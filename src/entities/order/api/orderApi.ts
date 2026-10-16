@@ -34,6 +34,8 @@ export const useOrders = () => {
         params?: OrderListParams,
         enabled = true,
         refetchInterval?: (data: OrderListResponse | undefined) => number | false,
+        /** `silentError` — xato umumiy bildirishnoma bermaydi (masalan filtr varaqasidagi yordamchi son). */
+        options?: { silentError?: boolean },
     ) =>
         useQuery<OrderListResponse>({
             queryKey: [ORDER_KEY, params],
@@ -41,6 +43,7 @@ export const useOrders = () => {
             enabled,
             placeholderData: (prev) => prev,
             refetchInterval: refetchInterval ? (query) => refetchInterval(query.state.data) : undefined,
+            ...(options?.silentError ? { meta: { silentError: true } } : {}),
         });
 
     const useGetExternalOrders = (params?: ExternalOrdersParams) =>

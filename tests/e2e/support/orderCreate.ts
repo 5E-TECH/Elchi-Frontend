@@ -104,4 +104,4 @@ export const measureGrid = (grid: Locator) =>
 
 /** Haqiqiy skroll konteyneri — `<main>`: ijobiy son = gorizontal skroll bor. */
 export const mainHorizontalOverflow = (page: Page) =>
-  page.locator("main.el-surface-page").evaluate((main) => main.scrollWidth - main.clientWidth);
+  page.locator("main:has([data-shell-slot=content])").evaluate((main) => main.scrollWidth - main.clientWidth);

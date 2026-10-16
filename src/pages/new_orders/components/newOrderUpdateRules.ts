@@ -4,6 +4,17 @@ export interface EditableOrderItem {
   id: string;
   quantity: number;
   product: { id: string } | null;
+  /** Katalog id'si — `product` relatsiyasi kelmaganda ham (hamkor posilkasi, o'chirilgan mahsulot). */
+  product_id?: string | null;
+  /** Katalogsiz (erkin-matnli / hamkor) qator nomi. */
+  product_name?: string | null;
+}
+
+/** `PATCH /orders/:id/full` dagi bitta qator (backend `OrderItemDto`). */
+export interface OrderUpdateItem {
+  product_id: string | null;
+  product_name?: string;
+  quantity: number;
 }
 
 export interface EditableOrderSnapshot {
@@ -90,11 +101,32 @@ export const isOrderSentToBranch = (order: EditableOrderSnapshot) => {
   );
 };
 
-const normalizeItems = (items: EditableOrderItem[]) =>
-  items
-    .map((item) => ({ product_id: item.product?.id ?? "", quantity: item.quantity }))
-    .filter((item) => item.product_id)
-    .sort((a, b) => a.product_id.localeCompare(b.product_id));
+/**
+ * Backend `items` ni TO'LIQ almashtiradi (`replaceOrderItems`: eski qatorlar o'chiriladi, faqat
+ * yuborilgani yoziladi) — shuning uchun HAR qator yuboriladi: katalog qatori `product_id` bilan
+ * (`product` kelmagan bo'lsa ham), katalogsiz qator `product_id: null` + `product_name` bilan; nom bo'lsa
+ * u ham (almashtirishda yo'qolmasin). Ilgari faqat `product.id` li qatorlar qolardi va boshqa
+ * mahsulot sonini o'zgartirish erkin-matnli qatorlarni o'chirib yuborardi. Na id, na nom bo'lmagan
+ * qatorni backend 400 bilan rad etadi — u yuborilmaydi.
+ */
+const normalizeItems = (items: EditableOrderItem[]): OrderUpdateItem[] =>
+  items.flatMap((item) => {
+    const rawProductId = item.product?.id ?? item.product_id;
+    const productId = rawProductId == null ? "" : String(rawProductId).trim();
+    const productName = typeof item.product_name === "string" ? item.product_name.trim() : "";
+    if (!productId && !productName) return [];
+    return [
+      {
+        product_id: productId || null,
+        ...(productName ? { product_name: productName } : {}),
+        quantity: item.quantity,
+      },
+    ];
+  });
+
+/** Qatorlar tartibidan qat'i nazar taqqoslash kaliti. */
+const itemsKey = (items: OrderUpdateItem[]) =>
+  JSON.stringify(items.map((item) => JSON.stringify(item)).sort());
 
 export const parseOrderTotalPrice = (value: string): number | null => {
   const normalized = value.trim();
@@ -148,7 +180,7 @@ export const buildOrderUpdatePayload = (
   }
 
   const nextItems = normalizeItems(form.items);
-  if (!locks.products && JSON.stringify(nextItems) !== JSON.stringify(normalizeItems(order.items))) {
+  if (!locks.products && itemsKey(nextItems) !== itemsKey(normalizeItems(order.items))) {
     payload.items = nextItems;
   }
 

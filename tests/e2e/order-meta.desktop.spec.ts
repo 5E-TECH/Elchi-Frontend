@@ -14,8 +14,8 @@ test.describe("Buyurtma ma'lumotlari — 1440px", () => {
     await openOrderDetail(page);
 
     const meta = page.getByTestId("order-meta");
-    const customer = page.getByText("Mijoz ma'lumotlari").first();
-    const products = page.getByText("Buyurtma mahsulotlari").first();
+    const customer = page.getByRole("heading", { name: "Mijoz", exact: true });
+    const products = page.getByRole("heading", { name: "Mahsulotlar", exact: true });
     const [metaBox, customerBox, productsBox] = await Promise.all([
       meta.boundingBox(),
       customer.boundingBox(),
@@ -32,7 +32,7 @@ test.describe("Buyurtma ma'lumotlari — 1440px", () => {
     await expect(page.getByTestId("order-parent-banner")).toContainText("#95");
 
     const overflow = await page
-      .locator("main.el-surface-page")
+      .locator("main:has([data-shell-slot=content])")
       .evaluate((main) => main.scrollWidth - main.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
     expect(leaked).toEqual([]);

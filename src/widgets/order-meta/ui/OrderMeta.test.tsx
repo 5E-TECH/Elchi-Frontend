@@ -55,7 +55,7 @@ describe("OrderMeta", () => {
     expect(row("meta-market").querySelector("a")!.getAttribute("href")).toBe("tel:+998992222222");
     expect(row("meta-branch")).toHaveTextContent("HQ Toshkent");
     expect(row("meta-post").querySelector("a")!.getAttribute("href")).toBe("/mails/78");
-    expect(row("meta-delivery")).toHaveTextContent("Markaz");
+    expect(row("meta-delivery")).toHaveTextContent("Markazgacha");
     expect(row("meta-sold-at").textContent).toMatch(/2026/);
 
     // Kuryer nomi va telefoni `GET users/93` dan — bosiladigan tel: havola.

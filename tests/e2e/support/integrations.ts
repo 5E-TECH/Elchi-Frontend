@@ -111,7 +111,7 @@ export const openElchiOverview = async (page: Page) => {
 
 /** Haqiqiy skroll konteyneri — `<main>`: ijobiy son = gorizontal skroll bor. */
 export const mainHorizontalOverflow = (page: Page) =>
-  page.locator("main.el-surface-page").evaluate((main) => main.scrollWidth - main.clientWidth);
+  page.locator("main:has([data-shell-slot=content])").evaluate((main) => main.scrollWidth - main.clientWidth);
 
 /**
  * Plitkalardagi kesilgan raqamlar — qiymat o'z qutisidan yoki kartadan

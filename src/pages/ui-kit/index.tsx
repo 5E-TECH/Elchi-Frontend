@@ -14,11 +14,12 @@ import { FormsSection } from "./sections/FormsSection";
 import { PageHeaderSection } from "./sections/PageHeaderSection";
 import { SelectSection } from "./sections/SelectSection";
 import { StatesSection } from "./sections/StatesSection";
+import { TableSection } from "./sections/TableSection";
 import { TabsSection } from "./sections/TabsSection";
 
 /**
  * KOMPONENTLAR TO'PLAMI (`/ops/ui-kit`) — dizayn v2 primitivlari namunasi (1-bosqich; 3-bosqich: forma,
- * ro'yxat, sana, oyna, xabar, holatlar).
+ * ro'yxat, sana, oyna, xabar, holatlar; 4-bosqich: jadval va sahifalash).
  *
  * Maket yo'q: ichki sahifa, eng yaqini — `Main` (dizayn tizimi taxtasi).
  * Faqat superadmin (`canViewUiKit`), menyuda yo'q.
@@ -26,7 +27,7 @@ import { TabsSection } from "./sections/TabsSection";
  * Har bo'lim namunani kunduzgi va tungi mavzuda yonma-yon chizadi (`ThemePair`).
  * Skrinshot uchun URL parametrlari:
  *   `?section=<id>`  — faqat shu bo'lim (`buttons`, `badges`, `cards`, `page-header`, `tabs`, `format`,
- *                    `forms`, `select`, `date`, `dialog`, `feedback`, `states`; noma'lum id — hammasi);
+ *                    `forms`, `select`, `date`, `dialog`, `feedback`, `states`, `table`; noma'lum id — hammasi);
  *   `?theme-pair=0`  — har bo'limda bitta panel, ilovaning joriy mavzusida.
  *   npm run app:shot -- "/ops/ui-kit?section=buttons" --device phone
  */
@@ -44,6 +45,8 @@ const SECTIONS: ReadonlyArray<{ id: string; Component: ComponentType }> = [
   { id: "dialog", Component: DialogSection },
   { id: "feedback", Component: FeedbackSection },
   { id: "states", Component: StatesSection },
+  // 4-bosqich: ro'yxat sahifalari.
+  { id: "table", Component: TableSection },
 ];
 
 export const UiKitPage = () => {

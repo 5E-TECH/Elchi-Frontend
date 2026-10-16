@@ -168,8 +168,10 @@ export const useOrders = () => {
       refetchInterval: refetchInterval ? (query) => refetchInterval(query.state.data) : undefined,
     });
 
+  // `GET orders/courier/orders`: holat, sahifa, qidiruv (ism, telefon, raqam) va sana oralig'i
+  // (`startDate` / `endDate`, YYYY-MM-DD) — openapi `findCourierOrdersLegacy`.
   const useGetOrderCourier = (
-    params?: { status?: string; page?: number; limit?: number },
+    params?: { status?: string; page?: number; limit?: number; search?: string; startDate?: string; endDate?: string },
     refetchInterval?: (data: unknown) => number | false,
   ) =>
     useQuery({

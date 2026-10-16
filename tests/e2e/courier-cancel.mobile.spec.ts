@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockCourierCancelApi, openCancelDialog } from "./support/courierCancel";
+import { chooseCancelReason, mockCourierCancelApi, openCancelDialog } from "./support/courierCancel";
 
 /** Kuryer → «Bekor qilish» — 390px: pastki varaqa, sabab majburiy. */
 test.describe("Kuryer bekor qilish oynasi — 390px", () => {
@@ -9,8 +9,15 @@ test.describe("Kuryer bekor qilish oynasi — 390px", () => {
     const { cancels, leaked } = await mockCourierCancelApi(page);
     const dialog = await openCancelDialog(page);
 
-    const box = (await dialog.boundingBox())!;
     const viewport = page.viewportSize()!;
+    // Dizayn v2 varaqasi pastdan siljib chiqadi (250 ms) — joyiga tushgach o'lchanadi.
+    await expect
+      .poll(async () => {
+        const settling = await dialog.boundingBox();
+        return settling ? Math.abs(settling.y + settling.height - viewport.height) : Infinity;
+      })
+      .toBeLessThanOrEqual(1);
+    const box = (await dialog.boundingBox())!;
     expect(Math.abs(box.y + box.height - viewport.height)).toBeLessThanOrEqual(1);
     expect(box.width).toBeGreaterThanOrEqual(viewport.width - 1);
 
@@ -31,7 +38,7 @@ test.describe("Kuryer bekor qilish oynasi — 390px", () => {
 
     const submit = dialog.getByRole("button", { name: "Bekor qilish", exact: true });
     await expect(submit).toBeDisabled();
-    await dialog.getByLabel(/^Sabab/).selectOption("CUSTOMER_NO_ANSWER");
+    await chooseCancelReason(page, dialog, "Mijoz javob bermadi");
     await submit.click();
     await expect(dialog).toHaveCount(0);
     expect(cancels.map((c) => c.body.reason)).toEqual(["CUSTOMER_NO_ANSWER"]);
@@ -45,7 +52,7 @@ test.describe("Kuryer bekor qilish oynasi — 390px", () => {
       market: { name: "Zamon Market", expense_proof_conditions: ["cancel_any"] },
     } as never;
     const dialog = await openCancelDialog(page);
-    await dialog.getByLabel(/^Sabab/).selectOption("CUSTOMER_REFUSED");
+    await chooseCancelReason(page, dialog, "Mijoz rad etdi");
 
     const submit = dialog.getByRole("button", { name: "Bekor qilish", exact: true });
     await expect(submit).toBeDisabled();

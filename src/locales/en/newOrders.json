@@ -240,6 +240,16 @@
   "note": "Note",
   "enterNote": "Enter note...",
   "productFallback": "Product",
+  "editDialog": {
+    "districtReselectHint": "The region changed, so select the district again.",
+    "customerNote": "The change is saved to the customer profile and shows in all of their orders.",
+    "removeItem": "Remove {{name}}",
+    "itemsEmpty": "No products left in the list.",
+    "addressSaved": "Address saved",
+    "customerSaved": "Customer details saved",
+    "orderSaved": "Order saved",
+    "itemQuantity": "{{count}} pcs"
+  },
   "externalOrdersTitle": "External orders",
   "externalOrdersSubtitle": "List of orders from external systems",
   "externalOrdersEmpty": "No external orders",

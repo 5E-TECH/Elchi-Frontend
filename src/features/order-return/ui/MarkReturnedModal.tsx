@@ -1,10 +1,10 @@
-import { memo, useEffect, useId, useState, type FormEvent } from "react";
+// dizayn-v2: (maket yo'q) admin-neworders-cancelled-scanner-dialog
+import { memo, useEffect, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { PackageCheck, X } from "lucide-react";
+import { CircleCheck, PackageCheck, ScanQrCode } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import Popup from "../../../shared/ui/Popup";
-import ScannerActionButton from "../../../shared/components/ScannerActionButton";
 import ScannerCameraModal from "../../../shared/components/ScannerCameraModal";
+import { Button, Dialog, Field, TextInput } from "../../../shared/ui/primitives";
 import { useOrders } from "../../../entities/orders";
 import { useOrdersCoverage } from "../../../entities/orders/ordersCoverage";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
@@ -26,10 +26,13 @@ const AUTHORIZATION_TTL_MS = 5 * 60 * 1000 - 10_000;
  * Filial: qaytarilgan buyurtmani marketga topshirish. Backend market QR
  * ruxsatini MAJBURIY talab qiladi — market QR (`MCR-...`) skan qilinadi,
  * 5 daqiqalik `authorization_token` olinadi va topshirish tasdiqlanadi.
+ *
+ * Dizayn v2: `Dialog` (telefonda pastki varaqa). Maket yo'q — eng yaqini
+ * `admin-neworders-cancelled-scanner-dialog` (kamera tugmasi + qo'lda kiritish). Kamera — umumiy
+ * `ScannerCameraModal` (oyna o'rnida ochiladi, ichma-ich emas).
  */
 const MarkReturnedModal = ({ open, orderId, onClose, onDone }: Props) => {
   const { t } = useTranslation(["orders", "newOrders", "common"]);
-  const titleId = useId();
   const queryClient = useQueryClient();
   const { scanMarketCancelledQr } = useOrders();
   const { markReturnedToMarket } = useOrdersCoverage();
@@ -131,89 +134,76 @@ const MarkReturnedModal = ({ open, orderId, onClose, onDone }: Props) => {
   }
 
   return (
-    <Popup isShow={open} onClose={onClose} labelledBy={titleId}>
-      <form
-        data-testid="mark-returned-modal"
-        onSubmit={handleSubmit}
-        className="relative mx-3 w-[calc(100vw-24px)] max-w-md overflow-hidden rounded-2xl border border-gray-200 bg-primary shadow-2xl dark:border-primarydark/60 dark:bg-maindark"
-      >
-        <div className="flex items-center justify-between bg-gradient-to-r from-emerald-600 to-emerald-500 px-5 py-4 dark:from-emerald-700 dark:to-emerald-600">
-          <div className="flex items-center gap-2">
-            <PackageCheck size={20} className="text-white" aria-hidden="true" />
-            <h2 id={titleId} className="text-base font-bold text-white">
-              {t("returnHandoverTitle", { id: orderId })}
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 transition-colors hover:bg-white/30"
-            aria-label={t("close", { ns: "common" })}
-          >
-            <X size={16} className="text-white" />
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-4 p-5">
-          <p className="text-sm text-gray-600 dark:text-gray-300">{t("returnHandoverHint")}</p>
-
-          {hasLiveAuthorization ? (
-            <p
-              data-testid="mark-returned-authorized"
-              className="rounded-xl border border-emerald-300/60 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-200"
-            >
-              {t("returnHandoverAuthorized")}
-            </p>
-          ) : (
-            <>
-              <ScannerActionButton
-                onClick={() => {
-                  setError("");
-                  setIsCameraOpen(true);
-                }}
-                label={t("returnHandoverScan")}
-                showLabel
-                className="min-h-11 w-full"
-              />
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor={`${titleId}-qr`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  {t("returnHandoverManualLabel")}
-                </label>
-                <input
-                  id={`${titleId}-qr`}
-                  data-testid="mark-returned-qr-input"
-                  value={qrInput}
-                  onChange={(event) => setQrInput(event.target.value)}
-                  autoComplete="off"
-                  spellCheck={false}
-                  className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-base text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:border-emerald-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-white dark:placeholder:text-white/35 md:text-sm"
-                  placeholder="MCR-..."
-                />
-              </div>
-            </>
-          )}
-
-          {error ? (
-            <p role="alert" data-testid="mark-returned-error" className="text-xs font-semibold text-error">
-              {error}
-            </p>
-          ) : null}
-
-          <button
+    <Dialog
+      open={open}
+      onClose={onClose}
+      busy={isPending}
+      size="sm"
+      className="md:max-w-[460px]"
+      title={t("returnHandoverTitle", { id: orderId })}
+      description={t("returnHandoverHint")}
+      icon={PackageCheck}
+      iconTone="success"
+      onSubmit={handleSubmit}
+      formProps={{ noValidate: true }}
+      data-testid="mark-returned-modal"
+      footer={
+        <>
+          <Button variant="secondary" disabled={isPending} onClick={onClose}>
+            {t("cancel", { ns: "common" })}
+          </Button>
+          <Button
             type="submit"
+            leftIcon={PackageCheck}
+            loading={isPending}
+            disabled={!hasLiveAuthorization && !qrInput.trim()}
             data-testid="mark-returned-submit"
-            disabled={isPending || (!hasLiveAuthorization && !qrInput.trim())}
-            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 py-3 font-bold text-white transition-colors hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isPending
-              ? t("loading", { ns: "common" })
-              : hasLiveAuthorization
-                ? t("returnHandoverRetry")
-                : t("returnHandoverSubmit")}
-          </button>
-        </div>
-      </form>
-    </Popup>
+            {hasLiveAuthorization ? t("returnHandoverRetry") : t("returnHandoverSubmit")}
+          </Button>
+        </>
+      }
+    >
+      {hasLiveAuthorization ? (
+        <p
+          data-testid="mark-returned-authorized"
+          className="m-0 flex items-start gap-2 rounded-xl bg-success-soft px-3 py-2.5 text-[13px] text-success-fg"
+        >
+          <CircleCheck size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
+          <span className="text-text">{t("returnHandoverAuthorized")}</span>
+        </p>
+      ) : (
+        <>
+          <Button
+            variant="secondary"
+            leftIcon={ScanQrCode}
+            fullWidth
+            onClick={() => {
+              setError("");
+              setIsCameraOpen(true);
+            }}
+          >
+            {t("returnHandoverScan")}
+          </Button>
+          <Field label={t("returnHandoverManualLabel")}>
+            <TextInput
+              value={qrInput}
+              onValueChange={setQrInput}
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="MCR-..."
+              data-testid="mark-returned-qr-input"
+            />
+          </Field>
+        </>
+      )}
+
+      {error ? (
+        <p role="alert" data-testid="mark-returned-error" className="m-0 text-[13px] font-semibold text-danger-fg">
+          {error}
+        </p>
+      ) : null}
+    </Dialog>
   );
 };
 

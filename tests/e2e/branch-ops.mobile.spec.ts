@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockBranchOpsApi, openBranchOps } from "./support/branchOps";
+import { confirmBatchCancel, mockBranchOpsApi, openBranchOps } from "./support/branchOps";
 
 /** /branch-ops — 390px (iPhone 12): jadval to'ladi, forma va xato ekranga sig'adi. */
 test.describe("Filiallar — operatsiyalar — 390px", () => {
@@ -16,7 +16,7 @@ test.describe("Filiallar — operatsiyalar — 390px", () => {
     await page.getByLabel("batch-id").fill("18");
     await page.getByLabel("Bekor qilish sababi").fill("Noto'g'ri viloyatga yuborilgan");
     await page.getByRole("button", { name: "Batchni bekor qilish" }).click();
-    await page.getByRole("button", { name: "Ha, bekor qilish" }).click();
+    await confirmBatchCancel(page);
     const alert = page.locator(".ant-alert-error");
     await expect(alert).toContainText("Partiya topilmadi");
 

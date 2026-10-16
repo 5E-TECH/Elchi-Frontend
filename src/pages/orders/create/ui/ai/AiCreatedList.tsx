@@ -1,41 +1,55 @@
+// dizayn-v2: superadmin-neworders-create-ai-preview, admin-neworders-create-ai, manager-new-orders-create-ai, registrator-new-orders-create-ai, market-new-orders-create-ai-preview
 import { memo } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CircleCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { formatPhone, formatPrice } from "../../model/orderCreateForm";
+import { formatMoneyLocalized } from "../../../../../shared/lib/formatMoney";
+import { formatPhone } from "../../../../../shared/lib/formatPhone";
+import { Card } from "../../../../../shared/ui/primitives";
 import type { AiCreatedRow } from "./aiDraft";
 
-/** AI orqali shu sessiyada muvaffaqiyatli yaratilgan buyurtmalar. */
+/**
+ * «YARATILDI (N)» — AI orqali shu sessiyada muvaffaqiyatli yaratilgan buyurtmalar (maket `*-create-ai-preview`):
+ * qator — «Ism · +998 90 214 55 08», ostida «Tuman · summa · №raqam».
+ */
 const AiCreatedList = ({ rows }: { rows: AiCreatedRow[] }) => {
-  const { t } = useTranslation("orders");
+  const { t, i18n } = useTranslation("orders");
+  const language = i18n.resolvedLanguage ?? i18n.language;
 
   if (rows.length === 0) return null;
 
   return (
-    <section
+    <Card
+      padding="none"
       data-testid="ai-created-list"
-      className="flex flex-col gap-2 rounded-2xl border border-[color:color-mix(in_srgb,var(--color-success)_30%,transparent)] bg-primary p-3 dark:bg-primarydark/30 sm:p-4"
+      title={
+        <span className="flex items-center gap-2">
+          <CircleCheck size={18} aria-hidden="true" className="shrink-0 text-success-fg" />
+          {t("aiCreatedTitle", { count: rows.length })}
+        </span>
+      }
     >
-      <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--color-success)]">
-        <CheckCircle2 size={16} />
-        {t("aiCreatedTitle", { count: rows.length })}
-      </h3>
-      <ul className="flex flex-col gap-1.5">
+      <ul className="flex flex-col">
         {rows.map((row) => (
           <li
             key={row.key}
-            className="flex flex-col gap-0.5 rounded-lg bg-gray-50 px-3 py-2 text-sm text-maindark dark:bg-primarydark dark:text-primary sm:flex-row sm:items-center sm:justify-between"
+            className="flex min-h-14 flex-wrap items-center justify-between gap-x-4 gap-y-1 border-b border-border px-5 py-3 text-sm last:border-b-0"
           >
-            <span className="min-w-0 truncate font-semibold">
-              {row.customer_name} · <span className="font-mono">+998 {formatPhone(row.phone_number)}</span>
+            <span className="min-w-0 font-semibold text-text">
+              {row.customer_name} · <span className="tabular-nums">{formatPhone(row.phone_number)}</span>
             </span>
-            <span className="text-xs text-gray-500 dark:text-gray-400">
-              {row.district_name ?? "—"} · {formatPrice(String(row.total_price))} {t("currency")}
-              {row.order_id ? ` · #${row.order_id}` : ""}
+            <span className="text-[13px] text-text-muted">
+              {[
+                row.district_name ?? "—",
+                formatMoneyLocalized(row.total_price, { language }),
+                row.order_id ? t("orderNumberShort", { id: row.order_id }) : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </span>
           </li>
         ))}
       </ul>
-    </section>
+    </Card>
   );
 };
 

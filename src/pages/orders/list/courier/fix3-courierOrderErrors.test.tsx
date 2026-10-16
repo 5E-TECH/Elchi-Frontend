@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AxiosError, type AxiosResponse } from "axios";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -52,6 +52,13 @@ const httpError = (status: number, message: string) =>
     data: { statusCode: status, message },
   } as AxiosResponse);
 
+/**
+ * Oyna ichidagi tugma. Dizayn v2 `Dialog` `#ui-portal` ga chiziladi; u testlar orasida saqlanadi va
+ * keyingi testning konteyneridan OLDIN turadi — `getAllByRole(…).at(-1)` endi qatordagi tugmani olardi.
+ * «Yopish» — oxirgisi (sarlavhadagi × ham «Yopish»).
+ */
+const dialogButton = (name: RegExp | string) => within(screen.getByRole("dialog")).getAllByRole("button", { name }).at(-1)!;
+
 const renderPage = () => renderWithProviders(<CourierOrders />, { route: "/orders?status=waiting" });
 
 const openFirst = async (user: ReturnType<typeof userEvent.setup>, name: RegExp) => {
@@ -74,9 +81,9 @@ describe("Kuryer ro'yxati — rad javobi ko'rinadi (fix3 FE-ORD-02)", () => {
     );
     renderPage();
 
-    await openFirst(user, /^Sotish$/);
+    await openFirst(user, /ni sotish$/);
     await user.type(screen.getByLabelText("Qo'shimcha xarajat"), "5000");
-    await user.click(screen.getAllByRole("button", { name: /^Sotish$/ }).at(-1)!);
+    await user.click(dialogButton(/^Sotish$/));
 
     expect(sellMutate).toHaveBeenCalledWith(
       { orderId: "7001", data: expect.objectContaining({ extraCost: 5000 }) },
@@ -86,7 +93,8 @@ describe("Kuryer ro'yxati — rad javobi ko'rinadi (fix3 FE-ORD-02)", () => {
       await screen.findByText("Bu foydalanuvchiga qo'shimcha xarajat yozish ruxsati berilmagan"),
     ).toBeInTheDocument();
     // Oyna yopilmadi — kuryer tuzatib qayta yuboradi.
-    expect(screen.getAllByRole("button", { name: /^Sotish$/ }).length).toBeGreaterThan(1);
+    // Qator tugmasining nomi «№7001 ni sotish» — «Sotish» faqat oynadagi tugma.
+    expect(screen.getAllByRole("button", { name: /^Sotish$/ })).toHaveLength(1);
   });
 
   it("bekor qilish 400 — sabab chiqadi", async () => {
@@ -96,9 +104,11 @@ describe("Kuryer ro'yxati — rad javobi ko'rinadi (fix3 FE-ORD-02)", () => {
     );
     renderPage();
 
-    await openFirst(user, /^Bekor qilish$/);
-    await user.selectOptions(screen.getByLabelText(/^Sabab/), "WRONG_ADDRESS");
-    await user.click(screen.getAllByRole("button", { name: /^Bekor qilish$/ }).at(-1)!);
+    await openFirst(user, /ni bekor qilish$/);
+    // Sabab — `Select` (combobox): ochib, variantni bosish.
+    await user.click(screen.getByRole("combobox", { name: /^Sabab/ }));
+    await user.click(await screen.findByRole("option", { name: "Manzil noto'g'ri" }));
+    await user.click(dialogButton(/^Bekor qilish$/));
 
     expect(await screen.findByText("Buyurtma holati noto'g'ri")).toBeInTheDocument();
   });
@@ -110,8 +120,8 @@ describe("Kuryer ro'yxati — rad javobi ko'rinadi (fix3 FE-ORD-02)", () => {
     );
     renderPage();
 
-    await openFirst(user, /^Sotish$/);
-    await user.click(screen.getAllByRole("button", { name: /^Sotish$/ }).at(-1)!);
+    await openFirst(user, /ni sotish$/);
+    await user.click(dialogButton(/^Sotish$/));
 
     expect(sellMutate).toHaveBeenCalledTimes(1);
     expect(screen.queryByText("Amalni bajarib bo'lmadi. Qayta urinib ko'ring.")).not.toBeInTheDocument();
@@ -130,7 +140,7 @@ describe("Kuryer sotuvi — uyga yetkazishda qo'shimcha xarajat yo'q (fix3 FE-OR
     const user = userEvent.setup();
     renderPage();
 
-    await openFirst(user, /^Sotish$/);
+    await openFirst(user, /ni sotish$/);
 
     expect(
       screen.getByText("Uyga yetkazishda qo'shimcha xarajat yozilmaydi — uy tarifi allaqachon yuqori."),
@@ -139,7 +149,7 @@ describe("Kuryer sotuvi — uyga yetkazishda qo'shimcha xarajat yo'q (fix3 FE-OR
     expect(screen.queryByRole("textbox", { name: "Qo'shimcha xarajat" })).toBeNull();
     expect(screen.getByLabelText("Marketga to'langan summa")).toBeInTheDocument();
 
-    await user.click(screen.getAllByRole("button", { name: /^Sotish$/ }).at(-1)!);
+    await user.click(dialogButton(/^Sotish$/));
     expect(sellMutate).toHaveBeenCalledWith(
       { orderId: "7002", data: expect.objectContaining({ extraCost: 0 }) },
       expect.any(Object),
@@ -165,18 +175,20 @@ describe("Market isbot shartlari — xarajat yozilganda isbot (fix3 FE-ORD-02)",
     const user = userEvent.setup();
     renderPage();
 
-    await openFirst(user, /^Bekor qilish$/);
-    await user.selectOptions(screen.getByLabelText(/^Sabab/), "CUSTOMER_REFUSED");
+    await openFirst(user, /ni bekor qilish$/);
+    // Sabab — `Select` (combobox): ochib, variantni bosish.
+    await user.click(screen.getByRole("combobox", { name: /^Sabab/ }));
+    await user.click(await screen.findByRole("option", { name: "Mijoz rad etdi" }));
     // Xarajatsiz — isbot shart emas.
-    expect(screen.getAllByRole("button", { name: /^Bekor qilish$/ }).at(-1)!).toBeEnabled();
+    expect(dialogButton(/^Bekor qilish$/)).toBeEnabled();
 
-    const [extraCostInput] = screen.getAllByRole("spinbutton");
+    const extraCostInput = screen.getByLabelText("Qo'shimcha xarajat");
     await user.clear(extraCostInput);
     await user.type(extraCostInput, "5000");
 
     // Sabab tugma yonida yoziladi, «Bekor qilish» o'chiq.
     expect(screen.getAllByText("Bekor qilishda rasm yoki video majburiy").length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("button", { name: /^Bekor qilish$/ }).at(-1)!).toBeDisabled();
+    expect(dialogButton(/^Bekor qilish$/)).toBeDisabled();
     expect(cancelMutate).not.toHaveBeenCalled();
   });
 
@@ -184,14 +196,14 @@ describe("Market isbot shartlari — xarajat yozilganda isbot (fix3 FE-ORD-02)",
     const user = userEvent.setup();
     renderPage();
 
-    await openFirst(user, /^Sotish$/);
-    expect(screen.getAllByRole("button", { name: /^Sotish$/ }).at(-1)!).toBeEnabled();
+    await openFirst(user, /ni sotish$/);
+    expect(dialogButton(/^Sotish$/)).toBeEnabled();
 
     await user.type(screen.getByLabelText("Qo'shimcha xarajat"), "3000");
 
     // Sabab tugma yonida yoziladi, «Sotish» o'chiq.
     expect(screen.getAllByText("Sotishda rasm yoki video majburiy").length).toBeGreaterThan(0);
-    expect(screen.getAllByRole("button", { name: /^Sotish$/ }).at(-1)!).toBeDisabled();
+    expect(dialogButton(/^Sotish$/)).toBeDisabled();
   });
 });
 
@@ -211,9 +223,9 @@ describe("Sotishdan keyin marketga to'lov natijasi (uguUEhin)", () => {
     );
     renderPage();
 
-    await openFirst(user, /^Sotish$/);
+    await openFirst(user, /ni sotish$/);
     await user.type(screen.getByLabelText("Marketga to'langan summa"), "100000");
-    await user.click(screen.getAllByRole("button", { name: /^Sotish$/ }).at(-1)!);
+    await user.click(dialogButton(/^Sotish$/));
 
     expect(sellMutate).toHaveBeenCalledWith(
       { orderId: "7004", data: expect.objectContaining({ paidAmount: 100000 }) },
@@ -228,8 +240,8 @@ describe("Sotishdan keyin marketga to'lov natijasi (uguUEhin)", () => {
       options.onSuccess?.({ statusCode: 200, data: { id: "7004", status: "sold" } }),
     );
     renderPage();
-    await openFirst(user, /^Sotish$/);
-    await user.click(screen.getAllByRole("button", { name: /^Sotish$/ }).at(-1)!);
+    await openFirst(user, /ni sotish$/);
+    await user.click(dialogButton(/^Sotish$/));
     expect(screen.queryByText(/marketga (to'liq|qisman) to'landi/)).toBeNull();
   });
 });

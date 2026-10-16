@@ -1,3 +1,4 @@
+// dizayn-v2: superadmin-neworders-create-ai-input, superadmin-neworders-create-ai-preview, admin-neworders-create-ai, manager-new-orders-create-ai, registrator-new-orders-create-ai, market-new-orders-create-ai-input, market-new-orders-create-ai-preview
 import { memo, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
@@ -12,8 +13,8 @@ import {
 import { useLogistics } from "../../../../../entities/logistics/api/logisticsApi";
 import { useProducts } from "../../../../../entities/product";
 import type { MarketOption } from "../../model/orderCreateForm";
+import { CreateAlert } from "../CreateAlert";
 import Step1Market from "../Step1Market";
-import { FormFieldError, FormStateNote } from "../formFieldStyles";
 import AiConfirmBar from "./AiConfirmBar";
 import AiCreatedList from "./AiCreatedList";
 import AiInputPanel from "./AiInputPanel";
@@ -23,7 +24,7 @@ import { toCreatedRow, toDraft, toList, type AiCreatedRow, type AiDraft } from "
 import { evalPreview } from "./evalPreview";
 import { previewSig } from "./previewSig";
 import { useKeepFocusedFieldVisible } from "./useKeepFocusedFieldVisible";
-import { useConfirm } from "../../../../../shared/ui/primitives";
+import { Card, useConfirm } from "../../../../../shared/ui/primitives";
 
 type AiCreatePanelProps = {
   /** Tab faolmi (yashirin turganda ham holat saqlanadi). */
@@ -36,11 +37,13 @@ type AiCreatePanelProps = {
 };
 
 /**
- * "AI BILAN" REJIMI — kirish paneli, preview kartalari, tasdiqlash.
+ * "AI BILAN" REJIMI — kirish paneli, natija xabari, «Yaratildi» ro'yxati, preview kartalari va pastga
+ * yopishgan tasdiqlash paneli (maketlar `*-create-ai-input`, `*-create-ai-preview`). Sahifaning asosiy
+ * ustunida turadi (sarlavha va yon ustun — `index.tsx`).
  *
  * Market tanlash BITTA joyda: sahifaning umumiy formasidagi `market` o'qiladi
  * (localStorage emas). Admin/registrator uchun market tanlanmagan bo'lsa
- * avval o'sha Step1Market ko'rsatiladi.
+ * avval ko'rsatma va market tanlash maydoni ko'rsatiladi (maket «Market tanlanmagan»).
  */
 const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChangeMarket }: AiCreatePanelProps) => {
   const { t } = useTranslation("orders");
@@ -57,7 +60,7 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
   const submittingRef = useRef(false);
   const nextKey = useRef(0);
   const cardsRef = useRef<HTMLDivElement | null>(null);
-  const barRef = useRef<HTMLDivElement | null>(null);
+  const barRef = useRef<HTMLElement | null>(null);
 
   const hasMarket = isMarketRole || Boolean(market);
   const marketId = !isMarketRole && market ? String(market.id) : undefined;
@@ -224,15 +227,15 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
 
   if (!hasMarket) {
     return active ? (
-      <div className="flex flex-col gap-3">
-        <FormStateNote state="info" message={t("aiSelectMarketFirst")} />
+      <Card bodyClassName="flex flex-col gap-3">
+        <CreateAlert tone="info">{t("aiSelectMarketFirst")}</CreateAlert>
         <Step1Market compact />
-      </div>
+      </Card>
     ) : null;
   }
 
   return (
-    <div className="flex flex-col gap-3 sm:gap-4">
+    <div className="flex min-w-0 flex-col gap-4">
       <AiInputPanel
         marketId={marketId}
         onParsed={handleParsed}
@@ -240,14 +243,19 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
         onSelectMarket={isMarketRole ? undefined : onChangeMarket}
       />
 
-      {parseNotice && <FormStateNote state="info" message={parseNotice} />}
-      {resultSummary && <FormStateNote state="success" message={t("aiResultSummary", resultSummary)} />}
-      <FormFieldError message={confirmError} />
+      {parseNotice ? <CreateAlert tone="info">{parseNotice}</CreateAlert> : null}
+      {resultSummary ? (
+        <CreateAlert
+          tone={resultSummary.failed > 0 ? "warning" : "success"}
+          title={t("aiResultSummary", resultSummary)}
+        />
+      ) : null}
+      {confirmError ? <CreateAlert tone="danger">{confirmError}</CreateAlert> : null}
 
       <AiCreatedList rows={created} />
 
-      {drafts.length > 0 && (
-        <div ref={cardsRef} className="flex flex-col gap-3 sm:gap-4">
+      {drafts.length > 0 ? (
+        <div ref={cardsRef} className="flex min-w-0 flex-col gap-4">
           {drafts.map((draft, index) => (
             <AiPreviewCard
               key={draft.key}
@@ -264,9 +272,9 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
             />
           ))}
         </div>
-      )}
+      ) : null}
 
-      {drafts.length > 0 && (
+      {drafts.length > 0 ? (
         <AiConfirmBar
           readyOrders={readyDrafts.map((draft) => draft.order)}
           notReadyCount={drafts.length - readyDrafts.length}
@@ -275,7 +283,7 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
           onJumpToUnready={jumpToUnready}
           barRef={barRef}
         />
-      )}
+      ) : null}
     </div>
   );
 };

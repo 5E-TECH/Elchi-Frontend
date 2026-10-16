@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { formatTrackingDate } from "./formatTrackingDate";
+import { formatTrackingDate, formatTrackingDateTime } from "./formatTrackingDate";
 
 /**
  * SANA — DOIM Asia/Tashkent zonasida.
@@ -30,5 +30,36 @@ describe("formatTrackingDate — Asia/Tashkent", () => {
   it("epoch ms (sold_at) va Date ham qabul qilinadi; buzuq qiymat — \"—\"", () => {
     expect(formatTrackingDate(1784557174975)).toBe(formatTrackingDate(new Date(1784557174975)));
     expect(formatTrackingDate("yaroqsiz")).toBe("—");
+  });
+});
+
+describe("formatTrackingDateTime — tarix yozuvi vaqti (dizayn v2), Asia/Tashkent", () => {
+  beforeEach(() => {
+    vi.stubEnv("TZ", "UTC");
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  // «Hozir» — Toshkentda 20-iyul 15:00 (UTC 10:00).
+  const now = new Date("2026-07-20T10:00:00.000Z");
+
+  it("⭐ bugun (Toshkent kuni bo'yicha) — «Bugun, 13:38»", () => {
+    expect(formatTrackingDateTime("2026-07-20T08:38:49.865Z", { now })).toBe("Bugun, 13:38");
+  });
+
+  it("⭐ UTC'da 19-iyul 20:30, Toshkentda esa 20-iyul 01:30 — «Bugun», «Kecha» emas", () => {
+    expect(formatTrackingDateTime("2026-07-19T20:30:00.000Z", { now })).toBe("Bugun, 01:30");
+  });
+
+  it("kecha va eskiroq; ru/en yorliqlari", () => {
+    expect(formatTrackingDateTime("2026-07-19T13:00:00.000Z", { now })).toBe("Kecha, 18:00");
+    expect(formatTrackingDateTime("2026-07-19T13:00:00.000Z", { now, language: "ru" })).toBe("Вчера, 18:00");
+    expect(formatTrackingDateTime("2026-07-17T13:00:00.000Z", { now, language: "en" })).toBe("17.07.2026, 18:00");
+  });
+
+  it("buzuq qiymat — «—»", () => {
+    expect(formatTrackingDateTime("yaroqsiz", { now })).toBe("—");
+    expect(formatTrackingDateTime(null, { now })).toBe("—");
   });
 });

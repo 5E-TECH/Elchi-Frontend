@@ -229,7 +229,8 @@
       "link": "Ссылка",
       "success": "Успех",
       "danger": "Опасная",
-      "dangerSoft": "Опасная (мягкая)"
+      "dangerSoft": "Опасная (мягкая)",
+      "successSoft": "Успех (мягкая)"
     },
     "iconVariants": {
       "ghost": "Кнопка-иконка",
@@ -369,6 +370,19 @@
       "longDescription": "01.10 – 08.10.2026 · 94 заказа"
     }
   },
+  "table": {
+    "selectAll": "Выбрать все строки",
+    "selectRow": "Выбрать строку",
+    "cards": "Список"
+  },
+  "pagination": {
+    "label": "Страницы",
+    "previous": "Предыдущая страница",
+    "next": "Следующая страница",
+    "summary": "{{from}}–{{to}} / {{total}}",
+    "pageSize": "Строк на странице: {{count}}",
+    "pageSizeOption": "{{count}} шт."
+  },
   "tabs": {
     "scrollPrev": "Предыдущие вкладки",
     "scrollNext": "Следующие вкладки",
@@ -472,6 +486,10 @@
       "states": {
         "title": "Загрузка, пустое и ошибочное состояние",
         "description": "Скелет, пустой список и повторная попытка."
+      },
+      "table": {
+        "title": "Таблица и страницы",
+        "description": "Сортировка, выбор, скрытые на планшете столбцы, карточки на телефоне и страницы."
       }
     }
   },
@@ -670,6 +688,22 @@
     "clearShort": "Очистить",
     "remove": "Убрать «{{label}}»",
     "selectedCount": "Выбрано: {{count}}"
+  },
+  "filters": {
+    "button": "Фильтры",
+    "panel": "Дополнительные фильтры",
+    "active": "Активные фильтры",
+    "clearAll": "Сбросить фильтры",
+    "remove": "Убрать фильтр «{{label}}»",
+    "chip": "{{label}}: {{value}}",
+    "searchChip": "{{label}}: «{{value}}»",
+    "sheetTitle": "Фильтры",
+    "sheetSelected": "Выбрано фильтров: {{count}}",
+    "sheetClose": "Закрыть фильтры",
+    "quickPeriod": "Быстрый период",
+    "reset": "Сбросить",
+    "apply": "Показать результаты",
+    "applyTotal": "({{total}})"
   },
   "popupSelect": {
     "search": "Поиск...",
@@ -913,6 +947,29 @@
       "burst": "4 подряд",
       "repeat": "Повторная ошибка",
       "dismissAll": "Закрыть все"
+    }
+  },
+  "tableKit": {
+    "label": "Пример заказов",
+    "sortByDate": "Сортировать по дате",
+    "selectAll": "Выбрать неотправленные заказы на странице",
+    "selectRow": "Выбрать №{{id}}",
+    "cannotSelect": "№{{id}} уже отправлен, выбрать нельзя",
+    "summary": "{{from}}–{{to}} из {{total}} заказов",
+    "toHome": "До дома",
+    "columns": {
+      "order": "Заказ",
+      "customer": "Клиент",
+      "area": "Район / область",
+      "status": "Статус",
+      "delivery": "Доставка",
+      "amount": "Сумма"
+    },
+    "status": {
+      "new": "Новый",
+      "onTheRoad": "В пути",
+      "cancelled": "Отменён",
+      "cancelledSent": "Отменён — отправлен"
     }
   },
   "statesKit": {

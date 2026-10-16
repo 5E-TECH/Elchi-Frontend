@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
  */
 describe("AI buyurtma — 390px manba qo'riqchisi", () => {
   it("AI fayllarida text-[10px] / text-[11px] yo'q", () => {
-    const sources = import.meta.glob(["./*.tsx", "../formFieldStyles.tsx", "../CreateModeTabs.tsx"], {
+    const sources = import.meta.glob(["./*.tsx", "../CreateAlert.tsx", "../CreateModeTabs.tsx"], {
       query: "?raw",
       import: "default",
       eager: true,

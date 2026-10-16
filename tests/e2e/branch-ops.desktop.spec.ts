@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockBranchOpsApi, openBranchOps } from "./support/branchOps";
+import { confirmBatchCancel, mockBranchOpsApi, openBranchOps } from "./support/branchOps";
 
 /**
  * FILIALLAR — OPERATSIYALAR (/branch-ops): jadval konvertdan ochiladi;
@@ -37,7 +37,8 @@ for (const width of [1920, 1440]) {
       await page.getByLabel("Bekor qilish sababi").fill("Noto'g'ri viloyatga yuborilgan");
       await expect(button).toBeEnabled();
       await button.click();
-      await page.getByRole("button", { name: "Ha, bekor qilish" }).click();
+      expect(cancelBodies).toEqual([]); // tasdiqsiz so'rov ketmaydi
+      await confirmBatchCancel(page);
 
       await expect(page.getByText("Partiya muvaffaqiyatli bekor qilindi")).toBeVisible();
       expect(cancelBodies).toEqual([{ reason: "Noto'g'ri viloyatga yuborilgan" }]);
@@ -55,7 +56,7 @@ for (const width of [1920, 1440]) {
       await page.getByLabel("batch-id").fill("18");
       await page.getByLabel("Bekor qilish sababi").fill("Noto'g'ri viloyatga yuborilgan");
       await page.getByRole("button", { name: "Batchni bekor qilish" }).click();
-      await page.getByRole("button", { name: "Ha, bekor qilish" }).click();
+      await confirmBatchCancel(page);
 
       const alert = page.locator(".ant-alert-error");
       await expect(alert).toContainText("Partiyani bekor qilib bo'lmadi");

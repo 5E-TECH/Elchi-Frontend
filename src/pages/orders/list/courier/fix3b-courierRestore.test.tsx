@@ -94,7 +94,7 @@ const courierState = {
 
 const openAllTab = async (user: ReturnType<typeof userEvent.setup>) => {
   renderWithProviders(<CourierOrders />, { route: "/orders?status=waiting", preloadedState: courierState });
-  await user.click(screen.getAllByRole("button", { name: /Hamma buyurtmalar/ })[0]);
+  await user.click(screen.getByRole("tab", { name: "Barchasi" }));
 };
 
 const rowOf = (customerName: string) => {
@@ -104,7 +104,8 @@ const rowOf = (customerName: string) => {
 };
 
 const restoreButtonIn = (customerName: string) =>
-  within(rowOf(customerName)).queryByRole("button", { name: "Qayta tiklash" });
+  // Nomi maketdagidek: «№502 ni kutilayotgan holatga qayta tiklash» (ko'rinadigan matn «Qayta tiklash»).
+  within(rowOf(customerName)).queryByRole("button", { name: /qayta tiklash$/ });
 
 describe("Kuryer — bekor qilinganni qayta tiklash (fix3b LC-05)", () => {
   beforeEach(() => rollbackMutate.mockReset());
@@ -141,7 +142,7 @@ describe("Kuryer — bekor qilinganni qayta tiklash (fix3b LC-05)", () => {
     await openAllTab(user);
 
     await user.click(restoreButtonIn("Qo'limdagi bekor")!);
-    await user.click(screen.getByRole("button", { name: "Ha, qaytarish" }));
+    await user.click(screen.getByRole("button", { name: "Ha, qayta tiklash" }));
 
     expect(rollbackMutate).toHaveBeenCalledWith("502", expect.anything());
     expect(await screen.findByText("Ogohlantirish")).toBeInTheDocument();
@@ -156,9 +157,10 @@ describe("Kuryer — bekor qilinganni qayta tiklash (fix3b LC-05)", () => {
     await openAllTab(user);
 
     await user.click(restoreButtonIn("Sotilgan mijoz")!);
-    await user.click(screen.getByRole("button", { name: "Ha, qaytarish" }));
+    await user.click(screen.getByRole("button", { name: "Ha, qayta tiklash" }));
 
     expect(rollbackMutate).toHaveBeenCalledWith("501", expect.anything());
     expect(screen.queryByText("Ogohlantirish")).not.toBeInTheDocument();
+    expect(await screen.findByText("Buyurtma qayta tiklandi")).toBeInTheDocument();
   });
 });

@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { AxiosError, CanceledError, type InternalAxiosRequestConfig } from "axios";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../../../test/test-utils";
@@ -35,7 +35,8 @@ const selectFiles = (files: File[]) => {
   fireEvent.change(input);
 };
 
-const textarea = () => screen.getByLabelText("Buyurtma matni") as HTMLTextAreaElement;
+/** Matn maydoni — karta sarlavhasidagi `<label>` bilan nomlangan (karta ham shu sarlavha bilan nomlangan). */
+const textarea = () => screen.getByRole("textbox", { name: "Buyurtma matni" }) as HTMLTextAreaElement;
 const parseButton = () =>
   screen.getByRole("button", { name: /Tahlil qilish|Qayta urinib ko'ring|soniyadan keyin/ });
 
@@ -87,12 +88,15 @@ describe("AiInputPanel", () => {
     const full = "a".repeat(4000);
 
     fireEvent.change(textarea(), { target: { value: full } });
-    expect(screen.getByTestId("ai-text-counter")).toHaveTextContent("4000 / 4000");
-    expect(screen.getByTestId("ai-text-counter").className).toContain("text-error");
+    expect(screen.getByTestId("ai-text-counter")).toHaveTextContent("4 000 / 4 000");
+    expect(screen.getByTestId("ai-text-counter").className).toContain("text-danger-fg");
+    // Hisoblagich maydonga bog'langan (ekran o'quvchi ham eshitadi).
+    expect(textarea()).toHaveAttribute("aria-describedby", expect.stringContaining(screen.getByTestId("ai-text-counter").id));
 
     fireEvent.change(textarea(), { target: { value: `${full}b` } });
     expect(textarea().value).toHaveLength(4000);
     expect(screen.getByText(/4000 belgidan oshmasligi kerak/)).toBeInTheDocument();
+    expect(textarea()).toHaveAttribute("aria-invalid", "true");
   });
 
   it("3 tadan ortiq rasm tanlansa xabar chiqadi va birinchi 3 tasi QABUL qilinadi", async () => {
@@ -149,7 +153,8 @@ describe("AiInputPanel", () => {
     selectFiles([file("a.jpg"), file("b.jpg")]);
     await waitFor(() => expect(screen.getByTestId("ai-image-grid").children).toHaveLength(2));
 
-    fireEvent.click(screen.getAllByRole("button", { name: "Suratni olib tashlash" })[0]);
+    // Har tugma nomida fayl nomi bor — qaysi surat olib tashlanishi aniq.
+    fireEvent.click(screen.getByRole("button", { name: "Suratni olib tashlash: a.jpg" }));
 
     expect(screen.getByTestId("ai-image-grid").children).toHaveLength(1);
     expect(screen.getByAltText("b.jpg")).toBeInTheDocument();
@@ -344,7 +349,7 @@ describe("AiInputPanel", () => {
     it("ai_error → yozish bo'yicha maslahat + \"Matnni tahrirlash\"; qayta urinish TAKLIF QILINMAYDI", async () => {
       await failWith("ai_error");
       expect(await screen.findByText("AI matndan buyurtma topa olmadi")).toBeInTheDocument();
-      expect(screen.getByText("Har buyurtmani yangi qatordan, telefon raqami bilan yozing.")).toBeInTheDocument();
+      expect(within(screen.getByTestId("ai-error")).getByText("Har buyurtmani yangi qatordan, telefon raqami bilan yozing.")).toBeInTheDocument();
       expect(screen.queryByRole("button", { name: "Qayta urinib ko'ring" })).not.toBeInTheDocument();
       expect(parseButton()).toHaveTextContent("Tahlil qilish");
 

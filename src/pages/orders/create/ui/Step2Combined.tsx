@@ -1,90 +1,153 @@
-import { memo, useEffect, useState, type ReactNode } from "react";
-import {
-  Building2,
-  Home,
-  MapPin,
-  Minus,
-  Phone,
-  Plus,
-  ShoppingBag,
-  Trash2,
-  User,
-} from "lucide-react";
-import { Controller, useForm, useFormContext, useWatch } from "react-hook-form";
+// dizayn-v2: superadmin-neworders-create-manual-step2, manager-new-orders-create-manual-step2, registrator-new-orders-create-step2, market-new-orders-create-manual
+import { memo, useMemo, useState, type ReactNode } from "react";
+import { Building2, Check, CircleX, MapPin, Minus, Plus, ShoppingBag, Tag, Trash2, type LucideIcon } from "lucide-react";
+import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useLogistics } from "../../../../entities/logistics/api/logisticsApi";
 import { useProducts } from "../../../../entities/product";
 import type { DeliveryType } from "../../../../entities/order/types/order";
-import { GlobalSearchInput } from "../../../../features/search";
 import type { RootState } from "../../../../app/config/store";
-import SearchableSelect from "../../../../shared/ui/SearchableSelect";
+import { cx } from "../../../../shared/lib/cx";
+import { formatMoneyLocalized } from "../../../../shared/lib/formatMoney";
+import { getUzbekistanPhoneDigits } from "../../../../shared/lib/phone";
 import {
-  formatPhone,
-  formatPrice,
-  stripPhone,
-  stripPrice,
-  type OrderCreateFormValues,
-} from "../model/orderCreateForm";
-import {
-  FormFieldError,
-  getFieldClassName,
-  orderInputClassName as inputCls,
-} from "./formFieldStyles";
-import { keepPhoneCaretAfterChange } from "../../../../shared/lib/phone";
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  IconButton,
+  Select,
+  Skeleton,
+  TextInput,
+  type SelectOption,
+} from "../../../../shared/ui/primitives";
+import { orderItemKey, toApiList, type OrderCreateFormValues } from "../model/orderCreateForm";
 
-interface FieldProps {
-  label: string;
-  required?: boolean;
-  icon?: ReactNode;
-  children: ReactNode;
-  error?: string;
-  wide?: boolean;
-}
+type OrderItemValue = OrderCreateFormValues["details"]["items"][number];
 
-const Field = ({ label, required, icon, children, error, wide }: FieldProps) => (
-  // `sm:` prefiksi shart: telefonda grid bitta ustunli. Prefiksiz `col-span-2` yashirin
-  // ikkinchi ustun yaratib, ISM/TELEFON inputlarini 37–70px ga siqib qo'yardi.
-  <div className={`flex flex-col gap-1.5${wide ? " sm:col-span-2" : ""}`}>
-    <label className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide leading-4">
-      <span className="shrink-0">{icon}</span>
-      <span className="wrap-break-word">{label}</span>
-      {required && <span className="text-error ml-0.5">*</span>}
-    </label>
-    {children}
-    <FormFieldError message={error} />
-  </div>
+type CatalogProduct = { id: string | number; name?: string; price?: number | string | null };
+
+type AreaItem = { id: string | number; name?: string; sato_code?: string | null };
+
+/** Mavjud naqsh: `nom • sato_code` — operator viloyat/tumanni kod bilan tekshira oladi. */
+const toAreaOptions = (items: AreaItem[]): SelectOption[] =>
+  items.map((item) => ({
+    value: String(item.id),
+    label: `${item.name ?? "—"}${item.sato_code ? ` • ${item.sato_code}` : ""}`,
+  }));
+
+/** `.el-stat-icon` (36 px): neytral ikonka qutisi. */
+const StatIcon = ({ icon: Icon, className }: { icon: LucideIcon; className?: string }) => (
+  <span
+    aria-hidden="true"
+    className={cx("inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] text-text-muted", className)}
+  >
+    <Icon size={18} />
+  </span>
 );
 
-const SectionHeader = ({
-  icon,
-  title,
-  sub,
+/** Son tanlagich: «−» · son · «+» (har biri 44 px), chegarali guruh. «−» 1 da o'chiq. */
+const QuantityStepper = ({
+  value,
+  groupLabel,
+  decreaseLabel,
+  increaseLabel,
+  onChange,
 }: {
-  icon: ReactNode;
-  title: string;
-  sub?: string;
+  value: number;
+  groupLabel: string;
+  decreaseLabel: string;
+  increaseLabel: string;
+  onChange: (next: number) => void;
 }) => (
-  <div className="flex items-center gap-3 mb-4">
-    <div className="w-9 h-9 rounded-xl bg-main/10 flex items-center justify-center shrink-0">
-      {icon}
-    </div>
-    <div>
-      <h3 className="font-semibold text-maindark dark:text-primary text-base leading-tight">
-        {title}
-      </h3>
-      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
-    </div>
+  <div
+    role="group"
+    aria-label={groupLabel}
+    className="inline-flex shrink-0 items-center rounded-xl border border-border-strong bg-surface"
+  >
+    <IconButton size="lg" icon={Minus} label={decreaseLabel} disabled={value <= 1} onClick={() => onChange(value - 1)} />
+    <span className="min-w-7 text-center font-semibold tabular-nums text-text">{value}</span>
+    <IconButton size="lg" icon={Plus} label={increaseLabel} onClick={() => onChange(value + 1)} />
   </div>
 );
 
+/** Yetkazish turi kartasi (`.el-choice-card` + radio): tanlanganda `action` chegara va `action-soft` fon. */
+const DeliveryChoice = ({
+  name,
+  value,
+  checked,
+  title,
+  hint,
+  icon: Icon,
+  invalid,
+  onSelect,
+}: {
+  name: string;
+  value: DeliveryType;
+  checked: boolean;
+  title: string;
+  hint: string;
+  icon: LucideIcon;
+  invalid: boolean;
+  onSelect: (value: DeliveryType) => void;
+}) => (
+  <label
+    className={cx(
+      // `relative` — `sr-only` radio karta ichida qoladi (fokusda sahifa boshqa joyga sakramaydi).
+      "relative flex min-h-11 min-w-0 cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-3 text-sm",
+      "transition-[background-color,border-color,box-shadow] duration-150 motion-reduce:transition-none",
+      "has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-focus",
+      checked
+        ? "border-action bg-action-soft"
+        : cx("bg-input hover:border-text-subtle", invalid ? "border-danger" : "border-border-strong"),
+    )}
+  >
+    <input
+      type="radio"
+      name={name}
+      value={value}
+      checked={checked}
+      onChange={() => onSelect(value)}
+      className="sr-only"
+    />
+    <span
+      aria-hidden="true"
+      className={cx(
+        "inline-flex size-5 shrink-0 items-center justify-center rounded-full border-2",
+        checked ? "border-action" : "border-border-strong",
+      )}
+    >
+      {checked ? <span className="size-2.5 rounded-full bg-action" /> : null}
+    </span>
+    <span className="flex min-w-0 flex-1 flex-col">
+      <span className="font-semibold text-text">{title}</span>
+      <span className="text-xs text-text-muted">{hint}</span>
+    </span>
+    <Icon size={18} aria-hidden="true" className={cx("shrink-0", checked ? "text-action-fg" : "text-text-muted")} />
+  </label>
+);
+
+/** Karta ostidagi xato matni (`Field error` ko'rinishida). */
+const InlineError = ({ id, children }: { id?: string; children: ReactNode }) => (
+  <p id={id} className="flex items-start gap-1.5 text-xs font-semibold text-danger-fg">
+    <CircleX size={16} aria-hidden="true" className="mt-px shrink-0" />
+    <span className="min-w-0">{children}</span>
+  </p>
+);
+
+/**
+ * 2-QADAM — MIJOZ VA MAHSULOTLAR (maket `*-create-manual-step2`, `market-new-orders-create-manual`):
+ *  - «Mijoz ma'lumotlari»: telefon · qo'shimcha raqam · mijoz ismi (desktopda 3 ustun); «Yetkazish manzili»:
+ *    viloyat · tuman (qidiruvli), yetkazish turi (2 radio-karta), manzil · izoh;
+ *  - «Buyurtma tafsilotlari *»: chapda katalogdan qo'shish (qidiruv + ro'yxat) va katalogda yo'q mahsulot
+ *    (nomi + soni), o'ngda tanlangan mahsulotlar (son tanlagich, olib tashlash).
+ * Summa, operator va «Buyurtma yaratish» — yon ustundagi `Step2Summary` da.
+ */
 const Step2Combined = () => {
   const { t, i18n } = useTranslation(["orders", "common"]);
-  const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
-  const { control: searchControl, watch: watchSearch } = useForm({
-    defaultValues: { productSearch: "" },
-  });
-  const productSearch = watchSearch("productSearch");
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const money = (value: unknown) => formatMoneyLocalized(value, { language });
 
   const {
     control,
@@ -94,10 +157,11 @@ const Step2Combined = () => {
   } = useFormContext<OrderCreateFormValues>();
 
   const market = useWatch({ control, name: "market" });
+  const items = useWatch({ control, name: "details.items" });
+  const whereDeliver = useWatch({ control, name: "details.where_deliver" });
+  const selectedRegionId = useWatch({ control, name: "customer.region_id" }) ?? "";
   const role = useSelector((state: RootState) => state.role.role);
-  const customer = useWatch({ control, name: "customer" });
-  const details = useWatch({ control, name: "details" });
-  const selectedRegionId = customer?.region_id ?? "";
+  const roleName = useSelector((state: RootState) => state.role.name);
   const isMarketRole = role === "market";
   const productSourceMarketId = market ? String(market.id) : "";
 
@@ -111,261 +175,167 @@ const Step2Combined = () => {
   const productsData = isMarketRole ? myProductsQuery.data : marketProductsQuery.data;
   const prodLoading = isMarketRole ? myProductsQuery.isLoading : marketProductsQuery.isLoading;
 
-  const toArray = (value: unknown): any[] => {
-    if (Array.isArray(value)) return value;
-    if (
-      typeof value === "object" &&
-      value !== null &&
-      "data" in value &&
-      Array.isArray((value as { data?: unknown[] }).data)
-    ) {
-      return (value as { data: unknown[] }).data;
-    }
-    if (
-      typeof value === "object" &&
-      value !== null &&
-      "items" in value &&
-      Array.isArray((value as { items?: unknown[] }).items)
-    ) {
-      return (value as { items: unknown[] }).items;
-    }
-    if (
-      typeof value === "object" &&
-      value !== null &&
-      "results" in value &&
-      Array.isArray((value as { results?: unknown[] }).results)
-    ) {
-      return (value as { results: unknown[] }).results;
-    }
-    return [];
+  const regionOptions = useMemo(() => toAreaOptions(toApiList<AreaItem>(regions)), [regions]);
+  const districtOptions = useMemo(() => toAreaOptions(toApiList<AreaItem>(districts)), [districts]);
+  const allProducts = useMemo(() => toApiList<CatalogProduct>(productsData), [productsData]);
+
+  const [productSearch, setProductSearch] = useState("");
+  const filteredProducts = useMemo(() => {
+    const query = productSearch.trim().toLowerCase();
+    return query ? allProducts.filter((product) => product.name?.toLowerCase().includes(query)) : allProducts;
+  }, [allProducts, productSearch]);
+
+  const updateItems = (updater: (current: OrderItemValue[]) => OrderItemValue[]) => {
+    setValue("details.items", updater(getValues("details.items")), { shouldDirty: true, shouldValidate: true });
   };
 
-  const regionList = toArray(regions);
-  const districtList = toArray(districts);
-  const getAreaOptionLabel = (item: any) => {
-    const satoCode = item?.sato_code ? ` • ${item.sato_code}` : "";
-
-    return `${item?.name ?? "—"}${satoCode}`;
+  // Katalogdagi mahsulot: bor bo'lsa soni +1 (avvalgidek), yo'q bo'lsa 1 ta bilan qo'shiladi.
+  const addProduct = (product: CatalogProduct) => {
+    const id = String(product.id);
+    updateItems((current) =>
+      current.some((item) => item.product_id === id)
+        ? current.map((item) => (item.product_id === id ? { ...item, quantity: item.quantity + 1 } : item))
+        : [...current, { product_id: id, quantity: 1 }],
+    );
   };
-  const regionOptions = regionList.map((region: any) => ({
-    value: String(region.id),
-    label: getAreaOptionLabel(region),
-  }));
-  const districtOptions = districtList.map((district: any) => ({
-    value: String(district.id),
-    label: getAreaOptionLabel(district),
-  }));
-  const allProducts = toArray(productsData);
-  const filteredProducts = allProducts.filter((product: any) =>
-    product.name?.toLowerCase().includes(productSearch.toLowerCase()),
-  );
-
-  useEffect(() => {
-    setValue("customer.district_id", "");
-  }, [selectedRegionId, setValue]);
-
-  const updateItems = (
-    updater: (items: OrderCreateFormValues["details"]["items"]) => OrderCreateFormValues["details"]["items"],
-  ) => {
-    const currentItems = getValues("details.items");
-    setValue("details.items", updater(currentItems), {
-      shouldDirty: true,
-      shouldValidate: true,
-    });
-  };
-
-  const addProduct = (product: any) => {
-    updateItems((items) => {
-      const existing = items.find((item) => item.product_id === String(product.id));
-
-      if (existing) {
-        return items.map((item) =>
-          item.product_id === String(product.id)
-            ? { ...item, quantity: item.quantity + 1 }
-            : item,
-        );
-      }
-
-      return [...items, { product_id: String(product.id), quantity: 1 }];
-    });
-  };
-
-  // #1 — katalog item (product_id) YOKI erkin-matnli "maxsus" item
-  // (product_name, product_id=null) uchun yagona kalit. Bo'sh katalogli marketga
-  // ham buyurtma yaratishni ochadi (order-service product_name'li itemni qabul qiladi).
-  const itemKey = (
-    item: OrderCreateFormValues["details"]["items"][number],
-  ): string => item.product_id ?? `name:${item.product_name ?? ""}`;
 
   const [customName, setCustomName] = useState("");
   const [customQty, setCustomQty] = useState(1);
   const addCustomProduct = () => {
     const name = customName.trim();
     if (!name) return;
-    updateItems((items) => [
-      ...items,
-      { product_id: null, product_name: name, quantity: Math.max(1, customQty) },
-    ]);
+    updateItems((current) => [...current, { product_id: null, product_name: name, quantity: Math.max(1, customQty) }]);
     setCustomName("");
     setCustomQty(1);
   };
 
-  const changeQty = (key: string, delta: number) => {
-    updateItems((items) =>
-      items
-        .map((item) =>
-          itemKey(item) === key
-            ? { ...item, quantity: Math.max(1, item.quantity + delta) }
-            : item,
-        )
-        .filter((item) => item.quantity > 0),
+  const setQuantity = (key: string, quantity: number) => {
+    updateItems((current) =>
+      current.map((item) => (orderItemKey(item) === key ? { ...item, quantity: Math.max(1, quantity) } : item)),
     );
   };
 
-  const removeItem = (key: string) => {
-    updateItems((items) => items.filter((item) => itemKey(item) !== key));
-  };
+  const removeItem = (key: string) => updateItems((current) => current.filter((item) => orderItemKey(item) !== key));
 
   const getProduct = (id: string | null) =>
-    id == null
-      ? undefined
-      : allProducts.find((product: any) => String(product.id) === id);
+    id == null ? undefined : allProducts.find((product) => String(product.id) === id);
+
+  const catalogOwner = isMarketRole ? roleName : market?.name;
+  const itemsError = errors.details?.items?.message ?? errors.details?.items?.root?.message;
+  const addressRequired = whereDeliver === "address";
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 sm:gap-6">
-      <div className="flex flex-col gap-4 sm:gap-5 bg-primary dark:bg-primarydark/30 rounded-2xl border border-gray-200 dark:border-primarydark p-3 sm:p-5">
-        <SectionHeader
-          icon={<User size={18} className="text-main" />}
-          title={t("customerInfo")}
-          sub={t("customerInfoSubtitle")}
-        />
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+    <>
+      <Card padding="none" title={t("customerInfo")} description={t("customerInfoSubtitle")}>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(200px,100%),1fr))] gap-4 p-5">
           <Controller
             control={control}
             name="customer.phone"
             render={({ field }) => (
-              <Field
-                label={t("phone")}
-                required
-                icon={<Phone size={12} />}
-                error={errors.customer?.phone?.message}
-              >
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono z-10">
-                    +998
-                  </span>
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    autoComplete="off"
-                    placeholder="XX XXX XX XX"
-                    value={formatPhone(field.value)}
-                    onChange={(event) => {
-                      const nextValue = stripPhone(event.target.value);
-                      const nextDisplayValue = formatPhone(nextValue);
-                      field.onChange(nextValue);
-                      keepPhoneCaretAfterChange(event.target, nextDisplayValue);
-                    }}
-                    className={getFieldClassName(
-                      `${inputCls} pl-14 font-mono tracking-wider`,
-                      !!errors.customer?.phone?.message,
-                    )}
-                  />
-                </div>
+              <Field id="customer.phone" label={t("phone")} required error={errors.customer?.phone?.message}>
+                <TextInput
+                  mode="phone"
+                  name={field.name}
+                  placeholder="XX XXX XX XX"
+                  value={field.value ? `+998${field.value}` : ""}
+                  onValueChange={(next) => field.onChange(getUzbekistanPhoneDigits(next))}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                />
               </Field>
             )}
           />
-
           <Controller
             control={control}
             name="customer.extra_phone"
             render={({ field }) => (
-              <Field
-                label={t("additionalPhone")}
-                icon={<Phone size={12} />}
-                error={errors.customer?.extra_phone?.message}
-              >
-                <div className="relative">
-                  <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono z-10">
-                    +998
-                  </span>
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    autoComplete="off"
-                    placeholder="XX XXX XX XX"
-                    value={formatPhone(field.value)}
-                    onChange={(event) => {
-                      const nextValue = stripPhone(event.target.value);
-                      const nextDisplayValue = formatPhone(nextValue);
-                      field.onChange(nextValue);
-                      keepPhoneCaretAfterChange(event.target, nextDisplayValue);
-                    }}
-                    className={getFieldClassName(
-                      `${inputCls} pl-14 font-mono tracking-wider`,
-                      !!errors.customer?.extra_phone?.message,
-                    )}
-                  />
-                </div>
+              <Field id="customer.extra_phone" label={t("additionalPhone")} error={errors.customer?.extra_phone?.message}>
+                <TextInput
+                  mode="phone"
+                  name={field.name}
+                  placeholder="XX XXX XX XX"
+                  value={field.value ? `+998${field.value}` : ""}
+                  onValueChange={(next) => field.onChange(getUzbekistanPhoneDigits(next))}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                />
               </Field>
             )}
           />
-
           <Controller
             control={control}
             name="customer.name"
             render={({ field }) => (
-              <Field
-                label={t("customerName")}
-                required
-                icon={<User size={12} />}
-                error={errors.customer?.name?.message}
-              >
-                <input
-                  {...field}
-                  type="text"
+              <Field id="customer.name" label={t("createCustomerName")} required error={errors.customer?.name?.message}>
+                <TextInput
+                  name={field.name}
                   placeholder={t("enterName")}
-                  className={getFieldClassName(inputCls, !!errors.customer?.name?.message)}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
                 />
               </Field>
             )}
           />
+        </div>
 
+        <div className="border-t border-border px-5 pt-5 pb-4">
+          <h3 className="text-sm font-semibold text-text">{t("createDeliveryAddressTitle")}</h3>
+        </div>
+        {/*
+          Ikki ustun (telefonda bitta). `auto-fit` emas: to'liq qatorli «Yetkazish turi» (`col-span-full`) keng ekranda
+          bo'sh uchinchi ustunni ushlab qolib, viloyat/tuman qatorini 2/3 ga qisib qo'yardi.
+        */}
+        <div className="grid grid-cols-2 gap-4 px-5 pb-5 max-md:grid-cols-1">
           <Controller
             control={control}
             name="customer.region_id"
             render={({ field }) => (
-              <div className="flex flex-col gap-1.5">
-                <SearchableSelect
-                  label={`${t("filterRegion")} *`}
+              <Field
+                id="customer.region_id"
+                label={t("filterRegion")}
+                required
+                labelAs="span"
+                error={errors.customer?.region_id?.message}
+              >
+                <Select
+                  searchable
                   name={field.name}
-                  value={field.value ?? ""}
-                  onChange={field.onChange}
                   options={regionOptions}
-                  placeholder={
-                    regLoading ? t("loading", { ns: "common" }) : t("selectRegion")
-                  }
-                  icon={MapPin}
+                  value={field.value || null}
+                  onChange={(next) => {
+                    const value = next ?? "";
+                    // Tuman faqat viloyat ALMASHGANDA tozalanadi — 2-qadamga qaytib kelganda (qayta mount) saqlanadi.
+                    if (value !== field.value) setValue("customer.district_id", "");
+                    field.onChange(value);
+                  }}
+                  onBlur={field.onBlur}
+                  placeholder={regLoading ? t("loading", { ns: "common" }) : t("selectRegion")}
                   loading={regLoading}
                   disabled={regLoading}
                 />
-                <FormFieldError message={errors.customer?.region_id?.message} />
-              </div>
+              </Field>
             )}
           />
-
           <Controller
             control={control}
             name="customer.district_id"
             render={({ field }) => (
-              <div className="flex flex-col gap-1.5">
-                <SearchableSelect
-                  label={`${t("district")} *`}
+              <Field
+                id="customer.district_id"
+                label={t("district")}
+                required
+                labelAs="span"
+                error={errors.customer?.district_id?.message}
+              >
+                <Select
+                  searchable
                   name={field.name}
-                  value={field.value ?? ""}
-                  onChange={field.onChange}
                   options={districtOptions}
+                  value={field.value || null}
+                  onChange={(next) => field.onChange(next ?? "")}
+                  onBlur={field.onBlur}
                   placeholder={
                     !selectedRegionId
                       ? t("selectRegionFirst")
@@ -373,12 +343,52 @@ const Step2Combined = () => {
                         ? t("loading", { ns: "common" })
                         : t("selectDistrict")
                   }
-                  icon={Building2}
                   loading={distLoading}
                   disabled={!selectedRegionId || distLoading}
                 />
-                <FormFieldError message={errors.customer?.district_id?.message} />
-              </div>
+              </Field>
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="details.where_deliver"
+            render={({ field }) => (
+              <fieldset className="col-span-full m-0 min-w-0 border-0 p-0">
+                <legend className="mb-1.5 p-0 text-[13px] font-semibold text-text">
+                  {t("deliveryType")}
+                  <span aria-hidden="true" className="text-danger-fg">
+                    {" *"}
+                  </span>
+                </legend>
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-4">
+                  <DeliveryChoice
+                    name={field.name}
+                    value="center"
+                    checked={field.value === "center"}
+                    title={t("deliveryToCenter")}
+                    hint={t("createDeliveryCenterHint")}
+                    icon={Building2}
+                    invalid={Boolean(errors.details?.where_deliver)}
+                    onSelect={field.onChange}
+                  />
+                  <DeliveryChoice
+                    name={field.name}
+                    value="address"
+                    checked={field.value === "address"}
+                    title={t("deliveryToHome")}
+                    hint={t("createDeliveryHomeHint")}
+                    icon={MapPin}
+                    invalid={Boolean(errors.details?.where_deliver)}
+                    onSelect={field.onChange}
+                  />
+                </div>
+                {errors.details?.where_deliver?.message ? (
+                  <div className="pt-1.5">
+                    <InlineError>{errors.details.where_deliver.message}</InlineError>
+                  </div>
+                ) : null}
+              </fieldset>
             )}
           />
 
@@ -387,318 +397,209 @@ const Step2Combined = () => {
             name="customer.address"
             render={({ field }) => (
               <Field
+                id="customer.address"
                 label={t("address")}
-                icon={<Home size={12} />}
+                required={addressRequired}
                 error={errors.customer?.address?.message}
-                wide
               >
-                <textarea
-                  {...field}
-                  rows={2}
+                <TextInput
+                  multiline
+                  rows={3}
+                  name={field.name}
                   placeholder={t("enterFullAddress")}
-                  className={getFieldClassName(
-                    `${inputCls} resize-none`,
-                    !!errors.customer?.address?.message,
-                  )}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
+                />
+              </Field>
+            )}
+          />
+          <Controller
+            control={control}
+            name="details.comment"
+            render={({ field }) => (
+              <Field id="details.comment" label={t("note")} error={errors.details?.comment?.message}>
+                <TextInput
+                  multiline
+                  rows={3}
+                  name={field.name}
+                  placeholder={t("notePlaceholder")}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  onBlur={field.onBlur}
+                  ref={field.ref}
                 />
               </Field>
             )}
           />
         </div>
-      </div>
+      </Card>
 
-      <div className="flex flex-col gap-4 sm:gap-5 bg-primary dark:bg-primarydark/30 rounded-2xl border border-gray-200 dark:border-primarydark p-3 sm:p-5">
-        <SectionHeader
-          icon={<ShoppingBag size={18} className="text-main" />}
-          title={t("details")}
-          sub={t("selectedProductsSummary", { count: details.items.length })}
-        />
+      <Card
+        title={
+          <>
+            {t("details")}
+            <span aria-hidden="true" className="text-danger-fg">
+              {" *"}
+            </span>
+          </>
+        }
+        description={t("selectedProductsSummary", { count: items.length })}
+        bodyClassName="flex flex-col gap-4"
+      >
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(280px,100%),1fr))] items-start gap-6">
+          <div className="flex min-w-0 flex-col gap-4">
+            <Field id="create-product-search" label={t("addProduct")}>
+              <TextInput mode="search" placeholder={t("searchProduct")} value={productSearch} onValueChange={setProductSearch} />
+            </Field>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              {t("addProduct")}
-            </p>
-            <Controller
-              control={searchControl}
-              name="productSearch"
-              render={({ field }) => (
-                <GlobalSearchInput
-                  name={field.name}
-                  value={field.value}
-                  onBlur={field.onBlur}
-                  onValueChange={field.onChange}
-                  placeholder={t("searchProduct")}
-                  className="w-full"
-                  inputClassName={`${inputCls} py-2 pl-11 shadow-none focus:shadow-none`}
-                  iconClassName="text-gray-400 group-focus-within:text-main"
-                  clearButtonClassName="text-gray-400 hover:text-main"
-                />
-              )}
-            />
-            <div className="flex flex-col gap-1.5 max-h-55 sm:max-h-50 overflow-y-auto custom-scrollbar pr-0.5">
+            <ul
+              aria-label={t("createCatalogLabel", { market: catalogOwner ?? "—" })}
+              aria-busy={prodLoading || undefined}
+              className="m-0 flex max-h-[296px] list-none flex-col gap-0.5 overflow-y-auto overscroll-contain rounded-xl bg-sunken p-1 text-sm"
+            >
               {prodLoading ? (
-                Array.from({ length: 3 }).map((_, index) => (
-                  <div
-                    key={index}
-                    className="h-12 rounded-xl bg-gray-100 dark:bg-primarydark animate-pulse"
-                  />
+                Array.from({ length: 3 }, (_, index) => (
+                  <li key={index} aria-hidden="true" className="flex min-h-13 items-center gap-3 px-3 py-2">
+                    <Skeleton shape="block" tone="border" width={36} height={36} />
+                    <span className="flex flex-1 flex-col gap-1.5">
+                      <Skeleton tone="border" width="55%" />
+                      <Skeleton tone="border" width="30%" />
+                    </span>
+                  </li>
                 ))
               ) : filteredProducts.length === 0 ? (
-                <div className="py-6 flex flex-col items-center gap-1.5 text-gray-400">
-                  <ShoppingBag size={26} strokeWidth={1} />
-                  <p className="text-xs">{t("notFound", { ns: "common" })}</p>
-                </div>
+                <li>
+                  <EmptyState icon={ShoppingBag} title={t("notFound", { ns: "common" })} />
+                </li>
               ) : (
-                filteredProducts.map((product: any) => {
-                  const isAdded = details.items.some(
-                    (item) => item.product_id === String(product.id),
-                  );
-
+                filteredProducts.map((product) => {
+                  const isAdded = items.some((item) => item.product_id === String(product.id));
                   return (
-                    <button
-                      key={product.id}
-                      type="button"
-                      onClick={() => addProduct(product)}
-                      className={`
-                        flex items-center gap-2 px-3 py-2.5 rounded-xl text-left
-                        border-2 transition-all duration-200 group cursor-pointer
-                        ${isAdded
-                          ? "border-main/40 bg-main/5 dark:bg-main/10"
-                          : "border-gray-200 dark:border-primarydark bg-primary dark:bg-primarydark hover:border-main/30"}
-                      `}
-                    >
-                      <div className="w-8 h-8 rounded-lg bg-sidebar dark:bg-background flex items-center justify-center shrink-0 overflow-hidden">
-                        {product.image ? (
-                          <img
-                            src={product.image}
-                            alt={product.name}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <ShoppingBag size={13} className="text-main/50" />
+                    <li key={product.id}>
+                      <button
+                        type="button"
+                        onClick={() => addProduct(product)}
+                        className={cx(
+                          "flex min-h-13 w-full items-center gap-3 rounded-[10px] px-3 py-2 text-left",
+                          "transition-[background-color] duration-150 hover:bg-surface motion-reduce:transition-none",
                         )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs sm:text-sm font-semibold text-maindark dark:text-primary truncate">
-                          {product.name}
-                        </p>
-                        <p className="text-xs text-main font-mono">
-                          {product.price?.toLocaleString(locale)} {t("currency")}
-                        </p>
-                      </div>
-                      <div
-                        className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${isAdded ? "bg-main text-primary" : "bg-sidebar dark:bg-background text-main"}`}
                       >
-                        <Plus size={12} />
-                      </div>
-                    </button>
+                        <StatIcon icon={ShoppingBag} className="bg-surface" />
+                        <span className="flex min-w-0 flex-1 flex-col">
+                          <span className="truncate font-semibold text-text">{product.name}</span>
+                          {product.price != null ? (
+                            <span className="text-[13px] text-text-muted">{money(product.price)}</span>
+                          ) : null}
+                        </span>
+                        {isAdded ? (
+                          <span className="inline-flex shrink-0 items-center gap-1 text-[13px] font-semibold text-action-fg">
+                            <Check size={16} aria-hidden="true" />
+                            {t("createProductAdded")}
+                          </span>
+                        ) : (
+                          <span className="inline-flex shrink-0 items-center gap-1 text-[13px] font-semibold text-text">
+                            <Plus size={16} aria-hidden="true" />
+                            {t("createProductAdd")}
+                          </span>
+                        )}
+                      </button>
+                    </li>
                   );
                 })
               )}
-            </div>
-            <FormFieldError message={errors.details?.items?.message} />
-          </div>
+            </ul>
 
-          {/* #1 — erkin-matnli "maxsus mahsulot": katalog bo'sh bo'lsa ham buyurtma yaratiladi */}
-          <div className="flex flex-col gap-2 rounded-xl border border-dashed border-gray-200 dark:border-primarydark p-3">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              {t("customProductLabel", { defaultValue: "Maxsus mahsulot (katalogsiz)" })}
-            </p>
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
+            {/* Katalogda yo'q («maxsus») mahsulot — katalog bo'sh bo'lsa ham buyurtma yaratiladi. */}
+            <Field id="create-custom-product" label={t("createCustomProductLabel")}>
+              <TextInput
+                placeholder={t("createCustomProductPlaceholder")}
                 value={customName}
-                onChange={(event) => setCustomName(event.target.value)}
+                onValueChange={setCustomName}
                 onKeyDown={(event) => {
                   if (event.key === "Enter") {
                     event.preventDefault();
                     addCustomProduct();
                   }
                 }}
-                placeholder={t("customProductPlaceholder", { defaultValue: "Mahsulot nomi" })}
-                className="flex-1 min-w-0 px-3 py-2 rounded-xl text-base md:text-sm bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark text-maindark dark:text-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main transition-all"
               />
-              <input
-                type="number"
-                min={1}
-                value={customQty}
-                onChange={(event) =>
-                  setCustomQty(Math.max(1, Math.floor(Number(event.target.value)) || 1))
-                }
-                aria-label={t("quantity", { defaultValue: "Soni" })}
-                className="w-16 px-2 py-2 rounded-xl text-base md:text-sm text-center bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark text-maindark dark:text-primary focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main transition-all"
-              />
-              <button
-                type="button"
-                onClick={addCustomProduct}
-                disabled={!customName.trim()}
-                className="shrink-0 flex items-center gap-1 px-3 py-2 rounded-xl text-sm font-semibold bg-main text-primary transition-all hover:bg-main/90 disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
-              >
-                <Plus size={14} />
-                {t("addCustom", { defaultValue: "Qo'shish" })}
-              </button>
-            </div>
+              <div className="flex min-w-0 items-center gap-3 pt-1.5">
+                <span className="text-[13px] text-text-muted">{t("createCustomQuantityLabel")}</span>
+                <QuantityStepper
+                  value={customQty}
+                  groupLabel={t("createCustomQuantityGroup")}
+                  decreaseLabel={t("createCustomQuantityDecrease")}
+                  increaseLabel={t("createCustomQuantityIncrease")}
+                  onChange={(next) => setCustomQty(Math.max(1, next))}
+                />
+                <Button
+                  variant="secondary"
+                  leftIcon={Plus}
+                  disabled={!customName.trim()}
+                  onClick={addCustomProduct}
+                  className="min-h-11 min-w-0 flex-1"
+                >
+                  {t("createProductAdd")}
+                </Button>
+              </div>
+            </Field>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">{t("selectedCount")}</p>
-            {details.items.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-8 gap-2 text-gray-400 border-2 border-dashed border-gray-200 dark:border-primarydark rounded-xl">
-                <ShoppingBag size={26} strokeWidth={1} />
-                <p className="text-xs text-center">{t("selectProductShort")}</p>
+          <div className="flex min-w-0 flex-col">
+            <h3 className="pb-3 text-[13px] font-semibold text-text">{t("createSelectedProducts")}</h3>
+            {items.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border-strong">
+                <EmptyState icon={ShoppingBag} title={t("selectProductShort")} />
               </div>
             ) : (
-              <div className="flex flex-col gap-1.5 max-h-60 sm:max-h-50 overflow-y-auto custom-scrollbar pr-0.5">
-                {details.items.map((item) => {
+              <ul aria-label={t("createSelectedProducts")} className="m-0 list-none p-0 text-sm">
+                {items.map((item) => {
+                  const key = orderItemKey(item);
                   const product = getProduct(item.product_id);
+                  const isCustom = item.product_id == null;
+                  const name = product?.name ?? item.product_name ?? `#${item.product_id ?? "?"}`;
                   return (
-                    <div
-                      key={itemKey(item)}
-                      className="flex flex-col items-stretch gap-2 p-2.5 rounded-xl bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark/60 sm:flex-row sm:items-center"
+                    <li
+                      key={key}
+                      className="grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-t border-border py-3 last:pb-0"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-sidebar dark:bg-background flex items-center justify-center shrink-0">
-                        <ShoppingBag size={12} className="text-main/50" />
+                      <StatIcon icon={isCustom ? Tag : ShoppingBag} className="bg-sunken" />
+                      <div className="min-w-0">
+                        <div className="truncate font-semibold text-text">{name}</div>
+                        <div className="text-[13px] text-text-muted">
+                          {isCustom
+                            ? t("orderDetail.catalogLess")
+                            : product?.price != null
+                              ? money(product.price)
+                              : "—"}
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs sm:text-sm font-semibold text-maindark dark:text-primary truncate">
-                          {product?.name ?? item.product_name ?? `#${item.product_id ?? "?"}`}
-                        </p>
-                        <p className="text-xs text-main font-mono">
-                          {product?.price?.toLocaleString(locale)} {t("currency")}
-                        </p>
+                      <IconButton
+                        size="lg"
+                        icon={Trash2}
+                        label={t("createRemoveItem", { name })}
+                        onClick={() => removeItem(key)}
+                      />
+                      <div className="col-start-2 col-end-4">
+                        <QuantityStepper
+                          value={item.quantity}
+                          groupLabel={t("itemQuantityGroup", { name })}
+                          decreaseLabel={t("decreaseQuantity", { name })}
+                          increaseLabel={t("increaseQuantity", { name })}
+                          onChange={(next) => setQuantity(key, next)}
+                        />
                       </div>
-                      <div className="flex items-center justify-end gap-1 sm:ml-auto">
-                        <button
-                          type="button"
-                          onClick={() => changeQty(itemKey(item), -1)}
-                          className="w-6 h-6 rounded-lg bg-sidebar dark:bg-background border border-gray-200 dark:border-primarydark flex items-center justify-center hover:border-main/40 transition-colors cursor-pointer"
-                        >
-                          <Minus size={10} />
-                        </button>
-                        <span className="w-5 text-center text-xs font-bold text-maindark dark:text-primary">
-                          {item.quantity}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => changeQty(itemKey(item), 1)}
-                          className="w-6 h-6 rounded-lg bg-sidebar dark:bg-background border border-gray-200 dark:border-primarydark flex items-center justify-center hover:border-main/40 transition-colors cursor-pointer"
-                        >
-                          <Plus size={10} />
-                        </button>
-                      </div>
-                      <div className="flex justify-end sm:block">
-                        <button
-                          type="button"
-                          onClick={() => removeItem(itemKey(item))}
-                          className="text-gray-300 hover:text-error transition-colors ml-0.5 cursor-pointer"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </div>
+                    </li>
                   );
                 })}
-              </div>
+              </ul>
             )}
           </div>
         </div>
-
-        <div className="border-t border-gray-200 dark:border-primarydark pt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-          <Controller
-            control={control}
-            name="details.where_deliver"
-            render={({ field }) => (
-              <div className="sm:col-span-2 flex flex-col gap-2">
-                <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-                  {t("deliveryType")}
-                </p>
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3">
-                  {(
-                    [
-                      { value: "center" as DeliveryType, label: t("deliveryCenter"), icon: Building2 },
-                      { value: "address" as DeliveryType, label: t("deliveryHome"), icon: Home },
-                    ] as const
-                  ).map(({ value, label, icon: Icon }) => (
-                    <button
-                      key={value}
-                      type="button"
-                      onClick={() => field.onChange(value)}
-                    className={getFieldClassName(`
-                        flex min-h-11 items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-center
-                        border-2 font-semibold text-sm transition-all duration-200 cursor-pointer
-                        ${field.value === value
-                          ? "border-main bg-main text-primary shadow-md shadow-main/20"
-                          : "border-gray-200 dark:border-primarydark text-gray-500 dark:text-gray-400 hover:border-main/40"}
-                      `, !!errors.details?.where_deliver?.message)}
-                    >
-                      <Icon size={15} />
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="details.total_price"
-            render={({ field }) => (
-              <Field label={t("totalPrice")} required error={errors.details?.total_price?.message}>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="0"
-                  value={formatPrice(field.value)}
-                  onChange={(event) => field.onChange(stripPrice(event.target.value))}
-                  className={getFieldClassName(`
-                    w-full px-3.5 py-2.5 rounded-xl text-base md:text-sm font-mono
-                    bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark
-                    text-maindark dark:text-primary placeholder:text-gray-400
-                    focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main
-                    transition-all duration-200
-                  `, !!errors.details?.total_price?.message)}
-                />
-              </Field>
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="details.operator"
-            render={({ field }) => (
-              <Field label={t("operator")} icon={<User size={12} />}>
-                <input
-                  {...field}
-                  type="text"
-                  placeholder={t("operatorPlaceholder")}
-                  className={getFieldClassName(inputCls, !!errors.details?.operator?.message)}
-                />
-              </Field>
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="details.comment"
-            render={({ field }) => (
-              <Field label={t("note")} wide>
-                <textarea
-                  {...field}
-                  rows={2}
-                  placeholder={t("notePlaceholder")}
-                  className={getFieldClassName(
-                    `${inputCls} resize-none`,
-                    !!errors.details?.comment?.message,
-                  )}
-                />
-              </Field>
-            )}
-          />
-        </div>
-      </div>
-    </div>
+        {itemsError ? <InlineError id="details.items-error">{itemsError}</InlineError> : null}
+      </Card>
+    </>
   );
 };
 

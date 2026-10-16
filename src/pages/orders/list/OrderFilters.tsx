@@ -1,982 +1,609 @@
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+// dizayn-v2: superadmin-orders-list, superadmin-orders-filters-mobile, admin-orders-list, admin-orders-filters-mobile, registrator-orders-list, registrator-orders-filters-mobile, market-orders-list, manager-orders-list-all, manager-orders-list-pending, manager-orders-list-cancelled
+import { memo, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import {
-    Filter,
-    X,
-    Store,
-    Building2,
-    MapPin,
-    Truck,
-    Tag,
-    Download,
-    ChevronDown,
-} from "lucide-react";
-import { useUser } from "../../../entities/user/api/userApi";
-import { useMarkets } from "../../../entities/markets";
-import { useBranches } from "../../../entities/branch";
-import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
-import type { DeliveryType, OrderStatus } from "../../../entities/order/types/order";
-import { resetFilters, setFilterValue } from "../../../shared/model/filterSlice";
-import { useQueryParams } from "../../../shared/lib/useQueryParams";
-import FilterSearch from "../../../shared/ui/FilterSearch";
-import FilterDateRange from "../../../shared/ui/FilterDateRange";
-import FilterMultiSelect from "../../../shared/ui/FilterMultiSelect";
-import FilterClearButton from "../../../shared/ui/FilterClearButton";
-import { clearAllSearch, setSearchValue } from "../../../shared/model/searchSlice";
+import { ListFilter, X } from "lucide-react";
 import type { RootState } from "../../../app/config/store";
-import SearchableSelect from "../../../shared/ui/SearchableSelect";
-import { isInUiLayer } from "../../../shared/ui/primitives";
+import { ORDER_STATUS_NS, ORDER_STATUS_REGISTRY } from "../../../entities/order";
+import type { OrderStatus } from "../../../entities/order/types/order";
+import { cx } from "../../../shared/lib/cx";
+import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { extractScannerToken } from "../../../shared/lib/scanToken";
+import { useQueryParams } from "../../../shared/lib/useQueryParams";
+import { resetFilters, setFilterValue } from "../../../shared/model/filterSlice";
+import { clearAllSearch, setSearchValue } from "../../../shared/model/searchSlice";
+import { Button, DateRange, Field, Select, TextInput } from "../../../shared/ui/primitives";
+import { formatDay, formatRangeShort } from "../../../shared/ui/primitives/date/calendarMath";
+import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
+import {
+  countPanelFilters,
+  FILTER_STATUSES,
+  getOrderFilterScope,
+  hasDateRange,
+  isDeliveryType,
+  LEGACY_DATE_FROM_KEY,
+  LEGACY_DATE_TO_KEY,
+  LEGACY_ORDER_STATUS_URL_KEY,
+  matchOrderStatusTab,
+  normalizeFilterStatuses,
+  ORDER_FILTER_KEYS,
+  ORDER_STATUS_URL_KEY,
+  parseStatusValues,
+  type OrderFilterValues,
+} from "./orderFilterModel";
+import { OrderFiltersSheet } from "./OrderFiltersSheet";
+import { useOrderFilterOptions, type FilterOption } from "./useOrderFilterOptions";
 
-// ── Holat variantlari ─────────────────────────────────────────────────────
-const ALL_STATUSES: { value: OrderStatus | ""; label: string }[] = [
-    { value: "new", label: "statusNew" },
-    { value: "created", label: "statusCreated" },
-    { value: "received", label: "statusReceived" },
-    { value: "on the road", label: "statusOnTheRoad" },
-    { value: "waiting", label: "statusWaiting" },
-    { value: "sold", label: "statusSold" },
-    { value: "paid", label: "statusPaid" },
-    { value: "partly_paid", label: "statusPartlyPaid" },
-    { value: "cancelled", label: "statusCancelled" },
-    { value: "closed", label: "statusClosed" },
-];
+/**
+ * «Buyurtmalar» ro'yxati filtrlari — dizayn v2 (maketlar `superadmin-orders-list`, `admin-orders-list`,
+ * `registrator-orders-list`, `market-orders-list`, `manager-orders-list-*`; telefon varaqasi —
+ * `*-orders-filters-mobile`, `OrderFiltersSheet.tsx`).
+ *
+ * Ro'yxat kartasi ichida (`Card padding="none"`, tablardan keyin) chiziladi va o'zi uchta qator beradi:
+ *   1. asboblar qatori — qidiruv · sana oralig'i · «Filtrlar N» (desktop/planshetda panelni ochadi-yopadi,
+ *      telefonda pastki varaqani ochadi);
+ *   2. «Qo'shimcha filtrlar» paneli (desktop/planshet) — market, filial, viloyat/tuman, kuryer, yetkazish turi,
+ *      holat (rolga qarab); o'zgarish darhol qo'llanadi;
+ *   3. faol filtr chiplari + «Filtrlarni tozalash».
+ *
+ * URL — yagona manba (Redux ko'zgusi avvalgidek yoziladi): kalitlar `ORDER_FILTER_KEYS`, holat — `status`.
+ * Telefonda sana superadmin/admin/registratorda varaqada (asboblar qatorida yo'q), menejer va marketda — qatorda.
+ * Holat tab bilan ko'rsatilgan bo'lsa (`statusTabs`, tab to'plamiga aynan mos) — u filtr soniga, chipga va
+ * «Filtrlarni tozalash» ga kirmaydi; «Holat» ro'yxatidan boshqa to'plam tanlansa — filtr.
+ */
 
-// ── Redux key-lari (UserListPage patterndek) ──────────────────────────────
-export const ORDER_FILTER_KEYS = {
-    marketId: "orderMarketId",
-    branchId: "orderBranchId",
-    regionId: "orderRegionId",
-    districtId: "orderDistrictId",
-    courierId: "orderCourierId",
-    status: "orderStatus",
-    deliveryType: "where_deliver",
-    dateFrom: "startDay",
-    dateTo: "endDay",
-    search: "orderSearch",
-} as const;
-
-export const ORDER_STATUS_URL_KEY = "status";
-const LEGACY_ORDER_STATUS_URL_KEY = ORDER_FILTER_KEYS.status;
-
-// ── Props ─────────────────────────────────────────────────────────────────
-interface Props {
-    onExport?: () => void;
-    isExporting?: boolean;
-}
-
-const parseStatusValues = (value: unknown): OrderStatus[] => {
-    if (Array.isArray(value)) {
-        return value.filter((item): item is OrderStatus => typeof item === "string" && item.length > 0);
-    }
-
-    if (typeof value !== "string" || !value.trim()) {
-        return [];
-    }
-
-    return value
-        .split(",")
-        .map((item) => item.trim())
-        .filter((item): item is OrderStatus => item.length > 0);
+type Props = {
+  /**
+   * Sahifada holat tablari bor (sukut `true`): tab to'plamiga mos holat filtr hisoblanmaydi (maket
+   * `manager-orders-list-pending` — «Kutilmoqda» tabida «Filtrlar» sonsiz, chip yo'q).
+   */
+  statusTabs?: boolean;
 };
 
-const isDeliveryType = (value: string): value is DeliveryType =>
-    value === "center" || value === "address";
+/** Qidiruv kechikishi (avvalgi `FilterSearch` dagidek); tozalash va Enter — darhol. */
+const SEARCH_DEBOUNCE_MS = 600;
 
-// ── Komponent ─────────────────────────────────────────────────────────────
-const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
-    const { t } = useTranslation(["orders", "common"]);
-    const dispatch = useDispatch();
-    const { setParam, removeParam, getParam, setMultipleParams } = useQueryParams();
-    const role = useSelector((state: RootState) => state.role.role);
-    const currentUser = useSelector((state: RootState) => state.user.user as Record<string, unknown> | null);
-    const isMarketRole = role === "market";
-    const isManagerRole = role === "manager";
-    const canUseBranchFilter = role === "admin" || role === "superadmin";
-    const shouldShowBranchFilter = canUseBranchFilter;
-    const canLoadRoleDependentOptions = role !== null && !isMarketRole;
-    const selectGridClassName = "grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3";
-    const [isMobile, setIsMobile] = useState(
-        typeof window !== "undefined" ? window.innerWidth < 640 : false,
-    );
-    const [isMobilePanelOpen, setIsMobilePanelOpen] = useState(false);
-    const [searchResetKey, setSearchResetKey] = useState(0);
-    const mobilePanelRef = useRef<HTMLDivElement | null>(null);
+/** `.el-tab-count` + `action-soft` (maket: «Filtrlar 2»). */
+const COUNT_PILL =
+  "inline-flex h-5 min-w-[22px] items-center justify-center rounded-full bg-action-soft px-1.5 text-xs font-semibold text-action-fg";
 
-    // ─── URL dan joriy qiymatlarni olish ───────────────────────────────────
-    const urlMarketId = getParam(ORDER_FILTER_KEYS.marketId) ?? "";
-    const urlBranchId = getParam(ORDER_FILTER_KEYS.branchId) ?? "";
-    const urlRegionId = getParam(ORDER_FILTER_KEYS.regionId) ?? "";
-    const urlDistrictId = getParam(ORDER_FILTER_KEYS.districtId) ?? "";
-    const urlCourierId = getParam(ORDER_FILTER_KEYS.courierId) ?? "";
-    const urlStatus = getParam(ORDER_STATUS_URL_KEY) ?? getParam(LEGACY_ORDER_STATUS_URL_KEY) ?? "";
-    const urlDeliveryType = getParam(ORDER_FILTER_KEYS.deliveryType) ?? "";
-    const urlDateFrom = getParam(ORDER_FILTER_KEYS.dateFrom) ?? getParam("orderDateFrom") ?? "";
-    const urlDateTo = getParam(ORDER_FILTER_KEYS.dateTo) ?? getParam("orderDateTo") ?? "";
-    const urlSearch = getParam(ORDER_FILTER_KEYS.search) ?? "";
+/** `.el-chip.el-chip-active` (CODE-MAP 2.2); telefonda 44 px. */
+const CHIP =
+  "inline-flex h-8 max-w-full shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-action " +
+  "bg-action-soft pl-3 pr-1 text-[13px] font-semibold text-action-fg max-md:h-11 max-md:pr-0";
 
-    // Buyurtmalar so'rovi URL parametrlaridan quriladi, shuning uchun URL bu
-    // sahifadagi filterlar uchun yagona ishonchli manba bo'lishi kerak. Redux
-    // qiymatlari browser back/forward'da eskirib qolishi mumkin.
-    const marketId = urlMarketId;
-    const branchId = urlBranchId;
-    const regionId = urlRegionId;
-    const districtId = urlDistrictId;
-    const courierId = urlCourierId;
-    const deliveryType = urlDeliveryType;
-    const dateFrom = urlDateFrom;
-    const dateTo = urlDateTo;
-    const search = urlSearch;
-    const statusValues = useMemo(
-        () => parseStatusValues(urlStatus),
-        [urlStatus],
-    );
+/**
+ * `.el-chip-x`: desktopda 28 px (maket `width: 28px; margin-right: -8px` — chip o'ng chekkasidan 4 px), telefonda
+ * chip balandligicha 44 px, o'ng chekkagacha (`registrator-orders-list`, `manager-orders-list-all` telefon:
+ * `44px; margin: 0 -14px 0 -10px`).
+ */
+const CHIP_X =
+  "inline-flex size-7 shrink-0 items-center justify-center rounded-full text-action-fg " +
+  "transition-[background-color] duration-150 motion-reduce:transition-none hover:bg-action/15 " +
+  "max-md:-ml-2.5 max-md:size-11";
 
-    const hasFilter = !!(
-        (!isMarketRole && marketId) ||
-        branchId ||
-        (isManagerRole ? districtId : regionId) ||
-        (!isMarketRole && courierId) ||
-        deliveryType ||
-        statusValues.length > 0 ||
-        dateFrom ||
-        dateTo ||
-        search
-    );
-    const activeFilterCount =
-        Number(Boolean(!isMarketRole && marketId))
-        + Number(Boolean(branchId))
-        + Number(Boolean(isManagerRole ? districtId : regionId))
-        + Number(Boolean(!isMarketRole && courierId))
-        + Number(Boolean(deliveryType))
-        + Number(statusValues.length > 0)
-        + Number(Boolean(dateFrom || dateTo))
-        + Number(Boolean(search));
+/** QR havolasi (`https://…/scan/<token>`) → token; boshqa matn o'zgarmaydi (avvalgi `FilterSearch` dagidek). */
+const normalizePossibleScanValue = (value: string) => {
+  if (!value.includes("/scan/")) return value;
+  const token = extractScannerToken(value, window.location.origin);
+  return token && token.length >= 6 ? token : value;
+};
 
-    useEffect(() => {
-        const handleResize = () => {
-            const mobile = window.innerWidth < 640;
-            setIsMobile(mobile);
-            if (!mobile) setIsMobilePanelOpen(false);
-        };
-
-        window.addEventListener("resize", handleResize);
-        return () => window.removeEventListener("resize", handleResize);
-    }, []);
-
-    useEffect(() => {
-        if (!isMobile || !isMobilePanelOpen) return;
-
-        const handleClickOutside = (event: MouseEvent) => {
-            if (!mobilePanelRef.current) return;
-            // v2 qatlami (`#ui-portal`: panel ichidan ochilgan ro'yxat, kalendar varaqasi, dialog) — «tashqari» emas.
-            if (isInUiLayer(event.target)) return;
-            if (!mobilePanelRef.current.contains(event.target as Node)) {
-                setIsMobilePanelOpen(false);
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [isMobile, isMobilePanelOpen]);
-
-    // ─── API lar ───────────────────────────────────────────────────────────
-    const { useGetRegions, useGetCouriers, useGetMyProfile } = useUser();
-    const { useGetDistricts } = useLogistics();
-    const { useGetMarkets } = useMarkets();
-
-    const toItems = (value: unknown): { id: string | number; name: string }[] => {
-        if (Array.isArray(value)) return value as { id: string | number; name: string }[];
-        if (
-            typeof value === "object" &&
-            value !== null &&
-            "data" in value &&
-            Array.isArray((value as { data?: { items?: { id: string | number; name: string }[] } }).data?.items)
-        ) {
-            return (value as { data: { items: { id: string | number; name: string }[] } }).data.items;
-        }
-        if (
-            typeof value === "object" &&
-            value !== null &&
-            "items" in value &&
-            Array.isArray((value as { items?: { id: string | number; name: string }[] }).items)
-        ) {
-            return (value as { items: { id: string | number; name: string }[] }).items;
-        }
-        return [];
+/** Bitta kechiktirilgan chaqiruv (yangisi eskisini bekor qiladi); komponent yopilsa bekor bo'ladi. */
+const useTimer = () => {
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    [],
+  );
+  return useMemo(() => {
+    const cancel = () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      timerRef.current = null;
     };
-
-    const { data: marketsData, isLoading: marketsLoading } = useGetMarkets(
-        { status: "active", limit: 100 },
-        canLoadRoleDependentOptions,
-    );
-    const markets = toItems(marketsData).map((m) => ({ value: String(m.id), label: m.name }));
-    const { data: branchesData, isLoading: branchesLoading } = useBranches(
-        {
-            status: "active",
-            limit: 100,
-            page: 1,
-        },
-        canUseBranchFilter,
-    );
-    const branches = canUseBranchFilter
-        ? (branchesData?.data ?? []).map((b) => ({ value: String(b.id), label: b.name }))
-        : [];
-
-    const { data: myProfileData } = useGetMyProfile();
-
-    const managerRegionId = useMemo(() => {
-        if (!isManagerRole) return "";
-
-        const profileUser =
-            ((myProfileData as { data?: Record<string, unknown> } | undefined)?.data as Record<string, unknown> | undefined)
-            ?? null;
-        const sourceUser = profileUser ?? currentUser;
-        if (!sourceUser) return "";
-
-        const branchObject =
-            sourceUser.branch && typeof sourceUser.branch === "object"
-                ? (sourceUser.branch as Record<string, unknown>)
-                : null;
-        const nestedBranchObject =
-            branchObject?.branch && typeof branchObject.branch === "object"
-                ? (branchObject.branch as Record<string, unknown>)
-                : null;
-        const branchRegionObject =
-            branchObject?.region && typeof branchObject.region === "object"
-                ? (branchObject.region as Record<string, unknown>)
-                : null;
-        const nestedBranchRegionObject =
-            nestedBranchObject?.region && typeof nestedBranchObject.region === "object"
-                ? (nestedBranchObject.region as Record<string, unknown>)
-                : null;
-
-        const rawValue =
-            nestedBranchObject?.region_id ??
-            nestedBranchObject?.regionId ??
-            nestedBranchRegionObject?.id ??
-            branchObject?.region_id ??
-            branchObject?.regionId ??
-            branchRegionObject?.id;
-
-        if (typeof rawValue === "string" && rawValue.trim()) return rawValue;
-        if (typeof rawValue === "number") return String(rawValue);
-        return "";
-    }, [currentUser, isManagerRole, myProfileData]);
-
-    const courierRegionId = isManagerRole ? managerRegionId : regionId;
-    const canLoadCouriers = canLoadRoleDependentOptions && (!isManagerRole || Boolean(managerRegionId));
-    const { data: couriersData, isLoading: couriersLoading } = useGetCouriers(
-        {
-            status: "active",
-            limit: 100,
-            ...(courierRegionId ? { region_id: courierRegionId } : {}),
-        },
-        canLoadCouriers,
-    );
-    const couriers = toItems(couriersData).map((c) => ({ value: String(c.id), label: c.name }));
-
-    const { data: regionsData, isLoading: regionsLoading } = useGetRegions(!isManagerRole);
-    const regions = ((regionsData?.data ?? regionsData ?? []) as { id: string | number; name: string }[]).map(
-        (r) => ({ value: String(r.id), label: r.name })
-    );
-    const { data: districtsData, isLoading: districtsLoading } = useGetDistricts(managerRegionId || undefined);
-    const managerDistricts = ((districtsData ?? []) as { id: string | number; name: string }[]).map((d) => ({
-        value: String(d.id),
-        label: d.name,
-    }));
-    const statuses = ALL_STATUSES.map((statusOption) => ({
-        ...statusOption,
-        label: t(statusOption.label, { ns: "orders" }),
-    }));
-    const deliveryTypes = [
-        { value: "center", label: t("deliveryCenter") },
-        { value: "address", label: t("deliveryHome") },
-    ];
-
-    // ─── Update: Redux + URL ───────────────────────────────────────────────
-    const update = (reduxKey: string, urlKey: string, value: string) => {
-        // 1. Redux ga saqlash
-        dispatch(setFilterValue({ key: reduxKey, value }));
-        // 2. URL params ga saqlash
-        if (value) {
-            setParam(urlKey, value);
-        } else {
-            removeParam(urlKey);
-        }
-
-        if (isMobile) {
-            setIsMobilePanelOpen(false);
-        }
+    return {
+      cancel,
+      schedule: (callback: () => void, delay: number) => {
+        cancel();
+        timerRef.current = setTimeout(() => {
+          timerRef.current = null;
+          callback();
+        }, delay);
+      },
     };
+  }, []);
+};
 
-    const updateRegionAndResetCourier = (value: string) => {
-        dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.regionId, value }));
-        dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.courierId, value: "" }));
+type ChipItem = { key: string; label: string; removeLabel: string; onRemove: () => void };
 
-        setMultipleParams({
-            [ORDER_FILTER_KEYS.regionId]: value,
-            [ORDER_FILTER_KEYS.courierId]: "",
-        });
-
-        if (isMobile) {
-            setIsMobilePanelOpen(false);
-        }
-    };
-
-    const updateDistrictAndResetCourier = (value: string) => {
-        dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.districtId, value }));
-        dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.courierId, value: "" }));
-
-        setMultipleParams({
-            [ORDER_FILTER_KEYS.districtId]: value,
-            [ORDER_FILTER_KEYS.courierId]: "",
-        });
-
-        if (isMobile) {
-            setIsMobilePanelOpen(false);
-        }
-    };
-
-    const updateStatus = (value: string[]) => {
-        const normalizedValue = value.filter((item): item is OrderStatus =>
-            ALL_STATUSES.some((statusOption) => statusOption.value === item),
-        );
-        dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.status, value: normalizedValue }));
-
-        // Ikkita ketma-ket URL update bir render ichida bir-birini bekor qilishi
-        // mumkin. Status va eski status kalitini atomar yangilaymiz.
-        setMultipleParams({
-            [ORDER_STATUS_URL_KEY]: normalizedValue.join(","),
-            [LEGACY_ORDER_STATUS_URL_KEY]: "",
-        });
-
-        if (isMobile) {
-            setIsMobilePanelOpen(false);
-        }
-    };
-
-    // Search uchun alohida (searchSlice)
-    const updateSearch = (value: string) => {
-        dispatch(setSearchValue({ key: ORDER_FILTER_KEYS.search, value }));
-        if (value) {
-            setParam(ORDER_FILTER_KEYS.search, value);
-        } else {
-            removeParam(ORDER_FILTER_KEYS.search);
-        }
-    };
-
-    const updateDateRange = (nextDateFrom: string, nextDateTo: string) => {
-        dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.dateFrom, value: nextDateFrom }));
-        dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.dateTo, value: nextDateTo }));
-        setMultipleParams({
-            [ORDER_FILTER_KEYS.dateFrom]: nextDateFrom,
-            [ORDER_FILTER_KEYS.dateTo]: nextDateTo,
-            orderDateFrom: "",
-            orderDateTo: "",
-        });
-
-        if (isMobile) {
-            setIsMobilePanelOpen(false);
-        }
-    };
-
-    // ─── Barcha filterlarni tozalash ──────────────────────────────────────
-    const handleReset = () => {
-        dispatch(resetFilters());
-        dispatch(clearAllSearch());
-        setMultipleParams({
-            [ORDER_FILTER_KEYS.marketId]: "",
-            [ORDER_FILTER_KEYS.branchId]: "",
-            [ORDER_FILTER_KEYS.regionId]: "",
-            [ORDER_FILTER_KEYS.districtId]: "",
-            [ORDER_FILTER_KEYS.courierId]: "",
-            [ORDER_FILTER_KEYS.deliveryType]: "",
-            [ORDER_STATUS_URL_KEY]: "",
-            [LEGACY_ORDER_STATUS_URL_KEY]: "",
-            [ORDER_FILTER_KEYS.dateFrom]: "",
-            [ORDER_FILTER_KEYS.dateTo]: "",
-            [ORDER_FILTER_KEYS.search]: "",
-            orderDateFrom: "",
-            orderDateTo: "",
-        });
-        setSearchResetKey((prev) => prev + 1);
-
-        if (isMobile) {
-            setIsMobilePanelOpen(false);
-        }
-    };
-
-    return (
-        <div className="flex flex-col gap-4">
-            {isMobile && (
-                <div ref={mobilePanelRef} className="sm:hidden">
-                    <button
-                        type="button"
-                        onClick={() => setIsMobilePanelOpen((prev) => !prev)}
-                        className="flex w-full items-center justify-between rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-left shadow-sm transition-colors hover:border-main/40 dark:border-primarydark/70 dark:bg-primarydark/60"
-                    >
-                        <div className="flex items-center gap-2.5">
-                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-main/10 text-main">
-                                <Filter size={15} />
-                            </span>
-                            <div className="min-w-0">
-                                <p className="truncate text-sm font-semibold text-maindark dark:text-primary">
-                                    {t("filters", { ns: "common" })}
-                                </p>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
-                                    {hasFilter
-                                        ? t("activeCount", { ns: "common", count: activeFilterCount, defaultValue: `${activeFilterCount} ta faol filter` })
-                                        : t("tapToOpen", { ns: "common", defaultValue: "Ochish uchun bosing" })}
-                                </p>
-                            </div>
-                        </div>
-                        <ChevronDown
-                            size={17}
-                            className={`shrink-0 text-gray-500 transition-transform dark:text-gray-400 ${isMobilePanelOpen ? "rotate-180" : ""}`}
-                        />
-                    </button>
-
-                    <div
-                        className={`grid transition-all duration-300 ease-out ${isMobilePanelOpen ? "mt-3 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
-                    >
-                        <div className="overflow-hidden">
-                            <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm dark:border-primarydark/70 dark:bg-primarydark/60">
-                                <div className="flex flex-col gap-4">
-                                    {/* ── 1-qator: search | date range ── */}
-                                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]">
-                                        <FilterSearch
-                                            key={`mobile-search-${searchResetKey}`}
-                                            value={search}
-                                            onChange={updateSearch}
-                                            placeholder={t("filterSearchPlaceholder")}
-                                            className="w-full"
-                                        />
-
-                                        <FilterDateRange
-                                            dateFrom={dateFrom}
-                                            dateTo={dateTo}
-                                            onChangeRange={updateDateRange}
-                                            onChangeDateFrom={(v) =>
-                                                update(ORDER_FILTER_KEYS.dateFrom, ORDER_FILTER_KEYS.dateFrom, v)
-                                            }
-                                            onChangeDateTo={(v) =>
-                                                update(ORDER_FILTER_KEYS.dateTo, ORDER_FILTER_KEYS.dateTo, v)
-                                            }
-                                        />
-                                    </div>
-
-                                    {/* ── 2-qator: selectlar ── */}
-                                    <div className={selectGridClassName}>
-                                        {/* MARKET */}
-                                        {canUseBranchFilter && (
-                                            <SearchableSelect
-                                                label={t("filterMarket")}
-                                                allOption
-                                                name={ORDER_FILTER_KEYS.marketId}
-                                                value={marketId}
-                                                onChange={(value) =>
-                                                    update(ORDER_FILTER_KEYS.marketId, ORDER_FILTER_KEYS.marketId, value)
-                                                }
-                                                options={markets}
-                                                placeholder={t("filterMarketPlaceholder")}
-                                                icon={Building2}
-                                                loading={marketsLoading}
-                                            />
-                                        )}
-                                        {/* FILIAL */}
-                                        {shouldShowBranchFilter && (
-                                            <SearchableSelect
-                                                label={t("filterBranch")}
-                                                allOption
-                                                name={ORDER_FILTER_KEYS.branchId}
-                                                value={branchId}
-                                                onChange={(value) =>
-                                                    update(ORDER_FILTER_KEYS.branchId, ORDER_FILTER_KEYS.branchId, value)
-                                                }
-                                                options={branches}
-                                                placeholder={t("filterBranchPlaceholder")}
-                                                icon={Store}
-                                                loading={branchesLoading}
-                                            />
-                                        )}
-
-                                        {/* VILOYAT */}
-                                        {isManagerRole ? (
-                                            <SearchableSelect
-                                                label={t("district")}
-                                                allOption
-                                                name={ORDER_FILTER_KEYS.districtId}
-                                                value={districtId}
-                                                onChange={updateDistrictAndResetCourier}
-                                                options={managerDistricts}
-                                                placeholder={t("selectDistrict")}
-                                                icon={MapPin}
-                                                loading={districtsLoading}
-                                            />
-                                        ) : (
-                                            <SearchableSelect
-                                                label={t("filterRegion")}
-                                                allOption
-                                                name={ORDER_FILTER_KEYS.regionId}
-                                                value={regionId}
-                                                onChange={updateRegionAndResetCourier}
-                                                options={regions}
-                                                placeholder={t("filterRegionPlaceholder")}
-                                                icon={MapPin}
-                                                loading={regionsLoading}
-                                            />
-                                        )}
-
-                                        {/* KURYER */}
-                                        {!isMarketRole && (
-                                            <SearchableSelect
-                                                label={t("filterCourier")}
-                                                allOption
-                                                name={ORDER_FILTER_KEYS.courierId}
-                                                value={courierId}
-                                                onChange={(value) =>
-                                                    update(ORDER_FILTER_KEYS.courierId, ORDER_FILTER_KEYS.courierId, value)
-                                                }
-                                                options={couriers}
-                                                placeholder={t("filterCourierPlaceholder")}
-                                                icon={Truck}
-                                                loading={couriersLoading}
-                                            />
-                                        )}
-
-                                        {/* HOLAT */}
-                                        <SearchableSelect
-                                            label={t("deliveryType")}
-                                            allOption
-                                            name={ORDER_FILTER_KEYS.deliveryType}
-                                            value={deliveryType}
-                                            onChange={(value) =>
-                                                update(
-                                                    ORDER_FILTER_KEYS.deliveryType,
-                                                    ORDER_FILTER_KEYS.deliveryType,
-                                                    isDeliveryType(value) ? value : "",
-                                                )
-                                            }
-                                            options={deliveryTypes}
-                                            placeholder={t("deliveryType")}
-                                            icon={Truck}
-                                        />
-
-                                        <FilterMultiSelect
-                                            label={t("filterStatus")}
-                                            name={ORDER_FILTER_KEYS.status}
-                                            value={statusValues}
-                                            onChange={updateStatus}
-                                            options={statuses}
-                                            placeholder={t("filterStatusPlaceholder")}
-                                            icon={Tag}
-                                        />
-                                    </div>
-
-                                    {/* ── 3-qator: tozalash | chiplar | export ── */}
-                                    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                                        {/* Tozalash tugmasi */}
-                                        {hasFilter && (
-                                            <FilterClearButton
-                                                onClick={handleReset}
-                                                className="shrink-0"
-                                            />
-                                        )}
-
-                                        {/* Aktiv filter chip-lar */}
-                                        {hasFilter && (
-                                            <div className="flex w-full flex-wrap gap-1.5 sm:flex-1">
-                                                {!isMarketRole && marketId && (
-                                                    <FilterChip
-                                                        label={`${t("chipMarket")}: ${markets.find((m) => m.value === marketId)?.label ?? `#${marketId}`}`}
-                                                        onRemove={() =>
-                                                            update(ORDER_FILTER_KEYS.marketId, ORDER_FILTER_KEYS.marketId, "")
-                                                        }
-                                                    />
-                                                )}
-                                                {canUseBranchFilter && branchId && (
-                                                    <FilterChip
-                                                        label={`${t("chipBranch")}: ${branches.find((b) => b.value === branchId)?.label ?? `#${branchId}`}`}
-                                                        onRemove={() =>
-                                                            update(ORDER_FILTER_KEYS.branchId, ORDER_FILTER_KEYS.branchId, "")
-                                                        }
-                                                    />
-                                                )}
-                                                {isManagerRole ? (
-                                                    districtId && (
-                                                        <FilterChip
-                                                            label={`${t("district")}: ${managerDistricts.find((d) => d.value === districtId)?.label ?? `#${districtId}`}`}
-                                                            onRemove={() =>
-                                                                update(ORDER_FILTER_KEYS.districtId, ORDER_FILTER_KEYS.districtId, "")
-                                                            }
-                                                        />
-                                                    )
-                                                ) : (
-                                                    regionId && (
-                                                        <FilterChip
-                                                            label={`${t("chipRegion")}: ${regions.find((r) => r.value === regionId)?.label ?? `#${regionId}`}`}
-                                                            onRemove={() =>
-                                                                update(ORDER_FILTER_KEYS.regionId, ORDER_FILTER_KEYS.regionId, "")
-                                                            }
-                                                        />
-                                                    )
-                                                )}
-                                                {!isMarketRole && courierId && (
-                                                    <FilterChip
-                                                        label={`${t("chipCourier")}: ${couriers.find((c) => c.value === courierId)?.label ?? `#${courierId}`}`}
-                                                        onRemove={() =>
-                                                            update(ORDER_FILTER_KEYS.courierId, ORDER_FILTER_KEYS.courierId, "")
-                                                        }
-                                                    />
-                                                )}
-                                                {deliveryType && (
-                                                    <FilterChip
-                                                        label={`${t("deliveryType")}: ${deliveryTypes.find((item) => item.value === deliveryType)?.label ?? deliveryType}`}
-                                                        onRemove={() =>
-                                                            update(ORDER_FILTER_KEYS.deliveryType, ORDER_FILTER_KEYS.deliveryType, "")
-                                                        }
-                                                    />
-                                                )}
-                                                {statusValues.map((status) => (
-                                                    <FilterChip
-                                                        key={status}
-                                                        label={`${t("chipStatus")}: ${statuses.find((item) => item.value === status)?.label ?? status}`}
-                                                        onRemove={() =>
-                                                            updateStatus(statusValues.filter((item) => item !== status))
-                                                        }
-                                                    />
-                                                ))}
-                                                {dateFrom && (
-                                                    <FilterChip
-                                                        label={`${t("chipFrom")}: ${dateFrom}`}
-                                                        onRemove={() =>
-                                                            update(ORDER_FILTER_KEYS.dateFrom, ORDER_FILTER_KEYS.dateFrom, "")
-                                                        }
-                                                    />
-                                                )}
-                                                {dateTo && (
-                                                    <FilterChip
-                                                        label={`${t("chipTo")}: ${dateTo}`}
-                                                        onRemove={() =>
-                                                            update(ORDER_FILTER_KEYS.dateTo, ORDER_FILTER_KEYS.dateTo, "")
-                                                        }
-                                                    />
-                                                )}
-                                                {search && (
-                                                    <FilterChip
-                                                        label={`${t("chipSearch")}: "${search}"`}
-                                                        onRemove={() => updateSearch("")}
-                                                    />
-                                                )}
-                                            </div>
-                                        )}
-
-                                        <div className="hidden flex-1 sm:block" />
-
-                                        {/* Export Excel */}
-                                        {onExport && (
-                                            <button
-                                                type="button"
-                                                onClick={onExport}
-                                                disabled={isExporting}
-                                                aria-label={t("export", { ns: "common" })}
-                                                className="
-                                                    flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 sm:ml-auto sm:w-auto
-                                                    bg-emerald-500 hover:bg-emerald-600
-                                                    text-white text-xs font-semibold
-                                                    transition-all duration-200
-                                                    shadow-sm hover:shadow-md hover:shadow-emerald-500/25
-                                                    disabled:cursor-not-allowed disabled:bg-emerald-500/55 disabled:hover:bg-emerald-500/55 disabled:hover:shadow-sm
-                                                "
-                                            >
-                                                <Download size={14} />
-                                                {isExporting
-                                                    ? t("exporting", { ns: "common", defaultValue: "Export..." })
-                                                    : t("export", { ns: "common" })}
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <div className={`${isMobile ? "hidden sm:flex sm:flex-col sm:gap-4" : "flex flex-col gap-4"}`}>
-
-            {/* ── 1-qator: search | date range ── */}
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)]">
-                <FilterSearch
-                    key={`desktop-search-${searchResetKey}`}
-                    value={search}
-                    onChange={updateSearch}
-                    placeholder={t("filterSearchPlaceholder")}
-                    className="w-full"
-                />
-
-                <FilterDateRange
-                    dateFrom={dateFrom}
-                    dateTo={dateTo}
-                    onChangeRange={updateDateRange}
-                    onChangeDateFrom={(v) =>
-                        update(ORDER_FILTER_KEYS.dateFrom, ORDER_FILTER_KEYS.dateFrom, v)
-                    }
-                    onChangeDateTo={(v) =>
-                        update(ORDER_FILTER_KEYS.dateTo, ORDER_FILTER_KEYS.dateTo, v)
-                    }
-                />
-            </div>
-
-            {/* ── 2-qator: selectlar ── */}
-            <div className={selectGridClassName}>
-                {/* MARKET */}
-                {canUseBranchFilter && (
-                    <SearchableSelect
-                        label={t("filterMarket")}
-                        allOption
-                        name={ORDER_FILTER_KEYS.marketId}
-                        value={marketId}
-                        onChange={(value) =>
-                            update(ORDER_FILTER_KEYS.marketId, ORDER_FILTER_KEYS.marketId, value)
-                        }
-                        options={markets}
-                        placeholder={t("filterMarketPlaceholder")}
-                        icon={Building2}
-                        loading={marketsLoading}
-                    />
-                )}
-                {/* FILIAL */}
-                {shouldShowBranchFilter && (
-                    <SearchableSelect
-                        label={t("filterBranch")}
-                        allOption
-                        name={ORDER_FILTER_KEYS.branchId}
-                        value={branchId}
-                        onChange={(value) =>
-                            update(ORDER_FILTER_KEYS.branchId, ORDER_FILTER_KEYS.branchId, value)
-                        }
-                        options={branches}
-                        placeholder={t("filterBranchPlaceholder")}
-                        icon={Store}
-                        loading={branchesLoading}
-                    />
-                )}
-
-                {/* VILOYAT */}
-                {isManagerRole ? (
-                    <SearchableSelect
-                        label={t("district")}
-                        allOption
-                        name={ORDER_FILTER_KEYS.districtId}
-                        value={districtId}
-                        onChange={updateDistrictAndResetCourier}
-                        options={managerDistricts}
-                        placeholder={t("selectDistrict")}
-                        icon={MapPin}
-                        loading={districtsLoading}
-                    />
-                ) : (
-                    <SearchableSelect
-                        label={t("filterRegion")}
-                        allOption
-                        name={ORDER_FILTER_KEYS.regionId}
-                        value={regionId}
-                        onChange={updateRegionAndResetCourier}
-                        options={regions}
-                        placeholder={t("filterRegionPlaceholder")}
-                        icon={MapPin}
-                        loading={regionsLoading}
-                    />
-                )}
-
-                {/* KURYER */}
-                {!isMarketRole && (
-                    <SearchableSelect
-                        label={t("filterCourier")}
-                        allOption
-                        name={ORDER_FILTER_KEYS.courierId}
-                        value={courierId}
-                        onChange={(value) =>
-                            update(ORDER_FILTER_KEYS.courierId, ORDER_FILTER_KEYS.courierId, value)
-                        }
-                        options={couriers}
-                        placeholder={t("filterCourierPlaceholder")}
-                        icon={Truck}
-                        loading={couriersLoading}
-                    />
-                )}
-
-                {/* HOLAT */}
-                <SearchableSelect
-                    label={t("deliveryType")}
-                    allOption
-                    name={ORDER_FILTER_KEYS.deliveryType}
-                    value={deliveryType}
-                    onChange={(value) =>
-                        update(
-                            ORDER_FILTER_KEYS.deliveryType,
-                            ORDER_FILTER_KEYS.deliveryType,
-                            isDeliveryType(value) ? value : "",
-                        )
-                    }
-                    options={deliveryTypes}
-                    placeholder={t("deliveryType")}
-                    icon={Truck}
-                />
-
-                <FilterMultiSelect
-                    label={t("filterStatus")}
-                    name={ORDER_FILTER_KEYS.status}
-                    value={statusValues}
-                    onChange={updateStatus}
-                    options={statuses}
-                    placeholder={t("filterStatusPlaceholder")}
-                    icon={Tag}
-                />
-            </div>
-
-            {/* ── 3-qator: tozalash | chiplar | export ── */}
-            <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                {/* Tozalash tugmasi */}
-                {hasFilter && (
-                    <FilterClearButton
-                        onClick={handleReset}
-                        className="shrink-0"
-                    />
-                )}
-
-                {/* Aktiv filter chip-lar */}
-                {hasFilter && (
-                    <div className="flex w-full flex-wrap gap-1.5 sm:flex-1">
-                        {!isMarketRole && marketId && (
-                            <FilterChip
-                                label={`${t("chipMarket")}: ${markets.find((m) => m.value === marketId)?.label ?? `#${marketId}`}`}
-                                onRemove={() =>
-                                    update(ORDER_FILTER_KEYS.marketId, ORDER_FILTER_KEYS.marketId, "")
-                                }
-                            />
-                        )}
-                        {canUseBranchFilter && branchId && (
-                            <FilterChip
-                                label={`${t("chipBranch")}: ${branches.find((b) => b.value === branchId)?.label ?? `#${branchId}`}`}
-                                onRemove={() =>
-                                    update(ORDER_FILTER_KEYS.branchId, ORDER_FILTER_KEYS.branchId, "")
-                                }
-                            />
-                        )}
-                        {isManagerRole ? (
-                            districtId && (
-                                <FilterChip
-                                    label={`${t("district")}: ${managerDistricts.find((d) => d.value === districtId)?.label ?? `#${districtId}`}`}
-                                    onRemove={() =>
-                                        update(ORDER_FILTER_KEYS.districtId, ORDER_FILTER_KEYS.districtId, "")
-                                    }
-                                />
-                            )
-                        ) : (
-                            regionId && (
-                                <FilterChip
-                                    label={`${t("chipRegion")}: ${regions.find((r) => r.value === regionId)?.label ?? `#${regionId}`}`}
-                                    onRemove={() =>
-                                        update(ORDER_FILTER_KEYS.regionId, ORDER_FILTER_KEYS.regionId, "")
-                                    }
-                                />
-                            )
-                        )}
-                        {!isMarketRole && courierId && (
-                            <FilterChip
-                                label={`${t("chipCourier")}: ${couriers.find((c) => c.value === courierId)?.label ?? `#${courierId}`}`}
-                                onRemove={() =>
-                                    update(ORDER_FILTER_KEYS.courierId, ORDER_FILTER_KEYS.courierId, "")
-                                }
-                            />
-                        )}
-                        {deliveryType && (
-                            <FilterChip
-                                label={`${t("deliveryType")}: ${deliveryTypes.find((item) => item.value === deliveryType)?.label ?? deliveryType}`}
-                                onRemove={() =>
-                                    update(ORDER_FILTER_KEYS.deliveryType, ORDER_FILTER_KEYS.deliveryType, "")
-                                }
-                            />
-                        )}
-                        {statusValues.map((status) => (
-                            <FilterChip
-                                key={status}
-                                label={`${t("chipStatus")}: ${statuses.find((item) => item.value === status)?.label ?? status}`}
-                                onRemove={() =>
-                                    updateStatus(statusValues.filter((item) => item !== status))
-                                }
-                            />
-                        ))}
-                        {dateFrom && (
-                            <FilterChip
-                                label={`${t("chipFrom")}: ${dateFrom}`}
-                                onRemove={() =>
-                                    update(ORDER_FILTER_KEYS.dateFrom, ORDER_FILTER_KEYS.dateFrom, "")
-                                }
-                            />
-                        )}
-                        {dateTo && (
-                            <FilterChip
-                                label={`${t("chipTo")}: ${dateTo}`}
-                                onRemove={() =>
-                                    update(ORDER_FILTER_KEYS.dateTo, ORDER_FILTER_KEYS.dateTo, "")
-                                }
-                            />
-                        )}
-                        {search && (
-                            <FilterChip
-                                label={`${t("chipSearch")}: "${search}"`}
-                                onRemove={() => updateSearch("")}
-                            />
-                        )}
-                    </div>
-                )}
-
-                <div className="hidden flex-1 sm:block" />
-
-                {/* Export Excel */}
-                {onExport && (
-                    <button
-                        type="button"
-                        onClick={onExport}
-                        disabled={isExporting}
-                        aria-label={t("export", { ns: "common" })}
-                        className="
-                            flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2 sm:ml-auto sm:w-auto
-                            bg-emerald-500 hover:bg-emerald-600
-                            text-white text-xs font-semibold
-                            transition-all duration-200
-                            shadow-sm hover:shadow-md hover:shadow-emerald-500/25
-                            disabled:cursor-not-allowed disabled:bg-emerald-500/55 disabled:hover:bg-emerald-500/55 disabled:hover:shadow-sm
-                        "
-                    >
-                        <Download size={14} />
-                        {isExporting
-                            ? t("exporting", { ns: "common", defaultValue: "Export..." })
-                            : t("export", { ns: "common" })}
-                    </button>
-                )}
-            </div>
-            </div>
-        </div>
-    );
-});
-
-// ── Filter chip ───────────────────────────────────────────────────────────
-const FilterChip = ({ label, onRemove }: { label?: string; onRemove: () => void }) => (
-    <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-main/20 bg-main/10 py-1 pl-2.5 pr-1.5 text-[11px] font-semibold text-main">
-        <span className="wrap-break-word">{label}</span>
-        <button
-            onClick={onRemove}
-            className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-main/20"
-        >
-            <X size={10} />
-        </button>
-    </span>
+const FilterChip = ({ label, removeLabel, onRemove }: Omit<ChipItem, "key">) => (
+  <span className={CHIP}>
+    <span className="min-w-0 truncate">{label}</span>
+    <button type="button" aria-label={removeLabel} title={removeLabel} onClick={onRemove} className={CHIP_X}>
+      <X aria-hidden="true" size={14} strokeWidth={2.25} />
+    </button>
+  </span>
 );
+
+const OrderFilters = memo(({ statusTabs = true }: Props) => {
+  const { t } = useTranslation(["orders", "ui", ORDER_STATUS_NS]);
+  const dispatch = useDispatch();
+  const { getParam, setMultipleParams } = useQueryParams();
+  const role = useSelector((state: RootState) => state.role.role);
+  const isPhone = useIsPhone();
+  const panelId = useId();
+
+  const scope = getOrderFilterScope(role);
+  const isMarketRole = role === "market";
+  const isManagerRole = role === "manager";
+  const isRegistrator = role === "registrator";
+  // Menejer va marketda sana telefonda ham asboblar qatorida (maket); qolganlarda — varaqada.
+  const dateOnPhoneToolbar = isMarketRole || isManagerRole;
+  const dateInSheet = isPhone && !dateOnPhoneToolbar;
+
+  // ─── URL — yagona manba (browser back/forward'da Redux eskirib qolishi mumkin) ───
+  const urlStatus = getParam(ORDER_STATUS_URL_KEY) ?? getParam(LEGACY_ORDER_STATUS_URL_KEY) ?? "";
+  const values = useMemo<OrderFilterValues>(() => {
+    const deliveryType = getParam(ORDER_FILTER_KEYS.deliveryType) ?? "";
+    return {
+      marketId: getParam(ORDER_FILTER_KEYS.marketId) ?? "",
+      branchId: getParam(ORDER_FILTER_KEYS.branchId) ?? "",
+      regionId: getParam(ORDER_FILTER_KEYS.regionId) ?? "",
+      districtId: getParam(ORDER_FILTER_KEYS.districtId) ?? "",
+      courierId: getParam(ORDER_FILTER_KEYS.courierId) ?? "",
+      deliveryType: isDeliveryType(deliveryType) ? deliveryType : "",
+      statuses: parseStatusValues(urlStatus),
+      dateFrom: getParam(ORDER_FILTER_KEYS.dateFrom) ?? getParam(LEGACY_DATE_FROM_KEY) ?? "",
+      dateTo: getParam(ORDER_FILTER_KEYS.dateTo) ?? getParam(LEGACY_DATE_TO_KEY) ?? "",
+    };
+  }, [getParam, urlStatus]);
+  const search = getParam(ORDER_FILTER_KEYS.search) ?? "";
+
+  // Holat tab orqali tanlanganmi (tab to'plamiga aynan mos) — unda u «Filtrlar» soniga va chiplarga kirmaydi.
+  const statusFromTab = statusTabs && values.statuses.length > 0 && matchOrderStatusTab(values.statuses) !== null;
+  const statusIsFilter = values.statuses.length > 0 && !statusFromTab;
+  const panelCount = countPanelFilters(values, scope, { includeStatus: statusIsFilter });
+  // Telefonda sana varaqada bo'lsa — u ham «Filtrlar N» soniga kiradi (maket: «Filtrlar 3» = sana + 2).
+  const buttonCount = panelCount + Number(dateInSheet && hasDateRange(values));
+
+  const options = useOrderFilterOptions(role, values.regionId);
+
+  // ─── Panel (desktop/planshet) va varaqa (telefon) ─────────────────────
+  // Panel faol filtr bo'lsa ochiq boshlanadi (maket `superadmin-orders-list`), aks holda yig'iq.
+  const [panelOpen, setPanelOpen] = useState(() => panelCount > 0);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [prevIsPhone, setPrevIsPhone] = useState(isPhone);
+  if (prevIsPhone !== isPhone) {
+    // Ekran telefondan kattalashsa varaqa yopiladi (qayta kichraysa o'zi ochilib ketmasin).
+    setPrevIsPhone(isPhone);
+    setSheetOpen(false);
+  }
+
+  // ─── Qidiruv: yozish kechikish bilan, tozalash / Enter — darhol ────────
+  const [searchText, setSearchText] = useState(search);
+  const [prevSearch, setPrevSearch] = useState(search);
+  if (prevSearch !== search) {
+    // URL tashqaridan o'zgardi (tozalash, back/forward) — maydon ham.
+    setPrevSearch(search);
+    setSearchText(search);
+  }
+  const searchTimer = useTimer();
+  const cancelPendingSearch = searchTimer.cancel;
+
+  // ─── Yozish: Redux ko'zgusi + URL (bitta atomar yangilanish) ──────────
+  const write = (params: Record<string, string>, redux: Partial<Record<keyof typeof ORDER_FILTER_KEYS, string | string[]>>) => {
+    for (const [key, value] of Object.entries(redux)) {
+      dispatch(setFilterValue({ key: ORDER_FILTER_KEYS[key as keyof typeof ORDER_FILTER_KEYS], value: value ?? "" }));
+    }
+    setMultipleParams(params);
+  };
+
+  const updateField = (key: "marketId" | "branchId" | "courierId" | "deliveryType", value: string) =>
+    write({ [ORDER_FILTER_KEYS[key]]: value }, { [key]: value });
+
+  // Viloyat (menejerda tuman) o'zgarsa kuryer tanlovi tozalanadi — kuryerlar ro'yxati shunga bog'liq.
+  const updateRegion = (value: string) =>
+    write(
+      { [ORDER_FILTER_KEYS.regionId]: value, [ORDER_FILTER_KEYS.courierId]: "" },
+      { regionId: value, courierId: "" },
+    );
+  const updateDistrict = (value: string) =>
+    write(
+      { [ORDER_FILTER_KEYS.districtId]: value, [ORDER_FILTER_KEYS.courierId]: "" },
+      { districtId: value, courierId: "" },
+    );
+
+  const updateStatus = (next: readonly string[]) => {
+    const normalized = normalizeFilterStatuses(next);
+    // Ikki ketma-ket URL yozuvi bir render ichida bir-birini bekor qilmasin — holat va eski kalit birga.
+    write(
+      { [ORDER_STATUS_URL_KEY]: normalized.join(","), [LEGACY_ORDER_STATUS_URL_KEY]: "" },
+      { status: normalized },
+    );
+  };
+
+  const updateDateRange = (from: string, to: string) =>
+    write(
+      {
+        [ORDER_FILTER_KEYS.dateFrom]: from,
+        [ORDER_FILTER_KEYS.dateTo]: to,
+        [LEGACY_DATE_FROM_KEY]: "",
+        [LEGACY_DATE_TO_KEY]: "",
+      },
+      { dateFrom: from, dateTo: to },
+    );
+
+  const updateSearch = (value: string) => {
+    dispatch(setSearchValue({ key: ORDER_FILTER_KEYS.search, value }));
+    setMultipleParams({ [ORDER_FILTER_KEYS.search]: value });
+  };
+  const commitSearch = (value: string) => {
+    cancelPendingSearch();
+    setSearchText(value);
+    updateSearch(value);
+  };
+  // Kechikkan yozuv ENG SO'NGGI `updateSearch` ni chaqiradi: `setSearchParams` render paytidagi URL nusxasidan
+  // quradi — eski yopilma kutish orasida o'zgargan filtr/tab/sahifani qaytarib yozardi.
+  const updateSearchRef = useRef(updateSearch);
+  useEffect(() => {
+    updateSearchRef.current = updateSearch;
+  });
+  const handleSearchInput = (raw: string) => {
+    const next = normalizePossibleScanValue(raw);
+    setSearchText(next);
+    searchTimer.schedule(() => updateSearchRef.current(next), SEARCH_DEBOUNCE_MS);
+  };
+
+  // ─── «Filtrlarni tozalash»: barcha filtr, sana va qidiruv; tab bilan tanlangan holat qoladi ───
+  const handleReset = () => {
+    cancelPendingSearch();
+    dispatch(resetFilters());
+    dispatch(clearAllSearch());
+    if (statusFromTab) dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.status, value: values.statuses }));
+    setMultipleParams({
+      [ORDER_FILTER_KEYS.marketId]: "",
+      [ORDER_FILTER_KEYS.branchId]: "",
+      [ORDER_FILTER_KEYS.regionId]: "",
+      [ORDER_FILTER_KEYS.districtId]: "",
+      [ORDER_FILTER_KEYS.courierId]: "",
+      [ORDER_FILTER_KEYS.deliveryType]: "",
+      ...(statusFromTab ? {} : { [ORDER_STATUS_URL_KEY]: "" }),
+      [LEGACY_ORDER_STATUS_URL_KEY]: "",
+      [ORDER_FILTER_KEYS.dateFrom]: "",
+      [ORDER_FILTER_KEYS.dateTo]: "",
+      [LEGACY_DATE_FROM_KEY]: "",
+      [LEGACY_DATE_TO_KEY]: "",
+      [ORDER_FILTER_KEYS.search]: "",
+    });
+    setSearchText("");
+  };
+
+  // ─── Varaqa: qoralama bir marta yoziladi ───────────────────────────────
+  const applySheet = (draft: OrderFilterValues) => {
+    const params: Record<string, string> = {
+      [ORDER_FILTER_KEYS.marketId]: draft.marketId,
+      [ORDER_FILTER_KEYS.branchId]: draft.branchId,
+      [ORDER_FILTER_KEYS.regionId]: draft.regionId,
+      [ORDER_FILTER_KEYS.districtId]: draft.districtId,
+      [ORDER_FILTER_KEYS.courierId]: draft.courierId,
+      [ORDER_FILTER_KEYS.deliveryType]: draft.deliveryType,
+      [ORDER_STATUS_URL_KEY]: draft.statuses.join(","),
+      [LEGACY_ORDER_STATUS_URL_KEY]: "",
+    };
+    const redux: Partial<Record<keyof typeof ORDER_FILTER_KEYS, string | string[]>> = {
+      marketId: draft.marketId,
+      branchId: draft.branchId,
+      regionId: draft.regionId,
+      districtId: draft.districtId,
+      courierId: draft.courierId,
+      deliveryType: draft.deliveryType,
+      status: draft.statuses,
+    };
+    if (dateInSheet) {
+      Object.assign(params, {
+        [ORDER_FILTER_KEYS.dateFrom]: draft.dateFrom,
+        [ORDER_FILTER_KEYS.dateTo]: draft.dateTo,
+        [LEGACY_DATE_FROM_KEY]: "",
+        [LEGACY_DATE_TO_KEY]: "",
+      });
+      Object.assign(redux, { dateFrom: draft.dateFrom, dateTo: draft.dateTo });
+    }
+    write(params, redux);
+  };
+
+  // ─── Variantlar ────────────────────────────────────────────────────────
+  const all = t("select.all", { ns: "ui" });
+  const withAll = (items: FilterOption[]) => [{ value: "", label: all }, ...items];
+  const nameOf = (items: FilterOption[], id: string) => items.find((item) => item.value === id)?.label ?? `#${id}`;
+  const statusLabel = (status: OrderStatus) => t(ORDER_STATUS_REGISTRY[status].labelKey, { ns: ORDER_STATUS_NS });
+  const statusOptions = FILTER_STATUSES.map((status) => ({ value: status, label: statusLabel(status) }));
+  const deliveryOptions = [
+    { value: "", label: all },
+    { value: "address", label: t("deliveryToHome") },
+    { value: "center", label: t("deliveryToCenter") },
+  ];
+  const deliveryLabel = (value: string) => deliveryOptions.find((item) => item.value === value)?.label ?? value;
+
+  // ─── Chiplar (maket tartibi: sana · market · filial · viloyat/tuman · kuryer · yetkazish · holat · qidiruv) ───
+  const chip = (label: string, value: string) => t("filters.chip", { ns: "ui", label, value });
+  const removeLabel = (label: string) => t("filters.remove", { ns: "ui", label });
+  const chips: ChipItem[] = [];
+  if (dateInSheet && hasDateRange(values)) {
+    const range = { from: values.dateFrom, to: values.dateTo };
+    chips.push({
+      key: "date",
+      label:
+        formatRangeShort(range) ??
+        (range.from
+          ? t("date.fromOnly", { ns: "ui", date: formatDay(range.from) })
+          : t("date.toOnly", { ns: "ui", date: formatDay(range.to) })),
+      removeLabel: removeLabel(t("date.dateLabel", { ns: "ui" })),
+      onRemove: () => updateDateRange("", ""),
+    });
+  }
+  if (scope.market && values.marketId) {
+    chips.push({
+      key: "market",
+      label: chip(t("chipMarket"), nameOf(options.markets, values.marketId)),
+      removeLabel: removeLabel(t("chipMarket")),
+      onRemove: () => updateField("marketId", ""),
+    });
+  }
+  if (scope.branch && values.branchId) {
+    chips.push({
+      key: "branch",
+      label: chip(t("chipBranch"), nameOf(options.branches, values.branchId)),
+      removeLabel: removeLabel(t("chipBranch")),
+      onRemove: () => updateField("branchId", ""),
+    });
+  }
+  if (scope.area === "district" && values.districtId) {
+    chips.push({
+      key: "district",
+      label: chip(t("district"), nameOf(options.districts, values.districtId)),
+      removeLabel: removeLabel(t("district")),
+      onRemove: () => updateDistrict(""),
+    });
+  }
+  if (scope.area === "region" && values.regionId) {
+    chips.push({
+      key: "region",
+      label: chip(t("chipRegion"), nameOf(options.regions, values.regionId)),
+      removeLabel: removeLabel(t("chipRegion")),
+      onRemove: () => updateRegion(""),
+    });
+  }
+  if (scope.courier && values.courierId) {
+    chips.push({
+      key: "courier",
+      label: chip(t("chipCourier"), nameOf(options.couriers, values.courierId)),
+      removeLabel: removeLabel(t("chipCourier")),
+      onRemove: () => updateField("courierId", ""),
+    });
+  }
+  if (values.deliveryType) {
+    chips.push({
+      key: "delivery",
+      label: chip(t("deliveryType"), deliveryLabel(values.deliveryType)),
+      removeLabel: removeLabel(t("deliveryType")),
+      onRemove: () => updateField("deliveryType", ""),
+    });
+  }
+  if (statusIsFilter) {
+    for (const status of values.statuses) {
+      const label = statusLabel(status);
+      chips.push({
+        key: `status-${status}`,
+        label: chip(t("chipStatus"), label),
+        removeLabel: removeLabel(chip(t("chipStatus"), label)),
+        onRemove: () => updateStatus(values.statuses.filter((item) => item !== status)),
+      });
+    }
+  }
+  if (search) {
+    chips.push({
+      key: "search",
+      label: t("filters.searchChip", { ns: "ui", label: t("chipSearch"), value: search }),
+      removeLabel: removeLabel(t("chipSearch")),
+      onRemove: () => commitSearch(""),
+    });
+  }
+
+  // ─── Joylashuv (maketlar): qidiruv va guruh asoslari rolga qarab ──────
+  const searchBasis = isMarketRole ? "flex-[1_1_320px]" : isManagerRole ? "flex-[1_1_280px]" : "flex-[1_1_240px]";
+  const groupBasis = isMarketRole ? "flex-[1_1_330px]" : "flex-[1_1_360px]";
+  const panelGrid = isRegistrator
+    ? "grid-cols-[repeat(auto-fit,minmax(min(220px,100%),1fr))]"
+    : isManagerRole
+      ? "grid-cols-[repeat(auto-fit,minmax(min(150px,100%),1fr))]"
+      : "grid-cols-[repeat(auto-fit,minmax(min(160px,100%),1fr))]";
+  // Telefonda sana chipi bo'lgan qator (superadmin, admin, registrator) — bir qatorda, yonga suriladi.
+  const chipsScroll = dateInSheet;
+  // Matn va son orasida 8 px (maketdagi `.el-btn` oralig'i), son markazda.
+  const filtersLabel = (count: number) => (
+    <span className="inline-flex items-center gap-2">
+      {t("filters.button", { ns: "ui" })}
+      {count > 0 ? <span className={COUNT_PILL}>{formatNumberLocalized(count)}</span> : null}
+    </span>
+  );
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-3 px-5 py-4">
+        <TextInput
+          mode="search"
+          value={searchText}
+          onValueChange={handleSearchInput}
+          onClear={() => commitSearch("")}
+          onSearch={(value) => commitSearch(normalizePossibleScanValue(value))}
+          placeholder={t(isRegistrator ? "listFilters.searchPlaceholderFull" : "listFilters.searchPlaceholder")}
+          aria-label={t("listFilters.searchLabel")}
+          className={searchBasis}
+        />
+        <div className={cx("flex min-w-0 max-w-[420px] flex-wrap gap-3", groupBasis)}>
+          {!isPhone || dateOnPhoneToolbar ? (
+            <DateRange
+              value={{ from: values.dateFrom, to: values.dateTo }}
+              onChange={({ from, to }) => updateDateRange(from, to)}
+              placeholder={t("date.rangeLabel", { ns: "ui" })}
+              // Kamida 210 px (maket `manager-orders-list-*`): telefonda oraliq to'liq ko'rinsin — sig'masa «Filtrlar»
+              // keyingi qatorga o'tadi (telefonda maydon shrifti 16 px va × tugmasi 44 px — maketdagidan kengroq).
+              className="min-w-[210px] flex-[1_1_200px]"
+              triggerClassName="whitespace-nowrap"
+            />
+          ) : null}
+          {/* Ochiq holat — maket `.el-btn-secondary.is-active` (`--border` fon), kursor ustida ham saqlanadi. */}
+          {isPhone ? (
+            <Button
+              variant="secondary"
+              leftIcon={ListFilter}
+              aria-haspopup="dialog"
+              aria-expanded={sheetOpen}
+              onClick={() => setSheetOpen(true)}
+              className="flex-[1_0_auto] aria-expanded:bg-border!"
+            >
+              {filtersLabel(buttonCount)}
+            </Button>
+          ) : (
+            <Button
+              variant="secondary"
+              leftIcon={ListFilter}
+              aria-expanded={panelOpen}
+              aria-controls={panelId}
+              onClick={() => setPanelOpen((open) => !open)}
+              className="flex-[1_0_auto] aria-expanded:bg-border!"
+            >
+              {filtersLabel(panelCount)}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {!isPhone ? (
+        <div id={panelId} hidden={!panelOpen} className="px-5 pb-4">
+          <div
+            role="group"
+            aria-label={t("filters.panel", { ns: "ui" })}
+            className={cx("grid gap-3 rounded-xl bg-sunken p-4", panelGrid)}
+          >
+            {scope.marketSelect ? (
+              <Field label={t("filterMarket")} labelAs="span">
+                <Select
+                  searchable
+                  options={withAll(options.markets)}
+                  value={values.marketId}
+                  onChange={(next) => updateField("marketId", next ?? "")}
+                  placeholder={all}
+                  loading={options.marketsLoading}
+                />
+              </Field>
+            ) : null}
+            {scope.branch ? (
+              <Field label={t("filterBranch")} labelAs="span">
+                <Select
+                  searchable
+                  options={withAll(options.branches)}
+                  value={values.branchId}
+                  onChange={(next) => updateField("branchId", next ?? "")}
+                  placeholder={all}
+                  loading={options.branchesLoading}
+                />
+              </Field>
+            ) : null}
+            {scope.area === "district" ? (
+              <Field label={t("district")} labelAs="span">
+                <Select
+                  searchable
+                  options={withAll(options.districts)}
+                  value={values.districtId}
+                  onChange={(next) => updateDistrict(next ?? "")}
+                  placeholder={all}
+                  loading={options.districtsLoading}
+                />
+              </Field>
+            ) : (
+              <Field label={t("filterRegion")} labelAs="span">
+                <Select
+                  searchable
+                  options={withAll(options.regions)}
+                  value={values.regionId}
+                  onChange={(next) => updateRegion(next ?? "")}
+                  placeholder={all}
+                  loading={options.regionsLoading}
+                />
+              </Field>
+            )}
+            {scope.courier ? (
+              <Field label={t("filterCourier")} labelAs="span">
+                <Select
+                  searchable
+                  options={withAll(options.couriers)}
+                  value={values.courierId}
+                  onChange={(next) => updateField("courierId", next ?? "")}
+                  placeholder={all}
+                  loading={options.couriersLoading}
+                />
+              </Field>
+            ) : null}
+            <Field label={t("deliveryType")} labelAs="span">
+              <Select
+                options={deliveryOptions}
+                value={values.deliveryType}
+                onChange={(next) => updateField("deliveryType", next && isDeliveryType(next) ? next : "")}
+                placeholder={all}
+              />
+            </Field>
+            <Field label={t("filterStatus")} labelAs="span">
+              {/* Bitta holat — nomi; bir nechta — «N ta tanlangan» (tor ustunda belgilar ikki qatorga o'tib panelni
+                  cho'zardi; nomlari pastdagi chiplarda). */}
+              <Select
+                multiple
+                multiDisplay={normalizeFilterStatuses(values.statuses).length > 1 ? "count" : "chips"}
+                clearable
+                options={statusOptions}
+                value={values.statuses}
+                onChange={updateStatus}
+                placeholder={all}
+              />
+            </Field>
+          </div>
+        </div>
+      ) : null}
+
+      {chips.length > 0 ? (
+        <div
+          role="group"
+          aria-label={t("filters.active", { ns: "ui" })}
+          className={cx(
+            "flex flex-wrap items-center gap-2 px-5 pb-4",
+            chipsScroll && "max-md:flex-nowrap max-md:overflow-x-auto max-md:scrollbar-hide",
+          )}
+        >
+          {chips.map(({ key, ...item }) => (
+            <FilterChip key={key} {...item} />
+          ))}
+          <Button variant="link" size="sm" onClick={handleReset} className="shrink-0">
+            {t("filters.clearAll", { ns: "ui" })}
+          </Button>
+        </div>
+      ) : null}
+
+      {isPhone ? (
+        <OrderFiltersSheet
+          open={sheetOpen}
+          onClose={() => setSheetOpen(false)}
+          initial={values}
+          role={role}
+          withDate={dateInSheet}
+          search={search}
+          onApply={applySheet}
+        />
+      ) : null}
+    </>
+  );
+});
 
 OrderFilters.displayName = "OrderFilters";
 

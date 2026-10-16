@@ -1,7 +1,9 @@
 import { expect, test } from "@playwright/test";
 import { mockCourierCancelApi, openSellDialog } from "./support/courierCancel";
+import { expectToast } from "./support/toast";
 
 /** Kuryer → «Sotish» — «Marketga to'langan summa» (uguUEhin, TC: T0UGh8bL) — 1440px. */
+
 test.describe("Kuryer sotish oynasi — 1440px", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
   test.describe.configure({ timeout: 90_000 });
@@ -18,7 +20,7 @@ test.describe("Kuryer sotish oynasi — 1440px", () => {
     await dialog.getByRole("button", { name: "Sotish", exact: true }).click();
 
     await expect(dialog).toHaveCount(0);
-    await expect(page.getByText("Sotildi, marketga qisman to'landi")).toBeVisible();
+    await expectToast(page, "Sotildi, marketga qisman to'landi", { tone: "success" });
     expect(sells).toEqual([{ id: "10234", body: { comment: "", extraCost: 0, paidAmount: 100000 }, status: 200 }]);
     expect(leaked).toEqual([]);
   });
@@ -28,7 +30,7 @@ test.describe("Kuryer sotish oynasi — 1440px", () => {
     let dialog = await openSellDialog(page);
     await dialog.getByLabel("Marketga to'langan summa").fill("280000");
     await dialog.getByRole("button", { name: "Sotish", exact: true }).click();
-    await expect(page.getByText("Sotildi, marketga to'liq to'landi")).toBeVisible();
+    await expectToast(page, "Sotildi, marketga to'liq to'landi", { tone: "success" });
 
     dialog = await openSellDialog(page);
     await dialog.getByRole("button", { name: "Sotish", exact: true }).click();
@@ -45,7 +47,7 @@ test.describe("Kuryer sotish oynasi — 1440px", () => {
     await dialog.getByLabel("Marketga to'langan summa").fill("300000");
     await expect(dialog.getByRole("alert")).toHaveText(/Marketga to'lov 280\D000 so'mdan oshmasligi kerak/);
     await dialog.getByRole("button", { name: "Sotish", exact: true }).click();
-    await expect(page.getByText("paidAmount 280000 dan oshmasligi kerak")).toBeVisible();
+    await expectToast(page, "paidAmount 280000 dan oshmasligi kerak", { tone: "error" });
     await expect(dialog).toBeVisible();
     expect(sells.map((s) => s.status)).toEqual([400]);
   });

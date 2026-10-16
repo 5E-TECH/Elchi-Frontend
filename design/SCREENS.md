@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**76 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **19** · qisman: **4** · v2 ga ko'chirilgan route: **6 / 76**
+**76 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **19** · qisman: **7** · v2 ga ko'chirilgan route: **10 / 76**
 
 ## Qanday ishlatiladi
 
@@ -54,10 +54,10 @@
 | `/*` | Kirish va xato sahifalari | `src/shared/ui/NotFound.tsx` | superadmin, admin, manager, registrator, market, courier | 1 | v2 |
 | `/` | Bosh sahifa | `src/pages/dashboard/MarketDashboardPage.tsx` + `src/pages/dashboard/DashboardPage.tsx` | superadmin, admin, manager (→ /branch-dashboard), registrator, market, courier | 8 | eski |
 | `/branch-dashboard` | Bosh sahifa | `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` | manager | 2 | eski |
-| `/orders` | Buyurtmalar | `src/pages/orders/index.tsx` | superadmin, admin, manager, registrator, market, courier | 24 | eski |
-| `/orders/edit/:orderId` | Buyurtmalar | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager, registrator, market, courier | 19 | eski |
+| `/orders` | Buyurtmalar | `src/pages/orders/index.tsx` | superadmin, admin, manager, registrator, market, courier | 24 | v2 |
+| `/orders/edit/:orderId` | Buyurtmalar | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager, registrator, market, courier | 19 | v2 |
 | `/new-orders` | Qabul va yaratish | `src/pages/new_orders/markets/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market | 4 | eski |
-| `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market | 23 | eski |
+| `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market | 23 | v2 |
 | `/new-orders/incoming` | Qabul va yaratish | `src/pages/incoming-orders/SourcePicker.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 3 | eski |
 | `/new-orders/incoming/:marketId` | Qabul va yaratish | `src/pages/incoming-orders/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 7 | eski |
 | `/new-orders/branches` | Qabul va yaratish | `src/pages/new_orders/branches/index.tsx` | superadmin, admin | 2 | eski |
@@ -66,7 +66,7 @@
 | `/new-orders/cancelled` | Qabul va yaratish | `src/pages/new_orders/cancelled/index.tsx` | superadmin, admin, registrator (faqat HQ) | 3 | eski |
 | `/new-orders/cancelled/:marketId` | Qabul va yaratish | `src/pages/new_orders/cancelled/detail.tsx` | superadmin, admin, registrator (faqat HQ), market (faqat o'z marketi) | 14 | eski |
 | `/new-orders/:marketId` | Qabul va yaratish | `src/pages/new_orders/components/new_orderDetail.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi) | 17 | eski |
-| `/new-orders/:marketId/edit/:orderId` | Qabul va yaratish | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi) | 3 | eski |
+| `/new-orders/:marketId/edit/:orderId` | Qabul va yaratish | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi) | 3 | v2 |
 | `/new-orders/userDetail/:id` | Qabul va yaratish | `src/pages/users/detail/UserDetailPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market | 0 | eski |
 | `/mails` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier | 0 | eski |
 | `/mails/today` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier | 6 | eski |
@@ -264,70 +264,70 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/orders` — Buyurtmalar ro'yxati (kuryerda — alohida ro'yxat komponenti)
 
-- **Fayllar:** `src/pages/orders/index.tsx` · `src/pages/orders/list/OrderFilters.tsx` · `src/pages/orders/list/OrdersTable.tsx` · `src/pages/orders/list/OrderStatusBadge.tsx` · `src/pages/orders/lib/exportOrdersToExcel.ts` · `src/pages/orders/list/courier/index.tsx` · `src/pages/orders/list/courier/list/tabs.tsx` · `src/pages/orders/list/courier/list/ordertable/pendingOrderTable.tsx` · `src/pages/orders/list/courier/list/ordertable/AllOrdersTable.tsx` · `src/pages/orders/list/courier/list/ordertable/CancelledOrdersTable.tsx` · `src/pages/orders/list/courier/list/SellModal.tsx` · `src/pages/orders/list/courier/list/CancelModal.tsx` · `src/entities/orders/ui/ExtraCostApproval.tsx` · `src/shared/components/popupConfirm.tsx`
+- **Fayllar:** `src/pages/orders/index.tsx` · `src/pages/orders/list/OrderFilters.tsx` · `src/pages/orders/list/OrderFiltersSheet.tsx` · `src/pages/orders/list/OrdersTable.tsx` · `src/pages/orders/list/orderFilterModel.ts` · `src/pages/orders/lib/exportOrdersToExcel.ts` · `src/pages/orders/list/courier/index.tsx` · `src/pages/orders/list/courier/list/tabs.tsx` · `src/pages/orders/list/courier/list/ordertable/pendingOrderTable.tsx` · `src/pages/orders/list/courier/list/ordertable/AllOrdersTable.tsx` · `src/pages/orders/list/courier/list/ordertable/CancelledOrdersTable.tsx` · `src/pages/orders/list/courier/list/ordertable/CourierOrdersTable.tsx` · `src/pages/orders/list/courier/list/SellModal.tsx` · `src/pages/orders/list/courier/list/CancelModal.tsx` · `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` · `src/pages/orders/list/courier/list/OrderActionParts.tsx` · `src/entities/orders/ui/ExtraCostApprovalAlerts.tsx` · `src/entities/orders/ui/ExtraCostApprovalTag.tsx` · `src/entities/order/ui/ReturnRequestedTag.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOrders` (access.ts → canViewOrders)
 - **Rollar:** superadmin, admin, manager, registrator, market, courier
 - **Menyuda:** «Buyurtmalar» (`orders`) — superadmin, admin, manager, registrator, market, courier
-- **Holat:** eski
-- **Izoh:** Kuryer ro'yxati — list/courier/index.tsx (tablar list/courier/list/tabs.tsx). Menejer tablari (kodda hozir «Hammasi · Kutilayotgan · Bekor qilinganlar»; maketda «Kutilayotgan · Barchasi · Bekor qilingan» — matn uchun maket fragmenti ustun) va sotish/bekor/qaytarish amallari faqat REGIONAL · HYBRID filialda (MANAGER_TABS_BRANCH_TYPES). Qator bosilsa → /orders/edit/:orderId.
+- **Holat:** v2
+- **Izoh:** Kuryer ro'yxati — list/courier/index.tsx (tablar list/courier/list/tabs.tsx). Kuryerdan boshqa barcha rollarda bir xil 8 holat tabi (Barchasi · Yangi · Qabul qilindi · Yo'lda · Kutilmoqda · Sotilgan · To'langan · Bekor qilingan; tab sonlari API'da yo'q — chizilmaydi). Menejerning qatordagi sotish/bekor/qaytarish amallari faqat REGIONAL · HYBRID filialda va can_sell_cancel yoqilganda; «Bekor qilingan» tabida HQ'ga yuborish (tanlov + QR skaner) ham faqat REGIONAL · HYBRID. Qator bosilsa → /orders/edit/:orderId.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/orders` | superadmin | `superadmin-orders-list` — Buyurtmalar ro'yxati | [design/fragments/superadmin--orders-list.html](fragments/superadmin--orders-list.html) | sahifa | eski |
-| `/orders` | superadmin | `superadmin-orders-filters-mobile` — Buyurtmalar — filtr paneli (telefon)<br>↳ `src/pages/orders/list/OrderFilters.tsx` | [design/fragments/superadmin--orders-filters-mobile.html](fragments/superadmin--orders-filters-mobile.html) | oyna · faqat telefon | eski |
-| `/orders` | admin | `admin-orders-list` — Buyurtmalar ro'yxati | [design/fragments/admin--orders-list.html](fragments/admin--orders-list.html) | sahifa | eski |
-| `/orders` | admin | `admin-orders-filters-mobile` — Buyurtmalar — filtr paneli (telefon)<br>↳ `src/pages/orders/list/OrderFilters.tsx` | [design/fragments/superadmin--orders-filters-mobile.html](fragments/superadmin--orders-filters-mobile.html) | oyna · faqat telefon | eski |
-| `/orders` | manager | `manager-orders-list-all` — Buyurtmalar — Hamma buyurtmalar | [design/fragments/manager--orders-list-all.html](fragments/manager--orders-list-all.html) | sahifa | eski |
-| `/orders` | manager | `manager-orders-list-pending` — Buyurtmalar — Kutilayotgan | [design/fragments/manager--orders-list-pending.html](fragments/manager--orders-list-pending.html) | sahifa | eski |
-| `/orders` | manager | `manager-orders-list-cancelled` — Buyurtmalar — Bekor qilinganlar (HQ'ga yuborish) | [design/fragments/manager--orders-list-cancelled.html](fragments/manager--orders-list-cancelled.html) | sahifa | eski |
-| `/orders` | manager | `manager-orders-sell-dialog` — Sotish oynasi<br>↳ `src/pages/orders/list/courier/list/SellModal.tsx` | [design/fragments/manager--orders-sell-dialog.html](fragments/manager--orders-sell-dialog.html) | oyna | eski |
-| `/orders` | manager | `manager-orders-cancel-dialog` — Bekor qilish oynasi<br>↳ `src/pages/orders/list/courier/list/CancelModal.tsx` | [design/fragments/manager--orders-cancel-dialog.html](fragments/manager--orders-cancel-dialog.html) | oyna | eski |
-| `/orders` | manager | `manager-orders-rollback-dialog` — Buyurtmani qaytarish tasdig'i | [design/fragments/manager--orders-rollback-dialog.html](fragments/manager--orders-rollback-dialog.html) | oyna | eski |
-| `/orders` | registrator | `registrator-orders-list` — Buyurtmalar ro'yxati | [design/fragments/registrator--orders-list.html](fragments/registrator--orders-list.html) | sahifa | eski |
-| `/orders` | registrator | `registrator-orders-filters-mobile` — Buyurtmalar — filtr paneli (telefon)<br>↳ `src/pages/orders/list/OrderFilters.tsx` | [design/fragments/registrator--orders-filters-mobile.html](fragments/registrator--orders-filters-mobile.html) | oyna · faqat telefon | eski |
-| `/orders` | market | `market-orders-list` — Buyurtmalar ro'yxati | [design/fragments/market--orders-list.html](fragments/market--orders-list.html) | sahifa | eski |
-| `/orders` | courier | `courier-orders-pending` — Buyurtmalar — Kutilayotganlar<br>↳ `src/pages/orders/list/courier/index.tsx` | [design/fragments/courier--orders-pending.html](fragments/courier--orders-pending.html) | sahifa | eski |
-| `/orders` | courier | `courier-orders-tab-switcher-open` — Buyurtmalar — tab almashtirildi, yuklanmoqda<br>↳ `src/pages/orders/list/courier/list/tabs.tsx` | [design/fragments/courier--orders-tab-switcher-open.html](fragments/courier--orders-tab-switcher-open.html) | sahifa · faqat telefon | eski |
-| `/orders` | courier | `courier-orders-all` — Buyurtmalar — Hammasi<br>↳ `src/pages/orders/list/courier/index.tsx` | [design/fragments/courier--orders-all.html](fragments/courier--orders-all.html) | sahifa | eski |
-| `/orders` | courier | `courier-orders-cancelled` — Buyurtmalar — Bekor qilinganlar<br>↳ `src/pages/orders/list/courier/index.tsx` | [design/fragments/courier--orders-cancelled.html](fragments/courier--orders-cancelled.html) | sahifa | eski |
-| `/orders` | courier | `courier-orders-sell-dialog` — Sotish oynasi<br>↳ `src/pages/orders/list/courier/list/SellModal.tsx` | [design/fragments/courier--orders-sell-dialog.html](fragments/courier--orders-sell-dialog.html) | oyna | eski |
-| `/orders` | courier | `courier-orders-sell-extra-cost-dialog` — Sotish — qo'shimcha xarajat bilan<br>↳ `src/pages/orders/list/courier/list/SellModal.tsx` | [design/fragments/courier--orders-sell-extra-cost-dialog.html](fragments/courier--orders-sell-extra-cost-dialog.html) | oyna | eski |
-| `/orders` | courier | `courier-orders-sell-partial-dialog` — Qisman sotish oynasi<br>↳ `src/pages/orders/list/courier/list/SellModal.tsx` | [design/fragments/courier--orders-sell-partial-dialog.html](fragments/courier--orders-sell-partial-dialog.html) | oyna | eski |
-| `/orders` | courier | `courier-orders-action-approval-pending` — Market tasdig'i kutilmoqda<br>↳ `src/pages/orders/list/courier/list/SellModal.tsx` | [design/fragments/courier--orders-action-approval-pending.html](fragments/courier--orders-action-approval-pending.html) | oyna | eski |
-| `/orders` | courier | `courier-orders-cancel-dialog` — Bekor qilish oynasi<br>↳ `src/pages/orders/list/courier/list/CancelModal.tsx` | [design/fragments/courier--orders-cancel-dialog.html](fragments/courier--orders-cancel-dialog.html) | oyna | eski |
-| `/orders` | courier | `courier-orders-rollback-confirm` — Buyurtmani qaytarish tasdig'i<br>↳ `src/pages/orders/list/courier/index.tsx` | [design/fragments/courier--orders-rollback-confirm.html](fragments/courier--orders-rollback-confirm.html) | oyna | eski |
+| `/orders` | superadmin | `superadmin-orders-list` — Buyurtmalar ro'yxati | [design/fragments/superadmin--orders-list.html](fragments/superadmin--orders-list.html) | sahifa | v2 |
+| `/orders` | superadmin | `superadmin-orders-filters-mobile` — Buyurtmalar — filtr paneli (telefon)<br>↳ `src/pages/orders/list/OrderFilters.tsx` | [design/fragments/superadmin--orders-filters-mobile.html](fragments/superadmin--orders-filters-mobile.html) | oyna · faqat telefon | v2 |
+| `/orders` | admin | `admin-orders-list` — Buyurtmalar ro'yxati | [design/fragments/admin--orders-list.html](fragments/admin--orders-list.html) | sahifa | v2 |
+| `/orders` | admin | `admin-orders-filters-mobile` — Buyurtmalar — filtr paneli (telefon)<br>↳ `src/pages/orders/list/OrderFilters.tsx` | [design/fragments/superadmin--orders-filters-mobile.html](fragments/superadmin--orders-filters-mobile.html) | oyna · faqat telefon | v2 |
+| `/orders` | manager | `manager-orders-list-all` — Buyurtmalar — Hamma buyurtmalar | [design/fragments/manager--orders-list-all.html](fragments/manager--orders-list-all.html) | sahifa | v2 |
+| `/orders` | manager | `manager-orders-list-pending` — Buyurtmalar — Kutilayotgan | [design/fragments/manager--orders-list-pending.html](fragments/manager--orders-list-pending.html) | sahifa | v2 |
+| `/orders` | manager | `manager-orders-list-cancelled` — Buyurtmalar — Bekor qilinganlar (HQ'ga yuborish) | [design/fragments/manager--orders-list-cancelled.html](fragments/manager--orders-list-cancelled.html) | sahifa | v2 |
+| `/orders` | manager | `manager-orders-sell-dialog` — Sotish oynasi<br>↳ `src/pages/orders/list/courier/list/SellModal.tsx` | [design/fragments/manager--orders-sell-dialog.html](fragments/manager--orders-sell-dialog.html) | oyna | v2 |
+| `/orders` | manager | `manager-orders-cancel-dialog` — Bekor qilish oynasi<br>↳ `src/pages/orders/list/courier/list/CancelModal.tsx` | [design/fragments/manager--orders-cancel-dialog.html](fragments/manager--orders-cancel-dialog.html) | oyna | v2 |
+| `/orders` | manager | `manager-orders-rollback-dialog` — Buyurtmani qaytarish tasdig'i<br>↳ `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` | [design/fragments/manager--orders-rollback-dialog.html](fragments/manager--orders-rollback-dialog.html) | oyna | v2 |
+| `/orders` | registrator | `registrator-orders-list` — Buyurtmalar ro'yxati | [design/fragments/registrator--orders-list.html](fragments/registrator--orders-list.html) | sahifa | v2 |
+| `/orders` | registrator | `registrator-orders-filters-mobile` — Buyurtmalar — filtr paneli (telefon)<br>↳ `src/pages/orders/list/OrderFilters.tsx` | [design/fragments/registrator--orders-filters-mobile.html](fragments/registrator--orders-filters-mobile.html) | oyna · faqat telefon | v2 |
+| `/orders` | market | `market-orders-list` — Buyurtmalar ro'yxati | [design/fragments/market--orders-list.html](fragments/market--orders-list.html) | sahifa | v2 |
+| `/orders` | courier | `courier-orders-pending` — Buyurtmalar — Kutilayotganlar<br>↳ `src/pages/orders/list/courier/index.tsx` | [design/fragments/courier--orders-pending.html](fragments/courier--orders-pending.html) | sahifa | v2 |
+| `/orders` | courier | `courier-orders-tab-switcher-open` — Buyurtmalar — tab almashtirildi, yuklanmoqda<br>↳ `src/pages/orders/list/courier/list/tabs.tsx` | [design/fragments/courier--orders-tab-switcher-open.html](fragments/courier--orders-tab-switcher-open.html) | sahifa · faqat telefon | v2 |
+| `/orders` | courier | `courier-orders-all` — Buyurtmalar — Hammasi<br>↳ `src/pages/orders/list/courier/index.tsx` | [design/fragments/courier--orders-all.html](fragments/courier--orders-all.html) | sahifa | v2 |
+| `/orders` | courier | `courier-orders-cancelled` — Buyurtmalar — Bekor qilinganlar<br>↳ `src/pages/orders/list/courier/index.tsx` | [design/fragments/courier--orders-cancelled.html](fragments/courier--orders-cancelled.html) | sahifa | v2 |
+| `/orders` | courier | `courier-orders-sell-dialog` — Sotish oynasi<br>↳ `src/pages/orders/list/courier/list/SellModal.tsx` | [design/fragments/courier--orders-sell-dialog.html](fragments/courier--orders-sell-dialog.html) | oyna | v2 |
+| `/orders` | courier | `courier-orders-sell-extra-cost-dialog` — Sotish — qo'shimcha xarajat bilan<br>↳ `src/pages/orders/list/courier/list/SellModal.tsx` | [design/fragments/courier--orders-sell-extra-cost-dialog.html](fragments/courier--orders-sell-extra-cost-dialog.html) | oyna | v2 |
+| `/orders` | courier | `courier-orders-sell-partial-dialog` — Qisman sotish oynasi<br>↳ `src/pages/orders/list/courier/list/SellModal.tsx` | [design/fragments/courier--orders-sell-partial-dialog.html](fragments/courier--orders-sell-partial-dialog.html) | oyna | v2 |
+| `/orders` | courier | `courier-orders-action-approval-pending` — Market tasdig'i kutilmoqda<br>↳ `src/pages/orders/list/courier/list/SellModal.tsx` | [design/fragments/courier--orders-action-approval-pending.html](fragments/courier--orders-action-approval-pending.html) | oyna | v2 |
+| `/orders` | courier | `courier-orders-cancel-dialog` — Bekor qilish oynasi<br>↳ `src/pages/orders/list/courier/list/CancelModal.tsx` | [design/fragments/courier--orders-cancel-dialog.html](fragments/courier--orders-cancel-dialog.html) | oyna | v2 |
+| `/orders` | courier | `courier-orders-rollback-confirm` — Buyurtmani qaytarish tasdig'i<br>↳ `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` | [design/fragments/courier--orders-rollback-confirm.html](fragments/courier--orders-rollback-confirm.html) | oyna | v2 |
 | `/orders` | tizim taxtasi | `tizim-states-data` — Holatlar — jadval, ro'yxat, kartalar | [design/fragments/tizim--states-data.html](fragments/tizim--states-data.html) | taxta | qoida |
 
 #### `/orders/edit/:orderId` — Buyurtma tafsiloti va tahrirlash (alohida «detail» marshruti yo'q — tafsilot shu sahifa)
 
-- **Fayllar:** `src/pages/new_orders/components/new_orderUpdate.tsx` · `src/pages/new_orders/components/new_orderUpdate.ui.tsx` · `src/pages/new_orders/components/newOrderUpdateRules.ts` · `src/pages/orders/list/courier/list/SellModal.tsx` · `src/pages/orders/list/courier/list/CancelModal.tsx` · `src/features/order-return/ui/InitiateReturnModal.tsx` · `src/features/order-return/ui/MarkReturnedModal.tsx`
+- **Fayllar:** `src/pages/new_orders/components/new_orderUpdate.tsx` · `src/pages/new_orders/components/detail/DetailHeader.tsx` · `src/pages/new_orders/components/detail/DetailAlerts.tsx` · `src/pages/new_orders/components/detail/CustomerCard.tsx` · `src/pages/new_orders/components/detail/AddressCard.tsx` · `src/pages/new_orders/components/detail/PaymentCard.tsx` · `src/pages/new_orders/components/detail/ProductsCard.tsx` · `src/pages/new_orders/components/detail/ProofCard.tsx` · `src/pages/new_orders/components/detail/CourierCards.tsx` · `src/pages/new_orders/components/detail/orderDetailAccess.ts` · `src/pages/new_orders/components/detail/orderDetailModel.ts` · `src/pages/new_orders/components/newOrderUpdateRules.ts` · `src/pages/new_orders/components/editDialogs/index.ts` · `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` · `src/pages/new_orders/components/editDialogs/EditCustomerDialog.tsx` · `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` · `src/widgets/order-tracking/ui/OrderTracking.tsx` · `src/features/order-tracking/ui/TrackingTimelineItem.tsx` · `src/entities/order/ui/ProofGallery.tsx` · `src/widgets/order-meta/ui/OrderMeta.tsx` · `src/pages/orders/list/courier/list/SellModal.tsx` · `src/pages/orders/list/courier/list/CancelModal.tsx` · `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` · `src/features/order-return/ui/InitiateReturnModal.tsx` · `src/features/order-return/ui/MarkReturnedModal.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOrders` (access.ts → canViewOrders)
 - **Rollar:** superadmin, admin, manager, registrator, market, courier
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
 - **Izoh:** Mijozni tahrirlash — faqat superadmin/admin; buyurtma va manzilni tahrirlash — superadmin/admin/registrator/menejer; market va kuryer — faqat o'qish. Sotish/bekor/qaytarish — REGIONAL · HYBRID menejeri. Ayni komponent /new-orders/:marketId/edit/:orderId da ham ishlatiladi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/orders/edit/:orderId` | superadmin | `superadmin-orders-detail` — Buyurtma tafsilotlari | [design/fragments/superadmin--orders-detail.html](fragments/superadmin--orders-detail.html) | sahifa | eski |
-| `/orders/edit/:orderId` | superadmin | `superadmin-orders-detail-edit-order-dialog` — Buyurtmani tahrirlash (popup) | [design/fragments/superadmin--orders-detail-edit-order-dialog.html](fragments/superadmin--orders-detail-edit-order-dialog.html) | oyna | eski |
-| `/orders/edit/:orderId` | superadmin | `superadmin-orders-detail-edit-customer-dialog` — Mijoz ma'lumotini tahrirlash (popup) | [design/fragments/superadmin--orders-detail-edit-customer-dialog.html](fragments/superadmin--orders-detail-edit-customer-dialog.html) | oyna | eski |
-| `/orders/edit/:orderId` | superadmin | `superadmin-orders-detail-edit-address-dialog` — Manzilni tahrirlash (popup) | [design/fragments/superadmin--orders-detail-edit-address-dialog.html](fragments/superadmin--orders-detail-edit-address-dialog.html) | oyna | eski |
-| `/orders/edit/:orderId` | admin | `admin-orders-detail` — Buyurtma tafsiloti | [design/fragments/admin--orders-detail.html](fragments/admin--orders-detail.html) | sahifa | eski |
-| `/orders/edit/:orderId` | admin | `admin-orders-edit-order-dialog` — Buyurtmani tahrirlash oynasi | [design/fragments/admin--orders-edit-order-dialog.html](fragments/admin--orders-edit-order-dialog.html) | oyna | eski |
-| `/orders/edit/:orderId` | admin | `admin-orders-edit-customer-dialog` — Mijozni tahrirlash oynasi | [design/fragments/admin--orders-edit-customer-dialog.html](fragments/admin--orders-edit-customer-dialog.html) | oyna | eski |
-| `/orders/edit/:orderId` | admin | `admin-orders-edit-address-dialog` — Manzilni tahrirlash oynasi | [design/fragments/admin--orders-edit-address-dialog.html](fragments/admin--orders-edit-address-dialog.html) | oyna | eski |
-| `/orders/edit/:orderId` | manager | `manager-orders-detail` — Buyurtma tafsiloti | [design/fragments/manager--orders-detail.html](fragments/manager--orders-detail.html) | sahifa | eski |
-| `/orders/edit/:orderId` | manager | `manager-orders-detail-edit-address-dialog` — Manzilni tahrirlash oynasi | [design/fragments/manager--orders-detail-edit-address-dialog.html](fragments/manager--orders-detail-edit-address-dialog.html) | oyna | eski |
-| `/orders/edit/:orderId` | manager | `manager-orders-detail-edit-products-dialog` — Buyurtmani tahrirlash oynasi | [design/fragments/manager--orders-detail-edit-products-dialog.html](fragments/manager--orders-detail-edit-products-dialog.html) | oyna | eski |
-| `/orders/edit/:orderId` | manager | `manager-orders-sell-dialog` — Sotish oynasi<br>↳ `src/pages/orders/list/courier/list/SellModal.tsx` | [design/fragments/manager--orders-sell-dialog.html](fragments/manager--orders-sell-dialog.html) | oyna | eski |
-| `/orders/edit/:orderId` | manager | `manager-orders-cancel-dialog` — Bekor qilish oynasi<br>↳ `src/pages/orders/list/courier/list/CancelModal.tsx` | [design/fragments/manager--orders-cancel-dialog.html](fragments/manager--orders-cancel-dialog.html) | oyna | eski |
-| `/orders/edit/:orderId` | manager | `manager-orders-rollback-dialog` — Buyurtmani qaytarish tasdig'i | [design/fragments/manager--orders-rollback-dialog.html](fragments/manager--orders-rollback-dialog.html) | oyna | eski |
-| `/orders/edit/:orderId` | registrator | `registrator-orders-detail` — Buyurtma tafsiloti | [design/fragments/registrator--orders-detail.html](fragments/registrator--orders-detail.html) | sahifa | eski |
-| `/orders/edit/:orderId` | registrator | `registrator-orders-detail-edit-order-dialog` — Buyurtmani tahrirlash oynasi | [design/fragments/registrator--orders-detail-edit-order-dialog.html](fragments/registrator--orders-detail-edit-order-dialog.html) | oyna | eski |
-| `/orders/edit/:orderId` | registrator | `registrator-orders-detail-edit-address-dialog` — Manzilni tahrirlash oynasi | [design/fragments/registrator--orders-detail-edit-address-dialog.html](fragments/registrator--orders-detail-edit-address-dialog.html) | oyna | eski |
-| `/orders/edit/:orderId` | market | `market-orders-detail` — Buyurtma tafsilotlari | [design/fragments/market--orders-detail.html](fragments/market--orders-detail.html) | sahifa | eski |
-| `/orders/edit/:orderId` | courier | `courier-orders-detail` — Buyurtma tafsilotlari | [design/fragments/courier--orders-detail.html](fragments/courier--orders-detail.html) | sahifa | eski |
+| `/orders/edit/:orderId` | superadmin | `superadmin-orders-detail` — Buyurtma tafsilotlari | [design/fragments/superadmin--orders-detail.html](fragments/superadmin--orders-detail.html) | sahifa | v2 |
+| `/orders/edit/:orderId` | superadmin | `superadmin-orders-detail-edit-order-dialog` — Buyurtmani tahrirlash (popup)<br>↳ `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` | [design/fragments/superadmin--orders-detail-edit-order-dialog.html](fragments/superadmin--orders-detail-edit-order-dialog.html) | oyna | v2 |
+| `/orders/edit/:orderId` | superadmin | `superadmin-orders-detail-edit-customer-dialog` — Mijoz ma'lumotini tahrirlash (popup)<br>↳ `src/pages/new_orders/components/editDialogs/EditCustomerDialog.tsx` | [design/fragments/superadmin--orders-detail-edit-customer-dialog.html](fragments/superadmin--orders-detail-edit-customer-dialog.html) | oyna | v2 |
+| `/orders/edit/:orderId` | superadmin | `superadmin-orders-detail-edit-address-dialog` — Manzilni tahrirlash (popup)<br>↳ `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | [design/fragments/superadmin--orders-detail-edit-address-dialog.html](fragments/superadmin--orders-detail-edit-address-dialog.html) | oyna | v2 |
+| `/orders/edit/:orderId` | admin | `admin-orders-detail` — Buyurtma tafsiloti | [design/fragments/admin--orders-detail.html](fragments/admin--orders-detail.html) | sahifa | v2 |
+| `/orders/edit/:orderId` | admin | `admin-orders-edit-order-dialog` — Buyurtmani tahrirlash oynasi<br>↳ `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` | [design/fragments/admin--orders-edit-order-dialog.html](fragments/admin--orders-edit-order-dialog.html) | oyna | v2 |
+| `/orders/edit/:orderId` | admin | `admin-orders-edit-customer-dialog` — Mijozni tahrirlash oynasi<br>↳ `src/pages/new_orders/components/editDialogs/EditCustomerDialog.tsx` | [design/fragments/admin--orders-edit-customer-dialog.html](fragments/admin--orders-edit-customer-dialog.html) | oyna | v2 |
+| `/orders/edit/:orderId` | admin | `admin-orders-edit-address-dialog` — Manzilni tahrirlash oynasi<br>↳ `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | [design/fragments/admin--orders-edit-address-dialog.html](fragments/admin--orders-edit-address-dialog.html) | oyna | v2 |
+| `/orders/edit/:orderId` | manager | `manager-orders-detail` — Buyurtma tafsiloti | [design/fragments/manager--orders-detail.html](fragments/manager--orders-detail.html) | sahifa | v2 |
+| `/orders/edit/:orderId` | manager | `manager-orders-detail-edit-address-dialog` — Manzilni tahrirlash oynasi<br>↳ `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | [design/fragments/manager--orders-detail-edit-address-dialog.html](fragments/manager--orders-detail-edit-address-dialog.html) | oyna | v2 |
+| `/orders/edit/:orderId` | manager | `manager-orders-detail-edit-products-dialog` — Buyurtmani tahrirlash oynasi<br>↳ `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` | [design/fragments/manager--orders-detail-edit-products-dialog.html](fragments/manager--orders-detail-edit-products-dialog.html) | oyna | v2 |
+| `/orders/edit/:orderId` | manager | `manager-orders-sell-dialog` — Sotish oynasi<br>↳ `src/pages/orders/list/courier/list/SellModal.tsx` | [design/fragments/manager--orders-sell-dialog.html](fragments/manager--orders-sell-dialog.html) | oyna | v2 |
+| `/orders/edit/:orderId` | manager | `manager-orders-cancel-dialog` — Bekor qilish oynasi<br>↳ `src/pages/orders/list/courier/list/CancelModal.tsx` | [design/fragments/manager--orders-cancel-dialog.html](fragments/manager--orders-cancel-dialog.html) | oyna | v2 |
+| `/orders/edit/:orderId` | manager | `manager-orders-rollback-dialog` — Buyurtmani qaytarish tasdig'i<br>↳ `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` | [design/fragments/manager--orders-rollback-dialog.html](fragments/manager--orders-rollback-dialog.html) | oyna | v2 |
+| `/orders/edit/:orderId` | registrator | `registrator-orders-detail` — Buyurtma tafsiloti | [design/fragments/registrator--orders-detail.html](fragments/registrator--orders-detail.html) | sahifa | v2 |
+| `/orders/edit/:orderId` | registrator | `registrator-orders-detail-edit-order-dialog` — Buyurtmani tahrirlash oynasi<br>↳ `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` | [design/fragments/registrator--orders-detail-edit-order-dialog.html](fragments/registrator--orders-detail-edit-order-dialog.html) | oyna | v2 |
+| `/orders/edit/:orderId` | registrator | `registrator-orders-detail-edit-address-dialog` — Manzilni tahrirlash oynasi<br>↳ `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | [design/fragments/registrator--orders-detail-edit-address-dialog.html](fragments/registrator--orders-detail-edit-address-dialog.html) | oyna | v2 |
+| `/orders/edit/:orderId` | market | `market-orders-detail` — Buyurtma tafsilotlari | [design/fragments/market--orders-detail.html](fragments/market--orders-detail.html) | sahifa | v2 |
+| `/orders/edit/:orderId` | courier | `courier-orders-detail` — Buyurtma tafsilotlari | [design/fragments/courier--orders-detail.html](fragments/courier--orders-detail.html) | sahifa | v2 |
 
 ### Qabul va yaratish
 
@@ -350,38 +350,38 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/new-orders/create` — Buyurtma yaratish — qo'lda (market → mijoz va mahsulot) yoki AI bilan
 
-- **Fayllar:** `src/pages/orders/create/index.tsx` · `src/pages/orders/create/ui/CreateModeTabs.tsx` · `src/pages/orders/create/ui/OrderStepper.tsx` · `src/pages/orders/create/ui/Step1Market.tsx` · `src/pages/orders/create/ui/Step2Combined.tsx` · `src/pages/orders/create/ui/ai/AiCreatePanel.tsx` · `src/pages/orders/create/ui/ai/AiInputPanel.tsx` · `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` · `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` · `src/pages/orders/create/ui/ai/AiCreatedList.tsx` · `src/pages/orders/create/model/orderCreateForm.ts`
+- **Fayllar:** `src/pages/orders/create/index.tsx` · `src/pages/orders/create/ui/CreateModeTabs.tsx` · `src/pages/orders/create/ui/OrderStepper.tsx` · `src/pages/orders/create/ui/Step1Market.tsx` · `src/pages/orders/create/ui/MarketPicker.tsx` · `src/pages/orders/create/ui/Step2Combined.tsx` · `src/pages/orders/create/ui/Step2Summary.tsx` · `src/pages/orders/create/ui/TodayOrdersCard.tsx` · `src/pages/orders/create/ui/CreateAlert.tsx` · `src/pages/orders/create/ui/ai/AiCreatePanel.tsx` · `src/pages/orders/create/ui/ai/AiInputPanel.tsx` · `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` · `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` · `src/pages/orders/create/ui/ai/AiCreatedList.tsx` · `src/pages/orders/create/model/orderCreateForm.ts`
 - **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders)
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market
 - **Menyuda:** yo'q — «Buyurtma yaratish» tugmasi (/new-orders sarlavhasi, market bosh sahifasi, market yangi buyurtmalari)
-- **Holat:** eski
-- **Izoh:** Market rolida 1-qadam (market tanlash) yo'q — forma darhol 2-qadamdan ochiladi. Market tanlash oynasi — Step1Market.tsx ichida; AI tasdiqlash oynasi — AiConfirmBar.tsx.
+- **Holat:** v2
+- **Izoh:** Market rolida 1-qadam (market tanlash) yo'q — forma darhol 2-qadamdan ochiladi. Market tanlash oynasi — MarketPicker.tsx (Step1Market.tsx ochadi); 2-qadam o'ng ustuni — Step2Summary.tsx + TodayOrdersCard.tsx; AI tasdiqlash oynasi — AiConfirmBar.tsx. «Oldingi» / «O'zgartirish» 1-qadamga qaytaradi (market va forma saqlanadi).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/new-orders/create` | superadmin | `superadmin-neworders-create-manual-step1` — Buyurtma yaratish — 1-qadam: Market<br>↳ `src/pages/orders/create/ui/Step1Market.tsx` | [design/fragments/superadmin--neworders-create-manual-step1.html](fragments/superadmin--neworders-create-manual-step1.html) | sahifa | eski |
-| `/new-orders/create` | superadmin | `superadmin-neworders-create-market-picker-dialog` — Market tanlash (modal)<br>↳ `src/pages/orders/create/ui/Step1Market.tsx` | [design/fragments/superadmin--neworders-create-market-picker-dialog.html](fragments/superadmin--neworders-create-market-picker-dialog.html) | oyna | eski |
-| `/new-orders/create` | superadmin | `superadmin-neworders-create-manual-step2` — Buyurtma yaratish — 2-qadam: Mijoz va mahsulot<br>↳ `src/pages/orders/create/ui/Step2Combined.tsx` | [design/fragments/superadmin--neworders-create-manual-step2.html](fragments/superadmin--neworders-create-manual-step2.html) | sahifa | eski |
-| `/new-orders/create` | superadmin | `superadmin-neworders-create-ai-input` — Buyurtma yaratish — AI bilan (kiritish)<br>↳ `src/pages/orders/create/ui/ai/AiInputPanel.tsx` | [design/fragments/superadmin--neworders-create-ai-input.html](fragments/superadmin--neworders-create-ai-input.html) | sahifa | eski |
-| `/new-orders/create` | superadmin | `superadmin-neworders-create-ai-preview` — Buyurtma yaratish — AI natijalari (preview)<br>↳ `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` | [design/fragments/superadmin--neworders-create-ai-preview.html](fragments/superadmin--neworders-create-ai-preview.html) | sahifa | eski |
-| `/new-orders/create` | superadmin | `superadmin-neworders-create-ai-confirm-dialog` — AI — yaratishni tasdiqlash<br>↳ `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | [design/fragments/superadmin--neworders-create-ai-confirm-dialog.html](fragments/superadmin--neworders-create-ai-confirm-dialog.html) | oyna | eski |
-| `/new-orders/create` | admin | `admin-neworders-create-manual` — Buyurtma yaratish — Qo'lda | [design/fragments/admin--neworders-create-manual.html](fragments/admin--neworders-create-manual.html) | sahifa | eski |
-| `/new-orders/create` | admin | `admin-neworders-create-market-picker` — Market tanlash oynasi<br>↳ `src/pages/orders/create/ui/Step1Market.tsx` | [design/fragments/admin--neworders-create-market-picker.html](fragments/admin--neworders-create-market-picker.html) | oyna | eski |
-| `/new-orders/create` | admin | `admin-neworders-create-ai` — Buyurtma yaratish — AI bilan | [design/fragments/admin--neworders-create-ai.html](fragments/admin--neworders-create-ai.html) | sahifa | eski |
-| `/new-orders/create` | admin | `admin-neworders-create-ai-confirm-dialog` — AI yaratishni tasdiqlash<br>↳ `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | [design/fragments/admin--neworders-create-ai-confirm-dialog.html](fragments/admin--neworders-create-ai-confirm-dialog.html) | oyna | eski |
-| `/new-orders/create` | manager | `manager-new-orders-create-manual-step1` — Buyurtma yaratish — market tanlash<br>↳ `src/pages/orders/create/ui/Step1Market.tsx` | [design/fragments/manager--new-orders-create-manual-step1.html](fragments/manager--new-orders-create-manual-step1.html) | sahifa | eski |
-| `/new-orders/create` | manager | `manager-new-orders-create-manual-step2` — Buyurtma yaratish — ma'lumotlar<br>↳ `src/pages/orders/create/ui/Step2Combined.tsx` | [design/fragments/manager--new-orders-create-manual-step2.html](fragments/manager--new-orders-create-manual-step2.html) | sahifa | eski |
-| `/new-orders/create` | manager | `manager-new-orders-create-ai` — Buyurtma yaratish — AI bilan | [design/fragments/manager--new-orders-create-ai.html](fragments/manager--new-orders-create-ai.html) | sahifa | eski |
-| `/new-orders/create` | manager | `manager-new-orders-create-ai-confirm-dialog` — AI buyurtmalarni tasdiqlash<br>↳ `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | [design/fragments/manager--new-orders-create-ai-confirm-dialog.html](fragments/manager--new-orders-create-ai-confirm-dialog.html) | oyna | eski |
-| `/new-orders/create` | registrator | `registrator-new-orders-create-step1` — Buyurtma yaratish — market tanlash<br>↳ `src/pages/orders/create/ui/Step1Market.tsx` | [design/fragments/manager--new-orders-create-manual-step1.html](fragments/manager--new-orders-create-manual-step1.html) | sahifa | eski |
-| `/new-orders/create` | registrator | `registrator-new-orders-create-market-picker-dialog` — Buyurtma yaratish — market tanlash oynasi<br>↳ `src/pages/orders/create/ui/Step1Market.tsx` | [design/fragments/registrator--new-orders-create-market-picker-dialog.html](fragments/registrator--new-orders-create-market-picker-dialog.html) | oyna | eski |
-| `/new-orders/create` | registrator | `registrator-new-orders-create-step2` — Buyurtma yaratish — qo'lda forma<br>↳ `src/pages/orders/create/ui/Step2Combined.tsx` | [design/fragments/registrator--new-orders-create-step2.html](fragments/registrator--new-orders-create-step2.html) | sahifa | eski |
-| `/new-orders/create` | registrator | `registrator-new-orders-create-ai` — Buyurtma yaratish — AI rejimi | [design/fragments/registrator--new-orders-create-ai.html](fragments/registrator--new-orders-create-ai.html) | sahifa | eski |
-| `/new-orders/create` | registrator | `registrator-new-orders-create-ai-confirm-dialog` — AI buyurtmalarni tasdiqlash<br>↳ `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | [design/fragments/manager--new-orders-create-ai-confirm-dialog.html](fragments/manager--new-orders-create-ai-confirm-dialog.html) | oyna | eski |
-| `/new-orders/create` | market | `market-new-orders-create-manual` — Buyurtma yaratish · Qo'lda<br>↳ `src/pages/orders/create/ui/Step2Combined.tsx` | [design/fragments/market--new-orders-create-manual.html](fragments/market--new-orders-create-manual.html) | sahifa | eski |
-| `/new-orders/create` | market | `market-new-orders-create-ai-input` — Buyurtma yaratish · AI kiritish<br>↳ `src/pages/orders/create/ui/ai/AiInputPanel.tsx` | [design/fragments/market--new-orders-create-ai-input.html](fragments/market--new-orders-create-ai-input.html) | sahifa | eski |
-| `/new-orders/create` | market | `market-new-orders-create-ai-preview` — Buyurtma yaratish · AI natijalari<br>↳ `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` | [design/fragments/market--new-orders-create-ai-preview.html](fragments/market--new-orders-create-ai-preview.html) | sahifa | eski |
-| `/new-orders/create` | market | `market-new-orders-create-ai-confirm-dialog` — AI · Yaratishni tasdiqlash<br>↳ `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | [design/fragments/market--new-orders-create-ai-confirm-dialog.html](fragments/market--new-orders-create-ai-confirm-dialog.html) | oyna | eski |
+| `/new-orders/create` | superadmin | `superadmin-neworders-create-manual-step1` — Buyurtma yaratish — 1-qadam: Market<br>↳ `src/pages/orders/create/ui/Step1Market.tsx` | [design/fragments/superadmin--neworders-create-manual-step1.html](fragments/superadmin--neworders-create-manual-step1.html) | sahifa | v2 |
+| `/new-orders/create` | superadmin | `superadmin-neworders-create-market-picker-dialog` — Market tanlash (modal)<br>↳ `src/pages/orders/create/ui/MarketPicker.tsx` | [design/fragments/superadmin--neworders-create-market-picker-dialog.html](fragments/superadmin--neworders-create-market-picker-dialog.html) | oyna | v2 |
+| `/new-orders/create` | superadmin | `superadmin-neworders-create-manual-step2` — Buyurtma yaratish — 2-qadam: Mijoz va mahsulot<br>↳ `src/pages/orders/create/ui/Step2Combined.tsx` | [design/fragments/superadmin--neworders-create-manual-step2.html](fragments/superadmin--neworders-create-manual-step2.html) | sahifa | v2 |
+| `/new-orders/create` | superadmin | `superadmin-neworders-create-ai-input` — Buyurtma yaratish — AI bilan (kiritish)<br>↳ `src/pages/orders/create/ui/ai/AiInputPanel.tsx` | [design/fragments/superadmin--neworders-create-ai-input.html](fragments/superadmin--neworders-create-ai-input.html) | sahifa | v2 |
+| `/new-orders/create` | superadmin | `superadmin-neworders-create-ai-preview` — Buyurtma yaratish — AI natijalari (preview)<br>↳ `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` | [design/fragments/superadmin--neworders-create-ai-preview.html](fragments/superadmin--neworders-create-ai-preview.html) | sahifa | v2 |
+| `/new-orders/create` | superadmin | `superadmin-neworders-create-ai-confirm-dialog` — AI — yaratishni tasdiqlash<br>↳ `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | [design/fragments/superadmin--neworders-create-ai-confirm-dialog.html](fragments/superadmin--neworders-create-ai-confirm-dialog.html) | oyna | v2 |
+| `/new-orders/create` | admin | `admin-neworders-create-manual` — Buyurtma yaratish — Qo'lda | [design/fragments/admin--neworders-create-manual.html](fragments/admin--neworders-create-manual.html) | sahifa | v2 |
+| `/new-orders/create` | admin | `admin-neworders-create-market-picker` — Market tanlash oynasi<br>↳ `src/pages/orders/create/ui/MarketPicker.tsx` | [design/fragments/admin--neworders-create-market-picker.html](fragments/admin--neworders-create-market-picker.html) | oyna | v2 |
+| `/new-orders/create` | admin | `admin-neworders-create-ai` — Buyurtma yaratish — AI bilan | [design/fragments/admin--neworders-create-ai.html](fragments/admin--neworders-create-ai.html) | sahifa | v2 |
+| `/new-orders/create` | admin | `admin-neworders-create-ai-confirm-dialog` — AI yaratishni tasdiqlash<br>↳ `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | [design/fragments/admin--neworders-create-ai-confirm-dialog.html](fragments/admin--neworders-create-ai-confirm-dialog.html) | oyna | v2 |
+| `/new-orders/create` | manager | `manager-new-orders-create-manual-step1` — Buyurtma yaratish — market tanlash<br>↳ `src/pages/orders/create/ui/Step1Market.tsx` | [design/fragments/manager--new-orders-create-manual-step1.html](fragments/manager--new-orders-create-manual-step1.html) | sahifa | v2 |
+| `/new-orders/create` | manager | `manager-new-orders-create-manual-step2` — Buyurtma yaratish — ma'lumotlar<br>↳ `src/pages/orders/create/ui/Step2Combined.tsx` | [design/fragments/manager--new-orders-create-manual-step2.html](fragments/manager--new-orders-create-manual-step2.html) | sahifa | v2 |
+| `/new-orders/create` | manager | `manager-new-orders-create-ai` — Buyurtma yaratish — AI bilan | [design/fragments/manager--new-orders-create-ai.html](fragments/manager--new-orders-create-ai.html) | sahifa | v2 |
+| `/new-orders/create` | manager | `manager-new-orders-create-ai-confirm-dialog` — AI buyurtmalarni tasdiqlash<br>↳ `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | [design/fragments/manager--new-orders-create-ai-confirm-dialog.html](fragments/manager--new-orders-create-ai-confirm-dialog.html) | oyna | v2 |
+| `/new-orders/create` | registrator | `registrator-new-orders-create-step1` — Buyurtma yaratish — market tanlash<br>↳ `src/pages/orders/create/ui/Step1Market.tsx` | [design/fragments/manager--new-orders-create-manual-step1.html](fragments/manager--new-orders-create-manual-step1.html) | sahifa | v2 |
+| `/new-orders/create` | registrator | `registrator-new-orders-create-market-picker-dialog` — Buyurtma yaratish — market tanlash oynasi<br>↳ `src/pages/orders/create/ui/MarketPicker.tsx` | [design/fragments/registrator--new-orders-create-market-picker-dialog.html](fragments/registrator--new-orders-create-market-picker-dialog.html) | oyna | v2 |
+| `/new-orders/create` | registrator | `registrator-new-orders-create-step2` — Buyurtma yaratish — qo'lda forma<br>↳ `src/pages/orders/create/ui/Step2Combined.tsx` | [design/fragments/registrator--new-orders-create-step2.html](fragments/registrator--new-orders-create-step2.html) | sahifa | v2 |
+| `/new-orders/create` | registrator | `registrator-new-orders-create-ai` — Buyurtma yaratish — AI rejimi | [design/fragments/registrator--new-orders-create-ai.html](fragments/registrator--new-orders-create-ai.html) | sahifa | v2 |
+| `/new-orders/create` | registrator | `registrator-new-orders-create-ai-confirm-dialog` — AI buyurtmalarni tasdiqlash<br>↳ `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | [design/fragments/manager--new-orders-create-ai-confirm-dialog.html](fragments/manager--new-orders-create-ai-confirm-dialog.html) | oyna | v2 |
+| `/new-orders/create` | market | `market-new-orders-create-manual` — Buyurtma yaratish · Qo'lda<br>↳ `src/pages/orders/create/ui/Step2Combined.tsx` | [design/fragments/market--new-orders-create-manual.html](fragments/market--new-orders-create-manual.html) | sahifa | v2 |
+| `/new-orders/create` | market | `market-new-orders-create-ai-input` — Buyurtma yaratish · AI kiritish<br>↳ `src/pages/orders/create/ui/ai/AiInputPanel.tsx` | [design/fragments/market--new-orders-create-ai-input.html](fragments/market--new-orders-create-ai-input.html) | sahifa | v2 |
+| `/new-orders/create` | market | `market-new-orders-create-ai-preview` — Buyurtma yaratish · AI natijalari<br>↳ `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` | [design/fragments/market--new-orders-create-ai-preview.html](fragments/market--new-orders-create-ai-preview.html) | sahifa | v2 |
+| `/new-orders/create` | market | `market-new-orders-create-ai-confirm-dialog` — AI · Yaratishni tasdiqlash<br>↳ `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | [design/fragments/market--new-orders-create-ai-confirm-dialog.html](fragments/market--new-orders-create-ai-confirm-dialog.html) | oyna | v2 |
 
 #### `/new-orders/incoming` — Kiruvchi posilkalar — manba tanlash
 
@@ -530,19 +530,19 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/new-orders/:marketId/edit/:orderId` — Yangi buyurtmani tahrirlash (qabuldan oldin)
 
-- **Fayllar:** `src/pages/new_orders/components/new_orderUpdate.tsx` · `src/pages/new_orders/components/new_orderUpdate.ui.tsx` · `src/pages/new_orders/components/newOrderUpdateRules.ts` · `src/app/lib/routes.tsx`
+- **Fayllar:** `src/pages/new_orders/components/new_orderUpdate.tsx` · `src/pages/new_orders/components/newOrderUpdateRules.ts` · `src/app/lib/routes.tsx`
 - **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) · o'rovchi: `NewOrdersMarketAccessEntry`
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/new-orders/:marketId/edit/:orderId` | superadmin | `superadmin-neworders-market-order-edit` — Market buyurtmasini tahrirlash | [design/fragments/superadmin--neworders-market-order-edit.html](fragments/superadmin--neworders-market-order-edit.html) | sahifa | eski |
-| `/new-orders/:marketId/edit/:orderId` | admin | — Maket yo'q — superadmin-neworders-market-order-edit ga qarang. | — | — | eski |
-| `/new-orders/:marketId/edit/:orderId` | manager | — Maket yo'q — registrator-new-orders-market-order-edit ga qarang. | — | — | eski |
-| `/new-orders/:marketId/edit/:orderId` | registrator | `registrator-new-orders-market-order-edit` — Market buyurtmasini tahrirlash | [design/fragments/registrator--new-orders-market-order-edit.html](fragments/registrator--new-orders-market-order-edit.html) | sahifa | eski |
-| `/new-orders/:marketId/edit/:orderId` | market | `market-new-orders-edit` — Yangi buyurtma tafsiloti | [design/fragments/market--new-orders-edit.html](fragments/market--new-orders-edit.html) | sahifa | eski |
+| `/new-orders/:marketId/edit/:orderId` | superadmin | `superadmin-neworders-market-order-edit` — Market buyurtmasini tahrirlash | [design/fragments/superadmin--neworders-market-order-edit.html](fragments/superadmin--neworders-market-order-edit.html) | sahifa | qisman |
+| `/new-orders/:marketId/edit/:orderId` | admin | — Maket yo'q — superadmin-neworders-market-order-edit ga qarang. | — | — | v2 |
+| `/new-orders/:marketId/edit/:orderId` | manager | — Maket yo'q — registrator-new-orders-market-order-edit ga qarang. | — | — | v2 |
+| `/new-orders/:marketId/edit/:orderId` | registrator | `registrator-new-orders-market-order-edit` — Market buyurtmasini tahrirlash | [design/fragments/registrator--new-orders-market-order-edit.html](fragments/registrator--new-orders-market-order-edit.html) | sahifa | qisman |
+| `/new-orders/:marketId/edit/:orderId` | market | `market-new-orders-edit` — Yangi buyurtma tafsiloti | [design/fragments/market--new-orders-edit.html](fragments/market--new-orders-edit.html) | sahifa | qisman |
 
 #### `/new-orders/userDetail/:id` — Foydalanuvchi tafsiloti (eski havola, /new-orders ichida)
 
@@ -1534,23 +1534,23 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 |---|---|---|---|---|---|
 | `superadmin-dashboard-main` | Dashboard — Bugungi statistika | sahifa | `/` | `src/pages/dashboard/DashboardPage.tsx` | eski |
 | `superadmin-dashboard-region-modal` | Dashboard — Viloyat tafsiloti (xarita) | oyna | `/` | `src/pages/region/ui/UzbekistanRegionMap.tsx` | eski |
-| `superadmin-orders-list` | Buyurtmalar ro'yxati | sahifa | `/orders` | `src/pages/orders/index.tsx` | eski |
-| `superadmin-orders-filters-mobile` | Buyurtmalar — filtr paneli (telefon) | oyna · faqat telefon | `/orders` | `src/pages/orders/list/OrderFilters.tsx` | eski |
-| `superadmin-orders-detail` | Buyurtma tafsilotlari | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
-| `superadmin-orders-detail-edit-order-dialog` | Buyurtmani tahrirlash (popup) | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
-| `superadmin-orders-detail-edit-customer-dialog` | Mijoz ma'lumotini tahrirlash (popup) | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
-| `superadmin-orders-detail-edit-address-dialog` | Manzilni tahrirlash (popup) | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
+| `superadmin-orders-list` | Buyurtmalar ro'yxati | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
+| `superadmin-orders-filters-mobile` | Buyurtmalar — filtr paneli (telefon) | oyna · faqat telefon | `/orders` | `src/pages/orders/list/OrderFilters.tsx` | v2 |
+| `superadmin-orders-detail` | Buyurtma tafsilotlari | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | v2 |
+| `superadmin-orders-detail-edit-order-dialog` | Buyurtmani tahrirlash (popup) | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` | v2 |
+| `superadmin-orders-detail-edit-customer-dialog` | Mijoz ma'lumotini tahrirlash (popup) | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditCustomerDialog.tsx` | v2 |
+| `superadmin-orders-detail-edit-address-dialog` | Manzilni tahrirlash (popup) | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | v2 |
 | `superadmin-neworders-markets` | Qabul va yaratish — Marketlar | sahifa | `/new-orders` | `src/pages/new_orders/markets/index.tsx` | eski |
 | `superadmin-neworders-market-orders` | Market yangi buyurtmalari (qabul) | sahifa | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | eski |
 | `superadmin-neworders-market-orders-camera` | Market yangi buyurtmalari (qabul) — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — sahifa faqat USB/klaviatura skaneri bilan ishlaydi (useOrderQrScanner). |
 | `superadmin-neworders-receive-confirm-dialog` | Qo'lda qabul qilish (tasdiq) | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | eski |
-| `superadmin-neworders-market-order-edit` | Market buyurtmasini tahrirlash | sahifa | `/new-orders/:marketId/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
-| `superadmin-neworders-create-manual-step1` | Buyurtma yaratish — 1-qadam: Market | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step1Market.tsx` | eski |
-| `superadmin-neworders-create-market-picker-dialog` | Market tanlash (modal) | oyna | `/new-orders/create` | `src/pages/orders/create/ui/Step1Market.tsx` | eski |
-| `superadmin-neworders-create-manual-step2` | Buyurtma yaratish — 2-qadam: Mijoz va mahsulot | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step2Combined.tsx` | eski |
-| `superadmin-neworders-create-ai-input` | Buyurtma yaratish — AI bilan (kiritish) | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiInputPanel.tsx` | eski |
-| `superadmin-neworders-create-ai-preview` | Buyurtma yaratish — AI natijalari (preview) | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` | eski |
-| `superadmin-neworders-create-ai-confirm-dialog` | AI — yaratishni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | eski |
+| `superadmin-neworders-market-order-edit` | Market buyurtmasini tahrirlash | sahifa | `/new-orders/:marketId/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | qisman — Ayni komponent /orders/edit/:orderId bilan — sahifa v2 da, lekin shu route'ning o'z maketi (tahrirlash formasi) hali ko'chirilmagan: tafsilot ko'rinishi (`superadmin-orders-detail`) chiqadi. |
+| `superadmin-neworders-create-manual-step1` | Buyurtma yaratish — 1-qadam: Market | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step1Market.tsx` | v2 |
+| `superadmin-neworders-create-market-picker-dialog` | Market tanlash (modal) | oyna | `/new-orders/create` | `src/pages/orders/create/ui/MarketPicker.tsx` | v2 |
+| `superadmin-neworders-create-manual-step2` | Buyurtma yaratish — 2-qadam: Mijoz va mahsulot | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step2Combined.tsx` | v2 |
+| `superadmin-neworders-create-ai-input` | Buyurtma yaratish — AI bilan (kiritish) | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiInputPanel.tsx` | v2 |
+| `superadmin-neworders-create-ai-preview` | Buyurtma yaratish — AI natijalari (preview) | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` | v2 |
+| `superadmin-neworders-create-ai-confirm-dialog` | AI — yaratishni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | v2 |
 | `superadmin-neworders-incoming-sources` | Kiruvchi posilkalar — manba tanlash | sahifa | `/new-orders/incoming` | `src/pages/incoming-orders/SourcePicker.tsx` | eski |
 | `superadmin-neworders-incoming-scan` | Kiruvchi posilkalar — skanerlab qabul | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | eski |
 | `superadmin-neworders-incoming-scan-camera` | Kiruvchi posilkalar — skanerlab qabul — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri. |
@@ -1664,12 +1664,12 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
 | `admin-dashboard-main` | Dashboard | sahifa | `/` | `src/pages/dashboard/DashboardPage.tsx` | eski |
-| `admin-orders-list` | Buyurtmalar ro'yxati | sahifa | `/orders` | `src/pages/orders/index.tsx` | eski |
-| `admin-orders-filters-mobile` | Buyurtmalar — filtr paneli (telefon) | oyna · faqat telefon | `/orders` | `src/pages/orders/list/OrderFilters.tsx` | eski |
-| `admin-orders-detail` | Buyurtma tafsiloti | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
-| `admin-orders-edit-order-dialog` | Buyurtmani tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
-| `admin-orders-edit-customer-dialog` | Mijozni tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
-| `admin-orders-edit-address-dialog` | Manzilni tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
+| `admin-orders-list` | Buyurtmalar ro'yxati | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
+| `admin-orders-filters-mobile` | Buyurtmalar — filtr paneli (telefon) | oyna · faqat telefon | `/orders` | `src/pages/orders/list/OrderFilters.tsx` | v2 |
+| `admin-orders-detail` | Buyurtma tafsiloti | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | v2 |
+| `admin-orders-edit-order-dialog` | Buyurtmani tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` | v2 |
+| `admin-orders-edit-customer-dialog` | Mijozni tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditCustomerDialog.tsx` | v2 |
+| `admin-orders-edit-address-dialog` | Manzilni tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | v2 |
 | `admin-neworders-markets` | Qabul — Marketlar tabi | sahifa | `/new-orders` | `src/pages/new_orders/markets/index.tsx` | eski |
 | `admin-neworders-market-detail` | Market yangi buyurtmalari | sahifa | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | eski |
 | `admin-neworders-market-detail-camera` | Market yangi buyurtmalari — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). |
@@ -1686,10 +1686,10 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-neworders-cancelled-detail-camera` | Bekor qilinganlarni marketga topshirish — kamera | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
 | `admin-neworders-cancelled-manual-dialog` | QR buzilganini tasdiqlash | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
 | `admin-neworders-cancelled-scanner-dialog` | Market QR skaneri | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
-| `admin-neworders-create-manual` | Buyurtma yaratish — Qo'lda | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | eski |
-| `admin-neworders-create-market-picker` | Market tanlash oynasi | oyna | `/new-orders/create` | `src/pages/orders/create/ui/Step1Market.tsx` | eski |
-| `admin-neworders-create-ai` | Buyurtma yaratish — AI bilan | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | eski |
-| `admin-neworders-create-ai-confirm-dialog` | AI yaratishni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | eski |
+| `admin-neworders-create-manual` | Buyurtma yaratish — Qo'lda | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | v2 |
+| `admin-neworders-create-market-picker` | Market tanlash oynasi | oyna | `/new-orders/create` | `src/pages/orders/create/ui/MarketPicker.tsx` | v2 |
+| `admin-neworders-create-ai` | Buyurtma yaratish — AI bilan | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | v2 |
+| `admin-neworders-create-ai-confirm-dialog` | AI yaratishni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | v2 |
 | `admin-mails-today` | Pochta — Bugungi pochtalar | sahifa | `/mails/today` | `src/pages/mails/index.tsx` | eski |
 | `admin-mails-return` | Pochta — Qaytarish | sahifa | `/mails/return` | `src/pages/mails/index.tsx` | eski |
 | `admin-mails-refused` | Pochta — Rad etilgan | sahifa | `/mails/refused` | `src/pages/mails/index.tsx` | eski |
@@ -1765,15 +1765,15 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-dispatch-scan` | Biriktirish — skan savati | sahifa | `/dispatch` | `src/pages/dispatch/index.tsx` | eski |
 | `manager-dispatch-courier-dialog` | Kuryer tanlash oynasi | oyna | `/dispatch` | `src/pages/dispatch/index.tsx` | eski |
 | `manager-dispatch-camera-dialog` | Biriktirish — kamera | oyna | `/dispatch` | `src/pages/dispatch/index.tsx` | eski |
-| `manager-orders-list-all` | Buyurtmalar — Hamma buyurtmalar | sahifa | `/orders` | `src/pages/orders/index.tsx` | eski |
-| `manager-orders-list-pending` | Buyurtmalar — Kutilayotgan | sahifa | `/orders` | `src/pages/orders/index.tsx` | eski |
-| `manager-orders-list-cancelled` | Buyurtmalar — Bekor qilinganlar (HQ'ga yuborish) | sahifa | `/orders` | `src/pages/orders/index.tsx` | eski |
-| `manager-orders-sell-dialog` | Sotish oynasi | oyna | `/orders`, `/orders/edit/:orderId` | `src/pages/orders/list/courier/list/SellModal.tsx` | eski |
-| `manager-orders-cancel-dialog` | Bekor qilish oynasi | oyna | `/orders`, `/orders/edit/:orderId` | `src/pages/orders/list/courier/list/CancelModal.tsx` | eski |
-| `manager-orders-rollback-dialog` | Buyurtmani qaytarish tasdig'i | oyna | `/orders`, `/orders/edit/:orderId` | `src/pages/orders/index.tsx`, `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
-| `manager-orders-detail` | Buyurtma tafsiloti | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
-| `manager-orders-detail-edit-address-dialog` | Manzilni tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
-| `manager-orders-detail-edit-products-dialog` | Buyurtmani tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
+| `manager-orders-list-all` | Buyurtmalar — Hamma buyurtmalar | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
+| `manager-orders-list-pending` | Buyurtmalar — Kutilayotgan | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
+| `manager-orders-list-cancelled` | Buyurtmalar — Bekor qilinganlar (HQ'ga yuborish) | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
+| `manager-orders-sell-dialog` | Sotish oynasi | oyna | `/orders`, `/orders/edit/:orderId` | `src/pages/orders/list/courier/list/SellModal.tsx` | v2 |
+| `manager-orders-cancel-dialog` | Bekor qilish oynasi | oyna | `/orders`, `/orders/edit/:orderId` | `src/pages/orders/list/courier/list/CancelModal.tsx` | v2 |
+| `manager-orders-rollback-dialog` | Buyurtmani qaytarish tasdig'i | oyna | `/orders`, `/orders/edit/:orderId` | `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` | v2 |
+| `manager-orders-detail` | Buyurtma tafsiloti | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | v2 |
+| `manager-orders-detail-edit-address-dialog` | Manzilni tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | v2 |
+| `manager-orders-detail-edit-products-dialog` | Buyurtmani tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` | v2 |
 | `manager-courier-bulk-main` | Tezkor amal | sahifa | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | eski |
 | `manager-courier-bulk-camera-dialog` | Tezkor amal — kamera | oyna | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | eski |
 | `manager-new-orders-markets` | Qabul va yaratish — Marketlar | sahifa | `/new-orders` | `src/pages/new_orders/markets/index.tsx` | eski |
@@ -1781,10 +1781,10 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-new-orders-market-detail-camera` | Market buyurtmalari — qabul — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). |
 | `manager-new-orders-receive-confirm-dialog` | Qo'lda qabul qilish tasdig'i | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | eski |
 | `manager-new-orders-delete-confirm-dialog` | Buyurtmani o'chirish tasdig'i | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | eski |
-| `manager-new-orders-create-manual-step1` | Buyurtma yaratish — market tanlash | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step1Market.tsx` | eski |
-| `manager-new-orders-create-manual-step2` | Buyurtma yaratish — ma'lumotlar | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step2Combined.tsx` | eski |
-| `manager-new-orders-create-ai` | Buyurtma yaratish — AI bilan | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | eski |
-| `manager-new-orders-create-ai-confirm-dialog` | AI buyurtmalarni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | eski |
+| `manager-new-orders-create-manual-step1` | Buyurtma yaratish — market tanlash | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step1Market.tsx` | v2 |
+| `manager-new-orders-create-manual-step2` | Buyurtma yaratish — ma'lumotlar | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step2Combined.tsx` | v2 |
+| `manager-new-orders-create-ai` | Buyurtma yaratish — AI bilan | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | v2 |
+| `manager-new-orders-create-ai-confirm-dialog` | AI buyurtmalarni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | v2 |
 | `manager-new-orders-incoming-sources` | Kiruvchi posilkalar — manba tanlash | sahifa | `/new-orders/incoming` | `src/pages/incoming-orders/SourcePicker.tsx` | eski |
 | `manager-new-orders-incoming-scan` | Kiruvchi posilkalar — skanerlash | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | eski |
 | `manager-new-orders-incoming-scan-camera` | Kiruvchi posilkalar — skanerlash — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri. |
@@ -1837,26 +1837,26 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `registrator-dispatch-empty` | Biriktirish — bo'sh holat | sahifa | `/dispatch` | `src/pages/dispatch/index.tsx` | eski |
 | `registrator-dispatch-camera-scanner-dialog` | Biriktirish — kamera skaneri | oyna | `/dispatch` | `src/pages/dispatch/index.tsx` | eski |
 | `registrator-dispatch-courier-select-dialog` | Biriktirish — kuryer tanlash | oyna | `/dispatch` | `src/pages/dispatch/index.tsx` | eski |
-| `registrator-orders-list` | Buyurtmalar ro'yxati | sahifa | `/orders` | `src/pages/orders/index.tsx` | eski |
-| `registrator-orders-filters-mobile` | Buyurtmalar — filtr paneli (telefon) | oyna · faqat telefon | `/orders` | `src/pages/orders/list/OrderFilters.tsx` | eski |
-| `registrator-orders-detail` | Buyurtma tafsiloti | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
-| `registrator-orders-detail-edit-order-dialog` | Buyurtmani tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
-| `registrator-orders-detail-edit-address-dialog` | Manzilni tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
+| `registrator-orders-list` | Buyurtmalar ro'yxati | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
+| `registrator-orders-filters-mobile` | Buyurtmalar — filtr paneli (telefon) | oyna · faqat telefon | `/orders` | `src/pages/orders/list/OrderFilters.tsx` | v2 |
+| `registrator-orders-detail` | Buyurtma tafsiloti | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | v2 |
+| `registrator-orders-detail-edit-order-dialog` | Buyurtmani tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` | v2 |
+| `registrator-orders-detail-edit-address-dialog` | Manzilni tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | v2 |
 | `registrator-new-orders-markets` | Qabul va yaratish — Marketlar | sahifa | `/new-orders` | `src/pages/new_orders/markets/index.tsx` | eski |
 | `registrator-new-orders-market-detail` | Market buyurtmalari — qabul | sahifa | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | eski |
 | `registrator-new-orders-market-detail-camera` | Market buyurtmalari — qabul — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). |
 | `registrator-new-orders-market-detail-receive-dialog` | Qabul qilish tasdig'i | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | eski |
 | `registrator-new-orders-market-detail-delete-dialog` | Buyurtmani o'chirish tasdig'i | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | eski |
-| `registrator-new-orders-market-order-edit` | Market buyurtmasini tahrirlash | sahifa | `/new-orders/:marketId/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
+| `registrator-new-orders-market-order-edit` | Market buyurtmasini tahrirlash | sahifa | `/new-orders/:marketId/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | qisman — Ayni komponent /orders/edit/:orderId bilan — sahifa v2 da, lekin shu route'ning o'z maketi hali ko'chirilmagan: tafsilot ko'rinishi (`registrator-orders-detail`) chiqadi. |
 | `registrator-new-orders-cancelled` | Bekor qilinganlar — marketlar (HQ) | sahifa | `/new-orders/cancelled` | `src/pages/new_orders/cancelled/index.tsx` | eski |
 | `registrator-new-orders-cancelled-detail` | Bekor qilinganlarni marketga topshirish (HQ) | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
 | `registrator-new-orders-cancelled-manual-dialog` | QR buzilganini tasdiqlash (HQ) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
 | `registrator-new-orders-cancelled-scanner-dialog` | Market QR skanerlash (HQ) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
-| `registrator-new-orders-create-step1` | Buyurtma yaratish — market tanlash | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step1Market.tsx` | eski |
-| `registrator-new-orders-create-market-picker-dialog` | Buyurtma yaratish — market tanlash oynasi | oyna | `/new-orders/create` | `src/pages/orders/create/ui/Step1Market.tsx` | eski |
-| `registrator-new-orders-create-step2` | Buyurtma yaratish — qo'lda forma | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step2Combined.tsx` | eski |
-| `registrator-new-orders-create-ai` | Buyurtma yaratish — AI rejimi | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | eski |
-| `registrator-new-orders-create-ai-confirm-dialog` | AI buyurtmalarni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | eski |
+| `registrator-new-orders-create-step1` | Buyurtma yaratish — market tanlash | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step1Market.tsx` | v2 |
+| `registrator-new-orders-create-market-picker-dialog` | Buyurtma yaratish — market tanlash oynasi | oyna | `/new-orders/create` | `src/pages/orders/create/ui/MarketPicker.tsx` | v2 |
+| `registrator-new-orders-create-step2` | Buyurtma yaratish — qo'lda forma | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step2Combined.tsx` | v2 |
+| `registrator-new-orders-create-ai` | Buyurtma yaratish — AI rejimi | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | v2 |
+| `registrator-new-orders-create-ai-confirm-dialog` | AI buyurtmalarni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | v2 |
 | `registrator-mails-today` | Pochta — Bugungi pochtalar | sahifa | `/mails/today` | `src/pages/mails/index.tsx` | eski |
 | `registrator-mails-return` | Pochta — Qaytarish | sahifa | `/mails/return` | `src/pages/mails/index.tsx` | eski |
 | `registrator-mails-refused` | Pochta — Rad etilgan pochtalar | sahifa | `/mails/refused` | `src/pages/mails/index.tsx` | eski |
@@ -1882,15 +1882,15 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 |---|---|---|---|---|---|
 | `market-dashboard-home` | Mening dashboardim | sahifa | `/` | `src/pages/dashboard/MarketDashboardPage.tsx` | eski |
 | `market-dashboard-extra-cost-approvals` | Dashboard · Xarajat tasdiqlari | sahifa | `/` | `src/pages/dashboard/MarketDashboardPage.tsx` | eski |
-| `market-orders-list` | Buyurtmalar ro'yxati | sahifa | `/orders` | `src/pages/orders/index.tsx` | eski |
-| `market-orders-detail` | Buyurtma tafsilotlari | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
+| `market-orders-list` | Buyurtmalar ro'yxati | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
+| `market-orders-detail` | Buyurtma tafsilotlari | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | v2 |
 | `market-new-orders-list` | Yangi buyurtmalar | sahifa | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | eski |
 | `market-new-orders-delete-dialog` | Buyurtmani o'chirish | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | eski |
-| `market-new-orders-edit` | Yangi buyurtma tafsiloti | sahifa | `/new-orders/:marketId/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
-| `market-new-orders-create-manual` | Buyurtma yaratish · Qo'lda | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step2Combined.tsx` | eski |
-| `market-new-orders-create-ai-input` | Buyurtma yaratish · AI kiritish | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiInputPanel.tsx` | eski |
-| `market-new-orders-create-ai-preview` | Buyurtma yaratish · AI natijalari | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` | eski |
-| `market-new-orders-create-ai-confirm-dialog` | AI · Yaratishni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | eski |
+| `market-new-orders-edit` | Yangi buyurtma tafsiloti | sahifa | `/new-orders/:marketId/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | qisman — Ayni komponent /orders/edit/:orderId bilan — sahifa v2 da, lekin shu route'ning o'z maketi hali ko'chirilmagan: tafsilot ko'rinishi (`market-orders-detail`) chiqadi. |
+| `market-new-orders-create-manual` | Buyurtma yaratish · Qo'lda | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step2Combined.tsx` | v2 |
+| `market-new-orders-create-ai-input` | Buyurtma yaratish · AI kiritish | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiInputPanel.tsx` | v2 |
+| `market-new-orders-create-ai-preview` | Buyurtma yaratish · AI natijalari | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` | v2 |
+| `market-new-orders-create-ai-confirm-dialog` | AI · Yaratishni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | v2 |
 | `market-new-orders-cancelled` | Bekor qilinganlar | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
 | `market-new-orders-cancelled-qr-dialog` | Bekor qilinganlar · QR kod | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
 | `market-products-list` | Mahsulotlar | sahifa | `/products` | `src/pages/products/list/index.tsx` | eski |
@@ -1909,17 +1909,17 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `courier-dashboard-home` | Bosh sahifa — kuryer statistikasi | sahifa | `/` | `src/pages/dashboard/DashboardPage.tsx` | eski |
 | `courier-dashboard-mobile-menu` | Menyu ochiq — yon panel / pastki varaq | oyna · faqat planshet + telefon | `(qobiq)` | `src/widgets/Sidebar/ui/MobileMenu.tsx` | v2 |
 | `courier-dashboard-mobile-search` | Global qidiruv (telefon) | oyna · faqat telefon | `(qobiq)` | `src/widgets/header/ui/SearchScreen.tsx` | v2 |
-| `courier-orders-pending` | Buyurtmalar — Kutilayotganlar | sahifa | `/orders` | `src/pages/orders/list/courier/index.tsx` | eski |
-| `courier-orders-tab-switcher-open` | Buyurtmalar — tab almashtirildi, yuklanmoqda | sahifa · faqat telefon | `/orders` | `src/pages/orders/list/courier/list/tabs.tsx` | eski |
-| `courier-orders-all` | Buyurtmalar — Hammasi | sahifa | `/orders` | `src/pages/orders/list/courier/index.tsx` | eski |
-| `courier-orders-cancelled` | Buyurtmalar — Bekor qilinganlar | sahifa | `/orders` | `src/pages/orders/list/courier/index.tsx` | eski |
-| `courier-orders-sell-dialog` | Sotish oynasi | oyna | `/orders` | `src/pages/orders/list/courier/list/SellModal.tsx` | eski |
-| `courier-orders-sell-extra-cost-dialog` | Sotish — qo'shimcha xarajat bilan | oyna | `/orders` | `src/pages/orders/list/courier/list/SellModal.tsx` | eski |
-| `courier-orders-sell-partial-dialog` | Qisman sotish oynasi | oyna | `/orders` | `src/pages/orders/list/courier/list/SellModal.tsx` | eski |
-| `courier-orders-action-approval-pending` | Market tasdig'i kutilmoqda | oyna | `/orders` | `src/pages/orders/list/courier/list/SellModal.tsx` | eski |
-| `courier-orders-cancel-dialog` | Bekor qilish oynasi | oyna | `/orders` | `src/pages/orders/list/courier/list/CancelModal.tsx` | eski |
-| `courier-orders-rollback-confirm` | Buyurtmani qaytarish tasdig'i | oyna | `/orders` | `src/pages/orders/list/courier/index.tsx` | eski |
-| `courier-orders-detail` | Buyurtma tafsilotlari | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | eski |
+| `courier-orders-pending` | Buyurtmalar — Kutilayotganlar | sahifa | `/orders` | `src/pages/orders/list/courier/index.tsx` | v2 |
+| `courier-orders-tab-switcher-open` | Buyurtmalar — tab almashtirildi, yuklanmoqda | sahifa · faqat telefon | `/orders` | `src/pages/orders/list/courier/list/tabs.tsx` | v2 |
+| `courier-orders-all` | Buyurtmalar — Hammasi | sahifa | `/orders` | `src/pages/orders/list/courier/index.tsx` | v2 |
+| `courier-orders-cancelled` | Buyurtmalar — Bekor qilinganlar | sahifa | `/orders` | `src/pages/orders/list/courier/index.tsx` | v2 |
+| `courier-orders-sell-dialog` | Sotish oynasi | oyna | `/orders` | `src/pages/orders/list/courier/list/SellModal.tsx` | v2 |
+| `courier-orders-sell-extra-cost-dialog` | Sotish — qo'shimcha xarajat bilan | oyna | `/orders` | `src/pages/orders/list/courier/list/SellModal.tsx` | v2 |
+| `courier-orders-sell-partial-dialog` | Qisman sotish oynasi | oyna | `/orders` | `src/pages/orders/list/courier/list/SellModal.tsx` | v2 |
+| `courier-orders-action-approval-pending` | Market tasdig'i kutilmoqda | oyna | `/orders` | `src/pages/orders/list/courier/list/SellModal.tsx` | v2 |
+| `courier-orders-cancel-dialog` | Bekor qilish oynasi | oyna | `/orders` | `src/pages/orders/list/courier/list/CancelModal.tsx` | v2 |
+| `courier-orders-rollback-confirm` | Buyurtmani qaytarish tasdig'i | oyna | `/orders` | `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` | v2 |
+| `courier-orders-detail` | Buyurtma tafsilotlari | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | v2 |
 | `courier-courier-bulk-main` | Tezkor amal — kunni yakunlash | sahifa | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | eski |
 | `courier-courier-bulk-scanner-camera` | Tezkor amal — kamera skaneri | oyna | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | eski |
 | `courier-courier-bulk-scanner-camera-list` | Tezkor amal — kamera, skanerlanganlar ro'yxati | oyna · faqat telefon | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | yangi (kodda yo'q) — Kamera oynasida «skanerlanganlar ro'yxati» varag'i yo'q (ScannerCameraModal faqat kamera). |
@@ -2002,7 +2002,10 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/app/lib/routes.tsx` | `/`, `/new-orders/cancelled/:marketId`, `/new-orders/:marketId`, `/new-orders/:marketId/edit/:orderId` |
 | `src/auth/SessionExpiryCountdown.tsx` | `/login` |
 | `src/auth/loginNotice.ts` | `/login` |
-| `src/entities/orders/ui/ExtraCostApproval.tsx` | `/orders` |
+| `src/entities/order/ui/ProofGallery.tsx` | `/orders/edit/:orderId` |
+| `src/entities/order/ui/ReturnRequestedTag.tsx` | `/orders` |
+| `src/entities/orders/ui/ExtraCostApprovalAlerts.tsx` | `/orders` |
+| `src/entities/orders/ui/ExtraCostApprovalTag.tsx` | `/orders` |
 | `src/features/auth/index.tsx` | `/login` |
 | `src/features/auth/ui/LoginForm.tsx` | `/login` |
 | `src/features/branch-add-employee/ui/AddEmployeeModal.tsx` | `/branches/:id` |
@@ -2014,6 +2017,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/features/notification-dispatch/ui/NotificationDispatchForm.tsx` | `/notifications/send` |
 | `src/features/order-return/ui/InitiateReturnModal.tsx` | `/orders/edit/:orderId` |
 | `src/features/order-return/ui/MarkReturnedModal.tsx` | `/orders/edit/:orderId` |
+| `src/features/order-tracking/ui/TrackingTimelineItem.tsx` | `/orders/edit/:orderId` |
 | `src/features/push-notifications/ui/PushPermissionButton.tsx` | `/settings`, `/inbox` |
 | `src/features/user/create-user/ui/CreateUserForm.tsx` | `/all-users/create-user` |
 | `src/features/user/create-user/ui/RoleSelector.tsx` | `/all-users/create-user` |
@@ -2097,12 +2101,25 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/new_orders/cancelled/index.tsx` | `/new-orders/cancelled` |
 | `src/pages/new_orders/cancelled/utils.ts` | `/new-orders/cancelled`, `/new-orders/cancelled/:marketId` |
 | `src/pages/new_orders/components/OrderCard.tsx` | `/new-orders/:marketId` |
+| `src/pages/new_orders/components/detail/AddressCard.tsx` | `/orders/edit/:orderId` |
+| `src/pages/new_orders/components/detail/CourierCards.tsx` | `/orders/edit/:orderId` |
+| `src/pages/new_orders/components/detail/CustomerCard.tsx` | `/orders/edit/:orderId` |
+| `src/pages/new_orders/components/detail/DetailAlerts.tsx` | `/orders/edit/:orderId` |
+| `src/pages/new_orders/components/detail/DetailHeader.tsx` | `/orders/edit/:orderId` |
+| `src/pages/new_orders/components/detail/PaymentCard.tsx` | `/orders/edit/:orderId` |
+| `src/pages/new_orders/components/detail/ProductsCard.tsx` | `/orders/edit/:orderId` |
+| `src/pages/new_orders/components/detail/ProofCard.tsx` | `/orders/edit/:orderId` |
+| `src/pages/new_orders/components/detail/orderDetailAccess.ts` | `/orders/edit/:orderId` |
+| `src/pages/new_orders/components/detail/orderDetailModel.ts` | `/orders/edit/:orderId` |
+| `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | `/orders/edit/:orderId` |
+| `src/pages/new_orders/components/editDialogs/EditCustomerDialog.tsx` | `/orders/edit/:orderId` |
+| `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` | `/orders/edit/:orderId` |
+| `src/pages/new_orders/components/editDialogs/index.ts` | `/orders/edit/:orderId` |
 | `src/pages/new_orders/components/lib/printLabelPdf.ts` | `/new-orders/:marketId` |
 | `src/pages/new_orders/components/newOrderReceiveRules.ts` | `/new-orders/:marketId` |
 | `src/pages/new_orders/components/newOrderUpdateRules.ts` | `/orders/edit/:orderId`, `/new-orders/:marketId/edit/:orderId` |
 | `src/pages/new_orders/components/new_orderDetail.tsx` | `/new-orders/:marketId` |
 | `src/pages/new_orders/components/new_orderUpdate.tsx` | `/orders/edit/:orderId`, `/new-orders/:marketId/edit/:orderId` |
-| `src/pages/new_orders/components/new_orderUpdate.ui.tsx` | `/orders/edit/:orderId`, `/new-orders/:marketId/edit/:orderId` |
 | `src/pages/new_orders/external_orders/create.tsx` | `/integrations/sources/create` |
 | `src/pages/new_orders/external_orders/detail.tsx` | `/integrations/sources/:id` |
 | `src/pages/new_orders/external_orders/index.tsx` | `/integrations/sources` |
@@ -2120,10 +2137,14 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/ops/tabs.ts` | `/ops` |
 | `src/pages/orders/create/index.tsx` | `/new-orders/create` |
 | `src/pages/orders/create/model/orderCreateForm.ts` | `/new-orders/create` |
+| `src/pages/orders/create/ui/CreateAlert.tsx` | `/new-orders/create` |
 | `src/pages/orders/create/ui/CreateModeTabs.tsx` | `/new-orders/create` |
+| `src/pages/orders/create/ui/MarketPicker.tsx` | `/new-orders/create` |
 | `src/pages/orders/create/ui/OrderStepper.tsx` | `/new-orders/create` |
 | `src/pages/orders/create/ui/Step1Market.tsx` | `/new-orders/create` |
 | `src/pages/orders/create/ui/Step2Combined.tsx` | `/new-orders/create` |
+| `src/pages/orders/create/ui/Step2Summary.tsx` | `/new-orders/create` |
+| `src/pages/orders/create/ui/TodayOrdersCard.tsx` | `/new-orders/create` |
 | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | `/new-orders/create` |
 | `src/pages/orders/create/ui/ai/AiCreatePanel.tsx` | `/new-orders/create` |
 | `src/pages/orders/create/ui/ai/AiCreatedList.tsx` | `/new-orders/create` |
@@ -2132,15 +2153,19 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/orders/index.tsx` | `/orders` |
 | `src/pages/orders/lib/exportOrdersToExcel.ts` | `/orders` |
 | `src/pages/orders/list/OrderFilters.tsx` | `/orders` |
-| `src/pages/orders/list/OrderStatusBadge.tsx` | `/orders` |
+| `src/pages/orders/list/OrderFiltersSheet.tsx` | `/orders` |
 | `src/pages/orders/list/OrdersTable.tsx` | `/orders` |
 | `src/pages/orders/list/courier/index.tsx` | `/orders` |
 | `src/pages/orders/list/courier/list/CancelModal.tsx` | `/orders`, `/orders/edit/:orderId` |
+| `src/pages/orders/list/courier/list/OrderActionParts.tsx` | `/orders` |
+| `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` | `/orders`, `/orders/edit/:orderId` |
 | `src/pages/orders/list/courier/list/SellModal.tsx` | `/orders`, `/orders/edit/:orderId` |
 | `src/pages/orders/list/courier/list/ordertable/AllOrdersTable.tsx` | `/orders` |
 | `src/pages/orders/list/courier/list/ordertable/CancelledOrdersTable.tsx` | `/orders` |
+| `src/pages/orders/list/courier/list/ordertable/CourierOrdersTable.tsx` | `/orders` |
 | `src/pages/orders/list/courier/list/ordertable/pendingOrderTable.tsx` | `/orders` |
 | `src/pages/orders/list/courier/list/tabs.tsx` | `/orders` |
+| `src/pages/orders/list/orderFilterModel.ts` | `/orders` |
 | `src/pages/partners/index.tsx` | `/integrations/partners` |
 | `src/pages/payments/components/CashboxActionFormCard.tsx` | `/payments/cash-detail/:id` |
 | `src/pages/payments/components/CashboxFormPopup.tsx` | `/payments/main-cashbox` |
@@ -2193,7 +2218,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/shared/components/PrintModeSelect.tsx` | `/mails/:id` |
 | `src/shared/components/ScanFeedbackOverlay.tsx` | `/scan` |
 | `src/shared/components/ScannerCameraModal.tsx` | `/new-orders/cancelled/:marketId`, `/dispatch`, `/courier-bulk` |
-| `src/shared/components/popupConfirm.tsx` | `/orders`, `/new-orders/:marketId`, `/products`, `/all-users` |
+| `src/shared/components/popupConfirm.tsx` | `/new-orders/:marketId`, `/products`, `/all-users` |
 | `src/shared/components/popupSelect.tsx` | `/dispatch`, `/payments`, `/products` |
 | `src/shared/components/popupUpdate.tsx` | `/products` |
 | `src/shared/lib/useCameraQrScanner.ts` | `/scan` |
@@ -2235,6 +2260,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/widgets/notification-inbox/ui/NotificationInboxItem.tsx` | `/notifications/send`, `/inbox` |
 | `src/widgets/notification-inbox/ui/NotificationInboxList.tsx` | `/inbox` |
 | `src/widgets/notification-table/ui/NotificationTable.tsx` | `/notifications` |
+| `src/widgets/order-meta/ui/OrderMeta.tsx` | `/orders/edit/:orderId` |
+| `src/widgets/order-tracking/ui/OrderTracking.tsx` | `/orders/edit/:orderId` |
 | `src/widgets/user-create/ui/CreateUserWidget.tsx` | `/all-users/create-user` |
 | `src/widgets/user-detail/ui/MarketTelegramTokenCard.tsx` | `/all-users/:id` |
 | `src/widgets/user-detail/ui/UserDetailWidget.tsx` | `/new-orders/userDetail/:id`, `/all-users/:id`, `/profile` |

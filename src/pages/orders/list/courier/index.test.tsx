@@ -49,6 +49,13 @@ vi.mock("../../../../entities/orders", () => ({
   }),
 }));
 
+/**
+ * Oyna ichidagi tugma. Dizayn v2 `Dialog` `#ui-portal` ga chiziladi; u testlar orasida saqlanadi va
+ * keyingi testning konteyneridan OLDIN turadi — `getAllByRole(…).at(-1)` endi qatordagi tugmani olardi.
+ * «Yopish» — oxirgisi (sarlavhadagi × ham «Yopish»).
+ */
+const dialogButton = (name: RegExp | string) => within(screen.getByRole("dialog")).getAllByRole("button", { name }).at(-1)!;
+
 const renderPage = () => renderWithProviders(<CourierOrders />, { route: "/orders?status=waiting" });
 
 const openModal = async (user: ReturnType<typeof userEvent.setup>, buttonName: RegExp) => {
@@ -68,12 +75,15 @@ describe("Courier orders — extra cost approval flow", () => {
     cancelMutate.mockImplementation((_vars, options: MutateOptions) => options.onSuccess?.(approvalResponse));
     renderPage();
 
-    await openModal(user, /^Bekor qilish$/);
-    const [extraCostInput] = screen.getAllByRole("spinbutton");
+    // Qator tugmasi nomi maketdagidek: «№1251165 ni bekor qilish» (ko'rinadigan matn «Bekor qilish»).
+    await openModal(user, /ni bekor qilish$/);
+    const extraCostInput = screen.getByLabelText("Qo'shimcha xarajat");
     await user.clear(extraCostInput);
     await user.type(extraCostInput, "5000");
-    await user.selectOptions(screen.getByLabelText(/^Sabab/), "CUSTOMER_REFUSED");
-    await user.click(screen.getAllByRole("button", { name: /^Bekor qilish$/ }).at(-1)!);
+    // Sabab — `Select` (combobox): ochib, variantni bosish.
+    await user.click(screen.getByRole("combobox", { name: /^Sabab/ }));
+    await user.click(await screen.findByRole("option", { name: "Mijoz rad etdi" }));
+    await user.click(dialogButton(/^Bekor qilish$/));
 
     expect(cancelMutate).toHaveBeenCalledWith(
       { orderId: "1251165", data: expect.objectContaining({ extraCost: 5000, reason: "CUSTOMER_REFUSED" }) },
@@ -89,16 +99,20 @@ describe("Courier orders — extra cost approval flow", () => {
 
     expect(courierRefetchInterval?.(listResponse)).toBe(false);
 
-    await openModal(user, /^Bekor qilish$/);
-    const [extraCostInput] = screen.getAllByRole("spinbutton");
+    // Qator tugmasi nomi maketdagidek: «№1251165 ni bekor qilish» (ko'rinadigan matn «Bekor qilish»).
+    await openModal(user, /ni bekor qilish$/);
+    const extraCostInput = screen.getByLabelText("Qo'shimcha xarajat");
     await user.clear(extraCostInput);
     await user.type(extraCostInput, "5000");
-    await user.selectOptions(screen.getByLabelText(/^Sabab/), "CUSTOMER_REFUSED");
-    await user.click(screen.getAllByRole("button", { name: /^Bekor qilish$/ }).at(-1)!);
-    await user.click(screen.getByText("Yopish", { selector: "button" }));
+    // Sabab — `Select` (combobox): ochib, variantni bosish.
+    await user.click(screen.getByRole("combobox", { name: /^Sabab/ }));
+    await user.click(await screen.findByRole("option", { name: "Mijoz rad etdi" }));
+    await user.click(dialogButton(/^Bekor qilish$/));
+    await user.click(dialogButton("Yopish"));
 
     const row = screen.getByText("TEST-E2E-AND-4").closest("tr") as HTMLElement;
-    expect(within(row).getByText("Tasdiqqa yuborilgan")).toBeInTheDocument();
+    // Kuryer maketi (`courier-orders-action-approval-pending`): «Tasdiq kutilmoqda» belgisi.
+    expect(within(row).getByText("Tasdiq kutilmoqda")).toBeInTheDocument();
     expect(courierRefetchInterval?.(listResponse)).toBe(EXTRA_COST_APPROVAL_POLL_MS);
     // Market tasdiqladi → buyurtma holati o'zgardi → so'rov to'xtaydi.
     expect(courierRefetchInterval?.({ data: [{ ...waitingOrder, status: "cancelled" }] })).toBe(false);
@@ -111,14 +125,16 @@ describe("Courier orders — extra cost approval flow", () => {
     );
     renderPage();
 
-    await openModal(user, /^Sotish$/);
-    await user.click(screen.getAllByRole("button", { name: /^Sotish$/ }).at(-1)!);
+    await openModal(user, /ni sotish$/);
+    await user.click(dialogButton(/^Sotish$/));
 
     expect(sellMutate).toHaveBeenCalledWith(
       { orderId: "1251165", data: expect.objectContaining({ extraCost: 0 }) },
       expect.any(Object),
     );
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    // Tasdiq so'ralmadi — oyna yopildi, «Market tasdig'i kutilmoqda» holati yo'q; amal bajarilgani xabar bilan.
+    expect(screen.queryByText("Market tasdig'i kutilmoqda")).not.toBeInTheDocument();
+    expect(await screen.findByText("Buyurtma sotildi")).toBeInTheDocument();
     expect(screen.queryByText("Qo'shimcha to'lov")).not.toBeInTheDocument();
   });
 });

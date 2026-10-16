@@ -6,11 +6,10 @@ import {
   recordPendingExtraCostApproval,
   resolveOrderActionResponse,
 } from "./extraCostApproval";
-import {
-  ExtraCostApprovalBadge,
-  ExtraCostApprovalPendingBanner,
-  ExtraCostApprovalSentNote,
-} from "./ui/ExtraCostApproval";
+import { ExtraCostApprovalBadge } from "./ui/ExtraCostApproval";
+// v1 SentNote / PendingBanner o'rnini v2 ogohlantirishlari egalladi (buyurtma tafsiloti
+// v2 ga o'tgach v1 lari ishlatilmay qoldi) — amal nomi talabi endi shularda tekshiriladi.
+import { ExtraCostPendingAlert, ExtraCostSentAlert } from "./ui/ExtraCostApprovalAlerts";
 
 /**
  * fix3b M3 — kutilayotgan qo'shimcha xarajat tasdig'i QAYSI amal uchun
@@ -61,7 +60,7 @@ describe("ExtraCostApproval UI — amal ko'rinadi (fix3b M3)", () => {
   };
 
   it("kuryerning eslatmasida amal nomi bor", () => {
-    renderWithProviders(<ExtraCostApprovalSentNote approval={approval} />);
+    renderWithProviders(<ExtraCostSentAlert approval={approval} />);
 
     expect(
       screen.getByText(/^Bekor qilish: 3\D?000 so'm qo'shimcha xarajat .* market tasdig'iga yuborilgan$/),
@@ -72,7 +71,7 @@ describe("ExtraCostApproval UI — amal ko'rinadi (fix3b M3)", () => {
     ["sell", "Sotish"],
     ["partly_sell", "Qisman sotish"],
   ] as const)("%s → '%s'", (action, label) => {
-    renderWithProviders(<ExtraCostApprovalSentNote approval={{ ...approval, action }} />);
+    renderWithProviders(<ExtraCostSentAlert approval={{ ...approval, action }} />);
 
     expect(screen.getByText(new RegExp(`^${label}: `))).toBeInTheDocument();
   });
@@ -85,13 +84,14 @@ describe("ExtraCostApproval UI — amal ko'rinadi (fix3b M3)", () => {
   });
 
   it("kutish banneri so'ralgan amalni ko'rsatadi", () => {
-    renderWithProviders(<ExtraCostApprovalPendingBanner amount={5000} action="sell" />);
+    renderWithProviders(<ExtraCostPendingAlert amount={5000} action="sell" />);
 
-    expect(screen.getByRole("status")).toHaveTextContent("So'ralgan amal: Sotish");
+    expect(screen.getByRole("status")).toHaveTextContent("So'ralgan amalSotish");
+    expect(screen.getByText("So'ralgan amal").nextElementSibling).toHaveTextContent("Sotish");
   });
 
   it("amalsiz banner avvalgidek", () => {
-    renderWithProviders(<ExtraCostApprovalPendingBanner amount={5000} />);
+    renderWithProviders(<ExtraCostPendingAlert amount={5000} />);
 
     expect(screen.getByRole("status")).not.toHaveTextContent("So'ralgan amal");
     expect(screen.getByRole("status")).toHaveTextContent("Market tasdig'i kutilmoqda");

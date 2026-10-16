@@ -1,11 +1,11 @@
-// dizayn-v2: courier-orders-sell-dialog, courier-orders-sell-partial-dialog, courier-orders-sell-extra-cost-dialog, manager-orders-sell-dialog
-import { memo, useEffect, useId, useState, type FormEvent } from "react";
-import { createPortal } from "react-dom";
-import { Camera, CircleCheck, Info, LoaderCircle, Minus, PackageCheck, Plus, TriangleAlert, X } from "lucide-react";
+// dizayn-v2: courier-orders-sell-dialog, courier-orders-sell-partial-dialog, courier-orders-sell-extra-cost-dialog, courier-orders-action-approval-pending, manager-orders-sell-dialog
+import { memo, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { CircleCheck, Clock, Info, Minus, PackageCheck, Plus, Tag, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { cx } from "../../../../../shared/lib/cx";
 import { getOrderItemName } from "../../../../../shared/lib/orderItemName";
-import { useFocusTrap } from "../../../../../shared/lib/useFocusTrap";
-import { formatMoneyLocalized, formatNumberLocalized } from "../../../../../shared/lib/formatMoney";
+import { formatMoneyLocalized } from "../../../../../shared/lib/formatMoney";
+import { Button, Dialog, Field, IconButton, TextInput } from "../../../../../shared/ui/primitives";
 import {
   getActivePendingApproval,
   usePendingExtraCostApprovals,
@@ -20,30 +20,32 @@ import {
   toKnownAmount,
 } from "../../../../../entities/orders/proofRequirement";
 import { getMarketPaidMax, type SellOrderPayload } from "../../../../../entities/orders/sellPayment";
+import { OrderCustomerSummary, ProofField } from "./OrderActionParts";
+import {
+  getDeliveryLabelKey,
+  isProofFileTooLarge,
+  MAX_PROOF_SIZE_MB,
+  toAmount,
+  type ActionOrder,
+  type ActionOrderItem,
+  type OrderActionVariant,
+} from "./orderActionModel";
+import { useActionDialogSession, useApprovalStateFocus } from "./useActionDialogSession";
 
 /**
- * SOTISH / QISMAN SOTISH — kuryer, menejer va buyurtma tafsilotida bitta oyna.
+ * SOTISH / QISMAN SOTISH — kuryer, menejer va buyurtma tafsilotida bitta oyna (`Dialog`: telefonda
+ * pastki varaqa, fokus tuzog'i, Esc, so'rov ketayotganda yopilmaydi).
  *
- * To'liq sotishda «Marketga to'langan summa» (uguUEhin): kuryer mijozdan
- * olgan puldan marketga o'zi bergan qism. Faqat 0 dan katta bo'lsa
- * yuboriladi; hamkor (`external_id`) buyurtmasida ko'rsatilmaydi.
+ * Maketlar: `courier-orders-sell-dialog` (+ `-partial-`, `-extra-cost-`, `-action-approval-pending`) —
+ * `variant="courier"` (sukut); `manager-orders-sell-dialog` — `variant="manager"` (menejer ro'yxati va
+ * buyurtma tafsiloti — u yerda sotishni faqat hududiy menejer qiladi).
  *
- * Maket: `courier-orders-sell-dialog` (+ `-partial-`, `-extra-cost-`).
- * «Marketga to'langan summa» maketda yo'q — summa maydoni naqshida.
+ * To'liq sotishda «Marketga to'langan summa» (uguUEhin): kuryer mijozdan olgan puldan marketga o'zi
+ * bergan qism. Faqat 0 dan katta bo'lsa yuboriladi; hamkor (`external_id`) buyurtmasida ko'rsatilmaydi.
+ * Maketda yo'q — summa maydoni naqshida.
  */
 
-type OrderItem = {
-  id: string;
-  quantity: number;
-  /**
-   * Katalogdagi mahsulot. Ro'yxat javoblari har xil keladi: kuryer ro'yxatida
-   * `product` obyekti bor, admin ro'yxatida faqat `product_id`, hamkor
-   * (BeePost) posilkalarida esa ikkalasi ham `null` — nom `product_name` da.
-   */
-  product?: { name?: string | null; image_url?: string | null; id?: string | null } | null;
-  product_id?: string | null;
-  product_name?: string | null;
-};
+type OrderItem = ActionOrderItem;
 
 /**
  * Katalog mahsuloti id'si (katalogsiz hamkor qatorida — `null`). Qisman
@@ -59,26 +61,6 @@ const getCatalogProductId = (item: OrderItem): string | null => {
 const getItemName = (item: OrderItem, index: number): string =>
   getOrderItemName(item, `#${index + 1}`);
 
-type Order = {
-  id: string;
-  created_at: string;
-  status: string;
-  total_price: number;
-  where_deliver: string;
-  product_quantity: number;
-  market: { name: string; expense_proof_conditions?: string[] | null };
-  customer: { name: string; phone_number: string };
-  district: { name: string };
-  region: { name: string };
-  items: OrderItem[];
-  sell_requires_media?: boolean;
-  cancel_requires_media?: boolean;
-  /** Marketga to'lanishi kerak bo'lgan summa — «Marketga to'langan summa» chegarasi uchun. */
-  to_be_paid?: number | string | null;
-  /** Hamkor (BeePost/API) buyurtmasi — marketga to'lov maydoni ko'rsatilmaydi. */
-  external_id?: string | number | null;
-};
-
 type PartlySellPayload = {
   order_item_info: { order_item_id: string; product_id?: string; quantity: number }[];
   totalPrice: number;
@@ -88,7 +70,7 @@ type PartlySellPayload = {
 };
 
 type SellModalProps = {
-  order: Order | null;
+  order: ActionOrder | null;
   open: boolean;
   onClose: () => void;
   onSell: (orderId: string, payload: SellOrderPayload) => void;
@@ -102,78 +84,69 @@ type SellModalProps = {
    * Menejerda bu cheklov yo'q, shuning uchun faqat kuryer sahifasi yoqadi.
    */
   restrictExtraCostToCenter?: boolean;
+  /** Maket varianti (sukut `courier`; menejer ro'yxati — `manager`). */
+  variant?: OrderActionVariant;
 };
 
-const sanitizeAmountInput = (value: string) => value.replace(/\D/g, "");
-const MAX_PROOF_SIZE_MB = 10;
-const MAX_PROOF_SIZE_BYTES = MAX_PROOF_SIZE_MB * 1024 * 1024;
-
-// CODE-MAP retseptlari (BTN, INPUT).
-const BTN =
-  "inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border px-4 text-sm font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action disabled:cursor-not-allowed disabled:opacity-45 max-md:min-h-11";
-const BTN_SECONDARY = `${BTN} border-border-strong bg-surface text-text hover:bg-sunken`;
-const BTN_SUCCESS = `${BTN} border-transparent bg-success text-on-solid hover:brightness-110`;
-const INPUT =
-  "h-10 w-full rounded-[10px] border border-border-strong bg-input px-3 text-base text-text placeholder:text-text-subtle hover:border-text-subtle focus:border-action focus:outline-none focus:ring-3 focus:ring-focus disabled:cursor-not-allowed disabled:bg-sunken disabled:text-text-subtle aria-[invalid=true]:border-danger max-md:min-h-11 md:text-sm";
+/** `.el-label` — `Field` siz yorliq (qo'shimcha xarajat yozilmaydigan holat, mahsulotlar ro'yxati). */
 const LABEL = "text-[13px] font-semibold text-text";
-const ICON_BTN =
-  "inline-flex size-8 flex-none items-center justify-center rounded-lg border border-border-strong bg-surface text-text-muted transition-colors hover:bg-sunken hover:text-text focus-visible:outline-2 focus-visible:outline-action disabled:cursor-not-allowed disabled:opacity-45 max-md:size-11";
 
-const initials = (name?: string | null) =>
-  (name ?? "")
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("") || "—";
-
-/** Summa maydoni: raqamlar mingliklar bilan, o'ngda valyuta. */
-const AmountInput = ({
-  id,
-  value,
-  onChange,
-  currency,
-  language,
-  invalid,
-  required,
-  describedBy,
+/** Qisman sotish kaliti (`.el-switch`, CODE-MAP 2.2): butun qator — `role="switch"` tugma. */
+const PartialSwitch = ({
+  checked,
+  disabled,
+  description,
+  descriptionId,
+  onToggle,
+  label,
 }: {
-  id: string;
-  value: string;
-  onChange: (value: string) => void;
-  currency: string;
-  language: string;
-  invalid?: boolean;
-  required?: boolean;
-  describedBy?: string;
+  checked: boolean;
+  disabled: boolean;
+  description: ReactNode;
+  descriptionId: string;
+  onToggle: () => void;
+  label: string;
 }) => (
-  <div className="relative flex items-center">
-    <input
-      id={id}
-      type="text"
-      inputMode="numeric"
-      value={value ? formatNumberLocalized(value, { language }) : ""}
-      onChange={(event) => onChange(sanitizeAmountInput(event.target.value))}
-      placeholder="0"
-      aria-invalid={invalid || undefined}
-      aria-required={required || undefined}
-      aria-describedby={describedBy}
-      className={`${INPUT} pr-14`}
-    />
-    <span className="pointer-events-none absolute right-3 text-sm text-text-muted">{currency}</span>
-  </div>
+  <button
+    type="button"
+    role="switch"
+    aria-checked={checked}
+    aria-describedby={descriptionId}
+    disabled={disabled}
+    onClick={onToggle}
+    className={cx(
+      "group flex min-h-12 w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors duration-150 motion-reduce:transition-none disabled:cursor-not-allowed",
+      checked ? "border-action bg-action-soft" : "border-border bg-transparent not-disabled:hover:bg-sunken",
+    )}
+  >
+    <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+      <span className={cx("text-sm font-semibold", disabled ? "text-text-muted" : "text-text")}>{label}</span>
+      <span id={descriptionId} className="text-[13px] text-text-muted">
+        {description}
+      </span>
+    </span>
+    <span
+      aria-hidden="true"
+      className="relative h-5 w-9 flex-none rounded-full bg-border-strong transition-colors duration-150 group-aria-checked:bg-action group-disabled:opacity-45 motion-reduce:transition-none"
+    >
+      <span className="absolute left-0.5 top-0.5 size-4 rounded-full bg-on-solid transition-transform duration-150 group-aria-checked:translate-x-4 motion-reduce:transition-none" />
+    </span>
+  </button>
 );
 
-const SellModal = ({
+type SellDialogProps = Omit<SellModalProps, "order"> & { order: ActionOrder; variant: OrderActionVariant };
+
+const SellDialog = ({
   order,
   open,
   onClose,
   onSell,
   onPartlySell,
-  isLoading,
-  awaitingApproval,
+  isLoading = false,
+  awaitingApproval = false,
   restrictExtraCostToCenter = false,
-}: SellModalProps) => {
+  variant,
+}: SellDialogProps) => {
   const { t, i18n } = useTranslation(["orders", "common"]);
   const approvals = usePendingExtraCostApprovals();
   const ids = useId();
@@ -185,29 +158,21 @@ const SellModal = ({
   const [note, setNote] = useState("");
   const [proof, setProof] = useState<File | null>(null);
   const [proofError, setProofError] = useState("");
-  const panelRef = useFocusTrap<HTMLDivElement>(open && Boolean(order), { onEscape: onClose, inertAppRoot: true });
-
+  const approvalCloseRef = useApprovalStateFocus(awaitingApproval);
+  // «−» bosilib o'zi o'chsa (0 ga yoki jami 1 donaga yetdi) fokus `body` ga tushmasin — shu qatordagi «+» ga.
+  const focusAfterRender = useRef<string | null>(null);
   useEffect(() => {
-    if (!open) return;
+    if (!focusAfterRender.current) return;
+    document.getElementById(focusAfterRender.current)?.focus();
+    focusAfterRender.current = null;
+  });
 
-    setIsPartial(false);
-    setItemQuantities({});
-    setTotalPrice("");
-    setExtraCost("");
-    setMarketPaid("");
-    setNote("");
-    setProof(null);
-    setProofError("");
-  }, [open, order?.id]);
-
-  if (!open || !order || typeof document === "undefined") return null;
-
+  const isManager = variant === "manager";
   const language = i18n.language;
-  const currency = t("currency");
   const money = (value: number) => formatMoneyLocalized(value, { language });
   const id = (suffix: string) => `${ids}-${suffix}`;
   const pendingApproval = getActivePendingApproval(approvals, order);
-  const orderFlags = order as Order & Record<string, unknown>;
+  const orderFlags = order as ActionOrder & Record<string, unknown>;
   const proofConditions = Array.isArray(order.market?.expense_proof_conditions)
     ? order.market.expense_proof_conditions
     : [];
@@ -216,7 +181,7 @@ const SellModal = ({
   const deliveryType = typeof order.where_deliver === "string" ? order.where_deliver.trim() : "";
   const isExtraCostBlocked =
     restrictExtraCostToCenter && deliveryType !== "" && deliveryType !== "center";
-  const effectiveExtraCost = isExtraCostBlocked ? 0 : Number(extraCost) || 0;
+  const effectiveExtraCost = isExtraCostBlocked ? 0 : toAmount(extraCost);
   const operationTotal = isPartial
     ? totalPrice === "" ? null : Number(totalPrice)
     : toKnownAmount(order.total_price);
@@ -240,7 +205,7 @@ const SellModal = ({
   // Hamkor buyurtmasida marketga to'lov bu yerdan yozilmaydi.
   const isPartnerOrder = order.external_id !== null && order.external_id !== undefined && order.external_id !== "";
   const showMarketPaid = !isPartial && !isPartnerOrder;
-  const marketPaidAmount = showMarketPaid ? Number(marketPaid) || 0 : 0;
+  const marketPaidAmount = showMarketPaid ? toAmount(marketPaid) : 0;
   const marketPaidMax = getMarketPaidMax(order.to_be_paid, effectiveExtraCost);
   const isMarketPaidAboveMax = marketPaidMax !== null && marketPaidAmount > marketPaidMax;
 
@@ -326,7 +291,7 @@ const SellModal = ({
 
   const handleSubmit = (event?: FormEvent) => {
     event?.preventDefault();
-    if (!order) return;
+    if (isLoading) return;
     if (sellRequiresMedia && !proof) {
       setProofError(t("mediaProofRequired"));
       return;
@@ -347,7 +312,7 @@ const SellModal = ({
             quantity: getItemQty(item),
           };
         }),
-        totalPrice: Number(totalPrice) || 0,
+        totalPrice: toAmount(totalPrice),
         extraCost: effectiveExtraCost,
         comment: note,
         ...(proof ? { proof } : {}),
@@ -369,7 +334,7 @@ const SellModal = ({
       setProof(null);
       return;
     }
-    if (file.size > MAX_PROOF_SIZE_BYTES) {
+    if (isProofFileTooLarge(file)) {
       setProof(null);
       setProofError(t("mediaProofTooLarge", { size: MAX_PROOF_SIZE_MB }));
       return;
@@ -377,377 +342,320 @@ const SellModal = ({
     setProof(file);
   };
 
-  const deliverLabel =
-    deliveryType === "address" ? t("deliveryToHome") : deliveryType === "center" ? t("deliveryToCenter") : "";
-  const subtitle = [`№${order.id}`, order.market?.name, deliverLabel].filter(Boolean).join(" · ");
+  const deliveryKey = getDeliveryLabelKey(order.where_deliver);
+  const subtitle = [`№${order.id}`, order.market?.name, deliveryKey ? t(deliveryKey) : null].filter(Boolean).join(" · ");
+  const showExtraNotice = !isExtraCostBlocked && toAmount(extraCost) > 0;
 
-  const extraCostField = (
+  // ── Market tasdig'i kutilmoqda (maket `courier-orders-action-approval-pending`) ──────────────
+  if (awaitingApproval) {
+    return (
+      <Dialog
+        open={open}
+        onClose={onClose}
+        size="md"
+        className={isManager ? undefined : "md:max-w-[500px]"}
+        title={t("extraCostApprovalPendingTitle")}
+        description={subtitle}
+        icon={Clock}
+        iconTone="warning"
+        footer={
+          <Button ref={approvalCloseRef} variant="secondary" className="md:min-w-[120px]" onClick={onClose}>
+            {t("close", { ns: "common" })}
+          </Button>
+        }
+      >
+        <OrderCustomerSummary order={order} variant={variant} />
+        <ExtraCostPendingAlert
+          amount={pendingApproval?.amount ?? effectiveExtraCost}
+          action={pendingApproval?.action}
+          requestedAt={pendingApproval?.requestedAt}
+        />
+      </Dialog>
+    );
+  }
+
+  // ── Maydonlar ─────────────────────────────────────────────────────────────────────────────
+  const extraCostField = isExtraCostBlocked ? (
     <div className="flex min-w-0 flex-col gap-1.5">
-      {isExtraCostBlocked ? (
-        <>
-          <span id={id("extra-label")} className={LABEL}>
-            {t("extraCost")}
-          </span>
-          <div
-            role="note"
-            aria-labelledby={id("extra-label")}
-            className="flex items-start gap-2 rounded-xl bg-sunken px-3 py-2.5 text-[13px] text-text-muted"
-          >
-            <Info className="mt-0.5 size-4 flex-none" aria-hidden="true" />
-            <p>{t("extraCostHomeNotAllowed")}</p>
-          </div>
-        </>
-      ) : (
-        <>
-          <label className={LABEL} htmlFor={id("extra")}>
-            {t("extraCost")}
-          </label>
-          <AmountInput
-            id={id("extra")}
-            value={extraCost}
-            onChange={setExtraCost}
-            currency={currency}
-            language={language}
-            describedBy={Number(extraCost) > 0 ? id("extra-note") : undefined}
-          />
-          {Number(extraCost) > 0 ? <ExtraCostNoticeAlert id={id("extra-note")} /> : null}
-        </>
-      )}
+      <span id={id("extra-label")} className={LABEL}>
+        {t("extraCost")}
+      </span>
+      <div
+        role="note"
+        aria-labelledby={id("extra-label")}
+        className="flex items-start gap-2 rounded-xl bg-sunken px-3 py-2.5 text-[13px] text-text-muted"
+      >
+        <Info size={16} strokeWidth={2} className="mt-0.5 shrink-0" aria-hidden="true" />
+        <p className="min-w-0">{t("extraCostHomeNotAllowed")}</p>
+      </div>
     </div>
+  ) : (
+    <Field
+      label={t("extraCost")}
+      // Menejer maketi: maydon ostida qisqa eslatma; summa yozilgach — to'liq ogohlantirish bloki.
+      hint={isManager && !showExtraNotice ? t("extraCostApprovalHint") : undefined}
+    >
+      <TextInput
+        mode="money"
+        value={extraCost}
+        onValueChange={setExtraCost}
+        placeholder="0"
+        aria-describedby={showExtraNotice ? id("extra-note") : undefined}
+      />
+    </Field>
   );
+  const extraNotice = showExtraNotice ? <ExtraCostNoticeAlert id={id("extra-note")} /> : null;
 
   const marketPaidField = showMarketPaid ? (
-    <div className="flex min-w-0 flex-col gap-1.5">
-      <label className={LABEL} htmlFor={id("market-paid")}>
-        {t("marketPaidAmount")}
-      </label>
-      <AmountInput
-        id={id("market-paid")}
-        value={marketPaid}
-        onChange={setMarketPaid}
-        currency={currency}
-        language={language}
-        invalid={isMarketPaidAboveMax}
-        describedBy={`${id("market-paid-hint")}${isMarketPaidAboveMax ? ` ${id("market-paid-error")}` : ""}`}
-      />
-      <span id={id("market-paid-hint")} className="text-xs text-text-muted">
-        {t("marketPaidAmountHint")}
-        {marketPaidMax !== null ? ` · ${t("amountMaxHint", { amount: money(marketPaidMax) })}` : ""}
-      </span>
-      {isMarketPaidAboveMax ? (
-        <span id={id("market-paid-error")} role="alert" className="text-xs font-semibold text-danger-fg">
-          {t("marketPaidAboveMax", { amount: money(marketPaidMax ?? 0) })}
-        </span>
-      ) : null}
-    </div>
+    <Field
+      label={t("marketPaidAmount")}
+      hint={`${t("marketPaidAmountHint")}${marketPaidMax !== null ? ` · ${t("amountMaxHint", { amount: money(marketPaidMax) })}` : ""}`}
+      error={
+        isMarketPaidAboveMax ? (
+          <span role="alert">{t("marketPaidAboveMax", { amount: money(marketPaidMax ?? 0) })}</span>
+        ) : undefined
+      }
+    >
+      <TextInput mode="money" value={marketPaid} onValueChange={setMarketPaid} placeholder="0" />
+    </Field>
   ) : null;
 
+  const totalField = (
+    <Field
+      label={isManager ? t("paidAmount") : t("paymentAmount")}
+      required
+      hint={orderTotalAmount !== null ? t("amountMaxHint", { amount: money(orderTotalAmount) }) : undefined}
+      error={
+        isPartialPriceAboveTotal ? <span role="alert">{t("partialSellPriceExceedsTotal")}</span> : undefined
+      }
+    >
+      <TextInput mode="money" value={totalPrice} onValueChange={setTotalPrice} placeholder="0" />
+    </Field>
+  );
+
   const noteField = (
-    <div className="flex min-w-0 flex-col gap-1.5">
-      <label className={LABEL} htmlFor={id("note")}>
-        {t("note")} <span className="font-normal text-text-muted">({t("optional", { ns: "common" })})</span>
-      </label>
-      <textarea
-        id={id("note")}
-        value={note}
-        onChange={(e) => setNote(e.target.value)}
-        placeholder={t("writeNote")}
-        rows={2}
-        className={`${INPUT} h-auto min-h-[72px] resize-y py-2.5`}
-      />
-    </div>
+    <Field label={t("note")} optional>
+      <TextInput multiline rows={2} value={note} onValueChange={setNote} placeholder={t("writeNote")} />
+    </Field>
   );
 
   const proofField = (
-    <div className="flex min-w-0 flex-col gap-1.5">
-      <span id={id("proof-label")} className={LABEL}>
-        {t("mediaProof")}{" "}
-        {sellRequiresMedia ? (
-          <span className="text-danger-fg">*</span>
-        ) : (
-          <span className="font-normal text-text-muted">({t("optional", { ns: "common" })})</span>
-        )}
+    <ProofField
+      variant={variant}
+      file={proof}
+      required={sellRequiresMedia}
+      hint={sellRequiresMedia ? t("sellMediaProofRequiredNotice") : undefined}
+      error={proofError || undefined}
+      onFileChange={handleProofChange}
+    />
+  );
+
+  const itemsField = (
+    <div className="flex min-w-0 flex-col gap-2">
+      <span id={id("items-label")} className={LABEL}>
+        {t("products")}
       </span>
-      <label
-        className={`flex cursor-pointer items-center gap-3 rounded-xl border border-dashed bg-sunken p-3 focus-within:outline-2 focus-within:outline-action ${
-          proofError ? "border-danger" : "border-border-strong"
-        }`}
-      >
-        <span
-          className={`inline-flex size-8 flex-none items-center justify-center rounded-full ${
-            proof ? "bg-success-soft text-success-fg" : "bg-surface text-text-muted"
-          }`}
+      {orderItems.length > 0 ? (
+        <ul
+          aria-labelledby={id("items-label")}
+          className={cx("m-0 flex list-none flex-col p-0", isManager ? "gap-2" : "rounded-xl bg-sunken")}
         >
-          {proof ? <CircleCheck className="size-4" aria-hidden="true" /> : <Camera className="size-4" aria-hidden="true" />}
-        </span>
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="truncate text-sm font-semibold text-text">{proof ? proof.name : t("mediaProofUpload")}</span>
-          <span className="text-xs text-text-muted">
-            {proof
-              ? `${formatNumberLocalized(proof.size / (1024 * 1024), { language, fractionDigits: 1 })} MB · ${t("mediaProofHint", { size: MAX_PROOF_SIZE_MB })}`
-              : t("mediaProofHint", { size: MAX_PROOF_SIZE_MB })}
-          </span>
-        </span>
-        <span aria-hidden="true" className={`${BTN_SECONDARY} h-8 px-3 text-[13px] max-md:min-h-11`}>
-          {proof ? t("mediaProofReplace") : t("mediaProofChoose")}
-        </span>
-        <input
-          type="file"
-          accept="image/*,video/*"
-          className="sr-only"
-          aria-labelledby={id("proof-label")}
-          aria-describedby={sellRequiresMedia || proofError ? id("proof-hint") : undefined}
-          aria-required={sellRequiresMedia || undefined}
-          onChange={(event) => handleProofChange(event.target.files?.[0])}
-        />
-      </label>
-      {proofError ? (
-        <span id={id("proof-hint")} className="text-xs font-semibold text-danger-fg">
-          {proofError}
-        </span>
-      ) : sellRequiresMedia ? (
-        <span id={id("proof-hint")} className="text-xs text-text-muted">
-          {t("sellMediaProofRequiredNotice")}
-        </span>
+          {orderItems.map((item, index) => {
+            const name = getItemName(item, index);
+            const quantity = getItemQty(item);
+            return (
+              <li
+                key={item.id}
+                className={cx(
+                  "flex items-center gap-3",
+                  isManager
+                    ? "flex-wrap gap-y-2 rounded-xl bg-sunken py-2 pl-2 pr-3"
+                    : "border-t border-border py-1.5 pl-4 pr-2 first:border-t-0",
+                )}
+              >
+                <span className={cx("flex min-w-0 items-center gap-3", isManager ? "flex-[1_1_180px]" : "flex-1")}>
+                  {isManager ? (
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-surface text-text-muted"
+                    >
+                      <Tag size={18} strokeWidth={2} />
+                    </span>
+                  ) : null}
+                  <span className="flex min-w-0 flex-col gap-0.5">
+                    <span className="truncate text-sm font-semibold text-text">{name}</span>
+                    <span className="text-xs text-text-muted">{t("maxQuantity", { count: item.quantity })}</span>
+                  </span>
+                </span>
+                <span
+                  role="group"
+                  aria-label={t("itemQuantityGroup", { name })}
+                  className="inline-flex flex-none items-center gap-1"
+                >
+                  <IconButton
+                    variant="secondary"
+                    size="sm"
+                    icon={Minus}
+                    label={t("decreaseQuantity", { name })}
+                    onClick={() => {
+                      if (quantity - 1 <= 0 || getSelectedItemsCount() - 1 <= 1) focusAfterRender.current = id(`inc-${index}`);
+                      setItemQty(item, quantity - 1);
+                    }}
+                    disabled={!canDecreaseItem(item)}
+                  />
+                  <span
+                    aria-live="polite"
+                    className={cx("min-w-7 text-center text-sm font-semibold", quantity === 0 ? "text-text-subtle" : "text-text")}
+                  >
+                    {quantity}
+                  </span>
+                  <IconButton
+                    id={id(`inc-${index}`)}
+                    variant="secondary"
+                    size="sm"
+                    icon={Plus}
+                    label={t("increaseQuantity", { name })}
+                    onClick={() => setItemQty(item, quantity + 1)}
+                    disabled={quantity >= item.quantity}
+                  />
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+      {isAtMinimumSelection ? (
+        <p role="alert" className="m-0 flex items-start gap-1.5 text-xs font-semibold text-danger-fg">
+          <TriangleAlert size={16} strokeWidth={2} className="shrink-0" aria-hidden="true" />
+          <span>{t("minimumSelectionError")}</span>
+        </p>
       ) : null}
     </div>
   );
 
-  return createPortal(
-    <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-overlay p-6 max-md:items-end max-md:p-0">
-      <button
-        type="button"
-        aria-hidden="true"
-        tabIndex={-1}
-        onClick={onClose}
-        className="absolute inset-0 cursor-default"
-      />
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={id("title")}
-        aria-describedby={id("desc")}
-        tabIndex={-1}
-        className={`relative flex max-h-[calc(100dvh-48px)] w-full flex-col gap-4 rounded-[20px] border border-border bg-raised p-6 shadow-xl outline-none max-md:max-h-[92dvh] max-md:max-w-full max-md:rounded-b-none max-md:px-4 max-md:pb-[calc(env(safe-area-inset-bottom)+24px)] max-md:pt-3 ${
-          isPartial ? "max-w-[780px]" : "max-w-[520px]"
-        }`}
-      >
-        <span aria-hidden="true" className="mx-auto -mb-1 h-1 w-10 flex-none rounded-full bg-border-strong md:hidden" />
+  /** Ikki maydon yonma-yon (menejer maketi), telefonda ustma-ust. */
+  const pair = (first: ReactNode, second: ReactNode) =>
+    second ? (
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(200px,100%),1fr))] items-start gap-4">
+        {first}
+        {second}
+      </div>
+    ) : (
+      first
+    );
 
-        {/* Sarlavha */}
-        <div className="flex items-center gap-3">
-          <span className="inline-flex size-10 flex-none items-center justify-center rounded-full bg-success-soft text-success-fg">
-            <PackageCheck className="size-5" aria-hidden="true" />
-          </span>
-          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <h2 id={id("title")} className="text-lg font-semibold text-text">
-              {isPartial ? t("partialSell") : t("sell")}
-            </h2>
-            <p id={id("desc")} className="truncate text-[13px] text-text-muted">
-              {subtitle}
-            </p>
+  let fields: ReactNode;
+  if (isPartial && isManager) {
+    fields = (
+      <>
+        {itemsField}
+        {pair(totalField, extraCostField)}
+        {extraNotice}
+        {noteField}
+        {proofField}
+      </>
+    );
+  } else if (isPartial) {
+    fields = (
+      <div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] items-start gap-x-6 gap-y-4">
+        {itemsField}
+        <div className="flex min-w-0 flex-col gap-4">
+          {totalField}
+          <div className="flex min-w-0 flex-col gap-2">
+            {extraCostField}
+            {extraNotice}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label={t("close", { ns: "common" })}
-            className="-mr-2 -mt-1 inline-flex size-8 flex-none items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-sunken hover:text-text focus-visible:outline-2 focus-visible:outline-action max-md:size-11"
-          >
-            <X className="size-5" aria-hidden="true" />
-          </button>
-        </div>
-
-        {/* Tana */}
-        <div className="-mx-1 flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-1 pb-0.5">
-          {awaitingApproval ? (
-            <ExtraCostPendingAlert
-              amount={pendingApproval?.amount ?? (Number(extraCost) || 0)}
-              action={pendingApproval?.action}
-            />
-          ) : (
-            <>
-              {pendingApproval ? <ExtraCostSentAlert approval={pendingApproval} /> : null}
-
-              <div role="group" aria-label={t("customer")} className="flex items-center gap-3 rounded-xl bg-sunken px-4 py-3 text-sm">
-                <span className="inline-flex size-10 flex-none items-center justify-center rounded-full bg-brand text-[13px] font-bold text-surface">
-                  {initials(order.customer?.name)}
-                </span>
-                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="truncate font-semibold text-text">{order.customer?.name ?? "—"}</span>
-                  <span className="flex flex-wrap gap-x-3 text-[13px] text-text-muted">
-                    {order.customer?.phone_number ? (
-                      <span className="whitespace-nowrap">{order.customer.phone_number}</span>
-                    ) : null}
-                    {order.district?.name ? <span className="whitespace-nowrap">{order.district.name}</span> : null}
-                  </span>
-                </div>
-                <div className="flex flex-none flex-col gap-0.5 text-right">
-                  <span className="text-xs text-text-muted">{t("sumLabel")}</span>
-                  <span className="whitespace-nowrap font-semibold text-text">{money(Number(order.total_price) || 0)}</span>
-                </div>
-              </div>
-
-              <form id={id("form")} noValidate onSubmit={handleSubmit} className="flex flex-col gap-4">
-                {/* Qisman sotish kaliti */}
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={isPartial}
-                  aria-describedby={id("partial-desc")}
-                  disabled={!canSellPartially}
-                  onClick={() => setIsPartial((value) => !value)}
-                  className={`group flex min-h-12 w-full items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors focus-visible:outline-2 focus-visible:outline-action disabled:cursor-not-allowed ${
-                    isPartial ? "border-action bg-action-soft" : "border-border bg-transparent hover:bg-sunken"
-                  }`}
-                >
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className={`text-sm font-semibold ${canSellPartially ? "text-text" : "text-text-muted"}`}>
-                      {t("partialSell")}
-                    </span>
-                    <span id={id("partial-desc")} className="text-[13px] text-text-muted">
-                      {partialUnavailableReason ?? t("sellSeparately")}
-                    </span>
-                  </span>
-                  <span
-                    aria-hidden="true"
-                    className="relative h-5 w-9 flex-none rounded-full bg-border-strong transition-colors duration-150 group-aria-checked:bg-action group-disabled:opacity-45"
-                  >
-                    <span className="absolute left-0.5 top-0.5 size-4 rounded-full bg-on-solid transition-transform duration-150 group-aria-checked:translate-x-4" />
-                  </span>
-                </button>
-
-                {isPartial ? (
-                  <div className="grid grid-cols-[repeat(auto-fit,minmax(min(300px,100%),1fr))] items-start gap-x-6 gap-y-4">
-                    {/* Mahsulotlar */}
-                    <div className="flex min-w-0 flex-col gap-2">
-                      <span id={id("items-label")} className={LABEL}>
-                        {t("products")}
-                      </span>
-                      {orderItems.length > 0 ? (
-                        <ul aria-labelledby={id("items-label")} className="flex flex-col rounded-xl bg-sunken">
-                          {orderItems.map((item, index) => {
-                            const quantity = getItemQty(item);
-                            return (
-                              <li
-                                key={item.id}
-                                className="flex items-center gap-3 border-t border-border py-1.5 pl-4 pr-2 first:border-t-0"
-                              >
-                                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                                  <span className="truncate text-sm font-semibold text-text">{getItemName(item, index)}</span>
-                                  <span className="text-xs text-text-muted">{t("maxQuantity", { count: item.quantity })}</span>
-                                </span>
-                                <span role="group" aria-label={getItemName(item, index)} className="inline-flex flex-none items-center gap-1">
-                                  <button
-                                    type="button"
-                                    onClick={() => setItemQty(item, quantity - 1)}
-                                    disabled={!canDecreaseItem(item)}
-                                    aria-label={t("decreaseQuantity", { name: getItemName(item, index) })}
-                                    className={ICON_BTN}
-                                  >
-                                    <Minus className="size-4" aria-hidden="true" />
-                                  </button>
-                                  <span
-                                    aria-live="polite"
-                                    className={`min-w-7 text-center text-sm font-semibold ${quantity === 0 ? "text-text-subtle" : "text-text"}`}
-                                  >
-                                    {quantity}
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => setItemQty(item, quantity + 1)}
-                                    disabled={quantity >= item.quantity}
-                                    aria-label={t("increaseQuantity", { name: getItemName(item, index) })}
-                                    className={ICON_BTN}
-                                  >
-                                    <Plus className="size-4" aria-hidden="true" />
-                                  </button>
-                                </span>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      ) : null}
-                      {isAtMinimumSelection ? (
-                        <p className="flex items-start gap-1.5 text-xs font-semibold text-danger-fg">
-                          <TriangleAlert className="size-4 flex-none" aria-hidden="true" />
-                          <span>{t("minimumSelectionError")}</span>
-                        </p>
-                      ) : null}
-                    </div>
-
-                    <div className="flex min-w-0 flex-col gap-4">
-                      <div className="flex min-w-0 flex-col gap-1.5">
-                        <label className={LABEL} htmlFor={id("total")}>
-                          {t("paymentAmount")} <span className="text-danger-fg">*</span>
-                        </label>
-                        <AmountInput
-                          id={id("total")}
-                          value={totalPrice}
-                          onChange={setTotalPrice}
-                          currency={currency}
-                          language={language}
-                          invalid={isPartialPriceAboveTotal}
-                          required
-                          describedBy={orderTotalAmount !== null ? id("total-hint") : undefined}
-                        />
-                        {isPartialPriceAboveTotal ? (
-                          <span role="alert" className="text-xs font-semibold text-danger-fg">
-                            {t("partialSellPriceExceedsTotal")}
-                          </span>
-                        ) : orderTotalAmount !== null ? (
-                          <span id={id("total-hint")} className="text-xs text-text-muted">
-                            {t("amountMaxHint", { amount: money(orderTotalAmount) })}
-                          </span>
-                        ) : null}
-                      </div>
-                      {extraCostField}
-                      {noteField}
-                      {proofField}
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    {extraCostField}
-                    {marketPaidField}
-                    {noteField}
-                    {proofField}
-                  </>
-                )}
-              </form>
-            </>
-          )}
-        </div>
-
-        {/* Pastki qism */}
-        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border pt-4 max-md:[&>button]:flex-1">
-          {!awaitingApproval && blockReason ? (
-            <p className="mr-auto min-w-0 text-[13px] text-text-muted max-md:w-full">{blockReason}</p>
-          ) : null}
-          <button type="button" onClick={onClose} className={BTN_SECONDARY}>
-            {awaitingApproval ? t("close", { ns: "common" }) : t("back", { ns: "common" })}
-          </button>
-          {awaitingApproval ? null : (
-            <button
-              type="submit"
-              form={id("form")}
-              disabled={isLoading || isProofMissing || Boolean(partialBlockReason)}
-              aria-busy={isLoading || undefined}
-              className={BTN_SUCCESS}
-            >
-              {isLoading ? (
-                <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
-              ) : (
-                <PackageCheck className="size-4" aria-hidden="true" />
-              )}
-              {t("sell")}
-            </button>
-          )}
+          {noteField}
+          {proofField}
         </div>
       </div>
-    </div>,
-    document.body,
+    );
+  } else if (isManager) {
+    fields = (
+      <>
+        {pair(extraCostField, marketPaidField)}
+        {extraNotice}
+        {noteField}
+        {proofField}
+      </>
+    );
+  } else {
+    fields = (
+      <>
+        <div className="flex min-w-0 flex-col gap-2">
+          {extraCostField}
+          {extraNotice}
+        </div>
+        {marketPaidField}
+        {noteField}
+        {proofField}
+      </>
+    );
+  }
+
+  const SubmitIcon = isManager ? CircleCheck : PackageCheck;
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      busy={isLoading}
+      // Ochilganda fokus panelda (sarlavha o'qiladi): telefonda klaviatura o'zi ochilib, varaqani yopmasin.
+      initialFocus="panel"
+      size={isManager ? "lg" : "md"}
+      className={isManager ? undefined : isPartial ? "md:max-w-[780px]" : "md:max-w-[520px]"}
+      title={isManager ? t("sellOrderTitle") : isPartial ? t("partialSell") : t("sell")}
+      description={subtitle}
+      icon={SubmitIcon}
+      iconTone="success"
+      onSubmit={handleSubmit}
+      formProps={{ noValidate: true }}
+      footer={
+        // Bitta o'ram: telefonda sabab o'z qatorida (maket), tugmalar teng enli ikkinchi qatorda.
+        <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 max-md:[&>button]:flex-1">
+          {blockReason ? (
+            <p
+              id={id("block")}
+              className="m-0 mr-auto min-w-0 text-[13px] text-text-muted max-md:basis-full max-md:text-center"
+            >
+              {blockReason}
+            </p>
+          ) : null}
+          <Button variant="secondary" disabled={isLoading} onClick={onClose}>
+            {t("back", { ns: "common" })}
+          </Button>
+          <Button
+            type="submit"
+            variant={isManager ? "primary" : "success"}
+            leftIcon={SubmitIcon}
+            loading={isLoading}
+            disabled={isProofMissing || Boolean(partialBlockReason)}
+            aria-describedby={blockReason ? id("block") : undefined}
+          >
+            {t("sell")}
+          </Button>
+        </div>
+      }
+    >
+      {pendingApproval ? <ExtraCostSentAlert approval={pendingApproval} /> : null}
+      <OrderCustomerSummary order={order} variant={variant} />
+      <PartialSwitch
+        checked={isPartial}
+        disabled={!canSellPartially}
+        label={t("partialSell")}
+        description={partialUnavailableReason ?? t("sellSeparately")}
+        descriptionId={id("partial-desc")}
+        onToggle={() => setIsPartial((value) => !value)}
+      />
+      {fields}
+    </Dialog>
   );
+};
+
+const SellModal = ({ order, open, variant = "courier", ...rest }: SellModalProps) => {
+  const session = useActionDialogSession(open, order);
+  if (!session.order) return null;
+  return <SellDialog key={session.session} {...rest} order={session.order} open={session.open} variant={variant} />;
 };
 
 export default memo(SellModal);

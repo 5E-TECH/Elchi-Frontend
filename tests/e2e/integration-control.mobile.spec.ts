@@ -19,7 +19,7 @@ test.describe("Integratsiya — Ish rejimi, 390px", () => {
         if (r.height < 44) out.push(`${Math.round(r.height)}px: ${el.textContent}`);
         if (el.scrollWidth > el.clientWidth + 1) out.push(`matn sig'madi: ${el.textContent}`);
       }
-      const main = document.querySelector("main.el-surface-page") as HTMLElement;
+      const main = document.querySelector("main:has([data-shell-slot=content])") as HTMLElement;
       if (main.scrollWidth > main.clientWidth) out.push(`gorizontal skroll ${main.scrollWidth - main.clientWidth}px`);
       return out;
     });

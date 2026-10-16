@@ -1,7 +1,7 @@
-import { memo, useMemo, useState } from "react";
+// dizayn-v2: superadmin-neworders-create-manual-step1, superadmin-neworders-create-market-picker-dialog, superadmin-neworders-create-manual-step2, superadmin-neworders-create-ai-input, superadmin-neworders-create-ai-preview, superadmin-neworders-create-ai-confirm-dialog, admin-neworders-create-manual, admin-neworders-create-market-picker, admin-neworders-create-ai, admin-neworders-create-ai-confirm-dialog, manager-new-orders-create-manual-step1, manager-new-orders-create-manual-step2, manager-new-orders-create-ai, manager-new-orders-create-ai-confirm-dialog, registrator-new-orders-create-step1, registrator-new-orders-create-market-picker-dialog, registrator-new-orders-create-step2, registrator-new-orders-create-ai, registrator-new-orders-create-ai-confirm-dialog, market-new-orders-create-manual, market-new-orders-create-ai-input, market-new-orders-create-ai-preview, market-new-orders-create-ai-confirm-dialog
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useLocation, useNavigate } from "react-router-dom";
-import { ChevronLeft, ChevronRight, ListPlus, Package, SendHorizontal, Store } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import {
   FormProvider,
   useForm,
@@ -12,14 +12,16 @@ import {
 } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
-import HeaderName from "../../../shared/components/headerName";
+import { Trans, useTranslation } from "react-i18next";
 import Step1Market from "./ui/Step1Market";
 import Step2Combined from "./ui/Step2Combined";
+import Step2Summary from "./ui/Step2Summary";
+import OrderStepper from "./ui/OrderStepper";
+import TodayOrdersCard from "./ui/TodayOrdersCard";
 import CreateModeTabs, { type CreateMode } from "./ui/CreateModeTabs";
+import { CreateAlert } from "./ui/CreateAlert";
 import AiCreatePanel from "./ui/ai/AiCreatePanel";
 import { useAiAvailability } from "../../../entities/ai-order";
-import { FormFieldError, getActionButtonClassName } from "./ui/formFieldStyles";
 import { useOrders } from "../../../entities/order/api/orderApi";
 import type { RootState } from "../../../app/config/store";
 import {
@@ -29,12 +31,10 @@ import {
   type MarketOption,
   type OrderCreateFormValues,
 } from "./model/orderCreateForm";
-import { useOrders as useIncomingOrders } from "../../../entities/orders";
-import type { ApiOrder } from "../../new_orders/components/OrderCard";
-import OrdersTable from "../list/OrdersTable";
-import type { OrderListItem } from "../../../entities/order/types/order";
 import { isInactiveMarketStatus } from "../../../shared/lib/marketStatus";
 import { notify } from "../../../shared/lib/notify";
+import { cx } from "../../../shared/lib/cx";
+import { PageHeader } from "../../../shared/ui/primitives";
 
 type BackendErrorPayload = {
   message?: unknown;
@@ -126,199 +126,21 @@ const applyOrderCreateFieldErrors = (
   });
 };
 
-type MarketNewOrdersTableProps = {
-  marketId?: string | number;
-  marketName?: string;
-  onRowClick: (order: ApiOrder) => void;
-};
+/** «Orqaga» va havolalar manzili — «Qabul va yaratish». */
+const BACK_TO = "/new-orders";
 
-const mapMarketOrderToListItem = (
-  order: ApiOrder,
-  marketId?: string | number,
-  marketName?: string,
-): OrderListItem => ({
-  id: order.id,
-  market_id: marketId ? String(marketId) : "",
-  customer_id: order.customer?.id ?? "",
-  product_quantity: order.items?.reduce((total, item) => total + (item.quantity ?? 0), 0) ?? 0,
-  status: order.status as OrderListItem["status"],
-  where_deliver: order.where_deliver === "center" ? "center" : "address",
-  total_price: order.total_price ?? 0,
-  to_be_paid: order.to_be_paid ?? 0,
-  paid_amount: order.paid_amount ?? 0,
-  district_id: null,
-  region_id: null,
-  address: order.address,
-  operator: null,
-  comment: order.comment,
-  post_id: null,
-  createdAt: order.createdAt,
-  updatedAt: order.createdAt,
-  deleted: false,
-  items: (order.items ?? []).map((item) => ({
-    id: item.id,
-    product_id: item.product?.id ?? "",
-    order_id: order.id,
-    quantity: item.quantity,
-    createdAt: order.createdAt,
-    updatedAt: order.createdAt,
-  })),
-  customer: {
-    id: order.customer?.id ?? "",
-    name: order.customer?.name ?? "",
-    phone_number: order.customer?.phone_number ?? "",
-  },
-  market: {
-    id: marketId ? String(marketId) : "",
-    name: marketName ?? "—",
-  },
-  district: {
-    id: "",
-    name: order.customer?.district?.name ?? order.district?.name ?? "—",
-    region: {
-      id: "",
-      name: order.customer?.region?.name ?? order.region?.name ?? order.address ?? "—",
-    },
-  },
-});
-
-const MarketNewOrdersTable = ({
-  marketId,
-  marketName,
-  onRowClick,
-}: MarketNewOrdersTableProps) => {
-  const { t } = useTranslation("orders");
-  const { useGetTodayOrdersByMarket } = useIncomingOrders();
-  const enabled = Boolean(marketId);
-  const { data, isLoading } = useGetTodayOrdersByMarket(marketId ?? 0, undefined, enabled);
-  const orders = useMemo<ApiOrder[]>(
-    () => (Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : []),
-    [data],
-  );
-  const orderListItems = useMemo(
-    () => orders.map((order) => mapMarketOrderToListItem(order, marketId, marketName)),
-    [marketId, marketName, orders],
-  );
-
-  if (!marketId) {
-    return null;
-  }
-
-  return (
-    <section className="rounded-2xl border border-gray-200 bg-primary p-4 shadow-sm dark:border-primarydark dark:bg-maindark sm:p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-main/10 text-main">
-              <Package size={18} />
-            </div>
-            <div className="min-w-0">
-              <h3 className="truncate text-base font-bold text-maindark dark:text-primary">
-                {t("newOrders")}
-              </h3>
-              <p className="truncate text-xs text-gray-400">
-                {marketName ?? "—"}
-              </p>
-            </div>
-          </div>
-        </div>
-        <span className="rounded-full bg-main/10 px-3 py-1 text-xs font-bold text-main">
-          {t("totalOrdersSummary", { count: orders.length })}
-        </span>
-      </div>
-
-      <OrdersTable
-        data={orderListItems}
-        isLoading={isLoading}
-        onRowClick={(order) => {
-          const originalOrder = orders.find((item) => item.id === order.id);
-          if (originalOrder) onRowClick(originalOrder);
-        }}
-      />
-    </section>
-  );
-};
-
-const StepActions = ({
-  step,
-  canNext,
-  isSubmitting,
-  onBack,
-  onNext,
-  isMarketRole,
-}: {
-  step: number;
-  canNext: boolean;
-  isSubmitting: boolean;
-  onBack: () => void;
-  onNext: () => void;
-  isMarketRole: boolean;
-}) => {
-  const { t } = useTranslation(["orders", "common"]);
-
-  return (
-    <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-4 py-4 sm:px-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <button
-        type="button"
-        onClick={onBack}
-        className={`${getActionButtonClassName({ variant: "secondary" })} w-full sm:w-auto`}
-      >
-        <ChevronLeft size={16} />
-        {step === 1 || isMarketRole ? t("back", { ns: "common" }) : t("previous", { ns: "common" })}
-      </button>
-
-      <div className="hidden text-center text-xs font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] sm:block">
-        {isSubmitting
-          ? t("createSubmitting")
-          : canNext
-            ? t("orderReadyMessage")
-            : step < 2
-              ? t("selectMarketFirst")
-              : t("fillRequiredFields")}
-      </div>
-
-      {step < 2 ? (
-        <button
-          type="button"
-          onClick={onNext}
-          disabled={!canNext}
-          className={getActionButtonClassName({
-            variant: "primary",
-            disabled: !canNext,
-          }) + " w-full sm:w-auto"}
-        >
-          {t("next", { ns: "common" })}
-          <ChevronRight size={16} />
-        </button>
-      ) : (
-        <button
-          type="submit"
-          disabled={!canNext || isSubmitting}
-          className={getActionButtonClassName({
-            variant: "primary",
-            disabled: !canNext || isSubmitting,
-          }) + " w-full sm:w-auto"}
-        >
-          {isSubmitting ? (
-            <>
-              <span className="w-4 h-4 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-              {t("submitting", { ns: "common" })}
-            </>
-          ) : (
-            <>
-              <SendHorizontal size={16} />
-              {t("create")}
-            </>
-          )}
-        </button>
-      )}
-    </div>
-  );
-};
-
+/**
+ * YANGI BUYURTMA — `/new-orders/create` (dizayn v2, maketlar `*-create-manual-step1|step2`,
+ * `*-create-market-picker-dialog`, `market-new-orders-create-manual`).
+ *
+ * Tuzilma: `PageHeader` («← Qabul va yaratish», «Yangi buyurtma», holatga qarab izoh, o'ngda «Qo'lda | AI bilan»)
+ * → ikki ustun (`flex-wrap`: asosiy 3 : yon 1; ~ 924 px dan tor ekranda ustma-ust):
+ *  - asosiy: qadamlar, server xatosi, 1-qadam (market) yoki 2-qadam (mijoz va mahsulotlar); AI rejimida — AI paneli;
+ *  - yon: 2-qadamda «Buyurtma xulosasi» (summa, operator, «Buyurtma yaratish»), market ma'lum bo'lsa — «Yangi buyurtmalar».
+ * Market rolida 1-qadam yo'q (o'z marketi), forma darhol 2-qadamdan ochiladi.
+ */
 const OrderCreateFormContent = () => {
-  const { t } = useTranslation(["orders", "common"]);
-  const navigate = useNavigate();
+  const { t } = useTranslation(["orders", "common", "newOrders"]);
   const location = useLocation();
   const queryClient = useQueryClient();
   const { createOrder } = useOrders();
@@ -328,7 +150,7 @@ const OrderCreateFormContent = () => {
   const isMarketRole = role === "market";
   const navigationState = location.state as { selectedMarket?: MarketOption } | null;
   const selectedMarketFromState = navigationState?.selectedMarket ?? null;
-  const [step, setStep] = useState(
+  const [step, setStep] = useState<1 | 2>(
     isMarketRole || selectedMarketFromState ? 2 : 1,
   );
   const [serverError, setServerError] = useState("");
@@ -351,7 +173,19 @@ const OrderCreateFormContent = () => {
     },
   });
 
-  const { control, handleSubmit, trigger, reset, setError } = methods;
+  const { control, handleSubmit, trigger, reset, setError, getValues, setValue } = methods;
+  // Katalog mahsulotlari qaysi marketga tegishli: «O'zgartirish»/«Oldingi» bilan boshqa market tanlansa, eski
+  // marketning `product_id` lari yangi market buyurtmasiga ketmasin.
+  const itemsMarketIdRef = useRef<MarketOption["id"] | null>(selectedMarketFromState?.id ?? null);
+  // «Keyingi» / «Oldingi» / «O'zgartirish» bosilgach bosilgan tugma yo'qoladi — fokus «Qadamlar» ga o'tadi
+  // (klaviatura va ekran o'quvchi joyini yo'qotmasin; telefonda sahifa yangi qadam boshiga keladi).
+  const stepsRef = useRef<HTMLDivElement>(null);
+  const focusStepsRef = useRef(false);
+  useEffect(() => {
+    if (!focusStepsRef.current) return;
+    focusStepsRef.current = false;
+    stepsRef.current?.focus();
+  }, [step]);
 
   const market = useWatch({ control, name: "market" });
   const customer = useWatch({ control, name: "customer" });
@@ -390,10 +224,6 @@ const OrderCreateFormContent = () => {
     );
   }, [customer, details, isInactiveSelectedMarket, isMarketRole, market, mode, step]);
 
-  const handleBack = () => {
-    navigate("/new-orders");
-  };
-
   const handleNext = async () => {
     setServerError("");
 
@@ -413,8 +243,24 @@ const OrderCreateFormContent = () => {
 
     const isValid = await trigger("market");
     if (isValid) {
+      const nextMarketId = getValues("market")?.id ?? null;
+      // Market almashgan: faqat katalogsiz («maxsus») mahsulotlar qoladi — ular marketga bog'liq emas.
+      if (itemsMarketIdRef.current != null && nextMarketId !== itemsMarketIdRef.current) {
+        const items = getValues("details.items");
+        const kept = items.filter((item) => item.product_id == null);
+        if (kept.length !== items.length) setValue("details.items", kept, { shouldDirty: true });
+      }
+      itemsMarketIdRef.current = nextMarketId;
+      focusStepsRef.current = true;
       setStep(2);
     }
+  };
+
+  // «Oldingi» / «O'zgartirish» — 1-qadamga, tanlangan market saqlanadi.
+  const handlePrevious = () => {
+    setServerError("");
+    focusStepsRef.current = true;
+    setStep(1);
   };
 
   const onSubmit = (values: OrderCreateFormValues) => {
@@ -477,9 +323,33 @@ const OrderCreateFormContent = () => {
     await handleSubmit(onSubmit)();
   };
 
+  const isManual = mode === "manual";
+  const showStep1 = isManual && !isMarketRole && step === 1;
+  const showSummary = isManual && step === 2;
+  const showToday = Boolean(selectedMarketId);
+  const hasAside = showSummary || showToday;
+
+  // Sarlavha izohi: market ma'lum bo'lsa (market roli yoki AI) — «Tanlangan market: …»; 2-qadamda — majburiy
+  // maydonlar belgisi; qolganida — «Buyurtma yaratish uchun qadamlarni bajaring».
+  const description =
+    selectedMarketName && (isMarketRole || !isManual) ? (
+      <Trans
+        t={t}
+        i18nKey="createSelectedMarket"
+        values={{ name: selectedMarketName }}
+        components={{ strong: <strong className="font-semibold text-text" /> }}
+      />
+    ) : isManual && step === 2 ? (
+      <Trans t={t} i18nKey="createRequiredHint" components={{ req: <span className="text-danger-fg" /> }} />
+    ) : (
+      t("createPageDescription")
+    );
+
   return (
     <FormProvider {...methods}>
       <form
+        aria-label={t("createFormLabel")}
+        noValidate
         onSubmit={(event) => {
           event.preventDefault();
           // ⚠️ AI paneli ham shu `<form>` ichida — AI rejimida qo'lda buyurtma
@@ -487,83 +357,105 @@ const OrderCreateFormContent = () => {
           if (mode !== "manual") return;
           void handleFinalSubmit();
         }}
-        className="flex min-h-full flex-col gap-3 sm:gap-6"
+        className="flex min-w-0 flex-col gap-6 max-md:gap-4"
       >
-        <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm px-3 py-3 sm:px-4">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <HeaderName
-              name={t("createTitle")}
-              description={selectedMarketName ? t("selectedMarket") : t("createPageDescription")}
-              icon={<ListPlus />}
-            />
-
-            {selectedMarketName && (
-              <div className="inline-flex max-w-full items-center gap-2 self-start rounded-2xl border border-main/15 bg-main/8 px-4 py-2.5 text-sm font-bold text-main dark:bg-main/12 md:self-center">
-                <Store size={16} />
-                <span className="truncate">{selectedMarketName}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {!aiHidden && <CreateModeTabs mode={mode} onChange={setMode} />}
-
-        {mode === "manual" && <FormFieldError message={serverError} />}
-
-        {/*
-          Ikkala rejim ham MOUNT bo'lib qoladi, faqat yashiriladi: tab
-          almashganda qo'lda forma qiymatlari ham, AI matni/rasmlari ham
-          yo'qolmaydi. (Step2Combined qayta mount bo'lsa effekti tumanni
-          tozalab yuborardi.)
-        */}
-        <div
-          data-testid="manual-mode-panel"
-          className={`bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm p-3 sm:p-6 flex-1 ${mode === "manual" ? "" : "hidden"}`}
-        >
-          {mode === "manual" && !isMarketRole && step === 1 && <Step1Market />}
-          {step === 2 && <Step2Combined />}
-        </div>
-
-        {!aiHidden && (
-          <div data-testid="ai-mode-panel" className={mode === "ai" ? "flex-1" : "hidden"}>
-            <AiCreatePanel
-              key={market ? String(market.id) : "no-market"}
-              active={mode === "ai"}
-              isMarketRole={isMarketRole}
-              market={isMarketRole ? null : market}
-              onSwitchToManual={() => setMode("manual")}
-              onChangeMarket={
-                isMarketRole
-                  ? undefined
-                  : () => {
-                      methods.setValue("market", null);
-                      setStep(1);
-                    }
-              }
-            />
-          </div>
-        )}
-
-        {mode === "manual" && (
-          <StepActions
-            step={step}
-            canNext={canNext}
-            isSubmitting={createOrder.isPending}
-            isMarketRole={isMarketRole}
-            onBack={handleBack}
-            onNext={() => {
-              void handleNext();
-            }}
-          />
-        )}
-
-        <MarketNewOrdersTable
-          marketId={selectedMarketId}
-          marketName={selectedMarketName}
-          onRowClick={(order) =>
-            navigate(`/new-orders/${selectedMarketId}/edit/${order.id}`)
-          }
+        <PageHeader
+          back={BACK_TO}
+          backLabel={t("pageTitle", { ns: "newOrders" })}
+          title={t("createPageTitle")}
+          description={description}
+          actions={aiHidden ? undefined : <CreateModeTabs mode={mode} onChange={setMode} />}
         />
+
+        <div className="flex min-w-0 flex-wrap items-start gap-6 max-md:gap-4">
+          <div className="flex min-w-0 flex-[3_1_560px] flex-col gap-6 max-md:gap-4">
+            {/*
+              Ikkala rejim ham MOUNT bo'lib qoladi, faqat yashiriladi: tab
+              almashganda qo'lda forma qiymatlari ham, AI matni/rasmlari ham
+              yo'qolmaydi.
+            */}
+            <div
+              data-testid="manual-mode-panel"
+              className={isManual ? "flex min-w-0 flex-col gap-6 max-md:gap-4" : "hidden"}
+            >
+              {!isMarketRole ? (
+                <div ref={stepsRef} tabIndex={-1} className="min-w-0 scroll-mt-6 outline-none">
+                  <OrderStepper
+                    step={step}
+                    marketName={selectedMarketName}
+                    onChangeMarket={handlePrevious}
+                  />
+                </div>
+              ) : null}
+
+              {serverError ? (
+                <CreateAlert tone="danger" title={t("orderCreateErrorTitle")}>
+                  {serverError}
+                </CreateAlert>
+              ) : null}
+
+              {showStep1 ? (
+                <Step1Market
+                  canNext={canNext}
+                  backTo={BACK_TO}
+                  onNext={() => {
+                    void handleNext();
+                  }}
+                />
+              ) : null}
+              {step === 2 ? <Step2Combined /> : null}
+            </div>
+
+            {!aiHidden ? (
+              <div data-testid="ai-mode-panel" className={isManual ? "hidden" : "flex min-w-0 flex-col gap-4"}>
+                <AiCreatePanel
+                  key={market ? String(market.id) : "no-market"}
+                  active={mode === "ai"}
+                  isMarketRole={isMarketRole}
+                  market={isMarketRole ? null : market}
+                  onSwitchToManual={() => setMode("manual")}
+                  onChangeMarket={
+                    isMarketRole
+                      ? undefined
+                      : () => {
+                          methods.setValue("market", null);
+                          setStep(1);
+                        }
+                  }
+                />
+              </div>
+            ) : null}
+          </div>
+
+          {hasAside ? (
+            <aside
+              aria-label={showSummary ? t("createSummaryTitle") : t("createTodayAside")}
+              className={cx(
+                "flex min-w-0 flex-[1_1_300px] gap-6 max-md:gap-4",
+                // Market maketi: yon ustun planshetda ikki karta yonma-yon (`flex-wrap`); xodimlarda — ustma-ust.
+                isMarketRole ? "flex-wrap content-start [&>*]:flex-[1_1_300px]" : "flex-col",
+                showSummary && "lg:sticky lg:top-6",
+              )}
+            >
+              {showSummary ? (
+                <Step2Summary
+                  isMarketRole={isMarketRole}
+                  ready={canNext}
+                  submitting={createOrder.isPending}
+                  onPrevious={handlePrevious}
+                  backTo={BACK_TO}
+                />
+              ) : null}
+              {showToday && selectedMarketId ? (
+                <TodayOrdersCard
+                  marketId={selectedMarketId}
+                  marketName={selectedMarketName}
+                  isMarketRole={isMarketRole}
+                />
+              ) : null}
+            </aside>
+          ) : null}
+        </div>
       </form>
     </FormProvider>
   );

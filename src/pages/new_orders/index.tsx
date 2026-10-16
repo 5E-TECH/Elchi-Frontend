@@ -32,6 +32,10 @@ const NewOrders = () => {
   // Forma ochiq bo'lsa tugma ham, tablar ham yashirin — formaning "Orqaga"si qaytaradi.
   const isCreatePage = location.pathname.startsWith("/new-orders/create");
 
+  // Yaratish sahifasi (dizayn v2) o'z sarlavhasini chizadi («← Qabul va yaratish» · «Yangi buyurtma») — bu
+  // yerdagi eski sarlavha va tablar takrorlanmasin; sahifa to'g'ridan-to'g'ri shell kontent slotida.
+  if (isCreatePage) return <Outlet />;
+
   return (
     <PageContainer>
       <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

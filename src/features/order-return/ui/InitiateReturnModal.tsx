@@ -1,11 +1,12 @@
-import { memo, useEffect, useId, useState } from "react";
+// dizayn-v2: (maket yo'q) manager-orders-cancel-dialog
+import { memo, useEffect, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Undo2, X } from "lucide-react";
+import { Undo2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import Popup from "../../../shared/ui/Popup";
 import { useOrdersCoverage } from "../../../entities/orders/ordersCoverage";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { notify } from "../../../shared/lib/notify";
+import { Button, Dialog, Field, TextInput } from "../../../shared/ui/primitives";
 
 interface Props {
   open: boolean;
@@ -15,10 +16,13 @@ interface Props {
   onDone?: () => void;
 }
 
-/** HQ: buyurtmani marketga qaytarishni boshlash — sabab majburiy. */
+/**
+ * HQ: buyurtmani marketga qaytarishni boshlash — sabab majburiy (`POST orders/:id/initiate-return`).
+ * Maket yo'q — eng yaqini `manager-orders-cancel-dialog` (sabab maydoni + pastda amallar);
+ * telefonda `Dialog` o'zi pastki varaqa. So'rov ketayotganda oyna yopilmaydi.
+ */
 const InitiateReturnModal = ({ open, orderId, onClose, onDone }: Props) => {
-  const { t } = useTranslation("orders");
-  const titleId = useId();
+  const { t } = useTranslation(["orders", "common"]);
   const queryClient = useQueryClient();
   const { initiateReturn } = useOrdersCoverage();
   const [reason, setReason] = useState("");
@@ -30,7 +34,9 @@ const InitiateReturnModal = ({ open, orderId, onClose, onDone }: Props) => {
     setError("");
   }, [open]);
 
-  const handleSubmit = () => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (initiateReturn.isPending) return;
     const trimmed = reason.trim();
     if (!trimmed) {
       setError(t("returnReasonRequired"));
@@ -52,64 +58,45 @@ const InitiateReturnModal = ({ open, orderId, onClose, onDone }: Props) => {
   };
 
   return (
-    <Popup isShow={open} onClose={onClose} labelledBy={titleId}>
-      <div
-        data-testid="initiate-return-modal"
-        className="relative mx-3 w-[calc(100vw-24px)] max-w-md overflow-hidden rounded-2xl border border-gray-200 bg-primary shadow-2xl dark:border-primarydark/60 dark:bg-maindark"
-      >
-        <div className="flex items-center justify-between bg-gradient-to-r from-amber-600 to-amber-500 px-5 py-4 dark:from-amber-700 dark:to-amber-600">
-          <div className="flex items-center gap-2">
-            <Undo2 size={20} className="text-white" aria-hidden="true" />
-            <h2 id={titleId} className="text-base font-bold text-white">
-              {t("returnInitiateTitle", { id: orderId })}
-            </h2>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/20 transition-colors hover:bg-white/30"
-            aria-label={t("close", { ns: "common" })}
-          >
-            <X size={16} className="text-white" />
-          </button>
-        </div>
-
-        <div className="flex flex-col gap-4 p-5">
-          <p className="text-sm text-gray-600 dark:text-gray-300">{t("returnInitiateHint")}</p>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor={`${titleId}-reason`} className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              {t("returnReasonLabel")} <span className="text-red-400">*</span>
-            </label>
-            <textarea
-              id={`${titleId}-reason`}
-              data-testid="return-reason-input"
-              value={reason}
-              onChange={(event) => setReason(event.target.value)}
-              rows={3}
-              maxLength={500}
-              aria-invalid={error ? true : undefined}
-              className="w-full resize-none rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-base text-gray-800 outline-none transition-colors placeholder:text-gray-400 focus:border-amber-400 dark:border-white/10 dark:bg-primarydark/35 dark:text-white dark:placeholder:text-white/35 md:text-sm"
-              placeholder={t("returnReasonPlaceholder")}
-            />
-            {error ? (
-              <p role="alert" className="text-xs font-semibold text-error">
-                {error}
-              </p>
-            ) : null}
-          </div>
-
-          <button
-            type="button"
-            data-testid="initiate-return-submit"
-            onClick={handleSubmit}
-            disabled={initiateReturn.isPending}
-            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-amber-500 py-3 font-bold text-white transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {initiateReturn.isPending ? t("loading", { ns: "common" }) : t("returnInitiateSubmit")}
-          </button>
-        </div>
-      </div>
-    </Popup>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      busy={initiateReturn.isPending}
+      size="sm"
+      className="md:max-w-[460px]"
+      title={t("returnInitiateTitle", { id: orderId })}
+      description={t("returnInitiateHint")}
+      icon={Undo2}
+      iconTone="warning"
+      onSubmit={handleSubmit}
+      formProps={{ noValidate: true }}
+      data-testid="initiate-return-modal"
+      footer={
+        <>
+          <Button variant="secondary" disabled={initiateReturn.isPending} onClick={onClose}>
+            {t("cancel", { ns: "common" })}
+          </Button>
+          <Button type="submit" leftIcon={Undo2} loading={initiateReturn.isPending} data-testid="initiate-return-submit">
+            {t("returnInitiateSubmit")}
+          </Button>
+        </>
+      }
+    >
+      <Field label={t("returnReasonLabel")} required error={error || undefined}>
+        <TextInput
+          multiline
+          rows={3}
+          maxLength={500}
+          value={reason}
+          onValueChange={(value) => {
+            setReason(value);
+            if (error) setError("");
+          }}
+          placeholder={t("returnReasonPlaceholder")}
+          data-testid="return-reason-input"
+        />
+      </Field>
+    </Dialog>
   );
 };
 

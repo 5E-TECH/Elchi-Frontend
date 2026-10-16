@@ -1,4 +1,5 @@
 import { expect, test, type BrowserContext, type CDPSession, type Page, type Route } from "@playwright/test";
+import { expectToast, waitToastsGone } from "./support/toast";
 
 /**
  * PUSH (davC9QOX) — PROD BUILD ustida, HAQIQIY Service Worker bilan.
@@ -151,15 +152,11 @@ const waitForServiceWorker = async (page: Page) => {
     .toBe(true);
 };
 
-/**
- * Muvaffaqiyat toasti (antd, o'ng yuqori) /inbox dagi tugma ustiga tushadi; sichqoncha
- * ustida tursa antd uni yopmaydi. Keyingi bosishdan oldin sichqoncha chetga olinadi va
- * toast yopilishi kutiladi.
+/*
+ * Muvaffaqiyat xabari (v2 `Toaster`) keyingi bosish nishonini to'smasin: sichqoncha ustida tursa vaqt
+ * to'xtaydi — `waitToastsGone` (support/toast.ts) kursorni chetga olib, xabarlar yopilishini kutadi.
+ * (Avval antd `.ant-notification-notice` kutilardi — v2 da u yo'q, kutish bo'sh o'tib ketardi.)
  */
-const waitToastsGone = async (page: Page) => {
-  await page.mouse.move(5, 895);
-  await expect(page.locator(".ant-notification-notice")).toHaveCount(0, { timeout: 15_000 });
-};
 
 const enablePush = async (page: Page, where = "/inbox") => {
   await page.goto(where);
@@ -289,7 +286,9 @@ test.describe("Push — prod build, haqiqiy Service Worker", () => {
     expect(subscriptions.size).toBe(1);
 
     await waitToastsGone(page);
-    await page.getByRole("button", { name: "Chiqish" }).click();
+    // Dizayn v2 shell (2-bosqich): «Chiqish» — sarlavhadagi profil menyusining bandi (`UserMenu`).
+    await page.getByRole("button", { name: /Profil menyusi$/ }).click();
+    await page.getByRole("menu", { name: "Profil menyusi" }).getByRole("menuitem", { name: "Chiqish" }).click();
     await page.waitForURL(/\/login/);
     const del = calls.findIndex((call) => call.method === "DELETE" && call.path === "notifications/push/subscribe");
     const logout = calls.findIndex((call) => call.path === "auth/logout");
@@ -314,7 +313,7 @@ test.describe("Push — prod build, haqiqiy Service Worker", () => {
 
     expect(await page.evaluate(() => document.visibilityState)).toBe("visible");
     await deliver({ title: "Yangi buyurtma #501", body: "Toshkent, 150 000 so'm", link: "/orders/edit/501", id: "n1" });
-    await expect(page.getByText("Yangi buyurtma #501")).toBeVisible({ timeout: 10_000 });
+    await expectToast(page, "Yangi buyurtma #501", { tone: "info", timeout: 10_000 });
     // SW push'ni qayta ishlashiga vaqt beriladi — keyin ham tizim bildirishnomasi bo'lmasligi kerak.
     await page.waitForTimeout(1500);
     expect(await systemNotifications(page)).toEqual([]);

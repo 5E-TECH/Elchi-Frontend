@@ -9,8 +9,15 @@ test.describe("Kuryer sotish oynasi — 390px", () => {
     const { sells, leaked } = await mockCourierCancelApi(page);
     const dialog = await openSellDialog(page);
 
-    const box = (await dialog.boundingBox())!;
     const viewport = page.viewportSize()!;
+    // Dizayn v2 varaqasi pastdan siljib chiqadi (250 ms) — joyiga tushgach o'lchanadi.
+    await expect
+      .poll(async () => {
+        const settling = await dialog.boundingBox();
+        return settling ? Math.abs(settling.y + settling.height - viewport.height) : Infinity;
+      })
+      .toBeLessThanOrEqual(1);
+    const box = (await dialog.boundingBox())!;
     expect(Math.abs(box.y + box.height - viewport.height)).toBeLessThanOrEqual(1);
     expect(box.width).toBeGreaterThanOrEqual(viewport.width - 1);
 

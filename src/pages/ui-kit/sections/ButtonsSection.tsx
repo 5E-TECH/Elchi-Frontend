@@ -44,6 +44,7 @@ const VARIANT_SAMPLES: ReadonlyArray<{
   { variant: "success", name: "success", text: "sell", loadingText: "selling" },
   { variant: "danger", name: "danger", text: "delete", loadingText: "deleting" },
   { variant: "danger-soft", name: "dangerSoft", text: "delete", loadingText: "deleting", icon: Trash2 },
+  { variant: "success-soft", name: "successSoft", text: "sell", loadingText: "selling" },
 ];
 
 /** Yuklanish nomi maketdan: «Yangilanmoqda», «Chek tayyorlanmoqda». */

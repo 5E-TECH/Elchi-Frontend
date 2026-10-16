@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { mockReturnApi, openReturnTab } from "./support/mailsReturn";
+import { expectToast } from "./support/toast";
 
 /** Pochta → Qaytarish (YEI06cPN) — 1440px. */
 test.describe("Pochta → Qaytarish — 1440px", () => {
@@ -35,7 +36,7 @@ test.describe("Pochta → Qaytarish — 1440px", () => {
 
     await expect(page.getByText("Aliyev Vali")).toHaveCount(0);
     await expect(page.getByText("Karimova Nodira")).toBeVisible();
-    await expect(page.getByText("1 ta buyurtma omborga qaytarildi")).toBeVisible();
+    await expectToast(page, "1 ta buyurtma omborga qaytarildi", { tone: "success" });
     expect(leaked).toEqual([]);
   });
 

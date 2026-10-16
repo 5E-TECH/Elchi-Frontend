@@ -7,9 +7,13 @@ import { renderWithProviders } from "../../../test/test-utils";
 
 /**
  * fix3b FE-ORD-12 — manzil va buyurtma/mahsulotlar oynasi PATCH
- * /orders/:id/full orqali saqlanadi (faqat SUPERADMIN/ADMIN/REGISTRATOR).
- * Boshqa rollarga tugma o'chiq va sababi title'da.
+ * /orders/:id/full orqali saqlanadi (SUPERADMIN/ADMIN/REGISTRATOR/MENEJER).
+ * Market va kuryer — faqat o'qish (dizayn v2 maketlari `market-orders-detail`,
+ * `courier-orders-detail`): tahrirlash tugmasi umuman yo'q, marketda sababi
+ * «Faqat ko'rish uchun» ogohlantirishida.
  * fix3b LC-04 — REGIONAL menejer kuryer qo'lidagi buyurtmani sotmaydi.
+ * fix #4 — sotish / bekor / qaytarish menejerning `can_sell_cancel` bayrog'iga bog'liq
+ * (ro'yxatdagi `canUseManagerTableActions` bilan AYNI qoida).
  */
 
 const ROLE_LOCK = "Buyurtmani faqat superadmin, admin, menejer yoki registrator o'zgartira oladi.";
@@ -54,10 +58,22 @@ vi.mock("../../../entities/logistics/api/logisticsApi", () => ({
 }));
 
 vi.mock("../../../widgets/order-tracking", () => ({ OrderTracking: () => null }));
-vi.mock("../../orders/list/courier/list/SellModal", () => ({ default: () => null }));
-vi.mock("../../orders/list/courier/list/CancelModal", () => ({ default: () => null }));
+// Oynalarning o'zi alohida testlangan — bu yerda faqat ochilgan-ochilmagani.
+const modalOpen = vi.hoisted(() => ({ sell: false, cancel: false }));
+vi.mock("../../orders/list/courier/list/SellModal", () => ({
+  default: ({ open }: { open: boolean }) => {
+    modalOpen.sell = open;
+    return null;
+  },
+}));
+vi.mock("../../orders/list/courier/list/CancelModal", () => ({
+  default: ({ open }: { open: boolean }) => {
+    modalOpen.cancel = open;
+    return null;
+  },
+}));
 
-const renderAs = (role: string, branchType?: string) =>
+const renderAs = (role: string, branchType?: string, extraUser: Record<string, unknown> = {}) =>
   renderWithProviders(
     <Routes>
       <Route path="/orders/edit/:orderId" element={<NewOrderUpdate />} />
@@ -67,7 +83,12 @@ const renderAs = (role: string, branchType?: string) =>
       preloadedState: {
         role: { id: `${role}-1`, role, region: null, name: role },
         user: {
-          user: { id: `${role}-1`, role, ...(branchType ? { branch: { id: "15", type: branchType } } : {}) },
+          user: {
+            id: `${role}-1`,
+            role,
+            ...(branchType ? { branch: { id: "15", type: branchType } } : {}),
+            ...extraUser,
+          },
           isAuthenticated: true,
           accessToken: null,
           loading: false,
@@ -78,23 +99,36 @@ const renderAs = (role: string, branchType?: string) =>
     },
   );
 
-// Tartib: [0] — mahsulotlar oynasi, [1] — manzil oynasi (mijoz tugmasi matnsiz).
-const editButtons = () => screen.getAllByRole("button", { name: "Tahrirlash" });
+// Har karta tugmasining nomi o'z amali bilan (maket: «Buyurtmani tahrirlash», «Manzilni tahrirlash»;
+// o'chiq bo'lsa «… — qulflangan»).
+const PRODUCTS_EDIT = /^Buyurtmani tahrirlash/;
+const ADDRESS_EDIT = /^Manzilni tahrirlash/;
+const editButtons = () => [
+  screen.getByRole("button", { name: PRODUCTS_EDIT }),
+  screen.getByRole("button", { name: ADDRESS_EDIT }),
+];
 
 describe("NewOrderUpdate — buyurtmani tahrirlash huquqi (fix3b FE-ORD-12)", () => {
   afterEach(() => {
     Object.keys(orderState).forEach((key) => delete orderState[key]);
   });
 
-  // fix #2: market va kuryer hanuz tahrirlay olmaydi — tugma o'chiq, sababi title'da.
-  it.each(["market", "courier"])("%s — ikkala tahrirlash tugmasi o'chiq, sababi title'da", (role) => {
+  // fix #2: market va kuryer hanuz tahrirlay olmaydi — dizayn v2 da tugma umuman yo'q (maket).
+  it.each(["market", "courier"])("%s — tahrirlash tugmalari va oynalari yo'q (faqat o'qish)", (role) => {
     renderAs(role);
 
-    const [productsEdit, addressEdit] = editButtons();
-    expect(productsEdit).toBeDisabled();
-    expect(productsEdit).toHaveAttribute("title", ROLE_LOCK);
-    expect(addressEdit).toBeDisabled();
-    expect(addressEdit).toHaveAttribute("title", ROLE_LOCK);
+    expect(screen.queryByRole("button", { name: PRODUCTS_EDIT })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: ADDRESS_EDIT })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Mijoz ma'lumotini tahrirlash/ })).not.toBeInTheDocument();
+    expect(screen.queryByText("Tahrirlash")).not.toBeInTheDocument();
+  });
+
+  it("market — «Faqat ko'rish uchun» ogohlantirishida rol sababi", () => {
+    renderAs("market");
+
+    const note = screen.getByRole("note");
+    expect(note).toHaveTextContent("Faqat ko'rish uchun");
+    expect(note).toHaveTextContent(ROLE_LOCK);
   });
 
   // fix #2: menejer endi (superadmin/admin/registrator qatorida) yangi buyurtmani
@@ -108,7 +142,7 @@ describe("NewOrderUpdate — buyurtmani tahrirlash huquqi (fix3b FE-ORD-12)", ()
     expect(addressEdit).toBeEnabled();
 
     await user.click(productsEdit);
-    expect(await screen.findByText("Buyurtmani tahrirlash")).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "Buyurtmani tahrirlash" })).toBeInTheDocument();
   });
 
   it("registrator — manzil oynasi ham ochiladi", async () => {
@@ -116,19 +150,39 @@ describe("NewOrderUpdate — buyurtmani tahrirlash huquqi (fix3b FE-ORD-12)", ()
     renderAs("registrator");
 
     await user.click(editButtons()[1]);
-    expect(await screen.findByText("Manzilni tahrirlash")).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "Manzilni tahrirlash" })).toBeInTheDocument();
   });
 
   it("qabul qilingan buyurtmada avvalgi qulf sababi saqlanadi (rol emas)", () => {
     orderState.status = "received";
     renderAs("registrator");
 
-    const [productsEdit] = editButtons();
+    const [productsEdit, addressEdit] = editButtons();
     expect(productsEdit).toBeDisabled();
+    expect(productsEdit).toHaveAccessibleName("Buyurtmani tahrirlash — qulflangan");
     expect(productsEdit).toHaveAttribute(
       "title",
       "HQ qabul qilgandan keyin summa va mahsulotlarni o'zgartirib bo'lmaydi.",
     );
+    // Tugma sahifadagi qulf ogohlantirishiga bog'langan; manzil hali tahrirlanadi.
+    expect(productsEdit).toHaveAttribute("aria-describedby", "products-lock");
+    expect(document.getElementById("products-lock")).toHaveTextContent("Mahsulotlar va summa qulflangan.");
+    expect(document.getElementById("products-lock")).toHaveTextContent("Manzilni filialga jo'natilgunga qadar tahrirlash mumkin.");
+    expect(addressEdit).toBeEnabled();
+  });
+
+  it("filialga jo'natilgan buyurtmada hamma tugma qulf, ogohlantirish «Tahrirlash yopiq.»", () => {
+    orderState.status = "waiting";
+    renderAs("admin");
+
+    const [productsEdit, addressEdit] = editButtons();
+    const customerEdit = screen.getByRole("button", { name: /^Mijoz ma'lumotini tahrirlash/ });
+    for (const button of [productsEdit, addressEdit, customerEdit]) {
+      expect(button).toBeDisabled();
+      expect(button).toHaveAttribute("aria-describedby", "edit-lock");
+    }
+    expect(addressEdit).toHaveAttribute("title", "Filialga jo'natilgandan keyin mijoz va manzilni o'zgartirib bo'lmaydi.");
+    expect(document.getElementById("edit-lock")).toHaveTextContent("Tahrirlash yopiq.");
   });
 });
 
@@ -139,7 +193,7 @@ describe("NewOrderUpdate — menejer kuryerdagi buyurtmani sotmaydi (fix3b LC-04
 
   it("kuryer qo'lidagi WAITING buyurtmada 'Sotish' yo'q, 'Bekor qilish' bor", () => {
     Object.assign(orderState, { status: "waiting", post_id: "90", holder_type: "COURIER", holder_courier_id: "289", courier_id: "289" });
-    renderAs("manager", "REGIONAL");
+    renderAs("manager", "REGIONAL", { can_sell_cancel: true });
 
     expect(screen.queryByRole("button", { name: "Sotish" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Bekor qilish" })).toBeInTheDocument();
@@ -147,9 +201,77 @@ describe("NewOrderUpdate — menejer kuryerdagi buyurtmani sotmaydi (fix3b LC-04
 
   it("filialda turgan WAITING buyurtmada 'Sotish' avvalgidek", () => {
     Object.assign(orderState, { status: "waiting", post_id: "90", holder_type: "BRANCH", holder_courier_id: null, courier_id: null });
-    renderAs("manager", "REGIONAL");
+    renderAs("manager", "REGIONAL", { can_sell_cancel: true });
 
     expect(screen.getByRole("button", { name: "Sotish" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Bekor qilish" })).toBeInTheDocument();
+  });
+});
+
+describe("NewOrderUpdate — menejerning sotish/bekor ruxsati `can_sell_cancel` (fix #4)", () => {
+  // Filialda turgan, pochtaga biriktirilgan WAITING — sotish va bekor uchun qolgan hamma shart bajarilgan.
+  const sellableOrder = { status: "waiting", post_id: "90", holder_type: "BRANCH", holder_courier_id: null, courier_id: null };
+
+  afterEach(() => {
+    Object.keys(orderState).forEach((key) => delete orderState[key]);
+    modalOpen.sell = false;
+    modalOpen.cancel = false;
+  });
+
+  it.each(["REGIONAL", "HYBRID"])("⭐ %s menejeri, bayroq yo'q — «Sotish» va «Bekor qilish» yo'q", (branchType) => {
+    Object.assign(orderState, sellableOrder);
+    renderAs("manager", branchType, { can_sell_cancel: false });
+
+    expect(screen.queryByRole("button", { name: "Sotish" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Bekor qilish" })).not.toBeInTheDocument();
+    expect(modalOpen).toEqual({ sell: false, cancel: false });
+  });
+
+  it.each(["REGIONAL", "HYBRID"])("⭐ %s menejeri, bayroq yo'q — sotilgan buyurtmada «Qaytarish» yo'q", (branchType) => {
+    orderState.status = "sold";
+    renderAs("manager", branchType);
+
+    expect(screen.queryByRole("button", { name: "Qaytarish" })).not.toBeInTheDocument();
+  });
+
+  it("bayroq yo'q menejer yangi buyurtmani avvalgidek tahrirlaydi (bayroq faqat sotish/bekorga)", () => {
+    renderAs("manager", "HYBRID");
+
+    for (const button of editButtons()) expect(button).toBeEnabled();
+  });
+
+  it.each(["REGIONAL", "HYBRID"])("⭐ %s menejeri, bayroq bor — «Sotish» va «Bekor qilish» oynalari ochiladi", async (branchType) => {
+    const user = userEvent.setup();
+    Object.assign(orderState, sellableOrder);
+    renderAs("manager", branchType, { can_sell_cancel: true });
+
+    await user.click(screen.getByRole("button", { name: "Sotish" }));
+    expect(modalOpen.sell).toBe(true);
+    await user.click(screen.getByRole("button", { name: "Bekor qilish" }));
+    expect(modalOpen.cancel).toBe(true);
+  });
+
+  it.each(["REGIONAL", "HYBRID"])("⭐ %s menejeri, bayroq bor — sotilgan buyurtmada «Qaytarish» oynasi ochiladi", async (branchType) => {
+    const user = userEvent.setup();
+    orderState.status = "sold";
+    renderAs("manager", branchType, { can_sell_cancel: true });
+
+    await user.click(screen.getByRole("button", { name: "Qaytarish" }));
+    expect(await screen.findByRole("alertdialog", { name: "Buyurtmani qaytarish" })).toBeInTheDocument();
+  });
+
+  // Boshqa rollar o'zgarmaydi: bayroq ularga sotish/bekor tugmasini OCHMAYDI.
+  it.each([
+    ["superadmin", undefined],
+    ["admin", undefined],
+    ["registrator", undefined],
+    ["manager", "HQ"],
+    ["manager", "PICKUP"],
+  ])("%s %s — bayroq bo'lsa ham «Sotish» / «Bekor qilish» yo'q", (role, branchType) => {
+    Object.assign(orderState, sellableOrder);
+    renderAs(role, branchType, { can_sell_cancel: true });
+
+    expect(screen.queryByRole("button", { name: "Sotish" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Bekor qilish" })).not.toBeInTheDocument();
   });
 });

@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { mockMailDeleteApi, openMailDetail } from "./support/mailDelete";
+import { expectToast } from "./support/toast";
 
 /** Pochta tafsiloti → savat (yokjwjXG) — superadmin, 1440px. Backend soxta. */
 test.describe("Pochtadan o'chirish — 1440px", () => {
@@ -24,7 +25,7 @@ test.describe("Pochtadan o'chirish — 1440px", () => {
     expect((await response).status()).toBe(200);
 
     await expect(dialog).toHaveCount(0);
-    await expect(page.getByText("1 ta buyurtma pochtadan o'chirildi")).toBeVisible();
+    await expectToast(page, "1 ta buyurtma pochtadan o'chirildi", { tone: "success" });
     await expect(page.getByText("Aliyev Vali")).toHaveCount(0);
     await expect(page.getByText("Karimova Nodira").first()).toBeVisible();
     expect(deletes).toEqual([

@@ -124,7 +124,7 @@ test.describe("Buyurtma ma'lumotlari — qabul mezonlari (1440px)", () => {
   test.describe("brauzer UTC zonasida", () => {
     test.use({ timezoneId: "UTC" });
 
-    test("⭐ yaratilgan sana (tarixda) Asia/Tashkent: 95 → 20.07.2026, 13:38:49; 102 → kun siljimaydi", async ({ page }) => {
+    test("⭐ yaratilgan sana (tarixda) Asia/Tashkent: 95 → 20.07.2026, 13:38; 102 → kun siljimaydi", async ({ page }) => {
       const first = await mockOrderDetailApi(page, ORDER_95, {
         profile: SUPERADMIN,
         tracking: () => [createdEvent("95", ORDER_95.createdAt)],
@@ -132,7 +132,8 @@ test.describe("Buyurtma ma'lumotlari — qabul mezonlari (1440px)", () => {
       await openOrderDetail(page, "95");
       // Brauzer UTC — tekshiruv ma'noli bo'lishi uchun.
       expect(await page.evaluate(() => Intl.DateTimeFormat().resolvedOptions().timeZone)).toBe("UTC");
-      await expect(page.getByTestId("tracking-event").first()).toContainText("20.07.2026, 13:38:49");
+      // Tarix yozuvi vaqti — dizayn v2 formati (soniyasiz), lekin Toshkent zonasida.
+      await expect(page.getByTestId("tracking-event").first()).toContainText("20.07.2026, 13:38");
       expect(first.leaked).toEqual([]);
       await page.context().unrouteAll({ behavior: "ignoreErrors" });
 
@@ -143,7 +144,7 @@ test.describe("Buyurtma ma'lumotlari — qabul mezonlari (1440px)", () => {
       });
       await openOrderDetail(page, "102");
       const event = page.getByTestId("tracking-event").first();
-      await expect(event).toContainText("20.07.2026, 01:30:00");
+      await expect(event).toContainText("20.07.2026, 01:30");
       await expect(event).not.toContainText("19.07.2026");
       expect(second.leaked).toEqual([]);
     });

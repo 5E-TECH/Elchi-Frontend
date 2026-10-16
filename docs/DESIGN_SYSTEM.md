@@ -358,6 +358,39 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   `Modal.confirm|info|success|error|warning`, `Modal.useModal`, `App.useApp`, `window.confirm|alert|prompt` va global
   `confirm`/`alert`/`prompt` — xato.
 
+**4-bosqich — jarayonda (sahifalar).** Har sahifa alohida PR, faylning birinchi qatorida `// dizayn-v2: <ekran>`.
+
+- **Ro'yxat standarti** — `DataTable` (ustunlar, `density`, server saralashi, tanlov, telefonda `renderCard` →
+  kartalar) + `Pagination` (`Card footer`, «10 ta» tanlovi, 5 o'rinli sahifalar), `src/shared/ui/primitives` barrelidan;
+  namunasi `/ops/ui-kit?section=table`, klasslar `design/CODE-MAP.md` §2.6. v1 `shared/components/Table` va
+  `shared/components/pagination` yangi kodda ishlatilmaydi.
+- **Ko'chirilgan:** `/orders` — barcha rollar (superadmin, admin, registrator, market, menejer, kuryer): ro'yxat va
+  8 holat tabi, filtrlar (asboblar qatori, «Qo'shimcha filtrlar» paneli, chiplar, telefon varaqasi), menejerning
+  «Bekor qilingan» tabida HQ'ga yuborish, kuryer ro'yxati (3 tab, skaner), sotish / qisman sotish / bekor qilish /
+  qaytarish oynalari (`variant="courier" | "manager"`). Tab sonlari chizilmagan — `GET /orders` holat bo'yicha sonlarni
+  bermaydi.
+- **Ko'chirilgan:** `/orders/edit/:orderId` — buyurtma tafsiloti, barcha rollar (`<rol>-orders-detail`; market va
+  kuryer — o'z tartibi): sarlavha `PageHeader` («← Buyurtmalar», № + nusxalash, holat, «Qaytarish so'ralgan», rol
+  amallari — bitta asosiy «Sotish»), ogohlantirishlar (market tasdig'i, qulflar, «Faqat ko'rish uchun», qisman sotuv),
+  Mijoz · Manzil · To'lov · Mahsulotlar · Dalillar · Tarix · «Buyurtma ma'lumotlari» kartalari, tahrirlash oynalari
+  (manzil, mijoz, buyurtma / mahsulotlar — `pages/new_orders/components/editDialogs/`), sotish / bekor qilish /
+  qaytarish — `/orders` dagi v2 oynalar, marketga qaytarish oynalari. Sahifa `pages/new_orders/components/new_orderUpdate.tsx`
+  (konteyner) + `detail/` (kartalar, ruxsat `orderDetailAccess.ts`, javob tozalash `orderDetailModel.ts`). Ayni komponent
+  `/new-orders/:marketId/edit/:orderId` da ham — u route'ning o'z maketlari (`*-neworders-market-order-edit`,
+  `market-new-orders-edit`) hali ko'chirilmagan, tafsilot ko'rinishi chiqadi.
+- **Ko'chirilgan:** `/new-orders/create` — buyurtma yaratish, barcha rollar (`*-create-manual*`, `*-create-step1|step2`,
+  `*-create-market-picker*`, `*-create-ai*`): sarlavha `PageHeader` («← Qabul va yaratish», «Yangi buyurtma», holatga
+  qarab izoh, o'ngda «Qo'lda | AI bilan» — `SegmentedControl`), ~ 924 px dan keng ekranda ikki ustun (asosiy + yon),
+  telefonda yopishqoq panel yo'q. Qo'lda: «Qadamlar» kartasi (`OrderStepper`; «O'zgartirish» / «Oldingi» 1-qadamga
+  qaytaradi, market va forma saqlanadi, boshqa market tanlansa katalog mahsulotlari tushib qoladi, «maxsus» qoladi),
+  «Market tanlang» (`Step1Market`) + market tanlash oynasi (`MarketPicker.tsx`: qidiruv, `listbox`, klaviatura,
+  skelet, «Market topilmadi»; ro'yxat faqat oyna ochiqligida so'raladi), 2-qadam — mijoz, manzil, mahsulotlar
+  (katalog + «maxsus»), yetkazish va izoh (`Step2Combined`), yon ustunda «Buyurtma xulosasi» (`Step2Summary`) va
+  bugungi «Yangi buyurtmalar» (`TodayOrdersCard`). Market rolida 1-qadam yo'q; planshetda yon kartalar yonma-yon.
+  AI bilan: matn/rasm paneli (`AiInputPanel`), tahlil kartalari (`AiPreviewCard`), tasdiq paneli va 5 tadan ortiq
+  buyurtmada tasdiq oynasi (`AiConfirmBar`), «Yaratildi (N)» (`AiCreatedList`), chiqib ketish himoyasi — `useConfirm()`.
+  Ogohlantirishlar — umumiy `ui/CreateAlert.tsx` (`.el-alert`). v1 `ui/formFieldStyles.tsx` o'chirildi.
+
 **Dizayn qo'riqchisi** (`scripts/design-guard.mjs`, `npm run design:guard`): `colour`, `palette`, `dark-pair`,
 `legacy`, `money`, `icons`, `tiny-text`, `v1-class`, `weight`, `gradient`, `v1-helper`. Ikki darvoza:
 `npm test` ichida ratchet (`design/guard-baseline.json`, fayl × qoida soni faqat kamayadi, yangi va `// dizayn-v2:`

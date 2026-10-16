@@ -17,14 +17,17 @@ import { Spinner, type SpinnerSize } from "./Spinner";
  *    secondary — chegarali (`.el-iconbtn-bordered`), matnli tugmalar yonida;
  *    primary   — to'liq ko'k (kamdan-kam: ekrandagi bosh amal ikonka bo'lsa);
  *    danger    — qizil ikonka, hover'da yumshoq qizil fon (`.el-menu-item-danger` kabi).
- *                To'liq qizil fon ikonka tugmada YO'Q: maket qoidasi — to'liq qizil faqat
- *                tasdiqlash oynasida va aniq fe'lli matn bilan.
+ *                Tinch holatda to'liq qizil fon ikonka tugmada YO'Q: maket qoidasi — to'liq qizil
+ *                faqat tasdiqlash oynasida va aniq fe'lli matn bilan;
+ *    danger-soft — yumshoq qizil fon doim (`.el-iconbtn` + `.el-btn-danger-soft`): ro'yxat qatoridan
+ *                olib tashlash (maket `*-orders-detail-edit-order-dialog` — mahsulot qatori); hover va
+ *                bosilganda `Button variant="danger-soft"` dagidek to'liq qizil + `on-solid`.
  *
  *  O'lchamlar: sm 32 (r 8, ikonka 16) · md 40 (sukut; r 10, ikonka 20) · lg 44 (r 12, ikonka 22).
  *  Telefonda (< 768) har o'lcham 44×44.
  */
 
-export type IconButtonVariant = "ghost" | "secondary" | "primary" | "danger";
+export type IconButtonVariant = "ghost" | "secondary" | "primary" | "danger" | "danger-soft";
 
 /** Fokus halqasi, fokusdagi burchak va kursor — `Button.tsx` dagi BASE izohiga qarang. */
 const BASE =
@@ -49,6 +52,10 @@ const VARIANT: Record<IconButtonVariant, string> = {
   danger:
     "border-transparent bg-transparent text-danger-fg not-disabled:not-aria-busy:hover:bg-danger-soft " +
     "not-disabled:not-aria-busy:active:bg-danger-soft",
+  "danger-soft":
+    "border-transparent bg-danger-soft text-danger-fg not-disabled:not-aria-busy:hover:bg-danger " +
+    "not-disabled:not-aria-busy:hover:text-on-solid not-disabled:not-aria-busy:active:bg-danger " +
+    "not-disabled:not-aria-busy:active:text-on-solid",
 };
 
 const SIZE: Record<ButtonSize, string> = {

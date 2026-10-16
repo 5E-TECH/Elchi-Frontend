@@ -1,4 +1,4 @@
-import { expect, type Page, type Route } from "@playwright/test";
+import { expect, type Locator, type Page, type Route } from "@playwright/test";
 
 /**
  * Kuryer → Buyurtmalar → «Bekor qilish» / «Sotish» oynalari — soxta backend.
@@ -110,10 +110,13 @@ export const mockCourierCancelApi = async (page: Page, theme: "light" | "dark" =
   return { state, cancels, sells, leaked };
 };
 
-/** Ro'yxatdagi birinchi «Bekor qilish» → oyna. */
+/**
+ * Ro'yxatdagi birinchi «Bekor qilish» → oyna. Qator tugmasi nomi maketdagidek (dizayn v2):
+ * kompyuterda «№10234 ni bekor qilish», telefonda «Feruza Mirzayeva: bekor qilish».
+ */
 export const openCancelDialog = async (page: Page) => {
   await page.goto("/orders");
-  const rowAction = page.getByRole("button", { name: "Bekor qilish", exact: true }).first();
+  const rowAction = page.getByRole("button", { name: /(ni|:) bekor qilish$/ }).first();
   await expect(rowAction).toBeVisible({ timeout: 60_000 });
   await rowAction.click();
   const dialog = page.getByRole("dialog", { name: "Buyurtmani bekor qilish" });
@@ -121,13 +124,23 @@ export const openCancelDialog = async (page: Page) => {
   return dialog;
 };
 
-/** Ro'yxatdagi birinchi «Sotish» → oyna. */
+/** Ro'yxatdagi birinchi «Sotish» → oyna (qator tugmasi: «№10234 ni sotish» / «Feruza Mirzayeva: sotish»). */
 export const openSellDialog = async (page: Page) => {
   await page.goto("/orders");
-  const rowAction = page.getByRole("button", { name: "Sotish", exact: true }).first();
+  const rowAction = page.getByRole("button", { name: /(ni|:) sotish$/ }).first();
   await expect(rowAction).toBeVisible({ timeout: 60_000 });
   await rowAction.click();
   const dialog = page.getByRole("dialog", { name: "Sotish" });
   await expect(dialog).toBeVisible();
   return dialog;
+};
+
+/**
+ * Bekor qilish sababi — dizayn v2 `Select` (combobox): ochiladi, variant bosiladi. Ro'yxat `#ui-portal` da
+ * (oyna tashqarisida), shuning uchun variant sahifadan qidiriladi.
+ */
+export const chooseCancelReason = async (page: Page, dialog: Locator, label: string) => {
+  await dialog.getByRole("combobox", { name: /^Sabab/ }).click();
+  await page.getByRole("option", { name: label, exact: true }).click();
+  await expect(dialog.getByRole("combobox", { name: /^Sabab/ })).toHaveText(label);
 };

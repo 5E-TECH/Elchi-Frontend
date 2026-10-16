@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockCourierCancelApi, openCancelDialog } from "./support/courierCancel";
+import { chooseCancelReason, mockCourierCancelApi, openCancelDialog } from "./support/courierCancel";
 
 /** Kuryer → «Bekor qilish» — sabab majburiy (GNWDKvmZ, TC: PUvKXWVw) — 1440px. */
 test.describe("Kuryer bekor qilish oynasi — 1440px", () => {
@@ -16,7 +16,7 @@ test.describe("Kuryer bekor qilish oynasi — 1440px", () => {
     const submit = dialog.getByRole("button", { name: "Bekor qilish", exact: true });
     await expect(submit).toBeDisabled();
 
-    await dialog.getByLabel(/^Sabab/).selectOption("CUSTOMER_REFUSED");
+    await chooseCancelReason(page, dialog, "Mijoz rad etdi");
     await expect(submit).toBeEnabled();
     const request = page.waitForRequest((r) => r.method() === "POST" && r.url().endsWith("/orders/cancel/10234"));
     await submit.click();
@@ -34,7 +34,7 @@ test.describe("Kuryer bekor qilish oynasi — 1440px", () => {
     const dialog = await openCancelDialog(page);
     const submit = dialog.getByRole("button", { name: "Bekor qilish", exact: true });
 
-    await dialog.getByLabel(/^Sabab/).selectOption("OTHER");
+    await chooseCancelReason(page, dialog, "Boshqa");
     await expect(dialog.getByText("«Boshqa» tanlanganda izoh majburiy")).toBeVisible();
     await expect(submit).toBeDisabled();
 

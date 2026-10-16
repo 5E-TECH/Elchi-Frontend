@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { mockFinancialEntryApi, openHistoryTab, submitManualExpense } from "./support/financialEntry";
+import { expectToast } from "./support/toast";
 
 /** Balans → Tarix → "Yozuv qo'shish" (GtAoqHlk) — 1440px. Daftarga haqiqiy yozuv YO'Q: gateway soxta. */
 test.describe("Balans → Yozuv qo'shish — 1440px", () => {
@@ -28,7 +29,7 @@ test.describe("Balans → Yozuv qo'shish — 1440px", () => {
     expect(posts[0].idempotencyKey).toBeTruthy();
 
     await expect(dialog).toBeHidden();
-    await expect(page.getByText("Yozuv qo'shildi")).toBeVisible();
+    await expectToast(page, "Yozuv qo'shildi", { tone: "success" });
     // Tarix DARHOL yangilanadi: yangi qator jadvalda, reload yo'q.
     const newRow = page.locator("tr").filter({ hasText: "Ofis ijarasi, oktabr" });
     await expect(newRow).toBeVisible();

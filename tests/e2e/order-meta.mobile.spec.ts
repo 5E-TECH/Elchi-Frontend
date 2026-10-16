@@ -31,7 +31,7 @@ test.describe("Buyurtma ma'lumotlari — 390px", () => {
     await expect(value).toContainText(/70\D?000 so'm/);
 
     const overflow = await page
-      .locator("main.el-surface-page")
+      .locator("main:has([data-shell-slot=content])")
       .evaluate((main) => main.scrollWidth - main.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
     expect(leaked).toEqual([]);

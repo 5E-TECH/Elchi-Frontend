@@ -1,33 +1,25 @@
+// dizayn-v2: superadmin-neworders-create-ai-preview, admin-neworders-create-ai, manager-new-orders-create-ai, registrator-new-orders-create-ai, market-new-orders-create-ai-preview
 import { memo, useId, useState, type ReactNode } from "react";
-import {
-  AlertTriangle,
-  Building2,
-  CheckCircle2,
-  ChevronDown,
-  Home,
-  MapPin,
-  Minus,
-  Package,
-  Phone,
-  Plus,
-  SendHorizontal,
-  Trash2,
-  User,
-  X,
-} from "lucide-react";
+import { Building2, ChevronDown, ChevronUp, MapPin, Minus, Package, Plus, Send, Trash2, TriangleAlert, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useLogistics } from "../../../../../entities/logistics/api/logisticsApi";
 import { toLocalPhone, type AiPreviewItem } from "../../../../../entities/ai-order";
 import type { DeliveryType } from "../../../../../entities/order/types/order";
-import { keepPhoneCaretAfterChange } from "../../../../../shared/lib/phone";
-import SearchableSelect, { type SearchableSelectOption } from "../../../../../shared/ui/SearchableSelect";
-import { formatPhone, formatPrice, stripPhone, stripPrice } from "../../model/orderCreateForm";
+import { cx } from "../../../../../shared/lib/cx";
+import { formatMoneyLocalized } from "../../../../../shared/lib/formatMoney";
+import { getUzbekistanPhoneDigits, toUzbekistanPhoneValue } from "../../../../../shared/lib/phone";
 import {
-  FormFieldError,
-  getActionButtonClassName,
-  getFieldClassName,
-  orderInputClassName,
-} from "../formFieldStyles";
+  Badge,
+  Button,
+  Card,
+  Field,
+  IconButton,
+  SegmentedControl,
+  Select,
+  TextInput,
+  type SelectOption,
+} from "../../../../../shared/ui/primitives";
+import { CreateAlert } from "../CreateAlert";
 import { toList, type AiDraft } from "./aiDraft";
 import { evalPreview, isItemResolved, needsPriceConfirm, type AiDraftOrder, type AiIssue } from "./evalPreview";
 
@@ -45,48 +37,50 @@ const ISSUE_KEYS: Record<AiIssue, string> = {
   item_unresolved: "aiIssueItemUnresolved",
 };
 
-/** Bo'lim sarlavhasi (Mahsulotlar, Yetkazish turi) — 12px dan kichik emas. */
-const sectionLabelClassName =
-  "flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400";
-
-/** Telefonda (390px) barmoq uchun 44px; `sm:` dan ilovaning zich 40px naqshi. */
-const touchButtonClassName = "min-h-11 sm:min-h-10";
-
-/** Mavjud naqsh (Step2Combined): `nom • sato_code` — operator viloyatni tekshira oladi. */
+/** Mavjud naqsh (qo'lda forma): `nom • sato_code` — operator viloyat/tumanni tekshira oladi. */
 const areaLabel = (item: AiAreaItem) => `${item.name ?? "—"}${item.sato_code ? ` • ${item.sato_code}` : ""}`;
 
-/** Maydon ostidagi kichik ogohlantirish (BeePost `FieldHint` uslubi). */
-const FieldHint = ({ children }: { children: ReactNode }) => (
-  <p className="flex items-start gap-1 text-xs font-semibold leading-4 text-amber-600 dark:text-amber-300">
-    <AlertTriangle size={12} className="mt-0.5 shrink-0" />
-    <span>{children}</span>
-  </p>
+/** Ikki ustundan biriga mos maydonlar to'ri (maket: `minmax(min(220px,100%),1fr)`, oraliq 16). */
+const FIELD_GRID = "grid grid-cols-[repeat(auto-fit,minmax(min(220px,100%),1fr))] gap-4";
+
+/** Maydon ostidagi sariq ogohlantirish (maket: 13 px, `warning-fg`, qalin, `TriangleAlert`). */
+const WarningHint = ({ children }: { children: ReactNode }) => (
+  <span className="flex items-start gap-1.5 text-[13px] font-semibold text-warning-fg">
+    <TriangleAlert size={16} aria-hidden="true" className="mt-px shrink-0" />
+    <span className="min-w-0">{children}</span>
+  </span>
 );
 
-const CardField = ({
-  label,
-  icon,
-  htmlFor,
+/** Checkbox qatori (`.el-choice`, telefonda ham ≥ 44 px). */
+const ChoiceRow = ({
+  checked,
+  onChange,
   children,
-  className = "",
+  className,
 }: {
-  label: string;
-  icon?: ReactNode;
-  htmlFor?: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
   children: ReactNode;
   className?: string;
 }) => (
-  <div className={`flex min-w-0 flex-col gap-1.5 ${className}`}>
-    <label
-      htmlFor={htmlFor}
-      className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400"
-    >
-      {icon}
-      {label}
-    </label>
+  <label className={cx("flex min-h-11 cursor-pointer items-center gap-2.5 text-[13px] font-semibold text-text", className)}>
+    <input
+      type="checkbox"
+      checked={checked}
+      onChange={(event) => onChange(event.target.checked)}
+      className="size-[18px] shrink-0 accent-action"
+    />
     {children}
-  </div>
+  </label>
 );
+
+/**
+ * Server sababi sarlavha bilan boshlansa («Buyurtma yaratilmadi: …») takrorlanmasin — matnda faqat sabab.
+ */
+const stripTitle = (message: string, title: string) => {
+  if (!message.startsWith(title)) return message;
+  return message.slice(title.length).replace(/^[\s:.—-]+/, "");
+};
 
 type AiPreviewCardProps = {
   draft: AiDraft;
@@ -101,6 +95,12 @@ type AiPreviewCardProps = {
   onCreate: () => void;
 };
 
+/**
+ * AI PREVIEW KARTASI (maket `*-create-ai-preview`): sarlavhada tartib raqami, mijoz ismi va holat
+ * («Tayyor» / «To'ldirilmagan: N ta»), «Bu kartani yaratish» + «Bu buyurtmani tashlab yuborish».
+ * Tanada: server xatosi, kamchiliklar, mijoz va manzil maydonlari, mahsulotlar (AI o'qigani + katalogdan
+ * tanlash), yetkazish turi, summa, operator, izoh. Karta boshqariladi — holat ota komponentda.
+ */
 const AiPreviewCard = ({
   draft,
   index,
@@ -113,27 +113,28 @@ const AiPreviewCard = ({
   onRemove,
   onCreate,
 }: AiPreviewCardProps) => {
-  const { t } = useTranslation("orders");
+  const { t, i18n } = useTranslation(["orders", "common"]);
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const { order, source } = draft;
   const { ready, issues } = evalPreview(order);
   const idPrefix = `ai-${draft.key}`;
+  const titleId = useId();
   const bodyId = useId();
 
   /**
-   * TELEFONDA karta sukut bo'yicha YIG'ILGAN (bitta qator xulosa) — 30 ta
-   * ochiq karta telefonda foydalanib bo'lmaydigan uzunlik beradi. ⚠️ `ready`
-   * bo'lmagan yoki yaratishda yiqilgan karta MAJBURAN ochiq: operator uni
-   * ko'rishi shart. Ish stolida (`sm:`) har doim ochiq — faqat CSS.
+   * TELEFONDA tayyor karta sukut bo'yicha YIG'ILGAN (bitta qator: tuman · summa) — 30 ta ochiq karta
+   * telefonda foydalanib bo'lmaydigan uzunlik beradi. ⚠️ `ready` bo'lmagan yoki yaratishda yiqilgan karta
+   * MAJBURAN ochiq va yig'ish tugmasi yo'q: operator uni ko'rishi shart. ≥ 768 da tana har doim ochiq (CSS).
    */
   const mustStayOpen = !ready || Boolean(draft.createError);
   const [expanded, setExpanded] = useState(mustStayOpen);
   // Karta "tayyor emas"ga o'tsa ochiladi va tahrir paytida o'zi yopilmaydi.
   if (mustStayOpen && !expanded) setExpanded(true);
-  const summaryPrice =
-    order.total_price === null ? "—" : `${formatPrice(String(order.total_price))} ${t("currency")}`;
 
-  // react-query kaliti `[districts, regionId]` — bir xil viloyatli kartalar
-  // keshni baham ko'radi, har karta uchun alohida so'rov ketmaydi.
+  const summaryPrice =
+    order.total_price === null ? "—" : formatMoneyLocalized(order.total_price, { language });
+
+  // react-query kaliti `[districts, regionId]` — bir xil viloyatli kartalar keshni baham ko'radi.
   const { useGetDistricts } = useLogistics();
   const districtsQuery = useGetDistricts(order.region_id ?? undefined);
   const districts = toList<AiAreaItem>(districtsQuery.data);
@@ -143,39 +144,39 @@ const AiPreviewCard = ({
   const updateItem = (itemIndex: number, patch: Partial<AiPreviewItem>) =>
     update({ items: order.items.map((item, i) => (i === itemIndex ? { ...item, ...patch } : item)) });
 
-  const regionOptions: SearchableSelectOption[] = regions.map((region) => ({
-    value: String(region.id),
-    label: areaLabel(region),
-  }));
+  const regionOptions: SelectOption[] = regions.map((region) => ({ value: String(region.id), label: areaLabel(region) }));
 
+  /**
+   * Tuman ro'yxati: AI takliflari ENG TEPADA alohida guruhda, qolganlari «Barcha tumanlar» guruhida.
+   * Taklif boshqa viloyatda bo'lsa (tumanlar ro'yxatida yo'q) — `nom • viloyat`.
+   */
   const candidateIds = new Set(order.district_candidates.map((candidate) => String(candidate.id)));
-  const candidateOptions = order.district_candidates.map((candidate) => {
+  const candidateOptions: SelectOption[] = order.district_candidates.map((candidate) => {
     const known = districts.find((district) => String(district.id) === String(candidate.id));
     return {
       value: String(candidate.id),
       label: known ? areaLabel(known) : `${candidate.label} • ${candidate.region_name}`,
+      group: t("aiSuggestions"),
     };
   });
-  const restDistrictOptions = districts
-    .filter((district) => !candidateIds.has(String(district.id)))
-    .map((district) => ({ value: String(district.id), label: areaLabel(district) }));
-  const districtOptions: SearchableSelectOption[] = candidateOptions.length
-    ? [
-        { value: "__ai_suggestions", label: t("aiSuggestions"), disabled: true },
-        ...candidateOptions,
-        ...(restDistrictOptions.length
-          ? [{ value: "__all_districts", label: t("aiAllDistricts"), disabled: true }, ...restDistrictOptions]
-          : []),
-      ]
-    : restDistrictOptions;
+  const hasCandidates = candidateOptions.length > 0;
+  const districtOptions: SelectOption[] = [
+    ...candidateOptions,
+    ...districts
+      .filter((district) => !candidateIds.has(String(district.id)))
+      .map((district) => ({
+        value: String(district.id),
+        label: areaLabel(district),
+        group: hasCandidates ? t("aiAllDistricts") : undefined,
+      })),
+  ];
   if (order.district_id && !districtOptions.some((option) => option.value === order.district_id)) {
     districtOptions.unshift({ value: order.district_id, label: order.district_name ?? `#${order.district_id}` });
   }
 
   /**
-   * ⚠️ Tuman FAQAT operator viloyatni qo'lda o'zgartirganda tozalanadi —
-   * shu handler ichida, `useEffect` da EMAS. Qo'lda formadagi effekt AI
-   * birga qo'ygan viloyat+tumanni jimgina o'chirib yuborardi.
+   * ⚠️ Tuman FAQAT operator viloyatni qo'lda o'zgartirganda tozalanadi — shu handler ichida, `useEffect` da
+   * EMAS. Effekt AI birga qo'ygan viloyat+tumanni jimgina o'chirib yuborardi.
    */
   const handleRegionChange = (value: string) => {
     if (value === (order.region_id ?? "")) return;
@@ -208,19 +209,24 @@ const AiPreviewCard = ({
     update(patch);
   };
 
-  const productOptionsFor = (item: AiPreviewItem): SearchableSelectOption[] => {
+  /** Katalog ro'yxati: AI takliflari tepada («AI takliflari»), qolgani «Barcha mahsulotlar». */
+  const productOptionsFor = (item: AiPreviewItem): SelectOption[] => {
     const suggested = new Set(item.candidates.map((candidate) => String(candidate.id)));
-    const suggestions = item.candidates.map((candidate) => ({ value: String(candidate.id), label: candidate.name }));
-    const rest = products
-      .filter((product) => !suggested.has(product.id))
-      .map((product) => ({ value: product.id, label: product.name }));
-    const options: SearchableSelectOption[] = suggestions.length
-      ? [
-          { value: "__ai_suggestions", label: t("aiSuggestions"), disabled: true },
-          ...suggestions,
-          ...(rest.length ? [{ value: "__all_products", label: t("aiAllProducts"), disabled: true }, ...rest] : []),
-        ]
-      : rest;
+    const hasSuggestions = item.candidates.length > 0;
+    const options: SelectOption[] = [
+      ...item.candidates.map((candidate) => ({
+        value: String(candidate.id),
+        label: candidate.name,
+        group: t("aiSuggestions"),
+      })),
+      ...products
+        .filter((product) => !suggested.has(product.id))
+        .map((product) => ({
+          value: product.id,
+          label: product.name,
+          group: hasSuggestions ? t("aiAllProducts") : undefined,
+        })),
+    ];
     if (item.product_id && !options.some((option) => option.value === item.product_id)) {
       options.unshift({ value: item.product_id, label: item.resolved_name ?? `#${item.product_id}` });
     }
@@ -228,374 +234,330 @@ const AiPreviewCard = ({
   };
 
   const phoneUnreadable = !toLocalPhone(order.phone_number) && Boolean(source.phone_number?.trim());
-  const accent = draft.createError
-    ? "border-l-[var(--color-error)]"
-    : ready
-      ? "border-l-[var(--color-success)]"
-      : "border-l-amber-400";
+  const failedTitle = t("aiCreateFailedTitle");
+  const failedText = draft.createError ? stripTitle(draft.createError, failedTitle) : "";
+  const priceInvalid = issues.includes("price_missing") || issues.includes("price_confirm");
+  const customerName = order.customer_name?.trim();
 
   return (
-    <article
+    <Card
+      as="article"
+      padding="none"
+      aria-labelledby={titleId}
       data-testid="ai-preview-card"
       data-ready={ready}
-      // `scroll-mb-48` — klaviatura ochilganda / scrollIntoView da maydon pastdagi
-      // yopishgan "Tayyorlarini yaratish" paneli ostida qolib ketmaydi.
-      className={`flex scroll-mb-48 scroll-mt-4 flex-col gap-3 rounded-2xl border border-l-4 border-gray-200 bg-primary p-3 shadow-sm dark:border-primarydark dark:bg-primarydark/30 sm:gap-4 sm:p-5 [&_input]:scroll-mb-48 [&_textarea]:scroll-mb-48 ${accent}`}
+      // `scroll-mb-48` — klaviatura ochilganda / `scrollIntoView` da maydon pastdagi yopishgan
+      // «Yaratishni tasdiqlash» paneli ostida qolib ketmaydi.
+      className="scroll-mt-4 scroll-mb-48 [&_input]:scroll-mb-48 [&_textarea]:scroll-mb-48"
     >
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="rounded-lg bg-main/10 px-2 py-1 text-xs font-bold text-main">#{index + 1}</span>
+      <header className="flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-3 border-b border-border px-5 py-4">
+        <div className="flex min-w-0 flex-[999_1_auto] flex-wrap items-center gap-2.5">
+          <Badge>#{index + 1}</Badge>
+          <h2 id={titleId} className="min-w-0 text-base font-bold text-text [overflow-wrap:anywhere]">
+            {customerName || "—"}
+          </h2>
           {ready ? (
-            <span className="flex items-center gap-1 text-sm font-semibold text-[var(--color-success)]">
-              <CheckCircle2 size={16} />
+            <Badge tone="success" dot>
               {t("aiReady")}
-            </span>
+            </Badge>
           ) : (
-            <span className="flex items-center gap-1 text-sm font-semibold text-amber-600 dark:text-amber-300">
-              <AlertTriangle size={16} />
+            <Badge tone="warning" dot>
               {t("aiNotReady", { count: issues.length })}
-            </span>
+            </Badge>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
+        <div className="flex flex-[1_1_auto] items-center justify-end gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={Send}
             onClick={onCreate}
             disabled={!ready || creating}
-            className={`${getActionButtonClassName({ variant: "primary", disabled: !ready || creating })} ${touchButtonClassName} flex-1 sm:flex-none`}
+            className="max-md:flex-[1_0_auto]"
           >
-            <SendHorizontal size={15} />
             {t("aiCreateThis")}
-          </button>
-          <button
-            type="button"
+          </Button>
+          <IconButton
+            variant="secondary"
+            size="sm"
+            icon={X}
+            label={t("aiDiscardOrder")}
             onClick={onRemove}
             disabled={creating}
-            aria-label={t("aiDiscardOrder")}
-            title={t("aiDiscardOrder")}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border-2 border-gray-200 text-gray-400 transition-colors hover:border-error/40 hover:text-error dark:border-primarydark sm:h-10 sm:w-10"
-          >
-            <X size={16} />
-          </button>
+          />
         </div>
       </header>
 
-      <button
-        type="button"
-        data-testid="ai-card-toggle"
-        aria-expanded={expanded}
-        aria-controls={bodyId}
-        disabled={mustStayOpen}
-        onClick={() => setExpanded((value) => !value)}
-        className="flex min-h-11 w-full items-center justify-between gap-2 rounded-xl bg-gray-50 px-3 text-left text-sm text-maindark disabled:cursor-default dark:bg-primarydark/40 dark:text-primary sm:hidden"
-      >
-        {/* Uzun ism birinchi qisqaradi — tuman va narx har doim ko'rinadi. */}
-        <span className="flex min-w-0 flex-1 items-baseline gap-1 font-semibold">
-          <span className="min-w-0 truncate">{order.customer_name?.trim() || "—"}</span>
-          <span className="shrink-0 text-gray-400">·</span>
-          <span className="min-w-0 max-w-[40%] shrink-0 truncate">{order.district_name || "—"}</span>
-          <span className="shrink-0 text-gray-400">·</span>
-          <span className="shrink-0 whitespace-nowrap">{summaryPrice}</span>
-        </span>
-        {!mustStayOpen && (
-          <ChevronDown size={18} className={`shrink-0 transition-transform ${expanded ? "rotate-180" : ""}`} />
-        )}
-      </button>
+      {!mustStayOpen ? (
+        <button
+          type="button"
+          data-testid="ai-card-toggle"
+          aria-expanded={expanded}
+          aria-controls={bodyId}
+          onClick={() => setExpanded((value) => !value)}
+          className={cx(
+            "hidden min-h-[52px] w-full items-center gap-2 px-5 py-3 text-left max-md:flex",
+            expanded && "border-b border-border",
+          )}
+        >
+          <span className="sr-only">{expanded ? t("aiCardCollapse") : t("aiCardExpand")} </span>
+          {/* Uzun tuman nomi qisqaradi — summa har doim to'liq ko'rinadi. */}
+          <span className="flex min-w-0 flex-1 items-baseline gap-1.5 text-[13px]">
+            <span className="min-w-0 truncate text-text-muted">{order.district_name || "—"}</span>
+            <span aria-hidden="true" className="shrink-0 text-text-muted">
+              ·
+            </span>
+            <span className="shrink-0 whitespace-nowrap font-semibold text-text">{summaryPrice}</span>
+          </span>
+          {expanded ? (
+            <ChevronUp size={16} aria-hidden="true" className="shrink-0 text-action-fg" />
+          ) : (
+            <ChevronDown size={16} aria-hidden="true" className="shrink-0 text-text-subtle" />
+          )}
+        </button>
+      ) : null}
 
       <div
         id={bodyId}
         data-testid="ai-card-body"
-        className={`flex-col gap-3 sm:flex sm:gap-4 ${expanded ? "flex" : "hidden"}`}
+        className={cx("flex flex-col gap-5 p-5", !expanded && "max-md:hidden")}
       >
-        <FormFieldError message={draft.createError} />
+        {draft.createError ? (
+          <CreateAlert tone="danger" title={failedTitle}>
+            {failedText}
+          </CreateAlert>
+        ) : null}
 
-        {!ready && (
-          <ul className="flex flex-wrap gap-1.5" data-testid="ai-issues">
+        {!ready ? (
+          <ul aria-label={t("aiIssuesLabel")} data-testid="ai-issues" className="flex flex-wrap gap-2">
             {issues.map((issue) => (
-              <li
-                key={issue}
-                className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-500/15 dark:text-amber-200"
-              >
-                {t(ISSUE_KEYS[issue])}
+              <li key={issue} className="min-w-0">
+                <Badge tone="warning" className="max-w-full">
+                  <span className="truncate">{t(ISSUE_KEYS[issue])}</span>
+                </Badge>
               </li>
             ))}
           </ul>
-        )}
+        ) : null}
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
-          <CardField label={t("customerName")} icon={<User size={12} />} htmlFor={`${idPrefix}-name`}>
-            <input
-              id={`${idPrefix}-name`}
-              type="text"
+        <div className={FIELD_GRID}>
+          <Field label={t("createCustomerName")} required id={`${idPrefix}-name`} invalid={issues.includes("name_missing")}>
+            <TextInput
               value={order.customer_name}
-              onChange={(event) => update({ customer_name: event.target.value })}
-              className={getFieldClassName(orderInputClassName, issues.includes("name_missing"))}
+              onValueChange={(value) => update({ customer_name: value })}
+              placeholder={t("enterName")}
             />
-          </CardField>
+          </Field>
 
-          <CardField label={t("phone")} icon={<Phone size={12} />} htmlFor={`${idPrefix}-phone`}>
-            <div className="relative">
-              <span className="absolute left-3.5 top-1/2 z-10 -translate-y-1/2 font-mono text-xs text-gray-400">+998</span>
-              <input
-                id={`${idPrefix}-phone`}
-                type="tel"
-                inputMode="numeric"
-                autoComplete="off"
-                placeholder="XX XXX XX XX"
-                value={formatPhone(order.phone_number)}
-                onChange={(event) => {
-                  const next = stripPhone(event.target.value);
-                  update({ phone_number: next });
-                  keepPhoneCaretAfterChange(event.target, formatPhone(next));
-                }}
-                className={getFieldClassName(
-                  `${orderInputClassName} pl-14 font-mono tracking-wider`,
-                  issues.includes("phone_invalid"),
-                )}
-              />
-            </div>
-            {phoneUnreadable && <FieldHint>{t("aiPhoneRead", { value: source.phone_number })}</FieldHint>}
-          </CardField>
+          <Field
+            label={t("phone")}
+            required
+            id={`${idPrefix}-phone`}
+            invalid={issues.includes("phone_invalid")}
+            hint={phoneUnreadable ? <WarningHint>{t("aiPhoneRead", { value: source.phone_number })}</WarningHint> : undefined}
+          >
+            <TextInput
+              mode="phone"
+              value={toUzbekistanPhoneValue(order.phone_number)}
+              onValueChange={(value) => update({ phone_number: getUzbekistanPhoneDigits(value) })}
+            />
+          </Field>
 
-          <CardField label={t("additionalPhone")} icon={<Phone size={12} />} htmlFor={`${idPrefix}-extra`}>
-            <div className="relative">
-              <span className="absolute left-3.5 top-1/2 z-10 -translate-y-1/2 font-mono text-xs text-gray-400">+998</span>
-              <input
-                id={`${idPrefix}-extra`}
-                type="tel"
-                inputMode="numeric"
-                autoComplete="off"
-                placeholder="XX XXX XX XX"
-                value={formatPhone(order.extra_number ?? "")}
-                onChange={(event) => {
-                  const next = stripPhone(event.target.value);
-                  update({ extra_number: next });
-                  keepPhoneCaretAfterChange(event.target, formatPhone(next));
-                }}
-                className={`${orderInputClassName} pl-14 font-mono tracking-wider`}
-              />
-            </div>
-          </CardField>
+          <Field label={t("additionalPhone")} id={`${idPrefix}-extra`}>
+            <TextInput
+              mode="phone"
+              value={toUzbekistanPhoneValue(order.extra_number ?? "")}
+              onValueChange={(value) => update({ extra_number: getUzbekistanPhoneDigits(value) })}
+            />
+          </Field>
 
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <SearchableSelect
-              label={`${t("filterRegion")} *`}
-              name={`${idPrefix}-region`}
-              value={order.region_id ?? ""}
-              onChange={handleRegionChange}
+          <Field
+            label={t("filterRegion")}
+            labelAs="span"
+            required
+            id={`${idPrefix}-region`}
+            hint={order.region_id && !order.region_given ? <WarningHint>{t("aiRegionGuessed")}</WarningHint> : undefined}
+          >
+            <Select
+              searchable
               options={regionOptions}
-              placeholder={regionsLoading ? t("loading", { ns: "common" }) : t("selectRegion")}
-              icon={MapPin}
+              value={order.region_id || null}
+              onChange={(value) => handleRegionChange(value ?? "")}
+              placeholder={t("selectRegion")}
               loading={regionsLoading}
-              disabled={regionsLoading}
             />
-            {order.region_id && !order.region_given && <FieldHint>{t("aiRegionGuessed")}</FieldHint>}
-            {!order.region_id && <FieldHint>{t("aiIssueRegionMissing")}</FieldHint>}
-          </div>
+          </Field>
 
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <SearchableSelect
-              label={`${t("district")} *`}
-              name={`${idPrefix}-district`}
-              value={order.district_id ?? ""}
-              onChange={handleDistrictChange}
+          <Field label={t("district")} labelAs="span" required id={`${idPrefix}-district`}>
+            <Select
+              searchable
               options={districtOptions}
-              placeholder={
-                !order.region_id && !candidateOptions.length
-                  ? t("selectRegionFirst")
-                  : districtsLoading
-                    ? t("loading", { ns: "common" })
-                    : t("selectDistrict")
-              }
-              icon={Building2}
+              value={order.district_id || null}
+              onChange={(value) => handleDistrictChange(value ?? "")}
+              placeholder={!order.region_id && !hasCandidates ? t("selectRegionFirst") : t("selectDistrict")}
               loading={districtsLoading}
-              disabled={(!order.region_id && !candidateOptions.length) || districtsLoading}
+              disabled={!order.region_id && !hasCandidates}
             />
-            {!order.district_id && <FieldHint>{t("aiIssueDistrictMissing")}</FieldHint>}
-          </div>
+          </Field>
 
-          <CardField label={t("address")} icon={<Home size={12} />} htmlFor={`${idPrefix}-address`}>
-            <textarea
-              id={`${idPrefix}-address`}
-              rows={2}
+          <Field label={t("address")} id={`${idPrefix}-address`}>
+            <TextInput
               value={order.address ?? ""}
-              onChange={(event) => update({ address: event.target.value })}
-              className={`${orderInputClassName} resize-none`}
+              onValueChange={(value) => update({ address: value })}
+              placeholder={t("enterFullAddress")}
             />
-          </CardField>
+          </Field>
         </div>
 
-        <section className="flex flex-col gap-2 border-t border-gray-200 pt-4 dark:border-primarydark">
-          <p className={sectionLabelClassName}>
-            <Package size={12} />
+        <section aria-labelledby={`${idPrefix}-items-title`} className="flex flex-col gap-3 border-t border-border pt-5">
+          <h3 id={`${idPrefix}-items-title`} className="flex items-center gap-2 text-sm font-semibold text-text">
+            <Package size={16} aria-hidden="true" className="shrink-0 text-text-muted" />
             {t("aiItems")}
-          </p>
-          {order.items.length === 0 && <FieldHint>{t("aiIssueItemsMissing")}</FieldHint>}
-          {order.items.map((item, itemIndex) => {
-            const resolved = isItemResolved(item);
-            return (
-              <div
-                key={`${item.name}-${itemIndex}`}
-                data-testid="ai-item-row"
-                className={`flex flex-col gap-2 rounded-xl border p-2.5 ${
-                  resolved ? "border-gray-200 dark:border-primarydark/60" : "border-amber-300 dark:border-amber-500/40"
-                }`}
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="min-w-0 flex-1 truncate text-xs text-gray-500 dark:text-gray-400">
-                    {t("aiReadAs")}: <span className="font-semibold text-maindark dark:text-primary">{item.name || "—"}</span>
-                  </p>
-                  <div className="flex shrink-0 items-center gap-1">
-                    <button
-                      type="button"
-                      aria-label="-"
-                      onClick={() => updateItem(itemIndex, { quantity: Math.max(1, item.quantity - 1) })}
-                      className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 hover:border-main/40 dark:border-primarydark sm:h-8 sm:w-8"
-                    >
-                      <Minus size={14} />
-                    </button>
-                    <span className="w-7 text-center text-sm font-bold text-maindark dark:text-primary">{item.quantity}</span>
-                    <button
-                      type="button"
-                      aria-label="+"
-                      onClick={() => updateItem(itemIndex, { quantity: item.quantity + 1 })}
-                      className="flex h-11 w-11 items-center justify-center rounded-lg border border-gray-200 hover:border-main/40 dark:border-primarydark sm:h-8 sm:w-8"
-                    >
-                      <Plus size={14} />
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={t("aiRemoveItem")}
-                      onClick={() => update({ items: order.items.filter((_, i) => i !== itemIndex) })}
-                      className="flex h-11 w-11 items-center justify-center text-gray-300 transition-colors hover:text-error sm:h-8 sm:w-8"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </div>
+          </h3>
+          {order.items.length === 0 ? <WarningHint>{t("aiIssueItemsMissing")}</WarningHint> : null}
+          {order.items.length > 0 ? (
+            <ul className="flex flex-col gap-2">
+              {order.items.map((item, itemIndex) => {
+                const name = item.name || "—";
+                return (
+                  <li
+                    key={`${item.name}-${itemIndex}`}
+                    data-testid="ai-item-row"
+                    data-resolved={isItemResolved(item)}
+                    className="flex flex-col gap-3 rounded-xl bg-sunken p-3"
+                  >
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                      <p className="min-w-0 flex-[1_1_200px] text-[13px] text-text-muted [overflow-wrap:anywhere]">
+                        {t("aiReadAs")}: <span className="font-semibold text-text">{name}</span>
+                      </p>
+                      <div className="flex items-center gap-1">
+                        <div
+                          role="group"
+                          aria-label={t("itemQuantityGroup", { name })}
+                          className="inline-flex items-center rounded-[10px] border border-border-strong bg-surface"
+                        >
+                          <IconButton
+                            size="sm"
+                            icon={Minus}
+                            label={t("decreaseQuantity", { name })}
+                            disabled={item.quantity <= 1}
+                            onClick={() => updateItem(itemIndex, { quantity: Math.max(1, item.quantity - 1) })}
+                          />
+                          <span className="min-w-7 text-center text-sm font-semibold text-text tabular-nums">
+                            {item.quantity}
+                          </span>
+                          <IconButton
+                            size="sm"
+                            icon={Plus}
+                            label={t("increaseQuantity", { name })}
+                            onClick={() => updateItem(itemIndex, { quantity: item.quantity + 1 })}
+                          />
+                        </div>
+                        <IconButton
+                          size="sm"
+                          icon={Trash2}
+                          label={t("aiRemoveItem", { name })}
+                          onClick={() => update({ items: order.items.filter((_, i) => i !== itemIndex) })}
+                        />
+                      </div>
+                    </div>
 
-                <SearchableSelect
-                  label={t("aiCatalogProduct")}
-                  name={`${idPrefix}-item-${itemIndex}`}
-                  value={item.product_id ?? ""}
-                  onChange={(value) => {
-                    const product = products.find((p) => p.id === value);
-                    const candidate = item.candidates.find((c) => String(c.id) === value);
-                    updateItem(itemIndex, {
-                      product_id: value || null,
-                      resolved_name: product?.name ?? candidate?.name ?? null,
-                      allow_free_text: false,
-                    });
-                  }}
-                  options={productOptionsFor(item)}
-                  placeholder={productsLoading ? t("loading", { ns: "common" }) : t("aiPickFromCatalog")}
-                  loading={productsLoading}
-                  disabled={productsLoading || item.allow_free_text === true}
-                  size="sm"
-                />
-
-                {!item.product_id && (
-                  <div className="flex flex-col gap-1.5 rounded-lg bg-amber-50 p-2 dark:bg-amber-500/10">
-                    <FieldHint>{t("aiProductNotInCatalog")}</FieldHint>
-                    <label className="flex min-h-11 cursor-pointer items-center gap-2 text-xs font-semibold text-maindark dark:text-primary sm:min-h-0">
-                      <input
-                        type="checkbox"
-                        checked={item.allow_free_text === true}
-                        onChange={(event) => updateItem(itemIndex, { allow_free_text: event.target.checked })}
-                        className="h-4 w-4 accent-[var(--color-main)]"
+                    <Field label={t("aiCatalogProduct")} labelAs="span" id={`${idPrefix}-item-${itemIndex}`}>
+                      <Select
+                        searchable
+                        options={productOptionsFor(item)}
+                        value={item.product_id || null}
+                        onChange={(value) => {
+                          const product = products.find((p) => p.id === value);
+                          const candidate = item.candidates.find((c) => String(c.id) === value);
+                          updateItem(itemIndex, {
+                            product_id: value || null,
+                            resolved_name: product?.name ?? candidate?.name ?? null,
+                            allow_free_text: false,
+                          });
+                        }}
+                        placeholder={t("aiPickFromCatalog")}
+                        loading={productsLoading}
+                        disabled={item.allow_free_text === true}
                       />
-                      {t("aiSendAsFreeText")}
-                    </label>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                    </Field>
+
+                    {!item.product_id ? (
+                      <div className="flex flex-col gap-1 rounded-xl bg-warning-soft px-3 py-2.5">
+                        <WarningHint>{t("aiProductNotInCatalog")}</WarningHint>
+                        <ChoiceRow
+                          checked={item.allow_free_text === true}
+                          onChange={(checked) => updateItem(itemIndex, { allow_free_text: checked })}
+                        >
+                          {t("aiSendAsFreeText")}
+                        </ChoiceRow>
+                      </div>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
         </section>
 
-        <div className="grid grid-cols-1 gap-3 border-t border-gray-200 pt-4 dark:border-primarydark sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
-          <div className="flex flex-col gap-2 sm:col-span-2 xl:col-span-3">
-            <p className={sectionLabelClassName}>
-              {t("deliveryType")}
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {(
-                [
-                  { value: "center" as DeliveryType, label: t("deliveryCenter"), icon: Building2 },
-                  { value: "address" as DeliveryType, label: t("deliveryHome"), icon: Home },
-                ] as const
-              ).map(({ value, label, icon: Icon }) => (
-                <button
-                  key={value}
-                  type="button"
-                  aria-pressed={order.where_deliver === value}
-                  onClick={() => update({ where_deliver: value })}
-                  className={`flex min-h-11 items-center justify-center gap-2 rounded-xl border-2 px-3 py-2 text-sm font-semibold transition-all ${
-                    order.where_deliver === value
-                      ? "border-main bg-main text-primary"
-                      : "border-gray-200 text-gray-500 hover:border-main/40 dark:border-primarydark dark:text-gray-400"
-                  }`}
-                >
-                  <Icon size={15} />
-                  {label}
-                </button>
-              ))}
-            </div>
+        <div className={cx(FIELD_GRID, "border-t border-border pt-5")}>
+          <div className="col-span-full flex min-w-0 flex-col gap-1.5">
+            <span className="text-[13px] font-semibold text-text">{t("deliveryType")}</span>
+            <SegmentedControl<DeliveryType>
+              ariaLabel={t("deliveryType")}
+              fullWidth
+              value={order.where_deliver === "address" ? "address" : "center"}
+              onValueChange={(value) => update({ where_deliver: value })}
+              options={[
+                { value: "center", label: t("deliveryToCenter"), icon: Building2 },
+                { value: "address", label: t("deliveryToHome"), icon: MapPin },
+              ]}
+            />
           </div>
 
-          <CardField label={t("totalPrice")} htmlFor={`${idPrefix}-price`}>
-            <input
-              id={`${idPrefix}-price`}
-              type="text"
-              inputMode="numeric"
+          <Field
+            label={t("totalPrice")}
+            required
+            id={`${idPrefix}-price`}
+            invalid={priceInvalid}
+            hint={issues.includes("price_missing") ? <WarningHint>{t("aiIssuePriceMissing")}</WarningHint> : undefined}
+          >
+            <TextInput
+              mode="money"
               placeholder="0"
-              value={order.total_price === null ? "" : formatPrice(String(order.total_price))}
-              onChange={(event) => {
-                const digits = stripPrice(event.target.value);
-                // Narx o'zgarsa oldingi tasdiq kuchini yo'qotadi.
-                update({ total_price: digits ? Number(digits) : null, price_confirmed: false });
-              }}
-              className={getFieldClassName(
-                `${orderInputClassName} font-mono`,
-                issues.includes("price_missing") || issues.includes("price_confirm"),
-              )}
+              value={order.total_price === null ? "" : String(order.total_price)}
+              // Narx o'zgarsa oldingi tasdiq kuchini yo'qotadi.
+              onValueChange={(digits) => update({ total_price: digits ? Number(digits) : null, price_confirmed: false })}
             />
-            {issues.includes("price_missing") && <FieldHint>{t("aiIssuePriceMissing")}</FieldHint>}
-            {needsPriceConfirm(order) && (
-              <label className="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg bg-amber-50 p-2 text-xs font-semibold text-maindark dark:bg-amber-500/10 dark:text-primary sm:min-h-0">
-                <input
-                  type="checkbox"
-                  checked={order.price_confirmed === true}
-                  onChange={(event) => update({ price_confirmed: event.target.checked })}
-                  className="h-4 w-4 accent-[var(--color-main)]"
-                />
+            {needsPriceConfirm(order) ? (
+              <ChoiceRow
+                checked={order.price_confirmed === true}
+                onChange={(checked) => update({ price_confirmed: checked })}
+                className="rounded-[10px] bg-warning-soft px-2.5 py-2"
+              >
                 {t("aiConfirmPrice")}
-              </label>
-            )}
-          </CardField>
+              </ChoiceRow>
+            ) : null}
+          </Field>
 
-          <CardField label={t("operator")} icon={<User size={12} />} htmlFor={`${idPrefix}-operator`}>
-            <input
-              id={`${idPrefix}-operator`}
-              type="text"
+          <Field label={t("operator")} id={`${idPrefix}-operator`}>
+            <TextInput
               value={order.operator ?? ""}
-              onChange={(event) => update({ operator: event.target.value })}
-              className={orderInputClassName}
+              onValueChange={(value) => update({ operator: value })}
+              placeholder={t("operatorPlaceholder")}
             />
-          </CardField>
+          </Field>
 
-          <CardField label={t("note")} htmlFor={`${idPrefix}-comment`} className="sm:col-span-2 xl:col-span-1">
-            <textarea
-              id={`${idPrefix}-comment`}
-              rows={2}
+          <Field label={t("note")} id={`${idPrefix}-comment`}>
+            <TextInput
               value={order.comment ?? ""}
-              onChange={(event) => update({ comment: event.target.value })}
-              className={`${orderInputClassName} resize-none`}
+              onValueChange={(value) => update({ comment: value })}
+              placeholder={t("notePlaceholder")}
             />
-          </CardField>
+          </Field>
         </div>
       </div>
-    </article>
+    </Card>
   );
 };
 

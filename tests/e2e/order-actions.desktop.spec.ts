@@ -58,7 +58,8 @@ test.describe("Sotish/Bekor qilish — hududiy menejer", () => {
     });
     await openOrderDetail(page);
 
-    await expect(actionButtons(page)).toHaveText(["Sotish", "Bekor qilish"]);
+    // Maket `manager-orders-detail`: «Bekor qilish» (danger-soft), keyin asosiy «Sotish».
+    await expect(actionButtons(page)).toHaveText(["Bekor qilish", "Sotish"]);
     await actionButtons(page).filter({ hasText: "Sotish" }).click();
 
     const submit = page.locator("button").filter({ hasText: /^Sotish$/ }).last();

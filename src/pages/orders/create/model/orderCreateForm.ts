@@ -134,20 +134,9 @@ export const createOrderSchema = (requireMarket: boolean = true) =>
 
 export const orderCreateSchema = createOrderSchema();
 
-export const stripPhone = (value: string): string =>
+// Telefon niqobi formada — `TextInput mode="phone"`; bu yordamchi faqat `formatExtraNumber` uchun.
+const stripPhone = (value: string): string =>
   value.replace(/\D/g, "").slice(0, 9);
-
-export const formatPhone = (raw: string): string => {
-  const digits = stripPhone(raw);
-
-  if (digits.length <= 2) return digits;
-  if (digits.length <= 5) return `${digits.slice(0, 2)} ${digits.slice(2)}`;
-  if (digits.length <= 7) {
-    return `${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5)}`;
-  }
-
-  return `${digits.slice(0, 2)} ${digits.slice(2, 5)} ${digits.slice(5, 7)} ${digits.slice(7, 9)}`;
-};
 
 export const formatPrice = (raw: string): string => {
   const amount = raw.replace(/\D/g, "");
@@ -196,3 +185,20 @@ export const buildCreateOrderPayload = (
     ...(operator && { operator }),
   };
 };
+
+/** API javobidan ro'yxat: `[]` · `{ data: [] }` · `{ items: [] }` · `{ results: [] }`. */
+export const toApiList = <T>(value: unknown): T[] => {
+  if (Array.isArray(value)) return value as T[];
+  if (typeof value !== "object" || value === null) return [];
+  const record = value as { data?: unknown; items?: unknown; results?: unknown };
+  if (Array.isArray(record.data)) return record.data as T[];
+  if (Array.isArray(record.items)) return record.items as T[];
+  if (Array.isArray(record.results)) return record.results as T[];
+  return [];
+};
+
+/**
+ * Katalog mahsuloti (`product_id`) YOKI erkin-matnli «maxsus» mahsulot (`product_name`, `product_id = null`)
+ * uchun yagona kalit — bo'sh katalogli marketga ham buyurtma yaratish mumkin.
+ */
+export const orderItemKey = (item: OrderItem): string => item.product_id ?? `name:${item.product_name ?? ""}`;

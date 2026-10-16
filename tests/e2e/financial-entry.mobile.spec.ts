@@ -25,7 +25,7 @@ test.describe("Balans → Yozuv qo'shish — 390px", () => {
     await expect(dialog).toBeHidden();
     await expect(page.getByText("Ofis ijarasi").first()).toBeVisible();
 
-    const main = await page.locator("main.el-surface-page").evaluate((el) => ({ sw: el.scrollWidth, cw: el.clientWidth }));
+    const main = await page.locator("main:has([data-shell-slot=content])").evaluate((el) => ({ sw: el.scrollWidth, cw: el.clientWidth }));
     expect(main.sw).toBeLessThanOrEqual(main.cw);
     expect(leaked).toEqual([]);
   });

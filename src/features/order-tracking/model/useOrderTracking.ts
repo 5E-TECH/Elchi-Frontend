@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { orderActivityLogApi } from "../../../entities/order";
 import { getApiErrorMessage } from "../../../shared/lib/apiError";
+import { getErrorStatus } from "../../../shared/lib/errorKind";
 import type { ActivityLogResponse, TrackingEvent } from "../../../entities/order";
 
 type UseOrderTrackingResult = {
@@ -8,8 +9,14 @@ type UseOrderTrackingResult = {
   isLoading: boolean;
   isError: boolean;
   errorMessage: string;
+  /** Xato HTTP kodi (403 — boshqa market buyurtmasi: «Qayta urinish» ma'nosiz). */
+  errorStatus: number | null;
   hasMore: boolean;
   loadMore: () => void;
+  /** Backend bergan jami yozuvlar soni (`total`); bermasa — `null` (sahifa yuklanganlar sonini ko'rsatadi). */
+  total: number | null;
+  /** Birinchi sahifani qayta so'rash (xato holatidagi «Qayta urinish»). */
+  retry: () => void;
 };
 
 const DEFAULT_LIMIT = 20;
@@ -130,6 +137,8 @@ export const useOrderTracking = (orderId: string | number, enabled = true): UseO
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [total, setTotal] = useState<number | null>(null);
+  const [errorStatus, setErrorStatus] = useState<number | null>(null);
   const requestIdRef = useRef(0);
 
   const fetchPage = useCallback(
@@ -144,6 +153,7 @@ export const useOrderTracking = (orderId: string | number, enabled = true): UseO
       setIsLoading(true);
       setIsError(false);
       setErrorMessage("");
+      setErrorStatus(null);
 
       try {
         const response = await orderActivityLogApi.getByOrderId(orderId, {
@@ -169,6 +179,7 @@ export const useOrderTracking = (orderId: string | number, enabled = true): UseO
         });
 
         setPage(nextPage);
+        setTotal(typeof total === "number" && Number.isFinite(total) ? total : null);
 
         const resolvedHasMore =
           typeof total === "number"
@@ -183,10 +194,12 @@ export const useOrderTracking = (orderId: string | number, enabled = true): UseO
 
         setIsError(true);
         setErrorMessage(getErrorMessage(error));
+        setErrorStatus(getErrorStatus(error) ?? null);
 
         if (replace) {
           setEvents([]);
           setHasMore(false);
+          setTotal(null);
         }
       } finally {
         if (requestIdRef.current === currentRequestId) {
@@ -201,6 +214,7 @@ export const useOrderTracking = (orderId: string | number, enabled = true): UseO
     setEvents([]);
     setPage(1);
     setHasMore(false);
+    setTotal(null);
 
     if (!enabled) {
       setIsLoading(false);
@@ -220,5 +234,9 @@ export const useOrderTracking = (orderId: string | number, enabled = true): UseO
     void fetchPage(page + 1, false);
   }, [fetchPage, hasMore, isLoading, page]);
 
-  return { events, isLoading, isError, errorMessage, hasMore, loadMore };
+  const retry = useCallback(() => {
+    void fetchPage(1, true);
+  }, [fetchPage]);
+
+  return { events, isLoading, isError, errorMessage, errorStatus, hasMore, loadMore, total, retry };
 };
