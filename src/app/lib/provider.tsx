@@ -9,6 +9,7 @@ import type { RootState } from "../config/store";
 import { ThemeProvider } from "../providers/theme/ThemeContext";
 import AntdThemeProvider from "../providers/theme/AntdThemeProvider";
 import { NotificationProvider } from "../providers/notification/NotificationProvider";
+import { UiHost } from "../providers/UiHost";
 import PageLoader from "../../shared/ui/PageLoader";
 import i18n from "../../i18n";
 import AuthBootstrap from "../../auth/AuthBootstrap";
@@ -65,6 +66,7 @@ const AppProvider = ({ children }: { children: ReactNode }) => {
               <QueryClientProvider client={queryClient}>
                 <NotificationProvider>
                   <ScanFeedbackOverlay />
+                  <UiHost />
                   <AuthBootstrap>
                     <SettingsSync />
                     <PushSync />

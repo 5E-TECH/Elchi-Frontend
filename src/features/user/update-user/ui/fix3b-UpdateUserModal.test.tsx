@@ -92,11 +92,11 @@ describe("UpdateUserModal — holat variantlari (fix3b)", () => {
     const user = userEvent.setup();
     renderModal(makeUser(), { role: "superadmin", id: "1" });
 
-    await user.click(screen.getByRole("button", { name: "Holat" }));
+    // v2 `Select searchable`: maydon — combobox, variantlar — option.
+    await user.click(screen.getByRole("combobox", { name: "Holat" }));
 
-    expect(screen.getByRole("button", { name: "Faol emas" })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Faol" }).length).toBeGreaterThan(0);
-    expect(screen.queryByRole("button", { name: "Bloklangan" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(["Faol", "Faol emas"]);
+    expect(screen.queryByRole("option", { name: "Bloklangan" })).not.toBeInTheDocument();
   });
 });
 
@@ -169,5 +169,65 @@ describe("UpdateUserModal — o'z parolini o'zgartirish (fix3b RBAC-09)", () => 
     expect(await screen.findByText("Parol juda qisqa")).toBeInTheDocument();
     expect(mocks.logout).not.toHaveBeenCalled();
     expect(peekLoginNotice()).toBeNull();
+  });
+});
+
+describe("UpdateUserModal — «To'lov kuni» 1–30 ro'yxati (ega qarori 2026-10-16)", () => {
+  beforeEach(() => {
+    mocks.updateUser.mockReset().mockResolvedValue({ statusCode: 200 });
+    mocks.logout.mockReset().mockResolvedValue(undefined);
+  });
+
+  const dayField = () => screen.getByRole("combobox", { name: "To'lov kuni (1-30)" });
+
+  it("saqlangan kun ko'rinadi; boshqasi tanlansa API'ga avvalgidek son bo'lib ketadi", async () => {
+    const user = userEvent.setup();
+    renderModal(makeUser({ id: "300", role: "admin", payment_day: "12" }), { role: "superadmin", id: "1" });
+
+    expect(dayField()).toHaveTextContent("12");
+    await user.click(dayField());
+    const options = screen.getAllByRole("option");
+    expect(options).toHaveLength(30);
+    expect(screen.getByRole("option", { name: "12" })).toHaveAttribute("aria-selected", "true");
+    await user.click(screen.getByRole("option", { name: "20" }));
+    await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
+
+    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
+    expect(mocks.updateUser).toHaveBeenCalledWith({ id: "300", data: expect.objectContaining({ payment_day: 20 }) });
+  });
+
+  it("kun o'zgarmasa — payload'da payment_day yo'q (avvalgidek)", async () => {
+    const user = userEvent.setup();
+    renderModal(makeUser({ id: "300", role: "admin", payment_day: "12", name: "Eski" }), { role: "superadmin", id: "1" });
+    const nameInput = document.querySelector<HTMLInputElement>('input[name="name"]');
+    if (!nameInput) throw new Error("name input not found");
+    await user.clear(nameInput);
+    await user.type(nameInput, "Yangi");
+    await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
+
+    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
+    expect(mocks.updateUser.mock.calls[0][0].data).not.toHaveProperty("payment_day");
+  });
+
+  it("saqlangan 31 — maydon bo'sh (xatosiz), saqlashda «1-30» xatosi; to'g'ri kun tanlansa saqlanadi", async () => {
+    const user = userEvent.setup();
+    renderModal(makeUser({ id: "300", role: "admin", payment_day: "31" }), { role: "superadmin", id: "1" });
+
+    expect(dayField()).toHaveTextContent("To'lov kunini tanlang");
+    await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
+    expect(await screen.findByText("1-30 oralig'ida bo'lishi kerak")).toBeInTheDocument();
+    expect(dayField()).toHaveAttribute("aria-invalid", "true");
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+
+    await user.click(dayField());
+    await user.click(screen.getByRole("option", { name: "28" }));
+    await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
+    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
+    expect(mocks.updateUser).toHaveBeenCalledWith({ id: "300", data: expect.objectContaining({ payment_day: 28 }) });
+  });
+
+  it("noto'g'ri qiymat («abc») — maydon bo'sh, sahifa yiqilmaydi", () => {
+    renderModal(makeUser({ id: "300", role: "admin", payment_day: "abc" }), { role: "superadmin", id: "1" });
+    expect(dayField()).toHaveTextContent("To'lov kunini tanlang");
   });
 });

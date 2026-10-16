@@ -178,12 +178,11 @@ const BranchDashboardPage = () => {
       </section>
 
       {isStatsUnavailable ? (
-        <div role="alert">
-          <QueryErrorState
-            description={t("statsUnavailable")}
-            onRetry={() => void refetch()}
-          />
-        </div>
+        // `QueryErrorState` (v2 `ErrorState`) o'zi `role="alert"` — qo'shimcha o'ram kerak emas.
+        <QueryErrorState
+          description={t("statsUnavailable")}
+          onRetry={() => void refetch()}
+        />
       ) : (
         <div className="grid content-start gap-3 xl:grid-cols-2">
           {displayDashboard.visibility.orders ? (

@@ -1,7 +1,6 @@
 import { memo, useId, useRef, useState, type FormEvent } from "react";
 import { Loader2, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
 import { getActionErrorMessage } from "../../../shared/lib/actionError";
 import Popup from "../../../shared/ui/Popup";
@@ -16,6 +15,7 @@ import {
   newEntryKey,
   type ManualEntrySource,
 } from "../lib/manualEntry";
+import { notify } from "../../../shared/lib/notify";
 
 /**
  * QO'LDA DAFTAR YOZUVI (GtAoqHlk) — `POST finance/financial-balance/entries`.
@@ -34,7 +34,6 @@ type FinancialEntryModalProps = { open: boolean; onClose: () => void };
 
 const FinancialEntryModal = ({ open, onClose }: FinancialEntryModalProps) => {
   const { t } = useTranslation("payments");
-  const { api: notify } = useAppNotification();
   const { createFinancialBalanceEntry } = useFinanceCoverage();
   const titleId = useId();
   const idempotencyKey = useRef(newEntryKey());
@@ -81,7 +80,7 @@ const FinancialEntryModal = ({ open, onClose }: FinancialEntryModalProps) => {
       },
       {
         onSuccess: () => {
-          notify.success({ message: t("financialEntryCreated"), placement: "topRight", duration: 3 });
+          notify.success(t("financialEntryCreated"), { duration: 3000 });
           reset();
           onClose();
         },

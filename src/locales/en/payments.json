@@ -308,4 +308,6 @@
   ,"financialEntryFailed": "Could not save the entry"
   ,"paymentConfirmTitle": "Confirm the payment?"
   ,"paymentConfirmMessage": "{{amount}} UZS — {{action}}: {{target}} ({{method}}). Once confirmed the money is transferred and cannot be undone."
+  ,"salaryConfirmTitle": "Confirm the salary payment"
+  ,"salaryConfirmDescription": "Check the details — once confirmed, the amount leaves the cashbox immediately and cannot be undone."
 }

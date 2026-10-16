@@ -8,8 +8,8 @@ import ScannerCameraModal from "../../../shared/components/ScannerCameraModal";
 import { useOrders } from "../../../entities/orders";
 import { useOrdersCoverage } from "../../../entities/orders/ordersCoverage";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { extractMarketQrToken, readHandoverAuthorization } from "../model/orderReturnRules";
+import { notify } from "../../../shared/lib/notify";
 
 interface Props {
   open: boolean;
@@ -31,7 +31,6 @@ const MarkReturnedModal = ({ open, orderId, onClose, onDone }: Props) => {
   const { t } = useTranslation(["orders", "newOrders", "common"]);
   const titleId = useId();
   const queryClient = useQueryClient();
-  const { api: notificationApi } = useAppNotification();
   const { scanMarketCancelledQr } = useOrders();
   const { markReturnedToMarket } = useOrdersCoverage();
   const [qrInput, setQrInput] = useState("");
@@ -63,11 +62,7 @@ const MarkReturnedModal = ({ open, orderId, onClose, onDone }: Props) => {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["orders"] });
-          notificationApi.success({
-            message: t("returnHandoverSuccess"),
-            placement: "topRight",
-            duration: 3,
-          });
+          notify.success(t("returnHandoverSuccess"), { duration: 3000 });
           onDone?.();
           onClose();
         },

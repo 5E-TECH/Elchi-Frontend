@@ -3,7 +3,6 @@ import { useTranslation } from "react-i18next";
 import PrintModeSelect, { type PrintSelectOption } from "../../../shared/components/PrintModeSelect";
 import { useNavigate, useParams } from "react-router-dom";
 import { Globe, FileText, CheckCircle2, Loader2, Plus } from "lucide-react";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { GlobalSearchInput, useDebounce } from "../../../features/search";
 import { useOrders } from "../../../entities/orders";
 import { OrderCard, Checkbox } from "./OrderCard";
@@ -21,6 +20,7 @@ import BackButton from "../../../shared/ui/BackButton";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { branchTypeOf } from "../../../app/lib/access";
 import { resolveReceiveMode } from "./newOrderReceiveRules";
+import { notify } from "../../../shared/lib/notify";
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderDetail = () => {
@@ -55,7 +55,6 @@ const NewOrderDetail = () => {
   const receiveMutation = shouldUseBranchTransferReceive
     ? createTransferBatch
     : createReceiveOrder;
-  const { api: notifApi } = useAppNotification();
 
   // Redux dan search qiymatini olish
   const searchQuery = useSelector((state: RootState) =>
@@ -116,13 +115,11 @@ const NewOrderDetail = () => {
 
   const showAlreadyReceivedFeedback = useCallback((orderId?: string | number) => {
     void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
-    notifApi.warning({
-      message: t("common:scannerFeedbackDuplicate"),
+    notify.warning(t("common:scannerFeedbackDuplicate"), {
       description: orderId ? `#${orderId}` : t("newOrderAlreadyReceivedDescription"),
-      placement: "topRight",
-      duration: 2,
+      duration: 2000,
     });
-  }, [notifApi, t]);
+  }, [t]);
 
   const handleMissingScannedOrder = useCallback((rawValue: string) => {
     const isAlreadyReceived = normalizeScannerCandidates(rawValue, window.location.origin)
@@ -134,12 +131,8 @@ const NewOrderDetail = () => {
     }
 
     playMissingOrderFeedback();
-    notifApi.warning({
-      message: t("newOrderScanMissing"),
-      placement: "topRight",
-      duration: 3,
-    });
-  }, [notifApi, showAlreadyReceivedFeedback, t]);
+    notify.warning(t("newOrderScanMissing"), { duration: 3000 });
+  }, [showAlreadyReceivedFeedback, t]);
 
   const receiveScannedOrder = useCallback((order: ApiOrder, rawValue: string) => {
     const orderId = order.id;
@@ -172,11 +165,9 @@ const NewOrderDetail = () => {
             return next;
           });
           void refetch();
-          notifApi.success({
-            message: t("newOrderReceiveSuccess"),
+          notify.success(t("newOrderReceiveSuccess"), {
             description: t("newOrderReceiveDescription"),
-            placement: "topRight",
-            duration: 2,
+            duration: 2000,
           });
         },
         onError: (err: unknown) => {
@@ -199,19 +190,14 @@ const NewOrderDetail = () => {
           }
 
           void playScanFeedback("error");
-          notifApi.error({
-            message: t("receiveError"),
-            description: msg,
-            placement: "topRight",
-            duration: 5,
-          });
+          notify.error(t("receiveError"), { description: msg });
         },
         onSettled: () => {
           pendingScanOrderIdsRef.current.delete(orderId);
         },
       },
     );
-  }, [receiveMutation, notifApi, receivedOrderIds, refetch, rememberReceivedScan, showAlreadyReceivedFeedback, t]);
+  }, [receiveMutation, receivedOrderIds, refetch, rememberReceivedScan, showAlreadyReceivedFeedback, t]);
 
   useOrderQrScanner({
     orders: rawOrders,
@@ -270,10 +256,10 @@ const NewOrderDetail = () => {
       onError: (err: unknown) => {
         setIsReceiveConfirmOpen(false);
         const msg = getBackendErrorMessage(err) ?? t("receiveError");
-        notifApi.error({ message: t("receiveError"), description: msg, placement: "topRight", duration: 5 });
+        notify.error(t("receiveError"), { description: msg });
       },
     });
-  }, [selectedIds, orders.length, receiveMutation, navigate, refetch, notifApi, t]);
+  }, [selectedIds, orders.length, receiveMutation, navigate, refetch, t]);
 
   const handlePrint = useCallback(async (mode: string) => {
     const printableOrders = selectedIds.size > 0
@@ -281,12 +267,7 @@ const NewOrderDetail = () => {
       : orders;
 
     if (!printableOrders.length) {
-      notifApi.warning({
-        message: t("print"),
-        description: t("notFound"),
-        placement: "topRight",
-        duration: 4,
-      });
+      notify.warning(t("print"), { description: t("notFound") });
       return;
     }
 
@@ -295,12 +276,7 @@ const NewOrderDetail = () => {
         const { openOrdersLabelPdf } = await import("./lib/printLabelPdf");
         await openOrdersLabelPdf(printableOrders);
       } catch {
-        notifApi.error({
-          message: t("print"),
-          description: t("printError"),
-          placement: "topRight",
-          duration: 5,
-        });
+        notify.error(t("print"), { description: t("printError") });
       }
       return;
     }
@@ -310,14 +286,9 @@ const NewOrderDetail = () => {
       const { openOrdersLabelBrowserPrint } = await import("./lib/printLabelPdf");
       openOrdersLabelBrowserPrint(printableOrders);
     } catch {
-      notifApi.error({
-        message: t("print"),
-        description: t("printError"),
-        placement: "topRight",
-        duration: 5,
-      });
+      notify.error(t("print"), { description: t("printError") });
     }
-  }, [notifApi, orders, selectedIds, t]);
+  }, [orders, selectedIds, t]);
 
   const printOptions = useMemo<PrintSelectOption[]>(
     () => [
@@ -387,7 +358,6 @@ const NewOrderDetail = () => {
                 buttonLabel={t("print")}
                 menuLabel={t("print")}
                 options={printOptions}
-                className={selectedIds.size === 0 ? "bg-main/40 shadow-none border-main/40 text-white" : "bg-main hover:bg-main/90 border-main text-white shadow-md shadow-main/20"}
               />
             )}
           </div>

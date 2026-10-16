@@ -1,8 +1,7 @@
 import { memo, useId, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { X, ImagePlus } from "lucide-react";
-import Button from "./button";
-import Popup from "../ui/Popup";
+import { ImagePlus } from "lucide-react";
+import { Button, Dialog, type DialogSize } from "../ui/primitives";
 
 interface UpdatePopupProps {
   isOpen: boolean;
@@ -14,6 +13,7 @@ interface UpdatePopupProps {
   saveLabel?: string;
   cancelLabel?: string;
   isLoading?: boolean;
+  /** ESKI: Tailwind `max-w-*` klassi — v2 da eng yaqin oyna kengligi (`max-w-md` → 480, `max-w-xl` → 560 …). */
   widthClassName?: string;
   // Rasm uchun ixtiyoriy propslar
   imageProps?: {
@@ -24,6 +24,73 @@ interface UpdatePopupProps {
   };
 }
 
+const WIDTH_SIZE: Record<string, DialogSize> = {
+  "max-w-sm": "sm",
+  "max-w-md": "md",
+  "max-w-lg": "md",
+  "max-w-xl": "lg",
+  "max-w-2xl": "xl",
+  "max-w-3xl": "xl",
+};
+
+/**
+ * Rasm yuklash maydoni — maket `superadmin-products-edit-dialog` («Rasm»): uzuq chegarali quti,
+ * doira ichida ikonka, «Rasm yuklash». Rasm bor bo'lsa — rasm va «Almashtirish».
+ */
+const ImageField = ({ label, value, onChange, previewUrl }: NonNullable<UpdatePopupProps["imageProps"]>) => {
+  const { t } = useTranslation("ui");
+  const id = useId();
+  const src = previewUrl ?? (typeof value === "string" && value ? value : undefined);
+  const fileName = value instanceof File ? value.name : null;
+
+  return (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <span id={`${id}-label`} className="text-[13px] font-semibold text-text">
+        {label}
+      </span>
+      <label
+        className={
+          "flex min-h-[152px] cursor-pointer flex-col items-center justify-center gap-1.5 rounded-xl border-2 " +
+          "border-dashed border-border-strong bg-input px-3.5 py-5 text-center transition-[border-color,background-color] " +
+          "duration-150 hover:border-text-subtle has-[:focus-visible]:border-action has-[:focus-visible]:ring-3 " +
+          "has-[:focus-visible]:ring-focus motion-reduce:transition-none"
+        }
+      >
+        <input
+          type="file"
+          accept="image/*"
+          aria-labelledby={`${id}-label`}
+          aria-describedby={`${id}-action`}
+          className="sr-only"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) onChange(file);
+          }}
+        />
+        {src ? (
+          <img src={src} alt="" className="max-h-40 max-w-full rounded-lg object-contain" />
+        ) : (
+          <span
+            aria-hidden="true"
+            className="mb-1 inline-flex size-10 items-center justify-center rounded-full border border-border bg-sunken text-text-muted"
+          >
+            <ImagePlus size={20} />
+          </span>
+        )}
+        <span id={`${id}-action`} className="text-sm font-semibold text-text">
+          {src || fileName ? t("dialog.replaceImage") : t("dialog.uploadImage")}
+        </span>
+        {fileName ? <span className="max-w-full truncate text-xs text-text-muted">{fileName}</span> : null}
+      </label>
+    </div>
+  );
+};
+
+/**
+ * ESKI (v1) TAHRIRLASH OYNASI — API o'zgarmagan, ko'rinishi dizayn v2 `Dialog` (3-bosqich): sarlavha
+ * (ikonka · sarlavha · «Yopish»), tana (ixtiyoriy rasm maydoni + maydonlar), pastda «Bekor qilish» +
+ * «Saqlash»; telefonda pastki varaqa. Yangi kodda to'g'ridan-to'g'ri `Dialog`.
+ */
 const UpdatePopup = ({
   isOpen,
   onClose,
@@ -40,87 +107,29 @@ const UpdatePopup = ({
   const { t } = useTranslation("common");
   const resolvedSaveLabel = saveLabel ?? t("save");
   const resolvedCancelLabel = cancelLabel ?? t("cancel");
-  const titleId = useId();
 
   return (
-    <Popup isShow={isOpen} onClose={onClose} labelledBy={titleId}>
-      <div className={`w-[92vw] ${widthClassName} flex max-h-[90vh] flex-col overflow-hidden rounded-3xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(255,255,255,0.99)_0%,rgba(246,248,255,0.99)_100%)] shadow-[0_30px_70px_rgba(46,54,98,0.18)] dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)] dark:bg-none dark:shadow-[0_30px_70px_rgba(0,0,0,0.34)]`}>
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(124,92,255,0.08)_0%,rgba(124,92,255,0.02)_100%)] p-6 dark:border-white/10 dark:bg-[color:var(--color-card-surface-strong)] dark:bg-none">
-          <div className="flex items-center gap-3">
-            {icon && <div className="text-main">{icon}</div>}
-            <h3 id={titleId} className="text-xl font-semibold tracking-wide text-maindark dark:text-primary">{title}</h3>
-          </div>
-          <X
-            className="cursor-pointer text-[color:var(--color-text-muted)] transition-colors hover:text-maindark dark:text-[color:var(--color-text-muted-dark)] dark:hover:text-primary"
-            onClick={onClose}
-          />
-        </div>
-
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-transparent dark:bg-primarydark">
-          {/* Universal Image Update Section */}
-          {imageProps && (
-            <div className="space-y-2">
-              <label className="text-sm text-gray-500 dark:text-gray-400 ml-1">
-                {imageProps.label}
-              </label>
-              <label className="relative h-44 rounded-2xl overflow-hidden border border-dashed border-[color:var(--color-border-soft)] dark:border-white/10 group cursor-pointer flex flex-col items-center justify-center bg-[var(--color-main-soft)] dark:bg-white/2 hover:bg-white dark:hover:bg-white/4 transition-all">
-                <input
-                  type="file"
-                  className="hidden"
-                  accept="image/*"
-                  onChange={(e) =>
-                    e.target.files?.[0] &&
-                    imageProps.onChange(e.target.files[0])
-                  }
-                />
-                {imageProps.previewUrl || imageProps.value ? (
-                  <img
-                    src={
-                      imageProps.previewUrl
-                        ?? (typeof imageProps.value === "string" ? imageProps.value : undefined)
-                    }
-                    alt=""
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="text-center space-y-2">
-                    <ImagePlus className="mx-auto text-gray-400 dark:text-gray-500" size={32} />
-                    <span className="text-xs text-gray-400 dark:text-gray-500">{t("uploadImage")}</span>
-                  </div>
-                )}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-sm">
-                  {t("edit")}
-                </div>
-              </label>
-            </div>
-          )}
-
-          {/* Boshqa inputlar (Columns) */}
-          {children}
-        </div>
-
-        {/* Footer */}
-        <div className="grid grid-cols-2 gap-3 border-t border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,rgba(124,92,255,0.04)_0%,rgba(255,255,255,0.82)_100%)] p-4 dark:border-white/10 dark:bg-[color:var(--color-card-surface-strong)] dark:bg-none sm:p-5">
-          <Button
-            label={resolvedCancelLabel}
-            onClick={onClose}
-            className="h-12 rounded-2xl border border-[color:var(--color-border-soft)] bg-white/90 text-sm font-semibold text-[color:var(--color-maindark)] shadow-none hover:bg-[color:var(--color-main-soft)] dark:border-white/12 dark:bg-white/8 dark:text-white dark:hover:bg-white/12"
-          />
-          <Button
-            label={isLoading ? t("submitting") : resolvedSaveLabel}
-            onClick={onSave}
-            disabled={isLoading}
-            className={`h-12 rounded-2xl text-sm font-semibold text-white shadow-lg shadow-main/25 ${
-              isLoading
-                ? "bg-main/55 text-white/80 shadow-none"
-                : "bg-main hover:bg-primarydark dark:hover:bg-main/90"
-            }`}
-          />
-        </div>
-      </div>
-    </Popup>
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      title={title}
+      icon={icon ?? undefined}
+      size={WIDTH_SIZE[widthClassName.trim()] ?? "md"}
+      busy={isLoading}
+      footer={
+        <>
+          <Button variant="secondary" disabled={isLoading} onClick={onClose}>
+            {resolvedCancelLabel}
+          </Button>
+          <Button loading={isLoading} loadingText={t("submitting")} onClick={onSave}>
+            {resolvedSaveLabel}
+          </Button>
+        </>
+      }
+    >
+      {imageProps ? <ImageField {...imageProps} /> : null}
+      {children}
+    </Dialog>
   );
 };
 

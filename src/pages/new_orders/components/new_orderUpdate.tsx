@@ -65,7 +65,6 @@ import type { RootState } from "../../../app/config/store";
 import SellModal from "../../orders/list/courier/list/SellModal";
 import CancelModal from "../../orders/list/courier/list/CancelModal";
 import PopupConfirm from "../../../shared/components/popupConfirm";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import {
   buildAddressUpdatePayload,
   buildCustomerUpdatePayload,
@@ -85,6 +84,7 @@ import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { getOrderItemName } from "../../../shared/lib/orderItemName";
 import { isCourierHeldOrder } from "../../../entities/orders/custody";
 import { getSellPaymentStatus, SELL_PAYMENT_NOTICE_KEYS, type SellOrderPayload } from "../../../entities/orders/sellPayment";
+import { notify } from "../../../shared/lib/notify";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface District {
@@ -354,7 +354,6 @@ const NewOrderUpdate = () => {
   const navigate = useNavigate();
   const { orderId } = useParams<{ orderId: string }>();
   const queryClient = useQueryClient();
-  const { api: notificationApi } = useAppNotification();
   const role = useSelector((state: RootState) => state.role.role);
   const user = useSelector((state: RootState) => state.user.user);
   /** Pochta raqami havola bo'ladimi — `/mails` marshruti bilan AYNI qoida. */
@@ -376,13 +375,13 @@ const NewOrderUpdate = () => {
     (id: string) => {
       void copyToClipboard(id).then((copied) => {
         if (copied) {
-          notificationApi.success({ message: t("orderNumberCopied", { ns: "orders" }), placement: "topRight" });
+          notify.success(t("orderNumberCopied", { ns: "orders" }));
         } else {
-          notificationApi.error({ message: t("orderNumberCopyFailed", { ns: "orders", id }), placement: "topRight" });
+          notify.error(t("orderNumberCopyFailed", { ns: "orders", id }));
         }
       });
     },
-    [notificationApi, t],
+    [t],
   );
   const productsLockReason = t("productsLockReason");
   const destinationLockReason = t("destinationLockReason");
@@ -474,23 +473,16 @@ const NewOrderUpdate = () => {
   const productsLocked = Boolean(order && isOrderReceivedOrLater(order.status));
   const destinationLocked = Boolean(order && isOrderSentToBranch(order));
   const showUpdateError = useCallback((error: unknown) => {
-    notificationApi.error({
-      message: t("error", { ns: "common" }),
-      description:
-        getBackendErrorMessage(error) ??
+    notify.error(t("error", { ns: "common" }), {
+      description: getBackendErrorMessage(error) ??
         t("updateError"),
-      placement: "topRight",
-      duration: 5,
     });
-  }, [notificationApi, t]);
+  }, [t]);
   const showActionError = useCallback((error: unknown) => {
-    notificationApi.error({
-      message: t("error", { ns: "common" }),
+    notify.error(t("error", { ns: "common" }), {
       description: getBackendErrorMessage(error) ?? t("orderActionError"),
-      placement: "topRight",
-      duration: 5,
     });
-  }, [notificationApi, t]);
+  }, [t]);
   const isRegionalManager =
     role === "manager" &&
     (branchType === "REGIONAL" || branchType === "HYBRID");
@@ -615,12 +607,10 @@ const NewOrderUpdate = () => {
     if (!orderId || !order || destinationLocked || !canEditOrderFull) return;
     const validationError = getAddressUpdateValidationError(addressForm);
     if (validationError) {
-      notificationApi.error({
-        message: t("error", { ns: "common" }),
+      notify.error(t("error", { ns: "common" }), {
         description: t(validationError === "region" ? "validationRegion" : "validationDistrict", {
           ns: "orders",
         }),
-        placement: "topRight",
       });
       return;
     }
@@ -637,7 +627,7 @@ const NewOrderUpdate = () => {
         onError: showUpdateError,
       },
     );
-  }, [addressForm, canEditOrderFull, destinationLocked, notificationApi, order, orderId, showUpdateError, t, updateNewOrder]);
+  }, [addressForm, canEditOrderFull, destinationLocked, order, orderId, showUpdateError, t, updateNewOrder]);
 
   // ─── Handlers — Customer popup ────────────────────────────────────────────
   const handleOpenCustomerPopup = useCallback(() => {
@@ -667,11 +657,7 @@ const NewOrderUpdate = () => {
         phoneFormat: "validationPhoneFormat",
       }[validationError];
 
-      notificationApi.error({
-        message: t("error", { ns: "common" }),
-        description: t(validationKey, { ns: "orders" }),
-        placement: "topRight",
-      });
+      notify.error(t("error", { ns: "common" }), { description: t(validationKey, { ns: "orders" }) });
       return;
     }
 
@@ -690,7 +676,7 @@ const NewOrderUpdate = () => {
         onError: showUpdateError,
       },
     );
-  }, [canEditCustomer, customerForm, destinationLocked, notificationApi, order, queryClient, showUpdateError, t, updateUser, userId]);
+  }, [canEditCustomer, customerForm, destinationLocked, order, queryClient, showUpdateError, t, updateUser, userId]);
 
   // ─── Handlers — Order popup ───────────────────────────────────────────────
   const handleOpenOrderPopup = useCallback(() => {
@@ -721,11 +707,7 @@ const NewOrderUpdate = () => {
   const handleSaveOrder = useCallback(() => {
     if (!orderId || !order || !canEditOrderFull) return;
     if (!productsLocked && parseOrderTotalPrice(orderForm.total_price) === null) {
-      notificationApi.error({
-        message: t("error", { ns: "common" }),
-        description: t("totalAmountValidation"),
-        placement: "topRight",
-      });
+      notify.error(t("error", { ns: "common" }), { description: t("totalAmountValidation") });
       return;
     }
 
@@ -744,7 +726,7 @@ const NewOrderUpdate = () => {
         onError: showUpdateError,
       },
     );
-  }, [canEditOrderFull, destinationLocked, notificationApi, order, orderForm, orderId, productsLocked, showUpdateError, t, updateNewOrder]);
+  }, [canEditOrderFull, destinationLocked, order, orderForm, orderId, productsLocked, showUpdateError, t, updateNewOrder]);
 
   const adjustQty = useCallback((itemId: string, delta: number) => {
     if (productsLocked) return;
@@ -795,18 +777,14 @@ const NewOrderUpdate = () => {
             // Marketga to'lov yozilgan bo'lsa — natija (to'liq / qisman).
             const paymentStatus = getSellPaymentStatus(response);
             if (paymentStatus) {
-              notificationApi.success({
-                message: t(SELL_PAYMENT_NOTICE_KEYS[paymentStatus], { ns: "orders" }),
-                placement: "topRight",
-                duration: 4,
-              });
+              notify.success(t(SELL_PAYMENT_NOTICE_KEYS[paymentStatus], { ns: "orders" }));
             }
           },
           onError: showActionError,
         },
       );
     },
-    [SellOrder, closeSellModal, notificationApi, order, showActionError, t],
+    [SellOrder, closeSellModal, order, showActionError, t],
   );
 
   const handlePartlySell = useCallback(

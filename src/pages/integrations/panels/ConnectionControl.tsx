@@ -1,7 +1,6 @@
 // dizayn-v2: superadmin-integrations-panel-control, admin-integrations-conn-control
 import { useId, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { message } from "antd";
 import { useTranslation } from "react-i18next";
 import { isAxiosError } from "axios";
 import {
@@ -25,6 +24,7 @@ import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { useFocusTrap } from "../../../shared/lib/useFocusTrap";
 import type { Connection } from "../useConnections";
+import { notify } from "../../../shared/lib/notify";
 
 /**
  * ISH REJIMI — kalitlar va qo'lda ishga tushirish.
@@ -302,11 +302,11 @@ const ConnectionControl = ({
           payload: { slug: String(raw.slug ?? ""), type: String(raw.type ?? "api"), ...flag },
         });
       }
-      message.success(next ? t("ctlEnabled") : t("ctlDisabled"));
+      notify.success(next ? t("ctlEnabled") : t("ctlDisabled"));
       onChanged();
       return true;
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || t("toggleFailed"));
+      notify.error(getBackendErrorMessage(error) || t("toggleFailed"));
       return false;
     } finally {
       setPendingSwitch(null);
@@ -328,9 +328,9 @@ const ConnectionControl = ({
   const run = async (label: string, fn: () => Promise<unknown>): Promise<void> => {
     try {
       await fn();
-      message.success(t("ctlDone", { label }));
+      notify.success(t("ctlDone", { label }));
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || t("ctlFailed", { label }));
+      notify.error(getBackendErrorMessage(error) || t("ctlFailed", { label }));
     }
   };
 
@@ -338,7 +338,7 @@ const ConnectionControl = ({
     const count = (value: number) => formatNumberLocalized(value, { language: i18n.language });
     try {
       const result = await reconcileNow.mutateAsync(connection.id);
-      message.success(
+      notify.success(
         t("ctlReconcileResult", {
           checked: count(result.checked),
           applied: count(result.applied),
@@ -348,7 +348,7 @@ const ConnectionControl = ({
     } catch (error) {
       // 409 / 400 — sabab operatorga tushunarli tilda (backend matni inglizcha bo'lishi mumkin).
       const status = isAxiosError(error) ? error.response?.status : undefined;
-      message.error(
+      notify.error(
         status === 409
           ? t("ctlReconcileConflict")
           : status === 400

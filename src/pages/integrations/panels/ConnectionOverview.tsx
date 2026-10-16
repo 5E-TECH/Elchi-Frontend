@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Button, Card, Statistic, Tag, Tooltip, message } from "antd";
+import { Alert, Button, Card, Statistic, Tag, Tooltip } from "antd";
 import {
   AlertTriangle,
   ArrowRight,
@@ -22,6 +22,7 @@ import { money, toAmount, useReceivableBalance } from "../../../entities/integra
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import type { Connection } from "../useConnections";
 import { MUTED } from "../ui";
+import { notify } from "../../../shared/lib/notify";
 
 /**
  * UMUMIY HOLAT — tayyorlik checklisti + jonli raqamlar.
@@ -371,9 +372,9 @@ const ConnectionOverview = ({
       const res = await healthcheck.mutateAsync(connection.id);
       // ⚠️ Backend yiqilganda HTTP xato BERMAYDI — natija `ok` bo'yicha o'qiladi.
       if (!res.ok) throw new Error(res.message ?? `HTTP ${res.status ?? "—"}`);
-      message.success(t("ctlDone", { label }));
+      notify.success(t("ctlDone", { label }));
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || t("ctlFailed", { label }));
+      notify.error(getBackendErrorMessage(error) || t("ctlFailed", { label }));
     }
   };
 

@@ -1,8 +1,12 @@
-import { Input } from "antd";
 import { memo, useEffect, useState } from "react";
-import { SearchOutlined } from "@ant-design/icons";
 import { useDebounce } from "../../lib/useDebounce";
+import { TextInput } from "../primitives/TextInput";
 
+/**
+ * QIDIRUV MAYDONI — eski API (`onSearch` kechikish bilan), ichi dizayn v2 `TextInput mode="search"`
+ * (`.el-search`): chapda `Search`, o'ngda × (tozalash), Enter — darhol, Esc — tozalash.
+ * Ko'rinadigan yorliq yo'q — `placeholder` maydon nomi (`aria-label`) bo'ladi.
+ */
 interface SearchInputProps {
   placeholder?: string;
   value?: string;
@@ -19,16 +23,17 @@ const SearchInput = ({ placeholder = "Qidirish", value = "", onSearch, delay = 4
   }, [value]);
 
   return (
-    <Input
-      allowClear
+    <TextInput
+      mode="search"
       value={innerValue}
-      prefix={<SearchOutlined />}
       placeholder={placeholder}
-      onChange={(event) => {
-        const nextValue = event.target.value;
+      aria-label={placeholder}
+      onValueChange={(nextValue) => {
         setInnerValue(nextValue);
         debouncedSearch(nextValue);
       }}
+      onClear={() => onSearch("")}
+      onSearch={(current) => onSearch(current)}
     />
   );
 };

@@ -22,11 +22,11 @@ import { useMarkets } from "../../../entities/markets";
 import PopupConfirm from "../../../shared/components/popupConfirm";
 import i18n from "../../../i18n";
 import type { RootState } from "../../../app/config/store";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { isInactiveMarketStatus, unwrapMarketPayload } from "../../../shared/lib/marketStatus";
 import BackButton from "../../../shared/ui/BackButton";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { resolveAssetUrl } from "../../../shared/lib/assetUrl";
+import { notify } from "../../../shared/lib/notify";
 
 interface ExistingProduct {
   id: number;
@@ -91,7 +91,6 @@ ProductNameCell.displayName = "ProductNameCell";
 
 const CreateProductPage = () => {
   const { t } = useTranslation("products");
-  const { api: notificationApi } = useAppNotification();
   const roleState = useSelector((state: RootState) => state.role);
   const profile = useSelector((state: RootState) => state.user.user);
   const isMarketRole = roleState.role === "market";
@@ -294,10 +293,7 @@ const CreateProductPage = () => {
       if (isPending || isMarketStatusLoading) return;
 
       if (isInactiveMarket) {
-        notificationApi.warning({
-          message: t("inactiveMarketCreateBlocked"),
-          placement: "topRight",
-        });
+        notify.warning(t("inactiveMarketCreateBlocked"));
         return;
       }
 
@@ -312,23 +308,15 @@ const CreateProductPage = () => {
         if (editTarget) {
           const mutation = isMarketRole ? updateMyProduct : updateProduct;
           await mutation.mutateAsync({ id: editTarget.id, data: formData });
-          notificationApi.success({
-            message: t("updateSuccess"),
-            placement: "topRight",
-          });
+          notify.success(t("updateSuccess"));
         } else {
           await createProduct.mutateAsync(formData);
-          notificationApi.success({
-            message: t("createSuccess"),
-            placement: "topRight",
-          });
+          notify.success(t("createSuccess"));
         }
         resetForm();
       } catch (error) {
-        notificationApi.error({
-          message: t(editTarget ? "updateError" : "createError"),
+        notify.error(t(editTarget ? "updateError" : "createError"), {
           description: getBackendErrorMessage(error),
-          placement: "topRight",
         });
       }
     },
@@ -340,7 +328,6 @@ const CreateProductPage = () => {
       isMarketRole,
       isMarketStatusLoading,
       isPending,
-      notificationApi,
       resetForm,
       t,
       updateMyProduct,

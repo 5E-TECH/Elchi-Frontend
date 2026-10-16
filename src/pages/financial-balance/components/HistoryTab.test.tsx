@@ -93,7 +93,8 @@ describe("HistoryTab URL state", () => {
     getHistoryMock.mockImplementation(() => ({ ...idleQuery, isError: true }));
     open("/financial-balance?tab=history");
 
-    expect(screen.getByText("Xatolik")).toBeInTheDocument();
+    // v2 xato holati (`tizim-errors` 02): sarlavha «Ma'lumotni yuklab bo'lmadi», role=alert.
+    expect(screen.getByRole("alert")).toHaveTextContent("Ma'lumotni yuklab bo'lmadi");
     expect(screen.getByRole("button", { name: "Qayta urinish" })).toBeInTheDocument();
     expect(screen.queryByText("Tarix ma'lumotlari topilmadi")).not.toBeInTheDocument();
   });

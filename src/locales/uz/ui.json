@@ -448,7 +448,605 @@
       "format": {
         "title": "Formatlash",
         "description": "Pul, telefon raqami va sana."
+      },
+      "forms": {
+        "title": "Forma elementlari",
+        "description": "Yorliq ustida, ko'rsatma yoki xato ostida; matn, qidiruv, telefon, summa va ko'p qatorli maydon."
+      },
+      "select": {
+        "title": "Tanlash ro'yxatlari",
+        "description": "Yopiq va ochiq holat, qidiruvli va ko'p tanlovli ro'yxat."
+      },
+      "date": {
+        "title": "Sana oralig'i",
+        "description": "Tez tanlov tugmalari va ikki oylik taqvim bitta panelda."
+      },
+      "dialog": {
+        "title": "Oynalar va tasdiqlash",
+        "description": "Oyna, tasdiqlash oynasi va telefonda pastki oyna."
+      },
+      "feedback": {
+        "title": "Qalqib chiquvchi xabarlar",
+        "description": "Amal natijasi: muvaffaqiyat, xato, ogohlantirish."
+      },
+      "states": {
+        "title": "Yuklanish, bo'sh va xato holatlari",
+        "description": "Skelet, bo'sh ro'yxat va qayta urinish."
       }
+    }
+  },
+  "field": {
+    "optional": "ixtiyoriy"
+  },
+  "input": {
+    "clear": "Tozalash",
+    "clearSearch": "Qidiruvni tozalash",
+    "copy": "Nusxa olish",
+    "copied": "Nusxa olindi",
+    "phonePlaceholder": "XX XXX XX XX"
+  },
+  "date": {
+    "rangeLabel": "Sana oralig'i",
+    "dateLabel": "Sana",
+    "placeholder": "Sana oralig'ini tanlang",
+    "datePlaceholder": "Sanani tanlang",
+    "panelLabel": "Sana oralig'ini tanlash",
+    "datePanelLabel": "Sanani tanlash",
+    "clear": "Sanalar oralig'ini tozalash",
+    "clearDate": "Sanani tozalash",
+    "required": "majburiy",
+    "close": "Yopish",
+    "presetsLabel": "Tez tanlov",
+    "periodLabel": "Davr",
+    "yearLabel": "Yilni tanlash",
+    "prevMonth": "Oldingi oy",
+    "nextMonth": "Keyingi oy",
+    "spokenRange": "{{from}} dan {{to}} gacha",
+    "fromOnly": "{{date}} dan",
+    "toOnly": "{{date}} gacha",
+    "pickStart": "Boshlanish sanasini tanlang",
+    "pickEnd": "Tugash sanasini tanlang",
+    "days": {
+      "one": "{{count}} kun",
+      "few": "{{count}} kun",
+      "many": "{{count}} kun"
+    },
+    "dayLabel": "{{day}}-{{month}}",
+    "today": "bugun",
+    "start": "boshlanish",
+    "end": "tugash",
+    "unavailable": "tanlab bo'lmaydi",
+    "presets": {
+      "today": "Bugun",
+      "yesterday": "Kecha",
+      "week": "Bu hafta",
+      "lastWeek": "O'tgan hafta",
+      "month": "Bu oy",
+      "lastMonth": "O'tgan oy",
+      "year": "Bu yil",
+      "all": "Barchasi"
+    },
+    "months": [
+      "Yanvar",
+      "Fevral",
+      "Mart",
+      "Aprel",
+      "May",
+      "Iyun",
+      "Iyul",
+      "Avgust",
+      "Sentabr",
+      "Oktabr",
+      "Noyabr",
+      "Dekabr"
+    ],
+    "monthsOf": [
+      "yanvar",
+      "fevral",
+      "mart",
+      "aprel",
+      "may",
+      "iyun",
+      "iyul",
+      "avgust",
+      "sentabr",
+      "oktabr",
+      "noyabr",
+      "dekabr"
+    ],
+    "weekdaysShort": [
+      "Du",
+      "Se",
+      "Ch",
+      "Pa",
+      "Ju",
+      "Sh",
+      "Ya"
+    ],
+    "weekdays": [
+      "Dushanba",
+      "Seshanba",
+      "Chorshanba",
+      "Payshanba",
+      "Juma",
+      "Shanba",
+      "Yakshanba"
+    ]
+  },
+  "dateKit": {
+    "groups": {
+      "field": "Maydon holatlari",
+      "panel": "Ochiq panel · «Bu oy» tanlangan",
+      "single": "Bitta sana · bitta oy"
+    },
+    "notes": {
+      "field": "Bosing — panel ochiladi. Tanlangan bo'lsa o'ngda × — oraliq tozalanadi, fokus maydonda qoladi.",
+      "panel": "Birinchi bosish — boshlanish, ikkinchisi — tugash; oraliq darhol qo'llanadi va panel yopiladi. Telefonda — pastdan oyna, bitta oy. Namunada bugun — 08.10.2026.",
+      "single": "Kun bosilishi bilan qo'llanadi. Klaviatura: strelkalar, Home, End, PageUp, PageDown, Enter."
+    },
+    "states": {
+      "empty": "Bo'sh",
+      "selected": "Tanlangan · tozalash",
+      "dashboard": "Dashboard",
+      "invalid": "Xato + xabar",
+      "disabled": "O'chirilgan",
+      "single": "Bitta sana"
+    },
+    "demo": {
+      "dateLabel": "Sana",
+      "dashboardPlaceholder": "Boshlanish → Tugash",
+      "dashboardLabel": "Sana oralig'ini tanlash",
+      "error": "Sana oralig'ini tanlang",
+      "disabledHint": "Yopilgan kassada davr o'zgarmaydi",
+      "lastOrderLabel": "Oxirgi buyurtma — dan"
+    },
+    "legend": {
+      "title": "Taqvim belgilari",
+      "edges": "boshlanish va tugash sanasi",
+      "range": "oraliq ichidagi kunlar",
+      "today": "bugun — ko'k chiziqli",
+      "muted": "qo'shni oy kunlari"
+    }
+  },
+  "forms": {
+    "groups": {
+      "matrix": "Holatlar matritsasi",
+      "search": "Qidiruv",
+      "phone": "Telefon raqam",
+      "money": "Summa",
+      "textarea": "Ko'p qatorli matn"
+    },
+    "notes": {
+      "matrix": "Kursor ustida — chegara to'qroq; fokus — ko'k chegara va halqa (Tab bilan tekshiring).",
+      "search": "Yozilganda o'ngda × — bosilsa matn tozalanadi, fokus maydonda qoladi.",
+      "phone": "+998 o'zgarmaydi · 90 123 45 67 ko'rinishida avtomatik bo'linadi",
+      "money": "Mingliklar bo'sh joy bilan, o'ngda valyuta."
+    },
+    "states": {
+      "empty": "Bo'sh",
+      "filled": "To'ldirilgan",
+      "invalid": "Xato + xabar",
+      "success": "Muvaffaqiyat",
+      "disabled": "O'chirilgan",
+      "readonly": "Faqat o'qish",
+      "large": "Telefonda · 48 px",
+      "optional": "Bo'sh · ixtiyoriy",
+      "counter": "Hisoblagich bilan"
+    },
+    "demo": {
+      "nameLabel": "Mijoz ismi",
+      "namePlaceholder": "Ism kiriting",
+      "nameHint": "Ism va familiya",
+      "nameValue": "Dilnoza Karimova",
+      "nameError": "Mijoz ismini kiriting",
+      "disabledHint": "Yopilgan buyurtmada tahrirlanmaydi",
+      "readonlyHint": "Ko'rish va nusxa olish uchun",
+      "copyName": "Ismdan nusxa olish",
+      "searchLabel": "Buyurtmalarni qidirish",
+      "searchPlaceholder": "Shu ro'yxatdan qidirish",
+      "searchValue": "Dilnoza",
+      "phoneLabel": "Telefon raqam",
+      "phoneHint": "9 ta raqam, kod avtomatik",
+      "phoneError": "Telefon raqam 9 ta raqamdan iborat bo'lishi kerak",
+      "phoneLargeHint": "Kuryer ekranlarida",
+      "amountLabel": "Summa",
+      "noteLabel": "Izoh",
+      "notePlaceholder": "Izoh yozing...",
+      "smsLabel": "SMS matni",
+      "smsValue": "Hurmatli mijoz, buyurtmangiz 10241 yo'lda. Kuryer bugun 18:00 gacha keladi.",
+      "smsCounter": "{{count}} / 160 belgi"
+    }
+  },
+  "select": {
+    "placeholder": "Tanlang",
+    "all": "Barchasi",
+    "loading": "Yuklanmoqda...",
+    "empty": "Topilmadi",
+    "emptyHint": "«{{query}}» bo'yicha natija yo'q",
+    "noOptions": "Ro'yxat bo'sh",
+    "results": "{{count}} ta natija",
+    "clear": "Tozalash",
+    "clearAll": "Barchasini tozalash",
+    "clearShort": "Tozalash",
+    "remove": "«{{label}}»ni olib tashlash",
+    "selectedCount": "{{count}} ta tanlangan"
+  },
+  "popupSelect": {
+    "search": "Qidirish...",
+    "confirm": "Tanlash",
+    "cancel": "Bekor qilish",
+    "close": "Yopish",
+    "list": "Variantlar"
+  },
+  "printMenu": {
+    "button": "Chop etish",
+    "menu": "Chop etish usuli",
+    "count": "{{count}} ta tanlangan"
+  },
+  "dialog": {
+    "close": "Yopish",
+    "cancel": "Bekor qilish",
+    "irreversible": "Bu amalni qaytarib bo'lmaydi.",
+    "error": "Amalni bajarib bo'lmadi. Qayta urinib ko'ring.",
+    "amount": "Summa",
+    "from": "Qayerdan",
+    "to": "Qayerga",
+    "uploadImage": "Rasm yuklash",
+    "replaceImage": "Almashtirish"
+  },
+  "dialogs": {
+    "groups": {
+      "dialog": "Oyna",
+      "dialogMeta": "sarlavha, izoh va «Yopish» · tana uzun bo'lsa faqat u aylanadi · amallar o'ngda, bitta asosiy",
+      "sheet": "Telefon: pastki oyna",
+      "sheetMeta": "ekran pastida, to'liq en, tutqich · tugmalar teng enli, 44 px",
+      "danger": "O'chirish — xavfli amal",
+      "dangerMeta": "ob'ekt nomi + «qaytarib bo'lmaydi» · qizil tugma faqat shu yerda",
+      "money": "Pul o'tkazmasi — tekshirish",
+      "moneyMeta": "summa, qayerdan → qayerga, izoh · yashil «Tasdiqlash»",
+      "deactivate": "Foydalanuvchini nofaol qilish",
+      "deactivateMeta": "kim ekanini ko'rsatadi · qaytarish yo'lini aytadi",
+      "live": "Jonli namuna",
+      "liveMeta": "haqiqiy oyna: fokus ichkarida, Tab aylanadi, Esc va fon yopadi, fokus tugmaga qaytadi",
+      "loading": "So'rov ketmoqda",
+      "loadingMeta": "tugmalar qulflanadi, Esc va fon oynani yopmaydi",
+      "error": "Xato",
+      "errorMeta": "oyna ochiq qoladi, xato matni oyna ichida — qayta urinish mumkin"
+    },
+    "rules": {
+      "title": "Sarlavha",
+      "titleText": "«… tasdiqlang» yoki aniq savol. «Ishonchingiz komilmi?» ishlatilmaydi.",
+      "buttons": "Tugmalar",
+      "buttonsText": "Chapda «Bekor qilish», o'ngda aniq fe'l: O'chirish, Tasdiqlash, Nofaol qilish. «Orqaga» — faqat asosiy amalning o'zi bekor qilish bo'lsa.",
+      "colour": "Rang",
+      "colourText": "Qizil — o'chirish va bloklash. Yashil — pul tasdig'i. Ko'k — oddiy rozilik.",
+      "closing": "Yopish",
+      "closingText": "Esc va fon bosilsa yopiladi; so'rov ketayotganda tugmalar qulflanadi va oyna yopilmaydi."
+    },
+    "demo": {
+      "shiftTitle": "Smenani yopish",
+      "shiftDescription": "Joriy kassa smenasi yakunlanadi",
+      "shiftCurrent": "Joriy smena",
+      "shiftCurrentValue": "Bugun, 09:00 dan",
+      "shiftOpenedBy": "Ochgan xodim",
+      "shiftOpenedByValue": "Ravshan Ortiqov",
+      "shiftCash": "Kassadagi summa",
+      "shiftExcel": "Smenani yopganingizda Excel hisobot avtomatik ravishda yuklab olinadi.",
+      "shiftComment": "Izoh",
+      "shiftCommentPlaceholder": "Smena haqida izoh...",
+      "shiftAction": "Smenani yopish",
+      "deleteTitle": "O'chirishni tasdiqlang",
+      "deleteDescription": "Mahsulot katalogdan butunlay o'chiriladi.",
+      "deleteProduct": "Simsiz quloqchin Pro",
+      "deleteMarket": "Nur Elektronika",
+      "deleteAction": "O'chirish",
+      "deleting": "O'chirilmoqda…",
+      "payTitle": "To'lovni tasdiqlang",
+      "payDescription": "Tekshirib chiqing — tasdiqlangach, summa ikkala kassada darhol aks etadi.",
+      "payCash": "Naqd",
+      "payFromTitle": "Kuryer kassasi",
+      "payFromMeta": "Jasur Tursunov",
+      "payToTitle": "Asosiy kassa",
+      "payToMeta": "Toshkent HQ",
+      "payNote": "Izoh",
+      "payNoteValue": "Kunlik topshiriq, 08.10.2026",
+      "payAction": "Tasdiqlash",
+      "offTitle": "Nofaol qilishni tasdiqlang",
+      "offDescription": "Farrux Sobirov hisobi nofaol holatga o'tadi. Kerak bo'lsa, uni istalgan vaqtda amallar menyusidan qayta faollashtirish mumkin.",
+      "offName": "Farrux Sobirov",
+      "offMeta": "Kuryer · Toshkent HQ · +998 90 412 18 07",
+      "offAction": "Nofaol qilish",
+      "dayTitle": "Kunni yakunlashni tasdiqlang",
+      "dayDescription": "7 ta buyurtma bo'yicha quyidagilar bajariladi",
+      "daySold": "4 ta sotilgan deb belgilanadi",
+      "dayCancelled": "1 ta bekor qilinadi",
+      "dayTomorrow": "2 tasi ertaga qoladi",
+      "dayAction": "Tasdiqlash",
+      "openDialog": "Oynani ochish",
+      "openConfirm": "Tasdiqlashni ochish",
+      "openFailing": "Xato bilan tasdiqlash",
+      "resultConfirmed": "Javob: tasdiqlandi",
+      "resultCancelled": "Javob: bekor qilindi",
+      "failingError": "Mahsulotni o'chirib bo'lmadi: u faol buyurtmada bor."
+    }
+  },
+  "toast": {
+    "region": "Bildirishnomalar",
+    "close": "Xabarni yopish",
+    "timeoutTitle": "Server javob bermadi"
+  },
+  "states": {
+    "loading": "Yuklanmoqda…",
+    "appLoading": "Ilova yuklanmoqda",
+    "slow": "Kutish uzoq davom etmoqda — internet sekin bo'lishi mumkin",
+    "refreshing": "Yangilanmoqda…",
+    "retry": "Qayta urinish",
+    "details": "Xato tafsilotlari",
+    "error": {
+      "server": {
+        "title": "Ma'lumotni yuklab bo'lmadi",
+        "description": "Server xatosi ({{status}}). Birozdan keyin qayta urinib ko'ring."
+      },
+      "timeout": {
+        "title": "Ma'lumotni yuklab bo'lmadi",
+        "description": "Server javob bermadi. Birozdan keyin qayta urinib ko'ring."
+      },
+      "offline": {
+        "title": "Internet aloqasi yo'q",
+        "description": "Internetga ulanishni tekshiring va qayta urinib ko'ring."
+      },
+      "forbidden": {
+        "title": "Bu ma'lumotni ko'rishga ruxsatingiz yo'q",
+        "description": "Bu blok sizning rolingiz uchun ochilmagan. Sahifaning qolgan qismidan bemalol foydalanishingiz mumkin."
+      },
+      "section": {
+        "title": "Bu bo'limni ochishda xatolik yuz berdi",
+        "description": "Boshqa bo'limlar ishlashda davom etadi."
+      },
+      "generic": {
+        "title": "Ma'lumotni yuklab bo'lmadi",
+        "description": "So'rov bajarilmadi ({{status}}).",
+        "descriptionNoStatus": "Birozdan keyin qayta urinib ko'ring."
+      }
+    },
+    "page": {
+      "home": "Bosh sahifaga qaytish",
+      "back": "Orqaga",
+      "notFound": {
+        "overline": "Xato kodi 404",
+        "title": "Bu sahifa topilmadi",
+        "description": "Manzil noto'g'ri yozilgan yoki sahifa o'chirilgan bo'lishi mumkin."
+      },
+      "forbidden": {
+        "overline": "Xato kodi 403",
+        "title": "Bu sahifaga ruxsatingiz yo'q",
+        "description": "Bu ma'lumotni ko'rish uchun sizda tegishli ruxsat yo'q."
+      },
+      "server": {
+        "overline": "Xato kodi 500",
+        "title": "Serverda xatolik yuz berdi",
+        "description": "Bu sizning xatoyingiz emas — birozdan keyin qayta urinib ko'ring."
+      },
+      "runtime": {
+        "overline": "Kutilmagan xato",
+        "title": "Sahifani ko'rsatib bo'lmadi",
+        "description": "Ilovada kutilmagan xato yuz berdi. Qayta urinib ko'ring."
+      }
+    }
+  },
+  "feedbackKit": {
+    "groups": {
+      "tones": "Turlari",
+      "tonesNote": "Sarlavha — nima bo'ldi (2–4 so'z), izoh — tafsilot yoki keyingi qadam. Ikonka ton rangida, matn neytral. Bitta xabarda ko'pi bilan bitta amal tugmasi.",
+      "live": "Sinab ko'rish",
+      "liveNote": "Kompyuterda pastki o'ngda, 3 tagacha ustma-ust; telefonda tepada, bittadan. Kursor yoki fokus xabar ustida bo'lsa, yopilish vaqti to'xtaydi."
+    },
+    "kinds": {
+      "success": {
+        "label": "Muvaffaqiyat",
+        "meta": "role=\"status\" · 4 soniyada yopiladi"
+      },
+      "info": {
+        "label": "Ma'lumot",
+        "meta": "role=\"status\" · 4 soniyada yopiladi"
+      },
+      "warning": {
+        "label": "Ogohlantirish",
+        "meta": "role=\"status\" · 6 soniyada yopiladi"
+      },
+      "error": {
+        "label": "Xato",
+        "meta": "role=\"alert\" · foydalanuvchi yopguncha turadi"
+      },
+      "undo": {
+        "label": "Amal bilan — bekor qilish",
+        "meta": "6 soniya · kursor ustida bo'lsa vaqt to'xtaydi"
+      },
+      "retry": {
+        "label": "Xato — qayta urinish",
+        "meta": "role=\"alert\" · takror xato bitta xabarga qo'shiladi"
+      }
+    },
+    "demo": {
+      "paid": {
+        "title": "To'lov o'tkazildi",
+        "text": "{{amount}} asosiy kassaga o'tkazildi."
+      },
+      "dayClosed": {
+        "title": "Kun yakunlandi",
+        "text": "Yakunlanadigan buyurtma yo'q — ertaga qoldirilganlar kutilmoqda holatida qoladi."
+      },
+      "duplicate": {
+        "title": "To'lov allaqachon yozilgan",
+        "text": "Kassa yangilandi — summani tekshiring."
+      },
+      "forbidden": {
+        "title": "Ruxsat yo'q",
+        "text": "Sizda AI bilan buyurtma yaratishga ruxsat yo'q. Buyurtmani qo'lda kiriting."
+      },
+      "removed": {
+        "title": "Buyurtma ro'yxatdan olib tashlandi",
+        "text": "№10241 · Dilnoza Karimova",
+        "action": "Bekor qilish"
+      },
+      "report": {
+        "title": "Hisobot yuklanmadi",
+        "text": "Server javob bermadi. Birozdan keyin qayta urinib ko'ring.",
+        "action": "Qayta urinish"
+      },
+      "excel": {
+        "title": "Excelga saqlandi",
+        "text": "248 ta buyurtma Excelga saqlandi."
+      },
+      "accepted": {
+        "title": "Buyurtma qabul qilindi",
+        "text": "№10241 · Chilonzor tumani"
+      }
+    },
+    "buttons": {
+      "success": "Muvaffaqiyat",
+      "info": "Ma'lumot",
+      "warning": "Ogohlantirish",
+      "error": "Xato",
+      "undo": "Bekor qilish bilan",
+      "retry": "Qayta urinish bilan",
+      "burst": "4 ta ketma-ket",
+      "repeat": "Takror xato",
+      "dismissAll": "Hammasini yopish"
+    }
+  },
+  "statesKit": {
+    "groups": {
+      "empty": "Bo'sh holat",
+      "emptyNote": "Hali yozuv yo'q yoki filtrga mos kelmadi: ikonka doirada, sarlavha, bir jumla sabab va keyingi qadam.",
+      "error": "Xato holati",
+      "errorNote": "So'rov xato qaytardi — karta joyida qoladi. Turi xatodan aniqlanadi; 403 — kulrang va tugmasiz.",
+      "chart": "Grafik ichida",
+      "chartNote": "Bo'sh davr va yuklanmagan grafik — karta joyida, kulrang yuzada.",
+      "page": "Sahifa xatosi",
+      "pageNote": "Sahifa umuman ochilmaganda — kontent maydonining o'rtasida, 24 px sarlavha va 2 ta tugma.",
+      "loading": "Yuklanish",
+      "loadingNote": "400 ms dan keyin skelet, 15 soniyadan keyin pastda izoh. Jadval qatori 56 px — ma'lumot kelganda sahifa sakramaydi.",
+      "boundary": "So'rov holatlari",
+      "boundaryNote": "QueryBoundary bitta so'rovning to'rt holatini chizadi: yuklanmoqda, bo'sh, xato va tayyor. 400 ms dan tez javobda skelet chiqmaydi, qayta so'rovda ro'yxat joyida qoladi."
+    },
+    "kinds": {
+      "server": "Server xatosi (500)",
+      "offline": "Internet aloqasi yo'q",
+      "forbidden": "Ruxsat yo'q (403)",
+      "section": "Bo'lim xatosi",
+      "table": "Jadval · 15 s dan keyin",
+      "lines": "Matn qatorlari",
+      "chart": "Grafik"
+    },
+    "demo": {
+      "emptyOrders": {
+        "title": "Hali buyurtma yo'q",
+        "text": "Buyurtmalar «Qabul va yaratish» bo'limida yaratiladi va shu ro'yxatda paydo bo'ladi.",
+        "action": "Buyurtma yaratish"
+      },
+      "emptyFilter": {
+        "title": "Bu filtrlar bo'yicha buyurtma topilmadi",
+        "text": "Filtrlardan birini olib tashlang yoki sana oralig'ini kengaytiring.",
+        "action": "Filtrlarni tozalash"
+      },
+      "chartEmpty": {
+        "title": "Bu davrda buyurtma yo'q",
+        "text": "Bugun hali birorta buyurtma qabul qilinmagan. Boshqa davrni tanlang.",
+        "action": "Bu hafta"
+      },
+      "chartError": {
+        "text": "Internet aloqasini tekshiring va qayta urinib ko'ring."
+      },
+      "notFound": {
+        "overline": "Xato kodi 404",
+        "title": "Bu sahifa topilmadi",
+        "text": "Manzil noto'g'ri yozilgan yoki sahifa o'chirilgan bo'lishi mumkin.",
+        "home": "Bosh sahifaga qaytish",
+        "back": "Orqaga"
+      },
+      "appError": {
+        "overline": "Kutilmagan xato",
+        "title": "Sahifani ko'rsatib bo'lmadi",
+        "text": "Ilovada kutilmagan xato yuz berdi. Qayta urinib ko'ring.",
+        "home": "Bosh sahifaga qaytish"
+      },
+      "columns": {
+        "order": "Buyurtma",
+        "customer": "Mijoz",
+        "region": "Tuman / viloyat",
+        "market": "Market",
+        "status": "Holat",
+        "delivery": "Yetkazish",
+        "amount": "Summa"
+      },
+      "boundary": {
+        "fast": "Tez javob",
+        "slow": "Sekin javob",
+        "empty": "Bo'sh javob",
+        "error": "Xato",
+        "title": "Buyurtmalar",
+        "loadingLabel": "Buyurtmalar yuklanmoqda",
+        "emptyTitle": "Hali buyurtma yo'q"
+      }
+    }
+  },
+  "selectKit": {
+    "groups": {
+      "closed": "Yopiq holat",
+      "open": "Ochiq holat",
+      "multi": "Ko'p tanlov",
+      "rich": "Ikkinchi qator va qidiruv"
+    },
+    "notes": {
+      "closed": "tugma · aria-haspopup=\"listbox\"",
+      "open": "ro'yxat maydon ostida, eng ko'pi 280 px balandlik, keyin aylantiriladi",
+      "multi": "tanlanganlar maydon ichida belgi ko'rinishida · har birini alohida olib tashlash mumkin",
+      "rich": "Foydalanuvchi tanlash: ism ostida login va rol (Xodim qo'shish oynasi). Ishlaydi — bosing yoki Tab bilan keling."
+    },
+    "states": {
+      "unselected": "Tanlanmagan",
+      "selected": "Tanlangan",
+      "invalid": "Xato + xabar",
+      "disabled": "O'chirilgan",
+      "open": "Ochiq",
+      "search": "Qidiruv bilan",
+      "notFound": "Topilmadi",
+      "loading": "Yuklanmoqda",
+      "closedMulti": "Yopiq · 3 ta tanlangan",
+      "count": "Soni bilan",
+      "interactive": "Ikkinchi qator",
+      "searchInteractive": "Qidiruv · tozalash",
+      "loadingClosed": "Yopiq · yuklanmoqda"
+    },
+    "demo": {
+      "regionLabel": "Viloyat",
+      "regionPlaceholder": "Viloyat tanlang",
+      "districtLabel": "Tuman",
+      "districtPlaceholder": "Tuman tanlang",
+      "districtError": "Tumanni tanlang",
+      "districtDisabled": "Avval viloyatni tanlang",
+      "districtDisabledHint": "Viloyat tanlangach ochiladi",
+      "marketLabel": "Market",
+      "marketsList": "Marketlar",
+      "marketNotFound": "«{{query}}» bo'yicha market yo'q",
+      "statusLabel": "Holat",
+      "statusPlaceholder": "Holatni tanlang",
+      "statusHint": "Tanlanmasa — barcha holatlar",
+      "statusChipsHint": "3 ta tanlangan — 2 tasi ko'rinadi, qolgani «+1»",
+      "statusClear": "Barcha holatlarni tozalash",
+      "statusRemove": "{{label}} holatini olib tashlash",
+      "userLabel": "Foydalanuvchi",
+      "userPlaceholder": "Foydalanuvchini tanlang",
+      "userHint": "Faqat faol menejer, ro'yxatchi va kuryerlar ko'rsatiladi",
+      "usersList": "Foydalanuvchilar",
+      "districtLoading": "Tumanlar yuklanmoqda…",
+      "marketPlaceholder": "Marketni tanlang"
+    },
+    "roles": {
+      "courier": "Kuryer",
+      "manager": "Menejer",
+      "registrator": "Ro'yxatchi"
     }
   }
 }

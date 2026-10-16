@@ -1,15 +1,24 @@
-import {
-  memo,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type ChangeEvent,
-  type KeyboardEvent,
-} from "react";
-import { ChevronDown, type LucideIcon } from "lucide-react";
+import { memo, useMemo } from "react";
+import type { LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { resolveFilterEmptyLabel, type AllOptionProp } from "../lib/selectPlaceholder";
+import { Field } from "./primitives/Field";
+import { Select } from "./primitives/Select";
 
+/**
+ * QIDIRUVLI TANLASH RO'YXATI — eski API, ichi dizayn v2 `Field` + `Select searchable`
+ * (`.el-select` / `.el-options`, taxta `tizim-states-forms` 03 «Qidiruv bilan»): maydonning o'zi
+ * qidiruvga aylanadi, mos qism qalin, topilmasa «Topilmadi».
+ *
+ * Xatti-harakati avvalgidek: qiymat — satr (bo'sh — `""`), `value=""` li variant ro'yxatga kirmaydi,
+ * `placement="top"` — ro'yxat tepada. `size` va `surface` endi bitta v2 maydon (40 px, telefonda 44) —
+ * e'tiborga olinmaydi.
+ *
+ * FILTR (ega qarori 2026-10-16; `allOption`, `value=""` li variant yoki «Barchasi»-simon namuna —
+ * `shared/lib/selectPlaceholder.ts`): bo'sh maydonda «Barchasi» (maket `superadmin-orders-list`), qiymat
+ * tanlangach maydonda × «Tozalash» — bosilsa `onChange("")`. Forma ro'yxati o'z namunasini saqlaydi.
+ * Yangi kodda to'g'ridan-to'g'ri `<Field labelAs="span"><Select searchable /></Field>` ishlating.
+ */
 export interface SearchableSelectOption {
   value: string;
   label: string;
@@ -18,6 +27,7 @@ export interface SearchableSelectOption {
 
 interface SearchableSelectProps {
   label: string;
+  /** Maydon `id` si (avvalgidek: `document.getElementById(name)`, tashqi `<label htmlFor>`). */
   name: string;
   value: string;
   onChange: (value: string) => void;
@@ -26,35 +36,23 @@ interface SearchableSelectProps {
   icon?: LucideIcon;
   loading?: boolean;
   disabled?: boolean;
+  /** v1: 44 / 48 px. v2 da bitta o'lcham — e'tiborga olinmaydi. */
   size?: "sm" | "md";
   hideLabel?: boolean;
+  /** v1 fon turi — v2 da bitta maydon foni, e'tiborga olinmaydi. */
   surface?: "default" | "search";
   /**
-   * Ro'yxat qayerga ochiladi. Standart — pastga. Modal oxiridagi tanlovda
-   * (pastda joy yo'q, modal tanasi esa aylanadi) "top" ro'yxatni qirqilishdan
-   * saqlaydi.
+   * Ro'yxat qayerga ochiladi. Standart — pastga. Modal oxiridagi tanlovda "top" (sig'masa v2 ro'yxat
+   * o'zi ham ag'dariladi).
    */
   placement?: "bottom" | "top";
+  /**
+   * Filtr: bo'sh qiymat (`""`) — «hammasi». `true` — bo'sh maydonda «Barchasi», qiymat tanlangach × «Tozalash»;
+   * satr — «Barchasi» o'rniga shu matn; `false` — filtr emas. Berilmasa: `value=""` li variant yoki
+   * «Barchasi»-simon `placeholder` bo'lsa — filtr.
+   */
+  allOption?: AllOptionProp;
 }
-
-const getNextEnabledIndex = (
-  options: SearchableSelectOption[],
-  startIndex: number,
-  step: 1 | -1 = 1,
-) => {
-  if (!options.length) {
-    return -1;
-  }
-
-  for (let offset = 0; offset < options.length; offset += 1) {
-    const index = (startIndex + offset * step + options.length) % options.length;
-    if (!options[index]?.disabled) {
-      return index;
-    }
-  }
-
-  return -1;
-};
 
 const SearchableSelect = ({
   label,
@@ -62,325 +60,40 @@ const SearchableSelect = ({
   value,
   onChange,
   options,
-  placeholder = "Tanlang...",
-  icon: Icon,
+  placeholder,
+  icon,
   loading = false,
   disabled = false,
-  size = "md",
   hideLabel = false,
-  surface = "default",
   placement = "bottom",
+  allOption,
 }: SearchableSelectProps) => {
-  const { t } = useTranslation("common");
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState("");
-  const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const containerRef = useRef<HTMLDivElement | null>(null);
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
-
-  const normalizedOptions = useMemo(
-    () => options.filter((option) => option.value !== ""),
-    [options],
-  );
-  const displayPlaceholder = useMemo(() => {
-    const normalizedPlaceholder = placeholder.trim().toLowerCase();
-    const isAllPlaceholder =
-      normalizedPlaceholder === "all" ||
-      normalizedPlaceholder.startsWith("all ") ||
-      normalizedPlaceholder === "barchasi" ||
-      normalizedPlaceholder.startsWith("barcha ") ||
-      normalizedPlaceholder === "все" ||
-      normalizedPlaceholder.startsWith("все ");
-
-    return isAllPlaceholder ? `${t("select")} ${label.toLowerCase()}` : placeholder;
-  }, [label, placeholder, t]);
-
-  const selectedOption = useMemo(
-    () => normalizedOptions.find((option) => option.value === value),
-    [normalizedOptions, value],
-  );
-
-  const filteredOptions = useMemo(() => {
-    const normalizedQuery = searchValue.trim().toLowerCase();
-
-    if (!normalizedQuery) {
-      return normalizedOptions;
-    }
-
-    return normalizedOptions.filter((option) =>
-      option.label.toLowerCase().includes(normalizedQuery),
-    );
-  }, [normalizedOptions, searchValue]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    searchInputRef.current?.focus();
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!containerRef.current?.contains(event.target as Node)) {
-        setSearchValue("");
-        setHighlightedIndex(-1);
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    const selectedIndex = filteredOptions.findIndex((option) => option.value === value);
-    if (selectedIndex >= 0 && !filteredOptions[selectedIndex]?.disabled) {
-      setHighlightedIndex(selectedIndex);
-      return;
-    }
-
-    setHighlightedIndex(getNextEnabledIndex(filteredOptions, 0));
-  }, [filteredOptions, isOpen, value]);
-
-  useEffect(() => {
-    if (!isOpen || highlightedIndex < 0) {
-      return;
-    }
-
-    optionRefs.current[highlightedIndex]?.scrollIntoView({
-      block: "nearest",
-    });
-  }, [highlightedIndex, isOpen]);
-
-  const openDropdown = () => {
-    if (disabled) {
-      return;
-    }
-
-    setIsOpen(true);
-  };
-
-  const handleSelect = (optionValue: string) => {
-    const option = normalizedOptions.find((item) => item.value === optionValue);
-    if (option?.disabled) {
-      return;
-    }
-
-    onChange(optionValue);
-    setSearchValue("");
-    setHighlightedIndex(-1);
-    setIsOpen(false);
-  };
-
-  const handleTriggerKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
-    if (
-      event.key === "Enter" ||
-      event.key === " " ||
-      event.key === "ArrowDown" ||
-      event.key === "ArrowUp"
-    ) {
-      event.preventDefault();
-      openDropdown();
-      return;
-    }
-
-    if (event.key === "Escape") {
-      setSearchValue("");
-      setHighlightedIndex(-1);
-      setIsOpen(false);
-      return;
-    }
-
-    const isPrintableKey =
-      event.key.length === 1 &&
-      !event.ctrlKey &&
-      !event.metaKey &&
-      !event.altKey;
-
-    if (isPrintableKey) {
-      event.preventDefault();
-      setSearchValue(event.key);
-      setIsOpen(true);
-    }
-  };
-
-  const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    setSearchValue(event.target.value);
-  };
-
-  const handleInputKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      setHighlightedIndex((current) => getNextEnabledIndex(filteredOptions, current + 1, 1));
-      return;
-    }
-
-    if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setHighlightedIndex((current) => {
-        const startIndex = current < 0 ? filteredOptions.length - 1 : current - 1;
-        return getNextEnabledIndex(filteredOptions, startIndex, -1);
-      });
-      return;
-    }
-
-    if (event.key === "Enter") {
-      event.preventDefault();
-
-      if (highlightedIndex >= 0 && filteredOptions[highlightedIndex]) {
-        handleSelect(filteredOptions[highlightedIndex].value);
-      }
-
-      return;
-    }
-
-    if (event.key === "Escape") {
-      setSearchValue("");
-      setHighlightedIndex(-1);
-      setIsOpen(false);
-    }
-  };
-
-  const controlSizeClass =
-    size === "sm" ? "h-11 rounded-xl px-3.5" : "h-12 rounded-xl px-4";
-  const controlSurfaceClass =
-    surface === "search"
-      ? "bg-[color:var(--color-card-surface-strong)] dark:bg-[color:var(--color-card-surface-strong)] border-[color:var(--color-border-strong)] dark:border-white/12"
-      : "bg-[color:var(--color-card-surface-strong)]/90 dark:bg-[color:var(--color-card-surface-strong)]/95 border-[color:var(--color-border-strong)]/80 dark:border-white/10";
+  const { t } = useTranslation("ui");
+  const normalizedOptions = useMemo(() => options.filter((option) => option.value !== ""), [options]);
+  const filterEmptyLabel = resolveFilterEmptyLabel({
+    allOption,
+    emptyOptionLabel: options.find((option) => option.value === "")?.label,
+    placeholder,
+    hideLabel,
+    allWord: t("select.all"),
+  });
 
   return (
-    <div ref={containerRef} className="relative space-y-0">
-      {!hideLabel && (
-        <label
-          htmlFor={name}
-          className="mb-1.5 ml-1 block text-xs font-bold uppercase tracking-wide text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
-        >
-          <span className="flex items-center gap-1.5">
-            {Icon && <Icon size={11} className="text-main/70" />}
-            {label}
-          </span>
-        </label>
-      )}
-
-      <div
-        className={`group relative flex w-full items-center border-2 text-left shadow-sm transition-all duration-200 outline-none ${controlSizeClass} ${controlSurfaceClass} ${
-          isOpen
-            ? "border-main ring-2 ring-main/15"
-            : "hover:border-main/60"
-        } ${disabled ? "cursor-not-allowed opacity-50" : "cursor-text"}`}
-      >
-        {Icon && (
-          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[color:var(--color-text-muted)] transition-colors group-hover:text-main group-focus-within:text-main dark:text-[color:var(--color-text-muted-dark)]">
-            <Icon size={18} />
-          </span>
-        )}
-
-        {isOpen ? (
-          <input
-            ref={searchInputRef}
-            id={name}
-            type="text"
-            value={searchValue}
-            onChange={handleInputChange}
-            onKeyDown={handleInputKeyDown}
-            disabled={disabled}
-            autoFocus
-            aria-expanded={isOpen}
-            aria-haspopup="listbox"
-            placeholder={selectedOption?.label ?? displayPlaceholder}
-            className={`min-w-0 flex-1 bg-transparent text-base md:text-sm font-semibold text-[color:var(--color-maindark)] outline-none placeholder:text-[color:var(--color-text-muted)] dark:text-white dark:placeholder:text-white/45 ${Icon ? "pl-7" : ""}`}
-          />
-        ) : (
-          <button
-            id={name}
-            type="button"
-            onClick={openDropdown}
-            onKeyDown={handleTriggerKeyDown}
-            disabled={disabled}
-            aria-expanded={isOpen}
-            aria-haspopup="listbox"
-            // `self-stretch my-[-2px]` — butun maydon balandligi (44/48px) bosiladi,
-            // faqat 20px matn qatori emas (telefonda barmoq uchun).
-            className={`my-[-2px] min-w-0 flex-1 self-stretch truncate bg-transparent text-left text-sm font-semibold outline-none ${
-              selectedOption
-                ? "text-[color:var(--color-maindark)] dark:text-white"
-                : "text-[color:var(--color-text-muted)] dark:text-white/50"
-            } ${Icon ? "pl-7" : ""}`}
-          >
-            {selectedOption?.label ?? displayPlaceholder}
-          </button>
-        )}
-
-        <span className="ml-2 flex items-center gap-1.5">
-          <ChevronDown
-            size={18}
-            className={`pointer-events-none shrink-0 text-[color:var(--color-text-muted)] transition-all duration-200 dark:text-white/45 ${
-              isOpen ? "rotate-180 text-main" : ""
-            }`}
-          />
-        </span>
-      </div>
-
-      {isOpen && (
-        <div
-          data-placement={placement}
-          className={`absolute left-0 right-0 z-40 ${placement === "top" ? "bottom-full mb-2" : "top-full mt-2"} overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-primary)] shadow-[0_20px_45px_color-mix(in_srgb,var(--color-background-deep)_18%,transparent)] dark:border-white/10 dark:bg-[color:var(--color-card-surface-strong)]`}
-        >
-          <div className="max-h-60 overflow-y-auto p-2 custom-scrollbar">
-            {loading ? (
-              <div className="flex h-11 items-center justify-center rounded-xl px-3 text-sm font-medium text-[color:var(--color-text-muted)] dark:text-white/45">
-                {t("loading")}
-              </div>
-            ) : filteredOptions.length > 0 ? (
-              filteredOptions.map((option, optionIndex) => {
-                const isSelected = option.value === value;
-                const isHighlighted = optionIndex === highlightedIndex;
-                const isDisabled = Boolean(option.disabled);
-
-                return (
-                  <button
-                    key={option.value}
-                    ref={(element) => {
-                      optionRefs.current[optionIndex] = element;
-                    }}
-                    type="button"
-                    onClick={() => handleSelect(option.value)}
-                    onMouseEnter={() => {
-                      if (!isDisabled) {
-                        setHighlightedIndex(optionIndex);
-                      }
-                    }}
-                    disabled={isDisabled}
-                    className={`flex h-11 w-full items-center rounded-xl px-3 text-left text-sm font-medium transition-colors ${
-                      isDisabled
-                        ? "cursor-not-allowed text-[color:var(--color-text-muted)] opacity-45 dark:text-white/35"
-                        : isHighlighted
-                        ? "bg-main text-white shadow-sm shadow-main/25"
-                        : isSelected
-                        ? "bg-main/20 text-main dark:bg-main/20 dark:text-white"
-                        : "text-[color:var(--color-maindark)] hover:bg-main/10 dark:text-white/85 dark:hover:bg-white/10"
-                    }`}
-                  >
-                    <span className="truncate">{option.label}</span>
-                  </button>
-                );
-              })
-            ) : (
-              <div className="flex h-11 items-center justify-center rounded-xl px-3 text-sm font-medium text-[color:var(--color-text-muted)] dark:text-white/45">
-                {t("search")} topilmadi
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
+    <Field id={name} label={label} hideLabel={hideLabel} labelAs="span">
+      <Select
+        searchable
+        options={normalizedOptions}
+        value={value || null}
+        onChange={(next) => onChange(next ?? "")}
+        placeholder={filterEmptyLabel ?? placeholder ?? t("select.placeholder")}
+        clearable={filterEmptyLabel !== null}
+        inlineLabel={hideLabel && filterEmptyLabel !== null ? label : undefined}
+        icon={icon}
+        loading={loading}
+        disabled={disabled}
+        placement={placement}
+      />
+    </Field>
   );
 };
 

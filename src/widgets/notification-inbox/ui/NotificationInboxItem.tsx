@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Button, Popconfirm, Tooltip, message } from "antd";
+import { Button, Tooltip } from "antd";
 import { Check, Mail, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +13,8 @@ import {
   useMarkInboxRead,
 } from "../../../features/notification-inbox";
 import { formatDate } from "../../../shared/lib/formatDate";
+import { notify } from "../../../shared/lib/notify";
+import { useConfirm } from "../../../shared/ui/primitives";
 
 type NotificationInboxItemProps = {
   notification: InboxNotification;
@@ -29,6 +31,7 @@ const NotificationInboxItem = ({ notification, preview = false }: NotificationIn
   const navigate = useNavigate();
   const markRead = useMarkInboxRead();
   const deleteNotification = useDeleteInboxNotification();
+  const confirm = useConfirm();
 
   const isUnread = !notification.is_read;
 
@@ -36,17 +39,23 @@ const NotificationInboxItem = ({ notification, preview = false }: NotificationIn
     try {
       await markRead.mutateAsync({ id: notification.id, read: isUnread });
     } catch {
-      message.error(t("actionError"));
+      notify.error(t("actionError"));
     }
   };
 
   const handleDelete = async () => {
-    try {
-      await deleteNotification.mutateAsync(notification.id);
-      message.success(t("deleteSuccess"));
-    } catch {
-      message.error(t("deleteError"));
-    }
+    // Xato oynaning o'zida ko'rinadi (qayta urinish yoki bekor qilish mumkin).
+    const ok = await confirm({
+      tone: "danger",
+      title: t("deleteConfirm"),
+      confirmLabel: t("delete"),
+      cancelLabel: t("cancel"),
+      icon: Trash2,
+      confirmIcon: Trash2,
+      errorMessage: () => t("deleteError"),
+      onConfirm: () => deleteNotification.mutateAsync(notification.id),
+    });
+    if (ok) notify.success(t("deleteSuccess"));
   };
 
   const handleOpen = async () => {
@@ -118,24 +127,17 @@ const NotificationInboxItem = ({ notification, preview = false }: NotificationIn
               onClick={handleToggleRead}
             />
           </Tooltip>
-          <Popconfirm
-            title={t("deleteConfirm")}
-            okText={t("delete")}
-            cancelText={t("cancel")}
-            okButtonProps={{ danger: true }}
-            onConfirm={handleDelete}
-          >
-            <Tooltip title={t("delete")}>
-              <Button
-                danger
-                type="text"
-                size="small"
-                aria-label={t("delete")}
-                icon={<Trash2 size={16} />}
-                loading={deleteNotification.isPending}
-              />
-            </Tooltip>
-          </Popconfirm>
+          <Tooltip title={t("delete")}>
+            <Button
+              danger
+              type="text"
+              size="small"
+              aria-label={t("delete")}
+              icon={<Trash2 size={16} />}
+              loading={deleteNotification.isPending}
+              onClick={handleDelete}
+            />
+          </Tooltip>
         </div>
       )}
     </div>

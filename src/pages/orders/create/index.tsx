@@ -21,7 +21,6 @@ import AiCreatePanel from "./ui/ai/AiCreatePanel";
 import { useAiAvailability } from "../../../entities/ai-order";
 import { FormFieldError, getActionButtonClassName } from "./ui/formFieldStyles";
 import { useOrders } from "../../../entities/order/api/orderApi";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import type { RootState } from "../../../app/config/store";
 import {
   buildCreateOrderPayload,
@@ -35,6 +34,7 @@ import type { ApiOrder } from "../../new_orders/components/OrderCard";
 import OrdersTable from "../list/OrdersTable";
 import type { OrderListItem } from "../../../entities/order/types/order";
 import { isInactiveMarketStatus } from "../../../shared/lib/marketStatus";
+import { notify } from "../../../shared/lib/notify";
 
 type BackendErrorPayload = {
   message?: unknown;
@@ -322,7 +322,6 @@ const OrderCreateFormContent = () => {
   const location = useLocation();
   const queryClient = useQueryClient();
   const { createOrder } = useOrders();
-  const { api } = useAppNotification();
   const role = useSelector((state: RootState) => state.role.role);
   const roleState = useSelector((state: RootState) => state.role);
   const profile = useSelector((state: RootState) => state.user.user);
@@ -423,10 +422,7 @@ const OrderCreateFormContent = () => {
 
     if (isInactiveSelectedMarket) {
       setServerError(t("inactiveMarketOrderBlocked"));
-      api.warning({
-        message: t("inactiveMarketOrderBlocked"),
-        placement: "topRight",
-      });
+      notify.warning(t("inactiveMarketOrderBlocked"));
       return;
     }
 
@@ -438,13 +434,10 @@ const OrderCreateFormContent = () => {
           market: isMarketRole ? null : values.market,
         });
         setStep(2);
-        api.success({
-          message: t("success", { ns: "common" }),
+        notify.success(t("success", { ns: "common" }), {
           description: isMarketRole
             ? t("orderCreatedMarketRole")
             : t("orderCreatedForMarket"),
-          placement: "topRight",
-          duration: 4,
         });
       },
       onError: (error) => {
@@ -455,12 +448,7 @@ const OrderCreateFormContent = () => {
 
         applyOrderCreateFieldErrors(error, setError);
         setServerError(message);
-        api.error({
-          message: t("orderCreateErrorTitle"),
-          description: message,
-          placement: "topRight",
-          duration: 5,
-        });
+        notify.error(t("orderCreateErrorTitle"), { description: message });
       },
     });
   };
@@ -482,10 +470,7 @@ const OrderCreateFormContent = () => {
 
     if (isInactiveSelectedMarket) {
       setServerError(t("inactiveMarketOrderBlocked"));
-      api.warning({
-        message: t("inactiveMarketOrderBlocked"),
-        placement: "topRight",
-      });
+      notify.warning(t("inactiveMarketOrderBlocked"));
       return;
     }
 

@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../../test/test-utils";
@@ -28,13 +28,6 @@ vi.mock("../../../../entities/user/api/userApi", () => ({
     createMarket: mocks.mutation(),
     createCourier: { mutateAsync: mocks.createCourier, isPending: false },
   }),
-}));
-
-// Kalendar o'rniga oddiy maydon — to'lov kuni (maosh bilan majburiy) bitta qadamda.
-vi.mock("../../../../shared/ui/CustomDatePicker", () => ({
-  default: ({ value, onChange }: { value: string; onChange: (value: string) => void }) => (
-    <input aria-label="payment-day" value={value} onChange={(event) => onChange(event.target.value)} />
-  ),
 }));
 
 vi.mock("../../../../entities/branch", async (importOriginal) => ({
@@ -87,7 +80,9 @@ describe("CreateUserForm — kuryer tariflari (fix3b FE-USR-11)", () => {
   it("maoshli kuryerda bo'sh tariflar 0 / 0 bo'lib yuboriladi", async () => {
     const { user, container } = await openCourierForm();
     await fill(user, container, "salary", "3000000");
-    fireEvent.change(screen.getByLabelText("payment-day"), { target: { value: "2026-10-05" } });
+    // To'lov kuni — 1–30 ro'yxati (v2 `Select`, ega qarori 2026-10-16).
+    await user.click(screen.getByRole("combobox", { name: "To'lov kuni" }));
+    await user.click(screen.getByRole("option", { name: "5" }));
 
     await user.click(screen.getByRole("button", { name: /Saqlash/ }));
 

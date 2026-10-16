@@ -11,6 +11,7 @@ import {
   Loader2,
   Plug,
   Plus,
+  Power,
   RefreshCw,
   RotateCw,
   Send,
@@ -21,6 +22,7 @@ import type { RootState } from "../../app/config/store";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import { copyToClipboard } from "../../shared/lib/clipboard";
 import QueryErrorState from "../../shared/ui/QueryErrorState";
+import { useConfirm } from "../../shared/ui/primitives";
 import {
   usePartnerActions,
   usePartnerWebhooks,
@@ -80,6 +82,7 @@ const PartnersPage = () => {
   const role = useSelector((state: RootState) => state.role.role);
   const allowed = Boolean(role && ALLOWED_ROLES.has(role));
 
+  const confirm = useConfirm();
   const partnersQuery = usePartners();
   const { createPartner, updatePartner, rotateKey, setActive, retryWebhook, testWebhook } =
     usePartnerActions();
@@ -245,34 +248,56 @@ const PartnersPage = () => {
     }
   };
 
-  const handleRotate = (partner: Partner) => {
-    if (!window.confirm(t("partnerRotateConfirm"))) return;
-    void (async () => {
-      try {
-        const res = await rotateKey.mutateAsync(String(partner.id));
-        if (res?.api_key) setRevealedKey({ name: partner.name, key: res.api_key });
-        setMessage({ tone: "success", text: t("partnerKeyRotated") });
-      } catch (error) {
-        fail(error, t("partnerRotateFailed"));
-      }
-    })();
+  // Kirish huquqini o'zgartiradi (eski kalit darhol ishlamay qoladi) — tasdiqlash oynasi orqali.
+  const handleRotate = async (partner: Partner) => {
+    const ok = await confirm({
+      tone: "danger",
+      title: t("partnerRotateKey"),
+      description: t("partnerRotateText"),
+      details: partner.name,
+      note: t("partnerRotateNote"),
+      // Maket `superadmin-integrations-rotate-key-dialog`: «Ha, yangilash».
+      confirmLabel: t("partnerRotateOk"),
+      icon: KeyRound,
+      confirmIcon: KeyRound,
+    });
+    if (!ok) return;
+    try {
+      const res = await rotateKey.mutateAsync(String(partner.id));
+      if (res?.api_key) setRevealedKey({ name: partner.name, key: res.api_key });
+      setMessage({ tone: "success", text: t("partnerKeyRotated") });
+    } catch (error) {
+      fail(error, t("partnerRotateFailed"));
+    }
   };
 
-  const handleToggle = (partner: Partner) => {
-    void (async () => {
-      try {
-        await setActive.mutateAsync({
-          id: String(partner.id),
-          is_active: !partner.is_active,
-        });
-        setMessage({
-          tone: "success",
-          text: partner.is_active ? t("partnerDisabled") : t("partnerEnabled"),
-        });
-      } catch (error) {
-        fail(error, t("partnerStatusChangeFailed"));
-      }
-    })();
+  // Hamkorni o'chirish kirish huquqini oladi — tasdiqlash oynasi orqali (DESIGN_SYSTEM §8).
+  // Yoqish — darhol (§8: faollashtirish ataylab tasdiqsiz; «Ish rejimi» panelidagi kalit ham shunday).
+  const handleToggle = async (partner: Partner) => {
+    if (partner.is_active) {
+      const ok = await confirm({
+        tone: "danger",
+        title: t("partnerDisableTitle"),
+        description: t("partnerDisableText"),
+        details: partner.name,
+        confirmLabel: t("partnerDisable"),
+        icon: Power,
+        confirmIcon: Power,
+      });
+      if (!ok) return;
+    }
+    try {
+      await setActive.mutateAsync({
+        id: String(partner.id),
+        is_active: !partner.is_active,
+      });
+      setMessage({
+        tone: "success",
+        text: partner.is_active ? t("partnerDisabled") : t("partnerEnabled"),
+      });
+    } catch (error) {
+      fail(error, t("partnerStatusChangeFailed"));
+    }
   };
 
   const handleRetry = (row: PartnerWebhookRow) => {
@@ -443,7 +468,7 @@ const PartnersPage = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleRotate(partner)}
+                    onClick={() => void handleRotate(partner)}
                     disabled={rotateKey.isPending}
                     title={t("partnerRotateKey")}
                     className="flex h-9 items-center gap-1.5 rounded-xl border border-[color:var(--color-border-soft)] px-3 text-xs font-bold text-maindark transition hover:bg-main/5 disabled:opacity-50 dark:text-white"
@@ -453,7 +478,7 @@ const PartnersPage = () => {
                   </button>
                   <button
                     type="button"
-                    onClick={() => handleToggle(partner)}
+                    onClick={() => void handleToggle(partner)}
                     disabled={setActive.isPending}
                     className={`flex h-9 items-center rounded-xl px-3 text-xs font-bold text-white transition disabled:opacity-50 ${
                       partner.is_active

@@ -3,7 +3,6 @@ import { Info, ListOrdered, Send } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { message } from "antd";
 import { useQuery } from "@tanstack/react-query";
 import HeaderName from "../../shared/components/headerName";
 import { useOrders } from "../../entities/order/api/orderApi";
@@ -39,6 +38,7 @@ import { getActionErrorMessage } from "../../shared/lib/actionError";
 import { isCourierHeldOrder } from "../../entities/orders/custody";
 import type { CancelOrderPayload } from "../../entities/orders/cancelReason";
 import { getSellPaymentStatus, SELL_PAYMENT_NOTICE_KEYS, type SellOrderPayload } from "../../entities/orders/sellPayment";
+import { notify } from "../../shared/lib/notify";
 
 const LIMIT = 10;
 const EXPORT_PAGE_SIZE = 100;
@@ -737,7 +737,7 @@ const Orders = () => {
   const notifyActionError = useCallback(
     (error: unknown) => {
       const description = getActionErrorMessage(error, t("orderActionError"));
-      if (description) message.error(description);
+      if (description) notify.error(description);
     },
     [t],
   );
@@ -758,7 +758,7 @@ const Orders = () => {
             });
             // Marketga to'lov yozilgan bo'lsa — natija (to'liq / qisman).
             const paymentStatus = getSellPaymentStatus(response);
-            if (paymentStatus) message.success(t(SELL_PAYMENT_NOTICE_KEYS[paymentStatus]));
+            if (paymentStatus) notify.success(t(SELL_PAYMENT_NOTICE_KEYS[paymentStatus]));
           },
           onError: notifyActionError,
         },
@@ -841,13 +841,13 @@ const Orders = () => {
 
   const selectScannedCancelledOrder = useCallback((order: OrderListItem) => {
     if (!isUnsentCancelledOrder(order)) {
-      message.warning(t("scanNotFoundDescription"));
+      notify.warning(t("scanNotFoundDescription"));
       void playScanFeedback("missing");
       return;
     }
 
     if (selectedCancelledIds.has(order.id)) {
-      message.warning(t("scanAlreadySelectedDescription", {
+      notify.warning(t("scanAlreadySelectedDescription", {
         name: order.customer?.name ?? `#${order.id}`,
       }));
       void playScanFeedback("duplicate");
@@ -859,7 +859,7 @@ const Orders = () => {
       next.add(order.id);
       return next;
     });
-    message.success(t("scanSelectedDescription", {
+    notify.success(t("scanSelectedDescription", {
       name: order.customer?.name ?? `#${order.id}`,
     }));
     void playScanFeedback("success");
@@ -884,10 +884,10 @@ const Orders = () => {
         return;
       }
 
-      message.error(t("scanNotFoundDescription"));
+      notify.error(t("scanNotFoundDescription"));
       void playScanFeedback("missing");
     } catch (error) {
-      message.error(getBackendErrorMessage(error) ?? t("scanNotFoundDescription"));
+      notify.error(getBackendErrorMessage(error) ?? t("scanNotFoundDescription"));
       void playScanFeedback("error");
     }
   }, [items, selectScannedCancelledOrder, t]);
@@ -915,11 +915,11 @@ const Orders = () => {
     SendToPost.mutate(Array.from(selectedCancelledIds), {
       onSuccess: () => {
         setSelectedCancelledIds(new Set());
-        message.success(t("sentToHqSuccess"));
+        notify.success(t("sentToHqSuccess"));
       },
       onError: (error: unknown) => {
         const backendMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
-        message.error(backendMessage ?? t("sendToHqError"));
+        notify.error(backendMessage ?? t("sendToHqError"));
       },
     });
   }, [SendToPost, selectedCancelledIds, t]);
@@ -967,7 +967,7 @@ const Orders = () => {
       }
 
       if (exportedOrders.length === 0) {
-        message.warning(t("exportEmpty"));
+        notify.warning(t("exportEmpty"));
         return;
       }
 
@@ -999,9 +999,9 @@ const Orders = () => {
           closed: t("statusClosed"),
         },
       });
-      message.success(t("exportSuccess", { count: exportedOrders.length }));
+      notify.success(t("exportSuccess", { count: exportedOrders.length }));
     } catch {
-      message.error(t("exportError"));
+      notify.error(t("exportError"));
     } finally {
       setIsExporting(false);
     }

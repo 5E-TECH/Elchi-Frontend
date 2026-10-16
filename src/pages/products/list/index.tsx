@@ -31,12 +31,12 @@ import type { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
 import { usePagination } from "../../../shared/lib/usePagination";
 import Pagination from "../../../shared/components/pagination";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import SearchableSelect from "../../../shared/ui/SearchableSelect";
 import { resolveAssetUrl } from "../../../shared/lib/assetUrl";
 import { isInactiveMarketStatus } from "../../../shared/lib/marketStatus";
 import PageContainer from "../../../shared/ui/PageContainer";
 import { canCreateProducts } from "../../../app/lib/access";
+import { notify } from "../../../shared/lib/notify";
 
 interface Product {
   id: number;
@@ -205,7 +205,6 @@ const getProductMeta = (response: unknown): Record<string, unknown> => {
 
 const ProductTable = () => {
   const { t } = useTranslation("products");
-  const { api: notificationApi } = useAppNotification();
   const navigate = useNavigate();
   const roleState = useSelector((state: RootState) => state.role);
   const profile = useSelector((state: RootState) => state.user.user);
@@ -459,10 +458,7 @@ const ProductTable = () => {
 
     const productName = values.name.trim();
     if (!productName) {
-      notificationApi.warning({
-        message: t("validationNameRequired"),
-        placement: "topRight",
-      });
+      notify.warning(t("validationNameRequired"));
       return;
     }
 
@@ -474,18 +470,11 @@ const ProductTable = () => {
     };
 
     const notifySuccess = () => {
-      notificationApi.success({
-        message: t("updateSuccess"),
-        placement: "topRight",
-      });
+      notify.success(t("updateSuccess"));
     };
 
     const notifyError = (err: unknown) => {
-      notificationApi.error({
-        message: t("updateError"),
-        description: getBackendErrorMessage(err),
-        placement: "topRight",
-      });
+      notify.error(t("updateError"), { description: getBackendErrorMessage(err) });
     };
 
     try {
@@ -495,7 +484,7 @@ const ProductTable = () => {
     } catch (err) {
       notifyError(err);
     }
-  }, [closeEditPopup, editTarget, notificationApi, t, updateProduct]);
+  }, [closeEditPopup, editTarget, t, updateProduct]);
 
   const handleEditCancel = closeEditPopup;
 
@@ -602,11 +591,7 @@ const ProductTable = () => {
             onClick={() => {
               if (isMarketRole) {
                 if (!marketUserId) {
-                  notificationApi.warning({
-                    message: t("marketNotResolved"),
-                    description: t("marketNotResolvedDescription"),
-                    placement: "topRight",
-                  });
+                  notify.warning(t("marketNotResolved"), { description: t("marketNotResolvedDescription") });
                   return;
                 }
                 navigate(`/products/create-product/${marketUserId}`);
@@ -639,6 +624,7 @@ const ProductTable = () => {
               render={({ field }) => (
                 <SearchableSelect
                   label={t("marketName")}
+                  allOption
                   name={field.name}
                   value={field.value}
                   onChange={handleMarketFilterChange}

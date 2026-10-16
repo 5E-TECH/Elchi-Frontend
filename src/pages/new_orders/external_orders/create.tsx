@@ -27,7 +27,7 @@ import {
   type CreateIntegrationPayload,
   useCreateIntegration,
 } from "../../../entities/integrations";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
+import { notify } from "../../../shared/lib/notify";
 
 type MarketOptionSource = {
   id?: string | number;
@@ -83,7 +83,6 @@ const getMarketItems = (value: unknown): MarketOptionSource[] => {
 const ExternalIntegrationCreatePage = () => {
   const { t } = useTranslation(["newOrders", "common"]);
   const navigate = useNavigate();
-  const { api: notificationApi } = useAppNotification();
   const [platform, setPlatform] = useState("custom");
   const [showPassword, setShowPassword] = useState(false);
   const { useGetMarkets } = useMarkets();
@@ -170,19 +169,12 @@ const ExternalIntegrationCreatePage = () => {
       };
 
       await createIntegration.mutateAsync(payload);
-      notificationApi.success({
-        message: t("integrationCreateSuccess"),
-        placement: "topRight",
-      });
+      notify.success(t("integrationCreateSuccess"));
       navigate("/new-orders/integrations");
     } catch (error) {
-      notificationApi.error({
-        message:
-          error instanceof Error
+      notify.error(error instanceof Error
             ? error.message
-            : getIntegrationErrorMessage(error) || t("integrationCreateError"),
-        placement: "topRight",
-      });
+            : getIntegrationErrorMessage(error) || t("integrationCreateError"));
     }
   });
 

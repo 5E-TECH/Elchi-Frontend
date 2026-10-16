@@ -11,7 +11,6 @@ import {
   Statistic,
   Table,
   Tag,
-  message,
 } from "antd";
 import { Banknote, CheckCircle2, Clock, Plus, Wallet, XCircle } from "lucide-react";
 import {
@@ -25,6 +24,7 @@ import {
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import FilterPills from "../FilterPills";
 import type { Connection } from "../useConnections";
+import { notify } from "../../../shared/lib/notify";
 
 /**
  * HISOB-KITOB — tashuvchi yig'gan pul va bizga qarzi.
@@ -112,7 +112,7 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
         reference: values.reference?.trim() || undefined,
         note: values.note?.trim() || undefined,
       });
-      message.success(t("stlPaid"));
+      notify.success(t("stlPaid"));
       setPayOpen(false);
       form.resetFields();
       void balance.refetch();
@@ -121,7 +121,7 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
       // `validateFields` ham shu yerga tushadi — u o'z xatosini maydonda
       // ko'rsatadi, shuning uchun faqat server xatosini xabar qilamiz.
       const msg = getBackendErrorMessage(error);
-      if (msg) message.error(msg);
+      if (msg) notify.error(msg);
     }
   };
 

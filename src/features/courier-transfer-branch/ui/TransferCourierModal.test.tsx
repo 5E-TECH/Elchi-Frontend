@@ -33,6 +33,8 @@ const CHECK_UNAVAILABLE =
 const OK_TEXT = "Kuryerda pul va buyurtma yo'q — o'tkazish mumkin";
 const BLOCKED_TEXT = "Hozircha o'tkazib bo'lmaydi";
 const PLACEHOLDER = "Yangi filialni tanlang";
+/** Tanlov — v2 `Select searchable`: yorliq (yashirin) bilan nomlangan combobox. */
+const TARGET_LABEL = "Yangi filial";
 
 /** Shartnoma §1: GET /couriers/:id/transfer-check javobining `data` qismi. */
 const checkData = (overrides: Record<string, unknown> = {}) => ({
@@ -127,7 +129,9 @@ const renderModal = () => {
 const openTargets = async () => {
   const user = userEvent.setup();
   await screen.findByText(OK_TEXT);
-  await user.click(screen.getByRole("button", { name: PLACEHOLDER }));
+  const target = screen.getByRole("combobox", { name: TARGET_LABEL });
+  expect(target).toHaveAttribute("placeholder", PLACEHOLDER);
+  await user.click(target);
   return user;
 };
 
@@ -181,7 +185,7 @@ describe("TransferCourierModal — kuryer holati", () => {
       expect(screen.getByText(reason)).toBeInTheDocument();
     }
     expect(screen.getByRole("button", { name: "O'tkazish" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: PLACEHOLDER })).toBeDisabled();
+    expect(screen.getByRole("combobox", { name: TARGET_LABEL })).toBeDisabled();
     expect(screen.queryByText(OK_TEXT)).not.toBeInTheDocument();
   });
 
@@ -247,12 +251,15 @@ describe("TransferCourierModal — yangi filial tanlovi", () => {
     await openTargets();
 
     expect(
-      await screen.findByRole("button", { name: "E2E Filial Sirdaryo · Viloyat" }),
-    ).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Bosh ofis · HQ" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Buxoro · Aralash (menejer yo'q)" })).toBeDisabled();
-    expect(screen.queryByRole("button", { name: /^Samarqand/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /PICKUP/ })).not.toBeInTheDocument();
+      await screen.findByRole("option", { name: "E2E Filial Sirdaryo · Viloyat" }),
+    ).not.toHaveAttribute("aria-disabled");
+    expect(screen.getByRole("option", { name: "Bosh ofis · HQ" })).not.toHaveAttribute("aria-disabled");
+    expect(screen.getByRole("option", { name: "Buxoro · Aralash (menejer yo'q)" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    expect(screen.queryByRole("option", { name: /^Samarqand/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /PICKUP/ })).not.toBeInTheDocument();
     expect(mocks.get).toHaveBeenCalledWith(DESTINATIONS_URL, { params: undefined });
   });
 
@@ -261,11 +268,9 @@ describe("TransferCourierModal — yangi filial tanlovi", () => {
     renderModal();
     await openTargets();
 
-    const option = await screen.findByRole("button", { name: "Bosh ofis · HQ" });
-    const panel = option.closest("[data-placement]");
-    expect(panel).toHaveAttribute("data-placement", "top");
-    expect(panel).toHaveClass("bottom-full");
-    expect(panel).not.toHaveClass("top-full");
+    const option = await screen.findByRole("option", { name: "Bosh ofis · HQ" });
+    // v2 ro'yxat portalda, maydonga nisbatan joylashadi: `placement="top"` — tepada.
+    expect(option.closest("[data-select-panel]")).toHaveAttribute("data-side", "top");
   });
 
   it("does not offer HQ to a courier who is already at HQ", async () => {
@@ -274,9 +279,9 @@ describe("TransferCourierModal — yangi filial tanlovi", () => {
     await openTargets();
 
     expect(
-      await screen.findByRole("button", { name: "E2E Filial Sirdaryo · Viloyat" }),
+      await screen.findByRole("option", { name: "E2E Filial Sirdaryo · Viloyat" }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Bosh ofis · HQ" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "Bosh ofis · HQ" })).not.toBeInTheDocument();
   });
 
   it("keeps the submit disabled until a target is chosen", async () => {
@@ -307,7 +312,7 @@ describe("TransferCourierModal — o'tkazish", () => {
     const invalidate = vi.spyOn(queryClient, "invalidateQueries");
 
     const user = await openTargets();
-    await user.click(await screen.findByRole("button", { name: "E2E Filial Sirdaryo · Viloyat" }));
+    await user.click(await screen.findByRole("option", { name: "E2E Filial Sirdaryo · Viloyat" }));
     await user.click(screen.getByRole("button", { name: "O'tkazish" }));
 
     await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(1));
@@ -343,7 +348,7 @@ describe("TransferCourierModal — o'tkazish", () => {
     const { onClose } = renderModal();
 
     const user = await openTargets();
-    await user.click(await screen.findByRole("button", { name: "E2E Filial Sirdaryo · Viloyat" }));
+    await user.click(await screen.findByRole("option", { name: "E2E Filial Sirdaryo · Viloyat" }));
     await user.click(screen.getByRole("button", { name: "O'tkazish" }));
 
     expect(await screen.findByText(reverted)).toBeInTheDocument();
@@ -361,7 +366,7 @@ describe("TransferCourierModal — o'tkazish", () => {
     const { onClose } = renderModal();
 
     const user = await openTargets();
-    await user.click(await screen.findByRole("button", { name: "E2E Filial Sirdaryo · Viloyat" }));
+    await user.click(await screen.findByRole("option", { name: "E2E Filial Sirdaryo · Viloyat" }));
     await user.click(screen.getByRole("button", { name: "O'tkazish" }));
 
     expect(await screen.findByText(txFailed)).toBeInTheDocument();

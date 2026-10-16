@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Button, Card, Form, message } from "antd";
+import { Alert, Button, Card, Form } from "antd";
 import { FlaskConical, PlugZap, Save, Shuffle } from "lucide-react";
 import { usePartnerActions, type WebhookTestResult } from "../../../entities/partners";
 import { useUpdateIntegration } from "../../../entities/integrations";
@@ -9,6 +9,7 @@ import ConnectionFields, { buildChangedPayload, type FieldValues } from "../Conn
 import { TYPE_CHANGE_FIELDS, fieldsInGroup, type ConnectionField } from "../connections";
 import { getPath } from "../fieldPath";
 import type { Connection } from "../useConnections";
+import { notify } from "../../../shared/lib/notify";
 
 /**
  * SOZLAMALAR — umumiy forma, turga qarab boshqa maydonlar.
@@ -127,7 +128,7 @@ const ConnectionSettings = ({
   const save = async () => {
     const payload = buildChangedPayload([...fields, ...sandboxFields], values, initial);
     if (!Object.keys(payload).length) {
-      message.info(t("setNoChange"));
+      notify.info(t("setNoChange"));
       return;
     }
 
@@ -154,10 +155,10 @@ const ConnectionSettings = ({
           } as never,
         });
       }
-      message.success(t("savedOk"));
+      notify.success(t("savedOk"));
       onSaved();
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || t("saveFailed"));
+      notify.error(getBackendErrorMessage(error) || t("saveFailed"));
     }
   };
 
@@ -171,7 +172,7 @@ const ConnectionSettings = ({
         }),
       );
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || t("setTestFailed"));
+      notify.error(getBackendErrorMessage(error) || t("setTestFailed"));
     }
   };
 
@@ -364,10 +365,10 @@ const TypeChangeCard = ({
           category: String(values.category ?? ""),
         } as never,
       });
-      message.success(t("setTypeChanged"));
+      notify.success(t("setTypeChanged"));
       onSaved();
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || t("setTypeChangeFailed"));
+      notify.error(getBackendErrorMessage(error) || t("setTypeChangeFailed"));
     }
   };
 

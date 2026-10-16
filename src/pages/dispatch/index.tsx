@@ -19,13 +19,13 @@ import { useScannerGate } from "../../shared/lib/useScannerGate";
 import { extractScannerToken } from "../../shared/lib/scanToken";
 import { fetchScanDetail, getScanResourceType, getBackendErrorMessage } from "../scan/lib/scanResource";
 import { playScanFeedback } from "../scan/lib/scanShared";
-import { useAppNotification } from "../../app/providers/notification/NotificationProvider";
 import { useOrders } from "../../entities/order/api/orderApi";
 import type { OrderStatus } from "../../entities/order/types/order";
 import { useUser } from "../../entities/user/api/userApi";
 import PageContainer from "../../shared/ui/PageContainer";
 import OrderStatusBadge from "../orders/list/OrderStatusBadge";
 import type { RootState } from "../../app/config/store";
+import { notify } from "../../shared/lib/notify";
 
 type PendingOrder = {
   id: string;
@@ -243,7 +243,6 @@ const DispatchPage = () => {
   const { t, i18n } = useTranslation(["dispatch", "orders"]);
   const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
   const currencyLabel = t("currency", { ns: "orders" });
-  const { api: notificationApi } = useAppNotification();
   const { assignCourier } = useOrders();
   const { useGetCouriers } = useUser();
   const role = useSelector((state: RootState) => state.role.role);
@@ -490,14 +489,12 @@ const DispatchPage = () => {
         order_ids: Array.from(assignedOrderIds),
       });
 
-      notificationApi.success({
-        message: t("success"),
+      notify.success(t("success"), {
         description: t("assignSuccess", {
           count: assignedCount,
           courier: courierName,
         }),
-        placement: "topRight",
-        duration: 3,
+        duration: 3000,
       });
 
       setPendingOrders((prev) => prev.filter((order) => !assignedOrderIds.has(order.id)));
@@ -512,12 +509,7 @@ const DispatchPage = () => {
       lookupTokensRef.current.clear();
       resetScannerGate();
     } catch (error) {
-      notificationApi.error({
-        message: t("error"),
-        description: getDispatchErrorMessage(error, t("orderLookupError")),
-        placement: "topRight",
-        duration: 5,
-      });
+      notify.error(t("error"), { description: getDispatchErrorMessage(error, t("orderLookupError")) });
     }
   };
 

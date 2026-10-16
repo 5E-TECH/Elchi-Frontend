@@ -1,48 +1,35 @@
+// dizayn-v2: tizim-errors
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { House, RefreshCw, ServerCrash, ShieldAlert } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import ErrorActions from "./error-page/ErrorActions";
-import ErrorCode from "./error-page/ErrorCode";
-import ErrorInfoCard from "./error-page/ErrorInfoCard";
-import ErrorPageLayout from "./error-page/ErrorPageLayout";
+import { House } from "lucide-react";
+import { ErrorState } from "./primitives";
+import { ErrorPageFrame, ErrorPageLink } from "./error-page/ErrorPageFrame";
 
-const ServerErrorPage = () => {
-  const { t } = useTranslation("common");
-  const navigate = useNavigate();
+/**
+ * 500 — server xato qaytardi (taxta `tizim-errors` 01): qizil `ServerCrash` (tizim xatosi), «Xato kodi 500»,
+ * asosiy — «Qayta urinish» (sahifani qayta yuklash), ikkinchisi — «Bosh sahifaga qaytish».
+ */
+const ServerErrorPage = ({ standalone = false }: { standalone?: boolean }) => {
+  const { t } = useTranslation("ui");
 
   return (
-    <ErrorPageLayout>
-      <ErrorCode leftDigit="5" rightDigit="0" subtitle={t("serverErrorCodeSubtitle")} />
-
-      <div className="mt-10 text-center">
-        <h1 className="text-4xl font-black text-primary sm:text-5xl">
-          {t("serverErrorTitle")}
-        </h1>
-        <p className="error-page-muted mx-auto mt-5 max-w-3xl text-sm leading-7 sm:text-base">
-          {t("serverErrorDescription")}
-        </p>
-      </div>
-
-      <div className="mt-10 grid w-full max-w-4xl grid-cols-1 gap-4 sm:grid-cols-3">
-        <ErrorInfoCard icon={<ServerCrash size={22} />} label={t("state")} value={t("serverUnavailable")} />
-        <ErrorInfoCard icon={<ShieldAlert size={22} />} label={t("code")} value={t("serverErrorCode")} />
-        <ErrorInfoCard icon={<RefreshCw size={22} />} label={t("recommendation")} value={t("tryAgain")} />
-      </div>
-
-      <ErrorActions
-        primary={{
-          label: t("reload"),
-          icon: <RefreshCw size={17} />,
-          onClick: () => window.location.reload(),
-        }}
-        secondary={{
-          label: t("returnToHome"),
-          icon: <House size={17} />,
-          onClick: () => navigate("/"),
-        }}
+    <ErrorPageFrame standalone={standalone}>
+      <ErrorState
+        framed
+        size="page"
+        titleAs="h1"
+        kind="server"
+        overline={t("states.page.server.overline")}
+        title={t("states.page.server.title")}
+        description={t("states.page.server.description")}
+        onRetry={() => window.location.reload()}
+        actions={
+          <ErrorPageLink to="/" icon={House} variant="secondary">
+            {t("states.page.home")}
+          </ErrorPageLink>
+        }
       />
-    </ErrorPageLayout>
+    </ErrorPageFrame>
   );
 };
 

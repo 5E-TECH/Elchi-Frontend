@@ -1,4 +1,4 @@
-import { Button, message } from "antd";
+import { Button } from "antd";
 import { useState } from "react";
 import type { BranchSetting } from "../../../entities/branch";
 import { useDeleteSetting, SettingFormModal } from "../../../features/branch-settings-manage";
@@ -6,6 +6,7 @@ import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import { ConfirmButton } from "../../../shared/ui/ConfirmButton";
 import { useTranslation } from "react-i18next";
+import { notify } from "../../../shared/lib/notify";
 
 interface BranchSettingsWidgetProps {
   branchId: string;
@@ -52,7 +53,7 @@ const BranchSettingsWidget = ({
             loading={deleteSetting.isPending}
             onConfirm={async () => {
               await deleteSetting.mutateAsync(record.id);
-              message.success(t("settings.deleted"));
+              notify.success(t("settings.deleted"));
             }}
           >
             {t("actions.delete")}

@@ -13,7 +13,6 @@ import {
   Send,
   UserRound,
 } from "lucide-react";
-import { message } from "antd";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -31,6 +30,7 @@ import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { printOrders } from "../detail/lib/printMode";
 import { exportOldMailsToExcel } from "./lib/exportOldMailsToExcel";
+import { notify } from "../../../shared/lib/notify";
 
 interface Region {
   id: string;
@@ -236,13 +236,13 @@ const OldMailCard = memo(({ item, mode }: { item: MailItem | BatchMailItem; mode
       const orders = getPostOrders(response.data);
 
       if (orders.length === 0) {
-        message.warning(t("emptyOrders"));
+        notify.warning(t("emptyOrders"));
         return;
       }
 
       printOrders("browser", orders);
     } catch {
-      message.error(t("reprintReceiptError"));
+      notify.error(t("reprintReceiptError"));
     } finally {
       setIsPrinting(false);
     }
@@ -450,7 +450,7 @@ const OldMails = () => {
         currency: t("currency", { ns: "payments" }),
       },
     });
-    message.success(t("oldExportSuccess", { count: filteredMails.length }));
+    notify.success(t("oldExportSuccess", { count: filteredMails.length }));
   };
 
   useEffect(() => {

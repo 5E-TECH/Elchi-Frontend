@@ -1,7 +1,7 @@
-import { message } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import { ConfirmButton } from "../../../shared/ui/ConfirmButton";
 import { useDeleteNotification } from "../api/useDeleteNotification";
+import { notify } from "../../../shared/lib/notify";
 
 const DeleteNotificationButton = ({ id }: { id: string }) => {
   const deleteNotification = useDeleteNotification();
@@ -15,9 +15,9 @@ const DeleteNotificationButton = ({ id }: { id: string }) => {
       onConfirm={async () => {
         try {
           await deleteNotification.mutateAsync(id);
-          message.success("Bildirishnoma o'chirildi");
+          notify.success("Bildirishnoma o'chirildi");
         } catch {
-          message.error("Bildirishnomani o'chirishda xatolik yuz berdi");
+          notify.error("Bildirishnomani o'chirishda xatolik yuz berdi");
         }
       }}
       loading={deleteNotification.isPending}

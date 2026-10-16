@@ -31,10 +31,10 @@ import { normalizeScannerCandidates } from "../../../shared/lib/scanToken";
 import { useScannerGate } from "../../../shared/lib/useScannerGate";
 import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
 import { getBackendErrorMessage } from "../../scan/lib/scanResource";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import type { RootState } from "../../../app/config/store";
 import type { OrderListItem } from "../../../entities/order/types/order";
 import { OrderCard, type ApiOrder } from "../components/OrderCard";
+import { notify } from "../../../shared/lib/notify";
 
 const formatMoney = (value: number, currencyLabel: string) =>
   `${value.toLocaleString("uz-UZ")} ${currencyLabel}`;
@@ -229,7 +229,6 @@ const getOrderProductNames = (order: OrderListItem) =>
 const CancelledMarketDetail = () => {
   const { t } = useTranslation(["newOrders", "orders"]);
   const currencyLabel = t("currency", { ns: "orders" });
-  const { api: notificationApi } = useAppNotification();
   const role = useSelector((state: RootState) => state.role.role);
   const user = useSelector((state: RootState) => state.user.user);
   const { marketId = "" } = useParams();
@@ -336,12 +335,7 @@ const CancelledMarketDetail = () => {
   const selectOrder = useCallback((order: OrderListItem) => {
     if (selectedIds.has(order.id)) {
       void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
-      notificationApi.warning({
-        message: t("common:scannerFeedbackDuplicate"),
-        description: `#${order.id}`,
-        placement: "topRight",
-        duration: 2,
-      });
+      notify.warning(t("common:scannerFeedbackDuplicate"), { description: `#${order.id}`, duration: 2000 });
       return;
     }
 
@@ -352,7 +346,7 @@ const CancelledMarketDetail = () => {
     });
     setScanError("");
     void playScanFeedback("success");
-  }, [notificationApi, selectedIds, t]);
+  }, [selectedIds, t]);
 
   const isGeneratedQrMatch = useCallback((rawValue: string) => {
     if (!handoverQr) return false;
@@ -390,11 +384,9 @@ const CancelledMarketDetail = () => {
       setIsHandoverQrScanned(true);
       setScanError("");
       void playScanFeedback("success");
-      notificationApi.success({
-        message: t("cancelledQrAccepted"),
+      notify.success(t("cancelledQrAccepted"), {
         description: t("cancelledQrAcceptedDescription", { count: selectableOrders.length }),
-        placement: "topRight",
-        duration: 3,
+        duration: 3000,
       });
 
       return true;
@@ -405,12 +397,8 @@ const CancelledMarketDetail = () => {
       setIsHandoverQrScanned(false);
       setScanError(message);
       playMissingOrderFeedback();
-      notificationApi.error({
-        message: t("qrNotFound"),
-        description: message,
-        placement: "topRight",
-        duration: 4,
-      });
+      // Skaner oqimi: xato qisqa turadi (v1 dagidek 4 s) — keyingi skanerlashda ekran to'silib qolmasin.
+      notify.error(t("qrNotFound"), { description: message, duration: 4000 });
       return true;
     }
   }, [
@@ -418,7 +406,6 @@ const CancelledMarketDetail = () => {
     handoverQr?.token,
     isGeneratedQrMatch,
     marketId,
-    notificationApi,
     scanMarketCancelledQr,
     selectableOrders,
     t,
@@ -433,13 +420,8 @@ const CancelledMarketDetail = () => {
     const message = t("cancelledScanMissing");
     setScanError(message);
     playMissingOrderFeedback();
-    notificationApi.warning({
-      message: t("qrNotFound"),
-      description: message,
-      placement: "topRight",
-      duration: 3,
-    });
-  }, [notificationApi, t, verifyHandoverQr]);
+    notify.warning(t("qrNotFound"), { description: message, duration: 3000 });
+  }, [t, verifyHandoverQr]);
 
   useOrderQrScanner({
     orders: selectableOrders,
@@ -486,15 +468,13 @@ const CancelledMarketDetail = () => {
       ...previous,
       [manualConfirmOrder.id]: reasonCode,
     }));
-    notificationApi.warning({
-      message: t("cancelledManualSelectSuccess"),
+    notify.warning(t("cancelledManualSelectSuccess"), {
       description: `#${manualConfirmOrder.id} · ${getManualReasonLabel(reasonCode)}`,
-      placement: "topRight",
-      duration: 3,
+      duration: 3000,
     });
     setManualConfirmOrder(null);
     setManualReason("");
-  }, [canManualSelectDamagedQr, getManualReasonLabel, manualConfirmOrder, manualReason, notificationApi, selectedIds, t]);
+  }, [canManualSelectDamagedQr, getManualReasonLabel, manualConfirmOrder, manualReason, selectedIds, t]);
 
   const openManualSelectModal = useCallback((order: OrderListItem) => {
     if (!canManualSelectDamagedQr || selectedIds.has(order.id)) return;
@@ -541,15 +521,12 @@ const CancelledMarketDetail = () => {
         setIsQrOpen(true);
       },
       onError: (error: unknown) => {
-        notificationApi.error({
-          message: t("cancelledQrGenerateError"),
+        notify.error(t("cancelledQrGenerateError"), {
           description: getBackendErrorMessage(error) ?? t("cancelledQrGenerateError"),
-          placement: "topRight",
-          duration: 5,
         });
       },
     });
-  }, [generateCancelledMarketQr, marketId, notificationApi, t]);
+  }, [generateCancelledMarketQr, marketId, t]);
 
   const handleSendToMarket = useCallback(() => {
     if (
@@ -581,19 +558,14 @@ const CancelledMarketDetail = () => {
         setAuthorizationToken("");
         setAuthorizationExpiresAt(null);
         setIsHandoverQrScanned(false);
-        notificationApi.success({
-          message: t("cancelledSendSuccess"),
+        notify.success(t("cancelledSendSuccess"), {
           description: t("cancelledSendSuccessDescription", { count: orderIds.length }),
-          placement: "topRight",
         });
         void query.refetch();
       },
       onError: (error: unknown) => {
-        notificationApi.error({
-          message: t("cancelledSendError"),
+        notify.error(t("cancelledSendError"), {
           description: getBackendErrorMessage(error) ?? t("cancelledSendError"),
-          placement: "topRight",
-          duration: 5,
         });
       },
     });
@@ -605,7 +577,6 @@ const CancelledMarketDetail = () => {
     marketId,
     manualOverrideReasons,
     manualSelectedIds,
-    notificationApi,
     query,
     selectedIds,
     t,

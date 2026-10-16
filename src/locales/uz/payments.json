@@ -308,4 +308,6 @@
   ,"financialEntryFailed": "Yozuvni saqlab bo'lmadi"
   ,"paymentConfirmTitle": "To'lovni tasdiqlaysizmi?"
   ,"paymentConfirmMessage": "{{amount}} so'm — {{action}}: {{target}} ({{method}}). Tasdiqlangach pul o'tkaziladi va bekor qilib bo'lmaydi."
+  ,"salaryConfirmTitle": "Maosh to'lovini tasdiqlang"
+  ,"salaryConfirmDescription": "Tekshirib chiqing — tasdiqlangach, summa kassadan darhol chiqariladi va bekor qilib bo'lmaydi."
 }

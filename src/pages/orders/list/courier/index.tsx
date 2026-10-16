@@ -24,12 +24,12 @@ import type { Order } from "./list/ordertable/pendingOrderTable";
 import { useOrderQrScanner } from "../../../../shared/lib/useOrderQrScanner";
 import { fetchScanDetail, getBackendErrorMessage } from "../../../scan/lib/scanResource";
 import { playScanFeedback } from "../../../scan/lib/scanShared";
-import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
 import { getActionErrorMessage } from "../../../../shared/lib/actionError";
 import { canCourierRestoreCancelledOrder } from "../../../../entities/orders/custody";
 import { getRollbackWarning } from "../../../../entities/orders/rollbackResult";
 import type { CancelOrderPayload } from "../../../../entities/orders/cancelReason";
 import { getSellPaymentStatus, SELL_PAYMENT_NOTICE_KEYS, type SellOrderPayload } from "../../../../entities/orders/sellPayment";
+import { notify } from "../../../../shared/lib/notify";
 
 const asRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" ? value as Record<string, unknown> : {};
@@ -312,7 +312,6 @@ const normalizeCourierStatusParam = (value: unknown) => {
 
 const CourierOrders = () => {
   const { t } = useTranslation("orders");
-  const { api: notificationApi } = useAppNotification();
   const navigate = useNavigate();
   const { getParam, setParam, removeParam } = useQueryParams();
   const currentUserId = useSelector(
@@ -403,24 +402,17 @@ const CourierOrders = () => {
 
   const selectScannedOrder = useCallback((order: Order) => {
     if (activeTab === "cancelled" && !isSelectableCancelledOrder(order)) {
-      notificationApi.warning({
-        message: t("scanNotFoundTitle"),
-        description: t("scanNotFoundDescription"),
-        placement: "topRight",
-        duration: 2.5,
-      });
+      notify.warning(t("scanNotFoundTitle"), { description: t("scanNotFoundDescription"), duration: 2500 });
       void playScanFeedback("missing");
       return;
     }
 
     if (selectedIds.has(order.id)) {
-      notificationApi.warning({
-        message: t("scanAlreadySelectedTitle"),
+      notify.warning(t("scanAlreadySelectedTitle"), {
         description: t("scanAlreadySelectedDescription", {
           name: order.customer?.name ?? `#${order.id}`,
         }),
-        placement: "topRight",
-        duration: 2.5,
+        duration: 2500,
       });
       void playScanFeedback("duplicate");
       return;
@@ -431,16 +423,14 @@ const CourierOrders = () => {
       next.add(order.id);
       return next;
     });
-    notificationApi.success({
-      message: t("scanSelectedTitle"),
+    notify.success(t("scanSelectedTitle"), {
       description: t("scanSelectedDescription", {
         name: order.customer?.name ?? `#${order.id}`,
       }),
-      placement: "topRight",
-      duration: 2,
-      });
+      duration: 2000,
+    });
       void playScanFeedback("success");
-  }, [activeTab, notificationApi, selectedIds, t]);
+  }, [activeTab, selectedIds, t]);
 
   const handleMissingScannedOrder = useCallback(async (rawValue: string) => {
     const tokenKey = rawValue.trim().toLowerCase();
@@ -466,25 +456,19 @@ const CourierOrders = () => {
         return;
       }
 
-      notificationApi.error({
-        message: t("scanNotFoundTitle"),
-        description: t("scanNotFoundDescription"),
-        placement: "topRight",
-        duration: 3,
-      });
+      // Skaner oqimi: xato qisqa turadi (v1 dagidek 3 s) — keyingi skanerlashda ekran to'silib qolmasin.
+      notify.error(t("scanNotFoundTitle"), { description: t("scanNotFoundDescription"), duration: 3000 });
       void playScanFeedback("missing");
     } catch (error) {
-      notificationApi.error({
-        message: t("scanNotFoundTitle"),
+      notify.error(t("scanNotFoundTitle"), {
         description: getBackendErrorMessage(error) ?? t("scanNotFoundDescription"),
-        placement: "topRight",
-        duration: 3,
+        duration: 3000,
       });
       void playScanFeedback("error");
     } finally {
       scanLookupTokensRef.current.delete(tokenKey);
     }
-  }, [notificationApi, orders, selectScannedOrder, t]);
+  }, [orders, selectScannedOrder, t]);
 
   useOrderQrScanner({
     orders,
@@ -502,12 +486,7 @@ const CourierOrders = () => {
   const notifyActionError = (error: unknown) => {
     const description = getActionErrorMessage(error, t("orderActionError"));
     if (!description) return;
-    notificationApi.error({
-      message: t("common:error"),
-      description,
-      placement: "topRight",
-      duration: 6,
-    });
+    notify.error(t("common:error"), { description });
   };
 
   const closeSellModal = () => {
@@ -536,11 +515,7 @@ const CourierOrders = () => {
           // Marketga to'lov yozilgan bo'lsa — natija (to'liq / qisman).
           const paymentStatus = getSellPaymentStatus(response);
           if (paymentStatus) {
-            notificationApi.success({
-              message: t(SELL_PAYMENT_NOTICE_KEYS[paymentStatus]),
-              placement: "topRight",
-              duration: 4,
-            });
+            notify.success(t(SELL_PAYMENT_NOTICE_KEYS[paymentStatus]));
           }
         },
         onError: notifyActionError,
@@ -605,12 +580,7 @@ const CourierOrders = () => {
         // pochtasi yaratilmadi — oddiy muvaffaqiyat emas, ogohlantirish.
         const warning = getRollbackWarning(response, t("rollbackCancelPostWarning"));
         if (!warning) return;
-        notificationApi.warning({
-          message: t("common:warning"),
-          description: warning,
-          placement: "topRight",
-          duration: 8,
-        });
+        notify.warning(t("common:warning"), { description: warning, duration: 8000 });
       },
       onError: notifyActionError,
     });

@@ -24,6 +24,8 @@ import {
   canViewUiKit,
 } from "./access";
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
+import { RUNTIME_ERROR_PATH } from "../../shared/lib/runtimeError";
+import ErrorBoundary from "../../shared/ui/ErrorBoundary";
 
 // ✅ Auth component (Protected route):
 const Auth = lazy(() => import("../../features/auth/page"));
@@ -144,6 +146,28 @@ const ForbiddenPage = lazy(() => import("../../shared/ui/Forbidden"));
 const NotFound = lazy(() => import("../../shared/ui/NotFound"));
 const ServerErrorPage = lazy(() => import("../../shared/ui/ServerError"));
 const ErrorBoundaryPage = lazy(() => import("../../shared/ui/ErrorBoundaryPage"));
+
+/**
+ * XATO SAHIFALARI (403 · 404 · 500 · ilova xatosi) — taxta `tizim-errors` 01: «Xato sahifasi menyu ichida
+ * ochiladi — foydalanuvchi boshqa bo'limga bemalol o'tadi».
+ *
+ *  - Kirgan foydalanuvchi — shell ICHIDA: `DashboardLayout` ning bolalari (`403`, `404`, `500`, `runtime-error`,
+ *    noma'lum yo'l `*`). Yon menyu va yuqori panel joyida qoladi, `ProtectedRoute` → `/403` shell'ni qayta qurmaydi.
+ *  - Kirmagan foydalanuvchi — shell'siz, butun ekran (`standalone`): `AppRouter` uni route'lardan oldin shu
+ *    jadvaldan chizadi (aks holda `Auth` kirish sahifasiga otib yuborardi).
+ *  - Shell yiqilsa (yoki xato sahifasining o'zi) — `AppRouter` dagi `ErrorBoundary` zaxirasi: shu jadvaldagi
+ *    shell'siz nusxa (bo'sh ekran emas).
+ */
+const STANDALONE_ERROR_PAGES = new Map<string, ReactNode>([
+  ["/403", <ForbiddenPage standalone />],
+  ["/404", <NotFound standalone />],
+  ["/500", <ServerErrorPage standalone />],
+  [RUNTIME_ERROR_PATH, <ErrorBoundaryPage standalone />],
+]);
+
+/** Yo'l → shell'siz xato sahifasi. Route'lardagidek katta-kichik harf va oxiridagi `/` farq qilmaydi. */
+const standaloneErrorPageFor = (pathname: string) =>
+  STANDALONE_ERROR_PAGES.get(pathname.replace(/\/+$/, "").toLowerCase());
 
 /**
  * Marshrut guardlari.
@@ -304,13 +328,12 @@ const NewOrdersMarketAccessEntry = ({ children }: { children: ReactNode }) => {
 
 const AppRouter = () => {
   useResetInputsOnPathChange();
+  const { pathname } = useLocation();
+  const isSignedIn = useSelector((state: RootState) => state.user.isAuthenticated);
+  const standaloneErrorPage = standaloneErrorPageFor(pathname);
 
-  return useRoutes([
+  const routes = useRoutes([
     { path: "/login", element: <Login /> },
-    { path: "/403", element: <ForbiddenPage /> },
-    { path: "/404", element: <NotFound /> },
-    { path: "/500", element: <ServerErrorPage /> },
-    { path: "/runtime-error", element: <ErrorBoundaryPage /> },
     {
       path: "/",
       element: <Auth />,
@@ -1020,6 +1043,7 @@ const AppRouter = () => {
                 </ProtectedRoute>
               ),
             },
+            // Xato sahifalari kirgan foydalanuvchiga shell ichida (kirmaganga — `STANDALONE_ERROR_PAGES`).
             {
               path: "403",
               element: <ForbiddenPage />,
@@ -1049,6 +1073,14 @@ const AppRouter = () => {
       element: <Navigate replace to="/404" />,
     },
   ]);
+
+  return (
+    // Sahifa yiqilsa — global chegara bilan bir xil: xato saqlanadi, `/runtime-error` ga. Kirgan foydalanuvchining
+    // xato sahifasida shell yiqilsa — o'sha sahifaning shell'siz nusxasi; yo'l o'zgarsa chegara tozalanadi.
+    <ErrorBoundary resetKey={pathname} fallback={isSignedIn ? standaloneErrorPage : undefined}>
+      {!isSignedIn && standaloneErrorPage ? standaloneErrorPage : routes}
+    </ErrorBoundary>
+  );
 };
 
 export default memo(AppRouter);

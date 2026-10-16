@@ -1,8 +1,8 @@
 import { DeleteOutlined } from "@ant-design/icons";
-import { message } from "antd";
 import { ConfirmButton } from "../../../shared/ui/ConfirmButton";
 import { useDeleteBranch } from "../api/useDeleteBranch";
 import { useTranslation } from "react-i18next";
+import { notify } from "../../../shared/lib/notify";
 
 const DeleteBranchButton = ({ id, className }: { id: string; className?: string }) => {
   const { t } = useTranslation("branches");
@@ -20,9 +20,9 @@ const DeleteBranchButton = ({ id, className }: { id: string; className?: string 
       onConfirm={async () => {
         try {
           await deleteBranch.mutateAsync(id);
-          message.success(t("delete.success"));
+          notify.success(t("delete.success"));
         } catch {
-          message.error(t("delete.error"));
+          notify.error(t("delete.error"));
         }
       }}
       loading={deleteBranch.isPending}

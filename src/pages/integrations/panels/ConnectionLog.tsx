@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Button, Card, Segmented, Table, Tag, Tooltip, message } from "antd";
+import { Button, Card, Segmented, Table, Tag, Tooltip } from "antd";
 import {
   CheckCircle2,
   Clock,
@@ -38,6 +38,7 @@ import {
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import FilterPills from "../FilterPills";
 import type { Connection } from "../useConnections";
+import { notify } from "../../../shared/lib/notify";
 
 /**
  * HODISALAR — ulanish bo'yicha yetkazish tarixi.
@@ -458,9 +459,9 @@ const InboundLog = ({ connection }: { connection: Connection }) => {
   const retry = async (id: string) => {
     try {
       await retryWebhook.mutateAsync(id);
-      message.success(t("logRequeued"));
+      notify.success(t("logRequeued"));
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || t("logRetryFailed"));
+      notify.error(getBackendErrorMessage(error) || t("logRetryFailed"));
     }
   };
 

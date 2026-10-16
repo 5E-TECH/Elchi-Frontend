@@ -176,17 +176,17 @@ describe("DashboardPage", () => {
     );
     expect(screen.getByText("Bugungi statistika")).toBeInTheDocument();
     expect(screen.getByLabelText("Boshlanish → Tugash")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Bugun" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Bu hafta" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Bu oy" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Barchasi" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Bugun" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Bu hafta" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Bu oy" })).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "Barchasi" })).toBeInTheDocument();
   });
 
   it("loads all-time totals when All is selected", async () => {
     const user = userEvent.setup();
     renderWithProviders(<DashboardPage />, { preloadedState: adminState });
 
-    await user.click(screen.getByRole("button", { name: "Barchasi" }));
+    await user.click(screen.getByRole("radio", { name: "Barchasi" }));
 
     expect(screen.getByText("Umumiy statistika")).toBeInTheDocument();
     expect(getDashboardMock).toHaveBeenLastCalledWith(

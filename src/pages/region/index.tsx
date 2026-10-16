@@ -335,6 +335,9 @@ const RegionPage = () => {
                     }}
                     className="w-[220px]"
                     size="sm"
+                    // Yonida «Bugun / Hafta / Oy / Barchasi» segmenti turibdi — panelda tez tanlov takrorlanmaydi
+                    // (maket `admin-regions-map`; dashboard'dagi `QuickDateRangeFilter` bilan bir xil).
+                    presets={false}
                     placeholder={t("common:dateRangePlaceholder", {
                       from: t("common:startDate"),
                       to: t("common:endDate"),

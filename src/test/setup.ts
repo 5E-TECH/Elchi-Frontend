@@ -1,6 +1,13 @@
 import "@testing-library/jest-dom/vitest";
 import { afterEach, vi } from "vitest";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
+import { toastStore } from "../shared/lib/notify";
+import { getConfirmSnapshot, removeConfirm } from "../shared/ui/primitives/dialog/confirmStore";
+
+// `<Toaster />` xabar matnini ekran o'quvchi uchun yashirin jonli hududda (`[data-toast-announcer]`) takrorlaydi.
+// `*ByText` so'rovlari ko'rinadigan matnni qidiradi — aks holda har xabar ikki marta topiladi.
+// E'lonning o'zi `Toaster.test.tsx` da selektor orqali tekshiriladi.
+configure({ defaultIgnore: "script, style, [data-toast-announcer], [data-toast-announcer] *" });
 
 class ResizeObserverMock {
   observe() {}
@@ -35,5 +42,10 @@ window.matchMedia = window.matchMedia || ((query: string) => ({
 
 afterEach(() => {
   cleanup();
+  // `notify()` va `confirm()` do'konlari modul darajasida — testlar bir-biriga xabar/oyna qoldirmasin.
+  // Faqat bekor qilish (`cancelAllConfirms`) yetmaydi: `ConfirmHost` allaqachon o'chirilgan, `onExited`
+  // kelmaydi va yopilgan so'rov navbat boshida qolib, keyingi testdagi `confirm()` ni to'sib qo'yadi.
+  for (const request of getConfirmSnapshot().requests) removeConfirm(request.id);
+  toastStore.reset();
   vi.clearAllMocks();
 });

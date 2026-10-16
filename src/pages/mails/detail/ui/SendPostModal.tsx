@@ -8,6 +8,7 @@ import Popup from "../../../../shared/ui/Popup";
 import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
 import { useDispatchPostToBranch } from "../../../../entities/mails";
 import type { Branch } from "../../../../entities/branch";
+import { notify } from "../../../../shared/lib/notify";
 
 interface SendPostModalProps {
   isOpen: boolean;
@@ -88,7 +89,7 @@ BranchCard.displayName = "BranchCard";
 const SendPostModal = memo(
   ({ isOpen, onClose, postId, branches, selectedIds, onSuccess }: SendPostModalProps) => {
     const { t } = useTranslation("mails");
-    const { apiRequest, api: notifApi } = useAppNotification();
+    const { apiRequest } = useAppNotification();
 
     const {
       control,
@@ -123,12 +124,7 @@ const SendPostModal = memo(
 
       const branch = branches.find((item) => item.id === branchId);
       if (!branch?.has_manager) {
-        notifApi.error({
-          message: t("branchManagerRequiredTitle"),
-          description: t("branchManagerRequiredDescription"),
-          placement: "topRight",
-          duration: 5,
-        });
+        notify.error(t("branchManagerRequiredTitle"), { description: t("branchManagerRequiredDescription") });
         return;
       }
 
@@ -154,7 +150,7 @@ const SendPostModal = memo(
     const showPopup = isOpen && branches.length > 0;
 
     return (
-      <Popup isShow={showPopup} onClose={handleClose}>
+      <Popup isShow={showPopup} onClose={handleClose} ariaLabel={t("selectBranch")}>
         <div className="w-[90vw] max-w-md bg-white dark:bg-maindark rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden">
           <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/10">
             <div className="flex items-center gap-3">

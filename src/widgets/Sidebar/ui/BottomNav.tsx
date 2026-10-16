@@ -1,5 +1,5 @@
 // dizayn-v2: shell
-import { memo, useMemo } from "react";
+import { memo, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -7,6 +7,7 @@ import { Menu, ScanLine, type LucideIcon } from "lucide-react";
 import type { RootState } from "../../../app/config/store";
 import { preloadRoute } from "../../../app/lib/routePreload";
 import { cx } from "../../../shared/lib/cx";
+import { useShellBottomInsetSource } from "../../../shared/ui/primitives";
 import {
     getSidebarConfigForUser,
     normalizeSidebarRole,
@@ -20,7 +21,8 @@ import { getActiveNavPath, useMobileMenu, useNavPathname } from "../model/shellN
  *
  * - 5 ta teng katak, balandligi 64px + `env(safe-area-inset-bottom)`; fon `surface`, ustida 1px `border`
  *   (shaffof/xira emas). Shell slot'i (`dashboardLayout`) uni faqat telefonda ko'rsatadi va ustun pastidan
- *   shuncha joy qoldiradi (`--shell-bottomnav-h`).
+ *   shuncha joy qoldiradi (`--shell-bottomnav-h`). Haqiqiy balandlik `:root` ga ham yoziladi
+ *   (`--shell-bottom-inset`, px; ≥ 768 da 0) — `#ui-portal` dagi ro'yxat/kalendar (`usePopover`) uni chetlaydi.
  * - Katak: ikonka 22px (yon menyudagi bilan bir xil) + yorliq 12px/600, BITTA qatorda — sig'masa «…» bilan
  *   kesiladi (ikki qatorga o'tmaydi, shrift kichraymaydi). Yorliq qisqa shaklda: «Qabul va yaratish» → «Qabul».
  *   Butun katak bosiladi (≈ 75–78 × 64px ≥ 44px).
@@ -173,10 +175,14 @@ const BottomNav = () => {
         [entries, pathname],
     );
 
+    // Balandlik `:root` ga (`--shell-bottom-inset`): portal qatlamidagi ro'yxat/kalendar pastki menyu ostida qolmaydi.
+    const navRef = useRef<HTMLElement>(null);
+    useShellBottomInsetSource(navRef, entries.length > 0);
+
     if (entries.length === 0) return null;
 
     return (
-        <nav aria-label={t("ui:shell.bottomNav.label")} data-bottomnav className={BAR}>
+        <nav ref={navRef} aria-label={t("ui:shell.bottomNav.label")} data-bottomnav className={BAR}>
             {entries.map((entry) => {
                 if (entry.kind === "menu") {
                     return (

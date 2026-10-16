@@ -1,8 +1,10 @@
 import { memo, useState } from "react";
-import { Alert, Button, Input, Popconfirm, Space, Table, Typography } from "antd";
+import { Alert, Button, Input, Space, Table, Typography } from "antd";
+import { Ban } from "lucide-react";
 import { useBranchCoverage } from "../../entities/branch/branchCoverage";
 import { extractArray } from "../../entities/branch";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
+import { useConfirm } from "../../shared/ui/primitives";
 
 const { Title, Text } = Typography;
 
@@ -19,6 +21,7 @@ const columns = [
 
 const BranchOpsPage = () => {
   const { useGetNewOrders, cancelBatch } = useBranchCoverage();
+  const confirm = useConfirm();
 
   const newOrders = useGetNewOrders();
 
@@ -70,20 +73,28 @@ const BranchOpsPage = () => {
               {trimmedReason.length} ta)
             </Text>
           ) : null}
-          <Popconfirm
-            title="Partiyani bekor qilasizmi?"
-            description="Partiya va undagi barcha buyurtmalar bog'lanishdan chiqariladi"
-            okText="Ha, bekor qilish"
-            cancelText="Yo'q"
+          <Button
+            type="primary"
+            danger
             disabled={!canCancel}
-            onConfirm={() =>
-              cancelBatch.mutate({ id: trimmedBatchId, data: { reason: trimmedReason } })
-            }
+            loading={cancelBatch.isPending}
+            onClick={async () => {
+              const ok = await confirm({
+                tone: "danger",
+                title: "Partiyani bekor qilasizmi?",
+                description: "Partiya va undagi barcha buyurtmalar bog'lanishdan chiqariladi",
+                confirmLabel: "Partiyani bekor qilish",
+                cancelLabel: "Orqaga", // asosiy amalning o'zi bekor qilish — «Orqaga» (tizim-feedback 06)
+                icon: Ban,
+                confirmIcon: Ban,
+                irreversible: true,
+              });
+              // Natija (muvaffaqiyat / xato) quyidagi `Alert` larda ko'rinadi.
+              if (ok) cancelBatch.mutate({ id: trimmedBatchId, data: { reason: trimmedReason } });
+            }}
           >
-            <Button type="primary" danger disabled={!canCancel} loading={cancelBatch.isPending}>
-              Batchni bekor qilish
-            </Button>
-          </Popconfirm>
+            Batchni bekor qilish
+          </Button>
         </Space>
 
         {cancelBatch.isSuccess ? (

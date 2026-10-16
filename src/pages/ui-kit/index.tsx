@@ -6,20 +6,27 @@ import { PageHeader } from "../../shared/ui/primitives";
 import { BadgesSection } from "./sections/BadgesSection";
 import { ButtonsSection } from "./sections/ButtonsSection";
 import { CardsSection } from "./sections/CardsSection";
+import { DateSection } from "./sections/DateSection";
+import { DialogSection } from "./sections/DialogSection";
+import { FeedbackSection } from "./sections/FeedbackSection";
 import { FormatSection } from "./sections/FormatSection";
+import { FormsSection } from "./sections/FormsSection";
 import { PageHeaderSection } from "./sections/PageHeaderSection";
+import { SelectSection } from "./sections/SelectSection";
+import { StatesSection } from "./sections/StatesSection";
 import { TabsSection } from "./sections/TabsSection";
 
 /**
- * KOMPONENTLAR TO'PLAMI (`/ops/ui-kit`) — dizayn v2 1-bosqich primitivlari namunasi.
+ * KOMPONENTLAR TO'PLAMI (`/ops/ui-kit`) — dizayn v2 primitivlari namunasi (1-bosqich; 3-bosqich: forma,
+ * ro'yxat, sana, oyna, xabar, holatlar).
  *
  * Maket yo'q: ichki sahifa, eng yaqini — `Main` (dizayn tizimi taxtasi).
  * Faqat superadmin (`canViewUiKit`), menyuda yo'q.
  *
  * Har bo'lim namunani kunduzgi va tungi mavzuda yonma-yon chizadi (`ThemePair`).
  * Skrinshot uchun URL parametrlari:
- *   `?section=<id>`  — faqat shu bo'lim (`buttons`, `badges`, `cards`, `page-header`, `tabs`, `format`;
- *                    noma'lum id — hammasi);
+ *   `?section=<id>`  — faqat shu bo'lim (`buttons`, `badges`, `cards`, `page-header`, `tabs`, `format`,
+ *                    `forms`, `select`, `date`, `dialog`, `feedback`, `states`; noma'lum id — hammasi);
  *   `?theme-pair=0`  — har bo'limda bitta panel, ilovaning joriy mavzusida.
  *   npm run app:shot -- "/ops/ui-kit?section=buttons" --device phone
  */
@@ -30,6 +37,13 @@ const SECTIONS: ReadonlyArray<{ id: string; Component: ComponentType }> = [
   { id: "page-header", Component: PageHeaderSection },
   { id: "tabs", Component: TabsSection },
   { id: "format", Component: FormatSection },
+  // 3-bosqich: forma, dialog va holatlar.
+  { id: "forms", Component: FormsSection },
+  { id: "select", Component: SelectSection },
+  { id: "date", Component: DateSection },
+  { id: "dialog", Component: DialogSection },
+  { id: "feedback", Component: FeedbackSection },
+  { id: "states", Component: StatesSection },
 ];
 
 export const UiKitPage = () => {

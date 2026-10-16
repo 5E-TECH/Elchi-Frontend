@@ -1,6 +1,7 @@
 import { memo, useEffect, useRef, useState, type ReactNode } from "react";
 import { ChevronDown, Clock, ClipboardList, XCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { isInUiLayer } from "../../../../../shared/ui/primitives";
 
 type Tab = {
   id: string;
@@ -65,6 +66,8 @@ const Tabs = ({ onChange, defaultTab = "pending", activeTab: controlledActiveTab
 
     const handleClickOutside = (event: MouseEvent) => {
       if (!mobileTabsRef.current) return;
+      // v2 qatlami (`#ui-portal`: panel ichidan ochilgan ro'yxat, kalendar varaqasi, dialog) — «tashqari» emas.
+      if (isInUiLayer(event.target)) return;
       if (!mobileTabsRef.current.contains(event.target as Node)) {
         setIsMobileOpen(false);
       }

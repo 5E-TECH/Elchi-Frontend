@@ -1,5 +1,5 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Button, Form, Input, Modal, Select, message } from "antd";
+import { Button, Form, Input, Modal, Select } from "antd";
 import { Controller, useForm } from "react-hook-form";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,6 +8,7 @@ import { useMarkets } from "../../../entities/markets";
 import { notificationEditSchema } from "../model/schema";
 import { useUpdateNotification } from "../api/useUpdateNotification";
 import type { UpdateNotificationDto } from "../model/types";
+import { notify } from "../../../shared/lib/notify";
 
 interface NotificationEditModalProps {
   open: boolean;
@@ -80,7 +81,7 @@ const NotificationEditModal = ({ open, initialData, onClose }: NotificationEditM
   const onSubmit = handleSubmit(async (values) => {
     if (!initialData) return;
     await updateNotification.mutateAsync({ id: initialData.id, payload: values });
-    message.success(t("notificationUpdated"));
+    notify.success(t("notificationUpdated"));
     onClose();
   });
 

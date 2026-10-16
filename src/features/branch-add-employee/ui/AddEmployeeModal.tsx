@@ -1,5 +1,5 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Form, Select, message } from "antd";
+import { Form, Select } from "antd";
 import { Controller, useForm } from "react-hook-form";
 import { useEffect } from "react";
 import { UserPlus } from "lucide-react";
@@ -9,6 +9,7 @@ import FormPopup, { popupLabelClassName } from "../../../shared/ui/FormPopup";
 import { addEmployeeSchema } from "../model/schema";
 import { useAddEmployee, type AddEmployeeDto } from "../api/useAddEmployee";
 import { getActionErrorMessage } from "../../../shared/lib/actionError";
+import { notify } from "../../../shared/lib/notify";
 
 /**
  * Filialga faqat shu rollar biriktiriladi — backend `resolveBranchRoleFromUserRole`
@@ -50,10 +51,10 @@ const AddEmployeeModal = ({
     } catch (error) {
       // Oyna ochiq qoladi — sabab ko'rinadi (masalan "boshqa filialga biriktirilgan").
       const description = getActionErrorMessage(error, t("employee.addError"));
-      if (description) message.error(description);
+      if (description) notify.error(description);
       return;
     }
-    message.success(t("employee.added"));
+    notify.success(t("employee.added"));
     onClose();
     reset();
   });

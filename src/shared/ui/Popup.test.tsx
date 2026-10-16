@@ -89,4 +89,34 @@ describe("Popup focus handling", () => {
     expect(appRoot).not.toHaveAttribute("inert");
     expect(opener).toHaveFocus();
   });
+
+  it("takes its accessible name from the first heading when the caller passes none", () => {
+    render(
+      <Popup isShow onClose={() => {}}>
+        <div>
+          <h3>Smenani yopish</h3>
+          <button type="button">Yopish</button>
+        </div>
+      </Popup>,
+    );
+    const dialog = screen.getByRole("dialog", { name: "Smenani yopish" });
+    expect(dialog.getAttribute("aria-labelledby")).toBe(screen.getByRole("heading").id);
+  });
+
+  it("keeps an existing heading id and prefers an explicit ariaLabel", () => {
+    const { rerender } = render(
+      <Popup isShow onClose={() => {}}>
+        <h2 id="own-title">Kassa yaratish</h2>
+      </Popup>,
+    );
+    expect(screen.getByRole("dialog", { name: "Kassa yaratish" })).toHaveAttribute("aria-labelledby", "own-title");
+
+    rerender(
+      <Popup isShow onClose={() => {}} ariaLabel="Filialni tanlang">
+        <p>Filialni tanlang</p>
+      </Popup>,
+    );
+    const named = screen.getByRole("dialog", { name: "Filialni tanlang" });
+    expect(named).not.toHaveAttribute("aria-labelledby");
+  });
 });

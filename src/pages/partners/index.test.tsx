@@ -1,14 +1,16 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import PartnersPage from "./index";
 import { renderWithProviders } from "../../test/test-utils";
 
 const apiGetMock = vi.fn();
+const apiPostMock = vi.fn();
 
 vi.mock("../../shared/api/api", () => ({
   api: {
     get: (...args: unknown[]) => apiGetMock(...args),
-    post: vi.fn(),
+    post: (...args: unknown[]) => apiPostMock(...args),
     patch: vi.fn(),
   },
 }));
@@ -107,5 +109,51 @@ describe("PartnersPage webhook journal", () => {
     renderWithProviders(<PartnersPage />, { preloadedState: adminState });
 
     expect(await screen.findByText("Yozuv topilmadi")).toBeInTheDocument();
+  });
+});
+
+// Kirish huquqini o'zgartiradigan amallar — v2 tasdiqlash oynasi (`useConfirm`) orqali, brauzer `confirm()` emas.
+describe("PartnersPage access-changing actions", () => {
+  const emptyJournal = () =>
+    Promise.resolve({
+      data: { statusCode: 200, message: "partner webhooks", data: { data: [], total: 0, page: 1, limit: 20, totalPages: 1 } },
+    });
+
+  beforeEach(() => {
+    apiGetMock.mockReset();
+    apiPostMock.mockReset();
+    mockApi(emptyJournal);
+    apiPostMock.mockResolvedValue({ data: { statusCode: 200, data: { id: "1", api_key: "elc_new" } } });
+  });
+
+  it("«Kalitni yangilash» asks for confirmation (maket matni) and rotates only after «Ha, yangilash»", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<PartnersPage />, { preloadedState: adminState });
+
+    await user.click(await screen.findByRole("button", { name: "Kalitni yangilash" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Kalitni yangilash" });
+    expect(dialog).toHaveTextContent("Eski kalit darhol ishlamay qoladi.");
+    expect(dialog).toHaveTextContent("BeePost");
+
+    await user.click(screen.getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    expect(apiPostMock).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Kalitni yangilash" }));
+    await user.click(await screen.findByRole("button", { name: "Ha, yangilash" }));
+    await waitFor(() => expect(apiPostMock).toHaveBeenCalledWith("admin/partners/1/rotate-key"));
+  });
+
+  it("disabling a partner goes through a danger confirmation", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<PartnersPage />, { preloadedState: adminState });
+
+    await user.click(await screen.findByRole("button", { name: "O'chirish" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Hamkorni o'chirish" });
+    expect(dialog).toHaveTextContent("O'chirilgandan keyin hamkor so'rovlari darhol rad etiladi.");
+    expect(apiPostMock).not.toHaveBeenCalled();
+
+    await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+    await waitFor(() => expect(apiPostMock).toHaveBeenCalledWith("admin/partners/1/status", { is_active: false }));
   });
 });

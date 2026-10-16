@@ -448,7 +448,605 @@
       "format": {
         "title": "Formatting",
         "description": "Money, phone number and date."
+      },
+      "forms": {
+        "title": "Form elements",
+        "description": "Label above, hint or error below; text, search, phone, amount and multi-line fields."
+      },
+      "select": {
+        "title": "Select lists",
+        "description": "Closed and open state, searchable and multi-select lists."
+      },
+      "date": {
+        "title": "Date range",
+        "description": "Quick presets and a two-month calendar in one panel."
+      },
+      "dialog": {
+        "title": "Dialogs and confirmation",
+        "description": "Dialog, confirmation dialog and bottom sheet on phones."
+      },
+      "feedback": {
+        "title": "Toast messages",
+        "description": "Action result: success, error, warning."
+      },
+      "states": {
+        "title": "Loading, empty and error states",
+        "description": "Skeleton, empty list and retry."
       }
+    }
+  },
+  "field": {
+    "optional": "optional"
+  },
+  "input": {
+    "clear": "Clear",
+    "clearSearch": "Clear search",
+    "copy": "Copy",
+    "copied": "Copied",
+    "phonePlaceholder": "XX XXX XX XX"
+  },
+  "date": {
+    "rangeLabel": "Date range",
+    "dateLabel": "Date",
+    "placeholder": "Select a date range",
+    "datePlaceholder": "Select a date",
+    "panelLabel": "Select a date range",
+    "datePanelLabel": "Select a date",
+    "clear": "Clear date range",
+    "clearDate": "Clear date",
+    "required": "required",
+    "close": "Close",
+    "presetsLabel": "Quick select",
+    "periodLabel": "Period",
+    "yearLabel": "Select a year",
+    "prevMonth": "Previous month",
+    "nextMonth": "Next month",
+    "spokenRange": "{{from}} to {{to}}",
+    "fromOnly": "from {{date}}",
+    "toOnly": "until {{date}}",
+    "pickStart": "Select a start date",
+    "pickEnd": "Select an end date",
+    "days": {
+      "one": "{{count}} day",
+      "few": "{{count}} days",
+      "many": "{{count}} days"
+    },
+    "dayLabel": "{{month}} {{day}}",
+    "today": "today",
+    "start": "start",
+    "end": "end",
+    "unavailable": "unavailable",
+    "presets": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "week": "This week",
+      "lastWeek": "Last week",
+      "month": "This month",
+      "lastMonth": "Last month",
+      "year": "This year",
+      "all": "All"
+    },
+    "months": [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ],
+    "monthsOf": [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December"
+    ],
+    "weekdaysShort": [
+      "Mo",
+      "Tu",
+      "We",
+      "Th",
+      "Fr",
+      "Sa",
+      "Su"
+    ],
+    "weekdays": [
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+      "Sunday"
+    ]
+  },
+  "dateKit": {
+    "groups": {
+      "field": "Field states",
+      "panel": "Open panel · «This month» selected",
+      "single": "Single date · one month"
+    },
+    "notes": {
+      "field": "Click to open the panel. When a range is selected, × on the right clears it and focus stays in the field.",
+      "panel": "First click sets the start, the second sets the end; the range applies at once and the panel closes. On a phone — a bottom sheet with one month. In the sample, today is 08.10.2026.",
+      "single": "Applies as soon as a day is clicked. Keyboard: arrows, Home, End, PageUp, PageDown, Enter."
+    },
+    "states": {
+      "empty": "Empty",
+      "selected": "Selected · clear",
+      "dashboard": "Dashboard",
+      "invalid": "Error + message",
+      "disabled": "Disabled",
+      "single": "Single date"
+    },
+    "demo": {
+      "dateLabel": "Date",
+      "dashboardPlaceholder": "Start → End",
+      "dashboardLabel": "Select a date range",
+      "error": "Select a date range",
+      "disabledHint": "The period cannot change in a closed cashbox",
+      "lastOrderLabel": "Last order — from"
+    },
+    "legend": {
+      "title": "Calendar marks",
+      "edges": "start and end date",
+      "range": "days inside the range",
+      "today": "today — blue outline",
+      "muted": "days of the adjacent month"
+    }
+  },
+  "forms": {
+    "groups": {
+      "matrix": "State matrix",
+      "search": "Search",
+      "phone": "Phone number",
+      "money": "Amount",
+      "textarea": "Multi-line text"
+    },
+    "notes": {
+      "matrix": "Hover — darker border; focus — blue border and ring (try it with Tab).",
+      "search": "While typing, × appears on the right — it clears the text and keeps focus in the field.",
+      "phone": "+998 stays fixed · the number is split as 90 123 45 67 automatically",
+      "money": "Thousands separated, currency on the right."
+    },
+    "states": {
+      "empty": "Empty",
+      "filled": "Filled",
+      "invalid": "Error + message",
+      "success": "Success",
+      "disabled": "Disabled",
+      "readonly": "Read-only",
+      "large": "Phone · 48 px",
+      "optional": "Empty · optional",
+      "counter": "With counter"
+    },
+    "demo": {
+      "nameLabel": "Customer name",
+      "namePlaceholder": "Enter a name",
+      "nameHint": "First and last name",
+      "nameValue": "Dilnoza Karimova",
+      "nameError": "Enter the customer name",
+      "disabledHint": "Cannot be edited on a closed order",
+      "readonlyHint": "For viewing and copying",
+      "copyName": "Copy name",
+      "searchLabel": "Search orders",
+      "searchPlaceholder": "Search this list",
+      "searchValue": "Dilnoza",
+      "phoneLabel": "Phone number",
+      "phoneHint": "9 digits, code added automatically",
+      "phoneError": "The phone number must have 9 digits",
+      "phoneLargeHint": "On courier screens",
+      "amountLabel": "Amount",
+      "noteLabel": "Note",
+      "notePlaceholder": "Write a note...",
+      "smsLabel": "SMS text",
+      "smsValue": "Dear customer, your order 10241 is on the way. The courier will arrive today before 18:00.",
+      "smsCounter": "{{count}} / 160 characters"
+    }
+  },
+  "select": {
+    "placeholder": "Select",
+    "all": "All",
+    "loading": "Loading...",
+    "empty": "Nothing found",
+    "emptyHint": "Nothing matches “{{query}}”",
+    "noOptions": "The list is empty",
+    "results": "Results: {{count}}",
+    "clear": "Clear",
+    "clearAll": "Clear all",
+    "clearShort": "Clear",
+    "remove": "Remove “{{label}}”",
+    "selectedCount": "{{count}} selected"
+  },
+  "popupSelect": {
+    "search": "Search...",
+    "confirm": "Select",
+    "cancel": "Cancel",
+    "close": "Close",
+    "list": "Options"
+  },
+  "printMenu": {
+    "button": "Print",
+    "menu": "Print method",
+    "count": "{{count}} selected"
+  },
+  "dialog": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "irreversible": "This action cannot be undone.",
+    "error": "The action could not be completed. Please try again.",
+    "amount": "Amount",
+    "from": "From",
+    "to": "To",
+    "uploadImage": "Upload image",
+    "replaceImage": "Replace"
+  },
+  "dialogs": {
+    "groups": {
+      "dialog": "Dialog",
+      "dialogMeta": "title, description and “Close” · long content scrolls on its own · actions on the right, one primary",
+      "sheet": "Phone: bottom sheet",
+      "sheetMeta": "at the bottom, full width, with a grip · equal-width buttons, 44 px",
+      "danger": "Delete — destructive action",
+      "dangerMeta": "object name + “cannot be undone” · the red button lives only here",
+      "money": "Money transfer — review",
+      "moneyMeta": "amount, from → to, note · green “Confirm”",
+      "deactivate": "Deactivate a user",
+      "deactivateMeta": "shows who it is · says how to undo",
+      "live": "Live example",
+      "liveMeta": "a real dialog: focus inside, Tab cycles, Esc and the backdrop close it, focus returns to the button",
+      "loading": "Request in progress",
+      "loadingMeta": "buttons lock; Esc and the backdrop do not close the dialog",
+      "error": "Error",
+      "errorMeta": "the dialog stays open, the error text is inside it — you can retry"
+    },
+    "rules": {
+      "title": "Title",
+      "titleText": "“Confirm …” or a specific question. “Are you sure?” is not used.",
+      "buttons": "Buttons",
+      "buttonsText": "“Cancel” on the left, an exact verb on the right: Delete, Confirm, Deactivate. “Back” only when the main action is itself a cancellation.",
+      "colour": "Colour",
+      "colourText": "Red — delete and block. Green — money confirmation. Blue — plain agreement.",
+      "closing": "Closing",
+      "closingText": "Esc and a backdrop click close it; while a request is running the buttons lock and the dialog stays open."
+    },
+    "demo": {
+      "shiftTitle": "Close shift",
+      "shiftDescription": "The current cash shift will be closed",
+      "shiftCurrent": "Current shift",
+      "shiftCurrentValue": "Today, since 09:00",
+      "shiftOpenedBy": "Opened by",
+      "shiftOpenedByValue": "Ravshan Ortiqov",
+      "shiftCash": "Cash on hand",
+      "shiftExcel": "When you close the shift, an Excel report downloads automatically.",
+      "shiftComment": "Comment",
+      "shiftCommentPlaceholder": "A note about the shift...",
+      "shiftAction": "Close shift",
+      "deleteTitle": "Confirm deletion",
+      "deleteDescription": "The product will be removed from the catalog for good.",
+      "deleteProduct": "Wireless earbuds Pro",
+      "deleteMarket": "Nur Elektronika",
+      "deleteAction": "Delete",
+      "deleting": "Deleting…",
+      "payTitle": "Confirm the payment",
+      "payDescription": "Review it — once confirmed, the amount shows in both cash desks right away.",
+      "payCash": "Cash",
+      "payFromTitle": "Courier cash",
+      "payFromMeta": "Jasur Tursunov",
+      "payToTitle": "Main cash desk",
+      "payToMeta": "Tashkent HQ",
+      "payNote": "Note",
+      "payNoteValue": "Daily handover, 08.10.2026",
+      "payAction": "Confirm",
+      "offTitle": "Confirm deactivation",
+      "offDescription": "Farrux Sobirov's account becomes inactive. You can reactivate it at any time from the actions menu.",
+      "offName": "Farrux Sobirov",
+      "offMeta": "Courier · Tashkent HQ · +998 90 412 18 07",
+      "offAction": "Deactivate",
+      "dayTitle": "Confirm finishing the day",
+      "dayDescription": "The following happens to 7 orders",
+      "daySold": "4 will be marked as sold",
+      "dayCancelled": "1 will be cancelled",
+      "dayTomorrow": "2 stay for tomorrow",
+      "dayAction": "Confirm",
+      "openDialog": "Open dialog",
+      "openConfirm": "Open confirmation",
+      "openFailing": "Confirmation with an error",
+      "resultConfirmed": "Answer: confirmed",
+      "resultCancelled": "Answer: cancelled",
+      "failingError": "The product could not be deleted: it is in an active order."
+    }
+  },
+  "toast": {
+    "region": "Notifications",
+    "close": "Close message",
+    "timeoutTitle": "The server didn't respond"
+  },
+  "states": {
+    "loading": "Loading…",
+    "appLoading": "App is loading",
+    "slow": "This is taking longer than usual — the connection may be slow",
+    "refreshing": "Updating…",
+    "retry": "Try again",
+    "details": "Error details",
+    "error": {
+      "server": {
+        "title": "Couldn't load the data",
+        "description": "Server error ({{status}}). Please try again in a moment."
+      },
+      "timeout": {
+        "title": "Couldn't load the data",
+        "description": "The server didn't respond. Please try again in a moment."
+      },
+      "offline": {
+        "title": "No internet connection",
+        "description": "Check your internet connection and try again."
+      },
+      "forbidden": {
+        "title": "You don't have access to this data",
+        "description": "This block isn't available for your role. You can keep using the rest of the page."
+      },
+      "section": {
+        "title": "Couldn't open this section",
+        "description": "Other sections keep working."
+      },
+      "generic": {
+        "title": "Couldn't load the data",
+        "description": "The request failed ({{status}}).",
+        "descriptionNoStatus": "Please try again in a moment."
+      }
+    },
+    "page": {
+      "home": "Back to home",
+      "back": "Back",
+      "notFound": {
+        "overline": "Error code 404",
+        "title": "Page not found",
+        "description": "The address may be mistyped, or the page may have been removed."
+      },
+      "forbidden": {
+        "overline": "Error code 403",
+        "title": "You don't have access to this page",
+        "description": "You don't have permission to view this data."
+      },
+      "server": {
+        "overline": "Error code 500",
+        "title": "Something went wrong on the server",
+        "description": "It's not your fault — please try again in a moment."
+      },
+      "runtime": {
+        "overline": "Unexpected error",
+        "title": "This page couldn't be displayed",
+        "description": "An unexpected error occurred in the app. Please try again."
+      }
+    }
+  },
+  "feedbackKit": {
+    "groups": {
+      "tones": "Types",
+      "tonesNote": "Title — what happened (2–4 words), text — detail or next step. The icon carries the tone colour, the text stays neutral. At most one action button per message.",
+      "live": "Try it",
+      "liveNote": "On desktop — bottom right, up to 3 stacked; on phones — at the top, one at a time. While the pointer or focus is on a message, its timer pauses."
+    },
+    "kinds": {
+      "success": {
+        "label": "Success",
+        "meta": "role=\"status\" · closes after 4 seconds"
+      },
+      "info": {
+        "label": "Information",
+        "meta": "role=\"status\" · closes after 4 seconds"
+      },
+      "warning": {
+        "label": "Warning",
+        "meta": "role=\"status\" · closes after 6 seconds"
+      },
+      "error": {
+        "label": "Error",
+        "meta": "role=\"alert\" · stays until the user closes it"
+      },
+      "undo": {
+        "label": "With an action — undo",
+        "meta": "6 seconds · the timer pauses under the pointer"
+      },
+      "retry": {
+        "label": "Error — try again",
+        "meta": "role=\"alert\" · a repeated error joins the same message"
+      }
+    },
+    "demo": {
+      "paid": {
+        "title": "Payment transferred",
+        "text": "{{amount}} transferred to the main cash desk."
+      },
+      "dayClosed": {
+        "title": "Day closed",
+        "text": "No orders to close — orders postponed to tomorrow stay pending."
+      },
+      "duplicate": {
+        "title": "Payment already recorded",
+        "text": "The cash desk was updated — check the amount."
+      },
+      "forbidden": {
+        "title": "No access",
+        "text": "You don't have permission to create orders with AI. Enter the order manually."
+      },
+      "removed": {
+        "title": "Order removed from the list",
+        "text": "№10241 · Dilnoza Karimova",
+        "action": "Undo"
+      },
+      "report": {
+        "title": "Report didn't load",
+        "text": "The server didn't respond. Please try again in a moment.",
+        "action": "Try again"
+      },
+      "excel": {
+        "title": "Saved to Excel",
+        "text": "248 orders saved to Excel."
+      },
+      "accepted": {
+        "title": "Order accepted",
+        "text": "№10241 · Chilonzor district"
+      }
+    },
+    "buttons": {
+      "success": "Success",
+      "info": "Information",
+      "warning": "Warning",
+      "error": "Error",
+      "undo": "With undo",
+      "retry": "With retry",
+      "burst": "4 in a row",
+      "repeat": "Repeated error",
+      "dismissAll": "Close all"
+    }
+  },
+  "statesKit": {
+    "groups": {
+      "empty": "Empty state",
+      "emptyNote": "No records yet or nothing matched the filters: icon in a circle, title, one sentence on why and the next step.",
+      "error": "Error state",
+      "errorNote": "The request failed — the card stays in place. The type comes from the error; 403 is grey and has no button.",
+      "chart": "Inside a chart",
+      "chartNote": "An empty period and a chart that didn't load — in place of the card, on a grey surface.",
+      "page": "Page error",
+      "pageNote": "When the page didn't open at all — in the middle of the content area, 24 px title and 2 buttons.",
+      "loading": "Loading",
+      "loadingNote": "Skeleton after 400 ms, a note below after 15 seconds. Table rows are 56 px — the page doesn't jump when data arrives.",
+      "boundary": "Query states",
+      "boundaryNote": "QueryBoundary draws the four states of one query: loading, empty, error and ready. Answers faster than 400 ms show no skeleton; on refetch the list stays in place."
+    },
+    "kinds": {
+      "server": "Server error (500)",
+      "offline": "No internet",
+      "forbidden": "No access (403)",
+      "section": "Section error",
+      "table": "Table · after 15 s",
+      "lines": "Text lines",
+      "chart": "Chart"
+    },
+    "demo": {
+      "emptyOrders": {
+        "title": "No orders yet",
+        "text": "Orders are created in «Intake and creation» and appear in this list.",
+        "action": "Create order"
+      },
+      "emptyFilter": {
+        "title": "No orders match these filters",
+        "text": "Remove one of the filters or widen the date range.",
+        "action": "Clear filters"
+      },
+      "chartEmpty": {
+        "title": "No orders in this period",
+        "text": "No orders have been accepted today yet. Pick another period.",
+        "action": "This week"
+      },
+      "chartError": {
+        "text": "Check your internet connection and try again."
+      },
+      "notFound": {
+        "overline": "Error code 404",
+        "title": "This page wasn't found",
+        "text": "The address may be mistyped or the page may have been removed.",
+        "home": "Back to home",
+        "back": "Back"
+      },
+      "appError": {
+        "overline": "Unexpected error",
+        "title": "Couldn't show the page",
+        "text": "Something unexpected went wrong in the app. Please try again.",
+        "home": "Back to home"
+      },
+      "columns": {
+        "order": "Order",
+        "customer": "Customer",
+        "region": "District / region",
+        "market": "Market",
+        "status": "Status",
+        "delivery": "Delivery",
+        "amount": "Amount"
+      },
+      "boundary": {
+        "fast": "Fast answer",
+        "slow": "Slow answer",
+        "empty": "Empty answer",
+        "error": "Error",
+        "title": "Orders",
+        "loadingLabel": "Orders are loading",
+        "emptyTitle": "No orders yet"
+      }
+    }
+  },
+  "selectKit": {
+    "groups": {
+      "closed": "Closed state",
+      "open": "Open state",
+      "multi": "Multiple choice",
+      "rich": "Second line and search"
+    },
+    "notes": {
+      "closed": "button · aria-haspopup=\"listbox\"",
+      "open": "list below the field, at most 280 px tall, then it scrolls",
+      "multi": "selected items as tags inside the field · each can be removed",
+      "rich": "Choosing a user: login and role under the name (Add employee dialog). Interactive — click or Tab to it."
+    },
+    "states": {
+      "unselected": "Not selected",
+      "selected": "Selected",
+      "invalid": "Error + message",
+      "disabled": "Disabled",
+      "open": "Open",
+      "search": "With search",
+      "notFound": "Not found",
+      "loading": "Loading",
+      "closedMulti": "Closed · 3 selected",
+      "count": "With count",
+      "interactive": "Second line",
+      "searchInteractive": "Search · clear",
+      "loadingClosed": "Closed · loading"
+    },
+    "demo": {
+      "regionLabel": "Region",
+      "regionPlaceholder": "Select a region",
+      "districtLabel": "District",
+      "districtPlaceholder": "Select a district",
+      "districtError": "Select a district",
+      "districtDisabled": "Select a region first",
+      "districtDisabledHint": "Opens once a region is selected",
+      "marketLabel": "Market",
+      "marketsList": "Markets",
+      "marketNotFound": "No market matches “{{query}}”",
+      "statusLabel": "Status",
+      "statusPlaceholder": "Select a status",
+      "statusHint": "None selected — all statuses",
+      "statusChipsHint": "3 selected — 2 shown, the rest as “+1”",
+      "statusClear": "Clear all statuses",
+      "statusRemove": "Remove the {{label}} status",
+      "userLabel": "User",
+      "userPlaceholder": "Select a user",
+      "userHint": "Only active managers, registrars and couriers are shown",
+      "usersList": "Users",
+      "districtLoading": "Loading districts…",
+      "marketPlaceholder": "Select a market"
+    },
+    "roles": {
+      "courier": "Courier",
+      "manager": "Manager",
+      "registrator": "Registrar"
     }
   }
 }
