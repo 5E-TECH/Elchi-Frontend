@@ -389,7 +389,7 @@ describe("NewOrderUpdate — buyurtma ma'lumotlari (OrderMeta)", () => {
 
 
 describe("NewOrderUpdate — Sotish/Bekor qilish tugmalari (backend: WAITING + post_id)", () => {
-  // Hududiy menejer — tugmalar faqat shu rolga chiqadi.
+  // Hududiy menejer (`can_sell_cancel` yoqilgan) — tugmalar faqat shu rolga chiqadi.
   const renderAsRegionalManager = () =>
     renderWithProviders(
       <Routes>
@@ -400,7 +400,12 @@ describe("NewOrderUpdate — Sotish/Bekor qilish tugmalari (backend: WAITING + p
         preloadedState: {
           role: { id: "manager-1", role: "manager", region: null, name: "manager" },
           user: {
-            user: { id: "manager-1", role: "manager", branch: { id: "1", type: "REGIONAL" } },
+            user: {
+              id: "manager-1",
+              role: "manager",
+              branch: { id: "1", type: "REGIONAL" },
+              can_sell_cancel: true,
+            },
             isAuthenticated: true,
             accessToken: null,
             loading: false,
@@ -661,7 +666,7 @@ describe("NewOrderUpdate — sotilgan buyurtmani qaytarish (RollbackOrderDialog)
     const user = userEvent.setup();
     orderState.status = "sold";
     rollbackMutation.mutate.mockImplementation((_id: string, options: { onSuccess?: () => void }) => options.onSuccess?.());
-    renderAsUser("manager", { branch: { id: "1", type: "REGIONAL" } });
+    renderAsUser("manager", { branch: { id: "1", type: "REGIONAL" }, can_sell_cancel: true });
 
     await user.click(screen.getByRole("button", { name: "Qaytarish" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Buyurtmani qaytarish" });
@@ -672,9 +677,9 @@ describe("NewOrderUpdate — sotilgan buyurtmani qaytarish (RollbackOrderDialog)
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });
 
-  it("HQ menejeri yoki admin — «Qaytarish» yo'q", () => {
+  it("HQ menejeri yoki admin — «Qaytarish» yo'q (bayroq bo'lsa ham)", () => {
     orderState.status = "sold";
-    const hq = renderAsUser("manager", { branch: { id: "1", type: "HQ" } });
+    const hq = renderAsUser("manager", { branch: { id: "1", type: "HQ" }, can_sell_cancel: true });
     expect(screen.queryByRole("button", { name: "Qaytarish" })).not.toBeInTheDocument();
     hq.unmount();
     renderAsUser("admin");

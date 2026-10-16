@@ -16,7 +16,9 @@ import type { OrderDetail } from "./orderDetailModel";
  *  - mijoz (PATCH /users/:id) — faqat superadmin / admin;
  *  - manzil va buyurtma/mahsulotlar (PATCH /orders/:id/full) — superadmin / admin / registrator / menejer;
  *  - HQ qabul qilgach mahsulot va summa qulflanadi; filialga jo'natilgach mijoz va manzil ham;
- *  - sotish / bekor qilish / qaytarish — faqat REGIONAL · HYBRID menejeri.
+ *  - sotish / bekor qilish / qaytarish — faqat REGIONAL · HYBRID menejeri VA uning per-menejer
+ *    `can_sell_cancel` bayrog'i yoqilgan bo'lsa (ro'yxatdagi `canUseManagerTableActions` bilan
+ *    AYNI qoida; backend sotish/bekorni baribir 403 bilan to'sadi).
  *
  * Ko'rinish maketlar bo'yicha: market va kuryer — faqat o'qish (tahrirlash tugmasi umuman yo'q);
  * registratorda mijoz tugmasi o'chiq (sababi bilan), menejerda tugma yo'q, faqat izoh
@@ -57,6 +59,13 @@ export const getOrderPageBranchType = (user: RootState["user"]["user"]): OrderPa
   );
 };
 
+/**
+ * Menejerning sotish/bekor/qaytarish ruxsati (`can_sell_cancel`, superadmin/admin yoqadi,
+ * default — yo'q). Redux `User` tipida bu maydon yo'q, shuning uchun cast bilan o'qiladi.
+ */
+export const getUserCanSellCancel = (user: RootState["user"]["user"]): boolean =>
+  Boolean((user as { can_sell_cancel?: boolean } | null | undefined)?.can_sell_cancel);
+
 /** Sahifa ko'rinishi: `courier` va `market` — o'z maketlari, qolganlar — umumiy. */
 export type OrderDetailLayout = "default" | "market" | "courier";
 
@@ -78,7 +87,7 @@ export interface OrderDetailAccess {
   productsLocked: boolean;
   destinationLocked: boolean;
   isRegionalManager: boolean;
-  /** «Bekor qilish» (va «Sotish», agar `canSell`) — WAITING + post_id. */
+  /** «Bekor qilish» (va «Sotish», agar `canSell`) — WAITING + post_id, `can_sell_cancel` yoqilgan. */
   canUseCourierActions: boolean;
   /** fix3b LC-04: kuryer qo'lidagi buyurtmani menejer sotmaydi (backend 400). */
   canSell: boolean;
@@ -92,10 +101,13 @@ const normalizeRole = (role: string | null | undefined) => (role ?? "").trim().t
 export const getOrderDetailAccess = ({
   role: rawRole,
   branchType,
+  canSellCancel = false,
   order,
 }: {
   role: string | null | undefined;
   branchType: OrderPageBranchType | null;
+  /** Menejerning `can_sell_cancel` bayrog'i (`getUserCanSellCancel`); berilmasa — ruxsat yo'q. */
+  canSellCancel?: boolean;
   order: OrderDetail | null;
 }): OrderDetailAccess => {
   const role = normalizeRole(rawRole);
@@ -103,7 +115,8 @@ export const getOrderDetailAccess = ({
   const canEditCustomer = role === "superadmin" || role === "admin";
   const canEditOrderFull = canEditCustomer || role === "registrator" || role === "manager";
   const isRegionalManager = role === "manager" && (branchType === "REGIONAL" || branchType === "HYBRID");
-  const canUseCourierActions = isRegionalManager && canRunCourierAction(order);
+  const canManagerSellCancel = isRegionalManager && canSellCancel;
+  const canUseCourierActions = canManagerSellCancel && canRunCourierAction(order);
 
   return {
     layout,
@@ -116,7 +129,7 @@ export const getOrderDetailAccess = ({
     isRegionalManager,
     canUseCourierActions,
     canSell: canUseCourierActions && !isCourierHeldOrder(order),
-    canRollback: isRegionalManager && normalizeOrderStatus(order?.status ?? "") === "sold",
+    canRollback: canManagerSellCancel && normalizeOrderStatus(order?.status ?? "") === "sold",
     canStartReturn: canInitiateReturn(rawRole, order),
     canHandOverReturn: canMarkReturnedToMarket(rawRole, order),
   };

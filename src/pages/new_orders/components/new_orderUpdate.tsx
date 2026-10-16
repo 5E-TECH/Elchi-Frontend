@@ -32,7 +32,12 @@ import { CustomerCard } from "./detail/CustomerCard";
 import { DetailAlerts } from "./detail/DetailAlerts";
 import { DetailHeader } from "./detail/DetailHeader";
 import { DetailSkeleton } from "./detail/DetailSkeleton";
-import { getLockAlertIds, getOrderDetailAccess, getOrderPageBranchType } from "./detail/orderDetailAccess";
+import {
+  getLockAlertIds,
+  getOrderDetailAccess,
+  getOrderPageBranchType,
+  getUserCanSellCancel,
+} from "./detail/orderDetailAccess";
 import {
   buildActionOrder,
   buildTrackingAccess,
@@ -75,6 +80,7 @@ const NewOrderUpdate = () => {
   const canOpenMails = menu.some((item) => item.to === "/mails");
   const canOpenProfiles = menu.some((item) => item.to === "/all-users");
   const branchType = getOrderPageBranchType(user);
+  const canSellCancel = getUserCanSellCancel(user);
 
   // ─── Ma'lumot ─────────────────────────────────────────────────────────────
   const { useGetOrderById, SellOrder, PartlySellOrder, CancelOrder, RollbackOrder } = useOrders();
@@ -85,7 +91,7 @@ const NewOrderUpdate = () => {
   const order = useMemo(() => normalizeOrderDetail(orderQuery.data), [orderQuery.data]);
   const pendingApprovals = usePendingExtraCostApprovals();
   const pendingApproval = getActivePendingApproval(pendingApprovals, order) ?? null;
-  const access = getOrderDetailAccess({ role, branchType, order });
+  const access = getOrderDetailAccess({ role, branchType, canSellCancel, order });
   const lockIds = getLockAlertIds(access.productsLocked, access.destinationLocked);
 
   const actionOrder = useMemo(() => buildActionOrder(order), [order]);
