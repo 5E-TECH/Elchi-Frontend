@@ -70,8 +70,13 @@ describe("BranchEditModal — HQ (bosh ofis) tahriri", () => {
   it("shows the type fixed as HQ and the parent picker disabled", async () => {
     renderModal(hqBranch);
 
-    expect(await screen.findByRole("button", { name: "HQ" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "HQ uchun yuqori filial kerak emas" })).toBeDisabled();
+    // v2 `Select searchable`: maydon — yorliq bilan nomlangan combobox, qiymat maydonda.
+    const type = await screen.findByRole("combobox", { name: "Filial turi" });
+    expect(type).toBeDisabled();
+    expect(type).toHaveValue("HQ");
+    const parent = screen.getByRole("combobox", { name: "Yuqori filial" });
+    expect(parent).toBeDisabled();
+    expect(parent).toHaveAttribute("placeholder", "HQ uchun yuqori filial kerak emas");
   });
 
   it("submits type HQ with no parent_id and closes on success", async () => {
@@ -115,8 +120,12 @@ describe("BranchEditModal — oddiy filial (o'zgarmagan)", () => {
   it("keeps the type and parent pickers editable", async () => {
     renderModal(regionalBranch);
 
-    expect(await screen.findByRole("button", { name: "Viloyat" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "Bosh ofis (HQ) · HQ" })).toBeEnabled();
+    const type = await screen.findByRole("combobox", { name: "Filial turi" });
+    expect(type).toBeEnabled();
+    expect(type).toHaveValue("Viloyat");
+    const parent = screen.getByRole("combobox", { name: "Yuqori filial" });
+    expect(parent).toBeEnabled();
+    expect(parent).toHaveValue("Bosh ofis (HQ) · HQ");
   });
 
   it("submits the selected type together with parent_id", async () => {
@@ -221,7 +230,9 @@ describe("BranchEditModal — PICKUP tahriri (ilgari saqlanmasdi)", () => {
   it("PICKUP uchun yuqori filial tanlovi ochiq", async () => {
     renderModal(pickupBranch);
 
-    expect(await screen.findByRole("button", { name: "Bosh ofis (HQ) · HQ" })).toBeEnabled();
+    const parent = await screen.findByRole("combobox", { name: "Yuqori filial" });
+    expect(parent).toBeEnabled();
+    expect(parent).toHaveValue("Bosh ofis (HQ) · HQ");
   });
 
   it("yuqori filialsiz PICKUP saqlanmaydi", async () => {

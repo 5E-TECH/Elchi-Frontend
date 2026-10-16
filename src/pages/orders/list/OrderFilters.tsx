@@ -26,6 +26,7 @@ import FilterClearButton from "../../../shared/ui/FilterClearButton";
 import { clearAllSearch, setSearchValue } from "../../../shared/model/searchSlice";
 import type { RootState } from "../../../app/config/store";
 import SearchableSelect from "../../../shared/ui/SearchableSelect";
+import { isInUiLayer } from "../../../shared/ui/primitives";
 
 // ── Holat variantlari ─────────────────────────────────────────────────────
 const ALL_STATUSES: { value: OrderStatus | ""; label: string }[] = [
@@ -168,6 +169,8 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
 
         const handleClickOutside = (event: MouseEvent) => {
             if (!mobilePanelRef.current) return;
+            // v2 qatlami (`#ui-portal`: panel ichidan ochilgan ro'yxat, kalendar varaqasi, dialog) — «tashqari» emas.
+            if (isInUiLayer(event.target)) return;
             if (!mobilePanelRef.current.contains(event.target as Node)) {
                 setIsMobilePanelOpen(false);
             }

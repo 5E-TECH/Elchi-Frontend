@@ -1,5 +1,5 @@
 import { useId, useMemo, useState } from "react";
-import { Badge, Button, Pagination, Segmented, Spin, Switch, message } from "antd";
+import { Badge, Button, Pagination, Segmented, Spin, Switch } from "antd";
 import { BellOff, CheckCheck, ChevronDown, ChevronUp, FilterX, SlidersHorizontal } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
@@ -13,6 +13,7 @@ import { useMarkAllInboxRead } from "../../../features/notification-inbox";
 import EmptyState from "../../../shared/ui/EmptyState";
 import QueryErrorState from "../../../shared/ui/QueryErrorState";
 import NotificationInboxItem from "./NotificationInboxItem";
+import { notify } from "../../../shared/lib/notify";
 
 const PAGE_SIZE = 20;
 type InboxTab = "all" | "unread";
@@ -92,9 +93,9 @@ const NotificationInboxList = () => {
   const handleMarkAllRead = async () => {
     try {
       await markAllRead.mutateAsync();
-      message.success(t("markAllReadSuccess"));
+      notify.success(t("markAllReadSuccess"));
     } catch {
-      message.error(t("markAllReadError"));
+      notify.error(t("markAllReadError"));
     }
   };
 

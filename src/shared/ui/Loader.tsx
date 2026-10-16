@@ -1,19 +1,19 @@
 import { useTranslation } from "react-i18next";
+import { cx } from "../lib/cx";
+import { Spinner } from "./primitives/Spinner";
 
 type LoaderProps = {
   className?: string;
 };
 
+/**
+ * v1 → v2 O'RAMI: blok yuklanishi halqasi — `Spinner size="lg"` (`.el-spinner-lg`, 32 px, `action` rangida),
+ * ekran o'quvchiga «Yuklanmoqda…» (`role="status"`). Sahifa va ro'yxat uchun — skelet (`QueryBoundary`).
+ */
 export const Loader = ({ className = "" }: LoaderProps) => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation("ui");
 
-  return (
-    <div
-      className={`h-8 w-8 rounded-full border-2 border-main/20 border-t-main animate-spin ${className}`.trim()}
-      aria-label={t("loading")}
-      role="status"
-    />
-  );
+  return <Spinner size="lg" label={t("states.loading")} className={cx("text-action-fg", className)} />;
 };
 
 export default Loader;

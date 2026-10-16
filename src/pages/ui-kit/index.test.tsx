@@ -34,6 +34,21 @@ const renderRoute = (role: string, route = "/ops/ui-kit") =>
     { route, preloadedState: { role: { id: "1", role, region: null, name: null } } as Partial<RootState> },
   );
 
+const SECTION_IDS = [
+  "buttons",
+  "badges",
+  "cards",
+  "page-header",
+  "tabs",
+  "format",
+  "forms",
+  "select",
+  "date",
+  "dialog",
+  "feedback",
+  "states",
+];
+
 const sectionIds = () =>
   Array.from(document.querySelectorAll("[data-kit-section]")).map((el) => el.getAttribute("data-kit-section"));
 
@@ -81,10 +96,10 @@ describe("/ops/ui-kit marshruti", () => {
 });
 
 describe("UiKitPage", () => {
-  it("bo'limlar tartibi: tugmalar, badge, kartalar, sahifa sarlavhasi, tablar, formatlash", () => {
+  it("bo'limlar tartibi: 1-bosqich primitivlari, keyin 3-bosqich (forma, ro'yxat, sana, oyna, xabar, holatlar)", () => {
     renderWithProviders(<UiKitPage />, { route: "/ops/ui-kit" });
-    expect(sectionIds()).toEqual(["buttons", "badges", "cards", "page-header", "tabs", "format"]);
-    const headings = screen.getAllByRole("heading", { level: 2 }).map((h) => h.textContent);
+    expect(sectionIds()).toEqual(SECTION_IDS);
+    const headings = Array.from(document.querySelectorAll("[data-kit-section] > div > h2")).map((h) => h.textContent);
     expect(headings).toEqual([
       "Tugmalar",
       "Holat belgilari",
@@ -92,23 +107,33 @@ describe("UiKitPage", () => {
       "Sahifa sarlavhasi",
       "Tablar va segmentlar",
       "Formatlash",
+      "Forma elementlari",
+      "Tanlash ro'yxatlari",
+      "Sana oralig'i",
+      "Oynalar va tasdiqlash",
+      "Qalqib chiquvchi xabarlar",
+      "Yuklanish, bo'sh va xato holatlari",
     ]);
   });
 
   it("har bo'limda kunduzgi va tungi panel; tungi panel `.dark` klassi bilan", () => {
     renderWithProviders(<UiKitPage />, { route: "/ops/ui-kit" });
+    for (const section of document.querySelectorAll("[data-kit-section]")) {
+      const id = section.getAttribute("data-kit-section");
+      const lightIn = section.querySelectorAll('[data-kit-theme="light"]').length;
+      expect(lightIn, `${id}: kunduzgi panel`).toBeGreaterThan(0);
+      expect(section.querySelectorAll('[data-kit-theme="dark"]').length, `${id}: tungi panel`).toBe(lightIn);
+    }
     const light = document.querySelectorAll('[data-kit-theme="light"]');
     const dark = document.querySelectorAll('[data-kit-theme="dark"]');
-    expect(light).toHaveLength(6);
-    expect(dark).toHaveLength(6);
     dark.forEach((panel) => expect(panel).toHaveClass("dark", "bg-bg", "text-text"));
     light.forEach((panel) => {
       expect(panel).not.toHaveClass("dark");
       // Ilova tungi bo'lsa ham kunduzgi panel kunduzgi tokenlarni o'zi beradi.
       expect((panel as HTMLElement).style.getPropertyValue("--color-surface")).not.toBe("");
     });
-    expect(screen.getAllByText("Kunduzgi")).toHaveLength(6);
-    expect(screen.getAllByText("Tungi")).toHaveLength(6);
+    expect(screen.getAllByText("Kunduzgi")).toHaveLength(light.length);
+    expect(screen.getAllByText("Tungi")).toHaveLength(dark.length);
   });
 
   it("?section=badges — faqat shu bo'lim", () => {
@@ -118,7 +143,12 @@ describe("UiKitPage", () => {
 
   it("noma'lum ?section — barcha bo'limlar", () => {
     renderWithProviders(<UiKitPage />, { route: "/ops/ui-kit?section=yoq" });
-    expect(sectionIds()).toHaveLength(6);
+    expect(sectionIds()).toHaveLength(SECTION_IDS.length);
+  });
+
+  it.each(["forms", "select", "date", "dialog", "feedback", "states"])("?section=%s — faqat shu bo'lim", (id) => {
+    renderWithProviders(<UiKitPage />, { route: `/ops/ui-kit?section=${id}` });
+    expect(sectionIds()).toEqual([id]);
   });
 
   it("?theme-pair=0 — bitta panel, joriy mavzuda", () => {

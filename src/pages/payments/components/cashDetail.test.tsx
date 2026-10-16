@@ -135,7 +135,8 @@ const chooseMethod = (method: string) =>
 
 const chooseMarket = async (market: string) => {
   const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Market tanlang" }));
+  // v2 `FilterSelect` (`Select`): maydon — yorliq bilan nomlangan combobox.
+  await user.click(screen.getByRole("combobox", { name: "Market tanlang" }));
   await user.click(screen.getByRole("option", { name: market }));
 };
 

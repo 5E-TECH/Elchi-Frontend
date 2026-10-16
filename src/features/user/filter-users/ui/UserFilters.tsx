@@ -11,6 +11,7 @@ import type { UserRole } from '../../../../entities/user/types/user';
 import { getUserRoleLabelKey } from '../../../../entities/user/lib/role';
 import type { RootState } from '../../../../app/config/store';
 import FilterSearch from '../../../../shared/ui/FilterSearch';
+import { isInUiLayer } from '../../../../shared/ui/primitives';
 
 const defaultRoles: UserRole[] = [
     "admin",
@@ -85,6 +86,8 @@ export const UserFilters = memo(({ availableRoles }: UserFiltersProps) => {
 
         const handleClickOutside = (event: MouseEvent) => {
             if (!mobilePanelRef.current) return;
+            // v2 qatlami (`#ui-portal`: panel ichidan ochilgan ro'yxat, kalendar varaqasi, dialog) — «tashqari» emas.
+            if (isInUiLayer(event.target)) return;
             if (!mobilePanelRef.current.contains(event.target as Node)) {
                 setIsMobilePanelOpen(false);
             }

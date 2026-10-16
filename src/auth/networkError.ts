@@ -36,6 +36,8 @@ export const emitNetworkError = (error: AxiosError) => {
       detail: {
         message: error.message,
         url: error.config?.url,
+        // Xabar matni uchun: `ECONNABORTED` — vaqt tugadi («Server javob bermadi»), qolgani — internet yo'q.
+        code: error.code,
       },
     }),
   );

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { message } from "antd";
+import { notify } from "../../../shared/lib/notify";
 import ConnectionOverview from "./ConnectionOverview";
 import ConnectionSettlement from "./ConnectionSettlement";
 import { renderWithProviders } from "../../../test/test-utils";
@@ -296,8 +296,9 @@ describe("ConnectionOverview — banner amallari", () => {
   });
 
   it("⭐ \"Aloqani sinash\" — haqiqiy healthcheck, natija xabar bilan; `ok: false` xato deb ko'rsatiladi", async () => {
-    const success = vi.spyOn(message, "success");
-    const error = vi.spyOn(message, "error");
+    // `notify` haqiqiy — xabar `UiHost` dagi `<Toaster />` da ham chiziladi.
+    const success = vi.spyOn(notify, "success");
+    const error = vi.spyOn(notify, "error");
     renderWithProviders(<ConnectionOverview connection={integration} metrics={metrics()} onFix={vi.fn()} />);
     const ping = bannerButton(/Aloqani sinash/)!;
     expect(ping).not.toBeNull();
@@ -305,6 +306,7 @@ describe("ConnectionOverview — banner amallari", () => {
     apiPostMock.mockResolvedValueOnce({ data: { statusCode: 200, data: { ok: true, status: 200 } } });
     await userEvent.click(ping);
     await waitFor(() => expect(success).toHaveBeenCalledWith("Aloqani sinash — bajarildi"));
+    expect(await screen.findByText("Aloqani sinash — bajarildi")).toBeInTheDocument();
     expect(apiPostMock).toHaveBeenCalledWith("integrations/7/healthcheck", {});
 
     // Backend yiqilganda HTTP xato BERMAYDI — "bajarildi" deyilmasligi kerak.

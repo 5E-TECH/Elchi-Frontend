@@ -10,6 +10,7 @@ import {
   Phone,
   Store,
   User,
+  UserX,
 } from "lucide-react";
 import UpdatePopup from "../../../../shared/components/popupUpdate";
 import SearchableSelect from "../../../../shared/ui/SearchableSelect";
@@ -25,6 +26,7 @@ import { formatUzbekistanPhoneLocal, keepPhoneCaretAfterChange } from "../../../
 import type { RootState } from "../../../../app/config/store";
 import { useLogout } from "../../../../shared/lib/useLogout";
 import { rememberLoginNotice } from "../../../../auth/loginNotice";
+import { useConfirm } from "../../../../shared/ui/primitives";
 
 /**
  * Backend `Status` enumi — faqat `active | inactive` (UpdateAdminRequestDto
@@ -134,6 +136,7 @@ export const UpdateUserModal = memo(({
   );
   const { useGetUserById, updateUser, updateMyProfile } = useUser();
   const { apiRequest } = useAppNotification();
+  const confirm = useConfirm();
   const { logout } = useLogout();
   // O'z hisobi: profil sahifasi yoki ro'yxatdan o'zini tahrirlash.
   const isSelf =
@@ -328,6 +331,22 @@ export const UpdateUserModal = memo(({
     if (Object.keys(payload).length === 0) {
       onClose();
       return;
+    }
+
+    // Nofaol qilish kirish huquqini oladi — tasdiqlash oynasi orqali (DESIGN_SYSTEM §8).
+    if (payload.status && payload.status !== "active") {
+      const name = payload.name ?? userData.name;
+      const ok = await confirm({
+        tone: "danger",
+        title: t("deactivateConfirmTitle"),
+        description: t("deactivateConfirmText", { name }),
+        details: name,
+        confirmLabel: t("deactivateConfirmAction"),
+        cancelLabel: t("cancel"),
+        icon: UserX,
+        confirmIcon: UserX,
+      });
+      if (!ok) return;
     }
 
     // fix3b RBAC-09: parol o'zgarsa backend o'sha hisobning sessiyasini
@@ -574,6 +593,7 @@ export const UpdateUserModal = memo(({
                             onChange={(nextDate) =>
                               field.onChange(isoDateToPaymentDay(nextDate))
                             }
+                            aria-label={t("paymentDayRange")}
                             placeholder={t("common:selectDateRange")}
                             variant="form"
                             className="w-full"

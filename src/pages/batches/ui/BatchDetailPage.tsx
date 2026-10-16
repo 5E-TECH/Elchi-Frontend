@@ -26,6 +26,7 @@ import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
 import BackButton from "../../../shared/ui/BackButton";
 import PageContainer from "../../../shared/ui/PageContainer";
+import { notify } from "../../../shared/lib/notify";
 
 const BatchDetailPage = () => {
   const { t } = useTranslation(["mails", "batches", "common"]);
@@ -38,7 +39,7 @@ const BatchDetailPage = () => {
     refetch: refetchRemainingBatch,
   } = useBatchRemainingDetail(id);
   const sendBatch = useSendTransferBatch();
-  const { apiRequest, api: notifApi } = useAppNotification();
+  const { apiRequest } = useAppNotification();
   const role = useSelector((state: RootState) => state.role.role);
   const [sentOrderIds, setSentOrderIds] = useState<Set<string>>(new Set());
 
@@ -69,37 +70,22 @@ const BatchDetailPage = () => {
     useMailDetailState(orders);
 
   const handleMissingScannedOrder = useCallback(() => {
-    notifApi.warning({
-      message: t("qrNotFound"),
-      description: t("batchScanMissing"),
-      placement: "topRight",
-      duration: 3,
-    });
+    notify.warning(t("qrNotFound"), { description: t("batchScanMissing"), duration: 3000 });
     playMissingOrderFeedback();
-  }, [notifApi, t]);
+  }, [t]);
 
   const selectScannedOrder = useCallback((order: (typeof orders)[number]) => {
     if (!canSendToMainBranch) return;
     if (selectedIds.has(order.id)) {
       void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
-      notifApi.warning({
-        message: t("common:scannerFeedbackDuplicate"),
-        description: `#${order.id}`,
-        placement: "topRight",
-        duration: 2,
-      });
+      notify.warning(t("common:scannerFeedbackDuplicate"), { description: `#${order.id}`, duration: 2000 });
       return;
     }
 
     selectOne(order.id);
-    notifApi.success({
-      message: t("orderSelected"),
-      description: `#${order.id}`,
-      placement: "topRight",
-      duration: 2,
-    });
+    notify.success(t("orderSelected"), { description: `#${order.id}`, duration: 2000 });
     void playScanFeedback("success");
-  }, [canSendToMainBranch, notifApi, selectOne, selectedIds, t]);
+  }, [canSendToMainBranch, selectOne, selectedIds, t]);
 
   useOrderQrScanner({
     orders,

@@ -8,7 +8,6 @@ import { UserStatusBadge } from "../../entities/user/ui/UserStatusBadge";
 import HeaderName from "../../shared/components/headerName";
 import FormPopup from "../../shared/ui/FormPopup";
 import PageContainer from "../../shared/ui/PageContainer";
-import { useAppNotification } from "../../app/providers/notification/NotificationProvider";
 import {
   formatUzbekistanPhoneLocal,
   isCompleteUzbekistanPhone,
@@ -20,6 +19,7 @@ import {
   buildCreateMarketOperatorPayload,
   type MarketOperatorCreateFormValues,
 } from "./model/createMarketOperator";
+import { notify } from "../../shared/lib/notify";
 
 const DEFAULT_CREATE_VALUES: MarketOperatorCreateFormValues = {
   name: "",
@@ -82,7 +82,6 @@ OperatorCard.displayName = "OperatorCard";
 
 const MarketOperatorsPage = () => {
   const { t } = useTranslation("marketOperators");
-  const { api } = useAppNotification();
   const { useGetUser } = useUser();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -114,12 +113,7 @@ const MarketOperatorsPage = () => {
 
   const handleCreateSubmit = (values: MarketOperatorCreateFormValues) => {
     buildCreateMarketOperatorPayload(values);
-    api.warning({
-      message: t("createUnavailableTitle"),
-      description: t("createUnavailableDescription"),
-      placement: "topRight",
-      duration: 4,
-    });
+    notify.warning(t("createUnavailableTitle"), { description: t("createUnavailableDescription") });
   };
 
   return (

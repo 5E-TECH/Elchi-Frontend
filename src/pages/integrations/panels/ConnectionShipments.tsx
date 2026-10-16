@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
-import { Alert, Button, Card, Grid, Table, Tag, Tooltip, message, theme } from "antd";
+import { Alert, Button, Card, Grid, Table, Tag, Tooltip, theme } from "antd";
 import { AlertTriangle, CheckCircle2, Clock, GitCompareArrows, Link2, RefreshCw, Send, Truck } from "lucide-react";
 import type { RootState } from "../../../app/config/store";
 import {
@@ -17,6 +17,7 @@ import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import FilterPills from "../FilterPills";
 import type { Connection } from "../useConnections";
 import { useStatusLabel } from "../statusLabel";
+import { notify } from "../../../shared/lib/notify";
 
 /**
  * JO'NATMALAR — ulanish bo'yicha posilkalar.
@@ -97,14 +98,14 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
   const retry = async (orderId: string) => {
     if (!slug) {
       // Slug bo'lmasa dispatch marshruti yasalmaydi — sababini aytamiz.
-      message.error(t("shpNoSlug"));
+      notify.error(t("shpNoSlug"));
       return;
     }
     try {
       await redispatch.mutateAsync({ slug, orderId });
-      message.success(t("shpResent"));
+      notify.success(t("shpResent"));
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || t("shpResendFailed"));
+      notify.error(getBackendErrorMessage(error) || t("shpResendFailed"));
     }
   };
 

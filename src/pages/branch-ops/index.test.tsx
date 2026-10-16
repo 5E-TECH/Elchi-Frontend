@@ -96,7 +96,7 @@ describe("BranchOps page", () => {
     ).toBeInTheDocument();
     expect(apiPostMock).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("button", { name: "Ha, bekor qilish" }));
+    await user.click(screen.getByRole("button", { name: "Partiyani bekor qilish" }));
 
     await waitFor(() =>
       expect(apiPostMock).toHaveBeenCalledWith("transfer-batches/b1/cancel", {
@@ -116,7 +116,7 @@ describe("BranchOps page", () => {
     await user.type(screen.getByLabelText("batch-id"), "b1");
     await user.type(screen.getByLabelText("Bekor qilish sababi"), "Noto'g'ri viloyatga yuborilgan");
     await user.click(screen.getByRole("button", { name: "Batchni bekor qilish" }));
-    await user.click(await screen.findByRole("button", { name: "Ha, bekor qilish" }));
+    await user.click(await screen.findByRole("button", { name: "Partiyani bekor qilish" }));
 
     expect(await screen.findByText("Partiya allaqachon bekor qilingan")).toBeInTheDocument();
   });
@@ -152,7 +152,7 @@ describe("BranchOps page", () => {
       renderWithProviders(<BranchOpsPage />);
       await fillCancelForm(user, "Noto'g'ri viloyatga yuborilgan");
       await user.click(cancelButton());
-      await user.click(await screen.findByRole("button", { name: "Ha, bekor qilish" }));
+      await user.click(await screen.findByRole("button", { name: "Partiyani bekor qilish" }));
 
       await waitFor(() => expect(document.querySelector(".ant-alert-error")).not.toBeNull());
       const alert = document.querySelector<HTMLElement>(".ant-alert-error")!;

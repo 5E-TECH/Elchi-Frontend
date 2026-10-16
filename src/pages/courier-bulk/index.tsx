@@ -3,8 +3,10 @@ import { useQuery } from "@tanstack/react-query";
 import {
   CalendarClock,
   CheckCircle2,
+  CircleX,
   Clock3,
   Loader2,
+  PackageCheck,
   RotateCcw,
   ScanLine,
   SearchX,
@@ -22,7 +24,6 @@ import { useOrderQrScanner } from "../../shared/lib/useOrderQrScanner";
 import { normalizeScannerCandidates } from "../../shared/lib/scanToken";
 import { getBackendErrorMessage } from "../scan/lib/scanResource";
 import { playScanFeedback } from "../scan/lib/scanShared";
-import { useAppNotification } from "../../app/providers/notification/NotificationProvider";
 import {
   extractCourierBulkOrders,
   extractCourierBulkTotal,
@@ -37,6 +38,8 @@ import {
   type CourierBulkAction,
   type CourierBulkOrder,
 } from "./model/courierBulk";
+import { notify } from "../../shared/lib/notify";
+import { useConfirm, type ConfirmConsequence } from "../../shared/ui/primitives";
 
 const formatMoney = (value: unknown, locale: string, currency: string) =>
   `${Number(value || 0).toLocaleString(locale)} ${currency}`;
@@ -117,8 +120,8 @@ const CourierBulkPage = () => {
   const { t, i18n } = useTranslation("courierBulk");
   const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
   const currency = t("currency");
-  const { api: notificationApi } = useAppNotification();
   const { SellOrder, CancelOrder } = useOrders();
+  const confirm = useConfirm();
   const { data: orders = [], isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ["orders", "courier", "bulk", "waiting"],
     queryFn: fetchAllCourierWaitingOrders,
@@ -153,11 +156,7 @@ const CourierBulkPage = () => {
     const tokenKey = rawValue.trim().toLowerCase() || order.id.toLowerCase();
 
     if (scannedTokenRef.current.has(tokenKey)) {
-      notificationApi.warning({
-        message: t("duplicateTitle"),
-        description: t("duplicateDescription"),
-        placement: "topRight",
-      });
+      notify.warning(t("duplicateTitle"), { description: t("duplicateDescription") });
       void playScanFeedback("duplicate");
       return;
     }
@@ -165,26 +164,20 @@ const CourierBulkPage = () => {
     scannedTokenRef.current.add(tokenKey);
     setOrderAction(order, scanMode);
     setScanError("");
-    notificationApi.success({
-      message: t("scanSuccessTitle"),
+    notify.success(t("scanSuccessTitle"), {
       description: t(scanMode === "cancel" ? "markedCancel" : "markedTomorrow", {
         name: order.customer?.name ?? `#${order.id}`,
       }),
-      placement: "topRight",
-      duration: 2,
+      duration: 2000,
     });
     void playScanFeedback("success");
-  }, [notificationApi, scanMode, setOrderAction, t]);
+  }, [scanMode, setOrderAction, t]);
 
   const handleScanMissing = useCallback(() => {
     setScanError(t("scanMissing"));
-    notificationApi.error({
-      message: t("scanMissingTitle"),
-      description: t("scanMissing"),
-      placement: "topRight",
-    });
+    notify.error(t("scanMissingTitle"), { description: t("scanMissing") });
     void playScanFeedback("missing");
-  }, [notificationApi, t]);
+  }, [t]);
 
   useOrderQrScanner({
     orders,
@@ -207,14 +200,53 @@ const CourierBulkPage = () => {
     const tomorrowCount = orders.length - tasks.length;
 
     if (tasks.length === 0) {
-      notificationApi.info({
-        message: t("finalizeSuccessTitle"),
-        description: t("finalizeNothing"),
-        placement: "topRight",
-        duration: 4,
-      });
+      notify.info(t("finalizeSuccessTitle"), { description: t("finalizeNothing") });
       return;
     }
+
+    // «Kunni yakunlash» — tasdiqlash oynasi orqali (maket `courier-courier-bulk-confirm-dialog`).
+    const cancelTasks = tasks.filter((task) => task.action === "cancel");
+    const soldCount = tasks.length - cancelTasks.length;
+    const consequences: ConfirmConsequence[] = [];
+    if (soldCount > 0) {
+      consequences.push({
+        text: t("confirmSold", { count: soldCount }),
+        hint: t("confirmSoldHint"),
+        tone: "success",
+        icon: PackageCheck,
+      });
+    }
+    if (cancelTasks.length > 0) {
+      const single = cancelTasks.length === 1 ? cancelTasks[0].order : null;
+      consequences.push({
+        text: t("confirmCancel", { count: cancelTasks.length }),
+        hint: single
+          ? t("confirmCancelOneHint", { id: single.id, name: single.customer?.name ?? `#${single.id}` })
+          : t("confirmCancelHint"),
+        tone: "danger",
+        icon: CircleX,
+      });
+    }
+    if (tomorrowCount > 0) {
+      consequences.push({
+        text: t("confirmTomorrow", { count: tomorrowCount }),
+        hint: t("confirmTomorrowHint"),
+        tone: "warning",
+        icon: CalendarClock,
+      });
+    }
+    const confirmed = await confirm({
+      title: t("confirmTitle"),
+      description: t("confirmDescription", { count: orders.length }),
+      icon: Zap,
+      size: "md",
+      closable: true,
+      consequences,
+      irreversible: t("confirmIrreversible", { count: tasks.length }),
+      confirmLabel: t("confirmAction"),
+      cancelLabel: t("confirmBack"),
+    });
+    if (!confirmed) return;
 
     setIsFinalizing(true);
     const succeededOrderIds = new Set<string>();
@@ -251,28 +283,22 @@ const CourierBulkPage = () => {
 
     if (failedCount > 0) {
       const firstError = results.find((result) => result.status === "rejected");
-      notificationApi.error({
-        message: t("finalizeErrorTitle"),
-        description:
-          firstError?.status === "rejected"
+      notify.error(t("finalizeErrorTitle"), {
+        description: firstError?.status === "rejected"
             ? getBackendErrorMessage(firstError.reason) ?? t("finalizeErrorDescription", { count: failedCount })
             : t("finalizeErrorDescription", { count: failedCount }),
-        placement: "topRight",
-        duration: 5,
       });
       return;
     }
 
-    notificationApi.success({
-      message: t("finalizeSuccessTitle"),
+    notify.success(t("finalizeSuccessTitle"), {
       description: [
         t("finalizeSuccessDescription", { count: succeededOrderIds.size }),
         tomorrowCount > 0 ? t("finalizeTomorrowKept", { count: tomorrowCount }) : "",
       ]
         .filter(Boolean)
         .join(" "),
-      placement: "topRight",
-      duration: 3,
+      duration: 3000,
     });
   };
 

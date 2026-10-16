@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Button, Card, Form, Popconfirm, Tag, Typography, message } from "antd";
+import { Alert, Button, Card, Form, Tag, Typography } from "antd";
 import { KeyRound, Power, Save, ShieldCheck } from "lucide-react";
 import { usePartnerActions } from "../../../entities/partners";
 import { useUpdateIntegration } from "../../../entities/integrations";
@@ -9,12 +9,14 @@ import ConnectionFields, { buildChangedPayload, type FieldValues } from "../Conn
 import { fieldsInGroup, type ConnectionField } from "../connections";
 import { getPath } from "../fieldPath";
 import type { Connection } from "../useConnections";
+import { notify } from "../../../shared/lib/notify";
+import { useConfirm } from "../../../shared/ui/primitives";
 
 /**
  * XAVFSIZLIK — kirishni CHEKLAYDIGAN qiymatlar va TA'SIRI KATTA amallar.
  *
  * Shakl PCS `ElchiControlTab` dan: har bir amal o'z `Card`ida, xavfli
- * amallar `Popconfirm` bilan, tushuntirish `Alert` bilan.
+ * amallar tasdiqlash oynasi (`useConfirm`) bilan, tushuntirish `Alert` bilan.
  *
  * NEGA SOZLAMALARDAN AJRATILDI. Bir tabda "webhook manzilini o'zgartirish"
  * bilan "API kalitni yangilash" yonma-yon turardi. Ikkinchisi hamkorning
@@ -69,6 +71,7 @@ const ConnectionSecurity = ({
   onSaved: () => void;
 }) => {
   const { t } = useTranslation("integrations");
+  const confirm = useConfirm();
   const fields = useMemo(() => fieldsInGroup(allFields, "security"), [allFields]);
   const initial = useMemo(() => initialValues(connection, fields), [connection, fields]);
 
@@ -89,7 +92,7 @@ const ConnectionSecurity = ({
   const save = async () => {
     const payload = buildChangedPayload(fields, values, initial);
     if (!Object.keys(payload).length) {
-      message.info("O'zgarish yo'q");
+      notify.info(t("setNoChange"));
       return;
     }
     try {
@@ -109,10 +112,10 @@ const ConnectionSecurity = ({
           } as never,
         });
       }
-      message.success(t("savedOk"));
+      notify.success(t("savedOk"));
       onSaved();
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || t("saveFailed"));
+      notify.error(getBackendErrorMessage(error) || t("saveFailed"));
     }
   };
 
@@ -120,10 +123,10 @@ const ConnectionSecurity = ({
     try {
       const res = await rotateKey.mutateAsync(connection.id);
       setFreshKey(res.api_key || null);
-      message.success(t("secKeyCreated"));
+      notify.success(t("secKeyCreated"));
       onSaved();
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || t("secKeyRotateFailed"));
+      notify.error(getBackendErrorMessage(error) || t("secKeyRotateFailed"));
     }
   };
 
@@ -153,14 +156,48 @@ const ConnectionSecurity = ({
           } as never,
         });
       }
-      message.success(next ? t("secEnabled") : t("secDisabled"));
+      notify.success(next ? t("secEnabled") : t("secDisabled"));
       onSaved();
     } catch (error) {
-      message.error(getBackendErrorMessage(error) || t("toggleFailed"));
+      notify.error(getBackendErrorMessage(error) || t("toggleFailed"));
     }
   };
 
   const togglePending = setActive.isPending || updateIntegration.isPending;
+
+  // Kirish huquqini o'zgartiradigan amallar — tasdiqlash oynasi orqali (DESIGN_SYSTEM §8).
+  // `doRotate` / `toggleActive` xatoni o'zi xabar qiladi; oyna amal tugaguncha yuklanishda turadi.
+  const confirmRotate = () =>
+    void confirm({
+      tone: "danger",
+      title: t("secRotateTitle"),
+      description: t("secRotateWarning"),
+      // Maket `superadmin-integrations-rotate-key-dialog`: hamkor nomi + kalit turi, «Ha, yangilash».
+      details: (
+        <>
+          <span className="block font-semibold">{connection.name}</span>
+          <span className="block text-text-muted">{t("secRotateKind")}</span>
+        </>
+      ),
+      note: t("secRotateNote"),
+      confirmLabel: t("secRotateOk"),
+      cancelLabel: t("common:cancel"),
+      icon: KeyRound,
+      confirmIcon: KeyRound,
+      onConfirm: doRotate,
+    });
+
+  const confirmToggle = () =>
+    void confirm({
+      tone: connection.is_active ? "danger" : "primary",
+      title: connection.is_active ? t("secDisableTitle") : t("secEnableTitle"),
+      description: connection.is_active ? t("secDisableDesc") : t("secEnableDesc"),
+      confirmLabel: connection.is_active ? t("secBtnOff") : t("secBtnOn"),
+      cancelLabel: t("common:cancel"),
+      icon: Power,
+      confirmIcon: Power,
+      onConfirm: toggleActive,
+    });
 
   return (
     <div className="space-y-4">
@@ -203,18 +240,9 @@ const ConnectionSecurity = ({
             </span>
           }
           extra={
-            <Popconfirm
-              title={t("secRotateTitle")}
-              description={<span className="block max-w-xs">{t("secRotateWarning")}</span>}
-              okText={t("secRotateOk")}
-              okButtonProps={{ danger: true, loading: rotateKey.isPending }}
-              cancelText={t("common:cancel")}
-              onConfirm={doRotate}
-            >
-              <Button danger icon={<KeyRound className="h-4 w-4" />}>
-                {t("secRotateTitle")}
-              </Button>
-            </Popconfirm>
+            <Button danger icon={<KeyRound className="h-4 w-4" />} loading={rotateKey.isPending} onClick={confirmRotate}>
+              {t("secRotateTitle")}
+            </Button>
           }
         >
           <p className="m-0 text-sm text-gray-500 dark:text-gray-400">{t("secKeyHashNote")}</p>
@@ -259,27 +287,16 @@ const ConnectionSecurity = ({
           description={connection.is_active ? t("secStateActiveDesc") : t("secStateOffDesc")}
         />
 
-        <Popconfirm
-          title={connection.is_active ? t("secDisableTitle") : t("secEnableTitle")}
-          description={connection.is_active ? t("secDisableDesc") : t("secEnableDesc")}
-          okText={t("common:yes")}
-          cancelText={t("common:cancel")}
-          okButtonProps={{
-            danger: connection.is_active,
-            loading: togglePending,
-          }}
-          onConfirm={toggleActive}
+        <Button
+          className="mt-3"
+          danger={connection.is_active}
+          type={connection.is_active ? "default" : "primary"}
+          icon={<Power className="h-4 w-4" />}
+          loading={togglePending}
+          onClick={confirmToggle}
         >
-          <Button
-            className="mt-3"
-            danger={connection.is_active}
-            type={connection.is_active ? "default" : "primary"}
-            icon={<Power className="h-4 w-4" />}
-            loading={togglePending}
-          >
-            {connection.is_active ? t("secBtnOff") : t("secBtnOn")}
-          </Button>
-        </Popconfirm>
+          {connection.is_active ? t("secBtnOff") : t("secBtnOn")}
+        </Button>
       </Card>
     </div>
   );

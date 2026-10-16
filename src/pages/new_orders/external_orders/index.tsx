@@ -31,7 +31,6 @@ import FilterSearch from "../../../shared/ui/FilterSearch";
 import FilterSelect from "../../../shared/ui/FilterSelect";
 import SearchableSelect from "../../../shared/ui/SearchableSelect";
 import Pagination from "../../../shared/components/pagination";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { useMarkets } from "../../../entities/markets";
 import {
   getIntegrationErrorMessage,
@@ -45,6 +44,7 @@ import {
   type IntegrationRole,
   type IntegrationCategory,
 } from "../../../entities/integrations";
+import { notify } from "../../../shared/lib/notify";
 
 const DEFAULT_LIMIT = 10;
 const AUTH_TYPES = ["none", "bearer", "basic"] as const;
@@ -149,7 +149,6 @@ const ExternalOrdersPage = () => {
   const tx = (key?: string) => (key ? t(`integrations:${key}`) : "");
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { api: notificationApi } = useAppNotification();
 
   const [status, setStatus] = useState("");
   /**
@@ -273,19 +272,12 @@ const ExternalOrdersPage = () => {
           is_active: editForm.is_active,
         },
       });
-      notificationApi.success({
-        message: t("integrationUpdateSuccess"),
-        placement: "topRight",
-      });
+      notify.success(t("integrationUpdateSuccess"));
       setEditTarget(null);
     } catch (error) {
-      notificationApi.error({
-        message:
-          getIntegrationErrorMessage(error) ||
+      notify.error(getIntegrationErrorMessage(error) ||
           (error instanceof Error ? error.message : "") ||
-          t("integrationUpdateError"),
-        placement: "topRight",
-      });
+          t("integrationUpdateError"));
     }
   };
 
@@ -294,16 +286,10 @@ const ExternalOrdersPage = () => {
 
     try {
       await deleteIntegration.mutateAsync(deleteTarget.id);
-      notificationApi.success({
-        message: t("integrationDeleteSuccess"),
-        placement: "topRight",
-      });
+      notify.success(t("integrationDeleteSuccess"));
       setDeleteTarget(null);
     } catch (error) {
-      notificationApi.error({
-        message: getIntegrationErrorMessage(error) || t("integrationDeleteError"),
-        placement: "topRight",
-      });
+      notify.error(getIntegrationErrorMessage(error) || t("integrationDeleteError"));
     }
   };
 

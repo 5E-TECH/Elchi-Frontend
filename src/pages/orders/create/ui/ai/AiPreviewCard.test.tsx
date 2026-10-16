@@ -52,17 +52,24 @@ const renderCard = (preview: AiPreviewOrder) => {
   return { changes, card: () => screen.getByTestId("ai-preview-card") };
 };
 
-const openSelect = async (id: string) => {
+/**
+ * Kartadagi tanlov maydonlari — v2 `Select searchable` (yorliq bilan nomlangan combobox):
+ * «Viloyat *», «Tuman *», «Katalogdagi mahsulot».
+ */
+const FIELD = { region: "Viloyat *", district: "Tuman *", item: "Katalogdagi mahsulot" } as const;
+const selectField = (name: (typeof FIELD)[keyof typeof FIELD]) => screen.getAllByRole("combobox", { name })[0];
+
+const openSelect = async (name: (typeof FIELD)[keyof typeof FIELD]) => {
   // Ma'lumot yuklanayotganda select `disabled` — faollashguncha kutiladi.
-  await waitFor(() => expect(document.getElementById(id)).toBeEnabled());
-  fireEvent.click(document.getElementById(id) as HTMLElement);
+  await waitFor(() => expect(selectField(name)).toBeEnabled());
+  fireEvent.click(selectField(name));
 };
 
-/** Ochiq dropdown'dagi variantlar (disabled sarlavhalar ham). */
-const openOptions = (container: HTMLElement) =>
-  Array.from(container.querySelectorAll<HTMLButtonElement>(".max-h-60 button")).map((button) => ({
-    label: button.textContent,
-    disabled: button.disabled,
+/** Ochiq ro'yxatdagi variantlar (o'chirilgan sarlavhalar ham). */
+const openOptions = () =>
+  screen.queryAllByRole("option").map((option) => ({
+    label: option.textContent,
+    disabled: option.getAttribute("aria-disabled") === "true",
   }));
 
 beforeEach(() => {
@@ -94,26 +101,26 @@ describe("AiPreviewCard", () => {
     const { changes, card } = renderCard(aiPreview());
 
     // Tumanlar yuklanib, label `nom • sato_code` bo'lib chiqadi — lekin qiymat o'zgarmaydi.
-    expect(await within(card()).findByText("Chilonzor • 1726269")).toBeInTheDocument();
+    await waitFor(() => expect(selectField(FIELD.district)).toHaveValue("Chilonzor • 1726269"));
     expect(changes).toHaveLength(0);
     expect(card()).toHaveAttribute("data-ready", "true");
   });
 
   it("operator viloyatni QO'LDA o'zgartirsa tuman tozalanadi va yangi viloyat tumanlari yuklanadi", async () => {
-    const { changes, card } = renderCard(aiPreview());
-    await within(card()).findByText("Chilonzor • 1726269");
+    const { changes } = renderCard(aiPreview());
+    await waitFor(() => expect(selectField(FIELD.district)).toHaveValue("Chilonzor • 1726269"));
 
-    await openSelect("ai-d1-region");
-    fireEvent.click(screen.getByRole("button", { name: "Samarqand viloyati • 1718" }));
+    await openSelect(FIELD.region);
+    fireEvent.click(screen.getByRole("option", { name: "Samarqand viloyati • 1718" }));
 
     expect(changes.at(-1)).toMatchObject({ region_id: "12", district_id: null, district_name: null });
     await waitFor(() => expect(mocks.get).toHaveBeenCalledWith("region/12"));
-    await openSelect("ai-d1-district");
-    expect(await screen.findByRole("button", { name: "Urgut • 1718236" })).toBeInTheDocument();
+    await openSelect(FIELD.district);
+    expect(await screen.findByRole("option", { name: "Urgut • 1718236" })).toBeInTheDocument();
   });
 
   it("`district_candidates` select ichida ENG TEPADA \"AI takliflari\" guruhida", async () => {
-    const { card } = renderCard(
+    renderCard(
       aiPreview({
         district_id: null,
         district_name: null,
@@ -122,10 +129,10 @@ describe("AiPreviewCard", () => {
     );
     await waitFor(() => expect(mocks.get).toHaveBeenCalledWith("region/11"));
 
-    await openSelect("ai-d1-district");
+    await openSelect(FIELD.district);
 
-    await waitFor(() => expect(openOptions(card()).length).toBeGreaterThan(2));
-    expect(openOptions(card())).toEqual([
+    await waitFor(() => expect(openOptions().length).toBeGreaterThan(2));
+    expect(openOptions()).toEqual([
       { label: "AI takliflari", disabled: true },
       { label: "Yunusobod • 1726266", disabled: false },
       { label: "Barcha tumanlar", disabled: true },
@@ -145,8 +152,8 @@ describe("AiPreviewCard", () => {
       }),
     );
 
-    await openSelect("ai-d1-district");
-    fireEvent.click(screen.getByRole("button", { name: "Urgut • Samarqand viloyati" }));
+    await openSelect(FIELD.district);
+    fireEvent.click(screen.getByRole("option", { name: "Urgut • Samarqand viloyati" }));
 
     expect(changes.at(-1)).toMatchObject({ district_id: "201", region_id: "12", region_given: true });
   });
@@ -204,9 +211,9 @@ describe("AiPreviewCard", () => {
     expect(screen.getByRole("checkbox", { name: "Katalogda yo'q, shundayligicha yuborish" })).not.toBeChecked();
 
     // 1-variant: katalogdan tanlash — AI takliflari tepada.
-    await openSelect("ai-d1-item-0");
-    expect(openOptions(card())[0]).toEqual({ label: "AI takliflari", disabled: true });
-    fireEvent.click(screen.getByRole("button", { name: "Avto changyutgich" }));
+    await openSelect(FIELD.item);
+    expect(openOptions()[0]).toEqual({ label: "AI takliflari", disabled: true });
+    fireEvent.click(screen.getByRole("option", { name: "Avto changyutgich" }));
 
     expect(changes.at(-1)?.items[0]).toMatchObject({ product_id: "502", allow_free_text: false });
     expect(card()).toHaveAttribute("data-ready", "true");

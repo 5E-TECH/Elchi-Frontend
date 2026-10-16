@@ -1,7 +1,7 @@
 import { memo, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Button, Input, Popconfirm, Select, message } from "antd";
+import { Button, Input, Select } from "antd";
 import { Check, GripVertical, Pencil, Plus, Search, Trash2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -12,6 +12,8 @@ import { getBackendErrorMessage } from "../../../../shared/lib/backendError";
 import PageContainer from "../../../../shared/ui/PageContainer";
 import BackButton from "../../../../shared/ui/BackButton";
 import QueryErrorState from "../../../../shared/ui/QueryErrorState";
+import { notify } from "../../../../shared/lib/notify";
+import { useConfirm } from "../../../../shared/ui/primitives";
 
 export type DistrictItem = { id: string; name: string };
 export type RegionWithDistricts = { id: string; name: string; districts: DistrictItem[] };
@@ -53,6 +55,7 @@ const RegionDistrictsPage = () => {
   const { t } = useTranslation("region");
   const role = useSelector((state: RootState) => state.role.role);
   const queryClient = useQueryClient();
+  const confirm = useConfirm();
 
   const [search, setSearch] = useState("");
   const [newName, setNewName] = useState("");
@@ -71,13 +74,13 @@ const RegionDistrictsPage = () => {
 
   const refresh = () => queryClient.invalidateQueries({ queryKey: REGIONS_KEY });
   const showError = (error: unknown, fallbackKey: string) =>
-    message.error(getBackendErrorMessage(error) ?? t(fallbackKey));
+    notify.error(getBackendErrorMessage(error) ?? t(fallbackKey));
 
   const createDistrict = useMutation({
     mutationFn: (payload: { name: string; region_id: string }) => api.post(API_ENDPOINTS.DISTRICTS.BASE, payload),
     onSuccess: async () => {
       setNewName("");
-      message.success(t("districts.createSuccess"));
+      notify.success(t("districts.createSuccess"));
       await refresh();
     },
     onError: (error) => showError(error, "districts.createError"),
@@ -88,7 +91,7 @@ const RegionDistrictsPage = () => {
       api.patch(API_ENDPOINTS.DISTRICTS.UPDATE_NAME(id), { name }),
     onSuccess: async () => {
       setEditingId(null);
-      message.success(t("districts.renameSuccess"));
+      notify.success(t("districts.renameSuccess"));
       await refresh();
     },
     onError: (error) => showError(error, "districts.renameError"),
@@ -97,7 +100,7 @@ const RegionDistrictsPage = () => {
   const deleteDistrict = useMutation({
     mutationFn: (id: string) => api.delete(API_ENDPOINTS.DISTRICTS.BY_ID(id)),
     onSuccess: async () => {
-      message.success(t("districts.deleteSuccess"));
+      notify.success(t("districts.deleteSuccess"));
       await refresh();
     },
     onError: (error) => showError(error, "districts.deleteError"),
@@ -126,7 +129,7 @@ const RegionDistrictsPage = () => {
       if (context?.snapshot) queryClient.setQueryData(REGIONS_KEY, context.snapshot);
       showError(error, "districts.moveError");
     },
-    onSuccess: () => message.success(t("districts.moveSuccess")),
+    onSuccess: () => notify.success(t("districts.moveSuccess")),
     onSettled: () => {
       void refresh();
     },
@@ -309,15 +312,26 @@ const RegionDistrictsPage = () => {
                                   setEditingName(district.name);
                                 }}
                               />
-                              <Popconfirm
-                                title={t("districts.deleteConfirm", { name: district.name })}
-                                okText={t("districts.delete")}
-                                cancelText={t("districts.cancel")}
-                                okButtonProps={{ danger: true }}
-                                onConfirm={() => deleteDistrict.mutate(district.id)}
-                              >
-                                <Button size="small" type="text" danger aria-label={t("districts.deleteAria", { name: district.name })} icon={<Trash2 size={13} />} />
-                              </Popconfirm>
+                              <Button
+                                size="small"
+                                type="text"
+                                danger
+                                aria-label={t("districts.deleteAria", { name: district.name })}
+                                icon={<Trash2 size={13} />}
+                                onClick={async () => {
+                                  const ok = await confirm({
+                                    tone: "danger",
+                                    title: t("districts.deleteConfirm", { name: district.name }),
+                                    confirmLabel: t("districts.delete"),
+                                    cancelLabel: t("districts.cancel"),
+                                    icon: Trash2,
+                                    confirmIcon: Trash2,
+                                    irreversible: true,
+                                  });
+                                  // Xato bo'lsa mutatsiyaning o'zi xabar chiqaradi (`showError`).
+                                  if (ok) deleteDistrict.mutate(district.id);
+                                }}
+                              />
                             </>
                           )}
                         </li>

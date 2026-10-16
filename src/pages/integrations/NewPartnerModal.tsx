@@ -8,11 +8,11 @@ import {
   Modal,
   Select,
   Typography,
-  message,
 } from "antd";
 import { KeyRound, Webhook } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { usePartnerActions, type CreatePartnerDto } from "../../entities/partners";
+import { notify } from "../../shared/lib/notify";
 
 /**
  * YANGI HAMKOR — BeePost yaratish oqimi (PCS "MarketplaceCreateModal" shakli).
@@ -71,7 +71,7 @@ const NewPartnerModal = ({ open, onClose, onCreated }: Props) => {
     try {
       const res = await createPartner.mutateAsync(dto);
       if (!res.api_key) {
-        message.error(t("npKeyMissing"));
+        notify.error(t("npKeyMissing"));
         return;
       }
       setApiKey(res.api_key);
@@ -81,7 +81,7 @@ const NewPartnerModal = ({ open, onClose, onCreated }: Props) => {
     } catch (err) {
       const e = err as { response?: { data?: { message?: string | string[] } } };
       const msg = e.response?.data?.message;
-      message.error(Array.isArray(msg) ? msg.join("; ") : (msg ?? t("npCreateError")));
+      notify.error(Array.isArray(msg) ? msg.join("; ") : (msg ?? t("npCreateError")));
     }
   };
 

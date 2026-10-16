@@ -114,7 +114,7 @@
       "section": "auth",
       "title": "Ruxsat yo'q",
       "public": true,
-      "components": ["src/shared/ui/Forbidden.tsx", "src/shared/ui/error-page/ErrorInfoCard.tsx"],
+      "components": ["src/shared/ui/Forbidden.tsx", "src/shared/ui/error-page/ErrorPageFrame.tsx"],
       "views": {
         "tizim": ["errors"]
       },
@@ -125,7 +125,7 @@
       "section": "auth",
       "title": "Sahifa topilmadi",
       "public": true,
-      "components": ["src/shared/ui/NotFound.tsx", "src/shared/ui/error-page/ErrorInfoCard.tsx"],
+      "components": ["src/shared/ui/NotFound.tsx", "src/shared/ui/error-page/ErrorPageFrame.tsx"],
       "views": {
         "tizim": ["errors"]
       },
@@ -136,7 +136,7 @@
       "section": "auth",
       "title": "Server xatosi",
       "public": true,
-      "components": ["src/shared/ui/ServerError.tsx", "src/shared/ui/error-page/ErrorInfoCard.tsx"],
+      "components": ["src/shared/ui/ServerError.tsx", "src/shared/ui/error-page/ErrorPageFrame.tsx"],
       "views": {
         "tizim": ["errors"]
       },

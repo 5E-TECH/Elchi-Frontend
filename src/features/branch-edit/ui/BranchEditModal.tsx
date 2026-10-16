@@ -1,5 +1,5 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Form, Input, message } from "antd";
+import { Form, Input } from "antd";
 import { Controller, useForm } from "react-hook-form";
 import { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -13,13 +13,13 @@ import SearchableSelect from "../../../shared/ui/SearchableSelect";
 import PhoneInput from "../../../shared/ui/PhoneInput";
 import { GlobalSearchInput } from "../../search";
 import { applyBranchBackendErrors } from "../../branch/lib/backendBranchErrors";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import {
   getBranchTypeOptions,
   filterParentCandidates,
   getParentBranchOptions,
   useParentBranchOptions,
 } from "../../branch/lib/branchFormOptions";
+import { notify } from "../../../shared/lib/notify";
 
 const BranchEditModal = ({
   open,
@@ -31,7 +31,6 @@ const BranchEditModal = ({
   onClose: () => void;
 }) => {
   const { t } = useTranslation("branches");
-  const { api: apiNotification } = useAppNotification();
   const { data: parentBranches, isLoading: parentBranchesLoading } = useParentBranchOptions(open);
   const updateBranch = useUpdateBranch();
   // HQ (bosh ofis): tur qulflangan (backend o'zgartirishni rad etadi), yuqori filial yo'q.
@@ -97,10 +96,10 @@ const BranchEditModal = ({
             parent_id: values.parent_id,
           };
       await updateBranch.mutateAsync({ id: initialData.id, payload });
-      message.success(t("messages.updated"));
+      notify.success(t("messages.updated"));
       onClose();
     } catch (error) {
-      applyBranchBackendErrors(error, setError, { notification: apiNotification });
+      applyBranchBackendErrors(error, setError, { notification: notify });
     }
   });
 

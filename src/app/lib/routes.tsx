@@ -307,10 +307,11 @@ const AppRouter = () => {
 
   return useRoutes([
     { path: "/login", element: <Login /> },
-    { path: "/403", element: <ForbiddenPage /> },
-    { path: "/404", element: <NotFound /> },
-    { path: "/500", element: <ServerErrorPage /> },
-    { path: "/runtime-error", element: <ErrorBoundaryPage /> },
+    // Shell'siz xato sahifalari (kirishdan oldin ham ochiladi) — butun ekran (`standalone`).
+    { path: "/403", element: <ForbiddenPage standalone /> },
+    { path: "/404", element: <NotFound standalone /> },
+    { path: "/500", element: <ServerErrorPage standalone /> },
+    { path: "/runtime-error", element: <ErrorBoundaryPage standalone /> },
     {
       path: "/",
       element: <Auth />,

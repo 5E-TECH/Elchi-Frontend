@@ -278,17 +278,22 @@ describe("AiCreatePanel", () => {
     window.dispatchEvent(unload);
     expect(unload.defaultPrevented).toBe(true);
 
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
     const link = document.createElement("a");
     link.href = "/orders";
     document.body.appendChild(link);
     const click = new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 });
     link.dispatchEvent(click);
 
-    expect(confirmSpy).toHaveBeenCalledWith("Tasdiqlanmagan buyurtmalar bor. Sahifadan chiqsangiz ular yo'qoladi. Chiqasizmi?");
+    // O'tish to'xtatiladi va v2 tasdiqlash oynasi (`useConfirm`) ochiladi — brauzer `confirm()` emas.
     expect(click.defaultPrevented).toBe(true);
+    const dialog = await screen.findByRole("alertdialog", { name: "Sahifadan chiqasizmi?" });
+    expect(dialog).toHaveTextContent("Tasdiqlanmagan buyurtmalar bor. Sahifadan chiqsangiz ular yo'qoladi.");
+
+    fireEvent.click(screen.getByRole("button", { name: "Qolish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    // Qolindi — kartalar joyida.
+    expect(screen.getAllByTestId("ai-preview-card")).toHaveLength(1);
     link.remove();
-    confirmSpy.mockRestore();
   });
 
   it("hamma karta yaratilgach chiqish ogohlantirishi olib tashlanadi", async () => {

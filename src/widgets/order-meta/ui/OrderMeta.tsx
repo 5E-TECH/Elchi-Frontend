@@ -16,7 +16,6 @@ import {
   Truck,
   Wallet,
 } from "lucide-react";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { formatMoney } from "../../../shared/config/designSystem";
 import { formatTrackingDate } from "../../../features/order-tracking";
@@ -29,6 +28,7 @@ import {
   type TariffField,
 } from "../model/orderMeta";
 import { useOrderMetaLookups, type PersonContact } from "../model/useOrderMetaLookups";
+import { notify } from "../../../shared/lib/notify";
 
 /**
  * BUYURTMA MA'LUMOTLARI — detal sahifaning O'NG ustunida, Mijozdan yuqorida.
@@ -107,7 +107,6 @@ const TARIFF_LABEL: Record<TariffField, string> = {
 
 const OrderMeta = ({ order, role, self, canOpenMails = false }: OrderMetaProps) => {
   const { t } = useTranslation("orders");
-  const { api: notify } = useAppNotification();
   const [showTariffs, setShowTariffs] = useState(false);
   const meta = readOrderMeta(order);
 
@@ -167,8 +166,8 @@ const OrderMeta = ({ order, role, self, canOpenMails = false }: OrderMetaProps) 
 
   const copyId = () => {
     void copyToClipboard(meta.id).then((copied) => {
-      if (copied) notify.success({ message: t("orderNumberCopied"), placement: "topRight" });
-      else notify.error({ message: t("orderNumberCopyFailed", { id: meta.id }), placement: "topRight" });
+      if (copied) notify.success(t("orderNumberCopied"));
+      else notify.error(t("orderNumberCopyFailed", { id: meta.id }));
     });
   };
 

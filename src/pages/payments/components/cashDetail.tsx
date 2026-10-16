@@ -28,13 +28,13 @@ import CashboxRolePageLayout from "./CashboxRolePageLayout";
 import CashboxActionFormCard, {
   type CashboxActionFormValues,
 } from "./CashboxActionFormCard";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import type { RootState } from "../../../app/config/store";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { getExportErrorMessage } from "../../../shared/lib/exportFile";
 import PopupConfirm from "../../../shared/components/popupConfirm";
+import { notify } from "../../../shared/lib/notify";
 
 const toNumber = (value: unknown) => {
   const parsed = Number(value);
@@ -332,7 +332,6 @@ const CashDetail = () => {
   } = useCashBox();
   const { useGetManagerPayableToHq } = useFinanceCoverage();
   const { useGetMarkets } = useMarkets();
-  const { api: notify } = useAppNotification();
 
   const [selectedDateFrom, setSelectedDateFrom] = useState("");
   const [selectedDateTo, setSelectedDateTo] = useState("");
@@ -828,11 +827,8 @@ const CashDetail = () => {
       URL.revokeObjectURL(url);
     } catch (error) {
       // FE-PAY-16: xato endi ko'rinadi (ilgari jim yutilardi).
-      notify.error({
-        message: t("common:error"),
+      notify.error(t("common:error"), {
         description: (await getExportErrorMessage(error)) ?? t("excelExportError"),
-        placement: "topRight",
-        duration: 5,
       });
     } finally {
       setIsExporting(false);
@@ -866,21 +862,11 @@ const CashDetail = () => {
     } catch (error) {
       // Kalit saqlanadi: aynan shu to'lov qayta yuborilsa backend uni
       // faqat bir marta o'tkazadi.
-      notify.error({
-        message: t("common:error"),
-        description: getBackendErrorMessage(error) ?? errorMessage,
-        placement: "topRight",
-        duration: 5,
-      });
+      notify.error(t("common:error"), { description: getBackendErrorMessage(error) ?? errorMessage });
       if (isUncertainPaymentError(error)) {
         // Javob kelmadi — pul o'tgan bo'lishi mumkin: forma o'sha eski balans
         // bilan qolib, ko'r-ko'rona qayta bosilmasin.
-        notify.warning({
-          message: t("common:warning"),
-          description: t("paymentOutcomeUnknown"),
-          placement: "topRight",
-          duration: 10,
-        });
+        notify.warning(t("common:warning"), { description: t("paymentOutcomeUnknown"), duration: 10000 });
         await refetchPaymentState();
       }
       return;
@@ -891,12 +877,7 @@ const CashDetail = () => {
       // Pul avvalgi (javobi yo'qolgan) urinishda o'tgan — "muvaffaqiyatli"
       // deyilmaydi va forma tozalanadi (bir bosishda yangi kalitli ikkinchi
       // to'lov ketib qolmasin); summa serverdan qayta o'qiladi.
-      notify.warning({
-        message: t("common:warning"),
-        description: t("paymentAlreadyRecorded"),
-        placement: "topRight",
-        duration: 8,
-      });
+      notify.warning(t("common:warning"), { description: t("paymentAlreadyRecorded"), duration: 8000 });
       if (isAmountFromRouterState) {
         setBalanceOverride(reduceBalanceTowardsZero(settlementBalance, amount));
       }
@@ -905,12 +886,7 @@ const CashDetail = () => {
       return;
     }
 
-    notify.success({
-      message: t("common:success"),
-      description: successMessage,
-      placement: "topRight",
-      duration: 4,
-    });
+    notify.success(t("common:success"), { description: successMessage });
     await refreshAfterPayment(amount);
   };
 
@@ -978,21 +954,13 @@ const CashDetail = () => {
       } catch (error) {
         // Kalit saqlanadi: aynan shu to'lov qayta yuborilsa backend uni
         // faqat bir marta o'tkazadi.
-        notify.error({
-          message: t("common:error"),
+        notify.error(t("common:error"), {
           description: getBackendErrorMessage(error) ?? t("receivePaymentError"),
-          placement: "topRight",
-          duration: 5,
         });
         if (isUncertainPaymentError(error)) {
           // Javob kelmadi (504 / tarmoq) — pul o'tgan bo'lishi mumkin: boshqa
           // oyoqlardagi kabi ogohlantirilib, kassa qayta o'qiladi.
-          notify.warning({
-            message: t("common:warning"),
-            description: t("paymentOutcomeUnknown"),
-            placement: "topRight",
-            duration: 10,
-          });
+          notify.warning(t("common:warning"), { description: t("paymentOutcomeUnknown"), duration: 10000 });
           await refetchCashbox();
         }
         return;
@@ -1006,12 +974,7 @@ const CashDetail = () => {
         // ko'rsatilmaydi va balansdan qayta ayirilmaydi — serverdagi haqiqiy
         // holat qayta o'qiladi. Forma tozalanadi: bir bosishda ikkinchi
         // (endi yangi kalitli) to'lov ketib qolmasin.
-        notify.warning({
-          message: t("common:warning"),
-          description: t("paymentAlreadyRecorded"),
-          placement: "topRight",
-          duration: 8,
-        });
+        notify.warning(t("common:warning"), { description: t("paymentAlreadyRecorded"), duration: 8000 });
         // Menejer ro'yxatdan ochganda summa router state'dan keladi va qayta
         // o'qilgan kassa uni yangilamaydi — avvalgi (javobi yo'qolgan) urinish
         // shu summani allaqachon o'tkazgan, shuning uchun ekrandagi summa ham
@@ -1023,12 +986,7 @@ const CashDetail = () => {
         await refetchCashbox();
         return;
       }
-      notify.success({
-        message: t("common:success"),
-        description: t("receivePaymentSuccess"),
-        placement: "topRight",
-        duration: 4,
-      });
+      notify.success(t("common:success"), { description: t("receivePaymentSuccess") });
       await refreshAfterPayment(amount);
       return;
     }
@@ -1036,7 +994,7 @@ const CashDetail = () => {
     // Marketga to'lov FAQAT market kassasiga — filial/kuryer ID si market_id
     // bo'lib ketmasin (ID lar bir xil raqamli fazoda).
     if (cashbox?.cashbox_type !== "markets" || !id) {
-      notify.error({ message: t("marketPaymentError"), description: t("cashDetailNotMarketCashbox") });
+      notify.error(t("marketPaymentError"), { description: t("cashDetailNotMarketCashbox") });
       return;
     }
     const payment = { market_id: id, amount, payment_method: normalizedPaymentMethod };
@@ -1075,7 +1033,7 @@ const CashDetail = () => {
       }
     }
     if (type === "market" && (cashbox?.cashbox_type !== "markets" || !id)) {
-      notify.error({ message: t("marketPaymentError"), description: t("cashDetailNotMarketCashbox") });
+      notify.error(t("marketPaymentError"), { description: t("cashDetailNotMarketCashbox") });
       return;
     }
     if (type === "branch" && !id) return;

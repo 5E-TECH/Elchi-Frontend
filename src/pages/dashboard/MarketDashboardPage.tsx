@@ -29,8 +29,8 @@ import {
   formatNumber,
   ratio,
 } from "../../shared/config/designSystem";
-import { useAppNotification } from "../../app/providers/notification/NotificationProvider";
 import { getActionErrorMessage } from "../../shared/lib/actionError";
+import { notify } from "../../shared/lib/notify";
 
 // ─── MarketDashboardPage ──────────────────────────────────────────────────────
 
@@ -78,7 +78,6 @@ const MarketDashboardPage = () => {
   // ─── API so'rovlari ───────────────────────────────────────────────────────────
   const { getDashboard } = useDashboard();
   const { useExtraCostApprovals, approveExtraCostApproval, rejectExtraCostApproval } = useOrders();
-  const { api: notificationApi } = useAppNotification();
 
   // fix3 FE-ORD-02: tasdiqlash/rad etish rad javobi endi ko'rinadi (avval
   // tugma jimgina "qaytib" qolardi va market nima bo'lganini bilmasdi).
@@ -86,14 +85,9 @@ const MarketDashboardPage = () => {
     (error: unknown) => {
       const description = getActionErrorMessage(error, t("market.extra_cost_action_error"));
       if (!description) return;
-      notificationApi.error({
-        message: t("common:error"),
-        description,
-        placement: "topRight",
-        duration: 6,
-      });
+      notify.error(t("common:error"), { description });
     },
-    [notificationApi, t],
+    [t],
   );
 
   const {

@@ -256,7 +256,21 @@ noto'g'ri (`2026-02-30`, `10/06/2026`) — `—`. Brauzerning mahalliy vaqti (ti
   `Bosh sahifa`, `Qaytarishlar`, `Filial paketlari`, `Yaratilgan`, `Nofaol`, `Excelga yuklash`, `Operatsiyalar tarixi`.
 - Buyurtma holati → ton: Yangi / Yaratilgan / Qabul qilindi — **info**; Yo'lda, Kutilmoqda, Qisman to'langan —
   **warning**; Sotilgan, To'langan — **success**; Bekor qilingan, Bekor — jo'natilgan — **danger**; Yopilgan — neytral.
-- Pul o'tkazish, foydalanuvchini nofaol qilish, «Kunni yakunlash» — **tasdiqlash oynasi** orqali.
+- Pul o'tkazish, foydalanuvchini nofaol qilish, «Kunni yakunlash» — **tasdiqlash oynasi** orqali
+  (`useConfirm()` / `ConfirmDialog`). Shu qatorda: kassa va to'lov amallari (maosh, kassadan to'lov), API kalitini
+  almashtirish, hamkor/ulanishni o'chirish, filialdan chiqarish, buzuvchi o'chirish. Tasdiq tugmasida aniq fe'l
+  («Nofaol qilish», «O'chirish», «Tasdiqlash»; maket shunday bersa — «Ha, yangilash»), «OK» emas; buzuvchi amal —
+  `tone: "danger"` va `irreversible`; pul — `amount` + `transfer` (Qayerdan → Qayerga); oqibat — `details` /
+  `consequences`. Matn — maketdagi `*-dialog` ekrani (`design/kit/views.json`, `kind: "dialog"`).
+  Ataylab tasdiqsiz: forma oynasining o'zi qaror bo'lgan joylar (kassani to'ldirish/xarajat, «Tashuvchidan olingan
+  to'lov», kuryerni o'tkazish, sotish/bekor qilish oynalari — maketda ham alohida tasdiq yo'q), darhol qaytariladigan
+  ruxsat kalitlari (foydalanuvchi tafsilotidagi switch'lar) va faollashtirish.
+- **Xabar** (amal natijasi) — `notify.success|info|warning|error()` (`src/shared/lib/notify.ts`, `<Toaster />`):
+  sarlavha 2–4 so'z, izoh — tafsilot; ko'pi bilan bitta amal tugmasi; xato foydalanuvchi yopguncha turadi.
+  antd `message` / `notification` ishlatilmaydi (ESLint).
+- **Holatlar** — `QueryBoundary`: yuklanish — skelet (400 ms kechikish, 15 s dan keyin «sekin» izohi), bo'sh —
+  `EmptyState` (nima uchun bo'sh + keyingi qadam), xato — `ErrorState` (turi o'zi aniqlanadi: server, tarmoq,
+  ruxsat yo'q …) + «Qayta urinish».
 
 ## 9. Kirish qulayligi
 
@@ -309,6 +323,37 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
 - **Holat** — bo'lim almashsa skroll tepaga (`model/useShellScroll.ts`), bo'lim yuklanish chizig'i
   (`ui/RouteProgress.tsx` + `shared/lib/navigationPending.ts`).
 - **Tokenlar** — `nav-*`, `on-nav`, `avatar`, `on-avatar` (§2).
+
+**3-bosqich — tayyor (forma, dialog, holatlar).** Hammasi `src/shared/ui/primitives` barrelidan; namunasi
+`/ops/ui-kit?section=forms|select|date|dialog|feedback|states`; klass retseptlari `design/CODE-MAP.md`.
+
+- **Forma** — `Field` (yorliq, majburiy belgisi, izoh, xato; `useFieldControl` bilan `aria-*` bog'lanadi),
+  `TextInput` (`mode`: matn, qidiruv, telefon, son, pul; `multiline`), `Select` (WAI-ARIA combobox + listbox:
+  qidiruvli, ko'p tanlovli, guruhlar, yuklanish), `DateRange` (tez tanlov + ikki oy, telefonda varaqa), `DateInput`,
+  `Calendar` (grid). Overlay infratuzilmasi — `overlay/` (`Portal`, `usePopover`, `useFocusTrap`, `useDismiss`,
+  `useScrollLock`, `inertOthers`). Telefonda popover pastki menyu ostiga tushmaydi (`:root` →
+  `--shell-bottom-inset`, `BottomNav` yozadi); modal varaqa esa uni ataylab yopadi. Eski sahifaning `document`
+  «tashqariga bosish» tinglovchisi `isInUiLayer(event.target)` bo'lsa — panelni yopmaydi.
+- **Oyna** — `Dialog` (fokus tuzog'i va qaytishi, Esc, fon, `inert` + skroll qulfi; < 768 px pastki varaqa —
+  tutqichni pastga tortib ham yopiladi; ichidagi ro'yxat ochiq turganda Esc va fonga bosish faqat ro'yxatni yopadi),
+  `ConfirmDialog` + `useConfirm()` / `confirm()` (va'da: yuklanish va xato oyna ichida).
+- **Xabar** — `notify()` + `Toaster` (`role="status"` / `role="alert"` e'lon hududlari, ko'pi bilan 3 ta).
+- **Holatlar** — `EmptyState`, `ErrorState`, `Skeleton` + presetlar, `QueryBoundary`, `useLoadingPhase`.
+- **Xato sahifalari** (`tizim-errors` 01, `// dizayn-v2: tizim-errors`) — 404 `NotFound`, 403 `Forbidden`, 500
+  `ServerError`, ilova xatosi `ErrorBoundaryPage`: `EmptyState`/`ErrorState` `size="page"` + «Xato kodi …», asosiy
+  tugma muammoni hal qiladi, ikkinchisi — chiqish yo'li; ramka `shared/ui/error-page/ErrorPageFrame.tsx`.
+- **Global qatlam** — `app/providers/UiHost.tsx` (`ConfirmHost` + `Toaster`), ilova provayderida bir marta.
+- **v1 o'ramlari** — eski import yo'llari va API saqlangan, ichi v2 (ishlatilmagan `shared/ui/Select.tsx`,
+  `features/Select/selectInput.tsx`, `StatusSelect/` o'chirildi): `SearchableSelect`, `FilterSelect`,
+  `FilterMultiSelect`, `PopupSelect`, `PrintModeSelect`;
+  `CustomDatePicker`, `DateRangePicker`, `FilterDateRange`, `FilterDateInput`, `QuickDateRangeFilter`; `Popup`,
+  `FormPopup`, `PopupConfirm`, `UpdatePopup`, `ConfirmButton`; `EmptyState`, `QueryErrorState`, `TableSkeleton`,
+  `Loader`/`PageLoader`; `PhoneInput`, `FilterSearch`, `SearchInput`.
+- **Migratsiya** — antd `message`/`notification` (va `NotificationProvider` ichidagi antd `notification`) →
+  `notify`; `Popconfirm` va `window.confirm` → `useConfirm()`; §8 dagi pul/kirish amallariga tasdiq qo'shildi.
+- **ESLint** (`eslint.config.js`) — antd `message` / `notification` / `Popconfirm` importi, `<Popconfirm>`,
+  `Modal.confirm|info|success|error|warning`, `Modal.useModal`, `App.useApp`, `window.confirm|alert|prompt` va global
+  `confirm`/`alert`/`prompt` — xato.
 
 **Dizayn qo'riqchisi** (`scripts/design-guard.mjs`, `npm run design:guard`): `colour`, `palette`, `dark-pair`,
 `legacy`, `money`, `icons`, `tiny-text`, `v1-class`, `weight`, `gradient`, `v1-helper`. Ikki darvoza:

@@ -11,6 +11,7 @@ import {
 import { createPortal } from "react-dom";
 import { Check, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { isInUiLayer } from "../../ui/primitives";
 
 const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
 const LIMIT_DROPDOWN_WIDTH = 132;
@@ -124,6 +125,8 @@ const Pagination = ({
 
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node;
+      // v2 qatlami (`#ui-portal`: panel ichidan ochilgan ro'yxat, kalendar varaqasi, dialog) — «tashqari» emas.
+      if (isInUiLayer(target)) return;
       if (
         !limitRef.current?.contains(target)
         && !limitDropdownRef.current?.contains(target)

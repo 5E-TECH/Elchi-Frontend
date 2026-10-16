@@ -17,12 +17,12 @@ import SearchableSelect from "../../../shared/ui/SearchableSelect";
 import PhoneInput from "../../../shared/ui/PhoneInput";
 import { GlobalSearchInput } from "../../search";
 import { applyBranchBackendErrors } from "../../branch/lib/backendBranchErrors";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import {
   filterParentCandidates,
   getParentBranchOptions,
   useParentBranchOptions,
 } from "../../branch/lib/branchFormOptions";
+import { notify } from "../../../shared/lib/notify";
 
 type RegionOption = {
   id: string;
@@ -59,7 +59,6 @@ const useRegionOptions = () =>
 
 const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const { t } = useTranslation("branches");
-  const { api: apiNotification } = useAppNotification();
   const createBranch = useCreateBranch();
   const { data: regions = [] } = useRegionOptions();
   const { data: parentBranches, isLoading: parentBranchesLoading } = useParentBranchOptions(open);
@@ -120,10 +119,7 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
     async (values) => {
       try {
         await createBranch.mutateAsync(buildCreateBranchPayload(values));
-        apiNotification.success({
-          message: t("messages.created"),
-          placement: "topRight",
-        });
+        notify.success(t("messages.created"));
         onClose();
         reset();
       } catch (error) {
@@ -131,18 +127,12 @@ const BranchFormModal = ({ open, onClose }: { open: boolean; onClose: () => void
         const backendMessage =
           (error as { response?: { data?: { message?: string | string[] } } })?.response?.data
             ?.message ?? t("errors.generic");
-        apiNotification.error({
-          message: Array.isArray(backendMessage) ? backendMessage.join(", ") : backendMessage,
-          placement: "topRight",
-        });
+        notify.error(Array.isArray(backendMessage) ? backendMessage.join(", ") : backendMessage);
       }
     },
     (invalidErrors) => {
       const firstError = Object.values(invalidErrors)[0];
-      apiNotification.error({
-        message: firstError?.message || t("validation.completeForm"),
-        placement: "topRight",
-      });
+      notify.error(firstError?.message || t("validation.completeForm"));
     },
   );
 

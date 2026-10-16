@@ -14,7 +14,6 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
 import { API_ENDPOINTS } from "../../../shared/api/endpoints";
 import { downloadXlsx, getExportErrorMessage } from "../../../shared/lib/exportFile";
@@ -25,6 +24,7 @@ import {
   readCurrentBalance,
   toFinancialNumber,
 } from "../lib/financialBalance";
+import { notify } from "../../../shared/lib/notify";
 
 interface LedgerRow {
   id: string;
@@ -375,7 +375,6 @@ const AnalysisTab = () => {
   const paginatedRows = topRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
   const isLoading = isAnalyticsLoading || isTopImpactsLoading;
   const currentBalance = readCurrentBalance(analyticsData);
-  const { api: notify } = useAppNotification();
   const [exporting, setExporting] = useState(false);
 
   // Tahlildagi davr bilan bir xil sana oralig'idagi daftar yozuvlari.
@@ -389,12 +388,7 @@ const AnalysisTab = () => {
         "financial-balance.xlsx",
       );
     } catch (error) {
-      notify.error({
-        message: t("excelExportError"),
-        description: await getExportErrorMessage(error),
-        placement: "topRight",
-        duration: 5,
-      });
+      notify.error(t("excelExportError"), { description: await getExportErrorMessage(error) });
     } finally {
       setExporting(false);
     }

@@ -2,6 +2,8 @@ import { memo, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+import { LogOut } from "lucide-react";
 import {
   buildAiConfirmPayload,
   useAiConfirm,
@@ -21,6 +23,7 @@ import { toCreatedRow, toDraft, toList, type AiCreatedRow, type AiDraft } from "
 import { evalPreview } from "./evalPreview";
 import { previewSig } from "./previewSig";
 import { useKeepFocusedFieldVisible } from "./useKeepFocusedFieldVisible";
+import { useConfirm } from "../../../../../shared/ui/primitives";
 
 type AiCreatePanelProps = {
   /** Tab faolmi (yashirin turganda ham holat saqlanadi). */
@@ -71,6 +74,9 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
   const regionsQuery = useGetRegions();
   const regions = toList<AiAreaItem>(regionsQuery.data);
 
+  const navigate = useNavigate();
+  const confirmLeave = useConfirm();
+
   const readyDrafts = drafts.filter((draft) => evalPreview(draft.order).ready);
   const hasUnconfirmedReady = readyDrafts.length > 0;
 
@@ -95,10 +101,21 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
       const anchor = (event.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
       if (!anchor || anchor.target === "_blank" || anchor.origin !== window.location.origin) return;
       if (anchor.pathname === window.location.pathname) return;
-      if (!window.confirm(t("aiLeaveConfirm"))) {
-        event.preventDefault();
-        event.stopPropagation();
-      }
+      // Tasdiq oynasi asinxron: o'tish to'xtatiladi, «Chiqish» bosilsa — o'sha manzilga o'tiladi.
+      event.preventDefault();
+      event.stopPropagation();
+      const to = `${anchor.pathname}${anchor.search}${anchor.hash}`;
+      void confirmLeave({
+        tone: "danger",
+        title: t("aiLeaveTitle"),
+        description: t("aiLeaveText"),
+        confirmLabel: t("aiLeaveAction"),
+        cancelLabel: t("aiLeaveStay"),
+        icon: LogOut,
+        confirmIcon: LogOut,
+      }).then((ok) => {
+        if (ok) navigate(to);
+      });
     };
 
     window.addEventListener("beforeunload", handleBeforeUnload);
@@ -107,7 +124,7 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
       window.removeEventListener("beforeunload", handleBeforeUnload);
       document.removeEventListener("click", handleLinkClick, true);
     };
-  }, [hasUnconfirmedReady, t]);
+  }, [confirmLeave, hasUnconfirmedReady, navigate, t]);
 
   const handleParsed = (orders: AiPreviewOrder[], draftId?: string) => {
     setResultSummary(null);

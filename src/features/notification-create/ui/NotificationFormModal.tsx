@@ -1,5 +1,5 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Alert, Button, Form, Input, Modal, Select, message } from "antd";
+import { Alert, Button, Form, Input, Modal, Select } from "antd";
 import { Controller, useForm } from "react-hook-form";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,6 +7,7 @@ import { useMarkets } from "../../../entities/markets";
 import { notificationSchema } from "../model/schema";
 import type { CreateNotificationDto } from "../model/types";
 import { useCreateNotification } from "../api/useCreateNotification";
+import { notify } from "../../../shared/lib/notify";
 
 interface NotificationFormModalProps {
   open: boolean;
@@ -84,11 +85,11 @@ const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) =>
   const onSubmit = handleSubmit(async (values) => {
     try {
       await createNotification.mutateAsync(values);
-      message.success(t("notificationCreated"));
+      notify.success(t("notificationCreated"));
       onClose();
       reset();
     } catch {
-      message.error("Bildirishnomani yaratishda xatolik bo'ldi");
+      notify.error("Bildirishnomani yaratishda xatolik bo'ldi");
     }
   });
 

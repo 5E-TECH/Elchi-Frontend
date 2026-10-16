@@ -12,12 +12,12 @@ import {
 import { useBranchDetail } from "../../../entities/branch";
 import HeaderName from "../../../shared/components/headerName";
 import { batchStatusClass, formatBatchMoney } from "../../batches/lib/batchFormat";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { Checkbox, OrderCard, type ApiOrder } from "../components/OrderCard";
 import BackButton from "../../../shared/ui/BackButton";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
 import { getBackendErrorMessage } from "../../scan/lib/scanResource";
+import { notify } from "../../../shared/lib/notify";
 
 const toOrderCardData = (order: BatchOrder, createdAt?: string): ApiOrder => ({
   id: order.id,
@@ -41,7 +41,6 @@ const toOrderCardData = (order: BatchOrder, createdAt?: string): ApiOrder => ({
 const BranchBatchDetailPage = () => {
   const { branchId, batchId } = useParams<{ branchId: string; batchId: string }>();
   const { t } = useTranslation("newOrders");
-  const { api } = useAppNotification();
   const receiveBatchOrders = useReceiveTransferBatchOrders();
   const detailQuery = useBatchDetail(batchId);
   const remainingQuery = useBatchRemainingDetail(batchId);
@@ -106,20 +105,14 @@ const BranchBatchDetailPage = () => {
       {
         onSuccess: async () => {
           markOrdersReceived(ids);
-          api.success({
-            message: t("branchOrderReceiveSuccess"),
+          notify.success(t("branchOrderReceiveSuccess"), {
             description: t("branchOrderReceiveManyDescription", { count: ids.length }),
-            placement: "topRight",
           });
           await refetchBatchData();
         },
         onError: (error: unknown) => {
           const msg = getBackendErrorMessage(error) ?? t("receiveError");
-          api.error({
-            message: t("receiveError"),
-            description: msg,
-            placement: "topRight",
-          });
+          notify.error(t("receiveError"), { description: msg });
         },
       },
     );
@@ -127,24 +120,14 @@ const BranchBatchDetailPage = () => {
 
   const handleMissingScannedOrder = useCallback(() => {
     playMissingOrderFeedback();
-    api.warning({
-      message: t("qrNotFound"),
-      description: t("branchOrderScanMissing"),
-      placement: "topRight",
-      duration: 3,
-    });
-  }, [api, t]);
+    notify.warning(t("qrNotFound"), { description: t("branchOrderScanMissing"), duration: 3000 });
+  }, [t]);
 
   const selectScannedOrder = useCallback((order: BatchOrder) => {
     setSelectedOrderIds((prev) => {
       if (prev.has(order.id)) {
         void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
-        api.warning({
-          message: t("common:scannerFeedbackDuplicate"),
-          description: `#${order.id}`,
-          placement: "topRight",
-          duration: 2,
-        });
+        notify.warning(t("common:scannerFeedbackDuplicate"), { description: `#${order.id}`, duration: 2000 });
         return prev;
       }
       const next = new Set(prev);
@@ -152,7 +135,7 @@ const BranchBatchDetailPage = () => {
       void playScanFeedback("success");
       return next;
     });
-  }, [api, t]);
+  }, [t]);
 
   const translatedBatchStatus = data ? t(`batchStatus.${data.status}`) : "";
   const translatedBatchDirection = data ? t(`batchDirection.${data.direction}`) : "";

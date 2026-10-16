@@ -7,11 +7,11 @@ import { useBranchDetail } from "../../../entities/branch";
 import { Table } from "../../../shared/components/Table/Table";
 import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
 import { batchStatusClass, batchStatusLabel, formatBatchDateTime, formatBatchMoney } from "../../batches/lib/batchFormat";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { Checkbox } from "../components/OrderCard";
 import BackButton from "../../../shared/ui/BackButton";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
+import { notify } from "../../../shared/lib/notify";
 
 type ScannableBatch = Batch & { qr_code_token?: string | null };
 
@@ -19,7 +19,6 @@ const BranchSentBatchesPage = () => {
   const { branchId } = useParams<{ branchId: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation("newOrders");
-  const { api } = useAppNotification();
   const [selectedBatchIds, setSelectedBatchIds] = useState<Set<string>>(new Set());
   const [receivedBatchIds, setReceivedBatchIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
@@ -109,42 +108,31 @@ const BranchSentBatchesPage = () => {
 
     if (successCount > 0) {
       markBatchesReceived(successIds);
-      api.success({
-        message: "Batchlar qabul qilindi",
+      notify.success("Batchlar qabul qilindi", {
         description: `${successCount} ta batch muvaffaqiyatli qabul qilindi.`,
-        placement: "topRight",
       });
     }
 
     if (failedCount > 0) {
-      api.error({
-        message: "Batchlarni qabul qilishda xatolik",
+      notify.error("Batchlarni qabul qilishda xatolik", {
         description: `${failedCount} ta batch qabul qilinmadi. Iltimos qayta urinib ko'ring.`,
-        placement: "topRight",
       });
     }
   };
 
   const handleMissingScannedBatch = useCallback(() => {
     playMissingOrderFeedback();
-    api.warning({
-      message: "QR topilmadi",
+    notify.warning("QR topilmadi", {
       description: "Bu QR kod ushbu filial batchlariga mos kelmadi.",
-      placement: "topRight",
-      duration: 3,
+      duration: 3000,
     });
-  }, [api]);
+  }, []);
 
   const selectScannedBatch = useCallback((batch: ScannableBatch) => {
     setSelectedBatchIds((prev) => {
       if (prev.has(batch.id)) {
         void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
-        api.warning({
-          message: t("common:scannerFeedbackDuplicate"),
-          description: `#${batch.id}`,
-          placement: "topRight",
-          duration: 2,
-        });
+        notify.warning(t("common:scannerFeedbackDuplicate"), { description: `#${batch.id}`, duration: 2000 });
         return prev;
       }
       const next = new Set(prev);
@@ -152,7 +140,7 @@ const BranchSentBatchesPage = () => {
       void playScanFeedback("success");
       return next;
     });
-  }, [api, t]);
+  }, [t]);
 
   useOrderQrScanner({
     orders: scannableRows,

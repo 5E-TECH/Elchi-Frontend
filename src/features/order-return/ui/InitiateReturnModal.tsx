@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import Popup from "../../../shared/ui/Popup";
 import { useOrdersCoverage } from "../../../entities/orders/ordersCoverage";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
+import { notify } from "../../../shared/lib/notify";
 
 interface Props {
   open: boolean;
@@ -20,7 +20,6 @@ const InitiateReturnModal = ({ open, orderId, onClose, onDone }: Props) => {
   const { t } = useTranslation("orders");
   const titleId = useId();
   const queryClient = useQueryClient();
-  const { api: notificationApi } = useAppNotification();
   const { initiateReturn } = useOrdersCoverage();
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
@@ -43,11 +42,7 @@ const InitiateReturnModal = ({ open, orderId, onClose, onDone }: Props) => {
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: ["orders"] });
-          notificationApi.success({
-            message: t("returnInitiateSuccess"),
-            placement: "topRight",
-            duration: 3,
-          });
+          notify.success(t("returnInitiateSuccess"), { duration: 3000 });
           onDone?.();
           onClose();
         },

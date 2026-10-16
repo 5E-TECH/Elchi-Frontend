@@ -1,5 +1,5 @@
 import { memo, useCallback, useMemo, useState } from 'react';
-import { Phone, Trash2, UserRound } from 'lucide-react';
+import { Phone, Trash2, UserRound, UserX } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { User } from '../../../entities/user/types/user';
 import { UserStatusBadge } from '../../../entities/user/ui/UserStatusBadge';
@@ -9,8 +9,9 @@ import type { ColumnConfig } from '../../../shared/components/Table/Table.types'
 import { useUser } from '../../../entities/user/api/userApi';
 import { useTranslation } from 'react-i18next';
 import Pagination from '../../../shared/components/pagination';
-import { useAppNotification } from '../../../app/providers/notification/NotificationProvider';
 import PopupConfirm from '../../../shared/components/popupConfirm';
+import { notify } from '../../../shared/lib/notify';
+import { useConfirm } from '../../../shared/ui/primitives';
 
 interface UserListTableProps {
     users: User[];
@@ -62,17 +63,37 @@ export const UserListTable = memo(({
     const { t } = useTranslation("users");
     const navigate = useNavigate();
     const { updateUserStatus, deleteUser } = useUser();
-    const { api } = useAppNotification();
+    const confirm = useConfirm();
 
     // Hozirda so'rov ketayotgan userlar ID lari
     const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
     const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
 
-    const handleStatusToggle = useCallback((user: User, e: React.MouseEvent) => {
+    const handleStatusToggle = useCallback(async (user: User, e: React.MouseEvent) => {
         e.stopPropagation(); // Row click ga o'tmasin
         if (loadingIds.has(user.id)) return; // Ikki marta bosilmasin
 
         const newStatus = user.status === 'active' ? 'inactive' : 'active';
+
+        // Nofaol qilish kirish huquqini oladi — tasdiqlash oynasi orqali (DESIGN_SYSTEM §8, `tizim-feedback`).
+        if (newStatus === 'inactive') {
+            const ok = await confirm({
+                tone: "danger",
+                title: t("deactivateConfirmTitle"),
+                description: t("deactivateConfirmText", { name: user.name }),
+                details: (
+                    <>
+                        <span className="block font-semibold">{user.name}</span>
+                        <span className="block text-text-muted">{formatPhoneNumber(String(user.phone_number ?? ""))}</span>
+                    </>
+                ),
+                confirmLabel: t("deactivateConfirmAction"),
+                cancelLabel: t("cancel"),
+                icon: UserX,
+                confirmIcon: UserX,
+            });
+            if (!ok) return;
+        }
 
         // Loading boshlan
         setLoadingIds(prev => new Set([...prev, user.id]));
@@ -81,16 +102,13 @@ export const UserListTable = memo(({
             { id: user.id, status: newStatus },
             {
                 onSuccess: () => {
-                    api.success({
-                        message: t("statusChangeSuccessTitle"),
+                    notify.success(t("statusChangeSuccessTitle"), {
                         description: t(
                             newStatus === "active"
                                 ? "statusActivatedSuccess"
                                 : "statusDeactivatedSuccess",
                             { name: user.name },
                         ),
-                        placement: "topRight",
-                        duration: 4,
                     });
                 },
                 onError: (error: unknown) => {
@@ -115,12 +133,7 @@ export const UserListTable = memo(({
                                 }).response?.data?.error
                                 : t("statusChangeErrorDescription");
 
-                    api.error({
-                        message: t("statusChangeErrorTitle"),
-                        description: errorMessage,
-                        placement: "topRight",
-                        duration: 5,
-                    });
+                    notify.error(t("statusChangeErrorTitle"), { description: errorMessage });
                 },
                 onSettled: () => {
                     // So'rov tugagach (success yoki error) loading o'chiriladi
@@ -132,18 +145,15 @@ export const UserListTable = memo(({
                 },
             }
         );
-    }, [api, loadingIds, t, updateUserStatus]);
+    }, [confirm, loadingIds, t, updateUserStatus]);
 
     const handleDeleteConfirm = useCallback(() => {
         if (!deleteTarget || deleteUser.isPending) return;
 
         deleteUser.mutate(deleteTarget.id, {
             onSuccess: () => {
-                api.success({
-                    message: t("deleteSuccessTitle"),
+                notify.success(t("deleteSuccessTitle"), {
                     description: t("deleteSuccessDescription", { name: deleteTarget.name }),
-                    placement: "topRight",
-                    duration: 4,
                 });
                 setDeleteTarget(null);
             },
@@ -169,15 +179,10 @@ export const UserListTable = memo(({
                             }).response?.data?.error
                             : t("deleteErrorDescription");
 
-                api.error({
-                    message: t("deleteErrorTitle"),
-                    description: errorMessage,
-                    placement: "topRight",
-                    duration: 5,
-                });
+                notify.error(t("deleteErrorTitle"), { description: errorMessage });
             },
         });
-    }, [api, deleteTarget, deleteUser, t]);
+    }, [deleteTarget, deleteUser, t]);
 
     const renderUserActions = useCallback((user: User, compact = false) => {
         const isActive = user.status === 'active';
@@ -189,7 +194,7 @@ export const UserListTable = memo(({
                 onClick={(e) => e.stopPropagation()}
             >
                 <button
-                    onClick={(e) => handleStatusToggle(user, e)}
+                    onClick={(e) => void handleStatusToggle(user, e)}
                     disabled={isPending}
                     title={isActive ? t("deactivate") : t("activate")}
                     role="switch"

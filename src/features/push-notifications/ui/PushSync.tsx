@@ -3,8 +3,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button } from "antd";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { useSettings } from "../../../entities/settings";
 import { queryKeys } from "../../../shared/config/queryKeys";
 import type { RootState } from "../../../app/config/store";
@@ -17,6 +15,7 @@ import {
   unsubscribeDevice,
 } from "../lib/pushClient";
 import { PUSH_SUBSCRIPTION_QUERY } from "../model/usePushSubscription";
+import { notify } from "../../../shared/lib/notify";
 
 /**
  * PushSync — qurilmadagi push obunasini foydalanuvchi sozlamasiga moslaydi.
@@ -48,7 +47,6 @@ const PushSync = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { t } = useTranslation("notifications");
-  const { api: notify } = useAppNotification();
   const { data: settings } = useSettings();
   const userId = useSelector((state: RootState) => state.role.id);
   const [resync, setResync] = useState(0);
@@ -64,26 +62,13 @@ const PushSync = () => {
         const payload = ((event.data as { payload?: PushPayload }).payload ?? {}) as PushPayload;
         // Yashirin tab ko'rsatmaydi: u holda SW tizim bildirishnomasini o'zi chiqargan.
         if (payload.title && document.visibilityState === "visible") {
-          const key = `elchi-push-${payload.id ?? payload.tag ?? payload.title}`;
           const link = safeLink(payload.link);
-          notify.info({
-            key,
-            message: payload.title,
+          // Bir xil `id` — qayta kelgan push yangi xabar qo'shmaydi, borini yangilaydi.
+          notify.info(payload.title, {
+            id: `elchi-push-${payload.id ?? payload.tag ?? payload.title}`,
             description: payload.body || undefined,
-            placement: "topRight",
-            duration: 6,
-            actions: (
-              <Button
-                type="primary"
-                size="small"
-                onClick={() => {
-                  notify.destroy(key);
-                  navigate(link);
-                }}
-              >
-                {t("push.toastOpen")}
-              </Button>
-            ),
+            duration: 6000,
+            action: { label: t("push.toastOpen"), onClick: () => navigate(link) },
           });
         }
       }
@@ -92,7 +77,7 @@ const PushSync = () => {
     const container = navigator.serviceWorker;
     container.addEventListener("message", onMessage);
     return () => container.removeEventListener("message", onMessage);
-  }, [queryClient, navigate, notify, t]);
+  }, [queryClient, navigate, t]);
 
   useEffect(() => {
     if (!isPushSupported() || !settingsReady || !userId) return;

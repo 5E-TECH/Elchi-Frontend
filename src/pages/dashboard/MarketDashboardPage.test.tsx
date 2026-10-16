@@ -141,7 +141,7 @@ describe("MarketDashboardPage", () => {
       },
     });
 
-    await user.click(screen.getByRole("button", { name: "Barchasi" }));
+    await user.click(screen.getByRole("radio", { name: "Barchasi" }));
 
     const lastParams = getDashboardMock.mock.lastCall?.[0];
 

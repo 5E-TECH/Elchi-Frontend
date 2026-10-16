@@ -1,9 +1,9 @@
-import { message } from "antd";
 import { DeleteOutlined } from "@ant-design/icons";
 import { ConfirmButton } from "../../../shared/ui/ConfirmButton";
 import { useRemoveEmployee } from "../api/useRemoveEmployee";
 import { useTranslation } from "react-i18next";
 import { getActionErrorMessage } from "../../../shared/lib/actionError";
+import { notify } from "../../../shared/lib/notify";
 
 const RemoveEmployeeButton = ({
   branchId,
@@ -29,12 +29,12 @@ const RemoveEmployeeButton = ({
       onConfirm={async () => {
         try {
           await removeEmployee.mutateAsync(userId);
-          message.success(t("employee.removed"));
+          notify.success(t("employee.removed"));
         } catch (error) {
           // fix3 CODE-21: avval xato jimgina yutilardi (masalan backend
           // "Kuryerni filialdan chiqarib bo'lmaydi: qo'lida pul bor").
           const description = getActionErrorMessage(error, t("employee.removeError"));
-          if (description) message.error(description);
+          if (description) notify.error(description);
         }
       }}
       loading={removeEmployee.isPending}

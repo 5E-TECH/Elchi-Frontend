@@ -84,6 +84,9 @@
     "approve": "Approval id",
     "approvePlaceholder": "Template id given by the provider",
     "delete": "Delete",
+    "deleteTitle": "Confirm template deletion",
+    "deleteText": "The template will be permanently removed from the list.",
+    "deleted": "Template deleted",
     "empty": "No templates",
     "edit": "Edit"
   },

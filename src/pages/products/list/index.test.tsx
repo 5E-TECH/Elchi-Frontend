@@ -151,10 +151,6 @@ vi.mock("../../../entities/markets", () => ({
   }),
 }));
 
-vi.mock("../../../features/Select/selectInput", () => ({
-  default: ({ placeholder }: { placeholder: string }) => <div>{placeholder}</div>,
-}));
-
 describe("ProductTable", () => {
   const renderProductTable = (route = "/products") =>
     renderWithProviders(<ProductTable />, {
@@ -305,7 +301,7 @@ describe("ProductTable", () => {
     );
 
     await user.click(document.getElementById("market_id")!);
-    await user.click(await screen.findByRole("button", { name: "Fresh" }));
+    await user.click(await screen.findByRole("option", { name: "Fresh" }));
 
     await waitFor(() => {
       expect(screen.getByTestId("search").textContent).toContain("market_id=1");
@@ -325,7 +321,7 @@ describe("ProductTable", () => {
 
     await user.click(document.getElementById("market_id")!);
     getProductsMock.mockClear();
-    await user.click(await screen.findByRole("button", { name: "Fresh" }));
+    await user.click(await screen.findByRole("option", { name: "Fresh" }));
 
     await waitFor(() => {
       expect(screen.getByTestId("search").textContent).toBe("?market_id=1");

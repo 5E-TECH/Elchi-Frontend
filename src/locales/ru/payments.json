@@ -308,4 +308,6 @@
   ,"financialEntryFailed": "Не удалось сохранить запись"
   ,"paymentConfirmTitle": "Подтвердить платёж?"
   ,"paymentConfirmMessage": "{{amount}} сум — {{action}}: {{target}} ({{method}}). После подтверждения деньги будут переведены, отменить нельзя."
+  ,"salaryConfirmTitle": "Подтвердите выплату зарплаты"
+  ,"salaryConfirmDescription": "Проверьте данные — после подтверждения сумма сразу списывается из кассы, отменить нельзя."
 }

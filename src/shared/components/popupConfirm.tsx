@@ -1,8 +1,7 @@
-import { memo, useId, type ReactNode } from "react";
+import { Fragment, isValidElement, memo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, CheckCircle2, Trash2 } from "lucide-react";
-import Popup from "../ui/Popup";
-import popupStyles from "../ui/FormPopup/FormPopup.module.css";
+import { CircleCheck, TriangleAlert, Trash2 } from "lucide-react";
+import { ConfirmDialog, type ConfirmContent } from "../ui/primitives";
 
 interface PopupConfirmProps {
   isOpen: boolean;
@@ -14,9 +13,29 @@ interface PopupConfirmProps {
   cancelLabel?: string;
   isLoading?: boolean;
   variant?: "danger" | "warning" | "success";
+  /** ESKI: v1 rang mavzusi — v2 da e'tiborga olinmaydi. */
   theme?: "default" | "branch";
 }
 
+/**
+ * v1 `variant` → v2 tasdiqlash oynasi (`tizim-feedback` 06 «Rang»: qizil — o'chirish va bloklash,
+ * ko'k — oddiy rozilik). v1 «warning» (sariq) va «success» (yashil) tugmalari maketda ko'k:
+ * buyurtmani qaytarish (`manager-orders-rollback-dialog` — sariq ikonka), qo'lda qabul
+ * (`manager-new-orders-receive-confirm-dialog`), push ruxsati.
+ */
+const VARIANT: Record<NonNullable<PopupConfirmProps["variant"]>, Pick<ConfirmContent, "tone" | "icon" | "iconTone">> = {
+  danger: { tone: "danger", icon: Trash2, iconTone: "danger" },
+  warning: { tone: "primary", icon: TriangleAlert, iconTone: "warning" },
+  success: { tone: "primary", icon: CircleCheck, iconTone: "neutral" },
+};
+
+/**
+ * ESKI (v1) TASDIQLASH OYNASI — API o'zgarmagan, ichi dizayn v2 `ConfirmDialog` (3-bosqich):
+ * fokus «Bekor qilish» da, Esc/fon yopadi, `isLoading` da tugmalar qulflanadi va
+ * oyna yopilmaydi; telefonda pastki varaqa. Yangi kodda `useConfirm()` yoki `ConfirmDialog`.
+ *
+ * `message` — matn bo'lsa sarlavha ostidagi izoh, element bo'lsa oyna tanasi (`sunken` quti).
+ */
 const PopupConfirm = ({
   isOpen,
   onClose,
@@ -27,82 +46,34 @@ const PopupConfirm = ({
   cancelLabel,
   isLoading = false,
   variant = "danger",
-  theme = "default",
 }: PopupConfirmProps) => {
   const { t } = useTranslation("common");
-
-  const iconBg = variant === "danger"
-    ? "bg-rose-100 dark:bg-rose-500/12"
-    : variant === "success"
-      ? "bg-emerald-100 dark:bg-emerald-500/12"
-      : "bg-amber-100 dark:bg-amber-400/15";
-
-  const iconColor = variant === "danger"
-    ? "text-rose-500 dark:text-rose-300"
-    : variant === "success"
-      ? "text-emerald-500 dark:text-emerald-300"
-      : "text-amber-600 dark:text-amber-200";
-
-  const confirmButtonClassName = variant === "danger"
-    ? "border-rose-200 bg-rose-50 text-rose-600 hover:border-rose-300 hover:bg-rose-100 dark:border-rose-500/30 dark:bg-rose-500/12 dark:text-rose-200 dark:hover:border-rose-400/60 dark:hover:bg-rose-500/18"
-    : variant === "success"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-300 hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/12 dark:text-emerald-200 dark:hover:border-emerald-400/60 dark:hover:bg-emerald-500/18"
-      : "border-amber-300 bg-amber-100 text-amber-800 hover:border-amber-400 hover:bg-amber-200 dark:border-amber-400/35 dark:bg-amber-400/14 dark:text-amber-100 dark:hover:border-amber-300/60 dark:hover:bg-amber-400/22";
-
-  const resolvedTitle = title ?? t("confirm");
+  const look = VARIANT[variant];
   const resolvedConfirmLabel = confirmLabel ?? (variant === "danger" ? t("delete") : t("confirm"));
-  const resolvedCancelLabel = cancelLabel ?? t("cancel");
-  const HeaderIcon = variant === "success" ? CheckCircle2 : AlertTriangle;
-  const ConfirmIcon = variant === "danger" ? Trash2 : CheckCircle2;
-  const titleId = useId();
+  // Matn (yoki matnli fragment) — izoh; boshqa element (ism, tafsilot) — tana.
+  const textMessage =
+    typeof message === "string" ||
+    typeof message === "number" ||
+    (isValidElement(message) && message.type === Fragment);
 
   return (
-    <Popup isShow={isOpen} onClose={onClose} labelledBy={titleId}>
-      <div data-theme={theme} className={`${popupStyles.panel} w-[92vw] max-w-md rounded-[1.75rem] px-8 py-7 text-center shadow-2xl`}>
-        <div className={`mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full ${iconBg}`}>
-          <HeaderIcon size={28} className={iconColor} />
-        </div>
-
-        <h3 id={titleId} className="mb-2 text-xl font-bold text-maindark dark:text-white">
-          {resolvedTitle}
-        </h3>
-
-        {message && (
-          <div className="mb-6 text-sm text-text-muted dark:text-text-muted-dark">
-            {message}
-          </div>
-        )}
-
-        <div className="flex justify-center gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isLoading}
-            className="rounded-xl border border-border-soft bg-white/70 px-6 py-2.5 text-sm font-medium text-maindark transition-colors hover:border-main/40 hover:bg-main-soft disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.06] dark:text-white/85 dark:hover:border-white/20 dark:hover:bg-white/10"
-          >
-            {resolvedCancelLabel}
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={isLoading}
-            className={`flex items-center gap-2 rounded-xl border px-6 py-2.5 text-sm font-medium transition-colors disabled:opacity-50 ${confirmButtonClassName}`}
-          >
-            {isLoading ? (
-              <>
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-current/30 border-t-current" />
-                {t("submitting")}
-              </>
-            ) : (
-              <>
-                <ConfirmIcon size={16} />
-                {resolvedConfirmLabel}
-              </>
-            )}
-          </button>
-        </div>
-      </div>
-    </Popup>
+    <ConfirmDialog
+      // v1 roli saqlanadi (sahifa testlari va e2e `getByRole("dialog")`); yangi kodda `useConfirm()` — `alertdialog`.
+      role="dialog"
+      open={isOpen}
+      onCancel={onClose}
+      // Va'da qaytarsa (async ishlovchi) — oyna yuklanishni va xatoni o'zi ko'rsatadi.
+      onConfirm={onConfirm}
+      loading={isLoading}
+      loadingLabel={t("submitting")}
+      title={title ?? t("confirm")}
+      description={textMessage ? message : undefined}
+      details={!textMessage && message != null && message !== false ? message : undefined}
+      confirmLabel={resolvedConfirmLabel}
+      cancelLabel={cancelLabel ?? t("cancel")}
+      confirmIcon={variant === "danger" ? Trash2 : undefined}
+      {...look}
+    />
   );
 };
 

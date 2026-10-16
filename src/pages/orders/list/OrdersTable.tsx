@@ -21,11 +21,11 @@ import OrderIdBadge from "../../../shared/ui/OrderIdBadge";
 import TableSkeleton from "../../../shared/ui/TableSkeleton";
 import OrderStatusBadge from "./OrderStatusBadge";
 import { ReturnRequestedBadge } from "../../../entities/order";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import type { OrderListItem } from "../../../entities/order/types/order";
 import type { RootState } from "../../../app/config/store";
 import type { SortConfig } from "../../../shared/components/Table/Table.types";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
+import { notify } from "../../../shared/lib/notify";
 
 const EMPTY_SELECTED_IDS = new Set<string>();
 
@@ -288,7 +288,6 @@ const OrdersTable = ({
 }: Props) => {
     const { t, i18n } = useTranslation("orders");
     const role = useSelector((state: RootState) => state.role.role);
-    const { api } = useAppNotification();
     const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
     const formatPrice = useCallback(
         (num: number) => `${(num ?? 0).toLocaleString(locale)} ${t("currency")}`,
@@ -298,13 +297,13 @@ const OrdersTable = ({
         (id: string) => {
             void copyToClipboard(id).then((copied) => {
                 if (copied) {
-                    api.success({ message: t("orderNumberCopied"), placement: "topRight" });
+                    notify.success(t("orderNumberCopied"));
                 } else {
-                    api.error({ message: t("orderNumberCopyFailed", { id }), placement: "topRight" });
+                    notify.error(t("orderNumberCopyFailed", { id }));
                 }
             });
         },
-        [api, t],
+        [t],
     );
     const selectableOrders = useMemo(
         () => data.filter((order) => isSelectable?.(order)),

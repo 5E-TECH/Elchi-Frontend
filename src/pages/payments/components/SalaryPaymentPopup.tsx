@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { message } from "antd";
-import { Banknote, CreditCard, History, WalletCards, X } from "lucide-react";
+import { Banknote, Check, CreditCard, History, WalletCards, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
 import Popup from "../../../shared/ui/Popup";
 import FilterSelect, { type FilterSelectOption } from "../../../shared/ui/FilterSelect";
+import { notify } from "../../../shared/lib/notify";
+import { Badge, useConfirm } from "../../../shared/ui/primitives";
 
 type Employee = {
   id: string;
@@ -60,6 +61,7 @@ const SalaryPaymentPopup = ({
   cardSources = [],
 }: SalaryPaymentPopupProps) => {
   const { t } = useTranslation("payments");
+  const confirm = useConfirm();
   const [amount, setAmount] = useState("");
   const [comment, setComment] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card">("cash");
@@ -111,8 +113,33 @@ const SalaryPaymentPopup = ({
     setAmount(digits ? formatAmount(Number(digits)) : "");
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!employee || !isValidAmount || !isCardPaymentReady) return;
+
+    // Pul kassadan chiqadi — tasdiqlash oynasi orqali (DESIGN_SYSTEM §8, `tizim-feedback` 06).
+    const sourceTitle =
+      paymentMethod === "card"
+        ? (cardSources.find((source) => source.id === selectedCardId)?.name ?? t("card"))
+        : t("mainCashbox");
+    const ok = await confirm({
+      tone: "success",
+      icon: WalletCards,
+      size: "md",
+      title: t("salaryConfirmTitle"),
+      description: t("salaryConfirmDescription"),
+      amount: {
+        value: parsedAmount,
+        badge: <Badge>{paymentMethod === "card" ? t("card") : t("cash")}</Badge>,
+      },
+      transfer: {
+        from: { title: sourceTitle },
+        to: { title: employee.name || t("userFallback"), meta: t("paySalary") },
+      },
+      rows: comment.trim() ? [{ label: t("comment"), value: comment.trim(), stacked: true }] : undefined,
+      confirmLabel: t("paySalary"),
+      confirmIcon: Check,
+    });
+    if (!ok) return;
 
     createSalary.mutate(
       {
@@ -127,10 +154,10 @@ const SalaryPaymentPopup = ({
       },
       {
         onSuccess: () => {
-          message.success(t("salaryPaymentSuccess"));
+          notify.success(t("salaryPaymentSuccess"));
           onClose();
         },
-        onError: () => message.error(t("salaryPaymentError")),
+        onError: () => notify.error(t("salaryPaymentError")),
       },
     );
   };
@@ -239,7 +266,7 @@ const SalaryPaymentPopup = ({
           <button
             type="button"
             disabled={!isValidAmount || !isCardPaymentReady || createSalary.isPending}
-            onClick={handleSubmit}
+            onClick={() => void handleSubmit()}
             className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-main px-4 font-semibold text-white transition hover:bg-main/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <WalletCards size={18} />

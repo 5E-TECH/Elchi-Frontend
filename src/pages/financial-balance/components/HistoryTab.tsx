@@ -2,7 +2,6 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { CalendarDays, FileSpreadsheet, Funnel, Loader2, Plus } from "lucide-react";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { API_ENDPOINTS } from "../../../shared/api/endpoints";
 import { downloadXlsx, getExportErrorMessage } from "../../../shared/lib/exportFile";
 import { Table } from "../../../shared/components/Table/Table";
@@ -27,6 +26,7 @@ import {
 } from "../lib/historyRow";
 import FinancialEntryModal from "./FinancialEntryModal";
 import FinancialHistoryDetail from "./FinancialHistoryDetail";
+import { notify } from "../../../shared/lib/notify";
 
 const PAGE_PARAM = `${HISTORY_PARAM_PREFIX}Page`;
 const LIMIT_PARAM = `${HISTORY_PARAM_PREFIX}Limit`;
@@ -139,7 +139,6 @@ const toDisplayAmount = (value: number) =>
 
 const HistoryTab = () => {
   const { t } = useTranslation("payments");
-  const { api: notify } = useAppNotification();
   const currencyLabel = t("currency");
   const [entryOpen, setEntryOpen] = useState(false);
   const [selected, setSelected] = useState<HistoryRow | null>(null);
@@ -343,12 +342,7 @@ const HistoryTab = () => {
         "financial-balance.xlsx",
       );
     } catch (error) {
-      notify.error({
-        message: t("excelExportError"),
-        description: await getExportErrorMessage(error),
-        placement: "topRight",
-        duration: 5,
-      });
+      notify.error(t("excelExportError"), { description: await getExportErrorMessage(error) });
     } finally {
       setExporting(false);
     }

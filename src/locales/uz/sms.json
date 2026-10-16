@@ -84,6 +84,9 @@
     "approve": "Tasdiq id",
     "approvePlaceholder": "Provayder bergan shablon id",
     "delete": "O'chirish",
+    "deleteTitle": "Shablonni o'chirishni tasdiqlang",
+    "deleteText": "Shablon ro'yxatdan butunlay o'chiriladi.",
+    "deleted": "Shablon o'chirildi",
     "empty": "Shablonlar yo'q",
     "edit": "Tahrirlash"
   },

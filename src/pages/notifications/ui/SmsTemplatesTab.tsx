@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Alert, Button, Input, Select, Table, Tag } from "antd";
 import { useTranslation } from "react-i18next";
+import { Trash2 } from "lucide-react";
 import {
   useApproveSmsTemplate,
   useDeleteSmsTemplate,
@@ -14,6 +15,7 @@ import {
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { OPT_OUT_SAMPLE, templateVars } from "../../../shared/lib/smsSegments";
 import SmsMeter from "../../../shared/ui/SmsMeter";
+import { useConfirm } from "../../../shared/ui/primitives";
 
 const EMPTY = { code: "", message_class: "transactional" as SmsMessageClass, lang: "uz" as SmsLanguage, text: "" };
 
@@ -29,6 +31,7 @@ const SmsTemplatesTab = () => {
   const upsert = useUpsertSmsTemplate();
   const approve = useApproveSmsTemplate();
   const remove = useDeleteSmsTemplate();
+  const confirm = useConfirm();
   const [draft, setDraft] = useState(EMPTY);
   const [approvals, setApprovals] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -46,6 +49,22 @@ const SmsTemplatesTab = () => {
     } catch (error) {
       setMessage({ type: "error", text: getBackendErrorMessage(error) ?? String(error) });
     }
+  };
+
+  // Shablonni o'chirish buzuvchi amal — tasdiqlash oynasi orqali (DESIGN_SYSTEM §8); xato oynaning o'zida.
+  const removeTemplate = async (row: SmsTemplate) => {
+    const ok = await confirm({
+      tone: "danger",
+      title: t("templates.deleteTitle"),
+      description: t("templates.deleteText"),
+      details: `${row.code} · ${row.lang}`,
+      confirmLabel: t("templates.delete"),
+      icon: Trash2,
+      confirmIcon: Trash2,
+      irreversible: true,
+      onConfirm: () => remove.mutateAsync(row.id),
+    });
+    if (ok) setMessage({ type: "success", text: t("templates.deleted") });
   };
 
   return (
@@ -164,7 +183,7 @@ const SmsTemplatesTab = () => {
                 >
                   {t("templates.edit")}
                 </Button>
-                <Button size="small" danger onClick={() => void remove.mutateAsync(row.id)}>
+                <Button size="small" danger loading={remove.isPending && remove.variables === row.id} onClick={() => void removeTemplate(row)}>
                   {t("templates.delete")}
                 </Button>
               </div>

@@ -46,6 +46,7 @@ import BackButton from "../../../shared/ui/BackButton";
 import PageContainer from "../../../shared/ui/PageContainer";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
+import { notify } from "../../../shared/lib/notify";
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 const MailDetailSkeleton = memo(() => (
@@ -304,7 +305,7 @@ const MailDetailPage = () => {
     refetch: refetchTransferBatchDetail,
   } = useBatchRemainingDetail(isBranchTransferRole ? postId : undefined);
   const sendTransferBatch = useSendTransferBatch();
-  const { apiRequest, api: notifApi } = useAppNotification();
+  const { apiRequest } = useAppNotification();
 
   // URL ni tozalash: /mails/:id?from=... -> /mails/:id (state orqali saqlab qolamiz)
   useEffect(() => {
@@ -566,24 +567,14 @@ const MailDetailPage = () => {
   const selectScannedOrder = useCallback((order: PostOrder) => {
     if (selectedIds.has(order.id)) {
       void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
-      notifApi.warning({
-        message: t("common:scannerFeedbackDuplicate"),
-        description: `#${order.id}`,
-        placement: "topRight",
-        duration: 2,
-      });
+      notify.warning(t("common:scannerFeedbackDuplicate"), { description: `#${order.id}`, duration: 2000 });
       return;
     }
 
     selectOne(order.id);
     void playScanFeedback("success");
-    notifApi.success({
-      message: t("orderSelected"),
-      description: `#${order.id}`,
-      placement: "topRight",
-      duration: 2,
-    });
-  }, [notifApi, selectOne, selectedIds, t]);
+    notify.success(t("orderSelected"), { description: `#${order.id}`, duration: 2000 });
+  }, [selectOne, selectedIds, t]);
 
   const handleMissingScannedOrder = useCallback(async (rawValue: string) => {
     const rawCandidates = normalizeScannerCandidates(rawValue, window.location.origin);
@@ -612,22 +603,16 @@ const MailDetailPage = () => {
       }
 
       playMissingOrderFeedback();
-      notifApi.warning({
-        message: t("qrNotFound"),
-        description: t("mailScanMissing"),
-        placement: "topRight",
-        duration: 3,
-      });
+      notify.warning(t("qrNotFound"), { description: t("mailScanMissing"), duration: 3000 });
     } catch (error) {
       void playScanFeedback("error");
-      notifApi.error({
-        message: t("qrNotFound"),
+      // Skaner oqimi: xato qisqa turadi (v1 dagidek 3 s) — keyingi skanerlashda ekran to'silib qolmasin.
+      notify.error(t("qrNotFound"), {
         description: getBackendErrorMessage(error) ?? t("mailScanMissing"),
-        placement: "topRight",
-        duration: 3,
+        duration: 3000,
       });
     }
-  }, [notifApi, orders, selectScannedOrder, t]);
+  }, [orders, selectScannedOrder, t]);
 
   useOrderQrScanner({
     orders,
@@ -686,23 +671,18 @@ const MailDetailPage = () => {
         const acceptedIds = receivedIds.filter((id) => !notReceivedSet.has(id));
 
         if (acceptedIds.length > 0) {
-          notifApi.success({
-            message: t("common:success"),
+          notify.success(t("common:success"), {
             description: notReceivedIds.length
               ? t("receivePartialSuccess", { count: acceptedIds.length })
               : t("receiveSuccess"),
-            placement: "topRight",
-            duration: 4,
           });
         }
         if (notReceivedIds.length > 0) {
-          notifApi.warning({
-            message: t("receiveNotReceivedTitle", { count: notReceivedIds.length }),
+          notify.warning(t("receiveNotReceivedTitle", { count: notReceivedIds.length }), {
             description: t("receiveNotReceivedDescription", {
               ids: notReceivedIds.map((id) => `#${id}`).join(", "),
             }),
-            placement: "topRight",
-            duration: 10,
+            duration: 10000,
           });
         }
 
@@ -711,12 +691,7 @@ const MailDetailPage = () => {
         void refetchRegularDetail();
       })
       .catch((error: unknown) => {
-        notifApi.error({
-          message: t("common:error"),
-          description: getBackendErrorMessage(error) ?? t("receiveError"),
-          placement: "topRight",
-          duration: 5,
-        });
+        notify.error(t("common:error"), { description: getBackendErrorMessage(error) ?? t("receiveError") });
       });
   }, [
     selectedIds,
@@ -725,7 +700,6 @@ const MailDetailPage = () => {
     receiveCanceledPost,
     receivePost,
     apiRequest,
-    notifApi,
     clearSelection,
     refetchRegularDetail,
     t,
@@ -786,12 +760,7 @@ const MailDetailPage = () => {
         );
 
         if (branches.length === 0) {
-          notifApi.error({
-            message: t("common:error"),
-            description: t("noActiveBranchInRegion"),
-            placement: "topRight",
-            duration: 5,
-          });
+          notify.error(t("common:error"), { description: t("noActiveBranchInRegion") });
           return;
         }
 
@@ -800,11 +769,8 @@ const MailDetailPage = () => {
       })
       .catch((error: unknown) => {
         // 403 va boshqa rad javoblarda backend xabari ko'rinadi.
-        notifApi.error({
-          message: t("common:error"),
+        notify.error(t("common:error"), {
           description: getBackendErrorMessage(error) ?? t("branchesLoadError"),
-          placement: "topRight",
-          duration: 5,
         });
       })
       .finally(() => {
@@ -816,7 +782,6 @@ const MailDetailPage = () => {
     postId,
     sendTransferBatch,
     apiRequest,
-    notifApi,
     clearSelection,
     refetchTransferBatchDetail,
     regionId,
@@ -893,23 +858,17 @@ const MailDetailPage = () => {
         closeDeleteConfirm();
         clearSelection();
         if (result.deleted.length > 0) {
-          notifApi.success({
-            message: t("deleteFromPostSuccess", { count: result.deleted.length }),
+          notify.success(t("deleteFromPostSuccess", { count: result.deleted.length }), {
             description: result.skipped.length > 0 ? t("deleteFromPostSkipped", { count: result.skipped.length }) : undefined,
-            placement: "topRight",
-            duration: 4,
           });
         } else {
           // Backend hech narsani o'chirmadi — "o'chirildi" deyish yolg'on bo'lardi.
-          notifApi.warning({
-            message: t("deleteFromPostNothing"),
+          notify.warning(t("deleteFromPostNothing"), {
             description: result.skipped.length > 0 ? t("deleteFromPostSkipped", { count: result.skipped.length }) : undefined,
-            placement: "topRight",
-            duration: 6,
           });
         }
         if (result.post_deleted) {
-          notifApi.info({ message: t("deleteFromPostEmptied"), placement: "topRight", duration: 4 });
+          notify.info(t("deleteFromPostEmptied"));
           navigate(getMailTabPath("today"));
           return;
         }
@@ -918,7 +877,7 @@ const MailDetailPage = () => {
         setDeleteError(getBackendErrorMessage(error) ?? t("deleteFromPostFailed"));
       }
     },
-    [postId, deleteTargetIds, deleteFromPost, closeDeleteConfirm, clearSelection, notifApi, t, navigate, refetchRegularDetail],
+    [postId, deleteTargetIds, deleteFromPost, closeDeleteConfirm, clearSelection, t, navigate, refetchRegularDetail],
   );
 
   // ─── Loading ──────────────────────────────────────────────────────────────

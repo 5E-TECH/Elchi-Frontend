@@ -1,11 +1,16 @@
-import { Button } from 'antd';
 import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
-import { notification } from 'antd';
-import type { NotificationInstance } from 'antd/es/notification/interface';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { getBackendErrorMessage } from '../../../shared/lib/backendError';
 import { QUERY_ERROR_EVENT, type QueryErrorDetail } from '../../../shared/lib/queryErrorEvents';
+import { notify } from '../../../shared/lib/notify';
+import { getErrorKind } from '../../../shared/lib/errorKind';
+
+/**
+ * Ilova darajasidagi xabarlar (dizayn v2, 3-bosqich): tarmoq va so'rov xatolari hamda `apiRequest`
+ * natijasi — hammasi `notify()` orqali (`<Toaster />`, `app/providers/UiHost.tsx`). antd `notification`
+ * ishlatilmaydi. Komponent ichidagi oddiy xabar uchun to'g'ridan-to'g'ri `notify.*` dan foydalaning.
+ */
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,10 +31,8 @@ interface ApiRequestOptions<T = unknown> {
 }
 
 interface NotificationContextValue {
-    /** Universal API request wrapper — avtomatik notification ko'rsatadi */
+    /** Universal API request wrapper — avtomatik xabar (`notify`) ko'rsatadi */
     apiRequest: <T = unknown>(options: ApiRequestOptions<T>) => Promise<T | undefined>;
-    /** To'g'ridan-to'g'ri notification API (zarur bo'lsa) */
-    api: NotificationInstance;
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -39,37 +42,37 @@ const NotificationContext = createContext<NotificationContextValue | null>(null)
 // ─── Provider ─────────────────────────────────────────────────────────────────
 
 export const NotificationProvider = ({ children }: { children: ReactNode }) => {
-    const [api, contextHolder] = notification.useNotification();
     const queryClient = useQueryClient();
     const { t } = useTranslation('common');
     const lastNetworkToastAtRef = useRef(0);
 
     useEffect(() => {
-        const handleNetworkError = () => {
+        const handleNetworkError = (event: Event) => {
             const now = Date.now();
             if (now - lastNetworkToastAtRef.current < 4000) {
                 return;
             }
 
             lastNetworkToastAtRef.current = now;
-            api.error({
-                message: t('networkError'),
-                description: t('networkCheckConnection'),
-                placement: "bottomRight",
-                duration: 8,
-                btn: (
-                    // ⚠️ `window.location.reload()` EMAS: internet hali qaytmagan bo'lsa
-                    // to'liq qayta yuklash sessiyani xavf ostiga qo'yardi (9w5Fq94s).
-                    <Button size="small" danger onClick={() => void queryClient.refetchQueries({ type: "active" })}>
-                        {t('retry')}
-                    </Button>
-                ),
+            // Matn — taxta `tizim-errors` 03: javob kelmadi → «Internet aloqasi yo'q» (barcha sahifalarda shu nom);
+            // vaqt tugadi (20 s, internet bor) → «Server javob bermadi» — foydalanuvchiga internetni tekshir demaymiz.
+            const code = (event as CustomEvent<{ code?: string } | null>).detail?.code;
+            const timedOut = getErrorKind({ code }) === 'timeout';
+            // Barqaror `id`: takroriy tarmoq xatosi bitta xabarga qo'shiladi (yangisi qo'shilmaydi).
+            notify.error(timedOut ? t('toast.timeoutTitle', { ns: 'ui' }) : t('states.error.offline.title', { ns: 'ui' }), {
+                id: 'network-error',
+                description: timedOut
+                    ? t('states.error.generic.descriptionNoStatus', { ns: 'ui' })
+                    : t('states.error.offline.description', { ns: 'ui' }),
+                // ⚠️ `window.location.reload()` EMAS: internet hali qaytmagan bo'lsa
+                // to'liq qayta yuklash sessiyani xavf ostiga qo'yardi (9w5Fq94s).
+                action: { label: t('retry'), onClick: () => void queryClient.refetchQueries({ type: "active" }) },
             });
         };
 
         window.addEventListener("elchi:network-error", handleNetworkError);
         return () => window.removeEventListener("elchi:network-error", handleNetworkError);
-    }, [api, queryClient, t]);
+    }, [queryClient, t]);
 
     const lastQueryErrorRef = useRef<{ key: string; at: number }>({ key: "", at: 0 });
     useEffect(() => {
@@ -82,11 +85,11 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
             const now = Date.now();
             if (lastQueryErrorRef.current.key === key && now - lastQueryErrorRef.current.at < 4000) return;
             lastQueryErrorRef.current = { key, at: now };
-            api.error({ message: t('queryErrorTitle'), description, placement: "bottomRight", duration: 8 });
+            notify.error(t('queryErrorTitle'), { description });
         };
         window.addEventListener(QUERY_ERROR_EVENT, handleQueryError);
         return () => window.removeEventListener(QUERY_ERROR_EVENT, handleQueryError);
-    }, [api, t]);
+    }, [t]);
 
     /**
      * Universal API request wrapper.
@@ -111,26 +114,15 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
                 description = t('operationCompleted');
             }
 
-            api.success({
-                message: t('success'),
-                description,
-                placement: 'topRight',
-                duration: 4,
-            });
+            notify.success(t('success'), { description });
 
             onSuccess?.(data);
             return data;
         } catch (error: unknown) {
             const backendMessage = getBackendErrorMessage(error);
 
-            api.error({
-                message: t('error'),
-                description:
-                    backendMessage ??
-                    errorMessage ??
-                    t('serverRequestError'),
-                placement: 'topRight',
-                duration: 5,
+            notify.error(t('error'), {
+                description: backendMessage ?? errorMessage ?? t('serverRequestError'),
             });
 
             onError?.(error);
@@ -139,8 +131,7 @@ export const NotificationProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <NotificationContext.Provider value={{ apiRequest, api }}>
-            {contextHolder}
+        <NotificationContext.Provider value={{ apiRequest }}>
             {children}
         </NotificationContext.Provider>
     );

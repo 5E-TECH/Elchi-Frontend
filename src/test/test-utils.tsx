@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, useSyncExternalStore, type ReactNode } from "react";
 import { render } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
@@ -14,6 +14,20 @@ import role from "../shared/model/roleSlice";
 import pagination from "../shared/model/paginationSlice";
 import i18n from "../i18n";
 import { NotificationProvider } from "../app/providers/notification/NotificationProvider";
+import { toastStore } from "../shared/lib/notify";
+import { ConfirmHost, Toaster } from "../shared/ui/primitives";
+
+/**
+ * Testdagi `<Toaster />`: birinchi xabar chiqqanda o'rnatiladi. Ilovada (`UiHost`) u doim turadi va doimiy
+ * `role="status"` / `role="alert"` e'lon hududlarini chizadi — xabarsiz testlarda ular sahifaning o'z
+ * `getByRole("alert")` so'rovlari bilan to'qnashmasin.
+ */
+const TestToaster = () => {
+  const toasts = useSyncExternalStore(toastStore.subscribe, toastStore.getSnapshot);
+  const [shown, setShown] = useState(false);
+  if (!shown && toasts.length > 0) setShown(true);
+  return shown || toasts.length > 0 ? <Toaster /> : null;
+};
 
 const rootReducer = combineReducers({
   sidebar,
@@ -59,6 +73,9 @@ export const renderWithProviders = (
           <MemoryRouter initialEntries={[route]}>
             <QueryClientProvider client={queryClient}>
               <NotificationProvider>{ui}</NotificationProvider>
+              {/* Ilovadagidek (`UiHost`): `useConfirm()` oynalari va `notify()` xabarlari shu yerda chiziladi. */}
+              <ConfirmHost />
+              <TestToaster />
             </QueryClientProvider>
           </MemoryRouter>
         </Provider>

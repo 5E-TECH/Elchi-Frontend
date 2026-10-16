@@ -1,4 +1,3 @@
-import type { NotificationInstance } from "antd/es/notification/interface";
 import type { FieldValues, Path, UseFormSetError } from "react-hook-form";
 import i18n from "../../../i18n";
 import {
@@ -9,13 +8,13 @@ import {
 
 export interface ApplyBranchBackendErrorsOptions {
   /**
-   * NotificationProvider `api`i (`useAppNotification().api`). Berilsa, hech bir
+   * Xabar chiqaruvchi — odatda `notify` (`shared/lib/notify`). Berilsa, hech bir
    * forma maydoniga bog'lanmagan server javobi bildirishnoma bilan ko'rsatiladi —
    * backend rad etishi (masalan "HQ filial turini o'zgartirib bo'lmaydi") jim
    * yutilib ketmaydi. Berilmasa — avvalgidek faqat maydon xatolari (chaqiruvchi
    * o'zi xabar ko'rsatadi, masalan BranchFormModal).
    */
-  notification?: Pick<NotificationInstance, "error">;
+  notification?: { error: (message: string) => unknown };
 }
 
 const getBackendMessage = (error: unknown) => {
@@ -123,6 +122,6 @@ export const applyBranchBackendErrors = <TFieldValues extends FieldValues>(
     (hasMappedFieldError || !hasServerResponse(error) ? undefined : i18n.t("branches:errors.generic"));
 
   if (fallbackMessage) {
-    notification.error({ message: fallbackMessage, placement: "topRight" });
+    notification.error(fallbackMessage);
   }
 };

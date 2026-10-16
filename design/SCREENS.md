@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**76 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **19** · qisman: **4** · v2 ga ko'chirilgan route: **1 / 76**
+**76 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **19** · qisman: **4** · v2 ga ko'chirilgan route: **6 / 76**
 
 ## Qanday ishlatiladi
 
@@ -47,11 +47,11 @@
 |---|---|---|---|---|---|
 | `(qobiq)` | Qobiq | `src/widgets/layout/dashboardLayout.tsx` | superadmin, admin, manager, registrator, market, courier | 5 | v2 |
 | `/login` | Kirish va xato sahifalari | `src/features/auth/index.tsx` | hamma (kirishsiz) | 3 | eski |
-| `/403` | Kirish va xato sahifalari | `src/shared/ui/Forbidden.tsx` | hamma (kirishsiz) | 1 | eski |
-| `/404` | Kirish va xato sahifalari | `src/shared/ui/NotFound.tsx` | hamma (kirishsiz) | 1 | eski |
-| `/500` | Kirish va xato sahifalari | `src/shared/ui/ServerError.tsx` | hamma (kirishsiz) | 1 | eski |
-| `/runtime-error` | Kirish va xato sahifalari | `src/shared/ui/ErrorBoundaryPage.tsx` | hamma (kirishsiz) | 1 | eski |
-| `/*` | Kirish va xato sahifalari | `src/shared/ui/NotFound.tsx` | superadmin, admin, manager, registrator, market, courier | 1 | eski |
+| `/403` | Kirish va xato sahifalari | `src/shared/ui/Forbidden.tsx` | hamma (kirishsiz) | 1 | v2 |
+| `/404` | Kirish va xato sahifalari | `src/shared/ui/NotFound.tsx` | hamma (kirishsiz) | 1 | v2 |
+| `/500` | Kirish va xato sahifalari | `src/shared/ui/ServerError.tsx` | hamma (kirishsiz) | 1 | v2 |
+| `/runtime-error` | Kirish va xato sahifalari | `src/shared/ui/ErrorBoundaryPage.tsx` | hamma (kirishsiz) | 1 | v2 |
+| `/*` | Kirish va xato sahifalari | `src/shared/ui/NotFound.tsx` | superadmin, admin, manager, registrator, market, courier | 1 | v2 |
 | `/` | Bosh sahifa | `src/pages/dashboard/MarketDashboardPage.tsx` + `src/pages/dashboard/DashboardPage.tsx` | superadmin, admin, manager (→ /branch-dashboard), registrator, market, courier | 8 | eski |
 | `/branch-dashboard` | Bosh sahifa | `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` | manager | 2 | eski |
 | `/orders` | Buyurtmalar | `src/pages/orders/index.tsx` | superadmin, admin, manager, registrator, market, courier | 24 | eski |
@@ -166,10 +166,10 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/403` — Ruxsat yo'q
 
-- **Fayllar:** `src/shared/ui/Forbidden.tsx` · `src/shared/ui/error-page/ErrorInfoCard.tsx`
+- **Fayllar:** `src/shared/ui/Forbidden.tsx` · `src/shared/ui/error-page/ErrorPageFrame.tsx`
 - **Qobiq:** qobiqsiz (kirishsiz) va DashboardLayout · **Guard:** yo'q (kirishsiz)
 - **Rollar:** hamma (kirishsiz)
-- **Holat:** eski
+- **Holat:** v2
 - **Izoh:** Alohida maket yo'q — tizim-errors taxtasidagi «403 · Ruxsat yo'q» bloki.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
@@ -178,10 +178,10 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/404` — Sahifa topilmadi
 
-- **Fayllar:** `src/shared/ui/NotFound.tsx` · `src/shared/ui/error-page/ErrorInfoCard.tsx`
+- **Fayllar:** `src/shared/ui/NotFound.tsx` · `src/shared/ui/error-page/ErrorPageFrame.tsx`
 - **Qobiq:** qobiqsiz (kirishsiz) va DashboardLayout · **Guard:** yo'q (kirishsiz)
 - **Rollar:** hamma (kirishsiz)
-- **Holat:** eski
+- **Holat:** v2
 - **Izoh:** tizim-errors taxtasidagi «404 · Sahifa topilmadi» bloki.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
@@ -190,10 +190,10 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/500` — Server xatosi
 
-- **Fayllar:** `src/shared/ui/ServerError.tsx` · `src/shared/ui/error-page/ErrorInfoCard.tsx`
+- **Fayllar:** `src/shared/ui/ServerError.tsx` · `src/shared/ui/error-page/ErrorPageFrame.tsx`
 - **Qobiq:** qobiqsiz (kirishsiz) va DashboardLayout · **Guard:** yo'q (kirishsiz)
 - **Rollar:** hamma (kirishsiz)
-- **Holat:** eski
+- **Holat:** v2
 - **Izoh:** tizim-errors taxtasidagi «500 · Server xatosi» bloki.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
@@ -205,7 +205,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Fayllar:** `src/shared/ui/ErrorBoundaryPage.tsx` · `src/shared/ui/ErrorBoundary.tsx`
 - **Qobiq:** qobiqsiz (kirishsiz) va DashboardLayout · **Guard:** yo'q (kirishsiz)
 - **Rollar:** hamma (kirishsiz)
-- **Holat:** eski
+- **Holat:** v2
 - **Izoh:** tizim-errors taxtasidagi «Ilova xatosi» bloki.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
@@ -218,7 +218,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish)
 - **Rollar:** superadmin, admin, manager, registrator, market, courier
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -2203,7 +2203,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/shared/ui/NotFound.tsx` | `/404`, `/*` |
 | `src/shared/ui/ServerError.tsx` | `/500` |
 | `src/shared/ui/SmsMeter.tsx` | `/notifications/sms` |
-| `src/shared/ui/error-page/ErrorInfoCard.tsx` | `/403`, `/404`, `/500` |
+| `src/shared/ui/error-page/ErrorPageFrame.tsx` | `/403`, `/404`, `/500` |
 | `src/widgets/Sidebar/model/menuConfig.tsx` | `(qobiq)` |
 | `src/widgets/Sidebar/ui/BottomNav.tsx` | `(qobiq)` |
 | `src/widgets/Sidebar/ui/MobileMenu.tsx` | `(qobiq)` |

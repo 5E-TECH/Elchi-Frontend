@@ -82,6 +82,19 @@ describe("RegionDistrictsPage (7exC7QKt)", () => {
     await waitFor(() => expect(api.patch).toHaveBeenCalledWith("district/name/3", { name: "Mirobod tumani" }));
   });
 
+  it("deletes a district only after the v2 confirmation (DELETE /district/:id)", async () => {
+    const user = userEvent.setup();
+    open();
+    await screen.findByText("Mirobod");
+
+    await user.click(screen.getByRole("button", { name: "Mirobod ni o'chirish" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Mirobod tumanini o'chirasizmi?" });
+    expect(api.delete).not.toHaveBeenCalled();
+
+    await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+    await waitFor(() => expect(api.delete).toHaveBeenCalledWith("district/3"));
+  });
+
   it("moves a dragged district to another region with PATCH /district/:id {assigned_region}", async () => {
     let resolvePatch: (value: unknown) => void = () => undefined;
     api.patch.mockReturnValue(new Promise((resolve) => { resolvePatch = resolve; }));

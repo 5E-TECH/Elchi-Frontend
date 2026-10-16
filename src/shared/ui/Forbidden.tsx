@@ -1,32 +1,41 @@
+// dizayn-v2: tizim-errors
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, LockKeyhole } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import EmptyState from "./EmptyState";
+import { ArrowLeft, House, Lock } from "lucide-react";
+import { Button, EmptyState } from "./primitives";
+import { ErrorPageFrame, ErrorPageLink } from "./error-page/ErrorPageFrame";
 
-const ForbiddenPage = () => {
-  const { t } = useTranslation("common");
+/**
+ * 403 — rolga ruxsat berilmagan bo'lim (taxta `tizim-errors` 01): KULRANG `Lock` (xato emas — qizil yo'q),
+ * «Xato kodi 403», asosiy — «Bosh sahifaga qaytish», ikkinchisi — «Orqaga».
+ */
+const ForbiddenPage = ({ standalone = false }: { standalone?: boolean }) => {
+  const { t } = useTranslation("ui");
   const navigate = useNavigate();
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background p-4 dark:bg-background">
+    <ErrorPageFrame standalone={standalone}>
       <EmptyState
-        icon={<LockKeyhole size={30} />}
-        title={t("forbiddenTitle")}
-        description={t("forbiddenDescription")}
-        className="w-full max-w-xl border-white/10 bg-primary/95 py-16 dark:bg-maindark"
-        action={(
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 rounded-2xl bg-main px-5 py-3 text-sm font-bold text-white shadow-lg shadow-main/25 transition hover:bg-main/90"
-          >
-            <ArrowLeft size={16} />
-            {t("goBack")}
-          </button>
-        )}
+        framed
+        size="page"
+        titleAs="h1"
+        icon={Lock}
+        overline={t("states.page.forbidden.overline")}
+        title={t("states.page.forbidden.title")}
+        description={t("states.page.forbidden.description")}
+        action={
+          <>
+            <ErrorPageLink to="/" icon={House}>
+              {t("states.page.home")}
+            </ErrorPageLink>
+            <Button variant="secondary" leftIcon={ArrowLeft} onClick={() => navigate(-1)}>
+              {t("states.page.back")}
+            </Button>
+          </>
+        }
       />
-    </main>
+    </ErrorPageFrame>
   );
 };
 

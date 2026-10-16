@@ -702,6 +702,7 @@ export const CreateUserForm = memo(() => {
             <CustomDatePicker
               value={paymentDayToIsoDate(field.value)}
               onChange={(nextDate) => field.onChange(isoDateToPaymentDay(nextDate))}
+              aria-label={t("paymentDay")}
             placeholder={t("common:selectDateRange")}
             variant="form"
             className="w-full"

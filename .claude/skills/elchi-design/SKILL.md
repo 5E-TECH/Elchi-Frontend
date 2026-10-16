@@ -76,8 +76,27 @@ nima yashirinadi yoki kartaga aylanadi; bo'sh, yuklanish va xato holatlari; dial
   v1 o'rnini bosuvchilar: `shared/components/button` → `Button`, `shared/ui/StatusBadge` va
   `pages/orders/list/OrderStatusBadge` → `StatusBadge` / `OrderStatusBadge`, `statusColorMap` → `statusRegistry` +
   `tone.ts`, `shared/lib/formatDate` → `formatDateTimeLocalized` (qo'riqchi yangi importni ushlaydi).
-  `Dialog`/`ConfirmDialog`, `Field`/`TextInput`/`Select`/`DateRange`, `QueryBoundary` hali yo'q (3-bosqich) —
-  ular uchun CODE-MAP dagi Tailwind klasslari.
+- **Forma, dialog, holatlar — 3-bosqich primitivlari (tayyor)**, o'sha barreldan; namunasi
+  `/ops/ui-kit?section=forms|select|date|dialog|feedback|states`, klass retseptlari CODE-MAP (`.el-field`,
+  `.el-select`, `.el-cal*`, `.el-dialog*`, `.el-toast*`, `.el-empty*`, `.el-skel*`):
+  - maydon — `<Field label hint error required>` ichida `TextInput` (`mode="phone"|"search"`, `multiline`),
+    `Select` (`searchable`, `multiple`), `DateRange` (tez tanlov: bugun, hafta, oy, barchasi) / `DateInput`;
+  - oyna — `Dialog` (telefonda pastki varaqa o'zi); tasdiq — `const confirm = useConfirm()` →
+    `await confirm({ title, description, confirmLabel: "<aniq fe'l>", tone, details, amount, transfer, consequences,
+    irreversible, onConfirm })` yoki deklarativ `ConfirmDialog`. Pul o'tkazish, kassa amali, «Kunni yakunlash»,
+    nofaol qilish, kalitni almashtirish — **har doim** tasdiq bilan, maketdagi `*-dialog` matnlari bilan;
+  - xabar — `notify.success|info|warning|error(sarlavha, { description, action, duration /* ms */ })`
+    (`src/shared/lib/notify.ts`);
+  - holatlar — `QueryBoundary` (skelet → `EmptyState` / `ErrorState` + «Qayta urinish»), `Skeleton*` presetlari;
+    sahifa umuman ochilmasa — `size="page"` (namunasi: `shared/ui/NotFound.tsx`, `ErrorBoundaryPage.tsx`).
+  - ro'yxat, kalendar, dialog `#ui-portal` da: sahifadagi `document` «tashqariga bosish» tinglovchisi
+    `if (isInUiLayer(event.target)) return;` bilan boshlanadi (aks holda panel ichidagi ro'yxat panelni yopadi).
+  - v1 o'ramlari (`SearchableSelect`, `FilterSelect`, `FilterMultiSelect`, `PopupSelect`, `DateRangePicker`,
+    `FilterDateRange`, `QuickDateRangeFilter`, `Popup`, `FormPopup`, `PopupConfirm`, `UpdatePopup`, `ConfirmButton`,
+    `EmptyState`, `QueryErrorState`, `TableSkeleton`, `PhoneInput`, `SearchInput`) API'si saqlangan, ichi v2 —
+    eski sahifa ishlayveradi; **yangi kodda** to'g'ridan-to'g'ri primitivni ishlating.
+  - Testda `renderWithProviders` (`src/test/test-utils.tsx`) `ConfirmHost` va `Toaster` ni o'zi qo'shadi: tasdiqni
+    `findByRole("alertdialog", { name })` → tugma bosish, xabarni `findByText` bilan tekshiring.
 - Faqat tokenlar: `bg-surface`, `text-text-muted`, `border-border`, `bg-action text-on-solid`,
   `bg-success-soft text-success-fg` … JS'da `themeTokens(theme)`, `CHART_PALETTE[theme]`.
 - Pul va son faqat `src/shared/lib/formatMoney.ts`. Ikonka faqat `lucide-react` (`design/icon-registry.json` dagi
@@ -119,7 +138,9 @@ Yangi yoki o'zgargan qatorlarda bo'lmasligi kerak: hex / `rgb()` / `hsl()`, Tail
 `font-extrabold`, gradient, v1 klasslari (`el-card`, `el-glass-control`, `el-segmented*`), v1 yordamchilari (`TYPO`,
 `TEXT`, `toneAccent`, `formatPercent`, `HeaderName`, `MetricCard`), v1 komponent importlari (`shared/components/button`,
 `shared/ui/StatusBadge`, `pages/orders/list/OrderStatusBadge`, `statusColorMap`, `shared/lib/formatDate`), maxsus soya, `Intl.NumberFormat`, qo'lda `so'm`,
-boshqa ikonka kutubxonalari.
+boshqa ikonka kutubxonalari, antd `message` / `notification` / `Popconfirm` / `Modal.confirm` / `App.useApp()`,
+brauzer `confirm()` / `alert()` / `prompt()` (ESLint xato beradi — `notify`, `useConfirm()`, `Dialog`), qo'lda yozilgan
+«Yuklanmoqda…» / «Ma'lumot yo'q» bloklari (`QueryBoundary`, `EmptyState`, `ErrorState`).
 
 ```bash
 npm run design:guard -- --diff            # origin/dev dan beri QO'SHILGAN qatorlar — yangi buzilish 0 (CI PR'da shu)

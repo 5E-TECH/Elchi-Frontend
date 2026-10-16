@@ -1,8 +1,8 @@
 import { memo, useState } from "react";
 import { Copy, Eye, EyeOff, KeyRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
+import { notify } from "../../../shared/lib/notify";
 
 /** Uzunligi ham oshkor bo'lmasin — doim bir xil sondagi nuqta. */
 const MASKED_TOKEN = "•".repeat(16);
@@ -22,7 +22,6 @@ interface MarketTelegramTokenCardProps {
  */
 export const MarketTelegramTokenCard = memo(({ token }: MarketTelegramTokenCardProps) => {
   const { t } = useTranslation("users");
-  const { api } = useAppNotification();
   const [isRevealed, setIsRevealed] = useState(false);
   const value = typeof token === "string" ? token.trim() : "";
 
@@ -30,9 +29,9 @@ export const MarketTelegramTokenCard = memo(({ token }: MarketTelegramTokenCardP
     if (!value) return;
     void copyToClipboard(value).then((copied) => {
       if (copied) {
-        api.success({ message: t("telegramTokenCopied"), placement: "topRight" });
+        notify.success(t("telegramTokenCopied"));
       } else {
-        api.error({ message: t("telegramTokenCopyFailed"), placement: "topRight" });
+        notify.error(t("telegramTokenCopyFailed"));
       }
     });
   };

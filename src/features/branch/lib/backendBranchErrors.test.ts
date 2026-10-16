@@ -22,10 +22,7 @@ describe("applyBranchBackendErrors — bog'lanmagan server xabari (fallback)", (
     );
 
     expect(notification.error).toHaveBeenCalledTimes(1);
-    expect(notification.error).toHaveBeenCalledWith({
-      message: "HQ filial turini o'zgartirib bo'lmaydi",
-      placement: "topRight",
-    });
+    expect(notification.error).toHaveBeenCalledWith("HQ filial turini o'zgartirib bo'lmaydi");
     expect(setError).not.toHaveBeenCalled();
   });
 
@@ -38,10 +35,7 @@ describe("applyBranchBackendErrors — bog'lanmagan server xabari (fallback)", (
       { notification },
     );
 
-    expect(notification.error).toHaveBeenCalledWith({
-      message: "name must be longer than or equal to 2 characters, phone_number must be a string",
-      placement: "topRight",
-    });
+    expect(notification.error).toHaveBeenCalledWith("name must be longer than or equal to 2 characters, phone_number must be a string");
   });
 
   it("falls back to `error` when the body has no `message`", () => {
@@ -49,7 +43,7 @@ describe("applyBranchBackendErrors — bog'lanmagan server xabari (fallback)", (
 
     applyBranchBackendErrors(serverError({ error: "Forbidden resource" }, 403), setError, { notification });
 
-    expect(notification.error).toHaveBeenCalledWith({ message: "Forbidden resource", placement: "topRight" });
+    expect(notification.error).toHaveBeenCalledWith("Forbidden resource");
   });
 
   it("shows the generic error when the server rejected without any message", () => {
@@ -57,10 +51,7 @@ describe("applyBranchBackendErrors — bog'lanmagan server xabari (fallback)", (
 
     applyBranchBackendErrors(serverError("<html>502 Bad Gateway</html>", 502), setError, { notification });
 
-    expect(notification.error).toHaveBeenCalledWith({
-      message: i18n.t("branches:errors.generic"),
-      placement: "topRight",
-    });
+    expect(notification.error).toHaveBeenCalledWith(i18n.t("branches:errors.generic"));
   });
 
   it("stays quiet for a network failure without a response (the interceptor shows 'Tarmoq xatosi')", () => {
@@ -126,10 +117,7 @@ describe("applyBranchBackendErrors — maydonga bog'langan xatolar (o'zgarmagan)
 
     expect(setError).toHaveBeenCalledTimes(1);
     expect(setError).toHaveBeenCalledWith("code", { type: "server", message: "Kod band" });
-    expect(notification.error).toHaveBeenCalledWith({
-      message: "Menejer topilmadi, Viloyat noto'g'ri",
-      placement: "topRight",
-    });
+    expect(notification.error).toHaveBeenCalledWith("Menejer topilmadi, Viloyat noto'g'ri");
   });
 
   it("treats a plain-text `errors` value as the message, not as a field map", () => {
@@ -137,7 +125,7 @@ describe("applyBranchBackendErrors — maydonga bog'langan xatolar (o'zgarmagan)
 
     applyBranchBackendErrors(serverError({ errors: "Filial topilmadi" }, 404), setError, { notification });
 
-    expect(notification.error).toHaveBeenCalledWith({ message: "Filial topilmadi", placement: "topRight" });
+    expect(notification.error).toHaveBeenCalledWith("Filial topilmadi");
   });
 
   it("without the notification option keeps the old behaviour (caller shows its own toast)", () => {

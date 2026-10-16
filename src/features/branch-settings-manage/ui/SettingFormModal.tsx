@@ -1,5 +1,5 @@
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Form, Input, message } from "antd";
+import { Form, Input } from "antd";
 import { Controller, useForm } from "react-hook-form";
 import { useEffect } from "react";
 import { SlidersHorizontal } from "lucide-react";
@@ -10,6 +10,7 @@ import { branchSettingSchema } from "../model/schema";
 import { useAddSetting } from "../api/useAddSetting";
 import { useUpdateSetting } from "../api/useUpdateSetting";
 import type { BranchSettingDto } from "../api/useAddSetting";
+import { notify } from "../../../shared/lib/notify";
 
 const SettingFormModal = ({
   branchId,
@@ -42,10 +43,10 @@ const SettingFormModal = ({
   const onSubmit = handleSubmit(async (values) => {
     if (initialData) {
       await updateSetting.mutateAsync({ id: initialData.id, payload: values });
-      message.success(t("settings.updated"));
+      notify.success(t("settings.updated"));
     } else {
       await addSetting.mutateAsync(values);
-      message.success(t("settings.created"));
+      notify.success(t("settings.created"));
     }
     onClose();
   });

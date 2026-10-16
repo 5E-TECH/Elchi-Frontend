@@ -1,7 +1,6 @@
 import { memo, useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { message } from "antd";
 import { MoveRight, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { RootState } from "../../../../app/config/store";
@@ -9,6 +8,7 @@ import { api } from "../../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../../shared/api";
 import PageContainer from "../../../../shared/ui/PageContainer";
 import BackButton from "../../../../shared/ui/BackButton";
+import { notify } from "../../../../shared/lib/notify";
 
 type District = {
   id: string;
@@ -83,7 +83,7 @@ const RegionSatoManagementPage = () => {
       const res = await api.get(API_ENDPOINTS.REGIONS.BASE);
       setRegions(normalizeRegions(res.data));
     } catch {
-      message.error(t("sato.loadError"));
+      notify.error(t("sato.loadError"));
       setRegions([]);
     } finally {
       setLoading(false);
@@ -144,9 +144,9 @@ const RegionSatoManagementPage = () => {
 
     try {
       await api.patch(API_ENDPOINTS.DISTRICTS.BY_ID(districtId), { assigned_region: toRegionId });
-      message.success(t("sato.moveSuccess"));
+      notify.success(t("sato.moveSuccess"));
     } catch {
-      message.error(t("sato.moveError"));
+      notify.error(t("sato.moveError"));
       await fetchRegions();
     } finally {
       setMovingId(null);

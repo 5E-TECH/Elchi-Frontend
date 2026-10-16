@@ -54,8 +54,8 @@ const pickRole = async (user: ReturnType<typeof userEvent.setup>, from: string, 
 };
 
 const openBranchSelect = async (user: ReturnType<typeof userEvent.setup>) => {
-  // Trigger nomi `<label htmlFor="branchId">` dan olinadi — "Filial".
-  await user.click(screen.getByRole("button", { name: "Filial" }));
+  // v2 `Select searchable`: maydon — `Field` yorlig'i ("Filial") bilan nomlangan combobox.
+  await user.click(screen.getByRole("combobox", { name: "Filial" }));
 };
 
 describe("CreateUserForm — filial ro'yxati rolga qarab", () => {
@@ -66,14 +66,14 @@ describe("CreateUserForm — filial ro'yxati rolga qarab", () => {
     await pickRole(user, "Admin", "Menejer");
     await openBranchSelect(user);
 
-    expect(screen.getByRole("button", { name: /Surxondaryo/ })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /HQ-TSHKNT/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Surxondaryo/ })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /HQ-TSHKNT/ })).not.toBeInTheDocument();
 
     await user.keyboard("{Escape}");
     await pickRole(user, "Menejer", "Ro'yxatchi");
     await openBranchSelect(user);
 
-    expect(screen.getByRole("button", { name: /HQ-TSHKNT/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Surxondaryo/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /HQ-TSHKNT/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Surxondaryo/ })).toBeInTheDocument();
   });
 });

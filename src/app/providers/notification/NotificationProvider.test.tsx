@@ -1,32 +1,32 @@
-import { render as rtlRender, screen, waitFor } from "@testing-library/react";
+import { act, render as rtlRender, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactElement } from "react";
 import userEvent from "@testing-library/user-event";
+import { I18nextProvider } from "react-i18next";
 import { vi } from "vitest";
+import i18n from "../../../i18n";
+import { notify } from "../../../shared/lib/notify";
+import { Toaster } from "../../../shared/ui/primitives";
 import {
   NotificationProvider,
   useAppNotification,
 } from "./NotificationProvider";
 
 // Ilovada NotificationProvider doim QueryClientProvider ichida turadi
-// ("Qayta urinish" so'rovlarni qayta yuklaydi, sahifani emas).
+// ("Qayta urinish" so'rovlarni qayta yuklaydi, sahifani emas). Xabarlar — haqiqiy `notify` + `<Toaster />`.
+let queryClient: QueryClient;
 const render = (ui: ReactElement) =>
-  rtlRender(<QueryClientProvider client={new QueryClient()}>{ui}</QueryClientProvider>);
+  rtlRender(
+    <I18nextProvider i18n={i18n}>
+      <QueryClientProvider client={queryClient}>
+        {ui}
+        <Toaster />
+      </QueryClientProvider>
+    </I18nextProvider>,
+  );
 
-const successMock = vi.fn();
-const errorMock = vi.fn();
-
-vi.mock("antd", () => ({
-  notification: {
-    useNotification: () => [
-      {
-        success: successMock,
-        error: errorMock,
-      },
-      <div key="holder">holder</div>,
-    ],
-  },
-}));
+const successMock = vi.spyOn(notify, "success");
+const errorMock = vi.spyOn(notify, "error");
 
 const TestConsumer = () => {
   const { apiRequest } = useAppNotification();
@@ -114,11 +114,12 @@ const CallbackConsumer = () => {
 
 describe("NotificationProvider", () => {
   beforeEach(() => {
-    successMock.mockReset();
-    errorMock.mockReset();
+    queryClient = new QueryClient();
+    successMock.mockClear();
+    errorMock.mockClear();
   });
 
-  it("renders children and context holder", () => {
+  it("renders children", () => {
     render(
       <NotificationProvider>
         <div>child-content</div>
@@ -126,7 +127,46 @@ describe("NotificationProvider", () => {
     );
 
     expect(screen.getByText("child-content")).toBeInTheDocument();
-    expect(screen.getByText("holder")).toBeInTheDocument();
+  });
+
+  it("shows the network error toast once with a «Qayta urinish» action that refetches active queries", async () => {
+    const user = userEvent.setup();
+    const refetch = vi.spyOn(queryClient, "refetchQueries").mockResolvedValue();
+    render(
+      <NotificationProvider>
+        <div />
+      </NotificationProvider>,
+    );
+
+    act(() => {
+      window.dispatchEvent(new Event("elchi:network-error"));
+      window.dispatchEvent(new Event("elchi:network-error"));
+    });
+
+    // Taxta `tizim-errors` 03: «Internet aloqasi yo'q» — barcha sahifalarda shu nom.
+    expect(await screen.findByText("Internet aloqasi yo'q")).toBeInTheDocument();
+    expect(screen.getAllByText("Internet aloqasi yo'q")).toHaveLength(1);
+    expect(screen.getByText("Internetga ulanishni tekshiring va qayta urinib ko'ring.")).toBeInTheDocument();
+    expect(errorMock).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByRole("button", { name: "Qayta urinish" }));
+    expect(refetch).toHaveBeenCalledWith({ type: "active" });
+  });
+
+  it("vaqt tugagan so'rov (ECONNABORTED) — «Server javob bermadi», internetni tekshirish so'ralmaydi", async () => {
+    render(
+      <NotificationProvider>
+        <div />
+      </NotificationProvider>,
+    );
+
+    act(() => {
+      window.dispatchEvent(new CustomEvent("elchi:network-error", { detail: { code: "ECONNABORTED" } }));
+    });
+
+    expect(await screen.findByText("Server javob bermadi")).toBeInTheDocument();
+    expect(screen.getByText("Birozdan keyin qayta urinib ko'ring.")).toBeInTheDocument();
+    expect(screen.queryByText("Internet aloqasi yo'q")).not.toBeInTheDocument();
   });
 
   it("shows success notification for successful request", async () => {
@@ -141,11 +181,7 @@ describe("NotificationProvider", () => {
     await user.click(screen.getByRole("button", { name: "success-case" }));
 
     await waitFor(() => {
-      expect(successMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          description: "Saved",
-        }),
-      );
+      expect(successMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ description: "Saved" }));
     });
   });
 
@@ -161,11 +197,7 @@ describe("NotificationProvider", () => {
     await user.click(screen.getByRole("button", { name: "error-case" }));
 
     await waitFor(() => {
-      expect(errorMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          description: "Boom",
-        }),
-      );
+      expect(errorMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ description: "Boom" }));
     });
   });
 
@@ -181,11 +213,7 @@ describe("NotificationProvider", () => {
     await user.click(screen.getByRole("button", { name: "callback-case" }));
 
     await waitFor(() => {
-      expect(successMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          description: "3 ta bajarildi, 1 ta o'tkazildi",
-        }),
-      );
+      expect(successMock).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ description: "3 ta bajarildi, 1 ta o'tkazildi" }));
     });
     expect(onSuccessSpy).toHaveBeenCalledWith({ approved: 3, skipped: 1 });
     expect(resultSpy).toHaveBeenCalledWith({ approved: 3, skipped: 1 });
@@ -204,12 +232,12 @@ describe("NotificationProvider", () => {
     // successMessage berilmagandagi odatiy matn — solishtirish uchun.
     await user.click(screen.getByRole("button", { name: "default-case" }));
     await waitFor(() => expect(successMock).toHaveBeenCalledTimes(1));
-    const defaultDescription = successMock.mock.calls[0][0].description;
+    const defaultDescription = successMock.mock.calls[0][1]?.description;
 
     await user.click(screen.getByRole("button", { name: "throwing-callback-case" }));
 
     await waitFor(() => expect(successMock).toHaveBeenCalledTimes(2));
-    expect(successMock.mock.calls[1][0].description).toBe(defaultDescription);
+    expect(successMock.mock.calls[1][1]?.description).toBe(defaultDescription);
     expect(onSuccessSpy).toHaveBeenCalledWith({ ok: true });
     expect(resultSpy).toHaveBeenCalledWith({ ok: true });
     expect(onErrorSpy).not.toHaveBeenCalled();

@@ -129,8 +129,44 @@ describe("UserListTable", () => {
 
     await user.click(screen.getAllByRole("switch")[0]);
 
+    // Nofaol qilish — avval tasdiqlash oynasi (DESIGN_SYSTEM §8); tasdiqsiz so'rov ketmaydi.
+    const dialog = await screen.findByRole("alertdialog", { name: "Nofaol qilishni tasdiqlang" });
+    expect(dialog).toHaveTextContent("Ali hisobi nofaol holatga o'tadi.");
+    expect(updateUserStatusMutateMock).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole("button", { name: "Nofaol qilish" }));
+
     expect(updateUserStatusMutateMock).toHaveBeenCalledWith(
       { id: "1", status: "inactive" },
+      expect.any(Object),
+    );
+  });
+
+  it("does not deactivate when the confirmation is cancelled", async () => {
+    const user = userEvent.setup();
+
+    renderWithProviders(
+      <UserListTable users={users as never} currentPage={1} onPageChange={vi.fn()} canManage />,
+    );
+
+    await user.click(screen.getAllByRole("switch")[0]);
+    await user.click(await screen.findByRole("button", { name: "Bekor qilish" }));
+
+    expect(updateUserStatusMutateMock).not.toHaveBeenCalled();
+  });
+
+  it("activates an inactive user without a confirmation", async () => {
+    const user = userEvent.setup();
+
+    renderWithProviders(
+      <UserListTable users={users as never} currentPage={1} onPageChange={vi.fn()} canManage />,
+    );
+
+    await user.click(screen.getAllByRole("switch")[1]);
+
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(updateUserStatusMutateMock).toHaveBeenCalledWith(
+      { id: "2", status: "active" },
       expect.any(Object),
     );
   });

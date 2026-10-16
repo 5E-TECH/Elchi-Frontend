@@ -2,8 +2,8 @@ import { memo, useState } from "react";
 import { Bell, BellOff, BellRing, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import PopupConfirm from "../../../shared/components/popupConfirm";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { usePushSubscription } from "../model/usePushSubscription";
+import { notify } from "../../../shared/lib/notify";
 
 const buttonBase =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60";
@@ -18,7 +18,6 @@ const buttonBase =
  */
 const PushPermissionButton = () => {
   const { t } = useTranslation("notifications");
-  const { api: notify } = useAppNotification();
   const { status, enable, disable } = usePushSubscription();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -41,9 +40,9 @@ const PushPermissionButton = () => {
     setBusy(true);
     try {
       const result = await enable();
-      if (result === "enabled") notify.success({ message: t("push.enabled") });
+      if (result === "enabled") notify.success(t("push.enabled"));
     } catch {
-      notify.error({ message: t("push.enableFailed") });
+      notify.error(t("push.enableFailed"));
     } finally {
       setBusy(false);
       setConfirmOpen(false);
@@ -54,9 +53,9 @@ const PushPermissionButton = () => {
     setBusy(true);
     try {
       await disable();
-      notify.success({ message: t("push.disabled") });
+      notify.success(t("push.disabled"));
     } catch {
-      notify.error({ message: t("push.disableFailed") });
+      notify.error(t("push.disableFailed"));
     } finally {
       setBusy(false);
     }

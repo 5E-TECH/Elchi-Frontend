@@ -92,11 +92,11 @@ describe("UpdateUserModal — holat variantlari (fix3b)", () => {
     const user = userEvent.setup();
     renderModal(makeUser(), { role: "superadmin", id: "1" });
 
-    await user.click(screen.getByRole("button", { name: "Holat" }));
+    // v2 `Select searchable`: maydon — combobox, variantlar — option.
+    await user.click(screen.getByRole("combobox", { name: "Holat" }));
 
-    expect(screen.getByRole("button", { name: "Faol emas" })).toBeInTheDocument();
-    expect(screen.getAllByRole("button", { name: "Faol" }).length).toBeGreaterThan(0);
-    expect(screen.queryByRole("button", { name: "Bloklangan" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(["Faol", "Faol emas"]);
+    expect(screen.queryByRole("option", { name: "Bloklangan" })).not.toBeInTheDocument();
   });
 });
 
