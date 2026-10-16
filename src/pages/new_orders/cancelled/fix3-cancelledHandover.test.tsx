@@ -17,8 +17,14 @@ const mocks = vi.hoisted(() => ({
   handoverMutate: vi.fn(),
 }));
 
+/** Qobiq tablaridagi sonlar (`useNewOrdersTabs`) — bu testda son kerak emas, so'rov kutilmoqda holati. */
+const idleQuery = () => ({ status: "pending", data: undefined, isLoading: false, isError: false, refetch: vi.fn() });
+
 vi.mock("../../../entities/orders", () => ({
   useOrders: () => ({
+    useGetTodayOrders: idleQuery,
+    useGetTodayOrdersByMarket: idleQuery,
+    useCancelledMarkets: idleQuery,
     useCancelledOrdersByMarket: () => ({
       data: {
         data: [
@@ -127,15 +133,24 @@ describe("Yangi buyurtmalar tablari — HQ registratori (fix3 CODE-16 / C4)", ()
       },
     }) as never;
 
+  // Dizayn v2: `/new-orders` da tablar bola sahifa kartasida; qobiqning o'zi tablarni hali ko'chirilmagan
+  // bola sahifalarda (bu yerda `userDetail`) chizadi — tab ko'rinishi shu yerda tekshiriladi.
   it("HQ registratori 'Bekor qilinganlar' tabini ko'radi", () => {
-    renderWithProviders(<NewOrders />, { route: "/new-orders", preloadedState: stateFor("registrator", "HQ") });
+    renderWithProviders(<NewOrders />, {
+      route: "/new-orders/userDetail/1",
+      preloadedState: stateFor("registrator", "HQ"),
+    });
 
-    expect(screen.getByText("Bekor qilinganlar")).toBeInTheDocument();
+    const tabs = screen.getByRole("navigation", { name: "Qabul manbalari" });
+    expect(within(tabs).getByRole("link", { name: "Bekor qilinganlar" })).toHaveAttribute(
+      "href",
+      "/new-orders/cancelled",
+    );
   });
 
   it("REGIONAL registratorida tab yo'q (mollar HQ omborida)", () => {
     renderWithProviders(<NewOrders />, {
-      route: "/new-orders",
+      route: "/new-orders/userDetail/1",
       preloadedState: stateFor("registrator", "REGIONAL"),
     });
 

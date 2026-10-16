@@ -1,258 +1,285 @@
-import { memo, useMemo, useState, useEffect } from "react";
-import { ChevronRight, Phone, ShoppingCart, Store, TrendingUp } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { Table } from "../../../shared/components/Table/Table";
-import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
-import { useOrders } from "../../../entities/orders";
-import { useNavigate } from "react-router-dom";
-import { GlobalSearchInput, useDebounce } from "../../../features/search";
+// dizayn-v2: superadmin-neworders-markets, admin-neworders-markets, manager-new-orders-markets, registrator-new-orders-markets
+import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { ChevronRight, Inbox, SearchX } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
+import { useOrders } from "../../../entities/orders";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { formatPhone } from "../../../shared/lib/formatPhone";
+import {
+  Button,
+  Card,
+  DataTable,
+  EmptyState,
+  QueryBoundary,
+  Skeleton,
+  SkeletonTable,
+  TextInput,
+  type DataTableColumn,
+  type DataTableSort,
+} from "../../../shared/ui/primitives";
+import {
+  extractTodayMarkets,
+  filterTodayMarkets,
+  sortTodayMarkets,
+  sumTodayMarkets,
+  type TodayMarketRow,
+} from "../model/todayMarkets";
+import { useHasNewOrdersTabs } from "../model/useNewOrdersTabs";
+import NewOrdersTabs from "../ui/NewOrdersTabs";
 
-// ─── API dan kelgan tuzilma ──────────────────────────────────────────────────
-interface MarketInfo {
-  id: string;
-  name: string;
-  phone_number: string;
-  status: "active" | "inactive";
-  default_tariff: "center" | "home";
-  tariff_center: number;
-  tariff_home: number;
-}
+/** Maketdagidek: buyurtmasi ko'p market tepada (`aria-sort="descending"`). */
+const DEFAULT_SORT: DataTableSort = { key: "orders", direction: "desc" };
 
-interface TodayOrder {
-  market_id: string;
-  orders_count: number;
-  total_price_sum: number;
-  market: MarketInfo;
-}
+/**
+ * Qatordagi «ochish» havolasi — `IconButton size="sm"` (ghost) ko'rinishida, lekin `<a>`: route'ga olib boradi
+ * (yangi oynada ham ochiladi). Telefonda 44 px (jadval telefonda kartaga aylanadi, bu yerda faqat moslik uchun).
+ */
+const ICON_LINK =
+  "inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-transparent text-text-muted " +
+  "transition-[background-color,border-color,color,box-shadow] duration-150 hover:bg-sunken hover:text-text " +
+  "motion-reduce:transition-none max-md:size-11";
 
-// ─── Jadval uchun flat tuzilma ───────────────────────────────────────────────
-interface TableRow {
-  market_id: string;
-  name: string;
-  phone_number: string;
-  orders_count: number;
-  total_price_sum: number;
-}
+const STRONG = <strong className="font-semibold text-text" />;
 
-// ─── Format helpers ──────────────────────────────────────────────────────────
-const fmt = (n: number, currencyLabel: string) =>
-  `${n.toLocaleString("uz-UZ")} ${currencyLabel}`;
-
-// ─── Stat Card ───────────────────────────────────────────────────────────────
-const StatCard = ({ icon, label, value, iconCls }: {
-  icon: React.ReactNode; label: string; value: string | number; iconCls: string;
-}) => (
-  <div className="flex w-full items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3.5 dark:border-white/10 dark:bg-primarydark sm:p-4">
-    <div className={`p-2.5 rounded-xl ${iconCls}`}>{icon}</div>
-    <div className="flex min-w-0 flex-col">
-      <span className="text-xs font-medium text-maindark dark:text-white/75">{label}</span>
-      <strong className="truncate text-base leading-tight text-maindark dark:text-white sm:text-lg">{value}</strong>
-    </div>
-  </div>
-);
-
-// ─── Main ─────────────────────────────────────────────────────────────────────
+/**
+ * «QABUL VA YARATISH» → «Marketlar» (`/new-orders`, xodimlar uchun).
+ *
+ * Bugun qabul kutayotgan buyurtmasi bor marketlar: kartaning boshida qobiq tablari (`NewOrdersTabs`), ostida
+ * qidiruv + kunlik xulosa, jadval (telefonda — kartalar ro'yxati). Bitta tabli rol (menejer, HQ bo'lmagan
+ * registrator) — tablar o'rnida «Marketlar» sarlavhasi va «Bugun: …» xulosasi (maket `manager-new-orders-markets`).
+ * Qidiruv va saralash mijoz tomonida (ro'yxat to'liq keladi). Market roli o'z buyurtmalariga yo'naltiriladi.
+ */
 const Markets = () => {
-  const { t } = useTranslation(["newOrders", "common", "orders"]);
-  const currencyLabel = t("currency", { ns: "orders" });
-  const { useGetTodayOrders } = useOrders();
+  const { t, i18n } = useTranslation("newOrders");
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const navigate = useNavigate();
-  const roleState = useSelector((state: RootState) => state.role);
-  const isMarketRole = roleState.role === "market";
-  const marketId = roleState.id;
-
-  // Redux dan search qiymatini olish (GlobalSearchInput Redux ga yozadi)
-  const searchQuery = useSelector((state: RootState) =>
-    (state.search["market_search"] as string) || ""
-  );
-
-  // Backend ga yuborish uchun debounce (500ms)
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const applyDebounce = useDebounce((val: string) => setDebouncedSearch(val), 500);
+  const role = useSelector((state: RootState) => state.role.role);
+  const marketId = useSelector((state: RootState) => state.role.id);
+  const isMarketRole = role === "market";
+  // Maketlarda matn rolga qarab: superadmin/admin — xulosa «Bugun:» siz, havola «{nom} ni ochish»;
+  // menejer va registrator (HQ ham, tablari bo'lsa ham) — «Bugun: …» va «{nom} buyurtmalarini ochish».
+  const isAdmin = role === "superadmin" || role === "admin";
+  const hasTabs = useHasNewOrdersTabs();
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<DataTableSort | null>(DEFAULT_SORT);
 
   useEffect(() => {
-    applyDebounce(searchQuery);
-  }, [searchQuery, applyDebounce]);
-
-  useEffect(() => {
-    if (!isMarketRole || !marketId) {
-      return;
-    }
-
+    if (!isMarketRole || !marketId) return;
     navigate(`/new-orders/${marketId}`, { replace: true });
   }, [isMarketRole, marketId, navigate]);
 
-  const params = debouncedSearch.trim() ? { search: debouncedSearch.trim() } : undefined;
-  const { data: response, isLoading } = useGetTodayOrders(params, !isMarketRole);
+  const { useGetTodayOrders } = useOrders();
+  // Kalit tab sonidagi bilan bir xil (`NewOrdersTabs`) — kesh umumiy.
+  const query = useGetTodayOrders(undefined, !isMarketRole);
 
-  const columns = useMemo<ColumnConfig<TableRow>[]>(
+  const allRows = useMemo(() => extractTodayMarkets(query.data), [query.data]);
+  // Xulosa — kunlik jami (qidiruvdan qat'i nazar: «Bugun: …»), v1 dagi uchta StatCard o'rnida.
+  const totals = useMemo(() => sumTodayMarkets(allRows), [allRows]);
+  const rows = useMemo(
+    () => sortTodayMarkets(filterTodayMarkets(allRows, search), sort, language),
+    [allRows, language, search, sort],
+  );
+
+  const money = useCallback((value: number) => formatMoneyLocalized(value, { language }), [language]);
+  const count = useCallback((value: number) => formatNumberLocalized(value, { language }), [language]);
+  const marketHref = (row: TodayMarketRow) => `/new-orders/${row.market_id}`;
+
+  const columns = useMemo<DataTableColumn<TodayMarketRow>[]>(
     () => [
       {
-        key: "market_id",
-        label: "#",
-        width: "6%",
-        render: (_v, _row, index) => (
-          <span className="font-medium text-maindark dark:text-gray-500">{index + 1}</span>
-        ),
-      },
-      {
-        key: "name",
-        label: t("marketName"),
-        width: "22%",
+        id: "name",
+        header: t("markets.columns.market"),
         sortable: true,
-        render: (v) => (
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-main/10 dark:bg-main/20 flex items-center justify-center shrink-0">
-              <Store size={14} className="text-main" />
-            </div>
-            <span className="font-semibold text-maindark dark:text-white">{v}</span>
-          </div>
+        sortTitle: t("markets.sortByName"),
+        className: "w-[30%]",
+        cell: (row) => (
+          <Link
+            to={`/new-orders/${row.market_id}`}
+            className="font-semibold text-text hover:text-action-fg hover:underline"
+          >
+            {row.name}
+          </Link>
         ),
       },
       {
-        key: "phone_number",
-        label: t("phone"),
-        width: "18%",
-        render: (v) => (
-          <span className="font-medium text-maindark dark:text-slate-300">{v}</span>
-        ),
+        id: "phone",
+        header: t("markets.columns.phone"),
+        className: "w-[22%] whitespace-nowrap",
+        cell: (row) => formatPhone(row.phone_number) || "—",
       },
       {
-        key: "orders_count",
-        label: t("orders"),
-        width: "25%",
+        id: "orders",
+        header: t("markets.columns.orders"),
+        align: "end",
         sortable: true,
-        render: (v) => (
-          <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-md bg-main/10 dark:bg-main/20 flex items-center justify-center">
-              <ShoppingCart size={12} className="text-main" />
-            </span>
-            <span className="font-bold text-maindark dark:text-white">
-              {t("orderCountValue", { count: Number(v) || 0 })}
-            </span>
-          </div>
-        ),
+        firstDirection: "desc",
+        sortTitle: t("markets.sortByOrders"),
+        className: "w-[16%]",
+        cell: (row) => t("markets.ordersCell", { value: count(row.orders_count) }),
       },
       {
-        key: "total_price_sum",
-        label: t("totalAmount"),
-        width: "28%",
+        id: "amount",
+        header: t("markets.columns.amount"),
+        align: "end",
         sortable: true,
-        render: (v) => (
-          <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
-            {fmt(Number(v) || 0, currencyLabel)}
-          </span>
-        ),
+        firstDirection: "desc",
+        sortTitle: t("markets.sortByAmount"),
+        className: "w-[22%]",
+        cell: (row) => <span className="font-semibold text-text">{money(row.total_price_sum)}</span>,
+      },
+      {
+        id: "actions",
+        header: <span className="sr-only">{t("markets.columns.actions")}</span>,
+        className: "w-14",
+        cellClassName: "text-right",
+        cell: (row) => {
+          const label = t(isAdmin ? "markets.open" : "markets.openOrders", { name: row.name });
+          return (
+            <Link to={`/new-orders/${row.market_id}`} aria-label={label} title={label} className={ICON_LINK}>
+              <ChevronRight aria-hidden="true" size={16} strokeWidth={2} />
+            </Link>
+          );
+        },
       },
     ],
-    [currencyLabel, t],
+    [count, isAdmin, money, t],
   );
 
-  // API dan kelgan array ni jadval uchun flat qilamiz
-  const rows: TableRow[] = useMemo(() => {
-    const list: TodayOrder[] = response?.data ?? response ?? [];
-    return list.map((item) => ({
-      market_id: item.market_id,
-      name: item.market?.name ?? "—",
-      phone_number: item.market?.phone_number ?? "—",
-      orders_count: item.orders_count,
-      total_price_sum: item.total_price_sum,
-    }));
-  }, [response]);
+  const renderCard = useCallback(
+    (row: TodayMarketRow) => {
+      const phone = formatPhone(row.phone_number) || "—";
+      const orders = t("markets.ordersSub", { count: row.orders_count, value: count(row.orders_count) });
+      return (
+        <Link to={`/new-orders/${row.market_id}`} className="flex min-h-14 items-center gap-3 px-4 py-3 text-sm text-text">
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="flex min-w-0 justify-between gap-2">
+              <span className="min-w-0 font-semibold">{row.name}</span>
+              <span className="whitespace-nowrap font-semibold">{money(row.total_price_sum)}</span>
+            </span>
+            <span className="text-[13px] text-text-muted">
+              {phone} · {orders}
+            </span>
+          </span>
+          <ChevronRight aria-hidden="true" size={18} strokeWidth={2} className="shrink-0 text-text-subtle" />
+        </Link>
+      );
+    },
+    [count, money, t],
+  );
 
   if (isMarketRole) {
-    return (
-      <div className="flex min-h-[240px] items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-primary dark:border-primarydark/50 dark:bg-primarydark">
-        <span className="text-sm font-medium text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-          {t("loading", { ns: "common" })}
-        </span>
-      </div>
-    );
+    // Market o'z «Yangi buyurtmalar» tabiga yo'naltirilmoqda — bir lahza skelet.
+    return <SkeletonTable rows={4} columns={3} />;
   }
 
-  // Statistika
-  const totalOrders = rows.reduce((s, r) => s + r.orders_count, 0);
-  const totalSum = rows.reduce((s, r) => s + r.total_price_sum, 0);
+  const isLoading = query.isLoading;
+  const isError = query.isError;
 
-  const renderMobileCard = (row: TableRow, index: number) => (
-    <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-transform active:scale-[0.98] dark:border-primarydark/70 dark:bg-primarydark/70">
-      <div className="mb-3 flex items-center justify-between">
-        <span className="text-xs font-semibold text-maindark dark:text-gray-400">#{index + 1}</span>
-        <ChevronRight size={16} className="text-maindark dark:text-gray-400" />
-      </div>
-
-      <div className="mb-3 flex items-center gap-2.5">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-main/10 text-main dark:bg-main/20">
-          <Store size={15} />
-        </div>
-        <p className="truncate text-base font-bold text-maindark dark:text-primary">{row.name}</p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-2 border-t border-gray-100 pt-3 dark:border-primarydark/70">
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-xs font-semibold uppercase tracking-[0.08em] text-maindark dark:text-gray-300">{t("phone")}</span>
-          <span className="inline-flex items-center gap-1.5 text-sm font-medium text-maindark dark:text-gray-200">
-            <Phone size={13} className="text-main/70" />
-            {row.phone_number}
-          </span>
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-xs font-semibold uppercase tracking-[0.08em] text-maindark dark:text-gray-300">{t("orders")}</span>
-          <span className="font-bold text-maindark dark:text-primary">
-            {t("orderCountValue", { count: row.orders_count })}
-          </span>
-        </div>
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-xs font-semibold uppercase tracking-[0.08em] text-maindark dark:text-gray-300">{t("totalAmount")}</span>
-          <span className="tabular-nums font-extrabold text-emerald-600 dark:text-emerald-400">
-            {fmt(row.total_price_sum, currencyLabel)}
-          </span>
-        </div>
-      </div>
-    </div>
+  const summaryPart = (key: string, value: number, extra?: Record<string, unknown>): ReactNode => (
+    <span className="whitespace-nowrap">
+      <Trans
+        t={t}
+        i18nKey={key}
+        count={extra ? undefined : value}
+        values={extra ?? { value: count(value) }}
+        components={{ strong: STRONG }}
+      />
+    </span>
   );
 
+  // Xulosa: yuklanishda skelet, xatoda yo'q (noma'lum son «0» deb yozilmaydi), bo'sh kunda ham yo'q —
+  // «Bugun buyurtma yo'q» holati o'zi aytadi.
+  const summary =
+    query.status === "success" && allRows.length > 0 ? (
+      <p className="text-[13px] leading-[18px] text-text-muted">
+        {isAdmin ? null : <>{t("markets.summaryToday")} </>}
+        {summaryPart("markets.summaryMarkets", totals.markets)}
+        {" · "}
+        {summaryPart("markets.summaryOrders", totals.orders)}
+        {" · "}
+        {summaryPart("markets.summaryTotal", totals.amount, { amount: money(totals.amount) })}
+      </p>
+    ) : isLoading ? (
+      <Skeleton width={260} height={14} />
+    ) : null;
+
+  const skeletonColumns = [
+    t("markets.columns.market"),
+    t("markets.columns.phone"),
+    t("markets.columns.orders"),
+    t("markets.columns.amount"),
+  ];
+
+  const empty =
+    allRows.length === 0 ? (
+      <EmptyState icon={Inbox} title={t("noOrdersToday")} description={t("markets.emptyDescription")} />
+    ) : (
+      <EmptyState
+        icon={SearchX}
+        title={t("markets.noMatchTitle")}
+        description={t("markets.noMatchDescription")}
+        action={
+          <Button variant="secondary" onClick={() => setSearch("")}>
+            {t("markets.clearSearch")}
+          </Button>
+        }
+      />
+    );
+
   return (
-    <div className="space-y-4 pb-28 sm:space-y-6 sm:pb-24 md:pb-4">
-      {/* Search */}
-      <div>
-        <GlobalSearchInput searchKey="market_search" placeholder={t("marketNameOrPhoneSearch")} />
-      </div>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <StatCard
-          icon={<Store size={20} />}
-          label={t("marketsCount")}
-          value={t("totalCount", { count: rows.length })}
-          iconCls="bg-main/10 dark:bg-main/20 text-main"
+    <Card
+      padding="none"
+      // Tablar bo'lsa karta nomi — «Qabul kutayotgan buyurtmalar»; bitta tabli rolda — «Marketlar» sarlavhasi.
+      aria-label={hasTabs ? t("markets.cardLabel") : undefined}
+      title={hasTabs ? undefined : t("markets.title")}
+      actions={hasTabs ? undefined : summary}
+    >
+      <NewOrdersTabs />
+
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4">
+        <TextInput
+          mode="search"
+          value={search}
+          onValueChange={setSearch}
+          placeholder={t("markets.searchPlaceholder")}
+          aria-label={t("markets.searchLabel")}
+          className="max-w-[480px] flex-[1_1_320px]"
         />
-        <StatCard
-          icon={<ShoppingCart size={20} />}
-          label={t("totalOrders")}
-          value={t("totalCount", { count: totalOrders })}
-          iconCls="bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-500"
-        />
-        <StatCard
-          icon={<TrendingUp size={20} />}
-          label={t("totalAmount")}
-          value={fmt(totalSum, currencyLabel)}
-          iconCls="bg-amber-500/10 dark:bg-amber-500/20 text-amber-500"
-        />
+        {hasTabs ? summary : null}
       </div>
 
-      {/* Jadval */}
-      <Table<TableRow>
-        data={rows}
-        loading={isLoading}
-        columns={columns}
-        keyExtractor={(item) => item.market_id}
-        onRowClick={(row) => navigate(`/new-orders/${row.market_id}`)}
-        mobileRowRender={renderMobileCard}
-        hoverable
-        emptyMessage={t("noOrdersToday")}
-      />
-    </div>
+      <QueryBoundary
+        query={{
+          data: isLoading || (isError && allRows.length === 0) ? undefined : rows,
+          isLoading,
+          isError,
+          error: query.error,
+          refetch: query.refetch,
+        }}
+        keepPreviousData={false}
+        loadingLabel={t("markets.loading")}
+        loading={<SkeletonTable framed={false} columns={skeletonColumns} rows={6} />}
+        empty={empty}
+      >
+        {(list, { isRefetching }) => (
+          <DataTable
+            rows={list}
+            columns={columns}
+            getRowKey={(row) => row.market_id}
+            label={t("markets.listLabel")}
+            sort={sort}
+            onSortChange={setSort}
+            onRowClick={(row) => navigate(marketHref(row))}
+            renderCard={renderCard}
+            busy={isRefetching}
+            className="max-md:border-t max-md:border-border"
+          />
+        )}
+      </QueryBoundary>
+    </Card>
   );
 };
 

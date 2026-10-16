@@ -1,159 +1,37 @@
-import { memo, useMemo } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
+// dizayn-v2: superadmin-neworders-markets, admin-neworders-markets, manager-new-orders-markets, registrator-new-orders-markets, market-new-orders-list
+import { memo } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { Building2, ClipboardList, Plus, QrCode, Store, XCircle } from "lucide-react";
 import type { RootState } from "../../app/config/store";
-import { canHandoverCancelledToMarket } from "../../app/lib/access";
-import Button from "../../shared/components/button";
-import HeaderName from "../../shared/components/headerName";
-import PageContainer from "../../shared/ui/PageContainer";
+import { resolveNewOrdersShellMode } from "./model/newOrdersShell";
+import NewOrdersHeader from "./ui/NewOrdersHeader";
+import NewOrdersTabs from "./ui/NewOrdersTabs";
 
-type Tab = "markets" | "incoming" | "branches" | "cancelled";
-
+/**
+ * «QABUL VA YARATISH» QOBIG'I — barcha `/new-orders/*` bola route'lari shu ichida.
+ *
+ * Rejim yo'lga va rolga qarab (`resolveNewOrdersShellMode`):
+ *  - `bare`   — faqat `<Outlet/>`: bola o'z sarlavhasini («← Qabul va yaratish» + nom) chizadi (yaratish,
+ *               skaner, market buyurtmalari, tahrirlash) — sarlavha va tablar takrorlanmasin;
+ *  - `hosted` — sahifa ildizi + «Qabul va yaratish» sarlavhasi; tablar bola sahifaning birinchi kartasida
+ *               (`NewOrdersTabs`, maket `superadmin-neworders-markets`);
+ *  - `legacy` — hali ko'chirilmagan bolalar (filial paketlari, bekor qilinganlar): sarlavha va tablar sahifa
+ *               fonida, bola sahifa o'zgarmagan.
+ * Sahifa shell kontent slotida: tashqi karta va chekka yo'q, ildiz faqat bo'limlar oralig'ini beradi.
+ */
 const NewOrders = () => {
-  const { t } = useTranslation("newOrders");
-  const navigate = useNavigate();
   const location = useLocation();
   const role = useSelector((state: RootState) => state.role.role);
-  const roleId = useSelector((state: RootState) => state.role.id);
-  const isMarketRole = role === "market";
-  const isAdminRole = role === "admin" || role === "superadmin";
-  // fix3 CODE-16 / C4: HQ registratori ham bekor qilingan mollarni topshiradi.
-  const canSeeCancelledTab = useSelector(canHandoverCancelledToMarket);
+  const mode = resolveNewOrdersShellMode(location.pathname, role);
 
-  const activeTab = useMemo<Tab>(() => {
-    if (location.pathname.startsWith("/new-orders/branches")) return "branches";
-    if (location.pathname.startsWith("/new-orders/cancelled")) return "cancelled";
-    if (location.pathname.startsWith("/new-orders/incoming")) return "incoming";
-    return "markets";
-  }, [location.pathname]);
-  // Buyurtma YARATISH shu sahifada (ilgari buyurtmalar ro'yxatida edi).
-  // Forma ochiq bo'lsa tugma ham, tablar ham yashirin — formaning "Orqaga"si qaytaradi.
-  const isCreatePage = location.pathname.startsWith("/new-orders/create");
-
-  // Yaratish sahifasi (dizayn v2) o'z sarlavhasini chizadi («← Qabul va yaratish» · «Yangi buyurtma») — bu
-  // yerdagi eski sarlavha va tablar takrorlanmasin; sahifa to'g'ridan-to'g'ri shell kontent slotida.
-  if (isCreatePage) return <Outlet />;
+  if (mode === "bare") return <Outlet />;
 
   return (
-    <PageContainer>
-      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <HeaderName
-          name={t("pageTitle")}
-          description={t("pageDescription")}
-          icon={<ClipboardList />}
-        />
-        {!isCreatePage && (
-          <Button
-            label={t("createOrderBtn")}
-            icon={<Plus size={16} />}
-            onClick={() => navigate("/new-orders/create")}
-            className="w-full rounded-2xl py-3 text-sm shadow-lg shadow-main/20 sm:w-auto sm:rounded-xl sm:py-2.5"
-          />
-        )}
-      </div>
-
-      {isCreatePage ? null : isMarketRole ? (
-        <div className="mb-5 mt-4 grid grid-cols-1 gap-3 sm:mb-6 sm:grid-cols-2 sm:gap-4">
-          <div
-            onClick={() => navigate("/new-orders")}
-            className={`flex min-w-0 w-full cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200 sm:p-4
-              ${activeTab === "markets"
-                ? "bg-main text-white border-main shadow-lg shadow-main/25"
-                : "bg-white dark:bg-primarydark text-gray-600 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:border-main/30 hover:bg-gray-50 dark:hover:bg-primarydark/80"
-              }`}
-          >
-            <Store size={20} />
-            <h4 className="font-semibold">{t("newOrdersTab")}</h4>
-          </div>
-
-          <div
-            onClick={() => {
-              if (roleId) {
-                navigate(`/new-orders/cancelled/${roleId}`);
-              }
-            }}
-            className={`flex min-w-0 w-full cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200 sm:p-4
-              ${activeTab === "cancelled"
-                ? "border-red-500 bg-linear-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25"
-                : "border-gray-200 bg-white text-gray-600 hover:border-red-400/40 hover:bg-red-500/5 dark:border-white/10 dark:bg-primarydark dark:text-gray-300 dark:hover:bg-red-500/10"
-              }`}
-          >
-            <XCircle size={20} />
-            <h4 className="font-semibold">{t("cancelledTab")}</h4>
-          </div>
-        </div>
-      ) : (
-        <div className="mb-5 mt-4 grid grid-cols-1 gap-3 sm:mb-6 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
-          {/* Markets tab */}
-          <div
-            onClick={() => navigate("/new-orders")}
-            className={`flex min-w-0 w-full cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200 sm:p-4
-              ${activeTab === "markets"
-                ? "bg-main text-white border-main shadow-lg shadow-main/25"
-                : "bg-white dark:bg-primarydark text-gray-600 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:border-main/30 hover:bg-gray-50 dark:hover:bg-primarydark/80"
-              }`}
-          >
-            <Store size={20} />
-            <h4 className="font-semibold">{t("marketsTab")}</h4>
-          </div>
-
-          {/*
-            "Integratsiyalar" tabi BU YERDAN OLIB TASHLANDI — u sozlama yuzasi
-            edi va kunlik buyurtma ekranida turishi mantiqan xato edi. Endi
-            `/integrations` uyida.
-
-            Uning O'RNIGA "Kiruvchi posilkalar" keldi: hamkordan (BeePost,
-            marketplace) kelgan posilkalarni skanerlab qabul qilish — bu AYNAN
-            kunlik operatsiya, shuning uchun buyurtma yuzasida turishi to'g'ri.
-          */}
-          {isAdminRole && (
-            <div
-              onClick={() => navigate("/new-orders/incoming")}
-              className={`flex min-w-0 w-full cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200 sm:p-4
-              ${activeTab === "incoming"
-                ? "bg-main text-white border-main shadow-lg shadow-main/25"
-                : "bg-white dark:bg-primarydark text-gray-600 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:border-main/30 hover:bg-gray-50 dark:hover:bg-primarydark/80"
-              }`}
-            >
-              <QrCode size={20} />
-              <h4 className="font-semibold">Kiruvchi posilkalar</h4>
-            </div>
-          )}
-
-          {isAdminRole && (
-            <div
-              onClick={() => navigate("/new-orders/branches")}
-              className={`sm:col-span-2 xl:col-span-1 flex min-w-0 w-full cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200 sm:p-4
-              ${activeTab === "branches"
-                ? "bg-main text-white border-main shadow-lg shadow-main/25"
-                : "bg-white dark:bg-primarydark text-gray-600 dark:text-gray-300 border-gray-200 dark:border-white/10 hover:border-main/30 hover:bg-gray-50 dark:hover:bg-primarydark/80"
-              }`}
-            >
-              <Building2 size={20} />
-              <h4 className="font-semibold">{t("branchesTab")}</h4>
-            </div>
-          )}
-
-          {canSeeCancelledTab && (
-            <div
-              onClick={() => navigate("/new-orders/cancelled")}
-              className={`flex min-w-0 w-full cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition-all duration-200 sm:p-4
-              ${activeTab === "cancelled"
-                ? "border-red-500 bg-linear-to-r from-red-500 to-red-600 text-white shadow-lg shadow-red-500/25"
-                : "border-gray-200 bg-white text-gray-600 hover:border-red-400/40 hover:bg-red-500/5 dark:border-white/10 dark:bg-primarydark dark:text-gray-300 dark:hover:bg-red-500/10"
-              }`}
-            >
-              <XCircle size={20} />
-              <h4 className="font-semibold">{t("cancelledTab")}</h4>
-            </div>
-          )}
-        </div>
-      )}
-
+    <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
+      <NewOrdersHeader />
+      {mode === "legacy" ? <NewOrdersTabs background="bg" listClassName="" /> : null}
       <Outlet />
-    </PageContainer>
+    </div>
   );
 };
 

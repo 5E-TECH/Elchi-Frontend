@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-orders-detail, admin-orders-detail, manager-orders-detail, registrator-orders-detail, market-orders-detail, courier-orders-detail
+// dizayn-v2: superadmin-orders-detail, admin-orders-detail, manager-orders-detail, registrator-orders-detail, market-orders-detail, courier-orders-detail, superadmin-neworders-market-order-edit, registrator-new-orders-market-order-edit, market-new-orders-edit
 import type { ReactNode } from "react";
 import { Copy } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -18,6 +18,8 @@ type DetailHeaderProps = {
   order: OrderDetail | null;
   layout: OrderDetailLayout;
   onBack: () => void;
+  /** Orqaga havolasi matni (sukut «Buyurtmalar»; `/new-orders/:marketId/edit` — market nomi yoki «Qabul va yaratish»). */
+  backLabel?: string;
   actions?: ReactNode;
 };
 
@@ -27,7 +29,7 @@ type DetailHeaderProps = {
  * `courier-orders-detail`) desktopda holat + yetkazish turi va «Market · sana», telefonda esa
  * badge'lar To'lov kartasiga tushadi, izoh — «Buyurtma tafsilotlari».
  */
-export const DetailHeader = ({ orderId, order, layout, onBack, actions }: DetailHeaderProps) => {
+export const DetailHeader = ({ orderId, order, layout, onBack, backLabel, actions }: DetailHeaderProps) => {
   const { t, i18n } = useTranslation(["orders", "newOrders"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
   const id = order?.id ?? orderId;
@@ -85,7 +87,7 @@ export const DetailHeader = ({ orderId, order, layout, onBack, actions }: Detail
   return (
     <PageHeader
       back={onBack}
-      backLabel={t("orders", { ns: "newOrders" })}
+      backLabel={backLabel ?? t("orders", { ns: "newOrders" })}
       title={`№${id}`}
       titleAction={<IconButton size="sm" icon={Copy} label={t("copyOrderNumber")} onClick={copy} />}
       meta={meta}

@@ -1,6 +1,7 @@
-// dizayn-v2: superadmin-orders-detail, admin-orders-detail, manager-orders-detail, registrator-orders-detail, market-orders-detail, courier-orders-detail
-import { Clock, Lock } from "lucide-react";
-import { useTranslation } from "react-i18next";
+// dizayn-v2: superadmin-orders-detail, admin-orders-detail, manager-orders-detail, registrator-orders-detail, market-orders-detail, courier-orders-detail, superadmin-neworders-market-order-edit, registrator-new-orders-market-order-edit, market-new-orders-edit
+import { Clock, Info, Lock } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { isExtraCostAction, type PendingExtraCostApproval } from "../../../../entities/orders/extraCostApproval";
 import { formatDateTimeLocalized } from "../../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized } from "../../../../shared/lib/formatMoney";
@@ -22,6 +23,13 @@ type DetailAlertsProps = {
   /** Superadmin / admin — qulf matnida «Mijoz va manzilni …», boshqalarda «Manzilni …». */
   canEditCustomer: boolean;
   parentOrderId: string | null;
+  /**
+   * `/new-orders/:marketId/edit` (maketlar `*-market-order-edit`): qulf yo'q bo'lsa xodimga «Tahrirlash ochiq.»
+   * (info) — `full` (mijoz ham tahrirlanadi: superadmin/admin) yoki `limited` (mahsulot, summa, manzil).
+   */
+  editOpen?: "full" | "limited" | null;
+  /** Marketning «Yangi buyurtmalar» ro'yxati — «Faqat ko'rish uchun» matniga «o'chirib, qaytadan yarating» havolasi. */
+  marketListHref?: string | null;
 };
 
 /**
@@ -36,6 +44,8 @@ export const DetailAlerts = ({
   destinationLocked,
   canEditCustomer,
   parentOrderId,
+  editOpen = null,
+  marketListHref = null,
 }: DetailAlertsProps) => {
   const { t, i18n } = useTranslation(["orders", "newOrders"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -83,6 +93,17 @@ export const DetailAlerts = ({
         <DetailAlert tone="info" icon={Lock} role="note" title={t("orderDetail.readOnlyTitle")} titleBlock>
           {t("orderEditRoleOnly", { ns: "newOrders" })}
           {destinationLocked ? ` ${t("orderDetail.readOnlyLocked")}` : null}
+          {marketListHref ? (
+            <>
+              {" "}
+              <Trans
+                t={t}
+                ns="newOrders"
+                i18nKey="orderEdit.marketReadOnlyHint"
+                components={{ list: <Link to={marketListHref} className="font-semibold text-action-fg underline" /> }}
+              />
+            </>
+          ) : null}
         </DetailAlert>
       );
     }
@@ -111,6 +132,15 @@ export const DetailAlerts = ({
       return (
         <DetailAlert tone="neutral" icon={Lock} role="status" id={LOCK_ALERT_ID.destination}>
           {t("destinationLockReason", { ns: "newOrders" })}
+        </DetailAlert>
+      );
+    }
+    if (editOpen) {
+      return (
+        <DetailAlert tone="info" icon={Info} role="status" title={t("orderEdit.editOpenTitle", { ns: "newOrders" })}>
+          {editOpen === "full"
+            ? t("orderEdit.editOpenBody", { ns: "newOrders" })
+            : t("orderEdit.editOpenBodyLimited", { ns: "newOrders" })}
         </DetailAlert>
       );
     }

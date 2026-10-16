@@ -376,8 +376,9 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   (manzil, mijoz, buyurtma / mahsulotlar — `pages/new_orders/components/editDialogs/`), sotish / bekor qilish /
   qaytarish — `/orders` dagi v2 oynalar, marketga qaytarish oynalari. Sahifa `pages/new_orders/components/new_orderUpdate.tsx`
   (konteyner) + `detail/` (kartalar, ruxsat `orderDetailAccess.ts`, javob tozalash `orderDetailModel.ts`). Ayni komponent
-  `/new-orders/:marketId/edit/:orderId` da ham — u route'ning o'z maketlari (`*-neworders-market-order-edit`,
-  `market-new-orders-edit`) hali ko'chirilmagan, tafsilot ko'rinishi chiqadi.
+  `/new-orders/:marketId/edit/:orderId` da ham (maketlar `*-neworders-market-order-edit`, `market-new-orders-edit`):
+  orqaga — market nomi (market rolida «Qabul va yaratish»), «Buyurtma ma'lumotlari» kartasi yo'q, qulf bo'lmasa
+  xodimga «Tahrirlash ochiq.», marketga «Faqat ko'rish uchun» + «Yangi buyurtmalar» ro'yxatiga havola.
 - **Ko'chirilgan:** `/new-orders/create` — buyurtma yaratish, barcha rollar (`*-create-manual*`, `*-create-step1|step2`,
   `*-create-market-picker*`, `*-create-ai*`): sarlavha `PageHeader` («← Qabul va yaratish», «Yangi buyurtma», holatga
   qarab izoh, o'ngda «Qo'lda | AI bilan» — `SegmentedControl`), ~ 924 px dan keng ekranda ikki ustun (asosiy + yon),
@@ -390,6 +391,30 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   AI bilan: matn/rasm paneli (`AiInputPanel`), tahlil kartalari (`AiPreviewCard`), tasdiq paneli va 5 tadan ortiq
   buyurtmada tasdiq oynasi (`AiConfirmBar`), «Yaratildi (N)» (`AiCreatedList`), chiqib ketish himoyasi — `useConfirm()`.
   Ogohlantirishlar — umumiy `ui/CreateAlert.tsx` (`.el-alert`). v1 `ui/formFieldStyles.tsx` o'chirildi.
+- **Ko'chirilgan:** «Qabul» — `/new-orders/*` qobig'i va qabul sahifalari (kamera rejimlari `*-camera` — keyinroq,
+  hozir faqat USB/klaviatura skaneri). Qobiq `pages/new_orders/index.tsx`: rejim yo'lga qarab
+  (`model/newOrdersShell.ts` — `bare` faqat `<Outlet/>`; `hosted` — «Qabul va yaratish» `PageHeader` + «Buyurtma
+  yaratish» havolasi, `ui/NewOrdersHeader.tsx`; `legacy` — hali v1 bola sahifalar uchun sarlavha + tablar). Tablar
+  (`ui/NewOrdersTabs.tsx`, havola rejimidagi `Tabs`) bola sahifaning birinchi kartasi boshida, sonlari sahifa bilan
+  bir xil kesh kalitidan (yuklanish/xatoda son chizilmaydi, ko'rinmas tab so'rov yubormaydi); ko'rinish v1
+  qoidalari bo'yicha — superadmin/admin 4 tab, HQ registrator 2, menejer va boshqa registrator 1 (tab o'rnida karta
+  sarlavhasi), market — «Yangi buyurtmalar · Bekor qilinganlar».
+  `/new-orders` — «Marketlar» (`markets/index.tsx`): qidiruv, «Bugun:» xulosasi, `DataTable` (telefonda kartalar),
+  market roli o'z marketiga yo'naltiriladi. `/new-orders/:marketId` (`components/new_orderDetail.tsx` +
+  `components/marketOrders/`): xodimga `PageHeader` (market nomi, bugungi son · summa, bitta asosiy «Qabul qilish —
+  N ta»; REGIONAL — tugma o'rnida «Biriktirish» izohi), qidiruv + «USB skaner tayyor», tanlov paneli (`SelectionBar`
+  — «N ta buyurtma tanlandi · summa», «Barchasini tanlash», chop etish menyusi), `DataTable` tanlov bilan (telefonda
+  48 px belgi), qabul / o'chirish oynalari (`MarketOrderDialogs.tsx`, `ConfirmDialog`; o'chirish xatosi oynada
+  qoladi); market rolida — qobiq ichida o'z ro'yxati. Registrator hozircha boshqa xodimlar ko'rinishida (o'z maketi
+  — ega qarori kutilmoqda, `route-map.json` `partialViews`). `/new-orders/incoming` (`incoming-orders/SourcePicker.tsx`
+  + `ui/`): manbalar xulosasi (SVG halqa + legenda, telefonda segment chizig'i; «Jami summa», «Eng uzoq
+  kutayotgan»), `DataTable` (kutish o'lchagichi `role="meter"`, 3 kun chegarasi `lib.ts` `STALE_HOURS`), bo'sh
+  manbalar kartasi. `/new-orders/incoming/:marketId` (`incoming-orders/index.tsx`): skan maydoni `ui/ScanInput.tsx`
+  (matn holati maydonning o'zida — skaner tugmalari ro'yxatni qayta chizmaydi), oxirgi natija `ui/ScanMessage.tsx`
+  (`.el-alert`), posilkalar `ui/IncomingTable.tsx`; qabul 200 talik partiyalar bilan, ovoz va takror/topilmadi
+  holatlari o'zgarmagan. Tab sonlari uchun `useIncomingSources`, `useCancelledMarkets`, `useCancelledOrdersByMarket`,
+  `useBranchesWithSentBatches` ga ixtiyoriy `enabled` qo'shildi (sukut o'zgarmagan). v1 o'lik kalitlar
+  (`addOrderBtn`, `ordersHeader`, `searchOrder`, `receiveOrders`, `selectOrders`, `receiveOrderMessage`) o'chirildi.
 
 **Dizayn qo'riqchisi** (`scripts/design-guard.mjs`, `npm run design:guard`): `colour`, `palette`, `dark-pair`,
 `legacy`, `money`, `icons`, `tiny-text`, `v1-class`, `weight`, `gradient`, `v1-helper`. Ikki darvoza:
