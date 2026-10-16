@@ -4,10 +4,11 @@ import Orders from "./index";
 import { renderWithProviders } from "../../test/test-utils";
 
 /**
- * fix3b LC-04 — menejer jadvalida kuryer qo'lidagi buyurtmada "Sotish"
- * (qisman sotish ham shu oynada) ko'rsatilmaydi: backend 400 "Bu buyurtma
- * kuryer qo'lida — uni kuryerning o'zi sotadi". Filialda turgan buyurtma
- * avvalgidek sotiladi; bekor qilish ikkalasida ham qoladi.
+ * fix3b LC-04 — menejer jadvalida kuryer qo'lidagi buyurtmani sotib bo'lmaydi
+ * (qisman sotish ham shu oynada): backend 400 "Bu buyurtma kuryer qo'lida —
+ * uni kuryerning o'zi sotadi". Dizayn v2 (`manager-orders-list-pending`):
+ * "Sotish" o'chiq turadi, sababi nomida. Filialda turgan buyurtma avvalgidek
+ * sotiladi; bekor qilish ikkalasida ham qoladi.
  */
 
 const baseRow = {
@@ -109,19 +110,22 @@ const rowOf = (customerName: string) => {
 };
 
 describe("Orders — menejer kuryerdagi buyurtmani sotmaydi (fix3b LC-04)", () => {
-  it("kuryer qo'lidagi qatorda 'Sotish' yo'q, bekor qilish bor", () => {
+  it("kuryer qo'lidagi qatorda 'Sotish' ishlamaydi (o'chiq, sababi aytiladi), bekor qilish bor", () => {
     renderWithProviders(<Orders />, { route: "/orders?orderStatus=waiting", preloadedState: regionalManagerState });
 
     const courierRow = rowOf("Kuryerdagi mijoz");
-    expect(within(courierRow).queryByRole("button", { name: "Sotish" })).not.toBeInTheDocument();
-    expect(within(courierRow).getByRole("button", { name: "Bekor qilish" })).toBeInTheDocument();
+    expect(within(courierRow).queryByRole("button", { name: "№9001 ni sotish" })).not.toBeInTheDocument();
+    expect(
+      within(courierRow).getByRole("button", { name: "№9001 ni sotib bo'lmaydi: buyurtma kuryer qo'lida" }),
+    ).toBeDisabled();
+    expect(within(courierRow).getByRole("button", { name: "№9001 ni bekor qilish" })).toBeEnabled();
   });
 
   it("filialda turgan qatorda 'Sotish' avvalgidek ('0' sentinel kuryer emas)", () => {
     renderWithProviders(<Orders />, { route: "/orders?orderStatus=waiting", preloadedState: regionalManagerState });
 
     const branchRow = rowOf("Filialdagi mijoz");
-    expect(within(branchRow).getByRole("button", { name: "Sotish" })).toBeInTheDocument();
-    expect(within(branchRow).getByRole("button", { name: "Bekor qilish" })).toBeInTheDocument();
+    expect(within(branchRow).getByRole("button", { name: "№9002 ni sotish" })).toBeEnabled();
+    expect(within(branchRow).getByRole("button", { name: "№9002 ni bekor qilish" })).toBeEnabled();
   });
 });

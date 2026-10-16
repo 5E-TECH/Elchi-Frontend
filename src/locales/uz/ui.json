@@ -229,7 +229,8 @@
       "link": "Havola",
       "success": "Muvaffaqiyat",
       "danger": "Xavfli",
-      "dangerSoft": "Xavfli (yumshoq)"
+      "dangerSoft": "Xavfli (yumshoq)",
+      "successSoft": "Muvaffaqiyat (yumshoq)"
     },
     "iconVariants": {
       "ghost": "Ikonka tugma",
@@ -369,6 +370,19 @@
       "longDescription": "01.10 – 08.10.2026 · 94 ta buyurtma"
     }
   },
+  "table": {
+    "selectAll": "Barcha qatorlarni tanlash",
+    "selectRow": "Qatorni tanlash",
+    "cards": "Ro'yxat"
+  },
+  "pagination": {
+    "label": "Sahifalar",
+    "previous": "Oldingi sahifa",
+    "next": "Keyingi sahifa",
+    "summary": "{{from}}–{{to}} / {{total}}",
+    "pageSize": "Sahifadagi qatorlar soni: {{count}} ta",
+    "pageSizeOption": "{{count}} ta"
+  },
   "tabs": {
     "scrollPrev": "Oldingi tablar",
     "scrollNext": "Keyingi tablar",
@@ -472,6 +486,10 @@
       "states": {
         "title": "Yuklanish, bo'sh va xato holatlari",
         "description": "Skelet, bo'sh ro'yxat va qayta urinish."
+      },
+      "table": {
+        "title": "Jadval va sahifalash",
+        "description": "Saralash, tanlov, planshetda yashirin ustunlar, telefonda kartalar va sahifalar."
       }
     }
   },
@@ -670,6 +688,22 @@
     "clearShort": "Tozalash",
     "remove": "«{{label}}»ni olib tashlash",
     "selectedCount": "{{count}} ta tanlangan"
+  },
+  "filters": {
+    "button": "Filtrlar",
+    "panel": "Qo'shimcha filtrlar",
+    "active": "Faol filtrlar",
+    "clearAll": "Filtrlarni tozalash",
+    "remove": "{{label}} filtrini olib tashlash",
+    "chip": "{{label}}: {{value}}",
+    "searchChip": "{{label}}: «{{value}}»",
+    "sheetTitle": "Filtrlar",
+    "sheetSelected": "{{count}} ta filtr tanlangan",
+    "sheetClose": "Filtrlarni yopish",
+    "quickPeriod": "Tezkor davr",
+    "reset": "Tozalash",
+    "apply": "Natijalarni ko'rsatish",
+    "applyTotal": "({{total}})"
   },
   "popupSelect": {
     "search": "Qidirish...",
@@ -913,6 +947,29 @@
       "burst": "4 ta ketma-ket",
       "repeat": "Takror xato",
       "dismissAll": "Hammasini yopish"
+    }
+  },
+  "tableKit": {
+    "label": "Buyurtmalar namunasi",
+    "sortByDate": "Sana bo'yicha saralash",
+    "selectAll": "Sahifadagi jo'natilmagan buyurtmalarni tanlash",
+    "selectRow": "№{{id}} ni tanlash",
+    "cannotSelect": "№{{id}} allaqachon jo'natilgan, tanlab bo'lmaydi",
+    "summary": "{{from}}–{{to}} / {{total}} ta buyurtma",
+    "toHome": "Uygacha",
+    "columns": {
+      "order": "Buyurtma",
+      "customer": "Mijoz",
+      "area": "Tuman / viloyat",
+      "status": "Holat",
+      "delivery": "Yetkazish",
+      "amount": "Summa"
+    },
+    "status": {
+      "new": "Yangi",
+      "onTheRoad": "Yo'lda",
+      "cancelled": "Bekor qilingan",
+      "cancelledSent": "Bekor — jo'natilgan"
     }
   },
   "statesKit": {

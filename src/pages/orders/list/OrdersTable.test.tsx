@@ -1,5 +1,6 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { afterEach, vi } from "vitest";
 import OrdersTable from "./OrdersTable";
 import { renderWithProviders } from "../../../test/test-utils";
 
@@ -16,13 +17,60 @@ const orders = [
   },
 ];
 
+/** Telefon (< 768): `DataTable` jadval o'rniga kartalar chizadi (`matchMedia`). */
+const mockPhone = () =>
+  vi.spyOn(window, "matchMedia").mockImplementation(
+    (query: string) =>
+      ({
+        matches: query === "(max-width: 767px)",
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      }) as unknown as MediaQueryList,
+  );
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+const bodyRows = () => screen.getAllByRole("row").slice(1);
+
 describe("OrdersTable", () => {
   it("renders order row data", () => {
     renderWithProviders(<OrdersTable data={orders as never} isLoading={false} />);
 
-    expect(screen.getByText("Ali")).toBeInTheDocument();
-    expect(screen.getByText("Fresh Market")).toBeInTheDocument();
-    expect(screen.getByText("Yunusobod")).toBeInTheDocument();
+    const [row] = bodyRows();
+    const cells = within(row).getAllByRole("cell");
+    expect(within(cells[1]).getByText("Ali")).toBeInTheDocument();
+    expect(within(cells[1]).getByText("+998 90 123 45 67")).toBeInTheDocument();
+    expect(within(cells[2]).getByText("Yunusobod")).toBeInTheDocument();
+    expect(within(cells[2]).getByText("Toshkent")).toBeInTheDocument();
+    expect(cells[3]).toHaveTextContent("Fresh Market");
+    expect(within(cells[4]).getByText("Sotilgan")).toBeInTheDocument();
+    expect(within(cells[6]).getByText("250 000 so'm")).toBeInTheDocument();
+  });
+
+  it("v2 ustunlari: tartib, planshetda yashirinadiganlar va summa o'ngda", () => {
+    renderWithProviders(<OrdersTable data={orders as never} isLoading={false} />);
+
+    const headers = screen.getAllByRole("columnheader");
+    expect(headers.map((header) => header.textContent)).toEqual([
+      "Buyurtma",
+      "Mijoz",
+      "Tuman / viloyat",
+      "Market",
+      "Holat",
+      "Yetkazish",
+      "Summa/ market",
+    ]);
+    expect(headers[2]).toHaveClass("max-lg:hidden");
+    expect(headers[3]).toHaveClass("max-lg:hidden");
+    expect(headers[5]).toHaveClass("max-lg:hidden");
+    expect(headers[6]).toHaveClass("text-right");
   });
 
   it("renders loading skeletons", () => {
@@ -35,6 +83,16 @@ describe("OrdersTable", () => {
     renderWithProviders(<OrdersTable data={[]} isLoading={false} />);
 
     expect(screen.getByText("Buyurtmalar topilmadi")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Filtrlarni tozalash" })).not.toBeInTheDocument();
+  });
+
+  it("bo'sh ro'yxatda filtr faol bo'lsa — «Filtrlarni tozalash»", async () => {
+    const user = userEvent.setup();
+    const onClearFilters = vi.fn();
+    renderWithProviders(<OrdersTable data={[]} isLoading={false} onClearFilters={onClearFilters} />);
+
+    await user.click(screen.getByRole("button", { name: "Filtrlarni tozalash" }));
+    expect(onClearFilters).toHaveBeenCalled();
   });
 
   it("hides market column for market role", () => {
@@ -44,13 +102,16 @@ describe("OrdersTable", () => {
       },
     });
 
-    expect(screen.queryByText("Market")).not.toBeInTheDocument();
+    expect(screen.queryByRole("columnheader", { name: "Market" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Fresh Market")).not.toBeInTheDocument();
+    // Market jadvalida yetkazish turi planshetda ham ko'rinadi.
+    expect(screen.getByRole("columnheader", { name: "Yetkazish" })).not.toHaveClass("max-lg:hidden");
   });
 
   it("renders translated delivery badge", () => {
     renderWithProviders(<OrdersTable data={orders as never} isLoading={false} />);
 
-    expect(screen.getByText("Markaz")).toBeInTheDocument();
+    expect(screen.getByText("Markazgacha")).toBeInTheDocument();
   });
 
   it("calls row click handler", async () => {
@@ -88,19 +149,32 @@ describe("OrdersTable", () => {
       />,
     );
 
-    const rowCheckboxes = screen.getAllByRole("checkbox").filter((checkbox) => checkbox !== screen.getAllByRole("checkbox")[0]);
-    const enabledCheckbox = rowCheckboxes.find((checkbox) => !checkbox.hasAttribute("disabled"));
-    const disabledCheckbox = rowCheckboxes.find((checkbox) => checkbox.hasAttribute("disabled"));
-
-    expect(disabledCheckbox).toBeDisabled();
-    await user.click(enabledCheckbox!);
+    expect(screen.getByRole("checkbox", { name: "Sahifadagi jo'natilmagan buyurtmalarni tanlash" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "№sent-1 allaqachon jo'natilgan, tanlab bo'lmaydi" })).toBeDisabled();
+    await user.click(screen.getByRole("checkbox", { name: "№cancelled-1 ni tanlash" }));
     expect(onSelectChange).toHaveBeenCalledWith("cancelled-1", true);
   });
 
-  it("shows the real order id next to the customer instead of just the row index", () => {
+  it("tanlangan qator ajralib turadi", () => {
+    renderWithProviders(
+      <OrdersTable
+        data={[{ ...orders[0], status: "cancelled" }] as never}
+        isLoading={false}
+        isSelectable={() => true}
+        selectedIds={new Set(["o-1"])}
+        onSelectChange={vi.fn()}
+        onSelectAll={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole("checkbox", { name: "№o-1 ni tanlash" })).toBeChecked();
+    expect(bodyRows()[0]).toHaveClass("bg-action-soft");
+  });
+
+  it("shows the real order id as a link to the order detail", () => {
     renderWithProviders(<OrdersTable data={orders as never} isLoading={false} />);
 
-    expect(screen.getByText("№o-1")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "№o-1" })).toHaveAttribute("href", "/edit/o-1");
   });
 
   it("copies the order id to the clipboard without triggering the row click", async () => {
@@ -116,7 +190,7 @@ describe("OrdersTable", () => {
       <OrdersTable data={orders as never} isLoading={false} onRowClick={onRowClick} />,
     );
 
-    await user.click(screen.getByText("№o-1"));
+    await user.click(screen.getByRole("button", { name: "№o-1 raqamini nusxalash" }));
 
     expect(writeText).toHaveBeenCalledWith("o-1");
     expect(onRowClick).not.toHaveBeenCalled();
@@ -132,7 +206,7 @@ describe("OrdersTable", () => {
 
     renderWithProviders(<OrdersTable data={orders as never} isLoading={false} />);
 
-    await user.click(screen.getByText("№o-1"));
+    await user.click(screen.getByRole("button", { name: "№o-1 raqamini nusxalash" }));
 
     expect(await screen.findByText("Nusxa olib bo'lmadi — buyurtma raqami: o-1")).toBeInTheDocument();
     expect(screen.queryByText("Buyurtma raqami nusxalandi")).not.toBeInTheDocument();
@@ -151,9 +225,25 @@ describe("OrdersTable", () => {
       />,
     );
 
-    await user.click(screen.getByRole("columnheader", { name: "Holat" }));
+    await user.click(screen.getByRole("button", { name: "Holat" }));
 
     expect(onSortChange).toHaveBeenCalledWith({ key: "status", direction: "asc" });
+  });
+
+  it("without a URL sort shows the server default (newest first) on the order column", async () => {
+    const user = userEvent.setup();
+    const onSortChange = vi.fn();
+    renderWithProviders(
+      <OrdersTable data={orders as never} isLoading={false} sortConfig={null} onSortChange={onSortChange} />,
+    );
+
+    const byDate = screen.getByRole("button", { name: "Buyurtma" });
+    expect(byDate).toHaveAttribute("aria-pressed", "true");
+    expect(byDate).toHaveAttribute("title", "Sana bo'yicha saralash");
+    expect(screen.getByRole("columnheader", { name: "Buyurtma" })).toHaveAttribute("aria-sort", "descending");
+
+    await user.click(byDate);
+    expect(onSortChange).toHaveBeenCalledWith({ key: "createdAt", direction: "asc" });
   });
 
   it("keeps the server's row order when sorted (the whole list is sorted on the server)", () => {
@@ -172,8 +262,8 @@ describe("OrdersTable", () => {
       />,
     );
 
-    const idBadges = screen.getAllByText(/^№/).map((node) => node.textContent);
-    expect(idBadges).toEqual(["№sold-1", "№new-1", "№cancelled-1"]);
+    const ids = screen.getAllByRole("link", { name: /^№/ }).map((node) => node.textContent);
+    expect(ids).toEqual(["№sold-1", "№new-1", "№cancelled-1"]);
   });
 
   it("does not offer sorting by customer name (the server cannot sort by it)", async () => {
@@ -189,12 +279,14 @@ describe("OrdersTable", () => {
       />,
     );
 
-    await user.click(screen.getByRole("columnheader", { name: "Mijoz" }));
+    const customerHeader = screen.getByRole("columnheader", { name: "Mijoz" });
+    expect(within(customerHeader).queryByRole("button")).not.toBeInTheDocument();
+    await user.click(customerHeader);
 
     expect(onSortChange).not.toHaveBeenCalled();
   });
 
-  it("marks the pinned exact-number match instead of a row number and keeps the others numbered from 1", () => {
+  it("marks the pinned exact-number match next to its number (only the first row)", () => {
     const rows = [
       { ...orders[0], id: "1", customer: { name: "Aniq Mijoz", phone_number: "+998901111111" } },
       { ...orders[0], id: "o-2" },
@@ -203,55 +295,70 @@ describe("OrdersTable", () => {
 
     renderWithProviders(<OrdersTable data={rows as never} isLoading={false} pinnedOrderId="1" />);
 
-    const bodyRows = screen.getAllByRole("row").slice(1);
-    const badge = within(bodyRows[0]).getByTestId("exact-match-badge");
+    const badge = within(bodyRows()[0]).getByTestId("exact-match-badge");
     expect(badge).toHaveTextContent("Aniq");
     expect(badge).toHaveAttribute("title", "Qidiruvdagi raqamga aynan mos buyurtma");
-    expect(within(bodyRows[1]).getAllByRole("cell")[0]).toHaveTextContent(/^#?1$/);
-    expect(within(bodyRows[2]).getAllByRole("cell")[0]).toHaveTextContent(/^#?2$/);
+    expect(within(bodyRows()[0]).getAllByRole("cell")[0]).toHaveTextContent("№1");
     expect(screen.getAllByTestId("exact-match-badge")).toHaveLength(1);
   });
 
-  it("numbers rows as usual without a pinned match", () => {
+  it("shows no exact-match badge without a pinned match", () => {
     const rows = [
       { ...orders[0], id: "o-2" },
       { ...orders[0], id: "o-3" },
     ];
 
-    renderWithProviders(<OrdersTable data={rows as never} isLoading={false} rowNumberOffset={20} />);
+    renderWithProviders(<OrdersTable data={rows as never} isLoading={false} />);
 
-    const bodyRows = screen.getAllByRole("row").slice(1);
-    expect(within(bodyRows[0]).getAllByRole("cell")[0]).toHaveTextContent(/^#?21$/);
-    expect(within(bodyRows[1]).getAllByRole("cell")[0]).toHaveTextContent(/^#?22$/);
     expect(screen.queryByTestId("exact-match-badge")).not.toBeInTheDocument();
   });
 
   it("shows the exact-match badge on the phone card too", () => {
-    Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 390 });
-    try {
-      renderWithProviders(
-        <OrdersTable data={[{ ...orders[0], id: "1" }, { ...orders[0], id: "o-2" }] as never} isLoading={false} pinnedOrderId="1" />,
-      );
+    mockPhone();
+    renderWithProviders(
+      <OrdersTable data={[{ ...orders[0], id: "1" }, { ...orders[0], id: "o-2" }] as never} isLoading={false} pinnedOrderId="1" />,
+    );
 
-      const badges = screen.getAllByTestId("exact-match-badge");
-      expect(badges).toHaveLength(1);
-      expect(badges[0]).toHaveTextContent("Aniq");
-    } finally {
-      Object.defineProperty(window, "innerWidth", { writable: true, configurable: true, value: 1024 });
-    }
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    const badges = screen.getAllByTestId("exact-match-badge");
+    expect(badges).toHaveLength(1);
+    expect(badges[0]).toHaveTextContent("Aniq");
   });
 
-  it("names each clickable row by order number and customer for keyboard and screen-reader users", async () => {
+  it("phone card: one link per order with name, amount, number · district · market and the date", () => {
+    mockPhone();
+    renderWithProviders(<OrdersTable data={orders as never} isLoading={false} label="Buyurtmalar ro'yxati" />);
+
+    const list = screen.getByRole("list", { name: "Buyurtmalar ro'yxati" });
+    const card = within(list).getByRole("link");
+    expect(card).toHaveAttribute("href", "/edit/o-1");
+    expect(card).toHaveTextContent("Ali");
+    expect(card).toHaveTextContent("250 000 so'm");
+    expect(card).toHaveTextContent("№o-1 · Yunusobod · Fresh Market");
+    expect(card).toHaveTextContent("06.04.2026");
+    // Havola ichida tugma yo'q (nusxalash — jadvalda).
+    expect(within(card).queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("market phone card: number · district · date, no market", () => {
+    mockPhone();
+    renderWithProviders(<OrdersTable data={orders as never} isLoading={false} />, {
+      preloadedState: { role: { role: "market", id: "", region: "", name: "" } },
+    });
+
+    const card = screen.getByRole("link");
+    expect(card).toHaveTextContent(/№o-1 · Yunusobod · 06\.04\.2026/);
+    expect(card).not.toHaveTextContent("Fresh Market");
+  });
+
+  it("each order is reachable by keyboard through its number link (rows are not buttons)", async () => {
     const user = userEvent.setup();
     const onRowClick = vi.fn();
     renderWithProviders(<OrdersTable data={orders as never} isLoading={false} onRowClick={onRowClick} />);
 
-    const row = screen.getByRole("button", { name: "Buyurtma №o-1, Ali" });
-    expect(row.tagName).toBe("TR");
-    row.focus();
-    await user.keyboard("{Enter}");
-
-    expect(onRowClick).toHaveBeenCalledWith(expect.objectContaining({ id: "o-1" }), 0);
+    expect(screen.queryByRole("button", { name: /Ali/ })).not.toBeInTheDocument();
+    await user.tab();
+    expect(screen.getByRole("link", { name: "№o-1" })).toHaveFocus();
   });
 
   it("shows an error with retry (not \"Buyurtmalar topilmadi\") when the list request failed", async () => {
@@ -262,6 +369,88 @@ describe("OrdersTable", () => {
     expect(screen.queryByText("Buyurtmalar topilmadi")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /Qayta urinish/ }));
     expect(onRetry).toHaveBeenCalled();
+  });
+
+  it("keeps the rows (no error screen) when a refetch failed but rows exist", () => {
+    renderWithProviders(<OrdersTable data={orders as never} isLoading={false} isError onRetry={vi.fn()} />);
+
+    expect(screen.getByRole("link", { name: "№o-1" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Qayta urinish/ })).not.toBeInTheDocument();
+  });
+
+  it("«Bekor — jo'natilgan»: kuryer qatori `transport_status` bilan keladi", () => {
+    renderWithProviders(
+      <OrdersTable
+        data={[{ ...orders[0], status: "cancelled", transport_status: "cancelled (sent)" }] as never}
+        isLoading={false}
+      />,
+    );
+
+    expect(screen.getByText("Bekor — jo'natilgan")).toBeInTheDocument();
+  });
+});
+
+describe("OrdersTable — menejer amallari", () => {
+  const actionRows = [
+    { ...orders[0], id: "w-1", status: "waiting" },
+    { ...orders[0], id: "s-1", status: "sold" },
+    { ...orders[0], id: "p-1", status: "paid" },
+  ];
+
+  const renderActions = (overrides: Record<string, unknown> = {}) => {
+    const handlers = { onSellOrder: vi.fn(), onCancelOrder: vi.fn(), onRollbackOrder: vi.fn() };
+    renderWithProviders(
+      <OrdersTable
+        data={actionRows as never}
+        isLoading={false}
+        canUseOrderActions={(order) => order.status !== "paid"}
+        {...handlers}
+        {...overrides}
+      />,
+    );
+    return handlers;
+  };
+
+  it("«Amallar» ustuni: kutilmoqda — Sotish + Bekor qilish; sotilgan — Qaytarish; boshqasi — «Amal yo'q»", async () => {
+    const user = userEvent.setup();
+    const handlers = renderActions();
+
+    expect(screen.getByRole("columnheader", { name: "Amallar" })).toBeInTheDocument();
+    const [waiting, sold, paid] = bodyRows();
+
+    await user.click(within(waiting).getByRole("button", { name: "№w-1 ni sotish" }));
+    expect(handlers.onSellOrder).toHaveBeenCalledWith(expect.objectContaining({ id: "w-1" }));
+    await user.click(within(waiting).getByRole("button", { name: "№w-1 ni bekor qilish" }));
+    expect(handlers.onCancelOrder).toHaveBeenCalledWith(expect.objectContaining({ id: "w-1" }));
+
+    const rollback = within(sold).getByRole("button", { name: "№s-1 ni kutilmoqda holatiga qaytarish" });
+    expect(rollback).toHaveAttribute("title", "Kutilmoqda holatiga qaytarish");
+    expect(rollback).toHaveTextContent("Qaytarish");
+    await user.click(rollback);
+    expect(handlers.onRollbackOrder).toHaveBeenCalledWith(expect.objectContaining({ id: "s-1" }));
+    expect(within(sold).queryByRole("button", { name: /ni sotish/ })).not.toBeInTheDocument();
+
+    expect(within(paid).queryAllByRole("button", { name: /ni (sotish|bekor qilish)/ })).toHaveLength(0);
+    expect(within(paid).getByLabelText("Amal yo'q")).toHaveTextContent("—");
+  });
+
+  it("amal so'rovi ketayotganda hamma amal tugmalari o'chiq", () => {
+    renderActions({ isOrderActionPending: true });
+
+    expect(screen.getByRole("button", { name: "№w-1 ni sotish" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "№w-1 ni bekor qilish" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "№s-1 ni kutilmoqda holatiga qaytarish" })).toBeDisabled();
+  });
+
+  it("telefon kartasida amallar kartaning ostida, to'liq enli", () => {
+    mockPhone();
+    renderActions();
+
+    const items = screen.getAllByRole("listitem");
+    const waitingCard = items[0];
+    expect(within(waitingCard).getByRole("button", { name: "№w-1 ni sotish" })).toHaveClass("flex-1");
+    expect(within(waitingCard).getByRole("button", { name: "№w-1 ni bekor qilish" })).toHaveTextContent("Bekor qilish");
+    expect(within(items[2]).queryByRole("button")).not.toBeInTheDocument();
   });
 });
 
@@ -274,13 +463,14 @@ describe("OrdersTable — qaytarish so'ralgan belgisi", () => {
     return_reason: "Mijoz rad etdi",
   };
 
-  it("⭐ return_requested qatorida amber \"Qaytarish so'ralgan\", sabab tooltip/aria'da", () => {
+  it("⭐ return_requested qatorida \"Qaytarish so'ralgan\", sabab tooltip/aria'da", () => {
     renderWithProviders(<OrdersTable data={[requested] as never} isLoading={false} />);
     const badges = screen.getAllByTestId("return-requested-badge");
     expect(badges.length).toBeGreaterThan(0);
     for (const badge of badges) {
       expect(badge).toHaveTextContent("Qaytarish so'ralgan");
       expect(badge).toHaveAttribute("aria-label", "Qaytarish so'ralgan. Sabab: Mijoz rad etdi");
+      expect(badge).toHaveAttribute("title", "Sabab: Mijoz rad etdi");
     }
   });
 

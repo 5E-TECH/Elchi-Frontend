@@ -7,11 +7,20 @@ import { SEMANTIC_TOKENS, TEXT_MUTED, type ThemeName } from "../../config/themeT
 import { Button, buttonClasses, type ButtonSize, type ButtonVariant } from "./Button";
 
 /**
- * TUGMA — `tizim-states-buttons` taxtasi bo'yicha: 7 tur × 3 o'lcham, ikonka, yuklanish,
+ * TUGMA — `tizim-states-buttons` taxtasi bo'yicha: 7 tur (+ kuryer `success-soft`) × 3 o'lcham, ikonka, yuklanish,
  * o'chirilgan holat, klaviatura va `buttonClasses` (`<Link>` uchun).
  */
 
-const VARIANTS: ButtonVariant[] = ["primary", "secondary", "ghost", "link", "success", "danger", "danger-soft"];
+const VARIANTS: ButtonVariant[] = [
+  "primary",
+  "secondary",
+  "ghost",
+  "link",
+  "success",
+  "danger",
+  "danger-soft",
+  "success-soft",
+];
 const SIZES: ButtonSize[] = ["sm", "md", "lg"];
 const classesOf = (el: Element) => (el.getAttribute("class") ?? "").split(/\s+/).filter(Boolean);
 /** Faol (o'chirilmagan, yuklanmayotgan) tugma prefiksi. */
@@ -98,6 +107,7 @@ describe("Button — turlar va o'lchamlar", () => {
     ["success", ["bg-success", "text-on-solid", `${IA}hover:brightness-108`]],
     ["danger", ["bg-danger", "text-on-solid", `${IA}hover:brightness-108`]],
     ["danger-soft", ["bg-danger-soft", "text-danger-fg", `${IA}hover:bg-danger`, `${IA}hover:text-on-solid`]],
+    ["success-soft", ["bg-success-soft", "text-success-fg", `${IA}hover:bg-success`, `${IA}hover:text-on-solid`]],
   ] as const)("%s", (variant, expected) => {
     render(<Button variant={variant}>Amal</Button>);
     expect(classesOf(screen.getByRole("button"))).toEqual(expect.arrayContaining([...expected]));

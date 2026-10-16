@@ -16,7 +16,7 @@ repoda turadi (`design/`).
 | 1 | primitivlar (`src/shared/ui/primitives`): `Button`, `IconButton`, `Spinner`, `Badge`, `StatusBadge` (+ `OrderStatusBadge`/`statusRegistry` — `src/entities/order`), `Card`, `StatCard`, `PageHeader`, `Tabs`, `SegmentedControl`; formatlovchilar `formatPhone`, `formatDateTime*`, `formatSigned*`; namuna sahifasi `/ops/ui-kit` | **tayyor** |
 | 2 | shell (`widgets/layout`, `widgets/Sidebar`, `widgets/header`, `// dizayn-v2: shell`): bitta kanvas (kontent karta emas, `max-w-[1440px]`, chekkalar 24·32·48 / < 1024 16·16·88), `nav-*` va `avatar` tokenlari, yon menyu 248/72 (guruhlar) + planshet surma menyu + telefon varaqasi, topbar + profil menyusi (mavzu, til, «Chiqish») + qo'ng'iroqcha + global qidiruv (Ctrl K, < 1024 qidiruv ekrani), pastki menyu (`roles.json` → `bottomNav`), bo'lim almashsa skroll tepaga, bo'lim yuklanish chizig'i (`RouteProgress`); ikonkalar yagona manba — `menuConfig.tsx` | **tayyor** |
 | 3 | forma, dialog va holatlar (`src/shared/ui/primitives`): `Field` + `TextInput` (telefon, qidiruv), `Select` (qidiruv, ko'p tanlov), `DateRange`/`DateInput`/`Calendar` (tez tanlov), `Dialog` + `ConfirmDialog` + `useConfirm()` (telefonda pastki varaqa), `notify()` + `Toaster`, `EmptyState`/`ErrorState`/`Skeleton*` + `QueryBoundary`; xato sahifalari (404/403/500/ilova xatosi, `tizim-errors`); global qatlam `app/providers/UiHost.tsx`; v1 o'ramlari (`SearchableSelect`, `FilterSelect`, `DateRangePicker`, `Popup`, `PopupConfirm`, `EmptyState`, `QueryErrorState` …) API'si o'zgarmagan, ichi v2; pul/kirish amallari tasdiq bilan; ESLint antd `message`/`notification`/`Popconfirm`/`Modal.confirm` va brauzer `confirm`/`alert`/`prompt` ni taqiqlaydi | **tayyor** |
-| 4 | sahifalar migratsiyasi (har sahifa alohida PR) | navbatda |
+| 4 | sahifalar migratsiyasi (har sahifa alohida PR); ro'yxat standarti — `DataTable` + `Pagination` (`src/shared/ui/primitives`, `/ops/ui-kit?section=table`). Ko'chirilgan: `/orders` (barcha rollar: ro'yxat, filtrlar + telefon varaqasi, kuryer ro'yxati, sotish / bekor qilish / qaytarish oynalari) | **jarayonda** |
 | 5 | qo'shimcha qo'riqchilar (ESLint, vizual snapshotlar) | navbatda |
 
 **Sahifa shell ichida chiziladi** (4-bosqichdan boshlab har sahifa): u `[data-shell-slot=content]` ichida turadi —
@@ -42,7 +42,7 @@ Trello'dagi «Dizayn v2» kartalari bosqichlarni kuzatadi.
 - **Kodga tarjima:** `design/CODE-MAP.md` (maket `el-*` klassi → Tailwind + tokenlar → mavjud komponent →
   1-bosqich primitivi).
 - **Primitivlar namunasi:** `/ops/ui-kit` (faqat superadmin, menyuda yo'q) — har primitiv kunduzgi va tungi
-  mavzuda yonma-yon; `?section=buttons|badges|cards|page-header|tabs|format|forms|select|date|dialog|feedback|states`
+  mavzuda yonma-yon; `?section=buttons|badges|cards|page-header|tabs|format|forms|select|date|dialog|feedback|states|table`
   bitta bo'lim.
 - **Ilovani ko'rish (akkauntsiz):** `npm run app:shot -- <route> [--device phone] [--theme dark] [--role manager]`
   → `design/shots/app/*.png` + JSON hisobot (gorizontal toshish, 44px dan kichik nishon, 12px dan kichik matn,
@@ -132,6 +132,8 @@ UI'ga tegadimi? ── yo'q ─→ bu bo'lim talab qilmaydi
     almashtirish, hamkorni o'chirish **majburiy** tasdiq bilan (maketdagi `*-dialog` matnlari).
   - **Oyna** — `Dialog` (telefonda o'zi pastki varaqa, fokus tuzog'i, Esc, skroll qulfi). Forma maydoni — `Field`
     ichida `TextInput` / `Select` / `DateRange` / `DateInput` (yorliq, majburiy belgisi, izoh, xato matni).
+  - **Ro'yxat** — jadval `DataTable` (telefonda `renderCard` → kartalar, server saralashi, tanlov), sahifalash
+    `Pagination` (`Card footer`); v1 `shared/components/Table` va `shared/components/pagination` yangi kodda yo'q.
   - **Holatlar** — so'rovli blok `QueryBoundary` (yuklanish skeleti, bo'sh — `EmptyState`, xato — `ErrorState` +
     «Qayta urinish») bilan; qo'lda «Yuklanmoqda…» / «Ma'lumot yo'q» yozilmaydi.
   - Global qatlam (`ConfirmHost` + `Toaster`) ilovada bir marta — `app/providers/UiHost.tsx`; testda

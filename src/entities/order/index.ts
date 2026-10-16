@@ -12,6 +12,7 @@ export { default as ProofGallery } from "./ui/ProofGallery";
 export { readReturnRequest } from "./model/returnRequest";
 export type { ReturnRequest } from "./model/returnRequest";
 export { default as ReturnRequestedBadge } from "./ui/ReturnRequestedBadge";
+export { ReturnRequestedTag } from "./ui/ReturnRequestedTag";
 export {
   ORDER_STATUSES,
   ORDER_STATUS_NS,

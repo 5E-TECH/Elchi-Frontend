@@ -169,3 +169,18 @@ export { SKELETON_DELAY_MS, SLOW_LOADING_MS, useDelayedFlag, useLoadingPhase } f
 export type { LoadingPhaseOptions } from "./useLoadingPhase";
 export { QueryBoundary } from "./QueryBoundary";
 export type { QueryBoundaryProps, QueryBoundarySkeleton, QueryBoundaryState, QueryLike } from "./QueryBoundary";
+
+// ── 4-bosqich: ro'yxat sahifalari ────────────────────────────────────────────
+
+// Jadval (planshetda ikkinchi darajali ustunlar yashirin, telefonda kartalar) va sahifalash.
+export { DataTable } from "./DataTable";
+export type {
+  DataTableColumn,
+  DataTableDensity,
+  DataTableProps,
+  DataTableSelection,
+  DataTableSort,
+  DataTableSortDirection,
+} from "./DataTable";
+export { getPageItems, Pagination } from "./Pagination";
+export type { PaginationProps, PaginationRange } from "./Pagination";

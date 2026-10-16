@@ -67,3 +67,18 @@ export const openBranchOps = async (page: Page) => {
   await page.goto("/branch-ops");
   await expect(page.getByText("Filiallar — operatsiyalar")).toBeVisible({ timeout: 60_000 });
 };
+
+/**
+ * Partiyani bekor qilish tasdig'i — design v2 `useConfirm` (`role="alertdialog"`).
+ * Matnlar `tizim-feedback` 06 qoidasi bo'yicha: asosiy amalning o'zi «bekor qilish»
+ * bo'lgani uchun chapda «Orqaga», o'ngda aniq fe'l «Partiyani bekor qilish»
+ * (v1 Popconfirm'dagi «Yo'q» / «Ha, bekor qilish» o'rniga).
+ */
+export const confirmBatchCancel = async (page: Page) => {
+  const dialog = page.getByRole("alertdialog", { name: "Partiyani bekor qilasizmi?" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("Partiya va undagi barcha buyurtmalar bog'lanishdan chiqariladi");
+  await expect(dialog.getByRole("button", { name: "Orqaga", exact: true })).toBeVisible();
+  await dialog.getByRole("button", { name: "Partiyani bekor qilish", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+};

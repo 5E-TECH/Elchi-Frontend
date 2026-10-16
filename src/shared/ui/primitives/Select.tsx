@@ -73,7 +73,7 @@ import { Spinner } from "./Spinner";
  *  yopiq maydonda Enter formani yubormaydi — ro'yxatni ochadi. Ko'p tanlovda «N ta tanlangan» live region'da.
  */
 
-export type SelectSize = "md" | "lg";
+export type SelectSize = "sm" | "md" | "lg";
 
 export type SelectOption<V extends string = string> = {
   value: V;
@@ -118,7 +118,7 @@ type SelectBaseProps<V extends string> = {
   /** Xato holati (odatda `Field error` dan keladi). */
   invalid?: boolean;
   required?: boolean;
-  /** md 40 (sukut) · lg 48 (kuryer ekranlari). */
+  /** sm 32 (jadval ostidagi «10 ta» — `.el-select.el-btn-sm`; telefonda 44) · md 40 (sukut) · lg 48 (kuryer ekranlari). */
   size?: SelectSize;
   /** Maydon chapidagi ikonka (`searchable` da sukut — `Search`). */
   icon?: IconSlot;
@@ -213,12 +213,14 @@ const BOX_BASE =
   "focus-within:ring-3";
 
 const BOX_SIZE: Record<SelectSize, string> = {
+  sm: "h-8 rounded-lg max-md:h-11",
   md: "h-10 rounded-[10px] max-md:h-11",
   lg: "h-12 rounded-xl md:text-[15px]",
 };
 
 /** Ko'p tanlov: belgilar o'raladi — balandlik kamida 40/44, maket `padding: 7px 4px 7px 8px`. */
 const MULTI_BOX_SIZE: Record<SelectSize, string> = {
+  sm: "min-h-8 rounded-lg py-[3px] pl-2 pr-1 max-md:min-h-11",
   md: "min-h-10 rounded-[10px] py-[7px] pl-2 pr-1 max-md:min-h-11",
   lg: "min-h-12 rounded-xl py-[11px] pl-2 pr-1 md:text-[15px]",
 };
@@ -723,6 +725,12 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
   const handleBlur = (event: FocusEvent<HTMLElement>) => {
     const next = event.relatedTarget as Node | null;
     if (next && (anchorRef.current?.contains(next) || floatingRef.current?.contains(next))) return;
+    // Fokus HECH QAYERGA ketdi (`relatedTarget` yo'q): telefonda klaviatura «Tayyor» bilan yopildi, `blur()`,
+    // oyna fokusni yo'qotdi. `useDismiss` faqat boshqa elementdagi `focusin` ni ko'radi — ro'yxat egasiz
+    // ochiq qolib, sahifa skrollida keyingi maydon ustiga tushardi va unga bosish variant tanlab yuborardi.
+    // WAI-ARIA combobox: fokus maydondan chiqsa ro'yxat yopiladi. Variant bosilishi fokusni olmaydi
+    // (panel `mousedown` → `preventDefault`), shuning uchun tanlashga ta'sir qilmaydi.
+    if (!next && isOpen) close();
     onBlur?.();
   };
 

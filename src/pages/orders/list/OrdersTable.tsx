@@ -1,275 +1,95 @@
-import { memo, useCallback, useMemo } from "react";
-import {
-    MapPin,
-    Store,
-    Calendar,
-    Banknote,
-    Phone,
-    Home,
-    Truck,
-    ChevronRight,
-    CheckCircle,
-    XCircle,
-    RotateCcw,
-} from "lucide-react";
+// dizayn-v2: superadmin-orders-list, admin-orders-list, registrator-orders-list, market-orders-list, manager-orders-list-all, manager-orders-list-pending, manager-orders-list-cancelled
+import { memo, useCallback, useMemo, type ReactNode } from "react";
+import { Copy, Inbox, RotateCcw } from "lucide-react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { Table } from "../../../shared/components/Table/Table";
-import EmptyState from "../../../shared/ui/EmptyState";
-import QueryErrorState from "../../../shared/ui/QueryErrorState";
-import OrderIdBadge from "../../../shared/ui/OrderIdBadge";
-import TableSkeleton from "../../../shared/ui/TableSkeleton";
-import OrderStatusBadge from "./OrderStatusBadge";
-import { ReturnRequestedBadge } from "../../../entities/order";
+import { Link } from "react-router-dom";
+import { OrderStatusBadge, ReturnRequestedTag } from "../../../entities/order";
 import type { OrderListItem } from "../../../entities/order/types/order";
+import { ExtraCostApprovalTag } from "../../../entities/orders/ui/ExtraCostApprovalTag";
 import type { RootState } from "../../../app/config/store";
-import type { SortConfig } from "../../../shared/components/Table/Table.types";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
+import { cx } from "../../../shared/lib/cx";
+import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
+import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
+import { formatPhone } from "../../../shared/lib/formatPhone";
 import { notify } from "../../../shared/lib/notify";
+import {
+    Badge,
+    Button,
+    DataTable,
+    EmptyState,
+    IconButton,
+    QueryBoundary,
+    SkeletonTable,
+    type DataTableColumn,
+    type DataTableSort,
+} from "../../../shared/ui/primitives";
 
 const EMPTY_SELECTED_IDS = new Set<string>();
+
+/** Server sukuti (OpenAPI `GET /orders`: «default created_at desc») — URL'da saralash yo'q bo'lsa shu ko'rinadi. */
+const DEFAULT_SORT: DataTableSort = { key: "createdAt", direction: "desc" };
+
+/** Menejer amallari: sotish / bekor qilish shu holatlarda, qaytarish — sotilgan va bekor qilinganda. */
+const ROLLBACK_STATUSES = new Set(["sold", "cancelled"]);
 
 interface Props {
     data: OrderListItem[];
     isLoading: boolean;
-    onRowClick?: (order: OrderListItem) => void;
-    rowNumberOffset?: number;
+    /** Ro'yxat so'rovi yiqildi — qator yo'q bo'lsa «Buyurtmalar topilmadi» o'rniga xato + «Qayta urinish». */
+    isError?: boolean;
+    error?: unknown;
+    onRetry?: () => void;
+    /**
+     * Qatorni sichqoncha bilan bosish (qulaylik). Klaviatura va ekran o'quvchi — `№` havolasi orqali
+     * (`getOrderHref`); qator `role="button"` emas (ichida havola va tugmalar bor).
+     */
+    onRowClick?: (order: OrderListItem, index: number) => void;
+    /** Tafsilot havolasi (sukut — nisbiy `edit/{id}`: `/orders/edit/{id}`). */
+    getOrderHref?: (order: OrderListItem) => string;
     canUseOrderActions?: (order: OrderListItem) => boolean;
     /**
-     * Qatorda "Sotish" (qisman sotish ham shu oynada) ko'rsatiladimi. Berilmasa —
-     * har bir amal qatorida. fix3b LC-04: menejer kuryer qo'lidagi buyurtmani
-     * sota olmaydi (backend 400), shuning uchun u yerda tugma yashiriladi.
+     * Qatordagi «Sotish» faolmi. fix3b LC-04: menejer kuryer qo'lidagi buyurtmani sota olmaydi (backend 400) —
+     * tugma o'chiq turadi va sababi yoziladi (maket `manager-orders-list-pending`).
      */
     canSellOrder?: (order: OrderListItem) => boolean;
     onSellOrder?: (order: OrderListItem) => void;
     onCancelOrder?: (order: OrderListItem) => void;
     onRollbackOrder?: (order: OrderListItem) => void;
+    /** Biror amal so'rovi ketmoqda — hamma amal tugmalari o'chiq. */
     isOrderActionPending?: boolean;
     isSelectable?: (order: OrderListItem) => boolean;
     selectedIds?: Set<string>;
     onSelectChange?: (id: string, checked: boolean) => void;
     onSelectAll?: (checked: boolean) => void;
-    sortConfig?: SortConfig | null;
-    onSortChange?: (config: SortConfig | null) => void;
-    /**
-     * Qidiruv to'liq buyurtma raqamiga aynan mos kelgan buyurtma — ro'yxat
-     * boshiga qo'yilgan. `#` ustunida qator tartibi o'rniga belgi chiqadi.
-     */
+    sortConfig?: DataTableSort | null;
+    onSortChange?: (config: DataTableSort | null) => void;
+    /** Qidiruv to'liq buyurtma raqamiga aynan mos kelgan buyurtma — ro'yxat boshida, «Aniq» belgisi bilan. */
     pinnedOrderId?: string;
-    /** Ro'yxat so'rovi yiqildi — "Buyurtmalar topilmadi" o'rniga xato + qayta urinish. */
-    isError?: boolean;
-    onRetry?: () => void;
+    /** Jadval / kartalar ro'yxati nomi. */
+    label?: string;
+    /** Bo'sh holatda «Filtrlarni tozalash» (filtr faol bo'lsa). */
+    onClearFilters?: () => void;
+    /** Fonda yangilanmoqda — ro'yxat xiralashadi. */
+    busy?: boolean;
 }
 
-const formatPhoneNumber = (phone: string | null | undefined) => {
-    if (!phone) return "";
-
-    const normalized = phone.replace(/\D/g, "");
-
-    if (normalized.startsWith("998") && normalized.length >= 12) {
-        return `+998 ${normalized.slice(3, 5)} ${normalized.slice(5, 8)} ${normalized.slice(8, 10)} ${normalized.slice(10, 12)}`;
-    }
-
-    if (normalized.length === 9) {
-        return `${normalized.slice(0, 2)} ${normalized.slice(2, 5)} ${normalized.slice(5, 7)} ${normalized.slice(7, 9)}`;
-    }
-
-    return phone;
-};
-
-const getDeliveryBadgeClassName = (value: OrderListItem["where_deliver"]) =>
-    value === "center"
-        ? "bg-linear-to-r from-blue-500 to-sky-500 text-white shadow-blue-500/25"
-        : "bg-linear-to-r from-emerald-500 to-green-500 text-white shadow-emerald-500/25";
-
-const DeliveryBadge = ({ value, label }: { value: OrderListItem["where_deliver"]; label: string }) => (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-extrabold shadow-lg ring-1 ring-white/12 whitespace-nowrap ${getDeliveryBadgeClassName(value)}`}>
-        {label}
-    </span>
-);
-
-const ActionButton = ({
-    label,
-    icon,
-    variant,
-    disabled,
-    onClick,
-}: {
-    label: string;
-    icon: React.ReactNode;
-    variant: "sell" | "cancel" | "rollback";
-    disabled?: boolean;
-    onClick: (event: React.MouseEvent<HTMLButtonElement>) => void;
-}) => {
-    const variantClassName =
-        variant === "sell"
-            ? "border-emerald-400/35 bg-emerald-500/15 text-emerald-700 hover:border-emerald-400 hover:bg-emerald-500 hover:text-white dark:text-emerald-200"
-            : variant === "rollback"
-                ? "border-sky-400/35 bg-sky-500/15 text-sky-700 hover:border-sky-400 hover:bg-sky-500 hover:text-white dark:text-sky-200"
-                : "border-rose-400/35 bg-rose-500/15 text-rose-700 hover:border-rose-400 hover:bg-rose-500 hover:text-white dark:text-rose-200";
-
-    return (
-        <button
-            type="button"
-            disabled={disabled}
-            onClick={onClick}
-            aria-label={label}
-            title={label}
-            className={`inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border px-2.5 text-xs font-bold transition-colors disabled:pointer-events-none disabled:opacity-60 ${variantClassName}`}
-        >
-            {icon}
-            <span className="hidden xl:inline">{label}</span>
-        </button>
-    );
-};
-
-const formatDate = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleDateString("uz-UZ", {
-        day: "2-digit",
-        month: "2-digit",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
-};
-
-/** Raqam bo'yicha aniq moslik belgisi (jadval va telefon kartasi uchun bir xil). */
-const ExactMatchBadge = ({ label, title }: { label: string; title: string }) => (
-    <span
-        title={title}
-        data-testid="exact-match-badge"
-        className="inline-flex items-center rounded-md bg-main/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-main dark:bg-main/20 dark:text-violet-200"
-    >
-        {label}
-    </span>
-);
-
-const createColumns = (
-    rowNumberOffset: number,
-    formatPrice: (num: number) => string,
-    onCopyId: (id: string) => void,
-    copyLabel: string,
-    pinned: { id: string; label: string; title: string } | null,
-) => [
-    {
-        key: "id" as const,
-        label: "#",
-        width: "50px",
-        render: (_: any, row: OrderListItem, i: number) =>
-            pinned && i === 0 && String(row.id) === pinned.id ? (
-                <ExactMatchBadge label={pinned.label} title={pinned.title} />
-            ) : (
-                // Boshiga qo'yilgan qator qator tartibiga kirmaydi — qolganlar
-                // sahifa bo'yicha avvalgidek raqamlanadi.
-                <span className="text-xs font-semibold text-gray-400">
-                    {rowNumberOffset + i + 1 - (pinned ? 1 : 0)}
-                </span>
-            ),
-    },
-    {
-        key: "customer" as const,
-        label: "Mijoz",
-        render: (customer: OrderListItem["customer"], row: OrderListItem) => (
-            <div className="min-w-0">
-                <p className="text-sm font-semibold text-maindark dark:text-primary truncate">
-                    {customer?.name ?? "—"}
-                </p>
-                <p className="text-xs text-gray-400 font-mono">
-                    {formatPhoneNumber(customer?.phone_number)}
-                </p>
-                <OrderIdBadge id={row.id} label={copyLabel} onCopy={onCopyId} className="mt-0.5" />
-            </div>
-        ),
-    },
-    {
-        key: "district" as const,
-        label: "Tuman / Viloyat",
-        render: (district: OrderListItem["district"]) => (
-            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                <MapPin size={14} className="shrink-0 text-main/70" />
-                <div className="min-w-0">
-                    <p className="text-[14px] font-semibold text-maindark dark:text-primary truncate">
-                        {district?.name ?? "—"}
-                    </p>
-                    {district?.region?.name && (
-                        <p className="text-[13px] font-medium text-gray-600 dark:text-gray-300/90 truncate">
-                            {district.region.name}
-                        </p>
-                    )}
-                </div>
-            </div>
-        ),
-    },
-    {
-        key: "market" as const,
-        label: "Market",
-        render: (market: OrderListItem["market"]) => (
-            <div className="flex items-center gap-1.5">
-                <Store size={13} className="text-main/60 shrink-0" />
-                <span className="text-sm font-medium text-maindark dark:text-primary">
-                    {market?.name ?? "—"}
-                </span>
-            </div>
-        ),
-    },
-    {
-        key: "status" as const,
-        label: "Holat",
-        sortable: true as const,
-        render: (status: OrderListItem["status"], row: OrderListItem) => (
-            <span className="inline-flex flex-wrap items-center gap-1">
-                <OrderStatusBadge orderId={row.id} status={status} />
-                <ReturnRequestedBadge order={row} />
-            </span>
-        ),
-    },
-    {
-        key: "where_deliver" as const,
-        label: "Yetkazish",
-        width: "120px",
-        className: "whitespace-nowrap",
-        render: (val: OrderListItem["where_deliver"]) => (
-            <DeliveryBadge value={val} label={val === "center" ? "Markaz" : "Uy"} />
-        ),
-    },
-    {
-        key: "total_price" as const,
-        label: "Summa",
-        width: "150px",
-        className: "whitespace-nowrap",
-        sortable: true as const,
-        render: (val: number) => (
-            <div className="flex items-center gap-1.5">
-                <Banknote size={13} className="text-main/60 shrink-0" />
-                <span className="text-sm font-semibold text-maindark dark:text-primary font-mono whitespace-nowrap">
-                    {formatPrice(val)}
-                </span>
-            </div>
-        ),
-    },
-    {
-        key: "createdAt" as const,
-        label: "Sana",
-        width: "170px",
-        className: "whitespace-nowrap",
-        sortable: true as const,
-        render: (val: string) => (
-            <div className="flex items-center gap-2">
-                <Calendar size={14} className="shrink-0 text-gray-600 dark:text-gray-300/80" />
-                <span className="whitespace-nowrap text-[13px] font-medium text-gray-700 dark:text-gray-200">
-                    {formatDate(val)}
-                </span>
-            </div>
-        ),
-    },
-];
+/**
+ * Kuryer qatori `status=cancelled` + `transport_status="cancelled (sent)"` bilan keladi (backend
+ * `normalizeOrderStatusForDisplay`) — ko'rsatishda «Bekor — jo'natilgan».
+ */
+const getDisplayStatus = (order: OrderListItem) =>
+    (order as { transport_status?: unknown }).transport_status === "cancelled (sent)" ? "cancelled (sent)" : order.status;
 
 const OrdersTable = ({
     data,
     isLoading,
+    isError = false,
+    error,
+    onRetry,
     onRowClick,
-    rowNumberOffset = 0,
+    getOrderHref = (order) => `edit/${order.id}`,
     canUseOrderActions,
     canSellOrder,
     onSellOrder,
@@ -283,16 +103,19 @@ const OrdersTable = ({
     sortConfig,
     onSortChange,
     pinnedOrderId,
-    isError = false,
-    onRetry,
+    label,
+    onClearFilters,
+    busy = false,
 }: Props) => {
     const { t, i18n } = useTranslation("orders");
+    const language = i18n.resolvedLanguage ?? i18n.language;
     const role = useSelector((state: RootState) => state.role.role);
-    const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
-    const formatPrice = useCallback(
-        (num: number) => `${(num ?? 0).toLocaleString(locale)} ${t("currency")}`,
-        [locale, t],
-    );
+    const isMarket = role === "market";
+    const hasActions = Boolean(onSellOrder || onCancelOrder || onRollbackOrder);
+    const hasSelection = Boolean(isSelectable && onSelectChange && onSelectAll);
+    // Menejer jadvalida (amallar ustuni) planshetda summa ostida market yo'q (maket `manager-orders-list-*`).
+    const showTabletMarket = !isMarket && !hasActions;
+
     const handleCopyOrderId = useCallback(
         (id: string) => {
             void copyToClipboard(id).then((copied) => {
@@ -305,338 +128,417 @@ const OrdersTable = ({
         },
         [t],
     );
-    const selectableOrders = useMemo(
-        () => data.filter((order) => isSelectable?.(order)),
-        [data, isSelectable],
+
+    const money = useCallback((value: unknown) => formatMoneyLocalized(value, { language }), [language]);
+    const dateTime = useCallback((value: string) => formatDateTimeLocalized(value, { language }), [language]);
+
+    const isPinned = useCallback(
+        (order: OrderListItem, index: number) => Boolean(pinnedOrderId) && index === 0 && String(order.id) === pinnedOrderId,
+        [pinnedOrderId],
     );
-    const allSelected =
-        selectableOrders.length > 0 && selectableOrders.every((order) => selectedIds.has(order.id));
-    const someSelected = selectableOrders.some((order) => selectedIds.has(order.id));
-    const tableColumns = useMemo(() => {
-        const pinned =
-            pinnedOrderId && data[0] && String(data[0].id) === pinnedOrderId
-                ? { id: pinnedOrderId, label: t("exactNumberMatch"), title: t("exactNumberMatchTitle") }
-                : null;
-        const translatedColumns = createColumns(rowNumberOffset, formatPrice, handleCopyOrderId, t("copyOrderNumber"), pinned).map((column) => {
-            if (column.key === "customer") return { ...column, label: t("customer") };
-            if (column.key === "district") return { ...column, label: t("filterRegion") + " / " + t("district") };
-            if (column.key === "market") return { ...column, label: t("market") };
-            if (column.key === "status") return { ...column, label: t("orderStatus") };
-            if (column.key === "where_deliver") {
-                return {
-                    ...column,
-                    label: t("deliveryType"),
-                    render: (val: OrderListItem["where_deliver"]) => (
-                        <DeliveryBadge
-                            value={val}
-                            label={val === "center" ? t("deliveryCenter") : t("deliveryHome")}
-                        />
-                    ),
-                };
+
+    const exactBadge = useMemo(
+        () => (
+            <Badge tone="info" title={t("exactNumberMatchTitle")} data-testid="exact-match-badge">
+                {t("exactNumberMatch")}
+            </Badge>
+        ),
+        [t],
+    );
+
+    const deliveryBadge = useCallback(
+        (order: OrderListItem) =>
+            order.where_deliver ? (
+                <Badge>{order.where_deliver === "center" ? t("deliveryToCenter") : t("deliveryToHome")}</Badge>
+            ) : null,
+        [t],
+    );
+
+    const statusBadges = useCallback(
+        (order: OrderListItem) => (
+            <>
+                <OrderStatusBadge status={getDisplayStatus(order)} />
+                <ReturnRequestedTag order={order} />
+                <ExtraCostApprovalTag orderId={order.id} status={order.status} />
+            </>
+        ),
+        [],
+    );
+
+    /** Menejer amallari — jadvalda `sm`, telefon kartasida to'liq enli (44 px). */
+    const renderActions = useCallback(
+        (order: OrderListItem, place: "table" | "card"): ReactNode => {
+            if (!hasActions) return null;
+            const id = order.id;
+            const size = place === "table" ? "sm" : "md";
+            const grow = place === "card" ? "flex-1" : undefined;
+            if (!canUseOrderActions?.(order)) {
+                return place === "table" ? (
+                    <span className="text-text-subtle" aria-label={t("ordersList.noAction")}>
+                        —
+                    </span>
+                ) : null;
             }
-            if (column.key === "total_price") return { ...column, label: t("sumLabel") };
-            if (column.key === "createdAt") return { ...column, label: t("date") };
-            return column;
-        });
-        const visibleColumns = role === "market"
-            ? translatedColumns.filter((column) => column.key !== "market")
-            : translatedColumns;
-        const columnsWithSelection = isSelectable && onSelectChange && onSelectAll
-            ? [
-                {
-                    key: "selection" as const,
-                    label: t("selectLabel"),
-                    width: "48px",
-                    renderHeader: () => (
-                        <input
-                            type="checkbox"
-                            checked={allSelected}
-                            ref={(element) => {
-                                if (element) element.indeterminate = someSelected && !allSelected;
-                            }}
-                            onChange={(event) => onSelectAll(event.target.checked)}
-                            className="h-4 w-4 cursor-pointer accent-red-500"
-                        />
-                    ),
-                    render: (_: string, row: OrderListItem) => {
-                        const selectable = isSelectable(row);
 
-                        return (
-                            <input
-                                type="checkbox"
-                                checked={selectedIds.has(row.id)}
-                                disabled={!selectable}
-                                onClick={(event) => event.stopPropagation()}
-                                onChange={(event) => onSelectChange(row.id, event.target.checked)}
-                                className="h-4 w-4 cursor-pointer accent-red-500 disabled:cursor-not-allowed disabled:opacity-25"
-                            />
-                        );
-                    },
-                },
-                ...visibleColumns,
-            ]
-            : visibleColumns;
+            if (ROLLBACK_STATUSES.has(order.status)) {
+                return onRollbackOrder ? (
+                    <Button
+                        variant="secondary"
+                        size={size}
+                        compact
+                        leftIcon={RotateCcw}
+                        className={grow}
+                        title={t("ordersList.rollbackHint")}
+                        aria-label={t("ordersList.rollbackOrder", { id })}
+                        aria-haspopup="dialog"
+                        disabled={isOrderActionPending}
+                        onClick={() => onRollbackOrder(order)}
+                    >
+                        {t("ordersList.rollback")}
+                    </Button>
+                ) : null;
+            }
 
-        if (!onSellOrder && !onCancelOrder && !onRollbackOrder) {
-            return columnsWithSelection;
-        }
+            const sellable = canSellOrder ? canSellOrder(order) : true;
+            return (
+                <>
+                    {onSellOrder ? (
+                        <Button
+                            variant="secondary"
+                            size={size}
+                            compact
+                            className={grow}
+                            disabled={isOrderActionPending || !sellable}
+                            title={sellable ? undefined : t("ordersList.courierHeldTitle")}
+                            aria-label={
+                                sellable ? t("ordersList.sellOrder", { id }) : t("ordersList.courierHeldLabel", { id })
+                            }
+                            aria-haspopup={sellable ? "dialog" : undefined}
+                            onClick={() => onSellOrder(order)}
+                        >
+                            {t("ordersList.sell")}
+                        </Button>
+                    ) : null}
+                    {onCancelOrder ? (
+                        <Button
+                            variant="danger-soft"
+                            size={size}
+                            compact
+                            className={grow}
+                            disabled={isOrderActionPending}
+                            aria-label={t("ordersList.cancelOrder", { id })}
+                            aria-haspopup="dialog"
+                            onClick={() => onCancelOrder(order)}
+                        >
+                            {place === "table" ? (
+                                // Planshetda qisqa «Bekor» (maket `manager-orders-list-*`): jadval 736 px ga sig'sin.
+                                <>
+                                    <span className="max-lg:hidden">{t("ordersList.cancel")}</span>
+                                    <span className="hidden max-lg:inline">{t("ordersList.cancelShort")}</span>
+                                </>
+                            ) : (
+                                t("ordersList.cancel")
+                            )}
+                        </Button>
+                    ) : null}
+                </>
+            );
+        },
+        [
+            canSellOrder,
+            canUseOrderActions,
+            hasActions,
+            isOrderActionPending,
+            onCancelOrder,
+            onRollbackOrder,
+            onSellOrder,
+            t,
+        ],
+    );
 
-        return [
-            ...columnsWithSelection,
+    const columns = useMemo<DataTableColumn<OrderListItem>[]>(() => {
+        const list: DataTableColumn<OrderListItem>[] = [
             {
-                key: "actions" as const,
-                label: t("actions", { ns: "common" }),
-                width: "150px",
-                className: "whitespace-nowrap",
-                render: (_: string, row: OrderListItem) => {
-                    const canUseActions = canUseOrderActions?.(row);
-                    if (!canUseActions) {
-                        return <span className="text-sm text-gray-400 dark:text-white/35">—</span>;
-                    }
-                    const canRollback = row.status === "sold" || row.status === "cancelled";
-                    const canSellOrCancel = !canRollback;
-                    const canSellRow = canSellOrder ? canSellOrder(row) : true;
-
-                    const stopAndRun =
-                        (handler?: (order: OrderListItem) => void) =>
-                            (event: React.MouseEvent<HTMLButtonElement>) => {
-                                event.stopPropagation();
-                                handler?.(row);
-                            };
-
-                    return (
-                        <div className="flex items-center gap-2">
-                            {canSellOrCancel && canSellRow && onSellOrder && (
-                                <ActionButton
-                                    label={t("sell")}
-                                    icon={<CheckCircle size={14} />}
-                                    variant="sell"
-                                    disabled={isOrderActionPending}
-                                    onClick={stopAndRun(onSellOrder)}
-                                />
-                            )}
-                            {canSellOrCancel && onCancelOrder && (
-                                <ActionButton
-                                    label={t("cancelOrderAction")}
-                                    icon={<XCircle size={14} />}
-                                    variant="cancel"
-                                    disabled={isOrderActionPending}
-                                    onClick={stopAndRun(onCancelOrder)}
-                                />
-                            )}
-                            {canRollback && onRollbackOrder && (
-                                <ActionButton
-                                    label={t("rollbackOrder")}
-                                    icon={<RotateCcw size={14} />}
-                                    variant="rollback"
-                                    disabled={isOrderActionPending}
-                                    onClick={stopAndRun(onRollbackOrder)}
-                                />
-                            )}
+                id: "createdAt",
+                header: t("ordersList.columns.order"),
+                sortable: true,
+                firstDirection: "desc",
+                sortTitle: t("ordersList.sortByDate"),
+                cell: (order, index) => (
+                    <>
+                        <div className="flex items-center gap-0.5">
+                            <Link
+                                to={getOrderHref(order)}
+                                className="whitespace-nowrap font-semibold text-text hover:text-action-fg hover:underline"
+                            >
+                                №{order.id}
+                            </Link>
+                            <IconButton
+                                size="sm"
+                                icon={Copy}
+                                label={t("ordersList.copyNumber", { id: order.id })}
+                                // Market jadvali planshetda 736 px ga sig'sin: maket `market-orders-list` da nusxalash yo'q.
+                                className={cx("-my-1", isMarket && "max-lg:hidden")}
+                                onClick={() => handleCopyOrderId(String(order.id))}
+                            />
+                            {isPinned(order, index) ? exactBadge : null}
                         </div>
-                    );
-                },
+                        <div className="whitespace-nowrap text-[13px] text-text-muted">{dateTime(order.createdAt)}</div>
+                    </>
+                ),
+            },
+            {
+                id: "customer",
+                header: t("ordersList.columns.customer"),
+                cell: (order) => (
+                    <>
+                        <div className="whitespace-nowrap font-semibold text-text">{order.customer?.name ?? "—"}</div>
+                        <div className="whitespace-nowrap text-[13px] text-text-muted">
+                            {formatPhone(order.customer?.phone_number) || "—"}
+                        </div>
+                        {isMarket ? (
+                            <div className="hidden whitespace-nowrap text-[13px] text-text-muted max-lg:block">
+                                {order.district?.name ?? "—"}
+                            </div>
+                        ) : null}
+                    </>
+                ),
+            },
+            {
+                id: "area",
+                header: t("ordersList.columns.area"),
+                hideBelow: "lg",
+                cell: (order) => (
+                    <>
+                        <div className="whitespace-nowrap">{order.district?.name ?? "—"}</div>
+                        {order.district?.region?.name ? (
+                            <div className="whitespace-nowrap text-[13px] text-text-muted">{order.district.region.name}</div>
+                        ) : null}
+                    </>
+                ),
             },
         ];
+
+        if (!isMarket) {
+            list.push({
+                id: "market",
+                header: t("ordersList.columns.market"),
+                hideBelow: "lg",
+                className: "whitespace-nowrap",
+                cell: (order) => order.market?.name ?? "—",
+            });
+        }
+
+        list.push(
+            {
+                id: "status",
+                header: t("ordersList.columns.status"),
+                sortable: true,
+                cell: (order) => <div className="flex flex-wrap items-center gap-1">{statusBadges(order)}</div>,
+            },
+            {
+                id: "delivery",
+                header: t("ordersList.columns.delivery"),
+                // Market jadvalida planshetda ham ko'rinadi (maket `market-orders-list`).
+                hideBelow: isMarket ? undefined : "lg",
+                cell: deliveryBadge,
+            },
+            {
+                id: "total_price",
+                header: showTabletMarket ? (
+                    <>
+                        {t("ordersList.columns.amount")}
+                        {/* Saralash tugmasi `gap-1` — «Summa / market» orasidagi bo'shliq shundan (maket `.el-th-sort`). */}
+                        <span className="hidden max-lg:inline">{t("ordersList.columns.amountMarket")}</span>
+                    </>
+                ) : (
+                    t("ordersList.columns.amount")
+                ),
+                sortable: true,
+                align: "end",
+                cell: (order) => (
+                    <>
+                        <div className="font-semibold text-text">{money(order.total_price)}</div>
+                        {showTabletMarket ? (
+                            <div className="hidden text-[13px] font-normal text-text-muted max-lg:block">
+                                {order.market?.name ?? "—"}
+                            </div>
+                        ) : null}
+                    </>
+                ),
+            },
+        );
+
+        if (hasActions) {
+            list.push({
+                id: "actions",
+                header: t("ordersList.columns.actions"),
+                className: "whitespace-nowrap",
+                cell: (order) => <div className="flex items-center gap-2">{renderActions(order, "table")}</div>,
+            });
+        }
+
+        return list;
     }, [
-        canUseOrderActions,
-        canSellOrder,
-        allSelected,
-        formatPrice,
+        dateTime,
+        deliveryBadge,
+        exactBadge,
+        getOrderHref,
         handleCopyOrderId,
-        isOrderActionPending,
-        isSelectable,
-        onCancelOrder,
-        onRollbackOrder,
-        onSelectAll,
-        onSelectChange,
-        onSellOrder,
-        role,
-        rowNumberOffset,
-        selectedIds,
-        someSelected,
+        hasActions,
+        isMarket,
+        isPinned,
+        money,
+        renderActions,
+        showTabletMarket,
+        statusBadges,
         t,
-        pinnedOrderId,
-        data,
     ]);
 
-    if (isLoading) {
-        return <TableSkeleton rows={8} columns={7} />;
-    }
+    const renderCard = useCallback(
+        (order: OrderListItem, index: number) => {
+            const selectable = hasSelection;
+            const meta = isMarket
+                ? [`№${order.id}`, order.district?.name ?? "—"]
+                : [`№${order.id}`, order.district?.name ?? "—", order.market?.name ?? "—"];
+            const actions = renderActions(order, "card");
+            const showCourierHeldNote =
+                hasActions &&
+                Boolean(onSellOrder) &&
+                Boolean(canUseOrderActions?.(order)) &&
+                !ROLLBACK_STATUSES.has(order.status) &&
+                canSellOrder !== undefined &&
+                !canSellOrder(order);
 
-    if (!data.length && isError) {
-        return <QueryErrorState onRetry={onRetry} />;
-    }
-
-    if (!data.length) {
-        return (
-            <EmptyState
-                icon="📭"
-                title={t("ordersNotFound")}
-                description={
-                    <>
-                        {t("ordersEmptyCreateHintLine1")}<br />
-                        {t("ordersEmptyCreateHintLine2")}
-                    </>
-                }
-            />
-        );
-    }
-
-    const renderMobileCard = (order: OrderListItem) => (
-        <div className={`rounded-xl border bg-white p-4 shadow-sm transition-transform active:scale-[0.98] dark:bg-primarydark/70 ${
-            selectedIds.has(order.id)
-                ? "border-red-400/60 ring-1 ring-red-400/30 dark:border-red-400/60"
-                : "border-gray-100 dark:border-primarydark/70"
-        }`}>
-            <div className="mb-3 flex items-center justify-between gap-2">
-                <div className="flex min-w-0 flex-wrap items-center gap-2">
-                    {isSelectable && onSelectChange ? (
-                        <input
-                            type="checkbox"
-                            checked={selectedIds.has(order.id)}
-                            disabled={!isSelectable(order)}
-                            onClick={(event) => event.stopPropagation()}
-                            onChange={(event) => onSelectChange(order.id, event.target.checked)}
-                            className="h-4 w-4 cursor-pointer accent-red-500 disabled:cursor-not-allowed disabled:opacity-25"
-                        />
-                    ) : null}
-                    <OrderStatusBadge orderId={order.id} status={order.status} />
-                    <ReturnRequestedBadge order={order} />
-                    {pinnedOrderId && String(order.id) === pinnedOrderId ? (
-                        <ExactMatchBadge label={t("exactNumberMatch")} title={t("exactNumberMatchTitle")} />
-                    ) : null}
-                </div>
-                <OrderIdBadge id={order.id} label={t("copyOrderNumber")} onCopy={handleCopyOrderId} />
-            </div>
-
-            <div className="mb-3 flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-main to-primarydark text-white">
-                    <span className="text-sm font-bold">
-                        {order.customer?.name?.[0]?.toUpperCase() ?? "?"}
-                    </span>
-                </div>
-                <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-base font-bold text-maindark dark:text-primary">
-                        {order.customer?.name ?? "—"}
-                    </h3>
-                    <a
-                        href={`tel:${order.customer?.phone_number ?? ""}`}
-                        onClick={(event) => event.stopPropagation()}
-                        className="inline-flex items-center gap-1.5 text-sm text-gray-600 hover:text-main dark:text-gray-300 dark:hover:text-main"
+            return (
+                <>
+                    <Link
+                        to={getOrderHref(order)}
+                        className={cx("flex min-w-0 flex-col gap-1 px-4 py-3 text-text", selectable && "pl-12")}
                     >
-                        <Phone size={14} className="shrink-0 text-emerald-500" />
-                        <span>{formatPhoneNumber(order.customer?.phone_number)}</span>
-                    </a>
-                </div>
-            </div>
-
-            <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-                <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
-                    <MapPin size={14} className="shrink-0 text-main/70" />
-                    <span className="truncate">{order.district?.name ?? "—"}</span>
-                </div>
-                {role !== "market" && (
-                    <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
-                        <Store size={14} className="shrink-0 text-main/70" />
-                        <span className="truncate">{order.market?.name ?? "—"}</span>
-                    </div>
-                )}
-                <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-300">
-                    <Calendar size={14} className="shrink-0 text-main/70" />
-                    <span className="truncate">{formatDate(order.createdAt)}</span>
-                </div>
-            </div>
-
-            <div className="flex items-center justify-between border-t border-gray-100 pt-3 dark:border-primarydark/70">
-                <div className="flex items-center gap-4">
-                    <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{t("price")}</p>
-                        <p className="font-bold text-maindark dark:text-primary">
-                            {formatPrice(order.total_price)}
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-1 rounded-md bg-gray-100 px-2 py-1 dark:bg-primarydark">
-                        {order.where_deliver === "address" ? (
-                            <Home size={14} className="text-amber-500" />
-                        ) : (
-                            <Truck size={14} className="text-sky-500" />
-                        )}
-                        <span className="text-xs text-gray-600 dark:text-gray-300">
-                            {order.where_deliver === "center" ? t("deliveryCenter") : t("deliveryHome")}
+                        <span className="flex min-w-0 justify-between gap-2">
+                            <span className="min-w-0 font-semibold">{order.customer?.name ?? "—"}</span>
+                            <span className="whitespace-nowrap font-semibold">{money(order.total_price)}</span>
                         </span>
-                    </div>
-                </div>
-
-                {canUseOrderActions?.(order) && (onSellOrder || onCancelOrder || onRollbackOrder) ? (
-                    <div className="flex shrink-0 items-center gap-2">
-                        {order.status !== "sold" &&
-                            order.status !== "cancelled" &&
-                            (canSellOrder ? canSellOrder(order) : true) &&
-                            onSellOrder && (
-                            <ActionButton
-                                label={t("sell")}
-                                icon={<CheckCircle size={14} />}
-                                variant="sell"
-                                disabled={isOrderActionPending}
-                                onClick={(event) => {
-                                    event.stopPropagation();
-                                    onSellOrder(order);
-                                }}
-                            />
-                        )}
-                        {order.status !== "sold" && order.status !== "cancelled" && onCancelOrder && (
-                            <ActionButton
-                                label={t("cancelOrderAction")}
-                                icon={<XCircle size={14} />}
-                                variant="cancel"
-                                disabled={isOrderActionPending}
-                                onClick={(event) => {
-                                    event.stopPropagation();
-                                    onCancelOrder(order);
-                                }}
-                            />
-                        )}
-                        {(order.status === "sold" || order.status === "cancelled") && onRollbackOrder && (
-                            <ActionButton
-                                label={t("rollbackOrder")}
-                                icon={<RotateCcw size={14} />}
-                                variant="rollback"
-                                disabled={isOrderActionPending}
-                                onClick={(event) => {
-                                    event.stopPropagation();
-                                    onRollbackOrder(order);
-                                }}
-                            />
-                        )}
-                    </div>
-                ) : (
-                    <ChevronRight size={18} className="text-gray-400" />
-                )}
-            </div>
-        </div>
+                        <span className="text-[13px] text-text-muted">
+                            {meta.join(" · ")}
+                            {isMarket ? (
+                                <>
+                                    {" · "}
+                                    <span className="whitespace-nowrap">{dateTime(order.createdAt)}</span>
+                                </>
+                            ) : null}
+                        </span>
+                        <span className="flex flex-wrap items-center gap-1.5">
+                            {isPinned(order, index) ? exactBadge : null}
+                            {statusBadges(order)}
+                            {deliveryBadge(order)}
+                            {isMarket ? null : (
+                                <span className="ml-auto whitespace-nowrap text-xs text-text-muted">{dateTime(order.createdAt)}</span>
+                            )}
+                        </span>
+                    </Link>
+                    {showCourierHeldNote ? (
+                        <p className={cx("px-4 pb-2 text-xs text-text-muted", selectable && "pl-12")}>
+                            {t("ordersList.courierHeldNote")}
+                        </p>
+                    ) : null}
+                    {actions ? <div className={cx("flex gap-2 px-4 pb-3", selectable && "pl-12")}>{actions}</div> : null}
+                </>
+            );
+        },
+        [
+            canSellOrder,
+            canUseOrderActions,
+            dateTime,
+            deliveryBadge,
+            exactBadge,
+            getOrderHref,
+            hasActions,
+            hasSelection,
+            isMarket,
+            isPinned,
+            money,
+            onSellOrder,
+            renderActions,
+            statusBadges,
+            t,
+        ],
     );
 
+    const selection = useMemo(
+        () =>
+            hasSelection && isSelectable && onSelectChange && onSelectAll
+                ? {
+                      isSelected: (order: OrderListItem) => selectedIds.has(order.id),
+                      isSelectable,
+                      onToggle: (order: OrderListItem, checked: boolean) => onSelectChange(order.id, checked),
+                      onToggleAll: onSelectAll,
+                      headerLabel: t("ordersList.selectPage"),
+                      rowLabel: (order: OrderListItem) => t("ordersList.selectOrder", { id: order.id }),
+                      disabledRowLabel: (order: OrderListItem) => t("ordersList.alreadySent", { id: order.id }),
+                  }
+                : undefined,
+        [hasSelection, isSelectable, onSelectAll, onSelectChange, selectedIds, t],
+    );
+
+    const skeletonColumns = useMemo(
+        () => columns.map((column) => (typeof column.header === "string" ? column.header : t("ordersList.columns.amount"))),
+        [columns, t],
+    );
+
+    // Yuklanayotganda va xatoda (qator yo'q) `data` berilmaydi — QueryBoundary skelet / xatoni chizadi.
+    const query = {
+        data: isLoading || (isError && data.length === 0) ? undefined : data,
+        isLoading,
+        isError,
+        error,
+        refetch: onRetry,
+    };
+
     return (
-        <Table
-            data={data}
-            columns={tableColumns as any}
-            keyExtractor={(row) => row.id}
-            loading={false}
-            onRowClick={onRowClick}
-            getRowAriaLabel={(order) => t("openOrderRow", { id: order.id, name: order.customer?.name ?? "—" })}
-            mobileRowRender={renderMobileCard}
-            sortConfig={sortConfig}
-            onSortChange={onSortChange}
-            // Ro'yxat serverda (butun ro'yxat bo'yicha) saralanadi — sahifa
-            // ichida qayta tartiblanmaydi.
-            manualSort
-            sortLabel={t("sortLabel")}
-            striped
-            hoverable
-            bordered
-        />
+        <QueryBoundary
+            query={query}
+            keepPreviousData={false}
+            loading={<SkeletonTable framed={false} columns={skeletonColumns} />}
+            empty={
+                <EmptyState
+                    icon={Inbox}
+                    title={t("ordersNotFound")}
+                    description={
+                        <>
+                            {t("ordersEmptyCreateHintLine1")}
+                            <br />
+                            {t("ordersEmptyCreateHintLine2")}
+                        </>
+                    }
+                    action={
+                        onClearFilters ? (
+                            <Button variant="secondary" onClick={onClearFilters}>
+                                {t("ordersList.clearFilters")}
+                            </Button>
+                        ) : undefined
+                    }
+                />
+            }
+        >
+            {(rows) => (
+                <DataTable
+                    rows={rows}
+                    columns={columns}
+                    getRowKey={(order) => String(order.id)}
+                    label={label}
+                    sort={onSortChange ? (sortConfig ?? DEFAULT_SORT) : undefined}
+                    onSortChange={onSortChange}
+                    density={hasActions || hasSelection ? "tight" : isMarket ? "tablet-tight" : "default"}
+                    selection={selection}
+                    onRowClick={onRowClick}
+                    renderCard={renderCard}
+                    busy={busy}
+                    className="border-t border-border"
+                />
+            )}
+        </QueryBoundary>
     );
 };
 

@@ -1,182 +1,73 @@
-import { memo, useEffect, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, Clock, ClipboardList, XCircle } from "lucide-react";
+// dizayn-v2: courier-orders-pending, courier-orders-all, courier-orders-cancelled, courier-orders-tab-switcher-open
+import { memo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { isInUiLayer } from "../../../../../shared/ui/primitives";
+import { Tabs as TabsPrimitive, type TabItem, type TabsBackground } from "../../../../../shared/ui/primitives";
+import type { CourierOrdersTab } from "./ordertable/courierOrdersModel";
 
-type Tab = {
-  id: string;
-  labelKey: string;
-  icon: ReactNode;
-  activeBackground: string;
+/**
+ * Kuryer buyurtmalari tablari: «Kutilayotgan · Barchasi · Bekor qilingan» (maket `courier-orders-*`).
+ * Kompyuter/planshetda — karta ichida (`listClassName="px-3"`), telefonda — karta ustida, butun enda
+ * teng bo'lib (`fullWidth`, `courier-orders-tab-switcher-open`).
+ *
+ * Har tab soni (maketdagi 7 · 24 · 3) ko'rsatilmaydi: kuryer ro'yxati API'si har holat bo'yicha sonni
+ * bermaydi, faqat joriy tabning `total` i keladi (u sarlavhada «Jami N ta buyurtma»).
+ */
+
+const TAB_LABEL_KEYS: Record<CourierOrdersTab, string> = {
+  pending: "courierList.tabPending",
+  all: "courierList.tabAll",
+  cancelled: "courierList.tabCancelled",
 };
+
+const TAB_ORDER: readonly CourierOrdersTab[] = ["pending", "all", "cancelled"];
 
 type TabsProps = {
   onChange?: (tabId: string) => void;
   defaultTab?: string;
   activeTab?: string;
+  /** Telefonda: tablar butun enni teng bo'lib egallaydi. */
+  fullWidth?: boolean;
+  /** Ro'yxat nomi (sukut «Holat bo'yicha»; telefonda maketdagi «Buyurtmalar turi»). */
+  ariaLabel?: string;
+  className?: string;
+  listClassName?: string;
+  background?: TabsBackground;
 };
 
-const tabs: Tab[] = [
-  {
-    id: "pending",
-    labelKey: "pendingOrders",
-    icon: <Clock size={16} />,
-    activeBackground: "linear-gradient(135deg, #ff8c00, #ff5500)",
-  },
-  {
-    id: "all",
-    labelKey: "allOrders",
-    icon: <ClipboardList size={16} />,
-    activeBackground: "#576adb",
-  },
-  {
-    id: "cancelled",
-    labelKey: "cancelledOrders",
-    icon: <XCircle size={16} />,
-    activeBackground: "linear-gradient(135deg, #ef4444, #b91c1c)",
-  },
-];
+const isTab = (value: string | undefined): value is CourierOrdersTab =>
+  value === "pending" || value === "all" || value === "cancelled";
 
-const Tabs = ({ onChange, defaultTab = "pending", activeTab: controlledActiveTab }: TabsProps) => {
+const Tabs = ({
+  onChange,
+  defaultTab = "pending",
+  activeTab,
+  fullWidth = false,
+  ariaLabel,
+  className,
+  listClassName = "px-3",
+  background,
+}: TabsProps) => {
   const { t } = useTranslation("orders");
-  const [internalActiveTab, setInternalActiveTab] = useState(defaultTab);
-  const [isMobile, setIsMobile] = useState(
-    typeof window !== "undefined" ? window.innerWidth < 640 : false,
-  );
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
-  const mobileTabsRef = useRef<HTMLDivElement | null>(null);
+  const [internalTab, setInternalTab] = useState(defaultTab);
+  const current = activeTab ?? internalTab;
+  const value: CourierOrdersTab = isTab(current) ? current : "pending";
 
-  useEffect(() => {
-    setInternalActiveTab(defaultTab);
-  }, [defaultTab]);
-
-  useEffect(() => {
-    const onResize = () => {
-      const mobile = window.innerWidth < 640;
-      setIsMobile(mobile);
-      if (!mobile) setIsMobileOpen(false);
-    };
-
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  useEffect(() => {
-    if (!isMobile || !isMobileOpen) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!mobileTabsRef.current) return;
-      // v2 qatlami (`#ui-portal`: panel ichidan ochilgan ro'yxat, kalendar varaqasi, dialog) — «tashqari» emas.
-      if (isInUiLayer(event.target)) return;
-      if (!mobileTabsRef.current.contains(event.target as Node)) {
-        setIsMobileOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isMobile, isMobileOpen]);
-
-  const handleTabClick = (tabId: string) => {
-    setInternalActiveTab(tabId);
-    onChange?.(tabId);
-    if (isMobile) {
-      setIsMobileOpen(false);
-    }
-  };
-
-  const activeTab = controlledActiveTab ?? internalActiveTab;
-  const activeTabItem = tabs.find((tab) => tab.id === activeTab) ?? tabs[0];
+  const items: TabItem<CourierOrdersTab>[] = TAB_ORDER.map((tab) => ({ value: tab, label: t(TAB_LABEL_KEYS[tab]) }));
 
   return (
-    <div className="mt-4">
-      <div ref={mobileTabsRef} className="sm:hidden">
-        <button
-          type="button"
-          onClick={() => setIsMobileOpen((prev) => !prev)}
-          style={{ background: activeTabItem.activeBackground }}
-          className="flex min-h-14 w-full items-center justify-between gap-3 rounded-xl px-4 py-3 text-left font-semibold text-sm text-white shadow-lg"
-        >
-          <span className="flex min-w-0 items-center gap-2">
-            {activeTabItem.icon}
-            <span className="truncate">{t(activeTabItem.labelKey)}</span>
-          </span>
-          <ChevronDown
-            size={18}
-            className={`shrink-0 text-white/90 transition-transform ${isMobileOpen ? "rotate-180" : ""}`}
-          />
-        </button>
-
-        <div
-          className={`grid transition-all duration-300 ease-out ${isMobileOpen ? "mt-2 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
-        >
-          <div className="overflow-hidden">
-            <div className="space-y-2 rounded-xl border border-gray-300/60 bg-transparent p-2 dark:border-gray-600/60">
-              {tabs.map((tab) => {
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => handleTabClick(tab.id)}
-                    style={isActive ? { background: tab.activeBackground } : undefined}
-                    className={`
-                      flex min-h-12 w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-center
-                      font-semibold text-sm transition-all duration-200
-                      ${
-                        isActive
-                          ? "text-white border-none shadow-md [&_svg]:text-white"
-                          : "text-gray-600 dark:text-gray-200 border border-gray-300 dark:border-gray-600 bg-transparent [&_svg]:text-gray-500 dark:[&_svg]:text-gray-300"
-                      }
-                    `}
-                  >
-                    {tab.icon}
-                    {t(tab.labelKey)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="hidden grid-cols-1 gap-2 sm:grid sm:grid-cols-3">
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => handleTabClick(tab.id)}
-              style={
-                isActive
-                  ? { background: tab.activeBackground }
-                  : { background: "transparent" }
-              }
-              className={`
-                flex min-h-14 w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-center
-                cursor-pointer font-semibold text-sm transition-all duration-250
-                ${
-                  isActive
-                    ? "text-white border-none shadow-lg [&_svg]:text-white"
-                    : `
-                      text-gray-600 dark:text-gray-200
-                      border border-gray-300 dark:border-gray-600
-                      hover:text-gray-800 dark:hover:text-white
-                      hover:border-gray-400 dark:hover:border-gray-400
-                      [&_svg]:text-gray-500 dark:[&_svg]:text-gray-300
-                      hover:[&_svg]:text-gray-700 dark:hover:[&_svg]:text-white
-                    `
-                }
-              `}
-            >
-              {tab.icon}
-              {t(tab.labelKey)}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    <TabsPrimitive
+      items={items}
+      value={value}
+      onValueChange={(next) => {
+        setInternalTab(next);
+        onChange?.(next);
+      }}
+      ariaLabel={ariaLabel ?? t("courierList.tabsLabel")}
+      fullWidth={fullWidth}
+      className={className}
+      listClassName={listClassName}
+      background={background}
+    />
   );
 };
 

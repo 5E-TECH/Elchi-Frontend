@@ -4,7 +4,6 @@ import {
   Home,
   MapPin,
   Minus,
-  Phone,
   Plus,
   ShoppingBag,
   Trash2,
@@ -19,6 +18,8 @@ import type { DeliveryType } from "../../../../entities/order/types/order";
 import { GlobalSearchInput } from "../../../../features/search";
 import type { RootState } from "../../../../app/config/store";
 import SearchableSelect from "../../../../shared/ui/SearchableSelect";
+import { Field as FormField } from "../../../../shared/ui/primitives/Field";
+import { cx } from "../../../../shared/lib/cx";
 import {
   formatPhone,
   formatPrice,
@@ -26,35 +27,56 @@ import {
   stripPrice,
   type OrderCreateFormValues,
 } from "../model/orderCreateForm";
-import {
-  FormFieldError,
-  getFieldClassName,
-  orderInputClassName as inputCls,
-} from "./formFieldStyles";
+import { FormFieldError, getFieldClassName } from "./formFieldStyles";
 import { keepPhoneCaretAfterChange } from "../../../../shared/lib/phone";
 
 interface FieldProps {
+  /** Boshqaruv `id` si: yorliq `htmlFor`, xato matni `${id}-error` (`fieldControlProps`). */
+  id: string;
   label: string;
   required?: boolean;
-  icon?: ReactNode;
   children: ReactNode;
   error?: string;
   wide?: boolean;
 }
 
-const Field = ({ label, required, icon, children, error, wide }: FieldProps) => (
+/**
+ * Maydon — dizayn v2 `Field` (`.el-field`/`.el-label`): yonidagi viloyat/tuman `SearchableSelect` lari
+ * (3-bosqichdan v2 `Field` + `Select`) bilan bir xil yorliq (13 px) va oraliq — juft maydonlar bir
+ * qatorda aynan tekislanadi (maket `market-new-orders-create-manual`).
+ */
+const Field = ({ id, label, required, children, error, wide }: FieldProps) => (
   // `sm:` prefiksi shart: telefonda grid bitta ustunli. Prefiksiz `col-span-2` yashirin
   // ikkinchi ustun yaratib, ISM/TELEFON inputlarini 37–70px ga siqib qo'yardi.
-  <div className={`flex flex-col gap-1.5${wide ? " sm:col-span-2" : ""}`}>
-    <label className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide leading-4">
-      <span className="shrink-0">{icon}</span>
-      <span className="wrap-break-word">{label}</span>
-      {required && <span className="text-error ml-0.5">*</span>}
-    </label>
+  <FormField id={id} label={label} required={required} error={error} className={wide ? "sm:col-span-2" : undefined}>
     {children}
-    <FormFieldError message={error} />
-  </div>
+  </FormField>
 );
+
+/** Xom `<input>`/`<textarea>` ni `Field` ga bog'lash (v2 `useFieldControl` kabi): id, xato, majburiylik. */
+const fieldControlProps = (id: string, error?: string, required?: boolean) => ({
+  id,
+  "aria-invalid": error ? true : undefined,
+  "aria-describedby": error ? `${id}-error` : undefined,
+  "aria-required": required || undefined,
+});
+
+/** v2 maydon qutisi holatlari (`TextInput`/`Select` bilan bir xil tokenlar). */
+const fieldBoxCls = (invalid: boolean) =>
+  cx(
+    "block w-full min-w-0 rounded-[10px] border bg-input px-3 text-base text-text md:text-sm",
+    "placeholder:text-text-subtle outline-none! focus:ring-3",
+    "transition-[background-color,border-color,box-shadow] duration-150 motion-reduce:transition-none",
+    invalid
+      ? "border-danger focus:ring-danger-soft"
+      : "border-border-strong hover:border-text-subtle focus:border-action focus:ring-focus",
+  );
+
+/** v2 `.el-input` — `TextInput` (md) va `Select` geometriyasi: 40 px, telefonda 44 px. */
+const inputCls = (invalid: boolean, extra?: string) => cx(fieldBoxCls(invalid), "h-10 max-md:h-11", extra);
+
+/** v2 `.el-textarea` — `TextInput multiline` geometriyasi: kamida 88 px, bo'yiga cho'ziladi. */
+const textareaCls = (invalid: boolean) => cx(fieldBoxCls(invalid), "min-h-[88px] resize-y py-2.5");
 
 const SectionHeader = ({
   icon,
@@ -246,16 +268,17 @@ const Step2Combined = () => {
             name="customer.phone"
             render={({ field }) => (
               <Field
+                id="customer.phone"
                 label={t("phone")}
                 required
-                icon={<Phone size={12} />}
                 error={errors.customer?.phone?.message}
               >
                 <div className="relative">
-                  <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono z-10">
+                  <span className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-base font-semibold text-text-muted tabular-nums md:text-sm">
                     +998
                   </span>
                   <input
+                    {...fieldControlProps("customer.phone", errors.customer?.phone?.message, true)}
                     type="tel"
                     inputMode="numeric"
                     autoComplete="off"
@@ -267,10 +290,7 @@ const Step2Combined = () => {
                       field.onChange(nextValue);
                       keepPhoneCaretAfterChange(event.target, nextDisplayValue);
                     }}
-                    className={getFieldClassName(
-                      `${inputCls} pl-14 font-mono tracking-wider`,
-                      !!errors.customer?.phone?.message,
-                    )}
+                    className={inputCls(!!errors.customer?.phone?.message, "pl-14 tabular-nums tracking-wider")}
                   />
                 </div>
               </Field>
@@ -282,15 +302,16 @@ const Step2Combined = () => {
             name="customer.extra_phone"
             render={({ field }) => (
               <Field
+                id="customer.extra_phone"
                 label={t("additionalPhone")}
-                icon={<Phone size={12} />}
                 error={errors.customer?.extra_phone?.message}
               >
                 <div className="relative">
-                  <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono z-10">
+                  <span className="pointer-events-none absolute left-3 top-1/2 z-10 -translate-y-1/2 text-base font-semibold text-text-muted tabular-nums md:text-sm">
                     +998
                   </span>
                   <input
+                    {...fieldControlProps("customer.extra_phone", errors.customer?.extra_phone?.message, false)}
                     type="tel"
                     inputMode="numeric"
                     autoComplete="off"
@@ -302,10 +323,7 @@ const Step2Combined = () => {
                       field.onChange(nextValue);
                       keepPhoneCaretAfterChange(event.target, nextDisplayValue);
                     }}
-                    className={getFieldClassName(
-                      `${inputCls} pl-14 font-mono tracking-wider`,
-                      !!errors.customer?.extra_phone?.message,
-                    )}
+                    className={inputCls(!!errors.customer?.extra_phone?.message, "pl-14 tabular-nums tracking-wider")}
                   />
                 </div>
               </Field>
@@ -317,16 +335,17 @@ const Step2Combined = () => {
             name="customer.name"
             render={({ field }) => (
               <Field
+                id="customer.name"
                 label={t("customerName")}
                 required
-                icon={<User size={12} />}
                 error={errors.customer?.name?.message}
               >
                 <input
                   {...field}
+                  {...fieldControlProps("customer.name", errors.customer?.name?.message, true)}
                   type="text"
                   placeholder={t("enterName")}
-                  className={getFieldClassName(inputCls, !!errors.customer?.name?.message)}
+                  className={inputCls(!!errors.customer?.name?.message)}
                 />
               </Field>
             )}
@@ -387,19 +406,17 @@ const Step2Combined = () => {
             name="customer.address"
             render={({ field }) => (
               <Field
+                id="customer.address"
                 label={t("address")}
-                icon={<Home size={12} />}
                 error={errors.customer?.address?.message}
                 wide
               >
                 <textarea
                   {...field}
-                  rows={2}
+                  {...fieldControlProps("customer.address", errors.customer?.address?.message)}
+                  rows={3}
                   placeholder={t("enterFullAddress")}
-                  className={getFieldClassName(
-                    `${inputCls} resize-none`,
-                    !!errors.customer?.address?.message,
-                  )}
+                  className={textareaCls(!!errors.customer?.address?.message)}
                 />
               </Field>
             )}
@@ -645,20 +662,20 @@ const Step2Combined = () => {
             control={control}
             name="details.total_price"
             render={({ field }) => (
-              <Field label={t("totalPrice")} required error={errors.details?.total_price?.message}>
+              <Field
+                id="details.total_price"
+                label={t("totalPrice")}
+                required
+                error={errors.details?.total_price?.message}
+              >
                 <input
+                  {...fieldControlProps("details.total_price", errors.details?.total_price?.message, true)}
                   type="text"
                   inputMode="numeric"
                   placeholder="0"
                   value={formatPrice(field.value)}
                   onChange={(event) => field.onChange(stripPrice(event.target.value))}
-                  className={getFieldClassName(`
-                    w-full px-3.5 py-2.5 rounded-xl text-base md:text-sm font-mono
-                    bg-primary dark:bg-primarydark border border-gray-200 dark:border-primarydark
-                    text-maindark dark:text-primary placeholder:text-gray-400
-                    focus:outline-none focus:ring-2 focus:ring-main/30 focus:border-main
-                    transition-all duration-200
-                  `, !!errors.details?.total_price?.message)}
+                  className={inputCls(!!errors.details?.total_price?.message, "tabular-nums")}
                 />
               </Field>
             )}
@@ -668,12 +685,13 @@ const Step2Combined = () => {
             control={control}
             name="details.operator"
             render={({ field }) => (
-              <Field label={t("operator")} icon={<User size={12} />}>
+              <Field id="details.operator" label={t("operator")} error={errors.details?.operator?.message}>
                 <input
                   {...field}
+                  {...fieldControlProps("details.operator", errors.details?.operator?.message)}
                   type="text"
                   placeholder={t("operatorPlaceholder")}
-                  className={getFieldClassName(inputCls, !!errors.details?.operator?.message)}
+                  className={inputCls(!!errors.details?.operator?.message)}
                 />
               </Field>
             )}
@@ -683,15 +701,13 @@ const Step2Combined = () => {
             control={control}
             name="details.comment"
             render={({ field }) => (
-              <Field label={t("note")} wide>
+              <Field id="details.comment" label={t("note")} error={errors.details?.comment?.message} wide>
                 <textarea
                   {...field}
-                  rows={2}
+                  {...fieldControlProps("details.comment", errors.details?.comment?.message)}
+                  rows={3}
                   placeholder={t("notePlaceholder")}
-                  className={getFieldClassName(
-                    `${inputCls} resize-none`,
-                    !!errors.details?.comment?.message,
-                  )}
+                  className={textareaCls(!!errors.details?.comment?.message)}
                 />
               </Field>
             )}

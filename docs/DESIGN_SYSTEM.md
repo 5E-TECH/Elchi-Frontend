@@ -358,6 +358,18 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   `Modal.confirm|info|success|error|warning`, `Modal.useModal`, `App.useApp`, `window.confirm|alert|prompt` va global
   `confirm`/`alert`/`prompt` — xato.
 
+**4-bosqich — jarayonda (sahifalar).** Har sahifa alohida PR, faylning birinchi qatorida `// dizayn-v2: <ekran>`.
+
+- **Ro'yxat standarti** — `DataTable` (ustunlar, `density`, server saralashi, tanlov, telefonda `renderCard` →
+  kartalar) + `Pagination` (`Card footer`, «10 ta» tanlovi, 5 o'rinli sahifalar), `src/shared/ui/primitives` barrelidan;
+  namunasi `/ops/ui-kit?section=table`, klasslar `design/CODE-MAP.md` §2.6. v1 `shared/components/Table` va
+  `shared/components/pagination` yangi kodda ishlatilmaydi.
+- **Ko'chirilgan:** `/orders` — barcha rollar (superadmin, admin, registrator, market, menejer, kuryer): ro'yxat va
+  8 holat tabi, filtrlar (asboblar qatori, «Qo'shimcha filtrlar» paneli, chiplar, telefon varaqasi), menejerning
+  «Bekor qilingan» tabida HQ'ga yuborish, kuryer ro'yxati (3 tab, skaner), sotish / qisman sotish / bekor qilish /
+  qaytarish oynalari (`variant="courier" | "manager"`). Tab sonlari chizilmagan — `GET /orders` holat bo'yicha sonlarni
+  bermaydi. Buyurtma tafsiloti (`/orders/edit/:orderId`) va yaratish — keyingi PR'lar.
+
 **Dizayn qo'riqchisi** (`scripts/design-guard.mjs`, `npm run design:guard`): `colour`, `palette`, `dark-pair`,
 `legacy`, `money`, `icons`, `tiny-text`, `v1-class`, `weight`, `gradient`, `v1-helper`. Ikki darvoza:
 `npm test` ichida ratchet (`design/guard-baseline.json`, fayl × qoida soni faqat kamayadi, yangi va `// dizayn-v2:`

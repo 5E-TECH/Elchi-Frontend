@@ -191,6 +191,29 @@ describe("Select — ochiq ro'yxat", () => {
     expect(screen.getByRole("listbox")).toBeInTheDocument();
   });
 
+  it.each([
+    ["oddiy", false],
+    ["qidiruvli", true],
+  ])("%s: fokus hech qayerga ketsa (telefon klaviaturasi yopildi, `blur()`) — ro'yxat yopiladi, `onBlur` chaqiriladi", async (_, searchable) => {
+    const user = userEvent.setup();
+    const onBlur = vi.fn();
+    const onChangeSpy = vi.fn();
+    render(<SingleControlled options={REGIONS} searchable={searchable} onBlur={onBlur} onChangeSpy={onChangeSpy} />);
+    await user.click(combobox());
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+    act(() => combobox().blur());
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(combobox()).toHaveAttribute("aria-expanded", "false");
+    expect(onBlur).toHaveBeenCalledTimes(1);
+    expect(onChangeSpy).not.toHaveBeenCalled();
+
+    // Variant bosilishi fokusni maydondan olmaydi — tanlash avvalgidek ishlaydi.
+    await user.click(combobox());
+    await user.click(screen.getByRole("option", { name: "Andijon" }));
+    expect(onChangeSpy).toHaveBeenLastCalledWith("andijan");
+    expect(combobox()).toHaveFocus();
+  });
+
   it("tashqariga bosish va Tab yopadi", async () => {
     const user = userEvent.setup();
     render(

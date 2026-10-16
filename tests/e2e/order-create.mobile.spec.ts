@@ -6,6 +6,7 @@ import {
   mockOrderCreateApi,
   openManualCreate,
 } from "./support/orderCreate";
+import { expectToast } from "./support/toast";
 
 /**
  * QO'LDA BUYURTMA YARATISH (Step2Combined) — 390px TELEFON.
@@ -102,11 +103,12 @@ test.describe("Qo'lda buyurtma yaratish — 390px", () => {
     await page.keyboard.type("901234567");
     await page.locator('input[name="customer.name"]').fill("Aliyev Vali");
 
+    // Viloyat/tuman — v2 `Select` (combobox + portaldagi listbox): variantlar `option` roli bilan.
     await page.locator('[id="customer.region_id"]').click();
-    await page.getByRole("button", { name: "Toshkent shahri • 1726" }).click();
+    await page.getByRole("listbox", { name: /Viloyat/ }).getByRole("option", { name: "Toshkent shahri • 1726" }).click();
     await expect(page.locator('[id="customer.district_id"]')).toBeEnabled();
     await page.locator('[id="customer.district_id"]').click();
-    await page.getByRole("button", { name: "Chilonzor • 1726269" }).click();
+    await page.getByRole("listbox", { name: /Tuman/ }).getByRole("option", { name: "Chilonzor • 1726269" }).click();
 
     await page.locator('textarea[name="customer.address"]').fill("Chilonzor 19-kvartal, 45-uy");
     await page.getByRole("button", { name: /Telefon ushlagich/ }).click();
@@ -136,7 +138,8 @@ test.describe("Qo'lda buyurtma yaratish — 390px", () => {
       address: "Chilonzor 19-kvartal, 45-uy",
     });
 
-    await expect(page.getByText("Muvaffaqiyatli")).toBeVisible();
+    // v2 Toaster: matn ko'rinadigan kartada VA yashirin e'londa — karta (muvaffaqiyat toni) tekshiriladi.
+    await expectToast(page, "Muvaffaqiyatli", { tone: "success" });
     // Forma keyingi buyurtma uchun tozalanadi.
     await expect(page.locator('input[name="customer.name"]')).toHaveValue("");
 

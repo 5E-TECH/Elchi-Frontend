@@ -229,7 +229,8 @@
       "link": "Link",
       "success": "Success",
       "danger": "Danger",
-      "dangerSoft": "Danger (soft)"
+      "dangerSoft": "Danger (soft)",
+      "successSoft": "Success (soft)"
     },
     "iconVariants": {
       "ghost": "Icon button",
@@ -369,6 +370,19 @@
       "longDescription": "01.10 – 08.10.2026 · 94 orders"
     }
   },
+  "table": {
+    "selectAll": "Select all rows",
+    "selectRow": "Select row",
+    "cards": "List"
+  },
+  "pagination": {
+    "label": "Pages",
+    "previous": "Previous page",
+    "next": "Next page",
+    "summary": "{{from}}–{{to}} of {{total}}",
+    "pageSize": "Rows per page: {{count}}",
+    "pageSizeOption": "{{count}} rows"
+  },
   "tabs": {
     "scrollPrev": "Previous tabs",
     "scrollNext": "Next tabs",
@@ -472,6 +486,10 @@
       "states": {
         "title": "Loading, empty and error states",
         "description": "Skeleton, empty list and retry."
+      },
+      "table": {
+        "title": "Table and pagination",
+        "description": "Sorting, selection, columns hidden on tablets, cards on phones and pages."
       }
     }
   },
@@ -670,6 +688,22 @@
     "clearShort": "Clear",
     "remove": "Remove “{{label}}”",
     "selectedCount": "{{count}} selected"
+  },
+  "filters": {
+    "button": "Filters",
+    "panel": "More filters",
+    "active": "Active filters",
+    "clearAll": "Clear filters",
+    "remove": "Remove {{label}} filter",
+    "chip": "{{label}}: {{value}}",
+    "searchChip": "{{label}}: “{{value}}”",
+    "sheetTitle": "Filters",
+    "sheetSelected": "Filters selected: {{count}}",
+    "sheetClose": "Close filters",
+    "quickPeriod": "Quick period",
+    "reset": "Reset",
+    "apply": "Show results",
+    "applyTotal": "({{total}})"
   },
   "popupSelect": {
     "search": "Search...",
@@ -913,6 +947,29 @@
       "burst": "4 in a row",
       "repeat": "Repeated error",
       "dismissAll": "Close all"
+    }
+  },
+  "tableKit": {
+    "label": "Order sample",
+    "sortByDate": "Sort by date",
+    "selectAll": "Select unsent orders on this page",
+    "selectRow": "Select №{{id}}",
+    "cannotSelect": "№{{id}} has already been sent and can't be selected",
+    "summary": "{{from}}–{{to}} of {{total}} orders",
+    "toHome": "To the door",
+    "columns": {
+      "order": "Order",
+      "customer": "Customer",
+      "area": "District / region",
+      "status": "Status",
+      "delivery": "Delivery",
+      "amount": "Amount"
+    },
+    "status": {
+      "new": "New",
+      "onTheRoad": "On the road",
+      "cancelled": "Cancelled",
+      "cancelledSent": "Cancelled — sent"
     }
   },
   "statesKit": {

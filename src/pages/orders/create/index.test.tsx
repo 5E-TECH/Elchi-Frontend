@@ -197,3 +197,36 @@ describe("OrderCreate — telefonda mijoz bloki (duIKLi7n)", () => {
     prefixes.forEach((prefix) => expect(prefix).toHaveClass("pointer-events-none"));
   });
 });
+
+describe("OrderCreate — maydonlar v2 Field geometriyasida (viloyat/tuman Select bilan tekis)", () => {
+  // 3-bosqichdan SearchableSelect — v2 Field (13 px yorliq) + 40/44 px quti. Qo'lda forma maydonlari eski
+  // (12 px yorliq + 48 px) qolganda ISM va VILOYAT bir qatorda 3.5 px siljigan, balandligi 48 ≠ 40 edi.
+  it("har maydon v2 yorliq bilan bog'langan va Select bilan bir xil quti o'lchamida", () => {
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+    const panel = within(manualPanel());
+
+    const region = panel.getByRole("combobox", { name: /^Viloyat/ });
+    const regionBox = region.closest("[class*='bg-input']") as HTMLElement;
+    expect(regionBox).toHaveClass("h-10", "max-md:h-11");
+
+    const fields: Array<[RegExp, string]> = [
+      [/^Telefon/, "customer.phone"],
+      [/^Qo'shimcha raqam/, "customer.extra_phone"],
+      [/^Ism/, "customer.name"],
+      [/^Umumiy summa/, "details.total_price"],
+      [/^Operator/, "details.operator"],
+    ];
+    for (const [label, id] of fields) {
+      const input = panel.getByLabelText(label);
+      expect(input, id).toHaveAttribute("id", id);
+      expect(input, id).toHaveClass("h-10", "max-md:h-11", "rounded-[10px]", "bg-input");
+      // Yorliq — Select bilan bir xil v2 `.el-label`.
+      const labelEl = document.querySelector(`label[for="${id}"]`);
+      expect(labelEl?.className, id).toBe(document.getElementById(`${region.id}-label`)?.className);
+    }
+
+    expect(panel.getByLabelText(/^Ism/)).toHaveAttribute("aria-required", "true");
+    expect(panel.getByLabelText(/^Manzil/)).toHaveClass("min-h-[88px]");
+    expect(panel.getByLabelText(/^Izoh/)).toHaveClass("min-h-[88px]");
+  });
+});

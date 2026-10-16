@@ -64,6 +64,10 @@ const setup = async (page: Page) => {
     const w = window as unknown as { __permissionAsked: number };
     w.__permissionAsked = 0;
     if ("Notification" in window) {
+      // Hali so'ralmagan foydalanuvchi. ⚠️ Playwright'ning sukut headless brauzeri (chromium-headless-shell)
+      // `Notification.permission` ni doim "denied" deydi (to'liq Chromium/Chrome — "default"): soxtalashtirilmasa
+      // tugma o'rniga «bloklangan» izohi chiqadi va test qaysi brauzerda yurganiga bog'liq bo'lib qoladi.
+      Object.defineProperty(Notification, "permission", { configurable: true, get: () => "default" });
       Notification.requestPermission = () => {
         w.__permissionAsked += 1;
         return Promise.resolve("default");
@@ -105,10 +109,12 @@ test.describe("Push ruxsat tugmasi — 390×664", () => {
     // Brauzer oynasi hali so'ralmagan — faqat bizning tushuntirish.
     expect(await page.evaluate(() => (window as unknown as { __permissionAsked: number }).__permissionAsked)).toBe(0);
 
+    // Telefonda oyna — pastki varaqa (dizayn v2 `Dialog`), pastdan surilib chiqadi: o'lchov joyiga
+    // o'rnashgan holatda (animatsiya tugagach) olinadi.
     for (const name of ["Yoqish", "Hozir emas"]) {
-      const action = await fullyVisible(page, `button:has-text("${name}")`);
-      expect(action.inside, name).toBe(true);
-      expect(action.notClipped, name).toBe(true);
+      await expect
+        .poll(() => fullyVisible(page, `button:has-text("${name}")`), { message: name })
+        .toMatchObject({ inside: true, notClipped: true });
     }
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
@@ -128,7 +134,7 @@ test.describe("Push ruxsat tugmasi — 390×664", () => {
     expect(box.notClipped).toBe(true);
 
     const mainOverflow = await page
-      .locator("main.el-surface-page")
+      .locator("main:has([data-shell-slot=content])")
       .evaluate((main) => main.scrollWidth - main.clientWidth);
     expect(mainOverflow).toBeLessThanOrEqual(0);
     expect(leaked).toEqual([]);

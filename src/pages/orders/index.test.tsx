@@ -5,7 +5,7 @@ import { vi, type MockInstance } from "vitest";
 import Orders from "./index";
 import { renderWithProviders } from "../../test/test-utils";
 import { api } from "../../shared/api/api";
-import type { SortConfig } from "../../shared/components/Table/Table.types";
+import type { DataTableSort as SortConfig } from "../../shared/ui/primitives";
 
 /** `MemoryRouter` brauzer manzilini o'zgartirmaydi — URL `useLocation`dan o'qiladi. */
 const LocationProbe = () => {
@@ -109,11 +109,163 @@ const open = (route: string) =>
 
 const currentSearch = () => new URLSearchParams(screen.getByTestId("search").textContent ?? "");
 
+const regionalManagerState = {
+  role: { id: "300", role: "manager", region: null, name: "Menejer" },
+  user: {
+    user: { id: "300", role: "manager", branch: { id: "15", type: "REGIONAL" } },
+    isAuthenticated: true,
+    accessToken: null,
+    loading: false,
+    isAppInitializing: false,
+    error: null,
+  },
+} as never;
+
 describe("Orders list — buyurtma yaratish", () => {
   it("ro'yxatda yaratish tugmasi yo'q (yaratish 'Qabul va yaratish' sahifasida)", () => {
     open("/orders");
 
     expect(screen.queryByRole("button", { name: /Yangi buyurtma/i })).not.toBeInTheDocument();
+  });
+
+  it("sarlavhada «Buyurtma yaratish» — yaratish sahifasiga havola (maket `superadmin-orders-list`)", () => {
+    open("/orders");
+
+    expect(screen.getByRole("link", { name: "Buyurtma yaratish" })).toHaveAttribute("href", "/new-orders/create");
+  });
+
+  it("yaratish huquqi yo'q menejerda (REGIONAL, `intake` yo'q) havola ko'rinmaydi", () => {
+    renderWithProviders(<Orders />, { route: "/orders", preloadedState: regionalManagerState });
+
+    expect(screen.queryByRole("link", { name: "Buyurtma yaratish" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Excelga yuklash" })).toBeInTheDocument();
+  });
+});
+
+describe("Orders list — sarlavha, tablar, sahifalash", () => {
+  beforeEach(() => {
+    getOrdersMock.mockClear();
+    ordersResponse.total = 25;
+    ordersResponse.search_truncated = false;
+    ordersResponse.rows = orderRows;
+  });
+
+  it("sarlavha «Buyurtmalar» va jami son", () => {
+    open("/orders");
+
+    expect(screen.getByRole("heading", { level: 1, name: "Buyurtmalar" })).toBeInTheDocument();
+    expect(screen.getByText("Jami 25 ta buyurtma")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Buyurtmalar ro'yxati" })).toBeInTheDocument();
+  });
+
+  it("«Excelga yuklash» — marketda maslahat bilan, boshqalarda maslahatsiz", () => {
+    const { unmount } = open("/orders");
+    expect(screen.getByRole("button", { name: "Excelga yuklash" })).not.toHaveAttribute("title");
+    unmount();
+
+    renderWithProviders(<Orders />, {
+      route: "/orders",
+      preloadedState: { role: { id: "m-1", role: "market", region: null, name: "Market" } } as never,
+    });
+    expect(screen.getByRole("button", { name: "Excelga yuklash" })).toHaveAttribute(
+      "title",
+      "Filtrga mos barcha sahifalar Excel faylga yuklanadi",
+    );
+  });
+
+  it("holat tablari: «Barchasi» tanlangan, sakkizta tab, izohlar", () => {
+    open("/orders");
+
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs.map((tab) => tab.textContent)).toEqual([
+      "Barchasi",
+      "Yangi",
+      "Qabul qilindi",
+      "Yo'lda",
+      "Kutilmoqda",
+      "Sotilgan",
+      "To'langan",
+      "Bekor qilingan",
+    ]);
+    expect(screen.getByRole("tablist", { name: "Holat bo'yicha" })).toBeInTheDocument();
+    expect(screen.getByRole("tab", { name: "Barchasi" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "To'langan" })).toHaveAttribute("title", "To'langan va qisman to'langan buyurtmalar");
+  });
+
+  it("tab bosilsa holat va 1-sahifa bitta URL yangilanishida yoziladi", async () => {
+    const user = userEvent.setup();
+    open("/orders?page=3");
+
+    await user.click(screen.getByRole("tab", { name: "Bekor qilingan" }));
+
+    await waitFor(() => expect(currentSearch().get("status")).toBe("cancelled,cancelled (sent)"));
+    expect(currentSearch().get("page")).toBe("1");
+    expect(screen.getByRole("tab", { name: "Bekor qilingan" })).toHaveAttribute("aria-selected", "true");
+    expect(getOrdersMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ status: ["cancelled", "cancelled (sent)"], page: 1 }),
+    );
+    expect(screen.getByRole("region", { name: "Bekor qilingan buyurtmalar" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("tab", { name: "To'langan" }));
+    await waitFor(() => expect(currentSearch().get("status")).toBe("paid,partly_paid"));
+
+    await user.click(screen.getByRole("tab", { name: "Barchasi" }));
+    await waitFor(() => expect(currentSearch().get("status")).toBeNull());
+  });
+
+  it("eski menejer havolasi (`orderStatus=waiting`) — «Kutilmoqda» tabi", async () => {
+    open("/orders?orderStatus=waiting");
+
+    await waitFor(() => expect(currentSearch().get("status")).toBe("waiting"));
+    expect(screen.getByRole("tab", { name: "Kutilmoqda" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("region", { name: "Kutilayotgan buyurtmalar" })).toBeInTheDocument();
+  });
+
+  it("Holat filtridan boshqa to'plam — birorta tab tanlanmaydi", () => {
+    open("/orders?status=new,sold");
+
+    for (const tab of screen.getAllByRole("tab")) expect(tab).toHaveAttribute("aria-selected", "false");
+    expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ status: ["new", "sold"] }));
+  });
+
+  it("sahifalash kartaning pastida: xulosa va sahifa almashishi", async () => {
+    const user = userEvent.setup();
+    open("/orders");
+
+    expect(screen.getByText("1–10 / 25 ta buyurtma")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "2" }));
+
+    await waitFor(() => expect(currentSearch().get("page")).toBe("2"));
+    expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }));
+  });
+
+  it("ro'yxat bo'sh bo'lsa sahifalash chiqmaydi", () => {
+    ordersResponse.total = 0;
+    ordersResponse.rows = [];
+    open("/orders");
+
+    expect(screen.queryByRole("navigation", { name: "Sahifalar" })).not.toBeInTheDocument();
+  });
+
+  it("sahifa ro'yxat oxiridan tashqarida qolsa (bo'sh sahifa, jami > 0) — oxirgi sahifaga o'tadi", async () => {
+    ordersResponse.total = 25;
+    ordersResponse.rows = [];
+    open("/orders?page=5");
+
+    await waitFor(() => expect(currentSearch().get("page")).toBe("3"));
+    expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ page: 3 }));
+  });
+
+  it("birinchi yuklanishda «Jami 0 ta» yozilmaydi (son hali noma'lum)", () => {
+    const implementation = getOrdersMock.getMockImplementation();
+    getOrdersMock.mockImplementation(() => ({ data: undefined, isLoading: true }) as never);
+    try {
+      open("/orders");
+      expect(screen.queryByText(/^Jami \d+ ta buyurtma$/)).not.toBeInTheDocument();
+      expect(screen.queryByRole("navigation", { name: "Sahifalar" })).not.toBeInTheDocument();
+    } finally {
+      if (implementation) getOrdersMock.mockImplementation(implementation);
+    }
   });
 });
 
@@ -197,7 +349,9 @@ describe("Orders list search", () => {
     ordersResponse.search_truncated = true;
     open("/orders?orderSearch=ali");
 
-    expect(screen.getByRole("note")).toHaveTextContent("Natija to'liq emas, qidiruvni aniqlashtiring");
+    expect(screen.getByRole("note")).toHaveTextContent(
+      "Natija to'liq emas. Qidiruvga juda ko'p mijoz mos keldi — ism, telefon yoki raqamni to'liqroq yozing.",
+    );
   });
 
   it("shows no warning when the search result is complete", () => {

@@ -33,6 +33,18 @@ const renderCancel = (props: Partial<Parameters<typeof CancelModal>[0]> = {}) =>
 
 const NOTICE = /market tasdig'idan o'tadi/;
 
+type User = ReturnType<typeof userEvent.setup>;
+
+/** Sabab — `Select` (combobox + listbox): ochib, variantni bosish. */
+const reasonBox = () => screen.getByRole("combobox", { name: /^Sabab/ });
+const chooseReason = async (user: User, label: string) => {
+  await user.click(reasonBox());
+  await user.click(await screen.findByRole("option", { name: label }));
+};
+
+/** Oyna pastidagi «Yopish» (sarlavhadagi × ham «Yopish» — oxirgisi pastdagi tugma). */
+const footerCloseButton = () => screen.getAllByRole("button", { name: "Yopish" }).at(-1)!;
+
 describe("SellModal — «Marketga to'langan summa» (uguUEhin)", () => {
   const paidInput = () => screen.getByLabelText("Marketga to'langan summa");
 
@@ -100,10 +112,14 @@ describe("SellModal extra cost approval", () => {
     recordPendingExtraCostApproval({ orderId: "o-1", action: "sell", amount: 5000, requestedAt: new Date().toISOString(), orderStatus: "waiting" });
     renderSell({ awaitingApproval: true });
 
+    // Maket `courier-orders-action-approval-pending`: oyna sarlavhasi almashadi, tanada blok + `dl`.
+    expect(screen.getByRole("dialog", { name: "Market tasdig'i kutilmoqda" })).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Market tasdig'i kutilmoqda");
     expect(screen.getByRole("status")).toHaveTextContent(/5\D?000 so'm qo'shimcha xarajat marketga tasdiqqa yuborildi/);
+    expect(screen.getByRole("status")).toHaveTextContent(/So'ralgan amal\s*Sotish/);
+    expect(screen.getByRole("status")).toHaveTextContent(/Yuborilgan vaqt\s*Bugun, \d{2}:\d{2}/);
     expect(screen.queryByRole("button", { name: /^Sotish$/ })).not.toBeInTheDocument();
-    expect(screen.getByText("Yopish", { selector: "button" })).toBeInTheDocument();
+    expect(footerCloseButton()).toHaveTextContent("Yopish");
   });
 
   it("reminds about an earlier request but still lets the courier resubmit", () => {
@@ -350,17 +366,20 @@ describe("CancelModal — sabab yopiq ro'yxatdan majburiy (GNWDKvmZ)", () => {
   it("«To'langan summa» maydoni yo'q (uguUEhin) — faqat xarajat, sabab, izoh, dalil", () => {
     renderCancel();
     expect(screen.queryByLabelText("To'langan summa")).toBeNull();
-    expect(screen.getAllByRole("spinbutton")).toHaveLength(1);
+    // Pul maydoni bitta — «Qo'shimcha xarajat» (so'm, mingliklar bilan).
+    expect(screen.getAllByPlaceholderText("0")).toHaveLength(1);
+    expect(screen.getByLabelText("Qo'shimcha xarajat")).toBeInTheDocument();
+    expect(reasonBox()).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Izoh/)).toBeInTheDocument();
   });
 
-  it("6 ta sabab; tanlanmaguncha «Bekor qilish» o'chiq", () => {
+  it("6 ta sabab; tanlanmaguncha «Bekor qilish» o'chiq", async () => {
+    const user = userEvent.setup();
     renderCancel();
-    const select = screen.getByLabelText(/^Sabab/);
-    expect(
-      Array.from((select as HTMLSelectElement).options)
-        .filter((option) => option.value)
-        .map((option) => option.textContent),
-    ).toEqual([
+    expect(reasonBox()).toHaveTextContent("Sababni tanlang");
+    expect(submit()).toBeDisabled();
+    await user.click(reasonBox());
+    expect((await screen.findAllByRole("option")).map((option) => option.textContent)).toEqual([
       "Mijoz javob bermadi",
       "Mijoz rad etdi",
       "Manzil noto'g'ri",
@@ -375,7 +394,7 @@ describe("CancelModal — sabab yopiq ro'yxatdan majburiy (GNWDKvmZ)", () => {
     const user = userEvent.setup();
     const onCancel = vi.fn();
     renderCancel({ onCancel });
-    await user.selectOptions(screen.getByLabelText(/^Sabab/), "CUSTOMER_NO_ANSWER");
+    await chooseReason(user, "Mijoz javob bermadi");
     expect(submit()).toBeEnabled();
     await user.click(submit());
     expect(onCancel).toHaveBeenCalledWith("o-1", {
@@ -389,7 +408,7 @@ describe("CancelModal — sabab yopiq ro'yxatdan majburiy (GNWDKvmZ)", () => {
     const user = userEvent.setup();
     const onCancel = vi.fn();
     renderCancel({ onCancel });
-    await user.selectOptions(screen.getByLabelText(/^Sabab/), "OTHER");
+    await chooseReason(user, "Boshqa");
     expect(screen.getByText("«Boshqa» tanlanganda izoh majburiy")).toBeInTheDocument();
     expect(screen.getByLabelText(/^Izoh/)).toBeRequired();
     expect(submit()).toBeDisabled();
@@ -403,14 +422,40 @@ describe("CancelModal — sabab yopiq ro'yxatdan majburiy (GNWDKvmZ)", () => {
     expect(onCancel).toHaveBeenCalledWith("o-1", expect.objectContaining({ reason: "OTHER", comment: "   Mijoz boshqa shaharga ketgan" }));
   });
 
+  it("xarajat yozilsa — so'm sifatida yuboriladi (mingliklar bilan ko'rinadi)", async () => {
+    const user = userEvent.setup();
+    const onCancel = vi.fn();
+    renderCancel({ onCancel });
+    await user.type(screen.getByLabelText("Qo'shimcha xarajat"), "15000");
+    expect(screen.getByLabelText("Qo'shimcha xarajat")).toHaveValue("15 000");
+    await chooseReason(user, "Mijoz rad etdi");
+    await user.click(submit());
+    expect(onCancel).toHaveBeenCalledWith("o-1", { reason: "CUSTOMER_REFUSED", comment: "", extraCost: 15000 });
+  });
+
   it("oyna qayta ochilganda sabab tozalanadi", async () => {
     const user = userEvent.setup();
     const { rerender } = renderCancel();
-    await user.selectOptions(screen.getByLabelText(/^Sabab/), "PRICE_DISPUTE");
+    await chooseReason(user, "Narx bo'yicha kelishmovchilik");
+    expect(reasonBox()).toHaveTextContent("Narx bo'yicha kelishmovchilik");
     rerender(<CancelModal order={order} open={false} onClose={vi.fn()} onCancel={vi.fn()} />);
     rerender(<CancelModal order={order} open onClose={vi.fn()} onCancel={vi.fn()} />);
-    expect((screen.getByLabelText(/^Sabab/) as HTMLSelectElement).value).toBe("");
+    expect(reasonBox()).toHaveTextContent("Sababni tanlang");
     expect(submit()).toBeDisabled();
+  });
+
+  it("so'rov ketayotganda «Bekor qilish» yuklanishda, «Orqaga» o'chiq, Esc yopmaydi", async () => {
+    const user = userEvent.setup();
+    const onClose = vi.fn();
+    const onCancel = vi.fn();
+    renderCancel({ isLoading: true, onClose, onCancel });
+    await chooseReason(user, "Mijoz rad etdi");
+    expect(submit()).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("button", { name: "Orqaga" })).toBeDisabled();
+    await user.click(submit());
+    expect(onCancel).not.toHaveBeenCalled();
+    await user.keyboard("{Escape}");
+    expect(onClose).not.toHaveBeenCalled();
   });
 });
 
@@ -422,9 +467,7 @@ describe("CancelModal extra cost approval", () => {
     renderCancel();
 
     expect(screen.queryByText(NOTICE)).not.toBeInTheDocument();
-    const [extraCostInput] = screen.getAllByRole("spinbutton");
-    await user.clear(extraCostInput);
-    await user.type(extraCostInput, "5000");
+    await user.type(screen.getByLabelText("Qo'shimcha xarajat"), "5000");
 
     expect(screen.getByText(NOTICE)).toBeInTheDocument();
   });
@@ -433,9 +476,25 @@ describe("CancelModal extra cost approval", () => {
     recordPendingExtraCostApproval({ orderId: "o-1", action: "cancel", amount: 5000, requestedAt: new Date().toISOString(), orderStatus: "waiting" });
     renderCancel({ awaitingApproval: true });
 
+    expect(screen.getByRole("dialog", { name: "Market tasdig'i kutilmoqda" })).toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Market tasdig'i kutilmoqda");
+    expect(screen.getByRole("status")).toHaveTextContent(/So'ralgan amal\s*Bekor qilish/);
     expect(screen.queryByRole("button", { name: /Bekor qilish/ })).not.toBeInTheDocument();
-    expect(screen.getByText("Yopish", { selector: "button" })).toBeInTheDocument();
+    expect(footerCloseButton()).toHaveTextContent("Yopish");
+  });
+
+  it("dalil faqat xarajat tufayli majburiy bo'lsa — aniq sabab yoziladi (`cancel_extra_cost`)", async () => {
+    const user = userEvent.setup();
+    renderCancel({
+      order: { ...order, market: { name: "Zamon", expense_proof_conditions: ["cancel_extra_cost"] } },
+    });
+    expect(screen.queryByText(/qo'shimcha xarajat bilan bekor qilishda/)).not.toBeInTheDocument();
+    await user.type(screen.getByLabelText("Qo'shimcha xarajat"), "15000");
+    expect(
+      screen.getByText("Bu market uchun qo'shimcha xarajat bilan bekor qilishda rasm yoki video majburiy"),
+    ).toBeInTheDocument();
+    await chooseReason(user, "Mijoz rad etdi");
+    expect(screen.getAllByRole("button", { name: /^Bekor qilish$/ }).at(-1)).toBeDisabled();
   });
 });
 

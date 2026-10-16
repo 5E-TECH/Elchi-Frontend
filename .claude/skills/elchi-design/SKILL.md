@@ -77,7 +77,7 @@ nima yashirinadi yoki kartaga aylanadi; bo'sh, yuklanish va xato holatlari; dial
   `pages/orders/list/OrderStatusBadge` → `StatusBadge` / `OrderStatusBadge`, `statusColorMap` → `statusRegistry` +
   `tone.ts`, `shared/lib/formatDate` → `formatDateTimeLocalized` (qo'riqchi yangi importni ushlaydi).
 - **Forma, dialog, holatlar — 3-bosqich primitivlari (tayyor)**, o'sha barreldan; namunasi
-  `/ops/ui-kit?section=forms|select|date|dialog|feedback|states`, klass retseptlari CODE-MAP (`.el-field`,
+  `/ops/ui-kit?section=forms|select|date|dialog|feedback|states|table`, klass retseptlari CODE-MAP (`.el-field`,
   `.el-select`, `.el-cal*`, `.el-dialog*`, `.el-toast*`, `.el-empty*`, `.el-skel*`):
   - maydon — `<Field label hint error required>` ichida `TextInput` (`mode="phone"|"search"`, `multiline`),
     `Select` (`searchable`, `multiple`), `DateRange` (tez tanlov: bugun, hafta, oy, barchasi) / `DateInput`;
@@ -89,6 +89,11 @@ nima yashirinadi yoki kartaga aylanadi; bo'sh, yuklanish va xato holatlari; dial
     (`src/shared/lib/notify.ts`);
   - holatlar — `QueryBoundary` (skelet → `EmptyState` / `ErrorState` + «Qayta urinish»), `Skeleton*` presetlari;
     sahifa umuman ochilmasa — `size="page"` (namunasi: `shared/ui/NotFound.tsx`, `ErrorBoundaryPage.tsx`).
+  - **ro'yxat sahifasi (4-bosqich standarti)** — jadval `DataTable` (ustunlar, `density`, server saralashi `sort` /
+    `onSortChange`, `selection`, telefonda `renderCard` → kartalar), sahifalash `Pagination` (`Card padding="none"
+    footer={<Pagination … />}`), ikkalasi o'sha barreldan; namunasi `/ops/ui-kit?section=table`, ishlatilishi —
+    `src/pages/orders/list/OrdersTable.tsx` (CODE-MAP §2.6). `shared/components/Table` va
+    `shared/components/pagination` (v1) yangi kodda ishlatilmaydi.
   - ro'yxat, kalendar, dialog `#ui-portal` da: sahifadagi `document` «tashqariga bosish» tinglovchisi
     `if (isInUiLayer(event.target)) return;` bilan boshlanadi (aks holda panel ichidagi ro'yxat panelni yopadi).
   - v1 o'ramlari (`SearchableSelect`, `FilterSelect`, `FilterMultiSelect`, `PopupSelect`, `DateRangePicker`,

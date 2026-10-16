@@ -155,7 +155,7 @@ export type DialogPanelProps = Omit<ComponentProps<"div">, "title" | "children" 
   layout?: DialogLayout;
   /** Pastdagi amallar: `Button` lar, chapdan o'ngga — «Bekor qilish», so'ng asosiy amal. */
   footer?: ReactNode;
-  /** Amallar ustidagi chiziq: `"auto"` (sukut) — tana aylanayotganda. */
+  /** Amallar ustidagi chiziq: `true` (sukut) — doim, maketlardagidek; `"auto"` — faqat tana aylanayotganda; `false` — yo'q. */
   footerDivider?: boolean | "auto";
   /** Sarlavhadagi «Yopish» tugmasi bosilganda. Berilmasa tugma yo'q. */
   onCloseClick?: () => void;
@@ -216,7 +216,7 @@ export const DialogPanel = ({
   size = "md",
   layout = "auto",
   footer,
-  footerDivider = "auto",
+  footerDivider = true,
   onCloseClick,
   closeLabel,
   closeDisabled,

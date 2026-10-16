@@ -26,6 +26,12 @@ const order = {
 
 const EXCEEDS = "Qisman sotuv summasi buyurtma summasidan oshmasligi kerak";
 
+/**
+ * Summa chegarasi xatosi (`role="alert"`). Jami 1 dona qolganda «Bundan ortiq kamaytirib bo'lmaydi» ham
+ * `alert` (maket `courier-orders-sell-partial-dialog`) — shuning uchun aynan shu xato qidiriladi.
+ */
+const exceedsAlert = () => screen.queryAllByRole("alert").find((alert) => alert.textContent?.includes(EXCEEDS));
+
 const setup = async (amount: string, overrides: Partial<typeof order> = {}) => {
   const user = userEvent.setup();
   const onPartlySell = vi.fn();
@@ -48,7 +54,7 @@ describe("SellModal — qisman sotuv summasi chegarasi (fix3b M10)", () => {
   it("buyurtma summasidan katta summani yubormaydi va sababini ko'rsatadi", async () => {
     const { user, onPartlySell } = await setup("1500000");
 
-    expect(screen.getByRole("alert")).toHaveTextContent(EXCEEDS);
+    expect(exceedsAlert()).toHaveTextContent(EXCEEDS);
     // Sabab «Sotish» yonida ham yoziladi; tugma o'chiq.
     expect(screen.getAllByText(EXCEEDS)).toHaveLength(2);
     const submit = screen.getByRole("button", { name: /^Sotish$/ });
@@ -61,7 +67,7 @@ describe("SellModal — qisman sotuv summasi chegarasi (fix3b M10)", () => {
   it("buyurtma summasiga teng summa ruxsat etiladi", async () => {
     const { user, onPartlySell } = await setup("150000");
 
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(exceedsAlert()).toBeUndefined();
     await user.click(screen.getByRole("button", { name: /^Sotish$/ }));
 
     expect(onPartlySell).toHaveBeenCalledWith("o-10", expect.objectContaining({ totalPrice: 150000 }));
@@ -81,7 +87,7 @@ describe("SellModal — qisman sotuv summasi chegarasi (fix3b M10)", () => {
     await user.clear(input);
     await user.type(input, "15000");
 
-    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(exceedsAlert()).toBeUndefined();
     await user.click(screen.getByRole("button", { name: /^Sotish$/ }));
     expect(onPartlySell).toHaveBeenCalledWith("o-10", expect.objectContaining({ totalPrice: 15000 }));
   });

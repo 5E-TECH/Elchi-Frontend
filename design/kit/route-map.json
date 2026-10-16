@@ -215,18 +215,23 @@
       "components": [
         "src/pages/orders/index.tsx",
         "src/pages/orders/list/OrderFilters.tsx",
+        "src/pages/orders/list/OrderFiltersSheet.tsx",
         "src/pages/orders/list/OrdersTable.tsx",
-        "src/pages/orders/list/OrderStatusBadge.tsx",
+        "src/pages/orders/list/orderFilterModel.ts",
         "src/pages/orders/lib/exportOrdersToExcel.ts",
         "src/pages/orders/list/courier/index.tsx",
         "src/pages/orders/list/courier/list/tabs.tsx",
         "src/pages/orders/list/courier/list/ordertable/pendingOrderTable.tsx",
         "src/pages/orders/list/courier/list/ordertable/AllOrdersTable.tsx",
         "src/pages/orders/list/courier/list/ordertable/CancelledOrdersTable.tsx",
+        "src/pages/orders/list/courier/list/ordertable/CourierOrdersTable.tsx",
         "src/pages/orders/list/courier/list/SellModal.tsx",
         "src/pages/orders/list/courier/list/CancelModal.tsx",
-        "src/entities/orders/ui/ExtraCostApproval.tsx",
-        "src/shared/components/popupConfirm.tsx"
+        "src/pages/orders/list/courier/list/RollbackOrderDialog.tsx",
+        "src/pages/orders/list/courier/list/OrderActionParts.tsx",
+        "src/entities/orders/ui/ExtraCostApprovalAlerts.tsx",
+        "src/entities/orders/ui/ExtraCostApprovalTag.tsx",
+        "src/entities/order/ui/ReturnRequestedTag.tsx"
       ],
       "views": {
         "superadmin": ["orders-list", "orders-filters-mobile"],
@@ -237,7 +242,7 @@
         "courier": ["orders-pending", "orders-tab-switcher-open", "orders-all", "orders-cancelled", "orders-sell-dialog", "orders-sell-extra-cost-dialog", "orders-sell-partial-dialog", "orders-action-approval-pending", "orders-cancel-dialog", "orders-rollback-confirm"],
         "tizim": ["states-data"]
       },
-      "note": "Kuryer ro'yxati — list/courier/index.tsx (tablar list/courier/list/tabs.tsx). Menejer tablari (kodda hozir «Hammasi · Kutilayotgan · Bekor qilinganlar»; maketda «Kutilayotgan · Barchasi · Bekor qilingan» — matn uchun maket fragmenti ustun) va sotish/bekor/qaytarish amallari faqat REGIONAL · HYBRID filialda (MANAGER_TABS_BRANCH_TYPES). Qator bosilsa → /orders/edit/:orderId."
+      "note": "Kuryer ro'yxati — list/courier/index.tsx (tablar list/courier/list/tabs.tsx). Kuryerdan boshqa barcha rollarda bir xil 8 holat tabi (Barchasi · Yangi · Qabul qilindi · Yo'lda · Kutilmoqda · Sotilgan · To'langan · Bekor qilingan; tab sonlari API'da yo'q — chizilmaydi). Menejerning qatordagi sotish/bekor/qaytarish amallari faqat REGIONAL · HYBRID filialda va can_sell_cancel yoqilganda; «Bekor qilingan» tabida HQ'ga yuborish (tanlov + QR skaner) ham faqat REGIONAL · HYBRID. Qator bosilsa → /orders/edit/:orderId."
     },
     {
       "path": "/orders/edit/:orderId",
@@ -1320,7 +1325,7 @@
     "courier-orders-all": "src/pages/orders/list/courier/index.tsx",
     "courier-orders-cancelled": "src/pages/orders/list/courier/index.tsx",
     "courier-orders-tab-switcher-open": "src/pages/orders/list/courier/list/tabs.tsx",
-    "courier-orders-rollback-confirm": "src/pages/orders/list/courier/index.tsx",
+    "courier-orders-rollback-confirm": "src/pages/orders/list/courier/list/RollbackOrderDialog.tsx",
     "courier-orders-sell-dialog": "src/pages/orders/list/courier/list/SellModal.tsx",
     "courier-orders-sell-extra-cost-dialog": "src/pages/orders/list/courier/list/SellModal.tsx",
     "courier-orders-sell-partial-dialog": "src/pages/orders/list/courier/list/SellModal.tsx",

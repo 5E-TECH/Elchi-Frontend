@@ -8,7 +8,7 @@ import { Spinner, type SpinnerSize } from "./Spinner";
  *  TUGMA — dizayn v2 (`.el-btn`, `design/CODE-MAP.md` 2.1, taxta `tizim-states-buttons`)
  * ────────────────────────────────────────────────────────────────────────────
  *
- *  Turlar (maketdagi 7 tur):
+ *  Turlar (maketdagi 8 tur):
  *    primary     — ekrandagi BITTA bosh amal (sarlavhada o'ngda yoki oyna oxirida);
  *    secondary   — yuklash, chop etish, filtr, «Bekor qilish»;
  *    ghost       — tozalash, orqaga, «Yana ko'rsatish»;
@@ -16,7 +16,9 @@ import { Spinner, type SpinnerSize } from "./Spinner";
  *                  (boshqa sahifaga olib borsa — `<Link className={buttonClasses({ variant: "link" })}>`);
  *    success     — faqat sotish va pul tasdig'i;
  *    danger      — to'liq qizil, FAQAT tasdiqlash oynasi ichida;
- *    danger-soft — jadval qatori, menyu, pastki panel (hover'da to'liq qizil).
+ *    danger-soft — jadval qatori, menyu, pastki panel (hover'da to'liq qizil);
+ *    success-soft — kuryer ro'yxatidagi «Sotish» (jadval qatori, telefon kartasi; maket `courier-orders-*`:
+ *                  `.el-btn` + `success-soft` fon, `success-fg` matn; hover'da to'liq yashil).
  *
  *  O'lchamlar: sm 32 (r 8, 13px, ikonka 16) · md 40 (sukut; r 10, 14px, ikonka 18) ·
  *  lg 48 (r 12, 15px, ikonka 18). Telefonda (< 768) har o'lcham kamida 44px.
@@ -35,7 +37,15 @@ import { Spinner, type SpinnerSize } from "./Spinner";
  *  ikkala mavzuda AA: kunduzgi 6.1 / 5.9, tungi 8.7 / 7.1 (≥ 4.5:1).
  */
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "link" | "success" | "danger" | "danger-soft";
+export type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "ghost"
+  | "link"
+  | "success"
+  | "danger"
+  | "danger-soft"
+  | "success-soft";
 export type ButtonSize = "sm" | "md" | "lg";
 
 /** Ikonka: lucide komponenti (`Plus`) yoki tayyor element (`<Plus />`). Har doim `aria-hidden`. */
@@ -82,6 +92,10 @@ const VARIANT: Record<ButtonVariant, string> = {
   "danger-soft":
     "border-transparent bg-danger-soft text-danger-fg not-disabled:not-aria-busy:hover:bg-danger " +
     "not-disabled:not-aria-busy:hover:text-on-solid not-disabled:not-aria-busy:active:bg-danger " +
+    "not-disabled:not-aria-busy:active:text-on-solid",
+  "success-soft":
+    "border-transparent bg-success-soft text-success-fg not-disabled:not-aria-busy:hover:bg-success " +
+    "not-disabled:not-aria-busy:hover:text-on-solid not-disabled:not-aria-busy:active:bg-success " +
     "not-disabled:not-aria-busy:active:text-on-solid",
 };
 

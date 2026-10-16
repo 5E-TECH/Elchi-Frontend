@@ -32,7 +32,7 @@ test.describe("Sozlamalar → Bildirishnomalar — 390px", () => {
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
-    const mainOverflow = await page.locator("main.el-surface-page").evaluate((main) => main.scrollWidth - main.clientWidth);
+    const mainOverflow = await page.locator("main:has([data-shell-slot=content])").evaluate((main) => main.scrollWidth - main.clientWidth);
     expect(mainOverflow).toBeLessThanOrEqual(0);
     expect(leaked).toEqual([]);
   });

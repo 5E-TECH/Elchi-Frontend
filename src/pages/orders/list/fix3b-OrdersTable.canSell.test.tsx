@@ -1,12 +1,14 @@
-import { screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import OrdersTable from "./OrdersTable";
 import { renderWithProviders } from "../../../test/test-utils";
 import { isCourierHeldOrder } from "../../../entities/orders/custody";
 
 /**
- * fix3b LC-04 — `canSellOrder` false bo'lgan qatorda "Sotish" yo'q (jadval
- * va telefon kartasi), "Bekor qilish" esa qoladi.
+ * fix3b LC-04 — `canSellOrder` false bo'lgan qatorda "Sotish" ishlamaydi (jadval
+ * va telefon kartasi), "Bekor qilish" esa qoladi. Dizayn v2 (maket
+ * `manager-orders-list-pending`): tugma yashirilmaydi — o'chiq turadi va
+ * sababi nomida, maslahatda (telefonda — matn bilan) aytiladi.
  */
 
 const row = (id: string, name: string, custody: Record<string, unknown>) => ({
@@ -40,32 +42,48 @@ const renderTable = () =>
   );
 
 describe("OrdersTable — canSellOrder (fix3b LC-04)", () => {
-  it("jadvalda faqat filialdagi qatorda 'Sotish'", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("jadvalda faqat filialdagi qatorda 'Sotish' ishlaydi, kuryerdagisida o'chiq va sababi aytiladi", () => {
     renderTable();
 
-    expect(screen.getAllByRole("button", { name: "Sotish" })).toHaveLength(1);
-    expect(screen.getAllByRole("button", { name: "Bekor qilish" })).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "№o-2 ni sotish" })).toBeEnabled();
+    const blocked = screen.getByRole("button", { name: "№o-1 ni sotib bo'lmaydi: buyurtma kuryer qo'lida" });
+    expect(blocked).toBeDisabled();
+    expect(blocked).toHaveAttribute("title", "Kuryer qo'lidagi buyurtmani kuryerning o'zi sotadi");
+    expect(screen.queryByRole("button", { name: "№o-1 ni sotish" })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /ni bekor qilish$/ })).toHaveLength(2);
   });
 
   describe("telefon kartasi", () => {
-    const originalWidth = window.innerWidth;
-
-    beforeEach(() => {
-      Object.defineProperty(window, "innerWidth", { value: 375, configurable: true, writable: true });
-    });
-
-    afterEach(() => {
-      Object.defineProperty(window, "innerWidth", { value: originalWidth, configurable: true, writable: true });
-    });
-
-    it("kartada ham kuryerdagi buyurtmada 'Sotish' yo'q", () => {
+    it("kartada ham kuryerdagi buyurtmada 'Sotish' o'chiq, sababi matnda", () => {
+      vi.spyOn(window, "matchMedia").mockImplementation(
+        (query: string) =>
+          ({
+            matches: query === "(max-width: 767px)",
+            media: query,
+            onchange: null,
+            addListener: vi.fn(),
+            removeListener: vi.fn(),
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn(),
+          }) as unknown as MediaQueryList,
+      );
       renderTable();
 
-      // Karta rejimi: mijoz nomi kartaning sarlavhasi (jadvalda <p>).
-      expect(screen.getByRole("heading", { name: "Kuryerdagi" })).toBeInTheDocument();
+      // Karta rejimi: jadval yo'q, har buyurtma — ro'yxat bandi.
+      expect(screen.queryByRole("table")).not.toBeInTheDocument();
+      const [courierCard, branchCard] = screen.getAllByRole("listitem");
 
-      expect(screen.getAllByRole("button", { name: "Sotish" })).toHaveLength(1);
-      expect(screen.getAllByRole("button", { name: "Bekor qilish" })).toHaveLength(2);
+      expect(within(courierCard).getByRole("button", { name: "№o-1 ni sotib bo'lmaydi: buyurtma kuryer qo'lida" })).toBeDisabled();
+      expect(within(courierCard).getByText("Sotib bo'lmaydi: kuryer qo'lida — kuryer o'zi sotadi")).toBeInTheDocument();
+      expect(within(courierCard).getByRole("button", { name: "№o-1 ni bekor qilish" })).toBeEnabled();
+
+      expect(within(branchCard).getByRole("button", { name: "№o-2 ni sotish" })).toBeEnabled();
+      expect(within(branchCard).queryByText(/Sotib bo'lmaydi/)).not.toBeInTheDocument();
     });
   });
 
@@ -80,6 +98,7 @@ describe("OrdersTable — canSellOrder (fix3b LC-04)", () => {
       />,
     );
 
-    expect(screen.getAllByRole("button", { name: "Sotish" })).toHaveLength(2);
+    expect(screen.getByRole("button", { name: "№o-1 ni sotish" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "№o-2 ni sotish" })).toBeEnabled();
   });
 });

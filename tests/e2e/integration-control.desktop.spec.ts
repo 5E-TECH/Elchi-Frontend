@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { mockControlApi, openControl } from "./support/integrationControl";
+import { expectToast } from "./support/toast";
 
 /** Integratsiya → Ish rejimi (fG48Xv5X, TC: DOZ6dtJn) — 1440 va 1920px. Backend soxta, serverga hech narsa ketmaydi. */
 test.describe("Integratsiya — Ish rejimi, desktop (1440 / 1920)", () => {
@@ -68,7 +69,7 @@ test.describe("Integratsiya — Ish rejimi, desktop (1440 / 1920)", () => {
     await expect(tile).toContainText("Oxirgi solishtiruv");
 
     await page.getByRole("button", { name: "Hoziroq tenglashtirish" }).click();
-    await expect(page.getByText("Solishtiruv tugadi: tekshirildi 1 200, yangilandi 3, yiqildi 1")).toBeVisible();
+    await expectToast(page, "Solishtiruv tugadi: tekshirildi 1 200, yangilandi 3, yiqildi 1", { tone: "success" });
     expect(reconcileCalls).toHaveLength(1);
     await expect(tile).not.toContainText("Hali bo'lmagan");
     await expect(tile).toContainText(/(Bugun|Kecha|15\.10\.2026), \d{2}:45/);
@@ -79,9 +80,9 @@ test.describe("Integratsiya — Ish rejimi, desktop (1440 / 1920)", () => {
     await mockControlApi(page, { reconcile: "conflict" });
     await openControl(page);
     await page.getByRole("button", { name: "Hoziroq tenglashtirish" }).click();
-    await expect(
-      page.getByText("Solishtiruv boshlanmadi: master kalit o'chiq yoki boshqa solishtiruv hozir ishlayapti."),
-    ).toBeVisible();
+    await expectToast(page, "Solishtiruv boshlanmadi: master kalit o'chiq yoki boshqa solishtiruv hozir ishlayapti.", {
+      tone: "error",
+    });
     await expect(page.getByTestId("ctl-last-reconcile")).toContainText("Hali bo'lmagan");
   });
 
@@ -89,9 +90,9 @@ test.describe("Integratsiya — Ish rejimi, desktop (1440 / 1920)", () => {
     await mockControlApi(page, { reconcile: "no-query" });
     await openControl(page);
     await page.getByRole("button", { name: "Hoziroq tenglashtirish" }).click();
-    await expect(
-      page.getByText("Solishtiruv uchun status so'rovi sozlanmagan — «Sozlamalar» bo'limida to'ldiring."),
-    ).toBeVisible();
+    await expectToast(page, "Solishtiruv uchun status so'rovi sozlanmagan — «Sozlamalar» bo'limida to'ldiring.", {
+      tone: "error",
+    });
   });
 
   test("Master o'chirish — tasdiqlash oynasi: Escape va «Bekor qilish» hech narsa yubormaydi", async ({ page }) => {

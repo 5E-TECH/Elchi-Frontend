@@ -36,7 +36,7 @@ test.describe("Integratsiya posilkalari — 390px", () => {
     expect((await retry.boundingBox())!.x + (await retry.boundingBox())!.width).toBeLessThanOrEqual(390);
     expect(await fixedActionColumnProblems(page)).toEqual([]);
 
-    const main = await page.locator("main.el-surface-page").evaluate((el) => el.scrollWidth - el.clientWidth);
+    const main = await page.locator("main:has([data-shell-slot=content])").evaluate((el) => el.scrollWidth - el.clientWidth);
     expect(main).toBeLessThanOrEqual(0);
     expect(leaked).toEqual([]);
   });

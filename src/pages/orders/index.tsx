@@ -1,35 +1,48 @@
+// dizayn-v2: superadmin-orders-list, admin-orders-list, registrator-orders-list, market-orders-list, manager-orders-list-all, manager-orders-list-pending, manager-orders-list-cancelled
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Info, ListOrdered, Send } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Download, Info, Plus, Send } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import HeaderName from "../../shared/components/headerName";
 import { useOrders } from "../../entities/order/api/orderApi";
 import { useOrders as useOrderActions } from "../../entities/orders";
 import {
   pollWhileApprovalPending,
   resolveOrderActionResponse,
 } from "../../entities/orders/extraCostApproval";
-import type { OrderListItem, OrderListParams, OrderStatus } from "../../entities/order/types/order";
-import OrderFilters, { ORDER_FILTER_KEYS, ORDER_STATUS_URL_KEY } from "./list/OrderFilters";
+import type { OrderListItem, OrderListParams } from "../../entities/order/types/order";
+import OrderFilters from "./list/OrderFilters";
+import {
+  buildOrderListParams,
+  isDeliveryType,
+  LEGACY_DATE_FROM_KEY,
+  LEGACY_DATE_TO_KEY,
+  LEGACY_ORDER_STATUS_URL_KEY,
+  matchOrderStatusTab,
+  ORDER_FILTER_KEYS,
+  ORDER_STATUS_TABS,
+  ORDER_STATUS_URL_KEY,
+  parseStatusValues,
+  type OrderFilterValues,
+  type OrderStatusTabId,
+} from "./list/orderFilterModel";
 import OrdersTable from "./list/OrdersTable";
-import type { SortConfig } from "../../shared/components/Table/Table.types";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
 import type { RootState } from "../../app/config/store";
+import { canCreateOrders } from "../../app/lib/access";
 import CourierOrders from "./list/courier/index";
 import { usePagination } from "../../shared/lib/usePagination";
-import Pagination from "../../shared/components/pagination";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { exportOrdersToExcel } from "./lib/exportOrdersToExcel";
 import { getUserBranchType } from "../../widgets/Sidebar/model/menuConfig";
-import PageContainer from "../../shared/ui/PageContainer";
 import SellModal from "./list/courier/list/SellModal";
 import CancelModal from "./list/courier/list/CancelModal";
-import PopupConfirm from "../../shared/components/popupConfirm";
-import OrderTabs from "./list/courier/list/tabs";
-import { setFilterValue } from "../../shared/model/filterSlice";
+import RollbackOrderDialog from "./list/courier/list/RollbackOrderDialog";
+import { notifyOrderActionDone, type ActionOrder } from "./list/courier/list/orderActionModel";
+import { resetFilters, setFilterValue } from "../../shared/model/filterSlice";
+import { clearAllSearch } from "../../shared/model/searchSlice";
 import { getOrderItemName } from "../../shared/lib/orderItemName";
 import { useOrderQrScanner } from "../../shared/lib/useOrderQrScanner";
 import { fetchScanDetail, getBackendErrorMessage } from "../scan/lib/scanResource";
@@ -39,10 +52,21 @@ import { isCourierHeldOrder } from "../../entities/orders/custody";
 import type { CancelOrderPayload } from "../../entities/orders/cancelReason";
 import { getSellPaymentStatus, SELL_PAYMENT_NOTICE_KEYS, type SellOrderPayload } from "../../entities/orders/sellPayment";
 import { notify } from "../../shared/lib/notify";
+import { formatNumberLocalized } from "../../shared/lib/formatMoney";
+import {
+  Button,
+  buttonClasses,
+  Card,
+  PageHeader,
+  Pagination,
+  Skeleton,
+  Tabs,
+  type DataTableSort,
+  type TabItem,
+} from "../../shared/ui/primitives";
 
 const LIMIT = 10;
 const EXPORT_PAGE_SIZE = 100;
-const LEGACY_ORDER_STATUS_URL_KEY = ORDER_FILTER_KEYS.status;
 const ORDER_SORT_BY_KEY = "orderSortBy";
 const ORDER_SORT_DIR_KEY = "orderSortDir";
 // Jadval ustuni -> GET /orders `sort_by` (backend oq ro'yxati). Boshqa ustun
@@ -53,9 +77,11 @@ const ORDER_SORT_BY_FIELD: Record<string, NonNullable<OrderListParams["sort_by"]
   status: "status",
 };
 const MANAGER_TABLE_ACTION_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
-const MANAGER_TABS_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
-const TABLE_ACTION_STATUSES = new Set<OrderStatus>(["waiting", "on the road", "new", "received"]);
-const TABLE_ROLLBACK_STATUSES = new Set<OrderStatus>(["sold", "cancelled"]);
+// Bekor qilinganlarni HQ'ga yuborish (tanlov + QR skaner) — eski menejer tablari bo'lgan filiallar.
+const MANAGER_BULK_SEND_BRANCH_TYPES = new Set(["HYBRID", "REGIONAL"]);
+const TABLE_ACTION_STATUSES = new Set(["waiting", "on the road", "new", "received"]);
+const TABLE_ROLLBACK_STATUSES = new Set(["sold", "cancelled"]);
+const CANCELLED_STATUSES = new Set(["cancelled", "cancelled (sent)"]);
 const isUnsentCancelledOrder = (order: OrderListItem) => order.status === "cancelled";
 const asRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" ? value as Record<string, unknown> : {};
@@ -67,49 +93,6 @@ const toText = (value: unknown) => {
 };
 
 const normalizeMatchText = (value: unknown) => toText(value).toLowerCase();
-
-const formatOrderAmount = (value: unknown) => {
-  const amount = Number(value ?? 0);
-  if (!Number.isFinite(amount) || amount <= 0) return "";
-  return new Intl.NumberFormat("uz-UZ").format(amount) + " so'm";
-};
-
-const getOrderPersonName = (order: unknown) => {
-  const record = asRecord(order);
-  const customer = asRecord(record.customer);
-  return toText(
-    customer.name ??
-      customer.full_name ??
-      customer.fullName ??
-      record.customer_name ??
-      record.customerName ??
-      record.name,
-  );
-};
-
-const getOrderPhone = (order: unknown) => {
-  const record = asRecord(order);
-  const customer = asRecord(record.customer);
-  return toText(
-    customer.phone_number ??
-      customer.phoneNumber ??
-      customer.phone ??
-      record.customer_phone ??
-      record.customerPhone ??
-      record.phone_number ??
-      record.phone,
-  );
-};
-
-const getRollbackOrderSummary = (order: unknown) => {
-  const record = asRecord(order);
-  const name = getOrderPersonName(order) || (record.id ? `Buyurtma #${record.id}` : "Buyurtma");
-  const details = [getOrderPhone(order), formatOrderAmount(record.total_price)]
-    .filter(Boolean)
-    .join(" • ");
-
-  return { name, details };
-};
 
 const unwrapScannedOrder = (payload: unknown) => {
   const source = asRecord(payload);
@@ -223,58 +206,24 @@ const isSameCustomerMarketOrder = (left: unknown, right: unknown) => {
 
   return sameCustomer && sameMarket && sameDistrict;
 };
-const isOrderStatus = (value: string): value is OrderStatus =>
-  [
-    "created",
-    "new",
-    "received",
-    "on the road",
-    "waiting",
-    "sold",
-    "cancelled",
-    "cancelled (sent)",
-    "paid",
-    "partly_paid",
-    "closed",
-  ].includes(value);
 
-const parseStatusFilterValue = (value: unknown): OrderListParams["status"] => {
-  if (Array.isArray(value)) {
-    const normalizedValue = value.filter(
-      (item): item is OrderStatus => typeof item === "string" && isOrderStatus(item),
-    );
+/**
+ * Faqat bekor qilinganlar (bitta yoki ikkala holat) — «Bekor qilingan» tabi. Eski menejer tabi ham shunday
+ * edi: filtrdan faqat «Bekor qilingan» tanlansa ham HQ'ga yuborish ochiq.
+ */
+const isCancelledOnly = (statuses: readonly string[]) =>
+  statuses.length > 0 && statuses.every((status) => CANCELLED_STATUSES.has(status));
 
-    return normalizedValue.length > 0 ? normalizedValue : "";
-  }
-
-  if (typeof value !== "string" || !value.trim()) {
-    return "";
-  }
-
-  const statusList = value
-    .split(",")
-    .map((item) => item.trim())
-    .filter((item): item is OrderStatus => isOrderStatus(item));
-
-  if (statusList.length === 0) {
-    return "";
-  }
-
-  return statusList;
+/** URL holati → tanlangan tab; Holat filtridan boshqa to'plam — `"custom"` (birorta tab tanlanmaydi). */
+const getActiveStatusTab = (statuses: readonly string[]): OrderStatusTabId | "custom" => {
+  if (statuses.length === 0) return "all";
+  if (isCancelledOnly(statuses)) return "cancelled";
+  return matchOrderStatusTab(statuses) ?? "custom";
 };
 
-const getManagerOrdersTab = (status: OrderListParams["status"]) => {
-  const statuses = Array.isArray(status) ? status : status ? [status] : [];
-
-  if (statuses.length === 1 && statuses[0] === "waiting") return "pending";
-  if (
-    statuses.length > 0 &&
-    statuses.every((item) => item === "cancelled" || item === "cancelled (sent)")
-  ) {
-    return "cancelled";
-  }
-
-  return "all";
+const TAB_HINT_KEYS: Partial<Record<OrderStatusTabId, string>> = {
+  paid: "ordersList.tabs.paidHint",
+  cancelled: "ordersList.tabs.cancelledHint",
 };
 
 const toPositiveNumber = (value: unknown): number | null => {
@@ -321,10 +270,10 @@ const extractOrderTotal = (payload: unknown): number | null => {
   );
 };
 
-
 // ── Main component ─────────────────────────────────────────────────────────
 const Orders = () => {
-  const { t } = useTranslation("orders");
+  const { t, i18n } = useTranslation("orders");
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { useGetOrders } = useOrders();
@@ -337,10 +286,10 @@ const Orders = () => {
   const [approvalOrderId, setApprovalOrderId] = useState<string | null>(null);
   const [rollbackOrder, setRollbackOrder] = useState<OrderListItem | null>(null);
   const [selectedCancelledIds, setSelectedCancelledIds] = useState<Set<string>>(new Set());
-  const rollbackSummary = useMemo(() => getRollbackOrderSummary(rollbackOrder), [rollbackOrder]);
 
   const role = useSelector((state: RootState) => state.role.role);
   const currentUser = useSelector((state: RootState) => state.user.user);
+  const canCreate = useSelector(canCreateOrders);
   const branchType = getUserBranchType(currentUser);
   // Menejerning sotish/bekor qilish (va shu oynadagi qisman sotish) hamda
   // qaytarish amallari endi per-menejer `can_sell_cancel` bayrog'iga ham bog'liq
@@ -354,10 +303,8 @@ const Orders = () => {
     role === "manager" &&
     Boolean(branchType && MANAGER_TABLE_ACTION_BRANCH_TYPES.has(branchType)) &&
     canSellCancelEnabled;
-  const canUseManagerTabs =
-    role === "manager" && Boolean(branchType && MANAGER_TABS_BRANCH_TYPES.has(branchType));
-  const canFilterByBranch = role === "admin" || role === "superadmin";
-
+  const canUseManagerBulkSend =
+    role === "manager" && Boolean(branchType && MANAGER_BULK_SEND_BRANCH_TYPES.has(branchType));
 
   const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "orders",
@@ -374,16 +321,17 @@ const Orders = () => {
   const urlCourierId = urlParams[ORDER_FILTER_KEYS.courierId] ?? "";
   const urlStatusRaw = urlParams[ORDER_STATUS_URL_KEY] ?? urlParams[LEGACY_ORDER_STATUS_URL_KEY] ?? "";
   const urlDeliveryType = urlParams[ORDER_FILTER_KEYS.deliveryType] ?? "";
-  const urlDateFrom = urlParams[ORDER_FILTER_KEYS.dateFrom] ?? urlParams.orderDateFrom ?? "";
-  const urlDateTo = urlParams[ORDER_FILTER_KEYS.dateTo] ?? urlParams.orderDateTo ?? "";
+  const urlDateFrom = urlParams[ORDER_FILTER_KEYS.dateFrom] ?? urlParams[LEGACY_DATE_FROM_KEY] ?? "";
+  const urlDateTo = urlParams[ORDER_FILTER_KEYS.dateTo] ?? urlParams[LEGACY_DATE_TO_KEY] ?? "";
   const urlSearch = urlParams[ORDER_FILTER_KEYS.search] ?? "";
   const urlSortBy = urlParams[ORDER_SORT_BY_KEY] ?? "";
   const urlSortDir = urlParams[ORDER_SORT_DIR_KEY] ?? "";
-  const sortConfig: SortConfig | null =
+  const sortConfig: DataTableSort | null =
     ORDER_SORT_BY_FIELD[urlSortBy] && (urlSortDir === "asc" || urlSortDir === "desc")
       ? { key: urlSortBy, direction: urlSortDir }
       : null;
-  const activeManagerTab = getManagerOrdersTab(parseStatusFilterValue(urlStatusRaw));
+  const urlStatuses = useMemo(() => parseStatusValues(urlStatusRaw), [urlStatusRaw]);
+  const activeStatusTab = getActiveStatusTab(urlStatuses);
 
   useEffect(() => {
     if (!urlParams[ORDER_STATUS_URL_KEY] && urlParams[LEGACY_ORDER_STATUS_URL_KEY]) {
@@ -394,20 +342,15 @@ const Orders = () => {
     }
   }, [setMultipleParams, urlParams]);
 
-  const handleManagerTabChange = useCallback(
+  // Holat tabi: holat va 1-sahifa bitta URL yangilanishida (ortiqcha so'rov ketmasin).
+  const handleStatusTabChange = useCallback(
     (tabId: string) => {
+      const tab = ORDER_STATUS_TABS.find((item) => item.id === tabId);
+      if (!tab) return;
       setSelectedCancelledIds(new Set());
-      dispatch(setFilterValue({
-        key: ORDER_FILTER_KEYS.status,
-        value: tabId === "pending" ? ["waiting"] : tabId === "cancelled" ? ["cancelled"] : [],
-      }));
+      dispatch(setFilterValue({ key: ORDER_FILTER_KEYS.status, value: [...tab.statuses] }));
       setMultipleParams({
-        [ORDER_STATUS_URL_KEY]:
-          tabId === "pending"
-            ? "waiting"
-            : tabId === "cancelled"
-              ? "cancelled,cancelled (sent)"
-              : "",
+        [ORDER_STATUS_URL_KEY]: tab.statuses.join(","),
         [LEGACY_ORDER_STATUS_URL_KEY]: "",
         page: "1",
       });
@@ -415,59 +358,36 @@ const Orders = () => {
     [dispatch, setMultipleParams],
   );
 
-  // API params qurishda Redux + URL params birga ishlatiladi (UserListPage patterndek)
+  const filterValues = useMemo(
+    (): OrderFilterValues & { search: string } => ({
+      marketId: urlMarketId,
+      branchId: urlBranchId,
+      regionId: urlRegionId,
+      districtId: urlDistrictId,
+      courierId: urlCourierId,
+      deliveryType: isDeliveryType(urlDeliveryType) ? urlDeliveryType : "",
+      statuses: urlStatuses,
+      dateFrom: urlDateFrom,
+      dateTo: urlDateTo,
+      search: urlSearch,
+    }),
+    [
+      urlMarketId,
+      urlBranchId,
+      urlRegionId,
+      urlDistrictId,
+      urlCourierId,
+      urlDeliveryType,
+      urlStatuses,
+      urlDateFrom,
+      urlDateTo,
+      urlSearch,
+    ],
+  );
+
+  // API parametrlari — telefon filtr varaqasidagi son bilan bir xil qoida (`orderFilterModel`), ustiga saralash.
   const apiParams = useMemo((): OrderListParams => {
-    const params: OrderListParams = {
-      page,
-      limit,
-    };
-
-    // Market
-    if (role !== "market") {
-      const marketId = urlMarketId;
-      if (marketId) params.market_id = String(marketId);
-
-      if (canFilterByBranch) {
-        const branchId = urlBranchId;
-        if (branchId) params.branch_id = String(branchId);
-      }
-    }
-
-    if (role === "manager") {
-      const districtId = urlDistrictId;
-      if (districtId) params.district_id = String(districtId);
-    } else {
-      // Viloyat / Region
-      const regionId = urlRegionId;
-      if (regionId) params.region_id = String(regionId);
-    }
-
-    // Kuryer
-    if (role !== "market") {
-      const courierId = urlCourierId;
-      if (courierId) params.courier_id = String(courierId);
-    }
-
-    // Holat
-    const status = parseStatusFilterValue(urlStatusRaw);
-    if (Array.isArray(status) ? status.length > 0 : Boolean(status)) {
-      params.status = status;
-    }
-
-    if (urlDeliveryType === "center" || urlDeliveryType === "address") {
-      params.where_deliver = urlDeliveryType;
-    }
-
-    // Sana oralig'i
-    const dateFrom = urlDateFrom;
-    if (dateFrom) params.start_day = String(dateFrom);
-
-    const dateTo = urlDateTo;
-    if (dateTo) params.end_day = String(dateTo);
-
-    // Qidiruv (searchSlice)
-    const search = urlSearch;
-    if (search) params.search = search;
+    const params = buildOrderListParams(filterValues, role, { page, limit });
 
     // Saralash serverda — butun ro'yxat bo'yicha.
     const sortBy = ORDER_SORT_BY_FIELD[urlSortBy];
@@ -477,57 +397,12 @@ const Orders = () => {
     }
 
     return params;
-  }, [
-    page,
-    limit,
-    role,
-    canFilterByBranch,
-    urlMarketId,
-    urlRegionId,
-    urlDistrictId,
-    urlBranchId,
-    urlCourierId,
-    urlStatusRaw,
-    urlDeliveryType,
-    urlDateFrom,
-    urlDateTo,
-    urlSearch,
-    urlSortBy,
-    urlSortDir,
-  ]);
+  }, [filterValues, role, page, limit, urlSortBy, urlSortDir]);
 
+  // Filtr kaliti: rol bo'yicha qo'llanadigan filtrlar (sahifa va saralashsiz).
   const filtersKey = useMemo(
-    () => {
-      const status = parseStatusFilterValue(urlStatusRaw);
-
-      return JSON.stringify({
-        role,
-        marketId: role !== "market" ? urlMarketId : "",
-        branchId: canFilterByBranch ? urlBranchId : "",
-        regionId: role === "manager" ? "" : urlRegionId,
-        districtId: role === "manager" ? urlDistrictId : "",
-        courierId: role !== "market" ? urlCourierId : "",
-        status: Array.isArray(status) ? status.join(",") : status,
-        deliveryType: urlDeliveryType,
-        dateFrom: urlDateFrom,
-        dateTo: urlDateTo,
-        search: urlSearch,
-      });
-    },
-    [
-      role,
-      canFilterByBranch,
-      urlMarketId,
-      urlRegionId,
-      urlDistrictId,
-      urlBranchId,
-      urlCourierId,
-      urlStatusRaw,
-      urlDeliveryType,
-      urlDateFrom,
-      urlDateTo,
-      urlSearch,
-    ],
+    () => JSON.stringify({ role, ...buildOrderListParams(filterValues, role, { page: 0, limit: 0 }) }),
+    [filterValues, role],
   );
 
   // Filter o'zgarganda sahifani 1 ga qaytarish
@@ -562,7 +437,7 @@ const Orders = () => {
   // Saralash va 1-sahifa bitta URL yangilanishida yoziladi — aks holda
   // avval yangi saralash + ESKI sahifa bilan ortiqcha so'rov ketardi.
   const handleSortChange = useCallback(
-    (config: SortConfig | null) => {
+    (config: DataTableSort | null) => {
       setMultipleParams({
         [ORDER_SORT_BY_KEY]: config?.key ?? "",
         [ORDER_SORT_DIR_KEY]: config?.direction ?? "",
@@ -572,9 +447,11 @@ const Orders = () => {
     [setMultipleParams],
   );
 
-  const { data, isLoading, isError: isOrdersError, refetch: refetchOrders } = useGetOrders(apiParams, true, (current) =>
+  // Kuryer o'z ro'yxatini (`CourierOrders`) o'zi so'raydi — bu so'rov unga kerak emas.
+  const ordersQuery = useGetOrders(apiParams, role !== "courier", (current) =>
     pollWhileApprovalPending(current?.data ?? []),
   );
+  const { data, isLoading, isError: isOrdersError, error: ordersError, refetch: refetchOrders } = ordersQuery;
 
   const rawPagination = (data as { meta?: Record<string, unknown>; pagination?: Record<string, unknown> } | undefined)?.meta
     ?? (data as { pagination?: Record<string, unknown> } | undefined)?.pagination
@@ -602,7 +479,7 @@ const Orders = () => {
           return order && String(order.id) === exactOrderId ? order : null;
         })
         .catch(() => null),
-    enabled: Boolean(exactOrderId),
+    enabled: Boolean(exactOrderId) && role !== "courier",
     retry: false,
     staleTime: 30_000,
   });
@@ -616,7 +493,16 @@ const Orders = () => {
   );
   const itemsPerPage = toPositiveNumber(data?.limit ?? rawPagination.limit) ?? limit;
   const total = toPositiveNumber(data?.total ?? rawPagination.total) ?? items.length;
-  const canSendCancelledToHq = canUseManagerTabs && activeManagerTab === "cancelled";
+  const canSendCancelledToHq = canUseManagerBulkSend && activeStatusTab === "cancelled";
+
+  // Sahifa ro'yxat oxiridan tashqarida qolsa (masalan oxirgi sahifadagi yagona buyurtma qaytarildi yoki
+  // HQ'ga yuborildi) — «Buyurtmalar topilmadi» va sahifalashsiz qolib ketmasin: oxirgi sahifaga o'tiladi.
+  const lastPage = Math.max(1, Math.ceil(total / itemsPerPage));
+  const isPlaceholderData = Boolean(ordersQuery.isPlaceholderData);
+  useEffect(() => {
+    if (role === "courier" || isLoading || isOrdersError || isPlaceholderData) return;
+    if (items.length === 0 && total > 0 && page > lastPage) setPage(lastPage);
+  }, [isLoading, isOrdersError, isPlaceholderData, items.length, lastPage, page, role, setPage, total]);
 
   useEffect(() => {
     if (!canSendCancelledToHq) {
@@ -641,23 +527,17 @@ const Orders = () => {
   );
   // fix3b LC-04: kuryer qo'lidagi buyurtmani kuryerning o'zi sotadi — menejer
   // "Sotish"ni (qisman sotish ham shu oynada) bossa backend 400 qaytaradi
-  // ("Bu buyurtma kuryer qo'lida..."). Bekor qilish menejerga ochiq qoladi.
+  // ("Bu buyurtma kuryer qo'lida..."). Tugma o'chiq va sababi yozilgan;
+  // bekor qilish menejerga ochiq qoladi.
   const canManagerSellOrder = useCallback(
     (order: OrderListItem) => !isCourierHeldOrder(order),
     [],
   );
 
   const selectedActionOrder = sellOrder ?? cancelOrder;
-  const selectedActionModalOrder = useMemo(() => {
+  const selectedActionModalOrder = useMemo((): ActionOrder | null => {
     if (!selectedActionOrder) return null;
 
-    const orderWithProducts = selectedActionOrder as OrderListItem & {
-      items?: Array<
-        OrderListItem["items"][number] & {
-          product?: { id?: string; name?: string; image_url?: string | null } | null;
-        }
-      >;
-    };
     const orderFlags = selectedActionOrder as OrderListItem & Record<string, unknown>;
     const proofConditions = Array.isArray(selectedActionOrder.market?.expense_proof_conditions)
       ? selectedActionOrder.market.expense_proof_conditions
@@ -679,11 +559,11 @@ const Orders = () => {
 
     return {
       id: selectedActionOrder.id,
-      created_at: selectedActionOrder.createdAt,
       status: selectedActionOrder.status,
       total_price: selectedActionOrder.total_price,
+      to_be_paid: selectedActionOrder.to_be_paid,
+      external_id: (orderFlags.external_id as string | number | null | undefined) ?? null,
       where_deliver: selectedActionOrder.where_deliver,
-      product_quantity: selectedActionOrder.product_quantity,
       market: {
         name: selectedActionOrder.market?.name ?? "—",
         expense_proof_conditions: selectedActionOrder.market?.expense_proof_conditions ?? null,
@@ -693,13 +573,9 @@ const Orders = () => {
         phone_number: selectedActionOrder.customer?.phone_number ?? "",
       },
       district: { name: selectedActionOrder.district?.name ?? "—" },
-      region: { name: selectedActionOrder.district?.region?.name ?? "—" },
       sell_requires_media: sellRequiresMedia,
       cancel_requires_media: cancelRequiresMedia,
-      items: (orderWithProducts.items ?? []).map((item) => {
-        const orderItem = item as OrderListItem["items"][number] & {
-          product?: { id?: string; name?: string; image_url?: string | null } | null;
-        };
+      items: (selectedActionOrder.items ?? []).map((orderItem) => {
         const productId = orderItem.product?.id ?? orderItem.product_id;
 
         return {
@@ -749,15 +625,18 @@ const Orders = () => {
         { orderId, data: payload },
         {
           onSuccess: (response) => {
+            // Marketga to'lov yozilgan bo'lsa — natija (to'liq / qisman) o'sha xabarning o'zi.
+            const paymentStatus = getSellPaymentStatus(response);
             resolveOrderActionResponse(response, {
               order,
               action: "sell",
               extraCost: payload.extraCost,
-              onCompleted: closeSellModal,
+              onCompleted: () => {
+                closeSellModal();
+                if (!paymentStatus) notifyOrderActionDone("sell", sellOrder);
+              },
               onApprovalRequested: () => setApprovalOrderId(orderId),
             });
-            // Marketga to'lov yozilgan bo'lsa — natija (to'liq / qisman).
-            const paymentStatus = getSellPaymentStatus(response);
             if (paymentStatus) notify.success(t(SELL_PAYMENT_NOTICE_KEYS[paymentStatus]));
           },
           onError: notifyActionError,
@@ -787,7 +666,10 @@ const Orders = () => {
               order,
               action: "partly_sell",
               extraCost: payload.extraCost,
-              onCompleted: closeSellModal,
+              onCompleted: () => {
+                closeSellModal();
+                notifyOrderActionDone("partly_sell", sellOrder);
+              },
               onApprovalRequested: () => setApprovalOrderId(orderId),
             }),
           onError: notifyActionError,
@@ -811,7 +693,10 @@ const Orders = () => {
               order,
               action: "cancel",
               extraCost: payload.extraCost,
-              onCompleted: closeCancelModal,
+              onCompleted: () => {
+                closeCancelModal();
+                notifyOrderActionDone("cancel", cancelOrder);
+              },
               onApprovalRequested: () => setApprovalOrderId(orderId),
             }),
           onError: notifyActionError,
@@ -824,8 +709,12 @@ const Orders = () => {
   const handleRollbackOrder = useCallback(() => {
     if (!rollbackOrder) return;
 
-    RollbackOrder.mutate(rollbackOrder.id, {
-      onSuccess: () => setRollbackOrder(null),
+    const order = rollbackOrder;
+    RollbackOrder.mutate(order.id, {
+      onSuccess: () => {
+        setRollbackOrder(null);
+        notifyOrderActionDone("rollback", order);
+      },
       onError: notifyActionError,
     });
   }, [RollbackOrder, notifyActionError, rollbackOrder]);
@@ -840,16 +729,15 @@ const Orders = () => {
   }, []);
 
   const selectScannedCancelledOrder = useCallback((order: OrderListItem) => {
+    const name = order.customer?.name ?? `№${order.id}`;
     if (!isUnsentCancelledOrder(order)) {
-      notify.warning(t("scanNotFoundDescription"));
+      notify.warning(t("scanNotFoundTitle"), { description: t("scanNotFoundDescription") });
       void playScanFeedback("missing");
       return;
     }
 
     if (selectedCancelledIds.has(order.id)) {
-      notify.warning(t("scanAlreadySelectedDescription", {
-        name: order.customer?.name ?? `#${order.id}`,
-      }));
+      notify.warning(t("scanAlreadySelectedTitle"), { description: t("scanAlreadySelectedDescription", { name }) });
       void playScanFeedback("duplicate");
       return;
     }
@@ -859,9 +747,9 @@ const Orders = () => {
       next.add(order.id);
       return next;
     });
-    notify.success(t("scanSelectedDescription", {
-      name: order.customer?.name ?? `#${order.id}`,
-    }));
+    notify.success(t("scanSelectedTitle"), {
+      description: t("ordersList.scanSelected", { name: order.customer?.name ?? "—", id: order.id }),
+    });
     void playScanFeedback("success");
   }, [selectedCancelledIds, t]);
 
@@ -884,10 +772,12 @@ const Orders = () => {
         return;
       }
 
-      notify.error(t("scanNotFoundDescription"));
+      notify.error(t("scanNotFoundTitle"), { description: t("scanNotFoundDescription") });
       void playScanFeedback("missing");
     } catch (error) {
-      notify.error(getBackendErrorMessage(error) ?? t("scanNotFoundDescription"));
+      notify.error(t("scanNotFoundTitle"), {
+        description: getBackendErrorMessage(error) ?? t("scanNotFoundDescription"),
+      });
       void playScanFeedback("error");
     }
   }, [items, selectScannedCancelledOrder, t]);
@@ -923,6 +813,41 @@ const Orders = () => {
       },
     });
   }, [SendToPost, selectedCancelledIds, t]);
+
+  // Bo'sh ro'yxatda «Filtrlarni tozalash»: holat tabi (navigatsiya) qoladi, Holat filtridan tanlangan to'plam
+  // (`custom`) esa tozalanadi.
+  const hasActiveFilters =
+    Boolean(
+      urlMarketId ||
+        urlBranchId ||
+        urlRegionId ||
+        urlDistrictId ||
+        urlCourierId ||
+        urlDeliveryType ||
+        urlDateFrom ||
+        urlDateTo ||
+        urlSearch,
+    ) || activeStatusTab === "custom";
+
+  const handleClearFilters = useCallback(() => {
+    dispatch(resetFilters());
+    dispatch(clearAllSearch());
+    setMultipleParams({
+      [ORDER_FILTER_KEYS.marketId]: "",
+      [ORDER_FILTER_KEYS.branchId]: "",
+      [ORDER_FILTER_KEYS.regionId]: "",
+      [ORDER_FILTER_KEYS.districtId]: "",
+      [ORDER_FILTER_KEYS.courierId]: "",
+      [ORDER_FILTER_KEYS.deliveryType]: "",
+      [ORDER_FILTER_KEYS.dateFrom]: "",
+      [ORDER_FILTER_KEYS.dateTo]: "",
+      [ORDER_FILTER_KEYS.search]: "",
+      [LEGACY_DATE_FROM_KEY]: "",
+      [LEGACY_DATE_TO_KEY]: "",
+      ...(activeStatusTab === "custom" ? { [ORDER_STATUS_URL_KEY]: "", [LEGACY_ORDER_STATUS_URL_KEY]: "" } : {}),
+      page: "1",
+    });
+  }, [activeStatusTab, dispatch, setMultipleParams]);
 
   const handleExportOrders = async () => {
     if (isExporting) return;
@@ -1007,70 +932,152 @@ const Orders = () => {
     }
   };
 
+  const statusTabs = useMemo<TabItem[]>(
+    () =>
+      ORDER_STATUS_TABS.map((tab) => ({
+        value: tab.id,
+        label: t(`ordersList.tabs.${tab.id}`),
+        title: TAB_HINT_KEYS[tab.id] ? t(TAB_HINT_KEYS[tab.id] as string) : undefined,
+      })),
+    [t],
+  );
+
   if (role === "courier") {
-    return (
-      <div>
-        <CourierOrders />
-      </div>
-    );
+    return <CourierOrders />;
   }
 
+  const listLabel =
+    activeStatusTab === "waiting"
+      ? t("ordersList.cardLabelPending")
+      : activeStatusTab === "cancelled"
+        ? t("ordersList.cardLabelCancelled")
+        : t("ordersList.cardLabel");
+  const selectedCount = selectedCancelledIds.size;
+  const showPagination = total > 0 && tableItems.length > 0;
+
   return (
-    <PageContainer className="flex flex-col gap-4 sm:gap-5">
+    <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
+      <PageHeader
+        title={t("title")}
+        // Xatoda va birinchi yuklanishda "Jami 0 ta" YOZILMAYDI — son noma'lum (yuklanishda skelet).
+        description={
+          isOrdersError && !items.length ? (
+            "—"
+          ) : isLoading && !data ? (
+            <Skeleton width={150} className="my-1" />
+          ) : (
+            t("ordersList.total", { total: formatNumberLocalized(total, { language }) })
+          )
+        }
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              compact
+              leftIcon={Download}
+              loading={isExporting}
+              title={role === "market" ? t("ordersList.exportAllHint") : undefined}
+              onClick={() => void handleExportOrders()}
+            >
+              {t("ordersList.exportExcel")}
+            </Button>
+            {canCreate ? (
+              <Link to="/new-orders/create" className={buttonClasses({ compact: true })}>
+                <Plus aria-hidden="true" size={16} strokeWidth={2} />
+                {t("ordersList.createOrder")}
+              </Link>
+            ) : null}
+          </>
+        }
+      />
 
-      {/* ── Header ── */}
-      <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm p-3 sm:p-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <HeaderName
-            name={t("list")}
-            // Xatoda "Jami 0 ta" YOZILMAYDI — son noma'lum.
-            description={isOrdersError && !items.length ? "—" : t("totalOrdersSummary", { count: total })}
-            icon={<ListOrdered />}
-          />
-        </div>
-        {canUseManagerTabs ? (
-          <OrderTabs activeTab={activeManagerTab} onChange={handleManagerTabChange} />
-        ) : null}
-      </div>
-
-      {/* ── Filters + Table ── */}
-      <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-primarydark shadow-sm flex flex-col gap-4 p-3 sm:p-4 lg:p-5">
-
-        {/* Filters */}
-        <OrderFilters
-          onExport={handleExportOrders}
-          isExporting={isExporting}
+      <Card
+        padding="none"
+        aria-label={listLabel}
+        footer={
+          showPagination ? (
+            <Pagination
+              page={currentPage}
+              pageSize={itemsPerPage}
+              total={total}
+              onPageChange={setPage}
+              onPageSizeChange={setLimit}
+              summary={(range) => t("ordersList.summary", range)}
+            />
+          ) : undefined
+        }
+      >
+        <Tabs
+          items={statusTabs}
+          value={activeStatusTab}
+          onValueChange={handleStatusTabChange}
+          ariaLabel={t("ordersList.tabsLabel")}
+          listClassName="px-3"
         />
 
-        {/* Divider */}
-        <div className="border-t border-gray-100 dark:border-primarydark/60" />
-
-        {canSendCancelledToHq ? (
-          <div className="rounded-2xl border border-main/20 bg-main/10 px-4 py-3 text-sm font-semibold text-maindark dark:border-white/10 dark:bg-white/6 dark:text-white">
-            {t("scanSelectHint")}
-          </div>
-        ) : null}
+        {/* Asboblar qatori (qidiruv, sana, «Filtrlar»), panel va chiplar. */}
+        <OrderFilters />
 
         {/* Backend 1000 tadan ortiq mos mijozni kesadi va buni `search_truncated`
             bilan bildiradi — aks holda "bunday buyurtma yo'q" deb o'ylanadi. */}
         {urlSearch && data?.search_truncated ? (
-          <p
+          <div
             role="note"
-            className="flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-300"
+            className="mx-5 mb-4 flex items-start gap-3 rounded-xl bg-warning-soft px-3.5 py-2.5 text-sm text-warning-fg max-md:mx-4"
           >
-            <Info size={13} className="shrink-0" />
-            {t("searchTruncatedWarning")}
+            <Info aria-hidden="true" size={18} strokeWidth={2} className="mt-px shrink-0" />
+            <p className="min-w-0 text-text">
+              <span className="font-bold">{t("ordersList.truncatedTitle")}</span> {t("ordersList.truncatedText")}
+            </p>
+          </div>
+        ) : null}
+
+        {/* Tanlov soni ekran o'quvchiga: jonli hudud tanlov paneli paydo bo'lishidan OLDIN DOMda turishi
+            kerak — aks holda birinchi tanlov («1 ta buyurtma tanlandi») aytilmaydi. */}
+        {canSendCancelledToHq ? (
+          <p role="status" className="sr-only">
+            {selectedCount > 0 ? t("ordersList.selectedCount", { count: selectedCount }) : ""}
           </p>
         ) : null}
 
-        {/* Table */}
+        {canSendCancelledToHq && selectedCount > 0 ? (
+          <div
+            role="region"
+            aria-label={t("ordersList.selectionLabel")}
+            className="flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-border bg-action-soft px-5 py-3 max-md:px-4"
+          >
+            <div className="flex min-w-0 flex-[1_1_300px] flex-col gap-0.5">
+              <span aria-hidden="true" className="text-sm font-semibold text-action-fg">
+                {t("ordersList.selectedCount", { count: selectedCount })}
+              </span>
+              <span className="text-xs text-text-muted">{t("ordersList.selectionHint")}</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setSelectedCancelledIds(new Set())}>
+                {t("ordersList.clearSelection")}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={Send}
+                loading={SendToPost.isPending}
+                onClick={handleSendCancelledToHq}
+              >
+                {t("ordersList.sendToHq")}
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
         <OrdersTable
           data={tableItems}
+          label={listLabel}
           pinnedOrderId={pinnedOrderId || undefined}
           isError={isOrdersError}
+          error={ordersError}
           onRetry={() => void refetchOrders()}
           isLoading={isLoading}
-          rowNumberOffset={(currentPage - 1) * itemsPerPage}
+          busy={Boolean(ordersQuery.isPlaceholderData)}
           onRowClick={(order) => navigate(`edit/${order.id}`)}
           canUseOrderActions={canUseOrderActions}
           canSellOrder={canManagerSellOrder}
@@ -1083,6 +1090,7 @@ const Orders = () => {
           onSelectAll={canSendCancelledToHq ? handleSelectAllCancelled : undefined}
           sortConfig={sortConfig}
           onSortChange={handleSortChange}
+          onClearFilters={hasActiveFilters ? handleClearFilters : undefined}
           isOrderActionPending={
             SellOrder.isPending ||
             PartlySellOrder.isPending ||
@@ -1090,39 +1098,7 @@ const Orders = () => {
             RollbackOrder.isPending
           }
         />
-
-        {/* Pagination */}
-        {!isLoading && (
-          <div className="mt-4 rounded-2xl border border-gray-200 bg-white px-4 py-4 shadow-sm dark:border-primarydark/60 dark:bg-primarydark/60 sm:px-5">
-            <Pagination
-              totalItems={total}
-              itemsPerPage={itemsPerPage}
-              currentPage={currentPage}
-              onPageChange={setPage}
-              onItemsPerPageChange={setLimit}
-              className="pt-0"
-            />
-          </div>
-        )}
-      </div>
-
-      {canSendCancelledToHq && selectedCancelledIds.size > 0 ? (
-        <div className="fixed bottom-[calc(var(--shell-bottomnav-h)+1rem)] left-3 right-3 z-50 md:bottom-6 sm:left-auto sm:right-6">
-          <button
-            type="button"
-            onClick={handleSendCancelledToHq}
-            disabled={SendToPost.isPending}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-red-500 to-red-600 px-5 py-3 text-sm font-bold text-white shadow-2xl shadow-red-500/25 transition hover:from-red-600 hover:to-red-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-          >
-            {SendToPost.isPending ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-            ) : (
-              <Send size={16} />
-            )}
-            {t("sendSelectedToHq", { count: selectedCancelledIds.size })}
-          </button>
-        </div>
-      ) : null}
+      </Card>
 
       <SellModal
         order={sellOrder ? selectedActionModalOrder : null}
@@ -1132,6 +1108,7 @@ const Orders = () => {
         onPartlySell={handlePartlySellOrder}
         isLoading={SellOrder.isPending || PartlySellOrder.isPending}
         awaitingApproval={!!sellOrder && approvalOrderId === sellOrder.id}
+        variant="manager"
       />
       <CancelModal
         order={cancelOrder ? selectedActionModalOrder : null}
@@ -1140,31 +1117,16 @@ const Orders = () => {
         onCancel={handleCancelOrder}
         isLoading={CancelOrder.isPending}
         awaitingApproval={!!cancelOrder && approvalOrderId === cancelOrder.id}
+        variant="manager"
       />
-      <PopupConfirm
-        isOpen={!!rollbackOrder}
-        onClose={() => setRollbackOrder(null)}
+      <RollbackOrderDialog
+        order={rollbackOrder}
+        variant="manager"
+        loading={RollbackOrder.isPending}
+        onCancel={() => setRollbackOrder(null)}
         onConfirm={handleRollbackOrder}
-        title={t("rollbackOrder")}
-        message={
-          <div className="space-y-2 text-center">
-            <div className="text-base font-semibold text-[var(--color-maindark)] dark:text-white">
-              {rollbackSummary.name}
-            </div>
-            {rollbackSummary.details && (
-              <div className="text-sm font-medium text-gray-500 dark:text-gray-300">
-                {rollbackSummary.details}
-              </div>
-            )}
-            <div>{t("rollbackConfirmMessage", { id: rollbackOrder?.id })}</div>
-          </div>
-        }
-        confirmLabel={t("rollbackConfirmLabel")}
-        cancelLabel={t("cancel", { ns: "common" })}
-        isLoading={RollbackOrder.isPending}
-        variant="warning"
       />
-    </PageContainer>
+    </div>
   );
 };
 

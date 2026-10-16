@@ -54,7 +54,7 @@ test.describe("Marketga qaytarish — 390px", () => {
       await outsideViewport(page, "[data-testid='initiate-return-modal'], [data-testid='initiate-return-modal'] button, [data-testid='initiate-return-modal'] textarea"),
     ).toEqual([]);
     const overflow = await page
-      .locator("main.el-surface-page")
+      .locator("main:has([data-shell-slot=content])")
       .evaluate((main) => main.scrollWidth - main.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
     expect(leaked).toEqual([]);
