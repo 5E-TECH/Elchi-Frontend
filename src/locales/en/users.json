@@ -138,7 +138,7 @@
   "fullNamePlaceholder": "Full name",
   "phonePlaceholder": "Enter phone",
   "salaryPlaceholder": "Enter salary",
-  "paymentDayPlaceholder": "Enter payment day",
+  "paymentDayPlaceholder": "Select payment day",
   "usernamePlaceholder": "Enter username",
   "passwordPlaceholder": "Enter password",
   "searchPlaceholder": "Search user...",

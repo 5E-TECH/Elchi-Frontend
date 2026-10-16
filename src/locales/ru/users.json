@@ -138,7 +138,7 @@
   "fullNamePlaceholder": "Ф.И.О",
   "phonePlaceholder": "Введите телефон",
   "salaryPlaceholder": "Введите зарплату",
-  "paymentDayPlaceholder": "Введите день выплаты",
+  "paymentDayPlaceholder": "Выберите день выплаты",
   "usernamePlaceholder": "Введите имя пользователя",
   "passwordPlaceholder": "Введите пароль",
   "searchPlaceholder": "Поиск пользователя...",

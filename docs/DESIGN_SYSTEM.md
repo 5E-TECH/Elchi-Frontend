@@ -329,7 +329,8 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
 
 - **Forma** — `Field` (yorliq, majburiy belgisi, izoh, xato; `useFieldControl` bilan `aria-*` bog'lanadi),
   `TextInput` (`mode`: matn, qidiruv, telefon, son, pul; `multiline`), `Select` (WAI-ARIA combobox + listbox:
-  qidiruvli, ko'p tanlovli, guruhlar, yuklanish), `DateRange` (tez tanlov + ikki oy, telefonda varaqa), `DateInput`,
+  qidiruvli, ko'p tanlovli, guruhlar, yuklanish; **filtrda** bo'sh maydon — «Barchasi», qiymat tanlangach maydonda ×
+  «Tozalash» — ega qarori 2026-10-16, CODE-MAP `.el-select`), `DateRange` (tez tanlov + ikki oy, telefonda varaqa), `DateInput`,
   `Calendar` (grid). Overlay infratuzilmasi — `overlay/` (`Portal`, `usePopover`, `useFocusTrap`, `useDismiss`,
   `useScrollLock`, `inertOthers`). Telefonda popover pastki menyu ostiga tushmaydi (`:root` →
   `--shell-bottom-inset`, `BottomNav` yozadi); modal varaqa esa uni ataylab yopadi. Eski sahifaning `document`
@@ -341,7 +342,9 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
 - **Holatlar** — `EmptyState`, `ErrorState`, `Skeleton` + presetlar, `QueryBoundary`, `useLoadingPhase`.
 - **Xato sahifalari** (`tizim-errors` 01, `// dizayn-v2: tizim-errors`) — 404 `NotFound`, 403 `Forbidden`, 500
   `ServerError`, ilova xatosi `ErrorBoundaryPage`: `EmptyState`/`ErrorState` `size="page"` + «Xato kodi …», asosiy
-  tugma muammoni hal qiladi, ikkinchisi — chiqish yo'li; ramka `shared/ui/error-page/ErrorPageFrame.tsx`.
+  tugma muammoni hal qiladi, ikkinchisi — chiqish yo'li; ramka `shared/ui/error-page/ErrorPageFrame.tsx`. Kirgan
+  foydalanuvchiga shell ichida (yon menyu va yuqori panel joyida); kirmagan foydalanuvchi yoki shell'ning o'zi
+  yiqilganda — butun ekran (`standalone`, `routes.tsx` → `STANDALONE_ERROR_PAGES`).
 - **Global qatlam** — `app/providers/UiHost.tsx` (`ConfirmHost` + `Toaster`), ilova provayderida bir marta.
 - **v1 o'ramlari** — eski import yo'llari va API saqlangan, ichi v2 (ishlatilmagan `shared/ui/Select.tsx`,
   `features/Select/selectInput.tsx`, `StatusSelect/` o'chirildi): `SearchableSelect`, `FilterSelect`,

@@ -472,6 +472,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                         {canUseBranchFilter && (
                                             <SearchableSelect
                                                 label={t("filterMarket")}
+                                                allOption
                                                 name={ORDER_FILTER_KEYS.marketId}
                                                 value={marketId}
                                                 onChange={(value) =>
@@ -487,6 +488,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                         {shouldShowBranchFilter && (
                                             <SearchableSelect
                                                 label={t("filterBranch")}
+                                                allOption
                                                 name={ORDER_FILTER_KEYS.branchId}
                                                 value={branchId}
                                                 onChange={(value) =>
@@ -503,6 +505,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                         {isManagerRole ? (
                                             <SearchableSelect
                                                 label={t("district")}
+                                                allOption
                                                 name={ORDER_FILTER_KEYS.districtId}
                                                 value={districtId}
                                                 onChange={updateDistrictAndResetCourier}
@@ -514,6 +517,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                         ) : (
                                             <SearchableSelect
                                                 label={t("filterRegion")}
+                                                allOption
                                                 name={ORDER_FILTER_KEYS.regionId}
                                                 value={regionId}
                                                 onChange={updateRegionAndResetCourier}
@@ -528,6 +532,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                         {!isMarketRole && (
                                             <SearchableSelect
                                                 label={t("filterCourier")}
+                                                allOption
                                                 name={ORDER_FILTER_KEYS.courierId}
                                                 value={courierId}
                                                 onChange={(value) =>
@@ -543,6 +548,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                                         {/* HOLAT */}
                                         <SearchableSelect
                                             label={t("deliveryType")}
+                                            allOption
                                             name={ORDER_FILTER_KEYS.deliveryType}
                                             value={deliveryType}
                                             onChange={(value) =>
@@ -729,6 +735,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                 {canUseBranchFilter && (
                     <SearchableSelect
                         label={t("filterMarket")}
+                        allOption
                         name={ORDER_FILTER_KEYS.marketId}
                         value={marketId}
                         onChange={(value) =>
@@ -744,6 +751,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                 {shouldShowBranchFilter && (
                     <SearchableSelect
                         label={t("filterBranch")}
+                        allOption
                         name={ORDER_FILTER_KEYS.branchId}
                         value={branchId}
                         onChange={(value) =>
@@ -760,6 +768,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                 {isManagerRole ? (
                     <SearchableSelect
                         label={t("district")}
+                        allOption
                         name={ORDER_FILTER_KEYS.districtId}
                         value={districtId}
                         onChange={updateDistrictAndResetCourier}
@@ -771,6 +780,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                 ) : (
                     <SearchableSelect
                         label={t("filterRegion")}
+                        allOption
                         name={ORDER_FILTER_KEYS.regionId}
                         value={regionId}
                         onChange={updateRegionAndResetCourier}
@@ -785,6 +795,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                 {!isMarketRole && (
                     <SearchableSelect
                         label={t("filterCourier")}
+                        allOption
                         name={ORDER_FILTER_KEYS.courierId}
                         value={courierId}
                         onChange={(value) =>
@@ -800,6 +811,7 @@ const OrderFilters = memo(({ onExport, isExporting = false }: Props) => {
                 {/* HOLAT */}
                 <SearchableSelect
                     label={t("deliveryType")}
+                    allOption
                     name={ORDER_FILTER_KEYS.deliveryType}
                     value={deliveryType}
                     onChange={(value) =>

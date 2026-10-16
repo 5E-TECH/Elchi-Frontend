@@ -167,10 +167,10 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/403` — Ruxsat yo'q
 
 - **Fayllar:** `src/shared/ui/Forbidden.tsx` · `src/shared/ui/error-page/ErrorPageFrame.tsx`
-- **Qobiq:** qobiqsiz (kirishsiz) va DashboardLayout · **Guard:** yo'q (kirishsiz)
+- **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish)
 - **Rollar:** hamma (kirishsiz)
 - **Holat:** v2
-- **Izoh:** Alohida maket yo'q — tizim-errors taxtasidagi «403 · Ruxsat yo'q» bloki.
+- **Izoh:** Alohida maket yo'q — tizim-errors taxtasidagi «403 · Ruxsat yo'q» bloki. ProtectedRoute va sahifa ichidagi ruxsat tekshiruvlari shu yerga yo'naltiradi. Kirgan foydalanuvchi — shell ichida (yon menyu va yuqori panel joyida); kirmagan yoki shell yiqilgan bo'lsa — butun ekran (routes.tsx → STANDALONE_ERROR_PAGES, AppRouter).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -179,10 +179,10 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/404` — Sahifa topilmadi
 
 - **Fayllar:** `src/shared/ui/NotFound.tsx` · `src/shared/ui/error-page/ErrorPageFrame.tsx`
-- **Qobiq:** qobiqsiz (kirishsiz) va DashboardLayout · **Guard:** yo'q (kirishsiz)
+- **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish)
 - **Rollar:** hamma (kirishsiz)
 - **Holat:** v2
-- **Izoh:** tizim-errors taxtasidagi «404 · Sahifa topilmadi» bloki.
+- **Izoh:** tizim-errors taxtasidagi «404 · Sahifa topilmadi» bloki. Kirgan foydalanuvchi — shell ichida (yon menyu va yuqori panel joyida); kirmagan yoki shell yiqilgan bo'lsa — butun ekran (routes.tsx → STANDALONE_ERROR_PAGES, AppRouter).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -191,10 +191,10 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/500` — Server xatosi
 
 - **Fayllar:** `src/shared/ui/ServerError.tsx` · `src/shared/ui/error-page/ErrorPageFrame.tsx`
-- **Qobiq:** qobiqsiz (kirishsiz) va DashboardLayout · **Guard:** yo'q (kirishsiz)
+- **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish)
 - **Rollar:** hamma (kirishsiz)
 - **Holat:** v2
-- **Izoh:** tizim-errors taxtasidagi «500 · Server xatosi» bloki.
+- **Izoh:** tizim-errors taxtasidagi «500 · Server xatosi» bloki. Kirgan foydalanuvchi — shell ichida (yon menyu va yuqori panel joyida); kirmagan yoki shell yiqilgan bo'lsa — butun ekran (routes.tsx → STANDALONE_ERROR_PAGES, AppRouter).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -203,10 +203,10 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/runtime-error` — Ilova xatosi
 
 - **Fayllar:** `src/shared/ui/ErrorBoundaryPage.tsx` · `src/shared/ui/ErrorBoundary.tsx`
-- **Qobiq:** qobiqsiz (kirishsiz) va DashboardLayout · **Guard:** yo'q (kirishsiz)
+- **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish)
 - **Rollar:** hamma (kirishsiz)
 - **Holat:** v2
-- **Izoh:** tizim-errors taxtasidagi «Ilova xatosi» bloki.
+- **Izoh:** tizim-errors taxtasidagi «Ilova xatosi» bloki. ErrorBoundary xatoni saqlab, shu yo'lga to'liq qayta yuklash bilan o'tadi. Kirgan foydalanuvchi — shell ichida (yon menyu va yuqori panel joyida); kirmagan yoki shell yiqilgan bo'lsa — butun ekran (routes.tsx → STANDALONE_ERROR_PAGES, AppRouter).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|

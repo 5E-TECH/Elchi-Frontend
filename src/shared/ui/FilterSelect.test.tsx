@@ -25,17 +25,65 @@ const LocationProbe = () => {
 };
 
 describe("FilterSelect (v2 ichida)", () => {
-  it("oddiy combobox; bo'sh variant — namuna («Tanlang <yorliq>»), ro'yxatda yo'q", async () => {
+  it("oddiy combobox; bo'sh variant — «Barchasi» (v1 «Tanlang <yorliq>» emas), ro'yxatda yo'q", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
     renderWithProviders(<FilterSelect label="To'lov turi" name="type" value="" onChange={onChange} options={OPTIONS} />);
     const trigger = screen.getByRole("combobox", { name: "To'lov turi" });
     expect(trigger.tagName).toBe("BUTTON");
-    expect(trigger).toHaveTextContent("Tanlang to'lov turi");
+    expect(trigger).toHaveTextContent("Barchasi");
+    expect(screen.queryByRole("button", { name: "Tozalash" })).not.toBeInTheDocument();
     await user.click(trigger);
     expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(["Naqd", "Karta"]);
     await user.click(screen.getByRole("option", { name: "Karta" }));
     expect(onChange).toHaveBeenCalledWith("card");
+  });
+
+  it("filtr: qiymat bo'lsa maydonda × «Tozalash» (Tab bilan) — onChange(\"\"), fokus maydonda", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    renderWithProviders(<FilterSelect label="To'lov turi" name="type" value="card" onChange={onChange} options={OPTIONS} />);
+    const trigger = screen.getByRole("combobox", { name: "To'lov turi" });
+    expect(trigger).toHaveTextContent("Karta");
+    trigger.focus();
+    await user.tab();
+    const clear = screen.getByRole("button", { name: "Tozalash" });
+    expect(clear).toHaveFocus();
+    expect(clear).toHaveAccessibleDescription("To'lov turi");
+    await user.keyboard("{Enter}");
+    expect(onChange).toHaveBeenCalledWith("");
+    expect(trigger).toHaveFocus();
+  });
+
+  it("forma ro'yxati (bo'sh variantsiz, «… tanlang» namunasi) — namuna qoladi, × yo'q", () => {
+    renderWithProviders(
+      <FilterSelect
+        label="Karta"
+        name="card"
+        value="card"
+        onChange={() => undefined}
+        options={OPTIONS.filter((option) => option.value)}
+        placeholder="Kartani tanlang"
+      />,
+    );
+    expect(screen.queryByRole("button", { name: "Tozalash" })).not.toBeInTheDocument();
+  });
+
+  it("yashirin yorliqli filtr: maydon ichida «Rol:» + «Barchasi» (maket superadmin-users-list)", () => {
+    renderWithProviders(
+      <FilterSelect
+        label="Rol"
+        name="role"
+        options={OPTIONS.filter((option) => option.value)}
+        placeholder="Rolni tanlang"
+        hideLabel
+        useRedux
+        reduxKey="userRole"
+      />,
+    );
+    const trigger = screen.getByRole("combobox", { name: "Rol" });
+    expect(trigger).toHaveTextContent("Rol:Barchasi");
+    expect(trigger.querySelector("[data-select-inline-label]")).toHaveAttribute("aria-hidden", "true");
   });
 
   it("useRedux: qiymat filterSlice va URL'ga yoziladi (urlKey)", async () => {
@@ -59,6 +107,12 @@ describe("FilterSelect (v2 ichida)", () => {
     expect(store.getState().filter.paymentType).toBe("cash");
     expect(screen.getByTestId("search")).toHaveTextContent("type=cash");
     expect(screen.getByRole("combobox", { name: "To'lov turi" })).toHaveTextContent("Naqd");
+
+    // × — «Barchasi» ga qaytish: Redux bo'sh, URL parametri olib tashlanadi.
+    await user.click(screen.getByRole("button", { name: "Tozalash" }));
+    expect(store.getState().filter.paymentType).toBe("");
+    expect(screen.getByTestId("search")).not.toHaveTextContent("type=");
+    expect(screen.getByRole("combobox", { name: "To'lov turi" })).toHaveTextContent("Barchasi");
   });
 
   it("klaviatura: ↓ ochadi, Enter tanlaydi", async () => {
@@ -77,6 +131,16 @@ describe("FilterMultiSelect (v2 ichida)", () => {
     { value: "on the road", label: "Yo'lda" },
     { value: "waiting", label: "Kutilmoqda" },
   ];
+
+  it("bo'sh — «Barchasi» (iste'molchi namunasi «Holatni tanlang» bo'lsa ham; maket superadmin-orders-list)", () => {
+    renderWithProviders(
+      <FilterMultiSelect label="Holat" name="status" value={[]} onChange={() => undefined} options={STATUSES} placeholder="Holatni tanlang" />,
+    );
+    // Ko'rinadigan namuna va ekran o'quvchi uchun tugma ichidagi xulosa — ikkalasi «Barchasi».
+    expect(screen.getByRole("combobox", { name: "Holat" })).toHaveTextContent("Barchasi");
+    expect(screen.getAllByText("Barchasi").some((node) => !node.closest("button"))).toBe(true);
+    expect(screen.queryByText("Holatni tanlang")).not.toBeInTheDocument();
+  });
 
   it("belgilar, «+N», × — hammasini tozalash; ro'yxatda belgilash", async () => {
     const user = userEvent.setup();

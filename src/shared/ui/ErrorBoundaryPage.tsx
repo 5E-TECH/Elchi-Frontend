@@ -14,7 +14,10 @@ import {
 
 interface ErrorBoundaryPageProps {
   error?: RuntimeErrorPayload | null;
-  /** Shell'siz route (`/runtime-error` — global `ErrorBoundary` shu yerga to'liq qayta yuklash bilan o'tadi). */
+  /**
+   * Shell'siz — butun ekran. `/runtime-error` ga `ErrorBoundary` to'liq qayta yuklash bilan o'tadi; kirgan
+   * foydalanuvchi uni shell ichida ko'radi, kirmagan yoki shell'ning o'zi yiqilgan bo'lsa — `standalone`.
+   */
   standalone?: boolean;
 }
 

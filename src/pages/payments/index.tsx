@@ -586,6 +586,7 @@ const Payments = () => {
                 <FilterSelect
                   name={field.name}
                   label={t(labelKey)}
+                  allOption
                   value={field.value}
                   onChange={(value) => {
                     field.onChange(value);

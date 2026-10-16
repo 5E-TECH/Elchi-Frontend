@@ -60,6 +60,12 @@ import { Spinner } from "./Spinner";
  *  (`Lock`, sababi `Field hint` da) · yuklanmoqda (`loading`: yopiq — chevron o'rnida spinner, ochiq —
  *  ro'yxatda spinner + `loadingText`; `aria-busy`, maydon bloklanmaydi — taxta `tizim-loading` 9).
  *
+ *  Tozalash (ega qarori 2026-10-16, filtrlar): qiymat tanlangach maydonning o'zida × («Tozalash», chevron
+ *  o'rnida, Tab bilan yetib boriladi, telefonda 44 px) — `clearable` berilsa yoki variantlarda bo'sh qiymatli
+ *  (`value: ""`) «Barchasi» varianti bo'lsa. Bunday variant — «hammasi»: qiymat `""` / `null` bo'lsa maydonda
+ *  uning nomi namuna ko'rinishida (maket `.el-select-placeholder` «Barchasi»), × qiymatni yana `""` qiladi
+ *  (variantsiz `clearable` — `null`).
+ *
  *  Yorliq, ko'rsatma va xato — `Field` (`labelAs="span"`: yorliq `aria-labelledby` bilan ulanadi).
  *  Fokus doim maydonda qoladi (`aria-activedescendant`, variant id'si qiymatdan), ro'yxat `Portal` da
  *  (`dropdown` qatlami; oyna ichida — oynadan yuqori). Esc va tashqariga bosish faqat ro'yxatni yopadi
@@ -88,11 +94,17 @@ export type SelectOptionState = { selected: boolean; active: boolean; query: str
 
 type SelectBaseProps<V extends string> = {
   options: ReadonlyArray<SelectOption<V>>;
-  /** Hech narsa tanlanmaganda (maket: «Viloyat tanlang»). */
+  /**
+   * Hech narsa tanlanmaganda (maket: «Viloyat tanlang»). Variantlarda bo'sh qiymatli («Barchasi») variant bo'lsa —
+   * uning nomi ustun (filtr: bo'sh maydonda «Barchasi»).
+   */
   placeholder?: string;
-  /** Tanlovni tozalash tugmasi (×). Ko'p tanlovda — «Barchasini tozalash». */
+  /**
+   * Tanlovni tozalash tugmasi (×, qiymat tanlangach). Ko'p tanlovda — «Barchasini tozalash». Bitta tanlovda bo'sh
+   * qiymatli («Barchasi») variant bo'lsa, × o'zi chiqadi (berilmasa ham).
+   */
   clearable?: boolean;
-  /** × tugmasi nomi (sukut: «Tanlovni tozalash» / «Barchasini tozalash»; maket: «Barcha holatlarni tozalash»). */
+  /** × tugmasi nomi (sukut: «Tozalash» / «Barchasini tozalash»; maket: «Barcha holatlarni tozalash»). */
   clearLabel?: string;
   /**
    * Ro'yxat yuklanmoqda (`tizim-loading` 9 «Tanlov ichida spinner»): maydon bloklanmaydi, yopiq holatda
@@ -110,6 +122,13 @@ type SelectBaseProps<V extends string> = {
   size?: SelectSize;
   /** Maydon chapidagi ikonka (`searchable` da sukut — `Search`). */
   icon?: IconSlot;
+  /**
+   * Maydon ichidagi yorliq (bitta tanlov) — yorlig'i yashirin filtrda: qiymat yoki namunadan oldin kulrang
+   * «Holat:» (maketlar `superadmin-users-list` «Holat: Barchasi», `superadmin-mails-old`,
+   * `superadmin-products-list`). Ekran o'quvchidan yashirin — maydon nomi `Field` yorlig'idan (`hideLabel`).
+   * Bunda bo'sh maydon matni oddiy rangda: «Barchasi» — holat, taklif emas.
+   */
+  inlineLabel?: string;
   /** Ro'yxat qayerda ochiladi (sig'masa baribir ag'dariladi). Sukut — pastda. */
   placement?: "bottom" | "top";
   /** Ro'yxat ochiqligi (boshqariladigan). */
@@ -160,7 +179,10 @@ type SearchProps = {
 export type SingleSelectProps<V extends string = string> = SelectBaseProps<V> &
   SearchProps & {
     multiple?: false;
-    /** Tanlangan qiymat; `null` (yoki variantlarda yo'q qiymat) — tanlanmagan. */
+    /**
+     * Tanlangan qiymat; `null` / `""` (yoki variantlarda yo'q qiymat) — tanlanmagan. Bo'sh qiymatli («Barchasi»)
+     * variant bo'lsa, `null` / `""` — o'sha variant.
+     */
     value?: V | null;
     defaultValue?: V | null;
     onChange?: (value: V | null, option: SelectOption<V> | null) => void;
@@ -343,6 +365,7 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
     required,
     size = "md",
     icon,
+    inlineLabel,
     placement = "bottom",
     open: openProp,
     defaultOpen = false,
@@ -387,9 +410,23 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
   );
   const singleValue = props.multiple ? null : props.value === undefined ? innerSingle : props.value;
   const multiValue = props.multiple ? (props.value ?? innerMulti) : EMPTY_VALUES;
+  /**
+   * «Barchasi» varianti (filtr): bo'sh qiymatli (`""`) variant — «hammasi». Qiymat `null` / `""` bo'lsa u tanlangan
+   * (ro'yxatda belgili), maydonda esa nomi namuna ko'rinishida; × qiymatni yana `""` qiladi.
+   */
+  const allOption = multiple ? undefined : options.find((option) => option.value === "");
+  /** Bitta tanlovda qiymat yo'q (`null` / `""`) — maydonda namuna, × chiqmaydi. */
+  const singleEmpty = singleValue === null || singleValue === undefined || singleValue === "";
   const selectedValues: readonly V[] = useMemo(
-    () => (multiple ? multiValue : singleValue === null || singleValue === undefined ? EMPTY_VALUES : [singleValue]),
-    [multiple, multiValue, singleValue],
+    () =>
+      multiple
+        ? multiValue
+        : singleEmpty
+          ? allOption
+            ? [allOption.value]
+            : EMPTY_VALUES
+          : [singleValue as V],
+    [allOption, multiple, multiValue, singleEmpty, singleValue],
   );
   const selectedSet = useMemo(() => new Set<string>(selectedValues), [selectedValues]);
   const optionByValue = useMemo(() => new Map<string, SelectOption<V>>(options.map((o) => [o.value, o])), [options]);
@@ -397,7 +434,9 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
     () => selectedValues.map((value) => optionByValue.get(value)).filter((o): o is SelectOption<V> => Boolean(o)),
     [optionByValue, selectedValues],
   );
-  const selectedLabel = !multiple ? selectedOptions[0]?.label : undefined;
+  const selectedLabel = !multiple && !singleEmpty ? selectedOptions[0]?.label : undefined;
+  /** Tozalanadigan qiymat bormi (× shunda chiqadi). */
+  const hasValue = multiple ? selectedValues.length > 0 : !singleEmpty;
 
   // ── Ochiqlik, qidiruv, faol variant ──────────────────────────────────────
   const [innerOpen, setInnerOpen] = useState(defaultOpen);
@@ -537,7 +576,11 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
 
   const clearAll = () => {
     if (multiple) commitMulti([]);
-    else commitSingle(null);
+    else {
+      // «Barchasi» varianti bo'lsa — uning qiymati (`""`), aks holda `null`.
+      commitSingle(allOption ? allOption.value : null);
+      if (isOpen) close();
+    }
     focusControl();
   };
 
@@ -685,7 +728,7 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
 
   // ── Ko'rinish ─────────────────────────────────────────────────────────────
   const state = { invalid: field.invalid, disabled: field.disabled, readOnly: field.readOnly, open: isOpen };
-  const placeholderText = placeholder ?? t("select.placeholder");
+  const placeholderText = allOption?.label || (placeholder ?? t("select.placeholder"));
   const comboboxAria = {
     id: controlId,
     role: "combobox" as const,
@@ -714,17 +757,40 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
     <ButtonIcon icon={ChevronDown} px={16} className="text-text-subtle" />
   );
 
-  const canClear = clearable && selectedValues.length > 0 && !field.disabled && !field.readOnly;
+  // × — qiymat bo'lsa: `clearable` yoki «Barchasi» varianti (filtr). Oddiy `<button>` — Tab bilan yetib boriladi;
+  // nomi «Tozalash», qaysi maydon ekani — `aria-describedby` (yorliq). Bosilganda fokus maydonga qaytadi.
+  // Bitta tanlovda × chevron/spinner o'rnida turadi: ro'yxat yuklanayotganda (URL'dagi qiymatning nomi hali
+  // kelmagan) — spinner ko'rinadi, × yuklangach chiqadi.
+  const canClear =
+    (clearable || Boolean(allOption)) &&
+    hasValue &&
+    !field.disabled &&
+    !field.readOnly &&
+    (multiple || !loading);
   const clearButton = canClear ? (
     <IconButton
       label={clearLabel ?? t(multiple ? "select.clearAll" : "select.clear")}
       icon={X}
       size="sm"
+      aria-describedby={labelledBy}
+      data-select-clear=""
       className={cx("relative text-text-subtle", multiple ? "-my-1 max-md:-my-2" : "-mr-2 max-md:-mr-3")}
       onMouseDown={(event) => event.preventDefault()}
       onClick={clearAll}
     />
   ) : null;
+
+  // Ichki yorliq (yorlig'i yashirin filtr): «Holat:» kulrang, ekran o'quvchidan yashirin (nomi `Field` yorlig'idan).
+  const inlineLabelNode =
+    inlineLabel && !multiple ? (
+      <span
+        aria-hidden="true"
+        data-select-inline-label=""
+        className="pointer-events-none shrink-0 whitespace-nowrap text-text-muted"
+      >
+        {`${inlineLabel}:`}
+      </span>
+    ) : null;
 
   const hiddenInputs = name
     ? (selectedValues.length ? selectedValues : [""]).map((value, index) => (
@@ -816,6 +882,7 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
         className={cx(BOX_BASE, BOX_SIZE[size], "gap-2 px-3", boxStateClasses(state), className)}
       >
         <ButtonIcon icon={icon ?? Search} px={18} className="pointer-events-none text-text-subtle" />
+        {inlineLabelNode}
         <input
           ref={setControlRef}
           type="text"
@@ -836,8 +903,12 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
           onBlur={handleBlur}
           className={cx(
             CONTROL_BASE,
-            "p-0 placeholder:text-text-subtle",
-            isOpen && selectedLabel && !query && "placeholder:text-text",
+            "p-0",
+            // Ochiqda tanlangan nom namunada — oddiy rangda (yozish uni almashtiradi); ichki yorliqli yopiq
+            // filtrda «Barchasi» — holat, oddiy rangda.
+            (isOpen && selectedLabel && !query) || (inlineLabel && !isOpen)
+              ? "placeholder:text-text"
+              : "placeholder:text-text-subtle",
           )}
         />
         {clearButton ?? (
@@ -870,7 +941,8 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
           className={cx(CONTROL_BASE, "flex cursor-[inherit] items-center gap-2 pl-3 text-left")}
         >
           {icon ? <ButtonIcon icon={icon} px={18} className="text-text-subtle" /> : null}
-          <span className={cx("min-w-0 flex-1 truncate", !selectedLabel && "text-text-subtle")}>
+          {inlineLabelNode}
+          <span className={cx("min-w-0 flex-1 truncate", !selectedLabel && !inlineLabel && "text-text-subtle")}>
             {selectedLabel ?? placeholderText}
           </span>
         </button>

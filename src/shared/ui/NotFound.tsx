@@ -9,7 +9,8 @@ import { ErrorPageFrame, ErrorPageLink } from "./error-page/ErrorPageFrame";
 /**
  * 404 — mavjud bo'lmagan manzil (taxta `tizim-errors` 01): kulrang `Compass`, «Xato kodi 404»,
  * asosiy — «Bosh sahifaga qaytish», ikkinchisi — «Orqaga» (brauzer tarixi).
- * Shell ichida (`*`) va shell'siz `/404` (`standalone`) route'larida.
+ * Kirgan foydalanuvchiga shell ichida (`/404` va noma'lum yo'l `*`); kirmaganga yoki shell yiqilganda —
+ * shell'siz (`standalone`, `routes.tsx` → `STANDALONE_ERROR_PAGES`).
  */
 const NotFoundPage = ({ standalone = false }: { standalone?: boolean }) => {
   const { t } = useTranslation("ui");

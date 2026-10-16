@@ -624,6 +624,7 @@ const ProductTable = () => {
               render={({ field }) => (
                 <SearchableSelect
                   label={t("marketName")}
+                  allOption
                   name={field.name}
                   value={field.value}
                   onChange={handleMarketFilterChange}

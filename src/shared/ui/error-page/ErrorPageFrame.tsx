@@ -12,9 +12,11 @@ import { ButtonIcon, buttonClasses, type ButtonVariant, type IconSlot } from "..
  *  ustki yozuvi, 24 px sarlavha (telefonda 20), bir jumla, 2 ta teng tugma (asosiy — muammoni hal qiladigan
  *  qadam, ikkinchisi — chiqish yo'li). Bu ramka faqat joylashuvni beradi:
  *
- *    - shell ichida (`*` → `NotFound`): kontent maydonining o'rtasida, yon menyu va yuqori panel joyida qoladi;
- *    - `standalone` — shell'siz route'lar (`/403`, `/404`, `/500`, `/runtime-error`; kirishdan oldin ham
- *      ochiladi): butun ekran `bg-bg`, karta o'rtada.
+ *    - shell ichida (sukut; kirgan foydalanuvchi: `/403`, `/404`, `/500`, `/runtime-error` va noma'lum yo'l `*`):
+ *      kontent maydonining o'rtasida, yon menyu va yuqori panel joyida qoladi (taxta: «Xato sahifasi menyu
+ *      ichida ochiladi»);
+ *    - `standalone` — kirmagan foydalanuvchi yoki shell'ning o'zi yiqilgan (`routes.tsx` →
+ *      `STANDALONE_ERROR_PAGES`): butun ekran `bg-bg`, karta o'rtada.
  */
 
 /** Shell kontent maydoni balandligi: 100dvh − topbar 64 − chekkalar (≥ 1024: 24 + 48; < 1024: 16 + 88) − pastki menyu. */
@@ -25,7 +27,7 @@ const IN_SHELL =
 const STANDALONE = "flex min-h-dvh items-center justify-center bg-bg p-8 font-sans text-text max-md:p-4";
 
 export type ErrorPageFrameProps = {
-  /** Shell'siz route — butun ekran. */
+  /** Shell'siz (kirmagan foydalanuvchi yoki shell yiqilgan) — butun ekran. */
   standalone?: boolean;
   children: ReactNode;
 };

@@ -118,7 +118,7 @@
       "views": {
         "tizim": ["errors"]
       },
-      "note": "Alohida maket yo'q — tizim-errors taxtasidagi «403 · Ruxsat yo'q» bloki."
+      "note": "Alohida maket yo'q — tizim-errors taxtasidagi «403 · Ruxsat yo'q» bloki. ProtectedRoute va sahifa ichidagi ruxsat tekshiruvlari shu yerga yo'naltiradi. Kirgan foydalanuvchi — shell ichida (yon menyu va yuqori panel joyida); kirmagan yoki shell yiqilgan bo'lsa — butun ekran (routes.tsx → STANDALONE_ERROR_PAGES, AppRouter)."
     },
     {
       "path": "/404",
@@ -129,7 +129,7 @@
       "views": {
         "tizim": ["errors"]
       },
-      "note": "tizim-errors taxtasidagi «404 · Sahifa topilmadi» bloki."
+      "note": "tizim-errors taxtasidagi «404 · Sahifa topilmadi» bloki. Kirgan foydalanuvchi — shell ichida (yon menyu va yuqori panel joyida); kirmagan yoki shell yiqilgan bo'lsa — butun ekran (routes.tsx → STANDALONE_ERROR_PAGES, AppRouter)."
     },
     {
       "path": "/500",
@@ -140,7 +140,7 @@
       "views": {
         "tizim": ["errors"]
       },
-      "note": "tizim-errors taxtasidagi «500 · Server xatosi» bloki."
+      "note": "tizim-errors taxtasidagi «500 · Server xatosi» bloki. Kirgan foydalanuvchi — shell ichida (yon menyu va yuqori panel joyida); kirmagan yoki shell yiqilgan bo'lsa — butun ekran (routes.tsx → STANDALONE_ERROR_PAGES, AppRouter)."
     },
     {
       "path": "/runtime-error",
@@ -151,7 +151,7 @@
       "views": {
         "tizim": ["errors"]
       },
-      "note": "tizim-errors taxtasidagi «Ilova xatosi» bloki."
+      "note": "tizim-errors taxtasidagi «Ilova xatosi» bloki. ErrorBoundary xatoni saqlab, shu yo'lga to'liq qayta yuklash bilan o'tadi. Kirgan foydalanuvchi — shell ichida (yon menyu va yuqori panel joyida); kirmagan yoki shell yiqilgan bo'lsa — butun ekran (routes.tsx → STANDALONE_ERROR_PAGES, AppRouter)."
     },
     {
       "path": "/*",

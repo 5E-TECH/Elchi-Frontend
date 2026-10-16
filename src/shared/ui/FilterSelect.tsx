@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import type { LucideIcon } from "lucide-react";
 import { setFilterValue } from "../model/filterSlice";
 import { useQueryParams } from "../lib/useQueryParams";
-import { resolveSelectPlaceholder } from "../lib/selectPlaceholder";
+import { resolveFilterEmptyLabel, type AllOptionProp } from "../lib/selectPlaceholder";
 import type { RootState } from "../../app/config/store";
 import { Field } from "./primitives/Field";
 import { Select, type SelectOption } from "./primitives/Select";
@@ -14,10 +14,14 @@ import { Select, type SelectOption } from "./primitives/Select";
  * (`.el-select` / `.el-options`, taxta `tizim-states-forms` 03): ↑ ↓ Home End, harf yozib o'tish,
  * Enter / Esc, tanlangan qatorda `Check`.
  *
- * Xatti-harakati avvalgidek: `value=""` li variant ro'yxatga kirmaydi — uning nomi (yoki `placeholder`)
- * namuna matni bo'ladi («Barchasi» → «Tanlang <yorliq>»); `useRedux` + `reduxKey` — qiymat
+ * Xatti-harakati avvalgidek: `value=""` li variant ro'yxatga kirmaydi; `useRedux` + `reduxKey` — qiymat
  * `filterSlice` da va URL'da (`urlKey ?? reduxKey`, bo'sh qiymat — parametr olib tashlanadi).
  * `size` endi bitta v2 maydon (40 px, telefonda 44) — e'tiborga olinmaydi.
+ *
+ * FILTR (ega qarori 2026-10-16; `allOption`, `value=""` li variant, «Barchasi»-simon namuna yoki `useRedux` —
+ * `shared/lib/selectPlaceholder.ts`): bo'sh maydonda «Barchasi» (yoki `value=""` li variant nomi), qiymat
+ * tanlangach maydonda × «Tozalash» — bosilsa `onChange("")` (Redux va URL ham tozalanadi). Forma ro'yxati
+ * (to'lov turi, karta …) o'z namunasini saqlaydi, × chiqmaydi.
  */
 export interface FilterSelectOption {
   value: string;
@@ -42,6 +46,12 @@ interface FilterSelectProps {
   useRedux?: boolean;
   reduxKey?: string;
   urlKey?: string;
+  /**
+   * Filtr: bo'sh qiymat (`""`) — «hammasi». `true` — bo'sh maydonda «Barchasi», qiymat tanlangach × «Tozalash»;
+   * satr — «Barchasi» o'rniga shu matn; `false` — filtr emas. Berilmasa: `value=""` li variant,
+   * «Barchasi»-simon `placeholder` yoki `useRedux` bo'lsa — filtr.
+   */
+  allOption?: AllOptionProp;
 }
 
 const FilterSelect = memo(
@@ -59,8 +69,9 @@ const FilterSelect = memo(
     useRedux = false,
     reduxKey,
     urlKey,
+    allOption,
   }: FilterSelectProps) => {
-    const { t } = useTranslation("common");
+    const { t } = useTranslation("ui");
     const dispatch = useDispatch();
     const { setParam, removeParam } = useQueryParams();
     const reduxValue = useSelector((state: RootState) =>
@@ -75,8 +86,14 @@ const FilterSelect = memo(
           .map((option) => ({ value: option.value, label: option.label, icon: option.icon })),
       [options],
     );
-    const emptyOptionLabel = options.find((option) => option.value === "")?.label ?? placeholder ?? t("select");
-    const emptyDisplayLabel = resolveSelectPlaceholder(emptyOptionLabel, label, t("select"));
+    const filterEmptyLabel = resolveFilterEmptyLabel({
+      allOption,
+      emptyOptionLabel: options.find((option) => option.value === "")?.label,
+      placeholder,
+      hideLabel,
+      implicitFilter: useRedux && Boolean(reduxKey),
+      allWord: t("select.all"),
+    });
 
     const handleChange = (nextValue: string) => {
       if (useRedux && reduxKey) {
@@ -94,7 +111,9 @@ const FilterSelect = memo(
           options={selectOptions}
           value={currentValue || null}
           onChange={(next) => handleChange(next ?? "")}
-          placeholder={emptyDisplayLabel}
+          placeholder={filterEmptyLabel ?? placeholder ?? t("select.placeholder")}
+          clearable={filterEmptyLabel !== null}
+          inlineLabel={hideLabel && filterEmptyLabel !== null ? label : undefined}
           icon={icon}
           loading={loading}
           disabled={disabled}

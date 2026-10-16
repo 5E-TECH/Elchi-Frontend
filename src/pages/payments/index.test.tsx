@@ -243,10 +243,30 @@ describe("Payments filters", () => {
 
     await waitFor(() => expect(currentSearch()).toContain("operation_type=income"));
 
-    await user.click(screen.getByRole("button", { name: "Tozalash" }));
+    // Sahifadagi umumiy «Tozalash» (maydondagi × ham «Tozalash» — u `data-select-clear`).
+    const pageClear = screen
+      .getAllByRole("button", { name: "Tozalash" })
+      .find((button) => !button.hasAttribute("data-select-clear"));
+    if (!pageClear) throw new Error("page clear button not found");
+    await user.click(pageClear);
 
     await waitFor(() => expect(currentSearch()).not.toContain("operation_type=income"));
-    expect(screen.getByLabelText("Operatsiya turi")).toHaveTextContent("Tanlang");
+    // Filtr bo'sh — «Barchasi» (ega qarori 2026-10-16).
+    expect(screen.getByLabelText("Operatsiya turi")).toHaveTextContent("Barchasi");
+  });
+
+  it("filtr maydonidagi × «Tozalash» faqat shu filtrni «Barchasi» ga qaytaradi (URL'dan ham)", async () => {
+    const user = userEvent.setup();
+    open("/payments?operation_type=income");
+
+    await waitFor(() => expect(currentSearch()).toContain("operation_type=income"));
+    const field = screen.getByLabelText("Operatsiya turi");
+    expect(field).toHaveTextContent("Kirim");
+
+    await user.click(screen.getByRole("button", { name: "Tozalash", description: "Operatsiya turi" }));
+
+    await waitFor(() => expect(currentSearch()).not.toContain("operation_type=income"));
+    expect(field).toHaveTextContent("Barchasi");
   });
 });
 

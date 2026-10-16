@@ -458,6 +458,99 @@ describe("Select — qidiruv (searchable)", () => {
   });
 });
 
+describe("Select — tozalash va «Barchasi» (ega qarori 2026-10-16, filtrlar)", () => {
+  const WITH_ALL: SelectOption[] = [{ value: "", label: "Barchasi" }, ...REGIONS];
+
+  it("clearable: × «Tozalash» faqat qiymat bo'lsa (chevron o'rnida); bosilsa null, fokus maydonda", async () => {
+    const user = userEvent.setup();
+    const onChangeSpy = vi.fn();
+    render(<SingleControlled options={REGIONS} clearable placeholder="Viloyat tanlang" onChangeSpy={onChangeSpy} />);
+    expect(screen.queryByRole("button", { name: "Tozalash" })).not.toBeInTheDocument();
+    await user.click(combobox());
+    await user.click(screen.getByRole("option", { name: "Samarqand" }));
+    const clear = screen.getByRole("button", { name: "Tozalash" });
+    expect(clear).toHaveAccessibleDescription("Viloyat");
+    // Telefonda 44 px (IconButton `max-md:size-11`).
+    expect(clear).toHaveClass("size-8", "max-md:size-11");
+    await user.click(clear);
+    expect(onChangeSpy).toHaveBeenLastCalledWith(null);
+    expect(combobox()).toHaveFocus();
+    expect(within(combobox()).getByText("Viloyat tanlang")).toHaveClass("text-text-subtle");
+    expect(screen.queryByRole("button", { name: "Tozalash" })).not.toBeInTheDocument();
+  });
+
+  it("klaviatura: Tab — × ga, Enter / Probel tozalaydi", async () => {
+    const user = userEvent.setup();
+    const onChangeSpy = vi.fn();
+    render(<SingleControlled options={REGIONS} clearable initial="samarkand" onChangeSpy={onChangeSpy} />);
+    combobox().focus();
+    await user.tab();
+    expect(screen.getByRole("button", { name: "Tozalash" })).toHaveFocus();
+    await user.keyboard(" ");
+    expect(onChangeSpy).toHaveBeenLastCalledWith(null);
+    expect(combobox()).toHaveFocus();
+  });
+
+  it("bo'sh qiymatli («Barchasi») variant: bo'sh maydonda uning nomi (namuna), × o'zi chiqadi va \"\" qaytaradi", async () => {
+    const user = userEvent.setup();
+    const onChangeSpy = vi.fn();
+    render(<SingleControlled options={WITH_ALL} placeholder="Viloyat tanlang" onChangeSpy={onChangeSpy} />);
+    expect(within(combobox()).getByText("Barchasi")).toHaveClass("text-text-subtle");
+    expect(screen.queryByRole("button", { name: "Tozalash" })).not.toBeInTheDocument();
+
+    await user.click(combobox());
+    // «Barchasi» ro'yxatda ham — tanlangan (qiymat bo'sh).
+    expect(screen.getByRole("option", { name: "Barchasi" })).toHaveAttribute("aria-selected", "true");
+    await user.click(screen.getByRole("option", { name: "Andijon" }));
+    expect(onChangeSpy).toHaveBeenLastCalledWith("andijan");
+
+    await user.click(screen.getByRole("button", { name: "Tozalash" }));
+    expect(onChangeSpy).toHaveBeenLastCalledWith("");
+    expect(within(combobox()).getByText("Barchasi")).toHaveClass("text-text-subtle");
+    expect(screen.queryByRole("button", { name: "Tozalash" })).not.toBeInTheDocument();
+  });
+
+  it("qiymat \"\" (variantsiz) — tanlanmagan: × yo'q", () => {
+    render(<SingleControlled options={REGIONS} clearable initial="" placeholder="Viloyat tanlang" />);
+    expect(within(combobox()).getByText("Viloyat tanlang")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Tozalash" })).not.toBeInTheDocument();
+  });
+
+  it("qidiruvli maydonda ham × (chevron o'rnida); ochiq ro'yxat tozalanganda yopiladi", async () => {
+    const user = userEvent.setup();
+    const onChangeSpy = vi.fn();
+    render(<SingleControlled options={WITH_ALL} searchable initial="samarkand" onChangeSpy={onChangeSpy} />);
+    expect(combobox()).toHaveValue("Samarqand");
+    await user.click(combobox());
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Tozalash" }));
+    expect(onChangeSpy).toHaveBeenLastCalledWith("");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(combobox()).toHaveValue("");
+    expect(combobox()).toHaveAttribute("placeholder", "Barchasi");
+  });
+
+  it("yuklanayotganda × o'rnida spinner (URL'dagi qiymat nomi hali kelmagan)", () => {
+    render(<SingleControlled options={[]} clearable loading initial="samarkand" />);
+    expect(screen.queryByRole("button", { name: "Tozalash" })).not.toBeInTheDocument();
+    expect(combobox().closest("[data-select]")!.querySelector("[data-select-loading]")).not.toBeNull();
+  });
+
+  it("o'chirilgan maydonda × yo'q", () => {
+    render(<SingleControlled options={REGIONS} clearable disabled initial="samarkand" />);
+    expect(screen.queryByRole("button", { name: "Tozalash" })).not.toBeInTheDocument();
+  });
+
+  it("inlineLabel — kulrang «Holat:» (aria-hidden), bo'sh matn oddiy rangda (maket superadmin-users-list)", () => {
+    render(<SingleControlled options={WITH_ALL} inlineLabel="Holat" />);
+    const inline = combobox().querySelector("[data-select-inline-label]")!;
+    expect(inline).toHaveTextContent("Holat:");
+    expect(inline).toHaveAttribute("aria-hidden", "true");
+    expect(inline).toHaveClass("text-text-muted");
+    expect(within(combobox()).getByText("Barchasi")).not.toHaveClass("text-text-subtle");
+  });
+});
+
 describe("Select — ko'p tanlov", () => {
   it("belgilar: 2 tasi ko'rinadi, qolgani «+N»; har birini olib tashlash", async () => {
     const user = userEvent.setup();

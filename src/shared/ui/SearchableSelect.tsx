@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import type { LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { resolveSelectPlaceholder } from "../lib/selectPlaceholder";
+import { resolveFilterEmptyLabel, type AllOptionProp } from "../lib/selectPlaceholder";
 import { Field } from "./primitives/Field";
 import { Select } from "./primitives/Select";
 
@@ -11,8 +11,12 @@ import { Select } from "./primitives/Select";
  * qidiruvga aylanadi, mos qism qalin, topilmasa «Topilmadi».
  *
  * Xatti-harakati avvalgidek: qiymat — satr (bo'sh — `""`), `value=""` li variant ro'yxatga kirmaydi,
- * «Barchasi»-simon namuna «Tanlang <yorliq>» bo'ladi, `placement="top"` — ro'yxat tepada.
- * `size` va `surface` endi bitta v2 maydon (40 px, telefonda 44) — e'tiborga olinmaydi.
+ * `placement="top"` — ro'yxat tepada. `size` va `surface` endi bitta v2 maydon (40 px, telefonda 44) —
+ * e'tiborga olinmaydi.
+ *
+ * FILTR (ega qarori 2026-10-16; `allOption`, `value=""` li variant yoki «Barchasi»-simon namuna —
+ * `shared/lib/selectPlaceholder.ts`): bo'sh maydonda «Barchasi» (maket `superadmin-orders-list`), qiymat
+ * tanlangach maydonda × «Tozalash» — bosilsa `onChange("")`. Forma ro'yxati o'z namunasini saqlaydi.
  * Yangi kodda to'g'ridan-to'g'ri `<Field labelAs="span"><Select searchable /></Field>` ishlating.
  */
 export interface SearchableSelectOption {
@@ -42,6 +46,12 @@ interface SearchableSelectProps {
    * o'zi ham ag'dariladi).
    */
   placement?: "bottom" | "top";
+  /**
+   * Filtr: bo'sh qiymat (`""`) — «hammasi». `true` — bo'sh maydonda «Barchasi», qiymat tanlangach × «Tozalash»;
+   * satr — «Barchasi» o'rniga shu matn; `false` — filtr emas. Berilmasa: `value=""` li variant yoki
+   * «Barchasi»-simon `placeholder` bo'lsa — filtr.
+   */
+  allOption?: AllOptionProp;
 }
 
 const SearchableSelect = ({
@@ -56,10 +66,17 @@ const SearchableSelect = ({
   disabled = false,
   hideLabel = false,
   placement = "bottom",
+  allOption,
 }: SearchableSelectProps) => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation("ui");
   const normalizedOptions = useMemo(() => options.filter((option) => option.value !== ""), [options]);
-  const displayPlaceholder = resolveSelectPlaceholder(placeholder ?? t("select"), label, t("select"));
+  const filterEmptyLabel = resolveFilterEmptyLabel({
+    allOption,
+    emptyOptionLabel: options.find((option) => option.value === "")?.label,
+    placeholder,
+    hideLabel,
+    allWord: t("select.all"),
+  });
 
   return (
     <Field id={name} label={label} hideLabel={hideLabel} labelAs="span">
@@ -68,7 +85,9 @@ const SearchableSelect = ({
         options={normalizedOptions}
         value={value || null}
         onChange={(next) => onChange(next ?? "")}
-        placeholder={displayPlaceholder}
+        placeholder={filterEmptyLabel ?? placeholder ?? t("select.placeholder")}
+        clearable={filterEmptyLabel !== null}
+        inlineLabel={hideLabel && filterEmptyLabel !== null ? label : undefined}
         icon={icon}
         loading={loading}
         disabled={disabled}

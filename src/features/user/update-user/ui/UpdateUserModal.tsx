@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import UpdatePopup from "../../../../shared/components/popupUpdate";
 import SearchableSelect from "../../../../shared/ui/SearchableSelect";
-import CustomDatePicker from "../../../../shared/ui/CustomDatePicker";
 import { useUser } from "../../../../entities/user/api/userApi";
 import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
 import { UserRoleBadge } from "../../../../entities/user/ui/UserRoleBadge";
@@ -26,7 +25,8 @@ import { formatUzbekistanPhoneLocal, keepPhoneCaretAfterChange } from "../../../
 import type { RootState } from "../../../../app/config/store";
 import { useLogout } from "../../../../shared/lib/useLogout";
 import { rememberLoginNotice } from "../../../../auth/loginNotice";
-import { useConfirm } from "../../../../shared/ui/primitives";
+import { Select, useConfirm } from "../../../../shared/ui/primitives";
+import { PAYMENT_DAY_OPTIONS, toPaymentDayOption } from "../../lib/paymentDay";
 
 /**
  * Backend `Status` enumi — faqat `active | inactive` (UpdateAdminRequestDto
@@ -52,24 +52,6 @@ const parseAmount = (value: string): number =>
   Number(value.replace(/\s/g, ""));
 
 const parsePhone = (value: string): string => value.replace(/\s/g, "");
-
-const paymentDayToIsoDate = (paymentDay: string): string => {
-  const day = Number(paymentDay);
-  if (!Number.isFinite(day) || day < 1 || day > 30) return "";
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  return `${year}-${month}-${String(day).padStart(2, "0")}`;
-};
-
-const isoDateToPaymentDay = (value: string): string => {
-  if (!value) return "";
-  const parts = value.split("-");
-  if (parts.length !== 3) return "";
-  const day = Number(parts[2]);
-  if (!Number.isFinite(day) || day < 1 || day > 30) return "";
-  return String(day);
-};
 
 interface UpdateUserModalProps {
   userId: string | null;
@@ -588,15 +570,19 @@ export const UpdateUserModal = memo(({
                             <Calendar size={11} className="inline mr-1 mb-px" />
                             {t("paymentDayRange")}
                           </label>
-                          <CustomDatePicker
-                            value={paymentDayToIsoDate(field.value)}
-                            onChange={(nextDate) =>
-                              field.onChange(isoDateToPaymentDay(nextDate))
-                            }
+                          {/*
+                            Dizayn v2 `Select` (ega qarori 2026-10-16): oylik kalendar o'rniga 1–30 kunlar.
+                            Saqlangan 31 yoki noto'g'ri qiymat — maydon bo'sh, forma qiymati o'zgarmaydi
+                            (saqlashda «1-30» xatosi, to'g'ri kun tanlanadi).
+                          */}
+                          <Select
                             aria-label={t("paymentDayRange")}
-                            placeholder={t("common:selectDateRange")}
-                            variant="form"
-                            className="w-full"
+                            options={PAYMENT_DAY_OPTIONS}
+                            value={toPaymentDayOption(field.value)}
+                            onChange={(next) => field.onChange(next ?? "")}
+                            onBlur={field.onBlur}
+                            placeholder={t("paymentDayPlaceholder")}
+                            invalid={Boolean(fieldState.error)}
                           />
                           {fieldState.error?.message && (
                             <p className="absolute -bottom-4 right-0 text-[10px] text-red-500 font-medium">
