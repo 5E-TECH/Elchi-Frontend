@@ -54,4 +54,19 @@ describe("buildOldMailsWorkbook", () => {
     expect(workbook).toContain("'=HYPERLINK(&quot;https://example.com&quot;)");
     expect(workbook).toContain("&lt;script&gt;");
   });
+
+  it("kuryer ustuni: nom bo'lsa nom, bo'lmasa toza «-» (formula himoyasining «'-» si emas) — 4YZcTTDQ", () => {
+    const row = { region: "Buxoro", status: "Sent", orders: 3, amount: 650000, createdAt: "2026-10-15T12:33:00.000Z" };
+    const workbook = buildOldMailsWorkbook([
+      { ...row, id: "90", courier: "Buxaro Courier" },
+      { ...row, id: "91", courier: "" },
+      { ...row, id: "92", courier: "-Hiyla" },
+    ], labels);
+
+    expect(workbook).toContain('<td class="cell">Buxaro Courier</td>');
+    expect(workbook).toContain('<td class="cell">-</td>');
+    expect(workbook).not.toContain("'-</td>");
+    // Haqiqiy kuryer nomi «-» bilan boshlansa — himoya saqlanadi.
+    expect(workbook).toContain('<td class="cell">\'-Hiyla</td>');
+  });
 });
