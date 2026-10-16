@@ -66,4 +66,13 @@ test.describe("Pochtadan o'chirish — 1440px", () => {
     await openMailDetail(page);
     await expect(page.getByRole("button", { name: /pochtadan o'chirish/ })).toHaveCount(0);
   });
+
+  test("⭐ 4YZcTTDQ: state'siz /mails/74 — sarlavhada server holati (maket `superadmin-mails-detail`)", async ({ page }) => {
+    await mockMailDeleteApi(page, { postStatus: "sent" });
+    await openMailDetail(page);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Toshkent buyurtmalari");
+    await expect(page.getByTestId("mail-post-status")).toHaveText("Jo'natilgan");
+    await expect(page.getByTestId("mail-detail-sub")).toHaveText("Pochta №74 · 3 ta buyurtma mavjud");
+    await expect(page.getByRole("button", { name: "Bugungi pochtalar" })).toBeVisible();
+  });
 });

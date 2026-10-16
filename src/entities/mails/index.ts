@@ -136,12 +136,28 @@ export interface CenterOrders {
   centerOrdersTotalPrice: number;
 }
 
+export interface MailDetailPost {
+  id: string;
+  status: string;
+  courier_id?: string | null;
+  /** Faqat shu uch maydon (maxfiy maydonlarsiz); kuryer yo'q / o'chirilgan — `null`. */
+  courier?: { id: string; name: string; phone_number?: string | null } | null;
+  qr_code_token?: string | null;
+  order_quantity?: number;
+  createdAt?: string;
+  branch_id?: string | null;
+}
+
 export interface MailDetailData {
   allOrdersByPostId: PostOrder[];
   homeOrders: HomeOrders;
   centerOrders: CenterOrders;
-  /** Pochtaning o'zi (yokjwjXG) — savat faqat `status === "new"` da. Eski backendda yo'q. */
-  post?: { id: string; status: string } | null;
+  /**
+   * Pochtaning o'z ma'lumoti (yokjwjXG, 4YZcTTDQ) — sarlavhadagi holat badge'i,
+   * raqam va sana shundan; savat faqat `status === "new"` da. Eski backendda yo'q —
+   * u holda sahifa router state / buyurtmalardan oladi.
+   */
+  post?: MailDetailPost | null;
 }
 
 export interface MailDetailResponse {

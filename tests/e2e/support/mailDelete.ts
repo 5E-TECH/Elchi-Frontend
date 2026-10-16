@@ -38,7 +38,7 @@ const order = (id: string, name: string, over: Record<string, unknown> = {}) => 
 
 export const mockMailDeleteApi = async (
   page: Page,
-  { postStatus = "new", conflictIds = [] as string[] } = {},
+  { postStatus = "new", conflictIds = [] as string[], theme = "light" as "light" | "dark" } = {},
 ) => {
   const state = { orders: [order("1251", "Aliyev Vali"), order("1252", "Karimova Nodira"), order("1253", "Sobirov Jasur")] };
   const deletes: Array<{ body: Record<string, unknown>; status: number }> = [];
@@ -52,7 +52,16 @@ export const mockMailDeleteApi = async (
     const path = url.pathname.replace(/^\//, "");
 
     if (path === "auth/my-profile") {
-      return reply(route, { statusCode: 200, data: { id: "1", role: "superadmin", name: "Bosh admin", status: "active" } });
+      return reply(route, {
+        statusCode: 200,
+        data: {
+          id: "1",
+          role: "superadmin",
+          name: "Bosh admin",
+          status: "active",
+          settings: { appearance: { theme, themeChosen: true } },
+        },
+      });
     }
     if (path === "post/orders/74") {
       const total = state.orders.reduce((sum, item) => sum + item.total_price, 0);
@@ -63,7 +72,16 @@ export const mockMailDeleteApi = async (
           allOrdersByPostId: state.orders,
           homeOrders: { homeOrders: 0, homeOrdersTotalPrice: 0 },
           centerOrders: { centerOrders: state.orders.length, centerOrdersTotalPrice: total },
-          post: { id: "74", status: postStatus },
+          post: {
+            id: "74",
+            status: postStatus,
+            courier_id: "119",
+            courier: { id: "119", name: "Buxaro Courier", phone_number: "+998901190119" },
+            qr_code_token: "qr-post-74",
+            order_quantity: state.orders.length,
+            createdAt: "2026-10-16T08:00:00.000Z",
+            branch_id: "1",
+          },
         },
       });
     }
@@ -99,14 +117,16 @@ export const mockMailDeleteApi = async (
     }
     return reply(route, { statusCode: 200, data: [] });
   });
-  await page.addInitScript(() => {
+  await page.addInitScript((t) => {
+    window.localStorage.setItem("theme", t);
+    window.localStorage.setItem("theme-version", "2");
     const far = Date.now() + 86_400_000;
     window.sessionStorage.setItem("accessToken", "e2e.local.token");
     window.sessionStorage.setItem(
       "authSessionMetadata",
       JSON.stringify({ accessTokenExpiresAt: far, refreshTokenExpiresAt: far, refreshTokenWarnAt: far }),
     );
-  });
+  }, theme);
   return { state, deletes, leaked };
 };
 

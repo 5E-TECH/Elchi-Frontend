@@ -248,7 +248,7 @@
     "src/pages/mails/components/refusedMails.tsx": { "palette": 10, "dark-pair": 3, "money": 1 },
     "src/pages/mails/components/returnMails.tsx": { "palette": 29, "dark-pair": 16, "legacy": 34, "money": 1, "weight": 5 },
     "src/pages/mails/components/todaysMails.tsx": { "palette": 12, "dark-pair": 4, "legacy": 2, "money": 1 },
-    "src/pages/mails/detail/index.tsx": { "palette": 21, "dark-pair": 9, "legacy": 4, "v1-helper": 1 },
+    "src/pages/mails/detail/index.tsx": { "palette": 19, "dark-pair": 9, "legacy": 4 },
     "src/pages/mails/detail/lib/helpers.ts": { "palette": 15, "money": 1 },
     "src/pages/mails/detail/lib/printMode.ts": { "colour": 3, "money": 1 },
     "src/pages/mails/detail/ui/Checkbox.tsx": { "colour": 1, "palette": 6, "dark-pair": 2, "legacy": 4 },
