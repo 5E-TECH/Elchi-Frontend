@@ -1,3 +1,4 @@
+// dizayn-v2: (maket yo'q) superadmin-orders-detail
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -6,9 +7,10 @@ import { GitBranch } from "lucide-react";
 /**
  * QISMAN SOTUVDAN TUG'ILGAN BUYURTMA — asosiy (ota) buyurtmaga havola.
  *
- * Ilgari `parent_order_id` faqat QR moslashtirishda ishlatilardi; operator
- * bu buyurtmaning qaysi buyurtmadan qolganini bilmasdi. Teskari yo'nalish
- * (ota → bola) uchun backendda `parent_order_id` bo'yicha qidiruv kerak — hozir yo'q.
+ * Maket yo'q — tafsilot sahifasidagi ogohlantirishlar qatorida `.el-alert.el-tone-info` sifatida
+ * (eng yaqini: `superadmin-orders-detail` qulf ogohlantirishi). Ilgari `parent_order_id` faqat QR
+ * moslashtirishda ishlatilardi; operator bu buyurtmaning qaysi buyurtmadan qolganini bilmasdi.
+ * Teskari yo'nalish (ota → bola) uchun backendda `parent_order_id` bo'yicha qidiruv kerak — hozir yo'q.
  */
 const OrderParentBanner = ({ parentOrderId }: { parentOrderId: string | null | undefined }) => {
   const { t } = useTranslation("orders");
@@ -17,16 +19,16 @@ const OrderParentBanner = ({ parentOrderId }: { parentOrderId: string | null | u
     <div
       role="note"
       data-testid="order-parent-banner"
-      className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100"
+      className="flex flex-wrap items-start gap-x-3 gap-y-1 rounded-xl bg-info-soft px-4 py-3 text-sm text-info-fg"
     >
-      <GitBranch size={16} className="shrink-0" />
+      <GitBranch size={18} aria-hidden="true" className="mt-0.5 shrink-0" />
       {/* Boshlang'ich kenglik 12rem: tor ekranda matn siqilmaydi, havola keyingi qatorga o'tadi. */}
-      <span className="min-w-0 flex-[1_1_12rem]" data-testid="order-parent-banner-text">
+      <span className="min-w-0 flex-[1_1_12rem] text-text" data-testid="order-parent-banner-text">
         {t("metaParentBanner", { id: parentOrderId })}
       </span>
       <Link
         to={`/orders/edit/${parentOrderId}`}
-        className="shrink-0 whitespace-nowrap font-semibold text-main underline-offset-2 hover:underline dark:text-amber-200"
+        className="shrink-0 whitespace-nowrap font-semibold text-action-fg underline-offset-2 hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center max-md:-my-3"
       >
         {t("metaParentOpen")}
       </Link>

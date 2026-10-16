@@ -8,9 +8,7 @@ import { readReturnRequest } from "../model/returnRequest";
 /**
  * «Qaytarish so'ralgan» — ro'yxatdagi holat yonida (dizayn v2). Maket yo'q — eng yaqini
  * `superadmin-orders-list` holat ustuni: `Badge` (`warning`, `Undo2` ikonka). Sabab — maslahatda va
- * ekran o'quvchi nomida. So'ralmagan buyurtmada hech narsa.
- *
- * v1 `ReturnRequestedBadge` (eski tafsilot sahifasi) o'zgarmaydi — u o'z sahifasi bilan ko'chiriladi.
+ * ekran o'quvchi nomida. So'ralmagan buyurtmada hech narsa. Buyurtma tafsiloti sarlavhasida ham shu belgi.
  */
 export const ReturnRequestedTag = memo(({ order }: { order: unknown }) => {
   const { t } = useTranslation("orders");

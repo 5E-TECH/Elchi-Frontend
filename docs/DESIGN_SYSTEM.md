@@ -368,7 +368,16 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   8 holat tabi, filtrlar (asboblar qatori, «Qo'shimcha filtrlar» paneli, chiplar, telefon varaqasi), menejerning
   «Bekor qilingan» tabida HQ'ga yuborish, kuryer ro'yxati (3 tab, skaner), sotish / qisman sotish / bekor qilish /
   qaytarish oynalari (`variant="courier" | "manager"`). Tab sonlari chizilmagan — `GET /orders` holat bo'yicha sonlarni
-  bermaydi. Buyurtma tafsiloti (`/orders/edit/:orderId`) va yaratish — keyingi PR'lar.
+  bermaydi.
+- **Ko'chirilgan:** `/orders/edit/:orderId` — buyurtma tafsiloti, barcha rollar (`<rol>-orders-detail`; market va
+  kuryer — o'z tartibi): sarlavha `PageHeader` («← Buyurtmalar», № + nusxalash, holat, «Qaytarish so'ralgan», rol
+  amallari — bitta asosiy «Sotish»), ogohlantirishlar (market tasdig'i, qulflar, «Faqat ko'rish uchun», qisman sotuv),
+  Mijoz · Manzil · To'lov · Mahsulotlar · Dalillar · Tarix · «Buyurtma ma'lumotlari» kartalari, tahrirlash oynalari
+  (manzil, mijoz, buyurtma / mahsulotlar — `pages/new_orders/components/editDialogs/`), sotish / bekor qilish /
+  qaytarish — `/orders` dagi v2 oynalar, marketga qaytarish oynalari. Sahifa `pages/new_orders/components/new_orderUpdate.tsx`
+  (konteyner) + `detail/` (kartalar, ruxsat `orderDetailAccess.ts`, javob tozalash `orderDetailModel.ts`). Ayni komponent
+  `/new-orders/:marketId/edit/:orderId` da ham — u route'ning o'z maketlari (`*-neworders-market-order-edit`,
+  `market-new-orders-edit`) hali ko'chirilmagan, tafsilot ko'rinishi chiqadi. Yaratish — keyingi PR.
 
 **Dizayn qo'riqchisi** (`scripts/design-guard.mjs`, `npm run design:guard`): `colour`, `palette`, `dark-pair`,
 `legacy`, `money`, `icons`, `tiny-text`, `v1-class`, `weight`, `gradient`, `v1-helper`. Ikki darvoza:

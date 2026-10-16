@@ -1,790 +1,168 @@
+// dizayn-v2: superadmin-orders-detail, admin-orders-detail, manager-orders-detail, registrator-orders-detail, market-orders-detail, courier-orders-detail, manager-orders-sell-dialog, manager-orders-cancel-dialog, manager-orders-rollback-dialog
 import { memo, useCallback, useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import {
-  Package,
-  User,
-  Phone,
-  MapPin,
-  Building,
-  Map,
-  Home,
-  ShoppingBag,
-  CreditCard,
-  Banknote,
-  Edit2,
-  Minus,
-  Plus, 
-  Trash2,
-  MessageSquare,
-  Truck,
-  RotateCcw,
-  Paperclip,
-  Undo2,
-  PackageCheck,
-} from "lucide-react";
-import {
-  Card,
-  SectionHead,
-  InfoRow,
-  EditBtn,
-  LockNotice,
-  OrderCommentCard,
-  Skeleton,
-  SelectField,
-  InputField,
-} from "./new_orderUpdate.ui";
-import HeaderName from "../../../shared/components/headerName";
-import BackButton from "../../../shared/ui/BackButton";
-import OrderIdBadge from "../../../shared/ui/OrderIdBadge";
+import { Check, PackageCheck, RotateCcw, SearchX, Undo2, X } from "lucide-react";
+import type { RootState } from "../../../app/config/store";
+import { readProofFiles } from "../../../entities/order";
+import { useOrders } from "../../../entities/orders";
+import type { CancelOrderPayload } from "../../../entities/orders/cancelReason";
 import {
   getActivePendingApproval,
   pollWhileApprovalPending,
   resolveOrderActionResponse,
   usePendingExtraCostApprovals,
 } from "../../../entities/orders/extraCostApproval";
-import { ExtraCostApprovalSentNote } from "../../../entities/orders/ui/ExtraCostApproval";
-import { useOrders } from "../../../entities/orders";
-import { useUser } from "../../../entities/user/api/userApi";
-import { useLogistics } from "../../../entities/logistics/api/logisticsApi";
-import UpdatePopup from "../../../shared/components/popupUpdate";
-import { OrderTracking } from "../../../widgets/order-tracking";
-import { ProofGallery, readProofFiles, ReturnRequestedBadge } from "../../../entities/order";
-import {
-  canInitiateReturn,
-  canMarkReturnedToMarket,
-  InitiateReturnModal,
-  MarkReturnedModal,
-} from "../../../features/order-return";
-import { OrderMeta, OrderParentBanner, readOrderMeta } from "../../../widgets/order-meta";
-import { getSidebarConfigForUser } from "../../../widgets/Sidebar/model/menuConfig";
-import { resolveAssetUrl } from "../../../shared/lib/assetUrl";
-import type { RootState } from "../../../app/config/store";
-import SellModal from "../../orders/list/courier/list/SellModal";
-import CancelModal from "../../orders/list/courier/list/CancelModal";
-import PopupConfirm from "../../../shared/components/popupConfirm";
-import {
-  buildAddressUpdatePayload,
-  buildCustomerUpdatePayload,
-  buildOrderUpdatePayload,
-  getAddressUpdateValidationError,
-  getCustomerUpdateValidationError,
-  canRunCourierAction,
-  isOrderReceivedOrLater,
-  isOrderSentToBranch,
-  normalizeOrderStatus,
-  parseOrderTotalPrice,
-  type EditableOrderSnapshot,
-} from "./newOrderUpdateRules";
-import type { CancelOrderPayload } from "../../../entities/orders/cancelReason";
-import { getBackendErrorMessage } from "../../../shared/lib/backendError";
-import { copyToClipboard } from "../../../shared/lib/clipboard";
-import { getOrderItemName } from "../../../shared/lib/orderItemName";
-import { isCourierHeldOrder } from "../../../entities/orders/custody";
 import { getSellPaymentStatus, SELL_PAYMENT_NOTICE_KEYS, type SellOrderPayload } from "../../../entities/orders/sellPayment";
+import { InitiateReturnModal, MarkReturnedModal } from "../../../features/order-return";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { notify } from "../../../shared/lib/notify";
+import { Button, EmptyState, QueryBoundary } from "../../../shared/ui/primitives";
+import { OrderMeta, readOrderMeta } from "../../../widgets/order-meta";
+import { OrderTracking } from "../../../widgets/order-tracking";
+import { getSidebarConfigForUser } from "../../../widgets/Sidebar/model/menuConfig";
+import CancelModal from "../../orders/list/courier/list/CancelModal";
+import { notifyOrderActionDone } from "../../orders/list/courier/list/orderActionModel";
+import RollbackOrderDialog from "../../orders/list/courier/list/RollbackOrderDialog";
+import SellModal from "../../orders/list/courier/list/SellModal";
+import { AddressCard } from "./detail/AddressCard";
+import { CourierContactCard, CourierPaymentCard, CourierProductsCard } from "./detail/CourierCards";
+import { CustomerCard } from "./detail/CustomerCard";
+import { DetailAlerts } from "./detail/DetailAlerts";
+import { DetailHeader } from "./detail/DetailHeader";
+import { DetailSkeleton } from "./detail/DetailSkeleton";
+import { getLockAlertIds, getOrderDetailAccess, getOrderPageBranchType } from "./detail/orderDetailAccess";
+import {
+  buildActionOrder,
+  buildTrackingAccess,
+  buildTrackingContext,
+  normalizeOrderDetail,
+  type OrderDetail,
+} from "./detail/orderDetailModel";
+import { PaymentCard } from "./detail/PaymentCard";
+import { ProductsCard } from "./detail/ProductsCard";
+import { ProofCard } from "./detail/ProofCard";
+import { EditAddressDialog, EditCustomerDialog, EditOrderDialog } from "./editDialogs";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
-interface District {
-  id: string;
-  name: string;
-  region_id?: string;
-  region?: { id: string; name: string };
-}
-interface Region {
-  id: string;
-  name: string;
-  districts?: District[];
-}
-interface Customer {
-  id: string;
-  name: string;
-  phone_number: string;
-  district?: District;
-  region?: Region;
-}
-interface OrderItem {
-  id: string;
-  quantity: number;
-  image?: string | null;
-  image_url?: string | null;
-  product: {
-    id: string;
-    name: string;
-    image?: string | null;
-    image_url?: string | null;
-    imageUrl?: string | null;
-    photo?: string | null;
-    photo_url?: string | null;
-    file?: string | null;
-    url?: string | null;
-  } | null;
-  /** Hamkor posilkalarida `product` null keladi: id va nom shu maydonlarda. */
-  product_id?: string | null;
-  product_name?: string | null;
-}
+/**
+ * BUYURTMA TAFSILOTI — `/orders/edit/:orderId` (va `/new-orders/:marketId/edit/:orderId`), dizayn v2.
+ *
+ * Maketlar: `<rol>-orders-detail` (superadmin, admin, manager, registrator, market, courier). Sahifa
+ * shell ichida chiziladi (tashqi karta / chekka / o'z skrolli yo'q). Tuzilma:
+ *  - sarlavha (`DetailHeader`): «← Buyurtmalar», №, holat, rol amallari (sotish, bekor qilish,
+ *    qaytarish, marketga qaytarish / topshirish);
+ *  - ogohlantirishlar (`DetailAlerts`): market tasdig'i, qulflar, qisman sotuv banneri;
+ *  - ikki ustun (`flex-row-reverse flex-wrap`: yon ustun DOM'da birinchi — telefonda tepada):
+ *    yon — Buyurtma ma'lumotlari, Mijoz + Manzil, To'lov; asosiy — Mahsulotlar, Dalillar, Tarix.
+ *    Market va kuryer — o'z maketlaridagi tartib.
+ *
+ * Ruxsat va qulf qoidalari — `detail/orderDetailAccess.ts`; xom javob tozalanadi
+ * (`detail/orderDetailModel.ts`): `id` yo'q javob «topilmadi», sahifa yiqilmaydi.
+ */
 
-const getProductImageUrl = (item: OrderItem) =>
-  resolveAssetUrl(
-    item.product?.image_url ??
-    item.product?.imageUrl ??
-    item.product?.image ??
-    item.product?.photo_url ??
-    item.product?.photo ??
-    item.product?.file ??
-    item.product?.url ??
-    item.image_url ??
-    item.image,
-  );
+type EditDialogKind = "customer" | "address" | "order" | null;
 
-const ProductThumbnail = ({
-  item,
-  alt,
-  className,
-}: {
-  item: OrderItem;
-  alt: string;
-  className: string;
-}) => {
-  const imageUrl = getProductImageUrl(item);
-  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
-  const hasImageError = failedImageUrl === imageUrl;
-
-  return (
-    <div className={className}>
-      {imageUrl && !hasImageError ? (
-        <img
-          src={imageUrl}
-          alt={alt}
-          className="h-full w-full object-cover"
-          loading="lazy"
-          onError={() => setFailedImageUrl(imageUrl)}
-        />
-      ) : (
-        <Package size={18} className="text-gray-300 dark:text-white/20" />
-      )}
-    </div>
-  );
-};
-interface OrderDetail extends EditableOrderSnapshot {
-  id: string;
-  where_deliver: "center" | "address";
-  total_price: number;
-  to_be_paid: number;
-  paid_amount: number;
-  status: string;
-  comment: string | null;
-  address: string | null;
-  district_id?: string;
-  items: OrderItem[];
-  customer: Customer;
-  district?: District;
-  region?: Region;
-  [key: string]: unknown;
-}
-
-interface AddressForm {
-  region_id: string;
-  district_id: string;
-  address: string;
-}
-interface CustomerForm {
-  name: string;
-  phone: string;
-}
-interface OrderForm {
-  where_deliver: string;
-  total_price: string;
-  comment: string;
-  items: OrderItem[];
-}
-
-// ─── Constants (module-level — re-render da qayta yaratilmaydi) ───────────────
-const LOCALE_BY_LANGUAGE: Record<string, string> = {
-  uz: "uz-UZ",
-  en: "en-US",
-  ru: "ru-RU",
-};
-
-const resolveLocale = (language: string) =>
-  LOCALE_BY_LANGUAGE[language.split("-")[0]] ?? "uz-UZ";
-
-const DELIVER_LABELS: Record<string, string> = {
-  center: "deliverCenter",
-  address: "deliverAddress",
-};
-
-const DELIVER_OPTIONS = [
-  { value: "center", labelKey: "deliverCenter" },
-  { value: "address", labelKey: "deliverAddress" },
-] as const;
-const BRANCH_TYPES = new Set(["HQ", "PICKUP", "REGIONAL", "HYBRID"]);
-const DEFAULT_STATUS_CLS = "bg-slate-500/20 text-slate-300 border border-slate-500/30";
-
-const getOrderPageBranchType = (
-  user: RootState["user"]["user"],
-): "HQ" | "PICKUP" | "REGIONAL" | "HYBRID" | null => {
-  const rawUser = user as
-    | (RootState["user"]["user"] & {
-        branch_type?: string | null;
-        branch?: {
-          type?: string | null;
-          branch_type?: string | null;
-          branch?: {
-            type?: string | null;
-            branch_type?: string | null;
-          } | null;
-        } | null;
-      })
-    | null
-    | undefined;
-
-  const normalize = (value: unknown) => {
-    if (typeof value !== "string") return null;
-    const upper = value.toUpperCase();
-    return BRANCH_TYPES.has(upper)
-      ? (upper as "HQ" | "PICKUP" | "REGIONAL" | "HYBRID")
-      : null;
-  };
-
-  return (
-    normalize(rawUser?.branch?.branch?.type) ??
-    normalize(rawUser?.branch?.branch?.branch_type) ??
-    normalize(rawUser?.branch?.type) ??
-    normalize(rawUser?.branch?.branch_type) ??
-    normalize(rawUser?.branch_type) ??
-    null
-  );
-};
-
-const STATUS_CONFIG: Record<string, { labelKey: string; cls: string; ns?: "newOrders" | "orders" }> = {
-  created: {
-    labelKey: "statusCreated",
-    ns: "orders",
-    cls: "bg-sky-500/20 text-sky-400 border border-sky-500/30",
-  },
-  received: {
-    labelKey: "statusReceived",
-    ns: "orders",
-    cls: "bg-violet-500/20 text-violet-400 border border-violet-500/30",
-  },
-  "on the road": {
-    labelKey: "statusOnTheRoad",
-    ns: "orders",
-    cls: "bg-orange-500/20 text-orange-400 border border-orange-500/30",
-  },
-  waiting: {
-    labelKey: "statusWaiting",
-    ns: "orders",
-    cls: "bg-amber-500/20 text-amber-400 border border-amber-500/30",
-  },
-  new: {
-    labelKey: "statusNew",
-    ns: "newOrders",
-    cls: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",
-  },
-  processing: {
-    labelKey: "statusProcessing",
-    ns: "newOrders",
-    cls: "bg-amber-500/20 text-amber-400 border border-amber-500/30",
-  },
-  completed: {
-    labelKey: "statusCompleted",
-    ns: "newOrders",
-    cls: "bg-blue-500/20 text-blue-400 border border-blue-500/30",
-  },
-  sold: {
-    labelKey: "statusSold",
-    ns: "orders",
-    cls: "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30",
-  },
-  paid: {
-    labelKey: "statusPaid",
-    ns: "orders",
-    cls: "bg-teal-500/20 text-teal-400 border border-teal-500/30",
-  },
-  "partly paid": {
-    labelKey: "statusPartlyPaid",
-    ns: "orders",
-    cls: "bg-cyan-500/20 text-cyan-400 border border-cyan-500/30",
-  },
-  cancelled: {
-    labelKey: "statusCancelled",
-    ns: "orders",
-    cls: "bg-rose-500/20 text-rose-400 border border-rose-500/30",
-  },
-  "cancelled (sent)": {
-    labelKey: "statusCancelled",
-    ns: "orders",
-    cls: "bg-rose-500/20 text-rose-400 border border-rose-500/30",
-  },
-  "returned to market": {
-    labelKey: "statusReturnedToMarket",
-    ns: "orders",
-    cls: "bg-slate-500/20 text-slate-300 border border-slate-500/30",
-  },
-  closed: {
-    labelKey: "statusClosed",
-    ns: "orders",
-    cls: "bg-slate-500/20 text-slate-300 border border-slate-500/30",
-  },
-};
-
-
-const getPaymentRows = (order: OrderDetail, formatMoney: (value: number) => string) => [
-  { labelKey: "total", value: formatMoney(order.total_price), cls: "text-gray-900 dark:text-white font-bold" },
-  { labelKey: "toBePaid", value: formatMoney(order.to_be_paid), cls: "text-amber-500 font-bold" },
-  { labelKey: "paid", value: formatMoney(order.paid_amount), cls: "text-emerald-500 font-bold" },
-];
-
-
-const unwrapOrderDetail = (res: unknown): OrderDetail | null => {
-  if (!res) return null;
-  if ("data" in (res as Record<string, unknown>) && (res as { data?: OrderDetail }).data) {
-    return (res as { data: OrderDetail }).data;
-  }
-  return res as OrderDetail;
-};
-
-// ─── Main Component ───────────────────────────────────────────────────────────
 const NewOrderUpdate = () => {
-  const { t, i18n } = useTranslation(["newOrders", "orders"]);
+  const { t } = useTranslation(["newOrders", "orders", "common"]);
   const navigate = useNavigate();
-  const { orderId } = useParams<{ orderId: string }>();
-  const queryClient = useQueryClient();
+  const location = useLocation();
+  const { orderId = "", marketId } = useParams<{ orderId: string; marketId?: string }>();
   const role = useSelector((state: RootState) => state.role.role);
   const user = useSelector((state: RootState) => state.user.user);
-  /** Pochta raqami havola bo'ladimi — `/mails` marshruti bilan AYNI qoida. */
-  const canOpenMails = useMemo(
-    () => getSidebarConfigForUser(role, user).some((item) => item.to === "/mails"),
-    [role, user],
-  );
+  const menu = useMemo(() => getSidebarConfigForUser(role, user), [role, user]);
+  /** Pochta raqami / mijoz ismi havola bo'ladimi — `/mails`, `/all-users` marshrutlari bilan AYNI qoida. */
+  const canOpenMails = menu.some((item) => item.to === "/mails");
+  const canOpenProfiles = menu.some((item) => item.to === "/all-users");
   const branchType = getOrderPageBranchType(user);
-  const numberFormatter = useMemo(
-    () => new Intl.NumberFormat(resolveLocale(i18n.resolvedLanguage ?? i18n.language)),
-    [i18n.language, i18n.resolvedLanguage],
-  );
-  const currencyLabel = t("currency", { ns: "orders" });
-  const formatMoney = useCallback(
-    (value: number) => `${numberFormatter.format(value)} ${currencyLabel}`,
-    [currencyLabel, numberFormatter],
-  );
-  const handleCopyOrderId = useCallback(
-    (id: string) => {
-      void copyToClipboard(id).then((copied) => {
-        if (copied) {
-          notify.success(t("orderNumberCopied", { ns: "orders" }));
-        } else {
-          notify.error(t("orderNumberCopyFailed", { ns: "orders", id }));
-        }
+
+  // ─── Ma'lumot ─────────────────────────────────────────────────────────────
+  const { useGetOrderById, SellOrder, PartlySellOrder, CancelOrder, RollbackOrder } = useOrders();
+  const orderQuery = useGetOrderById(orderId, Boolean(orderId), (current) => {
+    const detail = normalizeOrderDetail(current);
+    return pollWhileApprovalPending(detail ? [detail] : []);
+  });
+  const order = useMemo(() => normalizeOrderDetail(orderQuery.data), [orderQuery.data]);
+  const pendingApprovals = usePendingExtraCostApprovals();
+  const pendingApproval = getActivePendingApproval(pendingApprovals, order) ?? null;
+  const access = getOrderDetailAccess({ role, branchType, order });
+  const lockIds = getLockAlertIds(access.productsLocked, access.destinationLocked);
+
+  const actionOrder = useMemo(() => buildActionOrder(order), [order]);
+  const trackingContext = useMemo(() => buildTrackingContext(order), [order]);
+  const trackingAccess = useMemo(() => buildTrackingAccess(order), [order]);
+  /** Qisman sotuvdan tug'ilgan bo'lsa — asosiy buyurtma id'si. */
+  const parentOrderId = useMemo(() => readOrderMeta(order)?.parentOrderId ?? null, [order]);
+  /** Kuryer biriktirgan dalillar — bo'sh bo'lsa karta umuman chiqmaydi. */
+  const proofKeys = useMemo(() => readProofFiles(order?.proof_files), [order]);
+
+  // ─── Oynalar ──────────────────────────────────────────────────────────────
+  const [editing, setEditing] = useState<EditDialogKind>(null);
+  const [isSellOpen, setIsSellOpen] = useState(false);
+  const [isCancelOpen, setIsCancelOpen] = useState(false);
+  const [isRollbackOpen, setIsRollbackOpen] = useState(false);
+  const [isInitiateReturnOpen, setIsInitiateReturnOpen] = useState(false);
+  const [isMarkReturnedOpen, setIsMarkReturnedOpen] = useState(false);
+  // Market tasdig'iga tushgan amal: oyna yopilmaydi, holat ko'rsatiladi.
+  const [isApprovalRequested, setIsApprovalRequested] = useState(false);
+  // Tarix (tracking) o'zi qayta so'ralmaydi — amaldan keyin qayta mount.
+  const [trackingVersion, setTrackingVersion] = useState(0);
+  const refreshTracking = useCallback(() => setTrackingVersion((version) => version + 1), []);
+  const closeEdit = useCallback(() => setEditing(null), []);
+
+  const handleBack = useCallback(() => {
+    // Havoladan to'g'ridan-to'g'ri ochilgan sahifada tarix bo'sh — ota ro'yxatga.
+    if (location.key !== "default") navigate(-1);
+    else navigate(marketId ? `/new-orders/${marketId}` : "/orders");
+  }, [location.key, marketId, navigate]);
+
+  // ─── Sotish / bekor qilish / qaytarish ──────────────────────────────────────
+  const showActionError = useCallback(
+    (error: unknown) => {
+      notify.error(t("error", { ns: "common" }), {
+        description: getBackendErrorMessage(error) ?? t("orderActionError", { ns: "orders" }),
       });
     },
     [t],
   );
-  const productsLockReason = t("productsLockReason");
-  const destinationLockReason = t("destinationLockReason");
-  // fix3 FE-ORD-12: mijozni PATCH /users/:id orqali tahrirlash faqat
-  // superadmin/admin uchun ishlaydi. Registrator/market/kuryer doim 403 olardi,
-  // menejer esa faqat o'z filial xodimlarini yangilay oladi (mijoz emas).
-  const canEditCustomer = role === "superadmin" || role === "admin";
-  const customerEditLockReason = !canEditCustomer
-    ? t("customerEditAdminOnly")
-    : null;
-  // fix3b FE-ORD-12: manzil va buyurtma/mahsulotlar oynasi PATCH
-  // /orders/:id/full orqali saqlanadi. SUPERADMIN/ADMIN/REGISTRATOR uchun ochiq;
-  // backend endi MENEJERGA ham o'z filialidagi NEW buyurtmani tahrirlashga ruxsat
-  // beradi. Market va kuryer doim 403 oladi: ularga tugma o'chiq, sababi title'da.
-  // Qabul qilingan/filialga yuborilgan buyurtmada status qulflari (productsLocked /
-  // destinationLocked) baribir tugmani o'chiradi — bu rolga bog'liq emas.
-  const canEditOrderFull =
-    role === "superadmin" ||
-    role === "admin" ||
-    role === "registrator" ||
-    role === "manager";
-  const orderEditRoleLockReason = t("orderEditRoleOnly");
 
-  // ─── State ──────────────────────────────────────────────────────────────────
-  const [addressPopupOpen, setAddressPopupOpen] = useState(false);
-  const [addressForm, setAddressForm] = useState<AddressForm>({
-    region_id: "", district_id: "", address: "",
-  });
-
-  const [customerPopupOpen, setCustomerPopupOpen] = useState(false);
-  const [customerForm, setCustomerForm] = useState<CustomerForm>({ name: "", phone: "" });
-
-  const [orderPopupOpen, setOrderPopupOpen] = useState(false);
-  const [orderForm, setOrderForm] = useState<OrderForm>({
-    where_deliver: "", total_price: "", comment: "", items: [],
-  });
-  const [isSellModalOpen, setIsSellModalOpen] = useState(false);
-  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
-  // Market tasdig'iga tushgan amal: modal yopilmaydi, holat ko'rsatiladi.
-  const [isApprovalRequested, setIsApprovalRequested] = useState(false);
-  const [isRollbackConfirmOpen, setIsRollbackConfirmOpen] = useState(false);
-  const [isInitiateReturnOpen, setIsInitiateReturnOpen] = useState(false);
-  const [isMarkReturnedOpen, setIsMarkReturnedOpen] = useState(false);
-  // Tarix (tracking) o'zi qayta so'ralmaydi — qaytarish amalidan keyin qayta mount.
-  const [trackingVersion, setTrackingVersion] = useState(0);
-  const refreshTracking = useCallback(() => setTrackingVersion((version) => version + 1), []);
-
-  // ─── Data fetching ───────────────────────────────────────────────────────────
-  const {
-    useGetOrderById,
-    updateNewOrder,
-    SellOrder,
-    PartlySellOrder,
-    CancelOrder,
-    RollbackOrder,
-  } = useOrders();
-  const { updateUser } = useUser();
-  const { useGetRegions, useGetDistricts } = useLogistics();
-
-  const { data: res, isLoading } = useGetOrderById(orderId ?? "", !!orderId, (current) => {
-    const detail = unwrapOrderDetail(current);
-    return pollWhileApprovalPending(detail ? [detail] : []);
-  });
-  const order = useMemo(() => unwrapOrderDetail(res), [res]);
-  const pendingApprovals = usePendingExtraCostApprovals();
-  const pendingApproval = getActivePendingApproval(pendingApprovals, order);
-  const userId = order?.customer?.id;
-
-  const { data: regionsData } = useGetRegions();
-  const { data: districtsData } = useGetDistricts(addressForm.region_id || undefined);
-
-  // ─── Memoized derived state ──────────────────────────────────────────────────
-  const regions = useMemo(
-    () => (Array.isArray(regionsData?.data) ? regionsData.data : regionsData ?? []).map(
-      (r: Region) => ({ value: r.id, label: r.name }),
-    ),
-    [regionsData],
-  );
-
-  const districts = useMemo(
-    () => (Array.isArray(districtsData) ? districtsData : []).map(
-      (d: District) => ({ value: d.id, label: d.name }),
-    ),
-    [districtsData],
-  );
-
-  const normalizedStatus = normalizeOrderStatus(order?.status ?? "");
-  const statusCfg = STATUS_CONFIG[normalizedStatus] ?? null;
-  const productsLocked = Boolean(order && isOrderReceivedOrLater(order.status));
-  const destinationLocked = Boolean(order && isOrderSentToBranch(order));
-  const showUpdateError = useCallback((error: unknown) => {
-    notify.error(t("error", { ns: "common" }), {
-      description: getBackendErrorMessage(error) ??
-        t("updateError"),
-    });
-  }, [t]);
-  const showActionError = useCallback((error: unknown) => {
-    notify.error(t("error", { ns: "common" }), {
-      description: getBackendErrorMessage(error) ?? t("orderActionError"),
-    });
-  }, [t]);
-  const isRegionalManager =
-    role === "manager" &&
-    (branchType === "REGIONAL" || branchType === "HYBRID");
-  const canUseCourierActions =
-    isRegionalManager && canRunCourierAction(order);
-  // fix3b LC-04: kuryer qo'lidagi buyurtmani menejer sotmaydi (backend 400
-  // "Bu buyurtma kuryer qo'lida..."). Bekor qilish ochiq qoladi.
-  const canManagerSellOrder = canUseCourierActions && !isCourierHeldOrder(order);
-  const canRollbackSoldOrder = isRegionalManager && normalizedStatus === "sold";
-  // Marketga qaytarish: HQ boshlaydi, filial market QR bilan topshiradi.
-  const canStartReturn = canInitiateReturn(role, order);
-  const canHandOverReturn = canMarkReturnedToMarket(role, order);
-
-  const regionName = order?.district?.region?.name ?? order?.region?.name ?? "—";
-  const districtName = order?.district?.name ?? "—";
-  const addressText = order?.address ?? "—";
-  const trackingContext = useMemo(() => {
-    const source = order as (OrderDetail & {
-      branch?: { id?: string | number | null; name?: string | null } | null;
-      destination_branch?: { id?: string | number | null; name?: string | null } | null;
-      target_branch?: { id?: string | number | null; name?: string | null } | null;
-      market?: { id?: string | number | null; name?: string | null; title?: string | null } | null;
-      post?: { name?: string | null; title?: string | null } | null;
-      branch_id?: string | number | null;
-      destination_branch_id?: string | number | null;
-      target_branch_id?: string | number | null;
-      market_id?: string | number | null;
-      branch_name?: string | null;
-      destination_branch_name?: string | null;
-      target_branch_name?: string | null;
-      market_name?: string | null;
-      post_name?: string | null;
-    }) | null;
-    const branchNamesById: Record<string, string> = {};
-    const marketNamesById: Record<string, string> = {};
-    const addBranchName = (id?: string | number | null, name?: string | null) => {
-      if (id != null && name) {
-        branchNamesById[String(id)] = name;
-      }
-    };
-    const addMarketName = (id?: string | number | null, name?: string | null) => {
-      if (id != null && name) {
-        marketNamesById[String(id)] = name;
-      }
-    };
-
-    addBranchName(source?.branch?.id ?? source?.branch_id, source?.branch?.name ?? source?.branch_name);
-    addBranchName(
-      source?.destination_branch?.id ?? source?.destination_branch_id,
-      source?.destination_branch?.name ?? source?.destination_branch_name,
-    );
-    addBranchName(
-      source?.target_branch?.id ?? source?.target_branch_id,
-      source?.target_branch?.name ?? source?.target_branch_name,
-    );
-    addMarketName(
-      source?.market?.id ?? source?.market_id,
-      source?.market?.name ?? source?.market?.title ?? source?.market_name,
-    );
-
-    return {
-      branchName:
-        source?.destination_branch?.name ??
-        source?.target_branch?.name ??
-        source?.destination_branch_name ??
-        source?.target_branch_name ??
-        null,
-      postName:
-        source?.post?.name ??
-        source?.post?.title ??
-        source?.post_name ??
-        null,
-      marketName:
-        source?.market?.name ??
-        source?.market?.title ??
-        source?.market_name ??
-        null,
-      branchNamesById,
-      marketNamesById,
-    };
-  }, [order]);
-  const trackingAccess = useMemo(() => {
-    const source = order as (OrderDetail & {
-      holder_type?: string | null;
-      holderType?: string | null;
-      holder_branch_id?: string | number | null;
-      holderBranchId?: string | number | null;
-      holder_courier_id?: string | number | null;
-      holderCourierId?: string | number | null;
-    }) | null;
-
-    return {
-      holderType: source?.holder_type ?? source?.holderType ?? null,
-      holderBranchId: source?.holder_branch_id ?? source?.holderBranchId ?? null,
-      holderCourierId: source?.holder_courier_id ?? source?.holderCourierId ?? null,
-    };
-  }, [order]);
-
-  // ─── Handlers — Address popup ─────────────────────────────────────────────
-  const handleOpenAddressPopup = useCallback(() => {
-    if (destinationLocked || !canEditOrderFull) return;
-    setAddressForm({
-      region_id: order?.district?.region_id ?? order?.region?.id ?? "",
-      district_id: order?.district_id ?? order?.district?.id ?? "",
-      address: order?.address ?? "",
-    });
-    setAddressPopupOpen(true);
-  }, [canEditOrderFull, destinationLocked, order]);
-
-  const handleCloseAddressPopup = useCallback(() => setAddressPopupOpen(false), []);
-
-  const handleRegionChange = useCallback((v: string) =>
-    setAddressForm((p) => ({ ...p, region_id: v, district_id: "" })), []);
-
-  const handleDistrictChange = useCallback((v: string) =>
-    setAddressForm((p) => ({ ...p, district_id: v })), []);
-
-  const handleAddressChange = useCallback((v: string) =>
-    setAddressForm((p) => ({ ...p, address: v })), []);
-
-  const handleSaveAddress = useCallback(() => {
-    if (!orderId || !order || destinationLocked || !canEditOrderFull) return;
-    const validationError = getAddressUpdateValidationError(addressForm);
-    if (validationError) {
-      notify.error(t("error", { ns: "common" }), {
-        description: t(validationError === "region" ? "validationRegion" : "validationDistrict", {
-          ns: "orders",
-        }),
-      });
-      return;
-    }
-
-    const data = buildAddressUpdatePayload(order, addressForm);
-    if (!Object.keys(data).length) {
-      setAddressPopupOpen(false);
-      return;
-    }
-    updateNewOrder.mutate(
-      { orderId, data },
-      {
-        onSuccess: () => setAddressPopupOpen(false),
-        onError: showUpdateError,
-      },
-    );
-  }, [addressForm, canEditOrderFull, destinationLocked, order, orderId, showUpdateError, t, updateNewOrder]);
-
-  // ─── Handlers — Customer popup ────────────────────────────────────────────
-  const handleOpenCustomerPopup = useCallback(() => {
-    if (destinationLocked || !canEditCustomer) return;
-    setCustomerForm({
-      name: order?.customer?.name ?? "",
-      phone: order?.customer?.phone_number ?? "",
-    });
-    setCustomerPopupOpen(true);
-  }, [canEditCustomer, destinationLocked, order]);
-
-  const handleCloseCustomerPopup = useCallback(() => setCustomerPopupOpen(false), []);
-
-  const handleCustomerNameChange = useCallback((v: string) =>
-    setCustomerForm((p) => ({ ...p, name: v })), []);
-
-  const handleCustomerPhoneChange = useCallback((v: string) =>
-    setCustomerForm((p) => ({ ...p, phone: v })), []);
-
-  const handleSaveCustomer = useCallback(() => {
-    if (!userId || !order || destinationLocked || !canEditCustomer) return;
-    const validationError = getCustomerUpdateValidationError(customerForm);
-    if (validationError) {
-      const validationKey = {
-        name: "validationCustomerName",
-        phoneRequired: "validationPhoneRequired",
-        phoneFormat: "validationPhoneFormat",
-      }[validationError];
-
-      notify.error(t("error", { ns: "common" }), { description: t(validationKey, { ns: "orders" }) });
-      return;
-    }
-
-    const data = buildCustomerUpdatePayload(order, customerForm);
-    if (!Object.keys(data).length) {
-      setCustomerPopupOpen(false);
-      return;
-    }
-    updateUser.mutate(
-      { id: userId, data },
-      {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["orders"] });
-          setCustomerPopupOpen(false);
-        },
-        onError: showUpdateError,
-      },
-    );
-  }, [canEditCustomer, customerForm, destinationLocked, order, queryClient, showUpdateError, t, updateUser, userId]);
-
-  // ─── Handlers — Order popup ───────────────────────────────────────────────
-  const handleOpenOrderPopup = useCallback(() => {
-    if (productsLocked || !canEditOrderFull) return;
-    setOrderForm({
-      where_deliver: order?.where_deliver ?? "",
-      total_price: String(order?.total_price ?? ""),
-      comment: order?.comment ?? "",
-      items: order?.items.map((i) => ({ ...i })) ?? [],
-    });
-    setOrderPopupOpen(true);
-  }, [canEditOrderFull, order, productsLocked]);
-
-  const handleCloseOrderPopup = useCallback(() => setOrderPopupOpen(false), []);
-
-  const handleOrderDeliverChange = useCallback((v: string) =>
-    setOrderForm((p) => ({ ...p, where_deliver: v })), []);
-
-  const handleOrderPriceChange = useCallback((v: string) =>
-    setOrderForm((p) => ({ ...p, total_price: v })), []);
-
-  const handleOrderCommentChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) =>
-      setOrderForm((p) => ({ ...p, comment: e.target.value })),
-    [],
-  );
-
-  const handleSaveOrder = useCallback(() => {
-    if (!orderId || !order || !canEditOrderFull) return;
-    if (!productsLocked && parseOrderTotalPrice(orderForm.total_price) === null) {
-      notify.error(t("error", { ns: "common" }), { description: t("totalAmountValidation") });
-      return;
-    }
-
-    const data = buildOrderUpdatePayload(order, orderForm, {
-      products: productsLocked,
-      destination: destinationLocked,
-    });
-    if (!Object.keys(data).length) {
-      setOrderPopupOpen(false);
-      return;
-    }
-    updateNewOrder.mutate(
-      { orderId, data },
-      {
-        onSuccess: () => setOrderPopupOpen(false),
-        onError: showUpdateError,
-      },
-    );
-  }, [canEditOrderFull, destinationLocked, order, orderForm, orderId, productsLocked, showUpdateError, t, updateNewOrder]);
-
-  const adjustQty = useCallback((itemId: string, delta: number) => {
-    if (productsLocked) return;
-    setOrderForm((p) => ({
-      ...p,
-      items: p.items.map((i) =>
-        i.id === itemId ? { ...i, quantity: Math.max(1, i.quantity + delta) } : i
-      ),
-    }));
-  }, [productsLocked]);
-
-  const removeItem = useCallback((itemId: string) => {
-    if (productsLocked) return;
-    setOrderForm((p) => ({ ...p, items: p.items.filter((i) => i.id !== itemId) }));
-  }, [productsLocked]);
-
-  const handleNavigateToCustomer = useCallback(
-    () => {
-      if (!userId) return;
-      navigate(`/all-users/${userId}`);
-    },
-    [navigate, userId],
-  );
   const closeSellModal = useCallback(() => {
-    setIsSellModalOpen(false);
+    setIsSellOpen(false);
     setIsApprovalRequested(false);
   }, []);
 
   const closeCancelModal = useCallback(() => {
-    setIsCancelModalOpen(false);
+    setIsCancelOpen(false);
     setIsApprovalRequested(false);
   }, []);
 
   const handleSell = useCallback(
     (id: string, payload: SellOrderPayload) => {
-      const actionOrder = order ?? { id };
+      const target = actionOrder ?? { id };
       SellOrder.mutate(
         { orderId: id, data: payload },
         {
           onSuccess: (response) => {
+            // Marketga to'lov yozilgan bo'lsa — natija (to'liq / qisman) o'sha xabarning o'zi.
+            const paymentStatus = getSellPaymentStatus(response);
             resolveOrderActionResponse(response, {
-              order: actionOrder,
+              order: target,
               action: "sell",
               extraCost: payload.extraCost,
-              onCompleted: closeSellModal,
+              onCompleted: () => {
+                closeSellModal();
+                refreshTracking();
+                if (!paymentStatus) notifyOrderActionDone("sell", actionOrder);
+              },
               onApprovalRequested: () => setIsApprovalRequested(true),
             });
-            // Marketga to'lov yozilgan bo'lsa — natija (to'liq / qisman).
-            const paymentStatus = getSellPaymentStatus(response);
-            if (paymentStatus) {
-              notify.success(t(SELL_PAYMENT_NOTICE_KEYS[paymentStatus], { ns: "orders" }));
-            }
+            if (paymentStatus) notify.success(t(SELL_PAYMENT_NOTICE_KEYS[paymentStatus], { ns: "orders" }));
           },
           onError: showActionError,
         },
       );
     },
-    [SellOrder, closeSellModal, order, showActionError, t],
+    [SellOrder, actionOrder, closeSellModal, refreshTracking, showActionError, t],
   );
 
   const handlePartlySell = useCallback(
@@ -798,685 +176,296 @@ const NewOrderUpdate = () => {
         proof?: File;
       },
     ) => {
-      const actionOrder = order ?? { id };
+      const target = actionOrder ?? { id };
       PartlySellOrder.mutate(
         { orderId: id, data: payload },
         {
           onSuccess: (response) =>
             resolveOrderActionResponse(response, {
-              order: actionOrder,
+              order: target,
               action: "partly_sell",
               extraCost: payload.extraCost,
-              onCompleted: closeSellModal,
+              onCompleted: () => {
+                closeSellModal();
+                refreshTracking();
+                notifyOrderActionDone("partly_sell", actionOrder);
+              },
               onApprovalRequested: () => setIsApprovalRequested(true),
             }),
           onError: showActionError,
         },
       );
     },
-    [PartlySellOrder, closeSellModal, order, showActionError],
+    [PartlySellOrder, actionOrder, closeSellModal, refreshTracking, showActionError],
   );
 
-  const handleCancelOrder = useCallback(
+  const handleCancel = useCallback(
     (id: string, payload: CancelOrderPayload) => {
-      const actionOrder = order ?? { id };
+      const target = actionOrder ?? { id };
       CancelOrder.mutate(
         { orderId: id, data: payload },
         {
           onSuccess: (response) =>
             resolveOrderActionResponse(response, {
-              order: actionOrder,
+              order: target,
               action: "cancel",
               extraCost: payload.extraCost,
-              onCompleted: closeCancelModal,
+              onCompleted: () => {
+                closeCancelModal();
+                refreshTracking();
+                notifyOrderActionDone("cancel", actionOrder);
+              },
               onApprovalRequested: () => setIsApprovalRequested(true),
             }),
           onError: showActionError,
         },
       );
     },
-    [CancelOrder, closeCancelModal, order, showActionError],
+    [CancelOrder, actionOrder, closeCancelModal, refreshTracking, showActionError],
   );
-  const handleRollbackConfirm = useCallback(() => {
-    if (!order?.id) return;
-    RollbackOrder.mutate(order.id, {
-      onSuccess: () => setIsRollbackConfirmOpen(false),
+
+  const handleRollback = useCallback(() => {
+    if (!actionOrder) return;
+    RollbackOrder.mutate(actionOrder.id, {
+      onSuccess: () => {
+        setIsRollbackOpen(false);
+        refreshTracking();
+        notifyOrderActionDone("rollback", actionOrder);
+      },
       onError: showActionError,
     });
-  }, [RollbackOrder, order, showActionError]);
+  }, [RollbackOrder, actionOrder, refreshTracking, showActionError]);
 
-  /** Qisman sotuvdan tug'ilgan bo'lsa — asosiy buyurtma id'si. */
-  const parentOrderId = useMemo(() => readOrderMeta(order)?.parentOrderId ?? null, [order]);
+  // ─── Sarlavha amallari (bitta asosiy — «Sotish») ───────────────────────────
+  const headerActions =
+    order && access.layout === "default" ? (
+      <>
+        {access.canStartReturn ? (
+          <Button
+            variant="secondary"
+            leftIcon={Undo2}
+            data-testid="initiate-return-button"
+            aria-haspopup="dialog"
+            onClick={() => setIsInitiateReturnOpen(true)}
+          >
+            {t("returnInitiate", { ns: "orders" })}
+          </Button>
+        ) : null}
+        {access.canHandOverReturn ? (
+          <Button
+            variant="secondary"
+            leftIcon={PackageCheck}
+            data-testid="mark-returned-button"
+            aria-haspopup="dialog"
+            onClick={() => setIsMarkReturnedOpen(true)}
+          >
+            {t("returnHandover", { ns: "orders" })}
+          </Button>
+        ) : null}
+        {access.canRollback ? (
+          <Button
+            variant="secondary"
+            leftIcon={RotateCcw}
+            title={t("ordersList.rollbackHint", { ns: "orders" })}
+            aria-haspopup="dialog"
+            onClick={() => setIsRollbackOpen(true)}
+          >
+            {t("ordersList.rollback", { ns: "orders" })}
+          </Button>
+        ) : null}
+        {access.canUseCourierActions ? (
+          <Button variant="danger-soft" leftIcon={X} aria-haspopup="dialog" onClick={() => setIsCancelOpen(true)}>
+            {t("cancelOrderAction", { ns: "orders" })}
+          </Button>
+        ) : null}
+        {access.canSell ? (
+          <Button leftIcon={Check} aria-haspopup="dialog" onClick={() => setIsSellOpen(true)}>
+            {t("sell", { ns: "orders" })}
+          </Button>
+        ) : null}
+      </>
+    ) : null;
 
-  /** Kuryer biriktirgan dalillar — bo'sh bo'lsa karta umuman chiqmaydi. */
-  const proofKeys = useMemo(() => readProofFiles(order?.proof_files), [order]);
+  // ─── Ko'rinishlar ─────────────────────────────────────────────────────────
+  const tracking = (detail: OrderDetail, variant: "default" | "courier" = "default") => (
+    <OrderTracking
+      key={`${detail.id}:${trackingVersion}`}
+      orderId={detail.id}
+      currentStatus={detail.status}
+      access={trackingAccess}
+      context={trackingContext}
+      variant={variant}
+    />
+  );
+  const meta = (className?: string) => (
+    <OrderMeta order={order} role={role} self={user} canOpenMails={canOpenMails} className={className} />
+  );
+  const proofs = proofKeys.length > 0 ? <ProofCard keys={proofKeys} /> : null;
 
-  /**
-   * Buyurtmaning HAQIQIY marketi (`GET orders/:id` enriched javobida keladi).
-   *
-   * ⚠️ Ilgari bu yerda `{ name: "-" }` qattiq yozilgan edi — Sell/Cancel
-   * modali `expense_proof_conditions` ni hech qachon ko'rmasdi va dalil
-   * majburiyati (*) oldindan ko'rsatilmasdi: foydalanuvchi faqat backend
-   * 400 qaytarganda bilardi.
-   */
-  const orderMarket = useMemo(() => {
-    const raw = order?.market;
-    if (!raw || typeof raw !== "object") return null;
-    const market = raw as { name?: unknown; expense_proof_conditions?: unknown };
-    return {
-      name: typeof market.name === "string" && market.name.trim() ? market.name : "-",
-      expense_proof_conditions: Array.isArray(market.expense_proof_conditions)
-        ? market.expense_proof_conditions.filter((item): item is string => typeof item === "string")
-        : null,
-    };
-  }, [order]);
-
-  const sellModalOrder = useMemo(() => {
-    if (!order) return null;
-    const orderFlags = order as OrderDetail & Record<string, unknown>;
-    return {
-      id: order.id,
-      created_at: "",
-      status: order.status,
-      total_price: order.total_price,
-      where_deliver: order.where_deliver,
-      product_quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
-      market: orderMarket ?? { name: "-", expense_proof_conditions: null },
-      customer: { name: order.customer.name, phone_number: order.customer.phone_number },
-      district: { name: districtName },
-      region: { name: regionName },
-      // «Marketga to'langan summa» chegarasi va hamkor buyurtmasini aniqlash (uguUEhin).
-      to_be_paid: order.to_be_paid,
-      external_id: (orderFlags.external_id ?? orderFlags.externalId ?? null) as string | number | null,
-      sell_requires_media: Boolean(
-        orderFlags.sell_requires_media ??
-        orderFlags.sellRequiresMedia ??
-        orderFlags.require_sell_proof ??
-        orderFlags.sell_proof_required,
-      ),
-      cancel_requires_media: Boolean(
-        orderFlags.cancel_requires_media ??
-        orderFlags.cancelRequiresMedia ??
-        orderFlags.require_cancel_proof ??
-        orderFlags.cancel_proof_required,
-      ),
-      // Katalog id bo'lmasa (hamkor posilkasi) qator id'si product_id O'RNIGA
-      // qo'yilmaydi — SellModal qatorni `order_item_id` (item.id) bilan
-      // yuboradi.
-      items: order.items.map((item) => ({
-        id: item.id,
-        quantity: item.quantity,
-        product_id: item.product?.id ?? item.product_id ?? null,
-        product_name: item.product?.name ?? item.product_name ?? null,
-        product: {
-          id: item.product?.id ?? item.product_id ?? null,
-          name: item.product?.name ?? item.product_name ?? "",
-          image_url: item.product?.image_url ?? null,
-        },
-      })),
-    };
-  }, [order, orderMarket, districtName, regionName]);
-
-  // ─── Render ───────────────────────────────────────────────────────────────
-  return (
-    <div className="min-h-full space-y-4 rounded-2xl p-3 pb-20 sm:space-y-5 sm:p-4 sm:pb-24 md:space-y-6 md:p-6 md:pb-4">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <BackButton className="h-11 min-w-11 shrink-0 rounded-2xl px-2" label="" />
-          <HeaderName
-            icon={<Package />}
-            name={order?.customer?.name ?? t("orders")}
-            description={t("viewOrderDetails")}
+  const renderDefault = (detail: OrderDetail) => (
+    <div className="flex flex-row-reverse flex-wrap gap-6 max-md:gap-4">
+      <div className="flex min-w-0 flex-[2_1_340px] flex-col gap-6 max-md:gap-4">
+        {/* Buyurtma ma'lumotlari — Mijozdan YUQORIDA (tartib: Meta → Mijoz → Manzil). */}
+        {meta()}
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-6 max-md:gap-4">
+          <CustomerCard
+            order={detail}
+            canOpenProfile={canOpenProfiles}
+            edit={access.customerEdit}
+            locked={access.destinationLocked}
+            lockDescribedBy={lockIds.destination}
+            showLockHint={access.showCustomerLockHint}
+            onEdit={() => setEditing("customer")}
+          />
+          <AddressCard
+            order={detail}
+            editable={access.canEditOrderFull}
+            locked={access.destinationLocked}
+            lockDescribedBy={lockIds.destination}
+            onEdit={() => setEditing("address")}
           />
         </div>
-        {order && (
-          <div className="flex flex-wrap items-center gap-2">
-            <OrderIdBadge
-              id={String(order.id)}
-              label={t("copyOrderNumber", { ns: "orders" })}
-              onCopy={handleCopyOrderId}
-              className="text-sm"
-            />
-            {order.status && (
-              <>
-                <span className={`text-xs font-bold uppercase tracking-wider px-3 py-1.5 rounded-full ${statusCfg?.cls ?? DEFAULT_STATUS_CLS}`}>
-                  {statusCfg
-                    ? t(statusCfg.labelKey, { ns: statusCfg.ns ?? "orders", defaultValue: order.status })
-                    : order.status}
-                </span>
-                <ReturnRequestedBadge order={order} />
-                {canUseCourierActions && (
-                  <>
-                    {canManagerSellOrder && (
-                      <button
-                        type="button"
-                        onClick={() => setIsSellModalOpen(true)}
-                        className="rounded-lg bg-success px-3 py-1.5 text-xs font-bold text-on-solid transition-opacity hover:opacity-90"
-                      >
-                        {t("sell", { ns: "orders" })}
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => setIsCancelModalOpen(true)}
-                      className="rounded-lg bg-error px-3 py-1.5 text-xs font-bold text-on-solid transition-opacity hover:opacity-90"
-                    >
-                      {t("cancelOrderAction", { ns: "orders" })}
-                    </button>
-                  </>
-                )}
-                {canRollbackSoldOrder && (
-                  <button
-                    type="button"
-                    onClick={() => setIsRollbackConfirmOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300/70 bg-amber-100 px-3 py-1.5 text-xs font-bold text-amber-800 shadow-sm transition-colors hover:border-amber-400 hover:bg-amber-200 dark:border-amber-400/35 dark:bg-amber-400/12 dark:text-amber-100 dark:hover:border-amber-300/60 dark:hover:bg-amber-400/20"
-                  >
-                    <RotateCcw size={13} />
-                    {t("restoreOrder", { ns: "orders" })}
-                  </button>
-                )}
-                {canStartReturn && (
-                  <button
-                    type="button"
-                    data-testid="initiate-return-button"
-                    onClick={() => setIsInitiateReturnOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90"
-                  >
-                    <Undo2 size={13} aria-hidden="true" />
-                    {t("returnInitiate", { ns: "orders" })}
-                  </button>
-                )}
-                {canHandOverReturn && (
-                  <button
-                    type="button"
-                    data-testid="mark-returned-button"
-                    onClick={() => setIsMarkReturnedOpen(true)}
-                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-bold text-white transition-opacity hover:opacity-90"
-                  >
-                    <PackageCheck size={13} aria-hidden="true" />
-                    {t("returnHandover", { ns: "orders" })}
-                  </button>
-                )}
-              </>
-            )}
-          </div>
-        )}
+        <PaymentCard order={detail} />
       </div>
+      <div className="flex min-w-0 flex-[3_1_560px] flex-col gap-6 max-md:gap-4">
+        <ProductsCard
+          order={detail}
+          editable={access.canEditOrderFull}
+          locked={access.productsLocked}
+          lockDescribedBy={lockIds.products}
+          onEdit={() => setEditing("order")}
+        />
+        {proofs}
+        {tracking(detail)}
+      </div>
+    </div>
+  );
 
-      {pendingApproval ? <ExtraCostApprovalSentNote approval={pendingApproval} /> : null}
+  const renderMarket = (detail: OrderDetail) => (
+    <div className="flex flex-wrap items-start gap-6 max-md:gap-4">
+      <div className="flex min-w-0 flex-[3_1_520px] flex-col gap-6 max-md:gap-4">
+        <ProductsCard order={detail} showDelivery={false} />
+        <PaymentCard order={detail} />
+        {proofs}
+        {tracking(detail)}
+      </div>
+      <div className="flex min-w-0 flex-[2_1_340px] flex-wrap gap-6 max-md:gap-4">
+        {meta("basis-full")}
+        <CustomerCard order={detail} variant="market" className="min-w-0 flex-[1_1_300px]" />
+        <AddressCard order={detail} showDelivery className="min-w-0 flex-[1_1_300px]" />
+      </div>
+    </div>
+  );
 
-      {/* Qisman sotuvdan qolgan qism — asosiy buyurtmaga havola. */}
-      {!isLoading && parentOrderId ? (
-        <div className="mb-4">
-          <OrderParentBanner parentOrderId={parentOrderId} />
-        </div>
-      ) : null}
+  const renderCourier = (detail: OrderDetail) => (
+    <div className="flex flex-row-reverse flex-wrap items-start gap-x-6 gap-y-4">
+      <div className="flex min-w-0 flex-[2_1_340px] flex-wrap content-start gap-4">
+        <CourierPaymentCard order={detail} className="min-w-0 flex-[1_1_300px]" />
+        <CourierContactCard order={detail} locked={access.destinationLocked} className="min-w-0 flex-[1_1_300px]" />
+        {meta("basis-full")}
+      </div>
+      <div className="flex min-w-0 flex-[3_1_560px] flex-col gap-4">
+        <CourierProductsCard order={detail} locked={access.productsLocked} />
+        {proofs}
+        {tracking(detail, "courier")}
+      </div>
+    </div>
+  );
 
-      {/* Content */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
-          <Skeleton /><Skeleton />
-        </div>
-      ) : !order ? (
-        <div className="h-64 flex items-center justify-center text-gray-400 dark:text-white">
-          <p className="font-bold uppercase tracking-widest text-sm">{t("notFound")}</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
-          {/* ── LEFT ── */}
-          <div className="space-y-4">
-            {/* Order Products */}
-            <Card>
-              <div className="space-y-4 p-3.5 sm:p-4 md:p-5">
-                <SectionHead
-                  icon={<ShoppingBag size={16} />}
-                  title={t("orderProducts")}
-                  sub={t("productsCount", { count: order.items.length })}
-                  action={
-                    <EditBtn
-                      onClick={handleOpenOrderPopup}
-                      disabled={productsLocked || !canEditOrderFull}
-                      reason={productsLocked ? productsLockReason : orderEditRoleLockReason}
-                    />
-                  }
-                />
-                {productsLocked && <LockNotice>{productsLockReason}</LockNotice>}
-                <div className="hidden border-b border-gray-100 pb-2 text-[10px] font-black uppercase tracking-widest text-gray-400 dark:border-white/6 dark:text-white sm:grid sm:grid-cols-[1fr_auto]">
-                  <span>{t("product")}</span>
-                  <span>{t("quantity")}</span>
-                </div>
-                <div className="space-y-2">
-                  {order.items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="grid grid-cols-1 items-center gap-2 border-b border-gray-50 py-2 dark:border-white/4 sm:grid-cols-[1fr_auto] sm:gap-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        <ProductThumbnail
-                          item={item}
-                          alt={getOrderItemName(item, t("productFallback"))}
-                          className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-gray-100 dark:border-white/8 dark:bg-white/5"
-                        />
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                            {getOrderItemName(item, t("productFallback"))}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between sm:block">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 dark:text-white/70 sm:hidden">
-                          {t("quantity")}
-                        </span>
-                        <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-main/10 text-sm font-black text-main dark:bg-main/20">
-                          {item.quantity}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center gap-2 pt-2 border-t border-gray-100 dark:border-white/6">
-                  <span className="text-xs text-gray-400 dark:text-white font-medium">{t("deliveryType")}:</span>
-                  <span className="text-xs font-bold text-main">
-                    {t(DELIVER_LABELS[order.where_deliver] ?? "deliverAddress")}
-                  </span>
-                </div>
-                {/* Faqat bo'shliq yoki "\n" dan iborat izoh bo'sh sariq karta chiqarmasin. */}
-                {order.comment?.trim() && <OrderCommentCard comment={order.comment.trim()} />}
-              </div>
-            </Card>
+  return (
+    <div className="flex flex-col gap-6 max-md:gap-4">
+      <DetailHeader
+        orderId={orderId}
+        order={order}
+        layout={access.layout}
+        onBack={handleBack}
+        actions={headerActions}
+      />
 
-            {/* Payment */}
-            <Card>
-              <div className="space-y-1 p-3.5 sm:p-4 md:p-5">
-                <div className="mb-4">
-                  <SectionHead
-                    icon={<CreditCard size={16} />}
-                    title={t("payment")}
-                    sub={t("paymentSubtitle")}
-                    iconCls="bg-emerald-500/15 text-emerald-500"
-                  />
-                </div>
-                {getPaymentRows(order, formatMoney).map(({ labelKey, value, cls }) => (
-                  <div
-                    key={labelKey}
-                    className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-white/6 last:border-0"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Banknote size={14} className="text-gray-400 dark:text-white" />
-                      <span className="text-sm text-gray-500 dark:text-white">{t(labelKey)}</span>
-                    </div>
-                    <span className={`text-sm tabular-nums ${cls}`}>{value}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
-          </div>
-
-          {/* ── RIGHT ── */}
-          <div className="space-y-4">
-            {/* Buyurtma ma'lumotlari — Mijozdan YUQORIDA (tartib: Meta → Mijoz → Manzil). */}
-            <OrderMeta order={order} role={role} self={user} canOpenMails={canOpenMails} />
-
-            {/* Customer */}
-            <Card>
-              <div className="space-y-4 p-3.5 sm:p-4 md:p-5">
-                <SectionHead
-                  icon={<User size={16} />}
-                  title={t("customerDetails")}
-                  sub={t("customerSubtitle")}
-                  iconCls="bg-blue-500/15 text-blue-500"
-                  action={
-                    <button
-                      onClick={handleOpenCustomerPopup}
-                      disabled={destinationLocked || !canEditCustomer}
-                      title={
-                        destinationLocked
-                          ? destinationLockReason
-                          : customerEditLockReason ?? undefined
-                      }
-                      className="p-1.5 rounded-lg bg-gray-100 dark:bg-white/5 text-gray-400 dark:text-white hover:text-main dark:hover:text-white hover:bg-main/10 dark:hover:bg-white/10 transition-colors disabled:cursor-not-allowed disabled:opacity-45"
-                    >
-                      <Edit2 size={14} />
-                    </button>
-                  }
-                />
-                {destinationLocked && <LockNotice>{destinationLockReason}</LockNotice>}
-                <div
-                  onClick={handleNavigateToCustomer}
-                  className="flex items-center gap-3 p-3.5 rounded-xl bg-main/8 dark:bg-main/10 border border-main/20 cursor-pointer"
-                >
-                  <div className="w-12 h-12 rounded-full bg-linear-to-br from-main to-primarydark flex items-center justify-center text-white font-black text-xl shadow-lg shadow-main/30 shrink-0">
-                    {order.customer.name.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="font-bold text-sm text-gray-900 dark:text-white">
-                      {order.customer.name}
-                    </p>
-                    <p className="text-xs text-gray-400 dark:text-white">
-                      {t("customerProfileHint")}
-                    </p>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 dark:text-white mb-1">
-                    {t("contactInformation")}
-                  </p>
-                  <InfoRow
-                    icon={<Phone size={15} />}
-                    label={t("phone")}
-                    value={order.customer.phone_number}
-                    iconCls="bg-emerald-500/15 text-emerald-500"
-                  />
-                </div>
-              </div>
-            </Card>
-
-            {/* Address */}
-            <Card>
-              <div className="space-y-3 p-3.5 sm:p-4 md:p-5">
-                <SectionHead
-                  icon={<MapPin size={16} />}
-                  title={t("addressTitle")}
-                  sub={t("addressSubtitle")}
-                  iconCls="bg-amber-500/15 text-amber-500"
-                  action={
-                    <EditBtn
-                      onClick={handleOpenAddressPopup}
-                      disabled={destinationLocked || !canEditOrderFull}
-                      reason={destinationLocked ? destinationLockReason : orderEditRoleLockReason}
-                    />
-                  }
-                />
-                {destinationLocked && <LockNotice>{destinationLockReason}</LockNotice>}
-                <div>
-                  <InfoRow
-                    icon={<Map size={15} />}
-                    label={t("region")}
-                    value={regionName}
-                    iconCls="bg-blue-500/15 text-blue-500"
-                  />
-                  <InfoRow
-                    icon={<Building size={15} />}
-                    label={t("district")}
-                    value={districtName}
-                    iconCls="bg-purple-500/15 text-purple-500"
-                  />
-                  <InfoRow
-                    icon={<Home size={15} />}
-                    label={t("address")}
-                    value={addressText}
-                    iconCls="bg-emerald-500/15 text-emerald-500"
-                  />
-                </div>
-              </div>
-            </Card>
-          </div>
-        </div>
-      )}
-
-      {/*
-        DALILLAR — kuryer sotish / bekor qilishda biriktirgan rasm va videolar.
-        Nizoda ("mahsulot yetkazilmagan") admin dalilni shu yerda ko'radi;
-        ilgari faqat bazadan topilardi. Dalil yo'q bo'lsa karta chiqmaydi.
-      */}
-      {!isLoading && proofKeys.length > 0 ? (
-        <Card className="mb-4 lg:mb-5">
-          <div className="space-y-4 p-3.5 sm:p-4 md:p-5" data-testid="order-proof-card">
-            <SectionHead
-              icon={<Paperclip size={16} />}
-              title={t("proofTitle", { ns: "orders" })}
-              sub={t("proofSubtitle", { ns: "orders" })}
-            />
-            <ProofGallery keys={proofKeys} />
-          </div>
-        </Card>
-      ) : null}
-
-      {orderId ? (
-        <OrderTracking
-          key={trackingVersion}
-          orderId={orderId}
-          currentStatus={order?.status}
-          access={trackingAccess}
-          context={trackingContext}
+      {order ? (
+        <DetailAlerts
+          layout={access.layout}
+          pendingApproval={pendingApproval}
+          productsLocked={access.productsLocked}
+          destinationLocked={access.destinationLocked}
+          canEditCustomer={access.canEditCustomer}
+          parentOrderId={parentOrderId}
         />
       ) : null}
 
-      {/* ─── Address Edit Popup ─────────────────────────────────────────────── */}
-      <UpdatePopup
-        isOpen={addressPopupOpen}
-        onClose={handleCloseAddressPopup}
-        onSave={handleSaveAddress}
-        isLoading={updateNewOrder.isPending}
-        title={t("editAddress")}
-        icon={<MapPin size={20} />}
+      <QueryBoundary
+        query={{ ...orderQuery, data: order }}
+        keepPreviousData={false}
+        loading={<DetailSkeleton />}
+        empty={<EmptyState icon={SearchX} title={t("notFound")} size="page" />}
+        size="page"
       >
-        {destinationLocked && <LockNotice>{destinationLockReason}</LockNotice>}
-        <SelectField
-          label={t("region")}
-          icon={Map}
-          value={addressForm.region_id}
-          onChange={handleRegionChange}
-          placeholder={t("selectRegion")}
-          options={regions}
-          disabled={destinationLocked}
-        />
-        <SelectField
-          label={t("district")}
-          icon={Building}
-          value={addressForm.district_id}
-          onChange={handleDistrictChange}
-          placeholder={addressForm.region_id ? t("selectDistrict") : t("selectRegionFirst")}
-          options={districts}
-          disabled={destinationLocked}
-        />
-        <InputField
-          label={t("fullAddress")}
-          icon={Home}
-          value={addressForm.address}
-          onChange={handleAddressChange}
-          placeholder={t("enterAddress")}
-          disabled={destinationLocked}
-        />
-      </UpdatePopup>
+        {(detail) =>
+          access.layout === "courier"
+            ? renderCourier(detail)
+            : access.layout === "market"
+              ? renderMarket(detail)
+              : renderDefault(detail)
+        }
+      </QueryBoundary>
 
-      {/* ─── Customer Edit Popup ────────────────────────────────────────────── */}
-      <UpdatePopup
-        isOpen={customerPopupOpen}
-        onClose={handleCloseCustomerPopup}
-        onSave={handleSaveCustomer}
-        isLoading={updateUser.isPending}
-        title={t("editCustomer")}
-        icon={<User size={20} />}
-      >
-        {destinationLocked && <LockNotice>{destinationLockReason}</LockNotice>}
-        <InputField
-          label={t("name")}
-          icon={User}
-          value={customerForm.name}
-          onChange={handleCustomerNameChange}
-          placeholder={t("customerNamePlaceholder")}
-          disabled={destinationLocked}
-        />
-        <InputField
-          label={t("phone")}
-          icon={Phone}
-          value={customerForm.phone}
-          onChange={handleCustomerPhoneChange}
-          placeholder={t("phonePlaceholder")}
-          disabled={destinationLocked}
-        />
-      </UpdatePopup>
-
-      {/* ─── Order Edit Popup ───────────────────────────────────────────────── */}
-      <UpdatePopup
-        isOpen={orderPopupOpen}
-        onClose={handleCloseOrderPopup}
-        onSave={handleSaveOrder}
-        isLoading={updateNewOrder.isPending}
-        title={t("editOrder")}
-        icon={<ShoppingBag size={20} />}
-      >
-        {productsLocked && <LockNotice>{productsLockReason}</LockNotice>}
-        {destinationLocked && <LockNotice>{destinationLockReason}</LockNotice>}
-        {/* Mahsulotlar */}
-        <div className="space-y-2">
-          {orderForm.items.map((item) => (
-            <OrderItemRow
-              key={item.id}
-              item={item}
-              onAdjust={adjustQty}
-              onRemove={removeItem}
-              disabled={productsLocked}
-            />
-          ))}
-        </div>
-
-        {/* Yetkazish turi */}
-        <SelectField
-          label={t("deliveryType")}
-          icon={Truck}
-          value={orderForm.where_deliver}
-          onChange={handleOrderDeliverChange}
-          placeholder={t("selectType")}
-          options={DELIVER_OPTIONS.map((option) => ({ value: option.value, label: t(option.labelKey) }))}
-          disabled={destinationLocked}
-        />
-
-        {/* Total amount */}
-        <InputField
-          label={t("totalAmount")}
-          icon={Banknote}
-          value={orderForm.total_price}
-          onChange={handleOrderPriceChange}
-          placeholder={t("enterPrice")}
-          disabled={productsLocked}
-        />
-
-        {/* Izoh */}
-        <div className="space-y-1.5">
-          <label className="text-sm text-gray-500 dark:text-white ml-1">{t("note")}</label>
-          <div className="relative">
-            <div className="absolute left-3.5 top-3.5 text-gray-400 dark:text-white pointer-events-none">
-              <MessageSquare size={16} />
-            </div>
-            <textarea
-              value={orderForm.comment}
-              onChange={handleOrderCommentChange}
-              placeholder={t("enterNote")}
-              rows={4}
-              className="w-full bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl py-3 pl-10 pr-4 text-gray-800 dark:text-white text-base md:text-sm font-medium focus:outline-none focus:border-main focus:ring-1 focus:ring-main/30 transition-all resize-none placeholder:text-gray-400 dark:placeholder:text-white/80"
-            />
-          </div>
-        </div>
-      </UpdatePopup>
+      {/* Tahrirlash oynalari — har biri o'zi saqlaydi va natijani aytadi; ruxsat (rol, qulf) — sahifada. */}
+      {access.canEditCustomer ? (
+        <EditCustomerDialog open={editing === "customer"} order={order} onClose={closeEdit} />
+      ) : null}
+      {access.canEditOrderFull ? (
+        <>
+          <EditAddressDialog open={editing === "address"} order={order} onClose={closeEdit} />
+          <EditOrderDialog open={editing === "order"} order={order} onClose={closeEdit} />
+        </>
+      ) : null}
 
       <SellModal
-        order={sellModalOrder}
-        open={isSellModalOpen}
+        order={actionOrder}
+        open={isSellOpen}
         onClose={closeSellModal}
         onSell={handleSell}
         onPartlySell={handlePartlySell}
         isLoading={SellOrder.isPending || PartlySellOrder.isPending}
         awaitingApproval={isApprovalRequested}
+        variant="manager"
       />
-
       <CancelModal
-        order={sellModalOrder}
-        open={isCancelModalOpen}
+        order={actionOrder}
+        open={isCancelOpen}
         onClose={closeCancelModal}
-        onCancel={handleCancelOrder}
+        onCancel={handleCancel}
         isLoading={CancelOrder.isPending}
         awaitingApproval={isApprovalRequested}
+        variant="manager"
+      />
+      <RollbackOrderDialog
+        order={isRollbackOpen ? actionOrder : null}
+        variant="manager"
+        loading={RollbackOrder.isPending}
+        onCancel={() => setIsRollbackOpen(false)}
+        onConfirm={handleRollback}
       />
 
       {/* Faqat ochilganda mount — yopiq oyna so'rov hook'larini yaratmaydi. */}
-      {isInitiateReturnOpen && order?.id ? (
+      {isInitiateReturnOpen && order ? (
         <InitiateReturnModal
           open
-          orderId={String(order.id)}
+          orderId={order.id}
           onClose={() => setIsInitiateReturnOpen(false)}
           onDone={refreshTracking}
         />
       ) : null}
-      {isMarkReturnedOpen && order?.id ? (
+      {isMarkReturnedOpen && order ? (
         <MarkReturnedModal
           open
-          orderId={String(order.id)}
+          orderId={order.id}
           onClose={() => setIsMarkReturnedOpen(false)}
           onDone={refreshTracking}
         />
       ) : null}
-      <PopupConfirm
-        isOpen={isRollbackConfirmOpen}
-        onClose={() => setIsRollbackConfirmOpen(false)}
-        onConfirm={handleRollbackConfirm}
-        title={t("rollbackOrder", { ns: "orders" })}
-        message={t("rollbackConfirmMessage", { ns: "orders", id: order?.id })}
-        confirmLabel={t("rollbackConfirmLabel", { ns: "orders" })}
-        cancelLabel={t("cancelOrderAction", { ns: "orders" })}
-        isLoading={RollbackOrder.isPending}
-        variant="warning"
-      />
     </div>
   );
 };
-
-// ─── OrderItemRow: alohida memo komponent (har item uchun re-render izolyatsiyasi) ─
-const OrderItemRow = memo(({
-  item,
-  onAdjust,
-  onRemove,
-  disabled = false,
-}: {
-  item: OrderItem;
-  onAdjust: (id: string, delta: number) => void;
-  onRemove: (id: string) => void;
-  disabled?: boolean;
-}) => {
-  const handleDec = useCallback(() => onAdjust(item.id, -1), [item.id, onAdjust]);
-  const handleInc = useCallback(() => onAdjust(item.id, 1), [item.id, onAdjust]);
-  const handleRemove = useCallback(() => onRemove(item.id), [item.id, onRemove]);
-
-  return (
-    <div className="flex items-center gap-3 p-3 rounded-xl bg-gray-100 dark:bg-white/5 border border-gray-200 dark:border-white/10">
-      <ProductThumbnail
-        item={item}
-        alt={getOrderItemName(item, "—")}
-        className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-gray-200 bg-white dark:border-white/10 dark:bg-white/8"
-      />
-      <span className="flex-1 text-sm font-semibold text-gray-900 dark:text-white truncate">
-        {getOrderItemName(item, "—")}
-      </span>
-      <div className="flex items-center gap-1.5">
-        <button
-          onClick={handleDec}
-          disabled={disabled}
-          className="w-7 h-7 rounded-lg flex items-center justify-center bg-white dark:bg-white/8 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/60 hover:text-main transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <Minus size={12} />
-        </button>
-        <span className="w-6 text-center text-sm font-bold text-gray-900 dark:text-white">
-          {item.quantity}
-        </span>
-        <button
-          onClick={handleInc}
-          disabled={disabled}
-          className="w-7 h-7 rounded-lg flex items-center justify-center bg-white dark:bg-white/8 border border-gray-200 dark:border-white/10 text-gray-500 dark:text-white/60 hover:text-main transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <Plus size={12} />
-        </button>
-      </div>
-      <button
-        onClick={handleRemove}
-        disabled={disabled}
-        className="w-7 h-7 rounded-lg flex items-center justify-center bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
-      >
-        <Trash2 size={13} />
-      </button>
-    </div>
-  );
-});
 
 export default memo(NewOrderUpdate);

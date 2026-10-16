@@ -7,7 +7,9 @@ import { renderWithProviders } from "../../../test/test-utils";
 
 /**
  * fix3 FE-ORD-12 — mijozni tahrirlash (PATCH /users/:id) faqat
- * superadmin/admin uchun ishlaydi; boshqalarga tugma o'chiq va sababi ko'rinadi.
+ * superadmin/admin uchun ishlaydi. Dizayn v2 maketlari: registratorda tugma o'chiq
+ * (sababi title'da va karta ostidagi izohda), menejerda tugma yo'q — faqat izoh,
+ * market va kuryerda tugma ham, izoh ham yo'q (faqat o'qish).
  */
 
 const order = {
@@ -64,27 +66,35 @@ const renderAs = (role: string) =>
     },
   );
 
-const customerEditButton = () => {
-  const head = screen.getByText("Mijoz ma'lumotlari").closest(".justify-between");
-  const button = head?.querySelector("button");
-  if (!button) throw new Error("customer edit button not found");
-  return button;
-};
+const CUSTOMER_EDIT = /^Mijoz ma'lumotini tahrirlash/;
+const ADMIN_ONLY = "Mijoz ma'lumotlarini faqat admin yoki superadmin o'zgartira oladi.";
+const customerEditButton = () => screen.getByRole("button", { name: CUSTOMER_EDIT });
 
 describe("NewOrderUpdate — mijozni tahrirlash huquqi (fix3 FE-ORD-12)", () => {
-  it.each(["registrator", "market", "courier", "manager"])(
-    "%s — tugma o'chiq, sababi title'da (backend 403 berardi)",
-    (role) => {
-      renderAs(role);
+  it("registrator — tugma o'chiq, sababi title'da va izohda (backend 403 berardi)", () => {
+    renderAs("registrator");
 
-      const button = customerEditButton();
-      expect(button).toBeDisabled();
-      expect(button).toHaveAttribute(
-        "title",
-        "Mijoz ma'lumotlarini faqat admin yoki superadmin o'zgartira oladi.",
-      );
-    },
-  );
+    const button = customerEditButton();
+    expect(button).toBeDisabled();
+    expect(button).toHaveAccessibleName("Mijoz ma'lumotini tahrirlash — faqat admin yoki superadmin");
+    expect(button).toHaveAttribute("title", ADMIN_ONLY);
+    expect(button).toHaveAttribute("aria-describedby", "cust-lock");
+    expect(document.getElementById("cust-lock")).toHaveTextContent(ADMIN_ONLY);
+  });
+
+  it("manager — tugma yo'q, sababi karta izohida (maket `manager-orders-detail`)", () => {
+    renderAs("manager");
+
+    expect(screen.queryByRole("button", { name: CUSTOMER_EDIT })).not.toBeInTheDocument();
+    expect(screen.getByText(ADMIN_ONLY)).toBeInTheDocument();
+  });
+
+  it.each(["market", "courier"])("%s — tugma ham, izoh ham yo'q (faqat o'qish)", (role) => {
+    renderAs(role);
+
+    expect(screen.queryByRole("button", { name: CUSTOMER_EDIT })).not.toBeInTheDocument();
+    expect(screen.queryByText(ADMIN_ONLY)).not.toBeInTheDocument();
+  });
 
   it.each(["superadmin", "admin"])("%s — tahrirlash oynasi ochiladi", async (role) => {
     const user = userEvent.setup();
@@ -94,6 +104,6 @@ describe("NewOrderUpdate — mijozni tahrirlash huquqi (fix3 FE-ORD-12)", () => 
     expect(button).toBeEnabled();
     await user.click(button);
 
-    expect(await screen.findByText("Mijoz ma'lumotini tahrirlash")).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "Mijoz ma'lumotini tahrirlash" })).toBeInTheDocument();
   });
 });

@@ -1,3 +1,4 @@
+// dizayn-v2: (maket yo'q) superadmin-orders-detail
 import { memo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -8,16 +9,17 @@ import {
   Eye,
   EyeOff,
   Hash,
-  Info,
   Mail,
   MapPinned,
   PackageCheck,
   Store,
   Truck,
-  Wallet,
 } from "lucide-react";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
-import { formatMoney } from "../../../shared/config/designSystem";
+import { cx } from "../../../shared/lib/cx";
+import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
+import { notify } from "../../../shared/lib/notify";
+import { Card, IconButton } from "../../../shared/ui/primitives";
 import { formatTrackingDate } from "../../../features/order-tracking";
 import {
   canLookupBranches,
@@ -28,7 +30,6 @@ import {
   type TariffField,
 } from "../model/orderMeta";
 import { useOrderMetaLookups, type PersonContact } from "../model/useOrderMetaLookups";
-import { notify } from "../../../shared/lib/notify";
 
 /**
  * BUYURTMA MA'LUMOTLARI — detal sahifaning O'NG ustunida, Mijozdan yuqorida.
@@ -49,6 +50,7 @@ interface OrderMetaProps {
   self?: { id?: string | number | null; name?: string | null; phone_number?: string | null } | null;
   /** Pochta (`/mails/:id`) sahifasiga ruxsat bormi — bo'lmasa raqam matn bo'lib qoladi. */
   canOpenMails?: boolean;
+  className?: string;
 }
 
 /**
@@ -71,16 +73,15 @@ const Row = ({
   testId?: string;
   title?: string;
 }) => (
-  <div
-    className="flex min-h-11 items-center gap-2.5 border-b border-gray-100 py-2 last:border-0 dark:border-white/6"
-    data-testid={testId}
-  >
-    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-main/15 text-main">{icon}</div>
-    <span className="shrink-0 whitespace-nowrap text-xs font-medium text-gray-500 dark:text-gray-400" data-meta-label>
+  <div className="flex min-h-11 items-center gap-2.5 border-b border-border py-2 last:border-b-0" data-testid={testId}>
+    <span className="inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-sunken text-text-muted">
+      {icon}
+    </span>
+    <span className="shrink-0 whitespace-nowrap text-[13px] text-text-muted" data-meta-label>
       {label}
     </span>
     <div
-      className="ml-auto flex min-w-0 items-center justify-end gap-2 whitespace-nowrap text-right text-sm font-semibold text-gray-900 dark:text-white"
+      className="ml-auto flex min-w-0 items-center justify-end gap-2 whitespace-nowrap text-right text-sm font-semibold text-text"
       data-meta-value
       title={title}
     >
@@ -92,8 +93,11 @@ const Row = ({
 /** Qisqarishi mumkin bo'lgan matn (nom) — sig'masa `…`. */
 const Fit = ({ children }: { children: ReactNode }) => <span className="min-w-0 truncate">{children}</span>;
 
+/** Telefonda havola nishoni 44px, qator balandligi esa o'zgarmaydi (manfiy vertikal chekka). */
+const PHONE_TAP = "max-md:-my-3 max-md:inline-flex max-md:min-h-11 max-md:min-w-11 max-md:items-center max-md:justify-end";
+
 const PhoneLink = ({ phone }: { phone: string }) => (
-  <a href={telHref(phone)} className="shrink-0 font-mono text-xs font-semibold text-main hover:underline">
+  <a href={telHref(phone)} className={cx("shrink-0 text-[13px] font-semibold tabular-nums text-action-fg hover:underline", PHONE_TAP)}>
     {phone}
   </a>
 );
@@ -105,7 +109,7 @@ const TARIFF_LABEL: Record<TariffField, string> = {
   branchShare: "metaShareBranch",
 };
 
-const OrderMeta = ({ order, role, self, canOpenMails = false }: OrderMetaProps) => {
+const OrderMeta = ({ order, role, self, canOpenMails = false, className }: OrderMetaProps) => {
   const { t } = useTranslation("orders");
   const [showTariffs, setShowTariffs] = useState(false);
   const meta = readOrderMeta(order);
@@ -172,143 +176,141 @@ const OrderMeta = ({ order, role, self, canOpenMails = false }: OrderMetaProps) 
   };
 
   return (
-    <div
-      className="rounded-2xl border border-gray-200 bg-white dark:border-white/8 dark:bg-white/4"
+    <Card
+      title={t("metaTitle")}
       data-testid="order-meta"
+      className={className}
+      padding="none"
+      bodyClassName="flex flex-col gap-3 px-5 py-2"
     >
-      <div className="space-y-2 p-3.5 sm:p-4 md:p-5">
-        <div className="flex items-center gap-3">
-          <div className="rounded-xl bg-main/20 p-2.5 text-main">
-            <Info size={16} />
-          </div>
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">{t("metaTitle")}</p>
-        </div>
+      <div>
+        <Row icon={<Hash size={15} aria-hidden="true" />} label={t("metaId")} testId="meta-id">
+          <span className="inline-flex shrink-0 items-center gap-1">
+            <span className="tabular-nums">#{meta.id}</span>
+            {/* Telefonda 44px nishon, lekin qator balandligi (bir qator) o'zgarmaydi — manfiy chekka. */}
+            <IconButton
+              size="sm"
+              icon={Copy}
+              label={t("metaCopyId")}
+              onClick={copyId}
+              className="-my-1 max-md:-my-2.5"
+            />
+          </span>
+        </Row>
 
-        <div>
-          <Row icon={<Hash size={15} />} label={t("metaId")} testId="meta-id">
-            <span className="inline-flex shrink-0 items-center gap-1">
-              <span className="font-mono">#{meta.id}</span>
-              <button
-                type="button"
-                onClick={copyId}
-                aria-label={t("metaCopyId")}
-                title={t("metaCopyId")}
-                className="inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-main/10 hover:text-main dark:text-gray-400"
-              >
-                <Copy size={14} />
-              </button>
-            </span>
+        {meta.soldAt ? (
+          <Row icon={<CalendarCheck size={15} aria-hidden="true" />} label={t("metaSoldAt")} testId="meta-sold-at">
+            {/* Toshkent vaqti — brauzer zonasidan qat'i nazar (soniyagacha). */}
+            <span className="text-[13px] tabular-nums">{formatTrackingDate(meta.soldAt)}</span>
           </Row>
+        ) : null}
 
-          {meta.soldAt ? (
-            <Row icon={<CalendarCheck size={15} />} label={t("metaSoldAt")} testId="meta-sold-at">
-              {/* Toshkent vaqti — brauzer zonasidan qat'i nazar (timeline bilan bir xil format). */}
-              <span className="font-mono text-xs">{formatTrackingDate(meta.soldAt)}</span>
-            </Row>
-          ) : null}
-
-          {meta.market?.name || meta.market?.phone ? (
-            <Row
-              icon={<Store size={15} />}
-              label={t("metaMarket")}
-              testId="meta-market"
-              title={[meta.market.name, meta.market.phone].filter(Boolean).join(" · ")}
-            >
-              <Fit>{meta.market.name ?? "—"}</Fit>
-              {meta.market.phone ? <PhoneLink phone={meta.market.phone} /> : null}
-            </Row>
-          ) : null}
-
-          {meta.branch?.name ? (
-            <Row icon={<Building size={15} />} label={t("metaBranch")} testId="meta-branch" title={meta.branch.name}>
-              <Fit>{meta.branch.name}</Fit>
-            </Row>
-          ) : null}
-
-          {meta.postId ? (
-            <Row icon={<Mail size={15} />} label={t("metaPost")} testId="meta-post">
-              {canOpenMails ? (
-                <Link to={`/mails/${meta.postId}`} className="font-mono text-main hover:underline">
-                  #{meta.postId}
-                </Link>
-              ) : (
-                <span className="font-mono">#{meta.postId}</span>
-              )}
-            </Row>
-          ) : null}
-
+        {meta.market?.name || meta.market?.phone ? (
           <Row
-            icon={<Truck size={15} />}
-            label={t("metaCourier")}
-            testId="meta-courier"
-            title={meta.courierId ? [courier?.name ?? `#${meta.courierId}`, courier?.phone].filter(Boolean).join(" · ") : undefined}
+            icon={<Store size={15} aria-hidden="true" />}
+            label={t("metaMarket")}
+            testId="meta-market"
+            title={[meta.market.name, meta.market.phone].filter(Boolean).join(" · ")}
           >
-            {meta.courierId ? (
-              <>
-                <Fit>{courier?.name ?? `#${meta.courierId}`}</Fit>
-                {courier?.phone ? <PhoneLink phone={courier.phone} /> : null}
-              </>
+            <Fit>{meta.market.name ?? "—"}</Fit>
+            {meta.market.phone ? <PhoneLink phone={meta.market.phone} /> : null}
+          </Row>
+        ) : null}
+
+        {meta.branch?.name ? (
+          <Row
+            icon={<Building size={15} aria-hidden="true" />}
+            label={t("metaBranch")}
+            testId="meta-branch"
+            title={meta.branch.name}
+          >
+            <Fit>{meta.branch.name}</Fit>
+          </Row>
+        ) : null}
+
+        {meta.postId ? (
+          <Row icon={<Mail size={15} aria-hidden="true" />} label={t("metaPost")} testId="meta-post">
+            {canOpenMails ? (
+              <Link to={`/mails/${meta.postId}`} className={cx("tabular-nums text-action-fg hover:underline", PHONE_TAP)}>
+                #{meta.postId}
+              </Link>
             ) : (
-              <Fit>
-                <span className="text-gray-500 dark:text-gray-400">{t("metaCourierNone")}</span>
-              </Fit>
+              <span className="tabular-nums">#{meta.postId}</span>
             )}
           </Row>
+        ) : null}
 
-          <Row icon={<PackageCheck size={15} />} label={t("metaHolder")} testId="meta-holder" title={holderText}>
-            <Fit>{holderText}</Fit>
+        <Row
+          icon={<Truck size={15} aria-hidden="true" />}
+          label={t("metaCourier")}
+          testId="meta-courier"
+          title={
+            meta.courierId
+              ? [courier?.name ?? `#${meta.courierId}`, courier?.phone].filter(Boolean).join(" · ")
+              : undefined
+          }
+        >
+          {meta.courierId ? (
+            <>
+              <Fit>{courier?.name ?? `#${meta.courierId}`}</Fit>
+              {courier?.phone ? <PhoneLink phone={courier.phone} /> : null}
+            </>
+          ) : (
+            <Fit>
+              <span className="font-normal text-text-muted">{t("metaCourierNone")}</span>
+            </Fit>
+          )}
+        </Row>
+
+        <Row icon={<PackageCheck size={15} aria-hidden="true" />} label={t("metaHolder")} testId="meta-holder" title={holderText}>
+          <Fit>{holderText}</Fit>
+        </Row>
+
+        {meta.whereDeliver ? (
+          <Row icon={<MapPinned size={15} aria-hidden="true" />} label={t("metaDelivery")} testId="meta-delivery">
+            {/* Sahifadagi «Yetkazish turi» bilan bir xil yorliq: «Uygacha» / «Markazgacha». */}
+            {meta.whereDeliver === "center" ? t("deliveryToCenter") : t("deliveryToHome")}
           </Row>
-
-          {meta.whereDeliver ? (
-            <Row icon={<MapPinned size={15} />} label={t("metaDelivery")} testId="meta-delivery">
-              {meta.whereDeliver === "center" ? t("deliveryCenter") : t("deliveryHome")}
-            </Row>
-          ) : null}
-        </div>
-
-        {tariffFields.length > 0 ? (
-          <div className="rounded-xl border border-gray-100 p-3 dark:border-white/8" data-testid="meta-tariffs">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <span className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                <Wallet size={14} /> {t("metaTariffs")}
-              </span>
-              <button
-                type="button"
-                onClick={() => setShowTariffs((value) => !value)}
-                aria-pressed={showTariffs}
-                aria-label={showTariffs ? t("metaTariffsHide") : t("metaTariffsShow")}
-                title={showTariffs ? t("metaTariffsHide") : t("metaTariffsShow")}
-                className="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg text-gray-500 transition-colors hover:bg-main/10 hover:text-main dark:text-gray-400"
-              >
-                {showTariffs ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-            <dl className="m-0 flex flex-col gap-1.5">
-              {tariffFields.map((field) => {
-                const value = meta.tariffs[field];
-                return (
-                  <div key={field} className="flex min-w-0 items-center justify-between gap-3" data-tariff={field}>
-                    <dt className="shrink-0 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
-                      {t(TARIFF_LABEL[field])}
-                    </dt>
-                    <dd
-                      className={`m-0 whitespace-nowrap text-right text-sm font-bold text-gray-900 transition-[filter] dark:text-white ${
-                        showTariffs ? "" : "select-none blur-sm"
-                      }`}
-                      aria-hidden={!showTariffs}
-                    >
-                      {/* O'lchanmagan qiymat "—", hech qachon 0 emas. */}
-                      {value === null ? "—" : `${formatMoney(value)} ${t("currency")}`}
-                    </dd>
-                    {!showTariffs ? <span className="sr-only">{t("metaTariffsHidden")}</span> : null}
-                  </div>
-                );
-              })}
-            </dl>
-          </div>
         ) : null}
       </div>
-    </div>
+
+      {tariffFields.length > 0 ? (
+        <div className="mb-3 rounded-xl bg-sunken px-3 py-2.5" data-testid="meta-tariffs">
+          <div className="mb-1.5 flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold uppercase tracking-[.05em] text-text-muted">{t("metaTariffs")}</span>
+            <IconButton
+              size="sm"
+              icon={showTariffs ? EyeOff : Eye}
+              label={showTariffs ? t("metaTariffsHide") : t("metaTariffsShow")}
+              aria-pressed={showTariffs}
+              onClick={() => setShowTariffs((value) => !value)}
+              className="-my-1 -mr-1.5"
+            />
+          </div>
+          <dl className="m-0 flex flex-col gap-1.5">
+            {tariffFields.map((field) => {
+              const value = meta.tariffs[field];
+              return (
+                <div key={field} className="flex min-w-0 items-center justify-between gap-3" data-tariff={field}>
+                  <dt className="shrink-0 whitespace-nowrap text-[13px] text-text-muted">{t(TARIFF_LABEL[field])}</dt>
+                  <dd
+                    className={cx(
+                      "m-0 whitespace-nowrap text-right text-sm font-bold text-text transition-[filter] duration-150 motion-reduce:transition-none",
+                      !showTariffs && "select-none blur-sm",
+                    )}
+                    aria-hidden={!showTariffs}
+                  >
+                    {/* O'lchanmagan qiymat "—", hech qachon 0 emas. */}
+                    {value === null ? "—" : formatMoneyLocalized(value)}
+                  </dd>
+                  {!showTariffs ? <span className="sr-only">{t("metaTariffsHidden")}</span> : null}
+                </div>
+              );
+            })}
+          </dl>
+        </div>
+      ) : null}
+    </Card>
   );
 };
 

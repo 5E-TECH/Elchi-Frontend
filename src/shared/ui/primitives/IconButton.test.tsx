@@ -63,6 +63,8 @@ describe("IconButton — turlar va o'lchamlar", () => {
     ["secondary", ["border-border-strong", "bg-surface", "text-text-muted", `${IA}hover:bg-sunken`]],
     ["primary", ["bg-action", "text-on-solid", `${IA}hover:bg-action-hover`]],
     ["danger", ["text-danger-fg", `${IA}hover:bg-danger-soft`]],
+    // Maket `*-orders-detail-edit-order-dialog`: `.el-iconbtn` + `.el-btn-danger-soft` (mahsulotni olib tashlash).
+    ["danger-soft", ["bg-danger-soft", "text-danger-fg", `${IA}hover:bg-danger`, `${IA}hover:text-on-solid`]],
   ] as const)("%s", (variant: IconButtonVariant, expected) => {
     render(<IconButton variant={variant} label="Amal" icon={RefreshCw} />);
     expect(classesOf(screen.getByRole("button"))).toEqual(expect.arrayContaining([...expected]));
@@ -94,7 +96,7 @@ describe("IconButton — turlar va o'lchamlar", () => {
   });
 
   it("fokus halqasi o'chirilmaydi; hover/bosilgan faqat faol tugmada", () => {
-    for (const variant of ["ghost", "secondary", "primary", "danger"] as const) {
+    for (const variant of ["ghost", "secondary", "primary", "danger", "danger-soft"] as const) {
       const { unmount } = render(<IconButton variant={variant} label="Yangilash" icon={RefreshCw} />);
       const classes = classesOf(screen.getByRole("button"));
       expect(classes.some((c) => /outline-(none|0)$/.test(c))).toBe(false);

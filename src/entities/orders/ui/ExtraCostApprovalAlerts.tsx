@@ -9,9 +9,9 @@ import { isExtraCostAction, type ExtraCostAction, type PendingExtraCostApproval 
 /**
  * Qo'shimcha xarajat tasdig'i — v2 ogohlantirishlari (`.el-alert.el-tone-warning`).
  *
- * `ExtraCostApproval.tsx` dagi v1 komponentlar boshqa oynalarda (Sotish,
- * buyurtma tafsiloti) hamon ishlatiladi — ular tegilmaydi; v2 ga o'tgan
- * oynalar shu faylni oladi. Matnlar o'sha kalitlardan.
+ * `ExtraCostApproval.tsx` da faqat v1 ro'yxat belgisi (dispatch sahifasi) qoldi;
+ * v2 oynalar (Sotish, Bekor qilish) shu faylni oladi, buyurtma tafsiloti esa
+ * `pages/new_orders/components/detail/DetailAlerts.tsx` da. Matnlar o'sha kalitlardan.
  */
 
 const ACTION_LABEL_KEYS: Record<ExtraCostAction, string> = {

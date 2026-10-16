@@ -438,17 +438,18 @@
       "cancelledPostReceivedAtHq": "{{actor}} принял отмененный заказ в HQ для передачи маркету",
       "cancelledOrderHandedToMarket": "{{actor}} передал отмененный заказ маркету {{market}} с QR-подтверждением",
       "returnInitiated": "{{actor}} начал(а) возврат заказа в маркет. Причина: {{reason}}",
-      "returnedToMarketByActor": "{{actor}} передал(а) заказ в {{market}} с подтверждением по QR"
+      "returnedToMarketByActor": "{{actor}} передал(а) заказ в {{market}} с подтверждением по QR",
+      "createdByActor": "{{actor}} создал заказ"
     },
     "roleValue": {
-      "superadmin": "Super Admin",
+      "superadmin": "Суперадмин",
       "admin": "Админ",
       "registrator": "Регистратор",
       "courier": "Курьер",
       "branch": "Филиал",
       "manager": "Менеджер",
       "market": "Маркет",
-      "system": "System"
+      "system": "Система"
     },
     "status": {
       "created": "Создан",
@@ -463,7 +464,9 @@
       "partly_paid": "Частично оплачен",
       "closed": "Закрыт",
       "waiting_customer": "Ожидает клиента",
-      "returned_to_market": "Возвращён в маркет"
+      "returned_to_market": "Возвращён в маркет",
+      "processing": "В процессе",
+      "completed": "Готов"
     },
     "notes": {
       "order_created": "Заказ создан",
@@ -494,7 +497,8 @@
     },
     "newestFirst": "{{count}} записей — новые сверху",
     "expand": "Показать историю",
-    "collapse": "Свернуть историю"
+    "collapse": "Свернуть историю",
+    "noteLabel": "Комментарий:"
   },
   "branch": "Филиал",
   "filterBranch": "Филиал",
@@ -513,7 +517,6 @@
   "extraCostApprovalBadge": "На подтверждении",
   "extraCostApprovalSentAt": "Дополнительный расход {{amount}} отправлен на подтверждение магазину в {{time}}",
   "extraCostApprovalSentAtAction": "{{action}}: дополнительный расход {{amount}} отправлен на подтверждение магазину в {{time}}",
-  "extraCostApprovalPendingAction": "Запрошенное действие: {{action}}",
   "extraCostApprovalActionSell": "Продажа",
   "extraCostApprovalActionPartlySell": "Частичная продажа",
   "extraCostApprovalActionCancel": "Отмена",
@@ -669,5 +672,31 @@
   "returnHandoverSubmit": "Подтвердить передачу",
   "returnHandoverAuthorized": "QR маркета принят. Повторите подтверждение передачи.",
   "returnHandoverRetry": "Повторить",
-  "returnHandoverSuccess": "Заказ передан маркету"
+  "returnHandoverSuccess": "Заказ передан маркету",
+  "orderDetail": {
+    "created": "Создан: {{date}}",
+    "customer": "Клиент",
+    "products": "Товары",
+    "itemsCount": "{{count}} шт.",
+    "productsCount": "Товаров: {{count}}",
+    "customerAndAddress": "Клиент и адрес",
+    "catalogLess": "Вне каталога",
+    "editLocked": "{{label}} — заблокировано",
+    "editAdminOnly": "{{label}} — только администратор или суперадминистратор",
+    "approvalTitle": "Ожидается подтверждение маркета.",
+    "approvalBody": "{{sent}}. Если маркет подтвердит, действие выполнится автоматически.",
+    "approvalCompactTitle": "Ожидается подтверждение маркета:",
+    "approvalCompact": "доп. расход {{amount}}, {{time}}",
+    "productsLockedTitle": "Товары и сумма заблокированы.",
+    "productsLockedBody": "После приёма в HQ их нельзя изменить.",
+    "productsLockedCustomerAddress": "Клиента и адрес можно изменить до отправки в филиал.",
+    "productsLockedAddress": "Адрес можно изменить до отправки в филиал.",
+    "editClosedTitle": "Редактирование закрыто.",
+    "editClosedBody": "Заказ отправлен в филиал — клиента, адрес, сумму и товары больше нельзя изменить.",
+    "readOnlyTitle": "Только просмотр",
+    "readOnlyLocked": "Заказ отправлен в филиал, поэтому товары, сумма, клиент и адрес заблокированы.",
+    "dateLabel": "Дата:",
+    "addressLabel": "Адрес",
+    "noProducts": "В заказе нет товаров"
+  }
 }

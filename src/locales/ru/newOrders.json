@@ -248,6 +248,16 @@
   "note": "Примечание",
   "enterNote": "Введите примечание...",
   "productFallback": "Товар",
+  "editDialog": {
+    "districtReselectHint": "Область изменилась — выберите район заново.",
+    "customerNote": "Изменение сохранится в профиле клиента и будет видно во всех его заказах.",
+    "removeItem": "Убрать {{name}}",
+    "itemsEmpty": "В списке не осталось товаров.",
+    "addressSaved": "Адрес сохранён",
+    "customerSaved": "Данные клиента сохранены",
+    "orderSaved": "Заказ сохранён",
+    "itemQuantity": "{{count}} шт."
+  },
   "externalOrdersTitle": "Внешние заказы",
   "externalOrdersSubtitle": "Список заказов из внешних систем",
   "externalOrdersEmpty": "Внешних заказов нет",

@@ -428,27 +428,28 @@
     "dynamic": {
       "acceptedAtHq": "{{actor}} buyurtmani HQ’da qabul qildi",
       "dispatchToBranch": "{{actor}} {{post}}ni HQ’dan {{branch}} filialiga jo‘natdi",
-      "sentToCourier": "{{actor}} buyurtmani courierga biriktirib, yo‘lga chiqardi",
-      "assignedToCourier": "{{actor}} buyurtmani courierga biriktirdi",
+      "sentToCourier": "{{actor}} buyurtmani kuryerga biriktirib, yo‘lga chiqardi",
+      "assignedToCourier": "{{actor}} buyurtmani kuryerga biriktirdi",
       "returnedToWaiting": "{{actor}} buyurtmani kutilmoqda holatiga qaytardi",
       "cancelledByActor": "{{actor}} buyurtmani bekor qildi",
       "soldByActor": "{{actor}} buyurtmani sotdi",
       "cancelledPostCreated": "{{actor}} bekor qilingan buyurtmani qaytarish pochtasiga qo‘shib jo‘natdi",
-      "cancelledPostReceivedAtBranch": "{{actor}} bekor qilingan buyurtmani courierdan qabul qildi",
+      "cancelledPostReceivedAtBranch": "{{actor}} bekor qilingan buyurtmani kuryerdan qabul qildi",
       "cancelledPostReceivedAtHq": "{{actor}} bekor qilingan buyurtmani marketga topshirish uchun HQ’da qabul qildi",
       "cancelledOrderHandedToMarket": "{{actor}} bekor qilingan buyurtmani {{market}}ga QR tasdiq bilan topshirdi",
       "returnInitiated": "{{actor}} buyurtmani marketga qaytarishni boshladi. Sabab: {{reason}}",
-      "returnedToMarketByActor": "{{actor}} buyurtmani {{market}}ga QR tasdiq bilan topshirdi"
+      "returnedToMarketByActor": "{{actor}} buyurtmani {{market}}ga QR tasdiq bilan topshirdi",
+      "createdByActor": "{{actor}} buyurtmani yaratdi"
     },
     "roleValue": {
-      "superadmin": "Super Admin",
+      "superadmin": "Superadmin",
       "admin": "Admin",
-      "registrator": "Registrator",
+      "registrator": "Ro'yxatchi",
       "courier": "Kuryer",
       "branch": "Filial",
-      "manager": "Manager",
+      "manager": "Menejer",
       "market": "Market",
-      "system": "System"
+      "system": "Tizim"
     },
     "status": {
       "created": "Yaratilgan",
@@ -463,7 +464,9 @@
       "partly_paid": "Qisman to'langan",
       "closed": "Yopilgan",
       "waiting_customer": "Mijoz kutilmoqda",
-      "returned_to_market": "Marketga qaytarilgan"
+      "returned_to_market": "Marketga qaytarilgan",
+      "processing": "Jarayonda",
+      "completed": "Tayyor"
     },
     "notes": {
       "order_created": "Buyurtma yaratildi",
@@ -494,7 +497,8 @@
     },
     "newestFirst": "{{count}} ta yozuv — eng yangisi tepada",
     "expand": "Tarixni ko'rsatish",
-    "collapse": "Tarixni yig'ish"
+    "collapse": "Tarixni yig'ish",
+    "noteLabel": "Izoh:"
   },
   "branch": "Filial",
   "filterBranch": "Filial",
@@ -513,7 +517,6 @@
   "extraCostApprovalBadge": "Tasdiqqa yuborilgan",
   "extraCostApprovalSentAt": "{{amount}} qo'shimcha xarajat {{time}} da market tasdig'iga yuborilgan",
   "extraCostApprovalSentAtAction": "{{action}}: {{amount}} qo'shimcha xarajat {{time}} da market tasdig'iga yuborilgan",
-  "extraCostApprovalPendingAction": "So'ralgan amal: {{action}}",
   "extraCostApprovalActionSell": "Sotish",
   "extraCostApprovalActionPartlySell": "Qisman sotish",
   "extraCostApprovalActionCancel": "Bekor qilish",
@@ -669,5 +672,31 @@
   "returnHandoverSubmit": "Topshirishni tasdiqlash",
   "returnHandoverAuthorized": "Market QR qabul qilindi. Topshirishni qayta tasdiqlang.",
   "returnHandoverRetry": "Qayta urinish",
-  "returnHandoverSuccess": "Buyurtma marketga topshirildi"
+  "returnHandoverSuccess": "Buyurtma marketga topshirildi",
+  "orderDetail": {
+    "created": "Yaratilgan: {{date}}",
+    "customer": "Mijoz",
+    "products": "Mahsulotlar",
+    "itemsCount": "{{count}} ta",
+    "productsCount": "{{count}} ta mahsulot",
+    "customerAndAddress": "Mijoz va manzil",
+    "catalogLess": "Katalogdan tashqari",
+    "editLocked": "{{label}} — qulflangan",
+    "editAdminOnly": "{{label}} — faqat admin yoki superadmin",
+    "approvalTitle": "Market tasdig'i kutilmoqda.",
+    "approvalBody": "{{sent}}. Market tasdiqlasa, amal avtomatik bajariladi.",
+    "approvalCompactTitle": "Market tasdig'i kutilmoqda:",
+    "approvalCompact": "{{amount}} qo'shimcha xarajat, {{time}}",
+    "productsLockedTitle": "Mahsulotlar va summa qulflangan.",
+    "productsLockedBody": "HQ qabul qilgandan keyin ularni o'zgartirib bo'lmaydi.",
+    "productsLockedCustomerAddress": "Mijoz va manzilni filialga jo'natilgunga qadar tahrirlash mumkin.",
+    "productsLockedAddress": "Manzilni filialga jo'natilgunga qadar tahrirlash mumkin.",
+    "editClosedTitle": "Tahrirlash yopiq.",
+    "editClosedBody": "Buyurtma filialga jo'natilgan — mijoz, manzil, summa va mahsulotlarni endi o'zgartirib bo'lmaydi.",
+    "readOnlyTitle": "Faqat ko'rish uchun",
+    "readOnlyLocked": "Filialga jo'natilgani uchun mahsulotlar, summa, mijoz va manzil qulflangan.",
+    "dateLabel": "Sana:",
+    "addressLabel": "Manzil",
+    "noProducts": "Buyurtmada mahsulot yo'q"
+  }
 }

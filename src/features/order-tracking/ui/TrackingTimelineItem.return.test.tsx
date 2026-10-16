@@ -20,17 +20,13 @@ const base = {
 
 const render = (event: Partial<TrackingEvent>) =>
   renderWithProviders(
-    <TrackingTimelineItem
-      event={{ ...base, ...event } as TrackingEvent}
-      index={0}
-      total={1}
-      isLast
-      context={{ marketName: "Kimdur Kimdur" }}
-    />,
+    <ol>
+      <TrackingTimelineItem event={{ ...base, ...event } as TrackingEvent} isLast context={{ marketName: "Kimdur Kimdur" }} />
+    </ol>,
   );
 
 describe("TrackingTimelineItem — marketga qaytarish", () => {
-  it("⭐ initiate-return: \"Qaytarish so'raldi\" + kim boshlagani va SABABI (inglizcha xom izoh emas)", () => {
+  it("⭐ initiate-return: \"Qaytarish so'raldi\" belgisi + kim boshlagani va SABABI (inglizcha xom izoh emas)", () => {
     render({
       action: "note",
       from_status: "waiting",
@@ -41,12 +37,13 @@ describe("TrackingTimelineItem — marketga qaytarish", () => {
       description: "Return initiated: Mijoz rad etdi",
     });
     const item = screen.getByTestId("tracking-event");
+    // Holat o'zgarmagan (waiting → waiting): o'tish o'rnida amal nomi.
     expect(item).toHaveTextContent("Qaytarish so'raldi");
-    expect(item).toHaveTextContent("Bosh admin buyurtmani marketga qaytarishni boshladi. Sabab: Mijoz rad etdi");
+    expect(item).toHaveTextContent("Superadmin Bosh admin buyurtmani marketga qaytarishni boshladi. Sabab: Mijoz rad etdi");
     expect(item).not.toHaveTextContent("Return initiated");
   });
 
-  it("⭐ mark-returned-to-market: \"Marketga qaytarildi\" + market nomi, holat tarjima qilingan", () => {
+  it("⭐ mark-returned-to-market: jumla market nomi bilan, o'tish «Kutilmoqda › Marketga qaytarilgan»", () => {
     render({
       action: "returned_to_market",
       from_status: "waiting",
@@ -58,8 +55,10 @@ describe("TrackingTimelineItem — marketga qaytarish", () => {
       note: "Xodim 501 market egasiga topshirdi",
     });
     const item = screen.getByTestId("tracking-event");
-    expect(item).toHaveTextContent("Marketga qaytarildi");
-    expect(item).toHaveTextContent("Filial menejeri buyurtmani Kimdur Kimdurga QR tasdiq bilan topshirdi");
+    // Ikonka nomi — amal («Marketga qaytarildi»), jumla — kim va qaysi marketga.
+    expect(screen.getByRole("img", { name: "Marketga qaytarildi" })).toBeInTheDocument();
+    expect(item).toHaveTextContent("Menejer Filial menejeri buyurtmani Kimdur Kimdurga QR tasdiq bilan topshirdi");
+    expect(item).toHaveTextContent("Kutilmoqda");
     expect(item).toHaveTextContent("Marketga qaytarilgan");
     expect(item).not.toHaveTextContent("Returned To Market");
   });
@@ -73,6 +72,6 @@ describe("TrackingTimelineItem — marketga qaytarish", () => {
     });
     const item = screen.getByTestId("tracking-event");
     expect(item).not.toHaveTextContent("Qaytarish so'raldi");
-    expect(item).toHaveTextContent("Mijoz telefonni ko'tarmadi");
+    expect(item).toHaveTextContent("Izoh: Mijoz telefonni ko'tarmadi");
   });
 });

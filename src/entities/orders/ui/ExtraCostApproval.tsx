@@ -1,3 +1,9 @@
+/**
+ * v1 qo'shimcha xarajat tasdig'i belgisi — faqat eski `pages/orders/list/OrderStatusBadge`
+ * (dispatch sahifasi) uchun qoldi. v2 ekranlar `ExtraCostApprovalTag` va
+ * `ExtraCostApprovalAlerts` ni oladi; v1 eslatma/banner/izoh (Notice, PendingBanner,
+ * SentNote) buyurtma tafsiloti v2 ga o'tgach ishlatilmay qoldi va olib tashlandi.
+ */
 import { memo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { Clock3 } from "lucide-react";
@@ -48,56 +54,8 @@ const useApprovalFormatters = () => {
       ? t("extraCostApprovalSentAtAction", { ...params, action: t(ACTION_LABEL_KEYS[approval.action]) })
       : t("extraCostApprovalSentAt", params);
   };
-  const formatAction = (action: ExtraCostAction) => t(ACTION_LABEL_KEYS[action]);
-  return { t, formatAmount, formatTime, describeSentApproval, formatAction };
+  return { t, describeSentApproval };
 };
-
-export const ExtraCostApprovalNotice = memo(() => {
-  const { t } = useTranslation("orders");
-  return (
-    <p className="mt-1.5 text-xs font-semibold text-amber-700 dark:text-amber-300">
-      {t("extraCostApprovalNotice")}
-    </p>
-  );
-});
-ExtraCostApprovalNotice.displayName = "ExtraCostApprovalNotice";
-
-export const ExtraCostApprovalPendingBanner = memo(
-  ({ amount, action }: { amount: number; action?: ExtraCostAction | null }) => {
-    const { t, formatAmount, formatAction } = useApprovalFormatters();
-    return (
-      <div
-        role="status"
-        className="rounded-xl border border-amber-300/70 bg-amber-50 px-4 py-3 dark:border-amber-400/30 dark:bg-amber-400/10"
-      >
-        <p className="flex items-center gap-2 text-sm font-bold text-amber-800 dark:text-amber-100">
-          <Clock3 size={16} className="shrink-0" />
-          {t("extraCostApprovalPendingTitle")}
-        </p>
-        {action && isExtraCostAction(action) ? (
-          <p className="mt-1 text-xs font-bold text-amber-900 dark:text-amber-50">
-            {t("extraCostApprovalPendingAction", { action: formatAction(action) })}
-          </p>
-        ) : null}
-        <p className="mt-1 text-xs font-medium text-amber-800/90 dark:text-amber-100/85">
-          {t("extraCostApprovalPendingDescription", { amount: formatAmount(amount) })}
-        </p>
-      </div>
-    );
-  },
-);
-ExtraCostApprovalPendingBanner.displayName = "ExtraCostApprovalPendingBanner";
-
-export const ExtraCostApprovalSentNote = memo(({ approval }: { approval: PendingExtraCostApproval }) => {
-  const { describeSentApproval } = useApprovalFormatters();
-  return (
-    <p className="flex items-start gap-2 rounded-xl border border-amber-300/70 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800 dark:border-amber-400/30 dark:bg-amber-400/10 dark:text-amber-100">
-      <Clock3 size={14} className="mt-0.5 shrink-0" />
-      {describeSentApproval(approval)}
-    </p>
-  );
-});
-ExtraCostApprovalSentNote.displayName = "ExtraCostApprovalSentNote";
 
 /**
  * Ro'yxatdagi belgi. Buyurtma holati so'rov yuborilgandagidan o'zgargan bo'lsa

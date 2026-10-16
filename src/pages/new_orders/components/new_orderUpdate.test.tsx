@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
 import { vi } from "vitest";
@@ -23,32 +23,36 @@ const orderState: {
   status?: string;
   /** Qo'shimcha maydonlar (proof_files, market...) — test o'zi qo'yadi. */
   extra?: Record<string, unknown>;
+  /** `useGetOrderById` natijasini butunlay almashtirish (bo'sh javob, xato). */
+  query?: Record<string, unknown>;
 } = { comment: null, items: [] };
 
 // SellModal'ga uzatilgan `order` — qisman sotish payload'i shundan quriladi.
 const sellModalProps = vi.hoisted(() => ({ last: null as null | { order: { items: unknown[] } | null } }));
 
 const idleMutation = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
+const rollbackMutation = vi.hoisted(() => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }));
 
 vi.mock("../../../entities/orders", () => ({
   useOrders: () => ({
-    useGetOrderById: () => ({
-      data: {
+    useGetOrderById: () =>
+      orderState.query ?? {
         data: {
-          ...order,
-          ...orderState.extra,
-          status: orderState.status ?? order.status,
-          comment: orderState.comment,
-          items: orderState.items,
+          data: {
+            ...order,
+            ...orderState.extra,
+            status: orderState.status ?? order.status,
+            comment: orderState.comment,
+            items: orderState.items,
+          },
         },
+        isLoading: false,
       },
-      isLoading: false,
-    }),
     updateNewOrder: idleMutation,
     SellOrder: idleMutation,
     PartlySellOrder: idleMutation,
     CancelOrder: idleMutation,
-    RollbackOrder: idleMutation,
+    RollbackOrder: rollbackMutation,
     scanMarketCancelledQr: idleMutation,
   }),
 }));
@@ -132,7 +136,22 @@ describe("NewOrderUpdate header", () => {
   it("shows the order number on the detail page, matching the list's №id", () => {
     renderPage();
 
-    expect(screen.getByRole("button", { name: "Raqamni nusxalash" })).toHaveTextContent("№1251175");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("№1251175");
+    expect(screen.getByRole("button", { name: "Raqamni nusxalash" })).toBeInTheDocument();
+  });
+
+  it("«← Buyurtmalar» — tarix bo'lmasa ro'yxatga qaytaradi", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <Routes>
+        <Route path="/orders/edit/:orderId" element={<NewOrderUpdate />} />
+        <Route path="/orders" element={<p>ORDERS LIST</p>} />
+      </Routes>,
+      { route: "/orders/edit/1251175" },
+    );
+
+    await user.click(screen.getByRole("button", { name: "Buyurtmalar" }));
+    expect(await screen.findByText("ORDERS LIST")).toBeInTheDocument();
   });
 
   it("copies the order number and confirms it with a notification", async () => {
@@ -199,8 +218,8 @@ describe("NewOrderUpdate catalog-less product names", () => {
     renderPage("registrator");
 
     const dashesBefore = screen.queryAllByText("—").length;
-    await user.click(screen.getAllByRole("button", { name: "Tahrirlash" })[0]);
-    await screen.findByText("Buyurtmani tahrirlash");
+    await user.click(screen.getByRole("button", { name: /^Buyurtmani tahrirlash/ }));
+    await screen.findByRole("dialog", { name: "Buyurtmani tahrirlash" });
 
     // Har nom endi ikki joyda: detal ro'yxati + tahrirlash oynasi (ilgari oynada "—").
     for (const name of names) expect(screen.getAllByText(name)).toHaveLength(2);
@@ -232,12 +251,13 @@ describe("NewOrderUpdate manager edit (fix #2)", () => {
     orderState.status = "new";
     renderPage("manager");
 
-    const [productsEdit, addressEdit] = screen.getAllByRole("button", { name: "Tahrirlash" });
+    const productsEdit = screen.getByRole("button", { name: /^Buyurtmani tahrirlash/ });
+    const addressEdit = screen.getByRole("button", { name: /^Manzilni tahrirlash/ });
     expect(productsEdit).toBeEnabled();
     expect(addressEdit).toBeEnabled();
 
     await user.click(productsEdit);
-    expect(await screen.findByText("Buyurtmani tahrirlash")).toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "Buyurtmani tahrirlash" })).toBeInTheDocument();
   });
 });
 
@@ -309,7 +329,7 @@ describe("NewOrderUpdate — buyurtma ma'lumotlari (OrderMeta)", () => {
     orderState.extra = { post_id: "78", courier_id: null, holder_type: "HQ", branch: { id: "1", name: "HQ Toshkent" } };
     renderPage();
     const meta = screen.getByTestId("order-meta");
-    const customer = screen.getByText("Mijoz ma'lumotlari");
+    const customer = screen.getByRole("heading", { name: "Mijoz" });
     // Bitta ustun (RIGHT): widgetning ota elementi Mijoz kartasini ham o'z ichiga oladi,
     // va widget ustunning BIRINCHI bolasi — Mijozdan oldin.
     const rightColumn = meta.parentElement!;
@@ -365,11 +385,11 @@ describe("NewOrderUpdate — Sotish/Bekor qilish tugmalari (backend: WAITING + p
     orderState.extra = undefined;
   });
 
-  it("⭐ waiting + post_id — Sotish va Bekor qilish chiqadi", () => {
+  it("⭐ waiting + post_id — Bekor qilish va Sotish chiqadi (maket tartibi, asosiy amal oxirida)", () => {
     orderState.status = "waiting";
     orderState.extra = { post_id: "90" };
     renderAsRegionalManager();
-    expect(actionButtons()).toEqual(["Sotish", "Bekor qilish"]);
+    expect(actionButtons()).toEqual(["Bekor qilish", "Sotish"]);
   });
 
   it.each(["on the road", "new", "received"])(
@@ -460,5 +480,170 @@ describe("NewOrderUpdate — marketga qaytarish (initiate-return / mark-returned
     renderPage("manager");
     expect(screen.queryByTestId("return-requested-badge")).not.toBeInTheDocument();
     expect(button("mark-returned-button")).toBeNull();
+  });
+});
+
+// ─── Dizayn v2: holatlar, rollar bo'yicha ko'rinish, amallar ──────────────────
+const renderAsUser = (role: string, user: Record<string, unknown> = {}) =>
+  renderWithProviders(
+    <Routes>
+      <Route path="/orders/edit/:orderId" element={<NewOrderUpdate />} />
+    </Routes>,
+    {
+      route: "/orders/edit/1251175",
+      preloadedState: {
+        role: { id: `${role}-1`, role, region: null, name: role },
+        user: {
+          user: { id: `${role}-1`, role, ...user },
+          isAuthenticated: true,
+          accessToken: null,
+          loading: false,
+          isAppInitializing: false,
+          error: null,
+        },
+      } as never,
+    },
+  );
+
+describe("NewOrderUpdate — so'rov holatlari (dizayn v2)", () => {
+  afterEach(() => {
+    orderState.query = undefined;
+    orderState.extra = undefined;
+    orderState.status = undefined;
+  });
+
+  it("⭐ bo'sh javob `{}` (mock API) — sahifa yiqilmaydi, «Ma'lumot topilmadi»", () => {
+    orderState.query = { data: {}, isLoading: false };
+    renderPage("manager");
+    expect(screen.getByText("Ma'lumot topilmadi")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("№1251175");
+  });
+
+  it("⭐ xato — ErrorState va «Qayta urinish» so'rovni qayta yuboradi (ilgari «topilmadi» chiqardi)", async () => {
+    const user = userEvent.setup();
+    const refetch = vi.fn();
+    orderState.query = { data: undefined, isLoading: false, isError: true, error: { response: { status: 500 } }, refetch };
+    renderPage("admin");
+
+    expect(screen.queryByText("Ma'lumot topilmadi")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Qayta urinish" }));
+    expect(refetch).toHaveBeenCalled();
+  });
+
+  it("summa matn bo'lib kelsa (\"150000.00\") — 150 000 so'm, 15 000 000 emas", () => {
+    orderState.extra = { total_price: "150000.00", to_be_paid: "150000.00", paid_amount: "0.00" };
+    renderPage("admin");
+    const total = document.querySelector('[data-payment="total"] dd');
+    expect(total?.textContent).toMatch(/^150\s000 so'm$/);
+  });
+
+  it.each([
+    ["returned_to_market", "Marketga qaytarilgan"],
+    ["processing", "Jarayonda"],
+    ["completed", "Tayyor"],
+    ["waiting", "Kutilmoqda"],
+  ])("holat %s — sarlavhada «%s»", (status, label) => {
+    orderState.status = status;
+    renderPage("admin");
+    const header = screen.getByRole("banner");
+    expect(within(header).getByText(label)).toBeInTheDocument();
+  });
+
+  it("izohda yaratilgan vaqt va market: «Yaratilgan: … · Zamon Market»", () => {
+    orderState.extra = { createdAt: "2026-07-20T08:38:49.865Z", market: { id: "m1", name: "Zamon Market" } };
+    renderPage("admin");
+    expect(screen.getByRole("banner")).toHaveTextContent(/Yaratilgan: \d{2}\.\d{2}\.2026, \d{2}:\d{2} · Zamon Market/);
+  });
+});
+
+describe("NewOrderUpdate — mijoz havolasi va rol ko'rinishlari", () => {
+  afterEach(() => {
+    orderState.extra = undefined;
+    orderState.status = undefined;
+    orderState.items = [];
+  });
+
+  it("superadmin — ism /all-users/:id havolasi («Profilni ko'rish uchun bosing»)", () => {
+    renderAsUser("superadmin");
+    const link = screen.getByRole("link", { name: /Ali Valiyev/ });
+    expect(link).toHaveAttribute("href", "/all-users/c1");
+    expect(link).toHaveTextContent("Profilni ko'rish uchun bosing");
+  });
+
+  it("market — ism havola emas, mahsulotlarda yetkazish turi yo'q (u Manzil kartasida)", () => {
+    orderState.items = [{ id: "i1", quantity: 2, product_id: null, product: null, product_name: "Ipak ro'mol" }];
+    renderAsUser("market");
+    expect(screen.queryByRole("link", { name: /Ali Valiyev/ })).not.toBeInTheDocument();
+    const products = screen.getByRole("region", { name: "Mahsulotlar" });
+    expect(within(products).queryByText("Yetkazish turi")).not.toBeInTheDocument();
+    expect(within(products).getByText("Katalogdan tashqari")).toBeInTheDocument();
+    expect(within(products).getByText("2 ta")).toBeInTheDocument();
+    const address = screen.getByRole("region", { name: "Manzil" });
+    expect(within(address).getByText("Yetkazish turi")).toBeInTheDocument();
+    expect(within(address).getByText("Uygacha")).toBeInTheDocument();
+  });
+
+  it("kuryer — «Mijoz va manzil», qo'ng'iroq tel: havolasi, «To'lanishi kerak» katta raqam", () => {
+    renderAsUser("courier");
+    const call = screen.getByRole("link", { name: "Ali Valiyevga qo'ng'iroq qilish, +998 90 123 45 67" });
+    expect(call).toHaveAttribute("href", "tel:+998901234567");
+    expect(screen.getByRole("region", { name: "Mijoz va manzil" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "To'lov" })).toHaveTextContent("To'lanishi kerak");
+    // Kuryerda sarlavha amallari va tahrirlash yo'q.
+    expect(screen.queryByText("Tahrirlash")).not.toBeInTheDocument();
+  });
+
+  it("⭐ kutilayotgan market tasdig'i — sarlavha ostida ogohlantirish", async () => {
+    const { recordPendingExtraCostApproval, clearPendingExtraCostApproval } = await import(
+      "../../../entities/orders/extraCostApproval"
+    );
+    recordPendingExtraCostApproval({
+      orderId: "1251175",
+      action: "sell",
+      amount: 20000,
+      requestedAt: new Date().toISOString(),
+      orderStatus: "waiting",
+    });
+    try {
+      renderAsUser("manager", { branch: { id: "1", type: "REGIONAL" } });
+      const alert = screen
+        .getAllByRole("status")
+        .find((node) => node.textContent?.includes("Market tasdig'i kutilmoqda."));
+      expect(alert).toBeTruthy();
+      expect(alert).toHaveTextContent(/Sotish: 20\s000 so'm qo'shimcha xarajat Bugun, \d{2}:\d{2} da market tasdig'iga yuborilgan\. Market tasdiqlasa, amal avtomatik bajariladi\./);
+    } finally {
+      clearPendingExtraCostApproval("1251175");
+    }
+  });
+});
+
+describe("NewOrderUpdate — sotilgan buyurtmani qaytarish (RollbackOrderDialog)", () => {
+  afterEach(() => {
+    orderState.status = undefined;
+    rollbackMutation.mutate.mockReset();
+  });
+
+  it("⭐ hududiy menejer: «Qaytarish» → v2 tasdiq oynasi → so'rov → muvaffaqiyat xabari", async () => {
+    const user = userEvent.setup();
+    orderState.status = "sold";
+    rollbackMutation.mutate.mockImplementation((_id: string, options: { onSuccess?: () => void }) => options.onSuccess?.());
+    renderAsUser("manager", { branch: { id: "1", type: "REGIONAL" } });
+
+    await user.click(screen.getByRole("button", { name: "Qaytarish" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Buyurtmani qaytarish" });
+    await user.click(within(dialog).getByRole("button", { name: "Ha, qaytarish" }));
+
+    expect(rollbackMutation.mutate).toHaveBeenCalledWith("1251175", expect.anything());
+    expect(await screen.findByText("Buyurtma qayta tiklandi")).toBeInTheDocument();
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+  });
+
+  it("HQ menejeri yoki admin — «Qaytarish» yo'q", () => {
+    orderState.status = "sold";
+    const hq = renderAsUser("manager", { branch: { id: "1", type: "HQ" } });
+    expect(screen.queryByRole("button", { name: "Qaytarish" })).not.toBeInTheDocument();
+    hq.unmount();
+    renderAsUser("admin");
+    expect(screen.queryByRole("button", { name: "Qaytarish" })).not.toBeInTheDocument();
   });
 });

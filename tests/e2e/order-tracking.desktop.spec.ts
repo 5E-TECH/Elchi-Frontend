@@ -43,8 +43,10 @@ test.describe("Buyurtma tarixi — 1440px", () => {
     await expect(page.getByRole("heading", { name: "Buyurtma tarixi" })).toBeVisible();
     const items = page.getByTestId("tracking-event");
     await expect(items).toHaveCount(2);
-    await expect(items.first()).toContainText("#2/2");
-    await expect(items.first()).toContainText("Xorazm Courier");
+    // Eng yangisi tepada: sotish (kuryer), keyin yaratish (market).
+    await expect(items.first()).toContainText("Kuryer Xorazm Courier buyurtmani sotdi");
+    await expect(items.last()).toContainText("Market E2E market buyurtmani yaratdi");
+    await expect(page.getByText("2 ta yozuv — eng yangisi tepada")).toBeVisible();
     expect(requests).toContain("GET orders/95/tracking");
     expect(leaked).toEqual([]);
   });
@@ -61,7 +63,7 @@ test.describe("Buyurtma tarixi — 1440px", () => {
     await expect(block.getByTestId("tracking-event")).toHaveCount(0);
     // Qolgan sahifa buzilmagan.
     await expect(page.getByTestId("order-meta")).toBeVisible();
-    await expect(page.getByText("Mijoz ma'lumotlari").first()).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Mijoz", exact: true })).toBeVisible();
     expect(leaked).toEqual([]);
   });
 

@@ -79,13 +79,12 @@ test.describe("Marketga qaytarish — 1440px", () => {
     await page.getByTestId("initiate-return-submit").click();
     expect((await request).postDataJSON()).toEqual({ reason: "Mijoz rad etdi" });
 
-    // Sarlavha: amber badge (sabab tooltipda), qaytarish tugmasi yo'qoldi.
+    // Sarlavha: amber badge (sabab maslahatda — `title`), qaytarish tugmasi yo'qoldi.
     await expect(page.getByTestId("initiate-return-modal")).toHaveCount(0);
     const badge = page.getByTestId("return-requested-badge");
     await expect(badge).toHaveText("Qaytarish so'ralgan");
     await expect(badge).toHaveAttribute("aria-label", "Qaytarish so'ralgan. Sabab: Mijoz rad etdi");
-    await badge.hover();
-    await expect(page.locator(".ant-tooltip")).toContainText("Sabab: Mijoz rad etdi");
+    await expect(badge).toHaveAttribute("title", "Sabab: Mijoz rad etdi");
     await expect(page.getByTestId("initiate-return-button")).toHaveCount(0);
 
     // POST dan keyin buyurtma (GET orders/96) va tarix QAYTA so'raldi.
@@ -164,8 +163,9 @@ test.describe("Marketga qaytarish — 1440px", () => {
     const after = afterIndex(requests, "POST orders/96/mark-returned-to-market");
     expect(after).toContain("GET orders/96");
     expect(after).toContain("GET orders/96/tracking");
-    const handoverEvent = page.getByTestId("tracking-event").filter({ hasText: "Marketga qaytarildi" });
-    await expect(handoverEvent).toContainText("Filial menejeri buyurtmani Kimdur Kimdurga QR tasdiq bilan topshirdi");
+    const handoverEvent = page.getByTestId("tracking-event").filter({ hasText: "QR tasdiq bilan topshirdi" });
+    await expect(handoverEvent).toContainText("Menejer Filial menejeri buyurtmani Kimdur Kimdurga QR tasdiq bilan topshirdi");
+    await expect(handoverEvent).toContainText("Marketga qaytarilgan");
     expect(writes).toEqual(["POST scan/market-cancelled", "POST orders/96/mark-returned-to-market"]);
     expect(leaked).toEqual([]);
   });

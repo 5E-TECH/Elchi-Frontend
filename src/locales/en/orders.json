@@ -438,10 +438,11 @@
       "cancelledPostReceivedAtHq": "{{actor}} received the cancelled order at HQ for market handover",
       "cancelledOrderHandedToMarket": "{{actor}} handed the cancelled order over to {{market}} with QR confirmation",
       "returnInitiated": "{{actor}} started returning the order to the market. Reason: {{reason}}",
-      "returnedToMarketByActor": "{{actor}} handed the order to {{market}} with QR confirmation"
+      "returnedToMarketByActor": "{{actor}} handed the order to {{market}} with QR confirmation",
+      "createdByActor": "{{actor}} created the order"
     },
     "roleValue": {
-      "superadmin": "Super Admin",
+      "superadmin": "Superadmin",
       "admin": "Admin",
       "registrator": "Registrar",
       "courier": "Courier",
@@ -463,7 +464,9 @@
       "partly_paid": "Partly paid",
       "closed": "Closed",
       "waiting_customer": "Waiting for customer",
-      "returned_to_market": "Returned to market"
+      "returned_to_market": "Returned to market",
+      "processing": "Processing",
+      "completed": "Ready"
     },
     "notes": {
       "order_created": "Order created",
@@ -494,7 +497,8 @@
     },
     "newestFirst": "{{count}} entries — newest first",
     "expand": "Show history",
-    "collapse": "Collapse history"
+    "collapse": "Collapse history",
+    "noteLabel": "Note:"
   },
   "branch": "Branch",
   "filterBranch": "Branch",
@@ -513,7 +517,6 @@
   "extraCostApprovalBadge": "Sent for approval",
   "extraCostApprovalSentAt": "Extra cost of {{amount}} sent for market approval at {{time}}",
   "extraCostApprovalSentAtAction": "{{action}}: extra cost of {{amount}} sent for market approval at {{time}}",
-  "extraCostApprovalPendingAction": "Requested action: {{action}}",
   "extraCostApprovalActionSell": "Sale",
   "extraCostApprovalActionPartlySell": "Partial sale",
   "extraCostApprovalActionCancel": "Cancellation",
@@ -669,5 +672,31 @@
   "returnHandoverSubmit": "Confirm handover",
   "returnHandoverAuthorized": "Market QR accepted. Confirm the handover again.",
   "returnHandoverRetry": "Try again",
-  "returnHandoverSuccess": "The order was handed to the market"
+  "returnHandoverSuccess": "The order was handed to the market",
+  "orderDetail": {
+    "created": "Created: {{date}}",
+    "customer": "Customer",
+    "products": "Products",
+    "itemsCount": "{{count}} pcs",
+    "productsCount": "{{count}} products",
+    "customerAndAddress": "Customer and address",
+    "catalogLess": "Not in catalog",
+    "editLocked": "{{label}} — locked",
+    "editAdminOnly": "{{label}} — admin or superadmin only",
+    "approvalTitle": "Awaiting market approval.",
+    "approvalBody": "{{sent}}. If the market approves, the action runs automatically.",
+    "approvalCompactTitle": "Awaiting market approval:",
+    "approvalCompact": "{{amount}} extra cost, {{time}}",
+    "productsLockedTitle": "Products and amount are locked.",
+    "productsLockedBody": "They cannot be changed after HQ receives the order.",
+    "productsLockedCustomerAddress": "The customer and address can be edited until the order is sent to a branch.",
+    "productsLockedAddress": "The address can be edited until the order is sent to a branch.",
+    "editClosedTitle": "Editing is closed.",
+    "editClosedBody": "The order has been sent to a branch — the customer, address, amount and products can no longer be changed.",
+    "readOnlyTitle": "View only",
+    "readOnlyLocked": "The order has been sent to a branch, so products, amount, customer and address are locked.",
+    "dateLabel": "Date:",
+    "addressLabel": "Address",
+    "noProducts": "No products in the order"
+  }
 }

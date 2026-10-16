@@ -240,6 +240,16 @@
   "note": "Izoh",
   "enterNote": "Izoh kiriting...",
   "productFallback": "Mahsulot",
+  "editDialog": {
+    "districtReselectHint": "Viloyat o'zgargani uchun tumanni qayta tanlang.",
+    "customerNote": "O'zgarish mijoz profiliga saqlanadi va uning barcha buyurtmalarida ko'rinadi.",
+    "removeItem": "{{name}} ni olib tashlash",
+    "itemsEmpty": "Ro'yxatda mahsulot qolmadi.",
+    "addressSaved": "Manzil saqlandi",
+    "customerSaved": "Mijoz ma'lumoti saqlandi",
+    "orderSaved": "Buyurtma saqlandi",
+    "itemQuantity": "{{count}} ta"
+  },
   "externalOrdersTitle": "Tashqi buyurtmalar",
   "externalOrdersSubtitle": "Tashqi tizimlardan kelgan buyurtmalar ro'yxati",
   "externalOrdersEmpty": "Tashqi buyurtmalar yo'q",

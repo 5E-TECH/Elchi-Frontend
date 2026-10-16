@@ -37,7 +37,8 @@ import { useActionDialogSession, useApprovalStateFocus } from "./useActionDialog
  * pastki varaqa, fokus tuzog'i, Esc, so'rov ketayotganda yopilmaydi).
  *
  * Maketlar: `courier-orders-sell-dialog` (+ `-partial-`, `-extra-cost-`, `-action-approval-pending`) —
- * `variant="courier"` (sukut; tafsilot sahifasi ham); `manager-orders-sell-dialog` — `variant="manager"`.
+ * `variant="courier"` (sukut); `manager-orders-sell-dialog` — `variant="manager"` (menejer ro'yxati va
+ * buyurtma tafsiloti — u yerda sotishni faqat hududiy menejer qiladi).
  *
  * To'liq sotishda «Marketga to'langan summa» (uguUEhin): kuryer mijozdan olgan puldan marketga o'zi
  * bergan qism. Faqat 0 dan katta bo'lsa yuboriladi; hamkor (`external_id`) buyurtmasida ko'rsatilmaydi.
