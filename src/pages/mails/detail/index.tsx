@@ -1,7 +1,7 @@
-import { memo, useEffect, useMemo, useCallback, useState } from "react";
+import { Fragment, memo, useEffect, useMemo, useCallback, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, Ban, FileText, Globe, MapPin, ScanLine, Trash2 } from "lucide-react";
+import { AlertTriangle, CircleX, FileText, Globe, Lock, ScanLine, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   useDeleteOrdersFromPost,
@@ -13,7 +13,9 @@ import {
 } from "../../../entities/mails";
 import { useBatchRemainingDetail, useSendTransferBatch } from "../../../entities/batch";
 import { mapBatchOrdersToPostOrders } from "../../batches/lib/batchOrderMailAdapter";
-import HeaderName from "../../../shared/components/headerName";
+import { Badge, PageHeader, StatusBadge } from "../../../shared/ui/primitives";
+import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
+import { getPostStatusBadge } from "./lib/postStatus";
 import PrintModeSelect, { type PrintSelectOption } from "../../../shared/components/PrintModeSelect";
 
 // ─── UI komponentlar ──────────────────────────────────────────────────────────
@@ -41,12 +43,19 @@ import {
   normalizeScannerCandidates,
 } from "../../scan/lib/scanShared";
 import { fetchScanDetail, getBackendErrorMessage } from "../../scan/lib/scanResource";
-import { getMailTabPath, normalizeMailTab } from "../lib/navigation";
-import BackButton from "../../../shared/ui/BackButton";
+import { getMailTabPath, normalizeMailTab, type MailTab } from "../lib/navigation";
 import PageContainer from "../../../shared/ui/PageContainer";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { notify } from "../../../shared/lib/notify";
+
+/** «← …» havolasi — qaytiladigan bo'lim nomi (taxta `tizim-states-navigation`). */
+const MAIL_TAB_LABEL_KEYS: Record<MailTab, string> = {
+  today: "todayTab",
+  return: "returnTab",
+  refused: "refusedTab",
+  old: "oldTab",
+};
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 const MailDetailSkeleton = memo(() => (
@@ -232,7 +241,7 @@ ErrorState.displayName = "ErrorState";
 
 // ─── Asosiy Page ──────────────────────────────────────────────────────────────
 const MailDetailPage = () => {
-  const { t } = useTranslation(["mails", "newOrders", "orders"]);
+  const { t, i18n } = useTranslation(["mails", "newOrders", "orders"]);
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useNavigate();
@@ -521,32 +530,30 @@ const MailDetailPage = () => {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deleteTargetIds, setDeleteTargetIds] = useState<string[]>([]);
   const [deleteError, setDeleteError] = useState("");
-  const postStatus = regularResponse?.data?.post?.status ?? null;
+  const postMeta = regularResponse?.data?.post ?? null;
+  const postStatus = postMeta?.status ?? null;
+  // Holat badge'i: server holati birlamchi; u yo'q, lekin pochta rad etilgan deb aniqlangan bo'lsa — «Rad etilgan».
+  const headerStatus = getPostStatusBadge(postStatus ?? (isEffectiveRefusedDetail ? "canceled" : null));
   const canDeleteFromPost =
     role === "superadmin" && !isEffectiveRefusedDetail && !isOldDetail && postStatus === "new";
 
   // ─── Region nomi ──────────────────────────────────────────────────────────
-  const regionName = useMemo(
+  // `regionLabel` — aniq viloyat (yo'q bo'lsa `null`); `regionName` — sarlavha uchun, pochta raqami bilan to'ldirilgan.
+  const regionLabel = useMemo(
     () =>
       (isBranchTransferRole
         ? transferBatchResponse?.to_branch?.name
         : null) ??
       orders[0]?.district?.region?.name ??
       orders[0]?.region?.name ??
-      (fallbackRegionName ||
-      (isEffectiveRefusedDetail
-        ? t("refusedMailNumber", { id: postId })
-        : t("mailNumberWithId", { id: postId }))),
-    [
-      isBranchTransferRole,
-      transferBatchResponse,
-      orders,
-      fallbackRegionName,
-      postId,
-      isEffectiveRefusedDetail,
-      t,
-    ],
+      (fallbackRegionName || null),
+    [isBranchTransferRole, transferBatchResponse, orders, fallbackRegionName],
   );
+  const regionName =
+    regionLabel ??
+    (isEffectiveRefusedDetail
+      ? t("refusedMailNumber", { id: postId })
+      : t("mailNumberWithId", { id: postId }));
 
   // ─── Region ID (manzil filiallar uchun) ───────────────────────────────────
   // fix3 LC-09: pochtaning o'z viloyati (tuman qayta biriktirilgan bo'lsa ham
@@ -896,42 +903,80 @@ const MailDetailPage = () => {
       </PageContainer>
     );
 
+  // ─── Sarlavha (dizayn v2) ─────────────────────────────────────────────────
+  // Holat birlamchi manbasi — serverdagi `data.post` (4YZcTTDQ). Maketlar rolga qarab:
+  //  - superadmin/admin/registrator (`*-mails-detail`, `-refused`, `-old`): viloyat sarlavhasi,
+  //    holat badge'i, eski pochtada «Faqat o'qish», izohda «Pochta №… · N ta buyurtma»;
+  //  - kuryer (`courier-mails-detail-*`): badge yo'q, rad etilganda izoh oldida qizil ikonka;
+  //  - menejer (`manager-mails-detail-receive`, `-refused-receive`): sarlavhada pochta raqami,
+  //    izohda viloyat va sana; eski pochtasi — adminniki kabi (`admin-mails-old-detail`).
+  const mailNumber = postId ? t("mailNumberWithId", { id: postMeta?.id ?? postId }) : null;
+  const isManagerHeader = role === "manager" && !isOldDetail && Boolean(mailNumber);
+  const ordersCountText = isOldDetail
+    ? t("oldOrdersCount", { count: orders.length })
+    : isManagerHeader
+      ? t(isEffectiveRefusedDetail ? "headerRefusedOrdersCount" : "headerOrdersCount", { count: orders.length })
+      : isEffectiveRefusedDetail
+        ? t("refusedOrdersCount", { count: orders.length })
+        : t("ordersCount", { count: orders.length });
+  const headerParts = (
+    isManagerHeader
+      ? [
+          regionLabel,
+          postMeta?.createdAt ? formatDateTimeLocalized(postMeta.createdAt, { language: i18n.language }) : null,
+          ordersCountText,
+        ]
+      : [mailNumber, ordersCountText]
+  ).filter((part): part is string => Boolean(part));
+  const showStatusBadge = !isCourier && headerStatus !== null;
+  const showReadOnlyBadge = !isCourier && isOldDetail;
+
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <PageContainer className="flex flex-col gap-5">
-      {/* Sarlavha */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-3">
-          <BackButton onClick={handleBack} className="h-10 min-w-10 shrink-0 rounded-xl px-2" label="" />
-          <HeaderName
-            name={t("regionOrdersTitle", { region: regionName })}
-            description={
-              isOldDetail
-                ? t("oldOrdersCount", { count: orders.length })
-                : isEffectiveRefusedDetail
-                ? t("refusedOrdersCount", { count: orders.length })
-                : t("ordersCount", { count: orders.length })
-            }
-            icon={
-              isEffectiveRefusedDetail ? (
-                <Ban size={20} className="text-white" />
-              ) : (
-                <MapPin size={20} className="text-white" />
-              )
-            }
-            onIconClick={handleBack}
-          />
-        </div>
-        {!isOldDetail && (
-          <PrintModeSelect
-            count={selectedIds.size}
-            onSelect={(mode) => handlePrint(mode as PrintMode)}
-            buttonLabel={t("print")}
-            menuLabel={t("printMenu")}
-            options={printOptions}
-          />
-        )}
-      </div>
+      <PageHeader
+        back={handleBack}
+        backLabel={t(MAIL_TAB_LABEL_KEYS[normalizeMailTab(fromTab)])}
+        title={isManagerHeader ? mailNumber : t("regionOrdersTitle", { region: regionName })}
+        meta={
+          showStatusBadge || showReadOnlyBadge ? (
+            <>
+              {showStatusBadge && headerStatus ? (
+                <StatusBadge data-testid="mail-post-status" tone={headerStatus.tone} label={t(headerStatus.labelKey)} />
+              ) : null}
+              {showReadOnlyBadge ? (
+                <Badge data-testid="mail-read-only" icon={Lock}>
+                  {t("readOnlyBadge")}
+                </Badge>
+              ) : null}
+            </>
+          ) : null
+        }
+        description={
+          <span data-testid="mail-detail-sub">
+            {isCourier && isEffectiveRefusedDetail ? (
+              <CircleX size={14} aria-hidden="true" className="mr-1.5 inline-block align-[-2px] text-danger-fg" />
+            ) : null}
+            {headerParts.map((part, index) => (
+              <Fragment key={index}>
+                {index > 0 ? " · " : null}
+                <span className="whitespace-nowrap">{part}</span>
+              </Fragment>
+            ))}
+          </span>
+        }
+        actions={
+          !isOldDetail ? (
+            <PrintModeSelect
+              count={selectedIds.size}
+              onSelect={(mode) => handlePrint(mode as PrintMode)}
+              buttonLabel={t("print")}
+              menuLabel={t("printMenu")}
+              options={printOptions}
+            />
+          ) : null
+        }
+      />
 
       {/* Stat kartalar */}
       <MailStatCards

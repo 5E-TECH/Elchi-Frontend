@@ -312,3 +312,113 @@ describe("MailDetailPage — savat: buyurtmani pochtadan o'chirish (yokjwjXG)", 
     expect(await screen.findByTestId("navigated-away")).toBeInTheDocument();
   });
 });
+
+describe("MailDetailPage — sarlavha: pochta holati serverdan, rolga qarab maketdagidek (4YZcTTDQ)", () => {
+  const POST = {
+    id: POST_ID,
+    status: "sent",
+    courier_id: "119",
+    courier: { id: "119", name: "Buxaro Courier", phone_number: "+998901190119" },
+    createdAt: "2026-10-01T08:00:00.000Z",
+  };
+  const withPost = (post: Record<string, unknown> | undefined, orderStatus = "received") =>
+    mocks.useMailDetail.mockImplementation((postId: string) => ({
+      data: postId
+        ? { data: { allOrdersByPostId: [{ ...order("101"), status: orderStatus }], ...(post ? { post } : {}) } }
+        : undefined,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    }));
+  const sub = () => screen.getByTestId("mail-detail-sub");
+
+  it.each([
+    ["new", "Yangi"],
+    ["sent", "Jo'natilgan"],
+    ["received", "Qabul qilingan"],
+    ["canceled_received", "Qaytarilgan"],
+  ])("deep-link (state'siz): post.status=%s — badge «%s»", (status, label) => {
+    withPost({ ...POST, status });
+    renderPage(stateFor("superadmin"));
+    expect(screen.getByTestId("mail-post-status")).toHaveTextContent(label);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Sirdaryo buyurtmalari");
+  });
+
+  it("superadmin: izohda «Pochta №7 · 1 ta buyurtma mavjud» — kuryer maketda yo'q", () => {
+    withPost(POST);
+    renderPage(stateFor("superadmin"));
+    expect(sub()).toHaveTextContent(/^Pochta №7 · 1 ta buyurtma mavjud$/);
+    expect(screen.queryByText(/Buxaro Courier/)).toBeNull();
+    expect(screen.queryByTestId("mail-read-only")).toBeNull();
+  });
+
+  it("eski pochta: holat + «Faqat o'qish», izohda eski buyurtmalar soni (`superadmin-mails-detail-old`)", () => {
+    withPost({ ...POST, status: "received" });
+    renderPage(stateFor("superadmin"), { pathname: `/mails/${POST_ID}`, state: { fromTab: "old", view: "old" } });
+    expect(screen.getByTestId("mail-post-status")).toHaveTextContent("Qabul qilingan");
+    expect(screen.getByTestId("mail-read-only")).toHaveTextContent("Faqat o'qish");
+    expect(screen.getByRole("button", { name: /Eski pochtalar/ })).toBeInTheDocument();
+    expect(sub()).toHaveTextContent(/^Pochta №7 · 1 ta eski buyurtma mavjud$/);
+  });
+
+  it("kuryer: badge yo'q, eski pochtada ham (`courier-mails-detail-receive`, `-old`)", () => {
+    withPost(POST, "on the road");
+    renderPage(stateFor("courier"));
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Sirdaryo buyurtmalari");
+    expect(screen.queryByTestId("mail-post-status")).toBeNull();
+    expect(sub()).toHaveTextContent(/^Pochta №7 · 1 ta buyurtma mavjud$/);
+  });
+
+  it("kuryer, eski pochta — «Faqat o'qish» ham yo'q", () => {
+    withPost({ ...POST, status: "received" });
+    renderPage(stateFor("courier"), { pathname: `/mails/${POST_ID}`, state: { fromTab: "old", view: "old" } });
+    expect(screen.queryByTestId("mail-post-status")).toBeNull();
+    expect(screen.queryByTestId("mail-read-only")).toBeNull();
+  });
+
+  it("kuryer, rad etilgan pochta — izoh oldida qizil ikonka (`courier-mails-detail-refused`)", () => {
+    withPost(undefined);
+    renderPage(stateFor("courier"), { pathname: `/mails/${POST_ID}`, state: { fromTab: "refused", type: "refused" } });
+    expect(screen.queryByTestId("mail-post-status")).toBeNull();
+    expect(sub().querySelector("svg.lucide-circle-x")).not.toBeNull();
+    expect(sub()).toHaveTextContent(/^Pochta №7 · 0 ta rad etilgan buyurtma mavjud$/);
+  });
+
+  it("menejer (qabul): sarlavhada pochta raqami, izohda viloyat · sana · soni (`manager-mails-detail-receive`)", () => {
+    withPost({ ...POST, status: "new" }, "on the road");
+    renderPage(stateFor("manager", "REGIONAL"));
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^Pochta №7$/);
+    expect(screen.getByTestId("mail-post-status")).toHaveTextContent("Yangi");
+    expect(sub()).toHaveTextContent(/^Sirdaryo · 01\.10\.2026, \d{2}:00 · 1 ta buyurtma$/);
+  });
+
+  it("menejer, rad etilgan pochta: «Pochta №7», izohda «N ta rad etilgan buyurtma» (`manager-mails-detail-refused-receive`)", () => {
+    withPost(undefined);
+    renderPage(stateFor("manager", "HQ"), { pathname: `/mails/${POST_ID}`, state: { fromTab: "refused", type: "refused" } });
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^Pochta №7$/);
+    expect(screen.getByTestId("mail-post-status")).toHaveTextContent("Rad etilgan");
+    expect(sub()).toHaveTextContent(/^0 ta rad etilgan buyurtma$/);
+  });
+
+  it("menejer, eski pochta — adminniki kabi (`admin-mails-old-detail`)", () => {
+    withPost({ ...POST, status: "received" });
+    renderPage(stateFor("manager", "REGIONAL"), { pathname: `/mails/${POST_ID}`, state: { fromTab: "old", view: "old" } });
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Sirdaryo buyurtmalari");
+    expect(screen.getByTestId("mail-read-only")).toBeInTheDocument();
+  });
+
+  it("eski backend (post yo'q) — badge chizilmaydi, sahifa avvalgidek", () => {
+    withPost(undefined);
+    renderPage(stateFor("superadmin"));
+    expect(screen.queryByTestId("mail-post-status")).toBeNull();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Sirdaryo buyurtmalari");
+  });
+
+  it("«← Bugungi pochtalar» — ro'yxatga qaytaradi", async () => {
+    const user = userEvent.setup();
+    withPost({ ...POST, status: "new" });
+    renderPage(stateFor("superadmin"));
+    await user.click(screen.getByRole("button", { name: /Bugungi pochtalar/ }));
+    expect(await screen.findByTestId("navigated-away")).toBeInTheDocument();
+  });
+});
