@@ -261,6 +261,40 @@ describe("NewOrderUpdate manager edit (fix #2)", () => {
   });
 });
 
+// PATCH /orders/:id/full `items` ni TO'LIQ almashtiradi — payload'da yo'q qator bazadan o'chadi.
+describe("NewOrderUpdate — mahsulot sonini tahrirlash erkin-matnli qatorni saqlaydi", () => {
+  afterEach(() => {
+    orderState.items = [];
+    orderState.status = undefined;
+    idleMutation.mutateAsync.mockClear();
+  });
+
+  it("⭐ katalog mahsuloti sonini oshirish — so'rovdagi items'da erkin-matnli qator ham bor", async () => {
+    const user = userEvent.setup();
+    orderState.status = "new";
+    orderState.items = [
+      { id: "c1", quantity: 2, product_id: "6", product: { id: "6", name: "Televizor" }, product_name: null },
+      { id: "f1", quantity: 1, product_id: null, product: null, product_name: "Ipak ro'mol" },
+    ];
+    renderPage("registrator");
+
+    await user.click(screen.getByRole("button", { name: /^Buyurtmani tahrirlash/ }));
+    await screen.findByRole("dialog", { name: "Buyurtmani tahrirlash" });
+    await user.click(screen.getByRole("button", { name: "Televizor sonini oshirish" }));
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+
+    expect(idleMutation.mutateAsync).toHaveBeenCalledWith({
+      orderId: "1251175",
+      data: {
+        items: [
+          { product_id: "6", quantity: 3 },
+          { product_id: null, product_name: "Ipak ro'mol", quantity: 1 },
+        ],
+      },
+    });
+  });
+});
+
 describe("NewOrderUpdate — dalillar (proof_files) va dalil majburiyati", () => {
   afterEach(() => {
     orderState.extra = undefined;

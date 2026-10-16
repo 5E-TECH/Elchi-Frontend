@@ -10,6 +10,7 @@ import {
   isOrderSentToBranch,
   normalizeOrderStatus,
   parseOrderTotalPrice,
+  type EditableOrderItem,
   type EditableOrderSnapshot,
 } from "./newOrderUpdateRules";
 
@@ -102,6 +103,77 @@ describe("new order update rules", () => {
       where_deliver: "address",
       total_price: 200000,
       items: [{ product_id: "product-1", quantity: 2 }],
+    });
+  });
+
+  // Backend `PATCH /orders/:id/full` `items` ni TO'LIQ almashtiradi (`replaceOrderItems`) —
+  // payload'da yo'q qator bazadan o'chadi.
+  describe("items — erkin-matnli (katalogsiz) qatorlar saqlanadi", () => {
+    const mixedOrder: EditableOrderSnapshot = {
+      ...order,
+      status: "new",
+      items: [
+        { id: "item-1", quantity: 1, product: { id: "product-1" }, product_id: "product-1", product_name: null },
+        { id: "item-2", quantity: 1, product: null, product_id: null, product_name: "Ipak ro'mol" },
+      ],
+    };
+    const formWith = (items: EditableOrderItem[]) => ({
+      where_deliver: mixedOrder.where_deliver,
+      total_price: String(mixedOrder.total_price),
+      comment: mixedOrder.comment ?? "",
+      items,
+    });
+    const unlocked = { products: false, destination: false };
+    const withQuantity = (items: EditableOrderItem[], id: string, quantity: number) =>
+      items.map((item) => (item.id === id ? { ...item, quantity } : item));
+
+    it("⭐ katalog mahsuloti soni o'zgarsa — erkin-matnli qator ham yuboriladi (o'chib ketmaydi)", () => {
+      expect(
+        buildOrderUpdatePayload(mixedOrder, formWith(withQuantity(mixedOrder.items, "item-1", 3)), unlocked),
+      ).toEqual({
+        items: [
+          { product_id: "product-1", quantity: 3 },
+          { product_id: null, product_name: "Ipak ro'mol", quantity: 1 },
+        ],
+      });
+    });
+
+    it("faqat erkin-matnli qator soni o'zgarsa ham yuboriladi (ilgari jimgina tashlab ketilardi)", () => {
+      expect(
+        buildOrderUpdatePayload(mixedOrder, formWith(withQuantity(mixedOrder.items, "item-2", 2)), unlocked),
+      ).toEqual({
+        items: [
+          { product_id: "product-1", quantity: 1 },
+          { product_id: null, product_name: "Ipak ro'mol", quantity: 2 },
+        ],
+      });
+    });
+
+    it("erkin-matnli qatorni olib tashlash yuboriladi; o'zgarmagan yoki tartibi boshqa ro'yxat — yuborilmaydi", () => {
+      expect(buildOrderUpdatePayload(mixedOrder, formWith([mixedOrder.items[0]]), unlocked)).toEqual({
+        items: [{ product_id: "product-1", quantity: 1 }],
+      });
+      expect(buildOrderUpdatePayload(mixedOrder, formWith(mixedOrder.items), unlocked)).toEqual({});
+      expect(buildOrderUpdatePayload(mixedOrder, formWith([...mixedOrder.items].reverse()), unlocked)).toEqual({});
+    });
+
+    it("`product` kelmagan katalog qatori product_id va nomi bilan qoladi; na id, na nom — yuborilmaydi", () => {
+      const legacyOrder: EditableOrderSnapshot = {
+        ...mixedOrder,
+        items: [
+          { id: "item-1", quantity: 1, product: { id: "product-1" } },
+          { id: "item-3", quantity: 3, product: null, product_id: "8", product_name: "psarinorm" },
+          { id: "item-4", quantity: 1, product: null, product_id: null, product_name: "  " },
+        ],
+      };
+      expect(
+        buildOrderUpdatePayload(legacyOrder, formWith(withQuantity(legacyOrder.items, "item-1", 2)), unlocked),
+      ).toEqual({
+        items: [
+          { product_id: "product-1", quantity: 2 },
+          { product_id: "8", product_name: "psarinorm", quantity: 3 },
+        ],
+      });
     });
   });
 
