@@ -47,6 +47,9 @@ export const API_ENDPOINTS = {
     ADD_ORDER: (id: string | number) => `markets/${id}/add-order`, // PATCH
     CANCELLED_HANDOVER_QR: (id: string | number) => `markets/${id}/cancelled-handover-qr`, // PATCH
     EXPENSE_PROOF: (id: string | number) => `markets/${id}/expense-proof`, // PATCH proof conditions (guide §5)
+    // PATCH { tg_group_show_customer_pii } — Telegram guruhi kartasida mijoz ismi/telefoni (ysBqD9Nx;
+    // superadmin, admin, market — faqat o'zinikini)
+    TELEGRAM_GROUP_PII: (id: string | number) => `markets/${id}/telegram-group-pii`,
   },
   COURIERS: {
     BASE: "couriers", // GET list / POST create

@@ -6,6 +6,7 @@ import { useCashBox } from "../../../entities/payments";
 import type { RootState } from "../../../app/config/store";
 import { useTranslation } from "react-i18next";
 import CashboxRolePageLayout from "./CashboxRolePageLayout";
+import { toPaymentAck } from "./paymentAck";
 
 const toNumber = (value: unknown) => {
   const parsed = Number(value);
@@ -156,6 +157,7 @@ const MyCashboxPage = () => {
           payment_date:
             toOptionalString(item["payment_date"]) ?? toOptionalString(item["createdAt"]) ?? toOptionalString(item["created_at"]),
           comment: toOptionalString(item["comment"]),
+          payment_ack: toPaymentAck(item["payment_ack"]),
           balance_after: item["balance_after"] === undefined ? undefined : toNumber(item["balance_after"]),
           createdAt: item["createdAt"] as string | undefined,
           created_at: item["created_at"] as string | undefined,

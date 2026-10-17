@@ -15,6 +15,7 @@ import type { ExpenseProofCondition } from "../../../entities/user/types/user";
 import type { RootState } from "../../../app/config/store";
 import { MarketTelegramTokenCard } from "./MarketTelegramTokenCard";
 import { TelegramLinkCard, canLinkTelegram } from "../../../features/telegram-link";
+import { MarketTelegramGroupPiiCard } from "./MarketTelegramGroupPiiCard";
 
 interface UserDetailWidgetProps {
   user?: User;
@@ -279,6 +280,7 @@ export const UserDetailWidget = memo(
                 linkedAt={user.telegram_linked_at}
               />
             ) : null}
+            {isMarket ? <MarketTelegramGroupPiiCard user={user} isOwnProfile={isOwnProfile} /> : null}
             {canSeeMarketTelegramToken ? (
               <MarketTelegramTokenCard token={user.market_tg_token} />
             ) : null}

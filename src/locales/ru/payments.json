@@ -310,4 +310,9 @@
   ,"paymentConfirmMessage": "{{amount}} сум — {{action}}: {{target}} ({{method}}). После подтверждения деньги будут переведены, отменить нельзя."
   ,"salaryConfirmTitle": "Подтвердите выплату зарплаты"
   ,"salaryConfirmDescription": "Проверьте данные — после подтверждения сумма сразу списывается из кассы, отменить нельзя."
+  ,"paymentAckDisputed": "Неверно"
+  ,"paymentAckDisputedHint": "Курьер ответил в боте на квитанцию «Неверно»"
+  ,"paymentAckConfirmed": "Подтверждено"
+  ,"paymentAckConfirmedHint": "Курьер подтвердил квитанцию в боте"
+  ,"historyCorrectionBadge": "Корректировка"
 }

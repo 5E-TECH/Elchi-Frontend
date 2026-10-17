@@ -429,6 +429,28 @@ export const useUser = () => {
     },
   });
 
+  /**
+   * (ysBqD9Nx) Market Telegram guruhi kartasida mijoz ismi/telefoni — `PATCH markets/:id/telegram-group-pii`.
+   * Superadmin/admin istalgan market uchun, market — faqat o'zi uchun (boshqasi 403).
+   */
+  const updateMarketTelegramGroupPii = useMutation({
+    mutationFn: ({
+      id,
+      tg_group_show_customer_pii,
+    }: {
+      id: string;
+      tg_group_show_customer_pii: boolean;
+    }) =>
+      api
+        .patch(API_ENDPOINTS.MARKETS.TELEGRAM_GROUP_PII(id), { tg_group_show_customer_pii })
+        .then((res) => res.data),
+    onSuccess: () => {
+      // `[user]` — tafsilot (`[user, "detail", id]`) va o'z profili (`[user, "profile"]`) ham.
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" });
+      client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
+    },
+  });
+
   const deleteUser = useMutation({
     mutationFn: (id: string) =>
       api.delete(API_ENDPOINTS.USERS.BY_ID(id)).then((res) => res.data),
@@ -454,6 +476,7 @@ export const useUser = () => {
     updateMarketAddOrder,
     updateMarketExpenseProof,
     updateMarketCancelledHandoverQr,
+    updateMarketTelegramGroupPii,
     deleteUser,
   };
 };
