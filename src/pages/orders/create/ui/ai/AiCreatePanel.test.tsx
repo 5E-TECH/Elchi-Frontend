@@ -353,6 +353,44 @@ describe("AiCreatePanel", () => {
       "3f0c2a52-8a5b-4c6e-9d0e-1b2c3d4e5f60",
     ]);
   });
+  it("⭐ vncdmXOy: har buyurtmaga preview o'rni `ai_item_index` (backend `index`, bo'lmasa javobdagi o'rni) — yaratilganlar chiqarilsa ham asl o'rin", async () => {
+    const DRAFT = "3f0c2a52-8a5b-4c6e-9d0e-1b2c3d4e5f60";
+    parseOrders = [order(1), order(2)];
+    mocks.post.mockImplementation((url: string, body: unknown) => {
+      if (url === "orders/ai-parse") return Promise.resolve({ data: { data: { ok: true, orders: parseOrders, draft_id: DRAFT } } });
+      return Promise.resolve({ data: { data: allResultsOk(body as AiConfirmRequest) } });
+    });
+    renderPanel();
+    await parse(2);
+
+    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish — 2 ta" }));
+    await waitFor(() => expect(confirmCalls()).toHaveLength(1));
+    expect(confirmCalls()[0].orders.map((o) => o.ai_item_index)).toEqual([0, 1]);
+    await waitFor(() => expect(screen.queryAllByTestId("ai-preview-card")).toHaveLength(0));
+
+    // Qayta tahlil: 1–2 allaqachon yaratilgan — kartada faqat 3-buyurtma, o'rni esa javobdagidek 2 (0 emas).
+    parseOrders = [order(1), order(2), order(3)];
+    await reparse();
+    await waitFor(() => expect(screen.getAllByTestId("ai-preview-card")).toHaveLength(1));
+    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish — 1 ta" }));
+    await waitFor(() => expect(confirmCalls()).toHaveLength(2));
+    expect(confirmCalls()[1].orders.map((o) => o.ai_item_index)).toEqual([2]);
+  });
+
+  it("vncdmXOy: backend preview `index` bersa — o'shasi yuboriladi", async () => {
+    parseOrders = [order(1, { index: 7 }), order(2, { index: 4 })];
+    mocks.post.mockImplementation((url: string, body: unknown) => {
+      if (url === "orders/ai-parse") return Promise.resolve({ data: { data: { ok: true, orders: parseOrders, draft_id: "d-1" } } });
+      return Promise.resolve({ data: { data: allResultsOk(body as AiConfirmRequest) } });
+    });
+    renderPanel();
+    await parse(2);
+
+    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish — 2 ta" }));
+    await waitFor(() => expect(confirmCalls()).toHaveLength(1));
+    expect(confirmCalls()[0].orders.map((o) => o.ai_item_index)).toEqual([7, 4]);
+  });
+
   it("ai-confirm kodi tarjima qilinadi: `duplicate_recent` → mavjud buyurtma raqami bilan (6LSlbHoi)", async () => {
     parseOrders = [order(1), order(2)];
     confirmResponse = () => ({

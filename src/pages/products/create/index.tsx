@@ -28,6 +28,12 @@ import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { resolveAssetUrl } from "../../../shared/lib/assetUrl";
 import { notify } from "../../../shared/lib/notify";
 
+/**
+ * «Mavjud mahsulotlar» jadvali (maket `market-products-create`: «Jami N ta», sahifalashsiz) — marketning BARCHA
+ * mahsulotlari. `limit` bermasak server 10 tasini berardi va 11-mahsulot ko'rinmasdi (3qDsJpfW); 500 — server chegarasi.
+ */
+const EXISTING_PRODUCTS_PARAMS = { limit: 500 } as const;
+
 interface ExistingProduct {
   id: number;
   name: string;
@@ -116,8 +122,9 @@ const CreateProductPage = () => {
   const { data: marketD } = useGetByMarketId(
     effectiveMarketId || undefined,
     !isMarketRole && Boolean(effectiveMarketId),
+    EXISTING_PRODUCTS_PARAMS,
   );
-  const { data: myProductsData } = useGetMyProducts(isMarketRole);
+  const { data: myProductsData } = useGetMyProducts(isMarketRole, EXISTING_PRODUCTS_PARAMS);
 
   const marketData = useMemo<ExistingProduct[]>(() => {
     if (isMarketRole) {

@@ -88,6 +88,19 @@
     "limited": "Ma'lumot hali kam — reyting natijalari o'zgarishi mumkin.",
     "empty": "Ma'lumot hali kam (reyting uchun kamida 30 buyurtma kerak)."
   },
+  "ranking": {
+    "formula": "Sotuv foizi · sotilgan / jami",
+    "formulaWithOwn": "Sotuv foizi · top 5 va sizning filial",
+    "periodLastDays": "oxirgi {{count}} kun",
+    "ratio": "{{successful}} / {{total}} ta",
+    "rateAria": "{{name}}: sotuv foizi",
+    "lowData": "Ma'lumot hali kam — reyting natijalari o'zgarishi mumkin",
+    "empty": "Bu davrda reyting uchun buyurtma yo'q",
+    "showMore": "Yana ko'rsatish · {{count}} ta",
+    "showLess": "Kamroq ko'rsatish",
+    "ownBranch": "Sizning filial",
+    "ownRankAria": "Sizning filialingiz o'rni"
+  },
   "region": {
     "title": "Hududlar bo'yicha",
     "subtitle": "Viloyatlar kesimida buyurtma va sotuv ko'rsatkichlari"
@@ -186,10 +199,16 @@
     "extra_cost_on_approve_cancel": "Tasdiqlansa — buyurtma bekor qilinadi",
     "extra_cost_requester": "So'rovchi",
     "extra_cost_proofs": "Isbotlar",
+    "extra_cost_list": "Kutilayotgan so'rovlar",
+    "extra_cost_item": "{{action}}, buyurtma №{{id}}",
+    "extra_cost_amount": "So'ralgan summa",
+    "extra_cost_proofs_count": "{{value}} ta",
+    "extra_cost_no_proofs": "Yo'q",
     "extra_cost_approve": "Tasdiqlash",
     "extra_cost_reject": "Rad etish",
     "extra_cost_approving": "Tasdiqlanmoqda",
     "extra_cost_rejecting": "Rad etilmoqda",
-    "extra_cost_action_error": "So'rovni bajarib bo'lmadi. Qayta urinib ko'ring."
+    "extra_cost_action_error": "So'rovni bajarib bo'lmadi. Qayta urinib ko'ring.",
+    "extra_cost_already_resolved": "Bu so'rov allaqachon hal qilingan — ro'yxat yangilandi"
   }
 }

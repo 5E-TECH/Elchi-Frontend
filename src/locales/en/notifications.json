@@ -134,5 +134,8 @@
     "explainConfirm": "Turn on",
     "explainCancel": "Not now",
     "toastOpen": "Open"
+  },
+  "realtime": {
+    "manyNew": "{{count}} new notifications"
   }
 }

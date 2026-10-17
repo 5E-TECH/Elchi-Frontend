@@ -213,3 +213,22 @@ describe("FinancialAnalysis CustomTooltip", () => {
     expect(screen.getByText("Oldingi davr: —")).toBeInTheDocument();
   });
 });
+
+describe("FinancialAnalysis — qisman nosozlik (VkwhHqvW)", () => {
+  it("revenue `degraded` — moliya bo'lagi 0 lar bilan emas, xato va «Qayta urinish»", async () => {
+    const refetch = vi.fn();
+    getRevenueMock.mockReturnValue({
+      data: { data: { summary: { totalRevenue: 0, totalOrders: 0, avgRevenue: 0 }, chart: { labels: [], values: [] }, degraded: true, failedParts: ["finance"] } },
+      isLoading: false,
+      isError: false,
+      refetch,
+    });
+    renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Ma'lumotni yuklab bo'lmadi");
+    expect(screen.queryByText("Jami daromad")).not.toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Qayta urinish" }));
+    expect(refetch).toHaveBeenCalled();
+  });
+});
+

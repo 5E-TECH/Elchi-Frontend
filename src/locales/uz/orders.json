@@ -537,9 +537,13 @@
   "filterBranch": "Filial",
   "filterBranchPlaceholder": "Filialni tanlang",
   "chipBranch": "Filial",
-  "exportEmpty": "Export qilish uchun order topilmadi",
-  "exportSuccess": "{{count}} ta order Excelga saqlandi",
-  "exportError": "Orderlarni Excelga saqlashda xatolik yuz berdi",
+  "exportEmpty": "Filtrga mos buyurtma yo'q — Excel fayl yaratilmadi",
+  "exportSuccess": "{{count}} ta buyurtma Excelga saqlandi.",
+  "exportError": "Server javob bermadi. Birozdan keyin qayta urinib ko'ring.",
+  "exportSuccessTitle": "Excelga saqlandi",
+  "exportTruncatedTitle": "Fayl to'liq emas",
+  "exportTruncated": "Faylda {{count}} ta, jami {{total}} ta buyurtma — filtrni toraytiring.",
+  "exportErrorTitle": "Excel fayl yuklanmadi",
   "orderNumber": "Buyurtma raqami",
   "copyOrderNumber": "Raqamni nusxalash",
   "orderNumberCopied": "Buyurtma raqami nusxalandi",
@@ -555,19 +559,7 @@
   "extraCostApprovalActionCancel": "Bekor qilish",
   "sortLabel": "Saralash:",
   "excel": {
-    "fileName": "barcha_buyurtmalar",
-    "headers": {
-      "number": "N",
-      "region": "Viloyat",
-      "district": "Tuman",
-      "company": "Firma",
-      "product": "Mahsulot",
-      "phone": "Telefon raqam",
-      "price": "Narxi",
-      "courier": "Kuryer",
-      "status": "Holati",
-      "date": "Sana"
-    }
+    "fileName": "barcha_buyurtmalar"
   },
   "aiModeManual": "Qo'lda",
   "aiModeAi": "AI bilan",

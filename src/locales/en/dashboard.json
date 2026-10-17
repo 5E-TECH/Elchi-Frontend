@@ -88,6 +88,19 @@
     "limited": "Data is still limited — rankings may change.",
     "empty": "Data is still limited (at least 30 orders are needed for rankings)."
   },
+  "ranking": {
+    "formula": "Sales rate · sold / total",
+    "formulaWithOwn": "Sales rate · top 5 and your branch",
+    "periodLastDays": "last {{count}} days",
+    "ratio": "{{successful}} of {{total}}",
+    "rateAria": "{{name}}: sales rate",
+    "lowData": "Not enough data yet — the ranking may change",
+    "empty": "No orders for the ranking in this period",
+    "showMore": "Show more · {{count}}",
+    "showLess": "Show less",
+    "ownBranch": "Your branch",
+    "ownRankAria": "Your branch's place"
+  },
   "region": {
     "title": "By region",
     "subtitle": "Orders and sales metrics across provinces"
@@ -177,7 +190,8 @@
     "view_orders": "View Orders",
     "quick_actions": "Quick Actions",
     "extra_cost_approvals": "Extra cost approvals",
-    "extra_cost_approvals_count": "{{count}} request pending",
+    "extra_cost_approvals_count_one": "{{count}} request pending",
+    "extra_cost_approvals_count_other": "{{count}} requests pending",
     "extra_cost_sell": "Sale extra cost",
     "extra_cost_partly_sell": "Partial sale extra cost",
     "extra_cost_cancel": "Cancel extra cost",
@@ -186,10 +200,16 @@
     "extra_cost_on_approve_cancel": "If approved, the order is cancelled",
     "extra_cost_requester": "Requester",
     "extra_cost_proofs": "Proofs",
+    "extra_cost_list": "Pending requests",
+    "extra_cost_item": "{{action}}, order №{{id}}",
+    "extra_cost_amount": "Requested amount",
+    "extra_cost_proofs_count": "{{value}}",
+    "extra_cost_no_proofs": "None",
     "extra_cost_approve": "Approve",
     "extra_cost_reject": "Reject",
     "extra_cost_approving": "Approving",
     "extra_cost_rejecting": "Rejecting",
-    "extra_cost_action_error": "The request could not be completed. Please try again."
+    "extra_cost_action_error": "The request could not be completed. Please try again.",
+    "extra_cost_already_resolved": "This request has already been resolved — the list is updated"
   }
 }

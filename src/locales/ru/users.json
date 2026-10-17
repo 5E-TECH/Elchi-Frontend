@@ -193,5 +193,8 @@
   "telegramTokenCopied": "Токен скопирован",
   "telegramTokenCopyFailed": "Не удалось скопировать токен",
   "telegramTokenMissing": "У этого магазина ещё нет Telegram-токена",
-  "telegramTokenHint": "Пусть магазин добавит бота в свою Telegram-группу и отправит туда этот токен"
+  "telegramTokenHidden": "Токен скрыт",
+  "telegramTokenLoadFailed": "Не удалось получить токен",
+  "telegramTokenLoadFailedHint": "Попробуйте ещё раз чуть позже.",
+  "telegramTokenHint": "Пусть магазин добавит бота в свою группу Telegram и отправит этот токен. Токен — секретный ключ, передавайте его только этому магазину."
 }

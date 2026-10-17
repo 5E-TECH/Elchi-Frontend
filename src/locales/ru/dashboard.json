@@ -88,6 +88,19 @@
     "limited": "Данных пока мало — рейтинг может измениться.",
     "empty": "Данных пока мало (для рейтинга нужно минимум 30 заказов)."
   },
+  "ranking": {
+    "formula": "Процент продаж · продано / всего",
+    "formulaWithOwn": "Процент продаж · топ-5 и ваш филиал",
+    "periodLastDays": "последние {{count}} дн.",
+    "ratio": "{{successful}} из {{total}}",
+    "rateAria": "{{name}}: процент продаж",
+    "lowData": "Данных пока мало — рейтинг может измениться",
+    "empty": "За этот период нет заказов для рейтинга",
+    "showMore": "Показать ещё · {{count}}",
+    "showLess": "Показать меньше",
+    "ownBranch": "Ваш филиал",
+    "ownRankAria": "Место вашего филиала"
+  },
   "region": {
     "title": "По регионам",
     "subtitle": "Показатели заказов и продаж по областям"
@@ -186,10 +199,16 @@
     "extra_cost_on_approve_cancel": "При подтверждении заказ будет отменён",
     "extra_cost_requester": "Запросил",
     "extra_cost_proofs": "Доказательства",
+    "extra_cost_list": "Ожидающие запросы",
+    "extra_cost_item": "{{action}}, заказ №{{id}}",
+    "extra_cost_amount": "Запрошенная сумма",
+    "extra_cost_proofs_count": "{{value}} шт.",
+    "extra_cost_no_proofs": "Нет",
     "extra_cost_approve": "Подтвердить",
     "extra_cost_reject": "Отклонить",
     "extra_cost_approving": "Подтверждение",
     "extra_cost_rejecting": "Отклонение",
-    "extra_cost_action_error": "Не удалось выполнить запрос. Попробуйте снова."
+    "extra_cost_action_error": "Не удалось выполнить запрос. Попробуйте снова.",
+    "extra_cost_already_resolved": "Этот запрос уже решён — список обновлён"
   }
 }

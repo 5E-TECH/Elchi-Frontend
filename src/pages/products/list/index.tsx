@@ -364,8 +364,11 @@ const ProductTable = () => {
     apiParams,
     isRoleResolved && !isMarketRole,
   );
+  // 3qDsJpfW: market ham sahifa, son va qidiruvni serverga yuboradi — aks holda 10 tadan keyingisi ko'rinmasdi,
+  // qidiruv va sahifalagich hech narsa qilmasdi.
   const { data: myProductsData, isLoading: isMyProductsLoading, isError: isMyProductsError, refetch: refetchMyProducts } = useGetMyProducts(
     isRoleResolved && isMarketRole,
+    apiParams,
   );
   const products = isMarketRole ? myProductsData : productsData;
   const isLoading = isMarketRole ? isMyProductsLoading : isProductsLoading;

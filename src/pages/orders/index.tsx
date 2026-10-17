@@ -35,7 +35,6 @@ import CourierOrders from "./list/courier/index";
 import { usePagination } from "../../shared/lib/usePagination";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
-import { exportOrdersToExcel } from "./lib/exportOrdersToExcel";
 import { getUserBranchType } from "../../widgets/Sidebar/model/menuConfig";
 import SellModal from "./list/courier/list/SellModal";
 import CancelModal from "./list/courier/list/CancelModal";
@@ -53,6 +52,9 @@ import type { CancelOrderPayload } from "../../entities/orders/cancelReason";
 import { getSellPaymentStatus, SELL_PAYMENT_NOTICE_KEYS, type SellOrderPayload } from "../../entities/orders/sellPayment";
 import { notify } from "../../shared/lib/notify";
 import { formatNumberLocalized } from "../../shared/lib/formatMoney";
+import { getExportErrorMessage, getFileNameFromDisposition, saveBlob, XLSX_MIME } from "../../shared/lib/exportFile";
+import { toISODate } from "../../shared/lib/dateRange";
+import { isNetworkFailure } from "../../auth/networkError";
 import {
   Button,
   buttonClasses,
@@ -65,8 +67,10 @@ import {
   type TabItem,
 } from "../../shared/ui/primitives";
 
+/** Eksport natijasi xabari bitta: yangi natija eskisining o'rnini oladi (xWsCAA5N). */
+const EXPORT_TOAST_ID = "orders-export";
+
 const LIMIT = 10;
-const EXPORT_PAGE_SIZE = 100;
 const ORDER_SORT_BY_KEY = "orderSortBy";
 const ORDER_SORT_DIR_KEY = "orderSortDir";
 // Jadval ustuni -> GET /orders `sort_by` (backend oq ro'yxati). Boshqa ustun
@@ -232,44 +236,6 @@ const toPositiveNumber = (value: unknown): number | null => {
   return Math.floor(parsed);
 };
 
-const extractOrderItems = (payload: unknown): OrderListItem[] => {
-  const response = payload as
-    | OrderListItem[]
-    | {
-      data?: OrderListItem[] | { items?: OrderListItem[] };
-      items?: OrderListItem[];
-    };
-
-  if (Array.isArray(response)) return response;
-  if (Array.isArray(response?.data)) return response.data;
-  if (!Array.isArray(response?.data) && Array.isArray(response?.data?.items)) {
-    return response.data.items;
-  }
-  if (Array.isArray(response?.items)) return response.items;
-
-  return [];
-};
-
-const extractOrderTotal = (payload: unknown): number | null => {
-  const response = payload as
-    | {
-      total?: unknown;
-      meta?: { total?: unknown };
-      pagination?: { total?: unknown };
-      data?: { total?: unknown; meta?: { total?: unknown }; pagination?: { total?: unknown } };
-    }
-    | undefined;
-
-  return toPositiveNumber(
-    response?.total ??
-    response?.meta?.total ??
-    response?.pagination?.total ??
-    response?.data?.total ??
-    response?.data?.meta?.total ??
-    response?.data?.pagination?.total,
-  );
-};
-
 // ── Main component ─────────────────────────────────────────────────────────
 const Orders = () => {
   const { t, i18n } = useTranslation("orders");
@@ -280,6 +246,7 @@ const Orders = () => {
   const { SellOrder, PartlySellOrder, CancelOrder, RollbackOrder, SendToPost } = useOrderActions();
   const { getAllParams, setMultipleParams } = useQueryParams();
   const [isExporting, setIsExporting] = useState(false);
+  const exportingRef = useRef(false);
   const [sellOrder, setSellOrder] = useState<OrderListItem | null>(null);
   const [cancelOrder, setCancelOrder] = useState<OrderListItem | null>(null);
   // Market tasdig'iga tushgan amal: modal yopilmaydi, holat ko'rsatiladi.
@@ -849,85 +816,73 @@ const Orders = () => {
     });
   }, [activeStatusTab, dispatch, setMultipleParams]);
 
+  /**
+   * Excel eksporti (xWsCAA5N): joriy filtrlar bilan BITTA `GET orders/export/excel` — server haqiqiy
+   * .xlsx beradi («Jami» qatori, 50 000 gacha). Nom — `Content-Disposition` dan. Chegaradan oshsa
+   * (`X-Export-Truncated`) — ogohlantirish; xato javobi blob ichida JSON — backend matni ko'rsatiladi.
+   */
   const handleExportOrders = async () => {
-    if (isExporting) return;
-
+    // Ref, holat emas: xato xabaridagi «Qayta urinish» eski render'dagi funksiyani chaqiradi — u yerda
+    // `isExporting` hali `false`, ikkinchi so'rov va ikkinchi fayl ketardi.
+    if (exportingRef.current) return;
+    exportingRef.current = true;
     setIsExporting(true);
+    // Avvalgi natija xabari (masalan, «Qayta urinish» li xato) yangi urinishda qolmaydi.
+    notify.dismiss(EXPORT_TOAST_ID);
 
     try {
-      const filters = { ...apiParams };
+      // `GET /orders` filtrlari aynan shunday; sahifalash yo'q — filtrga mos hamma qator.
+      const filters: Record<string, unknown> = { ...apiParams };
       delete filters.page;
       delete filters.limit;
-      const exportedOrders: OrderListItem[] = [];
-      let exportPage = 1;
-      let expectedTotal = total;
-
-      while (true) {
-        const response = await api.get(API_ENDPOINTS.ORDERS.BASE, {
-          params: {
-            ...filters,
-            page: exportPage,
-            limit: EXPORT_PAGE_SIZE,
-          },
-          timeout: LONG_REQUEST_TIMEOUT_MS,
-        });
-        const pageItems = extractOrderItems(response.data);
-        const responseTotal = extractOrderTotal(response.data);
-
-        if (responseTotal !== null) {
-          expectedTotal = responseTotal;
-        }
-
-        exportedOrders.push(...pageItems);
-
-        if (
-          pageItems.length < EXPORT_PAGE_SIZE ||
-          exportedOrders.length >= expectedTotal ||
-          exportPage >= 100
-        ) {
-          break;
-        }
-
-        exportPage += 1;
-      }
-
-      if (exportedOrders.length === 0) {
-        notify.warning(t("exportEmpty"));
+      const response = await api.get(API_ENDPOINTS.ORDERS.EXPORT_EXCEL, {
+        params: filters,
+        responseType: "blob",
+        timeout: LONG_REQUEST_TIMEOUT_MS,
+      });
+      const headers = (response.headers ?? {}) as Record<string, unknown>;
+      const exportTotal = Number(headers["x-export-total"]);
+      if (headers["x-export-total"] !== undefined && exportTotal === 0) {
+        notify.warning(t("exportEmpty"), { id: EXPORT_TOAST_ID });
         return;
       }
 
-      exportOrdersToExcel(exportedOrders, {
-        fileName: t("excel.fileName"),
-        headers: [
-          t("excel.headers.number"),
-          t("excel.headers.region"),
-          t("excel.headers.district"),
-          t("excel.headers.company"),
-          t("excel.headers.product"),
-          t("excel.headers.phone"),
-          t("excel.headers.price"),
-          t("excel.headers.courier"),
-          t("excel.headers.status"),
-          t("excel.headers.date"),
-        ],
-        statuses: {
-          created: t("statusCreated"),
-          new: t("statusNew"),
-          received: t("statusReceived"),
-          "on the road": t("statusOnTheRoad"),
-          waiting: t("statusWaiting"),
-          sold: t("statusSold"),
-          cancelled: t("statusCancelled"),
-          "cancelled (sent)": t("statusCancelled"),
-          paid: t("statusPaid"),
-          partly_paid: t("statusPartlyPaid"),
-          closed: t("statusClosed"),
-        },
+      const blob = response.data instanceof Blob ? response.data : new Blob([response.data as BlobPart], { type: XLSX_MIME });
+      saveBlob(
+        blob,
+        getFileNameFromDisposition(headers["content-disposition"]) ??
+          `${t("excel.fileName")}_${toISODate(new Date())}.xlsx`,
+      );
+
+      const totalText = formatNumberLocalized(exportTotal, { language });
+      if (String(headers["x-export-truncated"]) === "true") {
+        notify.warning(t("exportTruncatedTitle"), {
+          id: EXPORT_TOAST_ID,
+          description: t("exportTruncated", {
+            count: formatNumberLocalized(Number(headers["x-export-limit"]), { language }),
+            total: totalText,
+          }),
+        });
+        return;
+      }
+      notify.success(t("exportSuccessTitle"), {
+        id: EXPORT_TOAST_ID,
+        ...(Number.isFinite(exportTotal) ? { description: t("exportSuccess", { count: totalText }) } : {}),
       });
-      notify.success(t("exportSuccess", { count: exportedOrders.length }));
-    } catch {
-      notify.error(t("exportError"));
+    } catch (error) {
+      // Javob umuman kelmadi (internet yo'q, 120 s tugadi) — global qatlam «Internet aloqasi yo'q» /
+      // «Server javob bermadi» ni o'zi chiqaradi; bir xil ikkinchi xabar ko'rsatilmaydi.
+      if (isNetworkFailure(error)) return;
+      // 5xx — taxtadagi matn («Server javob bermadi…»); 4xx (ruxsat, filtr xatosi) — backend sababi.
+      const status = (error as { response?: { status?: number } } | null)?.response?.status;
+      const backendMessage = status && status < 500 ? await getExportErrorMessage(error) : undefined;
+      notify.error(t("exportErrorTitle"), {
+        id: EXPORT_TOAST_ID,
+        description: backendMessage ?? t("exportError"),
+        action: { label: t("states.retry", { ns: "ui" }), onClick: () => void handleExportOrders() },
+      });
     } finally {
+      exportingRef.current = false;
       setIsExporting(false);
     }
   };

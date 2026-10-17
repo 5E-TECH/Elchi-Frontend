@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { renderWithProviders } from "../../test/test-utils";
@@ -13,6 +13,30 @@ vi.mock("../../entities/dashboard", () => ({
     getKpi: getKpiMock,
   }),
 }));
+
+// Qo'shimcha xarajat so'rovlari (PINtZcLj) — boshqariladigan holat; sukut: kutilayotgan so'rov yo'q.
+const approvals = vi.hoisted(() => {
+  const initial = () => ({
+    data: { data: [] as unknown[] },
+    isLoading: false,
+    isError: false,
+    error: null as unknown,
+    refetch: vi.fn(),
+  });
+  return { initial, state: initial() };
+});
+
+vi.mock("../../entities/orders", () => ({
+  useOrders: () => ({
+    useExtraCostApprovals: () => approvals.state,
+    approveExtraCostApproval: { mutate: vi.fn(), isPending: false, variables: undefined },
+    rejectExtraCostApproval: { mutate: vi.fn(), isPending: false, variables: undefined },
+  }),
+}));
+
+beforeEach(() => {
+  approvals.state = approvals.initial();
+});
 
 const settingsState: { data: unknown } = { data: undefined };
 
@@ -215,4 +239,129 @@ describe("MarketDashboardPage", () => {
 
     expect(screen.getByTestId("performance-chart")).toHaveAttribute("data-markets-count", "1");
   });
+
+  describe("qisman nosozlik (VkwhHqvW)", () => {
+    const marketState = { role: { id: "market-1", role: "market", region: null, name: "Market" } };
+    const withFailed = (failedParts: string[]) => {
+      const base = buildDashboardResponse();
+      getDashboardMock.mockReturnValue({ ...base, data: { data: { ...base.data.data, degraded: true, failedParts } } });
+    };
+
+    it("`topMarkets` olinmasa — reyting joyida «Ma'lumotni yuklab bo'lmadi» + «Qayta urinish» (0 emas)", () => {
+      withFailed(["topMarkets"]);
+      renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState });
+
+      const failed = screen.getByTestId("market-ranking-failed");
+      expect(failed).toHaveTextContent("Top marketlar");
+      expect(failed).toHaveTextContent("Ma'lumotni yuklab bo'lmadi");
+      expect(screen.getByTestId("market-stats-grid")).toBeInTheDocument();
+      // Sog' bo'lak — operatorlar reytingi — yo'qolmaydi.
+      expect(screen.getByText("Operator Ali")).toBeInTheDocument();
+    });
+
+    it("`topOperators` olinmasa — operatorlar reytingi alohida xato kartasi, marketlar reytingi joyida", () => {
+      withFailed(["topOperators"]);
+      renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState });
+
+      expect(screen.getByTestId("operators-ranking-failed")).toHaveTextContent("Top operatorlar");
+      expect(screen.queryByTestId("market-ranking-failed")).not.toBeInTheDocument();
+      expect(screen.queryByText("Operator Ali")).not.toBeInTheDocument();
+    });
+
+    it("`markets` olinmasa — solishtiruv grafigi o'rnida xato; `myStat` olinmasa — statistika 0 emas, xato", async () => {
+      const refetch = vi.fn();
+      const base = buildDashboardResponse();
+      getDashboardMock.mockReturnValue({
+        ...base,
+        refetch,
+        data: { data: { ...base.data.data, degraded: true, failedParts: ["markets", "myStat"] } },
+      });
+      renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState });
+
+      expect(screen.getByTestId("performance-markets-failed")).toHaveTextContent("Marketlar bo'yicha sotuv foizi");
+      expect(screen.queryByTestId("performance-chart")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("market-stats-grid")).not.toBeInTheDocument();
+      await userEvent.setup().click(screen.getAllByRole("button", { name: "Qayta urinish" })[0]);
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("«Qo'shimcha xarajat tasdiqlari» (PINtZcLj, `market-dashboard-extra-cost-approvals`)", () => {
+    const marketState = { role: { id: "market-1", role: "market", region: null, name: "Market" } };
+
+    it("⭐ so'rov xato bersa — karta jim yo'qolmaydi: v2 ErrorState va «Qayta urinish» so'rovni qaytaradi", async () => {
+      getDashboardMock.mockReturnValue(buildDashboardResponse());
+      const refetch = vi.fn();
+      approvals.state = { ...approvals.initial(), data: undefined as never, isError: true, refetch };
+      renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState });
+
+      const card = screen.getByTestId("extra-cost-approvals");
+      expect(card).toHaveTextContent("Qo'shimcha xarajat tasdiqlari");
+      expect(within(card).getByRole("alert")).toHaveTextContent("Ma'lumotni yuklab bo'lmadi");
+      await userEvent.setup().click(within(card).getByRole("button", { name: "Qayta urinish" }));
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("kutilayotgan so'rovlar — maketdagi tartib: amal, №, summa, «Tasdiqlansa — …», so'rovchi (#id · rol), isbotlar", () => {
+      getDashboardMock.mockReturnValue(buildDashboardResponse());
+      approvals.state = {
+        ...approvals.initial(),
+        data: {
+          data: [
+            {
+              id: "ap-1",
+              order_id: "10225",
+              market_id: "market-1",
+              requested_by_user_id: "56",
+              requested_by_role: "courier",
+              action: "sell",
+              amount: 25000,
+              proof_file_keys: ["a.jpg", "b.jpg"],
+              status: "pending",
+              createdAt: "2026-10-16T08:40:00.000Z",
+            },
+          ],
+        },
+      };
+      renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState });
+
+      const card = screen.getByTestId("extra-cost-approvals");
+      expect(card).toHaveTextContent("1 ta so'rov kutilmoqda");
+      const item = within(card).getByRole("listitem", { name: "Sotishdagi qo'shimcha xarajat, buyurtma №10225" });
+      expect(within(item).getByRole("link", { name: "№10225" })).toHaveAttribute("href", "/orders/edit/10225");
+      expect(item).toHaveTextContent("25 000 so'm");
+      expect(item).toHaveTextContent("So'ralgan summa");
+      expect(item).toHaveTextContent("Tasdiqlansa — buyurtma sotiladi");
+      expect(item).toHaveTextContent("#56 · Kuryer");
+      expect(item).toHaveTextContent("2 ta");
+      expect(within(item).getByRole("button", { name: "Tasdiqlash" })).toBeInTheDocument();
+      expect(within(item).getByRole("button", { name: "Rad etish" })).toBeInTheDocument();
+    });
+
+    it("fon yangilanishi yiqilsa (kesh bor) — ro'yxat qoladi, xato kartasi chiqmaydi", () => {
+      getDashboardMock.mockReturnValue(buildDashboardResponse());
+      approvals.state = {
+        ...approvals.initial(),
+        isError: true,
+        data: {
+          data: [
+            { id: "ap-1", order_id: "10225", market_id: "market-1", requested_by_user_id: "56", action: "sell", amount: 25000, status: "pending" },
+          ],
+        },
+      };
+      renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState });
+
+      const card = screen.getByTestId("extra-cost-approvals");
+      expect(within(card).queryByRole("alert")).not.toBeInTheDocument();
+      expect(within(card).getByRole("button", { name: "Tasdiqlash" })).toBeInTheDocument();
+      expect(card).toHaveTextContent("1 ta so'rov kutilmoqda");
+    });
+
+    it("so'rov yo'q — karta chizilmaydi", () => {
+      getDashboardMock.mockReturnValue(buildDashboardResponse());
+      renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState });
+      expect(screen.queryByTestId("extra-cost-approvals")).not.toBeInTheDocument();
+    });
+  });
 });
+

@@ -12,6 +12,7 @@ import MarketDashboardPage from "./MarketDashboardPage";
 
 const approveMutate = vi.fn();
 const rejectMutate = vi.fn();
+const refetchApprovals = vi.fn();
 
 vi.mock("../../entities/dashboard", () => ({
   useDashboard: () => ({
@@ -38,6 +39,7 @@ vi.mock("../../entities/orders", () => ({
       },
       isLoading: false,
       isError: false,
+      refetch: refetchApprovals,
     }),
     approveExtraCostApproval: { mutate: approveMutate, isPending: false, variables: undefined },
     rejectExtraCostApproval: { mutate: rejectMutate, isPending: false, variables: undefined },
@@ -65,6 +67,7 @@ describe("MarketDashboardPage — tasdiqlash xatosi (fix3 FE-ORD-02)", () => {
   beforeEach(() => {
     approveMutate.mockReset();
     rejectMutate.mockReset();
+    refetchApprovals.mockReset();
   });
 
   const renderPage = () =>
@@ -94,4 +97,19 @@ describe("MarketDashboardPage — tasdiqlash xatosi (fix3 FE-ORD-02)", () => {
 
     expect(await screen.findByText("So'rovni bajarib bo'lmadi. Qayta urinib ko'ring.")).toBeInTheDocument();
   });
+
+  it("⭐ 1tnpaIqd: boshqa joyda allaqachon hal qilingan (400 «Bu so'rov allaqachon yakunlangan») — xato emas, xabar va ro'yxat yangilanadi", async () => {
+    const user = userEvent.setup();
+    approveMutate.mockImplementation((_vars, options: MutateOptions) =>
+      options.onError?.(httpError(400, "Bu so'rov allaqachon yakunlangan")),
+    );
+    renderPage();
+
+    await user.click(screen.getByRole("button", { name: "Tasdiqlash" }));
+
+    expect(await screen.findByText("Bu so'rov allaqachon hal qilingan — ro'yxat yangilandi")).toBeInTheDocument();
+    expect(refetchApprovals).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("Bu so'rov allaqachon yakunlangan")).not.toBeInTheDocument();
+  });
 });
+

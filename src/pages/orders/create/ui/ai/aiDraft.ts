@@ -27,11 +27,16 @@ export type AiCreatedRow = {
 
 const idOrNull = (value: unknown) => (value === null || value === undefined || value === "" ? null : String(value));
 
-export const toDraft = (source: AiPreviewOrder, key: string, draftId?: string): AiDraft => ({
+/**
+ * `position` — buyurtmaning tahlil javobidagi o'rni: backend `index` bermasa, preview o'rni shu (vncdmXOy,
+ * `ai_item_index`). Allaqachon yaratilganlar chiqarib tashlanganda ham asl o'rin saqlanadi.
+ */
+export const toDraft = (source: AiPreviewOrder, key: string, draftId?: string, position?: number): AiDraft => ({
   key,
   source,
   order: {
     ...source,
+    index: Number.isInteger(source.index) ? source.index : position,
     customer_name: source.customer_name ?? "",
     phone_number: toLocalPhone(source.phone_number),
     extra_number: toLocalPhone(source.extra_number),

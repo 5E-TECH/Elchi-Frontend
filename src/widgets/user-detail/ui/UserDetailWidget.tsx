@@ -52,10 +52,10 @@ export const UserDetailWidget = memo(
     // Admin filial sahifalarini ocha olmaydi — kuryerni o'tkazishning uning
     // uchun yagona kirish joyi shu sahifa.
     const canTransferCourier = user?.role === "courier" && canManagePrivilegedToggles;
-    // fix3b CODE-02: marketning Telegram tokeni — faqat SUPERADMIN/ADMIN va
-    // faqat market sahifasida (o'z profilida emas). Boshqa rollar uchun karta
-    // umuman chizilmaydi (backend ham tokenni ularga bermaydi).
-    const canSeeMarketTelegramToken = isMarket && canManagePrivilegedToggles && !isOwnProfile;
+    // GvL6ZFAd: marketning Telegram tokeni faqat `GET /markets/:id/tg-token` (FAQAT SUPERADMIN) dan —
+    // karta faqat superadminga va faqat market sahifasida (o'z profilida emas); boshqa rollar uchun
+    // chizilmaydi va so'rov ketmaydi (adminga backend 403 qaytaradi).
+    const canSeeMarketTelegramToken = isMarket && currentRole === "superadmin" && !isOwnProfile;
 
     // ── Loading ──
     if (isLoading) {
@@ -270,7 +270,8 @@ export const UserDetailWidget = memo(
               }
             />
             {canSeeMarketTelegramToken ? (
-              <MarketTelegramTokenCard token={user.market_tg_token} />
+              // `key`: boshqa marketga o'tilsa (sahifa qayta o'rnatilmaydi) oldingi marketning tokeni qolmaydi.
+              <MarketTelegramTokenCard key={user.id} marketId={String(user.id)} />
             ) : null}
             {user.role === "customer" ? (
               <CustomerOrdersTable orders={user.orders || []} />

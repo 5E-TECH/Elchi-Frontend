@@ -92,7 +92,9 @@ export const useOrders = () => {
           .get(API_ENDPOINTS.ORDERS.EXTRA_COST_APPROVALS, { params: { status } })
           .then((res) => res.data),
       enabled,
-      refetchInterval: status === "pending" ? 30000 : false,
+      // Kutilayotganlar 30 s da yangilanadi; xato holatida EMAS — aks holda xato kartasi har 30 s da skeletga
+      // aylanib qaytadi (fokus va ekran o'quvchi e'loni yo'qoladi). «Qayta urinish» muvaffaqiyatli bo'lsa davom etadi.
+      refetchInterval: (query) => (status === "pending" && query.state.status !== "error" ? 30000 : false),
     });
 
   const approveExtraCostApproval = useMutation({

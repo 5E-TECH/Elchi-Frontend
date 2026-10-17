@@ -1,10 +1,7 @@
 import { memo, useCallback, useMemo, useState } from "react";
 import {
-  CheckCircle2,
-  Clock,
   LayoutDashboard,
   Plus,
-  ReceiptText,
   ShoppingBag,
   XCircle,
   TrendingUp,
@@ -13,7 +10,8 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useDashboard } from "../../entities/dashboard";
-import { useOrders, type ExtraCostApproval } from "../../entities/orders";
+import { hasFailedPart } from "../../entities/dashboard/lib/partialFailure";
+import { useOrders } from "../../entities/orders";
 import { useSettings, DEFAULT_SETTINGS } from "../../entities/settings";
 import HeaderName from "../../shared/components/headerName";
 import PageContainer from "../../shared/ui/PageContainer";
@@ -21,6 +19,8 @@ import QuickDateRangeFilter from "../../shared/ui/QuickDateRangeFilter";
 import QueryErrorState from "../../shared/ui/QueryErrorState";
 import MetricCard, { MetricCardSkeleton } from "../../shared/ui/MetricCard";
 import TopPerformers from "../../widgets/dashboard-top-performers/ui/TopPerformers";
+import { DashboardPartError } from "../../widgets/dashboard-part-error/ui/DashboardPartError";
+import ExtraCostApprovalsCard from "./ui/ExtraCostApprovalsCard";
 import PerformanceChart from "../../widgets/dashboard-performance-chart/ui/PerformanceChart";
 import { getAllTimeRange } from "../../shared/lib/dateRange";
 import type { RootState } from "../../app/config/store";
@@ -30,6 +30,7 @@ import {
   ratio,
 } from "../../shared/config/designSystem";
 import { getActionErrorMessage } from "../../shared/lib/actionError";
+import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import { notify } from "../../shared/lib/notify";
 
 // ─── MarketDashboardPage ──────────────────────────────────────────────────────
@@ -79,20 +80,10 @@ const MarketDashboardPage = () => {
   const { getDashboard } = useDashboard();
   const { useExtraCostApprovals, approveExtraCostApproval, rejectExtraCostApproval } = useOrders();
 
-  // fix3 FE-ORD-02: tasdiqlash/rad etish rad javobi endi ko'rinadi (avval
-  // tugma jimgina "qaytib" qolardi va market nima bo'lganini bilmasdi).
-  const notifyApprovalError = useCallback(
-    (error: unknown) => {
-      const description = getActionErrorMessage(error, t("market.extra_cost_action_error"));
-      if (!description) return;
-      notify.error(t("common:error"), { description });
-    },
-    [t],
-  );
-
   const {
     data,
     isLoading,
+    isFetching: dashboardFetching,
     isError: dashboardError,
     refetch: refetchDashboard,
   } = getDashboard(analyticsParams, true, analyticsScope);
@@ -101,8 +92,29 @@ const MarketDashboardPage = () => {
     data: approvalResponse,
     isLoading: approvalsLoading,
     isError: approvalsError,
+    error: approvalsErrorObject,
+    refetch: refetchApprovals,
   } = useExtraCostApprovals("pending", true);
   const extraCostApprovals = Array.isArray(approvalResponse?.data) ? approvalResponse.data : [];
+
+  // fix3 FE-ORD-02: tasdiqlash/rad etish rad javobi endi ko'rinadi (avval
+  // tugma jimgina "qaytib" qolardi va market nima bo'lganini bilmasdi).
+  // 1tnpaIqd: qaror atomik — so'rovni boshqa joyda (Telegram, boshqa oyna) allaqachon hal qilingan bo'lsa backend
+  // 400 «Bu so'rov allaqachon yakunlangan» qaytaradi: bu xato emas — xabar beriladi va ro'yxat yangilanadi.
+  const notifyApprovalError = useCallback(
+    (error: unknown) => {
+      const status = (error as { response?: { status?: number } } | null)?.response?.status;
+      if (status === 400 && /allaqachon yakunlangan/i.test(getBackendErrorMessage(error) ?? "")) {
+        notify.info(t("market.extra_cost_already_resolved"));
+        void refetchApprovals();
+        return;
+      }
+      const description = getActionErrorMessage(error, t("market.extra_cost_action_error"));
+      if (!description) return;
+      notify.error(t("common:error"), { description });
+    },
+    [refetchApprovals, t],
+  );
 
   // ─── Hisoblangan qiymatlar ────────────────────────────────────────────────────
   const orders = data?.data?.orders;
@@ -119,6 +131,13 @@ const MarketDashboardPage = () => {
   // grafik ko'rardi. "Barchasi" davrida `markets` bo'sh keladi — top-reyting.
   const marketStats = data?.data?.markets ?? [];
   const chartMarkets = marketStats.length ? marketStats : topMarkets;
+  // Qisman nosozlik (VkwhHqvW): olinmagan bo'lak 0 lar bilan emas, joyida xato holati bilan chiziladi.
+  const failedParts = data?.data?.failedParts;
+  const statsFailed = hasFailedPart(failedParts, "orders", "myStat");
+  const marketsRankingFailed = hasFailedPart(failedParts, "topMarkets");
+  const operatorsFailed = hasFailedPart(failedParts, "topOperators");
+  const chartFailed = hasFailedPart(failedParts, "markets");
+  const retryDashboard = () => void refetchDashboard();
 
   const successRate = myStat?.successRate ?? ratio(sold, accepted);
 
@@ -213,10 +232,13 @@ const MarketDashboardPage = () => {
         </div>
       )}
 
-      <ExtraCostApprovalPanel
+      <ExtraCostApprovalsCard
         approvals={extraCostApprovals}
         loading={approvalsLoading}
-        error={approvalsError}
+        // Kesh bor-u fon yangilanishi yiqilsa — ro'yxat qoladi (QueryBoundary qoidasi), xato faqat ma'lumot yo'qda.
+        error={approvalsError && !approvalResponse}
+        errorObject={approvalsErrorObject}
+        onRetry={() => void refetchApprovals()}
         approvingId={
           approveExtraCostApproval.isPending
             ? String(approveExtraCostApproval.variables?.id ?? "")
@@ -229,11 +251,16 @@ const MarketDashboardPage = () => {
         }
         onApprove={(id) => approveExtraCostApproval.mutate({ id }, { onError: notifyApprovalError })}
         onReject={(id) => rejectExtraCostApproval.mutate({ id }, { onError: notifyApprovalError })}
-        t={t}
       />
 
       {/* Marketga ruxsatli dashboard statistikasi */}
-      {!dashboardError && (
+      {!dashboardError && statsFailed ? (
+        <div className="mb-5">
+          <QueryErrorState description={t("load_error")} onRetry={retryDashboard} />
+        </div>
+      ) : null}
+
+      {!dashboardError && !statsFailed && (
         <div className="mb-5">
           <MarketStatsGrid
             accepted={accepted}
@@ -247,20 +274,52 @@ const MarketDashboardPage = () => {
         </div>
       )}
 
-      {widgets.topPerformers && !dashboardError && !isDataLoading && (
-        <div className="mb-5">
+      {widgets.topPerformers && !dashboardError && !isDataLoading && marketsRankingFailed ? (
+        <DashboardPartError
+          data-testid="market-ranking-failed"
+          className="mb-5"
+          title={t("top.markets_title")}
+          onRetry={retryDashboard}
+          retrying={dashboardFetching}
+        />
+      ) : null}
+
+      {/* Olinmagan bo'lak o'rnida xato kartasi; sog' bo'lagi (marketlar yoki operatorlar) reytingda qoladi. */}
+      {widgets.topPerformers && !dashboardError && !isDataLoading && !(marketsRankingFailed && operatorsFailed) && (
+        <div className="mb-5 empty:hidden">
           <TopPerformers
-            markets={topMarkets}
-            operators={topOperators.length ? topOperators : undefined}
+            markets={marketsRankingFailed ? undefined : topMarkets}
+            operators={!operatorsFailed && topOperators.length ? topOperators : undefined}
             currentUserId={user?.id ?? roleId}
           />
         </div>
       )}
 
+      {widgets.topPerformers && !dashboardError && !isDataLoading && operatorsFailed ? (
+        <DashboardPartError
+          data-testid="operators-ranking-failed"
+          className="mb-5"
+          title={t("top.operators_title")}
+          onRetry={retryDashboard}
+          retrying={dashboardFetching}
+        />
+      ) : null}
+
       {/* Marketlar solishtiruv diagrammasi — kuryerlar bo'limi yo'q, chunki
           market foydalanuvchisiga tegishli emas (DashboardPage'dagi bilan
           bir xil qoida). */}
-      {widgets.performanceChart && !dashboardError && !isDataLoading && (
+      {widgets.performanceChart && !dashboardError && !isDataLoading && chartFailed ? (
+        <DashboardPartError
+          data-testid="performance-markets-failed"
+          className="mb-5"
+          // Market grafigida faqat marketlar bo'limi (kuryerlar yo'q) — sarlavha o'shaniki.
+          title={t("performance.markets_title")}
+          onRetry={retryDashboard}
+          retrying={dashboardFetching}
+        />
+      ) : null}
+
+      {widgets.performanceChart && !dashboardError && !isDataLoading && !chartFailed && (
         <div className="mb-5">
           <PerformanceChart markets={chartMarkets} />
         </div>
@@ -277,158 +336,6 @@ const MarketDashboardPage = () => {
     </PageContainer>
   );
 };
-
-// ─── ExtraCostApprovalPanel ───────────────────────────────────────────────────
-
-interface ExtraCostApprovalPanelProps {
-  approvals: ExtraCostApproval[];
-  loading: boolean;
-  error: boolean;
-  approvingId: string;
-  rejectingId: string;
-  onApprove: (id: string) => void;
-  onReject: (id: string) => void;
-  t: (key: string, options?: Record<string, unknown>) => string;
-}
-
-const formatApprovalAmount = (amount: number) =>
-  new Intl.NumberFormat("uz-UZ").format(Number(amount) || 0);
-
-const ExtraCostApprovalPanel = memo(
-  ({
-    approvals,
-    loading,
-    error,
-    approvingId,
-    rejectingId,
-    onApprove,
-    onReject,
-    t,
-  }: ExtraCostApprovalPanelProps) => {
-    if (loading) {
-      return (
-        <div className="mb-5 rounded-2xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-primarydark sm:p-5">
-          <div className="h-5 w-52 animate-pulse rounded bg-gray-200 dark:bg-white/10" />
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            {[0, 1].map((item) => (
-              <div
-                key={item}
-                className="h-28 animate-pulse rounded-xl bg-gray-100 dark:bg-white/5"
-              />
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    if (error || approvals.length === 0) {
-      return null;
-    }
-
-    const actionLabel = (action: ExtraCostApproval["action"]) => {
-      if (action === "cancel") return t("market.extra_cost_cancel");
-      if (action === "partly_sell") return t("market.extra_cost_partly_sell");
-      return t("market.extra_cost_sell");
-    };
-    // fix3b M3: tasdiq AYNAN shu amalni bajaradi — market nimani tasdiqlayotganini
-    // aniq ko'rsin (bekor qilinayotgan buyurtma uchun eski SOTISH so'rovi va h.k.).
-    const approveConsequence = (action: ExtraCostApproval["action"]) => {
-      if (action === "cancel") return t("market.extra_cost_on_approve_cancel");
-      if (action === "partly_sell") return t("market.extra_cost_on_approve_partly_sell");
-      return t("market.extra_cost_on_approve_sell");
-    };
-
-    return (
-      <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 dark:border-amber-400/20 dark:bg-amber-400/10 sm:p-5">
-        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="grid size-10 place-items-center rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-300">
-              <Clock size={19} />
-            </span>
-            <div>
-              <h3 className="text-sm font-bold text-maindark dark:text-primary">
-                {t("market.extra_cost_approvals")}
-              </h3>
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                {t("market.extra_cost_approvals_count", { count: approvals.length })}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-3 lg:grid-cols-2">
-          {approvals.map((approval) => {
-            const isApproving = approvingId === approval.id;
-            const isRejecting = rejectingId === approval.id;
-            const busy = isApproving || isRejecting;
-
-            return (
-              <div
-                key={approval.id}
-                className="rounded-xl border border-amber-200 bg-white p-4 dark:border-white/10 dark:bg-primarydark"
-              >
-                <div className="mb-3 flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase text-amber-700 dark:text-amber-300">
-                      <ReceiptText size={14} />
-                      <span>{actionLabel(approval.action)}</span>
-                    </div>
-                    <p className="mt-1 text-sm font-bold text-maindark dark:text-primary">
-                      #{approval.order_id}
-                    </p>
-                    <p
-                      data-testid={`approval-consequence-${approval.id}`}
-                      className="mt-0.5 text-xs font-semibold text-amber-800 dark:text-amber-200"
-                    >
-                      {approveConsequence(approval.action)}
-                    </p>
-                  </div>
-                  <div className="text-right text-sm font-black text-maindark dark:text-primary">
-                    {formatApprovalAmount(approval.amount)} {t("currency_sum")}
-                  </div>
-                </div>
-
-                <div className="mb-4 grid grid-cols-2 gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                  <span>
-                    {t("market.extra_cost_requester")}: #{approval.requested_by_user_id}
-                  </span>
-                  <span className="text-right">
-                    {t("market.extra_cost_proofs")}: {approval.proof_file_keys?.length ?? 0}
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => onApprove(approval.id)}
-                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <CheckCircle2 size={15} />
-                    {isApproving
-                      ? t("market.extra_cost_approving")
-                      : t("market.extra_cost_approve")}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => onReject(approval.id)}
-                    className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-300"
-                  >
-                    <XCircle size={15} />
-                    {isRejecting ? t("market.extra_cost_rejecting") : t("market.extra_cost_reject")}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  },
-);
-
-ExtraCostApprovalPanel.displayName = "ExtraCostApprovalPanel";
 
 // ─── MarketStatsGrid ──────────────────────────────────────────────────────────
 

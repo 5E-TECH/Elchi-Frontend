@@ -15,6 +15,10 @@ export interface Region {
   sato_code: string;
 }
 
+/**
+ * Pochta detalidagi buyurtma tumani — backend oq ro'yxati (VfgcnxDa, FRONTEND_CHANGELOG 2026-10-14):
+ * `id/name/sato_code/region_id/assigned_region/region/assignedToRegion`.
+ */
 export interface District {
   id: string;
   name: string;
@@ -23,8 +27,6 @@ export interface District {
   assigned_region: string;
   region?: Region;
   assignedToRegion?: Region;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface RegionWithDistricts extends Region {
@@ -47,42 +49,25 @@ export interface OrderItem {
   };
 }
 
+/**
+ * Pochta detalidagi market — faqat oq ro'yxat (VfgcnxDa): `id/name/phone_number`. `market_tg_token`,
+ * `username`, `salary`, `tariff_*`, `commission_*`, `settings` backenddan hech qachon kelmaydi — UI ham o'qimaydi.
+ */
 export interface Market {
   id: string;
   name: string;
   phone_number: string;
-  extra_number: string | null;
-  username: string;
-  salary: number;
-  payment_day: string | null;
-  role: string;
-  status: string;
-  tariff_home: number;
-  tariff_center: number;
-  add_order: boolean;
-  default_tariff: string | null;
-  createdAt: string;
-  updatedAt: string;
-  is_deleted: boolean;
 }
 
+/** Pochta detalidagi mijoz — oq ro'yxat (VfgcnxDa): `id/name/phone_number/extra_number/address/district_id/region_id`. */
 export interface Customer {
   id: string;
   name: string;
   phone_number: string;
   extra_number: string | null;
-  username: string;
-  salary: number;
-  payment_day: string | null;
-  role: string;
-  status: string;
-  tariff_home: number | null;
-  tariff_center: number | null;
-  add_order: boolean;
-  default_tariff: string | null;
-  createdAt: string;
-  updatedAt: string;
-  is_deleted: boolean;
+  address?: string | null;
+  district_id?: string | null;
+  region_id?: string | null;
 }
 
 export type OrderStatus =
@@ -146,6 +131,9 @@ export interface MailDetailPost {
   order_quantity?: number;
   createdAt?: string;
   branch_id?: string | null;
+  /** Pochtaning o'z viloyati — sarlavha va manzil filiallari uchun birlamchi manba (router state — zaxira). */
+  region_id?: string | null;
+  region?: { id: string; name: string } | null;
 }
 
 export interface MailDetailData {

@@ -194,7 +194,7 @@ describe("DashboardPage", () => {
       true,
       "admin:unknown",
     );
-    expect(screen.getByTestId("top-performers")).toBeInTheDocument();
+    expect(screen.getByTestId("dashboard-rankings")).toBeInTheDocument();
     // Backend "Barchasi" davrida kuryerlar kesimini qaytarmaydi — bo'sh
     // bo'lim umumiy "ma'lumot yo'q" emas, aniq sabab bilan ko'rsatiladi.
     expect(screen.getByTestId("performance-chart")).toHaveAttribute(
@@ -212,6 +212,18 @@ describe("DashboardPage", () => {
     expect(screen.getByTestId("performance-chart")).toHaveAttribute("data-couriers-empty-text", "");
   });
 
+  it("9zbSDkUI: yuklanishda reyting kartalarida skelet — «Bu davrda … buyurtma yo'q» yozilmaydi", () => {
+    getDashboardMock.mockReturnValue({ data: undefined, isLoading: true, isError: false, refetch: vi.fn() });
+
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+
+    for (const id of ["ranking-markets", "ranking-branches"]) {
+      const card = screen.getByTestId(id);
+      expect(card).toHaveAttribute("aria-busy", "true");
+      expect(card).not.toHaveTextContent("Bu davrda reyting uchun buyurtma yo'q");
+    }
+  });
+
   it("passes dashboard metrics into child widgets", () => {
     renderWithProviders(<DashboardPage />, { preloadedState: adminState });
 
@@ -221,7 +233,7 @@ describe("DashboardPage", () => {
     expect(screen.getByTestId("financial-analysis")).toHaveTextContent('"startDate"');
   });
 
-  it("wires real top market and branch rankings into the Top performers block for admins", () => {
+  it("wires real top market and branch rankings into the v2 ranking cards for admins", () => {
     getDashboardMock.mockReturnValue({
       data: {
         data: {
@@ -243,9 +255,38 @@ describe("DashboardPage", () => {
     });
     renderWithProviders(<DashboardPage />, { preloadedState: adminState });
 
-    expect(screen.getByTestId("top-performers")).toBeInTheDocument();
-    expect(screen.getByTestId("top-market-name")).toHaveTextContent("Chilonzor filiali");
-    expect(screen.getByTestId("top-branch-name")).toHaveTextContent("Yunusobod filiali");
+    expect(screen.getByTestId("ranking-markets")).toHaveTextContent("Chilonzor filiali");
+    expect(screen.getByTestId("ranking-branches")).toHaveTextContent("Yunusobod filiali");
+    // Kuryerlar reytingi (v1 TopPerformers) admin dashboardida yo'q.
+    expect(screen.queryByTestId("top-performers")).not.toBeInTheDocument();
+  });
+
+  it("9zbSDkUI: izohda davr («oxirgi 30 kun»), bo'sh reyting — ixcham, «30 buyurtma» matnisiz", () => {
+    getDashboardMock.mockReturnValue({
+      data: {
+        data: {
+          orders: { acceptedCount: 1, soldAndPaid: 0, cancelled: 0, profit: 0, totalRevenue: 0 },
+          topMarkets: [
+            { market_id: "m-1", market_name: "Baraka Shop", total_orders: 45, successful_orders: 38, success_rate: 84.4 },
+          ],
+          topBranches: [],
+          topMarketsMeta: { periodRule: "last_30_days", periodDays: 30, from: null, to: null, minOrders: 1 },
+          topBranchesMeta: { periodRule: "last_30_days", periodDays: 30, from: null, to: null, minOrders: 1 },
+        },
+      },
+    });
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+
+    const markets = screen.getByTestId("ranking-markets");
+    expect(markets).toHaveTextContent("Sotuv foizi · sotilgan / jami · oxirgi 30 kun");
+    expect(markets).toHaveTextContent("84,4%");
+    expect(markets).toHaveTextContent("38 / 45 ta");
+
+    const branches = screen.getByTestId("ranking-branches");
+    expect(branches).toHaveAttribute("data-empty");
+    expect(branches).toHaveClass("self-start");
+    expect(branches.querySelector('[data-state-size="inline"]')).toHaveTextContent("Bu davrda reyting uchun buyurtma yo'q");
+    expect(screen.queryByText(/kamida 30 buyurtma/)).not.toBeInTheDocument();
   });
 
   it("wires both markets and couriers into the performance chart for admins", () => {
@@ -384,6 +425,7 @@ describe("DashboardPage", () => {
       "courier:unknown",
     );
     expect(screen.queryByTestId("top-performers")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("dashboard-rankings")).not.toBeInTheDocument();
     expect(screen.queryByTestId("region-stats")).not.toBeInTheDocument();
     expect(screen.queryByTestId("financial-analysis")).not.toBeInTheDocument();
   });
@@ -471,11 +513,115 @@ describe("DashboardPage", () => {
     // actually scopes analytics-service to the operator's own market — showing
     // them today would leak every market's and courier's data to an operator.
     expect(screen.queryByTestId("top-performers")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("dashboard-rankings")).not.toBeInTheDocument();
     expect(screen.queryByTestId("region-stats")).not.toBeInTheDocument();
     // Revenue analytics stay SUPERADMIN/ADMIN-only (Audit P1-2) — unaffected by this change.
     expect(screen.queryByTestId("financial-analysis")).not.toBeInTheDocument();
     // Company-wide revenue/profit and the admin-only KPI cards (which would
     // show fake zeros without the KPI request) are not shown to an operator.
     expect(screen.getByTestId("dashboard-statistics")).toHaveAttribute("data-financial", "false");
+  });
+});
+
+describe("DashboardPage — qisman nosozlik: bo'lak 0 emas, xato holati (VkwhHqvW)", () => {
+  const orders = { acceptedCount: 12, soldAndPaid: 5, cancelled: 2, profit: 480000, totalRevenue: 960000 };
+  const okKpi = {
+    data: { data: { averageOrderValue: 96000, averageFulfillmentHours: 24, onTimeRate: 80, cancellationRate: 0, courierEfficiency: 0, marketRating: [] } },
+  };
+
+  beforeEach(() => {
+    getKpiMock.mockReturnValue(okKpi);
+  });
+
+  it("`failed_parts: topMarkets, markets` — «Top marketlar» va solishtiruv joyida «Ma'lumotni yuklab bo'lmadi» + «Qayta urinish»; qolganlari odatdagidek", async () => {
+    const refetch = vi.fn();
+    getDashboardMock.mockReturnValue({
+      data: {
+        data: {
+          orders,
+          topMarkets: [],
+          topBranches: [{ branch_id: "b-1", branch_name: "Samarqand filiali", total_orders: 40, successful_orders: 30, success_rate: 75 }],
+          degraded: true,
+          failedParts: ["topMarkets", "markets"],
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch,
+    });
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+
+    const markets = screen.getByTestId("ranking-markets");
+    expect(markets).toHaveAttribute("data-part-failed");
+    expect(markets).toHaveTextContent("Top marketlar");
+    expect(markets).toHaveTextContent("Ma'lumotni yuklab bo'lmadi");
+    expect(markets).not.toHaveTextContent("Bu davrda reyting uchun buyurtma yo'q");
+    expect(screen.getByTestId("ranking-branches")).not.toHaveAttribute("data-part-failed");
+    expect(screen.getByTestId("ranking-branches")).toHaveTextContent("Samarqand filiali");
+
+    // Faqat marketlar bo'limi olinmadi — o'sha xato kartasi; kuryerlar bo'limi grafikda qoladi.
+    expect(screen.getByTestId("performance-markets-failed")).toHaveTextContent("Marketlar bo'yicha sotuv foizi");
+    expect(screen.queryByTestId("performance-couriers-failed")).not.toBeInTheDocument();
+    expect(screen.getByTestId("performance-chart")).toHaveAttribute("data-markets-count", "-1");
+    expect(screen.getByTestId("performance-chart")).not.toHaveAttribute("data-couriers-count", "undefined");
+    // Buyurtmalar statistikasi olingan — joyida.
+    expect(screen.getByTestId("dashboard-statistics")).toHaveTextContent("12-5-2-480000");
+
+    const user = userEvent.setup();
+    const [marketsRetry] = screen.getAllByRole("button", { name: "Qayta urinish" });
+    await user.click(marketsRetry);
+    expect(refetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("KPI'ning statistikada chizilmaydigan bo'lagi (`marketRating`) olinmasa — buyurtmalar statistikasi yashirilmaydi", () => {
+    getDashboardMock.mockReturnValue({ data: { data: { orders } }, isLoading: false, isError: false, refetch: vi.fn() });
+    getKpiMock.mockReturnValue({
+      data: { data: { ...okKpi.data.data, degraded: true, failedParts: ["marketRating"] } },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+
+    expect(screen.getByTestId("dashboard-statistics")).toHaveTextContent("12-5-2-480000");
+  });
+
+  it("KPI `degraded` (masalan `fulfillment` olinmadi) — statistika bloki 0 lar emas, xato va «Qayta urinish»", async () => {
+    const refetchKpi = vi.fn();
+    getDashboardMock.mockReturnValue({ data: { data: { orders } }, isLoading: false, isError: false, refetch: vi.fn() });
+    getKpiMock.mockReturnValue({
+      data: { data: { ...okKpi.data.data, averageFulfillmentHours: 0, onTimeRate: 0, degraded: true, failedParts: ["fulfillment"] } },
+      isLoading: false,
+      isError: false,
+      refetch: refetchKpi,
+    });
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+
+    expect(screen.queryByTestId("dashboard-statistics")).not.toBeInTheDocument();
+    await userEvent.setup().click(screen.getAllByRole("button", { name: "Qayta urinish" })[0]);
+    expect(refetchKpi).toHaveBeenCalledTimes(1);
+  });
+
+  it("kuryer: `failed_parts: topCouriers` — reyting joyida xato kartasi (yashirilmaydi, 0 emas)", () => {
+    getDashboardMock.mockReturnValue({
+      data: {
+        data: {
+          orders: {},
+          myStat: { totalOrders: 28, soldOrders: 19, canceledOrders: 3, profit: 480000, successRate: 67.86 },
+          topCouriers: [],
+          degraded: true,
+          failedParts: ["topCouriers"],
+        },
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    renderWithProviders(<DashboardPage />, { preloadedState: courierState });
+
+    expect(screen.getByTestId("courier-stats-grid")).toBeInTheDocument();
+    expect(screen.getByTestId("courier-ranking-failed")).toHaveTextContent("Top kuryerlar");
+    expect(screen.getByTestId("courier-ranking-failed")).toHaveTextContent("Ma'lumotni yuklab bo'lmadi");
+    expect(screen.queryByTestId("top-performers")).not.toBeInTheDocument();
   });
 });

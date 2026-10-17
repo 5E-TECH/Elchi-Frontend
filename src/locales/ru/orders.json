@@ -537,9 +537,13 @@
   "filterBranch": "Филиал",
   "filterBranchPlaceholder": "Выберите филиал",
   "chipBranch": "Филиал",
-  "exportEmpty": "Заказы для экспорта не найдены",
-  "exportSuccess": "{{count}} заказов сохранено в Excel",
-  "exportError": "Произошла ошибка при сохранении заказов в Excel",
+  "exportEmpty": "Нет заказов по фильтру — файл Excel не создан",
+  "exportSuccess": "Заказов сохранено в Excel: {{count}}.",
+  "exportError": "Сервер не ответил. Попробуйте ещё раз чуть позже.",
+  "exportSuccessTitle": "Сохранено в Excel",
+  "exportTruncatedTitle": "Файл неполный",
+  "exportTruncated": "В файле {{count}} из {{total}} заказов — сузьте фильтр.",
+  "exportErrorTitle": "Файл Excel не загружен",
   "orderNumber": "Номер заказа",
   "copyOrderNumber": "Скопировать номер",
   "orderNumberCopied": "Номер заказа скопирован",
@@ -555,19 +559,7 @@
   "extraCostApprovalActionCancel": "Отмена",
   "sortLabel": "Сортировка:",
   "excel": {
-    "fileName": "vse_zakazy",
-    "headers": {
-      "number": "№",
-      "region": "Область",
-      "district": "Район",
-      "company": "Фирма",
-      "product": "Товар",
-      "phone": "Номер телефона",
-      "price": "Цена",
-      "courier": "Курьер",
-      "status": "Статус",
-      "date": "Дата"
-    }
+    "fileName": "vse_zakazy"
   },
   "aiModeManual": "Вручную",
   "aiModeAi": "С помощью AI",
