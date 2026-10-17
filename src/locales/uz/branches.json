@@ -66,7 +66,16 @@
     "action": "O'tkazish",
     "success": "{{name}} '{{branch}}' filialiga o'tkazildi",
     "checkFailed": "Tekshirib bo'lmadi — birozdan so'ng qayta urinib ko'ring",
-    "retry": "Qayta tekshirish"
+    "retry": "Qayta tekshirish",
+    "openButtonFor": "{{name}}ni boshqa filialga o'tkazish",
+    "courierRole": "Kuryer",
+    "ordersCount": "{{value}} ta",
+    "searchLabel": "Filialni qidirish",
+    "searchPlaceholder": "Filial nomini qidiring",
+    "noManagerHint": "Menejer yo'q — bu filialga o'tkazib bo'lmaydi",
+    "noTargets": "Mos filial topilmadi",
+    "submitTo": "{{branch}}ga o'tkazish",
+    "transferring": "O'tkazilmoqda…"
   },
   "settings": {
     "title": "Filial sozlamalari",
@@ -191,5 +200,80 @@
     "status": "Holat tanlang",
     "manager": "Mas'ul xodimni tanlang",
     "completeForm": "Formani to'liq to'ldiring"
+  },
+  "v2": {
+    "list": {
+      "label": "Filiallar ro'yxati",
+      "cardsLabel": "Filiallar kartalari",
+      "viewLabel": "Ko'rinish",
+      "total": "Jami {{value}} ta filial",
+      "pagination": "{{from}}–{{to}} / {{total}} ta filial",
+      "searchLabel": "Filiallarni qidirish",
+      "loading": "Filiallar yuklanmoqda",
+      "loadFailed": "Filiallarni yuklab bo'lmadi",
+      "emptyDescription": "Birinchi filialni «Yangi filial» tugmasi bilan qo'shing.",
+      "filteredEmpty": "Mos filial topilmadi",
+      "filteredEmptyDescription": "Qidiruv yoki holat filtrini o'zgartirib ko'ring.",
+      "clearFilters": "Filtrlarni tozalash",
+      "employees": "{{value}} ta",
+      "employeesLong": "{{value}} ta xodim",
+      "rowActions": "{{name}} amallari",
+      "detailsFor": "Batafsil — {{name}}"
+    },
+    "tree": {
+      "label": "Filiallar daraxti",
+      "expand": "{{name}}: ichki filiallarni ochish",
+      "collapse": "{{name}}: ichki filiallarni yopish",
+      "childCount": "{{value}} ta ichki filial",
+      "groupCount": "{{value}} ta filial"
+    },
+    "columns": {
+      "branch": "Filial",
+      "type": "Turi",
+      "areaAddress": "Hudud va manzil",
+      "employees": "Xodimlar",
+      "status": "Holat",
+      "actions": "Amallar"
+    },
+    "delete": {
+      "description": "{{name}} filiallar ro'yxatidan o'chiriladi."
+    },
+    "form": {
+      "hqTypeLocked": "HQ turini o'zgartirib bo'lmaydi",
+      "parentHint": "Qabul punktlari yuqori filial bo'la olmaydi",
+      "parentEmpty": "Filial topilmadi"
+    },
+    "detail": {
+      "fallbackTitle": "Filial",
+      "parentLabel": "Yuqori filial:",
+      "infoLabel": "Filial ma'lumotlari",
+      "employeesHint": "filialga biriktirilgan",
+      "createdHint": "filial tizimga qo'shilgan",
+      "loading": "Filial yuklanmoqda",
+      "loadFailed": "Filial ma'lumotini yuklab bo'lmadi",
+      "notFoundHint": "Filial o'chirilgan yoki havola noto'g'ri. Filiallar ro'yxatiga qayting."
+    },
+    "employees": {
+      "description": "Biriktirilgan xodimlar ro'yxati va ularning lavozimlari",
+      "loading": "Xodimlar yuklanmoqda",
+      "loadFailed": "Xodimlarni yuklab bo'lmadi",
+      "empty": "Filialga hali xodim biriktirilmagan",
+      "emptyDescription": "Menejer, ro'yxatchi yoki kuryerni «Xodim qo'shish» tugmasi bilan biriktiring.",
+      "removeLabel": "{{name}}ni filialdan olib tashlash",
+      "removeTitle": "{{name}}ni filialdan olib tashlash?"
+    },
+    "addEmployee": {
+      "description": "{{branch}}ga foydalanuvchini biriktiring.",
+      "hint": "Faqat faol menejer, ro'yxatchi va kuryerlar ko'rsatiladi",
+      "listLabel": "Foydalanuvchilar",
+      "loading": "Foydalanuvchilar yuklanmoqda…",
+      "empty": "Foydalanuvchi topilmadi",
+      "noOptions": "Biriktirish mumkin bo'lgan faol xodim yo'q"
+    },
+    "positions": {
+      "MANAGER": "Menejer",
+      "REGISTRATOR": "Ro'yxatchi",
+      "COURIER": "Kuryer"
+    }
   }
 }

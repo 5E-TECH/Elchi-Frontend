@@ -48,5 +48,97 @@
   "deleteConfirmTitle": "O'chirishni tasdiqlang",
   "deleteConfirmMessage": "\"{{name}}\" ni rostdan o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi.",
   "validationNameRequired": "Mahsulot nomi kiritilishi shart",
-  "cancel": "Bekor qilish"
+  "cancel": "Bekor qilish",
+  "v2": {
+    "list": {
+      "total": "Jami {{value}} ta mahsulot",
+      "listLabel": "Mahsulotlar ro'yxati",
+      "cardsLabel": "Mahsulotlar",
+      "loading": "Mahsulotlar yuklanmoqda",
+      "create": "Mahsulot yaratish",
+      "searchPlaceholder": "Mahsulot qidiring...",
+      "searchAria": "Mahsulotlarni qidirish",
+      "searchAriaMarket": "Mahsulotlarni nomi bo'yicha qidirish",
+      "marketFilter": "Market",
+      "all": "Barchasi",
+      "columns": {
+        "index": "#",
+        "name": "Mahsulot nomi",
+        "market": "Market",
+        "actions": "Amallar"
+      },
+      "sortByName": "Nom bo'yicha saralash",
+      "editAria": "{{name}} — tahrirlash",
+      "deleteAria": "{{name}} — o'chirish",
+      "pagination": "{{from}}–{{to}} / {{total}} ta mahsulot",
+      "empty": "Hali mahsulot yo'q",
+      "emptyDescription": "Yangi mahsulot qo'shish uchun «Mahsulot yaratish» tugmasini bosing.",
+      "filteredEmpty": "Mahsulot topilmadi",
+      "filteredEmptyDescription": "Qidiruv so'zini yoki market filtrini o'zgartirib ko'ring.",
+      "loadFailed": "Mahsulotlarni yuklab bo'lmadi"
+    },
+    "selectMarket": {
+      "title": "Marketni tanlang",
+      "description": "Faqat faol marketlar ko'rsatiladi",
+      "searchPlaceholder": "Market qidirish...",
+      "searchAria": "Market qidirish",
+      "listLabel": "Faol marketlar",
+      "notFound": "Market topilmadi",
+      "notFoundHint": "«{{query}}» bo'yicha faol market yo'q",
+      "empty": "Faol market yo'q",
+      "loadFailed": "Marketlarni yuklab bo'lmadi",
+      "cancel": "Bekor qilish",
+      "confirm": "Tanlash"
+    },
+    "edit": {
+      "title": "Mahsulotni tahrirlash",
+      "name": "Mahsulot nomi",
+      "namePlaceholder": "Mahsulot nomini kiriting...",
+      "image": "Rasm",
+      "imageMarket": "Mahsulot rasmi",
+      "cancel": "Bekor qilish",
+      "save": "Saqlash",
+      "saving": "Saqlanmoqda..."
+    },
+    "image": {
+      "upload": "Rasm yuklash",
+      "hint": "Ixtiyoriy · bosing va rasm faylini tanlang",
+      "replace": "Rasmni almashtirish",
+      "replaceHint": "Bosing va boshqa rasm faylini tanlang",
+      "remove": "Tanlangan rasmni olib tashlash",
+      "previewAlt": "Mahsulot rasmi"
+    },
+    "delete": {
+      "title": "O'chirishni tasdiqlang",
+      "description": "Quyidagi mahsulotni rostdan o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi.",
+      "confirm": "O'chirish",
+      "loading": "O'chirilmoqda..."
+    },
+    "create": {
+      "back": "Mahsulotlar",
+      "title": "Yangi mahsulot",
+      "titleMarket": "Mahsulot yaratish",
+      "selectedMarket": "Tanlangan market:",
+      "formTitle": "Mahsulot ma'lumotlari",
+      "formTitleMarket": "Yangi mahsulot",
+      "formTitleEdit": "Mahsulotni tahrirlash",
+      "name": "Mahsulot nomi",
+      "namePlaceholder": "Mahsulot nomini kiriting...",
+      "image": "Mahsulot rasmi",
+      "clear": "Tozalash",
+      "cancelEdit": "Bekor qilish",
+      "save": "Saqlash",
+      "saving": "Saqlanmoqda...",
+      "listTitle": "Market mahsulotlari",
+      "listTitleMarket": "Mavjud mahsulotlar",
+      "listHintMarket": "Qalamni bossangiz, mahsulot formada tahrirlanadi",
+      "count": "{{value}} ta",
+      "countMarket": "Jami {{value}} ta",
+      "listLoading": "Market mahsulotlari yuklanmoqda",
+      "empty": "Bu marketda hali mahsulot yo'q",
+      "emptyDescription": "Birinchi mahsulotni shu sahifadagi forma orqali qo'shing.",
+      "loadFailed": "Market mahsulotlarini yuklab bo'lmadi",
+      "editing": "Tahrirlanmoqda"
+    }
+  }
 }

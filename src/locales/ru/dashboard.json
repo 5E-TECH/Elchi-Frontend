@@ -191,5 +191,249 @@
     "extra_cost_approving": "Подтверждение",
     "extra_cost_rejecting": "Отклонение",
     "extra_cost_action_error": "Не удалось выполнить запрос. Попробуйте снова."
+  },
+  "v2Charts": {
+    "zone": {
+      "good": "Хорошо · 70% и выше",
+      "mid": "Средне · 40–70%",
+      "low": "Низко · меньше 40%"
+    },
+    "showMore": "Показать ещё · {{count}}",
+    "showLess": "Свернуть",
+    "viewChart": "График",
+    "viewTable": "Таблица",
+    "viewLabel": "Вид",
+    "countTa": "{{value}} шт."
+  },
+  "v2Dashboard": {
+    "header": {
+      "title": "Главная",
+      "company": "{{headline}} · по всей компании",
+      "scoped": "{{headline}} · {{scope}}",
+      "periodLabel": "Период",
+      "year": "Год",
+      "yearLabel": "Выбрать год",
+      "rangePlaceholder": "Начало → Конец",
+      "rangeCourier": "Период"
+    },
+    "headline": {
+      "today": "Показатели за сегодня",
+      "filtered": "Показатели за выбранный период",
+      "all": "Показатели за всё время"
+    },
+    "period": {
+      "today": "Сегодня",
+      "week": "Эта неделя",
+      "month": "Этот месяц",
+      "all": "Всё время",
+      "year": "{{year}} год"
+    },
+    "vsYesterday": "к вчерашнему дню",
+    "vsPrevious": "к предыдущему периоду",
+    "yesterday": "Вчера",
+    "previousPeriod": "Предыдущий период",
+    "pp": "{{value}} п. п.",
+    "duration": "{{h}} ч {{m}} мин",
+    "durationHours": "{{h}} ч",
+    "durationMinutes": "{{m}} мин",
+    "partOfTotal": "{{part}} / {{total}} шт.",
+    "retry": "Повторить",
+    "kpi": {
+      "label": "Основные показатели",
+      "courierLabel": "Показатели, {{period}}",
+      "totalRevenue": "Общий доход",
+      "netProfit": "Чистая прибыль",
+      "avgOrder": "Средний заказ"
+    },
+    "success": {
+      "title": "Уровень успешности",
+      "subAccepted": "{{period}} · продано / принято",
+      "subAcceptedShort": "продано / принято",
+      "subTotal": "{{period}} · продано / всего заказов",
+      "subScoped": "{{period}} · {{scope}}",
+      "gaugeAccepted": "Продано / принято",
+      "gaugeTotal": "Продано / всего заказов",
+      "threshold": "Порог «хорошо» · 70%",
+      "zonesNote": "Зоны: меньше 40% — низко · 40–70% — средне · 70% и выше — хорошо",
+      "aria": "Уровень успешности: {{rate}}. Продано {{sold}}, отменено {{cancelled}}"
+    },
+    "status": {
+      "title": "Статусы заказов",
+      "subAccepted": "{{period}}: принятые",
+      "centerAccepted": "Всего принято",
+      "list": "Список",
+      "legend": "Распределение по статусам",
+      "sold": "Продано",
+      "inProgress": "В процессе",
+      "cancelled": "Отменено",
+      "inProgressNote": "В процессе = в пути, в ожидании и на складе филиала",
+      "aria": "{{label}}: {{total}} — {{list}}"
+    },
+    "quality": {
+      "title": "Качество доставки",
+      "onTime": "Вовремя (SLA)",
+      "onTimeHint": "в течение 24 часов",
+      "cancelRate": "Доля отмен",
+      "duration": "Время доставки",
+      "durationHint": "от приёма до продажи",
+      "allTimeTitle": "Показатели качества за всё время не рассчитываются",
+      "allTimeHint": "Выберите день, неделю или месяц"
+    },
+    "results": {
+      "title": "Итоги доставки",
+      "sub": "{{period}} · от всех принятых",
+      "delivered": "Доставлено",
+      "deliveredHint": "продано и закрыто",
+      "inProgressHint": "{{share}} · не доставлено"
+    },
+    "finance": {
+      "title": "Финансовый анализ",
+      "subtitle": "Доход · сравнение с предыдущим периодом",
+      "periodLabel": "Период графика",
+      "viewLabel": "Вид финансового анализа",
+      "revenueDays": "Доход · {{count}} дн.",
+      "orders": "Заказы",
+      "average": {
+        "daily": "Средний доход в день",
+        "weekly": "Средний доход в неделю",
+        "monthly": "Средний доход в месяц",
+        "yearly": "Средний доход в год"
+      },
+      "previousValue": "ранее: {{value}}",
+      "current": "Текущий",
+      "previous": "Предыдущий",
+      "previousPoint": "{{label}} · ранее",
+      "currentRange": "Текущий период · {{range}}",
+      "previousRange": "Предыдущий период · {{range}}",
+      "compareAria": "Сравнить с предыдущим периодом",
+      "tableDate": "Дата",
+      "chartAria": "Доход, {{range}}",
+      "empty": "За этот период нет данных о доходе"
+    },
+    "cash": {
+      "title": "Баланс кассы",
+      "asOf": "на {{time}}",
+      "positive": "Положительный",
+      "negative": "Отрицательный",
+      "formula": "Текущее состояние = касса + деньги в пути − маркеты",
+      "main": "Касса почты",
+      "transit": "Деньги в пути",
+      "markets": "Маркеты",
+      "marketsBalance": "Баланс маркетов",
+      "current": "Текущее состояние",
+      "open": "Открыть баланс",
+      "empty": "Данные кассы не получены",
+      "aria": "Текущее состояние {{current}}: касса почты {{main}}, плюс деньги в пути {{transit}}, минус баланс маркетов {{markets}}"
+    },
+    "top": {
+      "markets": "Топ маркетов",
+      "branches": "Топ филиалов",
+      "couriers": "Топ курьеров",
+      "operators": "Топ операторов",
+      "sub": "Процент продаж · продано / всего",
+      "courierSub": "{{scope}}{{period}} · процент продаж",
+      "limited": "Данных пока мало — результаты рейтинга могут измениться",
+      "emptyTitle": "Для рейтинга пока мало данных",
+      "emptyHint": "Рейтинг появится, когда станет больше заказов",
+      "couriersAllTimeTitle": "Срез по курьерам за всё время не рассчитывается",
+      "you": "Вы",
+      "yourPlace": "Ваше место",
+      "place": "{{rank}}-е место",
+      "gapToNext": "до {{rank}}-го места осталось {{gap}}"
+    },
+    "courier": {
+      "planToday": "План на сегодня",
+      "planPeriod": "План за период",
+      "planSub": "Назначено вам: {{count}} заказов",
+      "remaining": "Осталось: {{count}}",
+      "done": "{{done}} / {{total}} завершено",
+      "remainingOnWay": "Осталось · в пути",
+      "remainingOrders": "Оставшиеся заказы",
+      "planLegend": "Статусы заказов",
+      "planAria": "План: из {{total}} заказов завершено {{done}} ({{share}}) — продано {{sold}}, отменено {{cancelled}}; осталось {{remaining}}"
+    },
+    "courierCash": {
+      "title": "Касса",
+      "open": "Открыть кассу",
+      "inHand": "Деньги на руках · сдаются в филиал",
+      "start": "На начало дня",
+      "sales": "Продажи",
+      "handed": "Сдано",
+      "other": "Прочее",
+      "balance": "На руках",
+      "startRow": "На начало дня",
+      "salesRow": "Поступления от продаж",
+      "handedRow": "Сдано в филиал",
+      "otherRow": "Прочие операции",
+      "empty": "Данные кассы не получены",
+      "aria": "Касса за сегодня: на начало дня {{start}}, поступления от продаж {{sales}}, сдано в филиал {{handed}}, на руках {{balance}}"
+    },
+    "region": {
+      "title": "По регионам",
+      "subtitle": "Заказы и продажи по областям · {{period}}",
+      "metricLabel": "Показатель на карте",
+      "metric": {
+        "orders": "Заказы",
+        "success": "Успешность",
+        "revenue": "Доход"
+      },
+      "mapAria": "Карта заказов по регионам Узбекистана: {{list}}",
+      "tileAria": "{{name}}: заказов {{count}}",
+      "ordersWord": "заказов",
+      "soldWord": "продано",
+      "soldWithRevenue": "продано · {{revenue}}",
+      "scaleAria": "Цветовая шкала: {{metric}}",
+      "scaleLow": "Мало",
+      "scaleHigh": "Много",
+      "clickNote": "Нажмите на регион — откроется срез по районам",
+      "topOrders": "Больше всего заказов",
+      "topOrdersMeta": "{{count}} шт. · {{share}} от всех",
+      "lowestSuccess": "Самые низкие продажи (10+ шт.)",
+      "mostCancelled": "Наибольшая доля отмен (10+ шт.)",
+      "rateMeta": "{{rate}} · {{part}} / {{total}} шт.",
+      "activeCouriers": "Активные курьеры",
+      "inRegions": "в {{count}} регионах",
+      "colRegion": "Область",
+      "colOrders": "Заказы",
+      "colPending": "В процессе",
+      "colCancelled": "Отмены",
+      "colSuccess": "Продажи",
+      "colRevenue": "Доход",
+      "total": "Итого · {{count}} регионов",
+      "phoneRank": "Самые активные регионы",
+      "soldShare": "продано {{rate}}",
+      "showAll": "Все {{count}} регионов",
+      "empty": "За этот период нет заказов по регионам"
+    }
+  },
+  "v2Market": {
+    "headerSub": "Заказы и показатели · {{name}}",
+    "createOrder": "Создать заказ",
+    "statusSub": "{{period}} · заказов: {{count}}",
+    "statusCenter": "Всего заказов",
+    "operatorRate": "Процент продаж оператора",
+    "marketAverage": "Среднее {{name}} · {{rate}}",
+    "yourMarket": "маркета",
+    "approval": {
+      "aria": "{{action}}, заказ №{{order}}",
+      "order": "№{{id}}",
+      "requested": "Запрошенная сумма",
+      "noProofs": "Нет"
+    },
+    "quick": {
+      "viewHint": "Ваши заказы в разделе «Приём и создание»",
+      "createHint": "Вручную или с помощью ИИ"
+    },
+    "sales": {
+      "title": "Процент продаж по маркетам",
+      "sub": "Продано / всего заказов · по убыванию · маркетов: {{count}}",
+      "viewLabel": "Вид процента продаж",
+      "good": "Хорошо · 70% и выше",
+      "mid": "Средне · 50–69%",
+      "low": "Низко · меньше 50%",
+      "colMarket": "Маркет",
+      "colRate": "Процент продаж",
+      "colPart": "Продано / всего"
+    }
   }
 }

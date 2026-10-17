@@ -58,6 +58,7 @@ export const API_ENDPOINTS = {
     BASE: "region", // GET all / POST create
     STATS_ALL: "region/stats/all",
     STATS_BY_ID: (regionId: string | number) => `region/stats/${regionId}`,
+    MY_DISTRICT_STATS: "region/my/district-stats", // GET — kuryer/menejerning o'z viloyati (tumanlar kesimida)
     BY_ID: (regionId: string | number) => `region/${regionId}`, // GET / PATCH update / DELETE
   },
   DISTRICTS: {
