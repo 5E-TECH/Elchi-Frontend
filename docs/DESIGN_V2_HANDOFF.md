@@ -19,7 +19,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
 | Bosqich | Holat |
 |---|---|
 | 0 tokenlar, 1 primitivlar, 2 shell, 3 forma/dialog/holatlar | tayyor, dev'da |
-| 4 sahifalar migratsiyasi | jarayonda: G1 qurilmoqda, G2 va G3 spec tayyor |
+| 4 sahifalar migratsiyasi | jarayonda: G1 tayyor; G2, G3 alohida worktree'larda qurilmoqda |
 | 5 qo'shimcha qo'riqchilar (ESLint, vizual snapshot) | 4 tugashi bilan darhol (ega: kutilmaydi) |
 
 **4-bosqichda ko'chirilgan sahifalar** (ro'yxat `AGENTS.md` 4-qatorida ham bor):
@@ -31,6 +31,8 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
 - «Paketlar va qaytarishlar»: `/batches`, `/batches/:id`, `/returns`
 - «Moliya» (`7ea71d7`): `/payments`, `/payments/main-cashbox`, `/payments/cash-detail/:id`, `/cash-box`,
   `/financial-balance`
+- G1: `/`, `/branch-dashboard`, `/all-users*` (+ `/new-orders/userDetail/:id`), `/branches*`, `/products*`, `/regions*`
+  (umumiy `shared/ui/charts`, `widgets/region-detail`; dashboard bundle 418 KB ≤ 450)
 
 **Yo'l-yo'lakay qo'shilganlar:**
 
@@ -168,6 +170,18 @@ bilan **alohida ish**.
   - `/mails/old` yig'indilar backend'dan so'raladi (hozircha «N ta pochta»);
   - Excel 20 000 qator chegarasida ogohlantirish;
   - spec savollarida sukut.
+- **G1 spec §9 sukutlari (egaga ko'rsatiladi):**
+  - KPI deltalari ikkinchi analytics so'rovidan;
+  - gauge'da «Yaxshi chegarasi · 70%»;
+  - registrator sarlavhasida filial nomi;
+  - «Moliyaviy tahlil» = «Daromad»;
+  - market qo'shimcha xarajat tasdig'ida tasdiq oynasi yo'q;
+  - `/branches/:id` da «Filial ko'rsatkichlari» yo'q (backend `branch_id` kerak);
+  - `/regions` da Highcharts lazy;
+  - logist sahifasi maketdagi bo'sh holat;
+  - filial config kodi o'chirildi;
+  - `/all-users` da «Filial» ustuni yo'q (users'da filial maydoni yo'q);
+  - market tariflari majburiy.
 - Ochiq savollar (javob olinmagan), ehtiyot bo'lib birga so'rash mumkin:
   - chop etish menyusi izohlari: xodim maketi «Faqat jadvalni chop etadi», kuryer maketi «Brauzerning chop etish
     oynasi ochiladi». Kod kuryer matnini ishlatadi, chunki u to'g'ri;

@@ -5,7 +5,6 @@ import type { PaginatedResponse } from "../../../shared/types/pagination";
 import type {
   Branch,
   BranchParams,
-  BranchSetting,
   BranchType,
   Employee,
   SentBatchBranchParams,
@@ -140,15 +139,6 @@ const normalizeEmployee = (value: unknown): Employee => {
     },
     position: item.position ?? item.role ?? user.role ?? i18n.t("branches:fallback.employee"),
     joined_at: item.joined_at ?? item.created_at ?? item.createdAt ?? new Date().toISOString(),
-  };
-};
-
-const normalizeSetting = (value: unknown): BranchSetting => {
-  const item = value as BranchSetting;
-  return {
-    id: String(item.id),
-    key: item.key ?? "",
-    value: item.value ?? "",
   };
 };
 
@@ -305,11 +295,6 @@ export const getBranchById = async (id: string): Promise<Branch> => {
 export const getBranchEmployees = async (id: string): Promise<Employee[]> => {
   const response = await api.get(API_ENDPOINTS.BRANCHES.USERS(id));
   return extractArray<Employee>(response.data).map(normalizeEmployee);
-};
-
-export const getBranchSettings = async (id: string): Promise<BranchSetting[]> => {
-  const response = await api.get(API_ENDPOINTS.BRANCHES.SETTINGS(id));
-  return extractArray<BranchSetting>(response.data).map(normalizeSetting);
 };
 
 export const getBranchesWithSentBatches = async (

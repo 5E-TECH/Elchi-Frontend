@@ -1,86 +1,95 @@
+// dizayn-v2: market-dashboard-home, market-dashboard-extra-cost-approvals
+import { CircleCheck, CircleX, Plus, ShoppingBag, Truck, UsersRound, Wallet } from "lucide-react";
 import { memo, useCallback, useMemo, useState } from "react";
-import {
-  CheckCircle2,
-  Clock,
-  LayoutDashboard,
-  Plus,
-  ReceiptText,
-  ShoppingBag,
-  XCircle,
-  TrendingUp,
-} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { useDashboard } from "../../entities/dashboard";
-import { useOrders, type ExtraCostApproval } from "../../entities/orders";
-import { useSettings, DEFAULT_SETTINGS } from "../../entities/settings";
-import HeaderName from "../../shared/components/headerName";
-import PageContainer from "../../shared/ui/PageContainer";
-import QuickDateRangeFilter from "../../shared/ui/QuickDateRangeFilter";
-import QueryErrorState from "../../shared/ui/QueryErrorState";
-import MetricCard, { MetricCardSkeleton } from "../../shared/ui/MetricCard";
-import TopPerformers from "../../widgets/dashboard-top-performers/ui/TopPerformers";
-import PerformanceChart from "../../widgets/dashboard-performance-chart/ui/PerformanceChart";
-import { getAllTimeRange } from "../../shared/lib/dateRange";
 import type { RootState } from "../../app/config/store";
-import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
+import { useDashboard } from "../../entities/dashboard";
 import {
-  formatNumber,
-  ratio,
-} from "../../shared/config/designSystem";
+  comparisonHint,
+  percentChange,
+  periodHeadline,
+  periodLabel,
+  previousLabel,
+  previousPeriodRange,
+  resolveDashboardPeriod,
+  share,
+} from "../../entities/dashboard/lib/period";
+import { inProgressCount, readProfileName } from "../../entities/dashboard/lib/profile";
+import { useOrders } from "../../entities/orders";
+import { DEFAULT_SETTINGS, useSettings } from "../../entities/settings";
 import { getActionErrorMessage } from "../../shared/lib/actionError";
+import { getAllTimeRange } from "../../shared/lib/dateRange";
+import {
+  CURRENCY_LABEL,
+  formatMoneyLocalized,
+  formatNumberLocalized,
+  formatPercentLocalized,
+  resolveMoneyLanguage,
+} from "../../shared/lib/formatMoney";
 import { notify } from "../../shared/lib/notify";
+import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
+import { ChartLegend } from "../../shared/ui/charts";
+import { Button, Card, EmptyState, ErrorState, StatCard } from "../../shared/ui/primitives";
+import DashboardHeader from "../../widgets/dashboard-statistics/ui/DashboardHeader";
+import { CardRow, KpiRow, LoadingChartCard } from "../../widgets/dashboard-statistics/ui/DashboardGrid";
+import OrderStatusCard from "../../widgets/dashboard-statistics/ui/OrderStatusCard";
+import SuccessRateCard from "../../widgets/dashboard-statistics/ui/SuccessRateCard";
+import {
+  marketRows,
+  operatorRows,
+  sortByRate,
+  toRankItems,
+  type PerformerRow,
+} from "../../widgets/dashboard-top-performers/lib/rankItems";
+import TopRankCard from "../../widgets/dashboard-top-performers/ui/TopRankCard";
+import ExtraCostApprovalsCard from "./ui/ExtraCostApprovalsCard";
+import MarketSalesCard from "./ui/MarketSalesCard";
+import QuickActions from "./ui/QuickActions";
 
-// ─── MarketDashboardPage ──────────────────────────────────────────────────────
-
+/**
+ * BOSH SAHIFA — market (maketlar `market-dashboard-home`, `market-dashboard-extra-cost-approvals`).
+ *
+ * Saqlanadigan xulq: faqat market uchun ruxsat etilgan `analytics/dashboard` (start/end, «Barchasi» ham
+ * aniq sanalar bilan), `myStat` → `orders` zaxiralari, `add_order` ruxsati, qo'shimcha xarajat tasdiqlari
+ * (`approve/rejectExtraCostApproval.mutate` + xato `notify`), sozlamadagi vidjetlar (`topPerformers` —
+ * «Top operatorlar», `performanceChart` — «Marketlar bo'yicha sotuv foizi»). «Reytingdagi o'rningiz» va
+ * «Buyurtmalar dinamikasi» — «Taklif», chizilmaydi.
+ */
 const MarketDashboardPage = () => {
-  const { t } = useTranslation("dashboard");
+  const { t, i18n } = useTranslation("dashboard");
+  const language = i18n.language;
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // ─── Redux holat ─────────────────────────────────────────────────────────────
   const storedFromDate = useSelector((state: RootState) => state.filter.dashboardFromDate);
   const storedToDate = useSelector((state: RootState) => state.filter.dashboardToDate);
   const user = useSelector((state: RootState) => state.user.user);
   const role = useSelector((state: RootState) => state.role.role);
   const roleId = useSelector((state: RootState) => state.role.id);
 
-  // ─── Sana filtri holati ───────────────────────────────────────────────────────
-  const [fromDate, setFromDate] = useState(
-    typeof storedFromDate === "string" ? storedFromDate : "",
-  );
+  const [fromDate, setFromDate] = useState(typeof storedFromDate === "string" ? storedFromDate : "");
   const [toDate, setToDate] = useState(typeof storedToDate === "string" ? storedToDate : "");
-
-  // Sozlamalardagi "Dashboard vidjetlari" market uchun ham ko'rsatiladi —
-  // shu sabab bu yerda ham hurmat qilinadi.
   const { data: settingsData } = useSettings();
   const widgets = (settingsData ?? DEFAULT_SETTINGS).dashboard.widgets;
 
   const hasDateFilter = Boolean(fromDate && toDate);
-  const allTimeRange = getAllTimeRange();
-  const isAllTime = fromDate === allTimeRange.from && toDate === allTimeRange.to;
-
-  // ─── Scope: re-render minimizatsiya uchun ─────────────────────────────────────
-  const analyticsScope = useMemo(
-    () => `${role ?? "unknown"}:${user?.id ?? "unknown"}`,
-    [role, user?.id],
-  );
-
+  const isAllTime = (() => {
+    const all = getAllTimeRange();
+    return fromDate === all.from && toDate === all.to;
+  })();
+  const period = resolveDashboardPeriod(fromDate, toDate);
+  const analyticsScope = useMemo(() => `${role ?? "unknown"}:${user?.id ?? "unknown"}`, [role, user?.id]);
   const analyticsParams = useMemo(
-    () => ({
-      start_day: hasDateFilter ? fromDate : "",
-      end_day: hasDateFilter ? toDate : "",
-    }),
+    () => ({ start_day: hasDateFilter ? fromDate : "", end_day: hasDateFilter ? toDate : "" }),
     [fromDate, hasDateFilter, toDate],
   );
 
-  // ─── API so'rovlari ───────────────────────────────────────────────────────────
   const { getDashboard } = useDashboard();
   const { useExtraCostApprovals, approveExtraCostApproval, rejectExtraCostApproval } = useOrders();
 
-  // fix3 FE-ORD-02: tasdiqlash/rad etish rad javobi endi ko'rinadi (avval
-  // tugma jimgina "qaytib" qolardi va market nima bo'lganini bilmasdi).
+  // fix3 FE-ORD-02: tasdiqlash/rad etish rad javobi ko'rinadi.
   const notifyApprovalError = useCallback(
     (error: unknown) => {
       const description = getActionErrorMessage(error, t("market.extra_cost_action_error"));
@@ -90,12 +99,18 @@ const MarketDashboardPage = () => {
     [t],
   );
 
-  const {
-    data,
-    isLoading,
-    isError: dashboardError,
-    refetch: refetchDashboard,
-  } = getDashboard(analyticsParams, true, analyticsScope);
+  const { data, isLoading, isError: dashboardError, refetch: refetchDashboard } = getDashboard(
+    analyticsParams,
+    true,
+    analyticsScope,
+  );
+  // Oldingi teng davr (ega savoli 1 sukuti) — joriy javob kelgach, «Barchasi»da yo'q.
+  const prevRange = useMemo(() => previousPeriodRange(resolveDashboardPeriod(fromDate, toDate)), [fromDate, toDate]);
+  const previousParams = useMemo(
+    () => (prevRange ? { start_day: prevRange.from, end_day: prevRange.to } : analyticsParams),
+    [analyticsParams, prevRange],
+  );
+  const { data: previousData } = getDashboard(previousParams, Boolean(prevRange) && Boolean(data), analyticsScope);
 
   const {
     data: approvalResponse,
@@ -104,42 +119,42 @@ const MarketDashboardPage = () => {
   } = useExtraCostApprovals("pending", true);
   const extraCostApprovals = Array.isArray(approvalResponse?.data) ? approvalResponse.data : [];
 
-  // ─── Hisoblangan qiymatlar ────────────────────────────────────────────────────
   const orders = data?.data?.orders;
   const myStat = data?.data?.myStat;
-
   const accepted = myStat?.totalOrders ?? orders?.acceptedCount ?? 0;
   const sold = myStat?.soldOrders ?? orders?.soldAndPaid ?? 0;
   const cancelled = myStat?.canceledOrders ?? orders?.cancelled ?? 0;
   const profit = myStat?.profit ?? orders?.profit ?? 0;
-  const topMarkets = data?.data?.topMarkets ?? [];
-  const topOperators = data?.data?.topOperators ?? [];
-  // Grafik TO'LIQ statistikadan (`markets`) chiziladi (PMa5dgYQ): `topMarkets`
-  // ≥30 buyurtma chegarali reyting — market o'z ma'lumoti bo'lsa ham bo'sh
-  // grafik ko'rardi. "Barchasi" davrida `markets` bo'sh keladi — top-reyting.
-  const marketStats = data?.data?.markets ?? [];
-  const chartMarkets = marketStats.length ? marketStats : topMarkets;
+  const inProgress = myStat?.inProgress ?? orders?.inProgress ?? inProgressCount(accepted, sold, cancelled);
+  const successRate = myStat?.successRate ?? share(sold, accepted);
 
-  const successRate = myStat?.successRate ?? ratio(sold, accepted);
+  const prevStat = prevRange ? previousData?.data?.myStat : undefined;
+  const prevOrders = prevRange ? previousData?.data?.orders : undefined;
+  const prevAccepted = prevStat?.totalOrders ?? prevOrders?.acceptedCount;
+  const prevSold = prevStat?.soldOrders ?? prevOrders?.soldAndPaid;
+  const prevCancelled = prevStat?.canceledOrders ?? prevOrders?.cancelled;
+  const prevProfit = prevStat?.profit ?? prevOrders?.profit;
+  const hasPrevious = previousData != null && prevRange != null;
+  const prevRate =
+    hasPrevious && (prevAccepted ?? 0) > 0 ? (prevStat?.successRate ?? share(prevSold ?? 0, prevAccepted ?? 0)) : null;
 
-  // ─── Market add_order ruxsati ─────────────────────────────────────────────────
   const canAddOrder = Boolean((user as Record<string, unknown> | null)?.add_order);
+  const selfId = user?.id ?? roleId;
+  const marketName = readProfileName(user);
+  const periodText = periodLabel(t, period);
+  const hint = comparisonHint(t, period);
+  /** KPI delta va izohi («kechaga nisbatan»): delta bo'lmasa (oldingi davr yo'q, asos 0) — izoh ham yo'q. */
+  const deltaProps = (value: number | null) => ({ delta: value, hint: value != null ? hint : undefined });
+  const count = (value: number) => formatNumberLocalized(value, { language });
 
-  // ─── Sana filtri callbacklari ─────────────────────────────────────────────────
   const applyRange = useCallback(
     (range: { from: string; to: string }) => {
       setFromDate(range.from);
       setToDate(range.to);
-      dispatch(
-        setMultipleFilters({
-          dashboardFromDate: range.from,
-          dashboardToDate: range.to,
-        }),
-      );
+      dispatch(setMultipleFilters({ dashboardFromDate: range.from, dashboardToDate: range.to }));
     },
     [dispatch],
   );
-
   const clearRange = useCallback(() => {
     setFromDate("");
     setToDate("");
@@ -147,398 +162,168 @@ const MarketDashboardPage = () => {
     dispatch(removeFilterValue("dashboardToDate"));
   }, [dispatch]);
 
-  const isDataLoading = isLoading;
+  const delta = (current: number, previous: number | undefined) => (hasPrevious ? percentChange(current, previous) : null);
+
+  // «Marketlar bo'yicha sotuv foizi»: reyting (`topMarkets`) + o'z qatori (`markets` — RBAC-02, faqat o'zi).
+  // O'z qatori har doim ko'rinadi (≥ 30 buyurtma chegarasidan o'tmagan bo'lsa ham) — hozirgi `chartMarkets` xulqi.
+  const salesRows: PerformerRow[] = useMemo(() => {
+    const top = marketRows(data?.data?.topMarkets);
+    const own = marketRows(data?.data?.markets);
+    const merged = [...top];
+    for (const row of own) if (!merged.some((item) => item.id === row.id)) merged.push(row);
+    return sortByRate(merged);
+  }, [data?.data?.markets, data?.data?.topMarkets]);
+
+  const operators = operatorRows(data?.data?.topOperators);
+  const ordersListHref = isAllTime ? "/orders" : `/orders?startDay=${period.range.from}&endDay=${period.range.to}`;
+
+  const createOrderButton = canAddOrder ? (
+    <Button leftIcon={Plus} onClick={() => navigate("/new-orders/create")}>
+      {t("v2Market.createOrder")}
+    </Button>
+  ) : undefined;
 
   return (
-    <PageContainer>
-      {/* Sahifa sarlavhasi */}
-      <div className="mb-5 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <HeaderName
-          name={
-            isAllTime
-              ? t("page_title_all")
-              : hasDateFilter
-                ? t("page_title_filtered")
-                : t("market.page_title")
-          }
-          description={
-            isAllTime
-              ? t("page_subtitle_all")
-              : hasDateFilter
-                ? t("page_subtitle_filtered")
-                : t("market.page_subtitle")
-          }
-          icon={<LayoutDashboard />}
-        />
+    <div className="flex flex-col gap-6 max-md:gap-4">
+      <DashboardHeader
+        description={
+          marketName
+            ? t("v2Market.headerSub", { name: marketName })
+            : periodHeadline(t, period)
+        }
+        fromDate={fromDate}
+        toDate={toDate}
+        onChange={applyRange}
+        onClear={clearRange}
+        primaryAction={createOrderButton}
+      />
 
-        <div className="flex w-full flex-col gap-2 lg:w-auto lg:items-end">
-          <QuickDateRangeFilter
-            fromDate={fromDate}
-            toDate={toDate}
-            onChange={applyRange}
-            onClear={clearRange}
-            includeAll
-            labels={{
-              today: t("quickRanges.today"),
-              week: t("quickRanges.week"),
-              month: t("quickRanges.month"),
-              year: t("quickRanges.year"),
-              all: t("quickRanges.all"),
-            }}
-            placeholder={`${t("datePicker.from")} → ${t("datePicker.to")}`}
-            className="lg:items-end"
-            pickerClassName="w-full sm:w-88"
-            clearClassName="sm:w-auto"
-          />
-        </div>
-      </div>
-
-      {/* Yangi buyurtma qo'shish tugmasi */}
-      {canAddOrder && (
-        <div className="mb-5">
-          <button
-            onClick={() => navigate("/new-orders/create")}
-            className="flex items-center gap-2.5 rounded-2xl bg-main px-5 py-3 text-sm font-bold text-white shadow-lg shadow-main/25 transition-all duration-200 hover:-translate-y-0.5 hover:bg-main/90 hover:shadow-main/40 active:translate-y-0"
-          >
-            <Plus size={18} />
-            {t("market.add_order")}
-          </button>
-        </div>
-      )}
-
-      {/* Xato holati */}
-      {dashboardError && (
-        <div className="mb-5">
-          <QueryErrorState description={t("load_error")} onRetry={() => void refetchDashboard()} />
-        </div>
-      )}
-
-      <ExtraCostApprovalPanel
+      <ExtraCostApprovalsCard
         approvals={extraCostApprovals}
         loading={approvalsLoading}
         error={approvalsError}
-        approvingId={
-          approveExtraCostApproval.isPending
-            ? String(approveExtraCostApproval.variables?.id ?? "")
-            : ""
-        }
-        rejectingId={
-          rejectExtraCostApproval.isPending
-            ? String(rejectExtraCostApproval.variables?.id ?? "")
-            : ""
-        }
+        approvingId={approveExtraCostApproval.isPending ? String(approveExtraCostApproval.variables?.id ?? "") : ""}
+        rejectingId={rejectExtraCostApproval.isPending ? String(rejectExtraCostApproval.variables?.id ?? "") : ""}
         onApprove={(id) => approveExtraCostApproval.mutate({ id }, { onError: notifyApprovalError })}
         onReject={(id) => rejectExtraCostApproval.mutate({ id }, { onError: notifyApprovalError })}
-        t={t}
       />
 
-      {/* Marketga ruxsatli dashboard statistikasi */}
-      {!dashboardError && (
-        <div className="mb-5">
-          <MarketStatsGrid
-            accepted={accepted}
-            sold={sold}
-            cancelled={cancelled}
-            profit={profit}
-            successRate={successRate}
-            loading={isDataLoading}
-            t={t}
-          />
-        </div>
+      {dashboardError ? (
+        <Card>
+          <ErrorState description={t("load_error")} onRetry={() => void refetchDashboard()} />
+        </Card>
+      ) : (
+        <KpiRow count={4} label={t("v2Dashboard.kpi.label")}>
+          <div data-testid="market-stats-grid" className="contents">
+            <StatCard
+              label={t("cards.total_orders")}
+              icon={ShoppingBag}
+              loading={isLoading}
+              value={count(accepted)}
+              unit={t("unit.orders")}
+              {...deltaProps(delta(accepted, prevAccepted))}
+              goodWhen="none"
+            />
+            <StatCard
+              label={t("cards.sold")}
+              icon={CircleCheck}
+              loading={isLoading}
+              value={count(sold)}
+              unit={t("unit.orders")}
+              {...deltaProps(delta(sold, prevSold))}
+            />
+            <StatCard
+              label={t("cards.cancelled")}
+              icon={CircleX}
+              loading={isLoading}
+              value={count(cancelled)}
+              unit={t("unit.orders")}
+              {...deltaProps(delta(cancelled, prevCancelled))}
+              goodWhen="down"
+            />
+            <StatCard
+              label={t("cards.profit")}
+              icon={Wallet}
+              loading={isLoading}
+              value={formatMoneyLocalized(profit, { language, withCurrency: false })}
+              unit={CURRENCY_LABEL[resolveMoneyLanguage(language)]}
+              valueTone={profit < 0 ? "danger" : undefined}
+              {...deltaProps(delta(profit, prevProfit))}
+            />
+          </div>
+        </KpiRow>
       )}
 
-      {widgets.topPerformers && !dashboardError && !isDataLoading && (
-        <div className="mb-5">
-          <TopPerformers
-            markets={topMarkets}
-            operators={topOperators.length ? topOperators : undefined}
-            currentUserId={user?.id ?? roleId}
-          />
-        </div>
-      )}
 
-      {/* Marketlar solishtiruv diagrammasi — kuryerlar bo'limi yo'q, chunki
-          market foydalanuvchisiga tegishli emas (DashboardPage'dagi bilan
-          bir xil qoida). */}
-      {widgets.performanceChart && !dashboardError && !isDataLoading && (
-        <div className="mb-5">
-          <PerformanceChart markets={chartMarkets} />
-        </div>
-      )}
+      {!dashboardError ? (
+        <CardRow>
+          {isLoading ? (
+            <>
+              <LoadingChartCard title={t("v2Dashboard.success.title")} />
+              <LoadingChartCard title={t("v2Dashboard.status.title")} />
+            </>
+          ) : (
+            <>
+              <SuccessRateCard
+                rate={successRate}
+                sold={sold}
+                cancelled={cancelled}
+                description={t("v2Dashboard.success.subTotal", { period: periodText })}
+                gaugeLabel={t("v2Dashboard.success.gaugeTotal")}
+                previous={prevRate != null ? { rate: prevRate, label: previousLabel(t, period) } : null}
+              />
+              <OrderStatusCard
+                total={accepted}
+                description={t("v2Market.statusSub", { period: periodText, count: count(accepted) })}
+                centerLabel={t("v2Market.statusCenter")}
+                listHref={ordersListHref}
+                note={t("v2Dashboard.status.inProgressNote")}
+                segments={[
+                  { key: "sold", label: t("v2Dashboard.status.sold"), value: sold, tone: "success", icon: CircleCheck },
+                  { key: "progress", label: t("v2Dashboard.status.inProgress"), value: inProgress, tone: "warning", icon: Truck },
+                  { key: "cancelled", label: t("v2Dashboard.status.cancelled"), value: cancelled, tone: "danger", icon: CircleX },
+                ]}
+              />
+            </>
+          )}
+          {/* «Top operatorlar» — bo'sh bo'lsa karta yo'q (bo'sh joy qoldirilmaydi). */}
+          {widgets.topPerformers && !isLoading && operators.length > 0 ? (
+            <TopRankCard
+              title={t("v2Dashboard.top.operators")}
+              description={t("v2Dashboard.top.sub")}
+              items={toRankItems(operators, { t, language })}
+              expandable
+              meterTarget={successRate}
+              empty={<EmptyState size="chart" icon={UsersRound} title={t("v2Dashboard.top.emptyTitle")} />}
+              footer={
+                <ChartLegend
+                  items={[
+                    { key: "rate", tone: "action", keyClassName: "bg-chart-1", label: t("v2Market.operatorRate") },
+                    {
+                      key: "avg",
+                      tone: "neutral",
+                      shape: "target",
+                      label: t("v2Market.marketAverage", {
+                        name: marketName ?? t("v2Market.yourMarket"),
+                        rate: formatPercentLocalized(successRate, { language }),
+                      }),
+                    },
+                  ]}
+                />
+              }
+              note={operators.length < 5 ? t("v2Dashboard.top.limited") : undefined}
+            />
+          ) : null}
+        </CardRow>
+      ) : null}
 
-      {/* Tezkor harakatlar */}
-      {!dashboardError && !isDataLoading && (
-        <MarketQuickActions
-          onViewOrders={() => navigate("/new-orders")}
-          onAddOrder={canAddOrder ? () => navigate("/new-orders/create") : undefined}
-          t={t}
-        />
-      )}
-    </PageContainer>
+      {widgets.performanceChart && !dashboardError && !isLoading ? (
+        <MarketSalesCard rows={salesRows} selfId={selfId} />
+      ) : null}
+
+      {!dashboardError && !isLoading ? <QuickActions canAddOrder={canAddOrder} /> : null}
+    </div>
   );
 };
-
-// ─── ExtraCostApprovalPanel ───────────────────────────────────────────────────
-
-interface ExtraCostApprovalPanelProps {
-  approvals: ExtraCostApproval[];
-  loading: boolean;
-  error: boolean;
-  approvingId: string;
-  rejectingId: string;
-  onApprove: (id: string) => void;
-  onReject: (id: string) => void;
-  t: (key: string, options?: Record<string, unknown>) => string;
-}
-
-const formatApprovalAmount = (amount: number) =>
-  new Intl.NumberFormat("uz-UZ").format(Number(amount) || 0);
-
-const ExtraCostApprovalPanel = memo(
-  ({
-    approvals,
-    loading,
-    error,
-    approvingId,
-    rejectingId,
-    onApprove,
-    onReject,
-    t,
-  }: ExtraCostApprovalPanelProps) => {
-    if (loading) {
-      return (
-        <div className="mb-5 rounded-2xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-primarydark sm:p-5">
-          <div className="h-5 w-52 animate-pulse rounded bg-gray-200 dark:bg-white/10" />
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            {[0, 1].map((item) => (
-              <div
-                key={item}
-                className="h-28 animate-pulse rounded-xl bg-gray-100 dark:bg-white/5"
-              />
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    if (error || approvals.length === 0) {
-      return null;
-    }
-
-    const actionLabel = (action: ExtraCostApproval["action"]) => {
-      if (action === "cancel") return t("market.extra_cost_cancel");
-      if (action === "partly_sell") return t("market.extra_cost_partly_sell");
-      return t("market.extra_cost_sell");
-    };
-    // fix3b M3: tasdiq AYNAN shu amalni bajaradi — market nimani tasdiqlayotganini
-    // aniq ko'rsin (bekor qilinayotgan buyurtma uchun eski SOTISH so'rovi va h.k.).
-    const approveConsequence = (action: ExtraCostApproval["action"]) => {
-      if (action === "cancel") return t("market.extra_cost_on_approve_cancel");
-      if (action === "partly_sell") return t("market.extra_cost_on_approve_partly_sell");
-      return t("market.extra_cost_on_approve_sell");
-    };
-
-    return (
-      <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50/80 p-4 dark:border-amber-400/20 dark:bg-amber-400/10 sm:p-5">
-        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="grid size-10 place-items-center rounded-xl bg-amber-500/15 text-amber-700 dark:text-amber-300">
-              <Clock size={19} />
-            </span>
-            <div>
-              <h3 className="text-sm font-bold text-maindark dark:text-primary">
-                {t("market.extra_cost_approvals")}
-              </h3>
-              <p className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                {t("market.extra_cost_approvals_count", { count: approvals.length })}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid gap-3 lg:grid-cols-2">
-          {approvals.map((approval) => {
-            const isApproving = approvingId === approval.id;
-            const isRejecting = rejectingId === approval.id;
-            const busy = isApproving || isRejecting;
-
-            return (
-              <div
-                key={approval.id}
-                className="rounded-xl border border-amber-200 bg-white p-4 dark:border-white/10 dark:bg-primarydark"
-              >
-                <div className="mb-3 flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 text-xs font-bold uppercase text-amber-700 dark:text-amber-300">
-                      <ReceiptText size={14} />
-                      <span>{actionLabel(approval.action)}</span>
-                    </div>
-                    <p className="mt-1 text-sm font-bold text-maindark dark:text-primary">
-                      #{approval.order_id}
-                    </p>
-                    <p
-                      data-testid={`approval-consequence-${approval.id}`}
-                      className="mt-0.5 text-xs font-semibold text-amber-800 dark:text-amber-200"
-                    >
-                      {approveConsequence(approval.action)}
-                    </p>
-                  </div>
-                  <div className="text-right text-sm font-black text-maindark dark:text-primary">
-                    {formatApprovalAmount(approval.amount)} {t("currency_sum")}
-                  </div>
-                </div>
-
-                <div className="mb-4 grid grid-cols-2 gap-2 text-xs font-semibold text-gray-500 dark:text-gray-400">
-                  <span>
-                    {t("market.extra_cost_requester")}: #{approval.requested_by_user_id}
-                  </span>
-                  <span className="text-right">
-                    {t("market.extra_cost_proofs")}: {approval.proof_file_keys?.length ?? 0}
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => onApprove(approval.id)}
-                    className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <CheckCircle2 size={15} />
-                    {isApproving
-                      ? t("market.extra_cost_approving")
-                      : t("market.extra_cost_approve")}
-                  </button>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    onClick={() => onReject(approval.id)}
-                    className="inline-flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-bold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-400/20 dark:bg-red-400/10 dark:text-red-300"
-                  >
-                    <XCircle size={15} />
-                    {isRejecting ? t("market.extra_cost_rejecting") : t("market.extra_cost_reject")}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  },
-);
-
-ExtraCostApprovalPanel.displayName = "ExtraCostApprovalPanel";
-
-// ─── MarketStatsGrid ──────────────────────────────────────────────────────────
-
-interface MarketStatsGridProps {
-  accepted: number;
-  sold: number;
-  cancelled: number;
-  profit: number;
-  successRate: number;
-  loading: boolean;
-  t: (key: string) => string;
-}
-
-const MarketStatsGrid = memo(
-  ({
-    accepted,
-    sold,
-    cancelled,
-    profit,
-    successRate,
-    loading,
-    t,
-  }: MarketStatsGridProps) => {
-    if (loading) {
-      return (
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <MetricCardSkeleton key={i} />
-          ))}
-        </div>
-      );
-    }
-
-    const profitTone = profit < 0 ? "danger" : ("success" as const);
-    return (
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4" data-testid="market-stats-grid">
-        <MetricCard
-          title={t("cards.total_orders")}
-          value={formatNumber(accepted)}
-          suffix={t("unit.orders")}
-          icon={<ShoppingBag size={20} />}
-          tone="brand"
-        />
-        <MetricCard
-          title={t("cards.sold")}
-          value={formatNumber(sold)}
-          suffix={t("unit.orders")}
-          icon={<TrendingUp size={20} />}
-          tone="success"
-          badge={`${successRate}%`}
-          badgeUp={successRate > 50}
-        />
-        <MetricCard
-          title={t("cards.cancelled")}
-          value={formatNumber(cancelled)}
-          suffix={t("unit.orders")}
-          icon={<XCircle size={20} />}
-          tone="danger"
-        />
-        <MetricCard
-          title={t("cards.profit")}
-          value={new Intl.NumberFormat("uz-UZ", { maximumFractionDigits: 20 }).format(profit)}
-          suffix={t("currency_sum")}
-          icon={<TrendingUp size={20} />}
-          tone={profitTone}
-          compact
-          hint={t("cards.profit_hint")}
-        />
-      </div>
-    );
-  },
-);
-
-MarketStatsGrid.displayName = "MarketStatsGrid";
-
-// ─── MarketQuickActions ───────────────────────────────────────────────────────
-
-interface MarketQuickActionsProps {
-  onViewOrders: () => void;
-  onAddOrder?: () => void;
-  t: (key: string) => string;
-}
-
-const MarketQuickActions = memo(({ onViewOrders, onAddOrder, t }: MarketQuickActionsProps) => (
-  <div className="rounded-2xl border border-gray-200 bg-white p-4 dark:border-white/10 dark:bg-primarydark sm:p-5">
-    <h3 className="mb-3 text-sm font-bold text-maindark dark:text-primary">
-      {t("market.quick_actions")}
-    </h3>
-    <div className="flex flex-wrap gap-3">
-      <button
-        onClick={onViewOrders}
-        className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm font-semibold text-maindark transition-all duration-150 hover:border-main/30 hover:bg-main/5 dark:border-white/10 dark:bg-white/5 dark:text-primary dark:hover:bg-main/10"
-      >
-        <ShoppingBag size={15} />
-        {t("market.view_orders")}
-      </button>
-
-      {onAddOrder && (
-        <button
-          onClick={onAddOrder}
-          className="flex items-center gap-2 rounded-xl bg-main px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-main/20 transition-all duration-150 hover:bg-main/90"
-        >
-          <Plus size={15} />
-          {t("market.add_order")}
-        </button>
-      )}
-    </div>
-  </div>
-));
-
-MarketQuickActions.displayName = "MarketQuickActions";
 
 export default memo(MarketDashboardPage);

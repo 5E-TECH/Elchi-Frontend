@@ -155,6 +155,13 @@ const FADE_BG: Record<TabsBackground, string> = {
 };
 /** Xiralashish — gradient emas, 4 ta 8 px pog'ona (maketdagi kabi). */
 const FADE_STEPS = ["opacity-15", "opacity-35", "opacity-60", "opacity-85"] as const;
+/**
+ * Qoplamaning tashqi yuqori burchagi kartaning ICHKI radiusi bo'yicha yumaloq (`Card`: `rounded-[14px]` +
+ * 1 px chegara → 13 px). Tablar `Card padding="none"` boshida tursa, to'rtburchak qoplama karta
+ * burchagidagi yoy chegarani bo'yab yuborardi (telefonda ayniqsa ko'rinadi). Boshqa joyda (sahifa
+ * fonida, karta o'rtasida) yumaloq burchak ostida ham shu rangdagi bo'sh joy — farqi ko'rinmaydi.
+ */
+const FADE_CORNER = { start: "rounded-tl-[13px]", end: "rounded-tr-[13px]" } as const;
 
 /**
  * Chetdagi qoplama eni: xiralashish 32 px; ≥ 768 da + o'q tugmasi bloki 44 px.
@@ -344,7 +351,11 @@ const EdgeFade = ({
   return (
     <div
       data-tabs-edge={side}
-      className={cx("pointer-events-none absolute inset-y-0 flex", side === "end" ? "right-0" : "left-0")}
+      className={cx(
+        "pointer-events-none absolute inset-y-0 flex overflow-hidden",
+        side === "end" ? "right-0" : "left-0",
+        FADE_CORNER[side],
+      )}
     >
       {side === "end" ? fade : button}
       {side === "end" ? button : fade}

@@ -1,481 +1,464 @@
-import { screen } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import DashboardPage from "./DashboardPage";
 import { renderWithProviders } from "../../test/test-utils";
+import { getPreviousPeriodRange, getThisWeekRange, getTodayRange } from "../../shared/lib/dateRange";
 
 const getDashboardMock = vi.fn();
 const getKpiMock = vi.fn();
+const getRevenueMock = vi.fn();
+const useRegionStatsMock = vi.fn();
+const myCashboxMock = vi.fn();
 
 vi.mock("../../entities/dashboard", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../entities/dashboard")>()),
-  useDashboard: () => ({
-    getDashboard: getDashboardMock,
-    getKpi: getKpiMock,
-  }),
+  useDashboard: () => ({ getDashboard: getDashboardMock, getKpi: getKpiMock, getRevenue: getRevenueMock }),
 }));
 
-vi.mock("../../widgets/dashboard-statistics/ui/DashboardStatistics", () => ({
-  default: (props: Record<string, number | boolean>) => (
-    <div
-      data-testid="dashboard-statistics"
-      data-financial={String(props.showFinancialMetrics)}
-    >
-      {props.accepted}-{props.sold}-{props.cancelled}-{props.profit}-
-      {props.avgOrderValue}-{props.avgFulfillmentHours}
-    </div>
-  ),
+vi.mock("../../entities/region", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../entities/region")>()),
+  useRegionStats: (...args: unknown[]) => useRegionStatsMock(...args),
 }));
 
-vi.mock("../../widgets/financial-analysis/ui/FinancialAnalysis", () => ({
-  default: (props: Record<string, unknown>) => (
-    <div data-testid="financial-analysis">{JSON.stringify(props)}</div>
-  ),
+vi.mock("../../entities/payments", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../entities/payments")>()),
+  useCashBox: () => ({ useGetCashboxMyCashbox: (...args: unknown[]) => myCashboxMock(...args) }),
 }));
 
-vi.mock("../../widgets/dashboard-top-performers/ui/TopPerformers", () => ({
-  // Renders the wired-in market/branch names (instead of swallowing props) so a
-  // regression test can confirm the admin dashboard actually passes real ranking
-  // data through, not just that a wrapper div mounts.
-  default: (props: {
-    markets?: Array<{ market_name: string | null }>;
-    branches?: Array<{ branch_name: string | null }>;
-  }) => (
-    <div data-testid="top-performers">
-      {(props.markets ?? []).map((m, i) => (
-        <span key={`market-${i}`} data-testid="top-market-name">{m.market_name}</span>
-      ))}
-      {(props.branches ?? []).map((b, i) => (
-        <span key={`branch-${i}`} data-testid="top-branch-name">{b.branch_name}</span>
-      ))}
-    </div>
-  ),
-}));
-
-vi.mock("../../widgets/dashboard-region/ui/RegionStatsCard", () => ({
-  default: () => <div data-testid="region-stats" />,
-}));
-
-vi.mock("../../widgets/dashboard-performance-chart/ui/PerformanceChart", () => ({
-  // `couriers === undefined` (as opposed to `[]`) is the signal the market
-  // role uses to hide the couriers section entirely — surface that distinction.
-  default: (props: {
-    markets?: unknown[];
-    couriers?: unknown[];
-    loading?: boolean;
-    couriersEmptyText?: string;
-  }) => (
-    <div
-      data-testid="performance-chart"
-      data-markets-count={props.markets?.length ?? -1}
-      data-couriers-count={props.couriers === undefined ? "undefined" : props.couriers.length}
-      data-loading={String(Boolean(props.loading))}
-      data-couriers-empty-text={props.couriersEmptyText ?? ""}
-    />
-  ),
-}));
-
-vi.mock("../../shared/ui/DateRangePicker", () => ({
-  default: ({
-    value,
-    onChange,
-    placeholder,
-  }: {
-    value: { startDate: Date | null; endDate: Date | null };
-    onChange: (value: { startDate: Date | null; endDate: Date | null }) => void;
-    placeholder: string;
-  }) => (
-    <button
-      aria-label={placeholder}
-      onClick={() =>
-        onChange({
-          startDate: new Date("2026-04-01"),
-          endDate: new Date("2026-04-14"),
-        })
-      }
-    >
-      {value.startDate?.toISOString() ?? "empty"}
-    </button>
-  ),
-}));
-
-// KPI + financial analysis are gated to SUPERADMIN/ADMIN (Audit P1-2), so the
-// happy-path dashboard test renders as an admin.
-const adminState = {
-  role: { id: "admin-1", role: "admin", region: null, name: "Admin" },
-} as never;
-
-const registratorState = {
-  role: {
-    id: "registrator-1",
-    role: "registrator",
-    region: null,
-    name: "Registrator",
+// Viloyat oynasi (egasi «regions») — lazy; testda props'ni ko'rsatadigan o'rinbosar.
+const regionDialogMock = vi.fn();
+vi.mock("../../widgets/region-detail", () => ({
+  default: (props: { open: boolean; region: { id: string; name: string } | null; periodLabel: string; dateParams: unknown; company?: unknown; onClose: () => void }) => {
+    regionDialogMock(props);
+    return props.open ? (
+      <div role="dialog" aria-label={props.region?.name}>
+        {props.periodLabel}
+        <button type="button" onClick={props.onClose}>
+          Yopish
+        </button>
+      </div>
+    ) : null;
   },
-} as never;
+}));
 
-const courierState = {
-  role: {
-    id: "courier-1",
-    role: "courier",
-    region: null,
-    name: "Courier",
-  },
-} as never;
+const settingsState: { data: unknown } = { data: undefined };
+vi.mock("../../entities/settings", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../entities/settings")>()),
+  useSettings: () => settingsState,
+}));
 
-const operatorState = {
-  role: {
-    id: "operator-1",
-    role: "operator",
-    region: null,
-    name: "Operator",
-  },
-} as never;
+// recharts — faqat «Moliyaviy tahlil» plotida (lazy); testda bo'sh o'ram.
+vi.mock("recharts", () => {
+  const Pass = ({ children }: { children?: ReactNode }) => <div>{children}</div>;
+  const Nothing = () => null;
+  return { ResponsiveContainer: Pass, ComposedChart: Pass, Area: Nothing, Line: Nothing, XAxis: Nothing, YAxis: Nothing, CartesianGrid: Nothing, Tooltip: Nothing };
+});
 
-describe("DashboardPage", () => {
+const role = (name: string) => ({ role: { id: `${name}-1`, role: name, region: null, name } }) as never;
+const adminState = role("admin");
+const registratorState = role("registrator");
+const courierState = role("courier");
+const operatorState = role("operator");
+
+const today = getTodayRange();
+const yesterday = getPreviousPeriodRange(today)!;
+
+const ordersFixture = { acceptedCount: 12, soldAndPaid: 5, cancelled: 2, profit: 480000, totalRevenue: 960000 };
+const query = (data: unknown, extra: Record<string, unknown> = {}) => ({
+  data,
+  isLoading: false,
+  isError: false,
+  refetch: vi.fn(),
+  ...extra,
+});
+
+/** Joriy so'rov — `current`, kechagi (oldingi davr) — `previous`. */
+const routeDashboard = (current: unknown, previous: unknown = { data: { orders: ordersFixture } }) =>
+  getDashboardMock.mockImplementation((params: { start_day?: string }) =>
+    query(params?.start_day === yesterday.from ? previous : current),
+  );
+
+const sectionOf = (title: string) => screen.getByRole("heading", { name: title }).closest("section") as HTMLElement;
+
+describe("DashboardPage (v2)", () => {
   beforeEach(() => {
-    getDashboardMock.mockReturnValue({
-      data: {
-        data: {
-          orders: {
-            acceptedCount: 12,
-            soldAndPaid: 5,
-            cancelled: 2,
-            profit: 480000,
-            totalRevenue: 960000,
-          },
-        },
-      },
-    });
-    getKpiMock.mockReturnValue({
-      data: {
+    vi.clearAllMocks();
+    settingsState.data = undefined;
+    routeDashboard({ data: { orders: ordersFixture } });
+    getKpiMock.mockReturnValue(
+      query({
         data: {
           averageOrderValue: 96000,
-          averageFulfillmentHours: 24,
+          averageFulfillmentHours: 5.6667,
           onTimeRate: 80,
           cancellationRate: 16.67,
           courierEfficiency: 0,
           marketRating: [],
         },
-      },
-    });
+      }),
+    );
+    getRevenueMock.mockReturnValue(query({ data: { summary: { totalRevenue: 0, totalOrders: 0, avgRevenue: 0 }, chart: { labels: [], values: [] } } }));
+    useRegionStatsMock.mockReturnValue(query({ regions: [], summary: null, scopedDetail: null }));
+    myCashboxMock.mockReturnValue(query(undefined));
   });
 
-  it("renders dashboard header and date filters", () => {
+  it("sarlavha, izoh va davr boshqaruvlari; SA/admin uchun dashboard + kpi so'rovi", () => {
     renderWithProviders(<DashboardPage />, { preloadedState: adminState });
 
-    expect(getDashboardMock).toHaveBeenCalledWith(
-      { start_day: "", end_day: "" },
-      true,
-      "admin:unknown",
-    );
-    expect(getKpiMock).toHaveBeenCalledWith(
-      { start_day: "", end_day: "" },
-      true,
-      "admin:unknown",
-    );
-    expect(screen.getByText("Bugungi statistika")).toBeInTheDocument();
-    expect(screen.getByLabelText("Boshlanish → Tugash")).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Bugun" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Bu hafta" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Bu oy" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Barchasi" })).toBeInTheDocument();
+    expect(getDashboardMock).toHaveBeenCalledWith({ start_day: "", end_day: "" }, true, "admin:unknown");
+    expect(getKpiMock).toHaveBeenCalledWith({ start_day: "", end_day: "" }, true, "admin:unknown");
+    expect(screen.getByRole("heading", { level: 1, name: "Bosh sahifa" })).toBeInTheDocument();
+    expect(screen.getByText("Bugungi ko'rsatkichlar · butun kompaniya bo'yicha")).toBeInTheDocument();
+    for (const name of ["Bugun", "Bu hafta", "Bu oy", "Barchasi"]) {
+      expect(screen.getByRole("radio", { name })).toBeInTheDocument();
+    }
+    expect(screen.getByRole("radio", { name: "Bugun" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("combobox", { name: "Yilni tanlash" })).toBeInTheDocument();
   });
 
-  it("loads all-time totals when All is selected", async () => {
+  it("ko'rsatkichlar haqiqiy kartalarda: KPI, muvaffaqiyat, holat, sifat (Yo'qotilgan daromad yo'q)", () => {
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+
+    const kpis = screen.getByRole("region", { name: "Asosiy ko'rsatkichlar" });
+    expect(within(kpis).getByText("Jami daromad").closest("div")).toBeTruthy();
+    expect(kpis).toHaveTextContent("960");
+    expect(kpis).toHaveTextContent("ming so'm");
+    expect(kpis).toHaveTextContent("480");
+    expect(kpis).toHaveTextContent("96 000");
+    expect(screen.queryByText("Yo'qotilgan daromad")).not.toBeInTheDocument();
+    expect(screen.queryByText("Buyurtmalar vaqti")).not.toBeInTheDocument();
+
+    // 5 / 12 = 41,7% — o'rtacha zona
+    const success = sectionOf("Muvaffaqiyat darajasi");
+    expect(within(success).getByText("41,7%")).toBeInTheDocument();
+    expect(within(success).getByText("O'rtacha · 40–70%")).toBeInTheDocument();
+
+    const status = sectionOf("Buyurtmalar holati");
+    const legend = within(status).getByRole("list", { name: "Holatlar bo'yicha taqsimot" });
+    expect(legend).toHaveTextContent("Sotilgan5 ta");
+    expect(legend).toHaveTextContent("Jarayonda5 ta");
+    expect(legend).toHaveTextContent("Bekor qilingan2 ta");
+    expect(within(status).getByRole("link", { name: /Ro'yxat/ })).toHaveAttribute(
+      "href",
+      `/orders?startDay=${today.from}&endDay=${today.to}`,
+    );
+
+    const quality = sectionOf("Yetkazish sifati");
+    expect(quality).toHaveTextContent("80%");
+    expect(quality).toHaveTextContent("16,7%");
+    expect(quality).toHaveTextContent("2 / 12 ta");
+    expect(quality).toHaveTextContent("5 soat 40 daq");
+    expect(screen.getByRole("heading", { name: "Moliyaviy tahlil" })).toBeInTheDocument();
+  });
+
+  it("oldingi teng davr (kecha) joriy javobdan keyin so'raladi — delta «kechaga nisbatan»", () => {
+    routeDashboard({ data: { orders: ordersFixture } }, { data: { orders: { ...ordersFixture, totalRevenue: 800000 } } });
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+
+    expect(getDashboardMock).toHaveBeenCalledWith({ start_day: yesterday.from, end_day: yesterday.to }, true, "admin:unknown");
+    const kpis = screen.getByRole("region", { name: "Asosiy ko'rsatkichlar" });
+    // 960 000 / 800 000 → +20%
+    expect(within(kpis).getByText("+20%")).toBeInTheDocument();
+    expect(within(kpis).getAllByText("kechaga nisbatan").length).toBeGreaterThan(0);
+  });
+
+  it("«Barchasi» → `all: true`; kpi/revenue so'ralmaydi, sifat o'rnida izoh, kuryerlar kesimi yo'q", async () => {
     const user = userEvent.setup();
     renderWithProviders(<DashboardPage />, { preloadedState: adminState });
 
     await user.click(screen.getByRole("radio", { name: "Barchasi" }));
 
-    expect(screen.getByText("Umumiy statistika")).toBeInTheDocument();
-    expect(getDashboardMock).toHaveBeenLastCalledWith(
-      { all: true },
-      true,
-      "admin:unknown",
+    expect(getDashboardMock).toHaveBeenCalledWith({ all: true }, true, "admin:unknown");
+    expect(getKpiMock).toHaveBeenLastCalledWith({ all: true }, false, "admin:unknown");
+    expect(screen.getByText("Barcha davr ko'rsatkichlari · butun kompaniya bo'yicha")).toBeInTheDocument();
+    expect(screen.getByText("Barcha davr uchun sifat ko'rsatkichlari hisoblanmaydi")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Moliyaviy tahlil" })).not.toBeInTheDocument();
+    expect(screen.getByText("Barcha davr uchun kuryerlar kesimi hisoblanmaydi")).toBeInTheDocument();
+    expect(
+      screen.getByText("«Barchasi» davri uchun kuryerlar kesimi hisoblanmaydi — sana oralig'ini tanlang."),
+    ).toBeInTheDocument();
+  });
+
+  it("davr redux'dan tiklanadi (sahifa qayta ochilganda) va «Tanlangan davr» izohi", () => {
+    renderWithProviders(<DashboardPage />, {
+      preloadedState: {
+        role: { id: "admin-1", role: "admin", region: null, name: "admin" },
+        filter: { dashboardFromDate: "2026-04-01", dashboardToDate: "2026-04-14" },
+      } as never,
+    });
+    expect(getDashboardMock).toHaveBeenCalledWith({ start_day: "2026-04-01", end_day: "2026-04-14" }, true, "admin:unknown");
+    expect(screen.getByText("Tanlangan davr ko'rsatkichlari · butun kompaniya bo'yicha")).toBeInTheDocument();
+    expect(sectionOf("Muvaffaqiyat darajasi")).toHaveTextContent("01.04 – 14.04 · sotilgan / qabul qilingan");
+  });
+
+  it("reytinglar: Top marketlar (backend reytingi), Top filiallar, Top kuryerlar (`couriers` dan saralangan)", async () => {
+    const user = userEvent.setup();
+    const performer = (index: number) => ({ total_orders: 20, successful_orders: 20 - index, success_rate: ((20 - index) / 20) * 100 });
+    routeDashboard({
+      data: {
+        orders: ordersFixture,
+        topMarkets: [{ market_id: "m-1", market_name: "Chilonzor Market", total_orders: 50, successful_orders: 45, success_rate: 90 }],
+        markets: Array.from({ length: 12 }, (_, i) => ({ market_id: `m${i}`, market_name: `Market ${String(i + 1).padStart(2, "0")}`, ...performer(i) })),
+        topBranches: [{ branch_id: "b-1", branch_name: "Yunusobod filiali", total_orders: 40, successful_orders: 32, success_rate: 80 }],
+        couriers: [
+          { courier_id: "c-1", courier_name: "Aziz", ...performer(5) },
+          { courier_id: "c-2", courier_name: "Bobur", ...performer(1) },
+        ],
+      },
+    });
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+
+    const markets = sectionOf("Top marketlar");
+    expect(within(markets).getByText("Chilonzor Market")).toBeInTheDocument();
+    expect(within(markets).getByText("45 / 50 ta")).toBeInTheDocument();
+    // «Yana ko'rsatish» — to'liq `markets` statistikasi (12 ta), «Kamroq ko'rsatish» — qaytadi.
+    await user.click(within(markets).getByRole("button", { name: /Yana ko'rsatish · 11 ta/ }));
+    expect(within(markets).getAllByRole("listitem")).toHaveLength(12);
+    await user.click(within(markets).getByRole("button", { name: "Kamroq ko'rsatish" }));
+    expect(within(markets).getAllByRole("listitem")).toHaveLength(1);
+
+    expect(within(sectionOf("Top filiallar")).getByText("Yunusobod filiali")).toBeInTheDocument();
+    // Ma'lumot kam (< 5 qator) — izoh
+    expect(within(sectionOf("Top filiallar")).getByText("Ma'lumot hali kam — reyting natijalari o'zgarishi mumkin")).toBeInTheDocument();
+
+    const couriers = within(sectionOf("Top kuryerlar")).getAllByRole("listitem");
+    expect(couriers[0]).toHaveTextContent("Bobur");
+    expect(couriers[1]).toHaveTextContent("Aziz");
+  });
+
+  it("to'liq statistika bo'sh bo'lsa (Barchasi) — reyting top ro'yxatdan", () => {
+    routeDashboard({
+      data: {
+        orders: ordersFixture,
+        markets: [],
+        couriers: [],
+        topMarkets: [
+          { market_id: "m-1", market_name: "A", total_orders: 50, successful_orders: 22, success_rate: 44 },
+          { market_id: "m-2", market_name: "B", total_orders: 66, successful_orders: 16, success_rate: 24 },
+        ],
+      },
+    });
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+    expect(within(sectionOf("Top marketlar")).getAllByRole("listitem")).toHaveLength(2);
+    expect(within(sectionOf("Top kuryerlar")).getByText("Reyting uchun ma'lumot hali kam")).toBeInTheDocument();
+  });
+
+  it("sozlamada yashirilgan bloklar chizilmaydi", async () => {
+    const { DEFAULT_SETTINGS } = await import("../../entities/settings");
+    settingsState.data = {
+      ...DEFAULT_SETTINGS,
+      dashboard: { widgets: { ...DEFAULT_SETTINGS.dashboard.widgets, financial: false, topPerformers: false, performanceChart: false, region: false } },
+    };
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+    expect(screen.getByRole("heading", { name: "Muvaffaqiyat darajasi" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Moliyaviy tahlil" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Top marketlar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Top kuryerlar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Hududlar bo'yicha" })).not.toBeInTheDocument();
+    expect(useRegionStatsMock).not.toHaveBeenCalled();
+  });
+
+  it("registrator: KPI yo'q, kpi va revenue so'ralmaydi, «Yetkazish natijalari», hududlarda daromad yo'q", async () => {
+    const user = userEvent.setup();
+    useRegionStatsMock.mockReturnValue(
+      query({
+        regions: [
+          { id: "1", name: "Toshkent shahri", districtCount: 11, activeCouriers: 20, ordersCount: 112, deliveredOrders: 91, cancelledOrders: 8, pendingOrders: 13, totalRevenue: 18_500_000, successRate: 81.3 },
+        ],
+        summary: null,
+        scopedDetail: null,
+      }),
     );
-    expect(screen.getByTestId("top-performers")).toBeInTheDocument();
-    // Backend "Barchasi" davrida kuryerlar kesimini qaytarmaydi — bo'sh
-    // bo'lim umumiy "ma'lumot yo'q" emas, aniq sabab bilan ko'rsatiladi.
-    expect(screen.getByTestId("performance-chart")).toHaveAttribute(
-      "data-couriers-empty-text",
-      "«Barchasi» davri uchun kuryerlar kesimi hisoblanmaydi — sana oralig'ini tanlang.",
-    );
-  });
-
-  it("tells the comparison chart the data is still loading instead of letting it show an empty state", () => {
-    getDashboardMock.mockReturnValue({ data: undefined, isLoading: true, isError: false, refetch: vi.fn() });
-
-    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
-
-    expect(screen.getByTestId("performance-chart")).toHaveAttribute("data-loading", "true");
-    expect(screen.getByTestId("performance-chart")).toHaveAttribute("data-couriers-empty-text", "");
-  });
-
-  it("passes dashboard metrics into child widgets", () => {
-    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
-
-    expect(screen.getByTestId("dashboard-statistics")).toHaveTextContent(
-      "12-5-2-480000-96000-24",
-    );
-    expect(screen.getByTestId("financial-analysis")).toHaveTextContent('"startDate"');
-  });
-
-  it("wires real top market and branch rankings into the Top performers block for admins", () => {
-    getDashboardMock.mockReturnValue({
-      data: {
-        data: {
-          orders: {
-            acceptedCount: 12,
-            soldAndPaid: 5,
-            cancelled: 2,
-            profit: 480000,
-            totalRevenue: 960000,
-          },
-          topMarkets: [
-            { market_id: "m-1", market_name: "Chilonzor filiali", total_orders: 50, successful_orders: 45, success_rate: 90 },
-          ],
-          topBranches: [
-            { branch_id: "b-1", branch_name: "Yunusobod filiali", total_orders: 40, successful_orders: 32, success_rate: 80 },
-          ],
-        },
-      },
-    });
-    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
-
-    expect(screen.getByTestId("top-performers")).toBeInTheDocument();
-    expect(screen.getByTestId("top-market-name")).toHaveTextContent("Chilonzor filiali");
-    expect(screen.getByTestId("top-branch-name")).toHaveTextContent("Yunusobod filiali");
-  });
-
-  it("wires both markets and couriers into the performance chart for admins", () => {
-    getDashboardMock.mockReturnValue({
-      data: {
-        data: {
-          orders: {
-            acceptedCount: 12,
-            soldAndPaid: 5,
-            cancelled: 2,
-            profit: 480000,
-            totalRevenue: 960000,
-          },
-          topMarkets: [
-            { market_id: "m-1", market_name: "Chilonzor filiali", total_orders: 50, successful_orders: 45, success_rate: 90 },
-          ],
-          topCouriers: [
-            { courier_id: "c-1", courier_name: "Aziz", total_orders: 30, successful_orders: 24, success_rate: 80 },
-          ],
-        },
-      },
-    });
-    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
-
-    const chart = screen.getByTestId("performance-chart");
-    expect(chart).toHaveAttribute("data-markets-count", "1");
-    expect(chart).toHaveAttribute("data-couriers-count", "1");
-  });
-
-  it("charts every market and courier from the full stats, not just the top-5 rankings", () => {
-    const performer = (id: string) => ({ total_orders: 10, successful_orders: 5, success_rate: 50, id });
-    getDashboardMock.mockReturnValue({
-      data: {
-        data: {
-          orders: { acceptedCount: 12, soldAndPaid: 5, cancelled: 2, profit: 0, totalRevenue: 0 },
-          markets: Array.from({ length: 7 }, (_, i) => ({ ...performer(`m${i}`), market_id: `m${i}`, market_name: `Market ${i}` })),
-          couriers: Array.from({ length: 8 }, (_, i) => ({ ...performer(`c${i}`), courier_id: `c${i}`, courier_name: `Kuryer ${i}` })),
-          topMarkets: [
-            { market_id: "m-1", market_name: "Top market", total_orders: 50, successful_orders: 45, success_rate: 90 },
-          ],
-        },
-      },
-    });
-    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
-
-    const chart = screen.getByTestId("performance-chart");
-    expect(chart).toHaveAttribute("data-markets-count", "7");
-    expect(chart).toHaveAttribute("data-couriers-count", "8");
-  });
-
-  it("falls back to the top rankings when the full stats come back empty (all-time period)", () => {
-    getDashboardMock.mockReturnValue({
-      data: {
-        data: {
-          orders: { acceptedCount: 12, soldAndPaid: 5, cancelled: 2, profit: 0, totalRevenue: 0 },
-          markets: [],
-          couriers: [],
-          topMarkets: [
-            { market_id: "m-1", market_name: "A", total_orders: 50, successful_orders: 22, success_rate: 44 },
-            { market_id: "m-2", market_name: "B", total_orders: 66, successful_orders: 16, success_rate: 24 },
-            { market_id: "m-3", market_name: "C", total_orders: 33, successful_orders: 7, success_rate: 21 },
-          ],
-        },
-      },
-    });
-    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
-
-    const chart = screen.getByTestId("performance-chart");
-    expect(chart).toHaveAttribute("data-markets-count", "3");
-    expect(chart).toHaveAttribute("data-couriers-count", "0");
-  });
-
-  it("hides the performance chart for couriers and operators", () => {
-    getDashboardMock.mockReturnValue({
-      data: { data: { myStat: { totalOrders: 1, soldOrders: 1, canceledOrders: 0, profit: 0, successRate: 100 } } },
-    });
-    renderWithProviders(<DashboardPage />, { preloadedState: courierState });
-    expect(screen.queryByTestId("performance-chart")).not.toBeInTheDocument();
-
-    renderWithProviders(<DashboardPage />, { preloadedState: operatorState });
-    expect(screen.queryByTestId("performance-chart")).not.toBeInTheDocument();
-  });
-
-  it("hides financial dashboard metrics from registrators", () => {
     renderWithProviders(<DashboardPage />, { preloadedState: registratorState });
 
-    expect(screen.getByTestId("dashboard-statistics")).toHaveAttribute(
-      "data-financial",
-      "false",
-    );
-    expect(getKpiMock).toHaveBeenCalledWith(
-      { start_day: "", end_day: "" },
-      false,
-      "registrator:unknown",
-    );
-    expect(screen.queryByTestId("financial-analysis")).not.toBeInTheDocument();
+    expect(getKpiMock).toHaveBeenCalledWith({ start_day: "", end_day: "" }, false, "registrator:unknown");
+    expect(getKpiMock).not.toHaveBeenCalledWith(expect.anything(), true, expect.anything());
+    expect(getRevenueMock).not.toHaveBeenCalled();
+    // Oldingi davr so'rovi registratorga yuborilmaydi (KPI qatori yo'q).
+    expect(getDashboardMock).not.toHaveBeenCalledWith(expect.objectContaining({ start_day: yesterday.from }), true, expect.anything());
+    expect(screen.queryByRole("region", { name: "Asosiy ko'rsatkichlar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Moliyaviy tahlil" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Yetkazish sifati" })).not.toBeInTheDocument();
+    const results = sectionOf("Yetkazish natijalari");
+    expect(results).toHaveTextContent("5 ta");
+    expect(sectionOf("Muvaffaqiyat darajasi")).toHaveTextContent("Zonalar: 40% dan kam");
+    const regions = sectionOf("Hududlar bo'yicha");
+    expect(within(regions).queryByRole("radio", { name: "Daromad" })).not.toBeInTheDocument();
+    expect(within(regions).getByRole("radio", { name: "Muvaffaqiyat" })).toBeInTheDocument();
+    expect(within(regions).getByRole("table")).not.toHaveTextContent("so'm");
+    // Registrator ham viloyat oynasini ochadi, lekin daromadsiz (eski xulq: daromad ko'rsatilmas edi).
+    expect(regions).toHaveTextContent("Hududni bosing");
+    await user.click(within(regions).getByRole("button", { name: "Toshkent sh.: 112 ta buyurtma" }));
+    expect(await screen.findByRole("dialog", { name: "Toshkent shahri" })).toBeInTheDocument();
+    expect(regionDialogMock).toHaveBeenLastCalledWith(expect.objectContaining({ open: true, showRevenue: false }));
   });
 
-  it("shows only courier-relevant dashboard widgets for couriers", () => {
-    getDashboardMock.mockReturnValue({
-      data: {
+  it("hududlar: kartogramma, jadval va xulosa `region/stats/all` dan (sana bo'sh — bugun)", () => {
+    useRegionStatsMock.mockReturnValue(
+      query({
+        regions: [
+          { id: "1", name: "Toshkent shahri", districtCount: 11, activeCouriers: 20, ordersCount: 112, deliveredOrders: 91, cancelledOrders: 8, pendingOrders: 13, totalRevenue: 18_500_000, successRate: 81.3 },
+          { id: "2", name: "Andijon viloyati", districtCount: 14, activeCouriers: 6, ordersCount: 21, deliveredOrders: 15, cancelledOrders: 3, pendingOrders: 3, totalRevenue: 3_000_000, successRate: 71.4 },
+        ],
+        summary: null,
+        scopedDetail: null,
+      }),
+    );
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+
+    expect(useRegionStatsMock).toHaveBeenCalledWith({ startDate: today.from, endDate: today.to }, true);
+    const card = sectionOf("Hududlar bo'yicha");
+    expect(within(card).getByRole("button", { name: "Toshkent sh.: 112 ta buyurtma" })).toBeInTheDocument();
+    const table = within(card).getByRole("table");
+    expect(within(table).getByText("18,5 mln so'm")).toBeInTheDocument();
+    expect(within(table).getByText("Jami · 2 hudud")).toBeInTheDocument();
+    expect(card).toHaveTextContent("Eng past sotuv (10+ ta)Andijon71,4% · 15 / 21 ta");
+    expect(card).toHaveTextContent("Faol kuryerlar26 ta2 hududda");
+    expect(card).toHaveTextContent("Hududni bosing — tumanlar kesimi ochiladi");
+    // Oyna bosilmaguncha mount bo'lmaydi (lazy chunk ham yuklanmaydi).
+    expect(regionDialogMock).not.toHaveBeenCalled();
+  });
+
+  it("hudud katagi yoki jadval qatori bosilsa — `RegionDetailDialog` (lazy) shu viloyat va davr bilan ochiladi", async () => {
+    const user = userEvent.setup();
+    useRegionStatsMock.mockReturnValue(
+      query({
+        regions: [
+          { id: "1", name: "Toshkent shahri", districtCount: 11, activeCouriers: 20, ordersCount: 112, deliveredOrders: 91, cancelledOrders: 8, pendingOrders: 13, totalRevenue: 18_500_000, successRate: 81.3 },
+          { id: "2", name: "Andijon viloyati", districtCount: 14, activeCouriers: 6, ordersCount: 21, deliveredOrders: 15, cancelledOrders: 3, pendingOrders: 3, totalRevenue: 3_000_000, successRate: 71.4 },
+        ],
+        summary: null,
+        scopedDetail: null,
+      }),
+    );
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+    const card = sectionOf("Hududlar bo'yicha");
+
+    await user.click(within(card).getByRole("button", { name: "Toshkent sh.: 112 ta buyurtma" }));
+    expect(await screen.findByRole("dialog", { name: "Toshkent shahri" })).toHaveTextContent("Bugun");
+    expect(regionDialogMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        open: true,
+        region: { id: "1", name: "Toshkent shahri" },
+        dateParams: { startDate: today.from, endDate: today.to },
+        periodLabel: "Bugun",
+        company: { totalOrders: 133, totalRevenue: 21_500_000, successRate: (106 / 133) * 100 },
+        showRevenue: true,
+      }),
+    );
+
+    await user.click(screen.getByRole("button", { name: "Yopish" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    // Jadval qatori (klaviatura — ismdagi tugma).
+    const table = within(card).getByRole("table");
+    within(table).getByRole("button", { name: "Andijon" }).focus();
+    await user.keyboard("{Enter}");
+    expect(await screen.findByRole("dialog", { name: "Andijon viloyati" })).toBeInTheDocument();
+  });
+
+  it("kuryer: o'z KPI'lari, kpi/revenue yo'q, kompaniya bloklari yo'q, «Siz» va «Sizning o'rningiz»", () => {
+    routeDashboard(
+      {
         data: {
-          myStat: {
-            totalOrders: 28,
-            soldOrders: 19,
-            canceledOrders: 3,
-            profit: 480000,
-            successRate: 67.86,
-          },
+          myStat: { totalOrders: 27, soldOrders: 20, canceledOrders: 2, profit: 500000, successRate: 74.1 },
+          topCouriers: [
+            { courier_id: "c-9", courier_name: "Rustam Qosimov", total_orders: 21, successful_orders: 17, success_rate: 81 },
+            { courier_id: "c-8", courier_name: "Eldor Mahmudov", total_orders: 21, successful_orders: 16, success_rate: 76.2 },
+            { courier_id: "courier-1", courier_name: "Jasur Tursunov", total_orders: 27, successful_orders: 20, success_rate: 74.1 },
+          ],
+          myRank: 3,
+          myRanking: { courier_id: "courier-1", courier_name: "Jasur Tursunov", total_orders: 27, successful_orders: 20, success_rate: 74.1 },
         },
       },
-    });
+      { data: { myStat: { totalOrders: 25, soldOrders: 18, canceledOrders: 3, profit: 450000, successRate: 72 } } },
+    );
     renderWithProviders(<DashboardPage />, { preloadedState: courierState });
 
     const grid = screen.getByTestId("courier-stats-grid");
-    // 2x2 at mobile widths (no `sm`/`lg` breakpoint applies below 640px, so this
-    // stays a 2-column grid at 390px — Tailwind's grid-cols-N uses minmax(0,1fr)
-    // tracks, so long values wrap instead of forcing horizontal scroll) and a
-    // single row of 4 from the `lg` breakpoint up.
-    expect(grid).toHaveClass("grid-cols-2", "lg:grid-cols-4");
     expect(grid.children).toHaveLength(4);
-    expect(screen.getByText("Jami buyurtmalar").parentElement).toHaveTextContent("28");
-    expect(screen.getByText("Sotilgan").parentElement).toHaveTextContent("19");
-    expect(grid).toHaveTextContent("67.86%");
-    expect(screen.getByText("Bekor qilingan").parentElement).toHaveTextContent("3");
-    expect(screen.getByText("Foyda").parentElement).toHaveTextContent("480 000");
-    expect(screen.queryByTestId("dashboard-statistics")).not.toBeInTheDocument();
-    expect(getDashboardMock).toHaveBeenCalledWith(
-      { start_day: "", end_day: "" },
-      true,
-      "courier:unknown",
-    );
-    expect(getKpiMock).toHaveBeenCalledWith(
-      { start_day: "", end_day: "" },
-      false,
-      "courier:unknown",
-    );
-    expect(screen.queryByTestId("top-performers")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("region-stats")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("financial-analysis")).not.toBeInTheDocument();
+    expect(grid).toHaveTextContent("27");
+    expect(grid).toHaveTextContent("500 000");
+    expect(within(grid).getAllByText("kechaga nisbatan").length).toBe(4);
+    expect(getDashboardMock).toHaveBeenCalledWith({ start_day: "", end_day: "" }, true, "courier:unknown");
+    expect(getKpiMock).not.toHaveBeenCalledWith(expect.anything(), true, expect.anything());
+    expect(getRevenueMock).not.toHaveBeenCalled();
+    expect(myCashboxMock).toHaveBeenCalledWith({ fromDate: today.from, toDate: today.to }, { silentError: true });
+
+    expect(sectionOf("Bugungi reja")).toHaveTextContent("Sizga biriktirilgan 27 ta buyurtma");
+    expect(sectionOf("Bugungi reja")).toHaveTextContent("5 ta qoldi");
+    expect(sectionOf("Muvaffaqiyat darajasi")).toHaveTextContent("Kecha · 72%");
+
+    const top = sectionOf("Top kuryerlar");
+    expect(within(top).getByRole("listitem", { name: "3. Jasur Tursunov (Siz)" })).toBeInTheDocument();
+    expect(top).toHaveTextContent("Sizning o'rningiz");
+    expect(top).toHaveTextContent("3-o'rin · 2-o'ringa 2,1 p.p. qoldi");
+
+    expect(screen.queryByRole("heading", { name: "Top marketlar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Hududlar bo'yicha" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Moliyaviy tahlil" })).not.toBeInTheDocument();
   });
 
-  it("shows four skeleton cards while courier data is loading", () => {
+  it("kuryer ma'lumoti yuklanayotganda — 4 ta KPI skeleti", () => {
     getDashboardMock.mockReturnValue({ data: undefined, isLoading: true });
     const { container } = renderWithProviders(<DashboardPage />, { preloadedState: courierState });
-
     expect(screen.getByTestId("courier-stats-grid").children).toHaveLength(4);
-    expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
-    expect(screen.queryByText("Jami buyurtmalar")).not.toBeInTheDocument();
+    expect(container.querySelectorAll("[data-stat-skeleton]")).toHaveLength(4);
   });
 
-  it("shows an error instead of zero cards when courier myStat is absent", () => {
-    getDashboardMock.mockReturnValue({ data: { data: { orders: {} } }, isLoading: false });
+  it("kuryer myStat kelmasa — nol kartalar o'rniga xato", () => {
+    getDashboardMock.mockReturnValue(query({ data: { orders: {} } }));
     renderWithProviders(<DashboardPage />, { preloadedState: courierState });
-
     expect(screen.getByText("Kuryer statistikasi hozircha mavjud emas.")).toBeInTheDocument();
     expect(screen.queryByTestId("courier-stats-grid")).not.toBeInTheDocument();
   });
 
-  it("retries a failed courier dashboard request", async () => {
+  it("kuryer so'rovi yiqilsa — «Qayta urinish» qayta so'raydi", async () => {
     const refetch = vi.fn();
     getDashboardMock.mockReturnValue({ isError: true, isLoading: false, refetch });
     renderWithProviders(<DashboardPage />, { preloadedState: courierState });
-
-    expect(screen.getByText("Dashboard ma'lumotlarini yuklab bo'lmadi.")).toBeInTheDocument();
+    expect(screen.getByText("Bosh sahifa ma'lumotlarini yuklab bo'lmadi.")).toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("button", { name: "Qayta urinish" }));
     expect(refetch).toHaveBeenCalledTimes(1);
   });
 
-  it("requests courier statistics again after changing the date range", async () => {
-    getDashboardMock.mockImplementation((params: { start_day?: string }) => ({
-      data: {
-        data: {
-          myStat: {
-            totalOrders: params.start_day ? 9 : 28,
-            soldOrders: 5,
-            canceledOrders: 1,
-            profit: 120000,
-            successRate: 55.56,
-          },
-        },
-      },
-    }));
+  it("kuryer davrni almashtirsa — statistika yangi davr bilan so'raladi", async () => {
+    getDashboardMock.mockImplementation((params: { start_day?: string }) =>
+      query({ data: { myStat: { totalOrders: params.start_day ? 9 : 28, soldOrders: 5, canceledOrders: 1, profit: 120000, successRate: 55.56 } } }),
+    );
     renderWithProviders(<DashboardPage />, { preloadedState: courierState });
-
-    await userEvent.setup().click(screen.getByLabelText("Boshlanish → Tugash"));
-
-    expect(getDashboardMock).toHaveBeenLastCalledWith(
-      { start_day: "2026-04-01", end_day: "2026-04-14" },
-      true,
-      "courier:unknown",
-    );
-    expect(screen.getByText("Jami buyurtmalar").parentElement).toHaveTextContent("9");
+    await userEvent.setup().click(screen.getByRole("radio", { name: "Bu hafta" }));
+    const week = getThisWeekRange();
+    expect(getDashboardMock).toHaveBeenCalledWith({ start_day: week.from, end_day: week.to }, true, "courier:unknown");
+    expect(screen.getByTestId("courier-stats-grid")).toHaveTextContent("9");
   });
 
-  it("switches to filtered title when dates are selected", async () => {
-    const user = userEvent.setup();
+  it("javob bo'sh — nollar bilan (yiqilmaydi)", () => {
+    getDashboardMock.mockReturnValue(query(undefined));
     renderWithProviders(<DashboardPage />, { preloadedState: adminState });
-
-    await user.click(screen.getByLabelText("Boshlanish → Tugash"));
-
-    expect(screen.getByText("Tanlangan davr statistikasi")).toBeInTheDocument();
-    expect(getDashboardMock).toHaveBeenLastCalledWith(
-      { start_day: "2026-04-01", end_day: "2026-04-14" },
-      true,
-      "admin:unknown",
-    );
+    expect(within(sectionOf("Muvaffaqiyat darajasi")).getByText("0%")).toBeInTheDocument();
   });
 
-  it("falls back to zero metrics when api response is empty", () => {
-    getDashboardMock.mockReturnValue({ data: undefined });
-    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
-
-    expect(screen.getByTestId("dashboard-statistics")).toHaveTextContent("0-0-0-0");
-  });
-
-  it("gives operators their own stat cards instead of a blank page, without company-wide rankings", () => {
+  it("operator: asosiy kartalar bor, kompaniya reytinglari/hududlar/moliya yo'q", () => {
     renderWithProviders(<DashboardPage />, { preloadedState: operatorState });
+    expect(screen.getByRole("heading", { name: "Muvaffaqiyat darajasi" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Yetkazish natijalari" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Top marketlar" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Hududlar bo'yicha" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Moliyaviy tahlil" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Asosiy ko'rsatkichlar" })).not.toBeInTheDocument();
+  });
 
-    // Not blank: the operator sees the same base statistics widget admins do.
-    expect(screen.getByTestId("dashboard-statistics")).toBeInTheDocument();
-    // But company-wide ranking/region widgets are held back until the backend
-    // actually scopes analytics-service to the operator's own market — showing
-    // them today would leak every market's and courier's data to an operator.
-    expect(screen.queryByTestId("top-performers")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("region-stats")).not.toBeInTheDocument();
-    // Revenue analytics stay SUPERADMIN/ADMIN-only (Audit P1-2) — unaffected by this change.
-    expect(screen.queryByTestId("financial-analysis")).not.toBeInTheDocument();
-    // Company-wide revenue/profit and the admin-only KPI cards (which would
-    // show fake zeros without the KPI request) are not shown to an operator.
-    expect(screen.getByTestId("dashboard-statistics")).toHaveAttribute("data-financial", "false");
+  it("SA/admin xatosi — kartalar o'rnida xato va ikkala so'rovni qayta yuborish", async () => {
+    const refetchDashboard = vi.fn();
+    const refetchKpi = vi.fn();
+    getDashboardMock.mockReturnValue({ isError: true, isLoading: false, refetch: refetchDashboard });
+    getKpiMock.mockReturnValue({ isError: false, isLoading: false, refetch: refetchKpi });
+    renderWithProviders(<DashboardPage />, { preloadedState: adminState });
+    await userEvent.setup().click(screen.getByRole("button", { name: "Qayta urinish" }));
+    expect(refetchDashboard).toHaveBeenCalled();
+    expect(refetchKpi).toHaveBeenCalled();
   });
 });

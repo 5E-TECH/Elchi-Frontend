@@ -1,449 +1,370 @@
-import { memo, useCallback, useMemo, useState } from 'react';
-import { Phone, Trash2, UserRound, UserX } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import type { User } from '../../../entities/user/types/user';
-import { UserStatusBadge } from '../../../entities/user/ui/UserStatusBadge';
-import { UserRoleBadge } from '../../../entities/user/ui/UserRoleBadge';
-import { Table } from '../../../shared/components/Table/Table';
-import type { ColumnConfig } from '../../../shared/components/Table/Table.types';
-import { useUser } from '../../../entities/user/api/userApi';
-import { useTranslation } from 'react-i18next';
-import Pagination from '../../../shared/components/pagination';
-import PopupConfirm from '../../../shared/components/popupConfirm';
-import { notify } from '../../../shared/lib/notify';
-import { useConfirm } from '../../../shared/ui/primitives';
+// dizayn-v2: superadmin-users-list, admin-users-list, manager-users-list, superadmin-users-delete-dialog, admin-users-delete-dialog
+import { memo, useCallback, useMemo, useState } from "react";
+import { ChevronRight, Pencil, Trash2, UserCheck, UserX } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { Link, useNavigate } from "react-router-dom";
+import type { User, UserStatus } from "../../../entities/user/types/user";
+import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
+import { useUser } from "../../../entities/user/api/userApi";
+import { UpdateUserModal } from "../../../features/user/update-user/ui/UpdateUserModal";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { cx } from "../../../shared/lib/cx";
+import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
+import { formatPhone } from "../../../shared/lib/formatPhone";
+import { notify } from "../../../shared/lib/notify";
+import {
+  Badge,
+  ConfirmDialog,
+  DataTable,
+  useConfirm,
+  type DataTableColumn,
+  type Tone,
+} from "../../../shared/ui/primitives";
+import { UserRowMenu, type UserRowMenuItem } from "./UserRowMenu";
 
 interface UserListTableProps {
-    users: User[];
-    isLoading?: boolean;
-    isError?: boolean;
-    error?: unknown;
-    pagination?: {
-        page: number;
-        limit: number;
-        total: number;
-        totalPages: number;
-    };
-    currentPage: number;
-    currentLimit?: number;
-    onPageChange: (page: number) => void;
-    onItemsPerPageChange?: (limit: number) => void;
-    /**
-     * Holat almashtirgich va o'chirish tugmasi (fix3 RBAC-16). Backend
-     * PATCH /users/:id/status va DELETE /users/:id faqat SUPERADMIN/ADMIN
-     * ga ruxsat beradi — menejer ko'rardi, lekin har bosishda 403 olardi.
-     * Sukut — yashirin (xavfsiz tomon); sahifa rolga qarab yoqadi.
-     */
-    canManage?: boolean;
+  users: readonly User[];
+  /**
+   * Holat almashtirish, tahrirlash va o'chirish (fix3 RBAC-16). Backend
+   * PATCH /users/:id/status va DELETE /users/:id faqat SUPERADMIN/ADMIN
+   * ga ruxsat beradi — menejer ko'rardi, lekin har bosishda 403 olardi.
+   * Sukut — yashirin (xavfsiz tomon); sahifa rolga qarab yoqadi. Menejerda — «Ochish» (›).
+   */
+  canManage?: boolean;
+  /** Fonda yangilanmoqda — ro'yxat xiralashadi. */
+  busy?: boolean;
+  /** Jadval yoki kartalar o'rami klassi (karta ichida — `border-t border-border`). */
+  className?: string;
 }
 
-const formatPhoneNumber = (phone: string) => {
-    const digits = phone.replace(/\D/g, "");
-    const local = digits.startsWith("998") ? digits.slice(3) : digits;
-
-    if (local.length === 9) {
-        return `+998 (${local.slice(0, 2)}) ${local.slice(2, 5)}-${local.slice(5, 7)}-${local.slice(7, 9)}`;
-    }
-
-    return phone;
+const STATUS_TONE: Record<UserStatus, Tone> = {
+  active: "success",
+  inactive: "neutral",
+  blocked: "danger",
 };
 
-export const UserListTable = memo(({
-    users,
-    isLoading,
-    isError,
-    // error,
-    pagination,
-    currentPage,
-    currentLimit = pagination?.limit ?? users.length ?? 10,
-    onPageChange,
-    onItemsPerPageChange,
-    canManage = false,
-}: UserListTableProps) => {
-    const { t } = useTranslation("users");
-    const navigate = useNavigate();
-    const { updateUserStatus, deleteUser } = useUser();
-    const confirm = useConfirm();
+/**
+ * Faqat server javobidagi matn (avvalgidek): axios'ning ichki «Request failed with status code 500» /
+ * «Network Error» matni foydalanuvchiga chiqmaydi — u holda o'zbekcha zaxira matn.
+ */
+const serverMessage = (error: unknown) =>
+  getBackendErrorMessage({ response: (error as { response?: unknown } | null)?.response });
 
-    // Hozirda so'rov ketayotgan userlar ID lari
-    const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
-    const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+/** Ismdan bosh harflar (avatar): «Mehr Kosmetika» → «MK». */
+const userInitials = (name: string | null | undefined) =>
+  (name ?? "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "—";
 
-    const handleStatusToggle = useCallback(async (user: User, e: React.MouseEvent) => {
-        e.stopPropagation(); // Row click ga o'tmasin
-        if (loadingIds.has(user.id)) return; // Ikki marta bosilmasin
+const AVATAR =
+  "inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-sunken text-[13px] font-semibold text-text-muted";
+const ICON_LINK =
+  "inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-text-muted " +
+  "transition-[background-color,color] duration-150 hover:bg-sunken hover:text-text " +
+  "motion-reduce:transition-none max-md:size-11";
+const SUB = "text-[13px] text-text-muted";
 
-        const newStatus = user.status === 'active' ? 'inactive' : 'active';
+const userHref = (user: User) => `/all-users/${user.id}`;
 
-        // Nofaol qilish kirish huquqini oladi — tasdiqlash oynasi orqali (DESIGN_SYSTEM §8, `tizim-feedback`).
-        if (newStatus === 'inactive') {
-            const ok = await confirm({
-                tone: "danger",
-                title: t("deactivateConfirmTitle"),
-                description: t("deactivateConfirmText", { name: user.name }),
-                details: (
-                    <>
-                        <span className="block font-semibold">{user.name}</span>
-                        <span className="block text-text-muted">{formatPhoneNumber(String(user.phone_number ?? ""))}</span>
-                    </>
-                ),
-                confirmLabel: t("deactivateConfirmAction"),
-                cancelLabel: t("cancel"),
-                icon: UserX,
-                confirmIcon: UserX,
-            });
-            if (!ok) return;
-        }
+/**
+ * FOYDALANUVCHILAR JADVALI — `/all-users` (dizayn v2, `DataTable`; telefonda kartalar).
+ *
+ * Ustunlar (maket `superadmin-users-list`): Foydalanuvchi (avatar + ism; planshetda ostida telefon) · Telefon
+ * (planshetda yashirin) · Rol · Holat · Qo'shilgan (planshetda yashirin) · amallar (kebab: «Tahrirlash»,
+ * «Nofaol qilish»/«Faol qilish», «O'chirish»). Menejerda (`manager-users-list`) amallar o'rnida «Ochish» (›).
+ * «Filial» ustuni chizilmaydi: `GET /users` qatorlarida filial yo'q (backend `findAllAdmins` — faqat `users`
+ * jadvali), har qator uchun alohida so'rov esa og'ir — spec §6 ma'lumot bo'shlig'i.
+ *
+ * Xulq (o'zgarmagan): nofaol qilish — tasdiq oynasi (`useConfirm`), so'ng `updateUserStatus.mutate`, xabarlar
+ * va qatordagi kutish; faol qilish — tasdiqsiz; o'chirish — `ConfirmDialog` (maket `*-users-delete-dialog`),
+ * so'ng `deleteUser.mutate` + xabarlar. Qator bosilsa — `/all-users/:id`.
+ */
+export const UserListTable = memo(({ users, canManage = false, busy = false, className }: UserListTableProps) => {
+  const { t, i18n } = useTranslation(["users", "common"]);
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const navigate = useNavigate();
+  const { updateUserStatus, deleteUser } = useUser();
+  const confirm = useConfirm();
 
-        // Loading boshlan
-        setLoadingIds(prev => new Set([...prev, user.id]));
+  // Hozirda holat so'rovi ketayotgan foydalanuvchilar (ikki marta bosilmasin).
+  const [loadingIds, setLoadingIds] = useState<Set<string>>(new Set());
+  const [deleteTarget, setDeleteTarget] = useState<User | null>(null);
+  const [editTarget, setEditTarget] = useState<User | null>(null);
 
-        updateUserStatus.mutate(
-            { id: user.id, status: newStatus },
-            {
-                onSuccess: () => {
-                    notify.success(t("statusChangeSuccessTitle"), {
-                        description: t(
-                            newStatus === "active"
-                                ? "statusActivatedSuccess"
-                                : "statusDeactivatedSuccess",
-                            { name: user.name },
-                        ),
-                    });
-                },
-                onError: (error: unknown) => {
-                    const errorMessage =
-                        typeof error === "object" &&
-                        error !== null &&
-                        "response" in error &&
-                        typeof (error as {
-                            response?: { data?: { message?: string; error?: string } };
-                        }).response?.data?.message === "string"
-                            ? (error as {
-                                response?: { data?: { message?: string; error?: string } };
-                            }).response?.data?.message
-                            : typeof error === "object" &&
-                              error !== null &&
-                              "response" in error &&
-                              typeof (error as {
-                                  response?: { data?: { message?: string; error?: string } };
-                              }).response?.data?.error === "string"
-                                ? (error as {
-                                    response?: { data?: { message?: string; error?: string } };
-                                }).response?.data?.error
-                                : t("statusChangeErrorDescription");
+  const roleLabel = useCallback((user: User) => t(getUserRoleLabelKey(user.role)), [t]);
+  const phone = useCallback((user: User) => formatPhone(user.phone_number), []);
+  const joined = useCallback(
+    (user: User) => (user.createdAt ? formatDateTimeLocalized(user.createdAt, { language }) : "—"),
+    [language],
+  );
 
-                    notify.error(t("statusChangeErrorTitle"), { description: errorMessage });
-                },
-                onSettled: () => {
-                    // So'rov tugagach (success yoki error) loading o'chiriladi
-                    setLoadingIds(prev => {
-                        const next = new Set(prev);
-                        next.delete(user.id);
-                        return next;
-                    });
-                },
-            }
-        );
-    }, [confirm, loadingIds, t, updateUserStatus]);
+  const statusBadge = useCallback(
+    (user: User) => {
+      const status: UserStatus = user.status in STATUS_TONE ? user.status : "inactive";
+      return (
+        <Badge tone={STATUS_TONE[status]} dot>
+          {t(`v2.common.status.${status}`)}
+        </Badge>
+      );
+    },
+    [t],
+  );
 
-    const handleDeleteConfirm = useCallback(() => {
-        if (!deleteTarget || deleteUser.isPending) return;
+  const handleStatusToggle = useCallback(
+    async (user: User) => {
+      if (loadingIds.has(user.id)) return; // Ikki marta bosilmasin
 
-        deleteUser.mutate(deleteTarget.id, {
-            onSuccess: () => {
-                notify.success(t("deleteSuccessTitle"), {
-                    description: t("deleteSuccessDescription", { name: deleteTarget.name }),
-                });
-                setDeleteTarget(null);
-            },
-            onError: (error: unknown) => {
-                const errorMessage =
-                    typeof error === "object" &&
-                    error !== null &&
-                    "response" in error &&
-                    typeof (error as {
-                        response?: { data?: { message?: string; error?: string } };
-                    }).response?.data?.message === "string"
-                        ? (error as {
-                            response?: { data?: { message?: string; error?: string } };
-                        }).response?.data?.message
-                        : typeof error === "object" &&
-                          error !== null &&
-                          "response" in error &&
-                          typeof (error as {
-                              response?: { data?: { message?: string; error?: string } };
-                          }).response?.data?.error === "string"
-                            ? (error as {
-                                response?: { data?: { message?: string; error?: string } };
-                            }).response?.data?.error
-                            : t("deleteErrorDescription");
+      const newStatus = user.status === "active" ? "inactive" : "active";
 
-                notify.error(t("deleteErrorTitle"), { description: errorMessage });
-            },
+      // Nofaol qilish kirish huquqini oladi — tasdiqlash oynasi orqali (DESIGN_SYSTEM §8, `tizim-feedback`).
+      if (newStatus === "inactive") {
+        const ok = await confirm({
+          tone: "danger",
+          title: t("deactivateConfirmTitle"),
+          description: t("deactivateConfirmText", { name: user.name }),
+          details: (
+            <>
+              <span className="block font-semibold">{user.name}</span>
+              <span className="block text-text-muted">{phone(user)}</span>
+            </>
+          ),
+          confirmLabel: t("deactivateConfirmAction"),
+          cancelLabel: t("cancel"),
+          icon: UserX,
+          confirmIcon: UserX,
         });
-    }, [deleteTarget, deleteUser, t]);
+        if (!ok) return;
+      }
 
-    const renderUserActions = useCallback((user: User, compact = false) => {
-        const isActive = user.status === 'active';
-        const isPending = loadingIds.has(user.id);
+      setLoadingIds((prev) => new Set([...prev, user.id]));
 
-        return (
-            <div
-                className={`flex items-center justify-center whitespace-nowrap ${compact ? 'min-w-[78px] gap-1.5' : 'min-w-[96px] gap-2'}`}
-                onClick={(e) => e.stopPropagation()}
-            >
-                <button
-                    onClick={(e) => void handleStatusToggle(user, e)}
-                    disabled={isPending}
-                    title={isActive ? t("deactivate") : t("activate")}
-                    role="switch"
-                    aria-checked={isActive}
-                    className={`
-                        relative ${compact ? 'h-5 w-9' : 'w-11 h-6'} rounded-full
-                        transition-all duration-300 ease-in-out
-                        focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
-                        ${isPending
-                            ? 'cursor-not-allowed opacity-70 bg-slate-300 dark:bg-white/20 focus-visible:ring-slate-400'
-                            : isActive
-                                ? 'bg-emerald-500 hover:bg-emerald-600 focus-visible:ring-emerald-500 shadow-md shadow-emerald-500/30'
-                                : 'bg-slate-300 dark:bg-white/20 hover:bg-slate-400 dark:hover:bg-white/30 focus-visible:ring-slate-400'
-                        }
-                    `}
-                >
-                    <span
-                        className={`
-                            absolute left-0.5 top-0.5
-                            ${compact ? 'h-4 w-4' : 'w-5 h-5'} rounded-full bg-white shadow-sm
-                            flex items-center justify-center
-                            transition-all duration-300 ease-in-out
-                            ${isActive && !isPending ? (compact ? 'translate-x-4' : 'translate-x-5') : 'translate-x-0'}
-                        `}
-                    >
-                        {isPending ? (
-                            <span
-                                className={`${compact ? 'h-2.5 w-2.5' : 'w-3 h-3'} rounded-full border-2 border-slate-300 border-t-main animate-spin block`}
-                            />
-                        ) : isActive ? (
-                            <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
-                                <path d="M1 4L3.5 6.5L9 1" stroke="#10b981" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                        ) : (
-                            <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
-                                <path d="M1.5 1.5L6.5 6.5M6.5 1.5L1.5 6.5" stroke="#94a3b8" strokeWidth="1.8" strokeLinecap="round" />
-                            </svg>
-                        )}
-                    </span>
-                </button>
-
-                <button
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        setDeleteTarget(user);
-                    }}
-                    className={`${compact ? 'p-1.5' : 'p-1.5'} rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-slate-300 hover:text-red-500 dark:hover:text-red-400 transition-all duration-200`}
-                    aria-label={t("deleteTitle")}
-                >
-                    <Trash2 size={compact ? 17 : 20} />
-                </button>
-            </div>
-        );
-    }, [handleStatusToggle, loadingIds, t]);
-
-    const columns = useMemo<ColumnConfig<User>[]>(() => [
+      updateUserStatus.mutate(
+        { id: user.id, status: newStatus },
         {
-            key: 'name',
-            label: t('firstName'),
-            width: '30%',
-            sortable: true,
-            render: (value) => (
-                    <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-main/15 bg-main/10 text-xs font-black text-main shadow-sm dark:border-white/10 dark:bg-white/8 dark:text-white">
-                        {String(value).charAt(0).toUpperCase()}
-                    </div>
-                    <span className="text-sm font-bold text-slate-900 dark:text-white">{value}</span>
-                </div>
-            ),
+          onSuccess: () => {
+            notify.success(t("statusChangeSuccessTitle"), {
+              description: t(newStatus === "active" ? "statusActivatedSuccess" : "statusDeactivatedSuccess", {
+                name: user.name,
+              }),
+            });
+          },
+          onError: (error: unknown) => {
+            notify.error(t("statusChangeErrorTitle"), {
+              description: serverMessage(error) ?? t("statusChangeErrorDescription"),
+            });
+          },
+          onSettled: () => {
+            setLoadingIds((prev) => {
+              const next = new Set(prev);
+              next.delete(user.id);
+              return next;
+            });
+          },
+        },
+      );
+    },
+    [confirm, loadingIds, phone, t, updateUserStatus],
+  );
+
+  const handleDeleteConfirm = useCallback(() => {
+    if (!deleteTarget || deleteUser.isPending) return;
+
+    deleteUser.mutate(deleteTarget.id, {
+      onSuccess: () => {
+        notify.success(t("deleteSuccessTitle"), {
+          description: t("deleteSuccessDescription", { name: deleteTarget.name }),
+        });
+        setDeleteTarget(null);
+      },
+      onError: (error: unknown) => {
+        notify.error(t("deleteErrorTitle"), {
+          description: serverMessage(error) ?? t("deleteErrorDescription"),
+        });
+      },
+    });
+  }, [deleteTarget, deleteUser, t]);
+
+  const menuItems = useCallback(
+    (user: User): UserRowMenuItem[] => {
+      const isActive = user.status === "active";
+      return [
+        { key: "edit", label: t("v2.list.menu.edit"), icon: Pencil, onSelect: () => setEditTarget(user) },
+        {
+          key: "status",
+          label: t(isActive ? "v2.list.menu.deactivate" : "v2.list.menu.activate"),
+          icon: isActive ? UserX : UserCheck,
+          disabled: loadingIds.has(user.id),
+          onSelect: () => void handleStatusToggle(user),
         },
         {
-            key: 'phone_number',
-            label: t('phone'),
-            width: '25%',
-            sortable: true,
-            render: (value) => (
-                <span className="text-[15px] font-bold tabular-nums tracking-wide text-slate-700 dark:text-white/85">
-                    {formatPhoneNumber(String(value ?? ""))}
+          key: "delete",
+          label: t("v2.list.menu.delete"),
+          icon: Trash2,
+          danger: true,
+          onSelect: () => setDeleteTarget(user),
+        },
+      ];
+    },
+    [handleStatusToggle, loadingIds, t],
+  );
+
+  const renderActions = useCallback(
+    (user: User) =>
+      canManage ? (
+        <UserRowMenu label={t("v2.list.rowActions", { name: user.name })} items={menuItems(user)} />
+      ) : (
+        <Link
+          to={userHref(user)}
+          aria-label={t("v2.list.rowOpen", { name: user.name })}
+          title={t("v2.list.rowOpen", { name: user.name })}
+          className={ICON_LINK}
+        >
+          <ChevronRight aria-hidden="true" size={18} strokeWidth={2} />
+        </Link>
+      ),
+    [canManage, menuItems, t],
+  );
+
+  const columns = useMemo<DataTableColumn<User>[]>(
+    () => [
+      {
+        id: "user",
+        header: t("v2.list.columns.user"),
+        cell: (user) => (
+          <div className="flex min-w-0 items-center gap-3">
+            <span aria-hidden="true" className={AVATAR}>
+              {userInitials(user.name)}
+            </span>
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <Link
+                to={userHref(user)}
+                className={cx(
+                  "font-semibold hover:text-action-fg hover:underline",
+                  user.status === "active" ? "text-text" : "text-text-muted",
+                )}
+              >
+                {user.name}
+              </Link>
+              <span className={cx("hidden whitespace-nowrap max-lg:block", SUB)}>{phone(user)}</span>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: "phone",
+        header: t("v2.list.columns.phone"),
+        hideBelow: "lg",
+        className: "whitespace-nowrap",
+        cell: phone,
+      },
+      {
+        id: "role",
+        header: t("v2.list.columns.role"),
+        cell: (user) => <Badge>{roleLabel(user)}</Badge>,
+      },
+      { id: "status", header: t("v2.list.columns.status"), cell: statusBadge },
+      {
+        id: "joined",
+        header: t("v2.list.columns.joined"),
+        hideBelow: "lg",
+        className: "whitespace-nowrap",
+        cell: (user) => <span className="text-text-muted">{joined(user)}</span>,
+      },
+      {
+        id: "actions",
+        header: <span className="sr-only">{t(canManage ? "v2.list.columns.actions" : "v2.list.columns.open")}</span>,
+        className: "w-16",
+        cellClassName: "text-right",
+        cell: renderActions,
+      },
+    ],
+    [canManage, joined, phone, renderActions, roleLabel, statusBadge, t],
+  );
+
+  // Telefon kartasi (maket `.el-list-item`): avatar, ism, «telefon», rol + holat, kebab yoki ›.
+  const renderCard = useCallback(
+    (user: User) => (
+      <div className="flex min-h-14 items-center gap-3 px-4 py-3 text-sm text-text">
+        <span aria-hidden="true" className={AVATAR}>
+          {userInitials(user.name)}
+        </span>
+        <Link to={userHref(user)} className="flex min-w-0 flex-1 flex-col gap-1">
+          <span className={cx("min-w-0 font-semibold", user.status === "active" ? "text-text" : "text-text-muted")}>
+            {user.name}
+          </span>
+          <span className={SUB}>{phone(user)}</span>
+          <span className="flex flex-wrap gap-1.5">
+            <Badge>{roleLabel(user)}</Badge>
+            {statusBadge(user)}
+          </span>
+        </Link>
+        {canManage ? renderActions(user) : <ChevronRight aria-hidden="true" size={18} className="shrink-0 text-text-subtle" />}
+      </div>
+    ),
+    [canManage, phone, renderActions, roleLabel, statusBadge],
+  );
+
+  const deletePhone = deleteTarget ? phone(deleteTarget) : "";
+
+  return (
+    <>
+      <DataTable
+        rows={users}
+        columns={columns}
+        getRowKey={(user) => user.id}
+        label={t("v2.list.listLabel")}
+        cardsLabel={t("v2.list.cardsLabel")}
+        onRowClick={(user) => navigate(userHref(user))}
+        renderCard={renderCard}
+        busy={busy}
+        className={className}
+      />
+
+      {canManage ? (
+        <ConfirmDialog
+          open={Boolean(deleteTarget)}
+          onCancel={() => setDeleteTarget(null)}
+          onConfirm={handleDeleteConfirm}
+          loading={deleteUser.isPending}
+          tone="danger"
+          icon={null}
+          title={t("deleteUserTitle")}
+          description={t("v2.list.deleteDescription", { name: deleteTarget?.name ?? "" })}
+          details={
+            deleteTarget ? (
+              <span className="flex min-w-0 items-center gap-3">
+                <span aria-hidden="true" className={cx(AVATAR, "bg-surface")}>
+                  {userInitials(deleteTarget.name)}
                 </span>
-            ),
-        },
-        {
-            key: 'role',
-            label: t('role'),
-            width: '15%',
-            sortable: true,
-            render: (value) => <UserRoleBadge role={value as User["role"]} />,
-        },
-        {
-            key: 'status',
-            label: t('status'),
-            width: '15%',
-            render: (value) => <UserStatusBadge status={value as User["status"]} />,
-        },
-        ...(canManage
-            ? [{
-                key: 'id',
-                label: t('action'),
-                width: '18%',
-                className: 'whitespace-nowrap',
-                render: (_: unknown, user: User) => renderUserActions(user),
-            } satisfies ColumnConfig<User>]
-            : []),
-    ], [canManage, renderUserActions, t]);
+                <span className="flex min-w-0 flex-col">
+                  <span className="font-semibold text-text">{deleteTarget.name}</span>
+                  <span className="text-[13px] text-text-muted">
+                    {roleLabel(deleteTarget)} · {deletePhone}
+                  </span>
+                </span>
+              </span>
+            ) : null
+          }
+          note={t("v2.list.deleteNote")}
+          confirmLabel={t("v2.list.menu.delete")}
+          confirmIcon={Trash2}
+          loadingLabel={t("v2.list.deleting")}
+          cancelLabel={t("cancel")}
+        />
+      ) : null}
 
-    const renderMobileRow = useCallback((user: User) => (
-        <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-main/15 bg-main/10 text-main shadow-sm dark:border-white/10 dark:bg-white/8 dark:text-white">
-                    <UserRound size={16} />
-                </div>
-
-                <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
-                        {user.name}
-                    </p>
-                    <p className="mt-0.5 flex items-center gap-1 text-[13px] font-medium text-slate-500 dark:text-white/65">
-                        <Phone size={13} />
-                        <span className="truncate">{formatPhoneNumber(String(user.phone_number ?? ""))}</span>
-                    </p>
-                    <div className="mt-2">
-                        <UserRoleBadge role={user.role} />
-                    </div>
-                </div>
-            </div>
-
-            <div className="flex shrink-0 flex-col items-end gap-2">
-                <UserStatusBadge status={user.status} />
-                {canManage ? renderUserActions(user, true) : null}
-            </div>
-        </div>
-    ), [canManage, renderUserActions]);
-
-    const getUserKey = useCallback((user: User) => user.id, []);
-    const handleRowClick = useCallback(
-        (user: User) => navigate(`/all-users/${user.id}`),
-        [navigate],
-    );
-
-    // Loading state
-    if (isLoading) {
-        return (
-            <div className="overflow-hidden rounded-[24px] border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] shadow-[0_16px_42px_var(--color-card-shadow)] dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
-                <div className="flex items-center justify-center py-20">
-                    <div className="text-center space-y-3">
-                        <span className="relative flex h-12 w-12 mx-auto">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-main opacity-30" />
-                            <span className="relative inline-flex rounded-full h-12 w-12 bg-main/20 items-center justify-center">
-                                <span className="w-5 h-5 rounded-full bg-main animate-pulse" />
-                            </span>
-                        </span>
-                        <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">{t("loading")}</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    // Error state
-    if (isError) {
-        return (
-            <div className="overflow-hidden rounded-[24px] border border-red-200/70 bg-[color:var(--color-card-surface-strong)] shadow-[0_16px_42px_var(--color-card-shadow)] dark:border-red-400/20 dark:bg-[color:var(--color-surface-elevated-dark)]">
-                <div className="flex items-center justify-center py-20">
-                    <div className="text-center">
-                        <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <span className="text-3xl">⚠️</span>
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t("loadError")}</h3>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm">
-                            {t("loadDataError")}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    // Users props dan keladi (duplicate o'chirildi)
-
-    // Empty state
-    if (users.length === 0) {
-        return (
-            <div className="overflow-hidden rounded-[24px] border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] shadow-[0_16px_42px_var(--color-card-shadow)] dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
-                <div className="flex items-center justify-center py-20">
-                    <div className="text-center">
-                        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <span className="text-3xl">📭</span>
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">{t("usersNotFound")}</h3>
-                        <p className="text-gray-600 dark:text-gray-400 text-sm">
-                            {t("noUsersAvailable")}
-                        </p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <>
-            <div className="overflow-hidden rounded-[24px] border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] shadow-[0_16px_42px_var(--color-card-shadow)] dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
-                <Table
-                    data={users}
-                    columns={columns}
-                    keyExtractor={getUserKey}
-                    hoverable
-                    mobileRowRender={renderMobileRow}
-                    onRowClick={handleRowClick}
-                />
-
-                {/* Pagination */}
-                <div
-                    className="flex flex-col gap-3 border-t border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 dark:border-white/10 dark:bg-white/5"
-                >
-                    <span className="text-center text-sm font-semibold text-slate-600 dark:text-white/65 sm:text-left">
-                        {pagination ? (
-                            t("paginationSummary", {
-                                from: (currentPage - 1) * currentLimit + 1,
-                                to: Math.min(currentPage * currentLimit, pagination.total),
-                                total: pagination.total,
-                            })
-                        ) : (
-                            t("totalUsersCount", { count: users.length })
-                        )}
-                    </span>
-                    <Pagination
-                        totalItems={pagination?.total || users.length}
-                        itemsPerPage={currentLimit}
-                        currentPage={currentPage}
-                        onPageChange={onPageChange}
-                        onItemsPerPageChange={onItemsPerPageChange}
-                        className="w-full pt-0 sm:w-auto"
-                        summary={false}
-                    />
-                </div>
-            </div>
-
-            <PopupConfirm
-                isOpen={!!deleteTarget}
-                onClose={() => setDeleteTarget(null)}
-                onConfirm={handleDeleteConfirm}
-                isLoading={deleteUser.isPending}
-                title={t("deleteUserTitle")}
-                message={t("deleteUserMessage", { name: deleteTarget?.name ?? "" })}
-                confirmLabel={t("deleteTitle")}
-                variant="danger"
-            />
-        </>
-    );
+      {canManage ? (
+        <UpdateUserModal
+          userId={editTarget?.id ?? null}
+          initialUser={editTarget}
+          onClose={() => setEditTarget(null)}
+        />
+      ) : null}
+    </>
+  );
 });
 
-UserListTable.displayName = 'UserListTable';
+UserListTable.displayName = "UserListTable";

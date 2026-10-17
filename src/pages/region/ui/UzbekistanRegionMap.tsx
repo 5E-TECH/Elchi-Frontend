@@ -1,855 +1,207 @@
+// dizayn-v2: superadmin-regions-map, admin-regions-map
 import { memo, useEffect, useMemo, useState } from "react";
-import { Modal, Spin } from "antd";
 import Highcharts from "highcharts/highmaps";
 import HighchartsReact from "highcharts-react-official";
 import uzTopology from "@highcharts/map-collection/countries/uz/uz-all.topo.json";
-import { CheckCircle2, Clock3, Loader2, MapPin, Package, Phone, TrendingUp, Users, Wallet, XCircle } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { api } from "../../../shared/api/api";
-import { API_ENDPOINTS } from "../../../shared/api";
+import { mapStepOf, STEP_VAR, type RegionMetric, type RegionRow } from "../model/regionsModel";
 
-interface RegionStats {
-  districtCount: number;
-  activeCouriers: number;
-  orderCount: number;
-  deliveredOrders?: number;
-  cancelledOrders?: number;
-  pendingOrders?: number;
-  totalRevenue?: number;
-  successRate?: number;
+export interface UzbekistanRegionMapProps {
+  rows: RegionRow[];
+  metric: RegionMetric;
+  maxRevenue: number;
+  /** Viloyat yorlig'i ostidagi qiymat (`row.id` → «112», «81,3%», «18,5 mln»). */
+  valueLabels: ReadonlyMap<string, string>;
+  /** Tooltip HTML'i (matnlar chaqiruvchida, foydalanuvchi matni `escapeHtml` bilan). */
+  tooltipHtml: (row: RegionRow) => string;
+  onSelect: (row: RegionRow) => void;
+  /** Xaritaning matnli tavsifi (ekran o'quvchi; bosish — yonidagi reyting orqali ham). */
+  ariaLabel: string;
 }
 
-interface RegionMapItem {
-  id: string;
-  name: string;
-  stats: RegionStats;
-}
+type MapPointOptions = Highcharts.SeriesMapDataOptions & { rowId: string };
 
-interface MapPoint {
-  regionId: string;
-  "hc-key": string;
-  value: number;
-  regionName: string;
-  districtsCount: number;
-  couriersCount: number;
-  deliveredOrders: number;
-  cancelledOrders: number;
-  pendingOrders: number;
-  totalRevenue: number;
-  successRate: number;
-}
-
-type RegionSummary = {
-  totalOrders: number;
-  totalDelivered: number;
-  totalCancelled: number;
-  totalRevenue: number;
+/**
+ * Sharqdagi kichik viloyatlar yorliqlari bir-birini yopmasin — maketdagidek chetga suriladi (px, xarita
+ * kengligi ≥ 560 da; telefonda yorliq yo'q).
+ */
+const LABEL_OFFSET: Record<string, { x: number; y: number }> = {
+  "uz-tk": { x: -52, y: -12 },
+  "uz-ta": { x: 22, y: -52 },
+  "uz-ng": { x: 4, y: -28 },
+  "uz-an": { x: 30, y: 6 },
+  "uz-fa": { x: -6, y: 24 },
+  "uz-si": { x: -10, y: 28 },
 };
 
-type RegionDetailInfo = {
-  id: string;
-  name: string;
-  totalOrders: number;
-  deliveredOrders: number;
-  cancelledOrders: number;
-  pendingOrders: number;
-  activeCouriers: number;
-  districtsCount: number;
-  totalRevenue: number;
-  successRate: number;
-  couriers: Array<{
-    id: string;
-    name: string;
-    phone: string;
-    totalOrders: number;
-    deliveredOrders: number;
-    cancelledOrders: number;
-    successRate: number;
-    revenue: number;
-    isMain?: boolean;
-  }>;
-  districts: Array<{
-    id: string;
-    name: string;
-    satoCode?: string;
-    totalOrders: number;
-    successRate: number;
-    revenue: number;
-    activeCouriers: number;
-  }>;
-};
+const readCssColor = (name: string) =>
+  typeof window === "undefined"
+    ? ""
+    : getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
-const NAME_TO_HC_KEY: Record<string, string> = {
-  andijon: "uz-an",
-  buxoro: "uz-bu",
-  jizzax: "uz-ji",
-  qashqadaryo: "uz-qa",
-  navoiy: "uz-nw",
-  namangan: "uz-ng",
-  samarqand: "uz-sa",
-  surxondaryo: "uz-su",
-  sirdaryo: "uz-si",
-  toshkentsh: "uz-tk",
-  toshkentshahri: "uz-tk",
-  toshkent: "uz-ta",
-  toshkentviloyati: "uz-ta",
-  fargona: "uz-fa",
-  xorazm: "uz-kh",
-  qoraqalpogiston: "uz-qr",
-};
-
-const normalizeRegionName = (value: string) => {
-  const normalized = value
-    .toLocaleLowerCase()
-    .replace(/oʻ|o'/g, "o")
-    .replace(/gʻ|g'/g, "g")
-    .replace(/qoraqalpog'iston|qoraqalpog‘iston/g, "qoraqalpogiston")
-    .replace(/farg'ona|fargʻona/g, "fargona")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (normalized.includes("toshkent shahri") || normalized === "toshkent shahar") {
-    return "toshkentshahri";
-  }
-
-  if (normalized.includes("toshkent viloyati")) {
-    return "toshkentviloyati";
-  }
-
-  return normalized
-    .replace(/respublikasi|viloyati|viloyat|shahar/g, "")
-    .replace(/\s+/g, "")
-    .trim();
-};
-
-const toNum = (value: unknown, fallback = 0) => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : fallback;
-};
-
-const readCssColor = (name: string, fallback: string) => {
-  if (typeof window === "undefined") return fallback;
-  const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  return value || fallback;
-};
-
-const UzbekistanRegionMap = ({
-  regions,
-  summary,
-  startDate,
-  endDate,
-  showFinancialMetrics = true,
-}: {
-  regions: RegionMapItem[];
-  summary?: RegionSummary | null;
-  startDate?: string;
-  endDate?: string;
-  showFinancialMetrics?: boolean;
-}) => {
-  const { t } = useTranslation("region");
-  const [mapOptions, setMapOptions] = useState<Highcharts.Options | null>(null);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [isDetailLoading, setIsDetailLoading] = useState(false);
-  const [detailError, setDetailError] = useState("");
-  const [selectedRegion, setSelectedRegion] = useState<RegionDetailInfo | null>(null);
-  const labels = useMemo(
-    () => ({
-      low: t("map.legend.low"),
-      medium: t("map.legend.medium"),
-      high: t("map.legend.high"),
-      veryHigh: t("map.legend.veryHigh"),
-      orders: t("map.metrics.orders"),
-      delivered: t("map.metrics.delivered"),
-      cancelled: t("map.metrics.cancelled"),
-      success: t("map.metrics.success"),
-      pending: t("map.metrics.pending"),
-      revenue: t("map.metrics.revenue"),
-      districts: t("map.metrics.districts"),
-      couriers: t("map.metrics.couriers"),
-      clickForDetails: t("map.clickForDetails"),
-      seriesName: t("map.seriesName"),
-      loadingError: t("map.loadingError"),
-      unknown: t("unknown"),
-      unknownDistrict: t("unknownDistrict"),
-      currencySum: t("currencySum"),
-    }),
-    [t],
+/** Mavzu almashsa (`html.dark`) xarita ranglari qayta o'qiladi. */
+const useThemeKey = () => {
+  const [key, setKey] = useState(() =>
+    typeof document === "undefined"
+      ? "light"
+      : document.documentElement.classList.contains("dark")
+        ? "dark"
+        : "light",
   );
-  /**
-   * Dizayn v2: xarita va legenda BITTA manbadan — `--color-region-map-*`
-   * tokenlari (index.css; dark qiymatlar `.dark` da). Ilgari legenda yashil
-   * literallar edi, xarita esa token — ikkalasi ajralib qolardi.
-   */
-  const mapScale = useMemo(
-    () => ({
-      low: readCssColor("--color-region-map-low", isDarkMode ? "#1c3a63" : "#cde2fb"),
-      medium: readCssColor("--color-region-map-medium", isDarkMode ? "#24569a" : "#86b6ef"),
-      high: readCssColor("--color-region-map-high", "#3987e5"),
-      xhigh: readCssColor("--color-region-map-xhigh", isDarkMode ? "#86b6ef" : "#1c5cab"),
-      stroke: readCssColor("--color-region-map-stroke", isDarkMode ? "rgba(232, 235, 247, 0.84)" : "#ffffff"),
-    }),
-    [isDarkMode],
-  );
-  const legendItems = useMemo(
-    () => [
-      { name: labels.low, color: mapScale.low },
-      { name: labels.medium, color: mapScale.medium },
-      { name: labels.high, color: mapScale.high },
-      { name: labels.veryHigh, color: mapScale.xhigh },
-    ],
-    [mapScale, labels.high, labels.low, labels.medium, labels.veryHigh],
-  );
-
-  const computedSummary = useMemo(() => {
-    return regions.reduce(
-      (acc, region) => {
-        acc.orders += region.stats.orderCount;
-        return acc;
-      },
-      { orders: 0 },
-    );
-  }, [regions]);
-
-  const normalizeDetail = (payload: any, fallback: MapPoint): RegionDetailInfo => {
-    const raw = payload?.data?.data ?? payload?.data ?? payload ?? {};
-    const source = raw?.summary ? raw : raw?.data ?? raw;
-    const summary = source?.summary ?? {};
-    const region = source?.region ?? source;
-    const totalOrders = toNum(
-      summary?.totalOrders ??
-        summary?.ordersCount ??
-        summary?.orders_count ??
-        source?.totalOrders ??
-        source?.ordersCount ??
-        source?.orders_count ??
-        fallback.value,
-      0,
-    );
-    const deliveredOrders = toNum(
-      summary?.deliveredOrders ??
-        summary?.delivered_orders ??
-        source?.deliveredOrders ??
-        source?.delivered_orders ??
-        fallback.deliveredOrders,
-      0,
-    );
-    const cancelledOrders = toNum(
-      summary?.cancelledOrders ??
-        summary?.cancelled_orders ??
-        source?.cancelledOrders ??
-        source?.cancelled_orders ??
-        fallback.cancelledOrders,
-      0,
-    );
-    const rawPending = toNum(
-      summary?.pendingOrders ??
-        summary?.pending_orders ??
-        source?.pendingOrders ??
-        source?.pending_orders ??
-        fallback.pendingOrders,
-      0,
-    );
-    const pendingOrders =
-      rawPending > 0 ? rawPending : Math.max(totalOrders - deliveredOrders - cancelledOrders, 0);
-    const activeCouriers = toNum(
-      summary?.activeCouriers ??
-        summary?.active_couriers ??
-        source?.activeCouriers ??
-        source?.active_couriers ??
-        fallback.couriersCount,
-      0,
-    );
-    const districtsCount = toNum(
-      summary?.totalDistricts ??
-        summary?.districtsCount ??
-        summary?.districts_count ??
-        source?.districtsCount ??
-        source?.districts_count ??
-        (Array.isArray(source?.districts) ? source.districts.length : 0) ??
-        fallback.districtsCount,
-      0,
-    );
-    const totalRevenue = toNum(
-      summary?.totalRevenue ??
-        summary?.total_revenue ??
-        summary?.revenue ??
-        source?.totalRevenue ??
-        source?.total_revenue ??
-        source?.revenue ??
-        fallback.totalRevenue,
-      0,
-    );
-    const rateFromApi = toNum(
-      summary?.successRate ??
-        summary?.success_rate ??
-        source?.successRate ??
-        source?.success_rate ??
-        fallback.successRate,
-      0,
-    );
-    const successRate =
-      rateFromApi > 0 ? rateFromApi : totalOrders > 0 ? Math.round((deliveredOrders / totalOrders) * 100) : 0;
-
-    const couriersSource = Array.isArray(source?.couriers)
-      ? source.couriers
-      : Array.isArray(source?.mainCouriers)
-        ? source.mainCouriers
-        : Array.isArray(source?.users)
-          ? source.users
-          : [];
-    const districtsSource = Array.isArray(source?.districts)
-      ? source.districts
-      : Array.isArray(source?.tumanlar)
-        ? source.tumanlar
-        : [];
-
-    const couriers = couriersSource.map((item: any, idx: number) => {
-      const courierTotalOrders = toNum(item?.totalOrders ?? item?.ordersCount ?? item?.orders_count, 0);
-      const courierDelivered = toNum(item?.deliveredOrders ?? item?.delivered_orders, 0);
-      const courierCancelled = toNum(item?.cancelledOrders ?? item?.cancelled_orders, 0);
-      const courierSuccessRate =
-        toNum(item?.successRate ?? item?.success_rate, 0) ||
-        (courierTotalOrders > 0 ? Math.round((courierDelivered / courierTotalOrders) * 100) : 0);
-      return {
-        id: String(item?.id ?? idx + 1),
-        name: String(item?.name ?? item?.full_name ?? labels.unknown),
-        phone: String(item?.phone ?? item?.phone_number ?? "—"),
-        totalOrders: courierTotalOrders,
-        deliveredOrders: courierDelivered,
-        cancelledOrders: courierCancelled,
-        successRate: courierSuccessRate,
-        revenue: toNum(item?.revenue ?? item?.totalRevenue ?? item?.total_revenue, 0),
-        isMain: Boolean(item?.isMain ?? item?.is_main ?? idx === 0),
-      };
-    });
-
-    const districts = districtsSource.map((item: any, idx: number) => {
-      return {
-        id: String(item?.id ?? idx + 1),
-        name: String(item?.name ?? labels.unknownDistrict),
-        satoCode: item?.sato_code ? String(item.sato_code) : undefined,
-        totalOrders: toNum(item?.totalOrders ?? item?.ordersCount ?? item?.orders_count, 0),
-        successRate: toNum(item?.successRate ?? item?.success_rate, 0),
-        revenue: toNum(item?.revenue ?? item?.totalRevenue ?? item?.total_revenue, 0),
-        activeCouriers: toNum(
-          item?.activeCouriers ??
-            item?.active_couriers ??
-            (Array.isArray(item?.couriers) ? item.couriers.length : 0),
-          0,
-        ),
-      };
-    });
-
-    return {
-      id: String(region?.id ?? source?.id ?? fallback.regionId),
-      name: String(region?.name ?? source?.name ?? fallback.regionName),
-      totalOrders,
-      deliveredOrders,
-      cancelledOrders,
-      pendingOrders,
-      activeCouriers,
-      districtsCount,
-      totalRevenue,
-      successRate,
-      couriers,
-      districts,
-    };
-  };
-
-  const loadRegionDetail = async (point: MapPoint) => {
-    setIsDetailOpen(true);
-    setIsDetailLoading(true);
-    setDetailError("");
-    try {
-      const response = await api.get(API_ENDPOINTS.REGIONS.STATS_BY_ID(point.regionId), {
-        params: {
-          ...(startDate ? { startDate } : {}),
-          ...(endDate ? { endDate } : {}),
-        },
-      });
-      setSelectedRegion(normalizeDetail(response.data, point));
-    } catch (error: any) {
-      setDetailError(error?.response?.data?.message ?? labels.loadingError);
-      setSelectedRegion(normalizeDetail({}, point));
-    } finally {
-      setIsDetailLoading(false);
-    }
-  };
-
   useEffect(() => {
-    const checkDarkMode = () => {
-      setIsDarkMode(document.documentElement.classList.contains("dark"));
-    };
-    checkDarkMode();
-    const observer = new MutationObserver(checkDarkMode);
+    const read = () =>
+      setKey(document.documentElement.classList.contains("dark") ? "dark" : "light");
+    const observer = new MutationObserver(read);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     return () => observer.disconnect();
   }, []);
+  return key;
+};
 
-  useEffect(() => {
-    const mapTheme = isDarkMode
-      ? {
-          tooltipBg: "#312b48",
-          tooltipBorder: "rgba(255, 255, 255, 0.14)",
-          tooltipText: "#ffffff",
-          tooltipMuted: "rgba(255, 255, 255, 0.68)",
-          tooltipShadow: "0 18px 40px rgba(0,0,0,.38)",
-        }
-      : {
-          tooltipBg: "#ffffff",
-          tooltipBorder: "#e5e7eb",
-          tooltipText: "#111827",
-          tooltipMuted: "#6b7280",
-          tooltipShadow: "0 14px 34px rgba(15,23,42,.18)",
-        };
-    // Xarita ranglari legenda bilan bir manbadan (`mapScale` — region-map tokenlari).
-    const palette = mapScale;
-    const regionLabelColor = isDarkMode ? "#ffffff" : "#111827";
+/**
+ * Highcharts sozlamalari (komponentdan tashqarida — formatterlarda `this` = nuqta). Ranglar har chaqiruvda
+ * CSS o'zgaruvchilaridan o'qiladi; `theme` — mavzu almashganda qayta qurish uchun (`chart.className`).
+ */
+const buildMapOptions = (
+  {
+    rows,
+    metric,
+    maxRevenue,
+    valueLabels,
+    tooltipHtml,
+    onSelect,
+  }: Pick<
+    UzbekistanRegionMapProps,
+    "rows" | "metric" | "maxRevenue" | "valueLabels" | "tooltipHtml" | "onSelect"
+  >,
+  theme: string,
+): Highcharts.Options => {
+  const color = (name: string) => readCssColor(name);
+  const label = color("--color-region-map-label");
+  const onDark = color("--color-surface");
+  const rowsById = new Map(rows.map((row) => [row.id, row]));
+  const data: MapPointOptions[] = rows
+    .filter((row) => row.hcKey)
+    .map((row) => {
+      const step = mapStepOf(row, metric, maxRevenue);
+      return {
+        "hc-key": row.hcKey as string,
+        rowId: row.id,
+        value: row.orders,
+        name: row.short,
+        color: color(STEP_VAR[step]),
+        // Eng to'q pog'onada yorliq yuza rangida (kontrast), qolganida `region-map-label`.
+        dataLabels: {
+          ...LABEL_OFFSET[row.hcKey as string],
+          // Surilgan yorliq viloyat tashqarisida turadi — matn rangi doim `region-map-label`.
+          style: { color: step === 4 && !LABEL_OFFSET[row.hcKey as string] ? onDark : label },
+        },
+      };
+    });
 
-    const mapData: MapPoint[] = regions
-      .map((region) => {
-        const normalized = normalizeRegionName(region.name);
-        const hcKey = NAME_TO_HC_KEY[normalized];
-        if (!hcKey) return null;
-
-        const totalOrders = Number(region.stats.orderCount ?? 0);
-        const deliveredOrders = Number(region.stats.deliveredOrders ?? 0);
-        const cancelledOrders = Number(region.stats.cancelledOrders ?? 0);
-        const pendingOrdersRaw = Number(region.stats.pendingOrders ?? 0);
-        const pendingOrders =
-          pendingOrdersRaw > 0
-            ? pendingOrdersRaw
-            : Math.max(totalOrders - deliveredOrders - cancelledOrders, 0);
-        const successRateRaw = Number(region.stats.successRate ?? 0);
-        const successRate =
-          successRateRaw > 0
-            ? successRateRaw
-            : totalOrders > 0
-              ? Math.round((deliveredOrders / totalOrders) * 100)
-              : 0;
-
-        return {
-          regionId: region.id,
-          "hc-key": hcKey,
-          value: totalOrders,
-          regionName: region.name,
-          districtsCount: region.stats.districtCount,
-          couriersCount: region.stats.activeCouriers,
-          deliveredOrders,
-          cancelledOrders,
-          pendingOrders,
-          totalRevenue: region.stats.totalRevenue ?? 0,
-          successRate,
-        };
-      })
-      .filter((item): item is MapPoint => Boolean(item));
-
-    const maxOrders = mapData.reduce((max, item) => Math.max(max, item.value || 0), 0);
-    const rangeMax = Math.max(maxOrders, 1);
-    const q1 = rangeMax * 0.25;
-    const q2 = rangeMax * 0.5;
-    const q3 = rangeMax * 0.75;
-    const dataClasses = [
+  return {
+    chart: {
+      map: uzTopology as unknown as Highcharts.GeoJSON,
+      className: `region-map-${theme}`,
+      backgroundColor: "transparent",
+      height: "62%",
+      spacing: [8, 0, 8, 0],
+      animation: false,
+      style: { fontFamily: "inherit" },
+    },
+    title: { text: undefined },
+    credits: { enabled: false },
+    legend: { enabled: false },
+    mapNavigation: { enabled: false },
+    tooltip: {
+      useHTML: true,
+      backgroundColor: "transparent",
+      borderWidth: 0,
+      shadow: false,
+      padding: 0,
+      hideDelay: 80,
+      formatter: function (this: Highcharts.Point) {
+        const id = (this as unknown as { rowId?: string }).rowId;
+        const row = id ? rowsById.get(id) : undefined;
+        return row ? tooltipHtml(row) : false;
+      },
+    },
+    plotOptions: { series: { animation: false } },
+    series: [
       {
-        from: 0,
-        to: q1,
-        color: palette.low,
-        name: labels.low,
-      },
-      {
-        from: q1,
-        to: q2,
-        color: palette.medium,
-        name: labels.medium,
-      },
-      {
-        from: q2,
-        to: q3,
-        color: palette.high,
-        name: labels.high,
-      },
-      {
-        from: q3,
-        to: rangeMax,
-        color: palette.xhigh,
-        name: labels.veryHigh,
-      },
-    ];
-
-    setMapOptions({
-      chart: {
-        map: uzTopology as any,
-        backgroundColor: "transparent",
-        style: { fontFamily: "inherit" },
-      },
-      title: { text: undefined },
-      credits: { enabled: false },
-      legend: {
-        enabled: false,
-        align: "center",
-        verticalAlign: "bottom",
-        layout: "horizontal",
-        symbolRadius: 4,
-        itemStyle: {
-          color: readCssColor("--color-text-muted-dark", "#374151"),
-          fontSize: "12px",
-          fontWeight: "500",
+        type: "map",
+        data,
+        joinBy: "hc-key",
+        nullColor: color("--color-sunken"),
+        borderColor: color("--color-region-map-stroke"),
+        borderWidth: 1,
+        cursor: "pointer",
+        dataLabels: {
+          enabled: true,
+          allowOverlap: true,
+          crop: false,
+          padding: 0,
+          useHTML: false,
+          formatter: function (this: Highcharts.Point) {
+            const id = (this as unknown as { rowId?: string }).rowId;
+            if (!id) return "";
+            const value = valueLabels.get(id);
+            return value ? `${this.name}<br/>${value}` : String(this.name ?? "");
+          },
+          style: { fontSize: "12px", fontWeight: "600", textOutline: "none", textAlign: "center" },
+        },
+        states: {
+          hover: { brightness: 0, borderColor: color("--color-action"), borderWidth: 2 },
+          inactive: { enabled: false },
+        },
+        point: {
+          events: {
+            click: function (this: Highcharts.Point) {
+              const id = (this as unknown as { rowId?: string }).rowId;
+              const row = id ? rowsById.get(id) : undefined;
+              if (row) onSelect(row);
+            },
+          },
         },
       },
-      colorAxis: {
-        min: 0,
-        dataClassColor: "category",
-        dataClasses,
-      },
-      tooltip: {
-        useHTML: true,
-        backgroundColor: "transparent",
-        borderWidth: 0,
-        shadow: false,
-        padding: 0,
-        formatter: function (this: any) {
-          const p = this.point;
-          const totalOrders = Number(p.value || 0).toLocaleString();
-          const delivered = Number(p.deliveredOrders || 0).toLocaleString();
-          const cancelled = Number(p.cancelledOrders || 0).toLocaleString();
-          const pending = Number(p.pendingOrders || 0).toLocaleString();
-          const revenue = Number(p.totalRevenue || 0).toLocaleString();
-          const successRate = Number(p.successRate || 0);
-          const districts = Number(p.districtsCount || 0).toLocaleString();
-          const couriers = Number(p.couriersCount || 0).toLocaleString();
-
-          return `<div style="
-            min-width:220px;
-            border-radius:14px;
-            border:1px solid ${mapTheme.tooltipBorder};
-            background:${mapTheme.tooltipBg};
-            box-shadow:${mapTheme.tooltipShadow};
-            padding:12px;
-            color:${mapTheme.tooltipText};
-          ">
-            <div style="font-size:18px;font-weight:800;line-height:1.15;margin-bottom:10px;color:${mapTheme.tooltipText};">${p.regionName || p.name}</div>
-            <div style="display:grid;row-gap:5px;font-size:14px;line-height:1.3;">
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">${labels.orders}:</span><b style="color:#60a5fa;">${totalOrders}</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">${labels.delivered}:</span><b style="color:#34d399;">${delivered}</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">${labels.cancelled}:</span><b style="color:#fb7185;">${cancelled}</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">${labels.success}:</span><b style="color:#f472b6;">${successRate}%</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">${labels.pending}:</span><b style="color:#fbbf24;">${pending}</b></div>
-              ${showFinancialMetrics ? `<div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">${labels.revenue}:</span><b style="color:#c084fc;">${revenue} ${labels.currencySum}</b></div>` : ""}
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">${labels.districts}:</span><b>${districts}</b></div>
-              <div style="display:flex;justify-content:space-between;gap:14px;"><span style="color:${mapTheme.tooltipMuted};">${labels.couriers}:</span><b>${couriers}</b></div>
-            </div>
-            <div style="
-              margin-top:10px;
-              padding-top:8px;
-              border-top:1px solid ${mapTheme.tooltipBorder};
-              color:${mapTheme.tooltipMuted};
-              font-size:11px;
-              font-weight:600;
-            ">${labels.clickForDetails}</div>
-          </div>`;
-        },
-      },
-      series: [
+    ],
+    responsive: {
+      // Telefonda (maket) xaritada yorliq yo'q — qiymatlar ostidagi reytingda.
+      rules: [
         {
-          type: "map",
-          name: labels.seriesName,
-          data: mapData,
-          joinBy: "hc-key",
-          borderColor: palette.stroke,
-          borderWidth: 1,
-          dataLabels: {
-            enabled: true,
-            allowOverlap: true,
-            backgroundColor: "transparent",
-            borderWidth: 0,
-            color: regionLabelColor,
-            crop: false,
-            formatter: function (this: any) {
-              return this.point?.regionName || this.point?.name || "";
-            },
-            padding: 0,
-            shadow: false,
-            style: {
-              color: regionLabelColor,
-              fontSize: "12px",
-              fontWeight: "900",
-              lineHeight: "14px",
-              textOutline: "none",
-            },
-          },
-          states: {
-            hover: {
-              brightness: 0.1,
-              borderColor: "#3b82f6",
-              borderWidth: 2,
-            },
-          },
-          point: {
-            events: {
-              click: function (this: any) {
-                void loadRegionDetail({
-                  regionId: String(this.regionId ?? ""),
-                  "hc-key": String(this["hc-key"] ?? ""),
-                  value: Number(this.value ?? 0),
-                  regionName: String(this.regionName ?? this.name ?? "—"),
-                  districtsCount: Number(this.districtsCount ?? 0),
-                  couriersCount: Number(this.couriersCount ?? 0),
-                  deliveredOrders: Number(this.deliveredOrders ?? 0),
-                  cancelledOrders: Number(this.cancelledOrders ?? 0),
-                  pendingOrders: Number(this.pendingOrders ?? 0),
-                  totalRevenue: Number(this.totalRevenue ?? 0),
-                  successRate: Number(this.successRate ?? 0),
-                });
-              },
-            },
-          },
+          condition: { maxWidth: 560 },
+          chartOptions: { series: [{ type: "map", dataLabels: { enabled: false } }] },
         },
       ],
-    });
-  }, [regions, isDarkMode, labels, showFinancialMetrics, mapScale]);
+    },
+  };
+};
 
-  if (!mapOptions) {
-    return (
-      <div className="relative w-full h-[500px] flex items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-[#e5e7eb] via-[#d1d5db] to-[#e5e7eb] animate-pulse">
-        <div className="flex flex-col items-center gap-2 z-10">
-          <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
-          <span className="text-gray-500">{t("common:loading")}</span>
-        </div>
-      </div>
-    );
-  }
+/**
+ * O'ZBEKISTON VILOYATLARI XARITASI (Highcharts highmaps — og'ir, faqat `lazy` bilan yuklanadi; §9 savol 11
+ * sukuti). Ranglar faqat `--color-region-map-*` tokenlaridan (`getComputedStyle`), buyurtmasiz viloyat —
+ * `sunken`. Yorliqlar: qisqa nom + qiymat (telefonda yashirin). Viloyat bosilsa `onSelect`
+ * (`RegionDetailDialog`). Bu faylda faqat xarita: KPI, legenda, reyting — `RegionsMapCard`.
+ */
+const UzbekistanRegionMap = ({
+  rows,
+  metric,
+  maxRevenue,
+  valueLabels,
+  tooltipHtml,
+  onSelect,
+  ariaLabel,
+}: UzbekistanRegionMapProps) => {
+  const theme = useThemeKey();
+  // `tooltipHtml` / `onSelect` chaqiruvchida barqaror (`useCallback`) — `options` faqat ma'lumot, mavzu
+  // yoki matn o'zgarganda qayta quriladi.
+  const options = useMemo(
+    () => buildMapOptions({ rows, metric, maxRevenue, valueLabels, tooltipHtml, onSelect }, theme),
+    [rows, metric, maxRevenue, valueLabels, tooltipHtml, onSelect, theme],
+  );
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] p-4 shadow-sm dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10">
-              <Package className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{t("map.metrics.totalOrders")}</p>
-              <p className="text-lg font-bold text-blue-600">
-                {(summary?.totalOrders ?? computedSummary.orders).toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] p-4 shadow-sm dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
-              <TrendingUp className="h-5 w-5 text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{t("map.metrics.delivered")}</p>
-              <p className="text-lg font-bold text-emerald-600">
-                {(summary?.totalDelivered ?? 0).toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] p-4 shadow-sm dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-500/10">
-              <MapPin className="h-5 w-5 text-indigo-600" />
-            </div>
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">{t("map.metrics.cancelled")}</p>
-              <p className="text-lg font-bold text-indigo-600">
-                {(summary?.totalCancelled ?? 0).toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </div>
-        {showFinancialMetrics ? (
-          <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] p-4 shadow-sm dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
-                <Package className="h-5 w-5 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{t("map.metrics.totalRevenue")}</p>
-                <p className="text-lg font-bold text-purple-600">
-                  {(summary?.totalRevenue ?? 0).toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </div>
-
-      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] p-4 shadow-sm dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)]">
-        <HighchartsReact
-          highcharts={Highcharts}
-          constructorType="mapChart"
-          options={{
-            ...mapOptions,
-            chart: {
-              ...mapOptions.chart,
-              height: 500,
-            },
-          }}
-        />
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-6">
-          {legendItems.map((item) => (
-            <div
-              key={item.name}
-              className="flex items-center gap-2 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-primary/80"
-            >
-              <span
-                className="h-3 w-3 rounded-sm"
-                style={{ backgroundColor: item.color }}
-              />
-              <span>{item.name}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <Modal
-        open={isDetailOpen}
-        onCancel={() => setIsDetailOpen(false)}
-        footer={null}
-        width={920}
-        centered
-        destroyOnHidden
-        title={selectedRegion?.name ?? t("map.regionDetails")}
-      >
-        {isDetailLoading ? (
-          <div className="flex items-center justify-center py-16">
-            <Spin />
-          </div>
-        ) : (
-          <div className="space-y-5">
-            <div
-              className="rounded-2xl p-4 text-primary"
-              style={{
-                background: "linear-gradient(90deg, var(--color-main), var(--color-purple))",
-              }}
-            >
-              <div className="text-2xl font-black">{selectedRegion?.name ?? t("map.region")}</div>
-              <div className="text-sm opacity-85">{t("map.detailedStatistics")}</div>
-            </div>
-
-            {detailError ? (
-              <div className="rounded-xl border border-rose-300/30 bg-rose-500/10 p-3 text-sm text-rose-700 dark:text-rose-100">
-                {detailError}
-              </div>
-            ) : null}
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-6">
-              <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
-                <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-main"><Package size={16} /></div>
-                <div className="text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.totalOrders")}</div>
-                <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.totalOrders ?? 0}</div>
-              </div>
-              <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
-                <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-emerald-600"><CheckCircle2 size={16} /></div>
-                <div className="text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.delivered")}</div>
-                <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.deliveredOrders ?? 0}</div>
-              </div>
-              <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
-                <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-rose-600"><XCircle size={16} /></div>
-                <div className="text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.cancelled")}</div>
-                <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.cancelledOrders ?? 0}</div>
-              </div>
-              <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
-                <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-amber-600"><Clock3 size={16} /></div>
-                <div className="text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.pending")}</div>
-                <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.pendingOrders ?? 0}</div>
-              </div>
-              {showFinancialMetrics ? (
-                <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
-                  <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-fuchsia-600"><Wallet size={16} /></div>
-                  <div className="text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.totalRevenue")}</div>
-                  <div className="text-xl font-black text-main dark:text-primary">{(selectedRegion?.totalRevenue ?? 0).toLocaleString()} {t("currencySum")}</div>
-                </div>
-              ) : null}
-              <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-primary p-3 dark:bg-primarydark">
-                <div className="mb-1 inline-flex rounded-lg bg-[color:var(--color-main-soft)] p-2 text-red-500"><TrendingUp size={16} /></div>
-                <div className="text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.success")}</div>
-                <div className="text-xl font-black text-main dark:text-primary">{selectedRegion?.successRate ?? 0}%</div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 dark:bg-primarydark">
-              <div className="mb-3 flex items-center gap-2 text-xl font-black text-main dark:text-primary">
-                <Users size={20} className="text-amber-500" />
-                {t("map.mainCouriers", { count: selectedRegion?.couriers?.length ?? 0 })}
-              </div>
-              {selectedRegion?.couriers?.length ? (
-                <div className="space-y-2">
-                  {selectedRegion.couriers.map((courier, index) => (
-                    <div key={courier.id} className="rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar p-3 dark:bg-primarydark/40">
-                      <div className="flex flex-wrap items-center justify-between gap-3">
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-amber-500 text-xs font-bold text-white">{index + 1}</span>
-                          <div>
-                            <div className="font-bold text-main dark:text-primary">{courier.name}</div>
-                            <div className="flex items-center gap-1 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                              <Phone size={12} />
-                              {courier.phone}
-                            </div>
-                          </div>
-                          {courier.isMain ? (
-                            <span className="rounded-full bg-[color:var(--color-warning-soft)] px-2 py-0.5 text-xs text-amber-600">{t("map.mainCourier")}</span>
-                          ) : null}
-                        </div>
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div><span className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.order")}:</span> <b>{courier.totalOrders}</b></div>
-                          <div><span className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.success")}:</span> <b>{courier.successRate}%</b></div>
-                          {showFinancialMetrics ? (
-                            <div><span className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.revenue")}:</span> <b>{courier.revenue.toLocaleString()} {t("currencySum")}</b></div>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar p-3 text-sm text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] dark:bg-primarydark/40">
-                  {t("map.couriersNotFound")}
-                </div>
-              )}
-            </div>
-
-            <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 dark:bg-primarydark">
-              <div className="mb-3 flex items-center gap-2 text-xl font-black text-main dark:text-primary">
-                <MapPin size={20} className="text-emerald-500" />
-                {t("map.districtsTitle", { count: selectedRegion?.districtsCount ?? selectedRegion?.districts?.length ?? 0 })}
-              </div>
-              {selectedRegion?.districts?.length ? (
-                <div className="space-y-2">
-                  {selectedRegion.districts.map((district) => (
-                    <div key={district.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar p-3 dark:bg-primarydark/40">
-                      <div className="flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                        <span className="font-semibold text-main dark:text-primary">{district.name}</span>
-                        {district.satoCode ? (
-                          <span className="rounded-md bg-primary px-2 py-0.5 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] dark:bg-white/10">{district.satoCode}</span>
-                        ) : null}
-                      </div>
-                      <div className="flex items-center gap-4 text-sm">
-                        <span><b>{district.totalOrders}</b> {t("map.metrics.orderUnit")}</span>
-                        <span className="rounded-full bg-[color:var(--color-warning-soft)] px-2 py-0.5 text-xs">{district.successRate}%</span>
-                        {showFinancialMetrics ? (
-                          <span className="font-bold text-main">{district.revenue.toLocaleString()} {t("currencySum")}</span>
-                        ) : null}
-                        <span className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">{t("map.metrics.courier")}: {district.activeCouriers}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar p-3 text-sm text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] dark:bg-primarydark/40">
-                  {t("map.districtsNotFound")}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </Modal>
+    <div role="img" aria-label={ariaLabel} className="min-w-0">
+      <HighchartsReact highcharts={Highcharts} constructorType="mapChart" options={options} />
     </div>
   );
 };

@@ -352,6 +352,18 @@ describe("Tabs — sig'maganda", () => {
     expect(screen.getByRole("button", { name: "Oldingi tablar" })).toHaveAttribute("tabindex", "-1");
   });
 
+  it("chetdagi qoplama karta burchagini bo'yamaydi: tashqi yuqori burchagi ichki radius bo'yicha kesilgan", () => {
+    const { container } = render(<Controlled />);
+    const list = screen.getByRole("tablist");
+    const { setScrollLeft } = fakeLayout(list, { scrollWidth: 900, clientWidth: 300 });
+    act(() => setScrollLeft(300));
+    const end = container.querySelector('[data-tabs-edge="end"]');
+    const start = container.querySelector('[data-tabs-edge="start"]');
+    expect(end).toHaveClass("right-0", "overflow-hidden", "rounded-tr-[13px]");
+    expect(end).not.toHaveClass("rounded-tl-[13px]");
+    expect(start).toHaveClass("left-0", "overflow-hidden", "rounded-tl-[13px]");
+  });
+
   it("o'q tugmasi ro'yxatni ~80% enga suradi", () => {
     render(<Controlled />);
     const list = screen.getByRole("tablist");

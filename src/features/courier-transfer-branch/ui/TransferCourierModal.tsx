@@ -1,16 +1,26 @@
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+// dizayn-v2: superadmin-users-courier-transfer-dialog, admin-users-transfer-courier-dialog
+import { useId, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Button } from "antd";
 import type { TFunction } from "i18next";
-import { ArrowRightLeft, Building2, Loader2 } from "lucide-react";
+import { ArrowRightLeft, CircleCheck, CircleX, RefreshCw, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { getDispatchDestinations, type Branch } from "../../../entities/branch";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
 import { queryKeys } from "../../../shared/config/queryKeys";
 import { getApiErrorMessage } from "../../../shared/lib/apiError";
-import FormPopup, { popupLabelClassName } from "../../../shared/ui/FormPopup";
-import SearchableSelect from "../../../shared/ui/SearchableSelect";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { cx } from "../../../shared/lib/cx";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { notify } from "../../../shared/lib/notify";
+import {
+  Badge,
+  Button,
+  buttonClasses,
+  Dialog,
+  Skeleton,
+  TextInput,
+  TONE_SOFT,
+} from "../../../shared/ui/primitives";
 import { useCourierTransferCheck } from "../api/useCourierTransferCheck";
 import { useTransferCourier } from "../api/useTransferCourier";
 import type { CourierTransferCheck } from "../model/types";
@@ -25,7 +35,8 @@ interface TransferCourierModalProps {
 interface TransferTarget {
   id: string;
   name: string;
-  label: string;
+  /** Filial turi yorlig'i (badge): «HQ», «Viloyat», «Aralash». */
+  typeLabel: string;
   disabled: boolean;
 }
 
@@ -51,52 +62,80 @@ const buildTransferTargets = (
   const targets: TransferTarget[] = [];
 
   if (check.hqBranch && check.hqBranch.id !== currentBranchId) {
-    targets.push({
-      id: check.hqBranch.id,
-      name: check.hqBranch.name,
-      label: `${check.hqBranch.name} · HQ`,
-      disabled: false,
-    });
+    targets.push({ id: check.hqBranch.id, name: check.hqBranch.name, typeLabel: "HQ", disabled: false });
   }
 
   destinations
     .filter((branch) => isDestinationBranch(branch) && branch.id !== currentBranchId)
     .forEach((branch) => {
       if (targets.some((target) => target.id === branch.id)) return;
-
-      const hasNoManager = branch.has_manager === false;
-      const typeLabel = t(`branchTypes.${String(branch.type).toLowerCase()}`);
       targets.push({
         id: branch.id,
         name: branch.name,
-        label: `${branch.name} · ${typeLabel}${hasNoManager ? ` (${t("courierTransfer.noManager")})` : ""}`,
-        disabled: hasNoManager,
+        typeLabel: t(`branchTypes.${String(branch.type).toLowerCase()}`),
+        disabled: branch.has_manager === false,
       });
     });
 
   return targets;
 };
 
+/** Ismdan bosh harflar (avatar): «Sherzod Alimov» → «SA». */
+const initialsOf = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("") || "—";
+
+type AlertTone = "success" | "warning" | "danger";
+const ALERT_ICON: Record<AlertTone, LucideIcon> = { success: CircleCheck, warning: TriangleAlert, danger: CircleX };
+
+/** `.el-alert` (CODE-MAP 2.7): ton foni, ton rangidagi ikonka, qalin sarlavha, 13 px matn. */
+const TransferAlert = ({ tone, title, children }: { tone: AlertTone; title: ReactNode; children?: ReactNode }) => {
+  const Icon = ALERT_ICON[tone];
+  return (
+    <div
+      role={tone === "danger" ? "alert" : "status"}
+      data-tone={tone}
+      className={cx("flex min-w-0 items-start gap-3 rounded-xl px-4 py-3 text-sm", TONE_SOFT[tone])}
+    >
+      <Icon size={18} aria-hidden="true" className="mt-px shrink-0" />
+      <div className="flex min-w-0 flex-1 flex-col gap-1 text-text">
+        <div className="font-bold">{title}</div>
+        {children ? <div className="text-[13px] leading-[18px] wrap-break-word">{children}</div> : null}
+      </div>
+    </div>
+  );
+};
+
+/** Kuryer kartasidagi qator: telefonda «nom … qiymat», desktopda ustun (maket `HM` / `SM`). */
 const SummaryItem = ({ label, value }: { label: string; value: ReactNode }) => (
-  <div className="min-w-0">
-    <dt className="text-xs font-semibold uppercase tracking-wide text-text-muted dark:text-text-muted-dark">
-      {label}
-    </dt>
-    <dd className="mt-1 break-words text-sm font-semibold text-maindark dark:text-white">
-      {value}
-    </dd>
+  <div className="flex min-w-0 flex-col gap-0.5 max-md:flex-row max-md:items-baseline max-md:justify-between max-md:gap-3">
+    <dt className="text-[13px] text-text-muted">{label}</dt>
+    <dd className="m-0 font-semibold text-text wrap-break-word max-md:text-right">{value}</dd>
   </div>
 );
 
-const TransferCourierModal = ({
-  open,
-  onClose,
-  courierId,
-  courierName,
-}: TransferCourierModalProps) => {
-  const { t } = useTranslation("branches");
-  const { apiRequest } = useAppNotification();
+/**
+ * KURYERNI BOSHQA FILIALGA O'TKAZISH — dizayn v2 oynasi (telefonda pastki varaqa).
+ *
+ * Maket `superadmin-users-courier-transfer-dialog`: kuryer kartasi (bosh harflar, ism, «Kuryer», ghost
+ * «Qayta tekshirish») + hozirgi filial, qo'lidagi pul va buyurtmalar; tekshiruv natijasi (`.el-alert`
+ * success / warning — sabablar AYNAN server matni); «Yangi filial *» — qidiruv + radio ro'yxat (filial turi
+ * badge'i; menejersiz filial o'chiq va «Menejer yo'q — …» izohi); asosiy tugma «{filial}ga o'tkazish».
+ *
+ * Xulq (o'zgarmagan): `useCourierTransferCheck` — faqat muvaffaqiyatli tekshiruvga tayaniladi; manzillar
+ * ro'yxati faqat ochilganda; PATCH xatosi (409/503) — server matni bildirishnomada, oyna ochiq qoladi va
+ * tekshiruv yangilanadi (`useTransferCourier.onSettled`).
+ */
+const TransferCourierModal = ({ open, onClose, courierId, courierName }: TransferCourierModalProps) => {
+  const { t, i18n } = useTranslation(["branches", "common"]);
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const [targetBranchId, setTargetBranchId] = useState("");
+  const [query, setQuery] = useState("");
+  const listLabelId = useId();
   const check = useCourierTransferCheck(courierId, open);
   const destinations = useQuery({
     queryKey: queryKeys.courierTransfer.destinations,
@@ -115,47 +154,54 @@ const TransferCourierModal = ({
     () => (checkData ? buildTransferTargets(checkData, destinationBranches ?? [], t) : []),
     [checkData, destinationBranches, t],
   );
+  const visibleTargets = useMemo(() => {
+    const needle = query.trim().toLocaleLowerCase();
+    return needle ? targets.filter((target) => target.name.toLocaleLowerCase().includes(needle)) : targets;
+  }, [query, targets]);
   const selectedTarget = targets.find((target) => target.id === targetBranchId && !target.disabled);
   const canTransfer = checkData?.canTransfer === true;
+  const listDisabled = !canTransfer || transfer.isPending;
   const submitDisabled = !canTransfer || !selectedTarget || check.isFetching || transfer.isPending;
 
   const handleClose = () => {
     setTargetBranchId("");
+    setQuery("");
     onClose();
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (submitDisabled || !selectedTarget) return;
 
     // 409/503 da server matni (sabablar bilan) bildirishnomada AYNAN chiqadi,
     // oyna ochiq qoladi va tekshiruv yangilanadi (useTransferCourier.onSettled).
-    void apiRequest({
-      request: () => transfer.mutateAsync({ courierId, branchId: selectedTarget.id }),
-      successMessage: t("courierTransfer.success", {
+    try {
+      await transfer.mutateAsync({ courierId, branchId: selectedTarget.id });
+    } catch (error) {
+      notify.error(t("error", { ns: "common" }), {
+        description: getBackendErrorMessage(error) ?? t("serverRequestError", { ns: "common" }),
+      });
+      return;
+    }
+    notify.success(t("success", { ns: "common" }), {
+      description: t("courierTransfer.success", {
         name: courierName || `#${courierId}`,
         branch: selectedTarget.name,
       }),
-      onSuccess: handleClose,
     });
+    handleClose();
   };
 
-  const formatSom = (amount: number) =>
-    `${amount.toLocaleString("uz-UZ")} ${t("currencyAmountSuffix", { ns: "payments" })}`;
+  const money = (amount: number) => formatMoneyLocalized(amount, { language });
 
   const formatOrdersInHand = (data: CourierTransferCheck) => {
+    const count = t("courierTransfer.ordersCount", { value: formatNumberLocalized(data.ordersInHand, { language }) });
     const sampleIds = data.ordersSample.map((order) => `#${order.id}`);
-    if (data.ordersInHand <= 0 || sampleIds.length === 0) return String(data.ordersInHand);
+    if (data.ordersInHand <= 0 || sampleIds.length === 0) return count;
 
     const more = data.ordersInHand > sampleIds.length ? ", …" : "";
-    return `${data.ordersInHand} (${sampleIds.join(", ")}${more})`;
+    return `${count} (${sampleIds.join(", ")}${more})`;
   };
-
-  const retryButton = (
-    <Button size="small" loading={check.isFetching} onClick={() => void check.refetch()}>
-      {t("courierTransfer.retry")}
-    </Button>
-  );
 
   const renderPayHint = (data: CourierTransferCheck) => {
     if (data.balance <= 0 || !data.currentBranch) return null;
@@ -170,7 +216,7 @@ const TransferCourierModal = ({
             entity: { id: courierId, name: courierName, role: "courier", amount: data.balance },
           }}
           onClick={handleClose}
-          className="inline-flex font-semibold text-main underline underline-offset-2 hover:text-main/80"
+          className={buttonClasses({ variant: "link", size: "sm", className: "self-start" })}
         >
           {t("courierTransfer.payHint")}
         </Link>
@@ -178,63 +224,40 @@ const TransferCourierModal = ({
     }
 
     // Filial kuryerining pulini faqat o'sha filial menejeri oladi — superadmin EMAS.
-    return (
-      <p className="m-0 font-medium">
-        {t("courierTransfer.branchPayHint", { branch: data.currentBranch.name })}
-      </p>
-    );
+    return <p className="m-0 font-semibold">{t("courierTransfer.branchPayHint", { branch: data.currentBranch.name })}</p>;
   };
 
   const renderCheckStatus = () => {
     if (check.isPending) {
-      return (
-        <div
-          role="status"
-          className="flex items-center gap-2 rounded-2xl border border-slate-200/80 px-4 py-3 text-sm font-medium text-text-muted dark:border-white/10 dark:text-text-muted-dark"
-        >
-          <Loader2 size={16} className="shrink-0 animate-spin" />
-          <span>{t("loading", { ns: "common" })}</span>
-        </div>
-      );
+      return <Skeleton shape="block" height={48} className="rounded-xl" />;
     }
 
     if (!checkData) {
       return (
-        <Alert
-          type="error"
-          showIcon
-          title={getApiErrorMessage(check.error, t("courierTransfer.checkFailed"))}
-          action={retryButton}
-        />
+        <TransferAlert tone="danger" title={getApiErrorMessage(check.error, t("courierTransfer.checkFailed"))} />
       );
     }
 
     if (checkData.reasons.length > 0 || !checkData.canTransfer) {
       return (
-        <Alert
-          type="error"
-          showIcon
-          title={t("courierTransfer.blocked")}
-          description={
-            <div className="space-y-2">
-              {checkData.reasons.length > 0 ? (
-                <ul className="m-0 list-disc space-y-1 pl-4">
-                  {checkData.reasons.map((reason, index) => (
-                    <li key={`${index}:${reason}`}>{reason}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="m-0">{t("courierTransfer.checkFailed")}</p>
-              )}
-              {renderPayHint(checkData)}
-            </div>
-          }
-          action={retryButton}
-        />
+        <TransferAlert tone="warning" title={t("courierTransfer.blocked")}>
+          <div className="flex flex-col gap-2">
+            {checkData.reasons.length > 0 ? (
+              <ul className="m-0 flex list-disc flex-col gap-1 pl-4">
+                {checkData.reasons.map((reason, index) => (
+                  <li key={`${index}:${reason}`}>{reason}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="m-0">{t("courierTransfer.checkFailed")}</p>
+            )}
+            {renderPayHint(checkData)}
+          </div>
+        </TransferAlert>
       );
     }
 
-    return <Alert type="success" showIcon title={t("courierTransfer.ok")} />;
+    return <TransferAlert tone="success" title={t("courierTransfer.ok")} />;
   };
 
   const currentBranchLabel = checkData
@@ -243,77 +266,163 @@ const TransferCourierModal = ({
       : t("courierTransfer.noBranch")
     : "—";
 
-  return (
-    <FormPopup
-      isOpen={open}
-      onClose={handleClose}
-      onSubmit={handleSubmit}
-      title={t("courierTransfer.title")}
-      description={t("courierTransfer.description")}
-      icon={<ArrowRightLeft size={22} />}
-      submitLabel={t("courierTransfer.action")}
-      isLoading={transfer.isPending}
-      submitDisabled={submitDisabled}
-      theme="branch"
-      widthClassName="max-w-xl"
-    >
-      <div className="space-y-4">
-        <div className="rounded-2xl border border-slate-200/80 bg-white/70 p-4 dark:border-white/10 dark:bg-white/5">
-          {courierName ? (
-            <p className="m-0 truncate text-base font-bold text-maindark dark:text-white">
-              {courierName}
+  const renderTargets = () => {
+    if (check.isPending || (destinations.isPending && canTransfer)) {
+      return (
+        <div className="flex flex-col gap-2" aria-hidden="true">
+          {[0, 1, 2].map((index) => (
+            <Skeleton key={index} shape="block" height={48} className="rounded-xl" />
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <>
+        {destinations.isError ? (
+          <div role="alert" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-danger-fg">
+            <span>{getApiErrorMessage(destinations.error, t("courierTransfer.checkFailed"))}</span>
+            <Button variant="link" size="sm" onClick={() => void destinations.refetch()}>
+              {t("retry", { ns: "common" })}
+            </Button>
+          </div>
+        ) : null}
+        <div role="radiogroup" aria-labelledby={listLabelId} className="flex flex-col gap-2">
+          {visibleTargets.map((target) => {
+            const disabled = target.disabled || listDisabled;
+            const checked = target.id === targetBranchId && !target.disabled;
+            const hintId = `${listLabelId}-${target.id}-hint`;
+            return (
+              <label
+                key={target.id}
+                className={cx(
+                  "flex min-h-12 items-center gap-3 rounded-xl border px-4 py-2.5 transition-colors duration-150 motion-reduce:transition-none",
+                  checked ? "border-action bg-action-soft" : "border-border bg-surface",
+                  target.disabled ? "bg-sunken" : null,
+                  disabled ? "cursor-not-allowed" : "cursor-pointer hover:bg-sunken",
+                )}
+              >
+                <input
+                  type="radio"
+                  name="courier-transfer-target"
+                  value={target.id}
+                  checked={checked}
+                  disabled={disabled}
+                  aria-describedby={target.disabled ? hintId : undefined}
+                  onChange={() => setTargetBranchId(target.id)}
+                  className="size-[18px] shrink-0 accent-action disabled:opacity-45"
+                />
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className={cx("font-semibold", target.disabled ? "text-text-muted" : "text-text")}>
+                    {target.name}
+                  </span>
+                  {target.disabled ? (
+                    <span id={hintId} className="inline-flex items-start gap-1.5 text-[13px] text-warning-fg">
+                      <TriangleAlert size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
+                      {t("courierTransfer.noManagerHint")}
+                    </span>
+                  ) : null}
+                </span>
+                <Badge className="shrink-0">{target.typeLabel}</Badge>
+              </label>
+            );
+          })}
+          {visibleTargets.length === 0 && checkData ? (
+            <p className="m-0 rounded-xl border border-dashed border-border px-4 py-3 text-center text-[13px] text-text-muted">
+              {t("courierTransfer.noTargets")}
             </p>
           ) : null}
-          <dl className="m-0 mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        </div>
+      </>
+    );
+  };
+
+  const displayName = courierName || `#${courierId}`;
+
+  return (
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      title={t("courierTransfer.title")}
+      description={t("courierTransfer.description")}
+      icon={ArrowRightLeft}
+      size="lg"
+      busy={transfer.isPending}
+      onSubmit={(event) => void handleSubmit(event)}
+      formProps={{ noValidate: true }}
+      footer={
+        <>
+          <Button variant="secondary" onClick={handleClose} disabled={transfer.isPending}>
+            {t("cancel", { ns: "common" })}
+          </Button>
+          {/* `min-w-0`: telefonda (varaqa, tugmalar teng `flex-1`) uzun filial nomi «Bekor qilish»ni ekrandan
+              surib chiqarmasin — matn qisqartiriladi (`truncate`), to'liq nom tugma nomida qoladi. */}
+          <Button
+            type="submit"
+            leftIcon={ArrowRightLeft}
+            className="min-w-0"
+            disabled={submitDisabled && !transfer.isPending}
+            loading={transfer.isPending}
+            loadingText={t("courierTransfer.transferring")}
+          >
+            {selectedTarget
+              ? t("courierTransfer.submitTo", { branch: selectedTarget.name })
+              : t("courierTransfer.action")}
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <section aria-label={displayName} className="flex flex-col gap-4 rounded-xl bg-sunken p-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <span
+              aria-hidden="true"
+              className="inline-flex size-10 shrink-0 items-center justify-center rounded-full bg-avatar text-[13px] font-bold text-on-avatar"
+            >
+              {initialsOf(courierName ?? "")}
+            </span>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate font-semibold text-text">{courierName ?? displayName}</span>
+              <span className="text-[13px] text-text-muted">{t("courierTransfer.courierRole")}</span>
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              leftIcon={RefreshCw}
+              loading={check.isFetching && !check.isPending}
+              onClick={() => void check.refetch()}
+            >
+              {t("courierTransfer.retry")}
+            </Button>
+          </div>
+          <dl className="m-0 grid grid-cols-3 gap-x-4 gap-y-3 text-sm max-md:grid-cols-1 max-md:gap-2 max-md:border-t max-md:border-border max-md:pt-3">
             <SummaryItem label={t("courierTransfer.currentBranch")} value={currentBranchLabel} />
-            <SummaryItem
-              label={t("courierTransfer.balance")}
-              value={checkData ? formatSom(checkData.balance) : "—"}
-            />
+            <SummaryItem label={t("courierTransfer.balance")} value={checkData ? money(checkData.balance) : "—"} />
             <SummaryItem
               label={t("courierTransfer.ordersInHand")}
               value={checkData ? formatOrdersInHand(checkData) : "—"}
             />
           </dl>
-        </div>
+        </section>
 
         {renderCheckStatus()}
 
-        <div className="space-y-2">
-          <span className={popupLabelClassName}>{t("courierTransfer.targetBranch")}</span>
-          <SearchableSelect
-            label={t("courierTransfer.targetBranch")}
-            name="courier-transfer-target"
-            value={targetBranchId}
-            onChange={setTargetBranchId}
-            options={targets.map(({ id, label, disabled }) => ({ value: id, label, disabled }))}
-            placeholder={t("courierTransfer.selectTarget")}
-            icon={Building2}
-            loading={destinations.isPending}
-            disabled={!canTransfer || transfer.isPending}
-            hideLabel
-            surface="search"
-            // Tanlov modalning oxirida: pastga ochilsa ro'yxat modal tanasida qirqiladi.
-            placement="top"
+        <div className="flex flex-col gap-2">
+          <span id={listLabelId} className="text-[13px] font-semibold text-text">
+            {t("courierTransfer.targetBranch")} <span className="text-danger-fg" aria-hidden="true">*</span>
+          </span>
+          <TextInput
+            mode="search"
+            value={query}
+            onValueChange={setQuery}
+            placeholder={t("courierTransfer.searchPlaceholder")}
+            aria-label={t("courierTransfer.searchLabel")}
+            disabled={!checkData}
           />
-          {destinations.isError ? (
-            <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-rose-600 dark:text-rose-300">
-              <span>
-                {getApiErrorMessage(destinations.error, t("courierTransfer.checkFailed"))}
-              </span>
-              <Button
-                size="small"
-                type="link"
-                className="!px-0"
-                onClick={() => void destinations.refetch()}
-              >
-                {t("courierTransfer.retry")}
-              </Button>
-            </div>
-          ) : null}
+          {renderTargets()}
         </div>
       </div>
-    </FormPopup>
+    </Dialog>
   );
 };
 

@@ -1,87 +1,134 @@
+// dizayn-v2: superadmin-users-detail, admin-users-detail
 import { memo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Copy, Eye, EyeOff, KeyRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { getMarketTelegramToken, marketTelegramTokenQueryKey } from "../../../entities/user/api/userApi";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { notify } from "../../../shared/lib/notify";
+import { Button, Card } from "../../../shared/ui/primitives";
 
 /** Uzunligi ham oshkor bo'lmasin — doim bir xil sondagi nuqta. */
 const MASKED_TOKEN = "•".repeat(16);
 
 interface MarketTelegramTokenCardProps {
+  /** Oldindan ma'lum token (eski javoblar `market_tg_token` bilan kelardi). */
   token?: string | null;
+  /**
+   * Market id: token bo'lmasa — «Ko'rsatish» / «Nusxalash» bosilganda `GET /markets/:id/tg-token` dan
+   * olinadi (faqat superadmin; har ko'rish backend jurnaliga yoziladi — shuning uchun oldindan so'ralmaydi).
+   */
+  marketId?: string;
 }
 
-/**
- * Marketning Telegram tokeni (fix3b CODE-02, docs: admin tokenni marketga
- * beradi). Market Telegram guruhiga botni qo'shib, shu tokenni yuboradi —
- * bot guruhni o'sha marketga bog'laydi.
- *
- * ⚠️ Token — maxfiy kalit: sukut bo'yicha yashirin, faqat "Ko'rsatish"
- * bosilganda ochiladi. Kartani faqat SUPERADMIN/ADMIN ko'radi (chaqiruvchi
- * tekshiradi; backend ham tokenni faqat ularga qaytaradi).
- */
-export const MarketTelegramTokenCard = memo(({ token }: MarketTelegramTokenCardProps) => {
-  const { t } = useTranslation("users");
-  const [isRevealed, setIsRevealed] = useState(false);
-  const value = typeof token === "string" ? token.trim() : "";
+type TokenState = { status: "idle" | "loading" | "error" } | { status: "ready"; value: string | null };
 
-  const handleCopy = () => {
-    if (!value) return;
-    void copyToClipboard(value).then((copied) => {
-      if (copied) {
-        notify.success(t("telegramTokenCopied"));
-      } else {
-        notify.error(t("telegramTokenCopyFailed"));
-      }
-    });
+/**
+ * TELEGRAM TOKEN — dizayn v2 kartasi (maket `superadmin-users-detail`: «••••» + «Ko'rsatish» · «Nusxalash» +
+ * izoh). Market Telegram guruhiga botni qo'shib, shu tokenni yuboradi — bot guruhni o'sha marketga bog'laydi.
+ *
+ * ⚠️ Token — maxfiy kalit: sukut bo'yicha yashirin, faqat «Ko'rsatish» bosilganda ochiladi; yashirin holatda ham
+ * «Nusxalash» haqiqiy tokenni oladi. Kartani kim ko'rishini chaqiruvchi hal qiladi.
+ */
+export const MarketTelegramTokenCard = memo(({ token, marketId }: MarketTelegramTokenCardProps) => {
+  const { t } = useTranslation("users");
+  const queryClient = useQueryClient();
+  const [isRevealed, setIsRevealed] = useState(false);
+  const preloaded = typeof token === "string" && token.trim() ? token.trim() : null;
+  const [fetched, setFetched] = useState<TokenState>({ status: "idle" });
+  const canFetch = !preloaded && Boolean(marketId);
+
+  const value = preloaded ?? (fetched.status === "ready" ? fetched.value : null);
+  const missing = !preloaded && (!marketId || (fetched.status === "ready" && fetched.value === null));
+  const busy = fetched.status === "loading";
+
+  /** Token qiymatini oladi (bor bo'lsa — darhol). */
+  const resolveToken = async (): Promise<string | null> => {
+    if (value) return value;
+    if (!canFetch || !marketId) return null;
+    setFetched({ status: "loading" });
+    try {
+      const next = await queryClient.fetchQuery({
+        queryKey: marketTelegramTokenQueryKey(marketId),
+        queryFn: () => getMarketTelegramToken(marketId),
+        staleTime: 60_000,
+        meta: { silentError: true },
+      });
+      setFetched({ status: "ready", value: next });
+      return next;
+    } catch {
+      setFetched({ status: "error" });
+      return null;
+    }
+  };
+
+  const handleReveal = async () => {
+    if (isRevealed) {
+      setIsRevealed(false);
+      return;
+    }
+    if (await resolveToken()) setIsRevealed(true);
+  };
+
+  const handleCopy = async () => {
+    const next = await resolveToken();
+    if (!next) return;
+    const copied = await copyToClipboard(next);
+    if (copied) notify.success(t("telegramTokenCopied"));
+    else notify.error(t("telegramTokenCopyFailed"));
   };
 
   return (
-    <section
-      aria-label={t("telegramTokenTitle")}
-      className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm dark:border-white/5 dark:bg-maindark sm:p-5"
-    >
-      <div className="mb-3 flex items-center gap-2.5">
-        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-300">
-          <KeyRound size={17} />
+    <Card
+      as="section"
+      title={
+        <span className="inline-flex items-center gap-3">
+          <span
+            aria-hidden="true"
+            className="inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-sunken text-text-muted"
+          >
+            <KeyRound size={18} strokeWidth={2} />
+          </span>
+          {t("telegramTokenTitle")}
         </span>
-        <h3 className="text-sm font-bold text-slate-800 dark:text-white">{t("telegramTokenTitle")}</h3>
-      </div>
-
-      {value ? (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+      }
+      divided
+      bodyClassName="flex flex-col gap-3"
+    >
+      {missing ? (
+        <p className="m-0 text-sm text-text-muted">{t("telegramTokenMissing")}</p>
+      ) : (
+        <>
           <code
             data-testid="telegram-token-value"
-            className="min-w-0 flex-1 break-all rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 font-mono text-sm text-slate-800 dark:border-white/10 dark:bg-white/5 dark:text-white"
+            aria-label={isRevealed ? undefined : t("v2.token.maskedLabel")}
+            className="block min-w-0 rounded-[10px] bg-sunken px-4 py-3 font-mono text-sm break-all text-text"
           >
-            {isRevealed ? value : MASKED_TOKEN}
+            {isRevealed && value ? value : MASKED_TOKEN}
           </code>
-          <div className="flex shrink-0 gap-2">
-            <button
-              type="button"
-              onClick={() => setIsRevealed((previous) => !previous)}
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              variant="secondary"
+              leftIcon={isRevealed ? EyeOff : Eye}
               aria-pressed={isRevealed}
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-slate-200 px-3 text-xs font-bold text-slate-700 transition-colors hover:border-main/40 hover:text-main dark:border-white/10 dark:text-white/80"
+              loading={busy}
+              onClick={() => void handleReveal()}
             >
-              {isRevealed ? <EyeOff size={14} /> : <Eye size={14} />}
               {isRevealed ? t("telegramTokenHide") : t("telegramTokenShow")}
-            </button>
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-main px-3 text-xs font-bold text-white transition-colors hover:bg-main/90"
-            >
-              <Copy size={14} />
+            </Button>
+            <Button variant="secondary" leftIcon={Copy} disabled={busy} onClick={() => void handleCopy()}>
               {t("telegramTokenCopy")}
-            </button>
+            </Button>
           </div>
-        </div>
-      ) : (
-        <p className="text-sm font-medium text-slate-500 dark:text-white/60">{t("telegramTokenMissing")}</p>
+          {fetched.status === "error" ? (
+            <p role="alert" className="m-0 text-[13px] text-danger-fg">
+              {t("v2.token.loadError")}
+            </p>
+          ) : null}
+        </>
       )}
-
-      <p className="mt-3 text-xs font-medium text-slate-500 dark:text-white/60">{t("telegramTokenHint")}</p>
-    </section>
+      <p className="m-0 text-[13px] text-text-muted">{t("v2.token.hint")}</p>
+    </Card>
   );
 });
 

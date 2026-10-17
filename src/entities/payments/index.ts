@@ -274,11 +274,13 @@ export const useCashBox = () => {
       enabled: bool && Boolean(id),
     });
 
-  const useGetCashboxMyCashbox = (params?: any) =>
+  /** `silentError` — blok xatoni o'zi ko'rsatadi (`ErrorState`), global xabar takrorlanmaydi. */
+  const useGetCashboxMyCashbox = (params?: any, options?: { silentError?: boolean }) =>
     useQuery({
       queryKey: [cashbox, "my-cashbox", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.CASHBOX.MY_CASHBOX, { params }).then((res) => res.data),
+      ...(options?.silentError ? { meta: { silentError: true } } : {}),
     });
 
   const useGetCashBoxInfo = (bool: boolean = true, params?: any) =>

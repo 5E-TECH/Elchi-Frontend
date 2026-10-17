@@ -7,15 +7,14 @@
  *
  *  - `bare`   — qobiq faqat `<Outlet/>` beradi; bola o'z `PageHeader` ini (orqaga havolasi bilan) chizadi:
  *               yaratish, kiruvchi posilkalarni skanerlash, market buyurtmalari (xodim), buyurtmani tahrirlash,
- *               filial paketlari (filial va paket), bekor qilinganlarni marketga topshirish (xodim).
+ *               filial paketlari (filial va paket), bekor qilinganlarni marketga topshirish (xodim),
+ *               foydalanuvchi tafsiloti (`userDetail/:id` — v2 `UserDetailView`, o'z sarlavhasi va amallari).
  *  - `hosted` — qobiq sahifa ildizi + umumiy sarlavha («Qabul va yaratish» + «Buyurtma yaratish»), bola esa
  *               birinchi kartasini `NewOrdersTabs` bilan boshlaydi: marketlar ro'yxati, manba tanlash,
  *               filial paketlari ro'yxati, bekor qilinganlar (marketlar), market rolining o'z yangi va bekor
  *               qilingan buyurtmalari.
- *  - `legacy` — hali v2 ga ko'chirilmagan bola (foydalanuvchi tafsiloti): sarlavha va tablar sahifa fonida
- *               (kartasiz), bola sahifa o'zgarmagan.
  */
-export type NewOrdersShellMode = "bare" | "hosted" | "legacy";
+export type NewOrdersShellMode = "bare" | "hosted";
 
 /** `:marketId` bo'la olmaydigan birinchi segmentlar (shu nomdagi bola route'lar yoki eski yo'naltirishlar). */
 export const NEW_ORDERS_RESERVED_SEGMENTS = [
@@ -57,7 +56,8 @@ export const resolveNewOrdersShellMode = (
       if (second === undefined) return "hosted";
       return role === "market" ? "hosted" : "bare";
     case "userDetail":
-      return "legacy";
+      // Foydalanuvchi tafsiloti (v2) — o'z `PageHeader`i (h1 + «Tahrirlash»); qobiq sarlavhasi takrorlanmasin.
+      return "bare";
     case "external":
     case "integrations":
       // Eski yo'llar — darhol `/integrations/...` ga yo'naltiriladi; sarlavha miltillamasin.

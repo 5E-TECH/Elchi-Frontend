@@ -35,6 +35,8 @@ export interface DashboardMyStat {
   canceledOrders: number;
   profit: number;
   successRate: number;
+  /** Market: hali yakunlanmagan (yo'lda, kutilmoqda, filialda) buyurtmalar — backend `market_stat`. */
+  inProgress?: number;
 }
 
 export interface BranchDashboardOrdersCard {
@@ -133,6 +135,14 @@ export interface TopBranch {
   success_rate: number;
 }
 
+/** Reyting meta'si (`top*Meta`): eng kam buyurtma chegarasi, chetda qolganlar soni, davr. */
+export interface RankingMeta {
+  min_orders?: number;
+  filtered_out?: number;
+  from?: string;
+  to?: string;
+}
+
 export interface DashboardResponse {
   statusCode: number;
   message: string;
@@ -146,6 +156,15 @@ export interface DashboardResponse {
     topOperators?: TopOperator[];
     topBranches?: TopBranch[];
     branchDashboard?: BranchDashboardPayload | null;
+    topMarketsMeta?: RankingMeta | null;
+    topBranchesMeta?: RankingMeta | null;
+    topCouriersMeta?: RankingMeta | null;
+    /** Kuryer: reytingdagi o'rni (top-10 dan tashqarida ham), ro'yxatda bo'lmasa `null`. */
+    myRank?: number | null;
+    myRanking?: TopCourier | null;
+    /** Javobning bir qismi olinmadi (`failed_parts` — qaysilari). */
+    degraded?: boolean;
+    failed_parts?: string[];
   };
 }
 
@@ -340,6 +359,17 @@ const normalizeTopBranch = (value: unknown): TopBranch => {
   };
 };
 
+const normalizeRankingMeta = (value: unknown): RankingMeta | null => {
+  const item = asRecord(value);
+  if (!Object.keys(item).length) return null;
+  return {
+    min_orders: toOptionalNumber(item.min_orders ?? item.minOrders),
+    filtered_out: toOptionalNumber(item.filtered_out ?? item.filteredOut),
+    from: typeof item.from === "string" ? item.from : undefined,
+    to: typeof item.to === "string" ? item.to : undefined,
+  };
+};
+
 const normalizeBranchDashboard = (value: unknown): BranchDashboardPayload | null => {
   const item = asRecord(value);
   if (!Object.keys(item).length) return null;
@@ -458,6 +488,7 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
             canceledOrders: toNumber(myStat.canceledOrders ?? myStat.canceled_orders),
             profit: toNumber(myStat.profit),
             successRate: toNumber(myStat.successRate ?? myStat.success_rate),
+            inProgress: toOptionalNumber(myStat.inProgress ?? myStat.in_progress),
           }
         : undefined,
       orders: {
@@ -554,6 +585,16 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
         ? topBranches.map(normalizeTopBranch)
         : [],
       branchDashboard: normalizeBranchDashboard(branchDashboard),
+      topMarketsMeta: normalizeRankingMeta(data.topMarketsMeta ?? data.top_markets_meta),
+      topBranchesMeta: normalizeRankingMeta(data.topBranchesMeta ?? data.top_branches_meta),
+      topCouriersMeta: normalizeRankingMeta(data.topCouriersMeta ?? data.top_couriers_meta),
+      myRank: toOptionalNumber(data.myRank ?? data.my_rank) ?? null,
+      myRanking:
+        Object.keys(asRecord(data.myRanking ?? data.my_ranking)).length > 0
+          ? normalizeTopCourier(data.myRanking ?? data.my_ranking)
+          : null,
+      degraded: toOptionalBoolean(data.degraded),
+      failed_parts: Array.isArray(data.failed_parts) ? data.failed_parts.map(String) : undefined,
     },
   };
 };
@@ -653,6 +694,8 @@ const useGetDashboard = (params?: AnalyticsDateParams, enabled = true, scope = "
     enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+    // Dashboard bloklari xatoni o'zi ko'rsatadi (`ErrorState`); oldingi davr so'rovi — faqat delta yashirinadi.
+    meta: { silentError: true },
   });
 
 const useGetKpi = (params?: AnalyticsDateParams, enabled = true, scope = "anonymous") =>
@@ -665,6 +708,8 @@ const useGetKpi = (params?: AnalyticsDateParams, enabled = true, scope = "anonym
     enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+    // Dashboard bloklari xatoni o'zi ko'rsatadi (`ErrorState`); oldingi davr so'rovi — faqat delta yashirinadi.
+    meta: { silentError: true },
   });
 
 const useGetRevenue = (params: RevenueParams, enabled = true, scope = "anonymous") =>
@@ -677,6 +722,8 @@ const useGetRevenue = (params: RevenueParams, enabled = true, scope = "anonymous
     enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+    // Dashboard bloklari xatoni o'zi ko'rsatadi (`ErrorState`); oldingi davr so'rovi — faqat delta yashirinadi.
+    meta: { silentError: true },
   });
 
 export const useDashboard = () => {

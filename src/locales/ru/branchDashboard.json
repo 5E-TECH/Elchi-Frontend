@@ -1,51 +1,65 @@
 {
   "title": "Панель филиала",
   "subtitle": "Показатели филиала за выбранный период",
-  "dashboardMode": "Режим работы",
-  "managerMode": "Панель менеджера",
-  "operatorMode": "Панель оператора",
   "liveData": "Подключены живые данные",
   "loading": "Загрузка данных...",
   "loadError": "Не удалось загрузить данные панели филиала.",
-  "previewMode": "Preview",
-  "previewModeText": "Пока API не готов, эти блоки нужны для проверки UI филиального сотрудника.",
   "branchFallback": "Филиал",
-  "missingBranch": "Сотруднику не назначен филиал",
-  "missingBranchText": "В данных профиля не найден branch ID. Этот дашборд будет полноценно работать после назначения филиала администратором.",
-  "todayOrdersCount": "Заказы за сегодня",
-  "weekOrdersCount": "Заказы за неделю",
-  "activeBatchesCount": "Активные пакеты",
   "totalOrdersCount": "Всего заказов",
-  "deliveredOrdersCount": "Доставлено",
-  "cancelledOrdersCount": "Отменено",
-  "todayOrders": "Заказы за выбранный период",
-  "todayLoad": "Общий поток за выбранный период",
-  "ordersEyebrow": "Заказы",
-  "ordersUnit": "заказов",
   "new": "Новые",
   "onTheRoad": "В пути",
   "delivered": "Доставлено",
   "returned": "Отменено",
   "markets": "По маркетам",
-  "marketsEyebrow": "Ритм маркетов",
-  "marketOrders": "Заказы по маркетам",
-  "activePackages": "Активные пакеты",
-  "packagesEyebrow": "Поток пакетов",
   "onTheWayPackages": "Пакеты в пути",
   "waitingPackages": "Ожидают приема",
   "packagePlaceholder": "Открыть страницу пакетов",
   "couriers": "Курьеры",
-  "couriersEyebrow": "Состояние курьеров",
-  "totalCouriers": "Курьеры филиала",
   "activeCouriers": "Активны сегодня",
-  "money": {
-    "full": "{{value}} сум",
-    "million": "{{value}} млн",
-    "thousand": "{{value}} тыс."
-  },
-  "chartOrders": "Заказы",
-  "chartAmount": "Итого: {{amount}}",
   "emptyMarkets": "Пока нет статистики по маркетам",
-  "emptyCouriers": "Пока нет статистики по курьерам",
-  "statsUnavailable": "Статистика временно недоступна — обновите страницу"
+  "statsUnavailable": "Статистика временно недоступна — обновите страницу",
+  "v2": {
+    "subtitle": "{{branch}} · показатели за выбранный период",
+    "count": "{{value}} шт.",
+    "success": {
+      "needed": "До зоны «хорошо» (70%) не хватает продаж: {{count}}"
+    },
+    "status": {
+      "sub": "{{period}} · поток заказов филиала",
+      "note": "Процент — от всех заказов за выбранный период ({{count}})"
+    },
+    "packages": {
+      "title": "Активные пакеты",
+      "sub": "Состояние пакетов филиала",
+      "unit": "активных пакетов",
+      "aria": "Активные пакеты: {{total}}, в пути {{onTheWay}}, ожидают приёма {{waiting}}"
+    },
+    "couriers": {
+      "title": "Курьеры",
+      "sub": "Активность за сегодня",
+      "activeOf": "{{active}} / {{total}}",
+      "total": "Курьеры филиала",
+      "inactive": "Сегодня неактивны"
+    },
+    "markets": {
+      "sub": "Количество заказов и общая сумма по маркетам",
+      "metricLabel": "Показатель графика",
+      "byOrders": "Заказы",
+      "byAmount": "Сумма",
+      "viewLabel": "Вид по маркетам",
+      "totalAmount": "Общая сумма",
+      "totalMeta": "маркетов: {{markets}} · заказов: {{orders}}",
+      "topOrders": "Больше всего заказов",
+      "topOrdersMeta": "{{count}} шт. · {{share}} от всех",
+      "topAmount": "Наибольшая сумма",
+      "topAmountMeta": "{{amount}} · в среднем {{average}}",
+      "noteOrders": "Длина полосы — количество заказов; чтобы сравнить по сумме, выберите «Сумма»",
+      "noteAmount": "Длина полосы — общая сумма; чтобы сравнить по количеству, выберите «Заказы»",
+      "colMarket": "Маркет"
+    },
+    "top": {
+      "sub": "Процент продаж · топ-5 и ваш филиал",
+      "yourBranch": "Ваш филиал"
+    }
+  }
 }

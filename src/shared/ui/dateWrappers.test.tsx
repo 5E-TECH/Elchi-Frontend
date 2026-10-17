@@ -3,17 +3,15 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import i18n from "../../i18n";
-import { getPresetDateRange, type ISODateRange } from "../lib/dateRange";
 import CustomDatePicker from "./CustomDatePicker";
 import DateRangePicker, { type DateRangeValue } from "./DateRangePicker";
 import FilterDateInput from "./FilterDateInput";
 import FilterDateRange from "./FilterDateRange";
-import QuickDateRangeFilter from "./QuickDateRangeFilter";
 
 /**
  * v1 sana komponentlari — API o'zgarmagan, ichi dizayn v2 (`DateRange` / `DateInput`, 3-bosqich):
  * `DateRangePicker` (`Date`), `FilterDateRange` (satrlar), `FilterDateInput` (yorliqli bitta sana),
- * `CustomDatePicker` (bitta sana), `QuickDateRangeFilter` (segment + «Yil» + oraliq).
+ * `CustomDatePicker` (bitta sana).
  */
 
 beforeAll(async () => {
@@ -123,73 +121,5 @@ describe("CustomDatePicker (v1 API: bitta sana)", () => {
 
     await user.click(screen.getByRole("button", { name: "Sanani tozalash" }));
     expect(onChange).toHaveBeenLastCalledWith("");
-  });
-});
-
-describe("QuickDateRangeFilter (segment + «Yil» + oraliq)", () => {
-  const Harness = ({ onChange, onClear, includeAll = true }: { onChange?: (r: ISODateRange) => void; onClear?: () => void; includeAll?: boolean }) => {
-    const [range, setRange] = useState<ISODateRange>(getPresetDateRange("today"));
-    return (
-      <QuickDateRangeFilter
-        fromDate={range.from}
-        toDate={range.to}
-        includeAll={includeAll}
-        onChange={(next) => {
-          setRange(next);
-          onChange?.(next);
-        }}
-        onClear={
-          onClear
-            ? () => {
-                setRange({ from: "", to: "" });
-                onClear();
-              }
-            : undefined
-        }
-      />
-    );
-  };
-
-  it("segment «Davr» — radio guruhi, maketdagi yorliqlar, joriy davr tanlangan; bosilsa shared/lib davri keladi", async () => {
-    const user = userEvent.setup();
-    const onChange = vi.fn();
-    render(<Harness onChange={onChange} />);
-
-    const group = screen.getByRole("radiogroup", { name: "Davr" });
-    expect(within(group).getAllByRole("radio").map((radio) => radio.textContent)).toEqual([
-      "Bugun",
-      "Bu hafta",
-      "Bu oy",
-      "Barchasi",
-    ]);
-    expect(within(group).getByRole("radio", { name: "Bugun" })).toHaveAttribute("aria-checked", "true");
-
-    await user.click(within(group).getByRole("radio", { name: "Bu oy" }));
-    expect(onChange).toHaveBeenLastCalledWith(getPresetDateRange("month"));
-
-    await user.click(within(group).getByRole("radio", { name: "Barchasi" }));
-    expect(onChange).toHaveBeenLastCalledWith(getPresetDateRange("all"));
-    // «Barchasi» (1970 … bugun) maydonda sana bo'lib ko'rinmaydi.
-    expect(screen.getByRole("button", { name: /^Sana oralig'i:/ })).toHaveTextContent("Dan → Gacha");
-  });
-
-  it("«Yil» ro'yxati yil oralig'ini beradi; segmentda hech biri tanlanmaydi; × — onClear", async () => {
-    const user = userEvent.setup();
-    const onChange = vi.fn();
-    const onClear = vi.fn();
-    render(<Harness onChange={onChange} onClear={onClear} includeAll={false} />);
-
-    await user.selectOptions(screen.getByRole("combobox", { name: "Yilni tanlash" }), "2025");
-    expect(onChange).toHaveBeenLastCalledWith({ from: "2025-01-01", to: "2025-12-31" });
-    expect(screen.queryByRole("radio", { checked: true })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^Sana oralig'i:/ })).toHaveTextContent("01.01 – 31.12.2025");
-
-    // Oraliq panelida tez tanlov yo'q — segment yonida turibdi.
-    await user.click(screen.getByRole("button", { name: /^Sana oralig'i:/ }));
-    expect(within(screen.getByRole("dialog")).queryByRole("group", { name: "Tez tanlov" })).not.toBeInTheDocument();
-    await user.keyboard("{Escape}");
-
-    await user.click(screen.getByRole("button", { name: "Sanalar oralig'ini tozalash" }));
-    expect(onClear).toHaveBeenCalledTimes(1);
   });
 });

@@ -212,12 +212,14 @@ export const useUser = () => {
   const dispatch = useDispatch();
   const reduxStore = useStore<RootState>();
 
-  const useGetUser = (params?: IUserFilter, enabled: boolean = true) =>
+  /** `silentError` — sahifa xatoni o'zi ko'rsatadi (`ErrorState`), global xabar takrorlanmaydi. */
+  const useGetUser = (params?: IUserFilter, enabled: boolean = true, options?: { silentError?: boolean }) =>
     useQuery({
       queryKey: [user, params],
       queryFn: () => fetchUserList(params),
       enabled,
       placeholderData: (prev) => prev,
+      ...(options?.silentError ? { meta: { silentError: true } } : {}),
     });
 
   const useGetCouriers = (params?: IUserFilter, enabled: boolean = true) =>
@@ -286,12 +288,17 @@ export const useUser = () => {
       enabled,
     });
 
-  const useGetUserById = (id: string, params?: Pick<IUserFilter, "fromDate" | "toDate">) =>
+  const useGetUserById = (
+    id: string,
+    params?: Pick<IUserFilter, "fromDate" | "toDate">,
+    options?: { silentError?: boolean },
+  ) =>
     useQuery({
       queryKey: [user, "detail", id, params],
       queryFn: () =>
         api.get(API_ENDPOINTS.USERS.BY_ID(id), { params }).then((res) => res.data),
       enabled: !!id,
+      ...(options?.silentError ? { meta: { silentError: true } } : {}),
     });
 
   const useGetMyProfile = () =>
@@ -456,4 +463,19 @@ export const useUser = () => {
     updateMarketCancelledHandoverQr,
     deleteUser,
   };
+};
+
+/**
+ * Marketning Telegram tokeni (GvL6ZFAd, backend origin/main): `GET /users/:id` endi tokenni HECH bir rolga
+ * qaytarmaydi — u faqat `GET /markets/:id/tg-token` da va faqat SUPERADMIN uchun (admin → 403). Har ko'rish
+ * jurnalga yoziladi, shuning uchun karta tokenni faqat «Ko'rsatish» / «Nusxalash» bosilganda so'raydi.
+ * Natija: token yoki `null` (marketda hali token yo'q).
+ */
+export const marketTelegramTokenQueryKey = (marketId: string) => [user, "market-tg-token", marketId] as const;
+
+export const getMarketTelegramToken = async (marketId: string): Promise<string | null> => {
+  const response = await api.get(`${API_ENDPOINTS.MARKETS.BASE}/${encodeURIComponent(marketId)}/tg-token`);
+  const body = response.data as { data?: { market_tg_token?: unknown }; market_tg_token?: unknown } | undefined;
+  const token = body?.data?.market_tg_token ?? body?.market_tg_token;
+  return typeof token === "string" && token.trim() ? token.trim() : null;
 };

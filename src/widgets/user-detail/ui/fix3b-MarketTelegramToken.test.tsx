@@ -70,7 +70,12 @@ describe("UserDetailWidget — market Telegram tokeni (fix3b CODE-02)", () => {
     const value = screen.getByTestId("telegram-token-value");
     expect(value).not.toHaveTextContent(TOKEN);
     expect(screen.queryByText(TOKEN)).not.toBeInTheDocument();
-    expect(screen.getByText("Market Telegram guruhiga botni qo'shib, shu tokenni yuborsin")).toBeInTheDocument();
+    // Dizayn v2 kartasi (maket `superadmin-users-detail`): izoh maketdagi to'liq matn.
+    expect(
+      screen.getByText(
+        "Market Telegram guruhiga botni qo'shib, shu tokenni yuborsin. Token — maxfiy kalit, uni faqat shu marketga bering.",
+      ),
+    ).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Ko'rsatish" }));
     expect(value).toHaveTextContent(TOKEN);
