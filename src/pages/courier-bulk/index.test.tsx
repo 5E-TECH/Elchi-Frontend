@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import CourierBulkPage from "./index";
@@ -7,9 +7,15 @@ import { renderWithProviders } from "../../test/test-utils";
 /**
  * «Kunni yakunlash» — tasdiqlash oynasi orqali (DESIGN_SYSTEM §8, maket `courier-courier-bulk-confirm-dialog`):
  * oyna nima bo'lishini sanab beradi, «Orqaga» — hech narsa yuborilmaydi, «Tasdiqlash» — buyurtmalar yakunlanadi.
+ * Qator natijasi «Sotildi | Bekor | Ertaga» (maket `courier-courier-bulk-main`), «Ertaga» so'rov yubormaydi.
  */
 
-const mocks = vi.hoisted(() => ({ get: vi.fn(), sell: vi.fn(), cancel: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  get: vi.fn(),
+  sell: vi.fn(),
+  cancel: vi.fn(),
+  feedback: vi.fn(() => Promise.resolve()),
+}));
 
 vi.mock("../../shared/api/api", () => ({ api: { get: mocks.get } }));
 
@@ -20,19 +26,46 @@ vi.mock("../../entities/orders", () => ({
   }),
 }));
 
-const order = (id: string, name: string) => ({
+vi.mock("../scan/lib/scanShared", () => ({ playScanFeedback: mocks.feedback }));
+
+// Kamera oynasi yopiq — QR kutubxonasi testga kerak emas.
+vi.mock("../../shared/components/ScannerCameraModal", () => ({
+  default: () => null,
+}));
+
+const order = (id: string, name: string, over: Record<string, unknown> = {}) => ({
   id,
   status: "waiting",
   total_price: 100000,
+  createdAt: "2026-10-15T08:00:00.000Z",
+  qr_code_token: `tok-${id}-qr`,
   customer: { name, phone_number: "+998901112233" },
   market: { name: "Baraka Shop" },
+  ...over,
 });
+
+const respondWith = (orders: unknown[]) =>
+  mocks.get.mockResolvedValue({ data: { statusCode: 200, data: { data: orders, total: orders.length } } });
+
+/** USB (HID) skaner: tez ketma-ket tugmalar + Enter. */
+const scan = async (value: string) => {
+  await act(async () => {
+    for (const key of value) fireEvent.keyDown(window, { key });
+    fireEvent.keyDown(window, { key: "Enter" });
+  });
+};
+
+const rowOf = (name: string) => {
+  const group = screen.getByRole("radiogroup", { name: `${name}: natija` });
+  return group.closest("tr") as HTMLElement;
+};
 
 describe("CourierBulkPage — «Kunni yakunlash»", () => {
   beforeEach(() => {
-    mocks.get.mockResolvedValue({
-      data: { statusCode: 200, data: { data: [order("10", "Ali"), order("11", "Vali")], total: 2 } },
-    });
+    mocks.get.mockReset();
+    mocks.sell.mockReset();
+    mocks.cancel.mockReset();
+    respondWith([order("10", "Ali"), order("11", "Vali")]);
     mocks.sell.mockResolvedValue({});
     mocks.cancel.mockResolvedValue({});
   });
@@ -41,11 +74,14 @@ describe("CourierBulkPage — «Kunni yakunlash»", () => {
     const user = userEvent.setup();
     renderWithProviders(<CourierBulkPage />);
 
-    await user.click(await screen.findByRole("button", { name: /Kunni yakunlash/ }));
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Kunni yakunlash/ }));
     const dialog = await screen.findByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" });
     expect(dialog).toHaveTextContent("2 ta buyurtma: quyidagilar bajariladi");
     expect(dialog).toHaveTextContent("2 ta sotilgan deb belgilanadi");
-    expect(dialog).toHaveTextContent("Bu amalni ortga qaytarib bo'lmaydi: 2 ta buyurtma holati darhol o'zgaradi.");
+    expect(dialog).toHaveTextContent("2 tasi belgilanmagan, sukut bo'yicha");
+    expect(within(dialog).getByRole("note")).toHaveTextContent("Bu amalni ortga qaytarib bo'lmaydi");
+    expect(within(dialog).getByRole("note")).toHaveTextContent("2 ta buyurtma holati darhol o'zgaradi.");
 
     await user.click(within(dialog).getByRole("button", { name: "Orqaga" }));
     await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
@@ -57,12 +93,138 @@ describe("CourierBulkPage — «Kunni yakunlash»", () => {
     const user = userEvent.setup();
     renderWithProviders(<CourierBulkPage />);
 
-    await user.click(await screen.findByRole("button", { name: /Kunni yakunlash/ }));
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Kunni yakunlash/ }));
     const dialog = await screen.findByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" });
     await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
 
     await waitFor(() => expect(mocks.sell).toHaveBeenCalledTimes(2));
-    expect(mocks.sell).toHaveBeenCalledWith(expect.objectContaining({ orderId: "10" }));
+    expect(mocks.sell).toHaveBeenCalledWith({
+      orderId: "10",
+      data: { comment: "Kuryer tezkor amal orqali sotildi deb yakunladi", extraCost: 0 },
+    });
     expect(await screen.findByText("Kun yakunlandi")).toBeInTheDocument();
+  });
+
+  it("qatordagi natija: «Bekor» va «Ertaga» belgilanadi, «Ertaga» so'rov yubormaydi", async () => {
+    respondWith([order("10", "Ali"), order("11", "Vali"), order("12", "Soli")]);
+    const user = userEvent.setup();
+    renderWithProviders(<CourierBulkPage />);
+
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
+    // Boshida hammasi belgilanmagan (sukut — «sotildi»).
+    expect(within(rowOf("Ali")).getByText("Belgilanmagan")).toBeInTheDocument();
+
+    await user.click(within(screen.getByRole("radiogroup", { name: "Ali: natija" })).getByRole("radio", { name: "Bekor" }));
+    await user.click(within(screen.getByRole("radiogroup", { name: "Vali: natija" })).getByRole("radio", { name: "Ertaga" }));
+
+    expect(within(rowOf("Ali")).queryByText("Belgilanmagan")).not.toBeInTheDocument();
+    expect(within(screen.getByRole("radiogroup", { name: "Ali: natija" })).getByRole("radio", { name: "Bekor" })).toBeChecked();
+
+    await user.click(screen.getByRole("button", { name: /Kunni yakunlash/ }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" });
+    expect(dialog).toHaveTextContent("3 ta buyurtma: quyidagilar bajariladi");
+    expect(dialog).toHaveTextContent("1 ta sotilgan deb belgilanadi");
+    expect(dialog).toHaveTextContent("1 tasi belgilanmagan, sukut bo'yicha");
+    expect(dialog).toHaveTextContent("1 ta bekor qilinadi");
+    expect(dialog).toHaveTextContent("№10 · Ali — bekor qilingan holatiga o'tadi");
+    expect(dialog).toHaveTextContent("1 tasi ertaga qoladi");
+    expect(within(dialog).getByRole("note")).toHaveTextContent("2 ta buyurtma holati darhol o'zgaradi.");
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+
+    await waitFor(() => expect(mocks.cancel).toHaveBeenCalledTimes(1));
+    expect(mocks.cancel).toHaveBeenCalledWith({
+      orderId: "10",
+      data: { comment: "Kuryer tezkor amal orqali bekor qildi", extraCost: 0 },
+    });
+    await waitFor(() => expect(mocks.sell).toHaveBeenCalledTimes(1));
+    expect(mocks.sell).toHaveBeenCalledWith(expect.objectContaining({ orderId: "12" }));
+    // «Ertaga» (Vali, №11) — hech qanday so'rov yo'q.
+    expect(mocks.sell).not.toHaveBeenCalledWith(expect.objectContaining({ orderId: "11" }));
+    expect(mocks.cancel).not.toHaveBeenCalledWith(expect.objectContaining({ orderId: "11" }));
+    expect(await screen.findByText(/1 ta buyurtma ertaga qoldirildi\./)).toBeInTheDocument();
+  });
+
+  it("belgilanmagan qatorda «Sotildi» bosilsa — aniq belgi («Belgilanmagan» yo'qoladi)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CourierBulkPage />);
+
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
+    const sold = within(screen.getByRole("radiogroup", { name: "Ali: natija" })).getByRole("radio", { name: "Sotildi" });
+    expect(sold).toBeChecked();
+    await user.click(sold);
+
+    expect(within(rowOf("Ali")).queryByText("Belgilanmagan")).not.toBeInTheDocument();
+    expect(within(rowOf("Vali")).getByText("Belgilanmagan")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Belgilarni tozalash" })).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: "Belgilarni tozalash" }));
+    expect(within(rowOf("Ali")).getByText("Belgilanmagan")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Belgilarni tozalash" })).toBeDisabled();
+  });
+
+  it("USB skaner: «Bekor qilish» rejimida buyurtma bekorga belgilanadi; topilmasa — xato qoladi", async () => {
+    renderWithProviders(<CourierBulkPage />);
+
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
+    await scan("tok-10-qr");
+
+    expect(await screen.findByText("Ali bekor qilishga belgilandi")).toBeInTheDocument();
+    expect(within(screen.getByRole("radiogroup", { name: "Ali: natija" })).getByRole("radio", { name: "Bekor" })).toBeChecked();
+
+    await scan("noma'lum-qr-kod");
+    expect(await screen.findByTestId("courier-bulk-scan-error")).toHaveTextContent(
+      "Bu QR kod kutilayotgan buyurtmalar ichida topilmadi",
+    );
+    expect(screen.getByTestId("courier-bulk-scan-error")).toHaveAttribute("role", "alert");
+
+    // Keyingi muvaffaqiyatli skan xatoni yopadi.
+    await scan("tok-11-qr");
+    expect(await screen.findByText("Vali bekor qilishga belgilandi")).toBeInTheDocument();
+    expect(screen.queryByTestId("courier-bulk-scan-error")).not.toBeInTheDocument();
+  });
+
+  it("qidiruv va «Natija» filtri — mijoz tomonida, qayta so'rovsiz", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CourierBulkPage />);
+
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
+    const requests = mocks.get.mock.calls.length;
+
+    await user.type(screen.getByRole("searchbox", { name: /qidirish/ }), "Vali");
+    expect(screen.queryByText("Ali")).not.toBeInTheDocument();
+    expect(screen.getByText("Vali")).toBeInTheDocument();
+
+    await user.clear(screen.getByRole("searchbox", { name: /qidirish/ }));
+    await user.type(screen.getByRole("searchbox", { name: /qidirish/ }), "Hech kim");
+    expect(screen.getByText("Buyurtma topilmadi")).toBeInTheDocument();
+    expect(mocks.get.mock.calls.length).toBe(requests);
+  });
+
+  it("«Kunni yakunlash» DOM'da bitta; «Faqat bekorlarni qo'llash» yo'q", async () => {
+    renderWithProviders(<CourierBulkPage />);
+
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /Kunni yakunlash/ })).toHaveLength(1);
+    expect(screen.queryByText(/Faqat bekorlarni/)).not.toBeInTheDocument();
+  });
+
+  it("ro'yxat bo'sh — «Kutilayotgan buyurtmalar yo'q», yakunlash o'chiq", async () => {
+    respondWith([]);
+    renderWithProviders(<CourierBulkPage />);
+
+    expect(await screen.findByText("Kutilayotgan buyurtmalar yo'q")).toBeInTheDocument();
+    expect(screen.getByText("Kutilmoqda holatidagi buyurtmalar shu yerda chiqadi.")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Kunni yakunlash/ })).toBeDisabled();
+  });
+
+  it("yuklash xatosi — «Buyurtmalarni yuklashda xatolik» va «Qayta urinish»", async () => {
+    mocks.get.mockRejectedValueOnce({ response: { status: 500, data: { message: "Server xatosi" } } });
+    const user = userEvent.setup();
+    renderWithProviders(<CourierBulkPage />);
+
+    expect(await screen.findByText("Buyurtmalarni yuklashda xatolik")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Qayta urinish" }));
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
   });
 });

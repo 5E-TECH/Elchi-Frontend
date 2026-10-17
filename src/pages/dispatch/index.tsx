@@ -1,18 +1,9 @@
+// dizayn-v2: registrator-dispatch-list, registrator-dispatch-empty, manager-dispatch-scan, registrator-dispatch-courier-select-dialog, manager-dispatch-courier-dialog
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import {
-  Building2,
-  CheckCircle2,
-  Home,
-  Loader2,
-  QrCode,
-  Trash2,
-  Truck,
-  UserRound,
-} from "lucide-react";
-import { useTranslation } from "react-i18next";
-import PopupSelect from "../../shared/components/popupSelect";
-import ScannerActionButton from "../../shared/components/ScannerActionButton";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Camera, ListChecks, QrCode, RefreshCw, ScanLine, Truck } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 import ScannerCameraModal from "../../shared/components/ScannerCameraModal";
 import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
 import { useScannerGate } from "../../shared/lib/useScannerGate";
@@ -20,245 +11,71 @@ import { extractScannerToken } from "../../shared/lib/scanToken";
 import { fetchScanDetail, getScanResourceType, getBackendErrorMessage } from "../scan/lib/scanResource";
 import { playScanFeedback } from "../scan/lib/scanShared";
 import { useOrders } from "../../entities/order/api/orderApi";
-import type { OrderStatus } from "../../entities/order/types/order";
 import { useUser } from "../../entities/user/api/userApi";
-import PageContainer from "../../shared/ui/PageContainer";
-import OrderStatusBadge from "../orders/list/OrderStatusBadge";
 import type { RootState } from "../../app/config/store";
+import { canViewUsers } from "../../app/lib/access";
+import { readBranchName } from "../../widgets/header/model/userIdentity";
 import { notify } from "../../shared/lib/notify";
+import { SelectionRegion } from "../../shared/ui/SelectionRegion";
+import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
+import { Badge, Button, Card, EmptyState, PageHeader } from "../../shared/ui/primitives";
+import {
+  extractCouriers,
+  getBranchStem,
+  getDispatchErrorMessage,
+  getDispatchStats,
+  normalizeDispatchOrder,
+  type DispatchCourier,
+  type DispatchOrder,
+} from "./model/dispatchModel";
+import { CourierPickerDialog } from "./ui/CourierPickerDialog";
+import { DispatchAlert } from "./ui/DispatchAlert";
+import { DispatchOrdersTable } from "./ui/DispatchOrdersTable";
+import { DispatchStats } from "./ui/DispatchStats";
 
-type PendingOrder = {
-  id: string;
-  token: string;
-  market: string;
-  name: string;
-  phone: string;
-  district: string;
-  region: string;
-  address: string;
-  amount: number;
-  deliveryType: string;
-  createdAt: string;
-  status: string;
-  fields: Array<{
-    key: string;
-    label: string;
-    value: string;
-  }>;
+/** Skan xabari: takror — ogohlantirish, qolganlari — xato (maket «Sahifa holatlari»). */
+type ScanNotice = { tone: "warning" | "danger"; text: string };
+
+/** `/scan/:token` → «Kuryerga biriktirish» (spec §3.4): `navigate("/dispatch", { state: { scanToken } })`. */
+const readHandoffToken = (state: unknown): string | null => {
+  const token = (state as { scanToken?: unknown } | null)?.scanToken;
+  return typeof token === "string" && token.trim() ? token : null;
 };
 
-type BackendOrderError = {
-  order_id?: string | number;
-  orderId?: string | number;
-  id?: string | number;
-  token?: string;
-  message?: string;
-  error?: string;
-};
-
-type UnknownRecord = Record<string, unknown>;
-
-const asRecord = (value: unknown): UnknownRecord =>
-  value && typeof value === "object" ? value as UnknownRecord : {};
-
-const safe = (value: unknown, fallback = "—") => {
-  if (typeof value === "string" && value.trim()) return value.trim();
-  if (typeof value === "number") return String(value);
-  if (typeof value === "boolean") return value ? "true" : "false";
-  return fallback;
-};
-
-const formatMoney = (value: number, currencyLabel: string, locale: string) =>
-  `${value.toLocaleString(locale)} ${currencyLabel}`;
-
-const formatDate = (value: unknown) => {
-  if (typeof value !== "string" || !value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  const hours = String(date.getHours()).padStart(2, "0");
-  const minutes = String(date.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
-};
-
-const getDeliveryLabel = (value: unknown, t: (key: string) => string) => {
-  if (value === "center") return t("orders:deliveryToCenter");
-  if (value === "address" || value === "home") return t("orders:deliveryToHome");
-  return safe(value);
-};
-
-const unwrapOrderPayload = (payload: unknown) => {
-  const source = asRecord(payload);
-  const responseData = asRecord(source.data ?? source);
-  const responsePayload = asRecord(responseData.data ?? responseData);
-  return asRecord(responsePayload.order ?? responseData.order ?? responsePayload);
-};
-
-const ORDER_STATUS_KEYS = new Set([
-  "created",
-  "new",
-  "received",
-  "on the road",
-  "waiting",
-  "sold",
-  "cancelled",
-  "cancelled (sent)",
-  "paid",
-  "partly_paid",
-  "closed",
-]);
-
-const isOrderStatus = (value: string): value is OrderStatus => ORDER_STATUS_KEYS.has(value);
-
-const extractList = (payload: unknown): unknown[] => {
-  const source = asRecord(payload);
-  const data = asRecord(source.data);
-
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(data.data)) return data.data;
-  if (Array.isArray(source.data)) return source.data;
-  if (Array.isArray(data.items)) return data.items;
-  if (Array.isArray(data.couriers)) return data.couriers;
-  if (Array.isArray(data.rows)) return data.rows;
-  if (Array.isArray(data.results)) return data.results;
-  if (Array.isArray(source.items)) return source.items;
-  if (Array.isArray(source.couriers)) return source.couriers;
-  if (Array.isArray(source.rows)) return source.rows;
-  if (Array.isArray(source.results)) return source.results;
-  return [];
-};
-
-const normalizeCourierOption = (value: unknown) => {
-  const item = asRecord(value);
-  const user = asRecord(
-    item.user ??
-    item.employee ??
-    item.courier ??
-    item.identity_user ??
-    item.identityUser ??
-    item.profile ??
-    item,
-  );
-  const id = safe(user.id ?? item.user_id ?? item.userId ?? item.courier_id ?? item.courierId ?? item.id, "");
-  const label = safe(
-    user.fullName ??
-      user.full_name ??
-      user.name ??
-      user.username ??
-      item.fullName ??
-      item.full_name ??
-      item.name ??
-      item.username ??
-      item.phone_number ??
-      item.phone,
-    "",
-  );
-
-  if (!id || !label) return null;
-
-  return {
-    value: id,
-    label,
-  };
-};
-
-const normalizeOrder = (
-  payload: unknown,
-  token: string,
-  t: (key: string) => string,
-  locale: string,
-): PendingOrder | null => {
-  const order = unwrapOrderPayload(payload);
-  const id = safe(order.id, "");
-  if (!id) return null;
-
-  const market = asRecord(order.market);
-  const sender = asRecord(order.sender);
-  const customer = asRecord(order.customer);
-  const customerDistrict = asRecord(customer.district);
-  const district = asRecord(order.district ?? customerDistrict);
-  const region = asRecord(order.region ?? district.region ?? customer.region);
-  const status = safe(order.status, "");
-  const customerName = safe(
-    customer.fullName ??
-      customer.full_name ??
-      customer.name ??
-      order.customer_name ??
-      order.name,
-    "",
-  );
-  const phone = safe(customer.phone_number ?? customer.phone ?? order.phone_number ?? order.phone);
-  const marketName = safe(market.name ?? sender.name);
-  const districtName = safe(district.name ?? order.district_name);
-  const deliveryType = getDeliveryLabel(order.where_deliver ?? order.delivery_type ?? order.deliveryType, t);
-  const amount = Number(order?.total_price ?? 0) || 0;
-  const createdAt = formatDate(order.createdAt ?? order.created_at ?? order.updatedAt ?? order.updated_at);
-
-  return {
-    id,
-    token,
-    market: marketName,
-    name: customerName,
-    phone,
-    district: districtName,
-    region: safe(region.name ?? order.region_name),
-    address: safe(order.address ?? customer.address, ""),
-    amount,
-    deliveryType,
-    createdAt,
-    status: status || "—",
-    fields: [
-      { key: "name", label: t("tableName"), value: customerName || "—" },
-      { key: "phone", label: t("tablePhone"), value: phone },
-      { key: "district", label: t("tableDistrict"), value: districtName },
-      { key: "market", label: t("tableMarket"), value: marketName },
-      { key: "amount", label: t("tablePrice"), value: formatMoney(amount, t("orders:currency"), locale) },
-      { key: "deliveryType", label: t("tableDeliveryType"), value: deliveryType },
-      { key: "createdAt", label: t("tableDate"), value: createdAt },
-      { key: "status", label: t("tableStatus"), value: status || "—" },
-    ],
-  };
-};
-
-const getDispatchErrorMessage = (error: unknown, fallback: string) => {
-  const responseData = asRecord((error as { response?: { data?: unknown } } | null)?.response?.data);
-  const errors = responseData?.errors ?? responseData?.failed ?? responseData?.items;
-
-  if (Array.isArray(errors) && errors.length) {
-    return errors
-      .map((item: BackendOrderError) => {
-        const orderLabel = item.order_id ?? item.orderId ?? item.id ?? item.token ?? "order";
-        const message = item.message ?? item.error ?? fallback;
-        return `${orderLabel}: ${message}`;
-      })
-      .join("; ");
-  }
-
-  return getBackendErrorMessage(error) ?? fallback;
-};
-
+/**
+ * «KURYERGA BIRIKTIRISH» — `/dispatch` (superadmin, admin, filialda jo'natish bor registrator, REGIONAL/HYBRID
+ * menejer). Buyurtma QR kodlari USB skaner yoki kamera bilan ro'yxatga qo'shiladi (qo'shilgani darhol tanlanadi),
+ * so'ng tanlanganlar bitta kuryerga biriktiriladi (`POST orders/assign-to-courier`).
+ *
+ * Maketlar: `registrator-dispatch-list`, `registrator-dispatch-empty`, `manager-dispatch-scan` (barcha rollar uchun
+ * bitta tartib), kuryer oynasi `*-dispatch-courier-select-dialog` / `manager-dispatch-courier-dialog`. Kamera oynasi
+ * (`ScannerCameraModal`) — kamera ishi, o'zgarmagan.
+ *
+ * Saqlangan xatti-harakat: skan darvozasi (150 / 2600 ms), takror va noto'g'ri turdagi QR, parallel tekshiruvlar
+ * soni va «sekin» izohi (1,2 s), filialda bitta kuryer bo'lsa — oynasiz to'g'ridan-to'g'ri biriktirish,
+ * biriktirilganlar ro'yxatdan olinadi (tanlanmaganlari qoladi), so'rov tanasi o'zgarmagan.
+ */
 const DispatchPage = () => {
-  const { t, i18n } = useTranslation(["dispatch", "orders"]);
-  const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
-  const currencyLabel = t("currency", { ns: "orders" });
+  const { t } = useTranslation(["dispatch", "orders"]);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const isPhone = useIsPhone();
   const { assignCourier } = useOrders();
   const { useGetCouriers } = useUser();
   const role = useSelector((state: RootState) => state.role.role);
+  const user = useSelector((state: RootState) => state.user.user);
+  const showUsersLink = useSelector(canViewUsers);
   const isBranchScopedRole = role === "manager" || role === "registrator";
+  const branchName = isBranchScopedRole ? getBranchStem(readBranchName(user)) : null;
+
   // Menejer/registrator uchun region_id YUBORILMAYDI: GET /couriers so'rovchining
   // filialiga o'zi cheklaydi (filial kuryerlari bo'yicha, sahifalashdan oldin).
   // Avvalgi viloyat filtri HQ registratorida ro'yxatni butunlay bo'sh
   // qoldirardi — HQ ning viloyati yo'q (region_id NULL).
   const courierParams = useMemo(
-    () =>
-      isBranchScopedRole
-        ? { page: 1, limit: 100, status: "active" }
-        : { page: 1, limit: 100 },
+    () => (isBranchScopedRole ? { page: 1, limit: 100, status: "active" } : { page: 1, limit: 100 }),
     [isBranchScopedRole],
   );
-  // Ro'yxat har doim yuklanadi — endi viloyat topilishini kutmaydi.
   const {
     data: couriersResponse,
     isLoading: isCouriersLoading,
@@ -266,26 +83,22 @@ const DispatchPage = () => {
     refetch: refetchCouriers,
   } = useGetCouriers(courierParams, true);
 
-  const couriers = useMemo(
-    () =>
-      extractList(couriersResponse)
-        .map(normalizeCourierOption)
-        .filter((courier): courier is { value: string; label: string } => Boolean(courier)),
-    [couriersResponse],
-  );
+  const couriers = useMemo(() => extractCouriers(couriersResponse), [couriersResponse]);
 
-  const [pendingOrders, setPendingOrders] = useState<PendingOrder[]>([]);
-  const [scanError, setScanError] = useState("");
+  const [pendingOrders, setPendingOrders] = useState<DispatchOrder[]>([]);
+  const [scanNotice, setScanNotice] = useState<ScanNotice | null>(null);
   const [activeLookupCount, setActiveLookupCount] = useState(0);
   const [isLookupSlow, setIsLookupSlow] = useState(false);
   const [isCameraScannerOpen, setIsCameraScannerOpen] = useState(false);
-  const [isCourierPopupOpen, setIsCourierPopupOpen] = useState(false);
+  const [isCourierDialogOpen, setIsCourierDialogOpen] = useState(false);
+  const [courierDialogKey, setCourierDialogKey] = useState(0);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const isLookingUpOrder = activeLookupCount > 0;
 
   const isCameraScannerOpenRef = useRef(false);
   const pendingTokensRef = useRef<Set<string>>(new Set());
   const lookupTokensRef = useRef<Set<string>>(new Set());
+  const handoffDoneRef = useRef(false);
   const { canAcceptScan, blockScans, resetScannerGate } = useScannerGate({
     cooldownMs: 150,
     duplicateCooldownMs: 2600,
@@ -296,20 +109,16 @@ const DispatchPage = () => {
   }, [isCameraScannerOpen]);
 
   useEffect(() => {
-    pendingTokensRef.current = new Set(
-      pendingOrders.map((order) => order.token.trim().toLowerCase()),
-    );
+    pendingTokensRef.current = new Set(pendingOrders.map((order) => order.token.trim().toLowerCase()));
   }, [pendingOrders]);
 
   useEffect(() => {
     setSelectedOrderIds((prev) => {
       const availableIds = new Set(pendingOrders.map((order) => order.id));
       const next = new Set<string>();
-
       prev.forEach((id) => {
         if (availableIds.has(id)) next.add(id);
       });
-
       return next;
     });
   }, [pendingOrders]);
@@ -319,7 +128,6 @@ const DispatchPage = () => {
       setIsLookupSlow(false);
       return;
     }
-
     const timeout = window.setTimeout(() => setIsLookupSlow(true), 1200);
     return () => window.clearTimeout(timeout);
   }, [isLookingUpOrder]);
@@ -333,132 +141,80 @@ const DispatchPage = () => {
     });
   }, []);
 
+  const handleToggleOrder = useCallback((orderId: string, checked: boolean) => {
+    setSelectedOrderIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(orderId);
+      else next.delete(orderId);
+      return next;
+    });
+  }, []);
+
+  const handleToggleAll = useCallback(
+    (checked: boolean) => setSelectedOrderIds(checked ? new Set(pendingOrders.map((order) => order.id)) : new Set()),
+    [pendingOrders],
+  );
+
   const selectedOrders = useMemo(
     () => pendingOrders.filter((order) => selectedOrderIds.has(order.id)),
     [pendingOrders, selectedOrderIds],
   );
+  const stats = useMemo(() => getDispatchStats(pendingOrders, selectedOrderIds), [pendingOrders, selectedOrderIds]);
 
-  const tableColumns = useMemo(() => {
-    const columns = new Map<string, string>();
+  const handleScanValue = useCallback(
+    async (rawValue: string) => {
+      if (!canAcceptScan(rawValue)) return true;
 
-    pendingOrders.forEach((order) => {
-      order.fields.forEach((field) => {
-        if (!columns.has(field.key)) {
-          columns.set(field.key, field.label);
-        }
-      });
-    });
+      const normalizedToken = extractScannerToken(rawValue, window.location.origin) ?? rawValue.trim();
+      if (!normalizedToken) return false;
 
-    return Array.from(columns, ([key, label]) => ({ key, label }));
-  }, [pendingOrders]);
+      const tokenKey = normalizedToken.toLowerCase();
 
-  const allOrdersSelected = pendingOrders.length > 0 && selectedOrderIds.size === pendingOrders.length;
-
-  const homeOrders = useMemo(
-    () => pendingOrders.filter((order) => order.deliveryType === t("orders:deliveryToHome")),
-    [pendingOrders, t],
-  );
-
-  const centerOrders = useMemo(
-    () => pendingOrders.filter((order) => order.deliveryType === t("orders:deliveryToCenter")),
-    [pendingOrders, t],
-  );
-
-  const homeTotal = useMemo(
-    () => homeOrders.reduce((sum, order) => sum + order.amount, 0),
-    [homeOrders],
-  );
-
-  const centerTotal = useMemo(
-    () => centerOrders.reduce((sum, order) => sum + order.amount, 0),
-    [centerOrders],
-  );
-
-  const toggleSelectAll = () => {
-    setSelectedOrderIds((prev) => {
-      if (pendingOrders.length > 0 && prev.size === pendingOrders.length) return new Set();
-      return new Set(pendingOrders.map((order) => order.id));
-    });
-  };
-
-  const toggleOrderSelection = (orderId: string) => {
-    setSelectedOrderIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(orderId)) {
-        next.delete(orderId);
-      } else {
-        next.add(orderId);
-      }
-      return next;
-    });
-  };
-
-  const handleScanValue = useCallback(async (rawValue: string) => {
-    if (!canAcceptScan(rawValue)) return true;
-
-    const normalizedToken = extractScannerToken(rawValue, window.location.origin) ?? rawValue.trim();
-
-    if (!normalizedToken) {
-      return false;
-    }
-
-    const tokenKey = normalizedToken.toLowerCase();
-
-    if (getScanResourceType(normalizedToken) !== "order") {
-      setScanError(t("wrongType"));
-      void playScanFeedback("error");
-      return true;
-    }
-
-    if (pendingTokensRef.current.has(tokenKey) || lookupTokensRef.current.has(tokenKey)) {
-      setScanError(t("duplicateOrder"));
-      blockScans(250);
-      return true;
-    }
-
-    lookupTokensRef.current.add(tokenKey);
-    setActiveLookupCount((count) => count + 1);
-    setScanError("");
-
-    try {
-      const detail = await fetchScanDetail(normalizedToken);
-      if (detail.type !== "order") {
-        throw new Error(t("wrongType"));
+      if (getScanResourceType(normalizedToken) !== "order") {
+        setScanNotice({ tone: "danger", text: t("scanErrors.wrongType") });
+        void playScanFeedback("error");
+        return true;
       }
 
-      const nextOrder = normalizeOrder(detail.data, normalizedToken, t, locale);
-      if (!nextOrder) {
-        throw new Error(t("orderLookupError"));
+      if (pendingTokensRef.current.has(tokenKey) || lookupTokensRef.current.has(tokenKey)) {
+        setScanNotice({ tone: "warning", text: t("scanErrors.duplicate") });
+        blockScans(250);
+        return true;
       }
 
-      setPendingOrders((prev) => {
-        if (prev.some((order) => order.id === nextOrder.id || order.token.toLowerCase() === tokenKey)) {
-          return prev;
-        }
+      lookupTokensRef.current.add(tokenKey);
+      setActiveLookupCount((count) => count + 1);
+      setScanNotice(null);
 
-        return [...prev, nextOrder];
-      });
-      setSelectedOrderIds((selectedIds) => {
-        const next = new Set(selectedIds);
-        next.add(nextOrder.id);
-        return next;
-      });
-      void playScanFeedback("success");
-      if (isCameraScannerOpenRef.current) {
-        setIsCameraScannerOpen(false);
+      try {
+        const detail = await fetchScanDetail(normalizedToken);
+        if (detail.type !== "order") throw new Error(t("scanErrors.wrongType"));
+
+        const nextOrder = normalizeDispatchOrder(detail.data, normalizedToken);
+        if (!nextOrder) throw new Error(t("scanErrors.lookup"));
+
+        setPendingOrders((prev) =>
+          prev.some((order) => order.id === nextOrder.id || order.token.toLowerCase() === tokenKey)
+            ? prev
+            : [...prev, nextOrder],
+        );
+        setSelectedOrderIds((selectedIds) => new Set(selectedIds).add(nextOrder.id));
+        void playScanFeedback("success");
+        if (isCameraScannerOpenRef.current) setIsCameraScannerOpen(false);
+        blockScans(250);
+        return true;
+      } catch (error) {
+        setScanNotice({ tone: "danger", text: getBackendErrorMessage(error) ?? t("scanErrors.lookup") });
+        void playScanFeedback("error");
+        blockScans(600);
+        return true;
+      } finally {
+        lookupTokensRef.current.delete(tokenKey);
+        setActiveLookupCount((count) => Math.max(0, count - 1));
       }
-      blockScans(250);
-      return true;
-    } catch (error) {
-      setScanError(getBackendErrorMessage(error) ?? t("orderLookupError"));
-      void playScanFeedback("error");
-      blockScans(600);
-      return true;
-    } finally {
-      lookupTokensRef.current.delete(tokenKey);
-      setActiveLookupCount((count) => Math.max(0, count - 1));
-    }
-  }, [blockScans, canAcceptScan, locale, t]);
+    },
+    [blockScans, canAcceptScan, t],
+  );
 
   useKeyboardScanner({
     enabled: true,
@@ -469,31 +225,34 @@ const DispatchPage = () => {
     },
   });
 
-  const handleToggleCameraScanner = () => {
-    setScanError("");
-    setIsCameraScannerOpen((prev) => !prev);
+  // `/scan/:token` dan «Kuryerga biriktirish»: buyurtma bir marta qo'shiladi, so'ng router state tozalanadi —
+  // sahifani yangilash yoki «Orqaga» uni qayta qo'shmaydi.
+  useEffect(() => {
+    const token = readHandoffToken(location.state);
+    if (!token || handoffDoneRef.current) return;
+    handoffDoneRef.current = true;
+    navigate(location.pathname, { replace: true, state: null });
+    void handleScanValue(token);
+  }, [handleScanValue, location.pathname, location.state, navigate]);
+
+  const openCameraScanner = () => {
+    setScanNotice(null);
+    setIsCameraScannerOpen(true);
   };
 
-  const handleCloseCameraScanner = () => {
-    setIsCameraScannerOpen(false);
-  };
-
-  const handleComplete = async (courierId: string, courierName: string) => {
-    if (!courierId || selectedOrders.length === 0 || assignCourier.isPending) return;
+  const handleComplete = async (courier: DispatchCourier) => {
+    if (!courier.id || selectedOrders.length === 0 || assignCourier.isPending) return;
     const assignedOrderIds = new Set(selectedOrders.map((order) => order.id));
     const assignedCount = selectedOrders.length;
 
     try {
       await assignCourier.mutateAsync({
-        courier_id: courierId,
+        courier_id: courier.id,
         order_ids: Array.from(assignedOrderIds),
       });
 
-      notify.success(t("success"), {
-        description: t("assignSuccess", {
-          count: assignedCount,
-          courier: courierName,
-        }),
+      notify.success(t("assign.successTitle"), {
+        description: t("assign.success", { count: assignedCount, courier: courier.name }),
         duration: 3000,
       });
 
@@ -503,325 +262,235 @@ const DispatchPage = () => {
         assignedOrderIds.forEach((id) => next.delete(id));
         return next;
       });
-      setIsCourierPopupOpen(false);
-      setScanError("");
+      setIsCourierDialogOpen(false);
+      setScanNotice(null);
       setIsCameraScannerOpen(false);
       lookupTokensRef.current.clear();
       resetScannerGate();
     } catch (error) {
-      notify.error(t("error"), { description: getDispatchErrorMessage(error, t("orderLookupError")) });
+      notify.error(t("assign.errorTitle"), { description: getDispatchErrorMessage(error, t("scanErrors.lookup")) });
     }
   };
 
   const handleAssignCourier = () => {
-    const onlyCourier = couriers.length === 1 ? couriers[0] : null;
-
-    if (onlyCourier) {
-      void handleComplete(onlyCourier.value, onlyCourier.label);
+    // Filialda bitta faol kuryer — tanlash oynasi ochilmaydi, buyurtmalar darhol unga biriktiriladi.
+    if (couriers.length === 1) {
+      void handleComplete(couriers[0]);
       return;
     }
-
-    setIsCourierPopupOpen(true);
+    setCourierDialogKey((key) => key + 1);
+    setIsCourierDialogOpen(true);
   };
 
+  const noCouriers = !isCouriersLoading && !isCouriersError && couriers.length === 0;
+  const assignDisabled =
+    selectedOrders.length === 0 || isLookingUpOrder || isCouriersLoading || isCouriersError || couriers.length === 0;
+  const assignLabel = t("page.assign", { count: selectedOrders.length });
+  const hasOrders = pendingOrders.length > 0;
+  const allSelected = hasOrders && selectedOrders.length === pendingOrders.length;
+  const visibleNotice = scanNotice && !isCameraScannerOpen ? scanNotice : null;
+
+  // Telefonda «Kuryerga biriktirish» pastki panelda (bitta element; jsdom/desktopda — sarlavhada).
+  const assignButton = (
+    <Button
+      size={isPhone ? "lg" : "md"}
+      compact={isPhone}
+      leftIcon={Truck}
+      disabled={assignDisabled}
+      loading={assignCourier.isPending}
+      loadingText={t("page.assigning")}
+      aria-haspopup={couriers.length > 1 ? "dialog" : undefined}
+      aria-label={isPhone && !assignCourier.isPending ? assignLabel : undefined}
+      onClick={handleAssignCourier}
+      className={isPhone ? "min-w-0 flex-1" : undefined}
+    >
+      {isPhone ? t("page.assignShort", { count: selectedOrders.length }) : assignLabel}
+    </Button>
+  );
+
   return (
-    <PageContainer>
+    <div className="flex flex-col gap-6 max-md:gap-4">
       {isCouriersError ? (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-red-300/20 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-600 dark:text-red-100">
-          <span>{t("couriersLoadError")}</span>
-          <button
-            type="button"
-            onClick={() => void refetchCouriers()}
-            className="rounded-xl bg-red-500 px-4 py-2 text-xs font-extrabold text-white transition hover:bg-red-400"
-          >
-            {t("retry")}
-          </button>
-        </div>
+        <DispatchAlert
+          tone="danger"
+          action={
+            <Button variant="secondary" size="sm" leftIcon={RefreshCw} onClick={() => void refetchCouriers()}>
+              {t("couriers.retry")}
+            </Button>
+          }
+        >
+          {t("couriers.loadError")}
+        </DispatchAlert>
       ) : null}
 
-      <section className="overflow-hidden rounded-[28px] border border-(--color-border-soft) bg-primary p-4 shadow-sm dark:border-white/8 dark:bg-primarydark/95 md:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex min-w-0 items-start gap-3">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/70 text-(--color-text-muted) shadow-sm dark:bg-white/8 dark:text-white/75">
-              <QrCode size={22} />
-            </span>
-            <div className="min-w-0">
-              <h2 className="m-0 text-xl font-black text-maindark dark:text-white">
-                {t("oldUiTitle", { count: pendingOrders.length })}
-              </h2>
-              <p className="m-0 mt-1 text-sm font-semibold text-(--color-text-muted) dark:text-text-muted-dark">
-                {t("oldUiSubtitle", { count: pendingOrders.length })}
-              </p>
-            </div>
-          </div>
+      <PageHeader
+        title={t("page.title")}
+        description={hasOrders ? t("page.subtitle", { count: pendingOrders.length }) : t("page.subtitleEmpty")}
+        actions={isPhone ? undefined : assignButton}
+      />
 
-          <div className="flex flex-wrap items-center gap-2">
-            <ScannerActionButton
-              onClick={handleToggleCameraScanner}
-              label={t("openScanner")}
-              showLabel
-              className="!h-10 !rounded-2xl !border !border-main/25 !bg-main/10 !text-main hover:!bg-main/15 dark:!border-white/10 dark:!bg-white/8 dark:!text-white"
-            />
-          </div>
-        </div>
+      <DispatchStats stats={stats} />
 
-        <div className="mt-5 grid gap-3 lg:grid-cols-3">
-          <div className="rounded-2xl bg-rose-500 px-4 py-4 text-white shadow-lg shadow-rose-500/20">
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15">
-                <QrCode size={18} />
-              </span>
-              <div>
-                <p className="m-0 text-xs font-bold opacity-85">{t("statSelected")}</p>
-                <p className="m-0 text-lg font-black">{selectedOrders.length} / {pendingOrders.length}</p>
-                <p className="m-0 text-xs font-semibold opacity-85">{t("selectedCount", { count: selectedOrders.length })}</p>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-2xl border border-main/20 bg-main/15 px-4 py-4 text-maindark shadow-sm dark:border-white/8 dark:bg-white/8 dark:text-white">
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/35 text-main dark:bg-white/10 dark:text-white">
-                <Home size={18} />
-              </span>
-              <div>
-                <p className="m-0 text-xs font-bold text-(--color-text-muted) dark:text-text-muted-dark">{t("statHome")}</p>
-                <p className="m-0 text-lg font-black">{homeOrders.length} {t("piece")}</p>
-                <p className="m-0 text-xs font-semibold text-(--color-text-muted) dark:text-text-muted-dark">
-                  {formatMoney(homeTotal, currencyLabel, locale)}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-2xl border border-main/20 bg-main/15 px-4 py-4 text-maindark shadow-sm dark:border-white/8 dark:bg-white/8 dark:text-white">
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/35 text-main dark:bg-white/10 dark:text-white">
-                <Building2 size={18} />
-              </span>
-              <div>
-                <p className="m-0 text-xs font-bold text-(--color-text-muted) dark:text-text-muted-dark">{t("statCenter")}</p>
-                <p className="m-0 text-lg font-black">{centerOrders.length} {t("piece")}</p>
-                <p className="m-0 text-xs font-semibold text-(--color-text-muted) dark:text-text-muted-dark">
-                  {formatMoney(centerTotal, currencyLabel, locale)}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {isLookingUpOrder ? (
-          <div
-            role="status"
-            className="mt-4 flex items-center gap-3 rounded-2xl border border-main/20 bg-main/10 px-4 py-3 text-main dark:text-white"
-          >
-            <Loader2 size={20} className="shrink-0 animate-spin" />
-            <div>
-              <p className="m-0 text-sm font-extrabold">
-                {t("loadingCount", { count: activeLookupCount })}
-              </p>
-              {isLookupSlow ? (
-                <p className="m-0 mt-1 text-xs font-semibold opacity-75">
-                  {t("slowLoading")}
-                </p>
-              ) : null}
-            </div>
+      <Card
+        title={t("scanCard.title")}
+        description={t("scanCard.description")}
+        padding="none"
+        className="overflow-hidden"
+        actions={
+          isPhone ? undefined : (
+            <>
+              <Badge tone="success" dot role="status">
+                {t("scanCard.usbReady")}
+              </Badge>
+              <Button variant="secondary" size="sm" leftIcon={Camera} aria-haspopup="dialog" onClick={openCameraScanner}>
+                {t("scanCard.camera")}
+              </Button>
+            </>
+          )
+        }
+      >
+        {visibleNotice || isLookingUpOrder ? (
+          <div className="flex flex-col gap-3 px-5 py-4 max-md:px-4">
+            {isLookingUpOrder ? (
+              <DispatchAlert tone="info" busy title={t("lookup.checking", { count: activeLookupCount })}>
+                {isLookupSlow ? t("lookup.slow") : null}
+              </DispatchAlert>
+            ) : null}
+            {visibleNotice ? <DispatchAlert tone={visibleNotice.tone}>{visibleNotice.text}</DispatchAlert> : null}
           </div>
         ) : null}
 
-        {scanError && !isCameraScannerOpen ? (
-          <div
-            role="alert"
-            className="mt-4 rounded-2xl border border-red-300/20 bg-red-500/10 px-4 py-3 text-sm font-semibold text-red-600 dark:text-red-100"
-          >
-            {scanError}
-          </div>
-        ) : null}
-
-        <div className="mt-4 rounded-2xl border border-(--color-border-soft) bg-white/55 dark:border-white/8 dark:bg-white/4">
-          <button
-            type="button"
-            onClick={toggleSelectAll}
-            disabled={pendingOrders.length === 0}
-            className="flex h-10 w-full cursor-pointer items-center justify-between gap-3 px-4 text-left text-sm font-extrabold text-maindark transition hover:bg-main/5 disabled:cursor-not-allowed disabled:opacity-55 dark:text-white dark:hover:bg-white/6"
-          >
-            <span className="inline-flex items-center gap-2">
-              <span className={`flex h-5 w-5 items-center justify-center rounded-md border ${allOrdersSelected ? "border-main bg-main text-white" : "border-main/35 bg-main/10 text-transparent dark:border-white/20"}`}>
-                <CheckCircle2 size={13} />
-              </span>
-              {allOrdersSelected ? t("deselectAll") : t("selectAll")}
-            </span>
-            <span className="text-xs font-bold text-(--color-text-muted) dark:text-text-muted-dark">
-              {t("selectedCount", { count: selectedOrders.length })}
-            </span>
-          </button>
+        <div className={visibleNotice || isLookingUpOrder ? undefined : "-mt-px"}>
+          <SelectionRegion
+            label={t("selection.label")}
+            idle={selectedOrders.length === 0}
+            title={
+              <>
+                {t("selection.title", { count: selectedOrders.length })}
+                {hasOrders ? (
+                  <span className="font-medium text-text-muted">
+                    {" "}
+                    {t("selection.ofTotal", { count: pendingOrders.length, total: pendingOrders.length })}
+                  </span>
+                ) : null}
+              </>
+            }
+            hint={t("selection.hint")}
+            action={
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  leftIcon={ListChecks}
+                  disabled={!hasOrders || allSelected}
+                  onClick={() => handleToggleAll(true)}
+                >
+                  {t("selection.selectAll")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={selectedOrders.length === 0}
+                  onClick={() => handleToggleAll(false)}
+                >
+                  {t("selection.clear")}
+                </Button>
+              </>
+            }
+          />
         </div>
 
-        {pendingOrders.length === 0 ? (
-          <div className="mt-4 flex min-h-88 flex-col items-center justify-center rounded-2xl border border-dashed border-(--color-border-soft) px-6 text-center dark:border-white/10">
-            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-main/10 text-main dark:bg-white/10 dark:text-white">
-              <QrCode size={28} />
-            </div>
-            <h4 className="m-0 mt-4 text-lg font-black text-maindark dark:text-white">
-              {t("scanOrdersTitle")}
-            </h4>
-            <p className="m-0 mt-2 max-w-md text-sm font-semibold leading-6 text-(--color-text-muted) dark:text-text-muted-dark">
-              {t("scanOrdersHint")}
-            </p>
-          </div>
+        {hasOrders ? (
+          <DispatchOrdersTable
+            rows={pendingOrders}
+            selectedIds={selectedOrderIds}
+            onToggle={handleToggleOrder}
+            onToggleAll={handleToggleAll}
+            onRemove={handleRemoveOrder}
+          />
         ) : (
-          <div className="mt-3 overflow-x-auto custom-scrollbar">
-            <table className="min-w-max w-full border-separate border-spacing-y-2">
-              <thead>
-                <tr className="text-left text-[11px] font-black uppercase text-(--color-text-muted) dark:text-text-muted-dark">
-                  <th className="sticky left-0 z-10 bg-primary px-4 py-2 dark:bg-primarydark">
-                    {t("selectAll")}
-                  </th>
-                  {tableColumns.map((column) => (
-                    <th key={column.key} className="whitespace-nowrap px-4 py-2">
-                      {column.label}
-                    </th>
-                  ))}
-                  <th className="px-4 py-2 text-right">{t("tableAction")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pendingOrders.map((order) => {
-                  const selected = selectedOrderIds.has(order.id);
-                  const fieldMap = new Map(order.fields.map((field) => [field.key, field.value]));
-
-                  return (
-                    <tr
-                      key={order.id}
-                      onClick={() => toggleOrderSelection(order.id)}
-                      className={`cursor-pointer text-sm font-semibold text-maindark transition dark:text-white ${selected ? "bg-main/10 shadow-[inset_0_0_0_1px_rgba(16,185,129,0.38)]" : "bg-white/45 dark:bg-white/4"} hover:bg-main/12 dark:hover:bg-white/8`}
-                    >
-                      <td className="sticky left-0 z-10 rounded-l-xl bg-inherit px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${selected ? "bg-main text-white" : "bg-white/70 text-(--color-text-muted) dark:bg-white/8 dark:text-white/70"}`}>
-                            <UserRound size={13} />
-                          </span>
-                          <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${selected ? "border-main bg-main text-white" : "border-main/35 bg-main/10 text-transparent dark:border-white/20"}`}>
-                            <CheckCircle2 size={13} />
-                          </span>
-                        </div>
-                      </td>
-                      {tableColumns.map((column) => {
-                        const value = fieldMap.get(column.key) ?? "—";
-                        const normalizedKey = column.key.toLowerCase();
-
-                        return (
-                          <td key={column.key} className="max-w-64 px-4 py-3">
-                            {normalizedKey.endsWith("status") && isOrderStatus(value) ? (
-                              <OrderStatusBadge status={value} />
-                            ) : (
-                              <span className="block truncate" title={value}>
-                                {value}
-                              </span>
-                            )}
-                          </td>
-                        );
-                      })}
-                      <td className="rounded-r-xl px-4 py-3">
-                        <div className="flex justify-end">
-                          <button
-                            type="button"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleRemoveOrder(order.id);
-                            }}
-                            className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg border border-red-300/20 bg-red-500/10 text-red-500 transition hover:bg-red-500/15 dark:text-red-200"
-                            aria-label={t("remove")}
-                            title={t("remove")}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <EmptyState
+            icon={QrCode}
+            title={t("empty.title")}
+            description={t("empty.description")}
+            className="min-h-[260px] justify-center border-t border-border"
+          />
         )}
+      </Card>
 
-        {!isCouriersLoading && !isCouriersError && couriers.length === 0 ? (
-          <div
-            role="status"
-            className="mt-4 rounded-2xl border border-amber-300/30 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-700 dark:text-amber-100"
-          >
-            {t("noCouriersInBranch")}
+      {noCouriers ? (
+        <DispatchAlert tone="warning" title={t("couriers.emptyTitle")}>
+          {branchName || showUsersLink ? (
+            <>
+              {branchName ? t("couriers.emptyBranch", { branch: branchName }) : null}
+              {branchName && showUsersLink ? " " : null}
+              {showUsersLink ? (
+                <Trans
+                  t={t}
+                  ns="dispatch"
+                  i18nKey="couriers.emptyUsers"
+                  components={{
+                    usersLink: <Link to="/all-users" className="font-semibold text-action-fg underline-offset-2 hover:underline" />,
+                  }}
+                />
+              ) : null}
+            </>
+          ) : null}
+        </DispatchAlert>
+      ) : null}
+
+      {/* Telefon (< 768): «Kamera» + «Biriktirish — N ta» pastki menyu ustidagi panelda (spec §3.3, Q7). */}
+      {isPhone ? (
+        <>
+          <div aria-hidden="true" className="h-[72px] shrink-0" />
+          <div className="fixed inset-x-0 bottom-[var(--shell-bottomnav-h)] z-30 flex gap-2 border-t border-border bg-surface px-4 py-3">
+            <Button
+              variant="secondary"
+              size="lg"
+              compact
+              leftIcon={ScanLine}
+              aria-haspopup="dialog"
+              aria-label={t("scanCard.cameraPhone", { count: pendingOrders.length })}
+              onClick={openCameraScanner}
+              className="shrink-0"
+            >
+              {t("scanCard.camera")}
+              <Badge size="sm" className="ml-0.5">
+                {t("scanCard.cameraCount", { count: pendingOrders.length })}
+              </Badge>
+            </Button>
+            {assignButton}
           </div>
-        ) : null}
-
-        <button
-          type="button"
-          onClick={handleAssignCourier}
-          disabled={selectedOrders.length === 0 || isLookingUpOrder || assignCourier.isPending || isCouriersLoading || isCouriersError || couriers.length === 0}
-          className="mt-5 flex w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-emerald-500 px-6 py-4 text-sm font-black text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {assignCourier.isPending ? (
-            <>
-              <CheckCircle2 size={18} className="animate-pulse" />
-              {t("assignLoading")}
-            </>
-          ) : (
-            <>
-              <CheckCircle2 size={18} />
-              {t("oldUiAction", { count: selectedOrders.length })}
-            </>
-          )}
-        </button>
-      </section>
+        </>
+      ) : null}
 
       <ScannerCameraModal
         isOpen={isCameraScannerOpen}
-        onClose={handleCloseCameraScanner}
+        onClose={() => setIsCameraScannerOpen(false)}
         onDecode={(value) => void handleScanValue(value)}
-        title={t("scannerTitle")}
-        subtitle={t("scannerSubtitle")}
-        waitingText={t("scannerWaiting")}
-        closeLabel={t("closeScanner")}
-        torchOnLabel={t("torchOn")}
-        torchOffLabel={t("torchOff")}
-        invalidQrMessage={t("invalidQr")}
+        title={t("camera.title")}
+        subtitle={t("camera.subtitle")}
+        waitingText={t("camera.waiting")}
+        closeLabel={t("camera.close")}
+        torchOnLabel={t("camera.torchOn")}
+        torchOffLabel={t("camera.torchOff")}
+        invalidQrMessage={t("scanErrors.invalidQr")}
         loading={isLookingUpOrder}
-        loadingText={t("loading")}
-        error={scanError}
+        loadingText={t("camera.loading")}
+        error={scanNotice?.text ?? ""}
       />
 
-      <PopupSelect<{ value: string; label: string }>
-        isOpen={isCourierPopupOpen}
-        onClose={() => setIsCourierPopupOpen(false)}
-        data={couriers}
-        onSelect={(courier) => {
-          void handleComplete(courier.value, courier.label);
-        }}
-        keyExtractor={(courier) => courier.value}
-        searchKeys={["label"]}
-        title={t("courierPopupTitle")}
-        description={t("courierPopupDescription", { count: selectedOrders.length })}
-        icon={<Truck />}
-        placeholder={t("courierSearchPlaceholder")}
-        selectLabel={t("assignSelectedCourier")}
-        cancelLabel={t("cancel")}
-        labelKey="label"
-        renderItem={(courier, isSelected) => (
-          <div className="flex items-center gap-3">
-            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${isSelected ? "bg-main text-white" : "bg-main/10 text-main dark:bg-white/10 dark:text-white"}`}>
-              <Truck size={18} />
-            </div>
-            <div className="min-w-0">
-              <p className="m-0 truncate text-base font-extrabold text-maindark dark:text-white">
-                {courier.label}
-              </p>
-              <p className="m-0 mt-0.5 text-xs font-semibold text-(--color-text-muted) dark:text-text-muted-dark">
-                {t("courierOptionHint")}
-              </p>
-            </div>
-          </div>
-        )}
+      <CourierPickerDialog
+        key={courierDialogKey}
+        open={isCourierDialogOpen}
+        couriers={couriers}
+        count={selectedOrders.length}
+        branchName={branchName}
+        pending={assignCourier.isPending}
+        onClose={() => setIsCourierDialogOpen(false)}
+        onAssign={(courier) => void handleComplete(courier)}
       />
-    </PageContainer>
+    </div>
   );
 };
 

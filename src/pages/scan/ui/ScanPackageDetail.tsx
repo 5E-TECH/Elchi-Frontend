@@ -1,417 +1,196 @@
+// dizayn-v2: courier-scan-package-detail
+import { memo, useMemo, useState, type ReactNode } from "react";
 import { useMutation } from "@tanstack/react-query";
-import {
-  AlertTriangle,
-  Building2,
-  CalendarDays,
-  CheckCircle2,
-  MapPin,
-  Package,
-  Receipt,
-  ScanLine,
-  Truck,
-  UserRound,
-} from "lucide-react";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { Building2, Check, CircleCheck, MapPin, Package, ScanLine, TriangleAlert, Truck, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
-import { Table } from "../../../shared/components/Table/Table";
-import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
-import { getBackendErrorMessage, receiveScannedPackage, type ScanResourceType } from "../lib/scanResource";
-import BackButton from "../../../shared/ui/BackButton";
-
-type PackageOrderRow = {
-  id: string;
-  customer: string;
-  phone: string;
-  amount: string;
-  status: string;
-};
-
-type PackageView = {
-  id: string;
-  title: string;
-  sourceBranch: string;
-  destinationRegion: string;
-  ordersCount: string;
-  totalAmount: string;
-  carNumber: string;
-  driver: string;
-  createdAt: string;
-  status: string;
-  orders: PackageOrderRow[];
-};
-
-const safe = (value: unknown, fallback = "—") => {
-  if (typeof value === "string" && value.trim()) return value.trim();
-  if (typeof value === "number") return String(value);
-  return fallback;
-};
-
-const formatMoney = (value: unknown) => {
-  if (typeof value === "number") return `${value.toLocaleString("uz-UZ")} so'm`;
-  return safe(value);
-};
-
-const formatDate = (value: unknown) => {
-  if (typeof value !== "string" || !value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("uz-UZ", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const pickBranchName = (...values: any[]) => {
-  for (const value of values) {
-    const name = value?.name ?? value?.title ?? value?.branch_name ?? value;
-    const normalized = safe(name, "");
-    if (normalized) return normalized;
-  }
-
-  return "—";
-};
-
-const pickRegionName = (...values: any[]) => {
-  for (const value of values) {
-    const name =
-      value?.region?.name ??
-      value?.region_name ??
-      value?.name ??
-      value?.title ??
-      value;
-    const normalized = safe(name, "");
-    if (normalized) return normalized;
-  }
-
-  return "—";
-};
-
-const getPackageReceiveErrorText = (error: unknown, t: (key: string) => string) => {
-  const message = getBackendErrorMessage(error);
-  const normalized = message?.toLowerCase() ?? "";
-
-  if (
-    normalized.includes("already") ||
-    normalized.includes("qabul qilingan") ||
-    normalized.includes("accepted") ||
-    normalized.includes("received")
-  ) {
-    return t("scannerPackageAlreadyReceived");
-  }
-
-  if (
-    normalized.includes("cancel") ||
-    normalized.includes("bekor")
-  ) {
-    return t("scannerPackageCancelled");
-  }
-
-  if (
-    normalized.includes("branch") ||
-    normalized.includes("filial") ||
-    normalized.includes("permission") ||
-    normalized.includes("ruxsat")
-  ) {
-    return t("scannerPackageWrongBranch");
-  }
-
-  return message ?? t("scannerPackageReceiveError");
-};
-
-const normalizePackageDetail = (response: any, type: ScanResourceType, t: (key: string) => string): PackageView => {
-  const source = response?.data ?? response;
-  const payload = source?.data ?? source?.package ?? source?.batch ?? source;
-  const ordersSource =
-    payload?.orders ??
-    payload?.items ??
-    payload?.order_list ??
-    payload?.allOrdersByPackageId ??
-    payload?.allOrdersByBatchId ??
-    [];
-  const orders = Array.isArray(ordersSource) ? ordersSource : [];
-  const driver = payload?.driver ?? payload?.courier ?? payload?.user ?? {};
-  const sourceBranch =
-    payload?.source_branch ??
-    payload?.from_branch ??
-    payload?.fromBranch ??
-    payload?.branch_from ??
-    payload?.from ??
-    payload?.branch ??
-    {};
-  const destinationBranch =
-    payload?.to_branch ??
-    payload?.toBranch ??
-    payload?.destination_branch ??
-    payload?.to ??
-    {};
-  const destinationRegion =
-    payload?.destination_region ??
-    payload?.to_region ??
-    payload?.region ??
-    destinationBranch?.region ??
-    destinationBranch;
-
-  return {
-    id: safe(payload?.id ?? payload?.package_id ?? payload?.token),
-    title: type === "returned-package" ? t("scannerReturnedPackageTitle") : t("scannerPackageTitle"),
-    sourceBranch: pickBranchName(sourceBranch),
-    destinationRegion: pickRegionName(destinationRegion, destinationBranch),
-    ordersCount: safe(
-      payload?.orders_count ??
-        payload?.ordersCount ??
-        payload?.order_count ??
-        payload?.total_orders ??
-        orders.length,
-    ),
-    totalAmount: formatMoney(
-      payload?.total_price ??
-        payload?.totalPrice ??
-        payload?.amount ??
-        payload?.total_amount ??
-        payload?.total,
-    ),
-    carNumber: safe(
-        payload?.vehicle_number ??
-        payload?.car_number ??
-        payload?.vehicle_plate ??
-        payload?.plate_number,
-    ),
-    driver: safe(driver?.name ?? payload?.driver_name ?? payload?.courier_name ?? driver),
-    createdAt: formatDate(payload?.created_at ?? payload?.createdAt ?? payload?.updated_at ?? payload?.updatedAt ?? payload?.sent_at),
-    status: safe(payload?.status),
-    orders: orders.map((order: any) => ({
-      id: safe(order?.id ?? order?._id ?? order?.order_id),
-      customer: safe(order?.receiver ?? order?.customer?.name ?? order?.customer_name ?? order?.name),
-      phone: safe(order?.customer?.phone_number ?? order?.customer?.phone ?? order?.phone ?? order?.phone_number),
-      amount: formatMoney(order?.total_price ?? order?.price ?? order?.amount),
-      status: safe(order?.status),
-    })),
-  };
-};
+import { Link } from "react-router-dom";
+import { BATCH_STATUS_TONE, useBatchDetail } from "../../../entities/batch";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { Badge, Button, buttonClasses } from "../../../shared/ui/primitives";
+import { receiveScannedPackage, type ScanResourceType } from "../lib/scanResource";
+import { SCANNER_ROUTE } from "../model/routes";
+import { buildScanPackageView, getPackageReceiveError, type ScanPackageView } from "../model/scanBatchView";
+import type { ScanRoleKind } from "../model/scanOrderView";
+import { useScanRedirect } from "../model/useScanRedirect";
+import { useIsBelowLg, useIsBelowMd } from "../model/useViewport";
+import { ScanActionCard } from "./ScanActionCard";
+import { ScanAlert } from "./ScanAlert";
+import { ScanBatchSummary } from "./ScanBatchSummary";
+import { ScanOrdersCard } from "./ScanOrdersCard";
+import { ScanResultHeader } from "./ScanResultHeader";
+import { ScanStickyBar } from "./ScanStickyBar";
 
 interface ScanPackageDetailProps {
   data: unknown;
-  token: string;
   type: ScanResourceType;
+  roleKind: ScanRoleKind;
+  topNotice?: ReactNode;
 }
 
-const ScanPackageDetail = ({ data, token, type }: ScanPackageDetailProps) => {
-  const { t } = useTranslation("common");
-  const navigate = useNavigate();
-  const detail = useMemo(() => normalizePackageDetail(data, type, t), [data, t, type]);
-  const [inlineMessage, setInlineMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
-  const orderColumns = useMemo<ColumnConfig<PackageOrderRow>[]>(
-    () => [
-      {
-        key: "id",
-        label: t("scannerOrderId"),
-        render: (value) => <span className="font-black">{String(value)}</span>,
-      },
-      { key: "customer", label: t("scannerCustomer") },
-      { key: "phone", label: t("phone") },
-      {
-        key: "amount",
-        label: t("amount"),
-        render: (value) => <span className="font-bold">{String(value)}</span>,
-      },
-      { key: "status", label: t("status") },
-    ],
-    [t],
-  );
+type ReceiveResult = { tone: "success" | "error"; text: string };
 
-  const redirectTimerRef = useRef<number | null>(null);
-  useEffect(() => () => {
-    if (redirectTimerRef.current) window.clearTimeout(redirectTimerRef.current);
-  }, []);
+/**
+ * «Qabul qilish» (`POST transfer-batches/:id/receive`) backendda faqat SUPERADMIN · ADMIN · BRANCH · MANAGER ·
+ * REGISTRATOR uchun (`branch-gateway.controller.ts`). Kuryerga u doim 403 — maketdagi tugma kuryerga
+ * chizilmaydi (spec G3 §2.4, Q5 sukut): paket faqat ko'rish uchun.
+ */
+const canReceivePackage = (roleKind: ScanRoleKind) => roleKind === "staff" || roleKind === "manager";
+
+const PackageBody = ({
+  view,
+  canReceive,
+  topNotice,
+}: {
+  view: ScanPackageView;
+  canReceive: boolean;
+  topNotice?: ReactNode;
+}) => {
+  const { t, i18n } = useTranslation(["scan", "newOrders"]);
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const isBelowLg = useIsBelowLg();
+  const isPhone = useIsBelowMd();
+  const scheduleRedirect = useScanRedirect(2000);
+  const [result, setResult] = useState<ReceiveResult | null>(null);
 
   const receiveMutation = useMutation({
-    mutationFn: () => receiveScannedPackage(detail.id !== "—" ? detail.id : token),
+    mutationFn: () => receiveScannedPackage(view.id),
     onSuccess: () => {
-      setInlineMessage({
-        tone: "success",
-        text: t("scannerPackageReceiveSuccess"),
-      });
-      // Ref'da saqlanadi: skaner bilan keyingi posilka ochilsa (detal sahifa
-      // HID skanni ushlaydi), eski taymer operatorni /scan'ga tortib ketmasin.
-      redirectTimerRef.current = window.setTimeout(() => {
-        navigate("/scan");
-      }, 2000);
+      setResult({ tone: "success", text: t("package.receiveSuccess") });
+      // Skaner bilan keyingi posilka ochilsa (bu blok yangi token bilan qayta o'rnatiladi) — taymer bekor.
+      scheduleRedirect();
     },
     onError: (error) => {
-      setInlineMessage({
-        tone: "error",
-        text: getPackageReceiveErrorText(error, t),
-      });
+      const { key, message } = getPackageReceiveError(error);
+      setResult({ tone: "error", text: message ?? t(`package.${key}`) });
     },
   });
 
-  useEffect(() => {
-    setInlineMessage(null);
-  }, [token]);
+  const title = t(view.returned ? "package.returnedTitle" : "package.title", { code: view.code });
+  const ordersText = t("ordersCount", { count: view.ordersCount, value: formatNumberLocalized(view.ordersCount, { language }) });
+  const resultAlert = result ? (
+    <ScanAlert
+      tone={result.tone === "success" ? "success" : "danger"}
+      icon={result.tone === "success" ? CircleCheck : TriangleAlert}
+      title={result.text}
+      role={result.tone === "success" ? "status" : "alert"}
+    />
+  ) : null;
+  const receiveButton = (block: boolean) => (
+    <Button
+      size="lg"
+      fullWidth={block}
+      leftIcon={Check}
+      loading={receiveMutation.isPending}
+      loadingText={t("package.receiving")}
+      disabled={result?.tone === "success"}
+      onClick={() => receiveMutation.mutate()}
+    >
+      {t("package.receive")}
+    </Button>
+  );
+
+  const statusBadge = view.status ? (
+    <>
+      <span className="sr-only">{t("statusLabel")}</span>
+      <Badge tone={BATCH_STATUS_TONE[view.status]} dot>
+        {t(`batchStatus.${view.status}`, { ns: "newOrders" })}
+      </Badge>
+    </>
+  ) : null;
+
+  let aside: ReactNode = null;
+  let sticky: ReactNode = null;
+  if (canReceive) {
+    if (isBelowLg) {
+      sticky = (
+        <ScanStickyBar
+          summary={{
+            title: t("package.summaryLine", { code: view.code, orders: ordersText }),
+            sub: [formatMoneyLocalized(view.total, { language }), view.fromBranch].filter(Boolean).join(" · "),
+          }}
+          notice={resultAlert}
+        >
+          {receiveButton(false)}
+        </ScanStickyBar>
+      );
+    } else {
+      aside = (
+        <ScanActionCard title={t("package.actionTitle")} text={t("package.actionText")}>
+          {resultAlert}
+          {receiveButton(true)}
+        </ScanActionCard>
+      );
+    }
+  } else if (isPhone) {
+    sticky = (
+      <ScanStickyBar>
+        <Link to={SCANNER_ROUTE} className={buttonClasses({ variant: "secondary", size: "lg" })}>
+          <ScanLine size={18} aria-hidden="true" className="shrink-0" />
+          {t("backToScanner")}
+        </Link>
+      </ScanStickyBar>
+    );
+  }
 
   return (
-    <div className="rounded-[32px] border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary)_94%,var(--color-main)_6%)_0%,color-mix(in_srgb,var(--color-sidebar)_88%,var(--color-main)_12%)_100%)] shadow-sm dark:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-maindark)_92%,var(--color-main)_8%)_0%,color-mix(in_srgb,var(--color-primarydark)_88%,var(--color-maindark)_12%)_100%)]">
-      <div className="flex items-center justify-between border-b border-[color:var(--color-border-soft)] px-5 py-4 md:px-7">
-        <div className="flex items-center gap-3">
-          <BackButton to="/scan" className="shrink-0 bg-white dark:bg-maindark" label="" />
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/15 dark:text-emerald-100">
-            <Package size={20} />
-          </div>
-          <div>
-            <p className="m-0 text-lg font-extrabold tracking-tight text-maindark dark:text-white">
-              {detail.title}
-            </p>
-            <p className="m-0 mt-0.5 text-sm text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-              {t("scannerPackageSubtitle")}
-            </p>
-          </div>
+    <div className="flex flex-col gap-6 max-md:gap-4">
+      <ScanResultHeader
+        icon={Package}
+        title={title}
+        phoneTitle={title}
+        phoneSub={t("package.phoneSub")}
+        sub={t("package.sub")}
+        alertText={t("package.alertText")}
+      />
+      {topNotice}
+      <div className="flex flex-wrap items-start gap-6">
+        <div className="flex min-w-0 flex-[999_1_560px] flex-col gap-4">
+          <ScanBatchSummary
+            title={t("package.summary")}
+            badge={statusBadge}
+            date={view.createdAt}
+            total={view.total}
+            meta={[
+              { key: "from", icon: Building2, label: t("package.fromBranch"), value: view.fromBranch },
+              { key: "to", icon: MapPin, label: t("package.destination"), value: view.destinationRegion },
+              { key: "driver", icon: User, label: t("package.driver"), value: view.driver },
+              { key: "vehicle", icon: Truck, label: t("package.vehicle"), value: view.vehicle },
+            ]}
+          />
+          <ScanOrdersCard
+            title={t("package.ordersTitle")}
+            rows={view.orders}
+            count={view.ordersCount}
+            emptyText={t("package.ordersEmpty")}
+          />
         </div>
-
-        <div className="rounded-full border border-emerald-500/15 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-100">
-          {t("scannerScannedOk")}
-        </div>
+        {aside ? (
+          <aside aria-label={t("package.actionTitle")} className="min-w-0 flex-[1_1_360px]">
+            {aside}
+          </aside>
+        ) : null}
       </div>
-
-      <div className="grid gap-5 px-5 py-5 xl:grid-cols-[minmax(0,1.05fr)_minmax(20rem,0.95fr)] md:px-7 md:py-7">
-        <div className="space-y-4">
-          <div className="rounded-[30px] border border-[color:var(--color-border-soft)] bg-maindark p-6 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="m-0 text-xs font-bold uppercase tracking-[0.22em] text-emerald-200/70">
-                  {t("scannerPackageCode")}
-                </p>
-                <h2 className="m-0 mt-3 text-3xl font-extrabold text-white">
-                  #{detail.id}
-                </h2>
-                <p className="m-0 mt-2 text-sm text-white/60">
-                  {detail.createdAt}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-right">
-                <p className="m-0 text-xs font-bold uppercase tracking-[0.18em] text-white/45">
-                  {t("status")}
-                </p>
-                <p className="m-0 mt-2 text-lg font-extrabold text-white">
-                  {detail.status}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-3 md:grid-cols-2">
-              {[
-                { icon: <Building2 size={16} />, label: t("scannerPackageFromBranch"), value: detail.sourceBranch },
-                { icon: <MapPin size={16} />, label: t("scannerPackageDestination"), value: detail.destinationRegion },
-                { icon: <Receipt size={16} />, label: t("amount"), value: detail.totalAmount },
-                { icon: <CalendarDays size={16} />, label: t("date"), value: detail.createdAt },
-              ].map((item) => (
-                <div key={item.label} className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
-                  <div className="flex items-center gap-2 text-white/55">
-                    {item.icon}
-                    <p className="m-0 text-xs font-bold uppercase tracking-[0.16em]">
-                      {item.label}
-                    </p>
-                  </div>
-                  <p className="m-0 mt-3 text-base font-bold text-white [overflow-wrap:anywhere]">
-                    {item.value}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="overflow-hidden rounded-[30px] border border-[color:var(--color-border-soft)] bg-white/85 shadow-sm dark:bg-white/[0.04]">
-            <div className="flex items-center justify-between border-b border-[color:var(--color-border-soft)] px-5 py-4">
-              <div>
-                <p className="m-0 text-lg font-extrabold text-maindark dark:text-white">
-                  {t("scannerPackageOrdersTitle")}
-                </p>
-                <p className="m-0 mt-1 text-sm text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  {t("scannerPackageOrdersCount", { count: detail.orders.length })}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-main/10 bg-main/10 px-4 py-2 text-sm font-bold text-main dark:text-white">
-                {detail.ordersCount}
-              </div>
-            </div>
-
-            <Table
-              data={detail.orders}
-              columns={orderColumns}
-              keyExtractor={(row, index) => `${row.id}-${index}`}
-              emptyMessage={t("scannerPackageOrdersEmpty")}
-              dense
-              bordered={false}
-            />
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="rounded-[30px] border border-[color:var(--color-border-soft)] bg-white/80 p-6 shadow-sm dark:bg-white/[0.04]">
-            <div className="grid gap-3">
-              {[
-                { icon: <Truck size={16} />, label: t("scannerPackageCarNumber"), value: detail.carNumber },
-                { icon: <UserRound size={16} />, label: t("scannerPackageDriver"), value: detail.driver },
-              ].map((item) => (
-                <div key={item.label} className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-4 dark:border-white/10 dark:bg-white/[0.03]">
-                  <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/55">
-                    {item.icon}
-                    <p className="m-0 text-xs font-bold uppercase tracking-[0.16em]">
-                      {item.label}
-                    </p>
-                  </div>
-                  <p className="m-0 mt-3 text-base font-bold text-maindark dark:text-white [overflow-wrap:anywhere]">
-                    {item.value}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {inlineMessage ? (
-            <div
-              className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${
-                inlineMessage.tone === "success"
-                  ? "border-emerald-300/20 bg-emerald-500/12 text-emerald-100"
-                  : "border-red-300/20 bg-red-500/12 text-red-100"
-              }`}
-            >
-              <div className="flex items-start gap-2">
-                {inlineMessage.tone === "success" ? (
-                  <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
-                ) : (
-                  <AlertTriangle size={18} className="mt-0.5 shrink-0" />
-                )}
-                <span>{inlineMessage.text}</span>
-              </div>
-            </div>
-          ) : null}
-
-          <button
-            type="button"
-            onClick={() => receiveMutation.mutate()}
-            disabled={receiveMutation.isPending || inlineMessage?.tone === "success"}
-            className="flex w-full items-center justify-center gap-3 rounded-[28px] bg-emerald-600 px-6 py-5 text-base font-extrabold uppercase tracking-wide text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {receiveMutation.isPending ? (
-              <>
-                <ScanLine size={18} className="animate-pulse" />
-                {t("scannerPackageReceiving")}
-              </>
-            ) : (
-              <>
-                <CheckCircle2 size={18} />
-                {t("scannerPackageReceive")}
-              </>
-            )}
-          </button>
-        </div>
-      </div>
+      {sticky}
     </div>
   );
+};
+
+/**
+ * Skanerlangan paket (`BTB-…`) yoki qaytarilgan paket (`BTR-…`) — maket `courier-scan-package-detail`.
+ * Xodimda paket tafsiloti (`GET transfer-batches/:id`) filial/viloyat nomlari va ichidagi buyurtmalarning
+ * mijozi bilan to'ldiradi; kuryer faqat skan javobini ko'radi (backend unga tafsilotni bermaydi).
+ */
+const ScanPackageDetail = ({ data, type, roleKind, topNotice }: ScanPackageDetailProps) => {
+  const canReceive = canReceivePackage(roleKind);
+  const scanView = useMemo(() => buildScanPackageView(data, type), [data, type]);
+  const batchDetail = useBatchDetail(canReceive && scanView ? scanView.id : undefined);
+  const view = useMemo(
+    () => (scanView ? (buildScanPackageView(data, type, batchDetail.data) ?? scanView) : null),
+    [batchDetail.data, data, scanView, type],
+  );
+
+  if (!view) return null;
+  return <PackageBody view={view} canReceive={canReceive} topNotice={topNotice} />;
 };
 
 export default memo(ScanPackageDetail);

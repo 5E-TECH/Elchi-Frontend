@@ -2,6 +2,9 @@ import type { OrderListItem } from "../../../entities/order/types/order";
 
 export type CourierBulkAction = "sold" | "cancel" | "tomorrow";
 
+/** Skanerlash rejimi: skanerlangan buyurtma bekor qilishga yoki ertaga qoldirishga belgilanadi. */
+export type CourierBulkScanMode = Exclude<CourierBulkAction, "sold">;
+
 export type CourierBulkOrder = OrderListItem & {
   created_at?: string;
   region?: { id?: string; name?: string } | null;
@@ -137,6 +140,72 @@ export const getCourierBulkActionsAfterFinalize = (
   Object.fromEntries(
     Object.entries(actions).filter(([orderId]) => !succeededOrderIds.has(orderId)),
   ) as Record<string, CourierBulkAction>;
+
+/** Buyurtma qo'lda belgilanganmi (belgilanmagani sukut bo'yicha «sotildi»). */
+export const isCourierBulkOrderMarked = (orderId: string, actions: Record<string, CourierBulkAction>) =>
+  actions[orderId] !== undefined;
+
+/**
+ * Belgilanmagan buyurtmalar soni — «Sotiladi» kartasi va tasdiq oynasidagi «{u} tasi belgilanmagan, sukut
+ * bo'yicha» (maket `courier-courier-bulk-confirm-dialog`).
+ */
+export const getCourierBulkUnmarkedCount = (
+  orders: Array<{ id: string }>,
+  actions: Record<string, CourierBulkAction>,
+) => orders.filter((order) => !isCourierBulkOrderMarked(order.id, actions)).length;
+
+/** «Natija» filtri: barchasi · sotiladi · bekor · ertaga · belgilanmagan (mijoz tomonida). */
+export type CourierBulkResultFilter = "all" | CourierBulkAction | "unmarked";
+
+const digitsOf = (value: string) => value.replace(/\D/g, "");
+
+/**
+ * Qidiruv (ism, telefon yoki buyurtma raqami) va «Natija» filtri — faqat mijoz tomonida, yangi API parametrisiz.
+ * Telefon raqamlar bo'yicha ham solishtiriladi («90 214» → `+998902146631`).
+ */
+export const filterCourierBulkOrders = <T extends CourierBulkOrder>(
+  orders: T[],
+  actions: Record<string, CourierBulkAction>,
+  { query, result }: { query: string; result: CourierBulkResultFilter },
+): T[] => {
+  const needle = query.trim().toLocaleLowerCase();
+  const needleDigits = digitsOf(needle);
+
+  return orders.filter((order) => {
+    if (result === "unmarked" && isCourierBulkOrderMarked(order.id, actions)) return false;
+    if (result !== "all" && result !== "unmarked" && getCourierBulkOrderAction(order.id, actions) !== result) {
+      return false;
+    }
+    if (!needle) return true;
+
+    const name = order.customer?.name?.toLocaleLowerCase() ?? "";
+    const phone = order.customer?.phone_number ?? "";
+    const id = String(order.id).toLocaleLowerCase();
+    if (name.includes(needle) || id.includes(needle.replace(/^№/, "")) || phone.toLocaleLowerCase().includes(needle)) {
+      return true;
+    }
+    return needleDigits.length > 0 && digitsOf(phone).includes(needleDigits);
+  });
+};
+
+export type CourierBulkSortKey = "createdAt" | "amount";
+export type CourierBulkSort = { key: CourierBulkSortKey; direction: "asc" | "desc" };
+
+const createdTime = (order: CourierBulkOrder) => {
+  const time = new Date(order.created_at ?? order.createdAt ?? "").getTime();
+  return Number.isNaN(time) ? 0 : time;
+};
+
+/** Mijoz tomonidagi saralash (sana yoki summa); `null` — backend tartibi. Barqaror (teng qiymatlar joyida). */
+export const sortCourierBulkOrders = <T extends CourierBulkOrder>(orders: T[], sort: CourierBulkSort | null): T[] => {
+  if (!sort) return orders;
+  const read = sort.key === "amount" ? (order: T) => Number(order.total_price) || 0 : createdTime;
+  const sign = sort.direction === "asc" ? 1 : -1;
+  return orders
+    .map((order, index) => ({ order, index }))
+    .sort((a, b) => (read(a.order) - read(b.order)) * sign || a.index - b.index)
+    .map(({ order }) => order);
+};
 
 export const getCourierBulkFinalizeLabelCounts = (counts: CourierBulkCounts) => ({
   changed: counts.cancel + counts.tomorrow,

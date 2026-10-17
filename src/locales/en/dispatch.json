@@ -70,5 +70,100 @@
   "piece": "pcs",
   "selectAll": "Select all",
   "deselectAll": "Deselect all",
-  "oldUiAction": "Assign to courier {{count}}"
+  "oldUiAction": "Assign to courier {{count}}",
+  "page": {
+    "title": "Assign to courier",
+    "subtitle": "{{count}} orders added",
+    "subtitleEmpty": "No orders added yet",
+    "assign": "Assign to courier — {{count}}",
+    "assignShort": "Assign — {{count}}",
+    "assigning": "Assigning..."
+  },
+  "stats": {
+    "label": "List summary",
+    "selected": "Selected",
+    "home": "To home",
+    "center": "To center",
+    "unit": "pcs",
+    "ofTotal": "/ {{total}} pcs",
+    "ofTotalShort": "/ {{total}}",
+    "sum": "Total {{amount}}"
+  },
+  "scanCard": {
+    "title": "Scanned orders",
+    "description": "Read an order QR code with the USB scanner or the camera — it is added to the list and selected",
+    "usbReady": "USB scanner ready",
+    "camera": "Camera",
+    "cameraPhone": "Scan with camera, {{count}} orders in the list",
+    "cameraCount": "{{count}} pcs"
+  },
+  "selection": {
+    "label": "Selected orders",
+    "title": "{{count}} orders selected",
+    "ofTotal": "/ {{total}}",
+    "hint": "Only selected orders are assigned to the courier",
+    "selectAll": "Select all",
+    "clear": "Clear selection"
+  },
+  "table": {
+    "label": "Scanned orders",
+    "order": "Order",
+    "customer": "Customer",
+    "location": "District / region",
+    "market": "Market",
+    "delivery": "Delivery",
+    "status": "Status",
+    "amount": "Amount",
+    "actions": "Actions",
+    "selectAll": "Select all",
+    "selectRow": "Select No. {{id}}",
+    "remove": "Remove No. {{id}} from the list"
+  },
+  "empty": {
+    "title": "Scan order QR codes",
+    "description": "Read them with the USB scanner or press «Camera» — orders are added to this list. On a phone use «Scan with camera»."
+  },
+  "lookup": {
+    "checking": "Checking {{count}} order(s)...",
+    "slow": "The response is slower than usual. Waiting for the network or server."
+  },
+  "scanErrors": {
+    "duplicate": "This order is already in the list",
+    "wrongType": "Only order QR codes can be scanned",
+    "invalidQr": "This QR code is not valid for assignment",
+    "lookup": "Failed to fetch order details"
+  },
+  "couriers": {
+    "loadError": "Could not load the courier list. You can still scan, but retry before assigning.",
+    "retry": "Retry",
+    "emptyTitle": "No active couriers in this branch",
+    "emptyBranch": "Only active couriers of the {{branch}} branch are listed.",
+    "emptyUsers": "To add a courier, open the <usersLink>Users</usersLink> section."
+  },
+  "assign": {
+    "successTitle": "Success",
+    "success": "{{count}} orders assigned to {{courier}}",
+    "errorTitle": "Error"
+  },
+  "courierDialog": {
+    "title": "Select a courier",
+    "description": "{{count}} orders will be assigned to this courier",
+    "search": "Search courier...",
+    "searchLabel": "Search courier",
+    "listBranch": "Active couriers of the {{branch}} branch · {{count}}",
+    "list": "Active couriers · {{count}}",
+    "empty": "No courier found",
+    "emptyHint": "Check the name or phone number.",
+    "cancel": "Cancel",
+    "assign": "Assign — {{count}}"
+  },
+  "camera": {
+    "title": "Assignment",
+    "subtitle": "Only order QR codes are accepted",
+    "waiting": "Fit the QR code from the order label into the frame",
+    "close": "Close camera",
+    "torchOn": "Turn light on",
+    "torchOff": "Turn light off",
+    "loading": "Checking order..."
+  }
 }

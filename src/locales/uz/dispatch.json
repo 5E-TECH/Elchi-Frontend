@@ -70,5 +70,100 @@
   "piece": "ta",
   "selectAll": "Barchasini tanlash",
   "deselectAll": "Barchasini bekor qilish",
-  "oldUiAction": "Courierga biriktirish {{count}}"
+  "oldUiAction": "Courierga biriktirish {{count}}",
+  "page": {
+    "title": "Kuryerga biriktirish",
+    "subtitle": "{{count}} ta buyurtma qo'shilgan",
+    "subtitleEmpty": "Hali buyurtma qo'shilmagan",
+    "assign": "Kuryerga biriktirish — {{count}} ta",
+    "assignShort": "Biriktirish — {{count}} ta",
+    "assigning": "Biriktirilmoqda..."
+  },
+  "stats": {
+    "label": "Ro'yxat bo'yicha ko'rsatkichlar",
+    "selected": "Tanlangan",
+    "home": "Uygacha",
+    "center": "Markazgacha",
+    "unit": "ta",
+    "ofTotal": "/ {{total}} ta",
+    "ofTotalShort": "/ {{total}}",
+    "sum": "Jami {{amount}}"
+  },
+  "scanCard": {
+    "title": "Skanerlangan buyurtmalar",
+    "description": "Buyurtma QR kodini USB skaner yoki kamera bilan o'qing — u ro'yxatga qo'shiladi va tanlanadi",
+    "usbReady": "USB skaner tayyor",
+    "camera": "Kamera",
+    "cameraPhone": "Kamera bilan skanerlash, ro'yxatda {{count}} ta buyurtma",
+    "cameraCount": "{{count}} ta"
+  },
+  "selection": {
+    "label": "Tanlangan buyurtmalar",
+    "title": "{{count}} ta buyurtma tanlandi",
+    "ofTotal": "/ {{total}} ta",
+    "hint": "Faqat tanlangan buyurtmalar kuryerga biriktiriladi",
+    "selectAll": "Barchasini tanlash",
+    "clear": "Tanlovni bekor qilish"
+  },
+  "table": {
+    "label": "Skanerlangan buyurtmalar",
+    "order": "Buyurtma",
+    "customer": "Mijoz",
+    "location": "Tuman / viloyat",
+    "market": "Market",
+    "delivery": "Yetkazish",
+    "status": "Holat",
+    "amount": "Summa",
+    "actions": "Amallar",
+    "selectAll": "Barchasini tanlash",
+    "selectRow": "№{{id}} ni tanlash",
+    "remove": "№{{id}} ni ro'yxatdan olib tashlash"
+  },
+  "empty": {
+    "title": "Buyurtma QR kodlarini skanerlang",
+    "description": "USB skaner bilan o'qiting yoki «Kamera» tugmasini bosing — buyurtmalar shu ro'yxatga qo'shiladi. Telefonda «Kamera bilan skanerlash»."
+  },
+  "lookup": {
+    "checking": "{{count}} ta buyurtma tekshirilmoqda...",
+    "slow": "Javob odatdagidan sekin. Internet yoki server javobi kutilmoqda."
+  },
+  "scanErrors": {
+    "duplicate": "Bu buyurtma allaqachon ro'yxatga qo'shilgan",
+    "wrongType": "Faqat buyurtma QR kodlarini skanerlash mumkin",
+    "invalidQr": "Bu QR kod biriktirish uchun yaroqsiz",
+    "lookup": "Buyurtma ma'lumotini olib bo'lmadi"
+  },
+  "couriers": {
+    "loadError": "Kuryerlar ro'yxatini yuklab bo'lmadi. Skanerlash mumkin, lekin biriktirish uchun qayta urinib ko'ring.",
+    "retry": "Qayta urinish",
+    "emptyTitle": "Filialda faol kuryer yo'q",
+    "emptyBranch": "Ro'yxatda faqat {{branch}} filialining faol kuryerlari ko'rinadi.",
+    "emptyUsers": "Kuryer qo'shish uchun <usersLink>Foydalanuvchilar</usersLink> bo'limiga o'ting."
+  },
+  "assign": {
+    "successTitle": "Muvaffaqiyatli",
+    "success": "{{count}} ta buyurtma {{courier}}ga biriktirildi",
+    "errorTitle": "Xatolik"
+  },
+  "courierDialog": {
+    "title": "Kuryerni tanlang",
+    "description": "{{count}} ta buyurtma shu kuryerga biriktiriladi",
+    "search": "Kuryer qidirish...",
+    "searchLabel": "Kuryerni qidirish",
+    "listBranch": "{{branch}} filialining faol kuryerlari · {{count}} ta",
+    "list": "Faol kuryerlar · {{count}} ta",
+    "empty": "Kuryer topilmadi",
+    "emptyHint": "Ism yoki telefon raqamini tekshiring.",
+    "cancel": "Bekor qilish",
+    "assign": "Biriktirish — {{count}} ta"
+  },
+  "camera": {
+    "title": "Biriktirish",
+    "subtitle": "Faqat buyurtma QR kodi qabul qilinadi",
+    "waiting": "Buyurtma yorlig'idagi QR kodni ramkaga oling",
+    "close": "Kamerani yopish",
+    "torchOn": "Chiroqni yoqish",
+    "torchOff": "Chiroqni o'chirish",
+    "loading": "Buyurtma tekshirilmoqda..."
+  }
 }
