@@ -93,7 +93,7 @@ test.describe("Buyurtma ma'lumotlari — 390px", () => {
         expect(row.valueHeight, `${row.id}: qiymat bir qator`).toBeLessThan(32);
       }
       // Uzun nom kesilgan, telefon esa to'liq va bosiladi.
-      await expect(page.getByTestId("meta-market").locator("a")).toHaveText("+998992222222");
+      await expect(page.getByTestId("meta-market").locator("a")).toHaveText("+998 99 222 22 22");
       // UTC brauzerda ham Toshkent vaqti: 19-iyul 20:30Z → 20.07.2026, 01:30.
       await expect(page.getByTestId("meta-sold-at")).toContainText("20.07.2026, 01:30:00");
       expect(leaked).toEqual([]);

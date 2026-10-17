@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { formatTrackingDate, formatTrackingDateTime } from "./formatTrackingDate";
+import { formatTrackingDate, formatTrackingDateTime, isTashkentToday } from "./formatTrackingDate";
 
 /**
  * SANA — DOIM Asia/Tashkent zonasida.
@@ -61,5 +61,23 @@ describe("formatTrackingDateTime — tarix yozuvi vaqti (dizayn v2), Asia/Tashke
   it("buzuq qiymat — «—»", () => {
     expect(formatTrackingDateTime("yaroqsiz", { now })).toBe("—");
     expect(formatTrackingDateTime(null, { now })).toBe("—");
+  });
+});
+
+describe("isTashkentToday (D-07)", () => {
+  // «Hozir» — Toshkentda 20-iyul 15:00 (UTC 10:00).
+  const now = new Date("2026-07-20T10:00:00.000Z");
+
+  it("Toshkent kuni bo'yicha bugun — true; kecha va eski — false", () => {
+    expect(isTashkentToday("2026-07-20T08:38:49.865Z", now)).toBe(true);
+    // UTC'da hali 19-iyul, Toshkentda esa 20-iyul 01:30.
+    expect(isTashkentToday("2026-07-19T20:30:00.000Z", now)).toBe(true);
+    expect(isTashkentToday("2026-07-19T13:00:00.000Z", now)).toBe(false);
+    expect(isTashkentToday("2026-10-06T09:00:00.000Z", now)).toBe(false);
+  });
+
+  it("buzuq yoki bo'sh qiymat — false", () => {
+    expect(isTashkentToday("yaroqsiz", now)).toBe(false);
+    expect(isTashkentToday(null, now)).toBe(false);
   });
 });

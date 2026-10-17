@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { buildActionOrder, isCatalogLessItem, normalizeOrderDetail, readOrderCreatedAt } from "./orderDetailModel";
+import {
+  buildActionOrder,
+  buildTrackingContext,
+  isCatalogLessItem,
+  normalizeOrderDetail,
+  readOrderCreatedAt,
+} from "./orderDetailModel";
 
 describe("normalizeOrderDetail — xom javobni tozalash", () => {
   it("⭐ mock API `{}` va `{ data: {} }` — null (sahifa «topilmadi», yiqilmaydi)", () => {
@@ -63,5 +69,24 @@ describe("buildActionOrder — sotish/bekor qilish oynalari uchun", () => {
     expect(action?.market).toEqual({ name: "-", expense_proof_conditions: null });
     expect(action?.items[0]).toMatchObject({ id: "124", product_id: null, product: { id: null, name: "tv" } });
     expect(action?.product_quantity).toBe(2);
+  });
+});
+
+describe("buildTrackingContext — tarix jumlalaridagi nomlar", () => {
+  it("⭐ D-05: manzil filiali bo'lmasa — buyurtmaning o'z filiali («Filial filialiga» emas)", () => {
+    const context = buildTrackingContext(normalizeOrderDetail({ id: "1", branch: { id: "15", name: "Urgut" } }));
+    expect(context.branchName).toBe("Urgut");
+    expect(context.branchNamesById).toEqual({ "15": "Urgut" });
+  });
+
+  it("aniq manzil filiali (`destination_branch`) ustun", () => {
+    const context = buildTrackingContext(
+      normalizeOrderDetail({ id: "1", branch: { id: "1", name: "Toshkent HQ" }, destination_branch: { id: "15", name: "Urgut" } }),
+    );
+    expect(context.branchName).toBe("Urgut");
+  });
+
+  it("filial umuman yo'q — null (jumlada umumiy «Filial»)", () => {
+    expect(buildTrackingContext(normalizeOrderDetail({ id: "1" })).branchName).toBeNull();
   });
 });

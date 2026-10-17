@@ -439,6 +439,7 @@
       "courier": "Courier",
       "branch": "Branch",
       "post": "Post",
+      "postInSentence": "the post",
       "market": "Market",
       "user": "User",
       "phone": "Phone"
@@ -746,6 +747,16 @@
     "readOnlyLocked": "The order has been sent to a branch, so products, amount, customer and address are locked.",
     "dateLabel": "Date:",
     "addressLabel": "Address",
-    "noProducts": "No products in the order"
+    "noProducts": "No products in the order",
+    "notFoundTitle": "Order not found",
+    "notFoundDescription": "Order №{{id}} does not exist or you do not have access to it.",
+    "backToOrders": "Back to orders"
+  },
+  "createCatalogEmpty": "This market's catalog is empty",
+  "createCatalogEmptyHint": "Add the product with the “Product not in catalog” field.",
+  "amountInput": {
+    "fraction": "Enter the amount as a whole number — decimals are not accepted",
+    "negative": "The amount cannot be negative",
+    "tooLong": "The amount is too large — 12 digits at most"
   }
 }

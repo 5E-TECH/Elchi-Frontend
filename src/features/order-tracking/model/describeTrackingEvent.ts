@@ -230,9 +230,6 @@ const getAdditionalDetails = (event: TrackingEvent, context?: TrackingContext) =
 
 const getCurrentUserName = (currentUser?: User | null) => currentUser?.name || currentUser?.username || "";
 
-const isBranchWaitingHandlerRole = (role?: string | null) =>
-  ["manager", "branch", "registrator"].includes(normalizeKey(role));
-
 const isCourierReturnToWaitingEvent = (event: TrackingEvent) =>
   normalizeKey(event.old_value?.status ?? event.from_status) === "on_the_road" &&
   normalizeKey(event.new_value?.status ?? event.to_status) === "waiting";
@@ -307,27 +304,36 @@ const isCancelledPostReceivedEvent = (event: TrackingEvent) => {
 
 const isSystemName = (value: unknown) => normalizeKey(String(value ?? "")) === "system";
 
-const getActorName = (event: TrackingEvent, currentUser?: User | null) => {
+const isSystemEvent = (event: TrackingEvent) =>
+  isSystemName(event.actor?.name ?? event.actor?.username) ||
+  isSystemName(event.actor?.role) ||
+  normalizeKey(event.changed_by_role) === "system";
+
+/**
+ * Aktyor ismi. Tizim hodisasi (`changed_by_role: "system"`) — «Tizim» (D-04): uni kim bajarganini API
+ * aytmaydi, shuning uchun ism taxmin qilinmaydi (ilgari joriy foydalanuvchi yoki qo'shni hodisa aktyori
+ * yozilardi — boshqa odamga). Yagona istisno — hodisaning o'zida kuryer nomi bo'lsa (kuryer qaytargan).
+ */
+const getActorName = (event: TrackingEvent, t: T, currentUser?: User | null) => {
   const actorName = asCleanString(event.actor?.name) || asCleanString(event.actor?.username);
   const currentUserName = getCurrentUserName(currentUser);
   const eventUserName = asCleanString(event.user_name);
-  const changedByRole = normalizeKey(event.changed_by_role);
-  const isSystemActor = isSystemName(actorName) || isSystemName(event.actor?.role) || changedByRole === "system";
+  const isSystemActor = isSystemEvent(event);
 
   if (isSystemActor && isCourierReturnToWaitingEvent(event)) {
-    if (isBranchWaitingHandlerRole(currentUser?.role) && currentUserName) return currentUserName;
     const courierName = getCourierActorName(event);
     if (courierName) return courierName;
-    if (normalizeKey(currentUser?.role) === "courier" && currentUserName) return currentUserName;
   }
 
   if (actorName && !isSystemName(actorName)) return actorName;
   if (eventUserName && !isSystemName(eventUserName)) return eventUserName;
+  if (isSystemActor) return t("tracking.roleValue.system");
 
   const isCurrentUserAction = Boolean(currentUser?.id) && String(event.changed_by) === String(currentUser?.id);
-  if (isCurrentUserAction && changedByRole !== "system" && currentUserName) return currentUserName;
+  if (isCurrentUserAction && currentUserName) return currentUserName;
 
-  return humanize(event.changed_by_role || actorName || "system");
+  // Ism yo'q — rol nomi («Menejer»), inglizcha «Manager» emas.
+  return getRoleLabel(t, event.changed_by_role) || t("tracking.roleValue.system");
 };
 
 const getActorRole = (event: TrackingEvent, currentUser?: User | null) => {
@@ -335,25 +341,17 @@ const getActorRole = (event: TrackingEvent, currentUser?: User | null) => {
   const isCurrentUserAction = Boolean(currentUser?.id) && String(event.changed_by) === String(currentUser?.id);
   const isSystemActor = isSystemName(actorRole) || isSystemName(event.changed_by_role);
 
-  if (isSystemActor && isCourierReturnToWaitingEvent(event)) {
-    if (isBranchWaitingHandlerRole(currentUser?.role)) return currentUser?.role;
-    if (getCourierActorName(event) || normalizeKey(currentUser?.role) === "courier") return "courier";
-  }
+  if (isSystemActor && isCourierReturnToWaitingEvent(event) && getCourierActorName(event)) return "courier";
 
   if (actorRole && !isSystemName(actorRole)) return actorRole;
   if (event.changed_by_role && !isSystemName(event.changed_by_role)) return event.changed_by_role;
-  if (isCurrentUserAction && currentUser?.role) return currentUser.role;
+  if (isCurrentUserAction && !isSystemActor && currentUser?.role) return currentUser.role;
   return actorRole || event.changed_by_role;
 };
 
 const getActorPhone = (event: TrackingEvent, currentUser?: User | null) => {
   const actorPhone = asCleanString(event.actor?.phone_number) || asCleanString(event.actor?.phoneNumber);
   if (actorPhone) return actorPhone;
-
-  const systemReturn =
-    isCourierReturnToWaitingEvent(event) && isSystemName(event.actor?.role ?? event.changed_by_role);
-  if (systemReturn && isBranchWaitingHandlerRole(currentUser?.role)) return asCleanString(currentUser?.phone_number);
-  if (systemReturn && normalizeKey(currentUser?.role) === "courier") return asCleanString(currentUser?.phone_number);
 
   if (
     Boolean(currentUser?.id) &&
@@ -392,7 +390,7 @@ const formatNoteWithNames = (note: string, event: TrackingEvent, t: T, actor: st
   if (branchName && /dispatch qilindi|dispatch|jo'natildi|jonatildi/i.test(formattedNote)) {
     return {
       key: "tracking.dynamic.dispatchToBranch",
-      params: { actor, post: postName || t("tracking.entity.post"), branch: branchName },
+      params: { actor, post: postName || t("tracking.entity.postInSentence"), branch: branchName },
     };
   }
   return formattedNote;
@@ -414,7 +412,8 @@ const getSentenceTemplate = (
   const newStatus = normalizeKey(event.new_value?.status ?? event.to_status);
   const transition = `${oldStatus}->${newStatus}`;
   const branch = getTrackingName(event, "branch") || context?.branchName || t("tracking.entity.branch");
-  const post = getTrackingName(event, "post") || context?.postName || t("tracking.entity.post");
+  // Gap o'rtasida: nomi noma'lum pochta — kichik harf bilan («… pochtani HQ'dan Urgut filialiga jo'natdi», D-05).
+  const post = getTrackingName(event, "post") || context?.postName || t("tracking.entity.postInSentence");
   const market = getTrackingName(event, "market") || context?.marketName || t("tracking.entity.market");
   const dynamic = (name: string, params: Record<string, string> = {}): Template => ({
     key: `tracking.dynamic.${name}`,
@@ -517,7 +516,7 @@ export const describeTrackingEvent = (
               ? t(actionLabelKey)
               : humanize(event.action);
 
-  const actor = getActorName(event, currentUser);
+  const actor = getActorName(event, t, currentUser);
   const roleLabel = getRoleLabel(t, getActorRole(event, currentUser));
 
   let template = getSentenceTemplate(event, t, actor, context);

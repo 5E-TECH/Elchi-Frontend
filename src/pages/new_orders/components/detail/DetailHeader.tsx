@@ -13,7 +13,7 @@ import type { OrderDetailLayout } from "./orderDetailAccess";
 import { readOrderCreatedAt, readOrderMarket, type OrderDetail } from "./orderDetailModel";
 
 type DetailHeaderProps = {
-  /** URL'dagi raqam — buyurtma hali yuklanmagan (yoki topilmagan) bo'lsa ham sarlavha va nusxalash. */
+  /** URL'dagi raqam — buyurtma hali yuklanmagan (yoki topilmagan) bo'lsa ham sarlavha. */
   orderId: string;
   order: OrderDetail | null;
   layout: OrderDetailLayout;
@@ -89,7 +89,8 @@ export const DetailHeader = ({ orderId, order, layout, onBack, backLabel, action
       back={onBack}
       backLabel={backLabel ?? t("orders", { ns: "newOrders" })}
       title={`№${id}`}
-      titleAction={<IconButton size="sm" icon={Copy} label={t("copyOrderNumber")} onClick={copy} />}
+      // Nusxalash faqat mavjud buyurtmada (D-13): topilmagan / hali kelmagan raqamni nusxalash ma'nosiz.
+      titleAction={order ? <IconButton size="sm" icon={Copy} label={t("copyOrderNumber")} onClick={copy} /> : undefined}
       meta={meta}
       description={description}
       actions={actions}

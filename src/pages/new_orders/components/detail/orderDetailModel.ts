@@ -207,11 +207,16 @@ export const buildTrackingContext = (order: OrderDetail | null) => {
   );
 
   return {
+    // Jo'natish jumlasidagi filial («… pochtani HQ'dan Urgut filialiga jo'natdi»): aniq manzil filiali bo'lmasa —
+    // buyurtmaning o'z filiali (`branch`; jo'natilgach `branch_id` manzil filialiga o'tadi). Ilgari bu e'tiborsiz
+    // qolib, jumla «Filial filialiga» bo'lib chiqardi (D-05).
     branchName:
       source.destination_branch?.name ??
       source.target_branch?.name ??
       source.destination_branch_name ??
       source.target_branch_name ??
+      source.branch?.name ??
+      source.branch_name ??
       null,
     postName: source.post?.name ?? source.post?.title ?? source.post_name ?? null,
     marketName: source.market?.name ?? source.market?.title ?? source.market_name ?? null,

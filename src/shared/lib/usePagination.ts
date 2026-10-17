@@ -8,6 +8,12 @@ interface UsePaginationOptions {
   defaultLimit: number;
   pageParam?: string;
   limitParam?: string;
+  /**
+   * Backend qabul qiladigan `limit` qiymatlari (masalan `GET /orders` — 10, 25, 50, 100). Berilsa, URL'dagi
+   * boshqa qiymat (`?limit=5000`) e'tiborsiz qoldiriladi va `defaultLimit` ishlatiladi — aks holda so'rov 400
+   * bilan yiqilib, sahifa hech qachon o'tmaydigan xatoda qolardi. Berilmasa — avvalgidek har musbat butun son.
+   */
+  allowedLimits?: readonly number[];
 }
 
 const parsePositiveInt = (value: string | null) => {
@@ -21,11 +27,25 @@ const parsePositiveInt = (value: string | null) => {
   return Math.floor(parsed);
 };
 
+/**
+ * Sahifa almashganda (ro'yxatning «2-sahifa» si) shell kontentini tepaga qaytaradi. Shell'ning yagona skroll
+ * konteyneri — `[data-shell-slot=content]` ning ota-onasi `<main>` (`widgets/layout/dashboardLayout.tsx`);
+ * shell o'zi faqat yo'l (`pathname`) o'zgarganda tepaga qaytaradi, `?page=` da esa joyida qoldiradi.
+ * Shell'dan tashqarida (testlar, alohida sahifa) hech narsa qilmaydi.
+ */
+export const scrollShellContentToTop = () => {
+  if (typeof document === "undefined") return;
+  const slot = document.querySelector<HTMLElement>('[data-shell-slot="content"]');
+  const scroller = slot?.closest<HTMLElement>("main") ?? slot?.parentElement ?? null;
+  if (scroller && scroller.scrollTop > 0) scroller.scrollTop = 0;
+};
+
 export const usePagination = ({
   defaultPage = 1,
   defaultLimit,
   pageParam = "page",
   limitParam = "limit",
+  allowedLimits,
 }: UsePaginationOptions) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -36,10 +56,11 @@ export const usePagination = ({
     () => parsePositiveInt(rawPage) ?? defaultPage,
     [defaultPage, rawPage],
   );
-  const limit = useMemo(
-    () => parsePositiveInt(rawLimit) ?? defaultLimit,
-    [defaultLimit, rawLimit],
-  );
+  const limit = useMemo(() => {
+    const parsed = parsePositiveInt(rawLimit);
+    if (parsed === null) return defaultLimit;
+    return allowedLimits && !allowedLimits.includes(parsed) ? defaultLimit : parsed;
+  }, [allowedLimits, defaultLimit, rawLimit]);
 
   const updatePagination = useCallback(
     (

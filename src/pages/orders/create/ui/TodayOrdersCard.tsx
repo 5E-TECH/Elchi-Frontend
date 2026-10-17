@@ -5,6 +5,7 @@ import { ChevronRight, Inbox } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { OrderStatusBadge } from "../../../../entities/order";
 import { useOrders as useIncomingOrders } from "../../../../entities/orders";
+import { isTashkentToday } from "../../../../features/order-tracking";
 import { cx } from "../../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized } from "../../../../shared/lib/formatMoney";
@@ -57,12 +58,21 @@ const TodayOrderRow = ({ order, href }: { order: ApiOrder; href: string }) => {
  * `*-create-manual-step1`, `*-create-manual-step2`, `market-new-orders-create-manual`). Sarlavhada
  * «{market} · bugun» va son; qator — buyurtma tafsilotiga havola. Market rolida telefonda (< 768) ro'yxat
  * o'rniga bitta havola-karta («Baraka Shop · bugun · 5 ta» → yangi buyurtmalar ro'yxati).
+ *
+ * «Bugun» — Toshkent kuni bo'yicha mijozda (D-07): `GET orders/markets/:id/new` sana filtrisiz BARCHA yangi
+ * buyurtmalarni beradi (06.10 dagi ham), sarlavha esa «· bugun» deydi.
  */
 const TodayOrdersCard = ({ marketId, marketName, isMarketRole, className }: TodayOrdersCardProps) => {
   const { t } = useTranslation("orders");
   const { useGetTodayOrdersByMarket } = useIncomingOrders();
   const query = useGetTodayOrdersByMarket(marketId, undefined, Boolean(marketId));
-  const orders = useMemo(() => toApiList<ApiOrder>(query.data), [query.data]);
+  const orders = useMemo(
+    () =>
+      toApiList<ApiOrder>(query.data).filter((order) =>
+        isTashkentToday(order.createdAt ?? (order as { created_at?: unknown }).created_at),
+      ),
+    [query.data],
+  );
   const count = orders.length;
   const market = marketName ?? "—";
   const detailHref = (order: ApiOrder) => `/new-orders/${marketId}/edit/${order.id}`;
@@ -77,7 +87,7 @@ const TodayOrdersCard = ({ marketId, marketName, isMarketRole, className }: Toda
         className={cx(isMarketRole && "max-md:hidden", className)}
       >
         <QueryBoundary
-          query={query}
+          query={{ ...query, data: query.data === undefined ? undefined : orders }}
           loading={<SkeletonList rows={3} />}
           empty={<EmptyState icon={Inbox} title={t("createTodayEmpty")} />}
         >

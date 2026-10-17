@@ -4,6 +4,7 @@ import { ShoppingBag } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useOrders } from "../../../../entities/orders";
 import { Button, Dialog, Field, Select, TextInput, type SelectOption } from "../../../../shared/ui/primitives";
+import { ORDER_AMOUNT_ERROR_KEYS, readOrderAmountInput } from "../../../orders/lib/orderAmountInput";
 import {
   buildOrderUpdatePayload,
   isOrderReceivedOrLater,
@@ -31,6 +32,9 @@ import { useEditDialogSession } from "./useEditDialogSession";
  * ustma-ust) → «Izoh». Saqlash — `PATCH /orders/:id/full`, faqat o'zgargan va qulflanmagan maydonlar
  * (`buildOrderUpdatePayload`): HQ qabul qilgan buyurtmada mahsulot va summa, filialga jo'natilganda
  * yetkazish turi yuborilmaydi va maydoni qulf (sababi ostida).
+ *
+ * Kamida bitta mahsulot qoladi (D-01, `OrderItemsEditor`); summa maydoni kasr / minus / 12 xonadan uzun sonni
+ * jimgina o'zgartirmaydi — rad etadi va sababini aytadi (D-17, yaratish formasidagi bilan bir xil).
  */
 
 const DELIVERY_OPTIONS = [
@@ -41,12 +45,15 @@ const DELIVERY_OPTIONS = [
 type OrderDialogProps = Omit<EditDialogProps, "order"> & { order: EditDialogOrder };
 
 const OrderDialog = ({ open, order, onClose, onSaved }: OrderDialogProps) => {
-  const { t } = useTranslation(["newOrders", "orders", "common"]);
+  const { t, i18n } = useTranslation(["newOrders", "orders", "common"]);
   const ids = useId();
   const { updateNewOrder } = useOrders();
   const [initial] = useState<OrderFormState>(() => seedOrderForm(order));
   const [form, setForm] = useState<OrderFormState>(initial);
   const [totalError, setTotalError] = useState<string | undefined>();
+  const [itemsError, setItemsError] = useState<string | undefined>();
+  /** Rad etilgan belgi sababi (D-17) — o'chirilguncha yoki maydondan chiqilguncha ko'rinib turadi. */
+  const [amountHint, setAmountHint] = useState<string | undefined>();
   const [saving, setSaving] = useState(false);
   const totalRef = useRef<HTMLInputElement>(null);
   const productsLocked = isOrderReceivedOrLater(order.status ?? "");
@@ -71,6 +78,12 @@ const OrderDialog = ({ open, order, onClose, onSaved }: OrderDialogProps) => {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (saving) return;
+
+    // Mahsulotsiz buyurtma saqlanmaydi (`items: []` ketmasin) — oyna buni o'zi ham yo'l qo'ymaydi (D-01).
+    if (!productsLocked && hasItems && form.items.length === 0) {
+      setItemsError(t("editDialog.itemsMinOne"));
+      return;
+    }
 
     const totalPrice = toRulesTotalPrice(order, initial.total_price, form.total_price);
     if (!productsLocked && parseOrderTotalPrice(totalPrice) === null) {
@@ -129,7 +142,7 @@ const OrderDialog = ({ open, order, onClose, onSaved }: OrderDialogProps) => {
       }
     >
       {hasItems ? (
-        <Field id={itemsFieldId} label={t("products", { ns: "orders" })} labelAs="span">
+        <Field id={itemsFieldId} label={t("products", { ns: "orders" })} labelAs="span" error={itemsError}>
           <OrderItemsEditor
             items={form.items}
             labelledBy={`${itemsFieldId}-label`}
@@ -159,16 +172,25 @@ const OrderDialog = ({ open, order, onClose, onSaved }: OrderDialogProps) => {
           required={!productsLocked}
           error={totalError}
           disabled={productsLocked}
-          hint={productsLocked ? t("productsLockReason") : undefined}
+          hint={productsLocked ? t("productsLockReason") : amountHint}
+          hintLive
         >
           <TextInput
             ref={totalRef}
             mode="money"
             value={form.total_price}
-            onValueChange={(value) => {
-              setForm((prev) => ({ ...prev, total_price: value }));
+            // Xom matn tekshiriladi (`onValueChange` belgilarni jimgina tashlab yuboradi): «12.5» → 125 emas.
+            onChange={(event) => {
+              const result = readOrderAmountInput(event.target.value, i18n.resolvedLanguage ?? i18n.language);
+              if (result.error) {
+                setAmountHint(t(ORDER_AMOUNT_ERROR_KEYS[result.error]));
+                return;
+              }
+              if (result.digits.length < form.total_price.length) setAmountHint(undefined);
+              setForm((prev) => ({ ...prev, total_price: result.digits }));
               setTotalError(undefined);
             }}
+            onBlur={() => setAmountHint(undefined)}
             placeholder={t("enterPrice")}
           />
         </Field>

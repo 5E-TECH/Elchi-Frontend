@@ -266,6 +266,33 @@ describe("OrderFilters — desktop/planshet (superadmin-orders-list)", () => {
     expect(params.get("orderRegionId")).toBe("r1");
   });
 
+  it("⭐ D-11: faqat bo'shliq — qidiruv va chip yo'q; «№53» → `orderSearch=53`, maydonda yozilgani qoladi", async () => {
+    const user = userEvent.setup();
+    open("superadmin");
+    const input = screen.getByRole("searchbox");
+
+    await user.type(input, "   {Enter}");
+    expect(currentParams().get("orderSearch")).toBeNull();
+    expect(screen.queryByRole("group", { name: "Faol filtrlar" })).not.toBeInTheDocument();
+
+    await user.clear(input);
+    await user.type(input, "№53{Enter}");
+    expect(currentParams().get("orderSearch")).toBe("53");
+    expect(input).toHaveValue("№53");
+    expect(within(screen.getByRole("group", { name: "Faol filtrlar" })).getByText(/53/)).toBeInTheDocument();
+  });
+
+  it("D-11: eski havoladagi bo'shliqli qidiruv (`?orderSearch=%20%20`) chip bermaydi", () => {
+    open("superadmin", "/orders?orderSearch=%20%20");
+    expect(screen.queryByRole("group", { name: "Faol filtrlar" })).not.toBeInTheDocument();
+  });
+
+  it("D-08: noto'g'ri sana (`?startDay=falonchi`) — filtr emas, sana maydoni bo'sh", () => {
+    open("superadmin", "/orders?startDay=falonchi");
+    expect(screen.getByRole("button", { name: /Sana oralig'i/ })).not.toHaveAccessibleName(/falonchi/);
+    expect(screen.queryByRole("group", { name: "Faol filtrlar" })).not.toBeInTheDocument();
+  });
+
   it("gives every element a unique id", () => {
     open("superadmin", "/orders?orderBranchId=b1&orderRegionId=r1");
     const ids = Array.from(document.querySelectorAll("[id]")).map((el) => el.id);
@@ -323,6 +350,9 @@ describe("OrderFilters — telefon (superadmin-orders-filters-mobile)", () => {
     const active = screen.getByRole("group", { name: "Faol filtrlar" });
     expect(within(active).getByText("01.10 – 08.10.2026")).toBeInTheDocument();
     expect(within(active).getByRole("button", { name: "Sana filtrini olib tashlash" })).toBeInTheDocument();
+    // D-09: yonga suriladigan qator, brauzer skroll chizig'isiz (`scrollbar-hide` Tailwind v4 da utilita emas).
+    expect(active).toHaveClass("max-md:overflow-x-auto", "max-md:[scrollbar-width:none]", "max-md:[&::-webkit-scrollbar]:hidden");
+    expect(active).not.toHaveClass("max-md:scrollbar-hide");
   });
 
   it("edits a draft in the sheet and writes the URL once on «Natijalarni ko'rsatish»", async () => {
@@ -426,7 +456,8 @@ describe("OrderFilters — telefon (superadmin-orders-filters-mobile)", () => {
     await user.click(screen.getByRole("button", { name: "Filtrlar" }));
     const sheet = await screen.findByRole("dialog", { name: "Filtrlar" });
     expect(sheetFooter(sheet).getByRole("button", { name: "Natijalarni ko'rsatish" })).toBeInTheDocument();
-    expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 1 }), true, { silentError: true });
+    // D-10: `limit=1` backend'da 400 edi — son hech qachon chiqmasdi. Eng kichik ruxsat etilgan qiymat — 10.
+    expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 10 }), true, { silentError: true });
   });
 
   it("manager keeps the date in the toolbar and the sheet has no date section", async () => {

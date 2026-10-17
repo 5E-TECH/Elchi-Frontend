@@ -4,4 +4,4 @@ export type { TrackingContext, TrackingEventView } from "./model/describeTrackin
 export { TrackingTimeline } from "./ui/TrackingTimeline";
 export { TrackingStatusBadge } from "./ui/TrackingStatusBadge";
 export { useTrackingStatusLabel } from "./model/useTrackingStatusLabel";
-export { formatTrackingDate, formatTrackingDateTime, TASHKENT_TIME_ZONE } from "./lib/formatTrackingDate";
+export { formatTrackingDate, formatTrackingDateTime, isTashkentToday, TASHKENT_TIME_ZONE } from "./lib/formatTrackingDate";

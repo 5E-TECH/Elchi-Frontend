@@ -435,3 +435,62 @@ describe("Orders list search by exact order number", () => {
     expect(screen.getByTestId("orders-table")).toHaveAttribute("data-pinned", "");
   });
 });
+
+describe("Orders list — URL sanitizatsiyasi va sahifa almashishi (QA D-03, D-08, D-11)", () => {
+  beforeEach(() => {
+    getOrdersMock.mockClear();
+    ordersResponse.total = 25;
+    ordersResponse.search_truncated = false;
+    ordersResponse.rows = orderRows;
+  });
+
+  it("⭐ D-08: `?limit=5000` — API'ga 10 ketadi (backend faqat 10/25/50/100 ni qabul qiladi)", () => {
+    open("/orders?limit=5000");
+    expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 10 }));
+  });
+
+  it("D-08: ruxsat etilgan limit saqlanadi", () => {
+    open("/orders?limit=50");
+    expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 50 }));
+  });
+
+  it("⭐ D-08: noto'g'ri sana (`?startDay=falonchi`, `2026-02-30`) API'ga ketmaydi, to'g'risi ketadi", () => {
+    open("/orders?startDay=falonchi&endDay=2026-02-30");
+    const params = getOrdersMock.mock.lastCall?.[0] as Record<string, unknown>;
+    expect(params).not.toHaveProperty("start_day");
+    expect(params).not.toHaveProperty("end_day");
+
+    open("/orders?startDay=2026-10-01&endDay=2026-10-08");
+    expect(getOrdersMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ start_day: "2026-10-01", end_day: "2026-10-08" }),
+    );
+  });
+
+  it("⭐ D-11: faqat bo'shliqli qidiruv — `search` ketmaydi; «№53» → «53»", () => {
+    open("/orders?orderSearch=%20%20%20");
+    expect(getOrdersMock.mock.lastCall?.[0]).not.toHaveProperty("search");
+
+    open("/orders?orderSearch=%E2%84%9653");
+    expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ search: "53" }));
+  });
+
+  it("⭐ D-03: sahifa almashganda shell kontenti tepaga qaytadi", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <main>
+        <div data-shell-slot="content">
+          <Orders />
+          <LocationProbe />
+        </div>
+      </main>,
+      { route: "/orders", preloadedState: adminState },
+    );
+    const main = document.querySelector("main") as HTMLElement;
+    main.scrollTop = 829;
+
+    await user.click(screen.getByRole("button", { name: "2" }));
+
+    await waitFor(() => expect(currentSearch().get("page")).toBe("2"));
+    expect(main.scrollTop).toBe(0);
+  });
+});

@@ -234,7 +234,10 @@
     "addressSaved": "Address saved",
     "customerSaved": "Customer details saved",
     "orderSaved": "Order saved",
-    "itemQuantity": "{{count}} pcs"
+    "itemQuantity": "{{count}} pcs",
+    "itemsMinOne": "At least one product must remain. If the order is no longer needed, cancel it.",
+    "regionRequired": "No region selected",
+    "districtRequired": "No district selected"
   },
   "externalOrdersTitle": "External orders",
   "externalOrdersSubtitle": "List of orders from external systems",

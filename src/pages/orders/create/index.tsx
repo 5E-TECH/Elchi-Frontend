@@ -163,10 +163,10 @@ const OrderCreateFormContent = () => {
   const aiHidden = aiAvailability.data?.enabled === false;
   const mode: CreateMode = aiHidden ? "manual" : selectedMode;
 
+  // Bitta sxema — formaning tekshiruvi ham, «Buyurtma yuborishga tayyor» holati ham shundan (D-06).
+  const createSchema = useMemo(() => createOrderSchema(!isMarketRole), [isMarketRole]);
   const methods = useForm<OrderCreateFormValues>({
-    resolver: yupResolver(
-      createOrderSchema(!isMarketRole),
-    ) as Resolver<OrderCreateFormValues>,
+    resolver: yupResolver(createSchema) as Resolver<OrderCreateFormValues>,
     mode: "onTouched",
     defaultValues: {
       ...ORDER_CREATE_DEFAULT_VALUES,
@@ -215,17 +215,12 @@ const OrderCreateFormContent = () => {
       return isMarketRole || !!market;
     }
 
-    return Boolean(
-      (isMarketRole || market) &&
-      !isInactiveSelectedMarket &&
-      customer?.phone?.trim() &&
-      customer?.name?.trim() &&
-      customer?.region_id &&
-      customer?.district_id &&
-      details?.items?.length &&
-      details?.total_price?.trim(),
-    );
-  }, [customer, details, isInactiveSelectedMarket, isMarketRole, market, mode, step]);
+    // «Tayyor» — faqat forma haqiqatan yuboriladigan bo'lsa (D-06): yuborishdagi sxema bilan bir xil qoida —
+    // telefon 9 raqam, «Uygacha» da manzil majburiy, mahsulot va summa. Ilgari faqat «bo'sh emas» tekshirilib,
+    // «Uygacha» + bo'sh manzilda ham tugma faol va «Buyurtma yuborishga tayyor» ko'rinardi.
+    if (!(isMarketRole || market) || isInactiveSelectedMarket) return false;
+    return createSchema.isValidSync({ market: isMarketRole ? null : market, customer, details });
+  }, [createSchema, customer, details, isInactiveSelectedMarket, isMarketRole, market, mode, step]);
 
   const handleNext = async () => {
     setServerError("");

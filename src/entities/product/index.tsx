@@ -6,6 +6,16 @@ export const products = "products";
 
 type ProductQueryParams = Record<string, unknown>;
 
+/**
+ * `GET /product/market/:id` va `/product/my-products` dagi `limit` ning yuqori chegarasi (gateway
+ * `PRODUCT_LIST_MAX_LIMIT`). `limit` berilmasa server sukuti 10 — 11-mahsulot ro'yxatda hech qachon chiqmasdi
+ * (buyurtma yaratish katalogi, D-20).
+ */
+export const PRODUCT_LIST_MAX_LIMIT = 500;
+
+/** Katalog ro'yxati parametrlari (`search`, `page`, `limit` — gateway `buildProductListQuery`). */
+export type ProductListParams = { search?: string; page?: number; limit?: number };
+
 export const useProducts = () => {
   const client = useQueryClient();
 
@@ -51,19 +61,26 @@ export const useProducts = () => {
     },
   });
 
-  // Inside useProducts.ts
-  const useGetByMarketId = (id: string | undefined, enabled?: boolean) => {
+  // `params` — ixtiyoriy (berilmasa kalit va so'rov avvalgidek); `["market"]` / `[products]` bekor qilishlari ikkalasiga ham tegadi.
+  const useGetByMarketId = (id: string | undefined, enabled?: boolean, params?: ProductListParams) => {
     return useQuery({
-      queryKey: ["market", id],
-      queryFn: () => api.get(API_ENDPOINTS.PRODUCTS.BY_MARKET_ID(id as string)).then((res) => res.data), // or however you fetch
+      queryKey: params ? ["market", id, params] : ["market", id],
+      queryFn: () =>
+        (params
+          ? api.get(API_ENDPOINTS.PRODUCTS.BY_MARKET_ID(id as string), { params })
+          : api.get(API_ENDPOINTS.PRODUCTS.BY_MARKET_ID(id as string))
+        ).then((res) => res.data),
       enabled: !!id && enabled !== false, // Only fetch if ID exists
     });
   };
 
-  const useGetMyProducts = (enabled: boolean = true) =>
+  const useGetMyProducts = (enabled: boolean = true, params?: ProductListParams) =>
     useQuery({
-      queryKey: [products, "my-products"],
-      queryFn: () => api.get(API_ENDPOINTS.PRODUCTS.MY_PRODUCTS).then((res) => res.data),
+      queryKey: params ? [products, "my-products", params] : [products, "my-products"],
+      queryFn: () =>
+        (params ? api.get(API_ENDPOINTS.PRODUCTS.MY_PRODUCTS, { params }) : api.get(API_ENDPOINTS.PRODUCTS.MY_PRODUCTS)).then(
+          (res) => res.data,
+        ),
       enabled,
     });
 

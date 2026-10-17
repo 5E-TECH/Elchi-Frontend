@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-neworders-create-manual-step2, manager-new-orders-create-manual-step2, registrator-new-orders-create-step2, market-new-orders-create-manual
-import { memo, useId, useMemo } from "react";
+import { memo, useId, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, ChevronLeft, CircleCheck, Plus } from "lucide-react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
@@ -7,7 +7,8 @@ import { useTranslation } from "react-i18next";
 import { useLogistics } from "../../../../entities/logistics/api/logisticsApi";
 import { cx } from "../../../../shared/lib/cx";
 import { Badge, Button, buttonClasses, Card, Field, TextInput } from "../../../../shared/ui/primitives";
-import { stripPrice, toApiList, type OrderCreateFormValues } from "../model/orderCreateForm";
+import { ORDER_AMOUNT_ERROR_KEYS, readOrderAmountInput } from "../../lib/orderAmountInput";
+import { toApiList, type OrderCreateFormValues } from "../model/orderCreateForm";
 
 type Step2SummaryProps = {
   /** Market roli: «Market» qatori yo'q, pastki tugma «Orqaga» (`/new-orders`). */
@@ -31,8 +32,10 @@ const Divider = () => <hr className="m-0 h-px border-0 bg-border" />;
  * «Operator», asosiy «Buyurtma yaratish» (`type="submit"`) + holat qatori, ostida «Oldingi» / «Orqaga».
  */
 const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/new-orders" }: Step2SummaryProps) => {
-  const { t } = useTranslation(["orders", "common"]);
+  const { t, i18n } = useTranslation(["orders", "common"]);
   const statusId = useId();
+  /** Rad etilgan belgi sababi (kasr, minus, 12 xonadan uzun — D-17); o'chirilguncha yoki maydondan chiqilguncha. */
+  const [amountHint, setAmountHint] = useState<string | undefined>();
   const {
     control,
     formState: { errors },
@@ -88,7 +91,8 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
             id="details.total_price"
             label={t("totalPrice")}
             required
-            hint={t("createTotalHint")}
+            hint={amountHint ?? t("createTotalHint")}
+            hintLive
             error={errors.details?.total_price?.message}
           >
             <TextInput
@@ -97,8 +101,20 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
               name={field.name}
               placeholder="0"
               value={field.value}
-              onValueChange={(next) => field.onChange(stripPrice(next))}
-              onBlur={field.onBlur}
+              // Xom matn tekshiriladi: «12.5» jimgina 125 bo'lmaydi, «-» va 12 xonadan uzun son rad etiladi.
+              onChange={(event) => {
+                const result = readOrderAmountInput(event.target.value, i18n.resolvedLanguage ?? i18n.language);
+                if (result.error) {
+                  setAmountHint(t(ORDER_AMOUNT_ERROR_KEYS[result.error]));
+                  return;
+                }
+                if (result.digits.length < (field.value ?? "").length) setAmountHint(undefined);
+                field.onChange(result.digits);
+              }}
+              onBlur={() => {
+                setAmountHint(undefined);
+                field.onBlur();
+              }}
               ref={field.ref}
             />
           </Field>

@@ -11,7 +11,7 @@ import {
   type AiPreviewOrder,
 } from "../../../../../entities/ai-order";
 import { useLogistics } from "../../../../../entities/logistics/api/logisticsApi";
-import { useProducts } from "../../../../../entities/product";
+import { PRODUCT_LIST_MAX_LIMIT, useProducts } from "../../../../../entities/product";
 import type { MarketOption } from "../../model/orderCreateForm";
 import { CreateAlert } from "../CreateAlert";
 import Step1Market from "../Step1Market";
@@ -25,6 +25,9 @@ import { evalPreview } from "./evalPreview";
 import { previewSig } from "./previewSig";
 import { useKeepFocusedFieldVisible } from "./useKeepFocusedFieldVisible";
 import { Card, useConfirm } from "../../../../../shared/ui/primitives";
+
+/** Katalog to'liq — qo'lda formadagi `Step2Combined` bilan bir xil parametr (bitta so'rov kaliti). */
+const AI_CATALOG_PARAMS = { limit: PRODUCT_LIST_MAX_LIMIT };
 
 type AiCreatePanelProps = {
   /** Tab faolmi (yashirin turganda ham holat saqlanadi). */
@@ -66,8 +69,10 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
   const marketId = !isMarketRole && market ? String(market.id) : undefined;
 
   const { useGetByMarketId, useGetMyProducts } = useProducts();
-  const marketProducts = useGetByMarketId(marketId, !isMarketRole && drafts.length > 0);
-  const myProducts = useGetMyProducts(isMarketRole && drafts.length > 0);
+  // Katalog to'liq (500 gacha) — `limit` siz server 10 tasini berardi va tanlov ro'yxati kesilardi (D-20).
+  // Kalit qo'lda formadagi katalog bilan bir xil — so'rov bitta.
+  const marketProducts = useGetByMarketId(marketId, !isMarketRole && drafts.length > 0, AI_CATALOG_PARAMS);
+  const myProducts = useGetMyProducts(isMarketRole && drafts.length > 0, AI_CATALOG_PARAMS);
   const productsQuery = isMarketRole ? myProducts : marketProducts;
   const products: AiProductOption[] = toList<{ id: string | number; name?: string }>(productsQuery.data).map(
     (product) => ({ id: String(product.id), name: product.name ?? `#${product.id}` }),

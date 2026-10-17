@@ -231,7 +231,10 @@
     "addressSaved": "Manzil saqlandi",
     "customerSaved": "Mijoz ma'lumoti saqlandi",
     "orderSaved": "Buyurtma saqlandi",
-    "itemQuantity": "{{count}} ta"
+    "itemQuantity": "{{count}} ta",
+    "itemsMinOne": "Kamida bitta mahsulot qolishi kerak. Buyurtma kerak bo'lmasa, uni bekor qiling.",
+    "regionRequired": "Viloyat tanlanmagan",
+    "districtRequired": "Tuman tanlanmagan"
   },
   "externalOrdersTitle": "Tashqi buyurtmalar",
   "externalOrdersSubtitle": "Tashqi tizimlardan kelgan buyurtmalar ro'yxati",

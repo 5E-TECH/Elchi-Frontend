@@ -248,7 +248,10 @@
     "addressSaved": "Адрес сохранён",
     "customerSaved": "Данные клиента сохранены",
     "orderSaved": "Заказ сохранён",
-    "itemQuantity": "{{count}} шт."
+    "itemQuantity": "{{count}} шт.",
+    "itemsMinOne": "Должен остаться хотя бы один товар. Если заказ не нужен, отмените его.",
+    "regionRequired": "Область не выбрана",
+    "districtRequired": "Район не выбран"
   },
   "externalOrdersTitle": "Внешние заказы",
   "externalOrdersSubtitle": "Список заказов из внешних систем",

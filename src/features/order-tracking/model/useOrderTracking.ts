@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useMemo } from "react";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { orderActivityLogApi } from "../../../entities/order";
 import { getApiErrorMessage } from "../../../shared/lib/apiError";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
@@ -21,6 +22,9 @@ type UseOrderTrackingResult = {
 
 const DEFAULT_LIMIT = 20;
 const HIDDEN_TRACKING_ACTIONS = new Set(["custody_change", "custody_changed"]);
+
+/** React Query kaliti — buyurtma tarixi (sahifalar `useInfiniteQuery` ichida). */
+export const orderTrackingQueryKey = (orderId: string | number) => ["order-tracking", String(orderId)] as const;
 
 const sortEvents = (items: TrackingEvent[]) =>
   [...items].sort((left, right) => {
@@ -54,66 +58,6 @@ const normalizeAction = (value?: string | null) =>
 const shouldShowEvent = (event: TrackingEvent) =>
   !HIDDEN_TRACKING_ACTIONS.has(normalizeAction(event.action));
 
-const getSystemStatusActorInferenceMode = (event: TrackingEvent) => {
-  const oldStatus = normalizeAction(event.old_value?.status ?? event.from_status);
-  const newStatus = normalizeAction(event.new_value?.status ?? event.to_status);
-  const transition = `${oldStatus}->${newStatus}`;
-
-  if (transition === "new->received") return "nearby";
-  if (transition === "on_the_road->waiting") return "next";
-
-  return null;
-};
-
-const isSystemActor = (event: TrackingEvent) => {
-  const actorName = normalizeAction(event.actor?.name ?? event.actor?.username);
-  const actorRole = normalizeAction(event.actor?.role);
-  const changedByRole = normalizeAction(event.changed_by_role);
-
-  return actorName === "system" || actorRole === "system" || changedByRole === "system";
-};
-
-const isHumanActor = (event: TrackingEvent) => {
-  const actorName = normalizeAction(event.actor?.name ?? event.actor?.username ?? event.user_name);
-  const actorRole = normalizeAction(event.actor?.role ?? event.changed_by_role);
-
-  return Boolean(actorName && actorName !== "system" && actorRole && actorRole !== "system");
-};
-
-const withInferredActor = (event: TrackingEvent, source: TrackingEvent): TrackingEvent => ({
-  ...event,
-  changed_by: source.changed_by,
-  changed_by_role: source.actor?.role ?? source.changed_by_role,
-  actor: source.actor ?? event.actor,
-  user_name: source.user_name,
-});
-
-const inferSystemStatusActors = (items: TrackingEvent[]) => {
-  const chronologicalEvents = [...items].sort(
-    (left, right) => new Date(left.created_at).getTime() - new Date(right.created_at).getTime(),
-  );
-
-  return chronologicalEvents.map((event, index) => {
-    const inferenceMode = getSystemStatusActorInferenceMode(event);
-
-    if (!inferenceMode || !isSystemActor(event)) {
-      return event;
-    }
-
-    const nextHumanEvent = chronologicalEvents.slice(index + 1).find(isHumanActor);
-    const previousHumanEvent = chronologicalEvents
-      .slice(0, index)
-      .reverse()
-      .find(isHumanActor);
-
-    if (nextHumanEvent || inferenceMode === "next") {
-      return nextHumanEvent ? withInferredActor(event, nextHumanEvent) : event;
-    }
-
-    return previousHumanEvent ? withInferredActor(event, previousHumanEvent) : event;
-  });
-};
-
 const getPayloadMeta = (payload: ActivityLogResponse | TrackingEvent[]) => {
   if (Array.isArray(payload)) {
     return {
@@ -124,119 +68,79 @@ const getPayloadMeta = (payload: ActivityLogResponse | TrackingEvent[]) => {
   }
 
   return {
-    items: Array.isArray(payload.data) ? payload.data : [],
-    total: payload.total,
-    limit: payload.limit ?? DEFAULT_LIMIT,
+    items: Array.isArray(payload?.data) ? payload.data : [],
+    total: payload?.total,
+    limit: payload?.limit ?? DEFAULT_LIMIT,
   };
 };
 
+type TrackingPage = ActivityLogResponse | TrackingEvent[];
+
+/**
+ * BUYURTMA TARIXI (`GET orders/:id/tracking`) — sahifalab («Ko'proq yuklash»), yangidan eskiga.
+ *
+ * - Bitta so'rov (D-18): React Query kalit bo'yicha birlashtiradi — `StrictMode` dagi ikki marta mount ham,
+ *   sahifadagi qayta mount ham parallel ikkinchi so'rov yubormaydi. Amaldan keyin (sotish, bekor qilish …)
+ *   sahifa blokni qayta mount qiladi — `staleTime: 0`, shuning uchun tarix qayta so'raladi.
+ * - Tizim hodisalari (`changed_by_role: "system"`) O'ZGARTIRILMAYDI (D-04): ilgari aktyor qo'shni odam
+ *   hodisasidan «taxmin» qilinardi (hatto 3 kun keyingisidan) va hodisa noto'g'ri odamga yozilardi; endi u
+ *   «Tizim» bo'lib ko'rinadi (`describeTrackingEvent`).
+ * - Xato blokning o'zida (umumiy xabar emas, qayta urinishsiz — avvalgidek; 403 da «Qayta urinish» ma'nosiz).
+ */
 export const useOrderTracking = (orderId: string | number, enabled = true): UseOrderTrackingResult => {
-  const [events, setEvents] = useState<TrackingEvent[]>([]);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isError, setIsError] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [total, setTotal] = useState<number | null>(null);
-  const [errorStatus, setErrorStatus] = useState<number | null>(null);
-  const requestIdRef = useRef(0);
-
-  const fetchPage = useCallback(
-    async (nextPage: number, replace: boolean) => {
-      const currentRequestId = ++requestIdRef.current;
-
-      if (!enabled) {
-        setIsLoading(false);
-        return;
-      }
-
-      setIsLoading(true);
-      setIsError(false);
-      setErrorMessage("");
-      setErrorStatus(null);
-
-      try {
-        const response = await orderActivityLogApi.getByOrderId(orderId, {
-          page: nextPage,
-          limit: DEFAULT_LIMIT,
-        });
-        const payload = response.data;
-        const { items, total, limit } = getPayloadMeta(payload);
-        const incomingEvents = items.map(normalizeEvent).filter(shouldShowEvent);
-
-        if (requestIdRef.current !== currentRequestId) {
-          return;
-        }
-
-        setEvents((previousEvents) => {
-          const mergedEvents = replace ? incomingEvents : [...previousEvents, ...incomingEvents];
-          const uniqueEvents = mergedEvents.filter(
-            (event, index, collection) =>
-              collection.findIndex((item) => item.id === event.id) === index,
-          );
-
-          return sortEvents(inferSystemStatusActors(uniqueEvents));
-        });
-
-        setPage(nextPage);
-        setTotal(typeof total === "number" && Number.isFinite(total) ? total : null);
-
-        const resolvedHasMore =
-          typeof total === "number"
-            ? nextPage * limit < total
-            : incomingEvents.length >= limit;
-
-        setHasMore(resolvedHasMore);
-      } catch (error) {
-        if (requestIdRef.current !== currentRequestId) {
-          return;
-        }
-
-        setIsError(true);
-        setErrorMessage(getErrorMessage(error));
-        setErrorStatus(getErrorStatus(error) ?? null);
-
-        if (replace) {
-          setEvents([]);
-          setHasMore(false);
-          setTotal(null);
-        }
-      } finally {
-        if (requestIdRef.current === currentRequestId) {
-          setIsLoading(false);
-        }
-      }
+  const query = useInfiniteQuery({
+    queryKey: orderTrackingQueryKey(orderId),
+    queryFn: ({ pageParam }) =>
+      orderActivityLogApi
+        .getByOrderId(orderId, { page: pageParam, limit: DEFAULT_LIMIT })
+        .then((response) => response.data as TrackingPage),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, _pages, lastPageParam) => {
+      const { items, total, limit } = getPayloadMeta(lastPage);
+      const hasMore = typeof total === "number" ? lastPageParam * limit < total : items.length >= limit;
+      return hasMore ? lastPageParam + 1 : undefined;
     },
-    [enabled, orderId],
-  );
+    enabled: enabled && orderId !== "" && orderId !== null && orderId !== undefined,
+    staleTime: 0,
+    retry: false,
+    meta: { silentError: true },
+  });
 
-  useEffect(() => {
-    setEvents([]);
-    setPage(1);
-    setHasMore(false);
-    setTotal(null);
+  const { data, error, fetchNextPage, hasNextPage, isError, isFetching, isPending, refetch } = query;
 
-    if (!enabled) {
-      setIsLoading(false);
-      setIsError(false);
-      setErrorMessage("");
-      return;
-    }
+  const events = useMemo(() => {
+    const merged = (data?.pages ?? []).flatMap((page) =>
+      getPayloadMeta(page).items.map(normalizeEvent).filter(shouldShowEvent),
+    );
+    const unique = merged.filter(
+      (event, index, collection) => collection.findIndex((item) => item.id === event.id) === index,
+    );
+    return sortEvents(unique);
+  }, [data]);
 
-    void fetchPage(1, true);
-  }, [enabled, fetchPage, orderId]);
+  const lastPage = data?.pages[data.pages.length - 1];
+  const lastTotal = lastPage ? getPayloadMeta(lastPage).total : undefined;
+  const total = typeof lastTotal === "number" && Number.isFinite(lastTotal) ? lastTotal : null;
+  const isLoading = enabled && (isPending || isFetching);
 
   const loadMore = useCallback(() => {
-    if (isLoading || !hasMore) {
-      return;
-    }
-
-    void fetchPage(page + 1, false);
-  }, [fetchPage, hasMore, isLoading, page]);
+    if (isFetching || !hasNextPage) return;
+    void fetchNextPage();
+  }, [fetchNextPage, hasNextPage, isFetching]);
 
   const retry = useCallback(() => {
-    void fetchPage(1, true);
-  }, [fetchPage]);
+    void refetch();
+  }, [refetch]);
 
-  return { events, isLoading, isError, errorMessage, errorStatus, hasMore, loadMore, total, retry };
+  return {
+    events: enabled ? events : [],
+    isLoading,
+    isError: enabled && isError,
+    errorMessage: enabled && isError ? getErrorMessage(error) : "",
+    errorStatus: enabled && isError ? (getErrorStatus(error) ?? null) : null,
+    hasMore: enabled && Boolean(hasNextPage),
+    loadMore,
+    total: enabled ? total : null,
+    retry,
+  };
 };
