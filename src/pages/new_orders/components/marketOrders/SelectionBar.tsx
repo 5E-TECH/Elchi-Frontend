@@ -6,7 +6,7 @@ import { Trans, useTranslation } from "react-i18next";
 import PrintModeSelect, { type PrintSelectOption } from "../../../../shared/components/PrintModeSelect";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../../shared/lib/formatMoney";
 import { Button } from "../../../../shared/ui/primitives";
-import { SelectionRegion } from "../../ui/SelectionRegion";
+import { SelectionRegion } from "../../../../shared/ui/SelectionRegion";
 
 /**
  * Tanlangan buyurtmalar paneli (maket: `role="region"` «Tanlangan buyurtmalar», umumiy `SelectionRegion`;

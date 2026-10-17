@@ -1,27 +1,36 @@
 {
-  "title": "Return batches",
-  "description": "List of return-flow packages for the current branch",
-  "totalBatches": "{{count}} batch",
-  "empty": "No return batches found",
-  "emptyDescription": "No returned orders found yet.",
-  "orderCountValue": "{{count}} orders",
-  "columns": {
-    "id": "ID",
-    "from": "From branch",
-    "to": "Destination",
-    "ordersCount": "Orders count",
-    "totalPrice": "Total price",
-    "status": "Status",
-    "createdAt": "Created time"
-  },
+  "title": "Returns",
+  "descriptionAll": "Batches in the return flow from branches",
+  "descriptionBranch": "Return batches from {{branch}}",
+  "descriptionOwnBranch": "Return batches from your branch",
+  "total_one": "{{value}} batch in total",
+  "total_other": "{{value}} batches in total",
+  "listLabel": "Return batch list",
+  "filtersLabel": "Filters",
   "filters": {
     "status": "Status",
-    "allStatuses": "All statuses",
-    "from": "From",
-    "to": "To"
+    "all": "All"
   },
+  "columns": {
+    "batch": "Batch",
+    "from": "From branch",
+    "to": "Destination",
+    "status": "Status",
+    "orders": "Orders",
+    "amount": "Amount",
+    "open": "Open"
+  },
+  "qty": "{{value}}",
+  "open": "Open batch {{id}}",
+  "pagination": "{{from}}–{{to}} of {{total}} batches",
+  "cardsLabel": "Return batches",
+  "loading": "Loading return batches",
+  "empty": "No return batches found",
+  "emptyDescription": "When a branch creates a return batch, it appears here.",
+  "filteredEmpty": "No return batches with this status",
+  "filteredEmptyDescription": "Choose another status or clear the filter.",
+  "clearFilter": "Clear filter",
   "messages": {
-    "branchMissing": "No branch is assigned to the current user",
     "loadFailed": "Could not load return batches"
   },
   "opsReturnRequests": {

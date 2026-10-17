@@ -1,6 +1,5 @@
-import type { Batch, BatchBranch, BatchOrder, BatchStatus } from "../../../entities/batch";
+import type { Batch, BatchBranch, BatchOrder } from "../../../entities/batch";
 import type { useBranchesWithSentBatches } from "../../../entities/branch";
-import type { Tone } from "../../../shared/ui/primitives";
 import type { SourceListRow } from "../ui/SourceListCard";
 
 /**
@@ -28,16 +27,8 @@ export const toBranchSourceRows = (rows: readonly SentBatchBranchRow[] | undefin
       total_price_sum: Number(row.total_price_sum) || 0,
     }));
 
-/**
- * Paket holati → ton (ega qarori D1): yorliq — `newOrders:batchStatus.*` (haqiqiy holat, «Yangi» qattiq
- * yozilmaydi). `SENT` → `on_the_way` («Yo'lda»).
- */
-export const BATCH_STATUS_TONE: Record<BatchStatus, Tone> = {
-  new: "info",
-  on_the_way: "info",
-  received: "success",
-  cancelled: "danger",
-};
+/** Paket holati → ton: manbasi `entities/batch` (bir nechta sahifa ishlatadi), bu yerda qayta eksport. */
+export { BATCH_STATUS_TONE } from "../../../entities/batch";
 
 /** Normalizator topa olmagan maydon «—» bo'lib keladi (`batchApi.ts` `toText` fallback). */
 const known = (value: string | null | undefined): string | null => {

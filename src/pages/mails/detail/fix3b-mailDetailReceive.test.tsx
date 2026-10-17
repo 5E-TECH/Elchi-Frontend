@@ -151,7 +151,7 @@ describe("MailDetailPage — qisman qabul (fix3b LC-11)", () => {
     renderPage(managerState);
 
     await user.click(screen.getByRole("button", { name: "test-select-all" }));
-    await user.click(screen.getByRole("button", { name: /Pochta qabul qilish/ }));
+    await user.click(screen.getByRole("button", { name: /Pochtani qabul qilish/ }));
 
     await waitFor(() =>
       expect(mocks.receivePostMutateAsync).toHaveBeenCalledWith({
@@ -177,7 +177,7 @@ describe("MailDetailPage — qisman qabul (fix3b LC-11)", () => {
     renderPage(managerState);
 
     await user.click(screen.getByRole("button", { name: "test-select-all" }));
-    await user.click(screen.getByRole("button", { name: /Pochta qabul qilish/ }));
+    await user.click(screen.getByRole("button", { name: /Pochtani qabul qilish/ }));
 
     expect(await screen.findByText("Pochta muvaffaqiyatli qabul qilindi.")).toBeInTheDocument();
     expect(screen.queryByText(/qabul qilinmadi/)).not.toBeInTheDocument();
@@ -192,7 +192,7 @@ describe("MailDetailPage — qisman qabul (fix3b LC-11)", () => {
     renderPage(managerState);
 
     await user.click(screen.getByRole("button", { name: "test-select-all" }));
-    await user.click(screen.getByRole("button", { name: /Pochta qabul qilish/ }));
+    await user.click(screen.getByRole("button", { name: /Pochtani qabul qilish/ }));
 
     expect(await screen.findByText("Cannot receive post with this status")).toBeInTheDocument();
     expect(screen.getByTestId("orders-count")).toHaveTextContent("3");
@@ -215,7 +215,7 @@ describe("MailDetailPage — RECEIVED pochtadagi yo'ldagi qoldiq (fix3b LC-11)",
     expect(screen.getByTestId("orders-readonly")).toHaveTextContent("false");
 
     await user.click(screen.getByRole("button", { name: "test-select-all" }));
-    await user.click(screen.getByRole("button", { name: /Pochta qabul qilish/ }));
+    await user.click(screen.getByRole("button", { name: /Pochtani qabul qilish/ }));
 
     await waitFor(() =>
       expect(mocks.receivePostMutateAsync).toHaveBeenCalledWith({ postId: POST_ID, payload: { order_ids: ["102"] } }),
@@ -228,7 +228,7 @@ describe("MailDetailPage — RECEIVED pochtadagi yo'ldagi qoldiq (fix3b LC-11)",
 
     expect(await screen.findByTestId("orders-readonly")).toHaveTextContent("true");
     expect(screen.getByTestId("orders-count")).toHaveTextContent("2");
-    expect(screen.queryByRole("button", { name: /Pochta qabul qilish/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Pochtani qabul qilish/ })).not.toBeInTheDocument();
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
   });
 
@@ -238,6 +238,6 @@ describe("MailDetailPage — RECEIVED pochtadagi yo'ldagi qoldiq (fix3b LC-11)",
 
     expect(await screen.findByTestId("orders-readonly")).toHaveTextContent("true");
     expect(screen.getByTestId("orders-count")).toHaveTextContent("2");
-    expect(screen.queryByRole("button", { name: /Pochta qabul qilish/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Pochtani qabul qilish/ })).not.toBeInTheDocument();
   });
 });

@@ -1,10 +1,12 @@
 import { memo, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { ChevronDown, ChevronUp, Printer } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, Printer } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../lib/cx";
 import { formatNumberLocalized } from "../lib/formatMoney";
-import { Button } from "../ui/primitives/Button";
-import { IconButton } from "../ui/primitives/IconButton";
+import { Button, type ButtonSize } from "../ui/primitives/Button";
+import { Dialog } from "../ui/primitives/Dialog";
+import { IconButton, type IconButtonVariant } from "../ui/primitives/IconButton";
+import { useIsPhone } from "../ui/primitives/date/useIsPhone";
 import { Portal } from "../ui/primitives/overlay/Portal";
 import { useDismiss } from "../ui/primitives/overlay/useDismiss";
 import { usePopover } from "../ui/primitives/overlay/usePopover";
@@ -21,6 +23,14 @@ import { usePopover } from "../ui/primitives/overlay/usePopover";
  *   variant="icon"   — jadval qatoridagi `Printer` ikonka tugma (bitta buyurtma).
  *
  * `className` — faqat joylashuv (o'ram uchun); eski rang klasslari v2 tugmaga qo'yilmaydi.
+ *
+ * Qo'shimcha (ixtiyoriy, sukut o'zgarmaydi):
+ *  - `sheetTitle` / `sheetDescription` — berilsa, telefonda (< 768) menyu o'rniga PASTKI VARAQA (`Dialog`):
+ *    sarlavha, izoh va bandlar ro'yxati (maket `courier-mails-detail-print-menu`). Kompyuterda — oddiy menyu;
+ *  - `hideCount` — `header` tugmasida son yo'q («Barchasini chop etish», maket `courier-mails-detail-refused`);
+ *  - `ariaLabel` — tugma nomi (maket: «Barcha 5 ta buyurtma yorlig'ini chop etish»);
+ *  - `iconSize` / `iconVariant` — `icon` tugmasi o'lchami va ko'rinishi (kuryer kartasi: `lg`, chegarali);
+ *  - `compact` — `header` tugmasi ixcham (`Button compact`; tor qatorda, maket `courier-mails-detail-receive` telefon).
  */
 export type PrintSelectOption = {
   id: string;
@@ -42,7 +52,26 @@ type Props = {
   /** Menyu sarlavhasi (`.el-menu-label`); sukut — «N ta tanlangan» (faqat `header`). */
   menuTitle?: ReactNode;
   options: PrintSelectOption[];
+  /** Telefondagi pastki varaqa sarlavhasi — berilsa, < 768 da menyu o'rniga varaqa ochiladi. */
+  sheetTitle?: ReactNode;
+  /** Varaqa izohi («2 ta tanlangan buyurtma yorlig'i chop etiladi»). */
+  sheetDescription?: ReactNode;
+  /** `header`: tugmada son ko'rsatilmaydi. */
+  hideCount?: boolean;
+  /** Tugmaning ekran o'quvchi nomi (ko'rinadigan matn o'rniga). */
+  ariaLabel?: string;
+  /** `icon` tugmasi o'lchami (sukut `sm`). */
+  iconSize?: ButtonSize;
+  /** `icon` tugmasi ko'rinishi (sukut `ghost`). */
+  iconVariant?: IconButtonVariant;
+  /** `header`: ixcham tugma (kichikroq chekka va ikonka). */
+  compact?: boolean;
 };
+
+/** Varaqadagi band (`.el-menu-item` + o'ngda `ChevronRight`, maket `courier-mails-detail-print-menu`). */
+const SHEET_ITEM =
+  "flex min-h-16 w-full items-center gap-3 px-4 py-3 text-left text-sm text-text outline-none " +
+  "transition-[background-color] duration-150 hover:bg-sunken focus-visible:bg-sunken motion-reduce:transition-none";
 
 /** `.el-menu-item` (2 qatorli: nom + izoh), telefonda ≥ 44 px. */
 const MENU_ITEM =
@@ -59,15 +88,24 @@ const PrintModeSelect = ({
   menuLabel,
   menuTitle,
   options,
+  sheetTitle,
+  sheetDescription,
+  hideCount = false,
+  ariaLabel,
+  iconSize = "sm",
+  iconVariant,
+  compact = false,
 }: Props) => {
   const { t, i18n } = useTranslation("ui");
+  const isPhone = useIsPhone();
+  const asSheet = isPhone && sheetTitle != null;
   const [open, setOpen] = useState(false);
   const menuId = useId();
   const itemsRef = useRef<Array<HTMLButtonElement | null>>([]);
   /** Ochilganda qaysi bandga fokus (`first` — Enter/↓/bosish, `last` — ↑). */
   const focusTargetRef = useRef<"first" | "last">("first");
   const { anchorRef, floatingRef, floatingStyles, side, isPositioned } = usePopover<HTMLButtonElement, HTMLDivElement>({
-    open,
+    open: open && !asSheet,
     placement: variant === "icon" ? "bottom-end" : "bottom-start",
   });
 
@@ -85,7 +123,7 @@ const PrintModeSelect = ({
     setOpen(true);
   };
 
-  useDismiss({ open, refs: [anchorRef, floatingRef], onDismiss: () => close(false) });
+  useDismiss({ open: open && !asSheet, refs: [anchorRef, floatingRef], onDismiss: () => close(false) });
 
   // Ochilganda fokus menyu ichiga (WAI-ARIA menu button). Joylashuv hisoblanguncha menyu `visibility: hidden`
   // (`usePopover`) — yashirin elementga `focus()` o'tmaydi, shuning uchun `isPositioned` dan keyin.
@@ -98,6 +136,12 @@ const PrintModeSelect = ({
   const pick = (mode: string) => {
     onSelect(mode);
     close(true);
+  };
+
+  // Varaqa: `Dialog` o'zi fokusni ochgan tugmaga qaytaradi.
+  const pickFromSheet = (mode: string) => {
+    onSelect(mode);
+    setOpen(false);
   };
 
   const onTriggerKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
@@ -144,9 +188,9 @@ const PrintModeSelect = ({
   };
 
   const triggerAria = {
-    "aria-haspopup": "menu" as const,
+    "aria-haspopup": asSheet ? ("dialog" as const) : ("menu" as const),
     "aria-expanded": open,
-    "aria-controls": open ? menuId : undefined,
+    "aria-controls": open && !asSheet ? menuId : undefined,
   };
 
   return (
@@ -155,7 +199,9 @@ const PrintModeSelect = ({
         <Button
           ref={anchorRef}
           variant="secondary"
+          compact={compact}
           disabled={triggerDisabled}
+          aria-label={ariaLabel}
           {...triggerAria}
           onClick={() => (open ? close(false) : openWith("first"))}
           onKeyDown={onTriggerKeyDown}
@@ -165,18 +211,21 @@ const PrintModeSelect = ({
           className="w-full aria-expanded:bg-sunken"
         >
           {label}
-          <span
-            className="ml-2 inline-flex h-5 min-w-[22px] items-center justify-center rounded-full bg-action-soft px-1.5 align-middle text-xs font-semibold text-action-fg"
-          >
-            {formatNumberLocalized(count, { language: i18n.resolvedLanguage ?? i18n.language })}
-          </span>
+          {hideCount ? null : (
+            <span
+              className={cx(compact ? "ml-1.5" : "ml-2", "inline-flex h-5 min-w-[22px] items-center justify-center rounded-full bg-action-soft px-1.5 align-middle text-xs font-semibold text-action-fg")}
+            >
+              {formatNumberLocalized(count, { language: i18n.resolvedLanguage ?? i18n.language })}
+            </span>
+          )}
         </Button>
       ) : (
         <IconButton
           ref={anchorRef}
-          label={label}
+          label={ariaLabel ?? label}
           icon={Printer}
-          size="sm"
+          size={iconSize}
+          variant={iconVariant}
           disabled={triggerDisabled}
           {...triggerAria}
           onClick={() => (open ? close(false) : openWith("first"))}
@@ -184,7 +233,43 @@ const PrintModeSelect = ({
         />
       )}
 
-      {open ? (
+      {asSheet ? (
+        <Dialog
+          open={open}
+          onClose={() => setOpen(false)}
+          title={sheetTitle}
+          description={sheetDescription}
+          size="sm"
+        >
+          <div
+            role="menu"
+            aria-label={menuLabel ?? t("printMenu.menu")}
+            className="flex flex-col overflow-hidden rounded-xl border border-border"
+          >
+            {options.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                role="menuitem"
+                onClick={() => pickFromSheet(option.id)}
+                className={cx(SHEET_ITEM, "border-b border-border last:border-b-0")}
+              >
+                <span
+                  aria-hidden="true"
+                  className="inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-sunken text-text-muted"
+                >
+                  {option.icon}
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="font-semibold text-text">{option.label}</span>
+                  {option.hint ? <span className="text-[13px] text-text-muted">{option.hint}</span> : null}
+                </span>
+                <ChevronRight aria-hidden="true" size={18} className="shrink-0 text-text-subtle" />
+              </button>
+            ))}
+          </div>
+        </Dialog>
+      ) : open ? (
         <Portal layer="dropdown" anchor={anchorRef}>
           <div
             ref={floatingRef}

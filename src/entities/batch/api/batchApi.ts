@@ -16,7 +16,7 @@ import type {
 
 export const BATCH_KEY = "batches";
 
-type ApiBatchStatus = "PENDING" | "SENT" | "RECEIVED" | "CANCELLED";
+export type ApiBatchStatus = "PENDING" | "SENT" | "RECEIVED" | "CANCELLED";
 type ApiBatchDirection = "FORWARD" | "RETURN";
 
 const toNumber = (value: unknown, fallback = 0) => {
@@ -75,7 +75,8 @@ const normalizeWhereDeliver = (value: unknown): BatchOrder["where_deliver"] => {
   return undefined;
 };
 
-const toApiBatchStatus = (status: BatchStatus): ApiBatchStatus => {
+/** Ilova holati → API holati (`GET transfer-batches?status=`): `new` → `PENDING`, `on_the_way` → `SENT` … */
+export const toApiBatchStatus = (status: BatchStatus): ApiBatchStatus => {
   const statusMap: Record<BatchStatus, ApiBatchStatus> = {
     new: "PENDING",
     on_the_way: "SENT",
@@ -195,6 +196,7 @@ const normalizeOrder = (order: any, index: number): BatchOrder => ({
   ),
   district: optionalText(order?.order?.district?.name ?? order?.order?.customer?.district?.name),
   region: optionalText(order?.order?.region?.name ?? order?.order?.customer?.region?.name),
+  market: optionalText(order?.order?.market?.name),
 });
 
 const normalizeHistoryItem = (

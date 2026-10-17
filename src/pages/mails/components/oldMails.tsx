@@ -1,78 +1,92 @@
-import { memo, useEffect, useMemo, useState } from "react";
-import {
-  Ban,
-  CheckCircle2,
-  Download,
-  Filter,
-  MapPinned,
-  Inbox,
-  Package,
-  Printer,
-  RefreshCcw,
-  RotateCcw,
-  Send,
-  UserRound,
-} from "lucide-react";
+// dizayn-v2: superadmin-mails-old, superadmin-mails-old-batches, admin-mails-old, admin-mails-old-all-batches, manager-mails-old, registrator-mails-old, courier-mails-old
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { CircleCheck, Download, Inbox, ListFilter, MapPin, Package, Printer, User, X } from "lucide-react";
 import { useSelector } from "react-redux";
-import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { useMails, type PostOrder } from "../../../entities/mails";
-import { useBatches, type Batch } from "../../../entities/batch";
-import { useUser } from "../../../entities/user/api/userApi";
+import { useLocation, useSearchParams } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
 import type { RootState } from "../../../app/config/store";
-import SearchableSelect from "../../../shared/ui/SearchableSelect";
-import { buildRegionFilterOptions } from "./lib/regionFilterOptions";
-import Pagination from "../../../shared/components/pagination";
-import { usePagination } from "../../../shared/lib/usePagination";
-import MailGridCard, { MAIL_CARD_GRID_CLASS, MAIL_CARD_SKELETON_CLASS } from "./MailGridCard";
-import FilterDateRange from "../../../shared/ui/FilterDateRange";
+import { useMails, type PostOrder } from "../../../entities/mails";
+import { BATCH_STATUS_TONE, useBatches, type Batch, type BatchStatus } from "../../../entities/batch";
+import { useUser } from "../../../entities/user/api/userApi";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
-import { printOrders } from "../detail/lib/printMode";
-import { exportOldMailsToExcel } from "./lib/exportOldMailsToExcel";
+import { cx } from "../../../shared/lib/cx";
+import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
+import { usePagination } from "../../../shared/lib/usePagination";
+import {
+  Button,
+  Card,
+  DateRange,
+  EmptyState,
+  ErrorState,
+  IconButton,
+  Pagination,
+  QueryBoundary,
+  SegmentedControl,
+  Select,
+  SkeletonTable,
+  type SelectOption,
+} from "../../../shared/ui/primitives";
+import { formatDay, formatRangeShort } from "../../../shared/ui/primitives/date/calendarMath";
+import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
+import { formatBatchDisplayId } from "../../batches/lib/batchFormat";
+import { printOrders } from "../detail/lib/printMode";
+import type { MailsTabLayout } from "../model/mailsLayout";
+import {
+  clearOldMailsFilters,
+  countOldMailsFilters,
+  effectiveOldMailsStatus,
+  filterOldMails,
+  getOldMailDate,
+  getOldMailStatusBadge,
+  OLD_BATCH_STATUS_FILTERS,
+  OLD_MAIL_STATUS_FILTERS,
+  OLD_MAILS_BATCH_MODE_ALL,
+  OLD_MAILS_BATCH_MODE_KEY,
+  readOldMailsFilters,
+  readPostOrders,
+  summarizeOldMails,
+  toOldMailSourceFromBatch,
+  writeOldMailsFilters,
+  writeOldMailsMode,
+  type OldMailSource,
+  type OldMailStatusKind,
+  type OldMailsFilters,
+} from "../model/oldMailsModel";
+import { buildRegionFilterOptions } from "./lib/regionFilterOptions";
+import { exportOldMailsToExcel } from "./lib/exportOldMailsToExcel";
+import { MailsTable, type MailsTableRow } from "./MailsTable";
+import { OldMailsFiltersSheet } from "./OldMailsFiltersSheet";
 
-interface Region {
-  id: string;
-  name: string;
-  sato_code?: string;
-}
-
-interface MailItem {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  courier_id: string;
-  post_total_price: number;
-  order_quantity: number;
-  qr_code_token: string;
-  region_id: string;
-  region: Region;
-  courier?: {
-    id?: string;
-    name?: string;
-    phone_number?: string;
-  } | null;
-  status: string;
-}
-
-interface BatchMailItem {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  post_total_price: number;
-  order_quantity: number;
-  region_id: string;
-  region: Region;
-  status: string;
-}
-
-type OldMailStatusKind = "received" | "cancelled" | "returned" | "sent";
+/**
+ * «Pochta → Eski» (`/mails/old`) — dizayn v2. Maketlar: `admin-mails-old` / `superadmin-mails-old`,
+ * `manager-mails-old`, `registrator-mails-old`, `courier-mails-old`; «Filial paketlari» rejimi —
+ * `admin-mails-old-all-batches` / `superadmin-mails-old-batches`.
+ *
+ *  - Xodim (`layout="card"`, qobiq kartasi ichida): asboblar qatori — «Pochtalar | Filial paketlari» segmenti
+ *    (faqat admin va superadmin, `?batch_mode=all`, D11), xulosa «N ta pochta · N ta buyurtma · jami X» (D6),
+ *    «Excelga yuklash» (D5); filtrlar qatori — yorliqli `Select` lar (D4) va sana oralig'i; jadval; sahifalash.
+ *    Telefonda: «Filtrlar N» → pastki varaqa (`OldMailsFiltersSheet`), faol filtr chiplari, Excel — ikonka.
+ *  - Kuryer (`layout="page"`): o'z kartasi; filtrlar — sana, viloyat, holat (kuryer filtri yo'q); jadval
+ *    saralanadi; telefonda sana va «Filtrlar» karta ustida, «Jami N ta pochta» + «Excelga yuklash».
+ *
+ * Ma'lumot to'liq keladi (`limit: 10000`, backend esa ≤ 100 beradi — spec §7) — filtr, xulosa, sahifalash va
+ * Excel mijoz tomonida, filtrlangan ro'yxat bo'yicha.
+ */
 
 const OLD_MAILS_COLLECTION_LIMIT = 10000;
+const PAGE_SIZES = [8, 16, 32, 64] as const;
 
-const formatPrice = (price: number, currencyLabel: string): string =>
-  `${price.toLocaleString("uz-UZ")} ${currencyLabel}`;
+type OldMailRow = MailsTableRow & {
+  regionId: string;
+  isBatch: boolean;
+  /** Pochta holati turi (paketda — `null`). Chekni qayta chiqarish — faqat «qabul qilingan» pochtada. */
+  kind: OldMailStatusKind | null;
+};
+
+type ToRegion = { id: string | number; name?: string };
 
 const toItems = <T extends { id: string | number; name?: string }>(value: unknown): T[] => {
   if (Array.isArray(value)) return value as T[];
@@ -89,236 +103,73 @@ const toItems = <T extends { id: string | number; name?: string }>(value: unknow
   return [];
 };
 
-const getMailDate = (mail: MailItem | BatchMailItem) =>
-  mail.createdAt || mail.updatedAt || "";
+/** `.el-tab-count` + `action-soft` (maket: «Filtrlar 1»). */
+const COUNT_PILL =
+  "inline-flex h-5 min-w-[22px] items-center justify-center rounded-full bg-action-soft px-1.5 text-xs font-semibold text-action-fg";
 
-const formatMailDate = (value: string) => {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
+/** `.el-chip.el-chip-active` (CODE-MAP 2.2); telefonda 44 px. */
+const CHIP =
+  "inline-flex h-8 max-w-full shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-action " +
+  "bg-action-soft pl-3 pr-1 text-[13px] font-semibold text-action-fg max-md:h-11 max-md:pr-0";
+const CHIP_X =
+  "inline-flex size-7 shrink-0 items-center justify-center rounded-full text-action-fg " +
+  "transition-[background-color] duration-150 motion-reduce:transition-none hover:bg-action/15 " +
+  "max-md:-ml-2.5 max-md:size-11";
 
-  const pad = (item: number) => String(item).padStart(2, "0");
+/** Maketdagi filtr maydoni: `flex: 1 1 calc(300px - 10%)` — desktopda 4 tasi bir qatorda, planshetda 2 tadan. */
+const FILTER_ITEM = "min-w-0 flex-[1_1_calc(300px_-_10%)]";
 
-  return [
-    date.getFullYear(),
-    pad(date.getMonth() + 1),
-    pad(date.getDate()),
-  ].join("-") + ` ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+const STRONG = <span className="font-semibold text-text" />;
+
+type OldMailsProps = {
+  /** Qobiq kontrakti (`model/mailsLayout.ts`); berilmasa — rolga qarab (kuryer — `page`). */
+  layout?: MailsTabLayout;
 };
 
-const isInDateRange = (mail: MailItem | BatchMailItem, dateFrom: string, dateTo: string) => {
-  const value = getMailDate(mail).slice(0, 10);
-  if (!value) return true;
-  if (dateFrom && value < dateFrom) return false;
-  if (dateTo && value > dateTo) return false;
-  return true;
-};
-
-const normalizeStatus = (status: string) => status.trim().toLowerCase().replaceAll("-", "_");
-
-const hasOrders = (mail: MailItem | BatchMailItem) => Number(mail.order_quantity) > 0;
-
-const isMailItem = (mail: MailItem | BatchMailItem): mail is MailItem =>
-  "courier_id" in mail;
-
-const getStatusKind = (status: string): OldMailStatusKind => {
-  const normalizedStatus = normalizeStatus(status).replaceAll(" ", "_");
-
-  if (
-    normalizedStatus === "canceled_received" ||
-    normalizedStatus === "cancelled_received" ||
-    normalizedStatus === "returned" ||
-    normalizedStatus === "return"
-  ) {
-    return "returned";
-  }
-
-  if (
-    normalizedStatus === "canceled" ||
-    normalizedStatus === "cancelled" ||
-    normalizedStatus === "cancelled_(sent)" ||
-    normalizedStatus === "rejected"
-  ) {
-    return "cancelled";
-  }
-
-  if (
-    normalizedStatus === "sent" ||
-    normalizedStatus === "on_the_way" ||
-    normalizedStatus === "on_the_road"
-  ) {
-    return "sent";
-  }
-
-  return "received";
-};
-
-const getPostOrders = (value: unknown): PostOrder[] => {
-  const response = value as {
-    data?: {
-      allOrdersByPostId?: PostOrder[];
-      orders?: PostOrder[];
-      data?: PostOrder[];
-    } | PostOrder[];
-  };
-
-  if (Array.isArray(value)) return value as PostOrder[];
-  if (Array.isArray(response.data)) return response.data;
-  if (Array.isArray(response.data?.allOrdersByPostId)) return response.data.allOrdersByPostId;
-  if (Array.isArray(response.data?.orders)) return response.data.orders;
-  if (Array.isArray(response.data?.data)) return response.data.data;
-  return [];
-};
-
-const getStatusMeta = (status: string) => {
-  const statusKind = getStatusKind(status);
-
-  if (statusKind === "cancelled") {
-    return {
-      kind: statusKind,
-      labelKey: "statusRejected",
-      icon: <Ban size={12} className="text-rose-100" />,
-      badgeClassName: "border-rose-300/20 bg-rose-500 text-white shadow-sm shadow-rose-950/15",
-    };
-  }
-
-  if (statusKind === "returned") {
-    return {
-      kind: statusKind,
-      labelKey: "statusReturned",
-      icon: <RefreshCcw size={12} className="text-orange-100" />,
-      badgeClassName: "border-orange-300/20 bg-orange-500 text-white shadow-sm shadow-orange-950/15",
-    };
-  }
-
-  if (statusKind === "sent") {
-    return {
-      kind: statusKind,
-      labelKey: "statusSent",
-      icon: <Send size={12} className="text-blue-100" />,
-      badgeClassName: "border-blue-300/20 bg-blue-500 text-white shadow-sm shadow-blue-950/15",
-    };
-  }
-
-  return {
-    kind: statusKind,
-    labelKey: "statusReceived",
-    icon: <CheckCircle2 size={12} className="text-emerald-100" />,
-    badgeClassName: "border-emerald-300/20 bg-emerald-500 text-white shadow-sm shadow-emerald-950/15",
-  };
-};
-
-const OldMailCard = memo(({ item, mode }: { item: MailItem | BatchMailItem; mode: "mail" | "batch" }) => {
-  const { t } = useTranslation("mails");
-  const currencyLabel = t("currencyLabel");
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [isPrinting, setIsPrinting] = useState(false);
-  const status = getStatusMeta(item.status);
-  const isBatchCard = mode === "batch";
-  const courierName = "courier" in item ? item.courier?.name : "";
-  const createdAt = getMailDate(item);
-  const canReprint = !isBatchCard && status.kind === "received";
-  const openDetail = () => {
-    navigate(`/mails/${item.id}`, {
-      state: {
-        fromTab: "old",
-        view: mode === "batch" ? "old-all-batches" : "old",
-        fromSearch: location.search,
-      },
-    });
-  };
-  const handleReprint = async () => {
-    if (isBatchCard || isPrinting) return;
-
-    try {
-      setIsPrinting(true);
-      const response = await api.get(API_ENDPOINTS.POSTS.ORDERS_BY_POST_ID(item.id));
-      const orders = getPostOrders(response.data);
-
-      if (orders.length === 0) {
-        notify.warning(t("emptyOrders"));
-        return;
-      }
-
-      printOrders("browser", orders);
-    } catch {
-      notify.error(t("reprintReceiptError"));
-    } finally {
-      setIsPrinting(false);
-    }
-  };
-
-  return (
-    <MailGridCard
-      title={item.region?.name ?? t("regionHashFallback", { id: item.region_id })}
-      statusLabel={t(status.labelKey)}
-      statusIcon={status.icon}
-      leadingIcon={isBatchCard ? <Package size={20} /> : <Inbox size={20} />}
-      orders={item.order_quantity}
-      amount={formatPrice(item.post_total_price, currencyLabel)}
-      onOpen={openDetail}
-      variant={isBatchCard ? "batch" : "old"}
-      subtitle={courierName ? t("oldCourierLabel", { name: courierName }) : undefined}
-      footer={createdAt ? formatMailDate(createdAt) : undefined}
-      actionLabel={canReprint ? t("reprintReceipt") : undefined}
-      actionIcon={canReprint ? <Printer size={15} /> : undefined}
-      actionLoading={isPrinting}
-      onAction={canReprint ? handleReprint : undefined}
-      statusBadgeClassName={status.badgeClassName}
-    />
-  );
-});
-OldMailCard.displayName = "OldMailCard";
-
-const OldMailCardSkeleton = memo(() => (
-  <div className={`${MAIL_CARD_SKELETON_CLASS} bg-slate-400/20 dark:bg-white/6`} />
-));
-OldMailCardSkeleton.displayName = "OldMailCardSkeleton";
-
-const OldMails = () => {
-  const { t } = useTranslation("mails");
+const OldMails = ({ layout }: OldMailsProps) => {
+  const { t, i18n } = useTranslation(["mailsArchive", "mails", "mailsShell", "newOrders", "ui", "payments"]);
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const count = (value: number) => formatNumberLocalized(value, { language });
+  const money = (value: number) => formatMoneyLocalized(value, { language });
   const { role } = useSelector((state: RootState) => state.role);
   const isCourier = role === "courier";
+  const isManager = role === "manager";
+  const resolvedLayout: MailsTabLayout = layout ?? (isCourier ? "page" : "card");
+  const isPhone = useIsPhone();
   const canUseBatchMode = role === "admin" || role === "superadmin";
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
-  const selectedBatchId = new URLSearchParams(location.search).get("batch_mode") ?? "";
-  const isAllBatchMode = canUseBatchMode && selectedBatchId === "all";
+  const selectedBatchMode = searchParams.get(OLD_MAILS_BATCH_MODE_KEY) ?? "";
+  const isAllBatchMode = canUseBatchMode && selectedBatchMode === OLD_MAILS_BATCH_MODE_ALL;
+  const withCourier = !isCourier && !isAllBatchMode;
   const { useGetOldMails } = useMails();
   const { useGetRegions, useGetCouriers } = useUser();
   const { page, limit, setPage, setLimit } = usePagination({
     key: "mails",
-    defaultLimit: 8,
+    defaultLimit: PAGE_SIZES[0],
   });
-  const selectedRegionId = searchParams.get("region_id") ?? "";
-  const selectedCourierId = searchParams.get("courier_id") ?? "";
-  const selectedStatus = searchParams.get("status") ?? "";
-  const dateFrom = searchParams.get("startDate") ?? "";
-  const dateTo = searchParams.get("endDate") ?? "";
-  const activeFilterCount = [
-    selectedRegionId,
-    selectedCourierId,
-    selectedStatus,
-    dateFrom || dateTo,
-  ].filter(Boolean).length;
-  const { data, isLoading, isError } = useGetOldMails(
+
+  // URL — yagona manba. Kuryerda kuryer filtri yo'q (ekranda ham, hisobda ham).
+  const urlFilters = useMemo(() => readOldMailsFilters(searchParams), [searchParams]);
+  const filters = useMemo<OldMailsFilters>(
+    () => (isCourier ? { ...urlFilters, courierId: "" } : urlFilters),
+    [isCourier, urlFilters],
+  );
+
+  const mailsQuery = useGetOldMails(
     isCourier,
     {
       page: 1,
       limit: OLD_MAILS_COLLECTION_LIMIT,
-      region_id: selectedRegionId,
-      courier_id: selectedCourierId,
-      status: selectedStatus,
-      startDate: dateFrom,
-      endDate: dateTo,
+      region_id: filters.regionId,
+      courier_id: filters.courierId,
+      status: urlFilters.status,
+      startDate: filters.dateFrom,
+      endDate: filters.dateTo,
     },
     { enabled: !isAllBatchMode },
   );
-  const {
-    data: batchData,
-    isLoading: isBatchLoading,
-    isError: isBatchError,
-  } = useBatches(
+  const batchesQuery = useBatches(
     isAllBatchMode ? { page: 1, limit: OLD_MAILS_COLLECTION_LIMIT } : undefined,
     { enabled: isAllBatchMode },
   );
@@ -328,302 +179,705 @@ const OldMails = () => {
     !isCourier,
   );
 
-  const updateFilter = (key: string, value: string) => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (value) next.set(key, value);
-      else next.delete(key);
-      next.set("page", "1");
-      return next;
-    }, { replace: true });
-  };
+  /* ─── Ma'lumot ──────────────────────────────────────────────────────────── */
 
-  const resetFilters = () => {
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      ["region_id", "courier_id", "status", "startDate", "endDate", "page"].forEach((key) => {
-        next.delete(key);
-      });
-      return next;
-    }, { replace: true });
-  };
-
-  const mails: MailItem[] = useMemo(() => data?.data?.data ?? [], [data]);
-  const batchItems: BatchMailItem[] = useMemo(
-    () =>
-      (batchData?.data ?? []).map((batch: Batch) => ({
-        id: batch.id,
-        createdAt: batch.created_at,
-        updatedAt: batch.created_at,
-        post_total_price: batch.total_price,
-        order_quantity: batch.orders_count,
-        region_id: batch.to_branch.id,
-        region: {
-          id: batch.to_branch.id,
-          name: batch.to_branch.region ?? batch.to_branch.name,
-        },
-        status: batch.status,
-      })),
-    [batchData],
+  const mails = useMemo<OldMailSource[]>(
+    () => ((mailsQuery.data?.data?.data ?? []) as unknown as OldMailSource[]),
+    [mailsQuery.data],
   );
+  const batchItems = useMemo<OldMailSource[]>(
+    () => (batchesQuery.data?.data ?? []).map((batch: Batch) => toOldMailSourceFromBatch(batch)),
+    [batchesQuery.data],
+  );
+  const sources = isAllBatchMode ? batchItems : mails;
+  const filtered = useMemo(
+    () => filterOldMails(sources, filters, isAllBatchMode),
+    [filters, isAllBatchMode, sources],
+  );
+  const totals = useMemo(() => summarizeOldMails(filtered), [filtered]);
 
-  const regionOptions = useMemo(() => {
-    const regionItems = toItems<Region>(regionsData);
+  /* ─── Filtr variantlari ─────────────────────────────────────────────────── */
+
+  const regionOptions = useMemo<SelectOption[]>(() => {
+    const regionItems = toItems<ToRegion>(regionsData);
     if (regionItems.length) {
-      return regionItems.map((region) => ({
-        value: String(region.id),
-        label: region.name,
-      }));
+      return regionItems.map((region) => ({ value: String(region.id), label: region.name ?? String(region.id) }));
     }
+    return buildRegionFilterOptions(sources);
+  }, [regionsData, sources]);
 
-    return isAllBatchMode
-      ? buildRegionFilterOptions(batchItems)
-      : buildRegionFilterOptions(mails);
-  }, [isAllBatchMode, batchItems, mails, regionsData]);
-
-  const courierOptions = useMemo(
+  const courierOptions = useMemo<SelectOption[]>(
     () =>
       toItems<{ id: string | number; name?: string }>(couriersData)
         .filter((courier) => courier.name)
-        .map((courier) => ({
-          value: String(courier.id),
-          label: courier.name ?? String(courier.id),
-        })),
+        .map((courier) => ({ value: String(courier.id), label: courier.name ?? String(courier.id) })),
     [couriersData],
   );
 
-  const statusOptions = useMemo(
-    () => [
-      { value: "sent", label: t("statusSent") },
-      { value: "received", label: t("statusReceived") },
-      { value: "canceled", label: t("statusRejected") },
-      { value: "canceled_received", label: t("statusReturned") },
-    ],
-    [t],
-  );
-
-  const filteredMails = useMemo(
+  const statusOptions = useMemo<SelectOption[]>(
     () =>
-      (isAllBatchMode ? batchItems : mails).filter((mail) => {
-        const statusMatched = selectedStatus
-          ? getStatusKind(mail.status) === getStatusKind(selectedStatus)
-          : true;
-        const regionMatched = selectedRegionId ? String(mail.region?.id) === selectedRegionId : true;
-        const courierMatched =
-          selectedCourierId && "courier_id" in mail
-            ? String(mail.courier_id) === selectedCourierId
-            : true;
-        return hasOrders(mail) && regionMatched && courierMatched && statusMatched && isInDateRange(mail, dateFrom, dateTo);
-      }),
-    [isAllBatchMode, batchItems, mails, selectedRegionId, selectedCourierId, selectedStatus, dateFrom, dateTo],
-  );
-  const visibleMails = useMemo(
-    () => filteredMails.slice((page - 1) * limit, page * limit),
-    [filteredMails, limit, page],
+      isAllBatchMode
+        ? OLD_BATCH_STATUS_FILTERS.map((status) => ({ value: status, label: t(`newOrders:batchStatus.${status}`) }))
+        : OLD_MAIL_STATUS_FILTERS.map((option) => ({ value: option.value, label: t(`mails:${option.labelKey}`) })),
+    [isAllBatchMode, t],
   );
 
-  const handleExportExcel = () => {
-    exportOldMailsToExcel({
-      rows: filteredMails.map((mail) => ({
-        id: mail.id,
-        region: mail.region?.name ?? t("regionHashFallback", { id: mail.region_id }),
-        courier: isMailItem(mail) ? mail.courier?.name ?? "" : "",
-        status: t(getStatusMeta(mail.status).labelKey),
-        orders: Number(mail.order_quantity ?? 0),
-        amount: Number(mail.post_total_price ?? 0),
-        createdAt: getMailDate(mail),
-      })),
-      labels: {
-        title: isAllBatchMode ? t("oldBatchExportTitle") : t("oldExportTitle"),
-        generatedAt: t("oldExportGeneratedAt"),
-        no: t("oldExportNo"),
-        mailId: t("mailNumber"),
-        region: t("oldRegionFilterLabel"),
-        courier: t("courier"),
-        status: t("oldStatusFilterLabel"),
-        orders: t("ordersLabel"),
-        amount: t("amountLabel"),
-        date: t("mailDate"),
-        totalMails: t("totalMails"),
-        totalOrders: t("oldExportTotalOrders"),
-        totalAmount: t("oldExportTotalAmount"),
-        currency: t("currency", { ns: "payments" }),
-      },
-    });
-    notify.success(t("oldExportSuccess", { count: filteredMails.length }));
-  };
+  /* ─── URL yozish ────────────────────────────────────────────────────────── */
+
+  const updateFilters = useCallback(
+    (patch: Partial<OldMailsFilters>) =>
+      setSearchParams((prev) => writeOldMailsFilters(prev, patch), { replace: true }),
+    [setSearchParams],
+  );
+  const resetFilters = useCallback(
+    () => setSearchParams((prev) => clearOldMailsFilters(prev), { replace: true }),
+    [setSearchParams],
+  );
+  const setBatchMode = useCallback(
+    (batches: boolean) => setSearchParams((prev) => writeOldMailsMode(prev, batches), { replace: true }),
+    [setSearchParams],
+  );
+
+  /* ─── Sahifalash (mijoz tomonida) ───────────────────────────────────────── */
+
+  const visible = useMemo(() => filtered.slice((page - 1) * limit, page * limit), [filtered, limit, page]);
 
   useEffect(() => {
-    const totalPages = Math.max(1, Math.ceil(filteredMails.length / limit));
+    const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
     if (page > totalPages) {
       setPage(totalPages);
     }
-  }, [filteredMails.length, limit, page, setPage]);
+  }, [filtered.length, limit, page, setPage]);
 
-  if (isLoading || (isAllBatchMode && isBatchLoading)) {
+  /* ─── Qatorlar ──────────────────────────────────────────────────────────── */
+
+  const regionNameOf = useCallback(
+    (mail: OldMailSource) => mail.region?.name ?? t("mails:regionHashFallback", { id: mail.region_id }),
+    [t],
+  );
+
+  const toRow = useCallback(
+    (mail: OldMailSource): OldMailRow => {
+      const id = String(mail.id);
+      if (isAllBatchMode) {
+        const status = mail.status as BatchStatus;
+        const tone = BATCH_STATUS_TONE[status];
+        return {
+          id,
+          displayId: formatBatchDisplayId(id),
+          createdAt: getOldMailDate(mail),
+          regionId: String(mail.region?.id ?? mail.region_id ?? ""),
+          regionName: regionNameOf(mail),
+          courierName: null,
+          orders: Number(mail.order_quantity) || 0,
+          amount: Number(mail.post_total_price) || 0,
+          status: tone ? { tone, label: t(`newOrders:batchStatus.${status}`) } : null,
+          isBatch: true,
+          kind: null,
+        };
+      }
+      const badge = getOldMailStatusBadge(mail.status);
+      return {
+        id,
+        displayId: `№${id}`,
+        createdAt: getOldMailDate(mail),
+        regionId: String(mail.region?.id ?? mail.region_id ?? ""),
+        regionName: regionNameOf(mail),
+        courierName: mail.courier?.name?.trim() || null,
+        orders: Number(mail.order_quantity) || 0,
+        amount: Number(mail.post_total_price) || 0,
+        status: { tone: badge.tone, label: t(`mails:${badge.labelKey}`) },
+        isBatch: false,
+        kind: badge.kind,
+      };
+    },
+    [isAllBatchMode, regionNameOf, t],
+  );
+
+  const rows = useMemo(() => visible.map(toRow), [toRow, visible]);
+
+  // Tafsilotga: holat bilan (orqaga — shu tab va filtrlar; v1 dagidek). Paket qatori — paket sahifasi
+  // `/batches/:id` («← Eski pochtalar» filtrlar bilan, `resolveBatchBack`): v1 dagi `/mails/:id`
+  // (`view: "old-all-batches"`) paket id'si bilan pochta so'rardi va doim bo'sh chiqardi.
+  const linkOf = useCallback(
+    (row: OldMailRow) =>
+      row.isBatch
+        ? { to: `/batches/${row.id}`, state: { from: "mails-old", fromSearch: location.search } }
+        : { to: `/mails/${row.id}`, state: { fromTab: "old", view: "old", fromSearch: location.search } },
+    [location.search],
+  );
+
+  const openLabel = useCallback(
+    (row: OldMailRow) =>
+      row.isBatch
+        ? t("old.openBatch", { id: row.displayId })
+        : t(isCourier ? "old.openMailCourier" : "old.openMail", { id: row.id }),
+    [isCourier, t],
+  );
+
+  /* ─── Chekni qayta chiqarish ────────────────────────────────────────────── */
+
+  const [printingId, setPrintingId] = useState<string | null>(null);
+  const printingRef = useRef(false);
+  const handleReprint = useCallback(
+    async (row: OldMailRow) => {
+      // Qayta bosish himoyasi: chek tayyorlanayotganda boshqa so'rov ketmaydi.
+      if (row.isBatch || printingRef.current) return;
+      printingRef.current = true;
+      setPrintingId(row.id);
+      try {
+        const response = await api.get(API_ENDPOINTS.POSTS.ORDERS_BY_POST_ID(row.id));
+        const orders = readPostOrders<PostOrder>(response.data);
+
+        if (orders.length === 0) {
+          notify.warning(t("mails:emptyOrders"));
+          return;
+        }
+
+        printOrders("browser", orders);
+      } catch {
+        notify.error(t("mails:reprintReceiptError"));
+      } finally {
+        printingRef.current = false;
+        setPrintingId(null);
+      }
+    },
+    [t],
+  );
+
+  // Telefon kartasi: paketda «Paket B-129 · 14 ta buyurtma · sana» (maket `*-mails-old-*batches`); menejerda
+  // sarlavha «Pochta №X», ostida «Kuryer: … · viloyat» va «N ta buyurtma · sana» (maket `manager-mails-old`).
+  const ordersSub = (value: number) => t("mailsShell:table.ordersSub", { count: value, value: count(value) });
+  const dateText = (value: string) => formatDateTimeLocalized(value, { language });
+  const cardTitle = isManager && !isAllBatchMode ? (row: OldMailRow) => t("mailsShell:mailTitle", { id: row.displayId }) : undefined;
+  const cardSub = isAllBatchMode
+    ? (row: OldMailRow) => (
+        <>
+          {t("mailsShell:table.cardId", { header: t("old.colBatch"), id: row.displayId })} · {ordersSub(row.orders)} ·{" "}
+          <span className="whitespace-nowrap">{dateText(row.createdAt)}</span>
+        </>
+      )
+    : isManager
+      ? (row: OldMailRow) => (
+          <>
+            {[row.courierName ? t("mails:oldCourierLabel", { name: row.courierName }) : null, row.regionName]
+              .filter(Boolean)
+              .join(" · ")}
+            <br />
+            {ordersSub(row.orders)} · <span className="whitespace-nowrap">{dateText(row.createdAt)}</span>
+          </>
+        )
+      : undefined;
+
+  const canReprint = (row: OldMailRow) => !row.isBatch && row.kind === "received";
+  const reprintAria = (row: OldMailRow) => t(isCourier ? "old.reprintAriaCourier" : "old.reprintAria", { id: row.id });
+
+  const rowActions = (row: OldMailRow): ReactNode => {
+    if (!canReprint(row)) return null;
+    if (isCourier) {
+      // Kuryer desktopida — matnli kichik tugma (planshetda faqat ikonka).
+      return (
+        <Button
+          variant="secondary"
+          size="sm"
+          compact
+          leftIcon={Printer}
+          aria-label={reprintAria(row)}
+          title={t("old.reprint")}
+          loading={printingId === row.id}
+          onClick={() => void handleReprint(row)}
+        >
+          <span className="max-lg:hidden">{t("old.reprint")}</span>
+        </Button>
+      );
+    }
     return (
-      <div className={MAIL_CARD_GRID_CLASS}>
-        {Array.from({ length: 8 }).map((_, index) => (
-          <OldMailCardSkeleton key={index} />
-        ))}
-      </div>
+      <IconButton
+        size="sm"
+        icon={Printer}
+        label={reprintAria(row)}
+        loading={printingId === row.id}
+        loadingLabel={t("old.reprintLoading")}
+        onClick={() => void handleReprint(row)}
+      />
     );
+  };
+
+  const cardActions = (row: OldMailRow): ReactNode =>
+    canReprint(row) ? (
+      <Button
+        variant={isCourier ? "secondary" : "ghost"}
+        size="sm"
+        leftIcon={Printer}
+        aria-label={reprintAria(row)}
+        loading={printingId === row.id}
+        onClick={() => void handleReprint(row)}
+        className={isCourier ? undefined : "-mr-2"}
+      >
+        {t("old.reprint")}
+      </Button>
+    ) : null;
+
+  /* ─── Excel ─────────────────────────────────────────────────────────────── */
+
+  const handleExportExcel = () => {
+    exportOldMailsToExcel({
+      rows: filtered.map((mail) => {
+        const row = toRow(mail);
+        return {
+          id: mail.id,
+          region: regionNameOf(mail),
+          courier: isAllBatchMode ? "" : mail.courier?.name ?? "",
+          status: row.status?.label ?? "",
+          orders: Number(mail.order_quantity ?? 0),
+          amount: Number(mail.post_total_price ?? 0),
+          createdAt: getOldMailDate(mail),
+        };
+      }),
+      labels: {
+        title: isAllBatchMode ? t("mails:oldBatchExportTitle") : t("mails:oldExportTitle"),
+        generatedAt: t("mails:oldExportGeneratedAt"),
+        no: t("mails:oldExportNo"),
+        mailId: t("mails:mailNumber"),
+        region: t("mails:oldRegionFilterLabel"),
+        courier: t("mails:courier"),
+        status: t("mails:oldStatusFilterLabel"),
+        orders: t("mails:ordersLabel"),
+        amount: t("mails:amountLabel"),
+        date: t("mails:mailDate"),
+        totalMails: t("mails:totalMails"),
+        totalOrders: t("mails:oldExportTotalOrders"),
+        totalAmount: t("mails:oldExportTotalAmount"),
+        currency: t("payments:currency"),
+      },
+    });
+    notify.success(t("mails:oldExportSuccess", { count: filtered.length }));
+  };
+
+  /* ─── Filtrlar: qiymatlar, chiplar ──────────────────────────────────────── */
+
+  const effectiveStatus = effectiveOldMailsStatus(filters.status, isAllBatchMode);
+  const activeCount = countOldMailsFilters(filters, { batches: isAllBatchMode, withCourier });
+  // Telefonda «Filtrlar N»: kuryerda sana asboblar qatorida — songa kirmaydi.
+  const sheetCount = countOldMailsFilters(filters, { batches: isAllBatchMode, withCourier, withDate: !isCourier });
+  const all = t("ui:select.all");
+  const withAll = (items: readonly SelectOption[]) => [{ value: "", label: all }, ...items];
+  const nameOf = (items: readonly SelectOption[], id: string) => items.find((item) => item.value === id)?.label ?? `#${id}`;
+
+  type Chip = { key: string; label: string; removeLabel: string; onRemove: () => void };
+  const chips: Chip[] = [];
+  const removeLabel = (label: string) => t("ui:filters.remove", { label });
+  const chipText = (label: string, value: string) => t("ui:filters.chip", { label, value });
+  if (!isCourier && (filters.dateFrom || filters.dateTo)) {
+    const range = { from: filters.dateFrom, to: filters.dateTo };
+    const value =
+      formatRangeShort(range) ??
+      (range.from
+        ? t("ui:date.fromOnly", { date: formatDay(range.from) })
+        : t("ui:date.toOnly", { date: formatDay(range.to) }));
+    chips.push({
+      key: "date",
+      label: chipText(t("old.filters.date"), value),
+      removeLabel: removeLabel(t("old.filters.date")),
+      onRemove: () => updateFilters({ dateFrom: "", dateTo: "" }),
+    });
+  }
+  if (filters.regionId) {
+    chips.push({
+      key: "region",
+      label: chipText(t("old.filters.region"), nameOf(regionOptions, filters.regionId)),
+      removeLabel: removeLabel(t("old.filters.region")),
+      onRemove: () => updateFilters({ regionId: "" }),
+    });
+  }
+  if (withCourier && filters.courierId) {
+    chips.push({
+      key: "courier",
+      label: chipText(t("old.filters.courier"), nameOf(courierOptions, filters.courierId)),
+      removeLabel: removeLabel(t("old.filters.courier")),
+      onRemove: () => updateFilters({ courierId: "" }),
+    });
+  }
+  if (effectiveStatus) {
+    chips.push({
+      key: "status",
+      label: chipText(t("old.filters.status"), nameOf(statusOptions, effectiveStatus)),
+      removeLabel: removeLabel(t("old.filters.status")),
+      onRemove: () => updateFilters({ status: "" }),
+    });
   }
 
-  if (isError || (isAllBatchMode && isBatchError)) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <div className="w-14 h-14 rounded-2xl bg-main/10 flex items-center justify-center">
-          <Inbox size={28} className="text-main" />
-        </div>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">
-          {t("oldLoadError")}
-        </p>
-      </div>
-    );
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [prevIsPhone, setPrevIsPhone] = useState(isPhone);
+  if (prevIsPhone !== isPhone) {
+    // Ekran telefondan kattalashsa varaqa yopiladi.
+    setPrevIsPhone(isPhone);
+    setSheetOpen(false);
   }
 
-  if ((isAllBatchMode ? batchItems.length : mails.length) === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 gap-3">
-        <div className="w-14 h-14 rounded-2xl bg-main/10 flex items-center justify-center">
-          <Inbox size={28} className="text-main" />
-        </div>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">
-          {t("emptyOld")}
-        </p>
-      </div>
-    );
-  }
+  /* ─── Bo'laklar ─────────────────────────────────────────────────────────── */
 
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 sm:flex-row sm:items-end sm:justify-between dark:bg-white/3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-main/15 text-main">
-              <Filter size={18} />
-            </span>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-white dark:text-white">
-                {t("oldFilterTitle")}
-              </p>
-              <p className="text-xs text-white/60 dark:text-white/55">
-                {t("oldFilterHint")}
-              </p>
-            </div>
-          </div>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={handleExportExcel}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-main/40 bg-main px-3 text-sm font-semibold text-white transition hover:bg-main/90"
-          >
-            <Download size={16} />
-            Excel
-          </button>
-          {activeFilterCount > 0 ? (
+  const summaryPart = (key: string, value: number, values?: Record<string, unknown>) => (
+    <span className="whitespace-nowrap">
+      <Trans
+        t={t}
+        i18nKey={key}
+        count={values ? undefined : value}
+        values={values ?? { value: count(value) }}
+        components={{ strong: STRONG }}
+      />
+    </span>
+  );
+
+  // Xulosa «46 ta pochta · 684 ta buyurtma · jami 128 360 000 so'm» (manager maketi; telefonda 2 qator).
+  const summary = (
+    <p className="text-[13px] leading-[18px] text-text-muted">
+      {summaryPart(isAllBatchMode ? "old.summaryBatches" : "old.summaryMails", totals.count)}
+      {" · "}
+      {summaryPart("old.summaryOrders", totals.orders)}
+      {isPhone ? <br /> : " · "}
+      {summaryPart("old.summaryTotal", totals.amount, { amount: money(totals.amount) })}
+    </p>
+  );
+
+  const modeSwitch = canUseBatchMode ? (
+    <SegmentedControl
+      ariaLabel={t("old.viewLabel")}
+      options={[
+        { value: "mails", label: t("old.viewMails") },
+        { value: "batches", label: t("old.viewBatches") },
+      ]}
+      value={isAllBatchMode ? "batches" : "mails"}
+      onValueChange={(value) => setBatchMode(value === "batches")}
+    />
+  ) : null;
+
+  const query = isAllBatchMode ? batchesQuery : mailsQuery;
+  const emptyAll = sources.length === 0;
+  // Ma'lumot keldi va bo'sh emas. Xulosa va Excel faqat shunda: yuklanish, xato va bo'sh holatda «0 ta pochta»
+  // chalg'itadi, Excel esa bo'sh fayl berardi (v1 da bu holatlarda asboblar qatori umuman yo'q edi).
+  const hasData = query.data != null && !emptyAll;
+  const showSummary = hasData;
+
+  const exportButton = (
+    <Button variant="secondary" compact leftIcon={Download} disabled={!hasData} onClick={handleExportExcel}>
+      {t("old.export")}
+    </Button>
+  );
+  const exportIconButton = (
+    <IconButton
+      variant="secondary"
+      icon={Download}
+      label={t("old.export")}
+      disabled={!hasData}
+      onClick={handleExportExcel}
+    />
+  );
+  // Ko'rinish breakpointi o'ramda: `Button` ning o'z `inline-flex` i `hidden` ni bosib ketmasin.
+  const clearLink = (wrapperClassName?: string) =>
+    activeCount > 0 ? (
+      <span className={cx("shrink-0", wrapperClassName)}>
+        <Button variant="link" size="sm" onClick={resetFilters}>
+          {t("ui:filters.clearAll")}
+        </Button>
+      </span>
+    ) : null;
+
+  const regionSelect = (
+    <Select
+      options={withAll(regionOptions)}
+      value={filters.regionId}
+      onChange={(next) => updateFilters({ regionId: next ?? "" })}
+      placeholder={all}
+      inlineLabel={t("old.filters.region")}
+      aria-label={t("old.filters.region")}
+      icon={MapPin}
+      searchable={regionOptions.length > 8}
+      loading={regionsLoading}
+    />
+  );
+  const courierSelect = withCourier ? (
+    <Select
+      options={withAll(courierOptions)}
+      value={filters.courierId}
+      onChange={(next) => updateFilters({ courierId: next ?? "" })}
+      placeholder={all}
+      inlineLabel={t("old.filters.courier")}
+      aria-label={t("old.filters.courier")}
+      icon={User}
+      searchable
+      loading={couriersLoading}
+    />
+  ) : null;
+  const statusSelect = (
+    <Select
+      options={withAll(statusOptions)}
+      value={effectiveStatus}
+      onChange={(next) => updateFilters({ status: next ?? "" })}
+      placeholder={all}
+      inlineLabel={t("old.filters.status")}
+      aria-label={t("old.filters.status")}
+      icon={CircleCheck}
+    />
+  );
+  const dateRange = (className?: string, clearable = true) => (
+    <DateRange
+      value={{ from: filters.dateFrom, to: filters.dateTo }}
+      onChange={({ from, to }) => updateFilters({ dateFrom: from, dateTo: to })}
+      placeholder={t("old.filters.dateRange")}
+      clearable={clearable}
+      className={className}
+      triggerClassName="whitespace-nowrap"
+    />
+  );
+  // `Select` ildizi o'z o'rami (`className` ichki qutiga tushadi) — flex asosi tashqi o'ramda.
+  const filterItem = (node: ReactNode) => (node ? <div className={FILTER_ITEM}>{node}</div> : null);
+
+  const filtersButton = (active: number) => (
+    <Button
+      variant="secondary"
+      leftIcon={ListFilter}
+      aria-haspopup="dialog"
+      aria-expanded={sheetOpen}
+      onClick={() => setSheetOpen(true)}
+      className="flex-[1_1_140px] aria-expanded:bg-border!"
+    >
+      <span className="inline-flex items-center gap-2">
+        {t("ui:filters.button")}
+        {active > 0 ? <span className={COUNT_PILL}>{count(active)}</span> : null}
+      </span>
+    </Button>
+  );
+
+  const chipsRow = (withClear: boolean) =>
+    chips.length > 0 ? (
+      <div role="group" aria-label={t("ui:filters.active")} className="flex flex-wrap items-center gap-2">
+        {chips.map((chip) => (
+          <span key={chip.key} className={CHIP}>
+            <span className="min-w-0 truncate">{chip.label}</span>
             <button
               type="button"
-              onClick={resetFilters}
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/8 px-3 text-sm font-semibold text-white/80 transition hover:bg-white/12"
+              aria-label={chip.removeLabel}
+              title={chip.removeLabel}
+              onClick={chip.onRemove}
+              className={CHIP_X}
             >
-              <RotateCcw size={15} />
-              {t("oldResetFilters")}
+              <X aria-hidden="true" size={14} strokeWidth={2.25} />
             </button>
-          ) : null}
-        </div>
+          </span>
+        ))}
+        {withClear ? clearLink() : null}
       </div>
+    ) : null;
 
-      <div className="grid grid-cols-1 gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 dark:bg-white/3 md:grid-cols-2 xl:grid-cols-4">
-        <div className="min-w-0">
-          <SearchableSelect
-            label={t("oldRegionFilterLabel")}
-            name="old-mails-region-filter"
-            value={selectedRegionId}
-            onChange={(value) => updateFilter("region_id", value)}
-            options={regionOptions}
-            placeholder={t("oldRegionFilterPlaceholder")}
-            icon={MapPinned}
-            hideLabel
-            size="sm"
-            loading={regionsLoading}
-          />
-        </div>
+  const sheet = isPhone ? (
+    <OldMailsFiltersSheet
+      open={sheetOpen}
+      onClose={() => setSheetOpen(false)}
+      initial={{ ...filters, status: effectiveStatus }}
+      withDate={!isCourier}
+      withCourier={withCourier}
+      regionOptions={regionOptions}
+      courierOptions={courierOptions}
+      statusOptions={statusOptions}
+      regionsLoading={regionsLoading}
+      couriersLoading={couriersLoading}
+      previewCount={(draft) => filterOldMails(sources, isCourier ? { ...draft, courierId: "" } : draft, isAllBatchMode).length}
+      onApply={(draft) => updateFilters(draft)}
+    />
+  ) : null;
 
-        {!isCourier ? (
-          <div className="min-w-0">
-            <SearchableSelect
-              label={t("oldCourierFilterLabel")}
-              name="old-mails-courier-filter"
-              value={selectedCourierId}
-              onChange={(value) => updateFilter("courier_id", value)}
-              options={courierOptions}
-              placeholder={t("oldCourierFilterPlaceholder")}
-              icon={UserRound}
-              hideLabel
-              size="sm"
-              loading={couriersLoading}
-            />
+  /* ─── Jadval, holatlar, sahifalash ──────────────────────────────────────── */
+
+  const tableLabel = t(isAllBatchMode ? "old.tableBatches" : "old.tableMails");
+  const columnsForSkeleton = [
+    t(isAllBatchMode ? "old.colBatch" : "old.colMail"),
+    t("old.filters.region"),
+    t("old.filters.status"),
+    t("mails:ordersLabel"),
+    t("mails:amountLabel"),
+  ];
+
+  const pagination = (
+    <Pagination
+      page={page}
+      pageSize={limit}
+      total={filtered.length}
+      onPageChange={setPage}
+      onPageSizeChange={setLimit}
+      pageSizeOptions={PAGE_SIZES}
+      summary={(range) => t(isAllBatchMode ? "old.paginationBatches" : "old.paginationMails", range)}
+    />
+  );
+
+  const list = (
+    <QueryBoundary
+      query={{
+        data: query.data,
+        isLoading: query.isLoading,
+        isError: query.isError,
+        error: query.error,
+        refetch: query.refetch,
+      }}
+      isEmpty={() => emptyAll}
+      loadingLabel={t("old.loading")}
+      loading={<SkeletonTable framed={false} rows={8} columns={columnsForSkeleton} />}
+      error={(error, retry) => <ErrorState error={error} title={t("old.loadError")} onRetry={retry} />}
+      empty={
+        <EmptyState
+          icon={isAllBatchMode ? Package : Inbox}
+          title={t(isAllBatchMode ? "old.emptyBatchesTitle" : "old.emptyMailsTitle")}
+          description={t(isAllBatchMode ? "old.emptyBatchesDescription" : "old.emptyMailsDescription")}
+        />
+      }
+    >
+      {filtered.length === 0 ? (
+        <EmptyState
+          className="border-t border-border"
+          icon={ListFilter}
+          title={t("old.filtersEmptyTitle")}
+          description={t("old.filtersEmptyDescription")}
+          action={
+            <Button variant="secondary" onClick={resetFilters}>
+              {t("ui:filters.clearAll")}
+            </Button>
+          }
+        />
+      ) : (
+        <MailsTable<OldMailRow>
+          rows={rows}
+          ariaLabel={tableLabel}
+          idHeader={t(isAllBatchMode ? "old.colBatch" : "old.colMail")}
+          statusHeader={canUseBatchMode ? t("old.colStatus") : undefined}
+          showCourier={!isCourier && !isAllBatchMode}
+          courierCards={isCourier}
+          sortable={isCourier}
+          statusSortable={isCourier}
+          tabletMergeOrders={!isCourier && !isAllBatchMode}
+          cardTitle={cardTitle}
+          cardSub={cardSub}
+          linkOf={linkOf}
+          openLabel={openLabel}
+          rowActions={isAllBatchMode ? undefined : rowActions}
+          cardActions={isAllBatchMode ? undefined : cardActions}
+          busy={query.isFetching && !query.isLoading}
+          className="border-t border-border"
+        />
+      )}
+    </QueryBoundary>
+  );
+
+  const showFooter = !emptyAll && filtered.length > 0;
+
+  /* ─── Kuryer: o'z kartasi ───────────────────────────────────────────────── */
+
+  if (resolvedLayout === "page") {
+    return (
+      <div className="flex flex-col gap-4">
+        {isPhone ? (
+          <div role="search" aria-label={t("old.filters.label")} className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              {dateRange("min-w-[200px] flex-[1_1_200px]", false)}
+              {filtersButton(sheetCount)}
+            </div>
+            {chipsRow(true)}
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[13px] text-text-muted">
+                {showSummary ? (
+                  <Trans
+                    t={t}
+                    i18nKey="old.courierTotal"
+                    count={totals.count}
+                    values={{ value: count(totals.count) }}
+                    components={{ strong: STRONG }}
+                  />
+                ) : null}
+              </p>
+              <Button
+                variant="ghost"
+                size="sm"
+                leftIcon={Download}
+                disabled={!hasData}
+                onClick={handleExportExcel}
+                className="-mr-2"
+              >
+                {t("old.export")}
+              </Button>
+            </div>
           </div>
         ) : null}
+        <Card padding="none" footer={showFooter ? pagination : undefined}>
+          {!isPhone ? (
+            <div
+              role="search"
+              aria-label={t("old.filters.label")}
+              className="flex flex-wrap items-center gap-3 px-5 py-4"
+            >
+              {dateRange(FILTER_ITEM)}
+              {filterItem(regionSelect)}
+              {filterItem(statusSelect)}
+              {activeCount > 0 ? (
+                <Button variant="ghost" onClick={resetFilters}>
+                  {t("old.filters.clear")}
+                </Button>
+              ) : null}
+              {/* D5: kuryer maketida Excel sarlavha amallarida; sarlavha qobiqda — shu qatorning o'ng chetida. */}
+              <div className="ml-auto">{exportButton}</div>
+            </div>
+          ) : null}
+          {list}
+        </Card>
+        {sheet}
+      </div>
+    );
+  }
 
-        <div className="min-w-0">
-          <SearchableSelect
-            label={t("oldStatusFilterLabel")}
-            name="old-mails-status-filter"
-            value={selectedStatus}
-            onChange={(value) => updateFilter("status", value)}
-            options={statusOptions}
-            placeholder={t("oldStatusFilterPlaceholder")}
-            icon={CheckCircle2}
-            hideLabel
-            size="sm"
-          />
-        </div>
+  /* ─── Xodim: qobiq kartasi ichida ───────────────────────────────────────── */
 
-        <div className="min-w-0">
-          <FilterDateRange
-            dateFrom={dateFrom}
-            dateTo={dateTo}
-            onChangeDateFrom={(value) => updateFilter("startDate", value)}
-            onChangeDateTo={(value) => updateFilter("endDate", value)}
-            placeholder={t("oldDateFilterPlaceholder")}
-            size="sm"
-          />
+  return (
+    <>
+      {/* Asboblar qatori: segment (admin) · xulosa · Excel. Segment bo'lsa planshetda xulosa keyingi qatorga
+          o'tadi (maket: segment va Excel bir qatorda); telefonda segment to'liq enli, xulosa ostida. */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 px-5 pt-4 max-md:px-4">
+        {modeSwitch ? <div className="max-md:w-full">{modeSwitch}</div> : null}
+        <div className={cx("min-w-0 flex-1", modeSwitch && "max-lg:order-last max-lg:basis-full")}>
+          {showSummary ? summary : null}
         </div>
+        {!isPhone ? (
+          <div className="ml-auto flex items-center gap-3">
+            {clearLink("hidden max-lg:inline-flex")}
+            {exportButton}
+          </div>
+        ) : null}
       </div>
 
-      {filteredMails.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 gap-3">
-          <div className="w-14 h-14 rounded-2xl bg-main/10 flex items-center justify-center">
-            <Inbox size={28} className="text-main" />
+      {isPhone ? (
+        <div className="flex flex-col gap-3 px-4 pb-4 pt-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {filtersButton(sheetCount)}
+            {exportIconButton}
           </div>
-          <p className="text-gray-500 dark:text-gray-400 text-sm">
-            {t("oldFiltersEmpty")}
-          </p>
+          {chipsRow(true)}
         </div>
       ) : (
-        <div className="space-y-4">
-          <div className={MAIL_CARD_GRID_CLASS}>
-            {visibleMails.map((mail) => (
-              <OldMailCard key={mail.id} item={mail} mode={isAllBatchMode ? "batch" : "mail"} />
-            ))}
-          </div>
-
-          <Pagination
-            totalItems={filteredMails.length}
-            itemsPerPage={limit}
-            currentPage={page}
-            onPageChange={setPage}
-            onItemsPerPageChange={setLimit}
-            pageSizeOptions={[8, 16, 32, 64]}
-          />
+        <div className="flex flex-wrap items-center gap-3 px-5 pb-4 pt-3">
+          {filterItem(regionSelect)}
+          {filterItem(courierSelect)}
+          {filterItem(statusSelect)}
+          {dateRange(FILTER_ITEM)}
+          {clearLink("max-lg:hidden")}
         </div>
       )}
-    </div>
+
+      {list}
+      {showFooter ? (
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-3">
+          {pagination}
+        </div>
+      ) : null}
+      {sheet}
+    </>
   );
 };
 

@@ -25,7 +25,7 @@ import {
 } from "../../../shared/ui/primitives";
 import { formatBatchDisplayId } from "../../batches/lib/batchFormat";
 import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
-import { SelectionRegion } from "../ui/SelectionRegion";
+import { SelectionRegion } from "../../../shared/ui/SelectionRegion";
 import {
   BATCH_STATUS_TONE,
   matchesBatchSearch,

@@ -143,6 +143,8 @@ const TAB_SIZING_FULL = "flex-auto justify-center gap-1.5 px-1.5";
 const COUNT =
   "inline-flex h-5 min-w-[22px] items-center justify-center rounded-full px-1.5 text-xs font-semibold tabular-nums";
 const COUNT_IDLE = "bg-sunken text-text-muted";
+/** Sahifa fonidagi tablarda (`background="bg"`) nofaol son — yuza + chegara (maket `courier-mails-today`). */
+const COUNT_IDLE_ON_BG = "border border-border bg-surface text-text-muted";
 const COUNT_ACTIVE = "bg-action-soft text-action-fg";
 
 const FADE_BG: Record<TabsBackground, string> = {
@@ -289,10 +291,12 @@ const TabContent = ({
   item,
   active,
   language,
+  background = "surface",
 }: {
   item: TabItem;
   active: boolean;
   language: string | undefined;
+  background?: TabsBackground;
 }) => {
   const Icon = item.icon;
   return (
@@ -302,7 +306,7 @@ const TabContent = ({
       {/* Bo'shliq — ekran o'quvchi «Yangi 32» deb o'qisin («Yangi32» emas); flex ichida ko'rinmaydi. */}
       {item.count !== undefined ? " " : null}
       {item.count !== undefined ? (
-        <span className={cx(COUNT, active ? COUNT_ACTIVE : COUNT_IDLE)}>
+        <span className={cx(COUNT, active ? COUNT_ACTIVE : background === "bg" ? COUNT_IDLE_ON_BG : COUNT_IDLE)}>
           {formatNumberLocalized(item.count, { language })}
         </span>
       ) : null}
@@ -500,7 +504,7 @@ const TabList = <T extends string>({
               item.disabled ? TAB_DISABLED : active ? TAB_ACTIVE : TAB_IDLE,
             )}
           >
-            <TabContent item={item} active={active} language={language} />
+            <TabContent item={item} active={active} language={language} background={background} />
           </button>
         );
       })}
@@ -543,7 +547,7 @@ const TabNav = <T extends string>({
           // Havolani o'chirib bo'lmaydi — o'chirilgan band oddiy matn.
           return (
             <span key={item.value} id={id} aria-disabled="true" title={item.title} className={cx(TAB, sizing, TAB_DISABLED)}>
-              <TabContent item={item} active={false} language={language} />
+              <TabContent item={item} active={false} language={language} background={background} />
             </span>
           );
         }
@@ -562,7 +566,7 @@ const TabNav = <T extends string>({
               onClick={onClick}
               className={cx(TAB, sizing, active ? TAB_ACTIVE : TAB_IDLE)}
             >
-              <TabContent item={item} active={active} language={language} />
+              <TabContent item={item} active={active} language={language} background={background} />
             </Link>
           );
         }
@@ -576,7 +580,7 @@ const TabNav = <T extends string>({
             onClick={onClick}
             className={({ isActive }) => cx(TAB, sizing, isActive ? TAB_ACTIVE : TAB_IDLE)}
           >
-            {({ isActive }) => <TabContent item={item} active={isActive} language={language} />}
+            {({ isActive }) => <TabContent item={item} active={isActive} language={language} background={background} />}
           </NavLink>
         );
       })}

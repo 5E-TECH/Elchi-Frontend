@@ -237,6 +237,13 @@ describe("Tabs — son", () => {
     expect(screen.getByText("1 248")).toHaveClass("bg-action-soft", "text-action-fg");
     expect(screen.getByText("32")).toHaveClass("bg-sunken", "text-text-muted");
   });
+
+  it("sahifa fonida (`background=\"bg\"`) nofaol son — yuza + chegara (maket `courier-mails-today`), faoli o'zgarmaydi", () => {
+    render(<Controlled background="bg" />);
+    expect(screen.getByText("1 248")).toHaveClass("bg-action-soft", "text-action-fg");
+    expect(screen.getByText("32")).toHaveClass("bg-surface", "border", "border-border", "text-text-muted");
+    expect(screen.getByText("32")).not.toHaveClass("bg-sunken");
+  });
 });
 
 describe("Tabs — panel id sxemasi", () => {

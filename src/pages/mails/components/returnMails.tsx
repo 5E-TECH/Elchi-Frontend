@@ -1,8 +1,28 @@
-import { memo, useMemo, useState } from "react";
-import { Check, MapPin, Phone, RotateCcw, Truck, User, X } from "lucide-react";
-import { useTranslation } from "react-i18next";
+// dizayn-v2: superadmin-mails-return, admin-mails-return, manager-mails-return, registrator-mails-return
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Check, RotateCcw, Truck, X } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 import { useMails, type MailItem, type ReturnRequestActionPayload } from "../../../entities/mails";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
+import { cx } from "../../../shared/lib/cx";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { formatPhone } from "../../../shared/lib/formatPhone";
+import { SelectionRegion } from "../../../shared/ui/SelectionRegion";
+import { Badge, Button, Card, EmptyState, ErrorState, QueryBoundary, SkeletonTable } from "../../../shared/ui/primitives";
+import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
+import type { MailsTabLayout } from "../model/mailsLayout";
+
+/**
+ * «Pochta → Qaytarish» — kuryerlarning qaytarish so'rovlari (maket `superadmin-mails-return`; admin, menejer va
+ * registrator shu tuzilmada). Kuryerda bu tab yo'q (qobiq `/mails/today` ga qaytaradi).
+ *
+ * Tuzilma (shell kartasi ichida, `layout="card"`): xulosa («Jami qaytarish so'rovlari» · N ta kuryer, N ta
+ * buyurtma) → tanlov paneli (doim ko'rinadi; 0 ta — `idle`, tugmalar o'chiq; ega qarori D10 — har guruhdagi
+ * tugmalar o'rniga bitta panel) → kuryer bo'yicha guruhlangan jadval (guruh qatori `colspan` bilan, shuning uchun
+ * `DataTable` emas — CODE-MAP 2.6 TH/TD retsepti), telefonda — guruh sarlavhasi + `label` kartalar.
+ *
+ * Backend sahifalamaydi — doiradagi barcha so'rovlar bir yo'la keladi (sahifalash yo'q).
+ */
 
 type ReturnGroup = {
   courierId: string;
@@ -12,13 +32,12 @@ type ReturnGroup = {
   totalAmount: number;
 };
 
-const formatPrice = (price: number, currencyLabel: string): string =>
-  `${price.toLocaleString("uz-UZ")} ${currencyLabel}`;
+type Translate = (key: string, options?: Record<string, unknown>) => string;
 
 // Tasdiqlangan buyurtma qayerga qaytadi: filial doirasida — o'sha filial
 // omboriga, HQ doirasida — markazga. (Ilgari "branch" ham "Markazga" deb
 // chiqardi.)
-const actionLabel = (value: string | undefined, t: (key: string) => string) => {
+const actionLabel = (value: string | undefined, t: Translate) => {
   const normalized = String(value ?? "").toLowerCase();
 
   if (normalized.includes("market")) {
@@ -36,12 +55,12 @@ const actionLabel = (value: string | undefined, t: (key: string) => string) => {
   return t("returnDestinationCenter");
 };
 
-// ON_THE_ROAD — kuryer pochtani qabul qilganda bu posilkani qabul qilmagan;
-// WAITING — eski oqimdagi so'rov, posilka kuryer qo'lida.
-const requestStateLabel = (status: string | undefined, t: (key: string) => string) => {
+// ON_THE_ROAD — kuryer pochtani qabul qilganda bu posilkani qabul qilmagan (warning);
+// WAITING — eski oqimdagi so'rov, posilka kuryer qo'lida (neutral).
+const requestState = (status: string | undefined, t: Translate) => {
   const normalized = String(status ?? "").toLowerCase();
-  if (normalized === "on the road") return t("returnStateNotReceived");
-  if (normalized === "waiting") return t("returnStateWithCourier");
+  if (normalized === "on the road") return { label: t("returnStateNotReceived"), tone: "warning" as const };
+  if (normalized === "waiting") return { label: t("returnStateWithCourier"), tone: "neutral" as const };
   return null;
 };
 
@@ -89,17 +108,66 @@ const groupByCourier = (items: MailItem[], courierFallback: string): ReturnGroup
   return Array.from(groups.values());
 };
 
-const ReturnMails = () => {
-  const { t } = useTranslation("mails");
+/* ─── Klasslar (CODE-MAP 2.6) ─────────────────────────────────────────────── */
+
+const TH =
+  "h-10 whitespace-nowrap border-b border-border bg-sunken px-4 text-left text-xs font-semibold uppercase " +
+  "tracking-[.04em] text-text-muted";
+const TD = "h-14 border-b border-border px-4 py-2 align-middle text-text";
+/** `.el-col-check`: `w-11 pr-0`. */
+const CHECK_CELL = "w-11 pr-0";
+const CHECKBOX = "size-[18px] cursor-pointer accent-action disabled:cursor-not-allowed disabled:opacity-45";
+const SUB = "text-[13px] text-text-muted";
+
+/** Belgi: guruh/hammasi uchun qisman tanlov (`indeterminate` — faqat DOM xossasi). */
+const Checkbox = ({
+  checked,
+  indeterminate = false,
+  disabled,
+  label,
+  onChange,
+}: {
+  checked: boolean;
+  indeterminate?: boolean;
+  disabled?: boolean;
+  label: string;
+  onChange: () => void;
+}) => {
+  const ref = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (ref.current) ref.current.indeterminate = indeterminate;
+  }, [indeterminate]);
+  return (
+    <input
+      ref={ref}
+      type="checkbox"
+      className={CHECKBOX}
+      checked={checked}
+      disabled={disabled}
+      aria-label={label}
+      onChange={onChange}
+    />
+  );
+};
+
+type ReturnMailsProps = {
+  /** Qobiq kartasi ichida (`card`, sukut) yoki o'z kartasi bilan (`page`). Qaytarish tabi faqat xodimlarda. */
+  layout?: MailsTabLayout;
+};
+
+const ReturnMails = ({ layout = "card" }: ReturnMailsProps) => {
+  const { t, i18n } = useTranslation(["mails", "mailsArchive"]);
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const isPhone = useIsPhone();
   const { apiRequest } = useAppNotification();
   const {
     useGetReturnMails,
     approveReturnRequests,
     rejectReturnRequests,
   } = useMails();
-  const currencyLabel = t("currencyLabel");
   // Backend sahifalamaydi — doiradagi barcha so'rovlar bir yo'la keladi.
-  const { data: response, isLoading, isError } = useGetReturnMails();
+  const query = useGetReturnMails();
+  const response = query.data;
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const requests: MailItem[] = useMemo(() => response?.data?.data ?? [], [response]);
@@ -110,6 +178,12 @@ const ReturnMails = () => {
   );
   const isMutating = approveReturnRequests.isPending || rejectReturnRequests.isPending;
   const totalOrders = requests.reduce((sum, item) => sum + Math.max(1, item.order_quantity || 1), 0);
+  const allIds = useMemo(() => requests.map(getRequestId), [requests]);
+  const allSelected = allIds.length > 0 && allIds.every((id) => selectedIds.has(id));
+  const someSelected = selectedItems.length > 0;
+
+  const money = useCallback((value: unknown) => formatMoneyLocalized(value, { language }), [language]);
+  const count = useCallback((value: number) => formatNumberLocalized(value, { language }), [language]);
 
   const toggleOne = (id: string) => {
     setSelectedIds((prev) => {
@@ -125,12 +199,12 @@ const ReturnMails = () => {
 
   const toggleGroup = (group: ReturnGroup) => {
     const ids = group.orders.map(getRequestId);
-    const allSelected = ids.every((id) => selectedIds.has(id));
+    const groupSelected = ids.every((id) => selectedIds.has(id));
 
     setSelectedIds((prev) => {
       const next = new Set(prev);
       ids.forEach((id) => {
-        if (allSelected) {
+        if (groupSelected) {
           next.delete(id);
         } else {
           next.add(id);
@@ -141,9 +215,7 @@ const ReturnMails = () => {
   };
 
   const toggleAll = () => {
-    const ids = requests.map(getRequestId);
-    const allSelected = ids.length > 0 && ids.every((id) => selectedIds.has(id));
-    setSelectedIds(allSelected ? new Set() : new Set(ids));
+    setSelectedIds(allSelected ? new Set() : new Set(allIds));
   };
 
   const submit = async (type: "approve" | "reject") => {
@@ -159,202 +231,313 @@ const ReturnMails = () => {
       successMessage: (res: unknown) => {
         const body = (res as ReturnActionResponse | null | undefined)?.data;
         const done = Number(type === "approve" ? body?.approved : body?.rejected);
-        const count = Number.isFinite(done) ? done : payload.order_ids.length;
+        const total = Number.isFinite(done) ? done : payload.order_ids.length;
         const skipped = Array.isArray(body?.skipped_order_ids) ? body.skipped_order_ids.length : 0;
-        const base = t(type === "approve" ? "returnApproveSuccess" : "returnRejectSuccess", { count });
+        const base = t(type === "approve" ? "returnApproveSuccess" : "returnRejectSuccess", { count: total });
         return skipped > 0 ? `${base} · ${t("returnSkippedNote", { count: skipped })}` : base;
       },
       errorMessage: t("returnActionError"),
+      // Muvaffaqiyatda tanlov tozalanadi; xatoda saqlanadi (qayta urinish uchun).
       onSuccess: () => setSelectedIds(new Set()),
     });
   };
 
-  if (isLoading) {
+  /* ─── Qismlar ───────────────────────────────────────────────────────────── */
+
+  const customerOf = (item: MailItem) =>
+    item.customer?.name || t("customerNumber", { id: item.customer?.id || item.order_id || item.id });
+  const phoneOf = (item: MailItem) => {
+    const raw = item.customer?.phone_number || item.customer?.extra_number;
+    return raw ? formatPhone(raw) : t("phoneUnavailable");
+  };
+  const stateBadge = (item: MailItem) => {
+    const state = requestState(item.status, t);
+    return state ? (
+      <Badge tone={state.tone} dot>
+        {state.label}
+      </Badge>
+    ) : null;
+  };
+  const destinationBadge = (item: MailItem) => <Badge>{actionLabel(item.action, t)}</Badge>;
+  const groupState = (group: ReturnGroup) => {
+    const ids = group.orders.map(getRequestId);
+    const selected = ids.filter((id) => selectedIds.has(id)).length;
+    return { checked: selected === ids.length && ids.length > 0, indeterminate: selected > 0 && selected < ids.length };
+  };
+  const groupCheckbox = (group: ReturnGroup) => {
+    const state = groupState(group);
     return (
-      <div className="space-y-4">
-        {Array.from({ length: 3 }).map((_, index) => (
-          <div key={index} className="h-44 animate-pulse rounded-2xl bg-[color:var(--color-warning-soft)]" />
-        ))}
-      </div>
+      <Checkbox
+        checked={state.checked}
+        indeterminate={state.indeterminate}
+        disabled={isMutating}
+        label={t("mailsArchive:return.selectGroup", { courier: group.courierName })}
+        onChange={() => toggleGroup(group)}
+      />
     );
-  }
+  };
+  const rowCheckbox = (item: MailItem) => (
+    <Checkbox
+      checked={selectedIds.has(getRequestId(item))}
+      disabled={isMutating}
+      label={t("mailsArchive:return.selectRow", { customer: customerOf(item) })}
+      onChange={() => toggleOne(getRequestId(item))}
+    />
+  );
 
-  if (isError || requests.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-3 py-16">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[color:var(--color-warning-soft)]">
-          <RotateCcw size={28} className="text-[color:var(--color-warning-end)]" />
-        </div>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{t("returnEmptyDescription")}</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-glass-border bg-primary p-4 dark:bg-maindark">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[color:var(--color-warning-soft)] text-[color:var(--color-warning-end)]">
-            <RotateCcw size={23} />
-          </div>
-          <div>
-            <p className="text-base font-black text-maindark dark:text-white">{t("returnRequestsTotal")}</p>
-            <p className="text-sm text-maindark/55 dark:text-slate-400">
-              {t("returnRequestsSummary", { couriers: groups.length, orders: totalOrders })}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {groups.map((group) => {
-        const groupIds = group.orders.map(getRequestId);
-        const checkedCount = groupIds.filter((id) => selectedIds.has(id)).length;
-        const groupChecked = checkedCount === groupIds.length && groupIds.length > 0;
-
-        return (
-          <div key={group.courierId} className="overflow-hidden rounded-2xl border border-glass-border bg-primary dark:bg-maindark">
-            <div className="flex flex-col gap-3 border-b border-glass-border bg-[color:var(--color-warning-soft)] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[color:var(--color-warning-end)] text-white">
-                  <Truck size={22} />
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate text-base font-black text-maindark dark:text-white">{group.courierName}</p>
-                  <p className="text-sm text-maindark/55 dark:text-slate-400">
-                    {t("returnGroupDescription", { count: group.orders.length })}
-                    {group.courierPhone ? ` · ${group.courierPhone}` : ""}
-                  </p>
-                </div>
-              </div>
-              <p className="text-right text-sm font-black text-maindark dark:text-white">
-                {formatPrice(group.totalAmount, currencyLabel)}
-              </p>
-            </div>
-
-            <div className="divide-y divide-glass-border px-3 py-3">
-              {group.orders.map((item) => {
-                const id = getRequestId(item);
-                const isChecked = selectedIds.has(id);
-                const customerName = item.customer?.name || t("customerNumber", { id: item.customer?.id || item.order_id || item.id });
-                const phone = item.customer?.phone_number || item.customer?.extra_number || t("phoneUnavailable");
-                const location = [item.region?.name, item.district?.name].filter(Boolean).join(", ");
-                const stateLabel = requestStateLabel(item.status, t);
-
-                return (
-                  <label
-                    key={id}
-                    className="grid cursor-pointer grid-cols-[28px_minmax(0,1fr)_auto] items-center gap-3 rounded-xl px-2 py-3 transition hover:bg-main/5 dark:hover:bg-white/5"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => toggleOne(id)}
-                      className="h-4 w-4 rounded border-glass-border bg-transparent accent-main"
-                    />
-                    <div className="min-w-0">
-                      <p className="flex min-w-0 items-center gap-2 text-sm font-black text-maindark dark:text-white">
-                        <User size={14} className="shrink-0 text-maindark/45 dark:text-slate-400" />
-                        <span className="truncate">{customerName}</span>
-                      </p>
-                      <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-xs text-maindark/50 dark:text-slate-400">
-                        <span className="flex items-center gap-1">
-                          <Phone size={12} />
-                          {phone}
-                        </span>
-                        {location ? (
-                          <span className="flex min-w-0 items-center gap-1">
-                            <MapPin size={12} className="shrink-0" />
-                            <span className="truncate">{location}</span>
-                          </span>
-                        ) : null}
-                        {stateLabel ? (
-                          <span className="rounded-md bg-warning-soft px-2 py-0.5 font-semibold text-warning-end">
-                            {stateLabel}
-                          </span>
-                        ) : null}
-                        <span className="rounded-md bg-blue-500/15 px-2 py-0.5 font-semibold text-blue-400">
-                          <Truck size={12} className="mr-1 inline" />
-                          {actionLabel(item.action, t)}
-                        </span>
-                      </div>
-                    </div>
-                    <p className="shrink-0 text-right text-sm font-black text-maindark dark:text-white">
-                      {formatPrice(item.post_total_price, currencyLabel)}
-                    </p>
-                  </label>
-                );
-              })}
-            </div>
-
-            <div className="flex flex-col gap-3 border-t border-glass-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-maindark dark:text-white">
-                <input
-                  type="checkbox"
-                  checked={groupChecked}
-                  onChange={() => toggleGroup(group)}
-                  className="h-4 w-4 rounded border-glass-border bg-transparent accent-main"
-                />
-                {t("checkboxSelectAll")}
-              </label>
-
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  disabled={!checkedCount || isMutating}
-                  onClick={() => submit("approve")}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-45"
-                >
-                  <Check size={16} />
-                  {t("returnApprove")}
-                </button>
-                <button
-                  type="button"
-                  disabled={!checkedCount || isMutating}
-                  onClick={() => submit("reject")}
-                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 text-sm font-bold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-45"
-                >
-                  <X size={16} />
-                  {t("returnReject")}
-                </button>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-
-      <div className="flex flex-col gap-3 rounded-2xl border border-glass-border bg-primary px-4 py-4 dark:bg-maindark sm:flex-row sm:items-center sm:justify-between">
-        <label className="flex cursor-pointer items-center gap-2 text-sm font-medium text-maindark dark:text-white">
-          <input
-            type="checkbox"
-            checked={requests.length > 0 && requests.every((item) => selectedIds.has(getRequestId(item)))}
-            onChange={toggleAll}
-            className="h-4 w-4 rounded border-glass-border bg-transparent accent-main"
+  const summary = (
+    <div className="flex items-center gap-3 px-5 py-4 max-md:px-4">
+      <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-sunken text-text-muted">
+        <RotateCcw aria-hidden="true" size={18} strokeWidth={2} />
+      </span>
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <h2 className="text-sm font-semibold text-text">{t("returnRequestsTotal")}</h2>
+        <p className={SUB}>
+          <Trans
+            t={t}
+            i18nKey="mailsArchive:return.summary"
+            values={{ couriers: count(groups.length), orders: count(totalOrders) }}
+            components={{ strong: <span className="font-semibold text-text" /> }}
           />
-          {t("checkboxSelectAll")}
-        </label>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            disabled={!selectedItems.length || isMutating}
-            onClick={() => submit("approve")}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 text-sm font-bold text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            <Check size={16} />
-            {t("returnApprove")}
-          </button>
-          <button
-            type="button"
-            disabled={!selectedItems.length || isMutating}
-            onClick={() => submit("reject")}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-rose-600 px-4 text-sm font-bold text-white transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-45"
-          >
-            <X size={16} />
-            {t("returnReject")}
-          </button>
-        </div>
+        </p>
       </div>
     </div>
   );
+
+  const selection = (
+    <SelectionRegion
+      label={t("mailsArchive:return.selectionLabel")}
+      idle={!someSelected}
+      title={
+        someSelected
+          ? t("mailsArchive:return.selected", { count: selectedItems.length, value: count(selectedItems.length) })
+          : t("mailsArchive:return.noneSelected")
+      }
+      hint={t("mailsArchive:return.selectionHint")}
+      action={
+        <>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={!someSelected || isMutating}
+            onClick={() => setSelectedIds(new Set())}
+            className="max-md:order-last max-md:basis-full"
+          >
+            {t("mailsArchive:return.clearSelection")}
+          </Button>
+          <Button
+            variant="danger-soft"
+            size="sm"
+            leftIcon={X}
+            disabled={!someSelected || (isMutating && !rejectReturnRequests.isPending)}
+            loading={rejectReturnRequests.isPending}
+            onClick={() => submit("reject")}
+            className="max-md:flex-1"
+          >
+            {t("returnReject")}
+          </Button>
+          <Button
+            size="sm"
+            leftIcon={Check}
+            disabled={!someSelected || (isMutating && !approveReturnRequests.isPending)}
+            loading={approveReturnRequests.isPending}
+            onClick={() => submit("approve")}
+            className="max-md:flex-1"
+          >
+            {t("returnApprove")}
+          </Button>
+        </>
+      }
+    />
+  );
+
+  const groupSub = (group: ReturnGroup, short: boolean) =>
+    [
+      short
+        ? t("mailsArchive:return.groupShort", { count: group.orders.length, value: count(group.orders.length) })
+        : t("returnGroupDescription", { count: group.orders.length }),
+      group.courierPhone ? formatPhone(group.courierPhone) : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+
+  const table = (
+    <div className="relative overflow-x-auto">
+      <table
+        aria-label={t("mailsArchive:return.tableLabel")}
+        className="w-full border-collapse text-sm [&_tbody:last-child_tr:last-child_td]:border-b-0"
+      >
+        <thead>
+          <tr>
+            <th scope="col" className={cx(TH, CHECK_CELL)}>
+              <Checkbox
+                checked={allSelected}
+                indeterminate={someSelected && !allSelected}
+                disabled={isMutating}
+                label={t("mailsArchive:return.selectAll")}
+                onChange={toggleAll}
+              />
+            </th>
+            <th scope="col" className={cx(TH, "w-[26%]")}>
+              {t("mailsArchive:return.columns.customer")}
+            </th>
+            <th scope="col" className={cx(TH, "w-[24%]")}>
+              {t("mailsArchive:return.columns.area")}
+            </th>
+            <th scope="col" className={TH}>
+              {t("mailsArchive:return.columns.status")}
+            </th>
+            <th scope="col" className={cx(TH, "max-lg:hidden")}>
+              {t("mailsArchive:return.columns.destination")}
+            </th>
+            <th scope="col" className={cx(TH, "text-right")}>
+              {t("mailsArchive:return.columns.amount")}
+            </th>
+          </tr>
+        </thead>
+        {groups.map((group) => (
+          <tbody key={group.courierId}>
+            <tr>
+              <td className={cx(TD, CHECK_CELL, "bg-sunken")}>{groupCheckbox(group)}</td>
+              <td colSpan={3} className={cx(TD, "bg-sunken")}>
+                <div className="flex min-w-0 items-center gap-3">
+                  <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-[10px] bg-surface text-text-muted">
+                    <Truck aria-hidden="true" size={16} strokeWidth={2} />
+                  </span>
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate font-semibold text-text">{group.courierName}</span>
+                    <span className={cx(SUB, "truncate")}>{groupSub(group, false)}</span>
+                  </div>
+                </div>
+              </td>
+              <td className={cx(TD, "bg-sunken max-lg:hidden")} />
+              <td className={cx(TD, "whitespace-nowrap bg-sunken text-right font-semibold")}>
+                {money(group.totalAmount)}
+              </td>
+            </tr>
+            {group.orders.map((item) => {
+              const id = getRequestId(item);
+              const selected = selectedIds.has(id);
+              return (
+                <tr
+                  key={id}
+                  data-selected={selected || undefined}
+                  className={selected ? "bg-action-soft" : "hover:bg-row-hover"}
+                >
+                  <td className={cx(TD, CHECK_CELL)}>{rowCheckbox(item)}</td>
+                  <td className={TD}>
+                    <div className="whitespace-nowrap font-semibold text-text">{customerOf(item)}</div>
+                    <div className={cx(SUB, "whitespace-nowrap")}>{phoneOf(item)}</div>
+                  </td>
+                  <td className={TD}>
+                    <div className="whitespace-nowrap">{item.district?.name || "—"}</div>
+                    {item.region?.name ? <div className={SUB}>{item.region.name}</div> : null}
+                  </td>
+                  <td className={TD}>
+                    <div className="flex flex-col items-start gap-1">
+                      {stateBadge(item)}
+                      <span className="hidden max-lg:inline-flex">{destinationBadge(item)}</span>
+                    </div>
+                  </td>
+                  <td className={cx(TD, "max-lg:hidden")}>{destinationBadge(item)}</td>
+                  <td className={cx(TD, "whitespace-nowrap text-right font-semibold")}>
+                    {money(item.post_total_price)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        ))}
+      </table>
+    </div>
+  );
+
+  const cards = (
+    <div role="list" aria-label={t("mailsArchive:return.tableLabel")} className="flex flex-col">
+      {groups.map((group) => (
+        <Fragment key={group.courierId}>
+          <div
+            role="listitem"
+            className="flex items-center gap-1 border-y border-border bg-sunken py-2.5 pl-1 pr-4 first:border-t-0"
+          >
+            <label className="flex size-11 shrink-0 items-center justify-center">{groupCheckbox(group)}</label>
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="truncate font-semibold text-text">{group.courierName}</span>
+              <span className={SUB}>{groupSub(group, true)}</span>
+            </span>
+            <span className="whitespace-nowrap text-sm font-semibold text-text">{money(group.totalAmount)}</span>
+          </div>
+          {group.orders.map((item) => {
+            const id = getRequestId(item);
+            const selected = selectedIds.has(id);
+            const area = [item.district?.name, item.region?.name].filter(Boolean).join(", ");
+            return (
+              <label
+                key={id}
+                role="listitem"
+                data-selected={selected || undefined}
+                className={cx(
+                  "flex cursor-pointer items-start gap-1 border-b border-border py-3 pl-1 pr-4 last:border-b-0",
+                  selected && "bg-action-soft",
+                )}
+              >
+                <span className="-mt-2.5 flex size-11 shrink-0 items-center justify-center">{rowCheckbox(item)}</span>
+                <span className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="flex justify-between gap-2">
+                    <span className="min-w-0 truncate font-semibold text-text">{customerOf(item)}</span>
+                    <span className="whitespace-nowrap text-sm font-semibold text-text">{money(item.post_total_price)}</span>
+                  </span>
+                  <span className={SUB}>{[phoneOf(item), area].filter(Boolean).join(" · ")}</span>
+                  <span className="flex flex-wrap gap-1.5">
+                    {stateBadge(item)}
+                    {destinationBadge(item)}
+                  </span>
+                </span>
+              </label>
+            );
+          })}
+        </Fragment>
+      ))}
+    </div>
+  );
+
+  const body: ReactNode = (
+    <QueryBoundary
+      query={query}
+      isEmpty={(data) => (data?.data?.data ?? []).length === 0}
+      loadingLabel={t("mailsArchive:return.loading")}
+      error={(error, retry) => (
+        <ErrorState error={error} title={t("mailsArchive:return.loadError")} onRetry={retry} />
+      )}
+      loading={
+        <SkeletonTable
+          framed={false}
+          rows={5}
+          columns={[
+            t("mailsArchive:return.columns.customer"),
+            t("mailsArchive:return.columns.area"),
+            t("mailsArchive:return.columns.status"),
+            t("mailsArchive:return.columns.destination"),
+            t("mailsArchive:return.columns.amount"),
+          ]}
+        />
+      }
+      empty={
+        <EmptyState
+          icon={RotateCcw}
+          title={t("returnEmptyTitle")}
+          description={t("returnEmptyDescription")}
+        />
+      }
+    >
+      {summary}
+      {selection}
+      {isPhone ? cards : table}
+    </QueryBoundary>
+  );
+
+  // Qobiq kartasi ichida — o'z kartasi yo'q; `page` — mustaqil karta.
+  return layout === "page" ? <Card padding="none">{body}</Card> : body;
 };
 
 export default memo(ReturnMails);

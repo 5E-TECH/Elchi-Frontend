@@ -25,6 +25,8 @@ export interface BatchOrder {
   created_at?: string;
   district?: string;
   region?: string;
+  /** Ixtiyoriy: enriched buyurtmaning market nomi (`items[].order.market.name`); javobda bo'lmasa `undefined`. */
+  market?: string;
 }
 
 export interface BatchHistoryItem {

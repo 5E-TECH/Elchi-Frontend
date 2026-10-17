@@ -380,7 +380,7 @@
       "path": "/new-orders/branches/:branchId",
       "section": "newOrders",
       "title": "Filial paketlari ro'yxati",
-      "components": ["src/pages/new_orders/branches/batches.tsx", "src/pages/new_orders/ui/SelectionRegion.tsx", "src/pages/new_orders/branches/branchBatchesModel.ts"],
+      "components": ["src/pages/new_orders/branches/batches.tsx", "src/shared/ui/SelectionRegion.tsx", "src/pages/new_orders/branches/branchBatchesModel.ts"],
       "views": {
         "superadmin": ["neworders-branch-batches"],
         "admin": ["neworders-branch-batches"]
@@ -390,7 +390,7 @@
       "path": "/new-orders/branches/:branchId/batches/:batchId",
       "section": "newOrders",
       "title": "Filial paketi tafsiloti (qabul)",
-      "components": ["src/pages/new_orders/branches/batchDetail.tsx", "src/pages/new_orders/ui/SelectionRegion.tsx", "src/pages/new_orders/branches/branchBatchesModel.ts"],
+      "components": ["src/pages/new_orders/branches/batchDetail.tsx", "src/shared/ui/SelectionRegion.tsx", "src/pages/new_orders/branches/branchBatchesModel.ts"],
       "views": {
         "superadmin": ["neworders-branch-batch-detail", "neworders-branch-batch-detail-camera"],
         "admin": ["neworders-branch-batch-detail", "neworders-branch-batch-detail-camera"],
@@ -419,7 +419,7 @@
         "src/pages/new_orders/cancelled/ui/CancelledOrdersTable.tsx",
         "src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx",
         "src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx",
-        "src/pages/new_orders/ui/SelectionRegion.tsx",
+        "src/shared/ui/SelectionRegion.tsx",
         "src/pages/new_orders/cancelled/utils.ts",
         "src/shared/components/ScannerCameraModal.tsx",
         "src/app/lib/routes.tsx"
@@ -503,8 +503,12 @@
       "components": [
         "src/pages/mails/index.tsx",
         "src/pages/mails/components/todaysMails.tsx",
-        "src/pages/mails/components/MailGridCard.tsx",
-        "src/pages/mails/components/MailSummaryStats.tsx"
+        "src/pages/mails/components/MailsListBody.tsx",
+        "src/pages/mails/components/MailsTable.tsx",
+        "src/pages/mails/components/MailSummaryStats.tsx",
+        "src/pages/mails/model/mailsLists.ts",
+        "src/pages/mails/model/mailsLayout.ts",
+        "src/pages/mails/components/lib/regionFilterOptions.ts"
       ],
       "views": {
         "superadmin": ["mails-today"],
@@ -513,13 +517,13 @@
         "registrator": ["mails-today"],
         "courier": ["mails-today", "mails-tab-switcher-open"]
       },
-      "note": "Tablar (Bugungi · Qaytarish · Rad etilgan · Eski) — src/pages/mails/index.tsx; tor ekranda (< 1280px) tablar ochiladigan ixcham tanlagichga aylanadi (courier-mails-tab-switcher-open)."
+      "note": "Qobiq — src/pages/mails/index.tsx: xodimda sarlavha + bitta karta (sonli tablar «Bugungi · Qaytarish · Rad etilgan · Eski»; telefonda bo'lim tanlagichi — Select «Pochta bo'limi: …»), kuryerda tablar sahifa fonida («Qaytarish» yo'q; telefonda to'liq enli qisqa tablar — courier-mails-tab-switcher-open). Tab sonlari model/mailsLists.ts hooklaridan (tanalar bilan bir xil queryKey)."
     },
     {
       "path": "/mails/return",
       "section": "mails",
       "title": "Pochta — Qaytarish so'rovlari",
-      "components": ["src/pages/mails/index.tsx", "src/pages/mails/components/returnMails.tsx"],
+      "components": ["src/pages/mails/index.tsx", "src/pages/mails/components/returnMails.tsx", "src/shared/ui/SelectionRegion.tsx", "src/pages/mails/model/mailsLists.ts"],
       "views": {
         "superadmin": ["mails-return"],
         "admin": ["mails-return"],
@@ -534,7 +538,14 @@
       "path": "/mails/refused",
       "section": "mails",
       "title": "Pochta — Rad etilgan pochtalar",
-      "components": ["src/pages/mails/index.tsx", "src/pages/mails/components/refusedMails.tsx"],
+      "components": [
+        "src/pages/mails/index.tsx",
+        "src/pages/mails/components/refusedMails.tsx",
+        "src/pages/mails/components/MailsListBody.tsx",
+        "src/pages/mails/components/MailsTable.tsx",
+        "src/pages/mails/components/MailSummaryStats.tsx",
+        "src/pages/mails/model/mailsLists.ts"
+      ],
       "views": {
         "superadmin": ["mails-refused"],
         "admin": ["mails-refused"],
@@ -546,10 +557,13 @@
     {
       "path": "/mails/old",
       "section": "mails",
-      "title": "Pochta — Eski pochtalar (admin/superadmin: «Hamma batchlar» rejimi)",
+      "title": "Pochta — Eski pochtalar (admin/superadmin: «Filial paketlari» rejimi)",
       "components": [
         "src/pages/mails/index.tsx",
         "src/pages/mails/components/oldMails.tsx",
+        "src/pages/mails/components/OldMailsFiltersSheet.tsx",
+        "src/pages/mails/components/MailsTable.tsx",
+        "src/pages/mails/model/oldMailsModel.ts",
         "src/pages/mails/components/lib/exportOldMailsToExcel.ts",
         "src/pages/mails/components/lib/regionFilterOptions.ts"
       ],
@@ -568,14 +582,17 @@
       "components": [
         "src/pages/mails/detail/index.tsx",
         "src/pages/mails/detail/model/useMailDetailState.ts",
-        "src/pages/mails/detail/ui/MailDetailHeader.tsx",
+        "src/pages/mails/detail/model/useOrderRowView.tsx",
         "src/pages/mails/detail/ui/MailStatCards.tsx",
         "src/pages/mails/detail/ui/OrdersTable.tsx",
         "src/pages/mails/detail/ui/OrderRow.tsx",
         "src/pages/mails/detail/ui/SendButton.tsx",
         "src/pages/mails/detail/ui/SendPostModal.tsx",
-        "src/pages/mails/detail/ui/PrintOnlyOrders.tsx",
+        "src/pages/mails/detail/ui/DeleteFromPostDialog.tsx",
+        "src/pages/mails/detail/ui/printOptions.tsx",
         "src/pages/mails/detail/lib/printMode.ts",
+        "src/pages/mails/detail/lib/scanMatch.ts",
+        "src/shared/ui/SelectionRegion.tsx",
         "src/shared/components/PrintModeSelect.tsx"
       ],
       "views": {
@@ -586,13 +603,13 @@
         "courier": ["mails-detail-receive", "mails-detail-receive-camera", "mails-detail-refused", "mails-detail-old", "mails-detail-print-menu"],
         "tizim": ["scanner"]
       },
-      "note": "Rejim URL'dan: ?type=refused → rad etilgan, ?view=old → tarix (faqat o'qish), ?view=old-all-batches → «Hamma batchlar»dan ochilgan tarix (admin/superadmin; *-mails-detail-old / admin-mails-old-detail maketi). «Filialga jo'natish» oynasi faqat superadmin/admin/HQ registrator (canDispatchPostToBranch). Chop etish menyusi — PrintModeSelect."
+      "note": "Rejim URL'dan: ?type=refused → rad etilgan, ?view=old → tarix (faqat o'qish), ?view=old-all-batches → eski pochtalarning «Filial paketlari» rejimidan ochilgan tarix (admin/superadmin; *-mails-detail-old / admin-mails-old-detail maketi). «Filialga jo'natish» oynasi faqat superadmin/admin/HQ registrator (canDispatchPostToBranch). Chop etish menyusi — PrintModeSelect."
     },
     {
       "path": "/batches",
       "section": "batches",
       "title": "Paketlar — Yangi · Eski · Qaytarilgan",
-      "components": ["src/pages/batches/ui/BatchesPage.tsx", "src/pages/batches/lib/batchFormat.ts"],
+      "components": ["src/pages/batches/ui/BatchesPage.tsx", "src/pages/batches/model/batchView.ts", "src/pages/batches/lib/batchFormat.ts", "src/entities/batch/model/batchStatus.ts"],
       "views": {
         "superadmin": ["batches-new", "batches-old", "batches-return"],
         "admin": ["batches-new", "batches-old", "batches-return"],
@@ -606,9 +623,16 @@
       "title": "Paket tafsiloti (menejer: asosiy filialga jo'natish yoki faqat o'qish; qaytarish paketi ham shu sahifa)",
       "components": [
         "src/pages/batches/ui/BatchDetailPage.tsx",
+        "src/pages/batches/ui/BatchInfoCard.tsx",
+        "src/pages/batches/ui/BatchQrCard.tsx",
+        "src/pages/batches/ui/BatchHistoryCard.tsx",
         "src/pages/batches/ui/BatchPrintSheet.tsx",
         "src/pages/batches/ui/BatchQrCode.tsx",
-        "src/pages/batches/lib/batchOrderMailAdapter.ts"
+        "src/pages/batches/lib/batchOrderMailAdapter.ts",
+        "src/pages/mails/detail/ui/OrdersTable.tsx",
+        "src/pages/mails/detail/ui/MailStatCards.tsx",
+        "src/pages/mails/detail/ui/SendButton.tsx",
+        "src/pages/mails/detail/model/useMailDetailState.ts"
       ],
       "views": {
         "superadmin": ["batches-detail"],
@@ -616,13 +640,13 @@
         "manager": ["batches-detail-send", "batches-detail-send-camera", "batches-detail-readonly", "returns-batch-detail"],
         "tizim": ["scanner"]
       },
-      "note": "Jo'natish rejimi: paket holati «new» va rol menejer/registrator (canSendToMainBranch); aks holda faqat o'qish. /returns qatori ham shu sahifani ochadi."
+      "note": "Jo'natish rejimi: paket holati «new» va rol menejer/registrator (canSendToMainBranch); aks holda faqat o'qish. /returns qatori ham shu sahifani ochadi. Buyurtmalar kartasi, statistika va jo'natish tugmasi /mails/:id bilan umumiy (pages/mails/detail/ui — batchOrderMailAdapter.ts orqali)."
     },
     {
       "path": "/returns",
       "section": "batches",
       "title": "Qaytarishlar (qaytarish paketlari ro'yxati)",
-      "components": ["src/pages/returns/index.tsx"],
+      "components": ["src/pages/returns/index.tsx", "src/pages/returns/model/returnBatches.ts"],
       "views": {
         "superadmin": ["returns-list"],
         "admin": ["returns-list"],
@@ -1321,12 +1345,6 @@
     "manager-new-orders-incoming-scan-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri.",
     "superadmin-neworders-branch-batch-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
     "admin-neworders-branch-batch-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
-    "superadmin-mails-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
-    "admin-mails-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
-    "registrator-mails-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
-    "manager-mails-detail-receive-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
-    "courier-mails-detail-receive-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
-    "manager-batches-detail-send-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
     "courier-courier-bulk-scanner-camera-list": "Kamera oynasida «skanerlanganlar ro'yxati» varag'i yo'q (ScannerCameraModal faqat kamera).",
     "courier-courier-bulk-confirm-dialog": "«Kunni yakunlash» oldidan tasdiqlash oynasi yo'q (ega tasdiqlagan UX qo'shimchasi).",
     "courier-scan-offline": "Internet yo'qda skanlarni navbatga qo'yish yo'q.",
@@ -1343,7 +1361,13 @@
     "admin-neworders-cancelled-detail-camera": "Sahifa qismi (sarlavha, «Market QR» holati, «USB skaner tayyor» qatori, tanlov, jadval) v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
     "superadmin-neworders-cancelled-scanner-dialog": "Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
     "admin-neworders-cancelled-scanner-dialog": "Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
-    "registrator-new-orders-cancelled-scanner-dialog": "Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida."
+    "registrator-new-orders-cancelled-scanner-dialog": "Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
+    "superadmin-mails-detail-camera": "Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida.",
+    "admin-mails-detail-camera": "Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida.",
+    "registrator-mails-detail-camera": "Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida.",
+    "manager-mails-detail-receive-camera": "Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida.",
+    "courier-mails-detail-receive-camera": "Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida.",
+    "manager-batches-detail-send-camera": "Sahifa qismi (sarlavha, paket ma'lumoti, QR, «Buyurtmalar» kartasi — /mails/:id bilan umumiy OrdersTable, «Skaner tayyor» belgisi, tanlov) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida."
   },
   "viewFiles": {
     "$comment": "Maket → uni chizadigan aniq fayl, agar route'ning asosiy faylidan farq qilsa (rolga xos komponent, alohida oyna fayli). SCREENS.md 2- va 4-bo'limlarida ko'rsatiladi.",
@@ -1421,6 +1445,27 @@
     "admin-mails-send-branch-dialog": "src/pages/mails/detail/ui/SendPostModal.tsx",
     "registrator-mails-detail-send-dialog": "src/pages/mails/detail/ui/SendPostModal.tsx",
     "courier-mails-detail-print-menu": "src/shared/components/PrintModeSelect.tsx",
+    "superadmin-mails-today": "src/pages/mails/components/todaysMails.tsx",
+    "superadmin-mails-return": "src/pages/mails/components/returnMails.tsx",
+    "superadmin-mails-refused": "src/pages/mails/components/refusedMails.tsx",
+    "superadmin-mails-old": "src/pages/mails/components/oldMails.tsx",
+    "admin-mails-today": "src/pages/mails/components/todaysMails.tsx",
+    "admin-mails-return": "src/pages/mails/components/returnMails.tsx",
+    "admin-mails-refused": "src/pages/mails/components/refusedMails.tsx",
+    "admin-mails-old": "src/pages/mails/components/oldMails.tsx",
+    "manager-mails-today": "src/pages/mails/components/todaysMails.tsx",
+    "manager-mails-return": "src/pages/mails/components/returnMails.tsx",
+    "manager-mails-refused": "src/pages/mails/components/refusedMails.tsx",
+    "manager-mails-old": "src/pages/mails/components/oldMails.tsx",
+    "registrator-mails-today": "src/pages/mails/components/todaysMails.tsx",
+    "registrator-mails-return": "src/pages/mails/components/returnMails.tsx",
+    "registrator-mails-refused": "src/pages/mails/components/refusedMails.tsx",
+    "registrator-mails-old": "src/pages/mails/components/oldMails.tsx",
+    "courier-mails-today": "src/pages/mails/components/todaysMails.tsx",
+    "courier-mails-refused": "src/pages/mails/components/refusedMails.tsx",
+    "courier-mails-old": "src/pages/mails/components/oldMails.tsx",
+    "superadmin-mails-old-batches": "src/pages/mails/components/oldMails.tsx",
+    "admin-mails-old-all-batches": "src/pages/mails/components/oldMails.tsx",
     "superadmin-payments-main-cashbox-fill-dialog": "src/pages/payments/components/CashboxFormPopup.tsx",
     "admin-payments-cashbox-form-dialog": "src/pages/payments/components/CashboxFormPopup.tsx",
     "manager-payments-cashbox-form-dialog": "src/pages/payments/components/CashboxFormPopup.tsx",

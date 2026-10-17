@@ -1,7 +1,7 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { FileText, Globe } from "lucide-react";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import i18n from "../../i18n";
 import { renderWithProviders } from "../../test/test-utils";
 import PrintModeSelect, { type PrintSelectOption } from "./PrintModeSelect";
@@ -93,5 +93,76 @@ describe("PrintModeSelect (v2)", () => {
     expect(notPrevented).toBe(true);
     expect(screen.queryByRole("menu")).not.toBeInTheDocument();
     expect(trigger).toHaveFocus();
+  });
+
+  it("hideCount + ariaLabel: «Barchasini chop etish» — sonsiz, nomi aniq (maket `courier-mails-detail-refused`)", () => {
+    renderWithProviders(
+      <PrintModeSelect
+        count={5}
+        hideCount
+        ariaLabel="Barcha 5 ta buyurtma yorlig'ini chop etish"
+        onSelect={() => undefined}
+        buttonLabel="Barchasini chop etish"
+        options={OPTIONS}
+      />,
+    );
+    const trigger = screen.getByRole("button", { name: "Barcha 5 ta buyurtma yorlig'ini chop etish" });
+    expect(trigger).toHaveTextContent(/^Barchasini chop etish$/);
+  });
+
+  it("sheetTitle kompyuterda menyuni o'zgartirmaydi (sukut — popover)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <PrintModeSelect count={2} onSelect={() => undefined} buttonLabel="Chop etish" sheetTitle="Chop etish" options={OPTIONS} />,
+    );
+    await user.click(screen.getByRole("button", { name: "Chop etish 2" }));
+    expect(screen.getByRole("menu")).toBeInTheDocument();
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  describe("telefon (< 768) + sheetTitle — pastki varaqa (maket `courier-mails-detail-print-menu`)", () => {
+    beforeEach(() => {
+      vi.spyOn(window, "matchMedia").mockImplementation(
+        (query: string) =>
+          ({
+            matches: query.includes("max-width: 767px"),
+            media: query,
+            onchange: null,
+            addListener: vi.fn(),
+            removeListener: vi.fn(),
+            addEventListener: vi.fn(),
+            removeEventListener: vi.fn(),
+            dispatchEvent: vi.fn(),
+          }) as unknown as MediaQueryList,
+      );
+    });
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("sarlavha va izoh, bandlar; tanlash onSelect chaqiradi va varaqani yopadi", async () => {
+      const user = userEvent.setup();
+      const onSelect = vi.fn();
+      renderWithProviders(
+        <PrintModeSelect
+          count={2}
+          onSelect={onSelect}
+          buttonLabel="Chop etish"
+          menuLabel="Chop etish menyusi"
+          sheetTitle="Chop etish"
+          sheetDescription="2 ta tanlangan buyurtma yorlig'i chop etiladi"
+          options={OPTIONS}
+        />,
+      );
+      const trigger = screen.getByRole("button", { name: "Chop etish 2" });
+      expect(trigger).toHaveAttribute("aria-haspopup", "dialog");
+      await user.click(trigger);
+      const sheet = screen.getByRole("dialog", { name: "Chop etish" });
+      expect(sheet).toHaveTextContent("2 ta tanlangan buyurtma yorlig'i chop etiladi");
+      const menu = within(sheet).getByRole("menu", { name: "Chop etish menyusi" });
+      await user.click(within(menu).getByRole("menuitem", { name: /PDF yorliq/ }));
+      expect(onSelect).toHaveBeenCalledWith("pdf");
+      await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
+    });
   });
 });

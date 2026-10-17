@@ -1,15 +1,29 @@
-import { memo } from "react";
-import { Controller, useForm, type Resolver } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
-import { X, Send, User, Phone, CheckCircle2, Loader2, AlertTriangle } from "lucide-react";
+// dizayn-v2: superadmin-mails-detail-send-dialog, admin-mails-send-branch-dialog, registrator-mails-detail-send-dialog
+import { memo, useId, useState } from "react";
+import { Phone, Send, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import Popup from "../../../../shared/ui/Popup";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../../../app/config/store";
 import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
 import { useDispatchPostToBranch } from "../../../../entities/mails";
 import type { Branch } from "../../../../entities/branch";
+import { cx } from "../../../../shared/lib/cx";
+import { formatNumberLocalized } from "../../../../shared/lib/formatMoney";
+import { formatPhone } from "../../../../shared/lib/formatPhone";
 import { notify } from "../../../../shared/lib/notify";
+import { Button, Dialog } from "../../../../shared/ui/primitives";
 
+/**
+ * POCHTANI FILIALGA JO'NATISH — «Filialni tanlang» oynasi (`Dialog`, telefonda pastki varaqa).
+ *
+ * Maketlar: `superadmin-mails-detail-send-dialog`, `admin-mails-send-branch-dialog`,
+ * `registrator-mails-detail-send-dialog`. Viloyatdagi faol filiallar radio kartalar (`.el-choice-card`):
+ * nom va telefon; menejeri yo'q filial o'chiq va izohli (registratorda «adminga murojaat qiling»).
+ * Pastda «Bekor qilish» va «Jo'natish — n ta».
+ *
+ * So'rov: `POST branches/posts/:id/dispatch { destination_branch_id, order_ids }` (`useDispatchPostToBranch`).
+ * Menejer tekshiruvi yuborishda ham qoladi (backend bilan bir xil). So'rov ketayotganda oyna yopilmaydi.
+ */
 interface SendPostModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -17,110 +31,49 @@ interface SendPostModalProps {
   branches: Branch[];
   selectedIds: Set<string>;
   onSuccess: (sentIds?: string[]) => void;
+  /** Viloyat nomi — ro'yxat sarlavhasi («Qashqadaryo viloyatidagi faol filiallar»). */
+  regionName?: string | null;
 }
 
-interface SendPostFormValues {
-  branchId: string;
-}
-
-const createSendPostSchema = (requiredMessage: string): yup.ObjectSchema<SendPostFormValues> =>
-  yup.object({
-    branchId: yup.string().required(requiredMessage),
-  });
-
-const BranchCard = memo(
-  ({
-    branch,
-    selected,
-    onSelect,
-    missingManagerLabel,
-  }: {
-    branch: Branch;
-    selected: boolean;
-    onSelect: (id: string) => void;
-    missingManagerLabel: string;
-  }) => (
-    <button
-      type="button"
-      onClick={() => onSelect(branch.id)}
-      className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl border-2 transition-all duration-200 cursor-pointer text-left ${
-        selected
-          ? "border-main bg-main/10 dark:bg-main/15"
-          : "border-gray-100 dark:border-white/10 bg-white dark:bg-white/4 hover:border-main/40 hover:bg-gray-50 dark:hover:bg-white/6"
-      }`}
-    >
-      <div
-        className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 transition-all duration-200 ${
-          selected ? "bg-main text-white" : "bg-main/10 dark:bg-main/20 text-main"
-        }`}
-      >
-        <User size={18} />
-      </div>
-
-      <div className="flex flex-col gap-0.5 min-w-0 flex-1">
-        <span
-          className={`text-sm font-semibold truncate ${
-            selected ? "text-main" : "text-gray-800 dark:text-white"
-          }`}
-        >
-          {branch.name}
-        </span>
-        <div className="flex items-center gap-1">
-          <Phone size={11} className="text-gray-400 dark:text-white/40 shrink-0" />
-          <span className="text-xs text-gray-400 dark:text-white/50 truncate">
-            {branch.phone_number || "—"}
-          </span>
-        </div>
-        {!branch.has_manager && (
-          <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-amber-600 dark:text-amber-300">
-            <AlertTriangle size={12} className="shrink-0" />
-            <span className="truncate">{missingManagerLabel}</span>
-          </div>
-        )}
-      </div>
-
-      {selected && <CheckCircle2 size={20} className="text-main shrink-0" />}
-    </button>
-  ),
-);
-
-BranchCard.displayName = "BranchCard";
+/** Nomi allaqachon tur so'zi bilan tugasa («Toshkent sh.», «… viloyati») — «viloyatidagi» qo'shilmaydi. */
+const REGION_WITH_KIND = /(viloyati|sh\.|shahri|shahar|respublikasi)$/i;
 
 const SendPostModal = memo(
-  ({ isOpen, onClose, postId, branches, selectedIds, onSuccess }: SendPostModalProps) => {
-    const { t } = useTranslation("mails");
+  ({ isOpen, onClose, postId, branches, selectedIds, onSuccess, regionName }: SendPostModalProps) => {
+    const { t, i18n } = useTranslation("mails");
+    const language = i18n.resolvedLanguage ?? i18n.language;
     const { apiRequest } = useAppNotification();
-
-    const {
-      control,
-      handleSubmit,
-      reset,
-      setValue,
-      watch,
-    } = useForm<SendPostFormValues>({
-      defaultValues: {
-        branchId: "",
-      },
-      resolver: yupResolver(createSendPostSchema(t("branchRequired"))) as Resolver<SendPostFormValues>,
-    });
-
+    const role = useSelector((state: RootState) => state.role.role);
     const dispatchPostToBranch = useDispatchPostToBranch();
+    const [branchId, setBranchId] = useState("");
+    const groupName = useId();
+
     const orderIds = Array.from(selectedIds);
-    const selectedBranchId = watch("branchId");
+    const orderCount = orderIds.length;
+    const value = formatNumberLocalized(orderCount, { language });
+    const isPending = dispatchPostToBranch.isPending;
+    const open = isOpen && branches.length > 0;
 
-    const resetState = () => {
-      reset({ branchId: "" });
+    // Tanlov yopilganda tozalanadi — keyingi ochilishda avvalgisi qolmaydi.
+    const close = () => {
+      if (isPending) return;
+      setBranchId("");
       dispatchPostToBranch.reset();
-    };
-
-    const handleClose = () => {
-      if (dispatchPostToBranch.isPending) return;
-      resetState();
       onClose();
     };
 
-    const submitForm = ({ branchId }: SendPostFormValues) => {
-      if (!branchId || dispatchPostToBranch.isPending) return;
+    const region = regionName?.trim() || branches[0]?.region?.name?.trim() || "";
+    const legend = !region
+      ? t("detailPage.sendDialog.legendNoRegion")
+      : REGION_WITH_KIND.test(region)
+        ? t("detailPage.sendDialog.legendPlain", { region })
+        : t("detailPage.sendDialog.legend", { region });
+    const noManagerHint = t(
+      role === "registrator" ? "detailPage.sendDialog.noManagerRegistrator" : "detailPage.sendDialog.noManager",
+    );
+
+    const submit = () => {
+      if (!branchId || isPending) return;
 
       const branch = branches.find((item) => item.id === branchId);
       if (!branch?.has_manager) {
@@ -128,110 +81,91 @@ const SendPostModal = memo(
         return;
       }
 
-      apiRequest({
+      void apiRequest({
         request: () =>
           dispatchPostToBranch.mutateAsync({
             postId,
-            payload: {
-              destinationBranchId: branchId,
-              orderIds,
-            },
+            payload: { destinationBranchId: branchId, orderIds },
           }),
-        successMessage: t("sendBranchSuccess", { name: branch?.name ?? "" }),
+        successMessage: t("sendBranchSuccess", { name: branch.name ?? "" }),
         errorMessage: t("sendError"),
         onSuccess: () => {
-          resetState();
+          setBranchId("");
+          dispatchPostToBranch.reset();
           onSuccess(orderIds);
           onClose();
         },
       });
     };
 
-    const showPopup = isOpen && branches.length > 0;
-
     return (
-      <Popup isShow={showPopup} onClose={handleClose} ariaLabel={t("selectBranch")}>
-        <div className="w-[90vw] max-w-md bg-white dark:bg-maindark rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden">
-          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-white/10">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-main flex items-center justify-center">
-                <Send size={16} className="text-white" />
-              </div>
-              <div>
-                <p className="text-sm font-bold text-gray-800 dark:text-white">
-                  {t("selectBranch")}
-                </p>
-                <p className="text-xs text-gray-400 dark:text-white/50">
-                  {t("selectedOrdersWillBeSent", { count: orderIds.length })}
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={handleClose}
-              disabled={dispatchPostToBranch.isPending}
-              className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 dark:bg-white/8 text-gray-400 dark:text-white/50 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200 disabled:opacity-40 cursor-pointer"
+      <Dialog
+        open={open}
+        onClose={close}
+        busy={isPending}
+        size="md"
+        icon={Send}
+        title={t("detailPage.sendDialog.title")}
+        description={t("detailPage.sendDialog.description", { value, count: orderCount })}
+        footer={
+          <>
+            <Button variant="secondary" disabled={isPending} onClick={close}>
+              {t("cancel", { ns: "common" })}
+            </Button>
+            <Button
+              leftIcon={Send}
+              disabled={!branchId}
+              loading={isPending}
+              loadingText={t("sending")}
+              onClick={submit}
             >
-              <X size={16} />
-            </button>
-          </div>
-
-          <div className="px-5 py-4">
-            <p className="text-xs text-gray-400 dark:text-white/50 mb-3">
-              {t("chooseOneBranch")}
-            </p>
-            <Controller
-              control={control}
-              name="branchId"
-              render={() => (
-                <div className="flex flex-col gap-2 max-h-70 overflow-y-auto custom-scrollbar pr-1">
-                  {branches.map((branch) => (
-                    <BranchCard
-                      key={branch.id}
-                      branch={branch}
-                      selected={selectedBranchId === branch.id}
-                      missingManagerLabel={t("branchManagerMissing")}
-                      onSelect={(id) =>
-                        setValue("branchId", id, {
-                          shouldDirty: true,
-                          shouldTouch: true,
-                          shouldValidate: true,
-                        })
-                      }
-                    />
-                  ))}
-                </div>
-              )}
-            />
-          </div>
-
-          <div className="px-5 pb-5">
-            <button
-              type="button"
-              disabled={!selectedBranchId || dispatchPostToBranch.isPending}
-              onClick={handleSubmit(submitForm)}
-              className="w-full flex items-center justify-center gap-2.5 px-5 py-3.5 rounded-xl font-semibold text-sm transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed enabled:cursor-pointer enabled:bg-main enabled:text-white enabled:hover:bg-primarydark enabled:hover:shadow-lg enabled:hover:shadow-main/30 enabled:hover:scale-[1.01]"
-            >
-              {dispatchPostToBranch.isPending ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  {t("sending")}
-                </>
-              ) : (
-                <>
-                  <Send size={16} />
-                  {t("send")}
-                  {selectedBranchId && (
-                    <span className="px-2 py-0.5 rounded-md bg-white/20 text-xs font-bold">
-                      {orderIds.length}
+              {t("detailPage.sendDialog.submit", { value, count: orderCount })}
+            </Button>
+          </>
+        }
+      >
+        <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
+          <legend className="mb-2 p-0 text-xs font-semibold uppercase tracking-[.05em] text-text-muted">{legend}</legend>
+          {branches.map((branch) => {
+            const disabled = !branch.has_manager;
+            const phone = formatPhone(branch.phone_number) || branch.phone_number || "—";
+            return (
+              <label
+                key={branch.id}
+                className={cx(
+                  "flex items-start gap-2.5 rounded-xl border px-3.5 py-3 text-sm transition-[background-color,border-color] duration-150 motion-reduce:transition-none",
+                  disabled
+                    ? "cursor-not-allowed border-border bg-sunken"
+                    : "cursor-pointer border-border-strong bg-surface hover:bg-row-hover has-[:checked]:border-action has-[:checked]:bg-action-soft",
+                )}
+              >
+                <input
+                  type="radio"
+                  name={groupName}
+                  value={branch.id}
+                  checked={branchId === branch.id}
+                  disabled={disabled || isPending}
+                  onChange={() => setBranchId(branch.id)}
+                  className="mt-0.5 size-[18px] shrink-0 cursor-pointer accent-action disabled:cursor-not-allowed"
+                />
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className={cx("font-semibold", disabled ? "text-text-muted" : "text-text")}>{branch.name}</span>
+                  <span className="inline-flex items-center gap-1.5 text-[13px] text-text-muted">
+                    <Phone aria-hidden="true" size={14} className="shrink-0" />
+                    {phone}
+                  </span>
+                  {disabled ? (
+                    <span className="mt-0.5 inline-flex items-start gap-1.5 text-[13px] text-warning-fg">
+                      <TriangleAlert aria-hidden="true" size={14} className="mt-0.5 shrink-0" />
+                      {noManagerHint}
                     </span>
-                  )}
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </Popup>
+                  ) : null}
+                </span>
+              </label>
+            );
+          })}
+        </fieldset>
+      </Dialog>
     );
   },
 );

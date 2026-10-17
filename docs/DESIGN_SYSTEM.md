@@ -420,7 +420,8 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   xodimning topshirish sahifasi `bare`, market rolining bekor qilinganlari `hosted`. Umumiy qismlar:
   `ui/SourceListCard.tsx` (manba ro'yxati kartasi: qidiruv, saralash — sukut «Buyurtmalar/Paketlar» kamayish bo'yicha,
   «N ta … · jami» xulosasi, `DataTable` → telefonda kartalar, bo'sh / topilmadi / xato holatlari) va
-  `ui/SelectionRegion.tsx` (tanlov xulosasi, `aria-live`; `idle` — hali tanlanmagan). `/new-orders/branches`
+  `shared/ui/SelectionRegion.tsx` (tanlov xulosasi, `aria-live`; `idle` — hali tanlanmagan; pochta va paket
+  tafsilotlari ham ishlatadi). `/new-orders/branches`
   (`branches/index.tsx`) — filiallar; `/new-orders/branches/:branchId` (`branches/batches.tsx`) — yuborilgan paketlar,
   qidiruv + «Skaner tayyor», USB skaner paket QR'ini tanlaydi, «Qabul qilish — N ta paket» (har paketga
   `transfer-batches/:id/receive`); `…/batches/:batchId` (`branches/batchDetail.tsx`) — paket buyurtmalari, skan bilan
@@ -436,6 +437,35 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   Market rolida — o'z bekorlari (skanersiz) va «QR kod» oynasi (`ui/MarketQrDialog.tsx`). v1 `components/OrderCard.tsx`
   o'chirildi (tur `model/apiOrder.ts` ga ko'chdi), o'lik `newOrders` kalitlari (`cancelled*`, `branch*`,
   `deliver*` …) o'chirildi.
+- **Ko'chirilgan:** «Pochta» (`/mails/*`, superadmin, admin, menejer HQ · REGIONAL · HYBRID, registrator, kuryer;
+  kamera rejimlari `*-camera` — keyinroq, hozir faqat USB/klaviatura skaneri, `route-map.json` `partialViews`).
+  Qobiq `pages/mails/index.tsx`: xodimda `PageHeader` + bitta `Card` (havola rejimidagi sonli `Tabs` «Bugungi ·
+  Qaytarish · Rad etilgan · Eski», telefonda bo'lim tanlagichi — `Select`), kuryerda tablar sahifa fonida
+  (`background="bg"` — nofaol son yuza + chegara), «Qaytarish» yo'q (`/mails/return` → `/mails/today`). Sonlar
+  `model/mailsLists.ts` hooklaridan (tanalar bilan bir xil queryKey). Ro'yxatlar umumiy `components/MailsTable.tsx`
+  (`DataTable`, telefonda kartalar, kuryerda mijoz tomonida saralash; `statusHeader` — admin/superadmin eski
+  pochtalarida «Holati») va `MailsListBody.tsx` + `MailSummaryStats.tsx` (bugungi, rad etilgan). `/mails/return` —
+  kuryer bo'yicha guruhlangan jadval, doimiy `SelectionRegion`, `{ order_ids }` tasdiq/rad. `/mails/old` — «Pochtalar
+  | Filial paketlari» (`SegmentedControl`, faqat admin/superadmin, `batch_mode=all`), filtrlar URL'da (telefonda pastki
+  varaqa `OldMailsFiltersSheet.tsx`), xulosa, «Excelga yuklash» (ustunlar, jumladan «Kuryer», o'zgarmagan), mijoz
+  tomonida `Pagination`, chekni qayta chiqarish. `/mails/:id` (`detail/index.tsx`): `PageHeader` (holat, «Faqat
+  o'qish», chop etish menyusi + bitta asosiy «Pochtani jo'natish / qabul qilish — N ta»; kuryer telefonida pastki
+  menyu ustidagi panelda), `StatCard`lar (`MailStatCards`), buyurtmalar kartasi `ui/OrdersTable.tsx` (`DataTable`,
+  telefonda `OrderRow`, «USB skaner tayyor», `SelectionRegion`, qatorni bosish — tanlov), jo'natish oynasi
+  `SendPostModal` (`Dialog`), pochtadan o'chirish `DeleteFromPostDialog` (`Dialog`, `alertdialog`, sabab majburiy).
+  Yuborish/qabul/o'chirish so'rovlari, USB skaner (takror/topilmadi), chop etish rejimlari (brauzer / PDF 100×60)
+  o'zgarmagan. v1 `MailGridCard`, `MailDetailHeader`, `PrintOnlyOrders`, `Checkbox`, `lib/helpers.ts` va o'lik
+  `mails` kalitlari o'chirildi.
+- **Ko'chirilgan:** «Paketlar va qaytarishlar» (`/batches`, `/batches/:id`, `/returns`; superadmin, admin, menejer
+  HQ · PICKUP · HYBRID). `/batches` (`batches/ui/BatchesPage.tsx`): «Yangi · Eski · Qaytarilgan» sonli tablar
+  (`?tab`), `DataTable` (telefonda kartalar), `Pagination`; holat badge'i — haqiqiy paket holati
+  (`entities/batch` `BATCH_STATUS_TONE` + `newOrders:batchStatus.*`). `/batches/:id` (`ui/BatchDetailPage.tsx`):
+  `PageHeader` («← Paketlar / Qaytarishlar / Eski pochtalar»), `BatchInfoCard`, `BatchQrCard`, `BatchHistoryCard`,
+  A5 chop etish varag'i `BatchPrintSheet`; buyurtmalar — pochta tafsilotining `OrdersTable` kartasi
+  (`appearance="batch"`: telefonda «№X · [market ·] telefon» + manzil, pastda «Jami N ta buyurtma»;
+  qaytarish paketida `scannerReadyOnPhone`), jo'natish `PATCH transfer-batches/:id/send { orderIds }` va USB skaner
+  o'zgarmagan. `GET branches/:id` faqat superadmin/admin uchun so'raladi (backend `@Roles`). `/returns`
+  (`returns/index.tsx` + `model/returnBatches.ts`): holat filtri, `DataTable`, qator → `/batches/:id`.
 
 **Dizayn qo'riqchisi** (`scripts/design-guard.mjs`, `npm run design:guard`): `colour`, `palette`, `dark-pair`,
 `legacy`, `money`, `icons`, `tiny-text`, `v1-class`, `weight`, `gradient`, `v1-helper`. Ikki darvoza:

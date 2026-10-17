@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { expect, test, type Route } from "@playwright/test";
 
 /**
- * Eski pochtalar: kartada kuryer (TC2) va Excel «Kuryer» ustuni (TC3) — 4YZcTTDQ, 1440px.
+ * Eski pochtalar: jadvalda kuryer (TC2) va Excel «Kuryer» ustuni (TC3) — 4YZcTTDQ, 1440px.
  * Backend endi `GET /post` qatorida `courier: { id, name, phone_number }` beradi
  * (kuryer o'chirilgan / yo'q bo'lsa `null`). Soxta backend, serverga so'rov ketmaydi.
  */
@@ -36,7 +36,7 @@ test.describe("Eski pochtalar — kuryer: karta va Excel", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
   test.describe.configure({ timeout: 90_000 });
 
-  test("⭐ TC2+TC3: kartada «Kuryer: …», Excel'da «Kuryer» ustuni to'la; kuryersiz pochtada «-»", async ({ page }) => {
+  test("⭐ TC2+TC3: jadvalda «Kuryer» ustuni, Excel'da «Kuryer» ustuni to'la; kuryersiz pochtada «-»", async ({ page }) => {
     const leaked: string[] = [];
     await page.context().route("**/*", async (route) => {
       const request = route.request();
@@ -68,12 +68,23 @@ test.describe("Eski pochtalar — kuryer: karta va Excel", () => {
     });
 
     await page.goto("/mails/old");
-    // TC2: kartada «Kuryer: Buxaro Courier»; kuryersiz pochtada kuryer qatori yo'q.
-    await expect(page.getByText("Kuryer: Buxaro Courier", { exact: true })).toBeVisible({ timeout: 60_000 });
-    await expect(page.getByText(/^Kuryer: /)).toHaveCount(1);
+    // TC2 (dizayn v2): jadvalning «Kuryer» ustunida kuryer nomi; kuryersiz pochtada «—».
+    const table = page.getByRole("table", { name: "Eski pochtalar" });
+    await expect(table).toBeVisible({ timeout: 60_000 });
+    const headers = await table.getByRole("columnheader").allInnerTexts();
+    const courierColumn = headers.findIndex((text) => text.trim().toLowerCase() === "kuryer");
+    expect(courierColumn, "jadvalda «Kuryer» ustuni").toBeGreaterThan(-1);
+    const courierCell = (id: string) =>
+      table
+        .getByRole("row")
+        .filter({ has: page.getByRole("link", { name: `№${id}`, exact: true }) })
+        .getByRole("cell")
+        .nth(courierColumn);
+    await expect(courierCell("90")).toHaveText("Buxaro Courier");
+    await expect(courierCell("91")).toHaveText("—");
 
     const download = page.waitForEvent("download");
-    await page.getByRole("button", { name: "Excel", exact: true }).click();
+    await page.getByRole("button", { name: "Excelga yuklash", exact: true }).click();
     const file = await download;
     expect(file.suggestedFilename()).toMatch(/^old-mails-\d{4}-\d{2}-\d{2}\.xls$/);
     const html = readFileSync((await file.path())!, "utf8");

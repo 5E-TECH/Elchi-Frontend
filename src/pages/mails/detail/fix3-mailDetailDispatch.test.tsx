@@ -381,7 +381,8 @@ describe("MailDetailPage — sarlavha: pochta holati serverdan, rolga qarab make
     renderPage(stateFor("courier"), { pathname: `/mails/${POST_ID}`, state: { fromTab: "refused", type: "refused" } });
     expect(screen.queryByTestId("mail-post-status")).toBeNull();
     expect(sub().querySelector("svg.lucide-circle-x")).not.toBeNull();
-    expect(sub()).toHaveTextContent(/^Pochta №7 · 0 ta rad etilgan buyurtma mavjud$/);
+    // Maket matni: «Pochta №2476 · 5 ta rad etilgan buyurtma» («mavjud» siz).
+    expect(sub()).toHaveTextContent(/^Pochta №7 · 0 ta rad etilgan buyurtma$/);
   });
 
   it("menejer (qabul): sarlavhada pochta raqami, izohda viloyat · sana · soni (`manager-mails-detail-receive`)", () => {

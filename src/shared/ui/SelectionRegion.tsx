@@ -1,11 +1,13 @@
 // dizayn-v2: superadmin-neworders-market-orders, admin-neworders-market-detail, manager-new-orders-market-detail, registrator-new-orders-market-detail, superadmin-neworders-branch-batches, admin-neworders-branch-batches, superadmin-neworders-branch-batch-detail, admin-neworders-branch-batch-detail, superadmin-neworders-cancelled-handover, admin-neworders-cancelled-detail, registrator-new-orders-cancelled-detail
 import type { ReactNode } from "react";
-import { cx } from "../../../shared/lib/cx";
+import { cx } from "../lib/cx";
 
 /**
  * TANLOV PANELI — kartadagi `role="region"` «Tanlanganlar» qatori (`bg-action-soft`, maketlar
  * `superadmin-neworders-branch-batches`, `superadmin-neworders-branch-batch-detail`, bekor qilinganlarni topshirish;
- * market buyurtmalari — `marketOrders/SelectionBar.tsx` orqali).
+ * market buyurtmalari — `marketOrders/SelectionBar.tsx` orqali; pochta tafsiloti va paket buyurtmalari —
+ * `pages/mails/detail/ui/OrdersTable.tsx`; qaytarish so'rovlari — `pages/mails/components/returnMails.tsx`).
+ * Bir nechta sahifa ishlatgani uchun `shared/ui` da turadi (avval `pages/new_orders/ui` da edi).
  *
  * Chapda: sarlavha («2 ta paket tanlandi · 7 135 000 so'm», `aria-live` — skaner tanlaganda ekran o'quvchi
  * aytadi) va izoh; o'ngda ixtiyoriy amal(lar) («Barchasini tanlash»; telefonda chekka 16, amal alohida qatorda).

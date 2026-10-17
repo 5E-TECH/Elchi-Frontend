@@ -149,6 +149,28 @@ describe("Select — yopiq holat", () => {
     const { container } = render(<Select aria-label="Viloyat" name="region" options={REGIONS} value="samarkand" />);
     expect(container.querySelector('input[type="hidden"][name="region"]')).toHaveValue("samarkand");
   });
+
+  it("valueAddon: tanlangan nomdan keyin bezak (son belgisi), nomni o'zgartirmaydi; berilmasa — avvalgidek", () => {
+    const { rerender } = render(
+      <Select
+        aria-label="Pochta bo'limi"
+        options={REGIONS}
+        value="samarkand"
+        valueAddon={<span data-testid="count">8</span>}
+      />,
+    );
+    const trigger = combobox("Pochta bo'limi");
+    const addon = trigger.querySelector("[data-select-addon]")!;
+    expect(addon).toHaveAttribute("aria-hidden", "true");
+    expect(addon).toContainElement(screen.getByTestId("count"));
+    // Nom va bezak bir guruhda: nom kesiladi (truncate), son undan keyin — chevron oldida emas.
+    expect(within(trigger).getByText("Samarqand")).toHaveClass("truncate");
+    expect(within(trigger).getByText("Samarqand").nextElementSibling).toBe(addon);
+
+    rerender(<Select aria-label="Pochta bo'limi" options={REGIONS} value="samarkand" />);
+    expect(combobox("Pochta bo'limi").querySelector("[data-select-addon]")).toBeNull();
+    expect(within(combobox("Pochta bo'limi")).getByText("Samarqand")).toHaveClass("flex-1", "truncate");
+  });
 });
 
 describe("Select — ochiq ro'yxat", () => {

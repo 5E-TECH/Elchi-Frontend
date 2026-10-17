@@ -40,7 +40,7 @@ import {
 } from "../components/marketOrders/marketOrdersModel";
 import { useHasNewOrdersTabs } from "../model/useNewOrdersTabs";
 import NewOrdersTabs from "../ui/NewOrdersTabs";
-import { SelectionRegion } from "../ui/SelectionRegion";
+import { SelectionRegion } from "../../../shared/ui/SelectionRegion";
 import {
   canSendHandover,
   extractMarketCancelledQrToken,
