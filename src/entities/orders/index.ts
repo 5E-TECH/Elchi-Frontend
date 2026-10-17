@@ -3,6 +3,14 @@ import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import type { CancelOrderPayload } from "./cancelReason";
 import type { SellOrderPayload } from "./sellPayment";
+import type { ExtraCostRejectReason } from "./extraCostDecision";
+
+export {
+  EXTRA_COST_REJECT_REASONS,
+  canDecideExtraCost,
+  isExtraCostAlreadyDecidedError,
+  type ExtraCostRejectReason,
+} from "./extraCostDecision";
 
 const orders = "orders";
 
@@ -17,6 +25,13 @@ export type ExtraCostApproval = {
   amount: number;
   proof_file_keys?: string[];
   status: "pending" | "approved" | "rejected";
+  decided_by_user_id?: string | null;
+  decided_at?: string | null;
+  decision_comment?: string | null;
+  /** (1tnpaIqd) muddat o'tib avtomatik tasdiqlangan. */
+  auto_approved?: boolean;
+  /** (DuST9k8j) rad etish sababi — yopiq ro'yxat. */
+  reject_reason?: ExtraCostRejectReason | null;
   createdAt?: string;
   updatedAt?: string;
 };
@@ -92,7 +107,10 @@ export const useOrders = () => {
           .get(API_ENDPOINTS.ORDERS.EXTRA_COST_APPROVALS, { params: { status } })
           .then((res) => res.data),
       enabled,
+      // Kutilayotgan so'rov Telegram'da ham (✅/❌) hal qilinishi mumkin — oynaga qaytilganda va
+      // har 30 s da yangilanadi (global sukut `refetchOnWindowFocus: false`).
       refetchInterval: status === "pending" ? 30000 : false,
+      refetchOnWindowFocus: status === "pending" ? "always" : false,
     });
 
   const approveExtraCostApproval = useMutation({
@@ -104,9 +122,12 @@ export const useOrders = () => {
   });
 
   const rejectExtraCostApproval = useMutation({
-    mutationFn: ({ id, comment }: { id: string; comment?: string }) =>
+    mutationFn: ({ id, reason, comment }: { id: string; reason?: ExtraCostRejectReason; comment?: string }) =>
       api
-        .post(API_ENDPOINTS.ORDERS.EXTRA_COST_APPROVAL_REJECT(id), { comment })
+        .post(API_ENDPOINTS.ORDERS.EXTRA_COST_APPROVAL_REJECT(id), {
+          ...(reason ? { reason } : {}),
+          ...(comment?.trim() ? { comment: comment.trim() } : {}),
+        })
         .then((res) => res.data),
     onSuccess: invalidateMoney,
   });

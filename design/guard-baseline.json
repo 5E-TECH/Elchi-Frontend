@@ -216,7 +216,7 @@
     "src/pages/branches/ui/BranchesPage.tsx": { "icons": 1, "v1-helper": 2 },
     "src/pages/courier-bulk/index.tsx": { "palette": 18, "dark-pair": 29, "legacy": 68, "money": 1, "weight": 2 },
     "src/pages/dashboard/DashboardPage.tsx": { "palette": 1, "dark-pair": 1, "legacy": 2, "money": 1, "v1-helper": 2 },
-    "src/pages/dashboard/MarketDashboardPage.tsx": { "palette": 44, "dark-pair": 26, "legacy": 23, "money": 2, "weight": 1, "v1-helper": 2 },
+    "src/pages/dashboard/MarketDashboardPage.tsx": { "palette": 9, "dark-pair": 7, "legacy": 15, "money": 1, "v1-helper": 2 },
     "src/pages/dispatch/index.tsx": { "colour": 1, "palette": 74, "dark-pair": 51, "legacy": 53, "money": 1, "tiny-text": 1, "weight": 11, "v1-helper": 1 },
     "src/pages/finance-operators/index.tsx": { "money": 7 },
     "src/pages/financial-balance/components/AnalysisTab.tsx": { "palette": 67, "dark-pair": 41, "legacy": 49, "weight": 3 },

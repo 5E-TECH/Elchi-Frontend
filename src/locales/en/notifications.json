@@ -78,7 +78,7 @@
     "providerMissing": "Provider not connected yet",
     "telegramMarket": "Telegram group (market)",
     "telegramMarketPlaceholder": "Choose a market",
-    "telegramHint": "Telegram is sent only to the connected group of the chosen market.",
+    "telegramHint": "With a market chosen — to that market's Telegram group; without one — to each recipient's personal Telegram (recipients who have not connected are skipped).",
     "title": "Title",
     "titlePlaceholder": "E.g. Working hours change tomorrow",
     "body": "Text",
@@ -114,7 +114,6 @@
       "recipient": "Choose a recipient",
       "recipients": "Choose at least one recipient",
       "roles": "Choose at least one role",
-      "telegramMarket": "Choose a market for Telegram",
       "title": "Enter a title",
       "groupKey": "Enter a group key",
       "tooLong": "At most {{max}} characters"

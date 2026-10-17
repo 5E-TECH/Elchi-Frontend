@@ -78,7 +78,7 @@
     "providerMissing": "Provayder hali ulanmagan",
     "telegramMarket": "Telegram guruhi (market)",
     "telegramMarketPlaceholder": "Marketni tanlang",
-    "telegramHint": "Telegram faqat tanlangan marketning ulangan guruhiga yuboriladi.",
+    "telegramHint": "Market tanlansa — o'sha marketning Telegram guruhiga; tanlanmasa — har bir qabul qiluvchining shaxsiy Telegram'iga (ulanmagan bo'lsa o'tkazib yuboriladi).",
     "title": "Sarlavha",
     "titlePlaceholder": "Masalan: Ertaga ish vaqti o'zgaradi",
     "body": "Matn",
@@ -114,7 +114,6 @@
       "recipient": "Qabul qiluvchini tanlang",
       "recipients": "Kamida bitta qabul qiluvchini tanlang",
       "roles": "Kamida bitta rolni tanlang",
-      "telegramMarket": "Telegram uchun marketni tanlang",
       "title": "Sarlavhani kiriting",
       "groupKey": "Guruh kalitini kiriting",
       "tooLong": "{{max}} belgidan oshmasin"
