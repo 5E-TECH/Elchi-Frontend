@@ -378,6 +378,10 @@ describe("OrderCreate — 1-qadam: market tanlash (admin)", () => {
     expect(screen.getByRole("navigation", { name: "Qadamlar" }).parentElement).toHaveFocus();
   });
 
+  // Tasdiq oynasi `trigger("market")` (yup) dan keyin ochiladi — to'liq suite yuklamasida 1 s sukut yetmay qolgan.
+  const findMarketChangeDialog = () =>
+    screen.findByRole("alertdialog", { name: "Marketni almashtirasizmi?" }, { timeout: 5000 });
+
   it("1-qadamga qaytib BOSHQA market tanlansa — tasdiq oynasi; tasdiqlansa eski market katalog mahsulotlari olib tashlanadi, katalogsiz mahsulot qoladi", async () => {
     mocks.get.mockImplementation(getWithMarkets);
     const user = userEvent.setup();
@@ -401,7 +405,7 @@ describe("OrderCreate — 1-qadam: market tanlash (admin)", () => {
     await user.click(screen.getByRole("button", { name: "Keyingi" }));
 
     // Jimgina o'chmaydi: avval tasdiq (ega qarori 2026-10-17).
-    const dialog = await screen.findByRole("alertdialog", { name: "Marketni almashtirasizmi?" });
+    const dialog = await findMarketChangeDialog();
     expect(dialog).toHaveTextContent(
       "«Nur Elektronika» tanlansa, «Baraka Shop» katalogidan qo'shilgan mahsulotlar (1 ta) buyurtmadan olib tashlanadi. Katalogda yo'q mahsulotlar qoladi.",
     );
@@ -427,11 +431,11 @@ describe("OrderCreate — 1-qadam: market tanlash (admin)", () => {
     await user.click(screen.getByRole("button", { name: "Oldingi" }));
     await chooseMarket(user, "Nur Elektronika");
     await user.click(screen.getByRole("button", { name: "Keyingi" }));
-    const dialog = await screen.findByRole("alertdialog", { name: "Marketni almashtirasizmi?" });
+    const dialog = await findMarketChangeDialog();
     await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
 
     // 1-qadamda qolinadi, tanlov eski marketga qaytdi.
-    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument(), { timeout: 5000 });
     expect(screen.getByRole("region", { name: "Market tanlang" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Market.*Baraka Shop/ })).toBeInTheDocument();
 
