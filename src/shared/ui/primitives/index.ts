@@ -177,6 +177,7 @@ export { DataTable } from "./DataTable";
 export type {
   DataTableColumn,
   DataTableDensity,
+  DataTableExpandable,
   DataTableProps,
   DataTableSelection,
   DataTableSort,

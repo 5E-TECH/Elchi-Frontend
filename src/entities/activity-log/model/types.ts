@@ -25,6 +25,34 @@ export interface ActivityActor {
   status?: string | null;
 }
 
+/**
+ * (y8CxCtcK) Gateway har qatorga qo'shadigan fe'l tavsifi (`action-registry.ts`): o'zbekcha yorliq,
+ * kategoriya, ikonka/ton. `known: false` — reyestrda yo'q eski fe'l (yorliq — humanize).
+ */
+export interface ActivityActionMeta {
+  action: string;
+  label: string;
+  category: string;
+  category_label: string;
+  icon: string | null;
+  tone: string | null;
+  known: boolean;
+}
+
+/** `GET /activity-logs/actions` reyestr qatori. */
+export interface ActivityActionInfo {
+  action: string;
+  label: string;
+  category: string;
+  category_label: string;
+}
+
+/** Fe'llar katalogi: filtr ro'yxati (`actions`) va yorliqlar (`registry`). */
+export interface ActivityActionCatalog {
+  actions: string[];
+  registry: ActivityActionInfo[];
+}
+
 export interface ActivityLog {
   id: string;
   entity_type: string;
@@ -41,6 +69,9 @@ export interface ActivityLog {
   created_at: string;
   // Enrichment (added by the gateway):
   actor: ActivityActor | null;
+  /** `snapshot` · `resolved` · `unresolved` · `system` (aktyorsiz: cron/outbox/webhook). */
+  actor_status?: string | null;
+  action_meta?: ActivityActionMeta | null;
   /** Resolved primary subject; shape varies by entity_type (loose summary). */
   entity: Record<string, unknown> | null;
   references: Record<string, unknown> | null;

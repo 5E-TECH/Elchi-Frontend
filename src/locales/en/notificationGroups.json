@@ -1,0 +1,80 @@
+{
+  "title": "Notifications",
+  "description": "Telegram groups of markets: messages about new and cancelled orders are sent here",
+  "add": "Add notification",
+  "list": {
+    "title": "Connected groups",
+    "hint": "New-order and cancelled-order groups of one market are connected separately",
+    "label": "Connected Telegram groups",
+    "cardsLabel": "Telegram groups",
+    "loading": "Loading groups",
+    "emptyTitle": "No groups connected yet",
+    "emptyDescription": "To connect a market's Telegram group, press \"Add notification\".",
+    "loadError": "Could not load the list of groups",
+    "pagination": "{{from}}–{{to}} of {{total}} groups"
+  },
+  "columns": {
+    "market": "Market",
+    "groupId": "Telegram group ID",
+    "type": "Message type",
+    "date": "Date",
+    "actions": "Actions"
+  },
+  "type": {
+    "create": "New order",
+    "cancel": "Cancelled order"
+  },
+  "groupName": {
+    "create": "new-order group",
+    "cancel": "cancelled group"
+  },
+  "editLabel": "{{market}} — {{group}}: edit",
+  "deleteLabel": "{{market}} — {{group}}: delete",
+  "form": {
+    "createTitle": "Add notification",
+    "editTitle": "Edit notification",
+    "connectTitle": "Connect notifications to a Telegram group",
+    "connectText": "First add the bot to the group, then choose the market and enter the group ID. A group ID usually starts with -100.",
+    "addBot": "Add bot to the group",
+    "botMissingTitle": "Bot name is not configured",
+    "botMissingText": "To show the \"Add bot to the group\" button, add VITE_TELEGRAM_NOTIFICATION_BOT_USERNAME to the .env file.",
+    "market": "Market",
+    "marketPlaceholder": "Choose a market",
+    "marketsLoading": "Loading markets…",
+    "marketsEmpty": "No active markets found",
+    "groupId": "Telegram group ID",
+    "groupIdHint": "E.g. -1001234567890. The bot must be added to this group.",
+    "helpTitle": "How to get the group ID?",
+    "helpStep1": "Add the notification bot to the Telegram group.",
+    "helpStep2": "Write a simple message to the group, e.g. <b>test</b>.",
+    "helpStep3": "Take the group's <b>message.chat.id</b> value from the bot log — it usually starts with -100.",
+    "type": "Message type",
+    "typeCreate": "New orders group",
+    "typeCancel": "Cancelled orders group",
+    "typeHint": "New-order and cancelled-order groups of one market are connected separately.",
+    "cancel": "Cancel",
+    "save": "Save notification",
+    "saving": "Saving…",
+    "created": "Notification created",
+    "updated": "Notification updated",
+    "createFailed": "Could not create the notification",
+    "updateFailed": "Could not save the notification",
+    "errors": {
+      "market": "Choose a market",
+      "groupId": "Enter the Telegram group ID",
+      "type": "Choose a message type"
+    }
+  },
+  "deleteDialog": {
+    "title": "Do you really want to delete it?",
+    "description": {
+      "create": "Messages about new orders of {{market}} will no longer be sent to this group. The group can be connected again later.",
+      "cancel": "Messages about cancelled orders of {{market}} will no longer be sent to this group. The group can be connected again later."
+    },
+    "groupId": "Group ID: {{id}}",
+    "confirm": "Delete",
+    "loading": "Deleting…",
+    "deleted": "Notification deleted",
+    "failed": "Could not delete the notification"
+  }
+}

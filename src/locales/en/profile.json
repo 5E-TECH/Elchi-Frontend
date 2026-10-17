@@ -1,0 +1,54 @@
+{
+  "title": "Profile",
+  "subtitle": "Personal details and account information",
+  "edit": "Edit",
+  "login": "Login: {{username}}",
+  "info": {
+    "phone": "Phone",
+    "branch": "Branch",
+    "createdAt": "Registered",
+    "updatedAt": "Updated"
+  },
+  "salary": {
+    "title": "Monthly salary",
+    "accumulated": "Accrued this period",
+    "progressLabel": "Salary period",
+    "passed": "Day {{passed}} of {{total}}",
+    "remaining": "Days left: <b>{{count}}</b> · next payment {{date}}"
+  },
+  "security": {
+    "title": "Security",
+    "password": "Password",
+    "passwordHint": "Once the new password is saved, you will be signed out and sign in again with the new password.",
+    "changePassword": "Change password"
+  },
+  "password": {
+    "title": "Change password",
+    "new": "New password",
+    "newPlaceholder": "Enter a new password",
+    "minHint": "At least 4 characters",
+    "repeat": "Repeat the new password",
+    "repeatPlaceholder": "Enter the password again",
+    "match": "Passwords match",
+    "mismatch": "Passwords do not match",
+    "required": "Enter a new password",
+    "repeatRequired": "Repeat the new password",
+    "tooShort": "The password must be at least 4 characters",
+    "show": "Show password",
+    "hide": "Hide password",
+    "warning": "After saving you will be signed out. Then sign in with the new password.",
+    "cancel": "Cancel",
+    "submit": "Save password",
+    "saving": "Saving…"
+  },
+  "editDialog": {
+    "title": "Edit profile",
+    "name": "Name",
+    "namePlaceholder": "First and last name",
+    "nameTooShort": "Name must be at least 2 characters",
+    "phone": "Phone",
+    "cancel": "Cancel",
+    "submit": "Save",
+    "saving": "Saving…"
+  }
+}

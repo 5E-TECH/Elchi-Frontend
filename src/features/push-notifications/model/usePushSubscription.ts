@@ -21,6 +21,22 @@ export type PushStatus = "loading" | "unsupported" | "unavailable" | "denied" | 
 
 export type EnableResult = "enabled" | "denied" | "dismissed";
 
+/**
+ * Qurilma bloki uchun soddalashtirilgan holat (dizayn v2: Sozlamalar → Bildirishnomalar, `/inbox`):
+ * - `unsupported` — Push API yo'q yoki serverda o'chiq (`unsupported` / `unavailable`);
+ * - `default` — brauzer hali so'ramagan («So'ralmagan»);
+ * - `granted-off` — brauzer ruxsat bergan, lekin push o'chiq;
+ * - `enabled` / `denied` — `PushStatus` dagidek; `loading` — tekshirilmoqda.
+ */
+export type PushDeviceState = "loading" | "unsupported" | "default" | "granted-off" | "enabled" | "denied";
+
+export const toPushDeviceState = (status: PushStatus, permission: NotificationPermission): PushDeviceState => {
+  if (status === "loading") return "loading";
+  if (status === "unsupported" || status === "unavailable") return "unsupported";
+  if (status === "denied" || status === "enabled") return status;
+  return permission === "granted" ? "granted-off" : "default";
+};
+
 /** Rad etish belgisi — tugma passiv holatda qoladi, qayta bezovta qilinmaydi. */
 export const PUSH_DENIED_STORAGE_KEY = "elchi_push_denied";
 
@@ -157,5 +173,6 @@ export const usePushSubscription = () => {
     await refreshSubscription();
   }, [saveSettings, refreshSubscription]);
 
-  return { status, enable, disable };
+  // `permission` va `state` — qo'shimcha (dizayn v2 qurilma bloki: «Brauzer ruxsati» badge'i); `status` o'zgarmagan.
+  return { status, permission, state: toPushDeviceState(status, permission), enable, disable };
 };

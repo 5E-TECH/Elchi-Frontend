@@ -1,4 +1,7 @@
 export type {
+  ActivityActionCatalog,
+  ActivityActionInfo,
+  ActivityActionMeta,
   ActivityLog,
   ActivityActor,
   ActivityLogParams,
@@ -8,14 +11,15 @@ export type {
 export { ACTIVITY_SERVICES } from "./model/types";
 export {
   useActivityLogs,
-  useActivityActions,
+  useActivityActionCatalog,
   useEntityHistory,
   useUserActivity,
 } from "./api/useActivityLogs";
 export {
   getActivityLogs,
-  getActivityActions,
+  getActivityActionCatalog,
   getEntityHistory,
   getUserActivity,
 } from "./api/activityLogApi";
 export { default as ActivityActionTag } from "./ui/ActivityActionTag";
+export { activityActionTone, humanizeActivityAction } from "./model/actionTone";

@@ -1,24 +1,33 @@
 import { expect, test } from "@playwright/test";
-import { confirmBatchCancel, mockBranchOpsApi, openBranchOps } from "./support/branchOps";
+import {
+  batchIdInput,
+  branchRows,
+  cancelBatchButton,
+  confirmBatchCancel,
+  mockBranchOpsApi,
+  openBranchOps,
+  reasonInput,
+} from "./support/branchOps";
 
 /**
- * FILIALLAR — OPERATSIYALAR (/branch-ops): jadval konvertdan ochiladi;
- * partiyani bekor qilish faqat ≥10 belgili sabab bilan; 400 xabari ko'rinadi.
+ * FILIALLAR — OPERATSIYALAR (/branch-ops, dizayn v2 — maket `superadmin-ops-branches`): jadval konvertdan ochiladi;
+ * paketni bekor qilish faqat ≥10 belgili sabab bilan va tasdiqdan keyin; 400 xabari ko'rinadi.
  */
 for (const width of [1920, 1440]) {
   test.describe(`Filiallar — operatsiyalar — ${width}px`, () => {
     test.use({ viewport: { width, height: 900 } });
     test.describe.configure({ timeout: 90_000 });
 
-    test("⭐ jadvalda yangi buyurtmali filiallar (\"Ma'lumot topilmadi\" emas)", async ({ page }) => {
+    test("⭐ jadvalda yangi buyurtmali filiallar (bo'sh holat emas)", async ({ page }) => {
       const { leaked } = await mockBranchOpsApi(page);
       await openBranchOps(page);
-      const rows = page.locator(".ant-table-tbody tr.ant-table-row");
+      const rows = branchRows(page);
       await expect(rows).toHaveCount(2);
       await expect(rows.nth(0)).toContainText("Urganch filiali");
-      await expect(rows.nth(0)).toContainText("7");
+      await expect(rows.nth(0)).toContainText("7 ta");
       await expect(rows.nth(1)).toContainText("Xiva filiali");
-      await expect(page.locator(".ant-empty")).toHaveCount(0);
+      await expect(page.getByText("Yangi buyurtmali filial yo'q")).toHaveCount(0);
+      await expect(page.getByRole("main").getByRole("link", { name: "Ops vositalari" })).toHaveAttribute("href", "/ops?tab=branches");
       expect(leaked).toEqual([]);
     });
 
@@ -27,25 +36,26 @@ for (const width of [1920, 1440]) {
         cancel: () => ({ status: 200, body: { statusCode: 200, message: "Batch cancelled", data: { id: "18" } } }),
       });
       await openBranchOps(page);
-      const button = page.getByRole("button", { name: "Batchni bekor qilish" });
+      const button = cancelBatchButton(page);
 
-      await page.getByLabel("batch-id").fill("18");
-      await page.getByLabel("Bekor qilish sababi").fill("qisqa");
+      await batchIdInput(page).fill("18");
+      await reasonInput(page).fill("qisqa");
       await expect(page.getByText(/kamida 10 ta belgidan iborat/)).toBeVisible();
       await expect(button).toBeDisabled();
 
-      await page.getByLabel("Bekor qilish sababi").fill("Noto'g'ri viloyatga yuborilgan");
+      await reasonInput(page).fill("Noto'g'ri viloyatga yuborilgan");
+      await expect(page.getByText("30 ta belgi · kamida 10 ta")).toBeVisible();
       await expect(button).toBeEnabled();
       await button.click();
       expect(cancelBodies).toEqual([]); // tasdiqsiz so'rov ketmaydi
       await confirmBatchCancel(page);
 
-      await expect(page.getByText("Partiya muvaffaqiyatli bekor qilindi")).toBeVisible();
+      await expect(page.getByText("Paket muvaffaqiyatli bekor qilindi")).toBeVisible();
       expect(cancelBodies).toEqual([{ reason: "Noto'g'ri viloyatga yuborilgan" }]);
       expect(leaked).toEqual([]);
     });
 
-    test("⭐ backend 400 — server xabari xato Alert'ida ko'rinadi", async ({ page }) => {
+    test("⭐ backend 400 — server xabari xato ogohlantirishida ko'rinadi", async ({ page }) => {
       const { leaked } = await mockBranchOpsApi(page, {
         cancel: () => ({
           status: 400,
@@ -53,13 +63,13 @@ for (const width of [1920, 1440]) {
         }),
       });
       await openBranchOps(page);
-      await page.getByLabel("batch-id").fill("18");
-      await page.getByLabel("Bekor qilish sababi").fill("Noto'g'ri viloyatga yuborilgan");
-      await page.getByRole("button", { name: "Batchni bekor qilish" }).click();
+      await batchIdInput(page).fill("18");
+      await reasonInput(page).fill("Noto'g'ri viloyatga yuborilgan");
+      await cancelBatchButton(page).click();
       await confirmBatchCancel(page);
 
-      const alert = page.locator(".ant-alert-error");
-      await expect(alert).toContainText("Partiyani bekor qilib bo'lmadi");
+      const alert = page.getByRole("alert").filter({ hasText: "Paketni bekor qilib bo'lmadi" });
+      await expect(alert).toBeVisible();
       await expect(alert).toContainText("Faqat SENT holatdagi partiyani bekor qilish mumkin");
       expect(leaked).toEqual([]);
     });

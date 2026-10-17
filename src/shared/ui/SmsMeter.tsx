@@ -1,6 +1,10 @@
+// dizayn-v2: superadmin-notifications-sms-campaign, superadmin-notifications-sms-templates
 import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { cx } from "../lib/cx";
+import { formatMoneyLocalized, formatNumberLocalized } from "../lib/formatMoney";
 import { countSmsSegments } from "../lib/smsSegments";
+import { Badge } from "./primitives";
 
 interface SmsMeterProps {
   /** Yuboriladigan YAKUNIY matn (reklamada bekor qilish ko'rsatmasi bilan). */
@@ -12,46 +16,51 @@ interface SmsMeterProps {
   className?: string;
 }
 
-const formatSum = (value: number) => Math.round(value).toLocaleString("uz-UZ");
-
 /**
- * SMS hisoblagichi (D5sxjGBY #1-#3): kodlash, belgilar, bo'laklar va
- * TAXMINIY narx. Bitta kirill harfi UCS-2 ga o'tkazib limitni 70 ga
- * tushiradi — buni darhol ogohlantirish rangida ko'rsatadi.
+ * SMS hisoblagichi (D5sxjGBY #1-#3), dizayn v2 (maket `superadmin-notifications-sms-campaign`, `-templates`):
+ * kodlash badge'i («GSM-7» neytral, «UCS-2» ogohlantirish), «189 / 153 belgi», «2 bo'lak» (qalin), TAXMINIY narx
+ * («≈ 1 920 so'm (taxminiy)»). Bitta kirill harfi UCS-2 ga o'tkazib limitni 70 ga tushiradi — buni darhol
+ * ogohlantirish rangida ko'rsatadi.
  */
-const SmsMeter = ({ text, recipients = 1, tariff = null, className = "" }: SmsMeterProps) => {
-  const { t } = useTranslation("sms");
+const SmsMeter = ({ text, recipients = 1, tariff = null, className }: SmsMeterProps) => {
+  const { t, i18n } = useTranslation("sms");
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const segments = useMemo(() => countSmsSegments(text), [text]);
   const ucs2 = segments.encoding === "UCS-2";
-  const cost = tariff === null || tariff === undefined ? null : segments.parts * tariff * Math.max(recipients, 0);
+  const cost =
+    tariff === null || tariff === undefined
+      ? null
+      : segments.parts * tariff * Math.max(recipients, 0);
 
   return (
     <div
       data-testid="sms-meter"
       aria-live="polite"
-      className={`flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${className}`}
+      className={cx("flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]", className)}
     >
-      <span
+      <Badge
         data-testid="sms-meter-encoding"
-        className={`rounded-full px-2 py-0.5 font-semibold ${
-          ucs2
-            ? "bg-[color:var(--color-warning-soft)] text-[color:var(--color-warning-end)]"
-            : "bg-[color:var(--color-border-soft)] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
-        }`}
+        data-tone={ucs2 ? "warning" : "neutral"}
+        tone={ucs2 ? "warning" : "neutral"}
       >
         {segments.encoding}
+      </Badge>
+      <span className="text-text-muted tabular-nums">
+        {t("meter.chars", {
+          units: formatNumberLocalized(segments.units, { language }),
+          limit: formatNumberLocalized(segments.perPart, { language }),
+        })}
       </span>
-      <span className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-        {t("meter.chars", { units: segments.units, limit: segments.perPart })}
-      </span>
-      <span data-testid="sms-meter-parts" className="font-semibold text-maindark dark:text-white">
+      <span data-testid="sms-meter-parts" className="font-semibold text-text tabular-nums">
         {t("meter.parts", { count: segments.parts })}
       </span>
-      <span data-testid="sms-meter-cost" className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-        {cost === null ? t("meter.costUnknown") : t("meter.cost", { sum: formatSum(cost) })}
+      <span data-testid="sms-meter-cost" className="text-text-muted tabular-nums">
+        {cost === null
+          ? t("meter.costUnknown")
+          : t("meter.cost", { sum: formatMoneyLocalized(cost, { language }) })}
       </span>
       {ucs2 ? (
-        <span role="note" className="w-full text-[color:var(--color-warning-end)]">
+        <span role="note" className="w-full text-warning-fg">
           {t("meter.ucs2Warning")}
         </span>
       ) : null}

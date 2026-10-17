@@ -1,0 +1,80 @@
+{
+  "title": "Bildirishnomalar",
+  "description": "Marketlarning Telegram guruhlari: yangi va bekor qilingan buyurtmalar haqida xabar shu yerga boradi",
+  "add": "Bildirishnoma qo'shish",
+  "list": {
+    "title": "Ulangan guruhlar",
+    "hint": "Bitta market uchun yangi va bekor qilingan buyurtmalar guruhini alohida ulash mumkin",
+    "label": "Ulangan Telegram guruhlari",
+    "cardsLabel": "Telegram guruhlari",
+    "loading": "Guruhlar yuklanmoqda",
+    "emptyTitle": "Hali guruh ulanmagan",
+    "emptyDescription": "Marketning Telegram guruhini ulash uchun «Bildirishnoma qo'shish» tugmasini bosing.",
+    "loadError": "Guruhlar ro'yxatini olib bo'lmadi",
+    "pagination": "{{from}}–{{to}} / {{total}} ta guruh"
+  },
+  "columns": {
+    "market": "Market",
+    "groupId": "Telegram guruh ID",
+    "type": "Xabar turi",
+    "date": "Sana",
+    "actions": "Amallar"
+  },
+  "type": {
+    "create": "Yangi buyurtma",
+    "cancel": "Bekor qilingan buyurtma"
+  },
+  "groupName": {
+    "create": "yangi buyurtma guruhi",
+    "cancel": "bekor qilingan guruhi"
+  },
+  "editLabel": "{{market}} — {{group}}: tahrirlash",
+  "deleteLabel": "{{market}} — {{group}}: o'chirish",
+  "form": {
+    "createTitle": "Bildirishnoma qo'shish",
+    "editTitle": "Bildirishnomani tahrirlash",
+    "connectTitle": "Telegram guruhga bildirishnoma ulash",
+    "connectText": "Avval botni guruhga qo'shing, so'ng marketni tanlang va guruh ID sini kiriting. Guruh ID odatda -100 bilan boshlanadi.",
+    "addBot": "Botni guruhga qo'shish",
+    "botMissingTitle": "Bot nomi sozlanmagan",
+    "botMissingText": "«Botni guruhga qo'shish» tugmasi chiqishi uchun .env faylga VITE_TELEGRAM_NOTIFICATION_BOT_USERNAME qo'shish kerak.",
+    "market": "Market",
+    "marketPlaceholder": "Marketni tanlang",
+    "marketsLoading": "Marketlar yuklanmoqda…",
+    "marketsEmpty": "Faol market topilmadi",
+    "groupId": "Telegram guruh ID",
+    "groupIdHint": "Masalan: -1001234567890. Bot shu guruhga qo'shilgan bo'lishi kerak.",
+    "helpTitle": "Guruh ID ni qanday olish mumkin?",
+    "helpStep1": "Bildirishnoma botini Telegram guruhga qo'shing.",
+    "helpStep2": "Guruhga oddiy xabar yozing, masalan: <b>test</b>.",
+    "helpStep3": "Bot logidan guruhning <b>message.chat.id</b> qiymatini oling — u odatda -100 bilan boshlanadi.",
+    "type": "Xabar turi",
+    "typeCreate": "Yangi buyurtmalar guruhi",
+    "typeCancel": "Bekor qilinganlar guruhi",
+    "typeHint": "Bitta market uchun yangi va bekor qilingan buyurtmalar guruhini alohida ulash mumkin.",
+    "cancel": "Bekor qilish",
+    "save": "Bildirishnomani saqlash",
+    "saving": "Saqlanmoqda…",
+    "created": "Bildirishnoma yaratildi",
+    "updated": "Bildirishnoma yangilandi",
+    "createFailed": "Bildirishnomani yaratishda xatolik bo'ldi",
+    "updateFailed": "Bildirishnomani saqlashda xatolik bo'ldi",
+    "errors": {
+      "market": "Marketni tanlang",
+      "groupId": "Telegram guruh ID ni kiriting",
+      "type": "Xabar turini tanlang"
+    }
+  },
+  "deleteDialog": {
+    "title": "Haqiqatan ham o'chirmoqchimisiz?",
+    "description": {
+      "create": "{{market}}'ning yangi buyurtmalari haqidagi xabarlar bu guruhga endi yuborilmaydi. Guruhni keyin qayta ulash mumkin.",
+      "cancel": "{{market}}'ning bekor qilingan buyurtmalari haqidagi xabarlar bu guruhga endi yuborilmaydi. Guruhni keyin qayta ulash mumkin."
+    },
+    "groupId": "Guruh ID: {{id}}",
+    "confirm": "O'chirish",
+    "loading": "O'chirilmoqda…",
+    "deleted": "Bildirishnoma o'chirildi",
+    "failed": "Bildirishnomani o'chirishda xatolik yuz berdi"
+  }
+}

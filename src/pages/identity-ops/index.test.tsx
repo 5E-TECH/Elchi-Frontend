@@ -35,16 +35,28 @@ describe("IdentityOps page", () => {
     );
   });
 
-  it('typing market-id and clicking toggle calls api.patch with "markets/m1/add-order"', async () => {
+  it('typing Market ID and clicking «Ruxsat berish» calls api.patch with "markets/m1/add-order" and shows the result', async () => {
     const user = userEvent.setup();
     renderWithProviders(<IdentityOpsPage />);
 
-    await user.type(screen.getByLabelText("market-id"), "m1");
-    await user.click(screen.getByRole("switch"));
+    expect(screen.getByRole("button", { name: "Ruxsat berish" })).toBeDisabled();
+    await user.type(screen.getByRole("textbox", { name: /Market ID/ }), "m1");
+    await user.click(screen.getByRole("button", { name: "Ruxsat berish" }));
 
     await waitFor(() => {
       expect(apiPatchMock.mock.calls[0][0]).toBe("markets/m1/add-order");
     });
+    expect(await screen.findByText("Ruxsat berildi")).toBeInTheDocument();
+    expect(screen.getByText("Market m1 endi o'zi buyurtma qo'sha oladi")).toBeInTheDocument();
+  });
+
+  it("direct route — «← Ops vositalari»; `embedded` — no page header", () => {
+    const { unmount } = renderWithProviders(<IdentityOpsPage />);
+    expect(screen.getByRole("heading", { level: 1, name: "Xodimlar" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Ops vositalari/ })).toHaveAttribute("href", "/ops?tab=identity");
+    unmount();
+    renderWithProviders(<IdentityOpsPage embedded />);
+    expect(screen.queryByRole("heading", { level: 1 })).toBeNull();
   });
 
   it("fills all three tables from the backend envelope { data: { items } } without crashing", async () => {

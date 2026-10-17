@@ -373,7 +373,11 @@
   "table": {
     "selectAll": "Barcha qatorlarni tanlash",
     "selectRow": "Qatorni tanlash",
-    "cards": "Ro'yxat"
+    "cards": "Ro'yxat",
+    "details": "Tafsilot",
+    "noDetails": "Tafsilot yo'q",
+    "expand": "Tafsilotni ochish",
+    "collapse": "Tafsilotni yopish"
   },
   "pagination": {
     "label": "Sahifalar",
@@ -970,6 +974,27 @@
       "onTheRoad": "Yo'lda",
       "cancelled": "Bekor qilingan",
       "cancelledSent": "Bekor — jo'natilgan"
+    },
+    "expand": {
+      "label": "Jurnal namunasi",
+      "time": "Vaqt",
+      "who": "Kim",
+      "action": "Amal",
+      "object": "Obyekt",
+      "open": "{{object}} tafsilotini ochish",
+      "close": "{{object}} tafsilotini yopish",
+      "changes": "Maydon o'zgarishlari",
+      "statusChanged": "Holat o'zgardi",
+      "created": "Yaratildi",
+      "loggedOut": "Tizimdan chiqdi",
+      "courier": "Kuryer",
+      "registrar": "Ro'yxatchi",
+      "market": "Market",
+      "order": "Buyurtma",
+      "user": "Foydalanuvchi",
+      "status": "Holat",
+      "onTheRoad": "Yo'lda",
+      "sold": "Sotilgan"
     }
   },
   "statesKit": {

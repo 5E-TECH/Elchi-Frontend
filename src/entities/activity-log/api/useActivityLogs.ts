@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/config/queryKeys";
 import {
-  getActivityActions,
+  getActivityActionCatalog,
   getActivityLogs,
   getEntityHistory,
   getUserActivity,
@@ -16,11 +16,11 @@ export const useActivityLogs = (params: ActivityLogParams) =>
     staleTime: 15_000,
   });
 
-// Action verbs rarely change — cache them for the whole session.
-export const useActivityActions = () =>
+/** Fe'llar katalogi (filtr ro'yxati + yorliqlar) — sessiya davomida keshda. */
+export const useActivityActionCatalog = () =>
   useQuery({
-    queryKey: queryKeys.activityLogs.actions,
-    queryFn: getActivityActions,
+    queryKey: [...queryKeys.activityLogs.actions, "catalog"],
+    queryFn: getActivityActionCatalog,
     staleTime: 60 * 60_000,
   });
 

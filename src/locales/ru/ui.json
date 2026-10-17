@@ -373,7 +373,11 @@
   "table": {
     "selectAll": "Выбрать все строки",
     "selectRow": "Выбрать строку",
-    "cards": "Список"
+    "cards": "Список",
+    "details": "Подробности",
+    "noDetails": "Нет подробностей",
+    "expand": "Показать подробности",
+    "collapse": "Скрыть подробности"
   },
   "pagination": {
     "label": "Страницы",
@@ -970,6 +974,27 @@
       "onTheRoad": "В пути",
       "cancelled": "Отменён",
       "cancelledSent": "Отменён — отправлен"
+    },
+    "expand": {
+      "label": "Пример журнала",
+      "time": "Время",
+      "who": "Кто",
+      "action": "Действие",
+      "object": "Объект",
+      "open": "Показать подробности: {{object}}",
+      "close": "Скрыть подробности: {{object}}",
+      "changes": "Изменения полей",
+      "statusChanged": "Статус изменён",
+      "created": "Создано",
+      "loggedOut": "Вышел из системы",
+      "courier": "Курьер",
+      "registrar": "Регистратор",
+      "market": "Маркет",
+      "order": "Заказ",
+      "user": "Пользователь",
+      "status": "Статус",
+      "onTheRoad": "В пути",
+      "sold": "Продан"
     }
   },
   "statesKit": {

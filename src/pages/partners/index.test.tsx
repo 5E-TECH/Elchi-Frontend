@@ -83,8 +83,9 @@ describe("PartnersPage webhook journal", () => {
 
     renderWithProviders(<PartnersPage />, { preloadedState: adminState });
 
-    expect(await screen.findByText("1 / 2")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "›" })).toBeEnabled();
+    // v2 `Pagination`: «1–20 / 33 ta yozuv» + keyingi sahifa tugmasi.
+    expect(await screen.findByText("1–20 / 33 ta yozuv")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Keyingi sahifa" })).toBeEnabled();
   });
 
   it("shows an error state — not 'Yozuv topilmadi' — when the journal request fails", async () => {
@@ -130,7 +131,8 @@ describe("PartnersPage access-changing actions", () => {
     const user = userEvent.setup();
     renderWithProviders(<PartnersPage />, { preloadedState: adminState });
 
-    await user.click(await screen.findByRole("button", { name: "Kalitni yangilash" }));
+    // Maket `*-legacy-partners`: qatordagi ikonka tugma — «BeePost — kalitni yangilash».
+    await user.click(await screen.findByRole("button", { name: "BeePost — kalitni yangilash" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Kalitni yangilash" });
     expect(dialog).toHaveTextContent("Eski kalit darhol ishlamay qoladi.");
     expect(dialog).toHaveTextContent("BeePost");
@@ -139,7 +141,7 @@ describe("PartnersPage access-changing actions", () => {
     await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
     expect(apiPostMock).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("button", { name: "Kalitni yangilash" }));
+    await user.click(screen.getByRole("button", { name: "BeePost — kalitni yangilash" }));
     await user.click(await screen.findByRole("button", { name: "Ha, yangilash" }));
     await waitFor(() => expect(apiPostMock).toHaveBeenCalledWith("admin/partners/1/rotate-key"));
   });
@@ -148,12 +150,13 @@ describe("PartnersPage access-changing actions", () => {
     const user = userEvent.setup();
     renderWithProviders(<PartnersPage />, { preloadedState: adminState });
 
-    await user.click(await screen.findByRole("button", { name: "O'chirish" }));
+    // Maket: faol hamkor qatorida «To'xtatish» (danger-soft); tasdiq oynasi matni o'sha.
+    await user.click(await screen.findByRole("button", { name: "To'xtatish" }));
     const dialog = await screen.findByRole("alertdialog", { name: "Hamkorni o'chirish" });
     expect(dialog).toHaveTextContent("O'chirilgandan keyin hamkor so'rovlari darhol rad etiladi.");
     expect(apiPostMock).not.toHaveBeenCalled();
 
-    await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+    await user.click(within(dialog).getByRole("button", { name: "To'xtatish" }));
     await waitFor(() => expect(apiPostMock).toHaveBeenCalledWith("admin/partners/1/status", { is_active: false }));
   });
 });

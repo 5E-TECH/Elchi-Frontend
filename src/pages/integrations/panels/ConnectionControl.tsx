@@ -364,7 +364,9 @@ const ConnectionControl = ({
   const lastReconcile = integration?.last_reconcile_at;
 
   return (
-    <section aria-label={t("tabControl")} className="min-w-0 rounded-[14px] border border-border bg-surface">
+    // Panel tanlangan ulanish kartasi ichida turadi (konsol, maket `*-panel-control`) — o'z kartasi yo'q,
+    // tablar ostidan chiziq bilan ajraladi (karta ichida karta emas).
+    <section aria-label={t("tabControl")} className="min-w-0 border-t border-border">
       {/* ═══════ KALITLAR ═══════ */}
       <div role="list" aria-label={t("tabControl")}>
         <SwitchRow

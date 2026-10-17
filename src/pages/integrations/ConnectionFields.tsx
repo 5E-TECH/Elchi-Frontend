@@ -1,31 +1,27 @@
-import { Form, Input, Select, Switch } from "antd";
+// dizayn-v2: superadmin-integrations-panel-settings, superadmin-integrations-marketplace-console, superadmin-integrations-wizard, admin-integrations-conn-settings
+import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useMarkets } from "../../entities/markets";
+import { cx } from "../../shared/lib/cx";
+import { Field, Select, TextInput, type SelectOption } from "../../shared/ui/primitives";
 import { isFieldDisabled, visibleFields } from "./connections";
 import { nestPayload } from "./fieldPath";
 import type { ConnectionField } from "./connections";
 import StatusMapField from "./StatusMapField";
 import type { StatusMapValue } from "./statusMap";
+import { SecretInput, Switch, TagsInput } from "./ui";
 
 /**
- * UMUMIY ULANISH FORMASI — maydon ro'yxatidan o'zini yasaydi.
+ * UMUMIY ULANISH FORMASI — maydon ro'yxatidan o'zini yasaydi (dizayn v2: `Field` + `TextInput` /
+ * `Select`, kalit — `Switch`, IP ro'yxati — chiplar).
  *
- * NEGA UMUMIY. Foydalanuvchi talabi: "Marketplacelar bilan ulashlar, va boshqa
- * tizimlar bilan ulashni ham deyarli bir xil UI da qil, faqat so'raydigan va
- * ulaydigan qiymatlari farqli bo'lsa faqat shular boshqa bo'lsin".
- *
- * Ilgari har xil ulanish uchun alohida forma yozilgan edi — `partners`
- * sahifasida bir xil, `external_orders` sahifasida boshqa xil. Ikki forma
- * bir ishni bajarardi, lekin ko'rinishi, terminologiyasi va tekshiruvlari
- * boshqacha edi. Yangi tur qo'shilganda uchinchi forma kerak bo'lardi.
- *
- * Endi forma BITTA, farq faqat `connections.ts` dagi maydon ro'yxatida.
+ * NEGA UMUMIY. Foydalanuvchi talabi: «Marketplacelar bilan ulashlar, va boshqa tizimlar bilan ulashni
+ * ham deyarli bir xil UI da qil, faqat so'raydigan va ulaydigan qiymatlari farqli bo'lsa faqat shular
+ * boshqa bo'lsin». Forma BITTA, farq faqat `connections.ts` dagi maydon ro'yxatida.
  */
 
 /**
- * Maydon qiymatlari.
- *
- * `Record<string, string>` — `mapping` turi uchun (kalit→qiymat xaritasi).
+ * Maydon qiymatlari. `Record<string, string>` — `mapping` turi uchun (kalit→qiymat xaritasi).
  * Boshqa turlar satr/mantiq/massiv ishlatadi.
  */
 export type FieldValue = string | boolean | string[] | Record<string, string> | StatusMapValue;
@@ -38,102 +34,86 @@ interface Props {
   onChange: (key: string, value: FieldValue) => void;
   /** Tahrirlashda sir maydonlari bo'sh ko'rinadi — bu ATAYLAB (pastga qara). */
   disabled?: boolean;
+  /** Maydon yonidagi qo'shimcha (masalan webhook manzili yonida «Sinash» tugmasi). */
+  renderAddon?: (field: ConnectionField) => ReactNode;
+  /** Maydon ostidagi qo'shimcha (masalan sinov natijasi). */
+  renderAfter?: (field: ConnectionField) => ReactNode;
+  /** Ustunlar: sukut — ≥ 768 da ikki ustun. */
+  columns?: 1 | 2;
+  /** Majburiy deb belgilanadigan maydonlar (yorliqda «*»), masalan ustada «Nomi». Tekshiruvni chaqiruvchi qiladi. */
+  requiredKeys?: readonly string[];
 }
 
-/**
- * ⚠️ NAZORATLAR antd'dan. Ilgari bu yerda qo'lda yozilgan `<input>` va
- * `<select>` turardi. PCS esa `Form.Item` + antd `Input`/`Select`/`Switch`
- * ishlatadi va foydalanuvchi aynan o'sha ko'rinishni tanladi. Bonus: fokus
- * halqasi, xato holati va o'lchamlar butun ilova bo'ylab bir xil bo'ladi.
- *
- * `Form.Item` bu yerda `name` BERILMASDAN ishlatiladi — qiymatlar tashqi
- * state'da (`values`) va antd Form store'iga bog'lanmaydi. Sabab: forma
- * registrdan yasaladi va maydon to'plami ulanish turiga qarab o'zgaradi;
- * antd store bilan sinxron ushlash keraksiz murakkablik bo'lardi.
- */
-const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => {
+const WIDE = "md:col-span-2";
+
+const ConnectionFields = ({ fields, values, onChange, disabled, renderAddon, renderAfter, columns = 2, requiredKeys }: Props) => {
   const { t } = useTranslation("integrations");
+  const hintOf = (field: ConnectionField) => (field.hintKey ? t(field.hintKey) : undefined);
+  const placeholderOf = (field: ConnectionField) => (field.placeholderKey ? t(field.placeholderKey) : field.placeholder);
+
   return (
-    <div className="grid grid-cols-1 gap-x-4 md:grid-cols-2">
+    <div className={cx("grid grid-cols-1 gap-x-4 gap-y-4", columns === 2 && "md:grid-cols-2")}>
       {/*
-      Shartli maydonlar yashiriladi: `auth_type` "API kalit" bo'lsa
-      login/parol keraksiz. Ilgari to'rttasi BIRGA ko'rinardi va operator
-      qaysi ikkitasini to'ldirish kerakligini taxmin qilardi (audit FE-07).
-    */}
+        Shartli maydonlar yashiriladi: `auth_type` «API kalit» bo'lsa login/parol keraksiz (audit FE-07).
+      */}
       {visibleFields(fields, values).map((field) => {
         const raw = values[field.key];
         /**
-         * ⚠️ `disabled` IKKI manbadan: forma saqlanayotgan bo'lsa hammasi,
-         * yoki maydonning O'ZI shartli o'chirilgan bo'lsa (`disabledWhen`).
-         *
-         * Yashirish (`showWhen`) o'rniga o'chirish tanlangan joylar bor —
-         * masalan sandbox manzili: kalit o'chirilganda qiymat KO'RINISHI
+         * ⚠️ `disabled` IKKI manbadan: forma saqlanayotgan bo'lsa hammasi, yoki maydonning O'ZI shartli
+         * o'chirilgan bo'lsa (`disabledWhen`) — masalan sinov manzili: kalit o'chirilganda qiymat KO'RINISHI
          * kerak, aks holda operator nima sozlanganini bilmaydi.
          */
         const fieldDisabled = disabled || isFieldDisabled(field, values);
+        const addon = renderAddon?.(field);
+        const after = renderAfter?.(field);
 
         /* ── Kalit/o'chirgich ── */
         if (field.type === "switch") {
           return (
-            <Form.Item
-              key={field.key}
-              label={t(field.labelKey)}
-              extra={field.hintKey ? t(field.hintKey) : undefined}
-              className="md:col-span-2"
-            >
+            <div key={field.key} className={WIDE}>
               <Switch
                 checked={Boolean(raw)}
                 disabled={fieldDisabled}
                 onChange={(checked) => onChange(field.key, checked)}
+                label={t(field.labelKey)}
+                description={hintOf(field)}
               />
-            </Form.Item>
+            </div>
           );
         }
 
         /* ── Tanlov ── */
         if (field.type === "select") {
+          const options: SelectOption[] = (field.options ?? []).map((o) => ({
+            value: o.value,
+            label: "labelKey" in o ? t(o.labelKey) : o.label,
+          }));
           return (
-            <Form.Item
-              key={field.key}
-              label={t(field.labelKey)}
-              extra={field.hintKey ? t(field.hintKey) : undefined}
-            >
+            <Field key={field.key} label={t(field.labelKey)} hint={hintOf(field)} labelAs="span" disabled={fieldDisabled}>
               <Select
-                value={String(raw ?? "")}
+                options={options}
+                value={String(raw ?? "") || null}
+                onChange={(v) => onChange(field.key, v ?? "")}
+                placeholder={placeholderOf(field)}
                 disabled={fieldDisabled}
-                onChange={(v) => onChange(field.key, v)}
-                options={field.options ?? []}
-                placeholder={field.placeholderKey ? t(field.placeholderKey) : field.placeholder}
               />
-            </Form.Item>
+            </Field>
           );
         }
 
         /* ── Ro'yxat (IP va h.k.) ── */
         if (field.type === "tags") {
           return (
-            <Form.Item
-              key={field.key}
-              label={t(field.labelKey)}
-              extra={field.hintKey ? t(field.hintKey) : undefined}
-              className="md:col-span-2"
-            >
-              {/*
-              `mode="tags"` — foydalanuvchi o'zi qiymat kiritadi, tayyor
-              ro'yxatdan tanlamaydi. `tokenSeparators` bilan bir necha IP'ni
-              vergul orqali birdan qo'yish mumkin.
-            */}
-              <Select
-                mode="tags"
-                value={Array.isArray(raw) ? raw : []}
+            <Field key={field.key} label={t(field.labelKey)} hint={hintOf(field)} className={WIDE} disabled={fieldDisabled}>
+              <TagsInput
+                value={Array.isArray(raw) ? (raw as string[]) : []}
+                onChange={(v) => onChange(field.key, v)}
+                placeholder={placeholderOf(field)}
                 disabled={fieldDisabled}
-                onChange={(v: string[]) => onChange(field.key, v)}
-                tokenSeparators={[",", " ", "\n"]}
-                placeholder={field.placeholderKey ? t(field.placeholderKey) : field.placeholder}
-                open={false}
-                suffixIcon={null}
+                listLabel={t("console.ipListLabel")}
+                removeLabel={(item) => t("console.ipRemove", { ip: item })}
               />
-            </Form.Item>
+            </Field>
           );
         }
 
@@ -153,82 +133,92 @@ const ConnectionFields = ({ fields, values, onChange, disabled }: Props) => {
         /* ── Status xaritasi (kanonik katalogdan jadval) ── */
         if (field.type === "status-map") {
           return (
-            <StatusMapField
-              key={field.key}
-              field={field}
-              kind={field.statusMapKind ?? "outbound"}
-              value={raw}
-              disabled={fieldDisabled}
-              onChange={(v) => onChange(field.key, v)}
-            />
+            <div key={field.key} className={cx("min-w-0", WIDE)}>
+              <StatusMapField
+                field={field}
+                kind={field.statusMapKind ?? "outbound"}
+                value={raw}
+                disabled={fieldDisabled}
+                onChange={(v) => onChange(field.key, v)}
+              />
+            </div>
           );
         }
 
         /* ── Maydon xaritasi (JSON) ── */
         if (field.type === "mapping") {
           return (
-            <MappingField
-              key={field.key}
-              field={field}
-              value={raw}
-              disabled={fieldDisabled}
-              onChange={(v) => onChange(field.key, v)}
-            />
+            <div key={field.key} className={cx("min-w-0", WIDE)}>
+              <MappingField field={field} value={raw} disabled={fieldDisabled} onChange={(v) => onChange(field.key, v)} />
+            </div>
           );
         }
 
         /* ── Sir ── */
         if (field.type === "secret") {
           return (
-            <Form.Item
-              key={field.key}
-              label={t(field.labelKey)}
-              /**
-               * ⚠️ Sir maydoni BO'SH boshlanadi va bu ataylab: server uni
-               * qaytarmaydi (faqat shifrlangan holda saqlanadi). Bo'sh
-               * qoldirilsa `buildChangedPayload` uni YUBORMAYDI, ya'ni ishlab
-               * turgan kalit saqlanadi. Izoh shuni aytib turishi kerak, aks
-               * holda operator "kalit yo'qolgan" deb o'ylardi.
-               */
-              extra={field.hintKey ? t(field.hintKey) : undefined}
-            >
-              <Input.Password
+            /**
+             * ⚠️ Sir maydoni BO'SH boshlanadi va bu ataylab: server uni qaytarmaydi (faqat shifrlangan
+             * holda saqlanadi). Bo'sh qoldirilsa `buildChangedPayload` uni YUBORMAYDI — ishlab turgan kalit
+             * saqlanadi. Izoh shuni aytib turadi, aks holda operator «kalit yo'qolgan» deb o'ylardi.
+             */
+            <Field key={field.key} label={t(field.labelKey)} hint={hintOf(field)} disabled={fieldDisabled} required={requiredKeys?.includes(field.key)}>
+              <SecretInput
                 value={String(raw ?? "")}
-                disabled={fieldDisabled}
-                onChange={(e) => onChange(field.key, e.target.value)}
+                onValueChange={(v) => onChange(field.key, v)}
                 placeholder={t("fldSecretUntouched")}
-                autoComplete="new-password"
+                disabled={fieldDisabled}
               />
-            </Form.Item>
+            </Field>
           );
         }
 
         /* ── Matn / manzil ── */
+        const input = (
+          <TextInput
+            value={String(raw ?? "")}
+            onValueChange={(v) => onChange(field.key, v)}
+            placeholder={placeholderOf(field)}
+            disabled={fieldDisabled}
+            type={field.type === "url" ? "url" : "text"}
+            inputMode={field.type === "url" ? "url" : undefined}
+          />
+        );
         return (
-          <Form.Item
-            key={field.key}
-            label={t(field.labelKey)}
-            extra={field.hintKey ? t(field.hintKey) : undefined}
-          >
-            <Input
-              value={String(raw ?? "")}
-              disabled={fieldDisabled}
-              onChange={(e) => onChange(field.key, e.target.value)}
-              placeholder={field.placeholderKey ? t(field.placeholderKey) : field.placeholder}
-              inputMode={field.type === "url" ? "url" : undefined}
-            />
-          </Form.Item>
+          <div key={field.key} className={cx("flex min-w-0 flex-col gap-3", addon || after ? WIDE : undefined)}>
+            <Field label={t(field.labelKey)} hint={hintOf(field)} disabled={fieldDisabled} required={requiredKeys?.includes(field.key)}>
+              {addon ? (
+                <div className="flex min-w-0 items-start gap-2 max-md:flex-col max-md:items-stretch">
+                  <div className="min-w-0 flex-1">{input}</div>
+                  {addon}
+                </div>
+              ) : (
+                input
+              )}
+            </Field>
+            {after}
+          </div>
         );
       })}
     </div>
   );
 };
 
+/** Market javobidan ro'yxatni ajratadi — marshrutga qarab qobiq farq qiladi. */
+const marketList = (raw: unknown): Array<Record<string, unknown>> => {
+  const data = (raw as { data?: { items?: unknown[] } | unknown[] } | undefined)?.data;
+  if (Array.isArray(data)) return data as Array<Record<string, unknown>>;
+  if (Array.isArray((data as { items?: unknown[] } | undefined)?.items)) {
+    return (data as { items: unknown[] }).items as Array<Record<string, unknown>>;
+  }
+  return [];
+};
+
 /**
  * Market tanlagichi — ro'yxat API'dan yuklanadi.
  *
- * ⚠️ QIYMAT SATR bo'lib qoladi (`market_id` bigint). Songa aylantirmaymiz:
- * JS `number` katta bigint'ni aniq saqlamaydi va id buzilib ketardi.
+ * ⚠️ QIYMAT SATR bo'lib qoladi (`market_id` bigint). Songa aylantirmaymiz: JS `number` katta bigint'ni
+ * aniq saqlamaydi va id buzilib ketardi.
  */
 const MarketField = ({
   field,
@@ -244,55 +234,40 @@ const MarketField = ({
   const { t } = useTranslation("integrations");
   const { useGetMarkets } = useMarkets();
   const query = useGetMarkets({ limit: 200 });
-
-  /**
-   * Javob qobig'i marshrutga qarab farq qiladi — himoyalangan ochish, aks
-   * holda tanlagich bo'sh ko'rinib qolardi va sabab bilinmasdi.
-   */
-  const raw = query.data as { data?: { items?: unknown[] } | unknown[] } | undefined;
-  const list = Array.isArray(raw?.data)
-    ? (raw!.data as Array<Record<string, unknown>>)
-    : Array.isArray((raw?.data as { items?: unknown[] })?.items)
-      ? ((raw!.data as { items: unknown[] }).items as Array<Record<string, unknown>>)
-      : [];
+  const options: SelectOption[] = marketList(query.data).map((m) => ({
+    value: String(m.id),
+    label: String(m.name ?? m.username ?? `#${m.id}`),
+  }));
 
   return (
-    <Form.Item label={t(field.labelKey)} extra={field.hintKey ? t(field.hintKey) : undefined}>
+    <Field
+      label={t(field.labelKey)}
+      hint={query.isError ? t("fldListFailed") : field.hintKey ? t(field.hintKey) : undefined}
+      labelAs="span"
+      disabled={disabled}
+    >
       <Select
-        value={value || undefined}
-        disabled={disabled}
+        searchable
+        clearable
+        options={options}
+        value={value || null}
+        onChange={(v) => onChange(v ?? "")}
         loading={query.isLoading}
-        onChange={(v: string) => onChange(v ?? "")}
-        allowClear
-        showSearch
-        optionFilterProp="label"
-        placeholder={query.isError ? t("fldListFailed") : t("fldPickMarket")}
-        options={list.map((m) => ({
-          value: String(m.id),
-          label: String(m.name ?? m.username ?? `#${m.id}`),
-        }))}
+        placeholder={t("fldPickMarket")}
+        disabled={disabled}
       />
-    </Form.Item>
+    </Field>
   );
 };
 
 /**
  * MAYDON XARITASI — kalit→qiymat juftliklari.
  *
- * ⚠️ XOM JSON MAYDONI EMAS. Operator JSON sintaksisini bilishi shart
- * bo'lmasligi kerak: bitta vergul yoki qavs xatosi butun sozlamani
- * buzardi va xato faqat importda chiqardi. Shu bois tayyor kalitlar
- * ro'yxati va har biriga matn maydoni.
+ * ⚠️ XOM JSON MAYDONI EMAS: bitta vergul yoki qavs xatosi butun sozlamani buzardi. Shu bois tayyor
+ * kalitlar ro'yxati va har biriga matn maydoni. Kalitlar backend o'qiydigan nomlar bilan AYNAN bir xil
+ * (`order-lifecycle.service.ts` → `fieldMapping.*`).
  *
- * Kalitlar backend o'qiydigan nomlar bilan AYNAN bir xil
- * (`order-lifecycle.service.ts` → `fieldMapping.*`). Mos kelmasa xarita
- * jimgina e'tiborsiz qolardi.
- */
-/**
- * ⚠️ `def` — backend sukut bo'yicha o'qiydigan maydon nomi. U MATNDAN
- * AJRATILGAN: ilgari ko'rsatma "sukut: id" satridan `replace("sukut: ")`
- * bilan kesib olinardi, ya'ni tarjima qilingan zahoti placeholder butun
- * ko'rsatmani ko'rsatib qo'yardi.
+ * ⚠️ `def` — backend sukut bo'yicha o'qiydigan maydon nomi, MATNDAN AJRATILGAN.
  */
 const MAPPING_KEYS: Array<{
   key: string;
@@ -329,53 +304,51 @@ const MappingField = ({
   onChange: (v: Record<string, string>) => void;
 }) => {
   const { t } = useTranslation("integrations");
-  const current =
-    value && typeof value === "object" && !Array.isArray(value)
-      ? (value as Record<string, string>)
-      : {};
+  const current = value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, string>) : {};
 
   const set = (key: string, next: string) => {
     const out = { ...current };
-    // Bo'sh qiymat XARITADAN OLINADI — bo'sh satr saqlash backendni
-    // "maydon bor, lekin nomi yo'q" holatiga tushirardi.
+    // Bo'sh qiymat XARITADAN OLINADI — bo'sh satr backendni «maydon bor, lekin nomi yo'q» holatiga tushirardi.
     if (next.trim()) out[key] = next.trim();
     else delete out[key];
     onChange(out);
   };
 
   return (
-    <Form.Item
-      label={t(field.labelKey)}
-      extra={field.hintKey ? t(field.hintKey) : undefined}
-      className="md:col-span-2"
-    >
-      <div className="grid grid-cols-1 gap-x-4 sm:grid-cols-2">
+    <fieldset className="m-0 flex min-w-0 flex-col gap-3 border-0 p-0">
+      <legend className="mb-1 flex flex-col gap-0.5 p-0">
+        <span className="text-sm font-semibold text-text">{t(field.labelKey)}</span>
+        {field.hintKey ? <span className="text-[13px] leading-[18px] text-text-muted">{t(field.hintKey)}</span> : null}
+      </legend>
+      <div className="grid grid-cols-1 gap-x-4 gap-y-4 md:grid-cols-2">
         {MAPPING_KEYS.map((m) => (
-          <Form.Item
+          <Field
             key={m.key}
             label={t(m.labelKey)}
-            extra={
+            hint={
               m.hintKey
                 ? t(m.hintKey)
                 : m.def
                   ? t(m.inArray ? "mapDefaultInArray" : "mapDefault", { name: m.def })
                   : undefined
             }
+            disabled={disabled}
           >
-            <Input
+            <TextInput
               value={current[m.key] ?? ""}
+              onValueChange={(v) => set(m.key, v)}
+              placeholder={m.def ?? t("stlNotePlaceholder")}
               disabled={disabled}
-              onChange={(e) => set(m.key, e.target.value)}
-              placeholder={m.def}
             />
-          </Form.Item>
+          </Field>
         ))}
       </div>
-    </Form.Item>
+    </fieldset>
   );
 };
 
 export default ConnectionFields;
+
 
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);

@@ -1,26 +1,18 @@
-import { useState } from "react";
-import {
-  Alert,
-  Button,
-  Checkbox,
-  Form,
-  Input,
-  Modal,
-  Select,
-  Typography,
-} from "antd";
-import { KeyRound, Webhook } from "lucide-react";
+// dizayn-v2: superadmin-integrations-new-partner-dialog, admin-integrations-new-partner-dialog
+import { useState, type FormEvent } from "react";
+import { Handshake, KeyRound } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { usePartnerActions, type CreatePartnerDto } from "../../entities/partners";
 import { notify } from "../../shared/lib/notify";
+import { Button, Dialog, Field, TextInput } from "../../shared/ui/primitives";
+import { CopyValue, InlineAlert, SecretInput, TagsInput } from "./ui";
 
 /**
- * YANGI HAMKOR — BeePost yaratish oqimi (PCS "MarketplaceCreateModal" shakli).
+ * YANGI HAMKOR — BeePost yaratish oqimi (maket `*-new-partner-dialog`, telefonda pastki varaqa).
  *
- * Nega alohida modal (katalog/usta emas): hamkor yaratishdagi YAGONA muhim
- * natija — API kalit. U faqat BIR MARTA ko'rsatiladi (bazada sha256 hash).
- * Shu bois oqim ikki qadamli: (1) forma; (2) kalitni ko'rsatish + nusxa olish.
- * Operator kalitni ko'chirmasdan modalni yopa olmaydi.
+ * Nega alohida oyna (katalog/usta emas): hamkor yaratishdagi YAGONA muhim natija — API kalit. U faqat BIR
+ * MARTA ko'rsatiladi (bazada sha256 hash). Shu bois oqim ikki qadamli: (1) forma; (2) kalitni ko'rsatish
+ * + nusxa olish. Operator «Kalitni ko'chirib oldim» belgilamaguncha oyna yopilmaydi.
  */
 interface Props {
   open: boolean;
@@ -31,26 +23,44 @@ interface Props {
 
 type Step = "form" | "reveal";
 
-interface FormValues {
-  name: string;
-  webhook_url?: string;
-  webhook_secret?: string;
-  ip_allowlist?: string[];
-}
+const isUrl = (value: string) => {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
 
 const NewPartnerModal = ({ open, onClose, onCreated }: Props) => {
   const { t } = useTranslation("integrations");
-  const [form] = Form.useForm<FormValues>();
   const { createPartner } = usePartnerActions();
 
   const [step, setStep] = useState<Step>("form");
+  const [name, setName] = useState("");
+  const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
+  const [ips, setIps] = useState<string[]>([]);
+  const [touched, setTouched] = useState(false);
+  const [createdName, setCreatedName] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [secretShown, setSecretShown] = useState("");
   const [copied, setCopied] = useState(false);
 
+  const urlSet = Boolean(webhookUrl.trim());
+  const nameError = touched && !name.trim() ? t("npNameReq") : undefined;
+  const urlError = touched && urlSet && !isUrl(webhookUrl.trim()) ? t("npWebhookUrlInvalid") : undefined;
+  /* Backend: webhook_url bo'lsa secret SHART (aks holda 400). */
+  const secretError = touched && urlSet && !webhookSecret.trim() ? t("npWebhookSecretReq") : undefined;
+
   const reset = () => {
-    form.resetFields();
     setStep("form");
+    setName("");
+    setWebhookUrl("");
+    setWebhookSecret("");
+    setIps([]);
+    setTouched(false);
+    setCreatedName("");
     setApiKey("");
     setSecretShown("");
     setCopied(false);
@@ -61,12 +71,16 @@ const NewPartnerModal = ({ open, onClose, onCreated }: Props) => {
     onClose();
   };
 
-  const submit = async (values: FormValues) => {
+  const submit = async (event?: FormEvent) => {
+    event?.preventDefault();
+    setTouched(true);
+    if (!name.trim() || (urlSet && (!isUrl(webhookUrl.trim()) || !webhookSecret.trim()))) return;
+    if (createPartner.isPending) return;
     const dto: CreatePartnerDto = {
-      name: values.name.trim(),
-      ...(values.webhook_url?.trim() ? { webhook_url: values.webhook_url.trim() } : {}),
-      ...(values.webhook_secret?.trim() ? { webhook_secret: values.webhook_secret.trim() } : {}),
-      ...(values.ip_allowlist?.length ? { ip_allowlist: values.ip_allowlist } : {}),
+      name: name.trim(),
+      ...(webhookUrl.trim() ? { webhook_url: webhookUrl.trim() } : {}),
+      ...(webhookSecret.trim() ? { webhook_secret: webhookSecret.trim() } : {}),
+      ...(ips.length ? { ip_allowlist: ips } : {}),
     };
     try {
       const res = await createPartner.mutateAsync(dto);
@@ -74,6 +88,7 @@ const NewPartnerModal = ({ open, onClose, onCreated }: Props) => {
         notify.error(t("npKeyMissing"));
         return;
       }
+      setCreatedName(dto.name);
       setApiKey(res.api_key);
       setSecretShown(dto.webhook_secret ?? "");
       setStep("reveal");
@@ -85,160 +100,114 @@ const NewPartnerModal = ({ open, onClose, onCreated }: Props) => {
     }
   };
 
-  return (
-    <Modal
-      open={open}
-      onCancel={step === "form" ? close : undefined}
-      /* Reveal bosqichida X yo'q — kalit ko'chirilmasdan yopilmasin. */
-      closable={step === "form"}
-      maskClosable={step === "form"}
-      title={step === "form" ? t("npTitle") : t("npKeyRevealTitle")}
-      footer={null}
-      destroyOnClose
-      width={560}
-    >
-      {step === "form" ? (
-        <Form
-          form={form}
-          layout="vertical"
-          onFinish={submit}
-          requiredMark="optional"
-          className="mt-2"
-        >
-          <Alert
-            type="info"
-            showIcon
-            className="mb-4"
-            message={t("npIntroTitle")}
-            description={t("npIntroDesc")}
-          />
-
-          <Form.Item
-            name="name"
-            label={t("npName")}
-            rules={[{ required: true, message: t("npNameReq") }]}
-          >
-            <Input placeholder="BeePost" maxLength={100} autoFocus />
-          </Form.Item>
-
-          <Form.Item
-            name="webhook_url"
-            label={
-              <span className="flex items-center gap-1.5">
-                <Webhook className="h-3.5 w-3.5" />
-                {t("npWebhookUrl")}
-              </span>
-            }
-            tooltip={t("npWebhookUrlHint")}
-            rules={[{ type: "url", message: t("npWebhookUrlInvalid") }]}
-          >
-            <Input placeholder="https://beepost.uz/api/v1/elchi/webhook" />
-          </Form.Item>
-
-          <Form.Item
-            noStyle
-            shouldUpdate={(prev, cur) => prev.webhook_url !== cur.webhook_url}
-          >
-            {({ getFieldValue }) => {
-              const urlSet = Boolean(getFieldValue("webhook_url")?.trim());
-              return (
-                <Form.Item
-                  name="webhook_secret"
-                  label={
-                    <span className="flex items-center gap-1.5">
-                      <KeyRound className="h-3.5 w-3.5" />
-                      {t("npWebhookSecret")}
-                    </span>
-                  }
-                  tooltip={t("npWebhookSecretHint")}
-                  /* Backend: webhook_url bo'lsa secret SHART (aks holda 400). */
-                  rules={[
-                    {
-                      required: urlSet,
-                      message: t("npWebhookSecretReq"),
-                    },
-                  ]}
-                >
-                  <Input.Password
-                    placeholder={t("npWebhookSecretPh")}
-                    autoComplete="new-password"
-                  />
-                </Form.Item>
-              );
-            }}
-          </Form.Item>
-
-          <Form.Item
-            name="ip_allowlist"
-            label={t("npIpAllowlist")}
-            tooltip={t("npIpAllowlistHint")}
-          >
-            <Select
-              mode="tags"
-              tokenSeparators={[",", " "]}
-              placeholder={t("npIpAllowlistPh")}
-              open={false}
-              suffixIcon={null}
-            />
-          </Form.Item>
-
-          <div className="mt-5 flex justify-end gap-2">
-            <Button onClick={close}>{t("npCancel")}</Button>
-            <Button type="primary" htmlType="submit" loading={createPartner.isPending}>
-              {t("npCreate")}
-            </Button>
-          </div>
-        </Form>
-      ) : (
-        <div className="mt-2 space-y-4">
-          <Alert
-            type="warning"
-            showIcon
-            message={t("npKeyRevealWarn")}
-            description={t("npKeyRevealWarnDesc")}
-          />
-
-          <div>
-            <p className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200">
-              <KeyRound className="h-4 w-4" />
-              {t("npKeyLabel")}
-            </p>
-            <Typography.Paragraph
-              copyable={{ text: apiKey, onCopy: () => setCopied(true) }}
-              className="!mb-0 break-all rounded-lg bg-gray-50 p-3 font-mono text-sm dark:bg-gray-800"
-            >
-              {apiKey}
-            </Typography.Paragraph>
-          </div>
-
-          {secretShown && (
-            <div>
-              <p className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200">
-                <Webhook className="h-4 w-4" />
-                {t("npSecretLabel")}
-              </p>
-              <Typography.Paragraph
-                copyable={{ text: secretShown }}
-                className="!mb-0 break-all rounded-lg bg-gray-50 p-3 font-mono text-sm dark:bg-gray-800"
-              >
-                {secretShown}
-              </Typography.Paragraph>
-              <p className="mt-1 text-xs text-gray-400">{t("npSecretHint")}</p>
-            </div>
-          )}
-
-          <Checkbox checked={copied} onChange={(e) => setCopied(e.target.checked)}>
-            {t("npKeyCopiedConfirm")}
-          </Checkbox>
-
-          <div className="flex justify-end">
-            <Button type="primary" disabled={!copied} onClick={close}>
+  if (step === "reveal") {
+    return (
+      <Dialog
+        open={open}
+        /* Kalit ko'chirilmasdan yopilmasin: Esc, fon va × faqat belgidan keyin. */
+        onClose={() => (copied ? close() : undefined)}
+        closable={copied}
+        dismissible={copied}
+        closeOnOverlay={false}
+        title={t("npKeyRevealTitle")}
+        description={t("console.npCreated", { name: createdName })}
+        icon={KeyRound}
+        iconTone="warning"
+        size="lg"
+        footer={
+          <div className="flex w-full flex-wrap items-center justify-between gap-3">
+            <span className="text-xs text-text-muted max-md:hidden">{copied ? null : t("console.npCloseHint")}</span>
+            <Button disabled={!copied} onClick={close}>
               {t("npDone")}
             </Button>
           </div>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <InlineAlert tone="warning" title={t("npKeyRevealWarn")}>
+            {t("npKeyRevealWarnDesc")}
+          </InlineAlert>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-[13px] font-semibold text-text">{t("npKeyLabel")}</span>
+            <CopyValue value={apiKey} label={t("console.copyShort")} onCopied={() => setCopied(true)} />
+          </div>
+          {secretShown ? (
+            <div className="flex flex-col gap-1.5">
+              <span className="text-[13px] font-semibold text-text">{t("npSecretLabel")}</span>
+              <CopyValue value={secretShown} label={t("console.copyShort")} />
+              <span className="text-xs text-text-muted">{t("npSecretHint")}</span>
+            </div>
+          ) : null}
+          <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm text-text">
+            <input
+              type="checkbox"
+              className="size-[18px] accent-action"
+              checked={copied}
+              onChange={(e) => setCopied(e.target.checked)}
+            />
+            {t("npKeyCopiedConfirm")}
+          </label>
         </div>
-      )}
-    </Modal>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog
+      open={open}
+      onClose={close}
+      busy={createPartner.isPending}
+      title={t("npTitle")}
+      description={t("console.npSub")}
+      icon={Handshake}
+      size="lg"
+      onSubmit={(event) => void submit(event)}
+      footer={
+        <>
+          <Button variant="secondary" onClick={close} disabled={createPartner.isPending}>
+            {t("npCancel")}
+          </Button>
+          <Button type="submit" loading={createPartner.isPending}>
+            {t("npCreate")}
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <InlineAlert tone="info" title={t("npIntroTitle")}>
+          {t("npIntroDesc")}
+        </InlineAlert>
+        <Field label={t("npName")} required error={nameError}>
+          <TextInput value={name} onValueChange={setName} placeholder="BeePost" maxLength={100} />
+        </Field>
+        <Field label={t("npWebhookUrl")} hint={t("npWebhookUrlHint")} error={urlError}>
+          <TextInput
+            type="url"
+            inputMode="url"
+            value={webhookUrl}
+            onValueChange={setWebhookUrl}
+            placeholder="https://beepost.uz/api/v1/elchi/webhook"
+          />
+        </Field>
+        <Field
+          label={t("npWebhookSecret")}
+          required={urlSet}
+          hint={urlSet ? `${t("console.npSecretRequiredNow")} ${t("npWebhookSecretHint")}` : t("npWebhookSecretHint")}
+          error={secretError}
+        >
+          <SecretInput value={webhookSecret} onValueChange={setWebhookSecret} placeholder={t("npWebhookSecretPh")} />
+        </Field>
+        <Field label={t("npIpAllowlist")} hint={t("npIpAllowlistHint")}>
+          <TagsInput
+            value={ips}
+            onChange={setIps}
+            placeholder={t("npIpAllowlistPh")}
+            listLabel={t("console.ipListLabel")}
+            removeLabel={(ip) => t("console.npIpRemove", { ip })}
+          />
+        </Field>
+      </div>
+    </Dialog>
   );
 };
 

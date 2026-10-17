@@ -6,7 +6,7 @@ vi.mock("../../../shared/api/instance", () => ({
   api: { get: mocks.get },
 }));
 
-import { getActivityActions, getActivityLogs, getEntityHistory } from "./activityLogApi";
+import { getActivityActionCatalog, getActivityLogs, getEntityHistory } from "./activityLogApi";
 
 describe("activityLogApi", () => {
   beforeEach(() => {
@@ -54,7 +54,50 @@ describe("activityLogApi", () => {
 
   it("returns the actions array from the envelope", async () => {
     mocks.get.mockResolvedValue({ data: { data: ["create", "update", "status_change"] } });
-    await expect(getActivityActions()).resolves.toEqual(["create", "update", "status_change"]);
+    await expect(getActivityActionCatalog()).resolves.toEqual({
+      actions: ["create", "update", "status_change"],
+      registry: [],
+    });
+  });
+
+  it("reads the y8CxCtcK registry (labels, categories) next to the verbs", async () => {
+    mocks.get.mockResolvedValue({
+      data: {
+        data: ["status_change", "order.cancel"],
+        registry: [
+          { action: "status_change", label: "Holat o'zgardi", category: "general", category_label: "Umumiy", icon: "swap", tone: "blue" },
+          { action: "order.cancel", label: "Bekor qilindi", category: "order", category_label: "Buyurtma" },
+        ],
+        categories: [],
+      },
+    });
+    const catalog = await getActivityActionCatalog();
+    expect(catalog.actions).toEqual(["status_change", "order.cancel"]);
+    expect(catalog.registry).toEqual([
+      { action: "status_change", label: "Holat o'zgardi", category: "general", category_label: "Umumiy" },
+      { action: "order.cancel", label: "Bekor qilindi", category: "order", category_label: "Buyurtma" },
+    ]);
+  });
+
+  it("keeps action_meta and actor_status from the enriched feed row", async () => {
+    mocks.get.mockResolvedValue({
+      data: {
+        data: {
+          items: [
+            {
+              id: 9,
+              action: "logout",
+              actor_status: "snapshot",
+              action_meta: { action: "logout", label: "Tizimdan chiqdi", category: "auth", category_label: "Kirish", icon: "logout", tone: "slate", known: true },
+            },
+          ],
+          meta: { total: 1 },
+        },
+      },
+    });
+    const result = await getActivityLogs({ page: 1, limit: 20 });
+    expect(result.items[0].actor_status).toBe("snapshot");
+    expect(result.items[0].action_meta).toMatchObject({ label: "Tizimdan chiqdi", known: true });
   });
 
   it("normalizes entity-history items", async () => {

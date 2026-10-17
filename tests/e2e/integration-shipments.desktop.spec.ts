@@ -1,52 +1,47 @@
 import { expect, test } from "@playwright/test";
-import {
-  fixedActionColumnProblems,
-  mockShipmentsApi,
-  openShipments,
-  shipmentRow,
-} from "./support/integrationShipments";
+import { mockShipmentsApi, openShipments, shipmentErrorPanel, shipmentRow, shipmentRows } from "./support/integrationShipments";
 
-/** Integratsiya → Posilkalar / Hodisalar (tokhPLMP) — 1440px. Backend soxta, yozuv yo'q. */
+/** Integratsiya → Posilkalar / Hodisalar (tokhPLMP) — 1440px, dizayn v2 `DataTable`. Backend soxta, yozuv yo'q. */
 test.describe("Integratsiya posilkalari — 1440px", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
   test.describe.configure({ timeout: 90_000 });
 
-  test("⭐ TC1-TC3, TC9: Mijoz (ism+telefon) va Manzil (shahar+tuman) ikki qatorda, Summa o'ngda pul formatida, biz/ular yonma-yon", async ({ page }) => {
+  test("⭐ TC1-TC3, TC9: Mijoz (ism+telefon) va Manzil (tuman+viloyat) ikki qatorda, Summa o'ngda pul formatida, biz/ular yonma-yon", async ({ page }) => {
     const { leaked } = await mockShipmentsApi(page);
     await openShipments(page);
 
     const row = shipmentRow(page, "Mijoz 2 Aliyev");
     const cells = row.locator("td");
-    const headers = page.locator(".ant-table-thead th");
+    const headers = page.locator('table[aria-label="Posilkalar"] thead th');
     const columnIndex = async (title: string) =>
-      (await headers.allInnerTexts()).findIndex((text) => text.trim() === title);
+      (await headers.allInnerTexts()).findIndex((text) => text.trim().toLowerCase() === title.toLowerCase());
 
-    // Mijoz: ism va telefon — ikki ALOHIDA qator (ustma-ust).
+    // Mijoz: ism va telefon — ikki ALOHIDA qator (ustma-ust), telefon `formatPhone` bilan.
     const customer = cells.nth(await columnIndex("Mijoz"));
     const name = customer.getByText("Mijoz 2 Aliyev");
-    const phone = customer.getByText("+998901234562");
+    const phone = customer.getByText("+998 90 123 45 62");
     const [nameBox, phoneBox] = [await name.boundingBox(), await phone.boundingBox()];
     expect(phoneBox!.y).toBeGreaterThanOrEqual(nameBox!.y + nameBox!.height - 1);
 
-    // Manzil: shahar va tuman ikki qatorda.
+    // Manzil: tuman va viloyat ikki qatorda (maket: «Chilonzor tumani / Toshkent sh.»).
     const address = cells.nth(await columnIndex("Manzil"));
-    const [cityBox, districtBox] = [
-      await address.getByText("Toshkent shahri").boundingBox(),
+    const [districtBox, cityBox] = [
       await address.getByText("Chilonzor tumani").boundingBox(),
+      await address.getByText("Toshkent shahri").boundingBox(),
     ];
-    expect(districtBox!.y).toBeGreaterThanOrEqual(cityBox!.y + cityBox!.height - 1);
+    expect(cityBox!.y).toBeGreaterThanOrEqual(districtBox!.y + districtBox!.height - 1);
 
-    // Summa: ming ajratgichi bilan va o'ngga tekislangan.
+    // Summa: ming ajratgichi + valyuta (`formatMoneyLocalized`) va o'ngga tekislangan.
     const amount = cells.nth(await columnIndex("Summa (jo'natilgan)"));
-    await expect(amount).toHaveText("1 252 000");
+    await expect(amount).toHaveText(/^1\s252\s000 so'm$/);
     expect(await amount.evaluate((td) => getComputedStyle(td).textAlign)).toMatch(/right|end/);
-    const [amountText, amountCell] = [await amount.locator("span").boundingBox(), await amount.boundingBox()];
+    const [amountText, amountCell] = [await amount.locator("span").first().boundingBox(), await amount.boundingBox()];
     expect(amountCell!.x + amountCell!.width - (amountText!.x + amountText!.width)).toBeLessThan(20);
 
-    // TC9: ikki tomon statusi yonma-yon.
+    // TC9: ikki tomon statusi yonma-yon — bizniki tarjima qilingan badge, ularniki xom.
     const status = cells.nth(await columnIndex("Holat"));
-    await expect(status.getByText("biz: Kutilmoqda")).toBeVisible();
-    await expect(status.getByText("ular: delivered")).toBeVisible();
+    await expect(status.getByText("Kutilmoqda")).toBeVisible();
+    await expect(status.getByText("Ular: delivered")).toBeVisible();
     expect(leaked).toEqual([]);
   });
 
@@ -60,32 +55,31 @@ test.describe("Integratsiya posilkalari — 1440px", () => {
     expect(leaked).toEqual([]);
   });
 
-  test("⭐ TC6: \"Nomuvofiqlik\" pili — faqat biz/ular ajralgan qator qoladi", async ({ page }) => {
+  test("⭐ TC6: «Nomuvofiqlik» chipi — faqat biz/ular ajralgan qator qoladi", async ({ page }) => {
     const { leaked, requests } = await mockShipmentsApi(page);
     await openShipments(page);
-    await expect(page.locator(".ant-table-tbody tr.ant-table-row")).toHaveCount(4);
+    await expect(shipmentRows(page)).toHaveCount(4);
 
     await page.getByRole("button", { name: /Nomuvofiqlik/ }).click();
-    const rows = page.locator(".ant-table-tbody tr.ant-table-row");
-    await expect(rows).toHaveCount(1);
-    await expect(rows.first()).toContainText("Mijoz 2 Aliyev");
-    await expect(rows.first()).toContainText("biz: Kutilmoqda");
-    await expect(rows.first()).toContainText("ular: delivered");
+    await expect(shipmentRows(page)).toHaveCount(1);
+    await expect(shipmentRows(page).first()).toContainText("Mijoz 2 Aliyev");
+    await expect(shipmentRows(page).first()).toContainText("Kutilmoqda");
+    await expect(shipmentRows(page).first()).toContainText("Ular: delivered");
     expect(requests.some((r) => r.startsWith("GET integrations/7/shipments") && r.includes("filter=mismatch"))).toBe(true);
     expect(leaked).toEqual([]);
   });
 
-  test("⭐ TC7: status xaritasi bo'sh ulanishda \"Nomuvofiqlik\" pili umuman yo'q", async ({ page }) => {
+  test("⭐ TC7: status xaritasi bo'sh ulanishda «Nomuvofiqlik» chipi umuman yo'q", async ({ page }) => {
     await mockShipmentsApi(page);
     await openShipments(page, 8);
     await expect(page.getByRole("button", { name: /Yiqilgan/ })).toBeVisible();
     await expect(page.getByRole("button", { name: /Nomuvofiqlik/ })).toHaveCount(0);
   });
 
-  test("⭐ TC8: Hodisalar → \"Imzo xato\" pili faqat signature_valid=false qatorlarni qoldiradi", async ({ page }) => {
+  test("⭐ TC8: Hodisalar → «Imzo xato» chipi faqat signature_valid=false qatorlarni qoldiradi", async ({ page }) => {
     const { leaked, requests } = await mockShipmentsApi(page);
     await page.goto("/integrations/connections?scope=external&c=integration:7&t=log");
-    const rows = page.locator(".ant-table-tbody tr.ant-table-row");
+    const rows = page.locator('table[aria-label="Kiruvchi webhooklar"] tbody tr');
     await expect(rows).toHaveCount(4, { timeout: 60_000 });
 
     await page.getByRole("button", { name: /Imzo xato/ }).click();
@@ -100,19 +94,27 @@ test.describe("Integratsiya posilkalari — 1440px", () => {
     await openShipments(page);
     const row = shipmentRow(page, "Mijoz 2 Aliyev");
     await expect(row.getByText("*** 4562")).toBeVisible();
-    await expect(page.getByText("+998901234562")).toHaveCount(0);
+    await expect(page.getByText("+998 90 123 45 62")).toHaveCount(0);
     expect(leaked).toEqual([]);
   });
 
-  test("qotirilgan \"Buyurtma\" / \"Amal\" ustunlari foni shaffofmas — ostidan qo'shni ustun ko'rinmaydi", async ({ page }) => {
+  test("xatoli posilka ostida «Xato: …» qatori to'liq enli, «Qayta jo'natish» o'z qatoriga sig'adi", async ({ page }) => {
     await mockShipmentsApi(page);
     await openShipments(page);
-    expect(await fixedActionColumnProblems(page)).toEqual([]);
 
-    // "Qayta jo'natish" tugmasi o'z katakchasiga to'liq sig'adi (kesilmaydi).
-    const retry = shipmentRow(page, "Mijoz 3 Aliyev").getByRole("button", { name: "Qayta jo'natish" });
-    const [button, cell] = [await retry.boundingBox(), await retry.locator("xpath=ancestor::td").boundingBox()];
+    const panel = shipmentErrorPanel(page, "Mijoz 3 Aliyev");
+    await expect(panel).toContainText("Xato: HTTP 502 Bad Gateway");
+    const retry = panel.getByRole("button", { name: "Qayta jo'natish" });
+    const [button, cell, table] = [
+      await retry.boundingBox(),
+      await panel.boundingBox(),
+      await page.locator('table[aria-label="Posilkalar"]').boundingBox(),
+    ];
+    // Panel jadval eni bo'yicha (colSpan), tugma uning ichida.
+    expect(Math.abs(cell!.width - table!.width)).toBeLessThanOrEqual(2);
     expect(button!.x).toBeGreaterThanOrEqual(cell!.x);
     expect(button!.x + button!.width).toBeLessThanOrEqual(cell!.x + cell!.width);
+    // Xatosiz qator ostida panel yo'q (qayta jo'natish tashuvchida ikkinchi yozuv yaratmasin).
+    await expect(shipmentErrorPanel(page, "Mijoz 1 Aliyev")).toHaveCount(0);
   });
 });

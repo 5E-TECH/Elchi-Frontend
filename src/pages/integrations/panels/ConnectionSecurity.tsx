@@ -1,27 +1,27 @@
+// dizayn-v2: superadmin-integrations-panel-security, superadmin-integrations-rotate-key-dialog, admin-integrations-conn-security
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Button, Card, Form, Tag, Typography } from "antd";
-import { KeyRound, Power, Save, ShieldCheck } from "lucide-react";
+import { KeyRound, Plug, Power, ShieldCheck } from "lucide-react";
 import { usePartnerActions } from "../../../entities/partners";
 import { useUpdateIntegration } from "../../../entities/integrations";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { notify } from "../../../shared/lib/notify";
+import { Button, StatusBadge, useConfirm } from "../../../shared/ui/primitives";
 import ConnectionFields, { buildChangedPayload, type FieldValues } from "../ConnectionFields";
 import { fieldsInGroup, type ConnectionField } from "../connections";
 import { getPath } from "../fieldPath";
+import { ColumnGrid, CopyValue, InlineAlert, PanelSection, SectionHead } from "../ui";
 import type { Connection } from "../useConnections";
-import { notify } from "../../../shared/lib/notify";
-import { useConfirm } from "../../../shared/ui/primitives";
 
 /**
- * XAVFSIZLIK — kirishni CHEKLAYDIGAN qiymatlar va TA'SIRI KATTA amallar.
+ * XAVFSIZLIK — kirishni CHEKLAYDIGAN qiymatlar va TA'SIRI KATTA amallar (maket `*-panel-security`).
  *
- * Shakl PCS `ElchiControlTab` dan: har bir amal o'z `Card`ida, xavfli
- * amallar tasdiqlash oynasi (`useConfirm`) bilan, tushuntirish `Alert` bilan.
+ *   «Kirish cheklovlari» (IP chiplari yoki tashqi tizimda kalit/imzo maydonlari) + «Saqlash»
+ *   «API kalit» (faqat hamkor) + «Kalitni yangilash» → tasdiq (`*-rotate-key-dialog`) → yangi kalit BIR MARTA
+ *   «Ulanish holati» + «To'xtatish» / «Yoqish» → tasdiq
  *
- * NEGA SOZLAMALARDAN AJRATILDI. Bir tabda "webhook manzilini o'zgartirish"
- * bilan "API kalitni yangilash" yonma-yon turardi. Ikkinchisi hamkorning
- * ulanishini DARHOL uzadi, birinchisi esa oddiy tahrir. Bir xil
- * ko'rinishda turgani xato bosishga olib keladi.
+ * NEGA SOZLAMALARDAN AJRATILDI. «Webhook manzilini o'zgartirish» oddiy tahrir, «API kalitni yangilash»
+ * esa hamkorning ulanishini DARHOL uzadi — bir xil ko'rinishda turgani xato bosishga olib keladi.
  */
 
 const initialValues = (c: Connection, fields: ConnectionField[]): FieldValues => {
@@ -33,22 +33,10 @@ const initialValues = (c: Connection, fields: ConnectionField[]): FieldValues =>
       out[f.key] = "";
       continue;
     }
-    /**
-     * Xarita (obyekt) — asl yozuvdan o'qiladi. Busiz maydon bo'sh boshlanib,
-     * saqlashda mavjud xaritani O'CHIRIB yuborardi.
-     */
-    /**
-     * ⚠️ `status-map` ham OBYEKT (JnHK6bgV). Ilgari faqat `mapping` shu yerga
-     * tushardi va status xaritasi `String(obj)` → "[object Object]" bo'lib
-     * qolardi: jadval bo'sh ko'rinardi, bitta katak tahrirlanib saqlansa esa
-     * mavjud xaritaning QOLGAN qismi o'chib ketardi (lokal E2E ushladi).
-     */
+    /** Xarita (obyekt) — asl yozuvdan o'qiladi; busiz saqlashda mavjud xarita O'CHIB ketardi. */
     if (f.type === "mapping" || f.type === "status-map") {
       const val = getPath(raw, f.key);
-      out[f.key] =
-        val && typeof val === "object" && !Array.isArray(val)
-          ? (val as Record<string, string>)
-          : {};
+      out[f.key] = val && typeof val === "object" && !Array.isArray(val) ? (val as Record<string, string>) : {};
       continue;
     }
     if (f.type === "tags") {
@@ -97,19 +85,12 @@ const ConnectionSecurity = ({
     }
     try {
       if (isPartner) {
-        await updatePartner.mutateAsync({
-          id: connection.id,
-          dto: payload as never,
-        });
+        await updatePartner.mutateAsync({ id: connection.id, dto: payload as never });
       } else {
         const raw = connection.raw as Record<string, unknown>;
         await updateIntegration.mutateAsync({
           id: connection.id,
-          payload: {
-            slug: String(raw.slug ?? ""),
-            type: String(raw.type ?? "api"),
-            ...payload,
-          } as never,
+          payload: { slug: String(raw.slug ?? ""), type: String(raw.type ?? "api"), ...payload } as never,
         });
       }
       notify.success(t("savedOk"));
@@ -131,14 +112,9 @@ const ConnectionSecurity = ({
   };
 
   /**
-   * KILL-SWITCH.
-   *
-   * ⚠️ Ikki xil yo'l, va bu tasodif emas: hamkorda alohida endpoint bor
-   * (`POST partners/:id/status`), integratsiyada esa PATCH'ning o'zi
-   * `is_active` ni oladi. Ilgari ikkisi ham umumiy formaning `switch`
-   * maydoni orqali ketardi va HAMKOR uchun qiymat gateway'da jimgina
-   * tashlanardi (`whitelist: true`, DTO'da maydon yo'q) — forma "Saqlandi"
-   * deb yozardi, ulanish esa ishlab turardi.
+   * KILL-SWITCH. ⚠️ Ikki xil yo'l, va bu tasodif emas: hamkorda alohida endpoint bor
+   * (`POST partners/:id/status`), integratsiyada esa PATCH'ning o'zi `is_active` ni oladi. Ilgari
+   * HAMKOR uchun qiymat gateway'da jimgina tashlanardi — forma «Saqlandi» deb yozardi, ulanish ishlab turardi.
    */
   const toggleActive = async () => {
     const next = !connection.is_active;
@@ -149,11 +125,7 @@ const ConnectionSecurity = ({
         const raw = connection.raw as Record<string, unknown>;
         await updateIntegration.mutateAsync({
           id: connection.id,
-          payload: {
-            slug: String(raw.slug ?? ""),
-            type: String(raw.type ?? "api"),
-            is_active: next,
-          } as never,
+          payload: { slug: String(raw.slug ?? ""), type: String(raw.type ?? "api"), is_active: next } as never,
         });
       }
       notify.success(next ? t("secEnabled") : t("secDisabled"));
@@ -174,14 +146,19 @@ const ConnectionSecurity = ({
       description: t("secRotateWarning"),
       // Maket `superadmin-integrations-rotate-key-dialog`: hamkor nomi + kalit turi, «Ha, yangilash».
       details: (
-        <>
-          <span className="block font-semibold">{connection.name}</span>
-          <span className="block text-text-muted">{t("secRotateKind")}</span>
-        </>
+        <span className="flex items-center gap-3">
+          <span className="inline-flex size-9 flex-none items-center justify-center rounded-[10px] bg-surface text-text-muted">
+            <Plug size={18} aria-hidden="true" />
+          </span>
+          <span className="flex min-w-0 flex-col">
+            <span className="font-semibold text-text">{connection.name}</span>
+            <span className="text-[13px] text-text-muted">{t("secRotateKind")}</span>
+          </span>
+        </span>
       ),
       note: t("secRotateNote"),
       confirmLabel: t("secRotateOk"),
-      cancelLabel: t("common:cancel"),
+      cancelLabel: t("npCancel"),
       icon: KeyRound,
       confirmIcon: KeyRound,
       onConfirm: doRotate,
@@ -193,111 +170,119 @@ const ConnectionSecurity = ({
       title: connection.is_active ? t("secDisableTitle") : t("secEnableTitle"),
       description: connection.is_active ? t("secDisableDesc") : t("secEnableDesc"),
       confirmLabel: connection.is_active ? t("secBtnOff") : t("secBtnOn"),
-      cancelLabel: t("common:cancel"),
+      cancelLabel: t("npCancel"),
       icon: Power,
       confirmIcon: Power,
       onConfirm: toggleActive,
     });
 
-  return (
-    <div className="space-y-4">
-      {/* ═══ Kirish cheklovlari ═══ */}
-      <Card
-        title={
-          <span className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4" /> {t("secAccessLimits")}
-          </span>
-        }
-      >
-        {fields.length === 0 ? (
-          <Alert type="info" showIcon message={t("secNoLimitFields")} />
-        ) : (
-          <Form layout="vertical">
-            <ConnectionFields
-              fields={fields}
-              values={values}
-              onChange={(k, v) => setValues((s) => ({ ...s, [k]: v }))}
-              disabled={saving}
-            />
-            <Button
-              type="primary"
-              icon={<Save className="h-4 w-4" />}
-              loading={saving}
-              onClick={save}
-            >
-              {t("common:save")}
+  /* ═══ Kirish cheklovlari ═══ */
+  const access = (
+    <PanelSection aria-label={t("secAccessLimits")} bordered={!isPartner}>
+      <SectionHead title={t("secAccessLimits")} icon={ShieldCheck} />
+      {fields.length === 0 ? (
+        <InlineAlert tone="info">{t("secNoLimitFields")}</InlineAlert>
+      ) : (
+        <>
+          <ConnectionFields
+            fields={fields}
+            values={values}
+            onChange={(k, v) => setValues((s) => ({ ...s, [k]: v }))}
+            disabled={saving}
+          />
+          <div>
+            <Button variant="secondary" loading={saving} onClick={() => void save()} className="max-md:w-full">
+              {t("console.save")}
             </Button>
-          </Form>
-        )}
-      </Card>
-
-      {/* ═══ API kalit — faqat hamkorda ═══ */}
-      {isPartner && (
-        <Card
-          title={
-            <span className="flex items-center gap-2">
-              <KeyRound className="h-4 w-4" /> {t("secApiKey")}
-            </span>
-          }
-          extra={
-            <Button danger icon={<KeyRound className="h-4 w-4" />} loading={rotateKey.isPending} onClick={confirmRotate}>
-              {t("secRotateTitle")}
-            </Button>
-          }
-        >
-          <p className="m-0 text-sm text-gray-500 dark:text-gray-400">{t("secKeyHashNote")}</p>
-
-          {/* Yangi kalit — BIR MARTA. Sahifadan chiqilsa boshqa olinmaydi. */}
-          {freshKey && (
-            <Alert
-              className="mt-3"
-              type="success"
-              showIcon
-              message={t("secFreshKeyTitle")}
-              description={
-                <Typography.Paragraph
-                  copyable={{ text: freshKey }}
-                  className="!mb-0 !mt-1 break-all font-mono text-xs"
-                >
-                  {freshKey}
-                </Typography.Paragraph>
-              }
-            />
-          )}
-        </Card>
+          </div>
+        </>
       )}
+    </PanelSection>
+  );
 
-      {/* ═══ Kill-switch ═══ */}
-      <Card
-        title={
-          <span className="flex items-center gap-2">
-            <Power className="h-4 w-4" /> {t("secConnState")}
+  /* ═══ API kalit — faqat hamkorda ═══ */
+  const apiKey = isPartner ? (
+    <PanelSection aria-label={t("secApiKey")} bordered={false}>
+      <SectionHead
+        title={t("secApiKey")}
+        icon={KeyRound}
+        description={t("secKeyHashNote")}
+        actions={
+          <Button
+            variant="danger-soft"
+            size="sm"
+            leftIcon={KeyRound}
+            loading={rotateKey.isPending}
+            onClick={confirmRotate}
+            className="max-md:min-h-11"
+          >
+            {t("secRotateTitle")}
+          </Button>
+        }
+      />
+      {/* Yangi kalit — BIR MARTA. Sahifadan chiqilsa boshqa olinmaydi. */}
+      {freshKey ? (
+        <InlineAlert tone="success" title={t("secFreshKeyTitle")}>
+          <span className="mt-2 block">
+            <CopyValue value={freshKey} />
           </span>
-        }
-        extra={
-          <Tag color={connection.is_active ? "green" : "red"}>
-            {connection.is_active ? t("secTagActive") : t("secTagOff")}
-          </Tag>
-        }
-      >
-        <Alert
-          type={connection.is_active ? "info" : "warning"}
-          showIcon
-          message={connection.is_active ? t("secStateActive") : t("secStateOff")}
-          description={connection.is_active ? t("secStateActiveDesc") : t("secStateOffDesc")}
-        />
+        </InlineAlert>
+      ) : null}
+    </PanelSection>
+  ) : null;
 
+  /* ═══ Ulanish holati (kill-switch) ═══ */
+  const state = (
+    <PanelSection aria-label={t("secConnState")}>
+      <SectionHead
+        title={t("secConnState")}
+        icon={Power}
+        actions={
+          <StatusBadge
+            tone={connection.is_active ? "success" : "neutral"}
+            label={connection.is_active ? t("secTagActive") : t("secTagOff")}
+          />
+        }
+      />
+      {/* Maket: izoh va amal yonma-yon (tor ustunda — ustma-ust). */}
+      <div className="flex min-w-0 flex-wrap items-center gap-3">
+        <div className="min-w-0 flex-[1_1_240px]">
+          <InlineAlert
+            tone={connection.is_active ? "info" : "warning"}
+            title={connection.is_active ? t("secStateActive") : t("secStateOff")}
+          >
+            {connection.is_active ? t("secStateActiveDesc") : t("secStateOffDesc")}
+          </InlineAlert>
+        </div>
         <Button
-          className="mt-3"
-          danger={connection.is_active}
-          type={connection.is_active ? "default" : "primary"}
-          icon={<Power className="h-4 w-4" />}
+          variant={connection.is_active ? "danger-soft" : "secondary"}
+          leftIcon={Power}
           loading={togglePending}
           onClick={confirmToggle}
+          className="max-md:w-full"
         >
           {connection.is_active ? t("secBtnOff") : t("secBtnOn")}
         </Button>
-      </Card>
+      </div>
+    </PanelSection>
+  );
+
+  /*
+   * Hamkorda (maket): chapda «Kirish cheklovlari», o'ngda «API kalit» + «Ulanish holati» — ikki ustun
+   * (tor ekranda ustma-ust). Tashqi tizimda kalit bo'limi yo'q, cheklov maydonlari ko'p — to'liq enli.
+   */
+  return isPartner ? (
+    <ColumnGrid basis={420}>
+      <div className="bg-surface">{access}</div>
+      <div className="flex flex-col bg-surface">
+        {apiKey}
+        {state}
+      </div>
+    </ColumnGrid>
+  ) : (
+    <div className="flex min-w-0 flex-col">
+      {access}
+      {state}
     </div>
   );
 };

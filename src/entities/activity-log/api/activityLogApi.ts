@@ -1,6 +1,9 @@
 import { api } from "../../../shared/api/instance";
 import { API_ENDPOINTS } from "../../../shared/api";
 import type {
+  ActivityActionCatalog,
+  ActivityActionInfo,
+  ActivityActionMeta,
   ActivityActor,
   ActivityLog,
   ActivityLogListResult,
@@ -35,6 +38,20 @@ const normalizeActor = (value: unknown): ActivityActor | null => {
   };
 };
 
+const normalizeActionMeta = (value: unknown): ActivityActionMeta | null => {
+  if (!value || typeof value !== "object") return null;
+  const m = value as Record<string, unknown>;
+  return {
+    action: str(m.action),
+    label: str(m.label),
+    category: str(m.category),
+    category_label: str(m.category_label),
+    icon: strOrNull(m.icon),
+    tone: strOrNull(m.tone),
+    known: m.known !== false,
+  };
+};
+
 const normalizeLog = (value: unknown): ActivityLog => {
   const row = asRecord(value);
   return {
@@ -53,6 +70,8 @@ const normalizeLog = (value: unknown): ActivityLog => {
     metadata: objOrNull(row.metadata),
     created_at: str(row.created_at ?? row.createdAt),
     actor: normalizeActor(row.actor),
+    actor_status: strOrNull(row.actor_status),
+    action_meta: normalizeActionMeta(row.action_meta),
     entity: objOrNull(row.entity),
     references: objOrNull(row.references),
   };
@@ -80,10 +99,27 @@ export const getActivityLogs = async (
   return normalizeList(response.data, params);
 };
 
-export const getActivityActions = async (): Promise<string[]> => {
+/**
+ * Fe'llar katalogi (y8CxCtcK): `{ data: string[], registry: [{ action, label, category, category_label }],
+ * categories }`. Konvert bo'lsa ham (`{ data: { data, registry } }`) o'qiladi.
+ */
+export const getActivityActionCatalog = async (): Promise<ActivityActionCatalog> => {
   const response = await api.get(API_ENDPOINTS.ACTIVITY_LOGS.ACTIONS);
-  const data = unwrap(response.data);
-  return Array.isArray(data) ? data.map(str) : [];
+  const root = asRecord(response.data);
+  const inner = asRecord(root.data);
+  const list = Array.isArray(root.data) ? root.data : Array.isArray(inner.data) ? inner.data : [];
+  const rawRegistry = Array.isArray(root.registry) ? root.registry : Array.isArray(inner.registry) ? inner.registry : [];
+  const registry: ActivityActionInfo[] = rawRegistry
+    .map((item) => asRecord(item))
+    .filter((item) => str(item.action))
+    .map((item) => ({
+      action: str(item.action),
+      label: str(item.label),
+      category: str(item.category),
+      category_label: str(item.category_label),
+    }));
+  const actions = list.length ? list.map(str) : registry.map((item) => item.action);
+  return { actions, registry };
 };
 
 export const getEntityHistory = async (

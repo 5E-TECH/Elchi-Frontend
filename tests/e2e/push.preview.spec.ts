@@ -388,10 +388,13 @@ test.describe("Push — prod build, haqiqiy Service Worker", () => {
     expect(subscriptions.size).toBe(1);
 
     await page.goto("/settings");
-    await page.getByRole("main").getByRole("button", { name: /Bildirishnomalar/ }).click({ timeout: 60_000 });
+    await page.getByRole("main").getByRole("tab", { name: /Bildirishnomalar/ }).click({ timeout: 60_000 });
     await waitToastsGone(page);
-    await page.getByRole("button", { name: "Bildirishnomalarni o'chirish" }).click();
-    await expect(page.getByRole("button", { name: "Bildirishnomalarni yoqish" })).toBeVisible();
+    // Dizayn v2: Sozlamalarda push — «Shu qurilmaga bildirishnomalar» kaliti (maket `common-settings-notifications`).
+    const toggle = page.getByRole("switch", { name: "Shu qurilmaga bildirishnomalar" });
+    await expect(toggle).toHaveAttribute("aria-checked", "true", { timeout: 60_000 });
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-checked", "false");
     expect(subscriptions.size).toBe(0);
     const patch = calls.filter((call) => call.path === "auth/my-settings").at(-1)!;
     expect((patch.body as { settings: { notifications: { push: boolean } } }).settings.notifications.push).toBe(false);

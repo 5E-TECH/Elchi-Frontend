@@ -1,226 +1,82 @@
+// dizayn-v2: superadmin-notifications-create-dialog
+import { useEffect, useMemo } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Alert, Button, Form, Input, Modal, Select } from "antd";
-import { Controller, useForm } from "react-hook-form";
-import { useEffect } from "react";
+import { useForm, type Resolver } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useMarkets } from "../../../entities/markets";
-import { notificationSchema } from "../model/schema";
-import type { CreateNotificationDto } from "../model/types";
-import { useCreateNotification } from "../api/useCreateNotification";
+import {
+  createTelegramGroupSchema,
+  EMPTY_TELEGRAM_GROUP,
+  TelegramGroupFormDialog,
+  toTelegramMarketOptions,
+  type TelegramGroupFormValues,
+} from "../../../entities/notification";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { notify } from "../../../shared/lib/notify";
+import { useCreateNotification } from "../api/useCreateNotification";
 
 interface NotificationFormModalProps {
   open: boolean;
   onClose: () => void;
 }
 
-type MarketOption = {
-  id?: string | number;
-  name?: string;
-  username?: string;
-  phone_number?: string;
-};
-
-const getMarketItems = (value: unknown): MarketOption[] => {
-  if (!value) return [];
-
-  const response = value as Record<string, unknown>;
-  const responseData = response?.data as unknown;
-  const responseDataRecord =
-    typeof responseData === "object" && responseData !== null
-      ? (responseData as Record<string, unknown>)
-      : null;
-
-  if (Array.isArray(value)) return value as MarketOption[];
-  if (Array.isArray(responseData)) return responseData as MarketOption[];
-  if (Array.isArray(response?.items)) return response.items as MarketOption[];
-  if (Array.isArray(responseDataRecord?.items)) return responseDataRecord.items as MarketOption[];
-
-  return [];
-};
-
 /**
- * fix3b CODE-02: "Token orqali ulash" bo'limi olib tashlandi. U
- * `POST /notifications/connect-by-token` ga `{ token }` yuborardi, backend esa
- * `{ text, group_id }` talab qiladi — har doim 400. Guruh ikki yo'l bilan
- * ulanadi: market guruhga botni qo'shib maxfiy tokenni yuboradi (token market
- * sahifasida, faqat admin ko'radi) yoki admin shu forma orqali (market + Group
- * ID) ulaydi.
+ * «Bildirishnoma qo'shish» — marketning Telegram guruhini ulash (`POST /notifications`
+ * `{ market_id, group_id, group_type }`). Ko'rinish — `TelegramGroupFormDialog` (maket
+ * `superadmin-notifications-create-dialog`).
+ *
+ * fix3b CODE-02: «Token orqali ulash» bo'limi yo'q. U `POST /notifications/connect-by-token` ga `{ token }`
+ * yuborardi, backend esa `{ text, group_id }` talab qiladi — har doim 400. Guruh ikki yo'l bilan ulanadi:
+ * market guruhga botni qo'shib maxfiy tokenni yuboradi (token market sahifasida) yoki admin shu oyna orqali
+ * (market + guruh ID) ulaydi.
  */
 const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) => {
-  const { t } = useTranslation("common");
-  const notificationBotUsername = import.meta.env.VITE_TELEGRAM_NOTIFICATION_BOT_USERNAME
-    ?.replace(/^@/, "")
-    .trim();
-  const addBotToGroupUrl = notificationBotUsername
-    ? `https://t.me/${notificationBotUsername}?startgroup=notification`
-    : "";
+  const { t } = useTranslation("notificationGroups");
+  const schema = useMemo(() => createTelegramGroupSchema(t), [t]);
   const { useGetMarkets } = useMarkets();
   const marketsQuery = useGetMarkets({ status: "active", limit: 100 }, open);
+  const markets = useMemo(() => toTelegramMarketOptions(marketsQuery.data), [marketsQuery.data]);
   const createNotification = useCreateNotification();
   const {
     control,
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<CreateNotificationDto>({
-    resolver: yupResolver(notificationSchema),
-    defaultValues: {
-      market_id: "",
-      group_id: "",
-      group_type: "create",
-    },
+  } = useForm<TelegramGroupFormValues>({
+    resolver: yupResolver(schema) as unknown as Resolver<TelegramGroupFormValues>,
+    defaultValues: EMPTY_TELEGRAM_GROUP,
   });
 
   useEffect(() => {
-    if (!open) {
-      reset({
-        market_id: "",
-        group_id: "",
-        group_type: "create",
-      });
-    }
+    if (!open) reset(EMPTY_TELEGRAM_GROUP);
   }, [open, reset]);
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      await createNotification.mutateAsync(values);
-      notify.success(t("notificationCreated"));
+      await createNotification.mutateAsync({ ...values, group_id: values.group_id.trim() });
+      notify.success(t("form.created"));
       onClose();
-      reset();
-    } catch {
-      notify.error("Bildirishnomani yaratishda xatolik bo'ldi");
+      reset(EMPTY_TELEGRAM_GROUP);
+    } catch (error) {
+      notify.error(t("form.createFailed"), {
+        description: getBackendErrorMessage(error) ?? undefined,
+      });
     }
   });
 
   return (
-    <Modal
-      destroyOnHidden
+    <TelegramGroupFormDialog
       open={open}
-      title={t("addNotification")}
-      width={560}
-      footer={null}
-      onCancel={onClose}
-    >
-      <Form layout="vertical" onFinish={onSubmit}>
-        <Alert
-          className="mb-4"
-          type="info"
-          showIcon
-          message="Telegram groupga bildirishnoma ulash"
-          description={
-            <div className="space-y-1">
-              <p>Marketni tanlang, bot qo'shilgan Telegram group ID ni kiriting.</p>
-              <p className="text-xs">
-                Group ID odatda <span className="font-mono">-100</span> bilan boshlanadi.
-              </p>
-            </div>
-          }
-        />
-
-        {addBotToGroupUrl ? (
-          <Button
-            className="mb-4"
-            block
-            href={addBotToGroupUrl}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Botni Telegram groupga qo'shish
-          </Button>
-        ) : (
-          <Alert
-            className="mb-4"
-            type="warning"
-            showIcon
-            message="Bot username sozlanmagan"
-            description="Botni groupga qo'shish tugmasi chiqishi uchun .env faylga VITE_TELEGRAM_NOTIFICATION_BOT_USERNAME qo'shish kerak."
-          />
-        )}
-
-        <Form.Item
-          label={t("market")}
-          validateStatus={errors.market_id ? "error" : ""}
-          help={errors.market_id?.message}
-        >
-          <Controller
-            control={control}
-            name="market_id"
-            render={({ field }) => (
-              <Select
-                {...field}
-                showSearch
-                loading={marketsQuery.isLoading}
-                placeholder={t("selectMarket")}
-                optionFilterProp="label"
-                options={getMarketItems(marketsQuery.data).map((market) => ({
-                  value: String(market.id ?? ""),
-                  label: `${market.name ?? `#${market.id}`} ${
-                    market.phone_number ? `• ${market.phone_number}` : market.username ? `• ${market.username}` : ""
-                  }`,
-                }))}
-              />
-            )}
-          />
-        </Form.Item>
-
-        <Form.Item
-          label="Telegram group ID"
-          validateStatus={errors.group_id ? "error" : ""}
-          help={errors.group_id?.message}
-          extra="Masalan: -1001234567890. Bot shu groupga qo'shilgan bo'lishi kerak."
-        >
-          <Controller
-            control={control}
-            name="group_id"
-            render={({ field }) => <Input {...field} placeholder="-1001234567890" />}
-          />
-        </Form.Item>
-
-        <details className="mb-4 rounded-2xl border border-border-soft bg-main-soft p-3 text-sm dark:bg-background-soft">
-          <summary className="cursor-pointer font-semibold text-maindark dark:text-primary">
-            Group ID ni qanday olish mumkin?
-          </summary>
-          <div className="mt-3 space-y-2 text-text-muted dark:text-text-muted-dark">
-            <p>1. Notification botni Telegram groupga qo'shing.</p>
-            <p>2. Groupga oddiy xabar yozing: masalan, <span className="font-mono">test</span>.</p>
-            <p>3. Backend yoki bot logidan <span className="font-mono">message.chat.id</span> qiymatini oling.</p>
-            <p>
-              Group ID odatda <span className="font-mono">-100</span> bilan boshlanadi,
-              masalan <span className="font-mono">-1001234567890</span>.
-            </p>
-            <p className="font-semibold text-maindark dark:text-primary">
-              Eng qulay yechim: botga /id komandasi qo'shilsa, group ichida /id yozilganda ID ni o'zi chiqaradi.
-            </p>
-          </div>
-        </details>
-
-        <Form.Item
-          label="Qaysi xabar turi"
-          validateStatus={errors.group_type ? "error" : ""}
-          help={errors.group_type?.message}
-          extra="Bitta market uchun create va cancel guruhlarini alohida ulash mumkin."
-        >
-          <Controller
-            control={control}
-            name="group_type"
-            render={({ field }) => (
-              <Select
-                {...field}
-                options={[
-                  { value: "create", label: "Yangi buyurtmalar guruhi" },
-                  { value: "cancel", label: "Bekor qilinganlar guruhi" },
-                ]}
-              />
-            )}
-          />
-        </Form.Item>
-
-        <Button block type="primary" htmlType="submit" loading={createNotification.isPending}>
-          Bildirishnomani saqlash
-        </Button>
-      </Form>
-    </Modal>
+      onClose={onClose}
+      title={t("form.createTitle")}
+      showConnectHint
+      control={control}
+      errors={errors}
+      onSubmit={onSubmit}
+      submitting={createNotification.isPending}
+      markets={markets}
+      marketsLoading={marketsQuery.isLoading}
+    />
   );
 };
 

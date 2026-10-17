@@ -1,0 +1,345 @@
+{
+  "hub": {
+    "title": "Ops tools",
+    "description": "Internal service screens — rarely used, superadmin only",
+    "tabsLabel": "Ops sections",
+    "sectionSelect": "Ops section: {{tab}}",
+    "legacyPath": "Old address: {{path}}",
+    "back": "Ops tools",
+    "tabError": "Couldn't open this section",
+    "tabErrorHint": "The other sections keep working."
+  },
+  "tabs": {
+    "finance": "Finance operators",
+    "integrations": "Integrations",
+    "investors": "Investors",
+    "logistics": "Logistics",
+    "branches": "Branches",
+    "identity": "Staff",
+    "system": "System",
+    "auth": "Sign-in diagnostics"
+  },
+  "common": {
+    "count": "{{count}}",
+    "idValue": "ID {{id}}",
+    "retry": "Try again"
+  },
+  "finance": {
+    "intro": {
+      "title": "Operator settlement",
+      "description": "The operator's earned, paid and remaining amounts with earnings and payout history. Record a new payout here."
+    },
+    "lookup": {
+      "formLabel": "Load operator",
+      "label": "Operator ID",
+      "placeholder": "Operator ID",
+      "submit": "Load",
+      "invalid": "Operator ID must contain digits only"
+    },
+    "balance": {
+      "title": "Operator {{id}} balance",
+      "subtitle": "Remaining = earned − paid",
+      "due": "Owed to the operator",
+      "earned": "Earned",
+      "paid": "Paid",
+      "rest": "Remaining",
+      "paidShare": "Paid share",
+      "paidShareAria": "{{value}} of the earned amount has been paid",
+      "waterfallAria": "Remaining {{balance}}: earned {{earned}} minus paid {{paid}}",
+      "loadError": "Couldn't load the operator balance"
+    },
+    "payment": {
+      "title": "Record a payout",
+      "description": "Record a payout made to the operator — the remaining amount goes down automatically",
+      "amount": "Amount (UZS)",
+      "amountPlaceholder": "For example, 200 000",
+      "amountRequired": "Enter the amount",
+      "note": "Note",
+      "notePlaceholder": "For example, for October",
+      "submit": "Save payout",
+      "success": "Payout recorded",
+      "error": "Couldn't record the payout",
+      "confirmTitle": "Record this payout?",
+      "confirmDescription": "A payout will be recorded for operator {{id}} — the remaining amount goes down by this sum.",
+      "confirmAmount": "Payout amount",
+      "confirmNote": "Note",
+      "confirmLoading": "Saving…"
+    },
+    "earnings": {
+      "title": "Earnings",
+      "description": "The share accrued for each order",
+      "order": "Order",
+      "amount": "Amount",
+      "date": "Date",
+      "summary": "{{from}}–{{to}} of {{total}}",
+      "pagesLabel": "Earnings pages",
+      "empty": "No earnings yet",
+      "emptyHint": "When the operator takes an order, their share appears here.",
+      "loadError": "Couldn't load earnings"
+    },
+    "payouts": {
+      "title": "Payout history",
+      "description": "Payouts made to the operator",
+      "amount": "Amount",
+      "note": "Note",
+      "date": "Date",
+      "count": "{{count}} payouts",
+      "total": "Total:",
+      "summary": "{{from}}–{{to}} of {{total}} payouts",
+      "pagesLabel": "Payout pages",
+      "empty": "No payouts yet",
+      "emptyHint": "Recorded payouts appear here.",
+      "loadError": "Couldn't load the payout history"
+    }
+  },
+  "integrations": {
+    "intro": {
+      "title": "Integrations — operations",
+      "description": "Integration operations: receivables and synchronization."
+    },
+    "receivables": {
+      "title": "Receivables",
+      "description": "Amounts the carrier collected from customers and owes us",
+      "id": "ID",
+      "amount": "Amount",
+      "status": "Status",
+      "statuses": {
+        "pending": "Pending",
+        "settled": "Closed",
+        "cancelled": "Cancelled"
+      },
+      "summary": "{{from}}–{{to}} of {{total}}",
+      "empty": "No receivables",
+      "emptyHint": "A receivable appears here when the carrier sells an order.",
+      "loadError": "Couldn't load receivables"
+    },
+    "sync": {
+      "title": "Synchronization",
+      "description": "Pull the integration data again right now",
+      "label": "Integration ID",
+      "placeholder": "Integration ID",
+      "submit": "Synchronize",
+      "success": "Synchronization completed",
+      "successMeta": "Integration {{id}} · {{time}}",
+      "error": "Synchronization failed"
+    }
+  },
+  "investors": {
+    "intro": {
+      "title": "Investors",
+      "description": "The list of all investors and adding a new one."
+    },
+    "list": {
+      "title": "Investor list",
+      "id": "ID",
+      "name": "Name",
+      "phone": "Phone",
+      "summary": "{{from}}–{{to}} of {{total}} investors",
+      "empty": "No investors",
+      "emptyHint": "Add a new investor with the form on the right.",
+      "loadError": "Couldn't load the investor list"
+    },
+    "create": {
+      "title": "New investor",
+      "description": "The investor is added to the list right away",
+      "name": "Investor name",
+      "namePlaceholder": "First and last name",
+      "nameRequired": "Enter the investor's name",
+      "phone": "Phone number",
+      "phonePlaceholder": "90 123 45 67",
+      "phoneRequired": "Enter the full phone number",
+      "submit": "Add",
+      "success": "Investor added",
+      "error": "Couldn't add the investor"
+    }
+  },
+  "logistics": {
+    "list": {
+      "title": "Requests",
+      "selection": "Selected requests",
+      "selected": "{{count}} requests selected",
+      "grouped": "Requests are grouped by courier",
+      "clear": "Clear selection",
+      "approve": "Approve — {{count}}",
+      "selectAll": "Select all requests",
+      "selectAllShort": "Select all",
+      "selectedOf": "{{selected}} / {{total}}",
+      "selectRow": "Select request {{id}}",
+      "orderLink": "№{{id}}",
+      "noCourier": "No courier assigned"
+    },
+    "statuses": {
+      "waiting": "Courier hasn't accepted",
+      "on_the_road": "With the courier"
+    }
+  },
+  "branches": {
+    "intro": {
+      "title": "Branches — operations",
+      "description": "Branches with new orders and branch package management."
+    },
+    "list": {
+      "title": "Branches with new orders",
+      "id": "ID",
+      "name": "Name",
+      "newOrders": "New orders",
+      "empty": "No branches with new orders",
+      "emptyHint": "A branch appears here when it receives a new order.",
+      "loadError": "Couldn't load the branch list"
+    },
+    "cancel": {
+      "title": "Cancel package",
+      "description": "A package ID and a reason of at least 10 characters are required; the action runs after confirmation.",
+      "batchId": "Package ID",
+      "batchPrefix": "B-",
+      "reason": "Cancellation reason",
+      "reasonHint": "{{count}} characters · at least {{min}}",
+      "reasonTooShort": "The reason must be at least {{min}} characters (now {{count}})",
+      "submit": "Cancel package",
+      "confirmTitle": "Cancel this package?",
+      "confirmDescription": "The package will be cancelled and all its orders detached from it.",
+      "confirmLabel": "Yes, cancel it",
+      "cancelLabel": "No",
+      "success": "Package cancelled",
+      "error": "Couldn't cancel the package",
+      "unknownError": "An unknown error occurred"
+    }
+  },
+  "identity": {
+    "intro": {
+      "title": "Staff — lists",
+      "description": "View admin, manager and registrar lists and manage market settings."
+    },
+    "lists": {
+      "admins": "Admins",
+      "managers": "Managers",
+      "registrators": "Registrars",
+      "id": "ID",
+      "name": "Name",
+      "email": "Email",
+      "empty": "The list is empty",
+      "loadError": "Couldn't load the list"
+    },
+    "market": {
+      "title": "Market: permission to add orders",
+      "description": "Lets the market create orders on its own",
+      "label": "Market ID",
+      "placeholder": "Market ID",
+      "hint": "The same as the “Add orders” permission in the market profile",
+      "submit": "Grant permission",
+      "success": "Permission granted",
+      "successMeta": "Market {{id}} can now add orders on its own",
+      "error": "Couldn't grant the permission"
+    }
+  },
+  "system": {
+    "intro": {
+      "title": "System — analytics and services",
+      "description": "System health, analytics indicators and the QR token check."
+    },
+    "health": {
+      "title": "System health",
+      "ok": "Running",
+      "okHint": "The server is responding to requests",
+      "error": "Error",
+      "errorHint": "The server didn't respond"
+    },
+    "sla": {
+      "title": "On time (SLA)",
+      "subtitle": "Whole system · analytics KPI",
+      "label": "Delivered within 24 hours",
+      "good": "Good · 70% and above",
+      "low": "Low · below 70%",
+      "aria": "On-time delivery (SLA): {{value}} — share of orders delivered within 24 hours",
+      "note": "Share of orders sold within 24 hours of intake"
+    },
+    "kpi": {
+      "title": "Analytics KPI",
+      "subtitle": "Key indicators across the whole system",
+      "courier": "Courier efficiency",
+      "courierValue": "{{count}} orders on average",
+      "courierHint": "Per courier",
+      "cancellation": "Cancellation rate",
+      "cancellationHint": "Share of cancelled orders",
+      "cancellationAria": "Cancellation rate {{value}}",
+      "aov": "Average order value",
+      "aovHint": "Per sold order",
+      "fulfillment": "Average delivery time",
+      "fulfillmentValue": "{{hours}} h {{minutes}} min",
+      "fulfillmentHint": "Marker — the 24-hour limit",
+      "fulfillmentAria": "Average delivery time {{hours}} h {{minutes}} min, limit 24 hours",
+      "rating": "Market rating",
+      "ratingEmpty": "No data — the rating hasn't been calculated yet",
+      "ratingCount": "{{count}} markets in the rating",
+      "degradedTitle": "Some indicators weren't calculated",
+      "degradedText": "Some services didn't respond — the values are incomplete.",
+      "loadError": "Couldn't load analytics indicators"
+    },
+    "scan": {
+      "title": "Check by token",
+      "description": "Shows which order, package or mail a QR token belongs to",
+      "label": "Token",
+      "placeholder": "Enter a token",
+      "submit": "Check",
+      "result": "Result",
+      "types": {
+        "order": "Order",
+        "batch": "Package",
+        "post": "Mail",
+        "market_cancelled_handover": "Cancelled handover"
+      },
+      "notFound": "Not found",
+      "notFoundHint": "No order, package or mail was found for this token.",
+      "error": "Couldn't check the token",
+      "empty": "The result has no fields to show",
+      "yes": "Yes",
+      "no": "No",
+      "fields": {
+        "id": "ID",
+        "status": "Status",
+        "qr_code_token": "QR token",
+        "name": "Name",
+        "customer_name": "Customer",
+        "phone_number": "Phone",
+        "total_price": "Amount",
+        "total_amount": "Total amount",
+        "amount": "Amount",
+        "orders_count": "Orders",
+        "order_count": "Orders",
+        "from_branch": "From",
+        "to_branch": "To",
+        "source_branch": "From",
+        "destination_branch": "To",
+        "region": "Region",
+        "district": "District",
+        "market": "Market",
+        "courier": "Courier",
+        "created_at": "Created",
+        "createdAt": "Created",
+        "updated_at": "Updated",
+        "updatedAt": "Updated"
+      }
+    }
+  },
+  "auth": {
+    "intro": {
+      "title": "Sign-in diagnostics",
+      "description": "Tests the sign-in token refresh request.",
+      "journalPrefix": "For the log:",
+      "journalLink": "System → Activity log",
+      "journalMobile": "Log: System → Activity log"
+    },
+    "test": {
+      "title": "Token refresh test",
+      "description": "A new sign-in token is requested with the current session's refresh token",
+      "endpoint": "Request address",
+      "submit": "Send test request",
+      "submitting": "Sending",
+      "result": "Result",
+      "success": "Token refreshed",
+      "successDetail": "New token received: {{token}}…",
+      "error": "Token wasn't refreshed",
+      "errorDetail": "The refresh request failed."
+    }
+  }
+}

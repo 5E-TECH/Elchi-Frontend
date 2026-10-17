@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import ConnectionLog from "./ConnectionLog";
 import { renderWithProviders } from "../../../test/test-utils";
@@ -47,13 +47,11 @@ const refreshCount = () =>
     /Yangilash/i.test(b.textContent ?? ""),
   ).length;
 
+/** Ko'rinish almashtirgichi — v2 `SegmentedControl` (`role="radiogroup"` → `radio`). */
 const clickView = async (label: RegExp) => {
   const user = userEvent.setup();
-  const node = Array.from(document.querySelectorAll("label, .ant-segmented-item")).find((el) =>
-    label.test(el.textContent ?? ""),
-  );
-  if (!node) throw new Error(`"${label}" ko'rinishi topilmadi`);
-  await user.click(node);
+  const group = await screen.findByRole("radiogroup", { name: "Jurnal ko'rinishi" });
+  await user.click(within(group).getByRole("radio", { name: label }));
 };
 
 describe("Hodisalar tabi — ko'rinish almashtirgichi", () => {

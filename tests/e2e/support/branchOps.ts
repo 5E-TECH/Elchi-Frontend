@@ -4,7 +4,8 @@ import { expect, type Page, type Route } from "@playwright/test";
  * `/branch-ops` e2e uchun soxta backend (superadmin). Hech qanday so'rov
  * serverga ketmaydi; ruxsatsiz yozuvchi so'rov `leaked` ga tushadi.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+/** Dev server manzili (worktree probe'larida boshqa port — `E2E_ORIGIN`). */
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",
@@ -65,20 +66,26 @@ export const mockBranchOpsApi = async (
 
 export const openBranchOps = async (page: Page) => {
   await page.goto("/branch-ops");
-  await expect(page.getByText("Filiallar — operatsiyalar")).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("heading", { name: "Filiallar — operatsiyalar" })).toBeVisible({ timeout: 60_000 });
 };
 
+/** Dizayn v2 (maket `superadmin-ops-branches`): jadval qatorlari, forma maydonlari va tugma. */
+export const branchRows = (page: Page) =>
+  page.getByRole("table", { name: "Yangi buyurtmali filiallar" }).locator("tbody tr");
+export const batchIdInput = (page: Page) => page.getByRole("textbox", { name: /Paket ID/ });
+export const reasonInput = (page: Page) => page.getByRole("textbox", { name: /Bekor qilish sababi/ });
+export const cancelBatchButton = (page: Page) => page.getByRole("button", { name: "Paketni bekor qilish", exact: true });
+
 /**
- * Partiyani bekor qilish tasdig'i — design v2 `useConfirm` (`role="alertdialog"`).
- * Matnlar `tizim-feedback` 06 qoidasi bo'yicha: asosiy amalning o'zi «bekor qilish»
- * bo'lgani uchun chapda «Orqaga», o'ngda aniq fe'l «Partiyani bekor qilish»
- * (v1 Popconfirm'dagi «Yo'q» / «Ha, bekor qilish» o'rniga).
+ * Paketni bekor qilish tasdig'i — dizayn v2 `useConfirm` (`role="alertdialog"`), maket matnlari:
+ * «Paketni bekor qilasizmi?» / «Paket bekor qilinadi, undagi barcha buyurtmalar paketdan ajratiladi.» ·
+ * «Yo'q» / «Ha, bekor qilish».
  */
 export const confirmBatchCancel = async (page: Page) => {
-  const dialog = page.getByRole("alertdialog", { name: "Partiyani bekor qilasizmi?" });
+  const dialog = page.getByRole("alertdialog", { name: "Paketni bekor qilasizmi?" });
   await expect(dialog).toBeVisible();
-  await expect(dialog).toContainText("Partiya va undagi barcha buyurtmalar bog'lanishdan chiqariladi");
-  await expect(dialog.getByRole("button", { name: "Orqaga", exact: true })).toBeVisible();
-  await dialog.getByRole("button", { name: "Partiyani bekor qilish", exact: true }).click();
+  await expect(dialog).toContainText("Paket bekor qilinadi, undagi barcha buyurtmalar paketdan ajratiladi.");
+  await expect(dialog.getByRole("button", { name: "Yo'q", exact: true })).toBeVisible();
+  await dialog.getByRole("button", { name: "Ha, bekor qilish", exact: true }).click();
   await expect(dialog).toHaveCount(0);
 };

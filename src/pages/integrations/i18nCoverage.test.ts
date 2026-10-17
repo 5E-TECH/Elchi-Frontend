@@ -17,9 +17,25 @@ import en from "../../locales/en/integrations.json";
  */
 
 type Dict = Record<string, string>;
-const UZ = uz as Dict;
-const RU = ru as Dict;
-const EN = en as Dict;
+
+/**
+ * Ichma-ich bo'limlar (dizayn v2: `console.*`, `legacyPartners.*`, `legacySources.*`) nuqtali kalitga
+ * yoyiladi — i18next ularni `t("console.kpiTitle")` bilan o'qiydi, tekshiruvlar esa har barg qiymatga
+ * xuddi tekis kalitdek qo'llanadi (bo'lim ichida ham uch til teng bo'lishi shart).
+ */
+const flatten = (value: Record<string, unknown>, prefix = ""): Dict =>
+  Object.entries(value).reduce<Dict>((acc, [key, item]) => {
+    if (item && typeof item === "object" && !Array.isArray(item)) {
+      Object.assign(acc, flatten(item as Record<string, unknown>, `${prefix}${key}.`));
+    } else {
+      acc[`${prefix}${key}`] = String(item);
+    }
+    return acc;
+  }, {});
+
+const UZ = flatten(uz);
+const RU = flatten(ru);
+const EN = flatten(en);
 
 /**
  * Ruscha qiymatda kirill BO'LMASLIGI oqlangan kalitlar.
@@ -41,7 +57,7 @@ const RU_NO_CYRILLIC_OK = new Set([
  * Bo'sh qiymat ATAYLAB qo'yilgan kalitlar. O'zbekchadagi sanoq qo'shimchasi
  * ("3 ta") ingliz tilida yo'q — "3" ning o'zi to'g'ri.
  */
-const EMPTY_OK = new Set(["stlCountSuffix"]);
+const EMPTY_OK = new Set(["stlCountSuffix", "console.unitTa"]);
 
 describe("⭐ integrations i18n — uch til teng", () => {
   it("tarjima fayllari bo'sh emas (test bo'shliqda ishlamasin)", () => {
