@@ -12,6 +12,8 @@ import { cx } from "../../../shared/lib/cx";
  *
  *  - `inline` — sarlavha va izoh bitta qatorda (sig'masa o'raladi; maket `*-cancelled-handover`);
  *    sukut — ustma-ust (filial paketlari maketlari).
+ * Sarlavha `text-sm` — maketdagi `el-strong` (14 px, sahifa matni o'lchami).
+ *
  *  - `idle` — hali hech narsa tanlanmagan: `bg-sunken`, sarlavha oddiy matn rangida (maket
  *    `*-cancelled-scanner-dialog` «Hali buyurtma tanlanmagan»; ko'k faqat tanlov bo'lganda). Filial paketlari va
  *    market buyurtmalari ham shu holatni ishlatadi — bo'sh tanlov hamma joyda bir xil ko'rinadi.
@@ -43,7 +45,7 @@ export const SelectionRegion = ({ label, title, hint, action, inline = false, id
         inline ? "flex-wrap items-center gap-x-4 gap-y-1" : "flex-[1_1_280px] flex-col gap-0.5",
       )}
     >
-      <span className={cx("font-semibold", idle ? "text-text" : "text-action-fg")} aria-live="polite">
+      <span className={cx("text-sm font-semibold", idle ? "text-text" : "text-action-fg")} aria-live="polite">
         {title}
       </span>
       <span className="text-xs text-text-muted">{hint}</span>
