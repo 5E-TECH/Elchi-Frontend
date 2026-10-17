@@ -190,6 +190,38 @@
     "extra_cost_reject": "Rad etish",
     "extra_cost_approving": "Tasdiqlanmoqda",
     "extra_cost_rejecting": "Rad etilmoqda",
-    "extra_cost_action_error": "So'rovni bajarib bo'lmadi. Qayta urinib ko'ring."
+    "extra_cost_action_error": "So'rovni bajarib bo'lmadi. Qayta urinib ko'ring.",
+    "extra_cost_requested_amount": "So'ralgan summa",
+    "extra_cost_proofs_count": "{{count}} ta",
+    "extra_cost_proofs_none": "Yo'q",
+    "extra_cost_list_label": "Kutilayotgan so'rovlar",
+    "extra_cost_item_label": "{{action}}, buyurtma №{{id}}",
+    "extra_cost_owner_only": "Faqat market egasi qaror qiladi",
+    "extra_cost_role": {
+      "courier": "Kuryer",
+      "manager": "Menejer",
+      "registrator": "Ro'yxatchi",
+      "admin": "Admin",
+      "superadmin": "Superadmin",
+      "market": "Market"
+    },
+    "extra_cost_confirm_title": "Qo'shimcha xarajatni tasdiqlang",
+    "extra_cost_confirm_description": "№{{id}} buyurtmaga qo'shimcha xarajat yoziladi va so'ralgan amal bajariladi.",
+    "extra_cost_reject_title": "So'rovni rad etish",
+    "extra_cost_reject_reason": "Rad etish sababi",
+    "extra_cost_reject_reason_placeholder": "Sababni tanlang",
+    "extra_cost_reject_reasons": {
+      "TOO_EXPENSIVE": "Juda qimmat",
+      "NOT_AGREED": "Kelishilmagan",
+      "NO_PROOF": "Isbot yo'q",
+      "DUPLICATE": "Takroriy so'rov"
+    },
+    "extra_cost_reject_comment": "Izoh",
+    "extra_cost_reject_comment_placeholder": "Masalan, narx kelishilganidan yuqori",
+    "extra_cost_reject_note": "Rad etilsa — amal bajarilmaydi, buyurtma holati o'zgarmaydi.",
+    "extra_cost_approved": "Qo'shimcha xarajat tasdiqlandi",
+    "extra_cost_rejected": "So'rov rad etildi",
+    "extra_cost_already_decided": "So'rov allaqachon hal qilingan",
+    "extra_cost_already_decided_hint": "Bu so'rov boshqa joyda (masalan, Telegram'da) hal qilingan. Ro'yxat yangilandi."
   }
 }

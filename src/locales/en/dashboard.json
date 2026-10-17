@@ -190,6 +190,40 @@
     "extra_cost_reject": "Reject",
     "extra_cost_approving": "Approving",
     "extra_cost_rejecting": "Rejecting",
-    "extra_cost_action_error": "The request could not be completed. Please try again."
+    "extra_cost_action_error": "The request could not be completed. Please try again.",
+    "extra_cost_approvals_count_one": "{{count}} request pending",
+    "extra_cost_approvals_count_other": "{{count}} requests pending",
+    "extra_cost_requested_amount": "Requested amount",
+    "extra_cost_proofs_count": "{{count}}",
+    "extra_cost_proofs_none": "None",
+    "extra_cost_list_label": "Pending requests",
+    "extra_cost_item_label": "{{action}}, order №{{id}}",
+    "extra_cost_owner_only": "Only the market owner decides",
+    "extra_cost_role": {
+      "courier": "Courier",
+      "manager": "Manager",
+      "registrator": "Registrar",
+      "admin": "Admin",
+      "superadmin": "Superadmin",
+      "market": "Market"
+    },
+    "extra_cost_confirm_title": "Approve the extra cost",
+    "extra_cost_confirm_description": "The extra cost is added to order №{{id}} and the requested action is performed.",
+    "extra_cost_reject_title": "Reject the request",
+    "extra_cost_reject_reason": "Rejection reason",
+    "extra_cost_reject_reason_placeholder": "Choose a reason",
+    "extra_cost_reject_reasons": {
+      "TOO_EXPENSIVE": "Too expensive",
+      "NOT_AGREED": "Not agreed",
+      "NO_PROOF": "No proof",
+      "DUPLICATE": "Duplicate request"
+    },
+    "extra_cost_reject_comment": "Comment",
+    "extra_cost_reject_comment_placeholder": "For example, the price is higher than agreed",
+    "extra_cost_reject_note": "If rejected, the action is not performed and the order status does not change.",
+    "extra_cost_approved": "Extra cost approved",
+    "extra_cost_rejected": "Request rejected",
+    "extra_cost_already_decided": "The request is already decided",
+    "extra_cost_already_decided_hint": "This request was decided elsewhere (for example, in Telegram). The list has been refreshed."
   }
 }

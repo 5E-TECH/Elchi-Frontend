@@ -627,3 +627,41 @@ describe("CashDetail — kuryerdan qabul: tasdiq va noma'lum natija (5hBeDuyn)",
     await waitFor(() => expect(cashboxRefetch).toHaveBeenCalled());
   });
 });
+
+/**
+ * 2crjWf7v — `GET finance/cashbox/user/:id?cashbox_type=couriers` tarixidagi `courier_payment`
+ * qatorlarida `payment_ack` bor: tarixda «Noto'g'ri» / «Tasdiqlangan» belgisi, `null` — belgisiz.
+ */
+describe("CashDetail — kuryer kvitansiyasi javobi tarixda (2crjWf7v)", () => {
+  afterEach(() => {
+    cashboxState.response = undefined;
+    cashboxState.calls = [];
+  });
+
+  const historyRow = (id: string, extra: Record<string, unknown>) => ({
+    id,
+    amount: -100000,
+    operation_type: "expense",
+    source_type: "courier_payment",
+    payment_method: "cash",
+    created_by_user: { id: `m${id}`, name: `Menejer ${id}`, role: "manager" },
+    createdAt: `2026-10-17T0${id}:00:00.000Z`,
+    ...extra,
+  });
+
+  it("carries payment_ack into the history rows and marks disputed / confirmed ones", () => {
+    cashboxState.response = courierDetailResponse({
+      history: [
+        historyRow("1", { payment_ack: "disputed" }),
+        historyRow("2", { payment_ack: "confirmed" }),
+        historyRow("3", { payment_ack: null }),
+      ],
+    });
+    openWithoutState("/payments/cash-detail/263?type=courier");
+
+    const rowOf = (name: string) => screen.getByRole("button", { name: new RegExp(name) });
+    expect(within(rowOf("Menejer 1")).getByText("Noto'g'ri")).toHaveAttribute("data-payment-ack", "disputed");
+    expect(within(rowOf("Menejer 2")).getByText("Tasdiqlangan")).toHaveAttribute("data-payment-ack", "confirmed");
+    expect(rowOf("Menejer 3").querySelector("[data-payment-ack]")).toBeNull();
+  });
+});

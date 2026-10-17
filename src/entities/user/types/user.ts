@@ -81,6 +81,19 @@ export interface User {
    * qaytaradi — admin uni marketga beradi.
    */
   market_tg_token?: string | null;
+  /**
+   * Shaxsiy Telegram botga ulanganmi (td89SKXQ). Backend xom `telegram_id` ni
+   * qaytarmaydi — faqat shu holat; `telegram_username` va `telegram_linked_at`
+   * esa ulangan bo'lsa keladi (`GET /auth/my-profile`).
+   */
+  telegram_linked?: boolean;
+  telegram_username?: string | null;
+  telegram_linked_at?: string | null;
+  /**
+   * (ysBqD9Nx) Market Telegram GURUHIDAGI buyurtma kartalarida mijoz ismi va telefoni ko'rinadimi.
+   * Backend sukuti `true`; `false` — ism yashirin, telefon niqoblangan. Faqat market qatorida.
+   */
+  tg_group_show_customer_pii?: boolean;
   default_tariff: "home" | "center";
   region_id?: string | null;
   region?: Region | null;

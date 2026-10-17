@@ -114,6 +114,10 @@ export const useCameraQrScanner = ({
         setCameraUnavailable(false);
         setHasTorch(await scanner.hasFlash().catch(() => false));
       } catch (error) {
+        // Bekor qilingan ishga tushirish (StrictMode'ning ikkinchi effekti, `restartScanner`, `isActive` o'chdi):
+        // eski skaner yo'q qilingani uchun `start()` rad etadi — bu kamera xatosi EMAS. Aks holda kechikkan rad
+        // yangi, ishlab turgan sessiya ustiga «kamera ochilmadi» deb yozib qo'yardi.
+        if (cancelled) return;
         const messageText = error instanceof Error ? error.message : String(error);
         const isInterruptedStart =
           messageText.includes("AbortError") ||
