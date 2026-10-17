@@ -1,227 +1,273 @@
-import { yupResolver } from "@hookform/resolvers/yup";
-import { Alert, Button, Form, Input, Modal, Select } from "antd";
-import { Controller, useForm } from "react-hook-form";
-import { useEffect } from "react";
+// dizayn-v2: superadmin-notifications-create-dialog
+import { useEffect, useEffectEvent, useRef, useState, type FormEvent } from "react";
+import { Bell, Clock, ExternalLink, Link2, RefreshCw, Store } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { useMarkets } from "../../../entities/markets";
-import { notificationSchema } from "../model/schema";
-import type { CreateNotificationDto } from "../model/types";
-import { useCreateNotification } from "../api/useCreateNotification";
+import {
+  GroupTypeChoice,
+  useNotificationMarkets,
+  useNotifications,
+  type NotificationGroupType,
+} from "../../../entities/notification";
+import { queryKeys } from "../../../shared/config/queryKeys";
+import { getApiErrorMessage } from "../../../shared/lib/apiError";
+import { formatTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { notify } from "../../../shared/lib/notify";
+import { Button, buttonClasses, Dialog, Field, Select, Spinner } from "../../../shared/ui/primitives";
+import { useRequestGroupLink } from "../api/useRequestGroupLink";
+import { GROUP_LINK_POLL_MS } from "../model/constants";
+import type { GroupLinkCode } from "../model/types";
+import DialogAlert from "./DialogAlert";
+import GroupLinkQr from "./GroupLinkQr";
 
 interface NotificationFormModalProps {
   open: boolean;
   onClose: () => void;
 }
 
-type MarketOption = {
-  id?: string | number;
-  name?: string;
-  username?: string;
-  phone_number?: string;
-};
+/**
+ * «Bildirishnoma qo'shish» — market guruhini bir martalik havola bilan ulash (Trello 6jXw0DDr, 4TfLyTrL).
+ *
+ * Oqim: market + xabar turi → «Ulash havolasini olish» (`POST /telegram/link-code`, `purpose: "market_group"`)
+ * → QR + «Telegram'da ochish» (`t.me/<bot>?startgroup=<kod>`, 10 daqiqa, bir marta). Foydalanuvchi guruhni
+ * tanlaydi, bot guruhga qo'shilib uni o'zi ulaydi. Oyna shu paytda har 4 soniyada `GET /notifications
+ * ?market_id&group_type` ni so'raydi: qator paydo bo'lsa — oyna yopiladi, «Guruh ulandi».
+ *
+ * Mavjud (market, tur) ulanishini bot HECH QACHON almashtirmaydi — bunday holatda havola berilmaydi,
+ * foydalanuvchiga ro'yxatda tahrirlash yoki o'chirish aytiladi. Qo'lda «Telegram guruh ID» maydoni va
+ * `VITE_TELEGRAM_NOTIFICATION_BOT_USERNAME` endi kerak emas (maketdagi qo'lda oqim o'rniga — kartadagi qaror).
+ */
+const CreateGroupLinkDialog = ({ open, onClose }: NotificationFormModalProps) => {
+  const { t } = useTranslation("notifications");
+  const queryClient = useQueryClient();
+  const { options, getName, isLoading: marketsLoading } = useNotificationMarkets(open);
+  const requestLink = useRequestGroupLink();
 
-const getMarketItems = (value: unknown): MarketOption[] => {
-  if (!value) return [];
+  const [marketId, setMarketId] = useState<string | null>(null);
+  const [groupType, setGroupType] = useState<NotificationGroupType>("create");
+  const [marketMissing, setMarketMissing] = useState(false);
+  const [link, setLink] = useState<GroupLinkCode | null>(null);
+  const [expiredLink, setExpiredLink] = useState<GroupLinkCode | null>(null);
+  const marketRef = useRef<HTMLElement>(null);
+  /** Tanlov almashsa, kechikkan javob eski (market, tur) havolasini ko'rsatmasin. */
+  const requestSeq = useRef(0);
 
-  const response = value as Record<string, unknown>;
-  const responseData = response?.data as unknown;
-  const responseDataRecord =
-    typeof responseData === "object" && responseData !== null
-      ? (responseData as Record<string, unknown>)
-      : null;
+  // Tanlangan (market, tur) uchun ulanish: havoladan oldin — «allaqachon ulangan» tekshiruvi,
+  // havoladan keyin — ulanishni kutish (har 4 s, oyna fonda bo'lsa ham).
+  const linkQuery = useNotifications(
+    { market_id: marketId ?? undefined, group_type: groupType, page: 1, limit: 1 },
+    {
+      enabled: open && Boolean(marketId),
+      refetchInterval: open && link ? GROUP_LINK_POLL_MS : false,
+      refetchIntervalInBackground: true,
+    },
+  );
+  const connection = marketId
+    ? (linkQuery.data?.data.find((row) => row.market_id === marketId && row.group_type === groupType) ?? null)
+    : null;
+  const checking = Boolean(marketId) && linkQuery.isLoading;
+  const expired = link !== null && expiredLink === link;
+  const marketName = marketId ? (getName(marketId) ?? `#${marketId}`) : "";
 
-  if (Array.isArray(value)) return value as MarketOption[];
-  if (Array.isArray(responseData)) return responseData as MarketOption[];
-  if (Array.isArray(response?.items)) return response.items as MarketOption[];
-  if (Array.isArray(responseDataRecord?.items)) return responseDataRecord.items as MarketOption[];
+  // Havola muddati tugadi — «Yangi havola olish».
+  useEffect(() => {
+    if (!link) return;
+    const left = Date.parse(link.expires_at) - Date.now();
+    if (!Number.isFinite(left)) return;
+    const timer = window.setTimeout(() => setExpiredLink(link), Math.max(0, left));
+    return () => window.clearTimeout(timer);
+  }, [link]);
 
-  return [];
+  // Havola olingach qator paydo bo'ldi — bot guruhni uladi.
+  const connected = Boolean(open && link && connection);
+  const announceConnected = useEffectEvent(() => {
+    notify.success(t("telegramGroups.create.connected"), {
+      description: t("telegramGroups.create.connectedDescription", {
+        market: marketName,
+        type: t(`telegramGroups.typeChoice.${groupType}`),
+      }),
+    });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
+    onClose();
+  });
+  useEffect(() => {
+    if (connected) announceConnected();
+  }, [connected]);
+
+  const clearLink = () => {
+    requestSeq.current += 1;
+    setLink(null);
+    requestLink.reset();
+  };
+
+  const handleMarketChange = (value: string | null) => {
+    setMarketId(value);
+    if (value) setMarketMissing(false);
+    clearLink();
+  };
+
+  const handleTypeChange = (value: NotificationGroupType) => {
+    setGroupType(value);
+    clearLink();
+  };
+
+  const handleRequestLink = async (event?: FormEvent) => {
+    event?.preventDefault();
+    if (!marketId) {
+      setMarketMissing(true);
+      marketRef.current?.focus();
+      return;
+    }
+    if (connection || requestLink.isPending) return;
+    const seq = ++requestSeq.current;
+    try {
+      const next = await requestLink.mutateAsync({ purpose: "market_group", group_type: groupType, market_id: marketId });
+      if (seq === requestSeq.current) setLink(next);
+    } catch (error) {
+      if (seq !== requestSeq.current) return;
+      notify.error(t("telegramGroups.create.linkError"), { description: getApiErrorMessage(error) || undefined });
+    }
+  };
+
+  const activeLink = link && !expired ? link : null;
+
+  const primaryAction = activeLink ? (
+    activeLink.deep_link ? (
+      <a
+        href={activeLink.deep_link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={buttonClasses({ variant: "primary", className: "flex-[999_1_200px]" })}
+      >
+        <ExternalLink size={18} aria-hidden="true" className="shrink-0" />
+        {t("telegramGroups.create.open")}
+      </a>
+    ) : null
+  ) : (
+    <Button
+      type="submit"
+      variant="primary"
+      leftIcon={expired ? RefreshCw : Link2}
+      loading={requestLink.isPending}
+      loadingText={t("telegramGroups.create.gettingLink")}
+      disabled={Boolean(connection) || checking}
+      className="flex-[999_1_200px]"
+    >
+      {expired ? t("telegramGroups.create.newLink") : t("telegramGroups.create.getLink")}
+    </Button>
+  );
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      size="lg"
+      icon={Bell}
+      title={t("telegramGroups.create.title")}
+      busy={requestLink.isPending}
+      onSubmit={(event) => void handleRequestLink(event)}
+      formProps={{ noValidate: true }}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} className="flex-[1_1_120px]">
+            {t("telegramGroups.cancel")}
+          </Button>
+          {primaryAction}
+        </>
+      }
+    >
+      <DialogAlert tone="info" title={t("telegramGroups.create.introTitle")}>
+        {t("telegramGroups.create.intro")}
+      </DialogAlert>
+
+      <Field
+        label={t("telegramGroups.create.market")}
+        labelAs="span"
+        required
+        error={marketMissing ? t("telegramGroups.create.marketRequired") : undefined}
+      >
+        <Select
+          ref={marketRef}
+          searchable
+          icon={Store}
+          options={options}
+          value={marketId}
+          onChange={(value) => handleMarketChange(value)}
+          placeholder={t("telegramGroups.create.marketPlaceholder")}
+          listLabel={t("telegramGroups.create.marketList")}
+          loading={marketsLoading}
+        />
+      </Field>
+
+      <Field label={t("telegramGroups.create.type")} labelAs="span" required hint={t("telegramGroups.create.typeHint")}>
+        <GroupTypeChoice name="notification-create-type" value={groupType} onChange={handleTypeChange} />
+      </Field>
+
+      {connection && !link ? (
+        <DialogAlert tone="warning" title={t("telegramGroups.create.existsTitle")}>
+          {t("telegramGroups.create.exists", { market: marketName, groupId: connection.group_id })}
+        </DialogAlert>
+      ) : null}
+
+      {link && expired ? (
+        <DialogAlert tone="warning" title={t("telegramGroups.create.expired")}>
+          {t("telegramGroups.create.expiredHint")}
+        </DialogAlert>
+      ) : null}
+
+      {activeLink ? (
+        <section
+          aria-label={t("telegramGroups.create.linkTitle")}
+          className="flex min-w-0 items-start gap-4 rounded-xl bg-sunken p-4 max-md:flex-col max-md:items-center"
+        >
+          {activeLink.deep_link ? (
+            // Telefonda havola tugmasi asosiy yo'l — QR qadamlardan keyin (boshqa qurilmadan skanerlash uchun).
+            <GroupLinkQr value={activeLink.deep_link} alt={t("telegramGroups.create.qrAlt")} className="max-md:order-last" />
+          ) : null}
+          <div className="flex min-w-0 flex-1 flex-col gap-3 max-md:self-stretch">
+            <h3 className="text-sm font-semibold text-text">{t("telegramGroups.create.linkTitle")}</h3>
+            {activeLink.deep_link ? (
+              <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-[13px] text-text-muted">
+                <li>{t("telegramGroups.create.step1")}</li>
+                <li>{t("telegramGroups.create.step2")}</li>
+                <li>{t("telegramGroups.create.step3")}</li>
+              </ol>
+            ) : (
+              <div className="flex flex-col gap-1.5 text-[13px] text-text-muted">
+                <p>{t("telegramGroups.create.command")}</p>
+                <code className="rounded-lg bg-surface px-3 py-2 font-mono text-sm break-all text-text select-all">
+                  {activeLink.command}
+                </code>
+              </div>
+            )}
+            <p className="flex items-center gap-1.5 text-[13px] text-text-muted">
+              <Clock size={16} aria-hidden="true" className="shrink-0" />
+              {t("telegramGroups.create.expiresAt", { time: formatTimeLocalized(activeLink.expires_at) })}
+            </p>
+            <p role="status" className="flex items-center gap-2 text-[13px] font-semibold text-text">
+              <Spinner size="sm" />
+              {t("telegramGroups.create.waiting")}
+            </p>
+          </div>
+        </section>
+      ) : null}
+    </Dialog>
+  );
 };
 
 /**
- * fix3b CODE-02: "Token orqali ulash" bo'limi olib tashlandi. U
- * `POST /notifications/connect-by-token` ga `{ token }` yuborardi, backend esa
- * `{ text, group_id }` talab qiladi — har doim 400. Guruh ikki yo'l bilan
- * ulanadi: market guruhga botni qo'shib maxfiy tokenni yuboradi (token market
- * sahifasida, faqat admin ko'radi) yoki admin shu forma orqali (market + Group
- * ID) ulaydi.
+ * Har ochilishda holat yangidan (market, tur, havola) — ichki oyna har ochilishda qayta o'rnatiladi;
+ * yopilish harakati paytida esa eski holat ko'rinib turadi.
  */
 const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) => {
-  const { t } = useTranslation("common");
-  const notificationBotUsername = import.meta.env.VITE_TELEGRAM_NOTIFICATION_BOT_USERNAME
-    ?.replace(/^@/, "")
-    .trim();
-  const addBotToGroupUrl = notificationBotUsername
-    ? `https://t.me/${notificationBotUsername}?startgroup=notification`
-    : "";
-  const { useGetMarkets } = useMarkets();
-  const marketsQuery = useGetMarkets({ status: "active", limit: 100 }, open);
-  const createNotification = useCreateNotification();
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<CreateNotificationDto>({
-    resolver: yupResolver(notificationSchema),
-    defaultValues: {
-      market_id: "",
-      group_id: "",
-      group_type: "create",
-    },
-  });
+  const [session, setSession] = useState(0);
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setSession((value) => value + 1);
+  }
 
-  useEffect(() => {
-    if (!open) {
-      reset({
-        market_id: "",
-        group_id: "",
-        group_type: "create",
-      });
-    }
-  }, [open, reset]);
-
-  const onSubmit = handleSubmit(async (values) => {
-    try {
-      await createNotification.mutateAsync(values);
-      notify.success(t("notificationCreated"));
-      onClose();
-      reset();
-    } catch {
-      notify.error("Bildirishnomani yaratishda xatolik bo'ldi");
-    }
-  });
-
-  return (
-    <Modal
-      destroyOnHidden
-      open={open}
-      title={t("addNotification")}
-      width={560}
-      footer={null}
-      onCancel={onClose}
-    >
-      <Form layout="vertical" onFinish={onSubmit}>
-        <Alert
-          className="mb-4"
-          type="info"
-          showIcon
-          message="Telegram groupga bildirishnoma ulash"
-          description={
-            <div className="space-y-1">
-              <p>Marketni tanlang, bot qo'shilgan Telegram group ID ni kiriting.</p>
-              <p className="text-xs">
-                Group ID odatda <span className="font-mono">-100</span> bilan boshlanadi.
-              </p>
-            </div>
-          }
-        />
-
-        {addBotToGroupUrl ? (
-          <Button
-            className="mb-4"
-            block
-            href={addBotToGroupUrl}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Botni Telegram groupga qo'shish
-          </Button>
-        ) : (
-          <Alert
-            className="mb-4"
-            type="warning"
-            showIcon
-            message="Bot username sozlanmagan"
-            description="Botni groupga qo'shish tugmasi chiqishi uchun .env faylga VITE_TELEGRAM_NOTIFICATION_BOT_USERNAME qo'shish kerak."
-          />
-        )}
-
-        <Form.Item
-          label={t("market")}
-          validateStatus={errors.market_id ? "error" : ""}
-          help={errors.market_id?.message}
-        >
-          <Controller
-            control={control}
-            name="market_id"
-            render={({ field }) => (
-              <Select
-                {...field}
-                showSearch
-                loading={marketsQuery.isLoading}
-                placeholder={t("selectMarket")}
-                optionFilterProp="label"
-                options={getMarketItems(marketsQuery.data).map((market) => ({
-                  value: String(market.id ?? ""),
-                  label: `${market.name ?? `#${market.id}`} ${
-                    market.phone_number ? `• ${market.phone_number}` : market.username ? `• ${market.username}` : ""
-                  }`,
-                }))}
-              />
-            )}
-          />
-        </Form.Item>
-
-        <Form.Item
-          label="Telegram group ID"
-          validateStatus={errors.group_id ? "error" : ""}
-          help={errors.group_id?.message}
-          extra="Masalan: -1001234567890. Bot shu groupga qo'shilgan bo'lishi kerak."
-        >
-          <Controller
-            control={control}
-            name="group_id"
-            render={({ field }) => <Input {...field} placeholder="-1001234567890" />}
-          />
-        </Form.Item>
-
-        <details className="mb-4 rounded-2xl border border-border-soft bg-main-soft p-3 text-sm dark:bg-background-soft">
-          <summary className="cursor-pointer font-semibold text-maindark dark:text-primary">
-            Group ID ni qanday olish mumkin?
-          </summary>
-          <div className="mt-3 space-y-2 text-text-muted dark:text-text-muted-dark">
-            <p>1. Notification botni Telegram groupga qo'shing.</p>
-            <p>2. Groupga oddiy xabar yozing: masalan, <span className="font-mono">test</span>.</p>
-            <p>3. Backend yoki bot logidan <span className="font-mono">message.chat.id</span> qiymatini oling.</p>
-            <p>
-              Group ID odatda <span className="font-mono">-100</span> bilan boshlanadi,
-              masalan <span className="font-mono">-1001234567890</span>.
-            </p>
-            <p className="font-semibold text-maindark dark:text-primary">
-              Eng qulay yechim: botga /id komandasi qo'shilsa, group ichida /id yozilganda ID ni o'zi chiqaradi.
-            </p>
-          </div>
-        </details>
-
-        <Form.Item
-          label="Qaysi xabar turi"
-          validateStatus={errors.group_type ? "error" : ""}
-          help={errors.group_type?.message}
-          extra="Bitta market uchun create va cancel guruhlarini alohida ulash mumkin."
-        >
-          <Controller
-            control={control}
-            name="group_type"
-            render={({ field }) => (
-              <Select
-                {...field}
-                options={[
-                  { value: "create", label: "Yangi buyurtmalar guruhi" },
-                  { value: "cancel", label: "Bekor qilinganlar guruhi" },
-                ]}
-              />
-            )}
-          />
-        </Form.Item>
-
-        <Button block type="primary" htmlType="submit" loading={createNotification.isPending}>
-          Bildirishnomani saqlash
-        </Button>
-      </Form>
-    </Modal>
-  );
+  return <CreateGroupLinkDialog key={session} open={open} onClose={onClose} />;
 };
 
 export default NotificationFormModal;

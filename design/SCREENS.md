@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**76 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **19** · qisman: **7** · v2 ga ko'chirilgan route: **10 / 76**
+**76 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **19** · qisman: **7** · v2 ga ko'chirilgan route: **11 / 76**
 
 ## Qanday ishlatiladi
 
@@ -104,7 +104,7 @@
 | `/integrations/sources` | Integratsiyalar | `src/pages/new_orders/external_orders/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 2 | eski |
 | `/integrations/sources/create` | Integratsiyalar | `src/pages/new_orders/external_orders/create.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 1 | eski |
 | `/integrations/sources/:id` | Integratsiyalar | `src/pages/new_orders/external_orders/detail.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 1 | eski |
-| `/notifications` | Bildirishnomalar | `src/pages/notifications/ui/NotificationsPage.tsx` | superadmin | 3 | eski |
+| `/notifications` | Bildirishnomalar | `src/pages/notifications/ui/NotificationsPage.tsx` | superadmin | 3 | v2 |
 | `/notifications/send` | Bildirishnomalar | `src/pages/notification-send/index.tsx` | superadmin, admin | 2 | eski |
 | `/notifications/sms` | Bildirishnomalar | `src/pages/notifications/ui/SmsPage.tsx` | superadmin, admin | 5 | eski |
 | `/activity-logs` | Tizim | `src/pages/activity-logs/index.tsx` | superadmin, admin | 5 | eski |
@@ -1252,17 +1252,17 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/notifications` — Bildirishnomalar — Telegram guruhlari
 
-- **Fayllar:** `src/pages/notifications/ui/NotificationsPage.tsx` · `src/widgets/notification-table/ui/NotificationTable.tsx` · `src/features/notification-create/ui/NotificationFormModal.tsx` · `src/features/notification-delete/ui/DeleteNotificationButton.tsx`
+- **Fayllar:** `src/pages/notifications/ui/NotificationsPage.tsx` · `src/widgets/notification-table/ui/NotificationTable.tsx` · `src/features/notification-create/ui/NotificationFormModal.tsx` · `src/features/notification-edit/ui/NotificationEditModal.tsx` · `src/features/notification-delete/ui/DeleteNotificationButton.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewNotifications` (access.ts → canViewNotifications)
 - **Rollar:** superadmin
 - **Menyuda:** «Bildirishnomalar» (`notifications`) — superadmin
-- **Holat:** eski
+- **Holat:** v2
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/notifications` | superadmin | `superadmin-notifications-telegram-groups` — Bildirishnomalar — Telegram guruhlari | [design/fragments/superadmin--notifications-telegram-groups.html](fragments/superadmin--notifications-telegram-groups.html) | sahifa | eski |
-| `/notifications` | superadmin | `superadmin-notifications-create-dialog` — Bildirishnoma qo'shish (modal)<br>↳ `src/features/notification-create/ui/NotificationFormModal.tsx` | [design/fragments/superadmin--notifications-create-dialog.html](fragments/superadmin--notifications-create-dialog.html) | oyna | eski |
-| `/notifications` | superadmin | `superadmin-notifications-delete-dialog` — Bildirishnomani o'chirish (tasdiq)<br>↳ `src/features/notification-delete/ui/DeleteNotificationButton.tsx` | [design/fragments/superadmin--notifications-delete-dialog.html](fragments/superadmin--notifications-delete-dialog.html) | oyna | eski |
+| `/notifications` | superadmin | `superadmin-notifications-telegram-groups` — Bildirishnomalar — Telegram guruhlari | [design/fragments/superadmin--notifications-telegram-groups.html](fragments/superadmin--notifications-telegram-groups.html) | sahifa | v2 |
+| `/notifications` | superadmin | `superadmin-notifications-create-dialog` — Bildirishnoma qo'shish (modal)<br>↳ `src/features/notification-create/ui/NotificationFormModal.tsx` | [design/fragments/superadmin--notifications-create-dialog.html](fragments/superadmin--notifications-create-dialog.html) | oyna | v2 |
+| `/notifications` | superadmin | `superadmin-notifications-delete-dialog` — Bildirishnomani o'chirish (tasdiq)<br>↳ `src/features/notification-delete/ui/DeleteNotificationButton.tsx` | [design/fragments/superadmin--notifications-delete-dialog.html](fragments/superadmin--notifications-delete-dialog.html) | oyna | v2 |
 
 #### `/notifications/send` — Xabar yuborish (tizim ichidagi bildirishnoma)
 
@@ -1632,9 +1632,9 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-integrations-legacy-sources` | Tashqi manbalar (eski: Integratsiyalar ro'yxati) | sahifa | `/integrations/sources` | `src/pages/new_orders/external_orders/index.tsx` | eski |
 | `superadmin-integrations-legacy-source-create` | Integratsiya yaratish (eski forma) | sahifa | `/integrations/sources/create` | `src/pages/new_orders/external_orders/create.tsx` | eski |
 | `superadmin-integrations-legacy-source-detail` | Integratsiya — QR skaner (eski) | sahifa | `/integrations/sources/:id` | `src/pages/new_orders/external_orders/detail.tsx` | eski |
-| `superadmin-notifications-telegram-groups` | Bildirishnomalar — Telegram guruhlari | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | eski |
-| `superadmin-notifications-create-dialog` | Bildirishnoma qo'shish (modal) | oyna | `/notifications` | `src/features/notification-create/ui/NotificationFormModal.tsx` | eski |
-| `superadmin-notifications-delete-dialog` | Bildirishnomani o'chirish (tasdiq) | oyna | `/notifications` | `src/features/notification-delete/ui/DeleteNotificationButton.tsx` | eski |
+| `superadmin-notifications-telegram-groups` | Bildirishnomalar — Telegram guruhlari | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | v2 |
+| `superadmin-notifications-create-dialog` | Bildirishnoma qo'shish (modal) | oyna | `/notifications` | `src/features/notification-create/ui/NotificationFormModal.tsx` | v2 |
+| `superadmin-notifications-delete-dialog` | Bildirishnomani o'chirish (tasdiq) | oyna | `/notifications` | `src/features/notification-delete/ui/DeleteNotificationButton.tsx` | v2 |
 | `superadmin-notifications-inbox` | Bildirishnomalar — Inbox (qo'ng'iroqcha) | sahifa | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | eski |
 | `superadmin-notifications-push-explain-dialog` | Bildirishnomalarni yoqasizmi? (tasdiq) | oyna | `/inbox` | `src/features/push-notifications/ui/PushPermissionButton.tsx` | eski |
 | `superadmin-notifications-send` | Xabar yuborish | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | eski |
@@ -2015,6 +2015,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/features/notification-create/ui/NotificationFormModal.tsx` | `/notifications` |
 | `src/features/notification-delete/ui/DeleteNotificationButton.tsx` | `/notifications` |
 | `src/features/notification-dispatch/ui/NotificationDispatchForm.tsx` | `/notifications/send` |
+| `src/features/notification-edit/ui/NotificationEditModal.tsx` | `/notifications` |
 | `src/features/order-return/ui/InitiateReturnModal.tsx` | `/orders/edit/:orderId` |
 | `src/features/order-return/ui/MarkReturnedModal.tsx` | `/orders/edit/:orderId` |
 | `src/features/order-tracking/ui/TrackingTimelineItem.tsx` | `/orders/edit/:orderId` |
