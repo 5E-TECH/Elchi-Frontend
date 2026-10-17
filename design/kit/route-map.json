@@ -1108,6 +1108,7 @@
         "src/pages/notifications/ui/NotificationsPage.tsx",
         "src/widgets/notification-table/ui/NotificationTable.tsx",
         "src/features/notification-create/ui/NotificationFormModal.tsx",
+        "src/features/notification-edit/ui/NotificationEditModal.tsx",
         "src/features/notification-delete/ui/DeleteNotificationButton.tsx"
       ],
       "views": {
