@@ -14,6 +14,7 @@ import { useAppNotification } from "../../../app/providers/notification/Notifica
 import type { ExpenseProofCondition } from "../../../entities/user/types/user";
 import type { RootState } from "../../../app/config/store";
 import { MarketTelegramTokenCard } from "./MarketTelegramTokenCard";
+import { TelegramLinkCard, canLinkTelegram } from "../../../features/telegram-link";
 
 interface UserDetailWidgetProps {
   user?: User;
@@ -56,6 +57,8 @@ export const UserDetailWidget = memo(
     // faqat market sahifasida (o'z profilida emas). Boshqa rollar uchun karta
     // umuman chizilmaydi (backend ham tokenni ularga bermaydi).
     const canSeeMarketTelegramToken = isMarket && canManagePrivilegedToggles && !isOwnProfile;
+    // Shaxsiy Telegram'ni botga ulash — faqat o'z profilida va faqat xodimlarga (mijoz/investor — yo'q).
+    const canLinkOwnTelegram = isOwnProfile && canLinkTelegram(user?.role);
 
     // ── Loading ──
     if (isLoading) {
@@ -269,6 +272,13 @@ export const UserDetailWidget = memo(
                 </div>
               }
             />
+            {canLinkOwnTelegram ? (
+              <TelegramLinkCard
+                linked={user.telegram_linked === true}
+                username={user.telegram_username}
+                linkedAt={user.telegram_linked_at}
+              />
+            ) : null}
             {canSeeMarketTelegramToken ? (
               <MarketTelegramTokenCard token={user.market_tg_token} />
             ) : null}
