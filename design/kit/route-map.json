@@ -165,19 +165,30 @@
     {
       "path": "/",
       "section": "dashboard",
-      "title": "Bosh sahifa — rolga qarab: DashboardPage yoki MarketDashboardPage",
+      "title": "Bosh sahifa — rolga qarab: DashboardPage yoki MarketDashboardPage (dizayn v2)",
       "components": [
         "src/app/lib/routes.tsx",
         "src/pages/dashboard/DashboardPage.tsx",
         "src/pages/dashboard/MarketDashboardPage.tsx",
-        "src/widgets/dashboard-statistics/ui/DashboardStatistics.tsx",
-        "src/widgets/dashboard-statistics/ui/OrderStatusDonut.tsx",
-        "src/widgets/dashboard-statistics/ui/SuccessGauge.tsx",
+        "src/widgets/dashboard-statistics/ui/DashboardHeader.tsx",
+        "src/widgets/dashboard-statistics/ui/DashboardGrid.tsx",
+        "src/widgets/dashboard-statistics/ui/SuccessRateCard.tsx",
+        "src/widgets/dashboard-statistics/ui/OrderStatusCard.tsx",
+        "src/pages/dashboard/ui/DeliveryQualityCard.tsx",
+        "src/pages/dashboard/ui/DeliveryResultsCard.tsx",
         "src/widgets/financial-analysis/ui/FinancialAnalysis.tsx",
-        "src/widgets/dashboard-top-performers/ui/TopPerformers.tsx",
-        "src/widgets/dashboard-performance-chart/ui/PerformanceChart.tsx",
-        "src/widgets/dashboard-region/ui/RegionStatsCard.tsx",
-        "src/pages/region/ui/UzbekistanRegionMap.tsx"
+        "src/widgets/financial-analysis/ui/FinancialTrendPlot.tsx",
+        "src/widgets/financial-analysis/ui/CashBalanceCard.tsx",
+        "src/widgets/dashboard-top-performers/ui/TopRankCard.tsx",
+        "src/widgets/dashboard-region/ui/RegionOverviewCard.tsx",
+        "src/widgets/dashboard-region/ui/RegionTiles.tsx",
+        "src/widgets/region-detail/ui/RegionDetailDialog.tsx",
+        "src/pages/dashboard/ui/CourierPlanCard.tsx",
+        "src/pages/dashboard/ui/CourierCashCard.tsx",
+        "src/pages/dashboard/ui/MarketSalesCard.tsx",
+        "src/pages/dashboard/ui/QuickActions.tsx",
+        "src/pages/dashboard/ui/ExtraCostApprovalsCard.tsx",
+        "src/shared/ui/charts/index.ts"
       ],
       "roles": { "superadmin": "", "admin": "", "manager": "→ /branch-dashboard", "registrator": "", "market": "", "courier": "" },
       "views": {
@@ -191,22 +202,26 @@
       "roleNotes": {
         "manager": "DashboardEntry menejerni /branch-dashboard ga yo'naltiradi."
       },
-      "note": "DashboardEntry (routes.tsx): market → MarketDashboardPage (xarajat tasdiqlari shu sahifada), qolganlar → DashboardPage (kuryer — alohida tarmoq isCourier)."
+      "note": "DashboardEntry (routes.tsx): market → MarketDashboardPage (xarajat tasdiqlari shu sahifada), qolganlar → DashboardPage (kuryer — alohida tarmoq isCourier). Dizayn v2 (G1): grafiklar — src/shared/ui/charts (recharts faqat «Moliyaviy tahlil» trendida, FinancialTrendPlot lazy + DeferredMount rootMargin 0; bundle byudjeti 450 KB — tests/e2e/dashboard-bundle.preview.spec.ts), viloyat oynasi — umumiy RegionDetailDialog (lazy, faqat bosilganda; registratorda daromadsiz — showRevenue=false, eski oyna xulqi). Reytinglar top 5 (telefonda top 3) + «Yana ko'rsatish». Chizilmaganlar (Taklif yoki API yo'q, spec §6): «Buyurtmalar vaqti» issiqlik xaritasi, KPI «Yo'qotilgan daromad», KPI sparkline, «maqsad 80%», «Sof foyda» qatori, market «Reytingdagi o'rningiz» / «Buyurtmalar dinamikasi», xarajat so'rovida so'rovchi ismi va buyurtma raqami, kuryer «Oxirgi 7 kun». Ega savollari — sukut javoblari qo'llangan (spec §9): Q1 delta va «Kecha» — oldingi davr uchun ikkinchi analytics so'rovi («Barchasi»da yo'q); Q2 gauge belgisi «Yaxshi chegarasi · 70%»; Q3 registrator sarlavha izohida filial nomi (backend registratorni filialga cheklaydi); Q4 «Moliyaviy tahlil» izohi «Daromad · oldingi davr bilan solishtirish», qator «Daromad»; Q5 kuryer «Kassa» sharsharasi faqat my-cashbox bugungi tarixni bersa, aks holda «Qo'lingizdagi pul»; Q6 market «Tasdiqlash / Rad etish» tasdiq oynasisiz (maketdagidek); Q7 «Barchasi»da «Yetkazish sifati» o'rnida bo'sh holat, «Moliyaviy tahlil» va «Kassa» yashirin."
     },
     {
       "path": "/branch-dashboard",
       "section": "dashboard",
-      "title": "Filial paneli (menejer bosh sahifasi)",
+      "title": "Filial paneli (menejer bosh sahifasi, dizayn v2)",
       "components": [
+        "src/pages/branch-dashboard/index.tsx",
         "src/pages/branch-dashboard/ui/BranchDashboardPage.tsx",
-        "src/pages/branch-dashboard/ui/BranchDashboardCards.tsx",
+        "src/pages/branch-dashboard/ui/BranchCards.tsx",
         "src/pages/branch-dashboard/ui/branchDashboardAdapter.ts",
-        "src/widgets/dashboard-top-performers/ui/TopPerformers.tsx"
+        "src/widgets/dashboard-statistics/ui/DashboardHeader.tsx",
+        "src/widgets/dashboard-top-performers/ui/TopRankCard.tsx",
+        "src/shared/ui/charts/index.ts"
       ],
       "views": {
         "manager": ["branch-dashboard-main"],
         "tizim": ["charts"]
-      }
+      },
+      "note": "Asosiy fayl — ui/BranchDashboardPage.tsx (index.tsx faqat qayta eksport). «Sizning filial» — reytingda pinned qator; stats_unavailable — ErrorState «Statistika vaqtincha mavjud emas»; davr sukuti — bugun."
     },
     {
       "path": "/orders",
@@ -482,10 +497,14 @@
     {
       "path": "/new-orders/userDetail/:id",
       "section": "newOrders",
-      "title": "Foydalanuvchi tafsiloti (eski havola, /new-orders ichida)",
-      "components": ["src/pages/users/detail/UserDetailPage.tsx", "src/widgets/user-detail/ui/UserDetailWidget.tsx"],
+      "title": "Foydalanuvchi tafsiloti (eski havola, /new-orders ichida; dizayn v2)",
+      "components": [
+        "src/pages/users/detail/UserDetailPage.tsx",
+        "src/widgets/user-detail/ui/UserDetailView.tsx",
+        "src/widgets/user-detail/ui/MarketTelegramTokenCard.tsx"
+      ],
       "views": {},
-      "note": "Alohida maket yo'q — <rol>-users-detail maketlariga qarang (superadmin-users-detail)."
+      "note": "Alohida maket yo'q — <rol>-users-detail maketlari (superadmin-users-detail). /all-users/:id bilan bir xil v2 sahifa (UserDetailView); «Qabul va yaratish» qobig'i bu yo'lda bare — sarlavha va «Buyurtma yaratish» takrorlanmaydi (newOrdersShell.ts), «←» — navigate(-1)."
     },
     {
       "path": "/mails",
@@ -846,12 +865,15 @@
     {
       "path": "/products",
       "section": "products",
-      "title": "Mahsulotlar ro'yxati (tahrirlash, o'chirish, yaratish uchun market tanlash)",
+      "title": "Mahsulotlar ro'yxati (tahrirlash, o'chirish, yaratish uchun market tanlash; dizayn v2)",
       "components": [
         "src/pages/products/list/index.tsx",
-        "src/shared/components/popupSelect.tsx",
-        "src/shared/components/popupConfirm.tsx",
-        "src/shared/components/popupUpdate.tsx"
+        "src/pages/products/list/ui/SelectMarketDialog.tsx",
+        "src/pages/products/list/ui/EditProductDialog.tsx",
+        "src/pages/products/ui/useDeleteProductConfirm.tsx",
+        "src/pages/products/ui/ProductImageField.tsx",
+        "src/pages/products/ui/ProductThumb.tsx",
+        "src/pages/products/model/productView.ts"
       ],
       "views": {
         "superadmin": ["products-list", "products-select-market-dialog", "products-edit-dialog", "products-delete-dialog"],
@@ -859,46 +881,53 @@
         "manager": ["products-list", "products-market-select-dialog", "products-edit-dialog", "products-delete-dialog"],
         "registrator": ["products-list", "products-market-select-dialog", "products-edit-dialog", "products-delete-dialog"],
         "market": ["products-list", "products-edit-dialog", "products-delete-dialog"]
-      }
+      },
+      "note": "Market rolida GET product/my-products (search/page/limit), xodimda GET product + market filtri (URL market_id). Ro'yxat so'rovlari entities/product hook'lari (keepPreviousData, silentError)."
     },
     {
       "path": "/products/create-product/:id",
       "section": "products",
-      "title": "Mahsulot yaratish (:id — market)",
-      "components": ["src/pages/products/create/index.tsx"],
+      "title": "Mahsulot yaratish (:id — market; dizayn v2)",
+      "components": [
+        "src/pages/products/create/index.tsx",
+        "src/pages/products/ui/ProductImageField.tsx",
+        "src/pages/products/ui/ProductThumb.tsx",
+        "src/pages/products/ui/useDeleteProductConfirm.tsx"
+      ],
       "views": {
         "superadmin": ["products-create"],
         "admin": ["products-create"],
         "manager": ["products-create"],
         "registrator": ["products-create"],
         "market": ["products-create"]
-      }
+      },
+      "note": "O'ngdagi «Market mahsulotlari» ro'yxati bitta so'rovda (limit 500 — PRODUCT_LIST_MAX_LIMIT); qalam — forma tahrir rejimi; nofaol market — yaratish bloklanadi."
     },
     {
       "path": "/all-users",
       "section": "users",
-      "title": "Foydalanuvchilar ro'yxati",
+      "title": "Foydalanuvchilar ro'yxati (dizayn v2)",
       "components": [
         "src/pages/users/list/UserListPage.tsx",
         "src/widgets/user-list/ui/UserListTable.tsx",
-        "src/widgets/user-list/ui/UserStats.tsx",
-        "src/shared/components/popupConfirm.tsx"
+        "src/widgets/user-list/ui/UserListKpi.tsx",
+        "src/widgets/user-list/ui/UserRowMenu.tsx",
+        "src/features/user/update-user/ui/UpdateUserModal.tsx"
       ],
       "views": {
         "superadmin": ["users-list", "users-delete-dialog"],
         "admin": ["users-list", "users-delete-dialog"],
         "manager": ["users-list"]
-      }
+      },
+      "note": "Tablar, qidiruv va holat — URL'da (role, search, status); menejerda amallar yo'q, GET branches so'ralmaydi. Chizilmaganlar (backend ro'yxatda superadmin va mijozni bermaydi, spec §6): KPI «shundan {n} ta mijoz», segbar «Mijozlar», tablar «Superadminlar», «Mijozlar». Ega savoli Q8 sukuti: sarlavha izohi maketdagidek («… va mijozlar hisoblarini boshqarish»)."
     },
     {
       "path": "/all-users/create-user",
       "section": "users",
-      "title": "Foydalanuvchi yaratish",
+      "title": "Foydalanuvchi yaratish (dizayn v2)",
       "components": [
         "src/pages/users/create/CreateUserPage.tsx",
-        "src/widgets/user-create/ui/CreateUserWidget.tsx",
-        "src/features/user/create-user/ui/CreateUserForm.tsx",
-        "src/features/user/create-user/ui/RoleSelector.tsx"
+        "src/features/user/create-user/ui/CreateUserForm.tsx"
       ],
       "views": {
         "superadmin": ["users-create"],
@@ -910,10 +939,10 @@
     {
       "path": "/all-users/:id",
       "section": "users",
-      "title": "Foydalanuvchi tafsiloti",
+      "title": "Foydalanuvchi tafsiloti (dizayn v2)",
       "components": [
         "src/pages/users/detail/UserDetailPage.tsx",
-        "src/widgets/user-detail/ui/UserDetailWidget.tsx",
+        "src/widgets/user-detail/ui/UserDetailView.tsx",
         "src/widgets/user-detail/ui/MarketTelegramTokenCard.tsx",
         "src/features/user/update-user/ui/UpdateUserModal.tsx",
         "src/features/courier-transfer-branch/ui/TransferCourierButton.tsx",
@@ -923,17 +952,27 @@
         "superadmin": ["users-detail", "users-edit-dialog", "users-courier-transfer-dialog"],
         "admin": ["users-detail", "users-edit-dialog", "users-transfer-courier-dialog"],
         "manager": ["users-detail", "users-edit-dialog"]
-      }
+      },
+      "note": "Yangi v2 UserDetailView; eski UserDetailWidget faqat /profile uchun muzlatilgan. «Faoliyat» (Taklif) chizilmaydi. Ega savoli Q9 sukuti: menejer xodimidagi «Oylik maosh» kartasi (to'plangan / kun qoldi) chizilmaydi — faqat «Profil ma'lumotlari»dagi maosh va to'lov kuni. Mijoz (customer) — maket yo'q, eng yaqini superadmin-users-detail."
     },
     {
       "path": "/regions",
       "section": "regions",
-      "title": "Hududlar — xarita va statistika (menejer/kuryer: o'z hududi)",
+      "title": "Hududlar — xarita va statistika (menejer/kuryer: o'z viloyati; dizayn v2)",
       "components": [
         "src/pages/region/index.tsx",
+        "src/pages/region/ui/RegionsOverview.tsx",
+        "src/pages/region/ui/RegionsMapCard.tsx",
+        "src/pages/region/ui/RegionsSuccessCards.tsx",
         "src/pages/region/ui/UzbekistanRegionMap.tsx",
-        "src/pages/region/ui/ScopedRegionStatistics.tsx",
-        "src/pages/region/model/regionScope.ts"
+        "src/pages/region/ui/RegionPeriodControls.tsx",
+        "src/pages/region/ui/regionBlocks.tsx",
+        "src/pages/region/ui/ScopedRegionView.tsx",
+        "src/pages/region/ui/ScopedDistricts.tsx",
+        "src/pages/region/model/regionsModel.ts",
+        "src/pages/region/model/scopedModel.ts",
+        "src/pages/region/model/regionPeriod.ts",
+        "src/widgets/region-detail/ui/RegionDetailDialog.tsx"
       ],
       "views": {
         "superadmin": ["regions-map", "regions-region-modal"],
@@ -942,13 +981,17 @@
         "courier": ["regions-scoped"],
         "tizim": ["charts"]
       },
-      "note": "Viloyat oynasi — UzbekistanRegionMap.tsx ichidagi Modal (bosh sahifadagi xarita ham shu)."
+      "note": "Viloyat oynasi — umumiy RegionDetailDialog (widgets/region-detail, lazy; bosh sahifa kartogrammasi ham shu). Menejer va kuryer — GET region/my/district-stats (stats/all va orders so'rovlari yo'q). Ega savollari sukuti: Q11 xarita — Highcharts lazy, v2 tokenlar; Q12 scoped sarlavhalarda filial / «sizga tegishli» da'vosi yo'q («{viloyat} buyurtmalari · …» — backend butun viloyat raqamlarini beradi). Chizilmagan: oynadagi «Kunlik buyurtmalar» (Taklif), scoped filial/kuryer kesimi (API yo'q)."
     },
     {
       "path": "/regions/districts",
       "section": "regions",
       "title": "Tumanlar boshqaruvi",
-      "components": ["src/pages/region/pages/districts/index.tsx"],
+      "components": [
+        "src/pages/region/pages/districts/index.tsx",
+        "src/pages/region/ui/DistrictBoard.tsx",
+        "src/pages/region/model/boardModel.ts"
+      ],
       "roles": { "superadmin": "" },
       "views": {
         "superadmin": ["regions-districts"]
@@ -959,56 +1002,70 @@
       "path": "/regions/sato-management",
       "section": "regions",
       "title": "Tumanlarni o'tkazish (SATO)",
-      "components": ["src/pages/region/pages/sato-management/index.tsx"],
+      "components": [
+        "src/pages/region/pages/sato-management/index.tsx",
+        "src/pages/region/ui/DistrictBoard.tsx",
+        "src/pages/region/ui/MoveDistrictDialog.tsx",
+        "src/pages/region/model/boardModel.ts"
+      ],
       "roles": { "superadmin": "", "admin": "" },
       "views": {
         "superadmin": ["regions-sato-management"],
         "admin": ["regions-sato-management"]
       },
-      "note": "Komponent ichida: superadmin/admin bo'lmasa → /regions."
+      "note": "Komponent ichida: superadmin/admin bo'lmasa → /regions. Telefonda sudrash o'rniga ⇆ — MoveDistrictDialog (maket yo'q — eng yaqini superadmin-regions-sato-management)."
     },
     {
       "path": "/regions/logist-assignment",
       "section": "regions",
       "title": "Logist biriktirish",
-      "components": ["src/pages/region/pages/logist-assignment/index.tsx"],
+      "components": [
+        "src/pages/region/pages/logist-assignment/index.tsx"
+      ],
       "roles": { "superadmin": "", "admin": "" },
       "views": {
         "superadmin": ["regions-logist-assignment"],
         "admin": ["regions-logist-assignment"]
       },
-      "note": "Komponent ichida: superadmin/admin bo'lmasa → /regions."
+      "note": "Komponent ichida: superadmin/admin bo'lmasa → /regions. Ega savoli Q13 sukuti: maketdagi bo'sh holat «Bo'lim hali ishga tushmagan» + «Hududlarga qaytish» (backend'da GET /logists, PATCH region/{id}/logist bor — ishlaydigan sahifa uchun maket kerak)."
     },
     {
       "path": "/branches",
       "section": "branches",
-      "title": "Filiallar — daraxt / jadval / kartalar",
+      "title": "Filiallar — daraxt / jadval / kartalar (dizayn v2)",
       "components": [
         "src/pages/branches/ui/BranchesPage.tsx",
         "src/widgets/branch-list/ui/BranchListWidget.tsx",
+        "src/widgets/branch-list/ui/BranchSummaryCard.tsx",
         "src/widgets/branch-list/ui/BranchTree.tsx",
         "src/widgets/branch-list/ui/BranchTable.tsx",
         "src/widgets/branch-list/ui/BranchCards.tsx",
-        "src/features/branch-create/ui/BranchFormModal.tsx"
+        "src/widgets/branch-list/ui/BranchRowMenu.tsx",
+        "src/features/branch-create/ui/BranchFormModal.tsx",
+        "src/features/branch/ui/BranchFormDialog.tsx",
+        "src/features/branch-edit/ui/BranchEditModal.tsx"
       ],
       "views": {
         "superadmin": ["branches-list-tree", "branches-list-table", "branches-create-dialog"]
-      }
+      },
+      "note": "Tahrirlash oynasi — yaratish oynasi bilan bir xil forma (BranchFormDialog; maket yo'q — eng yaqini superadmin-branches-create-dialog)."
     },
     {
       "path": "/branches/:id",
       "section": "branches",
-      "title": "Filial tafsiloti",
+      "title": "Filial tafsiloti (dizayn v2)",
       "components": [
         "src/pages/branches/ui/BranchDetailPage.tsx",
         "src/widgets/branch-detail/ui/BranchDetailWidget.tsx",
         "src/widgets/branch-detail/ui/BranchEmployeesSection.tsx",
-        "src/widgets/branch-detail/ui/BranchSettingsSection.tsx",
-        "src/features/branch-add-employee/ui/AddEmployeeModal.tsx"
+        "src/features/branch-add-employee/ui/AddEmployeeModal.tsx",
+        "src/features/branch-remove-employee/ui/RemoveEmployeeButton.tsx",
+        "src/features/courier-transfer-branch/ui/TransferCourierButton.tsx"
       ],
       "views": {
         "superadmin": ["branches-detail", "branches-add-employee-dialog"]
-      }
+      },
+      "note": "404 — sahifada «Filial topilmadi» (global xabar takrorlanmaydi). Ega savollari sukuti: Q10 «Filial ko'rsatkichlari» bo'limi (KPI, daromad trendi, holat, kuryerlar reytingi) chizilmaydi — analytics branch_id qabul qilmaydi (backend kartasi kerak); Q14 filial sozlamalari (config) — sahifada hech qachon chizilmagan, o'lik kod sifatida o'chirildi."
     },
     {
       "path": "/integrations/connections",
@@ -1404,10 +1461,10 @@
     "registrator-dashboard-main": "src/pages/dashboard/DashboardPage.tsx",
     "courier-dashboard-home": "src/pages/dashboard/DashboardPage.tsx",
     "market-dashboard-home": "src/pages/dashboard/MarketDashboardPage.tsx",
-    "market-dashboard-extra-cost-approvals": "src/pages/dashboard/MarketDashboardPage.tsx",
-    "superadmin-dashboard-region-modal": "src/pages/region/ui/UzbekistanRegionMap.tsx",
-    "superadmin-regions-region-modal": "src/pages/region/ui/UzbekistanRegionMap.tsx",
-    "admin-regions-region-detail-dialog": "src/pages/region/ui/UzbekistanRegionMap.tsx",
+    "market-dashboard-extra-cost-approvals": "src/pages/dashboard/ui/ExtraCostApprovalsCard.tsx",
+    "superadmin-dashboard-region-modal": "src/widgets/region-detail/ui/RegionDetailDialog.tsx",
+    "superadmin-regions-region-modal": "src/widgets/region-detail/ui/RegionDetailDialog.tsx",
+    "admin-regions-region-detail-dialog": "src/widgets/region-detail/ui/RegionDetailDialog.tsx",
     "courier-dashboard-mobile-menu": "src/widgets/Sidebar/ui/MobileMenu.tsx",
     "courier-dashboard-mobile-search": "src/widgets/header/ui/SearchScreen.tsx",
     "common-bell-dropdown": "src/widgets/header/ui/NotificationsMenu.tsx",
@@ -1512,8 +1569,30 @@
     "manager-users-edit-dialog": "src/features/user/update-user/ui/UpdateUserModal.tsx",
     "superadmin-users-courier-transfer-dialog": "src/features/courier-transfer-branch/ui/TransferCourierModal.tsx",
     "admin-users-transfer-courier-dialog": "src/features/courier-transfer-branch/ui/TransferCourierModal.tsx",
+    "manager-branch-dashboard-main": "src/pages/branch-dashboard/ui/BranchDashboardPage.tsx",
+    "manager-regions-scoped": "src/pages/region/ui/ScopedRegionView.tsx",
+    "courier-regions-scoped": "src/pages/region/ui/ScopedRegionView.tsx",
+    "superadmin-users-delete-dialog": "src/widgets/user-list/ui/UserListTable.tsx",
+    "admin-users-delete-dialog": "src/widgets/user-list/ui/UserListTable.tsx",
+    "superadmin-products-select-market-dialog": "src/pages/products/list/ui/SelectMarketDialog.tsx",
+    "admin-products-market-select-dialog": "src/pages/products/list/ui/SelectMarketDialog.tsx",
+    "manager-products-market-select-dialog": "src/pages/products/list/ui/SelectMarketDialog.tsx",
+    "registrator-products-market-select-dialog": "src/pages/products/list/ui/SelectMarketDialog.tsx",
+    "superadmin-products-edit-dialog": "src/pages/products/list/ui/EditProductDialog.tsx",
+    "admin-products-edit-dialog": "src/pages/products/list/ui/EditProductDialog.tsx",
+    "manager-products-edit-dialog": "src/pages/products/list/ui/EditProductDialog.tsx",
+    "registrator-products-edit-dialog": "src/pages/products/list/ui/EditProductDialog.tsx",
+    "market-products-edit-dialog": "src/pages/products/list/ui/EditProductDialog.tsx",
+    "superadmin-products-delete-dialog": "src/pages/products/ui/useDeleteProductConfirm.tsx",
+    "admin-products-delete-dialog": "src/pages/products/ui/useDeleteProductConfirm.tsx",
+    "manager-products-delete-dialog": "src/pages/products/ui/useDeleteProductConfirm.tsx",
+    "registrator-products-delete-dialog": "src/pages/products/ui/useDeleteProductConfirm.tsx",
+    "market-products-delete-dialog": "src/pages/products/ui/useDeleteProductConfirm.tsx",
+    "superadmin-branches-list-tree": "src/widgets/branch-list/ui/BranchTree.tsx",
+    "superadmin-branches-list-table": "src/widgets/branch-list/ui/BranchTable.tsx",
+    "superadmin-regions-districts": "src/pages/region/pages/districts/index.tsx",
     "common-profile-password-dialog": "src/features/user/update-user/ui/UpdateUserModal.tsx",
-    "superadmin-branches-create-dialog": "src/features/branch-create/ui/BranchFormModal.tsx",
+    "superadmin-branches-create-dialog": "src/features/branch/ui/BranchFormDialog.tsx",
     "superadmin-branches-add-employee-dialog": "src/features/branch-add-employee/ui/AddEmployeeModal.tsx",
     "superadmin-notifications-create-dialog": "src/features/notification-create/ui/NotificationFormModal.tsx",
     "superadmin-notifications-delete-dialog": "src/features/notification-delete/ui/DeleteNotificationButton.tsx",
@@ -1560,7 +1639,7 @@
     },
     "charts": {
       "defines": "Qaysi grafik qachon, kategorial palitra (chart-1…8, kunduzgi/tungi), ketma-ket va ikki qutbli shkalalar, holat ranglari, grafik anatomiyasi, galereya (spidometr, donut, KPI, chiziq, ustunlar, reyting, issiqlik xaritasi, xarita, sharshara, voronka, sparkline), holatlar (yuklanmoqda, bo'sh, xato), «Grafik | Jadval» egizagi, telefon.",
-      "code": "CHART_PALETTE (src/shared/config/themeTokens.ts), src/widgets/dashboard-*/*, src/widgets/financial-analysis/*, src/pages/region/ui/UzbekistanRegionMap.tsx, docs/DESIGN_SYSTEM.md §3"
+      "code": "src/shared/ui/charts (Gauge, Donut, RankList, Meter, SegBar, HBarList, Waterfall, RingStat, ChartLegend, ChartNote, ViewToggle, DeltaChip), CHART_PALETTE (src/shared/config/themeTokens.ts), src/widgets/dashboard-*/*, src/widgets/financial-analysis/* (recharts — faqat FinancialTrendPlot), src/pages/region/ui/UzbekistanRegionMap.tsx, docs/DESIGN_SYSTEM.md §3"
     },
     "states-buttons": {
       "defines": "Tugma va havolalar: 12 tur × 6 holat, o'lchamlar (32/40/48), tugmalar guruhi, forma/oyna oxiri, sahifa sarlavhasi, xavfli juftlik, telefon pastki paneli, qilinmaydigan narsalar.",

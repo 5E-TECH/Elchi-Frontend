@@ -5,7 +5,12 @@ import { Link, Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import type { RootState } from "../../../../app/config/store";
-import { buttonClasses, ButtonIcon, EmptyState, PageHeader } from "../../../../shared/ui/primitives";
+import {
+  buttonClasses,
+  ButtonIcon,
+  EmptyState,
+  PageHeader,
+} from "../../../../shared/ui/primitives";
 
 /**
  * LOGIST BIRIKTIRISH (superadmin, admin). Maketdagi bo'sh holat: bo'lim hali ishga tushmagan

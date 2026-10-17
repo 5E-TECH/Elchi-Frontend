@@ -23,8 +23,10 @@ import { BranchDetailWidget } from "../../../widgets/branch-detail";
 const BranchDetailPage = () => {
   const { t } = useTranslation("branches");
   const { id = "" } = useParams();
-  const branchQuery = useBranchDetail(id);
-  const employeesQuery = useBranchEmployees(id);
+  // 404 / xato sahifada (`ErrorState`), xodimlar xatosi o'z kartasida — global xabar (backend inglizcha
+  // «Branch not found») takrorlanmaydi.
+  const branchQuery = useBranchDetail(id, { silentError: true });
+  const employeesQuery = useBranchEmployees(id, true, { silentError: true });
   const { data: branch, isLoading, error, refetch } = branchQuery;
 
   if (isLoading) {

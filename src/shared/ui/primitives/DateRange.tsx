@@ -250,7 +250,7 @@ export type DateRangeProps = {
   onChange: (range: ISODateRange) => void;
   /** Bo'sh maydon matni (sukut «Sana oralig'ini tanlang»; dashboard — «Boshlanish → Tugash»). */
   placeholder?: string;
-  /** Tez tanlov; `false` — yo'q (yonida segment bo'lsa, `QuickDateRangeFilter`). */
+  /** Tez tanlov; `false` — yo'q (yonida davr segmenti bo'lsa, masalan dashboard sarlavhasi). */
   presets?: readonly DatePresetKey[] | false;
   min?: string;
   max?: string;

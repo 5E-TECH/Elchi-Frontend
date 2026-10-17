@@ -349,7 +349,7 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
 - **v1 o'ramlari** — eski import yo'llari va API saqlangan, ichi v2 (ishlatilmagan `shared/ui/Select.tsx`,
   `features/Select/selectInput.tsx`, `StatusSelect/` o'chirildi): `SearchableSelect`, `FilterSelect`,
   `FilterMultiSelect`, `PopupSelect`, `PrintModeSelect`;
-  `CustomDatePicker`, `DateRangePicker`, `FilterDateRange`, `FilterDateInput`, `QuickDateRangeFilter`; `Popup`,
+  `CustomDatePicker`, `DateRangePicker`, `FilterDateRange`, `FilterDateInput` (`QuickDateRangeFilter` — G1 da o'chirildi); `Popup`,
   `FormPopup`, `PopupConfirm`, `UpdatePopup`, `ConfirmButton`; `EmptyState`, `QueryErrorState`, `TableSkeleton`,
   `Loader`/`PageLoader`; `PhoneInput`, `FilterSearch`, `SearchInput`.
 - **Migratsiya** — antd `message`/`notification` (va `NotificationProvider` ichidagi antd `notification`) →
@@ -486,6 +486,24 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   `market_payment` «Chiqim −» (ro'yxat va tafsilot); D3 — to'ldirish / xarajat `Idempotency-Key` bilan. Payload'lar,
   idempotentlik, ikki marta bosishdan himoya va eksportlar o'zgarmagan; «Taklif» grafiklari chizilmagan. v1
   `CashboxRolePageLayout`, `CashboxView`, `CashboxSummaryCard` va o'lik `payments` kalitlari o'chirildi.
+- **Ko'chirilgan:** G1 — «Bosh sahifa», «Foydalanuvchilar», «Filiallar», «Mahsulotlar», «Hududlar» (`/`,
+  `/branch-dashboard`, `/all-users`, `/all-users/create-user`, `/all-users/:id`, `/new-orders/userDetail/:id`,
+  `/branches`, `/branches/:id`, `/products`, `/products/create-product/:id`, `/regions`, `/regions/districts`,
+  `/regions/sato-management`, `/regions/logist-assignment`). **Grafiklar** — yangi umumiy `src/shared/ui/charts`
+  (barrel, `// dizayn-v2: tizim-charts`): `Gauge` (zona badge'i o'zida, `successZoneTone` ≥ 70 / 40–70 / < 40),
+  `Donut` (≤ 6 bo'lak + legenda-jadval), `RankList` (top 5, telefonda top 3, «Yana ko'rsatish · {n} ta», `pinned`
+  qator), `Meter`, `SegBar`, `HBarList`, `Waterfall`, `RingStat`, `ChartLegend` / `ChartNote`, `ViewToggle`
+  («Grafik | Jadval»), `DeltaChip`; hammasi oddiy SVG/div + tokenlar, recharts faqat «Moliyaviy tahlil» trendida
+  (`widgets/financial-analysis/ui/FinancialTrendPlot.tsx` — lazy, `DeferredMount rootMargin="0px"`; dashboard
+  birinchi ochilishi ≤ 450 KB gzip — `tests/e2e/dashboard-bundle.preview.spec.ts`). Dashboard: `DashboardHeader`
+  (davr segmenti + «Yil» + `DateRange`, davr redux'da), `DashboardGrid`, `SuccessRateCard`, `OrderStatusCard`,
+  `TopRankCard`, hududlar kartogrammasi `widgets/dashboard-region` (Highcharts'siz, `--color-region-map-*`).
+  Viloyat oynasi — umumiy `widgets/region-detail` `RegionDetailDialog` (faqat `lazy(() => import(…))`, bosilganda;
+  `showRevenue={false}` — registratorda daromadsiz). Foydalanuvchi tafsiloti — yangi `UserDetailView` (eski
+  `UserDetailWidget` faqat `/profile` uchun muzlatilgan). Xatosi sahifada chiziladigan G1 so'rovlari
+  `meta.silentError` bilan (global xabar takrorlanmaydi). Ega savollariga sukut javoblari (spec §9) —
+  `design/kit/route-map.json` izohlarida. Chiqarilgan v1: `MetricCard`, `MobileCollapsibleSection`,
+  `QuickDateRangeFilter`, `PerformanceChart`, `RegionStatsCard`, filial sozlamalari (config) kodi.
 
 **Dizayn qo'riqchisi** (`scripts/design-guard.mjs`, `npm run design:guard`): `colour`, `palette`, `dark-pair`,
 `legacy`, `money`, `icons`, `tiny-text`, `v1-class`, `weight`, `gradient`, `v1-helper`. Ikki darvoza:

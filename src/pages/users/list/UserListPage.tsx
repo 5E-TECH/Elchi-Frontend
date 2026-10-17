@@ -143,9 +143,10 @@ const UserListPage = memo(() => {
   }, [limit, page, role, search, status]);
 
   const { useGetUser } = useUser();
-  const listQuery = useGetUser(apiParams, !hasLegacyKeys);
+  // Ikkala so'rov xatosi sahifada (`ErrorState`) — global xabar takrorlanmaydi.
+  const listQuery = useGetUser(apiParams, !hasLegacyKeys, { silentError: true });
   // KPI — filtrsiz jami (qidiruv/holat o'zgarsa ham «Barcha foydalanuvchilar» o'zgarmaydi); faqat superadmin/admin.
-  const kpiQuery = useGetUser({ page: 1, limit: 1 }, canManageUsers);
+  const kpiQuery = useGetUser({ page: 1, limit: 1 }, canManageUsers, { silentError: true });
   const kpiMeta = kpiQuery.data?.data?.meta;
 
   const listData = listQuery.data?.data;

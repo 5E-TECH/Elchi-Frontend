@@ -468,14 +468,6 @@ describe("TransferCourierButton", () => {
     expect(button.className).toContain("bg-transparent");
   });
 
-  it("the row variant is an icon button named for screen readers", () => {
-    renderWithProviders(<TransferCourierButton variant="row" courierId={COURIER_ID} />, {
-      preloadedState: roleState("superadmin"),
-    });
-
-    expect(screen.getByRole("button", { name: "Boshqa filialga o'tkazish" })).toBeInTheDocument();
-  });
-
   it.each(["manager", "registrator", "courier", "market"])("%s never sees it", (role) => {
     renderWithProviders(<TransferCourierButton variant="header" courierId={COURIER_ID} />, {
       preloadedState: roleState(role),

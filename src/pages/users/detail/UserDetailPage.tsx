@@ -34,7 +34,8 @@ export const UserDetailPage = () => {
   const { pathname } = useLocation();
   const { t } = useTranslation("users");
   const { useGetUserById } = useUser();
-  const query = useGetUserById(id || "");
+  // Xato / «Topilmadi» sahifada (`ErrorState size="page"`) — global xabar takrorlanmaydi.
+  const query = useGetUserById(id || "", undefined, { silentError: true });
   const user = unwrapUserResponse(query.data);
   const fromNewOrders = pathname.startsWith("/new-orders");
   const back = fromNewOrders ? (true as const) : "/all-users";

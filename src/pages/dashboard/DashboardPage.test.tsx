@@ -260,7 +260,17 @@ describe("DashboardPage (v2)", () => {
     expect(useRegionStatsMock).not.toHaveBeenCalled();
   });
 
-  it("registrator: KPI yo'q, kpi va revenue so'ralmaydi, «Yetkazish natijalari», hududlarda daromad yo'q", () => {
+  it("registrator: KPI yo'q, kpi va revenue so'ralmaydi, «Yetkazish natijalari», hududlarda daromad yo'q", async () => {
+    const user = userEvent.setup();
+    useRegionStatsMock.mockReturnValue(
+      query({
+        regions: [
+          { id: "1", name: "Toshkent shahri", districtCount: 11, activeCouriers: 20, ordersCount: 112, deliveredOrders: 91, cancelledOrders: 8, pendingOrders: 13, totalRevenue: 18_500_000, successRate: 81.3 },
+        ],
+        summary: null,
+        scopedDetail: null,
+      }),
+    );
     renderWithProviders(<DashboardPage />, { preloadedState: registratorState });
 
     expect(getKpiMock).toHaveBeenCalledWith({ start_day: "", end_day: "" }, false, "registrator:unknown");
@@ -277,8 +287,12 @@ describe("DashboardPage (v2)", () => {
     const regions = sectionOf("Hududlar bo'yicha");
     expect(within(regions).queryByRole("radio", { name: "Daromad" })).not.toBeInTheDocument();
     expect(within(regions).getByRole("radio", { name: "Muvaffaqiyat" })).toBeInTheDocument();
-    // Registratorda oyna ochilmaydi (umumiy oyna daromadni yashira olmaydi — eski xulq: daromad yo'q).
-    expect(regions).not.toHaveTextContent("Hududni bosing");
+    expect(within(regions).getByRole("table")).not.toHaveTextContent("so'm");
+    // Registrator ham viloyat oynasini ochadi, lekin daromadsiz (eski xulq: daromad ko'rsatilmas edi).
+    expect(regions).toHaveTextContent("Hududni bosing");
+    await user.click(within(regions).getByRole("button", { name: "Toshkent sh.: 112 ta buyurtma" }));
+    expect(await screen.findByRole("dialog", { name: "Toshkent shahri" })).toBeInTheDocument();
+    expect(regionDialogMock).toHaveBeenLastCalledWith(expect.objectContaining({ open: true, showRevenue: false }));
   });
 
   it("hududlar: kartogramma, jadval va xulosa `region/stats/all` dan (sana bo'sh — bugun)", () => {
@@ -331,6 +345,7 @@ describe("DashboardPage (v2)", () => {
         dateParams: { startDate: today.from, endDate: today.to },
         periodLabel: "Bugun",
         company: { totalOrders: 133, totalRevenue: 21_500_000, successRate: (106 / 133) * 100 },
+        showRevenue: true,
       }),
     );
 
@@ -370,7 +385,7 @@ describe("DashboardPage (v2)", () => {
     expect(getDashboardMock).toHaveBeenCalledWith({ start_day: "", end_day: "" }, true, "courier:unknown");
     expect(getKpiMock).not.toHaveBeenCalledWith(expect.anything(), true, expect.anything());
     expect(getRevenueMock).not.toHaveBeenCalled();
-    expect(myCashboxMock).toHaveBeenCalledWith({ fromDate: today.from, toDate: today.to });
+    expect(myCashboxMock).toHaveBeenCalledWith({ fromDate: today.from, toDate: today.to }, { silentError: true });
 
     expect(sectionOf("Bugungi reja")).toHaveTextContent("Sizga biriktirilgan 27 ta buyurtma");
     expect(sectionOf("Bugungi reja")).toHaveTextContent("5 ta qoldi");
@@ -404,7 +419,7 @@ describe("DashboardPage (v2)", () => {
     const refetch = vi.fn();
     getDashboardMock.mockReturnValue({ isError: true, isLoading: false, refetch });
     renderWithProviders(<DashboardPage />, { preloadedState: courierState });
-    expect(screen.getByText("Dashboard ma'lumotlarini yuklab bo'lmadi.")).toBeInTheDocument();
+    expect(screen.getByText("Bosh sahifa ma'lumotlarini yuklab bo'lmadi.")).toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("button", { name: "Qayta urinish" }));
     expect(refetch).toHaveBeenCalledTimes(1);
   });

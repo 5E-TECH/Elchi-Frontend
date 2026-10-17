@@ -265,10 +265,11 @@ describe("Qabul va yaratish — bola sahifa rejimlari", () => {
     expect(screen.getByText(child)).toBeInTheDocument();
   });
 
-  it("ko'chirilmagan bola (foydalanuvchi tafsiloti) — legacy: sarlavha va tablar sahifada, bola o'zgarmagan", () => {
+  it("foydalanuvchi tafsiloti (v2) — bare: qobiq sarlavhasi, «Buyurtma yaratish» va tablar yo'q (bitta h1)", () => {
     renderShell("/new-orders/userDetail/1", "admin");
-    expect(screen.getByRole("heading", { level: 1, name: "Qabul va yaratish" })).toBeInTheDocument();
-    expect(within(tabsNav()).getByRole("link", { current: "page" })).toHaveTextContent("Marketlar");
+    expect(screen.queryByRole("heading", { level: 1, name: "Qabul va yaratish" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Buyurtma yaratish" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Qabul manbalari" })).not.toBeInTheDocument();
     expect(screen.getByText("Foydalanuvchi sahifasi")).toBeInTheDocument();
   });
 });

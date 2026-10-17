@@ -222,10 +222,10 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
         updateMarketCancelledHandoverQr.mutateAsync({ id: user.id, cancelled_handover_qr_required: nextValue }),
       successMessage: nextValue
         ? t("cancelledHandoverQrEnabled", {
-            defaultValue: "Bekor qilingan orderlarni topshirishda market QR talabi yoqildi",
+            defaultValue: "Bekor qilingan buyurtmalarni topshirishda market QR talabi yoqildi",
           })
         : t("cancelledHandoverQrDisabled", {
-            defaultValue: "Bekor qilingan orderlarni topshirishda market QR talabi o'chirildi",
+            defaultValue: "Bekor qilingan buyurtmalarni topshirishda market QR talabi o'chirildi",
           }),
       errorMessage: editError,
     });

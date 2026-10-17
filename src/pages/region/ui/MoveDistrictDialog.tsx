@@ -43,7 +43,10 @@ const MoveDistrictDialog = ({ target, regions, onClose, onMove }: MoveDistrictDi
       title={t("v2.board.move.title")}
       description={
         target
-          ? t("v2.board.move.description", { name: target.districtName, region: target.fromRegionName })
+          ? t("v2.board.move.description", {
+              name: target.districtName,
+              region: target.fromRegionName,
+            })
           : undefined
       }
       icon={ArrowLeftRight}
@@ -66,7 +69,9 @@ const MoveDistrictDialog = ({ target, regions, onClose, onMove }: MoveDistrictDi
       }
     >
       <fieldset className="m-0 flex min-w-0 flex-col border-0 p-0">
-        <legend className="pb-2 text-[13px] font-semibold text-text-muted">{t("v2.board.move.listLabel")}</legend>
+        <legend className="pb-2 text-[13px] font-semibold text-text-muted">
+          {t("v2.board.move.listLabel")}
+        </legend>
         {options.map((region) => {
           const checked = choice === region.id;
           return (
@@ -87,7 +92,9 @@ const MoveDistrictDialog = ({ target, regions, onClose, onMove }: MoveDistrictDi
                 className="size-4 shrink-0 accent-action"
               />
               <span className="min-w-0 flex-1 truncate">{region.name}</span>
-              {checked ? <Check size={18} aria-hidden="true" className="shrink-0 text-action-fg" /> : null}
+              {checked ? (
+                <Check size={18} aria-hidden="true" className="shrink-0 text-action-fg" />
+              ) : null}
             </label>
           );
         })}

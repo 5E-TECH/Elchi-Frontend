@@ -1,5 +1,12 @@
 // dizayn-v2: superadmin-regions-districts, superadmin-regions-sato-management, admin-regions-sato-management
-import { ArrowLeftRight, ArrowRight, ChevronDown, ChevronUp, GripVertical, LoaderCircle } from "lucide-react";
+import {
+  ArrowLeftRight,
+  ArrowRight,
+  ChevronDown,
+  ChevronUp,
+  GripVertical,
+  LoaderCircle,
+} from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../../shared/lib/cx";
@@ -60,9 +67,13 @@ const DistrictBoard = ({
 }: DistrictBoardProps) => {
   const { t, i18n } = useTranslation("region");
   const isPhone = useIsPhone();
-  const [dragging, setDragging] = useState<{ districtId: string; fromRegionId: string } | null>(null);
+  const [dragging, setDragging] = useState<{ districtId: string; fromRegionId: string } | null>(
+    null,
+  );
   const [dropTargetId, setDropTargetId] = useState<string | null>(null);
-  const [openIds, setOpenIds] = useState<ReadonlySet<string>>(() => new Set(regions[0] ? [regions[0].id] : []));
+  const [openIds, setOpenIds] = useState<ReadonlySet<string>>(
+    () => new Set(regions[0] ? [regions[0].id] : []),
+  );
   const [moveTarget, setMoveTarget] = useState<MoveDistrictTarget | null>(null);
   const count = (value: number) =>
     t("v2.common.countTa", { count: formatNumberLocalized(value, { language: i18n.language }) });
@@ -99,7 +110,11 @@ const DistrictBoard = ({
             const open = expandAll || openIds.has(region.id);
             const listId = `region-board-${region.id}`;
             return (
-              <section key={region.id} aria-label={region.name} className="border-t border-border first:border-t-0">
+              <section
+                key={region.id}
+                aria-label={region.name}
+                className="border-t border-border first:border-t-0"
+              >
                 <h3 className="m-0">
                   <button
                     type="button"
@@ -118,9 +133,17 @@ const DistrictBoard = ({
                     <span className="min-w-0 flex-1 truncate">{region.name}</span>
                     <Badge size="sm">{count(region.districts.length)}</Badge>
                     {open ? (
-                      <ChevronUp size={18} aria-hidden="true" className="shrink-0 text-text-muted" />
+                      <ChevronUp
+                        size={18}
+                        aria-hidden="true"
+                        className="shrink-0 text-text-muted"
+                      />
                     ) : (
-                      <ChevronDown size={18} aria-hidden="true" className="shrink-0 text-text-muted" />
+                      <ChevronDown
+                        size={18}
+                        aria-hidden="true"
+                        className="shrink-0 text-text-muted"
+                      />
                     )}
                   </button>
                 </h3>
@@ -133,13 +156,23 @@ const DistrictBoard = ({
                     {region.districts.length === 0
                       ? emptyList
                       : region.districts.map((district) => (
-                          <li key={district.id} data-testid={`district-${district.id}`} className={cx(ROW, "pr-2")}>
+                          <li
+                            key={district.id}
+                            data-testid={`district-${district.id}`}
+                            className={cx(ROW, "pr-2")}
+                          >
                             {editingId === district.id && renderEditor ? (
                               renderEditor(district, region)
                             ) : (
                               <>
-                                <GripVertical size={16} aria-hidden="true" className="shrink-0 text-text-subtle" />
-                                <span className="min-w-0 flex-1 truncate font-semibold">{district.name}</span>
+                                <GripVertical
+                                  size={16}
+                                  aria-hidden="true"
+                                  className="shrink-0 text-text-subtle"
+                                />
+                                <span className="min-w-0 flex-1 truncate font-semibold">
+                                  {district.name}
+                                </span>
                                 {movingId === district.id ? (
                                   <LoaderCircle
                                     size={16}
@@ -185,7 +218,8 @@ const DistrictBoard = ({
         className="grid grid-cols-4 items-start gap-4 max-xl:grid-cols-3 max-lg:grid-cols-2"
       >
         {regions.map((region) => {
-          const isTarget = dropTargetId === region.id && dragging != null && dragging.fromRegionId !== region.id;
+          const isTarget =
+            dropTargetId === region.id && dragging != null && dragging.fromRegionId !== region.id;
           return (
             <section
               key={region.id}
@@ -219,7 +253,9 @@ const DistrictBoard = ({
                   isTarget && "bg-action-soft",
                 )}
               >
-                <h3 className="m-0 min-w-0 truncate text-sm font-semibold text-text">{region.name}</h3>
+                <h3 className="m-0 min-w-0 truncate text-sm font-semibold text-text">
+                  {region.name}
+                </h3>
                 <Badge size="sm">{count(region.districts.length)}</Badge>
               </div>
               <ul
@@ -237,7 +273,9 @@ const DistrictBoard = ({
                           key={district.id}
                           data-testid={`district-${district.id}`}
                           draggable={!isEditing && !isMoving}
-                          aria-label={isDragging ? t("v2.board.dragging", { name: district.name }) : undefined}
+                          aria-label={
+                            isDragging ? t("v2.board.dragging", { name: district.name }) : undefined
+                          }
                           onDragStart={(event) => {
                             event.dataTransfer.setData("districtId", district.id);
                             event.dataTransfer.setData("fromRegionId", region.id);
@@ -259,11 +297,19 @@ const DistrictBoard = ({
                             renderEditor?.(district, region)
                           ) : (
                             <>
-                              <GripVertical size={16} aria-hidden="true" className="shrink-0 text-text-subtle" />
+                              <GripVertical
+                                size={16}
+                                aria-hidden="true"
+                                className="shrink-0 text-text-subtle"
+                              />
                               <span className="min-w-0 flex-1 truncate">{district.name}</span>
                               {isMoving ? (
                                 <span className="inline-flex shrink-0 items-center gap-1 text-xs text-text-muted">
-                                  <LoaderCircle size={16} aria-hidden="true" className="animate-spin" />
+                                  <LoaderCircle
+                                    size={16}
+                                    aria-hidden="true"
+                                    className="animate-spin"
+                                  />
                                   {t("v2.board.saving")}
                                 </span>
                               ) : moveHint ? (

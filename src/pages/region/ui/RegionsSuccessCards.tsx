@@ -1,5 +1,12 @@
 // dizayn-v2: superadmin-regions-map, admin-regions-map
-import { ChevronDown, ChevronUp, CircleAlert, CircleX, PackageCheck, TriangleAlert } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  CircleAlert,
+  CircleX,
+  PackageCheck,
+  TriangleAlert,
+} from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../../shared/lib/cx";
@@ -18,7 +25,12 @@ const SuccessRow = ({ row, hiddenOnPhone }: { row: RegionRow; hiddenOnPhone: boo
   const tone = successZoneTone(row.rate);
   const ZoneIcon = tone === "danger" ? CircleAlert : tone === "warning" ? TriangleAlert : null;
   return (
-    <li className={cx("flex min-w-0 flex-col gap-1.5 border-b border-border py-2.5", hiddenOnPhone && "max-md:hidden")}>
+    <li
+      className={cx(
+        "flex min-w-0 flex-col gap-1.5 border-b border-border py-2.5",
+        hiddenOnPhone && "max-md:hidden",
+      )}
+    >
       <span className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto_52px] items-center gap-3 text-sm">
         <span className="truncate font-semibold text-text">{row.short}</span>
         <span className="inline-flex items-center gap-1.5 whitespace-nowrap font-semibold text-text">
@@ -53,7 +65,13 @@ const SuccessRow = ({ row, hiddenOnPhone }: { row: RegionRow; hiddenOnPhone: boo
  * Pastki juftlik: «Muvaffaqiyat darajasi» (spidometr, butun kompaniya) + «Viloyatlar muvaffaqiyati»
  * (eng pastdan, 70% chegara chizig'i; telefonda 6 ta + «Barcha 14 viloyat»).
  */
-const RegionsSuccessCards = ({ summary, periodLabel }: { summary: RegionsSummary; periodLabel: string }) => {
+const RegionsSuccessCards = ({
+  summary,
+  periodLabel,
+}: {
+  summary: RegionsSummary;
+  periodLabel: string;
+}) => {
   const { t, i18n } = useTranslation("region");
   const language = i18n.language;
   const [expanded, setExpanded] = useState(false);
@@ -120,7 +138,10 @@ const RegionsSuccessCards = ({ summary, periodLabel }: { summary: RegionsSummary
                   </span>
                 ),
                 value: t("v2.gauge.belowValue", { count: number(summary.below.length) }),
-                meta: summary.below.length > 0 ? summary.below.map((row) => row.short).join(", ") : undefined,
+                meta:
+                  summary.below.length > 0
+                    ? summary.below.map((row) => row.short).join(", ")
+                    : undefined,
               },
             ]}
           />
@@ -137,7 +158,11 @@ const RegionsSuccessCards = ({ summary, periodLabel }: { summary: RegionsSummary
           <EmptyState size="chart" title={t("v2.success.empty")} />
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-x-8 max-md:grid-cols-1" aria-label={t("v2.success.aria")} role="group">
+            <div
+              className="grid grid-cols-2 gap-x-8 max-md:grid-cols-1"
+              aria-label={t("v2.success.aria")}
+              role="group"
+            >
               {columns.map((column, columnIndex) =>
                 column.length > 0 ? (
                   <ul key={columnIndex} className="m-0 flex min-w-0 list-none flex-col p-0">
@@ -161,7 +186,9 @@ const RegionsSuccessCards = ({ summary, periodLabel }: { summary: RegionsSummary
                 rightIcon={expanded ? ChevronUp : ChevronDown}
                 onClick={() => setExpanded((value) => !value)}
               >
-                {expanded ? t("v2.common.showLess") : t("v2.map.rank.showAll", { count: number(ordered.length) })}
+                {expanded
+                  ? t("v2.common.showLess")
+                  : t("v2.map.rank.showAll", { count: number(ordered.length) })}
               </Button>
             ) : null}
             <div className="flex flex-col gap-2 border-t border-border pt-3">
@@ -170,13 +197,20 @@ const RegionsSuccessCards = ({ summary, periodLabel }: { summary: RegionsSummary
                   { key: "good", tone: "success", label: t("v2.success.legend.good") },
                   { key: "mid", tone: "warning", label: t("v2.success.legend.mid") },
                   { key: "low", tone: "danger", label: t("v2.success.legend.low") },
-                  { key: "target", tone: "neutral", shape: "target", label: t("v2.success.legend.target") },
+                  {
+                    key: "target",
+                    tone: "neutral",
+                    shape: "target",
+                    label: t("v2.success.legend.target"),
+                  },
                 ]}
               />
               {summary.lowData.length > 0 ? (
                 <ChartNote>
                   {summary.lowData
-                    .map((row) => t("v2.success.lowData", { name: row.short, count: number(row.orders) }))
+                    .map((row) =>
+                      t("v2.success.lowData", { name: row.short, count: number(row.orders) }),
+                    )
                     .join("; ")}
                 </ChartNote>
               ) : null}

@@ -77,8 +77,11 @@ const RegionDistrictsPage = () => {
 
   const regionsQuery = useQuery({
     queryKey: REGIONS_KEY,
-    queryFn: () => api.get(API_ENDPOINTS.REGIONS.BASE).then((res) => toRegionsWithDistricts(res.data)),
+    queryFn: () =>
+      api.get(API_ENDPOINTS.REGIONS.BASE).then((res) => toRegionsWithDistricts(res.data)),
     enabled: role === "superadmin",
+    // Xato sahifada (`ErrorState` + «Qayta urinish») — global xabar takrorlanmaydi.
+    meta: { silentError: true },
   });
   const regions = useMemo(() => regionsQuery.data ?? [], [regionsQuery.data]);
 
@@ -87,7 +90,8 @@ const RegionDistrictsPage = () => {
     notify.error(getBackendErrorMessage(error) ?? t(fallbackKey));
 
   const createDistrict = useMutation({
-    mutationFn: (payload: { name: string; region_id: string }) => api.post(API_ENDPOINTS.DISTRICTS.BASE, payload),
+    mutationFn: (payload: { name: string; region_id: string }) =>
+      api.post(API_ENDPOINTS.DISTRICTS.BASE, payload),
     onSuccess: async () => {
       setNewName("");
       notify.success(t("districts.createSuccess"));
@@ -119,13 +123,21 @@ const RegionDistrictsPage = () => {
   // Optimistik ko'chirish: darhol yangi viloyatda ko'rinadi, xato bo'lsa
   // oldingi holat (snapshot) qaytariladi.
   const moveDistrict = useMutation({
-    mutationFn: ({ districtId, toRegionId }: { districtId: string; fromRegionId: string; toRegionId: string }) =>
-      api.patch(API_ENDPOINTS.DISTRICTS.BY_ID(districtId), { assigned_region: toRegionId }),
+    mutationFn: ({
+      districtId,
+      toRegionId,
+    }: {
+      districtId: string;
+      fromRegionId: string;
+      toRegionId: string;
+    }) => api.patch(API_ENDPOINTS.DISTRICTS.BY_ID(districtId), { assigned_region: toRegionId }),
     onMutate: async ({ districtId, fromRegionId, toRegionId }) => {
       await queryClient.cancelQueries({ queryKey: REGIONS_KEY });
       const snapshot = queryClient.getQueryData<RegionWithDistricts[]>(REGIONS_KEY);
       queryClient.setQueryData<RegionWithDistricts[]>(REGIONS_KEY, (current = []) => {
-        const district = current.find((r) => r.id === fromRegionId)?.districts.find((d) => d.id === districtId);
+        const district = current
+          .find((r) => r.id === fromRegionId)
+          ?.districts.find((d) => d.id === districtId);
         if (!district) return current;
         return current.map((region) => {
           if (region.id === fromRegionId)
@@ -133,7 +145,9 @@ const RegionDistrictsPage = () => {
           if (region.id === toRegionId)
             return {
               ...region,
-              districts: [...region.districts, district].sort((a, b) => a.name.localeCompare(b.name, "uz")),
+              districts: [...region.districts, district].sort((a, b) =>
+                a.name.localeCompare(b.name, "uz"),
+              ),
             };
           return region;
         });

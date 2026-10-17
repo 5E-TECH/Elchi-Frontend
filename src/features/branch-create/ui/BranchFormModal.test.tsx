@@ -160,7 +160,7 @@ describe("BranchFormModal — «Yangi filial» (v2)", () => {
     await user.click(screen.getByRole("button", { name: "Saqlash" }));
 
     await waitFor(() =>
-      expect(screen.getByLabelText(/^Qisqa nom/)).toHaveAccessibleErrorMessage("Bu code allaqachon mavjud"),
+      expect(screen.getByLabelText(/^Qisqa nom/)).toHaveAccessibleErrorMessage("Bu qisqa nom allaqachon mavjud"),
     );
     expect(await screen.findByText("Branch code already exists")).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();

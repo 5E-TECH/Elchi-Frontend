@@ -114,6 +114,27 @@ describe("UserListTable (dizayn v2)", () => {
     expect(updateUserStatusMutateMock).not.toHaveBeenCalled();
   });
 
+  it("menyu amalidan keyin fokus kebab tugmasiga qaytadi (body'ga tushmaydi)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<UserListTable users={users as never} canManage />);
+    const trigger = screen.getByRole("button", { name: "Vali amallari" });
+
+    // Tasdiqsiz amal — menyu yopilgach fokus darhol tugmada.
+    let menu = await openMenu(user, "Vali");
+    await user.click(within(menu).getByRole("menuitem", { name: "Faol qilish" }));
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+
+    // Tasdiq oynasi yopilgach (bekor) — fokus yana shu tugmaga qaytadi.
+    const aliTrigger = screen.getByRole("button", { name: "Ali Valiyev amallari" });
+    menu = await openMenu(user, "Ali Valiyev");
+    await user.click(within(menu).getByRole("menuitem", { name: "Nofaol qilish" }));
+    const dialog = await screen.findByRole("alertdialog");
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(aliTrigger).toHaveFocus());
+  });
+
   it("nofaol foydalanuvchini faol qilish — tasdiqsiz", async () => {
     const user = userEvent.setup();
     renderWithProviders(<UserListTable users={users as never} canManage />);
@@ -174,6 +195,22 @@ describe("UserListTable (dizayn v2)", () => {
 
     expect(await screen.findByText("Kuryerda pul bor")).toBeInTheDocument();
     expect(screen.getByRole("alertdialog", { name: "Foydalanuvchini o'chirish" })).toBeInTheDocument();
+  });
+
+  it("server matni bo'lmasa — axios'ning inglizcha matni emas, o'zbekcha zaxira matn", async () => {
+    deleteUserMutateMock.mockImplementation((_id, options: { onError?: (error: unknown) => void }) =>
+      options.onError?.({ message: "Request failed with status code 500", response: { status: 500, data: {} } }),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<UserListTable users={users as never} canManage />);
+
+    const menu = await openMenu(user, "Ali Valiyev");
+    await user.click(within(menu).getByRole("menuitem", { name: "O'chirish" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Foydalanuvchini o'chirish" });
+    await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+
+    expect(await screen.findByText("Foydalanuvchini o'chirishda xatolik yuz berdi")).toBeInTheDocument();
+    expect(screen.queryByText("Request failed with status code 500")).not.toBeInTheDocument();
   });
 
   it("«Tahrirlash» — tahrirlash oynasini shu foydalanuvchi bilan ochadi", async () => {

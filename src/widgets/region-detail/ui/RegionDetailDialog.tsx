@@ -33,7 +33,14 @@ import {
   formatPercentLocalized,
 } from "../../../shared/lib/formatMoney";
 import { formatPhone } from "../../../shared/lib/formatPhone";
-import { Button, Dialog, ErrorState, SkeletonChart, SkeletonList, StatCard } from "../../../shared/ui/primitives";
+import {
+  Button,
+  Dialog,
+  ErrorState,
+  SkeletonChart,
+  SkeletonList,
+  StatCard,
+} from "../../../shared/ui/primitives";
 import {
   ChartLegend,
   ChartNote,
@@ -66,6 +73,12 @@ export interface RegionDetailDialogProps {
   /** Xaritadagi qator — yuklanish va xatoda KPI shu raqamlardan. */
   fallback?: RegionItem;
   company?: RegionDetailCompany;
+  /**
+   * Daromad ko'rsatilsinmi (sukut `true`). `false` — «Umumiy tushum» KPI, uning ulushi, tumanlar va
+   * kuryerlar qatoridagi summa hamda jadvaldagi «Tushum» ustuni yashirinadi (registrator — eski oyna
+   * unga daromadni ko'rsatmas edi).
+   */
+  showRevenue?: boolean;
 }
 
 /** Telefonda tumanlar reytingi yig'iq holatda — 5 ta. */
@@ -136,7 +149,11 @@ const SectionHead = ({
 };
 
 /** Uch xulosa (`.el-summary`): yorliq · qiymat · izoh. */
-const SummaryRow = ({ items }: { items: { key: string; label: string; value: string; meta?: string }[] }) => (
+const SummaryRow = ({
+  items,
+}: {
+  items: { key: string; label: string; value: string; meta?: string }[];
+}) => (
   <dl className="m-0 grid grid-cols-3 gap-4 rounded-xl bg-sunken px-4 py-3.5 max-md:grid-cols-1 max-md:gap-3">
     {items.map((item) => (
       <div key={item.key} className="flex min-w-0 flex-col gap-0.5">
@@ -166,6 +183,7 @@ const RegionDetailDialog = ({
   periodLabel,
   fallback,
   company,
+  showRevenue = true,
 }: RegionDetailDialogProps) => {
   const { t, i18n } = useTranslation("region");
   const language = i18n.language;
@@ -201,13 +219,21 @@ const RegionDetailDialog = ({
   const total = detail?.summary.totalOrders ?? fallback?.ordersCount ?? 0;
   const sold = detail?.summary.totalDelivered ?? fallback?.deliveredOrders ?? 0;
   const cancelled = detail?.summary.totalCancelled ?? fallback?.cancelledOrders ?? 0;
-  const pending = pendingOf(total, sold, cancelled, detail?.summary.pendingOrders ?? fallback?.pendingOrders);
+  const pending = pendingOf(
+    total,
+    sold,
+    cancelled,
+    detail?.summary.pendingOrders ?? fallback?.pendingOrders,
+  );
   const revenue = detail?.summary.totalRevenue ?? fallback?.totalRevenue ?? 0;
   const rate = successRateOf(sold, total);
   const activeCouriers = detail?.summary.activeCouriers ?? fallback?.activeCouriers ?? 0;
   const couriers: RegionCourierStats[] = detail?.couriers ?? [];
   const districts: DistrictStatsItem[] = useMemo(
-    () => [...(detail?.districts ?? [])].sort((a, b) => b.totalOrders - a.totalOrders || a.name.localeCompare(b.name)),
+    () =>
+      [...(detail?.districts ?? [])].sort(
+        (a, b) => b.totalOrders - a.totalOrders || a.name.localeCompare(b.name),
+      ),
     [detail?.districts],
   );
   const districtTotal = detail ? districts.length : (fallback?.districtCount ?? 0);
@@ -260,7 +286,9 @@ const RegionDetailDialog = ({
         district.totalOrders <= 0
           ? undefined
           : district.deliveredOrders > 0 || pendingCount === 0
-            ? `${percent(districtRate)} · ${money(district.revenue)}`
+            ? showRevenue
+              ? `${percent(districtRate)} · ${money(district.revenue)}`
+              : percent(districtRate)
             : t("v2.detail.districts.pendingOnly", { count: number(pendingCount) }),
       share: maxDistrictOrders > 0 ? shareOf(district.totalOrders, maxDistrictOrders) : 0,
       meta: district.satoCode ? t("v2.common.sato", { code: district.satoCode }) : undefined,
@@ -272,7 +300,7 @@ const RegionDetailDialog = ({
   const courierItems: RankItem[] = couriers.map((courier) => {
     const meta = [
       courier.phone ? formatPhone(courier.phone) : null,
-      courier.revenue != null ? money(courier.revenue) : null,
+      showRevenue && courier.revenue != null ? money(courier.revenue) : null,
     ]
       .filter(Boolean)
       .join(" · ");
@@ -285,7 +313,9 @@ const RegionDetailDialog = ({
         total: number(courier.totalOrders),
       }),
       share: courier.successRate,
-      badge: courier.isPrimary ? { label: t("v2.detail.couriers.primary"), tone: "neutral" } : undefined,
+      badge: courier.isPrimary
+        ? { label: t("v2.detail.couriers.primary"), tone: "neutral" }
+        : undefined,
       meta: meta ? (
         <span className="inline-flex min-w-0 items-center gap-1.5">
           <Phone size={14} aria-hidden="true" className="shrink-0" />
@@ -294,7 +324,9 @@ const RegionDetailDialog = ({
       ) : undefined,
     };
   });
-  const smallSample = couriers.some((courier) => courier.totalOrders > 0 && courier.totalOrders < COURIER_SAMPLE_MIN);
+  const smallSample = couriers.some(
+    (courier) => courier.totalOrders > 0 && courier.totalOrders < COURIER_SAMPLE_MIN,
+  );
 
   const statusSegments = [
     {
@@ -327,7 +359,9 @@ const RegionDetailDialog = ({
           <span className="text-sm font-semibold text-text-muted">
             {t("v2.detail.districts.withoutOrders", { count: number(withoutOrders.length) })}
           </span>
-          <span className="text-xs text-text-muted">{withoutOrders.map((district) => district.name).join(", ")}</span>
+          <span className="text-xs text-text-muted">
+            {withoutOrders.map((district) => district.name).join(", ")}
+          </span>
         </div>
         <Button
           variant="ghost"
@@ -361,7 +395,9 @@ const RegionDetailDialog = ({
                 sorted: true,
               },
               { key: "rate", label: t("v2.detail.table.success"), className: "text-right" },
-              { key: "revenue", label: t("v2.detail.table.revenue"), className: "text-right" },
+              ...(showRevenue
+                ? [{ key: "revenue", label: t("v2.detail.table.revenue"), className: "text-right" }]
+                : []),
               {
                 key: "couriers",
                 label: t("v2.detail.table.couriers"),
@@ -378,7 +414,10 @@ const RegionDetailDialog = ({
                 )}
               >
                 {column.sorted ? (
-                  <span className="inline-flex items-center gap-1" title={t("v2.detail.table.sortedAria")}>
+                  <span
+                    className="inline-flex items-center gap-1"
+                    title={t("v2.detail.table.sortedAria")}
+                  >
                     {column.label}
                     <ArrowDown size={14} aria-hidden="true" />
                   </span>
@@ -411,9 +450,11 @@ const RegionDetailDialog = ({
                   ? percent(successRateOf(district.deliveredOrders, district.totalOrders))
                   : "—"}
               </td>
-              <td className="h-11 whitespace-nowrap border-b border-border px-3 py-1.5 text-right align-middle text-text">
-                {money(district.revenue)}
-              </td>
+              {showRevenue ? (
+                <td className="h-11 whitespace-nowrap border-b border-border px-3 py-1.5 text-right align-middle text-text">
+                  {money(district.revenue)}
+                </td>
+              ) : null}
               <td className="h-11 whitespace-nowrap border-b border-border px-3 py-1.5 text-right align-middle text-text max-lg:hidden">
                 {number(district.activeCouriers)}
               </td>
@@ -426,9 +467,17 @@ const RegionDetailDialog = ({
               {t("v2.detail.table.total", { count: number(districts.length) })}
             </td>
             <td className="h-11 px-3 py-1.5 max-lg:hidden" />
-            <td className="h-11 whitespace-nowrap px-3 py-1.5 text-right text-text">{countTa(total)}</td>
-            <td className="h-11 whitespace-nowrap px-3 py-1.5 text-right text-text">{percent(rate)}</td>
-            <td className="h-11 whitespace-nowrap px-3 py-1.5 text-right text-text">{money(revenue)}</td>
+            <td className="h-11 whitespace-nowrap px-3 py-1.5 text-right text-text">
+              {countTa(total)}
+            </td>
+            <td className="h-11 whitespace-nowrap px-3 py-1.5 text-right text-text">
+              {percent(rate)}
+            </td>
+            {showRevenue ? (
+              <td className="h-11 whitespace-nowrap px-3 py-1.5 text-right text-text">
+                {money(revenue)}
+              </td>
+            ) : null}
             <td className="h-11 whitespace-nowrap px-3 py-1.5 text-right text-text max-lg:hidden">
               {t("v2.detail.table.people", { count: number(couriers.length) })}
             </td>
@@ -486,7 +535,11 @@ const RegionDetailDialog = ({
           <div
             role="group"
             aria-label={t("v2.detail.kpiAria")}
-            className="grid grid-cols-4 gap-4 max-lg:grid-cols-2 max-md:gap-3"
+            className={cx(
+              "grid gap-4 max-lg:grid-cols-2 max-md:gap-3",
+              // Daromadsiz 3 ta KPI: planshet/telefonda oxirgisi to'liq en (bo'sh katak qolmasin).
+              showRevenue ? "grid-cols-4" : "grid-cols-3 max-lg:[&>:last-child]:col-span-2",
+            )}
           >
             <StatCard
               label={t("v2.kpi.total")}
@@ -512,7 +565,11 @@ const RegionDetailDialog = ({
               loading={!hasFigures}
               value={percent(rate)}
               delta={rateDelta}
-              deltaText={rateDelta != null ? t("v2.common.pp", { value: ppText(rateDelta, language) }) : undefined}
+              deltaText={
+                rateDelta != null
+                  ? t("v2.common.pp", { value: ppText(rateDelta, language) })
+                  : undefined
+              }
               hint={rateDelta != null ? t("v2.detail.vsCompany") : undefined}
             >
               {companyRate != null ? (
@@ -521,35 +578,46 @@ const RegionDetailDialog = ({
                   shortLabel={t("v2.detail.companyShort")}
                   value={percent(companyRate)}
                 >
-                  <Meter value={rate} tone={successZoneTone(rate)} thickness="thin" target={companyRate} />
+                  <Meter
+                    value={rate}
+                    tone={successZoneTone(rate)}
+                    thickness="thin"
+                    target={companyRate}
+                  />
                 </KpiMeter>
               ) : null}
             </StatCard>
-            <StatCard
-              label={t("v2.kpi.revenue")}
-              icon={Banknote}
-              loading={!hasFigures}
-              value={compact.value}
-              unit={compact.unit}
-              hint={money(revenue)}
-            >
-              {company && company.totalRevenue > 0 ? (
-                <KpiMeter
-                  label={t("v2.detail.companyShare")}
-                  shortLabel={t("v2.detail.companyShareShort")}
-                  value={percent(shareOf(revenue, company.totalRevenue))}
-                >
-                  <Meter value={shareOf(revenue, company.totalRevenue)} thickness="thin" />
-                </KpiMeter>
-              ) : null}
-            </StatCard>
+            {showRevenue ? (
+              <StatCard
+                label={t("v2.kpi.revenue")}
+                icon={Banknote}
+                loading={!hasFigures}
+                value={compact.value}
+                unit={compact.unit}
+                hint={money(revenue)}
+              >
+                {company && company.totalRevenue > 0 ? (
+                  <KpiMeter
+                    label={t("v2.detail.companyShare")}
+                    shortLabel={t("v2.detail.companyShareShort")}
+                    value={percent(shareOf(revenue, company.totalRevenue))}
+                  >
+                    <Meter value={shareOf(revenue, company.totalRevenue)} thickness="thin" />
+                  </KpiMeter>
+                ) : null}
+              </StatCard>
+            ) : null}
             <StatCard
               label={t("v2.detail.activeCouriers")}
               icon={Users}
               loading={!hasFigures}
               value={number(activeCouriers)}
               unit={unitTa}
-              hint={primaryCount > 0 ? t("v2.detail.primaryMeta", { count: number(primaryCount) }) : undefined}
+              hint={
+                primaryCount > 0
+                  ? t("v2.detail.primaryMeta", { count: number(primaryCount) })
+                  : undefined
+              }
             >
               {detail && districtTotal > 0 ? (
                 <KpiMeter
@@ -586,7 +654,10 @@ const RegionDetailDialog = ({
                 description={t("v2.detail.gauge.subtitle")}
                 actions={
                   rateDelta != null ? (
-                    <DeltaChip value={rateDelta} text={t("v2.common.pp", { value: ppText(rateDelta, language) })} />
+                    <DeltaChip
+                      value={rateDelta}
+                      text={t("v2.common.pp", { value: ppText(rateDelta, language) })}
+                    />
                   ) : undefined
                 }
               />
@@ -594,7 +665,11 @@ const RegionDetailDialog = ({
                 value={rate}
                 size="sm"
                 label={t("v2.common.soldOfAccepted")}
-                marker={companyRate != null ? { value: companyRate, label: t("v2.detail.company") } : undefined}
+                marker={
+                  companyRate != null
+                    ? { value: companyRate, label: t("v2.detail.company") }
+                    : undefined
+                }
                 ariaLabel={t("v2.detail.gauge.aria", {
                   name,
                   rate: percent(rate),
@@ -650,7 +725,9 @@ const RegionDetailDialog = ({
         {!failed ? (
           <div className="grid gap-6 border-t border-border pt-5 lg:grid-cols-2 lg:gap-8">
             {/* Tumanlar */}
-            <section className={cx("flex min-w-0 flex-col gap-4", view === "table" && "lg:col-span-2")}>
+            <section
+              className={cx("flex min-w-0 flex-col gap-4", view === "table" && "lg:col-span-2")}
+            >
               <SectionHead
                 title={t("v2.detail.districts.title")}
                 count={detail ? districts.length : undefined}
@@ -727,7 +804,9 @@ const RegionDetailDialog = ({
             <section
               className={cx(
                 "flex min-w-0 flex-col gap-4",
-                view === "table" ? "border-t border-border pt-5" : "max-lg:border-t max-lg:border-border max-lg:pt-5",
+                view === "table"
+                  ? "border-t border-border pt-5"
+                  : "max-lg:border-t max-lg:border-border max-lg:pt-5",
               )}
             >
               <SectionHead
@@ -743,7 +822,11 @@ const RegionDetailDialog = ({
                 </p>
               ) : (
                 <>
-                  <RankList items={courierItems} ariaLabel={t("v2.detail.couriers.aria")} limit={courierItems.length} />
+                  <RankList
+                    items={courierItems}
+                    ariaLabel={t("v2.detail.couriers.aria")}
+                    limit={courierItems.length}
+                  />
                   {smallSample ? <ChartNote>{t("v2.detail.couriers.lowData")}</ChartNote> : null}
                 </>
               )}

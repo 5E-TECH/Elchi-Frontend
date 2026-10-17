@@ -11,7 +11,13 @@ import {
   formatPercentLocalized,
 } from "../../../shared/lib/formatMoney";
 import { Button, Card, SegmentedControl, SkeletonChart } from "../../../shared/ui/primitives";
-import { ChartNote, RankList, ViewToggle, type ChartView, type RankItem } from "../../../shared/ui/charts";
+import {
+  ChartNote,
+  RankList,
+  ViewToggle,
+  type ChartView,
+  type RankItem,
+} from "../../../shared/ui/charts";
 import {
   escapeHtml,
   ORDER_STEPS,
@@ -58,14 +64,24 @@ const MapScale = ({ metric, maxRevenue }: { metric: RegionMetric; maxRevenue: nu
     if (metric === "success") {
       const [a, b, c] = SUCCESS_STEPS;
       return [
-        { step: 1, label: t("v2.map.scale.below", { value: formatNumberLocalized(a, { language }) }) },
-        { step: 2, label: `${formatNumberLocalized(a, { language })}–${formatPercentLocalized(b - 1, { language })}` },
-        { step: 3, label: `${formatNumberLocalized(b, { language })}–${formatPercentLocalized(c - 1, { language })}` },
+        {
+          step: 1,
+          label: t("v2.map.scale.below", { value: formatNumberLocalized(a, { language }) }),
+        },
+        {
+          step: 2,
+          label: `${formatNumberLocalized(a, { language })}–${formatPercentLocalized(b - 1, { language })}`,
+        },
+        {
+          step: 3,
+          label: `${formatNumberLocalized(b, { language })}–${formatPercentLocalized(c - 1, { language })}`,
+        },
         { step: 4, label: `${formatPercentLocalized(c, { language })}+` },
       ];
     }
     // Tushum — eng katta viloyatga nisbatan choraklar.
-    const q = (part: number) => formatCompactMoneyLocalized(maxRevenue * part, { language, withCurrency: false });
+    const q = (part: number) =>
+      formatCompactMoneyLocalized(maxRevenue * part, { language, withCurrency: false });
     return [
       { step: 1, label: t("v2.map.scale.upTo", { value: q(0.25) }) },
       { step: 2, label: t("v2.map.scale.upTo", { value: q(0.5) }) },
@@ -83,17 +99,24 @@ const MapScale = ({ metric, maxRevenue }: { metric: RegionMetric; maxRevenue: nu
       })}
       className="flex min-w-0 flex-wrap items-start gap-x-3 gap-y-1.5 text-xs text-text-muted"
     >
-      <span className="pt-px font-semibold text-text max-md:w-full">{t(`v2.map.metric.${metric}`)}</span>
+      <span className="pt-px font-semibold text-text max-md:w-full">
+        {t(`v2.map.metric.${metric}`)}
+      </span>
       <span className="flex gap-0.5">
         {steps.map((item) => (
-          <span key={item.step} className="flex w-[60px] flex-col gap-1 max-md:w-auto max-md:min-w-12">
+          <span
+            key={item.step}
+            className="flex w-[60px] flex-col gap-1 max-md:w-auto max-md:min-w-12"
+          >
             <span className={cx("h-2.5 w-full rounded-[2px]", STEP_CLASS[item.step])} />
             <span className="whitespace-nowrap">{item.label}</span>
           </span>
         ))}
       </span>
       <span className="flex w-10 flex-col gap-1">
-        <span className={cx("h-2.5 w-full rounded-[2px] ring-1 ring-inset ring-border", STEP_CLASS[0])} />
+        <span
+          className={cx("h-2.5 w-full rounded-[2px] ring-1 ring-inset ring-border", STEP_CLASS[0])}
+        />
         <span>{t("v2.map.scale.none")}</span>
       </span>
     </div>
@@ -123,8 +146,13 @@ const RegionsMapCard = ({ rows, summary, periodLower, onSelect }: RegionsMapCard
     for (const row of rows) {
       if (metric === "orders") labels.set(row.id, formatNumberLocalized(row.orders, { language }));
       else if (row.orders <= 0) labels.set(row.id, "—");
-      else if (metric === "success") labels.set(row.id, formatPercentLocalized(row.rate, { language }));
-      else labels.set(row.id, formatCompactMoneyLocalized(row.revenue, { language, withCurrency: false }));
+      else if (metric === "success")
+        labels.set(row.id, formatPercentLocalized(row.rate, { language }));
+      else
+        labels.set(
+          row.id,
+          formatCompactMoneyLocalized(row.revenue, { language, withCurrency: false }),
+        );
     }
     return labels;
   }, [language, metric, rows]);
@@ -147,7 +175,8 @@ const RegionsMapCard = ({ rows, summary, periodLower, onSelect }: RegionsMapCard
       const bar = segments.length
         ? `<span class="my-1 flex h-1.5 gap-0.5">${segments
             .map(
-              (part) => `<span class="block min-w-1 rounded-[2px] ${part.fill}" style="flex:${part.value} 1 0"></span>`,
+              (part) =>
+                `<span class="block min-w-1 rounded-[2px] ${part.fill}" style="flex:${part.value} 1 0"></span>`,
             )
             .join("")}</span>`
         : "";
@@ -175,7 +204,11 @@ const RegionsMapCard = ({ rows, summary, periodLower, onSelect }: RegionsMapCard
     sub: row.orders > 0 ? t("v2.map.rank.sold", { rate: percent(row.rate) }) : undefined,
     share: shareOf(row.orders, summary.maxOrders),
     onClick: () => onSelect(row),
-    ariaLabel: t("v2.map.rank.rowAria", { name: row.name, count: number(row.orders), rate: percent(row.rate) }),
+    ariaLabel: t("v2.map.rank.rowAria", {
+      name: row.name,
+      count: number(row.orders),
+      rate: percent(row.rate),
+    }),
   }));
 
   const top3 = summary.active
@@ -184,7 +217,10 @@ const RegionsMapCard = ({ rows, summary, periodLower, onSelect }: RegionsMapCard
   const least = summary.active.length > 3 ? summary.active[summary.active.length - 1] : undefined;
   const mapAria = t("v2.map.aria", {
     metric: t(`v2.map.metricLower.${metric}`),
-    list: [...top3, least ? t("v2.map.ariaLeast", { name: least.name, count: number(least.orders) }) : null]
+    list: [
+      ...top3,
+      least ? t("v2.map.ariaLeast", { name: least.name, count: number(least.orders) }) : null,
+    ]
       .filter(Boolean)
       .join("; "),
   });
@@ -217,7 +253,10 @@ const RegionsMapCard = ({ rows, summary, periodLower, onSelect }: RegionsMapCard
       key: "couriers",
       label: t("v2.summary.activeCouriers"),
       value: summary.couriers != null ? countTa(summary.couriers) : "—",
-      meta: t("v2.summary.couriersMeta", { regions: number(rows.length), districts: number(summary.districts) }),
+      meta: t("v2.summary.couriersMeta", {
+        regions: number(rows.length),
+        districts: number(summary.districts),
+      }),
     },
   ];
 
@@ -229,7 +268,10 @@ const RegionsMapCard = ({ rows, summary, periodLower, onSelect }: RegionsMapCard
       // Telefonda sarlavha amallari (metrika + «Grafik | Jadval») to'liq en (maket) — Card amallar o'rami.
       className="max-md:[&>div:first-child>div:last-child]:w-full"
       title={t("v2.map.title")}
-      description={t("v2.map.subtitle", { metric: t(`v2.map.metricLower.${metric}`), period: periodLower })}
+      description={t("v2.map.subtitle", {
+        metric: t(`v2.map.metricLower.${metric}`),
+        period: periodLower,
+      })}
       actions={
         <div className="flex min-w-0 flex-wrap items-center gap-2 max-md:w-full max-md:flex-col max-md:items-stretch">
           <SegmentedControl<RegionMetric>
@@ -284,7 +326,9 @@ const RegionsMapCard = ({ rows, summary, periodLower, onSelect }: RegionsMapCard
                 rightIcon={expanded ? ChevronUp : ChevronDown}
                 onClick={() => setExpanded((value) => !value)}
               >
-                {expanded ? t("v2.common.showLess") : t("v2.map.rank.showAll", { count: number(rows.length) })}
+                {expanded
+                  ? t("v2.common.showLess")
+                  : t("v2.map.rank.showAll", { count: number(rows.length) })}
               </Button>
             ) : null}
           </section>
@@ -299,10 +343,22 @@ const RegionsMapCard = ({ rows, summary, periodLower, onSelect }: RegionsMapCard
                   { key: "name", label: t("v2.table.region"), className: "text-left" },
                   { key: "orders", label: t("v2.table.orders"), className: "text-right" },
                   { key: "sold", label: t("v2.table.sold"), className: "text-right max-md:hidden" },
-                  { key: "pending", label: t("v2.table.pending"), className: "text-right max-md:hidden" },
-                  { key: "cancelled", label: t("v2.table.cancelled"), className: "text-right max-md:hidden" },
+                  {
+                    key: "pending",
+                    label: t("v2.table.pending"),
+                    className: "text-right max-md:hidden",
+                  },
+                  {
+                    key: "cancelled",
+                    label: t("v2.table.cancelled"),
+                    className: "text-right max-md:hidden",
+                  },
                   { key: "rate", label: t("v2.table.success"), className: "text-right" },
-                  { key: "revenue", label: t("v2.table.revenue"), className: "text-right max-lg:hidden" },
+                  {
+                    key: "revenue",
+                    label: t("v2.table.revenue"),
+                    className: "text-right max-lg:hidden",
+                  },
                 ].map((column) => (
                   <th
                     key={column.key}

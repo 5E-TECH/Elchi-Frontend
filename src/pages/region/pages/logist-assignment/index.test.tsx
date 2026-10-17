@@ -17,14 +17,22 @@ const open = (role: string) =>
   );
 
 describe("RegionLogistAssignmentPage (v2 bo'sh holat)", () => {
-  it.each(["superadmin", "admin"])("%s sees the mockup empty state with a way back to /regions", (role) => {
-    open(role);
+  it.each(["superadmin", "admin"])(
+    "%s sees the mockup empty state with a way back to /regions",
+    (role) => {
+      open(role);
 
-    expect(screen.getByRole("heading", { level: 1, name: "Logist biriktirish" })).toBeInTheDocument();
-    expect(screen.getByText("Logistlarni viloyatlarga biriktirish bo'limi")).toBeInTheDocument();
-    expect(screen.getByText("Bo'lim hali ishga tushmagan")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Hududlarga qaytish" })).toHaveAttribute("href", "/regions");
-  });
+      expect(
+        screen.getByRole("heading", { level: 1, name: "Logist biriktirish" }),
+      ).toBeInTheDocument();
+      expect(screen.getByText("Logistlarni viloyatlarga biriktirish bo'limi")).toBeInTheDocument();
+      expect(screen.getByText("Bo'lim hali ishga tushmagan")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Hududlarga qaytish" })).toHaveAttribute(
+        "href",
+        "/regions",
+      );
+    },
+  );
 
   it("redirects other roles to /regions", () => {
     open("courier");

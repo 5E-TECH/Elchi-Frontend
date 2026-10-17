@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 
@@ -16,6 +16,18 @@ export const PRODUCT_LIST_MAX_LIMIT = 500;
 /** Katalog ro'yxati parametrlari (`search`, `page`, `limit` — gateway `buildProductListQuery`). */
 export type ProductListParams = { search?: string; page?: number; limit?: number };
 
+/**
+ * Ro'yxat so'rovi sozlamalari (ixtiyoriy, berilmasa xulq avvalgidek):
+ * `keepPreviousData` — sahifa/qidiruv almashganda yangi javob kelguncha eski qatorlar qoladi;
+ * `silentError` — sahifa xatoni o'zi ko'rsatadi (`ErrorState`), global xabar takrorlanmaydi.
+ */
+export type ProductListQueryOptions = { keepPreviousData?: boolean; silentError?: boolean };
+
+const listQueryExtras = (options?: ProductListQueryOptions) => ({
+  ...(options?.keepPreviousData ? { placeholderData: keepPreviousData } : {}),
+  ...(options?.silentError ? { meta: { silentError: true } } : {}),
+});
+
 export const useProducts = () => {
   const client = useQueryClient();
 
@@ -28,12 +40,17 @@ export const useProducts = () => {
     },
   });
 
-  const useGetProducts = (params?: ProductQueryParams, enabled: boolean = true) =>
+  const useGetProducts = (
+    params?: ProductQueryParams,
+    enabled: boolean = true,
+    options?: Pick<ProductListQueryOptions, "silentError">,
+  ) =>
     useQuery({
       queryKey: [products, params],
       queryFn: () => api.get(API_ENDPOINTS.PRODUCTS.BASE, { params }).then((res) => res.data),
       enabled,
       placeholderData: (previousData) => previousData,
+      ...listQueryExtras(options),
     });
 
   const useGetProductById = (id: number | undefined, enabled: boolean = true) =>
@@ -62,7 +79,12 @@ export const useProducts = () => {
   });
 
   // `params` — ixtiyoriy (berilmasa kalit va so'rov avvalgidek); `["market"]` / `[products]` bekor qilishlari ikkalasiga ham tegadi.
-  const useGetByMarketId = (id: string | undefined, enabled?: boolean, params?: ProductListParams) => {
+  const useGetByMarketId = (
+    id: string | undefined,
+    enabled?: boolean,
+    params?: ProductListParams,
+    options?: ProductListQueryOptions,
+  ) => {
     return useQuery({
       queryKey: params ? ["market", id, params] : ["market", id],
       queryFn: () =>
@@ -71,10 +93,11 @@ export const useProducts = () => {
           : api.get(API_ENDPOINTS.PRODUCTS.BY_MARKET_ID(id as string))
         ).then((res) => res.data),
       enabled: !!id && enabled !== false, // Only fetch if ID exists
+      ...listQueryExtras(options),
     });
   };
 
-  const useGetMyProducts = (enabled: boolean = true, params?: ProductListParams) =>
+  const useGetMyProducts = (enabled: boolean = true, params?: ProductListParams, options?: ProductListQueryOptions) =>
     useQuery({
       queryKey: params ? [products, "my-products", params] : [products, "my-products"],
       queryFn: () =>
@@ -82,6 +105,7 @@ export const useProducts = () => {
           (res) => res.data,
         ),
       enabled,
+      ...listQueryExtras(options),
     });
 
   const deleteProduct = useMutation({

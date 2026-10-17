@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import i18n from "../../../i18n";
 import { renderWithProviders } from "../../../test/test-utils";
 import CancelledMarketDetail from "./detail";
-import NewOrders from "../index";
+import NewOrdersTabs from "../ui/NewOrdersTabs";
 
 /**
  * fix3 FE-RET-05 — RU/EN interfeysda ham qo'lda tanlash sababi backend enum
@@ -139,11 +139,11 @@ describe("Yangi buyurtmalar tablari — HQ registratori (fix3 CODE-16 / C4)", ()
       },
     }) as never;
 
-  // Dizayn v2: `/new-orders` da tablar bola sahifa kartasida; qobiqning o'zi tablarni hali ko'chirilmagan
-  // bola sahifalarda (bu yerda `userDetail`) chizadi — tab ko'rinishi shu yerda tekshiriladi.
+  // Dizayn v2: `/new-orders` da tablar bola sahifa kartasining boshida (`NewOrdersTabs`) — tab ko'rinishi
+  // shu komponentning o'zi orqali tekshiriladi.
   it("HQ registratori 'Bekor qilinganlar' tabini ko'radi", () => {
-    renderWithProviders(<NewOrders />, {
-      route: "/new-orders/userDetail/1",
+    renderWithProviders(<NewOrdersTabs />, {
+      route: "/new-orders",
       preloadedState: stateFor("registrator", "HQ"),
     });
 
@@ -155,8 +155,8 @@ describe("Yangi buyurtmalar tablari — HQ registratori (fix3 CODE-16 / C4)", ()
   });
 
   it("REGIONAL registratorida tab yo'q (mollar HQ omborida)", () => {
-    renderWithProviders(<NewOrders />, {
-      route: "/new-orders/userDetail/1",
+    renderWithProviders(<NewOrdersTabs />, {
+      route: "/new-orders",
       preloadedState: stateFor("registrator", "REGIONAL"),
     });
 

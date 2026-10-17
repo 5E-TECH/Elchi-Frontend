@@ -1,9 +1,8 @@
-export type { Branch, BranchParams, BranchType, Employee, BranchSetting } from "./model/types";
+export type { Branch, BranchParams, BranchType, Employee } from "./model/types";
 export {
   getBranches,
   getBranchById,
   getBranchEmployees,
-  getBranchSettings,
   getActiveManagerBranchIds,
   getDispatchDestinations,
   extractArray,

@@ -80,7 +80,11 @@ export const normalizeRegionName = (value: string) => {
     .replace(/\s+/g, " ")
     .trim();
 
-  if (normalized.includes("toshkent shahri") || normalized === "toshkent shahar" || normalized === "toshkent sh.") {
+  if (
+    normalized.includes("toshkent shahri") ||
+    normalized === "toshkent shahar" ||
+    normalized === "toshkent sh."
+  ) {
     return "toshkentshahri";
   }
   if (normalized.includes("toshkent viloyati") || normalized === "toshkent vil.") {
@@ -92,7 +96,8 @@ export const normalizeRegionName = (value: string) => {
     .trim();
 };
 
-export const hcKeyOf = (name: string): string | null => NAME_TO_HC_KEY[normalizeRegionName(name)] ?? null;
+export const hcKeyOf = (name: string): string | null =>
+  NAME_TO_HC_KEY[normalizeRegionName(name)] ?? null;
 
 export const regionAvatar = (row: Pick<RegionRow, "hcKey">): string | undefined =>
   row.hcKey ? HC_KEY_AVATAR[row.hcKey] : undefined;
@@ -199,7 +204,10 @@ export interface RegionsSummary {
   maxRevenue: number;
 }
 
-export const summarizeRegions = (rows: RegionRow[], summary?: RegionSummary | null): RegionsSummary => {
+export const summarizeRegions = (
+  rows: RegionRow[],
+  summary?: RegionSummary | null,
+): RegionsSummary => {
   const sum = (pick: (row: RegionRow) => number) => rows.reduce((acc, row) => acc + pick(row), 0);
   const total = summary?.totalOrders || sum((row) => row.orders);
   const sold = summary?.totalDelivered || sum((row) => row.sold);
@@ -236,5 +244,6 @@ export const summarizeRegions = (rows: RegionRow[], summary?: RegionSummary | nu
 export const escapeHtml = (value: string) =>
   value.replace(
     /[&<>"']/g,
-    (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char] ?? char,
+    (char) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char] ?? char,
   );

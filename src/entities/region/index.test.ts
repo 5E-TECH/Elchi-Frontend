@@ -152,11 +152,15 @@ describe("region statistics adapters", () => {
   });
 
   it("marks courier counts unknown when stats/all sends activeCouriers: null (o2j9uDtT)", () => {
-    expect(normalizeRegionItem({ id: 1, name: "Andijon", totalOrders: 3, activeCouriers: null })).toMatchObject({
+    expect(
+      normalizeRegionItem({ id: 1, name: "Andijon", totalOrders: 3, activeCouriers: null }),
+    ).toMatchObject({
       activeCouriers: 0,
       couriersKnown: false,
     });
-    expect(normalizeRegionItem({ id: 1, name: "Andijon", totalOrders: 3, activeCouriers: 4 })).toMatchObject({
+    expect(
+      normalizeRegionItem({ id: 1, name: "Andijon", totalOrders: 3, activeCouriers: 4 }),
+    ).toMatchObject({
       activeCouriers: 4,
       couriersKnown: true,
     });
@@ -166,11 +170,38 @@ describe("region statistics adapters", () => {
     const result = normalizeRegionDetailStats({
       statusCode: 200,
       data: {
-        region: { id: "6", name: "Samarqand viloyati", satoCode: "1718", mainCourier: { id: "c2", name: "Shohruh" } },
-        summary: { totalOrders: 21, deliveredOrders: 17, cancelledOrders: 2, pendingOrders: 2, totalRevenue: 3_450_000 },
+        region: {
+          id: "6",
+          name: "Samarqand viloyati",
+          satoCode: "1718",
+          mainCourier: { id: "c2", name: "Shohruh" },
+        },
+        summary: {
+          totalOrders: 21,
+          deliveredOrders: 17,
+          cancelledOrders: 2,
+          pendingOrders: 2,
+          totalRevenue: 3_450_000,
+        },
         couriers: [
-          { id: "c1", name: "Ilhom", phoneNumber: "+998972389014", totalOrders: 6, deliveredOrders: 5, totalRevenue: 1_110_000, successRate: 83 },
-          { id: "c2", name: "Shohruh", phoneNumber: "+998904121805", totalOrders: 15, deliveredOrders: 12, totalRevenue: 2_340_000, successRate: 80 },
+          {
+            id: "c1",
+            name: "Ilhom",
+            phoneNumber: "+998972389014",
+            totalOrders: 6,
+            deliveredOrders: 5,
+            totalRevenue: 1_110_000,
+            successRate: 83,
+          },
+          {
+            id: "c2",
+            name: "Shohruh",
+            phoneNumber: "+998904121805",
+            totalOrders: 15,
+            deliveredOrders: 12,
+            totalRevenue: 2_340_000,
+            successRate: 80,
+          },
         ],
         districts: [],
       },
@@ -178,7 +209,12 @@ describe("region statistics adapters", () => {
 
     expect(result.satoCode).toBe("1718");
     expect(result.couriers).toHaveLength(2);
-    expect(result.couriers?.[0]).toMatchObject({ id: "c1", phone: "+998972389014", revenue: 1_110_000, isPrimary: false });
+    expect(result.couriers?.[0]).toMatchObject({
+      id: "c1",
+      phone: "+998972389014",
+      revenue: 1_110_000,
+      isPrimary: false,
+    });
     expect(result.couriers?.[0].successRate).toBeCloseTo(83.33, 1);
     expect(result.couriers?.[1]).toMatchObject({ id: "c2", isPrimary: true });
   });
@@ -188,23 +224,65 @@ describe("region statistics adapters", () => {
       statusCode: 200,
       data: {
         region: { id: "12", name: "Jizzax viloyati", satoCode: "1708" },
-        summary: { totalOrders: 9, deliveredOrders: 6, cancelledOrders: 1, pendingOrders: 2, totalRevenue: 1_200_000, successRate: 67, districtsCount: 2 },
+        summary: {
+          totalOrders: 9,
+          deliveredOrders: 6,
+          cancelledOrders: 1,
+          pendingOrders: 2,
+          totalRevenue: 1_200_000,
+          successRate: 67,
+          districtsCount: 2,
+        },
         districts: [
-          { id: "1", name: "Arnasoy tumani", satoCode: "1708201", totalOrders: 9, deliveredOrders: 6, cancelledOrders: 1, pendingOrders: 2, totalRevenue: 1_200_000, couriersCount: 2 },
-          { id: "2", name: "Baxmal tumani", satoCode: "1708204", totalOrders: 0, deliveredOrders: 0, cancelledOrders: 0, pendingOrders: 0, totalRevenue: 0, couriersCount: 0 },
+          {
+            id: "1",
+            name: "Arnasoy tumani",
+            satoCode: "1708201",
+            totalOrders: 9,
+            deliveredOrders: 6,
+            cancelledOrders: 1,
+            pendingOrders: 2,
+            totalRevenue: 1_200_000,
+            couriersCount: 2,
+          },
+          {
+            id: "2",
+            name: "Baxmal tumani",
+            satoCode: "1708204",
+            totalOrders: 0,
+            deliveredOrders: 0,
+            cancelledOrders: 0,
+            pendingOrders: 0,
+            totalRevenue: 0,
+            couriersCount: 0,
+          },
         ],
       },
     });
 
     expect(result.region).toEqual({ id: "12", name: "Jizzax viloyati", satoCode: "1708" });
-    expect(result.detail?.summary).toMatchObject({ totalOrders: 9, totalDelivered: 6, totalCancelled: 1, pendingOrders: 2, totalRevenue: 1_200_000 });
+    expect(result.detail?.summary).toMatchObject({
+      totalOrders: 9,
+      totalDelivered: 6,
+      totalCancelled: 1,
+      pendingOrders: 2,
+      totalRevenue: 1_200_000,
+    });
     expect(result.detail?.districts).toHaveLength(2);
-    expect(result.detail?.districts[0]).toMatchObject({ satoCode: "1708201", revenue: 1_200_000, activeCouriers: 2 });
+    expect(result.detail?.districts[0]).toMatchObject({
+      satoCode: "1708201",
+      revenue: 1_200_000,
+      activeCouriers: 2,
+    });
   });
 
   it("returns region: null when the user has no region assigned", () => {
     expect(
-      normalizeMyRegionDistrictStats({ statusCode: 200, message: "Sizga viloyat biriktirilmagan", data: { region: null, summary: null, districts: [] } }),
+      normalizeMyRegionDistrictStats({
+        statusCode: 200,
+        message: "Sizga viloyat biriktirilmagan",
+        data: { region: null, summary: null, districts: [] },
+      }),
     ).toEqual({ region: null, detail: null });
   });
 
