@@ -217,6 +217,20 @@ describe("NewOrderDetail — xodim sahifasi (dizayn v2)", () => {
     );
   });
 
+  it("tanlov paneli: hammasi oldindan tanlangan — ko'k; tanlov bekor qilinsa — neytral «tanlanmagan»", async () => {
+    const user = userEvent.setup();
+    renderPage("superadmin");
+
+    await screen.findByRole("checkbox", { name: "№o2 ni tanlash" });
+    const region = () => screen.getByRole("region", { name: "Tanlangan buyurtmalar" });
+    expect(region()).toHaveClass("bg-action-soft");
+
+    await user.click(within(region()).getByRole("button", { name: "Tanlovni bekor qilish" }));
+    // Bo'sh tanlov — neytral (ko'k faqat tanlov bo'lganda; maket `*-cancelled-scanner-dialog`).
+    expect(region()).toHaveClass("bg-sunken");
+    expect(region()).not.toHaveClass("bg-action-soft");
+  });
+
   it("qabul oynasi: market, son, summa; tanlanmaganlar eslatmasi va faqat tanlanganlar yuboriladi", async () => {
     const user = userEvent.setup();
     renderPage("superadmin");

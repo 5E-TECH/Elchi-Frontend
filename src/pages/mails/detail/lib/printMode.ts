@@ -1,6 +1,6 @@
 import type { PostOrder } from "../../../../entities/mails";
 import i18n from "../../../../i18n";
-import type { ApiOrder } from "../../../new_orders/components/OrderCard";
+import type { ApiOrder } from "../../../new_orders/model/apiOrder";
 
 export type PrintMode = "browser" | "pdf_100x60" | "thermal_80mm";
 

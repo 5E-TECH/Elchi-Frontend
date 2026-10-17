@@ -1,88 +1,107 @@
-import { memo, useCallback, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import { Building2, CalendarClock, CheckSquare, MapPin, PackageCheck, Search, Square, TrendingUp } from "lucide-react";
-import { useTranslation } from "react-i18next";
+// dizayn-v2: superadmin-neworders-branch-batches, admin-neworders-branch-batches
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Check, ChevronRight, Inbox, ListChecks, SearchX } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useBatches, useReceiveTransferBatch, type Batch } from "../../../entities/batch";
 import { useBranchDetail } from "../../../entities/branch";
-import { Table } from "../../../shared/components/Table/Table";
-import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
-import { batchStatusClass, batchStatusLabel, formatBatchDateTime, formatBatchMoney } from "../../batches/lib/batchFormat";
-import { Checkbox } from "../components/OrderCard";
-import BackButton from "../../../shared/ui/BackButton";
-import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
-import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
+import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
+import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
+import {
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  EmptyState,
+  PageHeader,
+  QueryBoundary,
+  Skeleton,
+  SkeletonTable,
+  TextInput,
+  type DataTableColumn,
+  type DataTableSelection,
+} from "../../../shared/ui/primitives";
+import { formatBatchDisplayId } from "../../batches/lib/batchFormat";
+import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
+import { SelectionRegion } from "../ui/SelectionRegion";
+import {
+  BATCH_STATUS_TONE,
+  matchesBatchSearch,
+  readBatchRegion,
+  readBranchName,
+  sumBatchesTotal,
+  toScannableBatches,
+} from "./branchBatchesModel";
 
-type ScannableBatch = Batch & { qr_code_token?: string | null };
+/** Havola ko'rinishidagi ikonka-tugma (`.el-iconbtn-sm`, ghost) — telefonda 44 px. */
+const ICON_LINK =
+  "inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-text-muted " +
+  "transition-[background-color,color] duration-150 hover:bg-sunken hover:text-text " +
+  "motion-reduce:transition-none max-md:size-11";
 
+type ScannableBatch = Batch & { qr_code_token: string | null };
+
+/**
+ * FILIAL PAKETLARI — `/new-orders/branches/:branchId` (superadmin/admin; qobiq `bare`), dizayn v2.
+ *
+ * Sarlavha: «← Filial paketlari» · filial nomi · «Filialdan yuborilgan, qabul kutayotgan paketlar · N ta · summa»,
+ * yagona asosiy amal «Qabul qilish — N ta paket» (tanlanganlarga; tasdiq oynasi yo'q — v1 va maketdagidek).
+ * Karta: qidiruv (viloyat, paket raqami, token) + «Skaner tayyor» qatori, tanlov paneli, jadval (telefonda
+ * kartalar). USB skaner (klaviatura) paket QR'ini o'qisa — paket ro'yxatda tanlanadi (qabul qilinmaydi).
+ *
+ * So'rov: `transfer-batches?source_branch_id&status=SENT&direction=FORWARD&page=1&limit=100` (sahifalash yo'q,
+ * 100 ta bilan cheklangan — v1 dagidek). Qabul: har paketga `POST transfer-batches/:id/receive`
+ * (`Promise.allSettled`) — qabul qilinganlar ro'yxatdan yashiriladi, muvaffaqiyat va xato alohida xabar.
+ */
 const BranchSentBatchesPage = () => {
-  const { branchId } = useParams<{ branchId: string }>();
+  const { branchId = "" } = useParams<{ branchId: string }>();
   const navigate = useNavigate();
-  const { t } = useTranslation("newOrders");
+  const { t, i18n } = useTranslation(["newOrders", "common"]);
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const [selectedBatchIds, setSelectedBatchIds] = useState<Set<string>>(new Set());
   const [receivedBatchIds, setReceivedBatchIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const receiveTransferBatch = useReceiveTransferBatch();
-  const { data: branch } = useBranchDetail(branchId);
+  const branchQuery = useBranchDetail(branchId);
 
-  const { data, isLoading, isError } = useBatches({
+  const batchesQuery = useBatches({
     sourceBranchId: branchId,
     statusRaw: "SENT",
     directionRaw: "FORWARD",
     page: 1,
     limit: 100,
   });
+  const { data, isLoading, isError } = batchesQuery;
 
   const rows = useMemo(
     () => (data?.data ?? []).filter((row) => !receivedBatchIds.has(row.id)),
     [data?.data, receivedBatchIds],
   );
-  const visibleRows = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return rows;
-
-    return rows.filter((row) => {
-      const region = row.to_branch.region ?? "";
-      const branchName = row.to_branch.name ?? "";
-      return (
-        row.id.toLowerCase().includes(query) ||
-        row.token.toLowerCase().includes(query) ||
-        region.toLowerCase().includes(query) ||
-        branchName.toLowerCase().includes(query)
-      );
-    });
-  }, [rows, search]);
-  const scannableRows = useMemo<ScannableBatch[]>(
-    () => rows.map((row) => ({ ...row, qr_code_token: row.token })),
-    [rows],
-  );
+  const visibleRows = useMemo(() => rows.filter((row) => matchesBatchSearch(row, search)), [rows, search]);
+  const scannableRows = useMemo<ScannableBatch[]>(() => toScannableBatches(rows), [rows]);
   const isAllSelected = visibleRows.length > 0 && visibleRows.every((row) => selectedBatchIds.has(row.id));
-  const branchName = branch?.name || rows[0]?.from_branch?.name || `Filial #${branchId}`;
+  const knownBranchName = readBranchName(branchQuery.data) ?? readBranchName(rows[0]?.from_branch);
+  const isNameLoading = !knownBranchName && (branchQuery.isLoading || isLoading);
+  const branchName = knownBranchName ?? t("branchBatches.batches.branchFallback", { id: branchId });
 
-  const toggleBatch = useCallback((id: string) => {
+  // Skaner chaqiruvlari joriy tanlovni o'qiydi: yon ta'sir (ovoz, xabar) `setState` ichida emas.
+  // Ref tanlov o'zgarganda yangilanadi, skaner tanlaganda esa darhol (ketma-ket ikki skaner ham takror deb topiladi).
+  const selectedRef = useRef(selectedBatchIds);
+  useEffect(() => {
+    selectedRef.current = selectedBatchIds;
+  }, [selectedBatchIds]);
+
+  // «Barchasini tanlash» / «Tanlovni bekor qilish» — ko'rinib turgan (qidiruvdagi) paketlar, v1 dagidek.
+  const toggleAll = useCallback(() => {
     setSelectedBatchIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      const allVisibleSelected = visibleRows.length > 0 && visibleRows.every((row) => prev.has(row.id));
+      visibleRows.forEach((row) => (allVisibleSelected ? next.delete(row.id) : next.add(row.id)));
       return next;
     });
-  }, []);
-
-  const toggleAll = () => {
-    if (isAllSelected) {
-      setSelectedBatchIds((prev) => {
-        const next = new Set(prev);
-        visibleRows.forEach((row) => next.delete(row.id));
-        return next;
-      });
-      return;
-    }
-    setSelectedBatchIds((prev) => {
-      const next = new Set(prev);
-      visibleRows.forEach((row) => next.add(row.id));
-      return next;
-    });
-  };
+  }, [visibleRows]);
 
   const markBatchesReceived = useCallback((ids: string[]) => {
     setReceivedBatchIds((prev) => {
@@ -108,291 +127,325 @@ const BranchSentBatchesPage = () => {
 
     if (successCount > 0) {
       markBatchesReceived(successIds);
-      notify.success("Batchlar qabul qilindi", {
-        description: `${successCount} ta batch muvaffaqiyatli qabul qilindi.`,
+      notify.success(t("branchBatches.batches.receiveSuccess"), {
+        description: t("branchBatches.batches.receiveSuccessDescription", {
+          count: successCount,
+          value: formatNumberLocalized(successCount, { language }),
+        }),
       });
     }
 
     if (failedCount > 0) {
-      notify.error("Batchlarni qabul qilishda xatolik", {
-        description: `${failedCount} ta batch qabul qilinmadi. Iltimos qayta urinib ko'ring.`,
+      notify.error(t("branchBatches.batches.receiveError"), {
+        description: t("branchBatches.batches.receiveErrorDescription", {
+          count: failedCount,
+          value: formatNumberLocalized(failedCount, { language }),
+        }),
       });
     }
   };
 
   const handleMissingScannedBatch = useCallback(() => {
     playMissingOrderFeedback();
-    notify.warning("QR topilmadi", {
-      description: "Bu QR kod ushbu filial batchlariga mos kelmadi.",
-      duration: 3000,
-    });
-  }, []);
-
-  const selectScannedBatch = useCallback((batch: ScannableBatch) => {
-    setSelectedBatchIds((prev) => {
-      if (prev.has(batch.id)) {
-        void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
-        notify.warning(t("common:scannerFeedbackDuplicate"), { description: `#${batch.id}`, duration: 2000 });
-        return prev;
-      }
-      const next = new Set(prev);
-      next.add(batch.id);
-      void playScanFeedback("success");
-      return next;
-    });
+    notify.warning(t("qrNotFound"), { description: t("branchBatches.batches.scanMissing"), duration: 3000 });
   }, [t]);
 
+  const selectScannedBatch = useCallback(
+    (batch: ScannableBatch) => {
+      if (selectedRef.current.has(batch.id)) {
+        void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
+        notify.warning(t("common:scannerFeedbackDuplicate"), { description: `#${batch.id}`, duration: 2000 });
+        return;
+      }
+      selectedRef.current = new Set(selectedRef.current).add(batch.id);
+      setSelectedBatchIds((prev) => {
+        const next = new Set(prev);
+        next.add(batch.id);
+        return next;
+      });
+      void playScanFeedback("success");
+    },
+    [t],
+  );
+
+  const scannerEnabled = scannableRows.length > 0 && !receiveTransferBatch.isPending;
   useOrderQrScanner({
     orders: scannableRows,
-    enabled: scannableRows.length > 0 && !receiveTransferBatch.isPending,
+    enabled: scannerEnabled,
     onMatch: selectScannedBatch,
     onMissing: handleMissingScannedBatch,
   });
 
-  const totalPrice = visibleRows.reduce((sum, row) => sum + row.total_price, 0);
+  // ─── Ko'rinish ───────────────────────────────────────────────────────────────
+  const money = useCallback((value: number) => formatMoneyLocalized(value, { language }), [language]);
+  const count = useCallback((value: number) => formatNumberLocalized(value, { language }), [language]);
+  const dateTime = useCallback((value: string) => formatDateTimeLocalized(value, { language }), [language]);
+  const batchHref = useCallback((batch: Batch) => `/new-orders/branches/${branchId}/batches/${batch.id}`, [branchId]);
 
-  const columns: ColumnConfig<Batch>[] = useMemo(
-    () => [
-      {
-        key: "token",
-        label: "#",
-        width: "7%",
-        render: (_, row) => (
-          <Checkbox
-            checked={selectedBatchIds.has(row.id)}
-            onChange={() => toggleBatch(row.id)}
-          />
-        ),
-      },
-      {
-        key: "id",
-        label: "Viloyat",
-        width: "31%",
-        render: (_, row) => (
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-main/10 text-main dark:bg-main/20">
-              <MapPin size={14} />
-            </span>
-            <span className="font-semibold text-maindark dark:text-white">
-              {row.to_branch.region ?? row.to_branch.name}
-            </span>
-          </div>
-        ),
-      },
-      {
-        key: "orders_count",
-        label: "Order",
-        width: "18%",
-        sortable: true,
-        render: (value) => (
-          <div className="flex items-center gap-2">
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-main/10 dark:bg-main/20">
-              <PackageCheck size={12} className="text-main" />
-            </span>
-            <span className="font-bold text-maindark dark:text-white">{Number(value)} ta</span>
-          </div>
-        ),
-      },
-      {
-        key: "total_price",
-        label: "Umumiy narx",
-        width: "20%",
-        sortable: true,
-        render: (value) => (
-          <span className="tabular-nums font-bold text-emerald-600 dark:text-emerald-400">
-            {formatBatchMoney(Number(value))}
-          </span>
-        ),
-      },
-      {
-        key: "status",
-        label: "Holat",
-        width: "12%",
-        render: (_, row) => (
-          <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-extrabold ${batchStatusClass[row.status]}`}>
-            {batchStatusLabel[row.status]}
-          </span>
-        ),
-      },
-      {
-        key: "created_at",
-        label: "Yaratilgan vaqt",
-        width: "12%",
-        render: (value) => (
-          <span className="font-medium text-maindark dark:text-slate-300">
-            {formatBatchDateTime(String(value))}
-          </span>
-        ),
-      },
-    ],
-    [selectedBatchIds, toggleBatch],
+  const selectedRows = useMemo(() => rows.filter((row) => selectedBatchIds.has(row.id)), [rows, selectedBatchIds]);
+  const totalSum = sumBatchesTotal(rows);
+
+  const statusBadge = useCallback(
+    (batch: Batch) => (
+      <Badge tone={BATCH_STATUS_TONE[batch.status]} dot>
+        {t(`batchStatus.${batch.status}`)}
+      </Badge>
+    ),
+    [t],
   );
 
-  const renderMobileCard = useCallback((row: Batch) => (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-white/10 dark:bg-primarydark">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-3">
-          <Checkbox
-            checked={selectedBatchIds.has(row.id)}
-            onChange={() => toggleBatch(row.id)}
-          />
-          <div className="min-w-0">
-            <p className="text-[10px] font-black uppercase tracking-widest text-maindark/50 dark:text-white/45">
-              Viloyat
-            </p>
-            <div className="mt-1 flex min-w-0 items-start gap-2">
-              <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-main/10 text-main dark:bg-main/20">
-                <MapPin size={14} />
-              </span>
-              <p className="min-w-0 break-words text-sm font-extrabold leading-5 text-maindark dark:text-white">
-                {row.to_branch.region ?? row.to_branch.name}
-              </p>
-            </div>
-          </div>
-        </div>
+  const selection = useMemo<DataTableSelection<Batch>>(
+    () => ({
+      isSelected: (batch) => selectedBatchIds.has(batch.id),
+      onToggle: (batch, checked) =>
+        setSelectedBatchIds((prev) => {
+          const next = new Set(prev);
+          if (checked) next.add(batch.id);
+          else next.delete(batch.id);
+          return next;
+        }),
+      onToggleAll: (checked) =>
+        setSelectedBatchIds((prev) => {
+          const next = new Set(prev);
+          visibleRows.forEach((batch) => (checked ? next.add(batch.id) : next.delete(batch.id)));
+          return next;
+        }),
+      headerLabel: t("branchBatches.batches.selectAllLabel"),
+      rowLabel: (batch) => t("branchBatches.batches.selectRow", { id: formatBatchDisplayId(batch.id) }),
+    }),
+    [selectedBatchIds, t, visibleRows],
+  );
 
-        <span className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-extrabold ${batchStatusClass[row.status]}`}>
-          {batchStatusLabel[row.status]}
-        </span>
-      </div>
+  const columns = useMemo<DataTableColumn<Batch>[]>(
+    () => [
+      {
+        id: "batch",
+        header: t("branchBatches.batches.columns.batch"),
+        className: "w-[20%]",
+        cell: (batch) => (
+          <>
+            <Link
+              to={batchHref(batch)}
+              className="whitespace-nowrap font-semibold text-text hover:text-action-fg hover:underline"
+            >
+              {formatBatchDisplayId(batch.id)}
+            </Link>
+            <div className="whitespace-nowrap text-[13px] text-text-muted">{dateTime(batch.created_at)}</div>
+          </>
+        ),
+      },
+      {
+        id: "region",
+        header: t("branchBatches.batches.columns.region"),
+        cell: (batch) => readBatchRegion(batch) ?? "—",
+      },
+      {
+        id: "orders",
+        header: t("branchBatches.batches.columns.orders"),
+        align: "end",
+        cell: (batch) => t("branchBatches.batches.ordersCell", { value: count(batch.orders_count) }),
+      },
+      {
+        id: "status",
+        header: t("branchBatches.batches.columns.status"),
+        cell: statusBadge,
+      },
+      {
+        id: "amount",
+        header: t("branchBatches.batches.columns.amount"),
+        align: "end",
+        cell: (batch) => <span className="font-semibold text-text">{money(batch.total_price)}</span>,
+      },
+      {
+        id: "actions",
+        header: <span className="sr-only">{t("branchBatches.batches.columns.actions")}</span>,
+        className: "w-14",
+        cellClassName: "text-right",
+        cell: (batch) => {
+          const label = t("branchBatches.batches.open", { id: formatBatchDisplayId(batch.id) });
+          return (
+            <Link to={batchHref(batch)} aria-label={label} title={label} className={ICON_LINK}>
+              <ChevronRight aria-hidden="true" size={16} strokeWidth={2} />
+            </Link>
+          );
+        },
+      },
+    ],
+    [batchHref, count, dateTime, money, statusBadge, t],
+  );
 
-      <div className="grid gap-2.5 border-t border-gray-100 pt-3 dark:border-white/10">
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-[10px] font-black uppercase tracking-widest text-maindark/50 dark:text-white/45">
-            Order
-          </span>
-          <span className="inline-flex items-center gap-2 font-bold text-maindark dark:text-white">
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-main/10 dark:bg-main/20">
-              <PackageCheck size={12} className="text-main" />
+  // Telefon kartasi: chapda belgi (DataTable, 48 px), o'ngda butun karta — paket tafsilotiga havola.
+  const renderCard = useCallback(
+    (batch: Batch) => {
+      const region = readBatchRegion(batch);
+      return (
+        <Link to={batchHref(batch)} className="flex min-w-0 flex-col gap-1 py-3 pl-12 pr-4 text-sm text-text">
+          <span className="flex min-w-0 justify-between gap-2">
+            <span className="min-w-0 font-semibold">
+              {formatBatchDisplayId(batch.id)}
+              {region ? ` · ${region}` : null}
             </span>
-            {row.orders_count} ta
+            <span className="whitespace-nowrap font-semibold">{money(batch.total_price)}</span>
           </span>
-        </div>
+          <span className="text-[13px] text-text-muted">
+            {t("branchBatches.batches.ordersSub", { count: batch.orders_count, value: count(batch.orders_count) })}
+            {" · "}
+            <span className="whitespace-nowrap">{dateTime(batch.created_at)}</span>
+          </span>
+          <span className="flex flex-wrap gap-1.5">{statusBadge(batch)}</span>
+        </Link>
+      );
+    },
+    [batchHref, count, dateTime, money, statusBadge, t],
+  );
 
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-[10px] font-black uppercase tracking-widest text-maindark/50 dark:text-white/45">
-            Umumiy narx
-          </span>
-          <span className="text-right font-extrabold tabular-nums text-emerald-600 dark:text-emerald-400">
-            {formatBatchMoney(row.total_price)}
-          </span>
-        </div>
+  const isLoaded = data !== undefined;
+  const qty = (value: number) => t("branchBatches.batches.qty", { value: count(value) });
 
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-[10px] font-black uppercase tracking-widest text-maindark/50 dark:text-white/45">
-            Yaratilgan vaqt
-          </span>
-          <span className="inline-flex items-center gap-1.5 text-right text-sm font-semibold text-maindark dark:text-slate-300">
-            <CalendarClock size={13} className="text-main/70" />
-            {formatBatchDateTime(row.created_at)}
-          </span>
-        </div>
-      </div>
-    </div>
-  ), [selectedBatchIds, toggleBatch]);
+  const list = (
+    <QueryBoundary
+      query={{
+        data: isLoaded ? rows : undefined,
+        isLoading,
+        isError,
+        error: batchesQuery.error,
+        refetch: batchesQuery.refetch,
+      }}
+      keepPreviousData={false}
+      loadingLabel={t("branchBatches.batches.loading")}
+      loading={
+        <SkeletonTable
+          framed={false}
+          columns={[
+            t("branchBatches.batches.columns.batch"),
+            t("branchBatches.batches.columns.region"),
+            t("branchBatches.batches.columns.orders"),
+            t("branchBatches.batches.columns.status"),
+            t("branchBatches.batches.columns.amount"),
+          ]}
+          rows={6}
+        />
+      }
+      empty={
+        <EmptyState
+          icon={Inbox}
+          title={t("branchBatches.batches.emptyTitle")}
+          description={t("branchBatches.batches.emptyDescription")}
+        />
+      }
+      className="border-t border-border"
+    >
+      {(_, { isRefetching }) =>
+        visibleRows.length > 0 ? (
+          <DataTable
+            rows={visibleRows}
+            columns={columns}
+            getRowKey={(batch) => batch.id}
+            label={t("branchBatches.batches.tableLabel")}
+            selection={selection}
+            onRowClick={(batch) => navigate(batchHref(batch))}
+            renderCard={renderCard}
+            busy={isRefetching}
+          />
+        ) : (
+          <EmptyState
+            icon={SearchX}
+            title={t("branchBatches.batches.noMatchTitle")}
+            description={t("branchBatches.batches.noMatchDescription")}
+            action={
+              <Button variant="secondary" size="sm" onClick={() => setSearch("")}>
+                {t("branchBatches.batches.clearSearch")}
+              </Button>
+            }
+          />
+        )
+      }
+    </QueryBoundary>
+  );
 
   return (
-    <div className="space-y-4 pb-20 sm:space-y-6 sm:pb-24 md:pb-4">
-      <div className="flex min-w-0 items-center gap-3">
-        <BackButton to="/new-orders/branches" className="h-10 min-w-10 shrink-0 rounded-xl px-2" label="" />
-        <div className="relative min-w-0 flex-1">
-          <Search size={18} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-maindark/45 dark:text-white/45" />
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Viloyat yoki batch ID qidirish..."
-            className="h-12 w-full rounded-2xl border border-[color:var(--color-border-soft)] bg-primary pl-12 pr-4 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main/60 focus:ring-2 focus:ring-main/15 dark:bg-primarydark dark:text-white"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <div className="flex w-full items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3.5 dark:border-white/10 dark:bg-primarydark sm:p-4">
-          <div className="rounded-xl bg-main/10 p-2.5 text-main dark:bg-main/20">
-            <Building2 size={20} />
-          </div>
-          <div className="flex min-w-0 flex-col">
-            <span className="text-xs font-medium text-maindark dark:text-white/75">Filial</span>
-            <strong className="truncate text-base leading-tight text-maindark dark:text-white sm:text-lg">{branchName}</strong>
-          </div>
-        </div>
-
-        <div className="flex w-full items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3.5 dark:border-white/10 dark:bg-primarydark sm:p-4">
-          <div className="rounded-xl bg-emerald-500/10 p-2.5 text-emerald-500 dark:bg-emerald-500/20">
-            <PackageCheck size={20} />
-          </div>
-          <div className="flex min-w-0 flex-col">
-            <span className="text-xs font-medium text-maindark dark:text-white/75">Jami batchlar</span>
-            <strong className="truncate text-base leading-tight text-maindark dark:text-white sm:text-lg">{visibleRows.length} ta</strong>
-          </div>
-        </div>
-
-        <div className="flex w-full items-center gap-3 rounded-2xl border border-gray-200 bg-white p-3.5 dark:border-white/10 dark:bg-primarydark sm:p-4">
-          <div className="rounded-xl bg-amber-500/10 p-2.5 text-amber-500 dark:bg-amber-500/20">
-            <TrendingUp size={20} />
-          </div>
-          <div className="flex min-w-0 flex-col">
-            <span className="text-xs font-medium text-maindark dark:text-white/75">Umumiy summa</span>
-            <strong className="truncate text-base leading-tight text-emerald-600 dark:text-emerald-400 sm:text-lg">{formatBatchMoney(totalPrice)}</strong>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm dark:border-white/10 dark:bg-primarydark">
-        <button
-          type="button"
-          onClick={toggleAll}
-          disabled={visibleRows.length === 0}
-          className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl border px-4 text-xs font-bold transition-all disabled:cursor-not-allowed disabled:opacity-45 ${
-            isAllSelected
-              ? "border-main bg-main text-white shadow-lg shadow-main/20"
-              : "border-gray-200 bg-gray-50 text-maindark hover:border-main/35 hover:bg-main/10 hover:text-main dark:border-white/10 dark:bg-white/5 dark:text-white/80 dark:hover:border-main/45 dark:hover:bg-main/15 dark:hover:text-white"
-          }`}
-        >
-          {isAllSelected ? <CheckSquare size={16} /> : <Square size={16} />}
-          {isAllSelected ? "Tanlovni bekor qilish" : "Barchasini tanlash"}
-        </button>
-
-        <div className="inline-flex h-9 items-center gap-2 rounded-xl border border-main/15 bg-main/10 px-3 text-xs font-bold text-main dark:border-main/25 dark:bg-main/20 dark:text-main">
-          <CheckSquare size={14} />
-          {selectedBatchIds.size} ta tanlandi
-        </div>
-      </div>
-
-      {isError ? (
-        <div className="rounded-2xl border border-rose-300/30 bg-rose-500/10 p-6 text-center text-sm font-semibold text-rose-700 dark:text-rose-100">
-          Batchlar ro'yxatini yuklab bo'lmadi
-        </div>
-      ) : null}
-
-      <Table
-        data={visibleRows}
-        columns={columns}
-        loading={isLoading}
-        keyExtractor={(row) => row.id}
-        emptyMessage="Batch topilmadi"
-        onRowClick={(row) => navigate(`/new-orders/branches/${branchId}/batches/${row.id}`)}
-        mobileRowRender={renderMobileCard}
-        preserveTableOnDesktop
-        hoverable
+    <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
+      <PageHeader
+        back="/new-orders/branches"
+        backLabel={t("branchesTab")}
+        title={isNameLoading ? <Skeleton width={224} height={32} /> : branchName}
+        description={
+          isLoaded ? (
+            <>
+              {t("branchBatches.batches.description")} · <span className="whitespace-nowrap">{qty(rows.length)}</span>{" "}
+              · <span className="whitespace-nowrap">{money(totalSum)}</span>
+            </>
+          ) : null
+        }
+        actions={
+          <Button
+            leftIcon={Check}
+            disabled={selectedBatchIds.size === 0}
+            loading={receiveTransferBatch.isPending}
+            loadingText={t("receiving")}
+            onClick={() => void handleAcceptSelectedBatches()}
+          >
+            <Trans
+              t={t}
+              i18nKey="branchBatches.batches.receive"
+              values={{ value: count(selectedBatchIds.size) }}
+              count={selectedBatchIds.size}
+              components={{ long: <span className="max-md:hidden" /> }}
+            />
+          </Button>
+        }
       />
 
-      <div className="fixed bottom-[calc(var(--shell-bottomnav-h)+1rem)] right-6 z-40 sm:right-8 md:bottom-14 md:right-12">
-        <button
-          type="button"
-          disabled={selectedBatchIds.size === 0 || receiveTransferBatch.isPending}
-          onClick={handleAcceptSelectedBatches}
-          className={`inline-flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-xs font-bold text-white transition-all
-            bg-linear-to-r from-emerald-500 to-emerald-400 shadow-xl shadow-emerald-500/30
-            hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:translate-y-0
-            disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0
-            ${selectedBatchIds.size > 0 ? "cursor-pointer opacity-100" : "opacity-40"}`}
-        >
-          {receiveTransferBatch.isPending
-            ? "Qabul qilinmoqda..."
-            : `Batchlarni qabul qilish (${selectedBatchIds.size})`}
-        </button>
-      </div>
+      <Card as="section" padding="none" aria-label={t("branchBatches.batches.cardLabel")}>
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4 max-md:px-4">
+          <TextInput
+            mode="search"
+            value={search}
+            onValueChange={setSearch}
+            placeholder={t("branchBatches.batches.searchPlaceholder")}
+            aria-label={t("branchBatches.batches.searchLabel")}
+            className="min-w-0 max-w-[480px] flex-[1_1_320px]"
+          />
+          {scannerEnabled ? (
+            <p role="status" className="flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[13px] text-text-muted">
+              <Badge tone="success" dot>
+                {t("branchBatches.batches.scannerReady")}
+              </Badge>
+              <span>{t("branchBatches.batches.scanHint")}</span>
+            </p>
+          ) : null}
+        </div>
+
+        {rows.length > 0 ? (
+          <SelectionRegion
+            idle={selectedRows.length === 0}
+            label={t("branchBatches.batches.selectionRegion")}
+            title={
+              selectedRows.length > 0
+                ? t("branchBatches.batches.selectedSummary", {
+                    value: count(selectedRows.length),
+                    sum: money(sumBatchesTotal(selectedRows)),
+                  })
+                : t("branchBatches.batches.noneSelected")
+            }
+            hint={t("branchBatches.batches.selectionHint")}
+            action={
+              <Button
+                variant="ghost"
+                size="sm"
+                leftIcon={ListChecks}
+                onClick={toggleAll}
+                disabled={visibleRows.length === 0}
+                className="max-md:px-2"
+              >
+                {isAllSelected ? t("branchBatches.batches.clearSelection") : t("selectAll")}
+              </Button>
+            }
+          />
+        ) : null}
+
+        {list}
+      </Card>
     </div>
   );
 };

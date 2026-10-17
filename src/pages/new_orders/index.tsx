@@ -11,12 +11,14 @@ import NewOrdersTabs from "./ui/NewOrdersTabs";
  * «QABUL VA YARATISH» QOBIG'I — barcha `/new-orders/*` bola route'lari shu ichida.
  *
  * Rejim yo'lga va rolga qarab (`resolveNewOrdersShellMode`):
- *  - `bare`   — faqat `<Outlet/>`: bola o'z sarlavhasini («← Qabul va yaratish» + nom) chizadi (yaratish,
- *               skaner, market buyurtmalari, tahrirlash) — sarlavha va tablar takrorlanmasin;
+ *  - `bare`   — faqat `<Outlet/>`: bola o'z sarlavhasini («← …» + nom) chizadi (yaratish, skaner, market
+ *               buyurtmalari, tahrirlash, filial va paket, bekor qilinganlarni topshirish) — sarlavha va tablar
+ *               takrorlanmasin;
  *  - `hosted` — sahifa ildizi + «Qabul va yaratish» sarlavhasi; tablar bola sahifaning birinchi kartasida
- *               (`NewOrdersTabs`, maket `superadmin-neworders-markets`);
- *  - `legacy` — hali ko'chirilmagan bolalar (filial paketlari, bekor qilinganlar): sarlavha va tablar sahifa
- *               fonida, bola sahifa o'zgarmagan.
+ *               (`NewOrdersTabs`, maket `superadmin-neworders-markets`): marketlar, manba tanlash, filial
+ *               paketlari, bekor qilinganlar, market rolining o'z ro'yxatlari;
+ *  - `legacy` — hali ko'chirilmagan bola (foydalanuvchi tafsiloti): sarlavha va tablar sahifa fonida, bola
+ *               sahifa o'zgarmagan.
  * Sahifa shell kontent slotida: tashqi karta va chekka yo'q, ildiz faqat bo'limlar oralig'ini beradi.
  */
 const NewOrders = () => {

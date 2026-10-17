@@ -6,12 +6,14 @@
  * Qaror sof funksiyada — route ro'yxati o'zgarsa, test shu yerda ushlaydi.
  *
  *  - `bare`   — qobiq faqat `<Outlet/>` beradi; bola o'z `PageHeader` ini (orqaga havolasi bilan) chizadi:
- *               yaratish, kiruvchi posilkalarni skanerlash, market buyurtmalari (xodim), buyurtmani tahrirlash.
+ *               yaratish, kiruvchi posilkalarni skanerlash, market buyurtmalari (xodim), buyurtmani tahrirlash,
+ *               filial paketlari (filial va paket), bekor qilinganlarni marketga topshirish (xodim).
  *  - `hosted` — qobiq sahifa ildizi + umumiy sarlavha («Qabul va yaratish» + «Buyurtma yaratish»), bola esa
  *               birinchi kartasini `NewOrdersTabs` bilan boshlaydi: marketlar ro'yxati, manba tanlash,
- *               market rolining o'z yangi buyurtmalari.
- *  - `legacy` — hali v2 ga ko'chirilmagan bolalar (filial paketlari, bekor qilinganlar, foydalanuvchi): sarlavha
- *               va tablar sahifa fonida (kartasiz), bola sahifa o'zgarmagan.
+ *               filial paketlari ro'yxati, bekor qilinganlar (marketlar), market rolining o'z yangi va bekor
+ *               qilingan buyurtmalari.
+ *  - `legacy` — hali v2 ga ko'chirilmagan bola (foydalanuvchi tafsiloti): sarlavha va tablar sahifa fonida
+ *               (kartasiz), bola sahifa o'zgarmagan.
  */
 export type NewOrdersShellMode = "bare" | "hosted" | "legacy";
 
@@ -47,7 +49,13 @@ export const resolveNewOrdersShellMode = (
       // `/new-orders/incoming` — manba tanlash (tablar ostida); `/incoming/:marketId` — skaner, o'z sarlavhasi.
       return second === undefined ? "hosted" : "bare";
     case "branches":
+      // `/branches` — filiallar ro'yxati (tablar ostida); `/branches/:id`, `/branches/:id/batches/:b` — o'z sarlavhasi.
+      return second === undefined ? "hosted" : "bare";
     case "cancelled":
+      // `/cancelled` — marketlar (tablar ostida). `/cancelled/:marketId` — market rolida o'z «Bekor qilinganlar»
+      // tabi (tablar ostida), xodimda — marketga topshirish sahifasi (o'z sarlavhasi).
+      if (second === undefined) return "hosted";
+      return role === "market" ? "hosted" : "bare";
     case "userDetail":
       return "legacy";
     case "external":

@@ -370,7 +370,7 @@
       "path": "/new-orders/branches",
       "section": "newOrders",
       "title": "Filial paketlari — filiallar",
-      "components": ["src/pages/new_orders/branches/index.tsx"],
+      "components": ["src/pages/new_orders/branches/index.tsx", "src/pages/new_orders/ui/SourceListCard.tsx", "src/pages/new_orders/branches/branchBatchesModel.ts"],
       "views": {
         "superadmin": ["neworders-branches"],
         "admin": ["neworders-branches"]
@@ -380,7 +380,7 @@
       "path": "/new-orders/branches/:branchId",
       "section": "newOrders",
       "title": "Filial paketlari ro'yxati",
-      "components": ["src/pages/new_orders/branches/batches.tsx"],
+      "components": ["src/pages/new_orders/branches/batches.tsx", "src/pages/new_orders/ui/SelectionRegion.tsx", "src/pages/new_orders/branches/branchBatchesModel.ts"],
       "views": {
         "superadmin": ["neworders-branch-batches"],
         "admin": ["neworders-branch-batches"]
@@ -390,7 +390,7 @@
       "path": "/new-orders/branches/:branchId/batches/:batchId",
       "section": "newOrders",
       "title": "Filial paketi tafsiloti (qabul)",
-      "components": ["src/pages/new_orders/branches/batchDetail.tsx"],
+      "components": ["src/pages/new_orders/branches/batchDetail.tsx", "src/pages/new_orders/ui/SelectionRegion.tsx", "src/pages/new_orders/branches/branchBatchesModel.ts"],
       "views": {
         "superadmin": ["neworders-branch-batch-detail", "neworders-branch-batch-detail-camera"],
         "admin": ["neworders-branch-batch-detail", "neworders-branch-batch-detail-camera"],
@@ -401,7 +401,7 @@
       "path": "/new-orders/cancelled",
       "section": "newOrders",
       "title": "Bekor qilinganlar — marketlar",
-      "components": ["src/pages/new_orders/cancelled/index.tsx", "src/pages/new_orders/cancelled/utils.ts"],
+      "components": ["src/pages/new_orders/cancelled/index.tsx", "src/pages/new_orders/ui/SourceListCard.tsx", "src/pages/new_orders/cancelled/utils.ts"],
       "views": {
         "superadmin": ["neworders-cancelled-markets"],
         "admin": ["neworders-cancelled"],
@@ -414,6 +414,12 @@
       "title": "Bekor qilinganlarni marketga topshirish (market rolida — o'z bekorlari va QR kod)",
       "components": [
         "src/pages/new_orders/cancelled/detail.tsx",
+        "src/pages/new_orders/cancelled/cancelledModel.ts",
+        "src/pages/new_orders/cancelled/ui/HandoverStatusAlert.tsx",
+        "src/pages/new_orders/cancelled/ui/CancelledOrdersTable.tsx",
+        "src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx",
+        "src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx",
+        "src/pages/new_orders/ui/SelectionRegion.tsx",
         "src/pages/new_orders/cancelled/utils.ts",
         "src/shared/components/ScannerCameraModal.tsx",
         "src/app/lib/routes.tsx"
@@ -426,7 +432,7 @@
         "market": ["new-orders-cancelled", "new-orders-cancelled-qr-dialog"],
         "tizim": ["scanner"]
       },
-      "note": "Kirish NewOrdersCancelledDetailEntry (routes.tsx) da: canHandoverCancelledToMarket yoki o'z marketi; boshqalar → /403."
+      "note": "Kirish NewOrdersCancelledDetailEntry (routes.tsx) da: canHandoverCancelledToMarket yoki o'z marketi; boshqalar → /403. Qobiq: xodimda `bare` (o'z sarlavhasi), marketda `hosted` (tablar kartada). Marketga jo'natish faqat market QR skanerlangach (marketda QR o'chirilgan bo'lmasa); buzilgan buyurtma QR — «QR buzilganini tasdiqlash» oynasi (sabab — backend enum kodi). Kamera rejimi (`*-camera`) — keyinroq, `ScannerCameraModal` o'zgarmagan."
     },
     {
       "path": "/new-orders/:marketId",
@@ -1332,7 +1338,12 @@
     "courier-scan-other-courier": "Alohida holat yo'q — backend xato matni umumiy xato blokida chiqadi (scan/detail.tsx).",
     "common-session-expired": "Alohida ekran yo'q — SessionExpiryCountdown taymeri, keyin /login ga qaytarish.",
     "common-settings-scanner": "Alohida tab yo'q — skaner ovozlari hozir «Interfeys» tabida.",
-    "common-profile-password-dialog": "Alohida «Parolni o'zgartirish» oynasi (yangi parol + takrorlash, saqlangach chiqish) yo'q — parol umumiy tahrirlash oynasida (UpdateUserModal)."
+    "common-profile-password-dialog": "Alohida «Parolni o'zgartirish» oynasi (yangi parol + takrorlash, saqlangach chiqish) yo'q — parol umumiy tahrirlash oynasida (UpdateUserModal).",
+    "superadmin-neworders-cancelled-handover-camera": "Sahifa qismi (sarlavha, «Market QR» holati, «USB skaner tayyor» qatori, tanlov, jadval) v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
+    "admin-neworders-cancelled-detail-camera": "Sahifa qismi (sarlavha, «Market QR» holati, «USB skaner tayyor» qatori, tanlov, jadval) v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
+    "superadmin-neworders-cancelled-scanner-dialog": "Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
+    "admin-neworders-cancelled-scanner-dialog": "Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
+    "registrator-new-orders-cancelled-scanner-dialog": "Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida."
   },
   "viewFiles": {
     "$comment": "Maket → uni chizadigan aniq fayl, agar route'ning asosiy faylidan farq qilsa (rolga xos komponent, alohida oyna fayli). SCREENS.md 2- va 4-bo'limlarida ko'rsatiladi.",
@@ -1342,6 +1353,12 @@
     "manager-new-orders-delete-confirm-dialog": "src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx",
     "registrator-new-orders-market-detail-receive-dialog": "src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx",
     "registrator-new-orders-market-detail-delete-dialog": "src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx",
+    "superadmin-neworders-cancelled-manual-dialog": "src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx",
+    "admin-neworders-cancelled-manual-dialog": "src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx",
+    "registrator-new-orders-cancelled-manual-dialog": "src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx",
+    "market-new-orders-cancelled-qr-dialog": "src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx",
+    "superadmin-neworders-cancelled-handover-camera": "src/shared/components/ScannerCameraModal.tsx",
+    "admin-neworders-cancelled-detail-camera": "src/shared/components/ScannerCameraModal.tsx",
     "market-new-orders-delete-dialog": "src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx",
     "superadmin-dashboard-main": "src/pages/dashboard/DashboardPage.tsx",
     "admin-dashboard-main": "src/pages/dashboard/DashboardPage.tsx",

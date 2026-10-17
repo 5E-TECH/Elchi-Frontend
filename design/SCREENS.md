@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**76 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **19** · qisman: **6** · v2 ga ko'chirilgan route: **14 / 76**
+**76 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **19** · qisman: **11** · v2 ga ko'chirilgan route: **19 / 76**
 
 ## Qanday ishlatiladi
 
@@ -60,11 +60,11 @@
 | `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market | 23 | v2 |
 | `/new-orders/incoming` | Qabul va yaratish | `src/pages/incoming-orders/SourcePicker.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 3 | v2 |
 | `/new-orders/incoming/:marketId` | Qabul va yaratish | `src/pages/incoming-orders/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 7 | v2 |
-| `/new-orders/branches` | Qabul va yaratish | `src/pages/new_orders/branches/index.tsx` | superadmin, admin | 2 | eski |
-| `/new-orders/branches/:branchId` | Qabul va yaratish | `src/pages/new_orders/branches/batches.tsx` | superadmin, admin | 2 | eski |
-| `/new-orders/branches/:branchId/batches/:batchId` | Qabul va yaratish | `src/pages/new_orders/branches/batchDetail.tsx` | superadmin, admin | 5 | eski |
-| `/new-orders/cancelled` | Qabul va yaratish | `src/pages/new_orders/cancelled/index.tsx` | superadmin, admin, registrator (faqat HQ) | 3 | eski |
-| `/new-orders/cancelled/:marketId` | Qabul va yaratish | `src/pages/new_orders/cancelled/detail.tsx` | superadmin, admin, registrator (faqat HQ), market (faqat o'z marketi) | 14 | eski |
+| `/new-orders/branches` | Qabul va yaratish | `src/pages/new_orders/branches/index.tsx` | superadmin, admin | 2 | v2 |
+| `/new-orders/branches/:branchId` | Qabul va yaratish | `src/pages/new_orders/branches/batches.tsx` | superadmin, admin | 2 | v2 |
+| `/new-orders/branches/:branchId/batches/:batchId` | Qabul va yaratish | `src/pages/new_orders/branches/batchDetail.tsx` | superadmin, admin | 5 | v2 |
+| `/new-orders/cancelled` | Qabul va yaratish | `src/pages/new_orders/cancelled/index.tsx` | superadmin, admin, registrator (faqat HQ) | 3 | v2 |
+| `/new-orders/cancelled/:marketId` | Qabul va yaratish | `src/pages/new_orders/cancelled/detail.tsx` | superadmin, admin, registrator (faqat HQ), market (faqat o'z marketi) | 14 | v2 |
 | `/new-orders/:marketId` | Qabul va yaratish | `src/pages/new_orders/components/new_orderDetail.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi) | 17 | v2 |
 | `/new-orders/:marketId/edit/:orderId` | Qabul va yaratish | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi) | 3 | v2 |
 | `/new-orders/userDetail/:id` | Qabul va yaratish | `src/pages/users/detail/UserDetailPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market | 0 | eski |
@@ -419,84 +419,84 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/new-orders/branches` — Filial paketlari — filiallar
 
-- **Fayllar:** `src/pages/new_orders/branches/index.tsx`
+- **Fayllar:** `src/pages/new_orders/branches/index.tsx` · `src/pages/new_orders/ui/SourceListCard.tsx` · `src/pages/new_orders/branches/branchBatchesModel.ts`
 - **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canViewAdminNewOrderTabs` (routes.tsx → canViewAdminNewOrderTabs)
 - **Rollar:** superadmin, admin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/new-orders/branches` | superadmin | `superadmin-neworders-branches` — Filial batchlari — filiallar | [design/fragments/superadmin--neworders-branches.html](fragments/superadmin--neworders-branches.html) | sahifa | eski |
-| `/new-orders/branches` | admin | `admin-neworders-branches` — Filial batchlari tabi | [design/fragments/admin--neworders-branches.html](fragments/admin--neworders-branches.html) | sahifa | eski |
+| `/new-orders/branches` | superadmin | `superadmin-neworders-branches` — Filial batchlari — filiallar | [design/fragments/superadmin--neworders-branches.html](fragments/superadmin--neworders-branches.html) | sahifa | v2 |
+| `/new-orders/branches` | admin | `admin-neworders-branches` — Filial batchlari tabi | [design/fragments/admin--neworders-branches.html](fragments/admin--neworders-branches.html) | sahifa | v2 |
 
 #### `/new-orders/branches/:branchId` — Filial paketlari ro'yxati
 
-- **Fayllar:** `src/pages/new_orders/branches/batches.tsx`
+- **Fayllar:** `src/pages/new_orders/branches/batches.tsx` · `src/pages/new_orders/ui/SelectionRegion.tsx` · `src/pages/new_orders/branches/branchBatchesModel.ts`
 - **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canViewAdminNewOrderTabs` (routes.tsx → canViewAdminNewOrderTabs)
 - **Rollar:** superadmin, admin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/new-orders/branches/:branchId` | superadmin | `superadmin-neworders-branch-batches` — Filial batchlari ro'yxati | [design/fragments/superadmin--neworders-branch-batches.html](fragments/superadmin--neworders-branch-batches.html) | sahifa | eski |
-| `/new-orders/branches/:branchId` | admin | `admin-neworders-branch-batches` — Filial batchlari ro'yxati | [design/fragments/superadmin--neworders-branch-batches.html](fragments/superadmin--neworders-branch-batches.html) | sahifa | eski |
+| `/new-orders/branches/:branchId` | superadmin | `superadmin-neworders-branch-batches` — Filial batchlari ro'yxati | [design/fragments/superadmin--neworders-branch-batches.html](fragments/superadmin--neworders-branch-batches.html) | sahifa | v2 |
+| `/new-orders/branches/:branchId` | admin | `admin-neworders-branch-batches` — Filial batchlari ro'yxati | [design/fragments/superadmin--neworders-branch-batches.html](fragments/superadmin--neworders-branch-batches.html) | sahifa | v2 |
 
 #### `/new-orders/branches/:branchId/batches/:batchId` — Filial paketi tafsiloti (qabul)
 
-- **Fayllar:** `src/pages/new_orders/branches/batchDetail.tsx`
+- **Fayllar:** `src/pages/new_orders/branches/batchDetail.tsx` · `src/pages/new_orders/ui/SelectionRegion.tsx` · `src/pages/new_orders/branches/branchBatchesModel.ts`
 - **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canViewAdminNewOrderTabs` (routes.tsx → canViewAdminNewOrderTabs)
 - **Rollar:** superadmin, admin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/new-orders/branches/:branchId/batches/:batchId` | superadmin | `superadmin-neworders-branch-batch-detail` — Filial paketi tafsiloti | [design/fragments/superadmin--neworders-branch-batch-detail.html](fragments/superadmin--neworders-branch-batch-detail.html) | sahifa | eski |
+| `/new-orders/branches/:branchId/batches/:batchId` | superadmin | `superadmin-neworders-branch-batch-detail` — Filial paketi tafsiloti | [design/fragments/superadmin--neworders-branch-batch-detail.html](fragments/superadmin--neworders-branch-batch-detail.html) | sahifa | v2 |
 | `/new-orders/branches/:branchId/batches/:batchId` | superadmin | `superadmin-neworders-branch-batch-detail-camera` — Filial paketi tafsiloti — kamera | [design/fragments/superadmin--neworders-branch-batch-detail-camera.html](fragments/superadmin--neworders-branch-batch-detail-camera.html) | oyna | yangi (kodda yo'q) |
-| `/new-orders/branches/:branchId/batches/:batchId` | admin | `admin-neworders-branch-batch-detail` — Filial paketi tafsiloti | [design/fragments/superadmin--neworders-branch-batch-detail.html](fragments/superadmin--neworders-branch-batch-detail.html) | sahifa | eski |
+| `/new-orders/branches/:branchId/batches/:batchId` | admin | `admin-neworders-branch-batch-detail` — Filial paketi tafsiloti | [design/fragments/superadmin--neworders-branch-batch-detail.html](fragments/superadmin--neworders-branch-batch-detail.html) | sahifa | v2 |
 | `/new-orders/branches/:branchId/batches/:batchId` | admin | `admin-neworders-branch-batch-detail-camera` — Filial paketi tafsiloti — kamera | [design/fragments/superadmin--neworders-branch-batch-detail-camera.html](fragments/superadmin--neworders-branch-batch-detail-camera.html) | oyna | yangi (kodda yo'q) |
 | `/new-orders/branches/:branchId/batches/:batchId` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
 
 #### `/new-orders/cancelled` — Bekor qilinganlar — marketlar
 
-- **Fayllar:** `src/pages/new_orders/cancelled/index.tsx` · `src/pages/new_orders/cancelled/utils.ts`
+- **Fayllar:** `src/pages/new_orders/cancelled/index.tsx` · `src/pages/new_orders/ui/SourceListCard.tsx` · `src/pages/new_orders/cancelled/utils.ts`
 - **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canHandoverCancelledToMarket` (access.ts → canHandoverCancelledToMarket)
 - **Rollar:** superadmin, admin, registrator (faqat HQ)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/new-orders/cancelled` | superadmin | `superadmin-neworders-cancelled-markets` — Bekor qilinganlar — marketlar | [design/fragments/superadmin--neworders-cancelled-markets.html](fragments/superadmin--neworders-cancelled-markets.html) | sahifa | eski |
-| `/new-orders/cancelled` | admin | `admin-neworders-cancelled` — Bekor qilinganlar tabi | [design/fragments/admin--neworders-cancelled.html](fragments/admin--neworders-cancelled.html) | sahifa | eski |
-| `/new-orders/cancelled` | registrator | `registrator-new-orders-cancelled` — Bekor qilinganlar — marketlar (HQ) | [design/fragments/registrator--new-orders-cancelled.html](fragments/registrator--new-orders-cancelled.html) | sahifa | eski |
+| `/new-orders/cancelled` | superadmin | `superadmin-neworders-cancelled-markets` — Bekor qilinganlar — marketlar | [design/fragments/superadmin--neworders-cancelled-markets.html](fragments/superadmin--neworders-cancelled-markets.html) | sahifa | v2 |
+| `/new-orders/cancelled` | admin | `admin-neworders-cancelled` — Bekor qilinganlar tabi | [design/fragments/admin--neworders-cancelled.html](fragments/admin--neworders-cancelled.html) | sahifa | v2 |
+| `/new-orders/cancelled` | registrator | `registrator-new-orders-cancelled` — Bekor qilinganlar — marketlar (HQ) | [design/fragments/registrator--new-orders-cancelled.html](fragments/registrator--new-orders-cancelled.html) | sahifa | v2 |
 
 #### `/new-orders/cancelled/:marketId` — Bekor qilinganlarni marketga topshirish (market rolida — o'z bekorlari va QR kod)
 
-- **Fayllar:** `src/pages/new_orders/cancelled/detail.tsx` · `src/pages/new_orders/cancelled/utils.ts` · `src/shared/components/ScannerCameraModal.tsx` · `src/app/lib/routes.tsx`
+- **Fayllar:** `src/pages/new_orders/cancelled/detail.tsx` · `src/pages/new_orders/cancelled/cancelledModel.ts` · `src/pages/new_orders/cancelled/ui/HandoverStatusAlert.tsx` · `src/pages/new_orders/cancelled/ui/CancelledOrdersTable.tsx` · `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` · `src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx` · `src/pages/new_orders/ui/SelectionRegion.tsx` · `src/pages/new_orders/cancelled/utils.ts` · `src/shared/components/ScannerCameraModal.tsx` · `src/app/lib/routes.tsx`
 - **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) · o'rovchi: `NewOrdersCancelledDetailEntry`
 - **Rollar:** superadmin, admin, registrator (faqat HQ), market (faqat o'z marketi)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
-- **Izoh:** Kirish NewOrdersCancelledDetailEntry (routes.tsx) da: canHandoverCancelledToMarket yoki o'z marketi; boshqalar → /403.
+- **Holat:** v2
+- **Izoh:** Kirish NewOrdersCancelledDetailEntry (routes.tsx) da: canHandoverCancelledToMarket yoki o'z marketi; boshqalar → /403. Qobiq: xodimda `bare` (o'z sarlavhasi), marketda `hosted` (tablar kartada). Marketga jo'natish faqat market QR skanerlangach (marketda QR o'chirilgan bo'lmasa); buzilgan buyurtma QR — «QR buzilganini tasdiqlash» oynasi (sabab — backend enum kodi). Kamera rejimi (`*-camera`) — keyinroq, `ScannerCameraModal` o'zgarmagan.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/new-orders/cancelled/:marketId` | superadmin | `superadmin-neworders-cancelled-handover` — Bekor qilinganlarni marketga topshirish | [design/fragments/superadmin--neworders-cancelled-handover.html](fragments/superadmin--neworders-cancelled-handover.html) | sahifa | eski |
-| `/new-orders/cancelled/:marketId` | superadmin | `superadmin-neworders-cancelled-handover-camera` — Bekor qilinganlarni marketga topshirish — kamera | [design/fragments/superadmin--neworders-cancelled-handover-camera.html](fragments/superadmin--neworders-cancelled-handover-camera.html) | oyna | eski |
-| `/new-orders/cancelled/:marketId` | superadmin | `superadmin-neworders-cancelled-manual-dialog` — QR buzilganini tasdiqlash (modal) | [design/fragments/superadmin--neworders-cancelled-manual-dialog.html](fragments/superadmin--neworders-cancelled-manual-dialog.html) | oyna | eski |
-| `/new-orders/cancelled/:marketId` | superadmin | `superadmin-neworders-cancelled-scanner-dialog` — Kamera skaneri (modal) | [design/fragments/superadmin--neworders-cancelled-scanner-dialog.html](fragments/superadmin--neworders-cancelled-scanner-dialog.html) | oyna | eski |
-| `/new-orders/cancelled/:marketId` | admin | `admin-neworders-cancelled-detail` — Bekor qilinganlarni marketga topshirish | [design/fragments/admin--neworders-cancelled-detail.html](fragments/admin--neworders-cancelled-detail.html) | sahifa | eski |
-| `/new-orders/cancelled/:marketId` | admin | `admin-neworders-cancelled-detail-camera` — Bekor qilinganlarni marketga topshirish — kamera | [design/fragments/admin--neworders-cancelled-detail-camera.html](fragments/admin--neworders-cancelled-detail-camera.html) | oyna | eski |
-| `/new-orders/cancelled/:marketId` | admin | `admin-neworders-cancelled-manual-dialog` — QR buzilganini tasdiqlash | [design/fragments/admin--neworders-cancelled-manual-dialog.html](fragments/admin--neworders-cancelled-manual-dialog.html) | oyna | eski |
-| `/new-orders/cancelled/:marketId` | admin | `admin-neworders-cancelled-scanner-dialog` — Market QR skaneri | [design/fragments/admin--neworders-cancelled-scanner-dialog.html](fragments/admin--neworders-cancelled-scanner-dialog.html) | oyna | eski |
-| `/new-orders/cancelled/:marketId` | registrator | `registrator-new-orders-cancelled-detail` — Bekor qilinganlarni marketga topshirish (HQ) | [design/fragments/registrator--new-orders-cancelled-detail.html](fragments/registrator--new-orders-cancelled-detail.html) | sahifa | eski |
-| `/new-orders/cancelled/:marketId` | registrator | `registrator-new-orders-cancelled-manual-dialog` — QR buzilganini tasdiqlash (HQ) | [design/fragments/registrator--new-orders-cancelled-manual-dialog.html](fragments/registrator--new-orders-cancelled-manual-dialog.html) | oyna | eski |
-| `/new-orders/cancelled/:marketId` | registrator | `registrator-new-orders-cancelled-scanner-dialog` — Market QR skanerlash (HQ) | [design/fragments/registrator--new-orders-cancelled-scanner-dialog.html](fragments/registrator--new-orders-cancelled-scanner-dialog.html) | oyna | eski |
-| `/new-orders/cancelled/:marketId` | market | `market-new-orders-cancelled` — Bekor qilinganlar | [design/fragments/market--new-orders-cancelled.html](fragments/market--new-orders-cancelled.html) | sahifa | eski |
-| `/new-orders/cancelled/:marketId` | market | `market-new-orders-cancelled-qr-dialog` — Bekor qilinganlar · QR kod | [design/fragments/market--new-orders-cancelled-qr-dialog.html](fragments/market--new-orders-cancelled-qr-dialog.html) | oyna | eski |
+| `/new-orders/cancelled/:marketId` | superadmin | `superadmin-neworders-cancelled-handover` — Bekor qilinganlarni marketga topshirish | [design/fragments/superadmin--neworders-cancelled-handover.html](fragments/superadmin--neworders-cancelled-handover.html) | sahifa | v2 |
+| `/new-orders/cancelled/:marketId` | superadmin | `superadmin-neworders-cancelled-handover-camera` — Bekor qilinganlarni marketga topshirish — kamera<br>↳ `src/shared/components/ScannerCameraModal.tsx` | [design/fragments/superadmin--neworders-cancelled-handover-camera.html](fragments/superadmin--neworders-cancelled-handover-camera.html) | oyna | qisman |
+| `/new-orders/cancelled/:marketId` | superadmin | `superadmin-neworders-cancelled-manual-dialog` — QR buzilganini tasdiqlash (modal)<br>↳ `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | [design/fragments/superadmin--neworders-cancelled-manual-dialog.html](fragments/superadmin--neworders-cancelled-manual-dialog.html) | oyna | v2 |
+| `/new-orders/cancelled/:marketId` | superadmin | `superadmin-neworders-cancelled-scanner-dialog` — Kamera skaneri (modal) | [design/fragments/superadmin--neworders-cancelled-scanner-dialog.html](fragments/superadmin--neworders-cancelled-scanner-dialog.html) | oyna | qisman |
+| `/new-orders/cancelled/:marketId` | admin | `admin-neworders-cancelled-detail` — Bekor qilinganlarni marketga topshirish | [design/fragments/admin--neworders-cancelled-detail.html](fragments/admin--neworders-cancelled-detail.html) | sahifa | v2 |
+| `/new-orders/cancelled/:marketId` | admin | `admin-neworders-cancelled-detail-camera` — Bekor qilinganlarni marketga topshirish — kamera<br>↳ `src/shared/components/ScannerCameraModal.tsx` | [design/fragments/admin--neworders-cancelled-detail-camera.html](fragments/admin--neworders-cancelled-detail-camera.html) | oyna | qisman |
+| `/new-orders/cancelled/:marketId` | admin | `admin-neworders-cancelled-manual-dialog` — QR buzilganini tasdiqlash<br>↳ `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | [design/fragments/admin--neworders-cancelled-manual-dialog.html](fragments/admin--neworders-cancelled-manual-dialog.html) | oyna | v2 |
+| `/new-orders/cancelled/:marketId` | admin | `admin-neworders-cancelled-scanner-dialog` — Market QR skaneri | [design/fragments/admin--neworders-cancelled-scanner-dialog.html](fragments/admin--neworders-cancelled-scanner-dialog.html) | oyna | qisman |
+| `/new-orders/cancelled/:marketId` | registrator | `registrator-new-orders-cancelled-detail` — Bekor qilinganlarni marketga topshirish (HQ) | [design/fragments/registrator--new-orders-cancelled-detail.html](fragments/registrator--new-orders-cancelled-detail.html) | sahifa | v2 |
+| `/new-orders/cancelled/:marketId` | registrator | `registrator-new-orders-cancelled-manual-dialog` — QR buzilganini tasdiqlash (HQ)<br>↳ `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | [design/fragments/registrator--new-orders-cancelled-manual-dialog.html](fragments/registrator--new-orders-cancelled-manual-dialog.html) | oyna | v2 |
+| `/new-orders/cancelled/:marketId` | registrator | `registrator-new-orders-cancelled-scanner-dialog` — Market QR skanerlash (HQ) | [design/fragments/registrator--new-orders-cancelled-scanner-dialog.html](fragments/registrator--new-orders-cancelled-scanner-dialog.html) | oyna | qisman |
+| `/new-orders/cancelled/:marketId` | market | `market-new-orders-cancelled` — Bekor qilinganlar | [design/fragments/market--new-orders-cancelled.html](fragments/market--new-orders-cancelled.html) | sahifa | v2 |
+| `/new-orders/cancelled/:marketId` | market | `market-new-orders-cancelled-qr-dialog` — Bekor qilinganlar · QR kod<br>↳ `src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx` | [design/fragments/market--new-orders-cancelled-qr-dialog.html](fragments/market--new-orders-cancelled-qr-dialog.html) | oyna | v2 |
 | `/new-orders/cancelled/:marketId` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
 
 #### `/new-orders/:marketId` — Market yangi buyurtmalari — qabul (market rolida: o'z yangi buyurtmalari)
@@ -1554,15 +1554,15 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-neworders-incoming-sources` | Kiruvchi posilkalar — manba tanlash | sahifa | `/new-orders/incoming` | `src/pages/incoming-orders/SourcePicker.tsx` | v2 |
 | `superadmin-neworders-incoming-scan` | Kiruvchi posilkalar — skanerlab qabul | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | v2 |
 | `superadmin-neworders-incoming-scan-camera` | Kiruvchi posilkalar — skanerlab qabul — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri. |
-| `superadmin-neworders-branches` | Filial batchlari — filiallar | sahifa | `/new-orders/branches` | `src/pages/new_orders/branches/index.tsx` | eski |
-| `superadmin-neworders-branch-batches` | Filial batchlari ro'yxati | sahifa | `/new-orders/branches/:branchId` | `src/pages/new_orders/branches/batches.tsx` | eski |
-| `superadmin-neworders-branch-batch-detail` | Filial paketi tafsiloti | sahifa | `/new-orders/branches/:branchId/batches/:batchId` | `src/pages/new_orders/branches/batchDetail.tsx` | eski |
+| `superadmin-neworders-branches` | Filial batchlari — filiallar | sahifa | `/new-orders/branches` | `src/pages/new_orders/branches/index.tsx` | v2 |
+| `superadmin-neworders-branch-batches` | Filial batchlari ro'yxati | sahifa | `/new-orders/branches/:branchId` | `src/pages/new_orders/branches/batches.tsx` | v2 |
+| `superadmin-neworders-branch-batch-detail` | Filial paketi tafsiloti | sahifa | `/new-orders/branches/:branchId/batches/:batchId` | `src/pages/new_orders/branches/batchDetail.tsx` | v2 |
 | `superadmin-neworders-branch-batch-detail-camera` | Filial paketi tafsiloti — kamera | oyna | `/new-orders/branches/:branchId/batches/:batchId` | `src/pages/new_orders/branches/batchDetail.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). |
-| `superadmin-neworders-cancelled-markets` | Bekor qilinganlar — marketlar | sahifa | `/new-orders/cancelled` | `src/pages/new_orders/cancelled/index.tsx` | eski |
-| `superadmin-neworders-cancelled-handover` | Bekor qilinganlarni marketga topshirish | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
-| `superadmin-neworders-cancelled-handover-camera` | Bekor qilinganlarni marketga topshirish — kamera | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
-| `superadmin-neworders-cancelled-manual-dialog` | QR buzilganini tasdiqlash (modal) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
-| `superadmin-neworders-cancelled-scanner-dialog` | Kamera skaneri (modal) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
+| `superadmin-neworders-cancelled-markets` | Bekor qilinganlar — marketlar | sahifa | `/new-orders/cancelled` | `src/pages/new_orders/cancelled/index.tsx` | v2 |
+| `superadmin-neworders-cancelled-handover` | Bekor qilinganlarni marketga topshirish | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | v2 |
+| `superadmin-neworders-cancelled-handover-camera` | Bekor qilinganlarni marketga topshirish — kamera | oyna | `/new-orders/cancelled/:marketId` | `src/shared/components/ScannerCameraModal.tsx` | qisman — Sahifa qismi (sarlavha, «Market QR» holati, «USB skaner tayyor» qatori, tanlov, jadval) v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida. |
+| `superadmin-neworders-cancelled-manual-dialog` | QR buzilganini tasdiqlash (modal) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | v2 |
+| `superadmin-neworders-cancelled-scanner-dialog` | Kamera skaneri (modal) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | qisman — Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida. |
 | `superadmin-mails-today` | Pochta — Bugungi pochtalar | sahifa | `/mails/today` | `src/pages/mails/index.tsx` | eski |
 | `superadmin-mails-return` | Pochta — Qaytarish so'rovlari | sahifa | `/mails/return` | `src/pages/mails/index.tsx` | eski |
 | `superadmin-mails-refused` | Pochta — Rad etilgan pochtalar | sahifa | `/mails/refused` | `src/pages/mails/index.tsx` | eski |
@@ -1677,15 +1677,15 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-neworders-incoming-sources` | Kiruvchi posilkalar — manba tanlash | sahifa | `/new-orders/incoming` | `src/pages/incoming-orders/SourcePicker.tsx` | v2 |
 | `admin-neworders-incoming-scan` | Kiruvchi posilkalarni skanerlash | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | v2 |
 | `admin-neworders-incoming-scan-camera` | Kiruvchi posilkalarni skanerlash — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri. |
-| `admin-neworders-branches` | Filial batchlari tabi | sahifa | `/new-orders/branches` | `src/pages/new_orders/branches/index.tsx` | eski |
-| `admin-neworders-branch-batches` | Filial batchlari ro'yxati | sahifa | `/new-orders/branches/:branchId` | `src/pages/new_orders/branches/batches.tsx` | eski |
-| `admin-neworders-branch-batch-detail` | Filial paketi tafsiloti | sahifa | `/new-orders/branches/:branchId/batches/:batchId` | `src/pages/new_orders/branches/batchDetail.tsx` | eski |
+| `admin-neworders-branches` | Filial batchlari tabi | sahifa | `/new-orders/branches` | `src/pages/new_orders/branches/index.tsx` | v2 |
+| `admin-neworders-branch-batches` | Filial batchlari ro'yxati | sahifa | `/new-orders/branches/:branchId` | `src/pages/new_orders/branches/batches.tsx` | v2 |
+| `admin-neworders-branch-batch-detail` | Filial paketi tafsiloti | sahifa | `/new-orders/branches/:branchId/batches/:batchId` | `src/pages/new_orders/branches/batchDetail.tsx` | v2 |
 | `admin-neworders-branch-batch-detail-camera` | Filial paketi tafsiloti — kamera | oyna | `/new-orders/branches/:branchId/batches/:batchId` | `src/pages/new_orders/branches/batchDetail.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). |
-| `admin-neworders-cancelled` | Bekor qilinganlar tabi | sahifa | `/new-orders/cancelled` | `src/pages/new_orders/cancelled/index.tsx` | eski |
-| `admin-neworders-cancelled-detail` | Bekor qilinganlarni marketga topshirish | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
-| `admin-neworders-cancelled-detail-camera` | Bekor qilinganlarni marketga topshirish — kamera | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
-| `admin-neworders-cancelled-manual-dialog` | QR buzilganini tasdiqlash | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
-| `admin-neworders-cancelled-scanner-dialog` | Market QR skaneri | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
+| `admin-neworders-cancelled` | Bekor qilinganlar tabi | sahifa | `/new-orders/cancelled` | `src/pages/new_orders/cancelled/index.tsx` | v2 |
+| `admin-neworders-cancelled-detail` | Bekor qilinganlarni marketga topshirish | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | v2 |
+| `admin-neworders-cancelled-detail-camera` | Bekor qilinganlarni marketga topshirish — kamera | oyna | `/new-orders/cancelled/:marketId` | `src/shared/components/ScannerCameraModal.tsx` | qisman — Sahifa qismi (sarlavha, «Market QR» holati, «USB skaner tayyor» qatori, tanlov, jadval) v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida. |
+| `admin-neworders-cancelled-manual-dialog` | QR buzilganini tasdiqlash | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | v2 |
+| `admin-neworders-cancelled-scanner-dialog` | Market QR skaneri | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | qisman — Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida. |
 | `admin-neworders-create-manual` | Buyurtma yaratish — Qo'lda | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | v2 |
 | `admin-neworders-create-market-picker` | Market tanlash oynasi | oyna | `/new-orders/create` | `src/pages/orders/create/ui/MarketPicker.tsx` | v2 |
 | `admin-neworders-create-ai` | Buyurtma yaratish — AI bilan | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | v2 |
@@ -1848,10 +1848,10 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `registrator-new-orders-market-detail-receive-dialog` | Qabul qilish tasdig'i | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | qisman — Umumiy xodim qabul oynasi (MarketOrderDialogs.tsx) — tasdiq tugmasi «Tasdiqlash»; maketdagi «Qabul qilish — N ta» varianti ega qaroriga qadar kiritilmagan. |
 | `registrator-new-orders-market-detail-delete-dialog` | Buyurtmani o'chirish tasdig'i | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | v2 |
 | `registrator-new-orders-market-order-edit` | Market buyurtmasini tahrirlash | sahifa | `/new-orders/:marketId/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | v2 |
-| `registrator-new-orders-cancelled` | Bekor qilinganlar — marketlar (HQ) | sahifa | `/new-orders/cancelled` | `src/pages/new_orders/cancelled/index.tsx` | eski |
-| `registrator-new-orders-cancelled-detail` | Bekor qilinganlarni marketga topshirish (HQ) | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
-| `registrator-new-orders-cancelled-manual-dialog` | QR buzilganini tasdiqlash (HQ) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
-| `registrator-new-orders-cancelled-scanner-dialog` | Market QR skanerlash (HQ) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
+| `registrator-new-orders-cancelled` | Bekor qilinganlar — marketlar (HQ) | sahifa | `/new-orders/cancelled` | `src/pages/new_orders/cancelled/index.tsx` | v2 |
+| `registrator-new-orders-cancelled-detail` | Bekor qilinganlarni marketga topshirish (HQ) | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | v2 |
+| `registrator-new-orders-cancelled-manual-dialog` | QR buzilganini tasdiqlash (HQ) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | v2 |
+| `registrator-new-orders-cancelled-scanner-dialog` | Market QR skanerlash (HQ) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | qisman — Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida. |
 | `registrator-new-orders-create-step1` | Buyurtma yaratish — market tanlash | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step1Market.tsx` | v2 |
 | `registrator-new-orders-create-market-picker-dialog` | Buyurtma yaratish — market tanlash oynasi | oyna | `/new-orders/create` | `src/pages/orders/create/ui/MarketPicker.tsx` | v2 |
 | `registrator-new-orders-create-step2` | Buyurtma yaratish — qo'lda forma | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step2Combined.tsx` | v2 |
@@ -1891,8 +1891,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `market-new-orders-create-ai-input` | Buyurtma yaratish · AI kiritish | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiInputPanel.tsx` | v2 |
 | `market-new-orders-create-ai-preview` | Buyurtma yaratish · AI natijalari | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` | v2 |
 | `market-new-orders-create-ai-confirm-dialog` | AI · Yaratishni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | v2 |
-| `market-new-orders-cancelled` | Bekor qilinganlar | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
-| `market-new-orders-cancelled-qr-dialog` | Bekor qilinganlar · QR kod | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | eski |
+| `market-new-orders-cancelled` | Bekor qilinganlar | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | v2 |
+| `market-new-orders-cancelled-qr-dialog` | Bekor qilinganlar · QR kod | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx` | v2 |
 | `market-products-list` | Mahsulotlar | sahifa | `/products` | `src/pages/products/list/index.tsx` | eski |
 | `market-products-edit-dialog` | Mahsulotni tahrirlash | oyna | `/products` | `src/pages/products/list/index.tsx` | eski |
 | `market-products-delete-dialog` | Mahsulotni o'chirish | oyna | `/products` | `src/pages/products/list/index.tsx` | eski |
@@ -2104,9 +2104,15 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/market-operators/index.tsx` | `/market-operators` |
 | `src/pages/new_orders/branches/batchDetail.tsx` | `/new-orders/branches/:branchId/batches/:batchId` |
 | `src/pages/new_orders/branches/batches.tsx` | `/new-orders/branches/:branchId` |
+| `src/pages/new_orders/branches/branchBatchesModel.ts` | `/new-orders/branches`, `/new-orders/branches/:branchId`, `/new-orders/branches/:branchId/batches/:batchId` |
 | `src/pages/new_orders/branches/index.tsx` | `/new-orders/branches` |
+| `src/pages/new_orders/cancelled/cancelledModel.ts` | `/new-orders/cancelled/:marketId` |
 | `src/pages/new_orders/cancelled/detail.tsx` | `/new-orders/cancelled/:marketId` |
 | `src/pages/new_orders/cancelled/index.tsx` | `/new-orders/cancelled` |
+| `src/pages/new_orders/cancelled/ui/CancelledOrdersTable.tsx` | `/new-orders/cancelled/:marketId` |
+| `src/pages/new_orders/cancelled/ui/HandoverStatusAlert.tsx` | `/new-orders/cancelled/:marketId` |
+| `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | `/new-orders/cancelled/:marketId` |
+| `src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx` | `/new-orders/cancelled/:marketId` |
 | `src/pages/new_orders/cancelled/utils.ts` | `/new-orders/cancelled`, `/new-orders/cancelled/:marketId` |
 | `src/pages/new_orders/components/detail/AddressCard.tsx` | `/orders/edit/:orderId` |
 | `src/pages/new_orders/components/detail/CourierCards.tsx` | `/orders/edit/:orderId` |
@@ -2138,6 +2144,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/new_orders/markets/index.tsx` | `/new-orders` |
 | `src/pages/new_orders/ui/NewOrdersHeader.tsx` | `/new-orders` |
 | `src/pages/new_orders/ui/NewOrdersTabs.tsx` | `/new-orders` |
+| `src/pages/new_orders/ui/SelectionRegion.tsx` | `/new-orders/branches/:branchId`, `/new-orders/branches/:branchId/batches/:batchId`, `/new-orders/cancelled/:marketId` |
+| `src/pages/new_orders/ui/SourceListCard.tsx` | `/new-orders/branches`, `/new-orders/cancelled` |
 | `src/pages/notification-send/index.tsx` | `/notifications/send` |
 | `src/pages/notifications/ui/CampaignPage.tsx` | `/notifications/sms` |
 | `src/pages/notifications/ui/NotificationInboxPage.tsx` | `/inbox` |

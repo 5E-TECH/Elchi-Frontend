@@ -30,6 +30,12 @@ const toText = (value: unknown, fallback = "—") => {
   return fallback;
 };
 
+/** Bo'sh bo'lmagan matn yoki `undefined` (ixtiyoriy maydonlar uchun — «—» o'rniga maydon yo'q). */
+const optionalText = (value: unknown): string | undefined => {
+  const text = toText(value, "");
+  return text || undefined;
+};
+
 const normalizeStatus = (value: unknown): BatchStatus => {
   const normalized = String(value ?? "").trim().toLowerCase();
 
@@ -125,11 +131,13 @@ const normalizeBranch = (value: any, fallback = "—"): BatchBranch => {
 };
 
 const normalizeOrder = (order: any, index: number): BatchOrder => ({
+  // Paket bandi `{ id, order_id, order }`: `id` — bandning o'z id'si. Buyurtma boyitilmasa
+  // (branch-service `order: null` qaytaradi) `order_id` olinadi — aks holda qabulga band id'si ketadi.
   id: toText(
     order?.order?.id ??
+      order?.order_id ??
       order?.id ??
-      order?._id ??
-      order?.order_id,
+      order?._id,
     `ORD-${index + 1}`,
   ),
   qr_code_token: toText(
@@ -178,6 +186,15 @@ const normalizeOrder = (order: any, index: number): BatchOrder => ({
       order?.amount,
   ),
   status: toText(order?.order?.status ?? order?.status),
+  // Qo'shimcha (ixtiyoriy): enriched buyurtmaning sanasi, tumani va viloyati; yo'q bo'lsa — maydon yo'q.
+  created_at: optionalText(
+    order?.order?.createdAt ??
+      order?.order?.created_at ??
+      order?.createdAt ??
+      order?.created_at,
+  ),
+  district: optionalText(order?.order?.district?.name ?? order?.order?.customer?.district?.name),
+  region: optionalText(order?.order?.region?.name ?? order?.order?.customer?.region?.name),
 });
 
 const normalizeHistoryItem = (
@@ -259,7 +276,8 @@ const normalizeBatchWithRegion = (raw: any): Batch => {
 
 const normalizeBatchDetail = (raw: any): BatchDetail => {
   const source = raw?.data ?? raw?.item ?? raw;
-  const batch = normalizeBatch(source);
+  // Tafsilot javobida `region` bor (branch-service `findTransferBatchById`) — ro'yxatdagidek `to_branch.region`.
+  const batch = normalizeBatchWithRegion(source);
   const orders = Array.isArray(source?.orders)
     ? source.orders
     : Array.isArray(source?.order_list)

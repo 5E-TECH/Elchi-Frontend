@@ -17,6 +17,14 @@ export interface BatchOrder {
   address: string;
   price: number;
   status: string;
+  /**
+   * Ixtiyoriy (qo'shimcha) maydonlar — `GET transfer-batches/:id` dagi `items[].order` (enriched buyurtma):
+   * buyurtma yaratilgan vaqt (bo'lmasa — paketga qo'shilgan vaqt), tuman va viloyat nomlari.
+   * Javobda bo'lmasa `undefined`.
+   */
+  created_at?: string;
+  district?: string;
+  region?: string;
 }
 
 export interface BatchHistoryItem {

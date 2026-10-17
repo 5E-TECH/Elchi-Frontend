@@ -6,6 +6,7 @@ import { renderWithProviders } from "../../test/test-utils";
 import { LegacyOrderCreateRedirect } from "../../app/lib/routes";
 import NewOrders from "./index";
 import Markets from "./markets";
+import NewOrdersTabs from "./ui/NewOrdersTabs";
 
 /**
  * «Qabul va yaratish» qobig'i (`/new-orders/*`, dizayn v2): sarlavha, «Buyurtma yaratish» havolasi,
@@ -85,8 +86,20 @@ const renderShell = (route: string, role: string, branchType?: string, id?: stri
           <Route path="incoming" element={<p>Manba tanlash</p>} />
           <Route path="incoming/:marketId" element={<p>Skaner</p>} />
           <Route path="branches" element={<p>Filial paketlari sahifasi</p>} />
+          <Route path="branches/:branchId" element={<p>Filial paketlari ro'yxati</p>} />
+          <Route path="branches/:branchId/batches/:batchId" element={<p>Paket tafsiloti</p>} />
           <Route path="cancelled" element={<p>Bekor qilinganlar sahifasi</p>} />
-          <Route path="cancelled/:marketId" element={<p>Bekor qilingan market</p>} />
+          <Route
+            path="cancelled/:marketId"
+            element={
+              // Hosted bola (market roli): tablar bola kartasining boshida — haqiqiy sahifadagidek.
+              <>
+                <NewOrdersTabs />
+                <p>Bekor qilingan market</p>
+              </>
+            }
+          />
+          <Route path="userDetail/:id" element={<p>Foydalanuvchi sahifasi</p>} />
           <Route path=":marketId" element={<p>Market buyurtmalari</p>} />
           <Route path=":marketId/edit/:orderId" element={<p>Tahrirlash</p>} />
         </Route>
@@ -190,7 +203,7 @@ describe("Qabul va yaratish — tablar (v1 shartlari) va sonlar", () => {
     expect(urls).not.toContain("orders/markets/cancelled");
   });
 
-  it("market (legacy bola sahifada): Yangi buyurtmalar + Bekor qilinganlar, o'z market id si bilan", async () => {
+  it("market (hosted bola — tablar bola kartasida): Yangi buyurtmalar + Bekor qilinganlar, o'z market id si bilan", async () => {
     renderShell("/new-orders/cancelled/121", "market", undefined, "121");
 
     const nav = screen.getByRole("navigation", { name: "Qabul va yaratish bo'limlari" });
@@ -211,6 +224,8 @@ describe("Qabul va yaratish — bola sahifa rejimlari", () => {
     ["/new-orders/incoming/121", "admin", "Skaner"],
     ["/new-orders/121", "manager", "Market buyurtmalari"],
     ["/new-orders/121/edit/10257", "market", "Tahrirlash"],
+    ["/new-orders/branches/7", "admin", "Filial paketlari ro'yxati"],
+    ["/new-orders/branches/7/batches/9", "superadmin", "Paket tafsiloti"],
   ])("%s (%s) — faqat bola sahifa: qobiq sarlavhasi va tablari yo'q", (route, role, child) => {
     renderShell(route, role, role === "manager" ? "HYBRID" : undefined, "121");
 
@@ -219,6 +234,13 @@ describe("Qabul va yaratish — bola sahifa rejimlari", () => {
     expect(screen.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Buyurtma yaratish" })).not.toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: /Qabul/ })).not.toBeInTheDocument();
+  });
+
+  it("xodim bekor qilinganlarni topshirishda — bare: qobiq sarlavhasi yo'q (bola o'z sarlavhasini chizadi)", () => {
+    renderShell("/new-orders/cancelled/121", "admin");
+    expect(screen.getByText("Bekor qilingan market")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { level: 1 })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Buyurtma yaratish" })).not.toBeInTheDocument();
   });
 
   it("market o'z buyurtmalarida — qobiq sarlavhasi bor (tablar bola kartasida)", () => {
@@ -233,11 +255,21 @@ describe("Qabul va yaratish — bola sahifa rejimlari", () => {
     expect(screen.queryByRole("navigation", { name: "Qabul manbalari" })).not.toBeInTheDocument();
   });
 
-  it("ko'chirilmagan bola (filial paketlari) — sarlavha va tablar sahifada, bola o'zgarmagan", () => {
-    renderShell("/new-orders/branches", "admin");
+  it.each([
+    ["/new-orders/branches", "admin", "Filial paketlari sahifasi"],
+    ["/new-orders/cancelled", "superadmin", "Bekor qilinganlar sahifasi"],
+  ])("%s (%s) — hosted: qobiq sarlavhasi bor, tablar bola kartasida (qobiqda yo'q)", (route, role, child) => {
+    renderShell(route, role);
     expect(screen.getByRole("heading", { level: 1, name: "Qabul va yaratish" })).toBeInTheDocument();
-    expect(within(tabsNav()).getByRole("link", { current: "page" })).toHaveTextContent("Filial paketlari");
-    expect(screen.getByText("Filial paketlari sahifasi")).toBeInTheDocument();
+    expect(screen.queryByRole("navigation", { name: "Qabul manbalari" })).not.toBeInTheDocument();
+    expect(screen.getByText(child)).toBeInTheDocument();
+  });
+
+  it("ko'chirilmagan bola (foydalanuvchi tafsiloti) — legacy: sarlavha va tablar sahifada, bola o'zgarmagan", () => {
+    renderShell("/new-orders/userDetail/1", "admin");
+    expect(screen.getByRole("heading", { level: 1, name: "Qabul va yaratish" })).toBeInTheDocument();
+    expect(within(tabsNav()).getByRole("link", { current: "page" })).toHaveTextContent("Marketlar");
+    expect(screen.getByText("Foydalanuvchi sahifasi")).toBeInTheDocument();
   });
 });
 

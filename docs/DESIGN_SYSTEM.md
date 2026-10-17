@@ -415,6 +415,27 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   holatlari o'zgarmagan. Tab sonlari uchun `useIncomingSources`, `useCancelledMarkets`, `useCancelledOrdersByMarket`,
   `useBranchesWithSentBatches` ga ixtiyoriy `enabled` qo'shildi (sukut o'zgarmagan). v1 o'lik kalitlar
   (`addOrderBtn`, `ordersHeader`, `searchOrder`, `receiveOrders`, `selectOrders`, `receiveOrderMessage`) o'chirildi.
+- **Ko'chirilgan:** «Qabul» — «Filial paketlari» va «Bekor qilinganlar» (superadmin, admin; bekor qilinganlar — HQ
+  registrator va market ham). Qobiq rejimi (`model/newOrdersShell.ts`): ro'yxatlar `hosted`, filial / paket va
+  xodimning topshirish sahifasi `bare`, market rolining bekor qilinganlari `hosted`. Umumiy qismlar:
+  `ui/SourceListCard.tsx` (manba ro'yxati kartasi: qidiruv, saralash — sukut «Buyurtmalar/Paketlar» kamayish bo'yicha,
+  «N ta … · jami» xulosasi, `DataTable` → telefonda kartalar, bo'sh / topilmadi / xato holatlari) va
+  `ui/SelectionRegion.tsx` (tanlov xulosasi, `aria-live`; `idle` — hali tanlanmagan). `/new-orders/branches`
+  (`branches/index.tsx`) — filiallar; `/new-orders/branches/:branchId` (`branches/batches.tsx`) — yuborilgan paketlar,
+  qidiruv + «Skaner tayyor», USB skaner paket QR'ini tanlaydi, «Qabul qilish — N ta paket» (har paketga
+  `transfer-batches/:id/receive`); `…/batches/:batchId` (`branches/batchDetail.tsx`) — paket buyurtmalari, skan bilan
+  tanlash, `receive-orders`. Yordamchilar `branches/branchBatchesModel.ts`. `/new-orders/cancelled`
+  (`cancelled/index.tsx`) — bekor qilingan buyurtmasi bor marketlar (qidiruv mijozda — endpoint parametr olmaydi).
+  `/new-orders/cancelled/:marketId` (`cancelled/detail.tsx` + `cancelledModel.ts` + `ui/`): `PageHeader` (market
+  nomi, son · summa, yagona asosiy «Marketga jo'natish — N ta»), `HandoverStatusAlert` («Market QR kerak» → «Market QR
+  skanerlandi» + amal qilish taymeri; QR talab qilinmasa — neutral), «USB skaner tayyor» qatori + «Kamera» (kamera
+  oynasi `ScannerCameraModal` — v1, keyinroq), `CancelledOrdersTable` (tanlov faqat skaner orqali; «QR buzilgan»
+  qatorlarida qo'lda tasdiq), `ManualConfirmDialog` («QR buzilganini tasdiqlash», sabab `Select` — backendga enum
+  kodi, ko'rinadigani tarjima). Biznes qoidasi o'zgarmagan: jo'natish faqat market QR skanerlangach (u marketning
+  barcha bekorlarini tanlaydi), so'rov tanasi, ovozlar, takroriy/noto'g'ri skan va kirish huquqlari v1 dagidek.
+  Market rolida — o'z bekorlari (skanersiz) va «QR kod» oynasi (`ui/MarketQrDialog.tsx`). v1 `components/OrderCard.tsx`
+  o'chirildi (tur `model/apiOrder.ts` ga ko'chdi), o'lik `newOrders` kalitlari (`cancelled*`, `branch*`,
+  `deliver*` …) o'chirildi.
 
 **Dizayn qo'riqchisi** (`scripts/design-guard.mjs`, `npm run design:guard`): `colour`, `palette`, `dark-pair`,
 `legacy`, `money`, `icons`, `tiny-text`, `v1-class`, `weight`, `gradient`, `v1-helper`. Ikki darvoza:

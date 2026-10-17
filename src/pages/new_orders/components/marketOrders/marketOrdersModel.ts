@@ -1,5 +1,5 @@
 import type { DataTableSort } from "../../../../shared/ui/primitives";
-import type { ApiOrder } from "../OrderCard";
+import type { ApiOrder } from "../../model/apiOrder";
 
 /**
  * MARKETNING YANGI BUYURTMALARI (`/new-orders/:marketId`) — sof yordamchilar.
@@ -32,7 +32,7 @@ export type ProductLine = { key: string; name: string; quantity: number };
 
 /**
  * Mahsulot qatorlari. ⚠️ Hamkor (Partner API) buyurtmasida `product` yo'q — nomi `product_name` da
- * (katalogsiz mahsulot, `OrderCard.tsx` dagi qoida bilan bir xil).
+ * (katalogsiz mahsulot, `shared/lib/orderItemName.ts` qoidasi).
  */
 export const readProductLines = (order: MarketOrder): ProductLine[] =>
   (order.items ?? []).map((item, index) => ({

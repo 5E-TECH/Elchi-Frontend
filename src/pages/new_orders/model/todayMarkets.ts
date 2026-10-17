@@ -49,11 +49,17 @@ export const extractTodayMarkets = (response: unknown): TodayMarketRow[] =>
     .filter((row) => row.market_id);
 
 /**
+ * Manba ro'yxati qatori (marketlar, filial paketlari, bekor qilinganlar): qidiruv, saralash va xulosa
+ * faqat shu maydonlarga tayanadi — funksiyalar istalgan shunday qator uchun umumiy.
+ */
+export type SourceListLikeRow = Pick<TodayMarketRow, "name" | "phone_number" | "orders_count" | "total_price_sum">;
+
+/**
  * Qidiruv — mijoz tomonida: backend `orders/markets/new` qidiruv parametrini qabul qilmaydi (openapi'da
  * parametr yo'q, gateway uni e'tiborsiz qoldiradi), v1 dagi `?search=` hech narsani filtrlamasdi.
  * Nom — katta-kichik harfsiz; telefon — faqat raqamlar bo'yicha («90 315», «+99890315» ham topadi).
  */
-export const filterTodayMarkets = (rows: readonly TodayMarketRow[], query: string): TodayMarketRow[] => {
+export const filterTodayMarkets = <T extends SourceListLikeRow>(rows: readonly T[], query: string): T[] => {
   const text = query.trim().toLocaleLowerCase();
   if (!text) return [...rows];
   const digits = text.replace(/\D/g, "");
@@ -66,7 +72,8 @@ export const filterTodayMarkets = (rows: readonly TodayMarketRow[], query: strin
 
 export type TodayMarketsTotals = { markets: number; orders: number; amount: number };
 
-export const sumTodayMarkets = (rows: readonly TodayMarketRow[]): TodayMarketsTotals =>
+/** Xulosa: qatorlar soni (`markets`), `orders_count` va `total_price_sum` yig'indilari. */
+export const sumTodayMarkets = (rows: readonly SourceListLikeRow[]): TodayMarketsTotals =>
   rows.reduce<TodayMarketsTotals>(
     (acc, row) => ({
       markets: acc.markets + 1,
@@ -79,14 +86,14 @@ export const sumTodayMarkets = (rows: readonly TodayMarketRow[]): TodayMarketsTo
 export type TodayMarketsSortKey = "name" | "orders" | "amount";
 
 /** Saralash — mijoz tomonida (ro'yxat to'liq keladi, sahifalash yo'q). `null` — server tartibi. */
-export const sortTodayMarkets = (
-  rows: readonly TodayMarketRow[],
+export const sortTodayMarkets = <T extends SourceListLikeRow>(
+  rows: readonly T[],
   sort: { key: string; direction: "asc" | "desc" } | null,
   language?: string,
-): TodayMarketRow[] => {
+): T[] => {
   if (!sort) return [...rows];
   const sign = sort.direction === "asc" ? 1 : -1;
-  const compare = (a: TodayMarketRow, b: TodayMarketRow) => {
+  const compare = (a: T, b: T) => {
     switch (sort.key as TodayMarketsSortKey) {
       case "name":
         return a.name.localeCompare(b.name, language);

@@ -35,16 +35,27 @@ describe("resolveNewOrdersShellMode — qobiq rejimi", () => {
     }
   });
 
-  it.each([
-    "/new-orders/branches",
-    "/new-orders/branches/7",
-    "/new-orders/branches/7/batches/9",
-    "/new-orders/cancelled",
-    "/new-orders/cancelled/121",
-    "/new-orders/userDetail/5",
-  ])("%s — legacy (ko'chirilmagan bola: sarlavha + tablar sahifada)", (path) => {
-    expect(resolveNewOrdersShellMode(path, "admin")).toBe("legacy");
-    expect(resolveNewOrdersShellMode(path, "market")).toBe("legacy");
+  it("filial paketlari: ro'yxat — hosted (tablar kartada), filial va paket — bare (o'z sarlavhasi)", () => {
+    for (const role of ["superadmin", "admin"]) {
+      expect(resolveNewOrdersShellMode("/new-orders/branches", role)).toBe("hosted");
+      expect(resolveNewOrdersShellMode("/new-orders/branches/", role)).toBe("hosted");
+      expect(resolveNewOrdersShellMode("/new-orders/branches/7", role)).toBe("bare");
+      expect(resolveNewOrdersShellMode("/new-orders/branches/7/batches/9", role)).toBe("bare");
+    }
+  });
+
+  it("bekor qilinganlar: marketlar — hosted; market tafsiloti — market rolida hosted (o'z tabi), xodimda bare", () => {
+    for (const role of [...STAFF, "market"]) {
+      expect(resolveNewOrdersShellMode("/new-orders/cancelled", role)).toBe("hosted");
+    }
+    for (const role of STAFF) expect(resolveNewOrdersShellMode("/new-orders/cancelled/121", role)).toBe("bare");
+    expect(resolveNewOrdersShellMode("/new-orders/cancelled/121", "market")).toBe("hosted");
+    expect(resolveNewOrdersShellMode("/new-orders/cancelled/121", null)).toBe("bare");
+  });
+
+  it("/new-orders/userDetail/5 — legacy (ko'chirilmagan bola: sarlavha + tablar sahifada)", () => {
+    expect(resolveNewOrdersShellMode("/new-orders/userDetail/5", "admin")).toBe("legacy");
+    expect(resolveNewOrdersShellMode("/new-orders/userDetail/5", "market")).toBe("legacy");
   });
 
   it.each(["/new-orders/external", "/new-orders/external/3", "/new-orders/integrations", "/new-orders/integrations/incoming"])(
@@ -56,6 +67,8 @@ describe("resolveNewOrdersShellMode — qobiq rejimi", () => {
 
   it("band qilingan segmentlar hech biri market id deb o'qilmaydi", () => {
     for (const segment of NEW_ORDERS_RESERVED_SEGMENTS) {
+      // `cancelled/:marketId` — market rolining o'z «Bekor qilinganlar» tabi: hosted ATAYLAB (yuqoridagi test).
+      if (segment === "cancelled") continue;
       // Market rolida `:marketId` → hosted; band segment esa o'z rejimini oladi.
       const mode = resolveNewOrdersShellMode(`/new-orders/${segment}/x`, "market");
       expect(mode).not.toBe("hosted");

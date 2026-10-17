@@ -85,14 +85,17 @@ describe("Bekor qilingan mollar — qo'lda tanlash sababi (fix3 FE-RET-05)", () 
     const user = userEvent.setup();
     renderDetail();
 
-    await user.click(screen.getByRole("button", { name: "QR поврежден" }));
-    const select = screen.getByRole("combobox");
+    await user.click(screen.getByRole("button", { name: "QR повреждён" }));
+    // Dizayn v2: sabab — radio-kartalar («Sabab *»), `select` emas.
+    const dialog = await screen.findByRole("dialog", { name: "Подтверждение повреждённого QR" });
+    const unreadable = within(dialog).getByRole("radio", { name: "QR не читается" });
     // Foydalanuvchi tarjimani ko'radi...
-    expect(within(select).getByRole("option", { name: "QR не читается" })).toBeInTheDocument();
+    expect(unreadable).toBeInTheDocument();
     // ...lekin qiymat — enum kodi.
-    await user.selectOptions(select, "QR o'qilmayapti");
-    await user.click(screen.getByRole("button", { name: "Подтвердить вручную" }));
-    await user.click(screen.getByRole("button", { name: /Отправить маркету \(1\)/ }));
+    expect(unreadable).toHaveAttribute("value", "QR o'qilmayapti");
+    await user.click(unreadable);
+    await user.click(within(dialog).getByRole("button", { name: "Подтвердить вручную" }));
+    await user.click(screen.getByRole("button", { name: /Отправить маркету — 1/ }));
 
     expect(mocks.handoverMutate).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -108,9 +111,12 @@ describe("Bekor qilingan mollar — qo'lda tanlash sababi (fix3 FE-RET-05)", () 
     const user = userEvent.setup();
     renderDetail();
 
-    await user.click(screen.getByRole("button", { name: "QR поврежден" }));
-    await user.click(screen.getByRole("button", { name: "Подтвердить вручную" }));
-    await user.click(screen.getByRole("button", { name: /Отправить маркету \(1\)/ }));
+    await user.click(screen.getByRole("button", { name: "QR повреждён" }));
+    const dialog = await screen.findByRole("dialog", { name: "Подтверждение повреждённого QR" });
+    // Sukut tanlangan radio — birinchi sabab (yorlig'i tarjima, qiymati enum kodi).
+    expect(within(dialog).getByRole("radio", { name: "QR порван" })).toBeChecked();
+    await user.click(within(dialog).getByRole("button", { name: "Подтвердить вручную" }));
+    await user.click(screen.getByRole("button", { name: /Отправить маркету — 1/ }));
 
     expect(mocks.handoverMutate).toHaveBeenCalledWith(
       expect.objectContaining({ manualOverrides: [{ order_id: "501", reason: "QR yirtilgan" }] }),

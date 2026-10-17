@@ -1,7 +1,8 @@
-import { memo, useCallback, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
-import { CheckCircle2, FileText, Loader2, Package } from "lucide-react";
-import { useTranslation } from "react-i18next";
+// dizayn-v2: superadmin-neworders-branch-batch-detail, admin-neworders-branch-batch-detail
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, Check, Inbox, ListChecks, ScanLine } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
+import { Link, useParams } from "react-router-dom";
 import {
   useBatchDetail,
   useBatchRemainingDetail,
@@ -10,41 +11,65 @@ import {
   type BatchOrder,
 } from "../../../entities/batch";
 import { useBranchDetail } from "../../../entities/branch";
-import HeaderName from "../../../shared/components/headerName";
-import { batchStatusClass, formatBatchMoney } from "../../batches/lib/batchFormat";
-import { Checkbox, OrderCard, type ApiOrder } from "../components/OrderCard";
-import BackButton from "../../../shared/ui/BackButton";
-import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
-import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
-import { getBackendErrorMessage } from "../../scan/lib/scanResource";
+import { OrderStatusBadge } from "../../../entities/order";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { formatPhone } from "../../../shared/lib/formatPhone";
 import { notify } from "../../../shared/lib/notify";
+import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
+import {
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  EmptyState,
+  PageHeader,
+  QueryBoundary,
+  Skeleton,
+  type DataTableColumn,
+  type DataTableSelection,
+} from "../../../shared/ui/primitives";
+import { formatBatchDisplayId } from "../../batches/lib/batchFormat";
+import { getDeliveryLabelKey } from "../../orders/list/courier/list/orderActionModel";
+import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
+import { SelectionRegion } from "../ui/SelectionRegion";
+import {
+  BATCH_STATUS_TONE,
+  readBatchOrderDate,
+  readBatchOrderStatus,
+  readBatchRegion,
+  readBranchId,
+  readBranchName,
+  sumBatchOrdersTotal,
+  toDeliveryKind,
+} from "./branchBatchesModel";
 
-const toOrderCardData = (order: BatchOrder, createdAt?: string): ApiOrder => ({
-  id: order.id,
-  qr_code_token: order.qr_code_token ?? null,
-  status: String(order.status ?? "").toLowerCase(),
-  where_deliver: order.where_deliver ?? "center",
-  total_price: Number(order.price ?? 0),
-  paid_amount: 0,
-  to_be_paid: Number(order.price ?? 0),
-  createdAt: createdAt || new Date().toISOString(),
-  comment: null,
-  address: order.address && order.address !== "—" ? order.address : null,
-  items: [],
-  customer: {
-    id: order.id,
-    name: order.receiver || "—",
-    phone_number: order.phone || "—",
-  },
-});
+const known = (value: string | null | undefined) => (value && value.trim() && value !== "—" ? value : null);
 
+/** Buyurtma tafsiloti (maketdagi `@orders-detail`). */
+const orderHref = (order: BatchOrder) => `/orders/edit/${order.id}`;
+
+/**
+ * FILIAL PAKETI TAFSILOTI — `/new-orders/branches/:branchId/batches/:batchId` (superadmin/admin; qobiq `bare`).
+ *
+ * Sarlavha: «← {filial}» · «Paket B-140» + holat badge'i · «{viloyat} buyurtmalari · N ta · summa», yagona asosiy
+ * amal «Qabul qilish — N ta buyurtma» (tanlanganlar; tasdiq oynasi yo'q — v1 va maketdagidek).
+ * Karta: «Yo'nalish {manba} → {manzil}» + skaner maslahati («USB skaner tayyor»), tanlov paneli, jadval
+ * (telefonda kartalar). USB skaner (klaviatura) buyurtma QR'ini o'qisa — buyurtma ro'yxatda tanlanadi.
+ * Kamera rejimi (maket `*-camera`, telefondagi «Kamera bilan skanerlash») — keyinroq, alohida.
+ *
+ * Ma'lumot: `GET transfer-batches/:id`, bo'lmasa `…/remaining` (v1 dagidek). Qabul:
+ * `POST transfer-batches/:id/receive-orders { orderIds }` — qabul qilinganlar ro'yxatdan yashiriladi.
+ */
 const BranchBatchDetailPage = () => {
-  const { branchId, batchId } = useParams<{ branchId: string; batchId: string }>();
-  const { t } = useTranslation("newOrders");
+  const { branchId = "", batchId = "" } = useParams<{ branchId: string; batchId: string }>();
+  const { t, i18n } = useTranslation(["newOrders", "orders", "common"]);
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const receiveBatchOrders = useReceiveTransferBatchOrders();
   const detailQuery = useBatchDetail(batchId);
   const remainingQuery = useBatchRemainingDetail(batchId);
-  const { data: branch } = useBranchDetail(branchId);
+  const sourceBranchQuery = useBranchDetail(branchId);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [receivedOrderIds, setReceivedOrderIds] = useState<Set<string>>(new Set());
 
@@ -56,28 +81,30 @@ const BranchBatchDetailPage = () => {
   const isLoading = detailQuery.isLoading || remainingQuery.isLoading;
   const isError = detailQuery.isError && remainingQuery.isError;
 
+  // Manzil filial nomi tafsilotda yo'q (faqat `destination_branch_id`) — `GET branches/:id` dan.
+  const destinationName = readBranchName(data?.to_branch);
+  const destinationQuery = useBranchDetail(destinationName ? undefined : readBranchId(data?.to_branch));
+
   const orders = useMemo(
     () => (data?.orders ?? []).filter((order) => !receivedOrderIds.has(order.id)),
     [data?.orders, receivedOrderIds],
   );
-  const isAllSelected = orders.length > 0 && selectedOrderIds.size === orders.length;
+  const isAllSelected = orders.length > 0 && orders.every((order) => selectedOrderIds.has(order.id));
 
-  const toggleOne = (orderId: string) => {
-    setSelectedOrderIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(orderId)) next.delete(orderId);
-      else next.add(orderId);
-      return next;
-    });
-  };
+  const sourceName =
+    readBranchName(sourceBranchQuery.data) ??
+    readBranchName(data?.from_branch) ??
+    t("branchBatches.batches.branchFallback", { id: branchId });
+  const targetName = destinationName ?? readBranchName(destinationQuery.data);
 
-  const toggleAll = () => {
-    if (isAllSelected) {
-      setSelectedOrderIds(new Set());
-      return;
-    }
-    setSelectedOrderIds(new Set(orders.map((order) => order.id)));
-  };
+  // «Barchasini tanlash» / «Barchasini bekor qilish» — paketdagi barcha (qabul qilinmagan) buyurtmalar, v1 dagidek.
+  const toggleAll = useCallback(() => {
+    setSelectedOrderIds((prev) =>
+      orders.length > 0 && orders.every((order) => prev.has(order.id))
+        ? new Set()
+        : new Set(orders.map((order) => order.id)),
+    );
+  }, [orders]);
 
   const markOrdersReceived = useCallback((ids: string[]) => {
     setReceivedOrderIds((prev) => {
@@ -105,8 +132,11 @@ const BranchBatchDetailPage = () => {
       {
         onSuccess: async () => {
           markOrdersReceived(ids);
-          notify.success(t("branchOrderReceiveSuccess"), {
-            description: t("branchOrderReceiveManyDescription", { count: ids.length }),
+          notify.success(t("branchBatches.detail.receiveSuccess"), {
+            description: t("branchBatches.detail.receiveSuccessDescription", {
+              count: ids.length,
+              value: formatNumberLocalized(ids.length, { language }),
+            }),
           });
           await refetchBatchData();
         },
@@ -120,126 +150,306 @@ const BranchBatchDetailPage = () => {
 
   const handleMissingScannedOrder = useCallback(() => {
     playMissingOrderFeedback();
-    notify.warning(t("qrNotFound"), { description: t("branchOrderScanMissing"), duration: 3000 });
+    notify.warning(t("qrNotFound"), { description: t("branchBatches.detail.scanMissing"), duration: 3000 });
   }, [t]);
 
-  const selectScannedOrder = useCallback((order: BatchOrder) => {
-    setSelectedOrderIds((prev) => {
-      if (prev.has(order.id)) {
+  // Skaner chaqiruvlari joriy tanlovni o'qiydi: yon ta'sir (ovoz, xabar) `setState` ichida emas.
+  const selectedRef = useRef(selectedOrderIds);
+  useEffect(() => {
+    selectedRef.current = selectedOrderIds;
+  }, [selectedOrderIds]);
+
+  const selectScannedOrder = useCallback(
+    (order: BatchOrder) => {
+      if (selectedRef.current.has(order.id)) {
         void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
         notify.warning(t("common:scannerFeedbackDuplicate"), { description: `#${order.id}`, duration: 2000 });
-        return prev;
+        return;
       }
-      const next = new Set(prev);
-      next.add(order.id);
+      selectedRef.current = new Set(selectedRef.current).add(order.id);
+      setSelectedOrderIds((prev) => {
+        const next = new Set(prev);
+        next.add(order.id);
+        return next;
+      });
       void playScanFeedback("success");
-      return next;
-    });
-  }, [t]);
+    },
+    [t],
+  );
 
-  const translatedBatchStatus = data ? t(`batchStatus.${data.status}`) : "";
-  const translatedBatchDirection = data ? t(`batchDirection.${data.direction}`) : "";
-  const branchName = branch?.name || data?.from_branch?.name || `Filial #${branchId}`;
-
+  const scannerEnabled = orders.length > 0 && !receiveBatchOrders.isPending;
   useOrderQrScanner({
     orders,
-    enabled: orders.length > 0 && !receiveBatchOrders.isPending,
+    enabled: scannerEnabled,
     onMatch: selectScannedOrder,
     onMissing: handleMissingScannedOrder,
   });
 
-  const totalSum = orders.reduce((sum, order) => sum + Number(order.price ?? 0), 0);
+  // ─── Ko'rinish ───────────────────────────────────────────────────────────────
+  const money = useCallback((value: number) => formatMoneyLocalized(value, { language }), [language]);
+  const count = useCallback((value: number) => formatNumberLocalized(value, { language }), [language]);
+  const dateOf = useCallback(
+    (order: BatchOrder) => {
+      const value = readBatchOrderDate(order, data?.created_at);
+      return value ? formatDateTimeLocalized(value, { language }) : "—";
+    },
+    [data?.created_at, language],
+  );
+  const statusBadge = useCallback((order: BatchOrder) => {
+    const status = readBatchOrderStatus(order);
+    return status ? <OrderStatusBadge status={status} /> : null;
+  }, []);
+
+  const deliveryBadge = useCallback(
+    (order: BatchOrder) => {
+      const key = getDeliveryLabelKey(toDeliveryKind(order.where_deliver));
+      return key ? <Badge>{t(key, { ns: "orders" })}</Badge> : null;
+    },
+    [t],
+  );
+
+  const selection = useMemo<DataTableSelection<BatchOrder>>(
+    () => ({
+      isSelected: (order) => selectedOrderIds.has(order.id),
+      onToggle: (order, checked) =>
+        setSelectedOrderIds((prev) => {
+          const next = new Set(prev);
+          if (checked) next.add(order.id);
+          else next.delete(order.id);
+          return next;
+        }),
+      onToggleAll: (checked) => setSelectedOrderIds(checked ? new Set(orders.map((order) => order.id)) : new Set()),
+      headerLabel: t("marketOrders.selectAllLabel"),
+      rowLabel: (order) => t("marketOrders.selectRow", { id: order.id }),
+    }),
+    [orders, selectedOrderIds, t],
+  );
+
+  const columns = useMemo<DataTableColumn<BatchOrder>[]>(
+    () => [
+      {
+        id: "order",
+        header: t("marketOrders.columns.order"),
+        cell: (order) => (
+          <>
+            <Link
+              to={orderHref(order)}
+              className="whitespace-nowrap font-semibold text-text hover:text-action-fg hover:underline"
+            >
+              №{order.id}
+            </Link>
+            <div className="whitespace-nowrap text-[13px] text-text-muted">{dateOf(order)}</div>
+          </>
+        ),
+      },
+      {
+        id: "customer",
+        header: t("marketOrders.columns.customer"),
+        cell: (order) => (
+          <>
+            <div className="whitespace-nowrap font-semibold text-text">{known(order.receiver) ?? "—"}</div>
+            <div className="whitespace-nowrap text-[13px] text-text-muted">{formatPhone(order.phone) || "—"}</div>
+          </>
+        ),
+      },
+      {
+        id: "location",
+        header: t("marketOrders.columns.location"),
+        cell: (order) => (
+          <>
+            <div className="whitespace-nowrap">{order.district ?? known(order.address) ?? "—"}</div>
+            {order.region ? <div className="whitespace-nowrap text-[13px] text-text-muted">{order.region}</div> : null}
+          </>
+        ),
+      },
+      {
+        id: "status",
+        header: t("branchBatches.batches.columns.status"),
+        cell: statusBadge,
+      },
+      {
+        id: "delivery",
+        header: t("marketOrders.columns.delivery"),
+        hideBelow: "lg",
+        cell: deliveryBadge,
+      },
+      {
+        id: "amount",
+        header: t("marketOrders.columns.amount"),
+        align: "end",
+        cell: (order) => <span className="font-semibold text-text">{money(order.price)}</span>,
+      },
+    ],
+    [dateOf, deliveryBadge, money, statusBadge, t],
+  );
+
+  // Telefon kartasi: chapda belgi (DataTable, 48 px), o'ngda butun karta — buyurtma tafsilotiga havola.
+  const renderCard = useCallback(
+    (order: BatchOrder) => {
+      const place = order.district ?? known(order.address);
+      return (
+        <Link to={orderHref(order)} className="flex min-w-0 flex-col gap-1 py-3 pl-12 pr-4 text-sm text-text">
+          <span className="flex min-w-0 justify-between gap-2">
+            <span className="min-w-0 font-semibold">{known(order.receiver) ?? "—"}</span>
+            <span className="whitespace-nowrap font-semibold">{money(order.price)}</span>
+          </span>
+          <span className="text-[13px] text-text-muted">
+            №{order.id}
+            {place ? ` · ${place}` : null}
+            {order.phone ? (
+              <>
+                {" · "}
+                <span className="whitespace-nowrap">{formatPhone(order.phone)}</span>
+              </>
+            ) : null}
+          </span>
+          <span className="flex flex-wrap gap-1.5">
+            {statusBadge(order)}
+            {deliveryBadge(order)}
+          </span>
+        </Link>
+      );
+    },
+    [deliveryBadge, money, statusBadge],
+  );
+
+  const isLoaded = data !== undefined;
+  const region = data ? readBatchRegion(data) : null;
+  const totalSum = sumBatchOrdersTotal(orders);
+  const selectedOrders = orders.filter((order) => selectedOrderIds.has(order.id));
+  const displayId = formatBatchDisplayId(known(data?.id) ?? batchId);
+
+  const description = isLoaded ? (
+    <>
+      {region ? <>{t("branchBatches.detail.regionOrders", { region })} · </> : null}
+      <span className="whitespace-nowrap">{t("branchBatches.batches.qty", { value: count(orders.length) })}</span> ·{" "}
+      <span className="whitespace-nowrap">{money(totalSum)}</span>
+    </>
+  ) : null;
 
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl">
-      <div className="py-3 pb-3 sm:py-4 sm:pb-4 md:py-6 md:pb-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex min-w-0 items-start gap-3">
-            <BackButton to={`/new-orders/branches/${branchId}`} className="mt-1 h-10 min-w-10 shrink-0 rounded-xl px-2" label="" />
-            <div className="group relative min-w-0 overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-surface-elevated)] p-3 shadow-sm dark:bg-[color:var(--color-surface-elevated-dark)] sm:p-4">
-              <div className="pointer-events-none absolute -left-6 top-1/2 h-14 w-14 -translate-y-1/2 rounded-full bg-main/12 blur-xl transition-all duration-300 group-hover:bg-main/18" />
-              <HeaderName
-                name={`${branchName} orderlari`}
-                description={`Jami orderlar • ${formatBatchMoney(totalSum)}`}
-                icon={<Package />}
-              />
-            </div>
-          </div>
-
-          {data ? (
-            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-3 text-xs font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] dark:bg-primarydark lg:justify-end">
-              <span className={`inline-flex rounded-full border px-3 py-1 ${batchStatusClass[data.status]}`}>
-                {translatedBatchStatus}
-              </span>
-              <span>{t("branchInfoDirection")}: {translatedBatchDirection}</span>
-              <span>{t("branchInfoOrders")}: {t("branchInfoOrderCount", { count: data.orders_count })}</span>
-              <span>{t("branchInfoAmount")}: {formatBatchMoney(data.total_price)}</span>
-            </div>
-          ) : null}
-        </div>
-
-        <div className="mt-4 flex flex-col gap-2 rounded-xl border border-gray-200 bg-white px-3 py-3 dark:border-white/5 dark:bg-maindark sm:flex-row sm:items-center sm:justify-between sm:px-4">
-          <div onClick={toggleAll} className="flex cursor-pointer items-center gap-3">
-            <Checkbox checked={isAllSelected} onChange={toggleAll} />
-            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-              {isAllSelected ? t("deselectAll") : t("selectAll")}
-            </span>
-          </div>
-          {selectedOrderIds.size > 0 ? (
-            <span className="rounded-lg bg-main px-2.5 py-1 text-xs font-bold text-white">
-              {t("selectedCount", { count: selectedOrderIds.size })}
-            </span>
-          ) : null}
-        </div>
-      </div>
-
-      {isError ? (
-        <div className="rounded-2xl border border-rose-300/30 bg-rose-500/10 p-6 text-center text-sm font-semibold text-rose-700 dark:text-rose-100">
-          {t("branchBatchLoadError")}
-        </div>
-      ) : null}
-
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pb-24 sm:pb-28 md:pb-4">
-        {isLoading ? (
-          <div className="flex h-64 items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-main/20 border-t-main" />
-          </div>
-        ) : orders.length > 0 ? (
-          orders.map((order) => (
-            <OrderCard
-              key={order.id}
-              order={toOrderCardData(order, data?.created_at)}
-              isSelected={selectedOrderIds.has(order.id)}
-              onToggle={() => toggleOne(order.id)}
-              showCheckbox
-              showOrderId={false}
+    <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
+      <PageHeader
+        back={`/new-orders/branches/${branchId}`}
+        backLabel={sourceName}
+        title={t("branchBatches.detail.title", { id: displayId })}
+        meta={
+          data ? (
+            <Badge tone={BATCH_STATUS_TONE[data.status]} dot>
+              {t(`batchStatus.${data.status}`)}
+            </Badge>
+          ) : null
+        }
+        description={description}
+        actions={
+          <Button
+            leftIcon={Check}
+            disabled={selectedOrderIds.size === 0}
+            loading={receiveBatchOrders.isPending}
+            loadingText={t("receiving")}
+            onClick={handleAcceptSelectedOrders}
+          >
+            <Trans
+              t={t}
+              i18nKey="marketOrders.receive"
+              values={{ value: count(selectedOrderIds.size) }}
+              count={selectedOrderIds.size}
+              components={{ long: <span className="max-md:hidden" /> }}
             />
-          ))
-        ) : (
-          <div className="flex h-64 flex-col items-center justify-center text-gray-300 dark:text-gray-700">
-            <FileText size={48} className="mb-4 opacity-20" />
-            <p className="text-sm font-bold uppercase tracking-widest opacity-50">{t("branchOrdersEmpty")}</p>
-          </div>
-        )}
-      </div>
+          </Button>
+        }
+      />
 
-      <div className="shrink-0 border-t border-gray-100 bg-transparent py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] dark:border-white/5 sm:py-4">
-        <button
-          type="button"
-          disabled={selectedOrderIds.size === 0 || receiveBatchOrders.isPending}
-          onClick={handleAcceptSelectedOrders}
-          className={`flex w-full items-center justify-center gap-3 rounded-2xl py-3.5 text-sm font-bold text-white transition-all sm:py-4 sm:text-base
-            bg-linear-to-r from-emerald-500 to-emerald-400 shadow-xl shadow-emerald-500/30
-            hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:translate-y-0
-            disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0
-            ${selectedOrderIds.size > 0 ? "cursor-pointer opacity-100" : "opacity-40"}`}
+      <Card as="section" padding="none" aria-label={t("branchBatches.detail.cardLabel")}>
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4 max-md:px-4">
+          <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-1">
+            <p className="flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1">
+              <span className="text-xs font-semibold uppercase tracking-[.05em] text-text-muted">
+                {t("branchBatches.detail.direction")}
+              </span>
+              <span className="inline-flex flex-wrap items-center gap-1.5 font-semibold text-text">
+                {sourceBranchQuery.isLoading && !readBranchName(data?.from_branch) ? (
+                  <Skeleton width={140} height={14} />
+                ) : (
+                  sourceName
+                )}
+                {targetName ? (
+                  <>
+                    <ArrowRight aria-hidden="true" size={16} strokeWidth={2} className="shrink-0 text-text-subtle" />
+                    {targetName}
+                  </>
+                ) : null}
+              </span>
+            </p>
+            <p className="flex items-center gap-1.5 text-xs text-text-muted">
+              <ScanLine aria-hidden="true" size={14} className="shrink-0" />
+              <span>{t("branchBatches.detail.scanHint")}</span>
+            </p>
+          </div>
+          {scannerEnabled ? (
+            <Badge tone="success" dot role="status" className="max-md:hidden">
+              {t("marketOrders.scannerReady")}
+            </Badge>
+          ) : null}
+        </div>
+
+        {orders.length > 0 ? (
+          <SelectionRegion
+            idle={selectedOrders.length === 0}
+            label={t("branchBatches.batches.selectionRegion")}
+            title={
+              selectedOrders.length > 0
+                ? t("marketOrders.selectedSummary", {
+                    value: count(selectedOrders.length),
+                    sum: money(sumBatchOrdersTotal(selectedOrders)),
+                  })
+                : t("marketOrders.noneSelected")
+            }
+            hint={t("branchBatches.detail.selectionHint")}
+            action={
+              <Button variant="ghost" size="sm" leftIcon={ListChecks} onClick={toggleAll} className="max-md:px-2">
+                {isAllSelected ? t("deselectAll") : t("selectAll")}
+              </Button>
+            }
+          />
+        ) : null}
+
+        <QueryBoundary
+          query={{
+            data: isLoaded ? orders : undefined,
+            isLoading,
+            isError,
+            error: detailQuery.error ?? remainingQuery.error,
+            refetch: refetchBatchData,
+          }}
+          keepPreviousData={false}
+          skeleton="table"
+          loadingLabel={t("marketOrders.loading")}
+          empty={
+            <EmptyState
+              icon={Inbox}
+              title={t("branchBatches.detail.emptyTitle")}
+              description={t("branchBatches.detail.emptyDescription")}
+            />
+          }
+          className="border-t border-border"
         >
-          {receiveBatchOrders.isPending ? <Loader2 size={20} className="animate-spin" /> : <CheckCircle2 size={20} />}
-          {receiveBatchOrders.isPending
-            ? t("receiving")
-            : t("receiveOrdersShort", { count: selectedOrderIds.size })}
-        </button>
-      </div>
+          {(list, { isRefetching }) => (
+            <DataTable
+              rows={list}
+              columns={columns}
+              getRowKey={(order) => order.id}
+              label={t("branchBatches.detail.tableLabel")}
+              density="tight"
+              selection={selection}
+              // Qator bosilsa — tanlov (v1 kartasidagidek); buyurtma raqami havolasi tafsilotni ochadi.
+              onRowClick={(order) => selection.onToggle(order, !selectedOrderIds.has(order.id))}
+              renderCard={renderCard}
+              busy={isRefetching}
+            />
+          )}
+        </QueryBoundary>
+      </Card>
     </div>
   );
 };

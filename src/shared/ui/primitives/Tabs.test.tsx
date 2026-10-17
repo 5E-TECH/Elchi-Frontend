@@ -368,6 +368,57 @@ describe("Tabs — sig'maganda", () => {
     // 800 (tab oxiri) − 300 (ko'rinadigan en) + 32 (telefondagi xiralashish)
     expect(scrollTo).toHaveBeenLastCalledWith({ left: 532, behavior: "smooth" });
   });
+
+  describe("tab sonlari keyin yuklanib, tablar kengaysa", () => {
+    /** jsdom'da ResizeObserver yo'q — chaqiriqni qo'lda yuboramiz. */
+    const installResizeObserver = () => {
+      const callbacks: ResizeObserverCallback[] = [];
+      class ManualResizeObserver {
+        constructor(callback: ResizeObserverCallback) {
+          callbacks.push(callback);
+        }
+        observe() {}
+        unobserve() {}
+        disconnect() {
+          const index = callbacks.length - 1;
+          if (index >= 0) callbacks.splice(index, 1);
+        }
+      }
+      globalThis.ResizeObserver = ManualResizeObserver as unknown as typeof ResizeObserver;
+      return () => act(() => callbacks.forEach((callback) => callback([], {} as ResizeObserver)));
+    };
+
+    const mountWithLateCounts = () => {
+      const fire = installResizeObserver();
+      render(<Controlled initial="waiting" />);
+      const list = screen.getByRole("tablist");
+      const { scrollTo } = fakeLayout(list, { scrollWidth: 900, clientWidth: 300 });
+      const active = tab(/^Kutilmoqda/);
+      // Sonlar yuklangach tablar kengaydi — faol tab ko'rinadigan qismdan chiqdi.
+      Object.defineProperty(active, "offsetLeft", { configurable: true, value: 700 });
+      Object.defineProperty(active, "offsetWidth", { configurable: true, value: 100 });
+      return { list, scrollTo, fire };
+    };
+
+    // setup.ts dagi umumiy mock boshqa testlar uchun qaytariladi.
+    const sharedResizeObserver = globalThis.ResizeObserver;
+    afterEach(() => {
+      globalThis.ResizeObserver = sharedResizeObserver;
+    });
+
+    it("faol tab qayta ko'rinishga suriladi (darhol, silliq emas)", () => {
+      const { scrollTo, fire } = mountWithLateCounts();
+      fire();
+      expect(scrollTo).toHaveBeenLastCalledWith({ left: 532, behavior: "auto" });
+    });
+
+    it("foydalanuvchi ro'yxatni o'zi sursa — o'lcham o'zgarishi uni qaytarib tortmaydi", () => {
+      const { list, scrollTo, fire } = mountWithLateCounts();
+      fireEvent.wheel(list);
+      fire();
+      expect(scrollTo).not.toHaveBeenCalled();
+    });
+  });
 });
 
 describe("Tabs — havola rejimi (route)", () => {
