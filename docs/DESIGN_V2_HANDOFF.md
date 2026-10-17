@@ -6,17 +6,21 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
 
 ## 1. Hozirgi holat
 
-- **Branch:** `shodiyor` = `d417789` (hammasi push qilingan, ishchi daraxt toza). Ega `shodiyor` → `dev` ni o'zi
-  merge qiladi. Biz faqat `shodiyor` ga push qilamiz, `main`/`dev` ga hech qachon.
-- **Ish branchi** (lokal): `design-v2/phase-4-orders` (= `origin/shodiyor`). Yangi ishni `origin/shodiyor` dan
-  boshlang. Ega merge qilgan bo'lsa, `origin/dev` dan boshlang.
-- `dev` da hozircha `9a39eec` (PR #303) bor. `shodiyor` dagi 4-bosqich commitlari hali dev'ga merge qilinmagan.
+- **Branch:** `origin/shodiyor` = so'nggi push (2026-10-17 kechqurun: `7ea71d7` va undan keyingilar). Ega
+  `shodiyor` → `dev` ni o'zi merge qiladi. Biz faqat `shodiyor` ga push qilamiz (ega ruxsati: yashil tekshiruvli har
+  commit so'ramasdan push), `main`/`dev` ga hech qachon.
+- **Ish branchi** (lokal, asosiy papka): `design-v2/phase-4-moliya` (= `origin/shodiyor`). G1 guruhi alohida
+  worktree'da quriladi: branch `design-v2/phase-4-g1` (`8b9c73c` dan) → tayyor bo'lgach asosiy branchga merge qilinadi.
+- `dev` da hozircha `9a39eec` (PR #303). `shodiyor` dagi 4-bosqich commitlari hali dev'ga merge qilinmagan.
+- **Jonli tekshiruv:** front lokal (`127.0.0.1:4173`), backend — server (`api.elchipochta.uz`, test ma'lumot) lokal
+  proksi orqali: production CORS lokal manzillarni bloklaydi. Login'ni ega brauzerda o'zi qiladi, agent parol
+  kiritmaydi. Proksi sukut bo'yicha faqat o'qish rejimida.
 
 | Bosqich | Holat |
 |---|---|
 | 0 tokenlar, 1 primitivlar, 2 shell, 3 forma/dialog/holatlar | tayyor, dev'da |
-| 4 sahifalar migratsiyasi | jarayonda, Trello 3/10 band |
-| 5 qo'shimcha qo'riqchilar (ESLint, vizual snapshot) | navbatda |
+| 4 sahifalar migratsiyasi | jarayonda: G1 qurilmoqda, G2 va G3 spec tayyor |
+| 5 qo'shimcha qo'riqchilar (ESLint, vizual snapshot) | 4 tugashi bilan darhol (ega: kutilmaydi) |
 
 **4-bosqichda ko'chirilgan sahifalar** (ro'yxat `AGENTS.md` 4-qatorida ham bor):
 
@@ -25,86 +29,55 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   `/new-orders/branches*`, `/new-orders/cancelled*`
 - «Pochta»: `/mails/*`, `/mails/:id`
 - «Paketlar va qaytarishlar»: `/batches`, `/batches/:id`, `/returns`
+- «Moliya» (`7ea71d7`): `/payments`, `/payments/main-cashbox`, `/payments/cash-detail/:id`, `/cash-box`,
+  `/financial-balance`
 
 **Yo'l-yo'lakay qo'shilganlar:**
 
 - CI: Playwright e2e endi PR'da yuradi (`c0d81d2`). Ega GitHub'da «Deploy» tekshiruvini `dev` uchun required
   qilishi kerak, aks holda e2e merge'ni to'xtatmaydi.
 - Buyurtma yaratish: market almashtirilsa tasdiq oynasi chiqadi (`ae4c9f8`).
-- Tabs: sonlar kech yuklansa ham faol tab ko'rinadi.
-- Batch `normalizeOrder`: `order:null` holatda `order_id` olinadi.
-- Menejer/registrator paket sahifasida admin-only `GET branches` chaqirilib 403 olinardi — tuzatildi.
-- Eski pochtalardagi paket qatori endi `/batches/:id` ni ochadi.
+- F1–F5 bajarildi (`8b9c73c`):
+  - paket badge'i maketdagidek;
+  - `/returns` sana filtri; ega qarori: telefonda filtrlar qatorda, varaqa yo'q;
+  - Pochta qarorlari route-map `note` larida — `roleNotes` bu route'larda ko'rinmaydi;
+  - `/mails/old` server filtrlari, sahifalash va to'liq Excel;
+  - F5: avvalgi 6 ta bo'shliq `origin/main` da ham bor.
+- Real foydalanuvchi QA'si («Buyurtmalar», tafsilot, yaratish) topgan nuqsonlar tuzatildi (`b1a599a`).
 
 ## 2. Navbatdagi ish (shu tartibda)
 
-### 2.1 Ega qarorlari (2026-10-17) — hali BAJARILMAGAN
+### 2.1 Qolgan guruhlar — spec'lar tayyor
 
-1. **F1 — paket holati badge'i maketdagidek.**
-   - `src/entities/batch/model/batchStatus.ts`: `on_the_way` → `"warning"` (buyurtmadagi «Yo'lda» bilan bir xil).
-   - `newOrders:batchStatus` yorliqlari: uz `received` «Qabul qilingan», `cancelled` «Bekor qilingan»; ru/en ham
-     shu ma'noda.
-   - Haqiqiy holat saqlanadi: SENT = «Yo'lda», «Yangi» qattiq yozilmaydi.
-   - Barcha iste'molchi testlari yangilanadi: new_orders/branches, batches, returns, mails/old paket rejimi + Excel.
-2. **F2 — `/returns` ga qisqartirilgan «Sana» filtri.**
-   - Bugun / Hafta / Oy (`period=today|week|month`) va bitta kun (`date=YYYY-MM-DD`); `GET /transfer-batches`
-     oraliq (from/to) qabul qilmaydi.
-   - URL bilan sinxron, sahifa 1 ga qaytadi, tozalash bor, telefonda filtr varaqasi.
-3. **F3 — Pochta birxillashtirishi `design/kit/route-map.json` ga `roleNotes` qilib yoziladi** (ega tasdiqladi).
-   Qarorlar:
-   - filtrlar ichki yorliqli Select;
-   - «Excelga yuklash» karta asboblar qatorida;
-   - xulosa qatori barcha xodimlarda;
-   - «Qaytarish» tabida bitta doimiy tanlov paneli;
-   - «Pochtalar | Filial paketlari» almashtirgichi;
-   - paket qatori → `/batches/:id`.
-4. **F4 — `/mails/old` server tomonidagi filtr va sahifalash** (XATO, muhim).
-   - Backend Trello `YfrqN70i` (Done) bilan `GET /post` endi `region_id`, `courier_id`, `startDate`, `endDate`
-     (Toshkent kuni), `has_orders`, `status`, `page`, `limit` (max 100, `limit_capped`) ni bajaradi.
-   - `GET /post/courier/old-posts` ham `region_id`, `status`, `startDate`, `endDate`, `has_orders` ni bajaradi.
-   - Frontend hali v1 usulida (`limit=10000` + mijozda filtrlash) → amalda faqat oxirgi 100 ta ichida
-     filtrlaydi. Server filtrlari + `total` bo'yicha sahifalashga o'tkaziladi.
-   - Excel BARCHA filtrlangan qatorlarni oladi (limit=100 bilan sahifalab). UI va URL parametrlari o'zgarmaydi.
-5. **F5 — oldingi «backend'da yo'q» xulosalarini `origin/main` bo'yicha qayta tekshirish.**
-   - Tekshiriladiganlar:
-     - `post/new` kuryeri;
-     - `orders/markets/cancelled` parametrlari;
-     - `GET branches/:id` rollari;
-     - `transfer-batches/:id` filial nomlari va tarixi;
-     - `transfer-batches` saralash;
-     - qaytarish so'rovida «Marketga».
-   - Endi bor bo'lsa va tuzatish kichik bo'lsa, tuzatiladi.
-   - Ega qarori: `/mails/today` dagi «Kuryer» ustuni hozirgidek qoladi (backend kuryer yuborsagina).
+Spec'lar sessiya scratchpad'ida turibdi. Sessiya yo'qolsa, ularni qayta yozdirish kerak bo'ladi: har spec bitta
+spec agentning ishi. Har spec'dagi ega savollariga **sukut javoblari** qo'llanadi (ega: kutma). Ro'yxat 4-bosqich
+yakuniy hisobotida.
 
-### 2.2 «Moliya» guruhi (keyingi sahifalar, ~44 maket)
+1. **G1** — Dashboard (`/`, `/branch-dashboard`), Foydalanuvchilar, Filiallar, Mahsulotlar, Hududlar (13 route,
+   65 maket).
+   - Dashboard bundle byudjeti: ≤ 450 KB, `shared/ui/charts` recharts'siz.
+   - `RegionDetailDialog` umumiy, lazy.
+   - Kuryer `/regions` → `region/my/district-stats` (prod'da 403 xavfi).
+2. **G2** — Integratsiyalar, Bildirishnomalar, Tizim/Ops/Jurnal, Profil/Sozlamalar/Inbox (67 maket).
+   - `integrations/ui.ts` olib tashlanadi.
+   - `finance-operators` to'lovi tasdiq bilan.
+   - `/market-operators` ko'chirilmaydi.
+3. **G3** — `/login` (+ «Sessiya tugadi»), `/scan/:token`, `/dispatch`, `/courier-bulk`.
+   - Xato sahifalari 3-bosqichda tayyor.
+   - `/scan` butunlay kamera ekrani — kamera ishi bilan **alohida**.
 
-| Route | Fayl |
-|---|---|
-| `/payments` | `src/pages/payments/index.tsx` + dialoglar, `FinanceHistoryDetailPopup` |
-| `/payments/main-cashbox` | `components/mainCashbox.tsx`, `CashboxFormPopup`, `CloseShiftPopup`, `SalaryPaymentPopup` |
-| `/payments/cash-detail/:id` | `components/cashDetail.tsx` |
-| `/cash-box` | `MyCashboxPage`, `CashboxRolePageLayout`, `CashboxView` (market, kuryer; menejerga maket yo'q) |
-| `/financial-balance` | `src/pages/financial-balance/**` (grafiklar — `tizim-charts`) |
+So'ng 5-bosqich. Kamera skaner rejimlari (`*-camera` ko'rinishlari, `ScannerCameraModal`, butun `/scan`) ega qarori
+bilan **alohida ish**.
 
-**Pul qoidalari:**
+### 2.2 Ega tasdiqlagan, dizayndan keyin bitta to'plamda
 
-- Har pul amali, smena yopish va oylik to'lash tasdiq oynasi orqali.
-- `paymentIdempotency.ts` va ikki marta bosishdan himoya aynan saqlanadi.
-- Payload'lar va izoh majburiyligi o'zgarmaydi.
-- Kassalar orasidagi o'tkazish xarajat emas.
-- Chiqim kategoriyasi (18 talik yopiq ro'yxat, Trello `ljVOuNz4`) hali API'da ham, maketda ham yo'q — chizilmaydi.
-
-### 2.3 Qolgan guruhlar (Trello `tzvOkdpI` checklist tartibida)
-
-1. Dashboard. Oldindan ma'lum muammo: `playwright.preview` testida dashboard JS 487 KB > 450 KB byudjet.
-2. Foydalanuvchilar / Filiallar / Mahsulotlar.
-3. Hududlar.
-4. Integratsiyalar / Ops / Faoliyat jurnali (`integrations/ui.ts` olib tashlanadi).
-5. Login va xato sahifalari (404/403/500 bitta uslubda).
-6. Scan va Kuryer ommaviy (telefon, 48px tugmalar, yopishqoq asosiy harakat).
-
-So'ng 5-bosqich. Kamera skaner rejimlari (`*-camera` ko'rinishlari, `ScannerCameraModal`) ega qarori bilan
-**alohida ish** — route-map'da `partialViews`/`newViews` da turibdi.
+- Trello: 2 ta yangi Backend kartasi va 4 ta karta izohi.
+  - Yangi kartalar: `GET /transfer-batches` statussiz bo'lganda `meta.total` sahifaga xos; `GET /post` javobida
+    `orders_total`/`amount_total` yo'q.
+  - `FoCaUF10` Done → Backend: «EL-…» raqami bilan qidiruv ishlamaydi.
+  - Izohlar: `rwAy8Qyk`, `3qDsJpfW`, `Ho5qcDn4`.
+- To'liq QA: Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.
+- Ochiq: D-12 — yangi to'lanmagan buyurtmada «To'lanishi kerak 0» (`to_be_paid` semantikasi, backend bilan).
 
 ## 3. Ish usuli (o'zini oqlagan)
 
@@ -132,6 +105,16 @@ So'ng 5-bosqich. Kamera skaner rejimlari (`*-camera` ko'rinishlari, `ScannerCame
   - to'la holatlar uchun vaqtinchalik Playwright probe (`tests/e2e/support/*` fixture'lari bilan), ishdan keyin
     o'chiriladi;
   - telefon (390), planshet (768), desktop (1440) × kunduzgi/tungi.
+- **Kuchsiz kompyuter (ega shikoyati):**
+  - barcha og'ir buyruqlar (`tsc`, `vitest`, `playwright`, `design:shot`, `app:shot`, `build`) bitta umumiy
+    `flock` qulfi orqali, bittadan;
+  - bir vaqtda 2–3 agent;
+  - to'liq suite faqat integratorda, kataloglarga bo'lib (har biri < 9 daqiqa).
+- **Parallel guruh — alohida git worktree:**
+  - `node_modules` — asosiy o'rnatmaning paketlariga symlink, `.tmp` / `.vite` keshi esa alohida;
+  - worktree'da Playwright default konfig bilan YURITILMAYDI, chunki u asosiy daraxtning `:4173` serverini qayta
+    ishlatadi. Probe uchun `:4175` portli vaqtinchalik konfig ishlatiladi;
+  - integratsiya merge'dan keyin asosiy daraxtda qilinadi.
 - **Uzoq ish paytida** lokal WIP nazorat nuqtasi qo'ying: `git commit` → `git branch -f wip/<nom>` →
   `git reset --mixed HEAD~1`. Kompyuter o'chsa ish yo'qolmaydi.
 
@@ -175,6 +158,16 @@ So'ng 5-bosqich. Kamera skaner rejimlari (`*-camera` ko'rinishlari, `ScannerCame
   - `/returns` qisqartirilgan sana filtri (F2);
   - Pochta birxillashtirishi (F3);
   - «Kuryer» ustuni hozirgidek.
+- **2026-10-17 (kechqurun):**
+  - push `origin/shodiyor` ga so'ramasdan (yashil bo'lsa);
+  - 4 tugashi bilan 5 darhol;
+  - Moliya D1 — asosiy kassa faqat `cashbox_type=main`;
+  - D2 — market kassasida HQ → market «Chiqim −»;
+  - D3 — to'ldirish/xarajat tasdiq + `Idempotency-Key`;
+  - `/returns` telefonda filtrlar qatorda;
+  - `/mails/old` yig'indilar backend'dan so'raladi (hozircha «N ta pochta»);
+  - Excel 20 000 qator chegarasida ogohlantirish;
+  - spec savollarida sukut.
 - Ochiq savollar (javob olinmagan), ehtiyot bo'lib birga so'rash mumkin:
   - chop etish menyusi izohlari: xodim maketi «Faqat jadvalni chop etadi», kuryer maketi «Brauzerning chop etish
     oynasi ochiladi». Kod kuryer matnini ishlatadi, chunki u to'g'ri;
