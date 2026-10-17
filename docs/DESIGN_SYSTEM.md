@@ -466,6 +466,26 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   qaytarish paketida `scannerReadyOnPhone`), jo'natish `PATCH transfer-batches/:id/send { orderIds }` va USB skaner
   o'zgarmagan. `GET branches/:id` faqat superadmin/admin uchun so'raladi (backend `@Roles`). `/returns`
   (`returns/index.tsx` + `model/returnBatches.ts`): holat filtri, `DataTable`, qator → `/batches/:id`.
+- **Ko'chirilgan:** «Moliya» (`/payments`, `/payments/main-cashbox`, `/payments/cash-detail/:id`, `/cash-box`,
+  `/financial-balance`). Umumiy qismlar (`pages/payments/components/`): yorliqlar `paymentSourceType.ts`
+  (`getPaymentSourceTitle` — ko'ruvchiga bog'liq manba nomi, `getPaymentMethodLabel`, `getCashboxTypeLabel`,
+  `getViewerOperationType` — yo'nalish), tafsilot oynasi `FinanceHistoryDetailPopup` (barcha sahifalar; kuryerda
+  `hideCashboxType`), tanlash oynasi `SettlementPickerDialog` (`receive` · `give` · `courier`), kassa ro'yxati
+  `PaymentHistoryList`. Pul faqat `formatMoney*` (ishora `formatSignedMoneyLocalized`, kirim `success-fg`, chiqim
+  `danger-fg`), operatsiya badge'i neytral + strelka. `/payments`: KPI kartalari, menejerda «Kuryerlardagi pul»,
+  «Operatsiyalar tarixi» (`Tabs` Kirim/Chiqim, sana + manba + kassa + yaratgan filtrlari URL'da, telefonda varaqa,
+  `DataTable` + `Pagination`). `/payments/main-cashbox`: «Kassa balansi» (naqd/karta, kun oxiridagi qoldiq grafigi
+  `MainCashboxBalanceChart`, «Grafik | Jadval»), «Tezkor amallar», «Bugun / Bu hafta / Bu oy», «Pul qayerdan keldi,
+  qayerga ketdi», tarix; to'ldirish / xarajat (`CashboxFormPopup`) — `useConfirm` tasdig'i + `Idempotency-Key`,
+  smena oynasi `CloseShiftPopup` (oynaning o'zi tasdiq). `/payments/cash-detail/:id`: «Hisob-kitob holati», to'lov
+  formasi `CashboxActionFormCard` + «To'lovni tasdiqlang» (from → to), «Balans harakati» va tarix. `/cash-box`
+  (`MyCashboxPage`): balans kartasi, «Bugun» bloki, tarix jadvali. `/financial-balance`: 4 KPI, «Balans tarkibi»,
+  reytinglar (`SettlementRanks`), Tarix (`HistoryTab`), Tahlil (`AnalysisTab` + waterfall `LedgerFlow`, `tizim-charts`),
+  qo'lda yozuv `FinancialEntryModal`, tafsilot `FinancialHistoryDetail`. Ega qarorlari 2026-10-17: D1 — SA/admin
+  asosiy kassasida faqat asosiy kassa operatsiyalari (`cashbox_type=main`); D2 — marketning o'z kassasida
+  `market_payment` «Chiqim −» (ro'yxat va tafsilot); D3 — to'ldirish / xarajat `Idempotency-Key` bilan. Payload'lar,
+  idempotentlik, ikki marta bosishdan himoya va eksportlar o'zgarmagan; «Taklif» grafiklari chizilmagan. v1
+  `CashboxRolePageLayout`, `CashboxView`, `CashboxSummaryCard` va o'lik `payments` kalitlari o'chirildi.
 
 **Dizayn qo'riqchisi** (`scripts/design-guard.mjs`, `npm run design:guard`): `colour`, `palette`, `dark-pair`,
 `legacy`, `money`, `icons`, `tiny-text`, `v1-class`, `weight`, `gradient`, `v1-helper`. Ikki darvoza:

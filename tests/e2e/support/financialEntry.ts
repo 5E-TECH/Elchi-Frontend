@@ -134,7 +134,8 @@ export const mockFinancialEntryApi = async (page: Page, options: { failFirstPost
 export const openHistoryTab = async (page: Page) => {
   await page.goto("/financial-balance?tab=history");
   await expect(page.getByRole("button", { name: "Yozuv qo'shish" })).toBeVisible({ timeout: 60_000 });
-  await expect(page.getByText("Buyurtma #1001")).toBeVisible();
+  // Dizayn v2: buyurtma raqami «№» bilan (jadvalda havola, telefonda karta matni).
+  await expect(page.getByText("Buyurtma №1001")).toBeVisible();
 };
 
 /** "Yozuv qo'shish" → Qo'lda chiqim, 1 000, izoh → Saqlash. */
@@ -145,8 +146,8 @@ export const submitManualExpense = async (page: Page, comment: string) => {
   await dialog.getByRole("button", { name: "Qo'lda chiqim" }).click();
   await dialog.getByLabel("Summa").fill("1000");
   await dialog.getByLabel("Izoh").fill(comment);
-  // Dizayn v2: uz valyutasi "so'm" (payments.currency); minus — haqiqiy `−` (U+2212,
-  // `formatSignedMoneyLocalized`) yoki eski `-` (modal hali ko'chirilmagan).
-  await expect(dialog.getByText(/^Balansga ta'siri: [-\u2212]1\D?000 so'm$/)).toBeVisible();
+  // Dizayn v2 (maket `superadmin-balance-entry-dialog`): «Balansga ta'siri» yorlig'i va qiymati alohida, bitta
+  // `role=status` qatorida; uz valyutasi "so'm"; minus — haqiqiy `−` (U+2212, `formatSignedMoneyLocalized`).
+  await expect(dialog.getByRole("status")).toHaveText(/^Balansga ta'siri: ?\u22121\D?000 so'm$/);
   return dialog;
 };

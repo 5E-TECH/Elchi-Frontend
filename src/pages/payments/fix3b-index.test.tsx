@@ -31,6 +31,8 @@ vi.mock("../../entities/payments", () => ({
     useGetCashBoxInfo: () => ({ data: page.cashboxInfo, isLoading: false }),
     useGetFinanceHistory: () => ({ data: { data: { items: [] } }, isLoading: false }),
     useGetHqCourierReceivables: () => ({ data: undefined, isLoading: false }),
+    useGetCurrentShift: () => ({ isSuccess: false, data: undefined }),
+    useGetCashBoxMain: () => ({ data: undefined, isLoading: false }),
   }),
 }));
 vi.mock("../../entities/payments/financeCoverage", () => ({
@@ -132,5 +134,14 @@ describe("FE-PAY-01 reverted — manager 'Berilishi kerak' keeps the pre-fix3 br
     await userEvent.setup().click(screen.getByText("Berilishi kerak"));
 
     expect(screen.getByTestId("pathname").textContent).toBe("/payments/cash-detail/16");
+  });
+
+  it("the header «HQ'ga o'tkazish» action opens the same branch cashbox page", async () => {
+    open();
+
+    await userEvent.setup().click(screen.getByRole("button", { name: "HQ'ga o'tkazish" }));
+
+    expect(screen.getByTestId("pathname").textContent).toBe("/payments/cash-detail/3");
+    expect(screen.getByTestId("search").textContent).toBe("?type=branch");
   });
 });

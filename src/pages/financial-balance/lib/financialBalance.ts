@@ -1,3 +1,5 @@
+import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
+
 // Tarix tabining barcha URL parametrlari shu prefiks bilan boshlanadi.
 export const HISTORY_PARAM_PREFIX = "financialBalanceHistory";
 
@@ -23,6 +25,11 @@ export interface FinancialBalanceData {
    * `chainReceivable + providerReceivable`, eski javobda `couriersTotalBalanse`.
    */
   receivable: number;
+  /**
+   * Yo'ldagi pul tarkibi (yangi backend `chain`): kuryer va filial zanjiri hamda kargo qo'lidagi pul.
+   * Eski javobda `null` — «Balans tarkibi» bitta «Yo'ldagi pul» qatorini chizadi.
+   */
+  chain: { chainReceivable: number; providerReceivable: number } | null;
 }
 
 type UnknownRecord = Record<string, unknown>;
@@ -287,6 +294,7 @@ export const normalizeFinancialBalance = (response: unknown): FinancialBalanceDa
       items: courierItems,
     },
     receivable,
+    chain: chainReceivable !== undefined ? { chainReceivable, providerReceivable } : null,
   };
 };
 
@@ -359,22 +367,14 @@ export const extractFinancialLedgerPagination = (response: unknown): Record<stri
 };
 
 /**
- * Pul summasi (4AZ2xRRX): butun so'mga yaxlitlanadi, mingliklar BO'SHLIQ bilan.
- * Ilgari ru-RU natijasidagi bo'shliqlar vergulga almashtirilardi va kasr ham
- * vergul edi — "95,348,635,57" (mingliklar va tiyin bir xil belgi) chiqardi.
- *
- * ⚠️ `Intl.NumberFormat("uz-UZ")` ISHLATILMAYDI: Chrome'ning qisqartirilgan
- * ICU ma'lumotida "uz" yo'q va u inglizchaga qaytib "1,545,000" (vergul)
- * beradi — Node testlarida esa bo'shliq chiqadi, ya'ni test yashil bo'lib
- * brauzerda xato ko'rinardi. Ajratkich shu yerda qo'lda qo'yiladi.
+ * Pul summasi (4AZ2xRRX): butun so'mga yaxlitlanadi, mingliklar BO'SHLIQ bilan (uz/ru), valyutasiz.
+ * Dizayn v2: ichi `formatMoneyLocalized(value, { withCurrency: false })` — manfiy son haqiqiy minus
+ * `−` (U+2212) bilan, `Intl.NumberFormat` ishlatilmaydi (Chrome'da "uz" ICU yo'q — formatMoney.ts).
+ * NaN, bo'sh va harfli qiymat — "0".
  */
 export const formatFinancialAmount = (value: unknown): string => {
   const num = typeof value === "number" ? value : Number(value);
-  if (!Number.isFinite(num)) return "0";
-  const rounded = Math.round(num);
-  if (rounded === 0) return "0";
-  const digits = String(Math.abs(rounded)).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
-  return rounded < 0 ? `-${digits}` : digits;
+  return formatMoneyLocalized(Number.isFinite(num) ? num : 0, { withCurrency: false });
 };
 
 /**

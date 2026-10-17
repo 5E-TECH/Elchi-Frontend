@@ -747,16 +747,18 @@
         "src/pages/payments/components/PaymentSummaryCards.tsx",
         "src/pages/payments/components/patmentHistoryTable.tsx",
         "src/pages/payments/components/FinanceHistoryDetailPopup.tsx",
+        "src/pages/payments/components/SettlementPickerDialog.tsx",
         "src/pages/payments/components/InactiveBadge.tsx",
-        "src/pages/payments/components/lib/receiveOptions.ts",
-        "src/shared/components/popupSelect.tsx"
+        "src/pages/payments/components/paymentSourceType.ts",
+        "src/pages/payments/components/paymentHistoryActor.ts",
+        "src/pages/payments/components/lib/receiveOptions.ts"
       ],
       "views": {
         "superadmin": ["payments-overview", "payments-market-picker-dialog", "payments-to-give-dialog", "payments-history-detail-dialog"],
         "admin": ["payments-overview", "payments-to-give-dialog", "payments-to-receive-dialog", "payments-history-detail-dialog"],
         "manager": ["payments-overview", "payments-courier-select-dialog", "payments-history-detail-dialog"]
       },
-      "note": "Berilishi kerak / Qabul qilinishi kerak tanlash oynalari — PopupSelect (payments/index.tsx). Ruxsati yo'q rol (market, kuryer) → /cash-box."
+      "note": "Tanlash oynalari (Qabul qilinishi kerak · Berilishi kerak · Kuryerni tanlang) — SettlementPickerDialog (kind receive | give | courier), tafsilot — FinanceHistoryDetailPopup (barcha Moliya sahifalari uchun umumiy). Birxillashtirish (spec §0.5): filtr qatori barcha rollarda tarix kartasi ichida (menejer maketi naqshi), «Sana» filtri — GET finance/history from_date/to_date. Ega qarori D1 (2026-10-17): superadmin/admin tarixi kassa tanlanmagan bo'lsa server tomonida faqat asosiy kassa (gateway sukuti cashbox_type=main); «Kassa turi» filtri boshqa kassani tanlaydi; menejerda server doim filial kassasini beradi. Tab sonlari chizilmaydi (API bermaydi, Trello GaBIPi3Z). Ruxsati yo'q rol (market, kuryer) → /cash-box."
     },
     {
       "path": "/payments/main-cashbox",
@@ -764,18 +766,22 @@
       "title": "Asosiy kassa (to'ldirish / xarajat / smenani yopish)",
       "components": [
         "src/pages/payments/components/mainCashbox.tsx",
-        "src/pages/payments/components/CashboxSummaryCard.tsx",
+        "src/pages/payments/components/MainCashboxBalanceChart.tsx",
+        "src/pages/payments/components/lib/mainCashboxStats.ts",
         "src/pages/payments/components/CashboxFormPopup.tsx",
         "src/pages/payments/components/CloseShiftPopup.tsx",
+        "src/pages/payments/components/SettlementPickerDialog.tsx",
+        "src/pages/payments/components/FinanceHistoryDetailPopup.tsx",
         "src/pages/payments/components/SalaryPaymentPopup.tsx",
-        "src/pages/payments/components/PaymentHistoryList.tsx",
+        "src/shared/components/popupSelect.tsx",
         "src/pages/payments/components/lib/exportMainCashboxReport.ts"
       ],
       "views": {
         "superadmin": ["payments-main-cashbox", "payments-main-cashbox-fill-dialog", "payments-main-cashbox-shift-dialog"],
         "admin": ["payments-main-cashbox", "payments-cashbox-form-dialog", "payments-shift-dialog"],
         "manager": ["payments-main-cashbox", "payments-cashbox-form-dialog", "payments-close-shift-dialog"]
-      }
+      },
+      "note": "Ega qarori D1 (2026-10-17): superadmin/admin — faqat asosiy kassa operatsiyalari (GET finance/history?cashbox_type=main): ro'yxat, «Bugun / Bu hafta / Bu oy», «Pul qayerdan keldi, qayerga ketdi» va Excel hisobot; menejerda filial kassasi (server majburlaydi, o'zgarmagan). D3: «Kassani to'ldirish» / «Kassadan xarajat» — tasdiq oynasi (useConfirm) + Idempotency-Key (paymentIdempotency, qayta urinishda o'sha kalit). Birxillashtirish (spec §10 Q2): «Kassa balansi» chizig'i va manba bloklari menejerda ham; telefonda davrlar — bitta karta + SegmentedControl. Smena faqat superadmin/admin (Q4 — menejerda yo'q). «Maosh to'lash» yashirin (SalaryPaymentPopup + PopupSelect — v1, yetib bo'lmaydi). 18 talik xarajat kategoriyasi va nomli kartalar (card_id) chizilmaydi."
     },
     {
       "path": "/payments/cash-detail/:id",
@@ -783,16 +789,17 @@
       "title": "Kassa tafsiloti — kuryer / market / filial",
       "components": [
         "src/pages/payments/components/cashDetail.tsx",
-        "src/pages/payments/components/CashboxRolePageLayout.tsx",
         "src/pages/payments/components/CashboxActionFormCard.tsx",
-        "src/pages/payments/components/PaymentHistoryList.tsx"
+        "src/pages/payments/components/PaymentHistoryList.tsx",
+        "src/pages/payments/components/FinanceHistoryDetailPopup.tsx",
+        "src/pages/payments/components/lib/paymentIdempotency.ts"
       ],
       "views": {
         "superadmin": ["payments-cash-detail-courier", "payments-cash-detail-market", "payments-cash-detail-branch"],
         "admin": ["payments-cash-detail-courier", "payments-cash-detail-market", "payments-cash-detail-branch"],
         "manager": ["payments-cash-detail-courier", "payments-cash-detail-branch"]
       },
-      "note": "Tur URL'da: ?type=courier|market|branch."
+      "note": "Tur URL'da: ?type=courier|market|branch (noma'lum tur — forma yo'q). Pul o'tkazish — «To'lovni tasdiqlang» oynasi (useConfirm, from → to) + Idempotency-Key. Birxillashtirish (spec §10 Q2): «Balans harakati» va «Barcha tarix | To'lov o'tkazmalari» menejerda ham. Menejerda mijoz tomonidagi summa chegarasi yo'q (Q8 — backend chegaralaydi); tarix tab sonlari, kuryer «kechaga nisbatan» va sparkline chizilmaydi (API bermaydi). Excel faqat superadmin/admin."
     },
     {
       "path": "/cash-box",
@@ -800,9 +807,8 @@
       "title": "O'z kassam — market va kuryer (Barcha tarix · Oldi-berdi)",
       "components": [
         "src/pages/payments/components/MyCashboxPage.tsx",
-        "src/pages/payments/components/CashboxRolePageLayout.tsx",
-        "src/pages/payments/components/PaymentHistoryList.tsx",
-        "src/pages/payments/components/FinanceHistoryDetailPopup.tsx"
+        "src/pages/payments/components/FinanceHistoryDetailPopup.tsx",
+        "src/pages/payments/components/paymentSourceType.ts"
       ],
       "views": {
         "market": ["cashbox-my", "cashbox-history-detail-dialog"],
@@ -811,7 +817,7 @@
       "roleNotes": {
         "manager": "Maket yo'q. Ayni komponent menejerga filial kassasini ko'rsatadi, lekin menyudagi «To'lovlar» bandi /payments ga olib boradi (HQ · REGIONAL · HYBRID; PICKUP menejerida bu band yo'q, sahifa faqat URL orqali). Eng yaqin maket — market-cashbox-my (ayni tuzilma) va manager-payments-cash-detail-branch."
       },
-      "note": "Tarix tablari: «all» → cashbox-my-all, «payments» → cashbox-my-transfers. Ruxsati yo'q rol → /payments."
+      "note": "Tarix tablari: «all» → cashbox-my-all, «payments» → cashbox-my-transfers (sourceTypes). Ega qarori D2 (2026-10-17): marketning o'z kassasida HQ → market o'tkazmasi (market_payment) — «Chiqim −» (market balansi = Elchining qarzi), ro'yxatda ham, tafsilot oynasida ham (getViewerOperationType); boshqa rollarda yo'nalish o'zgarmagan. Kuryer tafsilotida «Kassa turi» yo'q (hideCashboxType). «Umumiy balans» grafigi, «Davr/Kassa oqimi», delta va sparkline — Taklif, chizilmaydi. Ruxsati yo'q rol → /payments."
     },
     {
       "path": "/financial-balance",
@@ -822,14 +828,20 @@
         "src/pages/financial-balance/components/Statistics.tsx",
         "src/pages/financial-balance/components/HistoryTab.tsx",
         "src/pages/financial-balance/components/AnalysisTab.tsx",
+        "src/pages/financial-balance/components/LedgerFlow.tsx",
+        "src/pages/financial-balance/components/SettlementRanks.tsx",
         "src/pages/financial-balance/components/FinancialEntryModal.tsx",
-        "src/pages/financial-balance/components/FinancialHistoryDetail.tsx"
+        "src/pages/financial-balance/components/FinancialHistoryDetail.tsx",
+        "src/pages/financial-balance/lib/financialBalance.ts",
+        "src/pages/financial-balance/lib/analytics.ts",
+        "src/pages/financial-balance/lib/manualEntry.ts"
       ],
       "views": {
         "superadmin": ["balance-overview", "balance-history", "balance-entry-dialog", "balance-analysis", "balance-history-detail-dialog"],
         "admin": ["balance-overview", "balance-history", "balance-analysis", "balance-entry-dialog", "balance-history-detail-dialog"],
         "tizim": ["charts"]
-      }
+      },
+      "note": "Tab URL'da: ?tab= (Umumiy ko'rinish · Tarix · Tahlil). «Excelga yuklash» va «Yozuv qo'shish» sarlavhada, har tabda; Excel faol tab paramlari bilan. Tahlil davri «Bugun / Bu hafta / Bu oy / Barchasi» (spec §10 Q7); eng katta ta'sirli tranzaksiyalar server sahifalashida (top-impacts limit ≤ 100); o'tgan davrda waterfall davr boshi/«Hozir» ustunlarisiz (currentBalance — bugungi qoldiq). Qo'lda yozuvga alohida tasdiq yo'q (Q5c — oynaning o'zi «Balansga ta'siri» bilan). KPI delta/sparkline, «Daftar qoldig'i» va «Kunlik kirim va chiqim» grafiklari — Taklif, chizilmaydi."
     },
     {
       "path": "/products",
@@ -1469,6 +1481,11 @@
     "courier-mails-old": "src/pages/mails/components/oldMails.tsx",
     "superadmin-mails-old-batches": "src/pages/mails/components/oldMails.tsx",
     "admin-mails-old-all-batches": "src/pages/mails/components/oldMails.tsx",
+    "superadmin-payments-market-picker-dialog": "src/pages/payments/components/SettlementPickerDialog.tsx",
+    "superadmin-payments-to-give-dialog": "src/pages/payments/components/SettlementPickerDialog.tsx",
+    "admin-payments-to-give-dialog": "src/pages/payments/components/SettlementPickerDialog.tsx",
+    "admin-payments-to-receive-dialog": "src/pages/payments/components/SettlementPickerDialog.tsx",
+    "manager-payments-courier-select-dialog": "src/pages/payments/components/SettlementPickerDialog.tsx",
     "superadmin-payments-main-cashbox-fill-dialog": "src/pages/payments/components/CashboxFormPopup.tsx",
     "admin-payments-cashbox-form-dialog": "src/pages/payments/components/CashboxFormPopup.tsx",
     "manager-payments-cashbox-form-dialog": "src/pages/payments/components/CashboxFormPopup.tsx",

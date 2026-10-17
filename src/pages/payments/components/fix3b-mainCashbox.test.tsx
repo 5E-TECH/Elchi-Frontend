@@ -13,6 +13,9 @@ import { renderWithProviders } from "../../../test/test-utils";
  *    comment? }) va keyin Excel hisobot. Menejerga ko'rsatilmaydi.
  *  - "Marketga to'lov" menejerga (HQ menejeri ham) ko'rsatilmaydi — backend
  *    POST /finance/cashbox/payment/market faqat SUPERADMIN/ADMIN.
+ *  - Ega qarori D1 (2026-10-17): superadmin/admin tarixi FAQAT asosiy kassa —
+ *    GET /finance/history?cashbox_type=main (jadval, davrlar va Excel shu
+ *    qatorlardan); menejer so'rovi o'zgarmagan (cashbox_type yo'q).
  *
  * Haqiqiy `useCashBox` (react-query) va haqiqiy `CloseShiftPopup` ishlatiladi —
  * faqat HTTP qatlami (`api`) almashtirilgan, so'rov tanasi aynan tekshiriladi.
@@ -27,6 +30,7 @@ const server = vi.hoisted(() => ({
   openShift: null as null | { id: string; opened_by: string },
   failShiftList: false,
   closeError: null as null | { status: number; message: string },
+  historyItems: [] as Array<Record<string, unknown>>,
 }));
 
 vi.mock("../../../shared/api/api", () => ({
@@ -48,13 +52,12 @@ vi.mock("../../../entities/markets", () => ({
 vi.mock("../../../entities/branch/api/useBranches", () => ({
   useBranches: () => ({ data: undefined, isLoading: false }),
 }));
-vi.mock("../../../shared/ui/DateRangePicker", () => ({ default: () => null }));
-vi.mock("./PaymentHistoryList", () => ({ default: () => null }));
 vi.mock("./SalaryPaymentPopup", () => ({ default: () => null }));
 vi.mock("./CashboxFormPopup", () => ({ default: () => null }));
 vi.mock("../../../shared/components/popupSelect", () => ({ default: () => null }));
 
 const SHIFT_URL = "finance/shift";
+const HISTORY_URL = "finance/history";
 const SHIFT_OPEN_URL = "finance/shift/open";
 const SHIFT_CLOSE_URL = "finance/shift/close";
 
@@ -94,6 +97,10 @@ const hqManager = {
 const open = (preloadedState: never) =>
   renderWithProviders(<MainCashbox />, { route: "/payments/main-cashbox", preloadedState });
 
+const historyCalls = () =>
+  http.get.mock.calls
+    .filter(([url]) => url === HISTORY_URL)
+    .map(([, config]) => (config as RequestConfig | undefined)?.params);
 const shiftListCalls = () =>
   http.get.mock.calls
     .filter(([url]) => url === SHIFT_URL)
@@ -105,6 +112,7 @@ beforeEach(() => {
   server.openShift = null;
   server.failShiftList = false;
   server.closeError = null;
+  server.historyItems = [];
   exportReport.mockReset();
   http.get.mockReset();
   http.post.mockReset();
@@ -135,6 +143,14 @@ beforeEach(() => {
             items,
             pagination: { total: items.length, page: 1, limit: 1, totalPages: items.length },
           },
+        },
+      };
+    }
+    if (url === HISTORY_URL) {
+      return {
+        data: {
+          statusCode: 200,
+          data: { items: server.historyItems, pagination: { total: server.historyItems.length, page: 1, limit: 10000 } },
         },
       };
     }
@@ -189,8 +205,13 @@ describe("FE-PAY-06 — shift open/close on the main cashbox (superadmin/admin)"
     open(superadmin);
 
     await user.click(await screen.findByRole("button", { name: CLOSE_SHIFT }));
-    const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByText(/Excel hisobot yuklab olinadi/)).toBeInTheDocument();
+    const dialog = await screen.findByRole("dialog", { name: CLOSE_SHIFT });
+    expect(within(dialog).getByText(/Excel hisobot avtomatik ravishda yuklab olinadi/)).toBeInTheDocument();
+    // Joriy smena, uni ochgan xodim (o'zi) va kassadagi summa.
+    expect(within(dialog).getByText("Joriy smena")).toBeInTheDocument();
+    expect(within(dialog).getByText(/01\.10\.2026, \d{2}:\d{2} dan/)).toBeInTheDocument();
+    expect(within(dialog).getByText("Ochgan xodim")).toBeInTheDocument();
+    expect(within(dialog).getByText("Kassadagi summa")).toBeInTheDocument();
     await user.type(within(dialog).getByLabelText("Izoh (ixtiyoriy)"), "Kun yakuni");
     await user.click(within(dialog).getByRole("button", { name: CLOSE_SHIFT }));
 
@@ -286,10 +307,10 @@ describe("Market payout action — SUPERADMIN/ADMIN only (backend 403 for manage
   it("HQ manager: no 'Marketga to'lov' action (the other actions stay)", async () => {
     open(hqManager);
 
-    expect(await screen.findByTitle("Kassadan xarajat")).toBeInTheDocument();
-    expect(screen.getByTitle("Kassani to'ldirish")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Kuryer" })).toBeInTheDocument();
-    expect(screen.queryByTitle("Marketga to'lov")).not.toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /Kassadan xarajat/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Kassani to'ldirish/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Kuryerdan qabul qilish/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Marketga to'lov/ })).not.toBeInTheDocument();
   });
 
   it.each([
@@ -298,6 +319,51 @@ describe("Market payout action — SUPERADMIN/ADMIN only (backend 403 for manage
   ])("%s: 'Marketga to'lov' is shown", async (_label, preloadedState) => {
     open(preloadedState as never);
 
-    expect(await screen.findByTitle("Marketga to'lov")).toBeInTheDocument();
+    expect(await screen.findByRole("button", { name: /Marketga to'lov/ })).toBeInTheDocument();
+  });
+});
+
+describe("D1 — the main cashbox history is main-cashbox only for superadmin/admin", () => {
+  it.each([
+    ["superadmin", superadmin],
+    ["admin", admin],
+  ])("%s: GET /finance/history asks for cashbox_type=main", async (_label, preloadedState) => {
+    open(preloadedState as never);
+
+    await waitFor(() => expect(historyCalls().length).toBeGreaterThan(0));
+    expect(historyCalls().at(-1)).toEqual({ page: 1, limit: 10000, cashbox_type: "main" });
+  });
+
+  it("manager: the history request is unchanged (no cashbox_type — the gateway pins the own branch cashbox)", async () => {
+    open(hqManager);
+
+    await waitFor(() => expect(historyCalls().length).toBeGreaterThan(0));
+    expect(historyCalls().at(-1)).toEqual({ page: 1, limit: 10000 });
+  });
+
+  it("superadmin: the table and the Excel report use exactly the main-cashbox rows", async () => {
+    server.historyItems = [
+      {
+        id: "501",
+        amount: 2_000_000,
+        operation_type: "income",
+        source_type: "manual_income",
+        payment_method: "cash",
+        cashbox_type: "main",
+        comment: "Bank hisobidan naqd olindi",
+        balance_after: 24_615_000,
+        createdAt: "2026-10-08T09:30:00.000Z",
+      },
+    ];
+    const user = userEvent.setup();
+    open(superadmin);
+
+    expect((await screen.findAllByText("Qo'lda kirim")).length).toBeGreaterThan(0);
+    await user.click(screen.getByRole("button", { name: /Excelga yuklash/ }));
+
+    expect(exportReport).toHaveBeenCalledTimes(1);
+    expect(exportReport.mock.calls[0][0]).toEqual(
+      expect.objectContaining({ rows: server.historyItems, fromDate: undefined, toDate: undefined }),
+    );
   });
 });

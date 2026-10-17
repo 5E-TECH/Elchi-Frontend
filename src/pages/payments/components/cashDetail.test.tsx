@@ -10,10 +10,14 @@ type CashboxCall = { id: unknown; enabled: unknown; params: Record<string, unkno
 const cashboxState = vi.hoisted(() => ({
   response: undefined as unknown,
   calls: [] as CashboxCall[],
+  /** Shu paramlar bilan so'rov yiqiladi (masalan tab/sana almashgach). */
+  failWhen: undefined as ((params: Record<string, unknown>) => boolean) | undefined,
 }));
 /** Kassani qayta o'qish — sukut bo'yicha serverdagi (joriy) javobni qaytaradi. */
 const cashboxRefetch = vi.hoisted(() => vi.fn(async () => ({ data: cashboxState.response })));
 const marketsState = vi.hoisted(() => ({ data: undefined as unknown }));
+/** GET /finance/history (filial sahifasi) — sukut bo'yicha bo'sh. */
+const historyState = vi.hoisted(() => ({ data: undefined as unknown }));
 const marketPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 const courierPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 const idle = { mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false };
@@ -23,13 +27,16 @@ vi.mock("../../../entities/payments", () => ({
   useCashBox: () => ({
     useGetCashBoxById: (id: unknown, enabled: unknown, params: Record<string, unknown>) => {
       cashboxState.calls.push({ id, enabled, params });
+      if (cashboxState.failWhen?.(params)) {
+        return { data: undefined, isLoading: false, isError: true, error: new Error("boom"), refetch: cashboxRefetch };
+      }
       return {
         data: cashboxState.response,
         isLoading: false,
         refetch: cashboxRefetch,
       };
     },
-    useGetFinanceHistory: () => idleQuery,
+    useGetFinanceHistory: () => ({ ...idleQuery, data: historyState.data }),
     useGetFinanceHistoryById: () => idleQuery,
     createPaymentCourier: courierPayment,
     createPaymentBranchToMain: idle,
@@ -37,7 +44,10 @@ vi.mock("../../../entities/payments", () => ({
   }),
 }));
 vi.mock("../../../entities/payments/financeCoverage", () => ({
-  useFinanceCoverage: () => ({ useGetManagerPayableToHq: () => idleQuery }),
+  useFinanceCoverage: () => ({
+    useGetManagerPayableToHq: () => idleQuery,
+    useGetManagerSettlement: () => idleQuery,
+  }),
 }));
 // GET /branches (menejersiz filiallar / HQ filial sahifasidagi server summasi).
 vi.mock("../../../entities/branch/api/useBranches", () => ({
@@ -57,6 +67,15 @@ const manager = { role: { id: "198", role: "manager", region: null, name: "Menej
 /** uz-UZ guruhlash belgisi U+00A0 — Testing Library matnni oddiy bo'shliqqa normallaydi. */
 // Dizayn v2: uz valyutasi "so'm" (payments.currency — ilgari "UZS" edi).
 const money = (amount: number) => `${amount.toLocaleString("uz-UZ")} so'm`.replace(/\s+/g, " ");
+const normalizeText = (text: string | null | undefined) => (text ?? "").replace(/\s+/g, " ").trim();
+/**
+ * Summa bitta element matni sifatida (dizayn v2 katta summasida raqam va «so'm» alohida qismlarda) —
+ * shu summani to'liq ko'rsatgan eng ichki element.
+ */
+const moneyText = (amount: number) => (_content: string, element: Element | null) =>
+  Boolean(element) &&
+  normalizeText(element?.textContent) === money(amount) &&
+  !Array.from(element?.children ?? []).some((child) => normalizeText(child.textContent) === money(amount));
 
 /**
  * GET /finance/cashbox/user/:id?cashbox_type=couriers — superadmin/admin uchun
@@ -119,15 +138,23 @@ const lastCashboxParams = () => cashboxState.calls.at(-1)?.params;
 const setAmount = (amount: string) =>
   fireEvent.change(screen.getByPlaceholderText("0"), { target: { value: amount } });
 
+/** Dizayn v2: tugma matnida summa bor («100 000 so'm qabul qilish»), summa yo'q bo'lsa «Qabul qilish». */
+const RECEIVE_BUTTON = /qabul qilish$/i;
+const CONFIRM_TITLE = "To'lovni tasdiqlang";
+const findConfirm = () => screen.findByRole("alertdialog", { name: CONFIRM_TITLE });
+
 /**
- * Yuborish: forma tugmasi → (5hBeDuyn) tasdiq oynasi ochilsa, undagi tasdiq tugmasi.
+ * Yuborish: forma tugmasi → (5hBeDuyn) tasdiq oynasi ochilsa, undagi «Tasdiqlash».
  * Oyna ochilmasa (forma xatosi / bloklangan) — hech narsa bosilmaydi.
  */
 const submitCourierPayment = async () => {
   const user = userEvent.setup();
-  await user.click(screen.getByRole("button", { name: "Qabul qilish" }));
-  const dialog = screen.queryByRole("dialog");
-  if (dialog) await user.click(within(dialog).getByRole("button", { name: "Qabul qilish" }));
+  await user.click(screen.getByRole("button", { name: RECEIVE_BUTTON }));
+  const dialog = await findConfirm().catch(() => null);
+  if (dialog) {
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+  }
 };
 
 const chooseMethod = (method: string) =>
@@ -135,8 +162,8 @@ const chooseMethod = (method: string) =>
 
 const chooseMarket = async (market: string) => {
   const user = userEvent.setup();
-  // v2 `FilterSelect` (`Select`): maydon — yorliq bilan nomlangan combobox.
-  await user.click(screen.getByRole("combobox", { name: "Market tanlang" }));
+  // v2 `Select`: maydon — «Market *» yorlig'i bilan nomlangan combobox.
+  await user.click(screen.getByRole("combobox", { name: "Market" }));
   await user.click(screen.getByRole("option", { name: market }));
 };
 
@@ -182,16 +209,19 @@ describe("CashDetail without router state (F5 / shared link)", () => {
     cashboxState.response = { data: { cashbox: { id: "30", cashbox_type: "branch", user_id: "13", balance: 0 } } };
     openWithoutState("/payments/cash-detail/13");
 
-    expect(screen.queryByText("Marketga to'lov qilish")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Marketga to'lov" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "To'lash" })).not.toBeInTheDocument();
     expect(screen.queryByText("Market kassasi")).not.toBeInTheDocument();
-    expect(screen.getAllByText("Filial kassasidan asosiy kassaga pul o'tkazish").length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: "Filialdan qabul qilish" })).toBeInTheDocument();
+    expect(screen.getByText("Pul filial kassasidan asosiy kassaga tushadi")).toBeInTheDocument();
   });
 
   it("keeps the type from the URL (?type=branch) even before the cashbox loads", () => {
     openWithoutState("/payments/cash-detail/13?type=branch");
 
-    expect(screen.queryByText("Marketga to'lov qilish")).not.toBeInTheDocument();
-    expect(screen.getAllByText("Filial kassasidan asosiy kassaga pul o'tkazish").length).toBeGreaterThan(0);
+    expect(screen.queryByRole("heading", { name: "Marketga to'lov" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "To'lash" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Filialdan qabul qilish" })).toBeInTheDocument();
   });
 
   it("shows no payment form at all when the type cannot be determined", () => {
@@ -199,15 +229,18 @@ describe("CashDetail without router state (F5 / shared link)", () => {
     openWithoutState("/payments/cash-detail/13");
 
     expect(screen.getByRole("alert")).toHaveTextContent("Kassa turi aniqlanmadi");
-    expect(screen.queryByText("Marketga to'lov qilish")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Marketga to'lov" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "To'lash" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: RECEIVE_BUTTON })).not.toBeInTheDocument();
+    expect(screen.queryByRole("radio", { name: "Naqd" })).not.toBeInTheDocument();
   });
 
   it("still opens a real market cashbox as a market payment", () => {
     cashboxState.response = { data: { cashbox: { id: "40", cashbox_type: "markets", user_id: "3", balance: 0 } } };
     openWithoutState("/payments/cash-detail/3");
 
-    expect(screen.getAllByText("Marketga to'lov qilish").length).toBeGreaterThan(0);
+    expect(screen.getByRole("heading", { name: "Marketga to'lov" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "To'lash" })).toBeInTheDocument();
   });
 });
 
@@ -248,7 +281,7 @@ describe("CashDetail — courier cashbox (HQ courier → Asosiy kassa)", () => {
     expect(screen.queryByText("Foydalanuvchi")).not.toBeInTheDocument();
     expect(screen.getAllByText("Qabul qilinishi kerak").length).toBeGreaterThan(0);
     expect(screen.queryByText("Umumiy balans")).not.toBeInTheDocument();
-    expect(screen.getAllByText(money(250000)).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(moneyText(250000)).length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Qabul qilish" })).toBeInTheDocument();
     // Hammasi joyida — hech qanday ogohlantirish yo'q.
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
@@ -275,7 +308,7 @@ describe("CashDetail — courier cashbox (HQ courier → Asosiy kassa)", () => {
 
       expect(screen.getByRole("alert")).toHaveTextContent(BRANCH_COURIER);
       expect(screen.queryByText(HQ_COURIER_HAS_BRANCH_SALES)).not.toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: "Qabul qilish" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: RECEIVE_BUTTON })).not.toBeInTheDocument();
       expect(screen.queryByRole("radio", { name: "Naqd" })).not.toBeInTheDocument();
     });
 
@@ -290,7 +323,7 @@ describe("CashDetail — courier cashbox (HQ courier → Asosiy kassa)", () => {
       expect(screen.getByRole("alert")).toHaveTextContent(HQ_COURIER_HAS_BRANCH_SALES);
       // "Filial kuryeri" deb noto'g'ri aytilmaydi — u HQ kuryeri.
       expect(screen.queryByText(BRANCH_COURIER)).not.toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: "Qabul qilish" })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: RECEIVE_BUTTON })).not.toBeInTheDocument();
       expect(screen.queryByRole("radio", { name: "Naqd" })).not.toBeInTheDocument();
     });
 
@@ -440,7 +473,7 @@ describe("CashDetail — courier cashbox (HQ courier → Asosiy kassa)", () => {
       openWithoutState("/payments/cash-detail/263?type=courier");
 
       setAmount("100000");
-      await chooseMethod("Do'konga o'tkazma");
+      await chooseMethod("Marketga o'tkazma");
       await chooseMarket("Yandex");
       await submitCourierPayment();
       await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1));
@@ -470,8 +503,8 @@ describe("CashDetail — courier cashbox (HQ courier → Asosiy kassa)", () => {
       expect(screen.queryByText(RECEIVE_SUCCESS)).not.toBeInTheDocument();
       await waitFor(() => expect(cashboxRefetch).toHaveBeenCalled());
       // Mahalliy 250 000 − 100 000 = 150 000 hisoblanmaydi — summa serverdan.
-      expect(screen.getAllByText(money(250000)).length).toBeGreaterThan(0);
-      expect(screen.queryByText(money(150000))).not.toBeInTheDocument();
+      expect(screen.getAllByText(moneyText(250000)).length).toBeGreaterThan(0);
+      expect(screen.queryAllByText(moneyText(150000))).toHaveLength(0);
       // Forma tozalangan — bir bosishda ikkinchi to'lov ketib qolmaydi.
       expect(screen.getByPlaceholderText("0")).toHaveValue("");
 
@@ -544,12 +577,12 @@ describe("CashDetail — courier cashbox (HQ courier → Asosiy kassa)", () => {
           preloadedState: manager,
         },
       );
-      expect(screen.getAllByText(money(250000)).length).toBeGreaterThan(0);
+      expect(screen.getAllByText(moneyText(250000)).length).toBeGreaterThan(0);
 
       await fillCourierPayment("100000");
 
       expect(await screen.findByText(ALREADY_RECORDED)).toBeInTheDocument();
-      await waitFor(() => expect(screen.getAllByText(money(150000)).length).toBeGreaterThan(0));
+      await waitFor(() => expect(screen.getAllByText(moneyText(150000)).length).toBeGreaterThan(0));
     });
   });
 
@@ -591,15 +624,19 @@ describe("CashDetail — kuryerdan qabul: tasdiq va noma'lum natija (5hBeDuyn)",
 
     setAmount("150000");
     await chooseMethod("Naqd");
-    await user.click(screen.getByRole("button", { name: "Qabul qilish" }));
+    await user.click(screen.getByRole("button", { name: RECEIVE_BUTTON }));
 
-    const dialog = await screen.findByRole("dialog");
-    expect(dialog).toHaveTextContent("To'lovni tasdiqlaysizmi?");
-    expect(dialog).toHaveTextContent(/150\D?000 so'm — Qabul qilish: .+ \(Naqd\)/);
+    // Oyna: summa, to'lov turi badge'i va qayerdan → qayerga (kuryer kassasi → asosiy kassa).
+    const dialog = await findConfirm();
+    expect(dialog).toHaveTextContent(/150\D?000\s*so'm/);
+    expect(within(dialog).getByText("Naqd")).toBeInTheDocument();
+    expect(dialog).toHaveTextContent(/Qayerdan\s*Kuryer kassasi\s*Ali Valiyev/);
+    expect(dialog).toHaveTextContent(/Qayerga\s*Asosiy kassa/);
+    expect(within(dialog).getByRole("button", { name: "Tasdiqlash" })).toBeInTheDocument();
     expect(courierPayment.mutateAsync).not.toHaveBeenCalled();
 
     await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
-    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
     expect(courierPayment.mutateAsync).not.toHaveBeenCalled();
     // Forma joyida qoladi — operator summani tuzatishi mumkin.
     expect(screen.getByPlaceholderText("0")).not.toHaveValue("");
@@ -625,5 +662,351 @@ describe("CashDetail — kuryerdan qabul: tasdiq va noma'lum natija (5hBeDuyn)",
 
     expect(await screen.findByText(OUTCOME_UNKNOWN)).toBeInTheDocument();
     await waitFor(() => expect(cashboxRefetch).toHaveBeenCalled());
+  });
+});
+
+/**
+ * Dizayn v2 (maket `*-payments-cash-detail-*`): sarlavha, «Hisob-kitob holati», tasdiq oynasi mazmuni,
+ * ikki marta yuborishdan himoya, «Marketga o'tkazma», operatsiyalar ro'yxati va «Balans harakati».
+ */
+describe("CashDetail — dizayn v2", () => {
+  const scrollIntoView = Element.prototype.scrollIntoView;
+  beforeAll(() => {
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+  afterAll(() => {
+    Element.prototype.scrollIntoView = scrollIntoView;
+  });
+  beforeEach(() => {
+    sessionStorage.clear();
+    courierPayment.mutateAsync.mockReset();
+    courierPayment.isPending = false;
+  });
+  afterEach(() => {
+    cashboxState.response = undefined;
+    cashboxState.calls = [];
+    cashboxState.failWhen = undefined;
+    marketsState.data = undefined;
+    historyState.data = undefined;
+    courierPayment.isPending = false;
+  });
+
+  const twoRowHistory = [
+    {
+      id: "2",
+      cashbox_id: "70",
+      source_type: "courier_payment",
+      operation_type: "expense",
+      amount: 100000,
+      balance_after: 150000,
+      payment_method: "cash",
+      createdAt: "2026-10-16T10:00:00.000Z",
+    },
+    {
+      id: "1",
+      cashbox_id: "70",
+      source_type: "sell",
+      source_id: "10236",
+      operation_type: "income",
+      amount: 250000,
+      balance_after: 250000,
+      payment_method: "cash",
+      createdAt: "2026-10-14T10:00:00.000Z",
+    },
+  ];
+
+  it("«To'lov o'tkazmalari»: qatorlar ketma-ket emas — «Davr boshida»/«Hozir» va grafik yo'q, Kirim/Chiqim qoladi", async () => {
+    cashboxState.response = courierDetailResponse({ history: twoRowHistory });
+    openWithoutState("/payments/cash-detail/263?type=courier");
+    const user = userEvent.setup();
+
+    const movement = screen.getByRole("region", { name: "Balans harakati" });
+    expect(movement).toHaveTextContent(/Davr boshida/);
+    expect(within(movement).getByRole("radio", { name: "Grafik" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("radio", { name: "To'lov o'tkazmalari" }));
+    const filtered = screen.getByRole("region", { name: "Balans harakati" });
+    expect(filtered).not.toHaveTextContent(/Davr boshida|Hozir/);
+    expect(within(filtered).queryByRole("radio", { name: "Grafik" })).not.toBeInTheDocument();
+    expect(filtered).toHaveTextContent(/Kirim\s*\+250\D000 so'm/);
+    expect(filtered).toHaveTextContent(/Chiqim\s*−100\D000 so'm/);
+  });
+
+  it("tab almashgach kassa so'rovi yiqilsa — eski tarix ko'rsatilmaydi, ro'yxat o'rnida xato + «Qayta urinish»", async () => {
+    cashboxState.response = courierDetailResponse({ history: twoRowHistory });
+    cashboxState.failWhen = (params) => Boolean(params.sourceTypes);
+    openWithoutState("/payments/cash-detail/263?type=courier");
+    const user = userEvent.setup();
+    expect(screen.getByRole("button", { name: /^Sotuv · №10236/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("radio", { name: "To'lov o'tkazmalari" }));
+    expect(screen.queryByRole("button", { name: /^Sotuv · №10236/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Balans harakati" })).not.toBeInTheDocument();
+    // Sahifa (kassa, forma) saqlangan javob bilan qoladi.
+    expect(screen.getByRole("heading", { name: "Kuryerdan qabul qilish" })).toBeInTheDocument();
+    cashboxRefetch.mockClear();
+    await user.click(screen.getByRole("button", { name: "Qayta urinish" }));
+    expect(cashboxRefetch).toHaveBeenCalled();
+  });
+
+  it("sarlavha: ism, «Kuryer kassasi» badge'i, «HQ kuryeri · telefon»; karta «Qarshi tomon: Asosiy kassa»", () => {
+    cashboxState.response = courierDetailResponse({
+      cashbox: { id: "70", cashbox_type: "couriers", user_id: "263", balance: 250000, balance_cash: 100000, balance_card: 150000 },
+    });
+    openWithoutState("/payments/cash-detail/263?type=courier");
+
+    expect(screen.getByRole("heading", { level: 1, name: "Ali Valiyev" })).toBeInTheDocument();
+    expect(screen.getByText("Kuryer kassasi")).toBeInTheDocument();
+    expect(screen.getByText("HQ kuryeri · +998 90 123 45 67")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Hisob-kitob holati" })).toBeInTheDocument();
+    expect(screen.getByText("Qarshi tomon: Asosiy kassa")).toBeInTheDocument();
+    // Kassadagi summa: naqd / o'tkazma bo'linmasi.
+    expect(screen.getByRole("img", { name: /naqd 100\D000 so'm \(40%\), o'tkazma 150\D000 so'm \(60%\)/ })).toBeInTheDocument();
+    // Qarama-qarshi qator: «Berilishi kerak 0 so'm».
+    expect(screen.getByText("Berilishi kerak")).toBeInTheDocument();
+    // Summa ko'rsatmasi — server chegarasi bilan.
+    expect(screen.getByText(/^Ko'pi bilan 250\D000 so'm — qabul qilinishi kerak bo'lgan summa$/)).toBeInTheDocument();
+    // Excel — superadmin/admin.
+    expect(screen.getByRole("button", { name: "Excelga yuklash" })).toBeInTheDocument();
+  });
+
+  it("«Summalarni yashirish»: summalar «••••••» bo'ladi, qayta bosilsa qaytadi", async () => {
+    cashboxState.response = courierDetailResponse();
+    openWithoutState("/payments/cash-detail/263?type=courier");
+    const user = userEvent.setup();
+    const toggle = screen.getByRole("button", { name: "Summalarni yashirish" });
+
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    await user.click(toggle);
+    expect(toggle).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryAllByText(moneyText(250000))).toHaveLength(0);
+    expect(screen.getAllByText(/••••••/).length).toBeGreaterThan(0);
+
+    await user.click(toggle);
+    expect(screen.getAllByText(moneyText(250000)).length).toBeGreaterThan(0);
+  });
+
+  it("tugma matnida kiritilgan summa: «Qabul qilish» → «150 000 so'm qabul qilish»", () => {
+    cashboxState.response = courierDetailResponse();
+    openWithoutState("/payments/cash-detail/263?type=courier");
+
+    expect(screen.getByRole("button", { name: "Qabul qilish" })).toBeInTheDocument();
+    setAmount("150000");
+    expect(screen.getByRole("button", { name: /^150\D000 so'm qabul qilish$/ })).toBeInTheDocument();
+  });
+
+  it("⭐ tasdiq oynasi ochiq paytida forma qayta yuborilsa ikkinchi oyna ochilmaydi; tasdiqdan keyin bitta POST", async () => {
+    courierPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+    cashboxState.response = courierDetailResponse();
+    openWithoutState("/payments/cash-detail/263?type=courier");
+    const user = userEvent.setup();
+
+    setAmount("100000");
+    await chooseMethod("Naqd");
+    const submitButton = screen.getByRole("button", { name: RECEIVE_BUTTON });
+    await user.click(submitButton);
+    const dialog = await findConfirm();
+    // Ikkinchi yuborish (Enter / ikki marta bosish) — qulf: yangi oyna yo'q.
+    fireEvent.submit(submitButton.closest("form") as HTMLFormElement);
+    await waitFor(() => expect(screen.getAllByRole("alertdialog")).toHaveLength(1));
+
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+    await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    // Navbatda ikkinchi tasdiq qolmagan: oyna qayta ochilmaydi, ikkinchi POST yo'q.
+    await expect(findConfirm()).rejects.toThrow();
+    expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it("⭐ to'lov ketayotganda (isPending) tugma «Yuklanmoqda…» va bosilmaydi — tasdiq ochilmaydi", async () => {
+    courierPayment.isPending = true;
+    cashboxState.response = courierDetailResponse();
+    openWithoutState("/payments/cash-detail/263?type=courier");
+    const user = userEvent.setup();
+
+    setAmount("100000");
+    await chooseMethod("Naqd");
+    const busy = screen.getByRole("button", { name: "Yuklanmoqda…" });
+    expect(busy).toHaveAttribute("aria-busy", "true");
+    await user.click(busy);
+
+    await expect(findConfirm()).rejects.toThrow();
+    expect(courierPayment.mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("tasdiq oynasi izohni ko'rsatadi; payload'dagi izoh — kesilgan, maydonlar o'zgarmagan", async () => {
+    courierPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+    cashboxState.response = courierDetailResponse();
+    openWithoutState("/payments/cash-detail/263?type=courier");
+    const user = userEvent.setup();
+
+    setAmount("100000");
+    await chooseMethod("O'tkazma");
+    fireEvent.change(screen.getByPlaceholderText("Izoh..."), { target: { value: "  Kunlik topshiriq  " } });
+    await user.click(screen.getByRole("button", { name: RECEIVE_BUTTON }));
+    const dialog = await findConfirm();
+    expect(dialog).toHaveTextContent(/Izoh\s*Kunlik topshiriq/);
+    expect(within(dialog).getByText("O'tkazma")).toBeInTheDocument();
+
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+    await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    expect(courierPaymentCalls()[0].data).toEqual({
+      courier_id: "263",
+      amount: 100000,
+      payment_method: "click",
+      market_id: null,
+      payment_date: expect.any(String),
+      comment: "Kunlik topshiriq",
+    });
+  });
+
+  it("«Marketga o'tkazma»: market tanlanmaguncha tugma faol emas (izoh bilan); tasdiqda market nomi", async () => {
+    courierPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+    marketsState.data = { data: { items: [{ id: "3", name: "Yandex" }] } };
+    cashboxState.response = courierDetailResponse();
+    openWithoutState("/payments/cash-detail/263?type=courier");
+    const user = userEvent.setup();
+
+    setAmount("100000");
+    await chooseMethod("Marketga o'tkazma");
+    expect(screen.getByText("Market tanlanmaguncha qabul qilish tugmasi faol emas")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: RECEIVE_BUTTON })).toBeDisabled();
+
+    await chooseMarket("Yandex");
+    expect(screen.queryByText("Market tanlanmaguncha qabul qilish tugmasi faol emas")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: RECEIVE_BUTTON }));
+    const dialog = await findConfirm();
+    expect(dialog).toHaveTextContent(/Market\s*Yandex/);
+    expect(within(dialog).getByText("Marketga o'tkazma")).toBeInTheDocument();
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    expect(courierPayment.mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it("operatsiyalar ro'yxati va «Balans harakati»: sarlavha, qarshi qator, izoh, ishorali summa; davr boshi → hozir", async () => {
+    cashboxState.response = courierDetailResponse({
+      cashbox: { id: "70", cashbox_type: "couriers", user_id: "263", balance: 0 },
+      olinishi_kerak: 0,
+      history: [
+        {
+          id: "3",
+          cashbox_id: "70",
+          source_type: "courier_payment",
+          operation_type: "expense",
+          amount: 300000,
+          balance_after: 0,
+          payment_method: "cash",
+          comment: "Kunlik topshiriq",
+          created_by_user: { id: "1", name: "Shodiyor Ergashev" },
+          createdAt: "2026-10-16T10:00:00.000Z",
+        },
+        {
+          id: "2",
+          cashbox_id: "70",
+          source_type: "sell",
+          source_id: "10237",
+          operation_type: "income",
+          amount: 200000,
+          balance_after: 300000,
+          payment_method: "click",
+          created_by_user: { id: "263", name: "Ali Valiyev" },
+          createdAt: "2026-10-15T10:00:00.000Z",
+        },
+        {
+          id: "1",
+          cashbox_id: "70",
+          source_type: "sell",
+          source_id: "10236",
+          operation_type: "income",
+          amount: 100000,
+          balance_after: 100000,
+          payment_method: "cash",
+          created_by_user: { id: "263", name: "Ali Valiyev" },
+          createdAt: "2026-10-14T10:00:00.000Z",
+        },
+      ],
+    });
+    openWithoutState("/payments/cash-detail/263?type=courier");
+
+    // Ro'yxat (maket qatori): «Sotuv · №10237», «Ali Valiyev · O'tkazma», +200 000 so'm.
+    const sale = screen.getByRole("button", { name: /^Sotuv · №10237, Kirim \+200\D000 so'm/ });
+    expect(within(sale).getByText("Ali Valiyev · O'tkazma")).toBeInTheDocument();
+    const handover = screen.getByRole("button", { name: /^Kuryer to'lovi, Chiqim −300\D000 so'm/ });
+    expect(within(handover).getByText("Shodiyor Ergashev · Naqd")).toBeInTheDocument();
+    expect(within(handover).getByText("Kunlik topshiriq")).toBeInTheDocument();
+
+    // «Balans harakati»: davr boshida = eng eski qoldiq − uning summasi (100 000 − 100 000).
+    const movement = screen.getByRole("region", { name: "Balans harakati" });
+    expect(movement).toHaveTextContent(/Davr boshida\s*0 so'm/);
+    expect(movement).toHaveTextContent(/Kirim\s*\+300\D000 so'm/);
+    expect(movement).toHaveTextContent(/Chiqim\s*−300\D000 so'm/);
+    expect(movement).toHaveTextContent(/Hozir\s*0 so'm/);
+
+    // «Jadval» ko'rinishi — qoldiqlar.
+    await userEvent.setup().click(within(movement).getByRole("radio", { name: "Jadval" }));
+    expect(within(movement).getAllByText(moneyText(300000)).length).toBeGreaterThan(0);
+
+    // Qator bosilsa — tafsilot oynasi.
+    await userEvent.setup().click(handover);
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("superadmin filial sahifasi: filial nomi sarlavhada, menejer izohda, «Kuryer: …» qatori, tasdiqda filial → asosiy kassa", async () => {
+    cashboxState.response = { data: { cashbox: { id: "30", cashbox_type: "branch", user_id: "15", balance: 400000 }, history: [] } };
+    historyState.data = {
+      data: {
+        items: [
+          {
+            id: "11",
+            cashbox_id: "30",
+            source_type: "courier_payment",
+            operation_type: "income",
+            amount: 180000,
+            balance_after: 400000,
+            payment_method: "cash",
+            source_user: { id: "209", name: "Sardor Qurbonov" },
+            created_by_user: { id: "198", name: "Ravshan Ortiqov" },
+            createdAt: "2026-10-16T09:00:00.000Z",
+          },
+        ],
+      },
+    };
+    renderWithProviders(
+      <Routes>
+        <Route path="/payments/cash-detail/:id" element={<CashDetail />} />
+      </Routes>,
+      {
+        route: {
+          pathname: "/payments/cash-detail/15",
+          search: "?type=branch",
+          state: {
+            type: "branch",
+            entity: {
+              id: "15",
+              name: "Ravshan Ortiqov",
+              branch_name: "Urgut filiali",
+              phone_number: "+998915123407",
+              role: "branch",
+              amount: 400000,
+            },
+          },
+        },
+        preloadedState: superadmin,
+      },
+    );
+
+    expect(screen.getByRole("heading", { level: 1, name: "Urgut filiali" })).toBeInTheDocument();
+    expect(screen.getByText("Menejer: Ravshan Ortiqov · +998 91 512 34 07")).toBeInTheDocument();
+    expect(screen.getByText("Filial kassasi")).toBeInTheDocument();
+    expect(screen.getByText("Kuryer: Sardor Qurbonov")).toBeInTheDocument();
+    expect(screen.getByText("Kuryerdan filialga o'tkazma")).toBeInTheDocument();
+
+    setAmount("100000");
+    await chooseMethod("Naqd");
+    await userEvent.setup().click(screen.getByRole("button", { name: /^100\D000 so'm qabul qilish$/ }));
+    const dialog = await findConfirm();
+    expect(dialog).toHaveTextContent(/Qayerdan\s*Filial kassasi\s*Urgut filiali/);
+    expect(dialog).toHaveTextContent(/Qayerga\s*Asosiy kassa/);
+    await userEvent.setup().click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
   });
 });

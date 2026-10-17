@@ -58,6 +58,7 @@ vi.mock("../../../entities/payments", () => ({
     useGetCurrentShift: () => ({ data: undefined, isLoading: false, isSuccess: false }),
     useGetCashBoxInfo: () => emptyQuery,
     useGetFinanceHistory: () => emptyQuery,
+    useGetFinanceHistoryById: () => emptyQuery,
     useGetCashBoxMain: () => emptyQuery,
     useGetHqCourierReceivables: (enabled: boolean) => ({
       data: enabled ? lists.hqCouriers : undefined,
@@ -70,45 +71,10 @@ vi.mock("../../../widgets/Sidebar/model/menuConfig", () => ({
   getUserBranchType: () => null,
 }));
 
-vi.mock("../../../shared/ui/DateRangePicker", () => ({ default: () => null }));
 vi.mock("./SalaryPaymentPopup", () => ({ default: () => null }));
 vi.mock("./CashboxFormPopup", () => ({ default: () => null }));
 vi.mock("./CloseShiftPopup", () => ({ default: () => null }));
-vi.mock("./PaymentHistoryList", () => ({ default: () => null }));
-
-// Ochiq oyna qatorlarini tugma qilib chiqaradi; kalit `keyExtractor` dan.
-vi.mock("../../../shared/components/popupSelect", () => ({
-  default: ({
-    isOpen,
-    data,
-    title,
-    description,
-    keyExtractor,
-    onSelect,
-  }: {
-    isOpen: boolean;
-    data?: { name: string }[];
-    title: string;
-    description?: string;
-    keyExtractor: (item: { name: string }) => string | number;
-    onSelect: (item: { name: string }) => void;
-  }) =>
-    isOpen ? (
-      <div role="dialog" aria-label={title}>
-        <p>{description}</p>
-        {(data ?? []).map((item) => (
-          <button
-            key={keyExtractor(item)}
-            type="button"
-            data-key={keyExtractor(item)}
-            onClick={() => onSelect(item)}
-          >
-            {item.name}
-          </button>
-        ))}
-      </div>
-    ) : null,
-}));
+vi.mock("./MainCashboxBalanceChart", () => ({ default: () => null }));
 
 const superadmin = { role: { id: "1", role: "superadmin", region: null, name: "Admin" } } as never;
 const manager = { role: { id: "198", role: "manager", region: null, name: "Menejer" } } as never;
@@ -150,22 +116,24 @@ describe("MainCashbox — receive quick action", () => {
     };
   });
 
-  it("superadmin: 'Qabul qilish' lists branch managers + HQ couriers and an HQ courier opens ?type=courier", async () => {
+  it("superadmin: 'Pul qabul qilish' lists branch managers + HQ couriers and an HQ courier opens ?type=courier", async () => {
     const user = userEvent.setup();
     open(superadmin);
 
-    const action = screen.getByRole("button", { name: "Qabul qilish" });
-    expect(action).toHaveAttribute("title", "Filial menejeri yoki HQ kuryeridan qabul qilish");
+    const action = screen.getByRole("button", { name: /Pul qabul qilish/ });
+    expect(action).toHaveTextContent("Filial yoki HQ kuryeridan");
     await user.click(action);
 
     const dialog = await screen.findByRole("dialog", { name: "Qabul qilinishi kerak" });
-    expect(within(dialog).getAllByRole("button").map((row) => row.getAttribute("data-key"))).toEqual([
+    // `${kind}:${id}` — filial 15 va kuryer 15 aralashib ketmasin.
+    expect(within(dialog).getAllByRole("option").map((row) => row.getAttribute("data-key"))).toEqual([
       "branch:15",
       "courier:263",
     ]);
     expect(within(dialog).getByText("Filial menejeri yoki HQ kuryerini tanlang")).toBeInTheDocument();
 
-    await user.click(within(dialog).getByRole("button", { name: "Ali Valiyev" }));
+    await user.click(within(dialog).getByRole("option", { name: /Ali Valiyev/ }));
+    await user.click(within(dialog).getByRole("button", { name: "Tanlash" }));
 
     expect(screen.getByTestId("pathname")).toHaveTextContent("/payments/cash-detail/263");
     expect(screen.getByTestId("search")).toHaveTextContent("?type=courier");
@@ -178,27 +146,50 @@ describe("MainCashbox — receive quick action", () => {
     const user = userEvent.setup();
     open(superadmin);
 
-    await user.click(screen.getByRole("button", { name: "Qabul qilish" }));
+    await user.click(screen.getByRole("button", { name: /Pul qabul qilish/ }));
     const dialog = await screen.findByRole("dialog", { name: "Qabul qilinishi kerak" });
-    await user.click(within(dialog).getByRole("button", { name: "Sirdaryo menejeri" }));
+    // Ikki marta bosish — tanlab darhol o'tadi (eski oynadagi kabi).
+    await user.dblClick(within(dialog).getByRole("option", { name: /Sirdaryo menejeri/ }));
 
     expect(screen.getByTestId("pathname")).toHaveTextContent("/payments/cash-detail/15");
     expect(screen.getByTestId("search")).toHaveTextContent("?type=branch");
   });
 
-  it("manager: the action stays 'Kuryer' and lists only the own branch couriers", async () => {
+  it("manager: the action is 'Kuryerdan qabul qilish' and lists only the own branch couriers", async () => {
     const user = userEvent.setup();
     open(manager);
 
-    await user.click(screen.getByRole("button", { name: "Kuryer" }));
-    const dialog = await screen.findByRole("dialog", { name: "Qabul qilinishi kerak" });
+    expect(screen.queryByRole("button", { name: /Pul qabul qilish/ })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Kuryerdan qabul qilish/ }));
+    const dialog = await screen.findByRole("dialog", { name: "Kuryerni tanlang" });
 
-    expect(within(dialog).getAllByRole("button").map((row) => row.getAttribute("data-key"))).toEqual([
+    expect(within(dialog).getAllByRole("option").map((row) => row.getAttribute("data-key"))).toEqual([
       "courier:209",
     ]);
-    await user.click(within(dialog).getByRole("button", { name: "Filial kuryeri" }));
+    await user.click(within(dialog).getByRole("option", { name: /Filial kuryeri/ }));
+    await user.click(within(dialog).getByRole("button", { name: "Tanlash" }));
 
     expect(screen.getByTestId("pathname")).toHaveTextContent("/payments/cash-detail/209");
     expect(screen.getByTestId("search")).toHaveTextContent("?type=courier");
+  });
+});
+
+describe("MainCashbox — balance visibility", () => {
+  it("the eye button hides and shows the amounts (aria-pressed follows)", async () => {
+    const user = userEvent.setup();
+    open(superadmin);
+
+    const hide = screen.getByRole("button", { name: "Balansni yashirish" });
+    expect(hide).toHaveAttribute("aria-pressed", "false");
+    expect(screen.queryByText("••••••")).not.toBeInTheDocument();
+
+    await user.click(hide);
+    const show = screen.getByRole("button", { name: "Balansni ko'rsatish" });
+    expect(show).toHaveAttribute("aria-pressed", "true");
+    // Umumiy balans, naqd, karta va bugungi sof oqim — yashirin.
+    expect(screen.getAllByText("••••••").length).toBeGreaterThanOrEqual(4);
+
+    await user.click(show);
+    expect(screen.queryByText("••••••")).not.toBeInTheDocument();
   });
 });

@@ -308,13 +308,22 @@ export const useCashBox = () => {
       enabled,
     });
 
+  // Ega qarori D3 (2026-10-17): «Kassadan xarajat» / «Kassani to'ldirish» ham
+  // `Idempotency-Key` bilan (gateway `cashbox/spend|fill` sarlavhani o'qiydi,
+  // takroriy kalitga `data.idempotent: true`). Kalit berilmasa so'rov avvalgidek.
   const cashboxSpand = useMutation({
-    mutationFn: ({ data }: { data: any }) => api.patch(API_ENDPOINTS.CASHBOX.SPEND, data),
+    mutationFn: ({ data, idempotencyKey }: { data: Record<string, unknown>; idempotencyKey?: string }) =>
+      idempotencyKey
+        ? api.patch(API_ENDPOINTS.CASHBOX.SPEND, data, idempotencyHeaders(idempotencyKey))
+        : api.patch(API_ENDPOINTS.CASHBOX.SPEND, data),
     onSuccess: refreshCashboxQueries,
   });
 
   const cashboxFill = useMutation({
-    mutationFn: ({ data }: { data: any }) => api.patch(API_ENDPOINTS.CASHBOX.FILL, data),
+    mutationFn: ({ data, idempotencyKey }: { data: Record<string, unknown>; idempotencyKey?: string }) =>
+      idempotencyKey
+        ? api.patch(API_ENDPOINTS.CASHBOX.FILL, data, idempotencyHeaders(idempotencyKey))
+        : api.patch(API_ENDPOINTS.CASHBOX.FILL, data),
     onSuccess: refreshCashboxQueries,
   });
 

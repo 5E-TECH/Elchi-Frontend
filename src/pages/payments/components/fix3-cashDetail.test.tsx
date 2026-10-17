@@ -61,6 +61,7 @@ vi.mock("../../../entities/payments/financeCoverage", () => ({
       isLoading: false,
       refetch: vi.fn(async () => ({ data: state.managerPayable })),
     }),
+    useGetManagerSettlement: () => ({ data: undefined, isLoading: false, refetch: vi.fn() }),
   }),
 }));
 vi.mock("../../../entities/markets", () => ({
@@ -86,13 +87,11 @@ vi.mock("../../../entities/branch/api/useBranches", () => ({
   },
 }));
 vi.mock("../../../shared/api/api", () => ({ api: { get: apiGet }, LONG_REQUEST_TIMEOUT_MS: 120_000 }));
-// Sana oralig'i: bitta tugma 2026-10-01 → 2026-10-01 ni tanlaydi.
-vi.mock("../../../shared/ui/DateRangePicker", () => ({
-  default: ({ onChange }: { onChange: (range: { startDate: Date | null; endDate: Date | null }) => void }) => (
-    <button
-      type="button"
-      onClick={() => onChange({ startDate: new Date(2026, 9, 1), endDate: new Date(2026, 9, 1) })}
-    >
+// Sana oralig'i (v2 `DateRange`): bitta tugma 2026-10-01 → 2026-10-01 ni tanlaydi; qolgan primitivlar — asl.
+vi.mock("../../../shared/ui/primitives", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../shared/ui/primitives")>()),
+  DateRange: ({ onChange }: { onChange: (range: { from: string; to: string }) => void }) => (
+    <button type="button" onClick={() => onChange({ from: "2026-10-01", to: "2026-10-01" })}>
       set-range
     </button>
   ),
@@ -160,6 +159,12 @@ const BRANCH_SUCCESS = "Asosiy filialga to'lov muvaffaqiyatli o'tkazildi";
 /** uz-UZ guruhlash belgisi U+00A0 — Testing Library matnni oddiy bo'shliqqa normallaydi. */
 // Dizayn v2: uz valyutasi "so'm" (payments.currency — ilgari "UZS" edi).
 const money = (amount: number) => `${amount.toLocaleString("uz-UZ")} so'm`.replace(/\s+/g, " ");
+const normalizeText = (text: string | null | undefined) => (text ?? "").replace(/\s+/g, " ").trim();
+/** Summani to'liq ko'rsatgan eng ichki element (v2 katta summasida raqam va «so'm» alohida qismlarda). */
+const moneyText = (amount: number) => (_content: string, element: Element | null) =>
+  Boolean(element) &&
+  normalizeText(element?.textContent) === money(amount) &&
+  !Array.from(element?.children ?? []).some((child) => normalizeText(child.textContent) === money(amount));
 
 const renderAt = (
   route: string | { pathname: string; search?: string; state?: unknown },
@@ -176,12 +181,20 @@ const setAmount = (amount: string) =>
   fireEvent.change(screen.getByPlaceholderText("0"), { target: { value: amount } });
 const chooseMethod = (method: string) =>
   userEvent.setup().click(screen.getByRole("radio", { name: method }));
-/** Forma tugmasi → (5hBeDuyn) tasdiq oynasi ochilsa, undagi tasdiq tugmasi. */
-const submit = async (label: string) => {
+const CONFIRM_TITLE = "To'lovni tasdiqlang";
+const findConfirm = () => screen.findByRole("alertdialog", { name: CONFIRM_TITLE });
+/** Dizayn v2 tugma matnlari: market «To'lash»; superadmin filialdan qabul — «{summa} qabul qilish». */
+const PAY = "To'lash";
+const RECEIVE_FROM_BRANCH = /qabul qilish$/i;
+/** Forma tugmasi → (5hBeDuyn) tasdiq oynasi ochilsa, undagi «Tasdiqlash». */
+const submit = async (label: string | RegExp) => {
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: label }));
-  const dialog = screen.queryByRole("dialog");
-  if (dialog) await user.click(within(dialog).getByRole("button", { name: label }));
+  const dialog = await findConfirm().catch(() => null);
+  if (dialog) {
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+  }
 };
 
 const callsOf = (mock: { mutateAsync: ReturnType<typeof vi.fn> }) =>
@@ -212,7 +225,7 @@ describe("FE-PAY-03 / C1 — market payout and branch → HQ are idempotent", ()
 
     setAmount("5000000");
     await chooseMethod("Naqd");
-    await submit("To'lash");
+    await submit(PAY);
 
     expect(await screen.findByText(OUTCOME_UNKNOWN)).toBeInTheDocument();
     expect(screen.getByText("Finance service response timeout")).toBeInTheDocument();
@@ -220,14 +233,14 @@ describe("FE-PAY-03 / C1 — market payout and branch → HQ are idempotent", ()
     // Forma qoladi — aynan shu to'lov qayta yuboriladi.
     expect(screen.getByPlaceholderText("0")).not.toHaveValue("");
 
-    await submit("To'lash");
+    await submit(PAY);
     await waitFor(() => expect(marketPayment.mutateAsync).toHaveBeenCalledTimes(2));
     expect(await screen.findByText(MARKET_SUCCESS)).toBeInTheDocument();
     await waitFor(() => expect(screen.getByPlaceholderText("0")).toHaveValue(""));
 
     setAmount("5000000");
     await chooseMethod("Naqd");
-    await submit("To'lash");
+    await submit(PAY);
     await waitFor(() => expect(marketPayment.mutateAsync).toHaveBeenCalledTimes(3));
 
     const [first, retry, next] = callsOf(marketPayment);
@@ -249,7 +262,7 @@ describe("FE-PAY-03 / C1 — market payout and branch → HQ are idempotent", ()
 
     setAmount("1000");
     await chooseMethod("Naqd");
-    await submit("To'lash");
+    await submit(PAY);
 
     expect(await screen.findByText("Marketga ortiqcha to'lov")).toBeInTheDocument();
     expect(screen.queryByText(OUTCOME_UNKNOWN)).not.toBeInTheDocument();
@@ -262,7 +275,7 @@ describe("FE-PAY-03 / C1 — market payout and branch → HQ are idempotent", ()
 
     setAmount("5000000");
     await chooseMethod("Naqd");
-    await submit("To'lash");
+    await submit(PAY);
 
     expect(await screen.findByText(ALREADY_RECORDED)).toBeInTheDocument();
     expect(screen.queryByText(MARKET_SUCCESS)).not.toBeInTheDocument();
@@ -277,7 +290,7 @@ describe("FE-PAY-03 / C1 — market payout and branch → HQ are idempotent", ()
     const market = renderAt("/payments/cash-detail/15?type=market");
     setAmount("1000");
     await chooseMethod("Naqd");
-    await submit("To'lash");
+    await submit(PAY);
     await waitFor(() => expect(marketPayment.mutateAsync).toHaveBeenCalledTimes(1));
     market.unmount();
 
@@ -285,7 +298,7 @@ describe("FE-PAY-03 / C1 — market payout and branch → HQ are idempotent", ()
     renderAt("/payments/cash-detail/15?type=branch");
     setAmount("1000");
     await chooseMethod("Naqd");
-    await submit("HQga o'tkazish");
+    await submit(RECEIVE_FROM_BRANCH);
     await waitFor(() => expect(branchPayment.mutateAsync).toHaveBeenCalledTimes(1));
 
     expect(callsOf(branchPayment)[0].idempotencyKey).not.toBe(callsOf(marketPayment)[0].idempotencyKey);
@@ -298,14 +311,14 @@ describe("FE-PAY-03 / C1 — market payout and branch → HQ are idempotent", ()
 
     setAmount("300000");
     await chooseMethod("Naqd");
-    await submit("HQga o'tkazish");
+    await submit(RECEIVE_FROM_BRANCH);
     expect(await screen.findByText(OUTCOME_UNKNOWN)).toBeInTheDocument();
     first.unmount();
 
     renderAt("/payments/cash-detail/15?type=branch");
     setAmount("300000");
     await chooseMethod("Naqd");
-    await submit("HQga o'tkazish");
+    await submit(RECEIVE_FROM_BRANCH);
     await waitFor(() => expect(branchPayment.mutateAsync).toHaveBeenCalledTimes(2));
 
     const [beforeReload, afterReload] = callsOf(branchPayment);
@@ -328,7 +341,7 @@ describe("FE-PAY-08 / M14 / C14 — no card-owner picker and no source_user_id f
     expect(screen.queryByLabelText("Kartani tanlang")).not.toBeInTheDocument();
     expect(state.usersEnabled.some(Boolean)).toBe(false);
 
-    await submit("To'lash");
+    await submit(PAY);
     await waitFor(() => expect(marketPayment.mutateAsync).toHaveBeenCalledTimes(1));
     expect(callsOf(marketPayment)[0].data).toEqual({
       market_id: "201",
@@ -348,7 +361,7 @@ describe("FE-PAY-08 / M14 / C14 — no card-owner picker and no source_user_id f
     await chooseMethod("O'tkazma");
     expect(screen.queryByLabelText("Kartani tanlang")).not.toBeInTheDocument();
 
-    await submit("HQga o'tkazish");
+    await submit(RECEIVE_FROM_BRANCH);
     await waitFor(() => expect(branchPayment.mutateAsync).toHaveBeenCalledTimes(1));
     const [call] = callsOf(branchPayment);
     expect(call.data).toEqual(
@@ -373,7 +386,7 @@ describe("FE-PAY-04 / C2 — cash-detail date filter", () => {
 
     setAmount("1000");
     await chooseMethod("Naqd");
-    await submit("To'lash");
+    await submit(PAY);
     await waitFor(() => expect(marketPayment.mutateAsync).toHaveBeenCalledTimes(1));
     expect(screen.queryByText("Bu market kassasi emas — to'lov yuborilmadi.")).not.toBeInTheDocument();
   });
@@ -395,8 +408,9 @@ describe("FE-PAY-15 — HQ branch receive page reads the payable from the server
     openHqBranch(1_000_000);
 
     expect(state.branchesEnabled.some(Boolean)).toBe(true);
-    expect(screen.getAllByText(money(400_000)).length).toBeGreaterThan(0);
-    expect(screen.queryByText(money(1_000_000))).not.toBeInTheDocument();
+    expect(screen.getAllByText(moneyText(400_000)).length).toBeGreaterThan(0);
+    expect(screen.queryAllByText(moneyText(1_000_000))).toHaveLength(0);
+    expect(screen.queryByText(/1\D000\D000/)).not.toBeInTheDocument();
     expect(screen.getAllByText("Qabul qilinishi kerak").length).toBeGreaterThan(0);
   });
 
@@ -405,7 +419,7 @@ describe("FE-PAY-15 — HQ branch receive page reads the payable from the server
     state.branches = { data: [] };
     openHqBranch(1_000_000);
 
-    expect(screen.getAllByText(money(1_000_000)).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(moneyText(1_000_000)).length).toBeGreaterThan(0);
   });
 
   it("after a receipt shows the refreshed server payable, or the locally reduced one while the ledger lags", async () => {
@@ -419,10 +433,10 @@ describe("FE-PAY-15 — HQ branch receive page reads the payable from the server
     // Ledger hali yangilanmagan (server summasi o'zgarmagan) — mahalliy 400 000 − 100 000.
     setAmount("100000");
     await chooseMethod("Naqd");
-    await submit("HQga o'tkazish");
+    await submit(RECEIVE_FROM_BRANCH);
     expect(await screen.findByText(BRANCH_SUCCESS)).toBeInTheDocument();
     await waitFor(() => expect(branchesRefetch).toHaveBeenCalled());
-    await waitFor(() => expect(screen.getAllByText(money(300_000)).length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.getAllByText(moneyText(300_000)).length).toBeGreaterThan(0));
   });
 
   it("after a receipt applies the refreshed server payable when the ledger already moved", async () => {
@@ -440,11 +454,11 @@ describe("FE-PAY-15 — HQ branch receive page reads the payable from the server
 
     setAmount("100000");
     await chooseMethod("Naqd");
-    await submit("HQga o'tkazish");
+    await submit(RECEIVE_FROM_BRANCH);
 
     expect(await screen.findByText(BRANCH_SUCCESS)).toBeInTheDocument();
-    await waitFor(() => expect(screen.getAllByText(money(250_000)).length).toBeGreaterThan(0));
-    expect(screen.queryByText(money(300_000))).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByText(moneyText(250_000)).length).toBeGreaterThan(0));
+    expect(screen.queryAllByText(moneyText(300_000))).toHaveLength(0);
   });
 });
 
@@ -499,9 +513,23 @@ describe("FE-PAY-16 — Excel export on cash-detail", () => {
 
 describe("5hBeDuyn — market va filial → HQ: tasdiqsiz pul KETMAYDI", () => {
   it.each([
-    { leg: "market", route: "/payments/cash-detail/201?type=market", label: "To'lash", amount: "5000000" },
-    { leg: "branch", route: "/payments/cash-detail/15?type=branch", label: "HQga o'tkazish", amount: "300000" },
-  ])("⭐ $leg: \"Bekor qilish\" — mutatsiya chaqirilmaydi; tasdiqlansa — bir marta", async ({ leg, route, label, amount }) => {
+    {
+      leg: "market",
+      route: "/payments/cash-detail/201?type=market",
+      label: PAY,
+      amount: "5000000",
+      from: /Qayerdan\s*Asosiy kassa/,
+      to: /Qayerga\s*Market kassasi/,
+    },
+    {
+      leg: "branch",
+      route: "/payments/cash-detail/15?type=branch",
+      label: RECEIVE_FROM_BRANCH,
+      amount: "300000",
+      from: /Qayerdan\s*Filial kassasi/,
+      to: /Qayerga\s*Asosiy kassa/,
+    },
+  ])("⭐ $leg: \"Bekor qilish\" — mutatsiya chaqirilmaydi; tasdiqlansa — bir marta", async ({ leg, route, label, amount, from, to }) => {
     const mutation = leg === "market" ? marketPayment : branchPayment;
     mutation.mutateAsync.mockResolvedValue(paymentAccepted);
     state.cashbox = leg === "market" ? marketCashbox : hqBranchCashbox;
@@ -511,12 +539,13 @@ describe("5hBeDuyn — market va filial → HQ: tasdiqsiz pul KETMAYDI", () => {
     setAmount(amount);
     await chooseMethod("Naqd");
     await user.click(screen.getByRole("button", { name: label }));
-    const dialog = await screen.findByRole("dialog");
-    expect(dialog).toHaveTextContent("To'lovni tasdiqlaysizmi?");
-    expect(dialog).toHaveTextContent("(Naqd)");
+    const dialog = await findConfirm();
+    expect(within(dialog).getByText("Naqd")).toBeInTheDocument();
+    expect(dialog).toHaveTextContent(from);
+    expect(dialog).toHaveTextContent(to);
 
     await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
-    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
     expect(mutation.mutateAsync).not.toHaveBeenCalled();
 
     await submit(label);
