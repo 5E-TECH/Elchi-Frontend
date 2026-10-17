@@ -1,4 +1,5 @@
 import type { OrderListItem } from "../../../entities/order/types/order";
+import { isProofRequiredByConditions, toKnownAmount } from "../../../entities/orders/proofRequirement";
 
 export type CourierBulkAction = "sold" | "cancel" | "tomorrow";
 
@@ -115,7 +116,7 @@ export const getCourierBulkOrderAction = (
 export const getCourierBulkFinalizeTasks = <T extends { id: string }>(
   orders: T[],
   actions: Record<string, CourierBulkAction>,
-): Array<{ order: T; action: Exclude<CourierBulkAction, "tomorrow"> }> =>
+): Array<CourierBulkFinalizeTask<T>> =>
   orders.flatMap((order) => {
     const action = getCourierBulkOrderAction(order.id, actions);
     return action === "tomorrow" ? [] : [{ order, action }];
@@ -143,24 +144,110 @@ export const getCourierBulkFinalizeLabelCounts = (counts: CourierBulkCounts) => 
   sold: counts.sold,
 });
 
-export const runLimited = async <T>(
-  items: T[],
+/**
+ * Vazifalarni ko'pi bilan `limit` tadan parallel bajaradi. Natijalar KIRISH tartibida
+ * (`results[i]` — `items[i]` niki), tugash tartibida emas: xato bergan buyurtma aynan o'z
+ * vazifasiga bog'lanadi.
+ */
+export const runLimited = async <T, R = unknown>(
+  items: readonly T[],
   limit: number,
-  task: (item: T) => Promise<unknown>,
-) => {
-  const queue = [...items];
-  const workerCount = Math.max(1, Math.min(limit, queue.length));
-  const results: PromiseSettledResult<unknown>[] = [];
+  task: (item: T) => Promise<R>,
+): Promise<PromiseSettledResult<R>[]> => {
+  const results: PromiseSettledResult<R>[] = new Array(items.length);
+  const workerCount = Math.max(1, Math.min(limit, items.length));
+  let cursor = 0;
 
   await Promise.all(
     Array.from({ length: workerCount }, async () => {
-      while (queue.length > 0) {
-        const item = queue.shift();
-        if (!item) continue;
-        results.push(await Promise.allSettled([task(item)]).then(([result]) => result));
+      while (cursor < items.length) {
+        const index = cursor;
+        cursor += 1;
+        try {
+          results[index] = { status: "fulfilled", value: await task(items[index]) };
+        } catch (reason) {
+          results[index] = { status: "rejected", reason };
+        }
       }
     }),
   );
 
   return results;
+};
+
+export type CourierBulkFinalizeAction = Exclude<CourierBulkAction, "tomorrow">;
+
+export type CourierBulkFinalizeTask<T> = { order: T; action: CourierBulkFinalizeAction };
+
+/** Isbotsiz buyurtmalar — avvalgidek 6 tadan parallel. */
+export const COURIER_BULK_CONCURRENCY = 6;
+/** Isbotli buyurtmalar (fayl yuklash + amal) — ko'pi bilan 2 tadan parallel (j9KFyqlS). */
+export const COURIER_BULK_PROOF_CONCURRENCY = 2;
+
+/**
+ * Ommaviy yopish so'rovlari sarlavhasi: backend ularni audit jurnalida ommaviy amal deb yozadi
+ * (`activity_logs.metadata.request_source = "courier-bulk"`).
+ */
+export const COURIER_BULK_REQUEST_HEADERS = { "X-Request-Source": "courier-bulk" } as const;
+
+type ProofCheckOrder = {
+  total_price?: unknown;
+  market?: { expense_proof_conditions?: readonly string[] | null } | null;
+};
+
+/**
+ * Market sozlamasi (`market.expense_proof_conditions`) bo'yicha shu amal uchun isbot majburmi.
+ * Ommaviy yopishda qo'shimcha xarajat yo'q (`extraCost: 0`), summa — buyurtma summasi
+ * (backend `enforceOperationProof` bilan bir xil).
+ */
+export const isCourierBulkProofRequired = (order: ProofCheckOrder, action: CourierBulkFinalizeAction) =>
+  isProofRequiredByConditions(order.market?.expense_proof_conditions, {
+    action: action === "cancel" ? "cancel" : "sell",
+    extraCost: 0,
+    totalPrice: toKnownAmount(order.total_price),
+  });
+
+/** Vazifalarni ikkiga ajratadi: isbot talab qilinadiganlar va qolganlari (tartib saqlanadi). */
+export const splitCourierBulkTasksByProof = <T extends ProofCheckOrder>(
+  tasks: ReadonlyArray<CourierBulkFinalizeTask<T>>,
+) => {
+  const proofTasks: CourierBulkFinalizeTask<T>[] = [];
+  const plainTasks: CourierBulkFinalizeTask<T>[] = [];
+  tasks.forEach((task) => {
+    (isCourierBulkProofRequired(task.order, task.action) ? proofTasks : plainTasks).push(task);
+  });
+  return { proofTasks, plainTasks };
+};
+
+/**
+ * Tanlangan isbot kaliti — buyurtma VA amal: bekor qilish uchun tanlangan rasm buyurtma keyin
+ * «sotildi» qilinsa sotish isboti bo'lib ketmasin.
+ */
+export const getCourierBulkProofKey = (task: { order: { id: string }; action: CourierBulkFinalizeAction }) =>
+  `${task.order.id}:${task.action}`;
+
+/** Har isbotli buyurtmaga fayl tanlanganmi (yakunlash tugmasi shungacha o'chiq). */
+export const hasAllCourierBulkProofs = (
+  proofTasks: ReadonlyArray<{ order: { id: string }; action: CourierBulkFinalizeAction }>,
+  proofs: Readonly<Record<string, File | undefined>>,
+) => proofTasks.every((task) => proofs[getCourierBulkProofKey(task)] instanceof File);
+
+export type CourierBulkFailure<T> = CourierBulkFinalizeTask<T> & { error: unknown };
+
+/** Vazifa ↔ natija (bir xil tartibda) → bajarilgan buyurtmalar va xato berganlar (sababi bilan). */
+export const summarizeCourierBulkResults = <T extends { id: string }>(
+  tasks: ReadonlyArray<CourierBulkFinalizeTask<T>>,
+  results: ReadonlyArray<PromiseSettledResult<unknown>>,
+) => {
+  const succeededOrderIds = new Set<string>();
+  const failures: CourierBulkFailure<T>[] = [];
+  tasks.forEach((task, index) => {
+    const result = results[index];
+    if (result?.status === "fulfilled") {
+      succeededOrderIds.add(String(task.order.id));
+      return;
+    }
+    failures.push({ ...task, error: result?.status === "rejected" ? result.reason : undefined });
+  });
+  return { succeededOrderIds, failures };
 };

@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**76 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **19** · qisman: **7** · v2 ga ko'chirilgan route: **11 / 76**
+**77 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **19** · qisman: **7** · v2 ga ko'chirilgan route: **13 / 77**
 
 ## Qanday ishlatiladi
 
@@ -81,6 +81,7 @@
 | `/courier-bulk` | Biriktirish va tezkor amal | `src/pages/courier-bulk/index.tsx` | manager (REGIONAL · HYBRID), courier | 7 | eski |
 | `/scan` | Skaner | `src/pages/scan/index.tsx` | superadmin, admin, manager, registrator, market, courier | 14 | eski |
 | `/scan/:token` | Skaner | `src/pages/scan/detail.tsx` | superadmin, admin, manager, registrator, market, courier | 10 | eski |
+| `/tg/scan` | Skaner | `src/pages/tg-scan/index.tsx` | hamma (kirishsiz) | 7 | v2 |
 | `/payments` | Moliya | `src/pages/payments/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 11 | eski |
 | `/payments/main-cashbox` | Moliya | `src/pages/payments/components/mainCashbox.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 9 | eski |
 | `/payments/cash-detail/:id` | Moliya | `src/pages/payments/components/cashDetail.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 8 | eski |
@@ -104,7 +105,7 @@
 | `/integrations/sources` | Integratsiyalar | `src/pages/new_orders/external_orders/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 2 | eski |
 | `/integrations/sources/create` | Integratsiyalar | `src/pages/new_orders/external_orders/create.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 1 | eski |
 | `/integrations/sources/:id` | Integratsiyalar | `src/pages/new_orders/external_orders/detail.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 1 | eski |
-| `/notifications` | Bildirishnomalar | `src/pages/notifications/ui/NotificationsPage.tsx` | superadmin | 3 | eski |
+| `/notifications` | Bildirishnomalar | `src/pages/notifications/ui/NotificationsPage.tsx` | superadmin | 3 | v2 |
 | `/notifications/send` | Bildirishnomalar | `src/pages/notification-send/index.tsx` | superadmin, admin | 2 | eski |
 | `/notifications/sms` | Bildirishnomalar | `src/pages/notifications/ui/SmsPage.tsx` | superadmin, admin | 5 | eski |
 | `/activity-logs` | Tizim | `src/pages/activity-logs/index.tsx` | superadmin, admin | 5 | v2 |
@@ -228,7 +229,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/` — Bosh sahifa — rolga qarab: DashboardPage yoki MarketDashboardPage
 
-- **Fayllar:** `src/app/lib/routes.tsx` · `src/pages/dashboard/DashboardPage.tsx` · `src/pages/dashboard/MarketDashboardPage.tsx` · `src/pages/dashboard/ui/ExtraCostApprovalsCard.tsx` · `src/widgets/dashboard-statistics/ui/DashboardStatistics.tsx` · `src/widgets/dashboard-statistics/ui/OrderStatusDonut.tsx` · `src/widgets/dashboard-statistics/ui/SuccessGauge.tsx` · `src/widgets/financial-analysis/ui/FinancialAnalysis.tsx` · `src/widgets/dashboard-top-performers/ui/TopPerformers.tsx` · `src/widgets/dashboard-top-performers/ui/RankingCard.tsx` · `src/widgets/dashboard-part-error/ui/DashboardPartError.tsx` · `src/widgets/dashboard-performance-chart/ui/PerformanceChart.tsx` · `src/widgets/dashboard-region/ui/RegionStatsCard.tsx` · `src/pages/region/ui/UzbekistanRegionMap.tsx`
+- **Fayllar:** `src/app/lib/routes.tsx` · `src/pages/dashboard/DashboardPage.tsx` · `src/pages/dashboard/MarketDashboardPage.tsx` · `src/widgets/dashboard-statistics/ui/DashboardStatistics.tsx` · `src/widgets/dashboard-statistics/ui/OrderStatusDonut.tsx` · `src/widgets/dashboard-statistics/ui/SuccessGauge.tsx` · `src/widgets/financial-analysis/ui/FinancialAnalysis.tsx` · `src/widgets/dashboard-top-performers/ui/TopPerformers.tsx` · `src/widgets/dashboard-top-performers/ui/RankingCard.tsx` · `src/widgets/dashboard-part-error/ui/DashboardPartError.tsx` · `src/widgets/dashboard-performance-chart/ui/PerformanceChart.tsx` · `src/widgets/dashboard-region/ui/RegionStatsCard.tsx` · `src/pages/region/ui/UzbekistanRegionMap.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish) · o'rovchi: `DashboardEntry`
 - **Rollar:** superadmin, admin, manager (→ /branch-dashboard), registrator, market, courier
 - **Menyuda:** «Bosh sahifa» (`dashboard`) — superadmin, admin, registrator, market, courier
@@ -819,6 +820,24 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/scan/:token` | courier | `courier-scan-other-courier` — Skaner — boshqa kuryerga biriktirilgan | [design/fragments/courier--scan-other-courier.html](fragments/courier--scan-other-courier.html) | sahifa | qisman |
 | `/scan/:token` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
 
+#### `/tg/scan` — Telegram skan Mini App — kuryer uzluksiz skanerlab buyurtmalarni o'ziga oladi (shell'siz, to'liq ekran)
+
+- **Fayllar:** `src/pages/tg-scan/index.tsx` · `src/features/tg-scan/ui/TgScanner.tsx` · `src/features/tg-scan/ui/CameraSurface.tsx` · `src/features/tg-scan/ui/ScanListSheet.tsx` · `src/features/tg-scan/model/useTelegramAuth.ts` · `src/features/tg-scan/model/useScanAssign.ts` · `src/features/tg-scan/model/telegramWebApp.ts` · `src/features/tg-scan/api/tgScanApi.ts`
+- **Qobiq:** qobiqsiz (kirishsiz) · **Guard:** yo'q (kirishsiz)
+- **Rollar:** hamma (kirishsiz)
+- **Holat:** v2
+- **Izoh:** Faqat kuryer (boshqa rol Telegram orqali kirsa — «Skaner faqat kuryerlar uchun»). Telegram'dan tashqarida (initData bo'sh) — «Bu sahifa faqat Telegram ichida ochiladi», kamera ochilmaydi. Hisoblagich «N ta qabul qilindi», «Ro'yxat» varag'i va «Tayyor» maketda yo'q (dizayn ziddiyati kartada qayd etilgan) — eng yaqin namuna `courier-courier-bulk-scanner-camera` va `-camera-list`. Kamera ochilmasa — Telegram skaneri (`showScanQrPopup`). «Juda tez» holati yo'q: uzluksiz rejimda kamera QR'ni qayta o'qiydi va pauza o'tgach o'zi qabul qiladi. Qo'lda kiritish yo'q: `scan-assign` faqat QR tokenni qabul qiladi (yorliqdagi raqam bilan qidirmaydi).
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `/tg/scan` | courier | `courier-scan-active` — Skaner — skanerlanmoqda | [design/fragments/courier--scan-active.html](fragments/courier--scan-active.html) | sahifa | v2 |
+| `/tg/scan` | courier | `courier-scan-starting` — Skaner — kamera ishga tushmoqda | [design/fragments/courier--scan-starting.html](fragments/courier--scan-starting.html) | sahifa | v2 |
+| `/tg/scan` | courier | `courier-scan-permission-denied` — Skaner — kameraga ruxsat yo'q | [design/fragments/courier--scan-permission-denied.html](fragments/courier--scan-permission-denied.html) | sahifa | v2 |
+| `/tg/scan` | courier | `courier-scan-success-flash` — Skaner — muvaffaqiyatli o'qildi | [design/fragments/courier--scan-success-flash.html](fragments/courier--scan-success-flash.html) | sahifa | v2 |
+| `/tg/scan` | courier | `courier-scan-other-courier` — Skaner — boshqa kuryerga biriktirilgan | [design/fragments/courier--scan-other-courier.html](fragments/courier--scan-other-courier.html) | sahifa | qisman |
+| `/tg/scan` | courier | `courier-scan-invalid` — Skaner — noto'g'ri QR | [design/fragments/courier--scan-invalid.html](fragments/courier--scan-invalid.html) | sahifa | v2 |
+| `/tg/scan` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
+
 ### Moliya — to'lovlar, kassa, balans
 
 #### `/payments` — To'lovlar — umumiy (berilishi / qabul qilinishi kerak, operatsiyalar tarixi)
@@ -1252,17 +1271,17 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/notifications` — Bildirishnomalar — Telegram guruhlari
 
-- **Fayllar:** `src/pages/notifications/ui/NotificationsPage.tsx` · `src/widgets/notification-table/ui/NotificationTable.tsx` · `src/features/notification-create/ui/NotificationFormModal.tsx` · `src/features/notification-delete/ui/DeleteNotificationButton.tsx`
+- **Fayllar:** `src/pages/notifications/ui/NotificationsPage.tsx` · `src/widgets/notification-table/ui/NotificationTable.tsx` · `src/features/notification-create/ui/NotificationFormModal.tsx` · `src/features/notification-edit/ui/NotificationEditModal.tsx` · `src/features/notification-delete/ui/DeleteNotificationButton.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewNotifications` (access.ts → canViewNotifications)
 - **Rollar:** superadmin
 - **Menyuda:** «Bildirishnomalar» (`notifications`) — superadmin
-- **Holat:** eski
+- **Holat:** v2
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/notifications` | superadmin | `superadmin-notifications-telegram-groups` — Bildirishnomalar — Telegram guruhlari | [design/fragments/superadmin--notifications-telegram-groups.html](fragments/superadmin--notifications-telegram-groups.html) | sahifa | eski |
-| `/notifications` | superadmin | `superadmin-notifications-create-dialog` — Bildirishnoma qo'shish (modal)<br>↳ `src/features/notification-create/ui/NotificationFormModal.tsx` | [design/fragments/superadmin--notifications-create-dialog.html](fragments/superadmin--notifications-create-dialog.html) | oyna | eski |
-| `/notifications` | superadmin | `superadmin-notifications-delete-dialog` — Bildirishnomani o'chirish (tasdiq)<br>↳ `src/features/notification-delete/ui/DeleteNotificationButton.tsx` | [design/fragments/superadmin--notifications-delete-dialog.html](fragments/superadmin--notifications-delete-dialog.html) | oyna | eski |
+| `/notifications` | superadmin | `superadmin-notifications-telegram-groups` — Bildirishnomalar — Telegram guruhlari | [design/fragments/superadmin--notifications-telegram-groups.html](fragments/superadmin--notifications-telegram-groups.html) | sahifa | v2 |
+| `/notifications` | superadmin | `superadmin-notifications-create-dialog` — Bildirishnoma qo'shish (modal)<br>↳ `src/features/notification-create/ui/NotificationFormModal.tsx` | [design/fragments/superadmin--notifications-create-dialog.html](fragments/superadmin--notifications-create-dialog.html) | oyna | v2 |
+| `/notifications` | superadmin | `superadmin-notifications-delete-dialog` — Bildirishnomani o'chirish (tasdiq)<br>↳ `src/features/notification-delete/ui/DeleteNotificationButton.tsx` | [design/fragments/superadmin--notifications-delete-dialog.html](fragments/superadmin--notifications-delete-dialog.html) | oyna | v2 |
 
 #### `/notifications/send` — Xabar yuborish (tizim ichidagi bildirishnoma)
 
@@ -1632,9 +1651,9 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-integrations-legacy-sources` | Tashqi manbalar (eski: Integratsiyalar ro'yxati) | sahifa | `/integrations/sources` | `src/pages/new_orders/external_orders/index.tsx` | eski |
 | `superadmin-integrations-legacy-source-create` | Integratsiya yaratish (eski forma) | sahifa | `/integrations/sources/create` | `src/pages/new_orders/external_orders/create.tsx` | eski |
 | `superadmin-integrations-legacy-source-detail` | Integratsiya — QR skaner (eski) | sahifa | `/integrations/sources/:id` | `src/pages/new_orders/external_orders/detail.tsx` | eski |
-| `superadmin-notifications-telegram-groups` | Bildirishnomalar — Telegram guruhlari | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | eski |
-| `superadmin-notifications-create-dialog` | Bildirishnoma qo'shish (modal) | oyna | `/notifications` | `src/features/notification-create/ui/NotificationFormModal.tsx` | eski |
-| `superadmin-notifications-delete-dialog` | Bildirishnomani o'chirish (tasdiq) | oyna | `/notifications` | `src/features/notification-delete/ui/DeleteNotificationButton.tsx` | eski |
+| `superadmin-notifications-telegram-groups` | Bildirishnomalar — Telegram guruhlari | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | v2 |
+| `superadmin-notifications-create-dialog` | Bildirishnoma qo'shish (modal) | oyna | `/notifications` | `src/features/notification-create/ui/NotificationFormModal.tsx` | v2 |
+| `superadmin-notifications-delete-dialog` | Bildirishnomani o'chirish (tasdiq) | oyna | `/notifications` | `src/features/notification-delete/ui/DeleteNotificationButton.tsx` | v2 |
 | `superadmin-notifications-inbox` | Bildirishnomalar — Inbox (qo'ng'iroqcha) | sahifa | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | eski |
 | `superadmin-notifications-push-explain-dialog` | Bildirishnomalarni yoqasizmi? (tasdiq) | oyna | `/inbox` | `src/features/push-notifications/ui/PushPermissionButton.tsx` | eski |
 | `superadmin-notifications-send` | Xabar yuborish | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | eski |
@@ -1942,12 +1961,12 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `courier-scan-package-detail` | Skanerlangan paket | sahifa | `/scan/:token` | `src/pages/scan/ui/ScanPackageDetail.tsx` | eski |
 | `courier-scan-post-detail` | Skanerlangan pochta | sahifa | `/scan/:token` | `src/pages/scan/ui/ScanPostDetail.tsx` | eski |
 | `courier-scan-not-found` | Skaner — topilmadi | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | eski |
-| `courier-scan-starting` | Skaner — kamera ishga tushmoqda | sahifa | `/scan` | `src/pages/scan/index.tsx` | eski |
-| `courier-scan-permission-denied` | Skaner — kameraga ruxsat yo'q | sahifa | `/scan` | `src/pages/scan/index.tsx` | eski |
-| `courier-scan-active` | Skaner — skanerlanmoqda | sahifa | `/scan` | `src/pages/scan/index.tsx` | eski |
-| `courier-scan-success-flash` | Skaner — muvaffaqiyatli o'qildi | sahifa | `/scan` | `src/pages/scan/index.tsx` | eski |
-| `courier-scan-other-courier` | Skaner — boshqa kuryerga biriktirilgan | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | qisman — Alohida holat yo'q — backend xato matni umumiy xato blokida chiqadi (scan/detail.tsx). |
-| `courier-scan-invalid` | Skaner — noto'g'ri QR | sahifa | `/scan` | `src/pages/scan/index.tsx` | eski |
+| `courier-scan-starting` | Skaner — kamera ishga tushmoqda | sahifa | `/scan`, `/tg/scan` | `src/pages/scan/index.tsx`, `src/pages/tg-scan/index.tsx` | eski, v2 |
+| `courier-scan-permission-denied` | Skaner — kameraga ruxsat yo'q | sahifa | `/scan`, `/tg/scan` | `src/pages/scan/index.tsx`, `src/pages/tg-scan/index.tsx` | eski, v2 |
+| `courier-scan-active` | Skaner — skanerlanmoqda | sahifa | `/scan`, `/tg/scan` | `src/pages/scan/index.tsx`, `src/pages/tg-scan/index.tsx` | eski, v2 |
+| `courier-scan-success-flash` | Skaner — muvaffaqiyatli o'qildi | sahifa | `/scan`, `/tg/scan` | `src/pages/scan/index.tsx`, `src/pages/tg-scan/index.tsx` | eski, v2 |
+| `courier-scan-other-courier` | Skaner — boshqa kuryerga biriktirilgan | sahifa | `/scan/:token`, `/tg/scan` | `src/pages/scan/detail.tsx`, `src/pages/tg-scan/index.tsx` | qisman — Alohida holat yo'q — backend xato matni umumiy xato blokida chiqadi (scan/detail.tsx). |
+| `courier-scan-invalid` | Skaner — noto'g'ri QR | sahifa | `/scan`, `/tg/scan` | `src/pages/scan/index.tsx`, `src/pages/tg-scan/index.tsx` | eski, v2 |
 | `courier-scan-too-fast` | Skaner — juda tez | sahifa | `/scan` | `src/pages/scan/index.tsx` | eski |
 | `courier-scan-offline` | Skaner — internet yo'q (navbat) | sahifa | `/scan` | `src/pages/scan/index.tsx` | yangi (kodda yo'q) — Internet yo'qda skanlarni navbatga qo'yish yo'q. |
 | `courier-scan-manual-entry` | Skaner — kodni qo'lda kiritish | sahifa | `/scan` | `src/pages/scan/index.tsx` | yangi (kodda yo'q) — Kodni qo'lda kiritish yo'q. |
@@ -1982,7 +2001,7 @@ Sahifa emas — qoidalar va komponent holatlari. Har UI ishida tegishli taxtani 
 | `Main` | Dizayn tizimi | Tamoyillar (rang = ma'no, bitta asosiy amal, faqat token), rang tokenlari (sirt, chiziq, matn, brend, amal, holat), tipografiya, 4px oraliq, radius, tugmalar, maydonlar, holat belgilari (buyurtma, yetkazish, foydalanuvchi), tab/segment/chip, statistika va jadval, xabar bloklari, tasdiqlash oynasi, bo'sh holat, format standarti. | src/index.css (@theme), src/shared/config/themeTokens.ts, src/shared/lib/formatMoney.ts, docs/DESIGN_SYSTEM.md; 1-bosqich primitivlari (Button, Badge/StatusBadge, Card/StatCard, PageHeader, Tabs) | barcha sahifalar |
 | `tizim-icons` | Ikonkalar katalogi | lucide ikonkalar katalogi: 12 guruh, o'lchamlar (16/18/20/22), rang va tugmadagi ikonka, eski sinonimlarni almashtirish jadvali. | design/icon-registry.json, lucide-react | barcha sahifalar |
 | `tizim-responsive` | Moslashuvchanlik — telefon, planshet, desktop | Breakpointlar (≥1024 · 768–1023 · <768), bitta sahifa uch kenglikda, dialog → pastdan oyna, yon/suriluvchi/pastki menyu, 70px yorliq qoidasi, yashirish sinflari, jadval o'rami, ≥44px bosish maydoni, asosiy amal pastda. | src/widgets/Sidebar/ui/{Sidebar,BottomNav,MobileMenu}.tsx, src/widgets/layout/dashboardLayout.tsx, docs/DESIGN_SYSTEM.md §6 | `(qobiq)` |
-| `tizim-scanner` | Kamera skaner — telefon kamerasi bilan skanerlash | Kamera va USB skaner qachon, kirish nuqtalari (pastki menyu «Skaner», yuqori panel «Skanerlash»), kamera anatomiyasi, barcha holatlar (ruxsat, ishga tushmoqda, tayyor, topildi, takroriy, topilmadi, noto'g'ri QR, boshqa kuryerniki, juda tez, kam yorug'lik, chiroq, oflayn navbat, kamera band, qo'lda kiritish), uzluksiz skanerlash (hisoblagich, ro'yxat, tugatish), desktop veb-kamera + USB. | src/pages/scan/*, src/shared/components/ScannerCameraModal.tsx, src/shared/lib/{useCameraQrScanner,useKeyboardScanner,useOrderQrScanner}.ts, src/pages/scan/lib/scanShared.ts | `/new-orders/incoming/:marketId`, `/new-orders/branches/:branchId/batches/:batchId`, `/new-orders/cancelled/:marketId`, `/new-orders/:marketId`, `/mails/:id`, `/batches/:id`, `/dispatch`, `/courier-bulk`, `/scan`, `/scan/:token` |
+| `tizim-scanner` | Kamera skaner — telefon kamerasi bilan skanerlash | Kamera va USB skaner qachon, kirish nuqtalari (pastki menyu «Skaner», yuqori panel «Skanerlash»), kamera anatomiyasi, barcha holatlar (ruxsat, ishga tushmoqda, tayyor, topildi, takroriy, topilmadi, noto'g'ri QR, boshqa kuryerniki, juda tez, kam yorug'lik, chiroq, oflayn navbat, kamera band, qo'lda kiritish), uzluksiz skanerlash (hisoblagich, ro'yxat, tugatish), desktop veb-kamera + USB. | src/pages/scan/*, src/shared/components/ScannerCameraModal.tsx, src/shared/lib/{useCameraQrScanner,useKeyboardScanner,useOrderQrScanner}.ts, src/pages/scan/lib/scanShared.ts | `/new-orders/incoming/:marketId`, `/new-orders/branches/:branchId/batches/:batchId`, `/new-orders/cancelled/:marketId`, `/new-orders/:marketId`, `/mails/:id`, `/batches/:id`, `/dispatch`, `/courier-bulk`, `/scan`, `/scan/:token`, `/tg/scan` |
 | `tizim-charts` | Grafiklar — statistika va tahlil | Qaysi grafik qachon, kategorial palitra (chart-1…8, kunduzgi/tungi), ketma-ket va ikki qutbli shkalalar, holat ranglari, grafik anatomiyasi, galereya (spidometr, donut, KPI, chiziq, ustunlar, reyting, issiqlik xaritasi, xarita, sharshara, voronka, sparkline), holatlar (yuklanmoqda, bo'sh, xato), «Grafik \| Jadval» egizagi, telefon. | CHART_PALETTE (src/shared/config/themeTokens.ts), src/widgets/dashboard-*/*, src/widgets/financial-analysis/*, src/pages/region/ui/UzbekistanRegionMap.tsx, docs/DESIGN_SYSTEM.md §3 | `/`, `/branch-dashboard`, `/financial-balance`, `/regions` |
 | `tizim-states-buttons` | Holatlar — tugmalar va havolalar | Tugma va havolalar: 12 tur × 6 holat, o'lchamlar (32/40/48), tugmalar guruhi, forma/oyna oxiri, sahifa sarlavhasi, xavfli juftlik, telefon pastki paneli, qilinmaydigan narsalar. | src/shared/components/button.tsx (1-bosqich: Button, IconButton) | barcha sahifalar |
 | `tizim-states-forms` | Holatlar — forma elementlari | Forma elementlari: matn maydoni holatlari, qidiruv, telefon, son, ko'p qatorli matn, tanlash ro'yxati (yopiq/ochiq/ko'p tanlov), sana oralig'i, katak/radio/kalit/tanlov kartasi, fayl yuklash, forma xatolari xulosasi. | src/shared/ui/{Select,SearchableSelect,PhoneInput,DateRangePicker,Filter*,Toggle}.tsx, antd mavzusi (src/app/providers/theme) — 3-bosqich | barcha sahifalar |
@@ -2016,10 +2035,18 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/features/notification-create/ui/NotificationFormModal.tsx` | `/notifications` |
 | `src/features/notification-delete/ui/DeleteNotificationButton.tsx` | `/notifications` |
 | `src/features/notification-dispatch/ui/NotificationDispatchForm.tsx` | `/notifications/send` |
+| `src/features/notification-edit/ui/NotificationEditModal.tsx` | `/notifications` |
 | `src/features/order-return/ui/InitiateReturnModal.tsx` | `/orders/edit/:orderId` |
 | `src/features/order-return/ui/MarkReturnedModal.tsx` | `/orders/edit/:orderId` |
 | `src/features/order-tracking/ui/TrackingTimelineItem.tsx` | `/orders/edit/:orderId` |
 | `src/features/push-notifications/ui/PushPermissionButton.tsx` | `/settings`, `/inbox` |
+| `src/features/tg-scan/api/tgScanApi.ts` | `/tg/scan` |
+| `src/features/tg-scan/model/telegramWebApp.ts` | `/tg/scan` |
+| `src/features/tg-scan/model/useScanAssign.ts` | `/tg/scan` |
+| `src/features/tg-scan/model/useTelegramAuth.ts` | `/tg/scan` |
+| `src/features/tg-scan/ui/CameraSurface.tsx` | `/tg/scan` |
+| `src/features/tg-scan/ui/ScanListSheet.tsx` | `/tg/scan` |
+| `src/features/tg-scan/ui/TgScanner.tsx` | `/tg/scan` |
 | `src/features/user/create-user/ui/CreateUserForm.tsx` | `/all-users/create-user` |
 | `src/features/user/create-user/ui/RoleSelector.tsx` | `/all-users/create-user` |
 | `src/features/user/update-user/ui/UpdateUserModal.tsx` | `/all-users/:id`, `/profile` |
@@ -2040,7 +2067,6 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/courier-bulk/model/courierBulk.ts` | `/courier-bulk` |
 | `src/pages/dashboard/DashboardPage.tsx` | `/` |
 | `src/pages/dashboard/MarketDashboardPage.tsx` | `/` |
-| `src/pages/dashboard/ui/ExtraCostApprovalsCard.tsx` | `/` |
 | `src/pages/dispatch/index.tsx` | `/dispatch` |
 | `src/pages/finance-operators/index.tsx` | `/finance-operators` |
 | `src/pages/financial-balance/components/AnalysisTab.tsx` | `/financial-balance` |
@@ -2204,6 +2230,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/scan/ui/ScanPostDetail.tsx` | `/scan/:token` |
 | `src/pages/settings/ui/SettingsPage.tsx` | `/settings` |
 | `src/pages/system-ops/index.tsx` | `/system-ops` |
+| `src/pages/tg-scan/index.tsx` | `/tg/scan` |
 | `src/pages/ui-kit/KitSection.tsx` | `/ops/ui-kit` |
 | `src/pages/ui-kit/ThemePair.tsx` | `/ops/ui-kit` |
 | `src/pages/ui-kit/index.tsx` | `/ops/ui-kit` |

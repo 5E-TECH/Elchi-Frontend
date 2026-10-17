@@ -5,6 +5,8 @@ import { resolvePaymentActorName } from "./paymentHistoryActor";
 import { useTranslation } from "react-i18next";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 import { getPaymentSourceTypeLabel } from "./paymentSourceType";
+import { Badge } from "../../../shared/ui/primitives";
+import { PaymentAckBadge } from "./PaymentAckBadge";
 
 const fmt = (n: number) => n.toLocaleString("uz-UZ");
 
@@ -47,25 +49,49 @@ const extractRollback = (comment: string) => {
   return { isRollback: true, text };
 };
 
-const Badge = memo(({ text, tone }: { text: string; tone: "neutral" | "green" | "red" }) => {
-  const cls =
-    tone === "green"
-      ? "bg-emerald-500/15 text-emerald-400"
-      : tone === "red"
-        ? "bg-rose-500/15 text-rose-400"
-        : "bg-white/10 text-white/70";
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-semibold whitespace-nowrap ${cls}`}>
-      {text}
-    </span>
-  );
-});
+/**
+ * Qator belgilari guruhi (dizayn v2, 2crjWf7v): «Tuzatish» (`[ROLLBACK]` yozuvi), kuryer kvitansiyasi
+ * javobi, manba turi, to'lov turi, «Kirim/Chiqim». Maket: `courier-cashbox-my-all` / `courier-cashbox-my-transfers`
+ * — `.el-badge.el-tone-neutral` (to'lov turi, «Kirim»/«Chiqim»: ikonka katalogi — «badge neytral, rangni summa
+ * oladi»), tuzatish — `.el-badge-outline` «Tuzatish».
+ * Maketdan farq: «Kirim»/«Chiqim» badge'ida ↙/↗ ikonkasi yo'q — qatorning chap ikonkasi va sahifadagi
+ * Kirim/Chiqim kartalari hali v1 (Kirim ↗, Chiqim ↘); bitta ekranda qarama-qarshi strelkalar bo'lmasin,
+ * ma'noni matn beradi. Qatorning qolgan qismi hali v1 (umumiy widget: `/payments/main-cashbox`,
+ * `/payments/cash-detail/:id`, `/cash-box`).
+ */
+const HistoryRowBadges = memo(
+  ({
+    isRollback,
+    paymentAck,
+    sourceType,
+    cashboxType,
+    operationType,
+  }: {
+    isRollback: boolean;
+    paymentAck?: PaymentRow["payment_ack"];
+    sourceType: string;
+    cashboxType: string;
+    operationType?: string;
+  }) => {
+    const { t } = useTranslation("payments");
 
-const RollbackBadge = memo(() => (
-  <span className="inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-semibold whitespace-nowrap bg-violet-500/15 text-violet-300">
-    ROLLBACK
-  </span>
-));
+    return (
+      <div className="mt-1 flex flex-wrap items-center gap-2">
+        {isRollback && <Badge variant="outline">{t("historyCorrectionBadge")}</Badge>}
+        <PaymentAckBadge ack={paymentAck} />
+        {sourceType && (
+          <span className="max-w-80 truncate text-xs text-text-muted">
+            {getPaymentSourceTypeLabel(sourceType, t)}
+          </span>
+        )}
+        {cashboxType && <Badge>{labelCashboxType(cashboxType, t) || cashboxType}</Badge>}
+        {operationType && (
+          <Badge>{labelOperation(operationType, t) || operationType}</Badge>
+        )}
+      </div>
+    );
+  },
+);
 
 const HistoryRow = memo(
   ({ row, onClick }: { row: PaymentRow; onClick: (row: PaymentRow) => void }) => {
@@ -100,16 +126,13 @@ const HistoryRow = memo(
           <p className="text-[13px] font-bold text-gray-900 dark:text-white/90 truncate m-0">
             {created}
           </p>
-          <div className="flex items-center gap-2 mt-1 flex-wrap">
-            {commentInfo.isRollback && <RollbackBadge />}
-            {sourceType && (
-              <span className="text-[11px] text-gray-600 dark:text-white/55 truncate max-w-80">
-                {getPaymentSourceTypeLabel(sourceType, t)}
-              </span>
-            )}
-            {cashboxType && <Badge text={labelCashboxType(cashboxType, t) || cashboxType} tone="neutral" />}
-            {op && <Badge text={labelOperation(op, t) || op} tone={isIncome ? "green" : "red"} />}
-          </div>
+          <HistoryRowBadges
+            isRollback={commentInfo.isRollback}
+            paymentAck={row.payment_ack}
+            sourceType={sourceType}
+            cashboxType={cashboxType}
+            operationType={op}
+          />
           {commentInfo.text && (
             <p className="mt-1 text-[11px] leading-5 text-gray-500 dark:text-white/45 whitespace-pre-line">
               {commentInfo.text}

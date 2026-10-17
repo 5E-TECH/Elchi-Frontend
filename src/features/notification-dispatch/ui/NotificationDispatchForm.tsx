@@ -413,7 +413,8 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
                     onChange={(value?: string) => field.onChange(value ?? "")}
                     options={markets.map((market) => ({ value: String(market.id), label: market.name ?? `#${market.id}` }))}
                     loading={marketsQuery.isLoading}
-                    status={errors.telegram_market_id ? "error" : undefined}
+                    // Market ixtiyoriy (TgYRqaTk) — tanlovni bekor qilib shaxsiy chatga qaytish mumkin.
+                    allowClear
                     disabled={locked}
                     className="w-full"
                   />
@@ -422,7 +423,6 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
               <p className="m-0 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
                 {t("dispatch.telegramHint")}
               </p>
-              <FieldError message={errors.telegram_market_id?.message} />
             </div>
           )}
         </Section>

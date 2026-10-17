@@ -1,17 +1,10 @@
 import { memo, useCallback, useMemo, useState } from "react";
-import {
-  LayoutDashboard,
-  Plus,
-  ShoppingBag,
-  XCircle,
-  TrendingUp,
-} from "lucide-react";
+import { LayoutDashboard, Plus, ShoppingBag, XCircle, TrendingUp } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useDashboard } from "../../entities/dashboard";
 import { hasFailedPart } from "../../entities/dashboard/lib/partialFailure";
-import { useOrders } from "../../entities/orders";
 import { useSettings, DEFAULT_SETTINGS } from "../../entities/settings";
 import HeaderName from "../../shared/components/headerName";
 import PageContainer from "../../shared/ui/PageContainer";
@@ -20,7 +13,6 @@ import QueryErrorState from "../../shared/ui/QueryErrorState";
 import MetricCard, { MetricCardSkeleton } from "../../shared/ui/MetricCard";
 import TopPerformers from "../../widgets/dashboard-top-performers/ui/TopPerformers";
 import { DashboardPartError } from "../../widgets/dashboard-part-error/ui/DashboardPartError";
-import ExtraCostApprovalsCard from "./ui/ExtraCostApprovalsCard";
 import PerformanceChart from "../../widgets/dashboard-performance-chart/ui/PerformanceChart";
 import { getAllTimeRange } from "../../shared/lib/dateRange";
 import type { RootState } from "../../app/config/store";
@@ -29,9 +21,7 @@ import {
   formatNumber,
   ratio,
 } from "../../shared/config/designSystem";
-import { getActionErrorMessage } from "../../shared/lib/actionError";
-import { getBackendErrorMessage } from "../../shared/lib/backendError";
-import { notify } from "../../shared/lib/notify";
+import { ExtraCostApprovals } from "./ui/ExtraCostApprovals";
 
 // ─── MarketDashboardPage ──────────────────────────────────────────────────────
 
@@ -78,7 +68,6 @@ const MarketDashboardPage = () => {
 
   // ─── API so'rovlari ───────────────────────────────────────────────────────────
   const { getDashboard } = useDashboard();
-  const { useExtraCostApprovals, approveExtraCostApproval, rejectExtraCostApproval } = useOrders();
 
   const {
     data,
@@ -87,34 +76,6 @@ const MarketDashboardPage = () => {
     isError: dashboardError,
     refetch: refetchDashboard,
   } = getDashboard(analyticsParams, true, analyticsScope);
-
-  const {
-    data: approvalResponse,
-    isLoading: approvalsLoading,
-    isError: approvalsError,
-    error: approvalsErrorObject,
-    refetch: refetchApprovals,
-  } = useExtraCostApprovals("pending", true);
-  const extraCostApprovals = Array.isArray(approvalResponse?.data) ? approvalResponse.data : [];
-
-  // fix3 FE-ORD-02: tasdiqlash/rad etish rad javobi endi ko'rinadi (avval
-  // tugma jimgina "qaytib" qolardi va market nima bo'lganini bilmasdi).
-  // 1tnpaIqd: qaror atomik — so'rovni boshqa joyda (Telegram, boshqa oyna) allaqachon hal qilingan bo'lsa backend
-  // 400 «Bu so'rov allaqachon yakunlangan» qaytaradi: bu xato emas — xabar beriladi va ro'yxat yangilanadi.
-  const notifyApprovalError = useCallback(
-    (error: unknown) => {
-      const status = (error as { response?: { status?: number } } | null)?.response?.status;
-      if (status === 400 && /allaqachon yakunlangan/i.test(getBackendErrorMessage(error) ?? "")) {
-        notify.info(t("market.extra_cost_already_resolved"));
-        void refetchApprovals();
-        return;
-      }
-      const description = getActionErrorMessage(error, t("market.extra_cost_action_error"));
-      if (!description) return;
-      notify.error(t("common:error"), { description });
-    },
-    [refetchApprovals, t],
-  );
 
   // ─── Hisoblangan qiymatlar ────────────────────────────────────────────────────
   const orders = data?.data?.orders;
@@ -232,26 +193,8 @@ const MarketDashboardPage = () => {
         </div>
       )}
 
-      <ExtraCostApprovalsCard
-        approvals={extraCostApprovals}
-        loading={approvalsLoading}
-        // Kesh bor-u fon yangilanishi yiqilsa — ro'yxat qoladi (QueryBoundary qoidasi), xato faqat ma'lumot yo'qda.
-        error={approvalsError && !approvalResponse}
-        errorObject={approvalsErrorObject}
-        onRetry={() => void refetchApprovals()}
-        approvingId={
-          approveExtraCostApproval.isPending
-            ? String(approveExtraCostApproval.variables?.id ?? "")
-            : ""
-        }
-        rejectingId={
-          rejectExtraCostApproval.isPending
-            ? String(rejectExtraCostApproval.variables?.id ?? "")
-            : ""
-        }
-        onApprove={(id) => approveExtraCostApproval.mutate({ id }, { onError: notifyApprovalError })}
-        onReject={(id) => rejectExtraCostApproval.mutate({ id }, { onError: notifyApprovalError })}
-      />
+      {/* Qo'shimcha xarajat tasdiqlari — alohida v2 blok (sahifaning qolgan qismi v1). */}
+      <ExtraCostApprovals />
 
       {/* Marketga ruxsatli dashboard statistikasi */}
       {!dashboardError && statsFailed ? (

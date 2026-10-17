@@ -310,4 +310,9 @@
   ,"paymentConfirmMessage": "{{amount}} so'm — {{action}}: {{target}} ({{method}}). Tasdiqlangach pul o'tkaziladi va bekor qilib bo'lmaydi."
   ,"salaryConfirmTitle": "Maosh to'lovini tasdiqlang"
   ,"salaryConfirmDescription": "Tekshirib chiqing — tasdiqlangach, summa kassadan darhol chiqariladi va bekor qilib bo'lmaydi."
+  ,"paymentAckDisputed": "Noto'g'ri"
+  ,"paymentAckDisputedHint": "Kuryer botdagi kvitansiyaga «Noto'g'ri» deb javob berdi"
+  ,"paymentAckConfirmed": "Tasdiqlangan"
+  ,"paymentAckConfirmedHint": "Kuryer botdagi kvitansiyani tasdiqladi"
+  ,"historyCorrectionBadge": "Tuzatish"
 }

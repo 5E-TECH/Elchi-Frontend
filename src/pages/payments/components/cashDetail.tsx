@@ -25,6 +25,7 @@ import {
 } from "./lib/paymentIdempotency";
 import { RECEIVE_BRANCHES_PARAMS } from "./lib/receiveOptions";
 import CashboxRolePageLayout from "./CashboxRolePageLayout";
+import { toPaymentAck } from "./paymentAck";
 import CashboxActionFormCard, {
   type CashboxActionFormValues,
 } from "./CashboxActionFormCard";
@@ -763,6 +764,7 @@ const CashDetail = () => {
           toOptionalString(item["method"]),
         payment_date: getHistoryDate(item),
         comment: toOptionalString(item["comment"]),
+        payment_ack: toPaymentAck(item["payment_ack"]),
         createdAt: toOptionalString(item["createdAt"]),
         created_at: toOptionalString(item["created_at"]),
         cashbox: item["cashbox"] as PaymentRow["cashbox"],

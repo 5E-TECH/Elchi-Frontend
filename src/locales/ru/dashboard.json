@@ -199,16 +199,42 @@
     "extra_cost_on_approve_cancel": "При подтверждении заказ будет отменён",
     "extra_cost_requester": "Запросил",
     "extra_cost_proofs": "Доказательства",
-    "extra_cost_list": "Ожидающие запросы",
-    "extra_cost_item": "{{action}}, заказ №{{id}}",
-    "extra_cost_amount": "Запрошенная сумма",
-    "extra_cost_proofs_count": "{{value}} шт.",
-    "extra_cost_no_proofs": "Нет",
     "extra_cost_approve": "Подтвердить",
     "extra_cost_reject": "Отклонить",
     "extra_cost_approving": "Подтверждение",
     "extra_cost_rejecting": "Отклонение",
     "extra_cost_action_error": "Не удалось выполнить запрос. Попробуйте снова.",
-    "extra_cost_already_resolved": "Этот запрос уже решён — список обновлён"
+    "extra_cost_requested_amount": "Запрошенная сумма",
+    "extra_cost_proofs_count": "{{count}} шт.",
+    "extra_cost_proofs_none": "Нет",
+    "extra_cost_list_label": "Ожидающие запросы",
+    "extra_cost_item_label": "{{action}}, заказ №{{id}}",
+    "extra_cost_owner_only": "Решение принимает только владелец маркета",
+    "extra_cost_role": {
+      "courier": "Курьер",
+      "manager": "Менеджер",
+      "registrator": "Регистратор",
+      "admin": "Админ",
+      "superadmin": "Суперадмин",
+      "market": "Маркет"
+    },
+    "extra_cost_confirm_title": "Подтвердите доп. расход",
+    "extra_cost_confirm_description": "К заказу №{{id}} будет записан доп. расход, и запрошенное действие будет выполнено.",
+    "extra_cost_reject_title": "Отклонить запрос",
+    "extra_cost_reject_reason": "Причина отказа",
+    "extra_cost_reject_reason_placeholder": "Выберите причину",
+    "extra_cost_reject_reasons": {
+      "TOO_EXPENSIVE": "Слишком дорого",
+      "NOT_AGREED": "Не согласовано",
+      "NO_PROOF": "Нет доказательств",
+      "DUPLICATE": "Повторный запрос"
+    },
+    "extra_cost_reject_comment": "Комментарий",
+    "extra_cost_reject_comment_placeholder": "Например, цена выше согласованной",
+    "extra_cost_reject_note": "При отказе действие не выполняется, статус заказа не меняется.",
+    "extra_cost_approved": "Доп. расход подтверждён",
+    "extra_cost_rejected": "Запрос отклонён",
+    "extra_cost_already_decided": "Запрос уже решён",
+    "extra_cost_already_decided_hint": "Этот запрос уже решён в другом месте (например, в Telegram). Список обновлён."
   }
 }
