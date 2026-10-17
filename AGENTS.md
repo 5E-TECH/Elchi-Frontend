@@ -29,7 +29,8 @@ Ilovada hozir ikki xil sahifa bor:
 - **Eski (v1)** sahifalar. Ular eski nomlar (alias) orqali yangi ranglarda ko'rinadi, lekin tuzilmasi va
   komponentlari eski.
 
-Trello'dagi «Dizayn v2» kartalari bosqichlarni kuzatadi.
+Trello'dagi «Dizayn v2» kartalari bosqichlarni kuzatadi. **Joriy holat, ega qarorlari jurnali va navbatdagi ish:
+`docs/DESIGN_V2_HANDOFF.md`** — dizayn v2 ishini davom ettiruvchi har sessiya/agent avval shuni o'qiydi.
 
 ## Dizaynni qayerdan ko'rish
 
