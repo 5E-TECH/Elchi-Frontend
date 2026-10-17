@@ -81,7 +81,6 @@
   "counterparty": "Qarshi tomon",
   "toBeReceived": "Qabul qilinishi kerak",
   "filters": "Filtrlar",
-  "clearFilters": "Filterlarni tozalash",
   "selectPlaceholder": "Tanlang",
   "selectCourierDescription": "Kuryerni tanlang",
   "selectEmployee": "Xodimni tanlang",
@@ -94,19 +93,13 @@
   "transactions": "Tranzaksiyalar",
   "startDate": "Boshlanish",
   "endDate": "Tugash",
-  "countLabel": "{{count}} ta",
   "totalBalanceLabel": "Umumiy balans",
   "hide": "Yashirish",
   "show": "Ko'rsatish",
-  "cashBalance": "Naqd balans",
-  "cardBalance": "Karta balans",
   "name": "Ism",
   "phone": "Telefon",
   "role": "Rol",
-  "amountLabel": "Summa",
   "comment": "Izoh",
-  "previousPage": "Oldingi sahifa",
-  "nextPage": "Keyingi sahifa",
   "createdBy": "Yaratgan",
   "amount": "Summa",
   "paymentDate": "To'lov sanasi",
@@ -125,17 +118,14 @@
   "toBePaid": "To'lanishi kerak",
   "paid": "To'langan",
   "address": "Manzil",
-  "qty": "Qty",
-  "detailError": "Detail yuklanmadi",
-  "commentLabel": "Comment",
+  "qty": "Soni",
   "closeShiftTitle": "Smenani yopish",
   "optionalComment": "Izoh (ixtiyoriy)",
-  "paymentTypeRequired": "payment type majburiy",
+  "paymentTypeRequired": "To'lov turi majburiy",
   "commentRequired": "Izoh majburiy",
   "amountRequired": "Summa majburiy",
   "cashbox": "Kassa",
   "mainCashbox": "Asosiy kassa",
-  "cashDetail": "Kassa tafsilotlari",
   "history": "Tarix",
   "income": "Kirim",
   "expense": "Chiqim",
@@ -143,17 +133,10 @@
   "cash": "Naqd",
   "card": "Karta",
   "other": "Boshqa",
-  "openShift": "Smena ochish",
-  "closeShift": "Smena yopish",
-  "currentShift": "Joriy smena",
   "fillCashbox": "Kassani to'ldirish",
   "spendFromCashbox": "Kassadan xarajat",
   "courierToBranchTransfer": "Kuryerdan filialga o'tkazma",
   "hqToMarketTransfer": "HQdan marketga o'tkazma",
-  "operationType": "Operatsiya turi",
-  "sourceType": "Manba turi",
-  "cashboxType": "Kassa turi",
-  "financialBalance": "Moliyaviy balans",
   "cashDetailTypeUnknown": "Kassa turi aniqlanmadi — xavfsizlik uchun to'lov formasi ko'rsatilmaydi. Kassalar ro'yxatidan qaytadan oching.",
   "cashDetailNotMarketCashbox": "Bu market kassasi emas — to'lov yuborilmadi.",
   "financialBalanceSourceManualIncome": "Qo'lda kirim",
@@ -162,22 +145,17 @@
   "financialBalanceSourceCorrection": "Tuzatish (rollback)",
   "financialBalanceSourceBills": "Hisob-fakturalar",
   "report": "Hisobot",
-  "exportReport": "Hisobotni eksport qilish",
   "commentPlaceholder": "Izoh...",
   "paymentType": "To'lov turi",
-  "paymentTypePlaceholder": "To'lov turini tanlang",
   "amountPositiveValidation": "Summa 0 dan katta bo'lishi kerak",
   "loadingLabel": "Yuklanmoqda...",
-  "cancelLabel": "Bekor qilish",
   "expenseSection": "Xarajat",
   "fromWhere": "Qayerdan",
   "toWhere": "Qayerga",
   "summaryIncome": "Jami kirim",
   "summaryExpense": "Jami chiqim",
   "totalBalance": "Jami balans",
-  "balanceVisible": "Balans ko'rinadi",
   "delivery": "Yetkazish",
-  "financeHistory": "Moliyaviy tarix",
   "fillSuccess": "Kassa muvaffaqiyatli to'ldirildi",
   "fillError": "Kassani to'ldirishda xatolik yuz berdi",
   "spendSuccess": "Xarajat muvaffaqiyatli saqlandi",
@@ -185,10 +163,7 @@
   "closeShiftSuccess": "Smena muvaffaqiyatli yopildi",
   "closeShiftError": "Smenani yopishda xatolik yuz berdi",
   "currency": "so'm"
-  ,"payAction": "To'lash"
   ,"userFallback": "Foydalanuvchi"
-  ,"receiveFromCourier": "Kuryerdan qabul qilish"
-  ,"receiveFromBranchManager": "Branch managerdan qabul qilish"
   ,"payToMarket": "Marketga to'lov"
   ,"paySalary": "Maosh to'lash"
   ,"monthlySalary": "Oylik maosh"
@@ -220,9 +195,8 @@
   ,"statusPartlyPaid": "Qisman to'langan"
   ,"statusNew": "Yangi"
   ,"statusReceived": "Qabul qilingan"
-  ,"deliveryCenter": "Markazga"
   ,"region": "Hudud"
-  ,"no": "No"
+  ,"no": "№"
   ,"currencyAmountSuffix": "so'm"
   ,"selectReceiveSourceDescription": "Filial menejeri yoki HQ kuryerini tanlang"
   ,"hqCourierLabel": "HQ kuryeri"

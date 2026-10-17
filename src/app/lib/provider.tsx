@@ -1,4 +1,3 @@
-import axios from "axios";
 import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { memo, Suspense, type ReactNode } from "react";
 import { BrowserRouter } from "react-router-dom";
@@ -18,6 +17,7 @@ import SettingsSync from "../providers/SettingsSync";
 import { PushSync } from "../../features/push-notifications";
 import ScanFeedbackOverlay from "../../shared/components/ScanFeedbackOverlay";
 import { emitQueryError } from "../../shared/lib/queryErrorEvents";
+import { shouldRetryQuery } from "../../shared/lib/queryRetry";
 
 const queryClient = new QueryClient({
   // 4xx/5xx ham foydalanuvchiga ko'rinsin — sahifa `isError` o'qimasa ham.
@@ -30,10 +30,9 @@ const queryClient = new QueryClient({
       gcTime: 10 * 60 * 1000,
       refetchOnWindowFocus: false,
       refetchOnReconnect: true,
-      // Vaqt chegarasiga (20 s) yetgan so'rov qayta urinilmaydi — aks holda
-      // foydalanuvchi xato holatini 40 s kutardi (qJjLP109). Qolganlari 1 marta.
-      retry: (failureCount, error) =>
-        failureCount < 1 && !(axios.isAxiosError(error) && error.code === "ECONNABORTED"),
+      // Vaqt chegarasi (20 s) va 4xx (408, 429 dan tashqari) qayta urinilmaydi; tarmoq xatosi va 5xx — 1 marta
+      // (D-08: har 400/404 ikki marta so'ralardi). Qoida va testlari — `shared/lib/queryRetry.ts`.
+      retry: shouldRetryQuery,
     },
   },
 });

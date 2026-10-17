@@ -55,6 +55,7 @@ import {
   OLD_MAIL_STATUS_FILTERS_COURIER,
   OLD_MAILS_BATCH_MODE_ALL,
   OLD_MAILS_BATCH_MODE_KEY,
+  OLD_MAILS_EXPORT_MAX_PAGES,
   OLD_MAILS_PAGE_MAX,
   readOldMailsFilters,
   readOldMailsPage,
@@ -490,16 +491,19 @@ const OldMails = ({ layout }: OldMailsProps) => {
     exportingRef.current = true;
     setExporting(true);
     try {
-      const items: OldMailSource[] = isAllBatchMode
-        ? filteredBatches
-        : (
-            await fetchAllOldMailPages(
-              (params) => fetchOldMails(isCourier, params),
-              buildOldMailsQuery({ filters, page: 1, limit: OLD_MAILS_PAGE_MAX, isCourier }),
-            )
-          ).rows;
+      const { rows: items, capped }: { rows: OldMailSource[]; capped: boolean } = isAllBatchMode
+        ? { rows: filteredBatches, capped: false }
+        : await fetchAllOldMailPages(
+            (params) => fetchOldMails(isCourier, params),
+            buildOldMailsQuery({ filters, page: 1, limit: OLD_MAILS_PAGE_MAX, isCourier }),
+          );
       exportRows(items);
-      notify.success(t("mails:oldExportSuccess", { count: items.length }));
+      // Chegaraga yetdi (serverda yana sahifa bor): fayl beriladi, lekin jim kesilmaydi — ogohlantirish.
+      if (capped) {
+        notify.warning(t("old.exportCapped", { limit: count(OLD_MAILS_EXPORT_MAX_PAGES * OLD_MAILS_PAGE_MAX) }));
+      } else {
+        notify.success(t("mails:oldExportSuccess", { count: items.length }));
+      }
     } catch {
       notify.error(t("old.exportError"));
     } finally {

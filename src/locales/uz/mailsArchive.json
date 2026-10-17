@@ -28,6 +28,7 @@
     "export": "Excelga yuklash",
     "exportLoading": "Excel tayyorlanmoqda",
     "exportError": "Excel faylini tayyorlab bo'lmadi",
+    "exportCapped": "Fayl to'liq emas: faqat birinchi {{limit}} qator yuklandi. Filtrni toraytiring.",
     "filters": {
       "label": "Eski pochtalar filtri",
       "region": "Viloyat",

@@ -314,6 +314,38 @@ describe("MyCashboxPage — holatlar", () => {
     expect(await screen.findByText("Jami 3 ta operatsiya")).toBeInTheDocument();
   });
 
+  it("⭐ D-03: sahifa almashganda shell skrolli tarix kartasining boshiga qaytadi (pastda qolib ketmaydi)", async () => {
+    const rows = Array.from({ length: 12 }, (_, index) => ({
+      id: String(900 + index),
+      operation_type: "income",
+      source_type: "sell",
+      source_id: String(10_400 + index),
+      amount: 1000 * (index + 1),
+      payment_method: "cash",
+      createdAt: at(7, 8 + (index % 10)),
+    }));
+    respond("couriers", 0, rows);
+    const user = userEvent.setup();
+    renderWithProviders(
+      <main>
+        <div data-shell-slot="content">
+          <MyCashboxPage />
+        </div>
+      </main>,
+      { route: "/cash-box", preloadedState: asRole("courier") },
+    );
+    await historyTable();
+    const main = document.querySelector("main") as HTMLElement;
+    const card = screen.getByRole("region", { name: "Operatsiyalar tarixi" });
+    main.scrollTop = 900;
+    main.getBoundingClientRect = () => ({ top: 64 }) as DOMRect;
+    card.getBoundingClientRect = () => ({ top: 64 - 400 }) as DOMRect;
+
+    await user.click(screen.getByRole("button", { name: "2" }));
+
+    expect(main.scrollTop).toBe(900 - 400 - 16);
+  });
+
   it("«Summa» bo'yicha saralash — mijoz tomonida", async () => {
     respond("couriers", 0, [
       { id: "1", operation_type: "income", source_type: "sell", source_id: "1", amount: 5_000, createdAt: at(8, 9) },

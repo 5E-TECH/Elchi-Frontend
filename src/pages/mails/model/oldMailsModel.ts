@@ -186,6 +186,12 @@ export const effectiveOldMailsStatus = (
 export const OLD_MAILS_PAGE_MAX = 100;
 
 /**
+ * Excel uchun eng ko'p sahifa (`fetchAllOldMailPages`) — 200 × 100 = 20 000 qator. Undan ko'p bo'lsa fayl
+ * baribir beriladi, lekin «Fayl to'liq emas» ogohlantirishi bilan (`capped: true`).
+ */
+export const OLD_MAILS_EXPORT_MAX_PAGES = 200;
+
+/**
  * URL holati → backend pochta holati (`sent | received | canceled | canceled_received`). Eski havolalar
  * (`cancelled`, `rejected`, `returned`, `on the road` …) tur orqali ishlayveradi; bo'sh — filtr yo'q.
  */
@@ -268,7 +274,7 @@ export const readOldMailsPage = <T = OldMailSource>(response: OldMailsPageRespon
 export const fetchAllOldMailPages = async <T extends { id: string | number }>(
   fetchPage: (params: GetOldMailsParams) => Promise<OldMailsPageResponse<T>>,
   query: GetOldMailsParams,
-  { pageSize = OLD_MAILS_PAGE_MAX, maxPages = 200 }: { pageSize?: number; maxPages?: number } = {},
+  { pageSize = OLD_MAILS_PAGE_MAX, maxPages = OLD_MAILS_EXPORT_MAX_PAGES }: { pageSize?: number; maxPages?: number } = {},
 ): Promise<{ rows: T[]; capped: boolean }> => {
   const rows: T[] = [];
   const seen = new Set<string>();

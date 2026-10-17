@@ -3,7 +3,7 @@ import { memo, useCallback, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Check, PackageCheck, RotateCcw, SearchX, Undo2, X } from "lucide-react";
+import { Check, PackageCheck, RotateCcw, Undo2, X } from "lucide-react";
 import type { RootState } from "../../../app/config/store";
 import { readProofFiles } from "../../../entities/order";
 import { useOrders } from "../../../entities/orders";
@@ -18,7 +18,7 @@ import { getSellPaymentStatus, SELL_PAYMENT_NOTICE_KEYS, type SellOrderPayload }
 import { InitiateReturnModal, MarkReturnedModal } from "../../../features/order-return";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { notify } from "../../../shared/lib/notify";
-import { Button, EmptyState, QueryBoundary } from "../../../shared/ui/primitives";
+import { Button, QueryBoundary } from "../../../shared/ui/primitives";
 import { OrderMeta, readOrderMeta } from "../../../widgets/order-meta";
 import { OrderTracking } from "../../../widgets/order-tracking";
 import { getSidebarConfigForUser } from "../../../widgets/Sidebar/model/menuConfig";
@@ -30,6 +30,7 @@ import { AddressCard } from "./detail/AddressCard";
 import { CourierContactCard, CourierPaymentCard, CourierProductsCard } from "./detail/CourierCards";
 import { CustomerCard } from "./detail/CustomerCard";
 import { DetailAlerts } from "./detail/DetailAlerts";
+import { DetailErrorState, DetailNotFound } from "./detail/DetailErrorState";
 import { DetailHeader } from "./detail/DetailHeader";
 import { DetailSkeleton } from "./detail/DetailSkeleton";
 import {
@@ -316,6 +317,8 @@ const NewOrderUpdate = () => {
     isNewOrdersRoute ? null : (
       <OrderMeta order={order} role={role} self={user} canOpenMails={canOpenMails} className={className} />
     );
+  /** «Buyurtma topilmadi» holatidagi qaytish manzili — sarlavhadagi «←» bilan bir ro'yxat. */
+  const notFoundBackTo = marketId ? `/new-orders/${marketId}` : "/orders";
   const newOrdersBackLabel = isNewOrdersRoute
     ? access.layout === "market"
       ? t("orderEdit.backToNewOrders")
@@ -427,7 +430,11 @@ const NewOrderUpdate = () => {
         query={{ ...orderQuery, data: order }}
         keepPreviousData={false}
         loading={<DetailSkeleton />}
-        empty={<EmptyState icon={SearchX} title={t("notFound")} size="page" />}
+        // D-13: bo'sh javob va 404 — «Buyurtma topilmadi» («Buyurtmalarga qaytish»); boshqa xato — «Qayta urinish».
+        empty={<DetailNotFound orderId={orderId} backTo={notFoundBackTo} />}
+        error={(error, retry) => (
+          <DetailErrorState orderId={orderId} backTo={notFoundBackTo} error={error} onRetry={retry} />
+        )}
         size="page"
       >
         {(detail) =>

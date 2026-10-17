@@ -1,6 +1,6 @@
 // dizayn-v2: market-cashbox-my, courier-cashbox-my-all, courier-cashbox-my-transfers
 // Menejer varianti: maket yo'q — eng yaqini market-cashbox-my (route-map roleNotes; «(maket yo'q) market-cashbox-my»).
-import { memo, useCallback, useId, useMemo, useState, type ReactNode } from "react";
+import { memo, useCallback, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -29,6 +29,7 @@ import {
   formatSignedMoneyLocalized,
   resolveMoneyLanguage,
 } from "../../../shared/lib/formatMoney";
+import { scrollShellContentToTop } from "../../../shared/lib/usePagination";
 import {
   Badge,
   Button,
@@ -434,6 +435,12 @@ const MyCashboxPage = () => {
   const [sort, setSort] = useState<DataTableSort | null>(DEFAULT_SORT);
   const [page, setPage] = useState(1);
   const [selectedRow, setSelectedRow] = useState<PaymentRow | null>(null);
+  // Sahifa almashganda tarix kartasining boshi ko'rinsin (D-03; karta balans kartasi ostida).
+  const historyCardRef = useRef<HTMLElement>(null);
+  const handlePageChange = (next: number) => {
+    setPage(next);
+    scrollShellContentToTop(historyCardRef.current);
+  };
 
   // C2 / CODE-22: sana oddiy `YYYY-MM-DD` — backend uni Toshkent kuni
   // (00:00–23:59:59.999, +05:00) deb oladi. Ilgari `T00:00:00.000Z` (UTC)
@@ -853,7 +860,7 @@ const MyCashboxPage = () => {
         page={currentPage}
         pageSize={PAGE_SIZE}
         total={total}
-        onPageChange={setPage}
+        onPageChange={handlePageChange}
         summary={(range) =>
           t(
             historyTab === "payments" ? "v2MyCashbox.history.paginationTransfers" : "v2Common.paginationOperations",
@@ -920,6 +927,7 @@ const MyCashboxPage = () => {
               />
 
               <Card
+                ref={historyCardRef}
                 as="section"
                 padding="none"
                 title={t("v2MyCashbox.history.title")}

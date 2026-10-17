@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useCashBox } from "../../entities/payments";
 import { useFinanceCoverage } from "../../entities/payments/financeCoverage";
 import { useUser } from "../../entities/user/api/userApi";
-import { usePagination } from "../../shared/lib/usePagination";
+import { scrollShellContentToTop, usePagination } from "../../shared/lib/usePagination";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
 import { formatNumberLocalized } from "../../shared/lib/formatMoney";
 import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
@@ -302,6 +302,16 @@ const Payments = () => {
     limitParam: "paymentsLimit",
   });
   const previousFiltersKeyRef = useRef("");
+  // Sahifa / sahifadagi qatorlar soni almashganda tarix kartasining boshi ko'rinsin (D-03; karta KPI ostida).
+  const historyCardRef = useRef<HTMLElement>(null);
+  const handleHistoryPageChange = (next: number) => {
+    setPage(next);
+    scrollShellContentToTop(historyCardRef.current);
+  };
+  const handleHistoryLimitChange = (next: number) => {
+    setLimit(next);
+    scrollShellContentToTop(historyCardRef.current);
+  };
   // Oyna turi yopilish harakati davomida saqlanadi (sarlavha almashib ketmasin).
   const [pickerKind, setPickerKind] = useState<SettlementPickerKind>(isManagerRole ? "courier" : "receive");
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -750,7 +760,7 @@ const Payments = () => {
         />
       ) : null}
 
-      <Card as="section" padding="none" aria-label={t("v2Overview.history.label")}>
+      <Card ref={historyCardRef} as="section" padding="none" aria-label={t("v2Overview.history.label")}>
         <Tabs<OperationTab>
           items={tabItems}
           value={operationTab}
@@ -767,8 +777,8 @@ const Payments = () => {
           isFetching={historyQuery.isFetching}
           onRetry={() => void refetchHistory()}
           pagination={pagination}
-          onPageChange={setPage}
-          onItemsPerPageChange={setLimit}
+          onPageChange={handleHistoryPageChange}
+          onItemsPerPageChange={handleHistoryLimitChange}
           currentPage={page}
           viewerRole={role}
           onClearFilters={activeCount > 0 ? clearFilters : undefined}

@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-balance-analysis, admin-balance-analysis, tizim-charts
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo, useRef, useState } from "react";
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -22,6 +22,7 @@ import {
   formatPercentLocalized,
   formatSignedMoneyLocalized,
 } from "../../../shared/lib/formatMoney";
+import { scrollShellContentToTop } from "../../../shared/lib/usePagination";
 import {
   Badge,
   Card,
@@ -191,6 +192,12 @@ const AnalysisTab = ({ range: rangeProp, onRangeChange }: AnalysisTabProps) => {
   const [ownRange, setOwnRange] = useState<ISODateRange>(getTodayRange);
   const range = rangeProp ?? ownRange;
   const [page, setPage] = useState(1);
+  // Sahifa almashganda ro'yxat kartasining boshi ko'rinsin (D-03; karta grafiklar ostida).
+  const topCardRef = useRef<HTMLElement>(null);
+  const handlePageChange = (next: number) => {
+    setPage(next);
+    scrollShellContentToTop(topCardRef.current);
+  };
 
   const changeRange = (next: ISODateRange) => {
     setPage(1);
@@ -388,6 +395,7 @@ const AnalysisTab = ({ range: rangeProp, onRangeChange }: AnalysisTabProps) => {
       </QueryBoundary>
 
       <Card
+        ref={topCardRef}
         padding="none"
         title={t("v2Balance.analysis.top.title")}
         description={t("v2Balance.analysis.top.subtitle")}
@@ -402,7 +410,7 @@ const AnalysisTab = ({ range: rangeProp, onRangeChange }: AnalysisTabProps) => {
               page={pagination.page}
               pageSize={pagination.limit}
               total={pagination.total}
-              onPageChange={setPage}
+              onPageChange={handlePageChange}
               summary={(r) => t("v2Balance.analysis.top.pagination", r)}
             />
           ) : undefined

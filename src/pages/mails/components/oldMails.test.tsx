@@ -335,6 +335,24 @@ describe("OldMails — xodim (pochtalar)", () => {
     expect(mocks.exportOldMailsToExcel).not.toHaveBeenCalled();
   });
 
+  it("⭐ Excel chegarasi (200 sahifa = 20 000 qator): fayl beriladi, lekin «Fayl to'liq emas» ogohlantirishi bilan", async () => {
+    const user = userEvent.setup();
+    mocks.useGetOldMails.mockReturnValue(mailsResult(MAILS, { total: 20_050 }));
+    pagedFetch(20_050);
+    renderOld("admin", "/mails/old", "card");
+
+    await user.click(screen.getByRole("button", { name: "Excelga yuklash" }));
+
+    expect(
+      await screen.findByText("Fayl to'liq emas: faqat birinchi 20 000 qator yuklandi. Filtrni toraytiring."),
+    ).toBeInTheDocument();
+    // 201-sahifa so'ralmaydi, fayl baribir yuklanadi; «N ta yuklandi» muvaffaqiyat xabari chiqmaydi.
+    expect(mocks.fetchOldMails).toHaveBeenCalledTimes(200);
+    expect(mocks.exportOldMailsToExcel).toHaveBeenCalledTimes(1);
+    expect(mocks.exportOldMailsToExcel.mock.calls[0][0].rows).toHaveLength(20_000);
+    expect(screen.queryByText(/ta eski pochta Excel fayliga yuklandi/)).not.toBeInTheDocument();
+  });
+
   it("writes a filter to the URL, resets the page to 1 and asks the server again", async () => {
     const user = userEvent.setup();
     renderOld("admin", "/mails/old?page=2", "card");

@@ -39,6 +39,7 @@ import {
   resolveMoneyLanguage,
 } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
+import { scrollShellContentToTop } from "../../../shared/lib/usePagination";
 import {
   Badge,
   Button,
@@ -337,6 +338,8 @@ const MainCashbox = () => {
   const [historyPage, setHistoryPage] = useState(1);
   const [historyPageSize, setHistoryPageSize] = useState<number>(HISTORY_PAGE_SIZES[0]);
   const [selectedRow, setSelectedRow] = useState<PaymentRow | null>(null);
+  // Tarix sahifasi almashganda karta boshi ko'rinsin (D-03; tarix balans, amallar va davrlar ostida).
+  const historyCardRef = useRef<HTMLElement>(null);
   // Qo'lda operatsiya (to'ldirish/xarajat) yuborilmoqda — ikkinchi yuborish e'tiborsiz.
   const manualPendingRef = useRef(false);
 
@@ -1307,6 +1310,7 @@ const MainCashbox = () => {
 
   const historyCard = (
     <Card
+      ref={historyCardRef}
       padding="none"
       title={t("v2MainCashbox.history.title")}
       description={historyDescription}
@@ -1322,10 +1326,14 @@ const MainCashbox = () => {
             page={currentPage}
             pageSize={historyPageSize}
             total={historyRows.length}
-            onPageChange={setHistoryPage}
+            onPageChange={(next) => {
+              setHistoryPage(next);
+              scrollShellContentToTop(historyCardRef.current);
+            }}
             onPageSizeChange={(size) => {
               setHistoryPageSize(size);
               setHistoryPage(1);
+              scrollShellContentToTop(historyCardRef.current);
             }}
             pageSizeOptions={HISTORY_PAGE_SIZES}
             summary={(range) => t("v2Common.paginationOperations", range)}

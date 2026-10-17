@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-payments-cash-detail-courier, superadmin-payments-cash-detail-market, superadmin-payments-cash-detail-branch, admin-payments-cash-detail-courier, admin-payments-cash-detail-market, admin-payments-cash-detail-branch, manager-payments-cash-detail-courier, manager-payments-cash-detail-branch
-import { memo, useState } from "react";
+import { memo, useRef, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, ReceiptText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -16,6 +16,7 @@ import {
 import { formatSignedMoneyLocalized } from "../../../shared/lib/formatMoney";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { cx } from "../../../shared/lib/cx";
+import { scrollShellContentToTop } from "../../../shared/lib/usePagination";
 import {
   Badge,
   Card,
@@ -199,6 +200,12 @@ const PaymentHistoryList = ({
   const viewerRole = useSelector((state: RootState) => state.role.role);
   const [selectedRow, setSelectedRow] = useState<PaymentRow | null>(null);
   const [page, setPage] = useState(1);
+  // Sahifa almashganda ro'yxat boshi ko'rinsin (D-03; kassa tafsilotida tarix forma va balans harakati ostida).
+  const listRef = useRef<HTMLUListElement>(null);
+  const handlePageChange = (next: number) => {
+    setPage(next);
+    scrollShellContentToTop(listRef.current);
+  };
   const rows = data ?? [];
   // Ro'yxat almashsa (filtr, tab, to'lovdan keyin yangilanish) — 1-sahifa (effektsiz, render paytida).
   const [seenRows, setSeenRows] = useState(rows);
@@ -221,7 +228,7 @@ const PaymentHistoryList = ({
   ) : rows.length === 0 ? (
     <EmptyState size="card" icon={ReceiptText} title={emptyText ?? t("v2CashDetail.history.empty")} />
   ) : (
-    <ul className="m-0 flex list-none flex-col divide-y divide-border p-0">
+    <ul ref={listRef} className="m-0 flex list-none flex-col divide-y divide-border p-0">
       {pageRows.map((row) => (
         <HistoryRow
           key={row.id}
@@ -240,7 +247,7 @@ const PaymentHistoryList = ({
         page={currentPage}
         pageSize={size}
         total={rows.length}
-        onPageChange={setPage}
+        onPageChange={handlePageChange}
         summary={(range) => t("v2Common.paginationOperations", range)}
       />
     ) : null;

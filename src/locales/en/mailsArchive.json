@@ -30,6 +30,7 @@
     "export": "Export to Excel",
     "exportLoading": "Preparing Excel",
     "exportError": "Couldn't prepare the Excel file",
+    "exportCapped": "The file is incomplete: only the first {{limit}} rows were exported. Narrow the filter.",
     "filters": {
       "label": "Old mails filter",
       "region": "Region",

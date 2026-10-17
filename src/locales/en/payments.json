@@ -81,7 +81,6 @@
   "counterparty": "Counterparty",
   "toBeReceived": "To be received",
   "filters": "Filters",
-  "clearFilters": "Clear filters",
   "selectPlaceholder": "Select",
   "selectCourierDescription": "Select a courier",
   "selectEmployee": "Select employee",
@@ -94,19 +93,13 @@
   "transactions": "Transactions",
   "startDate": "Start date",
   "endDate": "End date",
-  "countLabel": "{{count}} items",
   "totalBalanceLabel": "Total balance",
   "hide": "Hide",
   "show": "Show",
-  "cashBalance": "Cash balance",
-  "cardBalance": "Card balance",
   "name": "Name",
   "phone": "Phone",
   "role": "Role",
-  "amountLabel": "Amount",
   "comment": "Comment",
-  "previousPage": "Previous page",
-  "nextPage": "Next page",
   "createdBy": "Created by",
   "amount": "Amount",
   "paymentDate": "Payment date",
@@ -126,8 +119,6 @@
   "paid": "Paid",
   "address": "Address",
   "qty": "Qty",
-  "detailError": "Failed to load detail",
-  "commentLabel": "Comment",
   "closeShiftTitle": "Close shift",
   "optionalComment": "Comment (optional)",
   "paymentTypeRequired": "Payment type is required",
@@ -135,7 +126,6 @@
   "amountRequired": "Amount is required",
   "cashbox": "Cashbox",
   "mainCashbox": "Main cashbox",
-  "cashDetail": "Cashbox details",
   "history": "History",
   "income": "Income",
   "expense": "Expense",
@@ -143,17 +133,10 @@
   "cash": "Cash",
   "card": "Card",
   "other": "Other",
-  "openShift": "Open shift",
-  "closeShift": "Close shift",
-  "currentShift": "Current shift",
   "fillCashbox": "Fill cashbox",
   "spendFromCashbox": "Spend from cashbox",
   "courierToBranchTransfer": "Courier to branch transfer",
   "hqToMarketTransfer": "HQ to market transfer",
-  "operationType": "Operation type",
-  "sourceType": "Source type",
-  "cashboxType": "Cashbox type",
-  "financialBalance": "Financial balance",
   "cashDetailTypeUnknown": "Cashbox type could not be determined — the payment form is hidden for safety. Open the cashbox again from the list.",
   "cashDetailNotMarketCashbox": "This is not a market cashbox — the payment was not sent.",
   "financialBalanceSourceManualIncome": "Manual income",
@@ -162,22 +145,17 @@
   "financialBalanceSourceCorrection": "Correction (rollback)",
   "financialBalanceSourceBills": "Invoices",
   "report": "Report",
-  "exportReport": "Export report",
   "commentPlaceholder": "Comment...",
   "paymentType": "Payment type",
-  "paymentTypePlaceholder": "payment type",
   "amountPositiveValidation": "Amount must be greater than 0",
   "loadingLabel": "Loading...",
-  "cancelLabel": "Cancel",
   "expenseSection": "Expense",
   "fromWhere": "From where",
   "toWhere": "To where",
   "summaryIncome": "Total income",
   "summaryExpense": "Total expense",
   "totalBalance": "Total balance",
-  "balanceVisible": "Balance visible",
   "delivery": "Delivery",
-  "financeHistory": "Financial history",
   "fillSuccess": "Cashbox filled successfully",
   "fillError": "An error occurred while filling the cashbox",
   "spendSuccess": "Expense saved successfully",
@@ -185,10 +163,7 @@
   "closeShiftSuccess": "Shift closed successfully",
   "closeShiftError": "An error occurred while closing the shift",
   "currency": "UZS"
-  ,"payAction": "Pay"
   ,"userFallback": "User"
-  ,"receiveFromCourier": "Receive from courier"
-  ,"receiveFromBranchManager": "Receive from branch manager"
   ,"payToMarket": "Pay to market"
   ,"paySalary": "Pay salary"
   ,"monthlySalary": "Monthly salary"
@@ -220,7 +195,6 @@
   ,"statusPartlyPaid": "Partly paid"
   ,"statusNew": "New"
   ,"statusReceived": "Received"
-  ,"deliveryCenter": "To center"
   ,"region": "Region"
   ,"no": "No"
   ,"currencyAmountSuffix": "UZS"

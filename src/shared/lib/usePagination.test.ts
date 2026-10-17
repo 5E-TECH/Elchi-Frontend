@@ -59,4 +59,35 @@ describe("scrollShellContentToTop", () => {
   it("shell'siz sahifada xato bermaydi", () => {
     expect(() => scrollShellContentToTop()).not.toThrow();
   });
+
+  describe("anchor — sahifa pastidagi ro'yxat (Moliya)", () => {
+    const setup = (anchorTop: number) => {
+      document.body.innerHTML =
+        '<main><div data-shell-slot="content"><section>KPI</section><section id="history">Tarix</section></div></main>';
+      const main = document.querySelector("main") as HTMLElement;
+      const anchor = document.getElementById("history") as HTMLElement;
+      main.scrollTop = 1200;
+      main.getBoundingClientRect = () => ({ top: 64 }) as DOMRect;
+      anchor.getBoundingClientRect = () => ({ top: anchorTop }) as DOMRect;
+      return { main, anchor };
+    };
+
+    it("⭐ karta boshi ekrandan yuqorida — sahifa boshiga emas, karta boshiga (16px oraliq bilan)", () => {
+      const { main, anchor } = setup(64 - 500);
+      scrollShellContentToTop(anchor);
+      expect(main.scrollTop).toBe(1200 - 500 - 16);
+    });
+
+    it("karta boshi ko'rinib turibdi — skroll joyida qoladi (sakramaydi)", () => {
+      const { main, anchor } = setup(64 + 120);
+      scrollShellContentToTop(anchor);
+      expect(main.scrollTop).toBe(1200);
+    });
+
+    it("anchor yo'q (ref hali ulanmagan) — avvalgidek sahifa boshiga", () => {
+      const { main } = setup(0);
+      scrollShellContentToTop(null);
+      expect(main.scrollTop).toBe(0);
+    });
+  });
 });

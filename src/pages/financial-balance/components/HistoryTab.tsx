@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-balance-history, admin-balance-history
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { ArrowRight, ChevronRight, SearchX, History as HistoryIcon } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -12,7 +12,7 @@ import {
   formatNumberLocalized,
   formatSignedMoneyLocalized,
 } from "../../../shared/lib/formatMoney";
-import { usePagination } from "../../../shared/lib/usePagination";
+import { scrollShellContentToTop, usePagination } from "../../../shared/lib/usePagination";
 import {
   Badge,
   Button,
@@ -302,6 +302,16 @@ const HistoryTab = () => {
 
   const total = pagination.total;
   const showTotal = rows !== undefined;
+  // Sahifa / qatorlar soni almashganda tarix kartasining boshi ko'rinsin (D-03).
+  const historyCardRef = useRef<HTMLElement>(null);
+  const handlePageChange = (next: number) => {
+    setPage(next);
+    scrollShellContentToTop(historyCardRef.current);
+  };
+  const handlePageSizeChange = (next: number) => {
+    setLimit(next);
+    scrollShellContentToTop(historyCardRef.current);
+  };
 
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">
@@ -335,6 +345,7 @@ const HistoryTab = () => {
       </div>
 
       <Card
+        ref={historyCardRef}
         padding="none"
         title={t("v2Balance.history.title")}
         description={t("v2Balance.history.subtitle")}
@@ -347,8 +358,8 @@ const HistoryTab = () => {
               page={pagination.page}
               pageSize={pagination.limit}
               total={total}
-              onPageChange={setPage}
-              onPageSizeChange={setLimit}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
               pageSizeOptions={PAGE_SIZES}
               summary={(range) => t("v2Balance.history.pagination", range)}
             />

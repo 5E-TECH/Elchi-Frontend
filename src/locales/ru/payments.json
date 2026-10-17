@@ -81,7 +81,6 @@
   "counterparty": "Контрагент",
   "toBeReceived": "К получению",
   "filters": "Фильтры",
-  "clearFilters": "Очистить фильтры",
   "selectPlaceholder": "Выберите",
   "selectCourierDescription": "Выберите курьера",
   "selectEmployee": "Выберите сотрудника",
@@ -94,19 +93,13 @@
   "transactions": "Транзакции",
   "startDate": "Начало",
   "endDate": "Конец",
-  "countLabel": "{{count}} шт",
   "totalBalanceLabel": "Общий баланс",
   "hide": "Скрыть",
   "show": "Показать",
-  "cashBalance": "Баланс наличных",
-  "cardBalance": "Баланс карты",
   "name": "Имя",
   "phone": "Телефон",
   "role": "Роль",
-  "amountLabel": "Сумма",
   "comment": "Комментарий",
-  "previousPage": "Предыдущая страница",
-  "nextPage": "Следующая страница",
   "createdBy": "Создано",
   "amount": "Сумма",
   "paymentDate": "Дата платежа",
@@ -126,8 +119,6 @@
   "paid": "Оплачено",
   "address": "Адрес",
   "qty": "Кол-во",
-  "detailError": "Не удалось загрузить детали",
-  "commentLabel": "Комментарий",
   "closeShiftTitle": "Закрыть смену",
   "optionalComment": "Комментарий (необязательно)",
   "paymentTypeRequired": "Тип оплаты обязателен",
@@ -135,7 +126,6 @@
   "amountRequired": "Сумма обязательна",
   "cashbox": "Касса",
   "mainCashbox": "Основная касса",
-  "cashDetail": "Детали кассы",
   "history": "История",
   "income": "Доход",
   "expense": "Расход",
@@ -143,17 +133,10 @@
   "cash": "Наличные",
   "card": "Карта",
   "other": "Другое",
-  "openShift": "Открыть смену",
-  "closeShift": "Закрыть смену",
-  "currentShift": "Текущая смена",
   "fillCashbox": "Пополнить кассу",
   "spendFromCashbox": "Расход из кассы",
   "courierToBranchTransfer": "Перевод от курьера в филиал",
   "hqToMarketTransfer": "Перевод из HQ в маркет",
-  "operationType": "Тип операции",
-  "sourceType": "Тип источника",
-  "cashboxType": "Тип кассы",
-  "financialBalance": "Финансовый баланс",
   "cashDetailTypeUnknown": "Тип кассы не определён — форма оплаты скрыта для безопасности. Откройте кассу заново из списка.",
   "cashDetailNotMarketCashbox": "Это не касса маркета — платёж не отправлен.",
   "financialBalanceSourceManualIncome": "Ручное поступление",
@@ -162,22 +145,17 @@
   "financialBalanceSourceCorrection": "Корректировка (rollback)",
   "financialBalanceSourceBills": "Счета-фактуры",
   "report": "Отчет",
-  "exportReport": "Экспортировать отчет",
   "commentPlaceholder": "Комментарий...",
   "paymentType": "Тип оплаты",
-  "paymentTypePlaceholder": "тип оплаты",
   "amountPositiveValidation": "Сумма должна быть больше 0",
   "loadingLabel": "Загрузка...",
-  "cancelLabel": "Отмена",
   "expenseSection": "Расход",
   "fromWhere": "Откуда",
   "toWhere": "Куда",
   "summaryIncome": "Общий доход",
   "summaryExpense": "Общий расход",
   "totalBalance": "Общий баланс",
-  "balanceVisible": "Баланс видим",
   "delivery": "Доставка",
-  "financeHistory": "Финансовая история",
   "fillSuccess": "Касса успешно пополнена",
   "fillError": "Ошибка при пополнении кассы",
   "spendSuccess": "Расход успешно сохранен",
@@ -185,10 +163,7 @@
   "closeShiftSuccess": "Смена успешно закрыта",
   "closeShiftError": "Ошибка при закрытии смены",
   "currency": "сум"
-  ,"payAction": "Оплатить"
   ,"userFallback": "Пользователь"
-  ,"receiveFromCourier": "Принять от курьера"
-  ,"receiveFromBranchManager": "Принять от менеджера филиала"
   ,"payToMarket": "Оплатить маркету"
   ,"paySalary": "Выплатить зарплату"
   ,"monthlySalary": "Ежемесячная зарплата"
@@ -220,7 +195,6 @@
   ,"statusPartlyPaid": "Частично оплачено"
   ,"statusNew": "Новый"
   ,"statusReceived": "Принято"
-  ,"deliveryCenter": "В центр"
   ,"region": "Регион"
   ,"no": "№"
   ,"currencyAmountSuffix": "сум"

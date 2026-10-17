@@ -49,7 +49,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
 
 ### 2.1 Qolgan guruhlar — spec'lar tayyor
 
-Spec'lar sessiya scratchpad'ida turibdi. Sessiya yo'qolsa, ularni qayta yozdirish kerak bo'ladi: har spec bitta
+Spec nusxalari: `~/Desktop/Hujjatlar/elchi-v2-specs/` (g1/g2/g3, moliya, followups, QA hisoboti, lokal proksi `dev-api-proxy.mjs`). Yo'qolsa — har spec bitta
 spec agentning ishi. Har spec'dagi ega savollariga **sukut javoblari** qo'llanadi (ega: kutma). Ro'yxat 4-bosqich
 yakuniy hisobotida.
 
