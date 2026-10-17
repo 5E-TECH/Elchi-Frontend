@@ -32,7 +32,8 @@ const CourierCashCard = () => {
     const today = getTodayRange();
     return { fromDate: today.from, toDate: today.to };
   }, []);
-  const query = useGetCashboxMyCashbox(params);
+  // Xato kartada (`QueryBoundary` → `ErrorState`) — global xabar takrorlanmaydi.
+  const query = useGetCashboxMyCashbox(params, { silentError: true });
   const cash = useMemo(() => toCourierCash(query.data), [query.data]);
   const asOf = query.dataUpdatedAt ? formatDateTimeLocalized(query.dataUpdatedAt) : null;
   const compact = (value: number) => formatCompactMoneyLocalized(value, { language, withCurrency: false });

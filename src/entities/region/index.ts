@@ -561,6 +561,8 @@ export const useRegionStats = (
     enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+    // Har iste'molchi xatoni o'zi ko'rsatadi (`ErrorState`) — global xabar takrorlanmaydi.
+    meta: { silentError: true },
   });
 
 export const useRegionDetailStats = (
@@ -577,6 +579,8 @@ export const useRegionDetailStats = (
     enabled: enabled && Boolean(regionId),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+    // Har iste'molchi xatoni o'zi ko'rsatadi (`ErrorState`) — global xabar takrorlanmaydi.
+    meta: { silentError: true },
   });
 
 export const useRegionDistrictCatalog = (
@@ -615,4 +619,6 @@ export const useMyRegionDistrictStats = (
     enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+    // Har iste'molchi xatoni o'zi ko'rsatadi (`ErrorState`) — global xabar takrorlanmaydi.
+    meta: { silentError: true },
   });

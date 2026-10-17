@@ -1,4 +1,8 @@
-import { CURRENCY_LABEL, formatCompactMoneyLocalized, resolveMoneyLanguage } from "../../../shared/lib/formatMoney";
+import {
+  CURRENCY_LABEL,
+  formatCompactMoneyLocalized,
+  resolveMoneyLanguage,
+} from "../../../shared/lib/formatMoney";
 
 /**
  * Hudud statistikasi uchun kichik hisob-kitoblar (`/regions`, `RegionDetailDialog`, dashboard).
@@ -12,14 +16,20 @@ const finite = (value: unknown): number => {
 };
 
 /** Ulush foizda (0..100): `part / total`; `total ≤ 0` → 0. */
-export const shareOf = (part: number, total: number): number => (total > 0 ? (finite(part) / total) * 100 : 0);
+export const shareOf = (part: number, total: number): number =>
+  total > 0 ? (finite(part) / total) * 100 : 0;
 
 /** Muvaffaqiyat: sotilgan / qabul qilingan (0..100, aniq). Buyurtma bo'lmasa — 0. */
 export const successRateOf = (delivered: number, total: number): number =>
   Math.min(100, Math.max(0, shareOf(delivered, total)));
 
 /** Jarayonda: backend bergan son, bo'lmasa `jami − sotilgan − bekor` (manfiy bo'lmaydi). */
-export const pendingOf = (total: number, delivered: number, cancelled: number, pending?: number): number => {
+export const pendingOf = (
+  total: number,
+  delivered: number,
+  cancelled: number,
+  pending?: number,
+): number => {
   const given = finite(pending);
   if (given > 0) return given;
   return Math.max(0, finite(total) - finite(delivered) - finite(cancelled));
@@ -29,7 +39,10 @@ export const pendingOf = (total: number, delivered: number, cancelled: number, p
  * Ixcham pul StatCard uchun ikki bo'lakka: `48 600 000` → `{ value: "48,6", unit: "mln so'm" }`
  * (maket `.el-kpi-value` + `.el-kpi-unit`); en — `{ value: "48.6M", unit: "UZS" }`.
  */
-export const splitCompactMoney = (amount: number, language?: string | null): { value: string; unit: string } => {
+export const splitCompactMoney = (
+  amount: number,
+  language?: string | null,
+): { value: string; unit: string } => {
   const lang = resolveMoneyLanguage(language);
   const currency = CURRENCY_LABEL[lang];
   const compact = formatCompactMoneyLocalized(amount, { language: lang, withCurrency: false });

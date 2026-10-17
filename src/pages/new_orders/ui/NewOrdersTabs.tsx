@@ -3,14 +3,12 @@ import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
-import { Tabs, type TabsBackground } from "../../../shared/ui/primitives";
+import { Tabs } from "../../../shared/ui/primitives";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import { useNewOrdersTabs } from "../model/useNewOrdersTabs";
 
 type Props = {
-  /** Tablar turgan yuza: bola sahifa kartasining boshida — `surface` (sukut); eski bolalarda sahifa fonida — `bg`. */
-  background?: TabsBackground;
-  /** Ro'yxat chekkasi (sukut: karta ichida `px-3`, market telefonda `px-1`). Sahifa fonida — `""`. */
+  /** Ro'yxat chekkasi (sukut: karta ichida `px-3`, market telefonda `px-1`). */
   listClassName?: string;
   className?: string;
 };
@@ -23,7 +21,7 @@ type Props = {
  * maket `manager-new-orders-markets`). Market telefonda ikki tab teng bo'lib to'liq enni egallaydi
  * (maket `market-new-orders-list`).
  */
-const NewOrdersTabs = ({ background = "surface", listClassName, className }: Props) => {
+const NewOrdersTabs = ({ listClassName, className }: Props) => {
   const { t } = useTranslation("newOrders");
   const isMarket = useSelector((state: RootState) => state.role.role) === "market";
   const isPhone = useIsPhone();
@@ -37,7 +35,7 @@ const NewOrdersTabs = ({ background = "surface", listClassName, className }: Pro
       items={items}
       value={active}
       ariaLabel={isMarket ? t("shell.marketTabsLabel") : t("shell.tabsLabel")}
-      background={background}
+      background="surface"
       fullWidth={fullWidth}
       listClassName={listClassName ?? (fullWidth ? "px-1" : "px-3")}
       className={className}

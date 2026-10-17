@@ -33,7 +33,6 @@ import {
   type DataTableSort,
   type SelectOption,
 } from "../../../shared/ui/primitives";
-import { useMyProductsList } from "../model/productQueries";
 import {
   getProductList,
   getProductMarketName,
@@ -150,9 +149,13 @@ const ProductTable = () => {
     [limit, page, searchFromUrl],
   );
 
-  const { useGetProducts } = useProducts();
-  const staffQuery = useGetProducts(apiParams, isRoleResolved && !isMarketRole);
-  const marketQuery = useMyProductsList(myProductsParams, isRoleResolved && isMarketRole);
+  const { useGetProducts, useGetMyProducts } = useProducts();
+  // Xato ro'yxat kartasida (`ErrorState`) — global xabar takrorlanmaydi.
+  const staffQuery = useGetProducts(apiParams, isRoleResolved && !isMarketRole, { silentError: true });
+  const marketQuery = useGetMyProducts(isRoleResolved && isMarketRole, myProductsParams, {
+    keepPreviousData: true,
+    silentError: true,
+  });
   const productsQuery = isMarketRole ? marketQuery : staffQuery;
   const response = productsQuery.data;
 

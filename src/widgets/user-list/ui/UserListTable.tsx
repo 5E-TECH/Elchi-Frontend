@@ -43,6 +43,13 @@ const STATUS_TONE: Record<UserStatus, Tone> = {
   blocked: "danger",
 };
 
+/**
+ * Faqat server javobidagi matn (avvalgidek): axios'ning ichki «Request failed with status code 500» /
+ * «Network Error» matni foydalanuvchiga chiqmaydi — u holda o'zbekcha zaxira matn.
+ */
+const serverMessage = (error: unknown) =>
+  getBackendErrorMessage({ response: (error as { response?: unknown } | null)?.response });
+
 /** Ismdan bosh harflar (avatar): «Mehr Kosmetika» → «MK». */
 const userInitials = (name: string | null | undefined) =>
   (name ?? "")
@@ -146,7 +153,7 @@ export const UserListTable = memo(({ users, canManage = false, busy = false, cla
           },
           onError: (error: unknown) => {
             notify.error(t("statusChangeErrorTitle"), {
-              description: getBackendErrorMessage(error) ?? t("statusChangeErrorDescription"),
+              description: serverMessage(error) ?? t("statusChangeErrorDescription"),
             });
           },
           onSettled: () => {
@@ -174,7 +181,7 @@ export const UserListTable = memo(({ users, canManage = false, busy = false, cla
       },
       onError: (error: unknown) => {
         notify.error(t("deleteErrorTitle"), {
-          description: getBackendErrorMessage(error) ?? t("deleteErrorDescription"),
+          description: serverMessage(error) ?? t("deleteErrorDescription"),
         });
       },
     });

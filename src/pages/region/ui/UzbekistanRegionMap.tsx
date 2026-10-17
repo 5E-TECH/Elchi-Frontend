@@ -34,15 +34,22 @@ const LABEL_OFFSET: Record<string, { x: number; y: number }> = {
 };
 
 const readCssColor = (name: string) =>
-  typeof window === "undefined" ? "" : getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  typeof window === "undefined"
+    ? ""
+    : getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
 /** Mavzu almashsa (`html.dark`) xarita ranglari qayta o'qiladi. */
 const useThemeKey = () => {
   const [key, setKey] = useState(() =>
-    typeof document === "undefined" ? "light" : document.documentElement.classList.contains("dark") ? "dark" : "light",
+    typeof document === "undefined"
+      ? "light"
+      : document.documentElement.classList.contains("dark")
+        ? "dark"
+        : "light",
   );
   useEffect(() => {
-    const read = () => setKey(document.documentElement.classList.contains("dark") ? "dark" : "light");
+    const read = () =>
+      setKey(document.documentElement.classList.contains("dark") ? "dark" : "light");
     const observer = new MutationObserver(read);
     observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     return () => observer.disconnect();
@@ -62,7 +69,10 @@ const buildMapOptions = (
     valueLabels,
     tooltipHtml,
     onSelect,
-  }: Pick<UzbekistanRegionMapProps, "rows" | "metric" | "maxRevenue" | "valueLabels" | "tooltipHtml" | "onSelect">,
+  }: Pick<
+    UzbekistanRegionMapProps,
+    "rows" | "metric" | "maxRevenue" | "valueLabels" | "tooltipHtml" | "onSelect"
+  >,
   theme: string,
 ): Highcharts.Options => {
   const color = (name: string) => readCssColor(name);
@@ -157,7 +167,10 @@ const buildMapOptions = (
     responsive: {
       // Telefonda (maket) xaritada yorliq yo'q — qiymatlar ostidagi reytingda.
       rules: [
-        { condition: { maxWidth: 560 }, chartOptions: { series: [{ type: "map", dataLabels: { enabled: false } }] } },
+        {
+          condition: { maxWidth: 560 },
+          chartOptions: { series: [{ type: "map", dataLabels: { enabled: false } }] },
+        },
       ],
     },
   };

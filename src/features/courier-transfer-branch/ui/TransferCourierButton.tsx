@@ -10,11 +10,11 @@ interface TransferCourierButtonProps {
   courierId: string;
   courierName?: string;
   /**
-   * `row` — filial xodimlari jadvalidagi eski (v1) ikonka; `header` — eski (v1) sarlavha tugmasi.
+   * `header` — eski (v1) sarlavha tugmasi (muzlatilgan `/profile` → `UserDetailWidget`).
    * `secondary` / `ghost` — dizayn v2 `Button` («Boshqa filialga o'tkazish», ikonka + matn).
    * Berilmasa — `secondary` (v2).
    */
-  variant?: "row" | "header" | "secondary" | "ghost";
+  variant?: "header" | "secondary" | "ghost";
   /** Faqat v2 turlari uchun: `sm` 32 (jadval qatori), `md` 40 (sukut, sahifa sarlavhasi). */
   size?: "sm" | "md";
   /** Faqat v2 turlari uchun: to'liq kenglik (telefon kartasi, maket `el-btn-block`). */
@@ -60,18 +60,6 @@ const TransferCourierButton = ({
       >
         {t("courierTransfer.rowButton")}
       </Button>
-    );
-  } else if (variant === "row") {
-    button = (
-      <button
-        type="button"
-        onClick={handleOpen}
-        aria-label={t("courierTransfer.rowButton")}
-        title={t("courierTransfer.rowButton")}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-main/30 bg-main/10 p-0 text-main transition-colors hover:border-main/60 hover:bg-main/20 dark:border-main/40 dark:bg-main/15 dark:text-white dark:hover:bg-main/25"
-      >
-        <ArrowRightLeft size={16} />
-      </button>
     );
   } else {
     button = (

@@ -230,7 +230,7 @@ describe("MarketDashboardPage (v2)", () => {
     const refetch = vi.fn();
     getDashboardMock.mockReturnValue({ isError: true, isLoading: false, refetch });
     renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState() });
-    expect(screen.getByText("Dashboard ma'lumotlarini yuklab bo'lmadi.")).toBeInTheDocument();
+    expect(screen.getByText("Bosh sahifa ma'lumotlarini yuklab bo'lmadi.")).toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("button", { name: "Qayta urinish" }));
     expect(refetch).toHaveBeenCalled();
   });

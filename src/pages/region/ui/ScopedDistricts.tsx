@@ -1,5 +1,14 @@
 // dizayn-v2: manager-regions-scoped, courier-regions-scoped
-import { ChevronDown, ChevronUp, CircleAlert, CircleX, MapPin, PackageCheck, TriangleAlert, Truck } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  CircleAlert,
+  CircleX,
+  MapPin,
+  PackageCheck,
+  TriangleAlert,
+  Truck,
+} from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { shareOf } from "../../../entities/region";
@@ -46,13 +55,20 @@ const useFormat = () => {
     t,
     language,
     number: (value: number) => formatNumberLocalized(value, { language }),
-    percent: (value: number, fractionDigits?: number) => formatPercentLocalized(value, { language, fractionDigits }),
+    percent: (value: number, fractionDigits?: number) =>
+      formatPercentLocalized(value, { language, fractionDigits }),
     money: (value: number) => formatMoneyLocalized(value, { language }),
   };
 };
 
 /** «Tanlangan tuman» paneli: halqa (muvaffaqiyat) + viloyatga nisbatan p.p. + jami/tushum + holatlar. */
-export const SelectedDistrictPanel = ({ row, regionRate }: { row: DistrictRow; regionRate: number }) => {
+export const SelectedDistrictPanel = ({
+  row,
+  regionRate,
+}: {
+  row: DistrictRow;
+  regionRate: number;
+}) => {
   const { t, language, number, percent, money } = useFormat();
   const delta = row.orders > 0 ? row.rate - regionRate : null;
   return (
@@ -82,7 +98,10 @@ export const SelectedDistrictPanel = ({ row, regionRate }: { row: DistrictRow; r
         meta={
           delta != null ? (
             <>
-              <DeltaChip value={delta} text={t("v2.common.pp", { value: ppText(delta, language) })} />
+              <DeltaChip
+                value={delta}
+                text={t("v2.common.pp", { value: ppText(delta, language) })}
+              />
               <span>{t("v2.scoped.selected.vsRegion")}</span>
             </>
           ) : undefined
@@ -91,11 +110,15 @@ export const SelectedDistrictPanel = ({ row, regionRate }: { row: DistrictRow; r
       <dl className="m-0 grid grid-cols-2 gap-4">
         <div className="flex min-w-0 flex-col gap-0.5">
           <dt className="text-xs text-text-muted">{t("v2.kpi.total")}</dt>
-          <dd className="m-0 text-lg font-bold text-text">{t("v2.common.countTa", { count: number(row.orders) })}</dd>
+          <dd className="m-0 text-lg font-bold text-text">
+            {t("v2.common.countTa", { count: number(row.orders) })}
+          </dd>
         </div>
         <div className="flex min-w-0 flex-col gap-0.5">
           <dt className="text-xs text-text-muted">{t("v2.scoped.selected.revenue")}</dt>
-          <dd className="m-0 text-lg font-bold whitespace-nowrap text-text">{money(row.revenue)}</dd>
+          <dd className="m-0 text-lg font-bold whitespace-nowrap text-text">
+            {money(row.revenue)}
+          </dd>
         </div>
       </dl>
       <SegBar
@@ -106,9 +129,27 @@ export const SelectedDistrictPanel = ({ row, regionRate }: { row: DistrictRow; r
           cancelled: number(row.cancelled),
         })}
         segments={[
-          { key: "sold", label: t("v2.status.sold"), value: row.sold, tone: "success", icon: PackageCheck },
-          { key: "pending", label: t("v2.status.pending"), value: row.pending, tone: "warning", icon: Truck },
-          { key: "cancelled", label: t("v2.status.cancelled"), value: row.cancelled, tone: "danger", icon: CircleX },
+          {
+            key: "sold",
+            label: t("v2.status.sold"),
+            value: row.sold,
+            tone: "success",
+            icon: PackageCheck,
+          },
+          {
+            key: "pending",
+            label: t("v2.status.pending"),
+            value: row.pending,
+            tone: "warning",
+            icon: Truck,
+          },
+          {
+            key: "cancelled",
+            label: t("v2.status.cancelled"),
+            value: row.cancelled,
+            tone: "danger",
+            icon: CircleX,
+          },
         ]}
       />
     </section>
@@ -143,7 +184,11 @@ export const DistrictTiles = ({
         role="group"
         aria-label={
           top && top.orders > 0
-            ? t("v2.scoped.tiles.aria", { name: top.name, count: number(top.orders), empty: number(empty) })
+            ? t("v2.scoped.tiles.aria", {
+                name: top.name,
+                count: number(top.orders),
+                empty: number(empty),
+              })
             : t("v2.scoped.tiles.ariaEmpty")
         }
         className="grid grid-cols-4 gap-1 max-lg:grid-cols-4"
@@ -177,7 +222,9 @@ export const DistrictTiles = ({
                 selected && "ring-2 ring-text ring-offset-1 ring-offset-surface",
               )}
             >
-              <span className="text-xs font-semibold leading-[14px] [overflow-wrap:anywhere]">{row.name}</span>
+              <span className="text-xs font-semibold leading-[14px] [overflow-wrap:anywhere]">
+                {row.name}
+              </span>
               <span className="text-sm font-bold proportional-nums">
                 {row.orders > 0 ? t("v2.common.countTa", { count: number(row.orders) }) : number(0)}
               </span>
@@ -190,17 +237,26 @@ export const DistrictTiles = ({
         aria-label={t("v2.scoped.tiles.scaleAria", { steps: steps.join(", ") })}
         className="flex min-w-0 flex-wrap items-start gap-x-3 gap-y-1.5 text-xs text-text-muted"
       >
-        <span className="pt-px font-semibold text-text max-md:w-full">{t("v2.map.metric.orders")}</span>
+        <span className="pt-px font-semibold text-text max-md:w-full">
+          {t("v2.map.metric.orders")}
+        </span>
         <span className="flex gap-0.5">
           {steps.map((label, index) => (
             <span key={label} className="flex w-12 flex-col gap-1">
-              <span className={cx("h-2.5 w-full rounded-[2px]", STEP_CLASS[(index + 1) as TileStep])} />
+              <span
+                className={cx("h-2.5 w-full rounded-[2px]", STEP_CLASS[(index + 1) as TileStep])}
+              />
               <span className="whitespace-nowrap">{label}</span>
             </span>
           ))}
         </span>
         <span className="flex w-10 flex-col gap-1">
-          <span className={cx("h-2.5 w-full rounded-[2px] ring-1 ring-inset ring-border", STEP_CLASS[0])} />
+          <span
+            className={cx(
+              "h-2.5 w-full rounded-[2px] ring-1 ring-inset ring-border",
+              STEP_CLASS[0],
+            )}
+          />
           <span>{t("v2.map.scale.none")}</span>
         </span>
       </div>
@@ -229,7 +285,11 @@ export const DistrictRankPhone = ({
     sub: t("v2.map.rank.sold", { rate: percent(row.rate) }),
     highlight: row.id === selectedId,
     onClick: () => onSelect(row.id),
-    ariaLabel: t("v2.scoped.rank.rowAria", { name: row.name, count: number(row.orders), rate: percent(row.rate) }),
+    ariaLabel: t("v2.scoped.rank.rowAria", {
+      name: row.name,
+      count: number(row.orders),
+      rate: percent(row.rate),
+    }),
     meta: (
       <StatusBar
         sold={row.sold}
@@ -247,7 +307,12 @@ export const DistrictRankPhone = ({
   return (
     <div className="flex min-w-0 flex-col gap-4">
       {items.length > 0 ? (
-        <RankList items={items} ariaLabel={t("v2.scoped.rank.aria")} showAvatar={false} limit={items.length} />
+        <RankList
+          items={items}
+          ariaLabel={t("v2.scoped.rank.aria")}
+          showAvatar={false}
+          limit={items.length}
+        />
       ) : null}
       {withoutOrders.length > 0 ? (
         <div className="flex min-w-0 flex-col gap-2 border-t border-border pt-4">
@@ -276,7 +341,13 @@ export const DistrictRankPhone = ({
 };
 
 /** «Tumanlar kesimida» jadvali: Tuman (+SATO) · Buyurtmalar (chiziq) · Holat · Muvaffaqiyat · Tushum. */
-export const DistrictTable = ({ rows, onSelect }: { rows: DistrictRow[]; onSelect?: (id: string) => void }) => {
+export const DistrictTable = ({
+  rows,
+  onSelect,
+}: {
+  rows: DistrictRow[];
+  onSelect?: (id: string) => void;
+}) => {
   const { t, number, percent, money } = useFormat();
   const [showEmpty, setShowEmpty] = useState(false);
   const withOrders = rows.filter((row) => row.orders > 0);
@@ -307,9 +378,17 @@ export const DistrictTable = ({ rows, onSelect }: { rows: DistrictRow[]; onSelec
               {[
                 { key: "name", label: t("v2.scoped.table.district"), className: "text-left" },
                 { key: "orders", label: t("v2.scoped.table.orders"), className: "text-left" },
-                { key: "status", label: t("v2.scoped.table.status"), className: "text-left max-lg:hidden" },
+                {
+                  key: "status",
+                  label: t("v2.scoped.table.status"),
+                  className: "text-left max-lg:hidden",
+                },
                 { key: "rate", label: t("v2.scoped.table.success"), className: "text-right" },
-                { key: "revenue", label: t("v2.scoped.table.revenue"), className: "text-right max-md:hidden" },
+                {
+                  key: "revenue",
+                  label: t("v2.scoped.table.revenue"),
+                  className: "text-right max-md:hidden",
+                },
               ].map((column) => (
                 <th
                   key={column.key}
@@ -328,7 +407,11 @@ export const DistrictTable = ({ rows, onSelect }: { rows: DistrictRow[]; onSelec
             {bodyRows.map((row) => {
               const tone = successZoneTone(row.rate);
               const ZoneIcon =
-                row.orders > 0 && tone !== "success" ? (tone === "danger" ? CircleAlert : TriangleAlert) : null;
+                row.orders > 0 && tone !== "success"
+                  ? tone === "danger"
+                    ? CircleAlert
+                    : TriangleAlert
+                  : null;
               return (
                 <tr key={row.id}>
                   <td className={td}>
@@ -345,7 +428,9 @@ export const DistrictTable = ({ rows, onSelect }: { rows: DistrictRow[]; onSelec
                         <span className="font-semibold text-text">{row.name}</span>
                       )}
                       {row.satoCode ? (
-                        <span className="text-xs text-text-muted">{t("v2.common.sato", { code: row.satoCode })}</span>
+                        <span className="text-xs text-text-muted">
+                          {t("v2.common.sato", { code: row.satoCode })}
+                        </span>
                       ) : null}
                     </span>
                   </td>
@@ -354,10 +439,14 @@ export const DistrictTable = ({ rows, onSelect }: { rows: DistrictRow[]; onSelec
                       <span aria-hidden="true" className="h-3 min-w-0 flex-1 max-md:hidden">
                         <span
                           className="block h-full rounded-[3px] bg-action"
-                          style={{ width: `${maxOrders > 0 ? Math.max(2, shareOf(row.orders, maxOrders)) : 0}%` }}
+                          style={{
+                            width: `${maxOrders > 0 ? Math.max(2, shareOf(row.orders, maxOrders)) : 0}%`,
+                          }}
                         />
                       </span>
-                      <span className="shrink-0 font-semibold text-text proportional-nums">{number(row.orders)}</span>
+                      <span className="shrink-0 font-semibold text-text proportional-nums">
+                        {number(row.orders)}
+                      </span>
                     </span>
                   </td>
                   <td className={cx(td, "max-lg:hidden")}>
@@ -424,15 +513,21 @@ export const DistrictTable = ({ rows, onSelect }: { rows: DistrictRow[]; onSelec
           </tbody>
           <tfoot>
             <tr className="font-semibold text-text">
-              <td className="h-11 px-3 py-1.5">{t("v2.scoped.table.total", { count: number(rows.length) })}</td>
+              <td className="h-11 px-3 py-1.5">
+                {t("v2.scoped.table.total", { count: number(rows.length) })}
+              </td>
               <td className="h-11 whitespace-nowrap px-3 py-1.5">
                 {t("v2.common.countTa", { count: number(total.orders) })}
               </td>
               <td className="h-11 whitespace-nowrap px-3 py-1.5 max-lg:hidden">
                 {`${number(total.sold)} · ${number(total.pending)} · ${number(total.cancelled)}`}
               </td>
-              <td className="h-11 whitespace-nowrap px-3 py-1.5 text-right">{percent(totalRate)}</td>
-              <td className="h-11 whitespace-nowrap px-3 py-1.5 text-right max-md:hidden">{money(total.revenue)}</td>
+              <td className="h-11 whitespace-nowrap px-3 py-1.5 text-right">
+                {percent(totalRate)}
+              </td>
+              <td className="h-11 whitespace-nowrap px-3 py-1.5 text-right max-md:hidden">
+                {money(total.revenue)}
+              </td>
             </tr>
           </tfoot>
         </table>

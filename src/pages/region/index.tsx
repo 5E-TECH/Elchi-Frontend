@@ -18,7 +18,11 @@ import RegionPeriodControls from "./ui/RegionPeriodControls";
 import RegionsOverview from "./ui/RegionsOverview";
 import ScopedRegionView from "./ui/ScopedRegionView";
 
-const CHILD_ROUTES = ["/regions/districts", "/regions/sato-management", "/regions/logist-assignment"];
+const CHILD_ROUTES = [
+  "/regions/districts",
+  "/regions/sato-management",
+  "/regions/logist-assignment",
+];
 
 /**
  * «HUDUDLAR» (`/regions`, guard `canViewRegionStats`: superadmin, admin, menejer, kuryer).
@@ -34,7 +38,9 @@ const RegionPage = () => {
   const { getParam, setMultipleParams } = useQueryParams();
   const role = useSelector((state: RootState) => state.role.role);
 
-  const [initial] = useState(() => parseRegionPeriod(getParam("period"), getParam("startDate"), getParam("endDate")));
+  const [initial] = useState(() =>
+    parseRegionPeriod(getParam("period"), getParam("startDate"), getParam("endDate")),
+  );
   const [period, setPeriod] = useState<RegionPeriod>(initial.period);
   const [customRange, setCustomRange] = useState<RegionCustomRange | null>(initial.range);
 
@@ -51,7 +57,11 @@ const RegionPage = () => {
     // manzilga ?period yozib, redirectni qaytarmasin.
     if (isChildRoute || !(canViewStats || canViewScopedStats)) return;
     if (period === "custom" && customRange?.start && customRange?.end) {
-      setMultipleParams({ period: "custom", startDate: customRange.start, endDate: customRange.end });
+      setMultipleParams({
+        period: "custom",
+        startDate: customRange.start,
+        endDate: customRange.end,
+      });
       return;
     }
     // Bitta yangilash: ketma-ket `setSearchParams` chaqiruvlari eski URL ustidan yozib, davrni yo'qotardi.
@@ -66,9 +76,12 @@ const RegionPage = () => {
     return <Navigate to="/403" replace />;
   }
 
-  const periodLabel = period === "custom" && customRange ? customRangeLabel(customRange) : t(`v2.period.${period}`);
+  const periodLabel =
+    period === "custom" && customRange ? customRangeLabel(customRange) : t(`v2.period.${period}`);
   const periodLower =
-    period === "custom" && customRange ? customRangeLabel(customRange) : t(`v2.period.lower.${period}`);
+    period === "custom" && customRange
+      ? customRangeLabel(customRange)
+      : t(`v2.period.lower.${period}`);
 
   const controls = (
     <RegionPeriodControls
@@ -90,7 +103,9 @@ const RegionPage = () => {
   );
 
   if (canViewScopedStats) {
-    return <ScopedRegionView dateParams={dateParams} periodLabel={periodLabel} controls={controls} />;
+    return (
+      <ScopedRegionView dateParams={dateParams} periodLabel={periodLabel} controls={controls} />
+    );
   }
 
   return (
@@ -100,7 +115,11 @@ const RegionPage = () => {
         description={t("v2.page.subtitle")}
         actions={
           <>
-            <Button variant="secondary" leftIcon={ArrowLeftRight} onClick={() => navigate("sato-management")}>
+            <Button
+              variant="secondary"
+              leftIcon={ArrowLeftRight}
+              onClick={() => navigate("sato-management")}
+            >
               {t("v2.page.actions.sato")}
             </Button>
             {isSuperadmin ? (
@@ -108,7 +127,11 @@ const RegionPage = () => {
                 {t("v2.page.actions.districts")}
               </Button>
             ) : null}
-            <Button variant="secondary" leftIcon={Headset} onClick={() => navigate("logist-assignment")}>
+            <Button
+              variant="secondary"
+              leftIcon={Headset}
+              onClick={() => navigate("logist-assignment")}
+            >
               {t("v2.page.actions.logist")}
             </Button>
           </>
@@ -116,7 +139,11 @@ const RegionPage = () => {
       >
         {controls}
       </PageHeader>
-      <RegionsOverview dateParams={dateParams} periodLabel={periodLabel} periodLower={periodLower} />
+      <RegionsOverview
+        dateParams={dateParams}
+        periodLabel={periodLabel}
+        periodLower={periodLower}
+      />
     </div>
   );
 };

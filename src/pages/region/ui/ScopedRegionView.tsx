@@ -10,12 +10,28 @@ import {
   useMyRegionDistrictStats,
   useRegionDistrictCatalog,
 } from "../../../entities/region";
-import { formatMoneyLocalized, formatNumberLocalized, formatPercentLocalized } from "../../../shared/lib/formatMoney";
-import { Card, EmptyState, ErrorState, PageHeader, SkeletonChart, SkeletonList } from "../../../shared/ui/primitives";
+import {
+  formatMoneyLocalized,
+  formatNumberLocalized,
+  formatPercentLocalized,
+} from "../../../shared/lib/formatMoney";
+import {
+  Card,
+  EmptyState,
+  ErrorState,
+  PageHeader,
+  SkeletonChart,
+  SkeletonList,
+} from "../../../shared/ui/primitives";
 import { Gauge, SegBar, ViewToggle, type ChartView } from "../../../shared/ui/charts";
 import { SCOPED_LOWEST_MIN, toDistrictRows } from "../model/scopedModel";
 import { SummaryRow } from "./regionBlocks";
-import { DistrictRankPhone, DistrictTable, DistrictTiles, SelectedDistrictPanel } from "./ScopedDistricts";
+import {
+  DistrictRankPhone,
+  DistrictTable,
+  DistrictTiles,
+  SelectedDistrictPanel,
+} from "./ScopedDistricts";
 
 export interface ScopedRegionViewProps {
   dateParams: { startDate?: string; endDate?: string };
@@ -47,7 +63,9 @@ const ScopedRegionView = ({ dateParams, periodLabel, controls }: ScopedRegionVie
   const regionLabel = region?.name;
   const detail = useMemo(
     () =>
-      detailData ? mergeRegionDistrictStats(detailData, catalog ?? [], { id: regionId, name: regionLabel }) : null,
+      detailData
+        ? mergeRegionDistrictStats(detailData, catalog ?? [], { id: regionId, name: regionLabel })
+        : null,
     [catalog, detailData, regionId, regionLabel],
   );
   const rows = useMemo(() => toDistrictRows(detail?.districts ?? []), [detail?.districts]);
@@ -72,12 +90,18 @@ const ScopedRegionView = ({ dateParams, periodLabel, controls }: ScopedRegionVie
   const compact = splitCompactMoney(revenue, language);
 
   const regionName = region?.name ?? "";
-  const cardSub = regionName ? t("v2.scoped.cardSubtitle", { period: periodLabel, region: regionName }) : periodLabel;
+  const cardSub = regionName
+    ? t("v2.scoped.cardSubtitle", { period: periodLabel, region: regionName })
+    : periodLabel;
 
   const header = (
     <PageHeader
       title={regionName ? t("v2.scoped.title", { region: regionName }) : t("v2.page.title")}
-      description={regionName ? t("v2.scoped.subtitle", { region: regionName }) : t("v2.scoped.subtitleNoRegion")}
+      description={
+        regionName
+          ? t("v2.scoped.subtitle", { region: regionName })
+          : t("v2.scoped.subtitleNoRegion")
+      }
       actions={controls}
     />
   );
@@ -134,7 +158,13 @@ const ScopedRegionView = ({ dateParams, periodLabel, controls }: ScopedRegionVie
                 cancelled: number(cancelled),
               })}
               stats={[
-                { key: "sold", value: countTa(sold), label: t("v2.status.sold"), tone: "success", icon: PackageCheck },
+                {
+                  key: "sold",
+                  value: countTa(sold),
+                  label: t("v2.status.sold"),
+                  tone: "success",
+                  icon: PackageCheck,
+                },
                 {
                   key: "cancelled",
                   value: countTa(cancelled),
@@ -157,7 +187,9 @@ const ScopedRegionView = ({ dateParams, periodLabel, controls }: ScopedRegionVie
                 <dd className="m-0 flex flex-col">
                   <span className="text-[28px] leading-9 font-bold text-text max-md:text-[22px] max-md:leading-[30px]">
                     {number(total)}
-                    {unitTa ? <span className="ml-1 text-sm font-semibold text-text-muted">{unitTa}</span> : null}
+                    {unitTa ? (
+                      <span className="ml-1 text-sm font-semibold text-text-muted">{unitTa}</span>
+                    ) : null}
                   </span>
                   <span className="text-xs text-text-muted">
                     {t("v2.scoped.overview.totalMeta", {
@@ -172,20 +204,30 @@ const ScopedRegionView = ({ dateParams, periodLabel, controls }: ScopedRegionVie
                 <dd className="m-0 flex flex-col">
                   <span className="text-[28px] leading-9 font-bold whitespace-nowrap text-text max-md:text-[22px] max-md:leading-[30px]">
                     {compact.value}
-                    <span className="ml-1 text-sm font-semibold text-text-muted">{compact.unit}</span>
+                    <span className="ml-1 text-sm font-semibold text-text-muted">
+                      {compact.unit}
+                    </span>
                   </span>
-                  <span className="text-xs text-text-muted">{formatMoneyLocalized(revenue, { language })}</span>
+                  <span className="text-xs text-text-muted">
+                    {formatMoneyLocalized(revenue, { language })}
+                  </span>
                 </dd>
               </div>
               <div className="flex min-w-0 flex-col gap-0.5 max-md:hidden">
-                <dt className="text-[13px] font-semibold text-text-muted">{t("v2.status.pending")}</dt>
+                <dt className="text-[13px] font-semibold text-text-muted">
+                  {t("v2.status.pending")}
+                </dt>
                 <dd className="m-0 flex flex-col">
                   <span className="text-[28px] leading-9 font-bold text-text">
                     {number(pending)}
-                    {unitTa ? <span className="ml-1 text-sm font-semibold text-text-muted">{unitTa}</span> : null}
+                    {unitTa ? (
+                      <span className="ml-1 text-sm font-semibold text-text-muted">{unitTa}</span>
+                    ) : null}
                   </span>
                   <span className="text-xs text-text-muted">
-                    {t("v2.scoped.overview.pendingMeta", { share: percent(shareOf(pending, total)) })}
+                    {t("v2.scoped.overview.pendingMeta", {
+                      share: percent(shareOf(pending, total)),
+                    })}
                   </span>
                 </dd>
               </div>
@@ -198,9 +240,27 @@ const ScopedRegionView = ({ dateParams, periodLabel, controls }: ScopedRegionVie
                 cancelled: number(cancelled),
               })}
               segments={[
-                { key: "sold", label: t("v2.status.sold"), value: sold, tone: "success", icon: PackageCheck },
-                { key: "pending", label: t("v2.status.pending"), value: pending, tone: "warning", icon: Truck },
-                { key: "cancelled", label: t("v2.status.cancelled"), value: cancelled, tone: "danger", icon: CircleX },
+                {
+                  key: "sold",
+                  label: t("v2.status.sold"),
+                  value: sold,
+                  tone: "success",
+                  icon: PackageCheck,
+                },
+                {
+                  key: "pending",
+                  label: t("v2.status.pending"),
+                  value: pending,
+                  tone: "warning",
+                  icon: Truck,
+                },
+                {
+                  key: "cancelled",
+                  label: t("v2.status.cancelled"),
+                  value: cancelled,
+                  tone: "danger",
+                  icon: CircleX,
+                },
               ]}
             />
             {withOrders.length > 0 ? (
@@ -241,13 +301,19 @@ const ScopedRegionView = ({ dateParams, periodLabel, controls }: ScopedRegionVie
           title={t("v2.scoped.districts.title")}
           titleAddon={
             rows.length > 0 ? (
-              <span className="text-base font-semibold text-text-muted">({number(rows.length)})</span>
+              <span className="text-base font-semibold text-text-muted">
+                ({number(rows.length)})
+              </span>
             ) : undefined
           }
           description={t("v2.scoped.districts.subtitle")}
           actions={
             rows.length > 0 ? (
-              <ViewToggle value={view} onChange={setView} ariaLabel={t("v2.scoped.districts.viewAria")} />
+              <ViewToggle
+                value={view}
+                onChange={setView}
+                ariaLabel={t("v2.scoped.districts.viewAria")}
+              />
             ) : undefined
           }
         >
@@ -264,12 +330,20 @@ const ScopedRegionView = ({ dateParams, periodLabel, controls }: ScopedRegionVie
           ) : (
             <>
               <div className="grid grid-cols-[minmax(0,1fr)_380px] gap-6 max-lg:grid-cols-1 max-md:hidden">
-                <DistrictTiles rows={rows} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
+                <DistrictTiles
+                  rows={rows}
+                  selectedId={selected?.id ?? null}
+                  onSelect={setSelectedId}
+                />
                 {selected ? <SelectedDistrictPanel row={selected} regionRate={rate} /> : null}
               </div>
               <div className="flex min-w-0 flex-col gap-4 md:hidden">
                 {selected ? <SelectedDistrictPanel row={selected} regionRate={rate} /> : null}
-                <DistrictRankPhone rows={rows} selectedId={selected?.id ?? null} onSelect={setSelectedId} />
+                <DistrictRankPhone
+                  rows={rows}
+                  selectedId={selected?.id ?? null}
+                  onSelect={setSelectedId}
+                />
               </div>
             </>
           )}

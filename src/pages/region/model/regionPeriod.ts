@@ -20,7 +20,8 @@ export const parseRegionPeriod = (
   endDate: string | null | undefined,
 ): { period: RegionPeriod; range: RegionCustomRange | null } => {
   const range = startDate && endDate ? { start: startDate, end: endDate } : null;
-  if (period === "custom") return range ? { period: "custom", range } : { period: "today", range: null };
+  if (period === "custom")
+    return range ? { period: "custom", range } : { period: "today", range: null };
   if (period === "today" || period === "week" || period === "month" || period === "all") {
     return { period, range: null };
   }
@@ -37,13 +38,22 @@ export const regionDateParams = (
   now = dayjs(),
 ): { startDate?: string; endDate?: string } => {
   if (period === "today") {
-    return { startDate: now.startOf("day").format("YYYY-MM-DD"), endDate: now.endOf("day").format("YYYY-MM-DD") };
+    return {
+      startDate: now.startOf("day").format("YYYY-MM-DD"),
+      endDate: now.endOf("day").format("YYYY-MM-DD"),
+    };
   }
   if (period === "week") {
-    return { startDate: now.startOf("week").format("YYYY-MM-DD"), endDate: now.endOf("week").format("YYYY-MM-DD") };
+    return {
+      startDate: now.startOf("week").format("YYYY-MM-DD"),
+      endDate: now.endOf("week").format("YYYY-MM-DD"),
+    };
   }
   if (period === "month") {
-    return { startDate: now.startOf("month").format("YYYY-MM-DD"), endDate: now.endOf("month").format("YYYY-MM-DD") };
+    return {
+      startDate: now.startOf("month").format("YYYY-MM-DD"),
+      endDate: now.endOf("month").format("YYYY-MM-DD"),
+    };
   }
   if (period === "custom" && range) return { startDate: range.start, endDate: range.end };
   return {};

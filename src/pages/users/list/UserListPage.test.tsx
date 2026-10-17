@@ -111,7 +111,7 @@ describe("UserListPage — superadmin/admin (maket `superadmin-users-list`)", ()
       "Adminlar",
     ]);
     // KPI — filtrsiz alohida yengil so'rov.
-    expect(mocks.useGetUser).toHaveBeenCalledWith({ page: 1, limit: 1 }, true);
+    expect(mocks.useGetUser).toHaveBeenCalledWith({ page: 1, limit: 1 }, true, { silentError: true });
     expect(lastListParams()).toEqual({ page: 1, limit: 10 });
     expect(screen.getByText("1–10 / 1 286 ta foydalanuvchi")).toBeInTheDocument();
   });
@@ -236,7 +236,7 @@ describe("UserListPage — menejer (maket `manager-users-list`)", () => {
 
     expect(screen.getByText("Urgut filiali xodimlari va marketlari")).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Foydalanuvchilar soni" })).not.toBeInTheDocument();
-    expect(mocks.useGetUser).toHaveBeenCalledWith({ page: 1, limit: 1 }, false);
+    expect(mocks.useGetUser).toHaveBeenCalledWith({ page: 1, limit: 1 }, false, { silentError: true });
     const tabs = screen.getByRole("tablist", { name: "Rol bo'yicha" });
     expect(within(tabs).getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
       "Barchasi",

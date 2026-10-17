@@ -27,7 +27,10 @@ const open = (role = "superadmin") =>
       <Route path="/regions/districts" element={<RegionDistrictsPage />} />
       <Route path="/regions" element={<Where />} />
     </Routes>,
-    { route: "/regions/districts", preloadedState: { role: { id: "1", role, region: null, name: role } } as never },
+    {
+      route: "/regions/districts",
+      preloadedState: { role: { id: "1", role, region: null, name: role } } as never,
+    },
   );
 
 /** jsdom'da DataTransfer yo'q — oddiy xarita bilan. */
@@ -63,7 +66,9 @@ describe("RegionDistrictsPage (7exC7QKt)", () => {
     expect(within(tashkent).getByText("Chilonzor")).toBeInTheDocument();
     expect(within(tashkent).getByText("Mirobod")).toBeInTheDocument();
     expect(
-      within(screen.getByRole("region", { name: "Samarqand viloyati" })).getByText("Samarqand shahri"),
+      within(screen.getByRole("region", { name: "Samarqand viloyati" })).getByText(
+        "Samarqand shahri",
+      ),
     ).toBeInTheDocument();
     expect(screen.getByTestId("regions-count")).toHaveTextContent("2");
     expect(screen.getByTestId("districts-count")).toHaveTextContent("3");
@@ -80,7 +85,9 @@ describe("RegionDistrictsPage (7exC7QKt)", () => {
     await user.click(await screen.findByRole("option", { name: "Samarqand viloyati" }));
     await user.click(within(form).getByRole("button", { name: /Qo'shish/ }));
 
-    await waitFor(() => expect(api.post).toHaveBeenCalledWith("district", { name: "Yangi tuman", region_id: "6" }));
+    await waitFor(() =>
+      expect(api.post).toHaveBeenCalledWith("district", { name: "Yangi tuman", region_id: "6" }),
+    );
     await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
   });
 
@@ -90,13 +97,18 @@ describe("RegionDistrictsPage (7exC7QKt)", () => {
     await screen.findByText("Mirobod");
 
     await user.click(screen.getByRole("button", { name: "Mirobod nomini tahrirlash" }));
-    const input = within(screen.getByRole("region", { name: "Toshkent shahri" })).getByRole("textbox", {
-      name: "Tuman nomi",
-    });
+    const input = within(screen.getByRole("region", { name: "Toshkent shahri" })).getByRole(
+      "textbox",
+      {
+        name: "Tuman nomi",
+      },
+    );
     await user.clear(input);
     await user.type(input, "Mirobod tumani{Enter}");
 
-    await waitFor(() => expect(api.patch).toHaveBeenCalledWith("district/name/3", { name: "Mirobod tumani" }));
+    await waitFor(() =>
+      expect(api.patch).toHaveBeenCalledWith("district/name/3", { name: "Mirobod tumani" }),
+    );
   });
 
   it("deletes a district only after the v2 confirmation (DELETE /district/:id)", async () => {
@@ -152,6 +164,18 @@ describe("RegionDistrictsPage (7exC7QKt)", () => {
     expect(
       within(screen.getByRole("region", { name: "Samarqand viloyati" })).queryByText("Chilonzor"),
     ).not.toBeInTheDocument();
+  });
+
+  it("load error is shown on the page (ErrorState) and is not toasted globally again", async () => {
+    api.get.mockRejectedValue(
+      Object.assign(new Error("fail"), { isAxiosError: true, response: { status: 500, data: {} } }),
+    );
+    const { queryClient } = open();
+
+    expect(await screen.findByText("Ma'lumotni yuklab bo'lmadi")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Qayta urinish" })).toBeInTheDocument();
+    const [query] = queryClient.getQueryCache().getAll();
+    expect(query?.meta?.silentError).toBe(true);
   });
 
   it("redirects an admin (not superadmin) to /regions", async () => {

@@ -13,7 +13,10 @@ type MockSeries = {
   point?: { events?: { click?: (this: MockPoint) => void } };
   dataLabels?: { formatter?: (this: MockPoint) => string };
 };
-type MockOptions = { series?: MockSeries[]; tooltip?: { formatter?: (this: MockPoint) => string | false } };
+type MockOptions = {
+  series?: MockSeries[];
+  tooltip?: { formatter?: (this: MockPoint) => string | false };
+};
 
 const lastOptions = vi.hoisted(() => ({ current: null as MockOptions | null }));
 
@@ -25,7 +28,11 @@ vi.mock("highcharts-react-official", () => ({
     return (
       <div>
         {(series?.data ?? []).map((point) => (
-          <button key={String(point["hc-key"])} type="button" onClick={() => series?.point?.events?.click?.call(point)}>
+          <button
+            key={String(point["hc-key"])}
+            type="button"
+            onClick={() => series?.point?.events?.click?.call(point)}
+          >
             {`map-point-${String(point["hc-key"])}`}
           </button>
         ))}
@@ -34,7 +41,12 @@ vi.mock("highcharts-react-official", () => ({
   },
 }));
 
-const region = (id: string, name: string, ordersCount: number, deliveredOrders: number): RegionItem => ({
+const region = (
+  id: string,
+  name: string,
+  ordersCount: number,
+  deliveredOrders: number,
+): RegionItem => ({
   id,
   name,
   districtCount: 10,
@@ -105,7 +117,9 @@ describe("UzbekistanRegionMap (v2: faqat xarita, ranglar region-map tokenlaridan
     );
 
     await user.click(screen.getByRole("button", { name: "map-point-uz-sa" }));
-    expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: "6", name: "Samarqand viloyati" }));
+    expect(onSelect).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "6", name: "Samarqand viloyati" }),
+    );
 
     const series = lastOptions.current?.series?.[0];
     const point = series?.data?.find((item) => item.rowId === "6") as MockPoint;

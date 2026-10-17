@@ -164,11 +164,11 @@ describe("BranchDashboardPage (v2)", () => {
     expect(section("Muvaffaqiyat darajasi")).toHaveTextContent("42,9%");
   });
 
-  it("so'rov xatosi — «Filial dashboard ma'lumotlarini yuklab bo'lmadi» + qayta urinish", async () => {
+  it("so'rov xatosi — «Filial ko'rsatkichlarini yuklab bo'lmadi» + qayta urinish", async () => {
     const refetch = vi.fn();
     getDashboardMock.mockReturnValue({ isError: true, isLoading: false, refetch });
     renderWithProviders(<BranchDashboardPage />, { preloadedState: managerState() });
-    expect(screen.getByText("Filial dashboard ma'lumotlarini yuklab bo'lmadi.")).toBeInTheDocument();
+    expect(screen.getByText("Filial ko'rsatkichlarini yuklab bo'lmadi.")).toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("button", { name: "Qayta urinish" }));
     expect(refetch).toHaveBeenCalled();
   });

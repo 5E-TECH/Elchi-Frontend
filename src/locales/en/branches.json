@@ -9,32 +9,24 @@
   },
   "actions": {
     "save": "Save",
-    "update": "Update",
     "edit": "Edit",
     "delete": "Delete",
     "details": "Details"
   },
   "page": {
-    "title": "Branches",
-    "description": "Manage the branch list and statuses"
+    "title": "Branches"
   },
   "detail": {
     "notFound": "Branch not found",
-    "description": "Manage branch information, employees, and settings in one place.",
     "location": "Location",
     "employees": "Employees",
-    "assignedUsers": "users assigned to this branch",
-    "createdDate": "Created date",
-    "createdHint": "when the branch was added to the system",
-    "branchAndEmployees": "Branch and employees"
+    "createdDate": "Created date"
   },
   "employee": {
     "title": "Branch employees",
-    "description": "Assigned employees and their positions.",
     "employee": "Employee",
     "position": "Position",
     "joinedDate": "Joined date",
-    "notFound": "No employees found",
     "add": "Add employee",
     "addDescription": "Assign a user to this branch.",
     "addAction": "Add",
@@ -42,7 +34,6 @@
     "user": "User",
     "selectUser": "Select user",
     "remove": "Remove",
-    "removeConfirm": "Remove this employee from the branch?",
     "removed": "Employee removed",
     "removeError": "Could not remove the employee",
     "addError": "Could not add the employee"
@@ -77,22 +68,6 @@
     "submitTo": "Move to {{branch}}",
     "transferring": "Moving…"
   },
-  "settings": {
-    "title": "Branch settings",
-    "description": "Manage branch-specific key-value settings here.",
-    "key": "Key",
-    "value": "Value",
-    "add": "Add setting",
-    "edit": "Edit setting",
-    "formDescription": "Enter the key and value for this branch.",
-    "created": "Setting added",
-    "updated": "Setting updated",
-    "deleted": "Setting deleted",
-    "deleteConfirm": "Delete this setting?",
-    "notFound": "No settings found",
-    "keyRequired": "Enter key name",
-    "valueRequired": "Enter value"
-  },
   "delete": {
     "confirm": "Delete this branch?",
     "success": "Branch deleted",
@@ -107,21 +82,17 @@
     "region": "Region",
     "district": "District",
     "address": "Address",
-    "status": "Status",
-    "manager": "Responsible employee"
+    "status": "Status"
   },
   "placeholders": {
     "name": "Enter branch name",
     "parent": "Select parent branch",
     "parentForHq": "HQ does not need a parent branch",
-    "type": "Select branch type",
     "code": "Example: TSH-CHL",
     "phone": "90 123 45 67",
     "region": "Select region",
     "district": "Select district",
-    "address": "Enter branch address",
-    "status": "Select status",
-    "manager": "Select responsible employee"
+    "address": "Enter branch address"
   },
   "branchTypes": {
     "HQ": "HQ",
@@ -161,10 +132,7 @@
     "tableView": "Table",
     "cardView": "Cards",
     "treeView": "Tree",
-    "notFound": "No branches found",
-    "emptyCount": "0 branches",
-    "paginationSummary": "Showing {{from}}-{{to}} of {{total}}",
-    "employeeCount": "{{count}} employees"
+    "notFound": "No branches found"
   },
   "table": {
     "name": "Name",
@@ -175,13 +143,6 @@
   },
   "tree": {
     "level": "Level {{level}}",
-    "expand": "Expand child branches",
-    "collapse": "Collapse child branches",
-    "childCount": "{{count}} child branches",
-    "showChildren": "Show",
-    "hideChildren": "Hide",
-    "previousPage": "Previous branches",
-    "nextPage": "Next branches",
     "regionGroup": "Region",
     "districtGroup": "City/District"
   },
@@ -197,8 +158,6 @@
     "region": "Select region",
     "district": "Select district",
     "address": "Enter address",
-    "status": "Select status",
-    "manager": "Select responsible employee",
     "completeForm": "Complete the form"
   },
   "v2": {
@@ -270,7 +229,6 @@
       "description": "Assign a user to {{branch}}.",
       "hint": "Only active managers, registrars and couriers are shown",
       "listLabel": "Users",
-      "loading": "Loading users…",
       "empty": "No user found",
       "noOptions": "No active employees to assign"
     },

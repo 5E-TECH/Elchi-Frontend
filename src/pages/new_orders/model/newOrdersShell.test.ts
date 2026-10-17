@@ -53,9 +53,9 @@ describe("resolveNewOrdersShellMode — qobiq rejimi", () => {
     expect(resolveNewOrdersShellMode("/new-orders/cancelled/121", null)).toBe("bare");
   });
 
-  it("/new-orders/userDetail/5 — legacy (ko'chirilmagan bola: sarlavha + tablar sahifada)", () => {
-    expect(resolveNewOrdersShellMode("/new-orders/userDetail/5", "admin")).toBe("legacy");
-    expect(resolveNewOrdersShellMode("/new-orders/userDetail/5", "market")).toBe("legacy");
+  it("/new-orders/userDetail/5 — bare (v2 tafsilot: o'z sarlavhasi, qobiq h1 va tugmasi takrorlanmaydi)", () => {
+    expect(resolveNewOrdersShellMode("/new-orders/userDetail/5", "admin")).toBe("bare");
+    expect(resolveNewOrdersShellMode("/new-orders/userDetail/5", "market")).toBe("bare");
   });
 
   it.each(["/new-orders/external", "/new-orders/external/3", "/new-orders/integrations", "/new-orders/integrations/incoming"])(

@@ -694,6 +694,8 @@ const useGetDashboard = (params?: AnalyticsDateParams, enabled = true, scope = "
     enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+    // Dashboard bloklari xatoni o'zi ko'rsatadi (`ErrorState`); oldingi davr so'rovi — faqat delta yashirinadi.
+    meta: { silentError: true },
   });
 
 const useGetKpi = (params?: AnalyticsDateParams, enabled = true, scope = "anonymous") =>
@@ -706,6 +708,8 @@ const useGetKpi = (params?: AnalyticsDateParams, enabled = true, scope = "anonym
     enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+    // Dashboard bloklari xatoni o'zi ko'rsatadi (`ErrorState`); oldingi davr so'rovi — faqat delta yashirinadi.
+    meta: { silentError: true },
   });
 
 const useGetRevenue = (params: RevenueParams, enabled = true, scope = "anonymous") =>
@@ -718,6 +722,8 @@ const useGetRevenue = (params: RevenueParams, enabled = true, scope = "anonymous
     enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+    // Dashboard bloklari xatoni o'zi ko'rsatadi (`ErrorState`); oldingi davr so'rovi — faqat delta yashirinadi.
+    meta: { silentError: true },
   });
 
 export const useDashboard = () => {

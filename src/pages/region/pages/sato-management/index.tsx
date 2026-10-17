@@ -9,7 +9,13 @@ import { api } from "../../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../../shared/api";
 import { formatNumberLocalized } from "../../../../shared/lib/formatMoney";
 import { notify } from "../../../../shared/lib/notify";
-import { Badge, ErrorState, PageHeader, SkeletonList, TextInput } from "../../../../shared/ui/primitives";
+import {
+  Badge,
+  ErrorState,
+  PageHeader,
+  SkeletonList,
+  TextInput,
+} from "../../../../shared/ui/primitives";
 import DistrictBoard from "../../ui/DistrictBoard";
 import { filterBoardRegions } from "../../model/boardModel";
 
@@ -29,7 +35,8 @@ const toArray = <T,>(value: unknown): T[] => (Array.isArray(value) ? value : [])
 
 /** GET /region → viloyatlar va biriktirilgan tumanlar (`assignedDistricts`, bo'lmasa `districts`). */
 const normalizeSatoRegions = (payload: unknown): Region[] => {
-  const source = payload as { data?: unknown[] | { data?: unknown[]; items?: unknown[] } } | undefined;
+  const source = payload as
+    { data?: unknown[] | { data?: unknown[]; items?: unknown[] } } | undefined;
 
   const raw = Array.isArray(source?.data)
     ? source.data
@@ -47,7 +54,9 @@ const normalizeSatoRegions = (payload: unknown): Region[] => {
       districts?: unknown[];
     };
 
-    const districtsRaw = Array.isArray(region.assignedDistricts) ? region.assignedDistricts : toArray(region.districts);
+    const districtsRaw = Array.isArray(region.assignedDistricts)
+      ? region.assignedDistricts
+      : toArray(region.districts);
 
     const districts = districtsRaw.map((district) => {
       const d = district as { id?: string | number; name?: string; region_id?: string | number };
@@ -84,9 +93,12 @@ const RegionSatoManagementPage = () => {
 
   const regionsQuery = useQuery({
     queryKey: REGIONS_KEY,
-    queryFn: () => api.get(API_ENDPOINTS.REGIONS.BASE).then((res) => normalizeSatoRegions(res.data)),
+    queryFn: () =>
+      api.get(API_ENDPOINTS.REGIONS.BASE).then((res) => normalizeSatoRegions(res.data)),
     enabled: canAccess,
     refetchOnWindowFocus: false,
+    // Xato sahifada (`ErrorState` + «Qayta urinish») — global xabar takrorlanmaydi.
+    meta: { silentError: true },
   });
   const regions = useMemo(() => regionsQuery.data ?? [], [regionsQuery.data]);
   const totalDistricts = regions.reduce((sum, region) => sum + region.districts.length, 0);
@@ -95,13 +107,18 @@ const RegionSatoManagementPage = () => {
   const moveDistrictOptimistic = (districtId: string, fromRegionId: string, toRegionId: string) => {
     queryClient.setQueryData<Region[]>(REGIONS_KEY, (current) => {
       if (!current) return current;
-      const district = current.find((r) => r.id === fromRegionId)?.districts.find((d) => d.id === districtId);
+      const district = current
+        .find((r) => r.id === fromRegionId)
+        ?.districts.find((d) => d.id === districtId);
       if (!district) return current;
       return current.map((region) => {
         if (region.id === fromRegionId)
           return { ...region, districts: region.districts.filter((d) => d.id !== districtId) };
         if (region.id === toRegionId)
-          return { ...region, districts: [...region.districts, { ...district, region_id: toRegionId }] };
+          return {
+            ...region,
+            districts: [...region.districts, { ...district, region_id: toRegionId }],
+          };
         return region;
       });
     });
@@ -140,10 +157,12 @@ const RegionSatoManagementPage = () => {
         actions={
           <div role="group" aria-label={t("v2.board.countsAria")} className="flex flex-wrap gap-2">
             <Badge>
-              {t("v2.board.regionsCount")} <span className="font-bold">{number(regions.length)}</span>
+              {t("v2.board.regionsCount")}{" "}
+              <span className="font-bold">{number(regions.length)}</span>
             </Badge>
             <Badge>
-              {t("v2.board.districtsCount")} <span className="font-bold">{number(totalDistricts)}</span>
+              {t("v2.board.districtsCount")}{" "}
+              <span className="font-bold">{number(totalDistricts)}</span>
             </Badge>
           </div>
         }
@@ -175,7 +194,9 @@ const RegionSatoManagementPage = () => {
           movingId={movingId}
           moveHint
           expandAll={search.trim().length > 0}
-          onMove={(districtId, fromRegionId, toRegionId) => void handleMove(districtId, fromRegionId, toRegionId)}
+          onMove={(districtId, fromRegionId, toRegionId) =>
+            void handleMove(districtId, fromRegionId, toRegionId)
+          }
         />
       )}
     </div>

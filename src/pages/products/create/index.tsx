@@ -7,7 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
-import { useProducts } from "../../../entities/product";
+import { PRODUCT_LIST_MAX_LIMIT, useProducts } from "../../../entities/product";
 import { useMarkets } from "../../../entities/markets";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { cx } from "../../../shared/lib/cx";
@@ -31,7 +31,6 @@ import {
   TONE_SOFT,
   type DataTableColumn,
 } from "../../../shared/ui/primitives";
-import { PRODUCT_LIST_MAX_LIMIT, useMarketProductsList, useMyProductsList } from "../model/productQueries";
 import { getProductImageUrl, getProductList, getProductMarketName, getProductMeta, type Product } from "../model/productView";
 import { usePickedImage } from "../model/usePickedImage";
 import { ProductImageField } from "../ui/ProductImageField";
@@ -69,14 +68,17 @@ const CreateProductPage = () => {
   const [picked, pick] = usePickedImage();
   const confirmDelete = useDeleteProductConfirm();
 
-  const { createProduct, updateProduct, updateMyProduct } = useProducts();
+  const { createProduct, updateProduct, updateMyProduct, useGetByMarketId, useGetMyProducts } = useProducts();
   const { id } = useParams<{ id: string }>();
   const marketIdFromState = roleState.id ?? profile?.id;
   const effectiveMarketId = id ?? (marketIdFromState ? String(marketIdFromState) : "");
 
   // ─── Ro'yxat va market ───────────────────────────────────────────────────────
-  const marketListQuery = useMarketProductsList(effectiveMarketId || undefined, LIST_PARAMS, !isMarketRole);
-  const myListQuery = useMyProductsList(LIST_PARAMS, isMarketRole);
+  // Xato ro'yxat kartasida (`ErrorState`) — global xabar takrorlanmaydi.
+  const marketListQuery = useGetByMarketId(effectiveMarketId || undefined, !isMarketRole, LIST_PARAMS, {
+    silentError: true,
+  });
+  const myListQuery = useGetMyProducts(isMarketRole, LIST_PARAMS, { keepPreviousData: true, silentError: true });
   const listQuery = isMarketRole ? myListQuery : marketListQuery;
   const listResponse = listQuery.data;
   const rows = useMemo(() => (listResponse === undefined ? undefined : getProductList(listResponse)), [listResponse]);

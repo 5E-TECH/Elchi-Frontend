@@ -50,7 +50,11 @@ const RegionPeriodControls = ({
         options={QUICK_PERIODS.map((key) => ({ value: key, label: t(`v2.period.${key}`) }))}
       />
       <DateRange
-        value={period === "custom" && customRange ? { from: customRange.start, to: customRange.end } : null}
+        value={
+          period === "custom" && customRange
+            ? { from: customRange.start, to: customRange.end }
+            : null
+        }
         onChange={(range) => {
           if (range.from && range.to) onRange({ start: range.from, end: range.to });
           else onClear();

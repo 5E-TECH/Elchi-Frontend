@@ -83,7 +83,13 @@ const STATS_ALL = {
         totalCouriers: 2,
       },
     ],
-    summary: { totalRegions: 3, totalOrders: 148, deliveredOrders: 118, cancelledOrders: 13, totalRevenue: 23_960_000 },
+    summary: {
+      totalRegions: 3,
+      totalOrders: 148,
+      deliveredOrders: 118,
+      cancelledOrders: 13,
+      totalRevenue: 23_960_000,
+    },
   },
 };
 
@@ -257,7 +263,9 @@ describe("Region page — superadmin / admin", () => {
 
     expect(screen.getByRole("heading", { level: 1, name: "Hududlar" })).toBeInTheDocument();
     expect(screen.getByText("Hududlar kesimida buyurtmalar statistikasi")).toBeInTheDocument();
-    const kpis = await screen.findByRole("group", { name: "Hududlar bo'yicha umumiy ko'rsatkichlar" });
+    const kpis = await screen.findByRole("group", {
+      name: "Hududlar bo'yicha umumiy ko'rsatkichlar",
+    });
     expect(await within(kpis).findByText("148")).toBeInTheDocument();
     expect(within(kpis).getByText("Jarayonda 17 ta · 3 viloyat")).toBeInTheDocument();
     expect(within(kpis).getByText("Sotilgan va to'langan")).toBeInTheDocument();
@@ -292,8 +300,12 @@ describe("Region page — superadmin / admin", () => {
     expect(screen.getByRole("radio", { name: "Bu hafta" })).toHaveAttribute("aria-checked", "true");
 
     await user.click(screen.getByRole("radio", { name: "Barchasi" }));
-    await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent("/regions?period=all"));
-    await waitFor(() => expect(apiGetMock).toHaveBeenCalledWith("region/stats/all", { params: {} }));
+    await waitFor(() =>
+      expect(screen.getByTestId("where")).toHaveTextContent("/regions?period=all"),
+    );
+    await waitFor(() =>
+      expect(apiGetMock).toHaveBeenCalledWith("region/stats/all", { params: {} }),
+    );
   });
 
   it("restores a custom range from the URL", async () => {
@@ -304,20 +316,26 @@ describe("Region page — superadmin / admin", () => {
         params: { startDate: "2026-10-01", endDate: "2026-10-08" },
       }),
     );
-    expect(screen.getByTestId("where")).toHaveTextContent("period=custom&startDate=2026-10-01&endDate=2026-10-08");
+    expect(screen.getByTestId("where")).toHaveTextContent(
+      "period=custom&startDate=2026-10-01&endDate=2026-10-08",
+    );
   });
 
   it("opens the region dialog from the ranking with region stats, couriers and districts", async () => {
     const user = userEvent.setup();
     renderRegion("superadmin", "/regions?period=today");
 
-    const ranking = await screen.findByRole("list", { name: "Viloyatlar reytingi, buyurtmalar soni bo'yicha" });
+    const ranking = await screen.findByRole("list", {
+      name: "Viloyatlar reytingi, buyurtmalar soni bo'yicha",
+    });
     await user.click(within(ranking).getByRole("button", { name: "Samarqand" }));
 
     const dialog = await screen.findByRole("dialog", { name: "Samarqand viloyati" });
     const today = dayjs().format("YYYY-MM-DD");
     await waitFor(() =>
-      expect(apiGetMock).toHaveBeenCalledWith("region/stats/6", { params: { startDate: today, endDate: today } }),
+      expect(apiGetMock).toHaveBeenCalledWith("region/stats/6", {
+        params: { startDate: today, endDate: today },
+      }),
     );
     expect(within(dialog).getByText("Batafsil statistika · Bugun")).toBeInTheDocument();
     expect(await within(dialog).findByText("Ilhom Saidov")).toBeInTheDocument();
@@ -332,14 +350,19 @@ describe("Region page — superadmin / admin", () => {
       url === "region/stats/all"
         ? Promise.resolve({ data: STATS_ALL })
         : Promise.reject(
-            Object.assign(new Error("forbidden"), { isAxiosError: true, response: { status: 500, data: {} } }),
+            Object.assign(new Error("forbidden"), {
+              isAxiosError: true,
+              response: { status: 500, data: {} },
+            }),
           ),
     );
     renderRegion("admin");
 
     await user.click(await screen.findByRole("button", { name: "map:Samarqand viloyati" }));
     const dialog = await screen.findByRole("dialog", { name: "Samarqand viloyati" });
-    expect(await within(dialog).findByText("Viloyat ma'lumotini yuklab bo'lmadi")).toBeInTheDocument();
+    expect(
+      await within(dialog).findByText("Viloyat ma'lumotini yuklab bo'lmadi"),
+    ).toBeInTheDocument();
     // KPI xaritadagi qatordan: 31 ta buyurtma.
     const kpis = within(dialog).getByRole("group", { name: "Viloyat ko'rsatkichlari" });
     expect(within(kpis).getByText("31")).toBeInTheDocument();
@@ -369,7 +392,10 @@ describe("Region page — manager / courier (scoped, my/district-stats)", () => 
       renderRegion(role);
 
       expect(
-        await screen.findByRole("heading", { level: 1, name: "Jizzax viloyati — tumanlar statistikasi" }),
+        await screen.findByRole("heading", {
+          level: 1,
+          name: "Jizzax viloyati — tumanlar statistikasi",
+        }),
       ).toBeInTheDocument();
       expect((await screen.findAllByText("Arnasoy tumani")).length).toBeGreaterThan(0);
       expect(screen.getAllByText("Do'stlik tumani").length).toBeGreaterThan(0);
@@ -377,7 +403,9 @@ describe("Region page — manager / courier (scoped, my/district-stats)", () => 
       expect(apiGetMock).toHaveBeenCalledWith("region/my/district-stats", {
         params: { startDate: today, endDate: today },
       });
-      await waitFor(() => expect(apiGetMock).toHaveBeenCalledWith("district", { params: { region_id: "12" } }));
+      await waitFor(() =>
+        expect(apiGetMock).toHaveBeenCalledWith("district", { params: { region_id: "12" } }),
+      );
       expect(calledUrls()).not.toContain("region/stats/all");
       expect(calledUrls()).not.toContain("orders");
       expect(calledUrls().some((url) => url.startsWith("region/stats/"))).toBe(false);

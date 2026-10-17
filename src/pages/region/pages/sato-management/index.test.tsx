@@ -82,9 +82,13 @@ describe("RegionSatoManagementPage (v2)", () => {
     expect(within(tashkent).getByText("Chilonzor")).toBeInTheDocument();
     expect(within(tashkent).getByText("2 ta")).toBeInTheDocument();
     expect(
-      within(screen.getByRole("region", { name: "Sirdaryo viloyati" })).getByText("Tuman biriktirilmagan"),
+      within(screen.getByRole("region", { name: "Sirdaryo viloyati" })).getByText(
+        "Tuman biriktirilmagan",
+      ),
     ).toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1, name: "Tumanlarni o'tkazish" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { level: 1, name: "Tumanlarni o'tkazish" }),
+    ).toBeInTheDocument();
     expect(api.get).toHaveBeenCalledWith("region");
   });
 
@@ -94,7 +98,9 @@ describe("RegionSatoManagementPage (v2)", () => {
 
     act(() => drag("2", "6"));
 
-    await waitFor(() => expect(api.patch).toHaveBeenCalledWith("district/2", { assigned_region: "6" }));
+    await waitFor(() =>
+      expect(api.patch).toHaveBeenCalledWith("district/2", { assigned_region: "6" }),
+    );
     expect(
       within(screen.getByRole("region", { name: "Samarqand viloyati" })).getByText("Chilonzor"),
     ).toBeInTheDocument();
@@ -125,17 +131,35 @@ describe("RegionSatoManagementPage (v2)", () => {
       open();
       await screen.findByRole("button", { name: /^Toshkent shahri/ });
 
-      await user.click(screen.getByRole("button", { name: "Mirobod — boshqa viloyatga o'tkazish" }));
+      await user.click(
+        screen.getByRole("button", { name: "Mirobod — boshqa viloyatga o'tkazish" }),
+      );
       const dialog = await screen.findByRole("dialog", { name: "Boshqa viloyatga o'tkazish" });
-      expect(within(dialog).queryByRole("radio", { name: "Toshkent shahri" })).not.toBeInTheDocument();
+      expect(
+        within(dialog).queryByRole("radio", { name: "Toshkent shahri" }),
+      ).not.toBeInTheDocument();
       expect(within(dialog).getByRole("button", { name: "O'tkazish" })).toBeDisabled();
       await user.click(within(dialog).getByRole("radio", { name: "Sirdaryo viloyati" }));
       await user.click(within(dialog).getByRole("button", { name: "O'tkazish" }));
 
-      await waitFor(() => expect(api.patch).toHaveBeenCalledWith("district/3", { assigned_region: "11" }));
+      await waitFor(() =>
+        expect(api.patch).toHaveBeenCalledWith("district/3", { assigned_region: "11" }),
+      );
     } finally {
       restore();
     }
+  });
+
+  it("load error is shown on the page (ErrorState) and is not toasted globally again", async () => {
+    api.get.mockRejectedValue(
+      Object.assign(new Error("fail"), { isAxiosError: true, response: { status: 500, data: {} } }),
+    );
+    const { queryClient } = open();
+
+    expect(await screen.findByText("Ma'lumotni yuklab bo'lmadi")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Qayta urinish" })).toBeInTheDocument();
+    const [query] = queryClient.getQueryCache().getAll();
+    expect(query?.meta?.silentError).toBe(true);
   });
 
   it("redirects other roles to /regions without loading", async () => {

@@ -67,11 +67,8 @@ const RegionOverviewCard = ({ startDate, endDate, periodText, periodLabel, varia
     setDialogOpen(true);
   }, []);
   const isRegistrator = variant === "registrator";
-  // Registrator: eski oyna unga daromadni ko'rsatmas edi (`showFinancialMetrics=false`), umumiy
-  // `RegionDetailDialog` esa «Umumiy tushum»ni yashirish imkonini bermaydi — shu sabab registratorda
-  // oyna ochilmaydi (daromad oshkor bo'lmasin). Oynaga additiv `showRevenue` qo'shilgach ulanadi.
-  const canOpenDetail = !isRegistrator;
-  const selectRegion = canOpenDetail ? openRegion : undefined;
+  // Registrator ham oynani ochadi, lekin daromadsiz (`showRevenue={false}`) — eski oyna unga daromadni
+  // ko'rsatmas edi (`showFinancialMetrics=false`).
   // Telefonda kataklar ~41px (7 ustun) — bosish nishoni 44px dan kichik; u yerda viloyat «Eng faol
   // hududlar» ro'yxati qatoridan (≥ 44px) ochiladi, kataklar faqat ko'rsatadi.
   const isPhone = useIsPhone();
@@ -149,7 +146,7 @@ const RegionOverviewCard = ({ startDate, endDate, periodText, periodLabel, varia
             <div className={cx("flex flex-col gap-4 transition-opacity", isRefetching && "opacity-45")}>
               <div className="flex flex-wrap items-start gap-6 max-md:gap-4">
                 <div className="flex min-w-0 flex-[1_1_520px] flex-col gap-3">
-                  <RegionTiles rows={rows} metric={metric} ariaLabel={mapAria} showRevenue={!isRegistrator} onSelect={isPhone ? undefined : selectRegion} />
+                  <RegionTiles rows={rows} metric={metric} ariaLabel={mapAria} showRevenue={!isRegistrator} onSelect={isPhone ? undefined : openRegion} />
                   <div
                     aria-label={t("v2Dashboard.region.scaleAria", { metric: t(`v2Dashboard.region.metric.${metric}`) })}
                     className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-text-muted"
@@ -163,7 +160,7 @@ const RegionOverviewCard = ({ startDate, endDate, periodText, periodLabel, varia
                     </span>
                     <span>{scaleLabels[metric][1]}</span>
                   </div>
-                  {selectRegion ? <ChartNote>{t("v2Dashboard.region.clickNote")}</ChartNote> : null}
+                  <ChartNote>{t("v2Dashboard.region.clickNote")}</ChartNote>
                   <dl className="m-0 grid grid-cols-[repeat(auto-fit,minmax(min(150px,100%),1fr))] gap-x-4 gap-y-3 rounded-xl bg-sunken px-4 py-3">
                     <div className="flex min-w-0 flex-col gap-0.5">
                       <dt className="text-xs text-text-muted">{t("v2Dashboard.region.topOrders")}</dt>
@@ -247,23 +244,16 @@ const RegionOverviewCard = ({ startDate, endDate, periodText, periodLabel, varia
                         <tr
                           key={row.id}
                           data-region-row={row.id}
-                          className={cx(
-                            selectRegion &&
-                              "cursor-pointer transition-colors duration-150 hover:bg-row-hover motion-reduce:transition-none",
-                          )}
-                          onClick={selectRegion ? () => selectRegion(row) : undefined}
+                          className="cursor-pointer transition-colors duration-150 hover:bg-row-hover motion-reduce:transition-none"
+                          onClick={() => openRegion(row)}
                         >
                           <th scope="row" className={cx(TD, "text-left font-normal")}>
-                            {selectRegion ? (
-                              <button
-                                type="button"
-                                className="-mx-1 inline-flex min-h-11 items-center rounded-md px-1 text-left hover:underline"
-                              >
-                                {nameCell(row)}
-                              </button>
-                            ) : (
-                              nameCell(row)
-                            )}
+                            <button
+                              type="button"
+                              className="-mx-1 inline-flex min-h-11 items-center rounded-md px-1 text-left hover:underline"
+                            >
+                              {nameCell(row)}
+                            </button>
                           </th>
                           <td className={cx(TD, "text-right")}>
                             <span
@@ -320,7 +310,7 @@ const RegionOverviewCard = ({ startDate, endDate, periodText, periodLabel, varia
                       avatarText: row.tile?.short,
                       value: t("v2Charts.countTa", { value: count(row.orders) }),
                       sub: t("v2Dashboard.region.soldShare", { rate: pct(row.rate) }),
-                      onClick: selectRegion ? () => selectRegion(row) : undefined,
+                      onClick: () => openRegion(row),
                     }))}
                   />
                 </div>
@@ -352,6 +342,7 @@ const RegionOverviewCard = ({ startDate, endDate, periodText, periodLabel, varia
             periodLabel={periodLabel ?? periodText}
             fallback={selected.item}
             company={company ?? undefined}
+            showRevenue={!isRegistrator}
           />
         </Suspense>
       ) : null}

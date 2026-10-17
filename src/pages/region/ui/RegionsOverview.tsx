@@ -3,7 +3,11 @@ import { Banknote, CircleX, Map as MapIcon, PackageCheck, ShoppingBag } from "lu
 import { lazy, Suspense, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { shareOf, splitCompactMoney, useRegionStats } from "../../../entities/region";
-import { formatMoneyLocalized, formatNumberLocalized, formatPercentLocalized } from "../../../shared/lib/formatMoney";
+import {
+  formatMoneyLocalized,
+  formatNumberLocalized,
+  formatPercentLocalized,
+} from "../../../shared/lib/formatMoney";
 import { EmptyState, ErrorState, SkeletonChart, StatCard } from "../../../shared/ui/primitives";
 import { LegendKey, Meter, SegBar } from "../../../shared/ui/charts";
 import { summarizeRegions, toRegionRows, type RegionRow } from "../model/regionsModel";
@@ -37,7 +41,10 @@ const RegionsOverview = ({ dateParams, periodLabel, periodLower }: RegionsOvervi
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const rows = useMemo(() => toRegionRows(query.data?.regions ?? []), [query.data?.regions]);
-  const summary = useMemo(() => summarizeRegions(rows, query.data?.summary), [rows, query.data?.summary]);
+  const summary = useMemo(
+    () => summarizeRegions(rows, query.data?.summary),
+    [rows, query.data?.summary],
+  );
 
   const number = (value: number) => formatNumberLocalized(value, { language });
   const percent = (value: number) => formatPercentLocalized(value, { language });
@@ -76,7 +83,10 @@ const RegionsOverview = ({ dateParams, periodLabel, periodLower }: RegionsOvervi
           loading={loading}
           value={number(summary.total)}
           unit={unitTa}
-          hint={t("v2.kpi.totalHint", { pending: number(summary.pending), regions: number(summary.active.length) })}
+          hint={t("v2.kpi.totalHint", {
+            pending: number(summary.pending),
+            regions: number(summary.active.length),
+          })}
         >
           <div className="mt-auto flex min-w-0 flex-col gap-2 pt-2">
             <SegBar
@@ -89,8 +99,18 @@ const RegionsOverview = ({ dateParams, periodLabel, periodLower }: RegionsOvervi
               })}
               segments={[
                 { key: "sold", label: t("v2.status.sold"), value: summary.sold, tone: "success" },
-                { key: "pending", label: t("v2.status.pending"), value: summary.pending, tone: "warning" },
-                { key: "cancelled", label: t("v2.status.cancelledShort"), value: summary.cancelled, tone: "danger" },
+                {
+                  key: "pending",
+                  label: t("v2.status.pending"),
+                  value: summary.pending,
+                  tone: "warning",
+                },
+                {
+                  key: "cancelled",
+                  label: t("v2.status.cancelledShort"),
+                  value: summary.cancelled,
+                  tone: "danger",
+                },
               ]}
             />
             {/* Ixcham legenda (`.el-kpi` ichida 12 px) — ChartLegend 13 px kartaga sig'maydi. */}
@@ -118,7 +138,10 @@ const RegionsOverview = ({ dateParams, periodLabel, periodLower }: RegionsOvervi
           unit={unitTa}
           hint={t("v2.kpi.soldHint")}
         >
-          <KpiMeter label={t("v2.kpi.shareOfTotal")} value={percent(shareOf(summary.sold, summary.total))}>
+          <KpiMeter
+            label={t("v2.kpi.shareOfTotal")}
+            value={percent(shareOf(summary.sold, summary.total))}
+          >
             <Meter
               value={shareOf(summary.sold, summary.total)}
               tone="success"
@@ -135,7 +158,10 @@ const RegionsOverview = ({ dateParams, periodLabel, periodLower }: RegionsOvervi
           unit={unitTa}
           hint={t("v2.kpi.cancelledHint")}
         >
-          <KpiMeter label={t("v2.kpi.shareOfTotal")} value={percent(shareOf(summary.cancelled, summary.total))}>
+          <KpiMeter
+            label={t("v2.kpi.shareOfTotal")}
+            value={percent(shareOf(summary.cancelled, summary.total))}
+          >
             <Meter
               value={shareOf(summary.cancelled, summary.total)}
               tone="danger"
@@ -171,10 +197,20 @@ const RegionsOverview = ({ dateParams, periodLabel, periodLower }: RegionsOvervi
       {loading ? (
         <SkeletonChart className="h-[420px] rounded-[14px] border border-border bg-surface" />
       ) : rows.length === 0 ? (
-        <EmptyState framed icon={MapIcon} title={t("v2.states.empty.title")} description={t("v2.states.empty.text")} />
+        <EmptyState
+          framed
+          icon={MapIcon}
+          title={t("v2.states.empty.title")}
+          description={t("v2.states.empty.text")}
+        />
       ) : (
         <>
-          <RegionsMapCard rows={rows} summary={summary} periodLower={periodLower} onSelect={openRegion} />
+          <RegionsMapCard
+            rows={rows}
+            summary={summary}
+            periodLower={periodLower}
+            onSelect={openRegion}
+          />
           <RegionsSuccessCards summary={summary} periodLabel={periodLabel} />
         </>
       )}
@@ -188,7 +224,11 @@ const RegionsOverview = ({ dateParams, periodLabel, periodLower }: RegionsOvervi
             dateParams={dateParams}
             periodLabel={periodLabel}
             fallback={selected.item}
-            company={{ totalOrders: summary.total, totalRevenue: summary.revenue, successRate: summary.rate }}
+            company={{
+              totalOrders: summary.total,
+              totalRevenue: summary.revenue,
+              successRate: summary.rate,
+            }}
           />
         </Suspense>
       ) : null}

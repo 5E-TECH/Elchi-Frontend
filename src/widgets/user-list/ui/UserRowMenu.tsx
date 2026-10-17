@@ -126,7 +126,9 @@ export const UserRowMenu = ({ label, items }: { label: string; items: readonly U
                   disabled={item.disabled}
                   className={cx(item.danger ? ITEM_DANGER : ITEM)}
                   onClick={() => {
-                    close(false);
+                    // Fokus avval kebab tugmasiga qaytadi: ochiladigan oyna (tasdiq / tahrir) yopilganda fokusni
+                    // shu tugmaga qaytaradi (aks holda menyu bandi o'chib, fokus `body` ga tushardi).
+                    close(true);
                     item.onSelect();
                   }}
                 >

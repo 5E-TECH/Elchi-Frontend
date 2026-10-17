@@ -6,7 +6,9 @@ import { renderWithProviders } from "../../../test/test-utils";
 import RegionDetailDialog from "../index";
 
 const apiGet = vi.hoisted(() => vi.fn());
-vi.mock("../../../shared/api/api", () => ({ api: { get: (...args: unknown[]) => apiGet(...args) } }));
+vi.mock("../../../shared/api/api", () => ({
+  api: { get: (...args: unknown[]) => apiGet(...args) },
+}));
 
 const fallback: RegionItem = {
   id: "6",
@@ -165,28 +167,67 @@ describe("RegionDetailDialog (umumiy viloyat oynasi)", () => {
 
   it("keeps the map numbers and shows the dialog error when region stats fail", async () => {
     apiGet.mockRejectedValue(
-      Object.assign(new Error("forbidden"), { isAxiosError: true, response: { status: 403, data: {} } }),
+      Object.assign(new Error("forbidden"), {
+        isAxiosError: true,
+        response: { status: 403, data: {} },
+      }),
     );
     renderDialog();
 
     const dialog = await screen.findByRole("dialog", { name: "Samarqand viloyati" });
-    expect(await within(dialog).findByText("Viloyat ma'lumotini yuklab bo'lmadi")).toBeInTheDocument();
+    expect(
+      await within(dialog).findByText("Viloyat ma'lumotini yuklab bo'lmadi"),
+    ).toBeInTheDocument();
     const kpis = within(dialog).getByRole("group", { name: "Viloyat ko'rsatkichlari" });
     expect(within(kpis).getByText("31")).toBeInTheDocument();
     expect(within(kpis).getByText("4 860 000 so'm")).toBeInTheDocument();
-    expect(within(dialog).queryByRole("list", { name: "Viloyat kuryerlari" })).not.toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole("list", { name: "Viloyat kuryerlari" }),
+    ).not.toBeInTheDocument();
   });
 
   it("shows only the error (no endless skeletons) when region stats fail and no fallback is given", async () => {
     apiGet.mockRejectedValue(
-      Object.assign(new Error("forbidden"), { isAxiosError: true, response: { status: 403, data: {} } }),
+      Object.assign(new Error("forbidden"), {
+        isAxiosError: true,
+        response: { status: 403, data: {} },
+      }),
     );
     renderDialog({ fallback: undefined });
 
     const dialog = await screen.findByRole("dialog", { name: "Samarqand viloyati" });
-    expect(await within(dialog).findByText("Viloyat ma'lumotini yuklab bo'lmadi")).toBeInTheDocument();
-    expect(within(dialog).queryByRole("group", { name: "Viloyat ko'rsatkichlari" })).not.toBeInTheDocument();
-    expect(dialog.querySelector("[data-skeleton], [data-skeleton-preset], [aria-busy='true']")).toBeNull();
+    expect(
+      await within(dialog).findByText("Viloyat ma'lumotini yuklab bo'lmadi"),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole("group", { name: "Viloyat ko'rsatkichlari" }),
+    ).not.toBeInTheDocument();
+    expect(
+      dialog.querySelector("[data-skeleton], [data-skeleton-preset], [aria-busy='true']"),
+    ).toBeNull();
+  });
+
+  it("hides every revenue figure when showRevenue is false (registrator)", async () => {
+    apiGet.mockResolvedValue({ data: DETAIL });
+    const user = userEvent.setup();
+    renderDialog({ showRevenue: false });
+
+    const dialog = await screen.findByRole("dialog", { name: "Samarqand viloyati" });
+    const couriers = await within(dialog).findByRole("list", { name: "Viloyat kuryerlari" });
+    const kpis = within(dialog).getByRole("group", { name: "Viloyat ko'rsatkichlari" });
+    expect(within(kpis).queryByText("Umumiy tushum")).not.toBeInTheDocument();
+    expect(within(kpis).getByText("77,4%")).toBeInTheDocument();
+    // Kuryer qatorida telefon qoladi, summa yo'q; tuman qatorida faqat foiz.
+    expect(within(couriers).getByText("+998 97 238 90 14")).toBeInTheDocument();
+    const rank = within(dialog).getByRole("list", { name: "Tumanlar, buyurtmalar soni bo'yicha" });
+    expect(within(rank).getByText("81,8%")).toBeInTheDocument();
+    expect(dialog).not.toHaveTextContent("so'm");
+
+    await user.click(within(dialog).getByRole("radio", { name: "Jadval" }));
+    const table = within(dialog).getByRole("table");
+    expect(within(table).queryByRole("columnheader", { name: "Tushum" })).not.toBeInTheDocument();
+    expect(within(table).getByRole("columnheader", { name: "Sotuv" })).toBeInTheDocument();
+    expect(dialog).not.toHaveTextContent("so'm");
   });
 
   it("does not request anything while closed", async () => {

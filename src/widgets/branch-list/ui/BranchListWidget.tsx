@@ -78,7 +78,8 @@ const BranchListWidget = ({ viewMode, onViewModeChange, onEdit, createAction }: 
     () => (viewMode === "tree" ? { ...params, page: 1, limit: TREE_LIMIT } : params),
     [params, viewMode],
   );
-  const { data, isLoading, isError, error, refetch } = useBranches(queryParams);
+  // Xato ro'yxat kartasida (`ErrorState`) — global xabar takrorlanmaydi.
+  const { data, isLoading, isError, error, refetch } = useBranches(queryParams, true, { silentError: true });
   const total = data?.total;
   const hasFilters = Boolean(params.search) || Boolean(params.status);
 
