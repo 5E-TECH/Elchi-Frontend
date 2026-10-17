@@ -20,7 +20,7 @@ export const mapBatchOrdersToPostOrders = (batch?: BatchDetail | null): PostOrde
   const branchId = batch?.to_branch?.id ?? "batch-region";
   const branchName = batch?.to_branch?.name ?? i18n.t("batches:detail.branch");
 
-  return (batch?.orders ?? []).map((order) => ({
+  return (batch?.orders ?? []).map((order): PostOrder => ({
     id: order.id,
     createdAt,
     updatedAt: createdAt,
@@ -45,23 +45,12 @@ export const mapBatchOrdersToPostOrders = (batch?: BatchDetail | null): PostOrde
     external_id: null,
     deleted: false,
     items: [],
+    // Pochta detali tiplari backend oq ro'yxatiga toraytirilgan (VfgcnxDa) — faqat shu maydonlar.
     customer: {
       id: `batch-customer-${order.id}`,
       name: order.receiver,
       phone_number: order.phone,
       extra_number: null,
-      username: "",
-      salary: 0,
-      payment_day: null,
-      role: "customer",
-      status: "active",
-      tariff_home: null,
-      tariff_center: null,
-      add_order: false,
-      default_tariff: null,
-      createdAt,
-      updatedAt: createdAt,
-      is_deleted: false,
     },
     district: {
       id: "batch-district",
@@ -69,8 +58,6 @@ export const mapBatchOrdersToPostOrders = (batch?: BatchDetail | null): PostOrde
       sato_code: "",
       region_id: branchId,
       assigned_region: branchName,
-      createdAt,
-      updatedAt: createdAt,
     },
     region: {
       id: branchId,

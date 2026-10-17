@@ -88,6 +88,19 @@
     "limited": "Ma'lumot hali kam — reyting natijalari o'zgarishi mumkin.",
     "empty": "Ma'lumot hali kam (reyting uchun kamida 30 buyurtma kerak)."
   },
+  "ranking": {
+    "formula": "Sotuv foizi · sotilgan / jami",
+    "formulaWithOwn": "Sotuv foizi · top 5 va sizning filial",
+    "periodLastDays": "oxirgi {{count}} kun",
+    "ratio": "{{successful}} / {{total}} ta",
+    "rateAria": "{{name}}: sotuv foizi",
+    "lowData": "Ma'lumot hali kam — reyting natijalari o'zgarishi mumkin",
+    "empty": "Bu davrda reyting uchun buyurtma yo'q",
+    "showMore": "Yana ko'rsatish · {{count}} ta",
+    "showLess": "Kamroq ko'rsatish",
+    "ownBranch": "Sizning filial",
+    "ownRankAria": "Sizning filialingiz o'rni"
+  },
   "region": {
     "title": "Hududlar bo'yicha",
     "subtitle": "Viloyatlar kesimida buyurtma va sotuv ko'rsatkichlari"

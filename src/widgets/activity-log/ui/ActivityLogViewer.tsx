@@ -1,219 +1,280 @@
-import { useEffect, useMemo, useState } from "react";
-import { Button, DatePicker, Input, Select, Table, Tag, type TableColumnsType } from "antd";
-import type { Dayjs } from "dayjs";
-import { RotateCcw } from "lucide-react";
+// dizayn-v2: superadmin-activity-logs-list, superadmin-activity-logs-row-expanded, admin-activity-logs-list, admin-activity-logs-row-expanded
+import { useMemo, useState } from "react";
+import { ChevronDown, ChevronRight, ScrollText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
-  ACTIVITY_SERVICES,
-  ActivityActionTag,
+  ActivityActionBadge,
   useActivityActions,
   useActivityLogs,
+  type ActivityActionMeta,
   type ActivityLog,
   type ActivityLogParams,
 } from "../../../entities/activity-log";
-import QueryErrorState from "../../../shared/ui/QueryErrorState";
-import { formatDate } from "../../../shared/lib/formatDate";
+import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
+import {
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  EmptyState,
+  ErrorState,
+  IconButton,
+  Pagination,
+  QueryBoundary,
+  SkeletonTable,
+  type DataTableColumn,
+} from "../../../shared/ui/primitives";
+import { useActivityLabels } from "../model/useActivityLabels";
+import { hasActivityDetail } from "../model/activityDetail";
+import { EMPTY_ACTIVITY_FILTERS, hasActivityFilters, type ActivityLogFilterValues } from "../model/activityFilters";
 import ActivityLogDetail from "./ActivityLogDetail";
+import ActivityLogFilters from "./ActivityLogFilters";
 
-const { RangePicker } = DatePicker;
+/**
+ * Faoliyat jurnali — dizayn v2 (maketlar `superadmin-activity-logs-list`, `-row-expanded`; admin ham shu).
+ * Bitta karta: filtrlar → jadval (telefonda ro'yxat qatorlari) → sahifalash. Qator «›» bilan ochiladi:
+ * maydon o'zgarishlari va qo'shimcha ma'lumot (`ActivityLogDetail`); tafsiloti yo'q qatorda tugma yo'q.
+ * «Amal» — `action_meta` badge'i (y8CxCtcK), «Kim» — ism + rol (topilmasa «#7 (topilmadi)», «Tizim»).
+ */
+
 const PAGE_SIZE = 20;
-type DateRange = [Dayjs | null, Dayjs | null] | null;
+
+/** `YYYY-MM-DD` (mahalliy kun) → kun boshi / oxiri ISO (avvalgi `startOf("day")` / `endOf("day")` kabi). */
+const dayStartIso = (day: string) => new Date(`${day}T00:00:00`).toISOString();
+const dayEndIso = (day: string) => new Date(`${day}T23:59:59.999`).toISOString();
+
+const rowKey = (log: ActivityLog) => `${log.service ?? ""}-${log.id}`;
 
 const ActivityLogViewer = () => {
   const { t } = useTranslation("activityLogs");
+  const labels = useActivityLabels();
+  const { language } = labels;
 
   const [page, setPage] = useState(1);
-  const [searchInput, setSearchInput] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [service, setService] = useState<string | undefined>();
-  const [action, setAction] = useState<string | undefined>();
-  const [entityType, setEntityType] = useState("");
-  const [userId, setUserId] = useState("");
-  const [dateRange, setDateRange] = useState<DateRange>(null);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedSearch(searchInput.trim()), 400);
-    return () => window.clearTimeout(timer);
-  }, [searchInput]);
-
-  // Every filter change returns to the first page. Done in the event handlers
-  // (not an effect) so we never trigger a cascading setState-in-effect render.
-  const onFirstPage = <T,>(setter: (value: T) => void) => (value: T) => {
-    setter(value);
-    setPage(1);
-  };
+  const [filters, setFilters] = useState<ActivityLogFilterValues>(EMPTY_ACTIVITY_FILTERS);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const params = useMemo<ActivityLogParams>(() => {
     const next: ActivityLogParams = { page, limit: PAGE_SIZE };
-    if (debouncedSearch) next.search = debouncedSearch;
-    if (service) next.service = service;
-    if (action) next.action = action;
-    if (entityType.trim()) next.entity_type = entityType.trim();
-    if (userId.trim()) next.user_id = userId.trim();
-    if (dateRange?.[0]) next.from = dateRange[0].startOf("day").toISOString();
-    if (dateRange?.[1]) next.to = dateRange[1].endOf("day").toISOString();
+    if (filters.search) next.search = filters.search;
+    if (filters.service) next.service = filters.service;
+    if (filters.action) next.action = filters.action;
+    if (filters.entityType.trim()) next.entity_type = labels.entityTypeParam(filters.entityType);
+    if (filters.userId.trim()) next.user_id = filters.userId.trim();
+    if (filters.dateFrom) next.from = dayStartIso(filters.dateFrom);
+    if (filters.dateTo) next.to = dayEndIso(filters.dateTo);
     return next;
-  }, [page, debouncedSearch, service, action, entityType, userId, dateRange]);
+  }, [filters, labels, page]);
 
-  const { data, isLoading, isFetching, isError, refetch } = useActivityLogs(params);
-  const { data: actions = [] } = useActivityActions();
-
-  const items = data?.items ?? [];
-  const total = data?.total ?? 0;
-
-  const clearFilters = () => {
-    setSearchInput("");
-    setDebouncedSearch("");
-    setService(undefined);
-    setAction(undefined);
-    setEntityType("");
-    setUserId("");
-    setDateRange(null);
-    setPage(1);
-  };
-
-  const hasFilters = Boolean(
-    debouncedSearch || service || action || entityType || userId || dateRange,
+  const logsQuery = useActivityLogs(params);
+  const catalogQuery = useActivityActions();
+  const registry = useMemo(
+    () => new Map<string, ActivityActionMeta>((catalogQuery.data?.registry ?? []).map((item) => [item.action, item])),
+    [catalogQuery.data],
   );
 
-  const columns: TableColumnsType<ActivityLog> = [
+  const items = logsQuery.data?.items ?? [];
+  const total = logsQuery.data?.total ?? 0;
+  const filtered = hasActivityFilters(filters);
+
+  // Har filtr o'zgarishi birinchi sahifaga qaytaradi, ochiq qator yopiladi.
+  const changeFilters = (patch: Partial<ActivityLogFilterValues>) => {
+    setFilters((current) => ({ ...current, ...patch }));
+    setPage(1);
+    setExpandedKey(null);
+  };
+  // Filtr bloki qayta yaratiladi: yozilayotgan qidiruvning kechikkan taymeri (400 ms) tozalashni bekor qilmaydi.
+  const [filtersKey, setFiltersKey] = useState(0);
+  const clearFilters = () => {
+    setFilters(EMPTY_ACTIVITY_FILTERS);
+    setFiltersKey((key) => key + 1);
+    setPage(1);
+    setExpandedKey(null);
+  };
+  const changePage = (next: number) => {
+    setPage(next);
+    setExpandedKey(null);
+  };
+
+  const target = (log: ActivityLog) => [labels.entityType(log.entity_type), labels.entityId(log)].filter(Boolean).join(" ");
+
+  const toggleButton = (log: ActivityLog) => {
+    if (!hasActivityDetail(log)) return <span className="sr-only">{t("detail.none")}</span>;
+    const open = expandedKey === rowKey(log);
+    return (
+      <IconButton
+        size="sm"
+        icon={open ? ChevronDown : ChevronRight}
+        aria-expanded={open}
+        label={t(open ? "detail.collapse" : "detail.expand", { target: target(log) })}
+        onClick={() => setExpandedKey(open ? null : rowKey(log))}
+      />
+    );
+  };
+
+  const time = (log: ActivityLog) => formatDateTimeLocalized(log.created_at, { language });
+
+  const columns: DataTableColumn<ActivityLog>[] = [
     {
-      title: t("columns.time"),
-      dataIndex: "created_at",
-      width: 160,
-      render: (value: string) => (
-        <span className="whitespace-nowrap text-xs font-medium">{formatDate(value)}</span>
-      ),
+      id: "detail",
+      header: <span className="sr-only">{t("columns.detail")}</span>,
+      className: "w-[52px] pr-0",
+      cell: toggleButton,
     },
     {
-      title: t("columns.actor"),
-      width: 180,
-      render: (_, record) => {
-        const name = record.actor?.name || record.user_name || record.user_id || "—";
-        const role = record.actor?.role || record.user_role;
+      id: "time",
+      header: t("columns.time"),
+      className: "w-[150px] whitespace-nowrap",
+      cell: time,
+    },
+    {
+      id: "actor",
+      header: t("columns.actor"),
+      cell: (log) => {
+        const role = labels.role(log.actor?.role || log.user_role);
         return (
-          <div className="min-w-0">
-            <div className="truncate text-sm font-semibold">{name}</div>
-            {/* Ochilgan (expanded) qator foni och — dark'da muted token u yerda
-                4.3:1 berardi, shu sabab biroz yorqinroq ton (AA >= 4.5:1). */}
-            {role ? <div className="text-xs text-[color:var(--color-text-muted)] dark:text-white/70">{role}</div> : null}
-          </div>
+          <>
+            <div className="whitespace-nowrap font-semibold text-text">{labels.actorName(log)}</div>
+            {role ? <div className="whitespace-nowrap text-[13px] text-text-muted">{role}</div> : null}
+          </>
         );
       },
     },
     {
-      title: t("columns.action"),
-      dataIndex: "action",
-      width: 150,
-      render: (value: string) => <ActivityActionTag action={value} />,
+      id: "action",
+      header: t("columns.action"),
+      cell: (log) => <ActivityActionBadge action={log.action} meta={log.action_meta} registry={registry} />,
     },
     {
-      title: t("columns.entity"),
-      render: (_, record) => {
-        const entityName =
-          (record.entity?.name as string | undefined) ||
-          (record.entity?.title as string | undefined);
+      id: "entity",
+      header: t("columns.entity"),
+      cell: (log) => {
+        const name = labels.entityName(log);
         return (
-          <div className="min-w-0">
-            <div className="truncate text-sm font-medium">
-              {record.entity_type || "—"}
-              {record.entity_id ? (
-                <span className="text-[color:var(--color-text-muted)] dark:text-white/70"> #{record.entity_id}</span>
-              ) : null}
+          <>
+            <div className="whitespace-nowrap font-semibold text-text">
+              {labels.entityType(log.entity_type)}{" "}
+              <span className="font-medium text-text-muted">{labels.entityId(log)}</span>
             </div>
-            {entityName ? <div className="truncate text-xs">{entityName}</div> : null}
-          </div>
+            {name ? <div className="text-[13px] text-text-muted">{name}</div> : null}
+          </>
         );
       },
     },
     {
-      title: t("columns.service"),
-      dataIndex: "service",
-      width: 130,
-      render: (value: string | null) => (value ? <Tag>{value}</Tag> : "—"),
+      id: "service",
+      header: t("columns.service"),
+      hideBelow: "lg",
+      cell: (log) => (log.service ? <Badge>{labels.service(log.service)}</Badge> : <span className="text-text-muted">—</span>),
     },
   ];
 
-  return (
-    <div className="flex flex-col gap-4">
-      <div className="grid gap-3 rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 dark:border-white/10 dark:bg-white/[0.02] md:grid-cols-2 lg:grid-cols-3">
-        <Input.Search
-          allowClear
-          placeholder={t("filters.search")}
-          value={searchInput}
-          onChange={(event) => onFirstPage(setSearchInput)(event.target.value)}
-        />
-        <Select
-          allowClear
-          showSearch
-          placeholder={t("filters.service")}
-          value={service}
-          onChange={onFirstPage(setService)}
-          options={ACTIVITY_SERVICES.map((name) => ({ label: name, value: name }))}
-        />
-        <Select
-          allowClear
-          showSearch
-          placeholder={t("filters.action")}
-          value={action}
-          onChange={onFirstPage(setAction)}
-          options={actions.map((name) => ({ label: name, value: name }))}
-        />
-        <Input
-          allowClear
-          placeholder={t("filters.entityType")}
-          value={entityType}
-          onChange={(event) => onFirstPage(setEntityType)(event.target.value)}
-        />
-        <Input
-          allowClear
-          placeholder={t("filters.userId")}
-          value={userId}
-          onChange={(event) => onFirstPage(setUserId)(event.target.value)}
-        />
-        <div className="flex gap-2">
-          <RangePicker
-            className="w-full"
-            value={dateRange}
-            onChange={(value) => onFirstPage(setDateRange)(value)}
-            placeholder={[t("filters.from"), t("filters.to")]}
-          />
-          <Button
-            icon={<RotateCcw size={16} />}
-            disabled={!hasFilters}
-            onClick={clearFilters}
-            aria-label={t("filters.clear")}
-            title={t("filters.clear")}
-          />
+  const renderCard = (log: ActivityLog) => {
+    const role = labels.role(log.actor?.role || log.user_role);
+    const name = labels.entityName(log);
+    const expandable = hasActivityDetail(log);
+    return (
+      // Tugma bo'lsa o'ng chekka 4 px (maket `.el-list-item` `padding-right: 4px`), bo'lmasa — 16 px.
+      <div className={`flex min-w-0 items-start gap-2 py-3 pl-4 text-sm ${expandable ? "pr-1" : "pr-4"}`}>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          {/* Uzun fe'l yorlig'i vaqtni tugma ustiga surmaydi — qator o'raladi. */}
+          <span className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1">
+            <ActivityActionBadge action={log.action} meta={log.action_meta} registry={registry} />
+            <span className="whitespace-nowrap text-[13px] text-text-muted">{time(log)}</span>
+          </span>
+          <span className="min-w-0 font-semibold text-text">
+            {labels.entityType(log.entity_type)}{" "}
+            <span className="font-medium text-text-muted">{[labels.entityId(log), name].filter(Boolean).join(" · ")}</span>
+          </span>
+          <span className="flex min-w-0 justify-between gap-2 text-[13px] text-text-muted">
+            <span className="min-w-0">{[labels.actorName(log), role].filter(Boolean).join(" · ")}</span>
+            {log.service ? <span className="whitespace-nowrap">{labels.service(log.service)}</span> : null}
+          </span>
         </div>
+        {expandable ? <div className="-mt-1 shrink-0">{toggleButton(log)}</div> : null}
       </div>
+    );
+  };
 
-      {isError ? (
-        <QueryErrorState description={t("loadError")} onRetry={() => refetch()} />
-      ) : (
-        <Table<ActivityLog>
-          rowKey={(record) => `${record.service ?? ""}-${record.id}`}
-          columns={columns}
-          dataSource={items}
-          loading={isLoading || isFetching}
-          size="small"
-          scroll={{ x: "max-content" }}
-          expandable={{
-            expandedRowRender: (record) => <ActivityLogDetail log={record} />,
-            rowExpandable: (record) =>
-              Boolean(record.old_value || record.new_value || record.metadata || record.trace_id),
-          }}
-          pagination={{
-            current: page,
-            pageSize: PAGE_SIZE,
-            total,
-            showSizeChanger: false,
-            onChange: setPage,
-          }}
-          locale={{ emptyText: t("empty") }}
-        />
-      )}
-    </div>
+  const query = {
+    data: logsQuery.isLoading || (logsQuery.isError && items.length === 0) ? undefined : items,
+    isLoading: logsQuery.isLoading,
+    isError: logsQuery.isError,
+    error: logsQuery.error,
+    refetch: () => void logsQuery.refetch(),
+  };
+
+  return (
+    <Card
+      padding="none"
+      aria-label={t("cardLabel")}
+      footer={
+        total > 0 && items.length > 0 ? (
+          <Pagination
+            page={logsQuery.data?.page ?? page}
+            pageSize={PAGE_SIZE}
+            total={total}
+            onPageChange={changePage}
+            summary={(range) => t("summary", range)}
+          />
+        ) : undefined
+      }
+    >
+      <ActivityLogFilters
+        key={filtersKey}
+        values={filters}
+        onChange={changeFilters}
+        onClear={clearFilters}
+        catalog={catalogQuery.data}
+        catalogLoading={catalogQuery.isLoading}
+        labels={labels}
+      />
+      <QueryBoundary
+        query={query}
+        keepPreviousData={false}
+        error={(error, retry) => (
+          <ErrorState className="border-t border-border" error={error} onRetry={retry} />
+        )}
+        loading={
+          <SkeletonTable
+            framed={false}
+            className="border-t border-border"
+            columns={[t("columns.time"), t("columns.actor"), t("columns.action"), t("columns.entity"), t("columns.service")]}
+          />
+        }
+        empty={
+          <EmptyState
+            className="border-t border-border"
+            icon={ScrollText}
+            title={t("empty")}
+            description={filtered ? t("emptyFiltered") : undefined}
+            action={
+              filtered ? (
+                <Button variant="secondary" onClick={clearFilters}>
+                  {t("filters.clear")}
+                </Button>
+              ) : undefined
+            }
+          />
+        }
+      >
+        {(rows) => (
+          <DataTable
+            rows={rows}
+            columns={columns}
+            getRowKey={rowKey}
+            label={t("cardLabel")}
+            cardsLabel={t("cardLabel")}
+            renderCard={renderCard}
+            renderExpanded={(log) =>
+              expandedKey === rowKey(log) ? <ActivityLogDetail log={log} labels={labels} /> : null
+            }
+            busy={logsQuery.isFetching && !logsQuery.isLoading}
+            className="border-t border-border"
+          />
+        )}
+      </QueryBoundary>
+    </Card>
   );
 };
 

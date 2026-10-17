@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { ArrowLeft, ChartColumn, Compass, House, Plus, SearchX, ShoppingBag } from "lucide-react";
+import { ArrowLeft, ChartColumn, Compass, House, Plus, SearchX, ShoppingBag, Trophy } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
 import { Button } from "../../../shared/ui/primitives/Button";
@@ -199,6 +199,8 @@ export const StatesSection = () => {
                 }
               />
               <ErrorState size="chart" kind="generic" description={t("statesKit.demo.chartError.text")} onRetry={noop} />
+              {/* Ixcham — kichik reyting kartasida bo'sh joyni cho'zmaydi (dashboard «Top filiallar»). */}
+              <EmptyState size="inline" icon={Trophy} title={t("statesKit.demo.inlineEmpty.title")} />
             </div>
           </DemoBlock>
 

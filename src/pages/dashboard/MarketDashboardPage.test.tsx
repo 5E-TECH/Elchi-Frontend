@@ -215,4 +215,50 @@ describe("MarketDashboardPage", () => {
 
     expect(screen.getByTestId("performance-chart")).toHaveAttribute("data-markets-count", "1");
   });
+
+  describe("qisman nosozlik (VkwhHqvW)", () => {
+    const marketState = { role: { id: "market-1", role: "market", region: null, name: "Market" } };
+    const withFailed = (failedParts: string[]) => {
+      const base = buildDashboardResponse();
+      getDashboardMock.mockReturnValue({ ...base, data: { data: { ...base.data.data, degraded: true, failedParts } } });
+    };
+
+    it("`topMarkets` olinmasa — reyting joyida «Ma'lumotni yuklab bo'lmadi» + «Qayta urinish» (0 emas)", () => {
+      withFailed(["topMarkets"]);
+      renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState });
+
+      const failed = screen.getByTestId("market-ranking-failed");
+      expect(failed).toHaveTextContent("Top marketlar");
+      expect(failed).toHaveTextContent("Ma'lumotni yuklab bo'lmadi");
+      expect(screen.getByTestId("market-stats-grid")).toBeInTheDocument();
+      // Sog' bo'lak — operatorlar reytingi — yo'qolmaydi.
+      expect(screen.getByText("Operator Ali")).toBeInTheDocument();
+    });
+
+    it("`topOperators` olinmasa — operatorlar reytingi alohida xato kartasi, marketlar reytingi joyida", () => {
+      withFailed(["topOperators"]);
+      renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState });
+
+      expect(screen.getByTestId("operators-ranking-failed")).toHaveTextContent("Top operatorlar");
+      expect(screen.queryByTestId("market-ranking-failed")).not.toBeInTheDocument();
+      expect(screen.queryByText("Operator Ali")).not.toBeInTheDocument();
+    });
+
+    it("`markets` olinmasa — solishtiruv grafigi o'rnida xato; `myStat` olinmasa — statistika 0 emas, xato", async () => {
+      const refetch = vi.fn();
+      const base = buildDashboardResponse();
+      getDashboardMock.mockReturnValue({
+        ...base,
+        refetch,
+        data: { data: { ...base.data.data, degraded: true, failedParts: ["markets", "myStat"] } },
+      });
+      renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState });
+
+      expect(screen.getByTestId("performance-markets-failed")).toHaveTextContent("Marketlar bo'yicha sotuv foizi");
+      expect(screen.queryByTestId("performance-chart")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("market-stats-grid")).not.toBeInTheDocument();
+      await userEvent.setup().click(screen.getAllByRole("button", { name: "Qayta urinish" })[0]);
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
+  });
 });

@@ -202,5 +202,8 @@
   "telegramTokenCopied": "Token copied",
   "telegramTokenCopyFailed": "Could not copy the token",
   "telegramTokenMissing": "This market has no Telegram token yet",
-  "telegramTokenHint": "Ask the market to add the bot to its Telegram group and send this token there"
+  "telegramTokenHidden": "Token hidden",
+  "telegramTokenLoadFailed": "Couldn't get the token",
+  "telegramTokenLoadFailedHint": "Please try again in a moment.",
+  "telegramTokenHint": "Have the market add the bot to its Telegram group and send this token. The token is a secret key — give it only to this market."
 }

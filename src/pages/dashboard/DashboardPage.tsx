@@ -3,9 +3,12 @@ import { LayoutDashboard, Package, TrendingUp, Wallet, XCircle, BarChart2, MapPi
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import TopPerformers from "../../widgets/dashboard-top-performers/ui/TopPerformers";
+import { RankingCard } from "../../widgets/dashboard-top-performers/ui/RankingCard";
+import { DashboardPartError } from "../../widgets/dashboard-part-error/ui/DashboardPartError";
 import RegionStatsCard from "../../widgets/dashboard-region/ui/RegionStatsCard";
 import DeferredMount from "../../shared/ui/DeferredMount";
 import { useDashboard } from "../../entities/dashboard";
+import { hasFailedPart } from "../../entities/dashboard/lib/partialFailure";
 import { useSettings, DEFAULT_SETTINGS } from "../../entities/settings";
 import HeaderName from "../../shared/components/headerName";
 import PageContainer from "../../shared/ui/PageContainer";
@@ -116,6 +119,7 @@ const DashboardPage = () => {
   const {
     data,
     isLoading,
+    isFetching: dashboardFetching,
     isError: dashboardError,
     refetch: refetchDashboard,
   } = getDashboard(analyticsParams, needsDashboard, analyticsScope);
@@ -142,6 +146,20 @@ const DashboardPage = () => {
   const courierStats = data?.data?.couriers ?? [];
   const chartMarkets = marketStats.length ? marketStats : topMarkets;
   const chartCouriers = courierStats.length ? courierStats : topCouriers;
+  // Qisman nosozlik (VkwhHqvW): olinmagan bo'lak 0 lar bilan emas, joyida xato holati bilan chiziladi.
+  const failedParts = data?.data?.failedParts;
+  // KPI: faqat statistikada chiziladigan ko'rsatkichlar olinmasa (`fulfillment` — yetkazish vaqti / SLA) yoki
+  // qaysi bo'lak ekani aytilmasa; boshqa bo'lak (masalan `marketRating`) buyurtmalar statistikasini yashirmaydi.
+  const kpiParts = kpiData?.data?.failedParts ?? [];
+  const kpiStatsFailed =
+    Boolean(kpiData?.data?.degraded) &&
+    (kpiParts.length === 0 ||
+      hasFailedPart(kpiParts, "fulfillment", "averageOrderValue", "averageFulfillmentHours", "onTimeRate"));
+  const statsFailed =
+    dashboardError || hasFailedPart(failedParts, "orders") || (!isAllTime && (kpiError || kpiStatsFailed));
+  const marketsChartFailed = hasFailedPart(failedParts, "markets");
+  const couriersChartFailed = hasFailedPart(failedParts, "couriers");
+  const retryDashboard = () => void refetchDashboard();
 
   const clearRange = useCallback(() => {
     setFromDate("");
@@ -228,14 +246,24 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {isCourier && !dashboardError && topCouriers.length > 0 && (
+      {isCourier && !dashboardError && hasFailedPart(failedParts, "topCouriers") ? (
+        <DashboardPartError
+          data-testid="courier-ranking-failed"
+          className="mb-5"
+          title={t("top.couriers_title")}
+          onRetry={retryDashboard}
+          retrying={dashboardFetching}
+        />
+      ) : null}
+
+      {isCourier && !dashboardError && !hasFailedPart(failedParts, "topCouriers") && topCouriers.length > 0 && (
         <div className="mb-5">
           <TopPerformers couriers={topCouriers} currentUserId={user?.id ?? roleId} />
         </div>
       )}
 
       {/* Stat cards */}
-      {!isCourier && widgets.stats && (dashboardError || (!isAllTime && kpiError)) && (
+      {!isCourier && widgets.stats && statsFailed && (
         <div className="mb-5">
           <QueryErrorState
             description={t("load_error")}
@@ -248,7 +276,7 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {!isCourier && widgets.stats && !dashboardError && (isAllTime || !kpiError) && (
+      {!isCourier && widgets.stats && !statsFailed && (
         <div className="mb-5">
           <Deferred height={360}>
           <DashboardStatistics
@@ -277,9 +305,42 @@ const DashboardPage = () => {
         </div>
       )}
 
+      {/* Reytinglar — dizayn v2 (9zbSDkUI, `superadmin-dashboard-main`): qisqa davrda oxirgi 30 kun,
+          izohda davr, bo'sh karta ixcham; telefonda ustma-ust. */}
       {widgets.topPerformers && canShowTopPerformers && !dashboardError && (
-        <div className="mb-5">
-          <TopPerformers markets={topMarkets} branches={topBranches} currentUserId={user?.id ?? roleId} />
+        <div data-testid="dashboard-rankings" className="mb-5 flex flex-wrap gap-4 [&>*]:flex-[1_1_300px]">
+          {hasFailedPart(failedParts, "topMarkets") ? (
+            <DashboardPartError
+              data-testid="ranking-markets"
+              title={t("top.markets_title")}
+              onRetry={retryDashboard}
+              retrying={dashboardFetching}
+            />
+          ) : (
+            <RankingCard
+              data-testid="ranking-markets"
+              title={t("top.markets_title")}
+              markets={topMarkets}
+              meta={data?.data?.topMarketsMeta}
+              loading={isLoading}
+            />
+          )}
+          {hasFailedPart(failedParts, "topBranches") ? (
+            <DashboardPartError
+              data-testid="ranking-branches"
+              title={t("top.branches_title")}
+              onRetry={retryDashboard}
+              retrying={dashboardFetching}
+            />
+          ) : (
+            <RankingCard
+              data-testid="ranking-branches"
+              title={t("top.branches_title")}
+              branches={topBranches}
+              meta={data?.data?.topBranchesMeta}
+              loading={isLoading}
+            />
+          )}
         </div>
       )}
 
@@ -291,17 +352,47 @@ const DashboardPage = () => {
           icon={<BarChart3 size={16} />}
           className="mb-5"
         >
-          <Deferred height={420}>
-          <PerformanceChart
-            markets={chartMarkets}
-            couriers={chartCouriers}
-            loading={isLoading}
-            // "Barchasi" davrida backend kuryerlar kesimini hisoblamaydi
-            // (couriers: [], admin uchun topCouriers ham yo'q) — ma'lumot
-            // bor, lekin bu davr uchun kelmaydi.
-            couriersEmptyText={isAllTime ? t("performance.couriers_all_time_unavailable") : undefined}
-          />
-          </Deferred>
+          {marketsChartFailed || couriersChartFailed ? (
+            // Faqat olinmagan bo'lak xato kartasi bilan; sog' bo'lagi (marketlar yoki kuryerlar) grafikda qoladi.
+            <div className="flex flex-col gap-4">
+              {marketsChartFailed ? (
+                <DashboardPartError
+                  data-testid="performance-markets-failed"
+                  title={t("performance.markets_title")}
+                  onRetry={retryDashboard}
+                  retrying={dashboardFetching}
+                />
+              ) : null}
+              {couriersChartFailed ? (
+                <DashboardPartError
+                  data-testid="performance-couriers-failed"
+                  title={t("performance.couriers_title")}
+                  onRetry={retryDashboard}
+                  retrying={dashboardFetching}
+                />
+              ) : null}
+              {marketsChartFailed && couriersChartFailed ? null : (
+                <PerformanceChart
+                  markets={marketsChartFailed ? undefined : chartMarkets}
+                  couriers={couriersChartFailed ? undefined : chartCouriers}
+                  loading={isLoading}
+                  couriersEmptyText={isAllTime ? t("performance.couriers_all_time_unavailable") : undefined}
+                />
+              )}
+            </div>
+          ) : (
+            <Deferred height={420}>
+            <PerformanceChart
+              markets={chartMarkets}
+              couriers={chartCouriers}
+              loading={isLoading}
+              // "Barchasi" davrida backend kuryerlar kesimini hisoblamaydi
+              // (couriers: [], admin uchun topCouriers ham yo'q) — ma'lumot
+              // bor, lekin bu davr uchun kelmaydi.
+              couriersEmptyText={isAllTime ? t("performance.couriers_all_time_unavailable") : undefined}
+            />
+            </Deferred>
+          )}
         </MobileCollapsibleSection>
       )}
 

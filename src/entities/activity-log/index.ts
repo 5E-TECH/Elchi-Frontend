@@ -1,6 +1,9 @@
 export type {
   ActivityLog,
   ActivityActor,
+  ActivityActionMeta,
+  ActivityActionCategory,
+  ActivityActionsCatalog,
   ActivityLogParams,
   ActivityLogListResult,
   ActivityService,
@@ -18,4 +21,5 @@ export {
   getEntityHistory,
   getUserActivity,
 } from "./api/activityLogApi";
-export { default as ActivityActionTag } from "./ui/ActivityActionTag";
+export { actionBadgeTone, humanizeAction, resolveActionMeta } from "./model/actionMeta";
+export { default as ActivityActionBadge } from "./ui/ActivityActionBadge";

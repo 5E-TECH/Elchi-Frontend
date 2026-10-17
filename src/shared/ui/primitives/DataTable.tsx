@@ -1,4 +1,4 @@
-import { useEffect, useRef, type MouseEvent, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, type MouseEvent, type ReactNode } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../lib/cx";
@@ -25,6 +25,9 @@ import { useIsPhone } from "./date/useIsPhone";
  *  - Qatorni bosish (`onRowClick`) — sichqoncha uchun qulaylik: qator ichidagi havola/tugma/belgi bosilsa
  *    chaqirilmaydi. Klaviatura uchun qatorda havola bo'lishi SHART (masalan `№10242` → tafsilot):
  *    `<tr>` ga `role="button"` berilmaydi — ichida havola va tugma bor (ichma-ich interaktiv element yo'q).
+ *  - Ochiladigan qator (`renderExpanded`, maket `superadmin-activity-logs-row-expanded`): qiymat qaytarsa —
+ *    qator va uning ostidagi to'liq enli katak `bg-sunken`, ular orasida chiziq yo'q. Ochish tugmasini
+ *    (`aria-expanded`) ustunning o'zi chizadi. Telefonda kartadan keyin, o'sha `<li>` ichida.
  *
  *    <DataTable
  *      rows={orders}
@@ -97,6 +100,8 @@ export type DataTableProps<T> = {
   rowClassName?: (row: T, index: number) => string | false | null | undefined;
   /** Telefonda (< 768) jadval o'rniga karta. Berilmasa — jadval (gorizontal aylanadi). */
   renderCard?: (row: T, index: number) => ReactNode;
+  /** Ochilgan qator tafsiloti; `null` / `false` — yopiq. Ichki chekkani mazmunning o'zi beradi. */
+  renderExpanded?: (row: T, index: number) => ReactNode;
   /** Kartalar ro'yxati nomi (sukut «Ro'yxat»). */
   cardsLabel?: string;
   /** Fonda yangilanmoqda — ro'yxat xiralashadi (`aria-busy`). */
@@ -191,6 +196,7 @@ export const DataTable = <T,>({
   onRowClick,
   rowClassName,
   renderCard,
+  renderExpanded,
   cardsLabel,
   busy = false,
   className,
@@ -228,10 +234,16 @@ export const DataTable = <T,>({
     onRowClick(row, index);
   };
 
-  const rowState = (row: T, index: number) => {
+  const expandedOf = (row: T, index: number) => {
+    const content = renderExpanded?.(row, index);
+    return content === null || content === undefined || content === false ? null : content;
+  };
+
+  const rowState = (row: T, index: number, expanded = false) => {
     const selected = Boolean(selection && selectable(row) && selection.isSelected(row));
     return cx(
-      selected ? "bg-action-soft" : "hover:bg-row-hover",
+      // Ochilgan qator tafsiloti bilan bitta kulrang blok — ustiga kelganda ham fon o'zgarmaydi.
+      selected ? "bg-action-soft" : expanded ? "bg-sunken" : "hover:bg-row-hover",
       selection && !selectable(row) && "text-text-subtle",
       onRowClick && "cursor-pointer",
       rowClassName?.(row, index),
@@ -249,21 +261,26 @@ export const DataTable = <T,>({
           className,
         )}
       >
-        {rows.map((row, index) => (
-          <li
-            key={getRowKey(row, index)}
-            data-selected={selection && selectable(row) && selection.isSelected(row) ? "" : undefined}
-            className={cx("relative min-w-0 border-b border-border last:border-b-0", rowState(row, index))}
-            onClick={onRowClick ? handleRowClick(row, index) : undefined}
-          >
-            {selection ? (
-              <label className="absolute left-0 top-0 z-10 inline-flex size-12 cursor-pointer items-center justify-center">
-                {rowCheckbox(row)}
-              </label>
-            ) : null}
-            {renderCard(row, index)}
-          </li>
-        ))}
+        {rows.map((row, index) => {
+          const expanded = expandedOf(row, index);
+          return (
+            <li
+              key={getRowKey(row, index)}
+              data-selected={selection && selectable(row) && selection.isSelected(row) ? "" : undefined}
+              data-expanded={expanded ? "" : undefined}
+              className={cx("relative min-w-0 border-b border-border last:border-b-0", rowState(row, index, Boolean(expanded)))}
+              onClick={onRowClick ? handleRowClick(row, index) : undefined}
+            >
+              {selection ? (
+                <label className="absolute left-0 top-0 z-10 inline-flex size-12 cursor-pointer items-center justify-center">
+                  {rowCheckbox(row)}
+                </label>
+              ) : null}
+              {renderCard(row, index)}
+              {expanded}
+            </li>
+          );
+        })}
       </ul>
     );
   }
@@ -327,35 +344,49 @@ export const DataTable = <T,>({
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, index) => (
-            <tr
-              key={getRowKey(row, index)}
-              // `aria-selected` faqat grid/treegrid qatorida — oddiy jadvalda holat belgining o'zida (`checked`).
-              data-selected={selection && selectable(row) && selection.isSelected(row) ? "" : undefined}
-              className={cx(
-                "transition-[background-color] duration-150 motion-reduce:transition-none",
-                rowState(row, index),
-              )}
-              onClick={onRowClick ? handleRowClick(row, index) : undefined}
-            >
-              {selection ? <td className={cx(TD, TD_SIZE[density], "w-11 pr-0")}>{rowCheckbox(row)}</td> : null}
-              {columns.map((column) => (
-                <td
-                  key={column.id}
+          {rows.map((row, index) => {
+            const expanded = expandedOf(row, index);
+            return (
+              <Fragment key={getRowKey(row, index)}>
+                <tr
+                  // `aria-selected` faqat grid/treegrid qatorida — oddiy jadvalda holat belgining o'zida (`checked`).
+                  data-selected={selection && selectable(row) && selection.isSelected(row) ? "" : undefined}
+                  data-expanded={expanded ? "" : undefined}
                   className={cx(
-                    TD,
-                    TD_SIZE[density],
-                    column.align === "end" && "whitespace-nowrap text-right",
-                    column.hideBelow === "lg" && "max-lg:hidden",
-                    column.className,
-                    column.cellClassName,
+                    "transition-[background-color] duration-150 motion-reduce:transition-none",
+                    rowState(row, index, Boolean(expanded)),
+                    // Ochilgan qator tafsiloti bilan bitta blok: orada chiziq yo'q.
+                    expanded ? "[&>td]:border-b-0" : false,
                   )}
+                  onClick={onRowClick ? handleRowClick(row, index) : undefined}
                 >
-                  {column.cell(row, index)}
-                </td>
-              ))}
-            </tr>
-          ))}
+                  {selection ? <td className={cx(TD, TD_SIZE[density], "w-11 pr-0")}>{rowCheckbox(row)}</td> : null}
+                  {columns.map((column) => (
+                    <td
+                      key={column.id}
+                      className={cx(
+                        TD,
+                        TD_SIZE[density],
+                        column.align === "end" && "whitespace-nowrap text-right",
+                        column.hideBelow === "lg" && "max-lg:hidden",
+                        column.className,
+                        column.cellClassName,
+                      )}
+                    >
+                      {column.cell(row, index)}
+                    </td>
+                  ))}
+                </tr>
+                {expanded ? (
+                  <tr data-expanded-detail="">
+                    <td colSpan={columns.length + (selection ? 1 : 0)} className="border-b border-border bg-sunken p-0">
+                      {expanded}
+                    </td>
+                  </tr>
+                ) : null}
+              </Fragment>
+            );
+          })}
         </tbody>
       </table>
     </div>

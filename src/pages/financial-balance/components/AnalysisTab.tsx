@@ -25,6 +25,7 @@ import {
   toFinancialNumber,
 } from "../lib/financialBalance";
 import { notify } from "../../../shared/lib/notify";
+import { extractPaginationMeta } from "../../../shared/lib/paginationMeta";
 
 interface LedgerRow {
   id: string;
@@ -158,30 +159,6 @@ const normalizeRows = (items: unknown[]): LedgerRow[] =>
       signedAmount,
     };
   });
-
-const buildBuckets = (
-  rows: LedgerRow[],
-  direction: "positive" | "negative",
-  t: (key: string) => string,
-): SourceBucket[] => {
-  const filtered = rows.filter((row) => direction === "positive" ? row.signedAmount > 0 : row.signedAmount < 0);
-  const total = filtered.reduce((sum, row) => sum + Math.abs(row.signedAmount), 0);
-  const map = new Map<string, number>();
-
-  filtered.forEach((row) => {
-    const key = row.sourceType || "unknown";
-    map.set(key, (map.get(key) ?? 0) + Math.abs(row.signedAmount));
-  });
-
-  return Array.from(map.entries())
-    .map(([sourceType, amount]) => ({
-      sourceType,
-      label: sourceTypeLabel(sourceType === "unknown" ? "" : sourceType, t),
-      amount,
-      percent: total > 0 ? (amount / total) * 100 : 0,
-    }))
-    .sort((a, b) => b.amount - a.amount);
-};
 
 const normalizeApiBuckets = (
   response: unknown,
@@ -343,9 +320,11 @@ const AnalysisTab = () => {
     return params;
   }, [fromDate, toDate]);
 
+  // vmLTsAok: server sahifalaydi (`limit` ≤ 100) — ilgari `limit: 10000` so'ralib, server 100 tasini berar, mahalliy
+  // sahifalash esa ko'pi bilan 10 sahifa ko'rsatardi, sarlavhadagi «jami» bilan zid edi.
   const topImpactParams = useMemo(
-    () => ({ ...queryParams, page: 1, limit: 10000 }),
-    [queryParams],
+    () => ({ ...queryParams, page, limit: PAGE_SIZE }),
+    [page, queryParams],
   );
   const { data: analyticsData, isLoading: isAnalyticsLoading } =
     useGetFinancialBalanceAnalytics(true, queryParams);
@@ -356,23 +335,20 @@ const AnalysisTab = () => {
     [topImpactsData],
   );
   const summary = useMemo(
-    () => normalizeAnalyticsSummary(analyticsData, rows),
-    [analyticsData, rows],
+    // Zaxira faqat analytics'dan: endi `rows` — bitta sahifa (10 qator), ulardan jami yasalmaydi (vmLTsAok).
+    () => normalizeAnalyticsSummary(analyticsData, []),
+    [analyticsData],
   );
-  const positiveBuckets = useMemo(() => {
-    const apiBuckets = normalizeApiBuckets(analyticsData, "positive", t);
-    return apiBuckets.length ? apiBuckets : buildBuckets(rows, "positive", t);
-  }, [analyticsData, rows, t]);
-  const negativeBuckets = useMemo(() => {
-    const apiBuckets = normalizeApiBuckets(analyticsData, "negative", t);
-    return apiBuckets.length ? apiBuckets : buildBuckets(rows, "negative", t);
-  }, [analyticsData, rows, t]);
-  const topRows = useMemo(
-    () => [...rows].sort((a, b) => Math.abs(b.signedAmount) - Math.abs(a.signedAmount)),
-    [rows],
-  );
-  const totalPages = Math.max(1, Math.ceil(topRows.length / PAGE_SIZE));
-  const paginatedRows = topRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // Manbalar faqat analytics agregatidan (SQL) — bitta sahifadagi 10 qatordan «taxminiy» ulush yasalmaydi.
+  const positiveBuckets = useMemo(() => normalizeApiBuckets(analyticsData, "positive", t), [analyticsData, t]);
+  const negativeBuckets = useMemo(() => normalizeApiBuckets(analyticsData, "negative", t), [analyticsData, t]);
+  // Server allaqachon `ORDER BY abs_amount DESC` va sahifalangan — mahalliy saralash/kesish yo'q.
+  const topImpactsMeta = extractPaginationMeta(topImpactsData);
+  const topImpactsTotal = topImpactsMeta.total ?? rows.length;
+  const totalPages = Math.max(1, topImpactsMeta.totalPages ?? Math.ceil(topImpactsTotal / PAGE_SIZE));
+  const paginatedRows = rows;
+  // Keyingi sahifa yuklanayotganda oldingi qatorlar ko'rinadi — raqamlash ularning o'z sahifasi bo'yicha.
+  const shownPage = topImpactsMeta.page ?? page;
   const isLoading = isAnalyticsLoading || isTopImpactsLoading;
   const currentBalance = readCurrentBalance(analyticsData);
   const [exporting, setExporting] = useState(false);
@@ -492,7 +468,7 @@ const AnalysisTab = () => {
             <Sigma size={17} className="text-main" />
             <p className="text-base font-bold text-maindark dark:text-white">{t("financialBalanceTopTransactions")}</p>
           </div>
-          <p className="text-xs font-semibold text-maindark/45 dark:text-slate-400">{t("financialBalanceTotalTransactions", { count: summary.totalCount })}</p>
+          <p className="text-xs font-semibold text-maindark/45 dark:text-slate-400">{t("financialBalanceTotalTransactions", { count: topImpactsTotal })}</p>
         </div>
 
         <div className="min-h-64">
@@ -511,7 +487,7 @@ const AnalysisTab = () => {
                     key={`${row.id}-${index}`}
                     className="grid grid-cols-[40px_34px_minmax(0,1fr)_auto] items-center gap-3 border-b border-gray-100 px-2 py-3 last:border-b-0 hover:bg-main/5 dark:border-white/5 dark:hover:bg-white/5"
                   >
-                    <p className="text-xs font-bold text-maindark/45 dark:text-slate-400">#{(page - 1) * PAGE_SIZE + index + 1}</p>
+                    <p className="text-xs font-bold text-maindark/45 dark:text-slate-400">#{(shownPage - 1) * PAGE_SIZE + index + 1}</p>
                     <div className={`flex h-8 w-8 items-center justify-center rounded-full ${isExpense ? "bg-red-500/15 text-red-400" : "bg-emerald-500/15 text-emerald-400"}`}>
                       {isExpense ? <ArrowDownLeft size={15} /> : <ArrowUpRight size={15} />}
                     </div>
@@ -544,6 +520,7 @@ const AnalysisTab = () => {
             type="button"
             onClick={() => setPage((value) => Math.max(1, value - 1))}
             disabled={page <= 1}
+            aria-label={t("common:previous")}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-maindark/50 transition hover:bg-main/10 disabled:opacity-40 dark:text-slate-400 dark:hover:bg-white/10"
           >
             <ChevronLeft size={16} />
@@ -575,6 +552,7 @@ const AnalysisTab = () => {
             type="button"
             onClick={() => setPage((value) => Math.min(totalPages, value + 1))}
             disabled={page >= totalPages}
+            aria-label={t("common:next")}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-maindark/50 transition hover:bg-main/10 disabled:opacity-40 dark:text-slate-400 dark:hover:bg-white/10"
           >
             <ChevronRight size={16} />

@@ -179,6 +179,44 @@ describe("dashboard response normalization", () => {
     });
   });
 
+  it("reyting davri meta'si (9zbSDkUI): last_30_days va selected_range; eski backendda null", () => {
+    const result = normalizeDashboardResponse({
+      statusCode: 200,
+      message: "Dashboard infos",
+      data: {
+        topMarketsMeta: {
+          period_rule: "last_30_days",
+          period_days: 30,
+          from: "2026-09-15T19:00:00.000Z",
+          to: "2026-10-15T18:59:59.999Z",
+          min_orders: 1,
+        },
+        top_branches_meta: {
+          period_rule: "selected_range",
+          period_days: null,
+          selected_from: "2026-10-11T19:00:00.000Z",
+          selected_to: "2026-10-15T18:59:59.999Z",
+        },
+      },
+    });
+
+    expect(result.data.topMarketsMeta).toEqual({
+      periodRule: "last_30_days",
+      periodDays: 30,
+      from: "2026-09-15T19:00:00.000Z",
+      to: "2026-10-15T18:59:59.999Z",
+      minOrders: 1,
+    });
+    expect(result.data.topBranchesMeta).toEqual({
+      periodRule: "selected_range",
+      periodDays: null,
+      from: "2026-10-11T19:00:00.000Z",
+      to: "2026-10-15T18:59:59.999Z",
+      minOrders: null,
+    });
+    expect(normalizeDashboardResponse({ data: {} }).data.topMarketsMeta).toBeNull();
+  });
+
   it("normalizes the full per-market / per-courier stats (market_stats / courier_stats shape)", () => {
     const result = normalizeDashboardResponse({
       statusCode: 200,
@@ -390,6 +428,35 @@ describe("dashboard response normalization", () => {
       main: { balance: 120000 },
       markets: { marketsTotalBalans: 20000 },
       couriers: { couriersTotalBalanse: 10000 },
+    });
+  });
+
+  describe("qisman nosozlik — degraded + failed_parts (VkwhHqvW)", () => {
+    it("dashboard: `failed_parts` (data ichida yoki tepada) va `degraded` da `null` bo'lak — failedParts; ro'yxat [] ga aylansa ham yo'qolmaydi", () => {
+      const inData = normalizeDashboardResponse({
+        statusCode: 200,
+        data: { orders: { acceptedCount: 3 }, topMarkets: null, top_branches: null, couriers: [], degraded: true, failed_parts: ["couriers"] },
+      });
+      expect(inData.data.degraded).toBe(true);
+      expect(new Set(inData.data.failedParts)).toEqual(new Set(["couriers", "topMarkets", "topBranches"]));
+      expect(inData.data.topMarkets).toEqual([]);
+
+      const topLevel = normalizeDashboardResponse({ statusCode: 200, degraded: true, failed_parts: ["topCouriers"], data: { orders: {} } });
+      expect(topLevel.data.failedParts).toEqual(["topCouriers"]);
+    });
+
+    it("sog' javob — degraded yo'q, failedParts bo'sh; `null` bo'lak degraded bo'lmasa olinmagan hisoblanmaydi", () => {
+      const ok = normalizeDashboardResponse({ statusCode: 200, data: { orders: {}, topMarkets: null } });
+      expect(ok.data.degraded).toBe(false);
+      expect(ok.data.failedParts).toEqual([]);
+    });
+
+    it("KPI `fulfillment` va revenue `finance` olinmasa — degraded", () => {
+      const kpi = normalizeKpiResponse({ data: { averageOrderValue: 1, degraded: true, failed_parts: ["fulfillment"] } });
+      expect(kpi.data).toMatchObject({ degraded: true, failedParts: ["fulfillment"] });
+
+      const revenue = normalizeRevenueResponse({ data: { summary: { totalRevenue: 1 }, finance: null, degraded: true } });
+      expect(revenue.data).toMatchObject({ degraded: true, failedParts: ["finance"] });
     });
   });
 });

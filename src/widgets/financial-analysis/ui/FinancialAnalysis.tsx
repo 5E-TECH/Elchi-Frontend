@@ -434,7 +434,8 @@ const FinancialAnalysis = memo(({
     },
   ];
 
-  if (isError) {
+  // Qisman nosozlik (VkwhHqvW): moliya bo'lagi olinmasa — 0 lar emas, xato va «Qayta urinish».
+  if (isError || data?.data?.degraded) {
     return (
       <QueryErrorState
         description={t("load_error")}

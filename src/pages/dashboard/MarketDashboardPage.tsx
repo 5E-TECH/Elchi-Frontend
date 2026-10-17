@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { useDashboard } from "../../entities/dashboard";
+import { hasFailedPart } from "../../entities/dashboard/lib/partialFailure";
 import { useSettings, DEFAULT_SETTINGS } from "../../entities/settings";
 import HeaderName from "../../shared/components/headerName";
 import PageContainer from "../../shared/ui/PageContainer";
@@ -11,6 +12,7 @@ import QuickDateRangeFilter from "../../shared/ui/QuickDateRangeFilter";
 import QueryErrorState from "../../shared/ui/QueryErrorState";
 import MetricCard, { MetricCardSkeleton } from "../../shared/ui/MetricCard";
 import TopPerformers from "../../widgets/dashboard-top-performers/ui/TopPerformers";
+import { DashboardPartError } from "../../widgets/dashboard-part-error/ui/DashboardPartError";
 import PerformanceChart from "../../widgets/dashboard-performance-chart/ui/PerformanceChart";
 import { getAllTimeRange } from "../../shared/lib/dateRange";
 import type { RootState } from "../../app/config/store";
@@ -70,6 +72,7 @@ const MarketDashboardPage = () => {
   const {
     data,
     isLoading,
+    isFetching: dashboardFetching,
     isError: dashboardError,
     refetch: refetchDashboard,
   } = getDashboard(analyticsParams, true, analyticsScope);
@@ -89,6 +92,13 @@ const MarketDashboardPage = () => {
   // grafik ko'rardi. "Barchasi" davrida `markets` bo'sh keladi — top-reyting.
   const marketStats = data?.data?.markets ?? [];
   const chartMarkets = marketStats.length ? marketStats : topMarkets;
+  // Qisman nosozlik (VkwhHqvW): olinmagan bo'lak 0 lar bilan emas, joyida xato holati bilan chiziladi.
+  const failedParts = data?.data?.failedParts;
+  const statsFailed = hasFailedPart(failedParts, "orders", "myStat");
+  const marketsRankingFailed = hasFailedPart(failedParts, "topMarkets");
+  const operatorsFailed = hasFailedPart(failedParts, "topOperators");
+  const chartFailed = hasFailedPart(failedParts, "markets");
+  const retryDashboard = () => void refetchDashboard();
 
   const successRate = myStat?.successRate ?? ratio(sold, accepted);
 
@@ -187,7 +197,13 @@ const MarketDashboardPage = () => {
       <ExtraCostApprovals />
 
       {/* Marketga ruxsatli dashboard statistikasi */}
-      {!dashboardError && (
+      {!dashboardError && statsFailed ? (
+        <div className="mb-5">
+          <QueryErrorState description={t("load_error")} onRetry={retryDashboard} />
+        </div>
+      ) : null}
+
+      {!dashboardError && !statsFailed && (
         <div className="mb-5">
           <MarketStatsGrid
             accepted={accepted}
@@ -201,20 +217,52 @@ const MarketDashboardPage = () => {
         </div>
       )}
 
-      {widgets.topPerformers && !dashboardError && !isDataLoading && (
-        <div className="mb-5">
+      {widgets.topPerformers && !dashboardError && !isDataLoading && marketsRankingFailed ? (
+        <DashboardPartError
+          data-testid="market-ranking-failed"
+          className="mb-5"
+          title={t("top.markets_title")}
+          onRetry={retryDashboard}
+          retrying={dashboardFetching}
+        />
+      ) : null}
+
+      {/* Olinmagan bo'lak o'rnida xato kartasi; sog' bo'lagi (marketlar yoki operatorlar) reytingda qoladi. */}
+      {widgets.topPerformers && !dashboardError && !isDataLoading && !(marketsRankingFailed && operatorsFailed) && (
+        <div className="mb-5 empty:hidden">
           <TopPerformers
-            markets={topMarkets}
-            operators={topOperators.length ? topOperators : undefined}
+            markets={marketsRankingFailed ? undefined : topMarkets}
+            operators={!operatorsFailed && topOperators.length ? topOperators : undefined}
             currentUserId={user?.id ?? roleId}
           />
         </div>
       )}
 
+      {widgets.topPerformers && !dashboardError && !isDataLoading && operatorsFailed ? (
+        <DashboardPartError
+          data-testid="operators-ranking-failed"
+          className="mb-5"
+          title={t("top.operators_title")}
+          onRetry={retryDashboard}
+          retrying={dashboardFetching}
+        />
+      ) : null}
+
       {/* Marketlar solishtiruv diagrammasi — kuryerlar bo'limi yo'q, chunki
           market foydalanuvchisiga tegishli emas (DashboardPage'dagi bilan
           bir xil qoida). */}
-      {widgets.performanceChart && !dashboardError && !isDataLoading && (
+      {widgets.performanceChart && !dashboardError && !isDataLoading && chartFailed ? (
+        <DashboardPartError
+          data-testid="performance-markets-failed"
+          className="mb-5"
+          // Market grafigida faqat marketlar bo'limi (kuryerlar yo'q) — sarlavha o'shaniki.
+          title={t("performance.markets_title")}
+          onRetry={retryDashboard}
+          retrying={dashboardFetching}
+        />
+      ) : null}
+
+      {widgets.performanceChart && !dashboardError && !isDataLoading && !chartFailed && (
         <div className="mb-5">
           <PerformanceChart markets={chartMarkets} />
         </div>

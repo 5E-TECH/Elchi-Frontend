@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**77 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **19** · qisman: **7** · v2 ga ko'chirilgan route: **12 / 77**
+**77 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **19** · qisman: **7** · v2 ga ko'chirilgan route: **13 / 77**
 
 ## Qanday ishlatiladi
 
@@ -108,7 +108,7 @@
 | `/notifications` | Bildirishnomalar | `src/pages/notifications/ui/NotificationsPage.tsx` | superadmin | 3 | v2 |
 | `/notifications/send` | Bildirishnomalar | `src/pages/notification-send/index.tsx` | superadmin, admin | 2 | eski |
 | `/notifications/sms` | Bildirishnomalar | `src/pages/notifications/ui/SmsPage.tsx` | superadmin, admin | 5 | eski |
-| `/activity-logs` | Tizim | `src/pages/activity-logs/index.tsx` | superadmin, admin | 5 | eski |
+| `/activity-logs` | Tizim | `src/pages/activity-logs/index.tsx` | superadmin, admin | 5 | v2 |
 | `/ops` | Tizim | `src/pages/ops/index.tsx` | superadmin | 8 | eski |
 | `/ops/ui-kit` | Tizim | `src/pages/ui-kit/index.tsx` | superadmin | 0 | v2 |
 | `/finance-operators` | Tizim | `src/pages/finance-operators/index.tsx` | superadmin | 1 | eski |
@@ -229,7 +229,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/` — Bosh sahifa — rolga qarab: DashboardPage yoki MarketDashboardPage
 
-- **Fayllar:** `src/app/lib/routes.tsx` · `src/pages/dashboard/DashboardPage.tsx` · `src/pages/dashboard/MarketDashboardPage.tsx` · `src/widgets/dashboard-statistics/ui/DashboardStatistics.tsx` · `src/widgets/dashboard-statistics/ui/OrderStatusDonut.tsx` · `src/widgets/dashboard-statistics/ui/SuccessGauge.tsx` · `src/widgets/financial-analysis/ui/FinancialAnalysis.tsx` · `src/widgets/dashboard-top-performers/ui/TopPerformers.tsx` · `src/widgets/dashboard-performance-chart/ui/PerformanceChart.tsx` · `src/widgets/dashboard-region/ui/RegionStatsCard.tsx` · `src/pages/region/ui/UzbekistanRegionMap.tsx`
+- **Fayllar:** `src/app/lib/routes.tsx` · `src/pages/dashboard/DashboardPage.tsx` · `src/pages/dashboard/MarketDashboardPage.tsx` · `src/widgets/dashboard-statistics/ui/DashboardStatistics.tsx` · `src/widgets/dashboard-statistics/ui/OrderStatusDonut.tsx` · `src/widgets/dashboard-statistics/ui/SuccessGauge.tsx` · `src/widgets/financial-analysis/ui/FinancialAnalysis.tsx` · `src/widgets/dashboard-top-performers/ui/TopPerformers.tsx` · `src/widgets/dashboard-top-performers/ui/RankingCard.tsx` · `src/widgets/dashboard-part-error/ui/DashboardPartError.tsx` · `src/widgets/dashboard-performance-chart/ui/PerformanceChart.tsx` · `src/widgets/dashboard-region/ui/RegionStatsCard.tsx` · `src/pages/region/ui/UzbekistanRegionMap.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish) · o'rovchi: `DashboardEntry`
 - **Rollar:** superadmin, admin, manager (→ /branch-dashboard), registrator, market, courier
 - **Menyuda:** «Bosh sahifa» (`dashboard`) — superadmin, admin, registrator, market, courier
@@ -250,7 +250,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/branch-dashboard` — Filial paneli (menejer bosh sahifasi)
 
-- **Fayllar:** `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` · `src/pages/branch-dashboard/ui/BranchDashboardCards.tsx` · `src/pages/branch-dashboard/ui/branchDashboardAdapter.ts` · `src/widgets/dashboard-top-performers/ui/TopPerformers.tsx`
+- **Fayllar:** `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` · `src/pages/branch-dashboard/ui/BranchDashboardCards.tsx` · `src/pages/branch-dashboard/ui/branchDashboardAdapter.ts` · `src/widgets/dashboard-top-performers/ui/TopPerformers.tsx` · `src/widgets/dashboard-top-performers/ui/RankingCard.tsx` · `src/widgets/dashboard-part-error/ui/DashboardPartError.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewBranchDashboard` (routes.tsx → canViewBranchDashboard)
 - **Rollar:** manager
 - **Menyuda:** «Bosh sahifa» (`dashboard`) — manager
@@ -265,7 +265,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/orders` — Buyurtmalar ro'yxati (kuryerda — alohida ro'yxat komponenti)
 
-- **Fayllar:** `src/pages/orders/index.tsx` · `src/pages/orders/list/OrderFilters.tsx` · `src/pages/orders/list/OrderFiltersSheet.tsx` · `src/pages/orders/list/OrdersTable.tsx` · `src/pages/orders/list/orderFilterModel.ts` · `src/pages/orders/lib/exportOrdersToExcel.ts` · `src/pages/orders/list/courier/index.tsx` · `src/pages/orders/list/courier/list/tabs.tsx` · `src/pages/orders/list/courier/list/ordertable/pendingOrderTable.tsx` · `src/pages/orders/list/courier/list/ordertable/AllOrdersTable.tsx` · `src/pages/orders/list/courier/list/ordertable/CancelledOrdersTable.tsx` · `src/pages/orders/list/courier/list/ordertable/CourierOrdersTable.tsx` · `src/pages/orders/list/courier/list/SellModal.tsx` · `src/pages/orders/list/courier/list/CancelModal.tsx` · `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` · `src/pages/orders/list/courier/list/OrderActionParts.tsx` · `src/entities/orders/ui/ExtraCostApprovalAlerts.tsx` · `src/entities/orders/ui/ExtraCostApprovalTag.tsx` · `src/entities/order/ui/ReturnRequestedTag.tsx`
+- **Fayllar:** `src/pages/orders/index.tsx` · `src/pages/orders/list/OrderFilters.tsx` · `src/pages/orders/list/OrderFiltersSheet.tsx` · `src/pages/orders/list/OrdersTable.tsx` · `src/pages/orders/list/orderFilterModel.ts` · `src/pages/orders/list/courier/index.tsx` · `src/pages/orders/list/courier/list/tabs.tsx` · `src/pages/orders/list/courier/list/ordertable/pendingOrderTable.tsx` · `src/pages/orders/list/courier/list/ordertable/AllOrdersTable.tsx` · `src/pages/orders/list/courier/list/ordertable/CancelledOrdersTable.tsx` · `src/pages/orders/list/courier/list/ordertable/CourierOrdersTable.tsx` · `src/pages/orders/list/courier/list/SellModal.tsx` · `src/pages/orders/list/courier/list/CancelModal.tsx` · `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` · `src/pages/orders/list/courier/list/OrderActionParts.tsx` · `src/entities/orders/ui/ExtraCostApprovalAlerts.tsx` · `src/entities/orders/ui/ExtraCostApprovalTag.tsx` · `src/entities/order/ui/ReturnRequestedTag.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOrders` (access.ts → canViewOrders)
 - **Rollar:** superadmin, admin, manager, registrator, market, courier
 - **Menyuda:** «Buyurtmalar» (`orders`) — superadmin, admin, manager, registrator, market, courier
@@ -1319,18 +1319,18 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/activity-logs` — Faoliyat jurnali (ochiladigan qator)
 
-- **Fayllar:** `src/pages/activity-logs/index.tsx` · `src/widgets/activity-log/ui/ActivityLogViewer.tsx` · `src/widgets/activity-log/ui/ActivityLogDetail.tsx`
+- **Fayllar:** `src/pages/activity-logs/index.tsx` · `src/widgets/activity-log/ui/ActivityLogViewer.tsx` · `src/widgets/activity-log/ui/ActivityLogFilters.tsx` · `src/widgets/activity-log/ui/ActivityLogDetail.tsx` · `src/entities/activity-log/ui/ActivityActionBadge.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOps` (routes.tsx → canViewOps)
 - **Rollar:** superadmin, admin
 - **Menyuda:** «Faoliyat jurnali» (`activityLogs`) — superadmin, admin
-- **Holat:** eski
+- **Holat:** v2
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/activity-logs` | superadmin | `superadmin-activity-logs-list` — Faoliyat jurnali | [design/fragments/superadmin--activity-logs-list.html](fragments/superadmin--activity-logs-list.html) | sahifa | eski |
-| `/activity-logs` | superadmin | `superadmin-activity-logs-row-expanded` — Faoliyat jurnali — yozuv tafsiloti (ochilgan qator)<br>↳ `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | [design/fragments/superadmin--activity-logs-row-expanded.html](fragments/superadmin--activity-logs-row-expanded.html) | sahifa | eski |
-| `/activity-logs` | admin | `admin-activity-logs-list` — Faoliyat jurnali | [design/fragments/superadmin--activity-logs-list.html](fragments/superadmin--activity-logs-list.html) | sahifa | eski |
-| `/activity-logs` | admin | `admin-activity-logs-row-expanded` — Jurnal yozuvi ochilgan<br>↳ `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | [design/fragments/admin--activity-logs-row-expanded.html](fragments/admin--activity-logs-row-expanded.html) | sahifa | eski |
+| `/activity-logs` | superadmin | `superadmin-activity-logs-list` — Faoliyat jurnali | [design/fragments/superadmin--activity-logs-list.html](fragments/superadmin--activity-logs-list.html) | sahifa | v2 |
+| `/activity-logs` | superadmin | `superadmin-activity-logs-row-expanded` — Faoliyat jurnali — yozuv tafsiloti (ochilgan qator)<br>↳ `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | [design/fragments/superadmin--activity-logs-row-expanded.html](fragments/superadmin--activity-logs-row-expanded.html) | sahifa | v2 |
+| `/activity-logs` | admin | `admin-activity-logs-list` — Faoliyat jurnali | [design/fragments/superadmin--activity-logs-list.html](fragments/superadmin--activity-logs-list.html) | sahifa | v2 |
+| `/activity-logs` | admin | `admin-activity-logs-row-expanded` — Jurnal yozuvi ochilgan<br>↳ `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | [design/fragments/admin--activity-logs-row-expanded.html](fragments/admin--activity-logs-row-expanded.html) | sahifa | v2 |
 | `/activity-logs` | tizim taxtasi | `tizim-states-data` — Holatlar — jadval, ro'yxat, kartalar | [design/fragments/tizim--states-data.html](fragments/tizim--states-data.html) | taxta | qoida |
 
 #### `/ops` — Ops vositalari markazi (tablar: ?tab=finance|integrations|investors|logistics|branches|identity|system|auth)
@@ -1663,8 +1663,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-notifications-sms-templates` | SMS — Shablonlar | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | eski |
 | `superadmin-notifications-sms-report` | SMS — Xarajat | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | eski |
 | `superadmin-notifications-sms-settings` | SMS — Sozlamalar | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | eski |
-| `superadmin-activity-logs-list` | Faoliyat jurnali | sahifa | `/activity-logs` | `src/pages/activity-logs/index.tsx` | eski |
-| `superadmin-activity-logs-row-expanded` | Faoliyat jurnali — yozuv tafsiloti (ochilgan qator) | sahifa | `/activity-logs` | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | eski |
+| `superadmin-activity-logs-list` | Faoliyat jurnali | sahifa | `/activity-logs` | `src/pages/activity-logs/index.tsx` | v2 |
+| `superadmin-activity-logs-row-expanded` | Faoliyat jurnali — yozuv tafsiloti (ochilgan qator) | sahifa | `/activity-logs` | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | v2 |
 | `superadmin-ops-finance-operators` | Ops — Moliya operatorlari | sahifa | `/ops`, `/finance-operators` | `src/pages/ops/index.tsx`, `src/pages/finance-operators/index.tsx` | eski |
 | `superadmin-ops-integrations` | Ops — Integratsiyalar | sahifa | `/ops`, `/integrations-ops` | `src/pages/ops/index.tsx`, `src/pages/integrations-ops/index.tsx` | eski |
 | `superadmin-ops-investors` | Ops — Investorlar | sahifa | `/ops`, `/investors-ops` | `src/pages/ops/index.tsx`, `src/pages/investors-ops/index.tsx` | eski |
@@ -1769,8 +1769,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-integrations-wizard` | Ulash ustasi | sahifa | `/integrations/new/:typeKey` | `src/pages/integrations/wizard/ConnectWizard.tsx` | eski |
 | `admin-integrations-legacy-partners` | Partner API hamkorlari (eski) | sahifa | `/integrations/partners` | `src/pages/partners/index.tsx` | eski |
 | `admin-integrations-legacy-sources` | Integratsiyalar manbalari (eski) | sahifa | `/integrations/sources` | `src/pages/new_orders/external_orders/index.tsx` | eski |
-| `admin-activity-logs-list` | Faoliyat jurnali | sahifa | `/activity-logs` | `src/pages/activity-logs/index.tsx` | eski |
-| `admin-activity-logs-row-expanded` | Jurnal yozuvi ochilgan | sahifa | `/activity-logs` | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | eski |
+| `admin-activity-logs-list` | Faoliyat jurnali | sahifa | `/activity-logs` | `src/pages/activity-logs/index.tsx` | v2 |
+| `admin-activity-logs-row-expanded` | Jurnal yozuvi ochilgan | sahifa | `/activity-logs` | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | v2 |
 | `admin-scan-camera` | Skaner — kamera (umumiy) | sahifa | `/scan` | `src/pages/scan/index.tsx` | eski |
 | `admin-scan-result` | Skanerlangan buyurtma | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | eski |
 
@@ -2021,6 +2021,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/app/lib/routes.tsx` | `/`, `/new-orders/cancelled/:marketId`, `/new-orders/:marketId`, `/new-orders/:marketId/edit/:orderId` |
 | `src/auth/SessionExpiryCountdown.tsx` | `/login` |
 | `src/auth/loginNotice.ts` | `/login` |
+| `src/entities/activity-log/ui/ActivityActionBadge.tsx` | `/activity-logs` |
 | `src/entities/order/ui/ProofGallery.tsx` | `/orders/edit/:orderId` |
 | `src/entities/order/ui/ReturnRequestedTag.tsx` | `/orders` |
 | `src/entities/orders/ui/ExtraCostApprovalAlerts.tsx` | `/orders` |
@@ -2178,7 +2179,6 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/orders/create/ui/ai/AiInputPanel.tsx` | `/new-orders/create` |
 | `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` | `/new-orders/create` |
 | `src/pages/orders/index.tsx` | `/orders` |
-| `src/pages/orders/lib/exportOrdersToExcel.ts` | `/orders` |
 | `src/pages/orders/list/OrderFilters.tsx` | `/orders` |
 | `src/pages/orders/list/OrderFiltersSheet.tsx` | `/orders` |
 | `src/pages/orders/list/OrdersTable.tsx` | `/orders` |
@@ -2263,6 +2263,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/widgets/Sidebar/ui/Sidebar.tsx` | `(qobiq)` |
 | `src/widgets/Sidebar/ui/SidebarItem.tsx` | `(qobiq)` |
 | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | `/activity-logs` |
+| `src/widgets/activity-log/ui/ActivityLogFilters.tsx` | `/activity-logs` |
 | `src/widgets/activity-log/ui/ActivityLogViewer.tsx` | `/activity-logs` |
 | `src/widgets/branch-detail/ui/BranchDetailWidget.tsx` | `/branches/:id` |
 | `src/widgets/branch-detail/ui/BranchEmployeesSection.tsx` | `/branches/:id` |
@@ -2271,11 +2272,13 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/widgets/branch-list/ui/BranchListWidget.tsx` | `/branches` |
 | `src/widgets/branch-list/ui/BranchTable.tsx` | `/branches` |
 | `src/widgets/branch-list/ui/BranchTree.tsx` | `/branches` |
+| `src/widgets/dashboard-part-error/ui/DashboardPartError.tsx` | `/`, `/branch-dashboard` |
 | `src/widgets/dashboard-performance-chart/ui/PerformanceChart.tsx` | `/` |
 | `src/widgets/dashboard-region/ui/RegionStatsCard.tsx` | `/` |
 | `src/widgets/dashboard-statistics/ui/DashboardStatistics.tsx` | `/` |
 | `src/widgets/dashboard-statistics/ui/OrderStatusDonut.tsx` | `/` |
 | `src/widgets/dashboard-statistics/ui/SuccessGauge.tsx` | `/` |
+| `src/widgets/dashboard-top-performers/ui/RankingCard.tsx` | `/`, `/branch-dashboard` |
 | `src/widgets/dashboard-top-performers/ui/TopPerformers.tsx` | `/`, `/branch-dashboard` |
 | `src/widgets/financial-analysis/ui/FinancialAnalysis.tsx` | `/` |
 | `src/widgets/header/ui/Header.tsx` | `(qobiq)` |

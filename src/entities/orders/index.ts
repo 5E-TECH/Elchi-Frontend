@@ -119,8 +119,9 @@ export const useOrders = () => {
           .then((res) => res.data),
       enabled,
       // Kutilayotgan so'rov Telegram'da ham (✅/❌) hal qilinishi mumkin — oynaga qaytilganda va
-      // har 30 s da yangilanadi (global sukut `refetchOnWindowFocus: false`).
-      refetchInterval: status === "pending" ? 30000 : false,
+      // har 30 s da yangilanadi (global sukut `refetchOnWindowFocus: false`). Xato holatida 30 s lik
+      // yangilanish EMAS — aks holda xato kartasi har 30 s da skeletga aylanib qaytadi.
+      refetchInterval: (query) => (status === "pending" && query.state.status !== "error" ? 30000 : false),
       refetchOnWindowFocus: status === "pending" ? "always" : false,
     });
 

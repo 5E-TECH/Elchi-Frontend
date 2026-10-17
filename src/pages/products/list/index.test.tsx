@@ -119,14 +119,20 @@ const getProductsMock = vi.fn((params: unknown, enabled: unknown) => {
   };
 });
 
+const getMyProductsMock = vi.fn((enabled: unknown, params: unknown) => {
+  void enabled;
+  void params;
+  return {
+    data: { data: [{ id: 11, name: "Nok", market: { id: 7, name: "Baraka" } }], total: 14, page: 2, limit: 10 },
+    isLoading: false,
+    isFetching: false,
+  };
+});
+
 vi.mock("../../../entities/product", () => ({
   useProducts: () => ({
     useGetProducts: (params: unknown, enabled: unknown) => getProductsMock(params, enabled),
-    useGetMyProducts: () => ({
-      data: { data: [] },
-      isLoading: false,
-      isFetching: false,
-    }),
+    useGetMyProducts: (enabled: unknown, params: unknown) => getMyProductsMock(enabled, params),
     useGetProductById: () => ({
       data: {
         data: { id: 1, name: "Olma", image_url: "/uploads/olma.png", market: { id: 1, name: "Fresh" } },
@@ -348,3 +354,35 @@ describe("ProductTable — registrator (#1: endi yarata oladi)", () => {
     expect(screen.getByRole("button", { name: "Mahsulot yaratish" })).toBeInTheDocument();
   });
 });
+
+describe("ProductTable — market o'z mahsulotlarida sahifa va qidiruv (3qDsJpfW)", () => {
+  const marketRoleState = { id: "7", role: "market", region: null, name: "Baraka" };
+
+  beforeEach(() => {
+    getMyProductsMock.mockClear();
+    getProductsMock.mockClear();
+  });
+
+  it("⭐ TC1: 2-sahifa — `my-products` so'roviga `page: 2` (va `limit`) uzatiladi; admin ro'yxati so'ralmaydi", async () => {
+    renderWithProviders(<ProductTable />, { route: "/products?page=2", preloadedState: { role: marketRoleState } });
+
+    await waitFor(() =>
+      expect(getMyProductsMock).toHaveBeenLastCalledWith(true, expect.objectContaining({ page: 2, limit: 10 })),
+    );
+    expect(getProductsMock).toHaveBeenLastCalledWith(expect.anything(), false);
+    expect(await screen.findByText("Nok")).toBeInTheDocument();
+  });
+
+  it("⭐ TC2: qidiruv — `search` serverga ketadi, sahifa 1 ga qaytadi; `market_id` market uchun yuborilmaydi", async () => {
+    renderWithProviders(<ProductTable />, {
+      route: "/products?product_search=Nok&market_id=99",
+      preloadedState: { role: marketRoleState },
+    });
+
+    await waitFor(() =>
+      expect(getMyProductsMock).toHaveBeenLastCalledWith(true, expect.objectContaining({ search: "Nok", page: 1 })),
+    );
+    expect(getMyProductsMock.mock.lastCall?.[1]).not.toHaveProperty("market_id");
+  });
+});
+

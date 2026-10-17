@@ -76,12 +76,6 @@ export interface User {
   cancelled_handover_qr_required?: boolean;
   expense_proof_conditions?: ExpenseProofCondition[] | null;
   /**
-   * Marketning Telegram maxfiy tokeni (`group_token-<hex>`). Backend uni FAQAT
-   * SUPERADMIN/ADMIN so'rovida va faqat market qatorida (GET /users/:id)
-   * qaytaradi — admin uni marketga beradi.
-   */
-  market_tg_token?: string | null;
-  /**
    * Shaxsiy Telegram botga ulanganmi (td89SKXQ). Backend xom `telegram_id` ni
    * qaytarmaydi — faqat shu holat; `telegram_username` va `telegram_linked_at`
    * esa ulangan bo'lsa keladi (`GET /auth/my-profile`).

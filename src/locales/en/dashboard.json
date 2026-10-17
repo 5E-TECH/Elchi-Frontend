@@ -88,6 +88,19 @@
     "limited": "Data is still limited — rankings may change.",
     "empty": "Data is still limited (at least 30 orders are needed for rankings)."
   },
+  "ranking": {
+    "formula": "Sales rate · sold / total",
+    "formulaWithOwn": "Sales rate · top 5 and your branch",
+    "periodLastDays": "last {{count}} days",
+    "ratio": "{{successful}} of {{total}}",
+    "rateAria": "{{name}}: sales rate",
+    "lowData": "Not enough data yet — the ranking may change",
+    "empty": "No orders for the ranking in this period",
+    "showMore": "Show more · {{count}}",
+    "showLess": "Show less",
+    "ownBranch": "Your branch",
+    "ownRankAria": "Your branch's place"
+  },
   "region": {
     "title": "By region",
     "subtitle": "Orders and sales metrics across provinces"

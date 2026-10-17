@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
@@ -11,12 +11,6 @@ vi.mock("../../../entities/dashboard", () => ({
   useDashboard: () => ({
     getDashboard: getDashboardMock,
   }),
-}));
-
-vi.mock("../../../widgets/dashboard-top-performers/ui/TopPerformers", () => ({
-  default: ({ branches }: { branches?: unknown[] }) => (
-    <div data-testid="top-branches">branches:{branches?.length ?? 0}</div>
-  ),
 }));
 
 describe("BranchDashboardPage", () => {
@@ -117,7 +111,13 @@ describe("BranchDashboardPage", () => {
     expect(screen.getAllByText("7").length).toBeGreaterThan(0);
     expect(screen.getAllByText("3").length).toBeGreaterThan(0);
     expect(screen.getAllByText("1").length).toBeGreaterThan(0);
-    expect(screen.getByTestId("top-branches")).toHaveTextContent("branches:1");
+    // Reyting — v2 karta (9zbSDkUI): menejerning o'z filiali belgilangan, izoh maketdagidek.
+    const ranking = screen.getByTestId("ranking-branches");
+    expect(ranking).toHaveTextContent("Top filiallar");
+    expect(ranking).toHaveTextContent("Sotuv foizi · top 5 va sizning filial");
+    expect(ranking).toHaveTextContent("Qashqadaryo");
+    expect(ranking).toHaveTextContent("Sizning filial");
+    expect(ranking).toHaveTextContent("4 / 9 ta");
   });
 
   const managerState = {
@@ -150,6 +150,36 @@ describe("BranchDashboardPage", () => {
     );
     expect(screen.queryByText("Jami buyurtmalar")).not.toBeInTheDocument();
     expect(screen.queryByText("7")).not.toBeInTheDocument();
+  });
+
+  it("VkwhHqvW: `failed_parts: branchDashboard` — filial raqamlari 0 emas, «Statistika vaqtincha mavjud emas»", () => {
+    const base = getDashboardMock();
+    getDashboardMock.mockReturnValue({
+      ...base,
+      data: { data: { ...base.data.data, degraded: true, failedParts: ["branchDashboard"] } },
+    });
+    renderWithProviders(<BranchDashboardPage />, { preloadedState: managerState as never });
+
+    expect(screen.getAllByRole("alert")[0]).toHaveTextContent("Statistika vaqtincha mavjud emas");
+    expect(screen.queryByText("Jami buyurtmalar")).not.toBeInTheDocument();
+  });
+
+  it("VkwhHqvW: `failed_parts: topBranches` — «Top filiallar» joyida xato kartasi va «Qayta urinish»", async () => {
+    const refetch = vi.fn();
+    const base = getDashboardMock();
+    getDashboardMock.mockReturnValue({
+      ...base,
+      refetch,
+      data: { data: { ...base.data.data, degraded: true, failedParts: ["topBranches"] } },
+    });
+    renderWithProviders(<BranchDashboardPage />, { preloadedState: managerState as never });
+
+    const ranking = screen.getByTestId("ranking-branches");
+    expect(ranking).toHaveAttribute("data-part-failed");
+    expect(ranking).toHaveTextContent("Top filiallar");
+    expect(ranking).toHaveTextContent("Ma'lumotni yuklab bo'lmadi");
+    await userEvent.setup().click(within(ranking).getByRole("button", { name: "Qayta urinish" }));
+    expect(refetch).toHaveBeenCalledTimes(1);
   });
 
   it("filial paneli kelmasa — data.orders (boshqa doira) ga qaytmaydi (fix3 C9)", () => {

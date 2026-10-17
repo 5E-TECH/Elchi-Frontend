@@ -175,6 +175,8 @@
         "src/widgets/dashboard-statistics/ui/SuccessGauge.tsx",
         "src/widgets/financial-analysis/ui/FinancialAnalysis.tsx",
         "src/widgets/dashboard-top-performers/ui/TopPerformers.tsx",
+        "src/widgets/dashboard-top-performers/ui/RankingCard.tsx",
+        "src/widgets/dashboard-part-error/ui/DashboardPartError.tsx",
         "src/widgets/dashboard-performance-chart/ui/PerformanceChart.tsx",
         "src/widgets/dashboard-region/ui/RegionStatsCard.tsx",
         "src/pages/region/ui/UzbekistanRegionMap.tsx"
@@ -201,7 +203,9 @@
         "src/pages/branch-dashboard/ui/BranchDashboardPage.tsx",
         "src/pages/branch-dashboard/ui/BranchDashboardCards.tsx",
         "src/pages/branch-dashboard/ui/branchDashboardAdapter.ts",
-        "src/widgets/dashboard-top-performers/ui/TopPerformers.tsx"
+        "src/widgets/dashboard-top-performers/ui/TopPerformers.tsx",
+        "src/widgets/dashboard-top-performers/ui/RankingCard.tsx",
+        "src/widgets/dashboard-part-error/ui/DashboardPartError.tsx"
       ],
       "views": {
         "manager": ["branch-dashboard-main"],
@@ -218,7 +222,6 @@
         "src/pages/orders/list/OrderFiltersSheet.tsx",
         "src/pages/orders/list/OrdersTable.tsx",
         "src/pages/orders/list/orderFilterModel.ts",
-        "src/pages/orders/lib/exportOrdersToExcel.ts",
         "src/pages/orders/list/courier/index.tsx",
         "src/pages/orders/list/courier/list/tabs.tsx",
         "src/pages/orders/list/courier/list/ordertable/pendingOrderTable.tsx",
@@ -1159,7 +1162,9 @@
       "components": [
         "src/pages/activity-logs/index.tsx",
         "src/widgets/activity-log/ui/ActivityLogViewer.tsx",
-        "src/widgets/activity-log/ui/ActivityLogDetail.tsx"
+        "src/widgets/activity-log/ui/ActivityLogFilters.tsx",
+        "src/widgets/activity-log/ui/ActivityLogDetail.tsx",
+        "src/entities/activity-log/ui/ActivityActionBadge.tsx"
       ],
       "views": {
         "superadmin": ["activity-logs-list", "activity-logs-row-expanded"],

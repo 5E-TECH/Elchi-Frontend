@@ -15,6 +15,7 @@ import i18n from "../../i18n";
 import AuthBootstrap from "../../auth/AuthBootstrap";
 import SessionExpiryCountdown from "../../auth/SessionExpiryCountdown";
 import SettingsSync from "../providers/SettingsSync";
+import RealtimeSync from "../providers/RealtimeSync";
 import { PushSync } from "../../features/push-notifications";
 import ScanFeedbackOverlay from "../../shared/components/ScanFeedbackOverlay";
 import { emitQueryError } from "../../shared/lib/queryErrorEvents";
@@ -70,6 +71,7 @@ const AppProvider = ({ children }: { children: ReactNode }) => {
                   <AuthBootstrap>
                     <SettingsSync />
                     <PushSync />
+                    <RealtimeSync />
                     <SessionExpiryCountdown />
                     <GlobalLoader>
                       <Suspense fallback={<PageLoader />}>{children}</Suspense>

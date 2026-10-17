@@ -227,5 +227,8 @@
     "explainConfirm": "Yoqish",
     "explainCancel": "Hozir emas",
     "toastOpen": "Ochish"
+  },
+  "realtime": {
+    "manyNew": "{{count}} ta yangi bildirishnoma"
   }
 }

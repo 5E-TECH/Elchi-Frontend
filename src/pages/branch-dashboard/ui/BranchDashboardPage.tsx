@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import HeaderName from "../../../shared/components/headerName";
 import { useDashboard } from "../../../entities/dashboard";
+import { hasFailedPart } from "../../../entities/dashboard/lib/partialFailure";
 import {
   ActivePackagesCard,
   CourierActivityCard,
@@ -14,7 +15,8 @@ import { adaptBranchDashboard } from "./branchDashboardAdapter";
 import PageContainer from "../../../shared/ui/PageContainer";
 import QuickDateRangeFilter from "../../../shared/ui/QuickDateRangeFilter";
 import QueryErrorState from "../../../shared/ui/QueryErrorState";
-import TopPerformers from "../../../widgets/dashboard-top-performers/ui/TopPerformers";
+import { RankingCard } from "../../../widgets/dashboard-top-performers/ui/RankingCard";
+import { DashboardPartError } from "../../../widgets/dashboard-part-error/ui/DashboardPartError";
 import { getCurrentBranchId } from "../../../shared/lib/currentBranch";
 import { getTodayRange } from "../../../shared/lib/dateRange";
 import { removeFilterValue, setMultipleFilters } from "../../../shared/model/filterSlice";
@@ -57,7 +59,7 @@ const BranchDashboardPage = () => {
     [branchId, fromDate, hasDateFilter, toDate],
   );
   const { getDashboard } = useDashboard();
-  const { data, isLoading, isError, refetch } = getDashboard(
+  const { data, isLoading, isFetching, isError, refetch } = getDashboard(
     analyticsParams,
     true,
     analyticsScope,
@@ -69,8 +71,13 @@ const BranchDashboardPage = () => {
    * jimgina nollar yoki BOSHQA doiradagi `data.orders` (filialniki emas)
    * ko'rsatilardi va menejer "bugun 0 ta" deb o'ylardi.
    */
+  const failedParts = data?.data?.failedParts;
   const isStatsUnavailable =
-    Boolean(data) && (!rawBranchDashboard || rawBranchDashboard.stats_unavailable === true);
+    Boolean(data) &&
+    (!rawBranchDashboard ||
+      rawBranchDashboard.stats_unavailable === true ||
+      // VkwhHqvW: backend `failed_parts: ['branchDashboard']` — filial raqamlari olinmadi.
+      hasFailedPart(failedParts, "branchDashboard"));
   const branchDashboard = useMemo(
     () => adaptBranchDashboard(rawBranchDashboard, userRole || "OPERATOR", undefined, false),
     [rawBranchDashboard, userRole],
@@ -200,11 +207,27 @@ const BranchDashboardPage = () => {
         </div>
       )}
 
-      {!isLoading ? (
-        <section className="mt-3 xl:shrink-0">
-          <TopPerformers branches={topBranches} compact />
-        </section>
-      ) : null}
+      {/* Reyting — dizayn v2 (9zbSDkUI, `manager-branch-dashboard-main`): o'z filiali belgilangan. */}
+      <div className="mt-3 xl:shrink-0">
+        {hasFailedPart(failedParts, "topBranches") ? (
+          <DashboardPartError
+            data-testid="ranking-branches"
+            title={t("dashboard:top.branches_title")}
+            onRetry={() => void refetch()}
+            retrying={isFetching}
+          />
+        ) : (
+          <RankingCard
+            data-testid="ranking-branches"
+            title={t("dashboard:top.branches_title")}
+            branches={topBranches}
+            meta={data?.data?.topBranchesMeta}
+            ownId={branchId ? String(branchId) : null}
+            ownFormula={t("dashboard:ranking.formulaWithOwn")}
+            loading={isLoading}
+          />
+        )}
+      </div>
     </PageContainer>
   );
 };

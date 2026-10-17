@@ -47,6 +47,7 @@ export const API_ENDPOINTS = {
     ADD_ORDER: (id: string | number) => `markets/${id}/add-order`, // PATCH
     CANCELLED_HANDOVER_QR: (id: string | number) => `markets/${id}/cancelled-handover-qr`, // PATCH
     EXPENSE_PROOF: (id: string | number) => `markets/${id}/expense-proof`, // PATCH proof conditions (guide §5)
+    TG_TOKEN: (id: string | number) => `markets/${id}/tg-token`, // GET — faqat SUPERADMIN (GvL6ZFAd)
     // PATCH { tg_group_show_customer_pii } — Telegram guruhi kartasida mijoz ismi/telefoni (ysBqD9Nx;
     // superadmin, admin, market — faqat o'zinikini)
     TELEGRAM_GROUP_PII: (id: string | number) => `markets/${id}/telegram-group-pii`,
@@ -80,6 +81,7 @@ export const API_ENDPOINTS = {
   // ── Orders (role-dependent; see guide §11) ───────────────────────────────
   ORDERS: {
     BASE: "orders", // GET list (filters) / POST create
+    EXPORT_EXCEL: "orders/export/excel", // GET .xlsx — `GET /orders` filtrlari bilan, bitta so'rov (xWsCAA5N)
     BY_ID: (id: string | number) => `orders/${id}`, // GET / PATCH update (full incl. items) / DELETE
     FULL: (id: string | number) => `orders/${id}/full`, // PATCH update by id (full fields)
     TRACKING: (id: string | number) => `orders/${id}/tracking`, // GET history timeline

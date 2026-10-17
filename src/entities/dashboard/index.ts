@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { readPartialFailure } from "./lib/partialFailure";
+
+export { hasFailedPart } from "./lib/partialFailure";
 
 const dashboard = "dashboard";
 
@@ -133,6 +136,19 @@ export interface TopBranch {
   success_rate: number;
 }
 
+/**
+ * Reyting davri (9zbSDkUI) — backend `topMarketsMeta` / `topBranchesMeta`.
+ * `last_30_days`: qisqa davr tanlanganda reyting oxirgi 30 kun bo'yicha;
+ * `selected_range`: tanlangan oraliq (`from` / `to`). Eski backendda yo'q — `null`.
+ */
+export interface RankingMeta {
+  periodRule: string | null;
+  periodDays: number | null;
+  from: string | null;
+  to: string | null;
+  minOrders: number | null;
+}
+
 export interface DashboardResponse {
   statusCode: number;
   message: string;
@@ -145,7 +161,13 @@ export interface DashboardResponse {
     topCouriers?: TopCourier[];
     topOperators?: TopOperator[];
     topBranches?: TopBranch[];
+    topMarketsMeta?: RankingMeta | null;
+    topBranchesMeta?: RankingMeta | null;
     branchDashboard?: BranchDashboardPayload | null;
+    /** Qisman nosozlik (VkwhHqvW): bo'lak olinmadi — raqamlar 0 emas, «olinmadi» ko'rsatiladi. */
+    degraded?: boolean;
+    /** Olinmagan bo'laklar — javob kalitlari (`topMarkets`, `couriers`, `branchDashboard` …). */
+    failedParts?: string[];
   };
 }
 
@@ -185,6 +207,8 @@ export interface RevenueResponse {
       };
       difference?: number;
     };
+    degraded?: boolean;
+    failedParts?: string[];
     [key: string]: unknown;
   };
 }
@@ -199,6 +223,9 @@ export interface KpiResponse {
     cancellationRate: number;
     courierEfficiency: number;
     marketRating: unknown[];
+    degraded?: boolean;
+    /** Masalan `fulfillment` — yetkazish vaqti / SLA olinmadi (mKS1mjNr). */
+    failedParts?: string[];
   };
 }
 
@@ -325,6 +352,22 @@ const normalizeTopOperator = (value: unknown): TopOperator => {
   };
 };
 
+const toOptionalText = (value: unknown): string | null =>
+  typeof value === "string" && value.trim() ? value.trim() : null;
+
+/** `topMarketsMeta` / `topBranchesMeta` (snake_case ham): obyekt bo'lmasa — `null`. */
+export const normalizeRankingMeta = (value: unknown): RankingMeta | null => {
+  if (!value || typeof value !== "object") return null;
+  const meta = value as UnknownRecord;
+  return {
+    periodRule: toOptionalText(meta.period_rule ?? meta.periodRule),
+    periodDays: toOptionalNumber(meta.period_days ?? meta.periodDays) ?? null,
+    from: toOptionalText(meta.from ?? meta.selected_from ?? meta.selectedFrom),
+    to: toOptionalText(meta.to ?? meta.selected_to ?? meta.selectedTo),
+    minOrders: toOptionalNumber(meta.min_orders ?? meta.minOrders) ?? null,
+  };
+};
+
 const normalizeTopBranch = (value: unknown): TopBranch => {
   const metrics = normalizePerformerMetrics(value);
   return {
@@ -433,6 +476,18 @@ const normalizeBranchDashboard = (value: unknown): BranchDashboardPayload | null
       couriers: toOptionalBoolean(visibility.couriers),
     },
   };
+};
+
+const DASHBOARD_PARTS: Record<string, readonly string[]> = {
+  orders: [],
+  myStat: ["my_stat"],
+  markets: ["market_stats"],
+  couriers: ["courier_stats"],
+  topMarkets: ["top_markets"],
+  topCouriers: ["top_couriers"],
+  topOperators: ["top_operators"],
+  topBranches: ["top_branches"],
+  branchDashboard: ["branch_dashboard"],
 };
 
 export const normalizeDashboardResponse = (payload: unknown): DashboardResponse => {
@@ -553,7 +608,10 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
       topBranches: Array.isArray(topBranches)
         ? topBranches.map(normalizeTopBranch)
         : [],
+      topMarketsMeta: normalizeRankingMeta(data.topMarketsMeta ?? data.top_markets_meta),
+      topBranchesMeta: normalizeRankingMeta(data.topBranchesMeta ?? data.top_branches_meta),
       branchDashboard: normalizeBranchDashboard(branchDashboard),
+      ...readPartialFailure(response, data, DASHBOARD_PARTS),
     },
   };
 };
@@ -575,6 +633,7 @@ export const normalizeKpiResponse = (payload: unknown): KpiResponse => {
       cancellationRate: toNumber(data.cancellationRate ?? data.cancellation_rate),
       courierEfficiency: toNumber(data.courierEfficiency ?? data.courier_efficiency),
       marketRating: Array.isArray(marketRating) ? marketRating : [],
+      ...readPartialFailure(response, data),
     },
   };
 };
@@ -639,6 +698,7 @@ export const normalizeRevenueResponse = (payload: unknown): RevenueResponse => {
             difference: toNumber(finance.difference),
           }
         : undefined,
+      ...readPartialFailure(response, data, { finance: [], summary: [], chart: [] }),
     },
   };
 };
