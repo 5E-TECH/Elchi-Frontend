@@ -1,0 +1,88 @@
+{
+  "title": "QR skaner",
+  "context": "Buyurtmalarni o'zingizga olish",
+  "surfaceLabel": "Kamera skaneri",
+  "torch": "Chiroq",
+  "chip": {
+    "live": "Skanerlash faol",
+    "starting": "Kamera ishga tushmoqda",
+    "found": "QR topildi",
+    "torchOn": "Chiroq yoqilgan",
+    "cameraOff": "Kamera o'chiq",
+    "signingIn": "Kirilmoqda",
+    "sending": "Yuborilmoqda"
+  },
+  "hint": {
+    "aim": "QR kodni ramka ichiga olib keling",
+    "starting": "Bir lahza — kamera ochilmoqda",
+    "signingIn": "Bir lahza — Telegram orqali kirilmoqda",
+    "sending": "Xulosa botga yuborilmoqda"
+  },
+  "meter": {
+    "label": "ta qabul qilindi"
+  },
+  "list": {
+    "open": "Ro'yxat",
+    "title": "Skanerlanganlar",
+    "summary": "{{accepted}} ta qabul qilindi · {{failed}} ta xato",
+    "emptyTitle": "Hali skan yo'q",
+    "emptyText": "Qabul qilingan buyurtmalar shu yerda chiqadi.",
+    "continue": "Davom etish"
+  },
+  "last": {
+    "emptyTitle": "Hali skan yo'q",
+    "emptyText": "Qabul qilingan buyurtmalar shu yerda chiqadi",
+    "pendingTitle": "Qabul qilinmoqda",
+    "pendingText": "Bir lahza"
+  },
+  "entry": {
+    "title": "{{number}} · {{name}}",
+    "orderNoun": "Buyurtma",
+    "noNumber": "Buyurtma",
+    "assigned": "Sizga biriktirildi",
+    "already": "Allaqachon sizda",
+    "failed": "Qabul qilinmadi"
+  },
+  "toast": {
+    "assignedTitle": "{{number}} qabul qilindi",
+    "alreadyTitle": "Allaqachon sizda",
+    "repeatTitle": "Allaqachon qabul qilingan",
+    "failedText": "Skanerlash davom etmoqda — keyingi posilkani skanerlang",
+    "invalidTitle": "Bu QR kod skaner uchun yaroqsiz",
+    "invalidText": "Elchi yorlig'idagi QR kodni skanerlang"
+  },
+  "error": {
+    "offline": "Internet aloqasi yo'q — qayta skanerlang",
+    "timeout": "Server javob bermadi — qayta skanerlang",
+    "unknown": "Skan yuborilmadi — qayta urinib ko'ring"
+  },
+  "done": {
+    "action": "Tayyor",
+    "sending": "Yuborilmoqda…",
+    "errorTitle": "Xulosa yuborilmadi",
+    "errorText": "{{message}} Buyurtmalar baribir sizga biriktirilgan.",
+    "backToScan": "Skanerlashga qaytish"
+  },
+  "fallback": {
+    "telegramScanner": "Telegram skaneri",
+    "popupText": "Buyurtma QR kodini ramkaga olib keling",
+    "cameraTitle": "Kamera ochilmadi",
+    "cameraTextPopup": "Telegram kameradan foydalanishga ruxsat bermadi yoki kamera band. Telegram skaneri bilan davom eting.",
+    "cameraText": "Telegram sozlamalarida kameraga ruxsat bering va qayta urinib ko'ring.",
+    "startError": "Kamerani ishga tushirib bo'lmadi"
+  },
+  "state": {
+    "outsideTitle": "Bu sahifa faqat Telegram ichida ochiladi",
+    "outsideText": "Skanerni Elchi botidagi «Skaner» tugmasi orqali oching.",
+    "authErrorTitle": "Kirib bo'lmadi",
+    "authErrorText": "Telegram orqali kirish amalga oshmadi. Mini App'ni qayta oching.",
+    "notCourierTitle": "Skaner faqat kuryerlar uchun",
+    "notCourierText": "Bu Telegram akkaunt kuryerga bog'lanmagan. Kuryer akkauntiga ulangan Telegram'dan oching.",
+    "expiredTitle": "Sessiya muddati tugadi",
+    "expiredText": "Mini App'ni qayta oching. Skanerlangan buyurtmalar sizda saqlangan."
+  },
+  "action": {
+    "retry": "Qayta urinish",
+    "close": "Yopish"
+  }
+}

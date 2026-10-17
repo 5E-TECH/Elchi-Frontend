@@ -18,6 +18,7 @@ export const API_ENDPOINTS = {
     VALIDATE: "auth/validate", // GET — validate current JWT on app load
     MY_PROFILE: "auth/my-profile", // GET (read) / PATCH (update own profile)
     MY_SETTINGS: "auth/my-settings", // PATCH — update own UI settings/preferences
+    TELEGRAM: "auth/telegram", // POST { init_data } — Mini App login, 30-min JWT, no refresh (MWYaqprw)
   },
 
   // ── Identity / Users (superadmin/admin/manager) ──────────────────────────
@@ -366,6 +367,11 @@ export const API_ENDPOINTS = {
   SCAN: {
     BY_TOKEN: (token: string | number) => `scan/${token}`, // resolve QR → order/batch/post
     MARKET_CANCELLED: "scan/market-cancelled",
+  },
+
+  // ── Telegram scan Mini App (courier; `/tg/scan`, MWYaqprw) ───────────────
+  TELEGRAM_SCAN: {
+    DONE: "telegram/scan/done", // POST { order_ids } → { accepted, ignored }; bot sends the summary
   },
 
   // ── Files (MinIO) — guide §10 ────────────────────────────────────────────

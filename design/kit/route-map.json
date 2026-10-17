@@ -699,6 +699,28 @@
       "note": "«O'zimga olish» tugmasi faqat kuryerda. Paket → ScanPackageDetail, pochta → ScanPostDetail."
     },
     {
+      "path": "/tg/scan",
+      "section": "scan",
+      "title": "Telegram skan Mini App — kuryer uzluksiz skanerlab buyurtmalarni o'ziga oladi (shell'siz, to'liq ekran)",
+      "public": true,
+      "entry": "Telegram bot → «Skaner» web_app tugmasi (`/ishim`; URL backend `TELEGRAM_SCAN_WEBAPP_URL` dan, tokensiz). Kirish — Telegram initData (`POST /auth/telegram`), asosiy sessiyasiz",
+      "components": [
+        "src/pages/tg-scan/index.tsx",
+        "src/features/tg-scan/ui/TgScanner.tsx",
+        "src/features/tg-scan/ui/CameraSurface.tsx",
+        "src/features/tg-scan/ui/ScanListSheet.tsx",
+        "src/features/tg-scan/model/useTelegramAuth.ts",
+        "src/features/tg-scan/model/useScanAssign.ts",
+        "src/features/tg-scan/model/telegramWebApp.ts",
+        "src/features/tg-scan/api/tgScanApi.ts"
+      ],
+      "views": {
+        "courier": ["scan-active", "scan-starting", "scan-permission-denied", "scan-success-flash", "scan-other-courier", "scan-invalid"],
+        "tizim": ["scanner"]
+      },
+      "note": "Faqat kuryer (boshqa rol Telegram orqali kirsa — «Skaner faqat kuryerlar uchun»). Telegram'dan tashqarida (initData bo'sh) — «Bu sahifa faqat Telegram ichida ochiladi», kamera ochilmaydi. Hisoblagich «N ta qabul qilindi», «Ro'yxat» varag'i va «Tayyor» maketda yo'q (dizayn ziddiyati kartada qayd etilgan) — eng yaqin namuna `courier-courier-bulk-scanner-camera` va `-camera-list`. Kamera ochilmasa — Telegram skaneri (`showScanQrPopup`). «Juda tez» holati yo'q: uzluksiz rejimda kamera QR'ni qayta o'qiydi va pauza o'tgach o'zi qabul qiladi. Qo'lda kiritish yo'q: `scan-assign` faqat QR tokenni qabul qiladi (yorliqdagi raqam bilan qidirmaydi)."
+    },
+    {
       "path": "/payments",
       "section": "finance",
       "title": "To'lovlar — umumiy (berilishi / qabul qilinishi kerak, operatsiyalar tarixi)",
