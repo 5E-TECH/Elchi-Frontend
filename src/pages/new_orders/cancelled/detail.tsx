@@ -1,248 +1,99 @@
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+// dizayn-v2: superadmin-neworders-cancelled-handover, superadmin-neworders-cancelled-manual-dialog, superadmin-neworders-cancelled-scanner-dialog, admin-neworders-cancelled-detail, admin-neworders-cancelled-manual-dialog, admin-neworders-cancelled-scanner-dialog, registrator-new-orders-cancelled-detail, registrator-new-orders-cancelled-manual-dialog, registrator-new-orders-cancelled-scanner-dialog, market-new-orders-cancelled, market-new-orders-cancelled-qr-dialog
+import { memo, useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
-import { QRCode } from "antd";
+import { Trans, useTranslation } from "react-i18next";
+import { Camera, QrCode, RotateCcw, ScanLine, Send } from "lucide-react";
 import { useOrders } from "../../../entities/orders";
-import BackButton from "../../../shared/ui/BackButton";
-import HeaderName from "../../../shared/components/headerName";
-import {
-  ClipboardCheck,
-  Loader2,
-  PackageX,
-  QrCode,
-  ScanLine,
-  Send,
-  WalletCards,
-  AlertTriangle,
-  XCircle,
-} from "lucide-react";
 import {
   CANCELLED_MANUAL_REASONS,
   DEFAULT_CANCELLED_MANUAL_REASON,
   extractCancelledOrders,
   toCancelledManualReason,
 } from "./utils";
-import QueryErrorState from "../../../shared/ui/QueryErrorState";
-import ScannerActionButton from "../../../shared/components/ScannerActionButton";
 import ScannerCameraModal from "../../../shared/components/ScannerCameraModal";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import { normalizeScannerCandidates } from "../../../shared/lib/scanToken";
 import { useScannerGate } from "../../../shared/lib/useScannerGate";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { notify } from "../../../shared/lib/notify";
 import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
 import { getBackendErrorMessage } from "../../scan/lib/scanResource";
 import type { RootState } from "../../../app/config/store";
 import type { OrderListItem } from "../../../entities/order/types/order";
-import { OrderCard, type ApiOrder } from "../components/OrderCard";
-import { notify } from "../../../shared/lib/notify";
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  PageHeader,
+  QueryBoundary,
+  Skeleton,
+  type DataTableSort,
+} from "../../../shared/ui/primitives";
+import {
+  DEFAULT_MARKET_ORDERS_SORT,
+  readMarketName,
+  sortMarketOrders,
+  sumTotalPrice,
+  type MarketOrder,
+} from "../components/marketOrders/marketOrdersModel";
+import { useHasNewOrdersTabs } from "../model/useNewOrdersTabs";
+import NewOrdersTabs from "../ui/NewOrdersTabs";
+import { SelectionRegion } from "../../../shared/ui/SelectionRegion";
+import {
+  canSendHandover,
+  extractMarketCancelledQrToken,
+  getDecodedScannerText,
+  normalizeCancelledAuthorization,
+  normalizeCancelledMarketQr,
+  resolveHandoverQrStage,
+  scannerContainsMarketCancelledQr,
+  toOrderCardData,
+  type CancelledMarketQr,
+} from "./cancelledModel";
+import { CancelledOrdersTable } from "./ui/CancelledOrdersTable";
+import { HandoverStatusAlert } from "./ui/HandoverStatusAlert";
+import { ManualConfirmDialog } from "./ui/ManualConfirmDialog";
+import { MarketQrDialog } from "./ui/MarketQrDialog";
 
-const formatMoney = (value: number, currencyLabel: string) =>
-  `${value.toLocaleString("uz-UZ")} ${currencyLabel}`;
-
-type CancelledMarketQr = {
-  image?: string;
-  token?: string;
-  payload?: string;
-};
-
-type CancelledHandoverAuthorization = {
-  authorizationToken: string;
-  expiresAt: number;
-};
-
-const asRecord = (value: unknown): Record<string, unknown> =>
-  value && typeof value === "object" ? value as Record<string, unknown> : {};
-
-const firstText = (...values: unknown[]) => {
-  for (const value of values) {
-    if (typeof value === "string" && value.trim()) return value.trim();
-    if (typeof value === "number") return String(value);
-  }
-
-  return "";
-};
-
-const normalizeQrImage = (value: string) => {
-  if (!value) return "";
-  if (value.startsWith("data:") || value.startsWith("http://") || value.startsWith("https://")) {
-    return value;
-  }
-  if (value.trim().startsWith("<svg")) {
-    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(value)}`;
-  }
-
-  return /^[A-Za-z0-9+/=]+$/.test(value) && value.length > 120
-    ? `data:image/png;base64,${value}`
-    : "";
-};
-
-const normalizeCancelledMarketQr = (response: unknown): CancelledMarketQr => {
-  const source = asRecord(response);
-  const data = asRecord(source.data ?? source);
-  const qr = asRecord(data.qr ?? data.qrCode ?? data.qr_code);
-  const image = firstText(
-    data.qr_image,
-    data.qrImage,
-    data.qr_url,
-    data.qrUrl,
-    data.image,
-    data.url,
-    qr.image,
-    qr.url,
-  );
-  const token = firstText(
-    data.token,
-    data.qr_code_token,
-    data.qrCodeToken,
-    data.qr_token,
-    qr.token,
-    qr.qr_code_token,
-  );
-  const payload = firstText(data.payload, data.value, data.code, qr.payload, qr.value, token, image);
-
-  return {
-    image: normalizeQrImage(image),
-    token,
-    payload,
-  };
-};
-
-const normalizeCancelledAuthorization = (
-  response: unknown,
-): CancelledHandoverAuthorization => {
-  const source = asRecord(response);
-  const data = asRecord(source.data ?? source);
-  const authorizationToken = firstText(
-    data.authorization_token,
-    data.authorizationToken,
-    data.token,
-  );
-  const expiresAtText = firstText(data.expires_at, data.expiresAt);
-  const expiresAtFromResponse = expiresAtText ? new Date(expiresAtText).getTime() : NaN;
-  const remainingSeconds = Number(data.remaining_seconds ?? data.remainingSeconds ?? 300);
-  const expiresAt = Number.isFinite(expiresAtFromResponse)
-    ? expiresAtFromResponse
-    : Date.now() + Math.max(1, remainingSeconds) * 1000;
-
-  if (!authorizationToken) {
-    throw new Error("Authorization token is missing");
-  }
-
-  return { authorizationToken, expiresAt };
-};
-
-const getDecodedScannerText = (rawValue: string) => {
-  const candidates = normalizeScannerCandidates(rawValue, window.location.origin);
-  return [rawValue, ...candidates].map((item) => item.trim()).filter(Boolean);
-};
-
-const parseQrJson = (value: string) => {
-  try {
-    return asRecord(JSON.parse(value));
-  } catch {
-    return {};
-  }
-};
-
-const scannerContainsMarketCancelledQr = (rawValue: string, marketId: string) => {
-  const marketKey = String(marketId).toLowerCase();
-
-  return getDecodedScannerText(rawValue).some((candidate) => {
-    const text = candidate.toLowerCase();
-    if (text.startsWith("mcr-")) {
-      return true;
-    }
-
-    if (text.includes("cancelled") && text.includes("market") && text.includes(marketKey)) {
-      return true;
-    }
-
-    const parsed = parseQrJson(candidate);
-    const parsedMarketId = firstText(parsed.market_id, parsed.marketId, asRecord(parsed.market).id);
-    const parsedType = firstText(parsed.type, parsed.kind, parsed.action);
-
-    return parsedMarketId === marketId && parsedType.toLowerCase().includes("cancel");
-  });
-};
-
-const extractMarketCancelledQrToken = (rawValue: string) =>
-  getDecodedScannerText(rawValue).find((candidate) =>
-    candidate.trim().toUpperCase().startsWith("MCR-"),
-  ) ?? "";
-
-const toOrderCardData = (order: OrderListItem): ApiOrder => ({
-  id: order.id,
-  qr_code_token: order.qr_code_token,
-  status: order.status,
-  where_deliver: order.where_deliver,
-  total_price: order.total_price,
-  paid_amount: order.paid_amount,
-  to_be_paid: order.to_be_paid,
-  createdAt: order.createdAt,
-  comment: order.comment,
-  address: order.address,
-  /**
-   * Katalog bog'lanishi bo'lmasa SOXTA `product` yasamaymiz.
-   *
-   * Hamkor (Partner API) buyurtmalarida mahsulot bizning katalogda yo'q:
-   * `product_id` bo'sh, nom esa `product_name` da matn bo'lib keladi.
-   * Avval bu yerda `product: { id: item.product_id, ... }` qurilardi va
-   * id `null` bo'lib ketardi — ya'ni mavjud bo'lmagan mahsulotga havola.
-   * Endi nom o'z maydonida uzatiladi, kartochka esa ikkalasini ham biladi.
-   */
-  items: (order.items ?? []).map((item) => ({
-    id: item.id,
-    quantity: item.quantity,
-    product_name: item.product_name ?? null,
-    product: item.product
-      ? {
-          id: item.product.id,
-          name: item.product.name,
-          image_url: item.product.image_url ?? null,
-        }
-      : null,
-  })),
-  customer: {
-    id: order.customer?.id ?? order.customer_id,
-    name: order.customer?.name ?? "—",
-    phone_number: order.customer?.phone_number ?? "—",
-    district: order.district ? { name: order.district.name } : undefined,
-    region: order.district?.region ? { name: order.district.region.name } : undefined,
-  },
-  district: order.district ? { name: order.district.name } : undefined,
-  region: order.district?.region ? { name: order.district.region.name } : undefined,
-});
-
-const formatCountdown = (seconds: number) => {
-  const safeSeconds = Math.max(0, seconds);
-  const minutes = Math.floor(safeSeconds / 60);
-  const remainder = safeSeconds % 60;
-  return `${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
-};
-
-const getOrderProductNames = (order: OrderListItem) =>
-  order.items
-    .map((item) => item.product?.name ?? item.product_name ?? `#${item.product_id}`)
-    .filter(Boolean)
-    .join(", ");
-
+/**
+ * BEKOR QILINGANLARNI MARKETGA TOPSHIRISH — `/new-orders/cancelled/:marketId`, dizayn v2.
+ *
+ *  - Xodim (superadmin/admin/HQ registratori; qobiq `bare`): «← Bekor qilinganlar» · market nomi ·
+ *    «6 ta bekor qilingan buyurtma · jami …», asosiy amal «Marketga jo'natish — N ta». Ostida market QR
+ *    holati (`HandoverStatusAlert`: kerak / skanerlandi + taymer / talab qilinmaydi), so'ng karta
+ *    «Bekor qilingan buyurtmalarni tayyorlash»: «USB skaner tayyor» + «Kamera», tanlov qatori, jadval.
+ *  - Market (qobiq `hosted`): karta «Yangi buyurtmalar / Bekor qilinganlar» tablari bilan; «Bekor qilingan
+ *    buyurtmalarni pochtaga topshirish» bloki («Qabul qilish» → QR oynasi) va o'z ro'yxati.
+ *
+ * ⚠️ BIZNES QOIDA (o'zgarmaydi): bekor qilingan buyurtma marketga FAQAT market QR skanerlangach qaytadi
+ * (skanerlansa marketning barcha bekorlari tanlanadi va topshirish tokeni olinadi). Buyurtma QR buzilgan
+ * bo'lsa — sessiya ichida «QR buzilganini tasdiqlash» oynasi (sabab — backend enum kodi). Marketda QR
+ * o'chirilgan bo'lsa (`cancelled_handover_qr_required === false`) — skaner bilan birma-bir tanlanadi.
+ * Skaner, ovoz, xabarlar, so'rovlar va yuk (payload) — dizayn v2 gacha bo'lgani AYNAN.
+ */
 const CancelledMarketDetail = () => {
-  const { t } = useTranslation(["newOrders", "orders"]);
-  const currencyLabel = t("currency", { ns: "orders" });
+  const { t, i18n } = useTranslation(["newOrders", "orders", "common"]);
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const role = useSelector((state: RootState) => state.role.role);
   const user = useSelector((state: RootState) => state.user.user);
   const { marketId = "" } = useParams();
   const {
+    useCancelledMarkets,
     useCancelledOrdersByMarket,
     generateCancelledMarketQr,
     scanMarketCancelledQr,
     handoverCancelledOrders,
   } = useOrders();
   const query = useCancelledOrdersByMarket(marketId);
+  const hasTabs = useHasNewOrdersTabs();
+  const hintId = useId();
+  const cardTitleId = useId();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [manualSelectedIds, setManualSelectedIds] = useState<Set<string>>(new Set());
   const [manualOverrideReasons, setManualOverrideReasons] = useState<Record<string, string>>({});
-  const [manualConfirmOrder, setManualConfirmOrder] = useState<OrderListItem | null>(null);
+  const [manualConfirmOrder, setManualConfirmOrder] = useState<MarketOrder | null>(null);
   const [manualReason, setManualReason] = useState("");
   const [sentIds, setSentIds] = useState<Set<string>>(new Set());
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -253,6 +104,7 @@ const CancelledMarketDetail = () => {
   const [authorizationToken, setAuthorizationToken] = useState("");
   const [authorizationExpiresAt, setAuthorizationExpiresAt] = useState<number | null>(null);
   const [authorizationRemainingSeconds, setAuthorizationRemainingSeconds] = useState(0);
+  const [marketSort, setMarketSort] = useState<DataTableSort | null>(DEFAULT_MARKET_ORDERS_SORT);
   const rawOrders = useMemo(() => extractCancelledOrders(query.data), [query.data]);
   const orders = useMemo(
     () => rawOrders.filter((order) => !sentIds.has(order.id)),
@@ -260,10 +112,6 @@ const CancelledMarketDetail = () => {
   );
   const selectableOrders = useMemo(
     () => orders,
-    [orders],
-  );
-  const totalAmount = useMemo(
-    () => orders.reduce((sum, order) => sum + (Number(order.total_price) || 0), 0),
     [orders],
   );
   const scanIndex = useMemo(() => {
@@ -278,8 +126,14 @@ const CancelledMarketDetail = () => {
 
     return index;
   }, [selectableOrders]);
-  const marketName = rawOrders[0]?.market?.name ?? t("marketName");
   const isMarketRole = role === "market";
+  // Sarlavhadagi nom: buyurtmadan; ro'yxat bo'sh bo'lsa (hammasi jo'natilgan) — marketlar ro'yxatidan
+  // (kalit «Bekor qilinganlar» sahifasi va tab soni bilan umumiy — kesh bitta).
+  const nameFromOrders = rawOrders[0]?.market?.name?.trim() || null;
+  const marketsQuery = useCancelledMarkets(undefined, {
+    enabled: !isMarketRole && query.isSuccess && !nameFromOrders,
+  });
+  const marketName = nameFromOrders ?? readMarketName([], marketsQuery.data, marketId);
   const isCancelledHandoverQrRequired = isMarketRole
     ? user?.cancelled_handover_qr_required !== false
     : rawOrders[0]?.market?.cancelled_handover_qr_required !== false;
@@ -302,8 +156,6 @@ const CancelledMarketDetail = () => {
       manualReasonOptions.find((option) => option.value === value)?.label ?? value,
     [manualReasonOptions],
   );
-  const handoverQrValue = handoverQr?.payload || handoverQr?.token || "";
-  const handoverQrImage = handoverQr?.image || "";
   const { canAcceptScan } = useScannerGate({
     cooldownMs: 200,
     duplicateCooldownMs: 1800,
@@ -384,27 +236,31 @@ const CancelledMarketDetail = () => {
       setIsHandoverQrScanned(true);
       setScanError("");
       void playScanFeedback("success");
-      notify.success(t("cancelledQrAccepted"), {
-        description: t("cancelledQrAcceptedDescription", { count: selectableOrders.length }),
+      notify.success(t("cancelled.notify.qrAccepted"), {
+        description: t("cancelled.notify.qrAcceptedDescription", {
+          count: selectableOrders.length,
+          value: formatNumberLocalized(selectableOrders.length, { language }),
+        }),
         duration: 3000,
       });
 
       return true;
     } catch (error: unknown) {
-      const message = getBackendErrorMessage(error) ?? t("cancelledScanMissing");
+      const message = getBackendErrorMessage(error) ?? t("cancelled.notify.scanMissing");
       setAuthorizationToken("");
       setAuthorizationExpiresAt(null);
       setIsHandoverQrScanned(false);
       setScanError(message);
       playMissingOrderFeedback();
       // Skaner oqimi: xato qisqa turadi (v1 dagidek 4 s) — keyingi skanerlashda ekran to'silib qolmasin.
-      notify.error(t("qrNotFound"), { description: message, duration: 4000 });
+      notify.error(t("cancelled.notify.qrNotFound"), { description: message, duration: 4000 });
       return true;
     }
   }, [
     handoverQr?.payload,
     handoverQr?.token,
     isGeneratedQrMatch,
+    language,
     marketId,
     scanMarketCancelledQr,
     selectableOrders,
@@ -417,15 +273,16 @@ const CancelledMarketDetail = () => {
       return;
     }
 
-    const message = t("cancelledScanMissing");
+    const message = t("cancelled.notify.scanMissing");
     setScanError(message);
     playMissingOrderFeedback();
-    notify.warning(t("qrNotFound"), { description: message, duration: 3000 });
+    notify.warning(t("cancelled.notify.qrNotFound"), { description: message, duration: 3000 });
   }, [t, verifyHandoverQr]);
 
+  const scannerEnabled = !isMarketRole && !handoverCancelledOrders.isPending && !scanMarketCancelledQr.isPending;
   useOrderQrScanner({
     orders: selectableOrders,
-    enabled: !isMarketRole && !handoverCancelledOrders.isPending && !scanMarketCancelledQr.isPending,
+    enabled: scannerEnabled,
     onMatch: selectOrder,
     onMissing: handleMissingOrder,
   });
@@ -468,7 +325,7 @@ const CancelledMarketDetail = () => {
       ...previous,
       [manualConfirmOrder.id]: reasonCode,
     }));
-    notify.warning(t("cancelledManualSelectSuccess"), {
+    notify.warning(t("cancelled.manual.success"), {
       description: `#${manualConfirmOrder.id} · ${getManualReasonLabel(reasonCode)}`,
       duration: 3000,
     });
@@ -476,13 +333,13 @@ const CancelledMarketDetail = () => {
     setManualReason("");
   }, [canManualSelectDamagedQr, getManualReasonLabel, manualConfirmOrder, manualReason, selectedIds, t]);
 
-  const openManualSelectModal = useCallback((order: OrderListItem) => {
+  const openManualSelectModal = useCallback((order: MarketOrder) => {
     if (!canManualSelectDamagedQr || selectedIds.has(order.id)) return;
     setManualConfirmOrder(order);
     setManualReason(DEFAULT_CANCELLED_MANUAL_REASON);
   }, [canManualSelectDamagedQr, selectedIds]);
 
-  const toggleManualOrderSelection = useCallback((order: OrderListItem) => {
+  const toggleManualOrderSelection = useCallback((order: MarketOrder) => {
     if (!canManualSelectDamagedQr) return;
 
     if (!selectedIds.has(order.id)) {
@@ -521,8 +378,8 @@ const CancelledMarketDetail = () => {
         setIsQrOpen(true);
       },
       onError: (error: unknown) => {
-        notify.error(t("cancelledQrGenerateError"), {
-          description: getBackendErrorMessage(error) ?? t("cancelledQrGenerateError"),
+        notify.error(t("cancelled.notify.qrGenerateError"), {
+          description: getBackendErrorMessage(error) ?? t("cancelled.notify.qrGenerateError"),
         });
       },
     });
@@ -558,14 +415,17 @@ const CancelledMarketDetail = () => {
         setAuthorizationToken("");
         setAuthorizationExpiresAt(null);
         setIsHandoverQrScanned(false);
-        notify.success(t("cancelledSendSuccess"), {
-          description: t("cancelledSendSuccessDescription", { count: orderIds.length }),
+        notify.success(t("cancelled.notify.sendSuccess"), {
+          description: t("cancelled.notify.sendSuccessDescription", {
+            count: orderIds.length,
+            value: formatNumberLocalized(orderIds.length, { language }),
+          }),
         });
         void query.refetch();
       },
       onError: (error: unknown) => {
-        notify.error(t("cancelledSendError"), {
-          description: getBackendErrorMessage(error) ?? t("cancelledSendError"),
+        notify.error(t("cancelled.notify.sendError"), {
+          description: getBackendErrorMessage(error) ?? t("cancelled.notify.sendError"),
         });
       },
     });
@@ -574,6 +434,7 @@ const CancelledMarketDetail = () => {
     handoverCancelledOrders,
     isCancelledHandoverQrRequired,
     isHandoverQrScanned,
+    language,
     marketId,
     manualOverrideReasons,
     manualSelectedIds,
@@ -582,393 +443,301 @@ const CancelledMarketDetail = () => {
     t,
   ]);
 
-  return (
-    <div className="space-y-5 pb-28 md:pb-6">
-      {!isMarketRole && authorizationToken ? (
-        <div className="fixed right-4 top-24 z-50 rounded-2xl border border-emerald-500/25 bg-[color:var(--color-card-surface-strong)] px-4 py-3 text-emerald-700 shadow-2xl shadow-emerald-500/20 backdrop-blur-xl dark:border-emerald-300/25 dark:bg-[color:var(--color-surface-elevated-dark)] dark:text-emerald-100 sm:right-8">
-          <div className="flex items-center gap-3">
-            <span className="relative flex h-3 w-3 shrink-0">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-              <span className="relative inline-flex h-3 w-3 rounded-full bg-emerald-400" />
-            </span>
-            <div className="min-w-0">
-              <p className="m-0 text-[10px] font-black uppercase tracking-[0.16em] text-emerald-200/80">
-                {t("cancelledQrActiveTime")}
-              </p>
-              <p className="m-0 mt-1 font-mono text-3xl font-black leading-none tracking-normal text-white">
-                {formatCountdown(authorizationRemainingSeconds)}
-              </p>
-            </div>
-          </div>
-        </div>
-      ) : null}
+  const openCamera = useCallback(() => {
+    setScanError("");
+    setIsCameraOpen(true);
+  }, []);
 
-      <section className="relative overflow-hidden rounded-[28px] border border-red-300/20 bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-primary)_94%,#ef4444_6%)_0%,var(--color-primary)_68%)] p-4 shadow-sm dark:border-red-300/10 dark:bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-primarydark)_88%,#ef4444_12%)_0%,var(--color-primarydark)_72%)] sm:p-5">
-        <div className="pointer-events-none absolute -right-16 -top-20 h-52 w-52 rounded-full bg-red-500/10 blur-3xl dark:bg-red-400/10" />
-        <div className="relative flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex min-w-0 items-center gap-3">
-            <BackButton
-              to="/new-orders/cancelled"
-              className="shrink-0 border-red-300/20 bg-white/80 hover:border-red-400/40 hover:text-red-600 dark:border-white/10 dark:bg-white/5 dark:hover:text-red-300"
-              label=""
-            />
-            <HeaderName
-              name={marketName}
-              description={t("cancelledMarketDescription", { count: orders.length })}
-              icon={<XCircle />}
-            />
-          </div>
-          {isMarketRole && isCancelledHandoverQrRequired ? (
-            <button
-              type="button"
-              onClick={handleGenerateQr}
-              disabled={generateCancelledMarketQr.isPending || orders.length === 0}
-              className="inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-5 text-sm font-black text-white shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60 lg:w-auto"
+  // ─── Ko'rinish ───────────────────────────────────────────────────────────────
+  const rows = useMemo<MarketOrder[]>(() => orders.map(toOrderCardData), [orders]);
+  const marketRows = useMemo(() => sortMarketOrders(rows, marketSort), [marketSort, rows]);
+  const totalSum = sumTotalPrice(rows);
+  const isLoaded = query.data !== undefined;
+  const number = (value: number) => formatNumberLocalized(value, { language });
+  const money = (value: number) => formatMoneyLocalized(value, { language });
+  const ordersCountLabel = t("cancelled.ordersCount", { count: orders.length, value: number(orders.length) });
+  const titleText = marketName ?? t("cancelled.titleFallback");
+
+  const listQuery = { ...query, data: isLoaded ? rows : undefined };
+
+  // Market — sarlavha va sahifa ildizi qobiqda (`hosted`); karta tablar bilan boshlanadi.
+  if (isMarketRole) {
+    const regionTitleId = `${cardTitleId}-handover`;
+    return (
+      <>
+        <Card
+          as="section"
+          padding="none"
+          aria-label={hasTabs ? t("cancelled.market.cardLabel") : undefined}
+          title={hasTabs ? undefined : t("cancelled.market.headTitle")}
+        >
+          <NewOrdersTabs />
+          <div className="px-4 pt-4 pb-3">
+            <div
+              role="region"
+              aria-labelledby={regionTitleId}
+              className="flex flex-wrap items-center gap-x-6 gap-y-4 rounded-xl bg-sunken p-4"
             >
-              {generateCancelledMarketQr.isPending ? (
-                <Loader2 size={17} className="animate-spin" />
-              ) : (
-                <QrCode size={17} />
-              )}
-              {t("cancelledReceiveQrButton")}
-            </button>
-          ) : !isMarketRole ? (
-            <ScannerActionButton
-              onClick={() => {
-                setScanError("");
-                setIsCameraOpen(true);
-              }}
-              label={isCancelledHandoverQrRequired ? t("scanCancelledHandoverQr") : t("scanCancelledOrder")}
-              showLabel
-              className="w-full border-red-300/25! bg-red-500! text-white! shadow-lg! shadow-red-500/20! hover:bg-red-600! dark:text-white! lg:w-auto"
-            />
-          ) : null}
-        </div>
-      </section>
-
-      {query.isError ? (
-        <QueryErrorState onRetry={() => void query.refetch()} />
-      ) : (
-        <>
-          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-            {[
-              {
-                key: "total",
-                icon: <PackageX size={18} />,
-                label: t("cancelledOrders"),
-                value: String(orders.length),
-                tone: "text-red-600 dark:text-red-300 bg-red-500/10 dark:bg-red-400/15",
-              },
-              {
-                key: "ready",
-                icon: <ScanLine size={18} />,
-                label: t("cancelledReadyToSend"),
-                value: String(selectableOrders.length),
-                tone: "text-amber-600 dark:text-amber-300 bg-amber-500/10 dark:bg-amber-400/15",
-              },
-              {
-                key: "selected",
-                icon: <ClipboardCheck size={18} />,
-                label: t("cancelledSelected"),
-                value: String(selectedIds.size),
-                tone: selectedIds.size
-                  ? "text-emerald-600 dark:text-emerald-300 bg-emerald-500/10 dark:bg-emerald-400/15"
-                  : "text-main bg-main/10 dark:bg-main/20 dark:text-white",
-              },
-              {
-                key: "amount",
-                icon: <WalletCards size={18} />,
-                label: t("totalAmount"),
-                value: formatMoney(totalAmount, currencyLabel),
-                tone: "text-main bg-main/10 dark:bg-main/20 dark:text-white",
-              },
-            ].map((item) => (
-              <div
-                key={item.key}
-                className="flex min-w-0 items-center gap-3 rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-3.5 shadow-sm dark:border-white/10 dark:bg-primarydark sm:p-4"
-              >
-                <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${item.tone}`}>
-                  {item.icon}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate text-[10px] font-bold uppercase tracking-[0.13em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                    {item.label}
-                  </span>
-                  <strong className="mt-0.5 block truncate text-lg font-black text-maindark dark:text-white">
-                    {item.value}
-                  </strong>
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <section className="overflow-hidden rounded-[28px] border border-[color:var(--color-border-soft)] bg-primary shadow-sm dark:border-white/10 dark:bg-primarydark">
-            <div className="flex flex-col gap-4 border-b border-[color:var(--color-border-soft)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-main)_8%,var(--color-primary))_0%,var(--color-primary)_75%)] px-4 py-4 dark:border-white/10 dark:bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-main)_14%,var(--color-primarydark))_0%,var(--color-primarydark)_75%)] sm:px-5 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex min-w-0 items-start gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-main/10 text-main dark:bg-main/20 dark:text-white">
+              <div className="flex min-w-0 flex-[1_1_380px] items-start gap-3.5">
+                <span
+                  aria-hidden="true"
+                  className="inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-surface text-text-muted"
+                >
                   <ScanLine size={20} />
                 </span>
-                <div className="min-w-0">
-                  <h3 className="m-0 text-base font-black text-maindark dark:text-white sm:text-lg">
-                    {isMarketRole
-                      ? isCancelledHandoverQrRequired
-                        ? t("cancelledMarketQrTitle")
-                        : t("cancelledQrNotRequired")
-                      : t("cancelledWorkflowTitle")}
-                  </h3>
-                  <p className="m-0 mt-1 text-xs font-semibold leading-5 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] sm:text-sm">
-                    {isMarketRole
-                      ? isCancelledHandoverQrRequired
-                        ? t("cancelledMarketQrHint")
-                        : t("cancelledQrNotRequiredHint")
-                      : t("cancelledScanHint")}
+                <div className="flex min-w-0 flex-col gap-1">
+                  <h2 id={regionTitleId} className="text-base font-bold text-text">
+                    {isCancelledHandoverQrRequired
+                      ? t("cancelled.market.handoverTitle")
+                      : t("cancelled.market.notRequiredTitle")}
+                  </h2>
+                  <p className="text-[13px] text-text-muted">
+                    {isCancelledHandoverQrRequired
+                      ? t("cancelled.market.handoverHint")
+                      : t("cancelled.market.notRequiredHint")}
                   </p>
                 </div>
               </div>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                <div className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl border border-emerald-300/30 bg-emerald-500/10 px-4 text-sm font-bold text-emerald-700 dark:border-emerald-300/15 dark:text-emerald-200">
-                  <span className="relative flex h-2.5 w-2.5">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
-                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                  </span>
-                  {isMarketRole && isCancelledHandoverQrRequired
-                    ? t("cancelledQrReady")
-                    : !isCancelledHandoverQrRequired
-                      ? t("cancelledQrNotRequired")
-                      : isHandoverQrScanned
-                      ? `${t("cancelledQrScanned")} · ${formatCountdown(authorizationRemainingSeconds)}`
-                      : t("cancelledQrRequired")}
-                </div>
-                {!isMarketRole && selectedIds.size > 0 ? (
-                  <span className="inline-flex min-h-11 items-center justify-center rounded-2xl bg-main px-4 text-sm font-black text-white shadow-lg shadow-main/20">
-                    {t("cancelledSelectedCount", { count: selectedIds.size })}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="space-y-3 p-3 sm:p-4">
-              {!isMarketRole ? (
-                <div className="flex w-full items-center justify-between gap-3 rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-3 py-3 text-left dark:border-white/5 dark:bg-maindark sm:px-4">
-                  <span className="flex min-w-0 items-center gap-3">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-gray-300 dark:text-white/45">
-                      <ScanLine size={18} />
-                    </span>
-                    <span className="truncate text-sm font-bold text-maindark dark:text-white">
-                      {canManualSelectDamagedQr ? t("cancelledScannerOnlyWithManual") : t("cancelledScannerOnly")}
-                    </span>
-                  </span>
-                  {selectedIds.size > 0 ? (
-                    <span className="shrink-0 rounded-lg bg-main px-2.5 py-1 text-xs font-black text-white">
-                      {t("cancelledSelectedCount", { count: selectedIds.size })}
-                    </span>
-                  ) : null}
+              {isCancelledHandoverQrRequired ? (
+                <div className="flex flex-[0_1_auto] flex-wrap items-center gap-x-4 gap-y-3 max-md:w-full">
+                  <Badge tone="success" dot role="status">
+                    {t("cancelled.market.qrReady")}
+                  </Badge>
+                  <Button
+                    variant="secondary"
+                    leftIcon={QrCode}
+                    aria-haspopup="dialog"
+                    disabled={orders.length === 0}
+                    loading={generateCancelledMarketQr.isPending}
+                    onClick={handleGenerateQr}
+                    className="flex-[1_0_auto] max-md:w-full"
+                  >
+                    {t("cancelled.market.receive")}
+                  </Button>
                 </div>
               ) : null}
-              {query.isLoading ? (
-                <div className="flex h-64 items-center justify-center">
-                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-main/20 border-t-main" />
-                </div>
-              ) : orders.length > 0 ? orders.map((order) => (
-                <OrderCard
-                  key={order.id}
-                  order={toOrderCardData(order)}
-                  isSelected={selectedIds.has(order.id)}
-                  onToggle={() => toggleManualOrderSelection(order)}
-                  showCheckbox={!isMarketRole}
-                  checkboxDisabled={!canManualSelectDamagedQr}
-                  manualSelectLabel={t("cancelledManualSelect")}
-                  onManualSelect={
-                    canManualSelectDamagedQr && !manualSelectedIds.has(order.id)
-                      ? () => openManualSelectModal(order)
-                      : undefined
-                  }
-                />
-              )) : (
-                <div className="flex h-56 items-center justify-center rounded-2xl border border-dashed border-[color:var(--color-border-soft)] text-sm font-bold text-[color:var(--color-text-muted)] dark:border-white/10 dark:text-[color:var(--color-text-muted-dark)]">
-                  {t("noCancelledOrders")}
-                </div>
-              )}
             </div>
-          </section>
-        </>
-      )}
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 px-5 pt-1 pb-4 max-md:px-4">
+            <h3 className="text-sm font-semibold text-text">{t("cancelled.market.listTitle")}</h3>
+            {isLoaded && orders.length > 0 ? (
+              <p className="text-[13px] text-text-muted">
+                <span className="whitespace-nowrap">
+                  <Trans
+                    t={t}
+                    i18nKey="cancelled.market.summary"
+                    count={orders.length}
+                    values={{ value: number(orders.length) }}
+                    components={{ strong: <strong className="font-semibold text-text" /> }}
+                  />
+                </span>
+                {" · "}
+                <span className="whitespace-nowrap">
+                  <Trans
+                    t={t}
+                    i18nKey="cancelled.market.summaryTotal"
+                    values={{ sum: money(totalSum) }}
+                    components={{ strong: <strong className="font-semibold text-text" /> }}
+                  />
+                </span>
+              </p>
+            ) : null}
+          </div>
+          <QueryBoundary
+            query={listQuery}
+            skeleton="table"
+            loadingLabel={t("cancelled.table.loading")}
+            empty={
+              <EmptyState
+                icon={RotateCcw}
+                title={t("cancelled.table.emptyTitle")}
+                description={t("cancelled.table.marketEmptyDescription")}
+              />
+            }
+            className="border-t border-border"
+          >
+            {(_list, { isRefetching }) => (
+              <CancelledOrdersTable
+                variant="market"
+                rows={marketRows}
+                label={t("cancelled.table.label")}
+                sort={marketSort}
+                onSortChange={setMarketSort}
+                busy={isRefetching}
+              />
+            )}
+          </QueryBoundary>
+        </Card>
+        <MarketQrDialog open={isQrOpen} qr={handoverQr} onClose={() => setIsQrOpen(false)} />
+      </>
+    );
+  }
 
-      {!isMarketRole && selectedIds.size > 0 ? (
-        <div className="sticky bottom-3 z-40 rounded-[24px] border border-red-300/25 bg-primary/95 p-3 shadow-[0_20px_55px_rgba(239,68,68,0.2)] backdrop-blur-xl dark:border-red-300/15 dark:bg-primarydark/95 sm:p-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-red-500/10 text-red-600 dark:bg-red-400/15 dark:text-red-300">
-                <ClipboardCheck size={19} />
-              </span>
-              <div className="min-w-0">
-                <p className="m-0 text-sm font-black text-maindark dark:text-white">
-                  {t("cancelledSelectedCount", { count: selectedIds.size })}
-                </p>
-                <p className="m-0 mt-0.5 text-xs font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  {!isCancelledHandoverQrRequired || isHandoverQrScanned
-                    ? t("cancelledSendHint")
-                    : t("cancelledSendDisabledHint")}
-                </p>
-              </div>
-            </div>
-            <button
-              type="button"
+  const stage = resolveHandoverQrStage({
+    qrRequired: isCancelledHandoverQrRequired,
+    qrScanned: isHandoverQrScanned,
+    authorizationToken,
+  });
+  const canSend = canSendHandover({
+    selectedCount: selectedIds.size,
+    pending: false,
+    marketId,
+    qrRequired: isCancelledHandoverQrRequired,
+    qrScanned: isHandoverQrScanned,
+    authorizationToken,
+  });
+  const hasOrders = isLoaded && orders.length > 0;
+  const selectedCount = selectedIds.size;
+
+  return (
+    <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
+      <PageHeader
+        back="/new-orders/cancelled"
+        backLabel={t("cancelledTab")}
+        title={marketName ?? (query.isLoading ? <Skeleton width={224} height={32} /> : titleText)}
+        description={
+          isLoaded ? (
+            <>
+              <span className="whitespace-nowrap">{ordersCountLabel}</span> ·{" "}
+              <span className="whitespace-nowrap">{t("cancelled.total", { sum: money(totalSum) })}</span>
+            </>
+          ) : null
+        }
+        actions={
+          <>
+            {stage === "required" && hasOrders ? (
+              <Button variant="secondary" leftIcon={ScanLine} aria-haspopup="dialog" onClick={openCamera}>
+                {t("cancelled.scanMarketQr")}
+              </Button>
+            ) : null}
+            <Button
+              leftIcon={Send}
+              disabled={!canSend}
+              aria-describedby={stage === "required" && hasOrders ? hintId : undefined}
+              loading={handoverCancelledOrders.isPending}
+              loadingText={t("cancelled.sending")}
               onClick={handleSendToMarket}
-              disabled={
-                handoverCancelledOrders.isPending ||
-                (isCancelledHandoverQrRequired && (!isHandoverQrScanned || !authorizationToken))
-              }
-              className="flex min-h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-linear-to-r from-red-500 to-red-600 px-5 text-sm font-black text-white shadow-lg shadow-red-500/25 transition hover:-translate-y-0.5 hover:from-red-600 hover:to-red-700 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 sm:w-auto"
             >
-              {handoverCancelledOrders.isPending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-              {t("sendCancelledToMarket", { count: selectedIds.size })}
-            </button>
-          </div>
-        </div>
+              {selectedCount > 0
+                ? t("cancelled.send", { count: selectedCount, value: number(selectedCount) })
+                : t("cancelled.sendNone")}
+            </Button>
+          </>
+        }
+      />
+
+      {hasOrders ? (
+        <HandoverStatusAlert
+          stage={stage}
+          readyCount={orders.length}
+          remainingSeconds={authorizationRemainingSeconds}
+          hintId={hintId}
+        />
       ) : null}
 
-      {manualConfirmOrder ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg overflow-hidden rounded-[28px] border border-amber-300/20 bg-primary shadow-2xl shadow-amber-500/10 dark:bg-primarydark">
-            <div className="flex items-start justify-between gap-4 border-b border-[color:var(--color-border-soft)] bg-amber-500/10 px-5 py-4 dark:border-white/10">
-              <div className="flex min-w-0 items-start gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-200">
-                  <AlertTriangle size={21} />
-                </span>
-                <div className="min-w-0">
-                  <h3 className="m-0 text-lg font-black text-maindark dark:text-white">
-                    {t("cancelledManualModalTitle")}
-                  </h3>
-                  <p className="m-0 mt-1 text-sm font-semibold leading-5 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                    {t("cancelledManualModalDescription")}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={closeManualSelectModal}
-                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-[color:var(--color-border-soft)] text-[color:var(--color-text-muted)] transition hover:border-red-300/40 hover:text-red-500 dark:border-white/10 dark:text-white/70"
-                aria-label={t("closeScanner")}
-              >
-                <XCircle size={18} />
-              </button>
-            </div>
-            <div className="space-y-4 p-5">
-              <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white/70 p-4 dark:border-white/10 dark:bg-white/5">
-                <p className="m-0 text-xs font-black uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  {t("orderProducts")}
-                </p>
-                <h4 className="m-0 mt-2 text-xl font-black text-maindark dark:text-white">
-                  {manualConfirmOrder.customer?.name ?? "—"}
-                </h4>
-                <p className="m-0 mt-1 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  {getOrderProductNames(manualConfirmOrder) || t("productFallback")} · {formatMoney(Number(manualConfirmOrder.total_price) || 0, t("orders:currency"))}
-                </p>
-              </div>
-
-              <label className="block">
-                <span className="mb-2 block text-xs font-black uppercase tracking-[0.13em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  {t("cancelledManualReasonLabel")}
-                </span>
-                <select
-                  value={manualReason}
-                  onChange={(event) => setManualReason(event.target.value)}
-                  className="min-h-12 w-full rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 text-base md:text-sm font-bold text-maindark outline-none transition focus:border-main focus:ring-4 focus:ring-main/10 dark:border-white/10 dark:bg-maindark dark:text-white"
-                >
-                  {manualReasonOptions.map((reason) => (
-                    <option key={reason.value} value={reason.value}>
-                      {reason.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <div className="rounded-2xl border border-amber-300/25 bg-amber-500/10 px-4 py-3 text-sm font-semibold leading-5 text-amber-700 dark:text-amber-100">
-                {t("cancelledManualAuditHint")}
-              </div>
-
-              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  onClick={closeManualSelectModal}
-                  className="min-h-11 cursor-pointer rounded-2xl border border-[color:var(--color-border-soft)] px-5 text-sm font-black text-[color:var(--color-text-muted)] transition hover:border-red-300/40 hover:text-red-500 dark:border-white/10 dark:text-white/70"
-                >
-                  {t("cancel")}
-                </button>
-                <button
-                  type="button"
-                  onClick={confirmManualSelect}
-                  className="min-h-11 cursor-pointer rounded-2xl bg-amber-500 px-5 text-sm font-black text-white shadow-lg shadow-amber-500/20 transition hover:bg-amber-400"
-                >
-                  {t("cancelledManualConfirmButton")}
-                </button>
-              </div>
-            </div>
+      <Card as="section" padding="none" aria-labelledby={cardTitleId}>
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 max-md:px-4">
+          <div className="flex min-w-0 flex-[1_1_360px] flex-col gap-0.5">
+            <h2 id={cardTitleId} className="text-base font-bold text-text">
+              {t("cancelled.card.title")}
+            </h2>
+            <p className="text-[13px] leading-[18px] text-text-muted">
+              {canManualSelectDamagedQr ? t("cancelled.card.hint") : t("cancelled.card.hintScanOnly")}
+            </p>
           </div>
-        </div>
-      ) : null}
-
-      {isQrOpen && handoverQr ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4 backdrop-blur-sm">
-          <div className="w-full max-w-md overflow-hidden rounded-[28px] border border-white/10 bg-primary shadow-2xl dark:bg-primarydark">
-            <div className="flex items-start justify-between gap-4 border-b border-[color:var(--color-border-soft)] px-5 py-4 dark:border-white/10">
-              <div className="min-w-0">
-                <h3 className="m-0 text-lg font-black text-maindark dark:text-white">
-                  {t("cancelledReceiveQrTitle")}
-                </h3>
-                <p className="m-0 mt-1 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  {t("cancelledReceiveQrHint")}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsQrOpen(false)}
-                className="flex h-9 w-9 shrink-0 cursor-pointer items-center justify-center rounded-xl border border-[color:var(--color-border-soft)] text-[color:var(--color-text-muted)] transition hover:border-red-300/40 hover:text-red-500 dark:border-white/10 dark:text-white/70"
-                aria-label={t("closeScanner")}
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 max-md:hidden">
+            {scannerEnabled ? (
+              <Badge
+                tone="success"
+                dot
+                role="status"
+                title={stage === "required" ? t("cancelled.card.scannerMarketTitle") : t("cancelled.card.scannerOrderTitle")}
               >
-                <XCircle size={18} />
-              </button>
-            </div>
-            <div className="p-5">
-              <div className="flex min-h-64 items-center justify-center rounded-3xl border border-dashed border-[color:var(--color-border-soft)] bg-white/70 p-4 dark:border-white/10 dark:bg-white/5">
-                {handoverQrImage ? (
-                  <img
-                    src={handoverQrImage}
-                    alt={t("cancelledReceiveQrTitle")}
-                    className="h-64 w-64 max-w-full rounded-2xl bg-white object-contain p-3"
-                  />
-                ) : handoverQrValue.trim() ? (
-                  <QRCode
-                    value={handoverQrValue}
-                    size={256}
-                    errorLevel="M"
-                    bgColor="#ffffff"
-                    color="#111827"
-                    className="rounded-2xl bg-white p-3"
-                  />
-                ) : (
-                  <div className="text-center">
-                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-main/10 text-main dark:bg-white/10 dark:text-white">
-                      <QrCode size={38} />
-                    </div>
-                    <p className="m-0 mt-4 text-sm font-bold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                      {t("cancelledQrEmpty")}
-                    </p>
-                  </div>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsQrOpen(false)}
-                className="mt-4 flex min-h-11 w-full cursor-pointer items-center justify-center rounded-2xl bg-main px-5 text-sm font-black text-white transition hover:bg-main/90"
-              >
-                {t("closeScanner")}
-              </button>
-            </div>
+                {t("cancelled.card.scannerReady")}
+              </Badge>
+            ) : null}
+            <Button variant="secondary" leftIcon={Camera} aria-haspopup="dialog" onClick={openCamera}>
+              {t("cancelled.card.camera")}
+            </Button>
           </div>
+          {/* Telefon: kamera — to'liq enli yumshoq tugma (ikkinchi to'liq rangli tugma yo'q), tanlov soni bilan. */}
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            onClick={openCamera}
+            className="hidden h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-action-soft px-5 text-[15px] font-semibold text-action-fg transition-[background-color,color] duration-150 hover:bg-action hover:text-on-solid motion-reduce:transition-none max-md:inline-flex"
+          >
+            <ScanLine size={18} aria-hidden="true" className="shrink-0" />
+            {t("cancelled.card.cameraPhone")}
+            {selectedCount > 0 ? (
+              <span className="inline-flex h-6 items-center rounded-full bg-action px-2 text-[13px] text-on-solid">
+                <span className="sr-only">{t("cancelled.card.selectedSr")}</span>
+                {number(selectedCount)} / {number(orders.length)}
+              </span>
+            ) : null}
+          </button>
         </div>
-      ) : null}
+
+        {hasOrders ? (
+          <SelectionRegion
+            inline
+            idle={selectedCount === 0}
+            label={t("cancelled.selection.region")}
+            title={
+              selectedCount > 0
+                ? t("cancelled.selection.selected", { count: selectedCount, value: number(selectedCount) })
+                : t("cancelled.selection.none")
+            }
+            hint={
+              selectedCount > 0
+                ? t("cancelled.selection.hint")
+                : stage === "required"
+                  ? t("cancelled.selection.noneHintQr")
+                  : t("cancelled.selection.noneHintScan")
+            }
+          />
+        ) : null}
+
+        <QueryBoundary
+          query={listQuery}
+          skeleton="table"
+          loadingLabel={t("cancelled.table.loading")}
+          empty={
+            <EmptyState
+              icon={RotateCcw}
+              title={t("cancelled.table.emptyTitle")}
+              description={t("cancelled.table.emptyDescription")}
+            />
+          }
+          className={hasOrders ? undefined : "border-t border-border"}
+        >
+          {(list, { isRefetching }) => (
+            <CancelledOrdersTable
+              variant="handover"
+              rows={list}
+              label={t("cancelled.table.label")}
+              isSelected={(order) => selectedIds.has(order.id)}
+              manualReasonOf={(order) =>
+                manualSelectedIds.has(order.id)
+                  ? getManualReasonLabel(toCancelledManualReason(manualOverrideReasons[order.id]))
+                  : null
+              }
+              canManualSelect={canManualSelectDamagedQr}
+              onToggle={toggleManualOrderSelection}
+              onManualSelect={openManualSelectModal}
+              busy={isRefetching}
+            />
+          )}
+        </QueryBoundary>
+      </Card>
+
+      <ManualConfirmDialog
+        order={manualConfirmOrder}
+        reason={manualReason}
+        onReasonChange={setManualReason}
+        onCancel={closeManualSelectModal}
+        onConfirm={confirmManualSelect}
+      />
 
       <ScannerCameraModal
         isOpen={isCameraOpen}

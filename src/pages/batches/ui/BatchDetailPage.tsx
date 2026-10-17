@@ -1,287 +1,372 @@
-import { memo, useCallback, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
-import { MapPin, PackageCheck, Printer, QrCode, Truck } from "lucide-react";
+// dizayn-v2: superadmin-batches-detail, admin-batches-detail, manager-batches-detail-send, manager-batches-detail-readonly, manager-returns-batch-detail
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, Inbox, Package, Printer } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import HeaderName from "../../../shared/components/headerName";
-import Button from "../../../shared/components/button";
-import { useBatchDetail, useBatchRemainingDetail, useSendTransferBatch } from "../../../entities/batch";
-import {
-  batchDirectionLabel,
-  batchStatusClass,
-  batchStatusLabel,
-  formatBatchDateTime,
-  formatBatchMoney,
-} from "../lib/batchFormat";
-import BatchPrintSheet from "./BatchPrintSheet";
-import BatchQrCode from "./BatchQrCode";
 import { useSelector } from "react-redux";
+import { useLocation, useParams } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
-import OrdersTable from "../../mails/detail/ui/OrdersTable";
-import SendButton from "../../mails/detail/ui/SendButton";
-import MailStatCards from "../../mails/detail/ui/MailStatCards";
-import { useMailDetailState } from "../../mails/detail/model/useMailDetailState";
-import { mapBatchOrdersToPostOrders } from "../lib/batchOrderMailAdapter";
-import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
-import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
-import BackButton from "../../../shared/ui/BackButton";
-import PageContainer from "../../../shared/ui/PageContainer";
+import {
+  BATCH_STATUS_TONE,
+  useBatchDetail,
+  useBatchRemainingDetail,
+  useSendTransferBatch,
+} from "../../../entities/batch";
+import { useBranchDetail } from "../../../entities/branch";
+import type { PostOrder } from "../../../entities/mails";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { getErrorStatus } from "../../../shared/lib/errorKind";
+import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
+import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  PageHeader,
+  Skeleton,
+  SkeletonLines,
+  SkeletonTable,
+} from "../../../shared/ui/primitives";
+import { useMailDetailState } from "../../mails/detail/model/useMailDetailState";
+import OrdersTable, { type OrdersTableColumn } from "../../mails/detail/ui/OrdersTable";
+import SendButton from "../../mails/detail/ui/SendButton";
+import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
+import { formatBatchDisplayId } from "../lib/batchFormat";
+import { mapBatchOrdersToPostOrders } from "../lib/batchOrderMailAdapter";
+import {
+  isPlaceholderBranchName,
+  knownText,
+  readBatchDetailState,
+  readBatchRegion,
+  resolveBatchBack,
+  summarizeDelivery,
+} from "../model/batchView";
+import BatchHistoryCard from "./BatchHistoryCard";
+import BatchInfoCard from "./BatchInfoCard";
+import BatchPrintSheet from "./BatchPrintSheet";
+import BatchQrCard from "./BatchQrCard";
 
+/** Jo'natish rejimi (maket `manager-batches-detail-send`, `manager-returns-batch-detail`): market ustuni yo'q. */
+const SEND_COLUMNS: readonly OrdersTableColumn[] = ["order", "customer", "address", "delivery", "status", "amount"];
+const SEND_TABLET_HIDDEN: readonly OrdersTableColumn[] = ["address"];
+/** Faqat o'qish (maket `*-batches-detail`, `manager-batches-detail-readonly`): market — ma'lum bo'lsa (yetishmovchilik 7). */
+const READ_COLUMNS: readonly OrdersTableColumn[] = ["order", "customer", "market", "address", "delivery", "status", "amount"];
+const READ_COLUMNS_NO_MARKET: readonly OrdersTableColumn[] = ["order", "customer", "address", "delivery", "status", "amount"];
+const READ_TABLET_HIDDEN: readonly OrdersTableColumn[] = ["market", "delivery"];
+
+/** Filial nomi: ro'yxatda bor bo'lsa, aks holda (`—`, «Filial #12») — `null`. */
+const branchName = (name: string | null | undefined) => (isPlaceholderBranchName(name) ? null : knownText(name));
+const branchLookupId = (branch: { id: string; name: string } | undefined) =>
+  branch && isPlaceholderBranchName(branch.name) ? (knownText(branch.id) ?? undefined) : undefined;
+
+/**
+ * PAKET TAFSILOTI — `/batches/:id` (superadmin, admin, menejer HQ · PICKUP · HYBRID; registrator ham — jo'natish
+ * huquqi bilan), dizayn v2.
+ *
+ * Sarlavha: «← Paketlar / Qaytarishlar / Eski pochtalar» (kelgan sahifa — `state.from`), «Paket B-172» + holat,
+ * «from → to · Yaratilgan: …»; amallar «Chop etish» (A5 varaq, `BatchPrintSheet`) va jo'natish rejimida
+ * «HQ'ga yuborish — n ta». Kartalar: «Paket ma'lumotlari» (+ yetkazish turi bo'yicha), «QR kod», «Paketdagi
+ * buyurtmalar» (pochta tafsilotining `OrdersTable` kartasi), «Tarix».
+ *
+ * Jo'natish rejimi: paket holati `new` va rol menejer yoki registrator (`canSendToMainBranch`) — tanlov, USB skaner
+ * (buyurtma QR'i → tanlanadi) va `PATCH transfer-batches/:id/send { orderIds }`; yuborilganlar ro'yxatdan
+ * yashiriladi, `…/remaining` qayta o'qiladi; xatoda tanlov saqlanadi. Superadmin va admin — doim faqat o'qish.
+ * Ma'lumot: `GET transfer-batches/:id` va `…/remaining` (buyurtmalar — qolganlari, bo'lmasa hammasi; v1 dagidek).
+ */
 const BatchDetailPage = () => {
-  const { t } = useTranslation(["mails", "batches", "common"]);
-  const { id } = useParams();
-  const { data: batchDetail, isLoading: isDetailLoading, isError: isDetailError } = useBatchDetail(id);
-  const {
-    data: remainingBatch,
-    isLoading: isRemainingLoading,
-    isError: isRemainingError,
-    refetch: refetchRemainingBatch,
-  } = useBatchRemainingDetail(id);
-  const sendBatch = useSendTransferBatch();
-  const { apiRequest } = useAppNotification();
+  const { t, i18n } = useTranslation(["batches", "newOrders", "mails", "common"]);
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const { id = "" } = useParams();
+  const location = useLocation();
   const role = useSelector((state: RootState) => state.role.role);
+  const detailQuery = useBatchDetail(id);
+  const remainingQuery = useBatchRemainingDetail(id);
+  const sendBatch = useSendTransferBatch();
   const [sentOrderIds, setSentOrderIds] = useState<Set<string>>(new Set());
 
-  const isBranchManager = role === "manager";
-  const isBranchRegistrator = role === "registrator";
-  const batch = batchDetail ?? remainingBatch;
-  const canSendToMainBranch = batch?.status === "new" && (isBranchManager || isBranchRegistrator);
-  const rawOrders = useMemo(() => mapBatchOrdersToPostOrders(remainingBatch ?? batch), [batch, remainingBatch]);
-  const orders = useMemo(
-    () => rawOrders.filter((order) => !sentOrderIds.has(order.id)),
-    [rawOrders, sentOrderIds],
+  const batch = detailQuery.data ?? remainingQuery.data;
+  const remainingBatch = remainingQuery.data;
+  const isLoading = detailQuery.isLoading || remainingQuery.isLoading;
+  const canSendToMainBranch = batch?.status === "new" && (role === "manager" || role === "registrator");
+  const isReturn = batch?.direction === "return";
+
+  // Filial nomlari tafsilotda kelmasa (`destination_branch_id` xolos) — `GET branches/:id` dan. Bu endpoint faqat
+  // superadmin va admin uchun (backend `@Roles(SUPERADMIN, ADMIN)`): menejer/registrator so'rov yubormaydi (403 bo'lardi).
+  const canLookupBranch = role === "superadmin" || role === "admin";
+  const fromQuery = useBranchDetail(canLookupBranch ? branchLookupId(batch?.from_branch) : undefined);
+  const toQuery = useBranchDetail(canLookupBranch ? branchLookupId(batch?.to_branch) : undefined);
+  const fromName = branchName(batch?.from_branch.name) ?? branchName(fromQuery.data?.name);
+  const toName = branchName(batch?.to_branch.name) ?? branchName(toQuery.data?.name);
+
+  const rawOrders = useMemo(
+    () => mapBatchOrdersToPostOrders(remainingBatch ?? batch),
+    [batch, remainingBatch],
   );
-  const homeStats = useMemo(() => {
-    const homeOrders = orders.filter((order) => order.where_deliver === "address");
-    return {
-      homeOrders: homeOrders.length,
-      homeOrdersTotalPrice: homeOrders.reduce((sum, order) => sum + order.total_price, 0),
-    };
-  }, [orders]);
-  const centerStats = useMemo(() => {
-    const centerOrders = orders.filter((order) => order.where_deliver === "center");
-    return {
-      centerOrders: centerOrders.length,
-      centerOrdersTotalPrice: centerOrders.reduce((sum, order) => sum + order.total_price, 0),
-    };
-  }, [orders]);
+  const orders = useMemo(() => rawOrders.filter((order) => !sentOrderIds.has(order.id)), [rawOrders, sentOrderIds]);
+  // «Yetkazish turi bo'yicha» — paketning o'zi (barcha buyurtmalari), qolganlari emas.
+  const delivery = useMemo(() => summarizeDelivery(mapBatchOrdersToPostOrders(batch)), [batch]);
+  const hasMarket = useMemo(() => orders.some((order) => Boolean(order.market?.name)), [orders]);
+
   const { selectedIds, allSelected, someSelected, toggleAll, toggleOne, selectOne, clearSelection } =
     useMailDetailState(orders);
 
+  // Skaner chaqiruvlari joriy tanlovni o'qiydi: ketma-ket ikki skaner ham takror deb topilsin.
+  const selectedRef = useRef(selectedIds);
+  useEffect(() => {
+    selectedRef.current = selectedIds;
+  }, [selectedIds]);
+
   const handleMissingScannedOrder = useCallback(() => {
-    notify.warning(t("qrNotFound"), { description: t("batchScanMissing"), duration: 3000 });
+    notify.warning(t("detail.scanMissingTitle"), { description: t("detail.scanMissing"), duration: 3000 });
     playMissingOrderFeedback();
   }, [t]);
 
-  const selectScannedOrder = useCallback((order: (typeof orders)[number]) => {
-    if (!canSendToMainBranch) return;
-    if (selectedIds.has(order.id)) {
-      void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
-      notify.warning(t("common:scannerFeedbackDuplicate"), { description: `#${order.id}`, duration: 2000 });
-      return;
-    }
+  const selectScannedOrder = useCallback(
+    (order: PostOrder) => {
+      if (!canSendToMainBranch) return;
+      if (selectedRef.current.has(order.id)) {
+        void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
+        notify.warning(t("detail.scanDuplicate"), { description: `№${order.id}`, duration: 2000 });
+        return;
+      }
+      selectedRef.current = new Set(selectedRef.current).add(order.id);
+      selectOne(order.id);
+      notify.success(t("detail.scanSelected"), { description: `№${order.id}`, duration: 2000 });
+      void playScanFeedback("success");
+    },
+    [canSendToMainBranch, selectOne, t],
+  );
 
-    selectOne(order.id);
-    notify.success(t("orderSelected"), { description: `#${order.id}`, duration: 2000 });
-    void playScanFeedback("success");
-  }, [canSendToMainBranch, selectOne, selectedIds, t]);
-
+  const scannerEnabled = canSendToMainBranch && orders.length > 0;
   useOrderQrScanner({
     orders,
-    enabled: canSendToMainBranch && orders.length > 0,
+    enabled: scannerEnabled,
     onMatch: selectScannedOrder,
     onMissing: handleMissingScannedOrder,
   });
 
-  const handleSend = useCallback(() => {
+  const count = useCallback((value: number) => formatNumberLocalized(value, { language }), [language]);
+
+  const handleSend = useCallback(async () => {
     if (!id || selectedIds.size === 0 || sendBatch.isPending) return;
     const sentIds = Array.from(selectedIds);
 
-    apiRequest({
-      request: () =>
-        sendBatch.mutateAsync({
-          batchId: id,
-          orderIds: sentIds,
-        }),
-      successMessage: t("batchSendMainSuccess"),
-      errorMessage: t("batchSendMainError"),
-      onSuccess: async () => {
-        setSentOrderIds((prev) => {
-          const next = new Set(prev);
-          sentIds.forEach((orderId) => next.add(orderId));
-          return next;
-        });
-        clearSelection();
-        await refetchRemainingBatch();
-      },
+    try {
+      await sendBatch.mutateAsync({ batchId: id, orderIds: sentIds });
+    } catch (error) {
+      // Tanlov saqlanadi — qayta urinish mumkin; backend xabari ustun (v1 dagidek).
+      notify.error(t("detail.sendError"), {
+        description: getBackendErrorMessage(error) ?? t("detail.sendErrorDescription"),
+      });
+      return;
+    }
+
+    const value = count(sentIds.length);
+    notify.success(t("detail.sendSuccess"), {
+      description: toName
+        ? t("detail.sendSuccessDescription", { value, count: sentIds.length, to: toName })
+        : t("detail.sendSuccessDescriptionNoTarget", { value, count: sentIds.length }),
     });
-  }, [apiRequest, clearSelection, id, refetchRemainingBatch, selectedIds, sendBatch, t]);
+    setSentOrderIds((prev) => {
+      const next = new Set(prev);
+      sentIds.forEach((orderId) => next.add(orderId));
+      return next;
+    });
+    clearSelection();
+    await remainingQuery.refetch();
+  }, [clearSelection, count, id, remainingQuery, selectedIds, sendBatch, t, toName]);
 
-  if (isDetailLoading || isRemainingLoading) {
+  const refetchAll = useCallback(() => {
+    void detailQuery.refetch();
+    void remainingQuery.refetch();
+  }, [detailQuery, remainingQuery]);
+
+  const back = resolveBatchBack(readBatchDetailState(location.state), batch);
+  const backLabel = t(`detail.back.${back.label}`);
+  const displayId = formatBatchDisplayId(knownText(batch?.id) ?? id);
+  const print = useCallback(() => window.print(), []);
+
+  // ─── Yuklanish ───────────────────────────────────────────────────────────────
+  if (isLoading) {
     return (
-      <PageContainer>
-        <div className="rounded-2xl border border-(--color-border-soft) bg-primary p-10 text-center font-semibold text-(--color-text-muted) dark:bg-primarydark dark:text-white/70">
-          {t("loading", { ns: "common" })}
+      <div className="flex min-w-0 flex-col gap-6 max-md:gap-4" aria-busy="true">
+        <span role="status" className="sr-only">
+          {t("detail.loading")}
+        </span>
+        <PageHeader
+          back={back.to}
+          backLabel={backLabel}
+          title={<Skeleton width={200} height={32} />}
+          description={<Skeleton width={320} height={14} />}
+        />
+        <div className="flex flex-wrap items-stretch gap-6 max-md:gap-4">
+          <Card title={t("detail.infoTitle")} className="min-w-0 flex-[2_1_440px]">
+            <SkeletonLines lines={4} />
+          </Card>
+          <Card title={t("detail.qrCode")} className="min-w-0 flex-[1_1_240px]">
+            <Skeleton width={160} height={160} className="mx-auto" />
+          </Card>
         </div>
-      </PageContainer>
+        <Card title={t("detail.ordersTitle")} padding="none">
+          <SkeletonTable framed={false} rows={5} columns={[t("detail.orders"), t("detail.amount")]} />
+        </Card>
+      </div>
     );
   }
 
-  if ((isDetailError && isRemainingError) || !batch) {
+  // ─── Topilmadi / xato ────────────────────────────────────────────────────────
+  if (!batch) {
+    const error = detailQuery.error ?? remainingQuery.error;
+    const notFound = !error || getErrorStatus(error) === 404;
     return (
-      <PageContainer>
-        <div className="rounded-2xl border border-(--color-border-soft) bg-primary p-10 text-center font-semibold text-(--color-text-muted) dark:bg-primarydark dark:text-white/70">
-          {t("detail.notFound", { ns: "batches" })}
-        </div>
-      </PageContainer>
+      <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
+        <PageHeader back={back.to} backLabel={backLabel} title={t("detail.title", { id: displayId })} />
+        <Card padding="none">
+          {notFound ? (
+            <EmptyState icon={Package} title={t("detail.notFound")} description={t("detail.notFoundHint")} />
+          ) : (
+            <ErrorState error={error} onRetry={refetchAll} />
+          )}
+        </Card>
+      </div>
     );
   }
+
+  // ─── Ko'rinish ───────────────────────────────────────────────────────────────
+  const region = readBatchRegion(batch) ?? toName;
+  const money = (value: number) => formatMoneyLocalized(value, { language });
+  const selectedCount = selectedIds.size;
+  const sendLabel = t("detail.send", { value: count(selectedCount) });
+  const sendButton = (block: boolean) => (
+    <SendButton
+      selectedCount={selectedCount}
+      isCourier={false}
+      mode="send"
+      onSend={() => void handleSend()}
+      onReceive={() => void handleSend()}
+      isBusy={sendBatch.isPending}
+      sendLabel={sendLabel}
+      busyLabel={t("detail.sending")}
+      block={block}
+      // Qaytarish paketi (maket `manager-returns-batch-detail`): tugma telefonda ham sarlavhada, karta ostida yo'q.
+      className={block || isReturn ? undefined : "max-md:hidden"}
+    />
+  );
+
+  const qrHint = canSendToMainBranch
+    ? isReturn
+      ? t("detail.qrHintReturn")
+      : toName
+        ? t("detail.qrHint", { to: toName })
+        : t("detail.qrHintNoTarget")
+    : null;
+
+  const description = (
+    <>
+      {fromName || toName ? (
+        <>
+          <span className="inline-flex flex-wrap items-center gap-x-1.5">
+            {fromName}
+            {fromName && toName ? (
+              <ArrowRight aria-hidden="true" size={14} strokeWidth={2} className="shrink-0 text-text-subtle" />
+            ) : null}
+            {toName}
+          </span>
+          {" · "}
+        </>
+      ) : null}
+      <span className="whitespace-nowrap">
+        {t("detail.createdAt", { date: formatDateTimeLocalized(batch.created_at, { language }) })}
+      </span>
+    </>
+  );
+
+  const infoItems = [
+    {
+      label: t("detail.branch"),
+      value: fromName ?? "—",
+      sub: knownText(batch.from_branch.code),
+    },
+    { label: t("detail.destination"), value: toName ?? "—" },
+    { label: t("detail.region"), value: region ?? "—" },
+    { label: t("detail.direction"), value: t(`direction.${batch.direction}`) },
+    { label: t("detail.orders"), value: t("qty", { value: count(batch.orders_count) }) },
+    { label: t("detail.amount"), value: money(batch.total_price) },
+  ];
 
   return (
-    <PageContainer>
-      <BatchPrintSheet batch={batch} />
+    <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
+      <BatchPrintSheet batch={batch} fromName={fromName} regionName={region} />
 
-      <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <div className="flex items-start gap-3">
-          <BackButton to="/batches" className="mt-1 h-10 min-w-10 rounded-xl px-2" label="" />
-          <HeaderName
-            name={t("detail.title", { ns: "batches", id: batch.id })}
-            description={`${batch.from_branch.name} -> ${batch.to_branch.name}`}
-            icon={<PackageCheck />}
-          />
-        </div>
-        <Button label={t("print", { ns: "common" })} icon={<Printer size={17} />} onClick={() => window.print()} />
+      <PageHeader
+        back={back.to}
+        backLabel={backLabel}
+        title={t("detail.title", { id: displayId })}
+        meta={
+          <Badge tone={BATCH_STATUS_TONE[batch.status]} dot>
+            {t(`batchStatus.${batch.status}`, { ns: "newOrders" })}
+          </Badge>
+        }
+        description={description}
+        // Faqat o'qish maketlarida (`*-batches-detail`, `manager-batches-detail-readonly`) sarlavhada amal yo'q —
+        // «Chop etish» QR kartasida. Jo'natish rejimida: «Chop etish» + asosiy tugma.
+        actions={
+          canSendToMainBranch ? (
+            <>
+              <Button variant="secondary" leftIcon={Printer} onClick={print}>
+                {t("detail.print")}
+              </Button>
+              {sendButton(false)}
+            </>
+          ) : undefined
+        }
+      />
+
+      <div className="flex flex-wrap items-stretch gap-6 max-md:gap-4">
+        <BatchInfoCard
+          items={infoItems}
+          delivery={delivery}
+          className={canSendToMainBranch ? "flex-[2_1_520px]" : "flex-[2_1_440px]"}
+        />
+        <BatchQrCard
+          displayId={displayId}
+          token={batch.token}
+          hint={qrHint}
+          // Maket: oddiy paketda izoh faqat planshetda, qaytarish paketida planshet va telefonda.
+          hintClassName={isReturn ? "hidden max-lg:block" : "hidden max-lg:block max-md:hidden"}
+          onPrint={print}
+          className={canSendToMainBranch ? "flex-[1_1_280px]" : "flex-[1_1_240px]"}
+        />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1fr_260px]">
-        <div className="space-y-4">
-          <section className="rounded-[22px] border border-(--color-border-soft) bg-primary p-3.5 shadow-sm dark:bg-primarydark">
-            <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-              {[
-                {
-                  label: t("detail.branch", { ns: "batches" }),
-                  value: `${batch.from_branch.code ?? batch.from_branch.id} • ${batch.from_branch.name}`,
-                  icon: <MapPin size={14} />,
-                },
-                { label: t("detail.destination", { ns: "batches" }), value: batch.to_branch.name, icon: <MapPin size={14} /> },
-                { label: t("card.region", { ns: "batches" }), value: batch.to_branch.region ?? batch.to_branch.name ?? "—", icon: <MapPin size={14} /> },
-                { label: t("card.direction", { ns: "batches" }), value: batchDirectionLabel[batch.direction], icon: <Truck size={14} /> },
-                { label: t("card.orders", { ns: "batches" }), value: t("detail.orderCount", { ns: "batches", count: batch.orders_count }), icon: <PackageCheck size={14} /> },
-                { label: t("card.amount", { ns: "batches" }), value: formatBatchMoney(batch.total_price), icon: <PackageCheck size={14} /> },
-                { label: t("card.created", { ns: "batches" }), value: formatBatchDateTime(batch.created_at), icon: <PackageCheck size={14} /> },
-                {
-                  label: t("filter.status", { ns: "batches" }),
-                  value: (
-                    <span className={`inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-extrabold ${batchStatusClass[batch.status]}`}>
-                      {batchStatusLabel[batch.status]}
-                    </span>
-                  ),
-                  icon: <PackageCheck size={14} />,
-                },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="min-w-0 rounded-xl border border-(--color-border-soft) bg-white/60 px-3 py-2.5 dark:border-white/10 dark:bg-white/4"
-                >
-                  <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-(--color-text-muted) dark:text-white/55">
-                    {item.icon}
-                    {item.label}
-                  </div>
-                  <div className="truncate text-sm font-black text-maindark dark:text-white">{item.value}</div>
-                </div>
-              ))}
-            </div>
-          </section>
+      <OrdersTable
+        orders={orders}
+        selectedIds={selectedIds}
+        allSelected={allSelected}
+        someSelected={someSelected}
+        onToggleAll={toggleAll}
+        onToggleOne={toggleOne}
+        readOnly={!canSendToMainBranch}
+        title={t("detail.ordersTitle")}
+        ariaLabel={t("detail.ordersLabel")}
+        scanHint={canSendToMainBranch ? t("detail.scanHint") : undefined}
+        scannerReady={scannerEnabled}
+        scannerReadyLabel={isReturn ? t("mails:detailPage.scannerReadyShort") : undefined}
+        scannerReadyOnPhone={isReturn}
+        appearance="batch"
+        selectionHint={isReturn ? t("detail.selectionHintReturn") : t("detail.selectionHint")}
+        onClearSelection={clearSelection}
+        columns={canSendToMainBranch ? SEND_COLUMNS : hasMarket ? READ_COLUMNS : READ_COLUMNS_NO_MARKET}
+        tabletHidden={canSendToMainBranch ? SEND_TABLET_HIDDEN : READ_TABLET_HIDDEN}
+        empty={<EmptyState icon={Inbox} title={t("detail.emptyOrders")} description={t("detail.emptyOrdersHint")} />}
+        footerAction={canSendToMainBranch && !isReturn && orders.length > 0 ? sendButton(true) : undefined}
+      />
 
-          <section>
-            <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h3 className="text-xl font-black text-maindark dark:text-white md:text-2xl">
-                {t("detail.insideOrders", { ns: "batches" })}
-              </h3>
-            </div>
-            <MailStatCards
-              totalOrders={orders.length}
-              selectedCount={selectedIds.size}
-              homeStats={homeStats}
-              centerStats={centerStats}
-              showSelectionCard={canSendToMainBranch}
-              variant="compact"
-            />
-            <div className="mt-4">
-              <OrdersTable
-                orders={orders}
-                selectedIds={selectedIds}
-                allSelected={allSelected}
-                someSelected={someSelected}
-                onToggleAll={toggleAll}
-                onToggleOne={toggleOne}
-                readOnly={!canSendToMainBranch}
-              />
-            </div>
-            {canSendToMainBranch && orders.length > 0 ? (
-              <div className="mt-4">
-                <SendButton
-                  selectedCount={selectedIds.size}
-                  isCourier={false}
-                  mode="send"
-                  onSend={handleSend}
-                  onReceive={handleSend}
-                  isBusy={sendBatch.isPending}
-                  sendLabel={t("sendToMainBranch")}
-                  busyLabel={t("sendingToMainBranch")}
-                />
-              </div>
-            ) : null}
-          </section>
-
-          <section className="rounded-[28px] border border-(--color-border-soft) bg-primary p-5 shadow-sm dark:bg-primarydark">
-            <h3 className="mb-5 text-lg font-black text-maindark dark:text-white">
-              {t("detail.history", { ns: "batches" })}
-            </h3>
-            {batch.history.length ? (
-              <div className="relative space-y-5 pl-7 before:absolute before:bottom-2 before:left-2.25 before:top-2 before:w-px before:bg-main/30">
-                {batch.history.map((item) => (
-                  <div key={item.id} className="relative">
-                    <span className="absolute -left-6.25 top-1 flex h-5 w-5 items-center justify-center rounded-full border-4 border-primary bg-main dark:border-primarydark" />
-                    <p className="m-0 text-sm font-black text-maindark dark:text-white">{item.action}</p>
-                    <p className="m-0 mt-1 text-sm text-(--color-text-muted) dark:text-white/60">
-                      {item.actor} • {formatBatchDateTime(item.created_at)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-(--color-border-soft) px-4 py-8 text-center text-sm font-semibold text-(--color-text-muted) dark:text-white/60">
-                {t("detail.historyEmpty", { ns: "batches" })}
-              </div>
-            )}
-          </section>
-        </div>
-
-        <aside className="h-max rounded-[22px] border border-(--color-border-soft) bg-primary p-4 shadow-sm dark:bg-primarydark">
-          <div className="mb-3 flex items-center gap-2 text-base font-black text-maindark dark:text-white">
-            <QrCode size={17} />
-            {t("detail.qrCode", { ns: "batches" })}
-          </div>
-          <div className="rounded-[20px] border border-dashed border-(--color-border-soft) bg-white p-3.5 dark:bg-white">
-            <BatchQrCode
-              token={batch.token}
-              fallbackLabel={batch.id}
-              alt={`QR ${batch.id}`}
-              className="mx-auto aspect-square w-full max-w-47.5 object-contain"
-              fallbackClassName="mx-auto flex aspect-square w-full max-w-[190px] flex-col items-center justify-center rounded-xl border-2 border-maindark text-lg font-black text-maindark"
-            />
-          </div>
-          <Button
-            label={t("print", { ns: "common" })}
-            icon={<Printer size={17} />}
-            onClick={() => window.print()}
-            className="mt-4 w-full"
-          />
-        </aside>
-      </div>
-    </PageContainer>
+      <BatchHistoryCard items={batch.history} direction={batch.direction} targetName={toName} />
+    </div>
   );
 };
 

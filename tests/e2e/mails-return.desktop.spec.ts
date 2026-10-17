@@ -23,12 +23,13 @@ test.describe("Pochta → Qaytarish — 1440px", () => {
     const { actions, leaked } = await mockReturnApi(page);
     await openReturnTab(page);
 
-    const row = page.locator("label").filter({ hasText: "Aliyev Vali" }).locator('input[type="checkbox"]').first();
-    await row.check();
+    // Dizayn v2: jadval qatoridagi belgi — «⟨mijoz⟩ so'rovini tanlash».
+    await page.getByRole("checkbox", { name: "Aliyev Vali so'rovini tanlash" }).check();
+    await expect(page.getByRole("region", { name: "Tanlangan so'rovlar" })).toContainText("1 ta so'rov tanlandi");
     const response = page.waitForResponse(
       (res) => res.url().endsWith("/post/return-requests/approve") && res.request().method() === "POST",
     );
-    await page.getByRole("button", { name: "Tasdiqlash" }).first().click();
+    await page.getByRole("button", { name: "Tasdiqlash" }).click();
     const approve = await response;
     expect(approve.status()).toBeGreaterThanOrEqual(200);
     expect(approve.status()).toBeLessThan(300);
@@ -44,8 +45,9 @@ test.describe("Pochta → Qaytarish — 1440px", () => {
     const { actions } = await mockReturnApi(page);
     await openReturnTab(page);
 
-    await page.getByText("Barchasini tanlash").first().click();
-    await page.getByRole("button", { name: "Tasdiqlash" }).first().click();
+    // Guruh qatoridagi belgi — «⟨kuryer⟩: barchasini tanlash» (faqat shu kuryer).
+    await page.getByRole("checkbox", { name: "Baxodir Kuryer: barchasini tanlash" }).check();
+    await page.getByRole("button", { name: "Tasdiqlash" }).click();
 
     await expect(page.getByText("Hozircha kurierlardan qaytarish so'rovi kelmagan")).toBeVisible();
     expect(actions.map((action) => [action.type, (action.body as { order_ids: string[] }).order_ids.sort()])).toEqual([

@@ -9,7 +9,7 @@ import { cx } from "../../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized } from "../../../../shared/lib/formatMoney";
 import { Badge, Card, EmptyState, QueryBoundary, SkeletonList } from "../../../../shared/ui/primitives";
-import type { ApiOrder } from "../../../new_orders/components/OrderCard";
+import type { ApiOrder } from "../../../new_orders/model/apiOrder";
 import { toApiList } from "../model/orderCreateForm";
 
 type TodayOrdersCardProps = {

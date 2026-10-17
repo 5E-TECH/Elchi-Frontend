@@ -1,8 +1,24 @@
+// dizayn-v2: superadmin-mails-detail, superadmin-mails-detail-refused, superadmin-mails-detail-old, admin-mails-detail, admin-mails-refused-detail, admin-mails-old-detail, manager-mails-detail-receive, manager-mails-detail-refused-receive, manager-mails-detail-old, registrator-mails-detail, registrator-mails-detail-refused, registrator-mails-detail-old, courier-mails-detail-receive, courier-mails-detail-refused, courier-mails-detail-old
 import { memo } from "react";
-import { Package, Home, Building2 } from "lucide-react";
+import { Building2, ListChecks, MapPin, Package } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { formatPrice } from "../lib/helpers";
+import { cx } from "../../../../shared/lib/cx";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../../shared/lib/formatMoney";
+import { Card, StatCard } from "../../../../shared/ui/primitives";
 
+/**
+ * POCHTA XULOSASI — dizayn v2.
+ *
+ *  ≥ 768: `StatCard` to'ri (`.el-grid`, `.el-stat`): «Tanlangan» n / N ta · «Uygacha» n ta, jami X ·
+ *         «Markazgacha» n ta, jami X. Eski pochtada «Tanlangan» yo'q (`showSelectionCard=false`).
+ *  < 768: xodim — bitta karta, `dl` qatorlari (maket `superadmin-mails-detail` «Pochta xulosasi»);
+ *         kuryer — ikki ustun «Uygacha» · «Markazgacha» (maket `courier-mails-detail-receive`).
+ *
+ * Kuryer (`layout="courier"`): birinchi karta — «Tanlangan» (izoh — tanlanganlar summasi + jarayon chizig'i),
+ * rad etilgan pochtada «Rad etilgan» N ta, eski pochtada «Jami» N ta (`leadCard`).
+ *
+ * `variant="compact"` — eski API (paket tafsiloti ishlatgan); ko'rinishi `cards` bilan bir xil.
+ */
 interface HomeOrderStats {
   homeOrders: number;
   homeOrdersTotalPrice: number;
@@ -19,67 +35,18 @@ interface MailStatCardsProps {
   homeStats?: HomeOrderStats;
   centerStats?: CenterOrderStats;
   showSelectionCard?: boolean;
+  /** Eski API — ko'rinishga ta'sir qilmaydi. */
   variant?: "cards" | "compact";
+  /** Xodim (sukut) yoki kuryer maketi. */
+  layout?: "staff" | "courier";
+  /** Kuryer: birinchi karta (sukut — «Tanlangan», `showSelectionCard` bo'lsa). */
+  leadCard?: "selected" | "refused" | "total";
+  /** Tanlangan buyurtmalar summasi (kuryer «Tanlangan» izohi). */
+  selectedSum?: number;
+  /** Barcha buyurtmalar summasi («Rad etilgan» / «Jami» izohi). */
+  totalSum?: number;
 }
 
-// ─── Yagona stat kard ─────────────────────────────────────────────────────────
-const StatCard = memo(
-  ({
-    icon,
-    label,
-    main,
-    sub,
-    highlighted = false,
-    tone = "primary",
-  }: {
-    icon: React.ReactNode;
-    label: string;
-    main: React.ReactNode;
-    sub?: string;
-    highlighted?: boolean;
-    tone?: "primary" | "success" | "danger";
-  }) => (
-    <div
-      className={`flex items-center gap-4 px-5 py-4 rounded-2xl border ${highlighted
-          ? tone === "success"
-            ? "bg-linear-to-br from-emerald-500 to-emerald-400 border-emerald-300/40 text-white"
-            : tone === "danger"
-              ? "bg-linear-to-br from-rose-500 to-red-500 border-rose-300/40 text-white"
-              : "bg-linear-to-br from-main to-primarydark border-main/40 text-white"
-          : "bg-white dark:bg-primarydark border-gray-100 dark:border-white/10"
-        }`}
-    >
-      <div
-        className={`flex items-center justify-center w-10 h-10 rounded-xl shrink-0 ${highlighted ? "bg-white/20" : "bg-main/10 dark:bg-main/20"
-          }`}
-      >
-        <span className={highlighted ? "text-white" : "text-main"}>{icon}</span>
-      </div>
-      <div className="flex flex-col gap-0.5 min-w-0">
-        <span
-          className={`text-xs font-medium ${highlighted ? "text-white" : "text-gray-400 dark:text-white"}`}
-        >
-          {label}
-        </span>
-        <div
-          className={`text-lg font-bold leading-tight ${highlighted ? "text-white" : "text-gray-800 dark:text-white"}`}
-        >
-          {main}
-        </div>
-        {sub && (
-          <span
-            className={`text-xs font-medium ${highlighted ? "text-white" : "text-gray-400 dark:text-white"}`}
-          >
-            {sub}
-          </span>
-        )}
-      </div>
-    </div>
-  ),
-);
-StatCard.displayName = "StatCard";
-
-// ─── 3 ta stat kard ───────────────────────────────────────────────────────────
 const MailStatCards = memo(
   ({
     totalOrders,
@@ -87,147 +54,151 @@ const MailStatCards = memo(
     homeStats,
     centerStats,
     showSelectionCard = true,
-    variant = "cards",
+    layout = "staff",
+    leadCard,
+    selectedSum = 0,
+    totalSum = 0,
   }: MailStatCardsProps) => {
-    const { t } = useTranslation(["mails", "orders"]);
+    const { t, i18n } = useTranslation("mails");
+    const language = i18n.resolvedLanguage ?? i18n.language;
+    const count = (value: number) => formatNumberLocalized(value, { language });
+    const money = (value: number) => formatMoneyLocalized(value, { language });
 
-    if (variant === "compact") {
-      const isFullySelected = totalOrders > 0 && selectedCount === totalOrders;
-      const compactItems = [
-        showSelectionCard
-          ? {
-              key: "selected",
-              icon: <Package size={15} />,
-              label: t("mails:selected"),
-              value: `${selectedCount}/${totalOrders}`,
-              hint: selectedCount > 0 ? t("mails:selectedCountLabel", { count: selectedCount }) : t("mails:noneSelected"),
-              completed: isFullySelected,
-            }
-          : null,
-        {
-          key: "home",
-          icon: <Home size={15} />,
-          label: t("orders:deliveryToHome"),
-          value: `${homeStats?.homeOrders ?? 0} ${t("mails:piece")}`,
-          hint: homeStats ? formatPrice(homeStats.homeOrdersTotalPrice) : "—",
-          completed: false,
-        },
-        {
-          key: "center",
-          icon: <Building2 size={15} />,
-          label: t("orders:deliveryToCenter"),
-          value: `${centerStats?.centerOrders ?? 0} ${t("mails:piece")}`,
-          hint: centerStats ? formatPrice(centerStats.centerOrdersTotalPrice) : "—",
-          completed: false,
-        },
-      ].filter(Boolean) as Array<{
-        key: string;
-        icon: React.ReactNode;
-        label: string;
-        value: string;
-        hint: string;
-        completed: boolean;
-      }>;
+    const isCourier = layout === "courier";
+    const lead = leadCard ?? (showSelectionCard ? "selected" : null);
+    const homeCount = homeStats?.homeOrders ?? 0;
+    const homeSum = homeStats?.homeOrdersTotalPrice ?? 0;
+    const centerCount = centerStats?.centerOrders ?? 0;
+    const centerSum = centerStats?.centerOrdersTotalPrice ?? 0;
+    const unit = t("detailPage.statUnit");
+    const selectedHint =
+      selectedCount > 0
+        ? t("detailPage.statSelectedHint", { value: count(selectedCount), count: selectedCount })
+        : t("detailPage.statNoneSelected");
+    const percent = totalOrders > 0 ? Math.round((selectedCount / totalOrders) * 100) : 0;
 
-      return (
-        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-[color:var(--color-border-soft)] bg-white/70 p-2.5 dark:border-white/10 dark:bg-white/[0.04]">
-          {compactItems.map((item) => (
-            <div
-              key={item.key}
-              className={`flex min-w-[180px] flex-1 items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors ${
-                item.completed
-                  ? "border-emerald-300/50 bg-emerald-500/15 dark:border-emerald-300/30 dark:bg-emerald-500/18"
-                  : "border-[color:var(--color-border-soft)] bg-primary dark:border-white/10 dark:bg-primarydark"
-              }`}
+    const leadNode =
+      lead === "selected" ? (
+        <StatCard
+          label={t("detailPage.statSelected")}
+          icon={ListChecks}
+          value={count(selectedCount)}
+          unit={t("detailPage.statOfTotal", { value: count(totalOrders), count: totalOrders })}
+          hint={isCourier ? t("detailPage.statSum", { sum: money(selectedSum) }) : selectedHint}
+        >
+          {isCourier ? (
+            <span
+              role="progressbar"
+              aria-label={t("detailPage.statProgress")}
+              aria-valuemin={0}
+              aria-valuemax={totalOrders}
+              aria-valuenow={selectedCount}
+              className="mt-1.5 block h-2 overflow-hidden rounded-full bg-sunken"
             >
               <span
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-                  item.completed
-                    ? "bg-emerald-500 text-white"
-                    : "bg-main/12 text-main dark:bg-main/20 dark:text-white"
-                }`}
-              >
-                {item.icon}
-              </span>
-              <span className="min-w-0">
-                <span
-                  className={`block truncate text-[11px] font-bold uppercase tracking-[0.12em] ${
-                    item.completed ? "text-emerald-700 dark:text-emerald-100" : "text-[color:var(--color-text-muted)] dark:text-white/55"
-                  }`}
-                >
-                  {item.label}
-                </span>
-                <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                  <span className={`text-base font-black ${item.completed ? "text-emerald-700 dark:text-emerald-100" : "text-maindark dark:text-white"}`}>
-                    {item.value}
-                  </span>
-                  <span className={`text-xs font-semibold ${item.completed ? "text-emerald-700/80 dark:text-emerald-100/75" : "text-[color:var(--color-text-muted)] dark:text-white/60"}`}>
-                    {item.hint}
-                  </span>
-                </span>
-              </span>
-            </div>
-          ))}
-        </div>
-      );
-    }
+                className="block h-full rounded-full bg-action transition-[width] duration-200 motion-reduce:transition-none"
+                style={{ width: `${percent}%` }}
+              />
+            </span>
+          ) : null}
+        </StatCard>
+      ) : lead === "refused" || lead === "total" ? (
+        <StatCard
+          label={t(lead === "refused" ? "detailPage.statRefused" : "detailPage.statTotal")}
+          icon={Package}
+          value={count(totalOrders)}
+          unit={unit}
+          hint={t("detailPage.statSum", { sum: money(totalSum) })}
+        />
+      ) : null;
+
+    const phoneRows = [
+      showSelectionCard && !isCourier
+        ? {
+            key: "selected",
+            label: t("detailPage.statSelected"),
+            sub: selectedHint,
+            value: t("detailPage.statSelectedOf", { selected: count(selectedCount), total: count(totalOrders) }),
+          }
+        : null,
+      {
+        key: "home",
+        label: t("detailPage.statHome"),
+        sub: t("detailPage.statOrders", { value: count(homeCount), count: homeCount }),
+        value: money(homeSum),
+      },
+      {
+        key: "center",
+        label: t("detailPage.statCenter"),
+        sub: t("detailPage.statOrders", { value: count(centerCount), count: centerCount }),
+        value: money(centerSum),
+      },
+    ].filter((row): row is { key: string; label: string; sub: string; value: string } => row !== null);
 
     return (
-      <div className={`grid grid-cols-1 gap-4 ${showSelectionCard ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
-        {showSelectionCard && (
+      <>
+        {/* ≥ 768 — ko'rsatkich kartalari */}
+        <div
+          role="group"
+          aria-label={t("detailPage.summaryLabel")}
+          // Planshetda ham bir qatorda (maket: 768 da uchta karta yonma-yon).
+          className={cx("grid gap-4 max-md:hidden", leadNode ? "grid-cols-3" : "grid-cols-2")}
+        >
+          {leadNode}
           <StatCard
-            highlighted
-            tone={selectedCount === totalOrders && totalOrders > 0 ? "success" : "danger"}
-            icon={<Package size={18} />}
-            label={t("mails:selected")}
-            main={
-              <span>
-                {selectedCount}{" "}
-                <span className="text-white/60 font-normal text-base">
-                  / {totalOrders}
-                </span>
-              </span>
-            }
-            sub={
-              selectedCount > 0
-                ? t("mails:selectedCountLabel", { count: selectedCount })
-                : t("mails:noneSelected")
-            }
+            label={t("detailPage.statHome")}
+            icon={MapPin}
+            value={count(homeCount)}
+            unit={unit}
+            hint={t("detailPage.statSum", { sum: money(homeSum) })}
           />
+          <StatCard
+            label={t("detailPage.statCenter")}
+            icon={Building2}
+            value={count(centerCount)}
+            unit={unit}
+            hint={t("detailPage.statSum", { sum: money(centerSum) })}
+          />
+        </div>
+
+        {/* < 768 — xulosa kartasi */}
+        {isCourier ? (
+          <Card as="section" padding="none" aria-label={t("detailPage.summaryLabel")} className="hidden max-md:flex">
+            <div className="grid grid-cols-2">
+              {[
+                { key: "home", label: t("detailPage.statHome"), value: homeCount, sum: homeSum },
+                { key: "center", label: t("detailPage.statCenter"), value: centerCount, sum: centerSum },
+              ].map((item, index) => (
+                <div key={item.key} className={index > 0 ? "border-l border-border px-4 py-3.5" : "px-4 py-3.5"}>
+                  <div className="text-[13px] font-semibold text-text-muted">{item.label}</div>
+                  <div className="text-[22px] leading-[30px] font-bold text-text">
+                    {count(item.value)}
+                    <span className="ml-1 text-[13px] font-semibold text-text-muted">{unit}</span>
+                  </div>
+                  <div className="text-xs text-text-muted">{money(item.sum)}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+        ) : (
+          <Card as="section" padding="none" aria-label={t("detailPage.summaryLabel")} className="hidden max-md:flex">
+            <dl className="m-0 flex flex-col px-4">
+              {phoneRows.map((row) => (
+                <div
+                  key={row.key}
+                  className="flex items-center justify-between gap-3 border-b border-border py-3 last:border-b-0"
+                >
+                  <dt className="flex min-w-0 flex-col">
+                    <span className="text-sm font-semibold text-text">{row.label}</span>
+                    <span className="text-xs text-text-muted">{row.sub}</span>
+                  </dt>
+                  <dd className="m-0 whitespace-nowrap text-sm font-semibold text-text">{row.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </Card>
         )}
-
-        <StatCard
-          highlighted
-          icon={<Home size={18} />}
-          label={t("orders:deliveryToHome")}
-          main={
-            <span>
-              {homeStats?.homeOrders ?? 0}{" "}
-              <span className="text-gray-400 dark:text-white font-normal text-sm">
-                {t("mails:piece")}
-              </span>
-            </span>
-          }
-          sub={homeStats ? formatPrice(homeStats.homeOrdersTotalPrice) : "—"}
-        />
-
-        <StatCard
-          highlighted
-          icon={<Building2 size={18} />}
-          label={t("orders:deliveryToCenter")}
-          main={
-            <span>
-              {centerStats?.centerOrders ?? 0}{" "}
-              <span className="text-gray-400 dark:text-white font-normal text-sm">
-                {t("mails:piece")}
-              </span>
-            </span>
-          }
-          sub={
-            centerStats ? formatPrice(centerStats.centerOrdersTotalPrice) : "—"
-          }
-        />
-      </div>
+      </>
     );
   },
 );

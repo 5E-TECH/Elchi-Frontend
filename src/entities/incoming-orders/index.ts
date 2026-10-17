@@ -142,13 +142,15 @@ export type IncomingSource = {
 
 export const incomingSourcesKey = "incoming-external-sources";
 
-export const useIncomingSources = () =>
+/** `options.enabled` — ixtiyoriy (sukut `true`): «Qabul va yaratish» tabidagi son faqat tab ko'rinsa so'raladi. */
+export const useIncomingSources = (options?: { enabled?: boolean }) =>
   useQuery({
     queryKey: [incomingSourcesKey],
     queryFn: () =>
       api
         .get(API_ENDPOINTS.ORDERS.EXTERNAL_SOURCES)
         .then((res) => extractIncomingSources(res.data)),
+    enabled: options?.enabled ?? true,
   });
 
 /** Qobiq qatlamlari marshrutga qarab farq qiladi — himoyalangan ochish. */

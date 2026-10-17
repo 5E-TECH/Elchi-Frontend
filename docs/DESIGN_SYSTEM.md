@@ -376,8 +376,9 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   (manzil, mijoz, buyurtma / mahsulotlar — `pages/new_orders/components/editDialogs/`), sotish / bekor qilish /
   qaytarish — `/orders` dagi v2 oynalar, marketga qaytarish oynalari. Sahifa `pages/new_orders/components/new_orderUpdate.tsx`
   (konteyner) + `detail/` (kartalar, ruxsat `orderDetailAccess.ts`, javob tozalash `orderDetailModel.ts`). Ayni komponent
-  `/new-orders/:marketId/edit/:orderId` da ham — u route'ning o'z maketlari (`*-neworders-market-order-edit`,
-  `market-new-orders-edit`) hali ko'chirilmagan, tafsilot ko'rinishi chiqadi.
+  `/new-orders/:marketId/edit/:orderId` da ham (maketlar `*-neworders-market-order-edit`, `market-new-orders-edit`):
+  orqaga — market nomi (market rolida «Qabul va yaratish»), «Buyurtma ma'lumotlari» kartasi yo'q, qulf bo'lmasa
+  xodimga «Tahrirlash ochiq.», marketga «Faqat ko'rish uchun» + «Yangi buyurtmalar» ro'yxatiga havola.
 - **Ko'chirilgan:** `/new-orders/create` — buyurtma yaratish, barcha rollar (`*-create-manual*`, `*-create-step1|step2`,
   `*-create-market-picker*`, `*-create-ai*`): sarlavha `PageHeader` («← Qabul va yaratish», «Yangi buyurtma», holatga
   qarab izoh, o'ngda «Qo'lda | AI bilan» — `SegmentedControl`), ~ 924 px dan keng ekranda ikki ustun (asosiy + yon),
@@ -390,6 +391,81 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   AI bilan: matn/rasm paneli (`AiInputPanel`), tahlil kartalari (`AiPreviewCard`), tasdiq paneli va 5 tadan ortiq
   buyurtmada tasdiq oynasi (`AiConfirmBar`), «Yaratildi (N)» (`AiCreatedList`), chiqib ketish himoyasi — `useConfirm()`.
   Ogohlantirishlar — umumiy `ui/CreateAlert.tsx` (`.el-alert`). v1 `ui/formFieldStyles.tsx` o'chirildi.
+- **Ko'chirilgan:** «Qabul» — `/new-orders/*` qobig'i va qabul sahifalari (kamera rejimlari `*-camera` — keyinroq,
+  hozir faqat USB/klaviatura skaneri). Qobiq `pages/new_orders/index.tsx`: rejim yo'lga qarab
+  (`model/newOrdersShell.ts` — `bare` faqat `<Outlet/>`; `hosted` — «Qabul va yaratish» `PageHeader` + «Buyurtma
+  yaratish» havolasi, `ui/NewOrdersHeader.tsx`; `legacy` — hali v1 bola sahifalar uchun sarlavha + tablar). Tablar
+  (`ui/NewOrdersTabs.tsx`, havola rejimidagi `Tabs`) bola sahifaning birinchi kartasi boshida, sonlari sahifa bilan
+  bir xil kesh kalitidan (yuklanish/xatoda son chizilmaydi, ko'rinmas tab so'rov yubormaydi); ko'rinish v1
+  qoidalari bo'yicha — superadmin/admin 4 tab, HQ registrator 2, menejer va boshqa registrator 1 (tab o'rnida karta
+  sarlavhasi), market — «Yangi buyurtmalar · Bekor qilinganlar».
+  `/new-orders` — «Marketlar» (`markets/index.tsx`): qidiruv, «Bugun:» xulosasi, `DataTable` (telefonda kartalar),
+  market roli o'z marketiga yo'naltiriladi. `/new-orders/:marketId` (`components/new_orderDetail.tsx` +
+  `components/marketOrders/`): xodimga `PageHeader` (market nomi, bugungi son · summa, bitta asosiy «Qabul qilish —
+  N ta»; REGIONAL — tugma o'rnida «Biriktirish» izohi), qidiruv + «USB skaner tayyor», tanlov paneli (`SelectionBar`
+  — «N ta buyurtma tanlandi · summa», «Barchasini tanlash», chop etish menyusi), `DataTable` tanlov bilan (telefonda
+  48 px belgi), qabul / o'chirish oynalari (`MarketOrderDialogs.tsx`, `ConfirmDialog`; o'chirish xatosi oynada
+  qoladi); market rolida — qobiq ichida o'z ro'yxati. Registrator hozircha boshqa xodimlar ko'rinishida (o'z maketi
+  — ega qarori kutilmoqda, `route-map.json` `partialViews`). `/new-orders/incoming` (`incoming-orders/SourcePicker.tsx`
+  + `ui/`): manbalar xulosasi (SVG halqa + legenda, telefonda segment chizig'i; «Jami summa», «Eng uzoq
+  kutayotgan»), `DataTable` (kutish o'lchagichi `role="meter"`, 3 kun chegarasi `lib.ts` `STALE_HOURS`), bo'sh
+  manbalar kartasi. `/new-orders/incoming/:marketId` (`incoming-orders/index.tsx`): skan maydoni `ui/ScanInput.tsx`
+  (matn holati maydonning o'zida — skaner tugmalari ro'yxatni qayta chizmaydi), oxirgi natija `ui/ScanMessage.tsx`
+  (`.el-alert`), posilkalar `ui/IncomingTable.tsx`; qabul 200 talik partiyalar bilan, ovoz va takror/topilmadi
+  holatlari o'zgarmagan. Tab sonlari uchun `useIncomingSources`, `useCancelledMarkets`, `useCancelledOrdersByMarket`,
+  `useBranchesWithSentBatches` ga ixtiyoriy `enabled` qo'shildi (sukut o'zgarmagan). v1 o'lik kalitlar
+  (`addOrderBtn`, `ordersHeader`, `searchOrder`, `receiveOrders`, `selectOrders`, `receiveOrderMessage`) o'chirildi.
+- **Ko'chirilgan:** «Qabul» — «Filial paketlari» va «Bekor qilinganlar» (superadmin, admin; bekor qilinganlar — HQ
+  registrator va market ham). Qobiq rejimi (`model/newOrdersShell.ts`): ro'yxatlar `hosted`, filial / paket va
+  xodimning topshirish sahifasi `bare`, market rolining bekor qilinganlari `hosted`. Umumiy qismlar:
+  `ui/SourceListCard.tsx` (manba ro'yxati kartasi: qidiruv, saralash — sukut «Buyurtmalar/Paketlar» kamayish bo'yicha,
+  «N ta … · jami» xulosasi, `DataTable` → telefonda kartalar, bo'sh / topilmadi / xato holatlari) va
+  `shared/ui/SelectionRegion.tsx` (tanlov xulosasi, `aria-live`; `idle` — hali tanlanmagan; pochta va paket
+  tafsilotlari ham ishlatadi). `/new-orders/branches`
+  (`branches/index.tsx`) — filiallar; `/new-orders/branches/:branchId` (`branches/batches.tsx`) — yuborilgan paketlar,
+  qidiruv + «Skaner tayyor», USB skaner paket QR'ini tanlaydi, «Qabul qilish — N ta paket» (har paketga
+  `transfer-batches/:id/receive`); `…/batches/:batchId` (`branches/batchDetail.tsx`) — paket buyurtmalari, skan bilan
+  tanlash, `receive-orders`. Yordamchilar `branches/branchBatchesModel.ts`. `/new-orders/cancelled`
+  (`cancelled/index.tsx`) — bekor qilingan buyurtmasi bor marketlar (qidiruv mijozda — endpoint parametr olmaydi).
+  `/new-orders/cancelled/:marketId` (`cancelled/detail.tsx` + `cancelledModel.ts` + `ui/`): `PageHeader` (market
+  nomi, son · summa, yagona asosiy «Marketga jo'natish — N ta»), `HandoverStatusAlert` («Market QR kerak» → «Market QR
+  skanerlandi» + amal qilish taymeri; QR talab qilinmasa — neutral), «USB skaner tayyor» qatori + «Kamera» (kamera
+  oynasi `ScannerCameraModal` — v1, keyinroq), `CancelledOrdersTable` (tanlov faqat skaner orqali; «QR buzilgan»
+  qatorlarida qo'lda tasdiq), `ManualConfirmDialog` («QR buzilganini tasdiqlash», sabab `Select` — backendga enum
+  kodi, ko'rinadigani tarjima). Biznes qoidasi o'zgarmagan: jo'natish faqat market QR skanerlangach (u marketning
+  barcha bekorlarini tanlaydi), so'rov tanasi, ovozlar, takroriy/noto'g'ri skan va kirish huquqlari v1 dagidek.
+  Market rolida — o'z bekorlari (skanersiz) va «QR kod» oynasi (`ui/MarketQrDialog.tsx`). v1 `components/OrderCard.tsx`
+  o'chirildi (tur `model/apiOrder.ts` ga ko'chdi), o'lik `newOrders` kalitlari (`cancelled*`, `branch*`,
+  `deliver*` …) o'chirildi.
+- **Ko'chirilgan:** «Pochta» (`/mails/*`, superadmin, admin, menejer HQ · REGIONAL · HYBRID, registrator, kuryer;
+  kamera rejimlari `*-camera` — keyinroq, hozir faqat USB/klaviatura skaneri, `route-map.json` `partialViews`).
+  Qobiq `pages/mails/index.tsx`: xodimda `PageHeader` + bitta `Card` (havola rejimidagi sonli `Tabs` «Bugungi ·
+  Qaytarish · Rad etilgan · Eski», telefonda bo'lim tanlagichi — `Select`), kuryerda tablar sahifa fonida
+  (`background="bg"` — nofaol son yuza + chegara), «Qaytarish» yo'q (`/mails/return` → `/mails/today`). Sonlar
+  `model/mailsLists.ts` hooklaridan (tanalar bilan bir xil queryKey). Ro'yxatlar umumiy `components/MailsTable.tsx`
+  (`DataTable`, telefonda kartalar, kuryerda mijoz tomonida saralash; `statusHeader` — admin/superadmin eski
+  pochtalarida «Holati») va `MailsListBody.tsx` + `MailSummaryStats.tsx` (bugungi, rad etilgan). `/mails/return` —
+  kuryer bo'yicha guruhlangan jadval, doimiy `SelectionRegion`, `{ order_ids }` tasdiq/rad. `/mails/old` — «Pochtalar
+  | Filial paketlari» (`SegmentedControl`, faqat admin/superadmin, `batch_mode=all`), filtrlar URL'da (telefonda pastki
+  varaqa `OldMailsFiltersSheet.tsx`), xulosa, «Excelga yuklash» (ustunlar, jumladan «Kuryer», o'zgarmagan), mijoz
+  tomonida `Pagination`, chekni qayta chiqarish. `/mails/:id` (`detail/index.tsx`): `PageHeader` (holat, «Faqat
+  o'qish», chop etish menyusi + bitta asosiy «Pochtani jo'natish / qabul qilish — N ta»; kuryer telefonida pastki
+  menyu ustidagi panelda), `StatCard`lar (`MailStatCards`), buyurtmalar kartasi `ui/OrdersTable.tsx` (`DataTable`,
+  telefonda `OrderRow`, «USB skaner tayyor», `SelectionRegion`, qatorni bosish — tanlov), jo'natish oynasi
+  `SendPostModal` (`Dialog`), pochtadan o'chirish `DeleteFromPostDialog` (`Dialog`, `alertdialog`, sabab majburiy).
+  Yuborish/qabul/o'chirish so'rovlari, USB skaner (takror/topilmadi), chop etish rejimlari (brauzer / PDF 100×60)
+  o'zgarmagan. v1 `MailGridCard`, `MailDetailHeader`, `PrintOnlyOrders`, `Checkbox`, `lib/helpers.ts` va o'lik
+  `mails` kalitlari o'chirildi.
+- **Ko'chirilgan:** «Paketlar va qaytarishlar» (`/batches`, `/batches/:id`, `/returns`; superadmin, admin, menejer
+  HQ · PICKUP · HYBRID). `/batches` (`batches/ui/BatchesPage.tsx`): «Yangi · Eski · Qaytarilgan» sonli tablar
+  (`?tab`), `DataTable` (telefonda kartalar), `Pagination`; holat badge'i — haqiqiy paket holati
+  (`entities/batch` `BATCH_STATUS_TONE` + `newOrders:batchStatus.*`). `/batches/:id` (`ui/BatchDetailPage.tsx`):
+  `PageHeader` («← Paketlar / Qaytarishlar / Eski pochtalar»), `BatchInfoCard`, `BatchQrCard`, `BatchHistoryCard`,
+  A5 chop etish varag'i `BatchPrintSheet`; buyurtmalar — pochta tafsilotining `OrdersTable` kartasi
+  (`appearance="batch"`: telefonda «№X · [market ·] telefon» + manzil, pastda «Jami N ta buyurtma»;
+  qaytarish paketida `scannerReadyOnPhone`), jo'natish `PATCH transfer-batches/:id/send { orderIds }` va USB skaner
+  o'zgarmagan. `GET branches/:id` faqat superadmin/admin uchun so'raladi (backend `@Roles`). `/returns`
+  (`returns/index.tsx` + `model/returnBatches.ts`): holat filtri, `DataTable`, qator → `/batches/:id`.
 
 **Dizayn qo'riqchisi** (`scripts/design-guard.mjs`, `npm run design:guard`): `colour`, `palette`, `dark-pair`,
 `legacy`, `money`, `icons`, `tiny-text`, `v1-class`, `weight`, `gradient`, `v1-helper`. Ikki darvoza:

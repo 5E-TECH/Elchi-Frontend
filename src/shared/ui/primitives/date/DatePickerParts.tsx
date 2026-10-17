@@ -55,6 +55,12 @@ export type DateTriggerProps = {
   required?: boolean;
   className?: string;
   triggerClassName?: string;
+  /**
+   * Ichki yorliq (yorlig'i yashirin filtr, maket `superadmin-returns-list`: «Sana: Barchasi») — ikonkadan keyin
+   * kulrang «Sana:», ekran o'quvchidan yashirin (nomi `Field` yorlig'idan). `Select` `inlineLabel` bilan bir xil;
+   * bo'lsa bo'sh qiymat matni (`Barchasi`) `text-subtle` emas. Sukut — yo'q.
+   */
+  inlineLabel?: string;
 };
 
 /**
@@ -77,6 +83,7 @@ export const DateTrigger = ({
   required,
   className,
   triggerClassName,
+  inlineLabel,
 }: DateTriggerProps) => {
   const { t } = useTranslation("ui");
   const field = useFieldControl({ id, invalid, disabled, required });
@@ -115,7 +122,12 @@ export const DateTrigger = ({
       >
         <span className="flex min-w-0 items-center gap-2">
           <ButtonIcon icon={CalendarIcon} px={18} className="text-text-subtle" />
-          <span aria-hidden="true" className={cx("truncate", empty && "text-text-subtle")}>
+          {inlineLabel ? (
+            <span aria-hidden="true" data-date-inline-label="" className="shrink-0 whitespace-nowrap text-text-muted">
+              {`${inlineLabel}:`}
+            </span>
+          ) : null}
+          <span aria-hidden="true" className={cx("truncate", empty && !inlineLabel && "text-text-subtle")}>
             {text}
           </span>
           <span id={valueId} className="sr-only">

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { BATCH_ORDERS, BATCH_TOKEN, mockIncomingApi, openIncoming, scannedRowIds, scanToken } from "./support/incomingBatch";
+import { BATCH_ORDERS, BATCH_TOKEN, expectScanned, mockIncomingApi, openIncoming, scannedRowIds, scanToken } from "./support/incomingBatch";
 
 /** TC4 (CbKnJLZO) — 390px: qop skani, hisob xabari ekranga sig'adi. */
 test.describe("Kiruvchi posilkalar — qop yorlig'i, 390px", () => {
@@ -17,6 +17,9 @@ test.describe("Kiruvchi posilkalar — qop yorlig'i, 390px", () => {
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.x + box.width).toBeLessThanOrEqual(390);
     expect(await scannedRowIds(page)).toEqual(BATCH_ORDERS.map((order) => order.id));
+    await expectScanned(page, 6, 7);
+    // Telefonda ham «Qabul qilish» — yagona asosiy tugma (kamera rejimi hali yo'q), qisqa nom bilan.
+    await expect(page.getByRole("button", { name: "Qabul qilish — 6 ta" })).toBeEnabled();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
     expect(leaked).toEqual([]);

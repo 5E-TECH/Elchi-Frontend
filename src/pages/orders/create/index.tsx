@@ -1,6 +1,7 @@
 // dizayn-v2: superadmin-neworders-create-manual-step1, superadmin-neworders-create-market-picker-dialog, superadmin-neworders-create-manual-step2, superadmin-neworders-create-ai-input, superadmin-neworders-create-ai-preview, superadmin-neworders-create-ai-confirm-dialog, admin-neworders-create-manual, admin-neworders-create-market-picker, admin-neworders-create-ai, admin-neworders-create-ai-confirm-dialog, manager-new-orders-create-manual-step1, manager-new-orders-create-manual-step2, manager-new-orders-create-ai, manager-new-orders-create-ai-confirm-dialog, registrator-new-orders-create-step1, registrator-new-orders-create-market-picker-dialog, registrator-new-orders-create-step2, registrator-new-orders-create-ai, registrator-new-orders-create-ai-confirm-dialog, market-new-orders-create-manual, market-new-orders-create-ai-input, market-new-orders-create-ai-preview, market-new-orders-create-ai-confirm-dialog
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { Store } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import {
   FormProvider,
@@ -34,7 +35,7 @@ import {
 import { isInactiveMarketStatus } from "../../../shared/lib/marketStatus";
 import { notify } from "../../../shared/lib/notify";
 import { cx } from "../../../shared/lib/cx";
-import { PageHeader } from "../../../shared/ui/primitives";
+import { PageHeader, useConfirm } from "../../../shared/ui/primitives";
 
 type BackendErrorPayload = {
   message?: unknown;
@@ -175,8 +176,10 @@ const OrderCreateFormContent = () => {
 
   const { control, handleSubmit, trigger, reset, setError, getValues, setValue } = methods;
   // Katalog mahsulotlari qaysi marketga tegishli: «O'zgartirish»/«Oldingi» bilan boshqa market tanlansa, eski
-  // marketning `product_id` lari yangi market buyurtmasiga ketmasin.
-  const itemsMarketIdRef = useRef<MarketOption["id"] | null>(selectedMarketFromState?.id ?? null);
+  // marketning `product_id` lari yangi market buyurtmasiga ketmasin. Butun market saqlanadi — almashtirish
+  // tasdig'i bekor qilinsa, shu market qaytariladi.
+  const itemsMarketRef = useRef<MarketOption | null>(selectedMarketFromState ?? null);
+  const confirm = useConfirm();
   // «Keyingi» / «Oldingi» / «O'zgartirish» bosilgach bosilgan tugma yo'qoladi — fokus «Qadamlar» ga o'tadi
   // (klaviatura va ekran o'quvchi joyini yo'qotmasin; telefonda sahifa yangi qadam boshiga keladi).
   const stepsRef = useRef<HTMLDivElement>(null);
@@ -243,14 +246,36 @@ const OrderCreateFormContent = () => {
 
     const isValid = await trigger("market");
     if (isValid) {
-      const nextMarketId = getValues("market")?.id ?? null;
-      // Market almashgan: faqat katalogsiz («maxsus») mahsulotlar qoladi — ular marketga bog'liq emas.
-      if (itemsMarketIdRef.current != null && nextMarketId !== itemsMarketIdRef.current) {
+      const nextMarket = getValues("market") ?? null;
+      const previousMarket = itemsMarketRef.current;
+      // Market almashgan: faqat katalogsiz («Katalogda yo'q») mahsulotlar qoladi — ular marketga bog'liq emas.
+      // Katalog mahsulotlari o'chishidan oldin tasdiq so'raladi (ega qarori 2026-10-17); bekor qilinsa market
+      // almashmaydi — eski market (mahsulotlar egasi) qaytariladi va 1-qadamda qolinadi.
+      if (previousMarket != null && nextMarket?.id !== previousMarket.id) {
         const items = getValues("details.items");
         const kept = items.filter((item) => item.product_id == null);
-        if (kept.length !== items.length) setValue("details.items", kept, { shouldDirty: true });
+        const removed = items.length - kept.length;
+        if (removed > 0) {
+          const confirmed = await confirm({
+            tone: "danger",
+            icon: Store,
+            title: t("createMarketChangeTitle"),
+            description: t("createMarketChangeDescription", {
+              count: removed,
+              from: previousMarket.name,
+              to: nextMarket?.name ?? "",
+            }),
+            confirmLabel: t("createMarketChangeConfirm"),
+            cancelLabel: t("createMarketChangeCancel"),
+          });
+          if (!confirmed) {
+            setValue("market", previousMarket, { shouldDirty: true, shouldValidate: true });
+            return;
+          }
+          setValue("details.items", kept, { shouldDirty: true });
+        }
       }
-      itemsMarketIdRef.current = nextMarketId;
+      itemsMarketRef.current = nextMarket;
       focusStepsRef.current = true;
       setStep(2);
     }

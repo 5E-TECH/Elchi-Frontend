@@ -12,6 +12,8 @@ const REGIONAL_MANAGER = {
   status: "active",
   branch_id: "12",
   branch: { id: "12", name: "Urganch filiali", type: "REGIONAL" },
+  // 5c9faf0 dan beri tafsilotdagi «Sotish» menejerning sotish/bekor ruxsatini talab qiladi.
+  can_sell_cancel: true,
 };
 
 // antd Modal "zoom" animatsiyasi tugagach o'lchanadi.

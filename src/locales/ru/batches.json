@@ -1,46 +1,111 @@
 {
   "title": "Пакеты",
-  "description": "Список пакетов, созданных сотрудниками филиалов и HQ",
-  "statBadge": "{{count}} пакетов",
+  "description_one": "{{value}} пакет · созданы сотрудниками филиалов и HQ",
+  "description_few": "{{value}} пакета · созданы сотрудниками филиалов и HQ",
+  "description_many": "{{value}} пакетов · созданы сотрудниками филиалов и HQ",
+  "description_other": "{{value}} пакета · созданы сотрудниками филиалов и HQ",
+  "descriptionReturn_one": "{{value}} пакет · пакеты возвратного потока из филиалов · тот же список, что на странице <page>Возвраты</page>",
+  "descriptionReturn_few": "{{value}} пакета · пакеты возвратного потока из филиалов · тот же список, что на странице <page>Возвраты</page>",
+  "descriptionReturn_many": "{{value}} пакетов · пакеты возвратного потока из филиалов · тот же список, что на странице <page>Возвраты</page>",
+  "descriptionReturn_other": "{{value}} пакета · пакеты возвратного потока из филиалов · тот же список, что на странице <page>Возвраты</page>",
+  "listLabel": "Список пакетов",
+  "tabsLabel": "Типы пакетов",
   "tabs": {
     "new": "Новые",
     "old": "Старые",
-    "return": "Возвраты"
+    "return": "Возвращённые"
   },
-  "filter": {
-    "status": "Статус",
-    "direction": "Направление",
-    "date": "Дата"
-  },
-  "status": {
-    "new": "Новый",
-    "onTheWay": "В пути",
-    "received": "Получено",
-    "cancelled": "Отменено"
-  },
-  "direction": {
-    "forward": "Вперед",
-    "return": "Возврат"
-  },
-  "card": {
-    "orders": "Заказы",
-    "piece": "шт",
-    "amount": "Сумма",
-    "direction": "Направление",
-    "region": "Область",
+  "columns": {
+    "batch": "Пакет",
     "route": "Маршрут",
-    "created": "Создан"
+    "region": "Область",
+    "status": "Статус",
+    "orders": "Заказы",
+    "amount": "Сумма",
+    "open": "Открыть"
+  },
+  "qty": "{{value}} шт.",
+  "ordersSub_one": "{{value}} заказ",
+  "ordersSub_few": "{{value}} заказа",
+  "ordersSub_many": "{{value}} заказов",
+  "ordersSub_other": "{{value}} заказа",
+  "open": "Открыть пакет {{id}}",
+  "pagination": "{{from}}–{{to}} из {{total}} пакетов",
+  "cardsLabel": "Пакеты",
+  "loading": "Загрузка пакетов",
+  "loadError": "Не удалось загрузить список пакетов",
+  "emptyTitle": "Пакетов нет",
+  "emptyDescription": "В этом разделе пока нет пакетов.",
+  "direction": {
+    "forward": "Вперёд",
+    "return": "Возврат"
   },
   "detail": {
     "title": "Пакет {{id}}",
-    "notFound": "Пакет не найден",
+    "back": {
+      "batches": "Пакеты",
+      "returns": "Возвраты",
+      "mailsOld": "Старые почты"
+    },
+    "createdAt": "Создан: {{date}}",
+    "print": "Печать",
+    "send": "Отправить в HQ — {{value}} шт.",
+    "sending": "Отправка в HQ…",
+    "infoTitle": "Данные пакета",
     "branch": "Филиал",
     "destination": "Куда",
-    "orderCount": "{{count}} шт",
-    "insideOrders": "Заказы внутри",
+    "region": "Область",
+    "direction": "Направление",
+    "orders": "Заказы",
+    "amount": "Сумма",
+    "deliveryBreakdown": "По типу доставки",
+    "deliveryHome": "До дома",
+    "deliveryCenter": "До центра",
+    "qrCode": "QR-код",
+    "qrImage": "QR-код пакета {{id}}",
+    "qrFallback": "QR-код",
+    "qrHint": "Распечатайте лист и приклейте к пакету — {{to}} отсканирует этот QR-код и примет пакет.",
+    "qrHintNoTarget": "Распечатайте лист и приклейте к пакету — филиал-получатель отсканирует этот QR-код и примет пакет.",
+    "qrHintReturn": "Распечатайте этикетку и приклейте её на пакет.",
+    "ordersTitle": "Заказы в пакете",
+    "ordersLabel": "Заказы в пакете",
+    "scanHint": "Отсканируйте QR-код — заказ выделится в списке",
+    "selectionHint": "В HQ отправляются только выбранные заказы",
+    "selectionHintReturn": "В HQ отправляются только выбранные, остальные остаются в пакете",
+    "emptyOrders": "В пакете не осталось заказов",
+    "emptyOrdersHint": "Все заказы пакета отправлены.",
     "history": "История",
     "historyEmpty": "Истории пока нет",
-    "qrCode": "QR-код"
+    "historyEmptyHint": "После отправки и приёма пакета здесь появится каждое действие.",
+    "notFound": "Пакет не найден",
+    "notFoundHint": "Пакет удалён или ссылка неверна. Откройте его заново из списка пакетов.",
+    "loading": "Загрузка пакета",
+    "scanSelected": "Заказ выбран",
+    "scanDuplicate": "Уже выбран",
+    "scanMissingTitle": "QR не найден",
+    "scanMissing": "Этот QR-код не соответствует заказам этого пакета.",
+    "sendSuccess": "Пакет отправлен в HQ",
+    "sendSuccessDescription_one": "{{value}} заказ отправлен: {{to}}",
+    "sendSuccessDescription_few": "{{value}} заказа отправлено: {{to}}",
+    "sendSuccessDescription_many": "{{value}} заказов отправлено: {{to}}",
+    "sendSuccessDescription_other": "{{value}} заказа отправлено: {{to}}",
+    "sendSuccessDescriptionNoTarget_one": "{{value}} заказ отправлен в HQ",
+    "sendSuccessDescriptionNoTarget_few": "{{value}} заказа отправлено в HQ",
+    "sendSuccessDescriptionNoTarget_many": "{{value}} заказов отправлено в HQ",
+    "sendSuccessDescriptionNoTarget_other": "{{value}} заказа отправлено в HQ",
+    "sendError": "Ошибка при отправке пакета",
+    "sendErrorDescription": "Выбор сохранён — попробуйте ещё раз",
+    "historyCount": "{{value}}",
+    "historyLabel": "История пакета",
+    "historyAction": {
+      "created": "Пакет создан",
+      "createdReturn": "Возвратный пакет создан",
+      "sent": "Пакет отправлен",
+      "sentTo": "Пакет отправлен: {{to}}",
+      "received": "Пакет принят",
+      "receivedAt": "Пакет принят: {{to}}",
+      "cancelled": "Пакет отменён"
+    }
   },
   "print": {
     "branch": "ФИЛИАЛ:",
@@ -48,8 +113,5 @@
     "orders": "ЗАКАЗЫ:",
     "total": "ИТОГО:",
     "date": "ДАТА:"
-  },
-  "loadError": "Не удалось загрузить список пакетов",
-  "emptyTitle": "Пакетов нет",
-  "emptyDescription": "По этим фильтрам пакеты пока не найдены."
+  }
 }

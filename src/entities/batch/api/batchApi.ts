@@ -16,7 +16,7 @@ import type {
 
 export const BATCH_KEY = "batches";
 
-type ApiBatchStatus = "PENDING" | "SENT" | "RECEIVED" | "CANCELLED";
+export type ApiBatchStatus = "PENDING" | "SENT" | "RECEIVED" | "CANCELLED";
 type ApiBatchDirection = "FORWARD" | "RETURN";
 
 const toNumber = (value: unknown, fallback = 0) => {
@@ -28,6 +28,12 @@ const toText = (value: unknown, fallback = "—") => {
   if (typeof value === "string" && value.trim()) return value.trim();
   if (typeof value === "number") return String(value);
   return fallback;
+};
+
+/** Bo'sh bo'lmagan matn yoki `undefined` (ixtiyoriy maydonlar uchun — «—» o'rniga maydon yo'q). */
+const optionalText = (value: unknown): string | undefined => {
+  const text = toText(value, "");
+  return text || undefined;
 };
 
 const normalizeStatus = (value: unknown): BatchStatus => {
@@ -69,7 +75,8 @@ const normalizeWhereDeliver = (value: unknown): BatchOrder["where_deliver"] => {
   return undefined;
 };
 
-const toApiBatchStatus = (status: BatchStatus): ApiBatchStatus => {
+/** Ilova holati → API holati (`GET transfer-batches?status=`): `new` → `PENDING`, `on_the_way` → `SENT` … */
+export const toApiBatchStatus = (status: BatchStatus): ApiBatchStatus => {
   const statusMap: Record<BatchStatus, ApiBatchStatus> = {
     new: "PENDING",
     on_the_way: "SENT",
@@ -125,11 +132,13 @@ const normalizeBranch = (value: any, fallback = "—"): BatchBranch => {
 };
 
 const normalizeOrder = (order: any, index: number): BatchOrder => ({
+  // Paket bandi `{ id, order_id, order }`: `id` — bandning o'z id'si. Buyurtma boyitilmasa
+  // (branch-service `order: null` qaytaradi) `order_id` olinadi — aks holda qabulga band id'si ketadi.
   id: toText(
     order?.order?.id ??
+      order?.order_id ??
       order?.id ??
-      order?._id ??
-      order?.order_id,
+      order?._id,
     `ORD-${index + 1}`,
   ),
   qr_code_token: toText(
@@ -178,6 +187,16 @@ const normalizeOrder = (order: any, index: number): BatchOrder => ({
       order?.amount,
   ),
   status: toText(order?.order?.status ?? order?.status),
+  // Qo'shimcha (ixtiyoriy): enriched buyurtmaning sanasi, tumani va viloyati; yo'q bo'lsa — maydon yo'q.
+  created_at: optionalText(
+    order?.order?.createdAt ??
+      order?.order?.created_at ??
+      order?.createdAt ??
+      order?.created_at,
+  ),
+  district: optionalText(order?.order?.district?.name ?? order?.order?.customer?.district?.name),
+  region: optionalText(order?.order?.region?.name ?? order?.order?.customer?.region?.name),
+  market: optionalText(order?.order?.market?.name),
 });
 
 const normalizeHistoryItem = (
@@ -259,7 +278,8 @@ const normalizeBatchWithRegion = (raw: any): Batch => {
 
 const normalizeBatchDetail = (raw: any): BatchDetail => {
   const source = raw?.data ?? raw?.item ?? raw;
-  const batch = normalizeBatch(source);
+  // Tafsilot javobida `region` bor (branch-service `findTransferBatchById`) — ro'yxatdagidek `to_branch.region`.
+  const batch = normalizeBatchWithRegion(source);
   const orders = Array.isArray(source?.orders)
     ? source.orders
     : Array.isArray(source?.order_list)
@@ -328,22 +348,71 @@ const buildListParams = (params?: BatchListParams) => {
   return requestParams;
 };
 
+/** Bitta sahifa (`GET transfer-batches`) — `useBatches` queryFn bilan bir xil normallashtirish. */
+export const fetchTransferBatchesPage = async (params?: BatchListParams): Promise<BatchListResponse> => {
+  const response = await api.get(API_ENDPOINTS.BATCHES.BASE, {
+    params: buildListParams(params),
+  });
+  const data = extractBatchList(response.data);
+  const meta = extractMeta(response.data, data.length);
+
+  return {
+    data,
+    total: meta.total,
+    meta,
+  };
+};
+
+/** `GET transfer-batches` bitta sahifada ko'pi bilan 100 ta beradi (order-service `limit ≤ 100`). */
+export const TRANSFER_BATCHES_PAGE_MAX = 100;
+const TRANSFER_BATCHES_MAX_PAGES = 50;
+
+/**
+ * Hamma sahifalar (masalan «Eski pochtalar» → «Filial paketlari»: mijoz tomonidagi filtrlar butun ro'yxat ustida).
+ * Sahifalar ketma-ket, `limit` = 100 (yoki kichikroq `pageSize`), filtrlar har sahifada bir xil.
+ *
+ * To'xtash qoidasi: bo'sh sahifa. Holat bo'sh yoki `PENDING` bo'lsa backend `PENDING` paketlarni sahifa ichida
+ * yo'nalish bo'yicha bittaga yig'adi va `meta.total` ni shu sahifadagi qatorlar soni qilib qaytaradi — `total` /
+ * `totalPages` ishonchsiz (bo'sh bo'lmagan xom sahifa yig'ilgandan keyin ham kamida 1 qator beradi, shuning uchun
+ * bo'sh sahifa — haqiqiy oxir). Holat berilgan va `PENDING` emas — `meta.totalPages` da ham to'xtaydi (ishonchli).
+ * `maxPages` (sukut 50) ga yetsa — `capped: true`. Bir paket ikki sahifada kelsa (so'rovlar orasida yangi paket
+ * qo'shilib, siljish bo'lsa) — bir marta olinadi. Birinchi xatoda butun so'rov rad etiladi.
+ */
+export const fetchAllTransferBatches = async (
+  params?: Omit<BatchListParams, "page" | "limit">,
+  options?: { pageSize?: number; maxPages?: number },
+): Promise<{ data: Batch[]; capped: boolean }> => {
+  const pageSize = Math.min(
+    TRANSFER_BATCHES_PAGE_MAX,
+    Math.max(1, Math.floor(options?.pageSize ?? TRANSFER_BATCHES_PAGE_MAX)),
+  );
+  const maxPages = Math.max(1, Math.floor(options?.maxPages ?? TRANSFER_BATCHES_MAX_PAGES));
+  const apiStatus = buildListParams({ ...params })?.status;
+  const totalIsReliable = Boolean(apiStatus) && apiStatus !== "PENDING";
+
+  const seen = new Set<string>();
+  const data: Batch[] = [];
+
+  for (let page = 1; page <= maxPages; page += 1) {
+    const response = await fetchTransferBatchesPage({ ...params, page, limit: pageSize });
+    if (response.data.length === 0) return { data, capped: false };
+
+    for (const batch of response.data) {
+      if (seen.has(batch.id)) continue;
+      seen.add(batch.id);
+      data.push(batch);
+    }
+
+    if (totalIsReliable && page >= response.meta.totalPages) return { data, capped: false };
+  }
+
+  return { data, capped: true };
+};
+
 export const useBatches = (params?: BatchListParams, options?: { enabled?: boolean }) =>
   useQuery<BatchListResponse>({
     queryKey: [BATCH_KEY, params],
-    queryFn: async () => {
-      const response = await api.get(API_ENDPOINTS.BATCHES.BASE, {
-        params: buildListParams(params),
-      });
-      const data = extractBatchList(response.data);
-      const meta = extractMeta(response.data, data.length);
-
-      return {
-        data,
-        total: meta.total,
-        meta,
-      };
-    },
+    queryFn: () => fetchTransferBatchesPage(params),
     enabled: options?.enabled ?? true,
   });
 

@@ -143,6 +143,8 @@ const TAB_SIZING_FULL = "flex-auto justify-center gap-1.5 px-1.5";
 const COUNT =
   "inline-flex h-5 min-w-[22px] items-center justify-center rounded-full px-1.5 text-xs font-semibold tabular-nums";
 const COUNT_IDLE = "bg-sunken text-text-muted";
+/** Sahifa fonidagi tablarda (`background="bg"`) nofaol son — yuza + chegara (maket `courier-mails-today`). */
+const COUNT_IDLE_ON_BG = "border border-border bg-surface text-text-muted";
 const COUNT_ACTIVE = "bg-action-soft text-action-fg";
 
 const FADE_BG: Record<TabsBackground, string> = {
@@ -220,32 +222,67 @@ const edgeRoom = () =>
  * kerakli qadar (minimal) suradi: tab to'liq ko'rinadi va qoplama ostida
  * qolmaydi. Faqat ro'yxatning o'zi aylanadi (sahifa emas).
  */
-const useRevealActive = (listRef: RefObject<HTMLElement | null>, activeKey: string) => {
+const revealActiveTab = (list: HTMLElement, smooth: boolean) => {
+  if (list.clientWidth === 0) return;
+  const tab = list.querySelector<HTMLElement>('[aria-selected="true"], [aria-current="page"]');
+  if (!tab) return;
+
+  const max = list.scrollWidth - list.clientWidth;
+  if (max <= 0) return;
+  // Tab juda keng bo'lsa (tor ekran) — qoplama uchun joy shunchaki kamayadi.
+  const room = Math.max(0, Math.min(edgeRoom(), (list.clientWidth - tab.offsetWidth) / 2));
+  const viewStart = list.scrollLeft;
+  const tabStart = tab.offsetLeft;
+  const tabEnd = tabStart + tab.offsetWidth;
+  // Chetda qoplama faqat o'sha tomonda yashiringan tab bo'lsa chiqadi.
+  const startLimit = viewStart + (viewStart > 0 ? room : 0);
+  const endLimit = viewStart + list.clientWidth - (viewStart < max ? room : 0);
+  if (tabStart >= startLimit && tabEnd <= endLimit) return;
+
+  const target = tabEnd > endLimit ? tabEnd - list.clientWidth + room : tabStart - room;
+  scrollListTo(list, Math.min(max, Math.max(0, target)), smooth);
+};
+
+/** Foydalanuvchi ro'yxatni o'zi surishga kirishgani belgilari (o'q tugmalari o'ramda turadi). */
+const USER_SCROLL_EVENTS = ["pointerdown", "wheel", "touchstart", "keydown"] as const;
+
+const useRevealActive = (listRef: RefObject<HTMLElement | null>, activeKey: string, itemsKey: string) => {
   const mountedRef = useRef(false);
 
   useEffect(() => {
     const list = listRef.current;
     const smooth = mountedRef.current;
     mountedRef.current = true;
-    if (!list || list.clientWidth === 0) return;
-    const tab = list.querySelector<HTMLElement>('[aria-selected="true"], [aria-current="page"]');
-    if (!tab) return;
+    if (!list) return undefined;
+    revealActiveTab(list, smooth);
 
-    const max = list.scrollWidth - list.clientWidth;
-    if (max <= 0) return;
-    // Tab juda keng bo'lsa (tor ekran) — qoplama uchun joy shunchaki kamayadi.
-    const room = Math.max(0, Math.min(edgeRoom(), (list.clientWidth - tab.offsetWidth) / 2));
-    const viewStart = list.scrollLeft;
-    const tabStart = tab.offsetLeft;
-    const tabEnd = tabStart + tab.offsetWidth;
-    // Chetda qoplama faqat o'sha tomonda yashiringan tab bo'lsa chiqadi.
-    const startLimit = viewStart + (viewStart > 0 ? room : 0);
-    const endLimit = viewStart + list.clientWidth - (viewStart < max ? room : 0);
-    if (tabStart >= startLimit && tabEnd <= endLimit) return;
-
-    const target = tabEnd > endLimit ? tabEnd - list.clientWidth + room : tabStart - room;
-    scrollListTo(list, Math.min(max, Math.max(0, target)), smooth);
-  }, [listRef, activeKey]);
+    // Tab sonlari (count) keyinroq yuklanadi: tablar kengayib, faol tab yana chetga
+    // chiqib qolishi mumkin. Foydalanuvchi ro'yxatni o'zi surmaguncha o'lcham
+    // o'zgarganda faol tabni qayta ko'rsatamiz.
+    if (typeof ResizeObserver !== "function") return undefined;
+    const scope = list.parentElement ?? list;
+    let userScrolled = false;
+    const markUserScroll = () => {
+      userScrolled = true;
+    };
+    // Brauzer `observe()` dan keyin bir marta o'zi chaqiradi. Tab almashganda bu chaqiriq
+    // yuqoridagi silliq aylantirishni uzmasin — uni o'tkazib yuboramiz.
+    let initial = smooth;
+    const observer = new ResizeObserver(() => {
+      if (initial) {
+        initial = false;
+        return;
+      }
+      if (!userScrolled) revealActiveTab(list, false);
+    });
+    observer.observe(list);
+    for (const child of Array.from(list.children)) observer.observe(child);
+    for (const type of USER_SCROLL_EVENTS) scope.addEventListener(type, markUserScroll, { passive: true });
+    return () => {
+      observer.disconnect();
+      for (const type of USER_SCROLL_EVENTS) scope.removeEventListener(type, markUserScroll);
+    };
+  }, [listRef, activeKey, itemsKey]);
 };
 
 /* ─── Ichki qismlar ───────────────────────────────────────────────────────── */
@@ -254,10 +291,12 @@ const TabContent = ({
   item,
   active,
   language,
+  background = "surface",
 }: {
   item: TabItem;
   active: boolean;
   language: string | undefined;
+  background?: TabsBackground;
 }) => {
   const Icon = item.icon;
   return (
@@ -267,7 +306,7 @@ const TabContent = ({
       {/* Bo'shliq — ekran o'quvchi «Yangi 32» deb o'qisin («Yangi32» emas); flex ichida ko'rinmaydi. */}
       {item.count !== undefined ? " " : null}
       {item.count !== undefined ? (
-        <span className={cx(COUNT, active ? COUNT_ACTIVE : COUNT_IDLE)}>
+        <span className={cx(COUNT, active ? COUNT_ACTIVE : background === "bg" ? COUNT_IDLE_ON_BG : COUNT_IDLE)}>
           {formatNumberLocalized(item.count, { language })}
         </span>
       ) : null}
@@ -345,7 +384,7 @@ const TabStrip = ({
 }: StripProps) => {
   const { t } = useTranslation("ui");
   const edges = useOverflowEdges(listRef, itemsKey);
-  useRevealActive(listRef, activeKey);
+  useRevealActive(listRef, activeKey, itemsKey);
   // TS: `div` ham, `nav` ham HTMLElement — `ref` va atributlar bir xil.
   const Tag = Outer as "nav";
 
@@ -465,7 +504,7 @@ const TabList = <T extends string>({
               item.disabled ? TAB_DISABLED : active ? TAB_ACTIVE : TAB_IDLE,
             )}
           >
-            <TabContent item={item} active={active} language={language} />
+            <TabContent item={item} active={active} language={language} background={background} />
           </button>
         );
       })}
@@ -508,7 +547,7 @@ const TabNav = <T extends string>({
           // Havolani o'chirib bo'lmaydi — o'chirilgan band oddiy matn.
           return (
             <span key={item.value} id={id} aria-disabled="true" title={item.title} className={cx(TAB, sizing, TAB_DISABLED)}>
-              <TabContent item={item} active={false} language={language} />
+              <TabContent item={item} active={false} language={language} background={background} />
             </span>
           );
         }
@@ -527,7 +566,7 @@ const TabNav = <T extends string>({
               onClick={onClick}
               className={cx(TAB, sizing, active ? TAB_ACTIVE : TAB_IDLE)}
             >
-              <TabContent item={item} active={active} language={language} />
+              <TabContent item={item} active={active} language={language} background={background} />
             </Link>
           );
         }
@@ -541,7 +580,7 @@ const TabNav = <T extends string>({
             onClick={onClick}
             className={({ isActive }) => cx(TAB, sizing, isActive ? TAB_ACTIVE : TAB_IDLE)}
           >
-            {({ isActive }) => <TabContent item={item} active={isActive} language={language} />}
+            {({ isActive }) => <TabContent item={item} active={isActive} language={language} background={background} />}
           </NavLink>
         );
       })}
