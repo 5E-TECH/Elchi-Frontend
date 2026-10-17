@@ -25,6 +25,9 @@ export const API_ENDPOINTS = {
     BASE: "users",
     BY_ID: (id: string | number) => `users/${id}`,
     STATUS: (id: string | number) => `users/${id}/status`,
+    // O'z Telegram'ini botga ulash (har qanday xodim; mijoz/investor — 403).
+    MY_TELEGRAM_LINK_CODE: "users/me/telegram/link-code", // POST → { token, purpose, expires_at, deep_link, command } (bir martalik, 10 daqiqa)
+    MY_TELEGRAM: "users/me/telegram", // DELETE → { unlinked }
   },
   ADMINS: {
     BASE: "admins", // GET list / POST create
