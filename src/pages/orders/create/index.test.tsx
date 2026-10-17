@@ -378,7 +378,7 @@ describe("OrderCreate — 1-qadam: market tanlash (admin)", () => {
     expect(screen.getByRole("navigation", { name: "Qadamlar" }).parentElement).toHaveFocus();
   });
 
-  it("1-qadamga qaytib BOSHQA market tanlansa eski market katalog mahsulotlari olib tashlanadi, katalogsiz mahsulot qoladi", async () => {
+  it("1-qadamga qaytib BOSHQA market tanlansa — tasdiq oynasi; tasdiqlansa eski market katalog mahsulotlari olib tashlanadi, katalogsiz mahsulot qoladi", async () => {
     mocks.get.mockImplementation(getWithMarkets);
     const user = userEvent.setup();
     renderWithProviders(<OrderCreate />, { preloadedState: adminState });
@@ -399,10 +399,62 @@ describe("OrderCreate — 1-qadam: market tanlash (admin)", () => {
     await user.click(screen.getByRole("button", { name: "Oldingi" }));
     await chooseMarket(user, "Nur Elektronika");
     await user.click(screen.getByRole("button", { name: "Keyingi" }));
-    const selected = screen.getByRole("list", { name: "Tanlangan mahsulotlar" });
+
+    // Jimgina o'chmaydi: avval tasdiq (ega qarori 2026-10-17).
+    const dialog = await screen.findByRole("alertdialog", { name: "Marketni almashtirasizmi?" });
+    expect(dialog).toHaveTextContent(
+      "«Nur Elektronika» tanlansa, «Baraka Shop» katalogidan qo'shilgan mahsulotlar (1 ta) buyurtmadan olib tashlanadi. Katalogda yo'q mahsulotlar qoladi.",
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Marketni almashtirish" }));
+
+    const selected = await screen.findByRole("list", { name: "Tanlangan mahsulotlar" });
     expect(within(selected).getAllByRole("listitem")).toHaveLength(1);
     expect(within(selected).getByText("Bant")).toBeInTheDocument();
     expect(within(selected).queryByText("Telefon ushlagich")).not.toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Qadamlar" })).toHaveTextContent("Nur Elektronika");
+  });
+
+  it("market almashtirish tasdig'i bekor qilinsa — market eskisiga qaytadi, mahsulotlar o'chmaydi", async () => {
+    mocks.get.mockImplementation(getWithMarkets);
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: adminState });
+    await chooseMarket(user);
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+
+    const catalog = await screen.findByRole("list", { name: "Baraka Shop katalogi" });
+    await user.click(await within(catalog).findByRole("button", { name: /Telefon ushlagich/ }));
+
+    await user.click(screen.getByRole("button", { name: "Oldingi" }));
+    await chooseMarket(user, "Nur Elektronika");
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Marketni almashtirasizmi?" });
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+
+    // 1-qadamda qolinadi, tanlov eski marketga qaytdi.
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+    expect(screen.getByRole("region", { name: "Market tanlang" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Market.*Baraka Shop/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    const selected = await screen.findByRole("list", { name: "Tanlangan mahsulotlar" });
+    expect(within(selected).getByText("Telefon ushlagich")).toBeInTheDocument();
+  });
+
+  it("katalog mahsuloti yo'q bo'lsa market almashtirishda tasdiq so'ralmaydi", async () => {
+    mocks.get.mockImplementation(getWithMarkets);
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: adminState });
+    await chooseMarket(user);
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+    await user.type(await screen.findByLabelText("Katalogda yo'q mahsulot"), "Bant{Enter}");
+
+    await user.click(screen.getByRole("button", { name: "Oldingi" }));
+    await chooseMarket(user, "Nur Elektronika");
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(within(screen.getByRole("list", { name: "Tanlangan mahsulotlar" })).getByText("Bant")).toBeInTheDocument();
   });
 
   it("2-qadamdan qaytib kelganda tuman SAQLANADI (qayta mount tumanni tozalamaydi), viloyat almashsa tozalanadi", async () => {
