@@ -1,0 +1,88 @@
+{
+  "title": "QR scanner",
+  "context": "Take orders for delivery",
+  "surfaceLabel": "Camera scanner",
+  "torch": "Flashlight",
+  "chip": {
+    "live": "Scanning active",
+    "starting": "Starting camera",
+    "found": "QR found",
+    "torchOn": "Flashlight on",
+    "cameraOff": "Camera off",
+    "signingIn": "Signing in",
+    "sending": "Sending"
+  },
+  "hint": {
+    "aim": "Bring the QR code into the frame",
+    "starting": "One moment — opening the camera",
+    "signingIn": "One moment — signing in with Telegram",
+    "sending": "Sending the summary to the bot"
+  },
+  "meter": {
+    "label": "accepted"
+  },
+  "list": {
+    "open": "List",
+    "title": "Scanned",
+    "summary": "Accepted: {{accepted}} · errors: {{failed}}",
+    "emptyTitle": "No scans yet",
+    "emptyText": "Accepted orders will appear here.",
+    "continue": "Continue"
+  },
+  "last": {
+    "emptyTitle": "No scans yet",
+    "emptyText": "Accepted orders will appear here",
+    "pendingTitle": "Accepting",
+    "pendingText": "One moment"
+  },
+  "entry": {
+    "title": "{{number}} · {{name}}",
+    "orderNoun": "Order",
+    "noNumber": "Order",
+    "assigned": "Assigned to you",
+    "already": "Already yours",
+    "failed": "Not accepted"
+  },
+  "toast": {
+    "assignedTitle": "{{number}} accepted",
+    "alreadyTitle": "Already yours",
+    "repeatTitle": "Already accepted",
+    "failedText": "Scanning continues — scan the next parcel",
+    "invalidTitle": "This QR code is not valid for the scanner",
+    "invalidText": "Scan the QR code on the Elchi label"
+  },
+  "error": {
+    "offline": "No internet connection — scan again",
+    "timeout": "The server did not respond — scan again",
+    "unknown": "The scan was not sent — try again"
+  },
+  "done": {
+    "action": "Done",
+    "sending": "Sending…",
+    "errorTitle": "Summary not sent",
+    "errorText": "{{message}} The orders are assigned to you anyway.",
+    "backToScan": "Back to scanning"
+  },
+  "fallback": {
+    "telegramScanner": "Telegram scanner",
+    "popupText": "Bring the order QR code into the frame",
+    "cameraTitle": "Camera did not open",
+    "cameraTextPopup": "Telegram did not allow camera access or the camera is busy. Continue with the Telegram scanner.",
+    "cameraText": "Allow camera access in Telegram settings and try again.",
+    "startError": "Could not start the camera"
+  },
+  "state": {
+    "outsideTitle": "This page opens only inside Telegram",
+    "outsideText": "Open the scanner with the «Scanner» button in the Elchi bot.",
+    "authErrorTitle": "Could not sign in",
+    "authErrorText": "Signing in with Telegram failed. Reopen the Mini App.",
+    "notCourierTitle": "The scanner is for couriers only",
+    "notCourierText": "This Telegram account is not linked to a courier. Open it from the Telegram linked to a courier account.",
+    "expiredTitle": "Session expired",
+    "expiredText": "Reopen the Mini App. Scanned orders stay assigned to you."
+  },
+  "action": {
+    "retry": "Try again",
+    "close": "Close"
+  }
+}

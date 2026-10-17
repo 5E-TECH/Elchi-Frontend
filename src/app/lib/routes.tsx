@@ -48,6 +48,8 @@ const ActivityLogsPage = lazy(() => import("../../pages/activity-logs"));
 
 // ✅ Login page:
 const Login = lazy(() => import("../../features/auth"));
+// Telegram skan Mini App (MWYaqprw) — kirishsiz: Telegram `initData` orqali o'z qisqa tokeni bilan ishlaydi.
+const TgScanPage = lazy(() => import("../../pages/tg-scan"));
 
 const DashboardLayout = lazy(
   () => import("../../widgets/layout/dashboardLayout"),
@@ -334,6 +336,7 @@ const AppRouter = () => {
 
   const routes = useRoutes([
     { path: "/login", element: <Login /> },
+    { path: "/tg/scan", element: <TgScanPage /> },
     {
       path: "/",
       element: <Auth />,
