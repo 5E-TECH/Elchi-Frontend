@@ -2,12 +2,19 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_RETURN_SORT,
   buildReturnBatchesParams,
+  dateFilterToRange,
   normalizeReturnBatch,
+  rangeToDateFilter,
+  readReturnFilters,
   readUserBranchName,
   sortReturnBatches,
   toReturnBatchesResponse,
+  writeReturnFilters,
   type ReturnBatch,
 } from "./returnBatches";
+
+/** 2026-10-17 — shanba: hafta dushanba 12-oktabrdan, oy 1-oktabrdan. */
+const TODAY = "2026-10-17";
 
 describe("returnBatches — so'rov paramlari", () => {
   it("holat API qiymatiga o'tadi (PENDING/SENT/RECEIVED/CANCELLED), filial — joriy foydalanuvchiniki", () => {
@@ -23,12 +30,89 @@ describe("returnBatches — so'rov paramlari", () => {
     expect(buildReturnBatchesParams({ page: 1, limit: 10, status: "cancelled" }).status).toBe("CANCELLED");
   });
 
-  it("holat va filial bo'lmasa — paramda yo'q (sana paramlari yuborilmaydi, D14)", () => {
+  it("holat, filial va sana bo'lmasa — paramda yo'q", () => {
     expect(buildReturnBatchesParams({ page: 1, limit: 10, branchId: "", status: "" })).toEqual({
       page: 1,
       limit: 10,
       direction: "RETURN",
     });
+    expect(buildReturnBatchesParams({ page: 1, limit: 10, dateFilter: null })).toEqual({
+      page: 1,
+      limit: 10,
+      direction: "RETURN",
+    });
+  });
+
+  it("sana — `period` yoki `date` (F2), hech qachon `from`/`to`", () => {
+    const withPeriod = buildReturnBatchesParams({ page: 1, limit: 10, status: "received", dateFilter: { period: "week" } });
+    expect(withPeriod).toEqual({ page: 1, limit: 10, direction: "RETURN", status: "RECEIVED", period: "week" });
+    const withDate = buildReturnBatchesParams({ page: 2, limit: 20, dateFilter: { date: "2026-10-15" } });
+    expect(withDate).toEqual({ page: 2, limit: 20, direction: "RETURN", date: "2026-10-15" });
+    for (const params of [withPeriod, withDate]) {
+      expect(params).not.toHaveProperty("from");
+      expect(params).not.toHaveProperty("to");
+    }
+  });
+});
+
+describe("returnBatches — URL filtrlari (holat, sana)", () => {
+  const read = (search: string) => readReturnFilters(new URLSearchParams(search));
+
+  it("o'qish: holat, davr, kun; ikkalasi bo'lsa — `date` (backend qoidasi)", () => {
+    expect(read("")).toEqual({ status: "", dateFilter: null });
+    expect(read("?status=received&period=week")).toEqual({ status: "received", dateFilter: { period: "week" } });
+    expect(read("?date=2026-10-15")).toEqual({ status: "", dateFilter: { date: "2026-10-15" } });
+    expect(read("?period=month&date=2026-10-15")).toEqual({ status: "", dateFilter: { date: "2026-10-15" } });
+  });
+
+  it("noto'g'ri qiymatlar e'tiborsiz: holat, davr, sana", () => {
+    expect(read("?status=SENT&period=year")).toEqual({ status: "", dateFilter: null });
+    expect(read("?date=2026-13-40")).toEqual({ status: "", dateFilter: null });
+    expect(read("?date=2026-02-30")).toEqual({ status: "", dateFilter: null });
+    expect(read("?date=15.10.2026&period=today")).toEqual({ status: "", dateFilter: { period: "today" } });
+  });
+
+  it("yozish: sahifa 1 ga (page o'chadi), limit qoladi; davr ↔ kun bir-birini o'chiradi", () => {
+    const prev = new URLSearchParams("?page=3&limit=20&period=today&status=new");
+    const toDate = writeReturnFilters(prev, { dateFilter: { date: "2026-10-15" } });
+    expect(toDate.toString()).toBe("limit=20&status=new&date=2026-10-15");
+
+    const toPeriod = writeReturnFilters(toDate, { dateFilter: { period: "month" } });
+    expect(toPeriod.get("period")).toBe("month");
+    expect(toPeriod.has("date")).toBe(false);
+
+    const cleared = writeReturnFilters(new URLSearchParams("?page=2&limit=50&status=new&date=2026-10-15"), {
+      status: "",
+      dateFilter: null,
+    });
+    expect(cleared.toString()).toBe("limit=50");
+  });
+
+  it("faqat holat yozilsa — sana tegilmaydi", () => {
+    const next = writeReturnFilters(new URLSearchParams("?period=week&page=4"), { status: "cancelled" });
+    expect(next.toString()).toBe("period=week&status=cancelled");
+  });
+});
+
+describe("returnBatches — sana filtri ↔ maydon qiymati", () => {
+  it("maydon → filtr: tez tanlovlar `period`, bitta kun `date`, bo'sh — null", () => {
+    expect(rangeToDateFilter({ from: TODAY, to: TODAY }, TODAY)).toEqual({ period: "today" });
+    expect(rangeToDateFilter({ from: "2026-10-12", to: TODAY }, TODAY)).toEqual({ period: "week" });
+    expect(rangeToDateFilter({ from: "2026-10-01", to: TODAY }, TODAY)).toEqual({ period: "month" });
+    expect(rangeToDateFilter({ from: "2026-10-15", to: "2026-10-15" }, TODAY)).toEqual({ date: "2026-10-15" });
+    expect(rangeToDateFilter({ from: "", to: "" }, TODAY)).toBeNull();
+  });
+
+  it("dushanba kuni «Bu hafta» = «Bugun» oralig'i — `today` (backend natijasi bir xil)", () => {
+    expect(rangeToDateFilter({ from: "2026-10-12", to: "2026-10-12" }, "2026-10-12")).toEqual({ period: "today" });
+  });
+
+  it("filtr → maydon: davr — tez tanlov oralig'i, kun — { d, d }, null — bo'sh", () => {
+    expect(dateFilterToRange({ period: "today" }, TODAY)).toEqual({ from: TODAY, to: TODAY });
+    expect(dateFilterToRange({ period: "week" }, TODAY)).toEqual({ from: "2026-10-12", to: TODAY });
+    expect(dateFilterToRange({ period: "month" }, TODAY)).toEqual({ from: "2026-10-01", to: TODAY });
+    expect(dateFilterToRange({ date: "2026-10-15" }, TODAY)).toEqual({ from: "2026-10-15", to: "2026-10-15" });
+    expect(dateFilterToRange(null, TODAY)).toEqual({ from: "", to: "" });
   });
 });
 

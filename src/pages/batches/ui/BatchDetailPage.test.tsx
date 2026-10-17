@@ -230,7 +230,7 @@ describe("BatchDetailPage — /batches/:id", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Paket B-172" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Paketlar" })).toHaveAttribute("href", "/batches?tab=old&page=2");
-    expect(within(screen.getByRole("banner")).getByText("Qabul qilindi")).toBeInTheDocument();
+    expect(within(screen.getByRole("banner")).getByText("Qabul qilingan")).toHaveClass("bg-success-soft");
     // Superadmin: tafsilotda faqat `destination_branch_id` — nom `GET branches/:id` dan.
     const info = screen.getByRole("region", { name: "Paket ma'lumotlari" });
     expect(await within(info).findByText("Toshkent HQ")).toBeInTheDocument();

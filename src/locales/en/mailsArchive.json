@@ -28,6 +28,8 @@
     "viewMails": "Mails",
     "viewBatches": "Branch batches",
     "export": "Export to Excel",
+    "exportLoading": "Preparing Excel",
+    "exportError": "Couldn't prepare the Excel file",
     "filters": {
       "label": "Old mails filter",
       "region": "Region",

@@ -8,6 +8,7 @@
   "filtersLabel": "Filtrlar",
   "filters": {
     "status": "Holat",
+    "date": "Sana",
     "all": "Barchasi"
   },
   "columns": {
@@ -28,6 +29,8 @@
   "emptyDescription": "Filial qaytarish paketini yaratganda u shu yerda paydo bo'ladi.",
   "filteredEmpty": "Bu holatdagi qaytarish paketi yo'q",
   "filteredEmptyDescription": "Boshqa holatni tanlang yoki filtrni tozalang.",
+  "filteredEmptyPeriod": "Bu davrda qaytarish paketi yo'q",
+  "filteredEmptyPeriodDescription": "Boshqa sanani tanlang yoki filtrlarni tozalang.",
   "clearFilter": "Filtrni tozalash",
   "messages": {
     "loadFailed": "Qaytarish paketlari ro'yxatini yuklab bo'lmadi"

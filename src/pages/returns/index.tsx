@@ -4,12 +4,13 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowRight, ChevronRight, CircleCheck, Inbox, SearchX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import type { RootState } from "../../app/config/store";
 import { BATCH_STATUS_TONE, type BatchStatus } from "../../entities/batch";
 import { API_ENDPOINTS } from "../../shared/api";
 import { api } from "../../shared/api/api";
 import { getCurrentBranchId } from "../../shared/lib/currentBranch";
+import type { ISODateRange } from "../../shared/lib/dateRange";
 import { formatDateTimeLocalized } from "../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../shared/lib/formatMoney";
 import { usePagination } from "../../shared/lib/usePagination";
@@ -18,6 +19,7 @@ import {
   Button,
   Card,
   DataTable,
+  DateRange,
   EmptyState,
   ErrorState,
   Field,
@@ -36,9 +38,13 @@ import type { BatchDetailLocationState } from "../batches/model/batchView";
 import {
   DEFAULT_RETURN_SORT,
   buildReturnBatchesParams,
+  dateFilterToRange,
+  rangeToDateFilter,
+  readReturnFilters,
   readUserBranchName,
   sortReturnBatches,
   toReturnBatchesResponse,
+  writeReturnFilters,
   type ReturnBatch,
   type ReturnBatchSort,
   type ReturnBatchSortKey,
@@ -49,6 +55,8 @@ const RETURNS_KEY = "return-batches";
 const PAGE_SIZES = [10, 20, 50, 100] as const;
 const BATCH_STATUSES: readonly BatchStatus[] = ["new", "on_the_way", "received", "cancelled"];
 const SORT_KEYS: readonly ReturnBatchSortKey[] = ["batch", "from", "to", "status", "orders", "amount"];
+/** Sana filtri tez tanlovi: backend `period` qiymatlari + «Barchasi» (filtr yo'q); taqvimda — bitta kun (`date`). */
+const DATE_PRESETS = ["today", "week", "month", "all"] as const;
 
 /** Havola ko'rinishidagi ikonka-tugma (`.el-iconbtn-sm`, ghost) — telefonda 44 px. */
 const ICON_LINK =
@@ -58,18 +66,21 @@ const ICON_LINK =
 
 const known = (value: string) => (value.trim() && value !== "—" ? value : null);
 
-/** Tafsilotdan «← Qaytarishlar» shu sahifaga qaytaradi (ega qarori D20). */
-const LINK_STATE: BatchDetailLocationState = { from: "returns" };
-
 /**
  * QAYTARISHLAR — `/returns` (superadmin, admin, menejer HQ · PICKUP · HYBRID), dizayn v2.
  *
- * Sarlavha «Qaytarishlar» + izoh (menejerda — o'z filiali) va jami son; karta: «Holat» filtri, saralanadigan jadval
- * (joriy sahifa ichida; telefonda kartalar), sahifalash. Qator → `/batches/:id` (holat `{ from: "returns" }`).
+ * Sarlavha «Qaytarishlar» + izoh (menejerda — o'z filiali) va jami son; karta: «Holat» va «Sana» filtrlari (URL
+ * bilan sinxron: `?status&period|date`, o'zgarsa sahifa 1 ga qaytadi; telefonda ham qatorda — 2 ta filtr, maket),
+ * saralanadigan jadval (joriy sahifa ichida; telefonda kartalar), sahifalash. Qator → `/batches/:id` (holat
+ * `{ from: "returns", fromSearch }` — «← Qaytarishlar» filtrlar bilan qaytaradi, ega qarori D20).
  *
- * So'rov: `GET transfer-batches?direction=RETURN&source_branch_id&status&page&limit` (filial — joriy foydalanuvchi
- * filiali, bo'lmasa hammasi; holat — API qiymati `PENDING|SENT|RECEIVED|CANCELLED`). Sana filtri chizilmaydi —
- * backend `from/to` ni qabul qilmaydi (ega qarori D14).
+ * So'rov: `GET transfer-batches?direction=RETURN&source_branch_id&status&period|date&page&limit` (filial — joriy
+ * foydalanuvchi filiali, bo'lmasa hammasi; holat — API qiymati `PENDING|SENT|RECEIVED|CANCELLED`). Sana — qisqartirilgan
+ * (ega qarori 2026-10-17 F2): oraliq (from/to) yo'q — faqat Bugun / Bu hafta / Bu oy (`period`) yoki bitta kun (`date`).
+ *
+ * Ma'lum cheklov (backend, egaga savol Q2): holat bo'sh yoki `PENDING` bo'lsa backend PENDING paketlarni sahifa ichida
+ * yig'adi va `meta.total` ni shu sahifadagi qatorlar soni qilib qaytaradi — «jami N ta paket» va sahifalash shu
+ * holda to'liq emas. Frontend buni tuzata olmaydi.
  */
 const ReturnsPage = () => {
   const { t, i18n } = useTranslation(["returns", "newOrders"]);
@@ -79,13 +90,21 @@ const ReturnsPage = () => {
   const branchId = useSelector((state: RootState) => getCurrentBranchId(state));
   const userBranchName = useSelector((state: RootState) => readUserBranchName(state.user.user));
   const isManager = role === "manager";
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { page, limit, setPage, setLimit } = usePagination({ key: "returns", defaultLimit: 10 });
-  const [status, setStatus] = useState<BatchStatus | "">("");
   const [sort, setSort] = useState<ReturnBatchSort | null>(DEFAULT_RETURN_SORT);
+  const { status, dateFilter } = useMemo(() => readReturnFilters(searchParams), [searchParams]);
+  const activeFilters = (status ? 1 : 0) + (dateFilter ? 1 : 0);
 
   const params = useMemo(
-    () => buildReturnBatchesParams({ page, limit, branchId, status }),
-    [branchId, limit, page, status],
+    () => buildReturnBatchesParams({ page, limit, branchId, status, dateFilter }),
+    [branchId, dateFilter, limit, page, status],
+  );
+  // Tafsilotdan «← Qaytarishlar» shu sahifaga — filtrlar va sahifa bilan (ega qarori D20).
+  const linkState = useMemo<BatchDetailLocationState>(
+    () => ({ from: "returns", fromSearch: location.search }),
+    [location.search],
   );
 
   const returnsQuery = useQuery({
@@ -101,12 +120,22 @@ const ReturnsPage = () => {
   const rows = useMemo(() => (data ? sortReturnBatches(data.data, sort) : undefined), [data, sort]);
 
   const handleStatusChange = useCallback(
-    (next: string | null) => {
-      setStatus((next ?? "") as BatchStatus | "");
-      setPage(1);
-    },
-    [setPage],
+    (next: string | null) =>
+      setSearchParams((prev) => writeReturnFilters(prev, { status: (next ?? "") as BatchStatus | "" }), {
+        replace: true,
+      }),
+    [setSearchParams],
   );
+  const handleDateChange = useCallback(
+    (range: ISODateRange) =>
+      setSearchParams((prev) => writeReturnFilters(prev, { dateFilter: rangeToDateFilter(range) }), { replace: true }),
+    [setSearchParams],
+  );
+  const clearFilters = useCallback(
+    () => setSearchParams((prev) => writeReturnFilters(prev, { status: "", dateFilter: null }), { replace: true }),
+    [setSearchParams],
+  );
+  const dateValue = useMemo(() => dateFilterToRange(dateFilter), [dateFilter]);
 
   // ─── Ko'rinish ───────────────────────────────────────────────────────────────
   const money = useCallback((value: number) => formatMoneyLocalized(value, { language }), [language]);
@@ -159,7 +188,7 @@ const ReturnsPage = () => {
           <>
             <Link
               to={batchHref(batch)}
-              state={LINK_STATE}
+              state={linkState}
               className="whitespace-nowrap font-semibold text-text hover:text-action-fg hover:underline"
             >
               {formatBatchDisplayId(batch.id)}
@@ -218,7 +247,7 @@ const ReturnsPage = () => {
         cell: (batch) => {
           const label = t("open", { id: formatBatchDisplayId(batch.id) });
           return (
-            <Link to={batchHref(batch)} state={LINK_STATE} aria-label={label} title={label} className={ICON_LINK}>
+            <Link to={batchHref(batch)} state={linkState} aria-label={label} title={label} className={ICON_LINK}>
               <ChevronRight aria-hidden="true" size={16} strokeWidth={2} />
             </Link>
           );
@@ -226,7 +255,7 @@ const ReturnsPage = () => {
       },
     );
     return list;
-  }, [batchHref, dateTime, isManager, money, qty, routeTo, statusBadge, t]);
+  }, [batchHref, dateTime, isManager, linkState, money, qty, routeTo, statusBadge, t]);
 
   // Telefon kartasi: «B-171 · summa», «Urgut filiali → Toshkent HQ», holat va «4 ta · Bugun, 15:20».
   const renderCard = useCallback(
@@ -236,7 +265,7 @@ const ReturnsPage = () => {
       return (
         <Link
           to={batchHref(batch)}
-          state={LINK_STATE}
+          state={linkState}
           aria-label={t("open", { id: formatBatchDisplayId(batch.id) })}
           className="flex min-h-14 items-center gap-3 px-4 py-3 text-sm text-text"
         >
@@ -265,7 +294,7 @@ const ReturnsPage = () => {
         </Link>
       );
     },
-    [batchHref, dateTime, money, qty, statusBadge, t],
+    [batchHref, dateTime, linkState, money, qty, statusBadge, t],
   );
 
   const total = data?.meta.total;
@@ -323,7 +352,12 @@ const ReturnsPage = () => {
       >
         <div className="px-5 py-4 max-md:px-4">
           <div role="group" aria-label={t("filtersLabel")} className="flex max-w-[540px] flex-wrap items-center gap-3">
-            <Field label={t("filters.status")} hideLabel labelAs="span" className="min-w-0 flex-[0_1_264px] max-md:flex-1">
+            <Field
+              label={t("filters.status")}
+              hideLabel
+              labelAs="span"
+              className="min-w-0 flex-[1_1_200px] max-md:basis-full"
+            >
               <Select
                 options={statusOptions}
                 value={status || null}
@@ -331,6 +365,22 @@ const ReturnsPage = () => {
                 placeholder={t("filters.all")}
                 inlineLabel={t("filters.status")}
                 icon={CircleCheck}
+              />
+            </Field>
+            <Field
+              label={t("filters.date")}
+              hideLabel
+              labelAs="span"
+              className="min-w-0 flex-[1_1_200px] max-md:basis-full"
+            >
+              <DateRange
+                selection="day"
+                presets={DATE_PRESETS}
+                months={1}
+                value={dateValue}
+                onChange={handleDateChange}
+                placeholder={t("filters.all")}
+                inlineLabel={t("filters.date")}
               />
             </Field>
           </div>
@@ -347,14 +397,14 @@ const ReturnsPage = () => {
             />
           }
           empty={
-            status ? (
+            activeFilters ? (
               <EmptyState
                 icon={SearchX}
-                title={t("filteredEmpty")}
-                description={t("filteredEmptyDescription")}
+                title={t(dateFilter ? "filteredEmptyPeriod" : "filteredEmpty")}
+                description={t(dateFilter ? "filteredEmptyPeriodDescription" : "filteredEmptyDescription")}
                 action={
-                  <Button variant="secondary" onClick={() => handleStatusChange(null)}>
-                    {t("clearFilter")}
+                  <Button variant="secondary" onClick={clearFilters}>
+                    {activeFilters > 1 ? t("filters.clearAll", { ns: "ui" }) : t("clearFilter")}
                   </Button>
                 }
               />
@@ -376,7 +426,7 @@ const ReturnsPage = () => {
               cardsLabel={t("cardsLabel")}
               sort={sort}
               onSortChange={handleSortChange}
-              onRowClick={(batch) => navigate(batchHref(batch), { state: LINK_STATE })}
+              onRowClick={(batch) => navigate(batchHref(batch), { state: linkState })}
               renderCard={renderCard}
               busy={isRefetching}
             />

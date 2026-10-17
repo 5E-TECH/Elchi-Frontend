@@ -1,12 +1,19 @@
 // dizayn-v2: superadmin-mails-old, superadmin-mails-old-batches, admin-mails-old, admin-mails-old-all-batches, manager-mails-old, registrator-mails-old, courier-mails-old
 import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { CircleCheck, Download, Inbox, ListFilter, MapPin, Package, Printer, User, X } from "lucide-react";
 import { useSelector } from "react-redux";
 import { useLocation, useSearchParams } from "react-router-dom";
 import { Trans, useTranslation } from "react-i18next";
 import type { RootState } from "../../../app/config/store";
 import { useMails, type PostOrder } from "../../../entities/mails";
-import { BATCH_STATUS_TONE, useBatches, type Batch, type BatchStatus } from "../../../entities/batch";
+import {
+  BATCH_KEY,
+  BATCH_STATUS_TONE,
+  fetchAllTransferBatches,
+  type Batch,
+  type BatchStatus,
+} from "../../../entities/batch";
 import { useUser } from "../../../entities/user/api/userApi";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
@@ -35,17 +42,22 @@ import { formatBatchDisplayId } from "../../batches/lib/batchFormat";
 import { printOrders } from "../detail/lib/printMode";
 import type { MailsTabLayout } from "../model/mailsLayout";
 import {
+  buildOldMailsQuery,
   clearOldMailsFilters,
   countOldMailsFilters,
   effectiveOldMailsStatus,
-  filterOldMails,
+  fetchAllOldMailPages,
+  filterOldBatches,
   getOldMailDate,
   getOldMailStatusBadge,
   OLD_BATCH_STATUS_FILTERS,
   OLD_MAIL_STATUS_FILTERS,
+  OLD_MAIL_STATUS_FILTERS_COURIER,
   OLD_MAILS_BATCH_MODE_ALL,
   OLD_MAILS_BATCH_MODE_KEY,
+  OLD_MAILS_PAGE_MAX,
   readOldMailsFilters,
+  readOldMailsPage,
   readPostOrders,
   summarizeOldMails,
   toOldMailSourceFromBatch,
@@ -66,17 +78,21 @@ import { OldMailsFiltersSheet } from "./OldMailsFiltersSheet";
  * `admin-mails-old-all-batches` / `superadmin-mails-old-batches`.
  *
  *  - Xodim (`layout="card"`, qobiq kartasi ichida): asboblar qatori — «Pochtalar | Filial paketlari» segmenti
- *    (faqat admin va superadmin, `?batch_mode=all`, D11), xulosa «N ta pochta · N ta buyurtma · jami X» (D6),
- *    «Excelga yuklash» (D5); filtrlar qatori — yorliqli `Select` lar (D4) va sana oralig'i; jadval; sahifalash.
+ *    (faqat admin va superadmin, `?batch_mode=all`, D11), xulosa (D6), «Excelga yuklash» (D5); filtrlar qatori —
+ *    yorliqli `Select` lar (D4) va sana oralig'i; jadval; sahifalash.
  *    Telefonda: «Filtrlar N» → pastki varaqa (`OldMailsFiltersSheet`), faol filtr chiplari, Excel — ikonka.
- *  - Kuryer (`layout="page"`): o'z kartasi; filtrlar — sana, viloyat, holat (kuryer filtri yo'q); jadval
- *    saralanadi; telefonda sana va «Filtrlar» karta ustida, «Jami N ta pochta» + «Excelga yuklash».
+ *  - Kuryer (`layout="page"`): o'z kartasi; filtrlar — sana, viloyat, holat (kuryer filtri yo'q, holatda
+ *    «Jo'natilgan» yo'q); jadval saralanadi (faqat joriy sahifa — endpointda saralash parametri yo'q); telefonda
+ *    sana va «Filtrlar» karta ustida, «Jami N ta pochta» + «Excelga yuklash».
  *
- * Ma'lumot to'liq keladi (`limit: 10000`, backend esa ≤ 100 beradi — spec §7) — filtr, xulosa, sahifalash va
- * Excel mijoz tomonida, filtrlangan ro'yxat bo'yicha.
+ * Pochtalar (F4, backend YfrqN70i): filtr va sahifalash SERVERDA — `GET /post` / `post/courier/old-posts` URL
+ * filtrlari, `page`, `limit` (≤ 100) va `has_orders=true` bilan (`buildOldMailsQuery`); sahifalash javobdagi
+ * `total` bo'yicha; xulosa — faqat «N ta pochta» (API buyurtma/summa yig'indisini bermaydi); Excel — barcha
+ * filtrlangan qatorlar, 100 talab sahifalab (`fetchAllOldMailPages`).
+ * «Filial paketlari»: `GET transfer-batches` da viloyat va sana oralig'i yo'q — BARCHA sahifalar yuklanadi
+ * (`fetchAllTransferBatches`), filtr, xulosa, sahifalash va Excel mijoz tomonida.
  */
 
-const OLD_MAILS_COLLECTION_LIMIT = 10000;
 const PAGE_SIZES = [8, 16, 32, 64] as const;
 
 type OldMailRow = MailsTableRow & {
@@ -142,37 +158,37 @@ const OldMails = ({ layout }: OldMailsProps) => {
   const selectedBatchMode = searchParams.get(OLD_MAILS_BATCH_MODE_KEY) ?? "";
   const isAllBatchMode = canUseBatchMode && selectedBatchMode === OLD_MAILS_BATCH_MODE_ALL;
   const withCourier = !isCourier && !isAllBatchMode;
-  const { useGetOldMails } = useMails();
+  const { useGetOldMails, fetchOldMails } = useMails();
   const { useGetRegions, useGetCouriers } = useUser();
   const { page, limit, setPage, setLimit } = usePagination({
     key: "mails",
     defaultLimit: PAGE_SIZES[0],
   });
 
-  // URL — yagona manba. Kuryerda kuryer filtri yo'q (ekranda ham, hisobda ham).
+  // URL — yagona manba. Kuryerda kuryer filtri yo'q (ekranda ham, so'rovda ham), «Jo'natilgan» holati ham yo'q
+  // (`post/courier/old-posts` unga bo'sh sahifa beradi).
   const urlFilters = useMemo(() => readOldMailsFilters(searchParams), [searchParams]);
   const filters = useMemo<OldMailsFilters>(
-    () => (isCourier ? { ...urlFilters, courierId: "" } : urlFilters),
+    () =>
+      isCourier
+        ? { ...urlFilters, courierId: "", status: effectiveOldMailsStatus(urlFilters.status, false, { courier: true }) }
+        : urlFilters,
     [isCourier, urlFilters],
   );
 
-  const mailsQuery = useGetOldMails(
-    isCourier,
-    {
-      page: 1,
-      limit: OLD_MAILS_COLLECTION_LIMIT,
-      region_id: filters.regionId,
-      courier_id: filters.courierId,
-      status: urlFilters.status,
-      startDate: filters.dateFrom,
-      endDate: filters.dateTo,
-    },
-    { enabled: !isAllBatchMode },
+  // Pochtalar: bitta server sahifasi (filtrlar, `page`, `limit` ≤ 100, `has_orders`); sahifa almashganda oldingi
+  // sahifa xiralashib turadi (`keepPreviousData`).
+  const listQuery = useMemo(
+    () => buildOldMailsQuery({ filters, page, limit, isCourier }),
+    [filters, isCourier, limit, page],
   );
-  const batchesQuery = useBatches(
-    isAllBatchMode ? { page: 1, limit: OLD_MAILS_COLLECTION_LIMIT } : undefined,
-    { enabled: isAllBatchMode },
-  );
+  const mailsQuery = useGetOldMails(isCourier, listQuery, { enabled: !isAllBatchMode, keepPreviousData: true });
+  // Paketlar: barcha sahifalar (kalit `BATCH_KEY` ostida — paket amallaridan keyingi yangilanish shuni ham oladi).
+  const batchesQuery = useQuery({
+    queryKey: [BATCH_KEY, "all-pages"],
+    queryFn: () => fetchAllTransferBatches(),
+    enabled: isAllBatchMode,
+  });
   const { data: regionsData, isLoading: regionsLoading } = useGetRegions(true);
   const { data: couriersData, isLoading: couriersLoading } = useGetCouriers(
     { status: "active", limit: 100 },
@@ -181,20 +197,20 @@ const OldMails = ({ layout }: OldMailsProps) => {
 
   /* ─── Ma'lumot ──────────────────────────────────────────────────────────── */
 
-  const mails = useMemo<OldMailSource[]>(
-    () => ((mailsQuery.data?.data?.data ?? []) as unknown as OldMailSource[]),
-    [mailsQuery.data],
-  );
+  const mailsPage = useMemo(() => readOldMailsPage<OldMailSource>(mailsQuery.data), [mailsQuery.data]);
   const batchItems = useMemo<OldMailSource[]>(
     () => (batchesQuery.data?.data ?? []).map((batch: Batch) => toOldMailSourceFromBatch(batch)),
     [batchesQuery.data],
   );
-  const sources = isAllBatchMode ? batchItems : mails;
-  const filtered = useMemo(
-    () => filterOldMails(sources, filters, isAllBatchMode),
-    [filters, isAllBatchMode, sources],
+  const sources = isAllBatchMode ? batchItems : mailsPage.rows;
+  // Mijoz tomonidagi filtr va xulosa — faqat paketlar rejimida (pochtalarni server filtrlaydi).
+  const filteredBatches = useMemo(
+    () => (isAllBatchMode ? filterOldBatches(batchItems, filters) : []),
+    [batchItems, filters, isAllBatchMode],
   );
-  const totals = useMemo(() => summarizeOldMails(filtered), [filtered]);
+  const batchTotals = useMemo(() => summarizeOldMails(filteredBatches), [filteredBatches]);
+  /** Filtrlangan jami: pochtalarda server `total`, paketlarda mijoz hisobi. */
+  const listTotal = isAllBatchMode ? filteredBatches.length : mailsPage.total;
 
   /* ─── Filtr variantlari ─────────────────────────────────────────────────── */
 
@@ -218,8 +234,11 @@ const OldMails = ({ layout }: OldMailsProps) => {
     () =>
       isAllBatchMode
         ? OLD_BATCH_STATUS_FILTERS.map((status) => ({ value: status, label: t(`newOrders:batchStatus.${status}`) }))
-        : OLD_MAIL_STATUS_FILTERS.map((option) => ({ value: option.value, label: t(`mails:${option.labelKey}`) })),
-    [isAllBatchMode, t],
+        : (isCourier ? OLD_MAIL_STATUS_FILTERS_COURIER : OLD_MAIL_STATUS_FILTERS).map((option) => ({
+            value: option.value,
+            label: t(`mails:${option.labelKey}`),
+          })),
+    [isAllBatchMode, isCourier, t],
   );
 
   /* ─── URL yozish ────────────────────────────────────────────────────────── */
@@ -238,16 +257,26 @@ const OldMails = ({ layout }: OldMailsProps) => {
     [setSearchParams],
   );
 
-  /* ─── Sahifalash (mijoz tomonida) ───────────────────────────────────────── */
+  /* ─── Sahifalash (pochtalar — server, paketlar — mijoz tomonida) ───────── */
 
-  const visible = useMemo(() => filtered.slice((page - 1) * limit, page * limit), [filtered, limit, page]);
+  // Pochtalarda server bitta sahifada ≤ 100 beradi — qo'lda yozilgan `?limit=500` da ham sahifalash bir xil.
+  const pageSize = isAllBatchMode ? limit : Math.min(limit, OLD_MAILS_PAGE_MAX);
 
+  const visible = useMemo(
+    () => (isAllBatchMode ? filteredBatches.slice((page - 1) * limit, page * limit) : mailsPage.rows),
+    [filteredBatches, isAllBatchMode, limit, mailsPage.rows, page],
+  );
+
+  // URL'dagi sahifa oxirgisidan katta bo'lsa — oxirgisiga. Faqat haqiqiy (eski sahifa emas) javob bo'yicha.
+  const lastPage = isAllBatchMode ? Math.max(1, Math.ceil(filteredBatches.length / limit)) : mailsPage.totalPages;
+  const settled = isAllBatchMode
+    ? batchesQuery.data != null
+    : mailsQuery.data != null && !mailsQuery.isPlaceholderData;
   useEffect(() => {
-    const totalPages = Math.max(1, Math.ceil(filtered.length / limit));
-    if (page > totalPages) {
-      setPage(totalPages);
+    if (settled && page > lastPage) {
+      setPage(lastPage);
     }
-  }, [filtered.length, limit, page, setPage]);
+  }, [lastPage, page, setPage, settled]);
 
   /* ─── Qatorlar ──────────────────────────────────────────────────────────── */
 
@@ -420,9 +449,9 @@ const OldMails = ({ layout }: OldMailsProps) => {
 
   /* ─── Excel ─────────────────────────────────────────────────────────────── */
 
-  const handleExportExcel = () => {
+  const exportRows = (items: readonly OldMailSource[]) =>
     exportOldMailsToExcel({
-      rows: filtered.map((mail) => {
+      rows: items.map((mail) => {
         const row = toRow(mail);
         return {
           id: mail.id,
@@ -451,7 +480,32 @@ const OldMails = ({ layout }: OldMailsProps) => {
         currency: t("payments:currency"),
       },
     });
-    notify.success(t("mails:oldExportSuccess", { count: filtered.length }));
+
+  // Pochtalar: BARCHA filtrlangan qatorlar serverdan 100 talab (joriy sahifa emas); paketlar — mijoz filtri.
+  // Bir vaqtda bitta yuklash (ref — qayta bosish himoyasi, holat — tugma spinneri).
+  const [exporting, setExporting] = useState(false);
+  const exportingRef = useRef(false);
+  const handleExportExcel = async () => {
+    if (exportingRef.current) return;
+    exportingRef.current = true;
+    setExporting(true);
+    try {
+      const items: OldMailSource[] = isAllBatchMode
+        ? filteredBatches
+        : (
+            await fetchAllOldMailPages(
+              (params) => fetchOldMails(isCourier, params),
+              buildOldMailsQuery({ filters, page: 1, limit: OLD_MAILS_PAGE_MAX, isCourier }),
+            )
+          ).rows;
+      exportRows(items);
+      notify.success(t("mails:oldExportSuccess", { count: items.length }));
+    } catch {
+      notify.error(t("old.exportError"));
+    } finally {
+      exportingRef.current = false;
+      setExporting(false);
+    }
   };
 
   /* ─── Filtrlar: qiymatlar, chiplar ──────────────────────────────────────── */
@@ -517,7 +571,6 @@ const OldMails = ({ layout }: OldMailsProps) => {
 
   /* ─── Bo'laklar ─────────────────────────────────────────────────────────── */
 
-
   const summaryPart = (key: string, value: number, values?: Record<string, unknown>) => (
     <span className="whitespace-nowrap">
       <Trans
@@ -530,15 +583,19 @@ const OldMails = ({ layout }: OldMailsProps) => {
     </span>
   );
 
-  // Xulosa «46 ta pochta · 684 ta buyurtma · jami 128 360 000 so'm» (manager maketi; telefonda 2 qator).
-  const summary = (
+  // Xulosa (D6, manager maketi «46 ta pochta · 684 ta buyurtma · jami 128 360 000 so'm»; telefonda 2 qator).
+  // Pochtalarda faqat «N ta pochta» — server `total`: API buyurtma/summa yig'indisini bermaydi, bitta sahifadan
+  // hisoblash noto'g'ri bo'lardi (ega savoli Q1). Paketlarda — to'liq, barcha yuklangan paketlar bo'yicha.
+  const summary = isAllBatchMode ? (
     <p className="text-[13px] leading-[18px] text-text-muted">
-      {summaryPart(isAllBatchMode ? "old.summaryBatches" : "old.summaryMails", totals.count)}
+      {summaryPart("old.summaryBatches", batchTotals.count)}
       {" · "}
-      {summaryPart("old.summaryOrders", totals.orders)}
+      {summaryPart("old.summaryOrders", batchTotals.orders)}
       {isPhone ? <br /> : " · "}
-      {summaryPart("old.summaryTotal", totals.amount, { amount: money(totals.amount) })}
+      {summaryPart("old.summaryTotal", batchTotals.amount, { amount: money(batchTotals.amount) })}
     </p>
+  ) : (
+    <p className="text-[13px] leading-[18px] text-text-muted">{summaryPart("old.summaryMails", listTotal)}</p>
   );
 
   const modeSwitch = canUseBatchMode ? (
@@ -554,14 +611,24 @@ const OldMails = ({ layout }: OldMailsProps) => {
   ) : null;
 
   const query = isAllBatchMode ? batchesQuery : mailsQuery;
-  const emptyAll = sources.length === 0;
-  // Ma'lumot keldi va bo'sh emas. Xulosa va Excel faqat shunda: yuklanish, xato va bo'sh holatda «0 ta pochta»
-  // chalg'itadi, Excel esa bo'sh fayl berardi (v1 da bu holatlarda asboblar qatori umuman yo'q edi).
-  const hasData = query.data != null && !emptyAll;
+  // Umuman bo'sh («Eski pochtalar topilmadi»): pochtalarda — filtrsiz server `total` 0, paketlarda — birorta
+  // paket yo'q. Filtr bilan 0 — «Tanlangan filtrlar bo'yicha…» (tozalash tugmasi bilan).
+  const emptyAll = isAllBatchMode ? batchItems.length === 0 : mailsPage.total === 0 && activeCount === 0;
+  // Ma'lumot keldi va ro'yxat bo'sh emas. Xulosa, sahifalash va Excel faqat shunda: yuklanish, xato va bo'sh
+  // holatda «0 ta pochta» chalg'itadi, Excel esa bo'sh fayl berardi (v1 da bu holatlarda asboblar qatori yo'q edi).
+  const hasData = query.data != null && listTotal > 0;
   const showSummary = hasData;
+  const runExport = () => void handleExportExcel();
 
   const exportButton = (
-    <Button variant="secondary" compact leftIcon={Download} disabled={!hasData} onClick={handleExportExcel}>
+    <Button
+      variant="secondary"
+      compact
+      leftIcon={Download}
+      disabled={!hasData}
+      loading={exporting}
+      onClick={runExport}
+    >
       {t("old.export")}
     </Button>
   );
@@ -571,7 +638,9 @@ const OldMails = ({ layout }: OldMailsProps) => {
       icon={Download}
       label={t("old.export")}
       disabled={!hasData}
-      onClick={handleExportExcel}
+      loading={exporting}
+      loadingLabel={t("old.exportLoading")}
+      onClick={runExport}
     />
   );
   // Ko'rinish breakpointi o'ramda: `Button` ning o'z `inline-flex` i `hidden` ni bosib ketmasin.
@@ -683,7 +752,11 @@ const OldMails = ({ layout }: OldMailsProps) => {
       statusOptions={statusOptions}
       regionsLoading={regionsLoading}
       couriersLoading={couriersLoading}
-      previewCount={(draft) => filterOldMails(sources, isCourier ? { ...draft, courierId: "" } : draft, isAllBatchMode).length}
+      preview={
+        isAllBatchMode
+          ? { kind: "client", count: (draft) => filterOldBatches(batchItems, draft).length }
+          : { kind: "server", isCourier }
+      }
       onApply={(draft) => updateFilters(draft)}
     />
   ) : null;
@@ -702,8 +775,8 @@ const OldMails = ({ layout }: OldMailsProps) => {
   const pagination = (
     <Pagination
       page={page}
-      pageSize={limit}
-      total={filtered.length}
+      pageSize={pageSize}
+      total={listTotal}
       onPageChange={setPage}
       onPageSizeChange={setLimit}
       pageSizeOptions={PAGE_SIZES}
@@ -732,7 +805,7 @@ const OldMails = ({ layout }: OldMailsProps) => {
         />
       }
     >
-      {filtered.length === 0 ? (
+      {listTotal === 0 ? (
         <EmptyState
           className="border-t border-border"
           icon={ListFilter}
@@ -768,7 +841,7 @@ const OldMails = ({ layout }: OldMailsProps) => {
     </QueryBoundary>
   );
 
-  const showFooter = !emptyAll && filtered.length > 0;
+  const showFooter = hasData;
 
   /* ─── Kuryer: o'z kartasi ───────────────────────────────────────────────── */
 
@@ -788,8 +861,8 @@ const OldMails = ({ layout }: OldMailsProps) => {
                   <Trans
                     t={t}
                     i18nKey="old.courierTotal"
-                    count={totals.count}
-                    values={{ value: count(totals.count) }}
+                    count={listTotal}
+                    values={{ value: count(listTotal) }}
                     components={{ strong: STRONG }}
                   />
                 ) : null}
@@ -799,7 +872,8 @@ const OldMails = ({ layout }: OldMailsProps) => {
                 size="sm"
                 leftIcon={Download}
                 disabled={!hasData}
-                onClick={handleExportExcel}
+                loading={exporting}
+                onClick={runExport}
                 className="-mr-2"
               >
                 {t("old.export")}

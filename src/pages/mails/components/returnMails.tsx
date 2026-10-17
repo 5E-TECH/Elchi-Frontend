@@ -36,13 +36,9 @@ type Translate = (key: string, options?: Record<string, unknown>) => string;
 
 // Tasdiqlangan buyurtma qayerga qaytadi: filial doirasida — o'sha filial
 // omboriga, HQ doirasida — markazga. (Ilgari "branch" ham "Markazga" deb
-// chiqardi.)
+// chiqardi.) «Marketga» manzili yo'q: backend doirasi faqat HQ/BRANCH, tasdiq buyurtmani o'z omboriga qaytaradi.
 const actionLabel = (value: string | undefined, t: Translate) => {
   const normalized = String(value ?? "").toLowerCase();
-
-  if (normalized.includes("market")) {
-    return t("returnDestinationMarket");
-  }
 
   if (normalized.includes("main") || normalized.includes("center") || normalized.includes("hq")) {
     return t("returnDestinationCenter");

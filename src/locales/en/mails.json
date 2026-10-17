@@ -50,7 +50,6 @@
   "returnApprove": "Approve",
   "returnReject": "Reject",
   "returnDestinationCenter": "To center",
-  "returnDestinationMarket": "To market",
   "returnDestinationBranch": "To branch",
   "returnStateNotReceived": "Not accepted by courier",
   "returnStateWithCourier": "With courier",

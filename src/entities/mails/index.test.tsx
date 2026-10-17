@@ -44,9 +44,9 @@ const branchScopeBody = {
   },
 };
 
-const createWrapper = () => {
+const createWrapper = (role = "manager") => {
   const store = createTestStore({
-    role: { id: "198", role: "manager", region: null, name: "Manager" },
+    role: { id: "198", role, region: null, name: "Manager" },
   });
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -138,6 +138,112 @@ describe("useMails — Pochta → Qaytarish", () => {
     });
 
     await waitFor(() => expect(listGets()).toBe(2));
+  });
+});
+
+describe("useMails — eski pochtalar (server filtrlari, YfrqN70i)", () => {
+  const body = { statusCode: 200, data: { data: [], total: 0, page: 1, totalPages: 1, limit: 16 } };
+  const params = {
+    page: 2,
+    limit: 16,
+    has_orders: true,
+    region_id: "2",
+    courier_id: "119",
+    status: "received",
+    startDate: "2026-10-01",
+    endDate: "2026-10-08",
+  };
+  const sent = {
+    page: 2,
+    limit: 16,
+    region_id: "2",
+    courier_id: "119",
+    status: "received",
+    startDate: "2026-10-01",
+    endDate: "2026-10-08",
+    has_orders: "true",
+  };
+
+  beforeEach(() => {
+    apiMock.get.mockReset();
+    apiMock.get.mockResolvedValue({ data: body });
+  });
+
+  it("admin: GET /post with every filter and has_orders=true", async () => {
+    const { result } = renderHook(() => useMails().useGetOldMails(false, params), {
+      wrapper: createWrapper("admin"),
+    });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(apiMock.get).toHaveBeenCalledWith("post", { params: sent });
+  });
+
+  it("courier: GET post/courier/old-posts with has_orders=true", async () => {
+    const { result } = renderHook(
+      () => useMails().useGetOldMails(true, { page: 1, limit: 8, has_orders: true, region_id: "2" }),
+      { wrapper: createWrapper("courier") },
+    );
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    expect(apiMock.get).toHaveBeenCalledWith("post/courier/old-posts", {
+      params: { page: 1, limit: 8, region_id: "2", has_orders: "true" },
+    });
+  });
+
+  it("manager: own branch (branch_id) plus the filters and has_orders=true", async () => {
+    const store = createTestStore({
+      role: { id: "198", role: "manager", region: null, name: "Manager" },
+      user: {
+        user: { id: "198", branch: { id: "15" } },
+        isAuthenticated: true,
+        accessToken: null,
+        loading: false,
+        isAppInitializing: false,
+        error: null,
+      } as never,
+    });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <Provider store={store}>
+        <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      </Provider>
+    );
+    const { result } = renderHook(() => useMails().useGetOldMails(false, params), { wrapper });
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    const [url, config] = apiMock.get.mock.calls.at(-1)!;
+    expect(url).toBe("post");
+    expect(config.params).toEqual({ ...sent, branch_id: "15" });
+  });
+
+  it("returns fetchOldMails (no hook) hitting the same endpoints — used by the Excel export", async () => {
+    const { result } = renderHook(() => useMails(), { wrapper: createWrapper("superadmin") });
+
+    await expect(result.current.fetchOldMails(false, { page: 3, limit: 100, has_orders: true })).resolves.toEqual(body);
+    expect(apiMock.get).toHaveBeenLastCalledWith("post", { params: { page: 3, limit: 100, has_orders: "true" } });
+
+    await result.current.fetchOldMails(true, { page: 1, limit: 100, status: "canceled" });
+    expect(apiMock.get).toHaveBeenLastCalledWith("post/courier/old-posts", {
+      params: { page: 1, limit: 100, status: "canceled" },
+    });
+  });
+
+  it("keepPreviousData keeps the last page visible while the next one loads", async () => {
+    let resolveSecond: (value: unknown) => void = () => undefined;
+    apiMock.get
+      .mockResolvedValueOnce({ data: body })
+      .mockReturnValueOnce(new Promise((resolve) => (resolveSecond = resolve)));
+    const { result, rerender } = renderHook(
+      ({ page }) => useMails().useGetOldMails(false, { page, limit: 8 }, { keepPreviousData: true }),
+      { wrapper: createWrapper("admin"), initialProps: { page: 1 } },
+    );
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    rerender({ page: 2 });
+    expect(result.current.isPlaceholderData).toBe(true);
+    expect(result.current.data).toEqual(body);
+    resolveSecond({ data: { ...body, data: { ...body.data, page: 2 } } });
+    await waitFor(() => expect(result.current.isPlaceholderData).toBe(false));
   });
 });
 

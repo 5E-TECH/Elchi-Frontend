@@ -170,6 +170,8 @@ describe("Paket tafsiloti — sarlavha va yo'nalish", () => {
       expect(screen.getByText(/buyurtmalari ·/)).toHaveTextContent("Jizzax viloyati buyurtmalari · 3 ta · 412 000 so'm"),
     );
     expect(screen.getByRole("banner")).toHaveTextContent("Yo'lda");
+    // Paket badge'i maketdagidek (F1): «Yo'lda» — warning.
+    expect(within(screen.getByRole("banner")).getByText("Yo'lda")).toHaveClass("bg-warning-soft");
     expect(receiveButton()).toBeDisabled();
     expect(receiveButton()).toHaveTextContent("Qabul qilish — 0 ta buyurtma");
   });

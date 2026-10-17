@@ -1,14 +1,18 @@
 import type { Batch, BatchStatus } from "../../../entities/batch";
+import type { GetOldMailsParams } from "../../../entities/mails";
 import { getPostStatusBadge } from "../detail/lib/postStatus";
 
 /**
- * «ESKI POCHTALAR» (`/mails/old`) — sof yordamchilar (dizayn v2): URL filtrlari, holat turi, mijoz tomonidagi
- * filtr va paket → qator moslashtirgichi. UI — `components/oldMails.tsx`, telefon varaqasi —
- * `components/OldMailsFiltersSheet.tsx`.
+ * «ESKI POCHTALAR» (`/mails/old`) — sof yordamchilar (dizayn v2): URL filtrlari, holat turi, server so'rovi,
+ * Excel uchun barcha sahifalarni yig'ish, paket rejimining mijoz tomonidagi filtri va paket → qator
+ * moslashtirgichi. UI — `components/oldMails.tsx`, telefon varaqasi — `components/OldMailsFiltersSheet.tsx`.
  *
- * Ma'lumot yetishmovchiligi (spec §7): `GET /post` faqat `page, limit, status, branch_id` ni oladi va `limit` ni
- * 100 bilan cheklaydi; kuryerning `post/courier/old-posts` parametr olmaydi. Shuning uchun viloyat, kuryer, holat
- * va sana filtri — kelgan ro'yxat ustida mijoz tomonida (v1 dagidek), sahifalash ham.
+ * Pochtalar (F4, backend YfrqN70i): `GET /post` va kuryerning `GET post/courier/old-posts` viloyat, kuryer
+ * (faqat `GET /post`), holat, sana (Toshkent kuni) va `has_orders` ni o'zi filtrlaydi va `total` bilan
+ * sahifalaydi (`limit` ≤ 100) — filtr va sahifalash serverda, `buildOldMailsQuery`. Excel — barcha filtrlangan
+ * qatorlar, 100 talab (`fetchAllOldMailPages`). Javobda buyurtma/summa yig'indisi yo'q.
+ * Paketlar rejimi («Filial paketlari»): `GET transfer-batches` da viloyat va sana oralig'i yo'q — barcha
+ * paketlar yuklanadi va filtr mijoz tomonida (`filterOldBatches`, `summarizeOldMails`).
  */
 
 /* ─── URL ─────────────────────────────────────────────────────────────────── */
@@ -148,6 +152,12 @@ export const OLD_MAIL_STATUS_FILTERS = [
   { value: "canceled_received", labelKey: "statusReturned" },
 ] as const;
 
+/**
+ * Kuryer «Holati» filtri: `post/courier/old-posts` faqat received / canceled / canceled_received ni oladi
+ * (boshqasiga bo'sh sahifa; jo'natilgan pochta kuryerning eski ro'yxatida bo'lmaydi).
+ */
+export const OLD_MAIL_STATUS_FILTERS_COURIER = OLD_MAIL_STATUS_FILTERS.filter((option) => option.value !== "sent");
+
 /** «Holati» filtri — paketlar rejimida paket holatlari (D11; yorliq `newOrders:batchStatus.*`). */
 export const OLD_BATCH_STATUS_FILTERS: readonly BatchStatus[] = ["new", "on_the_way", "received", "cancelled"];
 
@@ -156,12 +166,130 @@ const isBatchStatus = (value: string): value is BatchStatus =>
 
 /**
  * Rejimga mos holat filtri: paketlar rejimida faqat paket holati, pochtalarda — v1 dagi har qanday qiymat
- * (`getOldMailStatusKind` orqali). Mos kelmasa — filtr yo'q (masalan qo'lda yozilgan URL).
+ * (`getOldMailStatusKind` orqali), kuryerda «jo'natilgan» turidan tashqari. Mos kelmasa — filtr yo'q
+ * (masalan qo'lda yozilgan URL).
  */
-export const effectiveOldMailsStatus = (status: string, batches: boolean): string => {
+export const effectiveOldMailsStatus = (
+  status: string,
+  batches: boolean,
+  options: { courier?: boolean } = {},
+): string => {
   if (!status) return "";
   if (batches) return isBatchStatus(status) ? status : "";
+  if (options.courier && getOldMailStatusKind(status) === "sent") return "";
   return status;
+};
+
+/* ─── Server so'rovi (F4) ─────────────────────────────────────────────────── */
+
+/** Backend bitta sahifada beradigan eng ko'p qator (`GET /post`, `post/courier/old-posts`, kA70Rban). */
+export const OLD_MAILS_PAGE_MAX = 100;
+
+/**
+ * URL holati → backend pochta holati (`sent | received | canceled | canceled_received`). Eski havolalar
+ * (`cancelled`, `rejected`, `returned`, `on the road` …) tur orqali ishlayveradi; bo'sh — filtr yo'q.
+ */
+export const toServerPostStatus = (status: string): string =>
+  status ? KIND_TO_POST_STATUS[getOldMailStatusKind(status)] : "";
+
+const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/** `YYYY-MM-DD` va haqiqiy kun (`2026-13-40` emas) — aks holda backend 400 qaytaradi. */
+const isValidDay = (value: string) => {
+  if (!DAY_PATTERN.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
+
+const toPositiveInt = (value: number, fallback: number) => {
+  const parsed = Math.floor(Number(value));
+  return Number.isFinite(parsed) && parsed >= 1 ? parsed : fallback;
+};
+
+/**
+ * Ro'yxat so'rovi (`useGetOldMails` / `fetchOldMails` parametrlari): sahifa, `limit` ≤ 100, doim
+ * `has_orders: true` (v1 dagidek buyurtmasiz pochta ko'rinmaydi), bo'sh bo'lmagan filtrlar. Kuryerda
+ * `courier_id` yo'q (backend — JWT egasi) va «jo'natilgan» holati tashlanadi. Sana noto'g'ri bo'lsa tashlanadi,
+ * teskari oraliq almashtiriladi (backend `startDate > endDate` ga 400 beradi).
+ */
+export const buildOldMailsQuery = ({
+  filters,
+  page,
+  limit,
+  isCourier,
+}: {
+  filters: OldMailsFilters;
+  page: number;
+  limit: number;
+  isCourier: boolean;
+}): GetOldMailsParams => {
+  const query: GetOldMailsParams = {
+    page: toPositiveInt(page, 1),
+    limit: Math.min(OLD_MAILS_PAGE_MAX, toPositiveInt(limit, 8)),
+    has_orders: true,
+  };
+  if (filters.regionId) query.region_id = filters.regionId;
+  if (!isCourier && filters.courierId) query.courier_id = filters.courierId;
+
+  const status = toServerPostStatus(effectiveOldMailsStatus(filters.status, false, { courier: isCourier }));
+  if (status) query.status = status;
+
+  let startDate = isValidDay(filters.dateFrom) ? filters.dateFrom : "";
+  let endDate = isValidDay(filters.dateTo) ? filters.dateTo : "";
+  if (startDate && endDate && startDate > endDate) [startDate, endDate] = [endDate, startDate];
+  if (startDate) query.startDate = startDate;
+  if (endDate) query.endDate = endDate;
+  return query;
+};
+
+/** Pochta ro'yxati javobi (`{ statusCode, data: { data, total, page, totalPages, limit, … } }`). */
+type OldMailsPageResponse<T> = {
+  statusCode?: number;
+  message?: string;
+  data?: { data?: T[]; total?: number; page?: number; totalPages?: number; limit?: number } | null;
+} | null | undefined;
+
+/** Bitta server sahifasi: qatorlar, filtrlangan jami (`total`), sahifalar soni va haqiqiy `limit`. */
+export const readOldMailsPage = <T = OldMailSource>(response: OldMailsPageResponse<T>) => {
+  const body = response?.data;
+  const rows = Array.isArray(body?.data) ? body.data : [];
+  const total = Math.max(0, Number(body?.total ?? rows.length) || 0);
+  const limit = Math.max(0, Number(body?.limit ?? rows.length) || 0);
+  const totalPages = Math.max(1, Number(body?.totalPages) || (limit > 0 ? Math.ceil(total / limit) : 1));
+  return { rows, total, totalPages, limit };
+};
+
+/**
+ * Excel uchun BARCHA filtrlangan qatorlar: `page = 1..totalPages` ketma-ket (javoblardagi eng katta `totalPages`
+ * bo'yicha), har biri `pageSize` (100) dan, filtrlar bir xil. Bo'sh sahifada to'xtaydi; `maxPages` dan oshsa
+ * `capped: true`. Yig'ish paytida yangi pochta qo'shilib sahifalar surilsa — takror `id` tashlanadi. Birinchi
+ * xatoda rad etadi (yarim fayl berilmaydi).
+ */
+export const fetchAllOldMailPages = async <T extends { id: string | number }>(
+  fetchPage: (params: GetOldMailsParams) => Promise<OldMailsPageResponse<T>>,
+  query: GetOldMailsParams,
+  { pageSize = OLD_MAILS_PAGE_MAX, maxPages = 200 }: { pageSize?: number; maxPages?: number } = {},
+): Promise<{ rows: T[]; capped: boolean }> => {
+  const rows: T[] = [];
+  const seen = new Set<string>();
+  let totalPages = 1;
+  let page = 1;
+
+  for (; page <= totalPages && page <= maxPages; page += 1) {
+    const response = await fetchPage({ ...query, page, limit: pageSize });
+    const current = readOldMailsPage<T>(response);
+    // Yig'ish paytida yangi pochta qo'shilsa `total` o'sadi — oxirgi qator keyingi sahifaga suriladi, uni ham olamiz.
+    totalPages = Math.max(totalPages, current.totalPages);
+    if (current.rows.length === 0) return { rows, capped: false };
+    current.rows.forEach((row) => {
+      const key = String(row.id);
+      if (seen.has(key)) return;
+      seen.add(key);
+      rows.push(row);
+    });
+  }
+
+  return { rows, capped: page <= totalPages };
 };
 
 /* ─── Qatorlar va filtr ───────────────────────────────────────────────────── */
@@ -216,31 +344,18 @@ export const isOldMailInDateRange = (
 const hasOrders = (mail: OldMailSource) => Number(mail.order_quantity) > 0;
 
 /**
- * Mijoz tomonidagi filtr (v1 dagidek): buyurtmasiz pochta ko'rinmaydi; viloyat; kuryer (faqat kuryeri bor
- * pochtada — paketga ta'sir qilmaydi); holat (pochtada — tur bo'yicha, paketda — aynan); sana oralig'i.
+ * Mijoz tomonidagi filtr — faqat «Filial paketlari» rejimi (pochtalarni server filtrlaydi, `buildOldMailsQuery`):
+ * buyurtmasiz paket ko'rinmaydi; viloyat; holat (paket holati, aynan); sana oralig'i. Kuryer filtri paketga
+ * ta'sir qilmaydi.
  */
-export const filterOldMails = <T extends OldMailSource>(
-  items: readonly T[],
-  filters: OldMailsFilters,
-  batches: boolean,
-): T[] => {
-  const status = effectiveOldMailsStatus(filters.status, batches);
-  const statusKind = status && !batches ? getOldMailStatusKind(status) : null;
+export const filterOldBatches = <T extends OldMailSource>(items: readonly T[], filters: OldMailsFilters): T[] => {
+  const status = effectiveOldMailsStatus(filters.status, true);
   return items.filter((mail) => {
-    const statusMatched = !status
-      ? true
-      : batches
-        ? mail.status === status
-        : getOldMailStatusKind(mail.status) === statusKind;
+    const statusMatched = !status || mail.status === status;
     const regionMatched = filters.regionId ? String(mail.region?.id) === filters.regionId : true;
-    const courierMatched =
-      !batches && filters.courierId && "courier_id" in mail
-        ? String(mail.courier_id) === filters.courierId
-        : true;
     return (
       hasOrders(mail) &&
       regionMatched &&
-      courierMatched &&
       statusMatched &&
       isOldMailInDateRange(mail, filters.dateFrom, filters.dateTo)
     );
@@ -259,7 +374,7 @@ export const countOldMailsFilters = (
     options.withDate === false ? "" : filters.dateFrom || filters.dateTo,
   ].filter(Boolean).length;
 
-/** Xulosa: «N ta pochta · N ta buyurtma · jami X» — filtrlangan ro'yxat bo'yicha (D6). */
+/** Xulosa: «N ta paket · N ta buyurtma · jami X» — paketlar rejimida, filtrlangan ro'yxat bo'yicha (D6). */
 export const summarizeOldMails = (items: readonly OldMailSource[]) =>
   items.reduce(
     (acc, mail) => ({

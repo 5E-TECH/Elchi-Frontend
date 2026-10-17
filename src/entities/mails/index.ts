@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { useSelector } from "react-redux";
@@ -181,10 +181,19 @@ export interface PaginatedPostsResponse {
     page: number;
     totalPages: number;
     limit: number;
+    /** `GET /post`, `post/courier/old-posts` (kA70Rban): so'ralgan `limit` 100 dan katta bo'lsa `true`. */
+    limit_capped?: boolean;
+    /** Backend bitta sahifada beradigan eng ko'p qator (100). */
+    max_limit?: number;
   };
 }
 
-interface GetOldMailsParams {
+/**
+ * Eski pochtalar so'rovi (`GET /post`, kuryerda `GET post/courier/old-posts`). Backend (YfrqN70i) viloyat,
+ * kuryer, holat, sana (Toshkent kuni, `YYYY-MM-DD`) va `has_orders` ni o'zi filtrlaydi; `limit` ≤ 100.
+ * Kuryer endpointi `courier_id` olmaydi (doim JWT egasi).
+ */
+export interface GetOldMailsParams {
   page?: number;
   limit?: number;
   region_id?: string;
@@ -192,6 +201,8 @@ interface GetOldMailsParams {
   status?: string;
   startDate?: string;
   endDate?: string;
+  /** `true` — faqat buyurtmasi bor pochtalar (`order_quantity > 0`); `has_orders=true` bo'lib ketadi. */
+  has_orders?: boolean;
 }
 
 type ManagerPostStatus = "new" | "sent" | "received" | "canceled" | "canceled_received";
@@ -368,6 +379,7 @@ export const useMails = () => {
           ...(params?.courier_id ? { courier_id: params.courier_id } : {}),
           ...(params?.startDate ? { startDate: params.startDate } : {}),
           ...(params?.endDate ? { endDate: params.endDate } : {}),
+          ...(params?.has_orders ? { has_orders: "true" } : {}),
         },
       })
       .then((res) => res.data);
@@ -457,10 +469,38 @@ export const useMails = () => {
       enabled: options?.enabled ?? true,
     });
 
+  /**
+   * Eski pochtalarning bitta sahifasi (hook emas — Excel barcha sahifalarni shu bilan yig'adi). Menejer — o'z
+   * filiali (`branch_id`), kuryer — `post/courier/old-posts`, qolganlar — `GET /post`.
+   */
+  const fetchOldMails = (isCourier = false, params?: GetOldMailsParams): Promise<PaginatedPostsResponse> =>
+    isManagerRole
+      ? getManagerScopedPosts(params?.status as ManagerPostStatus | undefined, params)
+      : api
+          .get(isCourier ? API_ENDPOINTS.POSTS.COURIER_OLD : API_ENDPOINTS.POSTS.BASE, {
+            params: {
+              page: params?.page ?? 1,
+              limit: params?.limit ?? 8,
+              ...(params?.region_id ? { region_id: params.region_id } : {}),
+              ...(params?.courier_id ? { courier_id: params.courier_id } : {}),
+              ...(params?.status ? { status: params.status } : {}),
+              ...(params?.startDate ? { startDate: params.startDate } : {}),
+              ...(params?.endDate ? { endDate: params.endDate } : {}),
+              ...(params?.has_orders ? { has_orders: "true" } : {}),
+            },
+          })
+          .then((res) => res.data);
+
   const useGetOldMails = (
     isCourier = false,
     params?: GetOldMailsParams,
-    options?: { enabled?: boolean },
+    options?: {
+      enabled?: boolean;
+      /** Sahifa yoki filtr almashganda oldingi javob ko'rinib turadi (`isPlaceholderData`). */
+      keepPreviousData?: boolean;
+      /** Xato umumiy bildirishnoma bermaydi (masalan filtr varaqasidagi yordamchi son). */
+      silentError?: boolean;
+    },
   ) =>
     useQuery<PaginatedPostsResponse>({
       queryKey: [
@@ -471,26 +511,10 @@ export const useMails = () => {
         isCourier ? "courier" : "default",
         params,
       ],
-      queryFn: () =>
-        isManagerRole
-          ? getManagerScopedPosts(
-              params?.status as ManagerPostStatus | undefined,
-              params,
-            )
-          : api
-            .get(isCourier ? API_ENDPOINTS.POSTS.COURIER_OLD : API_ENDPOINTS.POSTS.BASE, {
-              params: {
-                page: params?.page ?? 1,
-                limit: params?.limit ?? 8,
-                ...(params?.region_id ? { region_id: params.region_id } : {}),
-                ...(params?.courier_id ? { courier_id: params.courier_id } : {}),
-                ...(params?.status ? { status: params.status } : {}),
-                ...(params?.startDate ? { startDate: params.startDate } : {}),
-                ...(params?.endDate ? { endDate: params.endDate } : {}),
-              },
-            })
-            .then((res) => res.data),
+      queryFn: () => fetchOldMails(isCourier, params),
       enabled: options?.enabled ?? true,
+      ...(options?.keepPreviousData ? { placeholderData: keepPreviousData } : {}),
+      ...(options?.silentError ? { meta: { silentError: true } } : {}),
     });
 
   return {
@@ -500,6 +524,7 @@ export const useMails = () => {
     approveReturnRequests,
     rejectReturnRequests,
     useGetOldMails,
+    fetchOldMails,
     useGetNewMailsCourier,
     useGetTodayMailsCourier,
     useGetRefusedMailsCourier,

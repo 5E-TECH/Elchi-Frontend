@@ -1,15 +1,22 @@
 // dizayn-v2: (maket yo'q) superadmin-orders-filters-mobile
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useMails } from "../../../entities/mails";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { Button, DateRange, Dialog, Field, Select, type SelectOption } from "../../../shared/ui/primitives";
-import { EMPTY_OLD_MAILS_FILTERS, type OldMailsFilters } from "../model/oldMailsModel";
+import {
+  buildOldMailsQuery,
+  EMPTY_OLD_MAILS_FILTERS,
+  readOldMailsPage,
+  type OldMailsFilters,
+} from "../model/oldMailsModel";
 
 /**
  * «Eski pochtalar» — telefon (< 768) filtr varaqasi. Maket yo'q — eng yaqini `superadmin-orders-filters-mobile`
  * (`pages/orders/list/OrderFiltersSheet.tsx` namunasi). Varaqa QORALAMA bilan ishlaydi: «Natijalarni ko'rsatish (N)»
  * URL'ga bir marta yozadi va yopadi; ×, fon yoki tutqich — o'zgarishlar bekor; «Tozalash» — faqat qoralamani
- * tozalaydi. N — qoralama bo'yicha mijoz tomonidagi filtr natijasi (ro'yxat to'liq yuklangan).
+ * tozalaydi. N — qoralama bo'yicha natija: pochtalarda server `total` i (`limit: 1` so'rov, F4; yuklanayotganda
+ * yoki xatoda son yashirinadi), «Filial paketlari» rejimida — mijoz tomonidagi filtr (paketlar to'liq yuklangan).
  *
  * Bo'limlar: Sana (`withDate` — xodimda; kuryerda sana asboblar qatorida) → Viloyat · Kuryer (xodim, pochtalar
  * rejimi) · Holati.
@@ -27,9 +34,32 @@ export type OldMailsFiltersSheetProps = {
   statusOptions: readonly SelectOption[];
   regionsLoading?: boolean;
   couriersLoading?: boolean;
-  /** Qoralama bo'yicha natija soni. */
-  previewCount: (draft: OldMailsFilters) => number;
+  /**
+   * Qoralama bo'yicha natija soni: `server` — eski pochtalar so'rovi (`limit: 1`, javobdagi `total`),
+   * `client` — yuklangan ro'yxat ustida hisob (paketlar rejimi).
+   */
+  preview: { kind: "server"; isCourier: boolean } | { kind: "client"; count: (draft: OldMailsFilters) => number };
   onApply: (values: OldMailsFilters) => void;
+};
+
+/** «(N)» — server soni: qoralama bo'yicha bitta qatorli so'rov; eski javob, yuklanish yoki xatoda ko'rinmaydi. */
+const ServerPreviewTotal = ({
+  draft,
+  isCourier,
+  enabled,
+  format,
+}: {
+  draft: OldMailsFilters;
+  isCourier: boolean;
+  enabled: boolean;
+  format: (total: number) => string;
+}) => {
+  const { useGetOldMails } = useMails();
+  const params = useMemo(() => buildOldMailsQuery({ filters: draft, page: 1, limit: 1, isCourier }), [draft, isCourier]);
+  // Son — yordamchi: xatoda u yashirinadi, umumiy xato xabari varaqa ustiga chiqmaydi.
+  const preview = useGetOldMails(isCourier, params, { enabled, keepPreviousData: true, silentError: true });
+  if (!preview.data || preview.isPlaceholderData || preview.isError) return null;
+  return <span className="shrink-0">{format(readOldMailsPage(preview.data).total)}</span>;
 };
 
 export const OldMailsFiltersSheet = ({
@@ -43,7 +73,7 @@ export const OldMailsFiltersSheet = ({
   statusOptions,
   regionsLoading = false,
   couriersLoading = false,
-  previewCount,
+  preview,
   onApply,
 }: OldMailsFiltersSheetProps) => {
   const { t, i18n } = useTranslation(["mailsArchive", "ui"]);
@@ -63,7 +93,7 @@ export const OldMailsFiltersSheet = ({
     draft.status,
     withDate ? draft.dateFrom || draft.dateTo : "",
   ].filter(Boolean).length;
-  const total = previewCount(draft);
+  const formatTotal = (total: number) => t("ui:filters.applyTotal", { total: formatNumberLocalized(total, { language }) });
 
   const reset = () =>
     // Sana bo'limi yo'q bo'lsa sana asboblar qatorida qoladi — «Tozalash» unga tegmaydi.
@@ -117,9 +147,11 @@ export const OldMailsFiltersSheet = ({
           <Button size="lg" compact className="min-w-0" onClick={apply}>
             <span className="flex min-w-0 items-center gap-1">
               <span className="min-w-0 truncate">{t("ui:filters.apply")}</span>
-              <span className="shrink-0">
-                {t("ui:filters.applyTotal", { total: formatNumberLocalized(total, { language }) })}
-              </span>
+              {preview.kind === "server" ? (
+                <ServerPreviewTotal draft={draft} isCourier={preview.isCourier} enabled={open} format={formatTotal} />
+              ) : (
+                <span className="shrink-0">{formatTotal(preview.count(draft))}</span>
+              )}
             </span>
           </Button>
         </>

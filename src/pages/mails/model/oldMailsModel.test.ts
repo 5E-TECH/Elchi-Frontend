@@ -1,17 +1,23 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { Batch } from "../../../entities/batch";
 import {
+  buildOldMailsQuery,
   clearOldMailsFilters,
   countOldMailsFilters,
   EMPTY_OLD_MAILS_FILTERS,
   effectiveOldMailsStatus,
-  filterOldMails,
+  fetchAllOldMailPages,
+  filterOldBatches,
   getOldMailStatusBadge,
   getOldMailStatusKind,
+  OLD_MAIL_STATUS_FILTERS_COURIER,
+  OLD_MAILS_PAGE_MAX,
   readOldMailsFilters,
+  readOldMailsPage,
   readPostOrders,
   summarizeOldMails,
   toOldMailSourceFromBatch,
+  toServerPostStatus,
   writeOldMailsFilters,
   writeOldMailsMode,
   type OldMailSource,
@@ -106,6 +112,182 @@ describe("oldMailsModel — holat", () => {
     expect(effectiveOldMailsStatus("sent", true)).toBe("");
     expect(effectiveOldMailsStatus("on_the_way", true)).toBe("on_the_way");
   });
+
+  it("drops «Jo'natilgan» for the courier (post/courier/old-posts has no sent mails)", () => {
+    expect(effectiveOldMailsStatus("sent", false, { courier: true })).toBe("");
+    expect(effectiveOldMailsStatus("on the road", false, { courier: true })).toBe("");
+    expect(effectiveOldMailsStatus("received", false, { courier: true })).toBe("received");
+    expect(OLD_MAIL_STATUS_FILTERS_COURIER.map((option) => option.value)).toEqual([
+      "received",
+      "canceled",
+      "canceled_received",
+    ]);
+  });
+});
+
+describe("oldMailsModel — server so'rovi (F4, YfrqN70i)", () => {
+  const filters = {
+    regionId: "2",
+    courierId: "119",
+    status: "canceled",
+    dateFrom: "2026-10-01",
+    dateTo: "2026-10-08",
+  };
+
+  it("builds the GET /post query from the URL filters (server-side filters, has_orders)", () => {
+    expect(buildOldMailsQuery({ filters, page: 3, limit: 16, isCourier: false })).toEqual({
+      page: 3,
+      limit: 16,
+      has_orders: true,
+      region_id: "2",
+      courier_id: "119",
+      status: "canceled",
+      startDate: "2026-10-01",
+      endDate: "2026-10-08",
+    });
+  });
+
+  it("never asks for more than 100 rows and omits empty filters", () => {
+    const query = buildOldMailsQuery({ filters: EMPTY_OLD_MAILS_FILTERS, page: 1, limit: 10000, isCourier: false });
+    expect(query).toStrictEqual({ page: 1, limit: OLD_MAILS_PAGE_MAX, has_orders: true });
+    expect(OLD_MAILS_PAGE_MAX).toBe(100);
+  });
+
+  it("sends legacy URL statuses as backend post statuses", () => {
+    expect(toServerPostStatus("")).toBe("");
+    expect(toServerPostStatus("cancelled")).toBe("canceled");
+    expect(toServerPostStatus("rejected")).toBe("canceled");
+    expect(toServerPostStatus("returned")).toBe("canceled_received");
+    expect(toServerPostStatus("on the road")).toBe("sent");
+    expect(toServerPostStatus("received")).toBe("received");
+    expect(buildOldMailsQuery({ filters: { ...filters, status: "cancelled" }, page: 1, limit: 8, isCourier: false }).status).toBe(
+      "canceled",
+    );
+  });
+
+  it("courier: no courier_id and no «sent» status (backend returns an empty page for it)", () => {
+    const query = buildOldMailsQuery({ filters: { ...filters, status: "sent" }, page: 2, limit: 8, isCourier: true });
+    expect(query).toStrictEqual({
+      page: 2,
+      limit: 8,
+      has_orders: true,
+      region_id: "2",
+      startDate: "2026-10-01",
+      endDate: "2026-10-08",
+    });
+    expect(buildOldMailsQuery({ filters, page: 1, limit: 8, isCourier: true }).status).toBe("canceled");
+  });
+
+  it("swaps a reversed date range and drops an invalid date (backend answers 400 otherwise)", () => {
+    const reversed = buildOldMailsQuery({
+      filters: { ...EMPTY_OLD_MAILS_FILTERS, dateFrom: "2026-10-08", dateTo: "2026-10-01" },
+      page: 1,
+      limit: 8,
+      isCourier: false,
+    });
+    expect([reversed.startDate, reversed.endDate]).toEqual(["2026-10-01", "2026-10-08"]);
+
+    const invalid = buildOldMailsQuery({
+      filters: { ...EMPTY_OLD_MAILS_FILTERS, dateFrom: "2026-13-40", dateTo: "yesterday" },
+      page: 1,
+      limit: 8,
+      isCourier: false,
+    });
+    expect(invalid).toStrictEqual({ page: 1, limit: 8, has_orders: true });
+  });
+
+  it("reads one server page: rows, total, totalPages, limit", () => {
+    const rows = [mail(), mail({ id: "91" })];
+    expect(
+      readOldMailsPage({ statusCode: 200, data: { data: rows, total: 250, page: 2, totalPages: 32, limit: 8 } }),
+    ).toEqual({ rows, total: 250, totalPages: 32, limit: 8 });
+    expect(readOldMailsPage(undefined)).toEqual({ rows: [], total: 0, totalPages: 1, limit: 0 });
+  });
+});
+
+describe("oldMailsModel — Excel uchun barcha sahifalar (fetchAllOldMailPages)", () => {
+  const page = (from: number, count: number, total: number, limit = 100) => ({
+    statusCode: 200,
+    data: {
+      data: Array.from({ length: count }, (_, index) => mail({ id: String(from + index) })),
+      total,
+      page: Math.floor(from / limit) + 1,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+      limit,
+    },
+  });
+  const query = { page: 1, limit: 100, has_orders: true as const, region_id: "2", status: "received" };
+
+  it("requests pages 1..totalPages sequentially with the same filters and limit 100", async () => {
+    const fetchPage = vi
+      .fn()
+      .mockResolvedValueOnce(page(0, 100, 250))
+      .mockResolvedValueOnce(page(100, 100, 250))
+      .mockResolvedValueOnce(page(200, 50, 250));
+
+    const result = await fetchAllOldMailPages(fetchPage, { ...query, limit: 16, page: 4 });
+
+    expect(fetchPage.mock.calls.map(([params]) => params)).toEqual([
+      { ...query, page: 1 },
+      { ...query, page: 2 },
+      { ...query, page: 3 },
+    ]);
+    expect(result.rows).toHaveLength(250);
+    expect(result.capped).toBe(false);
+  });
+
+  it("stops at maxPages and reports capped", async () => {
+    const fetchPage = vi.fn((params: { page?: number }) =>
+      Promise.resolve(page(((params.page ?? 1) - 1) * 100, 100, 1000)),
+    );
+
+    const result = await fetchAllOldMailPages(fetchPage, query, { maxPages: 2 });
+
+    expect(fetchPage).toHaveBeenCalledTimes(2);
+    expect(result.rows).toHaveLength(200);
+    expect(result.capped).toBe(true);
+  });
+
+  it("drops duplicates when a new mail shifts the pages and stops on an empty page", async () => {
+    const fetchPage = vi
+      .fn()
+      .mockResolvedValueOnce(page(0, 100, 500))
+      .mockResolvedValueOnce(page(99, 100, 500))
+      .mockResolvedValueOnce(page(0, 0, 500));
+
+    const result = await fetchAllOldMailPages(fetchPage, query);
+
+    expect(fetchPage).toHaveBeenCalledTimes(3);
+    expect(result.rows).toHaveLength(199);
+    expect(new Set(result.rows.map((row) => row.id)).size).toBe(199);
+  });
+
+  it("follows a growing total: a mail added during the export does not push the last row out", async () => {
+    // 1-sahifa: 200 ta (2 sahifa). Yig'ish paytida yangi pochta qo'shildi — 2-sahifa `total: 201` (3 sahifa) va
+    // bitta siljigan; oxirgi qator 3-sahifaga o'tdi va u ham olinadi.
+    const fetchPage = vi
+      .fn()
+      .mockResolvedValueOnce(page(0, 100, 200))
+      .mockResolvedValueOnce(page(99, 100, 201))
+      .mockResolvedValueOnce(page(199, 1, 201));
+
+    const result = await fetchAllOldMailPages(fetchPage, query);
+
+    expect(fetchPage).toHaveBeenCalledTimes(3);
+    expect(result.rows).toHaveLength(200);
+    expect(result.rows.at(-1)?.id).toBe("199");
+    expect(result.capped).toBe(false);
+  });
+
+  it("rejects on the first failed page", async () => {
+    const fetchPage = vi
+      .fn()
+      .mockResolvedValueOnce(page(0, 100, 250))
+      .mockRejectedValueOnce(new Error("502"));
+
+    await expect(fetchAllOldMailPages(fetchPage, query)).rejects.toThrow("502");
+    expect(fetchPage).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("oldMailsModel — filtr va xulosa", () => {
@@ -116,26 +298,29 @@ describe("oldMailsModel — filtr va xulosa", () => {
     mail({ id: "93", status: "canceled", createdAt: "2026-09-20T10:00:00.000Z" }),
   ];
 
-  it("hides mails without orders", () => {
-    expect(filterOldMails(items, EMPTY_OLD_MAILS_FILTERS, false).map((item) => item.id)).toEqual(["90", "91", "93"]);
+  it("hides batches without orders", () => {
+    expect(filterOldBatches(items, EMPTY_OLD_MAILS_FILTERS).map((item) => item.id)).toEqual(["90", "91", "93"]);
   });
 
-  it("filters by region, courier, status kind and date range", () => {
+  it("filters batches by region and date range", () => {
     const pick = (patch: Partial<typeof EMPTY_OLD_MAILS_FILTERS>) =>
-      filterOldMails(items, { ...EMPTY_OLD_MAILS_FILTERS, ...patch }, false).map((item) => item.id);
+      filterOldBatches(items, { ...EMPTY_OLD_MAILS_FILTERS, ...patch }).map((item) => item.id);
     expect(pick({ regionId: "3" })).toEqual(["91"]);
-    expect(pick({ courierId: "119" })).toEqual(["90", "93"]);
-    expect(pick({ status: "cancelled" })).toEqual(["93"]);
     expect(pick({ dateFrom: "2026-10-01", dateTo: "2026-10-08" })).toEqual(["90", "91"]);
   });
 
-  it("compares batch statuses exactly and ignores the courier filter in the batches mode", () => {
+  it("compares batch statuses exactly and ignores the courier filter", () => {
     const batches = [mail({ id: "129", status: "received" }), mail({ id: "128", status: "on_the_way" })];
     expect(
-      filterOldMails(batches, { ...EMPTY_OLD_MAILS_FILTERS, status: "on_the_way", courierId: "999" }, true).map(
+      filterOldBatches(batches, { ...EMPTY_OLD_MAILS_FILTERS, status: "on_the_way", courierId: "999" }).map(
         (item) => item.id,
       ),
     ).toEqual(["128"]);
+    // Pochta holati (paket holati emas) — filtr yo'q.
+    expect(filterOldBatches(batches, { ...EMPTY_OLD_MAILS_FILTERS, status: "canceled" }).map((item) => item.id)).toEqual([
+      "129",
+      "128",
+    ]);
   });
 
   it("counts active filters per mode and role", () => {

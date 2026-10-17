@@ -466,8 +466,8 @@
   "batchStatus": {
     "new": "Yangi",
     "on_the_way": "Yo'lda",
-    "received": "Qabul qilindi",
-    "cancelled": "Bekor qilindi"
+    "received": "Qabul qilingan",
+    "cancelled": "Bekor qilingan"
   },
   "batchDirection": {
     "forward": "Oldinga",

@@ -44,8 +44,8 @@ describe("toBranchSourceRows — filiallar ro'yxati", () => {
 });
 
 describe("paket holati va viloyat", () => {
-  it("holat → ton (D1): yangi/yo'lda — info, qabul — success, bekor — danger", () => {
-    expect(BATCH_STATUS_TONE).toEqual({ new: "info", on_the_way: "info", received: "success", cancelled: "danger" });
+  it("holat → ton (maketdagidek, F1): yangi — info, yo'lda — warning, qabul — success, bekor — danger", () => {
+    expect(BATCH_STATUS_TONE).toEqual({ new: "info", on_the_way: "warning", received: "success", cancelled: "danger" });
   });
 
   it("viloyat: `to_branch.region`, bo'lmasa filial nomi; «—» — noma'lum", () => {

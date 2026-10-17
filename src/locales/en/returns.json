@@ -9,6 +9,7 @@
   "filtersLabel": "Filters",
   "filters": {
     "status": "Status",
+    "date": "Date",
     "all": "All"
   },
   "columns": {
@@ -29,6 +30,8 @@
   "emptyDescription": "When a branch creates a return batch, it appears here.",
   "filteredEmpty": "No return batches with this status",
   "filteredEmptyDescription": "Choose another status or clear the filter.",
+  "filteredEmptyPeriod": "No return batches for this period",
+  "filteredEmptyPeriodDescription": "Pick another date or clear the filters.",
   "clearFilter": "Clear filter",
   "messages": {
     "loadFailed": "Could not load return batches"

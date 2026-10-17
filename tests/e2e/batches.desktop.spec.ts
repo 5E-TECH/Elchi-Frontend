@@ -35,18 +35,25 @@ test.describe("Paketlar — HQ'ga yuborish, 1440px", () => {
     expect(leaked).toEqual([]);
   });
 
-  test("qaytarishlar → paket tafsiloti, «← Qaytarishlar»", async ({ page }) => {
+  test("qaytarishlar («Sana: Bugun» URL'da) → paket tafsiloti, «← Qaytarishlar» filtr bilan", async ({ page }) => {
     const { leaked, listQueries } = await mockBatchesApi(page);
-    await page.goto("/returns");
+    await page.goto("/returns?period=today");
     await expect(page.getByRole("heading", { level: 1, name: "Qaytarishlar" })).toBeVisible({ timeout: 60_000 });
     await expect(page.getByText(/Urgut filialidan chiqqan qaytarish paketlari/)).toBeVisible();
-    expect(listQueries.some((query) => query.includes("direction=RETURN") && query.includes("source_branch_id=7"))).toBe(true);
+    // Sana filtri (F2): `period` | `date`, hech qachon `from`/`to`.
+    await expect(page.getByRole("button", { name: /^Sana / })).toContainText("Bugun");
+    expect(
+      listQueries.some(
+        (query) => query.includes("direction=RETURN") && query.includes("source_branch_id=7") && query.includes("period=today"),
+      ),
+    ).toBe(true);
+    expect(listQueries.every((query) => !/[?&](from|to)=/.test(query))).toBe(true);
 
     await page.getByRole("link", { name: "B-171 paketini ochish" }).click();
     await expect(page).toHaveURL(/\/batches\/171$/);
     await expect(
       page.locator('[data-shell-slot="content"]').getByRole("link", { name: "Qaytarishlar", exact: true }),
-    ).toHaveAttribute("href", "/returns");
+    ).toHaveAttribute("href", "/returns?period=today");
     expect(leaked).toEqual([]);
   });
 });

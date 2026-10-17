@@ -11,6 +11,7 @@
   "filtersLabel": "Фильтры",
   "filters": {
     "status": "Статус",
+    "date": "Дата",
     "all": "Все"
   },
   "columns": {
@@ -31,6 +32,8 @@
   "emptyDescription": "Когда филиал создаст возвратный пакет, он появится здесь.",
   "filteredEmpty": "Нет возвратных пакетов с этим статусом",
   "filteredEmptyDescription": "Выберите другой статус или сбросьте фильтр.",
+  "filteredEmptyPeriod": "За этот период нет возвратных пакетов",
+  "filteredEmptyPeriodDescription": "Выберите другую дату или сбросьте фильтры.",
   "clearFilter": "Сбросить фильтр",
   "messages": {
     "loadFailed": "Не удалось загрузить список возвратных пакетов"

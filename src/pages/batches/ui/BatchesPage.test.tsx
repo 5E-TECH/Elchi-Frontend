@@ -114,7 +114,7 @@ describe("BatchesPage — /batches", () => {
     expect(within(row).getByText("Samarqand")).toBeInTheDocument();
     expect(row).toHaveTextContent("Chilonzor qabul punkti");
     expect(row).toHaveTextContent("Toshkent HQ");
-    expect(within(row).getByText("Yangi")).toBeInTheDocument();
+    expect(within(row).getByText("Yangi")).toHaveClass("bg-info-soft");
     expect(within(row).getByText("18 ta")).toBeInTheDocument();
     expect(within(row).getByText("4 260 000 so'm")).toBeInTheDocument();
     expect(within(row).getByRole("link", { name: "B-148 paketini ochish" })).toHaveAttribute("href", "/batches/148");
@@ -142,8 +142,8 @@ describe("BatchesPage — /batches", () => {
     expect(await screen.findByRole("link", { name: "Qaytarishlar" })).toHaveAttribute("href", "/returns");
     expect(screen.getByText(/filiallardan qaytish oqimidagi paketlar/)).toBeInTheDocument();
     expect(listCalls()).toContainEqual({ direction: "RETURN", page: "1", limit: "10" });
-    // SENT → «Yo'lda» (paket holati yorlig'i — newOrders:batchStatus).
-    expect(await screen.findByText("Yo'lda")).toBeInTheDocument();
+    // SENT → «Yo'lda» (paket holati yorlig'i — newOrders:batchStatus), ton — warning (maketdagidek, F1).
+    expect(await screen.findByText("Yo'lda")).toHaveClass("bg-warning-soft");
   });
 
   it("qator bosilsa — /batches/:id, holat { from: batches, fromSearch }", async () => {

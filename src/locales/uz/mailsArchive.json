@@ -26,6 +26,8 @@
     "viewMails": "Pochtalar",
     "viewBatches": "Filial paketlari",
     "export": "Excelga yuklash",
+    "exportLoading": "Excel tayyorlanmoqda",
+    "exportError": "Excel faylini tayyorlab bo'lmadi",
     "filters": {
       "label": "Eski pochtalar filtri",
       "region": "Viloyat",

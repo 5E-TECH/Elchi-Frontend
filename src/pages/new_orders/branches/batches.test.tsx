@@ -176,6 +176,8 @@ describe("Filial paketlari — jadval va tanlov", () => {
     expect(row).toHaveTextContent("Samarqand");
     expect(row).toHaveTextContent("18 ta");
     expect(row).toHaveTextContent("Yo'lda");
+    // Paket badge'i maketdagidek (F1): «Yo'lda» — warning, buyurtmadagi «Yo'lda» bilan bir xil.
+    expect(within(row).getByText("Yo'lda")).toHaveClass("bg-warning-soft");
     expect(row).not.toHaveTextContent("Yangi");
     expect(row).toHaveTextContent("4 260 000 so'm");
     expect(rowOf("B-140")).toHaveTextContent("04.10.2026");

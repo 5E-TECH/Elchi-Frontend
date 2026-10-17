@@ -32,6 +32,8 @@
     "viewMails": "Почта",
     "viewBatches": "Пакеты филиалов",
     "export": "Выгрузить в Excel",
+    "exportLoading": "Готовим Excel",
+    "exportError": "Не удалось подготовить файл Excel",
     "filters": {
       "label": "Фильтр старой почты",
       "region": "Область",
