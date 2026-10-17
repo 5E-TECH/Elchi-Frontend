@@ -81,6 +81,11 @@ export interface User {
    * qaytaradi — admin uni marketga beradi.
    */
   market_tg_token?: string | null;
+  /**
+   * (ysBqD9Nx) Market Telegram GURUHIDAGI buyurtma kartalarida mijoz ismi va telefoni ko'rinadimi.
+   * Backend sukuti `true`; `false` — ism yashirin, telefon niqoblangan. Faqat market qatorida.
+   */
+  tg_group_show_customer_pii?: boolean;
   default_tariff: "home" | "center";
   region_id?: string | null;
   region?: Region | null;

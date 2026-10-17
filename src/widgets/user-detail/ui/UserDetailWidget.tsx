@@ -14,6 +14,7 @@ import { useAppNotification } from "../../../app/providers/notification/Notifica
 import type { ExpenseProofCondition } from "../../../entities/user/types/user";
 import type { RootState } from "../../../app/config/store";
 import { MarketTelegramTokenCard } from "./MarketTelegramTokenCard";
+import { MarketTelegramGroupPiiCard } from "./MarketTelegramGroupPiiCard";
 
 interface UserDetailWidgetProps {
   user?: User;
@@ -269,6 +270,7 @@ export const UserDetailWidget = memo(
                 </div>
               }
             />
+            {isMarket ? <MarketTelegramGroupPiiCard user={user} isOwnProfile={isOwnProfile} /> : null}
             {canSeeMarketTelegramToken ? (
               <MarketTelegramTokenCard token={user.market_tg_token} />
             ) : null}

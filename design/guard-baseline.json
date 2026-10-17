@@ -296,7 +296,7 @@
     "src/pages/payments/components/FinanceHistoryDetailPopup.tsx": { "palette": 33, "dark-pair": 54, "legacy": 77, "money": 1, "tiny-text": 8, "weight": 1, "gradient": 9 },
     "src/pages/payments/components/InactiveBadge.tsx": { "palette": 5, "dark-pair": 1, "tiny-text": 1 },
     "src/pages/payments/components/MyCashboxPage.tsx": { "legacy": 3 },
-    "src/pages/payments/components/PaymentHistoryList.tsx": { "palette": 46, "dark-pair": 18, "legacy": 6, "money": 1, "tiny-text": 6, "weight": 1, "gradient": 2 },
+    "src/pages/payments/components/PaymentHistoryList.tsx": { "palette": 36, "dark-pair": 17, "legacy": 6, "money": 1, "tiny-text": 3, "weight": 1, "gradient": 2 },
     "src/pages/payments/components/PaymentSummaryCards.tsx": { "palette": 11, "legacy": 10, "money": 1, "tiny-text": 1, "weight": 1, "gradient": 1 },
     "src/pages/payments/components/SalaryPaymentPopup.tsx": { "palette": 31, "dark-pair": 21, "legacy": 36, "money": 1 },
     "src/pages/payments/components/cashDetail.tsx": { "palette": 35, "dark-pair": 13, "legacy": 18, "money": 4, "tiny-text": 1, "weight": 1 },
