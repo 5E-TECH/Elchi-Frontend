@@ -27,6 +27,13 @@ export type ExtraCostApprovalsResponse = {
   message?: string;
 };
 
+/**
+ * Sotish/bekor qilish so'roviga qo'shimcha sarlavhalar. Ommaviy yopish (`/courier-bulk`)
+ * `X-Request-Source: courier-bulk` yuboradi — backend amalni audit jurnalida ommaviy amal deb
+ * yozadi (`activity_logs.metadata.request_source`, j9KFyqlS).
+ */
+export type OrderActionHeaders = Readonly<Record<string, string>>;
+
 export type UpdateNewOrderPayload = Partial<{
   region_id: string;
   district_id: string;
@@ -70,6 +77,10 @@ export const useOrders = () => {
       proofFileKeys: Array.from(new Set([...existingKeys, uploadedKey])),
     };
   };
+
+  // Sarlavhasiz chaqiruv aynan avvalgidek (`api.post(url, body)`) — boshqa chaqiruvchilar o'zgarmaydi.
+  const postOrderAction = (url: string, body: unknown, headers?: OrderActionHeaders) =>
+    (headers ? api.post(url, body, { headers }) : api.post(url, body)).then((res) => res.data);
 
   // A sell/cancel/rollback/partly-sell moves COD cash across cashboxes, so the
   // finance/cashbox caches (separate key space, 30s staleTime) must be refreshed
@@ -209,12 +220,15 @@ export const useOrders = () => {
     mutationFn: ({
       orderId,
       data,
+      headers,
     }: {
       orderId: string;
       data: SellOrderPayload;
+      /** Qo'shimcha sarlavhalar (ommaviy yopish — `X-Request-Source`); berilmasa so'rov avvalgidek. */
+      headers?: OrderActionHeaders;
     }) =>
       toOrderActionBody(data).then((body) =>
-        api.post(API_ENDPOINTS.ORDERS.SELL(orderId), body).then((res) => res.data),
+        postOrderAction(API_ENDPOINTS.ORDERS.SELL(orderId), body, headers),
       ),
     onSuccess: invalidateMoney,
   });
@@ -293,12 +307,15 @@ export const useOrders = () => {
     mutationFn: ({
       orderId,
       data,
+      headers,
     }: {
       orderId: string;
       data: CancelOrderPayload;
+      /** Qo'shimcha sarlavhalar (ommaviy yopish — `X-Request-Source`); berilmasa so'rov avvalgidek. */
+      headers?: OrderActionHeaders;
     }) =>
       toOrderActionBody(data).then((body) =>
-        api.post(API_ENDPOINTS.ORDERS.CANCEL(orderId), body).then((res) => res.data),
+        postOrderAction(API_ENDPOINTS.ORDERS.CANCEL(orderId), body, headers),
       ),
     onSuccess: invalidateMoney,
   });
