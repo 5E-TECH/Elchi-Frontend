@@ -47,5 +47,49 @@
   "chartAmount": "Total: {{amount}}",
   "emptyMarkets": "No market statistics yet",
   "emptyCouriers": "No courier statistics yet",
-  "statsUnavailable": "Statistics are temporarily unavailable — refresh the page"
+  "statsUnavailable": "Statistics are temporarily unavailable — refresh the page",
+  "v2": {
+    "subtitle": "{{branch}} · selected period figures",
+    "count": "{{value}}",
+    "success": {
+      "needed": "{{count}} more sales needed to reach the good zone (70%)"
+    },
+    "status": {
+      "sub": "{{period}} · branch order flow",
+      "note": "Percentages are of all {{count}} orders in the selected period"
+    },
+    "packages": {
+      "title": "Active batches",
+      "sub": "Branch batch status",
+      "unit": "active batches",
+      "aria": "Active batches {{total}}: {{onTheWay}} on the way, {{waiting}} awaiting acceptance"
+    },
+    "couriers": {
+      "title": "Couriers",
+      "sub": "Today's activity",
+      "activeOf": "{{active}} / {{total}}",
+      "total": "Branch couriers",
+      "inactive": "Inactive today"
+    },
+    "markets": {
+      "sub": "Order count and total amount by market",
+      "metricLabel": "Chart metric",
+      "byOrders": "Orders",
+      "byAmount": "Amount",
+      "viewLabel": "By market view",
+      "totalAmount": "Total amount",
+      "totalMeta": "{{markets}} markets · {{orders}} orders",
+      "topOrders": "Most orders",
+      "topOrdersMeta": "{{count}} · {{share}} of all",
+      "topAmount": "Largest amount",
+      "topAmountMeta": "{{amount}} · average {{average}}",
+      "noteOrders": "Bar length is the order count; choose «Amount» to compare by amount",
+      "noteAmount": "Bar length is the total amount; choose «Orders» to compare by count",
+      "colMarket": "Market"
+    },
+    "top": {
+      "sub": "Sell-through · top 5 and your branch",
+      "yourBranch": "Your branch"
+    }
+  }
 }

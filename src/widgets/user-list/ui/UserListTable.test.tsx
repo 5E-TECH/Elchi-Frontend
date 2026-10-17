@@ -1,6 +1,6 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { UserListTable } from "./UserListTable";
 import { renderWithProviders } from "../../../test/test-utils";
 
@@ -18,23 +18,27 @@ vi.mock("react-router-dom", async () => {
 
 vi.mock("../../../entities/user/api/userApi", () => ({
   useUser: () => ({
-    updateUserStatus: {
-      mutate: updateUserStatusMutateMock,
-    },
-    deleteUser: {
-      mutate: deleteUserMutateMock,
-      isPending: false,
-    },
+    updateUserStatus: { mutate: updateUserStatusMutateMock },
+    deleteUser: { mutate: deleteUserMutateMock, isPending: false },
+    // «Tahrirlash» oynasi (`UpdateUserModal`) — `initialUser` bilan so'rov yubormaydi.
+    useGetUserById: () => ({ data: undefined, isLoading: false }),
+    updateUser: { mutateAsync: vi.fn(), isPending: false },
+    updateMyProfile: { mutateAsync: vi.fn(), isPending: false },
   }),
 }));
+
+beforeAll(() => {
+  Element.prototype.scrollIntoView = vi.fn();
+});
 
 const users = [
   {
     id: "1",
-    name: "Ali",
+    name: "Ali Valiyev",
     phone_number: "+998901234567",
     role: "admin",
     status: "active",
+    createdAt: "2026-09-03T09:00:00.000Z",
   },
   {
     id: "2",
@@ -42,143 +46,158 @@ const users = [
     phone_number: "+998909876543",
     role: "courier",
     status: "inactive",
+    createdAt: "2026-09-01T09:00:00.000Z",
   },
 ];
 
-describe("UserListTable", () => {
+const openMenu = async (user: ReturnType<typeof userEvent.setup>, name: string) => {
+  await user.click(screen.getByRole("button", { name: `${name} amallari` }));
+  return screen.findByRole("menu", { name: `${name} amallari` });
+};
+
+describe("UserListTable (dizayn v2)", () => {
   beforeEach(() => {
     navigateMock.mockReset();
     updateUserStatusMutateMock.mockReset();
     deleteUserMutateMock.mockReset();
   });
 
-  it("renders table rows and pagination summary", () => {
-    renderWithProviders(
-      <UserListTable
-        users={users as never}
-        currentPage={1}
-        onPageChange={vi.fn()}
-        pagination={{ page: 1, limit: 10, total: 25, totalPages: 3 }}
-      />,
-    );
+  it("qatorlar: avatar bosh harflari, formatlangan telefon, rol va holat badge'lari", () => {
+    renderWithProviders(<UserListTable users={users as never} canManage />);
 
-    expect(screen.getByText("Ali")).toBeInTheDocument();
-    expect(screen.getByText("Vali")).toBeInTheDocument();
-    expect(screen.getByText("1-10 dan 25 tasi ko'rsatilmoqda")).toBeInTheDocument();
+    const table = screen.getByRole("table", { name: "Foydalanuvchilar ro'yxati" });
+    const aliRow = within(table).getByText("Ali Valiyev").closest("tr");
+    expect(aliRow).not.toBeNull();
+    const row = within(aliRow as HTMLElement);
+    expect(row.getByText("AV")).toBeInTheDocument();
+    expect(row.getAllByText("+998 90 123 45 67").length).toBeGreaterThan(0);
+    expect(row.getByText("Admin")).toBeInTheDocument();
+    expect(row.getByText("Faol")).toBeInTheDocument();
+    expect(within(table).getByText("Nofaol")).toBeInTheDocument();
   });
 
-  it("renders loading state", () => {
-    renderWithProviders(
-      <UserListTable users={[]} isLoading currentPage={1} onPageChange={vi.fn()} />,
-    );
-
-    expect(screen.getByText("Yuklanmoqda...")).toBeInTheDocument();
-  });
-
-  it("renders error state", () => {
-    renderWithProviders(
-      <UserListTable users={[]} isError currentPage={1} onPageChange={vi.fn()} />,
-    );
-
-    expect(screen.getByText("Xatolik yuz berdi")).toBeInTheDocument();
-  });
-
-  it("renders empty state", () => {
-    renderWithProviders(<UserListTable users={[]} currentPage={1} onPageChange={vi.fn()} />);
-
-    expect(screen.getByText("Foydalanuvchilar topilmadi")).toBeInTheDocument();
-  });
-
-  it("calls pagination change handlers", async () => {
+  it("qator bosilsa — foydalanuvchi tafsilotiga o'tadi", async () => {
     const user = userEvent.setup();
-    const onPageChange = vi.fn();
+    renderWithProviders(<UserListTable users={users as never} />);
 
-    renderWithProviders(
-      <UserListTable
-        users={users as never}
-        currentPage={1}
-        onPageChange={onPageChange}
-        pagination={{ page: 1, limit: 10, total: 25, totalPages: 3 }}
-      />,
-    );
+    await user.click(screen.getAllByText("+998 90 987 65 43")[0]);
 
-    await user.click(screen.getByRole("button", { name: "Keyingi" }));
-
-    expect(onPageChange).toHaveBeenCalledWith(2);
-    expect(screen.getByRole("button", { name: "Oldingi" })).toBeDisabled();
+    expect(navigateMock).toHaveBeenCalledWith("/all-users/2");
   });
 
-  it("navigates to user detail when row is clicked", async () => {
+  it("nofaol qilish — avval tasdiq oynasi, so'ng PATCH status", async () => {
     const user = userEvent.setup();
+    renderWithProviders(<UserListTable users={users as never} canManage />);
 
-    renderWithProviders(
-      <UserListTable users={users as never} currentPage={1} onPageChange={vi.fn()} />,
-    );
-
-    await user.click(screen.getByText("Ali"));
-
-    expect(navigateMock).toHaveBeenCalledWith("/all-users/1");
-  });
-
-  it("toggles user status from active to inactive", async () => {
-    const user = userEvent.setup();
-
-    renderWithProviders(
-      <UserListTable users={users as never} currentPage={1} onPageChange={vi.fn()} canManage />,
-    );
-
-    await user.click(screen.getAllByRole("switch")[0]);
+    const menu = await openMenu(user, "Ali Valiyev");
+    await user.click(within(menu).getByRole("menuitem", { name: "Nofaol qilish" }));
 
     // Nofaol qilish — avval tasdiqlash oynasi (DESIGN_SYSTEM §8); tasdiqsiz so'rov ketmaydi.
     const dialog = await screen.findByRole("alertdialog", { name: "Nofaol qilishni tasdiqlang" });
-    expect(dialog).toHaveTextContent("Ali hisobi nofaol holatga o'tadi.");
+    expect(dialog).toHaveTextContent("Ali Valiyev hisobi nofaol holatga o'tadi.");
     expect(updateUserStatusMutateMock).not.toHaveBeenCalled();
 
-    await user.click(screen.getByRole("button", { name: "Nofaol qilish" }));
+    await user.click(within(dialog).getByRole("button", { name: "Nofaol qilish" }));
 
-    expect(updateUserStatusMutateMock).toHaveBeenCalledWith(
-      { id: "1", status: "inactive" },
-      expect.any(Object),
-    );
+    expect(updateUserStatusMutateMock).toHaveBeenCalledWith({ id: "1", status: "inactive" }, expect.any(Object));
   });
 
-  it("does not deactivate when the confirmation is cancelled", async () => {
+  it("tasdiq bekor qilinsa — holat o'zgarmaydi", async () => {
     const user = userEvent.setup();
+    renderWithProviders(<UserListTable users={users as never} canManage />);
 
-    renderWithProviders(
-      <UserListTable users={users as never} currentPage={1} onPageChange={vi.fn()} canManage />,
-    );
-
-    await user.click(screen.getAllByRole("switch")[0]);
-    await user.click(await screen.findByRole("button", { name: "Bekor qilish" }));
+    const menu = await openMenu(user, "Ali Valiyev");
+    await user.click(within(menu).getByRole("menuitem", { name: "Nofaol qilish" }));
+    const dialog = await screen.findByRole("alertdialog");
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
 
     expect(updateUserStatusMutateMock).not.toHaveBeenCalled();
   });
 
-  it("activates an inactive user without a confirmation", async () => {
+  it("nofaol foydalanuvchini faol qilish — tasdiqsiz", async () => {
     const user = userEvent.setup();
+    renderWithProviders(<UserListTable users={users as never} canManage />);
 
-    renderWithProviders(
-      <UserListTable users={users as never} currentPage={1} onPageChange={vi.fn()} canManage />,
-    );
-
-    await user.click(screen.getAllByRole("switch")[1]);
+    const menu = await openMenu(user, "Vali");
+    await user.click(within(menu).getByRole("menuitem", { name: "Faol qilish" }));
 
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
-    expect(updateUserStatusMutateMock).toHaveBeenCalledWith(
-      { id: "2", status: "active" },
-      expect.any(Object),
-    );
+    expect(updateUserStatusMutateMock).toHaveBeenCalledWith({ id: "2", status: "active" }, expect.any(Object));
   });
 
-  it("hides the status switch and delete button when the viewer cannot manage users (fix3 RBAC-16)", () => {
-    renderWithProviders(
-      <UserListTable users={users as never} currentPage={1} onPageChange={vi.fn()} />,
-    );
+  it("holat o'zgarsa — muvaffaqiyat xabari", async () => {
+    updateUserStatusMutateMock.mockImplementation((_vars, options: { onSuccess?: () => void; onSettled?: () => void }) => {
+      options.onSuccess?.();
+      options.onSettled?.();
+    });
+    const user = userEvent.setup();
+    renderWithProviders(<UserListTable users={users as never} canManage />);
 
-    expect(screen.getByText("Ali")).toBeInTheDocument();
-    expect(screen.queryAllByRole("switch")).toHaveLength(0);
-    expect(screen.queryAllByRole("button", { name: "O'chirish" })).toHaveLength(0);
+    const menu = await openMenu(user, "Vali");
+    await user.click(within(menu).getByRole("menuitem", { name: "Faol qilish" }));
+
+    expect(await screen.findByText('"Vali" foydalanuvchisi faol qilindi')).toBeInTheDocument();
+  });
+
+  it("o'chirish — maketdagi tasdiq oynasi matni, so'ng DELETE", async () => {
+    deleteUserMutateMock.mockImplementation((_id, options: { onSuccess?: () => void }) => options.onSuccess?.());
+    const user = userEvent.setup();
+    renderWithProviders(<UserListTable users={users as never} canManage />);
+
+    const menu = await openMenu(user, "Ali Valiyev");
+    await user.click(within(menu).getByRole("menuitem", { name: "O'chirish" }));
+
+    const dialog = await screen.findByRole("alertdialog", { name: "Foydalanuvchini o'chirish" });
+    expect(dialog).toHaveTextContent("«Ali Valiyev» foydalanuvchisini o'chirishni tasdiqlaysizmi?");
+    expect(dialog).toHaveTextContent("Admin · +998 90 123 45 67");
+    expect(dialog).toHaveTextContent("Hisobni vaqtincha to'xtatish kerak bo'lsa, o'chirish o'rniga nofaol qiling.");
+    expect(deleteUserMutateMock).not.toHaveBeenCalled();
+
+    await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+
+    expect(deleteUserMutateMock).toHaveBeenCalledWith("1", expect.any(Object));
+    expect(await screen.findByText('"Ali Valiyev" muvaffaqiyatli o\'chirildi')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+  });
+
+  it("o'chirish rad etilsa — backend matni xabarda, oyna ochiq qoladi", async () => {
+    deleteUserMutateMock.mockImplementation((_id, options: { onError?: (error: unknown) => void }) =>
+      options.onError?.({ response: { status: 409, data: { message: "Kuryerda pul bor" } } }),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<UserListTable users={users as never} canManage />);
+
+    const menu = await openMenu(user, "Ali Valiyev");
+    await user.click(within(menu).getByRole("menuitem", { name: "O'chirish" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Foydalanuvchini o'chirish" });
+    await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+
+    expect(await screen.findByText("Kuryerda pul bor")).toBeInTheDocument();
+    expect(screen.getByRole("alertdialog", { name: "Foydalanuvchini o'chirish" })).toBeInTheDocument();
+  });
+
+  it("«Tahrirlash» — tahrirlash oynasini shu foydalanuvchi bilan ochadi", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<UserListTable users={users as never} canManage />, {
+      preloadedState: { role: { id: "9", role: "superadmin", region: null, name: "SA" } } as never,
+    });
+
+    const menu = await openMenu(user, "Ali Valiyev");
+    await user.click(within(menu).getByRole("menuitem", { name: "Tahrirlash" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Foydalanuvchini tahrirlash" });
+    expect(dialog).toHaveTextContent("Ali Valiyev · Admin");
+  });
+
+  it("boshqarish huquqi bo'lmasa (menejer, fix3 RBAC-16) — amallar menyusi yo'q, faqat «Ochish»", () => {
+    renderWithProviders(<UserListTable users={users as never} />);
+
+    expect(screen.getByText("Ali Valiyev")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /amallari$/ })).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: "Ali Valiyev tafsilotlari" })[0]).toHaveAttribute(
+      "href",
+      "/all-users/1",
+    );
     expect(updateUserStatusMutateMock).not.toHaveBeenCalled();
   });
 });

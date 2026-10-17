@@ -1,5 +1,21 @@
-import { memo, useEffect, useState, type ReactNode } from "react";
+// dizayn-v2: superadmin-users-create, admin-users-create, manager-users-create-courier, manager-users-create-hybrid
+import { memo, useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import { Controller, useForm, useWatch, type Path } from "react-hook-form";
+import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import {
+  Briefcase,
+  Check,
+  ClipboardPenLine,
+  Eye,
+  EyeOff,
+  KeyRound,
+  Store,
+  Truck,
+  UserCog,
+  type LucideIcon,
+} from "lucide-react";
 import type {
   CreateAdminRequest,
   CreateCourierRequest,
@@ -8,34 +24,28 @@ import type {
   CreateRegistratorRequest,
   UserRole,
 } from "../../../../entities/user/types/user";
-import { RoleSelector } from "./RoleSelector";
-import SearchableSelect from "../../../../shared/ui/SearchableSelect";
-import { Select } from "../../../../shared/ui/primitives";
-import { PAYMENT_DAY_OPTIONS, toPaymentDayOption } from "../../lib/paymentDay";
 import { useUser } from "../../../../entities/user/api/userApi";
-import { useAppNotification } from "../../../../app/providers/notification/NotificationProvider";
-import {
-  Building,
-  Calendar,
-  ChevronDown,
-  Eye,
-  EyeOff,
-  Send,
-  Shield,
-  Store,
-  Truck,
-  User,
-  Users,
-  Briefcase,
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
-import { applyBackendFieldErrors } from "../../lib/backendFieldErrors";
-import { useTranslation } from "react-i18next";
 import { getUserRoleLabelKey } from "../../../../entities/user/lib/role";
 import { useBranches, type Branch } from "../../../../entities/branch";
 import type { RootState } from "../../../../app/config/store";
-import { formatUzbekistanPhoneLocal, keepPhoneCaretAfterChange } from "../../../../shared/lib/phone";
+import { cx } from "../../../../shared/lib/cx";
+import { getUzbekistanPhoneDigits, toUzbekistanPhoneValue } from "../../../../shared/lib/phone";
+import {
+  Button,
+  Card,
+  Field,
+  IconButton,
+  PageHeader,
+  SegmentedControl,
+  Select,
+  TextInput,
+  TONE_SOFT,
+  type SelectOption,
+} from "../../../../shared/ui/primitives";
+import { applyBackendFieldErrors } from "../../lib/backendFieldErrors";
+import { PAYMENT_DAY_OPTIONS, toPaymentDayOption } from "../../lib/paymentDay";
+import { runUserRequest } from "../../lib/userRequest";
+import { readViewerBranch } from "../../lib/viewerBranch";
 import { getBranchOptionsForRole, isManagerHqSelection } from "../lib/branchOptions";
 import {
   areCourierTariffsRequired,
@@ -43,23 +53,7 @@ import {
   getMissingCourierTariffs,
 } from "../lib/courierTariffs";
 
-const formatAmount = (value: string): string => {
-  const digits = value.replace(/\D/g, "");
-  if (!digits) return "";
-  const parts: string[] = [];
-  let remaining = digits;
-  while (remaining.length > 3) {
-    parts.unshift(remaining.slice(-3));
-    remaining = remaining.slice(0, -3);
-  }
-  if (remaining) parts.unshift(remaining);
-  return parts.join(" ");
-};
-
-const parseAmount = (value: string): number =>
-  Number(value.replace(/\s/g, ""));
-
-const parsePhone = (value: string): string => value.replace(/\s/g, "");
+const parseAmount = (value: string): number => Number(value.replace(/\D/g, ""));
 
 interface CreateUserFormValues {
   role: UserRole;
@@ -89,31 +83,6 @@ const INITIAL_FORM: CreateUserFormValues = {
   homeRate: "",
   centerRate: "",
   deliveryType: "",
-};
-
-const inputClasses = (hasError: boolean, hasPrefix: boolean) => `
-  w-full border-2 bg-[color:var(--color-card-surface-strong)] dark:bg-[color:var(--color-primarydark)]
-  ${
-    hasError
-      ? "border-red-400 dark:border-red-500 focus:ring-red-400/20"
-      : "border-[color:var(--color-border-strong)] dark:border-white/15 focus:border-main dark:focus:border-main focus:ring-main/15"
-  }
-  rounded-xl ${hasPrefix ? "pl-10" : "px-4"} pr-4 py-3
-  text-maindark dark:text-white text-sm font-semibold
-  placeholder:text-[color:var(--color-text-muted)] dark:placeholder:text-white/55
-  focus:outline-none focus:ring-2 transition-all duration-200 shadow-sm hover:border-main/60
-`;
-
-const labelClasses =
-  "block text-xs font-bold text-slate-500 dark:text-white/60 mb-1.5 ml-1 uppercase tracking-wide";
-
-const FieldError = ({ message }: { message?: string }) => {
-  if (!message) return null;
-  return (
-    <p className="absolute -bottom-4 right-0 text-[10px] text-red-500 font-medium">
-      {message}
-    </p>
-  );
 };
 
 const SERVER_FIELD_NAME_MAP: Record<string, Path<CreateUserFormValues>> = {
@@ -153,80 +122,71 @@ const getBranchOptionLabel = (branch: Branch) => {
   return `${code}${type}${branch.name}${region}`;
 };
 
-export const CreateUserForm = memo(() => {
-  const { t } = useTranslation("users");
-  const navigate = useNavigate();
-  const authRole = useSelector((state: RootState) => state.role.role);
-  const authUser = useSelector((state: RootState) => state.user.user) as
-    | {
-        id?: string | null;
-        branch_id?: string | null;
-        branch_type?: string | null;
-        region_id?: string | null;
-        region?: { id?: string | null } | null;
-        branch?: {
-          id?: string | null;
-          type?: string | null;
-          branch_type?: string | null;
-          region_id?: string | null;
-          regionId?: string | null;
-          region?: { id?: string | null } | null;
-          branch?: {
-            id?: string | null;
-            type?: string | null;
-            branch_type?: string | null;
-            region_id?: string | null;
-            regionId?: string | null;
-            region?: { id?: string | null } | null;
-          } | null;
-        } | null;
-      }
-    | null;
+/** Rol kartalari (maket: ikonka + nom + izoh). `marketing` — market yaratish (API rol nomi). */
+const ROLE_ICONS: Record<string, LucideIcon> = {
+  admin: UserCog,
+  manager: Briefcase,
+  registrator: ClipboardPenLine,
+  courier: Truck,
+  marketing: Store,
+};
+const ROLE_ORDER: UserRole[] = ["admin", "manager", "registrator", "courier", "marketing"];
 
-  const currentBranchType =
-    (
-      authUser?.branch?.branch?.type ??
-      authUser?.branch?.branch?.branch_type ??
-      authUser?.branch?.type ??
-      authUser?.branch?.branch_type ??
-      authUser?.branch_type ??
-      ""
-    )
-      .toString()
-      .toUpperCase() || null;
-  const currentBranchId =
-    authUser?.branch?.branch?.id ??
-    authUser?.branch?.id ??
-    authUser?.branch_id ??
-    "";
-  const currentRegionId =
-    authUser?.region_id ??
-    authUser?.region?.id ??
-    authUser?.branch?.branch?.region_id ??
-    authUser?.branch?.branch?.regionId ??
-    authUser?.branch?.branch?.region?.id ??
-    authUser?.branch?.region_id ??
-    authUser?.branch?.regionId ??
-    authUser?.branch?.region?.id ??
-    "";
-  const isManagerHybridCreator =
-    authRole === "manager" && currentBranchType === "HYBRID";
+/** `.el-overline` — bo'lim sarlavhasi. */
+const OVERLINE = "m-0 text-xs font-semibold uppercase tracking-[.05em] text-text-muted";
+/** Maydonlar to'ri (maket: `repeat(auto-fit, minmax(…, 1fr))`). */
+const GRID_200 = "grid grid-cols-[repeat(auto-fit,minmax(min(200px,100%),1fr))] gap-4";
+const GRID_260 = "grid grid-cols-[repeat(auto-fit,minmax(min(260px,100%),1fr))] gap-4";
+
+const FormSection = ({ title, note, children }: { title: string; note?: ReactNode; children: ReactNode }) => (
+  <div className="flex flex-col gap-4 border-t border-border px-5 py-5 first:border-t-0 max-md:px-4">
+    <div className="flex flex-col gap-1">
+      <h3 className={OVERLINE}>{title}</h3>
+      {note ? <p className="m-0 text-[13px] text-text-muted">{note}</p> : null}
+    </div>
+    {children}
+  </div>
+);
+
+/**
+ * YANGI FOYDALANUVCHI — `/all-users/create-user` sahifasining butun tarkibi (dizayn v2).
+ *
+ * Maketlar: `superadmin-users-create` (= admin; 5 rol), `manager-users-create-courier` (REGIONAL menejer —
+ * rol tanlanmaydi, «Biriktirish» kartasi), `manager-users-create-hybrid` (HYBRID menejer — Kuryer, Ro'yxatchi,
+ * Market). Chapda rol kartasi + «Kirish ma'lumotlarini o'zingiz bering» izohi; o'ngda forma kartasi
+ * («{Rol} qo'shish»): «Asosiy ma'lumotlar» → rolga qarab maosh/tarif, filial, kirish ma'lumotlari, yetkazish tarifi;
+ * pastda «Bekor qilish» · «Saqlash». Telefonda ustma-ust.
+ *
+ * Xulq AYNAN saqlangan: rollar (`managerAllowedRoles`), filial ro'yxati va HQ cheklovi, maosh/to'lov kuni
+ * qoidalari, kuryer tariflari (fix3b FE-USR-11), har rol payload'i, backend maydon xatolari, muvaffaqiyatda
+ * `navigate(-1)`. Filiallar so'rovi faqat superadmin/admin uchun (menejerga `GET branches` 403).
+ */
+export const CreateUserForm = memo(() => {
+  const { t } = useTranslation(["users", "common"]);
+  const navigate = useNavigate();
+  const formId = useId();
+  const authRole = useSelector((state: RootState) => state.role.role);
+  const viewerBranch = useSelector((state: RootState) => readViewerBranch(state.user.user), shallowBranch);
+
+  const currentBranchType = viewerBranch.type;
+  const currentBranchId = viewerBranch.id;
+  const currentRegionId = viewerBranch.regionId;
+  const isManagerHybridCreator = authRole === "manager" && currentBranchType === "HYBRID";
   // REGIONAL menejer — faqat kuryer (avvalgidek). fix3 CODE-21: boshqa
   // turdagi (PICKUP/HQ/noma'lum) menejer uchun avval `null` = HAMMA rollar
   // ochilardi. Hozir bu sahifaga ular kira olmaydi (`staff` qobiliyati yo'q),
   // lekin yo'l ochilsa — eng tor to'plam (backend baribir tekshiradi).
-  const managerAllowedRoles: UserRole[] | null =
-    authRole !== "manager"
-      ? null
-      : isManagerHybridCreator
-        ? ["courier", "registrator", "marketing"]
-        : ["courier"];
+  const managerAllowedRoles = useMemo<UserRole[] | null>(
+    () =>
+      authRole !== "manager"
+        ? null
+        : isManagerHybridCreator
+          ? ["courier", "registrator", "marketing"]
+          : ["courier"],
+    [authRole, isManagerHybridCreator],
+  );
 
   const [showPassword, setShowPassword] = useState(false);
-  const [isCompactRolePicker, setIsCompactRolePicker] = useState(
-    typeof window !== "undefined" ? window.innerWidth < 1280 : false,
-  );
-  const [isCompactRolePickerOpen, setIsCompactRolePickerOpen] = useState(false);
   const getRoleLabel = (userRole: UserRole) => t(getUserRoleLabelKey(userRole));
 
   const methods = useForm<CreateUserFormValues>({
@@ -234,44 +194,27 @@ export const CreateUserForm = memo(() => {
     mode: "onTouched",
   });
 
-  const {
-    control,
-    handleSubmit,
-    reset,
-    setValue,
-    setError,
-    clearErrors,
-  } = methods;
+  const { control, handleSubmit, reset, setValue, setError, clearErrors } = methods;
 
   const role = useWatch({ control, name: "role" });
   // fix3b FE-USR-11: kuryer tariflari maosh kiritilmaguncha majburiy (yulduzcha).
   const salaryValue = useWatch({ control, name: "salary" }) ?? "";
   const courierTariffsRequired = areCourierTariffsRequired({ salary: salaryValue });
-  const rolePickerOptions: Array<{ key: UserRole; icon: ReactNode }> = [
-    { key: "admin", icon: <Shield size={16} /> },
-    { key: "manager", icon: <Briefcase size={16} /> },
-    { key: "registrator", icon: <Users size={16} /> },
-    { key: "courier", icon: <Truck size={16} /> },
-    { key: "marketing", icon: <Store size={16} /> },
-  ];
-  const visibleRoleOptions = managerAllowedRoles
-    ? rolePickerOptions.filter((option) => managerAllowedRoles.includes(option.key))
-    : rolePickerOptions;
-  const shouldShowRolePanel = visibleRoleOptions.length > 1;
-
-  const activeRoleOption =
-    visibleRoleOptions.find((option) => option.key === role) ?? visibleRoleOptions[0];
+  // Menejer: o'z tartibida (maket `manager-users-create-hybrid`: Kuryer, Ro'yxatchi, Market).
+  const visibleRoles = managerAllowedRoles ?? ROLE_ORDER;
+  const shouldShowRolePanel = visibleRoles.length > 1;
 
   const { createAdmin, createManager, createRegistrator, createMarket, createCourier } = useUser();
-  const { apiRequest } = useAppNotification();
-  const { data: branchesResponse, isLoading: isBranchesLoading } = useBranches({
-    page: 1,
-    limit: 500,
-  });
+  // Filial tanlovi faqat superadmin/admin formasida — menejer uchun `GET branches` 403 (BatchesPage naqshi).
+  const canLoadBranches = authRole === "superadmin" || authRole === "admin";
+  const { data: branchesResponse, isLoading: isBranchesLoading } = useBranches(
+    { page: 1, limit: 500 },
+    canLoadBranches,
+  );
 
   // Menejer uchun HQ ko'rsatilmaydi (HQ da menejer bo'lmaydi), registrator
   // uchun HQ qoladi — qoida `getBranchOptionsForRole` da.
-  const branchOptions = getBranchOptionsForRole(branchesResponse?.data, role).map((branch) => ({
+  const branchOptions: SelectOption[] = getBranchOptionsForRole(branchesResponse?.data, role).map((branch) => ({
     value: branch.id,
     label: getBranchOptionLabel(branch),
   }));
@@ -286,19 +229,6 @@ export const CreateUserForm = memo(() => {
     }
   }, [managerAllowedRoles, role, setValue]);
 
-  useEffect(() => {
-    const handleResize = () => {
-      const compact = window.innerWidth < 1280;
-      setIsCompactRolePicker(compact);
-      if (!compact) {
-        setIsCompactRolePickerOpen(false);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
   const isPending =
     createAdmin.isPending ||
     createManager.isPending ||
@@ -308,14 +238,13 @@ export const CreateUserForm = memo(() => {
 
   const validateByRole = (values: CreateUserFormValues): boolean => {
     let valid = true;
-    const rawPhone = parsePhone(values.phone);
 
     if (!values.fullName.trim()) {
-      setError("fullName", { message: t("firstNameRequired") });
+      setError("fullName", { message: t(role === "marketing" ? "v2.create.errors.marketNameRequired" : "firstNameRequired") });
       valid = false;
     }
 
-    if (!rawPhone || rawPhone.length !== 9) {
+    if (getUzbekistanPhoneDigits(values.phone).length !== 9) {
       setError("phone", { message: t("phoneValidation") });
       valid = false;
     }
@@ -324,7 +253,7 @@ export const CreateUserForm = memo(() => {
       setError("password", { message: t("passwordRequired") });
       valid = false;
     } else if (values.password.length < 4) {
-      setError("password", { message: t("passwordMin") });
+      setError("password", { message: t("v2.create.errors.passwordMin") });
       valid = false;
     }
 
@@ -348,11 +277,8 @@ export const CreateUserForm = memo(() => {
       }
     }
 
-    const isHybridManagerRegistrator =
-      isManagerHybridCreator && role === "registrator";
-    const resolvedBranchId = isHybridManagerRegistrator
-      ? currentBranchId
-      : values.branchId;
+    const isHybridManagerRegistrator = isManagerHybridCreator && role === "registrator";
+    const resolvedBranchId = isHybridManagerRegistrator ? currentBranchId : values.branchId;
 
     if ((role === "manager" || role === "registrator") && !resolvedBranchId) {
       setError("branchId", { message: t("branchRequired") });
@@ -381,9 +307,7 @@ export const CreateUserForm = memo(() => {
       // fix3b FE-USR-11: maoshsiz kuryerda ikkala tarif ham majburiy (0 ga
       // tushirish faqat maoshli kuryer uchun). Menejerda tariflar ixtiyoriy.
       const missingCourierTariffs =
-        role === "courier"
-          ? getMissingCourierTariffs(values)
-          : { home: false, center: false };
+        role === "courier" ? getMissingCourierTariffs(values) : { home: false, center: false };
       if (missingCourierTariffs.home || missingCourierTariffs.center) {
         if (missingCourierTariffs.home) {
           setError("homeRate", { message: t("homeTariffRequiredNoSalary") });
@@ -405,7 +329,8 @@ export const CreateUserForm = memo(() => {
 
     if (role === "marketing") {
       if (!values.username.trim()) {
-        setError("username", { message: t("usernameRequired") });
+        // Eski «Username kiritilmadi» — inglizcha so'z; maketdagi maydon nomi «Login».
+        setError("username", { message: t("v2.create.errors.loginRequired") });
         valid = false;
       }
       if (!values.homeRate) {
@@ -425,11 +350,21 @@ export const CreateUserForm = memo(() => {
     return valid;
   };
 
+  const submitRequest = <T,>(request: () => Promise<T>, successMessage: string) =>
+    runUserRequest({
+      t,
+      request,
+      successMessage,
+      errorMessage: t("loadError"),
+      onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
+      onSuccess: () => navigate(-1),
+    });
+
   const onSubmit = async (values: CreateUserFormValues) => {
     clearErrors();
     if (!validateByRole(values)) return;
 
-    const rawPhone = `+998${parsePhone(values.phone)}`;
+    const rawPhone = toUzbekistanPhoneValue(values.phone);
 
     if (role === "admin") {
       const payload: CreateAdminRequest = {
@@ -439,19 +374,12 @@ export const CreateUserForm = memo(() => {
         salary: parseAmount(values.salary),
         payment_day: Number(values.paymentDay),
       };
-      await apiRequest({
-        request: () => createAdmin.mutateAsync(payload),
-        successMessage: t("createAdmin"),
-        errorMessage: t("loadError"),
-        onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
-        onSuccess: () => navigate(-1),
-      });
+      await submitRequest(() => createAdmin.mutateAsync(payload), t("createAdmin"));
       return;
     }
 
     if (role === "registrator") {
-      const branchId =
-        isManagerHybridCreator && currentBranchId ? currentBranchId : values.branchId;
+      const branchId = isManagerHybridCreator && currentBranchId ? currentBranchId : values.branchId;
 
       const payload: CreateRegistratorRequest = {
         name: values.fullName,
@@ -461,13 +389,7 @@ export const CreateUserForm = memo(() => {
         payment_day: Number(values.paymentDay),
         branch_id: branchId,
       };
-      await apiRequest({
-        request: () => createRegistrator.mutateAsync(payload),
-        successMessage: t("createRegistrator"),
-        errorMessage: t("loadError"),
-        onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
-        onSuccess: () => navigate(-1),
-      });
+      await submitRequest(() => createRegistrator.mutateAsync(payload), t("createRegistrator"));
       return;
     }
 
@@ -490,13 +412,7 @@ export const CreateUserForm = memo(() => {
         payload.tariff_center = parseAmount(values.centerRate);
       }
 
-      await apiRequest({
-        request: () => createManager.mutateAsync(payload),
-        successMessage: t("createManager"),
-        errorMessage: t("loadError"),
-        onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
-        onSuccess: () => navigate(-1),
-      });
+      await submitRequest(() => createManager.mutateAsync(payload), t("createManager"));
       return;
     }
 
@@ -524,13 +440,7 @@ export const CreateUserForm = memo(() => {
       payload.tariff_home = tariffs.tariff_home;
       payload.tariff_center = tariffs.tariff_center;
 
-      await apiRequest({
-        request: () => createCourier.mutateAsync(payload),
-        successMessage: t("createCourier"),
-        errorMessage: t("loadError"),
-        onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
-        onSuccess: () => navigate(-1),
-      });
+      await submitRequest(() => createCourier.mutateAsync(payload), t("createCourier"));
       return;
     }
 
@@ -545,493 +455,467 @@ export const CreateUserForm = memo(() => {
         default_tariff: values.deliveryType === "center" ? "center" : "address",
       };
 
-      await apiRequest({
-        request: () => createMarket.mutateAsync(payload),
-        successMessage: t("createMarket"),
-        errorMessage: t("loadError"),
-        onError: (error) => applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP),
-        onSuccess: () => navigate(-1),
-      });
+      await submitRequest(() => createMarket.mutateAsync(payload), t("createMarket"));
     }
   };
 
-  const renderInput = ({
-    label,
-    name,
-    type = "text",
-    placeholder,
-    icon,
-    required = true,
-  }: {
-    label: string;
-    name: keyof CreateUserFormValues;
-    type?: string;
-    placeholder: string;
-    icon?: ReactNode;
-    required?: boolean;
-  }) => (
+  // ─── Maydonlar ────────────────────────────────────────────────────────────
+
+  const renderTextField = (
+    name: "fullName" | "username",
+    label: string,
+    placeholder: string,
+    hint?: string,
+  ) => (
     <Controller
       control={control}
       name={name}
       render={({ field, fieldState }) => (
-        <div className="space-y-0 relative">
-          <label className={labelClasses}>
-            {label} {required && <span className="text-red-500">*</span>}
-          </label>
-          <div className="relative group">
-            {icon && (
-              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[color:var(--color-text-muted)] dark:text-white/55 group-focus-within:text-main transition-colors">
-                {icon}
-              </div>
-            )}
-            {name === "phone" && (
-              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-maindark dark:text-white font-semibold z-10 text-sm select-none">
-                +998
-              </div>
-            )}
-            <input
-              type={type}
-              name={field.name}
-              value={field.value}
-              onBlur={field.onBlur}
-              onChange={(event) => {
-                const { value } = event.target;
-
-                if (name === "salary" || name === "homeRate" || name === "centerRate") {
-                  field.onChange(formatAmount(value));
-                  return;
-                }
-
-                if (name === "phone") {
-                  const nextValue = formatUzbekistanPhoneLocal(value);
-                  field.onChange(nextValue);
-                  keepPhoneCaretAfterChange(event.target, nextValue);
-                  return;
-                }
-
-                if (name === "paymentDay") {
-                  const numericValue = parseInt(value, 10);
-                  if (value === "" || (numericValue >= 1 && numericValue <= 30)) {
-                    field.onChange(value);
-                  }
-                  return;
-                }
-
-                field.onChange(value);
-              }}
-              placeholder={placeholder}
-              className={inputClasses(
-                !!fieldState.error,
-                !!icon || name === "phone",
-              )}
-              style={name === "phone" ? { paddingLeft: "3.5rem" } : undefined}
-            />
-          </div>
-          <FieldError message={fieldState.error?.message} />
-        </div>
+        <Field label={label} required hint={hint} error={fieldState.error?.message}>
+          <TextInput
+            name={field.name}
+            value={field.value}
+            onValueChange={field.onChange}
+            onBlur={field.onBlur}
+            placeholder={placeholder}
+            autoComplete="off"
+          />
+        </Field>
       )}
     />
   );
 
-  const renderPasswordInput = () => (
+  const renderMoneyField = (
+    name: "salary" | "homeRate" | "centerRate",
+    label: string,
+    placeholder: string,
+    { required, hint }: { required: boolean; hint?: string },
+  ) => (
+    <Controller
+      control={control}
+      name={name}
+      render={({ field, fieldState }) => (
+        <Field label={label} required={required} hint={hint} error={fieldState.error?.message}>
+          <TextInput
+            mode="money"
+            name={field.name}
+            value={field.value}
+            onValueChange={field.onChange}
+            onBlur={field.onBlur}
+            placeholder={placeholder}
+          />
+        </Field>
+      )}
+    />
+  );
+
+  const phoneField = (
+    <Controller
+      control={control}
+      name="phone"
+      render={({ field, fieldState }) => (
+        <Field label={t("v2.create.fields.phone")} required error={fieldState.error?.message}>
+          <TextInput
+            mode="phone"
+            name={field.name}
+            value={field.value}
+            onValueChange={field.onChange}
+            onBlur={field.onBlur}
+            placeholder={t("v2.create.fields.phonePlaceholder")}
+          />
+        </Field>
+      )}
+    />
+  );
+
+  const passwordField = (
     <Controller
       control={control}
       name="password"
       render={({ field, fieldState }) => (
-        <div className="space-y-0 relative">
-          <label className={labelClasses}>
-            {t("passwordPlaceholder")} <span className="text-red-500">*</span>
-          </label>
-          <div className="relative group">
-            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[color:var(--color-text-muted)] dark:text-white/55 group-focus-within:text-main transition-colors">
-              <Shield size={18} />
-            </div>
-            <input
-              type={showPassword ? "text" : "password"}
-              name={field.name}
-              value={field.value}
-              onBlur={field.onBlur}
-              onChange={field.onChange}
-              placeholder="••••••"
-              className={inputClasses(!!fieldState.error, true)}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[color:var(--color-text-muted)] hover:text-maindark dark:text-white/55 dark:hover:text-white transition-colors p-1"
-            >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-            </button>
-          </div>
-          <FieldError message={fieldState.error?.message} />
-        </div>
+        <Field
+          label={t("v2.create.fields.password")}
+          required
+          hint={t("v2.create.fields.passwordHint")}
+          error={fieldState.error?.message}
+        >
+          <TextInput
+            type={showPassword ? "text" : "password"}
+            name={field.name}
+            value={field.value}
+            onValueChange={field.onChange}
+            onBlur={field.onBlur}
+            placeholder="••••••"
+            autoComplete="new-password"
+            suffix={
+              <IconButton
+                label={t(showPassword ? "v2.create.fields.hidePassword" : "v2.create.fields.showPassword")}
+                icon={showPassword ? EyeOff : Eye}
+                size="sm"
+                aria-pressed={showPassword}
+                className="-mr-2 max-md:-mr-3"
+                onMouseDown={(event) => event.preventDefault()}
+                onClick={() => setShowPassword((previous) => !previous)}
+              />
+            }
+          />
+        </Field>
       )}
     />
   );
 
-  const renderPaymentDayPicker = ({
-    required,
-  }: {
-    required: boolean;
-  }) => (
+  const renderPaymentDayField = (required: boolean) => (
     <Controller
       control={control}
       name="paymentDay"
       render={({ field, fieldState }) => (
-        <div className="space-y-0 relative">
-          <label className={labelClasses}>
-            {t("paymentDay")} {required && <span className="text-red-500">*</span>}
-          </label>
-          {/*
-            Dizayn v2 `Select` (ega qarori 2026-10-16): oylik kalendar o'rniga 1–30 kunlar; qiymat avvalgidek satr.
-            `lg` (48 px) — qatordagi «Maosh» maydoni bilan bir balandlikda.
-          */}
+        <Field
+          label={t("v2.create.fields.paymentDay")}
+          labelAs="span"
+          required={required}
+          hint={t(required ? "v2.create.fields.paymentDayHintRequired" : "v2.create.fields.paymentDayHint")}
+          error={fieldState.error?.message}
+        >
+          {/* Ega qarori 2026-10-16: oylik kalendar o'rniga 1–30 kunlar; qiymat avvalgidek satr. */}
           <Select
-            size="lg"
-            aria-label={t("paymentDay")}
             options={PAYMENT_DAY_OPTIONS}
             value={toPaymentDayOption(field.value)}
             onChange={(next) => field.onChange(next ?? "")}
             onBlur={field.onBlur}
             placeholder={t("paymentDayPlaceholder")}
-            invalid={Boolean(fieldState.error)}
-            required={required}
           />
-          <FieldError message={fieldState.error?.message} />
-        </div>
+        </Field>
       )}
     />
   );
 
-  return (
-    <div className="flex w-full min-h-full flex-col overflow-hidden rounded-2xl transition-colors duration-300">
-      <div className="shrink-0 border-b border-slate-100 px-3 py-3 dark:border-white/5 sm:px-4 md:px-6">
-        <div className="text-right">
-          <h2 className="text-base font-bold text-slate-800 dark:text-white sm:text-lg">
-            {t("createNewUser")}{" "}
-            {getRoleLabel(role)}
-          </h2>
+  const branchField = (
+    <Controller
+      control={control}
+      name="branchId"
+      render={({ field, fieldState }) => (
+        <Field label={t("v2.create.fields.branch")} labelAs="span" required error={fieldState.error?.message}>
+          <Select
+            searchable
+            options={branchOptions}
+            value={field.value || null}
+            onChange={(next) => field.onChange(next ?? "")}
+            onBlur={field.onBlur}
+            placeholder={t("branchPlaceholder")}
+            loading={isBranchesLoading}
+          />
+        </Field>
+      )}
+    />
+  );
+
+  const salaryPlaceholder = t("v2.create.fields.salaryPlaceholder");
+  const homeTariff = (required: boolean) =>
+    renderMoneyField("homeRate", t("v2.create.fields.homeTariff"), t("v2.create.fields.homeTariffPlaceholder"), {
+      required,
+      hint: t("v2.create.fields.homeTariffHint"),
+    });
+  const centerTariff = (required: boolean) =>
+    renderMoneyField("centerRate", t("v2.create.fields.centerTariff"), t("v2.create.fields.centerTariffPlaceholder"), {
+      required,
+      hint: t("v2.create.fields.centerTariffHint"),
+    });
+
+  const showBranchField =
+    role === "manager" || (role === "registrator" && !(isManagerHybridCreator && Boolean(currentBranchId)));
+  const isMarketRole = role === "marketing";
+  const RoleIcon = ROLE_ICONS[role] ?? UserCog;
+
+  const roleHint = (key: UserRole) => {
+    if (key === "marketing") return t("v2.create.roleHint.market");
+    if (key === "registrator" && isManagerHybridCreator) return t("v2.create.roleHint.registratorOwnBranch");
+    return t(`v2.create.roleHint.${key}`);
+  };
+
+  // ─── Chap ustun: rol kartasi / biriktirish kartasi + izoh ────────────────
+
+  const rolePanel = shouldShowRolePanel ? (
+    <Card title={t("v2.create.roleCard")} divided padding="none">
+      <fieldset className="m-0 grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-2 border-0 p-4">
+        <legend className="sr-only">{t("v2.create.roleGroup")}</legend>
+        {visibleRoles.map((key, index) => {
+          const Icon = ROLE_ICONS[key] ?? UserCog;
+          const selected = key === role;
+          const lastOdd = index === visibleRoles.length - 1 && visibleRoles.length % 2 === 1;
+          return (
+            <label
+              key={key}
+              className={cx(
+                "flex min-h-[60px] cursor-pointer items-center gap-3 rounded-xl border px-3.5 py-2.5",
+                "transition-[background-color,border-color] duration-150 motion-reduce:transition-none",
+                "has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-action",
+                selected ? "border-action bg-action-soft" : "border-border bg-surface hover:bg-sunken",
+                lastOdd && "col-span-full",
+              )}
+            >
+              <input
+                type="radio"
+                name={`${formId}-role`}
+                value={key}
+                checked={selected}
+                onChange={() => setValue("role", key)}
+                className="sr-only"
+              />
+              <span
+                aria-hidden="true"
+                className={cx(
+                  "inline-flex size-9 shrink-0 items-center justify-center rounded-[10px]",
+                  selected ? "bg-surface text-action-fg" : "bg-sunken text-text-muted",
+                )}
+              >
+                <Icon size={18} strokeWidth={2} />
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span className="font-semibold text-text">{getRoleLabel(key)}</span>
+                <span className="text-xs text-text-muted">{roleHint(key)}</span>
+              </span>
+              {selected ? <Check size={18} strokeWidth={2} aria-hidden="true" className="shrink-0 text-action-fg" /> : null}
+            </label>
+          );
+        })}
+        {isManagerHybridCreator ? (
+          <p className="col-span-full m-0 text-[13px] text-text-muted">
+            {viewerBranch.name
+              ? t("v2.create.hybridNote", { branch: viewerBranch.name })
+              : t("v2.create.hybridNoteOwnBranch")}
+          </p>
+        ) : null}
+      </fieldset>
+    </Card>
+  ) : (
+    <Card title={t("v2.create.assignCard")} divided bodyClassName="flex flex-col gap-4">
+      <div className="flex items-center gap-3 rounded-xl border border-action bg-action-soft px-3.5 py-2.5">
+        <span
+          aria-hidden="true"
+          className="inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-surface text-action-fg"
+        >
+          <Truck size={18} strokeWidth={2} />
+        </span>
+        <span className="flex min-w-0 flex-col gap-0.5">
+          <span className="font-semibold text-text">{t("v2.create.assignCourier")}</span>
+          <span className="text-xs text-text-muted">{t("v2.create.assignCourierHint")}</span>
+        </span>
+      </div>
+      <dl className="m-0 grid grid-cols-2 gap-4 text-sm">
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <dt className="text-[13px] text-text-muted">{t("v2.create.assignBranch")}</dt>
+          <dd className="m-0 font-semibold text-text">{viewerBranch.name ?? "—"}</dd>
+        </div>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <dt className="text-[13px] text-text-muted">{t("v2.create.assignRegion")}</dt>
+          <dd className="m-0 font-semibold text-text">{viewerBranch.regionName ?? "—"}</dd>
+        </div>
+      </dl>
+      <p className="m-0 text-[13px] text-text-muted">{t("v2.create.assignNote")}</p>
+    </Card>
+  );
+
+  const credentialsNote = (
+    <div role="note" className={cx("flex min-w-0 items-start gap-3 rounded-xl px-4 py-3 text-sm", TONE_SOFT.info)}>
+      <KeyRound size={18} aria-hidden="true" className="mt-px shrink-0" />
+      <div className="flex min-w-0 flex-1 flex-col gap-1 text-text">
+        <div className="font-bold">{t("v2.create.alertTitle")}</div>
+        <div className="text-[13px] leading-[18px]">
+          {t(shouldShowRolePanel ? "v2.create.alertText" : "v2.create.alertTextCourier")}
         </div>
       </div>
+    </div>
+  );
 
-      <div className="flex flex-1 flex-col gap-4 overflow-visible px-3 py-3 sm:px-4 sm:py-4 xl:flex-row xl:items-start xl:gap-6 xl:overflow-hidden xl:px-6 xl:py-6">
-        {shouldShowRolePanel && (
-          <div className="w-full shrink-0 xl:w-72">
-            <div className="rounded-2xl border border-slate-100 bg-white p-3 shadow-sm dark:border-primarydark/20 dark:bg-maindark sm:p-4">
-              <h3 className="text-xs font-bold text-slate-400 dark:text-white/40 uppercase tracking-wider mb-3 px-1">
-                {t("roleSelect")}
-              </h3>
-              {isCompactRolePicker ? (
-                <div>
-                  <button
-                    type="button"
-                    onClick={() => setIsCompactRolePickerOpen((prev) => !prev)}
-                    className="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-main bg-main px-3 py-2.5 text-primary shadow-sm shadow-main/20 dark:text-white"
-                  >
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary dark:bg-white/15 dark:text-white">
-                        {activeRoleOption.icon}
-                      </span>
-                      <span className="truncate text-left text-sm font-semibold">
-                        {getRoleLabel(activeRoleOption.key)}
-                      </span>
-                    </div>
-                    <ChevronDown
-                      size={16}
-                      className={`shrink-0 transition-transform duration-200 ${
-                        isCompactRolePickerOpen ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
+  // ─── O'ng ustun: forma kartasi ────────────────────────────────────────────
 
-                  {isCompactRolePickerOpen && (
-                    <div className="mt-3 flex flex-col gap-2">
-                      {rolePickerOptions
-                        .filter((option) =>
-                          managerAllowedRoles
-                            ? managerAllowedRoles.includes(option.key)
-                            : true,
-                        )
-                        .filter((option) => option.key !== role)
-                        .map((option) => (
-                          <button
-                            key={option.key}
-                            type="button"
-                            onClick={() => {
-                              setValue("role", option.key);
-                              setIsCompactRolePickerOpen(false);
-                            }}
-                            className="flex min-h-12 w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-700 transition-colors hover:border-main/30 hover:bg-main/5 dark:border-white/10 dark:bg-primarydark dark:text-white/80"
-                          >
-                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-main/10 text-main dark:bg-white/15 dark:text-white">
-                              {option.icon}
-                            </span>
-                            <span className="text-left text-sm font-semibold">
-                              {getRoleLabel(option.key)}
-                            </span>
-                          </button>
-                        ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="max-h-[45vh] overflow-y-auto pr-1 custom-scrollbar xl:max-h-none xl:overflow-visible xl:pr-0">
-                  <RoleSelector
-                    selectedRole={role}
-                    onSelect={(nextRole) => setValue("role", nextRole)}
-                    allowedRoles={
-                      managerAllowedRoles ?? undefined
-                    }
-                  />
-                </div>
-              )}
-            </div>
+  const formDescription =
+    role === "courier"
+      ? t("v2.create.formDescription.courier")
+      : isMarketRole
+        ? t("v2.create.formDescription.market")
+        : undefined;
 
-            <div className="mt-4 rounded-2xl bg-linear-to-br from-main to-indigo-600 p-4 text-white shadow-lg shadow-main/20 sm:p-5">
-              <h3 className="text-base font-bold mb-2">{getRoleLabel(role)}</h3>
-              <p className="text-white/80 text-xs leading-relaxed">
-                {t("roleMarketCardHint")}
-              </p>
-            </div>
-          </div>
-        )}
+  const formTitle = (
+    <span className="flex min-w-0 items-center gap-3">
+      <span
+        aria-hidden="true"
+        className="inline-flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-sunken text-text-muted"
+      >
+        <RoleIcon size={20} strokeWidth={2} />
+      </span>
+      <span className="flex min-w-0 flex-col">
+        <span>{t("addRoleTitle", { role: getRoleLabel(role) })}</span>
+        {formDescription ? <span className="text-[13px] font-normal text-text-muted">{formDescription}</span> : null}
+      </span>
+    </span>
+  );
 
-        <div className="flex w-full flex-col overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-xl shadow-slate-200/50 dark:border-primarydark/20 dark:bg-maindark dark:shadow-black/20">
-          <div className="flex shrink-0 items-center gap-3 border-b border-slate-100 bg-slate-50/50 px-3 py-3 dark:border-white/5 dark:bg-main sm:gap-4 sm:px-4 md:px-6">
-            <div
-              className={`p-2 rounded-xl bg-linear-to-br text-white shadow-md ${
-                role === "admin"
-                  ? "from-purple-500 to-indigo-600"
-                  : role === "manager" || role === "registrator"
-                    ? "from-blue-500 to-cyan-500"
-                    : role === "courier"
-                      ? "from-orange-500 to-amber-500"
-                      : "from-emerald-500 to-teal-500"
-              }`}
-            >
-              <ShieldIcon role={role} size={20} />
-            </div>
-            <h1 className="text-base font-bold text-slate-800 dark:text-white sm:text-lg md:text-xl">
-              {t("addRoleTitle", { role: getRoleLabel(role) })}
-            </h1>
-          </div>
+  return (
+    <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
+      <PageHeader
+        back="/all-users"
+        backLabel={t("v2.common.back")}
+        title={t("createNewUser")}
+        description={
+          <>
+            {shouldShowRolePanel ? t("v2.create.description") : t("v2.create.descriptionCourierOnly")}
+          </>
+        }
+      />
 
-          <div className="overflow-y-auto px-3 py-3 sm:px-4 sm:py-4 md:px-6 md:py-6">
-            <form id="create-user-form" onSubmit={handleSubmit(onSubmit)} className="w-full">
-              <div className="space-y-8">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-3 xl:gap-6">
-                  {renderInput({
-                    label: t("fullNameShort"),
-                    name: "fullName",
-                    placeholder: t("fullNamePlaceholder"),
-                    icon: <User size={18} />,
-                  })}
-                  {renderInput({
-                    label: t("phone"),
-                    name: "phone",
-                    type: "tel",
-                    placeholder: "90 123 45 67",
-                  })}
-                  {renderPasswordInput()}
-                </div>
-
-                <div className="h-px bg-slate-100 dark:bg-white/5" />
-
-                {(role === "admin" || role === "registrator") && (
-                  <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 md:gap-6">
-                    {renderInput({
-                      label: t("salaryWithCurrency"),
-                      name: "salary",
-                      placeholder: "Masalan: 5 000 000",
-                    })}
-                    {renderPaymentDayPicker({ required: true })}
-                  </div>
-                )}
-
-                {role === "manager" && (
-                  <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 2xl:grid-cols-4 md:gap-6">
-                    {renderInput({
-                      label: t("salaryWithCurrency"),
-                      name: "salary",
-                      placeholder: "Masalan: 5 000 000",
-                      required: false,
-                    })}
-                    {renderPaymentDayPicker({ required: false })}
-                    {renderInput({
-                      label: t("homeTariffWithCurrency"),
-                      name: "homeRate",
-                      placeholder: "Masalan: 10 000",
-                      icon: <Building size={18} />,
-                      required: false,
-                    })}
-                    {renderInput({
-                      label: t("centerTariffWithCurrency"),
-                      name: "centerRate",
-                      placeholder: "Masalan: 8 000",
-                      icon: <Store size={18} />,
-                      required: false,
-                    })}
-                  </div>
-                )}
-
-                {(role === "manager" ||
-                  (role === "registrator" &&
-                    !(isManagerHybridCreator && Boolean(currentBranchId)))) && (
-                  <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 md:gap-6">
-                    <Controller
-                      control={control}
-                      name="branchId"
-                      render={({ field, fieldState }) => (
-                        <div className="relative">
-                          <SearchableSelect
-                            label={t("branchLabel")}
-                            name={field.name}
-                            value={field.value}
-                            onChange={field.onChange}
-                            options={branchOptions}
-                            placeholder={branchOptions.length ? t("branchPlaceholder") : t("loading")}
-                            loading={isBranchesLoading}
-                            icon={Building}
-                            surface="search"
-                          />
-                          <FieldError message={fieldState.error?.message} />
-                        </div>
-                      )}
-                    />
-                  </div>
-                )}
-
-                {role === "courier" && (
-                  <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 2xl:grid-cols-4 md:gap-6">
-                    {renderInput({
-                      label: t("salaryWithCurrency"),
-                      name: "salary",
-                      placeholder: "Masalan: 5 000 000",
-                      required: false,
-                    })}
-                    {renderPaymentDayPicker({ required: false })}
-                    {renderInput({
-                      label: t("homeTariffWithCurrency"),
-                      name: "homeRate",
-                      placeholder: "Masalan: 10 000",
-                      icon: <Building size={18} />,
-                      required: courierTariffsRequired,
-                    })}
-                    {renderInput({
-                      label: t("centerTariffWithCurrency"),
-                      name: "centerRate",
-                      placeholder: "Masalan: 8 000",
-                      icon: <Store size={18} />,
-                      required: courierTariffsRequired,
-                    })}
-                  </div>
-                )}
-
-                {role === "marketing" && (
-                  <div className="grid grid-cols-1 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300 md:grid-cols-2 md:gap-6">
-                    {renderInput({
-                      label: "Username",
-                      name: "username",
-                      placeholder: "market_01",
-                      icon: <User size={18} />,
-                    })}
-                    <Controller
-                      control={control}
-                      name="deliveryType"
-                      render={({ field, fieldState }) => (
-                        <div className="relative">
-                          <SearchableSelect
-                            label={t("mainTariff")}
-                            name={field.name}
-                            value={field.value}
-                            onChange={field.onChange}
-                            options={[
-                              { value: "center", label: t("centerOnlyTariff") },
-                              { value: "address", label: t("doorTariff") },
-                            ]}
-                            placeholder={t("defaultTariffPlaceholder")}
-                            icon={Store}
-                            surface="search"
-                          />
-                          <FieldError message={fieldState.error?.message} />
-                        </div>
-                      )}
-                    />
-                    {renderInput({
-                      label: t("homeTariffWithCurrency"),
-                      name: "homeRate",
-                      placeholder: "Masalan: 10 000",
-                      icon: <Building size={18} />,
-                    })}
-                    {renderInput({
-                      label: t("centerTariffWithCurrency"),
-                      name: "centerRate",
-                      placeholder: "Masalan: 8 000",
-                      icon: <Store size={18} />,
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-8 flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 dark:border-white/5 sm:flex-row sm:items-center sm:justify-end sm:gap-4">
-                <button
-                  type="button"
-                  onClick={() => navigate(-1)}
-                  className="w-full rounded-xl px-6 py-2.5 text-sm font-semibold text-slate-500 transition-all hover:bg-slate-100 dark:text-white/60 dark:hover:bg-white/5 sm:w-auto"
-                >
-                  {t("cancel")}
-                </button>
-                <button
-                  type="submit"
-                  form="create-user-form"
-                  disabled={isPending}
-                  className={`relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl px-8 py-2.5 text-sm font-bold text-white shadow-lg shadow-main/20 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:transform-none disabled:opacity-70 sm:w-auto ${
-                    role === "admin"
-                      ? "bg-linear-to-r from-purple-600 to-indigo-600"
-                      : role === "manager" || role === "registrator"
-                        ? "bg-linear-to-r from-blue-500 to-cyan-500"
-                        : role === "courier"
-                          ? "bg-linear-to-r from-orange-500 to-amber-500"
-                          : "bg-linear-to-r from-emerald-500 to-teal-500"
-                  }`}
-                >
-                  {isPending ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>{t("saving")}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>{t("save")}</span>
-                      <Send size={16} strokeWidth={2.5} />
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
+      <div className="flex flex-wrap items-start gap-6 max-md:gap-4">
+        <div className="flex min-w-0 flex-[1_1_280px] flex-col gap-4">
+          {rolePanel}
+          {credentialsNote}
         </div>
+
+        <form
+          id={formId}
+          noValidate
+          onSubmit={(event) => void handleSubmit(onSubmit)(event)}
+          aria-label={t("addRoleTitle", { role: getRoleLabel(role) })}
+          className="min-w-0 flex-[3_1_520px]"
+        >
+          <Card
+            as="div"
+            padding="none"
+            title={formTitle}
+            divided
+            footer={
+              <div className="ml-auto flex gap-2 max-md:w-full max-md:[&>*]:flex-1">
+                <Button variant="secondary" onClick={() => navigate(-1)} disabled={isPending}>
+                  {t("cancel")}
+                </Button>
+                <Button type="submit" loading={isPending} loadingText={t("v2.create.saving")}>
+                  {t("save")}
+                </Button>
+              </div>
+            }
+          >
+            <FormSection title={t("v2.create.sections.main")}>
+              <div className={GRID_200}>
+                {renderTextField(
+                  "fullName",
+                  t(isMarketRole ? "v2.create.fields.marketName" : "v2.create.fields.name"),
+                  t(isMarketRole ? "v2.create.fields.marketNamePlaceholder" : "v2.create.fields.namePlaceholder"),
+                )}
+                {phoneField}
+                {isMarketRole ? null : passwordField}
+              </div>
+            </FormSection>
+
+            {showBranchField ? (
+              <FormSection title={t("v2.create.sections.branch")}>
+                <div className={GRID_260}>{branchField}</div>
+              </FormSection>
+            ) : null}
+
+            {role === "admin" || role === "registrator" ? (
+              <FormSection title={t("v2.create.sections.salary")}>
+                <div className={GRID_260}>
+                  {renderMoneyField("salary", t("v2.create.fields.salary"), salaryPlaceholder, { required: true })}
+                  {renderPaymentDayField(true)}
+                </div>
+              </FormSection>
+            ) : null}
+
+            {role === "manager" ? (
+              <FormSection title={t("v2.create.sections.salaryTariff")}>
+                <div className={GRID_260}>
+                  {renderMoneyField("salary", t("v2.create.fields.salary"), salaryPlaceholder, {
+                    required: false,
+                    hint: t("v2.create.fields.salaryOptional"),
+                  })}
+                  {renderPaymentDayField(false)}
+                </div>
+                <div className={GRID_260}>
+                  {homeTariff(false)}
+                  {centerTariff(false)}
+                </div>
+              </FormSection>
+            ) : null}
+
+            {role === "courier" ? (
+              <FormSection title={t("v2.create.sections.salaryTariff")} note={t("v2.create.fields.courierSalaryNote")}>
+                <div className={GRID_260}>
+                  {renderMoneyField("salary", t("v2.create.fields.salary"), salaryPlaceholder, {
+                    required: false,
+                    hint: t("v2.create.fields.salaryOptional"),
+                  })}
+                  {renderPaymentDayField(false)}
+                </div>
+                <div className={GRID_260}>
+                  {homeTariff(courierTariffsRequired)}
+                  {centerTariff(courierTariffsRequired)}
+                </div>
+              </FormSection>
+            ) : null}
+
+            {isMarketRole ? (
+              <>
+                <FormSection title={t("v2.create.sections.login")}>
+                  <div className={GRID_260}>
+                    {renderTextField(
+                      "username",
+                      t("v2.create.fields.login"),
+                      t("v2.create.fields.loginPlaceholder"),
+                      t("v2.create.fields.loginHint"),
+                    )}
+                    {passwordField}
+                  </div>
+                </FormSection>
+                <FormSection title={t("v2.create.sections.delivery")}>
+                  <Controller
+                    control={control}
+                    name="deliveryType"
+                    render={({ field, fieldState }) => (
+                      <Field
+                        label={t("v2.create.fields.defaultTariff")}
+                        labelAs="span"
+                        required
+                        hint={t("v2.create.fields.defaultTariffHint")}
+                        error={fieldState.error?.message}
+                      >
+                        <SegmentedControl
+                          ariaLabel={t("v2.create.fields.defaultTariff")}
+                          value={field.value || ""}
+                          onValueChange={(next) => {
+                            field.onChange(next);
+                            field.onBlur();
+                          }}
+                          options={[
+                            { value: "address", label: t("v2.create.fields.tariffHome") },
+                            { value: "center", label: t("v2.create.fields.tariffCenter") },
+                          ]}
+                          className="self-start max-md:self-stretch"
+                        />
+                      </Field>
+                    )}
+                  />
+                  <div className={GRID_260}>
+                    {homeTariff(true)}
+                    {centerTariff(true)}
+                  </div>
+                </FormSection>
+              </>
+            ) : null}
+          </Card>
+        </form>
       </div>
     </div>
   );
 });
 
-const ShieldIcon = ({
-  role,
-  size = 20,
-}: {
-  role: UserRole;
-  size?: number;
-}) => {
-  switch (role) {
-    case "admin":
-      return <Shield size={size} />;
-    case "manager":
-    case "registrator":
-      return <Calendar size={size} />;
-    case "courier":
-      return <Store size={size} />;
-    default:
-      return <Building size={size} />;
-  }
-};
+CreateUserForm.displayName = "CreateUserForm";
+
+/** `readViewerBranch` har chaqiruvda yangi obyekt — selektor qayta chizishni maydonlar bo'yicha solishtiradi. */
+function shallowBranch(left: ReturnType<typeof readViewerBranch>, right: ReturnType<typeof readViewerBranch>) {
+  return (
+    left.id === right.id &&
+    left.name === right.name &&
+    left.type === right.type &&
+    left.regionId === right.regionId &&
+    left.regionName === right.regionName
+  );
+}

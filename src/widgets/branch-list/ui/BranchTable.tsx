@@ -1,118 +1,185 @@
-import { Button } from "antd";
-import { EditOutlined } from "@ant-design/icons";
-import { useNavigate } from "react-router-dom";
+// dizayn-v2: superadmin-branches-list-table
+import { memo, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowRight } from "lucide-react";
-import { BranchStatusBadge, type Branch } from "../../../entities/branch";
-import { DeleteBranchButton } from "../../../features/branch-delete";
-import { Table } from "../../../shared/components/Table/Table";
-import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
-import { formatDate } from "../../../shared/lib/formatDate";
+import { Link, useNavigate } from "react-router-dom";
+import type { Branch } from "../../../entities/branch";
+import {
+  branchAreaText,
+  branchStatusLabel,
+  branchStatusTone,
+  branchTypeLabel,
+  knownText,
+} from "../../../features/branch/lib/branchDisplay";
+import { cx } from "../../../shared/lib/cx";
+import { formatDateLocalized } from "../../../shared/lib/formatDateTime";
+import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { Badge, DataTable, type DataTableColumn, type DataTableSort } from "../../../shared/ui/primitives";
+import { BranchRowMenu } from "./BranchRowMenu";
+import { BranchSummaryCard } from "./BranchSummaryCard";
 
 interface BranchTableProps {
-  data: Branch[];
-  loading?: boolean;
+  data: readonly Branch[];
   onEdit: (branch: Branch) => void;
+  onDelete: (branch: Branch) => void;
+  onOpen: (branch: Branch) => void;
+  busy?: boolean;
 }
 
-const BranchTable = ({ data, loading, onEdit }: BranchTableProps) => {
-  const { t } = useTranslation("branches");
-  const { t: tCommon } = useTranslation("common");
-  const navigate = useNavigate();
-  const actionButtonClassName =
-    "!flex !h-8 !w-8 !items-center !justify-center !rounded-lg !border !border-border-soft !bg-main-soft !p-0 !font-medium !text-maindark transition-colors hover:!border-main hover:!bg-main-soft hover:!text-main dark:!border-primarydark/60 dark:!bg-primarydark/40 dark:!text-white/85 dark:hover:!border-main dark:hover:!bg-primarydark/70 dark:hover:!text-white";
-  const deleteButtonClassName =
-    `${actionButtonClassName} !border-rose-200/80 !bg-rose-50 !text-rose-600 hover:!border-rose-400 hover:!bg-rose-100 hover:!text-rose-700 dark:!border-rose-500/30 dark:!bg-rose-500/12 dark:!text-rose-300 dark:hover:!border-rose-400/60 dark:hover:!bg-rose-500/18 dark:hover:!text-rose-200`;
+type SortKey = "name" | "region" | "employees" | "created";
 
-  const columns: ColumnConfig<Branch>[] = [
-    {
-      key: "name",
-      label: t("table.name"),
-      sortable: true,
-      render: (_, record) => (
-        <button
-          type="button"
-          className="font-semibold text-main transition-colors hover:text-primarydark dark:text-white dark:hover:text-main"
-          onClick={(event) => {
-            event.stopPropagation();
-            navigate(`/branches/${record.id}`);
-          }}
-        >
-          {record.name}
-        </button>
-      ),
-    },
-    {
-      key: "region",
-      label: t("table.area"),
-      sortable: true,
-      sortValue: (row) => `${row.region?.name ?? "—"} ${row.district?.name ?? "—"}`,
-      render: (_, record) => `${record.region?.name ?? "—"}, ${record.district?.name ?? "—"}`,
-    },
-    {
-      key: "address",
-      label: t("fields.address"),
-      sortable: true,
-    },
-    {
-      key: "status",
-      label: t("fields.status"),
-      sortable: true,
-      render: (status: Branch["status"]) => <BranchStatusBadge status={status} />,
-    },
-    {
-      key: "employees_count",
-      label: t("table.employees"),
-      sortable: true,
-      className: "text-center",
-    },
-    {
-      key: "created_at",
-      label: t("table.date"),
-      sortable: true,
-      sortValue: (row) => new Date(row.created_at ?? 0).getTime(),
-      render: (value: string) => (value ? formatDate(value, "DD.MM.YYYY") : "—"),
-    },
-    {
-      key: "id",
-      label: t("table.actions"),
-      render: (_, record) => (
-        <div className="flex flex-wrap items-center gap-2" onClick={(event) => event.stopPropagation()}>
-          <Button
-            size="small"
-            icon={<ArrowRight size={15} />}
-            className={actionButtonClassName}
-            onClick={() => navigate(`/branches/${record.id}`)}
-            aria-label={tCommon("open")}
-            title={tCommon("open")}
+const SORT_VALUE: Record<SortKey, (branch: Branch) => string | number> = {
+  name: (branch) => branch.name,
+  region: (branch) => `${branch.region?.name ?? "—"} ${branch.district?.name ?? "—"}`,
+  employees: (branch) => Number(branch.employees_count ?? 0),
+  created: (branch) => new Date(branch.created_at ?? 0).getTime() || 0,
+};
+
+const isSortKey = (value: string): value is SortKey => value in SORT_VALUE;
+
+/**
+ * Joriy sahifa ichida saralash (eski jadvaldagidek — `GET /branches` saralash parametrini qabul qilmaydi,
+ * openapi: faqat `search`, `status`, `page`, `limit`).
+ */
+const sortBranches = (rows: readonly Branch[], sort: DataTableSort | null): readonly Branch[] => {
+  if (!sort || !isSortKey(sort.key)) return rows;
+  const value = SORT_VALUE[sort.key];
+  const direction = sort.direction === "asc" ? 1 : -1;
+  return [...rows].sort((left, right) => {
+    const a = value(left);
+    const b = value(right);
+    const order = typeof a === "number" && typeof b === "number" ? a - b : String(a).localeCompare(String(b));
+    return order * direction;
+  });
+};
+
+/**
+ * FILIALLAR JADVALI (maket `superadmin-branches-list-table`): saralanadigan Nomi · Turi (< 1024 da nom ostida) ·
+ * Hudud (+ manzil) · Xodimlar · Holat · Sana (< 1024 da yashirin) · amallar menyusi. Qator bosilsa — tafsilot.
+ * Telefonda — kartalar (`BranchSummaryCard`: «Batafsil →» bilan).
+ */
+const BranchTable = ({ data, onEdit, onDelete, onOpen, busy = false }: BranchTableProps) => {
+  const { t, i18n } = useTranslation("branches");
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const navigate = useNavigate();
+  const [sort, setSort] = useState<DataTableSort | null>(null);
+  const rows = useMemo(() => sortBranches(data, sort), [data, sort]);
+  const count = useCallback((value: number) => formatNumberLocalized(value, { language }), [language]);
+
+  const columns = useMemo<DataTableColumn<Branch>[]>(
+    () => [
+      {
+        id: "name",
+        header: t("table.name"),
+        sortable: true,
+        cell: (branch) => {
+          const code = knownText(branch.code);
+          return (
+            <>
+              <Link
+                to={`/branches/${encodeURIComponent(branch.id)}`}
+                className="whitespace-nowrap font-semibold text-text hover:text-action-fg hover:underline"
+              >
+                {branch.name}
+              </Link>
+              <div className="whitespace-nowrap text-[13px] text-text-muted">
+                {code}
+                {/* Planshetda «Turi» ustuni yashirin — tur kod yonida (maket `.el-show-tablet`). */}
+                <span className="hidden max-lg:inline">
+                  {code ? " · " : ""}
+                  {branchTypeLabel(branch.type, t)}
+                </span>
+              </div>
+            </>
+          );
+        },
+      },
+      {
+        id: "type",
+        header: t("v2.columns.type"),
+        hideBelow: "lg",
+        cell: (branch) => <Badge>{branchTypeLabel(branch.type, t)}</Badge>,
+      },
+      {
+        id: "region",
+        header: t("table.area"),
+        sortable: true,
+        cell: (branch) => {
+          const address = knownText(branch.address);
+          return (
+            <>
+              <div>{branchAreaText(branch) || "—"}</div>
+              {address ? <div className="text-[13px] text-text-muted">{address}</div> : null}
+            </>
+          );
+        },
+      },
+      {
+        id: "employees",
+        header: t("table.employees"),
+        sortable: true,
+        align: "end",
+        cell: (branch) => (
+          <span className={cx(branch.employees_count === 0 && "text-text-subtle")}>
+            {t("v2.list.employees", { count: branch.employees_count, value: count(branch.employees_count) })}
+          </span>
+        ),
+      },
+      {
+        id: "status",
+        header: t("v2.columns.status"),
+        cell: (branch) => (
+          <Badge tone={branchStatusTone(branch.status)} dot>
+            {branchStatusLabel(branch.status, t)}
+          </Badge>
+        ),
+      },
+      {
+        id: "created",
+        header: t("table.date"),
+        sortable: true,
+        firstDirection: "desc",
+        hideBelow: "lg",
+        className: "whitespace-nowrap",
+        cell: (branch) => (branch.created_at ? formatDateLocalized(branch.created_at, { language }) : "—"),
+      },
+      {
+        id: "actions",
+        header: <span className="sr-only">{t("v2.columns.actions")}</span>,
+        className: "w-16",
+        cellClassName: "text-right",
+        cell: (branch) => (
+          <BranchRowMenu
+            name={branch.name}
+            onOpen={() => onOpen(branch)}
+            onEdit={() => onEdit(branch)}
+            onDelete={() => onDelete(branch)}
           />
-          <Button
-            size="small"
-            icon={<EditOutlined />}
-            className={actionButtonClassName}
-            onClick={() => onEdit(record)}
-            aria-label={t("actions.edit")}
-            title={t("actions.edit")}
-          />
-          <DeleteBranchButton id={record.id} className={deleteButtonClassName} />
-        </div>
-      ),
-    },
-  ];
+        ),
+      },
+    ],
+    [count, language, onDelete, onEdit, onOpen, t],
+  );
+
+  const renderCard = useCallback(
+    (branch: Branch) => <BranchSummaryCard branch={branch} onEdit={onEdit} onDelete={onDelete} onOpen={onOpen} />,
+    [onDelete, onEdit, onOpen],
+  );
 
   return (
-    <Table
-      className="text-maindark dark:text-white/85"
-      keyExtractor={(branch) => branch.id}
-      loading={loading}
+    <DataTable
+      rows={rows}
       columns={columns}
-      data={data}
-      emptyMessage={t("list.notFound")}
-      onRowClick={(branch) => navigate(`/branches/${branch.id}`)}
-      preserveTableOnDesktop
-      dense
+      getRowKey={(branch) => branch.id}
+      label={t("v2.list.label")}
+      cardsLabel={t("v2.list.label")}
+      sort={sort}
+      onSortChange={setSort}
+      onRowClick={(branch) => navigate(`/branches/${encodeURIComponent(branch.id)}`)}
+      renderCard={renderCard}
+      density="tablet-tight"
+      busy={busy}
     />
   );
 };
 
-export default BranchTable;
+export default memo(BranchTable);

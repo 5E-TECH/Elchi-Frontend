@@ -457,3 +457,18 @@ export const useUser = () => {
     deleteUser,
   };
 };
+
+/**
+ * Marketning Telegram tokeni (GvL6ZFAd, backend origin/main): `GET /users/:id` endi tokenni HECH bir rolga
+ * qaytarmaydi — u faqat `GET /markets/:id/tg-token` da va faqat SUPERADMIN uchun (admin → 403). Har ko'rish
+ * jurnalga yoziladi, shuning uchun karta tokenni faqat «Ko'rsatish» / «Nusxalash» bosilganda so'raydi.
+ * Natija: token yoki `null` (marketda hali token yo'q).
+ */
+export const marketTelegramTokenQueryKey = (marketId: string) => [user, "market-tg-token", marketId] as const;
+
+export const getMarketTelegramToken = async (marketId: string): Promise<string | null> => {
+  const response = await api.get(`${API_ENDPOINTS.MARKETS.BASE}/${encodeURIComponent(marketId)}/tg-token`);
+  const body = response.data as { data?: { market_tg_token?: unknown }; market_tg_token?: unknown } | undefined;
+  const token = body?.data?.market_tg_token ?? body?.market_tg_token;
+  return typeof token === "string" && token.trim() ? token.trim() : null;
+};

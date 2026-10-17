@@ -191,5 +191,249 @@
     "extra_cost_approving": "Tasdiqlanmoqda",
     "extra_cost_rejecting": "Rad etilmoqda",
     "extra_cost_action_error": "So'rovni bajarib bo'lmadi. Qayta urinib ko'ring."
+  },
+  "v2Charts": {
+    "zone": {
+      "good": "Yaxshi · 70% va undan yuqori",
+      "mid": "O'rtacha · 40–70%",
+      "low": "Past · 40% dan kam"
+    },
+    "showMore": "Yana ko'rsatish · {{count}} ta",
+    "showLess": "Kamroq ko'rsatish",
+    "viewChart": "Grafik",
+    "viewTable": "Jadval",
+    "viewLabel": "Ko'rinish",
+    "countTa": "{{value}} ta"
+  },
+  "v2Dashboard": {
+    "header": {
+      "title": "Bosh sahifa",
+      "company": "{{headline}} · butun kompaniya bo'yicha",
+      "scoped": "{{headline}} · {{scope}}",
+      "periodLabel": "Davr",
+      "year": "Yil",
+      "yearLabel": "Yilni tanlash",
+      "rangePlaceholder": "Boshlanish → Tugash",
+      "rangeCourier": "Sana oralig'i"
+    },
+    "headline": {
+      "today": "Bugungi ko'rsatkichlar",
+      "filtered": "Tanlangan davr ko'rsatkichlari",
+      "all": "Barcha davr ko'rsatkichlari"
+    },
+    "period": {
+      "today": "Bugun",
+      "week": "Bu hafta",
+      "month": "Bu oy",
+      "all": "Barcha davr",
+      "year": "{{year}} yil"
+    },
+    "vsYesterday": "kechaga nisbatan",
+    "vsPrevious": "oldingi davrga nisbatan",
+    "yesterday": "Kecha",
+    "previousPeriod": "Oldingi davr",
+    "pp": "{{value}} p.p.",
+    "duration": "{{h}} soat {{m}} daq",
+    "durationHours": "{{h}} soat",
+    "durationMinutes": "{{m}} daq",
+    "partOfTotal": "{{part}} / {{total}} ta",
+    "retry": "Qayta urinish",
+    "kpi": {
+      "label": "Asosiy ko'rsatkichlar",
+      "courierLabel": "Ko'rsatkichlar, {{period}}",
+      "totalRevenue": "Jami daromad",
+      "netProfit": "Sof foyda",
+      "avgOrder": "O'rtacha buyurtma"
+    },
+    "success": {
+      "title": "Muvaffaqiyat darajasi",
+      "subAccepted": "{{period}} · sotilgan / qabul qilingan",
+      "subAcceptedShort": "sotilgan / qabul qilingan",
+      "subTotal": "{{period}} · sotilgan / jami buyurtmalar",
+      "subScoped": "{{period}} · {{scope}}",
+      "gaugeAccepted": "Sotilgan / qabul qilingan",
+      "gaugeTotal": "Sotilgan / jami buyurtmalar",
+      "threshold": "Yaxshi chegarasi · 70%",
+      "zonesNote": "Zonalar: 40% dan kam — past · 40–70% — o'rtacha · 70% va undan yuqori — yaxshi",
+      "aria": "Muvaffaqiyat darajasi: {{rate}}. Sotilgan {{sold}} ta, bekor qilingan {{cancelled}} ta"
+    },
+    "status": {
+      "title": "Buyurtmalar holati",
+      "subAccepted": "{{period}} qabul qilinganlar",
+      "centerAccepted": "Jami qabul qilingan",
+      "list": "Ro'yxat",
+      "legend": "Holatlar bo'yicha taqsimot",
+      "sold": "Sotilgan",
+      "inProgress": "Jarayonda",
+      "cancelled": "Bekor qilingan",
+      "inProgressNote": "Jarayonda = yo'lda, kutilmoqda va filialda turgan buyurtmalar",
+      "aria": "{{label}} {{total}} ta: {{list}}"
+    },
+    "quality": {
+      "title": "Yetkazish sifati",
+      "onTime": "O'z vaqtida (SLA)",
+      "onTimeHint": "24 soat ichida",
+      "cancelRate": "Bekor qilish darajasi",
+      "duration": "Yetkazish vaqti",
+      "durationHint": "qabuldan sotuvgacha",
+      "allTimeTitle": "Barcha davr uchun sifat ko'rsatkichlari hisoblanmaydi",
+      "allTimeHint": "Bugun, hafta yoki oyni tanlang"
+    },
+    "results": {
+      "title": "Yetkazish natijalari",
+      "sub": "{{period}} · jami qabul qilinganlardan",
+      "delivered": "Yetkazib berilgan",
+      "deliveredHint": "sotilgan va yopilgan",
+      "inProgressHint": "{{share}} · yetkazilmagan"
+    },
+    "finance": {
+      "title": "Moliyaviy tahlil",
+      "subtitle": "Daromad · oldingi davr bilan solishtirish",
+      "periodLabel": "Grafik davri",
+      "viewLabel": "Moliyaviy tahlil ko'rinishi",
+      "revenueDays": "Daromad · {{count}} kun",
+      "orders": "Buyurtmalar",
+      "average": {
+        "daily": "O'rtacha kunlik daromad",
+        "weekly": "O'rtacha haftalik daromad",
+        "monthly": "O'rtacha oylik daromad",
+        "yearly": "O'rtacha yillik daromad"
+      },
+      "previousValue": "oldingi: {{value}}",
+      "current": "Joriy",
+      "previous": "Oldingi",
+      "previousPoint": "{{label}} · oldingi",
+      "currentRange": "Joriy davr · {{range}}",
+      "previousRange": "Oldingi davr · {{range}}",
+      "compareAria": "Oldingi davr bilan solishtirish",
+      "tableDate": "Sana",
+      "chartAria": "Daromad, {{range}}",
+      "empty": "Bu davr uchun daromad ma'lumoti yo'q"
+    },
+    "cash": {
+      "title": "Kassa balansi",
+      "asOf": "{{time}} holatiga",
+      "positive": "Ijobiy",
+      "negative": "Manfiy",
+      "formula": "Joriy holat = kassa + yo'ldagi pul − marketlar",
+      "main": "Pochta kassasi",
+      "transit": "Yo'ldagi pul",
+      "markets": "Marketlar",
+      "marketsBalance": "Marketlar balansi",
+      "current": "Joriy holat",
+      "open": "Balansni ochish",
+      "empty": "Kassa ma'lumoti kelmadi",
+      "aria": "Joriy holat {{current}}: pochta kassasi {{main}}, yo'ldagi pul qo'shiladi {{transit}}, marketlar balansi ayriladi {{markets}}"
+    },
+    "top": {
+      "markets": "Top marketlar",
+      "branches": "Top filiallar",
+      "couriers": "Top kuryerlar",
+      "operators": "Top operatorlar",
+      "sub": "Sotuv foizi · sotilgan / jami",
+      "courierSub": "{{scope}}{{period}} · sotuv foizi",
+      "limited": "Ma'lumot hali kam — reyting natijalari o'zgarishi mumkin",
+      "emptyTitle": "Reyting uchun ma'lumot hali kam",
+      "emptyHint": "Buyurtmalar ko'paygach reyting shu yerda chiqadi",
+      "couriersAllTimeTitle": "Barcha davr uchun kuryerlar kesimi hisoblanmaydi",
+      "you": "Siz",
+      "yourPlace": "Sizning o'rningiz",
+      "place": "{{rank}}-o'rin",
+      "gapToNext": "{{rank}}-o'ringa {{gap}} qoldi"
+    },
+    "courier": {
+      "planToday": "Bugungi reja",
+      "planPeriod": "Davr bo'yicha reja",
+      "planSub": "Sizga biriktirilgan {{count}} ta buyurtma",
+      "remaining": "{{count}} ta qoldi",
+      "done": "{{done}} / {{total}} ta yakunlandi",
+      "remainingOnWay": "Qolgan · yo'lda",
+      "remainingOrders": "Qolgan buyurtmalar",
+      "planLegend": "Buyurtmalar holati",
+      "planAria": "Reja: {{total}} ta buyurtmadan {{done}} tasi yakunlandi ({{share}}) — sotilgan {{sold}}, bekor qilingan {{cancelled}}; {{remaining}} ta qoldi"
+    },
+    "courierCash": {
+      "title": "Kassa",
+      "open": "Kassani ochish",
+      "inHand": "Qo'lingizdagi pul · filialga topshiriladi",
+      "start": "Kun boshida",
+      "sales": "Sotuvlar",
+      "handed": "Topshirildi",
+      "other": "Boshqa",
+      "balance": "Qo'lingizda",
+      "startRow": "Kun boshida",
+      "salesRow": "Sotuvlardan kirim",
+      "handedRow": "Filialga topshirildi",
+      "otherRow": "Boshqa harakatlar",
+      "empty": "Kassa ma'lumoti kelmadi",
+      "aria": "Bugungi kassa: kun boshida {{start}}, sotuvlardan {{sales}} kirim, filialga {{handed}} topshirildi, qo'lingizda {{balance}}"
+    },
+    "region": {
+      "title": "Hududlar bo'yicha",
+      "subtitle": "Viloyatlar kesimida buyurtma va sotuv · {{period}}",
+      "metricLabel": "Xaritadagi ko'rsatkich",
+      "metric": {
+        "orders": "Buyurtmalar",
+        "success": "Muvaffaqiyat",
+        "revenue": "Daromad"
+      },
+      "mapAria": "O'zbekiston hududlari bo'yicha buyurtmalar xaritasi: {{list}}",
+      "tileAria": "{{name}}: {{count}} ta buyurtma",
+      "ordersWord": "buyurtma",
+      "soldWord": "sotildi",
+      "soldWithRevenue": "sotildi · {{revenue}}",
+      "scaleAria": "Rang shkalasi: {{metric}}",
+      "scaleLow": "Kam",
+      "scaleHigh": "Ko'p",
+      "clickNote": "Hududni bosing — tumanlar kesimi ochiladi",
+      "topOrders": "Eng ko'p buyurtma",
+      "topOrdersMeta": "{{count}} ta · jamining {{share}}",
+      "lowestSuccess": "Eng past sotuv (10+ ta)",
+      "mostCancelled": "Eng yuqori bekor ulushi (10+ ta)",
+      "rateMeta": "{{rate}} · {{part}} / {{total}} ta",
+      "activeCouriers": "Faol kuryerlar",
+      "inRegions": "{{count}} hududda",
+      "colRegion": "Viloyat",
+      "colOrders": "Buyurtma",
+      "colPending": "Jarayonda",
+      "colCancelled": "Bekor",
+      "colSuccess": "Sotuv",
+      "colRevenue": "Daromad",
+      "total": "Jami · {{count}} hudud",
+      "phoneRank": "Eng faol hududlar",
+      "soldShare": "{{rate}} sotildi",
+      "showAll": "Barcha {{count}} hudud",
+      "empty": "Bu davrda hududlar bo'yicha buyurtma yo'q"
+    }
+  },
+  "v2Market": {
+    "headerSub": "Buyurtmalar va ko'rsatkichlar · {{name}}",
+    "createOrder": "Buyurtma yaratish",
+    "statusSub": "{{period}} · {{count}} ta buyurtma",
+    "statusCenter": "Jami buyurtma",
+    "operatorRate": "Operator sotuv foizi",
+    "marketAverage": "{{name}} o'rtachasi · {{rate}}",
+    "yourMarket": "Market",
+    "approval": {
+      "aria": "{{action}}, buyurtma №{{order}}",
+      "order": "№{{id}}",
+      "requested": "So'ralgan summa",
+      "noProofs": "Yo'q"
+    },
+    "quick": {
+      "viewHint": "Qabul va yaratish bo'limidagi buyurtmalaringiz",
+      "createHint": "Qo'lda yoki AI yordamida yaratish"
+    },
+    "sales": {
+      "title": "Marketlar bo'yicha sotuv foizi",
+      "sub": "Sotilgan / jami buyurtmalar · eng yuqoridan pastga · {{count}} ta market",
+      "viewLabel": "Sotuv foizi ko'rinishi",
+      "good": "Yaxshi · 70% va yuqori",
+      "mid": "O'rtacha · 50–69%",
+      "low": "Past · 50% dan kam",
+      "colMarket": "Market",
+      "colRate": "Sotuv foizi",
+      "colPart": "Sotilgan / jami"
+    }
   }
 }

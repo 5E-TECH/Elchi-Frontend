@@ -53,8 +53,8 @@ const fill = async (
 const openCourierForm = async () => {
   const user = userEvent.setup();
   const view = renderWithProviders(<CreateUserForm />, { preloadedState: superadminState });
-  await user.click(screen.getByRole("button", { name: "Admin" }));
-  await user.click(screen.getByRole("button", { name: "Kuryer" }));
+  // Dizayn v2: rol — radio-kartochkalar (nomi «Kuryer Maosh yoki buyurtma tarifi»).
+  await user.click(screen.getByRole("radio", { name: /^Kuryer/ }));
   await fill(user, view.container, "fullName", "Yangi Kuryer");
   await fill(user, view.container, "phone", "901234567");
   await fill(user, view.container, "password", "secret12");
@@ -70,7 +70,7 @@ describe("CreateUserForm — kuryer tariflari (fix3b FE-USR-11)", () => {
   it("maoshsiz va tarifsiz kuryer yuborilmaydi — ikkala tarifda xabar", async () => {
     const { user } = await openCourierForm();
 
-    await user.click(screen.getByRole("button", { name: /Saqlash/ }));
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
 
     expect(await screen.findByText("Maoshsiz kuryerda uy tarifi majburiy")).toBeInTheDocument();
     expect(screen.getByText("Maoshsiz kuryerda markaz tarifi majburiy")).toBeInTheDocument();
@@ -84,7 +84,7 @@ describe("CreateUserForm — kuryer tariflari (fix3b FE-USR-11)", () => {
     await user.click(screen.getByRole("combobox", { name: "To'lov kuni" }));
     await user.click(screen.getByRole("option", { name: "5" }));
 
-    await user.click(screen.getByRole("button", { name: /Saqlash/ }));
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
 
     await waitFor(() => expect(mocks.createCourier).toHaveBeenCalledTimes(1));
     expect(mocks.createCourier).toHaveBeenCalledWith(
@@ -97,7 +97,7 @@ describe("CreateUserForm — kuryer tariflari (fix3b FE-USR-11)", () => {
     await fill(user, container, "homeRate", "10000");
     await fill(user, container, "centerRate", "8000");
 
-    await user.click(screen.getByRole("button", { name: /Saqlash/ }));
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
 
     await waitFor(() => expect(mocks.createCourier).toHaveBeenCalledTimes(1));
     expect(mocks.createCourier).toHaveBeenCalledWith(
@@ -110,7 +110,7 @@ describe("CreateUserForm — kuryer tariflari (fix3b FE-USR-11)", () => {
     const { user, container } = await openCourierForm();
     await fill(user, container, "homeRate", "10000");
 
-    await user.click(screen.getByRole("button", { name: /Saqlash/ }));
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
 
     expect(await screen.findByText("Maoshsiz kuryerda markaz tarifi majburiy")).toBeInTheDocument();
     expect(screen.queryByText("Maoshsiz kuryerda uy tarifi majburiy")).not.toBeInTheDocument();

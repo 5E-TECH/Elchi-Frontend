@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Branch } from "../../../entities/branch";
@@ -70,10 +70,12 @@ describe("BranchEditModal — HQ (bosh ofis) tahriri", () => {
   it("shows the type fixed as HQ and the parent picker disabled", async () => {
     renderModal(hqBranch);
 
-    // v2 `Select searchable`: maydon — yorliq bilan nomlangan combobox, qiymat maydonda.
-    const type = await screen.findByRole("combobox", { name: "Filial turi" });
-    expect(type).toBeDisabled();
-    expect(type).toHaveValue("HQ");
+    // v2: tur — segment (radiogroup «Filial turi»): HQ tanlangan, hamma variant qulflangan.
+    const type = await screen.findByRole("radiogroup", { name: "Filial turi" });
+    expect(within(type).getByRole("radio", { name: "HQ" })).toBeChecked();
+    for (const radio of within(type).getAllByRole("radio")) expect(radio).toBeDisabled();
+    expect(screen.getByText("HQ turini o'zgartirib bo'lmaydi")).toBeInTheDocument();
+    // Yuqori filial — qidiruvli `Select` (combobox), HQ da o'chiq.
     const parent = screen.getByRole("combobox", { name: "Yuqori filial" });
     expect(parent).toBeDisabled();
     expect(parent).toHaveAttribute("placeholder", "HQ uchun yuqori filial kerak emas");
@@ -83,7 +85,7 @@ describe("BranchEditModal — HQ (bosh ofis) tahriri", () => {
     const user = userEvent.setup();
     const { onClose } = renderModal(hqBranch);
 
-    await user.click(await screen.findByRole("button", { name: "Yangilash" }));
+    await user.click(await screen.findByRole("button", { name: "Saqlash" }));
 
     await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(1));
     const [url, payload] = mocks.patch.mock.calls[0];
@@ -103,7 +105,7 @@ describe("BranchEditModal — HQ (bosh ofis) tahriri", () => {
     const user = userEvent.setup();
     renderModal(makeBranch({ parent_id: "7", parent: { id: "7", name: "Samarqand" } }));
 
-    await user.click(await screen.findByRole("button", { name: "Yangilash" }));
+    await user.click(await screen.findByRole("button", { name: "Saqlash" }));
 
     await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(1));
     expect(mocks.patch.mock.calls[0][1]).not.toHaveProperty("parent_id");
@@ -120,9 +122,12 @@ describe("BranchEditModal — oddiy filial (o'zgarmagan)", () => {
   it("keeps the type and parent pickers editable", async () => {
     renderModal(regionalBranch);
 
-    const type = await screen.findByRole("combobox", { name: "Filial turi" });
-    expect(type).toBeEnabled();
-    expect(type).toHaveValue("Viloyat");
+    const type = await screen.findByRole("radiogroup", { name: "Filial turi" });
+    expect(within(type).getByRole("radio", { name: "Viloyat" })).toBeChecked();
+    expect(within(type).getByRole("radio", { name: "Viloyat" })).toBeEnabled();
+    expect(within(type).getByRole("radio", { name: "Aralash" })).toBeEnabled();
+    // HQ yagona — boshqa filialni HQ qilib bo'lmaydi.
+    expect(within(type).getByRole("radio", { name: "HQ" })).toBeDisabled();
     const parent = screen.getByRole("combobox", { name: "Yuqori filial" });
     expect(parent).toBeEnabled();
     expect(parent).toHaveValue("Bosh ofis (HQ) · HQ");
@@ -132,7 +137,7 @@ describe("BranchEditModal — oddiy filial (o'zgarmagan)", () => {
     const user = userEvent.setup();
     const { onClose } = renderModal(regionalBranch);
 
-    await user.click(await screen.findByRole("button", { name: "Yangilash" }));
+    await user.click(await screen.findByRole("button", { name: "Saqlash" }));
 
     await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(1));
     expect(mocks.patch).toHaveBeenCalledWith("branches/7", {
@@ -150,15 +155,13 @@ describe("BranchEditModal — oddiy filial (o'zgarmagan)", () => {
     const user = userEvent.setup();
     renderModal(makeBranch({ ...regionalBranch, parent_id: undefined, parent: null }));
 
-    await user.click(await screen.findByRole("button", { name: "Yangilash" }));
+    await user.click(await screen.findByRole("button", { name: "Saqlash" }));
 
-    await waitFor(() =>
-      expect(
-        screen
-          .getAllByText("Yuqori filialni tanlang")
-          .some((element) => element.classList.contains("ant-form-item-explain-error")),
-      ).toBe(true),
-    );
+    // Xato maydon ostida (`Field error`) va maydonga ulangan (`aria-invalid` + `aria-errormessage`).
+    const parent = screen.getByRole("combobox", { name: "Yuqori filial" });
+    await waitFor(() => expect(parent).toHaveAttribute("aria-invalid", "true"));
+    const errorId = parent.getAttribute("aria-errormessage");
+    expect(errorId && document.getElementById(errorId)).toHaveTextContent("Yuqori filialni tanlang");
     expect(mocks.patch).not.toHaveBeenCalled();
   });
 });
@@ -177,7 +180,7 @@ describe("BranchEditModal — server rad etishi jim qolmaydi", () => {
     });
     const { onClose } = renderModal(hqBranch);
 
-    await user.click(await screen.findByRole("button", { name: "Yangilash" }));
+    await user.click(await screen.findByRole("button", { name: "Saqlash" }));
 
     expect(await screen.findByText("HQ filial turini o'zgartirib bo'lmaydi")).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
@@ -191,7 +194,7 @@ describe("BranchEditModal — server rad etishi jim qolmaydi", () => {
     });
     const { onClose } = renderModal(regionalBranch);
 
-    await user.click(await screen.findByRole("button", { name: "Yangilash" }));
+    await user.click(await screen.findByRole("button", { name: "Saqlash" }));
 
     expect(await screen.findByText("Forbidden resource")).toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
@@ -219,7 +222,7 @@ describe("BranchEditModal — PICKUP tahriri (ilgari saqlanmasdi)", () => {
     const user = userEvent.setup();
     const { onClose } = renderModal(pickupBranch);
 
-    await user.click(await screen.findByRole("button", { name: "Yangilash" }));
+    await user.click(await screen.findByRole("button", { name: "Saqlash" }));
 
     await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(1));
     expect(mocks.patch.mock.calls[0][0]).toBe("branches/18");
@@ -239,15 +242,13 @@ describe("BranchEditModal — PICKUP tahriri (ilgari saqlanmasdi)", () => {
     const user = userEvent.setup();
     renderModal(makeBranch({ ...pickupBranch, parent_id: undefined, parent: null }));
 
-    await user.click(await screen.findByRole("button", { name: "Yangilash" }));
+    await user.click(await screen.findByRole("button", { name: "Saqlash" }));
 
-    await waitFor(() =>
-      expect(
-        screen
-          .getAllByText("Yuqori filialni tanlang")
-          .some((element) => element.classList.contains("ant-form-item-explain-error")),
-      ).toBe(true),
-    );
+    // Xato maydon ostida (`Field error`) va maydonga ulangan (`aria-invalid` + `aria-errormessage`).
+    const parent = screen.getByRole("combobox", { name: "Yuqori filial" });
+    await waitFor(() => expect(parent).toHaveAttribute("aria-invalid", "true"));
+    const errorId = parent.getAttribute("aria-errormessage");
+    expect(errorId && document.getElementById(errorId)).toHaveTextContent("Yuqori filialni tanlang");
     expect(mocks.patch).not.toHaveBeenCalled();
   });
 });

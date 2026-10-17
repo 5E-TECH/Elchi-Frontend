@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 
+export { pendingOf, shareOf, shortRegionName, splitCompactMoney, successRateOf } from "./lib/stats";
+
 /**
  * Region (hudud) statistikasi — markaziy data-layer.
  *
@@ -33,6 +35,11 @@ export interface RegionItem {
   pendingOrders: number;
   totalRevenue: number;
   successRate: number;
+  /**
+   * Kuryerlar soni ma'lummi (additiv). Backend `stats/all` identity javob bermasa `activeCouriers: null`
+   * yuboradi — u holda `activeCouriers` 0 bo'ladi, lekin bu «yolg'on 0»: UI qatorni chizmaydi.
+   */
+  couriersKnown?: boolean;
 }
 
 /** UzbekistanRegionMap kutadigan ko'rinish. */
@@ -62,6 +69,21 @@ export interface DistrictStatsItem {
   activeCouriers: number;
 }
 
+/** Viloyat kuryeri (`GET region/stats/:id` → `couriers[]`; additiv). */
+export interface RegionCourierStats {
+  id: string;
+  name: string;
+  phone?: string;
+  revenue?: number;
+  totalOrders: number;
+  deliveredOrders: number;
+  cancelledOrders?: number;
+  /** 0..100, sotilgan / jami (backend butun songa yaxlitlaydi — bu yerda aniq). */
+  successRate: number;
+  /** Viloyatning asosiy kuryeri (`region.mainCourier`). */
+  isPrimary?: boolean;
+}
+
 export interface RegionDetailStats {
   id: string;
   name: string;
@@ -71,6 +93,10 @@ export interface RegionDetailStats {
     successRate: number;
   };
   districts: DistrictStatsItem[];
+  /** Additiv: viloyat SATO kodi. */
+  satoCode?: string;
+  /** Additiv: viloyat kuryerlari (sotilganlar bo'yicha kamayish tartibida). Kuryer/market uchun kelmaydi. */
+  couriers?: RegionCourierStats[];
 }
 
 export interface DistrictCatalogItem {
@@ -133,6 +159,8 @@ export const normalizeRegionItem = (raw: unknown): RegionItem | null => {
     successRate: toNumber(
       item.successRate ?? item.success_rate ?? stats.successRate ?? stats.success_rate,
     ),
+    couriersKnown:
+      (item.activeCouriers ?? item.active_couriers ?? stats.activeCouriers ?? stats.active_couriers) != null,
   };
 };
 
@@ -272,9 +300,43 @@ const normalizeDistrictStatsItem = (raw: unknown, index: number): DistrictStatsI
     activeCouriers: toNumber(
       item.activeCouriers ??
         item.active_couriers ??
+        // `my/district-stats` kuryer PII'sini bermaydi — faqat soni.
+        item.couriersCount ??
+        item.couriers_count ??
         (Array.isArray(item.couriers) ? item.couriers.length : 0),
     ),
   };
+};
+
+/** `stats/:id` → `couriers[]` (asosiy kuryer — `region.mainCourier.id`). */
+const normalizeRegionCouriers = (source: Record<string, unknown>): RegionCourierStats[] | undefined => {
+  const raw = Array.isArray(source.couriers)
+    ? source.couriers
+    : Array.isArray(source.mainCouriers)
+      ? source.mainCouriers
+      : null;
+  if (!raw) return undefined;
+  const region = asRecord(source.region);
+  const mainId = asRecord(region.mainCourier ?? region.main_courier).id;
+  return raw.map((value, index) => {
+    const courier = asRecord(value);
+    const totalOrders = toNumber(courier.totalOrders ?? courier.total_orders ?? courier.ordersCount);
+    const deliveredOrders = toNumber(courier.deliveredOrders ?? courier.delivered_orders);
+    const id = String(courier.id ?? index + 1);
+    const phone = courier.phoneNumber ?? courier.phone_number ?? courier.phone;
+    return {
+      id,
+      name: String(courier.name ?? courier.full_name ?? ""),
+      phone: phone == null || phone === "" ? undefined : String(phone),
+      revenue: toNumber(courier.totalRevenue ?? courier.total_revenue ?? courier.revenue),
+      totalOrders,
+      deliveredOrders,
+      cancelledOrders: toNumber(courier.cancelledOrders ?? courier.cancelled_orders),
+      successRate:
+        totalOrders > 0 ? (deliveredOrders / totalOrders) * 100 : toNumber(courier.successRate ?? courier.success_rate),
+      isPrimary: mainId != null && String(mainId) === id,
+    };
+  });
 };
 
 export const normalizeRegionDetailStats = (payload: unknown): RegionDetailStats => {
@@ -324,6 +386,8 @@ export const normalizeRegionDetailStats = (payload: unknown): RegionDetailStats 
   const successRate =
     toNumber(effectiveSummary.successRate ?? effectiveSummary.success_rate) ||
     (totalOrders > 0 ? Math.round((totalDelivered / totalOrders) * 100) : 0);
+  const regionSato = region.satoCode ?? region.sato_code;
+  const couriers = normalizeRegionCouriers(source);
 
   return {
     id: String(region.id ?? source.id ?? source.region_id ?? stats.region_id ?? ""),
@@ -338,7 +402,34 @@ export const normalizeRegionDetailStats = (payload: unknown): RegionDetailStats 
       successRate,
     },
     districts,
+    ...(regionSato ? { satoCode: String(regionSato) } : {}),
+    ...(couriers ? { couriers } : {}),
   };
+};
+
+/**
+ * `GET region/my/district-stats` (kuryer va menejer, uherIk8r): so'rovchining O'Z viloyati, tumanlar
+ * kesimida. Viloyat serverda aniqlanadi; biriktirilmagan bo'lsa `region: null` (200).
+ */
+export interface MyRegionDistrictStats {
+  region: { id: string; name: string; satoCode?: string } | null;
+  /** `region` bor bo'lsa — viloyat va uning BARCHA tumanlari (0 buyurtmalilari ham). */
+  detail: RegionDetailStats | null;
+}
+
+export const normalizeMyRegionDistrictStats = (payload: unknown): MyRegionDistrictStats => {
+  const source = unwrapRegionDetail(payload);
+  const region = asRecord(source.region);
+  const id = region.id ?? region.region_id;
+  if (id == null || id === "") return { region: null, detail: null };
+  const satoCode = region.satoCode ?? region.sato_code;
+  const scope = {
+    id: String(id),
+    name: String(region.name ?? ""),
+    ...(satoCode ? { satoCode: String(satoCode) } : {}),
+  };
+  const detail = normalizeRegionDetailStats({ ...source, region: scope });
+  return { region: scope, detail: { ...detail, id: scope.id, name: scope.name } };
 };
 
 export const normalizeDistrictCatalog = (payload: unknown): DistrictCatalogItem[] => {
@@ -504,5 +595,24 @@ export const useRegionDistrictCatalog = (
     },
     enabled: enabled && Boolean(regionId),
     staleTime: 5 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+
+/**
+ * Kuryer va menejerning o'z viloyati, tumanlar kesimida (`GET region/my/district-stats`). `stats/all`
+ * kuryerga 403 (o'tish davri flagisiz) — scoped `/regions` faqat shu endpointni ishlatadi.
+ */
+export const useMyRegionDistrictStats = (
+  params?: { startDate?: string; endDate?: string },
+  enabled = true,
+) =>
+  useQuery({
+    queryKey: ["region-stats", "my-district-stats", params],
+    queryFn: async () => {
+      const res = await api.get(API_ENDPOINTS.REGIONS.MY_DISTRICT_STATS, { params });
+      return normalizeMyRegionDistrictStats(res.data);
+    },
+    enabled,
+    staleTime: 30_000,
     refetchOnWindowFocus: false,
   });

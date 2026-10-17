@@ -94,5 +94,336 @@
       "couriers": "Couriers",
       "courier": "courier"
     }
+  },
+  "v2": {
+    "page": {
+      "title": "Regions",
+      "subtitle": "Order statistics by region",
+      "actions": {
+        "sato": "Move districts",
+        "districts": "Districts",
+        "logist": "Assign logisticians"
+      }
+    },
+    "period": {
+      "label": "Period",
+      "today": "Today",
+      "week": "This week",
+      "month": "This month",
+      "all": "All",
+      "lower": {
+        "today": "today",
+        "week": "this week",
+        "month": "this month",
+        "all": "all time"
+      },
+      "rangePlaceholder": "Start → End",
+      "rangeAria": "Choose another date range"
+    },
+    "common": {
+      "ta": "",
+      "countTa": "{{count}}",
+      "partOfTotal": "{{part}} / {{total}}",
+      "partOfTotalPlain": "{{part}} / {{total}}",
+      "pp": "{{value}} pp",
+      "rateMeta": "{{rate}} · {{part}} / {{total}}",
+      "sato": "SOATO {{code}}",
+      "show": "Show",
+      "hide": "Hide",
+      "showLess": "Show less",
+      "soldOfAccepted": "Sold / accepted",
+      "statusAria": "Total {{total}}: sold {{sold}}, in progress {{pending}}, cancelled {{cancelled}}",
+      "statusListAria": "Breakdown by status",
+      "statusShortAria": "{{sold}} sold, {{pending}} in progress, {{cancelled}} cancelled",
+      "pendingNote": "In progress = on the way, pending and held at a branch",
+      "noDistricts": "No district data found"
+    },
+    "status": {
+      "sold": "Sold",
+      "pending": "In progress",
+      "cancelled": "Cancelled",
+      "cancelledShort": "Cancelled"
+    },
+    "kpi": {
+      "aria": "Overall figures by region",
+      "total": "Total orders",
+      "totalHint": "{{pending}} in progress · {{regions}} regions",
+      "sold": "Sold",
+      "soldHint": "Sold and paid",
+      "shareOfTotal": "Share of total",
+      "soldShareAria": "Share of sold orders",
+      "cancelled": "Cancelled",
+      "cancelledHint": "Returned to the shop",
+      "cancelledShareAria": "Share of cancelled orders",
+      "revenue": "Total revenue",
+      "revenueHint": "Average {{average}} / sale",
+      "revenueShare": "{{region}} share",
+      "revenueShareAria": "{{region}} revenue share"
+    },
+    "map": {
+      "title": "Regions map",
+      "subtitle": "Colour — {{metric}} · {{period}}",
+      "metricLabel": "Map metric",
+      "metric": {
+        "orders": "Orders",
+        "success": "Success",
+        "revenue": "Revenue"
+      },
+      "metricLower": {
+        "orders": "number of orders",
+        "success": "success rate",
+        "revenue": "revenue"
+      },
+      "viewAria": "Regions map view",
+      "aria": "Map of Uzbekistan, regions coloured by {{metric}}: {{list}}",
+      "ariaItem": "{{name}} {{count}}",
+      "ariaLeast": "lowest {{name}} {{count}}",
+      "note": "Click a region to open the details window",
+      "scale": {
+        "aria": "Colour scale, {{metric}}: {{steps}}; grey — no orders",
+        "none": "None",
+        "below": "below {{value}}%",
+        "upTo": "up to {{value}}"
+      },
+      "tooltip": {
+        "orders": "orders · {{share}} of all",
+        "status": "{{sold}} sold · {{pending}} in progress · {{cancelled}} cancelled",
+        "success": "success",
+        "revenue": "revenue",
+        "couriers": "couriers",
+        "districts": "districts"
+      },
+      "rank": {
+        "title": "Regions ranking",
+        "subtitle": "Number of orders · sales rate",
+        "aria": "Regions ranking by number of orders",
+        "rowAria": "{{name}}: {{count}} orders, {{rate}} sold",
+        "sold": "{{rate}} sold",
+        "showAll": "All {{count}} regions"
+      }
+    },
+    "table": {
+      "region": "Region",
+      "orders": "Orders",
+      "sold": "Sold",
+      "pending": "In progress",
+      "cancelled": "Cancelled",
+      "success": "Success",
+      "revenue": "Revenue",
+      "total": "Total · {{count}} regions"
+    },
+    "summary": {
+      "topOrders": "Most orders",
+      "topMeta": "{{count}} · {{share}} of all",
+      "lowestRegion": "Lowest success (5+)",
+      "activeCouriers": "Active couriers",
+      "couriersMeta": "{{regions}} regions · {{districts}} districts"
+    },
+    "gauge": {
+      "title": "Success rate",
+      "subtitle": "{{period}} · all regions",
+      "aria": "Success rate, whole company: {{rate}}. Sold {{sold}}, cancelled {{cancelled}}",
+      "goodZone": "In the good zone",
+      "goodValue": "{{good}} / {{total}} regions",
+      "goodMeta": "70% and above",
+      "below": "Below 70%",
+      "belowValue": "{{count}} regions"
+    },
+    "success": {
+      "title": "Regions success",
+      "subtitle": "Sold / accepted · lowest first",
+      "aria": "Regions success, lowest first",
+      "rowAria": "{{name}}: success",
+      "empty": "No orders in this period",
+      "legend": {
+        "good": "Good · 70%+",
+        "mid": "Average · 40–70%",
+        "low": "Low · below 40%",
+        "target": "70% threshold"
+      },
+      "lowData": "{{name}} — not enough data yet ({{count}})"
+    },
+    "states": {
+      "error": {
+        "title": "Could not load region data",
+        "text": "Refresh the page and try again."
+      },
+      "empty": {
+        "title": "No region data found",
+        "text": "The list of regions is empty."
+      },
+      "noRegion": {
+        "title": "No region found for this user",
+        "text": "Your branch has no region assigned. This is expected for branches without a region, such as the head office."
+      },
+      "noDistricts": {
+        "title": "No district data found",
+        "text": "The district list for this region is still empty."
+      }
+    },
+    "detail": {
+      "subtitle": "Detailed statistics · {{period}}",
+      "kpiAria": "Region figures",
+      "pendingMeta": "{{count}} in progress",
+      "companyShare": "Share of company",
+      "companyShareShort": "Share",
+      "success": "Success",
+      "vsCompany": "vs company",
+      "company": "Company-wide",
+      "companyShort": "Company",
+      "activeCouriers": "Active couriers",
+      "primaryMeta": "{{count}} primary courier",
+      "districtsWithOrders": "Districts with orders",
+      "districtsShort": "Districts",
+      "gauge": {
+        "title": "Success rate",
+        "subtitle": "Sold / accepted · vs company",
+        "marker": "Company-wide · {{rate}}",
+        "aria": "{{name}} success rate {{rate}}, company-wide {{company}}. Sold {{sold}}, cancelled {{cancelled}}"
+      },
+      "status": {
+        "title": "Order status",
+        "subtitle": "{{period}}: accepted · {{count}}",
+        "center": "Total accepted"
+      },
+      "districts": {
+        "title": "Districts",
+        "subtitle": "By number of orders · sales rate and revenue",
+        "viewAria": "Districts view",
+        "rankAria": "Districts by number of orders",
+        "topMeta": "{{count}} · {{share}} of the region",
+        "lowest": "Lowest sales (2+)",
+        "noCourier": "Districts without couriers",
+        "namesMore": "{{names}} and {{count}} more",
+        "pendingOnly": "{{count}} in progress",
+        "withoutOrders": "Districts without orders · {{count}}",
+        "showAll": "All {{count}} districts"
+      },
+      "table": {
+        "district": "District",
+        "sato": "SOATO",
+        "orders": "Orders",
+        "success": "Sales",
+        "revenue": "Revenue",
+        "couriers": "Couriers",
+        "sortedAria": "Sorted by orders, descending",
+        "courierCount": "{{count}} couriers",
+        "total": "Total · {{count}} districts",
+        "people": "{{count}} people"
+      },
+      "couriers": {
+        "title": "Region couriers",
+        "subtitle": "Sales rate · sold / total",
+        "aria": "Region couriers",
+        "primary": "Primary",
+        "lowData": "Not enough data yet — rates are approximate (under 30 orders per courier)",
+        "empty": "No couriers are assigned to this region"
+      },
+      "error": {
+        "title": "Could not load region data",
+        "text": "The window shows the overall figures from the map; the courier and district lists stay empty."
+      }
+    },
+    "scoped": {
+      "title": "{{region}} — district statistics",
+      "subtitle": "{{region}} orders · Click a district to see the details",
+      "subtitleNoRegion": "Click a district to see the details",
+      "cardSubtitle": "{{period}} · {{region}} orders",
+      "gaugeAria": "{{region}}, success rate: {{rate}}. Sold {{sold}}, cancelled {{cancelled}}",
+      "overview": {
+        "title": "Overall figures",
+        "totalMeta": "in {{active}} of {{total}} districts",
+        "pendingMeta": "{{share}} of all",
+        "mostActive": "Most active district",
+        "lowest": "Lowest sales (3+)"
+      },
+      "districts": {
+        "title": "Districts",
+        "subtitle": "Colour — number of orders · select a district",
+        "viewAria": "Districts view"
+      },
+      "tiles": {
+        "aria": "Districts coloured by number of orders: most {{name}} {{count}}, {{empty}} districts without orders",
+        "ariaEmpty": "Districts: no orders in the selected period",
+        "tileAria": "{{name}}: {{count}} orders, {{sold}} sold, {{cancelled}} cancelled, {{pending}} in progress, success {{rate}}",
+        "tileAriaEmpty": "{{name}}: no orders",
+        "scaleAria": "Colour scale, number of orders: {{steps}}; grey — no orders",
+        "note": "Click a district — its figures open in the «Selected district» panel"
+      },
+      "selected": {
+        "aria": "Selected district: {{name}}",
+        "label": "Selected district",
+        "success": "Success",
+        "vsRegion": "vs region",
+        "revenue": "Revenue",
+        "statusAria": "{{name}}: sold {{sold}}, in progress {{pending}}, cancelled {{cancelled}}"
+      },
+      "rank": {
+        "aria": "Districts by number of orders",
+        "rowAria": "{{name}}: {{count}} orders, success {{rate}}"
+      },
+      "noOrders": {
+        "title": "Districts without orders",
+        "meta": "{{count}} · no orders in the selected period",
+        "chipAria": "{{name}}: no orders",
+        "row": "Districts without orders · {{count}}"
+      },
+      "table": {
+        "title": "By district",
+        "subtitle": "{{count}} districts with orders · status: sold · in progress · cancelled",
+        "district": "District",
+        "orders": "Orders",
+        "status": "Status",
+        "success": "Success",
+        "revenue": "Revenue",
+        "total": "Total · {{count}} districts"
+      }
+    },
+    "board": {
+      "aria": "Regions and districts",
+      "listAria": "{{region}} districts",
+      "countsAria": "Totals",
+      "regionsCount": "Regions",
+      "districtsCount": "Districts",
+      "searchAria": "Search district or region",
+      "noDistricts": "No districts assigned",
+      "editAria": "Rename {{name}}",
+      "deleteAria": "Delete {{name}}",
+      "deleteConfirm": "Delete {{name}}?",
+      "moveAria": "{{name}} — move to another region",
+      "dragging": "{{name}} is being dragged",
+      "moveHint": "Move",
+      "saving": "Saving...",
+      "loadError": "Could not load the data",
+      "cancel": "Cancel",
+      "move": {
+        "title": "Move to another region",
+        "description": "{{name}} · now: {{region}}",
+        "listLabel": "Select a region",
+        "submit": "Move"
+      }
+    },
+    "districts": {
+      "title": "Districts",
+      "create": {
+        "title": "Add a district",
+        "name": "District name",
+        "region": "Region"
+      }
+    },
+    "sato": {
+      "title": "Move districts",
+      "subtitle": "Manage districts by region: drag a district and drop it onto the target region",
+      "moveErrorText": "The list was reloaded, the district stayed in place"
+    },
+    "logist": {
+      "title": "Assign logisticians",
+      "subtitle": "Assigning logisticians to regions",
+      "empty": {
+        "title": "This section is not available yet",
+        "text": "Logistician assignment will appear on this page once it is ready. Use the regions map for now."
+      },
+      "back": "Back to regions"
+    }
   }
 }

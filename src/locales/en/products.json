@@ -48,5 +48,98 @@
   "deleteConfirmTitle": "Confirm deletion",
   "deleteConfirmMessage": "Are you sure you want to delete \"{{name}}\"? This action cannot be undone.",
   "validationNameRequired": "Product name is required",
-  "cancel": "Cancel"
+  "cancel": "Cancel",
+  "v2": {
+    "list": {
+      "total_one": "{{value}} product in total",
+      "total_other": "{{value}} products in total",
+      "listLabel": "Product list",
+      "cardsLabel": "Products",
+      "loading": "Loading products",
+      "create": "Create product",
+      "searchPlaceholder": "Search products...",
+      "searchAria": "Search products",
+      "searchAriaMarket": "Search products by name",
+      "marketFilter": "Market",
+      "all": "All",
+      "columns": {
+        "index": "#",
+        "name": "Product name",
+        "market": "Market",
+        "actions": "Actions"
+      },
+      "sortByName": "Sort by name",
+      "editAria": "{{name}} — edit",
+      "deleteAria": "{{name}} — delete",
+      "pagination": "{{from}}–{{to}} of {{total}} products",
+      "empty": "No products yet",
+      "emptyDescription": "Click «Create product» to add a new product.",
+      "filteredEmpty": "No products found",
+      "filteredEmptyDescription": "Try a different search or market filter.",
+      "loadFailed": "Could not load products"
+    },
+    "selectMarket": {
+      "title": "Select a market",
+      "description": "Only active markets are shown",
+      "searchPlaceholder": "Search markets...",
+      "searchAria": "Search markets",
+      "listLabel": "Active markets",
+      "notFound": "No market found",
+      "notFoundHint": "No active market matches «{{query}}»",
+      "empty": "No active markets",
+      "loadFailed": "Could not load markets",
+      "cancel": "Cancel",
+      "confirm": "Select"
+    },
+    "edit": {
+      "title": "Edit product",
+      "name": "Product name",
+      "namePlaceholder": "Enter product name...",
+      "image": "Image",
+      "imageMarket": "Product image",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving..."
+    },
+    "image": {
+      "upload": "Upload image",
+      "hint": "Optional · click and choose an image file",
+      "replace": "Replace image",
+      "replaceHint": "Click and choose another image file",
+      "remove": "Remove selected image",
+      "previewAlt": "Product image"
+    },
+    "delete": {
+      "title": "Confirm deletion",
+      "description": "Do you really want to delete this product? This action cannot be undone.",
+      "confirm": "Delete",
+      "loading": "Deleting..."
+    },
+    "create": {
+      "back": "Products",
+      "title": "New product",
+      "titleMarket": "Create product",
+      "selectedMarket": "Selected market:",
+      "formTitle": "Product details",
+      "formTitleMarket": "New product",
+      "formTitleEdit": "Edit product",
+      "name": "Product name",
+      "namePlaceholder": "Enter product name...",
+      "image": "Product image",
+      "clear": "Clear",
+      "cancelEdit": "Cancel",
+      "save": "Save",
+      "saving": "Saving...",
+      "listTitle": "Market products",
+      "listTitleMarket": "Existing products",
+      "listHintMarket": "Click the pencil to edit a product in the form",
+      "count": "{{value}} pcs",
+      "countMarket": "{{value}} in total",
+      "listLoading": "Loading market products",
+      "empty": "This market has no products yet",
+      "emptyDescription": "Add the first product using the form on this page.",
+      "loadFailed": "Could not load market products",
+      "editing": "Editing"
+    }
+  }
 }

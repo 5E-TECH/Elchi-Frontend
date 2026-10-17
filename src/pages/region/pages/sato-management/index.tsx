@@ -1,14 +1,17 @@
-import { memo, useEffect, useMemo, useState } from "react";
+// dizayn-v2: superadmin-regions-sato-management, admin-regions-sato-management
+import { memo, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { MoveRight, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RootState } from "../../../../app/config/store";
 import { api } from "../../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../../shared/api";
-import PageContainer from "../../../../shared/ui/PageContainer";
-import BackButton from "../../../../shared/ui/BackButton";
+import { formatNumberLocalized } from "../../../../shared/lib/formatMoney";
 import { notify } from "../../../../shared/lib/notify";
+import { Badge, ErrorState, PageHeader, SkeletonList, TextInput } from "../../../../shared/ui/primitives";
+import DistrictBoard from "../../ui/DistrictBoard";
+import { filterBoardRegions } from "../../model/boardModel";
 
 type District = {
   id: string;
@@ -19,15 +22,14 @@ type District = {
 type Region = {
   id: string;
   name: string;
-  assignedDistricts: District[];
+  districts: District[];
 };
 
 const toArray = <T,>(value: unknown): T[] => (Array.isArray(value) ? value : []);
 
-const normalizeRegions = (payload: unknown): Region[] => {
-  const source = payload as
-    | { data?: unknown[] | { data?: unknown[]; items?: unknown[] } }
-    | undefined;
+/** GET /region → viloyatlar va biriktirilgan tumanlar (`assignedDistricts`, bo'lmasa `districts`). */
+const normalizeSatoRegions = (payload: unknown): Region[] => {
+  const source = payload as { data?: unknown[] | { data?: unknown[]; items?: unknown[] } } | undefined;
 
   const raw = Array.isArray(source?.data)
     ? source.data
@@ -45,9 +47,7 @@ const normalizeRegions = (payload: unknown): Region[] => {
       districts?: unknown[];
     };
 
-    const districtsRaw = Array.isArray(region.assignedDistricts)
-      ? region.assignedDistricts
-      : toArray(region.districts);
+    const districtsRaw = Array.isArray(region.assignedDistricts) ? region.assignedDistricts : toArray(region.districts);
 
     const districts = districtsRaw.map((district) => {
       const d = district as { id?: string | number; name?: string; region_id?: string | number };
@@ -61,82 +61,53 @@ const normalizeRegions = (payload: unknown): Region[] => {
     return {
       id: String(region.id ?? ""),
       name: region.name ?? "—",
-      assignedDistricts: districts.filter((d) => d.id),
+      districts: districts.filter((d) => d.id),
     };
   });
 };
 
+const REGIONS_KEY = ["regions", "with-districts"];
+
+/**
+ * TUMANLARNI O'TKAZISH (superadmin, admin): tumanni sudrab boshqa viloyatga tashlash (telefonda «⇆» →
+ * viloyat tanlash oynasi). PATCH `district/:id {assigned_region}` — optimistik; xato bo'lsa xabar va
+ * ro'yxat serverdan qayta yuklanadi (tuman joyida qoladi).
+ */
 const RegionSatoManagementPage = () => {
-  const { t } = useTranslation("region");
+  const { t, i18n } = useTranslation("region");
   const role = useSelector((state: RootState) => state.role.role);
   const canAccess = role === "superadmin" || role === "admin";
+  const queryClient = useQueryClient();
 
-  const [regions, setRegions] = useState<Region[]>([]);
-  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [draggingId, setDraggingId] = useState<string | null>(null);
   const [movingId, setMovingId] = useState<string | null>(null);
 
-  const fetchRegions = async () => {
-    setLoading(true);
-    try {
-      const res = await api.get(API_ENDPOINTS.REGIONS.BASE);
-      setRegions(normalizeRegions(res.data));
-    } catch {
-      notify.error(t("sato.loadError"));
-      setRegions([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    void fetchRegions();
-  }, []);
-
-  const stats = useMemo(() => {
-    const totalRegions = regions.length;
-    const totalDistricts = regions.reduce((sum, region) => sum + region.assignedDistricts.length, 0);
-    return { totalRegions, totalDistricts };
-  }, [regions]);
-
-  const filteredRegions = useMemo(() => {
-    const term = search.trim().toLowerCase();
-    if (!term) return regions;
-    return regions
-      .map((region) => ({
-        ...region,
-        assignedDistricts: region.assignedDistricts.filter((district) =>
-          district.name.toLowerCase().includes(term),
-        ),
-      }))
-      .filter(
-        (region) =>
-          region.name.toLowerCase().includes(term) || region.assignedDistricts.length > 0,
-      );
-  }, [regions, search]);
+  const regionsQuery = useQuery({
+    queryKey: REGIONS_KEY,
+    queryFn: () => api.get(API_ENDPOINTS.REGIONS.BASE).then((res) => normalizeSatoRegions(res.data)),
+    enabled: canAccess,
+    refetchOnWindowFocus: false,
+  });
+  const regions = useMemo(() => regionsQuery.data ?? [], [regionsQuery.data]);
+  const totalDistricts = regions.reduce((sum, region) => sum + region.districts.length, 0);
+  const filteredRegions = useMemo(() => filterBoardRegions(regions, search), [regions, search]);
 
   const moveDistrictOptimistic = (districtId: string, fromRegionId: string, toRegionId: string) => {
-    if (!districtId || !fromRegionId || !toRegionId || fromRegionId === toRegionId) return;
-
-    setRegions((prev) => {
-      const next = prev.map((region) => ({
-        ...region,
-        assignedDistricts: [...region.assignedDistricts],
-      }));
-      const from = next.find((r) => r.id === fromRegionId);
-      const to = next.find((r) => r.id === toRegionId);
-      if (!from || !to) return prev;
-      const district = from.assignedDistricts.find((d) => d.id === districtId);
-      if (!district) return prev;
-
-      from.assignedDistricts = from.assignedDistricts.filter((d) => d.id !== districtId);
-      to.assignedDistricts.push({ ...district, region_id: toRegionId });
-      return next;
+    queryClient.setQueryData<Region[]>(REGIONS_KEY, (current) => {
+      if (!current) return current;
+      const district = current.find((r) => r.id === fromRegionId)?.districts.find((d) => d.id === districtId);
+      if (!district) return current;
+      return current.map((region) => {
+        if (region.id === fromRegionId)
+          return { ...region, districts: region.districts.filter((d) => d.id !== districtId) };
+        if (region.id === toRegionId)
+          return { ...region, districts: [...region.districts, { ...district, region_id: toRegionId }] };
+        return region;
+      });
     });
   };
 
-  const handleDropToRegion = async (toRegionId: string, fromRegionId: string, districtId: string) => {
+  const handleMove = async (districtId: string, fromRegionId: string, toRegionId: string) => {
     if (!districtId || !fromRegionId || !toRegionId || fromRegionId === toRegionId) return;
 
     setMovingId(districtId);
@@ -146,11 +117,10 @@ const RegionSatoManagementPage = () => {
       await api.patch(API_ENDPOINTS.DISTRICTS.BY_ID(districtId), { assigned_region: toRegionId });
       notify.success(t("sato.moveSuccess"));
     } catch {
-      notify.error(t("sato.moveError"));
-      await fetchRegions();
+      notify.error(t("sato.moveError"), { description: t("v2.sato.moveErrorText") });
+      await regionsQuery.refetch();
     } finally {
       setMovingId(null);
-      setDraggingId(null);
     }
   };
 
@@ -158,103 +128,57 @@ const RegionSatoManagementPage = () => {
     return <Navigate to="/regions" replace />;
   }
 
+  const number = (value: number) => formatNumberLocalized(value, { language: i18n.language });
+
   return (
-    <PageContainer>
-        <BackButton to="/regions" className="mb-4 h-10 min-w-10 rounded-xl px-3" />
-
-        <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-3 md:p-4 dark:bg-primarydark">
-          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-main dark:text-primary">{t("sato.title")}</h1>
-              <p className="mt-1 text-sm text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                {t("sato.description")}
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar px-3 py-2 text-sm text-main dark:text-primary">
-                {t("sato.regionsCount")}: <span className="font-semibold">{stats.totalRegions}</span>
-              </div>
-              <div className="rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar px-3 py-2 text-sm text-main dark:text-primary">
-                {t("sato.districtsCount")}: <span className="font-semibold">{stats.totalDistricts}</span>
-              </div>
-            </div>
+    <div className="flex flex-col gap-6 max-md:gap-4">
+      <PageHeader
+        back="/regions"
+        backLabel={t("v2.page.title")}
+        title={t("v2.sato.title")}
+        description={t("v2.sato.subtitle")}
+        actions={
+          <div role="group" aria-label={t("v2.board.countsAria")} className="flex flex-wrap gap-2">
+            <Badge>
+              {t("v2.board.regionsCount")} <span className="font-bold">{number(regions.length)}</span>
+            </Badge>
+            <Badge>
+              {t("v2.board.districtsCount")} <span className="font-bold">{number(totalDistricts)}</span>
+            </Badge>
           </div>
+        }
+      />
 
-          <div className="mt-3 flex items-center gap-2 rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar px-3 py-2">
-            <Search size={16} className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]" />
-            <input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder={t("sato.searchPlaceholder")}
-              className="w-full bg-transparent text-base md:text-sm text-main outline-none placeholder:text-[color:var(--color-text-muted)] dark:placeholder:text-[color:var(--color-text-muted-dark)] dark:text-primary"
-            />
-          </div>
+      <TextInput
+        mode="search"
+        value={search}
+        onValueChange={setSearch}
+        aria-label={t("v2.board.searchAria")}
+        placeholder={t("sato.searchPlaceholder")}
+        className="w-full max-w-[520px] max-md:max-w-none"
+      />
 
-          {loading ? (
-            <div className="mt-4 rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar p-4 text-sm text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-              {t("common:loading")}
-            </div>
-          ) : (
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-              {filteredRegions.map((region) => (
-                <div
-                  key={region.id}
-                  onDragOver={(event) => event.preventDefault()}
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    const districtId = event.dataTransfer.getData("districtId");
-                    const fromRegionId = event.dataTransfer.getData("fromRegionId");
-                    void handleDropToRegion(region.id, fromRegionId, districtId);
-                  }}
-                  className="rounded-xl border border-[color:var(--color-border-soft)] bg-sidebar p-2.5 transition-shadow hover:shadow-md"
-                >
-                  <div className="mb-2 flex items-center justify-between gap-2">
-                    <div className="truncate text-sm font-semibold text-main dark:text-primary">{region.name}</div>
-                    <div className="rounded-lg bg-primary px-2 py-1 text-xs font-medium text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] dark:bg-white/10">
-                      {t("sato.districtCount", { count: region.assignedDistricts.length })}
-                    </div>
-                  </div>
-
-                  <div className="max-h-[280px] space-y-1.5 overflow-y-auto pr-1">
-                    {region.assignedDistricts.length === 0 ? (
-                      <div className="rounded-lg border border-dashed border-[color:var(--color-border-soft)] bg-primary px-2 py-3 text-center text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] dark:bg-white/5">
-                        {t("sato.noDistricts")}
-                      </div>
-                    ) : (
-                      region.assignedDistricts.map((district) => {
-                        const isDragging = draggingId === district.id;
-                        const isMoving = movingId === district.id;
-                        return (
-                          <div
-                            key={district.id}
-                            draggable
-                            onDragStart={(event) => {
-                              event.dataTransfer.setData("districtId", district.id);
-                              event.dataTransfer.setData("fromRegionId", region.id);
-                              setDraggingId(district.id);
-                            }}
-                            onDragEnd={() => setDraggingId(null)}
-                            className={`flex items-center justify-between rounded-lg border border-[color:var(--color-border-soft)] bg-primary px-2.5 py-1.5 dark:bg-white/5 ${
-                              isDragging ? "opacity-60" : ""
-                            }`}
-                          >
-                            <span className="truncate pr-2 text-[13px] font-medium text-main dark:text-primary">{district.name}</span>
-                            <span className="inline-flex shrink-0 items-center gap-1 text-[11px] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                              <MoveRight size={14} />
-                              {isMoving ? t("sato.saving") : t("sato.move")}
-                            </span>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-    </PageContainer>
+      {regionsQuery.isError && !regionsQuery.data ? (
+        <ErrorState
+          framed
+          error={regionsQuery.error}
+          title={t("v2.board.loadError")}
+          onRetry={() => void regionsQuery.refetch()}
+          retrying={regionsQuery.isFetching}
+        />
+      ) : !regionsQuery.data ? (
+        <SkeletonList />
+      ) : (
+        <DistrictBoard
+          regions={filteredRegions}
+          allRegions={regions}
+          movingId={movingId}
+          moveHint
+          expandAll={search.trim().length > 0}
+          onMove={(districtId, fromRegionId, toRegionId) => void handleMove(districtId, fromRegionId, toRegionId)}
+        />
+      )}
+    </div>
   );
 };
 

@@ -66,7 +66,16 @@
     "action": "Перевести",
     "success": "{{name}} переведён в филиал «{{branch}}»",
     "checkFailed": "Не удалось проверить — попробуйте чуть позже",
-    "retry": "Проверить снова"
+    "retry": "Проверить снова",
+    "openButtonFor": "Перевести {{name}} в другой филиал",
+    "courierRole": "Курьер",
+    "ordersCount": "{{value}} шт.",
+    "searchLabel": "Поиск филиала",
+    "searchPlaceholder": "Введите название филиала",
+    "noManagerHint": "Нет менеджера — перевести в этот филиал нельзя",
+    "noTargets": "Подходящий филиал не найден",
+    "submitTo": "Перевести в «{{branch}}»",
+    "transferring": "Перевод…"
   },
   "settings": {
     "title": "Настройки филиала",
@@ -191,5 +200,92 @@
     "status": "Выберите статус",
     "manager": "Выберите ответственного сотрудника",
     "completeForm": "Заполните форму полностью"
+  },
+  "v2": {
+    "list": {
+      "label": "Список филиалов",
+      "cardsLabel": "Карточки филиалов",
+      "viewLabel": "Вид",
+      "total_one": "Всего {{value}} филиал",
+      "total_few": "Всего {{value}} филиала",
+      "total_many": "Всего {{value}} филиалов",
+      "total_other": "Всего {{value}} филиала",
+      "pagination": "{{from}}–{{to}} из {{total}} филиалов",
+      "searchLabel": "Поиск филиалов",
+      "loading": "Загрузка филиалов",
+      "loadFailed": "Не удалось загрузить филиалы",
+      "emptyDescription": "Добавьте первый филиал кнопкой «Новый филиал».",
+      "filteredEmpty": "Подходящие филиалы не найдены",
+      "filteredEmptyDescription": "Измените поиск или фильтр по статусу.",
+      "clearFilters": "Сбросить фильтры",
+      "employees": "{{value}}",
+      "employeesLong_one": "{{value}} сотрудник",
+      "employeesLong_few": "{{value}} сотрудника",
+      "employeesLong_many": "{{value}} сотрудников",
+      "employeesLong_other": "{{value}} сотрудника",
+      "rowActions": "Действия: {{name}}",
+      "detailsFor": "Подробнее — {{name}}"
+    },
+    "tree": {
+      "label": "Дерево филиалов",
+      "expand": "{{name}}: открыть дочерние филиалы",
+      "collapse": "{{name}}: скрыть дочерние филиалы",
+      "childCount_one": "{{value}} дочерний филиал",
+      "childCount_few": "{{value}} дочерних филиала",
+      "childCount_many": "{{value}} дочерних филиалов",
+      "childCount_other": "{{value}} дочернего филиала",
+      "groupCount_one": "{{value}} филиал",
+      "groupCount_few": "{{value}} филиала",
+      "groupCount_many": "{{value}} филиалов",
+      "groupCount_other": "{{value}} филиала"
+    },
+    "columns": {
+      "branch": "Филиал",
+      "type": "Тип",
+      "areaAddress": "Регион и адрес",
+      "employees": "Сотрудники",
+      "status": "Статус",
+      "actions": "Действия"
+    },
+    "delete": {
+      "description": "{{name}} будет удалён из списка филиалов."
+    },
+    "form": {
+      "hqTypeLocked": "Тип HQ изменить нельзя",
+      "parentHint": "Пункт приема не может быть вышестоящим филиалом",
+      "parentEmpty": "Филиал не найден"
+    },
+    "detail": {
+      "fallbackTitle": "Филиал",
+      "parentLabel": "Вышестоящий филиал:",
+      "infoLabel": "Данные филиала",
+      "employeesHint": "прикреплены к филиалу",
+      "createdHint": "добавлен в систему",
+      "loading": "Загрузка филиала",
+      "loadFailed": "Не удалось загрузить данные филиала",
+      "notFoundHint": "Филиал удалён или ссылка неверна. Вернитесь к списку филиалов."
+    },
+    "employees": {
+      "description": "Список прикреплённых сотрудников и их должности",
+      "loading": "Загрузка сотрудников",
+      "loadFailed": "Не удалось загрузить сотрудников",
+      "empty": "К филиалу ещё не прикреплены сотрудники",
+      "emptyDescription": "Прикрепите менеджера, регистратора или курьера кнопкой «Добавить сотрудника».",
+      "removeLabel": "Удалить {{name}} из филиала",
+      "removeTitle": "Удалить {{name}} из филиала?"
+    },
+    "addEmployee": {
+      "description": "Прикрепите пользователя к филиалу «{{branch}}».",
+      "hint": "Показаны только активные менеджеры, регистраторы и курьеры",
+      "listLabel": "Пользователи",
+      "loading": "Загрузка пользователей…",
+      "empty": "Пользователь не найден",
+      "noOptions": "Нет активных сотрудников для прикрепления"
+    },
+    "positions": {
+      "MANAGER": "Менеджер",
+      "REGISTRATOR": "Регистратор",
+      "COURIER": "Курьер"
+    }
   }
 }

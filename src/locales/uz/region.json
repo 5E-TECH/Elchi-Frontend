@@ -94,5 +94,336 @@
       "couriers": "Kuryerlar",
       "courier": "kuryer"
     }
+  },
+  "v2": {
+    "page": {
+      "title": "Hududlar",
+      "subtitle": "Hududlar kesimida buyurtmalar statistikasi",
+      "actions": {
+        "sato": "Tumanlarni o'tkazish",
+        "districts": "Tumanlar",
+        "logist": "Logist biriktirish"
+      }
+    },
+    "period": {
+      "label": "Davr",
+      "today": "Bugun",
+      "week": "Bu hafta",
+      "month": "Bu oy",
+      "all": "Barchasi",
+      "lower": {
+        "today": "bugun",
+        "week": "bu hafta",
+        "month": "bu oy",
+        "all": "barcha davr"
+      },
+      "rangePlaceholder": "Boshlanish → Tugash",
+      "rangeAria": "Boshqa sana oralig'ini tanlash"
+    },
+    "common": {
+      "ta": "ta",
+      "countTa": "{{count}} ta",
+      "partOfTotal": "{{part}} / {{total}} ta",
+      "partOfTotalPlain": "{{part}} / {{total}}",
+      "pp": "{{value}} p.p.",
+      "rateMeta": "{{rate}} · {{part}} / {{total}} ta",
+      "sato": "SATO {{code}}",
+      "show": "Ko'rsatish",
+      "hide": "Yashirish",
+      "showLess": "Kamroq ko'rsatish",
+      "soldOfAccepted": "Sotilgan / qabul qilingan",
+      "statusAria": "Jami {{total}} ta: sotilgan {{sold}}, jarayonda {{pending}}, bekor qilingan {{cancelled}}",
+      "statusListAria": "Holatlar bo'yicha taqsimot",
+      "statusShortAria": "{{sold}} sotilgan, {{pending}} jarayonda, {{cancelled}} bekor",
+      "pendingNote": "Jarayonda = yo'lda, kutilmoqda va filialda turgan buyurtmalar",
+      "noDistricts": "Tumanlar ma'lumoti topilmadi"
+    },
+    "status": {
+      "sold": "Sotilgan",
+      "pending": "Jarayonda",
+      "cancelled": "Bekor qilingan",
+      "cancelledShort": "Bekor"
+    },
+    "kpi": {
+      "aria": "Hududlar bo'yicha umumiy ko'rsatkichlar",
+      "total": "Jami buyurtmalar",
+      "totalHint": "Jarayonda {{pending}} ta · {{regions}} viloyat",
+      "sold": "Sotilgan",
+      "soldHint": "Sotilgan va to'langan",
+      "shareOfTotal": "Jamidan ulushi",
+      "soldShareAria": "Sotilganlar ulushi",
+      "cancelled": "Bekor qilingan",
+      "cancelledHint": "Marketga qaytadi",
+      "cancelledShareAria": "Bekor qilinganlar ulushi",
+      "revenue": "Umumiy tushum",
+      "revenueHint": "O'rtacha {{average}} / sotuv",
+      "revenueShare": "{{region}} ulushi",
+      "revenueShareAria": "{{region}} tushum ulushi"
+    },
+    "map": {
+      "title": "Viloyatlar xaritasi",
+      "subtitle": "Rang — {{metric}} · {{period}}",
+      "metricLabel": "Xaritadagi ko'rsatkich",
+      "metric": {
+        "orders": "Buyurtmalar",
+        "success": "Muvaffaqiyat",
+        "revenue": "Tushum"
+      },
+      "metricLower": {
+        "orders": "buyurtmalar soni",
+        "success": "muvaffaqiyat",
+        "revenue": "tushum"
+      },
+      "viewAria": "Viloyatlar xaritasi ko'rinishi",
+      "aria": "O'zbekiston xaritasi, viloyatlar {{metric}} bo'yicha bo'yalgan: {{list}}",
+      "ariaItem": "{{name}} {{count}} ta",
+      "ariaLeast": "eng kam {{name}} {{count}} ta",
+      "note": "Viloyatni bosing — batafsil oynasi ochiladi",
+      "scale": {
+        "aria": "Rang shkalasi, {{metric}}: {{steps}}; kulrang — buyurtma yo'q",
+        "none": "Yo'q",
+        "below": "{{value}}% dan kam",
+        "upTo": "{{value}} gacha"
+      },
+      "tooltip": {
+        "orders": "ta buyurtma · jamining {{share}}",
+        "status": "{{sold}} sotilgan · {{pending}} jarayonda · {{cancelled}} bekor",
+        "success": "muvaffaqiyat",
+        "revenue": "tushum",
+        "couriers": "kuryer",
+        "districts": "tuman"
+      },
+      "rank": {
+        "title": "Viloyatlar reytingi",
+        "subtitle": "Buyurtmalar soni · sotuv foizi",
+        "aria": "Viloyatlar reytingi, buyurtmalar soni bo'yicha",
+        "rowAria": "{{name}}: {{count}} ta buyurtma, {{rate}} sotildi",
+        "sold": "{{rate}} sotildi",
+        "showAll": "Barcha {{count}} viloyat"
+      }
+    },
+    "table": {
+      "region": "Viloyat",
+      "orders": "Buyurtma",
+      "sold": "Sotilgan",
+      "pending": "Jarayonda",
+      "cancelled": "Bekor",
+      "success": "Muvaffaqiyat",
+      "revenue": "Tushum",
+      "total": "Jami · {{count}} viloyat"
+    },
+    "summary": {
+      "topOrders": "Eng ko'p buyurtma",
+      "topMeta": "{{count}} ta · jamining {{share}}",
+      "lowestRegion": "Eng past muvaffaqiyat (5+ ta)",
+      "activeCouriers": "Faol kuryerlar",
+      "couriersMeta": "{{regions}} viloyat · {{districts}} tuman"
+    },
+    "gauge": {
+      "title": "Muvaffaqiyat darajasi",
+      "subtitle": "{{period}} · barcha viloyatlar",
+      "aria": "Muvaffaqiyat darajasi, butun kompaniya: {{rate}}. Sotilgan {{sold}} ta, bekor qilingan {{cancelled}} ta",
+      "goodZone": "Yaxshi zonada",
+      "goodValue": "{{good}} / {{total}} viloyat",
+      "goodMeta": "70% va undan yuqori",
+      "below": "70% dan past",
+      "belowValue": "{{count}} viloyat"
+    },
+    "success": {
+      "title": "Viloyatlar muvaffaqiyati",
+      "subtitle": "Sotilgan / qabul qilingan · eng pastdan boshlab",
+      "aria": "Viloyatlar muvaffaqiyati, eng pastdan",
+      "rowAria": "{{name}}: muvaffaqiyat",
+      "empty": "Bu davrda buyurtma yo'q",
+      "legend": {
+        "good": "Yaxshi · 70%+",
+        "mid": "O'rtacha · 40–70%",
+        "low": "Past · 40% dan kam",
+        "target": "70% chegarasi"
+      },
+      "lowData": "{{name}} — ma'lumot hali kam ({{count}} ta)"
+    },
+    "states": {
+      "error": {
+        "title": "Viloyat ma'lumotini yuklab bo'lmadi",
+        "text": "Sahifani yangilab, qayta urinib ko'ring."
+      },
+      "empty": {
+        "title": "Hududlar ma'lumoti topilmadi",
+        "text": "Viloyatlar ro'yxati hali bo'sh."
+      },
+      "noRegion": {
+        "title": "Bu foydalanuvchi uchun viloyat topilmadi",
+        "text": "Filialingizga viloyat biriktirilmagan. Bosh ofis kabi viloyatsiz filiallarda bu holat kutiladi."
+      },
+      "noDistricts": {
+        "title": "Tumanlar ma'lumoti topilmadi",
+        "text": "Bu viloyat uchun tumanlar ro'yxati hali bo'sh."
+      }
+    },
+    "detail": {
+      "subtitle": "Batafsil statistika · {{period}}",
+      "kpiAria": "Viloyat ko'rsatkichlari",
+      "pendingMeta": "Jarayonda {{count}} ta",
+      "companyShare": "Kompaniyadagi ulushi",
+      "companyShareShort": "Ulushi",
+      "success": "Muvaffaqiyat",
+      "vsCompany": "kompaniyaga nisbatan",
+      "company": "Kompaniya bo'yicha",
+      "companyShort": "Kompaniya",
+      "activeCouriers": "Faol kuryerlar",
+      "primaryMeta": "{{count}} asosiy kuryer",
+      "districtsWithOrders": "Buyurtmali tumanlar",
+      "districtsShort": "Tumanlar",
+      "gauge": {
+        "title": "Muvaffaqiyat darajasi",
+        "subtitle": "Sotilgan / qabul qilingan · kompaniyaga nisbatan",
+        "marker": "Kompaniya bo'yicha · {{rate}}",
+        "aria": "{{name}} muvaffaqiyat darajasi {{rate}}, kompaniya bo'yicha {{company}}. Sotilgan {{sold}} ta, bekor qilingan {{cancelled}} ta"
+      },
+      "status": {
+        "title": "Buyurtmalar holati",
+        "subtitle": "{{period}} qabul qilinganlar · {{count}} ta",
+        "center": "Jami qabul qilingan"
+      },
+      "districts": {
+        "title": "Tumanlar",
+        "subtitle": "Buyurtmalar soni bo'yicha · sotuv foizi va tushum",
+        "viewAria": "Tumanlar ko'rinishi",
+        "rankAria": "Tumanlar, buyurtmalar soni bo'yicha",
+        "topMeta": "{{count}} ta · viloyatning {{share}}",
+        "lowest": "Eng past sotuv (2+ ta)",
+        "noCourier": "Kuryersiz tumanlar",
+        "namesMore": "{{names}} va yana {{count}} ta",
+        "pendingOnly": "{{count}} ta jarayonda",
+        "withoutOrders": "Buyurtmasiz tumanlar · {{count}} ta",
+        "showAll": "Barcha {{count}} tuman"
+      },
+      "table": {
+        "district": "Tuman",
+        "sato": "SATO",
+        "orders": "Buyurtmalar",
+        "success": "Sotuv",
+        "revenue": "Tushum",
+        "couriers": "Kuryerlar",
+        "sortedAria": "Buyurtmalar bo'yicha saralangan, kamayish tartibida",
+        "courierCount": "{{count}} kuryer",
+        "total": "Jami · {{count}} tuman",
+        "people": "{{count}} nafar"
+      },
+      "couriers": {
+        "title": "Viloyat kuryerlari",
+        "subtitle": "Sotuv foizi · sotilgan / jami",
+        "aria": "Viloyat kuryerlari",
+        "primary": "Asosiy",
+        "lowData": "Ma'lumot hali kam — foizlar taxminiy (har kuryerda 30 tadan kam)",
+        "empty": "Bu viloyatga kuryer biriktirilmagan"
+      },
+      "error": {
+        "title": "Viloyat ma'lumotini yuklab bo'lmadi",
+        "text": "Oynada xaritadagi umumiy raqamlar ko'rsatiladi, kuryer va tumanlar ro'yxati bo'sh qoladi."
+      }
+    },
+    "scoped": {
+      "title": "{{region}} — tumanlar statistikasi",
+      "subtitle": "{{region}} buyurtmalari · Tuman ustiga bosib batafsil ma'lumotni ko'ring",
+      "subtitleNoRegion": "Tuman ustiga bosib batafsil ma'lumotni ko'ring",
+      "cardSubtitle": "{{period}} · {{region}} buyurtmalari",
+      "gaugeAria": "{{region}}, muvaffaqiyat darajasi: {{rate}}. Sotilgan {{sold}} ta, bekor qilingan {{cancelled}} ta",
+      "overview": {
+        "title": "Umumiy ko'rsatkichlar",
+        "totalMeta": "{{total}} tumandan {{active}} tasida",
+        "pendingMeta": "jamining {{share}}",
+        "mostActive": "Eng faol tuman",
+        "lowest": "Eng past sotuv (3+ ta)"
+      },
+      "districts": {
+        "title": "Tumanlar",
+        "subtitle": "Rang — buyurtmalar soni · tumanni tanlang",
+        "viewAria": "Tumanlar ko'rinishi"
+      },
+      "tiles": {
+        "aria": "Tumanlar, buyurtmalar soni bo'yicha bo'yalgan: eng ko'p {{name}} {{count}} ta, {{empty}} ta tumanda buyurtma yo'q",
+        "ariaEmpty": "Tumanlar, tanlangan davrda buyurtma yo'q",
+        "tileAria": "{{name}}: {{count}} ta buyurtma, {{sold}} sotilgan, {{cancelled}} bekor, {{pending}} jarayonda, muvaffaqiyat {{rate}}",
+        "tileAriaEmpty": "{{name}}: 0 ta buyurtma, buyurtma yo'q",
+        "scaleAria": "Rang shkalasi, buyurtmalar soni: {{steps}}; kulrang — buyurtma yo'q",
+        "note": "Tumanni bosing — ko'rsatkichlari «Tanlangan tuman» panelida ochiladi"
+      },
+      "selected": {
+        "aria": "Tanlangan tuman: {{name}}",
+        "label": "Tanlangan tuman",
+        "success": "Muvaffaqiyat",
+        "vsRegion": "viloyatga nisbatan",
+        "revenue": "Tushum",
+        "statusAria": "{{name}}: sotilgan {{sold}}, jarayonda {{pending}}, bekor qilingan {{cancelled}}"
+      },
+      "rank": {
+        "aria": "Tumanlar, buyurtmalar soni bo'yicha",
+        "rowAria": "{{name}}: {{count}} ta buyurtma, muvaffaqiyat {{rate}}"
+      },
+      "noOrders": {
+        "title": "Buyurtma bo'lmagan tumanlar",
+        "meta": "{{count}} ta · tanlangan davrda buyurtma yo'q",
+        "chipAria": "{{name}}: buyurtma yo'q",
+        "row": "Buyurtma bo'lmagan tumanlar · {{count}} ta"
+      },
+      "table": {
+        "title": "Tumanlar kesimida",
+        "subtitle": "Buyurtma bo'lgan {{count}} tuman · holat: sotilgan · jarayonda · bekor",
+        "district": "Tuman",
+        "orders": "Buyurtmalar",
+        "status": "Holat",
+        "success": "Muvaffaqiyat",
+        "revenue": "Tushum",
+        "total": "Jami · {{count}} tuman"
+      }
+    },
+    "board": {
+      "aria": "Viloyatlar va tumanlar",
+      "listAria": "{{region}} tumanlari",
+      "countsAria": "Umumiy son",
+      "regionsCount": "Viloyatlar",
+      "districtsCount": "Tumanlar",
+      "searchAria": "Tuman yoki viloyat qidirish",
+      "noDistricts": "Tuman biriktirilmagan",
+      "editAria": "{{name}} nomini tahrirlash",
+      "deleteAria": "{{name}}ni o'chirish",
+      "deleteConfirm": "{{name}} o'chirilsinmi?",
+      "moveAria": "{{name}} — boshqa viloyatga o'tkazish",
+      "dragging": "{{name}} sudralmoqda",
+      "moveHint": "Ko'chirish",
+      "saving": "Saqlanmoqda...",
+      "loadError": "Ma'lumotni yuklab bo'lmadi",
+      "cancel": "Bekor qilish",
+      "move": {
+        "title": "Boshqa viloyatga o'tkazish",
+        "description": "{{name}} · hozir: {{region}}",
+        "listLabel": "Viloyatni tanlang",
+        "submit": "O'tkazish"
+      }
+    },
+    "districts": {
+      "title": "Tumanlar",
+      "create": {
+        "title": "Yangi tuman qo'shish",
+        "name": "Tuman nomi",
+        "region": "Viloyat"
+      }
+    },
+    "sato": {
+      "title": "Tumanlarni o'tkazish",
+      "subtitle": "Tumanlarni viloyatlar bo'yicha boshqarish: tumanni ushlab olib kerakli viloyat ustiga tashlang",
+      "moveErrorText": "Ro'yxat qayta yuklandi, tuman joyida qoldi"
+    },
+    "logist": {
+      "title": "Logist biriktirish",
+      "subtitle": "Logistlarni viloyatlarga biriktirish bo'limi",
+      "empty": {
+        "title": "Bo'lim hali ishga tushmagan",
+        "text": "Logist biriktirish imkoniyati tayyor bo'lgach shu sahifada paydo bo'ladi. Hozircha hududlar xaritasidan foydalaning."
+      },
+      "back": "Hududlarga qaytish"
+    }
   }
 }

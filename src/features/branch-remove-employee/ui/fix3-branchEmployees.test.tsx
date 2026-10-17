@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AxiosError, type AxiosResponse } from "axios";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -49,10 +49,11 @@ describe("RemoveEmployeeButton (fix3 CODE-21)", () => {
     mocks.removeMutateAsync.mockRejectedValue(
       httpError(409, "Kuryerni filialdan chiqarib bo'lmaydi: qo'lida pul bor"),
     );
-    renderWithProviders(<RemoveEmployeeButton branchId="15" userId="56" />);
+    renderWithProviders(<RemoveEmployeeButton branchId="15" userId="56" userName="Ali Valiyev" />);
 
-    await user.click(screen.getByRole("button", { name: "Olib tashlash" }));
-    await user.click(await screen.findByRole("button", { name: "Tasdiqlash" }));
+    await user.click(screen.getByRole("button", { name: "Ali Valiyevni filialdan olib tashlash" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Ali Valiyevni filialdan olib tashlash?" });
+    await user.click(within(dialog).getByRole("button", { name: "Olib tashlash" }));
 
     expect(mocks.removeMutateAsync).toHaveBeenCalledWith("56");
     expect(

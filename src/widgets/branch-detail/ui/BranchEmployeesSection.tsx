@@ -1,101 +1,171 @@
-import { Table } from "../../../shared/components/Table/Table";
-import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
+// dizayn-v2: superadmin-branches-detail
+import { memo, useCallback, useMemo } from "react";
+import { Users } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { RemoveEmployeeButton } from "../../../features/branch-remove-employee";
 import { TransferCourierButton } from "../../../features/courier-transfer-branch";
 import type { Employee } from "../../../entities/branch";
-import { formatDate } from "../../../shared/lib/formatDate";
-import { useTranslation } from "react-i18next";
+import { branchPositionKey, branchPositionLabel } from "../../../features/branch/lib/branchDisplay";
+import { formatDateLocalized } from "../../../shared/lib/formatDateTime";
+import { formatPhone } from "../../../shared/lib/formatPhone";
+import {
+  Badge,
+  Card,
+  DataTable,
+  EmptyState,
+  ErrorState,
+  QueryBoundary,
+  SkeletonTable,
+  type DataTableColumn,
+  type QueryLike,
+} from "../../../shared/ui/primitives";
 
 interface BranchEmployeesSectionProps {
   branchId: string;
-  data: Employee[];
-  loading?: boolean;
+  /** `useBranchEmployees(branchId)` natijasi (yoki shunga o'xshash `{ data, isLoading, isError, refetch }`). */
+  query: QueryLike<Employee[]>;
 }
 
-const isCourierRow = (employee: Employee) =>
-  String(employee.position ?? "").trim().toUpperCase() === "COURIER";
+const isCourierRow = (employee: Employee) => branchPositionKey(employee.position) === "COURIER";
 
-const BranchEmployeesSection = ({
-  branchId,
-  data,
-  loading,
-}: BranchEmployeesSectionProps) => {
-  const { t } = useTranslation("branches");
-  const deleteButtonClassName =
-    "!inline-flex !h-9 !w-9 !items-center !justify-center !rounded-lg !border !border-rose-200/80 !bg-rose-50 !p-0 !text-rose-600 transition-colors hover:!border-rose-400 hover:!bg-rose-100 hover:!text-rose-700 dark:!border-rose-500/30 dark:!bg-rose-500/12 dark:!text-rose-300 dark:hover:!border-rose-400/60 dark:hover:!bg-rose-500/18 dark:hover:!text-rose-200";
+/**
+ * «FILIAL XODIMLARI» (maket `superadmin-branches-detail`): jadval Xodim (ism + telefon) · Lavozim · Qo'shilgan
+ * sana · Amallar; telefonda — kartalar («telefon · sana», lavozim badge'i, tugma to'liq enli).
+ *
+ * Amallar: menejer va ro'yxatchi — «Olib tashlash» (tasdiq bilan); kuryer — «Boshqa filialga o'tkazish»
+ * (`TransferCourierButton`, faqat superadmin/admin ko'radi).
+ */
+const BranchEmployeesSection = ({ branchId, query }: BranchEmployeesSectionProps) => {
+  const { t, i18n } = useTranslation("branches");
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const joined = useCallback(
+    (value: string) => (value ? formatDateLocalized(value, { language }) : "—"),
+    [language],
+  );
+  const phone = (value: string) => (value && value !== "—" ? formatPhone(value) : "");
 
-  const columns: ColumnConfig<Employee>[] = [
-    {
-      key: "user",
-      label: t("employee.employee"),
-      render: (_, record) => (
-        <div className="flex flex-col gap-0.5">
-          <span className="font-semibold text-maindark dark:text-white">
-            {record.user.fullName}
-          </span>
-          <span className="text-xs text-text-muted dark:text-text-muted-dark">
-            {record.user.phone}
-          </span>
-        </div>
+  // Kuryer qatorida "filialdan chiqarish" tugmasi DOIMIY yashirin:
+  // filialsiz kuryer ishlay olmaydi va uning pulini hech kim (menejer ham,
+  // superadmin ham) qabul qila olmaydi. Kuryer faqat "Boshqa filialga
+  // o'tkazish" orqali ko'chiriladi — server avval kuryerda pul, buyurtma
+  // va qaytarilmagan pochta yo'qligini tekshiradi (chiqarish ham serverda
+  // xuddi shu tekshiruv bilan himoyalangan).
+  const action = useCallback(
+    (employee: Employee, fullWidth: boolean) =>
+      isCourierRow(employee) ? (
+        <TransferCourierButton
+          variant="secondary"
+          size="sm"
+          fullWidth={fullWidth}
+          courierId={employee.user.id}
+          courierName={employee.user.fullName}
+        />
+      ) : (
+        <RemoveEmployeeButton
+          branchId={branchId}
+          userId={employee.user.id}
+          userName={employee.user.fullName}
+          fullWidth={fullWidth}
+        />
       ),
-    },
-    { key: "position", label: t("employee.position"), sortable: true },
-    {
-      key: "joined_at",
-      label: t("employee.joinedDate"),
-      sortable: true,
-      sortValue: (row) => new Date(row.joined_at).getTime(),
-      render: (value: string) => formatDate(value, "DD.MM.YYYY"),
-    },
-    {
-      key: "id",
-      label: t("table.actions"),
-      render: (_, record) =>
-        // Kuryer qatorida "filialdan chiqarish" tugmasi DOIMIY yashirin:
-        // filialsiz kuryer ishlay olmaydi va uning pulini hech kim (menejer ham,
-        // superadmin ham) qabul qila olmaydi. Kuryer faqat "Boshqa filialga
-        // o'tkazish" orqali ko'chiriladi — server avval kuryerda pul, buyurtma
-        // va qaytarilmagan pochta yo'qligini tekshiradi (chiqarish ham serverda
-        // xuddi shu tekshiruv bilan himoyalangan).
-        isCourierRow(record) ? (
-          <TransferCourierButton
-            variant="row"
-            courierId={record.user.id}
-            courierName={record.user.fullName}
-          />
-        ) : (
-          <RemoveEmployeeButton
-            branchId={branchId}
-            userId={record.user.id}
-            className={deleteButtonClassName}
-          />
+    [branchId],
+  );
+
+  const columns = useMemo<DataTableColumn<Employee>[]>(
+    () => [
+      {
+        id: "user",
+        header: t("employee.employee"),
+        cell: (employee) => (
+          <>
+            <div className="whitespace-nowrap font-semibold text-text">{employee.user.fullName}</div>
+            {phone(employee.user.phone) ? (
+              <div className="whitespace-nowrap text-[13px] text-text-muted">{phone(employee.user.phone)}</div>
+            ) : null}
+          </>
         ),
+      },
+      {
+        id: "position",
+        header: t("employee.position"),
+        cell: (employee) => <Badge>{branchPositionLabel(employee.position, t)}</Badge>,
+      },
+      {
+        id: "joined",
+        header: t("employee.joinedDate"),
+        className: "whitespace-nowrap",
+        cell: (employee) => joined(employee.joined_at),
+      },
+      {
+        id: "actions",
+        header: t("table.actions"),
+        align: "end",
+        cell: (employee) => <div className="flex justify-end">{action(employee, false)}</div>,
+      },
+    ],
+    [action, joined, t],
+  );
+
+  const renderCard = useCallback(
+    (employee: Employee) => {
+      const sub = [phone(employee.user.phone), joined(employee.joined_at)].filter(Boolean).join(" · ");
+      return (
+        <div className="flex flex-col gap-2.5 px-4 py-3.5">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <span className="font-semibold text-text [overflow-wrap:anywhere]">{employee.user.fullName}</span>
+              <span className="text-[13px] text-text-muted">{sub}</span>
+            </div>
+            <Badge className="shrink-0">{branchPositionLabel(employee.position, t)}</Badge>
+          </div>
+          {action(employee, true)}
+        </div>
+      );
     },
-  ];
+    [action, joined, t],
+  );
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-lg font-bold text-maindark dark:text-white">
-            {t("employee.title")}
-          </h2>
-          <p className="text-sm text-text-muted dark:text-text-muted-dark">
-            {t("employee.description")}
-          </p>
-        </div>
-      </div>
-
-      <Table
-        keyExtractor={(employee) => employee.id}
-        loading={loading}
-        columns={columns}
-        data={data}
-        emptyMessage={t("employee.notFound")}
-        className="text-maindark dark:text-white/85"
-      />
-    </div>
+    <Card
+      as="section"
+      padding="none"
+      divided
+      title={t("employee.title")}
+      description={t("v2.employees.description")}
+    >
+      <QueryBoundary
+        query={query}
+        loadingLabel={t("v2.employees.loading")}
+        loading={
+          <SkeletonTable
+            framed={false}
+            rows={4}
+            columns={[t("employee.employee"), t("employee.position"), t("employee.joinedDate"), t("table.actions")]}
+          />
+        }
+        empty={
+          <EmptyState
+            icon={Users}
+            title={t("v2.employees.empty")}
+            description={t("v2.employees.emptyDescription")}
+          />
+        }
+        error={(error, retry) => <ErrorState error={error} title={t("v2.employees.loadFailed")} onRetry={retry} />}
+      >
+        {(list, { isRefetching }) => (
+          <DataTable
+            rows={list}
+            columns={columns}
+            getRowKey={(employee) => employee.id || employee.user.id}
+            label={t("employee.title")}
+            cardsLabel={t("employee.title")}
+            renderCard={renderCard}
+            busy={isRefetching}
+          />
+        )}
+      </QueryBoundary>
+    </Card>
   );
 };
 
-export default BranchEmployeesSection;
+export default memo(BranchEmployeesSection);

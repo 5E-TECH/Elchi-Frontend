@@ -47,5 +47,49 @@
   "chartAmount": "Jami: {{amount}}",
   "emptyMarkets": "Market statistikasi hozircha yo'q",
   "emptyCouriers": "Courier statistikasi hozircha yo'q",
-  "statsUnavailable": "Statistika vaqtincha mavjud emas — sahifani yangilang"
+  "statsUnavailable": "Statistika vaqtincha mavjud emas — sahifani yangilang",
+  "v2": {
+    "subtitle": "{{branch}} · tanlangan davr ko'rsatkichlari",
+    "count": "{{value}} ta",
+    "success": {
+      "needed": "Yaxshi zonaga (70%) chiqish uchun yana {{count}} ta sotuv kerak"
+    },
+    "status": {
+      "sub": "{{period}} · filialdagi buyurtmalar oqimi",
+      "note": "Foiz — tanlangan davrdagi jami {{count}} ta buyurtmaga nisbatan"
+    },
+    "packages": {
+      "title": "Faol paketlar",
+      "sub": "Filial paketlari holati",
+      "unit": "ta faol paket",
+      "aria": "Faol paketlar {{total}} ta: yo'lda {{onTheWay}} ta, qabul kutayotganlar {{waiting}} ta"
+    },
+    "couriers": {
+      "title": "Kuryerlar",
+      "sub": "Bugungi faollik",
+      "activeOf": "{{active}} / {{total}} ta",
+      "total": "Filial kuryerlari",
+      "inactive": "Bugun faol emas"
+    },
+    "markets": {
+      "sub": "Market kesimida buyurtmalar soni va jami summa",
+      "metricLabel": "Grafik ko'rsatkichi",
+      "byOrders": "Buyurtmalar",
+      "byAmount": "Summa",
+      "viewLabel": "Marketlar bo'yicha ko'rinishi",
+      "totalAmount": "Jami summa",
+      "totalMeta": "{{markets}} ta market · {{orders}} ta buyurtma",
+      "topOrders": "Eng ko'p buyurtma",
+      "topOrdersMeta": "{{count}} ta · jamining {{share}}",
+      "topAmount": "Eng katta summa",
+      "topAmountMeta": "{{amount}} · o'rtacha {{average}}",
+      "noteOrders": "Chiziq uzunligi — buyurtmalar soni; summa bo'yicha solishtirish uchun «Summa»ni tanlang",
+      "noteAmount": "Chiziq uzunligi — jami summa; buyurtmalar soni bo'yicha solishtirish uchun «Buyurtmalar»ni tanlang",
+      "colMarket": "Market"
+    },
+    "top": {
+      "sub": "Sotuv foizi · top 5 va sizning filial",
+      "yourBranch": "Sizning filial"
+    }
+  }
 }
