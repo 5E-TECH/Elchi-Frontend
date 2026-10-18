@@ -438,7 +438,8 @@
       "count": "{{value}} шт.",
       "total": "Итого",
       "showMore": "Показать ещё · {{value}}",
-      "showLess": "Свернуть"
+      "showLess": "Свернуть",
+      "topShown": "Показаны {{shown}} крупнейших · всего {{total}}"
     },
     "history": {
       "filters": "Фильтры истории",

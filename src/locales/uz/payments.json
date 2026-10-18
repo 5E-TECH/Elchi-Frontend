@@ -438,7 +438,8 @@
       "count": "{{value}} ta",
       "total": "Jami",
       "showMore": "Yana ko'rsatish · {{value}} ta",
-      "showLess": "Kamroq ko'rsatish"
+      "showLess": "Kamroq ko'rsatish",
+      "topShown": "Eng katta {{shown}} tasi ko'rsatilgan · jami {{total}} ta"
     },
     "history": {
       "filters": "Tarix filtrlari",

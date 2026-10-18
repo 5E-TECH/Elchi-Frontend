@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-neworders-market-orders, superadmin-neworders-receive-confirm-dialog, admin-neworders-market-detail, admin-neworders-market-confirm-dialog, manager-new-orders-market-detail, manager-new-orders-receive-confirm-dialog, manager-new-orders-delete-confirm-dialog, registrator-new-orders-market-detail, registrator-new-orders-market-detail-receive-dialog, registrator-new-orders-market-detail-delete-dialog, market-new-orders-list, market-new-orders-delete-dialog
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Check, Info, ScanLine, SearchX } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
@@ -89,7 +89,6 @@ const NewOrderDetail = () => {
   const [sort, setSort] = useState<DataTableSort | null>(DEFAULT_MARKET_ORDERS_SORT);
   const pendingScanOrderIdsRef = useRef<Set<string>>(new Set());
   const receivedScanKeysRef = useRef<Set<string>>(new Set());
-  const selectedOrdersKeyRef = useRef("");
 
   const { useGetTodayOrders, useGetTodayOrdersByMarket, deleteOrder, createReceiveOrder, createTransferBatch } =
     useOrders();
@@ -104,7 +103,6 @@ const NewOrderDetail = () => {
     () => rawOrders.filter((order) => !receivedOrderIds.has(order.id)),
     [rawOrders, receivedOrderIds],
   );
-  const ordersKey = orders.map((order) => order.id).join("|");
   const visibleRows = useMemo(
     () => sortMarketOrders(orders.filter((order) => matchesMarketOrderSearch(order, search)), sort),
     [orders, search, sort],
@@ -114,14 +112,6 @@ const NewOrderDetail = () => {
   const nameFromOrders = readMarketName(rawOrders, undefined, marketId);
   const marketsQuery = useGetTodayOrders(undefined, !isMarketRole && ordersQuery.isSuccess && !nameFromOrders);
   const marketName = nameFromOrders ?? readMarketName([], marketsQuery.data, marketId);
-
-  useEffect(() => {
-    if (isMarketRole) return;
-    if (!orders.length || selectedOrdersKeyRef.current === ordersKey) return;
-
-    selectedOrdersKeyRef.current = ordersKey;
-    setSelectedIds(new Set(orders.map((order) => order.id)));
-  }, [isMarketRole, orders, ordersKey]);
 
   const rememberReceivedScan = useCallback((order: MarketOrder, rawValue?: string) => {
     const keys = receivedScanKeysRef.current;
@@ -295,14 +285,16 @@ const NewOrderDetail = () => {
     setDeleteTarget(null);
   }, [deleteOrder, deleteTarget]);
 
+  // Sukut — hech narsa tanlanmagan (QMvu5Ajx): operator o'zi belgilaydi yoki «Barchasini tanlash». Son, qabul va
+  // chop etish faqat ro'yxatda turgan tanlanganlardan — qabul qilingan / o'chirilgan buyurtma tanlovda qolib ketmaydi.
   const selectedOrders = useMemo(() => orders.filter((order) => selectedIds.has(order.id)), [orders, selectedIds]);
   const selectedTotal = sumTotalPrice(selectedOrders);
   const totalSum = sumTotalPrice(orders);
 
   const handleAccepted = useCallback(() => {
-    // snapshot: setSelectedIds(new Set()) dan KEYIN selectedIds.size o'zgaradi,
+    // snapshot: setSelectedIds(new Set()) dan KEYIN tanlov o'zgaradi,
     // lekin closure eski qiymatni ko'radi — shuning uchun oldindan saqlaymiz
-    const ids = [...selectedIds];
+    const ids = selectedOrders.map((order) => order.id);
     const isAll = ids.length === orders.length;
     receiveMutation.mutate(
       { orderIds: ids },
@@ -330,11 +322,11 @@ const NewOrderDetail = () => {
         },
       },
     );
-  }, [location.key, navigate, orders.length, receiveMutation, refetch, selectedIds, t]);
+  }, [location.key, navigate, orders.length, receiveMutation, refetch, selectedOrders, t]);
 
   const handlePrint = useCallback(
     async (mode: string) => {
-      const printableOrders = selectedIds.size > 0 ? orders.filter((order) => selectedIds.has(order.id)) : orders;
+      const printableOrders = selectedOrders.length > 0 ? selectedOrders : orders;
 
       if (!printableOrders.length) {
         notify.warning(t("print"), { description: t("notFound") });
@@ -359,7 +351,7 @@ const NewOrderDetail = () => {
         notify.error(t("print"), { description: t("printError") });
       }
     },
-    [orders, selectedIds, t],
+    [orders, selectedOrders, t],
   );
 
   // ─── Ko'rinish ───────────────────────────────────────────────────────────────
@@ -489,7 +481,7 @@ const NewOrderDetail = () => {
     );
   }
 
-  const receiveCount = formatNumberLocalized(selectedIds.size, { language });
+  const receiveCount = formatNumberLocalized(selectedOrders.length, { language });
 
   return (
     <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
@@ -510,7 +502,7 @@ const NewOrderDetail = () => {
             <Button
               leftIcon={Check}
               aria-haspopup="dialog"
-              disabled={selectedIds.size === 0}
+              disabled={selectedOrders.length === 0}
               loading={receiveMutation.isPending}
               loadingText={t("receiving")}
               onClick={() => setIsReceiveConfirmOpen(true)}
@@ -519,7 +511,7 @@ const NewOrderDetail = () => {
                 t={t}
                 i18nKey="marketOrders.receive"
                 values={{ value: receiveCount }}
-                count={selectedIds.size}
+                count={selectedOrders.length}
                 components={{ long: <span className="max-md:hidden" /> }}
               />
             </Button>

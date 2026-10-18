@@ -240,9 +240,9 @@ describe("BranchListWidget — filtrlar, o'chirish, holatlar", () => {
     expect(await screen.findByText("Filial o'chirildi")).toBeInTheDocument();
   });
 
-  it("o'chirish rad etilsa — «Filialni o'chirishda xatolik yuz berdi»", async () => {
+  const rejectDelete = async (error: unknown) => {
     const user = userEvent.setup();
-    api.delete.mockRejectedValue(new Error("409"));
+    api.delete.mockRejectedValue(error);
     renderWithProviders(<BranchListWidget viewMode="table" onViewModeChange={vi.fn()} onEdit={vi.fn()} />);
     await screen.findByText("1–12 / 13 ta filial");
 
@@ -251,7 +251,29 @@ describe("BranchListWidget — filtrlar, o'chirish, holatlar", () => {
     const dialog = await screen.findByRole("alertdialog", { name: "Filialni o'chirmoqchimisiz?" });
     await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
 
-    expect(await screen.findByText("Filialni o'chirishda xatolik yuz berdi")).toBeInTheDocument();
+    return screen.findByText("Filialni o'chirishda xatolik yuz berdi");
+  };
+  const httpError = (status: number, message: string) =>
+    Object.assign(new Error(`Request failed with status code ${status}`), {
+      response: { status, data: { statusCode: status, message } },
+    });
+
+  it("o'chirish rad etilsa (javobsiz xato) — «Filialni o'chirishda xatolik yuz berdi», izohsiz", async () => {
+    const title = await rejectDelete(new Error("Network Error"));
+    expect(title).toBeInTheDocument();
+    expect(screen.queryByText("Hozir tekshirib bo'lmadi. Keyinroq qayta urinib ko'ring.")).not.toBeInTheDocument();
+  });
+
+  it("⭐ 400 — xabar izohida backend sababi va summasi (5QHWbBCA)", async () => {
+    const reason = "Filialni o'chirib bo'lmaydi: filialning HQ'ga 1 250 000 so'm qarzi bor";
+    expect(await rejectDelete(httpError(400, reason))).toBeInTheDocument();
+    expect(await screen.findByText(reason)).toBeInTheDocument();
+  });
+
+  it("⭐ 503 — «Hozir tekshirib bo'lmadi. Keyinroq qayta urinib ko'ring.» (5QHWbBCA)", async () => {
+    expect(await rejectDelete(httpError(503, "Service Unavailable"))).toBeInTheDocument();
+    expect(await screen.findByText("Hozir tekshirib bo'lmadi. Keyinroq qayta urinib ko'ring.")).toBeInTheDocument();
+    expect(screen.queryByText("Service Unavailable")).not.toBeInTheDocument();
   });
 
   it("menyu «Tahrirlash» — onEdit shu filial bilan", async () => {

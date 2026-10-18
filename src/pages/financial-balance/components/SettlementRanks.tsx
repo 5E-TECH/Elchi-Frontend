@@ -32,6 +32,11 @@ interface RankCardProps {
   title: string;
   subtitle: string;
   rows: RankRow[];
+  /**
+   * Noldan farqli kassalarning haqiqiy soni (backend `nonZeroCount`, IaMK2tf2) — sanoq `rows.length` emas:
+   * backend ro'yxatni kesgan bo'lsa (`truncated`), `rows` faqat eng kattalari.
+   */
+  total: number;
   shareLabel: (name: string) => string;
   emptyIcon: typeof Store;
   emptyText: string;
@@ -39,14 +44,19 @@ interface RankCardProps {
 }
 
 /** Reyting kartasi (`.el-chart` + `.el-rank`): o'rin, bosh harflar, ism · joy, meter, summa + ulush. */
-const RankCard = ({ title, subtitle, rows, shareLabel, emptyIcon, emptyText, foot }: RankCardProps) => {
+const RankCard = ({ title, subtitle, rows, total, shareLabel, emptyIcon, emptyText, foot }: RankCardProps) => {
   const { t, i18n } = useTranslation("payments");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const isPhone = useIsPhone();
   const [expanded, setExpanded] = useState(false);
   const limit = isPhone ? PHONE_ROWS : DESKTOP_ROWS;
   const visible = expanded ? rows : rows.slice(0, limit);
+  // «Yana ko'rsatish · N ta» — bosilganda haqiqatan ochiladigan qatorlar.
   const hidden = rows.length - visible.length;
+  const count = Math.max(total, rows.length);
+  // Backend bermagan (kesilgan) qatorlar — ro'yxat to'liq ochiq turganda «eng katta N tasi» izohi.
+  const notLoaded = count - rows.length;
+  const number = (value: number) => formatNumberLocalized(value, { language });
 
   return (
     <Card
@@ -54,7 +64,7 @@ const RankCard = ({ title, subtitle, rows, shareLabel, emptyIcon, emptyText, foo
       className="min-w-0 flex-[1_1_400px]"
       title={title}
       description={subtitle}
-      actions={<Badge>{t("v2Balance.rank.count", { value: formatNumberLocalized(rows.length, { language }) })}</Badge>}
+      actions={<Badge>{t("v2Balance.rank.count", { value: number(count) })}</Badge>}
       footer={foot}
       bodyClassName="flex-1"
     >
@@ -118,10 +128,13 @@ const RankCard = ({ title, subtitle, rows, shareLabel, emptyIcon, emptyText, foo
               onClick={() => setExpanded((value) => !value)}
               rightIcon={expanded ? ChevronUp : ChevronDown}
             >
-              {expanded
-                ? t("v2Balance.rank.showLess")
-                : t("v2Balance.rank.showMore", { value: formatNumberLocalized(hidden, { language }) })}
+              {expanded ? t("v2Balance.rank.showLess") : t("v2Balance.rank.showMore", { value: number(hidden) })}
             </Button>
+          ) : null}
+          {notLoaded > 0 && hidden === 0 ? (
+            <p className="m-0 text-center text-xs text-text-muted">
+              {t("v2Balance.rank.topShown", { shown: number(rows.length), total: number(count) })}
+            </p>
           ) : null}
         </div>
       )}
@@ -184,6 +197,7 @@ const SettlementRanks = ({ data }: { data: FinancialBalanceData }) => {
         title={t("v2Balance.markets.title")}
         subtitle={t("v2Balance.markets.subtitle")}
         rows={marketRows}
+        total={data.markets.nonZeroCount}
         shareLabel={(name) => t("v2Balance.markets.share", { name })}
         emptyIcon={Store}
         emptyText={t("v2Balance.markets.empty")}
@@ -202,6 +216,7 @@ const SettlementRanks = ({ data }: { data: FinancialBalanceData }) => {
         title={t("v2Balance.couriers.title")}
         subtitle={t("v2Balance.couriers.subtitle")}
         rows={courierStats.rows}
+        total={data.couriers.nonZeroCount}
         shareLabel={(name) => t("v2Balance.couriers.share", { name })}
         emptyIcon={Truck}
         emptyText={t("v2Balance.couriers.empty")}
