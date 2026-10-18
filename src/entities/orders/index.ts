@@ -30,6 +30,11 @@ export type ExtraCostApproval = {
   decision_comment?: string | null;
   /** (1tnpaIqd) muddat o'tib avtomatik tasdiqlangan. */
   auto_approved?: boolean;
+  /**
+   * (1tnpaIqd) muddat: kutilayotgan so'rov shu vaqtgacha javobsiz qolsa avtomatik tasdiqlanadi
+   * (`EXTRA_COST_AUTO_APPROVE_MINUTES`). Avtomatik tasdiq o'chiq yoki so'rov yopilgan — `null`.
+   */
+  auto_approve_at?: string | null;
   /** (DuST9k8j) rad etish sababi — yopiq ro'yxat. */
   reject_reason?: ExtraCostRejectReason | null;
   createdAt?: string;
@@ -123,6 +128,21 @@ export const useOrders = () => {
       // yangilanish EMAS — aks holda xato kartasi har 30 s da skeletga aylanib qaytadi.
       refetchInterval: (query) => (status === "pending" && query.state.status !== "error" ? 30000 : false),
       refetchOnWindowFocus: status === "pending" ? "always" : false,
+    });
+
+  /**
+   * (1tnpaIqd) Avtomatik tasdiqlangan qo'shimcha xarajatlar — alohida filtr
+   * (`?status=approved&auto_approved=true`), market e'tiroz bildirishi uchun. Kamdan-kam o'zgaradi —
+   * davriy yangilanishsiz.
+   */
+  const useAutoApprovedExtraCostApprovals = (enabled = true) =>
+    useQuery<ExtraCostApprovalsResponse>({
+      queryKey: [orders, "extra-cost-approvals", "approved", "auto"],
+      queryFn: () =>
+        api
+          .get(API_ENDPOINTS.ORDERS.EXTRA_COST_APPROVALS, { params: { status: "approved", auto_approved: true } })
+          .then((res) => res.data),
+      enabled,
     });
 
   const approveExtraCostApproval = useMutation({
@@ -376,6 +396,7 @@ export const useOrders = () => {
     PartlySellOrder,
     CancelOrder,
     useExtraCostApprovals,
+    useAutoApprovedExtraCostApprovals,
     approveExtraCostApproval,
     rejectExtraCostApproval,
   };

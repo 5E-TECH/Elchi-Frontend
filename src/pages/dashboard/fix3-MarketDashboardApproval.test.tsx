@@ -23,6 +23,7 @@ vi.mock("../../entities/dashboard", () => ({
 
 vi.mock("../../entities/orders", () => ({
   useOrders: () => ({
+    useAutoApprovedExtraCostApprovals: () => ({ data: undefined }),
     useExtraCostApprovals: () => ({
       data: {
         data: [

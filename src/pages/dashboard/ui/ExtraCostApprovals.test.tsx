@@ -100,6 +100,20 @@ describe("ExtraCostApprovals — market dashboardidagi tasdiqlar bloki", () => {
     expect(within(sell).getByRole("button", { name: "Rad etish" })).toBeInTheDocument();
   });
 
+  it("1tnpaIqd: muddat (auto_approve_at) bo'lsa — «… gacha javob berilmasa — avtomatik tasdiqlanadi»; yo'q bo'lsa qator yo'q", async () => {
+    http.get.mockResolvedValue(
+      listResponse([
+        approval("ap-1", "sell", "53", { auto_approve_at: "2026-10-17T13:12:00.000Z" }),
+        approval("ap-2", "cancel", "55", { auto_approve_at: null }),
+      ]),
+    );
+    renderBlock();
+
+    await screen.findByRole("list", { name: "Kutilayotgan so'rovlar" });
+    expect(screen.getByTestId("approval-deadline-ap-1")).toHaveTextContent(/gacha javob berilmasa — avtomatik tasdiqlanadi$/);
+    expect(screen.queryByTestId("approval-deadline-ap-2")).not.toBeInTheDocument();
+  });
+
   it("kutilayotgan so'rov yo'q — blok chizilmaydi", async () => {
     http.get.mockResolvedValue(listResponse([]));
     const { container } = renderBlock();

@@ -37,6 +37,8 @@ import {
   getPaymentSourceTitle,
   getViewerOperationType,
 } from "./paymentSourceType";
+import { PaymentAckBadge } from "./PaymentAckBadge";
+import { toPaymentAck } from "./paymentAck";
 
 /**
  * KASSA TARIXI YOZUVI TAFSILOTI — «Moliya» sahifalarining umumiy oynasi (dizayn v2).
@@ -190,6 +192,9 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
   const partyRole = roleLabel(party?.role) ?? roleLabel(display.cashbox_type);
   const partyPhone = party?.phone_number?.trim() || party?.phone?.trim() || "";
   const comment = display.comment?.trim();
+  // 2crjWf7v: kuryerning bot kvitansiyasiga javobi — faqat «Kuryerdan qabul» qatorida (ro'yxat qatoridan;
+  // boshqa qatorlarda maydon yo'q → qator chizilmaydi). Maketda yo'q (Trello kartasidagi ega qarori).
+  const paymentAck = toPaymentAck(current?.payment_ack);
 
   const order = detail?.order ?? null;
   const orderId = order?.id != null ? String(order.id) : "";
@@ -247,6 +252,16 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
           : null}
         {kvRow(t("v2HistoryDetail.paymentType"), getPaymentMethodLabel(display.payment_method, t))}
         {kvRow(t("v2HistoryDetail.paymentDate"), dateText)}
+        {paymentAck !== undefined
+          ? kvRow(
+              t("v2HistoryDetail.paymentAck"),
+              paymentAck ? (
+                <PaymentAckBadge ack={paymentAck} />
+              ) : (
+                <span className="font-normal text-text-muted">{t("v2HistoryDetail.paymentAckNone")}</span>
+              ),
+            )
+          : null}
       </dl>
 
       {comment ? (

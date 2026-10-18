@@ -150,13 +150,6 @@
   "tgGroupPiiHiddenDescription": "Guruhdagi buyurtma kartalarida mijoz ismi va telefoni yashiriladi",
   "tgGroupPiiSaveError": "Saqlanmadi",
   "tgGroupPiiSaveErrorDescription": "Sozlamani saqlab bo'lmadi. Qayta urinib ko'ring",
-  "telegramTokenTitle": "Telegram token",
-  "telegramTokenShow": "Ko'rsatish",
-  "telegramTokenHide": "Yashirish",
-  "telegramTokenCopy": "Nusxalash",
-  "telegramTokenCopied": "Token nusxalandi",
-  "telegramTokenCopyFailed": "Tokenni nusxalab bo'lmadi",
-  "telegramTokenMissing": "Bu marketda Telegram token hali yo'q",
   "v2": {
     "common": {
       "back": "Foydalanuvchilar",
@@ -355,12 +348,6 @@
       "notFound": "Foydalanuvchi topilmadi",
       "notFoundDescription": "Bu foydalanuvchi o'chirilgan yoki mavjud emas."
     },
-    "token": {
-      "maskedLabel": "Token yashirilgan",
-      "hint": "Market Telegram guruhiga botni qo'shib, shu tokenni yuborsin. Token — maxfiy kalit, uni faqat shu marketga bering.",
-      "loadError": "Tokenni olib bo'lmadi",
-      "loadErrorHint": "Birozdan keyin qayta urinib ko'ring."
-    },
     "edit": {
       "description": "{{name}} · {{role}}",
       "name": "Ism familiya",
@@ -376,5 +363,7 @@
       "centerTariff": "Markazga tarif",
       "saving": "Saqlanmoqda…"
     }
-  }
+  },
+  "tgGroupLinkAction": "Ulash havolasini olish",
+  "tgGroupLinkHint": "Bir martalik havola (10 daqiqa): bot guruhga qo'shiladi va uni o'zi ulaydi. Ulangan guruhlar — «Bildirishnomalar» sahifasida."
 }

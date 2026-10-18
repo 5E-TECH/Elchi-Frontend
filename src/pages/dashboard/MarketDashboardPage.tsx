@@ -45,6 +45,7 @@ import {
 import { isLowDataRanking } from "../../widgets/dashboard-top-performers/model/ranking";
 import TopRankCard from "../../widgets/dashboard-top-performers/ui/TopRankCard";
 import { ExtraCostApprovals } from "./ui/ExtraCostApprovals";
+import { AutoApprovedExtraCosts } from "./ui/AutoApprovedExtraCosts";
 import MarketSalesCard from "./ui/MarketSalesCard";
 import QuickActions from "./ui/QuickActions";
 
@@ -196,6 +197,7 @@ const MarketDashboardPage = () => {
       />
 
       <ExtraCostApprovals />
+      <AutoApprovedExtraCosts />
 
       {dashboardError || statsFailed ? (
         <Card>

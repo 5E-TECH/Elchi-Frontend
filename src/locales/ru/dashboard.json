@@ -90,7 +90,14 @@
     "extra_cost_approved": "Доп. расход подтверждён",
     "extra_cost_rejected": "Запрос отклонён",
     "extra_cost_already_decided": "Запрос уже решён",
-    "extra_cost_already_decided_hint": "Этот запрос уже решён в другом месте (например, в Telegram). Список обновлён."
+    "extra_cost_already_decided_hint": "Этот запрос уже решён в другом месте (например, в Telegram). Список обновлён.",
+    "extra_cost_auto_at": "Если не ответить до {{time}} — подтвердится автоматически",
+    "extra_cost_auto_title": "Автоматически подтверждённые расходы",
+    "extra_cost_auto_count": "{{count}} шт.",
+    "extra_cost_auto_hint": "Запросы без ответа в срок подтверждены автоматически. Если вы не согласны — обратитесь к администратору.",
+    "extra_cost_auto_badge": "Подтверждено автоматически",
+    "extra_cost_auto_list_label": "Автоматически подтверждённые запросы",
+    "extra_cost_auto_decided": "Подтверждено {{time}}"
   },
   "v2Charts": {
     "zone": {

@@ -150,13 +150,6 @@
   "tgGroupPiiHiddenDescription": "Order cards in the group hide the customer's name and phone",
   "tgGroupPiiSaveError": "Not saved",
   "tgGroupPiiSaveErrorDescription": "Couldn't save the setting. Try again",
-  "telegramTokenTitle": "Telegram token",
-  "telegramTokenShow": "Show",
-  "telegramTokenHide": "Hide",
-  "telegramTokenCopy": "Copy",
-  "telegramTokenCopied": "Token copied",
-  "telegramTokenCopyFailed": "Could not copy the token",
-  "telegramTokenMissing": "This market has no Telegram token yet",
   "v2": {
     "common": {
       "back": "Users",
@@ -355,12 +348,6 @@
       "notFound": "User not found",
       "notFoundDescription": "This user was deleted or does not exist."
     },
-    "token": {
-      "maskedLabel": "Token hidden",
-      "hint": "Ask the market to add the bot to its Telegram group and send this token there. The token is a secret key — give it only to this market.",
-      "loadError": "Could not fetch the token",
-      "loadErrorHint": "Please try again in a moment."
-    },
     "edit": {
       "description": "{{name}} · {{role}}",
       "name": "Full name",
@@ -376,5 +363,7 @@
       "centerTariff": "Centre tariff",
       "saving": "Saving…"
     }
-  }
+  },
+  "tgGroupLinkAction": "Get connection link",
+  "tgGroupLinkHint": "One-time link (10 minutes): the bot joins the group and connects it itself. Connected groups are listed on the Notifications page."
 }
