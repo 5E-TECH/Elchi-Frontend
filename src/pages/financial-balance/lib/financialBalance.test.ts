@@ -40,6 +40,45 @@ describe("normalizeFinancialBalance", () => {
   });
 });
 
+describe("marketlar va kuryerlar ro'yxati (IaMK2tf2)", () => {
+  it("⭐ market qatori ishorasi teskari olinadi: musbat (biz qarzmiz) → manfiy, manfiy (oldindan to'lagan) → musbat", () => {
+    const data = normalizeFinancialBalance({
+      data: {
+        main: { balance: 0 },
+        markets: {
+          allMarketCashboxes: [
+            { id: "1", balance: 4_820_000, user: { name: "Baraka Shop" } },
+            { id: "2", balance: -150_000, user: { name: "Oldindan to'lagan" } },
+            { id: "3", balance: 0, user: { name: "Nol" } },
+          ],
+          marketsTotalBalans: -4_670_000,
+        },
+        couriers: { allCourierCashboxes: [{ id: "9", balance: -85_000, user: { name: "Kuryer" } }], couriersTotalBalanse: -85_000 },
+      },
+    });
+
+    expect(data?.markets.items.map((item) => item.balance)).toEqual([-4_820_000, 150_000, 0]);
+    expect(Object.is(data?.markets.items[2].balance, -0)).toBe(false);
+    // Kuryer ishorasi o'zgarmaydi.
+    expect(data?.couriers.items[0].balance).toBe(-85_000);
+  });
+
+  it("⭐ sanoq `nonZeroCount` dan, `truncated` o'qiladi; eski javobda — yuklangan qatorlar soni", () => {
+    const rows = (count: number) => Array.from({ length: count }, (_, i) => ({ id: String(i + 1), balance: 1000 * (i + 1), user: { name: `M${i + 1}` } }));
+    const data = normalizeFinancialBalance({
+      data: {
+        main: { balance: 0 },
+        markets: { allMarketCashboxes: rows(20), nonZeroCount: 57, truncated: true, marketsTotalBalans: -1 },
+        couriers: { allCourierCashboxes: rows(2), couriersTotalBalanse: 3000 },
+      },
+    });
+
+    expect(data?.markets).toMatchObject({ nonZeroCount: 57, truncated: true });
+    expect(data?.markets.items).toHaveLength(20);
+    expect(data?.couriers).toMatchObject({ nonZeroCount: 2, truncated: false });
+  });
+});
+
 describe("readCurrentBalance (GtAoqHlk)", () => {
   it("analytics javobidagi currentBalance (qobiq bilan ham, qobiqsiz ham)", async () => {
     const { readCurrentBalance } = await import("./financialBalance");

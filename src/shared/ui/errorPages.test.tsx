@@ -1,22 +1,43 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../test/test-utils";
 import ErrorBoundaryPage from "./ErrorBoundaryPage";
 import ForbiddenPage from "./Forbidden";
 import NotFoundPage from "./NotFound";
 import ServerErrorPage from "./ServerError";
-import { RUNTIME_ERROR_STORAGE_KEY, saveRuntimeError } from "../lib/runtimeError";
+import { getRuntimeError, RUNTIME_ERROR_STORAGE_KEY, saveRuntimeError } from "../lib/runtimeError";
 
 /**
  * Xato sahifalari (taxta `tizim-errors` 01): `EmptyState`/`ErrorState` `size="page"` — ustki yozuv, h1 sarlavha,
  * 2 ta tugma; 403 kulrang (`role=status` emas, oddiy holat), 500 va ilova xatosi qizil (`role=alert`).
  */
 
+const LocationProbe = () => {
+  const location = useLocation();
+  return <output data-testid="location">{`${location.pathname}${location.search}`}</output>;
+};
+
+/** Ilova xatosi sahifasi + u olib boradigan sahifalar (SPA o'tishni ko'rish uchun). */
+const renderRuntimeErrorPage = () =>
+  renderWithProviders(
+    <>
+      <Routes>
+        <Route path="/runtime-error" element={<ErrorBoundaryPage standalone />} />
+        <Route path="/orders" element={<p>Buyurtmalar sahifasi</p>} />
+        <Route path="/" element={<p>Bosh sahifa</p>} />
+      </Routes>
+      <LocationProbe />
+    </>,
+    { route: "/runtime-error" },
+  );
+
 describe("xato sahifalari (dizayn v2)", () => {
   afterEach(() => {
     window.sessionStorage.clear();
     vi.restoreAllMocks();
+    vi.unstubAllEnvs();
   });
 
   it("404: sarlavha, «Xato kodi 404», bosh sahifa havolasi va «Orqaga»", () => {
@@ -55,23 +76,69 @@ describe("xato sahifalari (dizayn v2)", () => {
     expect(reload).toHaveBeenCalledTimes(1);
   });
 
-  it("ilova xatosi: texnik matn yopiq «Xato tafsilotlari» ichida; «Qayta urinish» xato bo'lgan sahifaga qaytadi", async () => {
+  it("ilova xatosi: texnik matn yopiq «Xato tafsilotlari» ichida; «Qayta urinish» — xato bo'lgan sahifaga, qayta yuklashsiz", async () => {
     const replace = vi.fn();
     vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, replace } as Location);
     saveRuntimeError({ message: "boom xato", stack: "at Page (page.tsx:1)", sourcePath: "/orders?page=2" });
-    renderWithProviders(<ErrorBoundaryPage standalone />, { route: "/runtime-error" });
+    renderRuntimeErrorPage();
 
     expect(screen.getByRole("heading", { level: 1, name: "Sahifani ko'rsatib bo'lmadi" })).toBeInTheDocument();
     expect(screen.getByText("Kutilmagan xato")).toBeInTheDocument();
+    expect(screen.getByText("Ilovada kutilmagan xato yuz berdi. Qayta urinib ko'ring.")).toBeInTheDocument();
     const toggle = screen.getByRole("button", { name: "Xato tafsilotlari" });
     expect(toggle).toHaveAttribute("aria-expanded", "false");
     expect(screen.getByText(/boom xato/)).not.toBeVisible();
     await userEvent.click(toggle);
     expect(screen.getByText(/boom xato/)).toBeVisible();
+    expect(screen.getByText(/Xato kodi: ERR-[0-9A-F]{4}/)).toBeVisible();
+    // Ishlab chiqishda (vitest — DEV) stek ham ko'rinadi.
+    expect(screen.getByText(/at Page \(page\.tsx:1\)/)).toBeVisible();
 
-    await userEvent.click(screen.getByRole("button", { name: "Qayta urinish" }));
-    expect(replace).toHaveBeenCalledWith("/orders?page=2");
+    const retry = screen.getByRole("button", { name: "Qayta urinish" });
+    expect(retry).toHaveAttribute("data-variant", "primary");
+    expect(screen.getByRole("button", { name: "Bosh sahifaga qaytish" })).toHaveAttribute("data-variant", "secondary");
+    expect(screen.queryByRole("button", { name: "Orqaga" })).not.toBeInTheDocument();
+    await userEvent.click(retry);
+    expect(await screen.findByText("Buyurtmalar sahifasi")).toBeInTheDocument();
+    expect(screen.getByTestId("location")).toHaveTextContent("/orders?page=2");
+    expect(replace).not.toHaveBeenCalled();
+    // Yozuv qoladi — sahifa yana yiqilsa hisoblagich oshadi.
+    expect(getRuntimeError()).toMatchObject({ sourcePath: "/orders?page=2", retryCount: 1 });
+  });
+
+  it("takroriy xato (shu sahifa 2-marta yiqildi): «Qayta urinish» yo'q, «Bosh sahifaga qaytish» asosiy, administratorga murojaat", async () => {
+    saveRuntimeError({ message: "boom", sourcePath: "/orders" });
+    saveRuntimeError({ message: "boom", sourcePath: "/orders" });
+    renderRuntimeErrorPage();
+
+    expect(screen.getByRole("heading", { level: 1, name: "Sahifani ko'rsatib bo'lmadi" })).toBeInTheDocument();
+    expect(screen.getByText("Bu sahifa takroran xato bermoqda. Administratorga murojaat qiling.")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Qayta urinish" })).not.toBeInTheDocument();
+    const home = screen.getByRole("button", { name: "Bosh sahifaga qaytish" });
+    expect(home).toHaveAttribute("data-variant", "primary");
+    // Ikkinchi chiqish yo'li — 403 blokidagidek «Orqaga».
+    expect(screen.getByRole("button", { name: "Orqaga" })).toHaveAttribute("data-variant", "secondary");
+
+    await userEvent.click(home);
+    expect(await screen.findByText("Bosh sahifa")).toBeInTheDocument();
     expect(window.sessionStorage.getItem(RUNTIME_ERROR_STORAGE_KEY)).toBeNull();
+  });
+
+  it("prod build: stek «Xato tafsilotlari» ichida ham yo'q — faqat xato kodi va xabar", async () => {
+    vi.stubEnv("DEV", false);
+    saveRuntimeError({
+      message: "r.forEach is not a function",
+      stack: "TypeError: r.forEach is not a function\n    at Hx (index-abc.js:1:2345)",
+      componentStack: "\n    at Orders (index-abc.js:9:99)",
+      sourcePath: "/orders",
+    });
+    renderRuntimeErrorPage();
+
+    await userEvent.click(screen.getByRole("button", { name: "Xato tafsilotlari" }));
+    const details = screen.getByText(/Xato kodi: ERR-[0-9A-F]{4}/);
+    expect(details).toBeVisible();
+    expect(details).toHaveTextContent("r.forEach is not a function");
+    expect(details).not.toHaveTextContent("index-abc.js");
   });
 
   it("ilova xatosi yozuvi yo'q — hech narsa chizilmaydi (bosh sahifaga yo'naltiriladi)", () => {

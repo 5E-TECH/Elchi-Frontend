@@ -20,6 +20,8 @@ import {
  * `shell.mounts` — shell necha marta qayta qurilgani.
  */
 const shell = vi.hoisted(() => ({ crash: false, mounts: 0 }));
+/** `/orders` sahifasi o'rnida soxta: `ordersPage.crash` — sahifa har ochilganda yiqiladi (doimiy sabab). */
+const ordersPage = vi.hoisted(() => ({ crash: false }));
 
 vi.mock("../../widgets/layout/dashboardLayout", async () => {
   const { Outlet } = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
@@ -42,6 +44,13 @@ vi.mock("../../widgets/layout/dashboardLayout", async () => {
 
 vi.mock("../../pages/dashboard/DashboardPage", () => ({
   default: () => <p>Bosh sahifa kontenti</p>,
+}));
+
+vi.mock("../../pages/orders", () => ({
+  default: () => {
+    if (ordersPage.crash) throw new TypeError("r.forEach is not a function");
+    return <p>Buyurtmalar kontenti</p>;
+  },
 }));
 
 const signedIn: Partial<RootState> = {
@@ -88,6 +97,7 @@ describe("xato sahifalari: shell ichida yoki butun ekran", () => {
   beforeEach(() => {
     shell.crash = false;
     shell.mounts = 0;
+    ordersPage.crash = false;
   });
 
   afterEach(() => {
@@ -110,7 +120,7 @@ describe("xato sahifalari: shell ichida yoki butun ekran", () => {
       expect(screen.getAllByRole("main")).toHaveLength(1);
     });
 
-    it("ilova xatosi — shell ichida; «Qayta urinish» xato bo'lgan sahifaga qaytadi va yozuvni tozalaydi", async () => {
+    it("ilova xatosi — shell ichida; «Qayta urinish» xato bo'lgan sahifaga qayta yuklashsiz qaytadi", async () => {
       const replace = mockLocationReplace();
       saveRuntimeError({ message: "boom", sourcePath: "/orders?page=2" });
       renderApp("/runtime-error", signedIn);
@@ -119,8 +129,27 @@ describe("xato sahifalari: shell ichida yoki butun ekran", () => {
       expect(screen.getByTestId("shell")).toContainElement(heading);
 
       await userEvent.click(screen.getByRole("button", { name: "Qayta urinish" }));
-      expect(replace).toHaveBeenCalledWith("/orders?page=2");
-      expect(window.sessionStorage.getItem(RUNTIME_ERROR_STORAGE_KEY)).toBeNull();
+      expect(await screen.findByText("Buyurtmalar kontenti")).toBeInTheDocument();
+      expect(replace).not.toHaveBeenCalled();
+      expect(shell.mounts).toBe(1);
+      // Yozuv qoladi — sahifa yana yiqilsa hisoblagich oshadi (L6q4DiGU).
+      expect(getRuntimeError()).toMatchObject({ sourcePath: "/orders?page=2", retryCount: 1 });
+    });
+
+    it("L6q4DiGU: «Qayta urinish» dan keyin sahifa yana yiqilsa — takroriy (retryCount 2), qayta urinish tugmasi yo'q", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => {});
+      // Brauzerda SPA o'tish manzilni o'zgartiradi — chegara xato manzilini shundan oladi (soxta `location`
+      // shu paytdagi manzilni oladi).
+      window.history.replaceState({}, "", "/orders?page=2");
+      const replace = mockLocationReplace();
+      ordersPage.crash = true;
+      saveRuntimeError({ message: "r.forEach is not a function", sourcePath: "/orders?page=2" });
+      renderApp("/runtime-error", signedIn);
+      await findPageHeading("Sahifani ko'rsatib bo'lmadi");
+
+      await userEvent.click(screen.getByRole("button", { name: "Qayta urinish" }));
+      await vi.waitFor(() => expect(replace).toHaveBeenCalledWith("/runtime-error"), { timeout: 5000 });
+      expect(getRuntimeError()).toMatchObject({ sourcePath: "/orders?page=2", retryCount: 2 });
     });
 
     it("ilova xatosi — «Bosh sahifaga qaytish» yozuvni tozalab, shell ichida bosh sahifaga o'tadi", async () => {
@@ -172,6 +201,8 @@ describe("xato sahifalari: shell ichida yoki butun ekran", () => {
     });
 
     it("/runtime-error — butun ekran nusxasi; asl xato yozuvi va «Qayta urinish» manzili saqlanadi", async () => {
+      // «Qayta urinish» dan keyingi brauzer manzili (soxta `location` shu paytdagisini oladi).
+      window.history.replaceState({}, "", "/orders?page=2");
       const replace = mockLocationReplace();
       saveRuntimeError({ message: "asl xato", sourcePath: "/orders?page=2" });
       renderApp("/runtime-error", signedIn);
@@ -180,10 +211,12 @@ describe("xato sahifalari: shell ichida yoki butun ekran", () => {
       expect(screen.getByRole("main")).toContainElement(heading);
       expect(screen.queryByTestId("shell")).not.toBeInTheDocument();
       expect(replace).not.toHaveBeenCalled();
-      expect(getRuntimeError()).toMatchObject({ message: "asl xato", sourcePath: "/orders?page=2" });
+      expect(getRuntimeError()).toMatchObject({ message: "asl xato", sourcePath: "/orders?page=2", retryCount: 1 });
 
+      // «Qayta urinish» → /orders?page=2 (SPA): chegara tozalanadi, shell yana yiqiladi → shu sahifa 2-marta.
       await userEvent.click(screen.getByRole("button", { name: "Qayta urinish" }));
-      expect(replace).toHaveBeenCalledWith("/orders?page=2");
+      await vi.waitFor(() => expect(replace).toHaveBeenCalledWith("/runtime-error"), { timeout: 5000 });
+      expect(getRuntimeError()).toMatchObject({ message: "shell yiqildi", sourcePath: "/orders?page=2", retryCount: 2 });
     });
 
     it("/403 — o'sha sahifaning butun ekran nusxasi; bosh sahifaga o'tilsa shell qayta chiziladi", async () => {
