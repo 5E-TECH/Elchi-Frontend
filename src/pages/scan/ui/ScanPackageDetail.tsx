@@ -183,7 +183,8 @@ const PackageBody = ({
 const ScanPackageDetail = ({ data, type, roleKind, topNotice }: ScanPackageDetailProps) => {
   const canReceive = canReceivePackage(roleKind);
   const scanView = useMemo(() => buildScanPackageView(data, type), [data, type]);
-  const batchDetail = useBatchDetail(canReceive && scanView ? scanView.id : undefined);
+  // Ixtiyoriy to'ldirish: filial bu paketni o'qiy olmasa (403/404) global xabar chiqmaydi — skan javobi yetadi.
+  const batchDetail = useBatchDetail(canReceive && scanView ? scanView.id : undefined, { silentError: true });
   const view = useMemo(
     () => (scanView ? (buildScanPackageView(data, type, batchDetail.data) ?? scanView) : null),
     [batchDetail.data, data, scanView, type],

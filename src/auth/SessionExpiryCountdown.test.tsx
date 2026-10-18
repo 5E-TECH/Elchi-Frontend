@@ -4,6 +4,7 @@ import { renderWithProviders } from "../test/test-utils";
 import i18n from "../i18n";
 import SessionExpiryCountdown from "./SessionExpiryCountdown";
 import tokenStorage from "./tokenStorage";
+import { setShellBannerSlot } from "../shared/lib/shellBannerSlot";
 
 const mocks = vi.hoisted(() => ({
   logoutAndRedirect: vi.fn<(options?: { reason?: "sessionExpired" }) => Promise<void>>(),
@@ -23,6 +24,8 @@ const startWarning = (remainingMs = 118_000) => {
   });
 };
 
+let slotCleanup: (() => void) | undefined;
+
 describe("SessionExpiryCountdown (dizayn v2: tizim-feedback «Sessiya» bannerlari)", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -35,7 +38,9 @@ describe("SessionExpiryCountdown (dizayn v2: tizim-feedback «Sessiya» bannerla
     cleanup();
     vi.useRealTimers();
     tokenStorage.clearSessionMetadata();
-    document.querySelectorAll("[data-shell-slot=topbar]").forEach((node) => node.remove());
+    slotCleanup?.();
+    slotCleanup = undefined;
+    document.querySelectorAll("[data-shell-slot=banner]").forEach((node) => node.remove());
     await i18n.changeLanguage("uz");
   });
 
@@ -135,34 +140,67 @@ describe("SessionExpiryCountdown (dizayn v2: tizim-feedback «Sessiya» bannerla
     expect(mocks.logoutAndRedirect).not.toHaveBeenCalled();
   });
 
-  it("sits under the shell top bar, in its column (the sidebar stays uncovered)", () => {
+  it("in the dashboard shell it renders into the banner slot, in the flow (pushes the page down, covers nothing)", () => {
+    // `DashboardLayout`: `[data-shell-slot=banner]` — yuqori panel va `<main>` orasida.
+    const column = document.createElement("div");
     const topbar = document.createElement("div");
     topbar.setAttribute("data-shell-slot", "topbar");
-    topbar.getBoundingClientRect = () =>
-      ({ top: 0, bottom: 64, left: 248, right: 1440, width: 1192, height: 64, x: 248, y: 0 }) as DOMRect;
-    document.body.appendChild(topbar);
+    const slot = document.createElement("div");
+    slot.setAttribute("data-shell-slot", "banner");
+    const main = document.createElement("main");
+    column.append(topbar, slot, main);
+    document.body.appendChild(column);
+    act(() => {
+      slotCleanup = setShellBannerSlot(slot);
+    });
     startWarning();
 
-    renderWithProviders(<SessionExpiryCountdown />, { route: "/orders" });
+    const { container } = renderWithProviders(<SessionExpiryCountdown />, { route: "/orders" });
 
     const banner = screen.getByRole("status");
-    expect(banner).toHaveClass("fixed");
-    expect(banner.style.position).toBe("");
-    expect(banner.style.top).toBe("64px");
-    expect(banner.style.left).toBe("248px");
-    expect(banner.style.width).toBe("1192px");
+    expect(slot).toContainElement(banner);
+    expect(container).not.toContainElement(banner);
+    expect(main).not.toContainElement(banner);
+    // Oqimda: na `fixed`, na `sticky`, na qo'lda o'lchangan joy.
+    expect(banner.className).not.toMatch(/\b(fixed|sticky|absolute)\b/);
+    expect(banner.getAttribute("style")).toBeNull();
+
+    // Shell yo'qolsa (masalan `ScanLayout` ga o'tildi) banner o'z joyiga qaytadi.
+    act(() => {
+      slotCleanup?.();
+      slotCleanup = undefined;
+    });
+    expect(container).toContainElement(screen.getByRole("status"));
+    column.remove();
   });
 
-  it("without a top bar (scan shell) it is in the flow, sticky at the top: it pushes the page down", () => {
+  it("an old shell's ref cleanup does not clear a newer slot", () => {
+    const first = document.createElement("div");
+    const second = document.createElement("div");
+    document.body.append(first, second);
     startWarning();
-    renderWithProviders(<SessionExpiryCountdown />, { route: "/scan" });
+    let firstCleanup: (() => void) | undefined;
+    act(() => {
+      firstCleanup = setShellBannerSlot(first);
+      slotCleanup = setShellBannerSlot(second);
+    });
+    renderWithProviders(<SessionExpiryCountdown />, { route: "/orders" });
+    act(() => firstCleanup?.());
+
+    expect(second).toContainElement(screen.getByRole("status"));
+    first.remove();
+    second.remove();
+  });
+
+  it("without the shell slot (scan shell) it is in the flow, sticky at the top: it pushes the page down", () => {
+    startWarning();
+    const { container } = renderWithProviders(<SessionExpiryCountdown />, { route: "/scan" });
 
     const banner = screen.getByRole("status");
-    expect(banner).toHaveClass("inset-x-0", "top-0");
-    expect(banner.style.position).toBe("sticky");
-    expect(banner.style.top).toBe("");
-    expect(banner.style.left).toBe("");
-    expect(banner.style.width).toBe("");
+    expect(container).toContainElement(banner);
+    expect(banner).toHaveClass("sticky", "top-0");
+    expect(banner).not.toHaveClass("fixed");
+    expect(banner.getAttribute("style")).toBeNull();
   });
 
   it("russian plural forms", async () => {

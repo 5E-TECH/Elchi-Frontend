@@ -1,9 +1,11 @@
 // dizayn-v2: tizim-feedback
-import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Clock, Lock } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cx } from "../shared/lib/cx";
+import { useShellBannerSlot } from "../shared/lib/shellBannerSlot";
 import { Button } from "../shared/ui/primitives";
 import { logoutAndRedirect } from "./authService";
 import tokenStorage, { AUTH_SESSION_METADATA_EVENT } from "./tokenStorage";
@@ -23,12 +25,12 @@ import tokenStorage, { AUTH_SESSION_METADATA_EVENT } from "./tokenStorage";
  *    bosish yoki tugma chiqishni bajaradi (shu tugma ham) — `logoutAndRedirect({ reason: "sessionExpired" })`,
  *    login sahifasida «Sessiya tugadi» ekrani.
  *  - `/login` da va `warnAt` dan oldin ko'rinmaydi.
- *  - Joyi: yuqori panel (`[data-shell-slot=topbar]`) ostida, o'sha ustun kengligida (yon menyu yopilmaydi);
- *    paneli yo'q qobiqda (`ScanLayout`) — oqimda, `sticky top-0` (sahifani suradi, yopmaydi). Qatlam: sahifa va pastki menyudan (`z-30`) yuqori,
- *    yuqori panel (`z-40`, ochiladigan menyulari), suriluvchi menyu va dialoglardan past.
+ *  - Joyi (taxta: «sahifani pastga suradi — hech narsani yopmaydi»): `DashboardLayout` da shell slotiga
+ *    (`[data-shell-slot=banner]`, yuqori panel ostida, `<main>` dan tashqarida) portal — oqimda, o'sha ustun
+ *    kengligida (yon menyu yopilmaydi), skrollda panel bilan birga qoladi. Sloti yo'q qobiqda (`ScanLayout` —
+ *    oyna o'zi aylanadi) — o'z joyida, `sticky top-0 z-[35]`: sahifani suradi, skrollda tepada qoladi. Yuqori
+ *    panelning ochiladigan menyulari (`z-40`), suriluvchi menyu va dialoglar banner ustida.
  */
-
-const TOPBAR_SELECTOR = "[data-shell-slot=topbar]";
 
 const formatCountdown = (seconds: number) => {
   const safeSeconds = Math.max(0, seconds);
@@ -38,28 +40,12 @@ const formatCountdown = (seconds: number) => {
   return `${String(minutes).padStart(2, "0")}:${String(remainder).padStart(2, "0")}`;
 };
 
-/**
- * Bannerni yuqori panel ostiga qo'yadi (to'g'ridan-to'g'ri DOM uslubi — holat va qayta chizish yo'q).
- * Panel topilmasa (`ScanLayout` — oyna o'zi aylanadi) — `sticky top-0`: banner oqimda, qobiq ustida turadi va
- * sahifani pastga suradi (taxta `tizim-feedback`: «hech narsani yopmaydi»), skrollda tepada qoladi. Shunda
- * skaner natijasining telefon sarlavhasi (orqaga tugmasi) 15 daqiqa banner ostida qolmaydi.
- */
-const anchorUnderTopbar = (banner: HTMLElement) => {
-  const bar = document.querySelector<HTMLElement>(TOPBAR_SELECTOR);
-  const rect = bar?.getBoundingClientRect();
-  const anchored = rect && rect.width > 0;
-  banner.style.position = anchored ? "" : "sticky";
-  banner.style.top = anchored ? `${Math.round(rect.bottom)}px` : "";
-  banner.style.left = anchored ? `${Math.round(rect.left)}px` : "";
-  banner.style.width = anchored ? `${Math.round(rect.width)}px` : "";
-};
-
 const SessionExpiryCountdown = () => {
   const { t } = useTranslation("auth");
   const location = useLocation();
   const [now, setNow] = useState(() => Date.now());
   const [metadata, setMetadata] = useState(() => tokenStorage.getSessionMetadata());
-  const bannerRef = useRef<HTMLDivElement>(null);
+  const shellSlot = useShellBannerSlot();
   const loggingOutRef = useRef(false);
 
   useEffect(() => {
@@ -105,34 +91,18 @@ const SessionExpiryCountdown = () => {
     };
   }, [isExpired, isLoginPage, logoutExpired]);
 
-  // Yuqori panel ostiga: o'lcham har soniyada (taymer bilan) va oyna o'zgarganda qayta olinadi — yon menyu
-  // yig'ilsa yoki qobiq almashsa (`DashboardLayout` ↔ `ScanLayout`) banner o'zi suriladi.
-  useLayoutEffect(() => {
-    if (isVisible && bannerRef.current) anchorUnderTopbar(bannerRef.current);
-  }, [isVisible, isExpired, now, location.pathname]);
-
-  useEffect(() => {
-    if (!isVisible) return;
-    const onResize = () => {
-      if (bannerRef.current) anchorUnderTopbar(bannerRef.current);
-    };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [isVisible]);
-
   if (!isVisible) {
     return null;
   }
 
   const minutesLeft = Math.max(1, Math.ceil(remainingSeconds / 60));
 
-  return (
+  const banner = (
     <div
-      ref={bannerRef}
       data-session-banner={isExpired ? "expired" : "warning"}
       role={isExpired ? "alert" : "status"}
-      // `*-soft` tungi mavzuda yarim shaffof — tagida `surface`, ostidagi sahifa ko'rinmasin.
-      className="fixed inset-x-0 top-0 z-[35] bg-surface"
+      // `*-soft` tungi mavzuda yarim shaffof — tagida `surface` (sticky holatda ostidan sahifa ko'rinmasin).
+      className={cx("bg-surface", !shellSlot && "sticky top-0 z-[35]")}
     >
       <div
         className={cx(
@@ -174,6 +144,8 @@ const SessionExpiryCountdown = () => {
       </div>
     </div>
   );
+
+  return shellSlot ? createPortal(banner, shellSlot) : banner;
 };
 
 export default memo(SessionExpiryCountdown);

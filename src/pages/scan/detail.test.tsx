@@ -10,6 +10,7 @@ const feedbackMock = vi.fn();
 const assignMock = vi.fn();
 const receiveMock = vi.fn();
 const fetchMock = vi.fn();
+const batchDetailMock = vi.fn<(...args: unknown[]) => { data: undefined }>(() => ({ data: undefined }));
 
 vi.mock("react-router-dom", async () => ({
   ...(await vi.importActual<typeof import("react-router-dom")>("react-router-dom")),
@@ -34,7 +35,7 @@ vi.mock("./ui/ScanTrackingCard", () => ({ default: () => <div data-testid="scan-
 // Paket tafsiloti (`GET transfer-batches/:id`) — xodim uchun; testda so'rov yo'q.
 vi.mock("../../entities/batch", async () => ({
   ...(await vi.importActual<typeof import("../../entities/batch")>("../../entities/batch")),
-  useBatchDetail: () => ({ data: undefined }),
+  useBatchDetail: (...args: unknown[]) => batchDetailMock(...args),
 }));
 
 const ORDER = { id: "1251175", status: "waiting", customer: { name: "Ali Valiyev" }, items: [] };
@@ -76,6 +77,7 @@ beforeEach(() => {
   feedbackMock.mockReset();
   assignMock.mockReset();
   receiveMock.mockReset();
+  batchDetailMock.mockClear();
   fetchMock.mockReset().mockResolvedValue({ type: "order", data: ORDER });
 });
 
@@ -314,6 +316,8 @@ describe("ScanDetailPage — paket va pochta", () => {
 
     expect(receiveMock).toHaveBeenCalledWith("137");
     expect(await screen.findByText("Paket qabul qilindi")).toBeInTheDocument();
+    // Ixtiyoriy nom to'ldirish (`GET transfer-batches/:id`) xatosi global xabar bermaydi.
+    expect(batchDetailMock).toHaveBeenCalledWith("137", { silentError: true });
   });
 
   it("courier sees the package read-only (backend forbids couriers to receive)", async () => {
@@ -322,6 +326,8 @@ describe("ScanDetailPage — paket va pochta", () => {
 
     expect(await screen.findByRole("heading", { level: 1, name: "Paket B-137" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Qabul qilish" })).not.toBeInTheDocument();
+    // Kuryerga tafsilot so'ralmaydi (backend 403).
+    expect(batchDetailMock).not.toHaveBeenCalledWith("137", expect.anything());
   });
 
   it("maps a «wrong branch» receive error to a clear message", async () => {
