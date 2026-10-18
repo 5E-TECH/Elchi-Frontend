@@ -150,13 +150,6 @@
   "tgGroupPiiHiddenDescription": "В карточках заказов в группе имя и телефон клиента скрыты",
   "tgGroupPiiSaveError": "Не сохранено",
   "tgGroupPiiSaveErrorDescription": "Не удалось сохранить настройку. Попробуйте ещё раз",
-  "telegramTokenTitle": "Telegram-токен",
-  "telegramTokenShow": "Показать",
-  "telegramTokenHide": "Скрыть",
-  "telegramTokenCopy": "Копировать",
-  "telegramTokenCopied": "Токен скопирован",
-  "telegramTokenCopyFailed": "Не удалось скопировать токен",
-  "telegramTokenMissing": "У этого магазина ещё нет Telegram-токена",
   "v2": {
     "common": {
       "back": "Пользователи",
@@ -355,12 +348,6 @@
       "notFound": "Пользователь не найден",
       "notFoundDescription": "Пользователь удалён или не существует."
     },
-    "token": {
-      "maskedLabel": "Токен скрыт",
-      "hint": "Пусть маркет добавит бота в свою Telegram-группу и отправит туда этот токен. Токен — секретный ключ, передавайте его только этому маркету.",
-      "loadError": "Не удалось получить токен",
-      "loadErrorHint": "Попробуйте ещё раз чуть позже."
-    },
     "edit": {
       "description": "{{name}} · {{role}}",
       "name": "Имя и фамилия",
@@ -376,5 +363,7 @@
       "centerTariff": "Тариф до центра",
       "saving": "Сохранение…"
     }
-  }
+  },
+  "tgGroupLinkAction": "Получить ссылку",
+  "tgGroupLinkHint": "Одноразовая ссылка (10 минут): бот добавится в группу и сам её подключит. Подключённые группы — на странице «Уведомления»."
 }

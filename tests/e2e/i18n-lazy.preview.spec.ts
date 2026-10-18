@@ -63,8 +63,8 @@ test.describe("Tarjimalar — kerak bo'lganda yuklanadi", () => {
     const scripts = scriptsOf(page);
     await page.goto("/settings");
 
-    await expect(page.getByRole("main").getByRole("button", { name: /Внешний вид/ })).toBeVisible({ timeout: 60_000 });
-    await expect(page.getByRole("main").getByRole("button", { name: /Уведомления/ })).toBeVisible();
+    await expect(page.getByRole("main").getByRole("tab", { name: /Внешний вид/ })).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole("main").getByRole("tab", { name: /Уведомления/ })).toBeVisible();
     expect(await page.evaluate(() => (window as unknown as { __uzSeen: boolean }).__uzSeen)).toBe(false);
     expect(scripts.some((path) => /locale-ru-/.test(path))).toBe(true);
     expect(scripts.some((path) => /locale-en-/.test(path))).toBe(false);
@@ -74,18 +74,19 @@ test.describe("Tarjimalar — kerak bo'lganda yuklanadi", () => {
     await setup(context, "uz");
     const scripts = scriptsOf(page);
     await page.goto("/settings");
-    await expect(page.getByRole("main").getByRole("button", { name: /Ko'rinish/ })).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole("main").getByRole("tab", { name: /Ko'rinish/ })).toBeVisible({ timeout: 60_000 });
     expect(scripts.some((path) => /locale-(ru|en)-/.test(path))).toBe(false);
 
-    await page.getByRole("button", { name: /English/ }).click();
+    // Dizayn v2: til — radio-kartalar (yashirin `<input type="radio">` ni o'rab turgan `label` bosiladi).
+    await page.locator("label", { has: page.getByRole("radio", { name: /English/ }) }).click();
 
-    await expect(page.getByRole("main").getByRole("button", { name: /Appearance/ })).toBeVisible();
-    await expect(page.getByRole("main").getByRole("button", { name: /Notifications/ })).toBeVisible();
+    await expect(page.getByRole("main").getByRole("tab", { name: /Appearance/ })).toBeVisible();
+    await expect(page.getByRole("main").getByRole("tab", { name: /Notifications/ })).toBeVisible();
     expect(scripts.some((path) => /locale-en-/.test(path))).toBe(true);
     expect(scripts.some((path) => /locale-ru-/.test(path))).toBe(false);
 
     // Qayta yuklanganda ham inglizcha (tanlov saqlangan).
     await page.reload();
-    await expect(page.getByRole("main").getByRole("button", { name: /Appearance/ })).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByRole("main").getByRole("tab", { name: /Appearance/ })).toBeVisible({ timeout: 60_000 });
   });
 });

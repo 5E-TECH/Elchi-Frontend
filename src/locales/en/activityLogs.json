@@ -3,7 +3,6 @@
   "description": "Audit trail across all services (who, what, when)",
   "cardLabel": "Activity log records",
   "columns": {
-    "detail": "Details",
     "time": "Time",
     "actor": "Actor",
     "action": "Action",
@@ -33,32 +32,74 @@
     "investor": "Investors",
     "notification": "Notifications"
   },
-  "entities": {
+  "categories": {
     "order": "Order",
-    "settlement": "Settlement",
-    "user": "User",
-    "market": "Market",
-    "courier": "Courier",
+    "finance": "Finance",
+    "auth": "Sign-in",
     "branch": "Branch",
-    "product": "Product",
-    "batch": "Branch batch",
-    "post": "Mail",
-    "payment": "Payment",
-    "cashbox": "Cashbox",
-    "region": "Region",
-    "district": "District",
+    "integration": "Integration",
+    "logistics": "Logistics",
     "notification": "Notification",
-    "integration": "Integration partner",
-    "investor": "Investor"
+    "general": "General"
+  },
+  "entityTypes": {
+    "Order": "Order",
+    "User": "User",
+    "Auth": "User",
+    "Post": "Mail",
+    "Cashbox": "Cash box",
+    "CashboxCard": "Cash box card",
+    "CashboxHistory": "Cash box operation",
+    "Shift": "Cash box shift",
+    "District": "District",
+    "Region": "Region",
+    "Branch": "Branch",
+    "BranchUser": "Branch staff",
+    "BranchConfig": "Branch setting",
+    "BranchTransferBatch": "Branch package",
+    "TransferBatch": "Package",
+    "Partner": "Integration partner",
+    "ExternalIntegration": "Integration",
+    "Settlement": "Settlement",
+    "Product": "Product",
+    "Market": "Market",
+    "Investor": "Investor",
+    "Investment": "Investment",
+    "Notification": "Notification",
+    "NotificationCampaign": "Campaign",
+    "SmsCampaign": "SMS campaign",
+    "FinancialBalanceHistory": "Balance entry",
+    "UserSalary": "Salary",
+    "OperatorEarning": "Operator earning",
+    "OperatorPayment": "Operator payout",
+    "Courier": "Courier",
+    "Payment": "Payment"
   },
   "actor": {
     "system": "System",
     "unresolved": "#{{id}} (not found)"
   },
+  "actions": {
+    "created": "Created",
+    "updated": "Edited",
+    "deleted": "Deleted",
+    "restored": "Restored",
+    "status_change": "Status changed",
+    "payment": "Payment",
+    "refund": "Refund",
+    "login": "Signed in",
+    "logout": "Signed out",
+    "auth_failure": "Sign-in error",
+    "export": "Export",
+    "import": "Import",
+    "webhook_received": "Webhook received",
+    "external_sync": "External sync",
+    "assign": "Assigned",
+    "unassign": "Unassigned"
+  },
   "detail": {
     "expand": "Show details: {{target}}",
     "collapse": "Hide details: {{target}}",
-    "none": "No details",
     "changes": "Field changes",
     "field": "Field",
     "before": "Before",
@@ -91,7 +132,9 @@
     "branch_id": "Branch",
     "region_id": "Region",
     "district_id": "District",
-    "where_deliver": "Delivery type"
+    "where_deliver": "Delivery type",
+    "is_active": "Active",
+    "note": "Note"
   },
   "meta": {
     "source": "Source",
@@ -104,9 +147,12 @@
     "amount": "Amount",
     "count": "Count",
     "leg": "Direction",
-    "description": "Description"
+    "description": "Description",
+    "ip_address": "IP address"
   },
   "summary": "{{from}}–{{to}} of {{total}} records",
   "empty": "No records found",
-  "emptyFiltered": "No records match the filters. Try changing them."
+  "emptyHint": "Records appear here as actions are performed in the system.",
+  "emptyFiltered": "No records match the filters. Try changing them.",
+  "loadError": "Failed to load the activity log"
 }

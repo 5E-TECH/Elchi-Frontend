@@ -1,27 +1,36 @@
 import { expect, test } from "@playwright/test";
-import { confirmBatchCancel, mockBranchOpsApi, openBranchOps } from "./support/branchOps";
+import {
+  batchIdInput,
+  cancelBatchButton,
+  confirmBatchCancel,
+  mockBranchOpsApi,
+  openBranchOps,
+  reasonInput,
+} from "./support/branchOps";
 
-/** /branch-ops — 390px (iPhone 12): jadval to'ladi, forma va xato ekranga sig'adi. */
+/** /branch-ops — 390px (iPhone 12): ro'yxat kartalarda, forma va xato ekranga sig'adi, tasdiq pastki varaqada. */
 test.describe("Filiallar — operatsiyalar — 390px", () => {
   test.describe.configure({ timeout: 90_000 });
 
-  test("jadval filiallarni ko'rsatadi; 400 xabari ko'rinadi; gorizontal skroll yo'q", async ({ page }) => {
+  test("kartalar filiallarni ko'rsatadi; 400 xabari ko'rinadi; gorizontal skroll yo'q", async ({ page }) => {
     const { leaked } = await mockBranchOpsApi(page, {
       cancel: () => ({ status: 400, body: { statusCode: 400, message: "Partiya topilmadi" } }),
     });
     await openBranchOps(page);
-    await expect(page.locator(".ant-table-tbody tr.ant-table-row")).toHaveCount(2);
-    await expect(page.getByText("Urganch filiali")).toBeVisible();
+    const cards = page.getByRole("list", { name: "Yangi buyurtmali filiallar" }).getByRole("listitem");
+    await expect(cards).toHaveCount(2);
+    await expect(cards.nth(0)).toContainText("Urganch filiali");
+    await expect(cards.nth(0)).toContainText("7 ta");
 
-    await page.getByLabel("batch-id").fill("18");
-    await page.getByLabel("Bekor qilish sababi").fill("Noto'g'ri viloyatga yuborilgan");
-    await page.getByRole("button", { name: "Batchni bekor qilish" }).click();
+    await batchIdInput(page).fill("18");
+    await reasonInput(page).fill("Noto'g'ri viloyatga yuborilgan");
+    await cancelBatchButton(page).click();
     await confirmBatchCancel(page);
-    const alert = page.locator(".ant-alert-error");
+    const alert = page.getByRole("alert").filter({ hasText: "Paketni bekor qilib bo'lmadi" });
     await expect(alert).toContainText("Partiya topilmadi");
 
     const outside = await page
-      .locator(".ant-table, .ant-alert-error, textarea, button")
+      .locator("[data-shell-slot=content] li, [role='alert'], textarea, button")
       .evaluateAll((elements) =>
         elements
           .map((el) => ({ text: el.textContent?.trim().slice(0, 30) ?? el.tagName, r: el.getBoundingClientRect() }))
@@ -31,6 +40,9 @@ test.describe("Filiallar — operatsiyalar — 390px", () => {
     expect(outside).toEqual([]);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);
+    // Asosiy tugma telefonda ≥ 44 px.
+    const box = await cancelBatchButton(page).boundingBox();
+    expect(box?.height ?? 0).toBeGreaterThanOrEqual(44);
     expect(leaked).toEqual([]);
   });
 });

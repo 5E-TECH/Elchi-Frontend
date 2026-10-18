@@ -350,7 +350,7 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   `features/Select/selectInput.tsx`, `StatusSelect/` o'chirildi): `SearchableSelect`, `FilterSelect`,
   `FilterMultiSelect`, `PopupSelect`, `PrintModeSelect`;
   `CustomDatePicker`, `DateRangePicker`, `FilterDateRange`, `FilterDateInput` (`QuickDateRangeFilter` — G1 da o'chirildi); `Popup`,
-  `FormPopup`, `PopupConfirm`, `UpdatePopup`, `ConfirmButton`; `EmptyState`, `QueryErrorState`, `TableSkeleton`,
+  `FormPopup`, `PopupConfirm`, `UpdatePopup` (`ConfirmButton` — G2 da o'chirildi); `EmptyState`, `QueryErrorState`, `TableSkeleton`,
   `Loader`/`PageLoader`; `PhoneInput`, `FilterSearch`, `SearchInput`.
 - **Migratsiya** — antd `message`/`notification` (va `NotificationProvider` ichidagi antd `notification`) →
   `notify`; `Popconfirm` va `window.confirm` → `useConfirm()`; §8 dagi pul/kirish amallariga tasdiq qo'shildi.
@@ -500,10 +500,39 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   `TopRankCard`, hududlar kartogrammasi `widgets/dashboard-region` (Highcharts'siz, `--color-region-map-*`).
   Viloyat oynasi — umumiy `widgets/region-detail` `RegionDetailDialog` (faqat `lazy(() => import(…))`, bosilganda;
   `showRevenue={false}` — registratorda daromadsiz). Foydalanuvchi tafsiloti — yangi `UserDetailView` (eski
-  `UserDetailWidget` faqat `/profile` uchun muzlatilgan). Xatosi sahifada chiziladigan G1 so'rovlari
+  `UserDetailWidget` G2 da o'chirildi). Xatosi sahifada chiziladigan G1 so'rovlari
   `meta.silentError` bilan (global xabar takrorlanmaydi). Ega savollariga sukut javoblari (spec §9) —
   `design/kit/route-map.json` izohlarida. Chiqarilgan v1: `MetricCard`, `MobileCollapsibleSection`,
   `QuickDateRangeFilter`, `PerformanceChart`, `RegionStatsCard`, filial sozlamalari (config) kodi.
+- **Ko'chirilgan:** G2 — «Integratsiyalar», «Bildirishnomalar», «Tizim», «Hisob» (`/integrations/connections` —
+  konsol va 7 panel, `/integrations/new`, `/integrations/new/:typeKey`, `/integrations/partners`, `/integrations/sources`,
+  `/integrations/sources/create`, `/integrations/sources/:id`; `/notifications`, `/notifications/send`,
+  `/notifications/sms`; `/activity-logs`, `/ops` + `/finance-operators`, `/integrations-ops`, `/investors-ops`,
+  `/logistics-ops`, `/branch-ops`, `/identity-ops`, `/system-ops`, `/logs`; `/profile`, `/settings`, `/inbox`;
+  `/market-operators` yopiq, ko'chirilmagan). **`DataTable` ochiladigan qator** — yagona API `expandable` (dev'dagi `renderExpanded` unga birlashtirilgan: `isExpanded`,
+  `onToggle`, `render`, `canExpand`, `toggleLabel`, `toggle: "none"` + `panelId`, `panelClassName`,
+  `expandedClassName`): chevron ustuni birinchi, panel `colSpan` = barcha ustunlar, telefonda karta ostida; retsept —
+  CODE-MAP §2.6, namuna `/ops/ui-kit?section=table`, iste'molchilar — faoliyat jurnali, integratsiya posilkalari va eski hamkorlar
+  webhook jurnali. **Telegram guruhini ulash** (`/notifications`, dev birlashtirishi, ega qoidasi) — maketdagi qo'lda
+  guruh ID formasi o'rniga bir martalik havola: `POST /telegram/link-code` → QR + «Telegram'da ochish» + qadamlar +
+  muddat, oyna ochiqligida ro'yxat har 4 s, guruh ulangach oyna yopiladi; jadvalda «Holat» ustuni. `/profile` da
+  xodimning o'z Telegram'ini ulash/uzish (`TelegramLinkCard`, xuddi shu bir martalik oqim) va marketda «Guruhda mijoz
+  ismi va telefoni» (`MarketTelegramGroupPiiCard`) — maket yo'q, eng yaqini «Xavfsizlik» kartasi. Ops panellari — `pages/ops/ui/OpsToolPage.tsx` (`embedded` — hub ichida sarlavhasiz; to'g'ridan-to'g'ri
+  yo'lda «← Ops vositalari»), telefonda tablar → `Select`. Pul va xavfli amallar tasdiq bilan: operator to'lovi (`useConfirm` +
+  `Idempotency-Key`, muvaffaqiyat xabarida server qaytargan summa), SMS kampaniya (tasdiq oynasi + `Idempotency-Key`),
+  kalitni yangilash, hamkor / ulanishni to'xtatish, paketni bekor qilish, manba va Telegram guruhini o'chirish. Sozlamalar 5 tab («Skaner» alohida), profil — parol va tahrirlash oynalari
+  (`UpdateUserModal` profilda yo'q), inbox — push holat bloki barcha rollarda. Matnlar yangi `ops.json`,
+  `profile.json`, `notificationGroups.json` da. Xatosi sahifada chiziladigan G2 so'rovlari `meta.silentError`
+  bilan (umumiy hook'larda ixtiyoriy `{ silentError: true }`, `shared/lib/queryErrorEvents.ts` →
+  `silentErrorMeta`). Ega savollariga sukut javoblari (spec §10) — `route-map.json` izohlarida. Chiqarilgan v1:
+  `integrations/ui.ts`, `OverviewPage`, `ConnectionSubNav`, `FilterPills`, `widgets/notification-table`,
+  `DeleteNotificationButton`, `shared/ui/InlineErrorBoundary`, `shared/ui/Toggle`, `shared/ui/ConfirmButton`,
+  `NotificationCategoryTag` / `NotificationPriorityTag` (antd `Tag`), `financeCoverage.createOperatorPayment`,
+  `NOTIFICATIONS.CONNECT_BY_TOKEN`, `UserDetailWidget` (profil v2 da; uning Telegram kartalari — `ProfilePage` da) va
+  `TransferCourierButton` ning v1 `header` turi; dev bilan birlashtirishda dublikatlar — `ActivityLogFiltersSheet`,
+  `activity-log/lib/logView.ts`, `actionTone.ts`, `ActivityActionTag` (o'rniga dev'ning `ActivityLogFilters`,
+  `model/*`, `actionMeta.ts`, `ActivityActionBadge`), `TelegramGroupFormDialog` / `telegramGroupForm.ts` (o'rniga
+  `NotificationFormModal` + `NotificationEditModal`), `DataTable renderExpanded`.
 - **Ko'chirilgan:** G3 — kirish, skaner natijasi, «Biriktirish», «Tezkor amal» (`/login`, `/scan/:token`,
   `/dispatch`, `/courier-bulk`; xato sahifalari 3-bosqichda tayyor; butun `/scan` kamera ekrani — alohida kamera
   ishi). `/login` (`features/auth`): ≥ 1024 navy panel + forma, < 1024 navy tasma; `TextInput mode="phone"`

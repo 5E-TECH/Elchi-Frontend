@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-users-detail, admin-users-detail
+// dizayn-v2: (maket yo'q) common-profile
 import { memo, useId } from "react";
 import { useTranslation } from "react-i18next";
 import type { User } from "../../../entities/user/types/user";
@@ -31,7 +31,8 @@ interface MarketTelegramGroupPiiCardProps {
  * Qolganlar (menejer, registrator) holatni ko'radi, kalit nofaol.
  *
  * v2 `/all-users/:id` (`UserDetailView`) da «Ruxsatlar» alohida v2 karta — u yerda kalit o'sha kartaning
- * qatori (maketdagi joyi); bu alohida karta faqat muzlatilgan `UserDetailWidget` (`/profile`) uchun.
+ * qatori (maketdagi joyi); bu alohida karta — market o'z profilida (`pages/profile/ui/ProfilePage`, v2
+ * `/profile`).
  */
 export const MarketTelegramGroupPiiCard = memo(
   ({ user, isOwnProfile = false }: MarketTelegramGroupPiiCardProps) => {

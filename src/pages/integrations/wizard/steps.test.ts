@@ -8,7 +8,7 @@ import uz from "../../../locales/uz/integrations.json";
  * ham SABABNI aytadimi. Ikkinchisi bolmasa, kalit togri-yu matn bosh bolib
  * qolishi mumkin edi.
  */
-const text = (key: string): string => (uz as Record<string, string>)[key] ?? "";
+const text = (key: string): string => (uz as unknown as Record<string, string>)[key] ?? "";
 import type { WebhookTestResult } from "../../../entities/partners";
 
 const res = (over: Partial<WebhookTestResult> = {}): WebhookTestResult => ({

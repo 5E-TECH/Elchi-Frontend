@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { ACTIVITY_SERVICES, type ActivityActionsCatalog } from "../../../entities/activity-log";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { Button, DateRange, Dialog, Field, Select, TextInput, type SelectOption } from "../../../shared/ui/primitives";
+import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import {
   buildActionOptions,
   countSheetFilters,
@@ -17,12 +18,13 @@ import type { ActivityLabels } from "../model/useActivityLabels";
 /**
  * Faoliyat jurnali filtrlari — dizayn v2 (maket `superadmin-activity-logs-list`, admin ham shu).
  * Desktop/planshet: setka (qidiruv · «Xizmat:» · «Amal:» · Obyekt turi · Foydalanuvchi ID · sana +
- * «Filtrlarni tozalash»), o'zgarish darhol qo'llanadi. Telefon: qidiruv, sana va «Filtrlar» — qolgan
- * to'rttasi pastki varaqada (qoralama; «Natijalarni ko'rsatish» bir marta qo'llaydi; eng yaqin namuna
- * `superadmin-orders-filters-mobile`).
+ * «Filtrlarni tozalash»), o'zgarish darhol qo'llanadi. Telefon (< 768, `useIsPhone` — DOM'da bitta nusxa):
+ * qidiruv, sana va «Filtrlar» — qolgan to'rttasi pastki varaqada (qoralama; «Natijalarni ko'rsatish» bir marta
+ * qo'llaydi; ×/fon — bekor; eng yaqin namuna `superadmin-orders-filters-mobile`, jurnal varaqasining maketi yo'q).
  *
  * «Amal» (y8CxCtcK): `GET /activity-logs/actions` → `categories` tartibida guruhlar, ichida
- * `registry[].label`, qiymati — fe'l. Reyestrsiz (eski backend) — fe'llar humanize, guruhsiz.
+ * `registry[].label`, qiymati — fe'l. Reyestrsiz (eski backend) — fe'llar humanize, guruhsiz. Guruh va fe'l
+ * yorliqlari ru/en da tarjima qilinadi (`labels.category`, `labels.action` — backend reyestri faqat o'zbekcha).
  */
 
 const SEARCH_DEBOUNCE_MS = 400;
@@ -42,13 +44,17 @@ type Props = {
 
 const ActivityLogFilters = ({ values, onChange, onClear, catalog, catalogLoading, labels }: Props) => {
   const { t } = useTranslation(["activityLogs", "ui"]);
+  const isPhone = useIsPhone();
   const allLabel = t("filters.all");
 
   const serviceOptions = useMemo<SelectOption[]>(
     () => [{ value: "", label: allLabel }, ...ACTIVITY_SERVICES.map((name) => ({ value: name, label: labels.service(name) }))],
     [allLabel, labels],
   );
-  const actionOptions = useMemo(() => buildActionOptions(catalog, allLabel), [allLabel, catalog]);
+  const actionOptions = useMemo(
+    () => buildActionOptions(catalog, allLabel, { action: labels.action, category: labels.category }),
+    [allLabel, catalog, labels],
+  );
 
   // ─── Qidiruv: yozish kechikish bilan, Enter / × — darhol ───────────────
   const [searchText, setSearchText] = useState(values.search);
@@ -125,25 +131,27 @@ const ActivityLogFilters = ({ values, onChange, onClear, catalog, catalogLoading
           onSearch={(text) => commitSearch(text)}
           onClear={() => commitSearch("")}
         />
-        <div className="min-w-0 max-md:hidden">{serviceSelect(values.service, (service) => onChange({ service }), true)}</div>
-        <div className="min-w-0 max-md:hidden">{actionSelect(values.action, (action) => onChange({ action }), true)}</div>
-        <TextInput
-          className="max-md:hidden"
-          value={values.entityType}
-          placeholder={t("filters.entityType")}
-          aria-label={t("filters.entityTypeLabel")}
-          clearable
-          onValueChange={(entityType) => onChange({ entityType })}
-        />
-        <TextInput
-          className="max-md:hidden"
-          mode="number"
-          value={values.userId}
-          placeholder={t("filters.userId")}
-          aria-label={t("filters.userId")}
-          clearable
-          onValueChange={(userId) => onChange({ userId })}
-        />
+        {isPhone ? null : (
+          <>
+            <div className="min-w-0">{serviceSelect(values.service, (service) => onChange({ service }), true)}</div>
+            <div className="min-w-0">{actionSelect(values.action, (action) => onChange({ action }), true)}</div>
+            <TextInput
+              value={values.entityType}
+              placeholder={t("filters.entityType")}
+              aria-label={t("filters.entityTypeLabel")}
+              clearable
+              onValueChange={(entityType) => onChange({ entityType })}
+            />
+            <TextInput
+              mode="number"
+              value={values.userId}
+              placeholder={t("filters.userId")}
+              aria-label={t("filters.userId")}
+              clearable
+              onValueChange={(userId) => onChange({ userId })}
+            />
+          </>
+        )}
         <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
           <DateRange
             className="min-w-0 flex-[1_1_auto]"
@@ -151,27 +159,30 @@ const ActivityLogFilters = ({ values, onChange, onClear, catalog, catalogLoading
             onChange={({ from, to }) => onChange({ dateFrom: from, dateTo: to })}
             aria-label={t("filters.dateRange")}
           />
-          {hasActivityFilters(values) ? (
-            <Button variant="link" size="sm" className="flex-none max-md:hidden" onClick={onClear}>
+          {isPhone ? (
+            <Button
+              variant="secondary"
+              leftIcon={ListFilter}
+              className="flex-[1_0_auto]"
+              aria-haspopup="dialog"
+              aria-expanded={sheetOpen}
+              onClick={openSheet}
+            >
+              {t("filters.button", { ns: "ui" })}
+              {sheetCount > 0 ? (
+                <span className={COUNT_PILL}>{formatNumberLocalized(sheetCount, { language: labels.language })}</span>
+              ) : null}
+            </Button>
+          ) : hasActivityFilters(values) ? (
+            <Button variant="link" size="sm" className="flex-none" onClick={onClear}>
               {t("filters.clear")}
             </Button>
           ) : null}
-          <Button
-            variant="secondary"
-            leftIcon={ListFilter}
-            className="flex-[1_0_auto] md:hidden"
-            aria-haspopup="dialog"
-            aria-expanded={sheetOpen}
-            onClick={openSheet}
-          >
-            {t("filters.button", { ns: "ui" })}
-            {sheetCount > 0 ? <span className={COUNT_PILL}>{formatNumberLocalized(sheetCount)}</span> : null}
-          </Button>
         </div>
       </div>
 
       <Dialog
-        open={sheetOpen}
+        open={isPhone && sheetOpen}
         onClose={() => setSheetOpen(false)}
         title={t("filters.sheetTitle", { ns: "ui" })}
         description={t("filters.sheetSelected", { ns: "ui", count: countSheetFilters(draft) })}

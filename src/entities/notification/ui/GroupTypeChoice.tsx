@@ -24,7 +24,7 @@ export type GroupTypeChoiceProps = {
  * `Field labelAs="span"` ichida ishlatiladi: guruh nomi yorliqdan, izoh `hint` dan.
  */
 const GroupTypeChoice = ({ value, onChange, name, disabled }: GroupTypeChoiceProps) => {
-  const { t } = useTranslation("notifications");
+  const { t } = useTranslation("notificationGroups");
   const field = useFieldControl({ disabled });
 
   return (
@@ -46,7 +46,7 @@ const GroupTypeChoice = ({ value, onChange, name, disabled }: GroupTypeChoicePro
             onChange={() => onChange(type)}
             className="size-[18px] shrink-0 cursor-pointer accent-action disabled:cursor-not-allowed"
           />
-          <span className="text-sm font-semibold text-text">{t(`telegramGroups.typeChoice.${type}`)}</span>
+          <span className="text-sm font-semibold text-text">{t(type === "create" ? "form.typeCreate" : "form.typeCancel")}</span>
         </label>
       ))}
     </div>

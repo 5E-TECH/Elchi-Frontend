@@ -11,7 +11,7 @@ import type { ActivityLabels } from "../model/useActivityLabels";
 /**
  * Ochilgan jurnal yozuvi (maket `superadmin-activity-logs-row-expanded`): chapda «Maydon o'zgarishlari»
  * (Maydon · Oldin · Keyin — eski qiymat chizilgan), o'ngda «Qo'shimcha ma'lumot» (`metadata`: Manba, Filial, …,
- * Qurilma, IP manzil) va nusxalanadigan «Kuzatuv ID». Desktopda tafsilot «Vaqt» ustuni bilan bir chiziqdan boshlanadi.
+ * Qurilma, IP manzil) va nusxalanadigan «Kuzatuv ID». `DataTable expandable.render` ichida chiziladi.
  */
 
 const TH = "h-8 pb-1 pr-4 text-left text-xs font-semibold uppercase tracking-[.04em] text-text-muted last:pr-0";
@@ -33,7 +33,8 @@ const ActivityLogDetail = ({ log, labels }: { log: ActivityLog; labels: Activity
   };
 
   return (
-    <div className="flex flex-wrap gap-x-10 gap-y-5 pb-5 pl-[68px] pr-5 pt-1 max-md:px-4 max-md:pb-4 max-md:pt-0">
+    // Chekkalar — `DataTable expandable` panelida (jadvalda chevron ustuni bilan tekis, telefonda karta ostida).
+    <div className="flex flex-wrap gap-x-10 gap-y-5">
       <section aria-labelledby={`log-${log.id}-changes`} className="flex min-w-0 flex-[3_1_400px] flex-col gap-2">
         <h3 id={`log-${log.id}-changes`} className="text-sm font-semibold text-text">
           {t("detail.changes")}

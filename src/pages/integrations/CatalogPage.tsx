@@ -1,21 +1,21 @@
-import { useMemo } from "react";
+// dizayn-v2: superadmin-integrations-catalog, admin-integrations-catalog
+import { createElement, useMemo, type KeyboardEvent } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Button, Card, Tag } from "antd";
-import { ArrowLeft, Check, ChevronRight } from "lucide-react";
-import { CATEGORY_LABEL, ROLE_META } from "../../entities/integrations";
+import { Check, ChevronRight, CreditCard, Download, Handshake, Inbox, Store, Truck, type LucideIcon } from "lucide-react";
+import { CATEGORY_LABEL, ROLE_META, type IntegrationRole } from "../../entities/integrations";
+import { Badge, EmptyState, PageHeader } from "../../shared/ui/primitives";
 import { CONNECTION_TYPES, type ConnectionTypeMeta } from "./connections";
-import { PAGE_SUBTITLE, PAGE_TITLE } from "./ui";
 
 /**
- * KATALOG — "qaysi tizimni ulaysiz?".
+ * KATALOG — «Qaysi tizimni ulaysiz?» (maket `*-integrations-catalog`).
  *
- * ⚠️ YO'NALISH SAVOLI OLIB TASHLANDI. Ilgari katalog ikki guruhga bo'linardi —
- * "Ular bizga" / "Biz ularga" (kalit kimdan) — bu TEXNIK savol edi va operator
- * javobini bilmasdi. Endi yo'nalishni yuqoridagi TAB belgilaydi (Hamkorlar /
- * Tashqi tizimlar / Marketplace), katalog esa faqat o'sha tabga mos turlarni
- * YASSI ro'yxatda ko'rsatadi. Hamkor (BeePost) yaratish esa katalogsiz —
- * to'g'ridan-to'g'ri "Yangi hamkor" modali orqali.
+ * ⚠️ YO'NALISH SAVOLI OLIB TASHLANGAN. Yo'nalishni konsoldagi TAB belgilaydi (Hamkorlar / Tashqi tizimlar /
+ * Marketplace), katalog esa faqat o'sha tabga mos turlarni YASSI ro'yxatda ko'rsatadi. Hamkor (BeePost)
+ * yaratish katalogsiz — konsoldagi «Yangi hamkor» oynasi orqali.
+ *
+ * Kartalar klaviatura bilan ochiladi (Enter / Bo'shliq, `keyboardAccess.test.tsx`): karta ichida sarlavha,
+ * teglar va ro'yxat bor — `<button>` ichida blok elementlar noto'g'ri semantika, shuning uchun ARIA naqshi.
  */
 
 type Scope = "partner" | "external" | "marketplace";
@@ -26,6 +26,24 @@ const matchScope = (meta: ConnectionTypeMeta, scope: Scope): boolean => {
   return meta.kind === "integration" && meta.category !== "marketplace";
 };
 
+/** Turning ikonkasi (neytral `.el-stat-icon`) — rol bo'yicha. */
+const ROLE_ICON: Record<IntegrationRole, LucideIcon> = {
+  source: Inbox,
+  carrier: Truck,
+  payment: CreditCard,
+  mirror: Download,
+};
+
+const iconOf = (type: ConnectionTypeMeta): LucideIcon =>
+  type.kind === "partner" ? Handshake : type.category === "marketplace" ? Store : ROLE_ICON[type.role];
+
+/** Konsoldagi scope tab nomi — «← Tashqi tizimlar». */
+const BACK_LABEL: Record<Scope, string> = {
+  partner: "navPartners",
+  external: "navExternal",
+  marketplace: "navMarketplace",
+};
+
 const CatalogPage = () => {
   const { t } = useTranslation("integrations");
   const navigate = useNavigate();
@@ -33,41 +51,31 @@ const CatalogPage = () => {
 
   const scopeParam = searchParams.get("scope");
   const scope: Scope | null =
-    scopeParam === "partner" || scopeParam === "external" || scopeParam === "marketplace"
-      ? scopeParam
-      : null;
+    scopeParam === "partner" || scopeParam === "external" || scopeParam === "marketplace" ? scopeParam : null;
 
-  const items = useMemo(
-    () => (scope ? CONNECTION_TYPES.filter((m) => matchScope(m, scope)) : CONNECTION_TYPES),
-    [scope],
-  );
+  const items = useMemo(() => (scope ? CONNECTION_TYPES.filter((m) => matchScope(m, scope)) : CONNECTION_TYPES), [scope]);
 
   const backTo = scope ? `/integrations/connections?scope=${scope}` : "/integrations";
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <Button
-          icon={<ArrowLeft className="h-4 w-4" />}
-          onClick={() => navigate(backTo)}
-          title={t("catBack")}
-        />
-        <div>
-          <h1 className={`m-0 ${PAGE_TITLE}`}>{t("newConnection")}</h1>
-          <p className={`m-0 ${PAGE_SUBTITLE}`}>{t("catChooseType")}</p>
-        </div>
-      </div>
+    <div className="flex flex-col gap-6 max-md:gap-4">
+      <PageHeader
+        back={backTo}
+        backLabel={t(scope ? BACK_LABEL[scope] : "pageTitle")}
+        title={t("newConnection")}
+        description={t("console.catalogSub")}
+      />
 
       {items.length === 0 ? (
-        <p className={`m-0 text-sm ${PAGE_SUBTITLE}`}>{t("catNoTypes")}</p>
+        <EmptyState title={t("catNoTypes")} />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div
+          role="list"
+          aria-label={t("console.catalogListAria")}
+          className="grid grid-cols-[repeat(auto-fit,minmax(max(min(340px,100%),calc((100%-16px)/2)),1fr))] gap-4"
+        >
           {items.map((type) => (
-            <TypeCard
-              key={type.key}
-              type={type}
-              onPick={() => navigate(`/integrations/new/${type.key}`)}
-            />
+            <TypeCard key={type.key} type={type} onPick={() => navigate(`/integrations/new/${type.key}`)} />
           ))}
         </div>
       )}
@@ -77,51 +85,50 @@ const CatalogPage = () => {
 
 const TypeCard = ({ type, onPick }: { type: ConnectionTypeMeta; onPick: () => void }) => {
   const { t } = useTranslation("integrations");
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onPick();
+    }
+  };
   return (
-    <Card
-      hoverable
-      onClick={onPick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e: React.KeyboardEvent) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onPick();
-        }
-      }}
-      aria-label={t("catCardAria", { name: t(type.labelKey) })}
-      className="h-full"
-      title={
-        <div className="flex items-center justify-between gap-2">
-          <span className="truncate font-bold">{t(type.labelKey)}</span>
-          <ChevronRight className="h-4 w-4 shrink-0 text-gray-400" />
-        </div>
-      }
-    >
-      <div className="mb-2 flex flex-wrap gap-1.5">
-        <Tag color="blue">{t(ROLE_META[type.role].labelKey)}</Tag>
-        <Tag>{t(CATEGORY_LABEL[type.category])}</Tag>
+    <div role="listitem" className="flex min-w-0">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onPick}
+        onKeyDown={onKeyDown}
+        aria-label={t("catCardAria", { name: t(type.labelKey) })}
+        className="flex w-full min-w-0 cursor-pointer flex-col rounded-[14px] border border-border bg-surface text-text transition-[background-color,border-color] duration-150 hover:border-border-strong hover:bg-row-hover motion-reduce:transition-none"
+      >
+        <span className="flex flex-col gap-3 px-5 pb-4 pt-5 max-md:px-4">
+          <span className="flex items-center gap-3">
+            <span className="inline-flex size-9 flex-none items-center justify-center rounded-[10px] bg-sunken text-text-muted">
+              {/* `createElement` — render paytida komponent «yaratilmaydi» (react-hooks/static-components). */}
+              {createElement(iconOf(type), { size: 20, "aria-hidden": true })}
+            </span>
+            <span className="min-w-0 flex-1 text-base font-bold text-text">{t(type.labelKey)}</span>
+            <ChevronRight size={20} aria-hidden="true" className="flex-none text-action-fg" />
+          </span>
+          <span className="flex flex-wrap gap-1.5">
+            <Badge>{t(ROLE_META[type.role].labelKey)}</Badge>
+            <Badge>{t(CATEGORY_LABEL[type.category])}</Badge>
+          </span>
+          <span className="text-[13px] leading-[18px] text-text-muted">{t(type.descKey)}</span>
+        </span>
+        <span className="flex flex-1 flex-col gap-2 border-t border-border px-5 pb-5 pt-3.5 max-md:px-4">
+          <span className="text-xs font-semibold uppercase tracking-[.04em] text-text-muted">{t("catPrereqTitle")}</span>
+          <span role="list" className="flex flex-col gap-1.5">
+            {type.prereqKeys.map((item: string) => (
+              <span key={item} role="listitem" className="flex items-start gap-2 text-[13px] leading-[18px] text-text">
+                <Check size={16} aria-hidden="true" className="mt-px flex-none text-text-subtle" />
+                <span>{t(item)}</span>
+              </span>
+            ))}
+          </span>
+        </span>
       </div>
-
-      <p className="m-0 text-sm text-gray-500 dark:text-gray-400">{t(type.descKey)}</p>
-
-      <div className="mt-3 border-t border-gray-100 pt-2.5 dark:border-gray-700">
-        <p className="m-0 mb-1.5 text-[10px] font-bold uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400">
-          {t("catPrereqTitle")}
-        </p>
-        <ul className="m-0 list-none space-y-1 p-0">
-          {type.prereqKeys.map((item: string) => (
-            <li
-              key={t(item)}
-              className="flex items-start gap-1.5 text-[11px] leading-snug text-gray-600 dark:text-gray-300"
-            >
-              <Check className="mt-0.5 h-3 w-3 shrink-0 text-green-500" />
-              <span>{t(item)}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </Card>
+    </div>
   );
 };
 

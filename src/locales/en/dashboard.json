@@ -92,7 +92,14 @@
     "extra_cost_approved": "Extra cost approved",
     "extra_cost_rejected": "Request rejected",
     "extra_cost_already_decided": "The request is already decided",
-    "extra_cost_already_decided_hint": "This request was decided elsewhere (for example, in Telegram). The list has been refreshed."
+    "extra_cost_already_decided_hint": "This request was decided elsewhere (for example, in Telegram). The list has been refreshed.",
+    "extra_cost_auto_at": "Auto-approved if not answered by {{time}}",
+    "extra_cost_auto_title": "Auto-approved extra costs",
+    "extra_cost_auto_count": "{{count}}",
+    "extra_cost_auto_hint": "Requests not answered in time were approved automatically. If you disagree, contact an administrator.",
+    "extra_cost_auto_badge": "Auto-approved",
+    "extra_cost_auto_list_label": "Auto-approved requests",
+    "extra_cost_auto_decided": "Approved {{time}}"
   },
   "v2Charts": {
     "zone": {

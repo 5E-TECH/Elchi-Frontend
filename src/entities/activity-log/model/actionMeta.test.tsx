@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import ActivityActionBadge from "../ui/ActivityActionBadge";
-import { actionBadgeTone, humanizeAction, resolveActionMeta } from "./actionMeta";
+import { actionBadgeTone, actionVerbTone, humanizeAction, resolveActionMeta } from "./actionMeta";
 import type { ActivityActionMeta } from "./types";
 
 const meta = (over: Partial<ActivityActionMeta> = {}): ActivityActionMeta => ({
@@ -84,5 +84,22 @@ describe("activity-log amal yorlig'i va toni (y8CxCtcK)", () => {
     expect(screen.getByText("Custody changed")).toBeInTheDocument();
     rerender(<ActivityActionBadge action="" />);
     expect(screen.getByText("—")).toBeInTheDocument();
+  });
+
+  it("ton umuman kelmasa (eski backend) — fe'l kalit so'zi bo'yicha (G2 §3.1); backend toni bo'lsa u ustun", () => {
+    expect(actionVerbTone("deleted")).toBe("danger");
+    expect(actionVerbTone("order.cancel")).toBe("danger");
+    expect(actionVerbTone("finance.settle_market")).toBe("success");
+    expect(actionVerbTone("created")).toBe("info");
+    expect(actionVerbTone("assign")).toBe("info");
+    expect(actionVerbTone("status_change")).toBe("neutral");
+    const registry = new Map([["deleted", meta({ action: "deleted", label: "O'chirildi", tone: null })]]);
+    expect(resolveActionMeta({ action: "deleted", action_meta: null }, registry)).toEqual({ label: "O'chirildi", tone: "danger" });
+    expect(resolveActionMeta({ action: "deleted", action_meta: meta({ action: "deleted", label: "O'chirildi", tone: "slate" }) })).toEqual({
+      label: "O'chirildi",
+      tone: "neutral",
+    });
+    render(<ActivityActionBadge action="deleted" label="Удалено" />);
+    expect(screen.getByText("Удалено").parentElement).toHaveAttribute("data-tone", "danger");
   });
 });

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 /**
  * JO'NATMALAR — ulanish bo'yicha posilkalar.
@@ -101,7 +102,7 @@ export const useProviderShipments = (params: {
   filter?: ShipmentFilter;
   page?: number;
   limit?: number;
-}) =>
+}, options?: SilentErrorOption) =>
   useQuery({
     queryKey: [shipmentsKey, "provider", params.integrationId, params.failedOnly, params.filter, params.page],
     enabled: Boolean(params.integrationId),
@@ -118,6 +119,7 @@ export const useProviderShipments = (params: {
           },
         })
         .then((res) => unwrap<ProviderShipmentRow>(res.data)),
+    ...silentErrorMeta(options),
   });
 
 /** Hamkordan kelgan posilkalar bog'lanishi. */
@@ -125,7 +127,7 @@ export const usePartnerShipments = (params: {
   partnerId?: string;
   page?: number;
   limit?: number;
-}) =>
+}, options?: SilentErrorOption) =>
   useQuery({
     queryKey: [shipmentsKey, "partner", params.partnerId, params.page],
     enabled: Boolean(params.partnerId),
@@ -135,6 +137,7 @@ export const usePartnerShipments = (params: {
           params: { page: params.page ?? 1, limit: params.limit ?? 20 },
         })
         .then((res) => unwrap<PartnerShipmentRow>(res.data)),
+    ...silentErrorMeta(options),
   });
 
 /**

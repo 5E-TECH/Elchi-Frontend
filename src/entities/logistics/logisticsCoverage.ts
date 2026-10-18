@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 export const logiCov = "logi-cov";
 
@@ -141,12 +142,13 @@ export const useLogisticsCoverage = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "posts"] }),
   });
 
-  const useGetReturnRequestsList = (params?: any) =>
+  const useGetReturnRequestsList = (params?: any, options?: SilentErrorOption) =>
     useQuery({
       queryKey: [logiCov, "posts", "return-requests", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.POSTS.RETURN_REQUESTS_LIST, { params })
           .then((res) => res.data),
+      ...silentErrorMeta(options),
     });
 
   const rejectReturnRequest = useMutation({

@@ -232,6 +232,164 @@ describe("DataTable — tanlov", () => {
   });
 });
 
+describe("DataTable — ochiladigan qator", () => {
+  const ExpandHarness = ({
+    initial = [] as string[],
+    toggle,
+    withSelection = false,
+  }: {
+    initial?: string[];
+    toggle?: "start" | "none";
+    withSelection?: boolean;
+  }) => {
+    const [open, setOpen] = useState(new Set(initial));
+    const setRow = (row: Row, next: boolean) =>
+      setOpen((previous) => {
+        const copy = new Set(previous);
+        if (next) copy.add(row.id);
+        else copy.delete(row.id);
+        return copy;
+      });
+    return (
+      <DataTable
+        rows={ROWS}
+        columns={
+          toggle === "none"
+            ? [
+                ...COLUMNS.slice(0, 2),
+                {
+                  id: "actions",
+                  header: "",
+                  cell: (row) => (
+                    <button
+                      type="button"
+                      aria-expanded={open.has(row.id)}
+                      aria-controls={open.has(row.id) ? `pl-${row.id}` : undefined}
+                      onClick={() => setRow(row, !open.has(row.id))}
+                    >
+                      {row.id} — ma'lumot
+                    </button>
+                  ),
+                },
+              ]
+            : COLUMNS
+        }
+        getRowKey={(row) => row.id}
+        label="Jurnal"
+        renderCard={(row) => <span>{row.name}</span>}
+        selection={
+          withSelection
+            ? { isSelected: () => false, onToggle: vi.fn(), onToggleAll: vi.fn(), rowLabel: (row) => `№${row.id} ni tanlash` }
+            : undefined
+        }
+        expandable={{
+          isExpanded: (row) => open.has(row.id),
+          onToggle: setRow,
+          canExpand: (row) => !row.sent,
+          render: (row) => <p>Tafsilot {row.id}</p>,
+          toggleLabel: (row, expanded) => `№${row.id} tafsilotini ${expanded ? "yopish" : "ochish"}`,
+          toggle,
+          panelId: toggle === "none" ? (row) => `pl-${row.id}` : undefined,
+        }}
+      />
+    );
+  };
+
+  it("chevron ustuni birinchi (sarlavhada yashirin «Tafsilot»); ochilmaydigan qatorda tugma yo'q", () => {
+    render(<ExpandHarness />);
+    const headers = screen.getAllByRole("columnheader");
+    expect(headers).toHaveLength(COLUMNS.length + 1);
+    expect(headers[0]).toHaveTextContent("Tafsilot");
+    expect(headers[0]).toHaveClass("w-[52px]");
+
+    const rows = within(screen.getByRole("table", { name: "Jurnal" })).getAllByRole("row");
+    expect(within(rows[1]).getAllByRole("cell")[0]).toContainElement(
+      screen.getByRole("button", { name: "№10242 tafsilotini ochish" }),
+    );
+    // №10231 — ochilmaydi: chevron o'rnida faqat ekran o'quvchi matni.
+    expect(screen.queryByRole("button", { name: /№10231/ })).toBeNull();
+    expect(within(rows[3]).getAllByRole("cell")[0]).toHaveTextContent("Tafsilot yo'q");
+  });
+
+  it("bosilsa ochiladi: `aria-expanded`, panel `colSpan` = barcha ustunlar, `aria-controls` panelga; qayta bosilsa yopiladi", async () => {
+    const user = userEvent.setup();
+    render(<ExpandHarness />);
+
+    const toggle = screen.getByRole("button", { name: "№10241 tafsilotini ochish" });
+    expect(toggle).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("Tafsilot 10241")).toBeNull();
+
+    await user.click(toggle);
+    const collapse = screen.getByRole("button", { name: "№10241 tafsilotini yopish" });
+    expect(collapse).toHaveAttribute("aria-expanded", "true");
+    const panel = screen.getByText("Tafsilot 10241").closest("td") as HTMLTableCellElement;
+    expect(panel).toHaveAttribute("colspan", String(COLUMNS.length + 1));
+    expect(collapse).toHaveAttribute("aria-controls", panel.id);
+    // Ochilgan qator va panel bitta blok: fon `bg-sunken`, qator kataklarida pastki chiziq yo'q.
+    const row = collapse.closest("tr") as HTMLTableRowElement;
+    expect(row).toHaveClass("bg-sunken");
+    expect(row).toHaveAttribute("data-expanded");
+    expect(within(row).getAllByRole("cell")[1]).not.toHaveClass("border-b");
+    expect(panel.closest("tr")).toHaveClass("bg-sunken");
+
+    await user.click(collapse);
+    expect(screen.queryByText("Tafsilot 10241")).toBeNull();
+    expect(screen.getByRole("button", { name: "№10241 tafsilotini ochish" })).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("klaviatura: Enter va Space ochadi/yopadi", async () => {
+    const user = userEvent.setup();
+    render(<ExpandHarness />);
+
+    screen.getByRole("button", { name: "№10242 tafsilotini ochish" }).focus();
+    await user.keyboard("{Enter}");
+    expect(screen.getByText("Tafsilot 10242")).toBeInTheDocument();
+    await user.keyboard(" ");
+    expect(screen.queryByText("Tafsilot 10242")).toBeNull();
+  });
+
+  it("tanlov bilan: belgi ustuni birinchi, chevron undan keyin; panel `colSpan` ikkalasini ham qamraydi", () => {
+    render(<ExpandHarness withSelection initial={["10242"]} />);
+    const firstRowCells = within(screen.getAllByRole("row")[1]).getAllByRole("cell");
+    expect(within(firstRowCells[0]).getByRole("checkbox")).toBeInTheDocument();
+    expect(within(firstRowCells[1]).getByRole("button", { name: "№10242 tafsilotini yopish" })).toBeInTheDocument();
+    expect(screen.getByText("Tafsilot 10242").closest("td")).toHaveAttribute("colspan", String(COLUMNS.length + 2));
+  });
+
+  it("`toggle: none` — chevron ustuni yo'q, tugma iste'molchida; panel `panelId` bilan", async () => {
+    const user = userEvent.setup();
+    render(<ExpandHarness toggle="none" />);
+    expect(screen.getAllByRole("columnheader")).toHaveLength(3);
+    expect(screen.queryByRole("button", { name: /tafsilotini/ })).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "10241 — ma'lumot" }));
+    const panel = screen.getByText("Tafsilot 10241").closest("td");
+    expect(panel).toHaveAttribute("id", "pl-10241");
+    expect(panel).toHaveAttribute("colspan", "3");
+    expect(screen.getByRole("button", { name: "10241 — ma'lumot" })).toHaveAttribute("aria-controls", "pl-10241");
+  });
+
+  it("telefonda: chevron kartaning o'ng tomonida, panel karta ostida; ochilmaydigan kartada tugma yo'q", async () => {
+    mockPhone(true);
+    const user = userEvent.setup();
+    render(<ExpandHarness />);
+
+    expect(screen.queryByRole("table")).toBeNull();
+    const items = within(screen.getByRole("list", { name: "Jurnal" })).getAllByRole("listitem");
+    expect(within(items[2]).queryByRole("button")).toBeNull();
+
+    await user.click(within(items[0]).getByRole("button", { name: "№10242 tafsilotini ochish" }));
+    const item = screen.getAllByRole("listitem")[0];
+    expect(item).toHaveAttribute("data-expanded");
+    expect(item).toHaveClass("bg-sunken");
+    const panel = within(item).getByText("Tafsilot 10242");
+    expect(within(item).getByRole("button", { name: "№10242 tafsilotini yopish" })).toHaveAttribute(
+      "aria-controls",
+      panel.parentElement?.id,
+    );
+  });
+});
+
 describe("DataTable — telefon", () => {
   it("< 768: jadval o'rniga kartalar ro'yxati (DOM'da bitta nusxa), tanlov belgisi kartada", async () => {
     mockPhone(true);
@@ -269,7 +427,9 @@ describe("DataTable — telefon", () => {
   });
 });
 
-describe("DataTable — ochiladigan qator (`superadmin-activity-logs-row-expanded`)", () => {
+describe("DataTable — ochiladigan qator, tugma ustunda (`expandable.toggle: \"none\"`, `superadmin-activity-logs-row-expanded`)", () => {
+  // dev (0b52635) `renderExpanded` testlari — bitta API (`expandable`) ga ko'chirilgan: tugmani ustun chizadi,
+  // panelning ichki chekkasini mazmunning o'zi beradi (`panelClassName: "p-0"`).
   const Expandable = ({ initial }: { initial: string | null }) => {
     const [open, setOpen] = useState<string | null>(initial);
     return (
@@ -288,7 +448,13 @@ describe("DataTable — ochiladigan qator (`superadmin-activity-logs-row-expande
           ...COLUMNS,
         ]}
         getRowKey={(row) => row.id}
-        renderExpanded={(row) => (open === row.id ? <div>{`${row.name} tafsiloti`}</div> : null)}
+        expandable={{
+          toggle: "none",
+          isExpanded: (row) => open === row.id,
+          onToggle: (row, next) => setOpen(next ? row.id : null),
+          render: (row) => <div>{`${row.name} tafsiloti`}</div>,
+          panelClassName: "p-0",
+        }}
         renderCard={(row) => <span>{row.name}</span>}
       />
     );
@@ -302,10 +468,12 @@ describe("DataTable — ochiladigan qator (`superadmin-activity-logs-row-expande
     await user.click(screen.getByRole("button", { name: "№10242 tafsiloti" }));
     const detail = screen.getByText("Sevara Tursunova tafsiloti").closest("td")!;
     expect(detail).toHaveAttribute("colspan", "6");
-    expect(detail).toHaveClass("bg-sunken", "p-0");
+    expect(detail).toHaveClass("p-0");
+    expect(detail.parentElement).toHaveClass("bg-sunken");
     const row = screen.getByRole("button", { name: "№10242 tafsiloti" }).closest("tr")!;
     expect(row).toHaveAttribute("data-expanded");
-    expect(row).toHaveClass("bg-sunken", "[&>td]:border-b-0");
+    expect(row).toHaveClass("bg-sunken");
+    for (const cell of within(row).getAllByRole("cell")) expect(cell).not.toHaveClass("border-b");
     expect(row).not.toHaveClass("hover:bg-row-hover");
     expect(row.nextElementSibling).toBe(detail.parentElement);
 

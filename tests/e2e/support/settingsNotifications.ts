@@ -57,8 +57,14 @@ export const mockSettingsApi = async (
   return { state, patches, leaked };
 };
 
+/**
+ * Dizayn v2: bo'limlar — `role="tab"` (desktopda chapdagi vertikal ro'yxat, < 1024 da gorizontal `Tabs`; ikkinchisi
+ * CSS bilan yashirin, shuning uchun rol bo'yicha faqat ko'rinadigani topiladi).
+ */
+export const settingsTab = (page: Page, name: RegExp) => page.getByRole("main").getByRole("tab", { name });
+
 export const openNotificationsTab = async (page: Page) => {
   await page.goto("/settings");
-  await page.getByRole("main").getByRole("button", { name: /Bildirishnomalar/ }).click({ timeout: 60_000 });
+  await settingsTab(page, /Bildirishnomalar/).click({ timeout: 60_000 });
   await expect(page.getByTestId("notifications-scope-notice")).toBeVisible();
 };

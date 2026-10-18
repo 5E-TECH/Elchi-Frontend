@@ -2,10 +2,10 @@ import { expect, test } from "@playwright/test";
 import { clippedTiles, mainHorizontalOverflow, mockIntegrationsApi, openElchiOverview } from "./support/integrations";
 
 /**
- * INTEGRATSIYA — UMUMIY HOLAT, 390px TELEFON.
+ * INTEGRATSIYA — UMUMIY HOLAT, 390px TELEFON (dizayn v2).
  *
- * Bloklar USTMA-UST joylashadi, raqamlar (uzun COD summalari ham) kesilmaydi,
- * banner tugmalari esa sarlavhani siqib qo'ymaydi.
+ * Tayyorlik ro'yxati va uch blok USTMA-UST bitta ustunda, raqamlar (uzun COD summalari ham) kesilmaydi,
+ * amallar qatori («Aloqani sinash», «Yangilash») o'z qatorida, tugmalar ≥ 44px.
  */
 
 test.describe("Integratsiya umumiy holati — 390px", () => {
@@ -15,13 +15,9 @@ test.describe("Integratsiya umumiy holati — 390px", () => {
     const { leaked } = await mockIntegrationsApi(page);
     await openElchiOverview(page);
 
-    const checklist = page.locator(".ant-card", { hasText: "Tayyorlik checklisti" }).first();
-    const columnBoxes = [
-      (await checklist.boundingBox())!,
-      ...(await Promise.all(
-        ["ovw-shipments", "ovw-webhooks", "ovw-cod"].map(async (id) => (await page.getByTestId(id).boundingBox())!),
-      )),
-    ];
+    const columnBoxes = await Promise.all(
+      ["ovw-checklist", "ovw-shipments", "ovw-webhooks", "ovw-cod"].map(async (id) => (await page.getByTestId(id).boundingBox())!),
+    );
     // Bitta ustun: chap chegara va kenglik bir xil, har biri oldingisidan pastda.
     for (let i = 1; i < columnBoxes.length; i += 1) {
       expect(Math.abs(columnBoxes[i].x - columnBoxes[0].x), `blok ${i}`).toBeLessThanOrEqual(1);
@@ -30,25 +26,28 @@ test.describe("Integratsiya umumiy holati — 390px", () => {
     }
 
     expect(await clippedTiles(page)).toEqual([]);
-    // Eng uzun summa to'liq (guruh ajratuvchisi brauzer locale'iga bog'liq).
+    // Eng uzun summa to'liq.
     await expect(page.getByTestId("ovw-cod")).toContainText(/1\D?234\D?567\D?890 so'm/);
     expect(await mainHorizontalOverflow(page)).toBeLessThanOrEqual(0);
     expect(leaked).toEqual([]);
   });
 
-  test("banner: sarlavha siqilmaydi, amallar o'z qatorida", async ({ page }) => {
+  test("amallar o'z qatorida: tugmalar ko'rinadi, ≥ 44px va ekranga sig'adi", async ({ page }) => {
     const { leaked } = await mockIntegrationsApi(page);
     await openElchiOverview(page);
 
-    const title = page.locator(".ant-alert-title").first();
-    const titleBox = (await title.boundingBox())!;
-    // Avval uch tugma sarlavhani ~0px ga siqib, harfma-harf sindirardi.
-    expect(titleBox.width).toBeGreaterThan(200);
     const actions = page.getByTestId("ovw-actions");
-    await expect(actions.getByText("Aloqani sinash")).toBeVisible();
-    await expect(actions.getByText("Yangilash")).toBeVisible();
+    for (const name of ["Aloqani sinash", "Yangilash"]) {
+      const button = actions.getByRole("button", { name });
+      await expect(button).toBeVisible();
+      const box = (await button.boundingBox())!;
+      expect(box.height, name).toBeGreaterThanOrEqual(44);
+      expect(box.x + box.width, name).toBeLessThanOrEqual(390);
+    }
+    // Amallar qatori panel tablari ostida, tayyorlik ro'yxatidan oldin.
     const actionsBox = (await actions.boundingBox())!;
-    expect(actionsBox.y).toBeGreaterThanOrEqual(titleBox.y + titleBox.height - 1);
+    const checklistBox = (await page.getByTestId("ovw-checklist").boundingBox())!;
+    expect(checklistBox.y).toBeGreaterThanOrEqual(actionsBox.y + actionsBox.height - 1);
     expect(await mainHorizontalOverflow(page)).toBeLessThanOrEqual(0);
     expect(leaked).toEqual([]);
   });

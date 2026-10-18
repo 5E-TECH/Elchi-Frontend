@@ -2,35 +2,262 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
+import { peekLoginNotice } from "../../../auth/loginNotice";
 import { TELEGRAM_LINK_POLL_MS } from "../../../features/telegram-link/ui/TelegramLinkCard";
 import type { User, UserRole } from "../../../entities/user/types/user";
-import { UserDetailWidget } from "../../../widgets/user-detail/ui/UserDetailWidget";
+
+const mocks = vi.hoisted(() => ({
+  get: vi.fn(),
+  patch: vi.fn(),
+  post: vi.fn(),
+  delete: vi.fn(),
+  logout: vi.fn(),
+}));
+vi.mock("../../../shared/api/api", () => ({
+  api: { get: mocks.get, patch: mocks.patch, post: mocks.post, delete: mocks.delete },
+}));
+vi.mock("../../../shared/lib/useLogout", () => ({ useLogout: () => ({ logout: mocks.logout }) }));
+// Boshqa foydalanuvchi sahifasi (`UserDetailView`) testi uchun — o'tkazish tugmasi filiallarni so'ramasin.
+vi.mock("../../../features/courier-transfer-branch", () => ({ TransferCourierButton: () => null }));
+
 import ProfilePage from "./ProfilePage";
+import { UserDetailView } from "../../../widgets/user-detail/ui/UserDetailView";
+
+/**
+ * `/profile` (dizayn v2, maketlar `common-profile`, `common-profile-password-dialog`): ma'lumot kartasi, maosh
+ * (faqat maoshli xodimda), parol oynasi (≥ 4 belgi, takror mos, saqlangach chiqish) va tahrirlash oynasi
+ * (faqat o'zgargan maydonlar). Shuningdek o'z Telegram'ini botga ulash (BreQwksC) va marketda «Guruhda mijoz
+ * ismi va telefoni» kaliti (ysBqD9Nx) — ikkalasi faqat shu sahifada (o'z profili).
+ */
+
+const baseProfile = {
+  id: "1",
+  name: "Shodiyor Ergashev",
+  username: "shodiyor",
+  phone_number: "+998907001234",
+  role: "superadmin",
+  status: "active",
+  salary: 6_000_000,
+  payment_day: 25,
+  createdAt: "2026-01-14T09:00:00+05:00",
+  updatedAt: "2026-10-02T09:00:00+05:00",
+  branch: { id: "b1", branch_id: "7", branch: { id: "7", name: "Toshkent HQ" } },
+};
+
+let profile: Record<string, unknown> = baseProfile;
+
+const patchCalls = () =>
+  mocks.patch.mock.calls
+    .filter(([url]) => url === "auth/my-profile")
+    .map(([, body]) => body as Record<string, unknown>);
+
+beforeEach(() => {
+  profile = { ...baseProfile };
+  window.sessionStorage.clear();
+  mocks.logout.mockReset().mockResolvedValue(undefined);
+  mocks.get
+    .mockReset()
+    .mockImplementation((url: string) =>
+      url === "auth/my-profile"
+        ? Promise.resolve({ data: { statusCode: 200, data: profile } })
+        : Promise.resolve({ data: { data: {} } }),
+    );
+  mocks.patch.mockReset().mockResolvedValue({ data: { statusCode: 200, data: profile } });
+  mocks.post.mockReset();
+  mocks.delete.mockReset();
+});
+
+const open = async () => {
+  const view = renderWithProviders(<ProfilePage />, { route: "/profile" });
+  await screen.findByRole("heading", { name: "Shodiyor Ergashev" });
+  return view;
+};
+
+describe("Profil — ma'lumot kartasi", () => {
+  it("ism, login, rol va holat badge'lari, telefon, filial va sanalar", async () => {
+    await open();
+    expect(screen.getByRole("heading", { level: 1, name: "Profil" })).toBeInTheDocument();
+    expect(screen.getByText("Login: shodiyor")).toBeInTheDocument();
+    expect(screen.getByText("Superadmin")).toBeInTheDocument();
+    expect(screen.getByText("Faol")).toBeInTheDocument();
+    expect(screen.getByText("+998 90 700 12 34")).toBeInTheDocument();
+    expect(screen.getByText("Toshkent HQ")).toBeInTheDocument();
+    expect(screen.getByText("14.01.2026")).toBeInTheDocument();
+    expect(screen.getByText("02.10.2026")).toBeInTheDocument();
+  });
+
+  it("login va filial bo'lmasa — o'sha qatorlar chizilmaydi", async () => {
+    profile = { ...baseProfile, username: null, branch: null };
+    await open();
+    expect(screen.queryByText(/^Login:/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Filial")).not.toBeInTheDocument();
+  });
+});
+
+describe("Profil — oylik maosh", () => {
+  it("maoshli xodimda karta bor: to'plangan / maosh, foiz va progress", async () => {
+    await open();
+    const card = screen.getByRole("region", { name: "Oylik maosh" });
+    expect(within(card).getByText("Shu davrda to'plangan")).toBeInTheDocument();
+    expect(within(card).getByText(/6 000 000 so'm/)).toBeInTheDocument();
+    expect(within(card).getByRole("progressbar", { name: "Maosh davri" })).toHaveAttribute(
+      "aria-valuemax",
+      "100",
+    );
+  });
+
+  it.each([
+    ["maosh 0", { salary: 0 }],
+    ["kuryer (maoshli rol emas)", { role: "courier", salary: 3_000_000 }],
+  ])("%s — karta yo'q", async (_label, over) => {
+    profile = { ...baseProfile, ...over };
+    await open();
+    expect(screen.queryByRole("region", { name: "Oylik maosh" })).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Xavfsizlik" })).toBeInTheDocument();
+  });
+});
+
+describe("Profil — parolni o'zgartirish", () => {
+  const openDialog = async () => {
+    await open();
+    await userEvent.click(screen.getByRole("button", { name: "Parolni o'zgartirish" }));
+    return screen.findByRole("dialog", { name: "Parolni o'zgartirish" });
+  };
+
+  it("bo'sh, qisqa va mos kelmagan parol yuborilmaydi", async () => {
+    const dialog = await openDialog();
+    expect(within(dialog).getByText("Shodiyor Ergashev ·", { exact: false })).toBeInTheDocument();
+
+    await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
+    expect(within(dialog).getByText("Yangi parolni kiriting")).toBeInTheDocument();
+
+    const [first, second] = within(dialog).getAllByPlaceholderText(/parol/i);
+    await userEvent.type(first, "abc");
+    await userEvent.type(second, "abc");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
+    expect(
+      within(dialog).getByText("Parol kamida 4 ta belgidan iborat bo'lsin"),
+    ).toBeInTheDocument();
+
+    await userEvent.clear(first);
+    await userEvent.type(first, "namuna12");
+    await userEvent.clear(second);
+    await userEvent.type(second, "namuna13");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
+    expect(within(dialog).getByText("Parollar mos kelmadi")).toBeInTheDocument();
+
+    // Faqat bo'shliqdan iborat parol — bo'sh (eski modal `trim()` qoidasi).
+    await userEvent.clear(first);
+    await userEvent.type(first, "    ");
+    await userEvent.clear(second);
+    await userEvent.type(second, "    ");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
+    expect(within(dialog).getByText("Yangi parolni kiriting")).toBeInTheDocument();
+    expect(patchCalls()).toEqual([]);
+  });
+
+  it("mos kelsa yashil izoh; saqlansa faqat `{ password }` ketadi, xabar, login sababi va chiqish", async () => {
+    const dialog = await openDialog();
+    const [first, second] = within(dialog).getAllByPlaceholderText(/parol/i);
+    expect(first).toHaveAttribute("type", "password");
+    await userEvent.click(within(dialog).getAllByRole("button", { name: "Parolni ko'rsatish" })[0]);
+    expect(first).toHaveAttribute("type", "text");
+
+    await userEvent.type(first, "namuna12");
+    await userEvent.type(second, "namuna12");
+    expect(within(dialog).getByText("Parollar mos keladi")).toBeInTheDocument();
+
+    await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
+    await waitFor(() => expect(patchCalls()).toEqual([{ password: "namuna12" }]));
+    expect(await screen.findByText("Parol o'zgardi — qayta kiring")).toBeInTheDocument();
+    await waitFor(() => expect(mocks.logout).toHaveBeenCalledTimes(1));
+    // Saqlash shakli `auth/loginNotice.ts` ga tegishli (G3: JSON `{ notice, at }`) — o'quvchi orqali tekshiriladi.
+    expect(peekLoginNotice()).toBe("passwordChanged");
+  });
+
+  it("backend rad etsa — chiqilmaydi, oyna ochiq qoladi, xato ko'rinadi", async () => {
+    mocks.patch.mockRejectedValueOnce({
+      response: {
+        status: 400,
+        data: { message: "Parol juda oddiy", errors: { password: ["Parol juda oddiy"] } },
+      },
+    });
+    const dialog = await openDialog();
+    const [first, second] = within(dialog).getAllByPlaceholderText(/parol/i);
+    await userEvent.type(first, "1111");
+    await userEvent.type(second, "1111");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Parolni saqlash" }));
+
+    expect(await within(dialog).findByText("Parol juda oddiy")).toBeInTheDocument();
+    expect(mocks.logout).not.toHaveBeenCalled();
+    expect(window.sessionStorage.getItem("elchi_login_notice")).toBeNull();
+  });
+});
+
+describe("Profil — tahrirlash", () => {
+  const openDialog = async () => {
+    await open();
+    await userEvent.click(screen.getByRole("button", { name: "Tahrirlash" }));
+    return screen.findByRole("dialog", { name: "Profilni tahrirlash" });
+  };
+
+  it("faqat o'zgargan maydon yuboriladi (ism)", async () => {
+    const dialog = await openDialog();
+    const name = within(dialog).getByRole("textbox", { name: /Ism/ });
+    await userEvent.clear(name);
+    await userEvent.type(name, "  Shodiyor Ergash  ");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+
+    await waitFor(() => expect(patchCalls()).toEqual([{ name: "Shodiyor Ergash" }]));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Profilni tahrirlash" })).not.toBeInTheDocument(),
+    );
+  });
+
+  it("telefon o'zgarsa `+998…` ko'rinishida", async () => {
+    const dialog = await openDialog();
+    const phone = within(dialog).getByRole("textbox", { name: /Telefon/ });
+    await userEvent.clear(phone);
+    await userEvent.type(phone, "901112233");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+    await waitFor(() => expect(patchCalls()).toEqual([{ phone_number: "+998901112233" }]));
+  });
+
+  it("o'zgarish yo'q — so'rov ketmaydi, oyna yopiladi; noto'liq telefon — xato", async () => {
+    const dialog = await openDialog();
+    await userEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Profilni tahrirlash" })).not.toBeInTheDocument(),
+    );
+    expect(patchCalls()).toEqual([]);
+
+    await userEvent.click(screen.getByRole("button", { name: "Tahrirlash" }));
+    const again = await screen.findByRole("dialog", { name: "Profilni tahrirlash" });
+    const phone = within(again).getByRole("textbox", { name: /Telefon/ });
+    await userEvent.clear(phone);
+    await userEvent.type(phone, "9011");
+    await userEvent.click(within(again).getByRole("button", { name: "Saqlash" }));
+    expect(within(again).getByText("9 ta raqam kiriting")).toBeInTheDocument();
+    expect(patchCalls()).toEqual([]);
+  });
+
+  it("1 belgili ism — yuborilmaydi (backend `@MinLength(2)`)", async () => {
+    const dialog = await openDialog();
+    const name = within(dialog).getByRole("textbox", { name: /Ism/ });
+    await userEvent.clear(name);
+    await userEvent.type(name, "S");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+    expect(
+      within(dialog).getByText("Ism kamida 2 ta belgidan iborat bo'lsin"),
+    ).toBeInTheDocument();
+    expect(patchCalls()).toEqual([]);
+  });
+});
 
 /**
  * O'z profilida «Telegram» kartasi (BreQwksC): oyna ochiq turganda profil qayta o'qiladi va bot ulagach
  * (`telegram_linked: true`) oyna o'zi yopiladi. Karta faqat o'z profilida va faqat xodimlarga chiziladi.
  */
-
-const apiGet = vi.fn();
-const apiPost = vi.fn();
-
-vi.mock("../../../shared/api/api", () => ({
-  api: {
-    get: (...args: unknown[]) => apiGet(...args),
-    post: (...args: unknown[]) => apiPost(...args),
-    delete: vi.fn(),
-    patch: vi.fn(),
-  },
-}));
-
-vi.mock("../../../features/courier-transfer-branch", () => ({
-  TransferCourierButton: () => null,
-}));
-
-vi.mock("../../../features/user/update-user/ui/UpdateUserModal", () => ({
-  UpdateUserModal: () => null,
-}));
 
 const makeUser = (role: UserRole, overrides: Partial<User> = {}): User => ({
   id: "263",
@@ -50,17 +277,17 @@ const makeUser = (role: UserRole, overrides: Partial<User> = {}): User => ({
   ...overrides,
 });
 
-const profileResponse = (user: User) => ({ data: { statusCode: 200, message: "ok", data: user } });
+const roleState = (role: string, id = `${role}-1`) =>
+  ({ role: { id, role, region: null, name: role } }) as never;
 
-const roleState = (role: string) =>
-  ({ role: { id: `${role}-1`, role, region: null, name: role } }) as never;
+const serveProfile = (getUser: () => User) =>
+  mocks.get.mockImplementation((url: string) =>
+    url === "auth/my-profile"
+      ? Promise.resolve({ data: { statusCode: 200, message: "ok", data: getUser() } })
+      : Promise.resolve({ data: {} }),
+  );
 
-describe("ProfilePage — Telegram'ni ulash", () => {
-  beforeEach(() => {
-    apiGet.mockReset();
-    apiPost.mockReset();
-  });
-
+describe("Profil — Telegram'ni ulash", () => {
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -69,12 +296,8 @@ describe("ProfilePage — Telegram'ni ulash", () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     let linked = false;
-    apiGet.mockImplementation((url: string) =>
-      url === "auth/my-profile"
-        ? Promise.resolve(profileResponse(makeUser("courier", { telegram_linked: linked })))
-        : Promise.resolve({ data: {} }),
-    );
-    apiPost.mockResolvedValue({
+    serveProfile(() => makeUser("courier", { telegram_linked: linked }));
+    mocks.post.mockResolvedValue({
       data: {
         statusCode: 200,
         message: "Telegram link",
@@ -87,18 +310,19 @@ describe("ProfilePage — Telegram'ni ulash", () => {
         },
       },
     });
-    renderWithProviders(<ProfilePage />, { preloadedState: roleState("courier") });
+    renderWithProviders(<ProfilePage />, { route: "/profile", preloadedState: roleState("courier") });
 
     const card = await screen.findByRole("region", { name: "Telegram" });
     expect(within(card).getByText("Ulanmagan")).toBeInTheDocument();
 
     await user.click(within(card).getByRole("button", { name: "Telegram'ni ulash" }));
+    expect(mocks.post).toHaveBeenCalledWith("users/me/telegram/link-code");
     const dialog = await screen.findByRole("dialog", { name: "Telegram'ni ulash" });
     expect(
       await within(dialog).findByRole("img", { name: "Telegram'ni ulash havolasining QR kodi" }),
     ).toBeInTheDocument();
     const profileCalls = () =>
-      apiGet.mock.calls.filter(([url]) => url === "auth/my-profile").length;
+      mocks.get.mock.calls.filter(([url]) => url === "auth/my-profile").length;
     const before = profileCalls();
 
     // Hali ulanmagan — oyna ochiq qoladi, profil so'ralaveradi.
@@ -131,43 +355,79 @@ describe("ProfilePage — Telegram'ni ulash", () => {
   });
 
   it("mijozning o'z profilida karta yo'q", async () => {
-    apiGet.mockImplementation((url: string) =>
-      url === "auth/my-profile"
-        ? Promise.resolve(profileResponse(makeUser("customer", { name: "Mijoz" })))
-        : Promise.resolve({ data: {} }),
-    );
-    renderWithProviders(<ProfilePage />, { preloadedState: roleState("customer") });
+    serveProfile(() => makeUser("customer", { name: "Mijoz" }));
+    renderWithProviders(<ProfilePage />, { route: "/profile", preloadedState: roleState("customer") });
 
     expect(await screen.findAllByText("Mijoz")).not.toHaveLength(0);
     expect(screen.queryByRole("region", { name: "Telegram" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Telegram'ni ulash" })).not.toBeInTheDocument();
   });
-});
 
-describe("UserDetailWidget — Telegram kartasi faqat o'z profilida", () => {
   it.each(["courier", "market", "manager", "registrator", "admin", "superadmin"] as const)(
     "%s o'z profilida kartani ko'radi",
-    (role) => {
-      renderWithProviders(
-        <UserDetailWidget user={makeUser(role)} isLoading={false} isError={false} isOwnProfile />,
-        { preloadedState: roleState(role) },
-      );
+    async (role) => {
+      serveProfile(() => makeUser(role));
+      renderWithProviders(<ProfilePage />, { route: "/profile", preloadedState: roleState(role) });
 
-      expect(screen.getByRole("region", { name: "Telegram" })).toBeInTheDocument();
+      expect(await screen.findByRole("region", { name: "Telegram" })).toBeInTheDocument();
     },
   );
 
-  it("boshqa foydalanuvchining sahifasida (admin kuryerni ko'rmoqda) karta yo'q", () => {
-    renderWithProviders(
-      <UserDetailWidget
-        user={makeUser("courier", { telegram_linked: true })}
-        isLoading={false}
-        isError={false}
-      />,
-      { preloadedState: roleState("superadmin") },
-    );
+  it("boshqa foydalanuvchining sahifasida (superadmin kuryerni ko'rmoqda) karta yo'q", () => {
+    renderWithProviders(<UserDetailView user={makeUser("courier", { telegram_linked: true })} />, {
+      preloadedState: roleState("superadmin"),
+    });
 
+    expect(screen.getByRole("heading", { level: 1, name: "E2E Kuryer" })).toBeInTheDocument();
     expect(screen.queryByRole("region", { name: "Telegram" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Uzish" })).not.toBeInTheDocument();
+  });
+});
+
+describe("Profil — market: «Guruhda mijoz ismi va telefoni» (ysBqD9Nx)", () => {
+  const piiSwitch = () => screen.findByRole("switch", { name: "Guruhda mijoz ismi va telefoni" });
+
+  it("market o'z profilida kalitni o'zgartiradi: PATCH, profil qayta o'qiladi, «Saqlandi»", async () => {
+    let server = makeUser("market", { id: "201", name: "Baraka Shop", tg_group_show_customer_pii: true });
+    serveProfile(() => server);
+    mocks.patch.mockImplementation(async (url: string, body: Record<string, unknown>) => {
+      if (url === "markets/201/telegram-group-pii") server = { ...server, ...body };
+      return { data: { statusCode: 200, data: server } };
+    });
+    renderWithProviders(<ProfilePage />, { route: "/profile", preloadedState: roleState("market", "201") });
+
+    const control = await piiSwitch();
+    expect(control).toBeEnabled();
+    expect(control).toHaveAttribute("aria-checked", "true");
+    const profileGets = () => mocks.get.mock.calls.filter(([url]) => url === "auth/my-profile").length;
+    const before = profileGets();
+
+    await userEvent.click(control);
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(mocks.patch).toHaveBeenCalledWith("markets/201/telegram-group-pii", {
+        tg_group_show_customer_pii: false,
+      }),
+    );
+    expect(await screen.findByText("Saqlandi")).toBeInTheDocument();
+    await waitFor(() => expect(profileGets()).toBeGreaterThan(before));
+    expect(control).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("o'z profilida (superadmin bo'lsa ham) «Telegram token» kartasi yo'q, token so'ralmaydi (fix3b GvL6ZFAd)", async () => {
+    serveProfile(() => makeUser("market", { id: "201", name: "Baraka Shop" }));
+    renderWithProviders(<ProfilePage />, { route: "/profile", preloadedState: roleState("market", "201") });
+
+    await piiSwitch();
+    expect(screen.queryByRole("region", { name: "Telegram token" })).not.toBeInTheDocument();
+    expect(mocks.get.mock.calls.some(([url]) => String(url).endsWith("/tg-token"))).toBe(false);
+  });
+
+  it("market bo'lmagan rolda kalit yo'q", async () => {
+    serveProfile(() => makeUser("courier"));
+    renderWithProviders(<ProfilePage />, { route: "/profile", preloadedState: roleState("courier") });
+
+    await screen.findByRole("region", { name: "Telegram" });
+    expect(screen.queryByRole("switch", { name: "Guruhda mijoz ismi va telefoni" })).not.toBeInTheDocument();
   });
 });

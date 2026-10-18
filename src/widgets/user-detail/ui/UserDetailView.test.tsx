@@ -1,16 +1,15 @@
-import { useState } from "react";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AxiosError, type AxiosResponse } from "axios";
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
 import type { User, UserRole } from "../../../entities/user/types/user";
 import { UserDetailView } from "./UserDetailView";
 
 /**
- * Yangi v2 tafsilot (`/all-users/:id`, `/new-orders/userDetail/:id`) — muzlatilgan `UserDetailWidget` testlaridagi
- * holatlar shu yerda takrorlanadi: kuryer o'tkazish tugmasi (faqat superadmin/admin va faqat kuryer), har kalit
- * mutatsiyasi va xabarlari, Telegram token kartasi.
+ * Yangi v2 tafsilot (`/all-users/:id`, `/new-orders/userDetail/:id`) — eski (o'chirilgan) `UserDetailWidget` testlaridagi
+ * holatlar shu yerda: kuryer o'tkazish tugmasi (faqat superadmin/admin va faqat kuryer), har kalit
+ * mutatsiyasi va xabarlari, «Telegram guruhi» (bir martalik havola) kartasi.
  */
 
 const mocks = vi.hoisted(() => ({
@@ -19,7 +18,6 @@ const mocks = vi.hoisted(() => ({
   updateMarketExpenseProof: vi.fn(),
   updateMarketCancelledHandoverQr: vi.fn(),
   updateMarketTelegramGroupPii: vi.fn(),
-  fetchMarketTelegramToken: vi.fn(),
 }));
 
 vi.mock("../../../entities/user/api/userApi", () => ({
@@ -32,7 +30,12 @@ vi.mock("../../../entities/user/api/userApi", () => ({
     useGetUserById: () => ({ data: undefined, isLoading: false }),
     updateMyProfile: { mutateAsync: vi.fn(), isPending: false },
   }),
-  fetchMarketTelegramToken: mocks.fetchMarketTelegramToken,
+}));
+
+// Guruh ulash oynasi o'z so'rovlarini yuboradi — bu yerda faqat qaysi market bilan ochilgani tekshiriladi.
+vi.mock("../../../features/notification-create", () => ({
+  NotificationFormModal: ({ open, marketId }: { open: boolean; marketId?: string }) =>
+    open ? <div role="dialog" aria-label="Bildirishnoma qo'shish" data-market-id={marketId} /> : null,
 }));
 
 vi.mock("../../../features/courier-transfer-branch", () => ({
@@ -54,8 +57,6 @@ vi.mock("../../../features/courier-transfer-branch", () => ({
 beforeAll(() => {
   Element.prototype.scrollIntoView = vi.fn();
 });
-
-const TOKEN = "group_token-0123456789abcdef0123456789abcdef";
 
 const makeUser = (role: UserRole, overrides: Partial<User> = {}): User => ({
   id: "201",
@@ -158,7 +159,7 @@ describe("UserDetailView — kuryerni boshqa filialga o'tkazish tugmasi", () => 
     expect(screen.getByRole("button", { name: "Tahrirlash" })).toBeInTheDocument();
   });
 
-  it.each(["manager", "registrator"])("%s kuryer sahifasida tugmani ko'rmaydi", (viewerRole) => {
+  it.each(["manager", "registrator", "courier"])("%s kuryer sahifasida tugmani ko'rmaydi", (viewerRole) => {
     renderView(makeUser("courier", { id: "263" }), viewerRole);
     expect(screen.queryByTestId("transfer-263")).not.toBeInTheDocument();
   });
@@ -343,107 +344,29 @@ describe("UserDetailView — ruxsat kalitlari (darhol saqlanadi)", () => {
   });
 });
 
-describe("UserDetailView — Telegram token (GvL6ZFAd: faqat superadmin, `GET /markets/:id/tg-token`)", () => {
-  const writeText = vi.fn();
-  const originalClipboard = navigator.clipboard;
-  const installClipboard = () =>
-    Object.defineProperty(navigator, "clipboard", { value: { writeText }, configurable: true });
-
-  beforeEach(() => {
-    writeText.mockReset().mockResolvedValue(undefined);
-    mocks.fetchMarketTelegramToken.mockReset();
-  });
-  afterEach(() => {
-    Object.defineProperty(navigator, "clipboard", { value: originalClipboard, configurable: true });
-  });
-
-  it("token oldindan so'ralmaydi; «Ko'rsatish» bosilganda olinadi va ochiladi", async () => {
-    mocks.fetchMarketTelegramToken.mockResolvedValue(TOKEN);
+describe("UserDetailView — Telegram guruhi (bir martalik havola, 4TfLyTrL — eski «Telegram token» o'rnida)", () => {
+  it("superadmin: karta va tugma; bosilsa guruh ulash oynasi shu market bilan ochiladi; token so'ralmaydi", async () => {
     const user = userEvent.setup();
     renderView(makeUser("market"), "superadmin");
 
-    const card = screen.getByRole("region", { name: "Telegram token" });
-    expect(mocks.fetchMarketTelegramToken).not.toHaveBeenCalled();
-    expect(within(card).getByTestId("telegram-token-value")).not.toHaveTextContent(TOKEN);
-
-    await user.click(within(card).getByRole("button", { name: "Ko'rsatish" }));
-
-    await waitFor(() => expect(within(card).getByTestId("telegram-token-value")).toHaveTextContent(TOKEN));
-    expect(mocks.fetchMarketTelegramToken).toHaveBeenCalledWith("201");
-    expect(within(card).getByRole("button", { name: "Yashirish" })).toHaveAttribute("aria-pressed", "true");
-  });
-
-  it("yashirin holatda «Nusxalash» tokenni olib, nusxalaydi (ekranda ochmaydi)", async () => {
-    mocks.fetchMarketTelegramToken.mockResolvedValue(TOKEN);
-    const user = userEvent.setup();
-    installClipboard();
-    renderView(makeUser("market"), "superadmin");
-
-    await user.click(screen.getByRole("button", { name: "Nusxalash" }));
-
-    await waitFor(() => expect(writeText).toHaveBeenCalledWith(TOKEN));
-    expect(await screen.findByText("Token nusxalandi")).toBeInTheDocument();
-    expect(screen.queryByText(TOKEN)).not.toBeInTheDocument();
-  });
-
-  it("marketda token bo'lmasa — sababi, tugmalarsiz", async () => {
-    mocks.fetchMarketTelegramToken.mockResolvedValue(null);
-    const user = userEvent.setup();
-    renderView(makeUser("market"), "superadmin");
-
-    await user.click(screen.getByRole("button", { name: "Ko'rsatish" }));
-
-    expect(await screen.findByText("Bu marketda Telegram token hali yo'q")).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: "Nusxalash" })).not.toBeInTheDocument();
-  });
-
-  it("so'rov yiqilsa — xato matni, token ochilmaydi", async () => {
-    mocks.fetchMarketTelegramToken.mockRejectedValue({ response: { status: 500 } });
-    const user = userEvent.setup();
-    renderView(makeUser("market"), "superadmin");
-
-    await user.click(screen.getByRole("button", { name: "Ko'rsatish" }));
-
-    expect(await screen.findByText("Tokenni olib bo'lmadi")).toBeInTheDocument();
-    expect(screen.getByTestId("telegram-token-value")).not.toHaveTextContent(TOKEN);
-  });
-
-  it("boshqa marketga o'tilsa (sahifa qayta o'rnatilmaydi) — oldingi token ko'rinmaydi, yangisi so'raladi", async () => {
-    mocks.fetchMarketTelegramToken.mockImplementation(async (id: string) => `group_token-${id}`);
-    const user = userEvent.setup();
-    // Sahifa qayta o'rnatilmaydi — faqat `user` almashadi (`/all-users/:id` keshdan).
-    const Harness = () => {
-      const [current, setCurrent] = useState(() => makeUser("market"));
-      return (
-        <>
-          <button type="button" onClick={() => setCurrent(makeUser("market", { id: "305", name: "Nur" }))}>
-            boshqa market
-          </button>
-          <UserDetailView user={current} />
-        </>
-      );
-    };
-    renderWithProviders(<Harness />, { preloadedState: stateFor("superadmin") });
-
-    await user.click(screen.getByRole("button", { name: "Ko'rsatish" }));
-    await waitFor(() => expect(screen.getByTestId("telegram-token-value")).toHaveTextContent("group_token-201"));
-
-    await user.click(screen.getByRole("button", { name: "boshqa market" }));
-    expect(screen.getByTestId("telegram-token-value")).not.toHaveTextContent("group_token-201");
-
-    await user.click(screen.getByRole("button", { name: "Ko'rsatish" }));
-    await waitFor(() => expect(screen.getByTestId("telegram-token-value")).toHaveTextContent("group_token-305"));
-    expect(mocks.fetchMarketTelegramToken).toHaveBeenLastCalledWith("305");
-  });
-
-  it.each(["admin", "manager"])("%s uchun karta chizilmaydi (backend tokenni faqat superadminga beradi)", (role) => {
-    renderView(makeUser("market"), role);
+    const card = screen.getByRole("region", { name: "Telegram guruhi" });
+    expect(card).toHaveTextContent("Bir martalik havola (10 daqiqa)");
     expect(screen.queryByRole("region", { name: "Telegram token" })).not.toBeInTheDocument();
+    expect(screen.queryByText(/tokenni yuborsin/)).not.toBeInTheDocument();
+
+    await user.click(within(card).getByRole("button", { name: "Ulash havolasini olish" }));
+
+    expect(screen.getByRole("dialog", { name: "Bildirishnoma qo'shish" })).toHaveAttribute("data-market-id", "201");
+  });
+
+  it.each(["admin", "manager"])("%s uchun karta chizilmaydi (guruh ulash oynasi faqat superadminda)", (role) => {
+    renderView(makeUser("market"), role);
+    expect(screen.queryByRole("region", { name: "Telegram guruhi" })).not.toBeInTheDocument();
   });
 
   it("market bo'lmagan foydalanuvchida karta yo'q", () => {
     renderView(makeUser("courier"), "superadmin");
-    expect(screen.queryByRole("region", { name: "Telegram token" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Telegram guruhi" })).not.toBeInTheDocument();
   });
 });
 

@@ -43,4 +43,24 @@ describe("TableSection", () => {
     await user.click(within(light).getByRole("button", { name: "125" }));
     expect(within(dark).getByRole("button", { name: "125" })).toHaveAttribute("aria-current", "page");
   });
+
+  it("ochiladigan qator namunasi: chevron, ochilgan panel, tafsiloti yo'q qatorda chevron yo'q; ikkala panelda birga", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<TableSection />, { route: "/ops/ui-kit?section=table" });
+    const [light, dark] = panels();
+
+    const table = within(light).getByRole("table", { name: "Jurnal namunasi" });
+    expect(within(table).getByRole("button", { name: "Buyurtma №10227 tafsilotini yopish" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    expect(within(table).getByText("Maydon o'zgarishlari")).toBeInTheDocument();
+    expect(within(table).queryByRole("button", { name: /Foydalanuvchi #61/ })).toBeNull();
+
+    await user.click(within(light).getByRole("button", { name: "Buyurtma №10244 tafsilotini ochish" }));
+    expect(within(dark).getByRole("button", { name: "Buyurtma №10244 tafsilotini yopish" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+  });
 });

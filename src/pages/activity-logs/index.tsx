@@ -3,7 +3,10 @@ import { useTranslation } from "react-i18next";
 import { PageHeader } from "../../shared/ui/primitives";
 import { ActivityLogViewer } from "../../widgets/activity-log";
 
-/** Faoliyat jurnali (superadmin, admin) — sarlavha va bitta karta: filtrlar, jadval, sahifalash. */
+/**
+ * `/activity-logs` — «Faoliyat jurnali» (superadmin, admin; maket `*-activity-logs-list`). Sahifa shell kontent
+ * slotida: sarlavha + jurnal kartasi (filtrlar, jadval, sahifalash — `ActivityLogViewer`).
+ */
 const ActivityLogsPage = () => {
   const { t } = useTranslation("activityLogs");
 

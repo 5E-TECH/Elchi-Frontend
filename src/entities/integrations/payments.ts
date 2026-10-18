@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 /**
  * ONLAYN TO'LOV TRANZAKSIYALARI.
@@ -59,7 +60,7 @@ export const usePayments = (params: {
   unappliedOnly?: boolean;
   page?: number;
   limit?: number;
-}) =>
+}, options?: SilentErrorOption) =>
   useQuery({
     queryKey: [paymentsKey, params.integrationId, params.unappliedOnly, params.page, params.limit],
     enabled: Boolean(params.integrationId),
@@ -75,6 +76,7 @@ export const usePayments = (params: {
         })
         .then((res) => unwrap(res.data)),
     staleTime: 15_000,
+    ...silentErrorMeta(options),
   });
 
 /**

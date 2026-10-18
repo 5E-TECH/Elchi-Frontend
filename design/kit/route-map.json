@@ -191,6 +191,7 @@
         "src/pages/dashboard/ui/MarketSalesCard.tsx",
         "src/pages/dashboard/ui/QuickActions.tsx",
         "src/pages/dashboard/ui/ExtraCostApprovals.tsx",
+        "src/pages/dashboard/ui/AutoApprovedExtraCosts.tsx",
         "src/pages/dashboard/ui/ExtraCostRejectDialog.tsx",
         "src/widgets/dashboard-part-error/ui/DashboardPartError.tsx",
         "src/shared/ui/charts/index.ts"
@@ -506,7 +507,7 @@
       "components": [
         "src/pages/users/detail/UserDetailPage.tsx",
         "src/widgets/user-detail/ui/UserDetailView.tsx",
-        "src/widgets/user-detail/ui/MarketTelegramTokenCard.tsx"
+        "src/widgets/user-detail/ui/MarketTelegramGroupLinkCard.tsx"
       ],
       "views": {},
       "note": "Alohida maket yo'q — <rol>-users-detail maketlari (superadmin-users-detail). /all-users/:id bilan bir xil v2 sahifa (UserDetailView); «Qabul va yaratish» qobig'i bu yo'lda bare — sarlavha va «Buyurtma yaratish» takrorlanmaydi (newOrdersShell.ts), «←» — navigate(-1)."
@@ -1000,7 +1001,7 @@
       "components": [
         "src/pages/users/detail/UserDetailPage.tsx",
         "src/widgets/user-detail/ui/UserDetailView.tsx",
-        "src/widgets/user-detail/ui/MarketTelegramTokenCard.tsx",
+        "src/widgets/user-detail/ui/MarketTelegramGroupLinkCard.tsx",
         "src/widgets/user-detail/model/useMarketTelegramGroupPiiToggle.ts",
         "src/features/user/update-user/ui/UpdateUserModal.tsx",
         "src/features/courier-transfer-branch/ui/TransferCourierButton.tsx",
@@ -1011,7 +1012,7 @@
         "admin": ["users-detail", "users-edit-dialog", "users-transfer-courier-dialog"],
         "manager": ["users-detail", "users-edit-dialog"]
       },
-      "note": "Yangi v2 UserDetailView; eski UserDetailWidget faqat /profile uchun muzlatilgan. «Faoliyat» (Taklif) chizilmaydi. Ega savoli Q9 sukuti: menejer xodimidagi «Oylik maosh» kartasi (to'plangan / kun qoldi) chizilmaydi — faqat «Profil ma'lumotlari»dagi maosh va to'lov kuni. Mijoz (customer) — maket yo'q, eng yaqini superadmin-users-detail."
+      "note": "Yangi v2 UserDetailView (eski UserDetailWidget G2 da o'chirildi — iste'molchisi qolmadi). «Faoliyat» (Taklif) chizilmaydi. Ega savoli Q9 sukuti: menejer xodimidagi «Oylik maosh» kartasi (to'plangan / kun qoldi) chizilmaydi — faqat «Profil ma'lumotlari»dagi maosh va to'lov kuni. Mijoz (customer) — maket yo'q, eng yaqini superadmin-users-detail."
     },
     {
       "path": "/regions",
@@ -1128,13 +1129,14 @@
     {
       "path": "/integrations/connections",
       "section": "integrations",
-      "title": "Integratsiyalar konsoli — Hamkorlar · Tashqi tizimlar · Marketplace + ulanish panellari",
+      "title": "Integratsiyalar konsoli — Hamkorlar · Tashqi tizimlar · Marketplace + ulanish panellari (dizayn v2)",
       "components": [
         "src/pages/integrations/ConnectionsPage.tsx",
         "src/pages/integrations/index.tsx",
-        "src/pages/integrations/ConnectionSubNav.tsx",
-        "src/pages/integrations/FilterPills.tsx",
+        "src/pages/integrations/useConnections.ts",
         "src/pages/integrations/NewPartnerModal.tsx",
+        "src/pages/integrations/ConnectionFields.tsx",
+        "src/pages/integrations/StatusMapField.tsx",
         "src/pages/integrations/panels/ConnectionOverview.tsx",
         "src/pages/integrations/panels/ConnectionSettings.tsx",
         "src/pages/integrations/panels/ConnectionShipments.tsx",
@@ -1142,7 +1144,13 @@
         "src/pages/integrations/panels/ConnectionSettlement.tsx",
         "src/pages/integrations/panels/ConnectionControl.tsx",
         "src/pages/integrations/panels/ConnectionSecurity.tsx",
-        "src/pages/integrations/ui.ts"
+        "src/pages/integrations/ui/index.ts",
+        "src/pages/integrations/ui/layout.tsx",
+        "src/pages/integrations/ui/charts.tsx",
+        "src/pages/integrations/ui/FilterChips.tsx",
+        "src/pages/integrations/ui/InlineAlert.tsx",
+        "src/pages/integrations/ui/inputs.tsx",
+        "src/pages/integrations/ui/Switch.tsx"
       ],
       "views": {
         "superadmin": ["integrations-partners-console", "integrations-external-console", "integrations-marketplace-console", "integrations-panel-settings", "integrations-panel-shipments", "integrations-panel-events", "integrations-panel-settlement", "integrations-settlement-pay-dialog", "integrations-panel-control", "integrations-panel-security", "integrations-rotate-key-dialog", "integrations-new-partner-dialog"],
@@ -1152,7 +1160,7 @@
         "manager": "Menyuda yo'q (faqat URL) — admin-integrations-* maketlariga qarang.",
         "registrator": "Menyuda yo'q (faqat URL) — admin-integrations-* maketlariga qarang."
       },
-      "note": "?scope=partner|external|marketplace → *-console / admin-integrations-{partners,external,marketplace}; ?t=settings|shipments|log|settlement|control|security → panel maketlari (log = «Hodisalar»); ?t=overview (sukut) — konsol maketining o'zi. Tablar — src/pages/integrations/index.tsx (layout)."
+      "note": "?scope=partner|external|marketplace → *-console / admin-integrations-{partners,external,marketplace}; ?t=settings|shipments|log|settlement|control|security → panel maketlari (log = «Hodisalar»); ?t=overview (sukut) — konsol maketining o'zi. Dizayn v2 (G2): eski ui.ts / OverviewPage / ConnectionSubNav / FilterPills o'chirildi; scope tablari konsol kartasi ichida (D2, layout index.tsx faqat Outlet). KPI «kechaga nisbatan» — qo'shimcha GET integrations/metrics?hours=48 (kecha = 48 − 24 soat; ikkinchi so'rov yiqilsa meta qatori yashirinadi; ega savoli 8 — sukut: ha). Kalitni yangilash, to'xtatish va hisob-kitob to'lovi — tasdiq oynasi orqali. Chizilmagan (Taklif / API yo'q, spec §5): KPI sparklinelari, «Hodisalar · oxirgi 7 kun», «Soatlar bo'yicha», «O'rtacha javob vaqti» trendi (avg_ms — bitta son), «Qarz harakati · 30 kun». Sahifadagi xato holatlari global xabarni takrorlamaydi (meta.silentError)."
     },
     {
       "path": "/integrations/new",
@@ -1166,7 +1174,8 @@
       "roleNotes": {
         "manager": "Maket yo'q — admin-integrations-catalog ga qarang.",
         "registrator": "Maket yo'q — admin-integrations-catalog ga qarang."
-      }
+      },
+      "note": "Dizayn v2 (G2): 4 ta tur kartasi (klaviatura bilan), «← Integratsiyalar» qaytish havolasi."
     },
     {
       "path": "/integrations/new/:typeKey",
@@ -1184,7 +1193,8 @@
       "roleNotes": {
         "manager": "Maket yo'q — admin-integrations-wizard ga qarang.",
         "registrator": "Maket yo'q — admin-integrations-wizard ga qarang."
-      }
+      },
+      "note": "Dizayn v2 (G2): 4 qadam (Nomi → Kalitlar → Sinash → Tayyor), ulanish 2-qadamda yaratiladi; telefonda qadamlar ustma-ust."
     },
     {
       "path": "/integrations/partners",
@@ -1195,13 +1205,13 @@
         "superadmin": ["integrations-legacy-partners"],
         "admin": ["integrations-legacy-partners"]
       },
-      "note": "Marshrutda guard yo'q (faqat kirish) — menyuda ko'rinmaydi; yangi konsol to'liq tasdiqlanguncha zaxira.",
       "roleNotes": {
         "manager": "Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan.",
         "registrator": "Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan.",
         "market": "Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan.",
         "courier": "Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan."
-      }
+      },
+      "note": "Marshrutda guard yo'q (faqat kirish) — menyuda ko'rinmaydi; yangi konsol to'liq tasdiqlanguncha zaxira. Ega savoli 6 — sukut: guard o'zgarmaydi (market/kuryer URL bilan ochsa API 403 → sahifadagi xato holati). Dizayn v2 (G2): «Eski sahifa» belgisi, webhook jurnali — DataTable expandable (qator ochiladi), hamkorni o'chirish va kalitni almashtirish — tasdiq oynasi."
     },
     {
       "path": "/integrations/sources",
@@ -1215,7 +1225,8 @@
       "roleNotes": {
         "manager": "Maket yo'q — admin-integrations-legacy-sources ga qarang.",
         "registrator": "Maket yo'q — admin-integrations-legacy-sources ga qarang."
-      }
+      },
+      "note": "Dizayn v2 (G2): «Eski sahifa» belgisi; eski yo'llar (/new-orders/external, /new-orders/integrations …) kanonik /integrations/sources* ga yo'naltiriladi (D9); o'chirish — tasdiq oynasi."
     },
     {
       "path": "/integrations/sources/create",
@@ -1229,7 +1240,8 @@
         "admin": "Maket yo'q — superadmin-integrations-legacy-source-create ga qarang.",
         "manager": "Maket yo'q — superadmin-integrations-legacy-source-create ga qarang.",
         "registrator": "Maket yo'q — superadmin-integrations-legacy-source-create ga qarang."
-      }
+      },
+      "note": "Dizayn v2 (G2). auth_type qiymatlari (none/bearer/basic) o'zgartirilmagan — backend AuthType 'api_key' | 'login'; gateway moslashuvi alohida tekshiriladi."
     },
     {
       "path": "/integrations/sources/:id",
@@ -1243,7 +1255,8 @@
         "admin": "Maket yo'q — superadmin-integrations-legacy-source-detail ga qarang.",
         "manager": "Maket yo'q — superadmin-integrations-legacy-source-detail ga qarang.",
         "registrator": "Maket yo'q — superadmin-integrations-legacy-source-detail ga qarang."
-      }
+      },
+      "note": "Dizayn v2 (G2). Ega savoli 7 — sukut: maketdagi «Qidirish» maydoni chizilmaydi (POST integrations/{slug}/search-by-qr bor, lekin oqim kelishilmagan)."
     },
     {
       "path": "/notifications",
@@ -1251,14 +1264,15 @@
       "title": "Bildirishnomalar — Telegram guruhlari",
       "components": [
         "src/pages/notifications/ui/NotificationsPage.tsx",
-        "src/widgets/notification-table/ui/NotificationTable.tsx",
         "src/features/notification-create/ui/NotificationFormModal.tsx",
         "src/features/notification-edit/ui/NotificationEditModal.tsx",
-        "src/features/notification-delete/ui/DeleteNotificationButton.tsx"
+        "src/features/notification-create/ui/GroupLinkQr.tsx",
+        "src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx"
       ],
       "views": {
         "superadmin": ["notifications-telegram-groups", "notifications-create-dialog", "notifications-delete-dialog"]
-      }
+      },
+      "note": "Dizayn v2 (G2): jadval + sahifalash (DataTable / Pagination; telefonda kartalar), «Holat» ustuni (Faol / Nofaol + «Bot guruhdan chiqarilgan — qayta ulang»), market nomlari GET /markets dan (qatorda faqat market_id), o'chirish — tasdiq oynasi (maket matni). dev birlashtirishi (ega qoidasi): qo'shish oynasi maketdagi qo'lda guruh ID formasi EMAS — bir martalik Telegram havolasi: market + xabar turi → POST /telegram/link-code {purpose: market_group} → QR, «Telegram'da ochish», qadamlar, muddat; oyna ochiqligida GET /notifications har 4 s, guruh paydo bo'lsa yopiladi («Guruh ulandi»); shu (market, tur) ulangan bo'lsa havola berilmaydi. Tahrirlash — qo'shish oynasi qolipida (D6, maket yo'q: NotificationEditModal `(maket yo'q) superadmin-notifications-create-dialog`). Ustun saralashi chizilmaydi (GET /notifications da sort yo'q). Matnlar — notificationGroups.json."
     },
     {
       "path": "/notifications/send",
@@ -1275,7 +1289,8 @@
       },
       "roleNotes": {
         "admin": "Maket yo'q — superadmin-notifications-send ga qarang (kirish: /inbox sahifasidagi havola)."
-      }
+      },
+      "note": "Dizayn v2 (G2): 4 rejim, kanallar, ko'rinish (NotificationInboxItem preview), yuborish — tasdiq oynasi (hammaga — danger), ikki marta yuborilmaydi. Ega savoli 10 — sukut: «← Bildirishnomalar» /inbox ga qaytaradi (kirish nuqtasi /inbox; admin /notifications ni ocholmaydi)."
     },
     {
       "path": "/notifications/sms",
@@ -1287,6 +1302,8 @@
         "src/pages/notifications/ui/SmsTemplatesTab.tsx",
         "src/pages/notifications/ui/SmsReportTab.tsx",
         "src/pages/notifications/ui/SmsSettingsTab.tsx",
+        "src/pages/notifications/ui/sms/CardList.tsx",
+        "src/pages/notifications/ui/sms/SmsReportCharts.tsx",
         "src/shared/ui/SmsMeter.tsx"
       ],
       "views": {
@@ -1295,7 +1312,7 @@
       "roleNotes": {
         "admin": "Maket yo'q — superadmin-notifications-sms-* ga qarang."
       },
-      "note": "Tab URL'da: ?tab=campaign|templates|report|settings."
+      "note": "Tab URL'da: ?tab=campaign|templates|report|settings. Dizayn v2 (G2): kampaniya — tasdiq oynasi + Idempotency-Key; «Xarajat» grafiklari Grafik | Jadval egizagi; shablonni o'chirish — tasdiq. «Xarajat» o'lchagichi — «Yetkazildi / jami yuborilgan» (maket); backend success_rate (yetkazildi / (yetkazildi + xato)) ko'rsatilmaydi. Rejalashtirilgan vaqt «18.10.2026, 09:00 da yuboriladi» ko'rinishida (umumiy formatlovchida «Ertaga» yo'q)."
     },
     {
       "path": "/activity-logs",
@@ -1306,23 +1323,27 @@
         "src/widgets/activity-log/ui/ActivityLogViewer.tsx",
         "src/widgets/activity-log/ui/ActivityLogFilters.tsx",
         "src/widgets/activity-log/ui/ActivityLogDetail.tsx",
+        "src/widgets/activity-log/model/activityFilters.ts",
+        "src/widgets/activity-log/model/activityDetail.ts",
+        "src/widgets/activity-log/model/useActivityLabels.ts",
         "src/entities/activity-log/ui/ActivityActionBadge.tsx"
       ],
       "views": {
         "superadmin": ["activity-logs-list", "activity-logs-row-expanded"],
         "admin": ["activity-logs-list", "activity-logs-row-expanded"],
         "tizim": ["states-data"]
-      }
+      },
+      "note": "Dizayn v2 (G2 + dev): 6 filtr + tozalash (telefonda «Filtrlar» varag'i — ActivityLogFilters ichidagi Dialog, `(maket yo'q) superadmin-activity-logs-list, superadmin-orders-filters-mobile`); «Amal» filtri GET /activity-logs/actions reyestri bo'yicha kategoriyalarga guruhlangan; muallif `actor.resolved` («#44 (topilmadi)», «Tizim»), amal yorlig'i action_meta → reyestr → humanize (ActivityActionBadge). Qator DataTable expandable bilan ochiladi (o'zgarishlar, «Qo'shimcha ma'lumot»: Manba, Filial, …, Qurilma, IP); o'zgarish, metadata va «Kuzatuv ID» yo'q yozuvda chevron yo'q (faqat «Kuzatuv ID» bo'lsa ham ochiladi — dev qoidasi); sahifalash «1–20 / 45 ta yozuv»."
     },
     {
       "path": "/ops",
       "section": "system",
-      "title": "Ops vositalari markazi (tablar: ?tab=finance|integrations|investors|logistics|branches|identity|system|auth)",
-      "components": ["src/pages/ops/index.tsx", "src/pages/ops/tabs.ts"],
+      "title": "Ops vositalari markazi (tablar: ?tab=finance|integrations|investors|logistics|branches|identity|system|auth; dizayn v2)",
+      "components": ["src/pages/ops/index.tsx", "src/pages/ops/tabs.ts", "src/pages/ops/ui/OpsToolPage.tsx"],
       "views": {
         "superadmin": ["ops-finance-operators", "ops-integrations", "ops-investors", "ops-logistics", "ops-branches", "ops-identity", "ops-system", "ops-auth-diagnostics"]
       },
-      "note": "Har tab quyidagi eski to'g'ridan-to'g'ri sahifani ichida ko'rsatadi (/finance-operators … /logs)."
+      "note": "Har tab quyidagi to'g'ridan-to'g'ri sahifani `embedded` rejimda (sarlavhasiz panel) chizadi (/finance-operators … /logs). Desktopda 8 tab, telefonda tablar → Select (D8); auth tabi yorlig'i «Kirish diagnostikasi». Ega savoli 1 — sukut: to'g'ridan-to'g'ri yo'llar redirect emas, o'sha panel + «← Ops vositalari» (/ops?tab=<k>)."
     },
     {
       "path": "/ops/ui-kit",
@@ -1347,10 +1368,15 @@
       "path": "/finance-operators",
       "section": "system",
       "title": "Ops — Moliya operatorlari (eski to'g'ridan-to'g'ri yo'l)",
-      "components": ["src/pages/finance-operators/index.tsx"],
+      "components": [
+        "src/pages/finance-operators/index.tsx",
+        "src/pages/finance-operators/ui/OperatorBalanceCard.tsx",
+        "src/pages/finance-operators/lib/operatorFinance.ts"
+      ],
       "views": {
         "superadmin": ["ops-finance-operators"]
-      }
+      },
+      "note": "Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). «To'lovni saqlash» — tasdiq oynasi (D10, pul qoidasi; maketda oyna yo'q — tizim-states-forms + Moliya tasdiq naqshi) va Idempotency-Key (bitta mantiqiy to'lov — bitta kalit, xatodan keyin qayta urinishda o'sha kalit; muvaffaqiyat xabaridagi summa server javobidan). «Ishlab topgan va to'langan» yig'ma grafigi — Taklif, chizilmaydi."
     },
     {
       "path": "/integrations-ops",
@@ -1359,7 +1385,8 @@
       "components": ["src/pages/integrations-ops/index.tsx"],
       "views": {
         "superadmin": ["ops-integrations"]
-      }
+      },
+      "note": "Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut)."
     },
     {
       "path": "/investors-ops",
@@ -1368,7 +1395,8 @@
       "components": ["src/pages/investors-ops/index.tsx"],
       "views": {
         "superadmin": ["ops-investors"]
-      }
+      },
+      "note": "Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut)."
     },
     {
       "path": "/logistics-ops",
@@ -1377,16 +1405,18 @@
       "components": ["src/pages/logistics-ops/index.tsx", "src/pages/logistics-ops/lib/returnRequestRows.ts"],
       "views": {
         "superadmin": ["ops-logistics"]
-      }
+      },
+      "note": "Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Tanlangan qaytarish so'rovlarini tasdiqlash — POST post/return-requests/approve { order_ids }."
     },
     {
       "path": "/branch-ops",
       "section": "system",
-      "title": "Ops — Filiallar (partiya bekor qilish)",
+      "title": "Ops — Filiallar (paketni bekor qilish)",
       "components": ["src/pages/branch-ops/index.tsx"],
       "views": {
         "superadmin": ["ops-branches"]
-      }
+      },
+      "note": "Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Paketni bekor qilish — tasdiq oynasi."
     },
     {
       "path": "/identity-ops",
@@ -1395,26 +1425,32 @@
       "components": ["src/pages/identity-ops/index.tsx"],
       "views": {
         "superadmin": ["ops-identity"]
-      }
+      },
+      "note": "Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut)."
     },
     {
       "path": "/system-ops",
       "section": "system",
       "title": "Ops — Tizim",
-      "components": ["src/pages/system-ops/index.tsx"],
+      "components": [
+        "src/pages/system-ops/index.tsx",
+        "src/pages/system-ops/ui/charts.tsx",
+        "src/pages/system-ops/lib/systemOps.ts"
+      ],
       "views": {
         "superadmin": ["ops-system"]
-      }
+      },
+      "note": "Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). «Kuryer samaradorligi» (D3, ega savoli 5 — sukut): API foiz bermaydi (analytics courierEfficiency = kuryerga o'rtacha buyurtma soni) — «O'rtacha N ta buyurtma», maketdagi halqa chizilmaydi. Yetkazish bo'lmaganda backend onTimeRate = 0 yuboradi (0% ko'rinadi)."
     },
     {
       "path": "/logs",
       "section": "system",
-      "title": "Ops — Auth diagnostikasi (nomi «Loglar», lekin jurnal emas)",
+      "title": "Ops — Kirish diagnostikasi (POST /auth/refresh sinovi; eski nomi «Loglar», jurnal emas)",
       "components": ["src/pages/logs/index.tsx"],
       "views": {
         "superadmin": ["ops-auth-diagnostics"]
       },
-      "note": "/ops?tab=auth ichida ham ochiladi. Faoliyat jurnali — /activity-logs."
+      "note": "Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Faoliyat jurnali — /activity-logs (kirish kartasidagi havola)."
     },
     {
       "path": "/market-operators",
@@ -1431,23 +1467,39 @@
       "title": "Profil (yuqori panel → profil menyusi)",
       "components": [
         "src/pages/profile/ui/ProfilePage.tsx",
-        "src/widgets/user-detail/ui/UserDetailWidget.tsx",
-        "src/features/user/update-user/ui/UpdateUserModal.tsx"
+        "src/pages/profile/ui/ProfileCards.tsx",
+        "src/pages/profile/ui/ChangePasswordDialog.tsx",
+        "src/pages/profile/ui/EditProfileDialog.tsx",
+        "src/pages/profile/lib/salaryCycle.ts",
+        "src/pages/profile/lib/profileView.ts",
+        "src/features/telegram-link/ui/TelegramLinkCard.tsx",
+        "src/features/telegram-link/ui/TelegramLinkDialog.tsx",
+        "src/widgets/user-detail/ui/MarketTelegramGroupPiiCard.tsx"
       ],
       "views": {
         "common": ["profile", "profile-password-dialog"]
-      }
+      },
+      "note": "Dizayn v2 (G2): ma'lumot kartasi (GET /auth/my-profile), maosh bloki faqat salary > 0; parol — alohida oyna (≥ 4 belgi, mos kelish, saqlangach chiqish); profilni tahrirlash — alohida oyna (Ism, Telefon; D7, maket yo'q: EditProfileDialog `(maket yo'q) common-profile-password-dialog`). UpdateUserModal profilda ishlatilmaydi. «Login» — username bo'lsa. dev birlashtirishi: «Xavfsizlik» ostida yana bir qator — o'z Telegram'ini ulash/uzish (TelegramLinkCard, mijoz/investordan boshqa rollar; POST users/me/telegram/link-code, oyna ochiqligida profil har 3 s) va market uchun «Guruhda mijoz ismi va telefoni» (MarketTelegramGroupPiiCard, PATCH markets/:id/telegram-group-pii) — maket yo'q, eng yaqini «Xavfsizlik» kartasi (`(maket yo'q) common-profile`)."
     },
     {
       "path": "/settings",
       "entry": "yuqori panel → «Sozlamalar» tugmasi; telefon menyusi",
       "section": "account",
-      "title": "Sozlamalar — Ko'rinish · Bosh sahifa · Interfeys · Bildirishnomalar",
-      "components": ["src/pages/settings/ui/SettingsPage.tsx", "src/features/push-notifications/ui/PushPermissionButton.tsx"],
+      "title": "Sozlamalar — Ko'rinish · Bosh sahifa · Interfeys · Skaner · Bildirishnomalar (dizayn v2)",
+      "components": [
+        "src/pages/settings/ui/SettingsPage.tsx",
+        "src/pages/settings/ui/settingsUi.tsx",
+        "src/pages/settings/ui/AppearancePanel.tsx",
+        "src/pages/settings/ui/DashboardPanel.tsx",
+        "src/pages/settings/ui/InterfacePanel.tsx",
+        "src/pages/settings/ui/ScannerPanel.tsx",
+        "src/pages/settings/ui/NotificationsPanel.tsx",
+        "src/features/push-notifications/ui/PushPermissionButton.tsx"
+      ],
       "views": {
         "common": ["settings-appearance", "settings-dashboard", "settings-interface", "settings-scanner", "settings-notifications"]
       },
-      "note": "Tablar (Ko'rinish · Bosh sahifa · Interfeys · Bildirishnomalar) komponent holatida, URL'da emas — sahifa doim «Ko'rinish» tabidan ochiladi. Maketdagi alohida «Skaner» tabi kodda hozir «Interfeys» tabi ichida (skaner ovozlari)."
+      "note": "Dizayn v2 (G2): 5 tab (desktopda chap navigatsiya, telefonda gorizontal), komponent holatida — URL'da emas; «Saqlandi» belgisi, mavzu/til darhol. «Skaner» alohida tab (D5): ovozlar «Interfeys» dan ko'chdi; «Kamera» kartasi — kamera ishi bilan (ega savoli 4 — sukut: tab izohi maketdagidek «Kamera, ovoz va tebranish»). Ega savoli 3 — sukut: «Bildirishnomalar» tabida maketdagi qurilma blokidan keyin kodda bor kanallar / kategoriyalar / reklama / sokin soatlar maket uslubidagi kartalarda saqlanadi. «Bosh sahifa bloklari» tartibi bosh sahifadagi (G1) tartib bilan bir xil; «Buyurtmalar vaqti» — Taklif, chizilmaydi."
     },
     {
       "path": "/inbox",
@@ -1458,14 +1510,16 @@
         "src/pages/notifications/ui/NotificationInboxPage.tsx",
         "src/widgets/notification-inbox/ui/NotificationInboxList.tsx",
         "src/widgets/notification-inbox/ui/NotificationInboxItem.tsx",
-        "src/features/push-notifications/ui/PushPermissionButton.tsx"
+        "src/widgets/notification-inbox/ui/NotificationItemMenu.tsx",
+        "src/features/push-notifications/ui/PushPermissionButton.tsx",
+        "src/features/push-notifications/ui/PushExplainDialog.tsx"
       ],
       "views": {
         "superadmin": ["notifications-inbox", "notifications-push-explain-dialog"],
         "courier": ["inbox-list", "inbox-push-explain-dialog"],
         "common": ["inbox"]
       },
-      "note": "Push ruxsati tushuntirish oynasi — PushPermissionButton (sozlamalarda ham)."
+      "note": "Dizayn v2 (G2): tablar, kategoriya chiplari (URL'da), «Faqat muhim», qator amallari, sahifalash; push holat bloki barcha rollarda holatga qarab (D4). Ega savoli 9 — sukut: sarlavha barcha rollarda «Bildirishnomalar» (superadmin maketidagi «Bildirishnomalar qutisi» emas); «SMS» va «Xabar yuborish» faqat canSendNotifications. Push ruxsati tushuntirish oynasi — PushExplainDialog (sozlamalarda ham)."
     }
   ],
   "newViews": {
@@ -1491,8 +1545,7 @@
     "registrator-dispatch-camera-scanner-dialog": "Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish.",
     "manager-courier-bulk-camera-dialog": "Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish.",
     "courier-courier-bulk-scanner-camera": "Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish.",
-    "common-settings-scanner": "Alohida tab yo'q — skaner ovozlari hozir «Interfeys» tabida.",
-    "common-profile-password-dialog": "Alohida «Parolni o'zgartirish» oynasi (yangi parol + takrorlash, saqlangach chiqish) yo'q — parol umumiy tahrirlash oynasida (UpdateUserModal).",
+    "common-settings-scanner": "«Skaner» tabi bor (muvaffaqiyat/xato ovozlari, tebranish — ScannerPanel); «Kamera» kartasi yo'q — kamera rejimi keyinroq, alohida (spec D5 / G9).",
     "superadmin-neworders-cancelled-handover-camera": "Sahifa qismi (sarlavha, «Market QR» holati, «USB skaner tayyor» qatori, tanlov, jadval) v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
     "admin-neworders-cancelled-detail-camera": "Sahifa qismi (sarlavha, «Market QR» holati, «USB skaner tayyor» qatori, tanlov, jadval) v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
     "superadmin-neworders-cancelled-scanner-dialog": "Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
@@ -1655,13 +1708,13 @@
     "superadmin-branches-list-tree": "src/widgets/branch-list/ui/BranchTree.tsx",
     "superadmin-branches-list-table": "src/widgets/branch-list/ui/BranchTable.tsx",
     "superadmin-regions-districts": "src/pages/region/pages/districts/index.tsx",
-    "common-profile-password-dialog": "src/features/user/update-user/ui/UpdateUserModal.tsx",
+    "common-profile-password-dialog": "src/pages/profile/ui/ChangePasswordDialog.tsx",
     "superadmin-branches-create-dialog": "src/features/branch/ui/BranchFormDialog.tsx",
     "superadmin-branches-add-employee-dialog": "src/features/branch-add-employee/ui/AddEmployeeModal.tsx",
     "superadmin-notifications-create-dialog": "src/features/notification-create/ui/NotificationFormModal.tsx",
-    "superadmin-notifications-delete-dialog": "src/features/notification-delete/ui/DeleteNotificationButton.tsx",
-    "superadmin-notifications-push-explain-dialog": "src/features/push-notifications/ui/PushPermissionButton.tsx",
-    "courier-inbox-push-explain-dialog": "src/features/push-notifications/ui/PushPermissionButton.tsx",
+    "superadmin-notifications-delete-dialog": "src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx",
+    "superadmin-notifications-push-explain-dialog": "src/features/push-notifications/ui/PushExplainDialog.tsx",
+    "courier-inbox-push-explain-dialog": "src/features/push-notifications/ui/PushExplainDialog.tsx",
     "superadmin-activity-logs-row-expanded": "src/widgets/activity-log/ui/ActivityLogDetail.tsx",
     "admin-activity-logs-row-expanded": "src/widgets/activity-log/ui/ActivityLogDetail.tsx",
     "superadmin-integrations-panel-settings": "src/pages/integrations/panels/ConnectionSettings.tsx",
@@ -1731,7 +1784,7 @@
     },
     "errors": {
       "defines": "Sahifa xatolari (404, 403, 500, ilova xatosi) va ro'yxat/karta ichidagi holatlar (yuklanmoqda, bo'sh, natija yo'q, yuklanmadi, internet yo'q, ruxsat yo'q, bo'lim xatosi), xato xabarlari.",
-      "code": "src/shared/ui/{NotFound,Forbidden,ServerError,ErrorBoundaryPage,EmptyState,QueryErrorState,InlineErrorBoundary}.tsx, src/shared/ui/error-page/"
+      "code": "src/shared/ui/{NotFound,Forbidden,ServerError,ErrorBoundaryPage,EmptyState,QueryErrorState}.tsx, src/shared/ui/primitives/{QueryBoundary,ErrorState}.tsx, src/shared/ui/error-page/"
     },
     "motion": {
       "defines": "Davomiylik shkalasi, egri chiziqlar, ochilish kadrlari (oyna, pastki oyna, xabar), harakatni kamaytirish, fokus halqasi, klaviatura tartibi, bosish maydoni, kontrast juftliklari, z-index shkalasi.",

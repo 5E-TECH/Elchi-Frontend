@@ -16,6 +16,7 @@ import type {
   UserStatus,
 } from "../types/user";
 import { unwrapUserResponse } from "../lib/normalizeUser";
+import { silentErrorMeta, type SilentErrorOption } from "../../../shared/lib/queryErrorEvents";
 
 export const user = "user";
 
@@ -207,18 +208,6 @@ const fetchUserList = async (params?: IUserFilter) => {
   };
 };
 
-/**
- * Marketning Telegram tokeni (GvL6ZFAd): umumiy javoblarda (`/users`, `/users/:id`, `/markets`) YO'Q —
- * faqat `GET /markets/:id/tg-token` (faqat SUPERADMIN, har ko'rish audit jurnaliga yoziladi,
- * `Cache-Control: no-store`). Shuning uchun so'rov faqat «Ko'rsatish»/«Nusxalash» bosilganda va keshsiz.
- */
-export const fetchMarketTelegramToken = async (marketId: string): Promise<string | null> => {
-  const response = await api.get(API_ENDPOINTS.MARKETS.TG_TOKEN(marketId));
-  const body = (response.data ?? {}) as { data?: { market_tg_token?: unknown }; market_tg_token?: unknown };
-  const token = body.data?.market_tg_token ?? body.market_tg_token;
-  return typeof token === "string" && token.trim() ? token.trim() : null;
-};
-
 export const useUser = () => {
   const client = useQueryClient();
   const dispatch = useDispatch();
@@ -313,12 +302,14 @@ export const useUser = () => {
       ...(options?.silentError ? { meta: { silentError: true } } : {}),
     });
 
-  const useGetMyProfile = () =>
+  /** `silentError` — sahifa xatoni o'zi ko'rsatadi (`QueryBoundary`), global xabar takrorlanmaydi. */
+  const useGetMyProfile = (options?: SilentErrorOption) =>
     useQuery({
       queryKey: [user, "profile"],
       queryFn: () =>
         api.get(API_ENDPOINTS.AUTH.MY_PROFILE).then((res) => res.data),
       staleTime: 60 * 1000,
+      ...silentErrorMeta(options),
     });
 
   const updateUserStatus = useMutation({

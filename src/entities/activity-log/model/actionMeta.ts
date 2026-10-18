@@ -43,11 +43,29 @@ export const humanizeAction = (action: string): string => {
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : "";
 };
 
-/** Badge uchun yorliq va ton: avval qatordagi `action_meta`, keyin reyestr, oxiri — humanize. */
+/**
+ * Ton umuman kelmagan fe'l (eski backend: na `action_meta`, na reyestrda `tone`) — fe'l kalit so'zi bo'yicha
+ * (spec G2 §3.1, maket `superadmin-activity-logs-list`): yaratildi / biriktirildi — info, hisob-kitob — success,
+ * bekor qilindi / o'chirildi — danger, qolgani neytral. Backend toni bo'lsa, u ustun.
+ */
+export const actionVerbTone = (action: string): Tone => {
+  const tokens = action.toLowerCase().split(/[._\s-]+/).filter(Boolean);
+  const has = (re: RegExp) => tokens.some((token) => re.test(token));
+  if (has(/^(cancel|cancelled|canceled|delete|deleted|remove|removed)$/)) return "danger";
+  if (has(/^settle/)) return "success";
+  if (has(/^(create|created|assign|assigned)$/)) return "info";
+  return "neutral";
+};
+
+/**
+ * Badge uchun yorliq va ton: avval qatordagi `action_meta`, keyin reyestr, oxiri — humanize. Ton —
+ * `action_meta.tone` (noma'lum nom — neytral); ton umuman yo'q bo'lsa — `actionVerbTone`.
+ */
 export const resolveActionMeta = (
   log: Pick<ActivityLog, "action" | "action_meta">,
   registry?: ReadonlyMap<string, ActivityActionMeta>,
 ): { label: string; tone: Tone } => {
   const meta = log.action_meta ?? registry?.get(log.action) ?? null;
-  return { label: meta?.label || humanizeAction(log.action), tone: actionBadgeTone(meta?.tone) };
+  const tone = meta?.tone ? actionBadgeTone(meta.tone) : actionVerbTone(log.action);
+  return { label: meta?.label || humanizeAction(log.action), tone };
 };

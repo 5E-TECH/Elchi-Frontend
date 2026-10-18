@@ -8,7 +8,8 @@ import { expect, type Page, type Route } from "@playwright/test";
  * Backend kabi: `filter` / `invalid_signature` parametrlari bo'yicha qatorlar
  * serverda filtrlanadi, sanoqlar BITTA javobdagi `counts` da keladi.
  */
-const ORIGIN = "http://127.0.0.1:4173";
+// Worktree/probe serverlari boshqa portda yuradi — `E2E_ORIGIN` bilan almashtiriladi (sukut: CI/lokal :4173).
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
 const cors = {
   "access-control-allow-origin": ORIGIN,
   "access-control-allow-credentials": "true",
@@ -156,34 +157,24 @@ export const mockShipmentsApi = async (page: Page, profile: Record<string, unkno
 
 export const openShipments = async (page: Page, id = 7) => {
   await page.goto(`/integrations/connections?scope=external&c=integration:${id}&t=shipments`);
-  await expect(page.locator(".ant-table-tbody tr.ant-table-row").first()).toBeVisible({ timeout: 60_000 });
+  await expect(shipmentRows(page).first()).toBeVisible({ timeout: 60_000 });
 };
 
+/**
+ * Posilkalar ro'yxati (dizayn v2 `DataTable`): desktopda jadval qatorlari — xato paneli qatorlari
+ * (`data-expanded-panel`) hisobga kirmaydi; telefonda (< 768) kartalar ro'yxati.
+ */
+export const shipmentRows = (page: Page) =>
+  page.locator('table[aria-label="Posilkalar"] tbody tr:not([data-expanded-panel]), ul[aria-label="Posilkalar"] > li');
+
 /** Posilka qatori — mijoz ismi bo'yicha. */
-export const shipmentRow = (page: Page, name: string) =>
-  page.locator(".ant-table-tbody tr.ant-table-row").filter({ hasText: name });
+export const shipmentRow = (page: Page, name: string) => shipmentRows(page).filter({ hasText: name });
 
 /**
- * Qotirilgan ustunlar ("Buyurtma" chapda, "Amal" o'ngda — sarlavha va
- * katakchalar): foni to'liq shaffofmas, ostidan boshqa ustun matni ko'rinmaydi.
+ * Posilka qatori ostidagi xato paneli (`Xato: …` + «Qayta jo'natish»): desktopda keyingi `tr`,
+ * telefonda o'sha karta.
  */
-export const fixedActionColumnProblems = (page: Page) =>
-  page.evaluate(() => {
-    const problems: string[] = [];
-    const alpha = (color: string) => {
-      const m = /rgba?\(([^)]+)\)/.exec(color);
-      if (!m) return color === "transparent" ? 0 : 1;
-      const parts = m[1].split(/[\s,/]+/).filter(Boolean);
-      return parts.length > 3 ? Number(parts[3]) : 1;
-    };
-    const right = document.querySelectorAll(".ant-table-cell-fix-right, .ant-table-cell-fix-end");
-    const left = document.querySelectorAll(".ant-table-cell-fix-left, .ant-table-cell-fix-start");
-    if (!right.length) problems.push("qotirilgan o'ng ustun yo'q");
-    if (!left.length) problems.push("qotirilgan chap ustun yo'q");
-    const cells = [...Array.from(right), ...Array.from(left)] as HTMLElement[];
-    for (const cell of cells) {
-      const bg = getComputedStyle(cell).backgroundColor;
-      if (alpha(bg) < 1) problems.push(`${cell.tagName} "${cell.textContent?.trim()}" fon=${bg}`);
-    }
-    return problems;
-  });
+export const shipmentErrorPanel = (page: Page, name: string) =>
+  page.locator(
+    `table[aria-label="Posilkalar"] tbody tr:not([data-expanded-panel]):has-text("${name}") + tr[data-expanded-panel], ul[aria-label="Posilkalar"] > li:has-text("${name}")`,
+  );

@@ -148,3 +148,88 @@ describe("PushPermissionButton", () => {
     expect(window.localStorage.getItem(PUSH_DENIED_STORAGE_KEY)).toBeNull();
   });
 });
+
+/**
+ * Dizayn v2 qurilma bloki (`variant="switch"`, maket `common-settings-notifications`): «Shu qurilmaga
+ * bildirishnomalar» kaliti + «Brauzer ruxsati» badge'i; oqim tugmadagi bilan bir xil (avval bizning oyna).
+ */
+describe("PushPermissionButton variant=switch", () => {
+  beforeEach(() => {
+    window.localStorage.removeItem(PUSH_DENIED_STORAGE_KEY);
+    api.get.mockReset().mockResolvedValue({
+      data: { statusCode: 200, data: { enabled: true, public_key: "BPUBLIC-key" } },
+    });
+    api.post.mockReset().mockResolvedValue({ data: { statusCode: 201, data: { id: "5" } } });
+    api.patch.mockReset().mockResolvedValue({ data: {} });
+    api.delete.mockReset().mockResolvedValue({ data: {} });
+  });
+
+  afterEach(() => {
+    uninstallPushEnv();
+  });
+
+  const deviceSwitch = () => screen.findByRole("switch", { name: "Shu qurilmaga bildirishnomalar" });
+
+  it("so'ralmagan: kalit o'chiq, «So'ralmagan»; yoqilsa avval bizning oyna, so'ng obuna va kalit yoqiladi", async () => {
+    const env = installPushEnv({ answer: "granted" });
+    const user = userEvent.setup();
+    renderWithProviders(<PushPermissionButton variant="switch" />);
+
+    const toggle = await deviceSwitch();
+    await waitFor(() => expect(toggle).toBeEnabled());
+    expect(toggle).toHaveAttribute("aria-checked", "false");
+    expect(toggle).toHaveAccessibleDescription("Hozir o'chiq");
+    expect(screen.getByText("So'ralmagan")).toBeInTheDocument();
+
+    await user.click(toggle);
+    expect(screen.getByText("Bildirishnomalarni yoqasizmi?")).toBeInTheDocument();
+    expect(env.notification.requestPermission).not.toHaveBeenCalled();
+    await user.click(screen.getByRole("button", { name: "Yoqish" }));
+
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith("notifications/push/subscribe", expect.any(Object)));
+    await waitFor(() => expect(toggle).toHaveAttribute("aria-checked", "true"));
+    expect(screen.getByText("Ruxsat berilgan")).toBeInTheDocument();
+    expect(toggle).toHaveAccessibleDescription("Har bir qurilma (telefon, kompyuter) alohida yoqiladi");
+  });
+
+  it("yoqilgan kalit bosilsa — o'chiriladi (`push: false`)", async () => {
+    installPushEnv({ permission: "granted", answer: "granted" });
+    const user = userEvent.setup();
+    renderWithProviders(<PushPermissionButton variant="switch" />);
+    const toggle = await deviceSwitch();
+    await waitFor(() => expect(toggle).toBeEnabled());
+    await user.click(toggle);
+    await user.click(screen.getByRole("button", { name: "Yoqish" }));
+    await waitFor(() => expect(toggle).toHaveAttribute("aria-checked", "true"));
+
+    await user.click(toggle);
+    await waitFor(() =>
+      expect(api.patch).toHaveBeenLastCalledWith(
+        "auth/my-settings",
+        expect.objectContaining({
+          settings: expect.objectContaining({ notifications: expect.objectContaining({ push: false }) }),
+        }),
+      ),
+    );
+    await waitFor(() => expect(toggle).toHaveAttribute("aria-checked", "false"));
+  });
+
+  it("brauzerda bloklangan: kalit o'chirilgan, «Brauzerda bloklangan» va 3 qadamli yo'riqnoma", async () => {
+    installPushEnv({ permission: "denied" });
+    renderWithProviders(<PushPermissionButton variant="switch" />);
+    const toggle = await deviceSwitch();
+    expect(toggle).toBeDisabled();
+    expect(toggle).toHaveAccessibleDescription("Brauzer ruxsat bermaguncha yoqib bo'lmaydi");
+    expect(screen.getByText("Brauzerda bloklangan")).toBeInTheDocument();
+    expect(screen.getByText("Brauzerda bloklangan bo'lsa, qanday yoqiladi")).toBeInTheDocument();
+    expect(screen.getAllByRole("listitem")).toHaveLength(3);
+  });
+
+  it("Web Push yo'q — kalit o'chirilgan, «Bu brauzerda mavjud emas», ruxsat qatori yo'q", async () => {
+    renderWithProviders(<PushPermissionButton variant="switch" />);
+    const toggle = await deviceSwitch();
+    expect(toggle).toBeDisabled();
+    expect(toggle).toHaveAccessibleDescription("Bu brauzerda mavjud emas");
+    expect(screen.queryByText("Brauzer ruxsati")).not.toBeInTheDocument();
+  });
+});

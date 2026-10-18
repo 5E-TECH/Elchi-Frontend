@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 /**
  * INTEGRATSIYA METRIKASI.
@@ -155,7 +156,7 @@ export const metricsKey = ["integration-metrics"] as const;
  * Operator "Yangilash" bilan o'zi so'raydi; `staleTime` esa tab almashganda
  * keraksiz so'rovni to'sadi.
  */
-export const useIntegrationMetrics = (hours?: number) =>
+export const useIntegrationMetrics = (hours?: number, options?: SilentErrorOption) =>
   useQuery({
     queryKey: [...metricsKey, hours ?? 24],
     queryFn: () =>
@@ -166,6 +167,7 @@ export const useIntegrationMetrics = (hours?: number) =>
         .then((res) => normalizeIntegrationMetrics(res.data)),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+    ...silentErrorMeta(options),
   });
 
 /** `uid` bo'yicha tez qidirish uchun xarita. */

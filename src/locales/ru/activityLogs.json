@@ -3,7 +3,6 @@
   "description": "Аудит-трейл по всем сервисам (кто, что, когда)",
   "cardLabel": "Записи журнала активности",
   "columns": {
-    "detail": "Подробности",
     "time": "Время",
     "actor": "Кто",
     "action": "Действие",
@@ -33,32 +32,74 @@
     "investor": "Инвесторы",
     "notification": "Уведомления"
   },
-  "entities": {
+  "categories": {
     "order": "Заказ",
-    "settlement": "Расчёт",
-    "user": "Пользователь",
-    "market": "Маркет",
-    "courier": "Курьер",
+    "finance": "Финансы",
+    "auth": "Вход",
     "branch": "Филиал",
-    "product": "Товар",
-    "batch": "Пакет филиала",
-    "post": "Почта",
-    "payment": "Платёж",
-    "cashbox": "Касса",
-    "region": "Регион",
-    "district": "Район",
+    "integration": "Интеграция",
+    "logistics": "Логистика",
     "notification": "Уведомление",
-    "integration": "Партнёр интеграции",
-    "investor": "Инвестор"
+    "general": "Общие"
+  },
+  "entityTypes": {
+    "Order": "Заказ",
+    "User": "Пользователь",
+    "Auth": "Пользователь",
+    "Post": "Почта",
+    "Cashbox": "Касса",
+    "CashboxCard": "Карта кассы",
+    "CashboxHistory": "Операция кассы",
+    "Shift": "Смена кассы",
+    "District": "Район",
+    "Region": "Регион",
+    "Branch": "Филиал",
+    "BranchUser": "Сотрудник филиала",
+    "BranchConfig": "Настройка филиала",
+    "BranchTransferBatch": "Пакет филиала",
+    "TransferBatch": "Пакет",
+    "Partner": "Партнёр интеграции",
+    "ExternalIntegration": "Интеграция",
+    "Settlement": "Расчёт",
+    "Product": "Товар",
+    "Market": "Маркет",
+    "Investor": "Инвестор",
+    "Investment": "Инвестиция",
+    "Notification": "Уведомление",
+    "NotificationCampaign": "Кампания",
+    "SmsCampaign": "SMS-кампания",
+    "FinancialBalanceHistory": "Запись баланса",
+    "UserSalary": "Зарплата",
+    "OperatorEarning": "Доход оператора",
+    "OperatorPayment": "Выплата оператору",
+    "Courier": "Курьер",
+    "Payment": "Платёж"
   },
   "actor": {
     "system": "Система",
     "unresolved": "#{{id}} (не найден)"
   },
+  "actions": {
+    "created": "Создано",
+    "updated": "Изменено",
+    "deleted": "Удалено",
+    "restored": "Восстановлено",
+    "status_change": "Статус изменён",
+    "payment": "Оплата",
+    "refund": "Возврат денег",
+    "login": "Вход в систему",
+    "logout": "Выход из системы",
+    "auth_failure": "Ошибка входа",
+    "export": "Экспорт",
+    "import": "Импорт",
+    "webhook_received": "Получен вебхук",
+    "external_sync": "Внешняя синхронизация",
+    "assign": "Назначено",
+    "unassign": "Назначение отменено"
+  },
   "detail": {
     "expand": "Открыть подробности: {{target}}",
     "collapse": "Скрыть подробности: {{target}}",
-    "none": "Нет подробностей",
     "changes": "Изменения полей",
     "field": "Поле",
     "before": "До",
@@ -91,7 +132,9 @@
     "branch_id": "Филиал",
     "region_id": "Область",
     "district_id": "Район",
-    "where_deliver": "Тип доставки"
+    "where_deliver": "Тип доставки",
+    "is_active": "Активен",
+    "note": "Комментарий"
   },
   "meta": {
     "source": "Источник",
@@ -104,9 +147,12 @@
     "amount": "Сумма",
     "count": "Количество",
     "leg": "Направление",
-    "description": "Описание"
+    "description": "Описание",
+    "ip_address": "IP-адрес"
   },
-  "summary": "{{from}}–{{to}} / {{total}} записей",
+  "summary": "{{from}}–{{to}} из {{total}} записей",
   "empty": "Записи не найдены",
-  "emptyFiltered": "Нет записей по фильтрам. Попробуйте изменить фильтры."
+  "emptyHint": "Записи появятся здесь, когда в системе будут выполняться действия.",
+  "emptyFiltered": "Нет записей по фильтрам. Попробуйте изменить фильтры.",
+  "loadError": "Не удалось загрузить журнал активности"
 }

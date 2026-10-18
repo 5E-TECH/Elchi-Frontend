@@ -57,7 +57,7 @@ describe("LogisticsOps — qaytarish so'rovlarini tasdiqlash (fix3b)", () => {
     renderWithProviders(<LogisticsOpsPage />);
     await screen.findByText("Kuryer Vali");
 
-    expect(screen.getByRole("button", { name: "Tasdiqlash (0)" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Tasdiqlash — 0 ta" })).toBeDisabled();
     expect(screen.queryByLabelText("approve-payload")).not.toBeInTheDocument();
     expect(screen.getByText("Tasdiqlash uchun ro'yxatdan buyurtmalarni tanlang.")).toBeInTheDocument();
   });
@@ -70,7 +70,7 @@ describe("LogisticsOps — qaytarish so'rovlarini tasdiqlash (fix3b)", () => {
     const checkboxes = screen.getAllByRole("checkbox");
     await user.click(checkboxes[1]); // 9001
     await user.click(checkboxes[3]); // 9003
-    await user.click(screen.getByRole("button", { name: "Tasdiqlash (2)" }));
+    await user.click(screen.getByRole("button", { name: "Tasdiqlash — 2 ta" }));
 
     await waitFor(() =>
       expect(apiPostMock).toHaveBeenCalledWith("post/return-requests/approve", { order_ids: ["9001", "9003"] }),
@@ -85,7 +85,7 @@ describe("LogisticsOps — qaytarish so'rovlarini tasdiqlash (fix3b)", () => {
     await screen.findByText("Kuryer Vali");
 
     await user.click(screen.getAllByRole("checkbox")[1]);
-    await user.click(screen.getByRole("button", { name: "Tasdiqlash (1)" }));
+    await user.click(screen.getByRole("button", { name: "Tasdiqlash — 1 ta" }));
 
     expect(await screen.findByText("Bu kuryer sizning filialingizga tegishli emas")).toBeInTheDocument();
   });
@@ -106,7 +106,7 @@ describe("LogisticsOps — qaytarish so'rovlarini tasdiqlash (fix3b)", () => {
     renderWithProviders(<LogisticsOpsPage />);
 
     expect(await screen.findByText("Логистика — запросы на возврат")).toBeInTheDocument();
-    const headers = screen.getAllByRole("columnheader").map((cell) => cell.textContent?.trim());
+    const headers = (await screen.findAllByRole("columnheader")).map((cell) => cell.textContent?.trim());
     expect(headers).toEqual(expect.arrayContaining(["Заказ", "Статус", "Курьер"]));
   });
 });

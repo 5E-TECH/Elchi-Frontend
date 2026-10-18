@@ -1,0 +1,102 @@
+{
+  "title": "Notifications",
+  "description": "Telegram groups of markets: messages about new and cancelled orders are sent here",
+  "add": "Add notification",
+  "list": {
+    "title": "Connected groups",
+    "hint": "New-order and cancelled-order groups of one market are connected separately",
+    "label": "Connected Telegram groups",
+    "cardsLabel": "Telegram groups",
+    "loading": "Loading groups",
+    "emptyTitle": "No groups connected yet",
+    "emptyDescription": "To connect a market's Telegram group, press \"Add notification\".",
+    "loadError": "Could not load the list of groups",
+    "pagination_one": "{{from}}–{{to}} of {{total}} group",
+    "pagination_other": "{{from}}–{{to}} of {{total}} groups"
+  },
+  "columns": {
+    "market": "Market",
+    "groupId": "Telegram group ID",
+    "type": "Message type",
+    "status": "Status",
+    "date": "Date",
+    "actions": "Actions"
+  },
+  "type": {
+    "create": "New order",
+    "cancel": "Cancelled order"
+  },
+  "groupName": {
+    "create": "new-order group",
+    "cancel": "cancelled group"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "inactiveHint": "The bot was removed from the group — reconnect it"
+  },
+  "editLabel": "{{market}} — {{group}}: edit",
+  "deleteLabel": "{{market}} — {{group}}: delete",
+  "form": {
+    "market": "Market",
+    "marketPlaceholder": "Choose a market",
+    "marketList": "Markets",
+    "marketsLoading": "Loading markets…",
+    "marketsEmpty": "No active markets found",
+    "type": "Message type",
+    "typeCreate": "New orders group",
+    "typeCancel": "Cancelled orders group",
+    "typeHint": "New-order and cancelled-order groups of one market are connected separately.",
+    "cancel": "Cancel",
+    "errors": {
+      "market": "Choose a market"
+    }
+  },
+  "create": {
+    "title": "Add notification",
+    "introTitle": "Connect notifications to a Telegram group",
+    "intro": "Choose the market and the message type, then open the one-time link — the bot joins the group and connects it by itself.",
+    "getLink": "Get connection link",
+    "gettingLink": "Getting the link…",
+    "newLink": "Get a new link",
+    "open": "Open in Telegram",
+    "linkTitle": "One-time link is ready",
+    "qrAlt": "QR code of the Telegram group connection link",
+    "step1": "Open the link or scan the QR code with your phone.",
+    "step2": "Choose the group — the bot joins it.",
+    "step3": "The bot connects the group by itself, the list refreshes.",
+    "expiresAt": "Valid until {{time}}",
+    "waiting": "Waiting for the group to connect…",
+    "expired": "The link has expired",
+    "expiredHint": "The link is valid for 10 minutes and works once. Get a new one.",
+    "command": "Add the bot to the group and send this command there:",
+    "existsTitle": "A group of this type is already connected",
+    "exists": "{{market}} already has a group of this type (ID: {{groupId}}). The bot does not replace it — edit it in the list, or delete it and connect again.",
+    "linkError": "Could not get the link",
+    "connected": "Group connected",
+    "connectedDescription": "{{market}} — {{type}}"
+  },
+  "edit": {
+    "title": "Edit notification",
+    "groupId": "Telegram group ID",
+    "groupIdPlaceholder": "-1001234567890",
+    "groupIdHint": "For example: -1001234567890. Send /id in the group and the bot shows its ID.",
+    "groupIdRequired": "Enter the group ID",
+    "submit": "Save changes",
+    "saving": "Saving…",
+    "success": "Notification updated",
+    "error": "Could not save the notification"
+  },
+  "deleteDialog": {
+    "title": "Do you really want to delete it?",
+    "description": {
+      "create": "Messages about new orders of {{market}} will no longer be sent to this group. The group can be connected again later.",
+      "cancel": "Messages about cancelled orders of {{market}} will no longer be sent to this group. The group can be connected again later."
+    },
+    "groupId": "Group ID: {{id}}",
+    "confirm": "Delete",
+    "loading": "Deleting…",
+    "deleted": "Notification deleted",
+    "failed": "Could not delete the notification"
+  }
+}

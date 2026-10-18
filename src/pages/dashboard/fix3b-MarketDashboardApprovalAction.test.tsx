@@ -28,6 +28,7 @@ const approval = (id: string, action: "sell" | "partly_sell" | "cancel", orderId
 
 vi.mock("../../entities/orders", () => ({
   useOrders: () => ({
+    useAutoApprovedExtraCostApprovals: () => ({ data: undefined }),
     useExtraCostApprovals: () => ({
       data: {
         data: [

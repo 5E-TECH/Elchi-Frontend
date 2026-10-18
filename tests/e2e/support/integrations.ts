@@ -7,7 +7,8 @@ import { expect, type Page, type Route } from "@playwright/test";
  * so'rov shu yerda yopiladi. Kutilmagan yozuvchi so'rov `leaked` ga tushadi.
  */
 
-const ORIGIN = "http://127.0.0.1:4173";
+// Worktree/probe serverlari boshqa portda yuradi — `E2E_ORIGIN` bilan almashtiriladi (sukut: CI/lokal :4173).
+const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
 
 const cors = {
   "access-control-allow-origin": ORIGIN,
@@ -126,7 +127,7 @@ export const clippedTiles = (page: Page) =>
       if (!card) continue;
       const cardBox = card.getBoundingClientRect();
       for (const tile of Array.from(card.querySelectorAll<HTMLElement>("button[aria-label]"))) {
-        const value = tile.querySelector<HTMLElement>(".ant-statistic-content");
+        const value = tile.querySelector<HTMLElement>("[data-tile-value]");
         if (!value) continue;
         const box = value.getBoundingClientRect();
         const style = getComputedStyle(value);

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 export type SmsMessageClass = "transactional" | "promo" | "security";
 export type SmsLanguage = "uz" | "ru" | "en";
@@ -140,11 +141,12 @@ export const SMS_KEYS = {
   report: (from: string, to: string) => ["sms", "report", from, to] as const,
 };
 
-export const useSmsStatus = () =>
+export const useSmsStatus = (options?: SilentErrorOption) =>
   useQuery({
     queryKey: SMS_KEYS.status,
     queryFn: async () => unwrap<SmsStatus>((await api.get(API_ENDPOINTS.NOTIFICATIONS.SMS_STATUS)).data),
     staleTime: 30_000,
+    ...silentErrorMeta(options),
   });
 
 export const useSmsTariffs = () =>
@@ -155,31 +157,35 @@ export const useSmsTariffs = () =>
     meta: { silentError: true },
   });
 
-export const useSmsTemplates = () =>
+export const useSmsTemplates = (options?: SilentErrorOption) =>
   useQuery({
     queryKey: SMS_KEYS.templates,
     queryFn: async () => unwrap<SmsTemplate[]>((await api.get(API_ENDPOINTS.NOTIFICATIONS.SMS_TEMPLATES)).data) ?? [],
+    ...silentErrorMeta(options),
   });
 
-export const useSmsCampaigns = () =>
+export const useSmsCampaigns = (options?: SilentErrorOption) =>
   useQuery({
     queryKey: SMS_KEYS.campaigns,
     queryFn: async () =>
       unwrap<SmsCampaignHistoryItem[]>((await api.get(API_ENDPOINTS.NOTIFICATIONS.SMS_CAMPAIGNS)).data) ?? [],
+    ...silentErrorMeta(options),
   });
 
-export const useSmsAccounts = (enabled: boolean) =>
+export const useSmsAccounts = (enabled: boolean, options?: SilentErrorOption) =>
   useQuery({
     queryKey: SMS_KEYS.accounts,
     queryFn: async () => unwrap<SmsAccount[]>((await api.get(API_ENDPOINTS.NOTIFICATIONS.SMS_ACCOUNTS)).data) ?? [],
     enabled,
+    ...silentErrorMeta(options),
   });
 
-export const useSmsReport = (from: string, to: string) =>
+export const useSmsReport = (from: string, to: string, options?: SilentErrorOption) =>
   useQuery({
     queryKey: SMS_KEYS.report(from, to),
     queryFn: async () =>
       unwrap<SmsReport>((await api.get(API_ENDPOINTS.NOTIFICATIONS.SMS_REPORT, { params: { from, to } })).data),
+    ...silentErrorMeta(options),
   });
 
 export const previewSmsCampaign = async (input: SmsCampaignInput) =>

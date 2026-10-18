@@ -173,8 +173,9 @@ describe("--color-text-muted class'larida dark: jufti", () => {
   it("fayllar va muted class'lar topildi (test bo'shliqda ishlamasin)", () => {
     const uses = files.reduce((sum, [, source]) => sum + (source.match(TOKEN)?.length ?? 0), 0);
     expect(files.length).toBeGreaterThan(50);
-    // v1 kodi ko'chirilgan sari kamayadi (G1 dan keyin 94 ta) — chegara glob bo'sh emasligini tekshiradi, xolos.
-    expect(uses).toBeGreaterThan(50);
+    // v1 kodi ko'chirilgan sari kamayadi (G1 dan keyin 94 ta, G2 dan keyin 45 ta) — chegara glob bo'sh emasligini
+    // tekshiradi, xolos (har bir topilgan joyda `dark:` jufti — keyingi test, u zaiflashmagan).
+    expect(uses).toBeGreaterThan(20);
   });
 
   it("⭐ har bir `…-[color:var(--color-text-muted)]` yonida `dark:` jufti bor", () => {

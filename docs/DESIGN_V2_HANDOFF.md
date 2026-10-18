@@ -19,7 +19,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
 | Bosqich | Holat |
 |---|---|
 | 0 tokenlar, 1 primitivlar, 2 shell, 3 forma/dialog/holatlar | tayyor, dev'da |
-| 4 sahifalar migratsiyasi | jarayonda: G1 va G3 tayyor; G2 alohida worktree'da qurilmoqda |
+| 4 sahifalar migratsiyasi | jarayonda: G1, G2, G3 tayyor; kamera rejimlari — alohida ish |
 | 5 qo'shimcha qo'riqchilar (ESLint, vizual snapshot) | 4 tugashi bilan darhol (ega: kutilmaydi) |
 
 **4-bosqichda ko'chirilgan sahifalar** (ro'yxat `AGENTS.md` 4-qatorida ham bor):
@@ -33,6 +33,9 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   `/financial-balance`
 - G1: `/`, `/branch-dashboard`, `/all-users*` (+ `/new-orders/userDetail/:id`), `/branches*`, `/products*`, `/regions*`
   (umumiy `shared/ui/charts`, `widgets/region-detail`; dashboard bundle 418 KB ≤ 450)
+- G2: `/integrations/*` (konsol + 7 panel, katalog, usta; eski sahifalar «Eski sahifa» belgisi bilan), `/notifications*`
+  (Telegram guruhini bir martalik havola bilan ulash), `/activity-logs` (`DataTable expandable`), `/ops` + 8 ta ops yo'li,
+  `/profile`, `/settings`, `/inbox`; `/market-operators` yopiq, ko'chirilmagan
 - G3: `/login` (+ «Sessiya tugadi» ekrani, sessiya banneri shell'ning `[data-shell-slot=banner]` slotida),
   `/scan/:token`, `/dispatch`, `/courier-bulk` (+ dev'ning isbot qadami va xato berganlar oynasi, `X-Request-Source`);
   butun `/scan` kamera ekrani — alohida kamera ishi
@@ -185,6 +188,7 @@ bilan **alohida ish**.
   - filial config kodi o'chirildi;
   - `/all-users` da «Filial» ustuni yo'q (users'da filial maydoni yo'q);
   - market tariflari majburiy.
+- **G2 spec §10 sukutlari** — `design/kit/route-map.json` izohlarida (`docs/DESIGN_SYSTEM.md` §11, G2 bandi).
 - **G3 spec §9 sukutlari (egaga ko'rsatiladi):**
   - butun `/scan` (kamera holatlari, qo'lda kiritish, oflayn navbat) — alohida kamera ishi;
   - menejer skaner natijasida «Sotish / Bekor qilish» — buyurtma tafsilotidagi qoidalar bilan;

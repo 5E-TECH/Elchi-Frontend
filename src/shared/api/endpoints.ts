@@ -47,7 +47,6 @@ export const API_ENDPOINTS = {
     ADD_ORDER: (id: string | number) => `markets/${id}/add-order`, // PATCH
     CANCELLED_HANDOVER_QR: (id: string | number) => `markets/${id}/cancelled-handover-qr`, // PATCH
     EXPENSE_PROOF: (id: string | number) => `markets/${id}/expense-proof`, // PATCH proof conditions (guide §5)
-    TG_TOKEN: (id: string | number) => `markets/${id}/tg-token`, // GET — faqat SUPERADMIN (GvL6ZFAd)
     // PATCH { tg_group_show_customer_pii } — Telegram guruhi kartasida mijoz ismi/telefoni (ysBqD9Nx;
     // superadmin, admin, market — faqat o'zinikini)
     TELEGRAM_GROUP_PII: (id: string | number) => `markets/${id}/telegram-group-pii`,
@@ -320,7 +319,6 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string | number) => `notifications/${id}`, // GET / PATCH / DELETE
     HEALTH: "notifications/health",
     SEND: "notifications/send", // POST send to telegram group(s)
-    CONNECT_BY_TOKEN: "notifications/connect-by-token", // POST connect group by token
     // POST { purpose: "market_group", group_type, market_id } → { token, expires_at, deep_link, command } — bir martalik, 10 daqiqa
     TELEGRAM_LINK_CODE: "telegram/link-code",
     // In-app inbox (current user, per-recipient rows) ──────────────────────

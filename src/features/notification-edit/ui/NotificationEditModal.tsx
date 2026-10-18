@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-notifications-create-dialog
+// dizayn-v2: (maket yo'q) superadmin-notifications-create-dialog
 import { useMemo, useRef, useState } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Pencil, Store } from "lucide-react";
@@ -30,7 +30,7 @@ type EditDialogProps = NotificationEditModalProps & { initialData: Notification 
  * (`Field` + `Select` / `TextInput`, xabar turi — radio kartalar).
  */
 const EditDialog = ({ open, initialData, onClose }: EditDialogProps) => {
-  const { t } = useTranslation("notifications");
+  const { t } = useTranslation("notificationGroups");
   const { options, getName, isLoading: marketsLoading } = useNotificationMarkets(open);
   const updateNotification = useUpdateNotification();
   /** Ochilganda fokus guruh ID maydonida — odatda shu tahrirlanadi (market qidiruvi belgilanib qolmasin). */
@@ -61,10 +61,10 @@ const EditDialog = ({ open, initialData, onClose }: EditDialogProps) => {
         id: initialData.id,
         payload: { ...values, group_id: values.group_id.trim() },
       });
-      notify.success(t("telegramGroups.editDialog.success"));
+      notify.success(t("edit.success"));
       onClose();
     } catch (error) {
-      notify.error(t("telegramGroups.editDialog.error"), { description: getApiErrorMessage(error) || undefined });
+      notify.error(t("edit.error"), { description: getApiErrorMessage(error) || undefined });
     }
   });
 
@@ -74,7 +74,7 @@ const EditDialog = ({ open, initialData, onClose }: EditDialogProps) => {
       onClose={onClose}
       size="lg"
       icon={Pencil}
-      title={t("telegramGroups.editDialog.title")}
+      title={t("edit.title")}
       busy={updateNotification.isPending}
       initialFocus={groupIdRef}
       onSubmit={(event) => void onSubmit(event)}
@@ -82,16 +82,16 @@ const EditDialog = ({ open, initialData, onClose }: EditDialogProps) => {
       footer={
         <>
           <Button variant="secondary" onClick={onClose} className="flex-[1_1_120px]">
-            {t("telegramGroups.cancel")}
+            {t("form.cancel")}
           </Button>
           <Button
             type="submit"
             variant="primary"
             loading={updateNotification.isPending}
-            loadingText={t("telegramGroups.editDialog.saving")}
+            loadingText={t("edit.saving")}
             className="flex-[999_1_200px]"
           >
-            {t("telegramGroups.editDialog.submit")}
+            {t("edit.submit")}
           </Button>
         </>
       }
@@ -101,7 +101,7 @@ const EditDialog = ({ open, initialData, onClose }: EditDialogProps) => {
         name="market_id"
         render={({ field }) => (
           <Field
-            label={t("telegramGroups.create.market")}
+            label={t("form.market")}
             labelAs="span"
             required
             error={errors.market_id?.message ? t(errors.market_id.message) : undefined}
@@ -114,9 +114,11 @@ const EditDialog = ({ open, initialData, onClose }: EditDialogProps) => {
               value={field.value || null}
               onChange={(value) => field.onChange(value ?? "")}
               onBlur={field.onBlur}
-              placeholder={t("telegramGroups.create.marketPlaceholder")}
-              listLabel={t("telegramGroups.create.marketList")}
+              placeholder={t("form.marketPlaceholder")}
+              listLabel={t("form.marketList")}
               loading={marketsLoading}
+              loadingText={t("form.marketsLoading")}
+              noOptionsText={t("form.marketsEmpty")}
             />
           </Field>
         )}
@@ -127,9 +129,9 @@ const EditDialog = ({ open, initialData, onClose }: EditDialogProps) => {
         name="group_id"
         render={({ field }) => (
           <Field
-            label={t("telegramGroups.editDialog.groupId")}
+            label={t("edit.groupId")}
             required
-            hint={t("telegramGroups.editDialog.groupIdHint")}
+            hint={t("edit.groupIdHint")}
             error={errors.group_id?.message ? t(errors.group_id.message) : undefined}
           >
             <TextInput
@@ -141,8 +143,9 @@ const EditDialog = ({ open, initialData, onClose }: EditDialogProps) => {
               value={field.value}
               onValueChange={field.onChange}
               onBlur={field.onBlur}
-              placeholder={t("telegramGroups.editDialog.groupIdPlaceholder")}
+              placeholder={t("edit.groupIdPlaceholder")}
               autoComplete="off"
+              inputClassName="tabular-nums"
             />
           </Field>
         )}
@@ -152,7 +155,7 @@ const EditDialog = ({ open, initialData, onClose }: EditDialogProps) => {
         control={control}
         name="group_type"
         render={({ field }) => (
-          <Field label={t("telegramGroups.create.type")} labelAs="span" required hint={t("telegramGroups.create.typeHint")}>
+          <Field label={t("form.type")} labelAs="span" required hint={t("form.typeHint")}>
             <GroupTypeChoice name="notification-edit-type" value={field.value} onChange={field.onChange} />
           </Field>
         )}

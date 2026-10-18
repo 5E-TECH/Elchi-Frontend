@@ -6,7 +6,8 @@
  */
 export interface OpsTabMeta {
   key: string;
-  label: string;
+  /** Tab nomi — `ops` namespace kaliti (`ops:tabs.<key>`). */
+  labelKey: string;
   /**
    * Markaz qo'shilgunga qadar mavjud bo'lgan to'g'ridan-to'g'ri marshrut.
    * SAQLANADI — eski havola yoki xatcho'p buzilmasin.
@@ -19,43 +20,43 @@ export interface OpsTabMeta {
 export const OPS_TABS: OpsTabMeta[] = [
   {
     key: "finance",
-    label: "Moliya operatorlari",
+    labelKey: "tabs.finance",
     legacyPath: "/finance-operators",
     pageDir: "finance-operators",
   },
   {
     key: "integrations",
-    label: "Integratsiyalar",
+    labelKey: "tabs.integrations",
     legacyPath: "/integrations-ops",
     pageDir: "integrations-ops",
   },
   {
     key: "investors",
-    label: "Investorlar",
+    labelKey: "tabs.investors",
     legacyPath: "/investors-ops",
     pageDir: "investors-ops",
   },
   {
     key: "logistics",
-    label: "Logistika",
+    labelKey: "tabs.logistics",
     legacyPath: "/logistics-ops",
     pageDir: "logistics-ops",
   },
   {
     key: "branches",
-    label: "Filiallar",
+    labelKey: "tabs.branches",
     legacyPath: "/branch-ops",
     pageDir: "branch-ops",
   },
   {
     key: "identity",
-    label: "Xodimlar",
+    labelKey: "tabs.identity",
     legacyPath: "/identity-ops",
     pageDir: "identity-ops",
   },
   {
     key: "system",
-    label: "Tizim",
+    labelKey: "tabs.system",
     legacyPath: "/system-ops",
     pageDir: "system-ops",
   },
@@ -69,11 +70,18 @@ export const OPS_TABS: OpsTabMeta[] = [
      * tugmasini ko'rardi va haqiqiy jurnalni (`/activity-logs`) topolmasdi.
      *
      * Bu DIAGNOSTIKA vositasi — o'rni Ops markazi. Marshrut (`/logs`)
-     * saqlanadi, faqat menyudan olib tashlandi.
+     * saqlanadi, faqat menyudan olib tashlandi. Dizayn v2 da yorlig'i —
+     * «Kirish diagnostikasi» (maket `superadmin-ops-auth-diagnostics`).
      */
     key: "auth",
-    label: "Auth diagnostikasi",
+    labelKey: "tabs.auth",
     legacyPath: "/logs",
     pageDir: "logs",
   },
 ];
+
+/** Tab kaliti bo'yicha meta (to'g'ridan-to'g'ri yo'llardagi «← Ops vositalari» havolasi uchun). */
+export const getOpsTab = (key: string): OpsTabMeta => OPS_TABS.find((tab) => tab.key === key) ?? OPS_TABS[0];
+
+/** `/ops?tab=<key>` — hub'dagi shu tab. */
+export const opsTabPath = (key: string) => `/ops?tab=${key}`;

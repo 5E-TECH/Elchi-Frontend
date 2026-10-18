@@ -90,7 +90,14 @@
     "extra_cost_approved": "Qo'shimcha xarajat tasdiqlandi",
     "extra_cost_rejected": "So'rov rad etildi",
     "extra_cost_already_decided": "So'rov allaqachon hal qilingan",
-    "extra_cost_already_decided_hint": "Bu so'rov boshqa joyda (masalan, Telegram'da) hal qilingan. Ro'yxat yangilandi."
+    "extra_cost_already_decided_hint": "Bu so'rov boshqa joyda (masalan, Telegram'da) hal qilingan. Ro'yxat yangilandi.",
+    "extra_cost_auto_at": "{{time}} gacha javob berilmasa — avtomatik tasdiqlanadi",
+    "extra_cost_auto_title": "Avtomatik tasdiqlangan xarajatlar",
+    "extra_cost_auto_count": "{{count}} ta",
+    "extra_cost_auto_hint": "Muddat ichida javob berilmagan so'rovlar avtomatik tasdiqlangan. E'tirozingiz bo'lsa — administratorga murojaat qiling.",
+    "extra_cost_auto_badge": "Avtomatik tasdiqlangan",
+    "extra_cost_auto_list_label": "Avtomatik tasdiqlangan so'rovlar",
+    "extra_cost_auto_decided": "{{time}} da tasdiqlangan"
   },
   "v2Charts": {
     "zone": {

@@ -50,7 +50,7 @@ describe("LogisticsOps page", () => {
     await screen.findByText("Kuryer Ali");
     // [0] — "hammasini tanlash", [1] — 9001 qatori.
     await user.click(screen.getAllByRole("checkbox")[1]);
-    await user.click(screen.getByRole("button", { name: "Tasdiqlash (1)" }));
+    await user.click(screen.getByRole("button", { name: "Tasdiqlash — 1 ta" }));
 
     await waitFor(() => {
       expect(apiPostMock).toHaveBeenCalledWith("post/return-requests/approve", { order_ids: ["9001"] });
@@ -75,5 +75,40 @@ describe("LogisticsOps page", () => {
     expect(await screen.findAllByText("9001")).not.toHaveLength(0);
     expect(screen.getAllByText("9002")).not.toHaveLength(0);
     expect(screen.getByText("Kuryer Ali")).toBeInTheDocument();
+  });
+
+  it("v2: «← Ops vositalari», holat yorliqlari (maket), tanlov paneli va «Tanlovni bekor qilish»", async () => {
+    const user = userEvent.setup();
+    apiGetMock.mockResolvedValue({
+      data: {
+        statusCode: 200,
+        data: {
+          total: 2,
+          groups: [
+            {
+              courier_id: "56",
+              courier: { id: "56", name: "Kuryer Ali" },
+              orders: [
+                { id: "9001", status: "waiting" },
+                { id: "9002", status: "on_the_road" },
+              ],
+            },
+          ],
+        },
+      },
+    });
+    renderWithProviders(<LogisticsOpsPage />);
+
+    expect(screen.getByRole("link", { name: /Ops vositalari/ })).toHaveAttribute("href", "/ops?tab=logistics");
+    expect(await screen.findByText("Kuryer qabul qilmagan")).toBeInTheDocument();
+    expect(screen.getByText("Kuryer qo'lida")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "№9001" })).toHaveAttribute("href", "/orders/edit/9001");
+
+    await user.click(screen.getByRole("checkbox", { name: "So'rov 9001 ni tanlash" }));
+    const region = screen.getByRole("region", { name: "Tanlangan so'rovlar" });
+    expect(region).toHaveTextContent("1 ta so'rov tanlandi");
+    await user.click(screen.getByRole("button", { name: "Tanlovni bekor qilish" }));
+    expect(screen.getByRole("checkbox", { name: "So'rov 9001 ni tanlash" })).not.toBeChecked();
+    expect(screen.getByRole("button", { name: "Tasdiqlash — 0 ta" })).toBeDisabled();
   });
 });

@@ -1,3 +1,4 @@
+// dizayn-v2: superadmin-activity-logs-list, superadmin-activity-logs-row-expanded, admin-activity-logs-list, admin-activity-logs-row-expanded
 import { memo } from "react";
 import { Badge } from "../../../shared/ui/primitives";
 import { resolveActionMeta } from "../model/actionMeta";
@@ -12,16 +13,21 @@ const ActivityActionBadge = ({
   action,
   meta,
   registry,
+  label: labelOverride,
 }: {
   action: string;
   meta?: ActivityActionMeta | null;
   registry?: ReadonlyMap<string, ActivityActionMeta>;
+  /** Tarjima qilingan yorliq (ru/en — backend reyestri faqat o'zbekcha); berilmasa — `resolveActionMeta`. */
+  label?: string;
 }) => {
-  const { label, tone } = resolveActionMeta({ action, action_meta: meta ?? null }, registry);
+  const resolved = resolveActionMeta({ action, action_meta: meta ?? null }, registry);
+  const label = labelOverride || resolved.label;
+  const { tone } = resolved;
   if (!label) return <span className="text-text-muted">—</span>;
   // Badge bir qatorda; juda uzun yorliq (humanize qilingan noma'lum fe'l) kartadan chiqmaydi — «…», to'liq matn `title` da.
   return (
-    <Badge tone={tone} title={label} className="max-w-full">
+    <Badge tone={tone} data-tone={tone} title={label} className="max-w-full">
       <span className="min-w-0 truncate">{label}</span>
     </Badge>
   );
