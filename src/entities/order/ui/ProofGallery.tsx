@@ -2,7 +2,7 @@
 import { memo, useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronLeft, ChevronRight, ExternalLink, FileText, Play, TriangleAlert } from "lucide-react";
-import { Dialog, IconButton, Spinner } from "../../../shared/ui/primitives";
+import { Dialog, IconButton, Pressable, Spinner } from "../../../shared/ui/primitives";
 import { proofFileName, proofKind, useProofFileUrls } from "../api/proofFiles";
 
 /**
@@ -73,9 +73,8 @@ const ProofGallery = ({ keys }: ProofGalleryProps) => {
           const kind = proofKind(key);
           const name = proofFileName(key);
           return (
-            <button
+            <Pressable
               key={key}
-              type="button"
               onClick={() => setOpenIndex(index)}
               aria-label={`${t("proofOpen")}: ${name}`}
               title={name}
@@ -119,7 +118,7 @@ const ProofGallery = ({ keys }: ProofGalleryProps) => {
                   <span className="line-clamp-2 break-all">{name}</span>
                 </span>
               )}
-            </button>
+            </Pressable>
           );
         })}
       </div>

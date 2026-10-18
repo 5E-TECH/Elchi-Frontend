@@ -1,0 +1,83 @@
+{
+  "statusCode": 200,
+  "message": "ok",
+  "data": {
+    "id": "96",
+    "status": "waiting",
+    "where_deliver": "address",
+    "total_price": 185000,
+    "to_be_paid": 185000,
+    "paid_amount": 0,
+    "comment": "Kechqurun 18:00 dan keyin olib keling.",
+    "address": "Lutfiy ko'chasi, 14-uy, 32-xonadon",
+    "customer": {
+      "id": "c96",
+      "name": "Dilnoza Karimova",
+      "phone_number": "+998901234567"
+    },
+    "market": {
+      "id": "31",
+      "name": "Baraka Shop",
+      "phone_number": "+998903152241"
+    },
+    "region_id": "2",
+    "district_id": "202",
+    "region": {
+      "id": "2",
+      "name": "Samarqand viloyati"
+    },
+    "district": {
+      "id": "202",
+      "name": "Samarqand shahri",
+      "region": {
+        "id": "2",
+        "name": "Samarqand viloyati"
+      }
+    },
+    "market_tariff": 30000,
+    "courier_tariff": 20000,
+    "courier_share": 20000,
+    "branch_share": 0,
+    "courier_id": "93",
+    "post_id": "78",
+    "holder_type": "COURIER",
+    "holder_courier_id": "93",
+    "sold_at": null,
+    "branch": {
+      "id": "11",
+      "name": "Samarqand filiali"
+    },
+    "parent_order_id": null,
+    "product_quantity": 3,
+    "createdAt": "2026-10-14T09:15:00.000Z",
+    "updatedAt": "2026-10-15T04:20:00.000Z",
+    "items": [
+      {
+        "id": "i96-1",
+        "product_id": "p21",
+        "order_id": "96",
+        "quantity": 1,
+        "createdAt": "2026-10-14T09:15:00.000Z",
+        "updatedAt": "2026-10-14T09:15:00.000Z",
+        "product": {
+          "id": "p21",
+          "name": "Bolalar kurtkasi, 110 sm",
+          "image_url": null
+        }
+      },
+      {
+        "id": "i96-2",
+        "product_id": "p22",
+        "order_id": "96",
+        "quantity": 2,
+        "createdAt": "2026-10-14T09:15:00.000Z",
+        "updatedAt": "2026-10-14T09:15:00.000Z",
+        "product": {
+          "id": "p22",
+          "name": "Qishki shapka",
+          "image_url": null
+        }
+      }
+    ]
+  }
+}

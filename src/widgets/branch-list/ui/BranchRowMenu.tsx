@@ -3,7 +3,13 @@ import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { ArrowRight, Ellipsis, Pencil, Trash2, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../../shared/lib/cx";
-import { IconButton, Portal, useDismiss, usePopover } from "../../../shared/ui/primitives";
+import {
+  IconButton,
+  Portal,
+  Pressable,
+  useDismiss,
+  usePopover,
+} from "../../../shared/ui/primitives";
 
 type MenuItem = {
   key: string;
@@ -131,8 +137,7 @@ export const BranchRowMenu = ({ name, onOpen, onEdit, onDelete }: BranchRowMenuP
             {items.map((item, index) => (
               <div key={item.key} className="contents">
                 {item.danger && index > 0 ? <div role="separator" className={SEP} /> : null}
-                <button
-                  type="button"
+                <Pressable
                   role="menuitem"
                   tabIndex={-1}
                   className={cx(item.danger ? ITEM_DANGER : ITEM)}
@@ -145,7 +150,7 @@ export const BranchRowMenu = ({ name, onOpen, onEdit, onDelete }: BranchRowMenuP
                 >
                   <item.icon size={18} strokeWidth={2} aria-hidden="true" />
                   {item.label}
-                </button>
+                </Pressable>
               </div>
             ))}
           </div>

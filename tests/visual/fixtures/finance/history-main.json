@@ -1,0 +1,1086 @@
+{
+  "statusCode": 200,
+  "message": "ok",
+  "data": {
+    "items": [
+      {
+        "id": "5128",
+        "amount": 1850000,
+        "balance_after": 24615000,
+        "operation_type": "income",
+        "source_type": "courier_payment",
+        "source_id": "c6",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": {
+          "id": "c6",
+          "name": "Jasur Tursunov",
+          "role": "courier"
+        },
+        "payment_method": "cash",
+        "payment_date": "2026-10-15T04:32:00.000Z",
+        "createdAt": "2026-10-15T04:32:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5127",
+        "amount": 2400000,
+        "balance_after": 22765000,
+        "operation_type": "expense",
+        "source_type": "market_payment",
+        "source_id": "31",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": {
+          "id": "31",
+          "name": "Baraka Shop",
+          "role": "market"
+        },
+        "payment_method": "card",
+        "payment_date": "2026-10-15T03:05:00.000Z",
+        "createdAt": "2026-10-15T03:05:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5126",
+        "amount": 3120000,
+        "balance_after": 25165000,
+        "operation_type": "income",
+        "source_type": "branch_to_main",
+        "source_id": "b2",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "2",
+        "created_by_user": {
+          "id": "2",
+          "name": "Karimova Dilnoza",
+          "role": "admin"
+        },
+        "source_user": {
+          "id": "b2",
+          "name": "Sherzod Karimov",
+          "role": "manager"
+        },
+        "payment_method": "cash",
+        "payment_date": "2026-10-15T01:48:00.000Z",
+        "createdAt": "2026-10-15T01:48:00.000Z",
+        "comment": "Samarqand filiali",
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5125",
+        "amount": 2000000,
+        "balance_after": 22045000,
+        "operation_type": "income",
+        "source_type": "manual_income",
+        "source_id": null,
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": null,
+        "payment_method": "cash",
+        "payment_date": "2026-10-15T00:30:00.000Z",
+        "createdAt": "2026-10-15T00:30:00.000Z",
+        "comment": "Bank hisobidan naqd olindi",
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5124",
+        "amount": 1500000,
+        "balance_after": 20045000,
+        "operation_type": "expense",
+        "source_type": "manual_expense",
+        "source_id": null,
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "2",
+        "created_by_user": {
+          "id": "2",
+          "name": "Karimova Dilnoza",
+          "role": "admin"
+        },
+        "source_user": null,
+        "payment_method": "card",
+        "payment_date": "2026-10-14T13:40:00.000Z",
+        "createdAt": "2026-10-14T13:40:00.000Z",
+        "comment": "Ofis ijarasi, oktabr",
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5123",
+        "amount": 920000,
+        "balance_after": 21545000,
+        "operation_type": "income",
+        "source_type": "courier_payment",
+        "source_id": "c1",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": {
+          "id": "c1",
+          "name": "Rustam Qosimov",
+          "role": "courier"
+        },
+        "payment_method": "cash",
+        "payment_date": "2026-10-14T11:12:00.000Z",
+        "createdAt": "2026-10-14T11:12:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5122",
+        "amount": 150000,
+        "balance_after": 20625000,
+        "operation_type": "expense",
+        "source_type": "correction",
+        "source_id": null,
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": null,
+        "payment_method": "cash",
+        "payment_date": "2026-10-14T06:05:00.000Z",
+        "createdAt": "2026-10-14T06:05:00.000Z",
+        "comment": "№10198 bo'yicha xato yozuv qaytarildi",
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5121",
+        "amount": 1275000,
+        "balance_after": 20775000,
+        "operation_type": "expense",
+        "source_type": "market_payment",
+        "source_id": "32",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "2",
+        "created_by_user": {
+          "id": "2",
+          "name": "Karimova Dilnoza",
+          "role": "admin"
+        },
+        "source_user": {
+          "id": "32",
+          "name": "Nur Elektronika",
+          "role": "market"
+        },
+        "payment_method": "card",
+        "payment_date": "2026-10-13T12:30:00.000Z",
+        "createdAt": "2026-10-13T12:30:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5120",
+        "amount": 640000,
+        "balance_after": 22050000,
+        "operation_type": "income",
+        "source_type": "courier_payment",
+        "source_id": "c2",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": {
+          "id": "c2",
+          "name": "Eldor Mahmudov",
+          "role": "courier"
+        },
+        "payment_method": "cash",
+        "payment_date": "2026-10-13T10:10:00.000Z",
+        "createdAt": "2026-10-13T10:10:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5119",
+        "amount": 50000,
+        "balance_after": 21410000,
+        "operation_type": "expense",
+        "source_type": "manual_expense",
+        "source_id": null,
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": null,
+        "payment_method": "cash",
+        "payment_date": "2026-10-13T07:40:00.000Z",
+        "createdAt": "2026-10-13T07:40:00.000Z",
+        "comment": "Kanselyariya tovarlari",
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5118",
+        "amount": 1690000,
+        "balance_after": 21460000,
+        "operation_type": "expense",
+        "source_type": "market_payment",
+        "source_id": "34",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "2",
+        "created_by_user": {
+          "id": "2",
+          "name": "Karimova Dilnoza",
+          "role": "admin"
+        },
+        "source_user": {
+          "id": "34",
+          "name": "Chilonzor Market",
+          "role": "market"
+        },
+        "payment_method": "card",
+        "payment_date": "2026-10-12T11:20:00.000Z",
+        "createdAt": "2026-10-12T11:20:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5117",
+        "amount": 2110000,
+        "balance_after": 23150000,
+        "operation_type": "income",
+        "source_type": "courier_payment",
+        "source_id": "c2",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": {
+          "id": "c2",
+          "name": "Eldor Mahmudov",
+          "role": "courier"
+        },
+        "payment_method": "cash",
+        "payment_date": "2026-10-12T06:45:00.000Z",
+        "createdAt": "2026-10-12T06:45:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5116",
+        "amount": 1470000,
+        "balance_after": 21040000,
+        "operation_type": "expense",
+        "source_type": "market_payment",
+        "source_id": "32",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "2",
+        "created_by_user": {
+          "id": "2",
+          "name": "Karimova Dilnoza",
+          "role": "admin"
+        },
+        "source_user": {
+          "id": "32",
+          "name": "Nur Elektronika",
+          "role": "market"
+        },
+        "payment_method": "card",
+        "payment_date": "2026-10-11T11:20:00.000Z",
+        "createdAt": "2026-10-11T11:20:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5115",
+        "amount": 2540000,
+        "balance_after": 22510000,
+        "operation_type": "income",
+        "source_type": "courier_payment",
+        "source_id": "c1",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": {
+          "id": "c1",
+          "name": "Rustam Qosimov",
+          "role": "courier"
+        },
+        "payment_method": "cash",
+        "payment_date": "2026-10-11T06:45:00.000Z",
+        "createdAt": "2026-10-11T06:45:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5114",
+        "amount": 2140000,
+        "balance_after": 19970000,
+        "operation_type": "expense",
+        "source_type": "market_payment",
+        "source_id": "31",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "2",
+        "created_by_user": {
+          "id": "2",
+          "name": "Karimova Dilnoza",
+          "role": "admin"
+        },
+        "source_user": {
+          "id": "31",
+          "name": "Baraka Shop",
+          "role": "market"
+        },
+        "payment_method": "card",
+        "payment_date": "2026-10-10T11:20:00.000Z",
+        "createdAt": "2026-10-10T11:20:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5113",
+        "amount": 1920000,
+        "balance_after": 22110000,
+        "operation_type": "income",
+        "source_type": "courier_payment",
+        "source_id": "c6",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": {
+          "id": "c6",
+          "name": "Jasur Tursunov",
+          "role": "courier"
+        },
+        "payment_method": "cash",
+        "payment_date": "2026-10-10T06:45:00.000Z",
+        "createdAt": "2026-10-10T06:45:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5112",
+        "amount": 1830000,
+        "balance_after": 20190000,
+        "operation_type": "expense",
+        "source_type": "market_payment",
+        "source_id": "34",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "2",
+        "created_by_user": {
+          "id": "2",
+          "name": "Karimova Dilnoza",
+          "role": "admin"
+        },
+        "source_user": {
+          "id": "34",
+          "name": "Chilonzor Market",
+          "role": "market"
+        },
+        "payment_method": "card",
+        "payment_date": "2026-10-09T11:20:00.000Z",
+        "createdAt": "2026-10-09T11:20:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5111",
+        "amount": 2380000,
+        "balance_after": 22020000,
+        "operation_type": "income",
+        "source_type": "courier_payment",
+        "source_id": "c2",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": {
+          "id": "c2",
+          "name": "Eldor Mahmudov",
+          "role": "courier"
+        },
+        "payment_method": "cash",
+        "payment_date": "2026-10-09T06:45:00.000Z",
+        "createdAt": "2026-10-09T06:45:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5110",
+        "amount": 1580000,
+        "balance_after": 19640000,
+        "operation_type": "expense",
+        "source_type": "market_payment",
+        "source_id": "32",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "2",
+        "created_by_user": {
+          "id": "2",
+          "name": "Karimova Dilnoza",
+          "role": "admin"
+        },
+        "source_user": {
+          "id": "32",
+          "name": "Nur Elektronika",
+          "role": "market"
+        },
+        "payment_method": "card",
+        "payment_date": "2026-10-08T11:20:00.000Z",
+        "createdAt": "2026-10-08T11:20:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5109",
+        "amount": 2050000,
+        "balance_after": 21220000,
+        "operation_type": "income",
+        "source_type": "courier_payment",
+        "source_id": "c1",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": {
+          "id": "c1",
+          "name": "Rustam Qosimov",
+          "role": "courier"
+        },
+        "payment_method": "cash",
+        "payment_date": "2026-10-08T06:45:00.000Z",
+        "createdAt": "2026-10-08T06:45:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5108",
+        "amount": 2060000,
+        "balance_after": 19170000,
+        "operation_type": "expense",
+        "source_type": "market_payment",
+        "source_id": "31",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "2",
+        "created_by_user": {
+          "id": "2",
+          "name": "Karimova Dilnoza",
+          "role": "admin"
+        },
+        "source_user": {
+          "id": "31",
+          "name": "Baraka Shop",
+          "role": "market"
+        },
+        "payment_method": "card",
+        "payment_date": "2026-10-07T11:20:00.000Z",
+        "createdAt": "2026-10-07T11:20:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5107",
+        "amount": 2270000,
+        "balance_after": 21230000,
+        "operation_type": "income",
+        "source_type": "courier_payment",
+        "source_id": "c6",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": {
+          "id": "c6",
+          "name": "Jasur Tursunov",
+          "role": "courier"
+        },
+        "payment_method": "cash",
+        "payment_date": "2026-10-07T06:45:00.000Z",
+        "createdAt": "2026-10-07T06:45:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5106",
+        "amount": 1390000,
+        "balance_after": 18960000,
+        "operation_type": "expense",
+        "source_type": "market_payment",
+        "source_id": "34",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "2",
+        "created_by_user": {
+          "id": "2",
+          "name": "Karimova Dilnoza",
+          "role": "admin"
+        },
+        "source_user": {
+          "id": "34",
+          "name": "Chilonzor Market",
+          "role": "market"
+        },
+        "payment_method": "card",
+        "payment_date": "2026-10-06T11:20:00.000Z",
+        "createdAt": "2026-10-06T11:20:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5105",
+        "amount": 1840000,
+        "balance_after": 20350000,
+        "operation_type": "income",
+        "source_type": "courier_payment",
+        "source_id": "c2",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": {
+          "id": "c2",
+          "name": "Eldor Mahmudov",
+          "role": "courier"
+        },
+        "payment_method": "cash",
+        "payment_date": "2026-10-06T06:45:00.000Z",
+        "createdAt": "2026-10-06T06:45:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5104",
+        "amount": 1750000,
+        "balance_after": 18510000,
+        "operation_type": "expense",
+        "source_type": "market_payment",
+        "source_id": "32",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "2",
+        "created_by_user": {
+          "id": "2",
+          "name": "Karimova Dilnoza",
+          "role": "admin"
+        },
+        "source_user": {
+          "id": "32",
+          "name": "Nur Elektronika",
+          "role": "market"
+        },
+        "payment_method": "card",
+        "payment_date": "2026-10-05T11:20:00.000Z",
+        "createdAt": "2026-10-05T11:20:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5103",
+        "amount": 2610000,
+        "balance_after": 20260000,
+        "operation_type": "income",
+        "source_type": "courier_payment",
+        "source_id": "c1",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": {
+          "id": "c1",
+          "name": "Rustam Qosimov",
+          "role": "courier"
+        },
+        "payment_method": "cash",
+        "payment_date": "2026-10-05T06:45:00.000Z",
+        "createdAt": "2026-10-05T06:45:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5102",
+        "amount": 2210000,
+        "balance_after": 17650000,
+        "operation_type": "expense",
+        "source_type": "market_payment",
+        "source_id": "31",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "2",
+        "created_by_user": {
+          "id": "2",
+          "name": "Karimova Dilnoza",
+          "role": "admin"
+        },
+        "source_user": {
+          "id": "31",
+          "name": "Baraka Shop",
+          "role": "market"
+        },
+        "payment_method": "card",
+        "payment_date": "2026-10-04T11:20:00.000Z",
+        "createdAt": "2026-10-04T11:20:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5101",
+        "amount": 1960000,
+        "balance_after": 19860000,
+        "operation_type": "income",
+        "source_type": "courier_payment",
+        "source_id": "c6",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": {
+          "id": "c6",
+          "name": "Jasur Tursunov",
+          "role": "courier"
+        },
+        "payment_method": "cash",
+        "payment_date": "2026-10-04T06:45:00.000Z",
+        "createdAt": "2026-10-04T06:45:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5100",
+        "amount": 1480000,
+        "balance_after": 17900000,
+        "operation_type": "expense",
+        "source_type": "market_payment",
+        "source_id": "34",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "2",
+        "created_by_user": {
+          "id": "2",
+          "name": "Karimova Dilnoza",
+          "role": "admin"
+        },
+        "source_user": {
+          "id": "34",
+          "name": "Chilonzor Market",
+          "role": "market"
+        },
+        "payment_method": "card",
+        "payment_date": "2026-10-03T11:20:00.000Z",
+        "createdAt": "2026-10-03T11:20:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5099",
+        "amount": 2430000,
+        "balance_after": 19380000,
+        "operation_type": "income",
+        "source_type": "courier_payment",
+        "source_id": "c2",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": {
+          "id": "c2",
+          "name": "Eldor Mahmudov",
+          "role": "courier"
+        },
+        "payment_method": "cash",
+        "payment_date": "2026-10-03T06:45:00.000Z",
+        "createdAt": "2026-10-03T06:45:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5098",
+        "amount": 1920000,
+        "balance_after": 16950000,
+        "operation_type": "expense",
+        "source_type": "market_payment",
+        "source_id": "32",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "2",
+        "created_by_user": {
+          "id": "2",
+          "name": "Karimova Dilnoza",
+          "role": "admin"
+        },
+        "source_user": {
+          "id": "32",
+          "name": "Nur Elektronika",
+          "role": "market"
+        },
+        "payment_method": "card",
+        "payment_date": "2026-10-02T11:20:00.000Z",
+        "createdAt": "2026-10-02T11:20:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5097",
+        "amount": 1780000,
+        "balance_after": 18870000,
+        "operation_type": "income",
+        "source_type": "courier_payment",
+        "source_id": "c1",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": {
+          "id": "c1",
+          "name": "Rustam Qosimov",
+          "role": "courier"
+        },
+        "payment_method": "cash",
+        "payment_date": "2026-10-02T06:45:00.000Z",
+        "createdAt": "2026-10-02T06:45:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5096",
+        "amount": 1640000,
+        "balance_after": 17090000,
+        "operation_type": "expense",
+        "source_type": "market_payment",
+        "source_id": "31",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "2",
+        "created_by_user": {
+          "id": "2",
+          "name": "Karimova Dilnoza",
+          "role": "admin"
+        },
+        "source_user": {
+          "id": "31",
+          "name": "Baraka Shop",
+          "role": "market"
+        },
+        "payment_method": "card",
+        "payment_date": "2026-10-01T11:20:00.000Z",
+        "createdAt": "2026-10-01T11:20:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      },
+      {
+        "id": "5095",
+        "amount": 2150000,
+        "balance_after": 18730000,
+        "operation_type": "income",
+        "source_type": "courier_payment",
+        "source_id": "c6",
+        "cashbox_id": "1",
+        "cashbox_type": "main",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        },
+        "source_user": {
+          "id": "c6",
+          "name": "Jasur Tursunov",
+          "role": "courier"
+        },
+        "payment_method": "cash",
+        "payment_date": "2026-10-01T06:45:00.000Z",
+        "createdAt": "2026-10-01T06:45:00.000Z",
+        "comment": null,
+        "cashbox": {
+          "id": "1",
+          "balance": 24615000,
+          "balance_cash": 18240000,
+          "balance_card": 6375000,
+          "cashbox_type": "main"
+        }
+      }
+    ],
+    "pagination": {
+      "total": 34,
+      "page": 1,
+      "limit": 10,
+      "totalPages": 4
+    }
+  }
+}

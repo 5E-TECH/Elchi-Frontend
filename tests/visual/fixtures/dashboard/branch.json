@@ -1,0 +1,137 @@
+{
+  "statusCode": 200,
+  "message": "ok",
+  "data": {
+    "orders": {
+      "acceptedCount": 86,
+      "soldAndPaid": 58,
+      "cancelled": 9,
+      "profit": 1740000,
+      "totalRevenue": 17090000
+    },
+    "branchDashboard": {
+      "role": "MANAGER",
+      "today_orders_count": 86,
+      "week_orders_count": 412,
+      "active_batches_count": 5,
+      "couriers_count": 8,
+      "cards": {
+        "orders": {
+          "total": 86,
+          "new": 12,
+          "on_the_road": 7,
+          "delivered": 58,
+          "cancelled": 9
+        },
+        "markets": [
+          {
+            "market_id": "31",
+            "market_name": "Baraka Shop",
+            "orders_count": 24,
+            "total_price": 4800000
+          },
+          {
+            "market_id": "32",
+            "market_name": "Nur Elektronika",
+            "orders_count": 18,
+            "total_price": 6100000
+          },
+          {
+            "market_id": "5",
+            "market_name": "Ipak Yo'li Savdo",
+            "orders_count": 14,
+            "total_price": 2300000
+          },
+          {
+            "market_id": "34",
+            "market_name": "Chilonzor Market",
+            "orders_count": 12,
+            "total_price": 1900000
+          },
+          {
+            "market_id": "35",
+            "market_name": "Oila Market",
+            "orders_count": 10,
+            "total_price": 1150000
+          },
+          {
+            "market_id": "41",
+            "market_name": "Farg'ona Savdo",
+            "orders_count": 8,
+            "total_price": 840000
+          }
+        ],
+        "packages": {
+          "on_the_way": 3,
+          "waiting_for_acceptance": 2
+        },
+        "couriers": {
+          "branch_couriers": 8,
+          "active_today": 6
+        }
+      },
+      "visibility": {
+        "orders": true,
+        "markets": true,
+        "packages": true,
+        "couriers": true
+      }
+    },
+    "topBranches": [
+      {
+        "branch_id": "b1",
+        "branch_name": "Toshkent HQ",
+        "total_orders": 209,
+        "successful_orders": 166,
+        "success_rate": 79.43
+      },
+      {
+        "branch_id": "b2",
+        "branch_name": "Samarqand filiali",
+        "total_orders": 34,
+        "successful_orders": 25,
+        "success_rate": 73.53
+      },
+      {
+        "branch_id": "b3",
+        "branch_name": "Andijon filiali",
+        "total_orders": 22,
+        "successful_orders": 16,
+        "success_rate": 72.73
+      },
+      {
+        "branch_id": "b4",
+        "branch_name": "Namangan filiali",
+        "total_orders": 29,
+        "successful_orders": 21,
+        "success_rate": 72.41
+      },
+      {
+        "branch_id": "b5",
+        "branch_name": "Buxoro filiali",
+        "total_orders": 18,
+        "successful_orders": 13,
+        "success_rate": 72.22
+      },
+      {
+        "branch_id": "11",
+        "branch_name": "Farg'ona filiali",
+        "total_orders": 86,
+        "successful_orders": 58,
+        "success_rate": 67.44
+      },
+      {
+        "branch_id": "b6",
+        "branch_name": "Urgut filiali",
+        "total_orders": 40,
+        "successful_orders": 24,
+        "success_rate": 60
+      }
+    ],
+    "topBranchesMeta": {
+      "period_rule": "last_30_days",
+      "period_days": 30,
+      "min_orders": 1
+    }
+  }
+}

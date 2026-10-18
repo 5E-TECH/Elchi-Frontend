@@ -1,0 +1,47 @@
+{
+  "qr-10285": {
+    "id": "10285",
+    "qr_code_token": "qr-10285",
+    "createdAt": "2026-10-15T04:12:00.000Z",
+    "status": "received",
+    "total_price": 185000,
+    "to_be_paid": 185000,
+    "where_deliver": "address",
+    "product_quantity": 1,
+    "market": { "name": "Baraka Shop" },
+    "customer": { "name": "Zarina Mirzayeva", "phone_number": "+998907421836" },
+    "district": { "name": "Chilonzor tumani", "region": { "name": "Toshkent sh." } },
+    "region": { "name": "Toshkent sh." },
+    "items": []
+  },
+  "qr-10282": {
+    "id": "10282",
+    "qr_code_token": "qr-10282",
+    "createdAt": "2026-10-15T03:47:00.000Z",
+    "status": "received",
+    "total_price": 232500,
+    "to_be_paid": 232500,
+    "where_deliver": "center",
+    "product_quantity": 2,
+    "market": { "name": "Nur Elektronika" },
+    "customer": { "name": "Jahongir Alimov", "phone_number": "+998936150792" },
+    "district": { "name": "Yunusobod tumani", "region": { "name": "Toshkent sh." } },
+    "region": { "name": "Toshkent sh." },
+    "items": []
+  },
+  "qr-10278": {
+    "id": "10278",
+    "qr_code_token": "qr-10278",
+    "createdAt": "2026-10-14T13:04:00.000Z",
+    "status": "waiting",
+    "total_price": 410000,
+    "to_be_paid": 410000,
+    "where_deliver": "address",
+    "product_quantity": 1,
+    "market": { "name": "Chilonzor Market" },
+    "customer": { "name": "Madina Ochilova", "phone_number": "+998992308451" },
+    "district": { "name": "Sergeli tumani", "region": { "name": "Toshkent sh." } },
+    "region": { "name": "Toshkent sh." },
+    "items": []
+  }
+}

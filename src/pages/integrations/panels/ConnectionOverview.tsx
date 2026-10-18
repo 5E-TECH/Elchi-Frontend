@@ -23,7 +23,14 @@ import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { MINUS_SIGN, formatMoneyLocalized, formatNumberLocalized, formatPercentLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
-import { Badge, Button, StateIcon, TONE_FG, type Tone } from "../../../shared/ui/primitives";
+import {
+  Badge,
+  Button,
+  Pressable,
+  StateIcon,
+  TONE_FG,
+  type Tone,
+} from "../../../shared/ui/primitives";
 import { ChartBlock, ColumnGrid, LegendList, SegBar, SuccessGauge } from "../ui";
 import type { Connection } from "../useConnections";
 
@@ -207,14 +214,13 @@ const ChecklistItem = ({ check, onFix }: { check: Check; onFix?: (tab: string) =
             </Button>
           </div>
         ) : actionable ? (
-          <button
-            type="button"
+          <Pressable
             onClick={() => onFix!(check.fixTab!)}
             className="mt-1 inline-flex items-center gap-1 self-start text-[13px] font-semibold text-action-fg hover:underline max-md:min-h-11"
           >
             {t(check.fixHintKey ?? "fixDefault")}
             <ChevronRight size={16} aria-hidden="true" />
-          </button>
+          </Pressable>
         ) : null}
       </div>
     </div>
@@ -261,15 +267,14 @@ const MetricTile = ({
   );
   if (!onOpen) return <div className="flex min-w-0 flex-col gap-0.5 rounded-[10px] bg-sunken px-3 py-2.5">{body}</div>;
   return (
-    <button
-      type="button"
+    <Pressable
       onClick={() => onOpen(tab)}
       title={t("ovwOpenTab", { tab: tabLabel })}
       aria-label={`${label}: ${value ?? "—"}. ${t("ovwOpenTab", { tab: tabLabel })}`}
       className="flex min-w-0 flex-col gap-0.5 rounded-[10px] bg-sunken px-3 py-2.5 text-left transition-[background-color] duration-150 hover:bg-row-hover motion-reduce:transition-none"
     >
       {body}
-    </button>
+    </Pressable>
   );
 };
 
@@ -453,14 +458,13 @@ const ConnectionOverview = ({
             <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-[18px] text-text-muted">
               <span>{t("console.readyButFailed", { count: failed })}</span>
               {onFix ? (
-                <button
-                  type="button"
+                <Pressable
                   onClick={() => onFix("log")}
                   className="inline-flex items-center gap-1 font-semibold text-action-fg hover:underline max-md:min-h-11"
                 >
                   {t("console.openEvents")}
                   <ChevronRight size={16} aria-hidden="true" />
-                </button>
+                </Pressable>
               ) : null}
             </p>
           ) : null}

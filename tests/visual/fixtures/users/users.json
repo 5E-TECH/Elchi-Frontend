@@ -1,0 +1,88 @@
+{
+  "statusCode": 200,
+  "data": {
+    "items": [
+      {
+        "id": "301",
+        "name": "Mehr Kosmetika",
+        "phone_number": "+998941173984",
+        "role": "market",
+        "status": "active",
+        "createdAt": "2026-10-15T04:40:00.000Z",
+        "updatedAt": "2026-10-15T04:40:00.000Z"
+      },
+      {
+        "id": "302",
+        "name": "Jasur Tursunov",
+        "phone_number": "+998904121855",
+        "role": "courier",
+        "status": "active",
+        "createdAt": "2026-10-06T04:30:00.000Z",
+        "updatedAt": "2026-10-06T04:30:00.000Z"
+      },
+      {
+        "id": "303",
+        "name": "Sanjar Xudoyberdiyev",
+        "phone_number": "+998915073318",
+        "role": "courier",
+        "status": "inactive",
+        "createdAt": "2026-10-03T10:20:00.000Z",
+        "updatedAt": "2026-10-03T10:20:00.000Z"
+      },
+      {
+        "id": "304",
+        "name": "Gulchehra Sattorova",
+        "phone_number": "+998996402187",
+        "role": "manager",
+        "status": "active",
+        "createdAt": "2026-10-02T06:05:00.000Z",
+        "updatedAt": "2026-10-02T06:05:00.000Z"
+      },
+      {
+        "id": "31",
+        "name": "Baraka Shop",
+        "phone_number": "+998903152241",
+        "role": "market",
+        "status": "active",
+        "createdAt": "2026-09-29T05:00:00.000Z",
+        "updatedAt": "2026-09-29T05:00:00.000Z"
+      },
+      {
+        "id": "32",
+        "name": "Nur Elektronika",
+        "phone_number": "+998936041872",
+        "role": "market",
+        "status": "active",
+        "createdAt": "2026-09-24T11:45:00.000Z",
+        "updatedAt": "2026-09-24T11:45:00.000Z"
+      },
+      {
+        "id": "305",
+        "name": "Bobur Xolmatov",
+        "phone_number": "+998945520761",
+        "role": "registrator",
+        "status": "active",
+        "createdAt": "2026-09-17T04:10:00.000Z",
+        "updatedAt": "2026-09-17T04:10:00.000Z"
+      },
+      {
+        "id": "306",
+        "name": "Nilufar Rashidova",
+        "phone_number": "+998908112649",
+        "role": "admin",
+        "status": "active",
+        "createdAt": "2026-09-03T09:00:00.000Z",
+        "updatedAt": "2026-09-03T09:00:00.000Z"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "limit": 10,
+      "total": 8,
+      "totalPages": 1,
+      "totalUsers": 8,
+      "totalMarket": 3,
+      "totalEmployees": 5
+    }
+  }
+}

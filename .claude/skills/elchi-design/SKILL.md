@@ -73,9 +73,18 @@ nima yashirinadi yoki kartaga aylanadi; bo'sh, yuklanish va xato holatlari; dial
   Sana/vaqt — `formatDateTimeLocalized` / `formatDateLocalized` / `formatTimeLocalized` (`src/shared/lib/formatDateTime.ts`),
   telefon — `formatPhone` / `toTelHref` (`formatPhone.ts`), ishorali pul — `formatSignedMoneyLocalized`, klass
   birlashtirish — `cx` (`src/shared/lib/cx.ts`). Hammasining namunasi: `/ops/ui-kit` (superadmin).
-  v1 o'rnini bosuvchilar: `shared/components/button` → `Button`, `shared/ui/StatusBadge` va
+  v1 o'rnini bosuvchilar (v1 modullari o'chirilgan): `shared/components/button` → `Button`, `shared/ui/StatusBadge` va
   `pages/orders/list/OrderStatusBadge` → `StatusBadge` / `OrderStatusBadge`, `statusColorMap` → `statusRegistry` +
-  `tone.ts`, `shared/lib/formatDate` → `formatDateTimeLocalized` (qo'riqchi yangi importni ushlaydi).
+  `tone.ts`, `shared/lib/formatDate` → `formatDateTimeLocalized` (qo'riqchi ularning importi qaytishini ushlaydi).
+- **Xom `<button>` yozilmaydi** (ESLint `design-v2/raw-control`, 5-bosqich). Amal — `Button` / `IconButton`.
+  Amal tugmasi ko'rinishida bo'lmagan bosiladigan yuza — **`Pressable`** (o'sha barrel, uslubsiz
+  `<button type="button">`, o'zi klass qo'shmaydi): karta va telefon qator-kartasi, chip (`aria-pressed`), chip «×»,
+  menyu bandi (`role="menuitem"`), kalit (`role="switch"` + `.el-switch` retsepti), ochib-yopish sarlavhasi
+  (`aria-expanded`), matn ichidagi bosiladigan so'z (maketda `.el-btn-link` bo'lsa — `Button variant="link"`).
+  Ko'rinish — CODE-MAP retsepti klasslari:
+  `<Pressable aria-pressed={on} className="…" onClick={…}>`. `Pressable` ga `.el-btn` ko'rinishi (fon + radius +
+  balandlik) berilmaydi — u `Button`. Native `<input type="checkbox|radio">` (`.el-check` / `.el-radio`) ruxsat.
+  Asosli istisno (masalan kamera ishi): `// eslint-disable-next-line design-v2/raw-control -- <sabab>`.
 - **Forma, dialog, holatlar — 3-bosqich primitivlari (tayyor)**, o'sha barreldan; namunasi
   `/ops/ui-kit?section=forms|select|date|dialog|feedback|states|table`, klass retseptlari CODE-MAP (`.el-field`,
   `.el-select`, `.el-cal*`, `.el-dialog*`, `.el-toast*`, `.el-empty*`, `.el-skel*`):
@@ -92,14 +101,14 @@ nima yashirinadi yoki kartaga aylanadi; bo'sh, yuklanish va xato holatlari; dial
   - **ro'yxat sahifasi (4-bosqich standarti)** — jadval `DataTable` (ustunlar, `density`, server saralashi `sort` /
     `onSortChange`, `selection`, telefonda `renderCard` → kartalar), sahifalash `Pagination` (`Card padding="none"
     footer={<Pagination … />}`), ikkalasi o'sha barreldan; namunasi `/ops/ui-kit?section=table`, ishlatilishi —
-    `src/pages/orders/list/OrdersTable.tsx` (CODE-MAP §2.6). `shared/components/Table` va
-    `shared/components/pagination` (v1) yangi kodda ishlatilmaydi.
+    `src/pages/orders/list/OrdersTable.tsx` (CODE-MAP §2.6). v1 `shared/components/Table` va
+    `shared/components/pagination` o'chirilgan.
   - ro'yxat, kalendar, dialog `#ui-portal` da: sahifadagi `document` «tashqariga bosish» tinglovchisi
     `if (isInUiLayer(event.target)) return;` bilan boshlanadi (aks holda panel ichidagi ro'yxat panelni yopadi).
-  - v1 o'ramlari (`SearchableSelect`, `FilterSelect`, `FilterMultiSelect`, `PopupSelect`, `DateRangePicker`,
-    `FilterDateRange`, `QuickDateRangeFilter`, `Popup`, `FormPopup`, `PopupConfirm`, `UpdatePopup`, `ConfirmButton`,
-    `EmptyState`, `QueryErrorState`, `TableSkeleton`, `PhoneInput`, `SearchInput`) API'si saqlangan, ichi v2 —
-    eski sahifa ishlayveradi; **yangi kodda** to'g'ridan-to'g'ri primitivni ishlating.
+  - qolgan v1 o'ramlari (`FilterSelect`, `PopupSelect`, `PrintModeSelect`, `Popup`, `FormPopup`, `PageLoader`) API'si
+    saqlangan, ichi v2 — eski sahifa ishlayveradi; **yangi kodda** to'g'ridan-to'g'ri primitivni ishlating
+    (iste'molchisiz qolgan `SearchableSelect`, `DateRangePicker`, `PhoneInput`, `EmptyState`, `TableSkeleton` …
+    5-bosqichda o'chirildi).
   - Testda `renderWithProviders` (`src/test/test-utils.tsx`) `ConfirmHost` va `Toaster` ni o'zi qo'shadi: tasdiqni
     `findByRole("alertdialog", { name })` → tugma bosish, xabarni `findByText` bilan tekshiring.
 - Faqat tokenlar: `bg-surface`, `text-text-muted`, `border-border`, `bg-action text-on-solid`,
@@ -138,14 +147,33 @@ nima yashirinadi yoki kartaga aylanadi; bo'sh, yuklanish va xato holatlari; dial
 ## 5. Eski uslub qaytmaydi
 
 Yangi yoki o'zgargan qatorlarda bo'lmasligi kerak: hex / `rgb()` / `hsl()`, Tailwind rang oilalari (`bg-blue-500`,
-`text-gray-400`), `dark:` juftlari, eski nomlar (`main`, `maindark`, `primary`, `primarydark`, `purple*`,
-`border-soft`, `card-surface`, `page-surface`, `dashboard-*`), 12px dan kichik matn (`text-[11px]`), `font-black` /
+`text-gray-400`), nomli CSS ranglari (`stroke="white"`, `color: "red"`), `dark:` juftlari, eski nomlar (`main`,
+`maindark`, `primary`, `primarydark`, `purple*`, `border-soft`, `card-surface`, `page-surface`, `dashboard-*`), 12px
+dan kichik matn (`text-[11px]`), `font-black` /
 `font-extrabold`, gradient, v1 klasslari (`el-card`, `el-glass-control`, `el-segmented*`), v1 yordamchilari (`TYPO`,
-`TEXT`, `toneAccent`, `formatPercent`, `HeaderName`, `MetricCard`), v1 komponent importlari (`shared/components/button`,
-`shared/ui/StatusBadge`, `pages/orders/list/OrderStatusBadge`, `statusColorMap`, `shared/lib/formatDate`), maxsus soya, `Intl.NumberFormat`, qo'lda `so'm`,
+`TEXT`, `toneAccent`, `formatPercent`, `HeaderName`, `MetricCard`), o'chirilgan v1 modullari importi
+(`shared/components/button`, `shared/ui/StatusBadge`, `pages/orders/list/OrderStatusBadge`, `statusColorMap`,
+`shared/lib/formatDate`), maxsus soya, `Intl.NumberFormat`, qo'lda `so'm`,
 boshqa ikonka kutubxonalari, antd `message` / `notification` / `Popconfirm` / `Modal.confirm` / `App.useApp()`,
 brauzer `confirm()` / `alert()` / `prompt()` (ESLint xato beradi — `notify`, `useConfirm()`, `Dialog`), qo'lda yozilgan
 «Yuklanmoqda…» / «Ma'lumot yo'q» bloklari (`QueryBoundary`, `EmptyState`, `ErrorState`).
+
+**ESLint taqiqlari (5-bosqich, `npm run lint`; `docs/DESIGN_SYSTEM.md` §12.2):**
+
+- xom `<button>` → `Button` / `IconButton` / `Pressable`; `<select>` → `Select`; `<textarea>` →
+  `TextInput multiline`; matn `<input>` (`type` siz, matn turi, dinamik `type={…}`) → `Field` + `TextInput` /
+  `DateInput`; `<dialog>` → `Dialog`; `role="button"` → haqiqiy tugma; `bg-action` li `<a>` / `<Link>` →
+  `buttonClasses({ variant })`. Ruxsat: `<input type="checkbox|radio|file|hidden">`.
+- antd'dan faqat `ConfigProvider`, `theme`, `QRCode` — `Card`, `Table`, `Tag`, `Tooltip`, `Alert`, `Switch`,
+  `Button`, `Input`, `DatePicker` … va `import type` ham taqiq; `antd/*` chuqur importi faqat `antd/locale/*`.
+- `@ant-design/icons` va boshqa ikonka kutubxonalari — butun `src` da.
+- Xom element taqiqidan dizayn tizimi qatlami (`src/shared/ui/**`, shell) va testlar istisno (antd / ikonka
+  taqiqidan — faqat testlar); v1 fayllar — ratchet ro'yxatlari (faqat
+  qisqaradi; kamera ishi, yopiq `/market-operators`, `SalaryPaymentPopup`, `PrintModeSelect`). Boshqa hamma joyda — **xato**, `warn` yo'q (yangi
+  qurilayotgan sahifada ham). Bitta qator istisnosi faqat sabab bilan (`-- <sabab>`, test tekshiradi).
+
+Ko'chirilgan papkalarda (`V2_SCOPES`, `scripts/design-guard.mjs`) `// dizayn-v2:` belgisiz yordamchi fayl ham rang
+qoidalarida 0 — u yerda yangi `.ts` faylga ham rang literal yozilmaydi.
 
 ```bash
 npm run design:guard -- --diff            # origin/dev dan beri QO'SHILGAN qatorlar — yangi buzilish 0 (CI PR'da shu)
@@ -154,8 +182,8 @@ npm run design:guard -- --changed         # baseline'dan farq qilgan fayllar (os
 npm run design:guard -- --update          # eski fayldagi buzilishlarni kamaytirgach yangi sonni qotiring
 ```
 
-Qo'riqchi ushlamaydiganlarni o'zingiz tekshirasiz: rangsiz maxsus soya, antd vizual komponentlari (`Card`, `Tag`,
-`Segmented`), `sm:` telefon chegarasi sifatida, ikkinchi asosiy tugma, karta ichidagi karta.
+Qo'riqchi ushlamaydiganlarni o'zingiz tekshirasiz: rangsiz maxsus soya, `sm:` telefon chegarasi sifatida, ikkinchi
+asosiy tugma, karta ichidagi karta, `Pressable` ga `.el-btn` ko'rinishi berilgani (`docs/DESIGN_SYSTEM.md` §12.7).
 
 Qo'riqchi ratchet usulida ishlaydi (`design/guard-baseline.json`): eski fayldagi son faqat kamayadi, yangi faylda
 va `// dizayn-v2:` belgili faylda 0. Testni, baseline'ni oshirishni (`--allow-increase`) yoki `design-guard-ignore`
@@ -185,6 +213,16 @@ npm test                          # TO'LIQ, nishonli emas: dizayn qo'riqchisi, p
 npm run design:guard -- --diff    # qo'shilgan qatorlarda yangi buzilish yo'q (CI PR qadami)
 npm run build                     # tsc -b qat'iy, CI shu bilan yiqiladi
 ```
+
+**Vizual snapshotlar** CI'da yuradi («Visual» workflow, 23 sahna × kunduzgi/tungi × 1440/390, Playwright Docker
+obrazi; `docs/DESIGN_SYSTEM.md` §12.5) — lokal Docker shart emas, lokalda baseline yaratilmaydi. PR'da farq chiqsa:
+kutilmagan — kodni tuzating; kutilgan (sahna sahifasini ataylab o'zgartirdingiz) — GitHub → Actions → **Visual** →
+**Run workflow** (branch, «update» ✓): baseline'lar obrazda qayta yaratilib shu branchga commit qilinadi, keyin
+`git pull`, yangi commit bilan push va PR'da diff'ni ko'rsating (tugma `visual.yml` `dev` da bo'lgandagina chiqadi).
+«baseline yo'q» — xato emas (neytral), xuddi shu «Run workflow (update)» bilan yaratiladi. Sahnani lokalda ko'rish:
+`npm run visual:build`, so'ng `VISUAL_DRY=1 npx playwright test -c playwright.visual.config.ts --project desktop-light
+-g <sahna>` → `test-results-visual/dry/…png` ni Read qiling. Ixtiyoriy: `npm run visual:pull` (artefaktni olish, gh
+CLI yoki `-- --from <zip>`).
 
 ## 8. Maket yo'q bo'lsa
 

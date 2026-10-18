@@ -1,0 +1,134 @@
+{
+  "statusCode": 200,
+  "message": "ok",
+  "data": {
+    "cashbox": {
+      "id": "205",
+      "balance": 2820000,
+      "cashbox_type": "markets",
+      "user_id": "5"
+    },
+    "cashboxHistory": [
+      {
+        "id": "7310",
+        "amount": 2000000,
+        "balance_after": 2820000,
+        "operation_type": "expense",
+        "source_type": "market_payment",
+        "source_id": null,
+        "cashbox_id": "205",
+        "cashbox_type": "markets",
+        "payment_method": "transfer",
+        "payment_date": "2026-10-15T04:52:00.000Z",
+        "createdAt": "2026-10-15T04:52:00.000Z",
+        "comment": "Oktabr, 1-hafta hisobi",
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        }
+      },
+      {
+        "id": "7309",
+        "amount": 185000,
+        "balance_after": 4820000,
+        "operation_type": "income",
+        "source_type": "sell",
+        "source_id": "10234",
+        "cashbox_id": "205",
+        "cashbox_type": "markets",
+        "payment_method": "cash",
+        "payment_date": "2026-10-15T03:40:00.000Z",
+        "createdAt": "2026-10-15T03:40:00.000Z",
+        "comment": null,
+        "created_by": null,
+        "created_by_user": null
+      },
+      {
+        "id": "7308",
+        "amount": 2400000,
+        "balance_after": 4635000,
+        "operation_type": "expense",
+        "source_type": "market_payment",
+        "source_id": null,
+        "cashbox_id": "205",
+        "cashbox_type": "markets",
+        "payment_method": "cash",
+        "payment_date": "2026-10-15T02:05:00.000Z",
+        "createdAt": "2026-10-15T02:05:00.000Z",
+        "comment": null,
+        "created_by": "1",
+        "created_by_user": {
+          "id": "1",
+          "name": "Aliyev Vali",
+          "role": "superadmin"
+        }
+      },
+      {
+        "id": "7307",
+        "amount": 640000,
+        "balance_after": 7035000,
+        "operation_type": "income",
+        "source_type": "sell",
+        "source_id": "10239",
+        "cashbox_id": "205",
+        "cashbox_type": "markets",
+        "payment_method": "cash",
+        "payment_date": "2026-10-15T00:30:00.000Z",
+        "createdAt": "2026-10-15T00:30:00.000Z",
+        "comment": null,
+        "created_by": null,
+        "created_by_user": null
+      },
+      {
+        "id": "7306",
+        "amount": 1150000,
+        "balance_after": 6395000,
+        "operation_type": "income",
+        "source_type": "sell",
+        "source_id": "10232",
+        "cashbox_id": "205",
+        "cashbox_type": "markets",
+        "payment_method": "transfer",
+        "payment_date": "2026-10-14T13:04:00.000Z",
+        "createdAt": "2026-10-14T13:04:00.000Z",
+        "comment": null,
+        "created_by": null,
+        "created_by_user": null
+      },
+      {
+        "id": "7305",
+        "amount": 20000,
+        "balance_after": 5245000,
+        "operation_type": "expense",
+        "source_type": "extra_cost",
+        "source_id": "10219",
+        "cashbox_id": "205",
+        "cashbox_type": "markets",
+        "payment_method": "cash",
+        "payment_date": "2026-10-14T07:55:00.000Z",
+        "createdAt": "2026-10-14T07:55:00.000Z",
+        "comment": "Yo'l kira",
+        "created_by": null,
+        "created_by_user": null
+      },
+      {
+        "id": "7304",
+        "amount": 275000,
+        "balance_after": 5265000,
+        "operation_type": "income",
+        "source_type": "sell",
+        "source_id": "10224",
+        "cashbox_id": "205",
+        "cashbox_type": "markets",
+        "payment_method": "cash",
+        "payment_date": "2026-10-13T05:02:00.000Z",
+        "createdAt": "2026-10-13T05:02:00.000Z",
+        "comment": null,
+        "created_by": null,
+        "created_by_user": null
+      }
+    ]
+  }
+}

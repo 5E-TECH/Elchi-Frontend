@@ -3,7 +3,7 @@ import { memo, useId } from "react";
 import { Bell, BellOff, BellRing, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../../shared/lib/cx";
-import { Badge, Button, type Tone } from "../../../shared/ui/primitives";
+import { Badge, Button, Pressable, type Tone } from "../../../shared/ui/primitives";
 import { usePushControl, type PushControl } from "../model/usePushControl";
 import type { PushDeviceState } from "../model/usePushSubscription";
 import { PushExplainDialog } from "./PushExplainDialog";
@@ -121,8 +121,7 @@ const PushDeviceSwitch = ({ control }: { control: PushControl }) => {
 
   return (
     <div className="flex flex-col gap-4">
-      <button
-        type="button"
+      <Pressable
         role="switch"
         aria-checked={checked}
         aria-label={t("push.deviceToggle")}
@@ -149,7 +148,7 @@ const PushDeviceSwitch = ({ control }: { control: PushControl }) => {
           </span>
         </span>
         <SwitchTrack />
-      </button>
+      </Pressable>
 
       {state !== "unsupported" && state !== "loading" ? (
         <div className="flex flex-col gap-1">

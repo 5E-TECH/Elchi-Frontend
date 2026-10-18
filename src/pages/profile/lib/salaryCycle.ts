@@ -1,8 +1,8 @@
 /**
  * Oylik maosh davri — profil «Oylik maosh» kartasi (maket `common-profile`).
  *
- * Mantiq `entities/user/ui/UserStatsCard.tsx` dagi `calcCycleProgress` dan AYNAN ko'chirilgan (u fayl boshqa
- * guruhniki va funksiya eksport qilinmagan): davr to'lov kunidan keyingi oyning shu kunigacha; bugun to'lov
+ * Mantiq v1 `entities/user/ui/UserStatsCard.tsx` dagi `calcCycleProgress` dan AYNAN ko'chirilgan (v1 fayl
+ * iste'molchisiz qolib 5-bosqichda o'chirildi): davr to'lov kunidan keyingi oyning shu kunigacha; bugun to'lov
  * kunidan oldin bo'lsa — o'tgan oyning to'lov kunidan boshlanadi. Kunlar `Math.round` bilan, foiz 100 dan oshmaydi.
  * Qo'shimcha: davr boshi va oxiri (`Date`) — kartadagi «25.09.2026 – 25.10.2026» va «keyingi to'lov» uchun.
  */

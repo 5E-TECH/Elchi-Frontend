@@ -14,7 +14,8 @@ export type RuleId =
   | "v1-class"
   | "weight"
   | "gradient"
-  | "v1-helper";
+  | "v1-helper"
+  | "named-colour";
 
 export interface GuardRule {
   id: RuleId;
@@ -43,6 +44,8 @@ export interface FileScan {
   file: string;
   /** Birinchi qatorda `// dizayn-v2: <ekran>` — baseline qo'llanmaydi, ruxsat 0. */
   v2: boolean;
+  /** Rang qoidalarida (`COLOUR_RULES`) ruxsat 0: `v2` yoki `V2_SCOPES` ichida (`V2_SCOPE_PENDING` emas). */
+  scoped: boolean;
   counts: Partial<Record<RuleId, number>>;
   violations: Violation[];
   ignored: number;
@@ -80,6 +83,8 @@ export interface Regression {
   baseline: number;
   newFile: boolean;
   v2File: boolean;
+  /** V2_SCOPES fayli (v2 belgisiz), rang qoidasi — baseline ruxsati 0, `--update` qotirmaydi. */
+  scopeFile: boolean;
   violations: Violation[];
 }
 
@@ -97,6 +102,17 @@ export const RULES: readonly GuardRule[];
 export const RULE_IDS: readonly RuleId[];
 /** 1-bosqich o'rnini bosgan v1 modullari (src'ga nisbatan, kengaytmasiz) → v2 o'rnini bosuvchisi (hint). */
 export const V1_MODULES: Readonly<Record<string, string>>;
+/** Rang qoidalari — V2_SCOPES (ruxsat 0) va OUTPUT_FORMAT_FILES (istisno) faqat shularga qo'llanadi. */
+export const COLOUR_RULES: readonly RuleId[];
+/** 4-bosqichda to'liq ko'chirilgan papkalar (`src/<qatlam>/<slice>` yoki chuqurroq): ichidagi har fayl rangda 0. */
+export const V2_SCOPES: readonly string[];
+/** Scope ichida hali v1 qolgan fayllar → sabab. Faqat qisqaradi (`src/test/paletteGuard.test.ts`). */
+export const V2_SCOPE_PENDING: Readonly<Record<string, string>>;
+/** Chop etish / yorliq / Excel fayllari → sabab. Rang qoidalari qo'llanmaydi. */
+export const OUTPUT_FORMAT_FILES: Readonly<Record<string, string>>;
+/** CSS nomli ranglari (148 ta; `transparent`, `currentColor`, `inherit`, `none` yo'q). */
+export const CSS_NAMED_COLOURS: readonly string[];
+export function isInV2Scope(file: string): boolean;
 
 /**
  * Import spetsifikatorini `file` joylashuviga nisbatan src modul yo'liga aylantiradi

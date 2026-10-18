@@ -21,6 +21,7 @@ import {
   Card,
   DataTable,
   EmptyState,
+  Pressable,
   QueryBoundary,
   SegmentedControl,
   Skeleton,
@@ -70,8 +71,7 @@ const isPartFailed = (payload: RevenueResponse["data"] | undefined, ...parts: st
 
 /** «Solishtirish» almashtirgichi (`.el-switch`) — telefonda to'liq enli qator. */
 const ComparisonSwitch = ({ checked, onToggle, label, ariaLabel }: { checked: boolean; onToggle: () => void; label: string; ariaLabel: string }) => (
-  <button
-    type="button"
+  <Pressable
     role="switch"
     aria-checked={checked}
     aria-label={ariaLabel}
@@ -93,7 +93,7 @@ const ComparisonSwitch = ({ checked, onToggle, label, ariaLabel }: { checked: bo
         )}
       />
     </span>
-  </button>
+  </Pressable>
 );
 
 /**

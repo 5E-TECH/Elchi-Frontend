@@ -1,5 +1,5 @@
 {
-  "$comment": "Dizayn v2 qo'riqchisi (ratchet): har fayl × qoida uchun ruxsat etilgan ESKI buzilishlar soni. Son faqat kamayadi, yangi fayl = 0. Qo'lda tahrirlamang: `npm run design:guard -- --update`. Oshirish faqat `--allow-increase \"<sabab>\"` bilan va sabab `increases` ro'yxatiga yoziladi. Qoidalar: docs/DESIGN_SYSTEM.md §11, scripts/design-guard.mjs.",
+  "$comment": "Dizayn v2 qo'riqchisi (ratchet): har fayl × qoida uchun ruxsat etilgan ESKI buzilishlar soni. Son faqat kamayadi, yangi fayl = 0. Qo'lda tahrirlamang: `npm run design:guard -- --update`. Oshirish faqat `--allow-increase \"<sabab>\"` bilan va sabab `increases` ro'yxatiga yoziladi. Qoidalar: docs/DESIGN_SYSTEM.md §12.3, scripts/design-guard.mjs.",
   "version": 1,
   "rules": {
     "colour": "Rang literal (hex / rgb() / hsl()) — faqat tokenlar",
@@ -12,7 +12,8 @@
     "v1-class": "Eski v1 klassi (el-card, el-glass-control, el-segmented …)",
     "weight": "font-black / font-extrabold (v2 da eng qalin — font-bold)",
     "gradient": "Gradient (bg-linear-*, linear-gradient(...)) — v2 da tekis fon",
-    "v1-helper": "v1 yordamchisi/komponenti (TYPO, TEXT, toneAccent, formatPercent, HeaderName, MetricCard, v1 Button, StatusBadge, statusColorMap, formatDate)"
+    "v1-helper": "v1 yordamchisi/komponenti (TYPO, TEXT, toneAccent, formatPercent, HeaderName, MetricCard, v1 Button, StatusBadge, statusColorMap, formatDate)",
+    "named-colour": "Nomli CSS rangi (white, red …) — faqat tokenlar"
   },
   "increases": [
     {
@@ -176,43 +177,115 @@
           ]
         }
       }
+    },
+    {
+      "date": "2026-10-18",
+      "reason": "5-bosqich: named-colour qoidasi — boshlang'ich holat (G2/G3 fayllari)",
+      "changes": {
+        "src/entities/integrations/payments.ts": {
+          "named-colour": [
+            0,
+            10
+          ]
+        },
+        "src/entities/integrations/webhookLogs.ts": {
+          "named-colour": [
+            0,
+            17
+          ]
+        },
+        "src/features/auth/index.tsx": {
+          "named-colour": [
+            0,
+            9
+          ]
+        },
+        "src/pages/integrations/CatalogPage.tsx": {
+          "named-colour": [
+            0,
+            1
+          ]
+        },
+        "src/pages/integrations/OverviewPage.tsx": {
+          "named-colour": [
+            0,
+            1
+          ]
+        },
+        "src/pages/integrations/StatusMapField.tsx": {
+          "named-colour": [
+            0,
+            3
+          ]
+        },
+        "src/pages/integrations/panels/ConnectionLog.tsx": {
+          "named-colour": [
+            0,
+            7
+          ]
+        },
+        "src/pages/integrations/panels/ConnectionOverview.tsx": {
+          "named-colour": [
+            0,
+            4
+          ]
+        },
+        "src/pages/integrations/panels/ConnectionSecurity.tsx": {
+          "named-colour": [
+            0,
+            2
+          ]
+        },
+        "src/pages/integrations/panels/ConnectionSettlement.tsx": {
+          "named-colour": [
+            0,
+            2
+          ]
+        },
+        "src/pages/integrations/panels/ConnectionShipments.tsx": {
+          "named-colour": [
+            0,
+            2
+          ]
+        },
+        "src/pages/notifications/ui/SmsSettingsTab.tsx": {
+          "named-colour": [
+            0,
+            4
+          ]
+        },
+        "src/pages/notifications/ui/SmsTemplatesTab.tsx": {
+          "named-colour": [
+            0,
+            2
+          ]
+        },
+        "src/pages/system-ops/index.tsx": {
+          "named-colour": [
+            0,
+            2
+          ]
+        }
+      }
     }
   ],
   "files": {
     "src/app/providers/theme/AntdThemeProvider.tsx": { "colour": 1 },
     "src/entities/integrations/settlement.ts": { "money": 2 },
-    "src/entities/orders/ui/ExtraCostApproval.tsx": { "palette": 6, "dark-pair": 3, "money": 1, "tiny-text": 1 },
-    "src/entities/user/ui/CustomerOrdersTable.tsx": { "palette": 58, "dark-pair": 29, "legacy": 11, "money": 1, "tiny-text": 8, "weight": 5 },
-    "src/entities/user/ui/UserDetailHeader.tsx": { "palette": 83, "dark-pair": 26, "legacy": 4, "tiny-text": 4, "weight": 1 },
-    "src/entities/user/ui/UserInfoCards.tsx": { "palette": 83, "dark-pair": 33, "legacy": 8, "money": 8, "tiny-text": 2, "weight": 2 },
-    "src/entities/user/ui/UserStatsCard.tsx": { "colour": 3, "palette": 28, "dark-pair": 4, "legacy": 5, "money": 1, "tiny-text": 6, "weight": 3, "gradient": 3 },
     "src/entities/user/ui/UserStatusBadge.tsx": { "palette": 9 },
-    "src/pages/mails/components/lib/exportOldMailsToExcel.ts": { "colour": 6, "money": 1 },
-    "src/pages/mails/detail/lib/printMode.ts": { "colour": 3, "money": 1 },
+    "src/pages/mails/components/lib/exportOldMailsToExcel.ts": { "money": 1 },
+    "src/pages/mails/detail/lib/printMode.ts": { "money": 1 },
     "src/pages/market-operators/index.tsx": { "palette": 44, "dark-pair": 25, "legacy": 21, "weight": 6, "v1-helper": 1 },
-    "src/pages/new_orders/components/lib/printLabelPdf.ts": { "colour": 11, "money": 1 },
-    "src/pages/orders/list/OrderStatusBadge.tsx": { "v1-helper": 1 },
+    "src/pages/new_orders/components/lib/printLabelPdf.ts": { "money": 1 },
     "src/pages/payments/components/SalaryPaymentPopup.tsx": { "palette": 31, "dark-pair": 21, "legacy": 36, "money": 1 },
     "src/pages/payments/components/lib/amountInput.ts": { "money": 1 },
-    "src/pages/payments/components/lib/exportMainCashboxReport.ts": { "colour": 12, "money": 1 },
+    "src/pages/payments/components/lib/exportMainCashboxReport.ts": { "money": 1 },
     "src/pages/scan/index.tsx": { "colour": 6, "palette": 47, "dark-pair": 30, "legacy": 45, "weight": 3, "gradient": 9 },
     "src/shared/components/ScanFeedbackOverlay.tsx": { "colour": 6, "palette": 11, "weight": 1, "gradient": 1 },
     "src/shared/components/ScannerCameraModal.tsx": { "colour": 5, "palette": 21, "dark-pair": 16, "legacy": 22, "weight": 2, "gradient": 2 },
-    "src/shared/components/Table/Table.tsx": { "palette": 14, "dark-pair": 18, "legacy": 23, "tiny-text": 3, "gradient": 1 },
-    "src/shared/components/button.tsx": { "palette": 1, "dark-pair": 2, "legacy": 4 },
     "src/shared/components/headerName.tsx": { "dark-pair": 5, "legacy": 11, "weight": 1 },
-    "src/shared/components/pagination/index.tsx": { "palette": 18, "dark-pair": 19, "legacy": 36, "weight": 1 },
     "src/shared/config/designSystem.ts": { "legacy": 9, "tiny-text": 2 },
-    "src/shared/config/statusColorMap.ts": { "palette": 58, "dark-pair": 22 },
     "src/shared/lib/downscaleImage.ts": { "colour": 1 },
-    "src/shared/ui/BackButton.tsx": { "palette": 1, "dark-pair": 2, "legacy": 6 },
-    "src/shared/ui/ErrorBoundaryTestButton.tsx": { "dark-pair": 1, "legacy": 4 },
-    "src/shared/ui/FilterClearButton.tsx": { "palette": 10, "dark-pair": 4, "gradient": 1 },
-    "src/shared/ui/FilterFieldCard.tsx": { "palette": 3, "dark-pair": 2, "legacy": 1 },
-    "src/shared/ui/FilterPanel.tsx": { "dark-pair": 1, "legacy": 3 },
-    "src/shared/ui/GlobalSearchInput.tsx": { "palette": 14, "dark-pair": 11, "legacy": 11 },
-    "src/shared/ui/PageStatBadge.tsx": { "palette": 1, "dark-pair": 2, "legacy": 3 },
-    "src/shared/ui/StatusBadge.tsx": { "tiny-text": 1, "v1-helper": 1 },
-    "src/shared/ui/Timeline/TimelineItem.tsx": { "palette": 6, "dark-pair": 6, "legacy": 5, "gradient": 1 }
+    "src/shared/ui/BackButton.tsx": { "palette": 1, "dark-pair": 2, "legacy": 6 }
   }
 }

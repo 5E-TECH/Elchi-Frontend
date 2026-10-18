@@ -34,6 +34,7 @@ import {
   IconButton,
   PageHeader,
   Pagination,
+  Pressable,
   QueryBoundary,
   SegmentedControl,
   Select,
@@ -291,14 +292,13 @@ const ExternalOrdersPage = () => {
     </div>
   );
   const nameLink = (row: Integration) => (
-    <button
-      type="button"
+    <Pressable
       onClick={() => navigate(detailHref(row))}
       // Telefonda (kartalar) bosiladigan balandlik 44 px.
       className="text-left font-semibold text-text hover:text-action-fg hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center"
     >
       {row.name}
-    </button>
+    </Pressable>
   );
 
   const columns: DataTableColumn<Integration>[] = [

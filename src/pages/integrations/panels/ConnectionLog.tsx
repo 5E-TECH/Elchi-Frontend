@@ -70,10 +70,6 @@ const STATUS_TAG: Record<string, { tone: Tone; labelKey: string }> = {
   permanently_failed: { tone: "danger", labelKey: "deliveryFailed" },
 };
 
-/** Eski antd rang nomi (`paymentOutcome` / `webhookOutcome`) → v2 ton. */
-const toneOf = (color: string): Tone =>
-  color === "green" ? "success" : color === "red" ? "danger" : color === "orange" || color === "gold" ? "warning" : color === "blue" ? "info" : "neutral";
-
 const PAGE_SIZE = 20;
 
 type LogView = "payments" | "inbound" | "outbound";
@@ -174,7 +170,7 @@ const PaymentLog = ({ connection, switcher }: { connection: Connection; switcher
     );
   const outcomeBadge = (r: PaymentRow) => {
     const outcome = paymentOutcome(r);
-    return <StatusBadge tone={toneOf(outcome.color)} label={t(outcome.labelKey)} />;
+    return <StatusBadge tone={outcome.tone} label={t(outcome.labelKey)} />;
   };
   const txText = (r: PaymentRow) => `${r.provider_transaction_id}${r.provider_status ? ` · ${r.provider_status}` : ""}`;
 
@@ -272,7 +268,7 @@ const IncomingWebhookLog = ({ connection, switcher }: { connection: Connection; 
   const outcomeBadge = (r: WebhookLogRow) => {
     /* `status` faqat uch qiymatni biladi — operator uchun muhim savol «NIMA bo'ldi», shuning uchun natija `error` ichidan. */
     const outcome = webhookOutcome(r);
-    return <StatusBadge tone={toneOf(outcome.color)} label={t(outcome.labelKey)} />;
+    return <StatusBadge tone={outcome.tone} label={t(outcome.labelKey)} />;
   };
 
   const columns: DataTableColumn<WebhookLogRow>[] = [

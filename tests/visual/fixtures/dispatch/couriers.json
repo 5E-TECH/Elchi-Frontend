@@ -1,0 +1,10 @@
+{
+  "statusCode": 200,
+  "data": {
+    "items": [
+      { "id": "263", "name": "Sardor Aliyev", "phone_number": "+998901234501", "region": { "name": "Toshkent sh." }, "status": "active" },
+      { "id": "264", "name": "Jasur Karimov", "phone_number": "+998901234502", "region": { "name": "Toshkent sh." }, "status": "active" }
+    ],
+    "meta": { "page": 1, "limit": 100, "total": 2, "totalPages": 1 }
+  }
+}

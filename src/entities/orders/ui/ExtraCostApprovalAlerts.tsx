@@ -9,8 +9,8 @@ import { isExtraCostAction, type ExtraCostAction, type PendingExtraCostApproval 
 /**
  * Qo'shimcha xarajat tasdig'i — v2 ogohlantirishlari (`.el-alert.el-tone-warning`).
  *
- * `ExtraCostApproval.tsx` da faqat v1 ro'yxat belgisi (dispatch sahifasi) qoldi;
- * v2 oynalar (Sotish, Bekor qilish) shu faylni oladi, buyurtma tafsiloti esa
+ * v1 ro'yxat belgisi (`ExtraCostApproval.tsx`) iste'molchisiz qolgach o'chirildi (ro'yxatda —
+ * `ExtraCostApprovalTag`); v2 oynalar (Sotish, Bekor qilish) shu faylni oladi, buyurtma tafsiloti esa
  * `pages/new_orders/components/detail/DetailAlerts.tsx` da. Matnlar o'sha kalitlardan.
  */
 

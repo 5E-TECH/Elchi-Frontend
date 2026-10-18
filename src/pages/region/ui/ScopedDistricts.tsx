@@ -19,7 +19,7 @@ import {
   formatNumberLocalized,
   formatPercentLocalized,
 } from "../../../shared/lib/formatMoney";
-import { Badge, Button } from "../../../shared/ui/primitives";
+import { Badge, Button, Pressable } from "../../../shared/ui/primitives";
 import {
   ChartLegend,
   ChartNote,
@@ -197,9 +197,8 @@ export const DistrictTiles = ({
           const step = scale.stepOf(row.orders);
           const selected = row.id === selectedId;
           return (
-            <button
+            <Pressable
               key={row.id}
-              type="button"
               aria-pressed={selected}
               aria-label={
                 row.orders > 0
@@ -228,7 +227,7 @@ export const DistrictTiles = ({
               <span className="text-sm font-bold proportional-nums">
                 {row.orders > 0 ? t("v2.common.countTa", { count: number(row.orders) }) : number(0)}
               </span>
-            </button>
+            </Pressable>
           );
         })}
       </div>
@@ -322,16 +321,15 @@ export const DistrictRankPhone = ({
           </p>
           <div className="flex flex-wrap gap-2">
             {withoutOrders.map((row) => (
-              <button
+              <Pressable
                 key={row.id}
-                type="button"
                 aria-pressed={row.id === selectedId}
                 aria-label={t("v2.scoped.noOrders.chipAria", { name: row.name })}
                 onClick={() => onSelect(row.id)}
                 className="inline-flex h-8 items-center gap-1.5 whitespace-nowrap rounded-full border border-border-strong bg-surface px-3 text-[13px] font-medium text-text hover:border-text-subtle aria-pressed:border-action aria-pressed:bg-action-soft aria-pressed:font-semibold aria-pressed:text-action-fg max-md:h-11"
               >
                 {row.name}
-              </button>
+              </Pressable>
             ))}
           </div>
         </div>
@@ -417,13 +415,12 @@ export const DistrictTable = ({
                   <td className={td}>
                     <span className="flex min-w-0 flex-col">
                       {onSelect ? (
-                        <button
-                          type="button"
+                        <Pressable
                           onClick={() => onSelect(row.id)}
                           className="text-left font-semibold text-text hover:underline"
                         >
                           {row.name}
-                        </button>
+                        </Pressable>
                       ) : (
                         <span className="font-semibold text-text">{row.name}</span>
                       )}

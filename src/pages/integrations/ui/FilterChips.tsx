@@ -4,6 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../../shared/lib/cx";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { Pressable } from "../../../shared/ui/primitives";
 
 export type FilterChipOption<V extends string = string> = {
   value: V;
@@ -46,9 +47,8 @@ export const FilterChips = <V extends string>({
           const active = option.value === value;
           const Icon = option.icon;
           return (
-            <button
+            <Pressable
               key={option.value}
-              type="button"
               aria-pressed={active}
               onClick={() => onChange(option.value)}
               className={cx(
@@ -75,7 +75,7 @@ export const FilterChips = <V extends string>({
                   {formatNumberLocalized(option.count, { language: i18n.language })}
                 </span>
               ) : null}
-            </button>
+            </Pressable>
           );
         })}
       </div>

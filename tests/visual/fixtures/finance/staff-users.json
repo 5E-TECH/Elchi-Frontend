@@ -1,0 +1,28 @@
+{
+  "statusCode": 200,
+  "data": {
+    "items": [
+      {
+        "id": "1",
+        "name": "Aliyev Vali",
+        "role": "superadmin"
+      },
+      {
+        "id": "2",
+        "name": "Karimova Dilnoza",
+        "role": "admin"
+      },
+      {
+        "id": "4",
+        "name": "Toshpo'latova Madina",
+        "role": "registrator"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "limit": 100,
+      "total": 3,
+      "totalPages": 1
+    }
+  }
+}

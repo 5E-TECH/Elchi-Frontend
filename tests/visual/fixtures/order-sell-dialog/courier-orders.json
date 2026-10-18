@@ -1,0 +1,184 @@
+{
+  "statusCode": 200,
+  "data": [
+    {
+      "id": "10234",
+      "created_at": "2026-10-15T03:40:00.000Z",
+      "createdAt": "2026-10-15T03:40:00.000Z",
+      "updatedAt": "2026-10-15T03:40:00.000Z",
+      "status": "waiting",
+      "total_price": 310000,
+      "to_be_paid": 280000,
+      "paid_amount": 0,
+      "where_deliver": "address",
+      "product_quantity": 1,
+      "market": {
+        "id": "m10234",
+        "name": "Ipak Yo'li Savdo"
+      },
+      "customer": {
+        "id": "c10234",
+        "name": "Feruza Mirzayeva",
+        "phone_number": "+998993057164"
+      },
+      "district": {
+        "id": "d10234",
+        "name": "Samarqand shahri"
+      },
+      "region": {
+        "id": "2",
+        "name": "Samarqand viloyati"
+      },
+      "items": [
+        {
+          "id": "i10234",
+          "product_id": "p10234",
+          "order_id": "10234",
+          "quantity": 1,
+          "createdAt": "2026-10-15T03:40:00.000Z",
+          "updatedAt": "2026-10-15T03:40:00.000Z",
+          "product": {
+            "id": "p10234",
+            "name": "Simsiz quloqchin",
+            "image_url": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "10235",
+      "created_at": "2026-10-15T03:12:00.000Z",
+      "createdAt": "2026-10-15T03:12:00.000Z",
+      "updatedAt": "2026-10-15T03:12:00.000Z",
+      "status": "waiting",
+      "total_price": 185000,
+      "to_be_paid": 165000,
+      "paid_amount": 0,
+      "where_deliver": "address",
+      "product_quantity": 1,
+      "market": {
+        "id": "m10235",
+        "name": "Baraka Market"
+      },
+      "customer": {
+        "id": "c10235",
+        "name": "Jasur Karimov",
+        "phone_number": "+998993057165"
+      },
+      "district": {
+        "id": "d10235",
+        "name": "Urgut tumani"
+      },
+      "region": {
+        "id": "2",
+        "name": "Samarqand viloyati"
+      },
+      "items": [
+        {
+          "id": "i10235",
+          "product_id": "p10235",
+          "order_id": "10235",
+          "quantity": 1,
+          "createdAt": "2026-10-15T03:12:00.000Z",
+          "updatedAt": "2026-10-15T03:12:00.000Z",
+          "product": {
+            "id": "p10235",
+            "name": "Simsiz quloqchin",
+            "image_url": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "10236",
+      "created_at": "2026-10-15T02:25:00.000Z",
+      "createdAt": "2026-10-15T02:25:00.000Z",
+      "updatedAt": "2026-10-15T02:25:00.000Z",
+      "status": "waiting",
+      "total_price": 96000,
+      "to_be_paid": 96000,
+      "paid_amount": 0,
+      "where_deliver": "address",
+      "product_quantity": 1,
+      "market": {
+        "id": "m10236",
+        "name": "Samo Textile"
+      },
+      "customer": {
+        "id": "c10236",
+        "name": "Shahnoza Olimova",
+        "phone_number": "+998993057166"
+      },
+      "district": {
+        "id": "d10236",
+        "name": "Samarqand shahri"
+      },
+      "region": {
+        "id": "2",
+        "name": "Samarqand viloyati"
+      },
+      "items": [
+        {
+          "id": "i10236",
+          "product_id": "p10236",
+          "order_id": "10236",
+          "quantity": 1,
+          "createdAt": "2026-10-15T02:25:00.000Z",
+          "updatedAt": "2026-10-15T02:25:00.000Z",
+          "product": {
+            "id": "p10236",
+            "name": "Simsiz quloqchin",
+            "image_url": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "10237",
+      "created_at": "2026-10-14T12:58:00.000Z",
+      "createdAt": "2026-10-14T12:58:00.000Z",
+      "updatedAt": "2026-10-14T12:58:00.000Z",
+      "status": "waiting",
+      "total_price": 452000,
+      "to_be_paid": 420000,
+      "paid_amount": 0,
+      "where_deliver": "address",
+      "product_quantity": 1,
+      "market": {
+        "id": "m10237",
+        "name": "Ipak Yo'li Savdo"
+      },
+      "customer": {
+        "id": "c10237",
+        "name": "Otabek Saidov",
+        "phone_number": "+998993057167"
+      },
+      "district": {
+        "id": "d10237",
+        "name": "Kattaqo'rg'on tumani"
+      },
+      "region": {
+        "id": "2",
+        "name": "Samarqand viloyati"
+      },
+      "items": [
+        {
+          "id": "i10237",
+          "product_id": "p10237",
+          "order_id": "10237",
+          "quantity": 1,
+          "createdAt": "2026-10-14T12:58:00.000Z",
+          "updatedAt": "2026-10-14T12:58:00.000Z",
+          "product": {
+            "id": "p10237",
+            "name": "Simsiz quloqchin",
+            "image_url": null
+          }
+        }
+      ]
+    }
+  ],
+  "total": 4,
+  "page": 1,
+  "limit": 10
+}

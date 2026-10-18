@@ -16,9 +16,9 @@ import CatalogPage from "./CatalogPage";
  * Katalog — ustaga kirishning YAGONA yo'li. Ya'ni sichqonchasiz foydalanuvchi
  * uchun butun "yangi ulanish" oqimi BERK edi.
  *
- * ⚠️ `<button>` ga o'rash mumkin emas: karta ichida sarlavha, teglar va
- * ro'yxat bor; tugma ichida blok elementlar noto'g'ri semantika beradi. Shu
- * bois ARIA naqshi ishlatiladi.
+ * Karta — haqiqiy `<button>` (`Pressable`, dizayn v2 5-bosqich: `role="button"`
+ * taqiqlangan). Ichida faqat `<span>` — tugma ichida to'g'ri; fokus, Enter va
+ * Bo'shliq brauzerning o'zida.
  */
 
 /**
@@ -61,8 +61,11 @@ describe("Katalog kartalari — klaviatura", () => {
     for (const card of screen.getAllByRole("button", {
       name: /ulanish yaratish/i,
     })) {
-      // `tabIndex` bo'lmasa Tab bilan yetib bo'lmaydi.
-      expect(card).toHaveAttribute("tabindex", "0");
+      // Haqiqiy `<button>` — Tab tartibida o'zi bor (`tabIndex` shart emas).
+      expect(card.tagName).toBe("BUTTON");
+      expect(card).not.toHaveAttribute("tabindex", "-1");
+      card.focus();
+      expect(card).toHaveFocus();
     }
   });
 

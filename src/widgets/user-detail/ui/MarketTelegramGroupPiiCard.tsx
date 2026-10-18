@@ -2,7 +2,7 @@
 import { memo, useId } from "react";
 import { useTranslation } from "react-i18next";
 import type { User } from "../../../entities/user/types/user";
-import { Card } from "../../../shared/ui/primitives";
+import { Card, Pressable } from "../../../shared/ui/primitives";
 import { useMarketTelegramGroupPiiToggle } from "../model/useMarketTelegramGroupPiiToggle";
 
 interface MarketTelegramGroupPiiCardProps {
@@ -48,8 +48,7 @@ export const MarketTelegramGroupPiiCard = memo(
         padding="none"
         data-testid="market-tg-group-pii-card"
       >
-        <button
-          type="button"
+        <Pressable
           role="switch"
           aria-checked={checked}
           aria-labelledby={labelId}
@@ -73,7 +72,7 @@ export const MarketTelegramGroupPiiCard = memo(
           >
             <span className="absolute left-0.5 top-0.5 size-4 rounded-full bg-on-solid transition-transform duration-150 group-aria-checked:translate-x-4 motion-reduce:transition-none" />
           </span>
-        </button>
+        </Pressable>
       </Card>
     );
   },

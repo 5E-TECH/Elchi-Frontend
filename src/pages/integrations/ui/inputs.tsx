@@ -5,7 +5,13 @@ import { useTranslation } from "react-i18next";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { cx } from "../../../shared/lib/cx";
 import { notify } from "../../../shared/lib/notify";
-import { Button, IconButton, TextInput, useFieldControl } from "../../../shared/ui/primitives";
+import {
+  Button,
+  IconButton,
+  Pressable,
+  TextInput,
+  useFieldControl,
+} from "../../../shared/ui/primitives";
 
 /**
  * Integratsiyalar formalari uchun kichik boshqaruvlar (CODE-MAP 2.2):
@@ -107,8 +113,7 @@ export const TagsInput = ({
               className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border-strong bg-surface pl-3 pr-1 text-[13px] font-medium text-text max-md:h-11"
             >
               <span className="font-mono">{item}</span>
-              <button
-                type="button"
+              <Pressable
                 aria-label={removeLabel(item)}
                 disabled={control.disabled}
                 onClick={() => onChange(value.filter((v) => v !== item))}
@@ -120,7 +125,7 @@ export const TagsInput = ({
                 )}
               >
                 <X size={14} aria-hidden="true" />
-              </button>
+              </Pressable>
             </li>
           ))}
         </ul>

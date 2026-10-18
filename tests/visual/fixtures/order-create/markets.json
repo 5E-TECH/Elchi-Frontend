@@ -1,0 +1,31 @@
+{
+  "statusCode": 200,
+  "data": {
+    "items": [
+      {
+        "id": "31",
+        "name": "Baraka Shop",
+        "phone_number": "+998903152241",
+        "status": "active"
+      },
+      {
+        "id": "32",
+        "name": "Nur Elektronika",
+        "phone_number": "+998977014455",
+        "status": "active"
+      },
+      {
+        "id": "5",
+        "name": "Ipak Yo'li Savdo",
+        "phone_number": "+998901112277",
+        "status": "active"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "limit": 20,
+      "total": 3,
+      "totalPages": 1
+    }
+  }
+}

@@ -3,10 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../test/test-utils";
 import {
   clearPendingExtraCostApproval,
-  recordPendingExtraCostApproval,
   resolveOrderActionResponse,
 } from "./extraCostApproval";
-import { ExtraCostApprovalBadge } from "./ui/ExtraCostApproval";
 // v1 SentNote / PendingBanner o'rnini v2 ogohlantirishlari egalladi (buyurtma tafsiloti
 // v2 ga o'tgach v1 lari ishlatilmay qoldi) — amal nomi talabi endi shularda tekshiriladi.
 import { ExtraCostPendingAlert, ExtraCostSentAlert } from "./ui/ExtraCostApprovalAlerts";
@@ -74,13 +72,6 @@ describe("ExtraCostApproval UI — amal ko'rinadi (fix3b M3)", () => {
     renderWithProviders(<ExtraCostSentAlert approval={{ ...approval, action }} />);
 
     expect(screen.getByText(new RegExp(`^${label}: `))).toBeInTheDocument();
-  });
-
-  it("ro'yxat belgisi sarlavhasida ham amal", () => {
-    recordPendingExtraCostApproval({ ...approval, action: "partly_sell" });
-    renderWithProviders(<ExtraCostApprovalBadge orderId="o-4" status="waiting" />);
-
-    expect(screen.getByLabelText(/^Qisman sotish: 3\D?000 so'm qo'shimcha xarajat/)).toBeInTheDocument();
   });
 
   it("kutish banneri so'ralgan amalni ko'rsatadi", () => {
