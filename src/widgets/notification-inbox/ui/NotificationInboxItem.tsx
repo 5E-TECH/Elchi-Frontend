@@ -1,20 +1,28 @@
+// dizayn-v2: common-inbox, superadmin-notifications-inbox, courier-inbox-list
 import { memo } from "react";
-import { Button, Tooltip } from "antd";
-import { Check, Mail, Trash2 } from "lucide-react";
+import {
+  Bell,
+  Building2,
+  Check,
+  Mail,
+  MailOpen,
+  Server,
+  ShoppingBag,
+  Trash2,
+  Truck,
+  User,
+  Wallet,
+  type LucideIcon,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import {
-  NotificationCategoryTag,
-  NotificationPriorityTag,
-  type InboxNotification,
-} from "../../../entities/notification-inbox";
-import {
-  useDeleteInboxNotification,
-  useMarkInboxRead,
-} from "../../../features/notification-inbox";
-import { formatDate } from "../../../shared/lib/formatDate";
+import type { InboxNotification, NotificationCategory } from "../../../entities/notification-inbox";
+import { useDeleteInboxNotification, useMarkInboxRead } from "../../../features/notification-inbox";
+import { cx } from "../../../shared/lib/cx";
+import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { notify } from "../../../shared/lib/notify";
-import { useConfirm } from "../../../shared/ui/primitives";
+import { Badge, IconButton, Pressable, useConfirm } from "../../../shared/ui/primitives";
+import { NotificationItemMenu } from "./NotificationItemMenu";
 
 type NotificationInboxItemProps = {
   notification: InboxNotification;
@@ -26,6 +34,30 @@ type NotificationInboxItemProps = {
   preview?: boolean;
 };
 
+/** Kategoriya ikonkasi — yuqori paneldagi qo'ng'iroqcha ro'yxati (`NotificationsMenu`) bilan bir xil. */
+const CATEGORY_ICON: Record<NotificationCategory, LucideIcon> = {
+  order: ShoppingBag,
+  finance: Wallet,
+  branch: Building2,
+  logistics: Truck,
+  account: User,
+  system: Server,
+  marketing: Bell,
+};
+
+/** `.el-stat-icon` 36 px — neytral. Oldindan ko'rishda `sunken` ustida — `surface` fon (maket `notifications-send`). */
+const STAT_ICON =
+  "inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] text-text-muted";
+
+/**
+ * BILDIRISHNOMA QATORI — maket `common-inbox` (`.el-list-item`): o'qilmagan nuqta (`info`), kategoriya ikonkasi
+ * (telefonda yo'q), sarlavha (o'qilmagan — qalin) + muhimlik badge'i («Muhim» danger = critical, «Yuqori»
+ * warning = high), matn, «<Kategoriya> · <vaqt>»; o'ngda «O'qilgan deb belgilash» (faqat o'qilmaganda, desktop)
+ * va «…» menyusi («O'qilgan/O'qilmagan deb belgilash», «O'chirish» — tasdiq bilan).
+ *
+ * Xulq (avvalgidek): qator bosilsa — o'qilgan (best-effort) va havolaga o'tish; o'chirish `useConfirm`
+ * (xato oynaning o'zida); `preview` — amallarsiz va bosilmaydigan karta (`/notifications/send`).
+ */
 const NotificationInboxItem = ({ notification, preview = false }: NotificationInboxItemProps) => {
   const { t } = useTranslation("notifications");
   const navigate = useNavigate();
@@ -34,6 +66,8 @@ const NotificationInboxItem = ({ notification, preview = false }: NotificationIn
   const confirm = useConfirm();
 
   const isUnread = !notification.is_read;
+  const Icon = CATEGORY_ICON[notification.category] ?? Bell;
+  const important = notification.priority === "critical" || notification.priority === "high";
 
   const handleToggleRead = async () => {
     try {
@@ -58,7 +92,7 @@ const NotificationInboxItem = ({ notification, preview = false }: NotificationIn
     if (ok) notify.success(t("deleteSuccess"));
   };
 
-  const handleOpen = async () => {
+  const handleOpen = () => {
     if (isUnread) {
       // Best-effort: opening a notification marks it read, but navigation
       // should not be blocked if that write fails.
@@ -69,77 +103,95 @@ const NotificationInboxItem = ({ notification, preview = false }: NotificationIn
     }
   };
 
-  return (
-    <div
-      className={`flex gap-3 rounded-2xl border px-4 py-3 transition-colors ${
-        isUnread
-          ? "border-main/30 bg-main/[0.06] dark:bg-main/[0.12]"
-          : "border-[color:var(--color-border-soft)] bg-primary dark:border-white/10 dark:bg-white/[0.02]"
-      }`}
-    >
-      <span
-        aria-hidden
-        className={`mt-2 h-2 w-2 shrink-0 rounded-full ${isUnread ? "bg-main" : "bg-transparent"}`}
-      />
+  const content = (
+    <>
+      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        {isUnread ? <span className="sr-only">{t("inbox.unreadPrefix")}</span> : null}
+        <span className={cx("min-w-0 text-sm text-text", isUnread ? "font-bold" : "font-medium")}>
+          {notification.title}
+        </span>
+        {important ? (
+          <Badge tone={notification.priority === "critical" ? "danger" : "warning"}>
+            {t(`priority.${notification.priority}`)}
+          </Badge>
+        ) : null}
+      </span>
+      {notification.body ? (
+        <span className="line-clamp-3 text-[13px] text-text-muted">{notification.body}</span>
+      ) : null}
+      <span className="text-xs text-text-subtle">
+        {t(`category.${notification.category}`)} ·{" "}
+        {preview ? (
+          t("dispatch.previewNow")
+        ) : (
+          <time dateTime={notification.created_at}>
+            {formatDateTimeLocalized(notification.created_at)}
+          </time>
+        )}
+      </span>
+    </>
+  );
 
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <NotificationCategoryTag category={notification.category} />
-          <NotificationPriorityTag priority={notification.priority} />
-          <span className="ml-auto text-xs font-medium text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-            {preview ? t("dispatch.previewNow") : formatDate(notification.created_at)}
-          </span>
-        </div>
-
-        <button
-          type="button"
-          onClick={preview ? undefined : handleOpen}
-          disabled={preview}
-          // ⚠️ Birinchi klass nuqtasiz bo'lsin: lockfile'dagi nwsapi 2.2.23 (jsdom)
-          // antd `:has(...)` qoidasida birinchi klassdan selektor yasaydi va
-          // `mt-1.5` da SyntaxError beradi (testda yiqiladi, brauzerga ta'sirsiz).
-          className="block mt-1.5 w-full text-left disabled:cursor-default"
-        >
-          <h4
-            className={`m-0 truncate text-sm text-maindark dark:text-white ${
-              isUnread ? "font-black" : "font-semibold"
-            }`}
-          >
-            {notification.title}
-          </h4>
-          {notification.body ? (
-            <p className="m-0 mt-1 line-clamp-2 text-sm font-medium leading-6 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-              {notification.body}
-            </p>
-          ) : null}
-        </button>
+  if (preview) {
+    return (
+      <div className="flex items-start gap-3 rounded-xl bg-sunken py-4 pl-3 pr-4">
+        <span
+          aria-hidden="true"
+          className={cx("mt-3.5 size-2 shrink-0 rounded-full", isUnread && "bg-info")}
+        />
+        <span aria-hidden="true" className={cx(STAT_ICON, "bg-surface")}>
+          <Icon size={20} />
+        </span>
+        <div className="flex min-w-0 flex-1 flex-col gap-1">{content}</div>
       </div>
+    );
+  }
 
-      {preview ? null : (
-        <div className="flex shrink-0 flex-col items-center gap-1">
-          <Tooltip title={isUnread ? t("markRead") : t("markUnread")}>
-            <Button
-              type="text"
-              size="small"
-              aria-label={isUnread ? t("markRead") : t("markUnread")}
-              icon={isUnread ? <Check size={16} /> : <Mail size={16} />}
-              loading={markRead.isPending}
-              onClick={handleToggleRead}
-            />
-          </Tooltip>
-          <Tooltip title={t("delete")}>
-            <Button
-              danger
-              type="text"
-              size="small"
-              aria-label={t("delete")}
-              icon={<Trash2 size={16} />}
-              loading={deleteNotification.isPending}
-              onClick={handleDelete}
-            />
-          </Tooltip>
-        </div>
-      )}
+  return (
+    <div className="flex items-start gap-3 py-4 pl-3 pr-5 max-md:gap-2.5 max-md:pl-4 max-md:pr-3">
+      <span
+        aria-hidden="true"
+        className={cx("mt-3.5 size-2 shrink-0 rounded-full max-md:mt-[7px]", isUnread && "bg-info")}
+      />
+      <span aria-hidden="true" className={cx(STAT_ICON, "bg-sunken max-md:hidden")}>
+        <Icon size={20} />
+      </span>
+      <Pressable
+        onClick={handleOpen}
+        className="flex min-w-0 flex-1 flex-col gap-1 rounded-md text-left"
+      >
+        {content}
+      </Pressable>
+      <div className="flex flex-none items-center gap-1">
+        {isUnread ? (
+          <IconButton
+            size="sm"
+            icon={Check}
+            label={t("markRead")}
+            loading={markRead.isPending}
+            onClick={() => void handleToggleRead()}
+            className="max-md:hidden"
+          />
+        ) : null}
+        <NotificationItemMenu
+          label={t("inbox.actions")}
+          actions={[
+            {
+              id: "toggle-read",
+              label: isUnread ? t("markRead") : t("markUnread"),
+              icon: isUnread ? MailOpen : Mail,
+              onSelect: () => void handleToggleRead(),
+            },
+            {
+              id: "delete",
+              label: t("delete"),
+              icon: Trash2,
+              danger: true,
+              onSelect: () => void handleDelete(),
+            },
+          ]}
+        />
+      </div>
     </div>
   );
 };

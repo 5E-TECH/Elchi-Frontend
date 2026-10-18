@@ -63,35 +63,15 @@ export const RAW_CONTROL_RATCHET = {
   "src/shared/components/ScannerCameraModal.tsx": "kamera ishi — alohida (ega qarori 2026-10-16)",
   "src/pages/market-operators/index.tsx": "yopiq route (routes.tsx: guard doim false, maket yo'q) — ko'chirilmaydi (G2 spec §3.4)",
   "src/pages/payments/components/SalaryPaymentPopup.tsx": "yetib bo'lmaydigan v1 — «Maosh to'lash» UNAVAILABLE_ACTIONS da (Moliya spec §9)",
-  "src/widgets/user-detail/ui/UserDetailWidget.tsx": "v1 — faqat /profile (G1: muzlatilgan); iste'molchisi yo'qolsa o'chiriladi",
-  "src/entities/user/ui/UserInfoCards.tsx": "v1 — faqat UserDetailWidget ichida",
-  "src/features/courier-transfer-branch/ui/TransferCourierButton.tsx": "v1 tugma v2 sahifalarda (UserDetailView, BranchEmployeesSection) — G1 qoldig'i, followups",
-  "src/shared/components/button.tsx": "v1 Button primitivi — oxirgi iste'molchi (external_orders/create, G2) bilan o'chadi",
-  "src/shared/components/Table/Table.tsx": "v1 Table primitivi — iste'molchilari G2/G3 + CustomerOrdersTable",
-  "src/shared/components/pagination/index.tsx": "v1 pagination primitivi — G2 dan keyin o'chadi",
   "src/shared/components/PrintModeSelect.tsx": "v1 o'rami (ichi v2, menyu bandlari) — shared/ui ga ko'chirilguncha",
+  // Bosqich B integratsiyasi: iste'molchisiz v1 fayllar (UserInfoCards, button.tsx, Table, pagination) o'chirildi.
 };
-export const UI_IMPORT_RATCHET = {
-  "src/shared/ui/ConfirmButton/ConfirmButton.tsx": "v1 o'rami (antd Button) — yagona iste'molchi DeleteNotificationButton G2 da o'chadi",
-};
+/** Bosqich B: bo'sh — `ConfirmButton` (yagona yozuv) G2 da o'chirildi. Yangi yozuv faqat `MAX_UI` bilan. */
+export const UI_IMPORT_RATCHET = {};
 
 /**
- * BOSQICH A: G2/G3 worktree'larda quriladi — bu yo'llarda 5-bosqich qoidalari `warn` (`npm run lint` = `--quiet` ularni
- * ko'rsatmaydi; kuzatish — `npm run lint:report`). Egalik: G2 spec §6, G3 spec §7.
- * Bosqich B (G2 va G3 asosiy branchga qo'shilgach): `[]` — lintRatchet.test.ts shuni talab qiladi.
+ * BOSQICH A (tugadi): G2/G3 qurilayotganda ularning yo'llarida 5-bosqich qoidalari `warn` edi.
+ * Bosqich B (G2 va G3 asosiy branchga qo'shildi): bo'sh — `design-v2/*` hamma joyda xato; lintRatchet.test.ts shuni
+ * talab qiladi. Yangi yozuv qo'shilmaydi (qurilayotgan yo'l uchun ham — `Pressable` / primitiv yoki ratchet).
  */
-export const STAGE_A_PENDING = [
-  // G2
-  "src/pages/integrations/**", "src/pages/partners/**", "src/pages/new_orders/external_orders/**", "src/entities/integrations/**",
-  "src/pages/notifications/**", "src/pages/notification-send/**", "src/widgets/notification-table/**",
-  "src/features/notification-create/**", "src/features/notification-edit/**", "src/features/notification-delete/**",
-  "src/features/notification-dispatch/**", "src/features/notification-connect/**", "src/entities/notification/**",
-  "src/pages/activity-logs/**", "src/widgets/activity-log/**", "src/entities/activity-log/**", "src/pages/ops/**",
-  "src/pages/finance-operators/**", "src/pages/integrations-ops/**", "src/pages/investors-ops/**", "src/pages/logistics-ops/**",
-  "src/pages/branch-ops/**", "src/pages/identity-ops/**", "src/pages/system-ops/**", "src/pages/logs/**",
-  "src/pages/profile/**", "src/pages/settings/**", "src/widgets/notification-inbox/**", "src/features/notification-inbox/**",
-  "src/features/push-notifications/**", "src/entities/notification-inbox/**",
-  // G3
-  "src/features/auth/**", "src/auth/**", "src/pages/scan/detail.tsx", "src/pages/scan/ui/**", "src/pages/scan/model/**",
-  "src/pages/dispatch/**", "src/pages/courier-bulk/**", "src/shared/components/ScannerActionButton.tsx",
-];
+export const STAGE_A_PENDING = [];

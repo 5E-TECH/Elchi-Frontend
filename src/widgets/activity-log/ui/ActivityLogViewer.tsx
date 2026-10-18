@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-activity-logs-list, superadmin-activity-logs-row-expanded, admin-activity-logs-list, admin-activity-logs-row-expanded
 import { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, ScrollText } from "lucide-react";
+import { ScrollText } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   ActivityActionBadge,
@@ -8,7 +8,6 @@ import {
   useActivityLogs,
   type ActivityActionMeta,
   type ActivityLog,
-  type ActivityLogParams,
 } from "../../../entities/activity-log";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import {
@@ -18,7 +17,6 @@ import {
   DataTable,
   EmptyState,
   ErrorState,
-  IconButton,
   Pagination,
   QueryBoundary,
   SkeletonTable,
@@ -26,22 +24,28 @@ import {
 } from "../../../shared/ui/primitives";
 import { useActivityLabels } from "../model/useActivityLabels";
 import { hasActivityDetail } from "../model/activityDetail";
-import { EMPTY_ACTIVITY_FILTERS, hasActivityFilters, type ActivityLogFilterValues } from "../model/activityFilters";
+import {
+  buildActivityLogParams,
+  EMPTY_ACTIVITY_FILTERS,
+  hasActivityFilters,
+  type ActivityLogFilterValues,
+} from "../model/activityFilters";
 import ActivityLogDetail from "./ActivityLogDetail";
 import ActivityLogFilters from "./ActivityLogFilters";
 
 /**
- * Faoliyat jurnali — dizayn v2 (maketlar `superadmin-activity-logs-list`, `-row-expanded`; admin ham shu).
- * Bitta karta: filtrlar → jadval (telefonda ro'yxat qatorlari) → sahifalash. Qator «›» bilan ochiladi:
- * maydon o'zgarishlari va qo'shimcha ma'lumot (`ActivityLogDetail`); tafsiloti yo'q qatorda tugma yo'q.
+ * FAOLIYAT JURNALI (maketlar `superadmin-activity-logs-list`, `-row-expanded`; admin — shu). Bitta karta:
+ * filtrlar (`ActivityLogFilters`; telefonda qidiruv + sana + «Filtrlar» varaqasi) → `DataTable` (telefonda
+ * kartalar) → `Pagination`. Qator `DataTable expandable` bilan ochiladi (chevron ustuni, `aria-controls`):
+ * maydon o'zgarishlari va qo'shimcha ma'lumot (`ActivityLogDetail`); tafsiloti yo'q qatorda chevron yo'q.
+ * Bir vaqtda bitta qator ochiq; filtr yoki sahifa almashsa yopiladi.
+ *
  * «Amal» — `action_meta` badge'i (y8CxCtcK), «Kim» — ism + rol (topilmasa «#7 (topilmadi)», «Tizim»).
+ * Xulq: qidiruv 400 ms kechikish bilan (filtr blokida), filtr o'zgarsa 1-sahifa, `from` — kun boshi, `to` — kun
+ * oxiri (ISO), filtrlar URL'da EMAS. Xato sahifada chiziladi — global xabar takrorlanmaydi (`silentError`).
  */
 
 const PAGE_SIZE = 20;
-
-/** `YYYY-MM-DD` (mahalliy kun) → kun boshi / oxiri ISO (avvalgi `startOf("day")` / `endOf("day")` kabi). */
-const dayStartIso = (day: string) => new Date(`${day}T00:00:00`).toISOString();
-const dayEndIso = (day: string) => new Date(`${day}T23:59:59.999`).toISOString();
 
 const rowKey = (log: ActivityLog) => `${log.service ?? ""}-${log.id}`;
 
@@ -54,19 +58,12 @@ const ActivityLogViewer = () => {
   const [filters, setFilters] = useState<ActivityLogFilterValues>(EMPTY_ACTIVITY_FILTERS);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
-  const params = useMemo<ActivityLogParams>(() => {
-    const next: ActivityLogParams = { page, limit: PAGE_SIZE };
-    if (filters.search) next.search = filters.search;
-    if (filters.service) next.service = filters.service;
-    if (filters.action) next.action = filters.action;
-    if (filters.entityType.trim()) next.entity_type = labels.entityTypeParam(filters.entityType);
-    if (filters.userId.trim()) next.user_id = filters.userId.trim();
-    if (filters.dateFrom) next.from = dayStartIso(filters.dateFrom);
-    if (filters.dateTo) next.to = dayEndIso(filters.dateTo);
-    return next;
-  }, [filters, labels, page]);
+  const params = useMemo(
+    () => buildActivityLogParams(filters, page, PAGE_SIZE, labels.entityTypeParam),
+    [filters, labels, page],
+  );
 
-  const logsQuery = useActivityLogs(params);
+  const logsQuery = useActivityLogs(params, { silentError: true });
   const catalogQuery = useActivityActions();
   const registry = useMemo(
     () => new Map<string, ActivityActionMeta>((catalogQuery.data?.registry ?? []).map((item) => [item.action, item])),
@@ -96,31 +93,14 @@ const ActivityLogViewer = () => {
     setExpandedKey(null);
   };
 
-  const target = (log: ActivityLog) => [labels.entityType(log.entity_type), labels.entityId(log)].filter(Boolean).join(" ");
+  const toggleRow = (log: ActivityLog, next: boolean) => setExpandedKey(next ? rowKey(log) : null);
 
-  const toggleButton = (log: ActivityLog) => {
-    if (!hasActivityDetail(log)) return <span className="sr-only">{t("detail.none")}</span>;
-    const open = expandedKey === rowKey(log);
-    return (
-      <IconButton
-        size="sm"
-        icon={open ? ChevronDown : ChevronRight}
-        aria-expanded={open}
-        label={t(open ? "detail.collapse" : "detail.expand", { target: target(log) })}
-        onClick={() => setExpandedKey(open ? null : rowKey(log))}
-      />
-    );
-  };
-
-  const time = (log: ActivityLog) => formatDateTimeLocalized(log.created_at, { language });
+  const time = (log: ActivityLog) => (log.created_at ? formatDateTimeLocalized(log.created_at, { language }) : "—");
+  const actionBadge = (log: ActivityLog) => (
+    <ActivityActionBadge action={log.action} meta={log.action_meta} registry={registry} label={labels.action(log.action)} />
+  );
 
   const columns: DataTableColumn<ActivityLog>[] = [
-    {
-      id: "detail",
-      header: <span className="sr-only">{t("columns.detail")}</span>,
-      className: "w-[52px] pr-0",
-      cell: toggleButton,
-    },
     {
       id: "time",
       header: t("columns.time"),
@@ -143,18 +123,19 @@ const ActivityLogViewer = () => {
     {
       id: "action",
       header: t("columns.action"),
-      cell: (log) => <ActivityActionBadge action={log.action} meta={log.action_meta} registry={registry} />,
+      cell: actionBadge,
     },
     {
       id: "entity",
       header: t("columns.entity"),
       cell: (log) => {
         const name = labels.entityName(log);
+        const id = labels.entityId(log);
         return (
           <>
             <div className="whitespace-nowrap font-semibold text-text">
               {labels.entityType(log.entity_type)}{" "}
-              <span className="font-medium text-text-muted">{labels.entityId(log)}</span>
+              {id ? <span className="font-medium text-text-muted">{id}</span> : null}
             </div>
             {name ? <div className="text-[13px] text-text-muted">{name}</div> : null}
           </>
@@ -169,29 +150,25 @@ const ActivityLogViewer = () => {
     },
   ];
 
+  // Telefon kartasi; chevron (44 px) va ochilgan panel — `DataTable` da (kartaning o'ng tomoni / ostida).
   const renderCard = (log: ActivityLog) => {
     const role = labels.role(log.actor?.role || log.user_role);
     const name = labels.entityName(log);
-    const expandable = hasActivityDetail(log);
     return (
-      // Tugma bo'lsa o'ng chekka 4 px (maket `.el-list-item` `padding-right: 4px`), bo'lmasa — 16 px.
-      <div className={`flex min-w-0 items-start gap-2 py-3 pl-4 text-sm ${expandable ? "pr-1" : "pr-4"}`}>
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          {/* Uzun fe'l yorlig'i vaqtni tugma ustiga surmaydi — qator o'raladi. */}
-          <span className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1">
-            <ActivityActionBadge action={log.action} meta={log.action_meta} registry={registry} />
-            <span className="whitespace-nowrap text-[13px] text-text-muted">{time(log)}</span>
-          </span>
-          <span className="min-w-0 font-semibold text-text">
-            {labels.entityType(log.entity_type)}{" "}
-            <span className="font-medium text-text-muted">{[labels.entityId(log), name].filter(Boolean).join(" · ")}</span>
-          </span>
-          <span className="flex min-w-0 justify-between gap-2 text-[13px] text-text-muted">
-            <span className="min-w-0">{[labels.actorName(log), role].filter(Boolean).join(" · ")}</span>
-            {log.service ? <span className="whitespace-nowrap">{labels.service(log.service)}</span> : null}
-          </span>
-        </div>
-        {expandable ? <div className="-mt-1 shrink-0">{toggleButton(log)}</div> : null}
+      <div className="flex min-w-0 flex-col gap-1 py-3 pl-4 text-sm">
+        {/* Uzun fe'l yorlig'i vaqtni chevron ustiga surmaydi — qator o'raladi. */}
+        <span className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-1">
+          {actionBadge(log)}
+          <span className="whitespace-nowrap text-[13px] text-text-muted">{time(log)}</span>
+        </span>
+        <span className="min-w-0 font-semibold text-text">
+          {labels.entityType(log.entity_type)}{" "}
+          <span className="font-medium text-text-muted">{[labels.entityId(log), name].filter(Boolean).join(" · ")}</span>
+        </span>
+        <span className="flex min-w-0 justify-between gap-2 text-[13px] text-text-muted">
+          <span className="min-w-0">{[labels.actorName(log), role].filter(Boolean).join(" · ")}</span>
+          {log.service ? <span className="whitespace-nowrap">{labels.service(log.service)}</span> : null}
+        </span>
       </div>
     );
   };
@@ -209,7 +186,7 @@ const ActivityLogViewer = () => {
       padding="none"
       aria-label={t("cardLabel")}
       footer={
-        total > 0 && items.length > 0 ? (
+        total > 0 && items.length > 0 && !logsQuery.isError ? (
           <Pagination
             page={logsQuery.data?.page ?? page}
             pageSize={PAGE_SIZE}
@@ -233,7 +210,7 @@ const ActivityLogViewer = () => {
         query={query}
         keepPreviousData={false}
         error={(error, retry) => (
-          <ErrorState className="border-t border-border" error={error} onRetry={retry} />
+          <ErrorState className="border-t border-border" error={error} title={t("loadError")} onRetry={retry} />
         )}
         loading={
           <SkeletonTable
@@ -247,7 +224,7 @@ const ActivityLogViewer = () => {
             className="border-t border-border"
             icon={ScrollText}
             title={t("empty")}
-            description={filtered ? t("emptyFiltered") : undefined}
+            description={filtered ? t("emptyFiltered") : t("emptyHint")}
             action={
               filtered ? (
                 <Button variant="secondary" onClick={clearFilters}>
@@ -266,9 +243,16 @@ const ActivityLogViewer = () => {
             label={t("cardLabel")}
             cardsLabel={t("cardLabel")}
             renderCard={renderCard}
-            renderExpanded={(log) =>
-              expandedKey === rowKey(log) ? <ActivityLogDetail log={log} labels={labels} /> : null
-            }
+            onRowClick={(log) => {
+              if (hasActivityDetail(log)) toggleRow(log, expandedKey !== rowKey(log));
+            }}
+            expandable={{
+              isExpanded: (log) => expandedKey === rowKey(log),
+              onToggle: toggleRow,
+              canExpand: hasActivityDetail,
+              render: (log) => <ActivityLogDetail log={log} labels={labels} />,
+              toggleLabel: (log, open) => t(open ? "detail.collapse" : "detail.expand", { target: labels.entityTitle(log) }),
+            }}
             busy={logsQuery.isFetching && !logsQuery.isLoading}
             className="border-t border-border"
           />

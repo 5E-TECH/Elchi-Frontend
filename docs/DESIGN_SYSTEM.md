@@ -1,9 +1,10 @@
 # Elchi CRM — Dizayn tizimi v2
 
-> Holat (2026-10-18): 0–3 bosqichlar tayyor; 4 (sahifalar) — G1 gacha tayyor, G2 (integratsiyalar, bildirishnomalar,
-> tizim/ops, profil/sozlamalar) va G3 (kirish, `/scan/:token`, `/dispatch`, `/courier-bulk`) qurilmoqda; 5
-> (qo'riqchilar, §12) — **bosqich A**: ESLint `design-v2/*`, `V2_SCOPES` + `named-colour`, vizual snapshotlar (CI
-> «Visual»). Qolgan ish: G2/G3 → 5-bosqich B (§14), kamera rejimlari (alohida ish). Trello: «Dizayn v2» kartalari.
+> Holat (2026-10-18): **0–5 bosqichlar tayyor.** 4 (sahifalar): 77 route'dan 75 tasi v2 — G1, G2, G3 birlashtirildi
+> (`design/SCREENS.md`); 5 (qo'riqchilar, §12): ESLint `design-v2/*` butun `src` da xato, `V2_SCOPES` + `named-colour`,
+> vizual snapshotlar (CI «Visual», 23 sahna). Qolgan ish (§14): kamera rejimlari (alohida ish), yopiq
+> `/market-operators`, v1 ratchet ro'yxatlari (§12.2, §12.3), «Visual» baseline'lari va required tekshiruv (§12.5).
+> Trello: «Dizayn v2» kartalari.
 
 Bu hujjat — yangi UI yozayotgan har bir frontchi va AI agent uchun **majburiy** qoidalar. Qisqa versiyasi
 `AGENTS.md` da. Barcha ekranlarning tasdiqlangan chizmalari (desktop / planshet / telefon × kunduzgi / tungi)
@@ -296,8 +297,8 @@ sinonimlarning o'rnini bosuvchilari — `design/icon-registry.json` (132 ikonka,
 | 1 | primitivlar, formatlovchilar, namuna sahifasi `/ops/ui-kit` | `src/shared/ui/primitives`, `src/entities/order`, `src/shared/lib/format*.ts` | tayyor |
 | 2 | shell: kanvas, yon / pastki menyu, yuqori panel | `src/widgets/layout`, `src/widgets/Sidebar`, `src/widgets/header` | tayyor |
 | 3 | forma, dialog, xabar, holatlar, xato sahifalari | `src/shared/ui/primitives`, `src/app/providers/UiHost.tsx`, `src/shared/lib/notify.ts` | tayyor |
-| 4 | sahifalar migratsiyasi (har sahifa alohida PR, `// dizayn-v2:`) | `src/pages/**`, `src/widgets/**`; jurnal — Ilova A, route bo'yicha — `design/SCREENS.md` | G1 gacha tayyor; G2, G3 qurilmoqda |
-| 5 | qo'riqchilar: ESLint `design-v2/*` + `Pressable`, `V2_SCOPES` + `named-colour`, vizual snapshotlar (CI «Visual») | `eslint.config.js`, `scripts/eslint-design-v2.mjs`, `scripts/design-guard.mjs`, `playwright.visual.config.ts`, `tests/visual/`, `.github/workflows/visual.yml` | bosqich A (§12, §14) |
+| 4 | sahifalar migratsiyasi (har sahifa alohida PR, `// dizayn-v2:`) | `src/pages/**`, `src/widgets/**`; jurnal — Ilova A, route bo'yicha — `design/SCREENS.md` | tayyor: 75 / 77 route v2 (G1, G2, G3); qolgan `/scan` — kamera ishi, `/market-operators` — yopiq |
+| 5 | qo'riqchilar: ESLint `design-v2/*` + `Pressable`, `V2_SCOPES` + `named-colour`, vizual snapshotlar (CI «Visual») | `eslint.config.js`, `scripts/eslint-design-v2.mjs`, `scripts/design-guard.mjs`, `playwright.visual.config.ts`, `tests/visual/`, `.github/workflows/visual.yml` | tayyor (§12; qolgan ish — §14) |
 
 Palitra testi va ratchet qo'riqchisi 0-bosqichdan beri ishlaydi: eski kodga tegmaydi, lekin yangi buzilish qo'shilsa
 CI qizil bo'ladi. Barcha qo'riqchilar — §12 (dizayn qo'riqchisi, ratchet — §12.3), yangi sahifa tartibi va PR
@@ -317,9 +318,10 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
 - **Namuna sahifasi** — `/ops/ui-kit` (faqat superadmin, menyuda yo'q): har primitiv kunduzgi va tungi mavzuda
   yonma-yon; `?section=<id>` bitta bo'lim. Ilovani akkauntsiz ko'rish: `npm run app:shot -- <route>`
   (`design/README.md`).
-- **v1 o'rnini bosuvchilar** (yangi kodda v1 importi qo'riqchining `v1-helper` qoidasida): `shared/components/button`
-  → `Button`, `shared/ui/StatusBadge` va `pages/orders/list/OrderStatusBadge` → `StatusBadge` / `OrderStatusBadge`,
-  `shared/config/statusColorMap` → `statusRegistry` + `tone.ts`, `shared/lib/formatDate` → `formatDateTimeLocalized`.
+- **v1 o'rnini bosuvchilar** (v1 modullari 5-bosqich B da o'chirildi; importi qaytsa — qo'riqchining `v1-helper`
+  qoidasi): `shared/components/button` → `Button`, `shared/ui/StatusBadge` va `pages/orders/list/OrderStatusBadge` →
+  `StatusBadge` / `OrderStatusBadge`, `shared/config/statusColorMap` → `statusRegistry` + `tone.ts`,
+  `shared/lib/formatDate` → `formatDateTimeLocalized`.
 
 **2-bosqich — tayyor (shell).** Fayllar `// dizayn-v2: shell` belgili, qo'riqchida 0; klasslar `design/CODE-MAP.md` §2.10.
 
@@ -358,32 +360,36 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   foydalanuvchiga shell ichida (yon menyu va yuqori panel joyida); kirmagan foydalanuvchi yoki shell'ning o'zi
   yiqilganda — butun ekran (`standalone`, `routes.tsx` → `STANDALONE_ERROR_PAGES`).
 - **Global qatlam** — `app/providers/UiHost.tsx` (`ConfirmHost` + `Toaster`), ilova provayderida bir marta.
-- **v1 o'ramlari** — eski import yo'llari va API saqlangan, ichi v2 (ishlatilmagan `shared/ui/Select.tsx`,
-  `features/Select/selectInput.tsx`, `StatusSelect/` o'chirildi): `SearchableSelect`, `FilterSelect`,
-  `FilterMultiSelect`, `PopupSelect`, `PrintModeSelect`;
-  `CustomDatePicker`, `DateRangePicker`, `FilterDateRange`, `FilterDateInput` (`QuickDateRangeFilter` — G1 da o'chirildi); `Popup`,
-  `FormPopup`, `PopupConfirm`, `UpdatePopup`, `ConfirmButton`; `EmptyState`, `QueryErrorState`, `TableSkeleton`,
-  `Loader`/`PageLoader`; `PhoneInput`, `FilterSearch`, `SearchInput`.
+- **v1 o'ramlari** — eski import yo'llari va API saqlangan, ichi v2: `FilterSelect`, `PopupSelect`, `PrintModeSelect`,
+  `Popup`, `FormPopup`, `PageLoader`. Iste'molchisiz qolganlari o'chirildi: `shared/ui/Select.tsx`,
+  `features/Select/selectInput.tsx`, `StatusSelect/` (3-bosqich), `QuickDateRangeFilter` (G1), `ConfirmButton` (G2);
+  5-bosqich B da — `SearchableSelect`, `FilterMultiSelect`, `CustomDatePicker`, `DateRangePicker`, `FilterDateRange`,
+  `FilterDateInput`, `PopupConfirm`, `UpdatePopup`, `EmptyState`, `QueryErrorState`, `TableSkeleton`, `Loader`,
+  `PhoneInput`, `FilterSearch`, `SearchInput`, `GlobalSearchInput`, `FilterClearButton`, `PageStatBadge`, `Timeline`
+  (yangi kodda — to'g'ridan-to'g'ri primitivlar).
 - **Migratsiya** — antd `message`/`notification` (va `NotificationProvider` ichidagi antd `notification`) →
   `notify`; `Popconfirm` va `window.confirm` → `useConfirm()`; §8 dagi pul/kirish amallariga tasdiq qo'shildi.
 - **ESLint** (`eslint.config.js`) — antd `message` / `notification` / `Popconfirm` importi, `<Popconfirm>`,
   `Modal.confirm|info|success|error|warning`, `Modal.useModal`, `App.useApp`, `window.confirm|alert|prompt` va global
   `confirm`/`alert`/`prompt` — xato.
 
-**4-bosqich — jarayonda (sahifalar).** Har sahifa alohida PR, faylning birinchi qatorida `// dizayn-v2: <ekran>`.
+**4-bosqich — tayyor (sahifalar).** Har sahifa alohida PR, faylning birinchi qatorida `// dizayn-v2: <ekran>`.
+77 route'dan 75 tasi v2 (`design/SCREENS.md`); qolgan ikkitasi — `/scan` (butun kamera ekrani, alohida kamera ishi) va
+yopiq `/market-operators` (ko'chirilmaydi). Boshqa sahifalardagi kamera rejimlari (`*-camera`, `ScannerCameraModal`)
+ham kamera ishida (§14).
 
 - **Ro'yxat standarti** — `DataTable` (ustunlar, `density`, server saralashi, tanlov, telefonda `renderCard` →
   kartalar) + `Pagination` (`Card footer`, «10 ta» tanlovi, 5 o'rinli sahifalar), `src/shared/ui/primitives` barrelidan;
   namunasi `/ops/ui-kit?section=table`, klasslar `design/CODE-MAP.md` §2.6. v1 `shared/components/Table` va
-  `shared/components/pagination` yangi kodda ishlatilmaydi.
+  `shared/components/pagination` 5-bosqich B da o'chirildi.
 - **Ko'chirilgan sahifalar** (har guruh: route'lar, kartalar, oynalar, ega qarorlari, chiqarilgan v1) — **Ilova A**;
   route bo'yicha joriy holat (`v2` / `eski` / `qisman`) — `design/SCREENS.md` (generatsiya qilinadi, haqiqat manbai).
 
-## 12. Qo'riqchilar
+**5-bosqich — tayyor (qo'riqchilar).** Ikki bosqichda kiritildi: A — G2/G3 qurilayotganda ularning yo'llarida ESLint
+`design-v2/*` `warn` edi; B (G2 va G3 birlashtirilgach) — hamma joyda `error`, G2/G3 papkalari `V2_SCOPES` da, 23
+vizual sahna. Qoidalar, istisnolar va oqimlar — §12, sonlar va qolgan ish — §14.
 
-> **Bosqich A (2026-10-18).** G2/G3 qurilayotgan yo'llarda ESLint `design-v2/*` hozircha `warn` (`STAGE_A_PENDING`,
-> §12.2), ularning papkalari `V2_SCOPES` da emas, vizual sahnalar 19 ta. Bosqich B (G2 va G3 asosiy branchga
-> qo'shilgach): hamma joyda `error`, G2/G3 papkalari `V2_SCOPES` ga, +4 sahna (23), bu izoh olib tashlanadi.
+## 12. Qo'riqchilar
 
 Dizayn v2 qoidalari kodda bir necha darvoza bilan ushlanadi. **Bitta tashvish — bitta dvigatel:** JSX va import
 taqiqlari — ESLint, rang va tokenlar — `scripts/design-guard.mjs`, piksellar — Playwright vizual loyihasi (yagona
@@ -403,7 +409,7 @@ ESLint'da `-- <sabab>`, design-guard'da `design-guard-ignore: <sabab>`.
 | Dizayn qo'riqchisi — ratchet (`src/test/designGuard.test.ts`, §12.3) | 12 qoida: hex, Tailwind palitrasi, `dark:` juftlari, eski nomlar, qo'lda pul formati, ikonkalar, 12px dan kichik matn, v1 klass / yordamchi, `font-black`, gradient, nomli rang | `npm test` | §12.3 jadvali | `// design-guard-ignore: <sabab>`; baseline faqat kamayadi |
 | Dizayn qo'riqchisi — PR diff (§12.6) | PR'da **qo'shilgan** qatorlardagi yangi buzilish (o'sha 12 qoida) | CI, faqat PR (`deploy.yml`) | §12.3 | `design-guard-ignore: <sabab>` |
 | Palitra (`src/test/paletteGuard.test.ts`, §12.4) | `V2_SCOPES` papkalaridagi har fayl rangda 0; unutilgan toza papka; `src` dagi CSS fayllari; eski brend ranglari | `npm test` | tokenlar; papka — `V2_SCOPES` ga | `V2_SCOPE_PENDING`, `OUTPUT_FORMAT_FILES` (sabab bilan) |
-| ESLint ratchet (`src/test/lintRatchet.test.ts`, §12.2) | ratchet ro'yxatlari faqat qisqaradi; `design-v2` disable izohida sabab; `STAGE_A_PENDING` | `npm test` | ro'yxatdan olib tashlash | — |
+| ESLint ratchet (`src/test/lintRatchet.test.ts`, §12.2) | ratchet ro'yxatlari faqat qisqaradi; `design-v2` disable izohida sabab; `STAGE_A_PENDING` bo'sh | `npm test` | ro'yxatdan olib tashlash | — |
 | Vizual snapshotlar (CI «Visual», §12.5) | piksel farqi: sahnalar × kunduzgi/tungi × 1440/390 | GitHub Actions: PR + «Run workflow» | kodni tuzatish yoki «Run workflow (update)» | sahna `maxDiffPixels` faqat sabab bilan; beqaror — `test.fixme` + issue |
 | `src/test/visualCiVersion.test.ts` (§12.5) | CI Docker obrazi tegi = o'rnatilgan Playwright; aniq pin; lock; workflow qoidalari | `npm test` | bitta PR'da package.json + lock + obraz + baseline'lar | — |
 | Tokenlar, shrift, menyu | `themeTokens.test.ts` (`index.css` ↔ `themeTokens.ts`, kontrast), `inputFontGuard.test.ts` (telefonda maydon 16px), `design/tools/screens.test.mjs` (route ↔ maket, menyu) | `npm test` | `AGENTS.md` «Dizayn qo'riqchisi (CI)» | — |
@@ -412,7 +418,7 @@ ESLint'da `-- <sabab>`, design-guard'da `design-guard-ignore: <sabab>`.
 
 Ikki qoida — core `no-restricted-syntax` va `no-restricted-imports` ning alohida nomli nusxasi (plagin `design-v2`,
 `eslint.config.js`): darajasi, fayl istisnosi va `eslint-disable` izohi 3-bosqich selektorlaridan alohida.
-Ma'lumot (selektorlar, ruxsat ro'yxatlari, ratchet, bosqich A) — `scripts/eslint-design-v2.mjs`. Qamrov —
+Ma'lumot (selektorlar, ruxsat ro'yxatlari, ratchet) — `scripts/eslint-design-v2.mjs`. Qamrov —
 `src/**/*.{ts,tsx}`; faqat JSX tugunlari (chop etish HTML satridagi `<button` sanalmaydi).
 
 | Element / import | Qaror | O'rniga |
@@ -427,7 +433,7 @@ Ma'lumot (selektorlar, ruxsat ro'yxatlari, ratchet, bosqich A) — `scripts/esli
 | `role="button"` (har qanday elementda) | taqiq | haqiqiy tugma — `Button` yoki `Pressable` |
 | `<a>` / `<Link>` / `<NavLink>` + `className` da `bg-action` / `bg-success` / `bg-danger` | taqiq | `<Link className={buttonClasses({ variant })}>` |
 | antd | faqat `ConfigProvider`, `theme` (provayder) va `QRCode` (`MarketQrDialog`); boshqa har nom, `import type` ham, `antd/*` (`antd/locale/*` dan tashqari) — taqiq | `Button` / `IconButton`, `Dialog` / `ConfirmDialog`, `Select`, `TextInput`, `DateInput` / `DateRange`, `DataTable` + `Pagination`, `Badge` / `StatusBadge`, `Card`, `Tabs` / `SegmentedControl`, `Spinner`, `EmptyState` / `ErrorState` / `Skeleton`, `StatCard`; `Alert` → CODE-MAP `.el-alert`; `Tooltip` → `title` / `aria-describedby`; `Switch` → `.el-switch` + `Pressable` |
-| `@ant-design/icons` va boshqa ikonka kutubxonalari (25 nom, design-guard `ICON_LIBS` bilan bir ro'yxat) | taqiq (butun `src`) | `lucide-react` (`design/icon-registry.json`) |
+| `@ant-design/icons` va boshqa ikonka kutubxonalari (20 kutubxona, 25 import shabloni; design-guard `ICON_LIBS` bilan bir ro'yxat) | taqiq (butun `src`) | `lucide-react` (`design/icon-registry.json`) |
 | `<table>`, `<progress>`, `<meter>`, `<label>` | tegilmaydi | grafikning «Jadval» egizagi — oddiy `<table>` |
 
 **`Button`, `IconButton` yoki `Pressable`?**
@@ -436,9 +442,10 @@ Ma'lumot (selektorlar, ruxsat ro'yxatlari, ratchet, bosqich A) — `scripts/esli
   «Excelga yuklash», ikonka tugma. Havola tugma ko'rinishida — `buttonClasses({ variant })`.
 - **`Pressable`** (`src/shared/ui/primitives/Pressable.tsx`) — amal tugmasi ko'rinishida bo'lmagan bosiladigan
   yuza: karta va telefon qator-kartasi, chip (`aria-pressed`), chip «×», menyu bandi (`role="menuitem"`), kalit
-  (`role="switch"`, `.el-switch`), ochib-yopish sarlavhasi (`aria-expanded`), matn ko'rinishidagi «ochish»
-  (`hover:underline`). U uslubsiz `<button type="button">`: o'zi klass qo'shmaydi (DOM aynan `<button type="button" …>`),
-  `type="submit"` berish mumkin, `ref` — oddiy prop (React 19). Ko'rinishni chaqiruvchi CODE-MAP retsepti bilan beradi
+  (`role="switch"`, `.el-switch`), ochib-yopish sarlavhasi (`aria-expanded`), matn ichidagi bosiladigan so'z
+  (`hover:underline`; maketda `.el-btn-link` bo'lsa — `Button variant="link"`, §12.7). U uslubsiz
+  `<button type="button">`: o'zi klass qo'shmaydi (DOM aynan `<button type="button" …>`), `type="submit"` berish
+  mumkin, `ref` — oddiy prop (React 19). Ko'rinishni chaqiruvchi CODE-MAP retsepti bilan beradi
   (`.el-chip`, `.el-chip-x`, `.el-switch`, `.el-menu-item`, `.el-tile`). Fokus halqasi — global `:focus-visible`.
   `Pressable` ga `.el-btn` ko'rinishi berilmaydi — bu `Button`. `/ops/ui-kit` da bo'limi yo'q (ko'rsatadigan
   ko'rinishi yo'q).
@@ -448,23 +455,40 @@ o'ramlari — ichi v2) va 2-bosqich shell (`src/widgets/layout/**`, `src/widgets
 — `raw-control` o'chiq; testlar (`src/**/*.test.{ts,tsx}`, `__tests__`, `src/test/**`) — ikkala qoida o'chiq.
 `tests/`, `scripts/`, `design/` — qamrovdan tashqari.
 
-**Ratchet (faqat qisqaradi).** `RAW_CONTROL_RATCHET` — xom element hali qolgan v1 fayllar (kamera ishi: `/scan`,
-`ScannerCameraModal`; yopiq `/market-operators`; yetib bo'lmaydigan `SalaryPaymentPopup`; G1 qoldiqlari
-`UserDetailWidget`, `UserInfoCards`, `TransferCourierButton`; v1 `shared/components/button.tsx`, `Table`,
-`pagination`, `PrintModeSelect`) va `UI_IMPORT_RATCHET` (`ConfirmButton` — antd `Button`). Kalit — fayl, qiymat —
-sabab. `src/test/lintRatchet.test.ts`: fayl bor, `// dizayn-v2:` belgisiz, sababi yozilgan; fayl tozalansa —
-«ro'yxatdan olib tashlang»; o'lcham `≤ MAX_RAW` / `≤ MAX_UI` («faqat kamaytiring»). ESLint testda yurmaydi (tez).
+**Ratchet (faqat qisqaradi).** `RAW_CONTROL_RATCHET` — xom element hali qolgan v1 fayllar, kalit — fayl, qiymat —
+sabab (`scripts/eslint-design-v2.mjs`, hozir 5 ta, `MAX_RAW = 5`):
+
+- kamera ishi — `src/pages/scan/index.tsx` (butun `/scan` kamera ekrani), `src/shared/components/ScannerCameraModal.tsx`;
+- yopiq `/market-operators` (`src/pages/market-operators/index.tsx`, ko'chirilmaydi) va yetib bo'lmaydigan
+  `src/pages/payments/components/SalaryPaymentPopup.tsx` («Maosh to'lash» yashirin);
+- v1 o'rami `src/shared/components/PrintModeSelect.tsx` (ichi v2, menyu bandlari; `shared/ui` ga ko'chirilguncha).
+
+Bosqich B integratsiyasida iste'molchisi qolmagan (o'lik) v1 fayllar — `UserInfoCards.tsx`,
+`shared/components/button.tsx`, `shared/components/Table/` (+ `CustomerOrdersTable`), `shared/components/pagination`
+— o'chirildi, ularning yozuvlari bilan birga (`MAX_RAW` 9 → 5).
+
+`UI_IMPORT_RATCHET` — bo'sh (`MAX_UI = 0`; yagona yozuv `ConfirmButton` G2 da o'chirildi): `src` da antd'dan faqat
+`ConfigProvider`, `theme`, `QRCode`, boshqa ikonka kutubxonasi yo'q. `src/test/lintRatchet.test.ts`: fayl bor,
+`// dizayn-v2:` belgisiz, sababi yozilgan; fayl tozalansa — «ro'yxatdan olib tashlang»; o'lcham `≤ MAX_RAW` /
+`≤ MAX_UI` («faqat kamaytiring»; o'stirish — `MAX_*` ni o'zgartirish, review'da ko'rinadi). ESLint testda yurmaydi (tez).
 
 **Bitta qator istisnosi** — `// eslint-disable-next-line design-v2/raw-control -- <sabab>` (JSX ichida
 `{/* … */}`), sabab ≥ 10 belgi (test tekshiradi). `reportUnusedDisableDirectives: "error"` — keraksiz bo'lib qolgan
-disable izohi ham xato. **Kamera ishi** (ega qarori 2026-10-16, alohida ish) — shu shaklda:
-`src/pages/new_orders/cancelled/detail.tsx` dagi telefon «Kamera» tugmasi (`ScannerCameraModal` bilan birga
-ko'chiriladi); G2/G3 natijasida topilgan boshqa «Kamera» kirishlari ham.
+disable izohi ham xato. Hozir ikkita:
 
-**Bosqich A** — `STAGE_A_PENDING` (G2/G3 egalik globlari): u yerda ikkala qoida `warn`. `npm run lint`
-(`eslint . --quiet`) ogohlantirishni ko'rsatmaydi va unda yiqilmaydi; ro'yxat — `npm run lint:report`. G2/G3 kodida
-ham xom `<button>` o'rniga darhol `Pressable`. Bosqich B: `STAGE_A_PENDING = []` (`lintRatchet.test.ts` da
-`STAGE = "B"`), G2/G3 v2 fayllaridagi qoldiq — `Pressable` / kamera izohi, qolgan v1 fayl — ratchet'ga sabab bilan.
+- **kamera ishi** (ega qarori 2026-10-16, alohida ish) — `src/pages/new_orders/cancelled/detail.tsx` dagi telefon
+  «Kamera» tugmasi (`ScannerCameraModal` bilan birga ko'chiriladi);
+- `src/pages/notifications/ui/CampaignPage.tsx` dagi matn prefiksli maydon — `TextInput` da prefiks sloti yo'q, quti
+  `TextInput` klasslarida; slot qo'shilganda `TextInput` ga o'tadi (follow-up).
+
+**Bosqich B (joriy).** `STAGE_A_PENDING = []` — `design-v2/*` butun `src` da xato (yuqoridagi doimiy joylardan
+tashqari); `lintRatchet.test.ts` ro'yxat bo'sh bo'lishini talab qiladi. Bosqich A da G2/G3 qurilayotgan yo'llarda
+`warn` edi; ularning v2 fayllarida qolgan 24 ta xom element `Pressable` (kalit, chip, chip «×», matn-havola, menyu
+bandi, `role="button"` li karta) yoki `Button` (amal tugmasi ko'rinishidagilar) ga o'tdi, bittasi — yuqoridagi
+`CampaignPage` istisnosi. Yangi qurilayotgan yo'l uchun ham `warn` qaytarilmaydi: `Pressable` / primitiv, sababli
+bitta qator istisnosi yoki (v1 fayl) ratchet.
+`npm run lint` (`eslint . --quiet`) faqat xatolarni ko'rsatadi; ogohlantirishlar (`no-explicit-any` …) —
+`npm run lint:report`.
 
 `jsx-a11y/anchor-is-valid` faqat xom `<a>` ni tekshiradi: `components: ["Link"]` qo'yilmagan — lucide-react `Link`
 ikonkasi ham `<Link>` (soxta xato), react-router `Link` / `NavLink` da esa `to` TypeScript'da majburiy.
@@ -516,10 +540,12 @@ ko'chirilgan slice'larda **har fayl** — `// dizayn-v2:` belgisiz `.ts` yordamc
 `colour`, `palette`, `dark-pair`, `legacy`, `gradient`, `named-colour`) ruxsat 0; boshqa qoidalar (`money`,
 `tiny-text`, `weight`, `v1-helper` …) baseline bo'yicha qoladi. Ro'yxatlar — `scripts/design-guard.mjs`:
 
-- `V2_SCOPES` — papkalar (`src/<qatlam>/<slice>`; `src/shared/ui` butunligicha emas — `primitives`, `charts`,
-  `error-page`). Scope faylining rang soni `--update` da baseline'ga yozilmaydi; buzilish
-  «(V2_SCOPES: rang qoidalarida ruxsat 0)» deb chiqadi.
+- `V2_SCOPES` — 80 papka (`src/<qatlam>/<slice>`, qatlamdan tashqari yagona — `src/auth`; `src/shared/ui`
+  butunligicha emas — `primitives`, `charts`, `error-page`; yopiq `src/pages/market-operators` yo'q). Scope faylining
+  rang soni `--update` da baseline'ga yozilmaydi; buzilish «(V2_SCOPES: rang qoidalarida ruxsat 0)» deb chiqadi.
 - `V2_SCOPE_PENDING` — scope ichida hali v1 qolgan fayllar (sabab bilan, `≤ MAX_PENDING`): baseline ruxsati saqlanadi.
+  Hozir 2 ta: `SalaryPaymentPopup.tsx` (yetib bo'lmaydigan), `pages/scan/index.tsx` (kamera ishi); v1
+  `entities/orders/ui/ExtraCostApproval.tsx` iste'molchisiz qolib o'chirildi.
 - `OUTPUT_FORMAT_FILES` — ilova mavzusidan tashqari chiqish formatlari (chop etish HTML'i, termal yorliq / PDF, Excel
   ARGB): rang qoidalari qo'llanmaydi (oq qog'ozdagi qora matn to'g'ri). Faqat `/lib/` dagi `print|export|pdf|label`
   fayllari.
@@ -527,17 +553,17 @@ ko'chirilgan slice'larda **har fayl** — `// dizayn-v2:` belgisiz `.ts` yordamc
 `src/test/paletteGuard.test.ts` («migratsiya qilingan papkalar»): (1) har scope papkasi bor va ichida qo'riqlanadigan
 fayl bor; (2) har scope fayli rangda 0 — xatoda `fayl:qator:ustun [qoida] … → o'rnini bosuvchi`; (3) **avtomatik
 qattiqlashtirish** — ≥ 1 ta `// dizayn-v2:` fayli bor va rangda toza slice `V2_SCOPES` da bo'lishi shart
-(«integrator: papkani V2_SCOPES ga qo'shing»; bosqich A da `STAGE_A_PENDING` slice'lari hisobsiz); (4)
-`V2_SCOPE_PENDING` faqat qisqaradi (fayl bor, scope ichida, hali rang bor, sabab ≥ 10 belgi); (5)
-`OUTPUT_FORMAT_FILES` faqat `/lib/` dagi chiqish fayllari; (6) `src` dagi stil fayllari — faqat `src/index.css` va
-`src/shared/components/Table/Table.module.css` (v2 CSS modul / SCSS yozmaydi; ikkinchisi v1 `Table` bilan yo'qoladi).
+(«integrator: papkani V2_SCOPES ga qo'shing»; istisnosiz — G2/G3 papkalari ham); (4)
+`V2_SCOPE_PENDING` faqat qisqaradi (fayl bor, scope ichida, hali rang bor, sabab ≥ 10 belgi, `≤ MAX_PENDING = 2`); (5)
+`OUTPUT_FORMAT_FILES` faqat `/lib/` dagi chiqish fayllari; (6) `src` dagi stil fayllari — faqat `src/index.css` (v2 CSS
+modul / SCSS yozmaydi; v1 `Table.module.css` `Table` bilan o'chirildi).
 Eski brend ranglari tekshiruvlari (`index.css`, `AntdThemeProvider.tsx`, `var(--color-maindark)`) o'zgarmagan.
 
 ### 12.5 Vizual snapshotlar (CI «Visual»)
 
 **Matritsa:** 4 loyiha — `desktop-light`, `desktop-dark` (1440 × 900), `phone-light`, `phone-dark` (390 × 844,
-`isMobile`, `hasTouch`), DPR 1. Planshet 768 va ru/en matritsada yo'q (`app:shot` va e2e qoplaydi). Bosqich A: 19
-sahna × 4 = 76 PNG; bosqich B: 23 × 4 = 92.
+`isMobile`, `hasTouch`), DPR 1. Planshet 768 va ru/en matritsada yo'q (`app:shot` va e2e qoplaydi). **23 sahna × 4
+= 92 snapshot.** Rollar: superadmin 8, admin 3, menejer 3, registrator 3, kuryer 3, market 2, mehmon 1.
 
 | id | rol (filial turi) | route | maket | fayl |
 |---|---|---|---|---|
@@ -545,7 +571,7 @@ sahna × 4 = 76 PNG; bosqich B: 23 × 4 = 92.
 | `market-home` | market | `/` | `market-dashboard-home`, `market-dashboard-extra-cost-approvals` | `home.visual.ts` |
 | `branch-dashboard` | manager (HYBRID) | `/branch-dashboard` | `manager-branch-dashboard-main` | `home.visual.ts` |
 | `orders` | superadmin | `/orders?where_deliver=address` | `superadmin-orders-list` | `orders.visual.ts` |
-| `order-sell-dialog` | courier (REGIONAL) | `/orders` → «Sotish» (telefonda pastki varaqa) | `courier-orders-sell-dialog` | `orders.visual.ts` |
+| `order-sell-dialog` | courier (REGIONAL) | `/orders` → «Sotish» (telefonda pastki varaqa) | `courier-orders-sell-dialog`, `courier-orders-pending` | `orders.visual.ts` |
 | `orders-courier` | courier (REGIONAL) | `/orders` | `courier-orders-pending` | `order-pages.visual.ts` |
 | `order-detail` | admin | `/orders/edit/96` | `admin-orders-detail` | `order-pages.visual.ts` |
 | `order-create` | registrator (HQ) | `/new-orders/create` | `registrator-new-orders-create-step1` | `order-pages.visual.ts` |
@@ -559,8 +585,11 @@ sahna × 4 = 76 PNG; bosqich B: 23 × 4 = 92.
 | `financial-balance` | superadmin | `/financial-balance` | `superadmin-balance-overview` | `finance.visual.ts` |
 | `users` | superadmin | `/all-users` | `superadmin-users-list` | `directory.visual.ts` |
 | `regions` | admin | `/regions` | `admin-regions-map` | `directory.visual.ts` |
-| `ui-kit` | superadmin | `/ops/ui-kit?section=states` | `tizim-*` taxtalari | `kit.visual.ts` |
-| bosqich B: `login`, `integrations`, `settings`, `dispatch` | mehmon · superadmin · registrator (HQ) × 2 | `/login`, `/integrations/connections`, `/settings`, `/dispatch` | `common-login`, `superadmin-integrations-partners-console`, `common-settings-appearance`, `registrator-dispatch-list` | `auth`, `system`, `floor` |
+| `ui-kit` | superadmin | `/ops/ui-kit?section=states` | `tizim-main`, `tizim-errors`, `tizim-loading`, `tizim-charts` | `kit.visual.ts` |
+| `login` | mehmon (sessiyasiz) | `/login` — bo'sh forma, shell'siz | `common-login` | `auth.visual.ts` |
+| `integrations` | superadmin | `/integrations/connections` — «Hamkorlar», birinchi hamkor tanlangan | `superadmin-integrations-partners-console` | `system.visual.ts` |
+| `settings` | registrator (HQ) | `/settings` — «Ko'rinish» | `common-settings-appearance` | `system.visual.ts` |
+| `dispatch` | registrator (HQ) | `/dispatch` — USB skaner bilan 3 ta buyurtma (QR bo'yicha qidiruv — soxta API) | `registrator-dispatch-list` | `floor.visual.ts` |
 
 Har sahna aniq ro'yxat va holat (`api`, `act`, `capture`) — sahna faylining o'zida; `maket` hisobotda chiqadi.
 
@@ -586,10 +615,13 @@ faqat `mcr.microsoft.com/playwright:v1.59.1-noble` da yaratiladi va solishtirila
 
 **Yangilash oqimi** (`.github/workflows/visual.yml`):
 
+0. **Old shart — `visual.yml` `dev` da.** GitHub «Run workflow» tugmasini faqat workflow fayli default branch (`dev`)
+   da bo'lsa ko'rsatadi. `visual.yml` ni `dev` ga birinchi marta olib kiradigan PR'da baseline yo'q va «Visual»
+   neytral; o'sha PR merge qilingach 2-qadam ishchi branchda (masalan `shodiyor`) bajariladi → keyingi PR solishtiradi.
 1. **Baseline yo'q** (birinchi marta yoki yangi sahna): PR'dagi «Visual» yashil (neytral) — sahnalar chiziladi va
    tekshiriladi (tarmoq, konsol, shrift), piksel solishtirilmaydi; Summary'da «baseline yo'q — Run workflow (update)
    bilan yarating».
-2. **GitHub → Actions → Visual → Run workflow** → branch (masalan `shodiyor`), «update» belgili (sukut) → `baselines`
+2. **GitHub → Actions → Visual → Run workflow** → branch (masalan `shodiyor`), «update» ✓ (sukut) → `baselines`
    job barcha PNG'larni obrazda qayta yaratadi, `visual-baselines` artefaktini yuklaydi va
    `tests/visual/__screenshots__/**` ni **shu branchga commit qiladi** («test(visual): baseline'lar yangilandi
    [skip ci]»). Bayt-bayt bir xil PNG commit bo'lmaydi; o'chirilgan yoki qayta nomlangan sahnaning PNG'i ham ketadi;
@@ -602,9 +634,7 @@ faqat `mcr.microsoft.com/playwright:v1.59.1-noble` da yaratiladi va solishtirila
    diff, trace) va `visual-baselines` (faqat yiqilganlari qayta yaratilgan taklif — commit qilinmaydi). Farq
    **kutilgan** bo'lsa — 2-qadam va PR'da diff'ni ko'rsating; kutilmagan bo'lsa — kodni tuzating.
 
-**«Run workflow» qachon bor:** GitHub tugmani faqat workflow fayli default branch (`dev`) da bo'lsa ko'rsatadi.
-`visual.yml` ni `dev` ga birinchi marta olib kiradigan PR'da baseline yo'q va «Visual» neytral; merge'dan keyin ishchi
-branchda (masalan `shodiyor`) «Run workflow (update)» → baseline'lar o'sha branchga commit → keyingi PR solishtiradi.
+«update» belgisiz Run workflow — PR'dagidek faqat solishtirish (commit yo'q).
 
 Ixtiyoriy yordamchilar: `npm run visual:pull` — artefaktni lokal `__screenshots__` ga ko'chiradi (gh CLI kerak;
 gh'siz — Actions sahifasidan yuklangan zip: `npm run visual:pull -- --from <fayl.zip|papka>`); `npm run visual:docker`
@@ -626,9 +656,10 @@ forma + qadamlar, dialog → telefonda varaqa, tanlov paneli, skaner holati, KPI
 tuzilsa (route, holat, maket). id global va kebab-case (PNG nomi, `defineScene` takrorni rad etadi). Faqat v2
 sahifalar; kamera ko'rinishlari yo'q (alohida ish).
 
-**Holati:** bosqich A da «Visual / visual» maslahat (required emas). Bosqich B dan keyin — 5 ta ketma-ket yashil PR
-yugurishidan so'ng ega GitHub sozlamalarida `dev` uchun required qiladi. Har draft bo'lmagan PR push'ida yuradi
-(«Deploy» bilan parallel, ≈ 7–10 daqiqa); `paths` filtri ataylab yo'q (filtrlangan required tekshiruv PR'ni bloklaydi).
+**Holati:** «Visual / visual» hozircha maslahat (required emas): baseline'lar yaratilib (0- va 2-qadam), 5 ta ketma-ket
+yashil PR yugurishidan so'ng ega GitHub sozlamalarida `dev` uchun required qiladi. Har draft bo'lmagan PR push'ida
+yuradi («Deploy» bilan parallel; vaqt bahosi ≈ 7–10 daqiqa, GitHub'da hali o'lchanmagan); `paths` filtri ataylab yo'q
+(filtrlangan required tekshiruv PR'ni bloklaydi).
 
 ### 12.6 PR diff qadami
 
@@ -644,8 +675,10 @@ Lokal: `npm run design:guard -- --diff` (push oldidan, `origin/dev` bilan).
 - bitta ekranda ikkinchi asosiy tugma;
 - karta ichida karta (2 qavatdan ko'p);
 - `Pressable` ga `.el-btn` ko'rinishi (fon + radius + balandlik) berilgani — bu `Button`;
-- matn ko'rinishidagi havola: sahifa ichidagi amal — `Pressable` + `hover:underline`, boshqa sahifaga olib borsa —
-  `Link` + `buttonClasses({ variant: "link" })`; maketdagi ko'rinish bo'yicha;
+- matn ko'rinishidagi havola: maketda `.el-btn-link` — `Button variant="link"`, boshqa sahifaga olib borsa —
+  `Link` + `buttonClasses({ variant: "link" })`; `Pressable` + `hover:underline` — faqat `.el-btn-link` bo'lmagan matn
+  ichidagi bosiladigan so'z (5-bosqichda DOM'i o'zgarmasdan ko'chirilgan «ochish» havolalari shunday);
+- ESLint faqat JSX tugunini ko'radi: `createElement("button")` yoki satr ichidagi HTML (chop etish) sanalmaydi;
 - vizual sahnasi yo'q sahifalar (§12.5 jadvali) — kunduzgi / tungi / 390px skrinshotlar PR'da;
 - PR'da `tests/visual/__screenshots__/**` dagi PNG o'chirilsa (bot commit'idan tashqari), o'sha sahna «baseline yo'q»
   bo'lib neytral o'tadi — PR diff'ida o'chirilgan baseline'ga qarang.
@@ -664,12 +697,14 @@ Lokal: `npm run design:guard -- --diff` (push oldidan, `origin/dev` bilan).
    Sahifa shell ichida (ildiz `flex flex-col gap-6 max-md:gap-4`, §6).
 4. **Belgi:** faylning birinchi qatori `// dizayn-v2: <ekran>[, <ekran>]` (maketsiz —
    `// dizayn-v2: (maket yo'q) <eng yaqin ekran>`).
-5. **Papka toza bo'lsa** — `V2_SCOPES` ga (§12.4; palitra testi o'zi eslatadi, ro'yxat integratorda).
+5. **Papka toza bo'lsa** — `V2_SCOPES` ga (§12.4; palitra testi buni talab qiladi — toza v2 papka ro'yxatda bo'lmasa
+   `npm test` yiqiladi; ro'yxat `scripts/design-guard.mjs`, integrator yuritadi).
 6. **Eski fayldan buzilish kamaygan bo'lsa** — `npm run design:guard -- --update` (faqat kamayish; oshirish taqiqlangan).
 7. **Tekshiruvlar:** `npm run lint` · to'liq `npm test` · `npm run design:guard -- --diff` · `npm run build` (+
    tegishli e2e — `npm run test:e2e`).
 8. **Vizual sahna** — ekran rolning bosh ekrani yoki yangi pattern bo'lsa (§12.5): `tests/visual/scenes/*.visual.ts` da
-   `defineScene` + sintetik fixture, lokalda `VISUAL_DRY=1`, so'ng «Run workflow (update)».
+   `defineScene` + sintetik fixture, lokalda `VISUAL_DRY=1`, so'ng «Run workflow (update)» (§12.5, `visual.yml` `dev`
+   da bo'lgach). Sahna sahifasi ataylab o'zgarsa — xuddi shu yangilash va PR'da diff.
 9. **PR:** `.github/pull_request_template.md` (maket, kunduzgi / tungi / 390px skrinshot, «Visual» yashil).
 
 Har PR: faqat tokenlar · `PageHeader` · bitta asosiy amal · `StatusBadge` · formatlovchilar · 2 qavatdan ko'p
@@ -677,39 +712,48 @@ karta yo'q · kunduzgi / tungi / 390px skrinshot · to'liq `npm test` + `npm run
 
 ## 14. Migratsiya holati
 
-> Bosqich A qoralamasi — o'lchandi 2026-10-18 (asosiy daraxt, G1 integratsiyasidan keyin). Bosqich B da yangilanadi.
-> Route bo'yicha haqiqat manbai — `design/SCREENS.md` (generatsiya qilinadi, qo'lda tahrirlanmaydi).
+> Yakuniy — o'lchandi 2026-10-18 (asosiy daraxt, G1 + G2 + G3 birlashtirilgan, 5-bosqich B). Route bo'yicha haqiqat
+> manbai — `design/SCREENS.md` (generatsiya qilinadi, qo'lda tahrirlanmaydi); sonlar quyidagi manbadan qayta olinadi.
 
 | Ko'rsatkich | Son | Manba |
 |---|---|---|
-| `// dizayn-v2:` belgili fayllar | 275 / 827 qo'riqlanadigan | `npm run design:guard` |
-| `V2_SCOPES` | 47 papka | `scripts/design-guard.mjs` |
-| `V2_SCOPE_PENDING` | 7 (≤ 7; B da `external_orders` 3 tasi chiqadi) | `scripts/design-guard.mjs` |
-| `OUTPUT_FORMAT_FILES` | 4 | `scripts/design-guard.mjs` |
-| `RAW_CONTROL_RATCHET` / `UI_IMPORT_RATCHET` | 11 / 1 | `scripts/eslint-design-v2.mjs` |
-| `STAGE_A_PENDING` | 39 glob (B: 0) | `scripts/eslint-design-v2.mjs` |
-| Vizual sahnalar | 19 × 4 = 76 PNG (B: 23 × 4 = 92) | `tests/visual/scenes/` |
+| v2 ga ko'chirilgan route | 75 / 77 (qolgan: `/scan` — kamera ishi, `/market-operators` — yopiq) | `design/SCREENS.md` |
+| `// dizayn-v2:` belgili fayllar | 367 / 822 qo'riqlanadigan | `npm run design:guard` |
+| `V2_SCOPES` | 80 papka (ichida 680 fayl) | `scripts/design-guard.mjs` |
+| `V2_SCOPE_PENDING` | 2 (`MAX_PENDING = 2`) | `scripts/design-guard.mjs` |
+| `OUTPUT_FORMAT_FILES` | 4 (`MAX_OUTPUT_FORMAT = 4`) | `scripts/design-guard.mjs` |
+| `RAW_CONTROL_RATCHET` / `UI_IMPORT_RATCHET` | 5 / 0 (`MAX_RAW = 5`, `MAX_UI = 0`) | `scripts/eslint-design-v2.mjs` |
+| `design-v2` bitta qator istisnolari | 2 (kamera tugmasi, `CampaignPage` prefiksli maydon) | `src/**` |
+| `STAGE_A_PENDING` | 0 (bo'sh bo'lishi shart) | `scripts/eslint-design-v2.mjs` |
+| Vizual sahnalar | 23 × 4 = 92 snapshot | `tests/visual/scenes/` |
+| Commit qilingan vizual baseline'lar | 0 — §12.5 0- va 2-qadamdan keyin 92 | `tests/visual/__screenshots__/` |
 
 **Qolgan ish:**
 
-- **G2, G3** (alohida worktree'larda) → **5-bosqich B**: `STAGE_A_PENDING = []`, G2/G3 papkalari `V2_SCOPES` ga,
-  `external_orders` `V2_SCOPE_PENDING` dan chiqadi, +4 sahna (`login`, `integrations`, `settings`, `dispatch`), 92
-  baseline («Run workflow (update)»), «Visual» required.
-- **Kamera ishi** (alohida, ega qarori 2026-10-16): `/scan` (`src/pages/scan/index.tsx`), `*-camera` ko'rinishlari,
-  `src/shared/components/ScannerCameraModal.tsx`, `cancelled/detail.tsx` dagi telefon «Kamera» tugmasi.
-- **Yopiq va yetib bo'lmaydigan v1:** `/market-operators` (ko'chirilmaydi), `SalaryPaymentPopup` («Maosh to'lash»
-  yashirin) — ratchet'da; o'chirish — alohida qaror.
-- **G1 qoldiqlari** (v2 sahifadagi v1 komponent): `TransferCourierButton`, `UserDetailWidget` / `UserInfoCards`
-  (faqat `/profile`), `ExtraCostApproval` — pending / ratchet ro'yxatlarida, follow-up kartasi.
-- **v1 primitivlari** — oxirgi iste'molchisi bilan o'chadi: `shared/components/button.tsx`, `Table` (+
-  `Table.module.css`), `pagination`, `ConfirmButton`, `PrintModeSelect` (`shared/ui` ga ko'chirilguncha).
+- **«Visual» baseline'lari va required** (§12.5): `visual.yml` `dev` ga tushadi (birinchi PR — neytral) → ishchi
+  branchda «Run workflow (update)» → 92 PNG commit → ketma-ket ikki yugurishda 0 farq (determinizm) → 5 ta yashil PR
+  yugurishidan keyin ega `dev` uchun «Visual / visual» ni required qiladi. Shungacha «Visual» maslahat.
+- **Kamera ishi** (alohida, ega qarori 2026-10-16): `/scan` (`src/pages/scan/index.tsx` — `RAW_CONTROL_RATCHET` va
+  `V2_SCOPE_PENDING` da), boshqa sahifalardagi `*-camera` ko'rinishlari, `src/shared/components/ScannerCameraModal.tsx`
+  (ratchet'da), `cancelled/detail.tsx` dagi telefon «Kamera» tugmasi (bitta qator istisnosi). Kamera ko'rinishlari
+  vizual sahnalarda yo'q.
+- **Yopiq va yetib bo'lmaydigan v1:** `/market-operators` (ko'chirilmaydi, `V2_SCOPES` da yo'q), `SalaryPaymentPopup`
+  («Maosh to'lash» yashirin) — ratchet va pending'da; o'chirish — alohida qaror.
+- **v1 o'rami:** `PrintModeSelect` (ratchet'da, `shared/ui` ga ko'chirilguncha). Iste'molchisi qolmagan (o'lik) v1
+  — 61 fayl, testlari bilan: `UserInfoCards` / `UserStatsCard` / `UserDetailHeader` / `CustomerOrdersTable`,
+  `shared/components/{button,Table,pagination,popupConfirm,popupUpdate}`, `shared/ui` dagi v1 o'ramlari (§11,
+  3-bosqich ro'yxati), `StatusBadge` + `statusColorMap` + `pages/orders/list/OrderStatusBadge`, `formatDate`,
+  `ExtraCostApproval.tsx`, `features/search` barreli va `LoginForm`, eski `app/router`, `pages/home` — bosqich B
+  integratsiyasida o'chirildi (`MAX_RAW` 9 → 5, `MAX_PENDING` 3 → 2, CSS ruxsat ro'yxatida faqat `src/index.css`).
 - **Follow-up (5-bosqichda emas):** `Switch`, `FilterChip`, `Checkbox` primitivlari — qo'lda yasalgan `.el-switch`
-  (`SellModal`, `FinancialAnalysis`, `UserDetailView`, …) va chip «×» (`orders`, `mails`, `payments`) nusxalari.
+  (`SellModal`, `FinancialAnalysis`, `UserDetailView`, `settingsUi`, `pages/integrations/ui/Switch.tsx`, …) va chip «×»
+  (`orders`, `mails`, `payments`, `integrations`) nusxalari; `TextInput` prefiks sloti (`CampaignPage` istisnosi shu bilan
+  yo'qoladi).
 
 ## Ilova A. 4-bosqich migratsiya jurnali
 
 Har guruhning ko'chirilgan sahifalari: route'lar, kartalar, oynalar, ega qarorlari va chiqarilgan v1. Matn 2026-10-18
-da §11 dan o'zgarishsiz ko'chirildi; route bo'yicha joriy holat — `design/SCREENS.md`.
+da §11 dan o'zgarishsiz ko'chirildi, G2 va G3 yozuvlari birlashtirishda qo'shildi; route bo'yicha joriy holat — `design/SCREENS.md`.
 
 - **Ko'chirilgan:** `/orders` — barcha rollar (superadmin, admin, registrator, market, menejer, kuryer): ro'yxat va
   8 holat tabi, filtrlar (asboblar qatori, «Qo'shimcha filtrlar» paneli, chiplar, telefon varaqasi), menejerning
@@ -847,7 +891,64 @@ da §11 dan o'zgarishsiz ko'chirildi; route bo'yicha joriy holat — `design/SCR
   `TopRankCard`, hududlar kartogrammasi `widgets/dashboard-region` (Highcharts'siz, `--color-region-map-*`).
   Viloyat oynasi — umumiy `widgets/region-detail` `RegionDetailDialog` (faqat `lazy(() => import(…))`, bosilganda;
   `showRevenue={false}` — registratorda daromadsiz). Foydalanuvchi tafsiloti — yangi `UserDetailView` (eski
-  `UserDetailWidget` faqat `/profile` uchun muzlatilgan). Xatosi sahifada chiziladigan G1 so'rovlari
+  `UserDetailWidget` G2 da o'chirildi). Xatosi sahifada chiziladigan G1 so'rovlari
   `meta.silentError` bilan (global xabar takrorlanmaydi). Ega savollariga sukut javoblari (spec §9) —
   `design/kit/route-map.json` izohlarida. Chiqarilgan v1: `MetricCard`, `MobileCollapsibleSection`,
   `QuickDateRangeFilter`, `PerformanceChart`, `RegionStatsCard`, filial sozlamalari (config) kodi.
+- **Ko'chirilgan:** G2 — «Integratsiyalar», «Bildirishnomalar», «Tizim», «Hisob» (`/integrations/connections` —
+  konsol va 7 panel, `/integrations/new`, `/integrations/new/:typeKey`, `/integrations/partners`, `/integrations/sources`,
+  `/integrations/sources/create`, `/integrations/sources/:id`; `/notifications`, `/notifications/send`,
+  `/notifications/sms`; `/activity-logs`, `/ops` + `/finance-operators`, `/integrations-ops`, `/investors-ops`,
+  `/logistics-ops`, `/branch-ops`, `/identity-ops`, `/system-ops`, `/logs`; `/profile`, `/settings`, `/inbox`;
+  `/market-operators` yopiq, ko'chirilmagan). **`DataTable` ochiladigan qator** — yagona API `expandable` (dev'dagi `renderExpanded` unga birlashtirilgan: `isExpanded`,
+  `onToggle`, `render`, `canExpand`, `toggleLabel`, `toggle: "none"` + `panelId`, `panelClassName`,
+  `expandedClassName`): chevron ustuni birinchi, panel `colSpan` = barcha ustunlar, telefonda karta ostida; retsept —
+  CODE-MAP §2.6, namuna `/ops/ui-kit?section=table`, iste'molchilar — faoliyat jurnali, integratsiya posilkalari va eski hamkorlar
+  webhook jurnali. **Telegram guruhini ulash** (`/notifications`, dev birlashtirishi, ega qoidasi) — maketdagi qo'lda
+  guruh ID formasi o'rniga bir martalik havola: `POST /telegram/link-code` → QR + «Telegram'da ochish» + qadamlar +
+  muddat, oyna ochiqligida ro'yxat har 4 s, guruh ulangach oyna yopiladi; jadvalda «Holat» ustuni. `/profile` da
+  xodimning o'z Telegram'ini ulash/uzish (`TelegramLinkCard`, xuddi shu bir martalik oqim) va marketda «Guruhda mijoz
+  ismi va telefoni» (`MarketTelegramGroupPiiCard`) — maket yo'q, eng yaqini «Xavfsizlik» kartasi. Ops panellari — `pages/ops/ui/OpsToolPage.tsx` (`embedded` — hub ichida sarlavhasiz; to'g'ridan-to'g'ri
+  yo'lda «← Ops vositalari»), telefonda tablar → `Select`. Pul va xavfli amallar tasdiq bilan: operator to'lovi (`useConfirm` +
+  `Idempotency-Key`, muvaffaqiyat xabarida server qaytargan summa), SMS kampaniya (tasdiq oynasi + `Idempotency-Key`),
+  kalitni yangilash, hamkor / ulanishni to'xtatish, paketni bekor qilish, manba va Telegram guruhini o'chirish. Sozlamalar 5 tab («Skaner» alohida), profil — parol va tahrirlash oynalari
+  (`UpdateUserModal` profilda yo'q), inbox — push holat bloki barcha rollarda. Matnlar yangi `ops.json`,
+  `profile.json`, `notificationGroups.json` da. Xatosi sahifada chiziladigan G2 so'rovlari `meta.silentError`
+  bilan (umumiy hook'larda ixtiyoriy `{ silentError: true }`, `shared/lib/queryErrorEvents.ts` →
+  `silentErrorMeta`). Ega savollariga sukut javoblari (spec §10) — `route-map.json` izohlarida. Chiqarilgan v1:
+  `integrations/ui.ts`, `OverviewPage`, `ConnectionSubNav`, `FilterPills`, `widgets/notification-table`,
+  `DeleteNotificationButton`, `shared/ui/InlineErrorBoundary`, `shared/ui/Toggle`, `shared/ui/ConfirmButton`,
+  `NotificationCategoryTag` / `NotificationPriorityTag` (antd `Tag`), `financeCoverage.createOperatorPayment`,
+  `NOTIFICATIONS.CONNECT_BY_TOKEN`, `UserDetailWidget` (profil v2 da; uning Telegram kartalari — `ProfilePage` da) va
+  `TransferCourierButton` ning v1 `header` turi; dev bilan birlashtirishda dublikatlar — `ActivityLogFiltersSheet`,
+  `activity-log/lib/logView.ts`, `actionTone.ts`, `ActivityActionTag` (o'rniga dev'ning `ActivityLogFilters`,
+  `model/*`, `actionMeta.ts`, `ActivityActionBadge`), `TelegramGroupFormDialog` / `telegramGroupForm.ts` (o'rniga
+  `NotificationFormModal` + `NotificationEditModal`), `DataTable renderExpanded`.
+- **Ko'chirilgan:** G3 — kirish, skaner natijasi, «Biriktirish», «Tezkor amal» (`/login`, `/scan/:token`,
+  `/dispatch`, `/courier-bulk`; xato sahifalari 3-bosqichda tayyor; butun `/scan` kamera ekrani — alohida kamera
+  ishi). `/login` (`features/auth`): ≥ 1024 navy panel + forma, < 1024 navy tasma; `TextInput mode="phone"`
+  (payload `+998XXXXXXXXX`), parol ko'zi, xato — forma ichidagi `role="alert"` bloki; «Sessiya tugadi» ekrani
+  `SessionExpiredScreen` (`logoutAndRedirect({ reason: "sessionExpired" })` → `auth/loginNotice.ts`). **Sessiya
+  banneri** `auth/SessionExpiryCountdown.tsx` (`tizim-feedback` 04, entry chunk'da, faqat primitivlar): ogohlantirish
+  «Sessiya N daqiqadan keyin tugaydi» + `role="timer"`, tugagach «Qayta kirish». **Shell'ga qo'shilgan slot (maket
+  talabi):** `DashboardLayout` da yuqori panel va `<main>` orasida `[data-shell-slot=banner]` (`shrink-0`, oqimda,
+  skroll konteyneridan tashqarida) — banner unga portal qiladi (`shared/lib/shellBannerSlot.ts`), sahifani pastga
+  suradi va hech narsani yopmaydi; slot yo'q qobiqda (`ScanLayout`) — `sticky top-0`. `/scan/:token`
+  (`pages/scan/ui/*`): barcha rollar uchun bitta tartib (telefon yuqori paneli `ScanResultHeader`, «Holat va summa»,
+  «Mijoz va manzil», «Mahsulotlar», ≥ 1024 «Amallar» kartasi / < 1024 yopishqoq `ScanStickyBar`); kuryer «O'zimga
+  olish», menejer «Sotish» / «Bekor qilish» (`/orders` oynalari, tafsilot qoidalari) va «Kuryerga biriktirish» →
+  `/dispatch` (`state.scanToken`), xodimda «Holat tarixi»; paket va pochta tanalari, «topilmadi» kartasi. Paket
+  nomlari ixtiyoriy `useBatchDetail(id, { silentError: true })` bilan. `/dispatch` (`pages/dispatch/ui/*`): stat
+  kartalar, «Skanerlangan buyurtmalar» (`DataTable` + tanlov, USB skaner qo'shadi va tanlaydi), kuryer oynasi
+  `CourierPickerDialog`, bitta faol kuryer — darhol biriktirish, telefonda pastki menyu ustida yopishqoq panel.
+  `/courier-bulk` (`pages/courier-bulk/ui/*`): 4 stat karta, «Skanerlash rejimi», qator natijasi «Sotildi | Bekor |
+  Ertaga» (`SegmentedControl`), mijoz tomonida qidiruv / filtr / saralash, «Kunni yakunlash» — `useConfirm` tasdig'i
+  (DOM'da bitta tugma; telefonda yopishqoq panelda). Tasdiqdan keyin **isbot qadami** (maket yo'q — eng yaqini
+  `tizim-states-forms` + `courier-courier-bulk-confirm-dialog`): market `expense_proof_conditions` talab qilgan
+  buyurtmalar uchun `CourierBulkProofDialog` (har biriga bitta `ProofField`, hammasida fayl bo'lmaguncha «Yakunlash»
+  o'chiq; isbot kerak bo'lmasa qadam yo'q); xato berganlar `CourierBulkResultDialog` da backend sababi bilan;
+  ommaviy sotish/bekor so'rovlarida `X-Request-Source: courier-bulk`, isbotlilar 2 tadan, qolganlari 6 tadan parallel.
+  Skaner vaqtlari va ovozlar o'zgarmagan.
+  Ega savollariga sukut javoblari (spec §9) — `route-map.json` izohlarida. Chiqarilgan v1: `ScannerActionButton`,
+  `.login-field` CSS, `logo yozuvlik qora.png`, o'lik `auth` / `dispatch` / `courierBulk` / `common:scanner*`
+  kalitlari; en/ru ko'plik shakllari («1 order», «2 orders»).

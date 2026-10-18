@@ -34,7 +34,7 @@ describe("StatusMapField (JnHK6bgV)", () => {
     const row = screen.getByTestId("status-map-row-on_the_road");
     expect(within(row).getByText("on the road")).toBeInTheDocument();
     expect(within(row).getByText("Yo'lda — filiallar orasida")).toBeInTheDocument();
-    expect(screen.getByTestId("status-map-matched")).toHaveTextContent("moslangan: 1 / 3");
+    expect(screen.getByTestId("status-map-matched")).toHaveTextContent("1 / 3 moslangan");
     expect((within(screen.getByTestId("status-map-row-sold")).getByRole("textbox") as HTMLInputElement).value).toBe("7");
   });
 

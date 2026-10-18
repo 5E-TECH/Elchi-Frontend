@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
+import type { Tone } from "../../shared/ui/primitives";
 
 /**
  * KIRUVCHI WEBHOOK JURNALI — ular bizga yuborgan hodisalar.
@@ -83,7 +85,7 @@ export const useWebhookLogs = (params: {
   status?: string;
   page?: number;
   limit?: number;
-}) =>
+}, options?: SilentErrorOption) =>
   useQuery({
     queryKey: [webhookLogsKey, params.integrationId, params.status, params.page, params.limit],
     enabled: Boolean(params.integrationId),
@@ -103,6 +105,7 @@ export const useWebhookLogs = (params: {
         })
         .then((res) => unwrap(res.data)),
     staleTime: 15_000,
+    ...silentErrorMeta(options),
   });
 
 /**
@@ -111,37 +114,39 @@ export const useWebhookLogs = (params: {
  * Backend diagnostikani `error` ustuniga yozadi, chunki `status` faqat
  * uch qiymatni biladi (`rejected`/`verified`/`processed`). Operator uchun
  * esa muhim savol boshqa: NIMA bo'ldi.
+ *
+ * Rang — v2 badge TONI (`StatusBadge tone`, `docs/DESIGN_SYSTEM.md` §8), antd Tag rang nomi emas.
  */
-export const webhookOutcome = (row: WebhookLogRow): { labelKey: string; color: string } => {
-  if (!row.signature_valid) return { labelKey: "woBadSignature", color: "red" };
-  if (row.status === "rejected") return { labelKey: "woRejected", color: "red" };
+export const webhookOutcome = (row: WebhookLogRow): { labelKey: string; tone: Tone } => {
+  if (!row.signature_valid) return { labelKey: "woBadSignature", tone: "danger" };
+  if (row.status === "rejected") return { labelKey: "woRejected", tone: "danger" };
 
   const raw = row.error ?? "";
   const match = /apply:\s*([a-z_]+)/.exec(raw);
   const outcome = match?.[1] ?? "";
 
-  const MAP: Record<string, { labelKey: string; color: string }> = {
-    inbound_created: { labelKey: "woOrderCreated", color: "green" },
-    inbound_duplicate: { labelKey: "woDuplicate", color: "default" },
-    inbound_race: { labelKey: "woDuplicateRace", color: "default" },
-    inbound_stage_skipped: { labelKey: "woOtherStage", color: "default" },
-    inbound_other_funnel: { labelKey: "woOtherFunnel", color: "default" },
-    inbound_timeout: { labelKey: "woTimeout", color: "orange" },
-    inbound_failed: { labelKey: "woNotCreated", color: "red" },
-    inbound_no_gate: { labelKey: "woNoGate", color: "red" },
-    inbound_no_funnel: { labelKey: "woBadFunnelPath", color: "red" },
-    inbound_no_stage: { labelKey: "woBadStagePath", color: "red" },
-    inbound_no_deal: { labelKey: "woNoDeal", color: "red" },
-    inbound_no_external_id: { labelKey: "woNoDealId", color: "red" },
-    inbound_wrong_role: { labelKey: "woWrongRole", color: "red" },
-    no_shipment: { labelKey: "woNoShipment", color: "orange" },
-    no_paths: { labelKey: "woNoPaths", color: "orange" },
-    no_status: { labelKey: "woNoStatus", color: "orange" },
-    unmapped: { labelKey: "woUnmapped", color: "orange" },
-    integration_inactive: { labelKey: "woInactive", color: "default" },
+  const MAP: Record<string, { labelKey: string; tone: Tone }> = {
+    inbound_created: { labelKey: "woOrderCreated", tone: "success" },
+    inbound_duplicate: { labelKey: "woDuplicate", tone: "neutral" },
+    inbound_race: { labelKey: "woDuplicateRace", tone: "neutral" },
+    inbound_stage_skipped: { labelKey: "woOtherStage", tone: "neutral" },
+    inbound_other_funnel: { labelKey: "woOtherFunnel", tone: "neutral" },
+    inbound_timeout: { labelKey: "woTimeout", tone: "warning" },
+    inbound_failed: { labelKey: "woNotCreated", tone: "danger" },
+    inbound_no_gate: { labelKey: "woNoGate", tone: "danger" },
+    inbound_no_funnel: { labelKey: "woBadFunnelPath", tone: "danger" },
+    inbound_no_stage: { labelKey: "woBadStagePath", tone: "danger" },
+    inbound_no_deal: { labelKey: "woNoDeal", tone: "danger" },
+    inbound_no_external_id: { labelKey: "woNoDealId", tone: "danger" },
+    inbound_wrong_role: { labelKey: "woWrongRole", tone: "danger" },
+    no_shipment: { labelKey: "woNoShipment", tone: "warning" },
+    no_paths: { labelKey: "woNoPaths", tone: "warning" },
+    no_status: { labelKey: "woNoStatus", tone: "warning" },
+    unmapped: { labelKey: "woUnmapped", tone: "warning" },
+    integration_inactive: { labelKey: "woInactive", tone: "neutral" },
   };
 
   if (outcome && MAP[outcome]) return MAP[outcome];
   // Xato yo'q — hodisa toza qo'llanildi.
-  return raw ? { labelKey: "woError", color: "red" } : { labelKey: "woApplied", color: "green" };
+  return raw ? { labelKey: "woError", tone: "danger" } : { labelKey: "woApplied", tone: "success" };
 };

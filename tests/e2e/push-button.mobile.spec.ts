@@ -121,17 +121,24 @@ test.describe("Push ruxsat tugmasi — 390×664", () => {
     expect(leaked).toEqual([]);
   });
 
-  test("Sozlamalar → Bildirishnomalar: push qatoridagi tugma to'liq ko'rinadi", async ({ page }) => {
+  test("Sozlamalar → Bildirishnomalar: qurilma kaliti to'liq ko'rinadi, yoqishda AVVAL bizning oyna", async ({ page }) => {
     const { leaked } = await setup(page);
     await page.goto("/settings");
-    await page.getByRole("main").getByRole("button", { name: /Bildirishnomalar/ }).click({ timeout: 60_000 });
+    await page.getByRole("main").getByRole("tab", { name: /Bildirishnomalar/ }).click({ timeout: 60_000 });
 
-    const button = page.getByRole("button", { name: "Bildirishnomalarni yoqish" });
-    await button.scrollIntoViewIfNeeded();
-    await expect(button).toBeVisible();
-    const box = await fullyVisible(page, 'button:has-text("Bildirishnomalarni yoqish")');
+    // Dizayn v2 (maket `common-settings-notifications`): qurilma bloki — «Shu qurilmaga bildirishnomalar» kaliti.
+    const toggle = page.getByRole("switch", { name: "Shu qurilmaga bildirishnomalar" });
+    await toggle.scrollIntoViewIfNeeded();
+    await expect(toggle).toBeEnabled({ timeout: 60_000 });
+    await expect(toggle).toHaveAttribute("aria-checked", "false");
+    const box = await fullyVisible(page, '[role="switch"][aria-label="Shu qurilmaga bildirishnomalar"]');
     expect(box.inside).toBe(true);
     expect(box.notClipped).toBe(true);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+
+    await toggle.click();
+    await expect(page.getByText("Bildirishnomalarni yoqasizmi?")).toBeVisible();
+    expect(await page.evaluate(() => (window as unknown as { __permissionAsked: number }).__permissionAsked)).toBe(0);
 
     const mainOverflow = await page
       .locator("main:has([data-shell-slot=content])")

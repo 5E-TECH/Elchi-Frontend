@@ -373,7 +373,11 @@
   "table": {
     "selectAll": "Select all rows",
     "selectRow": "Select row",
-    "cards": "List"
+    "cards": "List",
+    "details": "Details",
+    "noDetails": "No details",
+    "expand": "Show details",
+    "collapse": "Hide details"
   },
   "pagination": {
     "label": "Pages",
@@ -970,6 +974,27 @@
       "onTheRoad": "On the road",
       "cancelled": "Cancelled",
       "cancelledSent": "Cancelled — sent"
+    },
+    "expand": {
+      "label": "Log sample",
+      "time": "Time",
+      "who": "Who",
+      "action": "Action",
+      "object": "Object",
+      "open": "Show details: {{object}}",
+      "close": "Hide details: {{object}}",
+      "changes": "Field changes",
+      "statusChanged": "Status changed",
+      "created": "Created",
+      "loggedOut": "Signed out",
+      "courier": "Courier",
+      "registrar": "Registrar",
+      "market": "Market",
+      "order": "Order",
+      "user": "User",
+      "status": "Status",
+      "onTheRoad": "On the road",
+      "sold": "Sold"
     }
   },
   "statesKit": {

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 type QueryParams = Record<string, unknown>;
 
@@ -42,11 +43,12 @@ export const useBranchCoverage = () => {
   });
 
   // GET branches/new-orders
-  const useGetNewOrders = (params?: QueryParams) =>
+  const useGetNewOrders = (params?: QueryParams, options?: SilentErrorOption) =>
     useQuery({
       queryKey: ["branch-cov", "new-orders", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.BRANCHES.NEW_ORDERS, { params }).then((res) => res.data),
+      ...silentErrorMeta(options),
     });
 
   // POST branches/posts/:postId/dispatch

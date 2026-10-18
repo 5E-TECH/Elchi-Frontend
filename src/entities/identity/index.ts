@@ -1,32 +1,36 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 export const useIdentityCoverage = () => {
   const client = useQueryClient();
 
   // ── GET · ADMINS.BASE ──────────────────────────────────────────────────────
-  const useGetAdmins = (params?: any) =>
+  const useGetAdmins = (params?: any, options?: SilentErrorOption) =>
     useQuery({
       queryKey: ["identity-cov", "admins", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.ADMINS.BASE, { params }).then((res) => res.data),
+      ...silentErrorMeta(options),
     });
 
   // ── GET · MANAGERS.BASE ───────────────────────────────────────────────────
-  const useGetManagers = (params?: any) =>
+  const useGetManagers = (params?: any, options?: SilentErrorOption) =>
     useQuery({
       queryKey: ["identity-cov", "managers", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.MANAGERS.BASE, { params }).then((res) => res.data),
+      ...silentErrorMeta(options),
     });
 
   // ── GET · REGISTRATORS.BASE ───────────────────────────────────────────────
-  const useGetRegistrators = (params?: any) =>
+  const useGetRegistrators = (params?: any, options?: SilentErrorOption) =>
     useQuery({
       queryKey: ["identity-cov", "registrators", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.REGISTRATORS.BASE, { params }).then((res) => res.data),
+      ...silentErrorMeta(options),
     });
 
   // ── GET · COURIERS.BY_REGION ──────────────────────────────────────────────

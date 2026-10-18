@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
   GroupTypeChoice,
+  NoticeAlert,
   useNotificationMarkets,
   useNotifications,
   type NotificationGroupType,
@@ -17,7 +18,6 @@ import { Button, buttonClasses, Dialog, Field, Select, Spinner } from "../../../
 import { useRequestGroupLink } from "../api/useRequestGroupLink";
 import { GROUP_LINK_POLL_MS } from "../model/constants";
 import type { GroupLinkCode } from "../model/types";
-import DialogAlert from "./DialogAlert";
 import GroupLinkQr from "./GroupLinkQr";
 
 interface NotificationFormModalProps {
@@ -38,7 +38,7 @@ interface NotificationFormModalProps {
  * `VITE_TELEGRAM_NOTIFICATION_BOT_USERNAME` endi kerak emas (maketdagi qo'lda oqim o'rniga — kartadagi qaror).
  */
 const CreateGroupLinkDialog = ({ open, onClose }: NotificationFormModalProps) => {
-  const { t } = useTranslation("notifications");
+  const { t } = useTranslation("notificationGroups");
   const queryClient = useQueryClient();
   const { options, getName, isLoading: marketsLoading } = useNotificationMarkets(open);
   const requestLink = useRequestGroupLink();
@@ -81,10 +81,10 @@ const CreateGroupLinkDialog = ({ open, onClose }: NotificationFormModalProps) =>
   // Havola olingach qator paydo bo'ldi — bot guruhni uladi.
   const connected = Boolean(open && link && connection);
   const announceConnected = useEffectEvent(() => {
-    notify.success(t("telegramGroups.create.connected"), {
-      description: t("telegramGroups.create.connectedDescription", {
+    notify.success(t("create.connected"), {
+      description: t("create.connectedDescription", {
         market: marketName,
-        type: t(`telegramGroups.typeChoice.${groupType}`),
+        type: t(groupType === "create" ? "form.typeCreate" : "form.typeCancel"),
       }),
     });
     void queryClient.invalidateQueries({ queryKey: queryKeys.notifications.all });
@@ -125,7 +125,7 @@ const CreateGroupLinkDialog = ({ open, onClose }: NotificationFormModalProps) =>
       if (seq === requestSeq.current) setLink(next);
     } catch (error) {
       if (seq !== requestSeq.current) return;
-      notify.error(t("telegramGroups.create.linkError"), { description: getApiErrorMessage(error) || undefined });
+      notify.error(t("create.linkError"), { description: getApiErrorMessage(error) || undefined });
     }
   };
 
@@ -140,7 +140,7 @@ const CreateGroupLinkDialog = ({ open, onClose }: NotificationFormModalProps) =>
         className={buttonClasses({ variant: "primary", className: "flex-[999_1_200px]" })}
       >
         <ExternalLink size={18} aria-hidden="true" className="shrink-0" />
-        {t("telegramGroups.create.open")}
+        {t("create.open")}
       </a>
     ) : null
   ) : (
@@ -149,11 +149,11 @@ const CreateGroupLinkDialog = ({ open, onClose }: NotificationFormModalProps) =>
       variant="primary"
       leftIcon={expired ? RefreshCw : Link2}
       loading={requestLink.isPending}
-      loadingText={t("telegramGroups.create.gettingLink")}
+      loadingText={t("create.gettingLink")}
       disabled={Boolean(connection) || checking}
       className="flex-[999_1_200px]"
     >
-      {expired ? t("telegramGroups.create.newLink") : t("telegramGroups.create.getLink")}
+      {expired ? t("create.newLink") : t("create.getLink")}
     </Button>
   );
 
@@ -163,28 +163,28 @@ const CreateGroupLinkDialog = ({ open, onClose }: NotificationFormModalProps) =>
       onClose={onClose}
       size="lg"
       icon={Bell}
-      title={t("telegramGroups.create.title")}
+      title={t("create.title")}
       busy={requestLink.isPending}
       onSubmit={(event) => void handleRequestLink(event)}
       formProps={{ noValidate: true }}
       footer={
         <>
           <Button variant="secondary" onClick={onClose} className="flex-[1_1_120px]">
-            {t("telegramGroups.cancel")}
+            {t("form.cancel")}
           </Button>
           {primaryAction}
         </>
       }
     >
-      <DialogAlert tone="info" title={t("telegramGroups.create.introTitle")}>
-        {t("telegramGroups.create.intro")}
-      </DialogAlert>
+      <NoticeAlert tone="info" role="note" title={t("create.introTitle")}>
+        {t("create.intro")}
+      </NoticeAlert>
 
       <Field
-        label={t("telegramGroups.create.market")}
+        label={t("form.market")}
         labelAs="span"
         required
-        error={marketMissing ? t("telegramGroups.create.marketRequired") : undefined}
+        error={marketMissing ? t("form.errors.market") : undefined}
       >
         <Select
           ref={marketRef}
@@ -193,48 +193,50 @@ const CreateGroupLinkDialog = ({ open, onClose }: NotificationFormModalProps) =>
           options={options}
           value={marketId}
           onChange={(value) => handleMarketChange(value)}
-          placeholder={t("telegramGroups.create.marketPlaceholder")}
-          listLabel={t("telegramGroups.create.marketList")}
+          placeholder={t("form.marketPlaceholder")}
+          listLabel={t("form.marketList")}
           loading={marketsLoading}
+          loadingText={t("form.marketsLoading")}
+          noOptionsText={t("form.marketsEmpty")}
         />
       </Field>
 
-      <Field label={t("telegramGroups.create.type")} labelAs="span" required hint={t("telegramGroups.create.typeHint")}>
+      <Field label={t("form.type")} labelAs="span" required hint={t("form.typeHint")}>
         <GroupTypeChoice name="notification-create-type" value={groupType} onChange={handleTypeChange} />
       </Field>
 
       {connection && !link ? (
-        <DialogAlert tone="warning" title={t("telegramGroups.create.existsTitle")}>
-          {t("telegramGroups.create.exists", { market: marketName, groupId: connection.group_id })}
-        </DialogAlert>
+        <NoticeAlert tone="warning" role="alert" title={t("create.existsTitle")}>
+          {t("create.exists", { market: marketName, groupId: connection.group_id })}
+        </NoticeAlert>
       ) : null}
 
       {link && expired ? (
-        <DialogAlert tone="warning" title={t("telegramGroups.create.expired")}>
-          {t("telegramGroups.create.expiredHint")}
-        </DialogAlert>
+        <NoticeAlert tone="warning" role="alert" title={t("create.expired")}>
+          {t("create.expiredHint")}
+        </NoticeAlert>
       ) : null}
 
       {activeLink ? (
         <section
-          aria-label={t("telegramGroups.create.linkTitle")}
+          aria-label={t("create.linkTitle")}
           className="flex min-w-0 items-start gap-4 rounded-xl bg-sunken p-4 max-md:flex-col max-md:items-center"
         >
           {activeLink.deep_link ? (
             // Telefonda havola tugmasi asosiy yo'l — QR qadamlardan keyin (boshqa qurilmadan skanerlash uchun).
-            <GroupLinkQr value={activeLink.deep_link} alt={t("telegramGroups.create.qrAlt")} className="max-md:order-last" />
+            <GroupLinkQr value={activeLink.deep_link} alt={t("create.qrAlt")} className="max-md:order-last" />
           ) : null}
           <div className="flex min-w-0 flex-1 flex-col gap-3 max-md:self-stretch">
-            <h3 className="text-sm font-semibold text-text">{t("telegramGroups.create.linkTitle")}</h3>
+            <h3 className="text-sm font-semibold text-text">{t("create.linkTitle")}</h3>
             {activeLink.deep_link ? (
               <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-[13px] text-text-muted">
-                <li>{t("telegramGroups.create.step1")}</li>
-                <li>{t("telegramGroups.create.step2")}</li>
-                <li>{t("telegramGroups.create.step3")}</li>
+                <li>{t("create.step1")}</li>
+                <li>{t("create.step2")}</li>
+                <li>{t("create.step3")}</li>
               </ol>
             ) : (
               <div className="flex flex-col gap-1.5 text-[13px] text-text-muted">
-                <p>{t("telegramGroups.create.command")}</p>
+                <p>{t("create.command")}</p>
                 <code className="rounded-lg bg-surface px-3 py-2 font-mono text-sm break-all text-text select-all">
                   {activeLink.command}
                 </code>
@@ -242,11 +244,11 @@ const CreateGroupLinkDialog = ({ open, onClose }: NotificationFormModalProps) =>
             )}
             <p className="flex items-center gap-1.5 text-[13px] text-text-muted">
               <Clock size={16} aria-hidden="true" className="shrink-0" />
-              {t("telegramGroups.create.expiresAt", { time: formatTimeLocalized(activeLink.expires_at) })}
+              {t("create.expiresAt", { time: formatTimeLocalized(activeLink.expires_at) })}
             </p>
             <p role="status" className="flex items-center gap-2 text-[13px] font-semibold text-text">
               <Spinner size="sm" />
-              {t("telegramGroups.create.waiting")}
+              {t("create.waiting")}
             </p>
           </div>
         </section>

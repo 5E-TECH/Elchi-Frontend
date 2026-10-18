@@ -8,8 +8,8 @@ import type { User, UserRole } from "../../../entities/user/types/user";
 import { UserDetailView } from "./UserDetailView";
 
 /**
- * Yangi v2 tafsilot (`/all-users/:id`, `/new-orders/userDetail/:id`) — muzlatilgan `UserDetailWidget` testlaridagi
- * holatlar shu yerda takrorlanadi: kuryer o'tkazish tugmasi (faqat superadmin/admin va faqat kuryer), har kalit
+ * Yangi v2 tafsilot (`/all-users/:id`, `/new-orders/userDetail/:id`) — eski (o'chirilgan) `UserDetailWidget` testlaridagi
+ * holatlar shu yerda: kuryer o'tkazish tugmasi (faqat superadmin/admin va faqat kuryer), har kalit
  * mutatsiyasi va xabarlari, Telegram token kartasi.
  */
 
@@ -158,7 +158,7 @@ describe("UserDetailView — kuryerni boshqa filialga o'tkazish tugmasi", () => 
     expect(screen.getByRole("button", { name: "Tahrirlash" })).toBeInTheDocument();
   });
 
-  it.each(["manager", "registrator"])("%s kuryer sahifasida tugmani ko'rmaydi", (viewerRole) => {
+  it.each(["manager", "registrator", "courier"])("%s kuryer sahifasida tugmani ko'rmaydi", (viewerRole) => {
     renderView(makeUser("courier", { id: "263" }), viewerRole);
     expect(screen.queryByTestId("transfer-263")).not.toBeInTheDocument();
   });

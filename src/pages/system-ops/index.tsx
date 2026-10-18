@@ -1,84 +1,363 @@
-import { memo, useState } from "react";
-import { Button, Card, Input, Space, Tag, Typography } from "antd";
+// dizayn-v2: superadmin-ops-system
+import { memo, useState, type FormEvent, type ReactNode } from "react";
+import { Banknote, CircleCheck, Clock, Info, Search, Server, Trophy, Truck, TriangleAlert } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { BATCH_STATUS_TONE } from "../../entities/batch";
 import { useMiscCoverage } from "../../entities/coverage/miscCoverage";
-
-const { Title, Text } = Typography;
+import { OrderStatusBadge } from "../../entities/order";
+import { getBackendErrorMessage } from "../../shared/lib/backendError";
+import { getErrorStatus } from "../../shared/lib/errorKind";
+import { formatDateTimeLocalized } from "../../shared/lib/formatDateTime";
+import { formatMoneyLocalized, formatNumberLocalized, formatPercentLocalized } from "../../shared/lib/formatMoney";
+import { formatPhone } from "../../shared/lib/formatPhone";
+import {
+  Badge,
+  Button,
+  Card,
+  Field,
+  QueryBoundary,
+  Skeleton,
+  StatusBadge,
+  TextInput,
+} from "../../shared/ui/primitives";
+import { OpsAlert, OpsIntro, OpsToolPage } from "../ops/ui/OpsToolPage";
+import {
+  ratingName,
+  readAnalyticsKpi,
+  readScanResult,
+  splitHours,
+  toBatchStatusKey,
+  type ScanResult,
+} from "./lib/systemOps";
+import { KpiRing, SlaGauge } from "./ui/charts";
 
 /**
- * System-ops page — analytics KPI + liveness health indicator + scan-by-token lookup.
- * Uses `useMiscCoverage()` hooks; all three queries called unconditionally at top level
- * with enabled flags so React hook rules are satisfied.
+ * OPS → «Tizim» (maket `superadmin-ops-system`): tizim holati (`GET /health` liveness), «O'z vaqtida (SLA)»
+ * (`onTimeRate`), «Analitika KPI» (`GET analytics/kpi`) va «Token orqali tekshirish» (`GET scan/:token`).
+ * Hozirgi `JSON.stringify` o'rniga natija maydonlar ro'yxati (`dl`). «Kuryer samaradorligi» — foiz halqasi emas,
+ * «O'rtacha N ta buyurtma» (API — kuryerga o'rtacha buyurtma soni, spec §8 D3).
  */
 
-const SystemOpsPage = () => {
+/** «O'rtacha yetkazish vaqti» o'lchagichi: shkala 30 soat, belgi — 24 soatlik chegara. */
+const FULFILLMENT_SCALE_HOURS = 30;
+const FULFILLMENT_LIMIT_HOURS = 24;
+
+const StatIcon = ({ children }: { children: ReactNode }) => (
+  <span className="inline-flex size-[72px] flex-none items-center justify-center rounded-full bg-sunken text-text-muted">
+    {children}
+  </span>
+);
+
+const KpiItem = ({ visual, label, value, hint, extra }: { visual: ReactNode; label: string; value: string; hint: string; extra?: ReactNode }) => (
+  <li className="flex min-w-0 items-center gap-3.5">
+    {visual}
+    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+      <span className="text-[13px] text-text-muted">{label}</span>
+      <span className="text-xl leading-7 font-bold text-text wrap-break-word">{value}</span>
+      {extra}
+      <span className="text-xs text-text-muted">{hint}</span>
+    </div>
+  </li>
+);
+
+const SystemOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
+  const { t, i18n } = useTranslation(["ops", "newOrders"]);
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const { useGetAnalyticsKpi, useGetHealthLiveness, useGetScanByToken } = useMiscCoverage();
 
-  // ── Scan lookup ───────────────────────────────────────────────────────────
   const [scanInput, setScanInput] = useState("");
   const [activeToken, setActiveToken] = useState("");
 
-  // All three queries unconditional at top level
-  const kpiQuery = useGetAnalyticsKpi();
-  const healthQuery = useGetHealthLiveness();
-  const scanQuery = useGetScanByToken(activeToken, !!activeToken);
+  // Uchala so'rov ham shartsiz (React hook qoidasi), skan — faqat token bo'lsa.
+  const kpiQuery = useGetAnalyticsKpi(undefined, { silentError: true });
+  const healthQuery = useGetHealthLiveness({ silentError: true });
+  const scanQuery = useGetScanByToken(activeToken, !!activeToken, { silentError: true });
+
+  const kpi = readAnalyticsKpi(kpiQuery.data);
+  const scan = readScanResult(scanQuery.data);
+
+  const percent = (value: number) => formatPercentLocalized(value, { language });
+
+  const submitScan = (event: FormEvent) => {
+    event.preventDefault();
+    const token = scanInput.trim();
+    if (!token) return;
+    if (token === activeToken) void scanQuery.refetch();
+    else setActiveToken(token);
+  };
+
+  const healthBlock = (
+    <div
+      role="status"
+      aria-label={t("system.health.title")}
+      className="flex min-w-0 flex-[0_1_380px] items-center gap-3 rounded-xl bg-sunken px-4 py-3 max-md:flex-auto"
+    >
+      <span className="inline-flex size-9 flex-none items-center justify-center rounded-[10px] bg-surface text-text-muted">
+        <Server size={20} aria-hidden="true" />
+      </span>
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+          <h3 className="text-sm font-semibold text-text">{t("system.health.title")}</h3>
+          {healthQuery.isLoading ? (
+            <Skeleton className="h-5 w-20" />
+          ) : healthQuery.isError ? (
+            <StatusBadge tone="danger" label={t("system.health.error")} />
+          ) : (
+            <StatusBadge tone="success" label={t("system.health.ok")} />
+          )}
+        </div>
+        <p className="text-xs text-text-muted">
+          {healthQuery.isError ? t("system.health.errorHint") : t("system.health.okHint")}
+        </p>
+      </div>
+    </div>
+  );
+
+  const scanStatus = (result: ScanResult, value: string) => {
+    if (result.type === "order") return <OrderStatusBadge status={value} />;
+    if (result.type === "batch") {
+      const key = toBatchStatusKey(value);
+      if (key) return <StatusBadge tone={BATCH_STATUS_TONE[key]} label={t(`newOrders:batchStatus.${key}`)} />;
+    }
+    return <Badge>{value}</Badge>;
+  };
+
+  const scanValue = (result: ScanResult, field: ScanResult["fields"][number]): ReactNode => {
+    const value = field.value;
+    switch (field.kind) {
+      case "money":
+        return formatMoneyLocalized(value, { language });
+      case "date":
+        return formatDateTimeLocalized(String(value), { language });
+      case "phone":
+        return formatPhone(value);
+      case "count":
+        return t("common.count", { count: Number(value) || 0 });
+      case "status":
+        return scanStatus(result, String(value));
+      default:
+        return String(value);
+    }
+  };
+
+  const scanNotFound = scanQuery.isError && getErrorStatus(scanQuery.error) === 404;
 
   return (
-    <div className="mx-auto w-full max-w-[860px] px-4 pt-4 pb-28 md:pb-4">
-      <Title level={3}>Tizim — analitika va xizmatlar</Title>
-      <Text type="secondary">
-        Tizim holati, analitika ko'rsatkichlari va QR-token tekshirish oynasi.
-      </Text>
+    <OpsToolPage tabKey="system" embedded={embedded}>
+      <OpsIntro title={t("system.intro.title")} description={t("system.intro.description")} aside={healthBlock} />
 
-      <Space direction="vertical" size="large" style={{ display: "flex", marginTop: 20 }}>
-        {/* Analytics KPI */}
-        <Card title="Analitika KPI">
-          {kpiQuery.isLoading ? (
-            <Text type="secondary">Yuklanmoqda…</Text>
-          ) : kpiQuery.data !== undefined ? (
-            <pre style={{ background: "#f6f8fa", padding: 12, borderRadius: 6, margin: 0, maxWidth: "100%", overflowX: "auto" }}>
-              {JSON.stringify(kpiQuery.data, null, 2)}
-            </pre>
-          ) : (
-            <Text type="secondary">Ma'lumot yo'q</Text>
-          )}
-        </Card>
+      <QueryBoundary
+        query={kpiQuery}
+        skeleton="chart"
+        isEmpty={() => kpi === null}
+        error={(error, retry) => (
+          <Card>
+            <OpsAlert tone="danger" title={t("system.kpi.loadError")}>
+              {getBackendErrorMessage(error)}
+            </OpsAlert>
+            <div className="pt-3">
+              <Button variant="secondary" size="sm" onClick={retry}>
+                {t("common.retry")}
+              </Button>
+            </div>
+          </Card>
+        )}
+      >
+        {() =>
+          kpi ? (
+            <div className="flex flex-col gap-4">
+              {kpi.degraded ? (
+                <OpsAlert tone="warning" title={t("system.kpi.degradedTitle")}>
+                  {t("system.kpi.degradedText")}
+                </OpsAlert>
+              ) : null}
+              <div className="flex flex-wrap gap-6 max-md:gap-4">
+                <Card
+                  divided={false}
+                  title={t("system.sla.title")}
+                  description={t("system.sla.subtitle")}
+                  className="min-w-0 flex-[1_1_352px]"
+                  bodyClassName="flex flex-col items-center gap-4"
+                >
+                  <SlaGauge
+                    value={kpi.onTimeRate}
+                    valueText={percent(kpi.onTimeRate)}
+                    label={t("system.sla.label")}
+                    ariaLabel={t("system.sla.aria", { value: percent(kpi.onTimeRate) })}
+                    badge={
+                      kpi.onTimeRate >= 70 ? (
+                        <Badge tone="success" icon={CircleCheck}>
+                          {t("system.sla.good")}
+                        </Badge>
+                      ) : (
+                        <Badge tone="warning" icon={TriangleAlert}>
+                          {t("system.sla.low")}
+                        </Badge>
+                      )
+                    }
+                  />
+                  <p className="flex items-start gap-1.5 self-start text-xs text-text-muted">
+                    <Info size={16} aria-hidden="true" className="shrink-0" />
+                    {t("system.sla.note")}
+                  </p>
+                </Card>
 
-        {/* Health liveness */}
-        <Card title="Tizim holati (liveness)">
-          {healthQuery.isLoading ? (
-            <Text type="secondary">Yuklanmoqda…</Text>
-          ) : healthQuery.isError ? (
-            <Tag color="red">Xatolik</Tag>
-          ) : (
-            <Tag color="green">Ishlayapti</Tag>
-          )}
-        </Card>
+                <Card
+                  divided={false}
+                  title={t("system.kpi.title")}
+                  description={t("system.kpi.subtitle")}
+                  className="min-w-0 flex-[2_1_348px]"
+                  bodyClassName="flex flex-1 flex-col gap-6"
+                >
+                  <ul className="m-0 grid flex-1 list-none grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] content-evenly gap-x-6 gap-y-7 p-0">
+                    <KpiItem
+                      visual={
+                        <StatIcon>
+                          <Truck size={24} aria-hidden="true" />
+                        </StatIcon>
+                      }
+                      label={t("system.kpi.courier")}
+                      value={t("system.kpi.courierValue", {
+                        count: formatNumberLocalized(kpi.courierEfficiency, { language, fractionDigits: 1 }),
+                      })}
+                      hint={t("system.kpi.courierHint")}
+                    />
+                    <KpiItem
+                      visual={
+                        <KpiRing
+                          value={kpi.cancellationRate}
+                          valueText={percent(kpi.cancellationRate)}
+                          ariaLabel={t("system.kpi.cancellationAria", { value: percent(kpi.cancellationRate) })}
+                        />
+                      }
+                      label={t("system.kpi.cancellation")}
+                      value={percent(kpi.cancellationRate)}
+                      hint={t("system.kpi.cancellationHint")}
+                    />
+                    <KpiItem
+                      visual={
+                        <StatIcon>
+                          <Banknote size={24} aria-hidden="true" />
+                        </StatIcon>
+                      }
+                      label={t("system.kpi.aov")}
+                      value={formatMoneyLocalized(kpi.averageOrderValue, { language })}
+                      hint={t("system.kpi.aovHint")}
+                    />
+                    {(() => {
+                      const { hours, minutes } = splitHours(kpi.averageFulfillmentHours);
+                      const fill = Math.min(kpi.averageFulfillmentHours / FULFILLMENT_SCALE_HOURS, 1) * 100;
+                      return (
+                        <KpiItem
+                          visual={
+                            <StatIcon>
+                              <Clock size={24} aria-hidden="true" />
+                            </StatIcon>
+                          }
+                          label={t("system.kpi.fulfillment")}
+                          value={t("system.kpi.fulfillmentValue", { hours, minutes })}
+                          hint={t("system.kpi.fulfillmentHint")}
+                          extra={
+                            <div className="my-1">
+                              <div
+                                role="meter"
+                                aria-label={t("system.kpi.fulfillmentAria", { hours, minutes })}
+                                aria-valuemin={0}
+                                aria-valuemax={FULFILLMENT_SCALE_HOURS}
+                                aria-valuenow={Math.round(kpi.averageFulfillmentHours * 10) / 10}
+                                className="relative h-1.5 rounded-full bg-action-soft"
+                              >
+                                <span className="block h-full rounded-full bg-chart-1" style={{ width: `${fill}%` }} />
+                                <span
+                                  aria-hidden="true"
+                                  className="absolute -inset-y-1 w-0.5 bg-text"
+                                  style={{ left: `${(FULFILLMENT_LIMIT_HOURS / FULFILLMENT_SCALE_HOURS) * 100}%` }}
+                                />
+                              </div>
+                            </div>
+                          }
+                        />
+                      );
+                    })()}
+                  </ul>
+                  <div className="flex items-center gap-3.5 rounded-xl bg-sunken px-4 py-3">
+                    <Trophy size={20} aria-hidden="true" className="flex-none text-text-subtle" />
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="text-[13px] font-semibold text-text">{t("system.kpi.rating")}</span>
+                      <span className="text-xs text-text-muted">
+                        {kpi.marketRating.length === 0
+                          ? t("system.kpi.ratingEmpty")
+                          : kpi.marketRating
+                              .slice(0, 3)
+                              .map((row, index) => `${index + 1}. ${ratingName(row) || "—"}`)
+                              .join(" · ")}
+                      </span>
+                    </div>
+                    <span aria-hidden="true" className="text-text-subtle">
+                      {kpi.marketRating.length === 0
+                        ? "—"
+                        : t("common.count", { count: kpi.marketRating.length })}
+                    </span>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          ) : null
+        }
+      </QueryBoundary>
 
-        {/* Scan by token */}
-        <Card title="Token orqali tekshirish">
-          <Space.Compact style={{ width: "100%" }}>
-            <Input
-              aria-label="scan-token"
-              placeholder="Token kiriting"
+      <Card title={t("system.scan.title")} description={t("system.scan.description")} bodyClassName="flex flex-col gap-4">
+        <form onSubmit={submitScan} className="flex flex-wrap items-end gap-3">
+          <Field label={t("system.scan.label")} className="min-w-0 flex-[999_1_240px]">
+            <TextInput
+              mode="search"
+              autoComplete="off"
               value={scanInput}
-              onChange={(e) => setScanInput(e.target.value)}
+              onValueChange={setScanInput}
+              placeholder={t("system.scan.placeholder")}
             />
-            <Button type="primary" onClick={() => setActiveToken(scanInput)}>
-              Tekshirish
-            </Button>
-          </Space.Compact>
-          {scanQuery.isLoading && activeToken ? (
-            <Text type="secondary" style={{ marginTop: 8, display: "block" }}>
-              Yuklanmoqda…
-            </Text>
-          ) : scanQuery.data !== undefined ? (
-            <pre style={{ marginTop: 12, background: "#f6f8fa", padding: 12, borderRadius: 6, maxWidth: "100%", overflowX: "auto" }}>
-              {JSON.stringify(scanQuery.data, null, 2)}
-            </pre>
-          ) : null}
-        </Card>
-      </Space>
-    </div>
+          </Field>
+          <Button
+            type="submit"
+            leftIcon={Search}
+            loading={Boolean(activeToken) && scanQuery.isFetching}
+            disabled={!scanInput.trim()}
+            className="flex-[1_0_auto]"
+          >
+            {t("system.scan.submit")}
+          </Button>
+        </form>
+
+        {scanNotFound ? (
+          <OpsAlert tone="warning" title={t("system.scan.notFound")}>
+            {t("system.scan.notFoundHint")}
+          </OpsAlert>
+        ) : scanQuery.isError ? (
+          <OpsAlert tone="danger" title={t("system.scan.error")}>
+            {getBackendErrorMessage(scanQuery.error)}
+          </OpsAlert>
+        ) : scan && activeToken ? (
+          <div role="status" aria-label={t("system.scan.result")} className="flex min-w-0 flex-col gap-3 rounded-xl bg-sunken p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-semibold uppercase tracking-[.05em] text-text-muted">{t("system.scan.result")}</span>
+              <Badge variant="outline">{t(`system.scan.types.${scan.type}`, { defaultValue: scan.type })}</Badge>
+            </div>
+            {scan.fields.length === 0 ? (
+              <p className="text-[13px] text-text-muted">{t("system.scan.empty")}</p>
+            ) : (
+              <dl className="m-0 grid grid-cols-[minmax(120px,40%)_1fr] items-center gap-x-4 gap-y-2.5 text-sm">
+                {scan.fields.map((field) => (
+                  <div key={field.key} className="contents">
+                    <dt className="text-text-muted">{t(`system.scan.fields.${field.key}`, { defaultValue: field.key })}</dt>
+                    <dd className="m-0 min-w-0 font-semibold text-text wrap-anywhere">{scanValue(scan, field)}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+          </div>
+        ) : null}
+      </Card>
+    </OpsToolPage>
   );
 };
 

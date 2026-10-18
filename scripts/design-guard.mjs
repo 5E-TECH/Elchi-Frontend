@@ -97,39 +97,72 @@ const COLOUR_RULE_SET = new Set(COLOUR_RULES);
 /**
  * 4-bosqichda to'liq ko'chirilgan slice'lar: ichidagi HAR fayl (belgisiz .ts yordamchi ham) rang qoidalarida 0.
  * Integrator guruh tugaganda qo'shadi; `src/test/paletteGuard.test.ts` unutilgan toza slice'ni o'zi topadi
- * (≥ 1 ta `// dizayn-v2:` fayl + rang buzilishi 0 → shu ro'yxatda bo'lishi shart). Bosqich B: G2/G3 papkalari.
+ * (≥ 1 ta `// dizayn-v2:` fayl + rang buzilishi 0 → shu ro'yxatda bo'lishi shart). Bosqich B (G2 + G3 birlashtirildi):
+ * G2/G3 papkalari ham shu yerda; `src/auth` (G3: sessiya, kirish — FSD qatlami emas) ham. FAQAT O'SADI.
  */
 export const V2_SCOPES = Object.freeze([
+  "src/auth",
+  "src/entities/activity-log",
+  "src/entities/integrations",
+  "src/entities/notification",
+  "src/entities/notification-inbox",
   "src/entities/order",
   "src/entities/orders",
+  "src/features/auth",
   "src/features/branch",
   "src/features/branch-add-employee",
   "src/features/branch-create",
   "src/features/branch-edit",
   "src/features/branch-remove-employee",
   "src/features/courier-transfer-branch",
+  "src/features/notification-create",
+  "src/features/notification-delete",
+  "src/features/notification-dispatch",
+  "src/features/notification-edit",
+  "src/features/notification-inbox",
   "src/features/order-return",
   "src/features/order-tracking",
+  "src/features/push-notifications",
   "src/features/telegram-link",
   "src/features/tg-scan",
   "src/features/user",
+  "src/pages/activity-logs",
   "src/pages/batches",
   "src/pages/branch-dashboard",
+  "src/pages/branch-ops",
   "src/pages/branches",
+  "src/pages/courier-bulk",
   "src/pages/dashboard",
+  "src/pages/dispatch",
+  "src/pages/finance-operators",
   "src/pages/financial-balance",
+  "src/pages/identity-ops",
   "src/pages/incoming-orders",
+  "src/pages/integrations",
+  "src/pages/integrations-ops",
+  "src/pages/investors-ops",
+  "src/pages/logistics-ops",
+  "src/pages/logs",
   "src/pages/mails",
   "src/pages/new_orders",
+  "src/pages/notification-send",
+  "src/pages/notifications",
+  "src/pages/ops",
   "src/pages/orders",
+  "src/pages/partners",
   "src/pages/payments",
   "src/pages/products",
+  "src/pages/profile",
   "src/pages/region",
   "src/pages/returns",
+  "src/pages/scan",
+  "src/pages/settings",
+  "src/pages/system-ops",
   "src/pages/tg-scan",
   "src/pages/ui-kit",
   "src/pages/users",
   "src/widgets/Sidebar",
+  "src/widgets/activity-log",
   "src/widgets/branch-detail",
   "src/widgets/branch-list",
   "src/widgets/dashboard-part-error",
@@ -139,12 +172,13 @@ export const V2_SCOPES = Object.freeze([
   "src/widgets/financial-analysis",
   "src/widgets/header",
   "src/widgets/layout",
+  "src/widgets/notification-inbox",
   "src/widgets/order-meta",
   "src/widgets/order-tracking",
   "src/widgets/region-detail",
   "src/widgets/user-detail",
   "src/widgets/user-list",
-  // `src/shared/ui` butunligicha EMAS — u yerda v1 o'ramlari hali rang bilan (GlobalSearchInput, FilterClearButton …).
+  // `src/shared/ui` butunligicha EMAS — u yerda v1 `BackButton.tsx` hali rang bilan (boshqa v1 o'ramlari o'chirildi).
   "src/shared/ui/primitives",
   "src/shared/ui/charts",
   "src/shared/ui/error-page",
@@ -155,14 +189,8 @@ export const V2_SCOPES = Object.freeze([
 export const V2_SCOPE_PENDING = Object.freeze({
   "src/pages/payments/components/SalaryPaymentPopup.tsx":
     "yetib bo'lmaydigan v1 — «Maosh to'lash» yashirin (Moliya spec §9)",
-  "src/widgets/user-detail/ui/UserDetailWidget.tsx": "v1 — faqat /profile (G1 muzlatgan, G2 account)",
-  "src/features/courier-transfer-branch/ui/TransferCourierButton.tsx":
-    "v1 tugma v2 sahifalarda — G1 qoldig'i (followups)",
-  "src/entities/orders/ui/ExtraCostApproval.tsx":
-    "v1 badge — faqat eski pages/orders/list/OrderStatusBadge.tsx",
-  "src/pages/new_orders/external_orders/index.tsx": "G2 — ko'chirilmoqda (bosqich B da yo'qoladi)",
-  "src/pages/new_orders/external_orders/create.tsx": "G2 — ko'chirilmoqda (bosqich B da yo'qoladi)",
-  "src/pages/new_orders/external_orders/detail.tsx": "G2 — ko'chirilmoqda (bosqich B da yo'qoladi)",
+  "src/pages/scan/index.tsx":
+    "kamera ishi — /scan butunlay kamera ekrani, alohida ish (ega qarori 2026-10-16)",
 });
 
 /** Ilova mavzusidan tashqari chiqish formatlari (chop etish, termal yorliq, Excel): rang qoidalari qo'llanmaydi —
@@ -1100,6 +1128,10 @@ export function compareToBaseline(scan, baseline) {
         });
       } else if (count < limit) {
         improvements.push({ file: result.file, rule: id, count, baseline: limit });
+      } else if (!count && (allowedByFile[result.file]?.[id] ?? 0) > limit) {
+        // `// dizayn-v2:` / V2_SCOPES fayli: baseline'dagi eski son hisobga olinmaydi va buzilish ham qolmagan —
+        // o'lik yozuv; `--changed` ko'rsatadi, `--update` o'chiradi.
+        improvements.push({ file: result.file, rule: id, count, baseline: allowedByFile[result.file][id] });
       }
     }
   }
@@ -1115,7 +1147,7 @@ const BASELINE_COMMENT =
   "Dizayn v2 qo'riqchisi (ratchet): har fayl × qoida uchun ruxsat etilgan ESKI buzilishlar soni. Son faqat " +
   "kamayadi, yangi fayl = 0. Qo'lda tahrirlamang: `npm run design:guard -- --update`. Oshirish faqat " +
   '`--allow-increase "<sabab>"` bilan va sabab `increases` ro\'yxatiga yoziladi. Qoidalar: ' +
-  "docs/DESIGN_SYSTEM.md §11, scripts/design-guard.mjs.";
+  "docs/DESIGN_SYSTEM.md §12.3, scripts/design-guard.mjs.";
 
 /**
  * Joriy skanerdan yangi baseline. Biror son oshgan bo'lsa `allowIncrease` (sabab) majburiy, aks holda xato.
@@ -1277,17 +1309,23 @@ function printFileTable(scan, baseline, onlyChanged) {
   const rows = [];
   for (const result of scan.files) {
     const allowed = allowanceOf(result, allowedByFile);
+    const raw = allowedByFile[result.file] ?? {};
     const cells = [];
     let changed = false;
     for (const id of RULE_IDS) {
       const count = result.counts[id] ?? 0;
       const limit = allowed[id] ?? 0;
-      if (!count && !limit) continue;
+      // v2 / V2_SCOPES fayli: baseline'da eski son bor, lekin u hisobga olinmaydi va buzilish qolmagan.
+      const dead = !count && (raw[id] ?? 0) > limit;
+      if (!count && !limit && !dead) continue;
       if (count > limit) {
         cells.push(`${id} ${count}>${limit} OSHDI`);
         changed = true;
       } else if (count < limit) {
         cells.push(`${id} ${count}<${limit}`);
+        changed = true;
+      } else if (dead) {
+        cells.push(`${id} 0<${raw[id]} (ruxsat 0 — --update o'chiradi)`);
         changed = true;
       } else cells.push(`${id} ${count}`);
     }
@@ -1475,7 +1513,7 @@ const USAGE = `Foydalanish: npm run design:guard [-- <variantlar>] [fayl ...]
   --diff [base]                faqat base (sukut: origin/dev) dan beri QO'SHILGAN qatorlar: yangi buzilish = 0
   --update --allow-increase "<sabab>"
                                oshishga ruxsat; sabab ${BASELINE_FILE} → increases ga yoziladi
-Qoidalar: docs/DESIGN_SYSTEM.md §11.`;
+Qoidalar: docs/DESIGN_SYSTEM.md §12.3.`;
 
 function parseArgs(argv) {
   const args = {

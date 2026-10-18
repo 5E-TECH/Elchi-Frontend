@@ -1,41 +1,52 @@
+// dizayn-v2: superadmin-integrations-partners-console, superadmin-integrations-external-console, admin-integrations-partners, admin-integrations-external
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Alert, Button, Card, Statistic, Tag, Tooltip } from "antd";
 import {
-  AlertTriangle,
-  ArrowRight,
-  CheckCircle2,
+  ChevronRight,
+  CircleCheck,
+  CircleMinus,
+  CircleX,
   Clock,
   Info,
-  PlugZap,
+  Plug,
   RefreshCw,
-  ShieldAlert,
+  Timer,
   Truck,
   Wallet,
   Webhook,
-  XCircle,
 } from "lucide-react";
-import { CATEGORY_LABEL, ROLE_META } from "../../../entities/integrations";
 import { useIntegrationHealthcheck } from "../../../entities/integrations/healthcheck";
-import { fmtMetric, type ConnectionMetrics } from "../../../entities/integrations/metrics";
-import { money, toAmount, useReceivableBalance } from "../../../entities/integrations/settlement";
+import type { ConnectionMetrics } from "../../../entities/integrations/metrics";
+import { toAmount, useReceivableBalance } from "../../../entities/integrations/settlement";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
-import type { Connection } from "../useConnections";
-import { MUTED } from "../ui";
+import { cx } from "../../../shared/lib/cx";
+import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
+import { MINUS_SIGN, formatMoneyLocalized, formatNumberLocalized, formatPercentLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
+import {
+  Badge,
+  Button,
+  Pressable,
+  StateIcon,
+  TONE_FG,
+  type Tone,
+} from "../../../shared/ui/primitives";
+import { ChartBlock, ColumnGrid, LegendList, SegBar, SuccessGauge } from "../ui";
+import type { Connection } from "../useConnections";
 
 /**
- * UMUMIY HOLAT — tayyorlik checklisti + jonli raqamlar.
+ * UMUMIY HOLAT — tayyorlik ro'yxati + 24 soatlik natija (maket `*-partners-console`, `*-external-console`).
  *
- * Shakl PCS `ElchiDashboardTab` dan ko'chirildi: yuqorida xulosa `Alert`,
- * ostida ikki `Card` — chapda checklist, o'ngda raqamlar (`Statistic`).
+ * Tuzilma (3 ustun, orasida 1 px chiziq): «Tayyorlik ro'yxati» · «Muvaffaqiyat · 24 soat» (speedometr) ·
+ * «Hodisalar tarkibi». Ostida — mavjud uch blok (Posilkalar 24 soat · Kiruvchi webhooklar 24 soat ·
+ * COD butun vaqt, `data-testid="ovw-*"`) bitta qatorda: maketdagi «Hodisalar · oxirgi 7 kun» — «Taklif»
+ * (kunlik seriya API'da yo'q), chizilmaydi, o'rnini shu bloklar egallaydi.
  *
- * NEGA CHECKLIST. "Nega ishlamayapti?" degan savolga javob ilgari bir necha
- * joyga tarqalgan edi: manzil bir sahifada, sekret boshqasida, oxirgi
- * sinxron uchinchisida. Endi bitta ro'yxat va YETISHMAGANI qizil.
+ * NEGA CHECKLIST. "Nega ishlamayapti?" degan savolga javob bitta ro'yxatda, YETISHMAGANI ajralib
+ * turadi va tuzatiladigan joyga bitta bosishda olib boradi (`onFix(tab)`).
  *
- * ⚠️ Tekshiruvlar ULANISH TURIGA qarab farq qiladi, chunki inbound va
- * outbound uchun "tayyorlik" ma'nosi boshqa:
+ * ⚠️ Tekshiruvlar ULANISH TURIGA qarab farq qiladi, chunki inbound va outbound uchun «tayyorlik»
+ * ma'nosi boshqa:
  *   inbound  — biz ularga webhook YUBORAMIZ → manzil + sekret kerak
  *   outbound — biz ularga so'rov yuboramiz → API manzili + kalit kerak
  */
@@ -44,20 +55,18 @@ export interface Check {
   labelKey: string;
   ok: boolean;
   detailKey: string;
-  /** `detailKey` ichidagi `{{...}}` orniga qoyiladigan qiymatlar. */
+  /** `detailKey` ichidagi `{{...}}` o'rniga qo'yiladigan qiymatlar. */
   detailParams?: Record<string, string>;
   /** `false` bo'lsa ham kritik emas — sariq, qizil emas. */
   optional?: boolean;
   /**
    * Bu kamchilik QAYSI tabda tuzatiladi.
    *
-   * ⚠️ BUSIZ CHECKLIST YARIM FOYDALI. Foydalanuvchi aynan shuni aytdi:
-   * "beepostda webhook yo'q deb ko'rsatilayapti, lekin uni qayerdan qo'shish
-   * kerak — nomalumligicha qolayapti". Muammoni ko'rsatib, yechimga yo'l
-   * ko'rsatmaslik operatorni ekranlar bo'ylab qidirishga majbur qiladi.
+   * ⚠️ BUSIZ CHECKLIST YARIM FOYDALI. Foydalanuvchi aynan shuni aytdi: «beepostda webhook yo'q deb
+   * ko'rsatilayapti, lekin uni qayerdan qo'shish kerak — noma'lumligicha qolayapti».
    */
   fixTab?: string;
-  /** Tuzatiladigan maydonning yorlig'i — "qayerda?" savoliga javob. */
+  /** Tuzatiladigan maydonning yorlig'i — «qayerda?» savoliga javob. */
   fixHintKey?: string;
 }
 
@@ -66,7 +75,7 @@ export const buildChecks = (c: Connection): Check[] => {
     {
       labelKey: "checkEnabled",
       ok: c.is_active,
-      detailKey: c.is_active ? "chkActive" : "chkInactiveDetail",
+      detailKey: c.is_active ? (c.kind === "partner" ? "chkActive" : "chkActiveOutbound") : "chkInactiveDetail",
       fixTab: "control",
       fixHintKey: "fixControlMaster",
     },
@@ -91,17 +100,8 @@ export const buildChecks = (c: Connection): Check[] => {
         fixHintKey: "fixSettingsWebhook",
       },
       /**
-       * SINOV REJIMI — KALITDAN hisoblanadi, manzilning borligidan EMAS.
-       *
-       * ⚠️ Ilgari faqat `sandbox_webhook_url` tekshirilardi. Ikki xato
-       * bergan:
-       *  1. manzil bor, kalit o'chiq bo'lsa "sozlangan" deb ko'rsatardi —
-       *     nusxa esa KETMASDI;
-       *  2. kalit yoqilgan, sekret yo'q bo'lsa ham "sozlangan" derdi —
-       *     backend esa nusxani tashlab yuboradi (prodakshn sekreti sinov
-       *     muhitiga yuborilmaydi).
-       *
-       * Endi uchala holat ajratilgan va matn KEYINGI QADAMNI aytadi.
+       * SINOV REJIMI — KALITDAN hisoblanadi, manzilning borligidan EMAS: manzil bor, kalit o'chiq
+       * bo'lsa nusxa KETMAYDI; kalit yoqilgan, sekret yo'q bo'lsa backend nusxani tashlab yuboradi.
        */
       {
         labelKey: "checkSandbox",
@@ -135,9 +135,7 @@ export const buildChecks = (c: Connection): Check[] => {
     {
       labelKey: "checkApiUrl",
       ok: Boolean(url),
-      ...(url
-        ? { detailKey: "rawValue", detailParams: { value: url } }
-        : { detailKey: "chkApiUrlMissing" }),
+      ...(url ? { detailKey: "rawValue", detailParams: { value: url } } : { detailKey: "chkApiUrlMissing" }),
       fixTab: "settings",
       fixHintKey: "fixSettingsApiUrl",
     },
@@ -154,10 +152,7 @@ export const buildChecks = (c: Connection): Check[] => {
       ok: Boolean(i.last_sync_at),
       optional: true,
       ...(i.last_sync_at
-        ? {
-            detailKey: "rawValue",
-            detailParams: { value: new Date(i.last_sync_at).toLocaleString("uz-UZ") },
-          }
+        ? { detailKey: "rawValue", detailParams: { value: formatDateTimeLocalized(i.last_sync_at) } }
         : { detailKey: "chkNeverSynced" }),
       fixTab: "control",
       fixHintKey: "fixControlQueue",
@@ -165,150 +160,133 @@ export const buildChecks = (c: Connection): Check[] => {
   ];
 };
 
-/**
- * PCS `ChecklistItem` — yashil belgi / qizil xato + izoh.
- *
- * Yetishmagan qator BOSILADI va tuzatiladigan tabga o'tkazadi. Bajarilgan
- * qator bosilmaydi: tuzatadigan narsa yo'q va bosiladigandek ko'rinishi
- * chalg'itardi.
- */
+/** Kirish turi xom kodi → yorliq kaliti («Turi: API kalit»). */
+const AUTH_TYPE_KEY: Record<string, string> = { api_key: "fOptApiKeyLabel", login: "fOptLoginLabel" };
+
+/** Yetishmagan majburiy qatordagi tugma matni (maket: «Webhook manzilini kiritish»). */
+const FIX_BUTTON_KEY: Record<string, string> = {
+  checkEnabled: "console.fixEnable",
+  checkWebhookUrl: "console.fixWebhookUrl",
+  checkApiUrl: "console.fixApiUrl",
+  checkAuthType: "console.fixAuthType",
+};
+
+/** Metrika so'rovining holati — «—» ning SABABI shunga qarab aytiladi. */
+export type MetricsState = "loading" | "error" | "ready";
+
 const ChecklistItem = ({ check, onFix }: { check: Check; onFix?: (tab: string) => void }) => {
   const { t } = useTranslation("integrations");
   const actionable = !check.ok && Boolean(check.fixTab) && Boolean(onFix);
-  const Row = actionable ? "button" : "div";
+  const missing = !check.ok && !check.optional;
+  const params =
+    check.detailParams && check.labelKey === "checkAuthType" && AUTH_TYPE_KEY[check.detailParams.type]
+      ? { ...check.detailParams, type: t(AUTH_TYPE_KEY[check.detailParams.type]) }
+      : check.detailParams;
+  const Icon = check.ok ? CircleCheck : check.optional ? Info : CircleX;
+  const srKey = check.ok ? "console.chkDone" : check.optional ? "console.chkOptional" : "console.chkMissing";
 
   return (
-    <Row
-      {...(actionable
-        ? {
-            type: "button" as const,
-            onClick: () => onFix!(check.fixTab!),
-            className:
-              "flex w-full cursor-pointer items-start gap-2 rounded-lg py-1.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/40",
-          }
-        : { className: "flex items-start gap-2 py-1.5" })}
+    <div
+      role="listitem"
+      className={cx("flex items-start gap-3 rounded-[10px] px-3 py-2.5", missing && "bg-warning-soft")}
     >
-      {check.ok ? (
-        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
-      ) : check.optional ? (
-        <Info className={`mt-0.5 h-4 w-4 shrink-0 ${MUTED}`} />
-      ) : (
-        <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-red-500" />
-      )}
-      <div className="min-w-0">
-        <span
-          className={
-            check.ok || check.optional
-              ? "text-gray-700 dark:text-gray-200"
-              : "font-medium text-red-600 dark:text-red-400"
-          }
-        >
-          {t(check.labelKey)}
-        </span>
-        {/*
-        ⚠️ `MUTED` — ilgari `text-gray-400` (dark juftligi YO'Q) edi.
-        Bu qator eng muhim diagnostik matnni ko'rsatadi ("webhook manzili
-        yo'q — status o'zgarishi hamkorga YETMAYDI"), qorong'ida esa u
-        deyarli o'qilmasdi.
-      */}
-        <span className={`block break-words text-xs ${MUTED}`}>
-          {t(check.detailKey, check.detailParams)}
-        </span>
-        {/* Qayerdan tuzatish — matn bilan aytiladi, taxmin qoldirilmaydi. */}
-        {actionable && (
-          <span className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400">
-            {t(check.fixHintKey ?? "fixDefault")}
-            <ArrowRight className="h-3 w-3" />
-          </span>
+      <span
+        className={cx(
+          "mt-px inline-flex",
+          check.ok ? TONE_FG.success : check.optional ? "text-text-subtle" : TONE_FG.warning,
         )}
+      >
+        <Icon size={18} aria-hidden="true" />
+        <span className="sr-only">{t(srKey)}</span>
+      </span>
+      <div className="flex min-w-0 flex-col gap-0.5">
+        <span className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-semibold text-text">{t(check.labelKey)}</span>
+          {check.optional ? <span className="text-xs text-text-subtle">{t("console.optional")}</span> : null}
+        </span>
+        <span className="text-[13px] leading-[18px] text-text-muted [overflow-wrap:anywhere]">
+          {t(check.detailKey, params)}
+        </span>
+        {actionable && missing && FIX_BUTTON_KEY[check.labelKey] ? (
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <Button variant="secondary" rightIcon={ChevronRight} onClick={() => onFix!(check.fixTab!)}>
+              {t(FIX_BUTTON_KEY[check.labelKey])}
+            </Button>
+          </div>
+        ) : actionable ? (
+          <Pressable
+            onClick={() => onFix!(check.fixTab!)}
+            className="mt-1 inline-flex items-center gap-1 self-start text-[13px] font-semibold text-action-fg hover:underline max-md:min-h-11"
+          >
+            {t(check.fixHintKey ?? "fixDefault")}
+            <ChevronRight size={16} aria-hidden="true" />
+          </Pressable>
+        ) : null}
       </div>
-    </Row>
+    </div>
   );
 };
 
 /**
  * RAQAM PLITKASI — bosilsa raqamning manbai bo'lgan tabga o'tadi.
  *
- * ⚠️ Qiymat `null` bo'lsa "—" (o'lchanmagan), HECH QACHON `0`: `0` "hammasi
- * joyida / qarz yo'q" degan yolg'on xabar bo'lardi (`fmtMetric` qoidasi).
+ * ⚠️ Qiymat `null` bo'lsa «—» (o'lchanmagan), HECH QACHON `0`: `0` «hammasi joyida / qarz yo'q»
+ * degan yolg'on xabar bo'lardi.
  */
 const MetricTile = ({
   label,
   value,
-  color,
+  tone,
   tab,
   tabLabel,
   onOpen,
 }: {
   label: string;
-  /** Tayyor matn (`fmtMetric` / `money` dan) yoki `null` — "—". */
+  /** Tayyor matn yoki `null` — «—». */
   value: string | null;
   /** Rang faqat o'lchangan va e'tibor talab qiladigan qiymatga beriladi. */
-  color?: string;
+  tone?: Extract<Tone, "success" | "warning" | "danger">;
   tab: string;
   tabLabel: string;
   onOpen?: (tab: string) => void;
 }) => {
   const { t } = useTranslation("integrations");
   const body = (
-    <Statistic
-      title={label}
-      value={value ?? "—"}
-      valueStyle={{ fontSize: 20, ...(value !== null && color ? { color } : {}) }}
-    />
+    <>
+      <span className="text-xs font-semibold text-text-muted">{label}</span>
+      <span
+        data-tile-value=""
+        className={cx(
+          "whitespace-nowrap text-xl font-bold leading-7 tabular-nums",
+          value !== null && tone ? TONE_FG[tone] : "text-text",
+        )}
+      >
+        {value ?? "—"}
+      </span>
+    </>
   );
-  if (!onOpen) return body;
+  if (!onOpen) return <div className="flex min-w-0 flex-col gap-0.5 rounded-[10px] bg-sunken px-3 py-2.5">{body}</div>;
   return (
-    <button
-      type="button"
+    <Pressable
       onClick={() => onOpen(tab)}
       title={t("ovwOpenTab", { tab: tabLabel })}
       aria-label={`${label}: ${value ?? "—"}. ${t("ovwOpenTab", { tab: tabLabel })}`}
-      className="cursor-pointer rounded-lg p-1.5 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/40"
+      className="flex min-w-0 flex-col gap-0.5 rounded-[10px] bg-sunken px-3 py-2.5 text-left transition-[background-color] duration-150 hover:bg-row-hover motion-reduce:transition-none"
     >
       {body}
-    </button>
+    </Pressable>
   );
 };
 
-/** Blok sarlavhasi — OYNA (24 soat / butun vaqt) har doim yonida yoziladi. */
-const BlockTitle = ({ icon, title, window }: { icon: ReactNode; title: string; window: string }) => (
-  <span className="flex flex-wrap items-center gap-2">
-    {icon} {title}
-    <Tag className="m-0 font-normal">{window}</Tag>
-  </span>
-);
-
-/** Metrika so'rovining holati — "—" ning SABABI shunga qarab aytiladi. */
-export type MetricsState = "loading" | "error" | "ready";
-
-/**
- * "—" nega turibdi — bir qatorda.
- *
- * ⚠️ Sabab so'rov holatiga bog'liq: yuklanayotganda hech narsa demaymiz
- * (javob hali kelmagan), xatoda — "yuklab bo'lmadi", faqat javob KELGANDA
- * va blok bo'lmasa — "server bermayapti". Aks holda yuklanish paytida ham
- * "server bermayapti" degan yolg'on chiqardi.
- */
+/** «—» nega turibdi — bir qatorda (yuklanayotganda hech narsa, xatoda — «yuklab bo'lmadi»). */
 const MissingNote = ({ state, missing }: { state: MetricsState; missing: boolean }) => {
   const { t } = useTranslation("integrations");
-  if (state === "error") {
-    return <p className="m-0 mt-2 text-xs text-red-600 dark:text-red-400">{t("ovwMetricsError")}</p>;
-  }
-  if (state === "ready" && missing) {
-    return <p className={`m-0 mt-2 text-xs ${MUTED}`}>{t("ovwNotMeasured")}</p>;
-  }
+  if (state === "error") return <p className={cx("text-xs", TONE_FG.danger)}>{t("ovwMetricsError")}</p>;
+  if (state === "ready" && missing) return <p className="text-xs text-text-muted">{t("ovwNotMeasured")}</p>;
   return null;
 };
 
-const count = (value: number | null | undefined) =>
-  value === null || value === undefined ? null : fmtMetric(value);
-const amount = (value: number | null | undefined) =>
-  value === null || value === undefined ? null : money(value);
-
-const RED = "#dc2626";
-const GREEN = "#16a34a";
-const ORANGE = "#ea580c";
+const WindowBadge = ({ children }: { children: ReactNode }) => <Badge size="sm">{children}</Badge>;
 
 const ConnectionOverview = ({
   connection,
@@ -318,6 +296,7 @@ const ConnectionOverview = ({
   hiddenTabs,
   onRefresh,
   refreshing,
+  prevSuccessRate = null,
 }: {
   connection: Connection;
   metrics?: ConnectionMetrics;
@@ -327,45 +306,44 @@ const ConnectionOverview = ({
   onFix?: (tab: string) => void;
   /** Shu ulanishda YO'Q tablar — ularning bloki ham, havolasi ham chiqmaydi. */
   hiddenTabs?: ReadonlySet<string>;
-  /** "Yangilash" — ulanish va metrika keshini invalidatsiya qiladi. */
+  /** «Yangilash» — ulanish va metrika keshini invalidatsiya qiladi. */
   onRefresh?: () => void;
   refreshing?: boolean;
+  /** Kechagi (48 − 24 soat) muvaffaqiyat foizi — maket «Kecha 99,3% edi» (D1); `null` — ko'rsatilmaydi. */
+  prevSuccessRate?: number | null;
 }) => {
-  const { t } = useTranslation("integrations");
+  const { t, i18n } = useTranslation("integrations");
+  const language = i18n.language;
+  const num = (value: number) => formatNumberLocalized(value, { language });
+  const pct = (value: number) => formatPercentLocalized(value, { language });
   const healthcheck = useIntegrationHealthcheck();
   const checks = buildChecks(connection);
-  const blocking = checks.filter((c) => !c.ok && !c.optional);
-  const failed = metrics?.failed ?? 0;
-  const queued = metrics?.queued ?? 0;
+  const required = checks.filter((c) => !c.optional);
+  const blocking = required.filter((c) => !c.ok);
 
-  const isIntegration = connection.kind === "integration";
+  const isPartner = connection.kind === "partner";
+  const isIntegration = !isPartner;
   const hasTab = (tab: string) => !hiddenTabs?.has(tab);
   const shipments = metrics?.shipments ?? null;
   const webhooks = metrics?.webhooks ?? null;
   const cod = metrics?.cod ?? null;
-  /**
-   * Kiruvchi webhook — faqat "biz ulanamiz" turida (tashuvchi bizga status
-   * yuboradi, imzoni BIZ tekshiramiz). Hamkorda webhookni biz YUBORAMIZ — ular
-   * yuqoridagi 24 soatlik hodisa raqamlarida allaqachon bor.
-   */
+  /** Kiruvchi webhook — faqat «biz ulanamiz» turida (imzoni BIZ tekshiramiz). */
   const showWebhooks = isIntegration && hasTab("log");
   const showShipments = hasTab("shipments");
   /** COD daftari faqat tashuvchi ulanishida yuritiladi (hamkorda — ularda). */
   const showCod = isIntegration && hasTab("settlement");
   /**
-   * ⚠️ YOPILMAGAN QARZ — Hisob-kitob tabidagi qoldiqning O'ZI: AYNI so'rov,
-   * AYNI kesh kaliti (`receivable-balance`). Metrika endpointidan alohida
-   * `cod.debt` olinsa, bir yorliq ostida ikki manba bo'lib, raqamlar
-   * ajralib qolishi mumkin edi.
+   * ⚠️ YOPILMAGAN QARZ — Hisob-kitob tabidagi qoldiqning O'ZI: AYNI so'rov, AYNI kesh kaliti. Metrika
+   * endpointidan alohida `cod.debt` olinsa, bir yorliq ostida ikki manba bo'lib qolardi.
    */
-  const balance = useReceivableBalance(showCod ? connection.id : undefined);
+  const balance = useReceivableBalance(showCod ? connection.id : undefined, { silentError: true });
   const debt = balance.data ? toAmount(balance.data.outstanding_amount) : null;
 
-  /**
-   * "Aloqani sinash" — Ish rejimi tabidagi AYNI amal (nomi ham bir xil:
-   * terminologiya testi boshqa nomni taqiqlaydi). Faqat "biz ulanamiz"
-   * turida bor: hamkorda tashqi API yo'q.
-   */
+  const count = (value: number | null | undefined) => (value === null || value === undefined ? null : num(value));
+  const amount = (value: number | null | undefined) =>
+    value === null || value === undefined ? null : formatMoneyLocalized(value, { language });
+
+  /** «Aloqani sinash» — Ish rejimi tabidagi AYNI amal va nom (terminologiya testi). */
   const ping = async () => {
     const label = t("ctlPingBtn");
     try {
@@ -378,328 +356,418 @@ const ConnectionOverview = ({
     }
   };
 
+  /* ── Tayyorlik ── */
+  const requiredDone = required.length - blocking.length;
+  const optionalChecks = checks.filter((c) => c.optional);
+  const readinessParts = [
+    ...required.map((c) => ({ value: 1, className: c.ok ? "bg-success" : "bg-warning" })),
+    ...optionalChecks.map((c) => ({ value: 1, className: c.ok ? "bg-success" : "bg-chart-muted" })),
+  ];
+  const allDone = blocking.length === 0 && optionalChecks.every((c) => c.ok);
+
+  /* ── 24 soat natijasi ── */
+  const delivered = metrics?.delivered ?? 0;
+  const failed = metrics?.failed ?? 0;
+  const queued = metrics?.queued ?? 0;
+  const events = metrics?.events ?? 0;
+  const rate = metrics?.success_rate ?? null;
+  const measured = rate !== null;
+  const rateDelta = measured && prevSuccessRate !== null ? rate - prevSuccessRate : null;
+  const zone: Tone = !measured ? "neutral" : rate >= 70 ? "success" : rate >= 40 ? "warning" : "danger";
+  const zoneKey = rate === null ? null : rate >= 70 ? "console.zoneGood" : rate >= 40 ? "console.zoneMid" : "console.zoneLow";
+  const total = delivered + queued + failed;
+  const share = (value: number) => (total > 0 ? pct((value / total) * 100) : pct(0));
+
   return (
-    <div className="space-y-4">
-      <Alert
-        type={blocking.length === 0 ? "success" : "warning"}
-        showIcon
-        message={
-          blocking.length === 0 ? t("ovwReady") : t("ovwMissing", { count: blocking.length })
-        }
-        description={
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <Tag color="blue">{t(ROLE_META[connection.role].labelKey)}</Tag>
-            <Tag>{t(CATEGORY_LABEL[connection.category])}</Tag>
-            {/* Yo'nalish — eng ko'p chalkashgan joy, shuning uchun aniq. */}
-            <Tooltip
-              title={connection.kind === "partner" ? t("ovwPartnerTip") : t("ovwIntegrationTip")}
-            >
-              <Tag color="purple" className="cursor-help">
-                {connection.kind === "partner" ? t("ovwTagInbound") : t("ovwTagOutbound")}
-              </Tag>
-            </Tooltip>
-            {failed > 0 && <Tag color="red">{t("eventsFailed", { count: failed })}</Tag>}
-            {queued > 0 && <Tag color="orange">{t("ovwQueuedTag", { count: queued })}</Tag>}
-            {/*
-              AMALLAR — sarlavha OSTIDAGI qatorda, `action` o'rnida EMAS: antd
-              `action` ni matn bilan bir qatorga qo'yadi va telefonda uchta
-              tugma sarlavhani deyarli 0 kenglikka siqib qo'yardi.
-            */}
-            <div className="flex w-full flex-wrap items-center gap-2 pt-1" data-testid="ovw-actions">
-              {/*
-                Eng muhim kamchilikka BIR BOSISHDA o'tish. Checklistdagi qator
-                ham bosiladi, lekin banner tepada turadi va odam birinchi shuni
-                ko'radi.
-              */}
-              {blocking.length > 0 && blocking[0].fixTab && onFix ? (
-                <Button size="small" type="primary" onClick={() => onFix(blocking[0].fixTab!)}>
-                  {t("fixDefault")}
-                </Button>
-              ) : null}
-              {isIntegration ? (
-                <Tooltip title={t("ctlPingTip")}>
-                  <Button
-                    size="small"
-                    icon={<PlugZap className="h-3.5 w-3.5" />}
-                    loading={healthcheck.isPending}
-                    onClick={() => void ping()}
-                  >
-                    {t("ctlPingBtn")}
-                  </Button>
-                </Tooltip>
-              ) : null}
-              {onRefresh ? (
-                <Button
-                  size="small"
-                  icon={<RefreshCw className="h-3.5 w-3.5" />}
-                  loading={refreshing}
-                  onClick={onRefresh}
-                >
-                  {t("refresh")}
-                </Button>
-              ) : null}
-            </div>
+    <div className="flex min-w-0 flex-col">
+      {/* Amallar — sarlavha ostidagi qator (telefonda to'liq enli). */}
+      <div
+        data-testid="ovw-actions"
+        className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-5 py-3 max-md:px-4 max-md:[&>*]:flex-1"
+      >
+        {isIntegration ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={Plug}
+            loading={healthcheck.isPending}
+            title={t("ctlPingTip")}
+            onClick={() => void ping()}
+            className="max-md:min-h-11"
+          >
+            {t("ctlPingBtn")}
+          </Button>
+        ) : null}
+        {onRefresh ? (
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={RefreshCw}
+            loading={refreshing}
+            onClick={onRefresh}
+            className="max-md:min-h-11"
+          >
+            {t("refresh")}
+          </Button>
+        ) : null}
+      </div>
+
+      <ColumnGrid>
+        {/* ═══ Tayyorlik ro'yxati ═══ */}
+        <section
+          data-testid="ovw-checklist"
+          aria-labelledby={`ovw-chk-${connection.uid}`}
+          className="flex flex-col gap-4 bg-surface p-5 max-md:p-4"
+        >
+          <div className="flex min-h-8 flex-wrap items-center justify-between gap-2">
+            <h3 id={`ovw-chk-${connection.uid}`} className="text-sm font-semibold text-text">
+              {t("ovwChecklistTitle")}
+            </h3>
+            {blocking.length > 0 ? (
+              <Badge tone="warning">{t("console.missingCount", { count: blocking.length })}</Badge>
+            ) : (
+              <Badge tone="success" dot>
+                {t("ovwReady")}
+              </Badge>
+            )}
           </div>
-        }
-      />
-
-      <div className="grid items-start gap-4 md:grid-cols-2">
-        <Card
-          title={
-            <span className="flex items-center gap-2">
-              <ShieldAlert className="h-4 w-4" /> {t("ovwChecklistTitle")}
-            </span>
-          }
-        >
-          {checks.map((c) => (
-            <ChecklistItem key={c.labelKey} check={c} onFix={onFix} />
-          ))}
-        </Card>
-
-        <div className="space-y-4">
-        <Card
-          title={
-            <span className="flex items-center gap-2">
-              <Clock className="h-4 w-4" /> {t("ovwLast24h")}
-            </span>
-          }
-        >
-          {/*
-            ⚠️ Metrika YO'Q bo'lishining ikki sababi bor va ular BOSHQA:
-            hali kelmadi, yoki 24 soatda hodisa bo'lmagan. Ikkisini bir xil
-            ko'rsatish "hodisa yo'q" degan xato xulosaga olib boradi.
-          */}
-          {!metrics ? (
-            <Alert
-              type="info"
-              showIcon
-              message={t("ovwNoEvents24h")}
-              description={t("ovwNoEventsDesc")}
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-2 text-[13px]">
+              <span className="text-text-muted">{t("console.checksLabel")}</span>
+              <span className="font-semibold text-text">
+                {allDone
+                  ? t("console.checksAllDone", { done: num(checks.length), total: num(checks.length) })
+                  : t("console.checksRequired", { done: num(requiredDone), total: num(required.length) })}
+              </span>
+            </div>
+            <SegBar
+              parts={readinessParts}
+              ariaLabel={t("console.checksAria", {
+                done: num(requiredDone),
+                total: num(required.length),
+                optional: num(optionalChecks.filter((c) => !c.ok).length),
+              })}
             />
+          </div>
+          <div role="list" className="-mx-3 flex flex-col gap-1">
+            {checks.map((c) => (
+              <ChecklistItem key={c.labelKey} check={c} onFix={onFix} />
+            ))}
+          </div>
+          {blocking.length === 0 && failed > 0 && hasTab("log") ? (
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-[18px] text-text-muted">
+              <span>{t("console.readyButFailed", { count: failed })}</span>
+              {onFix ? (
+                <Pressable
+                  onClick={() => onFix("log")}
+                  className="inline-flex items-center gap-1 font-semibold text-action-fg hover:underline max-md:min-h-11"
+                >
+                  {t("console.openEvents")}
+                  <ChevronRight size={16} aria-hidden="true" />
+                </Pressable>
+              ) : null}
+            </p>
+          ) : null}
+        </section>
+
+        {/* ═══ Muvaffaqiyat · 24 soat ═══ */}
+        <ChartBlock
+          id={`ovw-rate-${connection.uid}`}
+          title={t("console.rateTitle")}
+          subtitle={
+            measured
+              ? prevSuccessRate !== null
+                ? t("console.rateYesterday", { rate: pct(prevSuccessRate) })
+                : t("console.rateSub")
+              : t("console.rateNotMeasuredSub")
+          }
+          controls={
+            rateDelta !== null ? (
+              <Badge tone={Math.abs(rateDelta) < 0.05 ? "neutral" : rateDelta > 0 ? "success" : "danger"}>
+                {t("console.deltaPp", {
+                  value: `${rateDelta > 0 ? "+" : rateDelta < 0 ? MINUS_SIGN : ""}${formatNumberLocalized(Math.abs(rateDelta), { language, fractionDigits: 1 })}`,
+                })}
+              </Badge>
+            ) : null
+          }
+        >
+          <SuccessGauge
+            value={rate}
+            valueText={measured ? pct(rate) : "—"}
+            label={measured ? t("console.rateLabel") : t("console.rateNoneLabel")}
+            badge={
+              zoneKey ? (
+                <Badge tone={zone}>{t(zoneKey)}</Badge>
+              ) : (
+                <Badge icon={CircleMinus}>{t("console.rateNotMeasured")}</Badge>
+              )
+            }
+            ariaLabel={
+              measured
+                ? t("console.rateAria", { rate: pct(rate), delivered: num(delivered), failed: num(failed) })
+                : t("console.rateNoneAria", { queued: num(queued) })
+            }
+            stats={[
+              {
+                key: "delivered",
+                tone: measured ? "success" : "neutral",
+                icon: <CircleCheck size={16} aria-hidden="true" />,
+                value: t("console.countTa", { count: num(delivered) }),
+                label: t("deliveryDelivered"),
+              },
+              {
+                key: "failed",
+                tone: measured ? "danger" : "neutral",
+                icon: <CircleX size={16} aria-hidden="true" />,
+                value: t("console.countTa", { count: num(failed) }),
+                label: t("deliveryFailed"),
+              },
+            ]}
+          />
+        </ChartBlock>
+
+        {/* ═══ Hodisalar tarkibi ═══ */}
+        <ChartBlock
+          id={`ovw-mix-${connection.uid}`}
+          title={t("console.mixTitle")}
+          subtitle={t("console.mixSub", { count: num(events) })}
+          controls={
+            onFix && hasTab("log") ? (
+              <Button variant="ghost" size="sm" rightIcon={ChevronRight} onClick={() => onFix("log")} className="-mr-2 max-md:min-h-11">
+                {t("console.all")}
+              </Button>
+            ) : null
+          }
+        >
+          {!metrics ? (
+            <div className="flex flex-col items-center gap-2 rounded-xl bg-sunken px-4 py-6 text-center">
+              <StateIcon icon={Clock} size="chart" />
+              <p className="text-base font-bold text-text">{t("ovwNoEvents24h")}</p>
+              <p className="max-w-[320px] text-sm text-text-muted">{t("ovwNoEventsDesc")}</p>
+            </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-4">
-                <Statistic title={t("statEvents")} value={metrics.events} />
-                <Statistic
-                  title={t("statDelivered")}
-                  value={metrics.delivered}
-                  valueStyle={{ color: "#16a34a" }}
-                />
-                <Statistic
-                  title={t("statFailed")}
-                  value={metrics.failed}
-                  valueStyle={{
-                    color: metrics.failed > 0 ? "#dc2626" : undefined,
-                  }}
-                  prefix={
-                    metrics.failed > 0 ? <AlertTriangle className="inline h-4 w-4" /> : undefined
+              <div className="flex min-w-0 flex-wrap items-center justify-center gap-x-6 gap-y-4">
+                <div
+                  role="img"
+                  aria-label={
+                    total > 0 && queued === total
+                      ? t("console.mixAllQueuedAria", { count: num(queued) })
+                      : t("console.mixAria", {
+                          count: num(total),
+                          delivered: num(delivered),
+                          queued: num(queued),
+                          failed: num(failed),
+                        })
                   }
-                />
-                <Statistic
-                  title={t("statQueued")}
-                  value={metrics.queued}
-                  valueStyle={{
-                    color: metrics.queued > 0 ? "#ea580c" : undefined,
-                  }}
+                  className="flex min-w-0 flex-[0_1_184px] flex-col items-center gap-1.5 py-2"
+                >
+                  {total > 0 && queued === total ? (
+                    <span className="inline-flex size-8 items-center justify-center rounded-full bg-warning-soft text-warning-fg">
+                      <Clock size={16} aria-hidden="true" />
+                    </span>
+                  ) : null}
+                  <span className="whitespace-nowrap text-[28px] leading-9 font-bold text-text proportional-nums">
+                    {num(total > 0 && queued === total ? queued : events)}
+                    <span className="ml-1 text-sm font-semibold text-text-muted">
+                      {total > 0 && queued === total ? t("console.unitTa") : t("console.unitEvents24h")}
+                    </span>
+                  </span>
+                  {total > 0 && queued === total ? (
+                    <span className="text-center text-[13px] text-text-muted">{t("console.allQueued")}</span>
+                  ) : null}
+                </div>
+                <LegendList
+                  ariaLabel={t("console.mixLegendAria")}
+                  className="min-w-0 flex-[1_1_240px]"
+                  rows={[
+                    {
+                      key: "delivered",
+                      keyClassName: "bg-success",
+                      icon: <CircleCheck size={14} aria-hidden="true" className="shrink-0 text-text-muted" />,
+                      label: t("deliveryDelivered"),
+                      value: t("console.countTa", { count: num(delivered) }),
+                      share: share(delivered),
+                    },
+                    {
+                      key: "queued",
+                      keyClassName: "bg-warning",
+                      icon: <Clock size={14} aria-hidden="true" className="shrink-0 text-text-muted" />,
+                      label: t("deliveryQueued"),
+                      value: t("console.countTa", { count: num(queued) }),
+                      share: share(queued),
+                    },
+                    {
+                      key: "failed",
+                      keyClassName: "bg-danger",
+                      icon: <CircleX size={14} aria-hidden="true" className="shrink-0 text-text-muted" />,
+                      label: t("deliveryFailed"),
+                      value: t("console.countTa", { count: num(failed) }),
+                      share: share(failed),
+                    },
+                  ]}
                 />
               </div>
-
-              <div className="mt-4 space-y-2 border-t border-gray-100 pt-3 text-sm dark:border-gray-700/60">
-                <div className="flex justify-between gap-2">
-                  <span className={MUTED}>{t("ovwSuccessRate")}</span>
-                  {/*
-                    `fmtMetric` — o'lchanmagan qiymat "—", hech qachon `0`.
-                    `0%` "hammasi yiqildi" degan yolg'on xabar bo'lardi.
-                  */}
-                  <b>{fmtMetric(metrics.success_rate, "%")}</b>
-                </div>
-                <div className="flex justify-between gap-2">
-                  <span className={MUTED}>{t("ovwAvgMs")}</span>
-                  <b>{fmtMetric(metrics.avg_ms, " ms")}</b>
-                </div>
-                <div className="flex justify-between gap-2">
-                  <span className={`flex items-center gap-1 ${MUTED}`}>
-                    <Webhook className="h-3.5 w-3.5" /> {t("ovwLastEvent")}
-                  </span>
-                  <span className="font-mono text-xs">
-                    {metrics.last_event_at
-                      ? new Date(metrics.last_event_at).toLocaleString("uz-UZ")
-                      : "—"}
-                  </span>
-                </div>
-              </div>
+              {isPartner && queued > 0 && !(connection.raw as { webhook_url?: string | null }).webhook_url ? (
+                <p className="flex items-start gap-2 text-xs text-text-muted">
+                  <Clock size={14} aria-hidden="true" className="mt-px shrink-0" />
+                  <span>{t("console.queuedWillSend", { count: num(queued) })}</span>
+                </p>
+              ) : null}
             </>
           )}
-        </Card>
+          <dl className="mt-auto flex flex-col border-t border-border">
+            <div className="flex items-center justify-between gap-3 py-2.5">
+              <dt className="flex min-w-0 items-center gap-2 text-[13px] text-text">
+                <Timer size={16} aria-hidden="true" className="shrink-0 text-text-subtle" />
+                {t("console.responseTime")}
+              </dt>
+              <dd className="m-0 flex min-w-0 flex-wrap items-baseline justify-end gap-x-2 gap-y-0.5 text-right">
+                {metrics?.avg_ms != null ? (
+                  <span className="whitespace-nowrap font-semibold text-text">
+                    {t("console.ms", { value: num(metrics.avg_ms) })}
+                  </span>
+                ) : (
+                  <>
+                    <span className="text-xs text-text-muted">
+                      {isPartner ? t("console.noResponseYet") : t("console.notMeasuredOutbound")}
+                    </span>
+                    <span className="font-semibold text-text">—</span>
+                  </>
+                )}
+              </dd>
+            </div>
+            <div className="flex items-center justify-between gap-3 border-t border-border py-2.5">
+              <dt className="flex min-w-0 items-center gap-2 text-[13px] text-text">
+                <Webhook size={16} aria-hidden="true" className="shrink-0 text-text-subtle" />
+                {t("console.lastEvent")}
+              </dt>
+              <dd className="m-0 whitespace-nowrap font-semibold text-text">
+                {metrics?.last_event_at ? formatDateTimeLocalized(metrics.last_event_at, { language }) : "—"}
+              </dd>
+            </div>
+          </dl>
+        </ChartBlock>
+      </ColumnGrid>
 
-        {/* ═══════ POSILKALAR (24 soat) ═══════ */}
-        {showShipments && (
-          <Card
-            data-testid="ovw-shipments"
-            title={
-              <BlockTitle
-                icon={<Truck className="h-4 w-4" />}
-                title={t("ovwShipmentsTitle")}
-                window={t("ovwWindow24h")}
-              />
-            }
-          >
-            {/* `@container` — ustun soni KARTA kengligiga qarab (ekranga emas). */}
-            <div className="@container">
-            <div className="grid grid-cols-2 gap-2">
-              <MetricTile
-                label={t("ovwShpTotal")}
-                value={count(shipments?.total)}
-                tab="shipments"
-                tabLabel={t("tabShipments")}
-                onOpen={onFix}
-              />
-              <MetricTile
-                label={t("filterDelivered")}
-                value={count(shipments?.delivered)}
-                color={GREEN}
-                tab="shipments"
-                tabLabel={t("tabShipments")}
-                onOpen={onFix}
-              />
-              <MetricTile
-                label={t("filterFailed")}
-                value={count(shipments?.failed)}
-                color={(shipments?.failed ?? 0) > 0 ? RED : undefined}
-                tab="shipments"
-                tabLabel={t("tabShipments")}
-                onOpen={onFix}
-              />
-              {/*
-                ⚠️ Status xaritasi yo'q ulanishda (`mismatch: null`) BU RAQAM
-                CHIQMAYDI: xaritasiz har qator nomuvofiq bo'lib ko'rinardi.
-              */}
-              {shipments?.mismatch !== null && shipments?.mismatch !== undefined && (
+      {/* ═══ Posilkalar · webhooklar · COD — bitta qatorda (telefonda ustma-ust) ═══ */}
+      {showShipments || showWebhooks || showCod ? (
+        <ColumnGrid basis={300}>
+          {showShipments ? (
+            <ChartBlock
+              data-testid="ovw-shipments"
+              title={t("ovwShipmentsTitle")}
+              titleAddon={<WindowBadge>{t("ovwWindow24h")}</WindowBadge>}
+              controls={<Truck size={18} aria-hidden="true" className="text-text-subtle" />}
+            >
+              <div className="grid grid-cols-2 gap-2">
+                <MetricTile label={t("ovwShpTotal")} value={count(shipments?.total)} tab="shipments" tabLabel={t("tabShipments")} onOpen={onFix} />
                 <MetricTile
-                  label={t("filterMismatch")}
-                  value={count(shipments.mismatch)}
-                  color={shipments.mismatch > 0 ? ORANGE : undefined}
+                  label={t("filterDelivered")}
+                  value={count(shipments?.delivered)}
+                  tone="success"
                   tab="shipments"
                   tabLabel={t("tabShipments")}
                   onOpen={onFix}
                 />
-              )}
-            </div>
-            </div>
-            <MissingNote state={metricsState} missing={!shipments} />
-          </Card>
-        )}
-
-        {/* ═══════ KIRUVCHI WEBHOOKLAR (24 soat) ═══════ */}
-        {showWebhooks && (
-          <Card
-            data-testid="ovw-webhooks"
-            title={
-              <BlockTitle
-                icon={<Webhook className="h-4 w-4" />}
-                title={t("ovwWebhooksTitle")}
-                window={t("ovwWindow24h")}
-              />
-            }
-          >
-            <div className="@container">
-            <div className="grid grid-cols-2 gap-2 @xs:grid-cols-3">
-              <MetricTile
-                label={t("filterApplied")}
-                value={count(webhooks?.success)}
-                color={GREEN}
-                tab="log"
-                tabLabel={t("tabEvents")}
-                onOpen={onFix}
-              />
-              <MetricTile
-                label={t("filterRejected")}
-                value={count(webhooks?.failed)}
-                color={(webhooks?.failed ?? 0) > 0 ? RED : undefined}
-                tab="log"
-                tabLabel={t("tabEvents")}
-                onOpen={onFix}
-              />
-              {/* Imzo xato — sekret ikki tomonda mos emas degani. */}
-              {(!webhooks || webhooks.invalid_signature !== null) && (
                 <MetricTile
-                  label={t("filterInvalidSignature")}
-                  value={count(webhooks?.invalid_signature)}
-                  color={(webhooks?.invalid_signature ?? 0) > 0 ? RED : undefined}
+                  label={t("filterFailed")}
+                  value={count(shipments?.failed)}
+                  tone={(shipments?.failed ?? 0) > 0 ? "danger" : undefined}
+                  tab="shipments"
+                  tabLabel={t("tabShipments")}
+                  onOpen={onFix}
+                />
+                {/* ⚠️ Status xaritasi yo'q ulanishda (`mismatch: null`) bu raqam CHIQMAYDI. */}
+                {shipments?.mismatch !== null && shipments?.mismatch !== undefined ? (
+                  <MetricTile
+                    label={t("filterMismatch")}
+                    value={count(shipments.mismatch)}
+                    tone={shipments.mismatch > 0 ? "warning" : undefined}
+                    tab="shipments"
+                    tabLabel={t("tabShipments")}
+                    onOpen={onFix}
+                  />
+                ) : null}
+              </div>
+              <MissingNote state={metricsState} missing={!shipments} />
+            </ChartBlock>
+          ) : null}
+
+          {showWebhooks ? (
+            <ChartBlock
+              data-testid="ovw-webhooks"
+              title={t("ovwWebhooksTitle")}
+              titleAddon={<WindowBadge>{t("ovwWindow24h")}</WindowBadge>}
+              controls={<Webhook size={18} aria-hidden="true" className="text-text-subtle" />}
+            >
+              <div className="grid grid-cols-2 gap-2">
+                <MetricTile label={t("filterApplied")} value={count(webhooks?.success)} tone="success" tab="log" tabLabel={t("tabEvents")} onOpen={onFix} />
+                <MetricTile
+                  label={t("filterRejected")}
+                  value={count(webhooks?.failed)}
+                  tone={(webhooks?.failed ?? 0) > 0 ? "danger" : undefined}
                   tab="log"
                   tabLabel={t("tabEvents")}
                   onOpen={onFix}
                 />
-              )}
-            </div>
-            </div>
-            <MissingNote state={metricsState} missing={!webhooks} />
-          </Card>
-        )}
+                {/* Imzo xato — sekret ikki tomonda mos emas degani. */}
+                {!webhooks || webhooks.invalid_signature !== null ? (
+                  <MetricTile
+                    label={t("filterInvalidSignature")}
+                    value={count(webhooks?.invalid_signature)}
+                    tone={(webhooks?.invalid_signature ?? 0) > 0 ? "danger" : undefined}
+                    tab="log"
+                    tabLabel={t("tabEvents")}
+                    onOpen={onFix}
+                  />
+                ) : null}
+              </div>
+              <MissingNote state={metricsState} missing={!webhooks} />
+            </ChartBlock>
+          ) : null}
 
-        {/*
-          ═══════ COD (BUTUN VAQT) ═══════
-          ⚠️ OYNA BOSHQA: yuqoridagi raqamlar 24 soatlik, bu esa butun vaqt —
-          qarz davr bilan kesilmaydi. Sarlavhadagi yorliq va izoh shuni aytadi,
-          aks holda "24 soatda 0 hodisa" yonidagi "qarz 5 mln" chalg'itardi.
-          Manba — hisob-kitob daftari (`provider_receivable` /
-          `provider_remittance`), Hisob-kitob tabi bilan AYNI raqam.
-        */}
-        {showCod && (
-          <Card
-            data-testid="ovw-cod"
-            title={
-              <BlockTitle
-                icon={<Wallet className="h-4 w-4" />}
-                title={t("ovwCodTitle")}
-                window={t("ovwWindowAllTime")}
-              />
-            }
-          >
-            {/* Summa uzun ("15 000 000 so'm") — tor kartada bitta ustun, kesilmaydi. */}
-            <div className="@container">
-            <div className="grid grid-cols-1 gap-2 @sm:grid-cols-2">
-              <MetricTile
-                label={t("ovwCodDispatched")}
-                value={amount(cod?.dispatched)}
-                tab="settlement"
-                tabLabel={t("tabSettlement")}
-                onOpen={onFix}
-              />
-              <MetricTile
-                label={t("ovwCodCollected")}
-                value={amount(cod?.collected)}
-                tab="settlement"
-                tabLabel={t("tabSettlement")}
-                onOpen={onFix}
-              />
-              <MetricTile
-                label={t("ovwCodRemitted")}
-                value={amount(cod?.remitted)}
-                color={GREEN}
-                tab="settlement"
-                tabLabel={t("tabSettlement")}
-                onOpen={onFix}
-              />
-              <MetricTile
-                label={t("ovwCodDebt")}
-                value={amount(debt)}
-                color={(debt ?? 0) > 0 ? ORANGE : undefined}
-                tab="settlement"
-                tabLabel={t("tabSettlement")}
-                onOpen={onFix}
-              />
-            </div>
-            </div>
-            <MissingNote state={metricsState} missing={!cod} />
-            {balance.isError && (
-              <p className="m-0 mt-2 text-xs text-red-600 dark:text-red-400">{t("ovwBalanceError")}</p>
-            )}
-            <p className={`m-0 mt-2 text-xs ${MUTED}`}>{t("ovwCodNote")}</p>
-          </Card>
-        )}
-        </div>
-      </div>
+          {/*
+            ═══ COD (BUTUN VAQT) ═══ ⚠️ OYNA BOSHQA: yuqoridagi raqamlar 24 soatlik, bu esa butun vaqt —
+            qarz davr bilan kesilmaydi. Manba — hisob-kitob daftari, Hisob-kitob tabi bilan AYNI raqam.
+          */}
+          {showCod ? (
+            <ChartBlock
+              data-testid="ovw-cod"
+              title={t("ovwCodTitle")}
+              titleAddon={<WindowBadge>{t("ovwWindowAllTime")}</WindowBadge>}
+              controls={<Wallet size={18} aria-hidden="true" className="text-text-subtle" />}
+            >
+              {/* Summa uzun («15 000 000 so'm») — tor blokda bitta ustun, kesilmaydi. */}
+              <div className="@container">
+              <div className="grid grid-cols-1 gap-2 @md:grid-cols-2">
+                <MetricTile label={t("ovwCodDispatched")} value={amount(cod?.dispatched)} tab="settlement" tabLabel={t("tabSettlement")} onOpen={onFix} />
+                <MetricTile label={t("ovwCodCollected")} value={amount(cod?.collected)} tab="settlement" tabLabel={t("tabSettlement")} onOpen={onFix} />
+                <MetricTile
+                  label={t("ovwCodRemitted")}
+                  value={amount(cod?.remitted)}
+                  tone="success"
+                  tab="settlement"
+                  tabLabel={t("tabSettlement")}
+                  onOpen={onFix}
+                />
+                <MetricTile
+                  label={t("ovwCodDebt")}
+                  value={amount(debt)}
+                  tone={(debt ?? 0) > 0 ? "warning" : undefined}
+                  tab="settlement"
+                  tabLabel={t("tabSettlement")}
+                  onOpen={onFix}
+                />
+              </div>
+              </div>
+              <MissingNote state={metricsState} missing={!cod} />
+              {balance.isError ? <p className={cx("text-xs", TONE_FG.danger)}>{t("ovwBalanceError")}</p> : null}
+              <p className="text-xs text-text-muted">{t("ovwCodNote")}</p>
+            </ChartBlock>
+          ) : null}
+        </ColumnGrid>
+      ) : null}
     </div>
   );
 };

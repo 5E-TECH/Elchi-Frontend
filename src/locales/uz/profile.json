@@ -1,0 +1,54 @@
+{
+  "title": "Profil",
+  "subtitle": "Shaxsiy ma'lumotlar va hisob tafsilotlari",
+  "edit": "Tahrirlash",
+  "login": "Login: {{username}}",
+  "info": {
+    "phone": "Telefon",
+    "branch": "Filial",
+    "createdAt": "Ro'yxatdan o'tgan",
+    "updatedAt": "Yangilangan"
+  },
+  "salary": {
+    "title": "Oylik maosh",
+    "accumulated": "Shu davrda to'plangan",
+    "progressLabel": "Maosh davri",
+    "passed": "{{total}} kundan {{passed}} kun o'tdi",
+    "remaining": "<b>{{count}} kun</b> qoldi · keyingi to'lov {{date}}"
+  },
+  "security": {
+    "title": "Xavfsizlik",
+    "password": "Parol",
+    "passwordHint": "Yangi parol saqlangach, tizimdan chiqasiz va yangi parol bilan qayta kirasiz.",
+    "changePassword": "Parolni o'zgartirish"
+  },
+  "password": {
+    "title": "Parolni o'zgartirish",
+    "new": "Yangi parol",
+    "newPlaceholder": "Yangi parolni kiriting",
+    "minHint": "Kamida 4 ta belgi",
+    "repeat": "Yangi parolni takrorlang",
+    "repeatPlaceholder": "Parolni yana bir bor kiriting",
+    "match": "Parollar mos keladi",
+    "mismatch": "Parollar mos kelmadi",
+    "required": "Yangi parolni kiriting",
+    "repeatRequired": "Yangi parolni takrorlang",
+    "tooShort": "Parol kamida 4 ta belgidan iborat bo'lsin",
+    "show": "Parolni ko'rsatish",
+    "hide": "Parolni yashirish",
+    "warning": "Saqlangach, tizimdan chiqasiz. Keyin yangi parol bilan qayta kiring.",
+    "cancel": "Bekor qilish",
+    "submit": "Parolni saqlash",
+    "saving": "Saqlanmoqda…"
+  },
+  "editDialog": {
+    "title": "Profilni tahrirlash",
+    "name": "Ism",
+    "namePlaceholder": "Ism va familiya",
+    "nameTooShort": "Ism kamida 2 ta belgidan iborat bo'lsin",
+    "phone": "Telefon",
+    "cancel": "Bekor qilish",
+    "submit": "Saqlash",
+    "saving": "Saqlanmoqda…"
+  }
+}

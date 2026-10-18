@@ -3,12 +3,14 @@ import { queryKeys } from "../../../shared/config/queryKeys";
 import { unreadCountPollInterval } from "../../../shared/lib/realtime";
 import { getInbox, getInboxById, getInboxCounts, getInboxUnreadCount } from "./inboxApi";
 import type { InboxListParams } from "../model/types";
+import { silentErrorMeta, type SilentErrorOption } from "../../../shared/lib/queryErrorEvents";
 
-export const useInboxList = (params: InboxListParams) =>
+export const useInboxList = (params: InboxListParams, options?: SilentErrorOption) =>
   useQuery({
     queryKey: queryKeys.notificationsInbox.list(params),
     queryFn: () => getInbox(params),
     staleTime: 15_000,
+    ...silentErrorMeta(options),
   });
 
 export const useInboxDetail = (id?: string) =>

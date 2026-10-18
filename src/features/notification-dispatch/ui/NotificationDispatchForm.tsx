@@ -1,18 +1,33 @@
+// dizayn-v2: superadmin-notifications-send, superadmin-notifications-send-confirm-dialog
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Alert, Button, Checkbox, Input, Modal, Select, Tooltip } from "antd";
 import type { AxiosError } from "axios";
-import { Send } from "lucide-react";
+import { Send, TriangleAlert, Users, X } from "lucide-react";
 import { Controller, useForm, useWatch, type Resolver } from "react-hook-form";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import {
   NOTIFICATION_CATEGORIES,
   NOTIFICATION_PRIORITIES,
   type InboxNotification,
 } from "../../../entities/notification-inbox";
 import { useMarkets } from "../../../entities/markets";
+import { NoticeAlert } from "../../../entities/notification";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { cx } from "../../../shared/lib/cx";
+import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { formatPhone } from "../../../shared/lib/formatPhone";
 import { useDebounce } from "../../../shared/lib/useDebounce";
+import {
+  Button,
+  Card,
+  Dialog,
+  Field,
+  IconButton,
+  SegmentedControl,
+  Select,
+  TextInput,
+  type SelectOption,
+} from "../../../shared/ui/primitives";
 import {
   useDispatchNotification,
   useRecipientEstimate,
@@ -58,26 +73,62 @@ const toMarkets = (value: unknown): MarketOption[] => {
   return [];
 };
 
-const userLabel = (user: RecipientUser) =>
-  [user.name, user.phone_number, user.role].filter(Boolean).join(" · ");
+/**
+ * `.el-choice-card` (CODE-MAP 2.2): tanlangan — `action` chegara va `action-soft` fon; o'chirilgani — `sunken`,
+ * `text-subtle` (maketdagi «Mijoz», «Ilova ichida»).
+ */
+const CHOICE_CARD =
+  "flex min-h-11 min-w-0 cursor-pointer items-center gap-2.5 rounded-xl border border-border-strong bg-surface px-3.5 py-3 " +
+  "text-sm text-text has-[:checked]:border-action has-[:checked]:bg-action-soft " +
+  "has-[:disabled]:cursor-not-allowed has-[:disabled]:border-border has-[:disabled]:bg-sunken";
 
-const Section = ({ title, children }: { title: string; children: ReactNode }) => (
-  <section className="min-w-0 rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 dark:border-white/10 dark:bg-white/[0.02] sm:p-5">
-    <h3 className="m-0 mb-3 text-sm font-black uppercase tracking-wide text-maindark dark:text-white">{title}</h3>
-    <div className="flex min-w-0 flex-col gap-3">{children}</div>
-  </section>
-);
+/** `.el-check`. */
+const CHECKBOX =
+  "size-[18px] shrink-0 cursor-pointer accent-action disabled:cursor-not-allowed disabled:opacity-60";
 
-const FieldError = ({ message }: { message?: string }) =>
-  message ? (
-    <p role="alert" className="m-0 text-xs font-semibold text-red-500">
-      {message}
-    </p>
-  ) : null;
+type ChoiceCheckboxProps = {
+  checked: boolean;
+  disabled?: boolean;
+  onChange?: (checked: boolean) => void;
+  label: ReactNode;
+  hint?: ReactNode;
+  hintId?: string;
+  className?: string;
+};
 
-const FieldLabel = ({ htmlFor, children }: { htmlFor?: string; children: ReactNode }) => (
-  <label htmlFor={htmlFor} className="text-xs font-bold text-maindark/80 dark:text-white/80">
-    {children}
+/** Belgilash katakchali karta (rol, kanal). */
+const ChoiceCheckbox = ({
+  checked,
+  disabled,
+  onChange,
+  label,
+  hint,
+  hintId,
+  className,
+}: ChoiceCheckboxProps) => (
+  <label className={cx(CHOICE_CARD, disabled && !checked && "text-text-subtle", className)}>
+    <input
+      type="checkbox"
+      className={CHECKBOX}
+      checked={checked}
+      disabled={disabled}
+      // Izohli kartada nom — faqat sarlavha, izoh — tavsif (`aria-describedby`).
+      aria-labelledby={hint && hintId ? `${hintId}-label` : undefined}
+      aria-describedby={hintId}
+      onChange={(event) => onChange?.(event.target.checked)}
+    />
+    {hint ? (
+      <span className="flex min-w-0 flex-col gap-0.5">
+        <span id={hintId ? `${hintId}-label` : undefined} className="font-semibold text-text">
+          {label}
+        </span>
+        <span id={hintId} className="text-xs text-text-muted">
+          {hint}
+        </span>
+      </span>
+    ) : (
+      <span className="min-w-0">{label}</span>
+    )}
   </label>
 );
 
@@ -87,12 +138,22 @@ type NotificationDispatchFormProps = {
 };
 
 /**
- * XABAR YUBORISH — `POST /notifications/dispatch` (superadmin/admin).
- * Kimga → Kanal → Mazmun → Oldindan ko'rish → Tasdiq oynasi → Yuborish.
+ * XABAR YUBORISH — `POST /notifications/dispatch` (superadmin/admin), dizayn v2 (maketlar
+ * `superadmin-notifications-send`, `-send-confirm-dialog`).
+ *
+ * Chap ustun: «Kimga» (Bitta odam · Rol · Tanlangan ro'yxat · Hamma; rollar — karta-katakchalar, «Mijoz» o'chiq +
+ * sababi; taxminiy son), «Kanal» (Ilova ichida doim yoqiq; Darhol, Telegram, SMS, Push; SMS — ogohlantirish,
+ * Telegram — market guruhi). O'ng ustun: «Mazmun» (Sarlavha*, Matn, Kategoriya, Muhimlik, Havola, Guruh kaliti*),
+ * «Oldindan ko'rish» (inbox kartasi) + «Yuborish». Telefonda ustunlar ketma-ket.
+ *
+ * Tasdiq oynasi (`Dialog role="alertdialog"`): Kimga · Qabul qiluvchilar taxminan · Kanallar · to'liq xabar; «Hamma» da qizil
+ * ogohlantirish va qizil tugma. Ikki marta yuborilmaydi (`submittingRef` + `isPending`); javobsiz / 502–504 — natija
+ * noma'lum, qayta yuborilmaydi, forma «Yangi xabar» gacha qulflanadi (avvalgidek).
  */
 const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormProps) => {
-  const { t } = useTranslation("notifications");
+  const { t, i18n } = useTranslation("notifications");
   const { t: tUsers } = useTranslation("users");
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const schema = useMemo(() => createDispatchSchema(t), [t]);
   const {
     control,
@@ -105,7 +166,6 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
   });
   const values = useWatch({ control }) as DispatchFormValues;
 
-  const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const updateSearch = useDebounce((value: string) => setDebouncedSearch(value.trim()), 350);
   /** Tanlangan foydalanuvchilar nomi — qidiruv o'zgarsa ham tanlov yorlig'i yo'qolmasin. */
@@ -127,43 +187,67 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
   const [unknownOutcome, setUnknownOutcome] = useState(false);
   const [sendError, setSendError] = useState("");
   const submittingRef = useRef(false);
+  const cancelRef = useRef<HTMLButtonElement>(null);
   const [previewCreatedAt] = useState(() => new Date().toISOString());
 
   // Yuborilgan (yoki natijasi noma'lum) xabar shu formadan qayta yuborilmaydi —
   // faqat "Yangi xabar" orqali (yangi guruh kaliti bilan).
   const locked = unknownOutcome || Boolean(result);
 
-  const userOptions = useMemo(() => {
+  const roleLabel = (role?: string) => (role ? tUsers(ROLE_LABEL_KEYS[role] ?? role) : "");
+  const userLabel = (user: RecipientUser) =>
+    [user.name, user.phone_number, user.role].filter(Boolean).join(" · ");
+
+  const userOptions = useMemo<SelectOption[]>(() => {
     const found = recipientsQuery.data?.items ?? [];
     const merged = new Map<string, RecipientUser>();
     for (const user of Object.values(selectedUsers)) merged.set(user.id, user);
     for (const user of found) merged.set(user.id, user);
-    return Array.from(merged.values()).map((user) => ({ value: user.id, label: userLabel(user) }));
-  }, [recipientsQuery.data, selectedUsers]);
+    return Array.from(merged.values()).map((user) => ({
+      value: user.id,
+      label: user.name,
+      description:
+        [
+          user.phone_number ? formatPhone(user.phone_number) : "",
+          user.role ? tUsers(ROLE_LABEL_KEYS[user.role] ?? user.role) : "",
+        ]
+          .filter(Boolean)
+          .join(" · ") || undefined,
+      searchText: user.phone_number,
+    }));
+  }, [recipientsQuery.data, selectedUsers, tUsers]);
 
-  const rememberUsers = (ids: string[]) => {
-    const found = recipientsQuery.data?.items ?? [];
-    setSelectedUsers((prev) => {
-      const next: Record<string, RecipientUser> = {};
-      for (const id of ids) {
-        const user = prev[id] ?? found.find((item) => item.id === id);
-        if (user) next[id] = user;
-      }
-      return next;
-    });
+  /** Tanlov yorlig'i uchun foydalanuvchini eslab qoladi (qidiruv natijasi o'zgarsa ham). */
+  const rememberUser = (id: string) => {
+    const user = selectedUsers[id] ?? recipientsQuery.data?.items.find((item) => item.id === id);
+    if (user) setSelectedUsers((prev) => ({ ...prev, [id]: user }));
   };
 
-  const channelLabels = (channels: string[]) => channels.map((channel) => t(`dispatch.channel.${channel}`)).join(", ");
+  const searchProps = {
+    searchable: true as const,
+    filter: false as const,
+    onSearchChange: (value: string) => updateSearch(value),
+    loading: recipientsQuery.isFetching,
+    loadingText: t("dispatch.recipientsLoading"),
+    emptyText: t("dispatch.recipientsEmpty"),
+    noOptionsText: t("dispatch.recipientsEmpty"),
+    disabled: locked,
+  };
+
+  const channelLabels = (channels: string[]) =>
+    channels.map((channel) => t(`dispatch.channel.${channel}`)).join(", ");
 
   const recipientSummary = (payload: DispatchPayload) => {
     if (payload.broadcast) return t("dispatch.confirmAll");
-    if (payload.roles) return payload.roles.map((role) => tUsers(ROLE_LABEL_KEYS[role] ?? role)).join(", ");
+    if (payload.roles) return payload.roles.map((role) => roleLabel(role)).join(", ");
     if (payload.recipient_ids) {
       const names = payload.recipient_ids.map((id) => selectedUsers[id]?.name ?? `#${id}`);
       return `${t("dispatch.confirmList", { count: names.length })}: ${names.join(", ")}`;
     }
     const user = payload.recipient_id ? selectedUsers[payload.recipient_id] : undefined;
-    return t("dispatch.confirmSingle", { name: user ? userLabel(user) : `#${payload.recipient_id}` });
+    return t("dispatch.confirmSingle", {
+      name: user ? userLabel(user) : `#${payload.recipient_id}`,
+    });
   };
 
   const onValid = (formValues: DispatchFormValues) => {
@@ -203,7 +287,6 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
     setUnknownOutcome(false);
     setSendError("");
     setSelectedUsers({});
-    setSearch("");
     setDebouncedSearch("");
     dispatchMutation.reset();
   };
@@ -222,413 +305,554 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
     created_at: previewCreatedAt,
   };
 
-  const estimateText = estimate.loading
-    ? t("dispatch.estimateLoading")
-    : estimate.count === null
-      ? ""
-      : t("dispatch.estimate", { count: estimate.count });
+  const count = (value: number) => formatNumberLocalized(value, { language });
+  const counter = (value: string | undefined, max: number) =>
+    t("dispatch.counter", { count: count(value?.length ?? 0), max: count(max) });
+
+  const recipientsError =
+    errors.recipient_id?.message ?? errors.recipient_ids?.message ?? errors.roles?.message;
 
   return (
-    <form
-      noValidate
-      onSubmit={handleSubmit(onValid)}
-      className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,380px)]"
-    >
-      <div className="flex min-w-0 flex-col gap-4">
-        <Section title={t("dispatch.sectionRecipients")}>
-          <Controller
-            control={control}
-            name="mode"
-            render={({ field }) => (
-              <div role="radiogroup" aria-label={t("dispatch.sectionRecipients")} className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {MODES.map((mode) => (
-                  <button
-                    key={mode}
-                    type="button"
-                    role="radio"
-                    aria-checked={field.value === mode}
-                    disabled={locked}
-                    onClick={() => field.onChange(mode)}
-                    className={`min-w-0 rounded-xl border px-3 py-2 text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
-                      field.value === mode
-                        ? "border-main bg-main text-white"
-                        : "border-[color:var(--color-border-strong)] text-maindark hover:bg-main/10 dark:border-white/20 dark:text-white"
-                    }`}
-                  >
-                    {t(`dispatch.mode.${mode}`)}
-                  </button>
-                ))}
-              </div>
-            )}
-          />
-
-          {values.mode === "single" && (
+    <>
+      <form
+        noValidate
+        aria-label={t("dispatch.formLabel")}
+        onSubmit={handleSubmit(onValid)}
+        className="flex min-w-0 flex-wrap items-start gap-6 max-md:gap-4"
+      >
+        <div className="flex min-w-0 flex-[1_1_600px] flex-col gap-6 max-md:gap-4">
+          <Card title={t("dispatch.sectionRecipients")} bodyClassName="flex flex-col gap-4">
             <Controller
               control={control}
-              name="recipient_id"
+              name="mode"
               render={({ field }) => (
-                <Select
-                  showSearch={{ filterOption: false, searchValue: search, onSearch: (value) => { setSearch(value); updateSearch(value); } }}
-                  allowClear
-                  aria-label={t("dispatch.mode.single")}
-                  placeholder={t("dispatch.recipientPlaceholder")}
-                  value={field.value || undefined}
-                  onChange={(value?: string) => {
-                    field.onChange(value ?? "");
-                    rememberUsers(value ? [value] : []);
-                  }}
-                  options={userOptions}
-                  loading={recipientsQuery.isFetching}
-                  status={errors.recipient_id ? "error" : undefined}
-                  disabled={locked}
-                  className="w-full"
-                />
-              )}
-            />
-          )}
-          {values.mode === "list" && (
-            <Controller
-              control={control}
-              name="recipient_ids"
-              render={({ field }) => (
-                <Select
-                  mode="multiple"
-                  showSearch={{ filterOption: false, searchValue: search, onSearch: (value) => { setSearch(value); updateSearch(value); } }}
-                  aria-label={t("dispatch.mode.list")}
-                  placeholder={t("dispatch.recipientsPlaceholder")}
+                <SegmentedControl
+                  ariaLabel={t("dispatch.modeLabel")}
                   value={field.value}
-                  onChange={(value: string[]) => {
-                    field.onChange(value);
-                    rememberUsers(value);
+                  onValueChange={(mode) => {
+                    if (!locked) field.onChange(mode);
                   }}
-                  options={userOptions}
-                  loading={recipientsQuery.isFetching}
-                  status={errors.recipient_ids ? "error" : undefined}
-                  disabled={locked}
-                  className="w-full"
+                  fullWidth
+                  className="max-md:flex-wrap max-md:[&>button]:basis-[calc(50%-1px)]"
+                  options={MODES.map((mode) => ({
+                    value: mode,
+                    label: t(`dispatch.mode.${mode}`),
+                    disabled: locked,
+                  }))}
                 />
               )}
             />
-          )}
-          {values.mode === "roles" && (
-            <Controller
-              control={control}
-              name="roles"
-              render={({ field }) => (
-                <div role="group" aria-label={t("dispatch.rolesLabel")} className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {DISPATCH_ROLES.map((role) => (
-                    <Checkbox
-                      key={role}
-                      checked={field.value.includes(role)}
-                      disabled={locked}
-                      onChange={(event) =>
-                        field.onChange(
-                          event.target.checked ? [...field.value, role] : field.value.filter((item) => item !== role),
-                        )
-                      }
-                    >
-                      {tUsers(ROLE_LABEL_KEYS[role])}
-                    </Checkbox>
-                  ))}
-                  {DISABLED_DISPATCH_ROLES.map((role) => (
-                    <Tooltip key={role} title={t("dispatch.customerDisabled")}>
-                      <span>
-                        <Checkbox disabled checked={false}>
-                          {tUsers(ROLE_LABEL_KEYS[role])}
-                        </Checkbox>
-                      </span>
-                    </Tooltip>
-                  ))}
-                </div>
-              )}
-            />
-          )}
-          {values.mode === "all" && <Alert type="warning" showIcon title={t("dispatch.allHint")} />}
 
-          <FieldError message={errors.recipient_id?.message ?? errors.recipient_ids?.message ?? errors.roles?.message} />
-          {estimateText ? (
-            <p data-testid="recipient-estimate" className="m-0 text-sm font-semibold text-main dark:text-violet-200">
-              {estimateText}
-            </p>
-          ) : null}
-        </Section>
+            {values.mode === "single" ? (
+              <Field
+                label={t("dispatch.mode.single")}
+                labelAs="span"
+                hideLabel
+                error={errors.recipient_id?.message}
+              >
+                <Controller
+                  control={control}
+                  name="recipient_id"
+                  render={({ field }) => (
+                    <Select
+                      {...searchProps}
+                      clearable
+                      placeholder={t("dispatch.recipientPlaceholder")}
+                      options={userOptions}
+                      value={field.value || null}
+                      onChange={(value) => {
+                        field.onChange(value ?? "");
+                        if (value) rememberUser(value);
+                      }}
+                    />
+                  )}
+                />
+              </Field>
+            ) : null}
 
-        <Section title={t("dispatch.sectionChannels")}>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <Tooltip title={t("dispatch.inAppAlways")}>
-              <span>
-                <Checkbox checked disabled>
-                  {t("dispatch.channel.in_app")}
-                </Checkbox>
-              </span>
-            </Tooltip>
-            <Controller
-              control={control}
-              name="realtime"
-              render={({ field }) => (
-                <Checkbox checked={field.value} disabled={locked} onChange={(event) => field.onChange(event.target.checked)}>
-                  {t("dispatch.channel.realtime")}
-                </Checkbox>
-              )}
-            />
-            <Controller
-              control={control}
-              name="telegram"
-              render={({ field }) => (
-                <Checkbox checked={field.value} disabled={locked} onChange={(event) => field.onChange(event.target.checked)}>
-                  {t("dispatch.channel.telegram")}
-                </Checkbox>
-              )}
-            />
-            {(["sms", "push"] as const).map((channel) => (
+            {values.mode === "list" ? (
               <Controller
-                key={channel}
                 control={control}
-                name={channel}
+                name="recipient_ids"
                 render={({ field }) => (
-                  <Checkbox checked={field.value} disabled={locked} onChange={(event) => field.onChange(event.target.checked)}>
-                    {t(`dispatch.channel.${channel}`)}
-                  </Checkbox>
+                  <div className="flex min-w-0 flex-col gap-3">
+                    <Field
+                      label={t("dispatch.mode.list")}
+                      labelAs="span"
+                      hideLabel
+                      error={errors.recipient_ids?.message}
+                    >
+                      <Select
+                        {...searchProps}
+                        placeholder={t("dispatch.recipientsPlaceholder")}
+                        options={userOptions.filter(
+                          (option) => !field.value.includes(option.value),
+                        )}
+                        value={null}
+                        onChange={(value) => {
+                          if (!value || field.value.includes(value)) return;
+                          rememberUser(value);
+                          field.onChange([...field.value, value]);
+                        }}
+                      />
+                    </Field>
+                    {field.value.length ? (
+                      <ul
+                        aria-label={t("dispatch.recipientsSelected")}
+                        className="m-0 flex list-none flex-wrap gap-2 p-0"
+                      >
+                        {field.value.map((id) => {
+                          const name = selectedUsers[id]?.name ?? `#${id}`;
+                          return (
+                            <li
+                              key={id}
+                              className="inline-flex min-w-0 max-w-full items-center gap-1 rounded-lg bg-sunken py-0.5 pr-0.5 pl-2.5 text-[13px] font-semibold text-text"
+                            >
+                              <span className="min-w-0 truncate">{name}</span>
+                              <IconButton
+                                size="sm"
+                                icon={X}
+                                label={t("dispatch.removeRecipient", { name })}
+                                disabled={locked}
+                                onClick={() =>
+                                  field.onChange(field.value.filter((item) => item !== id))
+                                }
+                              />
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    ) : null}
+                  </div>
                 )}
               />
-            ))}
-          </div>
-          {values.sms ? (
-            <p className="m-0 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-              {t("dispatch.smsHint")}
-            </p>
-          ) : null}
-          {values.telegram && (
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <FieldLabel>{t("dispatch.telegramMarket")}</FieldLabel>
+            ) : null}
+
+            {values.mode === "roles" ? (
               <Controller
                 control={control}
-                name="telegram_market_id"
+                name="roles"
                 render={({ field }) => (
-                  <Select
-                    showSearch={{ optionFilterProp: "label" }}
-                    aria-label={t("dispatch.telegramMarket")}
-                    placeholder={t("dispatch.telegramMarketPlaceholder")}
-                    value={field.value || undefined}
-                    onChange={(value?: string) => field.onChange(value ?? "")}
-                    options={markets.map((market) => ({ value: String(market.id), label: market.name ?? `#${market.id}` }))}
-                    loading={marketsQuery.isLoading}
-                    // Market ixtiyoriy (TgYRqaTk) — tanlovni bekor qilib shaxsiy chatga qaytish mumkin.
-                    allowClear
-                    disabled={locked}
-                    className="w-full"
+                  <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
+                    <legend className="mb-2 p-0 text-[13px] font-semibold text-text">
+                      {t("dispatch.rolesLabel")}
+                      <span aria-hidden="true" className="text-danger-fg">
+                        {" *"}
+                      </span>
+                    </legend>
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(min(140px,100%),1fr))] gap-2">
+                      {DISPATCH_ROLES.map((role) => (
+                        <ChoiceCheckbox
+                          key={role}
+                          checked={field.value.includes(role)}
+                          disabled={locked}
+                          label={roleLabel(role)}
+                          onChange={(checked) =>
+                            field.onChange(
+                              checked
+                                ? [...field.value, role]
+                                : field.value.filter((item) => item !== role),
+                            )
+                          }
+                        />
+                      ))}
+                      {DISABLED_DISPATCH_ROLES.map((role) => (
+                        <label key={role} className={cx(CHOICE_CARD, "text-text-subtle")}>
+                          <input
+                            type="checkbox"
+                            className={CHECKBOX}
+                            checked={false}
+                            disabled
+                            aria-describedby="dispatch-customer-hint"
+                            readOnly
+                          />
+                          <span className="min-w-0">{roleLabel(role)}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <span id="dispatch-customer-hint" className="text-xs text-text-muted">
+                      {t("dispatch.customerDisabled")}
+                    </span>
+                  </fieldset>
+                )}
+              />
+            ) : null}
+
+            {values.mode === "all" ? (
+              <NoticeAlert tone="warning">{t("dispatch.allHint")}</NoticeAlert>
+            ) : null}
+
+            {values.mode === "roles" && recipientsError ? (
+              <p role="alert" className="m-0 text-xs font-semibold text-danger-fg">
+                {recipientsError}
+              </p>
+            ) : null}
+
+            {estimate.loading || estimate.count !== null ? (
+              <NoticeAlert tone="neutral" icon={Users} data-testid="recipient-estimate">
+                {estimate.loading ? (
+                  t("dispatch.estimateLoading")
+                ) : (
+                  <Trans
+                    t={t}
+                    i18nKey="dispatch.estimate"
+                    values={{ value: count(estimate.count ?? 0) }}
+                    components={{ b: <span className="font-semibold text-text" /> }}
                   />
                 )}
-              />
-              <p className="m-0 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                {t("dispatch.telegramHint")}
-              </p>
-            </div>
-          )}
-        </Section>
+              </NoticeAlert>
+            ) : null}
+          </Card>
 
-        <Section title={t("dispatch.sectionContent")}>
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <FieldLabel htmlFor="dispatch-title">{t("dispatch.title")}</FieldLabel>
+          <Card title={t("dispatch.sectionChannels")} bodyClassName="flex flex-col gap-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(max(220px,34%),100%),1fr))] gap-2">
+              <ChoiceCheckbox
+                checked
+                disabled
+                label={t("dispatch.channel.in_app")}
+                hint={t("dispatch.inAppAlways")}
+                hintId="dispatch-inapp-hint"
+                className="col-span-full"
+              />
+              {(["realtime", "telegram", "sms", "push"] as const).map((channel) => (
+                <Controller
+                  key={channel}
+                  control={control}
+                  name={channel}
+                  render={({ field }) => (
+                    <ChoiceCheckbox
+                      checked={field.value}
+                      disabled={locked}
+                      label={t(`dispatch.channel.${channel}`)}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+              ))}
+            </div>
+
+            {values.sms ? (
+              <NoticeAlert tone="warning" role="note">
+                {t("dispatch.smsHint")}
+              </NoticeAlert>
+            ) : null}
+
+            {values.telegram ? (
+              // Market ixtiyoriy (TgYRqaTk): tanlanmasa Telegram har qabul qiluvchining shaxsiy chatiga ketadi.
+              <Field
+                label={t("dispatch.telegramMarket")}
+                labelAs="span"
+                hint={t("dispatch.telegramHint")}
+              >
+                <Controller
+                  control={control}
+                  name="telegram_market_id"
+                  render={({ field }) => (
+                    <Select
+                      searchable={markets.length > 8}
+                      placeholder={t("dispatch.telegramMarketPlaceholder")}
+                      options={markets.map((market) => ({
+                        value: String(market.id),
+                        label: market.name ?? `#${market.id}`,
+                      }))}
+                      value={field.value || null}
+                      onChange={(value) => field.onChange(value ?? "")}
+                      clearable
+                      loading={marketsQuery.isLoading}
+                      disabled={locked}
+                    />
+                  )}
+                />
+              </Field>
+            ) : null}
+          </Card>
+        </div>
+
+        <div className="flex min-w-0 flex-[1_1_400px] flex-col gap-6 max-md:gap-4">
+          <Card title={t("dispatch.sectionContent")} bodyClassName="flex flex-col gap-4">
             <Controller
               control={control}
               name="title"
               render={({ field }) => (
-                <Input
-                  {...field}
-                  id="dispatch-title"
-                  placeholder={t("dispatch.titlePlaceholder")}
-                  count={{ show: true, max: DISPATCH_LIMITS.title }}
-                  status={errors.title ? "error" : undefined}
-                  disabled={locked}
-                />
+                <Field
+                  label={t("dispatch.title")}
+                  required
+                  hintLive
+                  hint={
+                    <span className="block text-right text-text-subtle tabular-nums">
+                      {counter(field.value, DISPATCH_LIMITS.title)}
+                    </span>
+                  }
+                  error={errors.title?.message}
+                >
+                  <TextInput
+                    name={field.name}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                    ref={field.ref}
+                    placeholder={t("dispatch.titlePlaceholder")}
+                    maxLength={DISPATCH_LIMITS.title}
+                    disabled={locked}
+                  />
+                </Field>
               )}
             />
-            <FieldError message={errors.title?.message} />
-          </div>
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <FieldLabel htmlFor="dispatch-body">{t("dispatch.body")}</FieldLabel>
             <Controller
               control={control}
               name="body"
               render={({ field }) => (
-                <Input.TextArea
-                  {...field}
-                  id="dispatch-body"
-                  rows={5}
-                  placeholder={t("dispatch.bodyPlaceholder")}
-                  count={{ show: true, max: DISPATCH_LIMITS.body }}
-                  status={errors.body ? "error" : undefined}
-                  disabled={locked}
-                />
+                <Field
+                  label={t("dispatch.body")}
+                  hintLive
+                  hint={
+                    <span className="block text-right text-text-subtle tabular-nums">
+                      {counter(field.value, DISPATCH_LIMITS.body)}
+                    </span>
+                  }
+                  error={errors.body?.message}
+                >
+                  <TextInput
+                    multiline
+                    rows={4}
+                    name={field.name}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder={t("dispatch.bodyPlaceholder")}
+                    maxLength={DISPATCH_LIMITS.body}
+                    disabled={locked}
+                  />
+                </Field>
               )}
             />
-            <FieldError message={errors.body?.message} />
-          </div>
-          <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2">
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <FieldLabel>{t("dispatch.category")}</FieldLabel>
-              <Controller
-                control={control}
-                name="category"
-                render={({ field }) => (
-                  <Select
-                    aria-label={t("dispatch.category")}
-                    value={field.value}
-                    onChange={field.onChange}
-                    options={NOTIFICATION_CATEGORIES.map((category) => ({ value: category, label: t(`category.${category}`) }))}
-                    disabled={locked}
-                    className="w-full"
-                  />
-                )}
-              />
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(140px,100%),1fr))] gap-4">
+              <Field label={t("dispatch.category")} labelAs="span">
+                <Controller
+                  control={control}
+                  name="category"
+                  render={({ field }) => (
+                    <Select
+                      options={NOTIFICATION_CATEGORIES.map((category) => ({
+                        value: category,
+                        label: t(`category.${category}`),
+                      }))}
+                      value={field.value}
+                      onChange={(value) => {
+                        if (value) field.onChange(value);
+                      }}
+                      disabled={locked}
+                    />
+                  )}
+                />
+              </Field>
+              <Field label={t("dispatch.priority")} labelAs="span">
+                <Controller
+                  control={control}
+                  name="priority"
+                  render={({ field }) => (
+                    <Select
+                      options={NOTIFICATION_PRIORITIES.map((priority) => ({
+                        value: priority,
+                        label: t(`priority.${priority}`),
+                      }))}
+                      value={field.value}
+                      onChange={(value) => {
+                        if (value) field.onChange(value);
+                      }}
+                      disabled={locked}
+                    />
+                  )}
+                />
+              </Field>
             </div>
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <FieldLabel>{t("dispatch.priority")}</FieldLabel>
-              <Controller
-                control={control}
-                name="priority"
-                render={({ field }) => (
-                  <Select
-                    aria-label={t("dispatch.priority")}
-                    value={field.value}
-                    onChange={field.onChange}
-                    options={NOTIFICATION_PRIORITIES.map((priority) => ({ value: priority, label: t(`priority.${priority}`) }))}
-                    disabled={locked}
-                    className="w-full"
-                  />
-                )}
-              />
-            </div>
-          </div>
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <FieldLabel htmlFor="dispatch-link">{t("dispatch.link")}</FieldLabel>
             <Controller
               control={control}
               name="link"
               render={({ field }) => (
-                <Input
-                  {...field}
-                  id="dispatch-link"
-                  placeholder={t("dispatch.linkPlaceholder")}
-                  status={errors.link ? "error" : undefined}
-                  disabled={locked}
-                />
+                <Field label={t("dispatch.link")} error={errors.link?.message}>
+                  <TextInput
+                    name={field.name}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                    placeholder={t("dispatch.linkPlaceholder")}
+                    maxLength={DISPATCH_LIMITS.link}
+                    disabled={locked}
+                  />
+                </Field>
               )}
             />
-            <FieldError message={errors.link?.message} />
-          </div>
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <FieldLabel htmlFor="dispatch-group-key">{t("dispatch.groupKey")}</FieldLabel>
             <Controller
               control={control}
               name="group_key"
               render={({ field }) => (
-                <Input
-                  {...field}
-                  id="dispatch-group-key"
-                  status={errors.group_key ? "error" : undefined}
-                  disabled={locked}
-                />
+                <Field
+                  label={t("dispatch.groupKey")}
+                  required
+                  hint={t("dispatch.groupKeyHint")}
+                  error={errors.group_key?.message}
+                >
+                  <TextInput
+                    name={field.name}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    onBlur={field.onBlur}
+                    maxLength={DISPATCH_LIMITS.groupKey}
+                    disabled={locked}
+                  />
+                </Field>
               )}
             />
-            <p className="m-0 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-              {t("dispatch.groupKeyHint")}
-            </p>
-            <FieldError message={errors.group_key?.message} />
-          </div>
-        </Section>
-      </div>
+          </Card>
 
-      {/* Telefonda matn tagida, desktopda o'ng ustunda. */}
-      <aside
-        aria-label={t("dispatch.sectionPreview")}
-        className="min-w-0 lg:col-start-2 lg:row-span-2 lg:row-start-1"
-      >
-        <div className="flex flex-col gap-3 lg:sticky lg:top-4">
-          <h3 className="m-0 text-sm font-black uppercase tracking-wide text-maindark dark:text-white">
-            {t("dispatch.sectionPreview")}
-          </h3>
-          <div data-testid="dispatch-preview">{renderPreview(previewNotification)}</div>
-        </div>
-      </aside>
+          <Card title={t("dispatch.sectionPreview")} bodyClassName="flex flex-col gap-4">
+            <div data-testid="dispatch-preview">{renderPreview(previewNotification)}</div>
 
-      <div className="flex min-w-0 flex-col gap-3">
-        {result ? (
-          <Alert
-            type="success"
-            showIcon
-            title={t("dispatch.sent", { count: result.dispatched })}
-            description={result.channels.length ? t("dispatch.sentChannels", { channels: channelLabels(result.channels) }) : undefined}
-          />
-        ) : null}
-        {unknownOutcome ? <Alert type="warning" showIcon title={t("dispatch.unknownOutcome")} /> : null}
-        {sendError ? <Alert type="error" showIcon title={sendError} /> : null}
+            {result ? (
+              <NoticeAlert tone="success" title={t("dispatch.sent", { count: result.dispatched })}>
+                {result.channels.length
+                  ? t("dispatch.sentChannels", { channels: channelLabels(result.channels) })
+                  : null}
+              </NoticeAlert>
+            ) : null}
+            {unknownOutcome ? (
+              <NoticeAlert tone="warning">{t("dispatch.unknownOutcome")}</NoticeAlert>
+            ) : null}
+            {sendError ? <NoticeAlert tone="danger">{sendError}</NoticeAlert> : null}
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="primary"
-            htmlType="submit"
-            icon={<Send size={16} />}
-            loading={dispatchMutation.isPending}
-            disabled={locked || dispatchMutation.isPending}
-            className="h-11 rounded-xl px-6 font-bold"
-          >
-            {t("dispatch.send")}
-          </Button>
-          {locked ? (
-            <Button htmlType="button" onClick={startNewMessage} className="h-11 rounded-xl px-5 font-semibold">
-              {t("dispatch.newMessage")}
+            <Button
+              type="submit"
+              size="lg"
+              fullWidth
+              leftIcon={Send}
+              loading={dispatchMutation.isPending}
+              disabled={locked}
+            >
+              {t("dispatch.send")}
             </Button>
-          ) : null}
+            {locked ? (
+              <Button variant="secondary" fullWidth onClick={startNewMessage}>
+                {t("dispatch.newMessage")}
+              </Button>
+            ) : null}
+          </Card>
         </div>
-      </div>
+      </form>
 
-      <Modal
+      {/* Tasdiq oynasi (maket `superadmin-notifications-send-confirm-dialog`): `alertdialog`, fokus «Bekor qilish» da,
+          yuborilayotganda yopilmaydi; «Hamma» — qizil ogohlantirish va qizil tugma. */}
+      <Dialog
         open={Boolean(confirmPayload)}
-        title={t("dispatch.confirmTitle")}
-        onCancel={() => {
+        onClose={() => {
           if (!dispatchMutation.isPending) setConfirmPayload(null);
         }}
-        onOk={confirmSend}
-        okText={t("dispatch.confirmSend")}
-        cancelText={t("dispatch.cancel")}
-        confirmLoading={dispatchMutation.isPending}
-        okButtonProps={{ danger: Boolean(confirmPayload?.broadcast) }}
-        cancelButtonProps={{ disabled: dispatchMutation.isPending }}
-        maskClosable={false}
-        destroyOnHidden
+        role="alertdialog"
+        title={t("dispatch.confirmTitle")}
+        icon={Send}
+        size="md"
+        busy={dispatchMutation.isPending}
+        initialFocus={cancelRef}
+        footer={
+          <>
+            <Button
+              ref={cancelRef}
+              variant="secondary"
+              disabled={dispatchMutation.isPending}
+              onClick={() => setConfirmPayload(null)}
+            >
+              {t("dispatch.cancel")}
+            </Button>
+            <Button
+              variant={confirmPayload?.broadcast ? "danger" : "primary"}
+              leftIcon={Send}
+              loading={dispatchMutation.isPending}
+              loadingText={t("dispatch.confirmSending")}
+              onClick={confirmSend}
+            >
+              {t("dispatch.confirmSend")}
+            </Button>
+          </>
+        }
       >
         {confirmPayload ? (
-          <div className="flex flex-col gap-3" data-testid="dispatch-confirm">
-            {confirmPayload.broadcast ? <Alert type="error" showIcon title={t("dispatch.confirmBroadcast")} /> : null}
-            <dl className="m-0 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1.5 text-sm">
-              <dt className="font-bold">{t("dispatch.confirmRecipients")}</dt>
-              <dd className="m-0 break-words">{recipientSummary(confirmPayload)}</dd>
-              <dt className="font-bold">{t("dispatch.confirmCount")}</dt>
-              <dd className="m-0" data-testid="confirm-count">
-                {estimate.count === null ? "…" : t("dispatch.confirmCountValue", { count: estimate.count })}
-              </dd>
-              <dt className="font-bold">{t("dispatch.confirmChannels")}</dt>
-              <dd className="m-0">{channelLabels(confirmPayload.channels)}</dd>
+          <div className="flex min-w-0 flex-col gap-4 text-sm" data-testid="dispatch-confirm">
+            {confirmPayload.broadcast ? (
+              <NoticeAlert
+                tone="danger"
+                role="alert"
+                icon={TriangleAlert}
+                title={t("dispatch.confirmBroadcast")}
+              />
+            ) : null}
+            <dl className="m-0 flex min-w-0 flex-col rounded-xl bg-sunken px-4 py-1">
+              {[
+                {
+                  label: t("dispatch.confirmRecipients"),
+                  value: (
+                    <span className="[overflow-wrap:anywhere]">
+                      {recipientSummary(confirmPayload)}
+                    </span>
+                  ),
+                },
+                {
+                  label: t("dispatch.confirmCount"),
+                  value: (
+                    <span data-testid="confirm-count">
+                      {estimate.count === null
+                        ? "…"
+                        : t("dispatch.confirmCountValue", { value: count(estimate.count) })}
+                    </span>
+                  ),
+                },
+                {
+                  label: t("dispatch.confirmChannels"),
+                  value: channelLabels(confirmPayload.channels),
+                },
+              ].map((row, index) => (
+                <div
+                  key={index}
+                  className={cx(
+                    "flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 py-2",
+                    index > 0 && "border-t border-border",
+                  )}
+                >
+                  <dt className="min-w-0 text-text-muted">{row.label}</dt>
+                  <dd className="m-0 ml-auto text-right font-semibold text-text">{row.value}</dd>
+                </div>
+              ))}
             </dl>
-            <div>
-              <p className="m-0 mb-1 text-sm font-bold">{t("dispatch.confirmMessage")}</p>
-              <div className="max-h-60 overflow-y-auto rounded-xl border border-[color:var(--color-border-soft)] p-3 dark:border-white/10">
-                <p className="m-0 font-bold break-words" data-testid="confirm-title">{confirmPayload.title}</p>
+            <div className="flex min-w-0 flex-col gap-2">
+              <span className="text-[13px] font-semibold text-text">
+                {t("dispatch.confirmMessage")}
+              </span>
+              <div className="flex max-h-60 min-w-0 flex-col gap-1 overflow-y-auto rounded-xl bg-sunken px-4 py-3">
+                <p
+                  className="m-0 font-semibold text-text [overflow-wrap:anywhere]"
+                  data-testid="confirm-title"
+                >
+                  {confirmPayload.title}
+                </p>
                 {confirmPayload.body ? (
-                  <p className="m-0 mt-1 whitespace-pre-wrap break-words" data-testid="confirm-body">
+                  <p
+                    className="m-0 text-[13px] whitespace-pre-wrap text-text-muted [overflow-wrap:anywhere]"
+                    data-testid="confirm-body"
+                  >
                     {confirmPayload.body}
                   </p>
                 ) : null}
-                {confirmPayload.link ? <p className="m-0 mt-1 text-xs text-main break-all">{confirmPayload.link}</p> : null}
+                {confirmPayload.link ? (
+                  <p className="m-0 text-[13px] break-all text-action-fg">{confirmPayload.link}</p>
+                ) : null}
               </div>
             </div>
-            <p className="m-0 text-sm font-semibold text-red-500">{t("dispatch.confirmIrreversible")}</p>
+            <p className="m-0 text-[13px] font-semibold text-text">
+              {t("dispatch.confirmIrreversible")}
+            </p>
           </div>
         ) : null}
-      </Modal>
-    </form>
+      </Dialog>
+    </>
   );
 };
 

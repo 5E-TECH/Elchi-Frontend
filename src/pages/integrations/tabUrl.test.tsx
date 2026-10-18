@@ -91,6 +91,17 @@ describe("Ulanish paneli — tab URL'da", () => {
     return match;
   };
 
+  /**
+   * Panel tabi — dizayn v2 `Tabs` (`role="tab"` + `aria-selected`). Ilgari v1 sub-nav tugmasi
+   * `aria-current` bilan belgilanardi; holat atributi primitivniki, xulq (URL ↔ tab) o'sha.
+   */
+  const panelTab = (label: RegExp) => {
+    const tabs = Array.from(document.querySelectorAll<HTMLElement>('[role="tab"]'));
+    const match = tabs.find((el) => label.test(el.textContent ?? ""));
+    if (!match) throw new Error(`"${label}" uchun tab topilmadi`);
+    return match;
+  };
+
   it("⭐ URL'dagi tab OCHILADI (havola ishlaydi)", async () => {
     /**
      * Eng muhim tekshiruv: `?t=security` bilan kelgan havola to'g'ridan-
@@ -99,21 +110,21 @@ describe("Ulanish paneli — tab URL'da", () => {
      */
     open("/integrations/connections?c=partner:7&t=security");
 
-    await waitFor(() => expect(tabButton(/Xavfsizlik/i)).toHaveAttribute("aria-current", "true"));
+    await waitFor(() => expect(panelTab(/Xavfsizlik/i)).toHaveAttribute("aria-selected", "true"));
   });
 
   it("sukut bo'yicha 'Umumiy holat' ochiladi", async () => {
     open("/integrations/connections?c=partner:7");
 
-    await waitFor(() => expect(tabButton(/Umumiy holat/i)).toHaveAttribute("aria-current", "true"));
+    await waitFor(() => expect(panelTab(/Umumiy holat/i)).toHaveAttribute("aria-selected", "true"));
   });
 
   it("⭐ tab bosilganda URL O'ZGARADI", async () => {
     const user = userEvent.setup();
     open("/integrations/connections?c=partner:7");
 
-    await waitFor(() => expect(tabButton(/Xavfsizlik/i)).toBeTruthy());
-    await user.click(tabButton(/Xavfsizlik/i));
+    await waitFor(() => expect(panelTab(/Xavfsizlik/i)).toBeTruthy());
+    await user.click(panelTab(/Xavfsizlik/i));
 
     // URL — yagona haqiqat manbai; holat undan o'qiladi.
     await waitFor(() => expect(currentSearch()).toContain("t=security"));
@@ -127,7 +138,7 @@ describe("Ulanish paneli — tab URL'da", () => {
      */
     open("/integrations/connections?c=partner:7&t=allaqanday-yoq-tab");
 
-    await waitFor(() => expect(tabButton(/Umumiy holat/i)).toHaveAttribute("aria-current", "true"));
+    await waitFor(() => expect(panelTab(/Umumiy holat/i)).toHaveAttribute("aria-selected", "true"));
   });
 
   it("⭐ boshqa ulanishga o'tganda tab BIRINCHISIGA qaytadi", async () => {
@@ -141,7 +152,7 @@ describe("Ulanish paneli — tab URL'da", () => {
      */
     open("/integrations/connections?c=partner:7&t=security");
 
-    await waitFor(() => expect(tabButton(/Xavfsizlik/i)).toHaveAttribute("aria-current", "true"));
+    await waitFor(() => expect(panelTab(/Xavfsizlik/i)).toHaveAttribute("aria-selected", "true"));
 
     // Chipni bosish — ro'yxatda bitta ulanish bor, shu bois o'zini bosamiz.
     const user = userEvent.setup();
@@ -169,10 +180,10 @@ describe("Ulanish paneli — tab URL'da", () => {
     fireEvent.click(overviewTile("Jami")!);
 
     await waitFor(() => expect(currentSearch()).toContain("t=shipments"));
-    await waitFor(() => expect(tabButton(/Posilkalar/i)).toHaveAttribute("aria-current", "true"));
+    await waitFor(() => expect(panelTab(/Posilkalar/i)).toHaveAttribute("aria-selected", "true"));
   });
 
-  it("⭐ mavjud fixTab havolalari ishlaydi: banner \"Tuzatish\" va checklist qatori", async () => {
+  it("⭐ mavjud fixTab havolalari ishlaydi: yetishmagan qator tugmasi va ixtiyoriy qator havolasi", async () => {
     apiGetMock.mockImplementation((url: string) =>
       Promise.resolve(
         String(url).includes("partners")
@@ -182,14 +193,16 @@ describe("Ulanish paneli — tab URL'da", () => {
     );
     open("/integrations/connections?c=partner:7");
 
-    const actions = await screen.findByTestId("ovw-actions");
-    fireEvent.click(within(actions).getByText("Tuzatish").closest("button")!);
+    // Majburiy yetishmagan qator (webhook manzili) — aniq fe'lli tugma Sozlamalarga olib boradi.
+    const checklist = await screen.findByTestId("ovw-checklist");
+    fireEvent.click(within(checklist).getByText("Webhook manzilini kiritish").closest("button")!);
     await waitFor(() => expect(currentSearch()).toContain("t=settings"));
 
-    // Checklist qatori (yetishmagan webhook manzili) — u ham Sozlamalarga olib boradi.
-    fireEvent.click(tabButton(/Umumiy holat/i));
+    // Ixtiyoriy qator (sinov rejimi) — «Sozlamalar → Sinov rejimi» havolasi ham Sozlamalarga.
+    fireEvent.click(panelTab(/Umumiy holat/i));
     await waitFor(() => expect(currentSearch()).toContain("t=overview"));
-    fireEvent.click(tabButton(/Webhook manzili/i));
+    const again = await screen.findByTestId("ovw-checklist");
+    fireEvent.click(within(again).getByText(/Sozlamalar → Sinov rejimi/).closest("button")!);
     await waitFor(() => expect(currentSearch()).toContain("t=settings"));
   });
 

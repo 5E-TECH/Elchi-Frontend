@@ -6,7 +6,7 @@ import { renderWithProviders } from "../../../test/test-utils";
 import { useUser } from "../../../entities/user/api/userApi";
 import type { User, UserRole } from "../../../entities/user/types/user";
 import { MarketTelegramGroupPiiCard } from "./MarketTelegramGroupPiiCard";
-import { UserDetailWidget } from "./UserDetailWidget";
+import { UserDetailView } from "./UserDetailView";
 
 /**
  * ysBqD9Nx — «Guruhda mijoz ismi va telefoni» kaliti (`tg_group_show_customer_pii`).
@@ -186,33 +186,30 @@ describe("MarketTelegramGroupPiiCard", () => {
   });
 });
 
-describe("UserDetailWidget — Telegram group PII card", () => {
-  const renderWidget = (user: User, viewerRole: string, isOwnProfile = false) =>
-    renderWithProviders(
-      <UserDetailWidget user={user} isLoading={false} isError={false} isOwnProfile={isOwnProfile} />,
-      { preloadedState: viewer(viewerRole) },
-    );
+// Eski `UserDetailWidget` o'chirildi: kalit jonli `/all-users/:id` (`UserDetailView`, «Ruxsatlar» qatori) va
+// `/profile` (`ProfilePage` → shu karta; testi `src/pages/profile/ui/ProfilePage.test.tsx`) da.
+describe("UserDetailView — Telegram group PII switch", () => {
+  const renderView = (user: User, viewerRole: string, viewerId?: string) =>
+    renderWithProviders(<UserDetailView user={user} />, { preloadedState: viewer(viewerRole, viewerId) });
 
   it("is shown for a market user", () => {
-    renderWidget(makeUser("market", { tg_group_show_customer_pii: false }), "admin");
+    renderView(makeUser("market", { tg_group_show_customer_pii: false }), "admin");
 
-    expect(screen.getByTestId("market-tg-group-pii-card")).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "Guruhda mijoz ismi va telefoni" })).toHaveAttribute(
       "aria-checked",
       "false",
     );
   });
 
-  it("is shown on the market's own profile", () => {
-    renderWidget(makeUser("market"), "market", true);
+  it("is enabled on the market's own user record", () => {
+    renderView(makeUser("market"), "market", "201");
 
     expect(screen.getByRole("switch", { name: "Guruhda mijoz ismi va telefoni" })).toBeEnabled();
   });
 
   it.each<UserRole>(["courier", "manager", "admin", "registrator"])("is not shown for a %s user", (role) => {
-    renderWidget(makeUser(role), "superadmin");
+    renderView(makeUser(role), "superadmin");
 
-    expect(screen.queryByTestId("market-tg-group-pii-card")).not.toBeInTheDocument();
     expect(screen.queryByRole("switch", { name: "Guruhda mijoz ismi va telefoni" })).not.toBeInTheDocument();
   });
 });

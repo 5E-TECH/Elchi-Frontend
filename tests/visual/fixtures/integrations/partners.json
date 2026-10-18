@@ -1,0 +1,44 @@
+{
+  "statusCode": 200,
+  "message": "ok",
+  "data": [
+    {
+      "id": "1",
+      "name": "BeePost",
+      "webhook_url": null,
+      "is_active": true,
+      "createdAt": "2026-10-15T03:30:00.000Z"
+    },
+    {
+      "id": "2",
+      "name": "Baraka Shop",
+      "webhook_url": "https://barakashop.example/elchi/status",
+      "is_active": true,
+      "createdAt": "2026-06-02T07:00:00.000Z"
+    },
+    {
+      "id": "3",
+      "name": "Chilonzor Market",
+      "webhook_url": "https://chilonzor-market.example/webhook",
+      "is_active": false,
+      "createdAt": "2026-04-11T07:00:00.000Z"
+    },
+    {
+      "id": "4",
+      "name": "Ipak Yo'li Savdo",
+      "webhook_url": "https://ipak-yoli-savdo.example/api/elchi",
+      "is_active": true,
+      "createdAt": "2026-03-20T07:00:00.000Z"
+    },
+    {
+      "id": "5",
+      "name": "Nur Elektronika",
+      "webhook_url": "https://nur-elektronika.example/hooks/elchi",
+      "sandbox_webhook_url": "https://sandbox.nur-elektronika.example/hooks/elchi",
+      "sandbox_enabled": true,
+      "has_sandbox_secret": true,
+      "is_active": true,
+      "createdAt": "2026-08-14T07:00:00.000Z"
+    }
+  ]
+}

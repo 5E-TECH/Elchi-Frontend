@@ -28,7 +28,7 @@
 - [ ] Eski sahifada: tegilgan qism v2 da, eski uslub kengaytirilmagan
 - [ ] Dizayn qo'riqchisi yashil (`npm test` + `npm run design:guard -- --diff`), baseline oshirilmagan, sababsiz `design-guard-ignore` yo'q
 - [ ] Eski fayl tozalangan bo'lsa, yangi son qotirilgan (`npm run design:guard -- --update`)
-- [ ] «Visual» (GitHub Actions) yashil; farq kutilgan bo'lsa — «Actions → Visual → Run workflow» (update) bilan baseline yangilangan va diff (`visual-report`) ko'rib chiqilgan; «baseline yo'q» bo'lsa — yaratilgan (docs/DESIGN_SYSTEM.md §12.5)
+- [ ] «Visual» (GitHub Actions) yashil; farq kutilgan bo'lsa — «Actions → Visual → Run workflow» (update ✓) bilan baseline yangilangan va diff (`visual-report`) ko'rib chiqilgan; «baseline yo'q» bo'lsa — yaratilgan yoki `visual.yml` hali `dev` da emas (docs/DESIGN_SYSTEM.md §12.5)
 - [ ] Route qo'shilgan, o'chirilgan yoki sahifa v2 ga ko'chirilgan bo'lsa: `design/kit/route-map.json` yangilangan, `npm run design:screens` yurilgan
 
 ## Tekshiruv

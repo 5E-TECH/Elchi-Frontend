@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
+import type { Tone } from "../../shared/ui/primitives";
 
 /**
  * ONLAYN TO'LOV TRANZAKSIYALARI.
@@ -59,7 +61,7 @@ export const usePayments = (params: {
   unappliedOnly?: boolean;
   page?: number;
   limit?: number;
-}) =>
+}, options?: SilentErrorOption) =>
   useQuery({
     queryKey: [paymentsKey, params.integrationId, params.unappliedOnly, params.page, params.limit],
     enabled: Boolean(params.integrationId),
@@ -75,6 +77,7 @@ export const usePayments = (params: {
         })
         .then((res) => unwrap(res.data)),
     staleTime: 15_000,
+    ...silentErrorMeta(options),
   });
 
 /**
@@ -92,18 +95,20 @@ export const usePayments = (params: {
  * ⚠️ NOMA'LUM natija XOM qaytariladi (kalit sifatida emas). Yangi natija
  * qo'shilib tarjima yozilmasa, `t()` kalitning o'zini qaytaradi — ya'ni
  * operator hech bo'lmasa xom qiymatni ko'radi, bo'sh katak emas.
+ *
+ * Rang — v2 badge TONI (`StatusBadge tone`, `docs/DESIGN_SYSTEM.md` §8), antd Tag rang nomi emas.
  */
-export const paymentOutcome = (row: PaymentRow): { labelKey: string; color: string } => {
-  const MAP: Record<string, { labelKey: string; color: string }> = {
-    recorded: { labelKey: "poRecorded", color: "green" },
-    order_not_found: { labelKey: "poOrderNotFound", color: "red" },
-    order_ref_missing: { labelKey: "poRefMissing", color: "red" },
-    order_already_closed: { labelKey: "poOrderClosed", color: "red" },
-    amount_exceeds_total: { labelKey: "poAmountExceeds", color: "red" },
-    amount_invalid: { labelKey: "poAmountInvalid", color: "red" },
-    ignored_status: { labelKey: "poIgnoredStatus", color: "default" },
-    timeout: { labelKey: "poTimeout", color: "orange" },
-    error: { labelKey: "poError", color: "red" },
+export const paymentOutcome = (row: PaymentRow): { labelKey: string; tone: Tone } => {
+  const MAP: Record<string, { labelKey: string; tone: Tone }> = {
+    recorded: { labelKey: "poRecorded", tone: "success" },
+    order_not_found: { labelKey: "poOrderNotFound", tone: "danger" },
+    order_ref_missing: { labelKey: "poRefMissing", tone: "danger" },
+    order_already_closed: { labelKey: "poOrderClosed", tone: "danger" },
+    amount_exceeds_total: { labelKey: "poAmountExceeds", tone: "danger" },
+    amount_invalid: { labelKey: "poAmountInvalid", tone: "danger" },
+    ignored_status: { labelKey: "poIgnoredStatus", tone: "neutral" },
+    timeout: { labelKey: "poTimeout", tone: "warning" },
+    error: { labelKey: "poError", tone: "danger" },
   };
   if (row.apply_outcome && MAP[row.apply_outcome]) {
     return MAP[row.apply_outcome];
@@ -114,7 +119,7 @@ export const paymentOutcome = (row: PaymentRow): { labelKey: string; color: stri
    * neytral EMAS.
    */
   if (!row.apply_outcome) {
-    return { labelKey: "poInterrupted", color: "orange" };
+    return { labelKey: "poInterrupted", tone: "warning" };
   }
-  return { labelKey: row.apply_outcome, color: "red" };
+  return { labelKey: row.apply_outcome, tone: "danger" };
 };

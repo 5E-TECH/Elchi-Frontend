@@ -12,7 +12,7 @@ test.describe("Jonli bildirishnomalar — 390px", () => {
 
     dispatch({ id: "n-3", title: "Pochta keldi", body: "Pochta №2493 · Samarqand", category: "logistics", link: "/mails/today" });
 
-    const toast = page.getByRole("region", { name: "Bildirishnomalar" }).getByText("Pochta keldi", { exact: true });
+    const toast = page.getByRole("region", { name: "Bildirishnomalar", exact: true }).getByText("Pochta keldi", { exact: true });
     await expect(toast).toBeVisible();
     const toastBox = (await toast.boundingBox())!;
     const header = (await page.locator("header").first().boundingBox())!;

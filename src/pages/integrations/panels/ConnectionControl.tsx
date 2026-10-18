@@ -8,12 +8,12 @@ import {
   GitCompareArrows,
   History,
   Info,
-  LoaderCircle,
   Plug,
   Power,
   RefreshCw,
   Send,
   Webhook,
+  type LucideIcon,
 } from "lucide-react";
 import { usePartnerActions } from "../../../entities/partners";
 import { useGetIntegrationById, useReconcileNow, useUpdateIntegration } from "../../../entities/integrations";
@@ -25,6 +25,7 @@ import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { useFocusTrap } from "../../../shared/lib/useFocusTrap";
 import type { Connection } from "../useConnections";
 import { notify } from "../../../shared/lib/notify";
+import { Button, Pressable } from "../../../shared/ui/primitives";
 
 /**
  * ISH REJIMI — kalitlar va qo'lda ishga tushirish.
@@ -53,11 +54,6 @@ import { notify } from "../../../shared/lib/notify";
 
 type SwitchKey = "master" | "webhook" | "reconcile";
 
-// CODE-MAP `BTN` retsepti; chegara rangi har variantda alohida (ikki `border-*` rangi to'qnashmasin).
-const BTN =
-  "inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border px-4 text-sm font-semibold transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action disabled:cursor-not-allowed disabled:opacity-45 max-md:min-h-11 max-md:w-full";
-const BTN_SECONDARY = `${BTN} border-border-strong bg-surface text-text hover:bg-sunken`;
-const BTN_DANGER_SOFT = `${BTN} border-transparent bg-danger-soft text-danger-fg hover:bg-danger hover:text-on-solid`;
 const BADGE =
   "inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-md px-2 text-xs font-semibold leading-none before:size-1.5 before:shrink-0 before:rounded-full before:bg-current before:content-['']";
 
@@ -108,8 +104,7 @@ const SwitchRow = ({
         {description}
       </p>
     </div>
-    <button
-      type="button"
+    <Pressable
       role="switch"
       aria-checked={checked}
       aria-label={title}
@@ -126,7 +121,7 @@ const SwitchRow = ({
       >
         <span className="absolute left-0.5 top-0.5 size-4 rounded-full bg-on-solid transition-transform duration-150 group-aria-checked:translate-x-4" />
       </span>
-    </button>
+    </Pressable>
   </div>
 );
 
@@ -140,7 +135,7 @@ const ActionRow = ({
 }: {
   description: string;
   label: string;
-  icon: ReactNode;
+  icon: LucideIcon;
   pending: boolean;
   onClick: () => void;
 }) => (
@@ -149,17 +144,16 @@ const ActionRow = ({
     className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 border-t border-border py-3"
   >
     <p className="min-w-0 flex-[1_1_280px] text-[13px] text-text-muted">{description}</p>
-    <button
-      type="button"
+    <Button
+      variant="secondary"
       title={description}
-      aria-busy={pending || undefined}
-      disabled={pending}
+      leftIcon={icon}
+      loading={pending}
       onClick={onClick}
-      className={`${BTN_SECONDARY} flex-none`}
+      className="flex-none max-md:w-full"
     >
-      {pending ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : icon}
       {label}
-    </button>
+    </Button>
   </div>
 );
 
@@ -193,8 +187,7 @@ const ConfirmStopDialog = ({
 
   return createPortal(
     <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-overlay p-6 max-md:items-end max-md:p-0">
-      <button
-        type="button"
+      <Pressable
         aria-hidden="true"
         tabIndex={-1}
         onClick={cancel}
@@ -238,19 +231,18 @@ const ConfirmStopDialog = ({
           <span>{t("ctlStopDesc")}</span>
         </p>
         <div className="flex flex-wrap justify-end gap-2 max-md:[&>*]:flex-1">
-          <button type="button" disabled={pending} onClick={cancel} className={BTN_SECONDARY}>
+          <Button variant="secondary" disabled={pending} onClick={cancel} className="max-md:w-full">
             {t("cancel", { ns: "common" })}
-          </button>
-          <button
-            type="button"
-            aria-busy={pending || undefined}
-            disabled={pending}
+          </Button>
+          <Button
+            variant="danger-soft"
+            loading={pending}
+            loadingText={t("ctlConfirmBtn")}
             onClick={onConfirm}
-            className={BTN_DANGER_SOFT}
+            className="max-md:w-full"
           >
-            {pending ? <LoaderCircle className="size-4 animate-spin" aria-hidden="true" /> : null}
             {t("ctlConfirmBtn")}
-          </button>
+          </Button>
         </div>
       </div>
     </div>,
@@ -364,7 +356,9 @@ const ConnectionControl = ({
   const lastReconcile = integration?.last_reconcile_at;
 
   return (
-    <section aria-label={t("tabControl")} className="min-w-0 rounded-[14px] border border-border bg-surface">
+    // Panel tanlangan ulanish kartasi ichida turadi (konsol, maket `*-panel-control`) — o'z kartasi yo'q,
+    // tablar ostidan chiziq bilan ajraladi (karta ichida karta emas).
+    <section aria-label={t("tabControl")} className="min-w-0 border-t border-border">
       {/* ═══════ KALITLAR ═══════ */}
       <div role="list" aria-label={t("tabControl")}>
         <SwitchRow
@@ -453,21 +447,21 @@ const ConnectionControl = ({
               <ActionRow
                 description={t("ctlQueueTip")}
                 label={t("ctlQueueBtn")}
-                icon={<Send className="size-4" aria-hidden="true" />}
+                icon={Send}
                 pending={processQueue.isPending}
                 onClick={() => void run(t("ctlQueueAction"), () => processQueue.mutateAsync(connection.id))}
               />
               <ActionRow
                 description={t("ctlRetryTip")}
                 label={t("ctlRetryBtn")}
-                icon={<RefreshCw className="size-4" aria-hidden="true" />}
+                icon={RefreshCw}
                 pending={retryFailed.isPending}
                 onClick={() => void run(t("ctlRetryBtn"), () => retryFailed.mutateAsync(connection.id))}
               />
               <ActionRow
                 description={t("ctlPingTip")}
                 label={t("ctlPingBtn")}
-                icon={<Activity className="size-4" aria-hidden="true" />}
+                icon={Activity}
                 pending={healthcheck.isPending}
                 onClick={() =>
                   void run(t("ctlPingBtn"), async () => {
@@ -484,7 +478,7 @@ const ConnectionControl = ({
               <ActionRow
                 description={t("ctlReconcileNowDesc")}
                 label={t("ctlReconcileNowBtn")}
-                icon={<GitCompareArrows className="size-4" aria-hidden="true" />}
+                icon={GitCompareArrows}
                 pending={reconcileNow.isPending}
                 onClick={() => void runReconcile()}
               />
@@ -505,20 +499,16 @@ const ConnectionControl = ({
             <h3 className="text-sm font-semibold text-danger-fg">{t("ctlStopTitle")}</h3>
             <p className="text-[13px] text-text-muted">{t("ctlStopDesc")}</p>
           </div>
-          <button
-            type="button"
-            aria-busy={pendingSwitch === "master" || undefined}
+          <Button
+            variant="danger-soft"
+            leftIcon={Power}
+            loading={pendingSwitch === "master"}
             disabled={switching}
             onClick={() => setConfirmStop(true)}
-            className={BTN_DANGER_SOFT}
+            className="max-md:w-full"
           >
-            {pendingSwitch === "master" ? (
-              <LoaderCircle className="size-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <Power className="size-4" aria-hidden="true" />
-            )}
             {t("ctlStopBtn")}
-          </button>
+          </Button>
         </div>
       )}
 

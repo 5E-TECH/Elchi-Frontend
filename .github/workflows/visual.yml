@@ -1,5 +1,5 @@
 # Dizayn v2, 5-bosqich: vizual snapshotlar (sahnalar × kunduzgi/tungi × 1440/390, mock API).
-# Bosqich A: 19 sahna × 4 loyiha = 76 PNG; bosqich B (G2/G3 dan keyin): 23 × 4 = 92.
+# 23 sahna × 4 loyiha (desktop-light, desktop-dark, phone-light, phone-dark) = 92 snapshot (5-bosqich, yakuniy).
 #
 # Baseline'lar FAQAT shu Docker obrazida yaratiladi va tekshiriladi — boshqa mashinada shrift/rasterlash farq qiladi.
 # Obraz tegi = package.json dagi aniq `@playwright/test` / `playwright` versiyasi (src/test/visualCiVersion.test.ts).

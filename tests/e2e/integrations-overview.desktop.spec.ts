@@ -2,44 +2,43 @@ import { expect, test } from "@playwright/test";
 import { clippedTiles, mainHorizontalOverflow, mockIntegrationsApi, openElchiOverview } from "./support/integrations";
 
 /**
- * INTEGRATSIYA — UMUMIY HOLAT, 1440×900.
+ * INTEGRATSIYA — UMUMIY HOLAT, 1440×900 (dizayn v2, maket `*-external-console`).
  *
- * Uch yangi blok (Posilkalar / Kiruvchi webhooklar / COD) O'NG ustunga
- * sig'adi: chap ustundagi checklist bilan ustma-ust tushmaydi, sahifada
- * gorizontal skroll yo'q, raqamlar kesilmaydi.
+ * Yuqorida uch ustun (Tayyorlik ro'yxati · Muvaffaqiyat · Hodisalar tarkibi), ostida uch blok
+ * (Posilkalar / Kiruvchi webhooklar / COD) BITTA qatorda: bir xil tepa, chapdan o'ngga, tayyorlik
+ * ro'yxatidan pastda. Sahifada gorizontal skroll yo'q, raqamlar kesilmaydi.
  */
 
 test.describe("Integratsiya umumiy holati — 1440px", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
   test.describe.configure({ timeout: 90_000 });
 
-  test("uch blok o'ng ustunda, gorizontal skroll yo'q, raqamlar to'liq", async ({ page }) => {
+  test("uch blok bitta qatorda, tayyorlik ro'yxati ostida; gorizontal skroll yo'q, raqamlar to'liq", async ({ page }) => {
     const { leaked } = await mockIntegrationsApi(page);
     await openElchiOverview(page);
 
-    const checklist = page.locator(".ant-card", { hasText: "Tayyorlik checklisti" }).first();
+    const checklist = page.getByTestId("ovw-checklist");
+    await expect(checklist).toContainText("Tayyorlik ro'yxati");
     const checklistBox = (await checklist.boundingBox())!;
     const blocks = ["ovw-shipments", "ovw-webhooks", "ovw-cod"];
-    let previousBottom = 0;
-    for (const id of blocks) {
-      const box = (await page.getByTestId(id).boundingBox())!;
-      // O'ng ustun: checklistdan o'ngda, bir xil chap chegarada.
-      expect(box.x, id).toBeGreaterThan(checklistBox.x + checklistBox.width);
-      expect(box.y, id).toBeGreaterThan(previousBottom - 1);
-      previousBottom = box.y + box.height;
+    const boxes = await Promise.all(blocks.map(async (id) => (await page.getByTestId(id).boundingBox())!));
+    let previousRight = 0;
+    for (const [index, box] of boxes.entries()) {
+      // Bitta qator: tepasi bir xil, har biri oldingisidan o'ngda, hammasi tayyorlik ro'yxatidan pastda.
+      expect(Math.abs(box.y - boxes[0].y), blocks[index]).toBeLessThanOrEqual(1);
+      expect(box.x, blocks[index]).toBeGreaterThanOrEqual(previousRight - 1);
+      expect(box.y, blocks[index]).toBeGreaterThanOrEqual(checklistBox.y + checklistBox.height - 1);
+      previousRight = box.x + box.width;
     }
-    const lefts = await Promise.all(blocks.map(async (id) => Math.round((await page.getByTestId(id).boundingBox())!.x)));
-    expect(new Set(lefts).size).toBe(1);
 
     expect(await mainHorizontalOverflow(page)).toBeLessThanOrEqual(0);
     expect(await clippedTiles(page)).toEqual([]);
-    // COD summalari to'liq va qarz Hisob-kitob manbasidan (guruh ajratuvchisi
-    // brauzer locale ma'lumotiga bog'liq — probel yoki vergul).
+    // COD summalari to'liq va qarz Hisob-kitob manbasidan (guruh ajratuvchisi — probel).
     await expect(page.getByTestId("ovw-cod")).toContainText(/Yopilmagan qarz111\D?111\D?111 so'm/);
     expect(leaked).toEqual([]);
   });
 
-  test("ESKI backend / hodisa yo'q: o'ng ustun bo'sh emas, qiymatlar \"—\"", async ({ page }) => {
+  test("ESKI backend / hodisa yo'q: bloklar bo'sh emas, qiymatlar \"—\"", async ({ page }) => {
     const { leaked } = await mockIntegrationsApi(page, { extended: false });
     await openElchiOverview(page);
 

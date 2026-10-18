@@ -24,7 +24,7 @@ const ACTION_LABEL_KEYS: Record<ExtraCostAction, string> = {
  * «Sotish: 20 000 so'm qo'shimcha xarajat Bugun, 14:05 da market tasdig'iga yuborilgan».
  *
  * Buyurtma holati so'rov yuborilgandagidan o'zgargan bo'lsa (market tasdiqladi, amal bajarildi) yozuv
- * o'chiriladi va belgi ko'rinmaydi. v1 `ExtraCostApprovalBadge` (eski sahifalar) shu mantiq bilan.
+ * o'chiriladi va belgi ko'rinmaydi.
  */
 export const ExtraCostApprovalTag = memo(({ orderId, status }: { orderId: string; status: string }) => {
   const { t, i18n } = useTranslation("orders");

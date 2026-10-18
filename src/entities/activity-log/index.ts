@@ -21,5 +21,5 @@ export {
   getEntityHistory,
   getUserActivity,
 } from "./api/activityLogApi";
-export { actionBadgeTone, humanizeAction, resolveActionMeta } from "./model/actionMeta";
+export { actionBadgeTone, actionVerbTone, humanizeAction, resolveActionMeta } from "./model/actionMeta";
 export { default as ActivityActionBadge } from "./ui/ActivityActionBadge";

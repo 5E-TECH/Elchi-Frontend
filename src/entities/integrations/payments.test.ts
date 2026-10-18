@@ -56,7 +56,7 @@ const row = (over: Partial<PaymentRow> = {}): PaymentRow => ({
 describe("paymentOutcome", () => {
   it("buyurtmaga yozilgani YASHIL", () => {
     const out = paymentOutcome(row());
-    expect(out).toEqual({ labelKey: "poRecorded", color: "green" });
+    expect(out).toEqual({ labelKey: "poRecorded", tone: "success" });
     expectTranslated(out.labelKey);
   });
 
@@ -69,9 +69,9 @@ describe("paymentOutcome", () => {
       "amount_invalid",
     ]) {
       expect(
-        paymentOutcome(row({ apply_outcome: outcome })).color,
+        paymentOutcome(row({ apply_outcome: outcome })).tone,
         `${outcome} qizil bo'lishi kerak`,
-      ).toBe("red");
+      ).toBe("danger");
     }
   });
 
@@ -83,7 +83,7 @@ describe("paymentOutcome", () => {
      * holat, shu bois kulrang qilib qo'yish xato bo'lardi.
      */
     const out = paymentOutcome(row({ apply_outcome: null }));
-    expect(out.color).toBe("orange");
+    expect(out.tone).toBe("warning");
     expect(out.labelKey).toBe("poInterrupted");
     expectTranslated(out.labelKey);
     // O'zbekcha matn "uzilgan" ni o'z ichiga olishi kerak.
@@ -96,7 +96,7 @@ describe("paymentOutcome", () => {
      * operatorni noto'g'ri xulosaga olib borardi.
      */
     const out = paymentOutcome(row({ apply_outcome: "timeout" }));
-    expect(out.color).toBe("orange");
+    expect(out.tone).toBe("warning");
     expect(out.labelKey).toBe("poTimeout");
     expect(dictOf("uz")[out.labelKey]).toContain("tekshirish");
     expectTranslated(out.labelKey);
@@ -106,7 +106,7 @@ describe("paymentOutcome", () => {
     // `pending`/`failed` — kutilgan oqim, ogohlantirish emas.
     expect(paymentOutcome(row({ apply_outcome: "ignored_status" }))).toEqual({
       labelKey: "poIgnoredStatus",
-      color: "default",
+      tone: "neutral",
     });
   });
 
@@ -114,6 +114,6 @@ describe("paymentOutcome", () => {
     // Yangi natija qo'shilib xarita yangilanmasa — yashil ko'rsatishdan
     // ko'ra xato deb ko'rsatish xavfsizroq.
     const out = paymentOutcome(row({ apply_outcome: "something_new" }));
-    expect(out.color).toBe("red");
+    expect(out.tone).toBe("danger");
   });
 });

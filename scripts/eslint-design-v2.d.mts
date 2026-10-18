@@ -35,5 +35,5 @@ export const UI_IMPORT_OPTIONS: UiImportOptions;
 export const RAW_CONTROL_RATCHET: Record<string, string>;
 /** Fayl → sabab. FAQAT QISQARADI. */
 export const UI_IMPORT_RATCHET: Record<string, string>;
-/** Bosqich A: G2/G3 yo'llari (`warn`). Bosqich B da `[]`. */
+/** Bosqich A da G2/G3 yo'llari (`warn`) edi; bosqich B (hozir) — `[]` (lintRatchet.test.ts talab qiladi). */
 export const STAGE_A_PENDING: string[];

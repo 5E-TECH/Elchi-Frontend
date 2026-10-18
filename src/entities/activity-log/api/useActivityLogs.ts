@@ -7,19 +7,24 @@ import {
   getUserActivity,
 } from "./activityLogApi";
 import type { ActivityLogParams } from "../model/types";
+import { silentErrorMeta, type SilentErrorOption } from "../../../shared/lib/queryErrorEvents";
 
-export const useActivityLogs = (params: ActivityLogParams) =>
+export const useActivityLogs = (params: ActivityLogParams, options?: SilentErrorOption) =>
   useQuery({
     queryKey: queryKeys.activityLogs.list(params),
     queryFn: () => getActivityLogs(params),
     placeholderData: keepPreviousData,
     staleTime: 15_000,
+    ...silentErrorMeta(options),
   });
 
-// Action verbs rarely change — cache them for the whole session.
+/**
+ * Fe'llar katalogi (y8CxCtcK: fe'llar, reyestr, kategoriyalar) — sessiya davomida keshda. Kalit eski
+ * `string[]` javobidan ajratilgan (`"catalog"`), shakl o'zgargan.
+ */
 export const useActivityActions = () =>
   useQuery({
-    queryKey: queryKeys.activityLogs.actions,
+    queryKey: [...queryKeys.activityLogs.actions, "catalog"],
     queryFn: getActivityActions,
     staleTime: 60 * 60_000,
   });

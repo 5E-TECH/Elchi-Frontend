@@ -1,473 +1,112 @@
-import { memo, useState, type ReactNode } from "react";
-import { SEMANTIC_TOKENS } from "../../../shared/config/themeTokens";
+// dizayn-v2: common-settings-appearance, common-settings-dashboard, common-settings-interface, common-settings-scanner, common-settings-notifications
+import { memo, useId, useRef, useState, type KeyboardEvent } from "react";
+import {
+  Bell,
+  CircleAlert,
+  CircleCheck,
+  House,
+  Palette,
+  PanelLeft,
+  Volume2,
+  type LucideIcon,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import { TimePicker } from "antd";
-import dayjs from "dayjs";
-import {
-  Settings as SettingsIcon,
-  Palette,
-  LayoutDashboard,
-  PanelLeft,
-  Sun,
-  Moon,
-  Check,
-  ChevronRight,
-  Volume2,
-  Play,
-  Bell,
-  Info,
-  Megaphone,
-  MoonStar,
-  Radio,
-  ShieldAlert,
-} from "lucide-react";
-import HeaderName from "../../../shared/components/headerName";
-import PageContainer from "../../../shared/ui/PageContainer";
-import Toggle from "../../../shared/ui/Toggle";
+import { useLocation } from "react-router-dom";
 import { useTheme } from "../../../app/providers/theme/ThemeContext";
-import { changeAppLanguage, normalizeLanguage } from "../../../i18n";
-import { setSidebar } from "../../../widgets/Sidebar/model/sidebarSlice";
 import type { RootState } from "../../../app/config/store";
 import {
+  DEFAULT_SETTINGS,
   useSettings,
   useUpdateSettings,
-  DEFAULT_SETTINGS,
   type AppSettings,
   type AppSettingsPatch,
-  type ThemeMode,
-  type Language,
   type DashboardWidgetId,
+  type Language,
   type ScannerSoundId,
-  type NotificationChannelId,
-  NOTIFICATION_CHANNEL_IDS,
+  type ThemeMode,
 } from "../../../entities/settings";
-import {
-  NOTIFICATION_CATEGORIES,
-  type NotificationCategory,
-} from "../../../entities/notification-inbox";
-import { PushPermissionButton, usePushSubscription } from "../../../features/push-notifications";
-import { playScanFeedback, SCANNER_SOUND_IDS } from "../../scan/lib/scanShared";
+import { changeAppLanguage, normalizeLanguage } from "../../../i18n";
+import { cx } from "../../../shared/lib/cx";
 import {
   writeStoredScannerErrorSound,
   writeStoredScannerSuccessSound,
 } from "../../../shared/lib/preferencesStorage";
-import { TYPO, TEXT, toneAccent, toneSoftBg } from "../../../shared/config/designSystem";
+import {
+  Card,
+  getPanelId,
+  getTabId,
+  PageHeader,
+  Pressable,
+  Spinner,
+  Tabs,
+} from "../../../shared/ui/primitives";
+import { setSidebar } from "../../../widgets/Sidebar/model/sidebarSlice";
+import { playScanFeedback } from "../../scan/lib/scanShared";
+import { AppearancePanel } from "./AppearancePanel";
+import { DashboardPanel } from "./DashboardPanel";
+import { InterfacePanel } from "./InterfacePanel";
+import { NotificationsPanel } from "./NotificationsPanel";
+import { ScannerPanel } from "./ScannerPanel";
 
-type TabId = "appearance" | "dashboard" | "interface" | "notifications";
+export type SettingsTabId = "appearance" | "dashboard" | "interface" | "scanner" | "notifications";
 
-const TABS: { id: TabId; icon: ReactNode }[] = [
-  { id: "appearance", icon: <Palette size={18} /> },
-  { id: "dashboard", icon: <LayoutDashboard size={18} /> },
-  { id: "interface", icon: <PanelLeft size={18} /> },
-  { id: "notifications", icon: <Bell size={18} /> },
+const TABS: { id: SettingsTabId; icon: LucideIcon }[] = [
+  { id: "appearance", icon: Palette },
+  { id: "dashboard", icon: House },
+  { id: "interface", icon: PanelLeft },
+  { id: "scanner", icon: Volume2 },
+  { id: "notifications", icon: Bell },
 ];
 
-/** Marketing alohida blokda ("Reklama va aksiyalar") — opt-out ko'zga tashlansin. */
-const SERVICE_CATEGORIES = NOTIFICATION_CATEGORIES.filter(
-  (category): category is Exclude<NotificationCategory, "marketing"> => category !== "marketing",
-);
+const isTabId = (value: unknown): value is SettingsTabId => TABS.some((tab) => tab.id === value);
 
-const TIME_FORMAT = "HH:mm";
+/** `/settings` ga boshqa sahifadan aniq bo'lim bilan kelish (`/inbox` → «Qanday yoqiladi»): router `state.tab`. */
+const readInitialTab = (state: unknown): SettingsTabId => {
+  const tab = (state as { tab?: unknown } | null)?.tab;
+  return isTabId(tab) ? tab : "appearance";
+};
 
-const LANGUAGES: { key: Language; label: string; native: string }[] = [
-  { key: "uz", label: "O'zbekcha", native: "UZ" },
-  { key: "ru", label: "Русский", native: "RU" },
-  { key: "en", label: "English", native: "EN" },
-];
-
-const WIDGET_META: { id: DashboardWidgetId; label: string; hint: string }[] = [
-  { id: "stats", label: "w_stats", hint: "w_stats_hint" },
-  { id: "topPerformers", label: "w_top", hint: "w_top_hint" },
-  { id: "financial", label: "w_financial", hint: "w_financial_hint" },
-  { id: "region", label: "w_region", hint: "w_region_hint" },
-  { id: "performanceChart", label: "w_performance", hint: "w_performance_hint" },
-];
-
-const SOUND_META: { id: ScannerSoundId; label: string }[] = SCANNER_SOUND_IDS.map((id) => ({
-  id,
-  label: `sound_${id}`,
-}));
-
-// ─── Bo'lim sarlavhasi ─────────────────────────────────────────────────────────
-const SectionTitle = ({ icon, title, hint }: { icon: ReactNode; title: string; hint?: string }) => (
-  <div className="mb-5 flex items-center gap-3">
-    <span
-      className="flex h-10 w-10 items-center justify-center rounded-xl"
-      style={{ background: toneSoftBg("brand", 14), color: "var(--color-main)" }}
-    >
-      {icon}
-    </span>
-    <div>
-      <h3 className={`${TYPO.sectionTitle} text-maindark dark:text-primary`}>{title}</h3>
-      {hint && (
-        <p className="mt-0.5 text-[12px]" style={{ color: TEXT.soft }}>
-          {hint}
-        </p>
-      )}
-    </div>
-  </div>
-);
-
-// ─── Mavzu tanlov kartasi (mini ko'rinish bilan) ───────────────────────────────
-const ThemeChoiceCard = ({
-  mode,
-  active,
-  label,
-  icon,
-  onClick,
-}: {
-  mode: ThemeMode;
-  active: boolean;
-  label: string;
-  icon: ReactNode;
-  onClick: () => void;
-}) => {
-  const isDark = mode === "dark";
-  // Dizayn v2: namuna ranglari haqiqiy tokenlardan (eski binafsha/indigo emas).
-  const preview = SEMANTIC_TOKENS[isDark ? "dark" : "light"];
-  const previewBg = preview.bg;
-  const previewCard = preview.surface;
-  const previewAccent = preview.action;
+/** Sarlavhadagi avto-saqlash holati: «Saqlandi» / «Saqlanmoqda…» / «Saqlashda xatolik». */
+const SaveStatus = ({ pending, failed }: { pending: boolean; failed: boolean }) => {
+  const { t } = useTranslation("settings");
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="relative flex flex-col gap-3 rounded-2xl border p-3 text-left transition-all duration-200 hover:-translate-y-0.5"
-      style={{
-        borderColor: active ? "var(--color-main)" : "var(--color-border-soft)",
-        background: "var(--color-card-surface)",
-        boxShadow: active ? "0 8px 24px color-mix(in srgb, var(--color-main) 22%, transparent)" : "none",
-      }}
-    >
-      {/* Mini ko'rinish */}
-      <div className="overflow-hidden rounded-xl p-2.5" style={{ background: previewBg }}>
-        <div className="mb-2 flex items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full" style={{ background: previewAccent }} />
-          <span className="h-1.5 flex-1 rounded-full" style={{ background: previewCard }} />
-        </div>
-        <div className="flex gap-1.5">
-          <div className="h-9 flex-1 rounded-lg" style={{ background: previewCard }} />
-          <div className="h-9 flex-1 rounded-lg" style={{ background: previewCard }} />
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between">
-        <span className="flex items-center gap-2 text-[13px] font-semibold text-maindark dark:text-primary">
-          {icon}
-          {label}
-        </span>
-        {active && (
-          <span
-            className="flex h-5 w-5 items-center justify-center rounded-full"
-            style={{ background: "var(--color-main)", color: "#fff" }}
-          >
-            <Check size={13} />
-          </span>
-        )}
-      </div>
-    </button>
+    <p role="status" className="inline-flex items-center gap-2 text-[13px] text-text-muted">
+      {pending ? (
+        <Spinner size="sm" />
+      ) : failed ? (
+        <CircleAlert size={16} aria-hidden="true" className="text-danger-fg" />
+      ) : (
+        <CircleCheck size={16} aria-hidden="true" className="text-success-fg" />
+      )}
+      <span className={cx("font-semibold", failed && !pending ? "text-danger-fg" : "text-text")}>
+        {pending ? t("saving") : failed ? t("save_error") : t("saved")}
+      </span>
+    </p>
   );
 };
 
-const SoundChoiceButton = ({
-  id,
-  label,
-  active,
-  tone,
-  onSelect,
-  onPreview,
-  selectedLabel,
-}: {
-  id: ScannerSoundId;
-  label: string;
-  active: boolean;
-  tone: "success" | "error";
-  onSelect: (id: ScannerSoundId) => void;
-  onPreview: (id: ScannerSoundId) => void;
-  selectedLabel: string;
-}) => (
-  <button
-    type="button"
-    onClick={() => onSelect(id)}
-    className="group flex min-h-16 items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-left transition-all hover:-translate-y-0.5"
-    style={{
-      borderColor: active ? "var(--color-main)" : "var(--color-border-soft)",
-      background: active ? toneSoftBg(tone === "error" ? "danger" : "success", 10) : "var(--color-card-surface)",
-      boxShadow: active ? "0 8px 20px color-mix(in srgb, var(--color-main) 16%, transparent)" : "none",
-    }}
-  >
-    <span className="flex min-w-0 items-center gap-2.5">
-      <span
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-        style={{
-          background: active ? "var(--color-main)" : toneSoftBg(tone === "error" ? "danger" : "success", 14),
-          color: active ? "#fff" : tone === "success" ? "var(--color-success)" : "var(--color-danger)",
-        }}
-      >
-        <Volume2 size={16} />
-      </span>
-      <span className="min-w-0">
-        <span className="block truncate text-sm font-bold text-maindark dark:text-primary">{label}</span>
-        {active ? (
-          <span className="mt-0.5 block text-[11px] font-semibold text-main">{selectedLabel}</span>
-        ) : null}
-      </span>
-    </span>
-    <span
-      role="button"
-      tabIndex={0}
-      onClick={(event) => {
-        event.stopPropagation();
-        onPreview(id);
-      }}
-      onKeyDown={(event) => {
-        if (event.key !== "Enter" && event.key !== " ") return;
-        event.preventDefault();
-        event.stopPropagation();
-        onPreview(id);
-      }}
-      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors hover:border-main hover:text-main"
-      style={{
-        borderColor: "var(--color-border-soft)",
-        color: "var(--color-dashboard-text-muted)",
-      }}
-      aria-label={label}
-    >
-      {active ? <Check size={16} /> : <Play size={15} />}
-    </span>
-  </button>
-);
-
-// ─── Sozlama qatori (sarlavha + izoh + boshqaruv) ──────────────────────────────
-const SettingRow = ({
-  title,
-  hint,
-  control,
-  muted,
-}: {
-  title: string;
-  hint?: string;
-  control: ReactNode;
-  muted?: boolean;
-}) => (
-  <div
-    className="flex items-center justify-between gap-4 rounded-xl border px-4 py-3.5"
-    style={{
-      borderColor: "var(--color-border-soft)",
-      background: muted ? "transparent" : toneSoftBg("brand", 4),
-    }}
-  >
-    <div className="min-w-0">
-      <p className={`${TYPO.cardTitle} text-maindark dark:text-primary`}>{title}</p>
-      {hint && (
-        <p className="block mt-0.5 text-[12px]" style={{ color: TEXT.soft }}>
-          {hint}
-        </p>
-      )}
-    </div>
-    <div className="shrink-0">{control}</div>
-  </div>
-);
-
-/** Push qatori — haqiqiy qurilma obunasi (`notifications.push` + `PushSync`). */
-const PushChannelControl = () => {
-  const { t } = useTranslation("settings");
-  const { status } = usePushSubscription();
-  if (status === "unsupported" || status === "unavailable") {
-    return (
-      <span className="inline text-[12px]" style={{ color: TEXT.soft }}>
-        {t("notifications.push_unsupported")}
-      </span>
-    );
-  }
-  return <PushPermissionButton />;
-};
-
-// ─── Bildirishnomalar tabi ─────────────────────────────────────────────────────
-const NotificationsTab = ({
-  settings,
-  persist,
-}: {
-  settings: AppSettings["notifications"];
-  persist: (patch: AppSettingsPatch) => void;
-}) => {
-  const { t } = useTranslation("settings");
-  const { t: tn } = useTranslation("notifications");
-  const muted = new Set(settings.muted_categories);
-  const quiet = settings.quiet_hours;
-
-  const onChannel = (id: NotificationChannelId, on: boolean) =>
-    persist({ notifications: { channels: { [id]: on } } });
-  // Kalit "olaman" ma'nosida: o'chirilsa — kategoriya ovozi o'chiriladi.
-  const onCategory = (category: NotificationCategory, receive: boolean) =>
-    persist({ notifications: { mute: { [category]: !receive } } });
-  const onQuietTime = (key: "from" | "to", value: dayjs.Dayjs | null) => {
-    if (value) persist({ notifications: { quiet_hours: { [key]: value.format(TIME_FORMAT) } } });
-  };
-
-  return (
-    <div className="space-y-4">
-      {/*
-        ⚠️ OCHIQ OGOHLANTIRISH — MAJBURIY. Backend xabar yuborishda bu
-        sozlamani hali O'QIMAYDI (Elchi-Backend'da qabul qiluvchi filtri yo'q).
-        Busiz ekran "o'chirdim" degan foydalanuvchiga yolg'on va'da berardi.
-        Filtr chiqqach bu blok olib tashlanadi.
-      */}
-      <div
-        role="note"
-        data-testid="notifications-scope-notice"
-        className="flex items-start gap-3 rounded-2xl border px-4 py-3.5"
-        style={{ borderColor: toneAccent("warning"), background: toneSoftBg("warning", 10) }}
-      >
-        <Info size={18} className="shrink-0 mt-0.5" style={{ color: toneAccent("warning") }} />
-        <div>
-          <p className={`${TYPO.cardTitle} text-maindark dark:text-primary`}>
-            {t("notifications.scope_title")}
-          </p>
-          <p className="mt-1 text-[12px]" style={{ color: TEXT.soft }}>
-            {t("notifications.scope_body")}
-          </p>
-        </div>
-      </div>
-
-      <div className="el-card rounded-2xl p-5">
-        <SectionTitle
-          icon={<Radio size={18} />}
-          title={t("notifications.channels_title")}
-          hint={t("notifications.channels_hint")}
-        />
-        <div className="block space-y-2.5">
-          {NOTIFICATION_CHANNEL_IDS.map((id) => (
-            <SettingRow
-              key={id}
-              title={t(`notifications.channel_${id}`)}
-              hint={t(`notifications.channel_${id}_hint`)}
-              muted={!settings.channels[id]}
-              control={
-                <Toggle
-                  checked={settings.channels[id]}
-                  onChange={(on) => onChannel(id, on)}
-                  aria-label={t(`notifications.channel_${id}`)}
-                />
-              }
-            />
-          ))}
-          <SettingRow
-            title={t("notifications.channel_push")}
-            hint={t("notifications.channel_push_hint")}
-            control={<PushChannelControl />}
-          />
-        </div>
-      </div>
-
-      <div className="el-card rounded-2xl p-5">
-        <SectionTitle
-          icon={<Bell size={18} />}
-          title={t("notifications.categories_title")}
-          hint={t("notifications.categories_hint")}
-        />
-        <div className="block space-y-2.5">
-          <SettingRow
-            title={t("notifications.critical")}
-            hint={t("notifications.critical_hint")}
-            control={
-              <span className="flex items-center gap-2">
-                <ShieldAlert size={16} style={{ color: toneAccent("danger") }} />
-                <Toggle checked disabled onChange={() => undefined} aria-label={t("notifications.critical")} />
-              </span>
-            }
-          />
-          {SERVICE_CATEGORIES.map((category) => (
-            <SettingRow
-              key={category}
-              title={tn(`category.${category}`)}
-              muted={muted.has(category)}
-              control={
-                <Toggle
-                  checked={!muted.has(category)}
-                  onChange={(receive) => onCategory(category, receive)}
-                  aria-label={tn(`category.${category}`)}
-                />
-              }
-            />
-          ))}
-        </div>
-      </div>
-
-      <div className="el-card rounded-2xl p-5" data-testid="notifications-marketing">
-        <SectionTitle
-          icon={<Megaphone size={18} />}
-          title={t("notifications.marketing_title")}
-          hint={t("notifications.marketing_hint")}
-        />
-        <SettingRow
-          title={t("notifications.marketing_toggle")}
-          hint={t("notifications.marketing_toggle_hint")}
-          muted={muted.has("marketing")}
-          control={
-            <Toggle
-              checked={!muted.has("marketing")}
-              onChange={(receive) => onCategory("marketing", receive)}
-              aria-label={t("notifications.marketing_toggle")}
-            />
-          }
-        />
-      </div>
-
-      <div className="el-card rounded-2xl p-5">
-        <SectionTitle
-          icon={<MoonStar size={18} />}
-          title={t("notifications.quiet_title")}
-          hint={t("notifications.quiet_hint")}
-        />
-        <div className="space-y-3">
-          <SettingRow
-            title={t("notifications.quiet_enabled")}
-            muted={!quiet.enabled}
-            control={
-              <Toggle
-                checked={quiet.enabled}
-                onChange={(enabled) => persist({ notifications: { quiet_hours: { enabled } } })}
-                aria-label={t("notifications.quiet_enabled")}
-              />
-            }
-          />
-          <div className="flex flex-wrap items-end gap-4">
-            {(["from", "to"] as const).map((key) => (
-              <label key={key} className="flex flex-col gap-1.5">
-                <span className="font-semibold text-[12px]" style={{ color: TEXT.strong }}>
-                  {t(`notifications.quiet_${key}`)}
-                </span>
-                <TimePicker
-                  format={TIME_FORMAT}
-                  minuteStep={5}
-                  allowClear={false}
-                  needConfirm={false}
-                  disabled={!quiet.enabled}
-                  value={dayjs(quiet[key], TIME_FORMAT)}
-                  onChange={(value) => onQuietTime(key, value)}
-                  aria-label={t(`notifications.quiet_${key}`)}
-                />
-              </label>
-            ))}
-            <span className="font-semibold pb-1.5 text-[12px]" style={{ color: TEXT.strong }}>
-              {t("notifications.quiet_timezone")}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
+/**
+ * SOZLAMALAR (`/settings`, barcha rollar) — maketlar `common-settings-{appearance,dashboard,interface,scanner,
+ * notifications}`.
+ *
+ * Desktop (≥ 1024): chapda bo'limlar kartasi (vertikal `tablist`: ikonka + nom + izoh), o'ngda panel kartasi.
+ * Planshet va telefon: sarlavha ostida gorizontal `Tabs` (aylanadi). Tanlangan bo'lim komponent holatida
+ * (URL'da emas — avvalgidek); boshqa sahifadan `state.tab` bilan ochish mumkin.
+ *
+ * Avto-saqlash `persist()` o'zgarmagan: har tanlov `useUpdateSettings().mutate(patch)` (optimistik, navbatli);
+ * holati sarlavhada. Mavzu va til darhol qo'llanadi; yon panel `setSidebar`; skaner ovozi localStorage + persist.
+ */
 const SettingsPage = () => {
   const { t, i18n } = useTranslation("settings");
   const dispatch = useDispatch();
+  const location = useLocation();
   const { theme, setTheme } = useTheme();
   const sidebarOpen = useSelector((s: RootState) => s.sidebar.isOpen);
-
-  const [activeTab, setActiveTab] = useState<TabId>("appearance");
+  const role = useSelector((s: RootState) => s.role.role);
+  const [activeTab, setActiveTab] = useState<SettingsTabId>(() => readInitialTab(location.state));
+  const idPrefix = useId();
+  const navRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const { data } = useSettings();
   const settings: AppSettings = data ?? DEFAULT_SETTINGS;
@@ -498,265 +137,149 @@ const SettingsPage = () => {
     else writeStoredScannerErrorSound(sound);
     persist({ scanner: { sounds: { [type]: sound } } });
   };
+  /** Faqat chaladi: vaqtincha shu ovozni yozadi, 350 ms dan keyin saqlangan tanlov qaytadi. */
   const previewScannerSound = (type: "success" | "error", sound: ScannerSoundId) => {
     const previous = settings.scanner.sounds[type];
     if (type === "success") writeStoredScannerSuccessSound(sound);
     else writeStoredScannerErrorSound(sound);
-    void playScanFeedback(type, t(`interface.${type === "success" ? "success_preview" : "error_preview"}`));
+    void playScanFeedback(
+      type,
+      t(`scanner.${type === "success" ? "success_preview" : "error_preview"}`),
+    );
     window.setTimeout(() => {
       if (type === "success") writeStoredScannerSuccessSound(previous);
       else writeStoredScannerErrorSound(previous);
     }, 350);
   };
 
+  // Menejerning bosh sahifasi — `/branch-dashboard` (`routes.tsx` → `DashboardEntry`).
+  const homePath = role === "manager" ? "/branch-dashboard" : "/";
+
+  /** Vertikal tablist: ↑ ↓ Home End (WAI-ARIA tabs, avtomatik faollashtirish). */
+  const onNavKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const last = TABS.length - 1;
+    const moves: Record<string, number> = {
+      ArrowDown: index === last ? 0 : index + 1,
+      ArrowUp: index === 0 ? last : index - 1,
+      Home: 0,
+      End: last,
+    };
+    const target = moves[event.key];
+    if (target === undefined) return;
+    event.preventDefault();
+    setActiveTab(TABS[target].id);
+    navRefs.current[target]?.focus();
+  };
+
+  const panelId = getPanelId(idPrefix, activeTab);
+
   return (
-    <PageContainer>
-      <div className="mb-5">
-        <HeaderName name={t("title")} description={t("subtitle")} icon={<SettingsIcon />} />
-      </div>
+    <div className="flex flex-col gap-6 max-md:gap-4">
+      <PageHeader
+        title={t("title")}
+        description={t("subtitle")}
+        actions={<SaveStatus pending={update.isPending} failed={update.isError} />}
+      />
 
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
-        {/* ── Tab navigatsiyasi ── */}
-        {/* Telefonda ham ustun: 4 ta tab qatorga sig'maydi va gorizontal scroll ostida yashirinardi. */}
-        <nav className="el-card flex shrink-0 flex-col gap-2 rounded-2xl p-2.5 lg:w-64">
-          {TABS.map((tab) => {
-            const active = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className="group flex min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-all duration-200"
-                style={
-                  active
-                    ? {
-                        background:
-                          "linear-gradient(135deg, var(--color-main), var(--color-purple-dark))",
-                        boxShadow: "0 8px 20px color-mix(in srgb, var(--color-main) 28%, transparent)",
-                      }
-                    : undefined
-                }
-              >
-                <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg transition-colors"
-                  style={
-                    active
-                      ? { background: "rgba(255,255,255,0.2)", color: "#fff" }
-                      : { background: toneSoftBg("brand", 14), color: "var(--color-main)" }
-                  }
+      <Tabs
+        className="lg:hidden"
+        ariaLabel={t("nav_label")}
+        items={TABS.map((tab) => ({ value: tab.id, label: t(`tabs.${tab.id}`) }))}
+        value={activeTab}
+        onValueChange={setActiveTab}
+        idPrefix={idPrefix}
+        controlsPanel
+        background="bg"
+      />
+
+      <div className="flex items-start gap-6">
+        <Card
+          as="div"
+          padding="none"
+          className="sticky top-6 w-[272px] flex-none p-2 max-lg:hidden"
+        >
+          <div
+            role="tablist"
+            aria-orientation="vertical"
+            aria-label={t("nav_label")}
+            className="flex flex-col gap-1"
+          >
+            {TABS.map(({ id, icon: Icon }, index) => {
+              const selected = activeTab === id;
+              return (
+                <Pressable
+                  key={id}
+                  ref={(element) => {
+                    navRefs.current[index] = element;
+                  }}
+                  role="tab"
+                  id={`${idPrefix}-nav-${id}`}
+                  aria-selected={selected}
+                  aria-controls={selected ? panelId : undefined}
+                  tabIndex={selected ? 0 : -1}
+                  onClick={() => setActiveTab(id)}
+                  onKeyDown={(event) => onNavKeyDown(event, index)}
+                  className={cx(
+                    "flex min-h-14 w-full items-center gap-3 rounded-[10px] px-3 py-2 text-left text-sm font-semibold",
+                    "transition-[background-color,color] duration-150 motion-reduce:transition-none",
+                    selected ? "bg-action-soft text-action-fg" : "text-text hover:bg-sunken",
+                  )}
                 >
-                  {tab.icon}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p
-                    className="text-[13px] font-semibold leading-tight"
-                    // `--color-maindark` dark rejimda karta foniga teng (#252039 → 1.08:1).
-                    style={{ color: active ? "#fff" : "var(--color-dashboard-text-muted)" }}
-                  >
-                    {t(`tabs.${tab.id}`)}
-                  </p>
-                  <p
-                    className="mt-0.5 truncate text-[11px] leading-tight"
-                    style={{ color: active ? "rgba(255,255,255,0.75)" : "var(--color-dashboard-text-soft)" }}
-                  >
-                    {t(`tabs_desc.${tab.id}`)}
-                  </p>
-                </div>
-                <ChevronRight
-                  size={15}
-                  className="hidden shrink-0 lg:block"
-                  style={{ color: active ? "rgba(255,255,255,0.8)" : "var(--color-dashboard-text-soft)" }}
+                  <Icon
+                    size={20}
+                    aria-hidden="true"
+                    className={cx("shrink-0", selected ? "" : "text-text-subtle")}
+                  />
+                  <span className="flex min-w-0 flex-col">
+                    <span>{t(`tabs.${id}`)}</span>
+                    <span className="text-xs font-medium text-text-muted">
+                      {t(`tabs_desc.${id}`)}
+                    </span>
+                  </span>
+                </Pressable>
+              );
+            })}
+          </div>
+        </Card>
+
+        <div
+          id={panelId}
+          role="tabpanel"
+          aria-labelledby={getTabId(idPrefix, activeTab)}
+          className="min-w-0 flex-1"
+        >
+          {activeTab === "notifications" ? (
+            <NotificationsPanel settings={settings.notifications} persist={persist} />
+          ) : (
+            <Card padding="none">
+              {activeTab === "appearance" ? (
+                <AppearancePanel
+                  theme={theme}
+                  language={currentLang}
+                  onTheme={onTheme}
+                  onLanguage={onLanguage}
                 />
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* ── Tab kontenti ── */}
-        <div className="min-w-0 flex-1">
-          {activeTab === "appearance" && (
-            <div className="space-y-4">
-              <div className="el-card rounded-2xl p-5">
-                <SectionTitle icon={<Palette size={18} />} title={t("appearance.theme")} hint={t("appearance.theme_hint")} />
-                <div className="grid grid-cols-2 gap-3 sm:max-w-md">
-                  <ThemeChoiceCard
-                    mode="light"
-                    active={theme === "light"}
-                    label={t("appearance.light")}
-                    icon={<Sun size={15} />}
-                    onClick={() => onTheme("light")}
-                  />
-                  <ThemeChoiceCard
-                    mode="dark"
-                    active={theme === "dark"}
-                    label={t("appearance.dark")}
-                    icon={<Moon size={15} />}
-                    onClick={() => onTheme("dark")}
-                  />
-                </div>
-              </div>
-
-              <div className="el-card rounded-2xl p-5">
-                <SectionTitle icon={<SettingsIcon size={18} />} title={t("appearance.language")} hint={t("appearance.language_hint")} />
-                <div className="grid grid-cols-3 gap-3 sm:max-w-lg">
-                  {LANGUAGES.map((lang) => {
-                    const active = currentLang === lang.key;
-                    return (
-                      <button
-                        key={lang.key}
-                        type="button"
-                        onClick={() => onLanguage(lang.key)}
-                        className="relative flex flex-col items-center gap-2 rounded-2xl border px-3 py-4 transition-all duration-200 hover:-translate-y-0.5"
-                        style={{
-                          borderColor: active ? "var(--color-main)" : "var(--color-border-soft)",
-                          background: active ? toneSoftBg("brand", 10) : "var(--color-card-surface)",
-                          boxShadow: active ? "0 8px 20px color-mix(in srgb, var(--color-main) 18%, transparent)" : "none",
-                        }}
-                      >
-                        <span
-                          className="flex h-10 w-10 items-center justify-center rounded-xl text-[13px] font-bold"
-                          style={{
-                            background: active ? "var(--color-main)" : toneSoftBg("brand", 14),
-                            color: active ? "#fff" : "var(--color-main)",
-                          }}
-                        >
-                          {lang.native}
-                        </span>
-                        <span className="text-[12px] font-semibold text-maindark dark:text-primary">
-                          {lang.label}
-                        </span>
-                        {active && (
-                          <span
-                            className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full"
-                            style={{ background: "var(--color-main)", color: "#fff" }}
-                          >
-                            <Check size={11} />
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "dashboard" && (
-            <div className="el-card rounded-2xl p-5">
-              <SectionTitle
-                icon={<LayoutDashboard size={18} />}
-                title={t("dashboard.widgets")}
-                hint={t("dashboard.widgets_hint")}
-              />
-              <div className="space-y-2.5">
-                {WIDGET_META.map((w) => {
-                  const visible = settings.dashboard.widgets[w.id];
-                  return (
-                    <div
-                      key={w.id}
-                      className="flex items-center justify-between gap-4 rounded-xl border px-4 py-3 transition-colors"
-                      style={{
-                        borderColor: visible ? "var(--color-border-strong)" : "var(--color-border-soft)",
-                        background: visible ? toneSoftBg("brand", 6) : "transparent",
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <span
-                          className="flex h-9 w-9 items-center justify-center rounded-xl"
-                          style={{
-                            background: toneSoftBg(visible ? "success" : "neutral", 14),
-                            color: visible ? "var(--color-success)" : "var(--color-dashboard-text-muted)",
-                          }}
-                        >
-                          {visible ? <Check size={16} /> : <LayoutDashboard size={16} />}
-                        </span>
-                        <div>
-                          <p className={`${TYPO.cardTitle} text-maindark dark:text-primary`}>
-                            {t(`dashboard.${w.label}`)}
-                          </p>
-                          <p className="mt-0.5 text-[12px]" style={{ color: TEXT.soft }}>
-                            {t(`dashboard.${w.hint}`)}
-                          </p>
-                        </div>
-                      </div>
-                      <Toggle checked={visible} onChange={(v) => onWidget(w.id, v)} aria-label={t(`dashboard.${w.label}`)} />
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {activeTab === "interface" && (
-            <div className="space-y-4">
-              <div className="el-card rounded-2xl p-5">
-                <SectionTitle icon={<PanelLeft size={18} />} title={t("tabs.interface")} hint={t("tabs_desc.interface")} />
-                <div
-                  className="flex items-center justify-between gap-4 rounded-xl border px-4 py-3.5"
-                  style={{ borderColor: "var(--color-border-soft)" }}
-                >
-                  <div>
-                    <p className={`${TYPO.cardTitle} text-maindark dark:text-primary`}>{t("interface.sidebar")}</p>
-                    <p className="mt-0.5 text-[12px]" style={{ color: TEXT.soft }}>
-                      {t("interface.sidebar_hint")}
-                    </p>
-                  </div>
-                  <Toggle checked={sidebarOpen} onChange={onSidebar} aria-label={t("interface.sidebar")} />
-                </div>
-              </div>
-
-              <div className="el-card rounded-2xl p-5">
-                <SectionTitle icon={<Volume2 size={18} />} title={t("interface.scanner_sounds")} hint={t("interface.scanner_sounds_hint")} />
-                <div className="grid gap-5 xl:grid-cols-2">
-                  {(["success", "error"] as const).map((type) => (
-                    <div key={type} className="rounded-2xl border p-3" style={{ borderColor: "var(--color-border-soft)" }}>
-                      <div className="mb-3 flex items-center justify-between gap-3">
-                        <div>
-                          <p className={`${TYPO.cardTitle} text-maindark dark:text-primary`}>
-                            {t(`interface.${type}_sound`)}
-                          </p>
-                          <p className="mt-0.5 text-[12px]" style={{ color: TEXT.soft }}>
-                            {t(`interface.${type}_sound_hint`)}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => previewScannerSound(type, settings.scanner.sounds[type])}
-                          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-bold transition-colors hover:border-main hover:text-main"
-                          style={{ borderColor: "var(--color-border-soft)", color: "var(--color-dashboard-text-muted)" }}
-                        >
-                          <Play size={14} />
-                          {t("interface.preview")}
-                        </button>
-                      </div>
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        {SOUND_META.map((sound) => (
-                          <SoundChoiceButton
-                            key={`${type}-${sound.id}`}
-                            id={sound.id}
-                            label={t(`interface.${sound.label}`)}
-                            active={settings.scanner.sounds[type] === sound.id}
-                            tone={type}
-                            onSelect={(id) => onScannerSound(type, id)}
-                            onPreview={(id) => previewScannerSound(type, id)}
-                            selectedLabel={t("interface.selected")}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {activeTab === "notifications" && (
-            <NotificationsTab settings={settings.notifications} persist={persist} />
+              ) : activeTab === "dashboard" ? (
+                <DashboardPanel
+                  widgets={settings.dashboard.widgets}
+                  homePath={homePath}
+                  onWidget={onWidget}
+                />
+              ) : activeTab === "interface" ? (
+                <InterfacePanel sidebarOpen={sidebarOpen} onSidebar={onSidebar} />
+              ) : (
+                <ScannerPanel
+                  sounds={settings.scanner.sounds}
+                  onSelect={onScannerSound}
+                  onPreview={previewScannerSound}
+                />
+              )}
+            </Card>
           )}
         </div>
       </div>
-    </PageContainer>
+    </div>
   );
 };
-
 
 export default memo(SettingsPage);

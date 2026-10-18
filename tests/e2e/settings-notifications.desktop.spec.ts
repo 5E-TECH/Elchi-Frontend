@@ -1,20 +1,22 @@
 import { expect, test } from "@playwright/test";
-import { mockSettingsApi, openNotificationsTab } from "./support/settingsNotifications";
+import { mockSettingsApi, openNotificationsTab, settingsTab } from "./support/settingsNotifications";
 
 /** Sozlamalar → Bildirishnomalar (F89H1avs) — 1440px. */
 test.describe("Sozlamalar → Bildirishnomalar — 1440px", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
   test.describe.configure({ timeout: 90_000 });
 
-  test("⭐ TC1: 4-tab \"Bildirishnomalar\" ko'rinadi va ochiladi", async ({ page }) => {
+  test("⭐ TC1: 5-bo'lim \"Bildirishnomalar\" ko'rinadi va ochiladi (dizayn v2: Ko'rinish · Bosh sahifa · Interfeys · Skaner · Bildirishnomalar)", async ({ page }) => {
     const { leaked } = await mockSettingsApi(page);
     await page.goto("/settings");
-    const tabs = page.getByRole("main").getByRole("button", { name: /^(Ko'rinish|Dashboard|Interfeys|Bildirishnomalar)/ });
-    await expect(tabs).toHaveCount(4, { timeout: 60_000 });
-    await expect(tabs.nth(3)).toContainText("Bildirishnomalar");
-    await tabs.nth(3).click();
+    const tabs = settingsTab(page, /^(Ko'rinish|Bosh sahifa|Interfeys|Skaner|Bildirishnomalar)/);
+    await expect(tabs).toHaveCount(5, { timeout: 60_000 });
+    await expect(tabs.nth(4)).toContainText("Bildirishnomalar");
+    await tabs.nth(4).click();
+    await expect(tabs.nth(4)).toHaveAttribute("aria-selected", "true");
     await expect(page.getByTestId("notifications-scope-notice")).toBeVisible();
     await expect(page.getByText("Kanallar", { exact: true })).toBeVisible();
+    await expect(page.getByText("Qurilma bildirishnomalari", { exact: true })).toBeVisible();
     expect(leaked).toEqual([]);
   });
 

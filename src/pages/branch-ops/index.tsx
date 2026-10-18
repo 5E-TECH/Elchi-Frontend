@@ -1,29 +1,44 @@
-import { memo, useState } from "react";
-import { Alert, Button, Input, Space, Table, Typography } from "antd";
-import { Ban } from "lucide-react";
+// dizayn-v2: superadmin-ops-branches
+import { memo, useState, type FormEvent } from "react";
+import { CircleX } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useBranchCoverage } from "../../entities/branch/branchCoverage";
 import { extractArray } from "../../entities/branch";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
-import { useConfirm } from "../../shared/ui/primitives";
+import {
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  EmptyState,
+  ErrorState,
+  Field,
+  QueryBoundary,
+  TextInput,
+  useConfirm,
+  type DataTableColumn,
+} from "../../shared/ui/primitives";
+import { OpsAlert, OpsIntro, OpsToolPage } from "../ops/ui/OpsToolPage";
 
-const { Title, Text } = Typography;
+/**
+ * OPS → «Filiallar» (maket `superadmin-ops-branches`): yangi buyurtmali filiallar (`GET branches/new-orders`,
+ * konvert `{ statusCode, message, data: [...] }`) va paketni bekor qilish (`POST transfer-batches/:id/cancel`
+ * — `{ reason }`, faqat tasdiqdan keyin; sabab kamida 10 belgi — backend shunday rad etadi).
+ */
 
 // Backend (branch-service) rejects a cancel without a reason of at least 10 chars.
 const MIN_REASON_LENGTH = 10;
 
 type BranchWithNewOrders = { id: string; name: string; new_orders_count: number };
 
-const columns = [
-  { title: "ID", dataIndex: "id", key: "id" },
-  { title: "Nomi", dataIndex: "name", key: "name" },
-  { title: "Yangi buyurtmalar", dataIndex: "new_orders_count", key: "new_orders_count" },
-];
-
-const BranchOpsPage = () => {
+const BranchOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
+  const { t } = useTranslation("ops");
   const { useGetNewOrders, cancelBatch } = useBranchCoverage();
   const confirm = useConfirm();
 
-  const newOrders = useGetNewOrders();
+  const newOrders = useGetNewOrders(undefined, { silentError: true });
+  // Javob konverti `{ statusCode, message, data: [...] }` — massiv `data` ichida.
+  const rows = extractArray<BranchWithNewOrders>(newOrders.data);
 
   const [batchId, setBatchId] = useState("");
   const [reason, setReason] = useState("");
@@ -33,90 +48,139 @@ const BranchOpsPage = () => {
   const reasonTooShort = trimmedReason.length > 0 && trimmedReason.length < MIN_REASON_LENGTH;
   const canCancel = trimmedBatchId.length > 0 && trimmedReason.length >= MIN_REASON_LENGTH;
 
-  // Javob konverti `{ statusCode, message, data: [...] }` — massiv `data` ichida.
-  const dataSource = extractArray<BranchWithNewOrders>(newOrders.data);
+  const count = (value: number) => t("common.count", { count: value });
+
+  const columns: DataTableColumn<BranchWithNewOrders>[] = [
+    {
+      id: "id",
+      header: t("branches.list.id"),
+      className: "w-[72px]",
+      cell: (row) => <span className="text-text-muted">{row.id}</span>,
+    },
+    { id: "name", header: t("branches.list.name"), cell: (row) => <span className="font-semibold">{row.name}</span> },
+    {
+      id: "new_orders_count",
+      header: t("branches.list.newOrders"),
+      align: "end",
+      cell: (row) => <span className="font-semibold">{count(Number(row.new_orders_count) || 0)}</span>,
+    },
+  ];
+
+  const handleCancel = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!canCancel || cancelBatch.isPending) return;
+    const ok = await confirm({
+      tone: "danger",
+      title: t("branches.cancel.confirmTitle"),
+      description: t("branches.cancel.confirmDescription"),
+      confirmLabel: t("branches.cancel.confirmLabel"),
+      cancelLabel: t("branches.cancel.cancelLabel"),
+      icon: CircleX,
+      confirmIcon: CircleX,
+    });
+    // Natija (muvaffaqiyat / xato) quyidagi ogohlantirishlarda ko'rinadi.
+    if (ok) cancelBatch.mutate({ id: trimmedBatchId, data: { reason: trimmedReason } });
+  };
 
   return (
-    <div style={{ padding: 16, maxWidth: 920, margin: "0 auto" }}>
-      <Title level={3}>Filiallar — operatsiyalar</Title>
-      <Text type="secondary">
-        Yangi buyurtmali filiallar ro'yxati va partiyalarni boshqarish.
-      </Text>
+    <OpsToolPage tabKey="branches" embedded={embedded}>
+      <OpsIntro title={t("branches.intro.title")} description={t("branches.intro.description")} />
 
-      <Space direction="vertical" size="large" style={{ display: "flex", marginTop: 20 }}>
-        <Table
-          rowKey="id"
-          size="small"
-          loading={newOrders.isLoading}
-          columns={columns}
-          dataSource={dataSource}
-          pagination={false}
-        />
-
-        <Space direction="vertical" style={{ display: "flex" }}>
-          <Input
-            aria-label="batch-id"
-            placeholder="Partiya ID"
-            value={batchId}
-            onChange={(e) => setBatchId(e.target.value)}
-          />
-          <Input.TextArea
-            aria-label="Bekor qilish sababi"
-            placeholder={`Bekor qilish sababi (kamida ${MIN_REASON_LENGTH} ta belgi)`}
-            rows={3}
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-          />
-          {reasonTooShort ? (
-            <Text type="warning">
-              Sabab kamida {MIN_REASON_LENGTH} ta belgidan iborat bo'lishi kerak (hozir{" "}
-              {trimmedReason.length} ta)
-            </Text>
-          ) : null}
-          <Button
-            type="primary"
-            danger
-            disabled={!canCancel}
-            loading={cancelBatch.isPending}
-            onClick={async () => {
-              const ok = await confirm({
-                tone: "danger",
-                title: "Partiyani bekor qilasizmi?",
-                description: "Partiya va undagi barcha buyurtmalar bog'lanishdan chiqariladi",
-                confirmLabel: "Partiyani bekor qilish",
-                cancelLabel: "Orqaga", // asosiy amalning o'zi bekor qilish — «Orqaga» (tizim-feedback 06)
-                icon: Ban,
-                confirmIcon: Ban,
-                irreversible: true,
-              });
-              // Natija (muvaffaqiyat / xato) quyidagi `Alert` larda ko'rinadi.
-              if (ok) cancelBatch.mutate({ id: trimmedBatchId, data: { reason: trimmedReason } });
-            }}
+      <div className="flex flex-wrap items-start gap-6 max-md:gap-4">
+        <Card
+          padding="none"
+          title={t("branches.list.title")}
+          actions={newOrders.data !== undefined && !newOrders.isError ? <Badge>{count(rows.length)}</Badge> : null}
+          className="min-w-0 flex-[3_1_440px]"
+        >
+          <QueryBoundary
+            query={newOrders}
+            skeleton="table"
+            isEmpty={() => rows.length === 0}
+            empty={<EmptyState title={t("branches.list.empty")} description={t("branches.list.emptyHint")} />}
+            error={(error, retry) => (
+              <ErrorState error={error} title={t("branches.list.loadError")} retryLabel={t("common.retry")} onRetry={retry} />
+            )}
           >
-            Batchni bekor qilish
-          </Button>
-        </Space>
+            {() => (
+              <DataTable
+                rows={rows}
+                columns={columns}
+                getRowKey={(row) => String(row.id)}
+                label={t("branches.list.title")}
+                renderCard={(row) => (
+                  <div className="flex min-w-0 items-center gap-3 px-4 py-3">
+                    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                      <span className="font-semibold">{row.name}</span>
+                      <span className="text-[13px] text-text-muted">{t("common.idValue", { id: row.id })}</span>
+                    </div>
+                    <span className="whitespace-nowrap font-semibold">{count(Number(row.new_orders_count) || 0)}</span>
+                  </div>
+                )}
+              />
+            )}
+          </QueryBoundary>
+        </Card>
 
-        {cancelBatch.isSuccess ? (
-          <Alert
-            type="success"
-            showIcon
-            message="Partiya muvaffaqiyatli bekor qilindi"
-          />
-        ) : null}
+        <Card
+          title={t("branches.cancel.title")}
+          description={t("branches.cancel.description")}
+          className="min-w-0 flex-[2_1_340px]"
+        >
+          <form onSubmit={handleCancel} noValidate className="flex flex-col gap-4">
+            <Field label={t("branches.cancel.batchId")} required>
+              <div className="relative flex items-center">
+                <span aria-hidden="true" className="pointer-events-none absolute left-3 z-10 text-text-muted">
+                  {t("branches.cancel.batchPrefix")}
+                </span>
+                <TextInput
+                  inputMode="numeric"
+                  value={batchId}
+                  onValueChange={setBatchId}
+                  className="w-full"
+                  inputClassName="pl-7"
+                />
+              </div>
+            </Field>
+            <Field
+              label={t("branches.cancel.reason")}
+              required
+              hint={
+                reasonTooShort
+                  ? undefined
+                  : t("branches.cancel.reasonHint", { count: trimmedReason.length, min: MIN_REASON_LENGTH })
+              }
+              error={
+                reasonTooShort
+                  ? t("branches.cancel.reasonTooShort", { count: trimmedReason.length, min: MIN_REASON_LENGTH })
+                  : undefined
+              }
+            >
+              <TextInput multiline rows={3} value={reason} onValueChange={setReason} className="min-h-24" />
+            </Field>
+            <div className="flex justify-end">
+              <Button
+                type="submit"
+                variant="danger-soft"
+                leftIcon={CircleX}
+                disabled={!canCancel}
+                loading={cancelBatch.isPending}
+                className="max-md:w-full"
+              >
+                {t("branches.cancel.submit")}
+              </Button>
+            </div>
 
-        {cancelBatch.isError ? (
-          <Alert
-            type="error"
-            showIcon
-            message="Partiyani bekor qilib bo'lmadi"
-            description={
-              getBackendErrorMessage(cancelBatch.error) ?? "Noma'lum xatolik yuz berdi"
-            }
-          />
-        ) : null}
-      </Space>
-    </div>
+            {cancelBatch.isSuccess ? <OpsAlert tone="success" title={t("branches.cancel.success")} /> : null}
+            {cancelBatch.isError ? (
+              <OpsAlert tone="danger" title={t("branches.cancel.error")}>
+                {getBackendErrorMessage(cancelBatch.error) ?? t("branches.cancel.unknownError")}
+              </OpsAlert>
+            ) : null}
+          </form>
+        </Card>
+      </div>
+    </OpsToolPage>
   );
 };
 

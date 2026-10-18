@@ -1,0 +1,342 @@
+{
+  "hub": {
+    "title": "Ops vositalari",
+    "description": "Ichki xizmat ekranlari — kamdan-kam ishlatiladi, faqat superadmin",
+    "tabsLabel": "Ops bo'limlari",
+    "sectionSelect": "Ops bo'limi: {{tab}}",
+    "legacyPath": "Eski manzil: {{path}}",
+    "back": "Ops vositalari",
+    "tabError": "Bu bo'limni ochishda xatolik yuz berdi",
+    "tabErrorHint": "Boshqa bo'limlar ishlashda davom etadi."
+  },
+  "tabs": {
+    "finance": "Moliya operatorlari",
+    "integrations": "Integratsiyalar",
+    "investors": "Investorlar",
+    "logistics": "Logistika",
+    "branches": "Filiallar",
+    "identity": "Xodimlar",
+    "system": "Tizim",
+    "auth": "Kirish diagnostikasi"
+  },
+  "common": {
+    "count": "{{count}} ta",
+    "idValue": "ID {{id}}",
+    "retry": "Qayta urinish"
+  },
+  "finance": {
+    "intro": {
+      "title": "Operator hisob-kitobi",
+      "description": "Operatorning ishlab topgan, to'langan va qoldiq summasi, daromad va to'lov tarixi. Yangi to'lovni shu yerda qayd qiling."
+    },
+    "lookup": {
+      "formLabel": "Operatorni yuklash",
+      "label": "Operator ID",
+      "placeholder": "Operator ID",
+      "submit": "Yuklash",
+      "invalid": "Operator ID faqat raqamlardan iborat bo'lishi kerak"
+    },
+    "balance": {
+      "title": "Operator {{id}} balansi",
+      "subtitle": "Qoldiq = ishlab topgan − to'langan",
+      "due": "Operatorga to'lanishi kerak",
+      "earned": "Ishlab topgan",
+      "paid": "To'langan",
+      "rest": "Qoldiq",
+      "paidShare": "To'langan ulushi",
+      "paidShareAria": "Ishlab topilganning {{value}} to'langan",
+      "waterfallAria": "Qoldiq {{balance}}: ishlab topgan {{earned}}, to'langan {{paid}} ayiriladi",
+      "loadError": "Operator balansini olib bo'lmadi"
+    },
+    "payment": {
+      "title": "To'lov qayd qilish",
+      "description": "Operatorga berilgan to'lovni yozib qo'ying — qoldiq avtomatik kamayadi",
+      "amount": "Summa (so'm)",
+      "amountPlaceholder": "Masalan, 200 000",
+      "amountRequired": "Summani kiriting",
+      "note": "Izoh",
+      "notePlaceholder": "Masalan, oktabr uchun",
+      "submit": "To'lovni saqlash",
+      "success": "To'lov qayd qilindi",
+      "error": "To'lovni qayd qilib bo'lmadi",
+      "confirmTitle": "To'lovni qayd qilasizmi?",
+      "confirmDescription": "Operator {{id}} ga to'lov yoziladi — qoldiq shu summaga kamayadi.",
+      "confirmAmount": "To'lov summasi",
+      "confirmNote": "Izoh",
+      "confirmLoading": "Saqlanmoqda…"
+    },
+    "earnings": {
+      "title": "Daromadlar",
+      "description": "Har bir buyurtma uchun hisoblangan ulush",
+      "order": "Buyurtma",
+      "amount": "Miqdor",
+      "date": "Sana",
+      "summary": "{{from}}–{{to}} / {{total}} ta",
+      "pagesLabel": "Daromadlar sahifalari",
+      "empty": "Hali daromad yo'q",
+      "emptyHint": "Operator buyurtma olganda ulushi shu yerda paydo bo'ladi.",
+      "loadError": "Daromadlarni olib bo'lmadi"
+    },
+    "payouts": {
+      "title": "To'lovlar tarixi",
+      "description": "Operatorga berilgan to'lovlar",
+      "amount": "Miqdor",
+      "note": "Izoh",
+      "date": "Sana",
+      "count": "{{count}} ta to'lov",
+      "total": "Jami:",
+      "summary": "{{from}}–{{to}} / {{total}} ta to'lov",
+      "pagesLabel": "To'lovlar sahifalari",
+      "empty": "Hali to'lov yo'q",
+      "emptyHint": "Qayd qilingan to'lovlar shu yerda ko'rinadi.",
+      "loadError": "To'lovlar tarixini olib bo'lmadi"
+    }
+  },
+  "integrations": {
+    "intro": {
+      "title": "Integratsiyalar — operatsiyalar",
+      "description": "Integratsiya operatsiyalari: debitorlik qarzlari va sinxronizatsiya."
+    },
+    "receivables": {
+      "title": "Debitorlik qarzlari",
+      "description": "Tashuvchi mijozdan yig'gan va bizga o'tkazishi kerak bo'lgan summalar",
+      "id": "ID",
+      "amount": "Summa",
+      "status": "Holat",
+      "statuses": {
+        "pending": "Kutilmoqda",
+        "settled": "Yopilgan",
+        "cancelled": "Bekor qilingan"
+      },
+      "summary": "{{from}}–{{to}} / {{total}} ta",
+      "empty": "Debitorlik qarzlari yo'q",
+      "emptyHint": "Tashuvchi buyurtmani sotganda qarz shu yerda paydo bo'ladi.",
+      "loadError": "Debitorlik qarzlarini yuklab bo'lmadi"
+    },
+    "sync": {
+      "title": "Sinxronizatsiya",
+      "description": "Integratsiya ma'lumotlarini hozir qayta tortib olish",
+      "label": "Integratsiya ID",
+      "placeholder": "Integratsiya ID",
+      "submit": "Sinxronlash",
+      "success": "Sinxronizatsiya muvaffaqiyatli bajarildi",
+      "successMeta": "Integratsiya {{id}} · {{time}}",
+      "error": "Sinxronizatsiya bajarilmadi"
+    }
+  },
+  "investors": {
+    "intro": {
+      "title": "Investorlar",
+      "description": "Barcha investorlar ro'yxati va yangi investor qo'shish."
+    },
+    "list": {
+      "title": "Investorlar ro'yxati",
+      "id": "ID",
+      "name": "Ism",
+      "phone": "Telefon",
+      "summary": "{{from}}–{{to}} / {{total}} ta investor",
+      "empty": "Investorlar yo'q",
+      "emptyHint": "Yangi investorni o'ngdagi forma orqali qo'shing.",
+      "loadError": "Investorlar ro'yxatini olib bo'lmadi"
+    },
+    "create": {
+      "title": "Yangi investor",
+      "description": "Investor ro'yxatga darhol qo'shiladi",
+      "name": "Investor ismi",
+      "namePlaceholder": "Ism va familiya",
+      "nameRequired": "Investor ismini kiriting",
+      "phone": "Telefon raqami",
+      "phonePlaceholder": "90 123 45 67",
+      "phoneRequired": "Telefon raqamini to'liq kiriting",
+      "submit": "Qo'shish",
+      "success": "Investor muvaffaqiyatli qo'shildi",
+      "error": "Investorni qo'shib bo'lmadi"
+    }
+  },
+  "logistics": {
+    "list": {
+      "title": "So'rovlar",
+      "selection": "Tanlangan so'rovlar",
+      "selected": "{{count}} ta so'rov tanlandi",
+      "grouped": "So'rovlar kuryer bo'yicha guruhlangan",
+      "clear": "Tanlovni bekor qilish",
+      "approve": "Tasdiqlash — {{count}} ta",
+      "selectAll": "Barcha so'rovlarni tanlash",
+      "selectAllShort": "Barchasini tanlash",
+      "selectedOf": "{{selected}} / {{total}}",
+      "selectRow": "So'rov {{id}} ni tanlash",
+      "orderLink": "№{{id}}",
+      "noCourier": "Kuryer biriktirilmagan"
+    },
+    "statuses": {
+      "waiting": "Kuryer qabul qilmagan",
+      "on_the_road": "Kuryer qo'lida"
+    }
+  },
+  "branches": {
+    "intro": {
+      "title": "Filiallar — operatsiyalar",
+      "description": "Yangi buyurtmali filiallar ro'yxati va filial paketlarini boshqarish."
+    },
+    "list": {
+      "title": "Yangi buyurtmali filiallar",
+      "id": "ID",
+      "name": "Nomi",
+      "newOrders": "Yangi buyurtmalar",
+      "empty": "Yangi buyurtmali filial yo'q",
+      "emptyHint": "Filialga yangi buyurtma kelganda u shu ro'yxatda chiqadi.",
+      "loadError": "Filiallar ro'yxatini olib bo'lmadi"
+    },
+    "cancel": {
+      "title": "Paketni bekor qilish",
+      "description": "Paket ID va kamida 10 ta belgili sabab kerak; amal tasdiqdan keyin bajariladi.",
+      "batchId": "Paket ID",
+      "batchPrefix": "B-",
+      "reason": "Bekor qilish sababi",
+      "reasonHint": "{{count}} ta belgi · kamida {{min}} ta",
+      "reasonTooShort": "Sabab kamida {{min}} ta belgidan iborat bo'lishi kerak (hozir {{count}} ta)",
+      "submit": "Paketni bekor qilish",
+      "confirmTitle": "Paketni bekor qilasizmi?",
+      "confirmDescription": "Paket bekor qilinadi, undagi barcha buyurtmalar paketdan ajratiladi.",
+      "confirmLabel": "Ha, bekor qilish",
+      "cancelLabel": "Yo'q",
+      "success": "Paket muvaffaqiyatli bekor qilindi",
+      "error": "Paketni bekor qilib bo'lmadi",
+      "unknownError": "Noma'lum xatolik yuz berdi"
+    }
+  },
+  "identity": {
+    "intro": {
+      "title": "Xodimlar — ro'yxatlar",
+      "description": "Adminlar, menejerlar va registratorlar ro'yxatini ko'rish va market sozlamalarini boshqarish."
+    },
+    "lists": {
+      "admins": "Adminlar",
+      "managers": "Menejerlar",
+      "registrators": "Registratorlar",
+      "id": "ID",
+      "name": "Ism",
+      "email": "Email",
+      "empty": "Ro'yxat bo'sh",
+      "loadError": "Ro'yxatni olib bo'lmadi"
+    },
+    "market": {
+      "title": "Market: buyurtma qo'shish ruxsati",
+      "description": "Market o'zi buyurtma yarata olishi uchun ruxsat beradi",
+      "label": "Market ID",
+      "placeholder": "Market ID",
+      "hint": "Market profilidagi «Buyurtma qo'shish» ruxsati bilan bir xil",
+      "submit": "Ruxsat berish",
+      "success": "Ruxsat berildi",
+      "successMeta": "Market {{id}} endi o'zi buyurtma qo'sha oladi",
+      "error": "Ruxsat berib bo'lmadi"
+    }
+  },
+  "system": {
+    "intro": {
+      "title": "Tizim — analitika va xizmatlar",
+      "description": "Tizim holati, analitika ko'rsatkichlari va QR-token tekshirish oynasi."
+    },
+    "health": {
+      "title": "Tizim holati",
+      "ok": "Ishlayapti",
+      "okHint": "Server so'rovlarga javob bermoqda",
+      "error": "Xatolik",
+      "errorHint": "Server javob bermadi"
+    },
+    "sla": {
+      "title": "O'z vaqtida (SLA)",
+      "subtitle": "Butun tizim · analitika KPI",
+      "label": "24 soat ichida yetkazilganlar",
+      "good": "Yaxshi · 70% va undan yuqori",
+      "low": "Past · 70% dan kam",
+      "aria": "O'z vaqtida yetkazish (SLA): {{value}} — 24 soat ichida yetkazilgan buyurtmalar ulushi",
+      "note": "Qabuldan sotuvgacha 24 soatdan oshmagan buyurtmalar ulushi"
+    },
+    "kpi": {
+      "title": "Analitika KPI",
+      "subtitle": "Butun tizim bo'yicha asosiy ko'rsatkichlar",
+      "courier": "Kuryer samaradorligi",
+      "courierValue": "O'rtacha {{count}} ta buyurtma",
+      "courierHint": "Kuryerga o'rtacha",
+      "cancellation": "Bekor qilish darajasi",
+      "cancellationHint": "Bekor qilinganlar ulushi",
+      "cancellationAria": "Bekor qilish darajasi {{value}}",
+      "aov": "O'rtacha buyurtma qiymati",
+      "aovHint": "Bitta sotilgan buyurtmaga",
+      "fulfillment": "O'rtacha yetkazish vaqti",
+      "fulfillmentValue": "{{hours}} soat {{minutes}} daq",
+      "fulfillmentHint": "Belgi — 24 soatlik chegara",
+      "fulfillmentAria": "O'rtacha yetkazish vaqti {{hours}} soat {{minutes}} daqiqa, chegara 24 soat",
+      "rating": "Market reytingi",
+      "ratingEmpty": "Ma'lumot yo'q — reyting hali hisoblanmagan",
+      "degradedTitle": "Ko'rsatkichlarning bir qismi hisoblanmadi",
+      "degradedText": "Ba'zi xizmatlar javob bermadi — qiymatlar to'liq emas.",
+      "loadError": "Analitika ko'rsatkichlarini olib bo'lmadi"
+    },
+    "scan": {
+      "title": "Token orqali tekshirish",
+      "description": "QR token qaysi buyurtma, paket yoki pochtaga tegishli ekanini ko'rsatadi",
+      "label": "Token",
+      "placeholder": "Token kiriting",
+      "submit": "Tekshirish",
+      "result": "Natija",
+      "types": {
+        "order": "Buyurtma",
+        "batch": "Paket",
+        "post": "Pochta",
+        "market_cancelled_handover": "Bekor qilinganlarni topshirish"
+      },
+      "notFound": "Topilmadi",
+      "notFoundHint": "Bu token bo'yicha buyurtma, paket yoki pochta topilmadi.",
+      "error": "Tokenni tekshirib bo'lmadi",
+      "empty": "Natijada ko'rsatiladigan maydon yo'q",
+      "fields": {
+        "id": "ID",
+        "status": "Holat",
+        "qr_code_token": "QR token",
+        "name": "Nomi",
+        "customer_name": "Mijoz",
+        "phone_number": "Telefon",
+        "total_price": "Summa",
+        "total_amount": "Jami summa",
+        "amount": "Summa",
+        "orders_count": "Buyurtmalar",
+        "order_count": "Buyurtmalar",
+        "from_branch": "Qayerdan",
+        "to_branch": "Qayerga",
+        "source_branch": "Qayerdan",
+        "destination_branch": "Qayerga",
+        "region": "Viloyat",
+        "district": "Tuman",
+        "market": "Market",
+        "courier": "Kuryer",
+        "created_at": "Yaratilgan",
+        "createdAt": "Yaratilgan",
+        "updated_at": "Yangilangan",
+        "updatedAt": "Yangilangan"
+      }
+    }
+  },
+  "auth": {
+    "intro": {
+      "title": "Kirish diagnostikasi",
+      "description": "Kirish tokenini yangilash so'rovini sinab ko'radi.",
+      "journalPrefix": "Jurnal uchun:",
+      "journalLink": "Tizim → Faoliyat jurnali",
+      "journalMobile": "Jurnal: Tizim → Faoliyat jurnali"
+    },
+    "test": {
+      "title": "Token yangilash sinovi",
+      "description": "Joriy sessiyaning yangilash tokeni bilan yangi kirish tokeni so'raladi",
+      "endpoint": "So'rov manzili",
+      "submit": "Sinov so'rovini yuborish",
+      "submitting": "Yuborilmoqda",
+      "result": "Natija",
+      "success": "Token muvaffaqiyatli yangilandi",
+      "successDetail": "Yangi token olindi: {{token}}…",
+      "error": "Token yangilanmadi",
+      "errorDetail": "Yangilash so'rovida xatolik yuz berdi."
+    }
+  }
+}

@@ -25,7 +25,7 @@ import {
 } from "../../scripts/design-guard.mjs";
 
 /**
- * DIZAYN v2 QO'RIQCHISI (ratchet) — docs/DESIGN_SYSTEM.md §11.
+ * DIZAYN v2 QO'RIQCHISI (ratchet) — docs/DESIGN_SYSTEM.md §12.3.
  *
  * Har PR'da (CI `npm test`) `src/**\/*.{ts,tsx}` skanerlanadi va har fayl × qoida soni
  * `design/guard-baseline.json` bilan solishtiriladi: son OSHSA — test yiqiladi va qaysi qatorni
@@ -622,7 +622,7 @@ describe("design guard engine", () => {
       expect(isInV2Scope("src/shared/ui/primitives/Button.tsx")).toBe(true);
       expect(isInV2Scope("src/pages/ordersX/x.ts")).toBe(false); // papka chegarasi
       expect(isInV2Scope("src/pages/orders")).toBe(false);
-      expect(isInV2Scope("src/shared/ui/GlobalSearchInput.tsx")).toBe(false); // shared/ui butunligicha emas
+      expect(isInV2Scope("src/shared/ui/BackButton.tsx")).toBe(false); // shared/ui butunligicha emas
       expect(scanSource(scopedFile, "export {};").scoped).toBe(true);
       expect(scanSource(pendingFile, "export {};").scoped).toBe(false);
       expect(pendingFile in V2_SCOPE_PENDING).toBe(true);
@@ -663,6 +663,20 @@ describe("design guard engine", () => {
       expect(compareToBaseline(scan, forced).regressions.map((r) => r.rule)).toEqual(["palette"]);
     });
 
+    it("o'lik yozuv: scope / v2 faylining baseline'dagi rang soni, buzilish qolmasa — yaxshilanish (--update o'chiradi)", () => {
+      const v2File = "src/pages/orders/index.tsx";
+      const scan = scanOf({ [scopedFile]: "export const a = 1;", [v2File]: "// dizayn-v2: x\nexport {};" });
+      const previous = base({ [scopedFile]: { "named-colour": 4, money: 1 }, [v2File]: { legacy: 2 } });
+      const cmp = compareToBaseline(scan, previous);
+      expect(cmp.regressions).toEqual([]);
+      expect(cmp.improvements).toEqual([
+        { file: scopedFile, rule: "money", count: 0, baseline: 1 },
+        { file: scopedFile, rule: "named-colour", count: 0, baseline: 4 },
+        { file: v2File, rule: "legacy", count: 0, baseline: 2 },
+      ]);
+      expect(buildBaseline(scan, previous).files).toEqual({});
+    });
+
     it("V2_SCOPE_PENDING fayli baseline ruxsatini saqlaydi (rangda ham)", () => {
       const src = `<p className="bg-main text-gray-400" />`;
       const scan = scanOf({ [pendingFile]: src });
@@ -685,6 +699,48 @@ describe("design guard engine", () => {
       const cmp = compareToBaseline({ root: "/virtual", ms: 0, files: [injected] }, baseline);
       expect(cmp.regressions.map((r) => [r.file, r.rule, r.scopeFile])).toEqual([
         [scopedFile, "palette", true],
+      ]);
+    });
+
+    it("bosqich B: G2/G3 papkalari scope'da; /scan kamera ekrani pending; eski antd rang nomi qaytmaydi", () => {
+      for (const file of [
+        "src/entities/integrations/payments.ts", // belgisiz yordamchi (ilgari `color: "red"` xaritasi)
+        "src/pages/integrations/panels/ConnectionLog.tsx",
+        "src/pages/notifications/ui/SmsSettingsTab.tsx", // ilgari antd Tag rang nomi
+        "src/pages/settings/ui/SettingsPage.tsx",
+        "src/features/auth/index.tsx",
+        "src/auth/authService.ts", // G3 — FSD qatlamidan tashqari papka
+        "src/pages/dispatch/index.tsx",
+        "src/pages/courier-bulk/index.tsx",
+        "src/pages/scan/detail.tsx",
+      ]) {
+        expect(isInV2Scope(file), file).toBe(true);
+      }
+      expect(isInV2Scope("src/authX/a.ts")).toBe(false); // papka chegarasi
+      // Kamera ishi (ega qarori) — scope ichida, lekin baseline ruxsati saqlanadi.
+      const camera = "src/pages/scan/index.tsx";
+      expect(camera in V2_SCOPE_PENDING).toBe(true);
+      expect(scanSource(camera, "export {};").scoped).toBe(false);
+      // Haqiqiy payments.ts: toza; eski baseline'dagi named-colour ruxsati endi hisobga olinmaydi.
+      const file = "src/entities/integrations/payments.ts";
+      const text = Object.values(
+        import.meta.glob("../entities/integrations/payments.ts", {
+          eager: true,
+          query: "?raw",
+          import: "default",
+        }) as Record<string, string>,
+      )[0];
+      expect(text).toContain("paymentOutcome");
+      const clean = scanSource(file, text);
+      expect(clean.scoped).toBe(true);
+      expect(COLOUR_RULES.filter((id) => clean.counts[id])).toEqual([]);
+      const injected = scanSource(file, `${text}\nexport const legacy = { labelKey: "x", color: "red" };\n`);
+      const cmp = compareToBaseline(
+        { root: "/virtual", ms: 0, files: [injected] },
+        base({ [file]: { "named-colour": 10, money: 1 } }),
+      );
+      expect(cmp.regressions.map((r) => [r.file, r.rule, r.count, r.baseline, r.scopeFile])).toEqual([
+        [file, "named-colour", 1, 0, true],
       ]);
     });
 

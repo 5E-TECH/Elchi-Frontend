@@ -1,0 +1,101 @@
+{
+  "title": "Bildirishnomalar",
+  "description": "Marketlarning Telegram guruhlari: yangi va bekor qilingan buyurtmalar haqida xabar shu yerga boradi",
+  "add": "Bildirishnoma qo'shish",
+  "list": {
+    "title": "Ulangan guruhlar",
+    "hint": "Bitta market uchun yangi va bekor qilingan buyurtmalar guruhini alohida ulash mumkin",
+    "label": "Ulangan Telegram guruhlari",
+    "cardsLabel": "Telegram guruhlari",
+    "loading": "Guruhlar yuklanmoqda",
+    "emptyTitle": "Hali guruh ulanmagan",
+    "emptyDescription": "Marketning Telegram guruhini ulash uchun «Bildirishnoma qo'shish» tugmasini bosing.",
+    "loadError": "Guruhlar ro'yxatini olib bo'lmadi",
+    "pagination": "{{from}}–{{to}} / {{total}} ta guruh"
+  },
+  "columns": {
+    "market": "Market",
+    "groupId": "Telegram guruh ID",
+    "type": "Xabar turi",
+    "status": "Holat",
+    "date": "Sana",
+    "actions": "Amallar"
+  },
+  "type": {
+    "create": "Yangi buyurtma",
+    "cancel": "Bekor qilingan buyurtma"
+  },
+  "groupName": {
+    "create": "yangi buyurtma guruhi",
+    "cancel": "bekor qilingan guruhi"
+  },
+  "status": {
+    "active": "Faol",
+    "inactive": "Nofaol",
+    "inactiveHint": "Bot guruhdan chiqarilgan — qayta ulang"
+  },
+  "editLabel": "{{market}} — {{group}}: tahrirlash",
+  "deleteLabel": "{{market}} — {{group}}: o'chirish",
+  "form": {
+    "market": "Market",
+    "marketPlaceholder": "Marketni tanlang",
+    "marketList": "Marketlar",
+    "marketsLoading": "Marketlar yuklanmoqda…",
+    "marketsEmpty": "Faol market topilmadi",
+    "type": "Xabar turi",
+    "typeCreate": "Yangi buyurtmalar guruhi",
+    "typeCancel": "Bekor qilinganlar guruhi",
+    "typeHint": "Bitta market uchun yangi va bekor qilingan buyurtmalar guruhini alohida ulash mumkin.",
+    "cancel": "Bekor qilish",
+    "errors": {
+      "market": "Marketni tanlang"
+    }
+  },
+  "create": {
+    "title": "Bildirishnoma qo'shish",
+    "introTitle": "Telegram guruhga bildirishnoma ulash",
+    "intro": "Marketni va xabar turini tanlang, so'ng bir martalik havolani oching — bot guruhga qo'shiladi va uni o'zi ulaydi.",
+    "getLink": "Ulash havolasini olish",
+    "gettingLink": "Havola olinmoqda…",
+    "newLink": "Yangi havola olish",
+    "open": "Telegram'da ochish",
+    "linkTitle": "Bir martalik havola tayyor",
+    "qrAlt": "Telegram guruhini ulash havolasining QR kodi",
+    "step1": "Havolani oching yoki QR kodni telefonda skanerlang.",
+    "step2": "Guruhni tanlang — bot guruhga qo'shiladi.",
+    "step3": "Bot guruhni o'zi ulaydi, ro'yxat yangilanadi.",
+    "expiresAt": "{{time}} gacha amal qiladi",
+    "waiting": "Guruh ulanishi kutilmoqda…",
+    "expired": "Havola muddati tugadi",
+    "expiredHint": "Havola 10 daqiqa amal qiladi va bir marta ishlatiladi. Yangisini oling.",
+    "command": "Botni guruhga qo'shing va guruhga shu buyruqni yuboring:",
+    "existsTitle": "Bu turdagi guruh allaqachon ulangan",
+    "exists": "{{market}} uchun bu turdagi guruh ulangan (ID: {{groupId}}). Bot uni almashtirmaydi — ro'yxatda tahrirlang yoki o'chirib, qayta ulang.",
+    "linkError": "Havolani olib bo'lmadi",
+    "connected": "Guruh ulandi",
+    "connectedDescription": "{{market}} — {{type}}"
+  },
+  "edit": {
+    "title": "Bildirishnomani tahrirlash",
+    "groupId": "Telegram guruh ID",
+    "groupIdPlaceholder": "-1001234567890",
+    "groupIdHint": "Masalan: -1001234567890. Guruhda /id yozsangiz, bot guruh ID sini ko'rsatadi.",
+    "groupIdRequired": "Guruh ID sini kiriting",
+    "submit": "O'zgarishlarni saqlash",
+    "saving": "Saqlanmoqda…",
+    "success": "Bildirishnoma yangilandi",
+    "error": "Bildirishnomani saqlashda xatolik bo'ldi"
+  },
+  "deleteDialog": {
+    "title": "Haqiqatan ham o'chirmoqchimisiz?",
+    "description": {
+      "create": "{{market}}'ning yangi buyurtmalari haqidagi xabarlar bu guruhga endi yuborilmaydi. Guruhni keyin qayta ulash mumkin.",
+      "cancel": "{{market}}'ning bekor qilingan buyurtmalari haqidagi xabarlar bu guruhga endi yuborilmaydi. Guruhni keyin qayta ulash mumkin."
+    },
+    "groupId": "Guruh ID: {{id}}",
+    "confirm": "O'chirish",
+    "loading": "O'chirilmoqda…",
+    "deleted": "Bildirishnoma o'chirildi",
+    "failed": "Bildirishnomani o'chirishda xatolik yuz berdi"
+  }
+}

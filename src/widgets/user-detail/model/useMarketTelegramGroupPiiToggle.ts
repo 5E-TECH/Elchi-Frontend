@@ -9,7 +9,7 @@ import { notify } from "../../../shared/lib/notify";
 
 /**
  * Kalit xulqi (holat, kim o'zgartira oladi, PATCH + xabarlar) — bir joyda: `/profile` dagi alohida karta
- * (`MarketTelegramGroupPiiCard`, muzlatilgan `UserDetailWidget`) va v2 `/all-users/:id` dagi «Ruxsatlar»
+ * (`MarketTelegramGroupPiiCard`, v2 `ProfilePage`) va v2 `/all-users/:id` dagi «Ruxsatlar»
  * kartasining qatori (`UserDetailView`) ikkalasi shuni ishlatadi — tahrir qoidalari aynan bir xil.
  */
 export const useMarketTelegramGroupPiiToggle = (user: User, isOwnProfile = false) => {

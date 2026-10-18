@@ -2,6 +2,7 @@ import type { AxiosError } from "axios";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 /**
  * INTEGRATSIYA ROLI — oqimda nima qiladi.
@@ -193,7 +194,7 @@ export const getIntegrationErrorMessage = (err: unknown): string => {
   return "";
 };
 
-export const useGetIntegrations = (params: IntegrationParams) =>
+export const useGetIntegrations = (params: IntegrationParams, options?: SilentErrorOption) =>
   useQuery<IntegrationsResponse>({
     queryKey: integrationKeys.list(params),
     queryFn: () => api.get(API_ENDPOINTS.INTEGRATIONS.BASE, { params }).then((res) => res.data),
@@ -201,6 +202,7 @@ export const useGetIntegrations = (params: IntegrationParams) =>
     staleTime: 10_000,
     refetchOnWindowFocus: false,
     retry: false,
+    ...silentErrorMeta(options),
   });
 
 export type IntegrationByIdResponse = {
@@ -209,7 +211,7 @@ export type IntegrationByIdResponse = {
   data: Integration;
 };
 
-export const useGetIntegrationById = (id?: string | number) =>
+export const useGetIntegrationById = (id?: string | number, options?: SilentErrorOption) =>
   useQuery<IntegrationByIdResponse>({
     queryKey: integrationKeys.byId(id ?? ""),
     queryFn: () =>
@@ -218,6 +220,7 @@ export const useGetIntegrationById = (id?: string | number) =>
     staleTime: 15_000,
     refetchOnWindowFocus: false,
     retry: false,
+    ...silentErrorMeta(options),
   });
 
 export const useCreateIntegration = () => {

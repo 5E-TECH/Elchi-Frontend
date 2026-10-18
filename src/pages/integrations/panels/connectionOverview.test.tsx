@@ -123,7 +123,7 @@ describe("ConnectionOverview — posilka / webhook / COD bloklari", () => {
     expect(within(cod).getByText(/24 soatlik raqamlarga bog'liq emas/)).toBeInTheDocument();
 
     expect(tileLabel(shipments, "Jami")).toMatch(/^Jami: 12\./);
-    expect(tileLabel(shipments, "Yetkazilgan")).toMatch(/^Yetkazilgan: 9\./);
+    expect(tileLabel(shipments, "Yetkazildi")).toMatch(/^Yetkazildi: 9\./);
     expect(tileLabel(shipments, "Yiqilgan")).toMatch(/^Yiqilgan: 2\./);
     expect(tileLabel(shipments, "Nomuvofiqlik")).toMatch(/^Nomuvofiqlik: 1\./);
 
@@ -278,11 +278,16 @@ describe("ConnectionOverview — banner amallari", () => {
     apiGetMock.mockImplementation(okGet);
   });
 
-  it("\"Tuzatish\" chuqur havolasi saqlangan", async () => {
+  /**
+   * Dizayn v2: alohida «Tuzatish» banner tugmasi o'rniga yetishmagan majburiy qatorning o'zida aniq fe'lli
+   * tugma (maket «Webhook manzilini kiritish»). Chuqur havola xulqi o'sha — tuzatiladigan tab ochiladi.
+   */
+  it("yetishmagan qatordagi tugma chuqur havola bo'lib qolgan («API manzilini kiritish» → Sozlamalar)", async () => {
     const onFix = vi.fn();
     const broken = { ...integration, raw: { slug: "elchi" } } as unknown as Connection;
     renderWithProviders(<ConnectionOverview connection={broken} metrics={metrics()} onFix={onFix} />);
-    await userEvent.click(bannerButton(/^Tuzatish$/)!);
+    const checklist = screen.getByTestId("ovw-checklist");
+    await userEvent.click(within(checklist).getByText("API manzilini kiritish").closest("button")!);
     expect(onFix).toHaveBeenCalledWith("settings");
   });
 

@@ -125,8 +125,8 @@ export default defineConfig([
       'jsx-a11y/anchor-is-valid': 'error',
     },
   },
-  // BOSQICH A — G2/G3 qurilmoqda: ularning yo'llarida `warn`. Bosqich B da STAGE_A_PENDING = [] va bu blok yo'qoladi.
-  // Quyidagi istisnolardan OLDIN turadi: shu yo'llardagi test fayllari ham `off` bo'lib qoladi (lint:report shovqinsiz).
+  // BOSQICH A edi (G2/G3 yo'llarida `warn`). Bosqich B: STAGE_A_PENDING = [] (lintRatchet.test.ts talab qiladi) —
+  // blok qo'shilmaydi, `design-v2/*` hamma joyda xato. Quyidagi istisnolardan OLDIN turardi (test fayllari `off`).
   ...(dv2.STAGE_A_PENDING.length
     ? [{ files: dv2.STAGE_A_PENDING, rules: { 'design-v2/raw-control': 'warn', 'design-v2/ui-imports': 'warn' } }]
     : []),

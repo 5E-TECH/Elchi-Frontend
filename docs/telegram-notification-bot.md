@@ -15,7 +15,7 @@ Uni faqat SUPERADMIN/ADMIN ko'radi va marketga o'zi beradi.
 ## 1. Admin: market tokenini beradi
 
 1. Superadmin yoki admin `Foydalanuvchilar` ro'yxatidan **market**ning sahifasini ochadi
-   (`UserDetailWidget`).
+   (`UserDetailView`, `/all-users/:id`).
 2. Sahifada **"Telegram token"** kartasi bor (`widgets/user-detail/ui/MarketTelegramTokenCard.tsx`):
    - faqat SUPERADMIN/ADMIN ko'radi, faqat market sahifasida va o'z profilida emas; boshqa rollar
      uchun karta umuman chizilmaydi;
@@ -107,9 +107,9 @@ qoladi). Tahrirlash oynasi guruh ID sini o'zgartira oladi (guruhda `/id` — bot
 | `POST /notifications/connect-by-token` | SUPERADMIN, ADMIN, REGISTRATOR | tana `{ "text": "group_token-<secret>[-cancel]", "group_id": "-100…" }` — ikkalasi majburiy; bot bilan bir xil qoidalar |
 | `POST /notifications/send` | SUPERADMIN, ADMIN, REGISTRATOR | guruh(lar)ga qo'lda xabar |
 
-Frontendda `connect-by-token` ni chaqiradigan UI yo'q: `useConnectNotificationByToken` hooki
-`{ text, group_id }` ga moslangan, lekin ishlatilmaydi; `entities/coverage/miscCoverage.ts`
-dagi coverage hooki erkin tana yuboradi.
+Frontendda `connect-by-token` ni chaqiradigan kod yo'q (ishlatilmagan `useConnectNotificationByToken` hooki,
+`miscCoverage` dagi coverage mutatsiyasi va `API_ENDPOINTS.NOTIFICATIONS.CONNECT_BY_TOKEN` — dizayn v2 G2 da
+o'chirildi). UI kerak bo'lsa, tana `{ text, group_id }`.
 
 **Avtomatik xabarlar:** hozircha hech bir servis buyurtma yaratilganda yoki bekor qilinganda ulangan
 guruhga **avtomatik** xabar yubormaydi — faqat `POST /notifications/send` va admin

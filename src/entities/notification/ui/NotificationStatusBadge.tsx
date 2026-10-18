@@ -11,12 +11,12 @@ import { StatusBadge } from "../../../shared/ui/primitives";
  * (backend shu payt «Telegram guruhi nofaol» muhim bildirishnomasini ham yuboradi). Xato → `danger`.
  */
 const NotificationStatusBadge = ({ active }: { active: boolean }) => {
-  const { t } = useTranslation("notifications");
+  const { t } = useTranslation("notificationGroups");
 
   return active ? (
-    <StatusBadge tone="success" label={t("telegramGroups.status.active")} />
+    <StatusBadge tone="success" label={t("status.active")} />
   ) : (
-    <StatusBadge tone="danger" label={t("telegramGroups.status.inactive")} />
+    <StatusBadge tone="danger" label={t("status.inactive")} />
   );
 };
 

@@ -428,14 +428,13 @@ describe("TransferCourierButton", () => {
     mockApi([() => ok(checkData())]);
   });
 
-  it.each(["superadmin", "admin"])("%s opens the modal from the header button", async (role) => {
-    renderWithProviders(
-      <TransferCourierButton variant="header" courierId={COURIER_ID} courierName="E2E Kuryer" />,
-      { preloadedState: roleState(role) },
-    );
+  it.each(["superadmin", "admin"])("%s opens the modal from the button", async (role) => {
+    renderWithProviders(<TransferCourierButton courierId={COURIER_ID} courierName="E2E Kuryer" />, {
+      preloadedState: roleState(role),
+    });
 
     expect(mocks.get).not.toHaveBeenCalled();
-    await userEvent.setup().click(screen.getByRole("button", { name: "Filialni o'zgartirish" }));
+    await userEvent.setup().click(screen.getByRole("button", { name: "E2E Kuryerni boshqa filialga o'tkazish" }));
 
     expect(await screen.findByText("Kuryerni boshqa filialga o'tkazish")).toBeInTheDocument();
     expect(await screen.findByText(OK_TEXT)).toBeInTheDocument();
@@ -469,7 +468,7 @@ describe("TransferCourierButton", () => {
   });
 
   it.each(["manager", "registrator", "courier", "market"])("%s never sees it", (role) => {
-    renderWithProviders(<TransferCourierButton variant="header" courierId={COURIER_ID} />, {
+    renderWithProviders(<TransferCourierButton courierId={COURIER_ID} />, {
       preloadedState: roleState(role),
     });
 

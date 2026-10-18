@@ -8,7 +8,7 @@ import uz from "../../../locales/uz/integrations.json";
  * hali ham SABABNI aytadimi. Faqat kalitni tekshirish yetmaydi — matn bosh
  * qolsa ham test yashil bolib ketardi.
  */
-const text = (key: string): string => (uz as Record<string, string>)[key] ?? "";
+const text = (key: string): string => (uz as unknown as Record<string, string>)[key] ?? "";
 
 /**
  * USTADAGI UCH XATOLIK — QULFLASH.
@@ -129,7 +129,7 @@ describe("⭐ 2-3. USTA MANBA KODI — himoyalar o'rnida", () => {
 
   it("nusxa olish TASDIQ sifatida hisoblanadi", () => {
     // Operator ikki marta bir narsani bildirmasin.
-    expect(wizard).toContain("onCopy: () => setKeyCopied(true)");
+    expect(wizard).toContain("onCopied={() => setKeyCopied(true)}");
   });
 
   it("⭐ ID bo'sh bo'lsa 3-qadamga O'TILMAYDI", () => {
@@ -157,6 +157,6 @@ describe("⭐ 2-3. USTA MANBA KODI — himoyalar o'rnida", () => {
     // Shartsiz yashil banner qaytmasligi kerak.
     expect(wizard).toContain("gaps.length === 0");
     expect(wizard).toContain('t("wzNotReady")');
-    expect(text("wzNotReady")).toContain("hali ISHLAMAYDI");
+    expect(text("wzNotReady")).toContain("hali ishlamaydi");
   });
 });

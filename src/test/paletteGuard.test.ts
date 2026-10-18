@@ -9,7 +9,6 @@ import {
   V2_SCOPES,
   type FileScan,
 } from "../../scripts/design-guard.mjs";
-import { STAGE_A_PENDING } from "../../scripts/eslint-design-v2.mjs";
 
 /**
  * PALITRA QO'RIQCHISI (RXoR7TIh, gXwlyhqF).
@@ -80,13 +79,15 @@ describe("palette guard", () => {
  * FAQAT QISQARADI: eskirgan yozuv testni yiqitadi, ro'yxatni o'stirish — shu yerdagi `MAX_*` ni o'zgartirish
  * (review'da ko'rinadi). Unutilgan toza papkani test o'zi topadi.
  */
-/** V2_SCOPE_PENDING o'lchami — faqat kamaytiring (bosqich A: 7; bosqich B: external_orders 3 tasi chiqadi). */
-const MAX_PENDING = 7;
+/** V2_SCOPE_PENDING o'lchami — faqat kamaytiring (bosqich A: 7; bosqich B: 3 — external_orders ×3 v2 ga o'tdi,
+ *  UserDetailWidget o'chdi, TransferCourierButton v2; `pages/scan/index.tsx` (kamera ishi) qo'shildi; integratsiya: 2 —
+ *  iste'molchisiz v1 `ExtraCostApproval.tsx` o'chirildi). */
+const MAX_PENDING = 2;
 /** OUTPUT_FORMAT_FILES o'lchami — faqat kamaytiring (dev birlashmasida exportOrdersToExcel.ts o'chdi: 5 → 4). */
 const MAX_OUTPUT_FORMAT = 4;
 /** `src` dagi stil fayllari — faqat qisqaradi: v2 CSS modul/SCSS yozmaydi (Tailwind + tokenlar). `index.css` —
- *  tokenlar manbai; `Table.module.css` — v1 Table bilan birga yo'qoladi. */
-const STYLE_FILE_ALLOWLIST = ["src/index.css", "src/shared/components/Table/Table.module.css"];
+ *  tokenlar manbai (v1 `Table.module.css` Table bilan birga o'chirildi). */
+const STYLE_FILE_ALLOWLIST = ["src/index.css"];
 
 describe("migratsiya qilingan papkalar (V2_SCOPES)", () => {
   const tree = scanTree();
@@ -109,7 +110,8 @@ describe("migratsiya qilingan papkalar (V2_SCOPES)", () => {
     expect(new Set(V2_SCOPES).size).toBe(V2_SCOPES.length);
     const nested = V2_SCOPES.filter((dir) => V2_SCOPES.some((other) => other !== dir && dir.startsWith(`${other}/`)));
     expect(nested, "ichma-ich scope — ota papka yetarli").toEqual([]);
-    const DIR = /^src\/(?:pages|widgets|features|entities|shared)\/[\w-]+(?:\/[\w-]+)*$/;
+    // FSD qatlami ichidagi papka; yagona istisno — `src/auth` (G3: sessiya va kirish, qatlamdan tashqari).
+    const DIR = /^src\/(?:(?:pages|widgets|features|entities|shared)\/[\w-]+(?:\/[\w-]+)*|auth)$/;
     for (const dir of V2_SCOPES) expect(dir).toMatch(DIR);
   });
 
@@ -122,23 +124,24 @@ describe("migratsiya qilingan papkalar (V2_SCOPES)", () => {
   });
 
   it("toza v2 slice'lar V2_SCOPES da (avtomatik qattiqlashtirish)", () => {
-    // slice = src/<qatlam>/<slice>; ≥ 1 ta `// dizayn-v2:` fayl va rang buzilishi 0 (pending/chiqish fayllari hisobsiz).
+    // slice = src/<qatlam>/<slice>; FSD qatlamidan tashqari papka (`src/auth`, `src/app`) — o'zi slice.
+    // ≥ 1 ta `// dizayn-v2:` fayl va rang buzilishi 0 (pending/chiqish fayllari hisobsiz).
+    const LAYERS = new Set(["pages", "widgets", "features", "entities", "shared"]);
     const slices = new Map<string, { v2: number; dirty: number }>();
     for (const f of tree.files) {
       const parts = f.file.split("/");
-      if (parts.length < 4) continue; // src/<qatlam>/<fayl> — slice emas
-      const slice = parts.slice(0, 3).join("/");
+      const depth = LAYERS.has(parts[1]) ? 3 : 2;
+      if (parts.length <= depth) continue; // src/<qatlam>/<fayl> yoki src/<fayl> — slice emas
+      const slice = parts.slice(0, depth).join("/");
       const s = slices.get(slice) ?? { v2: 0, dirty: 0 };
       slices.set(slice, s);
       if (f.v2) s.v2 += 1;
       if (f.file in V2_SCOPE_PENDING || f.file in OUTPUT_FORMAT_FILES) continue;
       if (colourCount(f) > 0) s.dirty += 1;
     }
-    // Bosqich A: butunligicha G2/G3 qurayotgan slice (`STAGE_A_PENDING` da `<slice>/**`) hali talab qilinmaydi —
-    // ular bosqich B da qo'shiladi (spec §0); bosqich B da STAGE_A_PENDING = [] va tekshiruv to'liq ishlaydi.
-    const ownedByG2G3 = (slice: string) => STAGE_A_PENDING.includes(`${slice}/**`);
+    // Bosqich B (G2 + G3 birlashtirildi): istisno yo'q — har toza v2 slice ro'yxatda bo'lishi shart.
     const missing = [...slices]
-      .filter(([slice, s]) => s.v2 > 0 && s.dirty === 0 && !isInV2Scope(`${slice}/_`) && !ownedByG2G3(slice))
+      .filter(([slice, s]) => s.v2 > 0 && s.dirty === 0 && !isInV2Scope(`${slice}/_`))
       .map(([slice]) => slice);
     expect(
       missing,

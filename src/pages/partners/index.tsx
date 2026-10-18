@@ -1,28 +1,39 @@
-import { useMemo, useState } from "react";
+// dizayn-v2: superadmin-integrations-legacy-partners, admin-integrations-legacy-partners
+import { useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Copy,
-  KeyRound,
-  Pencil,
-  Loader2,
-  Plug,
-  Plus,
-  Power,
-  RefreshCw,
-  RotateCw,
-  Send,
-  ShieldAlert,
-  X,
-} from "lucide-react";
+import { FileText, Handshake, Info, KeyRound, Lock, Pencil, Plus, Power, RefreshCw, Send, TriangleAlert } from "lucide-react";
 import type { RootState } from "../../app/config/store";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import { copyToClipboard } from "../../shared/lib/clipboard";
-import QueryErrorState from "../../shared/ui/QueryErrorState";
-import { useConfirm } from "../../shared/ui/primitives";
+import { cx } from "../../shared/lib/cx";
+import { formatDateTimeLocalized } from "../../shared/lib/formatDateTime";
+import { formatNumberLocalized } from "../../shared/lib/formatMoney";
+import { notify } from "../../shared/lib/notify";
+import {
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  Dialog,
+  EmptyState,
+  ErrorState,
+  Field,
+  IconButton,
+  PageHeader,
+  Pagination,
+  QueryBoundary,
+  Select,
+  SkeletonTable,
+  StatusBadge,
+  TextInput,
+  TONE_SOFT,
+  useConfirm,
+  type DataTableColumn,
+  type SelectOption,
+  type Tone,
+} from "../../shared/ui/primitives";
 import {
   usePartnerActions,
   usePartnerWebhooks,
@@ -35,99 +46,84 @@ import {
 /** Bu ekranga kimlar kira oladi — gateway guardi bilan bir xil. */
 const ALLOWED_ROLES = new Set(["superadmin", "admin"]);
 
-type Message = { tone: "success" | "error" | "warn"; text: string };
-
-const when = (value?: string | null) => (value ? new Date(value).toLocaleString("uz-UZ") : "—");
-
-const STATUS_TONE: Record<string, string> = {
-  completed: "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300",
-  pending: "bg-amber-500/12 text-amber-700 dark:text-amber-300",
-  processing: "bg-amber-500/12 text-amber-700 dark:text-amber-300",
+/** Hodisa holati → badge (yorliqlar `integrations` dagi yetkazish holatlari bilan bir xil). */
+const STATUS_TAG: Record<string, { tone: Tone; labelKey: string }> = {
+  completed: { tone: "success", labelKey: "deliveryDelivered" },
+  pending: { tone: "warning", labelKey: "deliveryQueued" },
+  processing: { tone: "warning", labelKey: "deliverySending" },
   /**
-   * `webhook_url` sozlanmagan — hodisa KUTIB turadi, yo'qolmaydi.
-   *
-   * Ilgari bunday hodisa `completed` deb yopilardi: sozlama yo'qligi
-   * jimgina "muvaffaqiyat" bo'lib, hodisa butunlay yo'qolardi. Ko'k rang
-   * ataylab — bu XATO emas, sozlama kutilayotgan holat.
+   * `webhook_url` sozlanmagan — hodisa KUTIB turadi, yo'qolmaydi. Ko'k (info) ataylab: bu XATO emas,
+   * sozlama kutilayotgan holat.
    */
-  awaiting_config: "bg-sky-500/12 text-sky-700 dark:text-sky-300",
-  permanently_failed: "bg-red-500/12 text-red-700 dark:text-red-300",
+  awaiting_config: { tone: "info", labelKey: "deliveryAwaitingConfig" },
+  permanently_failed: { tone: "danger", labelKey: "deliveryFailed" },
 };
 
-/** Holat nomlarini o'zbekcha ko'rsatish — xom kalit chalkashtiradi. */
-const STATUS_LABEL: Record<string, string> = {
-  completed: "yetkazildi",
-  pending: "navbatda",
-  processing: "yuborilmoqda",
-  awaiting_config: "sozlama kutilmoqda",
-  permanently_failed: "yetkazilmadi",
+const STATUS_FILTERS = ["pending", "processing", "completed", "awaiting_config", "permanently_failed"] as const;
+
+const ORDER_STATUS_KEY: Record<string, string> = {
+  created: "statusCreated",
+  new: "statusNew",
+  received: "statusReceived",
+  "on the road": "statusOnTheRoad",
+  waiting: "statusWaiting",
+  sold: "statusSold",
+  cancelled: "statusCancelled",
+  "cancelled (sent)": "statusCancelledSent",
+  paid: "statusPaid",
+  partly_paid: "statusPartlyPaid",
+  closed: "statusClosed",
 };
+
+const PAGE_SIZE = 20;
 
 /**
- * HAMKORLAR (Partner API) — admin paneli.
+ * API HAMKORLARI (eski sahifa, zaxira) — maket `*-integrations-legacy-partners`.
  *
- * Nima uchun kerak: `admin/partners` da 4 endpoint bor edi, lekin SAHIFA yo'q
- * edi — ya'ni BeePost'ni ro'yxatga olish faqat Swagger orqali bajarilardi.
+ * Nima uchun kerak: `admin/partners` da 4 endpoint bor edi, lekin SAHIFA yo'q edi — BeePost'ni ro'yxatga
+ * olish faqat Swagger orqali bajarilardi. Ikkinchi yarmi — WEBHOOK OUTBOX MONITORI: `permanently_failed`
+ * bo'lgan webhook hech kimga ko'rinmasdi.
  *
- * Ikkinchi yarmi — WEBHOOK OUTBOX MONITORI. `partner_webhook_outbox` jadvalida
- * qatorlar bor edi, lekin UI yo'q edi: `permanently_failed` bo'lgan webhook
- * hech kimga ko'rinmasdi va hamkor tomondagi buyurtma jimgina eskirgan holatda
- * qolardi.
- *
- * ⚠️ API KALIT BIR MARTA. Bazada faqat sha256 hash saqlanadi, shu bois kalit
- * yaratish/rotatsiya javobida BIR MARTA ko'rsatiladi va qayta ko'rsatilmaydi.
+ * ⚠️ API KALIT BIR MARTA. Bazada faqat sha256 hash saqlanadi, shu bois kalit yaratish/rotatsiya javobida
+ * BIR MARTA ko'rsatiladi va qayta ko'rsatilmaydi.
  */
 const PartnersPage = () => {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation(["integrations", "common", "orders"]);
+  const language = i18n.language;
+  const tc = (key: string, options?: Record<string, unknown>) => t(key, { ns: "common", ...options });
+  const num = (value: number) => formatNumberLocalized(value, { language });
   const role = useSelector((state: RootState) => state.role.role);
   const allowed = Boolean(role && ALLOWED_ROLES.has(role));
 
   const confirm = useConfirm();
-  const partnersQuery = usePartners();
-  const { createPartner, updatePartner, rotateKey, setActive, retryWebhook, testWebhook } =
-    usePartnerActions();
+  const partnersQuery = usePartners({ silentError: true });
+  const { createPartner, updatePartner, rotateKey, setActive, retryWebhook, testWebhook } = usePartnerActions();
 
-  const [message, setMessage] = useState<Message | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
-  const [form, setForm] = useState({
-    name: "",
-    webhook_url: "",
-    webhook_secret: "",
-    ip_allowlist: "",
-  });
+  const [form, setForm] = useState({ name: "", webhook_url: "", webhook_secret: "", ip_allowlist: "" });
+  const [formTouched, setFormTouched] = useState(false);
   /**
-   * Tahrirlanayotgan hamkor.
-   *
-   * Sekret maydoni ATAYLAB bo'sh keladi: mavjud qiymat bizga qaytarilmaydi
-   * (faqat shifrlangan holda saqlanadi). Bo'sh qoldirilsa tegilmaydi.
+   * Tahrirlanayotgan hamkor. Sekret maydoni ATAYLAB bo'sh keladi: mavjud qiymat bizga qaytarilmaydi.
+   * Bo'sh qoldirilsa tegilmaydi.
    */
   const [editing, setEditing] = useState<Partner | null>(null);
-  const [editForm, setEditForm] = useState({
-    name: "",
-    webhook_url: "",
-    webhook_secret: "",
-  });
-
-  /** Sinov webhooki natijasi — modal ichida ko'rsatiladi. */
+  const [editForm, setEditForm] = useState({ name: "", webhook_url: "", webhook_secret: "" });
+  /** Sinov webhooki natijasi — oyna ichida ko'rsatiladi. */
   const [testResult, setTestResult] = useState<WebhookTestResult | null>(null);
-
-  /** Bir martalik kalit — modal yopilgach BUTUNLAY yo'qoladi. */
-  const [revealedKey, setRevealedKey] = useState<{
-    name: string;
-    key: string;
-  } | null>(null);
+  /** Bir martalik kalit — oyna yopilgach BUTUNLAY yo'qoladi. */
+  const [revealedKey, setRevealedKey] = useState<{ name: string; key: string } | null>(null);
 
   const [webhookPartner, setWebhookPartner] = useState<string>("");
   const [webhookStatus, setWebhookStatus] = useState<string>("all");
   const [webhookPage, setWebhookPage] = useState(1);
-  const [payloadRow, setPayloadRow] = useState<PartnerWebhookRow | null>(null);
+  const [openPayload, setOpenPayload] = useState<string | null>(null);
 
   const webhooksQuery = usePartnerWebhooks({
     partner_id: webhookPartner || undefined,
     status: webhookStatus,
     page: webhookPage,
-    limit: 20,
-  });
+    limit: PAGE_SIZE,
+  }, { silentError: true });
 
   const partners = useMemo(() => partnersQuery.data ?? [], [partnersQuery.data]);
   const webhooks = webhooksQuery.data?.data ?? [];
@@ -138,18 +134,19 @@ const PartnersPage = () => {
   }, [partners]);
 
   /** Backend aniq sababni aytadi — umumiy xabar operatorni ko'r qoldirardi. */
-  const fail = (error: unknown, fallback: string) =>
-    setMessage({
-      tone: "error",
-      text: getBackendErrorMessage(error) ?? fallback,
-    });
+  const fail = (error: unknown, fallback: string) => notify.error(getBackendErrorMessage(error) ?? fallback);
 
-  const handleCreate = async () => {
+  const closeCreate = () => {
+    setCreateOpen(false);
+    setFormTouched(false);
+    setForm({ name: "", webhook_url: "", webhook_secret: "", ip_allowlist: "" });
+  };
+
+  const handleCreate = async (event?: FormEvent) => {
+    event?.preventDefault();
+    setFormTouched(true);
     const name = form.name.trim();
-    if (!name) {
-      setMessage({ tone: "warn", text: t("partnerNameRequired") });
-      return;
-    }
+    if (!name || createPartner.isPending) return;
     try {
       const res = await createPartner.mutateAsync({
         name,
@@ -160,43 +157,31 @@ const PartnersPage = () => {
           .map((s) => s.trim())
           .filter(Boolean),
       });
-      setCreateOpen(false);
-      setForm({ name: "", webhook_url: "", webhook_secret: "", ip_allowlist: "" });
+      closeCreate();
       if (res?.api_key) setRevealedKey({ name, key: res.api_key });
-      setMessage({ tone: "success", text: t("partnerCreated") });
+      notify.success(tc("partnerCreated"));
     } catch (error) {
-      fail(error, t("partnerCreateFailed"));
+      fail(error, tc("partnerCreateFailed"));
     }
   };
 
   const openEdit = (partner: Partner) => {
     setEditing(partner);
     setTestResult(null);
-    setEditForm({
-      name: partner.name ?? "",
-      webhook_url: partner.webhook_url ?? "",
-      webhook_secret: "",
-    });
+    setEditForm({ name: partner.name ?? "", webhook_url: partner.webhook_url ?? "", webhook_secret: "" });
   };
 
-  const handleEdit = async () => {
-    if (!editing) return;
+  const handleEdit = async (event?: FormEvent) => {
+    event?.preventDefault();
+    if (!editing || updatePartner.isPending) return;
     /**
-     * FAQAT O'ZGARGAN maydonlar yuboriladi. Aks holda tegilmagan maydon ham
-     * jo'natilib, backendning "berilmasa tegilmaydi" qoidasi ma'nosini
-     * yo'qotardi — masalan sekret bo'sh yuborilib, ishlab turgan imzo
-     * o'chib ketardi.
+     * FAQAT O'ZGARGAN maydonlar yuboriladi. Aks holda tegilmagan maydon ham jo'natilib, backendning
+     * «berilmasa tegilmaydi» qoidasi ma'nosini yo'qotardi — masalan sekret bo'sh yuborilib, imzo o'chib ketardi.
      */
     const dto: Record<string, string> = {};
-    if (editForm.name.trim() !== (editing.name ?? "")) {
-      dto.name = editForm.name.trim();
-    }
-    if (editForm.webhook_url.trim() !== (editing.webhook_url ?? "")) {
-      dto.webhook_url = editForm.webhook_url.trim();
-    }
-    if (editForm.webhook_secret.trim()) {
-      dto.webhook_secret = editForm.webhook_secret.trim();
-    }
+    if (editForm.name.trim() !== (editing.name ?? "")) dto.name = editForm.name.trim();
+    if (editForm.webhook_url.trim() !== (editing.webhook_url ?? "")) dto.webhook_url = editForm.webhook_url.trim();
+    if (editForm.webhook_secret.trim()) dto.webhook_secret = editForm.webhook_secret.trim();
 
     if (!Object.keys(dto).length) {
       setEditing(null);
@@ -204,47 +189,30 @@ const PartnersPage = () => {
     }
 
     try {
-      const res = await updatePartner.mutateAsync({
-        id: String(editing.id),
-        dto,
-      });
+      const res = await updatePartner.mutateAsync({ id: String(editing.id), dto });
       /**
-       * `webhook_url` qo'yilganda backend sozlama yo'qligi tufayli kutib
-       * turgan hodisalarni navbatga qaytaradi. Bu son JIM o'tmasligi kerak:
-       * operator "nega birdan 12 ta webhook ketdi" degan savolga javob
-       * topa olishi kerak.
+       * `webhook_url` qo'yilganda backend kutib turgan hodisalarni navbatga qaytaradi — bu son JIM o'tmasin.
        */
-      const requeued = Number(
-        (res as { data?: { requeued_webhooks?: number } })?.data?.requeued_webhooks ?? 0,
-      );
-      setMessage({
-        tone: "success",
-        text: requeued
-          ? `${t("partnerUpdated")} — kutib turgan ${requeued} ta hodisa navbatga qaytarildi`
-          : t("partnerUpdated"),
-      });
+      const requeued = Number((res as { data?: { requeued_webhooks?: number } })?.data?.requeued_webhooks ?? 0);
+      notify.success(requeued ? t("legacyPartners.updatedRequeued", { count: requeued }) : tc("partnerUpdated"));
       setEditing(null);
     } catch (error) {
-      fail(error, t("partnerUpdateFailed"));
+      fail(error, tc("partnerUpdateFailed"));
     }
   };
 
   /**
-   * SINOV WEBHOOKI. Formadagi manzil bilan sinaydi — ya'ni SAQLASHDAN OLDIN
-   * tekshirish mumkin. Natija modal ichida qoladi, chunki operator uni
-   * manzil bilan yonma-yon ko'rishi kerak.
+   * SINOV WEBHOOKI. Formadagi manzil bilan sinaydi — ya'ni SAQLASHDAN OLDIN tekshirish mumkin. Natija oyna
+   * ichida qoladi: operator uni manzil bilan yonma-yon ko'rishi kerak.
    */
   const handleTestWebhook = async () => {
     if (!editing) return;
     setTestResult(null);
     try {
-      const res = await testWebhook.mutateAsync({
-        id: String(editing.id),
-        url: editForm.webhook_url.trim() || undefined,
-      });
+      const res = await testWebhook.mutateAsync({ id: String(editing.id), url: editForm.webhook_url.trim() || undefined });
       setTestResult(res);
     } catch (error) {
-      fail(error, "Sinov webhookini yuborib bo'lmadi");
+      fail(error, t("legacyPartners.testFailed"));
     }
   };
 
@@ -252,12 +220,12 @@ const PartnersPage = () => {
   const handleRotate = async (partner: Partner) => {
     const ok = await confirm({
       tone: "danger",
-      title: t("partnerRotateKey"),
-      description: t("partnerRotateText"),
+      title: tc("partnerRotateKey"),
+      description: tc("partnerRotateText"),
       details: partner.name,
-      note: t("partnerRotateNote"),
+      note: tc("partnerRotateNote"),
       // Maket `superadmin-integrations-rotate-key-dialog`: «Ha, yangilash».
-      confirmLabel: t("partnerRotateOk"),
+      confirmLabel: tc("partnerRotateOk"),
       icon: KeyRound,
       confirmIcon: KeyRound,
     });
@@ -265,38 +233,32 @@ const PartnersPage = () => {
     try {
       const res = await rotateKey.mutateAsync(String(partner.id));
       if (res?.api_key) setRevealedKey({ name: partner.name, key: res.api_key });
-      setMessage({ tone: "success", text: t("partnerKeyRotated") });
+      notify.success(tc("partnerKeyRotated"));
     } catch (error) {
-      fail(error, t("partnerRotateFailed"));
+      fail(error, tc("partnerRotateFailed"));
     }
   };
 
-  // Hamkorni o'chirish kirish huquqini oladi — tasdiqlash oynasi orqali (DESIGN_SYSTEM §8).
+  // Hamkorni to'xtatish kirish huquqini oladi — tasdiqlash oynasi orqali (DESIGN_SYSTEM §8).
   // Yoqish — darhol (§8: faollashtirish ataylab tasdiqsiz; «Ish rejimi» panelidagi kalit ham shunday).
   const handleToggle = async (partner: Partner) => {
     if (partner.is_active) {
       const ok = await confirm({
         tone: "danger",
-        title: t("partnerDisableTitle"),
-        description: t("partnerDisableText"),
+        title: tc("partnerDisableTitle"),
+        description: tc("partnerDisableText"),
         details: partner.name,
-        confirmLabel: t("partnerDisable"),
+        confirmLabel: t("legacyPartners.stop"),
         icon: Power,
         confirmIcon: Power,
       });
       if (!ok) return;
     }
     try {
-      await setActive.mutateAsync({
-        id: String(partner.id),
-        is_active: !partner.is_active,
-      });
-      setMessage({
-        tone: "success",
-        text: partner.is_active ? t("partnerDisabled") : t("partnerEnabled"),
-      });
+      await setActive.mutateAsync({ id: String(partner.id), is_active: !partner.is_active });
+      notify.success(partner.is_active ? tc("partnerDisabled") : tc("partnerEnabled"));
     } catch (error) {
-      fail(error, t("partnerStatusChangeFailed"));
+      fail(error, tc("partnerStatusChangeFailed"));
     }
   };
 
@@ -304,652 +266,612 @@ const PartnersPage = () => {
     void (async () => {
       try {
         await retryWebhook.mutateAsync(String(row.id));
-        setMessage({ tone: "success", text: t("partnerWebhookRetried") });
+        notify.success(tc("partnerWebhookRetried"));
       } catch (error) {
-        fail(error, t("partnerWebhookRetryFailed"));
+        fail(error, tc("partnerWebhookRetryFailed"));
       }
     })();
   };
 
   const copyKey = (key: string) => {
-    void copyToClipboard(key).then((copied) => {
-      setMessage(
-        copied
-          ? { tone: "success", text: t("partnerKeyCopied") }
-          : { tone: "error", text: t("partnerKeyCopyFailed") },
-      );
-    });
+    void copyToClipboard(key).then((copied) =>
+      copied ? notify.success(tc("partnerKeyCopied")) : notify.error(tc("partnerKeyCopyFailed")),
+    );
   };
 
   if (!allowed) {
     return (
-      <div className="flex min-h-[240px] items-center justify-center">
-        <p className="m-0 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-          {t("partnerNoAccess")}
-        </p>
+      <div className="flex flex-col gap-6 max-md:gap-4">
+        <PageHeader back="/integrations" backLabel={t("pageTitle")} title={t("legacyPartners.title")} />
+        <Card padding="none">
+          <EmptyState icon={Lock} title={tc("partnerNoAccess")} />
+        </Card>
       </div>
     );
   }
 
+  /* ─── Hamkorlar jadvali ─── */
+  const webhookSummary = (partner: Partner) => {
+    const pending = partner.webhooks?.pending ?? 0;
+    const failed = partner.webhooks?.failed ?? 0;
+    if (!pending && !failed) return null;
+    return (
+      <span className="flex flex-col items-start text-[13px]">
+        {pending ? <span className="text-warning-fg">{t("legacyPartners.queued", { count: num(pending) })}</span> : null}
+        {failed ? <span className="text-danger-fg">{t("legacyPartners.failed", { count: num(failed) })}</span> : null}
+      </span>
+    );
+  };
+  const lastDelivery = (partner: Partner) => formatDateTimeLocalized(partner.webhooks?.last_delivered_at, { language });
+  const toggleButton = (partner: Partner) =>
+    partner.is_active ? (
+      <Button variant="danger-soft" size="sm" leftIcon={Power} disabled={setActive.isPending} onClick={() => void handleToggle(partner)} className="max-md:min-h-11">
+        {t("legacyPartners.stop")}
+      </Button>
+    ) : (
+      <Button variant="secondary" size="sm" leftIcon={Power} disabled={setActive.isPending} onClick={() => void handleToggle(partner)} className="max-md:min-h-11">
+        {tc("partnerEnable")}
+      </Button>
+    );
+
+  const partnerColumns: DataTableColumn<Partner>[] = [
+    {
+      id: "name",
+      header: t("legacyPartners.colPartner"),
+      cell: (p) => (
+        <div className="flex min-w-0 flex-col">
+          <span className="font-semibold">{p.name}</span>
+          <span className={cx("max-w-[360px] truncate text-xs", p.webhook_url ? "text-text-muted" : "text-warning-fg")}>
+            {p.webhook_url || tc("partnerNoWebhookUrl")}
+          </span>
+        </div>
+      ),
+    },
+    {
+      id: "status",
+      header: t("colStatus"),
+      cell: (p) => <StatusBadge tone={p.is_active ? "success" : "neutral"} label={p.is_active ? tc("partnerActive") : tc("partnerDisabledTag")} />,
+    },
+    { id: "webhooks", header: t("legacyPartners.colWebhooks"), cell: (p) => webhookSummary(p) ?? <span className="text-text-muted">—</span> },
+    { id: "last", header: tc("partnerLastDelivery"), hideBelow: "lg", cell: (p) => <span className="whitespace-nowrap">{lastDelivery(p)}</span> },
+    {
+      id: "actions",
+      header: <span className="sr-only">{t("console.colActions")}</span>,
+      align: "end",
+      cell: (p) => (
+        <div className="flex items-center justify-end gap-1">
+          <IconButton size="sm" icon={Pencil} label={t("legacyPartners.editAria", { name: p.name })} onClick={() => openEdit(p)} />
+          <IconButton
+            size="sm"
+            icon={KeyRound}
+            label={t("legacyPartners.rotateAria", { name: p.name })}
+            disabled={rotateKey.isPending}
+            onClick={() => void handleRotate(p)}
+          />
+          {toggleButton(p)}
+        </div>
+      ),
+    },
+  ];
+
+  /* ─── Webhook jurnali ─── */
+  const eventLabel = (row: PartnerWebhookRow) => {
+    const key = row.new_status ? ORDER_STATUS_KEY[row.new_status] : undefined;
+    return key ? t(key, { ns: "orders" }) : (row.new_status ?? row.event_type ?? "—");
+  };
+  const statusBadge = (row: PartnerWebhookRow) => {
+    const tag = STATUS_TAG[row.status];
+    // Xom kalit («awaiting_config») chalkashtiradi — o'zbekcha yorliq ko'rsatiladi.
+    return <StatusBadge tone={tag?.tone ?? "neutral"} label={tag ? t(tag.labelKey) : row.status} />;
+  };
+  const attemptsText = (row: PartnerWebhookRow) => `${num(row.attempts ?? 0)}/${num(row.max_attempts ?? 0)}`;
+  const payloadToggle = (row: PartnerWebhookRow, asButton: boolean) => {
+    const open = openPayload === String(row.id);
+    const panelId = `partner-payload-${row.id}`;
+    return asButton ? (
+      <Button
+        variant="ghost"
+        size="sm"
+        aria-expanded={open}
+        aria-controls={open ? panelId : undefined}
+        onClick={() => setOpenPayload(open ? null : String(row.id))}
+        className="max-md:min-h-11"
+      >
+        {t("legacyPartners.payloadShort")}
+      </Button>
+    ) : (
+      <IconButton
+        size="sm"
+        icon={FileText}
+        label={t("legacyPartners.payloadAria", { ref: row.external_order_id })}
+        aria-expanded={open}
+        aria-controls={open ? panelId : undefined}
+        onClick={() => setOpenPayload(open ? null : String(row.id))}
+      />
+    );
+  };
+  const retryControl = (row: PartnerWebhookRow, asButton: boolean) => {
+    const done = row.status === "completed";
+    if (asButton) {
+      return done ? null : (
+        <Button variant="secondary" size="sm" disabled={retryWebhook.isPending} onClick={() => handleRetry(row)} className="max-md:min-h-11">
+          {tc("partnerWebhookRetry")}
+        </Button>
+      );
+    }
+    return (
+      <IconButton
+        size="sm"
+        icon={RefreshCw}
+        label={t(done ? "legacyPartners.retryNotNeededAria" : "legacyPartners.retryAria", { ref: row.external_order_id })}
+        disabled={done || retryWebhook.isPending}
+        onClick={() => handleRetry(row)}
+      />
+    );
+  };
+
+  const journalColumns: DataTableColumn<PartnerWebhookRow>[] = [
+    {
+      id: "event",
+      header: t("colEvent"),
+      cell: (row) => (
+        <div className="flex min-w-0 flex-col">
+          <span className="font-semibold">{eventLabel(row)}</span>
+          <span className="font-mono text-xs text-text-muted">
+            {row.external_order_id}
+            <span className="lg:hidden"> · {partnerNames.get(String(row.partner_id)) ?? row.partner_id}</span>
+          </span>
+        </div>
+      ),
+    },
+    { id: "partner", header: t("legacyPartners.colPartner"), hideBelow: "lg", cell: (row) => partnerNames.get(String(row.partner_id)) ?? row.partner_id },
+    {
+      id: "status",
+      header: t("colStatus"),
+      cell: (row) => (
+        <div className="flex min-w-0 flex-col items-start gap-1">
+          {statusBadge(row)}
+          {row.last_error ? <span className="line-clamp-2 max-w-[260px] [overflow-wrap:anywhere] text-xs text-danger-fg lg:hidden">{row.last_error}</span> : null}
+        </div>
+      ),
+    },
+    { id: "attempts", header: t("colAttempt"), align: "end", cell: (row) => <span className="tabular-nums">{attemptsText(row)}</span> },
+    {
+      id: "error",
+      header: t("colError"),
+      hideBelow: "lg",
+      cell: (row) =>
+        row.last_error ? (
+          <span title={row.last_error} className="line-clamp-2 max-w-[280px] [overflow-wrap:anywhere] text-[13px] text-danger-fg">
+            {row.last_error}
+          </span>
+        ) : (
+          <span className="text-text-muted">—</span>
+        ),
+    },
+    {
+      id: "time",
+      header: t("colTime"),
+      cell: (row) => <span className="whitespace-nowrap">{formatDateTimeLocalized(row.delivered_at ?? row.created_at, { language })}</span>,
+    },
+    {
+      id: "actions",
+      header: <span className="sr-only">{t("console.colActions")}</span>,
+      align: "end",
+      cell: (row) => (
+        <div className="flex items-center justify-end gap-1">
+          {payloadToggle(row, false)}
+          {retryControl(row, false)}
+        </div>
+      ),
+    },
+  ];
+
+  const payloadPanel = (row: PartnerWebhookRow) => (
+    <div className="flex min-w-0 flex-col gap-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <span className="text-xs font-semibold uppercase tracking-[.04em] text-text-muted">{t("legacyPartners.payloadTitle")}</span>
+        <span className="text-xs text-text-muted">
+          {row.status === "permanently_failed"
+            ? t("legacyPartners.stoppedAfter", { count: num(row.attempts ?? 0) })
+            : t("legacyPartners.createdAt", { at: formatDateTimeLocalized(row.created_at, { language }) })}
+        </span>
+      </div>
+      <pre className="max-h-72 overflow-auto rounded-[10px] border border-border bg-surface p-3 font-mono text-xs leading-5 text-text">
+        {JSON.stringify(row.payload ?? {}, null, 2)}
+      </pre>
+    </div>
+  );
+
+  const statusOptions: SelectOption[] = [
+    { value: "all", label: tc("partnerAllStatuses") },
+    ...STATUS_FILTERS.map((s) => ({ value: s, label: t(STATUS_TAG[s].labelKey) })),
+  ];
+  const partnerOptions: SelectOption[] = [
+    { value: "", label: tc("partnerAllPartners") },
+    ...partners.map((p) => ({ value: String(p.id), label: p.name })),
+  ];
+
+  const total = webhooksQuery.data?.total ?? 0;
+
   return (
-    <div className="flex flex-col gap-4">
-      {/* ═══════ Sarlavha ═══════ */}
-      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm sm:rounded-[28px] dark:bg-primarydark">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-main/10 text-main">
-              <Plug size={20} />
-            </span>
-            <div>
-              <h1 className="m-0 text-lg font-extrabold text-maindark dark:text-white">
-                {t("partnersTitle")}
-              </h1>
-              <p className="m-0 mt-1 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                {t("partnersSubtitle")}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setCreateOpen(true)}
-              className="flex items-center gap-2 rounded-2xl bg-main px-4 py-2.5 text-sm font-bold text-white transition hover:opacity-90"
-            >
-              <Plus size={16} />
-              {t("partnerCreate")}
-            </button>
-            <button
-              type="button"
+    <div className="flex flex-col gap-6 max-md:gap-4">
+      <PageHeader
+        back="/integrations"
+        backLabel={t("pageTitle")}
+        title={t("legacyPartners.title")}
+        meta={
+          <Badge title={t("legacyPartners.legacyHint")}>{t("legacyPartners.legacyBadge")}</Badge>
+        }
+        description={tc("partnersSubtitle")}
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              leftIcon={RefreshCw}
+              loading={partnersQuery.isFetching && !partnersQuery.isLoading}
               onClick={() => void partnersQuery.refetch()}
-              disabled={partnersQuery.isFetching}
-              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] text-maindark transition hover:bg-main/5 disabled:opacity-50 dark:text-white"
-              title={t("refresh")}
             >
-              <RefreshCw size={18} className={partnersQuery.isFetching ? "animate-spin" : ""} />
-            </button>
-          </div>
-        </div>
+              {t("refresh")}
+            </Button>
+            <Button leftIcon={Plus} onClick={() => setCreateOpen(true)}>
+              {t("scPartnerNew")}
+            </Button>
+          </>
+        }
+      />
 
-        {message ? (
-          <div
-            className={`mt-3 rounded-2xl border px-4 py-3 text-sm font-semibold ${
-              message.tone === "success"
-                ? "border-emerald-400/30 bg-emerald-500/12 text-emerald-700 dark:text-emerald-200"
-                : message.tone === "warn"
-                  ? "border-amber-400/30 bg-amber-500/12 text-amber-700 dark:text-amber-200"
-                  : "border-red-400/30 bg-red-500/12 text-red-700 dark:text-red-200"
-            }`}
-          >
-            <div className="flex items-start gap-2">
-              {message.tone === "success" ? (
-                <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
-              ) : (
-                <AlertTriangle size={18} className="mt-0.5 shrink-0" />
-              )}
-              <span className="[overflow-wrap:anywhere]">{message.text}</span>
-            </div>
-          </div>
-        ) : null}
-      </div>
-
-      {/* ═══════ Hamkorlar ro'yxati ═══════ */}
-      <div className="overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-primary shadow-sm sm:rounded-[28px] dark:bg-primarydark">
-        {partnersQuery.isLoading ? (
-          <div className="flex min-h-[180px] items-center justify-center">
-            <Loader2 className="animate-spin text-main" size={28} />
-          </div>
-        ) : partnersQuery.isError ? (
-          // Xato "hamkor yo'q" bilan bir xil ko'rinmasligi kerak.
-          <QueryErrorState
-            description={getBackendErrorMessage(partnersQuery.error)}
-            onRetry={() => void partnersQuery.refetch()}
-          />
-        ) : partners.length === 0 ? (
-          <div className="flex min-h-[180px] flex-col items-center justify-center gap-3 text-center">
-            <Plug size={32} className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]" />
-            <p className="m-0 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-              {t("partnersEmpty")}
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-[color:var(--color-border-soft)] dark:divide-white/10">
-            {partners.map((partner) => (
-              <div key={partner.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                <div className="min-w-[10rem] flex-1">
-                  <p className="m-0 text-sm font-extrabold text-maindark dark:text-white">
-                    {partner.name}
-                  </p>
-                  <p className="m-0 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] [overflow-wrap:anywhere]">
-                    {partner.webhook_url || t("partnerNoWebhookUrl")}
-                  </p>
-                </div>
-
-                <span
-                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
-                    partner.is_active
-                      ? "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300"
-                      : "bg-red-500/12 text-red-700 dark:text-red-300"
-                  }`}
-                >
-                  {partner.is_active ? t("partnerActive") : t("partnerDisabledTag")}
-                </span>
-
-                {/* Webhook xulosasi — hamkor "tirikmi" degan savolga javob. */}
-                <div className="w-44 shrink-0 text-xs">
-                  <p className="m-0 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                    {t("partnerLastDelivery")}: {when(partner.webhooks?.last_delivered_at)}
-                  </p>
-                  <p className="m-0 mt-0.5 flex gap-2 font-bold">
-                    <span className="text-amber-600 dark:text-amber-400">
-                      ⏳ {partner.webhooks?.pending ?? 0}
-                    </span>
-                    <span
-                      className={
-                        (partner.webhooks?.failed ?? 0) > 0
-                          ? "text-red-600 dark:text-red-400"
-                          : "text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
-                      }
-                    >
-                      ✕ {partner.webhooks?.failed ?? 0}
-                    </span>
-                  </p>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => openEdit(partner)}
-                    title={t("partnerEdit")}
-                    className="flex h-9 items-center gap-1.5 rounded-xl border border-[color:var(--color-border-soft)] px-3 text-xs font-bold text-maindark transition hover:bg-main/5 dark:text-white"
-                  >
-                    <Pencil size={14} />
-                    {t("partnerEdit")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleRotate(partner)}
-                    disabled={rotateKey.isPending}
-                    title={t("partnerRotateKey")}
-                    className="flex h-9 items-center gap-1.5 rounded-xl border border-[color:var(--color-border-soft)] px-3 text-xs font-bold text-maindark transition hover:bg-main/5 disabled:opacity-50 dark:text-white"
-                  >
-                    <KeyRound size={14} />
-                    {t("partnerRotateKey")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleToggle(partner)}
-                    disabled={setActive.isPending}
-                    className={`flex h-9 items-center rounded-xl px-3 text-xs font-bold text-white transition disabled:opacity-50 ${
-                      partner.is_active
-                        ? "bg-red-600 hover:bg-red-500"
-                        : "bg-emerald-700 hover:bg-emerald-600"
-                    }`}
-                  >
-                    {partner.is_active ? t("partnerDisable") : t("partnerEnable")}
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* ═══════ Webhook outbox monitori ═══════ */}
-      <div className="overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-primary shadow-sm sm:rounded-[28px] dark:bg-primarydark">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--color-border-soft)] px-4 py-3 dark:border-white/10">
-          <h2 className="m-0 text-sm font-extrabold uppercase tracking-[0.14em] text-maindark dark:text-white">
-            {t("partnerWebhookLog")}
-          </h2>
-          <div className="flex flex-wrap items-center gap-2">
-            <select
-              value={webhookPartner}
-              onChange={(e) => {
-                setWebhookPartner(e.target.value);
-                setWebhookPage(1);
-              }}
-              className="h-9 rounded-xl border border-[color:var(--color-border-soft)] bg-white px-3 text-base md:text-xs font-semibold text-maindark dark:bg-white/[0.04] dark:text-white"
-            >
-              <option value="">{t("partnerAllPartners")}</option>
-              {partners.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-            <select
-              value={webhookStatus}
-              onChange={(e) => {
-                setWebhookStatus(e.target.value);
-                setWebhookPage(1);
-              }}
-              className="h-9 rounded-xl border border-[color:var(--color-border-soft)] bg-white px-3 text-base md:text-xs font-semibold text-maindark dark:bg-white/[0.04] dark:text-white"
-            >
-              <option value="all">{t("partnerAllStatuses")}</option>
-              <option value="pending">{t("partnerStatusPending")}</option>
-              <option value="processing">{t("partnerStatusProcessing")}</option>
-              <option value="completed">{t("partnerStatusCompleted")}</option>
-              {/* `webhook_url` sozlanmagani uchun kutib turgan hodisalar.
-                  Ilgari bunday hodisa `completed` deb yopilardi va butunlay
-                  yo'qolardi — shuning uchun alohida filtr kerak. */}
-              <option value="awaiting_config">sozlama kutilmoqda</option>
-              <option value="permanently_failed">{t("partnerStatusFailed")}</option>
-            </select>
-            <button
-              type="button"
-              onClick={() => void webhooksQuery.refetch()}
-              disabled={webhooksQuery.isFetching}
-              className="flex h-9 w-9 items-center justify-center rounded-xl border border-[color:var(--color-border-soft)] text-maindark transition hover:bg-main/5 disabled:opacity-50 dark:text-white"
-              title={t("refresh")}
-            >
-              <RefreshCw size={15} className={webhooksQuery.isFetching ? "animate-spin" : ""} />
-            </button>
-          </div>
-        </div>
-
-        {webhooksQuery.isLoading ? (
-          <div className="flex min-h-[160px] items-center justify-center">
-            <Loader2 className="animate-spin text-main" size={24} />
-          </div>
-        ) : webhooksQuery.isError ? (
-          // Jurnal — yetkazilmagan hodisalarni ko'radigan yagona ekran: xato
-          // "Yozuv topilmadi" deb ko'rsatilsa muammo butunlay yashirinadi.
-          <QueryErrorState
-            description={getBackendErrorMessage(webhooksQuery.error)}
-            onRetry={() => void webhooksQuery.refetch()}
-          />
-        ) : webhooks.length === 0 ? (
-          <div className="flex min-h-[160px] items-center justify-center">
-            <p className="m-0 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-              {t("partnerWebhookEmpty")}
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-[color:var(--color-border-soft)] dark:divide-white/10">
-            {webhooks.map((row) => (
-              <div key={row.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
-                <span
-                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
-                    STATUS_TONE[row.status] ?? "bg-white/10 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
-                  }`}
-                >
-                  {/* Xom kalit ("awaiting_config") chalkashtiradi —
-                      o'zbekcha yorliq ko'rsatiladi. */}
-                  {STATUS_LABEL[row.status] ?? row.status}
-                </span>
-                <p className="m-0 w-32 shrink-0 text-xs font-semibold text-maindark dark:text-white">
-                  {partnerNames.get(String(row.partner_id)) ?? row.partner_id}
-                </p>
-                <p className="m-0 w-28 shrink-0 font-mono text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  {row.new_status ?? row.event_type}
-                </p>
-                <p className="m-0 w-40 shrink-0 font-mono text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] [overflow-wrap:anywhere]">
-                  {row.external_order_id}
-                </p>
-                <p className="m-0 w-20 shrink-0 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  {row.attempts}/{row.max_attempts}
-                </p>
-                <p className="m-0 min-w-[8rem] flex-1 text-xs text-red-600 dark:text-red-400 [overflow-wrap:anywhere]">
-                  {row.last_error ?? ""}
-                </p>
-                <p className="m-0 w-40 shrink-0 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  {when(row.delivered_at ?? row.created_at)}
-                </p>
-                <div className="flex shrink-0 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPayloadRow(row)}
-                    className="h-8 rounded-lg border border-[color:var(--color-border-soft)] px-2.5 text-xs font-bold text-maindark transition hover:bg-main/5 dark:text-white"
-                  >
-                    JSON
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleRetry(row)}
-                    disabled={row.status === "completed" || retryWebhook.isPending}
-                    title={t("partnerWebhookRetry")}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-main text-white transition hover:opacity-90 disabled:opacity-40"
-                  >
-                    <RotateCw size={14} />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {(webhooksQuery.data?.totalPages ?? 1) > 1 && (
-          <div className="flex items-center justify-center gap-2 border-t border-[color:var(--color-border-soft)] px-4 py-3 dark:border-white/10">
-            <button
-              type="button"
-              disabled={webhookPage <= 1}
-              onClick={() => setWebhookPage((p) => Math.max(1, p - 1))}
-              className="h-9 rounded-xl border border-[color:var(--color-border-soft)] px-3 text-xs font-bold text-maindark disabled:opacity-40 dark:text-white"
-            >
-              ‹
-            </button>
-            <span className="text-xs font-bold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-              {webhookPage} / {webhooksQuery.data?.totalPages ?? 1}
-            </span>
-            <button
-              type="button"
-              disabled={webhookPage >= (webhooksQuery.data?.totalPages ?? 1)}
-              onClick={() => setWebhookPage((p) => p + 1)}
-              className="h-9 rounded-xl border border-[color:var(--color-border-soft)] px-3 text-xs font-bold text-maindark disabled:opacity-40 dark:text-white"
-            >
-              ›
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ═══════ Yaratish modali ═══════ */}
-      {createOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg rounded-[24px] bg-primary p-5 shadow-2xl dark:bg-primarydark">
-            <div className="flex items-center justify-between">
-              <h3 className="m-0 text-base font-extrabold text-maindark dark:text-white">
-                {t("partnerCreate")}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setCreateOpen(false)}
-                className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="mt-4 flex flex-col gap-3">
-              {(
-                [
-                  ["name", t("partnerName"), "BeePost"],
-                  ["webhook_url", t("partnerWebhookUrl"), "https://..."],
-                  ["webhook_secret", t("partnerWebhookSecret"), "HMAC-SHA256"],
-                  ["ip_allowlist", t("partnerIpAllowlist"), "1.2.3.4, 5.6.7.8"],
-                ] as const
-              ).map(([key, label, placeholder]) => (
-                <label key={key} className="flex flex-col gap-1">
-                  <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                    {label}
+      {/* ═══ Hamkorlar ro'yxati ═══ */}
+      <Card
+        padding="none"
+        title={t("navPartners")}
+        titleAddon={!partnersQuery.isLoading && !partnersQuery.isError ? <Badge>{t("console.countTa", { count: num(partners.length) })}</Badge> : null}
+      >
+        <QueryBoundary
+          query={{
+            data: partnersQuery.data ? partners : undefined,
+            isLoading: partnersQuery.isLoading,
+            isError: partnersQuery.isError,
+            error: partnersQuery.error,
+            refetch: partnersQuery.refetch,
+          }}
+          loading={<SkeletonTable framed={false} rows={3} columns={[t("legacyPartners.colPartner"), t("colStatus"), t("legacyPartners.colWebhooks")]} />}
+          empty={
+            <EmptyState
+              icon={Handshake}
+              title={tc("partnersEmpty")}
+              description={t("legacyPartners.emptyHint")}
+              action={
+                <Button variant="secondary" leftIcon={Plus} onClick={() => setCreateOpen(true)}>
+                  {t("scPartnerNew")}
+                </Button>
+              }
+            />
+          }
+          // Xato «hamkor yo'q» bilan bir xil ko'rinmasligi kerak.
+          error={(error, retry) => <ErrorState error={error} description={getBackendErrorMessage(error)} onRetry={retry} />}
+        >
+          {(list, { isRefetching }) => (
+            <DataTable
+              rows={list}
+              columns={partnerColumns}
+              getRowKey={(p) => String(p.id)}
+              label={t("navPartners")}
+              density="tablet-tight"
+              busy={isRefetching}
+              renderCard={(p) => (
+                <div className="flex min-w-0 flex-col gap-2 px-4 py-3">
+                  <span className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold">{p.name}</span>
+                    <StatusBadge tone={p.is_active ? "success" : "neutral"} label={p.is_active ? tc("partnerActive") : tc("partnerDisabledTag")} />
                   </span>
-                  <input
-                    value={form[key]}
-                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                    placeholder={placeholder}
-                    className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
-                  />
-                </label>
-              ))}
-            </div>
-
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setCreateOpen(false)}
-                className="h-11 rounded-2xl border border-[color:var(--color-border-soft)] px-4 text-sm font-bold text-maindark dark:text-white"
-              >
-                {t("cancel")}
-              </button>
-              <button
-                type="button"
-                onClick={handleCreate}
-                disabled={createPartner.isPending}
-                className="flex h-11 items-center gap-2 rounded-2xl bg-main px-5 text-sm font-bold text-white disabled:opacity-50"
-              >
-                {createPartner.isPending && <Loader2 size={16} className="animate-spin" />}
-                {t("save")}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══════ Tahrirlash modali ═══════ */}
-      {editing && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg rounded-[24px] bg-primary p-5 shadow-2xl dark:bg-primarydark">
-            <div className="flex items-center justify-between">
-              <h3 className="m-0 text-base font-extrabold text-maindark dark:text-white">
-                {editing.name} — {t("partnerEdit")}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setEditing(null)}
-                className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="mt-4 flex flex-col gap-3">
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  {t("partnerName")}
-                </span>
-                <input
-                  value={editForm.name}
-                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                  className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
-                />
-              </label>
-
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  {t("partnerWebhookUrl")}
-                </span>
-                <input
-                  value={editForm.webhook_url}
-                  onChange={(e) => setEditForm((f) => ({ ...f, webhook_url: e.target.value }))}
-                  placeholder="https://..."
-                  className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
-                />
-                <span className="text-[11px] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  {t("partnerWebhookUrlHint")}
-                </span>
-              </label>
-
-              <label className="flex flex-col gap-1">
-                <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  {t("partnerWebhookSecret")}
-                </span>
-                <input
-                  type="password"
-                  value={editForm.webhook_secret}
-                  onChange={(e) =>
-                    setEditForm((f) => ({
-                      ...f,
-                      webhook_secret: e.target.value,
-                    }))
-                  }
-                  autoComplete="new-password"
-                  className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
-                />
-                <span className="text-[11px] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                  {t("partnerSecretHint")}
-                </span>
-              </label>
-
-              {/* ═══════ SINOV WEBHOOKI ═══════
-                  Ilgari sozlamani tekshirishning yagona yo'li HAQIQIY sotuvni
-                  kutish edi — xato bo'lsa o'sha buyurtmaning hodisasi
-                  yo'qolardi. Tugma yuqoridagi manzil bilan sinaydi, ya'ni
-                  SAQLASHDAN OLDIN tekshirish mumkin. */}
-              <div className="rounded-2xl border border-dashed border-[color:var(--color-border-soft)] p-3">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="m-0 text-xs font-bold text-maindark dark:text-white">
-                      Ulanishni tekshirish
-                    </p>
-                    <p className="m-0 mt-0.5 text-[11px] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                      Sinov hodisasi yuboriladi — buyurtmaga ta'sir qilmaydi
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleTestWebhook}
-                    disabled={testWebhook.isPending || !editForm.webhook_url.trim()}
-                    className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-main px-3 text-xs font-bold text-main disabled:opacity-40"
-                  >
-                    {testWebhook.isPending ? (
-                      <Loader2 size={14} className="animate-spin" />
-                    ) : (
-                      <Send size={14} />
-                    )}
-                    Sinov yuborish
-                  </button>
+                  <span className={cx("text-xs [overflow-wrap:anywhere]", p.webhook_url ? "text-text-muted" : "text-warning-fg")}>
+                    {p.webhook_url || tc("partnerNoWebhookUrl")}
+                  </span>
+                  <span className="text-xs text-text-muted">
+                    {[
+                      `${tc("partnerLastDelivery")}: ${lastDelivery(p)}`,
+                      p.webhooks?.pending ? t("legacyPartners.queued", { count: num(p.webhooks.pending) }) : null,
+                      p.webhooks?.failed ? t("legacyPartners.failed", { count: num(p.webhooks.failed) }) : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                  <span className="flex flex-wrap items-center gap-2">
+                    <IconButton variant="secondary" icon={Pencil} label={t("legacyPartners.editAria", { name: p.name })} onClick={() => openEdit(p)} />
+                    <Button variant="danger-soft" size="sm" leftIcon={KeyRound} disabled={rotateKey.isPending} onClick={() => void handleRotate(p)} className="min-h-11">
+                      {tc("partnerRotateKey")}
+                    </Button>
+                    {toggleButton(p)}
+                  </span>
                 </div>
+              )}
+            />
+          )}
+        </QueryBoundary>
+      </Card>
 
-                {testResult && (
-                  <div
-                    className={`mt-3 rounded-xl p-2.5 text-[11px] ${
-                      testResult.ok
-                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
-                        : "bg-red-500/10 text-red-700 dark:text-red-300"
-                    }`}
-                  >
-                    <p className="m-0 font-bold">
-                      {testResult.ok
-                        ? `✓ Yetdi — HTTP ${testResult.http_status} (${testResult.duration_ms} ms)`
-                        : `✗ Yetmadi${
-                            testResult.http_status ? ` — HTTP ${testResult.http_status}` : ""
-                          }`}
-                    </p>
-                    {/* Sekret sozlanmagan bo'lsa qabul qiluvchi imzoni
-                        tekshira olmaydi — bu eng ko'p uchraydigan sabab. */}
-                    {!testResult.secret_configured && (
-                      <p className="m-0 mt-1">
-                        ⚠️ Webhook sekreti sozlanmagan — qabul qiluvchi imzoni tekshira olmaydi
-                      </p>
-                    )}
-                    {testResult.error && <p className="m-0 mt-1 break-all">{testResult.error}</p>}
-                    {/* Javob tanasi MUHIM: qabul qiluvchi 200 qaytarib ham
-                        "imzo yaroqsiz" deyishi mumkin. */}
-                    {testResult.response_body && (
-                      <p className="m-0 mt-1 break-all opacity-80">
-                        Javob: {testResult.response_body.slice(0, 200)}
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* ═══════ SANDBOX — BU YERDA TAHRIRLANMAYDI ═══════ */}
-              {/*
-                ⚠️ MAYDONLAR OLIB TASHLANDI, IKKI HAQIQAT BO'LMASIN.
-
-                Sinov rejimi endi KALIT (`sandbox_enabled`) bilan
-                boshqariladi va yoqish uchun manzil hamda ALOHIDA sekret
-                talab qiladi. Bu forma kalit haqida hech narsa bilmasdi:
-                operator shu yerda manzilni yozib, sinov yoqilgan deb
-                o'ylardi — nusxa esa ketmasdi (kalit o'chiq).
-
-                Ustiga bu yerdagi izoh "berilmasa ASOSIY sekret
-                ishlatiladi" deb yozardi; kod haqiqatan shunday qilardi va
-                bu prodakshn imzo kalitini dev hostga yuborish edi. Endi
-                bunday fallback yo'q.
-
-                Sahifaning o'zi ataylab qoldirilgan (zaxira yo'l), lekin
-                sinov rejimi YAGONA joyda sozlanadi.
-              */}
-              <div className="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-[11px] font-semibold text-sky-800 dark:border-sky-900 dark:bg-sky-900/20 dark:text-sky-200">
-                Sinov rejimi (sandbox) bu yerda emas —{" "}
-                <Link to="/integrations/connections" className="underline decoration-dotted">
-                  Integratsiyalar → Ulanish → Sozlamalar
-                </Link>{" "}
-                bo'limida yoqiladi. U yerda kalit, manzil va alohida sekret birga sozlanadi.
-              </div>
-            </div>
-
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setEditing(null)}
-                className="h-11 rounded-2xl border border-[color:var(--color-border-soft)] px-4 text-sm font-bold text-maindark dark:text-white"
-              >
-                {t("cancel")}
-              </button>
-              <button
-                type="button"
-                onClick={handleEdit}
-                disabled={updatePartner.isPending}
-                className="flex h-11 items-center gap-2 rounded-2xl bg-main px-5 text-sm font-bold text-white disabled:opacity-50"
-              >
-                {updatePartner.isPending && <Loader2 size={16} className="animate-spin" />}
-                {t("save")}
-              </button>
-            </div>
-          </div>
+      {/* ═══ Webhook yetkazish jurnali ═══ */}
+      <Card
+        padding="none"
+        title={tc("partnerWebhookLog")}
+        description={t("legacyPartners.journalSub")}
+        footer={
+          total > 0 ? (
+            <Pagination
+              page={webhooksQuery.data?.page ?? webhookPage}
+              pageSize={webhooksQuery.data?.limit || PAGE_SIZE}
+              total={total}
+              onPageChange={setWebhookPage}
+              summary={(range) => t("legacyPartners.journalRange", range)}
+              label={t("legacyPartners.journalPagesAria")}
+            />
+          ) : undefined
+        }
+      >
+        <div className="flex flex-wrap items-center gap-3 px-5 py-4 max-md:px-4">
+          <Field label={t("legacyPartners.filterPartnerAria")} hideLabel labelAs="span" className="min-w-0 flex-[1_1_200px] max-md:basis-full">
+            <Select
+              options={partnerOptions}
+              value={webhookPartner || null}
+              onChange={(v) => {
+                setWebhookPartner(v ?? "");
+                setWebhookPage(1);
+              }}
+              placeholder={tc("partnerAllPartners")}
+            />
+          </Field>
+          <Field label={t("legacyPartners.filterStatusAria")} hideLabel labelAs="span" className="min-w-0 flex-[1_1_200px] max-md:basis-full">
+            <Select
+              options={statusOptions}
+              value={webhookStatus}
+              onChange={(v) => {
+                setWebhookStatus(v ?? "all");
+                setWebhookPage(1);
+              }}
+              placeholder={tc("partnerAllStatuses")}
+            />
+          </Field>
+          <IconButton
+            variant="secondary"
+            icon={RefreshCw}
+            label={t("legacyPartners.refreshJournal")}
+            loading={webhooksQuery.isFetching && !webhooksQuery.isLoading}
+            onClick={() => void webhooksQuery.refetch()}
+          />
         </div>
-      )}
+        <QueryBoundary
+          query={{
+            data: webhooksQuery.data ? webhooks : undefined,
+            isLoading: webhooksQuery.isLoading,
+            isError: webhooksQuery.isError,
+            error: webhooksQuery.error,
+            refetch: webhooksQuery.refetch,
+          }}
+          loading={<SkeletonTable framed={false} rows={4} columns={[t("colEvent"), t("colStatus"), t("colAttempt"), t("colTime")]} />}
+          empty={<EmptyState icon={FileText} title={tc("partnerWebhookEmpty")} />}
+          // Jurnal — yetkazilmagan hodisalarni ko'radigan yagona ekran: xato «Yozuv topilmadi» deb ko'rsatilmasin.
+          error={(error, retry) => <ErrorState error={error} description={getBackendErrorMessage(error)} onRetry={retry} />}
+          className="border-t border-border"
+        >
+          {(list, { isRefetching }) => (
+            <DataTable
+              rows={list}
+              columns={journalColumns}
+              getRowKey={(row) => String(row.id)}
+              label={tc("partnerWebhookLog")}
+              density="tight"
+              busy={isRefetching}
+              expandable={{
+                toggle: "none",
+                isExpanded: (row) => openPayload === String(row.id),
+                onToggle: (row, next) => setOpenPayload(next ? String(row.id) : null),
+                render: payloadPanel,
+                panelId: (row) => `partner-payload-${row.id}`,
+                expandedClassName: "bg-row-hover",
+              }}
+              renderCard={(row) => (
+                <div className="flex min-w-0 flex-col gap-1.5 px-4 py-3">
+                  <span className="font-semibold">
+                    {eventLabel(row)} · <span className="font-mono">{row.external_order_id}</span>
+                  </span>
+                  <span className="flex flex-wrap items-center gap-2">
+                    {statusBadge(row)}
+                    <span className="text-xs text-text-muted">
+                      {partnerNames.get(String(row.partner_id)) ?? row.partner_id} · {formatDateTimeLocalized(row.delivered_at ?? row.created_at, { language })} ·{" "}
+                      {t("legacyPartners.attemptShort", { value: attemptsText(row) })}
+                    </span>
+                  </span>
+                  {row.last_error ? <span className="[overflow-wrap:anywhere] text-xs text-danger-fg">{row.last_error}</span> : null}
+                  <span className="flex flex-wrap gap-2">
+                    {payloadToggle(row, true)}
+                    {retryControl(row, true)}
+                  </span>
+                </div>
+              )}
+            />
+          )}
+        </QueryBoundary>
+      </Card>
 
-      {/* ═══════ BIR MARTALIK kalit ═══════ */}
-      {revealedKey && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-          <div className="w-full max-w-lg rounded-[24px] bg-primary p-5 shadow-2xl dark:bg-primarydark">
-            <div className="flex items-start gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/12 text-amber-600">
-                <ShieldAlert size={20} />
-              </span>
-              <div className="min-w-0">
-                <h3 className="m-0 text-base font-extrabold text-maindark dark:text-white">
-                  {revealedKey.name} — {t("partnerApiKey")}
-                </h3>
-                <p className="m-0 mt-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
-                  {t("partnerKeyOnceWarning")}
+      {/* ═══ Yaratish oynasi ═══ */}
+      <Dialog
+        open={createOpen}
+        onClose={closeCreate}
+        busy={createPartner.isPending}
+        title={t("scPartnerNew")}
+        icon={Handshake}
+        onSubmit={(event) => void handleCreate(event)}
+        footer={
+          <>
+            <Button variant="secondary" onClick={closeCreate} disabled={createPartner.isPending}>
+              {t("npCancel")}
+            </Button>
+            <Button type="submit" loading={createPartner.isPending}>
+              {t("console.save")}
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <Field label={tc("partnerName")} required error={formTouched && !form.name.trim() ? tc("partnerNameRequired") : undefined}>
+            <TextInput value={form.name} onValueChange={(v) => setForm((f) => ({ ...f, name: v }))} placeholder="BeePost" />
+          </Field>
+          <Field label={tc("partnerWebhookUrl")}>
+            <TextInput
+              type="url"
+              inputMode="url"
+              value={form.webhook_url}
+              onValueChange={(v) => setForm((f) => ({ ...f, webhook_url: v }))}
+              placeholder="https://..."
+            />
+          </Field>
+          <Field label={tc("partnerWebhookSecret")}>
+            <TextInput
+              type="password"
+              autoComplete="new-password"
+              value={form.webhook_secret}
+              onValueChange={(v) => setForm((f) => ({ ...f, webhook_secret: v }))}
+              placeholder="HMAC-SHA256"
+            />
+          </Field>
+          <Field label={tc("partnerIpAllowlist")}>
+            <TextInput value={form.ip_allowlist} onValueChange={(v) => setForm((f) => ({ ...f, ip_allowlist: v }))} placeholder="1.2.3.4, 5.6.7.8" />
+          </Field>
+        </div>
+      </Dialog>
+
+      {/* ═══ Tahrirlash oynasi ═══ */}
+      <Dialog
+        open={Boolean(editing)}
+        onClose={() => setEditing(null)}
+        busy={updatePartner.isPending}
+        title={t("legacyPartners.editTitle", { name: editing?.name ?? "" })}
+        icon={Pencil}
+        onSubmit={(event) => void handleEdit(event)}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setEditing(null)} disabled={updatePartner.isPending}>
+              {t("npCancel")}
+            </Button>
+            <Button type="submit" loading={updatePartner.isPending}>
+              {t("console.save")}
+            </Button>
+          </>
+        }
+      >
+        <div className="flex flex-col gap-4">
+          <Field label={tc("partnerName")}>
+            <TextInput value={editForm.name} onValueChange={(v) => setEditForm((f) => ({ ...f, name: v }))} />
+          </Field>
+          <Field label={tc("partnerWebhookUrl")} hint={t("legacyPartners.webhookUrlHint")}>
+            <TextInput
+              type="url"
+              inputMode="url"
+              value={editForm.webhook_url}
+              onValueChange={(v) => setEditForm((f) => ({ ...f, webhook_url: v }))}
+              placeholder="https://..."
+            />
+          </Field>
+          <Field label={tc("partnerWebhookSecret")} hint={tc("partnerSecretHint")}>
+            <TextInput
+              type="password"
+              autoComplete="new-password"
+              value={editForm.webhook_secret}
+              onValueChange={(v) => setEditForm((f) => ({ ...f, webhook_secret: v }))}
+              placeholder="HMAC-SHA256"
+            />
+          </Field>
+
+          {/*
+            SINOV WEBHOOKI — ilgari sozlamani tekshirishning yagona yo'li HAQIQIY sotuvni kutish edi. Tugma
+            yuqoridagi manzil bilan sinaydi, ya'ni SAQLASHDAN OLDIN tekshirish mumkin.
+          */}
+          <div className="flex flex-col gap-3 rounded-xl bg-sunken p-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <h3 className="text-sm font-semibold text-text">{t("legacyPartners.testTitle")}</h3>
+                <p className="text-[13px] text-text-muted">{t("legacyPartners.testHint")}</p>
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={Send}
+                loading={testWebhook.isPending}
+                disabled={!editForm.webhook_url.trim()}
+                onClick={() => void handleTestWebhook()}
+                className="max-md:min-h-11"
+              >
+                {t("legacyPartners.testSend")}
+              </Button>
+            </div>
+            {testResult ? (
+              <div className={cx("flex flex-col gap-1 rounded-[10px] px-3 py-2.5 text-[13px]", TONE_SOFT[testResult.ok ? "success" : "danger"])}>
+                <p className="font-semibold">
+                  {testResult.ok
+                    ? t("console.testReached", { status: testResult.http_status ?? "—", ms: testResult.duration_ms })
+                    : testResult.http_status
+                      ? t("console.testNotReachedStatus", { status: testResult.http_status })
+                      : t("console.testNotReached")}
                 </p>
+                {/* Sekret sozlanmagan bo'lsa qabul qiluvchi imzoni tekshira olmaydi — eng ko'p uchraydigan sabab. */}
+                {!testResult.secret_configured ? (
+                  <p className="flex items-start gap-1.5 text-text">
+                    <TriangleAlert size={16} aria-hidden="true" className="mt-px shrink-0" />
+                    {t("console.testNoSecret")}
+                  </p>
+                ) : null}
+                {testResult.error ? <p className="[overflow-wrap:anywhere] text-text">{testResult.error}</p> : null}
+                {/* Javob tanasi MUHIM: qabul qiluvchi 200 qaytarib ham «imzo yaroqsiz» deyishi mumkin. */}
+                {testResult.response_body ? (
+                  <p className="break-all text-text-muted">{t("wzResponse", { body: testResult.response_body.slice(0, 200) })}</p>
+                ) : null}
               </div>
-            </div>
-
-            <div className="mt-4 flex items-center gap-2 rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 dark:bg-white/[0.04]">
-              <code className="min-w-0 flex-1 break-all font-mono text-xs text-maindark dark:text-white">
-                {revealedKey.key}
-              </code>
-              <button
-                type="button"
-                onClick={() => copyKey(revealedKey.key)}
-                className="flex h-9 shrink-0 items-center gap-1.5 rounded-xl bg-main px-3 text-xs font-bold text-white"
-              >
-                <Copy size={14} />
-                {t("partnerCopy")}
-              </button>
-            </div>
-
-            <div className="mt-4 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setRevealedKey(null)}
-                className="h-11 rounded-2xl bg-maindark px-5 text-sm font-bold text-white dark:bg-white dark:text-maindark"
-              >
-                {t("partnerKeySaved")}
-              </button>
-            </div>
+            ) : null}
           </div>
-        </div>
-      )}
 
-      {/* ═══════ Payload ko'rish ═══════ */}
-      {payloadRow && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-2xl rounded-[24px] bg-primary p-5 shadow-2xl dark:bg-primarydark">
-            <div className="flex items-center justify-between">
-              <h3 className="m-0 text-base font-extrabold text-maindark dark:text-white">
-                {t("partnerWebhookPayload")}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setPayloadRow(null)}
-                className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <pre className="mt-3 max-h-[60vh] overflow-auto rounded-2xl bg-black/5 p-3 text-xs text-maindark dark:bg-white/5 dark:text-white">
-              {JSON.stringify(payloadRow.payload ?? {}, null, 2)}
-            </pre>
-          </div>
+          {/*
+            ⚠️ SINOV REJIMI BU YERDA TAHRIRLANMAYDI — ikki haqiqat bo'lmasin: kalit, manzil va alohida sekret
+            yagona joyda (konsol → Sozlamalar) sozlanadi; asosiy sekret sinov muhitiga yuborilmaydi.
+          */}
+          <p className="flex items-start gap-2 text-[13px] text-text-muted">
+            <Info size={16} aria-hidden="true" className="mt-px shrink-0" />
+            <span>
+              {t("legacyPartners.sandboxNoteA")}{" "}
+              <Link to="/integrations/connections" className="font-semibold text-action-fg hover:underline">
+                {t("legacyPartners.sandboxNoteLink")}
+              </Link>{" "}
+              {t("legacyPartners.sandboxNoteB")}
+            </span>
+          </p>
         </div>
-      )}
+      </Dialog>
+
+      {/* ═══ BIR MARTALIK kalit ═══ */}
+      <Dialog
+        open={Boolean(revealedKey)}
+        onClose={() => setRevealedKey(null)}
+        closeOnOverlay={false}
+        title={t("legacyPartners.keyTitle", { name: revealedKey?.name ?? "" })}
+        icon={KeyRound}
+        iconTone="warning"
+        footer={<Button onClick={() => setRevealedKey(null)}>{tc("partnerKeySaved")}</Button>}
+      >
+        <div className="flex flex-col gap-4">
+          <div role="status" className={cx("flex items-start gap-3 rounded-xl px-4 py-3 text-sm", TONE_SOFT.warning)}>
+            <TriangleAlert size={18} aria-hidden="true" className="mt-px shrink-0" />
+            <span className="text-text">{t("legacyPartners.keyOnce")}</span>
+          </div>
+          {revealedKey ? (
+            <div className="flex min-w-0 flex-wrap items-center gap-2 rounded-[10px] border border-border bg-sunken px-3 py-2">
+              <code className="min-w-0 flex-[1_1_200px] break-all font-mono text-[13px] text-text">{revealedKey.key}</code>
+              <Button variant="secondary" size="sm" onClick={() => copyKey(revealedKey.key)} className="max-md:min-h-11">
+                {tc("partnerCopy")}
+              </Button>
+            </div>
+          ) : null}
+        </div>
+      </Dialog>
     </div>
   );
 };

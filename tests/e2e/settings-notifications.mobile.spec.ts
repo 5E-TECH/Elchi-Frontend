@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { mockSettingsApi, openNotificationsTab } from "./support/settingsNotifications";
+import { mockSettingsApi, openNotificationsTab, settingsTab } from "./support/settingsNotifications";
 
 /** Sozlamalar → Bildirishnomalar (F89H1avs) — 390px (TC11). */
 test.describe("Sozlamalar → Bildirishnomalar — 390px", () => {
@@ -26,7 +26,7 @@ test.describe("Sozlamalar → Bildirishnomalar — 390px", () => {
     const rights = new Set(switches.map((box) => box.right));
     expect(Math.max(...rights) - Math.min(...rights)).toBeLessThanOrEqual(24);
 
-    const tab = page.getByRole("main").getByRole("button", { name: /Bildirishnomalar/ });
+    const tab = settingsTab(page, /Bildirishnomalar/);
     const tabBox = (await tab.boundingBox())!;
     expect(tabBox.x + tabBox.width).toBeLessThanOrEqual(390);
 

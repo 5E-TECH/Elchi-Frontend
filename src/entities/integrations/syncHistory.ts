@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 /**
  * CHIQUVCHI ULANISHNING HODISALAR JURNALI (`sync_history`).
@@ -73,7 +74,7 @@ export const useSyncHistory = (params: {
   integrationId?: string;
   status?: string;
   limit?: number;
-}) =>
+}, options?: SilentErrorOption) =>
   useQuery({
     queryKey: [syncHistoryKey, params.integrationId, params.status, params.limit],
     // Chiquvchi ulanish bo'lmasa so'rov yuborilmaydi.
@@ -89,6 +90,7 @@ export const useSyncHistory = (params: {
         })
         .then((res) => unwrap(res.data)),
     staleTime: 15_000,
+    ...silentErrorMeta(options),
   });
 
 /** Epoch (son yoki satr) → o'qiladigan sana. Yaroqsiz bo'lsa "—". */

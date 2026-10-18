@@ -3,7 +3,6 @@
   "description": "Barcha xizmatlar bo'yicha audit izlari (kim, nima, qachon)",
   "cardLabel": "Faoliyat jurnali yozuvlari",
   "columns": {
-    "detail": "Tafsilot",
     "time": "Vaqt",
     "actor": "Kim",
     "action": "Amal",
@@ -33,32 +32,74 @@
     "investor": "Investorlar",
     "notification": "Bildirishnomalar"
   },
-  "entities": {
+  "categories": {
     "order": "Buyurtma",
-    "settlement": "Hisob-kitob",
-    "user": "Foydalanuvchi",
-    "market": "Market",
-    "courier": "Kuryer",
+    "finance": "Moliya",
+    "auth": "Kirish",
     "branch": "Filial",
-    "product": "Mahsulot",
-    "batch": "Filial paketi",
-    "post": "Pochta",
-    "payment": "To'lov",
-    "cashbox": "Kassa",
-    "region": "Hudud",
-    "district": "Tuman",
+    "integration": "Integratsiya",
+    "logistics": "Logistika",
     "notification": "Bildirishnoma",
-    "integration": "Integratsiya hamkori",
-    "investor": "Investor"
+    "general": "Umumiy"
+  },
+  "entityTypes": {
+    "Order": "Buyurtma",
+    "User": "Foydalanuvchi",
+    "Auth": "Foydalanuvchi",
+    "Post": "Pochta",
+    "Cashbox": "Kassa",
+    "CashboxCard": "Kassa kartasi",
+    "CashboxHistory": "Kassa amali",
+    "Shift": "Kassa smenasi",
+    "District": "Tuman",
+    "Region": "Hudud",
+    "Branch": "Filial",
+    "BranchUser": "Filial xodimi",
+    "BranchConfig": "Filial sozlamasi",
+    "BranchTransferBatch": "Filial paketi",
+    "TransferBatch": "Paket",
+    "Partner": "Integratsiya hamkori",
+    "ExternalIntegration": "Integratsiya",
+    "Settlement": "Hisob-kitob",
+    "Product": "Mahsulot",
+    "Market": "Market",
+    "Investor": "Investor",
+    "Investment": "Investitsiya",
+    "Notification": "Bildirishnoma",
+    "NotificationCampaign": "Kampaniya",
+    "SmsCampaign": "SMS kampaniya",
+    "FinancialBalanceHistory": "Balans yozuvi",
+    "UserSalary": "Maosh",
+    "OperatorEarning": "Operator daromadi",
+    "OperatorPayment": "Operator to'lovi",
+    "Courier": "Kuryer",
+    "Payment": "To'lov"
   },
   "actor": {
     "system": "Tizim",
     "unresolved": "#{{id}} (topilmadi)"
   },
+  "actions": {
+    "created": "Yaratildi",
+    "updated": "Tahrirlandi",
+    "deleted": "O'chirildi",
+    "restored": "Tiklandi",
+    "status_change": "Holat o'zgardi",
+    "payment": "To'lov",
+    "refund": "Pul qaytarildi",
+    "login": "Tizimga kirdi",
+    "logout": "Tizimdan chiqdi",
+    "auth_failure": "Kirish xatosi",
+    "export": "Eksport",
+    "import": "Import",
+    "webhook_received": "Webhook qabul qilindi",
+    "external_sync": "Tashqi sinxronlash",
+    "assign": "Biriktirildi",
+    "unassign": "Biriktirish bekor qilindi"
+  },
   "detail": {
     "expand": "{{target}} tafsilotini ochish",
     "collapse": "{{target}} tafsilotini yopish",
-    "none": "Tafsilot yo'q",
     "changes": "Maydon o'zgarishlari",
     "field": "Maydon",
     "before": "Oldin",
@@ -91,7 +132,9 @@
     "branch_id": "Filial",
     "region_id": "Viloyat",
     "district_id": "Tuman",
-    "where_deliver": "Yetkazish turi"
+    "where_deliver": "Yetkazish turi",
+    "is_active": "Faol",
+    "note": "Izoh"
   },
   "meta": {
     "source": "Manba",
@@ -104,9 +147,12 @@
     "amount": "Summa",
     "count": "Soni",
     "leg": "Yo'nalish",
-    "description": "Tavsif"
+    "description": "Tavsif",
+    "ip_address": "IP manzil"
   },
   "summary": "{{from}}–{{to}} / {{total}} ta yozuv",
   "empty": "Yozuvlar topilmadi",
-  "emptyFiltered": "Filtrlarga mos yozuv yo'q. Filtrlarni o'zgartirib ko'ring."
+  "emptyHint": "Tizimda amal bajarilganda yozuvlar shu yerda paydo bo'ladi.",
+  "emptyFiltered": "Filtrlarga mos yozuv yo'q. Filtrlarni o'zgartirib ko'ring.",
+  "loadError": "Faoliyat jurnalini yuklashda xatolik yuz berdi"
 }

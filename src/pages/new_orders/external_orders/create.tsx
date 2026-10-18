@@ -1,61 +1,32 @@
-import { memo, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+// dizayn-v2: superadmin-integrations-legacy-source-create
+import { memo, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import {
-  Activity,
-  Cable,
-  CheckCircle2,
-  DatabaseZap,
-  Eye,
-  EyeOff,
-  Globe2,
-  KeyRound,
-  Link2,
-  LockKeyhole,
-  PlugZap,
-  Save,
-  Store,
-} from "lucide-react";
-import BackButton from "../../../shared/ui/BackButton";
-import HeaderName from "../../../shared/components/headerName";
-import SearchableSelect from "../../../shared/ui/SearchableSelect";
-import Button from "../../../shared/components/button";
 import { useMarkets } from "../../../entities/markets";
-import {
-  getIntegrationErrorMessage,
-  type CreateIntegrationPayload,
-  useCreateIntegration,
-} from "../../../entities/integrations";
+import { getIntegrationErrorMessage, type CreateIntegrationPayload, useCreateIntegration } from "../../../entities/integrations";
+import { formatPhone } from "../../../shared/lib/formatPhone";
 import { notify } from "../../../shared/lib/notify";
+import { Button, Card, Field, PageHeader, Select, TextInput, type SelectOption } from "../../../shared/ui/primitives";
+import { SecretInput, Switch } from "../../integrations/ui";
 
-type MarketOptionSource = {
-  id?: string | number;
-  name?: string;
-  username?: string | null;
-  phone_number?: string | null;
+/**
+ * ESKI TASHQI MANBA — yaratish (maket `*-integrations-legacy-source-create`; admin/menejer/registrator — shu).
+ *
+ * Uch bo'lim bitta kartada: «Asosiy ma'lumotlar» (nom, slug — nomdan avtomatik, market), «Ulanish sozlamalari»
+ * (API manzili, avtorizatsiya turi → login/parol yoki token), «Integratsiya holati» (kalit). Saqlangach —
+ * `/integrations/sources` (kanonik yo'l). Payload avvalgidek (`type: "api"`, `credentials`, `market_id`).
+ */
+
+type MarketOptionSource = { id?: string | number; name?: string; username?: string | null; phone_number?: string | null };
+
+const AUTH_TYPES = ["none", "bearer", "basic"] as const;
+type AuthType = (typeof AUTH_TYPES)[number];
+
+const AUTH_LABEL_KEY: Record<AuthType, string> = {
+  none: "legacySources.authNone",
+  bearer: "legacySources.authToken",
+  basic: "legacySources.authBasic",
 };
-
-type IntegrationCreateForm = {
-  name: string;
-  slug: string;
-  api_url: string;
-  auth_url: string;
-  auth_type: string;
-  username: string;
-  password: string;
-  token: string;
-  market_id: string;
-  is_active: boolean;
-};
-
-const authTypes = ["none", "bearer", "basic"] as const;
-
-const platformOptions = [
-  { value: "custom", labelKey: "platformCustom", icon: PlugZap },
-  { value: "marketplace", labelKey: "platformMarketplace", icon: Store },
-  { value: "crm", labelKey: "platformCrm", icon: DatabaseZap },
-];
 
 const makeSlug = (value: string) =>
   value
@@ -65,376 +36,218 @@ const makeSlug = (value: string) =>
     .replace(/^-+|-+$/g, "");
 
 const getMarketItems = (value: unknown): MarketOptionSource[] => {
-  const response = value as {
-    data?: MarketOptionSource[] | { items?: MarketOptionSource[] };
-  };
-
-  if (Array.isArray(response?.data)) {
-    return response.data;
-  }
-
-  if (Array.isArray(response?.data?.items)) {
-    return response.data.items;
-  }
-
+  const response = value as { data?: MarketOptionSource[] | { items?: MarketOptionSource[] } };
+  if (Array.isArray(response?.data)) return response.data;
+  if (Array.isArray(response?.data?.items)) return response.data.items;
   return [];
 };
 
+const Section = ({ title, description, children }: { title: string; description: string; children: ReactNode }) => (
+  <section className="flex min-w-0 flex-col gap-4 border-t border-border p-5 first:border-t-0 max-md:p-4">
+    <div className="flex flex-col gap-0.5">
+      <h2 className="text-base font-bold text-text">{title}</h2>
+      <p className="text-[13px] leading-[18px] text-text-muted">{description}</p>
+    </div>
+    {children}
+  </section>
+);
+
 const ExternalIntegrationCreatePage = () => {
-  const { t } = useTranslation(["newOrders", "common"]);
+  const { t } = useTranslation("integrations");
   const navigate = useNavigate();
-  const [platform, setPlatform] = useState("custom");
-  const [showPassword, setShowPassword] = useState(false);
   const { useGetMarkets } = useMarkets();
   const marketsQuery = useGetMarkets({ status: "active", limit: 100 }, true);
   const createIntegration = useCreateIntegration();
 
-  const {
-    register,
-    clearErrors,
-    handleSubmit,
-    setError,
-    setValue,
-    watch,
-    formState: { errors },
-  } = useForm<IntegrationCreateForm>({
-    defaultValues: {
-      name: "",
-      slug: "",
-      api_url: "",
-      auth_url: "",
-      auth_type: "basic",
-      username: "",
-      password: "",
-      token: "",
-      market_id: "",
-      is_active: true,
-    },
+  const [form, setForm] = useState({
+    name: "",
+    slug: "",
+    api_url: "",
+    auth_url: "",
+    auth_type: "basic" as AuthType,
+    username: "",
+    password: "",
+    token: "",
+    market_id: "",
+    is_active: true,
   });
+  const [touched, setTouched] = useState(false);
+  const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => setForm((f) => ({ ...f, [key]: value }));
 
-  const selectedAuthType = watch("auth_type");
-  const selectedMarketId = watch("market_id");
-  const isActive = watch("is_active");
-
-  const marketOptions = useMemo(
+  const marketOptions = useMemo<SelectOption[]>(
     () =>
       getMarketItems(marketsQuery.data).map((market) => ({
         value: String(market.id ?? ""),
-        label: `${market.name ?? `#${market.id}`} ${
-          market.phone_number ? `• ${market.phone_number}` : market.username ? `• ${market.username}` : ""
+        label: `${market.name ?? `#${market.id}`}${
+          market.phone_number ? ` · ${formatPhone(market.phone_number)}` : market.username ? ` · ${market.username}` : ""
         }`,
       })),
-    [marketsQuery.data, t],
+    [marketsQuery.data],
   );
-
-  const authOptions = useMemo(
-    () =>
-      authTypes.map((value) => ({
-        value,
-        label: t(`authTypes.${value}`),
-      })),
+  const authOptions = useMemo<SelectOption<AuthType>[]>(
+    () => AUTH_TYPES.map((value) => ({ value, label: t(AUTH_LABEL_KEY[value]) })),
     [t],
   );
 
-  const onSubmit = handleSubmit(async (values) => {
+  const required = (value: string) => (touched && !value.trim() ? t("legacySources.required") : undefined);
+
+  const onSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    setTouched(true);
+    if (!form.name.trim() || !form.slug.trim() || !form.api_url.trim() || !form.market_id) return;
+    if (createIntegration.isPending) return;
     try {
-      if (!values.market_id) {
-        setError("market_id", { type: "required", message: t("requiredField") });
-        return;
-      }
-
       const credentials: Record<string, string> = {};
-      const authUrl = values.auth_url.trim();
-      const username = values.username.trim();
-      const password = values.password.trim();
-      const token = values.token.trim();
-
+      const authUrl = form.auth_url.trim();
+      const username = form.username.trim();
+      const password = form.password.trim();
+      const token = form.token.trim();
       if (authUrl) credentials.auth_url = authUrl;
-      if (selectedAuthType === "basic") {
+      if (form.auth_type === "basic") {
         if (username) credentials.username = username;
         if (password) credentials.password = password;
       }
-      if (selectedAuthType === "bearer" && token) credentials.token = token;
+      if (form.auth_type === "bearer" && token) credentials.token = token;
 
       const payload: CreateIntegrationPayload = {
-        name: values.name.trim(),
-        slug: values.slug.trim(),
+        name: form.name.trim(),
+        slug: form.slug.trim(),
         type: "api",
-        status: values.is_active ? "active" : "inactive",
-        base_url: values.api_url.trim(),
-        auth_type: values.auth_type,
+        status: form.is_active ? "active" : "inactive",
+        base_url: form.api_url.trim(),
+        auth_type: form.auth_type,
         credentials,
-        market_id: values.market_id,
-        is_active: values.is_active,
+        market_id: form.market_id,
+        is_active: form.is_active,
       };
-
       await createIntegration.mutateAsync(payload);
-      notify.success(t("integrationCreateSuccess"));
-      navigate("/new-orders/integrations");
+      notify.success(t("legacySources.createSuccess"));
+      navigate("/integrations/sources");
     } catch (error) {
-      notify.error(error instanceof Error
-            ? error.message
-            : getIntegrationErrorMessage(error) || t("integrationCreateError"));
+      notify.error(
+        error instanceof Error ? error.message : getIntegrationErrorMessage(error) || t("legacySources.createError"),
+      );
     }
-  });
+  };
+
+  const actions = (
+    <>
+      <Button variant="secondary" onClick={() => navigate("/integrations/sources")} disabled={createIntegration.isPending}>
+        {t("npCancel")}
+      </Button>
+      <Button type="submit" loading={createIntegration.isPending} loadingText={t("legacySources.saving")}>
+        {t("console.save")}
+      </Button>
+    </>
+  );
 
   return (
-    <div className="space-y-5 pb-20 sm:pb-24 md:pb-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-3">
-          <BackButton to="/new-orders/integrations" className="h-10 min-w-10 rounded-xl px-2" label="" />
-          <HeaderName
-            name={t("createIntegrationTitle")}
-            description={t("createIntegrationSubtitle")}
-            icon={<Cable />}
-          />
-        </div>
-      </div>
+    <div className="flex flex-col gap-6 max-md:gap-4">
+      <PageHeader
+        back="/integrations/sources"
+        backLabel={t("legacySources.title")}
+        title={t("legacySources.createTitle")}
+        description={t("legacySources.createSub")}
+      />
 
-      <form onSubmit={onSubmit} className="grid gap-5 xl:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)]">
-        <section className="space-y-4 rounded-3xl border border-glass-border bg-white/95 p-4 shadow-sm dark:bg-primarydark sm:p-5">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-main/10 text-main">
-              <PlugZap size={20} />
+      <form onSubmit={(event) => void onSubmit(event)} noValidate>
+        <Card
+          padding="none"
+          aria-label={t("legacySources.createTitle")}
+          footer={
+            <div className="flex w-full flex-wrap items-center justify-between gap-3">
+              <span className="min-w-0 flex-[1_1_240px] text-xs text-text-muted">{t("legacySources.readyHint")}</span>
+              <div className="flex flex-wrap gap-2 max-md:w-full max-md:[&>*]:flex-1">{actions}</div>
             </div>
-            <div>
-              <h3 className="text-base font-bold text-maindark dark:text-primary">
-                {t("integrationBasics")}
-              </h3>
-              <p className="mt-1 text-sm text-maindark/50 dark:text-primary/55">
-                {t("integrationBasicsDescription")}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            {platformOptions.map((option) => {
-              const Icon = option.icon;
-              const selected = platform === option.value;
-
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setPlatform(option.value)}
-                  className={`flex min-h-23 flex-col items-start justify-between rounded-2xl border p-3 text-left transition-all ${
-                    selected
-                      ? "border-main bg-main/12 text-main shadow-[0_12px_28px_rgba(124,58,237,0.18)]"
-                      : "border-glass-border bg-sidebar/50 text-maindark hover:border-main/40 dark:bg-maindark/35 dark:text-primary"
-                  }`}
-                >
-                  <Icon size={20} />
-                  <span className="text-sm font-bold">{t(option.labelKey)}</span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="grid gap-4">
-            <label className="space-y-1.5">
-              <span className="text-xs font-bold uppercase tracking-[0.14em] text-maindark/55 dark:text-primary/55">
-                {t("integrationName")} *
-              </span>
-              <input
-                {...register("name", { required: t("requiredField") })}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setValue("name", value, { shouldValidate: true });
-                  setValue("slug", makeSlug(value), { shouldValidate: true });
-                }}
-                className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
-                placeholder={t("integrationNamePlaceholder")}
-              />
-              {errors.name?.message && <span className="text-xs font-semibold text-error">{errors.name.message}</span>}
-            </label>
-
-            <label className="space-y-1.5">
-              <span className="text-xs font-bold uppercase tracking-[0.14em] text-maindark/55 dark:text-primary/55">
-                {t("integrationSlug")} *
-              </span>
-              <input
-                {...register("slug", { required: t("requiredField") })}
-                className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
-                placeholder={t("integrationSlugPlaceholder")}
-              />
-              {errors.slug?.message && <span className="text-xs font-semibold text-error">{errors.slug.message}</span>}
-            </label>
-
-            <SearchableSelect
-              label={t("market")}
-              name="market_id"
-              value={selectedMarketId}
-              onChange={(value) => {
-                setValue("market_id", value, { shouldValidate: true });
-                clearErrors("market_id");
-              }}
-              options={marketOptions}
-              placeholder={t("selectMarket")}
-              icon={Store}
-              loading={marketsQuery.isLoading}
-            />
-            {errors.market_id?.message && (
-              <span className="text-xs font-semibold text-error">
-                {errors.market_id.message}
-              </span>
-            )}
-          </div>
-        </section>
-
-        <section className="space-y-4 rounded-3xl border border-glass-border bg-white/95 p-4 shadow-sm dark:bg-primarydark sm:p-5">
-          <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-success/10 text-success">
-              <Globe2 size={20} />
-            </div>
-            <div>
-              <h3 className="text-base font-bold text-maindark dark:text-primary">
-                {t("connectionSettings")}
-              </h3>
-              <p className="mt-1 text-sm text-maindark/50 dark:text-primary/55">
-                {t("connectionSettingsDescription")}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid gap-4 lg:grid-cols-2">
-            <label className="space-y-1.5 lg:col-span-2">
-              <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.14em] text-maindark/55 dark:text-primary/55">
-                <Link2 size={12} className="text-main" />
-                {t("apiUrl")} *
-              </span>
-              <input
-                {...register("api_url", {
-                  required: t("requiredField"),
-                  pattern: {
-                    value: /^https?:\/\/.+/i,
-                    message: t("urlField"),
-                  },
-                })}
-                className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
-                placeholder={t("apiUrlPlaceholder")}
-              />
-              {errors.api_url?.message && <span className="text-xs font-semibold text-error">{errors.api_url.message}</span>}
-            </label>
-
-            <SearchableSelect
-              label={t("authType")}
-              name="auth_type"
-              value={selectedAuthType}
-              onChange={(value) => setValue("auth_type", value)}
-              options={authOptions}
-              icon={LockKeyhole}
-            />
-
-            <label className="space-y-1.5">
-              <span className="text-xs font-bold uppercase tracking-[0.14em] text-maindark/55 dark:text-primary/55">
-                {t("authUrl")}
-              </span>
-              <input
-                {...register("auth_url")}
-                className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
-                placeholder={t("authUrlPlaceholder")}
-              />
-            </label>
-
-            {selectedAuthType === "basic" && (
-              <>
-                <label className="space-y-1.5">
-                  <span className="text-xs font-bold uppercase tracking-[0.14em] text-maindark/55 dark:text-primary/55">
-                    {t("username")}
-                  </span>
-                  <input
-                    {...register("username")}
-                    className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
-                    placeholder={t("usernamePlaceholder")}
-                  />
-                </label>
-                <label className="space-y-1.5">
-                  <span className="text-xs font-bold uppercase tracking-[0.14em] text-maindark/55 dark:text-primary/55">
-                    {t("password")}
-                  </span>
-                  <div className="relative">
-                    <input
-                      {...register("password")}
-                      type={showPassword ? "text" : "password"}
-                      className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 pr-12 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
-                      placeholder={t("passwordPlaceholder")}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((value) => !value)}
-                      aria-label={showPassword ? t("hidePassword") : t("showPassword")}
-                      className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-maindark/45 transition hover:bg-main/10 hover:text-main dark:text-primary/50 dark:hover:text-primary"
-                    >
-                      {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
-                    </button>
-                  </div>
-                </label>
-              </>
-            )}
-
-            {selectedAuthType === "bearer" && (
-              <label className="space-y-1.5 lg:col-span-2">
-                <span className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.14em] text-maindark/55 dark:text-primary/55">
-                  <KeyRound size={12} className="text-main" />
-                  {t("token")}
-                </span>
-                <input
-                  {...register("token")}
-                  className="h-12 w-full rounded-2xl border-2 border-glass-border bg-sidebar/70 px-4 text-base md:text-sm font-semibold text-maindark outline-none transition focus:border-main dark:bg-maindark/55 dark:text-primary"
-                  placeholder={t("tokenPlaceholder")}
+          }
+        >
+          <Section title={t("legacySources.basicsTitle")} description={t("legacySources.basicsSub")}>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Field label={t("legacySources.name")} required error={required(form.name)}>
+                <TextInput
+                  value={form.name}
+                  onValueChange={(value) => setForm((f) => ({ ...f, name: value, slug: makeSlug(value) }))}
+                  placeholder={t("legacySources.namePlaceholder")}
                 />
-              </label>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between gap-4 rounded-2xl border border-glass-border bg-sidebar/50 px-4 py-3 dark:bg-maindark/35">
-            <div>
-              <h4 className="text-sm font-bold text-maindark dark:text-primary">
-                {t("integrationStatus")}
-              </h4>
-              <p className="text-xs font-medium text-maindark/45 dark:text-primary/45">
-                {isActive ? t("integrationActiveHint") : t("integrationInactiveHint")}
-              </p>
+              </Field>
+              <Field label={t("legacySources.slug")} required hint={t("legacySources.slugHint")} error={required(form.slug)}>
+                <TextInput value={form.slug} onValueChange={(value) => set("slug", value)} placeholder={t("legacySources.slugPlaceholder")} />
+              </Field>
+              <Field
+                label={t("legacySources.market")}
+                required
+                labelAs="span"
+                hint={t("legacySources.marketHint")}
+                error={touched && !form.market_id ? t("legacySources.required") : undefined}
+                className="md:col-span-2"
+              >
+                <Select
+                  searchable
+                  options={marketOptions}
+                  value={form.market_id || null}
+                  onChange={(value) => set("market_id", value ?? "")}
+                  loading={marketsQuery.isLoading}
+                  placeholder={t("legacySources.selectMarket")}
+                />
+              </Field>
             </div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={isActive}
-              onClick={() => setValue("is_active", !isActive, { shouldDirty: true })}
-              className={`flex h-7 w-12 shrink-0 items-center rounded-full p-0.5 transition ${
-                isActive ? "bg-success shadow-md shadow-success/20" : "bg-maindark/15 dark:bg-white/12"
-              }`}
-            >
-              <span
-                className={`h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${
-                  isActive ? "translate-x-5" : "translate-x-0"
-                }`}
-              />
-            </button>
-          </div>
+          </Section>
 
-          <div className="flex flex-col-reverse gap-3 border-t border-glass-border pt-4 sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={() => navigate("/new-orders/integrations")}
-              className="h-11 rounded-xl border border-glass-border px-5 text-sm font-bold text-maindark transition hover:border-main/50 hover:text-main dark:text-primary"
-            >
-              {t("cancel", { ns: "common" })}
-            </button>
-            <Button
-              type="submit"
-              disabled={createIntegration.isPending}
-              label={createIntegration.isPending ? t("savingIntegration") : t("save", { ns: "common" })}
-              icon={createIntegration.isPending ? <Activity size={16} className="animate-spin" /> : <Save size={16} />}
-              className="h-11 min-w-40"
+          <Section title={t("legacySources.connTitle")} description={t("legacySources.connSub")}>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <Field label={t("legacySources.apiUrl")} required hint={t("legacySources.apiUrlHint")} error={required(form.api_url)} className="md:col-span-2">
+                <TextInput
+                  type="url"
+                  inputMode="url"
+                  value={form.api_url}
+                  onValueChange={(value) => set("api_url", value)}
+                  placeholder="https://api.example.com/orders"
+                />
+              </Field>
+              <Field label={t("legacySources.authType")} labelAs="span" hint={t("legacySources.authTypeHint")}>
+                <Select
+                  options={authOptions}
+                  value={form.auth_type}
+                  onChange={(value) => setForm((f) => ({ ...f, auth_type: value ?? "none", token: value === "bearer" ? f.token : "" }))}
+                />
+              </Field>
+              <Field label={t("legacySources.authUrl")} hint={t("legacySources.optional")}>
+                <TextInput
+                  type="url"
+                  inputMode="url"
+                  value={form.auth_url}
+                  onValueChange={(value) => set("auth_url", value)}
+                  placeholder="https://api.example.com/auth"
+                />
+              </Field>
+              {form.auth_type === "basic" ? (
+                <>
+                  <Field label={t("legacySources.username")}>
+                    <TextInput value={form.username} onValueChange={(value) => set("username", value)} placeholder={t("legacySources.usernamePlaceholder")} autoComplete="off" />
+                  </Field>
+                  <Field label={t("legacySources.password")}>
+                    <SecretInput value={form.password} onValueChange={(value) => set("password", value)} placeholder={t("legacySources.passwordPlaceholder")} />
+                  </Field>
+                </>
+              ) : null}
+              {form.auth_type === "bearer" ? (
+                <Field label={t("legacySources.token")} className="md:col-span-2">
+                  <SecretInput value={form.token} onValueChange={(value) => set("token", value)} placeholder={t("legacySources.tokenPlaceholder")} />
+                </Field>
+              ) : null}
+            </div>
+          </Section>
+
+          <Section title={t("legacySources.stateTitle")} description={t("legacySources.stateSub")}>
+            <Switch
+              checked={form.is_active}
+              onChange={(next) => set("is_active", next)}
+              aria-label={t("legacySources.activeAria")}
+              label={form.is_active ? t("legacySources.active") : t("legacySources.inactive")}
+              description={form.is_active ? t("legacySources.activeHint") : t("legacySources.inactiveHint")}
             />
-          </div>
-
-          <div className="flex items-center gap-2 rounded-2xl bg-success/10 px-4 py-3 text-sm font-semibold text-success">
-            <CheckCircle2 size={17} />
-            <span>{t("integrationReadyHint")}</span>
-          </div>
-        </section>
+          </Section>
+        </Card>
       </form>
     </div>
   );

@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } fr
 import { renderWithProviders } from "../../../test/test-utils";
 import { api } from "../../../shared/api/api";
 import type { User, UserRole } from "../../../entities/user/types/user";
-import { UserDetailWidget } from "./UserDetailWidget";
+import { UserDetailView } from "./UserDetailView";
 
 /**
  * Market sahifasidagi «Telegram token» kartasi (fix3b CODE-02 → GvL6ZFAd, maket `superadmin-users-detail`).
@@ -43,13 +43,14 @@ const makeUser = (role: UserRole, overrides: Partial<User> = {}): User => ({
   ...overrides,
 });
 
-const renderWidget = (user: User, viewerRole: string, isOwnProfile = false) =>
-  renderWithProviders(
-    <UserDetailWidget user={user} isLoading={false} isError={false} isOwnProfile={isOwnProfile} />,
-    { preloadedState: { role: { id: `${viewerRole}-1`, role: viewerRole, region: null, name: viewerRole } } as never },
-  );
+const renderWidget = (user: User, viewerRole: string) =>
+  renderWithProviders(<UserDetailView user={user} />, {
+    preloadedState: { role: { id: `${viewerRole}-1`, role: viewerRole, region: null, name: viewerRole } } as never,
+  });
 
-describe("UserDetailWidget — market Telegram tokeni (GvL6ZFAd)", () => {
+// Eski `UserDetailWidget` o'chirildi (hech bir sahifada ishlatilmasdi) — testlar jonli `/all-users/:id` (`UserDetailView`)
+// ustida. «O'z profilida karta yo'q» holati — `src/pages/profile/ui/ProfilePage.test.tsx` da.
+describe("UserDetailView — market Telegram tokeni (GvL6ZFAd)", () => {
   const writeText = vi.fn();
   const originalClipboard = navigator.clipboard;
   let getSpy: MockInstance;
@@ -179,7 +180,7 @@ describe("UserDetailWidget — market Telegram tokeni (GvL6ZFAd)", () => {
           <button type="button" onClick={() => setCurrent(makeUser("market", { id: "305", name: "Nur" }))}>
             boshqa market
           </button>
-          <UserDetailWidget user={current} isLoading={false} isError={false} />
+          <UserDetailView user={current} />
         </>
       );
     };
@@ -201,12 +202,6 @@ describe("UserDetailWidget — market Telegram tokeni (GvL6ZFAd)", () => {
 
   it("market bo'lmagan foydalanuvchida superadmin ham kartani ko'rmaydi", () => {
     renderWidget(makeUser("courier"), "superadmin");
-
-    expect(screen.queryByRole("region", { name: "Telegram token" })).not.toBeInTheDocument();
-  });
-
-  it("o'z profilida karta yo'q", () => {
-    renderWidget(makeUser("market"), "superadmin", true);
 
     expect(screen.queryByRole("region", { name: "Telegram token" })).not.toBeInTheDocument();
   });

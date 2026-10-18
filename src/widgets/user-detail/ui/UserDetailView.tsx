@@ -132,7 +132,7 @@ export interface UserDetailViewProps {
  * ma'lumotlari»). «Faoliyat» (Taklif) va menejerdagi «Oylik maosh» kartasi CHIZILMAYDI (spec §6, §9.9).
  * Mijoz (`customer`, maket yo'q — eng yaqini `superadmin-users-detail`): «Aloqa va sanalar» + buyurtmalar jadvali.
  *
- * Xulq `UserDetailWidget` dagidek (u `/profile` uchun muzlatilgan): ruxsat bayroqlari, har kalit mutatsiyasi va
+ * Xulq (eski, o'chirilgan `UserDetailWidget` dan): ruxsat bayroqlari, har kalit mutatsiyasi va
  * xabarlari, kutish holatlari, «Tahrirlash» — `UpdateUserModal`, kuryer o'tkazish — `TransferCourierButton`.
  * Telegram token — faqat superadmin (backend `GET /markets/:id/tg-token` faqat SUPERADMIN; admin uchun token
  * hech qayerda qaytmaydi — karta adminga «token yo'q» deb noto'g'ri gapirmasin).
@@ -171,7 +171,7 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   const date = (value: string | null | undefined) => (value ? formatDateLocalized(value, { language }) : "—");
   const phone = formatPhone(user.phone_number);
 
-  // ─── Mutatsiyalar (UserDetailWidget bilan aynan bir xil) ─────────────────
+  // ─── Mutatsiyalar ─────────────────
   const editError = t("editUserError");
 
   const handleToggleExtraCostPermission = async () => {

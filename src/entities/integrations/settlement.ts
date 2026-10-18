@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 /**
  * HISOB-KITOB — tashuvchi yig'gan COD va bizga qarzi.
@@ -58,7 +59,7 @@ export const money = (v: number) => `${Math.round(v).toLocaleString("uz-UZ")} so
 
 export const settlementKey = "integration-settlement";
 
-export const useReceivableBalance = (integrationId?: string) =>
+export const useReceivableBalance = (integrationId?: string, options?: SilentErrorOption) =>
   useQuery({
     queryKey: [settlementKey, "balance", integrationId],
     enabled: Boolean(integrationId),
@@ -70,6 +71,7 @@ export const useReceivableBalance = (integrationId?: string) =>
           outstanding_count: 0,
         }),
       ),
+    ...silentErrorMeta(options),
   });
 
 export interface ReceivablesPage {
@@ -82,7 +84,7 @@ export const useReceivables = (params: {
   status?: string;
   page?: number;
   limit?: number;
-}) =>
+}, options?: SilentErrorOption) =>
   useQuery({
     queryKey: [settlementKey, "list", params.integrationId, params.status, params.page],
     enabled: Boolean(params.integrationId),
@@ -102,6 +104,7 @@ export const useReceivables = (params: {
             pagination: { total: 0, page: 1, limit: 20 },
           }),
         ),
+    ...silentErrorMeta(options),
   });
 
 export interface RemittanceInput {

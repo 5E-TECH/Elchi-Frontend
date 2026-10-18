@@ -73,7 +73,7 @@ describe("ConnectionSettings — status xaritasi (regressiya)", () => {
     expect((within(inbound).getByRole("textbox") as HTMLInputElement).value).toBe("DELIVERED");
     expect((within(outbound).getByRole("textbox") as HTMLInputElement).value).toBe("7");
     const tags = screen.getAllByTestId("status-map-matched").map((el) => el.textContent);
-    expect(tags).toEqual(["moslangan: 1 / 3", "moslangan: 1 / 3"]);
+    expect(tags).toEqual(["1 / 3 moslangan", "1 / 3 moslangan"]);
   });
 
   it("⭐ bitta katak tahrirlanib saqlansa QOLGAN yozuvlar (va action) yo'qolmaydi", async () => {

@@ -76,14 +76,16 @@ describe("Posilkalar jadvali (tokhPLMP)", () => {
     renderWithProviders(<ConnectionShipments connection={conn} />, { preloadedState: asRole("superadmin") });
 
     expect(await screen.findByText("Aliyev Vali")).toBeInTheDocument();
-    expect(screen.getByText("+998901234567")).toBeInTheDocument();
+    // Telefon `formatPhone` bilan, summa `formatMoneyLocalized` bilan (maket: «1 280 000 so'm»).
+    expect(screen.getByText("+998 90 123 45 67")).toBeInTheDocument();
     expect(screen.getByText("Toshkent shahri")).toBeInTheDocument();
     expect(screen.getByText("Chilonzor")).toBeInTheDocument();
-    expect(screen.getByText("1 250 000")).toBeInTheDocument();
+    expect(screen.getByText("1 250 000 so'm")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "#1001" })).toHaveAttribute("href", "/orders/edit/1001");
-    // Elchi'ning ustunligi saqlanadi: ikki tomon statusi yonma-yon.
-    expect(screen.getByText(/^biz:/)).toBeInTheDocument();
-    expect(screen.getByText("ular: DELIVERED")).toBeInTheDocument();
+    // Elchi'ning ustunligi saqlanadi: ikki tomon statusi yonma-yon — bizniki tarjima qilingan badge, ularniki xom.
+    const row = screen.getByRole("link", { name: "#1001" }).closest("tr") as HTMLElement;
+    expect(within(row).getByText("Kutilmoqda")).toBeInTheDocument();
+    expect(within(row).getByText("Ular: DELIVERED")).toBeInTheDocument();
   });
 
   it("har pillda backend sanog'i; bosilganda `filter=` ketadi va sahifa 1 ga qaytadi", async () => {
@@ -94,7 +96,7 @@ describe("Posilkalar jadvali (tokhPLMP)", () => {
     expect(pill(/Hammasi\s*12/)).toBeInTheDocument();
     expect(pill(/Yuborilmagan\s*2/)).toBeInTheDocument();
     expect(pill(/Yiqilgan\s*3/)).toBeInTheDocument();
-    expect(pill(/Yetkazilgan\s*5/)).toBeInTheDocument();
+    expect(pill(/Yetkazildi\s*5/)).toBeInTheDocument();
     expect(pill(/Nomuvofiqlik\s*1/)).toBeInTheDocument();
 
     await user.click(pill(/Nomuvofiqlik/));
@@ -134,16 +136,24 @@ describe("Posilkalar jadvali (tokhPLMP)", () => {
     expect(within(row).getAllByText("—").length).toBeGreaterThan(0);
   });
 
-  it("\"Amal\" ustuni o'ngda qotirilgan va gorizontal scroll yangi ustunlarga yetadi", async () => {
+  it("xatoli posilka ostida «Xato: …» qatori va «Qayta jo'natish» — dispatch qayta yuboriladi", async () => {
     apiGetMock.mockResolvedValue(pageOf([shipment({ last_error: "HTTP 500" })], counts));
-    const { container } = renderWithProviders(<ConnectionShipments connection={conn} />, {
-      preloadedState: asRole("admin"),
-    });
-    await screen.findByRole("button", { name: /Qayta jo'natish/ });
-    // antd 6 mantiqiy nomlar: o'ng = "end", chap = "start".
-    expect(container.querySelector(".ant-table-cell-fix-end")).not.toBeNull();
-    expect(container.querySelector(".ant-table-cell-fix-start")).not.toBeNull();
-    const table = container.querySelector(".ant-table-content table, .ant-table-body table") as HTMLElement;
-    expect(table.style.width || table.style.minWidth).toMatch(/1430px/);
+    const user = userEvent.setup();
+    renderWithProviders(<ConnectionShipments connection={conn} />, { preloadedState: asRole("admin") });
+    const retry = await screen.findByRole("button", { name: /Qayta jo'natish/ });
+    // Xato matni posilka qatori ostidagi to'liq enli qatorda (maket `*-panel-shipments`).
+    const panelRow = retry.closest("tr") as HTMLElement;
+    expect(panelRow).toHaveAttribute("data-expanded-panel");
+    expect(within(panelRow).getByText(/HTTP 500/)).toBeInTheDocument();
+
+    apiGetMock.mockResolvedValueOnce({ data: { statusCode: 200, data: {} } });
+    await user.click(retry);
+    await waitFor(() => expect(apiGetMock).toHaveBeenCalledWith("integrations/kargo/dispatch", { order_id: "1001" }));
+  });
+
+  it("xatosiz posilkada qayta jo'natish tugmasi YO'Q (tashuvchida ikkinchi yozuv yaratilmasin)", async () => {
+    renderWithProviders(<ConnectionShipments connection={conn} />, { preloadedState: asRole("admin") });
+    await screen.findByText("Aliyev Vali");
+    expect(screen.queryByRole("button", { name: /Qayta jo'natish/ })).not.toBeInTheDocument();
   });
 });

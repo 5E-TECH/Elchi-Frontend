@@ -320,7 +320,6 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string | number) => `notifications/${id}`, // GET / PATCH / DELETE
     HEALTH: "notifications/health",
     SEND: "notifications/send", // POST send to telegram group(s)
-    CONNECT_BY_TOKEN: "notifications/connect-by-token", // POST connect group by token
     // POST { purpose: "market_group", group_type, market_id } → { token, expires_at, deep_link, command } — bir martalik, 10 daqiqa
     TELEGRAM_LINK_CODE: "telegram/link-code",
     // In-app inbox (current user, per-recipient rows) ──────────────────────

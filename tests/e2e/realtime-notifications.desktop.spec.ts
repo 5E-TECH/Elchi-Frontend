@@ -26,7 +26,7 @@ test.describe("Jonli bildirishnomalar — 1440px", () => {
 
     await expect(page.getByRole("button", { name: "Bildirishnomalar, 3 ta yangi" })).toBeVisible();
     expect(state.unreadRequests).toBeGreaterThan(unreadBefore);
-    const toasts = page.getByRole("region", { name: "Bildirishnomalar" });
+    const toasts = page.getByRole("region", { name: "Bildirishnomalar", exact: true });
     await expect(toasts.getByText("Buyurtma sotildi", { exact: true })).toBeVisible();
     await expect(toasts.getByText("Buyurtma · №10225 · Baraka Shop")).toBeVisible();
     // Inbox ochiq — yangi qator ro'yxat boshida.
@@ -50,7 +50,7 @@ test.describe("Jonli bildirishnomalar — 1440px", () => {
     state.sockets[0].send(frame);
     state.sockets[0].send(frame);
 
-    const toasts = page.getByRole("region", { name: "Bildirishnomalar" });
+    const toasts = page.getByRole("region", { name: "Bildirishnomalar", exact: true });
     await expect(toasts.getByText("Kassa topshirildi", { exact: true })).toBeVisible();
     await page.waitForTimeout(500);
     await expect(toasts.getByText("Kassa topshirildi", { exact: true })).toHaveCount(1);

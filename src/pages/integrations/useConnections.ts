@@ -7,6 +7,7 @@ import {
 } from "../../entities/integrations";
 import { usePartners, type Partner } from "../../entities/partners";
 import { CONNECTION_TYPES, type ConnectionField, type ConnectionKind } from "./connections";
+import type { SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 /**
  * IKKI RO'YXATNI BITTA RO'YXATGA QO'SHISH.
@@ -83,11 +84,15 @@ const integrationToConnection = (i: Integration): Connection => ({
  * yiqilsa ikkinchisi ko'rinishda qoladi: ro'yxat butunlay bo'sh bo'lib
  * qolishdan ko'ra yarmini ko'rsatish yaxshi, va xato alohida bildiriladi.
  */
-export const useConnections = () => {
-  const partnersQuery = usePartners();
+/**
+ * `silentError` — konsol xatoni o'zi chizadi (`ErrorState` / qismiy ogohlantirish), global xabar takrorlanmaydi.
+ * Bayroqsiz iste'molchi (manba tanlash) uchun xulq o'zgarmagan.
+ */
+export const useConnections = (options?: SilentErrorOption) => {
+  const partnersQuery = usePartners(options);
   // `limit: 100` — ulanishlar soni kichik; sahifalash bu ekranda ortiqcha
   // murakkablik bo'lardi.
-  const integrationsQuery = useGetIntegrations({ limit: 100 });
+  const integrationsQuery = useGetIntegrations({ limit: 100 }, options);
 
   const connections = useMemo<Connection[]>(() => {
     const partners = (partnersQuery.data ?? []).map(partnerToConnection);

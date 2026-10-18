@@ -44,7 +44,6 @@
       "status": "Holat",
       "courier": "Kuryer"
     },
-    "approve": "Tasdiqlash ({{count}})",
     "selectHint": "Tasdiqlash uchun ro'yxatdan buyurtmalarni tanlang.",
     "approveSuccess": "Tanlangan so'rovlar tasdiqlandi",
     "approveError": "So'rovlarni tasdiqlab bo'lmadi",

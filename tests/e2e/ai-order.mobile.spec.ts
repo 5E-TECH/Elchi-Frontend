@@ -81,7 +81,7 @@ const openAiMode = async (page: Page) => {
   await page.goto("/login");
   await page.locator('input[name="elchi-login-phone"]').fill("900000001");
   await page.locator('input[name="password"]').fill("0990");
-  await page.getByRole("button", { name: "Tizimga kirish" }).click();
+  await page.getByRole("button", { name: "Kirish", exact: true }).click();
   await page.waitForURL((url) => !url.pathname.startsWith("/login"));
 
   await page.goto("/new-orders/create");

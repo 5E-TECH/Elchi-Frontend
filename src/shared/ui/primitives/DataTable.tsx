@@ -1,8 +1,9 @@
-import { Fragment, useEffect, useRef, type MouseEvent, type ReactNode } from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { Fragment, useEffect, useId, useRef, type MouseEvent, type ReactNode } from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../lib/cx";
 import { useIsPhone } from "./date/useIsPhone";
+import { IconButton } from "./IconButton";
 
 /**
  * ────────────────────────────────────────────────────────────────────────────
@@ -25,9 +26,13 @@ import { useIsPhone } from "./date/useIsPhone";
  *  - Qatorni bosish (`onRowClick`) — sichqoncha uchun qulaylik: qator ichidagi havola/tugma/belgi bosilsa
  *    chaqirilmaydi. Klaviatura uchun qatorda havola bo'lishi SHART (masalan `№10242` → tafsilot):
  *    `<tr>` ga `role="button"` berilmaydi — ichida havola va tugma bor (ichma-ich interaktiv element yo'q).
- *  - Ochiladigan qator (`renderExpanded`, maket `superadmin-activity-logs-row-expanded`): qiymat qaytarsa —
- *    qator va uning ostidagi to'liq enli katak `bg-sunken`, ular orasida chiziq yo'q. Ochish tugmasini
- *    (`aria-expanded`) ustunning o'zi chizadi. Telefonda kartadan keyin, o'sha `<li>` ichida.
+ *  - Ochiladigan qator (`expandable`, maket `superadmin-activity-logs-row-expanded`): birinchi ustun
+ *    (tanlov bo'lsa undan keyin) — chevron tugma (`aria-expanded`, `aria-controls`, Enter/Space — oddiy
+ *    `button`); ochilgan qator va uning paneli `bg-sunken`, panel `colSpan` = barcha ustunlar. Ochib
+ *    bo'lmaydigan qatorda (`canExpand` → `false`) chevron yo'q, faqat ekran o'quvchi uchun «Tafsilot yo'q».
+ *    Telefonda kartaning o'ng tomonida 44 px chevron, panel karta ostida. `toggle: "none"` — tugmani
+ *    iste'molchi o'zi chizadi (masalan amallar ustunida, maket `*-integrations-legacy-partners`):
+ *    jadval faqat panelni chiqaradi, `panelId` bilan tugmaga `aria-controls` beriladi.
  *
  *    <DataTable
  *      rows={orders}
@@ -86,6 +91,28 @@ export type DataTableSelection<T> = {
   disabledRowLabel?: (row: T) => string;
 };
 
+export type DataTableExpandable<T> = {
+  isExpanded: (row: T) => boolean;
+  onToggle: (row: T, next: boolean) => void;
+  /** Ochilgan panel (jadvalda `colSpan` = barcha ustunlar; telefonda karta ostida). */
+  render: (row: T) => ReactNode;
+  /** `false` — chevron yo'q (masalan o'zgarishsiz jurnal yozuvi). Sukut: hammasi ochiladi. */
+  canExpand?: (row: T) => boolean;
+  /** Chevron nomi (`aria-label`): maket «Buyurtma №10227 tafsilotini ochish» / «… yopish». */
+  toggleLabel?: (row: T, expanded: boolean) => string;
+  /**
+   * `start` (sukut) — jadval o'zi chevron ustunini chizadi; `none` — tugmani iste'molchi chizadi
+   * (`onToggle` + `panelId` bilan `aria-expanded`/`aria-controls`), jadval faqat panelni chiqaradi.
+   */
+  toggle?: "start" | "none";
+  /** Panel elementining `id` si (`aria-controls` uchun). Sukut: jadval ichida yaratiladi. */
+  panelId?: (row: T) => string;
+  /** Panel katagining chekkalari (sukut: maket — chevron ustuni bilan tekislangan). */
+  panelClassName?: string;
+  /** Ochilgan qator va panel foni (sukut `bg-sunken`; maket `*-legacy-partners` — `bg-row-hover`). */
+  expandedClassName?: string;
+};
+
 export type DataTableProps<T> = {
   rows: readonly T[];
   columns: readonly DataTableColumn<T>[];
@@ -100,20 +127,22 @@ export type DataTableProps<T> = {
   rowClassName?: (row: T, index: number) => string | false | null | undefined;
   /** Telefonda (< 768) jadval o'rniga karta. Berilmasa — jadval (gorizontal aylanadi). */
   renderCard?: (row: T, index: number) => ReactNode;
-  /** Ochilgan qator tafsiloti; `null` / `false` — yopiq. Ichki chekkani mazmunning o'zi beradi. */
-  renderExpanded?: (row: T, index: number) => ReactNode;
   /** Kartalar ro'yxati nomi (sukut «Ro'yxat»). */
   cardsLabel?: string;
   /** Fonda yangilanmoqda — ro'yxat xiralashadi (`aria-busy`). */
   busy?: boolean;
   /** Tashqi o'ram (`.el-table-wrap` / kartalar ro'yxati) klassi — masalan `border-t border-border`. */
   className?: string;
+  /** Ochiladigan qatorlar (tafsilot paneli). */
+  expandable?: DataTableExpandable<T>;
 };
 
 /* ─── Klasslar (CODE-MAP 2.6) ─────────────────────────────────────────────── */
 
 const TH = "whitespace-nowrap border-b border-border bg-sunken text-xs font-semibold uppercase tracking-[.04em] text-text-muted";
-const TD = "border-b border-border align-middle text-text";
+const TD = "align-middle text-text";
+/** Katak pastki chizig'i — ochilgan qatorda yo'q (panel bilan bitta blok). */
+const TD_BORDER = "border-b border-border";
 
 const TH_SIZE: Record<DataTableDensity, string> = {
   default: "h-10 px-4",
@@ -134,6 +163,16 @@ const SORT_BUTTON =
   "aria-pressed:text-text transition-[color] duration-150 motion-reduce:transition-none";
 
 const CHECKBOX = "size-[18px] cursor-pointer accent-action disabled:cursor-not-allowed disabled:opacity-45";
+
+/** Chevron ustuni (maket: `th` 52 px, o'ng chekka 0). */
+const EXPAND_COL = "w-[52px] pr-0";
+
+/** Panel chekkalari: jadvalda chevron ustuni bilan tekis (maket `4px 20px 20px 68px`), telefonda `4px 16px 20px`. */
+const PANEL_TABLE: Record<"start" | "none", string> = {
+  start: "pb-5 pl-[68px] pr-5 pt-1",
+  none: "px-4 pb-4 pt-0",
+};
+const PANEL_CARD = "px-4 pb-5 pt-1";
 
 /** Qator ichidagi interaktiv element bosildi — qator bosilishi emas. */
 const INTERACTIVE = "a, button, input, label, select, textarea, summary, [role='button'], [role='checkbox'], [role='link']";
@@ -196,13 +235,14 @@ export const DataTable = <T,>({
   onRowClick,
   rowClassName,
   renderCard,
-  renderExpanded,
   cardsLabel,
   busy = false,
   className,
+  expandable,
 }: DataTableProps<T>) => {
   const { t } = useTranslation("ui");
   const isPhone = useIsPhone();
+  const panelBaseId = useId();
 
   const selectable = (row: T) => (selection?.isSelectable ? selection.isSelectable(row) : true);
   const selectableRows = selection ? rows.filter(selectable) : [];
@@ -227,6 +267,29 @@ export const DataTable = <T,>({
     );
   };
 
+  const toggleMode = expandable?.toggle ?? "start";
+  const hasToggleColumn = Boolean(expandable) && toggleMode === "start";
+  const expandableRow = (row: T) => Boolean(expandable && (expandable.canExpand ? expandable.canExpand(row) : true));
+  const expandedRow = (row: T) => expandableRow(row) && Boolean(expandable?.isExpanded(row));
+  const panelIdOf = (row: T, index: number) =>
+    expandable?.panelId?.(row) ?? `${panelBaseId}-panel-${getRowKey(row, index)}`;
+
+  const expandToggle = (row: T, index: number) => {
+    if (!expandable) return null;
+    if (!expandableRow(row)) return <span className="sr-only">{t("table.noDetails")}</span>;
+    const expanded = expandedRow(row);
+    return (
+      <IconButton
+        size={isPhone ? "md" : "sm"}
+        icon={expanded ? ChevronDown : ChevronRight}
+        label={expandable.toggleLabel?.(row, expanded) ?? t(expanded ? "table.collapse" : "table.expand")}
+        aria-expanded={expanded}
+        aria-controls={expanded ? panelIdOf(row, index) : undefined}
+        onClick={() => expandable.onToggle(row, !expanded)}
+      />
+    );
+  };
+
   const handleRowClick = (row: T, index: number) => (event: MouseEvent<HTMLElement>) => {
     if (!onRowClick) return;
     const target = event.target as Element | null;
@@ -234,16 +297,11 @@ export const DataTable = <T,>({
     onRowClick(row, index);
   };
 
-  const expandedOf = (row: T, index: number) => {
-    const content = renderExpanded?.(row, index);
-    return content === null || content === undefined || content === false ? null : content;
-  };
-
-  const rowState = (row: T, index: number, expanded = false) => {
+  const rowState = (row: T, index: number) => {
     const selected = Boolean(selection && selectable(row) && selection.isSelected(row));
+    const expanded = expandedRow(row);
     return cx(
-      // Ochilgan qator tafsiloti bilan bitta kulrang blok — ustiga kelganda ham fon o'zgarmaydi.
-      selected ? "bg-action-soft" : expanded ? "bg-sunken" : "hover:bg-row-hover",
+      selected ? "bg-action-soft" : expanded ? (expandable?.expandedClassName ?? "bg-sunken") : "hover:bg-row-hover",
       selection && !selectable(row) && "text-text-subtle",
       onRowClick && "cursor-pointer",
       rowClassName?.(row, index),
@@ -261,26 +319,36 @@ export const DataTable = <T,>({
           className,
         )}
       >
-        {rows.map((row, index) => {
-          const expanded = expandedOf(row, index);
-          return (
-            <li
-              key={getRowKey(row, index)}
-              data-selected={selection && selectable(row) && selection.isSelected(row) ? "" : undefined}
-              data-expanded={expanded ? "" : undefined}
-              className={cx("relative min-w-0 border-b border-border last:border-b-0", rowState(row, index, Boolean(expanded)))}
-              onClick={onRowClick ? handleRowClick(row, index) : undefined}
-            >
-              {selection ? (
-                <label className="absolute left-0 top-0 z-10 inline-flex size-12 cursor-pointer items-center justify-center">
-                  {rowCheckbox(row)}
-                </label>
-              ) : null}
-              {renderCard(row, index)}
-              {expanded}
-            </li>
-          );
-        })}
+        {rows.map((row, index) => (
+          <li
+            key={getRowKey(row, index)}
+            data-selected={selection && selectable(row) && selection.isSelected(row) ? "" : undefined}
+            data-expanded={expandedRow(row) ? "" : undefined}
+            className={cx("relative min-w-0 border-b border-border last:border-b-0", rowState(row, index))}
+            onClick={onRowClick ? handleRowClick(row, index) : undefined}
+          >
+            {selection ? (
+              <label className="absolute left-0 top-0 z-10 inline-flex size-12 cursor-pointer items-center justify-center">
+                {rowCheckbox(row)}
+              </label>
+            ) : null}
+            {hasToggleColumn ? (
+              <div className="flex min-w-0 items-start gap-2 pr-1">
+                <div className="min-w-0 flex-1">{renderCard(row, index)}</div>
+                <div className="flex flex-none pt-2">
+                  {expandableRow(row) ? expandToggle(row, index) : <span aria-hidden="true" className="block w-11" />}
+                </div>
+              </div>
+            ) : (
+              renderCard(row, index)
+            )}
+            {expandable && expandedRow(row) ? (
+              <div id={panelIdOf(row, index)} className={cx("min-w-0", expandable.panelClassName ?? PANEL_CARD)}>
+                {expandable.render(row)}
+              </div>
+            ) : null}
+          </li>
+        ))}
       </ul>
     );
   }
@@ -306,6 +374,11 @@ export const DataTable = <T,>({
                   label={selection.headerLabel ?? t("table.selectAll")}
                   onChange={selection.onToggleAll}
                 />
+              </th>
+            ) : null}
+            {hasToggleColumn ? (
+              <th scope="col" className={cx(TH, TH_SIZE[density], EXPAND_COL)}>
+                <span className="sr-only">{t("table.details")}</span>
               </th>
             ) : null}
             {columns.map((column) => {
@@ -345,7 +418,8 @@ export const DataTable = <T,>({
         </thead>
         <tbody>
           {rows.map((row, index) => {
-            const expanded = expandedOf(row, index);
+            const expanded = expandedRow(row);
+            const tdBorder = expanded ? null : TD_BORDER;
             return (
               <Fragment key={getRowKey(row, index)}>
                 <tr
@@ -354,18 +428,22 @@ export const DataTable = <T,>({
                   data-expanded={expanded ? "" : undefined}
                   className={cx(
                     "transition-[background-color] duration-150 motion-reduce:transition-none",
-                    rowState(row, index, Boolean(expanded)),
-                    // Ochilgan qator tafsiloti bilan bitta blok: orada chiziq yo'q.
-                    expanded ? "[&>td]:border-b-0" : false,
+                    rowState(row, index),
                   )}
                   onClick={onRowClick ? handleRowClick(row, index) : undefined}
                 >
-                  {selection ? <td className={cx(TD, TD_SIZE[density], "w-11 pr-0")}>{rowCheckbox(row)}</td> : null}
+                  {selection ? (
+                    <td className={cx(TD, tdBorder, TD_SIZE[density], "w-11 pr-0")}>{rowCheckbox(row)}</td>
+                  ) : null}
+                  {hasToggleColumn ? (
+                    <td className={cx(TD, tdBorder, TD_SIZE[density], EXPAND_COL)}>{expandToggle(row, index)}</td>
+                  ) : null}
                   {columns.map((column) => (
                     <td
                       key={column.id}
                       className={cx(
                         TD,
+                        tdBorder,
                         TD_SIZE[density],
                         column.align === "end" && "whitespace-nowrap text-right",
                         column.hideBelow === "lg" && "max-lg:hidden",
@@ -377,10 +455,14 @@ export const DataTable = <T,>({
                     </td>
                   ))}
                 </tr>
-                {expanded ? (
-                  <tr data-expanded-detail="">
-                    <td colSpan={columns.length + (selection ? 1 : 0)} className="border-b border-border bg-sunken p-0">
-                      {expanded}
+                {expandable && expanded ? (
+                  <tr data-expanded-panel="" className={expandable.expandedClassName ?? "bg-sunken"}>
+                    <td
+                      id={panelIdOf(row, index)}
+                      colSpan={columns.length + (selection ? 1 : 0) + (hasToggleColumn ? 1 : 0)}
+                      className={cx(TD_BORDER, "align-top text-text", expandable.panelClassName ?? PANEL_TABLE[toggleMode])}
+                    >
+                      {expandable.render(row)}
                     </td>
                   </tr>
                 ) : null}

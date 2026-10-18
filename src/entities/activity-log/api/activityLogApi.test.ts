@@ -150,6 +150,47 @@ describe("activityLogApi", () => {
     expect(result.items[1].actor_status).toBeNull();
   });
 
+  it("G2: reyestr (yorliq, kategoriya) fe'llar yonida o'qiladi; ikon/ton bo'lmasa — null", async () => {
+    mocks.get.mockResolvedValue({
+      data: {
+        data: ["status_change", "order.cancel"],
+        registry: [
+          { action: "status_change", label: "Holat o'zgardi", category: "general", category_label: "Umumiy", icon: "swap", tone: "blue" },
+          { action: "order.cancel", label: "Bekor qilindi", category: "order", category_label: "Buyurtma" },
+        ],
+        categories: [],
+      },
+    });
+    const catalog = await getActivityActions();
+    expect(catalog.actions).toEqual(["status_change", "order.cancel"]);
+    expect(catalog.registry).toEqual([
+      { action: "status_change", label: "Holat o'zgardi", category: "general", categoryLabel: "Umumiy", icon: "swap", tone: "blue", known: true },
+      { action: "order.cancel", label: "Bekor qilindi", category: "order", categoryLabel: "Buyurtma", icon: null, tone: null, known: true },
+    ]);
+    expect(catalog.categories).toEqual([]);
+  });
+
+  it("G2: boyitilgan qatordagi `action_meta` va `actor_status: snapshot` saqlanadi", async () => {
+    mocks.get.mockResolvedValue({
+      data: {
+        data: {
+          items: [
+            {
+              id: 9,
+              action: "logout",
+              actor_status: "snapshot",
+              action_meta: { action: "logout", label: "Tizimdan chiqdi", category: "auth", category_label: "Kirish", icon: "logout", tone: "slate", known: true },
+            },
+          ],
+          meta: { total: 1 },
+        },
+      },
+    });
+    const result = await getActivityLogs({ page: 1, limit: 20 });
+    expect(result.items[0].actor_status).toBe("snapshot");
+    expect(result.items[0].action_meta).toMatchObject({ label: "Tizimdan chiqdi", categoryLabel: "Kirish", known: true });
+  });
+
   it("normalizes entity-history items", async () => {
     mocks.get.mockResolvedValue({
       data: { data: { items: [{ id: 1, entity_type: "User", entity_id: "9", action: "update" }], meta: { total: 1 } } },

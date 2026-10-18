@@ -16,19 +16,18 @@ import {
  *  - `RAW_CONTROL_RATCHET` — xom `<button>`/`<select>`/`<input>`… hali qolgan v1 fayllar (`design-v2/raw-control` off);
  *  - `UI_IMPORT_RATCHET` — antd vizual komponenti / boshqa ikonka kutubxonasi importi qolgan fayllar
  *    (`design-v2/ui-imports` off);
- *  - `STAGE_A_PENDING` — G2/G3 qurilayotgan yo'llar (`warn`), bosqich B da `[]`.
+ *  - `STAGE_A_PENDING` — bosqich A da G2/G3 qurilayotgan yo'llar (`warn`) edi; bosqich B (hozir) — `[]`.
  * Fayl tozalansa — ro'yxatdan olib tashlanadi (test shuni talab qiladi). Ro'yxatni o'stirish — quyidagi `MAX_*` ni
  * oshirish, ya'ni review'da ko'rinadigan, sababli o'zgarish. ESLint bu yerda yurmaydi (tez test).
  */
 
-/** Faqat kamaytiring. */
-const MAX_RAW = 11;
-/** Faqat kamaytiring. */
-const MAX_UI = 1;
-/** Bosqich B (G2 va G3 asosiy branchga qo'shilgach) — "B": `STAGE_A_PENDING` bo'sh bo'lishi shart (spec §1.8). */
-const STAGE = "A" as "A" | "B";
-/** Bosqich A: G3 hali yaratmagan (wt-g3 da bor) papka — mavjud bo'lmasligi mumkin. */
-const PENDING_NOT_YET_CREATED = new Set(["src/pages/scan/model/**"]);
+/**
+ * Faqat kamaytiring. Bosqich B: 11 → 9 (`UserDetailWidget` G2 da o'chirildi, `TransferCourierButton` v2 ga o'tdi);
+ * integratsiya: 9 → 5 (iste'molchisiz v1 `UserInfoCards`, `button.tsx`, `Table.tsx`, `pagination` o'chirildi).
+ */
+const MAX_RAW = 5;
+/** Faqat kamaytiring. Bosqich B: 1 → 0 (`ConfirmButton` G2 da o'chirildi). */
+const MAX_UI = 0;
 const MIN_REASON = 10;
 
 // ── yordamchilar (sof funksiyalar — pastda sintetik kirish bilan ham sinaladi) ──────────────────────────────
@@ -210,17 +209,9 @@ describe("lint ratchet — ro'yxatlar faqat qisqaradi", () => {
     expect(bad).toEqual([]);
   });
 
-  it(`bosqich ${STAGE}: STAGE_A_PENDING`, () => {
-    if (STAGE === "B") {
-      expect(STAGE_A_PENDING).toEqual([]);
-      return;
-    }
-    expect(new Set(STAGE_A_PENDING).size, "takror yozuv").toBe(STAGE_A_PENDING.length);
-    const files = [...FILES.keys()];
-    const unmatched = STAGE_A_PENDING.filter(
-      (glob) => !PENDING_NOT_YET_CREATED.has(glob) && !files.some((file) => globToRegExp(glob).test(file)),
-    );
-    expect(unmatched, "mavjud faylga mos kelmaydi — yo'l xato yoki papka o'chirilgan (ro'yxatdan olib tashlang)").toEqual([]);
-    for (const glob of PENDING_NOT_YET_CREATED) expect(STAGE_A_PENDING).toContain(glob);
+  it("bosqich B: STAGE_A_PENDING bo'sh — `design-v2/*` hamma joyda xato (spec §1.8)", () => {
+    // G2 va G3 asosiy branchga qo'shilgan. Qurilayotgan yangi yo'l uchun ham `warn` qaytmaydi:
+    // `Pressable` / primitiv, asosli `eslint-disable-next-line … -- <sabab>` yoki ratchet (`MAX_*` bilan).
+    expect(STAGE_A_PENDING).toEqual([]);
   });
 });
