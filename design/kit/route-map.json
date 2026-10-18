@@ -102,12 +102,15 @@
       "components": [
         "src/features/auth/index.tsx",
         "src/features/auth/ui/LoginForm.tsx",
+        "src/features/auth/ui/SessionExpiredScreen.tsx",
         "src/auth/loginNotice.ts",
-        "src/auth/SessionExpiryCountdown.tsx"
+        "src/auth/SessionExpiryCountdown.tsx",
+        "src/shared/lib/shellBannerSlot.ts"
       ],
       "views": {
         "common": ["login", "login-error", "session-expired"]
-      }
+      },
+      "note": "Dizayn v2 (G3): kirish formasi (common-login, xato holati common-login-error) va «Sessiya tugadi» ekrani (SessionExpiredScreen — logoutAndRedirect({ reason: 'sessionExpired' }) → loginNotice; qo'lda «Chiqish» — to'g'ridan-to'g'ri forma). Sessiya banneri (SessionExpiryCountdown, taxta tizim-feedback 04) butun ilovada: DashboardLayout'da yuqori panel ostidagi shell slotiga ([data-shell-slot=banner], shared/lib/shellBannerSlot.ts) portal — sahifani pastga suradi, hech narsani yopmaydi (maket talabi bilan qo'shilgan shell sloti); ScanLayout'da oqimda, sticky. Ega savoli Q6 sukuti: «© 2026 Elchi Pochta» chizilmaydi (2026-10-16 «footer olib tashlangan»). Kirmagan foydalanuvchining noma'lum yo'li → /login (routes.tsx dagi mavjud xulq, o'zgartirilmadi)."
     },
     {
       "path": "/403",
@@ -684,8 +687,12 @@
       "title": "Biriktirish — buyurtmalarni skanerlab kuryerga berish",
       "components": [
         "src/pages/dispatch/index.tsx",
-        "src/shared/components/ScannerCameraModal.tsx",
-        "src/shared/components/popupSelect.tsx"
+        "src/pages/dispatch/ui/DispatchStats.tsx",
+        "src/pages/dispatch/ui/DispatchOrdersTable.tsx",
+        "src/pages/dispatch/ui/CourierPickerDialog.tsx",
+        "src/pages/dispatch/ui/DispatchAlert.tsx",
+        "src/pages/dispatch/model/dispatchModel.ts",
+        "src/shared/components/ScannerCameraModal.tsx"
       ],
       "views": {
         "manager": ["dispatch-scan", "dispatch-courier-dialog", "dispatch-camera-dialog"],
@@ -693,9 +700,10 @@
         "tizim": ["scanner"]
       },
       "roleNotes": {
-        "superadmin": "Menyuda yo'q (faqat URL) — registrator-dispatch-list ga qarang.",
-        "admin": "Menyuda yo'q (faqat URL) — registrator-dispatch-list ga qarang."
-      }
+        "superadmin": "Menyuda yo'q (faqat URL) — registrator-dispatch-list tartibi (barcha rollar uchun bitta tartib).",
+        "admin": "Menyuda yo'q (faqat URL) — registrator-dispatch-list tartibi (barcha rollar uchun bitta tartib)."
+      },
+      "note": "Dizayn v2 (G3): barcha rollar uchun bitta tartib — registrator maketlari (dispatch-list, dispatch-empty) + menejer dispatch-scan matnlari, «Kuryerni tanlang» oynasi — CourierPickerDialog (Dialog, telefonda pastki varaqa). Ega savoli Q7 sukuti: telefonda pastki menyu ustida yopishqoq panel «Kamera N ta» + «Biriktirish — K ta» (har rolda), sarlavhadagi tugma ≥ 768 da. Bitta faol kuryer — oynasiz darhol biriktiriladi. /scan/:token dan «Kuryerga biriktirish» (Q3) → state.scanToken bir marta qo'shiladi va tanlanadi. Ro'yxat sahifa holati — sahifadan chiqilsa yo'qoladi (menejer maketidagi «biriktirish savati» saqlanishi — ega qarori kutiladi). Kamera oynasi (ScannerCameraModal, umumiy) — alohida kamera ishi."
     },
     {
       "path": "/courier-bulk",
@@ -704,13 +712,23 @@
       "components": [
         "src/pages/courier-bulk/index.tsx",
         "src/pages/courier-bulk/model/courierBulk.ts",
+        "src/pages/courier-bulk/ui/CourierBulkSummary.tsx",
+        "src/pages/courier-bulk/ui/ScanModeControl.tsx",
+        "src/pages/courier-bulk/ui/CourierBulkOrders.tsx",
+        "src/pages/courier-bulk/ui/ResultControl.tsx",
+        "src/pages/courier-bulk/ui/BulkAlert.tsx",
+        "src/pages/courier-bulk/ui/CourierBulkProofDialog.tsx",
+        "src/pages/courier-bulk/ui/CourierBulkResultDialog.tsx",
+        "src/pages/courier-bulk/ui/segmentTint.ts",
+        "src/pages/courier-bulk/model/useIsBelowLg.ts",
         "src/shared/components/ScannerCameraModal.tsx"
       ],
       "views": {
         "manager": ["courier-bulk-main", "courier-bulk-camera-dialog"],
         "courier": ["courier-bulk-main", "courier-bulk-scanner-camera", "courier-bulk-scanner-camera-list", "courier-bulk-confirm-dialog"],
         "tizim": ["scanner"]
-      }
+      },
+      "note": "Dizayn v2 (G3): kuryer va menejer uchun bitta tartib (courier-courier-bulk-main). Ega savoli Q8 sukuti: menejerda ham kuryer maketi (4 stat karta, qidiruv + «Natija» filtri, saralash — hammasi mijoz tomonida, yangi API parametri yo'q); «Kutilayotgan» izohi menejerda «Filial kuryerlarida, yakunlanmagan». Q9: «Faqat bekorlarni qo'llash» olib tashlandi (maketlarda yo'q). Telefonda «Kunni yakunlash» pastki menyu ustidagi yopishqoq panelda (DOM'da bitta tugma). Tasdiq — useConfirm (courier-courier-bulk-confirm-dialog matnlari); «Ertaga» so'rov yubormaydi. Tasdiqdan keyingi isbot qadami (CourierBulkProofDialog — market expense_proof_conditions talab qilgan buyurtmalarga har biriga bitta ProofField, hammasida fayl bo'lmaguncha «Yakunlash» o'chiq) va xatolar ro'yxati (CourierBulkResultDialog — har xato backend sababi bilan) uchun maket yo'q — eng yaqini: tizim-states-forms + courier-courier-bulk-confirm-dialog (dev j9KFyqlS). Isbot kerak bo'lmasa qo'shimcha qadam yo'q; ommaviy sotish/bekor so'rovlarida X-Request-Source: courier-bulk. Kamera oynasi va skan topilmaganda chiqadigan umumiy qoplama (common:scannerFeedbackMissing «Bu pochtada yo'q» matni) — alohida kamera ishi."
     },
     {
       "path": "/scan",
@@ -734,7 +752,7 @@
       "roleNotes": {
         "market": "Maket yo'q — market skanerlamaydi (roles.json: persona.scan = false)."
       },
-      "note": "Kirish: yuqori panel «Skanerlash» tugmasi va telefon menyusi. Holatlar (ishga tushmoqda, faol, topildi, noto'g'ri QR, juda tez, kamera xatosi) bitta komponentda."
+      "note": "Kirish: yuqori panel «Skanerlash» tugmasi va telefon menyusi. Holatlar (ishga tushmoqda, faol, topildi, noto'g'ri QR, juda tez, kamera xatosi) bitta komponentda. Butun /scan sahifasi (barcha kamera holatlari, «Qo'lda kiritish», «Oxirgi skanerlar», oflayn navbat) — alohida kamera ishi (ega qarori 2026-10-16; G3 Q1 sukuti); 4-bosqichda faqat /scan/:token. Buyurtma raqami bilan qo'lda qidirish uchun API yo'q (QR faqat qr_code_token bo'yicha)."
     },
     {
       "path": "/scan/:token",
@@ -742,8 +760,20 @@
       "title": "Skanerlangan obyekt — buyurtma / paket / pochta",
       "components": [
         "src/pages/scan/detail.tsx",
+        "src/pages/scan/ui/ScanOrderResult.tsx",
+        "src/pages/scan/ui/ScanResultHeader.tsx",
+        "src/pages/scan/ui/ScanActionCard.tsx",
+        "src/pages/scan/ui/ScanStickyBar.tsx",
+        "src/pages/scan/ui/ScanAlert.tsx",
+        "src/pages/scan/ui/ScanStates.tsx",
+        "src/pages/scan/ui/ScanOrdersCard.tsx",
+        "src/pages/scan/ui/ScanBatchSummary.tsx",
+        "src/pages/scan/ui/ScanTrackingCard.tsx",
+        "src/pages/scan/ui/ManagerOrderDialogs.tsx",
         "src/pages/scan/ui/ScanPackageDetail.tsx",
         "src/pages/scan/ui/ScanPostDetail.tsx",
+        "src/pages/scan/model/scanOrderView.ts",
+        "src/pages/scan/model/scanBatchView.ts",
         "src/pages/scan/lib/scanResource.ts"
       ],
       "views": {
@@ -755,9 +785,10 @@
         "tizim": ["scanner"]
       },
       "roleNotes": {
-        "market": "Maket yo'q — market skanerlamaydi."
+        "admin": "superadmin-scan-result maketi (views.json: admin-scan-result = superadmin fragmenti) — bitta xodim tartibi.",
+        "market": "Maket yo'q — market skanerlamaydi. URL orqali ochilsa — xodimning faqat o'qish tartibi (amallarsiz, holat tarixisiz, tafsilot havolasisiz)."
       },
-      "note": "«O'zimga olish» tugmasi faqat kuryerda. Paket → ScanPackageDetail, pochta → ScanPostDetail."
+      "note": "Dizayn v2 (G3): barcha rollar uchun bitta tartib (menejer/kuryer maketlari tuzilmasi), rol farqi faqat mazmunda; admin — superadmin maketi (superadmin-scan-result). «O'zimga olish» faqat kuryerda; boshqa kuryerga biriktirilgan buyurtma xatosi — backend matni amallar kartasida. Paket → ScanPackageDetail, pochta → ScanPostDetail; xodimda paket nomlari GET transfer-batches/:id bilan to'ldiriladi (ixtiyoriy, xatosi global xabarsiz — silentError). Ega savollari sukuti: Q2 menejerda «Sotish / Bekor qilish» buyurtma tafsilotidagi qoidalar bilan (can_sell_cancel, REGIONAL/HYBRID, kuryer qo'lida emas); Q3 «Kuryerga biriktirish» → /dispatch (buyurtma qo'shilib tanlanadi; buyurtma holati bo'yicha cheklanmagan — spec sukuti); Q4 superadmin/admin/registrator xulosasida «To'langan» ham, «Yaratilgan» ham; Q5 kuryerga paketni «Qabul qilish» yo'q (backend 403) — faqat o'qish."
     },
     {
       "path": "/tg/scan",
@@ -1501,15 +1532,18 @@
     "superadmin-neworders-branch-batch-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
     "admin-neworders-branch-batch-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
     "courier-courier-bulk-scanner-camera-list": "Kamera oynasida «skanerlanganlar ro'yxati» varag'i yo'q (ScannerCameraModal faqat kamera).",
-    "courier-courier-bulk-confirm-dialog": "«Kunni yakunlash» oldidan tasdiqlash oynasi yo'q (ega tasdiqlagan UX qo'shimchasi).",
     "courier-scan-offline": "Internet yo'qda skanlarni navbatga qo'yish yo'q.",
     "courier-scan-manual-entry": "Kodni qo'lda kiritish yo'q."
   },
   "partialViews": {
     "registrator-new-orders-market-detail": "Registrator boshqa xodim rollari (superadmin/admin/menejer) bilan bir xil v2 ko'rinishda — maketdagi farqlar (sarlavhada «Chop etish», «Buyurtmalar N ta» karta sarlavhasi, «5 / 6 ta» tanlov xulosasi, qator kebab menyusi) ega qaroriga qadar kiritilmagan.",
     "registrator-new-orders-market-detail-receive-dialog": "Umumiy xodim qabul oynasi (MarketOrderDialogs.tsx) — tasdiq tugmasi «Tasdiqlash»; maketdagi «Qabul qilish — N ta» varianti ega qaroriga qadar kiritilmagan.",
-    "courier-scan-other-courier": "Alohida holat yo'q — backend xato matni umumiy xato blokida chiqadi (scan/detail.tsx).",
-    "common-session-expired": "Alohida ekran yo'q — SessionExpiryCountdown taymeri, keyin /login ga qaytarish.",
+    "courier-scan-other-courier": "Alohida holat yo'q — «O'zimga olish» rad etilsa backend xato matni amallar kartasida chiqadi (ScanActionCard). Kamera ekranidagi ko'rinishi — alohida kamera ishi.",
+    "courier-scan-not-found": "Maket holati kamera ekranida chizilgan — kamera ishi. /scan/:token da «Buyurtma topilmadi» kartasi (ScanStates: «Qayta urinish» + «Skanerga qaytish») v2.",
+    "manager-dispatch-camera-dialog": "Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish.",
+    "registrator-dispatch-camera-scanner-dialog": "Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish.",
+    "manager-courier-bulk-camera-dialog": "Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish.",
+    "courier-courier-bulk-scanner-camera": "Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish.",
     "common-settings-scanner": "«Skaner» tabi bor (muvaffaqiyat/xato ovozlari, tebranish — ScannerPanel); «Kamera» kartasi yo'q — kamera rejimi keyinroq, alohida (spec D5 / G9).",
     "superadmin-neworders-cancelled-handover-camera": "Sahifa qismi (sarlavha, «Market QR» holati, «USB skaner tayyor» qatori, tanlov, jadval) v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
     "admin-neworders-cancelled-detail-camera": "Sahifa qismi (sarlavha, «Market QR» holati, «USB skaner tayyor» qatori, tanlov, jadval) v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",

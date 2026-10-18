@@ -2,6 +2,7 @@ import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
+import { peekLoginNotice } from "../../../auth/loginNotice";
 import { TELEGRAM_LINK_POLL_MS } from "../../../features/telegram-link/ui/TelegramLinkCard";
 import type { User, UserRole } from "../../../entities/user/types/user";
 
@@ -170,7 +171,8 @@ describe("Profil — parolni o'zgartirish", () => {
     await waitFor(() => expect(patchCalls()).toEqual([{ password: "namuna12" }]));
     expect(await screen.findByText("Parol o'zgardi — qayta kiring")).toBeInTheDocument();
     await waitFor(() => expect(mocks.logout).toHaveBeenCalledTimes(1));
-    expect(window.sessionStorage.getItem("elchi_login_notice")).toBe("passwordChanged");
+    // Saqlash shakli `auth/loginNotice.ts` ga tegishli (G3: JSON `{ notice, at }`) — o'quvchi orqali tekshiriladi.
+    expect(peekLoginNotice()).toBe("passwordChanged");
   });
 
   it("backend rad etsa — chiqilmaydi, oyna ochiq qoladi, xato ko'rinadi", async () => {

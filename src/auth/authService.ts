@@ -8,6 +8,7 @@ import tokenStorage from "./tokenStorage";
 import type { User } from "../entities/user/model/types";
 import { clearStoredUiPreferences } from "../shared/lib/preferencesStorage";
 import { emitNetworkError, isNetworkFailure, isTransientAuthFailure } from "./networkError";
+import { clearLoginNotice, peekLoginNotice, peekLoginNoticeDetails, rememberLoginNotice } from "./loginNotice";
 
 type LoginCredentials = {
   phone_number: string;
@@ -321,7 +322,43 @@ export const logout = async () => {
   }
 };
 
-export const logoutAndRedirect = async () => {
+/** Chiqish sababi: `sessionExpired` — login sahifasida «Sessiya tugadi» ekrani (`common-session-expired`). */
+export type LogoutReason = "sessionExpired";
+
+export type LogoutAndRedirectOptions = {
+  reason?: LogoutReason;
+};
+
+/**
+ * «Sessiya tugadi» xabarini qoldiradi — `logout()` metama'lumotni tozalashidan OLDIN (tugagan vaqt shundan).
+ * Refresh token muddati hali o'tmagan bo'lsa (server sessiyani oldinroq rad etdi) — hozirgi vaqt.
+ * `passwordChanged` ustun: parol o'zgargach chiqarilgan foydalanuvchiga o'sha sabab ko'rinadi.
+ */
+const rememberSessionExpired = () => {
+  const existing = peekLoginNoticeDetails();
+  if (existing?.notice === "passwordChanged") return;
+  const now = Date.now();
+  const { refreshTokenExpiresAt } = tokenStorage.getSessionMetadata();
+  const at = refreshTokenExpiresAt && refreshTokenExpiresAt <= now ? refreshTokenExpiresAt : now;
+  // Bir vaqtdagi bir nechta chaqiruv (parallel so'rovlar): `logout()` metama'lumotni tozalagach kelgani
+  // birinchisi yozgan haqiqiy tugash vaqtini «hozir» bilan almashtirmasin — eng erta vaqt qoladi.
+  if (existing?.notice === "sessionExpired" && existing.at && existing.at <= at) return;
+  rememberLoginNotice("sessionExpired", { at });
+};
+
+/**
+ * Chiqish va `/login` ga o'tish. `reason` ixtiyoriy — mavjud chaqiruvchilar o'zgarmaydi.
+ *   - `{ reason: "sessionExpired" }` — sessiya tugadi (taymer, token yangilanmadi): login sahifasida «Sessiya
+ *     tugadi» ekrani;
+ *   - sababsiz (profil menyusidagi «Chiqish», parol o'zgargach) — oddiy kirish formasi; qolib ketgan «Sessiya
+ *     tugadi» xabari o'chiriladi, `passwordChanged` saqlanadi.
+ */
+export const logoutAndRedirect = async (options: LogoutAndRedirectOptions = {}) => {
+  if (options?.reason === "sessionExpired") {
+    rememberSessionExpired();
+  } else if (peekLoginNotice() === "sessionExpired") {
+    clearLoginNotice();
+  }
   await logout();
   window.location.replace("/login");
 };

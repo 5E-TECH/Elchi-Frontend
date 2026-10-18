@@ -416,10 +416,15 @@ export const useBatches = (params?: BatchListParams, options?: { enabled?: boole
     enabled: options?.enabled ?? true,
   });
 
-export const useBatchDetail = (id?: string) =>
+/**
+ * `silentError` — ixtiyoriy so'rov (masalan skaner natijasida paket nomlarini to'ldirish): xato global xabar
+ * bermaydi, sahifa skan javobi bilan chizilaveradi. Sukut bo'yicha xulq o'zgarmagan (`/batches/:id` xatoni ko'radi).
+ */
+export const useBatchDetail = (id?: string, options?: { silentError?: boolean }) =>
   useQuery<BatchDetail>({
     queryKey: [BATCH_KEY, id],
     enabled: Boolean(id),
+    ...(options?.silentError ? { meta: { silentError: true } } : {}),
     queryFn: async () => {
       const response = await api.get(API_ENDPOINTS.BATCHES.BY_ID(id || ""));
       return normalizeBatchDetail(response.data);

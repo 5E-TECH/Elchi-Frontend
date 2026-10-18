@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { cleanup, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import LoginForm from "./LoginForm";
 import { renderWithProviders } from "../../../test/test-utils";
@@ -17,6 +17,8 @@ vi.mock("../api/login", () => ({
 
 describe("LoginForm — 'Parol o'zgardi' xabari (fix3b RBAC-09)", () => {
   afterEach(async () => {
+    // Avval o'chiriladi: til almashishi o'rnatilgan formani `act` dan tashqarida qayta chizmasin.
+    cleanup();
     clearLoginNotice();
     await i18n.changeLanguage("uz");
   });

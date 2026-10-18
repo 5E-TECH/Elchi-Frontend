@@ -1,7 +1,8 @@
 import { AxiosError, type AxiosResponse } from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import store from "../app/config/store";
-import { authClient, initAuth } from "./authService";
+import { authClient, initAuth, logoutAndRedirect } from "./authService";
+import { peekLoginNoticeDetails, rememberLoginNotice } from "./loginNotice";
 import tokenStorage from "./tokenStorage";
 
 const networkError = () => new AxiosError("Network Error", "ERR_NETWORK");
@@ -75,5 +76,85 @@ describe("initAuth on a flaky network (9w5Fq94s)", () => {
     await runInit();
 
     expect(tokenStorage.getAccessToken()).toBeNull();
+  });
+});
+
+describe("logoutAndRedirect — «Sessiya tugadi» xabari (dizayn v2 common-session-expired)", () => {
+  const NOW = new Date("2026-10-17T14:20:00").getTime();
+  let replace: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    window.sessionStorage.clear();
+    tokenStorage.setAccessToken("token-123");
+    replace = vi.fn();
+    vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, replace } as Location);
+    vi.spyOn(authClient, "post").mockResolvedValue({ data: {} });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    window.sessionStorage.clear();
+  });
+
+  it("reason sessionExpired → remembers the refresh-token expiry time (read before logout clears it) and redirects", async () => {
+    const expiredAt = NOW - 5 * 60_000;
+    tokenStorage.setSessionMetadata({ refreshTokenExpiresAt: expiredAt, refreshTokenWarnAt: expiredAt - 900_000 });
+
+    await logoutAndRedirect({ reason: "sessionExpired" });
+
+    expect(peekLoginNoticeDetails()).toEqual({ notice: "sessionExpired", at: expiredAt });
+    expect(tokenStorage.getSessionMetadata().refreshTokenExpiresAt).toBeNull();
+    expect(tokenStorage.getAccessToken()).toBeNull();
+    expect(replace).toHaveBeenCalledWith("/login");
+  });
+
+  it("the server rejected the session before the token expiry → the time is now, not a future time", async () => {
+    tokenStorage.setSessionMetadata({ refreshTokenExpiresAt: NOW + 3_600_000 });
+
+    await logoutAndRedirect({ reason: "sessionExpired" });
+
+    expect(peekLoginNoticeDetails()).toEqual({ notice: "sessionExpired", at: NOW });
+  });
+
+  it("no expiry metadata → now", async () => {
+    await logoutAndRedirect({ reason: "sessionExpired" });
+
+    expect(peekLoginNoticeDetails()).toEqual({ notice: "sessionExpired", at: NOW });
+  });
+
+  it("concurrent calls: a later call (metadata already cleared) keeps the earlier real expiry time", async () => {
+    const expiredAt = NOW - 8 * 3_600_000;
+    tokenStorage.setSessionMetadata({ refreshTokenExpiresAt: expiredAt });
+
+    await logoutAndRedirect({ reason: "sessionExpired" });
+    // `logout()` metama'lumotni tozaladi — keyingi chaqiruv «hozir» ni hisoblaydi, lekin yozmaydi.
+    await logoutAndRedirect({ reason: "sessionExpired" });
+
+    expect(peekLoginNoticeDetails()).toEqual({ notice: "sessionExpired", at: expiredAt });
+  });
+
+  it("a passwordChanged notice wins over sessionExpired", async () => {
+    rememberLoginNotice("passwordChanged");
+
+    await logoutAndRedirect({ reason: "sessionExpired" });
+
+    expect(peekLoginNoticeDetails()).toEqual({ notice: "passwordChanged", at: null });
+  });
+
+  it("manual «Chiqish» (no reason) writes no notice and drops a stale sessionExpired one; passwordChanged stays", async () => {
+    await logoutAndRedirect();
+    expect(peekLoginNoticeDetails()).toBeNull();
+    expect(replace).toHaveBeenCalledWith("/login");
+
+    rememberLoginNotice("sessionExpired", { at: NOW - 1_000 });
+    await logoutAndRedirect();
+    expect(peekLoginNoticeDetails()).toBeNull();
+
+    rememberLoginNotice("passwordChanged");
+    await logoutAndRedirect();
+    expect(peekLoginNoticeDetails()).toEqual({ notice: "passwordChanged", at: null });
   });
 });

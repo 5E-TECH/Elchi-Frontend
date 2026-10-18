@@ -533,6 +533,34 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   `activity-log/lib/logView.ts`, `actionTone.ts`, `ActivityActionTag` (o'rniga dev'ning `ActivityLogFilters`,
   `model/*`, `actionMeta.ts`, `ActivityActionBadge`), `TelegramGroupFormDialog` / `telegramGroupForm.ts` (o'rniga
   `NotificationFormModal` + `NotificationEditModal`), `DataTable renderExpanded`.
+- **Ko'chirilgan:** G3 — kirish, skaner natijasi, «Biriktirish», «Tezkor amal» (`/login`, `/scan/:token`,
+  `/dispatch`, `/courier-bulk`; xato sahifalari 3-bosqichda tayyor; butun `/scan` kamera ekrani — alohida kamera
+  ishi). `/login` (`features/auth`): ≥ 1024 navy panel + forma, < 1024 navy tasma; `TextInput mode="phone"`
+  (payload `+998XXXXXXXXX`), parol ko'zi, xato — forma ichidagi `role="alert"` bloki; «Sessiya tugadi» ekrani
+  `SessionExpiredScreen` (`logoutAndRedirect({ reason: "sessionExpired" })` → `auth/loginNotice.ts`). **Sessiya
+  banneri** `auth/SessionExpiryCountdown.tsx` (`tizim-feedback` 04, entry chunk'da, faqat primitivlar): ogohlantirish
+  «Sessiya N daqiqadan keyin tugaydi» + `role="timer"`, tugagach «Qayta kirish». **Shell'ga qo'shilgan slot (maket
+  talabi):** `DashboardLayout` da yuqori panel va `<main>` orasida `[data-shell-slot=banner]` (`shrink-0`, oqimda,
+  skroll konteyneridan tashqarida) — banner unga portal qiladi (`shared/lib/shellBannerSlot.ts`), sahifani pastga
+  suradi va hech narsani yopmaydi; slot yo'q qobiqda (`ScanLayout`) — `sticky top-0`. `/scan/:token`
+  (`pages/scan/ui/*`): barcha rollar uchun bitta tartib (telefon yuqori paneli `ScanResultHeader`, «Holat va summa»,
+  «Mijoz va manzil», «Mahsulotlar», ≥ 1024 «Amallar» kartasi / < 1024 yopishqoq `ScanStickyBar`); kuryer «O'zimga
+  olish», menejer «Sotish» / «Bekor qilish» (`/orders` oynalari, tafsilot qoidalari) va «Kuryerga biriktirish» →
+  `/dispatch` (`state.scanToken`), xodimda «Holat tarixi»; paket va pochta tanalari, «topilmadi» kartasi. Paket
+  nomlari ixtiyoriy `useBatchDetail(id, { silentError: true })` bilan. `/dispatch` (`pages/dispatch/ui/*`): stat
+  kartalar, «Skanerlangan buyurtmalar» (`DataTable` + tanlov, USB skaner qo'shadi va tanlaydi), kuryer oynasi
+  `CourierPickerDialog`, bitta faol kuryer — darhol biriktirish, telefonda pastki menyu ustida yopishqoq panel.
+  `/courier-bulk` (`pages/courier-bulk/ui/*`): 4 stat karta, «Skanerlash rejimi», qator natijasi «Sotildi | Bekor |
+  Ertaga» (`SegmentedControl`), mijoz tomonida qidiruv / filtr / saralash, «Kunni yakunlash» — `useConfirm` tasdig'i
+  (DOM'da bitta tugma; telefonda yopishqoq panelda). Tasdiqdan keyin **isbot qadami** (maket yo'q — eng yaqini
+  `tizim-states-forms` + `courier-courier-bulk-confirm-dialog`): market `expense_proof_conditions` talab qilgan
+  buyurtmalar uchun `CourierBulkProofDialog` (har biriga bitta `ProofField`, hammasida fayl bo'lmaguncha «Yakunlash»
+  o'chiq; isbot kerak bo'lmasa qadam yo'q); xato berganlar `CourierBulkResultDialog` da backend sababi bilan;
+  ommaviy sotish/bekor so'rovlarida `X-Request-Source: courier-bulk`, isbotlilar 2 tadan, qolganlari 6 tadan parallel.
+  Skaner vaqtlari va ovozlar o'zgarmagan.
+  Ega savollariga sukut javoblari (spec §9) — `route-map.json` izohlarida. Chiqarilgan v1: `ScannerActionButton`,
+  `.login-field` CSS, `logo yozuvlik qora.png`, o'lik `auth` / `dispatch` / `courierBulk` / `common:scanner*`
+  kalitlari; en/ru ko'plik shakllari («1 order», «2 orders»).
 
 **Dizayn qo'riqchisi** (`scripts/design-guard.mjs`, `npm run design:guard`): `colour`, `palette`, `dark-pair`,
 `legacy`, `money`, `icons`, `tiny-text`, `v1-class`, `weight`, `gradient`, `v1-helper`. Ikki darvoza:

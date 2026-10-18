@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { I18nextProvider } from "react-i18next";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -6,6 +6,7 @@ import { createMemoryRouter, Link, RouterProvider } from "react-router-dom";
 import i18n from "../../i18n";
 import { createTestStore } from "../../test/test-utils";
 import DashboardLayout, { SHELL_DESKTOP_QUERY } from "./dashboardLayout";
+import { useShellBannerSlot } from "../../shared/lib/shellBannerSlot";
 
 /**
  * SHELL tuzilmasi (maket `.el-app` / `.el-main` / `.el-content`): slotlar, bitta skroll
@@ -113,6 +114,25 @@ describe("DashboardLayout (shell)", () => {
     // Qatlamlar: yuqori panel (va undagi profil menyusi) `z-40` — pastki menyu (`BottomNav`, `z-30`) ustida;
     // aks holda telefon yotiq holatida profil menyusining pastki bandlari (Chiqish) pastki menyu ostida qolardi.
     expect(topbarSlot.className).toMatch(/\bz-40\b/);
+  });
+
+  it("⭐ banner sloti: yuqori panel va <main> orasida, oqimda (`shrink-0`), skroll konteyneridan tashqarida", () => {
+    const slot = renderHook(() => useShellBannerSlot());
+    const { container, unmount } = renderShell();
+
+    const topbarSlot = container.querySelector('[data-shell-slot="topbar"]') as HTMLElement;
+    const bannerSlot = container.querySelector('[data-shell-slot="banner"]') as HTMLElement;
+    const main = screen.getByRole("main");
+    expect(topbarSlot.nextElementSibling).toBe(bannerSlot);
+    expect(bannerSlot.nextElementSibling).toBe(main);
+    expect(bannerSlot.className).toMatch(/\bshrink-0\b/);
+    expect(bannerSlot.className).not.toMatch(/\b(fixed|absolute|sticky)\b/);
+    expect(main).not.toContainElement(bannerSlot);
+    // Bannerlar (`SessionExpiryCountdown`) shu elementga portal qiladi.
+    expect(slot.result.current).toBe(bannerSlot);
+
+    unmount();
+    expect(slot.result.current).toBeNull();
   });
 
   it("⭐ menyu tugmasi suriluvchi menyuni ochadi, orqa fon `inert`; yopish — qaytaradi", () => {
