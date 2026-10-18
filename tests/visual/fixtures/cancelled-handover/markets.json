@@ -1,0 +1,17 @@
+{
+  "statusCode": 200,
+  "message": "ok",
+  "data": [
+    {
+      "market_id": "31",
+      "market": {
+        "id": "31",
+        "name": "Baraka Shop",
+        "phone_number": "+998903152241",
+        "cancelled_handover_qr_required": true
+      },
+      "orders_count": 6,
+      "total_price_sum": 1845000
+    }
+  ]
+}

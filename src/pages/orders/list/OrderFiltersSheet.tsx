@@ -5,7 +5,15 @@ import { ORDER_STATUS_NS, ORDER_STATUS_REGISTRY } from "../../../entities/order"
 import { useOrders } from "../../../entities/order/api/orderApi";
 import type { DeliveryType } from "../../../entities/order/types/order";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
-import { Button, DateRange, Dialog, Field, SegmentedControl, Select } from "../../../shared/ui/primitives";
+import {
+  Button,
+  DateRange,
+  Dialog,
+  Field,
+  Pressable,
+  SegmentedControl,
+  Select,
+} from "../../../shared/ui/primitives";
 import {
   buildOrderListParams,
   countPanelFilters,
@@ -250,15 +258,14 @@ export const OrderFiltersSheet = ({ open, onClose, initial, role, withDate, sear
       >
         <div className="flex flex-wrap gap-2">
           {FILTER_STATUSES.map((status) => (
-            <button
+            <Pressable
               key={status}
-              type="button"
               aria-pressed={draft.statuses.includes(status)}
               onClick={() => toggleStatus(status)}
               className={CHIP}
             >
               {t(ORDER_STATUS_REGISTRY[status].labelKey, { ns: ORDER_STATUS_NS })}
-            </button>
+            </Pressable>
           ))}
         </div>
       </Section>

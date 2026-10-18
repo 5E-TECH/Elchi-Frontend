@@ -1,0 +1,20 @@
+{
+  "statusCode": 200,
+  "message": "ok",
+  "data": {
+    "items": [
+      {
+        "id": "41",
+        "status": "open",
+        "opened_by": "2",
+        "opened_at": "2026-10-15T04:00:00.000Z",
+        "opened_by_user": {
+          "id": "2",
+          "name": "Karimova Dilnoza",
+          "role": "admin"
+        }
+      }
+    ],
+    "total": 1
+  }
+}

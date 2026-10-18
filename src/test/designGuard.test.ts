@@ -2,18 +2,24 @@ import { describe, expect, it } from "vitest";
 import {
   BASELINE_FILE,
   buildBaseline,
+  COLOUR_RULES,
   compareToBaseline,
+  CSS_NAMED_COLOURS,
   formatBadIgnores,
   formatRegressions,
   isGuardedFile,
+  isInV2Scope,
   loadBaseline,
   maskComments,
+  OUTPUT_FORMAT_FILES,
   parseUnifiedDiff,
+  RULES,
   scanSource,
   scanTree,
   resolveImportPath,
   serializeBaseline,
   V1_MODULES,
+  V2_SCOPE_PENDING,
   type Baseline,
   type TreeScan,
 } from "../../scripts/design-guard.mjs";
@@ -329,6 +335,99 @@ describe("design guard rules", () => {
       for (const hint of Object.values(V1_MODULES)) expect(hint).toMatch(/→/);
     });
   });
+
+  describe("named-colour: nomli CSS rangi (white, red …) — faqat tokenlar", () => {
+    const named = (src: string, file?: string) => counts(src, file)["named-colour"];
+
+    it("JSX / HTML rang atributlari", () => {
+      expect(named(`<path d="M0 0" fill="none" stroke="white" strokeLinecap="round" />`)).toBe(1);
+      expect(named(`<Tag color="red">x</Tag>`)).toBe(1);
+      expect(named(`<stop stopColor={"navy"} floodColor='Gold' />`)).toBe(2);
+      expect(named(`<Progress strokeColor="green" trailColor="lightgray" />`)).toBe(2);
+      expect(named(`const svg = '<svg><stop offset="0" stop-color="white" /></svg>';`)).toBe(1);
+    });
+
+    it("style / konfig obyekti kalitlari", () => {
+      expect(named(`<div style={{ color: "green", backgroundColor: 'white' }} />`)).toBe(2);
+      expect(named(`const s = { border: "1px solid black", boxShadow: "0 0 0 1px red" };`)).toBe(2);
+      expect(named(`const TAG = { recorded: { labelKey: "poRecorded", color: "orange" } };`)).toBe(1);
+      expect(named(`const s = { fill: "Tomato", outlineColor: "silver" };`)).toBe(2);
+    });
+
+    it("satr / template ichidagi CSS va Tailwind ixtiyoriy qiymati", () => {
+      expect(named("const css = `body { color: black; background: white; }`;")).toBe(2);
+      expect(named(`const html = '<td style="border-bottom: 1px solid silver">';`)).toBe(1);
+      // `fill-[color:navy]` ikki naqshga (Tailwind qiymati + CSS xossasi) mos — bir joy bir marta sanaladi.
+      expect(named(`<i className="bg-[white] text-[red] fill-[color:navy] [color:teal]" />`)).toBe(4);
+      expect(named(`<p style="color: red" color="red" />`)).toBe(2);
+    });
+
+    it("ifoda tarmoqlari va qo'shtirnoqli kalit: ternar / ?? / \"color\":", () => {
+      expect(named(`<svg stroke={dark ? "white" : "black"} fill={c ?? 'navy'} />`)).toBe(3);
+      expect(named(`<Tag color={ok ? "green" : "red"}>x</Tag>`)).toBe(2);
+      expect(named(`<path stroke={"white"} />`)).toBe(1); // ATTR + ATTR_EXPR — bir joy bir marta
+      expect(named(`const s = { color: ok ? "green" : "red", tone: "red" };`)).toBe(2);
+      expect(named(`const j = { "color": "red", 'fill': 'Navy' };`)).toBe(2);
+      // rang kaliti emas yoki qo'shtirnoqsiz/so'z ichida — sanalmaydi
+      expect(named(`<p title={ok ? "red" : "blue"} data-tone={t ? "green" : "x"} />`)).toBeUndefined();
+      expect(named(`const s = { label: ok ? "red" : "blue", color: ok ? tone : fallback };`)).toBeUndefined();
+      expect(named(`type P = { color?: "primary" | "danger" };`)).toBeUndefined();
+    });
+
+    it("rang emas: transparent / currentColor / inherit / none, so'z ichida, oddiy satr, tip, izoh", () => {
+      expect(
+        named(
+          `<svg fill="currentColor" stroke="none" color="inherit" style={{ background: "transparent" }} />`,
+        ),
+      ).toBeUndefined();
+      expect(
+        named(`<i className="text-on-solid fill-current" title="red" data-tone="green" />`),
+      ).toBeUndefined();
+      expect(named(`const s = { color: "redish", fill: "whitesmoke2", border: "1px solid tan-ish" };`)).toBeUndefined();
+      expect(named(`const label = "white"; const tones = ["red", "green"];`)).toBeUndefined();
+      expect(named(`type P = { color: string; fill?: Red; background: White };`)).toBeUndefined();
+      expect(named(`// stroke="white" edi\nconst x = 1; /* color: red; */`)).toBeUndefined();
+      expect(named(`<p className="text-[color:var(--color-text-muted)] border-border" />`)).toBeUndefined();
+    });
+
+    it("istisno: themeTokens.ts va OUTPUT_FORMAT_FILES; hint tokenni nomlaydi", () => {
+      expect(named(`const a = { color: "white" };`, "src/shared/config/themeTokens.ts")).toBeUndefined();
+      expect(named("const css = `color: black;`;", "src/pages/mails/detail/lib/printMode.ts")).toBeUndefined();
+      const v = scanSource("src/x.tsx", `<path stroke="white" />`).violations[0];
+      expect([v.rule, v.match, v.col]).toEqual(["named-colour", "white", 15]);
+      expect(v.hint).toMatch(/fill-current/);
+      expect(v.hint).toMatch(/tone/);
+    });
+
+    it("148 ta CSS nomi; transparent / currentColor / inherit / none — yo'q", () => {
+      expect(CSS_NAMED_COLOURS).toHaveLength(148);
+      expect(new Set(CSS_NAMED_COLOURS).size).toBe(148);
+      for (const word of ["transparent", "currentcolor", "currentColor", "inherit", "none", "initial"])
+        expect(CSS_NAMED_COLOURS).not.toContain(word);
+      for (const word of ["white", "black", "red", "rebeccapurple", "lightgoldenrodyellow"])
+        expect(CSS_NAMED_COLOURS).toContain(word);
+    });
+  });
+
+  it("palette: palitra CSS o'zgaruvchisi (var(--color-blue-500)) va dinamik oila (bg-${c}-500)", () => {
+    expect(
+      counts(
+        `<p style={{ color: "var(--color-blue-500)" }} className="bg-(--color-gray-400) text-[color:var(--color-red-600)]" />`,
+      ).palette,
+    ).toBe(3);
+    expect(counts("const c = `bg-${tone}-500 text-${t}-700`;").palette).toBe(2);
+    expect(
+      counts(
+        "<p style={{ color: \"var(--color-text-muted)\" }} className={`bg-(--color-surface) bg-${tone}-soft`} />",
+      ).palette,
+    ).toBeUndefined();
+    // `--color-purple-500` — palitra (legacy emas, ikki marta sanalmaydi).
+    expect(counts(`const v = "var(--color-purple-500)";`)).toEqual({ palette: 1 });
+    expect(scanSource("src/x.tsx", `const v = "var(--color-gray-400)";`).violations[0].hint).toContain(
+      "var(--color-text-muted)",
+    );
+    expect(scanSource("src/x.tsx", "const c = `bg-${c}-100`;").violations[0].hint).toContain("TONE_SOFT");
+  });
 });
 
 describe("design guard --diff", () => {
@@ -510,5 +609,110 @@ describe("design guard engine", () => {
     );
     expect(lowered.files).toEqual({});
     expect(JSON.parse(serializeBaseline(next))).toEqual(next);
+  });
+
+  describe("V2_SCOPES: migratsiya qilingan papkadagi har fayl rang qoidalarida 0", () => {
+    // Haqiqiy scope ichidagi belgisiz yordamchi va haqiqiy V2_SCOPE_PENDING fayli.
+    const scopedFile = "src/pages/orders/list/orderFilterModel.ts";
+    const pendingFile = "src/pages/payments/components/SalaryPaymentPopup.tsx";
+    const dirty = `const cls = "text-gray-400"; const s = n.toLocaleString("uz-UZ");`;
+
+    it("isInV2Scope / scanSource().scoped: scope, pending, v2, boshqa", () => {
+      expect(isInV2Scope("src/pages/orders/list/x.ts")).toBe(true);
+      expect(isInV2Scope("src/shared/ui/primitives/Button.tsx")).toBe(true);
+      expect(isInV2Scope("src/pages/ordersX/x.ts")).toBe(false); // papka chegarasi
+      expect(isInV2Scope("src/pages/orders")).toBe(false);
+      expect(isInV2Scope("src/shared/ui/GlobalSearchInput.tsx")).toBe(false); // shared/ui butunligicha emas
+      expect(scanSource(scopedFile, "export {};").scoped).toBe(true);
+      expect(scanSource(pendingFile, "export {};").scoped).toBe(false);
+      expect(pendingFile in V2_SCOPE_PENDING).toBe(true);
+      expect(scanSource("src/pages/demo/Demo.tsx", "export {};").scoped).toBe(false);
+      expect(scanSource("src/pages/demo/Demo.tsx", "// dizayn-v2: demo\nexport {};").scoped).toBe(true);
+    });
+
+    it("compareToBaseline: scope fayli — rang ruxsati 0, money ruxsati saqlanadi", () => {
+      const cmp = compareToBaseline(
+        scanOf({ [scopedFile]: dirty }),
+        base({ [scopedFile]: { palette: 3, money: 1 } }),
+      );
+      expect(cmp.regressions.map((r) => [r.rule, r.count, r.baseline, r.scopeFile, r.v2File])).toEqual([
+        ["palette", 1, 0, true, false],
+      ]);
+      expect(formatRegressions(cmp)).toContain("V2_SCOPES: rang qoidalarida ruxsat 0");
+      expect(formatRegressions(cmp)).toContain("text-gray-400");
+      // Scope'dan tashqaridagi xuddi shu fayl — baseline bo'yicha (regressiya yo'q).
+      const outside = "src/pages/demo/orderFilterModel.ts";
+      expect(
+        compareToBaseline(scanOf({ [outside]: dirty }), base({ [outside]: { palette: 3, money: 1 } }))
+          .regressions,
+      ).toEqual([]);
+    });
+
+    it("buildBaseline: scope faylining rang soni yozilmaydi, --allow-increase ham qotirmaydi", () => {
+      const scan = scanOf({ [scopedFile]: dirty });
+      // Rang regressiyasi baseline bilan tuzalmaydi — sabab so'ralmaydi, lekin yozilmaydi ham.
+      const next = buildBaseline(scan, base({ [scopedFile]: { palette: 3, money: 1 } }));
+      expect(next.files).toEqual({ [scopedFile]: { money: 1 } });
+      expect(next.increases).toEqual([]);
+      const forced = buildBaseline(scan, base({}), { allowIncrease: "sinov", date: "2026-10-17" });
+      expect(forced.files).toEqual({ [scopedFile]: { money: 1 } });
+      expect(forced.increases).toEqual([
+        { date: "2026-10-17", reason: "sinov", changes: { [scopedFile]: { money: [0, 1] } } },
+      ]);
+      // Qotirilgandan keyin ham rang regressiyasi qoladi.
+      expect(compareToBaseline(scan, forced).regressions.map((r) => r.rule)).toEqual(["palette"]);
+    });
+
+    it("V2_SCOPE_PENDING fayli baseline ruxsatini saqlaydi (rangda ham)", () => {
+      const src = `<p className="bg-main text-gray-400" />`;
+      const scan = scanOf({ [pendingFile]: src });
+      const previous = base({ [pendingFile]: { palette: 1, legacy: 1 } });
+      expect(compareToBaseline(scan, previous).regressions).toEqual([]);
+      expect(buildBaseline(scan, previous).files).toEqual({ [pendingFile]: { palette: 1, legacy: 1 } });
+    });
+
+    it("haqiqiy fayl: scope yordamchisiga text-gray-400 qo'shilsa joriy baseline bilan yiqiladi", () => {
+      const text = Object.values(
+        import.meta.glob("../pages/orders/list/orderFilterModel.ts", {
+          eager: true,
+          query: "?raw",
+          import: "default",
+        }) as Record<string, string>,
+      )[0];
+      expect(text.length).toBeGreaterThan(100);
+      expect(scanSource(scopedFile, text).v2).toBe(false); // belgisiz yordamchi
+      const injected = scanSource(scopedFile, `${text}\nexport const injected = "text-gray-400";\n`);
+      const cmp = compareToBaseline({ root: "/virtual", ms: 0, files: [injected] }, baseline);
+      expect(cmp.regressions.map((r) => [r.file, r.rule, r.scopeFile])).toEqual([
+        [scopedFile, "palette", true],
+      ]);
+    });
+
+    it("OUTPUT_FORMAT_FILES: rang qoidalari qo'llanmaydi, boshqa qoidalar (money) qo'llanadi", () => {
+      const printFile = "src/pages/mails/detail/lib/printMode.ts";
+      expect(printFile in OUTPUT_FORMAT_FILES).toBe(true);
+      const res = scanSource(
+        printFile,
+        "const css = `body { color: black; background: #fff; border: 1px solid rgba(0,0,0,.2) }`;\n" +
+          'const cls = "bg-white text-gray-900 dark:bg-black bg-main bg-linear-to-r"; const s = `${x} so\'m`;',
+      );
+      expect(res.counts).toEqual({ money: 1 });
+      // Haqiqiy faylga hex qo'shilsa ham rang hisobga kirmaydi.
+      const real = Object.values(
+        import.meta.glob("../pages/mails/detail/lib/printMode.ts", {
+          eager: true,
+          query: "?raw",
+          import: "default",
+        }) as Record<string, string>,
+      )[0];
+      expect(real.length).toBeGreaterThan(100);
+      expect(scanSource(printFile, `${real}\nconst injected = "#123456";\n`).counts.colour).toBeUndefined();
+      // Har chiqish fayli har rang qoidasidan istisno, rangsiz qoidalardan esa yo'q.
+      for (const file of Object.keys(OUTPUT_FORMAT_FILES)) {
+        for (const rule of RULES) {
+          expect(rule.exempt.includes(file), `${rule.id} × ${file}`).toBe(COLOUR_RULES.includes(rule.id));
+        }
+      }
+    });
   });
 });

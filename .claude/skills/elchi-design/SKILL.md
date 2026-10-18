@@ -76,6 +76,14 @@ nima yashirinadi yoki kartaga aylanadi; bo'sh, yuklanish va xato holatlari; dial
   v1 o'rnini bosuvchilar: `shared/components/button` → `Button`, `shared/ui/StatusBadge` va
   `pages/orders/list/OrderStatusBadge` → `StatusBadge` / `OrderStatusBadge`, `statusColorMap` → `statusRegistry` +
   `tone.ts`, `shared/lib/formatDate` → `formatDateTimeLocalized` (qo'riqchi yangi importni ushlaydi).
+- **Xom `<button>` yozilmaydi** (ESLint `design-v2/raw-control`, 5-bosqich). Amal — `Button` / `IconButton`.
+  Amal tugmasi ko'rinishida bo'lmagan bosiladigan yuza — **`Pressable`** (o'sha barrel, uslubsiz
+  `<button type="button">`, o'zi klass qo'shmaydi): karta va telefon qator-kartasi, chip (`aria-pressed`), chip «×»,
+  menyu bandi (`role="menuitem"`), kalit (`role="switch"` + `.el-switch` retsepti), ochib-yopish sarlavhasi
+  (`aria-expanded`), matn ko'rinishidagi «ochish». Ko'rinish — CODE-MAP retsepti klasslari:
+  `<Pressable aria-pressed={on} className="…" onClick={…}>`. `Pressable` ga `.el-btn` ko'rinishi (fon + radius +
+  balandlik) berilmaydi — u `Button`. Native `<input type="checkbox|radio">` (`.el-check` / `.el-radio`) ruxsat.
+  Asosli istisno (masalan kamera ishi): `// eslint-disable-next-line design-v2/raw-control -- <sabab>`.
 - **Forma, dialog, holatlar — 3-bosqich primitivlari (tayyor)**, o'sha barreldan; namunasi
   `/ops/ui-kit?section=forms|select|date|dialog|feedback|states|table`, klass retseptlari CODE-MAP (`.el-field`,
   `.el-select`, `.el-cal*`, `.el-dialog*`, `.el-toast*`, `.el-empty*`, `.el-skel*`):
@@ -138,14 +146,30 @@ nima yashirinadi yoki kartaga aylanadi; bo'sh, yuklanish va xato holatlari; dial
 ## 5. Eski uslub qaytmaydi
 
 Yangi yoki o'zgargan qatorlarda bo'lmasligi kerak: hex / `rgb()` / `hsl()`, Tailwind rang oilalari (`bg-blue-500`,
-`text-gray-400`), `dark:` juftlari, eski nomlar (`main`, `maindark`, `primary`, `primarydark`, `purple*`,
-`border-soft`, `card-surface`, `page-surface`, `dashboard-*`), 12px dan kichik matn (`text-[11px]`), `font-black` /
+`text-gray-400`), nomli CSS ranglari (`stroke="white"`, `color: "red"`), `dark:` juftlari, eski nomlar (`main`,
+`maindark`, `primary`, `primarydark`, `purple*`, `border-soft`, `card-surface`, `page-surface`, `dashboard-*`), 12px
+dan kichik matn (`text-[11px]`), `font-black` /
 `font-extrabold`, gradient, v1 klasslari (`el-card`, `el-glass-control`, `el-segmented*`), v1 yordamchilari (`TYPO`,
 `TEXT`, `toneAccent`, `formatPercent`, `HeaderName`, `MetricCard`), v1 komponent importlari (`shared/components/button`,
 `shared/ui/StatusBadge`, `pages/orders/list/OrderStatusBadge`, `statusColorMap`, `shared/lib/formatDate`), maxsus soya, `Intl.NumberFormat`, qo'lda `so'm`,
 boshqa ikonka kutubxonalari, antd `message` / `notification` / `Popconfirm` / `Modal.confirm` / `App.useApp()`,
 brauzer `confirm()` / `alert()` / `prompt()` (ESLint xato beradi — `notify`, `useConfirm()`, `Dialog`), qo'lda yozilgan
 «Yuklanmoqda…» / «Ma'lumot yo'q» bloklari (`QueryBoundary`, `EmptyState`, `ErrorState`).
+
+**ESLint taqiqlari (5-bosqich, `npm run lint`; `docs/DESIGN_SYSTEM.md` §12.2):**
+
+- xom `<button>` → `Button` / `IconButton` / `Pressable`; `<select>` → `Select`; `<textarea>` →
+  `TextInput multiline`; matn `<input>` (`type` siz, matn turi, dinamik `type={…}`) → `Field` + `TextInput` /
+  `DateInput`; `<dialog>` → `Dialog`; `role="button"` → haqiqiy tugma; `bg-action` li `<a>` / `<Link>` →
+  `buttonClasses({ variant })`. Ruxsat: `<input type="checkbox|radio|file|hidden">`.
+- antd'dan faqat `ConfigProvider`, `theme`, `QRCode` — `Card`, `Table`, `Tag`, `Tooltip`, `Alert`, `Switch`,
+  `Button`, `Input`, `DatePicker` … va `import type` ham taqiq; `antd/*` chuqur importi faqat `antd/locale/*`.
+- `@ant-design/icons` va boshqa ikonka kutubxonalari — butun `src` da.
+- Dizayn tizimi qatlami (`src/shared/ui/**`, shell) va testlar — istisno; v1 fayllar — ratchet ro'yxatlari (faqat
+  qisqaradi). G2/G3 qurilayotgan yo'llarda hozircha `warn` (bosqich A, `npm run lint:report`).
+
+Ko'chirilgan papkalarda (`V2_SCOPES`, `scripts/design-guard.mjs`) `// dizayn-v2:` belgisiz yordamchi fayl ham rang
+qoidalarida 0 — u yerda yangi `.ts` faylga ham rang literal yozilmaydi.
 
 ```bash
 npm run design:guard -- --diff            # origin/dev dan beri QO'SHILGAN qatorlar — yangi buzilish 0 (CI PR'da shu)
@@ -154,8 +178,8 @@ npm run design:guard -- --changed         # baseline'dan farq qilgan fayllar (os
 npm run design:guard -- --update          # eski fayldagi buzilishlarni kamaytirgach yangi sonni qotiring
 ```
 
-Qo'riqchi ushlamaydiganlarni o'zingiz tekshirasiz: rangsiz maxsus soya, antd vizual komponentlari (`Card`, `Tag`,
-`Segmented`), `sm:` telefon chegarasi sifatida, ikkinchi asosiy tugma, karta ichidagi karta.
+Qo'riqchi ushlamaydiganlarni o'zingiz tekshirasiz: rangsiz maxsus soya, `sm:` telefon chegarasi sifatida, ikkinchi
+asosiy tugma, karta ichidagi karta, `Pressable` ga `.el-btn` ko'rinishi berilgani (`docs/DESIGN_SYSTEM.md` §12.7).
 
 Qo'riqchi ratchet usulida ishlaydi (`design/guard-baseline.json`): eski fayldagi son faqat kamayadi, yangi faylda
 va `// dizayn-v2:` belgili faylda 0. Testni, baseline'ni oshirishni (`--allow-increase`) yoki `design-guard-ignore`
@@ -185,6 +209,16 @@ npm test                          # TO'LIQ, nishonli emas: dizayn qo'riqchisi, p
 npm run design:guard -- --diff    # qo'shilgan qatorlarda yangi buzilish yo'q (CI PR qadami)
 npm run build                     # tsc -b qat'iy, CI shu bilan yiqiladi
 ```
+
+**Vizual snapshotlar** CI'da yuradi («Visual» workflow, Playwright Docker obrazi; `docs/DESIGN_SYSTEM.md` §12.5) —
+lokal Docker shart emas, lokalda baseline yaratilmaydi. PR'da farq chiqsa: kutilmagan — kodni tuzating; kutilgan
+(sahna sahifasini ataylab o'zgartirdingiz) — GitHub → Actions → **Visual** → **Run workflow** (branch, «update»):
+baseline'lar obrazda qayta yaratilib shu branchga commit qilinadi, keyin `git pull`, yangi commit bilan push va PR'da
+diff'ni ko'rsating (tugma `visual.yml` `dev` da bo'lgandagina chiqadi).
+«baseline yo'q» — xato emas (neytral), xuddi shu «Run workflow (update)» bilan yaratiladi. Sahnani lokalda ko'rish:
+`npm run visual:build`, so'ng `VISUAL_DRY=1 npx playwright test -c playwright.visual.config.ts --project desktop-light
+-g <sahna>` → `test-results-visual/dry/…png` ni Read qiling. Ixtiyoriy: `npm run visual:pull` (artefaktni olish, gh
+CLI yoki `-- --from <zip>`).
 
 ## 8. Maket yo'q bo'lsa
 

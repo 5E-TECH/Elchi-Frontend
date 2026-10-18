@@ -17,7 +17,7 @@ repoda turadi (`design/`).
 | 2 | shell (`widgets/layout`, `widgets/Sidebar`, `widgets/header`, `// dizayn-v2: shell`): bitta kanvas (kontent karta emas, `max-w-[1440px]`, chekkalar 24·32·48 / < 1024 16·16·88), `nav-*` va `avatar` tokenlari, yon menyu 248/72 (guruhlar) + planshet surma menyu + telefon varaqasi, topbar + profil menyusi (mavzu, til, «Chiqish») + qo'ng'iroqcha + global qidiruv (Ctrl K, < 1024 qidiruv ekrani), pastki menyu (`roles.json` → `bottomNav`), bo'lim almashsa skroll tepaga, bo'lim yuklanish chizig'i (`RouteProgress`); ikonkalar yagona manba — `menuConfig.tsx` | **tayyor** |
 | 3 | forma, dialog va holatlar (`src/shared/ui/primitives`): `Field` + `TextInput` (telefon, qidiruv), `Select` (qidiruv, ko'p tanlov), `DateRange`/`DateInput`/`Calendar` (tez tanlov), `Dialog` + `ConfirmDialog` + `useConfirm()` (telefonda pastki varaqa), `notify()` + `Toaster`, `EmptyState`/`ErrorState`/`Skeleton*` + `QueryBoundary`; xato sahifalari (404/403/500/ilova xatosi, `tizim-errors`); global qatlam `app/providers/UiHost.tsx`; v1 o'ramlari (`SearchableSelect`, `FilterSelect`, `DateRangePicker`, `Popup`, `PopupConfirm`, `EmptyState`, `QueryErrorState` …) API'si o'zgarmagan, ichi v2; pul/kirish amallari tasdiq bilan; ESLint antd `message`/`notification`/`Popconfirm`/`Modal.confirm` va brauzer `confirm`/`alert`/`prompt` ni taqiqlaydi | **tayyor** |
 | 4 | sahifalar migratsiyasi (har sahifa alohida PR); ro'yxat standarti — `DataTable` + `Pagination` (`src/shared/ui/primitives`, `/ops/ui-kit?section=table`). Ko'chirilgan: `/orders` (barcha rollar: ro'yxat, filtrlar + telefon varaqasi, kuryer ro'yxati, sotish / bekor qilish / qaytarish oynalari), `/orders/edit/:orderId` (buyurtma tafsiloti, barcha rollar: kartalar, tarix, tahrirlash oynalari, amallar), `/new-orders/create` (buyurtma yaratish, barcha rollar: qo'lda — qadamlar, market tanlash oynasi, mijoz va mahsulotlar, xulosa; AI bilan — matn/rasm, tahlil kartalari, tasdiq oynasi, «Yaratildi»), «Qabul va yaratish» qobig'i (sarlavha + sonli tablar, `pages/new_orders/model/newOrdersShell.ts`), `/new-orders` («Marketlar»), `/new-orders/:marketId` (market yangi buyurtmalari: tanlov, qabul / o'chirish oynalari, USB skaner; market rolida — o'z ro'yxati), `/new-orders/:marketId/edit/:orderId`, `/new-orders/incoming` (manba tanlash), `/new-orders/incoming/:marketId` (USB skaner bilan qabul), «Filial paketlari» (`/new-orders/branches`, `/new-orders/branches/:branchId` — paketlar, tanlov va USB skaner, `…/batches/:batchId` — paket buyurtmalarini qabul qilish) va «Bekor qilinganlar» (`/new-orders/cancelled` — marketlar, `/new-orders/cancelled/:marketId` — marketga topshirish: «Market QR kerak» / «skanerlandi» holati, faqat market QR'idan keyin jo'natish, «QR buzilganini tasdiqlash» oynasi; market rolida — o'z bekorlari va QR kod oynasi), «Pochta» (`/mails/today`, `/mails/return`, `/mails/refused`, `/mails/old` — sonli tablar, kuryerda «Qaytarish»siz; ro'yxatlar `MailsTable`, eski pochtalar filtrlari + «Filial paketlari» + Excel; `/mails/:id` — jo'natish / qabul / rad etilgan / tarix, USB skaner, chop etish menyusi, jo'natish va o'chirish oynalari) va «Paketlar va qaytarishlar» (`/batches` — Yangi · Eski · Qaytarilgan, `/batches/:id` — paket ma'lumoti, QR, pochta tafsilotining buyurtmalar kartasi bilan jo'natish, A5 varaq; `/returns`) va «Moliya» (`/payments` — KPI, «Kuryerlardagi pul», tarix + filtrlar, tanlash oynalari `SettlementPickerDialog`; `/payments/main-cashbox` — kassa balansi + grafik, tezkor amallar, davrlar, manbalar, to'ldirish / xarajat tasdiq bilan, smena oynasi; `/payments/cash-detail/:id` — kuryer / market / filial kassasi, to'lov formasi + «To'lovni tasdiqlang», balans harakati; `/cash-box` — market, kuryer, menejer; `/financial-balance` — Umumiy · Tarix · Tahlil, qo'lda yozuv va tafsilot oynalari; umumiy tafsilot oynasi `FinanceHistoryDetailPopup`; ega qarorlari D1–D3 — `design/kit/route-map.json` izohlarida) va G1 — «Bosh sahifa» (`/` — superadmin, admin, registrator, kuryer, market: KPI, muvaffaqiyat spidometri, holat donuti, reytinglar top 5, «Moliyaviy tahlil», kassa, hududlar kartogrammasi + umumiy viloyat oynasi `RegionDetailDialog`, xarajat tasdiqlari; `/branch-dashboard` — menejer; grafiklar `src/shared/ui/charts`), «Foydalanuvchilar» (`/all-users` — KPI, rol tablari, qator menyusi, nofaol qilish / o'chirish tasdiq bilan; `/all-users/create-user`; `/all-users/:id` va `/new-orders/userDetail/:id` — `UserDetailView`, ruxsatlar, tarif, Telegram token, tahrirlash va kuryerni o'tkazish oynalari), «Filiallar» (`/branches` — daraxt · jadval · kartalar, yaratish / tahrirlash oynasi; `/branches/:id` — xodimlar, qo'shish / olib tashlash / o'tkazish), «Mahsulotlar» (`/products` — market tanlash, tahrirlash, o'chirish oynalari; `/products/create-product/:id`), «Hududlar» (`/regions` — xarita, metrika, jadval egizagi, viloyat oynasi; menejer va kuryerda o'z viloyati `region/my/district-stats`; `/regions/districts`, `/regions/sato-management`, `/regions/logist-assignment`; ega savollariga sukut javoblari — `route-map.json` izohlarida); kamera rejimlari (`*-camera`, `ScannerCameraModal`) — keyinroq | **jarayonda** |
-| 5 | qo'shimcha qo'riqchilar (ESLint, vizual snapshotlar) | navbatda |
+| 5 | qo'riqchilar (`docs/DESIGN_SYSTEM.md` §12): ESLint `design-v2/raw-control` (xom `<button>` / `<select>` / `<textarea>` / matn `<input>` / `<dialog>` / `role="button"` — o'rniga primitivlar va yangi `Pressable`), `design-v2/ui-imports` (antd vizual komponentlari, boshqa ikonka kutubxonalari), `jsx-a11y/anchor-is-valid`; design-guard `named-colour` + `V2_SCOPES` (ko'chirilgan papkadagi har fayl rangda 0); vizual snapshotlar (Playwright, mock API, CI «Visual» workflow — baseline faqat Docker obrazida); ratchet ro'yxatlari faqat qisqaradi | **jarayonda** — bosqich A (G2/G3 yo'llarida `warn`); bosqich B — G2 va G3 dan keyin |
 
 **Sahifa shell ichida chiziladi** (4-bosqichdan boshlab har sahifa): u `[data-shell-slot=content]` ichida turadi —
 kanvas foni, `max-w-[1440px]`, chekkalar va telefonda pastki menyu joyi shell'da. Sahifa o'ziga tashqi karta
@@ -145,22 +145,28 @@ UI'ga tegadimi? ── yo'q ─→ bu bo'lim talab qilmaydi
 
 CI (`.github/workflows/deploy.yml`) har PR'da `npm run lint` → `npm test` → `npm run build` →
 `npm run check:bundle` → Playwright e2e (`npx playwright test`, `tests/e2e`, API mock) ni yuradi. Biri yiqilsa,
-merge va deploy bo'lmaydi. E2E'ni push oldidan lokalda ham yurgizing: `npm run test:e2e`.
+merge va deploy bo'lmaydi. E2E'ni push oldidan lokalda ham yurgizing: `npm run test:e2e`. Yonida alohida **«Visual»**
+workflow (`.github/workflows/visual.yml`, vizual snapshotlar — quyida) parallel yuradi.
 `npm test` ichidagi dizayn tekshiruvlari:
 
 - `src/test/designGuard.test.ts` (`scripts/design-guard.mjs`): rang literallari, Tailwind palitrasi (`bg-white`
-  ham), `dark:` rang juftlari, eski token nomlari, qo'lda pul formati, boshqa ikonka kutubxonalari, 12px dan kichik
-  matn. Ratchet usulida ishlaydi: `design/guard-baseline.json` dagi son har fayl uchun faqat **kamayadi**, yangi
-  faylda 0. `// dizayn-v2:` belgili faylda esa har doim 0.
-- `src/test/paletteGuard.test.ts`: eski brend ranglari qaytmasin.
+  ham), `dark:` rang juftlari, eski token nomlari, nomli CSS ranglari (`stroke="white"`, `color: "red"`), qo'lda pul
+  formati, boshqa ikonka kutubxonalari, 12px dan kichik matn. Ratchet usulida ishlaydi: `design/guard-baseline.json`
+  dagi son har fayl uchun faqat **kamayadi**, yangi faylda 0. `// dizayn-v2:` belgili faylda esa har doim 0.
+- `src/test/paletteGuard.test.ts`: eski brend ranglari qaytmasin; **ko'chirilgan papkalar** (`V2_SCOPES`,
+  `scripts/design-guard.mjs`) ichidagi har fayl — `// dizayn-v2:` belgisiz yordamchi ham — rang qoidalarida 0;
+  rangda toza v2 papkani `V2_SCOPES` ga qo'shishni o'zi talab qiladi; `src` da yangi CSS fayl yo'q.
+- `src/test/lintRatchet.test.ts`: ESLint istisno ro'yxatlari (`scripts/eslint-design-v2.mjs`) faqat qisqaradi,
+  `design-v2` disable izohida sabab bor.
+- `src/test/visualCiVersion.test.ts`: «Visual» Docker obrazi tegi = package.json dagi aniq Playwright versiyasi.
 - `src/shared/config/themeTokens.test.ts`: `index.css` ↔ `themeTokens.ts` mosligi va kontrast.
 - `src/test/inputFontGuard.test.ts`: telefonda maydon shrifti 16px (iOS zoom).
 - `design/tools/screens.test.mjs` (`npm run design:screens -- --check`): `routes.tsx` dagi har route
   `design/kit/route-map.json` da bor, har maket biror route'ga bog'langan, menyu bandlari maketdagi menyu bilan bir xil
   va `design/SCREENS.md` yangi.
 
-Qoidalar (`scripts/design-guard.mjs`): `colour`, `palette`, `dark-pair`, `legacy`, `money`, `icons`, `tiny-text`,
-`v1-class` (`index.css` dagi eski `el-card`, `el-glass-control`, `el-segmented*` …), `weight` (`font-black`,
+Qoidalar (`scripts/design-guard.mjs`): `colour`, `palette`, `dark-pair`, `legacy`, `named-colour`, `money`, `icons`,
+`tiny-text`, `v1-class` (`index.css` dagi eski `el-card`, `el-glass-control`, `el-segmented*` …), `weight` (`font-black`,
 `font-extrabold`), `gradient` (`bg-linear-*`, `linear-gradient(…)`), `v1-helper` (`TYPO`, `TEXT`, `TONE`,
 `toneAccent`, `formatPercent`, `HeaderName`, `MetricCard`; 1-bosqich o'rnini bosgan v1 modullari importi:
 `shared/components/button` → `Button`, `shared/ui/StatusBadge` va `pages/orders/list/OrderStatusBadge` →
@@ -171,6 +177,34 @@ Qoidalar (`scripts/design-guard.mjs`): `colour`, `palette`, `dark-pair`, `legacy
   `Modal.confirm|info|success|error|warning`, `Modal.useModal`, `App.useApp`, `<Popconfirm>`, `window.confirm` /
   `alert` / `prompt` va global `confirm()` — xato (o'rniga `notify`, `useConfirm()`, `Dialog`). `eslint-disable` faqat
   asosli istisno uchun, sababi bilan.
+- **ESLint, dizayn v2** (5-bosqich, `docs/DESIGN_SYSTEM.md` §12.2; ma'lumot — `scripts/eslint-design-v2.mjs`):
+  - `design-v2/raw-control` — xom `<button>`, `<select>`, `<textarea>`, matn `<input>` (`type` siz, matn turi,
+    dinamik), `<dialog>`, `role="button"` va `bg-action`/`bg-success`/`bg-danger` li `<a>`/`<Link>` — xato. Amal —
+    `Button` / `IconButton`; karta, qator-karta, chip, chip «×», menyu bandi, kalit (`role="switch"`), ochib-yopish,
+    matn-havola — **`Pressable`** (uslubsiz `<button type="button">`); maydon — `Field` + `TextInput` / `Select` /
+    `DateInput`; oyna — `Dialog`; havola-tugma — `buttonClasses({ variant })`. `type="checkbox|radio|file|hidden"`
+    ruxsat. Dizayn tizimi qatlami (`src/shared/ui/**`, shell `widgets/layout|Sidebar|header`) va testlar — istisno.
+  - `design-v2/ui-imports` — antd'dan faqat `ConfigProvider`, `theme`, `QRCode` (`import type` ham taqiq, `antd/*`
+    faqat `antd/locale/*`); `@ant-design/icons` va boshqa ikonka kutubxonalari — xato.
+  - `jsx-a11y/anchor-is-valid`; keraksiz `eslint-disable` izohi ham xato (`reportUnusedDisableDirectives`).
+  - Istisno: `// eslint-disable-next-line design-v2/raw-control -- <sabab>` (sabab majburiy, test tekshiradi);
+    v1 fayllar — ratchet ro'yxatlarida (faqat qisqaradi). **Bosqich A:** G2/G3 qurilayotgan yo'llarda
+    (`STAGE_A_PENDING`) — `warn`, ro'yxati `npm run lint:report`; bosqich B da hamma joyda xato.
+- **Vizual snapshotlar** («Visual» workflow, `docs/DESIGN_SYSTEM.md` §12.5): asosiy sahifalar (bosqich A — 19 sahna)
+  × kunduzgi/tungi × 1440/390, mock API, `tests/visual/`. Baseline'lar faqat CI'da, Playwright Docker obrazida
+  yaratiladi va solishtiriladi — **lokal Docker yoki lokal vizual yugurish shart emas**. Har draft bo'lmagan PR'da
+  yuradi: baseline yo'q bo'lsa — neytral (yashil, Summary'da «baseline yo'q»), bor bo'lsa — farq yiqitadi
+  (artefaktlar `visual-report`, `visual-baselines`). Bosqich A da maslahat, bosqich B dan keyin ega required qiladi.
+  - **Baseline yaratish / yangilash:** GitHub → Actions → **Visual** → **Run workflow** → branch, «update» belgili →
+    PNG'lar obrazda qayta yaratiladi va shu branchga commit qilinadi («test(visual): baseline'lar yangilandi
+    [skip ci]»; `main`/`dev` ga emas). So'ng lokalda `git pull`; bot commit'i PR tekshiruvlarini qayta yurgizmaydi —
+    keyingi push (yangi commit) bilan, PR'ni ham bot commit'idan keyingi commit bilan oching. Farq faqat **kutilgan**
+    bo'lsa yangilanadi va PR'da ko'rsatiladi. «Run workflow» tugmasi faqat `visual.yml` default branch (`dev`) da
+    bo'lganda chiqadi: uni `dev` ga olib kiradigan birinchi PR neytral, baseline'lar merge'dan keyin yaratiladi.
+  - Lokal: faqat `VISUAL_DRY=1` (chizish + tekshiruvlar, solishtirishsiz) — `npm run visual:build`, so'ng
+    `VISUAL_DRY=1 npx playwright test -c playwright.visual.config.ts --project desktop-light -g <sahna>`.
+    `--update-snapshots` lokalda rad etiladi. Ixtiyoriy: `npm run visual:pull` (artefaktni olish, gh CLI yoki
+    `-- --from <zip>`), `npm run visual:docker` (Docker bor bo'lsa, solishtirish).
 - **PR diff qadami** (CI, faqat PR'da): `npm run design:guard -- --diff origin/<base>` — PR'da **qo'shilgan**
   qatorlarda yangi buzilish bo'lmasin. Eski qatorni tahrirlash yoki kodni ko'chirish o'tadi, lekin bir joyda
   `bg-white` ni o'chirib boshqa joyga `text-gray-400` qo'shish o'tmaydi (ratchet buni ko'rmaydi, diff ko'radi).
@@ -179,8 +213,10 @@ Lokal tekshiruv: `npm run design:guard -- --diff` (push oldidan, `origin/dev` bi
 (har buzilish va uning v2 o'rnini bosuvchisi) yoki `npm run design:guard -- --changed`. Eski fayldagi buzilishlarni
 kamaytirgach `npm run design:guard -- --update` bilan yangi sonni qotiring, aks holda keyingi PR ularni qaytara oladi.
 
-Qo'riqchi hammasini ushlamaydi: rangsiz maxsus soya, antd vizual komponentlari (`Card`, `Tag`, `Segmented`),
-`sm:` ni telefon chegarasi sifatida ishlatish, ikkinchi asosiy tugma va karta ichidagi karta review'da tekshiriladi.
+Qo'riqchi hammasini ushlamaydi: rangsiz maxsus soya, `sm:` ni telefon chegarasi sifatida ishlatish, ikkinchi asosiy
+tugma, karta ichidagi karta va `Pressable` ga `.el-btn` ko'rinishi (fon + radius + balandlik — bu `Button`) berilgani
+review'da tekshiriladi (`docs/DESIGN_SYSTEM.md` §12.7). G2/G3 yo'llarida (bosqich A, `warn`) antd vizual
+komponentlari va xom elementlar ham hozircha review'da.
 
 Qo'riqchini o'chirish, testni yumshatish, baseline'ni oshirish (`--allow-increase`) va sababsiz
 `design-guard-ignore` **taqiqlanadi**. Asosli istisno bo'lsa, sababi belgining o'zida yoziladi, PR'da ko'rsatiladi
@@ -219,5 +255,9 @@ va ega rozi bo'ladi.
 - [ ] faqat tokenlar; eski nomlar, hex, rang oilalari, `dark:` juftlari yo'q
 - [ ] `formatMoney`, `lucide-react`, uz/ru/en matnlar
 - [ ] eski sahifada: tegilgan qism v2 da, eski uslub kengaytirilmagan
+- [ ] xom `<button>` / `<select>` / matn `<input>` / `<textarea>`, antd vizual komponenti va `@ant-design/icons` yo'q
+  (`npm run lint` — `design-v2/*`); sirt — `Pressable`, amal — `Button` / `IconButton`
 - [ ] dizayn qo'riqchisi yashil (`npm test` + `npm run design:guard -- --diff`), baseline oshirilmagan
+- [ ] «Visual» yashil; farq kutilgan bo'lsa — «Actions → Visual → Run workflow» (update) bilan baseline yangilangan va
+  diff (`visual-report`) ko'rib chiqilgan
 - [ ] `npm run lint`, to'liq `npm test`, `npm run build` yashil

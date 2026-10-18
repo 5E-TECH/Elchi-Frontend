@@ -1,0 +1,284 @@
+{
+  "statusCode": 200,
+  "message": "ok",
+  "data": [
+    {
+      "id": "10235",
+      "status": "cancelled",
+      "where_deliver": "address",
+      "total_price": 96000,
+      "paid_amount": 0,
+      "to_be_paid": 0,
+      "createdAt": "2026-10-14T13:04:00.000Z",
+      "comment": null,
+      "address": null,
+      "qr_code_token": "tok-10235",
+      "items": [
+        {
+          "id": "i10235-1",
+          "product_id": "p51",
+          "quantity": 1,
+          "product": {
+            "id": "p51",
+            "name": "Bolalar kurtkasi",
+            "image_url": null
+          }
+        }
+      ],
+      "customer": {
+        "id": "c10235",
+        "name": "Malika Yusupova",
+        "phone_number": "+998998124011"
+      },
+      "district": {
+        "id": "d10235",
+        "name": "Sergeli tumani",
+        "region": {
+          "id": "r10235",
+          "name": "Toshkent shahri"
+        }
+      },
+      "market": {
+        "id": "31",
+        "name": "Baraka Shop",
+        "phone_number": "+998903152241",
+        "cancelled_handover_qr_required": true
+      }
+    },
+    {
+      "id": "10220",
+      "status": "cancelled",
+      "where_deliver": "center",
+      "total_price": 245000,
+      "paid_amount": 0,
+      "to_be_paid": 0,
+      "createdAt": "2026-10-06T10:20:00.000Z",
+      "comment": null,
+      "address": null,
+      "qr_code_token": "tok-10220",
+      "items": [
+        {
+          "id": "i10220-1",
+          "product_id": "p52",
+          "quantity": 1,
+          "product": {
+            "id": "p52",
+            "name": "Ayollar sumkasi",
+            "image_url": null
+          }
+        }
+      ],
+      "customer": {
+        "id": "c10220",
+        "name": "Dilfuza Hasanova",
+        "phone_number": "+998904412763"
+      },
+      "district": {
+        "id": "d10220",
+        "name": "Chilonzor tumani",
+        "region": {
+          "id": "r10220",
+          "name": "Toshkent shahri"
+        }
+      },
+      "market": {
+        "id": "31",
+        "name": "Baraka Shop",
+        "phone_number": "+998903152241",
+        "cancelled_handover_qr_required": true
+      }
+    },
+    {
+      "id": "10213",
+      "status": "cancelled",
+      "where_deliver": "address",
+      "total_price": 420000,
+      "paid_amount": 0,
+      "to_be_paid": 0,
+      "createdAt": "2026-10-05T06:42:00.000Z",
+      "comment": null,
+      "address": null,
+      "qr_code_token": "tok-10213",
+      "items": [
+        {
+          "id": "i10213-1",
+          "product_id": "p53",
+          "quantity": 1,
+          "product": {
+            "id": "p53",
+            "name": "Sport krossovka",
+            "image_url": null
+          }
+        },
+        {
+          "id": "i10213-2",
+          "product_id": "p54",
+          "quantity": 2,
+          "product": {
+            "id": "p54",
+            "name": "Paypoq to'plami",
+            "image_url": null
+          }
+        }
+      ],
+      "customer": {
+        "id": "c10213",
+        "name": "Kamron Islomov",
+        "phone_number": "+998931185092"
+      },
+      "district": {
+        "id": "d10213",
+        "name": "Samarqand shahri",
+        "region": {
+          "id": "r10213",
+          "name": "Samarqand viloyati"
+        }
+      },
+      "market": {
+        "id": "31",
+        "name": "Baraka Shop",
+        "phone_number": "+998903152241",
+        "cancelled_handover_qr_required": true
+      }
+    },
+    {
+      "id": "10205",
+      "status": "cancelled",
+      "where_deliver": "address",
+      "total_price": 310000,
+      "paid_amount": 0,
+      "to_be_paid": 0,
+      "createdAt": "2026-10-04T12:05:00.000Z",
+      "comment": null,
+      "address": null,
+      "qr_code_token": "tok-10205",
+      "items": [
+        {
+          "id": "i10205-1",
+          "product_id": "p55",
+          "quantity": 1,
+          "product": {
+            "id": "p55",
+            "name": "Choynak to'plami",
+            "image_url": null
+          }
+        }
+      ],
+      "customer": {
+        "id": "c10205",
+        "name": "Zuhra Mamatova",
+        "phone_number": "+998975628130"
+      },
+      "district": {
+        "id": "d10205",
+        "name": "Marg'ilon shahri",
+        "region": {
+          "id": "r10205",
+          "name": "Farg'ona viloyati"
+        }
+      },
+      "market": {
+        "id": "31",
+        "name": "Baraka Shop",
+        "phone_number": "+998903152241",
+        "cancelled_handover_qr_required": true
+      }
+    },
+    {
+      "id": "10202",
+      "status": "cancelled",
+      "where_deliver": "address",
+      "total_price": 590000,
+      "paid_amount": 0,
+      "to_be_paid": 0,
+      "createdAt": "2026-10-02T11:48:00.000Z",
+      "comment": null,
+      "address": null,
+      "qr_code_token": "tok-10202",
+      "items": [
+        {
+          "id": "i10202-1",
+          "product_id": "p51",
+          "quantity": 1,
+          "product": {
+            "id": "p51",
+            "name": "Bolalar kurtkasi",
+            "image_url": null
+          }
+        },
+        {
+          "id": "i10202-2",
+          "product_id": "p56",
+          "quantity": 1,
+          "product": {
+            "id": "p56",
+            "name": "Qo'lqop",
+            "image_url": null
+          }
+        }
+      ],
+      "customer": {
+        "id": "c10202",
+        "name": "Feruza Qosimova",
+        "phone_number": "+998943801257"
+      },
+      "district": {
+        "id": "d10202",
+        "name": "Andijon shahri",
+        "region": {
+          "id": "r10202",
+          "name": "Andijon viloyati"
+        }
+      },
+      "market": {
+        "id": "31",
+        "name": "Baraka Shop",
+        "phone_number": "+998903152241",
+        "cancelled_handover_qr_required": true
+      }
+    },
+    {
+      "id": "10200",
+      "status": "cancelled",
+      "where_deliver": "center",
+      "total_price": 184000,
+      "paid_amount": 0,
+      "to_be_paid": 0,
+      "createdAt": "2026-10-03T05:30:00.000Z",
+      "comment": null,
+      "address": null,
+      "qr_code_token": "tok-10200",
+      "items": [
+        {
+          "id": "i10200-1",
+          "product_id": "p57",
+          "quantity": 2,
+          "product": {
+            "id": "p57",
+            "name": "Qishki shapka",
+            "image_url": null
+          }
+        }
+      ],
+      "customer": {
+        "id": "c10200",
+        "name": "Ulug'bek Sobirov",
+        "phone_number": "+998912076614"
+      },
+      "district": {
+        "id": "d10200",
+        "name": "Yunusobod tumani",
+        "region": {
+          "id": "r10200",
+          "name": "Toshkent shahri"
+        }
+      },
+      "market": {
+        "id": "31",
+        "name": "Baraka Shop",
+        "phone_number": "+998903152241",
+        "cancelled_handover_qr_required": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "statusCode": 200,
+  "message": "ok",
+  "data": {
+    "data": [
+      {
+        "id": "2493",
+        "createdAt": "2026-10-15T04:10:00.000Z",
+        "updatedAt": "2026-10-15T04:10:00.000Z",
+        "courier_id": "",
+        "post_total_price": 1411000,
+        "order_quantity": 6,
+        "qr_code_token": "post-2493",
+        "region_id": "12",
+        "region": {
+          "id": "12",
+          "name": "Farg'ona viloyati",
+          "sato_code": "1730"
+        },
+        "status": "sent",
+        "courier": null
+      },
+      {
+        "id": "2488",
+        "createdAt": "2026-10-15T02:45:00.000Z",
+        "updatedAt": "2026-10-15T02:45:00.000Z",
+        "courier_id": "",
+        "post_total_price": 3290000,
+        "order_quantity": 18,
+        "qr_code_token": "post-2488",
+        "region_id": "12",
+        "region": {
+          "id": "12",
+          "name": "Farg'ona viloyati",
+          "sato_code": "1730"
+        },
+        "status": "sent",
+        "courier": null
+      },
+      {
+        "id": "2482",
+        "createdAt": "2026-10-15T01:20:00.000Z",
+        "updatedAt": "2026-10-15T01:20:00.000Z",
+        "courier_id": "",
+        "post_total_price": 6210000,
+        "order_quantity": 31,
+        "qr_code_token": "post-2482",
+        "region_id": "12",
+        "region": {
+          "id": "12",
+          "name": "Farg'ona viloyati",
+          "sato_code": "1730"
+        },
+        "status": "sent",
+        "courier": null
+      }
+    ],
+    "total": 3,
+    "page": 1,
+    "limit": 8,
+    "totalPages": 1
+  }
+}

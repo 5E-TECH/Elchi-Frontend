@@ -1,4 +1,15 @@
 import { describe, expect, it } from "vitest";
+import {
+  COLOUR_RULES,
+  isInV2Scope,
+  OUTPUT_FORMAT_FILES,
+  scanSource,
+  scanTree,
+  V2_SCOPE_PENDING,
+  V2_SCOPES,
+  type FileScan,
+} from "../../scripts/design-guard.mjs";
+import { STAGE_A_PENDING } from "../../scripts/eslint-design-v2.mjs";
 
 /**
  * PALITRA QO'RIQCHISI (RXoR7TIh, gXwlyhqF).
@@ -60,5 +71,130 @@ describe("palette guard", () => {
     const code = provider.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/.*$/gm, "");
     expect(code).toContain("themeTokens");
     expect(code.match(/['"]#[0-9a-f]{3,8}['"]/gi) ?? []).toEqual([]);
+  });
+});
+
+/**
+ * DIZAYN v2, 5-bosqich — MIGRATSIYA QILINGAN PAPKALAR (`V2_SCOPES`, scripts/design-guard.mjs).
+ * Scope ichidagi har fayl (belgisiz `.ts` yordamchi ham) rang qoidalarida (`COLOUR_RULES`) 0. Istisno ro'yxatlari
+ * FAQAT QISQARADI: eskirgan yozuv testni yiqitadi, ro'yxatni o'stirish — shu yerdagi `MAX_*` ni o'zgartirish
+ * (review'da ko'rinadi). Unutilgan toza papkani test o'zi topadi.
+ */
+/** V2_SCOPE_PENDING o'lchami — faqat kamaytiring (bosqich A: 7; bosqich B: external_orders 3 tasi chiqadi). */
+const MAX_PENDING = 7;
+/** OUTPUT_FORMAT_FILES o'lchami — faqat kamaytiring (dev birlashmasida exportOrdersToExcel.ts o'chdi: 5 → 4). */
+const MAX_OUTPUT_FORMAT = 4;
+/** `src` dagi stil fayllari — faqat qisqaradi: v2 CSS modul/SCSS yozmaydi (Tailwind + tokenlar). `index.css` —
+ *  tokenlar manbai; `Table.module.css` — v1 Table bilan birga yo'qoladi. */
+const STYLE_FILE_ALLOWLIST = ["src/index.css", "src/shared/components/Table/Table.module.css"];
+
+describe("migratsiya qilingan papkalar (V2_SCOPES)", () => {
+  const tree = scanTree();
+  const byFile = new Map(tree.files.map((f) => [f.file, f]));
+  const colourHits = (f: FileScan) => f.violations.filter((v) => COLOUR_RULES.includes(v.rule));
+  const colourCount = (f: FileScan) => COLOUR_RULES.reduce((n, id) => n + (f.counts[id] ?? 0), 0);
+  const report = (files: FileScan[]) =>
+    files
+      .flatMap((f) =>
+        colourHits(f)
+          .slice(0, 10)
+          .map((v) => `  ${f.file}:${v.line}:${v.col}  [${v.rule}] ${v.match}  →  ${v.hint}\n      ${v.source}`),
+      )
+      .join("\n");
+
+  it("har scope papkasi mavjud va qo'riqlanadigan fayli bor; takror va ichma-ich yo'q", () => {
+    expect(V2_SCOPES.length).toBeGreaterThan(30);
+    const empty = V2_SCOPES.filter((dir) => !tree.files.some((f) => f.file.startsWith(`${dir}/`)));
+    expect(empty, "papka yo'q yoki ichida qo'riqlanadigan fayl yo'q — V2_SCOPES dan olib tashlang").toEqual([]);
+    expect(new Set(V2_SCOPES).size).toBe(V2_SCOPES.length);
+    const nested = V2_SCOPES.filter((dir) => V2_SCOPES.some((other) => other !== dir && dir.startsWith(`${other}/`)));
+    expect(nested, "ichma-ich scope — ota papka yetarli").toEqual([]);
+    const DIR = /^src\/(?:pages|widgets|features|entities|shared)\/[\w-]+(?:\/[\w-]+)*$/;
+    for (const dir of V2_SCOPES) expect(dir).toMatch(DIR);
+  });
+
+  it("scope ichidagi har fayl rang qoidalarida 0 (belgisiz .ts yordamchi ham)", () => {
+    const offenders = tree.files.filter((f) => f.scoped && colourCount(f) > 0);
+    expect(
+      offenders.map((f) => f.file),
+      `V2_SCOPES fayllarida rang buzilishi (ruxsat 0, baseline qo'llanmaydi) — v2 tokeni bilan yozing:\n${report(offenders)}`,
+    ).toEqual([]);
+  });
+
+  it("toza v2 slice'lar V2_SCOPES da (avtomatik qattiqlashtirish)", () => {
+    // slice = src/<qatlam>/<slice>; ≥ 1 ta `// dizayn-v2:` fayl va rang buzilishi 0 (pending/chiqish fayllari hisobsiz).
+    const slices = new Map<string, { v2: number; dirty: number }>();
+    for (const f of tree.files) {
+      const parts = f.file.split("/");
+      if (parts.length < 4) continue; // src/<qatlam>/<fayl> — slice emas
+      const slice = parts.slice(0, 3).join("/");
+      const s = slices.get(slice) ?? { v2: 0, dirty: 0 };
+      slices.set(slice, s);
+      if (f.v2) s.v2 += 1;
+      if (f.file in V2_SCOPE_PENDING || f.file in OUTPUT_FORMAT_FILES) continue;
+      if (colourCount(f) > 0) s.dirty += 1;
+    }
+    // Bosqich A: butunligicha G2/G3 qurayotgan slice (`STAGE_A_PENDING` da `<slice>/**`) hali talab qilinmaydi —
+    // ular bosqich B da qo'shiladi (spec §0); bosqich B da STAGE_A_PENDING = [] va tekshiruv to'liq ishlaydi.
+    const ownedByG2G3 = (slice: string) => STAGE_A_PENDING.includes(`${slice}/**`);
+    const missing = [...slices]
+      .filter(([slice, s]) => s.v2 > 0 && s.dirty === 0 && !isInV2Scope(`${slice}/_`) && !ownedByG2G3(slice))
+      .map(([slice]) => slice);
+    expect(
+      missing,
+      "integrator: papkani V2_SCOPES ga qo'shing (scripts/design-guard.mjs) — ichida v2 fayl bor va rang buzilishi 0",
+    ).toEqual([]);
+  });
+
+  it("V2_SCOPE_PENDING faqat qisqaradi: fayl bor, scope ichida, hali rang bor, sababi yozilgan", () => {
+    const entries = Object.entries(V2_SCOPE_PENDING);
+    expect(entries.length, "faqat kamaytiring (MAX_PENDING)").toBeLessThanOrEqual(MAX_PENDING);
+    const problems = entries.flatMap(([file, reason]) => {
+      const f = byFile.get(file);
+      if (!f) return [`${file}: fayl yo'q — ro'yxatdan olib tashlang`];
+      const out: string[] = [];
+      if (!isInV2Scope(file)) out.push(`${file}: V2_SCOPES dan tashqarida — pending kerak emas`);
+      if (f.v2) out.push(`${file}: // dizayn-v2: belgili — ro'yxatdan olib tashlang`);
+      if (colourCount(f) === 0) out.push(`${file}: rang buzilishi qolmadi — ro'yxatdan olib tashlang`);
+      if (reason.trim().length < 10) out.push(`${file}: sabab yozilmagan (≥ 10 belgi)`);
+      return out;
+    });
+    expect(problems).toEqual([]);
+  });
+
+  it("OUTPUT_FORMAT_FILES: faqat /lib/ dagi chop etish / eksport fayllari, hali rang bor, sababi yozilgan", () => {
+    const sources = import.meta.glob("../**/lib/*.{ts,tsx}", {
+      eager: true,
+      query: "?raw",
+      import: "default",
+    }) as Record<string, string>;
+    const textOf = (file: string) => sources[file.replace(/^src\//, "../")];
+    const entries = Object.entries(OUTPUT_FORMAT_FILES);
+    expect(entries.length, "faqat kamaytiring (MAX_OUTPUT_FORMAT)").toBeLessThanOrEqual(MAX_OUTPUT_FORMAT);
+    const problems = entries.flatMap(([file, reason]) => {
+      const text = textOf(file);
+      if (!byFile.has(file) || text === undefined)
+        return [`${file}: fayl yo'q (yoki /lib/ da emas) — ro'yxatdan olib tashlang`];
+      const out: string[] = [];
+      const name = file.split("/").pop() ?? "";
+      if (!file.includes("/lib/") || !/(print|export|pdf|label)/i.test(name))
+        out.push(`${file}: chiqish formati emas (faqat /lib/ dagi print|export|pdf|label)`);
+      if (reason.trim().length < 10) out.push(`${file}: sabab yozilmagan (≥ 10 belgi)`);
+      // Istisnosiz skanerlanganda hali rang bormi (yo'q bo'lsa — istisno kerak emas).
+      if (colourCount(scanSource("src/output-format-probe.ts", text)) === 0)
+        out.push(`${file}: rang literal qolmadi — ro'yxatdan olib tashlang`);
+      return out;
+    });
+    expect(problems).toEqual([]);
+  });
+
+  it("src dagi stil fayllari — faqat ruxsat ro'yxati (yangi *.module.css / SCSS yo'q)", () => {
+    const styles = Object.keys(import.meta.glob("../**/*.{css,scss,sass,less,styl,pcss}"))
+      .map((p) => p.replace(/^\.\.\//, "src/"))
+      .sort();
+    expect(
+      styles,
+      "v2 da stil faqat Tailwind + tokenlar (src/index.css). Fayl o'chirilgan bo'lsa — STYLE_FILE_ALLOWLIST dan ham olib tashlang",
+    ).toEqual(STYLE_FILE_ALLOWLIST);
   });
 });

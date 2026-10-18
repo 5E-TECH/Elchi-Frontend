@@ -23,6 +23,7 @@ import {
   EmptyState,
   ErrorState,
   Pagination,
+  Pressable,
   SkeletonList,
 } from "../../../shared/ui/primitives";
 import { PaymentAckBadge } from "./PaymentAckBadge";
@@ -137,8 +138,7 @@ const HistoryRow = memo(
 
     return (
       <li>
-        <button
-          type="button"
+        <Pressable
           onClick={() => onOpen(row)}
           aria-label={t("v2CashDetail.list.rowLabel", {
             title: labelTitle,
@@ -182,7 +182,7 @@ const HistoryRow = memo(
             </span>
             <span className="whitespace-nowrap text-[13px] text-text-muted">{date}</span>
           </span>
-        </button>
+        </Pressable>
       </li>
     );
   },

@@ -24,6 +24,7 @@ import {
   DataTable,
   EmptyState,
   PageHeader,
+  Pressable,
   type DataTableColumn,
   type Tone,
 } from "../../../shared/ui/primitives";
@@ -59,8 +60,7 @@ const SettingSwitch = ({
           </p>
         ) : null}
       </div>
-      <button
-        type="button"
+      <Pressable
         role="switch"
         aria-checked={checked}
         aria-label={title}
@@ -84,7 +84,7 @@ const SettingSwitch = ({
             )}
           />
         </span>
-      </button>
+      </Pressable>
     </div>
   );
 };
@@ -516,8 +516,7 @@ const CustomerOrdersCard = ({ orders, onOpen }: { orders: readonly Order[]; onOp
           label={t("v2.detail.ordersLabel")}
           onRowClick={onOpen}
           renderCard={(order) => (
-            <button
-              type="button"
+            <Pressable
               onClick={() => onOpen(order)}
               className="flex min-h-14 w-full items-center gap-3 px-4 py-3 text-left text-sm text-text"
             >
@@ -536,7 +535,7 @@ const CustomerOrdersCard = ({ orders, onOpen }: { orders: readonly Order[]; onOp
                   <OrderStatusBadge status={order.status} />
                 </span>
               </span>
-            </button>
+            </Pressable>
           )}
         />
       )}

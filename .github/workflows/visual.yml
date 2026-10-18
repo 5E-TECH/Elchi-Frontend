@@ -1,0 +1,340 @@
+# Dizayn v2, 5-bosqich: vizual snapshotlar (sahnalar × kunduzgi/tungi × 1440/390, mock API).
+# Bosqich A: 19 sahna × 4 loyiha = 76 PNG; bosqich B (G2/G3 dan keyin): 23 × 4 = 92.
+#
+# Baseline'lar FAQAT shu Docker obrazida yaratiladi va tekshiriladi — boshqa mashinada shrift/rasterlash farq qiladi.
+# Obraz tegi = package.json dagi aniq `@playwright/test` / `playwright` versiyasi (src/test/visualCiVersion.test.ts).
+# Hech kimning kompyuterida Docker yoki vizual yugurish shart emas (docs/DESIGN_SYSTEM.md §12.5):
+#
+#   - PR (draft emas): `visual` job solishtiradi. Sahnaning baseline'i hali yo'q bo'lsa — solishtirilmaydi, job
+#     yiqilmaydi (neytral, yashil), Summary'da «baseline yo'q — Run workflow (update) bilan yarating». Baseline bor
+#     bo'lsa — farq jobni yiqitadi; `visual-report` (expected / actual / diff) va `visual-baselines` (taklif) artefaktlari.
+#   - «Actions → Visual → Run workflow» (branch tanlanadi, «update» belgili — sukut): `baselines` job barcha
+#     baseline'larni shu obrazda qayta yaratadi, `visual-baselines` artefaktini yuklaydi va
+#     `tests/visual/__screenshots__/**` ni shu branchga commit qiladi («test(visual): baseline'lar yangilandi [skip ci]»).
+#     `main` / `dev` ga commit qilinmaydi (AGENTS.md) — u yerda faqat artefakt.
+#   - «update» belgisiz Run workflow — PR'dagidek faqat solishtirish.
+#   - GitHub «Run workflow» ni faqat bu fayl default branch (`dev`) da bo'lsa ko'rsatadi: u yerga birinchi marta
+#     qo'shiladigan PR'da baseline yo'q (neytral) — merge'dan keyin ishchi branchda Run workflow (update).
+name: Visual
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      update:
+        description: "Baseline'larni qayta yaratish va shu branchga commit qilish (belgisiz — faqat solishtirish)"
+        type: boolean
+        default: true
+
+# PR'da yangi push eskisini to'xtatadi; baseline yaratish (commit qiladi) yarim yo'lda uzilmaydi.
+concurrency:
+  group: visual-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # ── Solishtirish: har draft bo'lmagan PR + belgisiz Run workflow. Faqat o'qish huquqi. ──────────────────────
+  visual:
+    if: >-
+      (github.event_name == 'pull_request' && github.event.pull_request.draft == false) ||
+      (github.event_name == 'workflow_dispatch' && !inputs.update)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    container:
+      # = package.json `@playwright/test` (src/test/visualCiVersion.test.ts tekshiradi). Bump — bitta PR'da ikkalasi
+      # + qayta yaratilgan baseline'lar.
+      image: mcr.microsoft.com/playwright:v1.59.1-noble
+      # Playwright CI hujjatidagidek: runner foydalanuvchisi (fayllar egasi bir xil), `--ipc=host` — Chromium xotirasi.
+      options: --user 1001 --ipc=host
+    env:
+      # Faqat shu obrazda `--update-snapshots` ruxsat (playwright.visual.config.ts / tests/visual/support/policy.ts).
+      VISUAL_IN_DOCKER: "1"
+      # = container.image (job darajasida `env` konteksti obrazda ishlatilmaydi — nusxa; test tengligini tekshiradi).
+      VISUAL_IMAGE: mcr.microsoft.com/playwright:v1.59.1-noble
+      BRANCH: ${{ github.head_ref || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - run: npm ci
+
+      # npm'dagi Playwright = obraz tegi va obrazda aynan shu versiyaning brauzerlari bor (aks holda — darhol to'xtash).
+      - name: Playwright versiyasi = Docker obrazi
+        run: |
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const fail = (message) => { console.error(message); process.exit(1); };
+            const image = process.env.VISUAL_IMAGE ?? "";
+            const want = /^mcr\.microsoft\.com\/playwright:v(\d+\.\d+\.\d+)-noble$/.exec(image)?.[1];
+            if (!want) fail(`VISUAL_IMAGE tanilmadi: ${image}`);
+            for (const name of ["@playwright/test", "playwright", "playwright-core"]) {
+              const got = require(`${name}/package.json`).version;
+              if (got !== want) fail(`${name} ${got} != obraz v${want}-noble: package.json pini va workflow obrazi birga yangilanadi`);
+            }
+            const root = process.env.PLAYWRIGHT_BROWSERS_PATH || fail("PLAYWRIGHT_BROWSERS_PATH topilmadi — bu Playwright obrazi emas");
+            const core = path.dirname(require.resolve("playwright-core/package.json"));
+            const { browsers } = JSON.parse(fs.readFileSync(path.join(core, "browsers.json"), "utf8"));
+            for (const name of ["chromium", "chromium-headless-shell"]) {
+              const entry = browsers.find((browser) => browser.name === name) ?? fail(`browsers.json: ${name} yozuvi yo\x27q`);
+              const dir = path.join(root, `${name.replaceAll("-", "_")}-${entry.revision}`);
+              if (!fs.existsSync(dir)) fail(`obrazda ${dir} topilmadi — obraz va npm Playwright versiyasi mos emas`);
+            }
+            console.log(`Playwright ${want} = obraz ${image}`);
+          '
+
+      - run: npm run visual:build
+
+      - name: Baseline holati
+        run: |
+          # `shell: bash` = `-eo pipefail`: papka yo'q bo'lsa `find` quvurni yiqitmasin (baseline hali yo'q holati).
+          count=0
+          if [ -d tests/visual/__screenshots__ ]; then
+            count=$(find tests/visual/__screenshots__ -name '*.png' | wc -l | tr -d ' ')
+          fi
+          {
+            echo "### Vizual snapshotlar"
+            echo ""
+            echo "Obraz \`${VISUAL_IMAGE}\` · commit \`${GITHUB_SHA::7}\` · commit qilingan baseline: **${count}** PNG"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$count" = "0" ]; then
+            {
+              echo ""
+              echo "**baseline yo'q — Run workflow (update) bilan yarating:** Actions → Visual → Run workflow → branch \`${BRANCH}\`, «update» belgili."
+              echo "Baseline'lar shu Docker obrazida yaratiladi va branchga commit qilinadi. Hozircha job neytral (yashil): sahnalar chiziladi va tekshiriladi (tarmoq, konsol, shrift), lekin piksel solishtirilmaydi."
+              echo "«Run workflow» tugmasi GitHub'da faqat \`visual.yml\` default branch (\`dev\`) da bo'lsa chiqadi — bu workflow hali \`dev\` da bo'lmasa, avval shu PR merge qilinadi, so'ng ishchi branchda Run workflow (docs/DESIGN_SYSTEM.md §12.5)."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::notice title=Visual::baseline yo'q — Run workflow (update) bilan yarating (docs/DESIGN_SYSTEM.md §12.5)"
+          fi
+
+      - name: Vizual snapshotlar (solishtirish)
+        id: compare
+        run: |
+          set +e
+          npx playwright test -c playwright.visual.config.ts --update-snapshots=none
+          status=$?
+          set -e
+          # Baseline'i yo'q sahnalar test «skipped» bo'ladi va Summary'ga o'zi yozadi (tests/visual/support/test.ts).
+          missing=$(grep -c "baseline yo'q" "$GITHUB_STEP_SUMMARY" 2>/dev/null || true)
+          if [ "${missing:-0}" != "0" ]; then
+            echo "::notice title=Visual::${missing} ta snapshotda baseline yo'q — neytral (solishtirilmadi). Run workflow (update) bilan yarating."
+          fi
+          exit "$status"
+
+      # ── Yiqilganda (tartib muhim: hisobot keyingi qayta yugurishdan OLDIN yuklanadi — u natija papkasini tozalaydi) ──
+      - name: Farqlar ro'yxati
+        if: failure() && steps.compare.outcome == 'failure'
+        run: |
+          diffs=""
+          if [ -d test-results-visual ]; then
+            diffs=$(find test-results-visual -name '*-diff.png' | sort)
+          fi
+          {
+            echo ""
+            echo "#### Vizual farqlar"
+            if [ -n "$diffs" ]; then
+              printf '%s\n' "$diffs" | sed 's/^/- `/; s/$/`/'
+            else
+              echo "- \`*-diff.png\` yo'q: yiqilish piksel farqidan emas (konsol xatosi, tarmoq, shrift, tayyorlik) — \`visual-report\` dagi HTML hisobotni oching."
+            fi
+            echo ""
+            echo "Farq **kutilgan** bo'lsa: Actions → Visual → Run workflow → branch \`${BRANCH}\`, «update» — baseline'lar qayta yaratiladi va branchga commit qilinadi."
+            echo "Kutilmagan bo'lsa — kodni tuzating. Artefaktlar: \`visual-report\` (expected / actual / diff), \`visual-baselines\` (taklif, commit qilinmagan). docs/DESIGN_SYSTEM.md §12.5"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Hisobot artefakti
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-report
+          path: |
+            playwright-report-visual/
+            test-results-visual/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Taklif etilgan baseline'lar (faqat yiqilgan sahnalar)
+        if: failure() && steps.compare.outcome == 'failure'
+        run: |
+          if [ ! -f test-results-visual/.last-run.json ]; then
+            echo "test-results-visual/.last-run.json yo'q — taklif yaratilmadi."
+            exit 0
+          fi
+          npx playwright test -c playwright.visual.config.ts --last-failed --update-snapshots=changed --reporter=dot || true
+
+      - name: Baseline artefakti (taklif)
+        if: failure() && steps.compare.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-baselines
+          path: tests/visual/__screenshots__/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  # ── Baseline yaratish: faqat «Run workflow», «update» belgili. Shu branchga commit qiladi. ─────────────────────
+  baselines:
+    if: github.event_name == 'workflow_dispatch' && inputs.update
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    container:
+      image: mcr.microsoft.com/playwright:v1.59.1-noble
+      options: --user 1001 --ipc=host
+    env:
+      VISUAL_IN_DOCKER: "1"
+      VISUAL_IMAGE: mcr.microsoft.com/playwright:v1.59.1-noble
+      BRANCH: ${{ github.ref_name }}
+    steps:
+      - name: Faqat branch
+        if: ${{ !startsWith(github.ref, 'refs/heads/') }}
+        run: |
+          echo "::error title=Visual::Run workflow (update) faqat branchda yuradi (tanlangan: ${GITHUB_REF})."
+          exit 1
+
+      # Token .git/config ga yozilmaydi (npm o'rnatish skriptlari va testlar uni ko'rmaydi) — faqat push qadamida.
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - run: npm ci
+
+      # npm'dagi Playwright = obraz tegi va obrazda aynan shu versiyaning brauzerlari bor (aks holda — darhol to'xtash).
+      - name: Playwright versiyasi = Docker obrazi
+        run: |
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const fail = (message) => { console.error(message); process.exit(1); };
+            const image = process.env.VISUAL_IMAGE ?? "";
+            const want = /^mcr\.microsoft\.com\/playwright:v(\d+\.\d+\.\d+)-noble$/.exec(image)?.[1];
+            if (!want) fail(`VISUAL_IMAGE tanilmadi: ${image}`);
+            for (const name of ["@playwright/test", "playwright", "playwright-core"]) {
+              const got = require(`${name}/package.json`).version;
+              if (got !== want) fail(`${name} ${got} != obraz v${want}-noble: package.json pini va workflow obrazi birga yangilanadi`);
+            }
+            const root = process.env.PLAYWRIGHT_BROWSERS_PATH || fail("PLAYWRIGHT_BROWSERS_PATH topilmadi — bu Playwright obrazi emas");
+            const core = path.dirname(require.resolve("playwright-core/package.json"));
+            const { browsers } = JSON.parse(fs.readFileSync(path.join(core, "browsers.json"), "utf8"));
+            for (const name of ["chromium", "chromium-headless-shell"]) {
+              const entry = browsers.find((browser) => browser.name === name) ?? fail(`browsers.json: ${name} yozuvi yo\x27q`);
+              const dir = path.join(root, `${name.replaceAll("-", "_")}-${entry.revision}`);
+              if (!fs.existsSync(dir)) fail(`obrazda ${dir} topilmadi — obraz va npm Playwright versiyasi mos emas`);
+            }
+            console.log(`Playwright ${want} = obraz ${image}`);
+          '
+
+      - run: npm run visual:build
+
+      # To'liq qayta yaratish: eski papka o'chiriladi — o'chirilgan/qayta nomlangan sahnaning PNG'i ham ketadi.
+      # Bayt-bayt bir xil PNG git'da o'zgarish emas (aniqlik tekshiruvi: ketma-ket ikki yugurish → «o'zgarish yo'q»).
+      - name: Baseline'larni qayta yaratish
+        id: update
+        run: |
+          rm -rf tests/visual/__screenshots__
+          npx playwright test -c playwright.visual.config.ts --update-snapshots=all
+
+      - name: Baseline artefakti
+        if: always() && steps.update.outcome != 'skipped'
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-baselines
+          path: tests/visual/__screenshots__/
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Hisobot artefakti
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-report
+          path: |
+            playwright-report-visual/
+            test-results-visual/
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: O'zgargan baseline'lar
+        id: changes
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          changes=$(git status --porcelain --untracked-files=all -- tests/visual/__screenshots__)
+          total=0
+          if [ -d tests/visual/__screenshots__ ]; then
+            total=$(find tests/visual/__screenshots__ -name '*.png' | wc -l | tr -d ' ')
+          fi
+          {
+            echo "### Vizual baseline'lar (Run workflow — update)"
+            echo ""
+            echo "Obraz \`${VISUAL_IMAGE}\` · branch \`${BRANCH}\` · commit \`${GITHUB_SHA::7}\` · jami **${total}** PNG"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ -z "$changes" ]; then
+            echo "O'zgarish yo'q — baseline'lar bayt-bayt bir xil, commit qilinmaydi." >> "$GITHUB_STEP_SUMMARY"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          added=$(printf '%s\n' "$changes" | grep -c '^??' || true)
+          modified=$(printf '%s\n' "$changes" | grep -c '^ M' || true)
+          deleted=$(printf '%s\n' "$changes" | grep -c '^ D' || true)
+          {
+            echo "Yangi: **${added}** · o'zgargan: **${modified}** · o'chirilgan: **${deleted}**"
+            echo ""
+            echo "<details><summary>Fayllar</summary>"
+            echo ""
+            printf '%s\n' "$changes" | sed 's/^/    /'
+            echo ""
+            echo "</details>"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Baseline'larni branchga commit qilish
+        if: steps.changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          case "$BRANCH" in
+            main|dev)
+              echo "::warning title=Visual::«${BRANCH}» ga bot commit qilinmaydi (AGENTS.md) — baseline'lar faqat «visual-baselines» artefaktida."
+              echo "" >> "$GITHUB_STEP_SUMMARY"
+              echo "«${BRANCH}» ga commit qilinmadi (AGENTS.md: main/dev ga to'g'ridan-to'g'ri push yo'q) — «visual-baselines» artefaktini ishchi branchga oling (\`npm run visual:pull -- --from <zip>\`)." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+              ;;
+          esac
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A -- tests/visual/__screenshots__
+          other=$(git diff --cached --name-only | grep -v '^tests/visual/__screenshots__/' || true)
+          if [ -n "$other" ]; then
+            echo "::error title=Visual::commit'ga baseline'dan boshqa fayl tushdi: ${other}"
+            exit 1
+          fi
+          git commit -q -m "test(visual): baseline'lar yangilandi [skip ci]" \
+            -m "Run workflow (update) · ${GITHUB_SHA::7} · ${VISUAL_IMAGE} · ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          auth=$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)
+          if ! git -c http.extraheader="AUTHORIZATION: basic ${auth}" push origin "HEAD:refs/heads/${BRANCH}"; then
+            echo "::error title=Visual::push rad etildi — «${BRANCH}» shu orada yangilangan bo'lishi mumkin. Run workflow (update) ni qayta yuring (artefakt «visual-baselines» saqlandi)."
+            exit 1
+          fi
+          {
+            echo ""
+            echo "Commit \`$(git rev-parse --short HEAD)\` → \`${BRANCH}\`. Lokalda: \`git pull\`."
+            echo "Eslatma: bot commit'i PR tekshiruvlarini o'zi qayta yurgizmaydi (GitHub \`GITHUB_TOKEN\` push'ida workflow ishga tushirmaydi; \`[skip ci]\` esa PR'ning oxirgi commit'i bo'lib qolsa, PR ochilganda ham «Deploy» va «Visual» ni o'tkazib yuboradi) — \`git pull\`, so'ng keyingi push (yangi commit) bilan yuriting."
+          } >> "$GITHUB_STEP_SUMMARY"

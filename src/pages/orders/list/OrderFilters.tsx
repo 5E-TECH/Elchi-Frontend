@@ -12,7 +12,14 @@ import { extractScannerToken } from "../../../shared/lib/scanToken";
 import { useQueryParams } from "../../../shared/lib/useQueryParams";
 import { resetFilters, setFilterValue } from "../../../shared/model/filterSlice";
 import { clearAllSearch, setSearchValue } from "../../../shared/model/searchSlice";
-import { Button, DateRange, Field, Select, TextInput } from "../../../shared/ui/primitives";
+import {
+  Button,
+  DateRange,
+  Field,
+  Pressable,
+  Select,
+  TextInput,
+} from "../../../shared/ui/primitives";
 import { formatDay, formatRangeShort } from "../../../shared/ui/primitives/date/calendarMath";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import {
@@ -123,9 +130,9 @@ type ChipItem = { key: string; label: string; removeLabel: string; onRemove: () 
 const FilterChip = ({ label, removeLabel, onRemove }: Omit<ChipItem, "key">) => (
   <span className={CHIP}>
     <span className="min-w-0 truncate">{label}</span>
-    <button type="button" aria-label={removeLabel} title={removeLabel} onClick={onRemove} className={CHIP_X}>
+    <Pressable aria-label={removeLabel} title={removeLabel} onClick={onRemove} className={CHIP_X}>
       <X aria-hidden="true" size={14} strokeWidth={2.25} />
-    </button>
+    </Pressable>
   </span>
 );
 

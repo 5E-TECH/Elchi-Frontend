@@ -1,0 +1,240 @@
+{
+  "statusCode": 200,
+  "message": "ok",
+  "data": {
+    "allOrdersByPostId": [
+      {
+        "id": "10252",
+        "createdAt": "2026-10-15T02:58:00.000Z",
+        "updatedAt": "2026-10-15T02:58:00.000Z",
+        "market_id": "31",
+        "customer_id": "c10252",
+        "product_quantity": 1,
+        "where_deliver": "address",
+        "total_price": 245000,
+        "to_be_paid": 245000,
+        "paid_amount": 0,
+        "status": "on the road",
+        "comment": null,
+        "operator": null,
+        "post_id": "78",
+        "qr_code_token": "tok-10252",
+        "customer": {
+          "id": "c10252",
+          "name": "Shohruh Aliyev",
+          "phone_number": "+998915402217"
+        },
+        "market": {
+          "id": "31",
+          "name": "Baraka Shop"
+        },
+        "district": {
+          "id": "d10252",
+          "name": "Samarqand shahri",
+          "region_id": "6",
+          "region": {
+            "id": "6",
+            "name": "Samarqand viloyati"
+          }
+        },
+        "region": {
+          "id": "6",
+          "name": "Samarqand viloyati"
+        },
+        "items": [
+          {
+            "id": "i10252",
+            "product_id": "p61",
+            "quantity": 1,
+            "product": {
+              "id": "p61",
+              "name": "Bolalar kurtkasi",
+              "image_url": null
+            }
+          }
+        ]
+      },
+      {
+        "id": "10250",
+        "createdAt": "2026-10-15T02:51:00.000Z",
+        "updatedAt": "2026-10-15T02:51:00.000Z",
+        "market_id": "32",
+        "customer_id": "c10250",
+        "product_quantity": 2,
+        "where_deliver": "center",
+        "total_price": 410000,
+        "to_be_paid": 410000,
+        "paid_amount": 0,
+        "status": "on the road",
+        "comment": null,
+        "operator": null,
+        "post_id": "78",
+        "qr_code_token": "tok-10250",
+        "customer": {
+          "id": "c10250",
+          "name": "Feruza Rasulova",
+          "phone_number": "+998932076145"
+        },
+        "market": {
+          "id": "32",
+          "name": "Nur Elektronika"
+        },
+        "district": {
+          "id": "d10250",
+          "name": "Urgut tumani",
+          "region_id": "6",
+          "region": {
+            "id": "6",
+            "name": "Samarqand viloyati"
+          }
+        },
+        "region": {
+          "id": "6",
+          "name": "Samarqand viloyati"
+        },
+        "items": [
+          {
+            "id": "i10250",
+            "product_id": "p62",
+            "quantity": 2,
+            "product": {
+              "id": "p62",
+              "name": "Simsiz quloqchin",
+              "image_url": null
+            }
+          }
+        ]
+      },
+      {
+        "id": "10247",
+        "createdAt": "2026-10-15T02:40:00.000Z",
+        "updatedAt": "2026-10-15T02:40:00.000Z",
+        "market_id": "5",
+        "customer_id": "c10247",
+        "product_quantity": 1,
+        "where_deliver": "address",
+        "total_price": 186000,
+        "to_be_paid": 186000,
+        "paid_amount": 0,
+        "status": "on the road",
+        "comment": null,
+        "operator": null,
+        "post_id": "78",
+        "qr_code_token": "tok-10247",
+        "customer": {
+          "id": "c10247",
+          "name": "Dilshod Ergashev",
+          "phone_number": "+998903187702"
+        },
+        "market": {
+          "id": "5",
+          "name": "Ipak Yo'li Savdo"
+        },
+        "district": {
+          "id": "d10247",
+          "name": "Pastdarg'om tumani",
+          "region_id": "6",
+          "region": {
+            "id": "6",
+            "name": "Samarqand viloyati"
+          }
+        },
+        "region": {
+          "id": "6",
+          "name": "Samarqand viloyati"
+        },
+        "items": [
+          {
+            "id": "i10247",
+            "product_id": "p63",
+            "quantity": 1,
+            "product": {
+              "id": "p63",
+              "name": "Ipak ro'mol",
+              "image_url": null
+            }
+          }
+        ]
+      },
+      {
+        "id": "10245",
+        "createdAt": "2026-10-15T02:36:00.000Z",
+        "updatedAt": "2026-10-15T02:36:00.000Z",
+        "market_id": "34",
+        "customer_id": "c10245",
+        "product_quantity": 1,
+        "where_deliver": "address",
+        "total_price": 320000,
+        "to_be_paid": 320000,
+        "paid_amount": 0,
+        "status": "on the road",
+        "comment": null,
+        "operator": null,
+        "post_id": "78",
+        "qr_code_token": "tok-10245",
+        "customer": {
+          "id": "c10245",
+          "name": "Kamola Yusupova",
+          "phone_number": "+998974551036"
+        },
+        "market": {
+          "id": "34",
+          "name": "Chilonzor Market"
+        },
+        "district": {
+          "id": "d10245",
+          "name": "Kattaqo'rg'on tumani",
+          "region_id": "6",
+          "region": {
+            "id": "6",
+            "name": "Samarqand viloyati"
+          }
+        },
+        "region": {
+          "id": "6",
+          "name": "Samarqand viloyati"
+        },
+        "items": [
+          {
+            "id": "i10245",
+            "product_id": "p64",
+            "quantity": 1,
+            "product": {
+              "id": "p64",
+              "name": "Choynak to'plami",
+              "image_url": null
+            }
+          }
+        ]
+      }
+    ],
+    "homeOrders": {
+      "homeOrders": 3,
+      "homeOrdersTotalPrice": 751000
+    },
+    "centerOrders": {
+      "centerOrders": 1,
+      "centerOrdersTotalPrice": 410000
+    },
+    "post": {
+      "id": "78",
+      "status": "sent",
+      "courier_id": "6",
+      "courier": {
+        "id": "6",
+        "name": "Yusupov Jasur",
+        "phone_number": "+998901112288"
+      },
+      "qr_code_token": "post-78",
+      "order_quantity": 4,
+      "post_total_price": 1161000,
+      "createdAt": "2026-10-15T03:30:00.000Z",
+      "branch_id": "11",
+      "region_id": "6",
+      "region": {
+        "id": "6",
+        "name": "Samarqand viloyati"
+      }
+    }
+  }
+}

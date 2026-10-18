@@ -11,7 +11,14 @@ import {
   formatPercentLocalized,
 } from "../../../shared/lib/formatMoney";
 import { ChartNote, RankList } from "../../../shared/ui/charts";
-import { Button, Card, EmptyState, QueryBoundary, SegmentedControl } from "../../../shared/ui/primitives";
+import {
+  Button,
+  Card,
+  EmptyState,
+  Pressable,
+  QueryBoundary,
+  SegmentedControl,
+} from "../../../shared/ui/primitives";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import {
   ORDER_STEPS,
@@ -248,12 +255,11 @@ const RegionOverviewCard = ({ startDate, endDate, periodText, periodLabel, varia
                           onClick={() => openRegion(row)}
                         >
                           <th scope="row" className={cx(TD, "text-left font-normal")}>
-                            <button
-                              type="button"
+                            <Pressable
                               className="-mx-1 inline-flex min-h-11 items-center rounded-md px-1 text-left hover:underline"
                             >
                               {nameCell(row)}
-                            </button>
+                            </Pressable>
                           </th>
                           <td className={cx(TD, "text-right")}>
                             <span

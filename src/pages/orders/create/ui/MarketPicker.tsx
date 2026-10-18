@@ -6,7 +6,15 @@ import { useTranslation } from "react-i18next";
 import { useMarkets } from "../../../../entities/markets";
 import { cx } from "../../../../shared/lib/cx";
 import { formatPhone } from "../../../../shared/lib/formatPhone";
-import { Button, Dialog, Field, Skeleton, TextInput, useFieldControl } from "../../../../shared/ui/primitives";
+import {
+  Button,
+  Dialog,
+  Field,
+  Pressable,
+  Skeleton,
+  TextInput,
+  useFieldControl,
+} from "../../../../shared/ui/primitives";
 import type { MarketOption, OrderCreateFormValues } from "../model/orderCreateForm";
 
 const getMarketPhone = (market?: MarketOption | null) => market?.phone_number ?? market?.phone ?? "";
@@ -226,8 +234,7 @@ const MarketTrigger = ({ market, open, onOpen }: MarketTriggerProps) => {
   const phone = getMarketPhone(market);
 
   return (
-    <button
-      type="button"
+    <Pressable
       id={field.id}
       aria-haspopup="dialog"
       aria-expanded={open}
@@ -270,7 +277,7 @@ const MarketTrigger = ({ market, open, onOpen }: MarketTriggerProps) => {
       ) : (
         <ChevronDown size={16} aria-hidden="true" className="shrink-0 text-text-subtle" />
       )}
-    </button>
+    </Pressable>
   );
 };
 

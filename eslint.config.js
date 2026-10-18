@@ -7,9 +7,21 @@ import importPlugin from 'eslint-plugin-import'
 import prettier from 'eslint-config-prettier'
 import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
+import { builtinRules } from 'eslint/use-at-your-own-risk'
+import * as dv2 from './scripts/eslint-design-v2.mjs'
+
+// Dizayn v2, 5-bosqich: core qoidalarning alohida nomli nusxasi — 3-bosqich selektorlariga tegmaydi,
+// darajasi, fayl istisnosi va `eslint-disable` izohi alohida.
+const designV2 = {
+  meta: { name: 'eslint-plugin-design-v2' },
+  rules: {
+    'raw-control': builtinRules.get('no-restricted-syntax'),
+    'ui-imports': builtinRules.get('no-restricted-imports'),
+  },
+}
 
 export default defineConfig([
-  globalIgnores(['dist', 'coverage', 'test-results', 'playwright-report']),
+  globalIgnores(['dist', 'dist-visual', 'coverage', 'test-results', 'test-results-visual', 'playwright-report', 'playwright-report-visual']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -28,9 +40,11 @@ export default defineConfig([
       ecmaVersion: 2020,
       globals: globals.browser,
     },
+    // Eskirgan istisno izohi — xato (ro'yxat o'zi qisqaradi).
+    linterOptions: { reportUnusedDisableDirectives: 'error' },
     rules: {
-      // Existing migration debt is baselined by --max-warnings in package.json.
-      // New violations still make the lint gate fail when the baseline grows.
+      // Eski migratsiya qarzi `warn` darajasida: `npm run lint` (`eslint . --quiet`) faqat xatolarni ko'rsatadi va
+      // ularda yiqiladi; ogohlantirishlar ro'yxati — `npm run lint:report`.
       '@typescript-eslint/no-explicit-any': 'warn',
       'react-refresh/only-export-components': 'warn',
       'react-hooks/set-state-in-effect': 'warn',
@@ -98,4 +112,30 @@ export default defineConfig([
       ],
     },
   },
+  // ── Dizayn v2, 5-bosqich: xom boshqaruv elementlari, antd va ikonka importlari (docs/DESIGN_SYSTEM.md §12.2) ──
+  // Ma'lumot (selektorlar, ruxsat ro'yxatlari, ratchet, bosqich A): scripts/eslint-design-v2.mjs.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    plugins: { 'design-v2': designV2 },
+    rules: {
+      'design-v2/raw-control': ['error', ...dv2.RAW_CONTROL_SELECTORS],
+      'design-v2/ui-imports': ['error', dv2.UI_IMPORT_OPTIONS],
+      // Faqat xom <a>. `components: ['Link']` qo'yilmaydi: lucide-react `Link` ikonkasi (design/icon-registry.json)
+      // ham <Link> — soxta xato beradi; react-router <Link>/<NavLink> da `to` TypeScript'da majburiy.
+      'jsx-a11y/anchor-is-valid': 'error',
+    },
+  },
+  // BOSQICH A — G2/G3 qurilmoqda: ularning yo'llarida `warn`. Bosqich B da STAGE_A_PENDING = [] va bu blok yo'qoladi.
+  // Quyidagi istisnolardan OLDIN turadi: shu yo'llardagi test fayllari ham `off` bo'lib qoladi (lint:report shovqinsiz).
+  ...(dv2.STAGE_A_PENDING.length
+    ? [{ files: dv2.STAGE_A_PENDING, rules: { 'design-v2/raw-control': 'warn', 'design-v2/ui-imports': 'warn' } }]
+    : []),
+  // Doimiy joylar: dizayn tizimi qatlami (primitivlar, v1 o'ramlari, shell) va testlar.
+  { files: [...dv2.DS_LAYER, ...dv2.TEST_FILES], rules: { 'design-v2/raw-control': 'off' } },
+  { files: dv2.TEST_FILES, rules: { 'design-v2/ui-imports': 'off' } },
+  // Ratchet (faqat qisqaradi — src/test/lintRatchet.test.ts).
+  { files: Object.keys(dv2.RAW_CONTROL_RATCHET), rules: { 'design-v2/raw-control': 'off' } },
+  ...(Object.keys(dv2.UI_IMPORT_RATCHET).length
+    ? [{ files: Object.keys(dv2.UI_IMPORT_RATCHET), rules: { 'design-v2/ui-imports': 'off' } }]
+    : []),
 ])

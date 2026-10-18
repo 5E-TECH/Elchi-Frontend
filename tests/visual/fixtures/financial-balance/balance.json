@@ -1,0 +1,156 @@
+{
+  "statusCode": 200,
+  "message": "ok",
+  "data": {
+    "currentSituation": 22543000,
+    "main": {
+      "balance": 24615000
+    },
+    "chain": {
+      "chainReceivable": 8236000,
+      "providerReceivable": 3150000
+    },
+    "markets": {
+      "marketsTotalBalans": -13458000,
+      "allMarketCashboxes": [
+        {
+          "id": "31",
+          "balance": 4820000,
+          "market": {
+            "id": "31",
+            "name": "Baraka Shop"
+          },
+          "region": {
+            "name": "Toshkent shahri"
+          }
+        },
+        {
+          "id": "32",
+          "balance": 3145500,
+          "market": {
+            "id": "32",
+            "name": "Nur Elektronika"
+          },
+          "region": {
+            "name": "Toshkent shahri"
+          }
+        },
+        {
+          "id": "34",
+          "balance": 2260000,
+          "market": {
+            "id": "34",
+            "name": "Chilonzor Market"
+          },
+          "region": {
+            "name": "Toshkent shahri"
+          }
+        },
+        {
+          "id": "5",
+          "balance": 1784000,
+          "market": {
+            "id": "5",
+            "name": "Ipak Yo'li Savdo"
+          },
+          "region": {
+            "name": "Toshkent shahri"
+          }
+        },
+        {
+          "id": "35",
+          "balance": 936500,
+          "market": {
+            "id": "35",
+            "name": "Oila Market"
+          },
+          "region": {
+            "name": "Farg'ona viloyati"
+          }
+        },
+        {
+          "id": "42",
+          "balance": 512000,
+          "market": {
+            "id": "42",
+            "name": "Grand Moda"
+          },
+          "region": {
+            "name": "Andijon viloyati"
+          }
+        }
+      ]
+    },
+    "couriers": {
+      "couriersTotalBalanse": 4118500,
+      "allCourierCashboxes": [
+        {
+          "id": "c2",
+          "balance": 1420000,
+          "user": {
+            "id": "c2",
+            "name": "Eldor Mahmudov",
+            "region": {
+              "name": "Toshkent viloyati"
+            }
+          }
+        },
+        {
+          "id": "c6",
+          "balance": 1155000,
+          "user": {
+            "id": "c6",
+            "name": "Jasur Tursunov",
+            "region": {
+              "name": "Toshkent shahri"
+            }
+          }
+        },
+        {
+          "id": "c3",
+          "balance": 986000,
+          "user": {
+            "id": "c3",
+            "name": "Farrux Sobirov",
+            "region": {
+              "name": "Samarqand viloyati"
+            }
+          }
+        },
+        {
+          "id": "c4",
+          "balance": 642500,
+          "user": {
+            "id": "c4",
+            "name": "Ulug'bek Hamidov",
+            "region": {
+              "name": "Farg'ona viloyati"
+            }
+          }
+        },
+        {
+          "id": "c5",
+          "balance": 0,
+          "user": {
+            "id": "c5",
+            "name": "Akmal Yusupov",
+            "region": {
+              "name": "Andijon viloyati"
+            }
+          }
+        },
+        {
+          "id": "c1",
+          "balance": -85000,
+          "user": {
+            "id": "c1",
+            "name": "Rustam Qosimov",
+            "region": {
+              "name": "Toshkent shahri"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

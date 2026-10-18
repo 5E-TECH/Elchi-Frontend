@@ -51,6 +51,7 @@ import {
   IconButton,
   PageHeader,
   Pagination,
+  Pressable,
   QueryBoundary,
   SegmentedControl,
   Skeleton,
@@ -779,13 +780,12 @@ const MainCashbox = () => {
         const sub = rowCounterparty(row);
         return (
           <>
-            <button
-              type="button"
+            <Pressable
               onClick={() => setSelectedRow(row)}
               className="text-left font-semibold text-text hover:text-action-fg hover:underline"
             >
               {rowSourceTitle(row)}
-            </button>
+            </Pressable>
             {sub ? <div className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{sub}</div> : null}
             <div className="hidden text-[13px] text-text-muted max-lg:block">{paymentMethodLabel(row.payment_method)}</div>
           </>
@@ -840,8 +840,7 @@ const MainCashbox = () => {
   const renderHistoryCard = (row: PaymentRow) => {
     const sub = [rowCounterparty(row), paymentMethodLabel(row.payment_method)].filter(Boolean).join(" · ");
     return (
-      <button
-        type="button"
+      <Pressable
         aria-label={openLabel(row)}
         onClick={() => setSelectedRow(row)}
         className="flex min-h-14 w-full flex-col gap-1 px-4 py-3 text-left text-sm text-text hover:bg-row-hover"
@@ -857,7 +856,7 @@ const MainCashbox = () => {
             <span className="whitespace-nowrap">{rowDateText(row)}</span> · {actorName(row)}
           </span>
         </span>
-      </button>
+      </Pressable>
     );
   };
 
@@ -1088,7 +1087,7 @@ const MainCashbox = () => {
           const copy = actionCopy[label];
           const Icon = copy.icon;
           return (
-            <button key={label} type="button" onClick={() => handleActionClick(label)} className={ACTION_TILE}>
+            <Pressable key={label} onClick={() => handleActionClick(label)} className={ACTION_TILE}>
               <span
                 aria-hidden="true"
                 className="inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-sunken text-text-muted"
@@ -1099,7 +1098,7 @@ const MainCashbox = () => {
                 <span>{copy.title}</span>
                 <span className="text-xs font-normal text-text-muted">{copy.hint}</span>
               </span>
-            </button>
+            </Pressable>
           );
         })}
       </div>

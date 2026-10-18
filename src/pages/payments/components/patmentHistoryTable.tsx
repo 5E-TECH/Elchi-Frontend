@@ -13,6 +13,7 @@ import {
   ErrorState,
   IconButton,
   Pagination as PaginationControl,
+  Pressable,
   QueryBoundary,
   SkeletonTable,
   type DataTableColumn,
@@ -223,13 +224,12 @@ const PaymentHistoryTable = ({
           const sub = counterparty(row);
           return (
             <>
-              <button
-                type="button"
+              <Pressable
                 onClick={() => setSelectedRow(row)}
                 className="text-left font-semibold text-text hover:text-action-fg hover:underline"
               >
                 {sourceTitle(row)}
-              </button>
+              </Pressable>
               {sub ? <div className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{sub}</div> : null}
             </>
           );
@@ -285,8 +285,7 @@ const PaymentHistoryTable = ({
     (row: PaymentRow) => {
       const sub = [counterparty(row), rowCashboxType(row) ? cashboxLabel(row) : null].filter(Boolean).join(" · ");
       return (
-        <button
-          type="button"
+        <Pressable
           aria-label={openLabel(row)}
           onClick={() => setSelectedRow(row)}
           className="flex min-h-14 w-full flex-col gap-1 px-4 py-3 text-left text-sm text-text hover:bg-row-hover"
@@ -302,7 +301,7 @@ const PaymentHistoryTable = ({
               <span className="whitespace-nowrap">{dateText(row)}</span> · {actorName(row)}
             </span>
           </span>
-        </button>
+        </Pressable>
       );
     },
     [amountNode, cashboxLabel, counterparty, dateText, openLabel, operationBadge, sourceTitle],

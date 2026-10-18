@@ -7,6 +7,7 @@ import {
   formatNumberLocalized,
   formatPercentLocalized,
 } from "../../../shared/lib/formatMoney";
+import { Pressable } from "../../../shared/ui/primitives";
 import { regionStep, STEP_CLASS, type RegionMetric, type RegionRow } from "../lib/regionModel";
 import { REGION_TILE_COLUMNS, REGION_TILES } from "../lib/regionTileLayout";
 
@@ -89,9 +90,8 @@ const RegionTiles = ({ rows, metric, ariaLabel, showRevenue, onSelect }: RegionT
         );
         const style = { gridRow: tile.row, gridColumn: tile.span ? `${tile.col} / span ${tile.span}` : tile.col };
         return onSelect && row ? (
-          <button
+          <Pressable
             key={tile.key}
-            type="button"
             aria-label={label}
             data-region-tile={tile.key}
             className={cx(className, "cursor-pointer transition-[box-shadow] duration-150 hover:ring-2 hover:ring-text hover:ring-inset motion-reduce:transition-none")}
@@ -99,7 +99,7 @@ const RegionTiles = ({ rows, metric, ariaLabel, showRevenue, onSelect }: RegionT
             onClick={() => onSelect(row)}
           >
             {content}
-          </button>
+          </Pressable>
         ) : (
           <div key={tile.key} role="img" aria-label={label} data-region-tile={tile.key} className={className} style={style}>
             {content}

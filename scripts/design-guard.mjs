@@ -49,8 +49,19 @@
  *                shared/components/button → Button, shared/ui/StatusBadge va pages/orders/list/OrderStatusBadge →
  *                StatusBadge / entities/order OrderStatusBadge, shared/config/statusColorMap → statusRegistry +
  *                tone.ts, shared/lib/formatDate → formatDateTimeLocalized.
+ *    named-colour — nomli CSS rangi (`white`, `red`, `navy` … 148 ta; `transparent`/`currentColor`/`inherit`/`none`
+ *                emas): JSX rang atributlari (`stroke="white"`, `color="red"`), style/konfig kalitlari
+ *                (`color: "green"`, `"color": "red"`, `border: "1px solid black"`), ulardagi ternar / `??` tarmoqlari
+ *                (`stroke={dark ? "white" : "black"}`, `color: ok ? "green" : "red"`), satr ichidagi CSS (`color: red;`), Tailwind
+ *                ixtiyoriy qiymati (`bg-[white]`). themeTokens.ts va OUTPUT_FORMAT_FILES — istisno.
  *
- *  Tezlik: ~600 fayl ≈ 0.3 s (bitta o'tishli izoh-niqoblovchi + qator regexlari, AST yo'q).
+ *  Migratsiya qilingan papkalar (5-bosqich): `V2_SCOPES` dagi papka ichidagi HAR fayl (belgisiz `.ts` yordamchi ham)
+ *  rang qoidalarida (`COLOUR_RULES`) ruxsat 0 — baseline'dagi eski son hisobga olinmaydi va `--update` uni yozmaydi.
+ *  Istisnolar: `V2_SCOPE_PENDING` (hali v1 qolgan fayllar, faqat qisqaradi) va `OUTPUT_FORMAT_FILES` (chop etish,
+ *  termal yorliq, Excel — oq qog'oz, ilova mavzusidan tashqari; rang qoidalari qo'llanmaydi).
+ *  Ro'yxatlarni `src/test/paletteGuard.test.ts` tekshiradi (eskirgan yozuv, unutilgan toza papka, o'lcham).
+ *
+ *  Tezlik: ~800 fayl ≈ 0.4 s (bitta o'tishli izoh-niqoblovchi + qator regexlari, AST yo'q).
  */
 
 import { execFileSync } from "node:child_process";
@@ -68,6 +79,108 @@ const EXCLUDED_DIR_NAMES = new Set(["test", "tests", "__tests__", "__mocks__", "
 
 const TOKEN_SOURCE = "src/shared/config/themeTokens.ts";
 const MONEY_SOURCE = "src/shared/lib/formatMoney.ts";
+
+/* ──────────────── Migratsiya qilingan papkalar (V2_SCOPES) va chiqish formatlari ──────────────── */
+
+/** Rang qoidalari: V2_SCOPES (ruxsat 0) va OUTPUT_FORMAT_FILES (istisno) faqat shularga qo'llanadi.
+ *  `money`, `tiny-text`, `weight`, `v1-helper` … baseline bo'yicha ishlashda davom etadi. */
+export const COLOUR_RULES = Object.freeze([
+  "colour",
+  "palette",
+  "dark-pair",
+  "legacy",
+  "gradient",
+  "named-colour",
+]);
+const COLOUR_RULE_SET = new Set(COLOUR_RULES);
+
+/**
+ * 4-bosqichda to'liq ko'chirilgan slice'lar: ichidagi HAR fayl (belgisiz .ts yordamchi ham) rang qoidalarida 0.
+ * Integrator guruh tugaganda qo'shadi; `src/test/paletteGuard.test.ts` unutilgan toza slice'ni o'zi topadi
+ * (≥ 1 ta `// dizayn-v2:` fayl + rang buzilishi 0 → shu ro'yxatda bo'lishi shart). Bosqich B: G2/G3 papkalari.
+ */
+export const V2_SCOPES = Object.freeze([
+  "src/entities/order",
+  "src/entities/orders",
+  "src/features/branch",
+  "src/features/branch-add-employee",
+  "src/features/branch-create",
+  "src/features/branch-edit",
+  "src/features/branch-remove-employee",
+  "src/features/courier-transfer-branch",
+  "src/features/order-return",
+  "src/features/order-tracking",
+  "src/features/telegram-link",
+  "src/features/tg-scan",
+  "src/features/user",
+  "src/pages/batches",
+  "src/pages/branch-dashboard",
+  "src/pages/branches",
+  "src/pages/dashboard",
+  "src/pages/financial-balance",
+  "src/pages/incoming-orders",
+  "src/pages/mails",
+  "src/pages/new_orders",
+  "src/pages/orders",
+  "src/pages/payments",
+  "src/pages/products",
+  "src/pages/region",
+  "src/pages/returns",
+  "src/pages/tg-scan",
+  "src/pages/ui-kit",
+  "src/pages/users",
+  "src/widgets/Sidebar",
+  "src/widgets/branch-detail",
+  "src/widgets/branch-list",
+  "src/widgets/dashboard-part-error",
+  "src/widgets/dashboard-region",
+  "src/widgets/dashboard-statistics",
+  "src/widgets/dashboard-top-performers",
+  "src/widgets/financial-analysis",
+  "src/widgets/header",
+  "src/widgets/layout",
+  "src/widgets/order-meta",
+  "src/widgets/order-tracking",
+  "src/widgets/region-detail",
+  "src/widgets/user-detail",
+  "src/widgets/user-list",
+  // `src/shared/ui` butunligicha EMAS — u yerda v1 o'ramlari hali rang bilan (GlobalSearchInput, FilterClearButton …).
+  "src/shared/ui/primitives",
+  "src/shared/ui/charts",
+  "src/shared/ui/error-page",
+]);
+
+/** Scope ichida hali v1 qolgan fayllar — baseline'dagi rang ruxsati saqlanadi. FAQAT QISQARADI (sabab bilan;
+ *  paletteGuard.test.ts: fayl bor, scope ichida, hali rang buzilishi bor, o'lcham ≤ MAX_PENDING). */
+export const V2_SCOPE_PENDING = Object.freeze({
+  "src/pages/payments/components/SalaryPaymentPopup.tsx":
+    "yetib bo'lmaydigan v1 — «Maosh to'lash» yashirin (Moliya spec §9)",
+  "src/widgets/user-detail/ui/UserDetailWidget.tsx": "v1 — faqat /profile (G1 muzlatgan, G2 account)",
+  "src/features/courier-transfer-branch/ui/TransferCourierButton.tsx":
+    "v1 tugma v2 sahifalarda — G1 qoldig'i (followups)",
+  "src/entities/orders/ui/ExtraCostApproval.tsx":
+    "v1 badge — faqat eski pages/orders/list/OrderStatusBadge.tsx",
+  "src/pages/new_orders/external_orders/index.tsx": "G2 — ko'chirilmoqda (bosqich B da yo'qoladi)",
+  "src/pages/new_orders/external_orders/create.tsx": "G2 — ko'chirilmoqda (bosqich B da yo'qoladi)",
+  "src/pages/new_orders/external_orders/detail.tsx": "G2 — ko'chirilmoqda (bosqich B da yo'qoladi)",
+});
+
+/** Ilova mavzusidan tashqari chiqish formatlari (chop etish, termal yorliq, Excel): rang qoidalari qo'llanmaydi —
+ *  oq qog'ozdagi qora matn / Excel ARGB to'g'ri. Faqat `/lib/` dagi print|export|pdf|label fayllari (test). */
+export const OUTPUT_FORMAT_FILES = Object.freeze({
+  "src/pages/new_orders/components/lib/printLabelPdf.ts":
+    "termal yorliq / PDF — oq qog'oz, ilova mavzusidan tashqari",
+  "src/pages/mails/detail/lib/printMode.ts": "brauzer chop etish HTML'i — oq qog'oz",
+  "src/pages/mails/components/lib/exportOldMailsToExcel.ts": "Excel katak ranglari (ARGB)",
+  "src/pages/payments/components/lib/exportMainCashboxReport.ts": "Excel katak ranglari (ARGB)",
+});
+const OUTPUT_FORMAT_PATHS = Object.keys(OUTPUT_FORMAT_FILES);
+
+/** Fayl `V2_SCOPES` papkalaridan biri ichidami (`src/...` yo'li, posix). */
+export const isInV2Scope = (file) => V2_SCOPES.some((dir) => file.startsWith(`${dir}/`));
+
+/** Rang qoidalarida ruxsat 0 bo'lgan fayl: `// dizayn-v2:` belgili yoki scope ichida (pending emas). */
+const isScoped = (file, v2) => v2 || (isInV2Scope(file) && !Object.hasOwn(V2_SCOPE_PENDING, file));
 
 /* ─────────────────────────────── Qoidalar ─────────────────────────────── */
 
@@ -115,6 +228,70 @@ const RE_ICON_IMPORT = new RegExp(
 const RE_TW_TEXT_SIZE = /(?<![\w-])text-\[(?:length:)?(\d*\.?\d+)(px|rem|em)\]/g;
 const RE_FONT_SIZE_PROP = /\bfontSize\s*[:=]\s*\{?\s*["'`]?(\d*\.?\d+)(px|rem|em)?(?![\d.])/g;
 const RE_FONT_SIZE_CSS = /\bfont-size\s*:\s*(\d*\.?\d+)(px|rem|em)/g;
+// Palitra CSS o'zgaruvchisi (`var(--color-blue-500)`, `bg-(--color-gray-400)`) va dinamik oila (`bg-${c}-500`).
+const RE_PALETTE_VAR = new RegExp(`(?<![\\w-])--color-${PALETTE_FAMILY}-(\\d{2,3})(?![\\w-])`, "g");
+const RE_PALETTE_DYNAMIC = new RegExp(
+  `(?<![\\w-])${UTIL_PREFIX}-\\$\\{[^}\\n]*\\}-(\\d{2,3})(?![\\w-])`,
+  "g",
+);
+
+/** CSS nomli ranglari (CSS Color 4, 148 ta). `transparent`, `currentColor`, `inherit`, `none` — rang emas, yo'q. */
+export const CSS_NAMED_COLOURS = Object.freeze(
+  (
+    "aliceblue antiquewhite aqua aquamarine azure beige bisque black blanchedalmond blue blueviolet brown " +
+    "burlywood cadetblue chartreuse chocolate coral cornflowerblue cornsilk crimson cyan darkblue darkcyan " +
+    "darkgoldenrod darkgray darkgreen darkgrey darkkhaki darkmagenta darkolivegreen darkorange darkorchid darkred " +
+    "darksalmon darkseagreen darkslateblue darkslategray darkslategrey darkturquoise darkviolet deeppink " +
+    "deepskyblue dimgray dimgrey dodgerblue firebrick floralwhite forestgreen fuchsia gainsboro ghostwhite gold " +
+    "goldenrod gray green greenyellow grey honeydew hotpink indianred indigo ivory khaki lavender lavenderblush " +
+    "lawngreen lemonchiffon lightblue lightcoral lightcyan lightgoldenrodyellow lightgray lightgreen lightgrey " +
+    "lightpink lightsalmon lightseagreen lightskyblue lightslategray lightslategrey lightsteelblue lightyellow lime " +
+    "limegreen linen magenta maroon mediumaquamarine mediumblue mediumorchid mediumpurple mediumseagreen " +
+    "mediumslateblue mediumspringgreen mediumturquoise mediumvioletred midnightblue mintcream mistyrose moccasin " +
+    "navajowhite navy oldlace olive olivedrab orange orangered orchid palegoldenrod palegreen paleturquoise " +
+    "palevioletred papayawhip peachpuff peru pink plum powderblue purple rebeccapurple red rosybrown royalblue " +
+    "saddlebrown salmon sandybrown seagreen seashell sienna silver skyblue slateblue slategray slategrey snow " +
+    "springgreen steelblue tan teal thistle tomato turquoise violet wheat white whitesmoke yellow yellowgreen"
+  ).split(" "),
+);
+const NAMED = `(?<c>${[...CSS_NAMED_COLOURS].sort((a, b) => b.length - a.length).join("|")})`;
+// 1) JSX / HTML rang atributi: `stroke="white"`, `color={"red"}`, `stopColor='navy'`, `iconColor="red"`, satrdagi
+//    `stop-color="white"`. Qo'shtirnoq ichida — katta-kichik harf farqsiz.
+const RE_NAMED_ATTR = new RegExp(
+  `\\b(?:fill|stroke|[a-z]*color)\\s*=\\s*\\{?\\s*(["'\`])${NAMED}\\1`,
+  "dgi",
+);
+// 2) style / konfig obyekti kaliti: `color: "green"`, `backgroundColor: 'white'`, `border: "1px solid black"`.
+const NAMED_KEY =
+  "(?:fill|stroke|background|border(?:Top|Right|Bottom|Left|Block|Inline)?|outline|boxShadow|textShadow|[a-z]*color)";
+const RE_NAMED_KEY = new RegExp(
+  `\\b${NAMED_KEY}["']?\\s*:\\s*(["'\`])(?:[^"'\`;\\n]*?\\s)?${NAMED}(?![\\w-])`,
+  "dgi",
+);
+// 1b/2b) ifoda ichidagi qo'shtirnoqli nom: `stroke={dark ? "white" : "black"}`, `color={c ?? "red"}`,
+//    `color: ok ? "green" : "red"` — har tarmoq alohida sanaladi (ifoda: `e` guruhi, nom: `RE_NAMED_QUOTED`).
+const RE_NAMED_ATTR_EXPR = new RegExp(`\\b(?:fill|stroke|[a-z]*color)\\s*=\\s*\\{(?<e>[^{}\\n]*)\\}`, "dgi");
+const RE_NAMED_KEY_EXPR = new RegExp(
+  `\\b${NAMED_KEY}["']?\\s*:\\s*(?<e>[^,;\\n{}"'\`]*\\?[^,;\\n{}]*)`,
+  "dgi",
+);
+const RE_NAMED_QUOTED = new RegExp(`(["'\`])${NAMED}\\1`, "dgi");
+// 3) satr / template ichidagi CSS matni: `color: red;`, `{ background: white }`, `border: 1px solid black`, Tailwind
+//    ixtiyoriy xossasi `[color:red]`. Qo'shtirnoqsiz — JS identifikatoriga adashmaslik uchun faqat kichik harf.
+const NAMED_CSS_PROP = [
+  "(?:stop|flood|lighting|caret|outline|column-rule|text-decoration)-color",
+  "color",
+  "background(?:-color)?",
+  "border(?:-(?:top|right|bottom|left|block|inline)(?:-(?:start|end))?)?(?:-color)?",
+  "fill|stroke|outline|box-shadow|text-shadow",
+].join("|");
+const RE_NAMED_CSS = new RegExp(
+  `(?:^|[;{\\[\\s"'\`])(?:${NAMED_CSS_PROP})\\s*:\\s*(?:[^;"'\`\\n]*\\s)?${NAMED}(?![\\w-])`,
+  "dg",
+);
+// 4) Tailwind ixtiyoriy qiymati: `bg-[white]`, `text-[red]`, `fill-[navy]` (palitra qoidasi `bg-white` ni ushlaydi).
+const RE_NAMED_TW = new RegExp(`(?<![\\w-])${UTIL_PREFIX}-\\[(?:color:)?${NAMED}\\]`, "dg");
+const RE_NAMED_PREFILTER = /olor|fill|stroke|background|border|outline|shadow|-\[/i;
 
 const TONE_OF_FAMILY = {
   slate: "neutral",
@@ -252,6 +429,14 @@ const ICON_HINT = "faqat lucide-react — kanonik nom: design/icon-registry.json
 const DARK_PAIR_HINT =
   "dark: jufti yozilmaydi — tokenlar mavzuga o'zi moslashadi (bg-surface, text-text, border-border …)";
 const TINY_TEXT_HINT = "eng kichik matn 12px: text-xs — docs/DESIGN_SYSTEM.md §4";
+const NAMED_COLOUR_HINT =
+  "token: SVG — fill-current / stroke-current + text-* (text-on-solid, text-text-muted …); JS — CHART_PALETTE[theme], " +
+  "themeTokens(theme); antd Tag rangi o'rniga Badge/StatusBadge tone";
+const PALETTE_VAR_HINT =
+  "palitra o'zgaruvchisi o'rniga v2 tokeni: var(--color-surface) · var(--color-text-muted) · var(--color-border) · " +
+  "var(--color-action) · var(--color-<ton>-soft|fg) (src/index.css)";
+const PALETTE_DYNAMIC_HINT =
+  "dinamik rang oilasi yozilmaydi: ton xaritasi TONE_SOFT / TONE_FG / TONE_SOLID (tone.ts) yoki CHART_PALETTE[theme]";
 
 const toPx = (value, unit) => Number(value) * (unit === "rem" || unit === "em" ? 16 : 1);
 
@@ -261,6 +446,33 @@ const collect = (re, line, hintOf, out) => {
   for (let m = re.exec(line); m; m = re.exec(line)) {
     const hint = hintOf(m);
     if (hint !== null) out.push({ col: m.index + 1, match: m[0], hint });
+  }
+};
+
+/** `collect` ning nomli guruh (`c`) varianti: ustun va matn — faqat rang nomi (`d` bayrog'i). Bir joy bir marta. */
+const collectNamed = (re, line, hint, out, seen) => {
+  re.lastIndex = 0;
+  for (let m = re.exec(line); m; m = re.exec(line)) {
+    const [start] = m.indices.groups.c;
+    if (seen.has(start)) continue;
+    seen.add(start);
+    out.push({ col: start + 1, match: m.groups.c, hint });
+  }
+};
+
+/** Ifoda (`e` guruhi) ichidagi har qo'shtirnoqli rang nomi — ternar / `??` tarmoqlari. Bir joy bir marta. */
+const collectNamedInExpr = (re, line, hint, out, seen) => {
+  re.lastIndex = 0;
+  for (let m = re.exec(line); m; m = re.exec(line)) {
+    const [from, to] = m.indices.groups.e;
+    const expr = line.slice(from, to);
+    RE_NAMED_QUOTED.lastIndex = 0;
+    for (let q = RE_NAMED_QUOTED.exec(expr); q; q = RE_NAMED_QUOTED.exec(expr)) {
+      const start = from + q.indices.groups.c[0];
+      if (seen.has(start)) continue;
+      seen.add(start);
+      out.push({ col: start + 1, match: q.groups.c, hint });
+    }
   }
 };
 
@@ -335,7 +547,7 @@ export const RULES = [
   {
     id: "colour",
     title: "Rang literal (hex / rgb() / hsl()) — faqat tokenlar",
-    exempt: [TOKEN_SOURCE],
+    exempt: [TOKEN_SOURCE, ...OUTPUT_FORMAT_PATHS],
     find(line, out) {
       if (line.includes("#")) {
         collect(
@@ -351,17 +563,19 @@ export const RULES = [
   {
     id: "palette",
     title: "Tailwind standart palitrasi (bg-blue-500, text-gray-400, bg-white, text-black …)",
-    exempt: [],
+    exempt: [...OUTPUT_FORMAT_PATHS],
     find(line, out) {
       collect(RE_PALETTE, line, (m) => paletteHint(m[1].replace(/-.*/, ""), m[2]), out);
       if (line.includes("white") || line.includes("black"))
         collect(RE_PALETTE_BW, line, (m) => paletteHint(m[1].replace(/-.*/, ""), m[2]), out);
+      if (line.includes("--color-")) collect(RE_PALETTE_VAR, line, () => PALETTE_VAR_HINT, out);
+      if (line.includes("${")) collect(RE_PALETTE_DYNAMIC, line, () => PALETTE_DYNAMIC_HINT, out);
     },
   },
   {
     id: "dark-pair",
     title: "dark: rang jufti (dark:bg-…, dark:text-…) — tokenlar o'zi moslashadi",
-    exempt: [],
+    exempt: [...OUTPUT_FORMAT_PATHS],
     find(line, out) {
       if (line.includes("dark:")) collect(RE_DARK_PAIR, line, () => DARK_PAIR_HINT, out);
     },
@@ -369,7 +583,7 @@ export const RULES = [
   {
     id: "legacy",
     title: "Eski token nomi (main, maindark, primary, purple*, border-soft …)",
-    exempt: [],
+    exempt: [...OUTPUT_FORMAT_PATHS],
     find(line, out) {
       collect(RE_LEGACY_UTIL, line, (m) => legacyHint(m[2]), out);
       if (line.includes("--color-")) collect(RE_LEGACY_VAR, line, (m) => legacyHint(m[1]), out);
@@ -440,7 +654,7 @@ export const RULES = [
   {
     id: "gradient",
     title: "Gradient (bg-linear-*, linear-gradient(...)) — v2 da tekis fon",
-    exempt: [],
+    exempt: [...OUTPUT_FORMAT_PATHS],
     find(line, out) {
       if (line.includes("bg-")) collect(RE_GRADIENT_CLASS, line, () => GRADIENT_HINT, out);
       if (line.includes("gradient(")) collect(RE_GRADIENT_FN, line, () => GRADIENT_HINT, out);
@@ -462,6 +676,23 @@ export const RULES = [
           out,
         );
       }
+    },
+  },
+  {
+    id: "named-colour",
+    title: "Nomli CSS rangi (white, red …) — faqat tokenlar",
+    exempt: [TOKEN_SOURCE, ...OUTPUT_FORMAT_PATHS],
+    find(line, out) {
+      if (!RE_NAMED_PREFILTER.test(line)) return;
+      const seen = new Set();
+      if (line.includes("=")) collectNamed(RE_NAMED_ATTR, line, NAMED_COLOUR_HINT, out, seen);
+      if (line.includes("={")) collectNamedInExpr(RE_NAMED_ATTR_EXPR, line, NAMED_COLOUR_HINT, out, seen);
+      if (line.includes(":")) {
+        collectNamed(RE_NAMED_KEY, line, NAMED_COLOUR_HINT, out, seen);
+        collectNamed(RE_NAMED_CSS, line, NAMED_COLOUR_HINT, out, seen);
+        if (line.includes("?")) collectNamedInExpr(RE_NAMED_KEY_EXPR, line, NAMED_COLOUR_HINT, out, seen);
+      }
+      if (line.includes("-[")) collectNamed(RE_NAMED_TW, line, NAMED_COLOUR_HINT, out, seen);
     },
   },
 ];
@@ -780,7 +1011,8 @@ export function scanSource(file, text) {
     .filter((m) => !m.used)
     .map(({ line, source }) => ({ line, source }));
   const v2 = RE_V2_MARKER.test(lines[0] ?? "");
-  return { file, v2, counts, violations, ignored, badIgnores, unusedIgnores };
+  const scoped = isScoped(file, v2);
+  return { file, v2, scoped, counts, violations, ignored, badIgnores, unusedIgnores };
 }
 
 const toPosix = (p) => p.split(path.sep).join("/");
@@ -830,6 +1062,17 @@ export function loadBaseline(root = ROOT) {
   return JSON.parse(readFileSync(file, "utf8"));
 }
 
+/**
+ * Faylning ruxsatlari: `// dizayn-v2:` — hammasi 0; V2_SCOPES ichidagi (pending emas) — rang qoidalari
+ * (`COLOUR_RULES`) 0, qolganlari (`money`, `tiny-text` …) baseline bo'yicha; boshqa fayl — baseline.
+ */
+function allowanceOf(result, allowedByFile) {
+  if (result.v2) return {};
+  const allowed = allowedByFile[result.file] ?? {};
+  if (!result.scoped) return allowed;
+  return Object.fromEntries(Object.entries(allowed).filter(([id]) => !COLOUR_RULE_SET.has(id)));
+}
+
 export function compareToBaseline(scan, baseline) {
   const allowedByFile = baseline?.files ?? {};
   const totals = Object.fromEntries(RULE_IDS.map((id) => [id, { current: 0, baseline: 0 }]));
@@ -838,8 +1081,8 @@ export function compareToBaseline(scan, baseline) {
   const seen = new Set();
   for (const result of scan.files) {
     seen.add(result.file);
-    // `// dizayn-v2:` fayl — faqat v2: baseline'dagi eski son hisobga olinmaydi.
-    const allowed = result.v2 ? {} : (allowedByFile[result.file] ?? {});
+    // `// dizayn-v2:` fayl — faqat v2: baseline'dagi eski son hisobga olinmaydi. V2_SCOPES fayli — rangda shunday.
+    const allowed = allowanceOf(result, allowedByFile);
     for (const id of RULE_IDS) {
       const count = result.counts[id] ?? 0;
       const limit = allowed[id] ?? 0;
@@ -852,6 +1095,7 @@ export function compareToBaseline(scan, baseline) {
           baseline: limit,
           newFile: !(result.file in allowedByFile),
           v2File: result.v2,
+          scopeFile: !result.v2 && Boolean(result.scoped) && COLOUR_RULE_SET.has(id),
           violations: result.violations.filter((v) => v.rule === id),
         });
       } else if (count < limit) {
@@ -882,8 +1126,9 @@ export function buildBaseline(
   { allowIncrease = "", date = new Date().toISOString().slice(0, 10) } = {},
 ) {
   const cmp = compareToBaseline(scan, previous);
-  // `// dizayn-v2:` fayldagi buzilish baseline orqali qotirilmaydi (ruxsat doim 0) — faqat tuzatiladi.
-  const regressions = cmp.regressions.filter((r) => !r.v2File);
+  // `// dizayn-v2:` fayldagi va V2_SCOPES faylidagi rang buzilishi baseline orqali qotirilmaydi (ruxsat doim 0) —
+  // faqat tuzatiladi.
+  const regressions = cmp.regressions.filter((r) => !r.v2File && !r.scopeFile);
   const reason = allowIncrease.trim();
   if (regressions.length && !reason) {
     const error = new Error('baseline oshishi uchun --allow-increase "<sabab>" kerak');
@@ -894,7 +1139,11 @@ export function buildBaseline(
   for (const result of scan.files) {
     if (result.v2) continue; // v2 fayl uchun ruxsat doim 0 — baseline'ga yozilmaydi
     const entry = {};
-    for (const id of RULE_IDS) if (result.counts[id]) entry[id] = result.counts[id];
+    for (const id of RULE_IDS) {
+      if (!result.counts[id]) continue;
+      if (result.scoped && COLOUR_RULE_SET.has(id)) continue; // V2_SCOPES: rang ruxsati yozilmaydi
+      entry[id] = result.counts[id];
+    }
     if (Object.keys(entry).length) files[result.file] = entry;
   }
   const increases = [...(previous?.increases ?? [])];
@@ -974,9 +1223,11 @@ export function formatRegressions(cmp) {
     shown += 1;
     const note = entries[0].v2File
       ? "   (// dizayn-v2: fayl — ruxsat 0, baseline qo'llanmaydi)"
-      : entries[0].newFile
-        ? "   (yangi fayl — baseline 0)"
-        : "";
+      : entries.some((r) => r.scopeFile)
+        ? "   (V2_SCOPES: rang qoidalarida ruxsat 0)"
+        : entries[0].newFile
+          ? "   (yangi fayl — baseline 0)"
+          : "";
     out.push(file + note);
     for (const r of entries) {
       const rule = RULES.find((x) => x.id === r.rule);
@@ -998,6 +1249,13 @@ export function formatRegressions(cmp) {
     "Fayl ko'chirilgan/bo'lingan bo'lsa yoki boshqa asosli sabab bo'lsa:",
     "  npm run design:guard -- --update --allow-increase \"<sabab>\"   (sabab baseline'ga yoziladi, review'da ko'rinadi)",
   );
+  if (cmp.regressions.some((r) => r.v2File || r.scopeFile)) {
+    out.push(
+      "`// dizayn-v2:` fayldagi har buzilish va V2_SCOPES faylidagi rang buzilishi baseline bilan",
+      "  qotirilmaydi — faqat tuzatiladi (V2_SCOPES / V2_SCOPE_PENDING / OUTPUT_FORMAT_FILES —",
+      "  scripts/design-guard.mjs, istisno ro'yxatlari faqat qisqaradi).",
+    );
+  }
   if (cmp.stale.length && cmp.regressions.some((r) => r.newFile)) {
     out.push(
       `Eslatma: baseline'da yo'qolgan fayllar bor (${cmp.stale.slice(0, 3).join(", ")}${cmp.stale.length > 3 ? " …" : ""}) — ko'chirish bo'lsa, yuqoridagi --allow-increase bilan qotiring.`,
@@ -1018,7 +1276,7 @@ function printFileTable(scan, baseline, onlyChanged) {
   const allowedByFile = baseline?.files ?? {};
   const rows = [];
   for (const result of scan.files) {
-    const allowed = result.v2 ? {} : (allowedByFile[result.file] ?? {});
+    const allowed = allowanceOf(result, allowedByFile);
     const cells = [];
     let changed = false;
     for (const id of RULE_IDS) {
@@ -1068,11 +1326,12 @@ function printFileDetails(scan, files) {
 
 function printTotals(cmp, scan) {
   console.log(`\nJami (${scan.files.length} fayl, ${scan.ms} ms):`);
+  const idWidth = Math.max(...RULE_IDS.map((id) => id.length));
   for (const id of RULE_IDS) {
     const t = cmp.totals[id];
     const rule = RULES.find((x) => x.id === id);
     console.log(
-      `  ${pad(id, 10)} ${pad(String(t.current), 6)} baseline ${pad(String(t.baseline), 6)} ${rule.title}`,
+      `  ${pad(id, idWidth)} ${pad(String(t.current), 6)} baseline ${pad(String(t.baseline), 6)} ${rule.title}`,
     );
   }
 }
@@ -1109,14 +1368,15 @@ export function parseUnifiedDiff(text) {
 }
 
 /**
- * Buzilish "turi" — qiymatsiz: `colour` → hex | rgba(; `palette` → `text-gray` (soyasiz); `dark-pair` →
- * `dark:hover:bg` (qiymatsiz); qolganlari → topilgan matn. Eski qatorni tahrirlash (rangni boshqasiga, eski
+ * Buzilish "turi" — qiymatsiz: `colour` → hex | rgba(; `named-colour` → named; `palette` → `text-gray` (soyasiz);
+ * `dark-pair` → `dark:hover:bg` (qiymatsiz); qolganlari → topilgan matn. Eski qatorni tahrirlash (rangni boshqasiga, eski
  * `dark:bg-[#…]` ni `dark:bg-surface` ga) yangi buzilish emas; YANGI tur yoki ortiqcha son — yangi.
  */
 const violationKey = (v) => {
   const m = v.match.replace(/\s+/g, "");
   let kind = m;
   if (v.rule === "colour") kind = m.startsWith("#") ? "hex" : m.toLowerCase();
+  else if (v.rule === "named-colour") kind = "named"; // `white` → `black` almashtirish — yangi tur emas (hex kabi)
   else if (v.rule === "palette") kind = m.replace(/-\d{2,3}$/, "");
   else if (v.rule === "dark-pair") kind = /^(dark:(?:[\w-]+:)*!?[a-z]+(?:-[xytrblse])?)-/.exec(m)?.[1] ?? m;
   return `${v.rule}\u0000${kind}`;
@@ -1268,11 +1528,19 @@ function runUpdate(scan, previous, args) {
   }
   const cmp = compareToBaseline(scan, previous);
   const v2Regressions = cmp.regressions.filter((r) => r.v2File);
-  cmp.regressions = cmp.regressions.filter((r) => !r.v2File);
+  const scopeRegressions = cmp.regressions.filter((r) => r.scopeFile);
+  cmp.regressions = cmp.regressions.filter((r) => !r.v2File && !r.scopeFile);
   if (v2Regressions.length) {
     console.error(
       `Diqqat: // dizayn-v2: fayllarda buzilish bor — ular baseline bilan qotirilmaydi, tuzating: ${[
         ...new Set(v2Regressions.map((r) => r.file)),
+      ].join(", ")}`,
+    );
+  }
+  if (scopeRegressions.length) {
+    console.error(
+      `Diqqat: V2_SCOPES fayllarida rang buzilishi bor — baseline bilan qotirilmaydi, tuzating: ${[
+        ...new Set(scopeRegressions.map((r) => r.file)),
       ].join(", ")}`,
     );
   }

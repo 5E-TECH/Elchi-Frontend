@@ -1,0 +1,16 @@
+/* Vizual snapshotlar: surat olish paytida harakat, kursor va skroll chizig'i o'chiriladi (docs/DESIGN_SYSTEM.md §12.5). */
+*,
+*::before,
+*::after {
+  transition: none !important;
+  animation: none !important;
+  caret-color: transparent !important;
+  scrollbar-width: none !important;
+}
+*::-webkit-scrollbar {
+  display: none !important;
+}
+/* Bo'lim yuklanish chizig'i (shell RouteProgress) suratda bo'lmaydi. */
+[data-route-progress] {
+  display: none !important;
+}

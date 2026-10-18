@@ -18,6 +18,7 @@ import {
   Dialog,
   Field,
   PageHeader,
+  Pressable,
   Select,
   Tabs,
   type SelectOption,
@@ -683,15 +684,14 @@ const Payments = () => {
           {chips.map((chip) => (
             <span key={chip.key} className={CHIP}>
               <span className="min-w-0 truncate">{chip.label}</span>
-              <button
-                type="button"
+              <Pressable
                 aria-label={chip.removeLabel}
                 title={chip.removeLabel}
                 onClick={chip.onRemove}
                 className={CHIP_X}
               >
                 <X aria-hidden="true" size={14} strokeWidth={2.25} />
-              </button>
+              </Pressable>
             </span>
           ))}
           {clearLink}

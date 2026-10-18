@@ -2,7 +2,13 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { Ellipsis, type LucideIcon } from "lucide-react";
 import { cx } from "../../../shared/lib/cx";
-import { IconButton, Portal, useDismiss, usePopover } from "../../../shared/ui/primitives";
+import {
+  IconButton,
+  Portal,
+  Pressable,
+  useDismiss,
+  usePopover,
+} from "../../../shared/ui/primitives";
 
 export interface UserRowMenuItem {
   key: string;
@@ -119,8 +125,7 @@ export const UserRowMenu = ({ label, items }: { label: string; items: readonly U
             {items.map((item, index) => (
               <div key={item.key} className="contents">
                 {item.danger && index > 0 ? <div role="separator" className={SEP} /> : null}
-                <button
-                  type="button"
+                <Pressable
                   role="menuitem"
                   tabIndex={-1}
                   disabled={item.disabled}
@@ -134,7 +139,7 @@ export const UserRowMenu = ({ label, items }: { label: string; items: readonly U
                 >
                   <item.icon size={18} strokeWidth={2} aria-hidden="true" />
                   {item.label}
-                </button>
+                </Pressable>
               </div>
             ))}
           </div>

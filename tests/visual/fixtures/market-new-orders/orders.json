@@ -1,0 +1,272 @@
+{
+  "statusCode": 200,
+  "message": "ok",
+  "data": [
+    {
+      "id": "10331",
+      "status": "new",
+      "where_deliver": "address",
+      "total_price": 240000,
+      "paid_amount": 0,
+      "to_be_paid": 240000,
+      "createdAt": "2026-10-15T04:22:00.000Z",
+      "updatedAt": "2026-10-15T04:22:00.000Z",
+      "comment": null,
+      "address": null,
+      "qr_code_token": "tok-10331",
+      "market_id": "7",
+      "market": {
+        "id": "7",
+        "name": "Urgut Savdo"
+      },
+      "customer": {
+        "id": "c10331",
+        "name": "Sevara Abdullayeva",
+        "phone_number": "+998904125530"
+      },
+      "district": {
+        "name": "Urgut tumani"
+      },
+      "region": {
+        "name": "Samarqand viloyati"
+      },
+      "items": [
+        {
+          "id": "i10331-1",
+          "product_id": "p41",
+          "quantity": 1,
+          "product": {
+            "id": "p41",
+            "name": "Atlas ko'ylak",
+            "image_url": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "10329",
+      "status": "new",
+      "where_deliver": "center",
+      "total_price": 185000,
+      "paid_amount": 0,
+      "to_be_paid": 185000,
+      "createdAt": "2026-10-15T03:05:00.000Z",
+      "updatedAt": "2026-10-15T03:05:00.000Z",
+      "comment": null,
+      "address": null,
+      "qr_code_token": "tok-10329",
+      "market_id": "7",
+      "market": {
+        "id": "7",
+        "name": "Urgut Savdo"
+      },
+      "customer": {
+        "id": "c10329",
+        "name": "Farrux Normurodov",
+        "phone_number": "+998932187406"
+      },
+      "district": {
+        "name": "Samarqand shahri"
+      },
+      "region": {
+        "name": "Samarqand viloyati"
+      },
+      "items": [
+        {
+          "id": "i10329-1",
+          "product_id": "p42",
+          "quantity": 1,
+          "product": {
+            "id": "p42",
+            "name": "Choynak to'plami",
+            "image_url": null
+          }
+        },
+        {
+          "id": "i10329-2",
+          "product_id": "p43",
+          "quantity": 6,
+          "product": {
+            "id": "p43",
+            "name": "Piyola",
+            "image_url": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "10327",
+      "status": "new",
+      "where_deliver": "address",
+      "total_price": 120000,
+      "paid_amount": 0,
+      "to_be_paid": 120000,
+      "createdAt": "2026-10-15T01:40:00.000Z",
+      "updatedAt": "2026-10-15T01:40:00.000Z",
+      "comment": null,
+      "address": null,
+      "qr_code_token": "tok-10327",
+      "market_id": "7",
+      "market": {
+        "id": "7",
+        "name": "Urgut Savdo"
+      },
+      "customer": {
+        "id": "c10327",
+        "name": "Dilshod Rajabov",
+        "phone_number": "+998976053192"
+      },
+      "district": {
+        "name": "Pastdarg'om tumani"
+      },
+      "region": {
+        "name": "Samarqand viloyati"
+      },
+      "items": [
+        {
+          "id": "i10327-1",
+          "product_id": "p44",
+          "quantity": 2,
+          "product": {
+            "id": "p44",
+            "name": "Do'ppi",
+            "image_url": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "10325",
+      "status": "new",
+      "where_deliver": "center",
+      "total_price": 210000,
+      "paid_amount": 50000,
+      "to_be_paid": 160000,
+      "createdAt": "2026-10-15T00:18:00.000Z",
+      "updatedAt": "2026-10-15T00:18:00.000Z",
+      "comment": null,
+      "address": null,
+      "qr_code_token": "tok-10325",
+      "market_id": "7",
+      "market": {
+        "id": "7",
+        "name": "Urgut Savdo"
+      },
+      "customer": {
+        "id": "c10325",
+        "name": "Muxlisa Sobirova",
+        "phone_number": "+998943771265"
+      },
+      "district": {
+        "name": "Kattaqo'rg'on tumani"
+      },
+      "region": {
+        "name": "Samarqand viloyati"
+      },
+      "items": [
+        {
+          "id": "i10325-1",
+          "product_id": "p45",
+          "quantity": 2,
+          "product": {
+            "id": "p45",
+            "name": "Suzani yostiq jildi",
+            "image_url": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "10323",
+      "status": "new",
+      "where_deliver": "address",
+      "total_price": 95000,
+      "paid_amount": 0,
+      "to_be_paid": 95000,
+      "createdAt": "2026-10-14T23:52:00.000Z",
+      "updatedAt": "2026-10-14T23:52:00.000Z",
+      "comment": null,
+      "address": null,
+      "qr_code_token": "tok-10323",
+      "market_id": "7",
+      "market": {
+        "id": "7",
+        "name": "Urgut Savdo"
+      },
+      "customer": {
+        "id": "c10323",
+        "name": "Bahodir Xoliqov",
+        "phone_number": "+998998204613"
+      },
+      "district": {
+        "name": "Jomboy tumani"
+      },
+      "region": {
+        "name": "Samarqand viloyati"
+      },
+      "items": [
+        {
+          "id": "i10323-1",
+          "product_id": "p46",
+          "quantity": 1,
+          "product": {
+            "id": "p46",
+            "name": "Non savati",
+            "image_url": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "10320",
+      "status": "new",
+      "where_deliver": "address",
+      "total_price": 270000,
+      "paid_amount": 0,
+      "to_be_paid": 270000,
+      "createdAt": "2026-10-14T23:10:00.000Z",
+      "updatedAt": "2026-10-14T23:10:00.000Z",
+      "comment": null,
+      "address": null,
+      "qr_code_token": "tok-10320",
+      "market_id": "7",
+      "market": {
+        "id": "7",
+        "name": "Urgut Savdo"
+      },
+      "customer": {
+        "id": "c10320",
+        "name": "Oydin Murodova",
+        "phone_number": "+998912640857"
+      },
+      "district": {
+        "name": "Qarshi shahri"
+      },
+      "region": {
+        "name": "Qashqadaryo viloyati"
+      },
+      "items": [
+        {
+          "id": "i10320-1",
+          "product_id": "p47",
+          "quantity": 1,
+          "product": {
+            "id": "p47",
+            "name": "Ipak ro'mol",
+            "image_url": null
+          }
+        },
+        {
+          "id": "i10320-2",
+          "product_id": "p48",
+          "quantity": 1,
+          "product": {
+            "id": "p48",
+            "name": "Atir",
+            "image_url": null
+          }
+        }
+      ]
+    }
+  ]
+}

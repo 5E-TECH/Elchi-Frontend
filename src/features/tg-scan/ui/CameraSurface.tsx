@@ -2,6 +2,7 @@
 import type { ComponentProps, ReactNode, Ref } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cx } from "../../../shared/lib/cx";
+import { Pressable } from "../../../shared/ui/primitives";
 
 /**
  * KAMERA YUZASI — maket `.el-cam*` (`design/CODE-MAP.md` 2.11, taxta `tizim-scanner`), telefon ko'rinishi.
@@ -100,8 +101,7 @@ export const CameraButton = ({
   className,
   ...rest
 }: Omit<ComponentProps<"button">, "children"> & { icon: LucideIcon; label: string }) => (
-  <button
-    type="button"
+  <Pressable
     aria-label={label}
     title={label}
     {...rest}
@@ -113,7 +113,7 @@ export const CameraButton = ({
     )}
   >
     <Icon aria-hidden="true" focusable="false" size={22} strokeWidth={2} />
-  </button>
+  </Pressable>
 );
 
 export type CameraChipDot = "live" | "info" | "warning" | "error";

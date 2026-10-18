@@ -1,0 +1,122 @@
+{
+  "statusCode": 200,
+  "message": "Return requests",
+  "data": {
+    "total": 4,
+    "scope": {
+      "type": "BRANCH"
+    },
+    "groups": [
+      {
+        "courier": {
+          "id": "61",
+          "name": "Sardor Aliyev",
+          "phone_number": "+998911234561"
+        },
+        "courier_id": "61",
+        "orders": [
+          {
+            "id": "10190",
+            "status": "waiting",
+            "total_price": 150000,
+            "qr_code_token": "qr-10190",
+            "post_id": "2460",
+            "holder_courier_id": "61",
+            "return_requested": true,
+            "createdAt": "2026-10-12T08:00:00.000Z",
+            "updatedAt": "2026-10-14T08:00:00.000Z",
+            "customer": {
+              "id": "c10190",
+              "name": "Nodira Karimova",
+              "phone_number": "+998901234567"
+            },
+            "district": {
+              "id": "d301",
+              "name": "Marg'ilon shahri"
+            },
+            "region": {
+              "id": "12",
+              "name": "Farg'ona viloyati",
+              "sato_code": "1730"
+            }
+          },
+          {
+            "id": "10187",
+            "status": "waiting",
+            "total_price": 150000,
+            "qr_code_token": "qr-10187",
+            "post_id": "2460",
+            "holder_courier_id": "61",
+            "return_requested": true,
+            "createdAt": "2026-10-12T08:00:00.000Z",
+            "updatedAt": "2026-10-14T08:00:00.000Z",
+            "customer": {
+              "id": "c10187",
+              "name": "Jahongir Usmonov",
+              "phone_number": "+998901234567"
+            },
+            "district": {
+              "id": "d301",
+              "name": "Marg'ilon shahri"
+            },
+            "region": {
+              "id": "12",
+              "name": "Farg'ona viloyati",
+              "sato_code": "1730"
+            }
+          },
+          {
+            "id": "10181",
+            "status": "waiting",
+            "total_price": 150000,
+            "qr_code_token": "qr-10181",
+            "post_id": "2460",
+            "holder_courier_id": "61",
+            "return_requested": true,
+            "createdAt": "2026-10-12T08:00:00.000Z",
+            "updatedAt": "2026-10-14T08:00:00.000Z",
+            "customer": {
+              "id": "c10181",
+              "name": "Madina Rahimova",
+              "phone_number": "+998901234567"
+            },
+            "district": {
+              "id": "d301",
+              "name": "Marg'ilon shahri"
+            },
+            "region": {
+              "id": "12",
+              "name": "Farg'ona viloyati",
+              "sato_code": "1730"
+            }
+          },
+          {
+            "id": "10176",
+            "status": "waiting",
+            "total_price": 150000,
+            "qr_code_token": "qr-10176",
+            "post_id": "2460",
+            "holder_courier_id": "61",
+            "return_requested": true,
+            "createdAt": "2026-10-12T08:00:00.000Z",
+            "updatedAt": "2026-10-14T08:00:00.000Z",
+            "customer": {
+              "id": "c10176",
+              "name": "Otabek Saidov",
+              "phone_number": "+998901234567"
+            },
+            "district": {
+              "id": "d301",
+              "name": "Marg'ilon shahri"
+            },
+            "region": {
+              "id": "12",
+              "name": "Farg'ona viloyati",
+              "sato_code": "1730"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

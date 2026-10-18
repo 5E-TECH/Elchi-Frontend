@@ -1,0 +1,197 @@
+{
+  "statusCode": 200,
+  "data": [
+    {
+      "id": "10239",
+      "created_at": "2026-10-15T04:35:00.000Z",
+      "createdAt": "2026-10-15T04:35:00.000Z",
+      "updatedAt": "2026-10-15T04:35:00.000Z",
+      "status": "waiting",
+      "total_price": 185000,
+      "to_be_paid": 165000,
+      "paid_amount": 0,
+      "where_deliver": "address",
+      "product_quantity": 1,
+      "market": {
+        "id": "m31",
+        "name": "Baraka Shop"
+      },
+      "customer": {
+        "id": "c10239",
+        "name": "Laylo Hasanova",
+        "phone_number": "+998902146631"
+      },
+      "district": {
+        "id": "d201",
+        "name": "Urgut tumani"
+      },
+      "region": {
+        "id": "2",
+        "name": "Samarqand viloyati"
+      },
+      "items": [
+        {
+          "id": "i10239-1",
+          "product_id": "p11",
+          "order_id": "10239",
+          "quantity": 1,
+          "createdAt": "2026-10-15T04:35:00.000Z",
+          "updatedAt": "2026-10-15T04:35:00.000Z",
+          "product": {
+            "id": "p11",
+            "name": "Bolalar kurtkasi, 110 sm",
+            "image_url": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "10238",
+      "created_at": "2026-10-15T03:50:00.000Z",
+      "createdAt": "2026-10-15T03:50:00.000Z",
+      "updatedAt": "2026-10-15T03:50:00.000Z",
+      "status": "waiting",
+      "total_price": 1280000,
+      "to_be_paid": 1260000,
+      "paid_amount": 0,
+      "where_deliver": "address",
+      "product_quantity": 3,
+      "market": {
+        "id": "m32",
+        "name": "Nur Elektronika"
+      },
+      "customer": {
+        "id": "c10238",
+        "name": "Javohir Toshmatov",
+        "phone_number": "+998977013345"
+      },
+      "district": {
+        "id": "d202",
+        "name": "Samarqand shahri"
+      },
+      "region": {
+        "id": "2",
+        "name": "Samarqand viloyati"
+      },
+      "items": [
+        {
+          "id": "i10238-1",
+          "product_id": "p12",
+          "order_id": "10238",
+          "quantity": 2,
+          "createdAt": "2026-10-15T03:50:00.000Z",
+          "updatedAt": "2026-10-15T03:50:00.000Z",
+          "product": {
+            "id": "p12",
+            "name": "Smartfon g'ilofi",
+            "image_url": null
+          }
+        },
+        {
+          "id": "i10238-2",
+          "product_id": "p13",
+          "order_id": "10238",
+          "quantity": 1,
+          "createdAt": "2026-10-15T03:50:00.000Z",
+          "updatedAt": "2026-10-15T03:50:00.000Z",
+          "product": {
+            "id": "p13",
+            "name": "Simsiz quloqchin",
+            "image_url": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "10236",
+      "created_at": "2026-10-15T03:10:00.000Z",
+      "createdAt": "2026-10-15T03:10:00.000Z",
+      "updatedAt": "2026-10-15T03:10:00.000Z",
+      "status": "waiting",
+      "total_price": 232500,
+      "to_be_paid": 212500,
+      "paid_amount": 0,
+      "where_deliver": "center",
+      "product_quantity": 1,
+      "market": {
+        "id": "m34",
+        "name": "Chilonzor Market"
+      },
+      "customer": {
+        "id": "c10236",
+        "name": "Kamron Ahmedov",
+        "phone_number": "+998931182047"
+      },
+      "district": {
+        "id": "d203",
+        "name": "Pastdarg'om tumani"
+      },
+      "region": {
+        "id": "2",
+        "name": "Samarqand viloyati"
+      },
+      "items": [
+        {
+          "id": "i10236-1",
+          "product_id": "p14",
+          "order_id": "10236",
+          "quantity": 1,
+          "createdAt": "2026-10-15T03:10:00.000Z",
+          "updatedAt": "2026-10-15T03:10:00.000Z",
+          "product": {
+            "id": "p14",
+            "name": "Choynak to'plami",
+            "image_url": null
+          }
+        }
+      ]
+    },
+    {
+      "id": "10232",
+      "created_at": "2026-10-14T12:45:00.000Z",
+      "createdAt": "2026-10-14T12:45:00.000Z",
+      "updatedAt": "2026-10-14T12:45:00.000Z",
+      "status": "waiting",
+      "total_price": 420000,
+      "to_be_paid": 400000,
+      "paid_amount": 0,
+      "where_deliver": "center",
+      "product_quantity": 1,
+      "market": {
+        "id": "m32",
+        "name": "Nur Elektronika"
+      },
+      "customer": {
+        "id": "c10232",
+        "name": "Sherali Jo'rayev",
+        "phone_number": "+998953770842"
+      },
+      "district": {
+        "id": "d204",
+        "name": "Kattaqo'rg'on tumani"
+      },
+      "region": {
+        "id": "2",
+        "name": "Samarqand viloyati"
+      },
+      "items": [
+        {
+          "id": "i10232-1",
+          "product_id": "p15",
+          "order_id": "10232",
+          "quantity": 1,
+          "createdAt": "2026-10-14T12:45:00.000Z",
+          "updatedAt": "2026-10-14T12:45:00.000Z",
+          "product": {
+            "id": "p15",
+            "name": "Elektr choynak",
+            "image_url": null
+          }
+        }
+      ]
+    }
+  ],
+  "total": 4,
+  "page": 1,
+  "limit": 10
+}
