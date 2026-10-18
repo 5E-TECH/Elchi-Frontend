@@ -414,7 +414,12 @@ const MailDetailPage = () => {
   const postMeta = regularResponse?.data?.post ?? null;
   const postStatus = postMeta?.status ?? null;
   // Holat badge'i: server holati birlamchi; u yo'q, lekin pochta rad etilgan deb aniqlangan bo'lsa — «Rad etilgan».
-  const headerStatus = getPostStatusBadge(postStatus ?? (isEffectiveRefusedDetail ? "canceled" : null));
+  // Menejerga jo'natilgan (`sent`) pochta uning qabul ekranida «Yangi» (`manager-mails-detail-receive`, ro'yxatdagidek).
+  const isManagerIncoming =
+    role === "manager" && !isOldDetail && !isEffectiveRefusedDetail && String(postStatus ?? "").toLowerCase() === "sent";
+  const headerStatus = getPostStatusBadge(
+    isManagerIncoming ? "new" : (postStatus ?? (isEffectiveRefusedDetail ? "canceled" : null)),
+  );
   const canDeleteFromPost =
     role === "superadmin" && !isEffectiveRefusedDetail && !isOldDetail && postStatus === "new";
 
@@ -422,10 +427,13 @@ const MailDetailPage = () => {
   // `regionLabel` — aniq viloyat (yo'q bo'lsa `null`); `regionName` — sarlavha uchun, pochta raqami bilan to'ldirilgan.
   const regionLabel = useMemo(
     () =>
+      // 4YZcTTDQ: pochtaning o'z viloyati (`data.post.region`) birlamchi — buyurtmalar bo'sh yoki tuman
+      // boshqa viloyatga o'tkazilgan bo'lsa ham to'g'ri; qolganlari — eski backend uchun zaxira.
+      postMeta?.region?.name ??
       orders[0]?.district?.region?.name ??
       orders[0]?.region?.name ??
       (fallbackRegionName || null),
-    [orders, fallbackRegionName],
+    [postMeta, orders, fallbackRegionName],
   );
   const regionName =
     regionLabel ??
@@ -437,8 +445,8 @@ const MailDetailPage = () => {
   // fix3 LC-09: pochtaning o'z viloyati (tuman qayta biriktirilgan bo'lsa ham
   // to'g'ri), birinchi buyurtmaning geografik viloyati EMAS.
   const regionId = useMemo(
-    () => resolveDispatchRegionId(fallbackRegionId, orders),
-    [fallbackRegionId, orders],
+    () => resolveDispatchRegionId(postMeta?.region_id || fallbackRegionId, orders),
+    [postMeta, fallbackRegionId, orders],
   );
 
   const selectScannedOrder = useCallback((order: PostOrder) => {

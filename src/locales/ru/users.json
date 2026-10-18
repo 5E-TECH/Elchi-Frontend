@@ -141,6 +141,15 @@
   "sellExtraCostProofRequired": "Доказательство доп. расхода при продаже",
   "cancelExtraCostProofRequired": "Доказательство доп. расхода при отмене",
   "permissions": "Разрешения",
+  "tgGroupCardTitle": "Telegram-группа",
+  "changesSaveInstantly": "Изменения сохраняются сразу",
+  "tgGroupPiiLabel": "Имя и телефон клиента в группе",
+  "tgGroupPiiHint": "Если выключить, в карточках заказов в Telegram-группе имя и телефон клиента будут скрыты",
+  "tgGroupPiiSaved": "Сохранено",
+  "tgGroupPiiShownDescription": "В карточках заказов в группе видны имя и телефон клиента",
+  "tgGroupPiiHiddenDescription": "В карточках заказов в группе имя и телефон клиента скрыты",
+  "tgGroupPiiSaveError": "Не сохранено",
+  "tgGroupPiiSaveErrorDescription": "Не удалось сохранить настройку. Попробуйте ещё раз",
   "telegramTokenTitle": "Telegram-токен",
   "telegramTokenShow": "Показать",
   "telegramTokenHide": "Скрыть",
@@ -349,7 +358,8 @@
     "token": {
       "maskedLabel": "Токен скрыт",
       "hint": "Пусть маркет добавит бота в свою Telegram-группу и отправит туда этот токен. Токен — секретный ключ, передавайте его только этому маркету.",
-      "loadError": "Не удалось получить токен"
+      "loadError": "Не удалось получить токен",
+      "loadErrorHint": "Попробуйте ещё раз чуть позже."
     },
     "edit": {
       "description": "{{name}} · {{role}}",

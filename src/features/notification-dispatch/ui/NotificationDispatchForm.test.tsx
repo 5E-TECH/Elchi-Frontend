@@ -157,6 +157,41 @@ describe("NotificationDispatchForm — channels, preview, confirm", () => {
     expect(screen.getByRole("checkbox", { name: "Telegram" })).not.toBeDisabled();
   });
 
+  it("Telegram without a market is allowed — sent to personal chats, no telegram target (TgYRqaTk)", async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await pickOption(screen.getByRole("combobox", { name: "Bitta odam" }), "Kuryer Ali · +998970000095 · courier");
+    await user.click(screen.getByRole("checkbox", { name: "Telegram" }));
+    expect(screen.getByRole("combobox", { name: "Telegram guruhi (market)" })).toBeInTheDocument();
+    expect(screen.getByText(/tanlanmasa — har bir qabul qiluvchining shaxsiy Telegram'iga/)).toBeInTheDocument();
+
+    await fillContent(user);
+    const dialog = await submitAndConfirm(user);
+    await user.click(within(dialog).getByRole("button", { name: /Ha, yuborish/ }));
+
+    await waitFor(() => expect(postSpy).toHaveBeenCalledTimes(1));
+    expect(sentPayload()).toMatchObject({ recipient_id: "56", channels: ["in_app", "realtime", "telegram"] });
+    expect(sentPayload()).not.toHaveProperty("telegram");
+    expect(screen.queryByText("Telegram uchun marketni tanlang")).not.toBeInTheDocument();
+  });
+
+  it("Telegram with a chosen market targets that market's group", async () => {
+    const user = userEvent.setup();
+    renderForm();
+
+    await pickOption(screen.getByRole("combobox", { name: "Bitta odam" }), "Kuryer Ali · +998970000095 · courier");
+    await user.click(screen.getByRole("checkbox", { name: "Telegram" }));
+    await pickOption(screen.getByRole("combobox", { name: "Telegram guruhi (market)" }), "Yandex");
+
+    await fillContent(user);
+    const dialog = await submitAndConfirm(user);
+    await user.click(within(dialog).getByRole("button", { name: /Ha, yuborish/ }));
+
+    await waitFor(() => expect(postSpy).toHaveBeenCalledTimes(1));
+    expect(sentPayload()).toMatchObject({ channels: ["in_app", "realtime", "telegram"], telegram: { market_id: "3" } });
+  });
+
   it("updates the preview with the title, text, category and priority as they are typed", async () => {
     const user = userEvent.setup();
     renderForm();

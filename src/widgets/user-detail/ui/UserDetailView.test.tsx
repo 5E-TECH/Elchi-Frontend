@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { AxiosError, type AxiosResponse } from "axios";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
 import type { User, UserRole } from "../../../entities/user/types/user";
@@ -16,7 +18,8 @@ const mocks = vi.hoisted(() => ({
   updateMarketAddOrder: vi.fn(),
   updateMarketExpenseProof: vi.fn(),
   updateMarketCancelledHandoverQr: vi.fn(),
-  getMarketTelegramToken: vi.fn(),
+  updateMarketTelegramGroupPii: vi.fn(),
+  fetchMarketTelegramToken: vi.fn(),
 }));
 
 vi.mock("../../../entities/user/api/userApi", () => ({
@@ -25,11 +28,11 @@ vi.mock("../../../entities/user/api/userApi", () => ({
     updateMarketAddOrder: { mutateAsync: mocks.updateMarketAddOrder, isPending: false },
     updateMarketExpenseProof: { mutateAsync: mocks.updateMarketExpenseProof, isPending: false },
     updateMarketCancelledHandoverQr: { mutateAsync: mocks.updateMarketCancelledHandoverQr, isPending: false },
+    updateMarketTelegramGroupPii: { mutateAsync: mocks.updateMarketTelegramGroupPii, isPending: false },
     useGetUserById: () => ({ data: undefined, isLoading: false }),
     updateMyProfile: { mutateAsync: vi.fn(), isPending: false },
   }),
-  getMarketTelegramToken: mocks.getMarketTelegramToken,
-  marketTelegramTokenQueryKey: (id: string) => ["user", "market-tg-token", id],
+  fetchMarketTelegramToken: mocks.fetchMarketTelegramToken,
 }));
 
 vi.mock("../../../features/courier-transfer-branch", () => ({
@@ -261,6 +264,83 @@ describe("UserDetailView — ruxsat kalitlari (darhol saqlanadi)", () => {
     expect(screen.getByRole("switch", { name: "Buyurtma qo'shish" })).toBeDisabled();
     expect(screen.queryByText("Rasm yoki video isbot")).not.toBeInTheDocument();
   });
+
+  // ysBqD9Nx — «Guruhda mijoz ismi va telefoni» (`PATCH markets/:id/telegram-group-pii`) v2 «Ruxsatlar» qatorida;
+  // xulq va tahrir qoidalari `/profile` dagi `MarketTelegramGroupPiiCard` bilan bitta hook'dan.
+  const piiName = { name: "Guruhda mijoz ismi va telefoni" };
+
+  it("market: Telegram guruhi PII kaliti «Ruxsatlar» ichida, izohi bilan; maydon kelmasa — yoqiq", () => {
+    renderView(makeUser("market"), "superadmin");
+
+    const permissions = screen.getByRole("region", { name: "Ruxsatlar" });
+    const control = within(permissions).getByRole("switch", piiName);
+    expect(control).toHaveAttribute("aria-checked", "true");
+    expect(control).toHaveAccessibleDescription(
+      "O'chirilsa, Telegram guruhidagi buyurtma kartalarida mijoz ismi va telefoni yashiriladi",
+    );
+  });
+
+  it("market: PII kaliti tasdiqsiz — PATCH teskari qiymat bilan va «Saqlandi»", async () => {
+    const user = userEvent.setup();
+    renderView(makeUser("market", { tg_group_show_customer_pii: true }), "admin");
+
+    const control = screen.getByRole("switch", piiName);
+    await user.click(control);
+
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(mocks.updateMarketTelegramGroupPii).toHaveBeenCalledWith({ id: "201", tg_group_show_customer_pii: false }),
+    );
+    expect(await screen.findByText("Saqlandi")).toBeInTheDocument();
+    expect(screen.getByText("Guruhdagi buyurtma kartalarida mijoz ismi va telefoni yashiriladi")).toBeInTheDocument();
+    expect(control).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("market: PII PATCH yiqilsa — kalit qaytadi, backend matni xabarda", async () => {
+    mocks.updateMarketTelegramGroupPii.mockRejectedValue(
+      new AxiosError("Request failed", "ERR_BAD_REQUEST", undefined, undefined, {
+        status: 403,
+        data: { message: "Ruxsat yo'q" },
+      } as AxiosResponse),
+    );
+    const user = userEvent.setup();
+    renderView(makeUser("market", { tg_group_show_customer_pii: false }), "superadmin");
+
+    const control = screen.getByRole("switch", piiName);
+    await user.click(control);
+
+    expect(await screen.findByText("Saqlanmadi")).toBeInTheDocument();
+    expect(screen.getByText("Ruxsat yo'q")).toBeInTheDocument();
+    expect(control).toHaveAttribute("aria-checked", "false");
+  });
+
+  it.each(["manager", "registrator"])("%s PII kalitini faqat ko'radi (PATCH ketmaydi)", async (role) => {
+    const user = userEvent.setup();
+    renderView(makeUser("market"), role);
+
+    const control = screen.getByRole("switch", piiName);
+    expect(control).toBeDisabled();
+    await user.click(control);
+    expect(mocks.updateMarketTelegramGroupPii).not.toHaveBeenCalled();
+  });
+
+  it("market o'z yozuvida PII kalitini o'zgartira oladi, boshqa market — yo'q", () => {
+    const own = renderWithProviders(<UserDetailView user={makeUser("market")} />, {
+      preloadedState: { role: { id: "201", role: "market", region: null, name: "market" } } as never,
+    });
+    expect(screen.getByRole("switch", piiName)).toBeEnabled();
+    own.unmount();
+
+    renderWithProviders(<UserDetailView user={makeUser("market")} />, {
+      preloadedState: { role: { id: "202", role: "market", region: null, name: "market" } } as never,
+    });
+    expect(screen.getByRole("switch", piiName)).toBeDisabled();
+  });
+
+  it.each<UserRole>(["courier", "manager"])("%s foydalanuvchida PII kaliti yo'q", (role) => {
+    renderView(makeUser(role), "superadmin");
+    expect(screen.queryByRole("switch", piiName)).not.toBeInTheDocument();
+  });
 });
 
 describe("UserDetailView — Telegram token (GvL6ZFAd: faqat superadmin, `GET /markets/:id/tg-token`)", () => {
@@ -271,30 +351,30 @@ describe("UserDetailView — Telegram token (GvL6ZFAd: faqat superadmin, `GET /m
 
   beforeEach(() => {
     writeText.mockReset().mockResolvedValue(undefined);
-    mocks.getMarketTelegramToken.mockReset();
+    mocks.fetchMarketTelegramToken.mockReset();
   });
   afterEach(() => {
     Object.defineProperty(navigator, "clipboard", { value: originalClipboard, configurable: true });
   });
 
   it("token oldindan so'ralmaydi; «Ko'rsatish» bosilganda olinadi va ochiladi", async () => {
-    mocks.getMarketTelegramToken.mockResolvedValue(TOKEN);
+    mocks.fetchMarketTelegramToken.mockResolvedValue(TOKEN);
     const user = userEvent.setup();
     renderView(makeUser("market"), "superadmin");
 
     const card = screen.getByRole("region", { name: "Telegram token" });
-    expect(mocks.getMarketTelegramToken).not.toHaveBeenCalled();
+    expect(mocks.fetchMarketTelegramToken).not.toHaveBeenCalled();
     expect(within(card).getByTestId("telegram-token-value")).not.toHaveTextContent(TOKEN);
 
     await user.click(within(card).getByRole("button", { name: "Ko'rsatish" }));
 
     await waitFor(() => expect(within(card).getByTestId("telegram-token-value")).toHaveTextContent(TOKEN));
-    expect(mocks.getMarketTelegramToken).toHaveBeenCalledWith("201");
+    expect(mocks.fetchMarketTelegramToken).toHaveBeenCalledWith("201");
     expect(within(card).getByRole("button", { name: "Yashirish" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("yashirin holatda «Nusxalash» tokenni olib, nusxalaydi (ekranda ochmaydi)", async () => {
-    mocks.getMarketTelegramToken.mockResolvedValue(TOKEN);
+    mocks.fetchMarketTelegramToken.mockResolvedValue(TOKEN);
     const user = userEvent.setup();
     installClipboard();
     renderView(makeUser("market"), "superadmin");
@@ -307,7 +387,7 @@ describe("UserDetailView — Telegram token (GvL6ZFAd: faqat superadmin, `GET /m
   });
 
   it("marketda token bo'lmasa — sababi, tugmalarsiz", async () => {
-    mocks.getMarketTelegramToken.mockResolvedValue(null);
+    mocks.fetchMarketTelegramToken.mockResolvedValue(null);
     const user = userEvent.setup();
     renderView(makeUser("market"), "superadmin");
 
@@ -318,7 +398,7 @@ describe("UserDetailView — Telegram token (GvL6ZFAd: faqat superadmin, `GET /m
   });
 
   it("so'rov yiqilsa — xato matni, token ochilmaydi", async () => {
-    mocks.getMarketTelegramToken.mockRejectedValue({ response: { status: 500 } });
+    mocks.fetchMarketTelegramToken.mockRejectedValue({ response: { status: 500 } });
     const user = userEvent.setup();
     renderView(makeUser("market"), "superadmin");
 
@@ -326,6 +406,34 @@ describe("UserDetailView — Telegram token (GvL6ZFAd: faqat superadmin, `GET /m
 
     expect(await screen.findByText("Tokenni olib bo'lmadi")).toBeInTheDocument();
     expect(screen.getByTestId("telegram-token-value")).not.toHaveTextContent(TOKEN);
+  });
+
+  it("boshqa marketga o'tilsa (sahifa qayta o'rnatilmaydi) — oldingi token ko'rinmaydi, yangisi so'raladi", async () => {
+    mocks.fetchMarketTelegramToken.mockImplementation(async (id: string) => `group_token-${id}`);
+    const user = userEvent.setup();
+    // Sahifa qayta o'rnatilmaydi — faqat `user` almashadi (`/all-users/:id` keshdan).
+    const Harness = () => {
+      const [current, setCurrent] = useState(() => makeUser("market"));
+      return (
+        <>
+          <button type="button" onClick={() => setCurrent(makeUser("market", { id: "305", name: "Nur" }))}>
+            boshqa market
+          </button>
+          <UserDetailView user={current} />
+        </>
+      );
+    };
+    renderWithProviders(<Harness />, { preloadedState: stateFor("superadmin") });
+
+    await user.click(screen.getByRole("button", { name: "Ko'rsatish" }));
+    await waitFor(() => expect(screen.getByTestId("telegram-token-value")).toHaveTextContent("group_token-201"));
+
+    await user.click(screen.getByRole("button", { name: "boshqa market" }));
+    expect(screen.getByTestId("telegram-token-value")).not.toHaveTextContent("group_token-201");
+
+    await user.click(screen.getByRole("button", { name: "Ko'rsatish" }));
+    await waitFor(() => expect(screen.getByTestId("telegram-token-value")).toHaveTextContent("group_token-305"));
+    expect(mocks.fetchMarketTelegramToken).toHaveBeenLastCalledWith("305");
   });
 
   it.each(["admin", "manager"])("%s uchun karta chizilmaydi (backend tokenni faqat superadminga beradi)", (role) => {

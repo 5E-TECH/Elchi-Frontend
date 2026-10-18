@@ -1,0 +1,88 @@
+{
+  "title": "QR-сканер",
+  "context": "Забрать заказы себе",
+  "surfaceLabel": "Сканер камеры",
+  "torch": "Фонарик",
+  "chip": {
+    "live": "Сканирование активно",
+    "starting": "Камера запускается",
+    "found": "QR найден",
+    "torchOn": "Фонарик включён",
+    "cameraOff": "Камера выключена",
+    "signingIn": "Вход",
+    "sending": "Отправка"
+  },
+  "hint": {
+    "aim": "Наведите QR-код в рамку",
+    "starting": "Секунду — камера открывается",
+    "signingIn": "Секунду — входим через Telegram",
+    "sending": "Итог отправляется в бот"
+  },
+  "meter": {
+    "label": "принято"
+  },
+  "list": {
+    "open": "Список",
+    "title": "Отсканированные",
+    "summary": "Принято: {{accepted}} · ошибок: {{failed}}",
+    "emptyTitle": "Пока нет сканов",
+    "emptyText": "Здесь появятся принятые заказы.",
+    "continue": "Продолжить"
+  },
+  "last": {
+    "emptyTitle": "Пока нет сканов",
+    "emptyText": "Здесь появятся принятые заказы",
+    "pendingTitle": "Принимаем",
+    "pendingText": "Секунду"
+  },
+  "entry": {
+    "title": "{{number}} · {{name}}",
+    "orderNoun": "Заказ",
+    "noNumber": "Заказ",
+    "assigned": "Закреплён за вами",
+    "already": "Уже у вас",
+    "failed": "Не принят"
+  },
+  "toast": {
+    "assignedTitle": "{{number}} принят",
+    "alreadyTitle": "Уже у вас",
+    "repeatTitle": "Уже принят",
+    "failedText": "Сканирование продолжается — сканируйте следующую посылку",
+    "invalidTitle": "Этот QR-код не подходит для сканера",
+    "invalidText": "Сканируйте QR-код с этикетки Elchi"
+  },
+  "error": {
+    "offline": "Нет подключения к интернету — отсканируйте ещё раз",
+    "timeout": "Сервер не ответил — отсканируйте ещё раз",
+    "unknown": "Скан не отправлен — попробуйте ещё раз"
+  },
+  "done": {
+    "action": "Готово",
+    "sending": "Отправка…",
+    "errorTitle": "Итог не отправлен",
+    "errorText": "{{message}} Заказы всё равно закреплены за вами.",
+    "backToScan": "Вернуться к сканированию"
+  },
+  "fallback": {
+    "telegramScanner": "Сканер Telegram",
+    "popupText": "Наведите QR-код заказа в рамку",
+    "cameraTitle": "Камера не открылась",
+    "cameraTextPopup": "Telegram не разрешил доступ к камере или камера занята. Продолжите через сканер Telegram.",
+    "cameraText": "Разрешите доступ к камере в настройках Telegram и попробуйте снова.",
+    "startError": "Не удалось запустить камеру"
+  },
+  "state": {
+    "outsideTitle": "Эта страница открывается только в Telegram",
+    "outsideText": "Откройте сканер кнопкой «Сканер» в боте Elchi.",
+    "authErrorTitle": "Не удалось войти",
+    "authErrorText": "Вход через Telegram не выполнен. Откройте Mini App заново.",
+    "notCourierTitle": "Сканер только для курьеров",
+    "notCourierText": "Этот аккаунт Telegram не привязан к курьеру. Откройте из Telegram, привязанного к аккаунту курьера.",
+    "expiredTitle": "Сессия истекла",
+    "expiredText": "Откройте Mini App заново. Отсканированные заказы сохранены за вами."
+  },
+  "action": {
+    "retry": "Повторить",
+    "close": "Закрыть"
+  }
+}

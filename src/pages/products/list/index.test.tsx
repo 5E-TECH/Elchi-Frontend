@@ -472,3 +472,25 @@ describe("ProductTable — URL filtrlari", () => {
     await waitFor(() => expect(screen.getByTestId("search").textContent).toBe(""));
   });
 });
+
+describe("ProductTable — market o'z mahsulotlarida sahifa va qidiruv (3qDsJpfW)", () => {
+  it("⭐ TC1: 2-sahifa — `my-products` so'roviga `page: 2` (va `limit`) uzatiladi; admin ro'yxati so'ralmaydi", async () => {
+    productRows = [NOK];
+    renderPage("/products?page=2", "market", "7");
+
+    await waitFor(() =>
+      expect(lastListParams("product/my-products")).toEqual(expect.objectContaining({ page: 2, limit: 10 })),
+    );
+    expect(listCalls("product")).toHaveLength(0);
+    expect(await screen.findByText("Nok")).toBeInTheDocument();
+  });
+
+  it("⭐ TC2: qidiruv — `search` serverga ketadi, sahifa 1 ga qaytadi; `market_id` market uchun yuborilmaydi", async () => {
+    renderPage("/products?product_search=Nok&market_id=99", "market", "7");
+
+    await waitFor(() =>
+      expect(lastListParams("product/my-products")).toEqual(expect.objectContaining({ search: "Nok", page: 1 })),
+    );
+    expect(lastListParams("product/my-products")).not.toHaveProperty("market_id");
+  });
+});

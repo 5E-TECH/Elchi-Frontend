@@ -1,7 +1,7 @@
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../api/api";
 import { getBackendErrorMessage } from "./backendError";
 
-const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+export const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
 /**
  * Excel yuklash xatosining matni. `responseType: "blob"` bo'lgani uchun
@@ -28,6 +28,26 @@ export const getExportErrorMessage = async (error: unknown): Promise<string | un
     }
   }
   return getBackendErrorMessage(error);
+};
+
+/**
+ * `Content-Disposition` sarlavhasidan fayl nomi: `filename*=UTF-8''…` (RFC 5987) ustun, keyin
+ * `filename="…"`. Sarlavha yo'q yoki nom bo'sh — `null`.
+ */
+export const getFileNameFromDisposition = (header: unknown): string | null => {
+  if (typeof header !== "string" || !header) return null;
+  const encoded = /filename\*\s*=\s*(?:UTF-8|utf-8)?''([^;]+)/.exec(header);
+  if (encoded) {
+    try {
+      const name = decodeURIComponent(encoded[1].trim().replace(/^"|"$/g, ""));
+      if (name) return name;
+    } catch {
+      // Buzilgan kodlash — oddiy `filename` ga o'tamiz.
+    }
+  }
+  const plain = /filename\s*=\s*("([^"]*)"|[^;]+)/.exec(header);
+  const name = (plain?.[2] ?? plain?.[1] ?? "").trim();
+  return name || null;
 };
 
 /** Brauzerda faylni saqlash (vaqtinchalik `<a download>`). */

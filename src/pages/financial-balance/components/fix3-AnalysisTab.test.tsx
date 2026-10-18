@@ -1,6 +1,6 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, vi } from "vitest";
+import { afterEach, beforeEach, vi } from "vitest";
 import AnalysisTab from "./AnalysisTab";
 import { renderWithProviders } from "../../../test/test-utils";
 
@@ -16,6 +16,8 @@ const calls = vi.hoisted(() => ({
   topImpacts: [] as unknown[],
   analyticsData: undefined as unknown,
   topData: undefined as unknown,
+  // Serverdek: `page`/`limit` bo'yicha qatorlar va `pagination` (vmLTsAok). Berilsa `topData` o'rniga.
+  topImpactsResponse: undefined as undefined | ((params: { page: number; limit: number }) => unknown),
 }));
 
 vi.mock("../../../entities/payments/financeCoverage", () => ({
@@ -24,9 +26,10 @@ vi.mock("../../../entities/payments/financeCoverage", () => ({
       calls.analytics.push(params);
       return { data: calls.analyticsData, isLoading: false, isError: false, refetch: vi.fn() };
     },
-    useGetFinancialBalanceTopImpacts: (_enabled: boolean, params: unknown) => {
+    useGetFinancialBalanceTopImpacts: (_enabled: boolean, params: { page: number; limit: number }) => {
       calls.topImpacts.push(params);
-      return { data: calls.topData, isLoading: false, isError: false, refetch: vi.fn() };
+      const data = calls.topImpactsResponse ? calls.topImpactsResponse(params) : calls.topData;
+      return { data, isLoading: false, isError: false, refetch: vi.fn() };
     },
   }),
 }));
@@ -107,6 +110,72 @@ describe("AnalysisTab — top tranzaksiyalar server sahifalashi (vmLTsAok)", () 
     await user.click(screen.getByRole("button", { name: "2" }));
 
     expect(calls.topImpacts.at(-1)).toMatchObject({ page: 2, limit: 10 });
+  });
+});
+
+describe("AnalysisTab — eng katta tranzaksiyalar server sahifalashi (vmLTsAok, dev)", () => {
+  const TOTAL = 186;
+  const serverPage = ({ page, limit }: { page: number; limit: number }) => {
+    const from = (page - 1) * limit;
+    const items = Array.from({ length: Math.max(0, Math.min(limit, TOTAL - from)) }, (_, index) => ({
+      id: String(from + index + 1),
+      amount: 1_000_000 - (from + index) * 1000,
+      operation_type: "income",
+      source_type: "manual_income",
+      payment_date: "2026-10-17T05:00:00.000Z",
+    }));
+    return { statusCode: 200, data: { items, pagination: { total: TOTAL, page, limit, totalPages: Math.ceil(TOTAL / limit) } } };
+  };
+  /** Jadvaldagi «#» ustuni (tartib raqami). */
+  const indexes = () =>
+    within(screen.getByRole("table", { name: "Eng katta ta'sir ko'rsatgan tranzaksiyalar" }))
+      .getAllByRole("row")
+      .slice(1)
+      .map((row) => row.querySelectorAll("td")[0]?.textContent);
+
+  beforeEach(() => {
+    calls.topImpactsResponse = serverPage;
+  });
+
+  afterEach(() => {
+    calls.topImpactsResponse = undefined;
+  });
+
+  it("⭐ TC2/TC3: so'rovda `limit` 10 (≤ 100); sarlavhadagi «jami» — `pagination.total`, sahifalar soni u bilan mos (186 → 19)", () => {
+    renderWithProviders(<AnalysisTab />, { route: "/financial-balance?tab=analysis" });
+
+    expect(calls.topImpacts.every((params) => (params as { limit: number }).limit <= 100)).toBe(true);
+    expect(screen.getByText("186 ta jami")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "19" })).toBeInTheDocument();
+    expect(indexes()).toEqual(["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]);
+  });
+
+  it("⭐ TC1: 11-sahifaga o'tiladi — server `page: 11` so'raladi va 101–110 qatorlar keladi", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<AnalysisTab />, { route: "/financial-balance?tab=analysis" });
+
+    // v2 `Pagination` 1-sahifada «1 2 3 … 19» ko'rsatadi — 11-sahifaga «Keyingi» bilan.
+    for (let step = 0; step < 10; step += 1) await user.click(screen.getByRole("button", { name: "Keyingi sahifa" }));
+
+    await waitFor(() => expect(calls.topImpacts.at(-1)).toMatchObject({ page: 11, limit: 10 }));
+    expect(indexes()[0]).toBe("101");
+    expect(indexes().at(-1)).toBe("110");
+    expect(indexes()).not.toContain("100");
+
+    // Oxirgi sahifa — 19 (181–186), «Keyingi» o'chiq.
+    await user.click(screen.getByRole("button", { name: "19" }));
+    await waitFor(() => expect(calls.topImpacts.at(-1)).toMatchObject({ page: 19 }));
+    expect(indexes()).toEqual(["181", "182", "183", "184", "185", "186"]);
+    expect(screen.getByRole("button", { name: "Keyingi sahifa" })).toBeDisabled();
+  });
+
+  it("jami va manbalar bitta sahifadagi qatorlardan yasalmaydi (analytics'da ta'sirlar yo'q — reytinglar bo'sh)", () => {
+    calls.analyticsData = { data: { currentBalance: 1_000_000 } };
+    renderWithProviders(<AnalysisTab />, { route: "/financial-balance?tab=analysis" });
+
+    const positive = screen.getByRole("region", { name: "Musbatga tortuvchi manbalar" });
+    expect(within(positive).getByText("Bu davrda kirim yo'q")).toBeInTheDocument();
+    expect(within(positive).queryByText("Qo'lda kirim")).not.toBeInTheDocument();
   });
 });
 

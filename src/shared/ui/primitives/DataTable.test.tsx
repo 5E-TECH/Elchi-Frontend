@@ -268,3 +268,57 @@ describe("DataTable — telefon", () => {
     expect(screen.getByRole("table")).toBeInTheDocument();
   });
 });
+
+describe("DataTable — ochiladigan qator (`superadmin-activity-logs-row-expanded`)", () => {
+  const Expandable = ({ initial }: { initial: string | null }) => {
+    const [open, setOpen] = useState<string | null>(initial);
+    return (
+      <DataTable
+        rows={ROWS}
+        columns={[
+          {
+            id: "toggle",
+            header: "Tafsilot",
+            cell: (row) => (
+              <button type="button" aria-expanded={open === row.id} onClick={() => setOpen(open === row.id ? null : row.id)}>
+                {`№${row.id} tafsiloti`}
+              </button>
+            ),
+          },
+          ...COLUMNS,
+        ]}
+        getRowKey={(row) => row.id}
+        renderExpanded={(row) => (open === row.id ? <div>{`${row.name} tafsiloti`}</div> : null)}
+        renderCard={(row) => <span>{row.name}</span>}
+      />
+    );
+  };
+
+  it("ochilgan qator ostida to'liq enli katak; qator va katak kulrang, orada chiziq yo'q; qayta bosilsa yopiladi", async () => {
+    const user = userEvent.setup();
+    render(<Expandable initial={null} />);
+    expect(screen.queryByText("Sevara Tursunova tafsiloti")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "№10242 tafsiloti" }));
+    const detail = screen.getByText("Sevara Tursunova tafsiloti").closest("td")!;
+    expect(detail).toHaveAttribute("colspan", "6");
+    expect(detail).toHaveClass("bg-sunken", "p-0");
+    const row = screen.getByRole("button", { name: "№10242 tafsiloti" }).closest("tr")!;
+    expect(row).toHaveAttribute("data-expanded");
+    expect(row).toHaveClass("bg-sunken", "[&>td]:border-b-0");
+    expect(row).not.toHaveClass("hover:bg-row-hover");
+    expect(row.nextElementSibling).toBe(detail.parentElement);
+
+    await user.click(screen.getByRole("button", { name: "№10242 tafsiloti" }));
+    expect(screen.queryByText("Sevara Tursunova tafsiloti")).toBeNull();
+  });
+
+  it("telefonda tafsilot kartadan keyin, o'sha `<li>` ichida", () => {
+    mockPhone(true);
+    render(<Expandable initial="10241" />);
+    const item = screen.getByText("Dilnoza Karimova tafsiloti").closest("li")!;
+    expect(item).toHaveAttribute("data-expanded");
+    expect(item).toHaveClass("bg-sunken");
+    expect(within(item).getByText("Dilnoza Karimova")).toBeInTheDocument();
+  });
+});

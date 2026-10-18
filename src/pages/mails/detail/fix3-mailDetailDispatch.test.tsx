@@ -200,6 +200,28 @@ describe("MailDetailPage — qayta biriktirilgan tuman pochtasi (fix3 LC-09)", (
     );
     expect(await screen.findByRole("dialog")).toBeInTheDocument();
   });
+
+  it("4YZcTTDQ: holatsiz havolada `data.post.region_id` birlamchi (buyurtmalar tumanidan oldin)", async () => {
+    const user = userEvent.setup();
+    mocks.useMailDetail.mockImplementation((postId: string) => ({
+      data: postId
+        ? {
+            data: {
+              allOrdersByPostId: [order("101"), order("102")],
+              post: { id: POST_ID, status: "received", region_id: "30", region: { id: "30", name: "Navoiy" } },
+            },
+          }
+        : undefined,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn().mockResolvedValue({ data: { data: { allOrdersByPostId: [] } } }),
+    }));
+    renderPage(stateFor("superadmin"));
+
+    await selectAllAndSend(user);
+
+    await waitFor(() => expect(mocks.getDispatchDestinations).toHaveBeenCalledWith({ region_id: "30" }));
+  });
 });
 
 describe("MailDetailPage — savat: buyurtmani pochtadan o'chirish (yokjwjXG)", () => {
@@ -386,7 +408,8 @@ describe("MailDetailPage — sarlavha: pochta holati serverdan, rolga qarab make
   });
 
   it("menejer (qabul): sarlavhada pochta raqami, izohda viloyat · sana · soni (`manager-mails-detail-receive`)", () => {
-    withPost({ ...POST, status: "new" }, "on the road");
+    // Menejerga jo'natilgan pochta serverda `sent` — qabul ekranida «Yangi» (maket va ro'yxatdagidek).
+    withPost(POST, "on the road");
     renderPage(stateFor("manager", "REGIONAL"));
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^Pochta №7$/);
     expect(screen.getByTestId("mail-post-status")).toHaveTextContent("Yangi");
@@ -406,6 +429,18 @@ describe("MailDetailPage — sarlavha: pochta holati serverdan, rolga qarab make
     renderPage(stateFor("manager", "REGIONAL"), { pathname: `/mails/${POST_ID}`, state: { fromTab: "old", view: "old" } });
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Sirdaryo buyurtmalari");
     expect(screen.getByTestId("mail-read-only")).toBeInTheDocument();
+  });
+
+  it("deep-link: viloyat `data.post.region` dan — buyurtma tumani boshqa viloyatda bo'lsa ham", () => {
+    withPost({ ...POST, region_id: POST_REGION, region: { id: POST_REGION, name: "Jizzax" } });
+    renderPage(stateFor("superadmin"));
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Jizzax buyurtmalari");
+  });
+
+  it("menejer, qabul qilinadigan buyurtma qolmagan deep-link — viloyat baribir `data.post.region` dan", () => {
+    withPost({ ...POST, region_id: POST_REGION, region: { id: POST_REGION, name: "Jizzax" } }, "received");
+    renderPage(stateFor("manager", "REGIONAL"));
+    expect(sub()).toHaveTextContent(/^Jizzax · 01\.10\.2026, \d{2}:00 · 0 ta buyurtma$/);
   });
 
   it("eski backend (post yo'q) — badge chizilmaydi, sahifa avvalgidek", () => {

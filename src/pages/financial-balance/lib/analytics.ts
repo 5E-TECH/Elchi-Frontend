@@ -88,26 +88,6 @@ export const normalizeLedgerRows = (items: unknown[]): LedgerRow[] =>
     };
   });
 
-/** Zaxira: API ta'sirlar ro'yxatini bermasa — qatorlardan manba bo'yicha yig'iladi. */
-export const buildBuckets = (rows: LedgerRow[], direction: "positive" | "negative"): SourceBucket[] => {
-  const filtered = rows.filter((row) => (direction === "positive" ? row.signedAmount > 0 : row.signedAmount < 0));
-  const total = filtered.reduce((sum, row) => sum + Math.abs(row.signedAmount), 0);
-  const map = new Map<string, number>();
-
-  filtered.forEach((row) => {
-    const key = row.sourceType || "unknown";
-    map.set(key, (map.get(key) ?? 0) + Math.abs(row.signedAmount));
-  });
-
-  return Array.from(map.entries())
-    .map(([sourceType, amount]) => ({
-      sourceType: sourceType === "unknown" ? "" : sourceType,
-      amount,
-      percent: total > 0 ? (amount / total) * 100 : 0,
-    }))
-    .sort((a, b) => b.amount - a.amount);
-};
-
 export const normalizeApiBuckets = (response: unknown, direction: "positive" | "negative"): SourceBucket[] => {
   const payload = getPayload(response);
   const rows = getArray(
@@ -130,7 +110,11 @@ export const normalizeApiBuckets = (response: unknown, direction: "positive" | "
     .sort((a, b) => b.amount - a.amount);
 };
 
-export const normalizeAnalyticsSummary = (response: unknown, fallbackRows: LedgerRow[]): AnalyticsSummary => {
+/**
+ * Davr jamlari — faqat analytics agregatidan. Zaxira yo'q: top-impacts endi bitta sahifa (10 qator) beradi,
+ * undan jami yasash noto'g'ri bo'lardi (vmLTsAok); maydon yo'q bo'lsa — 0.
+ */
+export const normalizeAnalyticsSummary = (response: unknown): AnalyticsSummary => {
   const payload = getPayload(response);
   const summary = getRecord(payload.summary);
   const positiveTotal = toFinancialNumber(summary.totalPositive ?? summary.total_positive ?? payload.totalPositive);
@@ -138,22 +122,7 @@ export const normalizeAnalyticsSummary = (response: unknown, fallbackRows: Ledge
   const netTotal = toFinancialNumber(summary.netChange ?? summary.net_change ?? payload.netChange);
   const totalCount = toFinancialNumber(summary.totalCount ?? summary.total_count ?? payload.totalCount);
 
-  if (positiveTotal || negativeTotal || netTotal || totalCount) {
-    return { positiveTotal, negativeTotal, netTotal, totalCount };
-  }
-
-  const fallbackPositive = fallbackRows.reduce((sum, row) => (row.signedAmount > 0 ? sum + row.signedAmount : sum), 0);
-  const fallbackNegative = fallbackRows.reduce(
-    (sum, row) => (row.signedAmount < 0 ? sum + Math.abs(row.signedAmount) : sum),
-    0,
-  );
-
-  return {
-    positiveTotal: fallbackPositive,
-    negativeTotal: fallbackNegative,
-    netTotal: fallbackPositive - fallbackNegative,
-    totalCount: fallbackRows.length,
-  };
+  return { positiveTotal, negativeTotal, netTotal, totalCount };
 };
 
 /* ─── «Daftar qoldig'i harakati» — sharshara ──────────────────────────────── */

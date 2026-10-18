@@ -18,6 +18,7 @@ export const API_ENDPOINTS = {
     VALIDATE: "auth/validate", // GET — validate current JWT on app load
     MY_PROFILE: "auth/my-profile", // GET (read) / PATCH (update own profile)
     MY_SETTINGS: "auth/my-settings", // PATCH — update own UI settings/preferences
+    TELEGRAM: "auth/telegram", // POST { init_data } — Mini App login, 30-min JWT, no refresh (MWYaqprw)
   },
 
   // ── Identity / Users (superadmin/admin/manager) ──────────────────────────
@@ -25,6 +26,9 @@ export const API_ENDPOINTS = {
     BASE: "users",
     BY_ID: (id: string | number) => `users/${id}`,
     STATUS: (id: string | number) => `users/${id}/status`,
+    // O'z Telegram'ini botga ulash (har qanday xodim; mijoz/investor — 403).
+    MY_TELEGRAM_LINK_CODE: "users/me/telegram/link-code", // POST → { token, purpose, expires_at, deep_link, command } (bir martalik, 10 daqiqa)
+    MY_TELEGRAM: "users/me/telegram", // DELETE → { unlinked }
   },
   ADMINS: {
     BASE: "admins", // GET list / POST create
@@ -43,6 +47,10 @@ export const API_ENDPOINTS = {
     ADD_ORDER: (id: string | number) => `markets/${id}/add-order`, // PATCH
     CANCELLED_HANDOVER_QR: (id: string | number) => `markets/${id}/cancelled-handover-qr`, // PATCH
     EXPENSE_PROOF: (id: string | number) => `markets/${id}/expense-proof`, // PATCH proof conditions (guide §5)
+    TG_TOKEN: (id: string | number) => `markets/${id}/tg-token`, // GET — faqat SUPERADMIN (GvL6ZFAd)
+    // PATCH { tg_group_show_customer_pii } — Telegram guruhi kartasida mijoz ismi/telefoni (ysBqD9Nx;
+    // superadmin, admin, market — faqat o'zinikini)
+    TELEGRAM_GROUP_PII: (id: string | number) => `markets/${id}/telegram-group-pii`,
   },
   COURIERS: {
     BASE: "couriers", // GET list / POST create
@@ -74,6 +82,7 @@ export const API_ENDPOINTS = {
   // ── Orders (role-dependent; see guide §11) ───────────────────────────────
   ORDERS: {
     BASE: "orders", // GET list (filters) / POST create
+    EXPORT_EXCEL: "orders/export/excel", // GET .xlsx — `GET /orders` filtrlari bilan, bitta so'rov (xWsCAA5N)
     BY_ID: (id: string | number) => `orders/${id}`, // GET / PATCH update (full incl. items) / DELETE
     FULL: (id: string | number) => `orders/${id}/full`, // PATCH update by id (full fields)
     TRACKING: (id: string | number) => `orders/${id}/tracking`, // GET history timeline
@@ -312,6 +321,8 @@ export const API_ENDPOINTS = {
     HEALTH: "notifications/health",
     SEND: "notifications/send", // POST send to telegram group(s)
     CONNECT_BY_TOKEN: "notifications/connect-by-token", // POST connect group by token
+    // POST { purpose: "market_group", group_type, market_id } → { token, expires_at, deep_link, command } — bir martalik, 10 daqiqa
+    TELEGRAM_LINK_CODE: "telegram/link-code",
     // In-app inbox (current user, per-recipient rows) ──────────────────────
     INBOX: "notifications/inbox", // GET my inbox (is_read/type/category/priority/page/limit)
     INBOX_UNREAD_COUNT: "notifications/inbox/unread-count", // GET my unread count
@@ -363,6 +374,11 @@ export const API_ENDPOINTS = {
   SCAN: {
     BY_TOKEN: (token: string | number) => `scan/${token}`, // resolve QR → order/batch/post
     MARKET_CANCELLED: "scan/market-cancelled",
+  },
+
+  // ── Telegram scan Mini App (courier; `/tg/scan`, MWYaqprw) ───────────────
+  TELEGRAM_SCAN: {
+    DONE: "telegram/scan/done", // POST { order_ids } → { accepted, ignored }; bot sends the summary
   },
 
   // ── Files (MinIO) — guide §10 ────────────────────────────────────────────

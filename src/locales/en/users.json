@@ -141,6 +141,15 @@
   "sellExtraCostProofRequired": "Sale extra cost proof",
   "cancelExtraCostProofRequired": "Cancel extra cost proof",
   "permissions": "Permissions",
+  "tgGroupCardTitle": "Telegram group",
+  "changesSaveInstantly": "Changes are saved instantly",
+  "tgGroupPiiLabel": "Customer name and phone in the group",
+  "tgGroupPiiHint": "When off, the customer's name and phone are hidden on order cards in the Telegram group",
+  "tgGroupPiiSaved": "Saved",
+  "tgGroupPiiShownDescription": "Order cards in the group show the customer's name and phone",
+  "tgGroupPiiHiddenDescription": "Order cards in the group hide the customer's name and phone",
+  "tgGroupPiiSaveError": "Not saved",
+  "tgGroupPiiSaveErrorDescription": "Couldn't save the setting. Try again",
   "telegramTokenTitle": "Telegram token",
   "telegramTokenShow": "Show",
   "telegramTokenHide": "Hide",
@@ -349,7 +358,8 @@
     "token": {
       "maskedLabel": "Token hidden",
       "hint": "Ask the market to add the bot to its Telegram group and send this token there. The token is a secret key — give it only to this market.",
-      "loadError": "Could not fetch the token"
+      "loadError": "Could not fetch the token",
+      "loadErrorHint": "Please try again in a moment."
     },
     "edit": {
       "description": "{{name}} · {{role}}",

@@ -7,6 +7,8 @@ import { defineConfig, devices } from "@playwright/test";
  * Ishga tushirish: `PLAYWRIGHT_CHANNEL=chrome npx playwright test -c playwright.preview.config.ts`.
  */
 const channel = process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {};
+/** Prod API hosti DNS'da topilmaydi — soxtalanmagan so'rov yoki WebSocket prod'ga yetmaydi (`playwright.config.ts` dagidek). */
+const blockProdApi = { args: ["--host-resolver-rules=MAP api.elchipochta.uz ~NOTFOUND"] };
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -16,6 +18,7 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:4175",
     trace: "retain-on-failure",
+    launchOptions: blockProdApi,
   },
   webServer: {
     command: "npm run build && npx vite preview --host 127.0.0.1 --port 4175 --strictPort",

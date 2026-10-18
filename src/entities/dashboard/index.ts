@@ -1,6 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { readPartialFailure } from "./lib/partialFailure";
+
+export { hasFailedPart } from "./lib/partialFailure";
 
 const dashboard = "dashboard";
 
@@ -135,12 +138,19 @@ export interface TopBranch {
   success_rate: number;
 }
 
-/** Reyting meta'si (`top*Meta`): eng kam buyurtma chegarasi, chetda qolganlar soni, davr. */
+/**
+ * Reyting meta'si (9zbSDkUI, PQt3n1N0) — backend `topMarketsMeta` / `topBranchesMeta` / `topCouriersMeta`.
+ * `last_30_days`: qisqa davr tanlanganda reyting oxirgi 30 kun bo'yicha; `selected_range`: tanlangan oraliq
+ * (`from` / `to`). `minOrders` — reytingga kirish chegarasi, `filteredOut` — chegaradan o'tmay chetda
+ * qolganlar soni. Eski backendda yo'q — `null`.
+ */
 export interface RankingMeta {
-  min_orders?: number;
-  filtered_out?: number;
-  from?: string;
-  to?: string;
+  periodRule: string | null;
+  periodDays: number | null;
+  from: string | null;
+  to: string | null;
+  minOrders: number | null;
+  filteredOut: number | null;
 }
 
 export interface DashboardResponse {
@@ -155,16 +165,17 @@ export interface DashboardResponse {
     topCouriers?: TopCourier[];
     topOperators?: TopOperator[];
     topBranches?: TopBranch[];
-    branchDashboard?: BranchDashboardPayload | null;
     topMarketsMeta?: RankingMeta | null;
     topBranchesMeta?: RankingMeta | null;
+    branchDashboard?: BranchDashboardPayload | null;
     topCouriersMeta?: RankingMeta | null;
     /** Kuryer: reytingdagi o'rni (top-10 dan tashqarida ham), ro'yxatda bo'lmasa `null`. */
     myRank?: number | null;
     myRanking?: TopCourier | null;
-    /** Javobning bir qismi olinmadi (`failed_parts` — qaysilari). */
+    /** Qisman nosozlik (VkwhHqvW): bo'lak olinmadi — raqamlar 0 emas, «olinmadi» ko'rsatiladi. */
     degraded?: boolean;
-    failed_parts?: string[];
+    /** Olinmagan bo'laklar — javob kalitlari (`topMarkets`, `couriers`, `branchDashboard` …). */
+    failedParts?: string[];
   };
 }
 
@@ -204,6 +215,8 @@ export interface RevenueResponse {
       };
       difference?: number;
     };
+    degraded?: boolean;
+    failedParts?: string[];
     [key: string]: unknown;
   };
 }
@@ -218,6 +231,9 @@ export interface KpiResponse {
     cancellationRate: number;
     courierEfficiency: number;
     marketRating: unknown[];
+    degraded?: boolean;
+    /** Masalan `fulfillment` — yetkazish vaqti / SLA olinmadi (mKS1mjNr). */
+    failedParts?: string[];
   };
 }
 
@@ -344,6 +360,23 @@ const normalizeTopOperator = (value: unknown): TopOperator => {
   };
 };
 
+const toOptionalText = (value: unknown): string | null =>
+  typeof value === "string" && value.trim() ? value.trim() : null;
+
+/** `topMarketsMeta` / `topBranchesMeta` / `topCouriersMeta` (snake_case ham): obyekt bo'lmasa — `null`. */
+export const normalizeRankingMeta = (value: unknown): RankingMeta | null => {
+  if (!value || typeof value !== "object") return null;
+  const meta = value as UnknownRecord;
+  return {
+    periodRule: toOptionalText(meta.period_rule ?? meta.periodRule),
+    periodDays: toOptionalNumber(meta.period_days ?? meta.periodDays) ?? null,
+    from: toOptionalText(meta.from ?? meta.selected_from ?? meta.selectedFrom),
+    to: toOptionalText(meta.to ?? meta.selected_to ?? meta.selectedTo),
+    minOrders: toOptionalNumber(meta.min_orders ?? meta.minOrders) ?? null,
+    filteredOut: toOptionalNumber(meta.filtered_out ?? meta.filteredOut) ?? null,
+  };
+};
+
 const normalizeTopBranch = (value: unknown): TopBranch => {
   const metrics = normalizePerformerMetrics(value);
   return {
@@ -356,17 +389,6 @@ const normalizeTopBranch = (value: unknown): TopBranch => {
     total_orders: metrics.total_orders,
     successful_orders: metrics.successful_orders,
     success_rate: metrics.success_rate,
-  };
-};
-
-const normalizeRankingMeta = (value: unknown): RankingMeta | null => {
-  const item = asRecord(value);
-  if (!Object.keys(item).length) return null;
-  return {
-    min_orders: toOptionalNumber(item.min_orders ?? item.minOrders),
-    filtered_out: toOptionalNumber(item.filtered_out ?? item.filteredOut),
-    from: typeof item.from === "string" ? item.from : undefined,
-    to: typeof item.to === "string" ? item.to : undefined,
   };
 };
 
@@ -463,6 +485,18 @@ const normalizeBranchDashboard = (value: unknown): BranchDashboardPayload | null
       couriers: toOptionalBoolean(visibility.couriers),
     },
   };
+};
+
+const DASHBOARD_PARTS: Record<string, readonly string[]> = {
+  orders: [],
+  myStat: ["my_stat"],
+  markets: ["market_stats"],
+  couriers: ["courier_stats"],
+  topMarkets: ["top_markets"],
+  topCouriers: ["top_couriers"],
+  topOperators: ["top_operators"],
+  topBranches: ["top_branches"],
+  branchDashboard: ["branch_dashboard"],
 };
 
 export const normalizeDashboardResponse = (payload: unknown): DashboardResponse => {
@@ -584,17 +618,16 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
       topBranches: Array.isArray(topBranches)
         ? topBranches.map(normalizeTopBranch)
         : [],
-      branchDashboard: normalizeBranchDashboard(branchDashboard),
       topMarketsMeta: normalizeRankingMeta(data.topMarketsMeta ?? data.top_markets_meta),
       topBranchesMeta: normalizeRankingMeta(data.topBranchesMeta ?? data.top_branches_meta),
+      branchDashboard: normalizeBranchDashboard(branchDashboard),
       topCouriersMeta: normalizeRankingMeta(data.topCouriersMeta ?? data.top_couriers_meta),
       myRank: toOptionalNumber(data.myRank ?? data.my_rank) ?? null,
       myRanking:
         Object.keys(asRecord(data.myRanking ?? data.my_ranking)).length > 0
           ? normalizeTopCourier(data.myRanking ?? data.my_ranking)
           : null,
-      degraded: toOptionalBoolean(data.degraded),
-      failed_parts: Array.isArray(data.failed_parts) ? data.failed_parts.map(String) : undefined,
+      ...readPartialFailure(response, data, DASHBOARD_PARTS),
     },
   };
 };
@@ -616,6 +649,7 @@ export const normalizeKpiResponse = (payload: unknown): KpiResponse => {
       cancellationRate: toNumber(data.cancellationRate ?? data.cancellation_rate),
       courierEfficiency: toNumber(data.courierEfficiency ?? data.courier_efficiency),
       marketRating: Array.isArray(marketRating) ? marketRating : [],
+      ...readPartialFailure(response, data),
     },
   };
 };
@@ -680,6 +714,7 @@ export const normalizeRevenueResponse = (payload: unknown): RevenueResponse => {
             difference: toNumber(finance.difference),
           }
         : undefined,
+      ...readPartialFailure(response, data, { finance: [], summary: [], chart: [] }),
     },
   };
 };

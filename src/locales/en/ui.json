@@ -1012,6 +1012,9 @@
         "text": "No orders have been accepted today yet. Pick another period.",
         "action": "This week"
       },
+      "inlineEmpty": {
+        "title": "No orders for the ranking in this period"
+      },
       "chartError": {
         "text": "Check your internet connection and try again."
       },

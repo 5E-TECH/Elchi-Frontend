@@ -41,7 +41,11 @@ export type DispatchFormValues = {
   sms: boolean;
   /** Web push — bildirishnomani yoqqan qurilmalarga. */
   push: boolean;
-  /** Telegram kanali faqat market guruhiga yetkaziladi — market shart. */
+  /**
+   * Telegram nishoni (ixtiyoriy, TgYRqaTk): market tanlansa — o'sha marketning ulangan guruhiga;
+   * tanlanmasa — har bir qabul qiluvchining SHAXSIY Telegram chatiga (ulanmaganlar `skipped`,
+   * ilova ichidagi xabar baribir yetadi).
+   */
   telegram_market_id: string;
   title: string;
   body: string;
@@ -102,10 +106,8 @@ export const createDispatchSchema = (t: Translate) =>
     telegram: yup.boolean().required(),
     sms: yup.boolean().required(),
     push: yup.boolean().required(),
-    telegram_market_id: yup.string().default("").when("telegram", {
-      is: true,
-      then: (schema) => schema.required(t("dispatch.errors.telegramMarket")),
-    }),
+    // Market ixtiyoriy: tanlanmasa Telegram shaxsiy chatga ketadi (backend TgYRqaTk).
+    telegram_market_id: yup.string().default(""),
     title: yup
       .string()
       .trim()
@@ -143,6 +145,7 @@ export type DispatchPayload = {
   recipient_ids?: string[];
   roles?: string[];
   broadcast?: true;
+  /** Faqat market tanlanganda; yo'q bo'lsa backend Telegram'ni shaxsiy chatga yuboradi. */
   telegram?: { market_id: string };
 };
 

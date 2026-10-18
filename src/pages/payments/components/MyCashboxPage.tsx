@@ -60,6 +60,8 @@ import {
   getViewerOperationType,
   isOrderLinkedSource,
 } from "./paymentSourceType";
+import { toPaymentAck } from "./paymentAck";
+import { PaymentAckBadge } from "./PaymentAckBadge";
 
 /**
  * O'Z KASSAM — `/cash-box` (dizayn v2): market («To'lovlar»), kuryer («Kassa») va menejer (filial kassasi).
@@ -196,6 +198,7 @@ const toPaymentRows = (response: CashboxResponse | undefined, role: CashboxRole)
           toOptionalString(item["createdAt"]) ??
           toOptionalString(item["created_at"]),
         comment: toOptionalString(item["comment"]),
+        payment_ack: toPaymentAck(item["payment_ack"]),
         balance_after: item["balance_after"] === undefined || item["balance_after"] === null
           ? undefined
           : toNumber(item["balance_after"]),
@@ -567,6 +570,9 @@ const MyCashboxPage = () => {
       </Badge>
     ) : null;
 
+  /** Kuryer kvitansiyasi javobi (2crjWf7v): faqat `courier_payment` qatorida, javob bo'lsa. */
+  const ackBadge = (row: PaymentRow) => <PaymentAckBadge ack={row.payment_ack} size="sm" />;
+
   const receivedByNode = (row: PaymentRow) => {
     const name = receiverName(row);
     if (!name) return null;
@@ -600,7 +606,16 @@ const MyCashboxPage = () => {
   const subPlainText = (row: PaymentRow) => {
     const id = orderId(row);
     const received = receiverName(row);
+    // Telefon kartasining nomi (aria-label) belgilarni ham aytsin — «Tuzatish», kvitansiya javobi (2crjWf7v).
+    const ack =
+      row.payment_ack === "disputed"
+        ? t("paymentAckDisputed")
+        : row.payment_ack === "confirmed"
+          ? t("paymentAckConfirmed")
+          : "";
     return [
+      isCorrection(row) ? t("v2MyCashbox.history.correction") : "",
+      ack,
       id ? t("v2Common.orderNumber", { id }) : "",
       received ? `${t("v2MyCashbox.history.receivedBy")} ${received}` : "",
       row.comment?.trim() ?? "",
@@ -662,6 +677,7 @@ const MyCashboxPage = () => {
                 {sourceTitle(row)}
               </button>
               {correctionBadge(row)}
+              {ackBadge(row)}
             </span>
             {parts.length ? (
               <div className="text-[13px] text-text-muted [overflow-wrap:anywhere]">
@@ -746,9 +762,10 @@ const MyCashboxPage = () => {
           </span>
           {balanceLine}
         </span>
-        {isCorrection(row) || receiverName(row) || row.comment?.trim() ? (
+        {isCorrection(row) || row.payment_ack || receiverName(row) || row.comment?.trim() ? (
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] text-text-muted">
             {correctionBadge(row)}
+            {ackBadge(row)}
             {receivedByNode(row)}
             {row.comment?.trim() ? (
               <span className="inline-flex min-w-0 items-center gap-1.5 [overflow-wrap:anywhere]">
@@ -766,6 +783,7 @@ const MyCashboxPage = () => {
           <span className="inline-flex min-w-0 flex-wrap items-center gap-2">
             <span className="font-semibold">{sourceTitle(row)}</span>
             {correctionBadge(row)}
+            {ackBadge(row)}
           </span>
           {amountNode(row)}
         </span>

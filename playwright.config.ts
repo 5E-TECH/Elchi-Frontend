@@ -3,6 +3,12 @@ import { defineConfig, devices } from "@playwright/test";
 /** Brauzer kanali (masalan `PLAYWRIGHT_CHANNEL=chrome`) — o'rnatilgan Chromium bo'lmasa. */
 const channel = process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {};
 
+/**
+ * Prod API hosti e2e brauzerida DNS'da topilmaydi: `route.fulfill` bilan soxtalangan so'rovlar tarmoqqa chiqmaydi,
+ * ushlanmagan narsa (masalan jonli kanal WebSocket'i — `context.route` uni ushlamaydi) esa prod'ga YETMAYDI.
+ */
+const blockProdApi = { args: ["--host-resolver-rules=MAP api.elchipochta.uz ~NOTFOUND"] };
+
 export default defineConfig({
   testDir: "./tests/e2e",
   timeout: 30_000,
@@ -15,6 +21,7 @@ export default defineConfig({
   use: {
     baseURL: "http://127.0.0.1:4173",
     trace: "on-first-retry",
+    launchOptions: blockProdApi,
   },
   webServer: {
     command: "npm run dev -- --host 127.0.0.1 --port 4173",

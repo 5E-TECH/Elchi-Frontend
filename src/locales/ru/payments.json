@@ -868,7 +868,11 @@
       "orderTitle": "{{title}} · №{{id}}",
       "courier": "Курьер: {{name}}",
       "rowLabel": "{{title}}, {{direction}} {{amount}}, {{date}}",
-      "rollback": "Откат"
+      "rollback": "Корректировка"
     }
   }
+  ,"paymentAckDisputed": "Неверно"
+  ,"paymentAckDisputedHint": "Курьер ответил в боте на квитанцию «Неверно»"
+  ,"paymentAckConfirmed": "Подтверждено"
+  ,"paymentAckConfirmedHint": "Курьер подтвердил квитанцию в боте"
 }

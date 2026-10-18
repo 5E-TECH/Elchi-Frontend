@@ -78,7 +78,13 @@ export const useProducts = () => {
     },
   });
 
-  // `params` — ixtiyoriy (berilmasa kalit va so'rov avvalgidek); `["market"]` / `[products]` bekor qilishlari ikkalasiga ham tegadi.
+  /**
+   * `GET /product/market/:marketId` va `GET /product/my-products` `search` / `page` / `limit` (≤ 500) ni qabul
+   * qiladi (3qDsJpfW). `params` — ixtiyoriy (berilmasa kalit va so'rov avvalgidek, server sukuti: 1-sahifa,
+   * 10 ta); berilsa `queryKey` ga ham kiradi. `["market"]` / `[products]` bekor qilishlari ikkalasiga ham tegadi.
+   * Eski sahifa ko'rinib turishi (`keepPreviousData`) — faqat `options` bilan (sahifalangan ro'yxat): market
+   * almashadigan katalogda (buyurtma yaratish) avvalgi marketning mahsulotlari ko'rinib qolmasin.
+   */
   const useGetByMarketId = (
     id: string | undefined,
     enabled?: boolean,

@@ -41,6 +41,18 @@ describe("buildDispatchPayload", () => {
     expect(all.telegram).toEqual({ market_id: "3" });
   });
 
+  it("Telegram without a market: channel kept, no telegram target (personal chats)", () => {
+    const payload = buildDispatchPayload(base({ mode: "roles", roles: ["courier"], telegram: true, telegram_market_id: "" }));
+    expect(payload.channels).toEqual(["in_app", "realtime", "telegram"]);
+    expect(payload).not.toHaveProperty("telegram");
+  });
+
+  it("a market left over from an unchecked Telegram channel is not sent", () => {
+    const payload = buildDispatchPayload(base({ telegram: false, telegram_market_id: "3" }));
+    expect(payload.channels).not.toContain("telegram");
+    expect(payload).not.toHaveProperty("telegram");
+  });
+
   it("sends the backend-required type and drops empty optional fields", () => {
     const payload = buildDispatchPayload(base({ body: "  ", link: " ", category: "finance" }));
     expect(payload.type).toBe("finance.manual");
@@ -63,6 +75,15 @@ describe("createDispatchSchema", () => {
     await expect(schema.validate(base({ mode: "single", recipient_id: "" }))).rejects.toThrow("dispatch.errors.recipient");
     await expect(schema.validate(base({ mode: "roles", roles: [] }))).rejects.toThrow("dispatch.errors.roles");
     await expect(schema.validate(base({ mode: "list", recipient_ids: [] }))).rejects.toThrow("dispatch.errors.recipients");
-    await expect(schema.validate(base({ mode: "all", telegram: true, telegram_market_id: "" }))).rejects.toThrow("dispatch.errors.telegramMarket");
+  });
+
+  it("Telegram market is optional — without it Telegram goes to personal chats (TgYRqaTk)", async () => {
+    await expect(schema.validate(base({ mode: "all", telegram: true, telegram_market_id: "" }))).resolves.toMatchObject({
+      telegram: true,
+      telegram_market_id: "",
+    });
+    await expect(schema.validate(base({ mode: "all", telegram: true, telegram_market_id: "3" }))).resolves.toMatchObject({
+      telegram_market_id: "3",
+    });
   });
 });

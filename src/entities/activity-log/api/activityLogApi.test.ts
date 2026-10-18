@@ -52,9 +52,102 @@ describe("activityLogApi", () => {
     expect(result.items[0].actor).toMatchObject({ id: "7", name: "Ali", role: "manager" });
   });
 
-  it("returns the actions array from the envelope", async () => {
+  it("eski kontrakt: faqat fe'llar — reyestr va kategoriyalar bo'sh", async () => {
     mocks.get.mockResolvedValue({ data: { data: ["create", "update", "status_change"] } });
-    await expect(getActivityActions()).resolves.toEqual(["create", "update", "status_change"]);
+    await expect(getActivityActions()).resolves.toEqual({
+      actions: ["create", "update", "status_change"],
+      registry: [],
+      categories: [],
+    });
+  });
+
+  it("y8CxCtcK: `registry` va `categories` o'qiladi (FRONTEND_CHANGELOG 2026-10-14)", async () => {
+    mocks.get.mockResolvedValue({
+      data: {
+        statusCode: 200,
+        data: ["finance.manual_expense", "order.sell"],
+        registry: [
+          {
+            action: "finance.manual_expense",
+            label: "Qo'lda chiqim",
+            category: "finance",
+            category_label: "Moliya",
+            icon: "minus",
+            tone: "rose",
+            known: true,
+          },
+          { action: "order.sell", label: "Sotildi", category: "order", category_label: "Buyurtma", tone: "green" },
+          { label: "" },
+        ],
+        categories: [{ key: "order", label: "Buyurtma" }, { key: "finance", label: "Moliya" }, { label: "kalitsiz" }],
+      },
+    });
+
+    const catalog = await getActivityActions();
+
+    expect(catalog.actions).toEqual(["finance.manual_expense", "order.sell"]);
+    expect(catalog.registry).toEqual([
+      {
+        action: "finance.manual_expense",
+        label: "Qo'lda chiqim",
+        category: "finance",
+        categoryLabel: "Moliya",
+        icon: "minus",
+        tone: "rose",
+        known: true,
+      },
+      { action: "order.sell", label: "Sotildi", category: "order", categoryLabel: "Buyurtma", icon: null, tone: "green", known: true },
+    ]);
+    expect(catalog.categories).toEqual([
+      { key: "order", label: "Buyurtma" },
+      { key: "finance", label: "Moliya" },
+    ]);
+  });
+
+  it("qo'shimcha o'ram (`data: { data, registry, categories }`) ham o'qiladi", async () => {
+    mocks.get.mockResolvedValue({
+      data: { data: { data: ["login"], registry: [{ action: "login", label: "Tizimga kirdi" }], categories: [] } },
+    });
+    const catalog = await getActivityActions();
+    expect(catalog.actions).toEqual(["login"]);
+    expect(catalog.registry[0]).toMatchObject({ action: "login", label: "Tizimga kirdi", known: true });
+  });
+
+  it("qatorda `action_meta` va `actor_status` (y8CxCtcK); eski backendda — null", async () => {
+    mocks.get.mockResolvedValue({
+      data: {
+        data: {
+          items: [
+            {
+              id: 9,
+              action: "order.batch_sent",
+              action_meta: { action: "order.batch_sent", label: "Order batch sent", icon: "dot", tone: "slate", known: false },
+              actor_status: "unresolved",
+              actor: { id: 44, name: null, role: null, resolved: false },
+              user_id: "44",
+            },
+            { id: 10, action: "login" },
+          ],
+          meta: { total: 2 },
+        },
+      },
+    });
+
+    const result = await getActivityLogs({ page: 1, limit: 20 });
+
+    expect(result.items[0].action_meta).toEqual({
+      action: "order.batch_sent",
+      label: "Order batch sent",
+      category: null,
+      categoryLabel: null,
+      icon: "dot",
+      tone: "slate",
+      known: false,
+    });
+    expect(result.items[0].actor_status).toBe("unresolved");
+    expect(result.items[0].actor?.resolved).toBe(false);
+    expect(result.items[1].action_meta).toBeNull();
+    expect(result.items[1].actor_status).toBeNull();
   });
 
   it("normalizes entity-history items", async () => {
