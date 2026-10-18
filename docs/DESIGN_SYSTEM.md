@@ -603,9 +603,16 @@ Har sahna aniq ro'yxat va holat (`api`, `act`, `capture`) — sahna faylining o'
 tarmoq to'liq yopiq — faqat ilova, soxta API va Google Fonts, qolgani bloklanadi, yozish so'rovi va mock qilinmagan
 yo'l hisobotda, yozish — yiqilish; soat muzlatilgan `2026-10-15T10:00:00+05:00`, `Asia/Tashkent`, `uz-UZ`;
 `reducedMotion: reduce`, animatsiya va kursor o'chiq (`support/screenshot.css`); Manrope ilovadagidek Google Fonts'dan,
-suratdan oldin `document.fonts.load("600 16px Manrope")` bo'sh bo'lmasligi shart; sahifa tayyorligi —
-`[data-route-progress]`, `aria-busy`, skelet yo'q; konsol xatosi va `pageerror` — yiqilish (sahnada faqat sabab
-bilan ruxsat). Balandlik: kontent bo'yicha (6000 px gacha), dialog sahnalari — faqat oyna.
+suratdan oldin `document.fonts.load("600 16px Manrope")` bo'sh bo'lmasligi shart; brauzer doim «onlayn»
+(`pinOnline`: xost Wi-Fi'si uzilsa ham `navigator.onLine` true, `online`/`offline` hodisalari ilovaga yetmaydi —
+aks holda React Query so'rovni to'xtatib «Internet aloqasi yo'q» chizardi); sahifa tayyorligi — bo'lim yuklanish
+chizig'i (`[data-route-progress]`) yo'q, «band» shartnomasi (`BUSY_SELECTOR`: `aria-busy`,
+`data-query-state="loading"`, har qanday skelet `[data-skeleton]` — `Suspense` zaxirasi ham, `svg` siz recharts
+konteyneri) bo'yicha chizilgan element yo'q va oynaga kirgan, lekin ochilmagan `DeferredMount` yo'q; xato holati
+(`data-query-state="error"` yoki `ErrorState`, `forbidden` dan tashqari) suratga tushmaydi — yiqilish (sahnada
+faqat `allowErrors` sababi bilan); ikkala tekshiruv ham `display: none` ostidagini hisoblamaydi; konsol xatosi va `pageerror` — yiqilish (sahnada faqat sabab bilan
+ruxsat). Balandlik: kontent bo'yicha (6000 px gacha) — har o'lchovdan oldin tayyorlik qayta kutiladi, balandlik
+ketma-ket ikki o'lchovda o'zgarmaguncha (10 urinish, keyin yiqilish); dialog sahnalari — faqat oyna.
 
 **Baseline faqat CI Docker obrazida.** Shrift va rasterlash mashinadan mashinaga farq qiladi, shuning uchun baseline
 faqat `mcr.microsoft.com/playwright:v1.59.1-noble` da yaratiladi va solishtiriladi (= package.json dagi aniq
