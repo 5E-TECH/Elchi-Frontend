@@ -7,13 +7,15 @@ import {
   getUserActivity,
 } from "./activityLogApi";
 import type { ActivityLogParams } from "../model/types";
+import { silentErrorMeta, type SilentErrorOption } from "../../../shared/lib/queryErrorEvents";
 
-export const useActivityLogs = (params: ActivityLogParams) =>
+export const useActivityLogs = (params: ActivityLogParams, options?: SilentErrorOption) =>
   useQuery({
     queryKey: queryKeys.activityLogs.list(params),
     queryFn: () => getActivityLogs(params),
     placeholderData: keepPreviousData,
     staleTime: 15_000,
+    ...silentErrorMeta(options),
   });
 
 /** Fe'llar katalogi (filtr ro'yxati + yorliqlar) — sessiya davomida keshda. */

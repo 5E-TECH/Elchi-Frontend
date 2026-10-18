@@ -16,6 +16,7 @@ import type {
   UserStatus,
 } from "../types/user";
 import { unwrapUserResponse } from "../lib/normalizeUser";
+import { silentErrorMeta, type SilentErrorOption } from "../../../shared/lib/queryErrorEvents";
 
 export const user = "user";
 
@@ -301,12 +302,14 @@ export const useUser = () => {
       ...(options?.silentError ? { meta: { silentError: true } } : {}),
     });
 
-  const useGetMyProfile = () =>
+  /** `silentError` — sahifa xatoni o'zi ko'rsatadi (`QueryBoundary`), global xabar takrorlanmaydi. */
+  const useGetMyProfile = (options?: SilentErrorOption) =>
     useQuery({
       queryKey: [user, "profile"],
       queryFn: () =>
         api.get(API_ENDPOINTS.AUTH.MY_PROFILE).then((res) => res.data),
       staleTime: 60 * 1000,
+      ...silentErrorMeta(options),
     });
 
   const updateUserStatus = useMutation({

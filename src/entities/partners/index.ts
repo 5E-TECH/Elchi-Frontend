@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 /**
  * Partner API hamkorlari (admin).
@@ -196,13 +197,14 @@ export const readWebhooksPage = (raw: unknown): PartnerWebhooksPage => {
   throw new Error("Webhook jurnali kutilmagan shaklda keldi");
 };
 
-export const usePartners = () =>
+export const usePartners = (options?: SilentErrorOption) =>
   useQuery({
     queryKey: [partnersKey],
     queryFn: () =>
       api
         .get(API_ENDPOINTS.PARTNERS.BASE)
         .then((res) => readPartnerList(res.data)),
+    ...silentErrorMeta(options),
   });
 
 export const usePartnerWebhooks = (params: {
@@ -210,13 +212,14 @@ export const usePartnerWebhooks = (params: {
   status?: string;
   page?: number;
   limit?: number;
-}) =>
+}, options?: SilentErrorOption) =>
   useQuery({
     queryKey: [partnerWebhooksKey, params],
     queryFn: () =>
       api
         .get(API_ENDPOINTS.PARTNERS.WEBHOOKS, { params })
         .then((res) => readWebhooksPage(res.data)),
+    ...silentErrorMeta(options),
   });
 
 export const usePartnerActions = () => {

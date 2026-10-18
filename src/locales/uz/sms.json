@@ -114,7 +114,6 @@
     "deleted": "Shablon o'chirildi",
     "empty": "Shablonlar yo'q",
     "emptyHint": "Yangi shablonni yuqoridagi forma orqali qo'shing.",
-    "edit": "Tahrirlash",
     "editLabel": "{{code}} ({{lang}}) — tahrirlash",
     "actions": "Amallar",
     "langs": {
@@ -179,7 +178,6 @@
     "daysTitle": "Kunlar bo'yicha",
     "daysSub": "Har kun va xabar turi alohida qator",
     "daysLabel": "Kunlar bo'yicha SMS",
-    "untariffedCell": "— tarif sozlanmagan",
     "untariffedShort": "— tarifsiz",
     "untariffedTitle": "Tarif sozlanmagan",
     "dayCard": "{{total}} ta · {{delivered}} yetkazildi · {{failed}} xato · {{parts}} bo'lak",

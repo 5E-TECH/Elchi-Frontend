@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 export const useIntegrationsCoverage = () => {
   const client = useQueryClient();
@@ -87,11 +88,12 @@ export const useIntegrationsCoverage = () => {
   });
 
   // ── GET · INTEGRATIONS.RECEIVABLES ─────────────────────────────────────────
-  const useGetReceivables = (params?: any) =>
+  const useGetReceivables = (params?: any, options?: SilentErrorOption) =>
     useQuery({
       queryKey: ["integ-cov", "receivables", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.INTEGRATIONS.RECEIVABLES, { params }).then((res) => res.data),
+      ...silentErrorMeta(options),
     });
 
   // ── GET · INTEGRATIONS.SHIPMENT_BY_ORDER ───────────────────────────────────

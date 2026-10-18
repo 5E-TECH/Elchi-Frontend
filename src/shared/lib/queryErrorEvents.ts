@@ -25,3 +25,13 @@ export const emitQueryError = (error: unknown, meta?: Record<string, unknown>) =
     }),
   );
 };
+
+/**
+ * Umumiy hook'lar uchun ixtiyoriy bayroq: sahifa xatoni o'zi chizsa (`ErrorState` / `QueryBoundary`),
+ * global xabar takrorlanmaydi. Bayroqsiz iste'molchilar uchun xulq o'zgarmaydi.
+ * Ishlatilishi: `useQuery({ …, ...silentErrorMeta(options) })`.
+ */
+export type SilentErrorOption = { silentError?: boolean };
+
+export const silentErrorMeta = (options?: SilentErrorOption) =>
+  options?.silentError ? { meta: { silentError: true } } : {};

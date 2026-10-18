@@ -116,7 +116,6 @@
     "deleted": "Шаблон удалён",
     "empty": "Шаблонов нет",
     "emptyHint": "Добавьте новый шаблон через форму выше.",
-    "edit": "Редактировать",
     "editLabel": "{{code}} ({{lang}}) — изменить",
     "actions": "Действия",
     "langs": {
@@ -181,7 +180,6 @@
     "daysTitle": "По дням",
     "daysSub": "Каждый день и тип сообщений — отдельная строка",
     "daysLabel": "SMS по дням",
-    "untariffedCell": "— тариф не настроен",
     "untariffedShort": "— без тарифа",
     "untariffedTitle": "Тариф не настроен",
     "dayCard": "{{total}} шт. · {{delivered}} доставлено · {{failed}} ошибок · {{parts}} частей",

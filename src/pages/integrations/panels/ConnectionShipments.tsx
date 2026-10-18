@@ -171,7 +171,7 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
   const raw = connection.raw as { slug?: string };
   const slug = String(raw.slug ?? "");
 
-  const list = useProviderShipments({ integrationId: connection.id, filter, page, limit: PAGE_SIZE });
+  const list = useProviderShipments({ integrationId: connection.id, filter, page, limit: PAGE_SIZE }, { silentError: true });
   const redispatch = useRedispatch();
 
   const rows = list.data?.items ?? [];
@@ -428,7 +428,7 @@ const ProviderShipments = ({ connection }: { connection: Connection }) => {
 const PartnerShipments = ({ connection }: { connection: Connection }) => {
   const { t, i18n } = useTranslation("integrations");
   const [page, setPage] = useState(1);
-  const list = usePartnerShipments({ partnerId: connection.id, page, limit: PAGE_SIZE });
+  const list = usePartnerShipments({ partnerId: connection.id, page, limit: PAGE_SIZE }, { silentError: true });
   const rows = list.data?.items ?? [];
   const total = list.data?.pagination.total ?? rows.length;
 

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 type QueryParams = Record<string, unknown>;
 
@@ -9,11 +10,12 @@ export const useMiscCoverage = () => {
 
   // ── ANALYTICS ──────────────────────────────────────────────────────────────
 
-  const useGetAnalyticsKpi = (params?: QueryParams) =>
+  const useGetAnalyticsKpi = (params?: QueryParams, options?: SilentErrorOption) =>
     useQuery({
       queryKey: ["misc-cov", "analytics-kpi", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.ANALYTICS.KPI, { params }).then((res) => res.data),
+      ...silentErrorMeta(options),
     });
 
   const useGetAnalyticsReportCouriers = (params?: QueryParams) =>
@@ -119,11 +121,12 @@ export const useMiscCoverage = () => {
 
   // ── HEALTH ─────────────────────────────────────────────────────────────────
 
-  const useGetHealthLiveness = () =>
+  const useGetHealthLiveness = (options?: SilentErrorOption) =>
     useQuery({
       queryKey: ["misc-cov", "health-liveness"],
       queryFn: () =>
         api.get(API_ENDPOINTS.HEALTH.LIVENESS).then((res) => res.data),
+      ...silentErrorMeta(options),
     });
 
   const useGetHealthReadiness = () =>
@@ -134,11 +137,6 @@ export const useMiscCoverage = () => {
     });
 
   // ── NOTIFICATIONS ──────────────────────────────────────────────────────────
-
-  const connectNotificationByToken = useMutation({
-    mutationFn: (data: unknown) =>
-      api.post(API_ENDPOINTS.NOTIFICATIONS.CONNECT_BY_TOKEN, data),
-  });
 
   const useGetNotificationsHealth = () =>
     useQuery({
@@ -179,12 +177,13 @@ export const useMiscCoverage = () => {
 
   // ── SCAN ───────────────────────────────────────────────────────────────────
 
-  const useGetScanByToken = (token: string, enabled: boolean = true) =>
+  const useGetScanByToken = (token: string, enabled: boolean = true, options?: SilentErrorOption) =>
     useQuery({
       queryKey: ["misc-cov", "scan-by-token", token],
       queryFn: () =>
         api.get(API_ENDPOINTS.SCAN.BY_TOKEN(token)).then((res) => res.data),
       enabled: enabled && !!token,
+      ...silentErrorMeta(options),
     });
 
   // ── SEARCH ─────────────────────────────────────────────────────────────────
@@ -221,7 +220,6 @@ export const useMiscCoverage = () => {
     useGetHealthLiveness,
     useGetHealthReadiness,
     // Notifications
-    connectNotificationByToken,
     useGetNotificationsHealth,
     sendNotification,
     // Printer

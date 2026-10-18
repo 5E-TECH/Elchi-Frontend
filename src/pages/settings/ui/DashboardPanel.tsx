@@ -187,7 +187,11 @@ const RegionThumb = () => (
   </svg>
 );
 
-/** Maketdagi tartib. «Buyurtmalar vaqti» — «Taklif» (widget yo'q), chizilmaydi. */
+/**
+ * Maketdagi va bosh sahifadagi tartib (G1 `pages/dashboard/DashboardPage.tsx`: KPI va holat kartalari → «Moliyaviy
+ * tahlil» (daromad grafigi + kassa balansi) → reytinglar qatori (top marketlar · filiallar · kuryerlar) → hududlar).
+ * «Buyurtmalar vaqti» — «Taklif» (widget yo'q), chizilmaydi.
+ */
 const WIDGETS: { id: DashboardWidgetId; key: string; thumb: () => ReactNode }[] = [
   { id: "stats", key: "w_stats", thumb: StatsThumb },
   { id: "financial", key: "w_financial", thumb: FinancialThumb },

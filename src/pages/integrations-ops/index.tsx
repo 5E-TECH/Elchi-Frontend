@@ -72,7 +72,7 @@ const IntegrationsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const { useGetReceivables, sync } = useIntegrationsCoverage();
 
   const [page, setPage] = useState(1);
-  const receivables = useGetReceivables({ page, limit: PAGE_SIZE });
+  const receivables = useGetReceivables({ page, limit: PAGE_SIZE }, { silentError: true });
   const { rows, total } = readReceivables(receivables.data);
 
   const [integrationId, setIntegrationId] = useState("");

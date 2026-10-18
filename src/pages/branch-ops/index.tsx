@@ -36,7 +36,7 @@ const BranchOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const { useGetNewOrders, cancelBatch } = useBranchCoverage();
   const confirm = useConfirm();
 
-  const newOrders = useGetNewOrders();
+  const newOrders = useGetNewOrders(undefined, { silentError: true });
   // Javob konverti `{ statusCode, message, data: [...] }` — massiv `data` ichida.
   const rows = extractArray<BranchWithNewOrders>(newOrders.data);
 

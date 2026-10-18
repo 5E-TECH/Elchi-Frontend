@@ -69,7 +69,7 @@ const SmsReportTab = () => {
   const language = i18n.resolvedLanguage ?? i18n.language;
   const [range, setRange] = useState(defaultReportRange);
   const query = reportQueryRange(range.from, range.to);
-  const report = useSmsReport(query.from, query.to);
+  const report = useSmsReport(query.from, query.to, { silentError: true });
   const tariffs = useSmsTariffs();
   const today = tashkentDay();
 

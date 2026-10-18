@@ -331,7 +331,7 @@ const ConnectionOverview = ({
    * ⚠️ YOPILMAGAN QARZ — Hisob-kitob tabidagi qoldiqning O'ZI: AYNI so'rov, AYNI kesh kaliti. Metrika
    * endpointidan alohida `cod.debt` olinsa, bir yorliq ostida ikki manba bo'lib qolardi.
    */
-  const balance = useReceivableBalance(showCod ? connection.id : undefined);
+  const balance = useReceivableBalance(showCod ? connection.id : undefined, { silentError: true });
   const debt = balance.data ? toAmount(balance.data.outstanding_amount) : null;
 
   const count = (value: number | null | undefined) => (value === null || value === undefined ? null : num(value));

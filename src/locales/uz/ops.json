@@ -270,7 +270,6 @@
       "fulfillmentAria": "O'rtacha yetkazish vaqti {{hours}} soat {{minutes}} daqiqa, chegara 24 soat",
       "rating": "Market reytingi",
       "ratingEmpty": "Ma'lumot yo'q — reyting hali hisoblanmagan",
-      "ratingCount": "{{count}} ta market reytingda",
       "degradedTitle": "Ko'rsatkichlarning bir qismi hisoblanmadi",
       "degradedText": "Ba'zi xizmatlar javob bermadi — qiymatlar to'liq emas.",
       "loadError": "Analitika ko'rsatkichlarini olib bo'lmadi"
@@ -292,8 +291,6 @@
       "notFoundHint": "Bu token bo'yicha buyurtma, paket yoki pochta topilmadi.",
       "error": "Tokenni tekshirib bo'lmadi",
       "empty": "Natijada ko'rsatiladigan maydon yo'q",
-      "yes": "Ha",
-      "no": "Yo'q",
       "fields": {
         "id": "ID",
         "status": "Holat",

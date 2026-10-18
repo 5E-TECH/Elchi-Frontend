@@ -160,7 +160,7 @@ const ExternalOrdersPage = () => {
     return next;
   }, [dateFrom, dateTo, limit, page, role, status]);
 
-  const query = useGetIntegrations(params);
+  const query = useGetIntegrations(params, { silentError: true });
   const deleteIntegration = useDeleteIntegration();
   const updateIntegration = useUpdateIntegration();
   const items = useMemo(() => query.data?.data?.items ?? [], [query.data]);

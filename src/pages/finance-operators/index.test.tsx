@@ -149,4 +149,45 @@ describe("Finance operators page (dizayn v2)", () => {
     const [first, second] = apiPostMock.mock.calls.map((call) => (call[2] as { headers: Record<string, string> }).headers["Idempotency-Key"]);
     expect(first).toBe(second);
   });
+
+  it("xatodan keyin summa tahrirlanib o'sha kalit bilan qayta yuborilsa — xabarda server qaytargan summa", async () => {
+    const user = userEvent.setup();
+    apiPostMock
+      .mockRejectedValueOnce({ response: { status: 504, data: { message: "Finance service response timeout" } } })
+      // Birinchi urinish serverda yozilgan edi: takroriy kalit birinchi to'lovni qaytaradi (`idempotent: true`).
+      .mockResolvedValueOnce({
+        data: {
+          statusCode: 200,
+          message: "Operator to'lovi allaqachon qayd qilingan (takroriy so'rov)",
+          data: { id: "pay1", operator_id: "1042", amount: 1000, note: null, createdAt: "2026-10-06T14:20:00Z", idempotent: true },
+        },
+      });
+    renderWithProviders(<FinanceOperatorsPage />);
+    await loadOperator(user);
+
+    const amountInput = await screen.findByRole("textbox", { name: /Summa \(so'm\)/ });
+    await user.type(amountInput, "1000");
+    await user.click(screen.getByRole("button", { name: "To'lovni saqlash" }));
+    let dialog = await screen.findByRole("alertdialog", { name: "To'lovni qayd qilasizmi?" });
+    await user.click(within(dialog).getByRole("button", { name: "To'lovni saqlash" }));
+    await waitFor(() => expect(apiPostMock).toHaveBeenCalledTimes(1));
+    await user.click(await within(dialog).findByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+
+    // Summa tahrirlanadi va qayta yuboriladi — kalit o'sha (mantiqiy to'lov yozilmagan deb hisoblanadi).
+    await user.clear(amountInput);
+    await user.type(amountInput, "2000");
+    await user.click(screen.getByRole("button", { name: "To'lovni saqlash" }));
+    dialog = await screen.findByRole("alertdialog", { name: "To'lovni qayd qilasizmi?" });
+    await user.click(within(dialog).getByRole("button", { name: "To'lovni saqlash" }));
+    await waitFor(() => expect(apiPostMock).toHaveBeenCalledTimes(2));
+
+    const [first, second] = apiPostMock.mock.calls.map((call) => (call[2] as { headers: Record<string, string> }).headers["Idempotency-Key"]);
+    expect(first).toBe(second);
+    expect(apiPostMock.mock.calls[1][1]).toEqual({ operator_id: "1042", amount: 2000 });
+
+    const success = (await screen.findByText("To'lov qayd qilindi")).closest("[role=status]") as HTMLElement;
+    expect(success).toHaveTextContent("1 000 so'm");
+    expect(success).not.toHaveTextContent("2 000 so'm");
+  });
 });

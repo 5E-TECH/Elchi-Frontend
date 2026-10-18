@@ -46,7 +46,7 @@ const NotificationsPage = () => {
   const [editTarget, setEditTarget] = useState<Notification | null>(null);
   const confirmDelete = useDeleteNotificationConfirm();
 
-  const query = useNotifications({ page, limit });
+  const query = useNotifications({ page, limit }, { silentError: true });
   const { data, isLoading, isError, error, refetch } = query;
   const total = data?.total;
 

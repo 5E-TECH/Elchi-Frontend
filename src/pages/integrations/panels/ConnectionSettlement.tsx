@@ -84,8 +84,8 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
   const [page, setPage] = useState(1);
   const [payOpen, setPayOpen] = useState(false);
 
-  const balance = useReceivableBalance(connection.id);
-  const list = useReceivables({ integrationId: connection.id, status, page, limit: PAGE_SIZE });
+  const balance = useReceivableBalance(connection.id, { silentError: true });
+  const list = useReceivables({ integrationId: connection.id, status, page, limit: PAGE_SIZE }, { silentError: true });
 
   const rows = list.data?.items ?? [];
   const total = list.data?.pagination.total ?? rows.length;

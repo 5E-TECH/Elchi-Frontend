@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**76 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **13** · qisman: **17** · v2 ga ko'chirilgan route: **47 / 76**
+**76 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **13** · qisman: **16** · v2 ga ko'chirilgan route: **70 / 76**
 
 ## Qanday ishlatiladi
 
@@ -97,31 +97,31 @@
 | `/regions/logist-assignment` | Hududlar | `src/pages/region/pages/logist-assignment/index.tsx` | superadmin, admin | 2 | v2 |
 | `/branches` | Filiallar | `src/pages/branches/ui/BranchesPage.tsx` | superadmin | 3 | v2 |
 | `/branches/:id` | Filiallar | `src/pages/branches/ui/BranchDetailPage.tsx` | superadmin | 2 | v2 |
-| `/integrations/connections` | Integratsiyalar | `src/pages/integrations/ConnectionsPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 23 | eski |
-| `/integrations/new` | Integratsiyalar | `src/pages/integrations/CatalogPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 2 | eski |
-| `/integrations/new/:typeKey` | Integratsiyalar | `src/pages/integrations/wizard/ConnectWizard.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 2 | eski |
-| `/integrations/partners` | Integratsiyalar | `src/pages/partners/index.tsx` | superadmin, admin, manager, registrator, market, courier | 2 | eski |
-| `/integrations/sources` | Integratsiyalar | `src/pages/new_orders/external_orders/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 2 | eski |
-| `/integrations/sources/create` | Integratsiyalar | `src/pages/new_orders/external_orders/create.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 1 | eski |
-| `/integrations/sources/:id` | Integratsiyalar | `src/pages/new_orders/external_orders/detail.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 1 | eski |
-| `/notifications` | Bildirishnomalar | `src/pages/notifications/ui/NotificationsPage.tsx` | superadmin | 3 | eski |
-| `/notifications/send` | Bildirishnomalar | `src/pages/notification-send/index.tsx` | superadmin, admin | 2 | eski |
-| `/notifications/sms` | Bildirishnomalar | `src/pages/notifications/ui/SmsPage.tsx` | superadmin, admin | 5 | eski |
-| `/activity-logs` | Tizim | `src/pages/activity-logs/index.tsx` | superadmin, admin | 5 | eski |
-| `/ops` | Tizim | `src/pages/ops/index.tsx` | superadmin | 8 | eski |
+| `/integrations/connections` | Integratsiyalar | `src/pages/integrations/ConnectionsPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 23 | v2 |
+| `/integrations/new` | Integratsiyalar | `src/pages/integrations/CatalogPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 2 | v2 |
+| `/integrations/new/:typeKey` | Integratsiyalar | `src/pages/integrations/wizard/ConnectWizard.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 2 | v2 |
+| `/integrations/partners` | Integratsiyalar | `src/pages/partners/index.tsx` | superadmin, admin, manager, registrator, market, courier | 2 | v2 |
+| `/integrations/sources` | Integratsiyalar | `src/pages/new_orders/external_orders/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 2 | v2 |
+| `/integrations/sources/create` | Integratsiyalar | `src/pages/new_orders/external_orders/create.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 1 | v2 |
+| `/integrations/sources/:id` | Integratsiyalar | `src/pages/new_orders/external_orders/detail.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 1 | v2 |
+| `/notifications` | Bildirishnomalar | `src/pages/notifications/ui/NotificationsPage.tsx` | superadmin | 3 | v2 |
+| `/notifications/send` | Bildirishnomalar | `src/pages/notification-send/index.tsx` | superadmin, admin | 2 | v2 |
+| `/notifications/sms` | Bildirishnomalar | `src/pages/notifications/ui/SmsPage.tsx` | superadmin, admin | 5 | v2 |
+| `/activity-logs` | Tizim | `src/pages/activity-logs/index.tsx` | superadmin, admin | 5 | v2 |
+| `/ops` | Tizim | `src/pages/ops/index.tsx` | superadmin | 8 | v2 |
 | `/ops/ui-kit` | Tizim | `src/pages/ui-kit/index.tsx` | superadmin | 0 | v2 |
-| `/finance-operators` | Tizim | `src/pages/finance-operators/index.tsx` | superadmin | 1 | eski |
-| `/integrations-ops` | Tizim | `src/pages/integrations-ops/index.tsx` | superadmin | 1 | eski |
-| `/investors-ops` | Tizim | `src/pages/investors-ops/index.tsx` | superadmin | 1 | eski |
-| `/logistics-ops` | Tizim | `src/pages/logistics-ops/index.tsx` | superadmin | 1 | eski |
-| `/branch-ops` | Tizim | `src/pages/branch-ops/index.tsx` | superadmin | 1 | eski |
-| `/identity-ops` | Tizim | `src/pages/identity-ops/index.tsx` | superadmin | 1 | eski |
-| `/system-ops` | Tizim | `src/pages/system-ops/index.tsx` | superadmin | 1 | eski |
-| `/logs` | Tizim | `src/pages/logs/index.tsx` | superadmin | 1 | eski |
+| `/finance-operators` | Tizim | `src/pages/finance-operators/index.tsx` | superadmin | 1 | v2 |
+| `/integrations-ops` | Tizim | `src/pages/integrations-ops/index.tsx` | superadmin | 1 | v2 |
+| `/investors-ops` | Tizim | `src/pages/investors-ops/index.tsx` | superadmin | 1 | v2 |
+| `/logistics-ops` | Tizim | `src/pages/logistics-ops/index.tsx` | superadmin | 1 | v2 |
+| `/branch-ops` | Tizim | `src/pages/branch-ops/index.tsx` | superadmin | 1 | v2 |
+| `/identity-ops` | Tizim | `src/pages/identity-ops/index.tsx` | superadmin | 1 | v2 |
+| `/system-ops` | Tizim | `src/pages/system-ops/index.tsx` | superadmin | 1 | v2 |
+| `/logs` | Tizim | `src/pages/logs/index.tsx` | superadmin | 1 | v2 |
 | `/market-operators` | Tizim | `src/pages/market-operators/index.tsx` | hech kim (yopiq) | 0 | eski |
-| `/profile` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/profile/ui/ProfilePage.tsx` | superadmin, admin, manager, registrator, market, courier | 2 | eski |
-| `/settings` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/settings/ui/SettingsPage.tsx` | superadmin, admin, manager, registrator, market, courier | 5 | eski |
-| `/inbox` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/notifications/ui/NotificationInboxPage.tsx` | superadmin, admin, manager, registrator, market, courier | 5 | eski |
+| `/profile` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/profile/ui/ProfilePage.tsx` | superadmin, admin, manager, registrator, market, courier | 2 | v2 |
+| `/settings` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/settings/ui/SettingsPage.tsx` | superadmin, admin, manager, registrator, market, courier | 5 | v2 |
+| `/inbox` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/notifications/ui/NotificationInboxPage.tsx` | superadmin, admin, manager, registrator, market, courier | 5 | v2 |
 
 ## 2. Route bo'yicha maketlar (batafsil)
 
@@ -1130,42 +1130,42 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 ### Integratsiyalar
 
-#### `/integrations/connections` — Integratsiyalar konsoli — Hamkorlar · Tashqi tizimlar · Marketplace + ulanish panellari
+#### `/integrations/connections` — Integratsiyalar konsoli — Hamkorlar · Tashqi tizimlar · Marketplace + ulanish panellari (dizayn v2)
 
-- **Fayllar:** `src/pages/integrations/ConnectionsPage.tsx` · `src/pages/integrations/index.tsx` · `src/pages/integrations/ConnectionSubNav.tsx` · `src/pages/integrations/FilterPills.tsx` · `src/pages/integrations/NewPartnerModal.tsx` · `src/pages/integrations/panels/ConnectionOverview.tsx` · `src/pages/integrations/panels/ConnectionSettings.tsx` · `src/pages/integrations/panels/ConnectionShipments.tsx` · `src/pages/integrations/panels/ConnectionLog.tsx` · `src/pages/integrations/panels/ConnectionSettlement.tsx` · `src/pages/integrations/panels/ConnectionControl.tsx` · `src/pages/integrations/panels/ConnectionSecurity.tsx` · `src/pages/integrations/ui.ts`
+- **Fayllar:** `src/pages/integrations/ConnectionsPage.tsx` · `src/pages/integrations/index.tsx` · `src/pages/integrations/useConnections.ts` · `src/pages/integrations/NewPartnerModal.tsx` · `src/pages/integrations/ConnectionFields.tsx` · `src/pages/integrations/StatusMapField.tsx` · `src/pages/integrations/panels/ConnectionOverview.tsx` · `src/pages/integrations/panels/ConnectionSettings.tsx` · `src/pages/integrations/panels/ConnectionShipments.tsx` · `src/pages/integrations/panels/ConnectionLog.tsx` · `src/pages/integrations/panels/ConnectionSettlement.tsx` · `src/pages/integrations/panels/ConnectionControl.tsx` · `src/pages/integrations/panels/ConnectionSecurity.tsx` · `src/pages/integrations/ui/index.ts` · `src/pages/integrations/ui/layout.tsx` · `src/pages/integrations/ui/charts.tsx` · `src/pages/integrations/ui/FilterChips.tsx` · `src/pages/integrations/ui/InlineAlert.tsx` · `src/pages/integrations/ui/inputs.tsx` · `src/pages/integrations/ui/Switch.tsx`
 - **Qobiq:** DashboardLayout › IntegrationsPage (`src/pages/integrations/index.tsx`) · **Guard:** `canManageExternalIntegrations` (access.ts → canReceiveExternalOrders)
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator
 - **Menyuda:** «Integratsiyalar» (`integrations`, `/integrations` orqali) — superadmin, admin
-- **Holat:** eski
-- **Izoh:** ?scope=partner|external|marketplace → *-console / admin-integrations-{partners,external,marketplace}; ?t=settings|shipments|log|settlement|control|security → panel maketlari (log = «Hodisalar»); ?t=overview (sukut) — konsol maketining o'zi. Tablar — src/pages/integrations/index.tsx (layout).
+- **Holat:** v2
+- **Izoh:** ?scope=partner|external|marketplace → *-console / admin-integrations-{partners,external,marketplace}; ?t=settings|shipments|log|settlement|control|security → panel maketlari (log = «Hodisalar»); ?t=overview (sukut) — konsol maketining o'zi. Dizayn v2 (G2): eski ui.ts / OverviewPage / ConnectionSubNav / FilterPills o'chirildi; scope tablari konsol kartasi ichida (D2, layout index.tsx faqat Outlet). KPI «kechaga nisbatan» — qo'shimcha GET integrations/metrics?hours=48 (kecha = 48 − 24 soat; ikkinchi so'rov yiqilsa meta qatori yashirinadi; ega savoli 8 — sukut: ha). Kalitni yangilash, to'xtatish va hisob-kitob to'lovi — tasdiq oynasi orqali. Chizilmagan (Taklif / API yo'q, spec §5): KPI sparklinelari, «Hodisalar · oxirgi 7 kun», «Soatlar bo'yicha», «O'rtacha javob vaqti» trendi (avg_ms — bitta son), «Qarz harakati · 30 kun». Sahifadagi xato holatlari global xabarni takrorlamaydi (meta.silentError).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/integrations/connections` | superadmin | `superadmin-integrations-partners-console` — Integratsiyalar — Hamkorlar (konsol) | [design/fragments/superadmin--integrations-partners-console.html](fragments/superadmin--integrations-partners-console.html) | sahifa | eski |
-| `/integrations/connections` | superadmin | `superadmin-integrations-external-console` — Integratsiyalar — Tashqi tizimlar | [design/fragments/superadmin--integrations-external-console.html](fragments/superadmin--integrations-external-console.html) | sahifa | eski |
-| `/integrations/connections` | superadmin | `superadmin-integrations-marketplace-console` — Integratsiyalar — Marketplace | [design/fragments/superadmin--integrations-marketplace-console.html](fragments/superadmin--integrations-marketplace-console.html) | sahifa | eski |
-| `/integrations/connections` | superadmin | `superadmin-integrations-panel-settings` — Ulanish — Sozlamalar paneli<br>↳ `src/pages/integrations/panels/ConnectionSettings.tsx` | [design/fragments/superadmin--integrations-panel-settings.html](fragments/superadmin--integrations-panel-settings.html) | sahifa | eski |
-| `/integrations/connections` | superadmin | `superadmin-integrations-panel-shipments` — Ulanish — Posilkalar paneli<br>↳ `src/pages/integrations/panels/ConnectionShipments.tsx` | [design/fragments/superadmin--integrations-panel-shipments.html](fragments/superadmin--integrations-panel-shipments.html) | sahifa | eski |
-| `/integrations/connections` | superadmin | `superadmin-integrations-panel-events` — Ulanish — Hodisalar paneli<br>↳ `src/pages/integrations/panels/ConnectionLog.tsx` | [design/fragments/superadmin--integrations-panel-events.html](fragments/superadmin--integrations-panel-events.html) | sahifa | eski |
-| `/integrations/connections` | superadmin | `superadmin-integrations-panel-settlement` — Ulanish — Hisob-kitob paneli<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/superadmin--integrations-panel-settlement.html](fragments/superadmin--integrations-panel-settlement.html) | sahifa | eski |
-| `/integrations/connections` | superadmin | `superadmin-integrations-settlement-pay-dialog` — Tashuvchidan olingan to'lov (modal)<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/superadmin--integrations-settlement-pay-dialog.html](fragments/superadmin--integrations-settlement-pay-dialog.html) | oyna | eski |
-| `/integrations/connections` | superadmin | `superadmin-integrations-panel-control` — Ulanish — Ish rejimi paneli<br>↳ `src/pages/integrations/panels/ConnectionControl.tsx` | [design/fragments/superadmin--integrations-panel-control.html](fragments/superadmin--integrations-panel-control.html) | sahifa | eski |
-| `/integrations/connections` | superadmin | `superadmin-integrations-panel-security` — Ulanish — Xavfsizlik paneli<br>↳ `src/pages/integrations/panels/ConnectionSecurity.tsx` | [design/fragments/superadmin--integrations-panel-security.html](fragments/superadmin--integrations-panel-security.html) | sahifa | eski |
-| `/integrations/connections` | superadmin | `superadmin-integrations-rotate-key-dialog` — Kalitni yangilash (tasdiq)<br>↳ `src/pages/integrations/panels/ConnectionSecurity.tsx` | [design/fragments/superadmin--integrations-rotate-key-dialog.html](fragments/superadmin--integrations-rotate-key-dialog.html) | oyna | eski |
-| `/integrations/connections` | superadmin | `superadmin-integrations-new-partner-dialog` — Yangi hamkor (modal)<br>↳ `src/pages/integrations/NewPartnerModal.tsx` | [design/fragments/superadmin--integrations-new-partner-dialog.html](fragments/superadmin--integrations-new-partner-dialog.html) | oyna | eski |
-| `/integrations/connections` | admin | `admin-integrations-partners` — Integratsiyalar — Hamkorlar | [design/fragments/admin--integrations-partners.html](fragments/admin--integrations-partners.html) | sahifa | eski |
-| `/integrations/connections` | admin | `admin-integrations-external` — Integratsiyalar — Tashqi tizimlar | [design/fragments/admin--integrations-external.html](fragments/admin--integrations-external.html) | sahifa | eski |
-| `/integrations/connections` | admin | `admin-integrations-marketplace` — Integratsiyalar — Marketplace | [design/fragments/admin--integrations-marketplace.html](fragments/admin--integrations-marketplace.html) | sahifa | eski |
-| `/integrations/connections` | admin | `admin-integrations-conn-settings` — Ulanish — Sozlamalar<br>↳ `src/pages/integrations/panels/ConnectionSettings.tsx` | [design/fragments/admin--integrations-conn-settings.html](fragments/admin--integrations-conn-settings.html) | sahifa | eski |
-| `/integrations/connections` | admin | `admin-integrations-conn-shipments` — Ulanish — Posilkalar<br>↳ `src/pages/integrations/panels/ConnectionShipments.tsx` | [design/fragments/admin--integrations-conn-shipments.html](fragments/admin--integrations-conn-shipments.html) | sahifa | eski |
-| `/integrations/connections` | admin | `admin-integrations-conn-log` — Ulanish — Hodisalar<br>↳ `src/pages/integrations/panels/ConnectionLog.tsx` | [design/fragments/admin--integrations-conn-log.html](fragments/admin--integrations-conn-log.html) | sahifa | eski |
-| `/integrations/connections` | admin | `admin-integrations-conn-settlement` — Ulanish — Hisob-kitob<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/admin--integrations-conn-settlement.html](fragments/admin--integrations-conn-settlement.html) | sahifa | eski |
-| `/integrations/connections` | admin | `admin-integrations-settlement-pay-dialog` — Tashuvchidan olingan to'lov<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/admin--integrations-settlement-pay-dialog.html](fragments/admin--integrations-settlement-pay-dialog.html) | oyna | eski |
-| `/integrations/connections` | admin | `admin-integrations-conn-control` — Ulanish — Ish rejimi<br>↳ `src/pages/integrations/panels/ConnectionControl.tsx` | [design/fragments/admin--integrations-conn-control.html](fragments/admin--integrations-conn-control.html) | sahifa | eski |
-| `/integrations/connections` | admin | `admin-integrations-conn-security` — Ulanish — Xavfsizlik<br>↳ `src/pages/integrations/panels/ConnectionSecurity.tsx` | [design/fragments/admin--integrations-conn-security.html](fragments/admin--integrations-conn-security.html) | sahifa | eski |
-| `/integrations/connections` | admin | `admin-integrations-new-partner-dialog` — Yangi hamkor oynasi<br>↳ `src/pages/integrations/NewPartnerModal.tsx` | [design/fragments/admin--integrations-new-partner-dialog.html](fragments/admin--integrations-new-partner-dialog.html) | oyna | eski |
-| `/integrations/connections` | manager | — Menyuda yo'q (faqat URL) — admin-integrations-* maketlariga qarang. | — | — | eski |
-| `/integrations/connections` | registrator | — Menyuda yo'q (faqat URL) — admin-integrations-* maketlariga qarang. | — | — | eski |
+| `/integrations/connections` | superadmin | `superadmin-integrations-partners-console` — Integratsiyalar — Hamkorlar (konsol) | [design/fragments/superadmin--integrations-partners-console.html](fragments/superadmin--integrations-partners-console.html) | sahifa | v2 |
+| `/integrations/connections` | superadmin | `superadmin-integrations-external-console` — Integratsiyalar — Tashqi tizimlar | [design/fragments/superadmin--integrations-external-console.html](fragments/superadmin--integrations-external-console.html) | sahifa | v2 |
+| `/integrations/connections` | superadmin | `superadmin-integrations-marketplace-console` — Integratsiyalar — Marketplace | [design/fragments/superadmin--integrations-marketplace-console.html](fragments/superadmin--integrations-marketplace-console.html) | sahifa | v2 |
+| `/integrations/connections` | superadmin | `superadmin-integrations-panel-settings` — Ulanish — Sozlamalar paneli<br>↳ `src/pages/integrations/panels/ConnectionSettings.tsx` | [design/fragments/superadmin--integrations-panel-settings.html](fragments/superadmin--integrations-panel-settings.html) | sahifa | v2 |
+| `/integrations/connections` | superadmin | `superadmin-integrations-panel-shipments` — Ulanish — Posilkalar paneli<br>↳ `src/pages/integrations/panels/ConnectionShipments.tsx` | [design/fragments/superadmin--integrations-panel-shipments.html](fragments/superadmin--integrations-panel-shipments.html) | sahifa | v2 |
+| `/integrations/connections` | superadmin | `superadmin-integrations-panel-events` — Ulanish — Hodisalar paneli<br>↳ `src/pages/integrations/panels/ConnectionLog.tsx` | [design/fragments/superadmin--integrations-panel-events.html](fragments/superadmin--integrations-panel-events.html) | sahifa | v2 |
+| `/integrations/connections` | superadmin | `superadmin-integrations-panel-settlement` — Ulanish — Hisob-kitob paneli<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/superadmin--integrations-panel-settlement.html](fragments/superadmin--integrations-panel-settlement.html) | sahifa | v2 |
+| `/integrations/connections` | superadmin | `superadmin-integrations-settlement-pay-dialog` — Tashuvchidan olingan to'lov (modal)<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/superadmin--integrations-settlement-pay-dialog.html](fragments/superadmin--integrations-settlement-pay-dialog.html) | oyna | v2 |
+| `/integrations/connections` | superadmin | `superadmin-integrations-panel-control` — Ulanish — Ish rejimi paneli<br>↳ `src/pages/integrations/panels/ConnectionControl.tsx` | [design/fragments/superadmin--integrations-panel-control.html](fragments/superadmin--integrations-panel-control.html) | sahifa | v2 |
+| `/integrations/connections` | superadmin | `superadmin-integrations-panel-security` — Ulanish — Xavfsizlik paneli<br>↳ `src/pages/integrations/panels/ConnectionSecurity.tsx` | [design/fragments/superadmin--integrations-panel-security.html](fragments/superadmin--integrations-panel-security.html) | sahifa | v2 |
+| `/integrations/connections` | superadmin | `superadmin-integrations-rotate-key-dialog` — Kalitni yangilash (tasdiq)<br>↳ `src/pages/integrations/panels/ConnectionSecurity.tsx` | [design/fragments/superadmin--integrations-rotate-key-dialog.html](fragments/superadmin--integrations-rotate-key-dialog.html) | oyna | v2 |
+| `/integrations/connections` | superadmin | `superadmin-integrations-new-partner-dialog` — Yangi hamkor (modal)<br>↳ `src/pages/integrations/NewPartnerModal.tsx` | [design/fragments/superadmin--integrations-new-partner-dialog.html](fragments/superadmin--integrations-new-partner-dialog.html) | oyna | v2 |
+| `/integrations/connections` | admin | `admin-integrations-partners` — Integratsiyalar — Hamkorlar | [design/fragments/admin--integrations-partners.html](fragments/admin--integrations-partners.html) | sahifa | v2 |
+| `/integrations/connections` | admin | `admin-integrations-external` — Integratsiyalar — Tashqi tizimlar | [design/fragments/admin--integrations-external.html](fragments/admin--integrations-external.html) | sahifa | v2 |
+| `/integrations/connections` | admin | `admin-integrations-marketplace` — Integratsiyalar — Marketplace | [design/fragments/admin--integrations-marketplace.html](fragments/admin--integrations-marketplace.html) | sahifa | v2 |
+| `/integrations/connections` | admin | `admin-integrations-conn-settings` — Ulanish — Sozlamalar<br>↳ `src/pages/integrations/panels/ConnectionSettings.tsx` | [design/fragments/admin--integrations-conn-settings.html](fragments/admin--integrations-conn-settings.html) | sahifa | v2 |
+| `/integrations/connections` | admin | `admin-integrations-conn-shipments` — Ulanish — Posilkalar<br>↳ `src/pages/integrations/panels/ConnectionShipments.tsx` | [design/fragments/admin--integrations-conn-shipments.html](fragments/admin--integrations-conn-shipments.html) | sahifa | v2 |
+| `/integrations/connections` | admin | `admin-integrations-conn-log` — Ulanish — Hodisalar<br>↳ `src/pages/integrations/panels/ConnectionLog.tsx` | [design/fragments/admin--integrations-conn-log.html](fragments/admin--integrations-conn-log.html) | sahifa | v2 |
+| `/integrations/connections` | admin | `admin-integrations-conn-settlement` — Ulanish — Hisob-kitob<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/admin--integrations-conn-settlement.html](fragments/admin--integrations-conn-settlement.html) | sahifa | v2 |
+| `/integrations/connections` | admin | `admin-integrations-settlement-pay-dialog` — Tashuvchidan olingan to'lov<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/admin--integrations-settlement-pay-dialog.html](fragments/admin--integrations-settlement-pay-dialog.html) | oyna | v2 |
+| `/integrations/connections` | admin | `admin-integrations-conn-control` — Ulanish — Ish rejimi<br>↳ `src/pages/integrations/panels/ConnectionControl.tsx` | [design/fragments/admin--integrations-conn-control.html](fragments/admin--integrations-conn-control.html) | sahifa | v2 |
+| `/integrations/connections` | admin | `admin-integrations-conn-security` — Ulanish — Xavfsizlik<br>↳ `src/pages/integrations/panels/ConnectionSecurity.tsx` | [design/fragments/admin--integrations-conn-security.html](fragments/admin--integrations-conn-security.html) | sahifa | v2 |
+| `/integrations/connections` | admin | `admin-integrations-new-partner-dialog` — Yangi hamkor oynasi<br>↳ `src/pages/integrations/NewPartnerModal.tsx` | [design/fragments/admin--integrations-new-partner-dialog.html](fragments/admin--integrations-new-partner-dialog.html) | oyna | v2 |
+| `/integrations/connections` | manager | — Menyuda yo'q (faqat URL) — admin-integrations-* maketlariga qarang. | — | — | v2 |
+| `/integrations/connections` | registrator | — Menyuda yo'q (faqat URL) — admin-integrations-* maketlariga qarang. | — | — | v2 |
 
 #### `/integrations/new` — Yangi ulanish — katalog
 
@@ -1173,14 +1173,15 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Qobiq:** DashboardLayout › IntegrationsPage (`src/pages/integrations/index.tsx`) · **Guard:** `canManageExternalIntegrations` (access.ts → canReceiveExternalOrders)
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2): 4 ta tur kartasi (klaviatura bilan), «← Integratsiyalar» qaytish havolasi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/integrations/new` | superadmin | `superadmin-integrations-catalog` — Yangi ulanish — katalog | [design/fragments/superadmin--integrations-catalog.html](fragments/superadmin--integrations-catalog.html) | sahifa | eski |
-| `/integrations/new` | admin | `admin-integrations-catalog` — Yangi ulanish — katalog | [design/fragments/admin--integrations-catalog.html](fragments/admin--integrations-catalog.html) | sahifa | eski |
-| `/integrations/new` | manager | — Maket yo'q — admin-integrations-catalog ga qarang. | — | — | eski |
-| `/integrations/new` | registrator | — Maket yo'q — admin-integrations-catalog ga qarang. | — | — | eski |
+| `/integrations/new` | superadmin | `superadmin-integrations-catalog` — Yangi ulanish — katalog | [design/fragments/superadmin--integrations-catalog.html](fragments/superadmin--integrations-catalog.html) | sahifa | v2 |
+| `/integrations/new` | admin | `admin-integrations-catalog` — Yangi ulanish — katalog | [design/fragments/admin--integrations-catalog.html](fragments/admin--integrations-catalog.html) | sahifa | v2 |
+| `/integrations/new` | manager | — Maket yo'q — admin-integrations-catalog ga qarang. | — | — | v2 |
+| `/integrations/new` | registrator | — Maket yo'q — admin-integrations-catalog ga qarang. | — | — | v2 |
 
 #### `/integrations/new/:typeKey` — Ulash ustasi (Nomi → Kalitlar → Sinash → Tayyor)
 
@@ -1188,14 +1189,15 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Qobiq:** DashboardLayout › IntegrationsPage (`src/pages/integrations/index.tsx`) · **Guard:** `canManageExternalIntegrations` (access.ts → canReceiveExternalOrders)
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2): 4 qadam (Nomi → Kalitlar → Sinash → Tayyor), ulanish 2-qadamda yaratiladi; telefonda qadamlar ustma-ust.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/integrations/new/:typeKey` | superadmin | `superadmin-integrations-wizard` — Ulash ustasi (Nomi → Kalitlar → Sinash → Tayyor) | [design/fragments/superadmin--integrations-wizard.html](fragments/superadmin--integrations-wizard.html) | sahifa | eski |
-| `/integrations/new/:typeKey` | admin | `admin-integrations-wizard` — Ulash ustasi | [design/fragments/admin--integrations-wizard.html](fragments/admin--integrations-wizard.html) | sahifa | eski |
-| `/integrations/new/:typeKey` | manager | — Maket yo'q — admin-integrations-wizard ga qarang. | — | — | eski |
-| `/integrations/new/:typeKey` | registrator | — Maket yo'q — admin-integrations-wizard ga qarang. | — | — | eski |
+| `/integrations/new/:typeKey` | superadmin | `superadmin-integrations-wizard` — Ulash ustasi (Nomi → Kalitlar → Sinash → Tayyor) | [design/fragments/superadmin--integrations-wizard.html](fragments/superadmin--integrations-wizard.html) | sahifa | v2 |
+| `/integrations/new/:typeKey` | admin | `admin-integrations-wizard` — Ulash ustasi | [design/fragments/admin--integrations-wizard.html](fragments/admin--integrations-wizard.html) | sahifa | v2 |
+| `/integrations/new/:typeKey` | manager | — Maket yo'q — admin-integrations-wizard ga qarang. | — | — | v2 |
+| `/integrations/new/:typeKey` | registrator | — Maket yo'q — admin-integrations-wizard ga qarang. | — | — | v2 |
 
 #### `/integrations/partners` — Partner API hamkorlari (eski sahifa, zaxira)
 
@@ -1203,17 +1205,17 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Qobiq:** DashboardLayout › IntegrationsPage (`src/pages/integrations/index.tsx`) · **Guard:** yo'q (faqat kirish)
 - **Rollar:** superadmin, admin, manager, registrator, market, courier
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
-- **Izoh:** Marshrutda guard yo'q (faqat kirish) — menyuda ko'rinmaydi; yangi konsol to'liq tasdiqlanguncha zaxira.
+- **Holat:** v2
+- **Izoh:** Marshrutda guard yo'q (faqat kirish) — menyuda ko'rinmaydi; yangi konsol to'liq tasdiqlanguncha zaxira. Ega savoli 6 — sukut: guard o'zgarmaydi (market/kuryer URL bilan ochsa API 403 → sahifadagi xato holati). Dizayn v2 (G2): «Eski sahifa» belgisi, webhook jurnali — DataTable expandable (qator ochiladi), hamkorni o'chirish va kalitni almashtirish — tasdiq oynasi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/integrations/partners` | superadmin | `superadmin-integrations-legacy-partners` — Partner API hamkorlari (eski sahifa) | [design/fragments/superadmin--integrations-legacy-partners.html](fragments/superadmin--integrations-legacy-partners.html) | sahifa | eski |
-| `/integrations/partners` | admin | `admin-integrations-legacy-partners` — Partner API hamkorlari (eski) | [design/fragments/admin--integrations-legacy-partners.html](fragments/admin--integrations-legacy-partners.html) | sahifa | eski |
-| `/integrations/partners` | manager | — Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan. | — | — | eski |
-| `/integrations/partners` | registrator | — Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan. | — | — | eski |
-| `/integrations/partners` | market | — Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan. | — | — | eski |
-| `/integrations/partners` | courier | — Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan. | — | — | eski |
+| `/integrations/partners` | superadmin | `superadmin-integrations-legacy-partners` — Partner API hamkorlari (eski sahifa) | [design/fragments/superadmin--integrations-legacy-partners.html](fragments/superadmin--integrations-legacy-partners.html) | sahifa | v2 |
+| `/integrations/partners` | admin | `admin-integrations-legacy-partners` — Partner API hamkorlari (eski) | [design/fragments/admin--integrations-legacy-partners.html](fragments/admin--integrations-legacy-partners.html) | sahifa | v2 |
+| `/integrations/partners` | manager | — Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan. | — | — | v2 |
+| `/integrations/partners` | registrator | — Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan. | — | — | v2 |
+| `/integrations/partners` | market | — Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan. | — | — | v2 |
+| `/integrations/partners` | courier | — Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan. | — | — | v2 |
 
 #### `/integrations/sources` — Tashqi manbalar (eski: integratsiyalar ro'yxati)
 
@@ -1221,14 +1223,15 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Qobiq:** DashboardLayout › IntegrationsPage (`src/pages/integrations/index.tsx`) · **Guard:** `canManageExternalIntegrations` (access.ts → canReceiveExternalOrders)
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2): «Eski sahifa» belgisi; eski yo'llar (/new-orders/external, /new-orders/integrations …) kanonik /integrations/sources* ga yo'naltiriladi (D9); o'chirish — tasdiq oynasi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/integrations/sources` | superadmin | `superadmin-integrations-legacy-sources` — Tashqi manbalar (eski: Integratsiyalar ro'yxati) | [design/fragments/superadmin--integrations-legacy-sources.html](fragments/superadmin--integrations-legacy-sources.html) | sahifa | eski |
-| `/integrations/sources` | admin | `admin-integrations-legacy-sources` — Integratsiyalar manbalari (eski) | [design/fragments/admin--integrations-legacy-sources.html](fragments/admin--integrations-legacy-sources.html) | sahifa | eski |
-| `/integrations/sources` | manager | — Maket yo'q — admin-integrations-legacy-sources ga qarang. | — | — | eski |
-| `/integrations/sources` | registrator | — Maket yo'q — admin-integrations-legacy-sources ga qarang. | — | — | eski |
+| `/integrations/sources` | superadmin | `superadmin-integrations-legacy-sources` — Tashqi manbalar (eski: Integratsiyalar ro'yxati) | [design/fragments/superadmin--integrations-legacy-sources.html](fragments/superadmin--integrations-legacy-sources.html) | sahifa | v2 |
+| `/integrations/sources` | admin | `admin-integrations-legacy-sources` — Integratsiyalar manbalari (eski) | [design/fragments/admin--integrations-legacy-sources.html](fragments/admin--integrations-legacy-sources.html) | sahifa | v2 |
+| `/integrations/sources` | manager | — Maket yo'q — admin-integrations-legacy-sources ga qarang. | — | — | v2 |
+| `/integrations/sources` | registrator | — Maket yo'q — admin-integrations-legacy-sources ga qarang. | — | — | v2 |
 
 #### `/integrations/sources/create` — Integratsiya yaratish (eski forma)
 
@@ -1236,14 +1239,15 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Qobiq:** DashboardLayout › IntegrationsPage (`src/pages/integrations/index.tsx`) · **Guard:** `canManageExternalIntegrations` (access.ts → canReceiveExternalOrders)
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2). auth_type qiymatlari (none/bearer/basic) o'zgartirilmagan — backend AuthType 'api_key' | 'login'; gateway moslashuvi alohida tekshiriladi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/integrations/sources/create` | superadmin | `superadmin-integrations-legacy-source-create` — Integratsiya yaratish (eski forma) | [design/fragments/superadmin--integrations-legacy-source-create.html](fragments/superadmin--integrations-legacy-source-create.html) | sahifa | eski |
-| `/integrations/sources/create` | admin | — Maket yo'q — superadmin-integrations-legacy-source-create ga qarang. | — | — | eski |
-| `/integrations/sources/create` | manager | — Maket yo'q — superadmin-integrations-legacy-source-create ga qarang. | — | — | eski |
-| `/integrations/sources/create` | registrator | — Maket yo'q — superadmin-integrations-legacy-source-create ga qarang. | — | — | eski |
+| `/integrations/sources/create` | superadmin | `superadmin-integrations-legacy-source-create` — Integratsiya yaratish (eski forma) | [design/fragments/superadmin--integrations-legacy-source-create.html](fragments/superadmin--integrations-legacy-source-create.html) | sahifa | v2 |
+| `/integrations/sources/create` | admin | — Maket yo'q — superadmin-integrations-legacy-source-create ga qarang. | — | — | v2 |
+| `/integrations/sources/create` | manager | — Maket yo'q — superadmin-integrations-legacy-source-create ga qarang. | — | — | v2 |
+| `/integrations/sources/create` | registrator | — Maket yo'q — superadmin-integrations-legacy-source-create ga qarang. | — | — | v2 |
 
 #### `/integrations/sources/:id` — Integratsiya — QR skaner (eski tafsilot)
 
@@ -1251,30 +1255,32 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Qobiq:** DashboardLayout › IntegrationsPage (`src/pages/integrations/index.tsx`) · **Guard:** `canManageExternalIntegrations` (access.ts → canReceiveExternalOrders)
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2). Ega savoli 7 — sukut: maketdagi «Qidirish» maydoni chizilmaydi (POST integrations/{slug}/search-by-qr bor, lekin oqim kelishilmagan).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/integrations/sources/:id` | superadmin | `superadmin-integrations-legacy-source-detail` — Integratsiya — QR skaner (eski) | [design/fragments/superadmin--integrations-legacy-source-detail.html](fragments/superadmin--integrations-legacy-source-detail.html) | sahifa | eski |
-| `/integrations/sources/:id` | admin | — Maket yo'q — superadmin-integrations-legacy-source-detail ga qarang. | — | — | eski |
-| `/integrations/sources/:id` | manager | — Maket yo'q — superadmin-integrations-legacy-source-detail ga qarang. | — | — | eski |
-| `/integrations/sources/:id` | registrator | — Maket yo'q — superadmin-integrations-legacy-source-detail ga qarang. | — | — | eski |
+| `/integrations/sources/:id` | superadmin | `superadmin-integrations-legacy-source-detail` — Integratsiya — QR skaner (eski) | [design/fragments/superadmin--integrations-legacy-source-detail.html](fragments/superadmin--integrations-legacy-source-detail.html) | sahifa | v2 |
+| `/integrations/sources/:id` | admin | — Maket yo'q — superadmin-integrations-legacy-source-detail ga qarang. | — | — | v2 |
+| `/integrations/sources/:id` | manager | — Maket yo'q — superadmin-integrations-legacy-source-detail ga qarang. | — | — | v2 |
+| `/integrations/sources/:id` | registrator | — Maket yo'q — superadmin-integrations-legacy-source-detail ga qarang. | — | — | v2 |
 
 ### Bildirishnomalar
 
 #### `/notifications` — Bildirishnomalar — Telegram guruhlari
 
-- **Fayllar:** `src/pages/notifications/ui/NotificationsPage.tsx` · `src/widgets/notification-table/ui/NotificationTable.tsx` · `src/features/notification-create/ui/NotificationFormModal.tsx` · `src/features/notification-delete/ui/DeleteNotificationButton.tsx`
+- **Fayllar:** `src/pages/notifications/ui/NotificationsPage.tsx` · `src/features/notification-create/ui/NotificationFormModal.tsx` · `src/features/notification-edit/ui/NotificationEditModal.tsx` · `src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewNotifications` (access.ts → canViewNotifications)
 - **Rollar:** superadmin
 - **Menyuda:** «Bildirishnomalar» (`notifications`) — superadmin
-- **Holat:** eski
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2): jadval + sahifalash (DataTable / Pagination; telefonda kartalar), qo'shish oynasi, o'chirish — tasdiq oynasi (maket matni). Tahrirlash — qo'shish oynasi qolipida (D6, maket yo'q: NotificationEditModal `(maket yo'q) superadmin-notifications-create-dialog`). Ustun saralashi chizilmaydi (GET /notifications da sort yo'q). Matnlar — notificationGroups.json.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/notifications` | superadmin | `superadmin-notifications-telegram-groups` — Bildirishnomalar — Telegram guruhlari | [design/fragments/superadmin--notifications-telegram-groups.html](fragments/superadmin--notifications-telegram-groups.html) | sahifa | eski |
-| `/notifications` | superadmin | `superadmin-notifications-create-dialog` — Bildirishnoma qo'shish (modal)<br>↳ `src/features/notification-create/ui/NotificationFormModal.tsx` | [design/fragments/superadmin--notifications-create-dialog.html](fragments/superadmin--notifications-create-dialog.html) | oyna | eski |
-| `/notifications` | superadmin | `superadmin-notifications-delete-dialog` — Bildirishnomani o'chirish (tasdiq)<br>↳ `src/features/notification-delete/ui/DeleteNotificationButton.tsx` | [design/fragments/superadmin--notifications-delete-dialog.html](fragments/superadmin--notifications-delete-dialog.html) | oyna | eski |
+| `/notifications` | superadmin | `superadmin-notifications-telegram-groups` — Bildirishnomalar — Telegram guruhlari | [design/fragments/superadmin--notifications-telegram-groups.html](fragments/superadmin--notifications-telegram-groups.html) | sahifa | v2 |
+| `/notifications` | superadmin | `superadmin-notifications-create-dialog` — Bildirishnoma qo'shish (modal)<br>↳ `src/features/notification-create/ui/NotificationFormModal.tsx` | [design/fragments/superadmin--notifications-create-dialog.html](fragments/superadmin--notifications-create-dialog.html) | oyna | v2 |
+| `/notifications` | superadmin | `superadmin-notifications-delete-dialog` — Bildirishnomani o'chirish (tasdiq)<br>↳ `src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx` | [design/fragments/superadmin--notifications-delete-dialog.html](fragments/superadmin--notifications-delete-dialog.html) | oyna | v2 |
 
 #### `/notifications/send` — Xabar yuborish (tizim ichidagi bildirishnoma)
 
@@ -1282,69 +1288,71 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Qobiq:** DashboardLayout · **Guard:** `canSendNotifications` (access.ts → canSendNotifications)
 - **Rollar:** superadmin, admin
 - **Menyuda:** yo'q — /inbox sahifasidagi «Xabar yuborish» havolasi
-- **Holat:** eski
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2): 4 rejim, kanallar, ko'rinish (NotificationInboxItem preview), yuborish — tasdiq oynasi (hammaga — danger), ikki marta yuborilmaydi. Ega savoli 10 — sukut: «← Bildirishnomalar» /inbox ga qaytaradi (kirish nuqtasi /inbox; admin /notifications ni ocholmaydi).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/notifications/send` | superadmin | `superadmin-notifications-send` — Xabar yuborish | [design/fragments/superadmin--notifications-send.html](fragments/superadmin--notifications-send.html) | sahifa | eski |
-| `/notifications/send` | superadmin | `superadmin-notifications-send-confirm-dialog` — Xabarni yuborishni tasdiqlang | [design/fragments/superadmin--notifications-send-confirm-dialog.html](fragments/superadmin--notifications-send-confirm-dialog.html) | oyna | eski |
-| `/notifications/send` | admin | — Maket yo'q — superadmin-notifications-send ga qarang (kirish: /inbox sahifasidagi havola). | — | — | eski |
+| `/notifications/send` | superadmin | `superadmin-notifications-send` — Xabar yuborish | [design/fragments/superadmin--notifications-send.html](fragments/superadmin--notifications-send.html) | sahifa | v2 |
+| `/notifications/send` | superadmin | `superadmin-notifications-send-confirm-dialog` — Xabarni yuborishni tasdiqlang | [design/fragments/superadmin--notifications-send-confirm-dialog.html](fragments/superadmin--notifications-send-confirm-dialog.html) | oyna | v2 |
+| `/notifications/send` | admin | — Maket yo'q — superadmin-notifications-send ga qarang (kirish: /inbox sahifasidagi havola). | — | — | v2 |
 
 #### `/notifications/sms` — SMS — Kampaniya · Shablonlar · Xarajat · Sozlamalar
 
-- **Fayllar:** `src/pages/notifications/ui/SmsPage.tsx` · `src/pages/notifications/ui/CampaignPage.tsx` · `src/pages/notifications/ui/SmsTemplatesTab.tsx` · `src/pages/notifications/ui/SmsReportTab.tsx` · `src/pages/notifications/ui/SmsSettingsTab.tsx` · `src/shared/ui/SmsMeter.tsx`
+- **Fayllar:** `src/pages/notifications/ui/SmsPage.tsx` · `src/pages/notifications/ui/CampaignPage.tsx` · `src/pages/notifications/ui/SmsTemplatesTab.tsx` · `src/pages/notifications/ui/SmsReportTab.tsx` · `src/pages/notifications/ui/SmsSettingsTab.tsx` · `src/pages/notifications/ui/sms/CardList.tsx` · `src/pages/notifications/ui/sms/SmsReportCharts.tsx` · `src/shared/ui/SmsMeter.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canSendNotifications` (access.ts → canSendNotifications)
 - **Rollar:** superadmin, admin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
-- **Izoh:** Tab URL'da: ?tab=campaign|templates|report|settings.
+- **Holat:** v2
+- **Izoh:** Tab URL'da: ?tab=campaign|templates|report|settings. Dizayn v2 (G2): kampaniya — tasdiq oynasi + Idempotency-Key; «Xarajat» grafiklari Grafik | Jadval egizagi; shablonni o'chirish — tasdiq. «Xarajat» o'lchagichi — «Yetkazildi / jami yuborilgan» (maket); backend success_rate (yetkazildi / (yetkazildi + xato)) ko'rsatilmaydi. Rejalashtirilgan vaqt «18.10.2026, 09:00 da yuboriladi» ko'rinishida (umumiy formatlovchida «Ertaga» yo'q).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/notifications/sms` | superadmin | `superadmin-notifications-sms-campaign` — SMS — Kampaniya | [design/fragments/superadmin--notifications-sms-campaign.html](fragments/superadmin--notifications-sms-campaign.html) | sahifa | eski |
-| `/notifications/sms` | superadmin | `superadmin-notifications-sms-campaign-confirm-dialog` — SMS kampaniyani tasdiqlash | [design/fragments/superadmin--notifications-sms-campaign-confirm-dialog.html](fragments/superadmin--notifications-sms-campaign-confirm-dialog.html) | oyna | eski |
-| `/notifications/sms` | superadmin | `superadmin-notifications-sms-templates` — SMS — Shablonlar | [design/fragments/superadmin--notifications-sms-templates.html](fragments/superadmin--notifications-sms-templates.html) | sahifa | eski |
-| `/notifications/sms` | superadmin | `superadmin-notifications-sms-report` — SMS — Xarajat | [design/fragments/superadmin--notifications-sms-report.html](fragments/superadmin--notifications-sms-report.html) | sahifa | eski |
-| `/notifications/sms` | superadmin | `superadmin-notifications-sms-settings` — SMS — Sozlamalar | [design/fragments/superadmin--notifications-sms-settings.html](fragments/superadmin--notifications-sms-settings.html) | sahifa | eski |
-| `/notifications/sms` | admin | — Maket yo'q — superadmin-notifications-sms-* ga qarang. | — | — | eski |
+| `/notifications/sms` | superadmin | `superadmin-notifications-sms-campaign` — SMS — Kampaniya | [design/fragments/superadmin--notifications-sms-campaign.html](fragments/superadmin--notifications-sms-campaign.html) | sahifa | v2 |
+| `/notifications/sms` | superadmin | `superadmin-notifications-sms-campaign-confirm-dialog` — SMS kampaniyani tasdiqlash | [design/fragments/superadmin--notifications-sms-campaign-confirm-dialog.html](fragments/superadmin--notifications-sms-campaign-confirm-dialog.html) | oyna | v2 |
+| `/notifications/sms` | superadmin | `superadmin-notifications-sms-templates` — SMS — Shablonlar | [design/fragments/superadmin--notifications-sms-templates.html](fragments/superadmin--notifications-sms-templates.html) | sahifa | v2 |
+| `/notifications/sms` | superadmin | `superadmin-notifications-sms-report` — SMS — Xarajat | [design/fragments/superadmin--notifications-sms-report.html](fragments/superadmin--notifications-sms-report.html) | sahifa | v2 |
+| `/notifications/sms` | superadmin | `superadmin-notifications-sms-settings` — SMS — Sozlamalar | [design/fragments/superadmin--notifications-sms-settings.html](fragments/superadmin--notifications-sms-settings.html) | sahifa | v2 |
+| `/notifications/sms` | admin | — Maket yo'q — superadmin-notifications-sms-* ga qarang. | — | — | v2 |
 
 ### Tizim — faoliyat jurnali va ops
 
 #### `/activity-logs` — Faoliyat jurnali (ochiladigan qator)
 
-- **Fayllar:** `src/pages/activity-logs/index.tsx` · `src/widgets/activity-log/ui/ActivityLogViewer.tsx` · `src/widgets/activity-log/ui/ActivityLogDetail.tsx`
+- **Fayllar:** `src/pages/activity-logs/index.tsx` · `src/widgets/activity-log/ui/ActivityLogViewer.tsx` · `src/widgets/activity-log/ui/ActivityLogDetail.tsx` · `src/widgets/activity-log/ui/ActivityLogFiltersSheet.tsx` · `src/widgets/activity-log/lib/logView.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOps` (routes.tsx → canViewOps)
 - **Rollar:** superadmin, admin
 - **Menyuda:** «Faoliyat jurnali» (`activityLogs`) — superadmin, admin
-- **Holat:** eski
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2): 6 filtr + tozalash (telefonda «Filtrlar» varag'i — ActivityLogFiltersSheet, `(maket yo'q) superadmin-activity-logs-list, superadmin-orders-filters-mobile`); qator DataTable expandable bilan ochiladi (o'zgarishlar / metadata), o'zgarishsiz va metadatasiz yozuvda chevron yo'q (faqat «Kuzatuv ID» bo'lsa ham — ochilmaydi); sahifalash.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/activity-logs` | superadmin | `superadmin-activity-logs-list` — Faoliyat jurnali | [design/fragments/superadmin--activity-logs-list.html](fragments/superadmin--activity-logs-list.html) | sahifa | eski |
-| `/activity-logs` | superadmin | `superadmin-activity-logs-row-expanded` — Faoliyat jurnali — yozuv tafsiloti (ochilgan qator)<br>↳ `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | [design/fragments/superadmin--activity-logs-row-expanded.html](fragments/superadmin--activity-logs-row-expanded.html) | sahifa | eski |
-| `/activity-logs` | admin | `admin-activity-logs-list` — Faoliyat jurnali | [design/fragments/superadmin--activity-logs-list.html](fragments/superadmin--activity-logs-list.html) | sahifa | eski |
-| `/activity-logs` | admin | `admin-activity-logs-row-expanded` — Jurnal yozuvi ochilgan<br>↳ `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | [design/fragments/admin--activity-logs-row-expanded.html](fragments/admin--activity-logs-row-expanded.html) | sahifa | eski |
+| `/activity-logs` | superadmin | `superadmin-activity-logs-list` — Faoliyat jurnali | [design/fragments/superadmin--activity-logs-list.html](fragments/superadmin--activity-logs-list.html) | sahifa | v2 |
+| `/activity-logs` | superadmin | `superadmin-activity-logs-row-expanded` — Faoliyat jurnali — yozuv tafsiloti (ochilgan qator)<br>↳ `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | [design/fragments/superadmin--activity-logs-row-expanded.html](fragments/superadmin--activity-logs-row-expanded.html) | sahifa | v2 |
+| `/activity-logs` | admin | `admin-activity-logs-list` — Faoliyat jurnali | [design/fragments/superadmin--activity-logs-list.html](fragments/superadmin--activity-logs-list.html) | sahifa | v2 |
+| `/activity-logs` | admin | `admin-activity-logs-row-expanded` — Jurnal yozuvi ochilgan<br>↳ `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | [design/fragments/admin--activity-logs-row-expanded.html](fragments/admin--activity-logs-row-expanded.html) | sahifa | v2 |
 | `/activity-logs` | tizim taxtasi | `tizim-states-data` — Holatlar — jadval, ro'yxat, kartalar | [design/fragments/tizim--states-data.html](fragments/tizim--states-data.html) | taxta | qoida |
 
-#### `/ops` — Ops vositalari markazi (tablar: ?tab=finance|integrations|investors|logistics|branches|identity|system|auth)
+#### `/ops` — Ops vositalari markazi (tablar: ?tab=finance|integrations|investors|logistics|branches|identity|system|auth; dizayn v2)
 
-- **Fayllar:** `src/pages/ops/index.tsx` · `src/pages/ops/tabs.ts`
+- **Fayllar:** `src/pages/ops/index.tsx` · `src/pages/ops/tabs.ts` · `src/pages/ops/ui/OpsToolPage.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
 - **Rollar:** superadmin
 - **Menyuda:** «Ops vositalari» (`ops`) — superadmin
-- **Holat:** eski
-- **Izoh:** Har tab quyidagi eski to'g'ridan-to'g'ri sahifani ichida ko'rsatadi (/finance-operators … /logs).
+- **Holat:** v2
+- **Izoh:** Har tab quyidagi to'g'ridan-to'g'ri sahifani `embedded` rejimda (sarlavhasiz panel) chizadi (/finance-operators … /logs). Desktopda 8 tab, telefonda tablar → Select (D8); auth tabi yorlig'i «Kirish diagnostikasi». Ega savoli 1 — sukut: to'g'ridan-to'g'ri yo'llar redirect emas, o'sha panel + «← Ops vositalari» (/ops?tab=<k>).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/ops` | superadmin | `superadmin-ops-finance-operators` — Ops — Moliya operatorlari | [design/fragments/superadmin--ops-finance-operators.html](fragments/superadmin--ops-finance-operators.html) | sahifa | eski |
-| `/ops` | superadmin | `superadmin-ops-integrations` — Ops — Integratsiyalar | [design/fragments/superadmin--ops-integrations.html](fragments/superadmin--ops-integrations.html) | sahifa | eski |
-| `/ops` | superadmin | `superadmin-ops-investors` — Ops — Investorlar | [design/fragments/superadmin--ops-investors.html](fragments/superadmin--ops-investors.html) | sahifa | eski |
-| `/ops` | superadmin | `superadmin-ops-logistics` — Ops — Logistika (qaytarish so'rovlari) | [design/fragments/superadmin--ops-logistics.html](fragments/superadmin--ops-logistics.html) | sahifa | eski |
-| `/ops` | superadmin | `superadmin-ops-branches` — Ops — Filiallar (partiya bekor qilish) | [design/fragments/superadmin--ops-branches.html](fragments/superadmin--ops-branches.html) | sahifa | eski |
-| `/ops` | superadmin | `superadmin-ops-identity` — Ops — Xodimlar ro'yxatlari | [design/fragments/superadmin--ops-identity.html](fragments/superadmin--ops-identity.html) | sahifa | eski |
-| `/ops` | superadmin | `superadmin-ops-system` — Ops — Tizim | [design/fragments/superadmin--ops-system.html](fragments/superadmin--ops-system.html) | sahifa | eski |
-| `/ops` | superadmin | `superadmin-ops-auth-diagnostics` — Ops — Auth diagnostikasi | [design/fragments/superadmin--ops-auth-diagnostics.html](fragments/superadmin--ops-auth-diagnostics.html) | sahifa | eski |
+| `/ops` | superadmin | `superadmin-ops-finance-operators` — Ops — Moliya operatorlari | [design/fragments/superadmin--ops-finance-operators.html](fragments/superadmin--ops-finance-operators.html) | sahifa | v2 |
+| `/ops` | superadmin | `superadmin-ops-integrations` — Ops — Integratsiyalar | [design/fragments/superadmin--ops-integrations.html](fragments/superadmin--ops-integrations.html) | sahifa | v2 |
+| `/ops` | superadmin | `superadmin-ops-investors` — Ops — Investorlar | [design/fragments/superadmin--ops-investors.html](fragments/superadmin--ops-investors.html) | sahifa | v2 |
+| `/ops` | superadmin | `superadmin-ops-logistics` — Ops — Logistika (qaytarish so'rovlari) | [design/fragments/superadmin--ops-logistics.html](fragments/superadmin--ops-logistics.html) | sahifa | v2 |
+| `/ops` | superadmin | `superadmin-ops-branches` — Ops — Filiallar (partiya bekor qilish) | [design/fragments/superadmin--ops-branches.html](fragments/superadmin--ops-branches.html) | sahifa | v2 |
+| `/ops` | superadmin | `superadmin-ops-identity` — Ops — Xodimlar ro'yxatlari | [design/fragments/superadmin--ops-identity.html](fragments/superadmin--ops-identity.html) | sahifa | v2 |
+| `/ops` | superadmin | `superadmin-ops-system` — Ops — Tizim | [design/fragments/superadmin--ops-system.html](fragments/superadmin--ops-system.html) | sahifa | v2 |
+| `/ops` | superadmin | `superadmin-ops-auth-diagnostics` — Ops — Auth diagnostikasi | [design/fragments/superadmin--ops-auth-diagnostics.html](fragments/superadmin--ops-auth-diagnostics.html) | sahifa | v2 |
 
 #### `/ops/ui-kit` — Komponentlar to'plami — dizayn v2 primitivlari namunasi (kunduzgi + tungi yonma-yon; ?section=<id>, ?theme-pair=0)
 
@@ -1361,15 +1369,16 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/finance-operators` — Ops — Moliya operatorlari (eski to'g'ridan-to'g'ri yo'l)
 
-- **Fayllar:** `src/pages/finance-operators/index.tsx`
+- **Fayllar:** `src/pages/finance-operators/index.tsx` · `src/pages/finance-operators/ui/OperatorBalanceCard.tsx` · `src/pages/finance-operators/lib/operatorFinance.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
 - **Rollar:** superadmin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). «To'lovni saqlash» — tasdiq oynasi (D10, pul qoidasi; maketda oyna yo'q — tizim-states-forms + Moliya tasdiq naqshi) va Idempotency-Key (bitta mantiqiy to'lov — bitta kalit, xatodan keyin qayta urinishda o'sha kalit; muvaffaqiyat xabaridagi summa server javobidan). «Ishlab topgan va to'langan» yig'ma grafigi — Taklif, chizilmaydi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/finance-operators` | superadmin | `superadmin-ops-finance-operators` — Ops — Moliya operatorlari | [design/fragments/superadmin--ops-finance-operators.html](fragments/superadmin--ops-finance-operators.html) | sahifa | eski |
+| `/finance-operators` | superadmin | `superadmin-ops-finance-operators` — Ops — Moliya operatorlari | [design/fragments/superadmin--ops-finance-operators.html](fragments/superadmin--ops-finance-operators.html) | sahifa | v2 |
 
 #### `/integrations-ops` — Ops — Integratsiyalar
 
@@ -1377,11 +1386,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
 - **Rollar:** superadmin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/integrations-ops` | superadmin | `superadmin-ops-integrations` — Ops — Integratsiyalar | [design/fragments/superadmin--ops-integrations.html](fragments/superadmin--ops-integrations.html) | sahifa | eski |
+| `/integrations-ops` | superadmin | `superadmin-ops-integrations` — Ops — Integratsiyalar | [design/fragments/superadmin--ops-integrations.html](fragments/superadmin--ops-integrations.html) | sahifa | v2 |
 
 #### `/investors-ops` — Ops — Investorlar
 
@@ -1389,11 +1399,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
 - **Rollar:** superadmin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/investors-ops` | superadmin | `superadmin-ops-investors` — Ops — Investorlar | [design/fragments/superadmin--ops-investors.html](fragments/superadmin--ops-investors.html) | sahifa | eski |
+| `/investors-ops` | superadmin | `superadmin-ops-investors` — Ops — Investorlar | [design/fragments/superadmin--ops-investors.html](fragments/superadmin--ops-investors.html) | sahifa | v2 |
 
 #### `/logistics-ops` — Ops — Logistika (qaytarish so'rovlari)
 
@@ -1401,23 +1412,25 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
 - **Rollar:** superadmin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Tanlangan qaytarish so'rovlarini tasdiqlash — POST post/return-requests/approve { order_ids }.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/logistics-ops` | superadmin | `superadmin-ops-logistics` — Ops — Logistika (qaytarish so'rovlari) | [design/fragments/superadmin--ops-logistics.html](fragments/superadmin--ops-logistics.html) | sahifa | eski |
+| `/logistics-ops` | superadmin | `superadmin-ops-logistics` — Ops — Logistika (qaytarish so'rovlari) | [design/fragments/superadmin--ops-logistics.html](fragments/superadmin--ops-logistics.html) | sahifa | v2 |
 
-#### `/branch-ops` — Ops — Filiallar (partiya bekor qilish)
+#### `/branch-ops` — Ops — Filiallar (paketni bekor qilish)
 
 - **Fayllar:** `src/pages/branch-ops/index.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
 - **Rollar:** superadmin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Paketni bekor qilish — tasdiq oynasi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/branch-ops` | superadmin | `superadmin-ops-branches` — Ops — Filiallar (partiya bekor qilish) | [design/fragments/superadmin--ops-branches.html](fragments/superadmin--ops-branches.html) | sahifa | eski |
+| `/branch-ops` | superadmin | `superadmin-ops-branches` — Ops — Filiallar (partiya bekor qilish) | [design/fragments/superadmin--ops-branches.html](fragments/superadmin--ops-branches.html) | sahifa | v2 |
 
 #### `/identity-ops` — Ops — Xodimlar ro'yxatlari
 
@@ -1425,36 +1438,38 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
 - **Rollar:** superadmin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/identity-ops` | superadmin | `superadmin-ops-identity` — Ops — Xodimlar ro'yxatlari | [design/fragments/superadmin--ops-identity.html](fragments/superadmin--ops-identity.html) | sahifa | eski |
+| `/identity-ops` | superadmin | `superadmin-ops-identity` — Ops — Xodimlar ro'yxatlari | [design/fragments/superadmin--ops-identity.html](fragments/superadmin--ops-identity.html) | sahifa | v2 |
 
 #### `/system-ops` — Ops — Tizim
 
-- **Fayllar:** `src/pages/system-ops/index.tsx`
+- **Fayllar:** `src/pages/system-ops/index.tsx` · `src/pages/system-ops/ui/charts.tsx` · `src/pages/system-ops/lib/systemOps.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOpsPages` (routes.tsx → canViewOpsPages)
 - **Rollar:** superadmin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). «Kuryer samaradorligi» (D3, ega savoli 5 — sukut): API foiz bermaydi (analytics courierEfficiency = kuryerga o'rtacha buyurtma soni) — «O'rtacha N ta buyurtma», maketdagi halqa chizilmaydi. Yetkazish bo'lmaganda backend onTimeRate = 0 yuboradi (0% ko'rinadi).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/system-ops` | superadmin | `superadmin-ops-system` — Ops — Tizim | [design/fragments/superadmin--ops-system.html](fragments/superadmin--ops-system.html) | sahifa | eski |
+| `/system-ops` | superadmin | `superadmin-ops-system` — Ops — Tizim | [design/fragments/superadmin--ops-system.html](fragments/superadmin--ops-system.html) | sahifa | v2 |
 
-#### `/logs` — Ops — Auth diagnostikasi (nomi «Loglar», lekin jurnal emas)
+#### `/logs` — Ops — Kirish diagnostikasi (POST /auth/refresh sinovi; eski nomi «Loglar», jurnal emas)
 
 - **Fayllar:** `src/pages/logs/index.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewLogs` (access.ts → canViewLogs)
 - **Rollar:** superadmin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
-- **Izoh:** /ops?tab=auth ichida ham ochiladi. Faoliyat jurnali — /activity-logs.
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Faoliyat jurnali — /activity-logs (kirish kartasidagi havola).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/logs` | superadmin | `superadmin-ops-auth-diagnostics` — Ops — Auth diagnostikasi | [design/fragments/superadmin--ops-auth-diagnostics.html](fragments/superadmin--ops-auth-diagnostics.html) | sahifa | eski |
+| `/logs` | superadmin | `superadmin-ops-auth-diagnostics` — Ops — Auth diagnostikasi | [design/fragments/superadmin--ops-auth-diagnostics.html](fragments/superadmin--ops-auth-diagnostics.html) | sahifa | v2 |
 
 #### `/market-operators` — Market operatorlari — YOPIQ sahifa
 
@@ -1469,50 +1484,51 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/profile` — Profil (yuqori panel → profil menyusi)
 
-- **Fayllar:** `src/pages/profile/ui/ProfilePage.tsx` · `src/widgets/user-detail/ui/UserDetailWidget.tsx` · `src/features/user/update-user/ui/UpdateUserModal.tsx`
+- **Fayllar:** `src/pages/profile/ui/ProfilePage.tsx` · `src/pages/profile/ui/ProfileCards.tsx` · `src/pages/profile/ui/ChangePasswordDialog.tsx` · `src/pages/profile/ui/EditProfileDialog.tsx` · `src/pages/profile/lib/salaryCycle.ts` · `src/pages/profile/lib/profileView.ts`
 - **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish)
 - **Rollar:** superadmin, admin, manager, registrator, market, courier
 - **Menyuda:** yo'q — yuqori panel → ism/avatar (profil)
-- **Holat:** eski
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2): ma'lumot kartasi (GET /auth/my-profile), maosh bloki faqat salary > 0; parol — alohida oyna (≥ 4 belgi, mos kelish, saqlangach chiqish); profilni tahrirlash — alohida oyna (Ism, Telefon; D7, maket yo'q: EditProfileDialog `(maket yo'q) common-profile-password-dialog`). UpdateUserModal / UserDetailWidget profilda ishlatilmaydi. «Login» — username bo'lsa.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/profile` | umumiy (barcha rollar) | `common-profile` — Profil | [design/fragments/common--profile.html](fragments/common--profile.html) | sahifa | eski |
-| `/profile` | umumiy (barcha rollar) | `common-profile-password-dialog` — Profil — parolni o'zgartirish<br>↳ `src/features/user/update-user/ui/UpdateUserModal.tsx` | [design/fragments/common--profile-password-dialog.html](fragments/common--profile-password-dialog.html) | oyna | qisman |
+| `/profile` | umumiy (barcha rollar) | `common-profile` — Profil | [design/fragments/common--profile.html](fragments/common--profile.html) | sahifa | v2 |
+| `/profile` | umumiy (barcha rollar) | `common-profile-password-dialog` — Profil — parolni o'zgartirish<br>↳ `src/pages/profile/ui/ChangePasswordDialog.tsx` | [design/fragments/common--profile-password-dialog.html](fragments/common--profile-password-dialog.html) | oyna | v2 |
 
-#### `/settings` — Sozlamalar — Ko'rinish · Bosh sahifa · Interfeys · Bildirishnomalar
+#### `/settings` — Sozlamalar — Ko'rinish · Bosh sahifa · Interfeys · Skaner · Bildirishnomalar (dizayn v2)
 
-- **Fayllar:** `src/pages/settings/ui/SettingsPage.tsx` · `src/features/push-notifications/ui/PushPermissionButton.tsx`
+- **Fayllar:** `src/pages/settings/ui/SettingsPage.tsx` · `src/pages/settings/ui/settingsUi.tsx` · `src/pages/settings/ui/AppearancePanel.tsx` · `src/pages/settings/ui/DashboardPanel.tsx` · `src/pages/settings/ui/InterfacePanel.tsx` · `src/pages/settings/ui/ScannerPanel.tsx` · `src/pages/settings/ui/NotificationsPanel.tsx` · `src/features/push-notifications/ui/PushPermissionButton.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish)
 - **Rollar:** superadmin, admin, manager, registrator, market, courier
 - **Menyuda:** yo'q — yuqori panel → «Sozlamalar» tugmasi; telefon menyusi
-- **Holat:** eski
-- **Izoh:** Tablar (Ko'rinish · Bosh sahifa · Interfeys · Bildirishnomalar) komponent holatida, URL'da emas — sahifa doim «Ko'rinish» tabidan ochiladi. Maketdagi alohida «Skaner» tabi kodda hozir «Interfeys» tabi ichida (skaner ovozlari).
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2): 5 tab (desktopda chap navigatsiya, telefonda gorizontal), komponent holatida — URL'da emas; «Saqlandi» belgisi, mavzu/til darhol. «Skaner» alohida tab (D5): ovozlar «Interfeys» dan ko'chdi; «Kamera» kartasi — kamera ishi bilan (ega savoli 4 — sukut: tab izohi maketdagidek «Kamera, ovoz va tebranish»). Ega savoli 3 — sukut: «Bildirishnomalar» tabida maketdagi qurilma blokidan keyin kodda bor kanallar / kategoriyalar / reklama / sokin soatlar maket uslubidagi kartalarda saqlanadi. «Bosh sahifa bloklari» tartibi bosh sahifadagi (G1) tartib bilan bir xil; «Buyurtmalar vaqti» — Taklif, chizilmaydi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/settings` | umumiy (barcha rollar) | `common-settings-appearance` — Sozlamalar — Ko'rinish | [design/fragments/common--settings-appearance.html](fragments/common--settings-appearance.html) | sahifa | eski |
-| `/settings` | umumiy (barcha rollar) | `common-settings-dashboard` — Sozlamalar — Bosh sahifa bloklari | [design/fragments/common--settings-dashboard.html](fragments/common--settings-dashboard.html) | sahifa | eski |
-| `/settings` | umumiy (barcha rollar) | `common-settings-interface` — Sozlamalar — Interfeys | [design/fragments/common--settings-interface.html](fragments/common--settings-interface.html) | sahifa | eski |
+| `/settings` | umumiy (barcha rollar) | `common-settings-appearance` — Sozlamalar — Ko'rinish | [design/fragments/common--settings-appearance.html](fragments/common--settings-appearance.html) | sahifa | v2 |
+| `/settings` | umumiy (barcha rollar) | `common-settings-dashboard` — Sozlamalar — Bosh sahifa bloklari | [design/fragments/common--settings-dashboard.html](fragments/common--settings-dashboard.html) | sahifa | v2 |
+| `/settings` | umumiy (barcha rollar) | `common-settings-interface` — Sozlamalar — Interfeys | [design/fragments/common--settings-interface.html](fragments/common--settings-interface.html) | sahifa | v2 |
 | `/settings` | umumiy (barcha rollar) | `common-settings-scanner` — Sozlamalar — Skaner (kamera va ovoz) | [design/fragments/common--settings-scanner.html](fragments/common--settings-scanner.html) | sahifa | qisman |
-| `/settings` | umumiy (barcha rollar) | `common-settings-notifications` — Sozlamalar — Bildirishnomalar | [design/fragments/common--settings-notifications.html](fragments/common--settings-notifications.html) | sahifa | eski |
+| `/settings` | umumiy (barcha rollar) | `common-settings-notifications` — Sozlamalar — Bildirishnomalar | [design/fragments/common--settings-notifications.html](fragments/common--settings-notifications.html) | sahifa | v2 |
 
 #### `/inbox` — Bildirishnomalar qutisi (qo'ng'iroqcha manzili)
 
-- **Fayllar:** `src/pages/notifications/ui/NotificationInboxPage.tsx` · `src/widgets/notification-inbox/ui/NotificationInboxList.tsx` · `src/widgets/notification-inbox/ui/NotificationInboxItem.tsx` · `src/features/push-notifications/ui/PushPermissionButton.tsx`
+- **Fayllar:** `src/pages/notifications/ui/NotificationInboxPage.tsx` · `src/widgets/notification-inbox/ui/NotificationInboxList.tsx` · `src/widgets/notification-inbox/ui/NotificationInboxItem.tsx` · `src/widgets/notification-inbox/ui/NotificationItemMenu.tsx` · `src/features/push-notifications/ui/PushPermissionButton.tsx` · `src/features/push-notifications/ui/PushExplainDialog.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish)
 - **Rollar:** superadmin, admin, manager, registrator, market, courier
 - **Menyuda:** yo'q — yuqori panel → qo'ng'iroqcha; telefon menyusi
-- **Holat:** eski
-- **Izoh:** Push ruxsati tushuntirish oynasi — PushPermissionButton (sozlamalarda ham).
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (G2): tablar, kategoriya chiplari (URL'da), «Faqat muhim», qator amallari, sahifalash; push holat bloki barcha rollarda holatga qarab (D4). Ega savoli 9 — sukut: sarlavha barcha rollarda «Bildirishnomalar» (superadmin maketidagi «Bildirishnomalar qutisi» emas); «SMS» va «Xabar yuborish» faqat canSendNotifications. Push ruxsati tushuntirish oynasi — PushExplainDialog (sozlamalarda ham).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/inbox` | superadmin | `superadmin-notifications-inbox` — Bildirishnomalar — Inbox (qo'ng'iroqcha) | [design/fragments/superadmin--notifications-inbox.html](fragments/superadmin--notifications-inbox.html) | sahifa | eski |
-| `/inbox` | superadmin | `superadmin-notifications-push-explain-dialog` — Bildirishnomalarni yoqasizmi? (tasdiq)<br>↳ `src/features/push-notifications/ui/PushPermissionButton.tsx` | [design/fragments/superadmin--notifications-push-explain-dialog.html](fragments/superadmin--notifications-push-explain-dialog.html) | oyna | eski |
-| `/inbox` | courier | `courier-inbox-list` — Bildirishnomalar | [design/fragments/courier--inbox-list.html](fragments/courier--inbox-list.html) | sahifa | eski |
-| `/inbox` | courier | `courier-inbox-push-explain-dialog` — Bildirishnomalarni yoqish oynasi<br>↳ `src/features/push-notifications/ui/PushPermissionButton.tsx` | [design/fragments/courier--inbox-push-explain-dialog.html](fragments/courier--inbox-push-explain-dialog.html) | oyna | eski |
-| `/inbox` | umumiy (barcha rollar) | `common-inbox` — Bildirishnomalar qutisi | [design/fragments/common--inbox.html](fragments/common--inbox.html) | sahifa | eski |
+| `/inbox` | superadmin | `superadmin-notifications-inbox` — Bildirishnomalar — Inbox (qo'ng'iroqcha) | [design/fragments/superadmin--notifications-inbox.html](fragments/superadmin--notifications-inbox.html) | sahifa | v2 |
+| `/inbox` | superadmin | `superadmin-notifications-push-explain-dialog` — Bildirishnomalarni yoqasizmi? (tasdiq)<br>↳ `src/features/push-notifications/ui/PushExplainDialog.tsx` | [design/fragments/superadmin--notifications-push-explain-dialog.html](fragments/superadmin--notifications-push-explain-dialog.html) | oyna | v2 |
+| `/inbox` | courier | `courier-inbox-list` — Bildirishnomalar | [design/fragments/courier--inbox-list.html](fragments/courier--inbox-list.html) | sahifa | v2 |
+| `/inbox` | courier | `courier-inbox-push-explain-dialog` — Bildirishnomalarni yoqish oynasi<br>↳ `src/features/push-notifications/ui/PushExplainDialog.tsx` | [design/fragments/courier--inbox-push-explain-dialog.html](fragments/courier--inbox-push-explain-dialog.html) | oyna | v2 |
+| `/inbox` | umumiy (barcha rollar) | `common-inbox` — Bildirishnomalar qutisi | [design/fragments/common--inbox.html](fragments/common--inbox.html) | sahifa | v2 |
 
 ## 3. Yo'naltirishlar (eski havolalar)
 
@@ -1626,46 +1642,46 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-branches-create-dialog` | Yangi filial (modal) | oyna | `/branches` | `src/features/branch/ui/BranchFormDialog.tsx` | v2 |
 | `superadmin-branches-detail` | Filial tafsiloti | sahifa | `/branches/:id` | `src/pages/branches/ui/BranchDetailPage.tsx` | v2 |
 | `superadmin-branches-add-employee-dialog` | Xodim qo'shish (modal) | oyna | `/branches/:id` | `src/features/branch-add-employee/ui/AddEmployeeModal.tsx` | v2 |
-| `superadmin-integrations-partners-console` | Integratsiyalar — Hamkorlar (konsol) | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | eski |
-| `superadmin-integrations-external-console` | Integratsiyalar — Tashqi tizimlar | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | eski |
-| `superadmin-integrations-marketplace-console` | Integratsiyalar — Marketplace | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | eski |
-| `superadmin-integrations-panel-settings` | Ulanish — Sozlamalar paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettings.tsx` | eski |
-| `superadmin-integrations-panel-shipments` | Ulanish — Posilkalar paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionShipments.tsx` | eski |
-| `superadmin-integrations-panel-events` | Ulanish — Hodisalar paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionLog.tsx` | eski |
-| `superadmin-integrations-panel-settlement` | Ulanish — Hisob-kitob paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | eski |
-| `superadmin-integrations-settlement-pay-dialog` | Tashuvchidan olingan to'lov (modal) | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | eski |
-| `superadmin-integrations-panel-control` | Ulanish — Ish rejimi paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionControl.tsx` | eski |
-| `superadmin-integrations-panel-security` | Ulanish — Xavfsizlik paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSecurity.tsx` | eski |
-| `superadmin-integrations-rotate-key-dialog` | Kalitni yangilash (tasdiq) | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSecurity.tsx` | eski |
-| `superadmin-integrations-new-partner-dialog` | Yangi hamkor (modal) | oyna | `/integrations/connections` | `src/pages/integrations/NewPartnerModal.tsx` | eski |
-| `superadmin-integrations-catalog` | Yangi ulanish — katalog | sahifa | `/integrations/new` | `src/pages/integrations/CatalogPage.tsx` | eski |
-| `superadmin-integrations-wizard` | Ulash ustasi (Nomi → Kalitlar → Sinash → Tayyor) | sahifa | `/integrations/new/:typeKey` | `src/pages/integrations/wizard/ConnectWizard.tsx` | eski |
-| `superadmin-integrations-legacy-partners` | Partner API hamkorlari (eski sahifa) | sahifa | `/integrations/partners` | `src/pages/partners/index.tsx` | eski |
-| `superadmin-integrations-legacy-sources` | Tashqi manbalar (eski: Integratsiyalar ro'yxati) | sahifa | `/integrations/sources` | `src/pages/new_orders/external_orders/index.tsx` | eski |
-| `superadmin-integrations-legacy-source-create` | Integratsiya yaratish (eski forma) | sahifa | `/integrations/sources/create` | `src/pages/new_orders/external_orders/create.tsx` | eski |
-| `superadmin-integrations-legacy-source-detail` | Integratsiya — QR skaner (eski) | sahifa | `/integrations/sources/:id` | `src/pages/new_orders/external_orders/detail.tsx` | eski |
-| `superadmin-notifications-telegram-groups` | Bildirishnomalar — Telegram guruhlari | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | eski |
-| `superadmin-notifications-create-dialog` | Bildirishnoma qo'shish (modal) | oyna | `/notifications` | `src/features/notification-create/ui/NotificationFormModal.tsx` | eski |
-| `superadmin-notifications-delete-dialog` | Bildirishnomani o'chirish (tasdiq) | oyna | `/notifications` | `src/features/notification-delete/ui/DeleteNotificationButton.tsx` | eski |
-| `superadmin-notifications-inbox` | Bildirishnomalar — Inbox (qo'ng'iroqcha) | sahifa | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | eski |
-| `superadmin-notifications-push-explain-dialog` | Bildirishnomalarni yoqasizmi? (tasdiq) | oyna | `/inbox` | `src/features/push-notifications/ui/PushPermissionButton.tsx` | eski |
-| `superadmin-notifications-send` | Xabar yuborish | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | eski |
-| `superadmin-notifications-send-confirm-dialog` | Xabarni yuborishni tasdiqlang | oyna | `/notifications/send` | `src/pages/notification-send/index.tsx` | eski |
-| `superadmin-notifications-sms-campaign` | SMS — Kampaniya | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | eski |
-| `superadmin-notifications-sms-campaign-confirm-dialog` | SMS kampaniyani tasdiqlash | oyna | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | eski |
-| `superadmin-notifications-sms-templates` | SMS — Shablonlar | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | eski |
-| `superadmin-notifications-sms-report` | SMS — Xarajat | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | eski |
-| `superadmin-notifications-sms-settings` | SMS — Sozlamalar | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | eski |
-| `superadmin-activity-logs-list` | Faoliyat jurnali | sahifa | `/activity-logs` | `src/pages/activity-logs/index.tsx` | eski |
-| `superadmin-activity-logs-row-expanded` | Faoliyat jurnali — yozuv tafsiloti (ochilgan qator) | sahifa | `/activity-logs` | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | eski |
-| `superadmin-ops-finance-operators` | Ops — Moliya operatorlari | sahifa | `/ops`, `/finance-operators` | `src/pages/ops/index.tsx`, `src/pages/finance-operators/index.tsx` | eski |
-| `superadmin-ops-integrations` | Ops — Integratsiyalar | sahifa | `/ops`, `/integrations-ops` | `src/pages/ops/index.tsx`, `src/pages/integrations-ops/index.tsx` | eski |
-| `superadmin-ops-investors` | Ops — Investorlar | sahifa | `/ops`, `/investors-ops` | `src/pages/ops/index.tsx`, `src/pages/investors-ops/index.tsx` | eski |
-| `superadmin-ops-logistics` | Ops — Logistika (qaytarish so'rovlari) | sahifa | `/ops`, `/logistics-ops` | `src/pages/ops/index.tsx`, `src/pages/logistics-ops/index.tsx` | eski |
-| `superadmin-ops-branches` | Ops — Filiallar (partiya bekor qilish) | sahifa | `/ops`, `/branch-ops` | `src/pages/ops/index.tsx`, `src/pages/branch-ops/index.tsx` | eski |
-| `superadmin-ops-identity` | Ops — Xodimlar ro'yxatlari | sahifa | `/ops`, `/identity-ops` | `src/pages/ops/index.tsx`, `src/pages/identity-ops/index.tsx` | eski |
-| `superadmin-ops-system` | Ops — Tizim | sahifa | `/ops`, `/system-ops` | `src/pages/ops/index.tsx`, `src/pages/system-ops/index.tsx` | eski |
-| `superadmin-ops-auth-diagnostics` | Ops — Auth diagnostikasi | sahifa | `/ops`, `/logs` | `src/pages/ops/index.tsx`, `src/pages/logs/index.tsx` | eski |
+| `superadmin-integrations-partners-console` | Integratsiyalar — Hamkorlar (konsol) | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | v2 |
+| `superadmin-integrations-external-console` | Integratsiyalar — Tashqi tizimlar | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | v2 |
+| `superadmin-integrations-marketplace-console` | Integratsiyalar — Marketplace | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | v2 |
+| `superadmin-integrations-panel-settings` | Ulanish — Sozlamalar paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettings.tsx` | v2 |
+| `superadmin-integrations-panel-shipments` | Ulanish — Posilkalar paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionShipments.tsx` | v2 |
+| `superadmin-integrations-panel-events` | Ulanish — Hodisalar paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionLog.tsx` | v2 |
+| `superadmin-integrations-panel-settlement` | Ulanish — Hisob-kitob paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | v2 |
+| `superadmin-integrations-settlement-pay-dialog` | Tashuvchidan olingan to'lov (modal) | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | v2 |
+| `superadmin-integrations-panel-control` | Ulanish — Ish rejimi paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionControl.tsx` | v2 |
+| `superadmin-integrations-panel-security` | Ulanish — Xavfsizlik paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSecurity.tsx` | v2 |
+| `superadmin-integrations-rotate-key-dialog` | Kalitni yangilash (tasdiq) | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSecurity.tsx` | v2 |
+| `superadmin-integrations-new-partner-dialog` | Yangi hamkor (modal) | oyna | `/integrations/connections` | `src/pages/integrations/NewPartnerModal.tsx` | v2 |
+| `superadmin-integrations-catalog` | Yangi ulanish — katalog | sahifa | `/integrations/new` | `src/pages/integrations/CatalogPage.tsx` | v2 |
+| `superadmin-integrations-wizard` | Ulash ustasi (Nomi → Kalitlar → Sinash → Tayyor) | sahifa | `/integrations/new/:typeKey` | `src/pages/integrations/wizard/ConnectWizard.tsx` | v2 |
+| `superadmin-integrations-legacy-partners` | Partner API hamkorlari (eski sahifa) | sahifa | `/integrations/partners` | `src/pages/partners/index.tsx` | v2 |
+| `superadmin-integrations-legacy-sources` | Tashqi manbalar (eski: Integratsiyalar ro'yxati) | sahifa | `/integrations/sources` | `src/pages/new_orders/external_orders/index.tsx` | v2 |
+| `superadmin-integrations-legacy-source-create` | Integratsiya yaratish (eski forma) | sahifa | `/integrations/sources/create` | `src/pages/new_orders/external_orders/create.tsx` | v2 |
+| `superadmin-integrations-legacy-source-detail` | Integratsiya — QR skaner (eski) | sahifa | `/integrations/sources/:id` | `src/pages/new_orders/external_orders/detail.tsx` | v2 |
+| `superadmin-notifications-telegram-groups` | Bildirishnomalar — Telegram guruhlari | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | v2 |
+| `superadmin-notifications-create-dialog` | Bildirishnoma qo'shish (modal) | oyna | `/notifications` | `src/features/notification-create/ui/NotificationFormModal.tsx` | v2 |
+| `superadmin-notifications-delete-dialog` | Bildirishnomani o'chirish (tasdiq) | oyna | `/notifications` | `src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx` | v2 |
+| `superadmin-notifications-inbox` | Bildirishnomalar — Inbox (qo'ng'iroqcha) | sahifa | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | v2 |
+| `superadmin-notifications-push-explain-dialog` | Bildirishnomalarni yoqasizmi? (tasdiq) | oyna | `/inbox` | `src/features/push-notifications/ui/PushExplainDialog.tsx` | v2 |
+| `superadmin-notifications-send` | Xabar yuborish | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | v2 |
+| `superadmin-notifications-send-confirm-dialog` | Xabarni yuborishni tasdiqlang | oyna | `/notifications/send` | `src/pages/notification-send/index.tsx` | v2 |
+| `superadmin-notifications-sms-campaign` | SMS — Kampaniya | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | v2 |
+| `superadmin-notifications-sms-campaign-confirm-dialog` | SMS kampaniyani tasdiqlash | oyna | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | v2 |
+| `superadmin-notifications-sms-templates` | SMS — Shablonlar | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | v2 |
+| `superadmin-notifications-sms-report` | SMS — Xarajat | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | v2 |
+| `superadmin-notifications-sms-settings` | SMS — Sozlamalar | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | v2 |
+| `superadmin-activity-logs-list` | Faoliyat jurnali | sahifa | `/activity-logs` | `src/pages/activity-logs/index.tsx` | v2 |
+| `superadmin-activity-logs-row-expanded` | Faoliyat jurnali — yozuv tafsiloti (ochilgan qator) | sahifa | `/activity-logs` | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | v2 |
+| `superadmin-ops-finance-operators` | Ops — Moliya operatorlari | sahifa | `/ops`, `/finance-operators` | `src/pages/ops/index.tsx`, `src/pages/finance-operators/index.tsx` | v2 |
+| `superadmin-ops-integrations` | Ops — Integratsiyalar | sahifa | `/ops`, `/integrations-ops` | `src/pages/ops/index.tsx`, `src/pages/integrations-ops/index.tsx` | v2 |
+| `superadmin-ops-investors` | Ops — Investorlar | sahifa | `/ops`, `/investors-ops` | `src/pages/ops/index.tsx`, `src/pages/investors-ops/index.tsx` | v2 |
+| `superadmin-ops-logistics` | Ops — Logistika (qaytarish so'rovlari) | sahifa | `/ops`, `/logistics-ops` | `src/pages/ops/index.tsx`, `src/pages/logistics-ops/index.tsx` | v2 |
+| `superadmin-ops-branches` | Ops — Filiallar (partiya bekor qilish) | sahifa | `/ops`, `/branch-ops` | `src/pages/ops/index.tsx`, `src/pages/branch-ops/index.tsx` | v2 |
+| `superadmin-ops-identity` | Ops — Xodimlar ro'yxatlari | sahifa | `/ops`, `/identity-ops` | `src/pages/ops/index.tsx`, `src/pages/identity-ops/index.tsx` | v2 |
+| `superadmin-ops-system` | Ops — Tizim | sahifa | `/ops`, `/system-ops` | `src/pages/ops/index.tsx`, `src/pages/system-ops/index.tsx` | v2 |
+| `superadmin-ops-auth-diagnostics` | Ops — Auth diagnostikasi | sahifa | `/ops`, `/logs` | `src/pages/ops/index.tsx`, `src/pages/logs/index.tsx` | v2 |
 | `superadmin-scan-camera` | Skaner — kamera (umumiy) | sahifa | `/scan` | `src/pages/scan/index.tsx` | eski |
 | `superadmin-scan-result` | Skanerlangan buyurtma | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | eski |
 
@@ -1747,23 +1763,23 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-regions-region-detail-dialog` | Viloyat ma'lumotlari oynasi | oyna | `/regions` | `src/widgets/region-detail/ui/RegionDetailDialog.tsx` | v2 |
 | `admin-regions-sato-management` | Tumanlarni o'tkazish | sahifa | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | v2 |
 | `admin-regions-logist-assignment` | Logist biriktirish | sahifa | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | v2 |
-| `admin-integrations-partners` | Integratsiyalar — Hamkorlar | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | eski |
-| `admin-integrations-external` | Integratsiyalar — Tashqi tizimlar | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | eski |
-| `admin-integrations-marketplace` | Integratsiyalar — Marketplace | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | eski |
-| `admin-integrations-conn-settings` | Ulanish — Sozlamalar | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettings.tsx` | eski |
-| `admin-integrations-conn-shipments` | Ulanish — Posilkalar | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionShipments.tsx` | eski |
-| `admin-integrations-conn-log` | Ulanish — Hodisalar | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionLog.tsx` | eski |
-| `admin-integrations-conn-settlement` | Ulanish — Hisob-kitob | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | eski |
-| `admin-integrations-settlement-pay-dialog` | Tashuvchidan olingan to'lov | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | eski |
-| `admin-integrations-conn-control` | Ulanish — Ish rejimi | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionControl.tsx` | eski |
-| `admin-integrations-conn-security` | Ulanish — Xavfsizlik | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSecurity.tsx` | eski |
-| `admin-integrations-new-partner-dialog` | Yangi hamkor oynasi | oyna | `/integrations/connections` | `src/pages/integrations/NewPartnerModal.tsx` | eski |
-| `admin-integrations-catalog` | Yangi ulanish — katalog | sahifa | `/integrations/new` | `src/pages/integrations/CatalogPage.tsx` | eski |
-| `admin-integrations-wizard` | Ulash ustasi | sahifa | `/integrations/new/:typeKey` | `src/pages/integrations/wizard/ConnectWizard.tsx` | eski |
-| `admin-integrations-legacy-partners` | Partner API hamkorlari (eski) | sahifa | `/integrations/partners` | `src/pages/partners/index.tsx` | eski |
-| `admin-integrations-legacy-sources` | Integratsiyalar manbalari (eski) | sahifa | `/integrations/sources` | `src/pages/new_orders/external_orders/index.tsx` | eski |
-| `admin-activity-logs-list` | Faoliyat jurnali | sahifa | `/activity-logs` | `src/pages/activity-logs/index.tsx` | eski |
-| `admin-activity-logs-row-expanded` | Jurnal yozuvi ochilgan | sahifa | `/activity-logs` | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | eski |
+| `admin-integrations-partners` | Integratsiyalar — Hamkorlar | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | v2 |
+| `admin-integrations-external` | Integratsiyalar — Tashqi tizimlar | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | v2 |
+| `admin-integrations-marketplace` | Integratsiyalar — Marketplace | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | v2 |
+| `admin-integrations-conn-settings` | Ulanish — Sozlamalar | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettings.tsx` | v2 |
+| `admin-integrations-conn-shipments` | Ulanish — Posilkalar | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionShipments.tsx` | v2 |
+| `admin-integrations-conn-log` | Ulanish — Hodisalar | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionLog.tsx` | v2 |
+| `admin-integrations-conn-settlement` | Ulanish — Hisob-kitob | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | v2 |
+| `admin-integrations-settlement-pay-dialog` | Tashuvchidan olingan to'lov | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | v2 |
+| `admin-integrations-conn-control` | Ulanish — Ish rejimi | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionControl.tsx` | v2 |
+| `admin-integrations-conn-security` | Ulanish — Xavfsizlik | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSecurity.tsx` | v2 |
+| `admin-integrations-new-partner-dialog` | Yangi hamkor oynasi | oyna | `/integrations/connections` | `src/pages/integrations/NewPartnerModal.tsx` | v2 |
+| `admin-integrations-catalog` | Yangi ulanish — katalog | sahifa | `/integrations/new` | `src/pages/integrations/CatalogPage.tsx` | v2 |
+| `admin-integrations-wizard` | Ulash ustasi | sahifa | `/integrations/new/:typeKey` | `src/pages/integrations/wizard/ConnectWizard.tsx` | v2 |
+| `admin-integrations-legacy-partners` | Partner API hamkorlari (eski) | sahifa | `/integrations/partners` | `src/pages/partners/index.tsx` | v2 |
+| `admin-integrations-legacy-sources` | Integratsiyalar manbalari (eski) | sahifa | `/integrations/sources` | `src/pages/new_orders/external_orders/index.tsx` | v2 |
+| `admin-activity-logs-list` | Faoliyat jurnali | sahifa | `/activity-logs` | `src/pages/activity-logs/index.tsx` | v2 |
+| `admin-activity-logs-row-expanded` | Jurnal yozuvi ochilgan | sahifa | `/activity-logs` | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | v2 |
 | `admin-scan-camera` | Skaner — kamera (umumiy) | sahifa | `/scan` | `src/pages/scan/index.tsx` | eski |
 | `admin-scan-result` | Skanerlangan buyurtma | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | eski |
 
@@ -1963,8 +1979,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `courier-scan-too-fast` | Skaner — juda tez | sahifa | `/scan` | `src/pages/scan/index.tsx` | eski |
 | `courier-scan-offline` | Skaner — internet yo'q (navbat) | sahifa | `/scan` | `src/pages/scan/index.tsx` | yangi (kodda yo'q) — Internet yo'qda skanlarni navbatga qo'yish yo'q. |
 | `courier-scan-manual-entry` | Skaner — kodni qo'lda kiritish | sahifa | `/scan` | `src/pages/scan/index.tsx` | yangi (kodda yo'q) — Kodni qo'lda kiritish yo'q. |
-| `courier-inbox-list` | Bildirishnomalar | sahifa | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | eski |
-| `courier-inbox-push-explain-dialog` | Bildirishnomalarni yoqish oynasi | oyna | `/inbox` | `src/features/push-notifications/ui/PushPermissionButton.tsx` | eski |
+| `courier-inbox-list` | Bildirishnomalar | sahifa | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | v2 |
+| `courier-inbox-push-explain-dialog` | Bildirishnomalarni yoqish oynasi | oyna | `/inbox` | `src/features/push-notifications/ui/PushExplainDialog.tsx` | v2 |
 
 ### umumiy ekranlar (common — barcha rollar)
 
@@ -1975,14 +1991,14 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `common-login` | Tizimga kirish | sahifa | `/login` | `src/features/auth/index.tsx` | eski |
 | `common-login-error` | Tizimga kirish — xato holati | sahifa | `/login` | `src/features/auth/index.tsx` | eski |
 | `common-session-expired` | Sessiya tugadi | sahifa | `/login` | `src/features/auth/index.tsx` | qisman — Alohida ekran yo'q — SessionExpiryCountdown taymeri, keyin /login ga qaytarish. |
-| `common-settings-appearance` | Sozlamalar — Ko'rinish | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | eski |
-| `common-settings-dashboard` | Sozlamalar — Bosh sahifa bloklari | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | eski |
-| `common-settings-interface` | Sozlamalar — Interfeys | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | eski |
-| `common-settings-scanner` | Sozlamalar — Skaner (kamera va ovoz) | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | qisman — Alohida tab yo'q — skaner ovozlari hozir «Interfeys» tabida. |
-| `common-settings-notifications` | Sozlamalar — Bildirishnomalar | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | eski |
-| `common-profile` | Profil | sahifa | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | eski |
-| `common-profile-password-dialog` | Profil — parolni o'zgartirish | oyna | `/profile` | `src/features/user/update-user/ui/UpdateUserModal.tsx` | qisman — Alohida «Parolni o'zgartirish» oynasi (yangi parol + takrorlash, saqlangach chiqish) yo'q — parol umumiy tahrirlash oynasida (UpdateUserModal). |
-| `common-inbox` | Bildirishnomalar qutisi | sahifa | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | eski |
+| `common-settings-appearance` | Sozlamalar — Ko'rinish | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | v2 |
+| `common-settings-dashboard` | Sozlamalar — Bosh sahifa bloklari | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | v2 |
+| `common-settings-interface` | Sozlamalar — Interfeys | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | v2 |
+| `common-settings-scanner` | Sozlamalar — Skaner (kamera va ovoz) | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | qisman — «Skaner» tabi bor (muvaffaqiyat/xato ovozlari, tebranish — ScannerPanel); «Kamera» kartasi yo'q — kamera rejimi keyinroq, alohida (spec D5 / G9). |
+| `common-settings-notifications` | Sozlamalar — Bildirishnomalar | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | v2 |
+| `common-profile` | Profil | sahifa | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | v2 |
+| `common-profile-password-dialog` | Profil — parolni o'zgartirish | oyna | `/profile` | `src/pages/profile/ui/ChangePasswordDialog.tsx` | v2 |
+| `common-inbox` | Bildirishnomalar qutisi | sahifa | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | v2 |
 | `common-bell-dropdown` | Qo'ng'iroqcha ochiq (so'nggi bildirishnomalar) | oyna | `(qobiq)` | `src/widgets/header/ui/NotificationsMenu.tsx` | v2 |
 
 ## 5. Dizayn tizimi taxtalari
@@ -2029,14 +2045,16 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/features/courier-transfer-branch/ui/TransferCourierButton.tsx` | `/all-users/:id`, `/branches/:id` |
 | `src/features/courier-transfer-branch/ui/TransferCourierModal.tsx` | `/all-users/:id` |
 | `src/features/notification-create/ui/NotificationFormModal.tsx` | `/notifications` |
-| `src/features/notification-delete/ui/DeleteNotificationButton.tsx` | `/notifications` |
+| `src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx` | `/notifications` |
 | `src/features/notification-dispatch/ui/NotificationDispatchForm.tsx` | `/notifications/send` |
+| `src/features/notification-edit/ui/NotificationEditModal.tsx` | `/notifications` |
 | `src/features/order-return/ui/InitiateReturnModal.tsx` | `/orders/edit/:orderId` |
 | `src/features/order-return/ui/MarkReturnedModal.tsx` | `/orders/edit/:orderId` |
 | `src/features/order-tracking/ui/TrackingTimelineItem.tsx` | `/orders/edit/:orderId` |
+| `src/features/push-notifications/ui/PushExplainDialog.tsx` | `/inbox` |
 | `src/features/push-notifications/ui/PushPermissionButton.tsx` | `/settings`, `/inbox` |
 | `src/features/user/create-user/ui/CreateUserForm.tsx` | `/all-users/create-user` |
-| `src/features/user/update-user/ui/UpdateUserModal.tsx` | `/all-users`, `/all-users/:id`, `/profile` |
+| `src/features/user/update-user/ui/UpdateUserModal.tsx` | `/all-users`, `/all-users/:id` |
 | `src/pages/activity-logs/index.tsx` | `/activity-logs` |
 | `src/pages/batches/lib/batchFormat.ts` | `/batches` |
 | `src/pages/batches/lib/batchOrderMailAdapter.ts` | `/batches/:id` |
@@ -2068,6 +2086,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/dashboard/ui/QuickActions.tsx` | `/` |
 | `src/pages/dispatch/index.tsx` | `/dispatch` |
 | `src/pages/finance-operators/index.tsx` | `/finance-operators` |
+| `src/pages/finance-operators/lib/operatorFinance.ts` | `/finance-operators` |
+| `src/pages/finance-operators/ui/OperatorBalanceCard.tsx` | `/finance-operators` |
 | `src/pages/financial-balance/components/AnalysisTab.tsx` | `/financial-balance` |
 | `src/pages/financial-balance/components/FinancialEntryModal.tsx` | `/financial-balance` |
 | `src/pages/financial-balance/components/FinancialHistoryDetail.tsx` | `/financial-balance` |
@@ -2093,11 +2113,10 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/incoming-orders/ui/sourceVisuals.tsx` | `/new-orders/incoming` |
 | `src/pages/integrations-ops/index.tsx` | `/integrations-ops` |
 | `src/pages/integrations/CatalogPage.tsx` | `/integrations/new` |
-| `src/pages/integrations/ConnectionFields.tsx` | `/integrations/new/:typeKey` |
-| `src/pages/integrations/ConnectionSubNav.tsx` | `/integrations/connections` |
+| `src/pages/integrations/ConnectionFields.tsx` | `/integrations/connections`, `/integrations/new/:typeKey` |
 | `src/pages/integrations/ConnectionsPage.tsx` | `/integrations/connections` |
-| `src/pages/integrations/FilterPills.tsx` | `/integrations/connections` |
 | `src/pages/integrations/NewPartnerModal.tsx` | `/integrations/connections` |
+| `src/pages/integrations/StatusMapField.tsx` | `/integrations/connections` |
 | `src/pages/integrations/index.tsx` | `/integrations/connections` |
 | `src/pages/integrations/panels/ConnectionControl.tsx` | `/integrations/connections` |
 | `src/pages/integrations/panels/ConnectionLog.tsx` | `/integrations/connections` |
@@ -2106,7 +2125,14 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/integrations/panels/ConnectionSettings.tsx` | `/integrations/connections` |
 | `src/pages/integrations/panels/ConnectionSettlement.tsx` | `/integrations/connections` |
 | `src/pages/integrations/panels/ConnectionShipments.tsx` | `/integrations/connections` |
-| `src/pages/integrations/ui.ts` | `/integrations/connections` |
+| `src/pages/integrations/ui/FilterChips.tsx` | `/integrations/connections` |
+| `src/pages/integrations/ui/InlineAlert.tsx` | `/integrations/connections` |
+| `src/pages/integrations/ui/Switch.tsx` | `/integrations/connections` |
+| `src/pages/integrations/ui/charts.tsx` | `/integrations/connections` |
+| `src/pages/integrations/ui/index.ts` | `/integrations/connections` |
+| `src/pages/integrations/ui/inputs.tsx` | `/integrations/connections` |
+| `src/pages/integrations/ui/layout.tsx` | `/integrations/connections` |
+| `src/pages/integrations/useConnections.ts` | `/integrations/connections` |
 | `src/pages/integrations/wizard/ConnectWizard.tsx` | `/integrations/new/:typeKey` |
 | `src/pages/integrations/wizard/steps.ts` | `/integrations/new/:typeKey` |
 | `src/pages/investors-ops/index.tsx` | `/investors-ops` |
@@ -2192,8 +2218,11 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/notifications/ui/SmsReportTab.tsx` | `/notifications/sms` |
 | `src/pages/notifications/ui/SmsSettingsTab.tsx` | `/notifications/sms` |
 | `src/pages/notifications/ui/SmsTemplatesTab.tsx` | `/notifications/sms` |
+| `src/pages/notifications/ui/sms/CardList.tsx` | `/notifications/sms` |
+| `src/pages/notifications/ui/sms/SmsReportCharts.tsx` | `/notifications/sms` |
 | `src/pages/ops/index.tsx` | `/ops` |
 | `src/pages/ops/tabs.ts` | `/ops` |
+| `src/pages/ops/ui/OpsToolPage.tsx` | `/ops` |
 | `src/pages/orders/create/index.tsx` | `/new-orders/create` |
 | `src/pages/orders/create/model/orderCreateForm.ts` | `/new-orders/create` |
 | `src/pages/orders/create/ui/CreateAlert.tsx` | `/new-orders/create` |
@@ -2255,6 +2284,11 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/products/ui/ProductImageField.tsx` | `/products`, `/products/create-product/:id` |
 | `src/pages/products/ui/ProductThumb.tsx` | `/products`, `/products/create-product/:id` |
 | `src/pages/products/ui/useDeleteProductConfirm.tsx` | `/products`, `/products/create-product/:id` |
+| `src/pages/profile/lib/profileView.ts` | `/profile` |
+| `src/pages/profile/lib/salaryCycle.ts` | `/profile` |
+| `src/pages/profile/ui/ChangePasswordDialog.tsx` | `/profile` |
+| `src/pages/profile/ui/EditProfileDialog.tsx` | `/profile` |
+| `src/pages/profile/ui/ProfileCards.tsx` | `/profile` |
 | `src/pages/profile/ui/ProfilePage.tsx` | `/profile` |
 | `src/pages/region/index.tsx` | `/regions` |
 | `src/pages/region/model/boardModel.ts` | `/regions/districts`, `/regions/sato-management` |
@@ -2282,8 +2316,16 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/scan/lib/scanShared.ts` | `/scan` |
 | `src/pages/scan/ui/ScanPackageDetail.tsx` | `/scan/:token` |
 | `src/pages/scan/ui/ScanPostDetail.tsx` | `/scan/:token` |
+| `src/pages/settings/ui/AppearancePanel.tsx` | `/settings` |
+| `src/pages/settings/ui/DashboardPanel.tsx` | `/settings` |
+| `src/pages/settings/ui/InterfacePanel.tsx` | `/settings` |
+| `src/pages/settings/ui/NotificationsPanel.tsx` | `/settings` |
+| `src/pages/settings/ui/ScannerPanel.tsx` | `/settings` |
 | `src/pages/settings/ui/SettingsPage.tsx` | `/settings` |
+| `src/pages/settings/ui/settingsUi.tsx` | `/settings` |
 | `src/pages/system-ops/index.tsx` | `/system-ops` |
+| `src/pages/system-ops/lib/systemOps.ts` | `/system-ops` |
+| `src/pages/system-ops/ui/charts.tsx` | `/system-ops` |
 | `src/pages/ui-kit/KitSection.tsx` | `/ops/ui-kit` |
 | `src/pages/ui-kit/ThemePair.tsx` | `/ops/ui-kit` |
 | `src/pages/ui-kit/index.tsx` | `/ops/ui-kit` |
@@ -2315,7 +2357,9 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/widgets/Sidebar/ui/MobileMenu.tsx` | `(qobiq)` |
 | `src/widgets/Sidebar/ui/Sidebar.tsx` | `(qobiq)` |
 | `src/widgets/Sidebar/ui/SidebarItem.tsx` | `(qobiq)` |
+| `src/widgets/activity-log/lib/logView.ts` | `/activity-logs` |
 | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | `/activity-logs` |
+| `src/widgets/activity-log/ui/ActivityLogFiltersSheet.tsx` | `/activity-logs` |
 | `src/widgets/activity-log/ui/ActivityLogViewer.tsx` | `/activity-logs` |
 | `src/widgets/branch-detail/ui/BranchDetailWidget.tsx` | `/branches/:id` |
 | `src/widgets/branch-detail/ui/BranchEmployeesSection.tsx` | `/branches/:id` |
@@ -2344,13 +2388,12 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/widgets/layout/scanLayout.tsx` | `(qobiq)` |
 | `src/widgets/notification-inbox/ui/NotificationInboxItem.tsx` | `/notifications/send`, `/inbox` |
 | `src/widgets/notification-inbox/ui/NotificationInboxList.tsx` | `/inbox` |
-| `src/widgets/notification-table/ui/NotificationTable.tsx` | `/notifications` |
+| `src/widgets/notification-inbox/ui/NotificationItemMenu.tsx` | `/inbox` |
 | `src/widgets/order-meta/ui/OrderMeta.tsx` | `/orders/edit/:orderId` |
 | `src/widgets/order-tracking/ui/OrderTracking.tsx` | `/orders/edit/:orderId` |
 | `src/widgets/region-detail/ui/RegionDetailDialog.tsx` | `/`, `/regions` |
 | `src/widgets/user-detail/ui/MarketTelegramTokenCard.tsx` | `/new-orders/userDetail/:id`, `/all-users/:id` |
 | `src/widgets/user-detail/ui/UserDetailView.tsx` | `/new-orders/userDetail/:id`, `/all-users/:id` |
-| `src/widgets/user-detail/ui/UserDetailWidget.tsx` | `/profile` |
 | `src/widgets/user-list/ui/UserListKpi.tsx` | `/all-users` |
 | `src/widgets/user-list/ui/UserListTable.tsx` | `/all-users` |
 | `src/widgets/user-list/ui/UserRowMenu.tsx` | `/all-users` |

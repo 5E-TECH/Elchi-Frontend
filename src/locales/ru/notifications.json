@@ -91,7 +91,6 @@
       "push": "Push"
     },
     "inAppAlways": "Всегда включено — сообщение сохраняется в разделе уведомлений",
-    "providerMissing": "Провайдер ещё не подключён",
     "telegramMarket": "Telegram-группа (маркет)",
     "telegramMarketPlaceholder": "Выберите маркет",
     "telegramHint": "Telegram отправляется только в подключённую группу выбранного маркета.",

@@ -45,7 +45,6 @@
       "status": "Status",
       "courier": "Courier"
     },
-    "approve": "Approve ({{count}})",
     "selectHint": "Select orders in the list to approve.",
     "approveSuccess": "Selected requests approved",
     "approveError": "Could not approve the requests",

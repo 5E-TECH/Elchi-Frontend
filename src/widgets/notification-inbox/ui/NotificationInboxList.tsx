@@ -133,7 +133,7 @@ const NotificationInboxList = () => {
     [category, important, page, tab],
   );
 
-  const listQuery = useInboxList(params);
+  const listQuery = useInboxList(params, { silentError: true });
   const counts = useInboxCounts().data ?? null;
 
   const totalAll = counts

@@ -44,7 +44,7 @@ const InvestorsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const { useGetInvestors, createInvestor } = useInvestors();
 
   const [page, setPage] = useState(1);
-  const investorsQuery = useGetInvestors({ page, limit: PAGE_SIZE });
+  const investorsQuery = useGetInvestors({ page, limit: PAGE_SIZE }, { silentError: true });
   const rows = (Array.isArray(investorsQuery.data?.items) ? investorsQuery.data.items : []).map((item, index) =>
     toRow(item as Record<string, unknown>, index),
   );

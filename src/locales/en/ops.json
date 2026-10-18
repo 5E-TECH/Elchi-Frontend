@@ -270,7 +270,6 @@
       "fulfillmentAria": "Average delivery time {{hours}} h {{minutes}} min, limit 24 hours",
       "rating": "Market rating",
       "ratingEmpty": "No data — the rating hasn't been calculated yet",
-      "ratingCount": "{{count}} markets in the rating",
       "degradedTitle": "Some indicators weren't calculated",
       "degradedText": "Some services didn't respond — the values are incomplete.",
       "loadError": "Couldn't load analytics indicators"
@@ -292,8 +291,6 @@
       "notFoundHint": "No order, package or mail was found for this token.",
       "error": "Couldn't check the token",
       "empty": "The result has no fields to show",
-      "yes": "Yes",
-      "no": "No",
       "fields": {
         "id": "ID",
         "status": "Status",

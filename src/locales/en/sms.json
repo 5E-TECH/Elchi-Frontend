@@ -114,7 +114,6 @@
     "deleted": "Template deleted",
     "empty": "No templates",
     "emptyHint": "Add a new template with the form above.",
-    "edit": "Edit",
     "editLabel": "{{code}} ({{lang}}) — edit",
     "actions": "Actions",
     "langs": {
@@ -179,7 +178,6 @@
     "daysTitle": "By day",
     "daysSub": "Each day and message type on its own row",
     "daysLabel": "SMS by day",
-    "untariffedCell": "— tariff not set",
     "untariffedShort": "— no tariff",
     "untariffedTitle": "Tariff not set",
     "dayCard": "{{total}} · {{delivered}} delivered · {{failed}} failed · {{parts}} parts",

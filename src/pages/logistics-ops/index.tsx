@@ -38,7 +38,7 @@ const LogisticsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const isPhone = useIsPhone();
   const { useGetReturnRequestsList, approveReturnRequest } = useLogisticsCoverage();
 
-  const returnRequests = useGetReturnRequestsList();
+  const returnRequests = useGetReturnRequestsList(undefined, { silentError: true });
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
 
   // fix3 CODE-09 / C13: javob `data.groups[].orders` — kuryer bo'yicha guruhlangan.

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 /**
  * KIRUVCHI WEBHOOK JURNALI — ular bizga yuborgan hodisalar.
@@ -83,7 +84,7 @@ export const useWebhookLogs = (params: {
   status?: string;
   page?: number;
   limit?: number;
-}) =>
+}, options?: SilentErrorOption) =>
   useQuery({
     queryKey: [webhookLogsKey, params.integrationId, params.status, params.page, params.limit],
     enabled: Boolean(params.integrationId),
@@ -103,6 +104,7 @@ export const useWebhookLogs = (params: {
         })
         .then((res) => unwrap(res.data)),
     staleTime: 15_000,
+    ...silentErrorMeta(options),
   });
 
 /**

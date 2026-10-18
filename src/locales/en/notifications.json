@@ -91,7 +91,6 @@
       "push": "Push"
     },
     "inAppAlways": "Always on — the message is kept in the inbox",
-    "providerMissing": "Provider not connected yet",
     "telegramMarket": "Telegram group (market)",
     "telegramMarketPlaceholder": "Choose a market",
     "telegramHint": "Telegram is sent only to the connected group of the chosen market.",

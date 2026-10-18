@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 export const investors = "investors";
 
@@ -25,11 +26,12 @@ export const useInvestors = () => {
 
   // ==================== INVESTORS ====================
 
-  const useGetInvestors = (params?: { page?: number; limit?: number }) =>
+  const useGetInvestors = (params?: { page?: number; limit?: number }, options?: SilentErrorOption) =>
     useQuery({
       queryKey: [investors, "list", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.INVESTORS.BASE, { params }).then((res) => toInvestorList(res.data)),
+      ...silentErrorMeta(options),
     });
 
   const createInvestor = useMutation({

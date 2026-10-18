@@ -311,7 +311,6 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string | number) => `notifications/${id}`, // GET / PATCH / DELETE
     HEALTH: "notifications/health",
     SEND: "notifications/send", // POST send to telegram group(s)
-    CONNECT_BY_TOKEN: "notifications/connect-by-token", // POST connect group by token
     // In-app inbox (current user, per-recipient rows) ──────────────────────
     INBOX: "notifications/inbox", // GET my inbox (is_read/type/category/priority/page/limit)
     INBOX_UNREAD_COUNT: "notifications/inbox/unread-count", // GET my unread count

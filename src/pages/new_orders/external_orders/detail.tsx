@@ -18,7 +18,7 @@ const ExternalIntegrationDetail = () => {
   const { t, i18n } = useTranslation("integrations");
   const { id } = useParams();
 
-  const query = useGetIntegrationById(id);
+  const query = useGetIntegrationById(id, { silentError: true });
   const integration = query.data?.data;
 
   const title = integration?.name ?? t("legacySources.integration");

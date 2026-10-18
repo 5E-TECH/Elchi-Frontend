@@ -135,10 +135,10 @@ const ConnectionsPage = () => {
   const { t, i18n } = useTranslation("integrations");
   const language = i18n.language;
   const num = (value: number) => formatNumberLocalized(value, { language });
-  const { connections, isLoading, isError, partialError, refetch } = useConnections();
-  const metricsQuery = useIntegrationMetrics();
+  const { connections, isLoading, isError, partialError, refetch } = useConnections({ silentError: true });
+  const metricsQuery = useIntegrationMetrics(undefined, { silentError: true });
   /** D1: «kechaga nisbatan» — 48 soatlik oyna; kecha = 48 soat − 24 soat. Yiqilsa meta yashirinadi. */
-  const prevQuery = useIntegrationMetrics(48);
+  const prevQuery = useIntegrationMetrics(48, { silentError: true });
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState("");
   const [newPartnerOpen, setNewPartnerOpen] = useState(false);

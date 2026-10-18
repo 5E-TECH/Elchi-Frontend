@@ -90,7 +90,7 @@ const ActivityLogViewer = () => {
     [filters, debouncedSearch, page],
   );
 
-  const logsQuery = useActivityLogs(params);
+  const logsQuery = useActivityLogs(params, { silentError: true });
   const catalogQuery = useActivityActionCatalog();
 
   const items = logsQuery.data?.items ?? [];

@@ -72,8 +72,8 @@ const SmsSettingsTab = () => {
   const { t, i18n } = useTranslation("sms");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const isSuperadmin = useSelector((state: RootState) => state.role.role) === "superadmin";
-  const status = useSmsStatus();
-  const accounts = useSmsAccounts(isSuperadmin);
+  const status = useSmsStatus({ silentError: true });
+  const accounts = useSmsAccounts(isSuperadmin, { silentError: true });
   const upsertAccount = useUpsertSmsAccount();
   const grant = useGrantSmsConsent();
   const revoke = useRevokeSmsConsent();

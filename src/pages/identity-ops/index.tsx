@@ -104,9 +104,9 @@ const IdentityOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const { t } = useTranslation("ops");
   const { useGetAdmins, useGetManagers, useGetRegistrators, addOrderToMarket } = useIdentityCoverage();
 
-  const admins = useGetAdmins();
-  const managers = useGetManagers();
-  const registrators = useGetRegistrators();
+  const admins = useGetAdmins(undefined, { silentError: true });
+  const managers = useGetManagers(undefined, { silentError: true });
+  const registrators = useGetRegistrators(undefined, { silentError: true });
 
   const [marketId, setMarketId] = useState("");
   const [granted, setGranted] = useState<string | null>(null);

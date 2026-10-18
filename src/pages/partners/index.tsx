@@ -96,7 +96,7 @@ const PartnersPage = () => {
   const allowed = Boolean(role && ALLOWED_ROLES.has(role));
 
   const confirm = useConfirm();
-  const partnersQuery = usePartners();
+  const partnersQuery = usePartners({ silentError: true });
   const { createPartner, updatePartner, rotateKey, setActive, retryWebhook, testWebhook } = usePartnerActions();
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -123,7 +123,7 @@ const PartnersPage = () => {
     status: webhookStatus,
     page: webhookPage,
     limit: PAGE_SIZE,
-  });
+  }, { silentError: true });
 
   const partners = useMemo(() => partnersQuery.data ?? [], [partnersQuery.data]);
   const webhooks = webhooksQuery.data?.data ?? [];

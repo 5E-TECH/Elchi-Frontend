@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
+import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 export const useFinanceCoverage = () => {
   const client = useQueryClient();
@@ -116,40 +117,36 @@ export const useFinanceCoverage = () => {
       enabled,
     });
 
-  // ── Operator payments / balance / earnings / payouts ─────────────────────
+  // ── Operator balance / earnings / payouts (to'lov — `pages/finance-operators`, Idempotency-Key bilan) ──
 
-  const createOperatorPayment = useMutation({
-    mutationFn: (data: unknown) =>
-      api.post(API_ENDPOINTS.FINANCE.OPERATOR_PAYMENTS, data)
-        .then((res) => res.data),
-    onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
-  });
-
-  const useGetOperatorBalance = (operatorId: string, enabled: boolean = true) =>
+  const useGetOperatorBalance = (operatorId: string, enabled: boolean = true, options?: SilentErrorOption) =>
     useQuery({
       queryKey: ["finance-cov", "operator-balance", operatorId],
       queryFn: () =>
         api.get(API_ENDPOINTS.FINANCE.OPERATOR_BALANCE(operatorId))
           .then((res) => res.data),
       enabled,
+      ...silentErrorMeta(options),
     });
 
-  const useGetOperatorEarnings = (operatorId: string, enabled: boolean = true, params?: any) =>
+  const useGetOperatorEarnings = (operatorId: string, enabled: boolean = true, params?: any, options?: SilentErrorOption) =>
     useQuery({
       queryKey: ["finance-cov", "operator-earnings", operatorId, params],
       queryFn: () =>
         api.get(API_ENDPOINTS.FINANCE.OPERATOR_EARNINGS(operatorId), { params })
           .then((res) => res.data),
       enabled,
+      ...silentErrorMeta(options),
     });
 
-  const useGetOperatorPayouts = (operatorId: string, enabled: boolean = true, params?: any) =>
+  const useGetOperatorPayouts = (operatorId: string, enabled: boolean = true, params?: any, options?: SilentErrorOption) =>
     useQuery({
       queryKey: ["finance-cov", "operator-payouts", operatorId, params],
       queryFn: () =>
         api.get(API_ENDPOINTS.FINANCE.OPERATOR_PAYOUTS(operatorId), { params })
           .then((res) => res.data),
       enabled,
+      ...silentErrorMeta(options),
     });
 
   // ── Salary ────────────────────────────────────────────────────────────────
@@ -203,7 +200,6 @@ export const useFinanceCoverage = () => {
     // Health
     useGetFinanceHealth,
     // Operator
-    createOperatorPayment,
     useGetOperatorBalance,
     useGetOperatorEarnings,
     useGetOperatorPayouts,

@@ -49,7 +49,7 @@ const ProfileSkeleton = () => (
 const ProfilePage = () => {
   const { t } = useTranslation(["profile", "users"]);
   const { useGetMyProfile } = useUser();
-  const profileQuery = useGetMyProfile();
+  const profileQuery = useGetMyProfile({ silentError: true });
   const user = unwrapUserResponse(profileQuery.data);
   const [editOpen, setEditOpen] = useState(false);
   const [passwordOpen, setPasswordOpen] = useState(false);

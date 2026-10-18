@@ -103,3 +103,27 @@ export const newPaymentKey = () =>
   typeof globalThis.crypto?.randomUUID === "function"
     ? globalThis.crypto.randomUUID()
     : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+
+export type OperatorPaymentResult = { amount: number; note: string; at: Date; idempotent: boolean };
+
+/**
+ * `POST finance/operator-payments` javobi → muvaffaqiyat xabari. Javob `{ …, data: OperatorPayment }` (takroriy
+ * kalitda — birinchi yozilgan to'lov, `idempotent: true`). Xato urinishdan keyin summa tahrirlanib o'sha kalit bilan
+ * qayta yuborilsa, backend BIRINCHI to'lovni qaytarishi mumkin — shuning uchun summa va izoh javobdan olinadi;
+ * javobda bo'lmasa — yuborilgan qiymat.
+ */
+export const readOperatorPaymentResult = (
+  payload: unknown,
+  sent: { amount: number; note?: string },
+): OperatorPaymentResult => {
+  const data = asRecord(unwrap(payload));
+  const amount = "amount" in data ? Number(data.amount) : Number.NaN;
+  const created = toDate(data);
+  const at = created ? new Date(created) : new Date();
+  return {
+    amount: Number.isFinite(amount) ? amount : sent.amount,
+    note: "note" in data || "comment" in data ? toText(data.note ?? data.comment) : (sent.note ?? ""),
+    at: Number.isNaN(at.getTime()) ? new Date() : at,
+    idempotent: data.idempotent === true,
+  };
+};

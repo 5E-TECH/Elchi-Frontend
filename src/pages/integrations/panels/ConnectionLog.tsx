@@ -161,7 +161,7 @@ const PaymentLog = ({ connection, switcher }: { connection: Connection; switcher
   const [unapplied, setUnapplied] = useState<"all" | "unapplied">("all");
   const [page, setPage] = useState(1);
 
-  const payments = usePayments({ integrationId: connection.id, unappliedOnly: unapplied === "unapplied", page, limit: PAGE_SIZE });
+  const payments = usePayments({ integrationId: connection.id, unappliedOnly: unapplied === "unapplied", page, limit: PAGE_SIZE }, { silentError: true });
   const rows = payments.data?.items ?? [];
   const meta = payments.data?.meta;
 
@@ -264,7 +264,7 @@ const IncomingWebhookLog = ({ connection, switcher }: { connection: Connection; 
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
 
-  const logs = useWebhookLogs({ integrationId: connection.id, status, page, limit: PAGE_SIZE });
+  const logs = useWebhookLogs({ integrationId: connection.id, status, page, limit: PAGE_SIZE }, { silentError: true });
   const rows = logs.data?.items ?? [];
   const meta = logs.data?.meta;
   const counts = logs.data?.counts;
@@ -375,7 +375,7 @@ const InboundLog = ({ connection, metrics }: { connection: Connection; metrics?:
   const [status, setStatus] = useState("all");
   const [page, setPage] = useState(1);
 
-  const webhooks = usePartnerWebhooks({ partner_id: connection.id, status, page, limit: PAGE_SIZE });
+  const webhooks = usePartnerWebhooks({ partner_id: connection.id, status, page, limit: PAGE_SIZE }, { silentError: true });
   const { retryWebhook } = usePartnerActions();
   const rows = webhooks.data?.data ?? [];
 
@@ -642,7 +642,7 @@ const OutboundLog = ({ connection, switcher }: { connection: Connection; switche
   const language = i18n.language;
   const num = (value: number) => formatNumberLocalized(value, { language });
   const [status, setStatus] = useState("all");
-  const history = useSyncHistory({ integrationId: connection.id, status, limit: PAGE_SIZE });
+  const history = useSyncHistory({ integrationId: connection.id, status, limit: PAGE_SIZE }, { silentError: true });
 
   const rows = history.data?.items ?? [];
   const summary = history.data?.summary;

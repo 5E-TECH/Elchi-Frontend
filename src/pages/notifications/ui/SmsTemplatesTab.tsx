@@ -57,7 +57,7 @@ const LANGS = ["uz", "ru", "en"] as const;
 const SmsTemplatesTab = () => {
   const { t, i18n } = useTranslation("sms");
   const language = i18n.resolvedLanguage ?? i18n.language;
-  const templates = useSmsTemplates();
+  const templates = useSmsTemplates({ silentError: true });
   const tariffs = useSmsTariffs();
   const upsert = useUpsertSmsTemplate();
   const approve = useApproveSmsTemplate();

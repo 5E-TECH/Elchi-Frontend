@@ -133,7 +133,7 @@ const CampaignPage = () => {
   const language = i18n.resolvedLanguage ?? i18n.language;
   const tariffs = useSmsTariffs();
   const templates = useSmsTemplates();
-  const history = useSmsCampaigns();
+  const history = useSmsCampaigns({ silentError: true });
   const status = useSmsStatus();
   const sendCampaign = useSendSmsCampaign();
   const cancelRef = useRef<HTMLButtonElement>(null);

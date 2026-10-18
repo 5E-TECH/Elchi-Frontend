@@ -93,9 +93,9 @@ Modaldagi eski **"Token orqali ulash"** bo'limi olib tashlandi (fix3b): u
 | `POST /notifications/connect-by-token` | SUPERADMIN, ADMIN, REGISTRATOR | tana `{ "text": "group_token-<secret>[-cancel]", "group_id": "-100…" }` — ikkalasi majburiy; bot bilan bir xil qoidalar |
 | `POST /notifications/send` | SUPERADMIN, ADMIN, REGISTRATOR | guruh(lar)ga qo'lda xabar |
 
-Frontendda `connect-by-token` ni chaqiradigan UI yo'q: `useConnectNotificationByToken` hooki
-`{ text, group_id }` ga moslangan, lekin ishlatilmaydi; `entities/coverage/miscCoverage.ts`
-dagi coverage hooki erkin tana yuboradi.
+Frontendda `connect-by-token` ni chaqiradigan kod yo'q (ishlatilmagan `useConnectNotificationByToken` hooki,
+`miscCoverage` dagi coverage mutatsiyasi va `API_ENDPOINTS.NOTIFICATIONS.CONNECT_BY_TOKEN` — dizayn v2 G2 da
+o'chirildi). UI kerak bo'lsa, tana `{ text, group_id }`.
 
 **Avtomatik xabarlar:** hozircha hech bir servis buyurtma yaratilganda yoki bekor qilinganda ulangan
 guruhga **avtomatik** xabar yubormaydi — faqat `POST /notifications/send` va admin

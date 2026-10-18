@@ -69,9 +69,9 @@ const SystemOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const [activeToken, setActiveToken] = useState("");
 
   // Uchala so'rov ham shartsiz (React hook qoidasi), skan — faqat token bo'lsa.
-  const kpiQuery = useGetAnalyticsKpi();
-  const healthQuery = useGetHealthLiveness();
-  const scanQuery = useGetScanByToken(activeToken, !!activeToken);
+  const kpiQuery = useGetAnalyticsKpi(undefined, { silentError: true });
+  const healthQuery = useGetHealthLiveness({ silentError: true });
+  const scanQuery = useGetScanByToken(activeToken, !!activeToken, { silentError: true });
 
   const kpi = readAnalyticsKpi(kpiQuery.data);
   const scan = readScanResult(scanQuery.data);

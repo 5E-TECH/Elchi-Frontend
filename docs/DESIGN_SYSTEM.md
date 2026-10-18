@@ -350,7 +350,7 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   `features/Select/selectInput.tsx`, `StatusSelect/` o'chirildi): `SearchableSelect`, `FilterSelect`,
   `FilterMultiSelect`, `PopupSelect`, `PrintModeSelect`;
   `CustomDatePicker`, `DateRangePicker`, `FilterDateRange`, `FilterDateInput` (`QuickDateRangeFilter` — G1 da o'chirildi); `Popup`,
-  `FormPopup`, `PopupConfirm`, `UpdatePopup`, `ConfirmButton`; `EmptyState`, `QueryErrorState`, `TableSkeleton`,
+  `FormPopup`, `PopupConfirm`, `UpdatePopup` (`ConfirmButton` — G2 da o'chirildi); `EmptyState`, `QueryErrorState`, `TableSkeleton`,
   `Loader`/`PageLoader`; `PhoneInput`, `FilterSearch`, `SearchInput`.
 - **Migratsiya** — antd `message`/`notification` (va `NotificationProvider` ichidagi antd `notification`) →
   `notify`; `Popconfirm` va `window.confirm` → `useConfirm()`; §8 dagi pul/kirish amallariga tasdiq qo'shildi.
@@ -504,6 +504,27 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   `meta.silentError` bilan (global xabar takrorlanmaydi). Ega savollariga sukut javoblari (spec §9) —
   `design/kit/route-map.json` izohlarida. Chiqarilgan v1: `MetricCard`, `MobileCollapsibleSection`,
   `QuickDateRangeFilter`, `PerformanceChart`, `RegionStatsCard`, filial sozlamalari (config) kodi.
+- **Ko'chirilgan:** G2 — «Integratsiyalar», «Bildirishnomalar», «Tizim», «Hisob» (`/integrations/connections` —
+  konsol va 7 panel, `/integrations/new`, `/integrations/new/:typeKey`, `/integrations/partners`, `/integrations/sources`,
+  `/integrations/sources/create`, `/integrations/sources/:id`; `/notifications`, `/notifications/send`,
+  `/notifications/sms`; `/activity-logs`, `/ops` + `/finance-operators`, `/integrations-ops`, `/investors-ops`,
+  `/logistics-ops`, `/branch-ops`, `/identity-ops`, `/system-ops`, `/logs`; `/profile`, `/settings`, `/inbox`;
+  `/market-operators` yopiq, ko'chirilmagan). **`DataTable` ochiladigan qator** — `expandable` (additiv: `isExpanded`,
+  `onToggle`, `render`, `canExpand`, `toggleLabel`, `toggle: "none"` + `panelId`, `panelClassName`,
+  `expandedClassName`): chevron ustuni birinchi, panel `colSpan` = barcha ustunlar, telefonda karta ostida; retsept —
+  CODE-MAP §2.6, namuna `/ops/ui-kit?section=table`, iste'molchilar — faoliyat jurnali va eski hamkorlar webhook
+  jurnali. Ops panellari — `pages/ops/ui/OpsToolPage.tsx` (`embedded` — hub ichida sarlavhasiz; to'g'ridan-to'g'ri
+  yo'lda «← Ops vositalari»), telefonda tablar → `Select`. Pul va xavfli amallar tasdiq bilan: operator to'lovi (`useConfirm` +
+  `Idempotency-Key`, muvaffaqiyat xabarida server qaytargan summa), SMS kampaniya (tasdiq oynasi + `Idempotency-Key`),
+  kalitni yangilash, hamkor / ulanishni to'xtatish, paketni bekor qilish, manba va Telegram guruhini o'chirish. Sozlamalar 5 tab («Skaner» alohida), profil — parol va tahrirlash oynalari
+  (`UpdateUserModal` profilda yo'q), inbox — push holat bloki barcha rollarda. Matnlar yangi `ops.json`,
+  `profile.json`, `notificationGroups.json` da. Xatosi sahifada chiziladigan G2 so'rovlari `meta.silentError`
+  bilan (umumiy hook'larda ixtiyoriy `{ silentError: true }`, `shared/lib/queryErrorEvents.ts` →
+  `silentErrorMeta`). Ega savollariga sukut javoblari (spec §10) — `route-map.json` izohlarida. Chiqarilgan v1:
+  `integrations/ui.ts`, `OverviewPage`, `ConnectionSubNav`, `FilterPills`, `widgets/notification-table`,
+  `DeleteNotificationButton`, `shared/ui/InlineErrorBoundary`, `shared/ui/Toggle`, `shared/ui/ConfirmButton`,
+  `NotificationCategoryTag` / `NotificationPriorityTag` (antd `Tag`), `financeCoverage.createOperatorPayment`,
+  `NOTIFICATIONS.CONNECT_BY_TOKEN`. `UserDetailWidget` endi iste'molchisiz (profil v2 da) — o'chirishga nomzod.
 
 **Dizayn qo'riqchisi** (`scripts/design-guard.mjs`, `npm run design:guard`): `colour`, `palette`, `dark-pair`,
 `legacy`, `money`, `icons`, `tiny-text`, `v1-class`, `weight`, `gradient`, `v1-helper`. Ikki darvoza:

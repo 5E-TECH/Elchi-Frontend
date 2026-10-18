@@ -30,8 +30,10 @@ import {
   newPaymentKey,
   readOperatorBalance,
   readOperatorEarnings,
+  readOperatorPaymentResult,
   readOperatorPayouts,
   type OperatorEarningRow,
+  type OperatorPaymentResult,
   type OperatorPayoutRow,
 } from "./lib/operatorFinance";
 import { OperatorBalanceCard } from "./ui/OperatorBalanceCard";
@@ -67,19 +69,19 @@ const FinanceOperatorsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const [amountText, setAmountText] = useState("");
   const [note, setNote] = useState("");
   const [amountTouched, setAmountTouched] = useState(false);
-  const [lastPayment, setLastPayment] = useState<{ amount: number; note: string; at: Date } | null>(null);
+  const [lastPayment, setLastPayment] = useState<OperatorPaymentResult | null>(null);
   const paymentKey = useRef(newPaymentKey());
 
   const enabled = operatorId !== "";
-  const balanceQuery = useGetOperatorBalance(operatorId, enabled);
+  const balanceQuery = useGetOperatorBalance(operatorId, enabled, { silentError: true });
   const earningsQuery = useGetOperatorEarnings(operatorId, enabled, {
     limit: EARNINGS_PAGE_SIZE,
     offset: (earningsPage - 1) * EARNINGS_PAGE_SIZE,
-  });
+  }, { silentError: true });
   const payoutsQuery = useGetOperatorPayouts(operatorId, enabled, {
     limit: PAYOUTS_PAGE_SIZE,
     offset: (payoutsPage - 1) * PAYOUTS_PAGE_SIZE,
-  });
+  }, { silentError: true });
 
   const balance = readOperatorBalance(balanceQuery.data);
   const earnings = readOperatorEarnings(earningsQuery.data);
@@ -123,6 +125,7 @@ const FinanceOperatorsPage = ({ embedded = false }: { embedded?: boolean }) => {
     setAmountTouched(true);
     if (!amountValid || createPayment.isPending) return;
     const payload = buildOperatorPaymentPayload(operatorId, amount, note);
+    let response: unknown;
     const ok = await confirm({
       title: t("finance.payment.confirmTitle"),
       description: t("finance.payment.confirmDescription", { id: operatorId }),
@@ -131,10 +134,14 @@ const FinanceOperatorsPage = ({ embedded = false }: { embedded?: boolean }) => {
       confirmLabel: t("finance.payment.submit"),
       loadingLabel: t("finance.payment.confirmLoading"),
       tone: "primary",
-      onConfirm: () => createPayment.mutateAsync({ payload, key: paymentKey.current }),
+      onConfirm: async () => {
+        response = await createPayment.mutateAsync({ payload, key: paymentKey.current });
+      },
     });
     if (!ok) return;
-    setLastPayment({ amount, note: payload.note ?? "", at: new Date() });
+    // Summa va izoh — server javobidan: xato urinishdan keyin summa tahrirlanib o'sha `Idempotency-Key` bilan
+    // qayta yuborilsa, backend birinchi yozilgan to'lovni qaytaradi (`idempotent: true`) — tahrirlangan maydonni emas.
+    setLastPayment(readOperatorPaymentResult(response, payload));
     setAmountText("");
     setNote("");
     setAmountTouched(false);
