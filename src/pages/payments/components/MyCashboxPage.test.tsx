@@ -367,3 +367,69 @@ describe("MyCashboxPage — holatlar", () => {
     expect(amounts()).toEqual(["+90 000 so'm", "+5 000 so'm", "−40 000 so'm"]);
   });
 });
+
+/**
+ * 2crjWf7v — kuryerning `/cash-box` sahifasi: `GET finance/cashbox/my-cashbox` javobidagi
+ * `payment_ack` qatorga o'tadi va tarixda «Noto'g'ri» / «Tasdiqlangan» belgisi chiqadi.
+ */
+describe("MyCashboxPage — courier receipt answer (2crjWf7v)", () => {
+  const courierPayment = (id: string, hour: number, extra: Params) => ({
+    id,
+    amount: -1_650_000,
+    operation_type: "expense",
+    source_type: "courier_payment",
+    payment_method: "cash",
+    cashbox_type: "couriers",
+    createdByUser: { name: `Menejer ${id}` },
+    createdAt: at(8, hour),
+    ...extra,
+  });
+
+  const rows = () => [
+    courierPayment("11", 9, { payment_ack: "disputed" }),
+    courierPayment("12", 10, { payment_ack: "confirmed" }),
+    courierPayment("13", 11, { payment_ack: null }),
+    { id: "14", amount: 420_000, operation_type: "income", source_type: "sell", cashbox_type: "couriers", createdAt: at(8, 12) },
+  ];
+
+  it("carries payment_ack from the my-cashbox history into the rows", async () => {
+    respond("couriers", 640_000, rows());
+    renderWithProviders(<MyCashboxPage />, { route: "/cash-box", preloadedState: asRole("courier") });
+
+    const table = await historyTable();
+    const rowByReceiver = (name: string) => within(table).getByText(name).closest("tr") as HTMLTableRowElement;
+    const disputed = rowByReceiver("Menejer 11");
+    const confirmed = rowByReceiver("Menejer 12");
+    const unanswered = rowByReceiver("Menejer 13");
+
+    expect(within(disputed).getByText("Noto'g'ri")).toHaveAttribute("data-payment-ack", "disputed");
+    expect(within(confirmed).getByText("Tasdiqlangan")).toHaveAttribute("data-payment-ack", "confirmed");
+    expect(unanswered.querySelector("[data-payment-ack]")).toBeNull();
+    expect(document.querySelectorAll("[data-payment-ack]")).toHaveLength(2);
+  });
+
+  it("phone cards show the badge and say it in the card name", async () => {
+    const matchMedia = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes("max-width"),
+      media: query,
+      onchange: null,
+      addListener: () => {},
+      removeListener: () => {},
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+    try {
+      respond("couriers", 640_000, rows());
+      renderWithProviders(<MyCashboxPage />, { route: "/cash-box", preloadedState: asRole("courier") });
+
+      const card = await screen.findByRole("button", { name: /\(Noto'g'ri · Qabul qildi: Menejer 11\)/ });
+      expect(within(card).getByText("Noto'g'ri")).toHaveAttribute("data-payment-ack", "disputed");
+      expect(screen.getByRole("button", { name: /\(Tasdiqlangan · Qabul qildi: Menejer 12\)/ })).toBeInTheDocument();
+      expect(document.querySelectorAll("[data-payment-ack]")).toHaveLength(2);
+    } finally {
+      window.matchMedia = matchMedia;
+    }
+  });
+});

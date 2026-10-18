@@ -1,6 +1,7 @@
 {
   "title": "Журнал активности",
   "description": "Аудит-трейл по всем сервисам (кто, что, когда)",
+  "cardLabel": "Записи журнала активности",
   "columns": {
     "time": "Время",
     "actor": "Кто",
@@ -9,12 +10,10 @@
     "service": "Сервис"
   },
   "filters": {
-    "region": "Фильтры журнала",
+    "label": "Фильтры журнала",
     "search": "Поиск по журналу",
     "service": "Сервис",
-    "serviceAria": "По сервису",
     "action": "Действие",
-    "actionAria": "По действию",
     "all": "Все",
     "entityType": "Тип объекта (например, Заказ)",
     "entityTypeLabel": "Тип объекта",
@@ -22,29 +21,6 @@
     "dateRange": "Период",
     "clear": "Сбросить фильтры"
   },
-  "detail": {
-    "changes": "Изменения полей",
-    "field": "Поле",
-    "before": "До",
-    "after": "После",
-    "noChanges": "Изменения полей не зафиксированы",
-    "metadata": "Дополнительные сведения",
-    "traceId": "ID трассировки",
-    "copyTrace": "Скопировать ID трассировки",
-    "copied": "ID трассировки скопирован",
-    "yes": "Да",
-    "no": "Нет"
-  },
-  "cardLabel": "Записи журнала активности",
-  "summary": "{{from}}–{{to}} из {{total}} записей",
-  "toggleOpen": "Показать подробности: {{object}}",
-  "toggleClose": "Скрыть подробности: {{object}}",
-  "system": "Система",
-  "empty": "Записи не найдены",
-  "emptyHint": "Записи появятся здесь, когда в системе будут выполняться действия.",
-  "emptyFiltered": "По этим фильтрам записей нет",
-  "emptyFilteredHint": "Уберите один из фильтров или расширьте период.",
-  "loadError": "Не удалось загрузить журнал активности",
   "services": {
     "identity": "Пользователи",
     "order": "Заказы",
@@ -95,38 +71,13 @@
     "FinancialBalanceHistory": "Запись баланса",
     "UserSalary": "Зарплата",
     "OperatorEarning": "Доход оператора",
-    "OperatorPayment": "Выплата оператору"
+    "OperatorPayment": "Выплата оператору",
+    "Courier": "Курьер",
+    "Payment": "Платёж"
   },
-  "fieldLabels": {
-    "status": "Статус",
-    "sold_at": "Время продажи",
-    "comment": "Комментарий",
-    "name": "Название",
-    "phone_number": "Телефон",
-    "address": "Адрес",
-    "total_price": "Сумма",
-    "price": "Цена",
-    "amount": "Сумма",
-    "courier_id": "Курьер",
-    "market_id": "Маркет",
-    "branch_id": "Филиал",
-    "region_id": "Область",
-    "district_id": "Район",
-    "role": "Роль",
-    "is_active": "Активен",
-    "note": "Комментарий",
-    "reason": "Причина"
-  },
-  "metaLabels": {
-    "source": "Источник",
-    "branch": "Филиал",
-    "branch_name": "Филиал",
-    "device": "Устройство",
-    "ip": "IP-адрес",
-    "ip_address": "IP-адрес",
-    "user_agent": "Браузер",
-    "reason": "Причина",
-    "comment": "Комментарий"
+  "actor": {
+    "system": "Система",
+    "unresolved": "#{{id}} (не найден)"
   },
   "actions": {
     "created": "Создано",
@@ -145,5 +96,63 @@
     "external_sync": "Внешняя синхронизация",
     "assign": "Назначено",
     "unassign": "Назначение отменено"
-  }
+  },
+  "detail": {
+    "expand": "Открыть подробности: {{target}}",
+    "collapse": "Скрыть подробности: {{target}}",
+    "changes": "Изменения полей",
+    "field": "Поле",
+    "before": "До",
+    "after": "После",
+    "noChanges": "Изменения полей не зафиксированы",
+    "metadata": "Дополнительно",
+    "traceId": "ID трассировки",
+    "copyTraceId": "Скопировать ID трассировки",
+    "copied": "ID трассировки скопирован",
+    "copyFailed": "Не удалось скопировать",
+    "yes": "Да",
+    "no": "Нет"
+  },
+  "fields": {
+    "status": "Статус",
+    "sold_at": "Время продажи",
+    "comment": "Комментарий",
+    "name": "Название",
+    "phone_number": "Телефон",
+    "role": "Роль",
+    "total_price": "Сумма",
+    "price": "Цена",
+    "amount": "Сумма",
+    "paid_amount": "Оплаченная сумма",
+    "quantity": "Количество",
+    "address": "Адрес",
+    "reason": "Причина",
+    "courier_id": "Курьер",
+    "market_id": "Маркет",
+    "branch_id": "Филиал",
+    "region_id": "Область",
+    "district_id": "Район",
+    "where_deliver": "Тип доставки",
+    "is_active": "Активен",
+    "note": "Комментарий"
+  },
+  "meta": {
+    "source": "Источник",
+    "branch": "Филиал",
+    "branch_name": "Филиал",
+    "device": "Устройство",
+    "ip": "IP-адрес",
+    "reason": "Причина",
+    "comment": "Комментарий",
+    "amount": "Сумма",
+    "count": "Количество",
+    "leg": "Направление",
+    "description": "Описание",
+    "ip_address": "IP-адрес"
+  },
+  "summary": "{{from}}–{{to}} из {{total}} записей",
+  "empty": "Записи не найдены",
+  "emptyHint": "Записи появятся здесь, когда в системе будут выполняться действия.",
+  "emptyFiltered": "Нет записей по фильтрам. Попробуйте изменить фильтры.",
+  "loadError": "Не удалось загрузить журнал активности"
 }

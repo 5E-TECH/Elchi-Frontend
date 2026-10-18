@@ -1,3 +1,4 @@
 export { default as NotificationFormModal } from "./ui/NotificationFormModal";
-export { useCreateNotification } from "./api/useCreateNotification";
-export type { CreateNotificationDto } from "./model/types";
+export { useRequestGroupLink } from "./api/useRequestGroupLink";
+export { GROUP_LINK_POLL_MS } from "./model/constants";
+export type { GroupLinkCode, GroupLinkCodeRequest } from "./model/types";

@@ -1,9 +1,9 @@
 import { api } from "../../../shared/api/instance";
 import { API_ENDPOINTS } from "../../../shared/api";
 import type {
-  ActivityActionCatalog,
-  ActivityActionInfo,
+  ActivityActionCategory,
   ActivityActionMeta,
+  ActivityActionsCatalog,
   ActivityActor,
   ActivityLog,
   ActivityLogListResult,
@@ -35,19 +35,29 @@ const normalizeActor = (value: unknown): ActivityActor | null => {
     phone_number: strOrNull(a.phone_number),
     role: strOrNull(a.role),
     status: strOrNull(a.status),
+    resolved: typeof a.resolved === "boolean" ? a.resolved : null,
   };
 };
 
-const normalizeActionMeta = (value: unknown): ActivityActionMeta | null => {
+const textOrNull = (value: unknown): string | null => {
+  const text = value == null ? "" : String(value).trim();
+  return text ? text : null;
+};
+
+/** `action_meta` / `registry[]` yozuvi (y8CxCtcK). Fe'l ham, yorliq ham bo'lmasa — `null`. */
+export const normalizeActionMeta = (value: unknown): ActivityActionMeta | null => {
   if (!value || typeof value !== "object") return null;
   const m = value as Record<string, unknown>;
+  const action = textOrNull(m.action);
+  const label = textOrNull(m.label);
+  if (!action && !label) return null;
   return {
-    action: str(m.action),
-    label: str(m.label),
-    category: str(m.category),
-    category_label: str(m.category_label),
-    icon: strOrNull(m.icon),
-    tone: strOrNull(m.tone),
+    action: action ?? "",
+    label: label ?? "",
+    category: textOrNull(m.category),
+    categoryLabel: textOrNull(m.category_label ?? m.categoryLabel),
+    icon: textOrNull(m.icon),
+    tone: textOrNull(m.tone),
     known: m.known !== false,
   };
 };
@@ -70,8 +80,8 @@ const normalizeLog = (value: unknown): ActivityLog => {
     metadata: objOrNull(row.metadata),
     created_at: str(row.created_at ?? row.createdAt),
     actor: normalizeActor(row.actor),
-    actor_status: strOrNull(row.actor_status),
     action_meta: normalizeActionMeta(row.action_meta),
+    actor_status: strOrNull(row.actor_status),
     entity: objOrNull(row.entity),
     references: objOrNull(row.references),
   };
@@ -99,27 +109,36 @@ export const getActivityLogs = async (
   return normalizeList(response.data, params);
 };
 
+const normalizeCategory = (value: unknown): ActivityActionCategory | null => {
+  const c = asRecord(value);
+  const key = textOrNull(c.key);
+  return key ? { key, label: textOrNull(c.label) ?? key } : null;
+};
+
 /**
- * Fe'llar katalogi (y8CxCtcK): `{ data: string[], registry: [{ action, label, category, category_label }],
- * categories }`. Konvert bo'lsa ham (`{ data: { data, registry } }`) o'qiladi.
+ * `GET /activity-logs/actions` (y8CxCtcK): `{ data: string[], registry: [...], categories: [{ key, label }] }`.
+ * Eski backend — faqat `data: string[]` (reyestr va kategoriyalar bo'sh).
  */
-export const getActivityActionCatalog = async (): Promise<ActivityActionCatalog> => {
+export const normalizeActionsCatalog = (payload: unknown): ActivityActionsCatalog => {
+  const body = asRecord(payload);
+  // Qo'shimcha o'ram (`{ data: { data, registry, categories } }`) — ichkarisini o'qiymiz.
+  if (body.data && typeof body.data === "object" && !Array.isArray(body.data)) {
+    return normalizeActionsCatalog(body.data);
+  }
+  const data = Array.isArray(payload) ? payload : body.data;
+  const registry = (Array.isArray(body.registry) ? body.registry : [])
+    .map(normalizeActionMeta)
+    .filter((item): item is ActivityActionMeta => Boolean(item?.action));
+  const categories = (Array.isArray(body.categories) ? body.categories : [])
+    .map(normalizeCategory)
+    .filter((item): item is ActivityActionCategory => item !== null);
+  const actions = Array.isArray(data) ? data.map(str).filter(Boolean) : registry.map((item) => item.action);
+  return { actions, registry, categories };
+};
+
+export const getActivityActions = async (): Promise<ActivityActionsCatalog> => {
   const response = await api.get(API_ENDPOINTS.ACTIVITY_LOGS.ACTIONS);
-  const root = asRecord(response.data);
-  const inner = asRecord(root.data);
-  const list = Array.isArray(root.data) ? root.data : Array.isArray(inner.data) ? inner.data : [];
-  const rawRegistry = Array.isArray(root.registry) ? root.registry : Array.isArray(inner.registry) ? inner.registry : [];
-  const registry: ActivityActionInfo[] = rawRegistry
-    .map((item) => asRecord(item))
-    .filter((item) => str(item.action))
-    .map((item) => ({
-      action: str(item.action),
-      label: str(item.label),
-      category: str(item.category),
-      category_label: str(item.category_label),
-    }));
-  const actions = list.length ? list.map(str) : registry.map((item) => item.action);
-  return { actions, registry };
+  return normalizeActionsCatalog(response.data);
 };
 
 export const getEntityHistory = async (

@@ -1,7 +1,7 @@
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/config/queryKeys";
 import {
-  getActivityActionCatalog,
+  getActivityActions,
   getActivityLogs,
   getEntityHistory,
   getUserActivity,
@@ -18,11 +18,14 @@ export const useActivityLogs = (params: ActivityLogParams, options?: SilentError
     ...silentErrorMeta(options),
   });
 
-/** Fe'llar katalogi (filtr ro'yxati + yorliqlar) — sessiya davomida keshda. */
-export const useActivityActionCatalog = () =>
+/**
+ * Fe'llar katalogi (y8CxCtcK: fe'llar, reyestr, kategoriyalar) — sessiya davomida keshda. Kalit eski
+ * `string[]` javobidan ajratilgan (`"catalog"`), shakl o'zgargan.
+ */
+export const useActivityActions = () =>
   useQuery({
     queryKey: [...queryKeys.activityLogs.actions, "catalog"],
-    queryFn: getActivityActionCatalog,
+    queryFn: getActivityActions,
     staleTime: 60 * 60_000,
   });
 

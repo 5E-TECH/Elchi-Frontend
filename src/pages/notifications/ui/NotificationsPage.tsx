@@ -2,7 +2,13 @@
 import { memo, useCallback, useMemo, useState } from "react";
 import { BellOff, Pencil, Plus, Store, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useNotifications, type Notification } from "../../../entities/notification";
+import {
+  NotificationGroupTypeBadge,
+  NotificationStatusBadge,
+  useNotificationMarkets,
+  useNotifications,
+  type Notification,
+} from "../../../entities/notification";
 import { NotificationFormModal } from "../../../features/notification-create";
 import { useDeleteNotificationConfirm } from "../../../features/notification-delete";
 import { NotificationEditModal } from "../../../features/notification-edit";
@@ -34,8 +40,12 @@ const STAT_ICON =
  * Maketlar: `superadmin-notifications-telegram-groups`, `-create-dialog`, `-delete-dialog`.
  *
  * Sarlavha + «Bildirishnoma qo'shish»; karta «Ulangan guruhlar» (son) — jadval (Market #id · Telegram guruh ID ·
- * Xabar turi · Sana · tahrirlash/o'chirish), telefonda kartalar; pastda sahifalash.
- * So'rov: `GET /notifications?page&limit` (avvalgidek). Ustun saralash strelkalari chizilmaydi — API'da sort yo'q (spec G8).
+ * Xabar turi · Holat · Sana · tahrirlash/o'chirish), telefonda kartalar; pastda sahifalash.
+ * So'rov: `GET /notifications?page&limit`. Ustun saralash strelkalari chizilmaydi — API'da sort yo'q (spec G8).
+ *
+ * dev (Dilshod, 8c6c07b) xulqlari: «Holat» ustuni (Faol / Nofaol + «Bot guruhdan chiqarilgan — qayta ulang»,
+ * 9HIaV80X); market nomi `GET /markets` dan (`GET /notifications` qatorida faqat `market_id` — nom topilmasa
+ * sarlavhada `#id`, ostida takrorlanmaydi); qo'shish — bir martalik havola oynasi (6jXw0DDr).
  */
 const NotificationsPage = () => {
   const { t, i18n } = useTranslation("notificationGroups");
@@ -45,6 +55,7 @@ const NotificationsPage = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Notification | null>(null);
   const confirmDelete = useDeleteNotificationConfirm();
+  const { getName } = useNotificationMarkets();
 
   const query = useNotifications({ page, limit }, { silentError: true });
   const { data, isLoading, isError, error, refetch } = query;
@@ -58,19 +69,38 @@ const NotificationsPage = () => {
   }
 
   const groupName = useCallback((row: Notification) => t(`groupName.${row.group_type}`), [t]);
+  const marketName = useCallback(
+    (row: Notification) => row.market_name ?? getName(row.market_id) ?? `#${row.market_id}`,
+    [getName],
+  );
+  /** Nom topilmasa sarlavhada `#id` turadi — ostida takrorlanmaydi. */
+  const hasName = useCallback(
+    (row: Notification) => Boolean(row.market_name ?? getName(row.market_id)),
+    [getName],
+  );
   const dateTime = useCallback(
     (value: string) => formatDateTimeLocalized(value, { language }),
     [language],
   );
 
   const typeBadge = useCallback(
-    (row: Notification) => <Badge>{t(`type.${row.group_type}`)}</Badge>,
+    (row: Notification) => <NotificationGroupTypeBadge type={row.group_type} />,
+    [],
+  );
+
+  /** «Nofaol» — bot guruhdan chiqarilgan yoki guruhga yetib bo'lmaydi: qayta ulash kerak (izoh bilan). */
+  const inactiveHint = useCallback(
+    (row: Notification) =>
+      row.is_active ? null : (
+        <span className="text-xs text-text-muted">{t("status.inactiveHint")}</span>
+      ),
     [t],
   );
 
   const rowActions = useCallback(
     (row: Notification, layout: "row" | "column") => {
-      const names = { market: row.market_name, group: groupName(row) };
+      const market = marketName(row);
+      const names = { market, group: groupName(row) };
       return (
         <div
           className={
@@ -83,6 +113,7 @@ const NotificationsPage = () => {
             size="sm"
             icon={Pencil}
             label={t("editLabel", names)}
+            aria-haspopup="dialog"
             onClick={() => setEditTarget(row)}
           />
           <IconButton
@@ -90,12 +121,13 @@ const NotificationsPage = () => {
             variant="danger"
             icon={Trash2}
             label={t("deleteLabel", names)}
-            onClick={() => void confirmDelete(row)}
+            aria-haspopup="dialog"
+            onClick={() => void confirmDelete(row, market)}
           />
         </div>
       );
     },
-    [confirmDelete, groupName, t],
+    [confirmDelete, groupName, marketName, t],
   );
 
   const marketCell = useCallback(
@@ -105,14 +137,14 @@ const NotificationsPage = () => {
           <Store size={18} />
         </span>
         <span className="flex min-w-0 flex-col">
-          <span className="font-semibold text-text">{row.market_name}</span>
-          {row.market_id ? (
+          <span className="font-semibold text-text">{marketName(row)}</span>
+          {hasName(row) ? (
             <span className="text-[13px] text-text-muted tabular-nums">#{row.market_id}</span>
           ) : null}
         </span>
       </div>
     ),
-    [],
+    [hasName, marketName],
   );
 
   const columns = useMemo<DataTableColumn<Notification>[]>(
@@ -134,6 +166,17 @@ const NotificationsPage = () => {
       },
       { id: "type", header: t("columns.type"), cell: typeBadge },
       {
+        id: "status",
+        header: t("columns.status"),
+        className: "min-w-[120px] max-w-[200px]",
+        cell: (row) => (
+          <span className="flex flex-col items-start gap-1">
+            <NotificationStatusBadge active={row.is_active} />
+            {inactiveHint(row)}
+          </span>
+        ),
+      },
+      {
         id: "date",
         header: t("columns.date"),
         hideBelow: "lg",
@@ -147,7 +190,7 @@ const NotificationsPage = () => {
         cell: (row) => rowActions(row, "row"),
       },
     ],
-    [dateTime, marketCell, rowActions, t, typeBadge],
+    [dateTime, inactiveHint, marketCell, rowActions, t, typeBadge],
   );
 
   // Telefon kartasi (maket `.el-list-item`): belgi, «Market #id», guruh ID, turi + sana; o'ngda ikki ikonka tugma (44 px).
@@ -159,8 +202,8 @@ const NotificationsPage = () => {
         </span>
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-            <span className="font-semibold text-text">{row.market_name}</span>
-            {row.market_id ? (
+            <span className="font-semibold text-text">{marketName(row)}</span>
+            {hasName(row) ? (
               <span className="text-[13px] text-text-muted tabular-nums">#{row.market_id}</span>
             ) : null}
           </span>
@@ -169,13 +212,15 @@ const NotificationsPage = () => {
           </span>
           <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             {typeBadge(row)}
+            <NotificationStatusBadge active={row.is_active} />
             <span className="text-xs text-text-muted tabular-nums">{dateTime(row.created_at)}</span>
           </span>
+          {inactiveHint(row)}
         </div>
         {rowActions(row, "column")}
       </div>
     ),
-    [dateTime, rowActions, typeBadge],
+    [dateTime, hasName, inactiveHint, marketName, rowActions, typeBadge],
   );
 
   const changeLimit = (next: number) => {
@@ -189,7 +234,7 @@ const NotificationsPage = () => {
         title={t("title")}
         description={t("description")}
         actions={
-          <Button leftIcon={Plus} onClick={() => setIsCreateOpen(true)}>
+          <Button leftIcon={Plus} aria-haspopup="dialog" onClick={() => setIsCreateOpen(true)}>
             {t("add")}
           </Button>
         }
@@ -215,7 +260,7 @@ const NotificationsPage = () => {
               onPageChange={setPage}
               onPageSizeChange={changeLimit}
               pageSizeOptions={PAGE_SIZES}
-              summary={(range) => t("list.pagination", range)}
+              summary={(range) => t("list.pagination", { ...range, count: data.total })}
             />
           ) : undefined
         }
@@ -230,6 +275,7 @@ const NotificationsPage = () => {
                 t("columns.market"),
                 t("columns.groupId"),
                 t("columns.type"),
+                t("columns.status"),
                 t("columns.date"),
               ]}
               rows={6}
@@ -241,7 +287,12 @@ const NotificationsPage = () => {
               title={t("list.emptyTitle")}
               description={t("list.emptyDescription")}
               action={
-                <Button variant="secondary" leftIcon={Plus} onClick={() => setIsCreateOpen(true)}>
+                <Button
+                  variant="secondary"
+                  leftIcon={Plus}
+                  aria-haspopup="dialog"
+                  onClick={() => setIsCreateOpen(true)}
+                >
                   {t("add")}
                 </Button>
               }
@@ -258,6 +309,7 @@ const NotificationsPage = () => {
               getRowKey={(row) => row.id}
               label={t("list.label")}
               cardsLabel={t("list.cardsLabel")}
+              density="tablet-tight"
               renderCard={renderCard}
               busy={isRefetching}
             />

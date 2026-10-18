@@ -39,7 +39,10 @@ import { useDeleteProductConfirm } from "../ui/useDeleteProductConfirm";
 
 type CreateFormValues = { name: string };
 
-/** O'ng ro'yxat — sahifalashsiz (maket), bitta so'rovda hammasi. */
+/**
+ * O'ng ro'yxat — sahifalashsiz (maket «Jami N ta»), bitta so'rovda hammasi: `limit` bermasak server 10 tasini
+ * berardi va 11-mahsulot ko'rinmasdi (3qDsJpfW); 500 — server chegarasi.
+ */
 const LIST_PARAMS = { limit: PRODUCT_LIST_MAX_LIMIT };
 
 /**

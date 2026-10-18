@@ -1,158 +1,182 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import i18n from "../../../i18n";
-import ActivityLogsPage from "../../../pages/activity-logs";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
-import { buildLogParams, EMPTY_LOG_FILTERS } from "../lib/logView";
+import type { ActivityActionsCatalog, ActivityLog, ActivityLogParams } from "../../../entities/activity-log";
+import ActivityLogViewer from "./ActivityLogViewer";
 
-const apiGetMock = vi.fn();
-
-vi.mock("../../../shared/api/api", () => ({
-  api: { get: (...args: unknown[]) => apiGetMock(...args) },
+const mocks = vi.hoisted(() => ({
+  logs: vi.fn(),
+  actions: vi.fn(),
 }));
 
-/** Gateway audit feed (`GET /activity-logs`) — `{ data: { items, meta } }`, qatorlar boyitilgan (`actor`, `action_meta`). */
-const LOGS = [
-  {
-    id: 101,
-    entity_type: "Order",
-    entity_id: "10227",
+vi.mock("../../../entities/activity-log", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../entities/activity-log")>()),
+  useActivityLogs: mocks.logs,
+  useActivityActions: mocks.actions,
+}));
+
+const log = (over: Partial<ActivityLog> = {}): ActivityLog => ({
+  id: "1",
+  entity_type: "Order",
+  entity_id: "10227",
+  action: "status_change",
+  old_value: { status: "on the road", sold_at: null },
+  new_value: { status: "sold", sold_at: "2026-10-16T09:32:00.000Z" },
+  user_id: "7",
+  user_name: null,
+  user_role: null,
+  service: "order",
+  trace_id: "4f9c2a7e81d34b6a9e05c3d17a2b8f64",
+  metadata: { source: "Kuryer ilovasi", ip: "10.24.6.118" },
+  created_at: "2026-10-16T09:32:00.000Z",
+  actor: { id: "7", name: "Jasur Tursunov", role: "courier" },
+  action_meta: {
     action: "status_change",
-    _service: "order",
-    created_at: "2026-10-06T09:32:00Z",
-    user_name: "Jasur Tursunov",
-    user_role: "courier",
-    actor: { id: "7", name: "Jasur Tursunov", role: "courier" },
-    action_meta: { action: "status_change", label: "Holat o'zgardi", category: "general", tone: "blue", known: true },
-    old_value: { status: "on_the_road", sold_at: null },
-    new_value: { status: "sold", sold_at: "2026-10-06T09:32:00Z" },
-    metadata: { source: "Kuryer ilovasi", device: "Android" },
-    trace_id: "4f9c2a7e81d34b6a9e05c3d17a2b8f64",
-    entity: { id: "10227", status: "sold" },
+    label: "Holat o'zgardi",
+    category: "order",
+    categoryLabel: "Buyurtma",
+    icon: "swap",
+    tone: "slate",
+    known: true,
   },
-  {
-    id: 102,
-    entity_type: "User",
-    entity_id: "61",
-    action: "logout",
-    _service: "identity",
-    created_at: "2026-10-05T11:31:00Z",
-    actor: { id: "61", name: "Akbar Nurmatov", role: "market" },
-    action_meta: { action: "logout", label: "Tizimdan chiqdi", category: "auth", known: true },
-    old_value: null,
-    new_value: null,
-    metadata: null,
-    trace_id: "aa11",
-    entity: { id: "61", name: "Akbar Nurmatov" },
-  },
-  {
-    id: 103,
-    entity_type: "Product",
-    entity_id: "887",
-    action: "deleted",
-    _service: "catalog",
-    created_at: "2026-10-05T10:24:00Z",
-    actor: { id: "1", name: "Shodiyor Ergashev", role: "superadmin" },
-    old_value: { name: "Eski zaryadlovchi" },
-    new_value: null,
-    metadata: null,
-    entity: { id: "887", name: "Eski zaryadlovchi" },
-  },
-];
-
-const CATALOG = {
-  data: ["status_change", "logout", "deleted", "order.cancel"],
-  registry: [
-    { action: "status_change", label: "Holat o'zgardi", category: "general", category_label: "Umumiy" },
-    { action: "logout", label: "Tizimdan chiqdi", category: "auth", category_label: "Kirish" },
-    { action: "deleted", label: "O'chirildi", category: "general", category_label: "Umumiy" },
-    { action: "order.cancel", label: "Bekor qilindi", category: "order", category_label: "Buyurtma" },
-  ],
-  categories: [],
-};
-
-const feed = (items: unknown[], total = items.length) => ({
-  data: { data: { items, meta: { page: 1, limit: 20, total, totalPages: Math.max(1, Math.ceil(total / 20)) } } },
+  actor_status: "snapshot",
+  entity: { name: "Sardor Qodirov" },
+  references: null,
+  ...over,
 });
 
-/** Oxirgi `GET activity-logs` so'rovining parametrlari. */
-const lastListParams = () => {
-  const calls = apiGetMock.mock.calls.filter(([url]) => url === "activity-logs");
-  return (calls.at(-1)?.[1] as { params: Record<string, unknown> } | undefined)?.params;
+const CATALOG: ActivityActionsCatalog = {
+  actions: ["finance.manual_expense", "order.sell", "login", "order.new_verb"],
+  registry: [
+    { action: "finance.manual_expense", label: "Qo'lda chiqim", category: "finance", categoryLabel: "Moliya", icon: "minus", tone: "rose", known: true },
+    { action: "order.sell", label: "Sotildi", category: "order", categoryLabel: "Buyurtma", icon: "plus", tone: "green", known: true },
+    { action: "login", label: "Tizimga kirdi", category: "auth", categoryLabel: "Kirish", icon: "login", tone: "slate", known: true },
+  ],
+  categories: [
+    { key: "order", label: "Buyurtma" },
+    { key: "finance", label: "Moliya" },
+    { key: "auth", label: "Kirish" },
+  ],
 };
 
-const mockPhone = (phone: boolean) =>
-  vi.spyOn(window, "matchMedia").mockImplementation(
-    (query: string) =>
-      ({
-        matches: phone && query === "(max-width: 767px)",
-        media: query,
-        onchange: null,
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-      }) as unknown as MediaQueryList,
-  );
+const listResult = (items: ActivityLog[]) => ({
+  data: { items, page: 1, limit: 20, total: items.length, totalPages: 1 },
+  isLoading: false,
+  isFetching: false,
+  isError: false,
+  error: null,
+  refetch: vi.fn(),
+});
 
-describe("Faoliyat jurnali (dizayn v2)", () => {
-  beforeEach(() => {
-    apiGetMock.mockReset();
-    apiGetMock.mockImplementation((url: string) => {
-      if (url === "activity-logs/actions") return Promise.resolve({ data: CATALOG });
-      if (url === "activity-logs") return Promise.resolve(feed(LOGS));
-      return Promise.resolve({ data: {} });
-    });
-  });
+const lastParams = (): ActivityLogParams => mocks.logs.mock.lastCall?.[0];
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+beforeEach(() => {
+  mocks.logs.mockReset();
+  mocks.actions.mockReset();
+  mocks.actions.mockReturnValue({ data: CATALOG, isLoading: false });
+});
 
-  it("sarlavha va jadval: vaqt, kim (rol yorlig'i), amal badge'i, obyekt, xizmat; sahifalash xulosasi", async () => {
-    renderWithProviders(<ActivityLogsPage />, { route: "/activity-logs" });
+describe("ActivityLogViewer — dizayn v2 (y8CxCtcK, `superadmin-activity-logs-list`)", () => {
+  it("qator: vaqt, Kim (ism + rol), Amal badge'i (`action_meta`), Obyekt (№ + nom), Xizmat", () => {
+    mocks.logs.mockReturnValue(listResult([log()]));
+    renderWithProviders(<ActivityLogViewer />);
 
-    expect(screen.getByRole("heading", { level: 1, name: "Faoliyat jurnali" })).toBeInTheDocument();
-    const table = await screen.findByRole("table", { name: "Faoliyat jurnali yozuvlari" });
-    const headers = within(table).getAllByRole("columnheader").map((cell) => cell.textContent);
-    expect(headers).toEqual(["Tafsilot", "Vaqt", "Kim", "Amal", "Obyekt", "Xizmat"]);
-
-    const row = within(table).getByText("Jasur Tursunov").closest("tr") as HTMLTableRowElement;
-    expect(within(row).getByText("Kuryer")).toBeInTheDocument();
-    expect(within(row).getByText("Holat o'zgardi")).toBeInTheDocument();
-    expect(within(row).getByText("№10227")).toBeInTheDocument();
+    const table = screen.getByRole("table", { name: "Faoliyat jurnali yozuvlari" });
+    const [, row] = within(table).getAllByRole("row");
+    expect(row).toHaveTextContent("Jasur Tursunov");
+    expect(row).toHaveTextContent("Kuryer");
+    expect(within(row).getByText("Holat o'zgardi").parentElement).toHaveClass("bg-sunken", "text-text-muted");
+    expect(row).toHaveTextContent("Buyurtma №10227");
+    expect(row).toHaveTextContent("Sardor Qodirov");
     expect(within(row).getByText("Buyurtmalar")).toBeInTheDocument();
-
-    const deletedRow = within(table).getByText("Shodiyor Ergashev").closest("tr") as HTMLTableRowElement;
-    expect(within(deletedRow).getByText("O'chirildi")).toHaveAttribute("data-tone", "danger");
-    expect(within(deletedRow).getByText("Superadmin")).toBeInTheDocument();
-
-    expect(screen.getByText("1–3 / 3 ta yozuv")).toBeInTheDocument();
-    expect(lastListParams()).toEqual({ page: 1, limit: 20 });
+    expect(row).toHaveTextContent(/\d{2}\.\d{2}\.\d{4}, \d{2}:\d{2}|Bugun|Kecha/);
   });
 
-  it("qator ochiladi: maydon o'zgarishlari (yorliq + kalit, oldin → keyin), qo'shimcha ma'lumot, Kuzatuv ID; o'zgarishsiz yozuvda chevron yo'q", async () => {
+  it("Kim: ism topilmasa «#44 (topilmadi)», aktyorsiz — «Tizim» (telefon ko'rsatilmaydi)", () => {
+    mocks.logs.mockReturnValue(
+      listResult([
+        log({ id: "2", actor: { id: "44", name: null, role: null, phone_number: "+998901234567" }, user_id: "44", actor_status: "unresolved" }),
+        log({ id: "3", actor: null, user_id: null, actor_status: "system" }),
+      ]),
+    );
+    renderWithProviders(<ActivityLogViewer />);
+    expect(screen.getByText("#44 (topilmadi)")).toBeInTheDocument();
+    expect(screen.getByText("Tizim")).toBeInTheDocument();
+    expect(screen.queryByText(/998901234567/)).toBeNull();
+  });
+
+  it("⭐ TC8: «Amal» filtri `categories` tartibida guruhlangan, ichida `registry[].label`; tanlansa — `action` so'raladi", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<ActivityLogsPage />, { route: "/activity-logs" });
+    mocks.logs.mockReturnValue(listResult([log()]));
+    renderWithProviders(<ActivityLogViewer />);
 
-    const toggle = await screen.findByRole("button", { name: "Buyurtma №10227 tafsilotini ochish" });
-    expect(toggle).toHaveAttribute("aria-expanded", "false");
-    // «Tizimdan chiqdi» — o'zgarish ham, metadata ham yo'q: chevron yo'q.
-    expect(screen.queryByRole("button", { name: /Foydalanuvchi #61/ })).toBeNull();
+    await user.click(screen.getByRole("combobox", { name: "Amal" }));
+    const listbox = await screen.findByRole("listbox", { name: "Amal" });
+    const groups = within(listbox).getAllByRole("group");
+    expect(groups.map((group) => group.getAttribute("aria-labelledby") && within(group).getAllByRole("option")[0].textContent)).toEqual([
+      "Sotildi",
+      "Qo'lda chiqim",
+      "Tizimga kirdi",
+    ]);
+    expect(within(listbox).getByRole("group", { name: "Buyurtma" })).toBeInTheDocument();
+    expect(within(listbox).getByRole("group", { name: "Moliya" })).toHaveTextContent("Qo'lda chiqim");
+    expect(within(listbox).getByRole("group", { name: "Kirish" })).toHaveTextContent("Tizimga kirdi");
+    // Reyestrda yo'q yangi fe'l — oxirida, humanize.
+    expect(within(listbox).getByRole("option", { name: "Order new verb" })).toBeInTheDocument();
 
-    await user.click(toggle);
-    const changes = await screen.findByRole("table", { name: "Maydon o'zgarishlari" });
-    const statusRow = within(changes).getByText("status").closest("tr") as HTMLTableRowElement;
-    expect(within(statusRow).getByText("Holat")).toBeInTheDocument();
+    await user.click(within(listbox).getByRole("option", { name: "Qo'lda chiqim" }));
+    await waitFor(() => expect(lastParams()).toMatchObject({ action: "finance.manual_expense", page: 1 }));
+  });
+
+  it("Obyekt turi o'zbekcha yozilsa backend turi yuboriladi; «Filtrlarni tozalash» hammasini tozalaydi", async () => {
+    const user = userEvent.setup();
+    mocks.logs.mockReturnValue(listResult([log()]));
+    renderWithProviders(<ActivityLogViewer />);
+
+    await user.type(screen.getByRole("textbox", { name: "Obyekt turi" }), "buyurtma");
+    await waitFor(() => expect(lastParams()).toMatchObject({ entity_type: "Order" }));
+
+    await user.click(screen.getByRole("button", { name: "Filtrlarni tozalash" }));
+    await waitFor(() => expect(lastParams()).toEqual({ page: 1, limit: 20 }));
+    expect(screen.getByRole("textbox", { name: "Obyekt turi" })).toHaveValue("");
+  });
+
+  it("qidiruv yozilayotganda (400 ms ichida) «Filtrlarni tozalash» — kechikkan qidiruv tozalashni qaytarmaydi", async () => {
+    const user = userEvent.setup();
+    mocks.logs.mockReturnValue(listResult([log()]));
+    renderWithProviders(<ActivityLogViewer />);
+
+    await user.type(screen.getByRole("textbox", { name: "Obyekt turi" }), "buyurtma");
+    await waitFor(() => expect(lastParams()).toMatchObject({ entity_type: "Order" }));
+    await user.type(screen.getByRole("searchbox", { name: "Jurnaldan qidirish" }), "Ali");
+    await user.click(screen.getByRole("button", { name: "Filtrlarni tozalash" }));
+
+    // Qidiruv taymeri (400 ms) o'tib ketsin — `search=Ali` qaytib kelmasligi kerak.
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    expect(lastParams()).toEqual({ page: 1, limit: 20 });
+    expect(screen.getByRole("searchbox", { name: "Jurnaldan qidirish" })).toHaveValue("");
+  });
+
+  it("qator ochiladi: maydon o'zgarishlari (eski qiymat chizilgan), qo'shimcha ma'lumot, Kuzatuv ID; qayta bosilsa yopiladi", async () => {
+    const user = userEvent.setup();
+    mocks.logs.mockReturnValue(listResult([log()]));
+    renderWithProviders(<ActivityLogViewer />);
+
+    const open = screen.getByRole("button", { name: "Buyurtma №10227 tafsilotini ochish" });
+    expect(open).toHaveAttribute("aria-expanded", "false");
+    await user.click(open);
+
+    const changes = screen.getByRole("table", { name: "Maydon o'zgarishlari" });
+    const statusRow = within(changes).getByText("Holat").closest("tr")!;
+    expect(statusRow).toHaveTextContent("status");
     expect(within(statusRow).getByText("Yo'lda")).toHaveClass("line-through");
-    expect(within(statusRow).getByText("Sotilgan")).toBeInTheDocument();
-    expect(within(changes).getByText("Sotilgan vaqti")).toBeInTheDocument();
+    expect(statusRow).toHaveTextContent("Sotilgan");
+    const soldRow = within(changes).getByText("Sotilgan vaqti").closest("tr")!;
+    expect(within(soldRow).getByText("—")).not.toHaveClass("line-through");
 
-    expect(screen.getByText("Qo'shimcha ma'lumot")).toBeInTheDocument();
-    expect(screen.getByText("Manba")).toBeInTheDocument();
-    expect(screen.getByText("Kuryer ilovasi")).toBeInTheDocument();
+    expect(screen.getByText("Manba").nextElementSibling).toHaveTextContent("Kuryer ilovasi");
+    expect(screen.getByText("IP manzil").nextElementSibling).toHaveTextContent("10.24.6.118");
     expect(screen.getByText("4f9c2a7e81d34b6a9e05c3d17a2b8f64")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Kuzatuv ID ni nusxalash" })).toBeInTheDocument();
 
@@ -160,114 +184,123 @@ describe("Faoliyat jurnali (dizayn v2)", () => {
     expect(screen.queryByRole("table", { name: "Maydon o'zgarishlari" })).toBeNull();
   });
 
-  it("qidiruv 400 ms kechikish bilan; Xizmat filtri → `service`, sahifa 1 ga qaytadi; «Filtrlarni tozalash»", async () => {
+  it("⭐ f2Ud5tju TC11: «Qo'shimcha ma'lumot» — Manba, Filial, Qurilma, IP manzil (maket tartibi); kontekstsiz yozuvda «—»", async () => {
     const user = userEvent.setup();
-    apiGetMock.mockImplementation((url: string) => {
-      if (url === "activity-logs/actions") return Promise.resolve({ data: CATALOG });
-      if (url === "activity-logs") return Promise.resolve(feed(LOGS, 45));
-      return Promise.resolve({ data: {} });
+    const userAgent =
+      "Mozilla/5.0 (Linux; Android 14; SM-A546E) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.6668.100 Mobile Safari/537.36";
+    mocks.logs.mockReturnValue(
+      listResult([
+        log({
+          metadata: {
+            ip: "10.24.6.118",
+            user_agent: userAgent,
+            device_id: "3f1c9a2e-55b1-4b8e-9d0a-1f2e3d4c5b6a",
+            device_name: "Android",
+            branch_name: "Toshkent HQ",
+            source: "Kuryer ilovasi",
+          },
+        }),
+        log({ id: "2", entity_id: "10230", metadata: null, trace_id: null }),
+      ]),
+    );
+    renderWithProviders(<ActivityLogViewer />);
+
+    await user.click(screen.getByRole("button", { name: "Buyurtma №10227 tafsilotini ochish" }));
+    const meta = screen.getByRole("region", { name: "Qo'shimcha ma'lumot" });
+    const terms = within(meta).getAllByRole("term").map((term) => term.textContent);
+    expect(terms).toEqual(["Manba", "Filial", "Qurilma", "IP manzil", "Kuzatuv ID"]);
+    const device = within(meta).getByText("Qurilma").nextElementSibling!;
+    expect(device).toHaveTextContent(/^Android$/);
+    expect(device).toHaveAttribute("title", userAgent);
+    expect(within(meta).getByText("IP manzil").nextElementSibling).toHaveTextContent("10.24.6.118");
+    // Texnik kalitlar alohida qator emas (maketda yo'q).
+    expect(within(meta).queryByText("3f1c9a2e-55b1-4b8e-9d0a-1f2e3d4c5b6a")).toBeNull();
+    expect(within(meta).queryByText(userAgent)).toBeNull();
+
+    // Kontekstsiz yozuv (cron/bot yoki 30 kundan eski): «—», sun'iy qiymat yo'q.
+    await user.click(screen.getByRole("button", { name: "Buyurtma №10230 tafsilotini ochish" }));
+    const plain = screen.getByRole("region", { name: "Qo'shimcha ma'lumot" });
+    expect(within(plain).getAllByRole("term").map((term) => term.textContent)).toEqual(["Qurilma", "IP manzil"]);
+    expect(within(plain).getByText("Qurilma").nextElementSibling).toHaveTextContent(/^—$/);
+    expect(within(plain).getByText("IP manzil").nextElementSibling).toHaveTextContent(/^—$/);
+  });
+
+  it("tafsiloti yo'q qatorda tugma yo'q — «Tafsilot yo'q» (ekran o'quvchi uchun)", () => {
+    mocks.logs.mockReturnValue(
+      listResult([log({ id: "9", old_value: null, new_value: null, metadata: null, trace_id: null, entity_type: "User", entity_id: "61" })]),
+    );
+    renderWithProviders(<ActivityLogViewer />);
+    expect(screen.queryByRole("button", { name: /tafsilotini ochish/ })).toBeNull();
+    expect(screen.getByText("Tafsilot yo'q")).toHaveClass("sr-only");
+    expect(screen.getByText("Foydalanuvchi")).toBeInTheDocument();
+    expect(screen.getByText("#61")).toBeInTheDocument();
+  });
+
+  it("bo'sh: «Yozuvlar topilmadi»; filtr bilan — sabab va «Filtrlarni tozalash»", async () => {
+    const user = userEvent.setup();
+    mocks.logs.mockReturnValue(listResult([]));
+    renderWithProviders(<ActivityLogViewer />);
+    expect(screen.getByText("Yozuvlar topilmadi")).toBeInTheDocument();
+    expect(screen.queryByText(/Filtrlarga mos yozuv yo'q/)).toBeNull();
+
+    await user.type(screen.getByRole("textbox", { name: "Foydalanuvchi ID" }), "99");
+    expect(await screen.findByText("Filtrlarga mos yozuv yo'q. Filtrlarni o'zgartirib ko'ring.")).toBeInTheDocument();
+    expect(lastParams()).toMatchObject({ user_id: "99" });
+  });
+
+  it("yuklanishda jadval skeleti (qo'lda «Yuklanmoqda…» yo'q), sahifalash yo'q", () => {
+    mocks.logs.mockReturnValue({ data: undefined, isLoading: true, isFetching: true, isError: false, error: null, refetch: vi.fn() });
+    renderWithProviders(<ActivityLogViewer />);
+    expect(screen.queryByRole("table", { name: "Faoliyat jurnali yozuvlari" })).toBeNull();
+    expect(screen.queryByText(/Yuklanmoqda/)).toBeNull();
+    expect(screen.queryByRole("navigation")).toBeNull();
+    // Filtrlar yuklanishda ham ishlaydi.
+    expect(screen.getByRole("searchbox", { name: "Jurnaldan qidirish" })).toBeEnabled();
+  });
+
+  it("xato: ErrorState + «Qayta urinish» so'rovni qaytaradi", async () => {
+    const user = userEvent.setup();
+    const refetch = vi.fn();
+    mocks.logs.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      isFetching: false,
+      isError: true,
+      error: { response: { status: 500 } },
+      refetch,
     });
-    renderWithProviders(<ActivityLogsPage />, { route: "/activity-logs" });
-
-    expect(screen.queryByRole("button", { name: "Filtrlarni tozalash" })).toBeNull();
-    await user.click(await screen.findByRole("button", { name: "2" }));
-    await waitFor(() => expect(lastListParams()).toMatchObject({ page: 2 }));
-
-    await user.type(screen.getByRole("searchbox", { name: "Jurnaldan qidirish" }), "10227");
-    await waitFor(() => expect(lastListParams()).toEqual({ page: 1, limit: 20, search: "10227" }), { timeout: 2000 });
-
-    await user.click(screen.getByRole("combobox", { name: /Xizmat bo'yicha/ }));
-    await user.click(await screen.findByRole("option", { name: "Moliya" }));
-    await waitFor(() => expect(lastListParams()).toEqual({ page: 1, limit: 20, search: "10227", service: "finance" }));
-
-    await user.type(screen.getByRole("textbox", { name: "Foydalanuvchi ID" }), "7");
-    await waitFor(() => expect(lastListParams()).toMatchObject({ user_id: "7" }));
-
-    await user.click(screen.getByRole("button", { name: "Filtrlarni tozalash" }));
-    // Filtrsiz so'rov keshda bor (birinchi yuklash) — qayta yuborilmaydi; maydonlar tozalanadi, havola yo'qoladi.
-    expect(screen.getByRole("searchbox", { name: "Jurnaldan qidirish" })).toHaveValue("");
-    expect(screen.getByRole("textbox", { name: "Foydalanuvchi ID" })).toHaveValue("");
-    expect(screen.getByRole("combobox", { name: /Xizmat bo'yicha/ })).toHaveTextContent("Barchasi");
-    expect(screen.queryByRole("button", { name: "Filtrlarni tozalash" })).toBeNull();
-  });
-
-  it("Amal filtri — katalog yorliqlari (`GET /activity-logs/actions` reyestri)", async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<ActivityLogsPage />, { route: "/activity-logs" });
-
-    await user.click(await screen.findByRole("combobox", { name: /Amal bo'yicha/ }));
-    await user.click(await screen.findByRole("option", { name: "Bekor qilindi" }));
-    await waitFor(() => expect(lastListParams()).toMatchObject({ action: "order.cancel" }));
-  });
-
-  it("Amal filtri guruhlari ru tilida tarjima qilinadi (backend `category_label` — faqat o'zbekcha)", async () => {
-    const user = userEvent.setup();
-    await i18n.changeLanguage("ru");
-    try {
-      renderWithProviders(<ActivityLogsPage />, { route: "/activity-logs" });
-      await user.click(await screen.findByRole("combobox", { name: /По действию/ }));
-      expect(await screen.findByRole("group", { name: "Заказ" })).toBeInTheDocument();
-      expect(screen.getByRole("group", { name: "Вход" })).toBeInTheDocument();
-      expect(screen.queryByRole("group", { name: "Buyurtma" })).toBeNull();
-    } finally {
-      await i18n.changeLanguage("uz");
-    }
-  });
-
-  it("xato — «Faoliyat jurnalini yuklashda xatolik yuz berdi» + qayta urinish; bo'sh — «Yozuvlar topilmadi»", async () => {
-    const user = userEvent.setup();
-    let fail = true;
-    apiGetMock.mockImplementation((url: string) => {
-      if (url === "activity-logs/actions") return Promise.resolve({ data: CATALOG });
-      if (url === "activity-logs") {
-        if (fail) return Promise.reject({ response: { status: 500, data: { message: "down" } } });
-        return Promise.resolve(feed([]));
-      }
-      return Promise.resolve({ data: {} });
-    });
-    renderWithProviders(<ActivityLogsPage />, { route: "/activity-logs" });
-
-    expect(await screen.findByText("Faoliyat jurnalini yuklashda xatolik yuz berdi")).toBeInTheDocument();
-    fail = false;
+    renderWithProviders(<ActivityLogViewer />);
     await user.click(screen.getByRole("button", { name: /Qayta urinish/ }));
-    expect(await screen.findByText("Yozuvlar topilmadi")).toBeInTheDocument();
+    expect(refetch).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("Yozuvlar topilmadi")).toBeNull();
   });
 
-  it("telefonda: kartalar + chevron, filtrlar pastki varaqada (qoralama → «Natijalarni ko'rsatish»)", async () => {
-    mockPhone(true);
+  it("sahifalash: «1–20 / 45 ta yozuv», boshqa sahifa so'raladi va ochiq qator yopiladi", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<ActivityLogsPage />, { route: "/activity-logs" });
-
-    const list = await screen.findByRole("list", { name: "Faoliyat jurnali yozuvlari" });
-    expect(within(list).getAllByRole("listitem")).toHaveLength(3);
-    expect(screen.queryByRole("combobox", { name: /Xizmat bo'yicha/ })).toBeNull();
-
-    await user.click(within(list).getByRole("button", { name: "Buyurtma №10227 tafsilotini ochish" }));
-    expect(await within(list).findByText("Maydon o'zgarishlari")).toBeInTheDocument();
-
-    await user.click(screen.getByRole("button", { name: "Filtrlar" }));
-    const sheet = await screen.findByRole("dialog", { name: "Filtrlar" });
-    await user.type(within(sheet).getByRole("textbox", { name: "Foydalanuvchi ID" }), "61");
-    expect(lastListParams()).not.toHaveProperty("user_id");
-    await user.click(within(sheet).getByRole("button", { name: "Natijalarni ko'rsatish" }));
-
-    await waitFor(() => expect(lastListParams()).toEqual({ page: 1, limit: 20, user_id: "61" }));
-    expect(screen.getByRole("button", { name: /Filtrlar/ })).toHaveTextContent("1");
-  });
-});
-
-describe("buildLogParams", () => {
-  it("`from` — kun boshi, `to` — kun oxiri (mahalliy vaqt, ISO)", () => {
-    const params = buildLogParams({ ...EMPTY_LOG_FILTERS, dateFrom: "2026-10-01", dateTo: "2026-10-08" }, "", 1, 20);
-    expect(params.from).toBe(new Date(2026, 9, 1, 0, 0, 0, 0).toISOString());
-    expect(params.to).toBe(new Date(2026, 9, 8, 23, 59, 59, 999).toISOString());
-  });
-
-  it("bo'sh qiymatlar yuborilmaydi; matn chetidagi bo'shliq olib tashlanadi", () => {
-    expect(buildLogParams({ ...EMPTY_LOG_FILTERS, entityType: "  Order ", userId: " " }, "", 3, 20)).toEqual({
-      page: 3,
-      limit: 20,
-      entity_type: "Order",
+    mocks.logs.mockReturnValue({
+      ...listResult([log()]),
+      data: { items: [log()], page: 1, limit: 20, total: 45, totalPages: 3 },
     });
+    renderWithProviders(<ActivityLogViewer />);
+    expect(screen.getByText("1–20 / 45 ta yozuv")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Buyurtma №10227 tafsilotini ochish" }));
+    expect(screen.getByRole("table", { name: "Maydon o'zgarishlari" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "2" }));
+    await waitFor(() => expect(lastParams()).toMatchObject({ page: 2 }));
+    expect(screen.queryByRole("table", { name: "Maydon o'zgarishlari" })).toBeNull();
+  });
+
+  it("reyestr kelmasa (eski backend) — fe'llar guruhsiz, humanize", async () => {
+    const user = userEvent.setup();
+    mocks.actions.mockReturnValue({ data: { actions: ["order.sell"], registry: [], categories: [] }, isLoading: false });
+    mocks.logs.mockReturnValue(listResult([log({ action_meta: null, action: "order.sell" })]));
+    renderWithProviders(<ActivityLogViewer />);
+
+    expect(screen.getAllByText("Order sell")[0]).toBeInTheDocument();
+    await user.click(screen.getByRole("combobox", { name: "Amal" }));
+    const listbox = await screen.findByRole("listbox", { name: "Amal" });
+    expect(within(listbox).queryAllByRole("group")).toHaveLength(0);
+    expect(within(listbox).getByRole("option", { name: "Order sell" })).toBeInTheDocument();
   });
 });

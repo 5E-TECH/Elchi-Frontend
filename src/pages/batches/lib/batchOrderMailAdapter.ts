@@ -31,7 +31,7 @@ export const mapBatchOrdersToPostOrders = (batch?: BatchDetail | null): PostOrde
   const branchId = batch?.to_branch?.id ?? "batch-region";
   const branchName = batch?.to_branch?.name ?? i18n.t("batches:detail.branch");
 
-  return (batch?.orders ?? []).map((order) => {
+  return (batch?.orders ?? []).map((order): PostOrder => {
     // Buyurtma sanasi — buyurtmaning o'zi, bo'lmasa paket yaratilgan vaqt (D13).
     const createdAt = known(order.created_at) ?? batchCreatedAt;
     // Tuman — enriched buyurtmadan (D13); bo'lmasa bo'sh (filial nomi tuman o'rnida ko'rsatilmasin).
@@ -66,24 +66,8 @@ export const mapBatchOrdersToPostOrders = (batch?: BatchDetail | null): PostOrde
       items: [],
       ...(marketName
         ? {
-            market: {
-              id: "batch-market",
-              name: marketName,
-              phone_number: "",
-              extra_number: null,
-              username: "",
-              salary: 0,
-              payment_day: null,
-              role: "market",
-              status: "active",
-              tariff_home: 0,
-              tariff_center: 0,
-              add_order: false,
-              default_tariff: null,
-              createdAt,
-              updatedAt: createdAt,
-              is_deleted: false,
-            },
+            // Pochta detali tiplari backend oq ro'yxatiga toraytirilgan (VfgcnxDa) — faqat `id/name/phone_number`.
+            market: { id: "batch-market", name: marketName, phone_number: "" },
           }
         : {}),
       customer: {
@@ -91,18 +75,6 @@ export const mapBatchOrdersToPostOrders = (batch?: BatchDetail | null): PostOrde
         name: order.receiver,
         phone_number: order.phone,
         extra_number: null,
-        username: "",
-        salary: 0,
-        payment_day: null,
-        role: "customer",
-        status: "active",
-        tariff_home: null,
-        tariff_center: null,
-        add_order: false,
-        default_tariff: null,
-        createdAt,
-        updatedAt: createdAt,
-        is_deleted: false,
       },
       district: {
         id: "batch-district",
@@ -110,8 +82,6 @@ export const mapBatchOrdersToPostOrders = (batch?: BatchDetail | null): PostOrde
         sato_code: "",
         region_id: branchId,
         assigned_region: regionName,
-        createdAt,
-        updatedAt: createdAt,
       },
       region: {
         id: branchId,

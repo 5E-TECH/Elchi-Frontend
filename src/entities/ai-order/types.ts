@@ -69,6 +69,11 @@ export type AiPreviewOrder = {
    * qatorlari yaratilgan buyurtmaga bog'lanadi.
    */
   draft_id?: string | null;
+  /**
+   * Preview'dagi o'rni (ai-parse javobidagi `index`, 0..29; vncdmXOy). Tasdiqlashda `ai_item_index` bo'lib
+   * qaytadi — operator karta o'chirsa ham o'zgarmaydi.
+   */
+  index?: number;
 };
 
 export type AiParseResponse = {
@@ -139,6 +144,11 @@ export type AiConfirmOrder = {
   operator?: string;
   /** Tahlil javobidagi `draft_id` (bo'lsa) — xarajatni buyurtmaga bog'lash uchun. */
   draft_id?: string;
+  /**
+   * Preview'dagi `index` (0..29). `draft_id` bilan birga — barqaror dublikat kaliti (`ai:<market>:<draft>:<index>`)
+   * va server tomonidagi audit (`edited_fields`: operator nimani o'zgartirdi). Qayta yuborishda O'ZGARMAYDI.
+   */
+  ai_item_index?: number;
 };
 
 export type AiConfirmRequest = {

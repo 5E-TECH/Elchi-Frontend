@@ -1,6 +1,7 @@
 {
   "title": "Faoliyat jurnali",
   "description": "Barcha xizmatlar bo'yicha audit izlari (kim, nima, qachon)",
+  "cardLabel": "Faoliyat jurnali yozuvlari",
   "columns": {
     "time": "Vaqt",
     "actor": "Kim",
@@ -9,12 +10,10 @@
     "service": "Xizmat"
   },
   "filters": {
-    "region": "Jurnal filtrlari",
+    "label": "Jurnal filtrlari",
     "search": "Jurnaldan qidirish",
     "service": "Xizmat",
-    "serviceAria": "Xizmat bo'yicha",
     "action": "Amal",
-    "actionAria": "Amal bo'yicha",
     "all": "Barchasi",
     "entityType": "Obyekt turi (masalan, Buyurtma)",
     "entityTypeLabel": "Obyekt turi",
@@ -22,29 +21,6 @@
     "dateRange": "Sana oralig'i",
     "clear": "Filtrlarni tozalash"
   },
-  "detail": {
-    "changes": "Maydon o'zgarishlari",
-    "field": "Maydon",
-    "before": "Oldin",
-    "after": "Keyin",
-    "noChanges": "Maydon o'zgarishlari qayd etilmagan",
-    "metadata": "Qo'shimcha ma'lumot",
-    "traceId": "Kuzatuv ID",
-    "copyTrace": "Kuzatuv ID ni nusxalash",
-    "copied": "Kuzatuv ID nusxalandi",
-    "yes": "Ha",
-    "no": "Yo'q"
-  },
-  "cardLabel": "Faoliyat jurnali yozuvlari",
-  "summary": "{{from}}–{{to}} / {{total}} ta yozuv",
-  "toggleOpen": "{{object}} tafsilotini ochish",
-  "toggleClose": "{{object}} tafsilotini yopish",
-  "system": "Tizim",
-  "empty": "Yozuvlar topilmadi",
-  "emptyHint": "Tizimda amal bajarilganda yozuvlar shu yerda paydo bo'ladi.",
-  "emptyFiltered": "Bu filtrlar bo'yicha yozuv topilmadi",
-  "emptyFilteredHint": "Filtrlardan birini olib tashlang yoki sana oralig'ini kengaytiring.",
-  "loadError": "Faoliyat jurnalini yuklashda xatolik yuz berdi",
   "services": {
     "identity": "Foydalanuvchilar",
     "order": "Buyurtmalar",
@@ -95,38 +71,13 @@
     "FinancialBalanceHistory": "Balans yozuvi",
     "UserSalary": "Maosh",
     "OperatorEarning": "Operator daromadi",
-    "OperatorPayment": "Operator to'lovi"
+    "OperatorPayment": "Operator to'lovi",
+    "Courier": "Kuryer",
+    "Payment": "To'lov"
   },
-  "fieldLabels": {
-    "status": "Holat",
-    "sold_at": "Sotilgan vaqti",
-    "comment": "Izoh",
-    "name": "Nomi",
-    "phone_number": "Telefon",
-    "address": "Manzil",
-    "total_price": "Summa",
-    "price": "Narx",
-    "amount": "Summa",
-    "courier_id": "Kuryer",
-    "market_id": "Market",
-    "branch_id": "Filial",
-    "region_id": "Viloyat",
-    "district_id": "Tuman",
-    "role": "Rol",
-    "is_active": "Faol",
-    "note": "Izoh",
-    "reason": "Sabab"
-  },
-  "metaLabels": {
-    "source": "Manba",
-    "branch": "Filial",
-    "branch_name": "Filial",
-    "device": "Qurilma",
-    "ip": "IP manzil",
-    "ip_address": "IP manzil",
-    "user_agent": "Brauzer",
-    "reason": "Sabab",
-    "comment": "Izoh"
+  "actor": {
+    "system": "Tizim",
+    "unresolved": "#{{id}} (topilmadi)"
   },
   "actions": {
     "created": "Yaratildi",
@@ -145,5 +96,63 @@
     "external_sync": "Tashqi sinxronlash",
     "assign": "Biriktirildi",
     "unassign": "Biriktirish bekor qilindi"
-  }
+  },
+  "detail": {
+    "expand": "{{target}} tafsilotini ochish",
+    "collapse": "{{target}} tafsilotini yopish",
+    "changes": "Maydon o'zgarishlari",
+    "field": "Maydon",
+    "before": "Oldin",
+    "after": "Keyin",
+    "noChanges": "Maydon o'zgarishlari qayd etilmagan",
+    "metadata": "Qo'shimcha ma'lumot",
+    "traceId": "Kuzatuv ID",
+    "copyTraceId": "Kuzatuv ID ni nusxalash",
+    "copied": "Kuzatuv ID nusxalandi",
+    "copyFailed": "Nusxalab bo'lmadi",
+    "yes": "Ha",
+    "no": "Yo'q"
+  },
+  "fields": {
+    "status": "Holat",
+    "sold_at": "Sotilgan vaqti",
+    "comment": "Izoh",
+    "name": "Nomi",
+    "phone_number": "Telefon",
+    "role": "Rol",
+    "total_price": "Summa",
+    "price": "Narx",
+    "amount": "Summa",
+    "paid_amount": "To'langan summa",
+    "quantity": "Soni",
+    "address": "Manzil",
+    "reason": "Sabab",
+    "courier_id": "Kuryer",
+    "market_id": "Market",
+    "branch_id": "Filial",
+    "region_id": "Viloyat",
+    "district_id": "Tuman",
+    "where_deliver": "Yetkazish turi",
+    "is_active": "Faol",
+    "note": "Izoh"
+  },
+  "meta": {
+    "source": "Manba",
+    "branch": "Filial",
+    "branch_name": "Filial",
+    "device": "Qurilma",
+    "ip": "IP manzil",
+    "reason": "Sabab",
+    "comment": "Izoh",
+    "amount": "Summa",
+    "count": "Soni",
+    "leg": "Yo'nalish",
+    "description": "Tavsif",
+    "ip_address": "IP manzil"
+  },
+  "summary": "{{from}}–{{to}} / {{total}} ta yozuv",
+  "empty": "Yozuvlar topilmadi",
+  "emptyHint": "Tizimda amal bajarilganda yozuvlar shu yerda paydo bo'ladi.",
+  "emptyFiltered": "Filtrlarga mos yozuv yo'q. Filtrlarni o'zgartirib ko'ring.",
+  "loadError": "Faoliyat jurnalini yuklashda xatolik yuz berdi"
 }

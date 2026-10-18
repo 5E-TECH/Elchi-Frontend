@@ -20,6 +20,7 @@ import {
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 import { resolvePaymentActorName, resolvePaymentCounterparty } from "./paymentHistoryActor";
 import { getCashboxTypeLabel, getPaymentSourceTitle, getViewerOperationType } from "./paymentSourceType";
+import type { PaymentAck } from "./paymentAck";
 
 // ─── Types (boshqa «Moliya» fayllari import qiladi — o'zgarmaydi, faqat additiv) ───────────────
 
@@ -41,6 +42,11 @@ export interface PaymentRow {
   payment_method?: string;
   payment_date?: string;
   comment?: string;
+  /**
+   * Kuryerning bot kvitansiyasiga javobi — faqat kuryer kassasidagi `courier_payment` qatorida
+   * (2crjWf7v): `confirmed` / `disputed` / `null` (javob yo'q). Boshqa qatorlarda yo'q.
+   */
+  payment_ack?: PaymentAck | null;
   createdAt?: string;
   created_at?: string;
   cashbox?: {

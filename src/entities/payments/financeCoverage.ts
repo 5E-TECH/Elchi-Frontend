@@ -105,6 +105,12 @@ export const useFinanceCoverage = () => {
         api.get(API_ENDPOINTS.FINANCE.FINANCIAL_BALANCE_TOP_IMPACTS, { params })
           .then((res) => res.data),
       enabled,
+      // vmLTsAok: server sahifalaydi — keyingi sahifa yuklanguncha oldingisi (jami, sahifalagich) ko'rinib turadi;
+      // davr o'zgarsa eski davr ma'lumoti ko'rsatilmaydi.
+      placeholderData: (previousData, previousQuery) => {
+        const previous = previousQuery?.queryKey[2] as { fromDate?: string; toDate?: string } | undefined;
+        return previous?.fromDate === params?.fromDate && previous?.toDate === params?.toDate ? previousData : undefined;
+      },
     });
 
   // ── Health ────────────────────────────────────────────────────────────────

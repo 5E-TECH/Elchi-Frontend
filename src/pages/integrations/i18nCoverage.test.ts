@@ -57,7 +57,7 @@ const RU_NO_CYRILLIC_OK = new Set([
  * Bo'sh qiymat ATAYLAB qo'yilgan kalitlar. O'zbekchadagi sanoq qo'shimchasi
  * ("3 ta") ingliz tilida yo'q — "3" ning o'zi to'g'ri.
  */
-const EMPTY_OK = new Set(["stlCountSuffix", "console.unitTa"]);
+const EMPTY_OK = new Set(["console.unitTa"]);
 
 describe("⭐ integrations i18n — uch til teng", () => {
   it("tarjima fayllari bo'sh emas (test bo'shliqda ishlamasin)", () => {

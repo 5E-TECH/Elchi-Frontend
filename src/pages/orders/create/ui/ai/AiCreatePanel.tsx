@@ -137,12 +137,15 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
   const handleParsed = (orders: AiPreviewOrder[], draftId?: string) => {
     setResultSummary(null);
     setConfirmError("");
-    const fresh = orders.filter((order) => !createdSigs.current.has(previewSig(order)));
+    // O'rin filtrdan OLDIN olinadi: `ai_item_index` — tahlil javobidagi asl o'rin (vncdmXOy).
+    const fresh = orders
+      .map((order, position) => ({ order, position }))
+      .filter(({ order }) => !createdSigs.current.has(previewSig(order)));
     const skipped = orders.length - fresh.length;
     setDrafts(
-      fresh.map((order) => {
+      fresh.map(({ order, position }) => {
         nextKey.current += 1;
-        return toDraft(order, `draft-${nextKey.current}`, draftId);
+        return toDraft(order, `draft-${nextKey.current}`, draftId, position);
       }),
     );
     setParseNotice(

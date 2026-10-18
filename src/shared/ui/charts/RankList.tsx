@@ -51,6 +51,8 @@ export interface RankListProps {
   meterTarget?: number;
   /** Ro'yxatdan tashqari, pastda alohida (o'z filiali 6-o'rin). */
   pinned?: RankItem;
+  /** Pastdagi alohida ro'yxat nomi (ekran o'quvchi): «Sizning filialingiz o'rni» (sukut — `ariaLabel`). */
+  pinnedAriaLabel?: string;
   /** Ochilganda ko'rsatiladigan to'liq ro'yxat (sukut — `items`). */
   expandedItems?: RankItem[];
   /** Boshqariladigan ochiq holat (sukut — ichki). */
@@ -175,6 +177,7 @@ export const RankList = ({
   meterTone,
   meterTarget,
   pinned,
+  pinnedAriaLabel,
   expandedItems,
   expanded: expandedProp,
   onExpandedChange,
@@ -212,7 +215,7 @@ export const RankList = ({
         ))}
       </ol>
       {pinned ? (
-        <ol aria-label={ariaLabel} className="m-0 list-none p-0">
+        <ol aria-label={pinnedAriaLabel ?? ariaLabel} start={pinned.rank} className="m-0 list-none p-0">
           <RankRow
             item={pinned}
             position={pinned.rank ?? items.length + 1}

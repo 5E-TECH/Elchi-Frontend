@@ -1,20 +1,32 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
+import { TELEGRAM_LINK_POLL_MS } from "../../../features/telegram-link/ui/TelegramLinkCard";
+import type { User, UserRole } from "../../../entities/user/types/user";
 
-const mocks = vi.hoisted(() => ({ get: vi.fn(), patch: vi.fn(), logout: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  get: vi.fn(),
+  patch: vi.fn(),
+  post: vi.fn(),
+  delete: vi.fn(),
+  logout: vi.fn(),
+}));
 vi.mock("../../../shared/api/api", () => ({
-  api: { get: mocks.get, patch: mocks.patch, post: vi.fn(), delete: vi.fn() },
+  api: { get: mocks.get, patch: mocks.patch, post: mocks.post, delete: mocks.delete },
 }));
 vi.mock("../../../shared/lib/useLogout", () => ({ useLogout: () => ({ logout: mocks.logout }) }));
+// Boshqa foydalanuvchi sahifasi (`UserDetailView`) testi uchun — o'tkazish tugmasi filiallarni so'ramasin.
+vi.mock("../../../features/courier-transfer-branch", () => ({ TransferCourierButton: () => null }));
 
 import ProfilePage from "./ProfilePage";
+import { UserDetailView } from "../../../widgets/user-detail/ui/UserDetailView";
 
 /**
  * `/profile` (dizayn v2, maketlar `common-profile`, `common-profile-password-dialog`): ma'lumot kartasi, maosh
  * (faqat maoshli xodimda), parol oynasi (≥ 4 belgi, takror mos, saqlangach chiqish) va tahrirlash oynasi
- * (faqat o'zgargan maydonlar).
+ * (faqat o'zgargan maydonlar). Shuningdek o'z Telegram'ini botga ulash (BreQwksC) va marketda «Guruhda mijoz
+ * ismi va telefoni» kaliti (ysBqD9Nx) — ikkalasi faqat shu sahifada (o'z profili).
  */
 
 const baseProfile = {
@@ -50,6 +62,8 @@ beforeEach(() => {
         : Promise.resolve({ data: { data: {} } }),
     );
   mocks.patch.mockReset().mockResolvedValue({ data: { statusCode: 200, data: profile } });
+  mocks.post.mockReset();
+  mocks.delete.mockReset();
 });
 
 const open = async () => {
@@ -235,5 +249,183 @@ describe("Profil — tahrirlash", () => {
       within(dialog).getByText("Ism kamida 2 ta belgidan iborat bo'lsin"),
     ).toBeInTheDocument();
     expect(patchCalls()).toEqual([]);
+  });
+});
+
+/**
+ * O'z profilida «Telegram» kartasi (BreQwksC): oyna ochiq turganda profil qayta o'qiladi va bot ulagach
+ * (`telegram_linked: true`) oyna o'zi yopiladi. Karta faqat o'z profilida va faqat xodimlarga chiziladi.
+ */
+
+const makeUser = (role: UserRole, overrides: Partial<User> = {}): User => ({
+  id: "263",
+  name: "E2E Kuryer",
+  phone_number: "+998901112233",
+  username: "e2e_kuryer",
+  role,
+  status: "active",
+  salary: 0,
+  payment_day: null,
+  createdAt: "2026-09-01T09:00:00.000Z",
+  updatedAt: "2026-09-30T09:00:00.000Z",
+  is_deleted: false,
+  tariff_home: null,
+  tariff_center: null,
+  default_tariff: "home",
+  ...overrides,
+});
+
+const roleState = (role: string, id = `${role}-1`) =>
+  ({ role: { id, role, region: null, name: role } }) as never;
+
+const serveProfile = (getUser: () => User) =>
+  mocks.get.mockImplementation((url: string) =>
+    url === "auth/my-profile"
+      ? Promise.resolve({ data: { statusCode: 200, message: "ok", data: getUser() } })
+      : Promise.resolve({ data: {} }),
+  );
+
+describe("Profil — Telegram'ni ulash", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("oyna ochiq turganda profil qayta o'qiladi; bot ulagach oyna yopiladi va karta «Ulangan»", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    let linked = false;
+    serveProfile(() => makeUser("courier", { telegram_linked: linked }));
+    mocks.post.mockResolvedValue({
+      data: {
+        statusCode: 200,
+        message: "Telegram link",
+        data: {
+          token: "Kod123",
+          purpose: "user",
+          expires_at: new Date(Date.now() + 10 * 60_000).toISOString(),
+          deep_link: "https://t.me/elchi_test_bot?start=Kod123",
+          command: "/start Kod123",
+        },
+      },
+    });
+    renderWithProviders(<ProfilePage />, { route: "/profile", preloadedState: roleState("courier") });
+
+    const card = await screen.findByRole("region", { name: "Telegram" });
+    expect(within(card).getByText("Ulanmagan")).toBeInTheDocument();
+
+    await user.click(within(card).getByRole("button", { name: "Telegram'ni ulash" }));
+    expect(mocks.post).toHaveBeenCalledWith("users/me/telegram/link-code");
+    const dialog = await screen.findByRole("dialog", { name: "Telegram'ni ulash" });
+    expect(
+      await within(dialog).findByRole("img", { name: "Telegram'ni ulash havolasining QR kodi" }),
+    ).toBeInTheDocument();
+    const profileCalls = () =>
+      mocks.get.mock.calls.filter(([url]) => url === "auth/my-profile").length;
+    const before = profileCalls();
+
+    // Hali ulanmagan — oyna ochiq qoladi, profil so'ralaveradi.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(TELEGRAM_LINK_POLL_MS);
+    });
+    expect(profileCalls()).toBeGreaterThan(before);
+    expect(dialog).toBeInTheDocument();
+
+    // Foydalanuvchi botda «Start» ni bosdi.
+    linked = true;
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(TELEGRAM_LINK_POLL_MS);
+    });
+
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Telegram'ni ulash" })).not.toBeInTheDocument(),
+    );
+    expect(await screen.findByText("Telegram ulandi")).toBeInTheDocument();
+    expect(
+      within(screen.getByRole("region", { name: "Telegram" })).getByText("Ulangan"),
+    ).toBeInTheDocument();
+
+    // Oyna yopilgach so'rash to'xtaydi.
+    const afterLinked = profileCalls();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(TELEGRAM_LINK_POLL_MS * 2);
+    });
+    expect(profileCalls()).toBe(afterLinked);
+  });
+
+  it("mijozning o'z profilida karta yo'q", async () => {
+    serveProfile(() => makeUser("customer", { name: "Mijoz" }));
+    renderWithProviders(<ProfilePage />, { route: "/profile", preloadedState: roleState("customer") });
+
+    expect(await screen.findAllByText("Mijoz")).not.toHaveLength(0);
+    expect(screen.queryByRole("region", { name: "Telegram" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Telegram'ni ulash" })).not.toBeInTheDocument();
+  });
+
+  it.each(["courier", "market", "manager", "registrator", "admin", "superadmin"] as const)(
+    "%s o'z profilida kartani ko'radi",
+    async (role) => {
+      serveProfile(() => makeUser(role));
+      renderWithProviders(<ProfilePage />, { route: "/profile", preloadedState: roleState(role) });
+
+      expect(await screen.findByRole("region", { name: "Telegram" })).toBeInTheDocument();
+    },
+  );
+
+  it("boshqa foydalanuvchining sahifasida (superadmin kuryerni ko'rmoqda) karta yo'q", () => {
+    renderWithProviders(<UserDetailView user={makeUser("courier", { telegram_linked: true })} />, {
+      preloadedState: roleState("superadmin"),
+    });
+
+    expect(screen.getByRole("heading", { level: 1, name: "E2E Kuryer" })).toBeInTheDocument();
+    expect(screen.queryByRole("region", { name: "Telegram" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Uzish" })).not.toBeInTheDocument();
+  });
+});
+
+describe("Profil — market: «Guruhda mijoz ismi va telefoni» (ysBqD9Nx)", () => {
+  const piiSwitch = () => screen.findByRole("switch", { name: "Guruhda mijoz ismi va telefoni" });
+
+  it("market o'z profilida kalitni o'zgartiradi: PATCH, profil qayta o'qiladi, «Saqlandi»", async () => {
+    let server = makeUser("market", { id: "201", name: "Baraka Shop", tg_group_show_customer_pii: true });
+    serveProfile(() => server);
+    mocks.patch.mockImplementation(async (url: string, body: Record<string, unknown>) => {
+      if (url === "markets/201/telegram-group-pii") server = { ...server, ...body };
+      return { data: { statusCode: 200, data: server } };
+    });
+    renderWithProviders(<ProfilePage />, { route: "/profile", preloadedState: roleState("market", "201") });
+
+    const control = await piiSwitch();
+    expect(control).toBeEnabled();
+    expect(control).toHaveAttribute("aria-checked", "true");
+    const profileGets = () => mocks.get.mock.calls.filter(([url]) => url === "auth/my-profile").length;
+    const before = profileGets();
+
+    await userEvent.click(control);
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(mocks.patch).toHaveBeenCalledWith("markets/201/telegram-group-pii", {
+        tg_group_show_customer_pii: false,
+      }),
+    );
+    expect(await screen.findByText("Saqlandi")).toBeInTheDocument();
+    await waitFor(() => expect(profileGets()).toBeGreaterThan(before));
+    expect(control).toHaveAttribute("aria-checked", "false");
+  });
+
+  it("o'z profilida (superadmin bo'lsa ham) «Telegram token» kartasi yo'q, token so'ralmaydi (fix3b GvL6ZFAd)", async () => {
+    serveProfile(() => makeUser("market", { id: "201", name: "Baraka Shop" }));
+    renderWithProviders(<ProfilePage />, { route: "/profile", preloadedState: roleState("market", "201") });
+
+    await piiSwitch();
+    expect(screen.queryByRole("region", { name: "Telegram token" })).not.toBeInTheDocument();
+    expect(mocks.get.mock.calls.some(([url]) => String(url).endsWith("/tg-token"))).toBe(false);
+  });
+
+  it("market bo'lmagan rolda kalit yo'q", async () => {
+    serveProfile(() => makeUser("courier"));
+    renderWithProviders(<ProfilePage />, { route: "/profile", preloadedState: roleState("courier") });
+
+    await screen.findByRole("region", { name: "Telegram" });
+    expect(screen.queryByRole("switch", { name: "Guruhda mijoz ismi va telefoni" })).not.toBeInTheDocument();
   });
 });

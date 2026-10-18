@@ -95,6 +95,10 @@ const toConfirmItem = (item: AiPreviewItem): AiConfirmItem[] => {
   return [];
 };
 
+/** Backend chegarasi: `ai_item_index` 0..29 (bitta tahlilda ko'pi bilan 30 buyurtma). */
+const isAiItemIndex = (value: unknown): value is number =>
+  typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 29;
+
 const toConfirmOrder = (preview: AiPreviewOrder): AiConfirmOrder => {
   const phone = toLocalPhone(preview.phone_number);
   const extra = toLocalPhone(preview.extra_number);
@@ -120,6 +124,8 @@ const toConfirmOrder = (preview: AiPreviewOrder): AiConfirmOrder => {
     ...(comment && { comment }),
     ...(operator && { operator }),
     ...(preview.draft_id && { draft_id: preview.draft_id }),
+    // vncdmXOy: preview o'rni — faqat `draft_id` bilan ma'noli (backend audit'i va barqaror kaliti).
+    ...(preview.draft_id && isAiItemIndex(preview.index) && { ai_item_index: preview.index }),
   };
 };
 

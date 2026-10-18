@@ -1010,3 +1010,49 @@ describe("CashDetail — dizayn v2", () => {
     await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
   });
 });
+
+/**
+ * 2crjWf7v — `GET finance/cashbox/user/:id?cashbox_type=couriers` tarixidagi `courier_payment`
+ * qatorlarida `payment_ack` bor: tarixda «Noto'g'ri» / «Tasdiqlangan» belgisi, `null` — belgisiz.
+ */
+describe("CashDetail — kuryer kvitansiyasi javobi tarixda (2crjWf7v)", () => {
+  afterEach(() => {
+    cashboxState.response = undefined;
+    cashboxState.calls = [];
+  });
+
+  const historyRow = (id: string, extra: Record<string, unknown>) => ({
+    id,
+    amount: -100000,
+    operation_type: "expense",
+    source_type: "courier_payment",
+    payment_method: "cash",
+    created_by_user: { id: `m${id}`, name: `Menejer ${id}`, role: "manager" },
+    createdAt: `2026-10-17T0${id}:00:00.000Z`,
+    ...extra,
+  });
+
+  it("carries payment_ack into the history rows and marks disputed / confirmed ones", () => {
+    cashboxState.response = courierDetailResponse({
+      history: [
+        historyRow("1", { payment_ack: "disputed" }),
+        historyRow("2", { payment_ack: "confirmed" }),
+        historyRow("3", { payment_ack: null }),
+      ],
+    });
+    openWithoutState("/payments/cash-detail/263?type=courier");
+
+    // Ro'yxat qatori (v2 `.el-list`): ostidagi «{yaratgan} · {to'lov turi}» bo'yicha topiladi.
+    const rowOf = (name: string) => {
+      const buttons = screen
+        .getAllByText(new RegExp(`^${name}( ·|$)`))
+        .map((element) => element.closest("li")?.querySelector("button"))
+        .filter((button): button is HTMLButtonElement => Boolean(button));
+      expect(buttons).toHaveLength(1);
+      return buttons[0];
+    };
+    expect(within(rowOf("Menejer 1")).getByText("Noto'g'ri")).toHaveAttribute("data-payment-ack", "disputed");
+    expect(within(rowOf("Menejer 2")).getByText("Tasdiqlangan")).toHaveAttribute("data-payment-ack", "confirmed");
+    expect(rowOf("Menejer 3").querySelector("[data-payment-ack]")).toBeNull();
+  });
+});

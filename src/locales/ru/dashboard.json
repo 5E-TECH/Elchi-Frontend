@@ -58,7 +58,39 @@
     "extra_cost_reject": "Отклонить",
     "extra_cost_approving": "Подтверждение",
     "extra_cost_rejecting": "Отклонение",
-    "extra_cost_action_error": "Не удалось выполнить запрос. Попробуйте снова."
+    "extra_cost_action_error": "Не удалось выполнить запрос. Попробуйте снова.",
+    "extra_cost_requested_amount": "Запрошенная сумма",
+    "extra_cost_proofs_count": "{{count}} шт.",
+    "extra_cost_proofs_none": "Нет",
+    "extra_cost_list_label": "Ожидающие запросы",
+    "extra_cost_item_label": "{{action}}, заказ №{{id}}",
+    "extra_cost_owner_only": "Решение принимает только владелец маркета",
+    "extra_cost_role": {
+      "courier": "Курьер",
+      "manager": "Менеджер",
+      "registrator": "Регистратор",
+      "admin": "Админ",
+      "superadmin": "Суперадмин",
+      "market": "Маркет"
+    },
+    "extra_cost_confirm_title": "Подтвердите доп. расход",
+    "extra_cost_confirm_description": "К заказу №{{id}} будет записан доп. расход, и запрошенное действие будет выполнено.",
+    "extra_cost_reject_title": "Отклонить запрос",
+    "extra_cost_reject_reason": "Причина отказа",
+    "extra_cost_reject_reason_placeholder": "Выберите причину",
+    "extra_cost_reject_reasons": {
+      "TOO_EXPENSIVE": "Слишком дорого",
+      "NOT_AGREED": "Не согласовано",
+      "NO_PROOF": "Нет доказательств",
+      "DUPLICATE": "Повторный запрос"
+    },
+    "extra_cost_reject_comment": "Комментарий",
+    "extra_cost_reject_comment_placeholder": "Например, цена выше согласованной",
+    "extra_cost_reject_note": "При отказе действие не выполняется, статус заказа не меняется.",
+    "extra_cost_approved": "Доп. расход подтверждён",
+    "extra_cost_rejected": "Запрос отклонён",
+    "extra_cost_already_decided": "Запрос уже решён",
+    "extra_cost_already_decided_hint": "Этот запрос уже решён в другом месте (например, в Telegram). Список обновлён."
   },
   "v2Charts": {
     "zone": {
@@ -207,7 +239,9 @@
       "you": "Вы",
       "yourPlace": "Ваше место",
       "place": "{{rank}}-е место",
-      "gapToNext": "до {{rank}}-го места осталось {{gap}}"
+      "gapToNext": "до {{rank}}-го места осталось {{gap}}",
+      "periodLastDays": "последние {{count}} дн.",
+      "emptyPeriod": "За этот период нет заказов для рейтинга"
     },
     "courier": {
       "planToday": "План на сегодня",
@@ -282,12 +316,6 @@
     "operatorRate": "Процент продаж оператора",
     "marketAverage": "Среднее {{name}} · {{rate}}",
     "yourMarket": "маркета",
-    "approval": {
-      "aria": "{{action}}, заказ №{{order}}",
-      "order": "№{{id}}",
-      "requested": "Запрошенная сумма",
-      "noProofs": "Нет"
-    },
     "quick": {
       "viewHint": "Ваши заказы в разделе «Приём и создание»",
       "createHint": "Вручную или с помощью ИИ"

@@ -197,6 +197,7 @@ describe("MarketDashboardPage (v2)", () => {
   });
 
   it("qo'shimcha xarajat: kutilayotganlar karta, yuborilayotganida «Tasdiqlanmoqda» va tugmalar o'chiq", () => {
+    // Blok — `ExtraCostApprovals` (DuST9k8j): №, summa, so'rovchi (#id · rol), isbotlar, tasdiq oqibati.
     approvalsState.data = {
       data: [
         { id: "ap-1", order_id: "1251165", market_id: "market-1", requested_by_user_id: "56", requested_by_role: "courier", action: "sell", amount: 25000, status: "pending", proof_file_keys: ["a", "b"] },
@@ -209,21 +210,32 @@ describe("MarketDashboardPage (v2)", () => {
 
     const card = screen.getByRole("heading", { name: "Qo'shimcha xarajat tasdiqlari" }).closest("section") as HTMLElement;
     expect(card).toHaveTextContent("2 ta so'rov kutilmoqda");
-    const first = within(card).getByRole("article", { name: "Sotishdagi qo'shimcha xarajat, buyurtma №251165" });
+    const first = within(card).getByRole("listitem", { name: "Sotishdagi qo'shimcha xarajat, buyurtma №1251165" });
+    expect(within(first).getByRole("link", { name: "№1251165" })).toHaveAttribute("href", "/orders/edit/1251165");
     expect(first).toHaveTextContent("25 000 so'm");
-    expect(first).toHaveTextContent("So'rovchiKuryer");
+    expect(first).toHaveTextContent("So'rovchi#56 · Kuryer");
     expect(first).toHaveTextContent("Isbotlar2 ta");
-    expect(within(first).getByRole("button", { name: "Tasdiqlanmoqda" })).toBeDisabled();
+    // Yuborilayotgan tugma — `loading` (aria-busy + aria-disabled, takror bosilmaydi), qo'shnisi o'chiq.
+    const approving = within(first).getByRole("button", { name: /Tasdiqlanmoqda/ });
+    expect(approving).toHaveAttribute("aria-busy", "true");
+    expect(approving).toHaveAttribute("aria-disabled", "true");
     expect(within(first).getByRole("button", { name: "Rad etish" })).toBeDisabled();
-    const second = within(card).getByRole("article", { name: "Bekor qilishdagi qo'shimcha xarajat, buyurtma №251166" });
+    const second = within(card).getByRole("listitem", { name: "Bekor qilishdagi qo'shimcha xarajat, buyurtma №1251166" });
     expect(second).toHaveTextContent("IsbotlarYo'q");
     expect(within(second).getByRole("button", { name: "Tasdiqlash" })).toBeEnabled();
   });
 
-  it("qo'shimcha xarajat so'rovi xato yoki bo'sh bo'lsa — panel ko'rinmaydi", () => {
+  it("qo'shimcha xarajat: bo'sh — panel ko'rinmaydi; so'rov xatosi — karta ichida xato (2f7cca6, QueryBoundary)", () => {
+    approvalsState.data = { data: [] };
+    const { unmount } = renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState() });
+    expect(screen.queryByText("Qo'shimcha xarajat tasdiqlari")).not.toBeInTheDocument();
+    unmount();
+
+    approvalsState.data = undefined;
     approvalsState.isError = true;
     renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState() });
-    expect(screen.queryByText("Qo'shimcha xarajat tasdiqlari")).not.toBeInTheDocument();
+    const card = screen.getByRole("heading", { name: "Qo'shimcha xarajat tasdiqlari" }).closest("section") as HTMLElement;
+    expect(within(card).getByRole("alert")).toHaveTextContent("Ma'lumotni yuklab bo'lmadi");
   });
 
   it("dashboard xatosi — «Qayta urinish»", async () => {
@@ -233,5 +245,54 @@ describe("MarketDashboardPage (v2)", () => {
     expect(screen.getByText("Bosh sahifa ma'lumotlarini yuklab bo'lmadi.")).toBeInTheDocument();
     await userEvent.setup().click(screen.getByRole("button", { name: "Qayta urinish" }));
     expect(refetch).toHaveBeenCalled();
+  });
+
+  describe("qisman nosozlik (VkwhHqvW)", () => {
+    const marketState = { role: { id: "market-1", role: "market", region: null, name: "Market" } };
+    const withFailed = (failedParts: string[]) => {
+      const base = buildDashboardResponse();
+      getDashboardMock.mockReturnValue({ ...base, data: { data: { ...base.data.data, degraded: true, failedParts } } });
+    };
+
+    it("`topMarkets` olinmasa — reyting joyida «Ma'lumotni yuklab bo'lmadi» + «Qayta urinish» (0 emas)", () => {
+      withFailed(["topMarkets"]);
+      renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState });
+
+      // v2: marketlar reytingi — «Marketlar bo'yicha sotuv foizi» kartasi (reyting + o'z qatori).
+      const failed = screen.getByTestId("market-ranking-failed");
+      expect(failed).toHaveAttribute("data-part-failed");
+      expect(failed).toHaveTextContent("Marketlar bo'yicha sotuv foizi");
+      expect(failed).toHaveTextContent("Ma'lumotni yuklab bo'lmadi");
+      expect(screen.getByTestId("market-stats-grid")).toBeInTheDocument();
+      // Sog' bo'lak — operatorlar reytingi — yo'qolmaydi.
+      expect(screen.getByText("Operator Ali")).toBeInTheDocument();
+    });
+
+    it("`topOperators` olinmasa — operatorlar reytingi alohida xato kartasi, marketlar reytingi joyida", () => {
+      withFailed(["topOperators"]);
+      renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState });
+
+      expect(screen.getByTestId("operators-ranking-failed")).toHaveTextContent("Top operatorlar");
+      expect(screen.queryByTestId("market-ranking-failed")).not.toBeInTheDocument();
+      expect(screen.queryByText("Operator Ali")).not.toBeInTheDocument();
+    });
+
+    it("`markets` olinmasa — solishtiruv grafigi o'rnida xato; `myStat` olinmasa — statistika 0 emas, xato", async () => {
+      const refetch = vi.fn();
+      const base = buildDashboardResponse();
+      getDashboardMock.mockReturnValue({
+        ...base,
+        refetch,
+        data: { data: { ...base.data.data, degraded: true, failedParts: ["markets", "myStat"] } },
+      });
+      renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState });
+
+      expect(screen.getByTestId("performance-markets-failed")).toHaveTextContent("Marketlar bo'yicha sotuv foizi");
+      expect(screen.queryByRole("list", { name: "Marketlar bo'yicha sotuv foizi" })).not.toBeInTheDocument();
+      expect(screen.queryByTestId("market-stats-grid")).not.toBeInTheDocument();
+      expect(screen.queryByRole("heading", { name: "Muvaffaqiyat darajasi" })).not.toBeInTheDocument();
+      await userEvent.setup().click(screen.getAllByRole("button", { name: "Qayta urinish" })[0]);
+      expect(refetch).toHaveBeenCalledTimes(1);
+    });
   });
 });

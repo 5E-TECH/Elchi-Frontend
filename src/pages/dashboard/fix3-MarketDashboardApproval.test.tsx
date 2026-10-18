@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { AxiosError, type AxiosResponse } from "axios";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -8,6 +8,7 @@ import MarketDashboardPage from "./MarketDashboardPage";
 /**
  * fix3 FE-ORD-02 — market qo'shimcha xarajatni tasdiqlasa/rad etsa va backend
  * rad javob qaytarsa, sabab ko'rinadi (avval tugma jimgina "qaytib" qolardi).
+ * DuST9k8j: tasdiqlash — tasdiq oynasi orqali, rad etish — sabab oynasi orqali.
  */
 
 const approveMutate = vi.fn();
@@ -71,14 +72,16 @@ describe("MarketDashboardPage — tasdiqlash xatosi (fix3 FE-ORD-02)", () => {
   it("tasdiqlash rad etilsa — backend sababi ko'rinadi", async () => {
     const user = userEvent.setup();
     approveMutate.mockImplementation((_vars, options: MutateOptions) =>
-      options.onError?.(httpError(409, "Bu so'rov allaqachon ko'rib chiqilgan")),
+      options.onError?.(httpError(403, "Bu qo'shimcha xarajat so'rovini tasdiqlash mumkin emas")),
     );
     renderPage();
 
     await user.click(screen.getByRole("button", { name: "Tasdiqlash" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Qo'shimcha xarajatni tasdiqlang" });
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
 
     expect(approveMutate).toHaveBeenCalledWith({ id: "ap-1" }, expect.objectContaining({ onError: expect.any(Function) }));
-    expect(await screen.findByText("Bu so'rov allaqachon ko'rib chiqilgan")).toBeInTheDocument();
+    expect(await screen.findByText("Bu qo'shimcha xarajat so'rovini tasdiqlash mumkin emas")).toBeInTheDocument();
   });
 
   it("rad etish xabarsiz yiqilsa — umumiy xato matni", async () => {
@@ -87,7 +90,15 @@ describe("MarketDashboardPage — tasdiqlash xatosi (fix3 FE-ORD-02)", () => {
     renderPage();
 
     await user.click(screen.getByRole("button", { name: "Rad etish" }));
+    const dialog = await screen.findByRole("dialog", { name: "So'rovni rad etish" });
+    await user.click(within(dialog).getByRole("combobox", { name: /Rad etish sababi/ }));
+    await user.click(await screen.findByRole("option", { name: "Juda qimmat" }));
+    await user.click(within(dialog).getByRole("button", { name: "Rad etish" }));
 
+    expect(rejectMutate).toHaveBeenCalledWith(
+      { id: "ap-1", reason: "TOO_EXPENSIVE" },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
     expect(await screen.findByText("So'rovni bajarib bo'lmadi. Qayta urinib ko'ring.")).toBeInTheDocument();
   });
 });

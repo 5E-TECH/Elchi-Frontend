@@ -16,7 +16,9 @@ import type { IconSlot } from "./Button";
  *    card  — ro'yxat/karta ichida (sukut): ikonka 48 (22), sarlavha 16 px, bitta tugma (`mt-2`);
  *    page  — sahifa umuman ochilmaganda: ikonka 56 (26), ustida «Xato kodi 404» (`overline`), sarlavha
  *            24 px (telefonda 20), 2 ta tugma (`action` ga ikkalasini bering — teng enli, o'raladi);
- *    chart — grafik kartasi ichida (`.el-chart-empty`): kulrang yuza, kamida 200 px, kichik tugma.
+ *    chart — grafik kartasi ichida (`.el-chart-empty`): kulrang yuza, kamida 200 px, kichik tugma;
+ *    inline — ixcham, gorizontal (ikonka 40 chapda, matn o'ngda; ≈ 64 px): kichik grafik/reyting
+ *             kartasida bo'sh joyni cho'zmaslik uchun (dashboard reytingi, 9zbSDkUI).
  *
  *  Ton: `neutral` (sukut; bo'sh, filtr natija yo'q, ruxsat yo'q) · `danger` — FAQAT tizim xatosi
  *  (taxta: «Qizil rang — faqat tizim xatosida»), bu `ErrorState` da.
@@ -25,7 +27,7 @@ import type { IconSlot } from "./Button";
  *  ramka bermang (karta ichida karta yo'q).
  */
 
-export type StateSize = "card" | "page" | "chart";
+export type StateSize = "card" | "page" | "chart" | "inline";
 export type StateTone = "neutral" | "danger";
 
 export type EmptyStateProps = Omit<ComponentProps<"div">, "title"> & {
@@ -53,37 +55,46 @@ const ROOT: Record<StateSize, string> = {
   card: "flex min-w-0 flex-col items-center gap-2 px-6 py-12 text-center",
   page: "flex min-h-[360px] min-w-0 flex-col items-center justify-center gap-5 px-8 py-12 text-center max-md:px-4 max-md:py-10",
   chart: "flex min-h-[200px] min-w-0 flex-col items-center justify-center gap-2 rounded-xl bg-sunken p-6 text-center",
+  inline: "flex min-w-0 items-center gap-3 rounded-xl bg-sunken px-4 py-3 text-left",
 };
 
 const ICON_BOX: Record<StateSize, string> = {
   card: "mb-1 size-12",
   page: "size-14",
   chart: "mb-1 size-12",
+  inline: "size-10",
 };
 
-const ICON_PX: Record<StateSize, number> = { card: 22, page: 26, chart: 22 };
+const ICON_PX: Record<StateSize, number> = { card: 22, page: 26, chart: 22, inline: 20 };
 
 const ICON_TONE: Record<StateTone, string> = {
   neutral: "bg-sunken text-text-muted",
   danger: "bg-danger-soft text-danger-fg",
 };
 
+/** `inline` ning o'zi `bg-sunken` — neytral doira unda ko'rinishi uchun `surface`. */
+const iconTone = (size: StateSize, tone: StateTone) =>
+  size === "inline" && tone === "neutral" ? "bg-surface text-text-muted" : ICON_TONE[tone];
+
 const TITLE: Record<StateSize, string> = {
   card: "text-base font-bold text-text",
   page: "text-2xl leading-8 font-bold tracking-[-0.01em] text-text max-md:text-xl max-md:leading-7",
   chart: "text-base font-bold text-text",
+  inline: "text-sm font-semibold text-text",
 };
 
 const TEXT: Record<StateSize, string> = {
   card: "max-w-[460px] text-sm text-text-muted",
   page: "max-w-[480px] text-sm text-text-muted",
   chart: "max-w-[380px] text-sm text-text-muted",
+  inline: "text-[13px] text-text-muted",
 };
 
 const ACTIONS: Record<StateSize, string> = {
   card: "mt-2 flex flex-wrap items-center justify-center gap-2",
   page: "flex w-full max-w-[440px] flex-wrap items-center justify-center gap-2 [&>*]:flex-[1_1_180px]",
   chart: "mt-1 flex flex-wrap items-center justify-center gap-2",
+  inline: "ml-auto flex shrink-0 flex-wrap items-center gap-2",
 };
 
 const FRAME = "rounded-[14px] border border-border bg-surface";
@@ -112,7 +123,7 @@ export const StateIcon = ({
       className={cx(
         "inline-flex shrink-0 items-center justify-center rounded-full",
         ICON_BOX[size],
-        ICON_TONE[tone],
+        iconTone(size, tone),
       )}
     >
       {Glyph ? (
@@ -170,7 +181,13 @@ export const EmptyState = ({
       {...rest}
     >
       <StateIcon icon={icon} size={size} tone={tone} />
-      {size === "page" ? <div className="flex min-w-0 flex-col items-center gap-2">{text}</div> : text}
+      {size === "page" ? (
+        <div className="flex min-w-0 flex-col items-center gap-2">{text}</div>
+      ) : size === "inline" ? (
+        <div className="flex min-w-0 flex-1 flex-col gap-0.5">{text}</div>
+      ) : (
+        text
+      )}
       {hasAction ? <div className={ACTIONS[size]}>{action}</div> : null}
       {footer}
     </div>

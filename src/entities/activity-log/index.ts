@@ -1,9 +1,9 @@
 export type {
-  ActivityActionCatalog,
-  ActivityActionInfo,
-  ActivityActionMeta,
   ActivityLog,
   ActivityActor,
+  ActivityActionMeta,
+  ActivityActionCategory,
+  ActivityActionsCatalog,
   ActivityLogParams,
   ActivityLogListResult,
   ActivityService,
@@ -11,15 +11,15 @@ export type {
 export { ACTIVITY_SERVICES } from "./model/types";
 export {
   useActivityLogs,
-  useActivityActionCatalog,
+  useActivityActions,
   useEntityHistory,
   useUserActivity,
 } from "./api/useActivityLogs";
 export {
   getActivityLogs,
-  getActivityActionCatalog,
+  getActivityActions,
   getEntityHistory,
   getUserActivity,
 } from "./api/activityLogApi";
-export { default as ActivityActionTag } from "./ui/ActivityActionTag";
-export { activityActionTone, humanizeActivityAction } from "./model/actionTone";
+export { actionBadgeTone, actionVerbTone, humanizeAction, resolveActionMeta } from "./model/actionMeta";
+export { default as ActivityActionBadge } from "./ui/ActivityActionBadge";

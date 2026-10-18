@@ -125,9 +125,66 @@ describe("BranchDashboardPage (v2)", () => {
 
   it("«Top filiallar»: top 5 + o'z filiali 6-qator «Sizning filial»", () => {
     renderWithProviders(<BranchDashboardPage />, { preloadedState: managerState() });
-    const lists = within(section("Top filiallar")).getAllByRole("list", { name: "Top filiallar" });
-    expect(within(lists[0]).getAllByRole("listitem")).toHaveLength(5);
-    expect(lists[1]).toHaveTextContent("7UFUrgut filialiSizning filial63,3%19 / 30 ta");
+    const top = within(section("Top filiallar"));
+    expect(within(top.getByRole("list", { name: "Top filiallar" })).getAllByRole("listitem")).toHaveLength(5);
+    // O'z filiali — alohida ro'yxat, o'z nomi bilan (ekran o'quvchi), raqamlash o'z o'rnidan.
+    const own = top.getByRole("list", { name: "Sizning filialingiz o'rni" });
+    expect(own).toHaveAttribute("start", "7");
+    expect(own).toHaveTextContent("7UFUrgut filialiSizning filial63,3%19 / 30 ta");
+    // 9zbSDkUI: v2 karta, izoh maketdagidek; meta yo'q — davr yozilmaydi.
+    const ranking = screen.getByTestId("ranking-branches");
+    expect(ranking).toHaveTextContent("Top filiallar");
+    expect(ranking).toHaveTextContent("Sotuv foizi · top 5 va sizning filial");
+    expect(ranking).toHaveTextContent("Sizning filial");
+  });
+
+  it("«Top filiallar» izohida reyting davri (9zbSDkUI): `last_30_days` — «oxirgi 30 kun»", () => {
+    const base = response();
+    getDashboardMock.mockReturnValue({
+      ...base,
+      data: {
+        data: {
+          ...base.data.data,
+          topBranchesMeta: { periodRule: "last_30_days", periodDays: 30, from: null, to: null, minOrders: 1, filteredOut: 0 },
+        },
+      },
+    });
+    renderWithProviders(<BranchDashboardPage />, { preloadedState: managerState() });
+    expect(screen.getByTestId("ranking-branches")).toHaveTextContent("Sotuv foizi · top 5 va sizning filial · oxirgi 30 kun");
+  });
+
+  it("VkwhHqvW: `failed_parts: branchDashboard` — filial raqamlari 0 emas, «Statistika vaqtincha mavjud emas»", () => {
+    const base = response();
+    getDashboardMock.mockReturnValue({
+      ...base,
+      data: { data: { ...base.data.data, degraded: true, failedParts: ["branchDashboard"] } },
+    });
+    renderWithProviders(<BranchDashboardPage />, { preloadedState: managerState() });
+
+    expect(screen.getAllByRole("alert")[0]).toHaveTextContent("Statistika vaqtincha mavjud emas");
+    expect(screen.queryByRole("heading", { name: "Muvaffaqiyat darajasi" })).not.toBeInTheDocument();
+    expect(screen.queryByText("42,9%")).not.toBeInTheDocument();
+  });
+
+  it("VkwhHqvW: `failed_parts: topBranches` — «Top filiallar» joyida xato kartasi va «Qayta urinish»", async () => {
+    const refetch = vi.fn();
+    const base = response();
+    getDashboardMock.mockReturnValue({
+      ...base,
+      refetch,
+      data: { data: { ...base.data.data, degraded: true, failedParts: ["topBranches"] } },
+    });
+    renderWithProviders(<BranchDashboardPage />, { preloadedState: managerState() });
+
+    const ranking = screen.getByTestId("ranking-branches");
+    expect(ranking).toHaveAttribute("data-part-failed");
+    expect(ranking).toHaveTextContent("Top filiallar");
+    expect(ranking).toHaveTextContent("Ma'lumotni yuklab bo'lmadi");
+    expect(within(ranking).queryByText("Urgut filiali")).not.toBeInTheDocument();
+    // Filial kartalari joyida.
+    expect(section("Muvaffaqiyat darajasi")).toHaveTextContent("42,9%");
+    await userEvent.setup().click(within(ranking).getByRole("button", { name: "Qayta urinish" }));
+    expect(refetch).toHaveBeenCalledTimes(1);
   });
 
   it("«Marketlar bo'yicha»: «Summa» tanlansa — summa bo'yicha tartib", async () => {

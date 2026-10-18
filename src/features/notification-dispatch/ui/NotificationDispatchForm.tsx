@@ -538,12 +538,11 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
             ) : null}
 
             {values.telegram ? (
+              // Market ixtiyoriy (TgYRqaTk): tanlanmasa Telegram har qabul qiluvchining shaxsiy chatiga ketadi.
               <Field
                 label={t("dispatch.telegramMarket")}
                 labelAs="span"
-                required
                 hint={t("dispatch.telegramHint")}
-                error={errors.telegram_market_id?.message}
               >
                 <Controller
                   control={control}
@@ -558,6 +557,7 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
                       }))}
                       value={field.value || null}
                       onChange={(value) => field.onChange(value ?? "")}
+                      clearable
                       loading={marketsQuery.isLoading}
                       disabled={locked}
                     />

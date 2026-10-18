@@ -1,5 +1,10 @@
 # Telegram notification bot setup
 
+> **2026-10-17 yangilanishi (6jXw0DDr, 4TfLyTrL, 9HIaV80X).** Matnli `group_token-…` bilan ulash backendda
+> o'chirildi. Guruh endi **bir martalik havola** bilan ulanadi: `/notifications` → «Bildirishnoma qo'shish» →
+> market + xabar turi → «Ulash havolasini olish» (`POST /telegram/link-code`, quyida §4). Quyidagi §1–§3
+> tarixiy (fix3b) oqimni tasvirlaydi; amaldagi qoidalar — backend `docs/frontend/FRONTEND_CHANGELOG.md`.
+
 Market Telegram guruhini Elchi'ga ulash — **haqiqiy (ishga tushirilgan) oqim**, 2026-10-01
 (backend fix3/fix3b CODE-02, frontend fix3b). Bot backendning `notification-service` ichida
 **long polling** (`getUpdates`) bilan ishlaydi: webhook yo'q, `setWebhook` qilinmaydi.
@@ -10,7 +15,7 @@ Uni faqat SUPERADMIN/ADMIN ko'radi va marketga o'zi beradi.
 ## 1. Admin: market tokenini beradi
 
 1. Superadmin yoki admin `Foydalanuvchilar` ro'yxatidan **market**ning sahifasini ochadi
-   (`UserDetailWidget`).
+   (`UserDetailView`, `/all-users/:id`).
 2. Sahifada **"Telegram token"** kartasi bor (`widgets/user-detail/ui/MarketTelegramTokenCard.tsx`):
    - faqat SUPERADMIN/ADMIN ko'radi, faqat market sahifasida va o'z profilida emas; boshqa rollar
      uchun karta umuman chizilmaydi;
@@ -62,33 +67,42 @@ Qoidalar (backend `notification-service.service.ts` — `parseGroupTokenText` / 
 
 `/start <payload>` va `/start@bot` ga javob yo'q (faqat aynan `/start`).
 
-## 4. Admin qo'lda ulash (fallback)
+## 4. Admin: guruhni bir martalik havola bilan ulash
 
 `Bildirishnomalar` sahifasi (`/notifications`; frontendda faqat **superadmin** ochadi — backend
-route'lari SUPERADMIN/ADMIN) → "Bildirishnoma qo'shish" modali (`NotificationFormModal`):
-market + Telegram group ID + xabar turi → `POST /notifications`:
+route'lari SUPERADMIN/ADMIN) → «Bildirishnoma qo'shish» oynasi (`NotificationFormModal`):
 
-```json
-{
-  "market_id": "12",
-  "group_id": "-1001234567890",
-  "group_type": "create"
-}
-```
+1. Market va xabar turi (`create` — yangi buyurtmalar, `cancel` — bekor qilinganlar) tanlanadi. Shu
+   (market, tur) uchun ulanish bor bo'lsa, havola berilmaydi: bot mavjud ulanishni almashtirmaydi —
+   ro'yxatda tahrirlash (`PATCH /notifications/:id`) yoki o'chirib (`DELETE`) qayta ulash kerak.
+2. «Ulash havolasini olish» → `POST /telegram/link-code`:
 
-`group_type` faqat `create` yoki `cancel`. Group ID ni guruhda `/id` yozib olish mumkin; bot o'sha
-guruhga qo'shilgan bo'lishi kerak. (Modaldagi "Group ID ni qanday olish mumkin?" yordam matni hali
-"botga /id komandasi qo'shilsa…" deydi — `/id` endi ishlaydi.)
+   ```json
+   { "purpose": "market_group", "group_type": "create", "market_id": "12" }
+   ```
 
-Modaldagi eski **"Token orqali ulash"** bo'limi olib tashlandi (fix3b): u
-`POST /notifications/connect-by-token` ga `{ token }` yuborardi va har doim 400 olardi.
+   Javob: `{ token, purpose, group_type, expires_at, deep_link, command }` — `deep_link`
+   `https://t.me/<bot>?startgroup=<kod>`, bir martalik, 10 daqiqa.
+3. Oynada QR (`deep_link` dan) va «Telegram'da ochish» tugmasi. Foydalanuvchi guruhni tanlaydi, Telegram
+   botni qo'shib guruhga `/start@bot <kod>` yuboradi, backend guruhni ulaydi va marketga
+   `telegram.group_connected` bildirishnomasi ketadi. Oyna har 4 soniyada
+   `GET /notifications?market_id&group_type` ni so'raydi: qator chiqsa — «Guruh ulandi», oyna yopiladi.
+   Muddat tugasa — «Yangi havola olish». Backendda bot nomi sozlanmagan bo'lsa (`deep_link: null`),
+   oyna guruhga yuboriladigan `command` ni ko'rsatadi.
+
+Ro'yxatdagi «Holat» ustuni: `is_active: false` — bot guruhdan chiqarilgan yoki guruhga yetib bo'lmaydi
+(«Nofaol», adminlarga «Telegram guruhi nofaol» bildirishnomasi ham keladi).
+
+Qo'lda «Telegram group ID» maydoni va `POST /notifications` oynadan olib tashlandi (endpoint backendda
+qoladi). Tahrirlash oynasi guruh ID sini o'zgartira oladi (guruhda `/id` — bot ID ni ko'rsatadi).
 
 ## 5. Backend endpointlar
 
 | Endpoint | Rollar | Izoh |
 |---|---|---|
 | `GET /notifications`, `GET /notifications/:id` | SUPERADMIN, ADMIN | ulanishlar ro'yxati |
-| `POST /notifications` | SUPERADMIN, ADMIN | qo'lda ulash (yuqoridagi tana) |
+| `POST /notifications` | SUPERADMIN, ADMIN | qo'lda ulash `{ market_id, group_id, group_type }` (UI'da yo'q — §4) |
+| `POST /telegram/link-code` | SUPERADMIN, ADMIN (`market_id` majburiy), market, operator | bir martalik guruh havolasi (§4) |
 | `PATCH /notifications/:id`, `DELETE /notifications/:id` | SUPERADMIN, ADMIN | qayta ulashning yagona yo'li |
 | `POST /notifications/connect-by-token` | SUPERADMIN, ADMIN, REGISTRATOR | tana `{ "text": "group_token-<secret>[-cancel]", "group_id": "-100…" }` — ikkalasi majburiy; bot bilan bir xil qoidalar |
 | `POST /notifications/send` | SUPERADMIN, ADMIN, REGISTRATOR | guruh(lar)ga qo'lda xabar |
@@ -113,17 +127,8 @@ ORDER_BOT_TOKEN=
 ORDER_BOT_WEBAPP_URL=
 ```
 
-Frontend:
-
-```env
-# "Botni Telegram groupga qo'shish" tugmasi uchun (https://t.me/<bot>?startgroup=notification)
-VITE_TELEGRAM_NOTIFICATION_BOT_USERNAME=
-```
-
-**Prod holati (2026-10-01):** `VITE_TELEGRAM_NOTIFICATION_BOT_USERNAME` hech bir frontend env
-faylida yo'q — modal "Bot username sozlanmagan" ogohlantirishini ko'rsatadi. Prod backendda
-`TELEGRAM_BOT_TOKEN` hali placeholder, `ORDER_BOT_TOKEN` qo'yilmagan — ops haqiqiy tokenlarni
-qo'ymaguncha ikkala bot ham ishlamaydi. Tokenlarni repoga yozmang.
+Frontend: alohida env kerak emas — havola (`deep_link`) backenddan keladi.
+`VITE_TELEGRAM_NOTIFICATION_BOT_USERNAME` endi ishlatilmaydi (2026-10-17). Tokenlarni repoga yozmang.
 
 ## Mavjud EMAS
 

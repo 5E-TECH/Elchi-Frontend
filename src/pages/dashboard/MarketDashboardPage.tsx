@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import type { RootState } from "../../app/config/store";
 import { useDashboard } from "../../entities/dashboard";
+import { hasFailedPart } from "../../entities/dashboard/lib/partialFailure";
 import {
   comparisonHint,
   percentChange,
@@ -17,9 +18,7 @@ import {
   share,
 } from "../../entities/dashboard/lib/period";
 import { inProgressCount, readProfileName } from "../../entities/dashboard/lib/profile";
-import { useOrders } from "../../entities/orders";
 import { DEFAULT_SETTINGS, useSettings } from "../../entities/settings";
-import { getActionErrorMessage } from "../../shared/lib/actionError";
 import { getAllTimeRange } from "../../shared/lib/dateRange";
 import {
   CURRENCY_LABEL,
@@ -28,10 +27,10 @@ import {
   formatPercentLocalized,
   resolveMoneyLanguage,
 } from "../../shared/lib/formatMoney";
-import { notify } from "../../shared/lib/notify";
 import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
 import { ChartLegend } from "../../shared/ui/charts";
 import { Button, Card, EmptyState, ErrorState, StatCard } from "../../shared/ui/primitives";
+import { DashboardPartError } from "../../widgets/dashboard-part-error/ui/DashboardPartError";
 import DashboardHeader from "../../widgets/dashboard-statistics/ui/DashboardHeader";
 import { CardRow, KpiRow, LoadingChartCard } from "../../widgets/dashboard-statistics/ui/DashboardGrid";
 import OrderStatusCard from "../../widgets/dashboard-statistics/ui/OrderStatusCard";
@@ -43,8 +42,9 @@ import {
   toRankItems,
   type PerformerRow,
 } from "../../widgets/dashboard-top-performers/lib/rankItems";
+import { isLowDataRanking } from "../../widgets/dashboard-top-performers/model/ranking";
 import TopRankCard from "../../widgets/dashboard-top-performers/ui/TopRankCard";
-import ExtraCostApprovalsCard from "./ui/ExtraCostApprovalsCard";
+import { ExtraCostApprovals } from "./ui/ExtraCostApprovals";
 import MarketSalesCard from "./ui/MarketSalesCard";
 import QuickActions from "./ui/QuickActions";
 
@@ -53,9 +53,11 @@ import QuickActions from "./ui/QuickActions";
  *
  * Saqlanadigan xulq: faqat market uchun ruxsat etilgan `analytics/dashboard` (start/end, «Barchasi» ham
  * aniq sanalar bilan), `myStat` → `orders` zaxiralari, `add_order` ruxsati, qo'shimcha xarajat tasdiqlari
- * (`approve/rejectExtraCostApproval.mutate` + xato `notify`), sozlamadagi vidjetlar (`topPerformers` —
- * «Top operatorlar», `performanceChart` — «Marketlar bo'yicha sotuv foizi»). «Reytingdagi o'rningiz» va
- * «Buyurtmalar dinamikasi» — «Taklif», chizilmaydi.
+ * (`ExtraCostApprovals`: tasdiq oynasi, rad etish sababi, «allaqachon hal qilingan», `market_operator` faqat
+ * ko'radi), sozlamadagi vidjetlar (`topPerformers` — «Top operatorlar», `performanceChart` — «Marketlar
+ * bo'yicha sotuv foizi»). «Reytingdagi o'rningiz» va «Buyurtmalar dinamikasi» — «Taklif», chizilmaydi.
+ * Qisman nosozlik (VkwhHqvW): `myStat`/`orders` olinmasa — KPI va grafiklar o'rnida xato; `topOperators` —
+ * «Top operatorlar» joyida; `topMarkets` yoki `markets` — «Marketlar bo'yicha sotuv foizi» joyida xato kartasi.
  */
 const MarketDashboardPage = () => {
   const { t, i18n } = useTranslation("dashboard");
@@ -87,23 +89,14 @@ const MarketDashboardPage = () => {
   );
 
   const { getDashboard } = useDashboard();
-  const { useExtraCostApprovals, approveExtraCostApproval, rejectExtraCostApproval } = useOrders();
 
-  // fix3 FE-ORD-02: tasdiqlash/rad etish rad javobi ko'rinadi.
-  const notifyApprovalError = useCallback(
-    (error: unknown) => {
-      const description = getActionErrorMessage(error, t("market.extra_cost_action_error"));
-      if (!description) return;
-      notify.error(t("common:error"), { description });
-    },
-    [t],
-  );
-
-  const { data, isLoading, isError: dashboardError, refetch: refetchDashboard } = getDashboard(
-    analyticsParams,
-    true,
-    analyticsScope,
-  );
+  const {
+    data,
+    isLoading,
+    isFetching: dashboardFetching,
+    isError: dashboardError,
+    refetch: refetchDashboard,
+  } = getDashboard(analyticsParams, true, analyticsScope);
   // Oldingi teng davr (ega savoli 1 sukuti) — joriy javob kelgach, «Barchasi»da yo'q.
   const prevRange = useMemo(() => previousPeriodRange(resolveDashboardPeriod(fromDate, toDate)), [fromDate, toDate]);
   const previousParams = useMemo(
@@ -112,12 +105,14 @@ const MarketDashboardPage = () => {
   );
   const { data: previousData } = getDashboard(previousParams, Boolean(prevRange) && Boolean(data), analyticsScope);
 
-  const {
-    data: approvalResponse,
-    isLoading: approvalsLoading,
-    isError: approvalsError,
-  } = useExtraCostApprovals("pending", true);
-  const extraCostApprovals = Array.isArray(approvalResponse?.data) ? approvalResponse.data : [];
+  // Qisman nosozlik (VkwhHqvW): olinmagan bo'lak 0 lar bilan emas, joyida xato holati bilan chiziladi.
+  const failedParts = data?.data?.failedParts;
+  const statsFailed = hasFailedPart(failedParts, "orders", "myStat");
+  const operatorsFailed = hasFailedPart(failedParts, "topOperators");
+  // «Marketlar bo'yicha sotuv foizi» = reyting (`topMarkets`) + o'z qatori (`markets`) — biri olinmasa ham chala.
+  const salesRankingFailed = hasFailedPart(failedParts, "topMarkets");
+  const salesFailed = salesRankingFailed || hasFailedPart(failedParts, "markets");
+  const retryDashboard = () => void refetchDashboard();
 
   const orders = data?.data?.orders;
   const myStat = data?.data?.myStat;
@@ -128,13 +123,15 @@ const MarketDashboardPage = () => {
   const inProgress = myStat?.inProgress ?? orders?.inProgress ?? inProgressCount(accepted, sold, cancelled);
   const successRate = myStat?.successRate ?? share(sold, accepted);
 
-  const prevStat = prevRange ? previousData?.data?.myStat : undefined;
-  const prevOrders = prevRange ? previousData?.data?.orders : undefined;
+  // Oldingi davr bo'lagi olinmagan bo'lsa — 0 bilan solishtirilmaydi.
+  const prevFailed = hasFailedPart(previousData?.data?.failedParts, "orders", "myStat");
+  const prevStat = prevRange && !prevFailed ? previousData?.data?.myStat : undefined;
+  const prevOrders = prevRange && !prevFailed ? previousData?.data?.orders : undefined;
   const prevAccepted = prevStat?.totalOrders ?? prevOrders?.acceptedCount;
   const prevSold = prevStat?.soldOrders ?? prevOrders?.soldAndPaid;
   const prevCancelled = prevStat?.canceledOrders ?? prevOrders?.cancelled;
   const prevProfit = prevStat?.profit ?? prevOrders?.profit;
-  const hasPrevious = previousData != null && prevRange != null;
+  const hasPrevious = previousData != null && prevRange != null && !prevFailed;
   const prevRate =
     hasPrevious && (prevAccepted ?? 0) > 0 ? (prevStat?.successRate ?? share(prevSold ?? 0, prevAccepted ?? 0)) : null;
 
@@ -166,13 +163,13 @@ const MarketDashboardPage = () => {
 
   // «Marketlar bo'yicha sotuv foizi»: reyting (`topMarkets`) + o'z qatori (`markets` — RBAC-02, faqat o'zi).
   // O'z qatori har doim ko'rinadi (≥ 30 buyurtma chegarasidan o'tmagan bo'lsa ham) — hozirgi `chartMarkets` xulqi.
-  const salesRows: PerformerRow[] = useMemo(() => {
+  const salesRows: PerformerRow[] = (() => {
     const top = marketRows(data?.data?.topMarkets);
     const own = marketRows(data?.data?.markets);
     const merged = [...top];
     for (const row of own) if (!merged.some((item) => item.id === row.id)) merged.push(row);
     return sortByRate(merged);
-  }, [data?.data?.markets, data?.data?.topMarkets]);
+  })();
 
   const operators = operatorRows(data?.data?.topOperators);
   const ordersListHref = isAllTime ? "/orders" : `/orders?startDay=${period.range.from}&endDay=${period.range.to}`;
@@ -198,19 +195,11 @@ const MarketDashboardPage = () => {
         primaryAction={createOrderButton}
       />
 
-      <ExtraCostApprovalsCard
-        approvals={extraCostApprovals}
-        loading={approvalsLoading}
-        error={approvalsError}
-        approvingId={approveExtraCostApproval.isPending ? String(approveExtraCostApproval.variables?.id ?? "") : ""}
-        rejectingId={rejectExtraCostApproval.isPending ? String(rejectExtraCostApproval.variables?.id ?? "") : ""}
-        onApprove={(id) => approveExtraCostApproval.mutate({ id }, { onError: notifyApprovalError })}
-        onReject={(id) => rejectExtraCostApproval.mutate({ id }, { onError: notifyApprovalError })}
-      />
+      <ExtraCostApprovals />
 
-      {dashboardError ? (
+      {dashboardError || statsFailed ? (
         <Card>
-          <ErrorState description={t("load_error")} onRetry={() => void refetchDashboard()} />
+          <ErrorState description={t("load_error")} onRetry={retryDashboard} retrying={dashboardFetching} />
         </Card>
       ) : (
         <KpiRow count={4} label={t("v2Dashboard.kpi.label")}>
@@ -257,7 +246,7 @@ const MarketDashboardPage = () => {
 
       {!dashboardError ? (
         <CardRow>
-          {isLoading ? (
+          {statsFailed ? null : isLoading ? (
             <>
               <LoadingChartCard title={t("v2Dashboard.success.title")} />
               <LoadingChartCard title={t("v2Dashboard.status.title")} />
@@ -286,9 +275,18 @@ const MarketDashboardPage = () => {
               />
             </>
           )}
-          {/* «Top operatorlar» — bo'sh bo'lsa karta yo'q (bo'sh joy qoldirilmaydi). */}
-          {widgets.topPerformers && !isLoading && operators.length > 0 ? (
+          {/* «Top operatorlar» — bo'sh bo'lsa karta yo'q (bo'sh joy qoldirilmaydi); olinmasa — xato kartasi. */}
+          {widgets.topPerformers && !isLoading && operatorsFailed ? (
+            <DashboardPartError
+              data-testid="operators-ranking-failed"
+              title={t("v2Dashboard.top.operators")}
+              onRetry={retryDashboard}
+              retrying={dashboardFetching}
+            />
+          ) : null}
+          {widgets.topPerformers && !isLoading && !operatorsFailed && operators.length > 0 ? (
             <TopRankCard
+              data-testid="operators-ranking"
               title={t("v2Dashboard.top.operators")}
               description={t("v2Dashboard.top.sub")}
               items={toRankItems(operators, { t, language })}
@@ -311,13 +309,21 @@ const MarketDashboardPage = () => {
                   ]}
                 />
               }
-              note={operators.length < 5 ? t("v2Dashboard.top.limited") : undefined}
+              note={operators.length < 5 || isLowDataRanking(operators, null) ? t("v2Dashboard.top.limited") : undefined}
             />
           ) : null}
         </CardRow>
       ) : null}
 
-      {widgets.performanceChart && !dashboardError && !isLoading ? (
+      {widgets.performanceChart && !dashboardError && !isLoading && salesFailed ? (
+        <DashboardPartError
+          data-testid={salesRankingFailed ? "market-ranking-failed" : "performance-markets-failed"}
+          title={t("v2Market.sales.title")}
+          onRetry={retryDashboard}
+          retrying={dashboardFetching}
+        />
+      ) : null}
+      {widgets.performanceChart && !dashboardError && !isLoading && !salesFailed ? (
         <MarketSalesCard rows={salesRows} selfId={selfId} />
       ) : null}
 

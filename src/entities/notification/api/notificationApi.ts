@@ -3,11 +3,17 @@ import { API_ENDPOINTS } from "../../../shared/api";
 import type { PaginatedResponse } from "../../../shared/types/pagination";
 import type { Notification, NotificationParams } from "../model/types";
 
+/**
+ * Backend qatori (`toPublicTelegramMarket`): `{ id, createdAt, updatedAt, market_id, group_id, group_type,
+ * bot_slug, is_active }`. Market obyekti javobda yo'q — nom marketlar ro'yxatidan olinadi.
+ */
 const normalizeNotification = (value: unknown): Notification => {
-  const item = value as Notification & {
+  const item = value as Partial<Omit<Notification, "is_active">> & {
+    id?: string | number;
     market_id?: string | number;
     group_id?: string | number;
-    group_type?: "cancel" | "create";
+    group_type?: string;
+    is_active?: boolean | string | null;
     market?: {
       id?: string | number;
       name?: string;
@@ -19,7 +25,7 @@ const normalizeNotification = (value: unknown): Notification => {
   };
   const market = item.market ?? null;
   const marketId = String(item.market_id ?? market?.id ?? "");
-  const marketName = market?.name ?? market?.username ?? market?.phone_number ?? (marketId ? `#${marketId}` : "—");
+  const marketName = market?.name ?? market?.username ?? market?.phone_number ?? null;
 
   return {
     id: String(item.id),
@@ -27,6 +33,8 @@ const normalizeNotification = (value: unknown): Notification => {
     market_name: marketName,
     group_id: String(item.group_id ?? ""),
     group_type: item.group_type === "cancel" ? "cancel" : "create",
+    // Maydon yo'q bo'lsa (eski javob) — faol; faqat aniq `false` nofaol.
+    is_active: item.is_active !== false && item.is_active !== "false",
     created_at: item.created_at ?? item.createdAt ?? item.updatedAt ?? new Date().toISOString(),
   };
 };

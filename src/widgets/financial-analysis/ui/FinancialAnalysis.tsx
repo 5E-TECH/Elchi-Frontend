@@ -58,6 +58,16 @@ const toChartData = (payload: RevenueResponse["data"] | undefined) => {
     .map((item) => ({ date: item.label, revenue: Number(item.revenue ?? 0) }));
 };
 
+/**
+ * Qisman nosozlik (VkwhHqvW): revenue javobida shu bo'laklardan biri olinmadimi (`degraded` + `failedParts`;
+ * qaysi bo'lak aytilmasa — hammasi olinmagan hisoblanadi).
+ */
+const isPartFailed = (payload: RevenueResponse["data"] | undefined, ...parts: string[]) => {
+  if (!payload?.degraded) return false;
+  const failed = payload.failedParts ?? [];
+  return failed.length === 0 || failed.some((part) => parts.includes(part));
+};
+
 /** «Solishtirish» almashtirgichi (`.el-switch`) — telefonda to'liq enli qator. */
 const ComparisonSwitch = ({ checked, onToggle, label, ariaLabel }: { checked: boolean; onToggle: () => void; label: string; ariaLabel: string }) => (
   <button
@@ -122,6 +132,20 @@ const FinancialAnalysis = ({ startDate, endDate, analyticsScope }: FinancialAnal
   const previousQuery = getRevenue(previousParams, comparisonEnabled && Boolean(previousRange), analyticsScope);
   const revenuePayload = revenueQuery.data?.data;
   const previousPayload = previousQuery.data?.data;
+  // Qisman nosozlik (VkwhHqvW): olinmagan bo'lak 0 lar bilan emas, o'z kartasi joyida xato + «Qayta urinish».
+  // `summary`/`chart` — «Moliyaviy tahlil», `finance` — «Kassa balansi»; qaysi bo'lak aytilmasa — ikkalasi.
+  const trendFailed = useMemo(() => isPartFailed(revenuePayload, "summary", "chart"), [revenuePayload]);
+  const cashFailed = useMemo(() => isPartFailed(revenuePayload, "finance"), [revenuePayload]);
+  // Olinmagan bo'lak — `QueryBoundary` uchun xato holati (ma'lumotsiz), «Qayta urinish» — o'sha so'rov.
+  const failedRevenue = {
+    data: undefined,
+    isError: true,
+    isLoading: false,
+    isFetching: revenueQuery.isFetching,
+    refetch: revenueQuery.refetch,
+  };
+  const trendQuery = trendFailed ? failedRevenue : revenueQuery;
+  const cashQuery = cashFailed ? failedRevenue : revenueQuery;
   // Faqat so'rov haqiqatan bajarilayotganda «yuklanmoqda» (o'chirilganda eski isLoading qolishi mumkin).
   const isPreviousLoading = comparisonEnabled && Boolean(previousRange) && previousQuery.isLoading;
 
@@ -134,7 +158,9 @@ const FinancialAnalysis = ({ startDate, endDate, analyticsScope }: FinancialAnal
   const chartData = useMemo(() => toChartData(revenuePayload), [revenuePayload]);
   const currentSummary = revenuePayload?.summary;
   const previousSummary = previousPayload?.summary;
-  const previousHasData = Boolean(previousSummary && previousSummary.totalOrders > 0);
+  // Oldingi davrning daromad bo'lagi olinmagan bo'lsa — 0 bilan solishtirilmaydi (delta va chiziq yo'q).
+  const previousFailed = useMemo(() => isPartFailed(previousPayload, "summary", "chart"), [previousPayload]);
+  const previousHasData = !previousFailed && Boolean(previousSummary && previousSummary.totalOrders > 0);
   const previousValues = previousPayload?.chart?.values;
   const previousLabels = previousPayload?.chart?.labels;
   // Nuqtalar faqat indeks bo'yicha moslashtiriladi — uzunlik teng bo'lmasa oldingi chiziq yashiriladi.
@@ -220,7 +246,7 @@ const FinancialAnalysis = ({ startDate, endDate, analyticsScope }: FinancialAnal
         actions={controls}
         bodyClassName="flex flex-col gap-4"
       >
-        <QueryBoundary query={revenueQuery} skeleton="chart" size="chart" isEmpty={() => false}>
+        <QueryBoundary query={trendQuery} skeleton="chart" size="chart" isEmpty={() => false}>
           {(_data, { isRefetching }) => (
             <div className={cx("flex flex-col gap-4 transition-opacity", isRefetching && "opacity-45")}>
               <dl className="m-0 grid grid-cols-3 gap-4 max-md:grid-cols-1 max-md:gap-0">
@@ -349,7 +375,7 @@ const FinancialAnalysis = ({ startDate, endDate, analyticsScope }: FinancialAnal
           />
         </div>
       </Card>
-      <CashBalanceCard query={revenueQuery} />
+      <CashBalanceCard query={cashQuery} />
     </div>
   );
 };

@@ -6,8 +6,9 @@ import NotificationsPage from "./NotificationsPage";
 
 /**
  * «Bildirishnomalar» — marketlarning Telegram guruhlari (dizayn v2, maketlar `superadmin-notifications-telegram-groups`,
- * `-create-dialog`, `-delete-dialog`). Haqiqiy UI orqali: jadval, sahifalash, qo'shish / tahrirlash payloadi,
- * o'chirish tasdiq oynasi.
+ * `-create-dialog`, `-delete-dialog`). Haqiqiy UI orqali: jadval (holat ustuni — 9HIaV80X), sahifalash, qo'shish oynasi
+ * (bir martalik havola — oqimning o'zi `NotificationFormModal.test.tsx` da), tahrirlash payloadi, o'chirish tasdig'i.
+ * dev'ning `widgets/notification-table` testlari (jadval sahifa ichiga ko'chgan) shu yerga birlashtirilgan.
  */
 
 const api = vi.hoisted(() => ({
@@ -26,20 +27,24 @@ const GROUPS = [
     market: { id: "12", name: "Baraka Shop", phone_number: "+998901112233" },
     group_id: "-1002184736577",
     group_type: "cancel",
+    is_active: true,
     created_at: "2026-10-01T10:14:00+05:00",
   },
   {
+    // Backend qatori (`toPublicTelegramMarket`): market obyekti yo'q — nom `GET /markets` dan.
     id: "8",
     market_id: "27",
-    market: { id: "27", name: "Nur Elektronika" },
     group_id: "-1001937420815",
     group_type: "create",
-    created_at: "2026-09-28T17:45:00+05:00",
+    bot_slug: null,
+    is_active: false,
+    createdAt: "2026-09-28T17:45:00+05:00",
   },
 ];
 
 const MARKETS = [
   { id: 12, name: "Baraka Shop", phone_number: "+998901112233" },
+  { id: 27, name: "Nur Elektronika" },
   { id: 52, name: "Bahor Kiyim", phone_number: "+998904123675" },
 ];
 
@@ -80,6 +85,7 @@ describe("NotificationsPage — Telegram guruhlari", () => {
     expect(within(table).getByText("-1002184736577")).toBeInTheDocument();
     expect(within(table).getByText("Bekor qilingan buyurtma")).toBeInTheDocument();
     expect(within(table).getByText("Yangi buyurtma")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Ulangan guruhlar" })).toBeInTheDocument();
     expect(screen.getByText("24")).toBeInTheDocument();
     expect(screen.getByText("1–10 / 24 ta guruh")).toBeInTheDocument();
     // API'da saralash yo'q — sarlavhada saralash tugmasi chizilmaydi (spec G8).
@@ -189,45 +195,75 @@ describe("NotificationsPage — Telegram guruhlari", () => {
     expect(screen.getByRole("alertdialog")).toBeInTheDocument();
   });
 
-  it("add dialog: validation, then POST { market_id, group_id, group_type }", async () => {
+  it("status column: Faol / Nofaol with the reconnect hint; names come from GET /markets", async () => {
+    renderWithProviders(<NotificationsPage />);
+
+    const table = await screen.findByRole("table", { name: "Ulangan Telegram guruhlari" });
+    const [, active, inactive] = within(table).getAllByRole("row");
+
+    expect(within(active).getByText("Baraka Shop")).toBeInTheDocument();
+    expect(within(active).getByText("Faol")).toBeInTheDocument();
+    expect(
+      within(active).queryByText("Bot guruhdan chiqarilgan — qayta ulang"),
+    ).not.toBeInTheDocument();
+
+    // Qatorda market obyekti yo'q — nom marketlar ro'yxatidan, ostida «#27».
+    expect(await within(inactive).findByText("Nur Elektronika")).toBeInTheDocument();
+    expect(within(inactive).getByText("#27")).toBeInTheDocument();
+    expect(within(inactive).getByText("Yangi buyurtma")).toBeInTheDocument();
+    expect(within(inactive).getByText("Nofaol")).toBeInTheDocument();
+    expect(within(inactive).getByText("Bot guruhdan chiqarilgan — qayta ulang")).toBeInTheDocument();
+  });
+
+  it("a market missing from GET /markets shows #id once (no duplicate sub-line)", async () => {
+    api.get.mockImplementation((url: string) => {
+      if (url === "notifications") {
+        return Promise.resolve({
+          data: {
+            data: {
+              items: [{ ...GROUPS[1], id: "9", market_id: "99" }],
+              meta: { total: 1, page: 1, limit: 10 },
+            },
+          },
+        });
+      }
+      if (url === "markets") return Promise.resolve({ data: { data: { items: MARKETS } } });
+      return Promise.resolve({ data: {} });
+    });
+    renderWithProviders(<NotificationsPage />);
+
+    const table = await screen.findByRole("table", { name: "Ulangan Telegram guruhlari" });
+    expect(within(table).getAllByText("#99")).toHaveLength(1);
+    expect(
+      screen.getByRole("button", { name: "#99 — yangi buyurtma guruhi: tahrirlash" }),
+    ).toBeInTheDocument();
+  });
+
+  it("add opens the one-time link dialog — no manual group ID field", async () => {
     const user = userEvent.setup();
     renderWithProviders(<NotificationsPage />);
 
-    await user.click(screen.getByRole("button", { name: "Bildirishnoma qo'shish" }));
+    expect(
+      screen.getByText(
+        "Marketlarning Telegram guruhlari: yangi va bekor qilingan buyurtmalar haqida xabar shu yerga boradi",
+      ),
+    ).toBeInTheDocument();
+    const add = screen.getByRole("button", { name: "Bildirishnoma qo'shish" });
+    expect(add).toHaveAttribute("aria-haspopup", "dialog");
+    await user.click(add);
     const dialog = await screen.findByRole("dialog", { name: "Bildirishnoma qo'shish" });
     expect(within(dialog).getByText("Telegram guruhga bildirishnoma ulash")).toBeInTheDocument();
     expect(within(dialog).getByRole("radio", { name: "Yangi buyurtmalar guruhi" })).toBeChecked();
-
-    await user.click(within(dialog).getByRole("button", { name: "Bildirishnomani saqlash" }));
-    expect(await within(dialog).findByText("Marketni tanlang")).toBeInTheDocument();
-    expect(within(dialog).getByText("Telegram guruh ID ni kiriting")).toBeInTheDocument();
+    expect(
+      within(dialog).getByRole("button", { name: "Ulash havolasini olish" }),
+    ).toBeInTheDocument();
+    expect(
+      within(dialog).queryByRole("textbox", { name: /Telegram guruh ID/ }),
+    ).not.toBeInTheDocument();
     expect(api.post).not.toHaveBeenCalled();
-
-    await user.click(within(dialog).getByRole("combobox", { name: "Market" }));
-    await user.click(await screen.findByRole("option", { name: /^Bahor Kiyim/ }));
-    await user.type(
-      within(dialog).getByRole("textbox", { name: "Telegram guruh ID" }),
-      " -1002251847019 ",
-    );
-    await user.click(within(dialog).getByRole("radio", { name: "Bekor qilinganlar guruhi" }));
-    await user.click(within(dialog).getByRole("button", { name: "Bildirishnomani saqlash" }));
-
-    await waitFor(() =>
-      expect(api.post).toHaveBeenCalledWith("notifications", {
-        market_id: "52",
-        group_id: "-1002251847019",
-        group_type: "cancel",
-      }),
-    );
-    expect(await screen.findByText("Bildirishnoma yaratildi")).toBeInTheDocument();
-    await waitFor(() =>
-      expect(
-        screen.queryByRole("dialog", { name: "Bildirishnoma qo'shish" }),
-      ).not.toBeInTheDocument(),
-    );
   });
 
-  it("edit dialog is prefilled and PATCHes the changed group", async () => {
+  it("edit dialog is prefilled, validates the group ID and PATCHes the changed group", async () => {
     const user = userEvent.setup();
     renderWithProviders(<NotificationsPage />);
 
@@ -237,7 +273,7 @@ describe("NotificationsPage — Telegram guruhlari", () => {
       }),
     );
     const dialog = await screen.findByRole("dialog", { name: "Bildirishnomani tahrirlash" });
-    const groupInput = within(dialog).getByRole("textbox", { name: "Telegram guruh ID" });
+    const groupInput = within(dialog).getByRole("textbox", { name: /Telegram guruh ID/ });
     expect(groupInput).toHaveValue("-1002184736577");
     expect(within(dialog).getByRole("radio", { name: "Bekor qilinganlar guruhi" })).toBeChecked();
     // Tahrirlashda ulash izohi yo'q (faqat qo'shishda).
@@ -246,14 +282,19 @@ describe("NotificationsPage — Telegram guruhlari", () => {
     ).not.toBeInTheDocument();
 
     await user.clear(groupInput);
-    await user.type(groupInput, "-1009999999999");
-    await user.click(within(dialog).getByRole("button", { name: "Bildirishnomani saqlash" }));
+    await user.click(within(dialog).getByRole("button", { name: "O'zgarishlarni saqlash" }));
+    expect(await within(dialog).findByText("Guruh ID sini kiriting")).toBeInTheDocument();
+    expect(api.patch).not.toHaveBeenCalled();
+
+    await user.type(groupInput, " -1009999999999 ");
+    await user.click(within(dialog).getByRole("radio", { name: "Yangi buyurtmalar guruhi" }));
+    await user.click(within(dialog).getByRole("button", { name: "O'zgarishlarni saqlash" }));
 
     await waitFor(() =>
       expect(api.patch).toHaveBeenCalledWith("notifications/7", {
         market_id: "12",
         group_id: "-1009999999999",
-        group_type: "cancel",
+        group_type: "create",
       }),
     );
     expect(await screen.findByText("Bildirishnoma yangilandi")).toBeInTheDocument();
@@ -267,6 +308,7 @@ describe("NotificationsPage — Telegram guruhlari", () => {
     );
     const { unmount } = renderWithProviders(<NotificationsPage />);
     expect(await screen.findByText("Hali guruh ulanmagan")).toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
     unmount();
 
     api.get.mockImplementation((url: string) =>

@@ -208,6 +208,18 @@ const fetchUserList = async (params?: IUserFilter) => {
   };
 };
 
+/**
+ * Marketning Telegram tokeni (GvL6ZFAd): umumiy javoblarda (`/users`, `/users/:id`, `/markets`) YO'Q —
+ * faqat `GET /markets/:id/tg-token` (faqat SUPERADMIN, har ko'rish audit jurnaliga yoziladi,
+ * `Cache-Control: no-store`). Shuning uchun so'rov faqat «Ko'rsatish»/«Nusxalash» bosilganda va keshsiz.
+ */
+export const fetchMarketTelegramToken = async (marketId: string): Promise<string | null> => {
+  const response = await api.get(API_ENDPOINTS.MARKETS.TG_TOKEN(marketId));
+  const body = (response.data ?? {}) as { data?: { market_tg_token?: unknown }; market_tg_token?: unknown };
+  const token = body.data?.market_tg_token ?? body.market_tg_token;
+  return typeof token === "string" && token.trim() ? token.trim() : null;
+};
+
 export const useUser = () => {
   const client = useQueryClient();
   const dispatch = useDispatch();
@@ -439,6 +451,28 @@ export const useUser = () => {
     },
   });
 
+  /**
+   * (ysBqD9Nx) Market Telegram guruhi kartasida mijoz ismi/telefoni — `PATCH markets/:id/telegram-group-pii`.
+   * Superadmin/admin istalgan market uchun, market — faqat o'zi uchun (boshqasi 403).
+   */
+  const updateMarketTelegramGroupPii = useMutation({
+    mutationFn: ({
+      id,
+      tg_group_show_customer_pii,
+    }: {
+      id: string;
+      tg_group_show_customer_pii: boolean;
+    }) =>
+      api
+        .patch(API_ENDPOINTS.MARKETS.TELEGRAM_GROUP_PII(id), { tg_group_show_customer_pii })
+        .then((res) => res.data),
+    onSuccess: () => {
+      // `[user]` — tafsilot (`[user, "detail", id]`) va o'z profili (`[user, "profile"]`) ham.
+      client.invalidateQueries({ queryKey: [user], refetchType: "active" });
+      client.invalidateQueries({ queryKey: ["markets"], refetchType: "active" });
+    },
+  });
+
   const deleteUser = useMutation({
     mutationFn: (id: string) =>
       api.delete(API_ENDPOINTS.USERS.BY_ID(id)).then((res) => res.data),
@@ -464,21 +498,7 @@ export const useUser = () => {
     updateMarketAddOrder,
     updateMarketExpenseProof,
     updateMarketCancelledHandoverQr,
+    updateMarketTelegramGroupPii,
     deleteUser,
   };
-};
-
-/**
- * Marketning Telegram tokeni (GvL6ZFAd, backend origin/main): `GET /users/:id` endi tokenni HECH bir rolga
- * qaytarmaydi — u faqat `GET /markets/:id/tg-token` da va faqat SUPERADMIN uchun (admin → 403). Har ko'rish
- * jurnalga yoziladi, shuning uchun karta tokenni faqat «Ko'rsatish» / «Nusxalash» bosilganda so'raydi.
- * Natija: token yoki `null` (marketda hali token yo'q).
- */
-export const marketTelegramTokenQueryKey = (marketId: string) => [user, "market-tg-token", marketId] as const;
-
-export const getMarketTelegramToken = async (marketId: string): Promise<string | null> => {
-  const response = await api.get(`${API_ENDPOINTS.MARKETS.BASE}/${encodeURIComponent(marketId)}/tg-token`);
-  const body = response.data as { data?: { market_tg_token?: unknown }; market_tg_token?: unknown } | undefined;
-  const token = body?.data?.market_tg_token ?? body?.market_tg_token;
-  return typeof token === "string" && token.trim() ? token.trim() : null;
 };

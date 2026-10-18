@@ -187,7 +187,9 @@
         "src/pages/dashboard/ui/CourierCashCard.tsx",
         "src/pages/dashboard/ui/MarketSalesCard.tsx",
         "src/pages/dashboard/ui/QuickActions.tsx",
-        "src/pages/dashboard/ui/ExtraCostApprovalsCard.tsx",
+        "src/pages/dashboard/ui/ExtraCostApprovals.tsx",
+        "src/pages/dashboard/ui/ExtraCostRejectDialog.tsx",
+        "src/widgets/dashboard-part-error/ui/DashboardPartError.tsx",
         "src/shared/ui/charts/index.ts"
       ],
       "roles": { "superadmin": "", "admin": "", "manager": "→ /branch-dashboard", "registrator": "", "market": "", "courier": "" },
@@ -202,7 +204,7 @@
       "roleNotes": {
         "manager": "DashboardEntry menejerni /branch-dashboard ga yo'naltiradi."
       },
-      "note": "DashboardEntry (routes.tsx): market → MarketDashboardPage (xarajat tasdiqlari shu sahifada), qolganlar → DashboardPage (kuryer — alohida tarmoq isCourier). Dizayn v2 (G1): grafiklar — src/shared/ui/charts (recharts faqat «Moliyaviy tahlil» trendida, FinancialTrendPlot lazy + DeferredMount rootMargin 0; bundle byudjeti 450 KB — tests/e2e/dashboard-bundle.preview.spec.ts), viloyat oynasi — umumiy RegionDetailDialog (lazy, faqat bosilganda; registratorda daromadsiz — showRevenue=false, eski oyna xulqi). Reytinglar top 5 (telefonda top 3) + «Yana ko'rsatish». Chizilmaganlar (Taklif yoki API yo'q, spec §6): «Buyurtmalar vaqti» issiqlik xaritasi, KPI «Yo'qotilgan daromad», KPI sparkline, «maqsad 80%», «Sof foyda» qatori, market «Reytingdagi o'rningiz» / «Buyurtmalar dinamikasi», xarajat so'rovida so'rovchi ismi va buyurtma raqami, kuryer «Oxirgi 7 kun». Ega savollari — sukut javoblari qo'llangan (spec §9): Q1 delta va «Kecha» — oldingi davr uchun ikkinchi analytics so'rovi («Barchasi»da yo'q); Q2 gauge belgisi «Yaxshi chegarasi · 70%»; Q3 registrator sarlavha izohida filial nomi (backend registratorni filialga cheklaydi); Q4 «Moliyaviy tahlil» izohi «Daromad · oldingi davr bilan solishtirish», qator «Daromad»; Q5 kuryer «Kassa» sharsharasi faqat my-cashbox bugungi tarixni bersa, aks holda «Qo'lingizdagi pul»; Q6 market «Tasdiqlash / Rad etish» tasdiq oynasisiz (maketdagidek); Q7 «Barchasi»da «Yetkazish sifati» o'rnida bo'sh holat, «Moliyaviy tahlil» va «Kassa» yashirin."
+      "note": "DashboardEntry (routes.tsx): market → MarketDashboardPage (xarajat tasdiqlari shu sahifada), qolganlar → DashboardPage (kuryer — alohida tarmoq isCourier). Dizayn v2 (G1): grafiklar — src/shared/ui/charts (recharts faqat «Moliyaviy tahlil» trendida, FinancialTrendPlot lazy + DeferredMount rootMargin 0; bundle byudjeti 450 KB — tests/e2e/dashboard-bundle.preview.spec.ts), viloyat oynasi — umumiy RegionDetailDialog (lazy, faqat bosilganda; registratorda daromadsiz — showRevenue=false, eski oyna xulqi). Reytinglar top 5 (telefonda top 3) + «Yana ko'rsatish». Chizilmaganlar (Taklif yoki API yo'q, spec §6): «Buyurtmalar vaqti» issiqlik xaritasi, KPI «Yo'qotilgan daromad», KPI sparkline, «maqsad 80%», «Sof foyda» qatori, market «Reytingdagi o'rningiz» / «Buyurtmalar dinamikasi», xarajat so'rovida so'rovchi ismi va buyurtma raqami, kuryer «Oxirgi 7 kun». Ega savollari — sukut javoblari qo'llangan (spec §9): Q1 delta va «Kecha» — oldingi davr uchun ikkinchi analytics so'rovi («Barchasi»da yo'q); Q2 gauge belgisi «Yaxshi chegarasi · 70%»; Q3 registrator sarlavha izohida filial nomi (backend registratorni filialga cheklaydi); Q4 «Moliyaviy tahlil» izohi «Daromad · oldingi davr bilan solishtirish», qator «Daromad»; Q5 kuryer «Kassa» sharsharasi faqat my-cashbox bugungi tarixni bersa, aks holda «Qo'lingizdagi pul»; Q6 market «Tasdiqlash» — pul amali, tasdiq oynasi bilan (useConfirm), «Rad etish» — sabab oynasi ExtraCostRejectDialog; 409 «allaqachon hal qilingan» — qayta yuklash + info toast; market_operator — faqat ko'rish (dev, Urozov04); Q7 «Barchasi»da «Yetkazish sifati» o'rnida bo'sh holat, «Moliyaviy tahlil» va «Kassa» yashirin."
     },
     {
       "path": "/branch-dashboard",
@@ -215,6 +217,7 @@
         "src/pages/branch-dashboard/ui/branchDashboardAdapter.ts",
         "src/widgets/dashboard-statistics/ui/DashboardHeader.tsx",
         "src/widgets/dashboard-top-performers/ui/TopRankCard.tsx",
+        "src/widgets/dashboard-part-error/ui/DashboardPartError.tsx",
         "src/shared/ui/charts/index.ts"
       ],
       "views": {
@@ -233,7 +236,6 @@
         "src/pages/orders/list/OrderFiltersSheet.tsx",
         "src/pages/orders/list/OrdersTable.tsx",
         "src/pages/orders/list/orderFilterModel.ts",
-        "src/pages/orders/lib/exportOrdersToExcel.ts",
         "src/pages/orders/list/courier/index.tsx",
         "src/pages/orders/list/courier/list/tabs.tsx",
         "src/pages/orders/list/courier/list/ordertable/pendingOrderTable.tsx",
@@ -758,6 +760,28 @@
       "note": "«O'zimga olish» tugmasi faqat kuryerda. Paket → ScanPackageDetail, pochta → ScanPostDetail."
     },
     {
+      "path": "/tg/scan",
+      "section": "scan",
+      "title": "Telegram skan Mini App — kuryer uzluksiz skanerlab buyurtmalarni o'ziga oladi (shell'siz, to'liq ekran)",
+      "public": true,
+      "entry": "Telegram bot → «Skaner» web_app tugmasi (`/ishim`; URL backend `TELEGRAM_SCAN_WEBAPP_URL` dan, tokensiz). Kirish — Telegram initData (`POST /auth/telegram`), asosiy sessiyasiz",
+      "components": [
+        "src/pages/tg-scan/index.tsx",
+        "src/features/tg-scan/ui/TgScanner.tsx",
+        "src/features/tg-scan/ui/CameraSurface.tsx",
+        "src/features/tg-scan/ui/ScanListSheet.tsx",
+        "src/features/tg-scan/model/useTelegramAuth.ts",
+        "src/features/tg-scan/model/useScanAssign.ts",
+        "src/features/tg-scan/model/telegramWebApp.ts",
+        "src/features/tg-scan/api/tgScanApi.ts"
+      ],
+      "views": {
+        "courier": ["scan-active", "scan-starting", "scan-permission-denied", "scan-success-flash", "scan-other-courier", "scan-invalid"],
+        "tizim": ["scanner"]
+      },
+      "note": "Faqat kuryer (boshqa rol Telegram orqali kirsa — «Skaner faqat kuryerlar uchun»). Telegram'dan tashqarida (initData bo'sh) — «Bu sahifa faqat Telegram ichida ochiladi», kamera ochilmaydi. Hisoblagich «N ta qabul qilindi», «Ro'yxat» varag'i va «Tayyor» maketda yo'q (dizayn ziddiyati kartada qayd etilgan) — eng yaqin namuna `courier-courier-bulk-scanner-camera` va `-camera-list`. Kamera ochilmasa — Telegram skaneri (`showScanQrPopup`). «Juda tez» holati yo'q: uzluksiz rejimda kamera QR'ni qayta o'qiydi va pauza o'tgach o'zi qabul qiladi. Qo'lda kiritish yo'q: `scan-assign` faqat QR tokenni qabul qiladi (yorliqdagi raqam bilan qidirmaydi)."
+    },
+    {
       "path": "/payments",
       "section": "finance",
       "title": "To'lovlar — umumiy (berilishi / qabul qilinishi kerak, operatsiyalar tarixi)",
@@ -810,6 +834,7 @@
         "src/pages/payments/components/cashDetail.tsx",
         "src/pages/payments/components/CashboxActionFormCard.tsx",
         "src/pages/payments/components/PaymentHistoryList.tsx",
+        "src/pages/payments/components/PaymentAckBadge.tsx",
         "src/pages/payments/components/FinanceHistoryDetailPopup.tsx",
         "src/pages/payments/components/lib/paymentIdempotency.ts"
       ],
@@ -826,6 +851,7 @@
       "title": "O'z kassam — market va kuryer (Barcha tarix · Oldi-berdi)",
       "components": [
         "src/pages/payments/components/MyCashboxPage.tsx",
+        "src/pages/payments/components/PaymentAckBadge.tsx",
         "src/pages/payments/components/FinanceHistoryDetailPopup.tsx",
         "src/pages/payments/components/paymentSourceType.ts"
       ],
@@ -944,6 +970,7 @@
         "src/pages/users/detail/UserDetailPage.tsx",
         "src/widgets/user-detail/ui/UserDetailView.tsx",
         "src/widgets/user-detail/ui/MarketTelegramTokenCard.tsx",
+        "src/widgets/user-detail/model/useMarketTelegramGroupPiiToggle.ts",
         "src/features/user/update-user/ui/UpdateUserModal.tsx",
         "src/features/courier-transfer-branch/ui/TransferCourierButton.tsx",
         "src/features/courier-transfer-branch/ui/TransferCourierModal.tsx"
@@ -953,7 +980,7 @@
         "admin": ["users-detail", "users-edit-dialog", "users-transfer-courier-dialog"],
         "manager": ["users-detail", "users-edit-dialog"]
       },
-      "note": "Yangi v2 UserDetailView; eski UserDetailWidget faqat /profile uchun muzlatilgan. «Faoliyat» (Taklif) chizilmaydi. Ega savoli Q9 sukuti: menejer xodimidagi «Oylik maosh» kartasi (to'plangan / kun qoldi) chizilmaydi — faqat «Profil ma'lumotlari»dagi maosh va to'lov kuni. Mijoz (customer) — maket yo'q, eng yaqini superadmin-users-detail."
+      "note": "Yangi v2 UserDetailView (eski UserDetailWidget G2 da o'chirildi — iste'molchisi qolmadi). «Faoliyat» (Taklif) chizilmaydi. Ega savoli Q9 sukuti: menejer xodimidagi «Oylik maosh» kartasi (to'plangan / kun qoldi) chizilmaydi — faqat «Profil ma'lumotlari»dagi maosh va to'lov kuni. Mijoz (customer) — maket yo'q, eng yaqini superadmin-users-detail."
     },
     {
       "path": "/regions",
@@ -1207,12 +1234,13 @@
         "src/pages/notifications/ui/NotificationsPage.tsx",
         "src/features/notification-create/ui/NotificationFormModal.tsx",
         "src/features/notification-edit/ui/NotificationEditModal.tsx",
+        "src/features/notification-create/ui/GroupLinkQr.tsx",
         "src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx"
       ],
       "views": {
         "superadmin": ["notifications-telegram-groups", "notifications-create-dialog", "notifications-delete-dialog"]
       },
-      "note": "Dizayn v2 (G2): jadval + sahifalash (DataTable / Pagination; telefonda kartalar), qo'shish oynasi, o'chirish — tasdiq oynasi (maket matni). Tahrirlash — qo'shish oynasi qolipida (D6, maket yo'q: NotificationEditModal `(maket yo'q) superadmin-notifications-create-dialog`). Ustun saralashi chizilmaydi (GET /notifications da sort yo'q). Matnlar — notificationGroups.json."
+      "note": "Dizayn v2 (G2): jadval + sahifalash (DataTable / Pagination; telefonda kartalar), «Holat» ustuni (Faol / Nofaol + «Bot guruhdan chiqarilgan — qayta ulang»), market nomlari GET /markets dan (qatorda faqat market_id), o'chirish — tasdiq oynasi (maket matni). dev birlashtirishi (ega qoidasi): qo'shish oynasi maketdagi qo'lda guruh ID formasi EMAS — bir martalik Telegram havolasi: market + xabar turi → POST /telegram/link-code {purpose: market_group} → QR, «Telegram'da ochish», qadamlar, muddat; oyna ochiqligida GET /notifications har 4 s, guruh paydo bo'lsa yopiladi («Guruh ulandi»); shu (market, tur) ulangan bo'lsa havola berilmaydi. Tahrirlash — qo'shish oynasi qolipida (D6, maket yo'q: NotificationEditModal `(maket yo'q) superadmin-notifications-create-dialog`). Ustun saralashi chizilmaydi (GET /notifications da sort yo'q). Matnlar — notificationGroups.json."
     },
     {
       "path": "/notifications/send",
@@ -1261,16 +1289,19 @@
       "components": [
         "src/pages/activity-logs/index.tsx",
         "src/widgets/activity-log/ui/ActivityLogViewer.tsx",
+        "src/widgets/activity-log/ui/ActivityLogFilters.tsx",
         "src/widgets/activity-log/ui/ActivityLogDetail.tsx",
-        "src/widgets/activity-log/ui/ActivityLogFiltersSheet.tsx",
-        "src/widgets/activity-log/lib/logView.ts"
+        "src/widgets/activity-log/model/activityFilters.ts",
+        "src/widgets/activity-log/model/activityDetail.ts",
+        "src/widgets/activity-log/model/useActivityLabels.ts",
+        "src/entities/activity-log/ui/ActivityActionBadge.tsx"
       ],
       "views": {
         "superadmin": ["activity-logs-list", "activity-logs-row-expanded"],
         "admin": ["activity-logs-list", "activity-logs-row-expanded"],
         "tizim": ["states-data"]
       },
-      "note": "Dizayn v2 (G2): 6 filtr + tozalash (telefonda «Filtrlar» varag'i — ActivityLogFiltersSheet, `(maket yo'q) superadmin-activity-logs-list, superadmin-orders-filters-mobile`); qator DataTable expandable bilan ochiladi (o'zgarishlar / metadata), o'zgarishsiz va metadatasiz yozuvda chevron yo'q (faqat «Kuzatuv ID» bo'lsa ham — ochilmaydi); sahifalash."
+      "note": "Dizayn v2 (G2 + dev): 6 filtr + tozalash (telefonda «Filtrlar» varag'i — ActivityLogFilters ichidagi Dialog, `(maket yo'q) superadmin-activity-logs-list, superadmin-orders-filters-mobile`); «Amal» filtri GET /activity-logs/actions reyestri bo'yicha kategoriyalarga guruhlangan; muallif `actor.resolved` («#44 (topilmadi)», «Tizim»), amal yorlig'i action_meta → reyestr → humanize (ActivityActionBadge). Qator DataTable expandable bilan ochiladi (o'zgarishlar, «Qo'shimcha ma'lumot»: Manba, Filial, …, Qurilma, IP); o'zgarish, metadata va «Kuzatuv ID» yo'q yozuvda chevron yo'q (faqat «Kuzatuv ID» bo'lsa ham ochiladi — dev qoidasi); sahifalash «1–20 / 45 ta yozuv»."
     },
     {
       "path": "/ops",
@@ -1408,12 +1439,15 @@
         "src/pages/profile/ui/ChangePasswordDialog.tsx",
         "src/pages/profile/ui/EditProfileDialog.tsx",
         "src/pages/profile/lib/salaryCycle.ts",
-        "src/pages/profile/lib/profileView.ts"
+        "src/pages/profile/lib/profileView.ts",
+        "src/features/telegram-link/ui/TelegramLinkCard.tsx",
+        "src/features/telegram-link/ui/TelegramLinkDialog.tsx",
+        "src/widgets/user-detail/ui/MarketTelegramGroupPiiCard.tsx"
       ],
       "views": {
         "common": ["profile", "profile-password-dialog"]
       },
-      "note": "Dizayn v2 (G2): ma'lumot kartasi (GET /auth/my-profile), maosh bloki faqat salary > 0; parol — alohida oyna (≥ 4 belgi, mos kelish, saqlangach chiqish); profilni tahrirlash — alohida oyna (Ism, Telefon; D7, maket yo'q: EditProfileDialog `(maket yo'q) common-profile-password-dialog`). UpdateUserModal / UserDetailWidget profilda ishlatilmaydi. «Login» — username bo'lsa."
+      "note": "Dizayn v2 (G2): ma'lumot kartasi (GET /auth/my-profile), maosh bloki faqat salary > 0; parol — alohida oyna (≥ 4 belgi, mos kelish, saqlangach chiqish); profilni tahrirlash — alohida oyna (Ism, Telefon; D7, maket yo'q: EditProfileDialog `(maket yo'q) common-profile-password-dialog`). UpdateUserModal profilda ishlatilmaydi. «Login» — username bo'lsa. dev birlashtirishi: «Xavfsizlik» ostida yana bir qator — o'z Telegram'ini ulash/uzish (TelegramLinkCard, mijoz/investordan boshqa rollar; POST users/me/telegram/link-code, oyna ochiqligida profil har 3 s) va market uchun «Guruhda mijoz ismi va telefoni» (MarketTelegramGroupPiiCard, PATCH markets/:id/telegram-group-pii) — maket yo'q, eng yaqini «Xavfsizlik» kartasi (`(maket yo'q) common-profile`)."
     },
     {
       "path": "/settings",
@@ -1509,7 +1543,7 @@
     "registrator-dashboard-main": "src/pages/dashboard/DashboardPage.tsx",
     "courier-dashboard-home": "src/pages/dashboard/DashboardPage.tsx",
     "market-dashboard-home": "src/pages/dashboard/MarketDashboardPage.tsx",
-    "market-dashboard-extra-cost-approvals": "src/pages/dashboard/ui/ExtraCostApprovalsCard.tsx",
+    "market-dashboard-extra-cost-approvals": "src/pages/dashboard/ui/ExtraCostApprovals.tsx",
     "superadmin-dashboard-region-modal": "src/widgets/region-detail/ui/RegionDetailDialog.tsx",
     "superadmin-regions-region-modal": "src/widgets/region-detail/ui/RegionDetailDialog.tsx",
     "admin-regions-region-detail-dialog": "src/widgets/region-detail/ui/RegionDetailDialog.tsx",
@@ -1715,7 +1749,7 @@
     },
     "errors": {
       "defines": "Sahifa xatolari (404, 403, 500, ilova xatosi) va ro'yxat/karta ichidagi holatlar (yuklanmoqda, bo'sh, natija yo'q, yuklanmadi, internet yo'q, ruxsat yo'q, bo'lim xatosi), xato xabarlari.",
-      "code": "src/shared/ui/{NotFound,Forbidden,ServerError,ErrorBoundaryPage,EmptyState,QueryErrorState,InlineErrorBoundary}.tsx, src/shared/ui/error-page/"
+      "code": "src/shared/ui/{NotFound,Forbidden,ServerError,ErrorBoundaryPage,EmptyState,QueryErrorState}.tsx, src/shared/ui/primitives/{QueryBoundary,ErrorState}.tsx, src/shared/ui/error-page/"
     },
     "motion": {
       "defines": "Davomiylik shkalasi, egri chiziqlar, ochilish kadrlari (oyna, pastki oyna, xabar), harakatni kamaytirish, fokus halqasi, klaviatura tartibi, bosish maydoni, kontrast juftliklari, z-index shkalasi.",

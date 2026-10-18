@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/config/queryKeys";
+import { unreadCountPollInterval } from "../../../shared/lib/realtime";
 import { getInbox, getInboxById, getInboxCounts, getInboxUnreadCount } from "./inboxApi";
 import type { InboxListParams } from "../model/types";
 import { silentErrorMeta, type SilentErrorOption } from "../../../shared/lib/queryErrorEvents";
@@ -28,14 +29,15 @@ export const useInboxCounts = () =>
     meta: { silentError: true },
   });
 
-// Polled so the header bell badge stays roughly live without websockets.
+// Badge jonli kanaldan (`RealtimeSync`, uRkw6lk0) yangilanadi; polling — zaxira: socket ulangan bo'lsa 5 daqiqada
+// bir marta, uzilgan bo'lsa 60 s da (uzilish paytida sanoq darhol qayta so'raladi).
 export const useUnreadCount = (enabled = true) =>
   useQuery({
     queryKey: queryKeys.notificationsInbox.unreadCount,
     queryFn: getInboxUnreadCount,
     enabled,
     staleTime: 30_000,
-    refetchInterval: 60_000,
+    refetchInterval: unreadCountPollInterval,
     refetchOnWindowFocus: true,
     // Har daqiqada fonda so'raladi — xato bo'lsa bildirishnoma bilan bezovta qilinmaydi.
     meta: { silentError: true },

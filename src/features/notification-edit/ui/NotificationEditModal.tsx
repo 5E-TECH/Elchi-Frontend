@@ -1,20 +1,20 @@
 // dizayn-v2: (maket yo'q) superadmin-notifications-create-dialog
-import { useEffect, useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useForm, type Resolver } from "react-hook-form";
+import { Pencil, Store } from "lucide-react";
+import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useMarkets } from "../../../entities/markets";
 import {
-  createTelegramGroupSchema,
-  EMPTY_TELEGRAM_GROUP,
-  TelegramGroupFormDialog,
-  toTelegramMarketOptions,
+  GroupTypeChoice,
+  useNotificationMarkets,
   type Notification,
-  type TelegramGroupFormValues,
 } from "../../../entities/notification";
-import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { getApiErrorMessage } from "../../../shared/lib/apiError";
 import { notify } from "../../../shared/lib/notify";
+import { Button, Dialog, Field, Select, TextInput, type SelectOption } from "../../../shared/ui/primitives";
 import { useUpdateNotification } from "../api/useUpdateNotification";
+import { notificationEditSchema } from "../model/schema";
+import type { UpdateNotificationDto } from "../model/types";
 
 interface NotificationEditModalProps {
   open: boolean;
@@ -22,75 +22,161 @@ interface NotificationEditModalProps {
   onClose: () => void;
 }
 
+type EditDialogProps = NotificationEditModalProps & { initialData: Notification };
+
 /**
- * «Bildirishnomani tahrirlash» — maket yo'q, eng yaqini qo'shish oynasi (ega qarori D6).
- * `PATCH /notifications/:id` `{ market_id, group_id, group_type }` (avvalgidek).
+ * Guruh ulanishini tahrirlash (`PATCH /notifications/:id`: market, guruh ID, xabar turi). Maket — jadvaldagi
+ * «Tahrirlash» `superadmin-notifications-create-dialog` ga olib boradi; maydonlar shu oyna uslubida
+ * (`Field` + `Select` / `TextInput`, xabar turi — radio kartalar).
  */
-const NotificationEditModal = ({ open, initialData, onClose }: NotificationEditModalProps) => {
+const EditDialog = ({ open, initialData, onClose }: EditDialogProps) => {
   const { t } = useTranslation("notificationGroups");
-  const schema = useMemo(() => createTelegramGroupSchema(t), [t]);
-  const { useGetMarkets } = useMarkets();
-  const marketsQuery = useGetMarkets({ status: "active", limit: 100 }, open);
+  const { options, getName, isLoading: marketsLoading } = useNotificationMarkets(open);
   const updateNotification = useUpdateNotification();
+  /** Ochilganda fokus guruh ID maydonida — odatda shu tahrirlanadi (market qidiruvi belgilanib qolmasin). */
+  const groupIdRef = useRef<HTMLInputElement | null>(null);
   const {
     control,
     handleSubmit,
-    reset,
     formState: { errors },
-  } = useForm<TelegramGroupFormValues>({
-    resolver: yupResolver(schema) as unknown as Resolver<TelegramGroupFormValues>,
-    defaultValues: EMPTY_TELEGRAM_GROUP,
+  } = useForm<UpdateNotificationDto>({
+    resolver: yupResolver(notificationEditSchema),
+    defaultValues: {
+      market_id: initialData.market_id,
+      group_id: initialData.group_id,
+      group_type: initialData.group_type,
+    },
   });
 
-  useEffect(() => {
-    if (open && initialData) {
-      reset({
-        market_id: initialData.market_id,
-        group_id: initialData.group_id,
-        group_type: initialData.group_type,
-      });
-    }
-    if (!open) reset(EMPTY_TELEGRAM_GROUP);
-  }, [initialData, open, reset]);
-
-  // Faol marketlar ro'yxatida bo'lmasa ham joriy market tanlangan ko'rinsin (nofaol market guruhi).
-  const markets = useMemo(() => {
-    const list = toTelegramMarketOptions(marketsQuery.data);
-    if (initialData?.market_id && !list.some((market) => market.id === initialData.market_id)) {
-      list.unshift({ id: initialData.market_id, name: initialData.market_name });
-    }
-    return list;
-  }, [initialData, marketsQuery.data]);
+  // Joriy market faol marketlar ro'yxatida bo'lmasa ham tanlovda ko'rinsin.
+  const marketOptions = useMemo<SelectOption[]>(() => {
+    if (!initialData.market_id || options.some((option) => option.value === initialData.market_id)) return options;
+    const label = initialData.market_name ?? getName(initialData.market_id) ?? `#${initialData.market_id}`;
+    return [{ value: initialData.market_id, label }, ...options];
+  }, [getName, initialData.market_id, initialData.market_name, options]);
 
   const onSubmit = handleSubmit(async (values) => {
-    if (!initialData) return;
     try {
       await updateNotification.mutateAsync({
         id: initialData.id,
         payload: { ...values, group_id: values.group_id.trim() },
       });
-      notify.success(t("form.updated"));
+      notify.success(t("edit.success"));
       onClose();
     } catch (error) {
-      notify.error(t("form.updateFailed"), {
-        description: getBackendErrorMessage(error) ?? undefined,
-      });
+      notify.error(t("edit.error"), { description: getApiErrorMessage(error) || undefined });
     }
   });
 
   return (
-    <TelegramGroupFormDialog
+    <Dialog
       open={open}
       onClose={onClose}
-      title={t("form.editTitle")}
-      control={control}
-      errors={errors}
-      onSubmit={onSubmit}
-      submitting={updateNotification.isPending}
-      markets={markets}
-      marketsLoading={marketsQuery.isLoading}
-    />
+      size="lg"
+      icon={Pencil}
+      title={t("edit.title")}
+      busy={updateNotification.isPending}
+      initialFocus={groupIdRef}
+      onSubmit={(event) => void onSubmit(event)}
+      formProps={{ noValidate: true }}
+      footer={
+        <>
+          <Button variant="secondary" onClick={onClose} className="flex-[1_1_120px]">
+            {t("form.cancel")}
+          </Button>
+          <Button
+            type="submit"
+            variant="primary"
+            loading={updateNotification.isPending}
+            loadingText={t("edit.saving")}
+            className="flex-[999_1_200px]"
+          >
+            {t("edit.submit")}
+          </Button>
+        </>
+      }
+    >
+      <Controller
+        control={control}
+        name="market_id"
+        render={({ field }) => (
+          <Field
+            label={t("form.market")}
+            labelAs="span"
+            required
+            error={errors.market_id?.message ? t(errors.market_id.message) : undefined}
+          >
+            <Select
+              ref={field.ref}
+              searchable
+              icon={Store}
+              options={marketOptions}
+              value={field.value || null}
+              onChange={(value) => field.onChange(value ?? "")}
+              onBlur={field.onBlur}
+              placeholder={t("form.marketPlaceholder")}
+              listLabel={t("form.marketList")}
+              loading={marketsLoading}
+              loadingText={t("form.marketsLoading")}
+              noOptionsText={t("form.marketsEmpty")}
+            />
+          </Field>
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="group_id"
+        render={({ field }) => (
+          <Field
+            label={t("edit.groupId")}
+            required
+            hint={t("edit.groupIdHint")}
+            error={errors.group_id?.message ? t(errors.group_id.message) : undefined}
+          >
+            <TextInput
+              ref={(element) => {
+                field.ref(element);
+                groupIdRef.current = element;
+              }}
+              name={field.name}
+              value={field.value}
+              onValueChange={field.onChange}
+              onBlur={field.onBlur}
+              placeholder={t("edit.groupIdPlaceholder")}
+              autoComplete="off"
+              inputClassName="tabular-nums"
+            />
+          </Field>
+        )}
+      />
+
+      <Controller
+        control={control}
+        name="group_type"
+        render={({ field }) => (
+          <Field label={t("form.type")} labelAs="span" required hint={t("form.typeHint")}>
+            <GroupTypeChoice name="notification-edit-type" value={field.value} onChange={field.onChange} />
+          </Field>
+        )}
+      />
+    </Dialog>
   );
+};
+
+/** Har ochilishda forma tanlangan qatordan qayta to'ladi; yopilish harakati paytida oxirgi qator ko'rinadi. */
+const NotificationEditModal = ({ open, initialData, onClose }: NotificationEditModalProps) => {
+  const [session, setSession] = useState(0);
+  const [wasOpen, setWasOpen] = useState(open);
+  const [shown, setShown] = useState<Notification | null>(initialData);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setSession((value) => value + 1);
+  }
+  if (initialData && initialData !== shown) setShown(initialData);
+
+  if (!shown) return null;
+  return <EditDialog key={session} open={open && Boolean(initialData)} initialData={shown} onClose={onClose} />;
 };
 
 export default NotificationEditModal;

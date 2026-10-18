@@ -2,6 +2,7 @@
 import type { LucideIcon } from "lucide-react";
 import { memo, type ReactNode } from "react";
 import { ChartNote, RankList, type RankItem, type RankListProps } from "../../../shared/ui/charts";
+import { cx } from "../../../shared/lib/cx";
 import { Card, TONE_SOFT } from "../../../shared/ui/primitives";
 
 export interface TopRankCardProps {
@@ -15,6 +16,8 @@ export interface TopRankCardProps {
   limit?: number;
   mobileLimit?: number;
   pinned?: RankItem;
+  /** `pinned` ro'yxati nomi (ekran o'quvchi): «Sizning filialingiz o'rni». */
+  pinnedLabel?: string;
   meterTarget?: number;
   meterTone?: RankListProps["meterTone"];
   /** Ro'yxat bo'sh bo'lganda (`EmptyState size="chart"`). */
@@ -26,11 +29,13 @@ export interface TopRankCardProps {
   /** Sarlavha yonidagi neytral ikonka (kuryer «Top kuryerlar» — kubok, telefonda yashirin). */
   icon?: LucideIcon;
   className?: string;
+  "data-testid"?: string;
 }
 
 /**
  * REYTING KARTASI («Top marketlar / filiallar / kuryerlar / operatorlar»): `Card` + `RankList`.
- * Top 5 (telefonda 3), «Yana ko'rsatish · {n} ta» — to'liq ro'yxat.
+ * Top 5 (telefonda 3), «Yana ko'rsatish · {n} ta» — to'liq ro'yxat. Bo'sh karta qo'shnisi bo'yiga
+ * cho'zilmaydi — ixcham qoladi (9zbSDkUI, `data-empty`).
  */
 const TopRankCard = ({
   title,
@@ -41,6 +46,7 @@ const TopRankCard = ({
   limit = 5,
   mobileLimit = 3,
   pinned,
+  pinnedLabel,
   meterTarget,
   meterTone,
   empty,
@@ -48,10 +54,15 @@ const TopRankCard = ({
   note,
   icon: Icon,
   className,
-}: TopRankCardProps) => (
+  "data-testid": testId,
+}: TopRankCardProps) => {
+  const isEmpty = items.length === 0 && !pinned;
+  return (
   <Card
     divided={false}
-    className={className}
+    className={cx(isEmpty && "self-start", className)}
+    data-testid={testId}
+    data-empty={isEmpty ? "" : undefined}
     title={title}
     description={description}
     actions={
@@ -66,7 +77,7 @@ const TopRankCard = ({
     }
     bodyClassName="flex flex-1 flex-col gap-4"
   >
-    {items.length === 0 && !pinned ? (
+    {isEmpty ? (
       empty
     ) : (
       <RankList
@@ -77,6 +88,7 @@ const TopRankCard = ({
         mobileLimit={mobileLimit}
         expandable={expandable}
         pinned={pinned}
+        pinnedAriaLabel={pinnedLabel}
         meterTarget={meterTarget}
         meterTone={meterTone}
       />
@@ -90,6 +102,7 @@ const TopRankCard = ({
       </div>
     ) : null}
   </Card>
-);
+  );
+};
 
 export default memo(TopRankCard);

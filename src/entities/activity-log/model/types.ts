@@ -23,34 +23,39 @@ export interface ActivityActor {
   phone_number?: string | null;
   role: string | null;
   status?: string | null;
+  /** Ism identity'dan topildimi (y8CxCtcK). */
+  resolved?: boolean | null;
 }
 
 /**
- * (y8CxCtcK) Gateway har qatorga qo'shadigan fe'l tavsifi (`action-registry.ts`): o'zbekcha yorliq,
- * kategoriya, ikonka/ton. `known: false` — reyestrda yo'q eski fe'l (yorliq — humanize).
+ * Amal fe'lining reyestr yozuvi (y8CxCtcK): `GET /activity-logs/actions` → `registry[]`, har qatorda
+ * `action_meta`. Reyestrda yo'q eski fe'l: backend yorlig'i humanize, `tone: "slate"`, `known: false`.
  */
 export interface ActivityActionMeta {
   action: string;
+  /** O'zbekcha yorliq («Qo'lda chiqim»). */
   label: string;
-  category: string;
-  category_label: string;
+  /** Kategoriya kaliti (`order`, `finance`, `auth` …). */
+  category: string | null;
+  /** Kategoriya nomi («Moliya»). */
+  categoryLabel: string | null;
+  /** Backend ikona nomi (`plus`, `minus` …) — maketda ikona yo'q, UI ishlatmaydi. */
   icon: string | null;
+  /** BeePost toni (`green`, `rose`, `slate` …) — UI `actionBadgeTone` bilan badge toniga o'giradi. */
   tone: string | null;
   known: boolean;
 }
 
-/** `GET /activity-logs/actions` reyestr qatori. */
-export interface ActivityActionInfo {
-  action: string;
+export interface ActivityActionCategory {
+  key: string;
   label: string;
-  category: string;
-  category_label: string;
 }
 
-/** Fe'llar katalogi: filtr ro'yxati (`actions`) va yorliqlar (`registry`). */
-export interface ActivityActionCatalog {
+/** `GET /activity-logs/actions`: fe'llar (eski kontrakt), reyestr va kategoriyalar (tartib — filtr guruhlari). */
+export interface ActivityActionsCatalog {
   actions: string[];
-  registry: ActivityActionInfo[];
+  registry: ActivityActionMeta[];
+  categories: ActivityActionCategory[];
 }
 
 export interface ActivityLog {
@@ -69,9 +74,10 @@ export interface ActivityLog {
   created_at: string;
   // Enrichment (added by the gateway):
   actor: ActivityActor | null;
-  /** `snapshot` · `resolved` · `unresolved` · `system` (aktyorsiz: cron/outbox/webhook). */
-  actor_status?: string | null;
-  action_meta?: ActivityActionMeta | null;
+  /** Fe'l yorlig'i va toni (y8CxCtcK); eski backendda yo'q — `null`. */
+  action_meta: ActivityActionMeta | null;
+  /** `snapshot` · `resolved` · `unresolved` (id bor, ism topilmadi) · `system` (aktyorsiz). */
+  actor_status: string | null;
   /** Resolved primary subject; shape varies by entity_type (loose summary). */
   entity: Record<string, unknown> | null;
   references: Record<string, unknown> | null;

@@ -41,7 +41,6 @@ import {
 } from "../../../shared/ui/primitives";
 import { formatDay, formatRangeShort } from "../../../shared/ui/primitives/date/calendarMath";
 import {
-  buildBuckets,
   normalizeAnalyticsSummary,
   normalizeApiBuckets,
   normalizeLedgerRows,
@@ -223,19 +222,18 @@ const AnalysisTab = ({ range: rangeProp, onRangeChange }: AnalysisTabProps) => {
     () => (topQuery.data == null ? undefined : normalizeLedgerRows(extractFinancialLedgerItems(topQuery.data))),
     [topQuery.data],
   );
+  // Keyingi sahifa yuklanguncha oldingisi ko'rinadi (`placeholderData`, faqat shu davr ichida) — raqamlash
+  // ko'rinib turgan qatorlarning o'z sahifasi bo'yicha (`pagination.page`), sahifalagich esa so'ralgan `page`da.
   const pagination = readTopImpactsPagination(topQuery.data, page, PAGE_SIZE);
+  // Eski javobda `pagination` bo'lmasa — jami kamida ko'rinib turgan qatorlar soni.
+  const topTotal = Math.max(pagination.total, rows?.length ?? 0);
 
   const analytics = analyticsQuery.data;
-  const summary = useMemo(() => normalizeAnalyticsSummary(analytics, rows ?? []), [analytics, rows]);
-  // Zaxira (eski backend): API ta'sirlar ro'yxatini bermasa — joriy qatorlardan yig'iladi.
-  const positiveBuckets = useMemo(() => {
-    const api = normalizeApiBuckets(analytics, "positive");
-    return api.length ? api : buildBuckets(rows ?? [], "positive");
-  }, [analytics, rows]);
-  const negativeBuckets = useMemo(() => {
-    const api = normalizeApiBuckets(analytics, "negative");
-    return api.length ? api : buildBuckets(rows ?? [], "negative");
-  }, [analytics, rows]);
+  // Jami va manbalar faqat analytics agregatidan (SQL): `rows` — bitta sahifa (10 qator), ulardan jami yoki
+  // «taxminiy» ulush yasalmaydi (vmLTsAok).
+  const summary = useMemo(() => normalizeAnalyticsSummary(analytics), [analytics]);
+  const positiveBuckets = useMemo(() => normalizeApiBuckets(analytics, "positive"), [analytics]);
+  const negativeBuckets = useMemo(() => normalizeApiBuckets(analytics, "negative"), [analytics]);
   const currentBalance = readCurrentBalance(analytics);
 
   const today = toISODate(new Date());
@@ -401,15 +399,15 @@ const AnalysisTab = ({ range: rangeProp, onRangeChange }: AnalysisTabProps) => {
         description={t("v2Balance.analysis.top.subtitle")}
         actions={
           rows ? (
-            <Badge>{t("v2Balance.analysis.top.count", { value: formatNumberLocalized(pagination.total, { language }) })}</Badge>
+            <Badge>{t("v2Balance.analysis.top.count", { value: formatNumberLocalized(topTotal, { language }) })}</Badge>
           ) : null
         }
         footer={
-          rows && pagination.total > 0 ? (
+          rows && topTotal > 0 ? (
             <Pagination
-              page={pagination.page}
+              page={page}
               pageSize={pagination.limit}
-              total={pagination.total}
+              total={topTotal}
               onPageChange={handlePageChange}
               summary={(r) => t("v2Balance.analysis.top.pagination", r)}
             />

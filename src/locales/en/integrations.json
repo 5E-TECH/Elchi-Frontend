@@ -368,7 +368,6 @@
   "stlNotCashboxDesc": "Payment records here do not touch the cashbox balance — they only show the difference between what the carrier collected and what it paid. Cashbox movements are entered separately, through the normal cashbox flow.",
   "stlBalance": "Balance",
   "stlOutstanding": "Outstanding debt",
-  "stlCountSuffix": "",
   "stlBalanceNoteA": "The debt is",
   "stlBalanceNoteBold": "not cut off by period",
   "stlBalanceNoteB": "— it is a running balance. Otherwise money collected last month and paid this month would look like an “overpayment”.",

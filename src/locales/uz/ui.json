@@ -1037,6 +1037,9 @@
         "text": "Bugun hali birorta buyurtma qabul qilinmagan. Boshqa davrni tanlang.",
         "action": "Bu hafta"
       },
+      "inlineEmpty": {
+        "title": "Bu davrda reyting uchun buyurtma yo'q"
+      },
       "chartError": {
         "text": "Internet aloqasini tekshiring va qayta urinib ko'ring."
       },

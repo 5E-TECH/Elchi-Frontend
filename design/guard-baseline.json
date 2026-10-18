@@ -190,14 +190,12 @@
     "src/entities/user/ui/UserStatusBadge.tsx": { "palette": 9 },
     "src/features/auth/index.tsx": { "legacy": 1 },
     "src/features/auth/ui/LoginForm.tsx": { "colour": 1, "palette": 18, "dark-pair": 1, "legacy": 12, "tiny-text": 4 },
-    "src/features/courier-transfer-branch/ui/TransferCourierButton.tsx": { "palette": 1, "dark-pair": 4, "legacy": 7 },
     "src/pages/courier-bulk/index.tsx": { "palette": 18, "dark-pair": 29, "legacy": 68, "money": 1, "weight": 2 },
     "src/pages/dispatch/index.tsx": { "colour": 1, "palette": 74, "dark-pair": 51, "legacy": 53, "money": 1, "tiny-text": 1, "weight": 11, "v1-helper": 1 },
     "src/pages/mails/components/lib/exportOldMailsToExcel.ts": { "colour": 6, "money": 1 },
     "src/pages/mails/detail/lib/printMode.ts": { "colour": 3, "money": 1 },
     "src/pages/market-operators/index.tsx": { "palette": 44, "dark-pair": 25, "legacy": 21, "weight": 6, "v1-helper": 1 },
     "src/pages/new_orders/components/lib/printLabelPdf.ts": { "colour": 11, "money": 1 },
-    "src/pages/orders/lib/exportOrdersToExcel.ts": { "colour": 5 },
     "src/pages/orders/list/OrderStatusBadge.tsx": { "v1-helper": 1 },
     "src/pages/payments/components/SalaryPaymentPopup.tsx": { "palette": 31, "dark-pair": 21, "legacy": 36, "money": 1 },
     "src/pages/payments/components/lib/amountInput.ts": { "money": 1 },
@@ -224,7 +222,6 @@
     "src/shared/ui/GlobalSearchInput.tsx": { "palette": 14, "dark-pair": 11, "legacy": 11 },
     "src/shared/ui/PageStatBadge.tsx": { "palette": 1, "dark-pair": 2, "legacy": 3 },
     "src/shared/ui/StatusBadge.tsx": { "tiny-text": 1, "v1-helper": 1 },
-    "src/shared/ui/Timeline/TimelineItem.tsx": { "palette": 6, "dark-pair": 6, "legacy": 5, "gradient": 1 },
-    "src/widgets/user-detail/ui/UserDetailWidget.tsx": { "palette": 17, "dark-pair": 8, "legacy": 6 }
+    "src/shared/ui/Timeline/TimelineItem.tsx": { "palette": 6, "dark-pair": 6, "legacy": 5, "gradient": 1 }
   }
 }

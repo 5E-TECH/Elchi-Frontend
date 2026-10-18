@@ -368,7 +368,6 @@
   "stlNotCashboxDesc": "Bu yerdagi to'lov yozuvlari kassa balansiga tegmaydi — ular faqat «tashuvchi qancha yig'di / qancha to'ladi» farqini ko'rsatadi. Kassa harakati alohida, odatdagi kassa oqimi orqali kiritiladi.",
   "stlBalance": "Qoldiq",
   "stlOutstanding": "Yopilmagan qarz",
-  "stlCountSuffix": "ta",
   "stlBalanceNoteA": "Qarz",
   "stlBalanceNoteBold": "davr bo'yicha kesilmaydi",
   "stlBalanceNoteB": "— u to'planib boradigan qoldiq. Oldingi oyda yig'ilib bu oyda to'langan pul aks holda «ortiqcha to'lov» bo'lib ko'rinardi.",

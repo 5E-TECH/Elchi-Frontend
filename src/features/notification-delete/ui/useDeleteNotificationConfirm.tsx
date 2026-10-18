@@ -2,10 +2,10 @@
 import { useCallback } from "react";
 import { Store, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { Notification } from "../../../entities/notification";
+import { NotificationGroupTypeBadge, type Notification } from "../../../entities/notification";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { notify } from "../../../shared/lib/notify";
-import { Badge, useConfirm } from "../../../shared/ui/primitives";
+import { useConfirm } from "../../../shared/ui/primitives";
 import { useDeleteNotification } from "../api/useDeleteNotification";
 
 /**
@@ -14,8 +14,11 @@ import { useDeleteNotification } from "../api/useDeleteNotification";
  * yuborilmaydi…», ob'ekt kartasi (market #id, turi, «Guruh ID: …»), «O'chirish» (qizil). So'rov ketayotganda oyna
  * qulflanadi, xato oyna ichida; muvaffaqiyat — «Bildirishnoma o'chirildi».
  *
+ * Market nomi chaqiruvchidan keladi: `GET /notifications` qatorida market obyekti yo'q, nom marketlar ro'yxatidan
+ * (`useNotificationMarkets`) olinadi — jadvaldagi ko'rinish bilan bir xil bo'lsin.
+ *
  *   const confirmDelete = useDeleteNotificationConfirm();
- *   <IconButton onClick={() => void confirmDelete(row)} … />
+ *   <IconButton aria-haspopup="dialog" onClick={() => void confirmDelete(row, marketName(row))} … />
  */
 export const useDeleteNotificationConfirm = () => {
   const { t } = useTranslation("notificationGroups");
@@ -24,15 +27,16 @@ export const useDeleteNotificationConfirm = () => {
   const { mutateAsync } = deleteNotification;
 
   return useCallback(
-    async (row: Notification) => {
+    async (row: Notification, marketName: string) => {
       const ok = await confirm({
         tone: "danger",
         title: t("deleteDialog.title"),
-        description: t(`deleteDialog.description.${row.group_type}`, { market: row.market_name }),
+        description: t(`deleteDialog.description.${row.group_type}`, { market: marketName }),
         icon: Trash2,
         confirmIcon: Trash2,
         confirmLabel: t("deleteDialog.confirm"),
         loadingLabel: t("deleteDialog.loading"),
+        cancelLabel: t("form.cancel"),
         details: (
           <div className="flex min-w-0 items-center gap-3">
             <span
@@ -43,9 +47,9 @@ export const useDeleteNotificationConfirm = () => {
             </span>
             <span className="flex min-w-0 flex-col gap-1">
               <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-                <span className="font-semibold text-text">{row.market_name}</span>
+                <span className="font-semibold text-text">{marketName}</span>
                 {row.market_id ? <span className="text-text-muted">#{row.market_id}</span> : null}
-                <Badge>{t(`type.${row.group_type}`)}</Badge>
+                <NotificationGroupTypeBadge type={row.group_type} />
               </span>
               <span className="text-[13px] text-text-muted tabular-nums">
                 {t("deleteDialog.groupId", { id: row.group_id })}
