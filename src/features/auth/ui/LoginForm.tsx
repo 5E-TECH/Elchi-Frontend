@@ -1,26 +1,33 @@
-// Migrated to React Hook Form
-import { memo, useEffect, useState } from "react";
-import logo from "../../../shared/assets/logo yozuvlik qora.png";
-import { Eye, EyeClosed, Loader2 } from "lucide-react";
+// dizayn-v2: common-login, common-login-error
+import { memo, useEffect, useId, useState } from "react";
+import { CircleCheck, CircleX, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { Controller, useForm, type Resolver, type SubmitHandler } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useTranslation } from "react-i18next";
-import { createLoginSchema } from "../../../shared/lib/validation/loginSchema";
-import {
-  setLoading,
-  setAppInitializing,
-  setError,
-} from "../../../entities/user/model/slice";
-import type { RootState, AppDispatch } from "../../../app/config/store";
-import { useLogin } from "../api/login";
 import type { AxiosError } from "axios";
-import {
-  formatUzbekistanPhoneFull,
-  keepPhoneCaretAfterChange,
-} from "../../../shared/lib/phone";
+import { createLoginSchema } from "../../../shared/lib/validation/loginSchema";
+import { UZBEKISTAN_PHONE_PREFIX } from "../../../shared/lib/phone";
+import { setLoading, setAppInitializing, setError } from "../../../entities/user/model/slice";
+import type { RootState, AppDispatch } from "../../../app/config/store";
+import { Button, Field, IconButton, TextInput } from "../../../shared/ui/primitives";
+import { useLogin } from "../api/login";
+import { isNetworkFailure } from "../../../auth/networkError";
 import { clearLoginNotice, peekLoginNotice } from "../../../auth/loginNotice";
+
+/**
+ * Kirish formasi — dizayn v2 (maketlar `common-login`, `common-login-error`). Ramka (navy panel / tasma) —
+ * `features/auth/index.tsx`.
+ *
+ * Saqlangan xatti-harakat:
+ *   - ikki marta yuborish himoyasi (`isSubmitting`; tugma `loading`, maydonlar shu payt faqat o'qish uchun),
+ *     `setLoading` / `setAppInitializing` / `setError`;
+ *   - so'rov `{ phone_number: "+998XXXXXXXXX", password }` (`POST /auth/login`), muvaffaqiyat → `/`;
+ *   - xato matni: 400 / 401 / 404 / 500 / javobsiz (tarmoq) / boshqa — redux `user.error` da;
+ *   - «Parol o'zgardi — qayta kiring» bir martalik xabari (`loginNotice`);
+ *   - e2e tayanadigan nomlar: telefon `name="elchi-login-phone"`, parol `name="password"`.
+ */
 
 interface LoginFormValues {
   phone_number: string;
@@ -31,13 +38,25 @@ interface ApiErrorResponse {
   message?: string;
 }
 
-const LoginForm = () => {
-  const [show, setShow] = useState(false);
+type LoginFormProps = {
+  /** Forma ochilganda telefon maydoniga fokus («Sessiya tugadi» → «Qayta kirish» dan keyin). */
+  autoFocus?: boolean;
+};
+
+const ALERT_BASE = "flex items-start gap-3 rounded-xl px-4 py-3 text-sm";
+
+const LoginForm = ({ autoFocus = false }: LoginFormProps) => {
+  const [showPassword, setShowPassword] = useState(false);
+  const [credentialsHint, setCredentialsHint] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { t } = useTranslation("auth");
   const loading = useSelector((state: RootState) => state.user.loading);
   const error = useSelector((state: RootState) => state.user.error);
+  const ids = useId();
+  const errorId = `${ids}-error`;
+  const phoneHintId = `${ids}-phone-prefix`;
+  const passwordId = `${ids}-password`;
 
   const { signinUser } = useLogin();
   const isSubmitting = loading || signinUser.isPending;
@@ -49,18 +68,22 @@ const LoginForm = () => {
   }, [loginNotice]);
 
   const {
-    register,
     control,
     handleSubmit,
+    setFocus,
     formState: { errors },
   } = useForm<LoginFormValues>({
     resolver: yupResolver(createLoginSchema(t)) as Resolver<LoginFormValues>,
     mode: "onTouched",
     defaultValues: {
-      phone_number: formatUzbekistanPhoneFull(),
+      phone_number: UZBEKISTAN_PHONE_PREFIX,
       password: "",
     },
   });
+
+  useEffect(() => {
+    if (autoFocus) setFocus("phone_number");
+  }, [autoFocus, setFocus]);
 
   const onSubmit: SubmitHandler<LoginFormValues> = (data) => {
     if (isSubmitting) return;
@@ -68,157 +91,139 @@ const LoginForm = () => {
     dispatch(setLoading(true));
     dispatch(setAppInitializing(true));
     dispatch(setError(null));
+    setCredentialsHint(false);
 
+    // `TextInput mode="phone"` qiymati allaqachon `+998XXXXXXXXX` (bo'sh joysiz) — qayta formatlanmaydi.
     const payload = {
-      phone_number: data.phone_number.replace(/\s/g, ""), // Remove spaces
+      phone_number: data.phone_number,
       password: data.password,
     };
 
-    signinUser.mutate(
-      payload,
-      {
-        onSuccess: async () => {
-          navigate("/");
-        },
-        onError: (error) => {
-          const err = error as AxiosError<ApiErrorResponse>;
-          let message = t("systemError");
-          if (err.response) {
-            const status = err.response.status;
-            if (status === 400) message = t("invalidInput");
-            if (status === 401) message = t("invalidCredentials");
-            if (status === 404) message = t("userNotFound");
-            if (status === 500) message = t("serverError");
-          } else {
-            message = err.message || t("networkError");
-          }
-
-          dispatch(setError(message));
-          dispatch(setAppInitializing(false));
-        },
+    signinUser.mutate(payload, {
+      onSuccess: async () => {
+        navigate("/");
       },
-    );
+      onError: (error) => {
+        const err = error as AxiosError<ApiErrorResponse>;
+        let message = t("systemError");
+        let credentials = false;
+        if (err.response) {
+          const status = err.response.status;
+          if (status === 400) message = t("invalidInput");
+          if (status === 401) message = t("invalidCredentials");
+          if (status === 404) message = t("userNotFound");
+          if (status === 500) message = t("serverError");
+          credentials = status === 400 || status === 401 || status === 404;
+        } else if (isNetworkFailure(error)) {
+          // Javob kelmadi (internet yo'q / vaqt tugadi) — axios'ning inglizcha matni emas.
+          message = t("networkError");
+        } else {
+          message = err.message || t("networkError");
+        }
+
+        setCredentialsHint(credentials);
+        dispatch(setError(message));
+        dispatch(setAppInitializing(false));
+      },
+    });
   };
 
+  const passwordToggleLabel = showPassword ? t("hidePassword") : t("showPassword");
+
   return (
-    <div className="flex w-full items-center justify-center">
-      {/* Login kartasi ikkala temada ham OQ (ichidagi matn ranglari faqat yorug' fon uchun). */}
-      <div className="w-full max-w-[21rem] rounded-2xl bg-primary dark:bg-white px-5 py-6 shadow-[0_20px_50px_rgba(0,0,0,0.12)] sm:max-w-md sm:px-10 sm:py-8">
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
-          <div className="mb-8 flex justify-center sm:mb-10">
-            <img src={logo} alt="Elchi Logo" className="w-38 sm:w-50" />
-          </div>
-
-          <div>
-            {loginNotice === "passwordChanged" && (
-              <div
-                role="status"
-                className="mb-4 rounded-lg border border-emerald-100 bg-emerald-50 p-2 text-center text-xs font-semibold text-emerald-700 sm:text-sm"
-              >
-                {t("passwordChangedRelogin")}
-              </div>
-            )}
-            <div className="mb-3 sm:mb-4">
-              <label className="mb-1 ml-1 block text-[11px] font-semibold uppercase tracking-wider text-gray-500 sm:text-xs">
-                {t("phoneLabel")}
-              </label>
-              <Controller
-                control={control}
-                name="phone_number"
-                render={({ field }) => (
-                  <input
-                    ref={field.ref}
-                    name="elchi-login-phone"
-                    value={field.value}
-                    onBlur={field.onBlur}
-                    onChange={(event) => {
-                      const nextValue = formatUzbekistanPhoneFull(event.target.value);
-                      field.onChange(nextValue);
-                      keepPhoneCaretAfterChange(event.target, nextValue, true);
-                    }}
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    aria-label={t("phoneLabel")}
-                    disabled={isSubmitting}
-                    className={`login-field h-12 w-full rounded-xl border bg-gray-50 px-5 text-base text-maindark transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-maindark ${errors.phone_number ? "border-red-500" : "border-gray-200"
-                      } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
-                    placeholder={t("phonePlaceholder")}
-                  />
-                )}
-              />
-              {errors.phone_number && (
-                <p className="ml-1 mt-1 text-[11px] text-red-500 sm:text-xs">
-                  {errors.phone_number.message as string}
-                </p>
-              )}
-            </div>
-
-            {/* Parol */}
-            <div className="mb-5 sm:mb-8">
-              <div className="mb-1 ml-1 flex items-center justify-between">
-                <label className="text-[11px] font-semibold uppercase tracking-wider text-gray-500 sm:text-xs">
-                  {t("passwordLabel")}
-                </label>
-              </div>
-              <div className="relative">
-                <input
-                  {...register("password")}
-                  type={show ? "text" : "password"}
-                  disabled={isSubmitting}
-                  placeholder={t("passwordPlaceholder")}
-                  autoComplete="current-password"
-                  className={`login-field h-12 w-full rounded-xl border bg-gray-50 px-5 pr-12 text-base text-maindark transition-all duration-200 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-maindark ${errors.password ? "border-red-500" : "border-gray-200"
-                    } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
-                />
-                <button
-                  type="button"
-                  disabled={isSubmitting}
-                  onClick={() => setShow(!show)}
-                  aria-label={show ? t("hidePassword", { defaultValue: "Hide password" }) : t("showPassword", { defaultValue: "Show password" })}
-                  className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-lg text-gray-400 transition-colors hover:text-main focus:outline-none disabled:cursor-not-allowed"
-                >
-                  {show ? <Eye size={18} /> : <EyeClosed size={18} />}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="ml-1 mt-1 text-[11px] text-red-500 sm:text-xs">
-                  {errors.password.message as string}
-                </p>
-              )}
-            </div>
-
-            {/* Error Message */}
-            {error && (
-              <div className="mb-4 rounded-lg border border-red-100 bg-red-50 p-2 text-center text-xs text-red-500 sm:text-sm">
-                {error}
-              </div>
-            )}
-
-            {/* Kirish tugmasi */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className={`mb-1 mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl text-base font-semibold shadow-lg transition-all duration-200 sm:mb-2 sm:mt-4 sm:h-12 sm:text-lg ${isSubmitting
-                ? "bg-maindark/70 text-primary cursor-not-allowed shadow-none translate-y-0"
-                : "bg-maindark text-primary shadow-main/30 hover:shadow-main/40 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-                }`}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="animate-spin" size={20} />
-                  {t("signingIn")}
-                </>
-              ) : (
-                t("signInButton")
-              )}
-            </button>
-          </div>
-        </form>
+    <form
+      noValidate
+      onSubmit={handleSubmit(onSubmit)}
+      aria-labelledby={`${ids}-title`}
+      aria-describedby={error ? errorId : undefined}
+      className="flex w-full max-w-[400px] flex-col gap-6"
+    >
+      <div className="mb-2 flex flex-col gap-1">
+        <h1 id={`${ids}-title`} className="text-2xl font-bold tracking-[-.01em] text-text max-md:text-xl">
+          {t("loginTitle")}
+        </h1>
+        <p className="text-sm text-text-muted">{t("loginSubtitle")}</p>
       </div>
-    </div>
+
+      {error ? (
+        <div id={errorId} role="alert" className={`${ALERT_BASE} -mt-2 bg-danger-soft text-danger-fg`}>
+          <CircleX aria-hidden="true" focusable="false" size={20} className="mt-px shrink-0" />
+          <div className="min-w-0 text-text">
+            <p className="font-bold">{error}</p>
+            {credentialsHint ? <p className="text-[13px]">{t("loginErrorHint")}</p> : null}
+          </div>
+        </div>
+      ) : loginNotice === "passwordChanged" ? (
+        <div role="status" className={`${ALERT_BASE} -mt-2 bg-success-soft text-success-fg`}>
+          <CircleCheck aria-hidden="true" focusable="false" size={20} className="mt-px shrink-0" />
+          <p className="min-w-0 font-bold text-text">{t("passwordChangedRelogin")}</p>
+        </div>
+      ) : null}
+
+      <div className="flex flex-col gap-4">
+        <Field label={t("phoneLabel")} error={errors.phone_number?.message}>
+          <Controller
+            control={control}
+            name="phone_number"
+            render={({ field }) => (
+              <TextInput
+                ref={field.ref}
+                mode="phone"
+                size="lg"
+                name="elchi-login-phone"
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder={t("phonePlaceholder")}
+                aria-describedby={phoneHintId}
+                autoCorrect="off"
+                spellCheck={false}
+                readOnly={isSubmitting}
+              />
+            )}
+          />
+          <span id={phoneHintId} className="sr-only">
+            {t("phonePrefixHint")}
+          </span>
+        </Field>
+
+        <Field id={passwordId} label={t("passwordLabel")} error={errors.password?.message}>
+          <Controller
+            control={control}
+            name="password"
+            render={({ field }) => (
+              <TextInput
+                ref={field.ref}
+                size="lg"
+                name={field.name}
+                type={showPassword ? "text" : "password"}
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder={t("passwordPlaceholder")}
+                autoComplete="current-password"
+                readOnly={isSubmitting}
+                suffix={
+                  <IconButton
+                    size="lg"
+                    label={passwordToggleLabel}
+                    icon={showPassword ? EyeOff : Eye}
+                    aria-pressed={showPassword}
+                    aria-controls={passwordId}
+                    onClick={() => setShowPassword((value) => !value)}
+                    className="-mr-2.5"
+                  />
+                }
+              />
+            )}
+          />
+        </Field>
+      </div>
+
+      <Button type="submit" size="lg" fullWidth loading={isSubmitting} loadingText={t("signingIn")} className="mt-2">
+        {t("loginButton")}
+      </Button>
+    </form>
   );
 };
 

@@ -1,0 +1,65 @@
+{
+  "title": "Pochta",
+  "description": {
+    "staff": "Viloyatlar bo'yicha pochtalarni jo'natish va qabul qilish",
+    "manager": "Filialga kelgan pochtalarni ko'rish va qabul qilish",
+    "courier": "Sizga biriktirilgan pochtalar: qabul qilish, rad etilganlar va tarix"
+  },
+  "tabsLabel": "Pochta turlari",
+  "sectionLabel": "Pochta bo'limi: {{section}}",
+  "tabs": {
+    "today": { "short": "Bugungi", "title": "Bugungi pochtalar" },
+    "return": { "short": "Qaytarish", "title": "Qaytarish so'rovlari" },
+    "refused": { "short": "Rad etilgan", "title": "Rad etilgan pochtalar" },
+    "old": { "short": "Eski", "title": "Eski pochtalar" }
+  },
+  "table": {
+    "mail": "Pochta",
+    "region": "Viloyat",
+    "courier": "Kuryer",
+    "status": "Holat",
+    "orders": "Buyurtmalar",
+    "amount": "Summa",
+    "actions": "Amallar",
+    "ordersCell": "{{value}} ta",
+    "ordersSub": "{{value}} ta buyurtma",
+    "cardId": "{{header}} {{id}}",
+    "cardLabel": "{{id}}, {{region}}, {{date}}, {{orders}}, {{amount}} — ochish",
+    "sortDate": "Sana bo'yicha saralash",
+    "sortOrders": "Buyurtmalar soni bo'yicha saralash",
+    "sortAmount": "Summa bo'yicha saralash",
+    "sortStatus": "Holat bo'yicha saralash"
+  },
+  "summary": {
+    "regions": "<b>{{value}}</b> ta viloyat",
+    "mails": "<b>{{value}}</b> ta pochta",
+    "orders": "<b>{{value}}</b> ta buyurtma",
+    "total": "jami <b>{{value}}</b>"
+  },
+  "stats": {
+    "orders": "Buyurtmalar",
+    "amount": "Jami summa",
+    "unit": "ta"
+  },
+  "filter": {
+    "region": "Viloyat",
+    "all": "Barchasi",
+    "clear": "Filtrni tozalash"
+  },
+  "openMail": "{{id}} pochtani ochish",
+  "openCourierMail": "Pochta {{id}}ni ochish",
+  "mailTitle": "Pochta {{id}}",
+  "today": {
+    "loading": "Bugungi pochtalar yuklanmoqda",
+    "courierTitle": "Qabul qilinishi kerak",
+    "courierDescription": "Pochtani oching, buyurtmalarni tekshirib qabul qiling"
+  },
+  "refused": {
+    "loading": "Rad etilgan pochtalar yuklanmoqda",
+    "hint": "Kuryer qaytargan pochtalar. Pochtani oching va buyurtmalarni skanerlab qabul qiling.",
+    "open": "{{id}} rad etilgan pochtani ochish",
+    "cardLabel": "Rad etilgan pochta {{id}}, {{region}}, {{date}}, {{orders}}, {{amount}} — ochish",
+    "courierNote": "Bekor qilingan buyurtmalaringiz pochtalari. Ularni filial qabul qiladi — siz faqat ko'rishingiz mumkin.",
+    "courierDescription": "Faqat ko'rish uchun — qabulni filial bajaradi"
+  }
+}

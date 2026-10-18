@@ -93,9 +93,13 @@ export const seedAddressForm = (order: EditDialogOrder): AddressFormState => ({
   address: order.address ?? "",
 });
 
+/**
+ * Xato matni maydon namunasidan («Tumanni tanlang») farq qiladi (D-21): ikkalasi bir xil bo'lsa, xato ham
+ * oddiy namuna matniga o'xshab qolardi.
+ */
 export const ADDRESS_ERROR_KEYS: Record<Exclude<AddressUpdateValidationError, null>, string> = {
-  region: "orders:validationRegion",
-  district: "orders:validationDistrict",
+  region: "newOrders:editDialog.regionRequired",
+  district: "newOrders:editDialog.districtRequired",
 };
 
 // ─── Mijoz ───────────────────────────────────────────────────────────────────

@@ -1,4 +1,4 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useLocation } from "react-router-dom";
 import { vi, type MockInstance } from "vitest";
@@ -433,5 +433,239 @@ describe("Orders list search by exact order number", () => {
     await settleLookup();
 
     expect(screen.getByTestId("orders-table")).toHaveAttribute("data-pinned", "");
+  });
+});
+
+describe("Orders list — URL sanitizatsiyasi va sahifa almashishi (QA D-03, D-08, D-11)", () => {
+  beforeEach(() => {
+    getOrdersMock.mockClear();
+    ordersResponse.total = 25;
+    ordersResponse.search_truncated = false;
+    ordersResponse.rows = orderRows;
+  });
+
+  it("⭐ D-08: `?limit=5000` — API'ga 10 ketadi (backend faqat 10/25/50/100 ni qabul qiladi)", () => {
+    open("/orders?limit=5000");
+    expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 10 }));
+  });
+
+  it("D-08: ruxsat etilgan limit saqlanadi", () => {
+    open("/orders?limit=50");
+    expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ limit: 50 }));
+  });
+
+  it("⭐ D-08: noto'g'ri sana (`?startDay=falonchi`, `2026-02-30`) API'ga ketmaydi, to'g'risi ketadi", () => {
+    open("/orders?startDay=falonchi&endDay=2026-02-30");
+    const params = getOrdersMock.mock.lastCall?.[0] as Record<string, unknown>;
+    expect(params).not.toHaveProperty("start_day");
+    expect(params).not.toHaveProperty("end_day");
+
+    open("/orders?startDay=2026-10-01&endDay=2026-10-08");
+    expect(getOrdersMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ start_day: "2026-10-01", end_day: "2026-10-08" }),
+    );
+  });
+
+  it("⭐ D-11: faqat bo'shliqli qidiruv — `search` ketmaydi; «№53» → «53»", () => {
+    open("/orders?orderSearch=%20%20%20");
+    expect(getOrdersMock.mock.lastCall?.[0]).not.toHaveProperty("search");
+
+    open("/orders?orderSearch=%E2%84%9653");
+    expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ search: "53" }));
+  });
+
+  it("⭐ D-03: sahifa almashganda shell kontenti tepaga qaytadi", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <main>
+        <div data-shell-slot="content">
+          <Orders />
+          <LocationProbe />
+        </div>
+      </main>,
+      { route: "/orders", preloadedState: adminState },
+    );
+    const main = document.querySelector("main") as HTMLElement;
+    main.scrollTop = 829;
+
+    await user.click(screen.getByRole("button", { name: "2" }));
+
+    await waitFor(() => expect(currentSearch().get("page")).toBe("2"));
+    expect(main.scrollTop).toBe(0);
+  });
+});
+
+describe("Orders list — Excel eksporti (xWsCAA5N)", () => {
+  let getSpy: MockInstance;
+  let clickSpy: MockInstance;
+  const downloads: string[] = [];
+
+  const exportResponse = (headers: Record<string, string>) => ({
+    data: new Blob(["PK"], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }),
+    headers,
+  });
+
+  beforeEach(() => {
+    downloads.length = 0;
+    URL.createObjectURL = vi.fn(() => "blob:mock");
+    URL.revokeObjectURL = vi.fn();
+    clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (this: HTMLAnchorElement) {
+      downloads.push(this.download);
+    });
+  });
+
+  afterEach(() => {
+    getSpy?.mockRestore();
+    clickSpy.mockRestore();
+  });
+
+  const exportCalls = () => getSpy.mock.calls.filter(([url]) => url === "orders/export/excel");
+
+  it("⭐ TC3+TC4: BITTA `GET orders/export/excel` (joriy filtrlar, sahifasiz, blob) — .xlsx `Content-Disposition` nomi bilan, «Excelga saqlandi»", async () => {
+    const user = userEvent.setup();
+    getSpy = vi.spyOn(api, "get").mockResolvedValue(
+      exportResponse({
+        "content-disposition": 'attachment; filename="barcha_buyurtmalar_2026-10-17.xlsx"',
+        "x-export-total": "248",
+        "x-export-limit": "50000",
+        "x-export-truncated": "false",
+      }),
+    );
+    open("/orders?orderSearch=Ali&where_deliver=address");
+
+    await user.click(screen.getByRole("button", { name: "Excelga yuklash" }));
+
+    await waitFor(() => expect(exportCalls()).toHaveLength(1));
+    const [, config] = exportCalls()[0];
+    expect(config).toMatchObject({ responseType: "blob", params: { search: "Ali", where_deliver: "address" } });
+    expect(config.params).not.toHaveProperty("page");
+    expect(config.params).not.toHaveProperty("limit");
+    // Eski sahifalash sikli yo'q — `GET /orders?page=N` eksport uchun chaqirilmaydi.
+    expect(getSpy.mock.calls.filter(([url]) => url === "orders")).toHaveLength(0);
+    expect(downloads).toEqual(["barcha_buyurtmalar_2026-10-17.xlsx"]);
+    expect((await screen.findAllByText("Excelga saqlandi")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("248 ta buyurtma Excelga saqlandi.").length).toBeGreaterThan(0);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Excelga yuklash" })).not.toHaveAttribute("aria-busy"));
+  });
+
+  it("⭐ TC2: chegaradan oshsa (`X-Export-Truncated`) — fayl saqlanadi va aniq ogohlantirish (jim kesilmaydi)", async () => {
+    const user = userEvent.setup();
+    getSpy = vi.spyOn(api, "get").mockResolvedValue(
+      exportResponse({
+        "content-disposition": 'attachment; filename="barcha_buyurtmalar_2026-10-17.xlsx"',
+        "x-export-total": "61234",
+        "x-export-limit": "50000",
+        "x-export-truncated": "true",
+      }),
+    );
+    open("/orders");
+
+    await user.click(screen.getByRole("button", { name: "Excelga yuklash" }));
+
+    expect((await screen.findAllByText("Fayl to'liq emas")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Faylda 50 000 ta, jami 61 234 ta buyurtma — filtrni toraytiring.").length).toBeGreaterThan(0);
+    expect(downloads).toHaveLength(1);
+    expect(screen.queryByText("Excelga saqlandi")).toBeNull();
+  });
+
+  it("filtrga mos buyurtma yo'q (`X-Export-Total: 0`) — fayl saqlanmaydi, ogohlantirish", async () => {
+    const user = userEvent.setup();
+    getSpy = vi.spyOn(api, "get").mockResolvedValue(exportResponse({ "x-export-total": "0", "x-export-truncated": "false" }));
+    open("/orders");
+
+    await user.click(screen.getByRole("button", { name: "Excelga yuklash" }));
+
+    expect((await screen.findAllByText("Filtrga mos buyurtma yo'q — Excel fayl yaratilmadi")).length).toBeGreaterThan(0);
+    expect(downloads).toHaveLength(0);
+  });
+
+  it("xato (blob ichida JSON) — backend matni va «Qayta urinish» eksportni qaytaradi", async () => {
+    const user = userEvent.setup();
+    const error = Object.assign(new Error("403"), {
+      response: { status: 403, data: new Blob([JSON.stringify({ message: "Eksportga ruxsat yo'q" })], { type: "application/json" }) },
+    });
+    getSpy = vi.spyOn(api, "get").mockRejectedValue(error);
+    open("/orders");
+
+    await user.click(screen.getByRole("button", { name: "Excelga yuklash" }));
+
+    expect((await screen.findAllByText("Excel fayl yuklanmadi")).length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Eksportga ruxsat yo'q").length).toBeGreaterThan(0);
+    expect(downloads).toHaveLength(0);
+
+    await user.click(screen.getByRole("button", { name: "Qayta urinish" }));
+    await waitFor(() => expect(exportCalls()).toHaveLength(2));
+  });
+
+  it("eksport ketayotganda eski xatodagi «Qayta urinish» ikkinchi so'rov yubormaydi; natija eski xato o'rnini oladi", async () => {
+    const user = userEvent.setup();
+    let resolveSecond: (value: unknown) => void = () => {};
+    getSpy = vi
+      .spyOn(api, "get")
+      .mockRejectedValueOnce(Object.assign(new Error("503"), { response: { status: 503, data: new Blob(["{}"]) } }))
+      .mockImplementationOnce(() => new Promise((resolve) => (resolveSecond = resolve)));
+    open("/orders");
+
+    await user.click(screen.getByRole("button", { name: "Excelga yuklash" }));
+    const staleRetry = await screen.findByRole("button", { name: "Qayta urinish" });
+
+    // Yangi eksport boshlandi (javob hali yo'q) — eski xabardagi «Qayta urinish» bosilsa ham so'rov qo'shilmaydi.
+    await user.click(screen.getByRole("button", { name: "Excelga yuklash" }));
+    await waitFor(() => expect(exportCalls()).toHaveLength(2));
+    fireEvent.click(staleRetry);
+    expect(exportCalls()).toHaveLength(2);
+
+    resolveSecond(
+      exportResponse({
+        "content-disposition": 'attachment; filename="barcha_buyurtmalar_2026-10-17.xlsx"',
+        "x-export-total": "3",
+        "x-export-truncated": "false",
+      }),
+    );
+    expect((await screen.findAllByText("Excelga saqlandi")).length).toBeGreaterThan(0);
+    await waitFor(() => expect(screen.queryByText("Excel fayl yuklanmadi")).toBeNull());
+    expect(downloads).toEqual(["barcha_buyurtmalar_2026-10-17.xlsx"]);
+    expect(exportCalls()).toHaveLength(2);
+  });
+
+  it("`Content-Disposition` o'qilmasa — zaxira nom «barcha_buyurtmalar_<bugun>.xlsx» (mahalliy sana)", async () => {
+    const user = userEvent.setup();
+    getSpy = vi.spyOn(api, "get").mockResolvedValue(exportResponse({ "x-export-total": "5", "x-export-truncated": "false" }));
+    open("/orders");
+
+    await user.click(screen.getByRole("button", { name: "Excelga yuklash" }));
+
+    const now = new Date();
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    await waitFor(() => expect(downloads).toEqual([`barcha_buyurtmalar_${today}.xlsx`]));
+  });
+
+  it("javob umuman kelmasa (internet yo'q / vaqt tugadi) — ikkinchi xabar yo'q (global «Internet aloqasi yo'q» yetarli)", async () => {
+    const user = userEvent.setup();
+    const { AxiosError } = await import("axios");
+    getSpy = vi.spyOn(api, "get").mockRejectedValue(new AxiosError("Network Error", "ERR_NETWORK"));
+    open("/orders");
+
+    await user.click(screen.getByRole("button", { name: "Excelga yuklash" }));
+
+    await waitFor(() => expect(exportCalls()).toHaveLength(1));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Excelga yuklash" })).not.toHaveAttribute("aria-busy"));
+    expect(screen.queryByText("Excel fayl yuklanmadi")).toBeNull();
+    expect(downloads).toHaveLength(0);
+  });
+
+  it("server/tarmoq xatosi (504, javobsiz) — inglizcha «Gateway Timeout» emas, taxtadagi matn", async () => {
+    const user = userEvent.setup();
+    getSpy = vi.spyOn(api, "get").mockRejectedValue(
+      Object.assign(new Error("504"), {
+        response: { status: 504, data: new Blob([JSON.stringify({ message: "Gateway Timeout" })], { type: "application/json" }) },
+      }),
+    );
+    open("/orders");
+
+    await user.click(screen.getByRole("button", { name: "Excelga yuklash" }));
+
+    expect((await screen.findAllByText("Server javob bermadi. Birozdan keyin qayta urinib ko'ring.")).length).toBeGreaterThan(0);
+    expect(screen.queryByText("Gateway Timeout")).toBeNull();
   });
 });

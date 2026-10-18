@@ -1,11 +1,13 @@
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { AxiosError } from "axios";
 import { vi } from "vitest";
 import LoginForm from "./LoginForm";
 import { renderWithProviders } from "../../../test/test-utils";
 
 const navigateMock = vi.fn();
-const mutateMock = vi.fn();
+// Haqiqiy `useMutation` (holat — `isPending` — ilovadagidek), so'rov funksiyasi — soxta.
+const loginFn = vi.hoisted(() => vi.fn());
 
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
@@ -15,96 +17,186 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
-vi.mock("../api/login", () => ({
-  useLogin: () => ({
-    signinUser: {
-      mutate: mutateMock,
-    },
-  }),
-}));
+vi.mock("../api/login", async () => {
+  const { useMutation } = await vi.importActual<typeof import("@tanstack/react-query")>("@tanstack/react-query");
+  return {
+    useLogin: () => ({
+      signinUser: useMutation({ mutationFn: (payload: unknown) => loginFn(payload) }),
+    }),
+  };
+});
 
-describe("LoginForm", () => {
+const phoneInput = () => screen.getByLabelText("Telefon raqam") as HTMLInputElement;
+const passwordInput = () => screen.getByLabelText("Parol") as HTMLInputElement;
+const submitButton = () => screen.getByRole("button", { name: "Kirish" });
+
+const fillAndSubmit = async (user: ReturnType<typeof userEvent.setup>, phone = "90 123 45 67", password = "1234") => {
+  await user.type(phoneInput(), phone);
+  await user.type(passwordInput(), password);
+  await user.click(submitButton());
+};
+
+describe("LoginForm (dizayn v2: common-login, common-login-error)", () => {
   beforeEach(() => {
     navigateMock.mockReset();
-    mutateMock.mockReset();
+    loginFn.mockReset();
   });
 
-  it("renders login form fields and submit button", () => {
+  it("renders the v2 form: heading, labelled phone (+998 prefix) and password fields, one «Kirish» button", () => {
     renderWithProviders(<LoginForm />);
 
-    expect(screen.getByPlaceholderText("+998 90 123 45 67")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("••••••••")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Tizimga kirish" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1, name: "Tizimga kirish" })).toBeInTheDocument();
+    expect(screen.getByText("Hisobingizga kirish uchun ma'lumotlarni kiriting")).toBeInTheDocument();
+    expect(screen.getByRole("form", { name: "Tizimga kirish" })).toBeInTheDocument();
+
+    // e2e (`ai-order.mobile.spec.ts`) shu nomlarga tayanadi.
+    expect(phoneInput()).toHaveAttribute("name", "elchi-login-phone");
+    expect(phoneInput()).toHaveAttribute("type", "tel");
+    expect(phoneInput()).toHaveAttribute("placeholder", "90 123 45 67");
+    expect(phoneInput()).toHaveAccessibleDescription("Raqam +998 bilan boshlanadi");
+    expect(screen.getByText("+998")).toBeInTheDocument();
+    expect(passwordInput()).toHaveAttribute("name", "password");
+    expect(passwordInput()).toHaveAttribute("type", "password");
+    expect(passwordInput()).toHaveAttribute("placeholder", "Parolni kiriting");
+
+    expect(screen.getAllByRole("button", { name: "Kirish" })).toHaveLength(1);
+    expect(submitButton()).toHaveAttribute("type", "submit");
   });
 
-  it("shows validation errors for empty submit", async () => {
+  it("shows required errors for an empty submit", async () => {
     const user = userEvent.setup();
     renderWithProviders(<LoginForm />);
 
-    await user.click(screen.getByRole("button", { name: "Tizimga kirish" }));
+    await user.click(submitButton());
 
-    expect(await screen.findByText("Format: +998 90 123 45 67")).toBeInTheDocument();
+    expect(await screen.findByText("Telefon raqam shart")).toBeInTheDocument();
     expect(await screen.findByText("Parol shart")).toBeInTheDocument();
+    expect(phoneInput()).toHaveAttribute("aria-invalid", "true");
+    expect(loginFn).not.toHaveBeenCalled();
   });
 
-  it("shows phone format validation for incomplete phone number", async () => {
+  it("shows phone format validation for an incomplete phone number", async () => {
     const user = userEvent.setup();
     renderWithProviders(<LoginForm />);
 
-    await user.clear(screen.getByPlaceholderText("+998 90 123 45 67"));
-    await user.type(screen.getByPlaceholderText("+998 90 123 45 67"), "90123");
-    await user.type(screen.getByPlaceholderText("••••••••"), "1234");
-    await user.click(screen.getByRole("button", { name: "Tizimga kirish" }));
+    await fillAndSubmit(user, "90123");
 
     expect(await screen.findByText("Format: +998 90 123 45 67")).toBeInTheDocument();
+    expect(loginFn).not.toHaveBeenCalled();
   });
 
-  it("submits successful login and navigates to dashboard", async () => {
+  it("submits a successful login with the +998XXXXXXXXX payload and navigates to the dashboard", async () => {
     const user = userEvent.setup();
-    mutateMock.mockImplementation((_payload, handlers) => {
-      handlers.onSuccess?.({
-        user: { id: "1", role: "admin", name: "Admin" },
-        accessToken: "token",
-        refreshToken: "refresh",
-      });
+    loginFn.mockResolvedValue({
+      user: { id: "1", role: "admin", name: "Admin" },
+      accessToken: "token",
     });
 
     renderWithProviders(<LoginForm />);
 
-    await user.clear(screen.getByPlaceholderText("+998 90 123 45 67"));
-    await user.type(screen.getByPlaceholderText("+998 90 123 45 67"), "90 123 45 67");
-    await user.type(screen.getByPlaceholderText("••••••••"), "1234");
-    await user.click(screen.getByRole("button", { name: "Tizimga kirish" }));
+    await fillAndSubmit(user);
 
-    await waitFor(() => {
-      expect(mutateMock).toHaveBeenCalledWith(
-        {
-          phone_number: "+998901234567",
-          password: "1234",
-        },
-        expect.any(Object),
-      );
+    await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/"));
+    expect(loginFn).toHaveBeenCalledTimes(1);
+    expect(loginFn).toHaveBeenCalledWith({
+      phone_number: "+998901234567",
+      password: "1234",
     });
-    expect(navigateMock).toHaveBeenCalledWith("/");
   });
 
-  it("shows invalid credentials error for 401 response", async () => {
+  it("typing 9 bare digits (as the e2e does) sends +998 + those digits", async () => {
     const user = userEvent.setup();
-    mutateMock.mockImplementation((_payload, handlers) => {
-      handlers.onError?.({
-        response: {
-          status: 401,
-        },
-      });
+    renderWithProviders(<LoginForm />);
+
+    await fillAndSubmit(user, "900000001", "0990");
+
+    expect(phoneInput()).toHaveValue("90 000 00 01");
+    await waitFor(() => expect(loginFn).toHaveBeenCalledWith({ phone_number: "+998900000001", password: "0990" }));
+  });
+
+  it("401 → danger alert between heading and fields: mapped title + hint, form described by it", async () => {
+    const user = userEvent.setup();
+    loginFn.mockRejectedValue({
+      response: {
+        status: 401,
+      },
     });
 
     renderWithProviders(<LoginForm />);
 
-    await user.clear(screen.getByPlaceholderText("+998 90 123 45 67"));
-    await user.type(screen.getByPlaceholderText("+998 90 123 45 67"), "90 123 45 67");
-    await user.type(screen.getByPlaceholderText("••••••••"), "1234");
-    await user.click(screen.getByRole("button", { name: "Tizimga kirish" }));
+    await fillAndSubmit(user);
 
-    expect(await screen.findByText("Parol noto'g'ri yoki foydalanuvchi topilmadi")).toBeInTheDocument();
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Parol noto'g'ri yoki foydalanuvchi topilmadi");
+    expect(alert).toHaveTextContent("Telefon raqam va parolni tekshirib, qayta urinib ko'ring.");
+    expect(screen.getByRole("form", { name: "Tizimga kirish" })).toHaveAttribute("aria-describedby", alert.id);
+    // Tartib: sarlavha → xato → maydonlar.
+    expect(screen.getByRole("heading", { level: 1 }).compareDocumentPosition(alert)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+    expect(alert.compareDocumentPosition(phoneInput())).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it("a network failure (no response) shows «Tarmoq xatoligi» without the credentials hint", async () => {
+    const user = userEvent.setup();
+    loginFn.mockRejectedValue(new AxiosError("Network Error", "ERR_NETWORK"));
+
+    renderWithProviders(<LoginForm />);
+
+    await fillAndSubmit(user);
+
+    const alert = await screen.findByRole("alert");
+    expect(alert).toHaveTextContent("Tarmoq xatoligi");
+    expect(alert).not.toHaveTextContent("Network Error");
+    expect(alert).not.toHaveTextContent("Telefon raqam va parolni tekshirib");
+  });
+
+  it("maps 500 to the server error text", async () => {
+    const user = userEvent.setup();
+    loginFn.mockRejectedValue({ response: { status: 500 } });
+
+    renderWithProviders(<LoginForm />);
+
+    await fillAndSubmit(user);
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Serverda xatolik yuz berdi");
+  });
+
+  it("while the request is pending the button shows «Kirilmoqda…» and a second submit sends nothing", async () => {
+    const user = userEvent.setup();
+    // Javob kelmaydi — so'rov kutilmoqda.
+    loginFn.mockReturnValue(new Promise(() => undefined));
+
+    renderWithProviders(<LoginForm />);
+
+    await fillAndSubmit(user);
+
+    const pending = await screen.findByRole("button", { name: "Kirilmoqda…" });
+    expect(pending).toHaveAttribute("aria-busy", "true");
+    expect(pending).toHaveAttribute("aria-disabled", "true");
+    expect(phoneInput()).toHaveAttribute("readonly");
+
+    await user.click(pending);
+    await user.type(passwordInput(), "{Enter}");
+
+    expect(loginFn).toHaveBeenCalledTimes(1);
+  });
+
+  it("the eye toggle shows/hides the password with aria-label, aria-pressed and aria-controls", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<LoginForm />);
+
+    const toggle = screen.getByRole("button", { name: "Parolni ko'rsatish" });
+    expect(toggle).toHaveAttribute("aria-pressed", "false");
+    expect(toggle).toHaveAttribute("aria-controls", passwordInput().id);
+
+    await user.click(toggle);
+
+    expect(passwordInput()).toHaveAttribute("type", "text");
+    const hide = screen.getByRole("button", { name: "Parolni yashirish" });
+    expect(hide).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(hide);
+    expect(passwordInput()).toHaveAttribute("type", "password");
   });
 });

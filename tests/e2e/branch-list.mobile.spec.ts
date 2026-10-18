@@ -8,14 +8,14 @@ test.describe("Filiallar ro'yxati — sahifalash, 390px", () => {
   test("karta: 2-sahifa tugmasi ekranda, bosilganda HQ Toshkent", async ({ page }) => {
     const { leaked } = await mockBranchListApi(page, "card");
     await openBranchList(page);
-    await expect(page.getByText("1-8 dan 13 tasi ko'rsatilmoqda")).toBeVisible();
+    await expect(page.getByText("1–8 / 13 ta filial")).toBeVisible();
 
-    const second = page.locator("button").filter({ hasText: /^2$/ });
+    const second = page.getByRole("navigation", { name: "Sahifalar" }).getByRole("button", { name: "2", exact: true });
     await second.scrollIntoViewIfNeeded();
     const box = (await second.boundingBox())!;
     expect(box.x + box.width).toBeLessThanOrEqual(390);
     await second.click();
-    await expect(page.getByText("9-13 dan 13 tasi ko'rsatilmoqda")).toBeVisible();
+    await expect(page.getByText("9–13 / 13 ta filial")).toBeVisible();
     await expect(page.getByText("HQ Toshkent").first()).toBeVisible();
 
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);

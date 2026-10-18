@@ -1,5 +1,5 @@
 import { jsPDF } from "jspdf";
-import type { ApiOrder } from "../OrderCard";
+import type { ApiOrder } from "../../model/apiOrder";
 import pdfLogoUrl from "../../../../shared/assets/pdflogo.svg";
 import pdfLogoFallbackUrl from "../../../../shared/assets/logoo.png";
 import i18n from "../../../../i18n";

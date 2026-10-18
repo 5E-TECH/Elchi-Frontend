@@ -30,12 +30,6 @@ export interface Employee {
   joined_at: string;
 }
 
-export interface BranchSetting {
-  id: string;
-  key: string;
-  value: string;
-}
-
 export interface BranchParams {
   page?: number;
   limit?: number;

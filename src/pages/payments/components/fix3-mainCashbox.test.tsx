@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
@@ -45,37 +44,13 @@ vi.mock("../../../entities/payments", () => ({
     useGetCurrentShift: () => ({ data: undefined, isLoading: false, isSuccess: false }),
     useGetCashBoxInfo: () => emptyQuery,
     useGetFinanceHistory: () => emptyQuery,
+    useGetFinanceHistoryById: () => emptyQuery,
     useGetCashBoxMain: () => emptyQuery,
     useGetHqCourierReceivables: () => ({ data: undefined, isLoading: false }),
   }),
 }));
 vi.mock("../../../widgets/Sidebar/model/menuConfig", () => ({ getUserBranchType: () => null }));
-vi.mock("../../../shared/ui/DateRangePicker", () => ({ default: () => null }));
-vi.mock("./PaymentHistoryList", () => ({ default: () => null }));
-vi.mock("../../../shared/components/popupSelect", () => ({
-  default: ({
-    isOpen,
-    data,
-    title,
-    keyExtractor,
-    renderItem,
-  }: {
-    isOpen: boolean;
-    data?: { name: string }[];
-    title: string;
-    keyExtractor: (item: { name: string }) => string | number;
-    renderItem?: (item: { name: string }, isSelected: boolean) => ReactNode;
-  }) =>
-    isOpen ? (
-      <div role="dialog" aria-label={title}>
-        {(data ?? []).map((item) => (
-          <div key={keyExtractor(item)} data-testid="row" data-key={keyExtractor(item)}>
-            {renderItem ? renderItem(item, false) : item.name}
-          </div>
-        ))}
-      </div>
-    ) : null,
-}));
+vi.mock("./MainCashboxBalanceChart", () => ({ default: () => null }));
 
 const superadmin = { role: { id: "1", role: "superadmin", region: null, name: "Admin" } } as never;
 const manager = { role: { id: "198", role: "manager", region: null, name: "Menejer" } } as never;
@@ -95,11 +70,12 @@ describe("MainCashbox — actions that cannot work yet are hidden", () => {
   ])("%s: no 'Maosh' action; Excel stays", (_label, preloadedState) => {
     open(preloadedState as never);
 
-    expect(screen.queryByRole("button", { name: "Maosh" })).not.toBeInTheDocument();
-    expect(screen.queryByTitle("Maosh to'lash")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Maosh/ })).not.toBeInTheDocument();
+    expect(screen.queryByText("Maosh to'lash")).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Excel/ })).toBeInTheDocument();
     // Qolgan amallar joyida.
-    expect(screen.getByTitle("Kassadan xarajat")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Kassadan xarajat/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Kassani to'ldirish/ })).toBeInTheDocument();
   });
 });
 
@@ -116,13 +92,14 @@ describe("MainCashbox — 'Marketga to'lov' list (FE-PAY-13)", () => {
     };
     open(superadmin);
 
-    await userEvent.setup().click(screen.getByTitle("Marketga to'lov"));
+    await userEvent.setup().click(screen.getByRole("button", { name: /Marketga to'lov/ }));
     const dialog = await screen.findByRole("dialog", { name: "Berilishi kerak" });
 
     expect(page.marketParams.at(-1)).not.toHaveProperty("status");
-    const rows = within(dialog).getAllByTestId("row");
+    const rows = within(dialog).getAllByRole("option");
     expect(rows.map((row) => row.getAttribute("data-key"))).toEqual(["201", "202"]);
-    expect(within(rows[1]).getByText("Bloklangan")).toBeInTheDocument();
-    expect(within(rows[0]).queryByText("Bloklangan")).not.toBeInTheDocument();
+    // Bloklangan, lekin puli qolgan market — «Nofaol» belgisi bilan (v2 matni).
+    expect(within(rows[1]).getByText("Nofaol")).toBeInTheDocument();
+    expect(within(rows[0]).queryByText("Nofaol")).not.toBeInTheDocument();
   });
 });

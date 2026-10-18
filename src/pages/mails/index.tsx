@@ -1,357 +1,207 @@
-import { memo, useEffect, useState, type ReactNode } from "react";
-import { Mail, Package, AlertTriangle, Clock, RotateCcw, ChevronDown } from "lucide-react";
+// dizayn-v2: superadmin-mails-today, admin-mails-today, manager-mails-today, registrator-mails-today, courier-mails-today, courier-mails-tab-switcher-open, superadmin-mails-refused, admin-mails-refused, manager-mails-refused, registrator-mails-refused, courier-mails-refused
+import { memo, useEffect, useMemo } from "react";
+import { Clock, Package, RotateCcw, TriangleAlert, type LucideIcon } from "lucide-react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import TodaysMails from "./components/todaysMails";
+import type { RootState } from "../../app/config/store";
+import { cx } from "../../shared/lib/cx";
+import { formatNumberLocalized } from "../../shared/lib/formatMoney";
+import { Card, PageHeader, Select, Tabs, type SelectOption, type TabItem } from "../../shared/ui/primitives";
+import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
 import OldMails from "./components/oldMails";
 import RefusedMails from "./components/refusedMails";
 import ReturnMails from "./components/returnMails";
-import HeaderName from "../../shared/components/headerName";
-import type { RootState } from "../../app/config/store";
-import {
-  getMailTabPath,
-  normalizeMailTab,
-  type MailTab,
-} from "./lib/navigation";
-import PageContainer from "../../shared/ui/PageContainer";
+import TodaysMails from "./components/todaysMails";
+import { getMailTabPath, normalizeMailTab, type MailTab } from "./lib/navigation";
+import type { MailsTabLayout } from "./model/mailsLayout";
+import { useRefusedMails, useReturnRequestsCount, useTodayMails } from "./model/mailsLists";
 
-interface TabItem {
-  key: MailTab;
-  icon: ReactNode;
-  labelKey: "todayTab" | "returnTab" | "refusedTab" | "oldTab";
-  activeWrapperClassName: string;
-  activeWrapperStyle?: React.CSSProperties;
-  inactiveIconClassName: string;
-}
+/**
+ * «POCHTA» QOBIG'I — `/mails/:tab` (dizayn v2).
+ *
+ * Sarlavha «Pochta» + rolga qarab izoh, tablar (havola rejimi: har tab — alohida route) va faol tab tanasi.
+ *  - xodim (superadmin, admin, manager, registrator): bitta `Card padding="none"`, ichida tablar «Bugungi ⟨son⟩ ·
+ *    Qaytarish ⟨son⟩ · Rad etilgan ⟨son⟩ · Eski» va tana (`layout="card"`). Telefonda tablar o'rnida bo'lim
+ *    tanlagichi (`Select`, «Pochta bo'limi: …»). Maketlar `*-mails-today`, `*-mails-refused`.
+ *  - kuryer: tablar sahifa fonida (karta ustida), «Qaytarish» tabi yo'q; telefonda to'liq enli qisqa tablar.
+ *    Tana o'z bo'limlarini chizadi (`layout="page"`). Maketlar `courier-mails-*`.
+ *
+ * Sonlar tab tanalari ishlatadigan o'sha hooklardan (`model/mailsLists.ts`) — queryKey bir xil, qo'shimcha
+ * so'rov yo'q. «Eski» sonsiz (ro'yxat filtr va sahifaga bog'liq).
+ *
+ * Saqlangan xatti-harakatlar (v1): `/mails` va eski `?tab=x` → `/mails/x`; kuryer `/mails/return` (va
+ * `?tab=return`) → `/mails/today`; tab almashganda URL parametrlari tushadi (tab havolasi parametrsiz);
+ * `batch_mode` faqat admin va superadmin uchun — boshqa rolda URL'dan olib tashlanadi.
+ */
 
-const tabs: TabItem[] = [
-  {
-    key: "today",
-    icon: <Package size={18} />,
-    labelKey: "todayTab",
-    activeWrapperClassName:
-      "border-success bg-success text-on-solid shadow-lg shadow-success/25",
-    inactiveIconClassName: "bg-success/10 text-success",
-  },
-  {
-    key: "return",
-    icon: <RotateCcw size={18} />,
-    labelKey: "returnTab",
-    activeWrapperClassName: "border-transparent text-primary shadow-lg",
-    activeWrapperStyle: {
-      background:
-        "linear-gradient(135deg, var(--color-warning-start) 0%, var(--color-warning-end) 100%)",
-      boxShadow: "0 18px 34px var(--color-warning-border)",
-    },
-    inactiveIconClassName:
-      "bg-[color:var(--color-warning-soft)] text-[color:var(--color-warning-end)]",
-  },
-  {
-    key: "refused",
-    icon: <AlertTriangle size={18} />,
-    labelKey: "refusedTab",
-    activeWrapperClassName:
-      "border-error bg-error text-on-solid shadow-lg shadow-error/25",
-    inactiveIconClassName: "bg-error/10 text-error",
-  },
-  {
-    key: "old",
-    icon: <Clock size={18} />,
-    labelKey: "oldTab",
-    activeWrapperClassName:
-      "border-main bg-main text-primary shadow-lg shadow-main/25",
-    inactiveIconClassName: "bg-main/10 text-main",
-  },
-];
+const TAB_ICON: Record<MailTab, LucideIcon> = {
+  today: Package,
+  return: RotateCcw,
+  refused: TriangleAlert,
+  old: Clock,
+};
 
-const Mails = () => {
-  const { t } = useTranslation("mails");
-  const location = useLocation();
+const STAFF_TABS: readonly MailTab[] = ["today", "return", "refused", "old"];
+const COURIER_TABS: readonly MailTab[] = ["today", "refused", "old"];
+
+type MailCounts = Partial<Record<MailTab, number>>;
+
+/** Tab sonidagi belgi (`.el-tab-count`, faol — ko'k). */
+const COUNT_BADGE =
+  "inline-flex h-5 min-w-[22px] items-center justify-center rounded-full px-1.5 text-xs font-semibold tabular-nums";
+const COUNT_ACTIVE = "bg-action-soft text-action-fg";
+const COUNT_IDLE = "bg-sunken text-text-muted";
+
+const TabBody = ({ tab, layout, canUseReturnTab }: { tab: MailTab; layout: MailsTabLayout; canUseReturnTab: boolean }) => (
+  <>
+    {tab === "today" && <TodaysMails layout={layout} />}
+    {canUseReturnTab && tab === "return" && <ReturnMails layout={layout} />}
+    {tab === "refused" && <RefusedMails layout={layout} />}
+    {tab === "old" && <OldMails layout={layout} />}
+  </>
+);
+
+/**
+ * Telefondagi bo'lim tanlagichi (maket `superadmin-mails-today` telefonda): ikonka, bo'lim nomi va soni;
+ * tanlansa — o'sha tab route'iga o'tadi.
+ */
+const MailSectionSelect = ({ tabs, active, counts }: { tabs: readonly MailTab[]; active: MailTab; counts: MailCounts }) => {
+  const { t, i18n } = useTranslation("mailsShell");
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const navigate = useNavigate();
-  const role = useSelector((state: RootState) => state.role.role);
-  const canUseReturnTab = role !== "courier";
-  const canUseOldBatchMode = role === "admin" || role === "superadmin";
-  const visibleTabs = canUseReturnTab
-    ? tabs
-    : tabs.filter((tab) => tab.key !== "return");
-  const [isCompactTabs, setIsCompactTabs] = useState(
-    typeof window !== "undefined" ? window.innerWidth < 1280 : false,
+  const options = useMemo<SelectOption<MailTab>[]>(
+    () => tabs.map((tab) => ({ value: tab, label: t(`tabs.${tab}.title`), icon: TAB_ICON[tab] })),
+    [t, tabs],
   );
-  const [isCompactTabsOpen, setIsCompactTabsOpen] = useState(false);
-  const [isOldBatchMenuOpen, setIsOldBatchMenuOpen] = useState(false);
-  const tabParam = new URLSearchParams(location.search).get("tab");
-  const shouldRedirectFromTabParam = Boolean(tabParam);
-  const shouldRedirectFromRootPath = location.pathname === "/mails";
-
-  useEffect(() => {
-    const handleResize = () => {
-      const isCompact = window.innerWidth < 1280;
-      setIsCompactTabs(isCompact);
-      if (!isCompact) {
-        setIsCompactTabsOpen(false);
-      }
-    };
-
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const activeTab = normalizeMailTab(
-    location.pathname.split("/").filter(Boolean).at(-1),
-  );
-  const activeTabData = visibleTabs.find((tab) => tab.key === activeTab) ?? visibleTabs[0];
-  const selectedBatchId = new URLSearchParams(location.search).get("batch_mode") ?? "";
-
-  const batchOptions = [
-    { value: "", label: t("oldTab") },
-    { value: "all", label: t("oldBatchFilterPlaceholder") },
-  ];
-
-  const handleBatchChange = (value: string) => {
-    const params = new URLSearchParams(location.search);
-    if (value) params.set("batch_mode", value);
-    else params.delete("batch_mode");
-    navigate(`${location.pathname}${params.toString() ? `?${params.toString()}` : ""}`, { replace: true });
-    setIsOldBatchMenuOpen(false);
-  };
-
-  useEffect(() => {
-    if (canUseOldBatchMode || !selectedBatchId) return;
-    const params = new URLSearchParams(location.search);
-    params.delete("batch_mode");
-    navigate(`${location.pathname}${params.toString() ? `?${params.toString()}` : ""}`, { replace: true });
-  }, [canUseOldBatchMode, selectedBatchId, location.pathname, location.search, navigate]);
-
-  if (shouldRedirectFromTabParam) {
+  const countBadge = (tab: MailTab, selected: boolean) => {
+    const count = counts[tab];
+    if (count === undefined) return null;
     return (
-      <Navigate
-        replace
-        to={getMailTabPath(!canUseReturnTab && tabParam === "return" ? "today" : tabParam)}
-      />
+      <span className={cx(COUNT_BADGE, selected ? COUNT_ACTIVE : COUNT_IDLE)}>
+        {formatNumberLocalized(count, { language })}
+      </span>
     );
-  }
-
-  if (shouldRedirectFromRootPath || (!canUseReturnTab && activeTab === "return")) {
-    return <Navigate replace to={getMailTabPath("today")} />;
-  }
-
-  const handleTabChange = (tab: MailTab) => {
-    navigate(getMailTabPath(tab));
-    setIsOldBatchMenuOpen(false);
-    if (isCompactTabs) {
-      setIsCompactTabsOpen(false);
-    }
   };
 
   return (
-    <PageContainer>
-      <div className="rounded-2xl border border-gray-200 bg-primary p-3 shadow-sm dark:border-primarydark dark:bg-maindark sm:p-4">
-        <HeaderName
-          name={t("title")}
-          description={t("pageDescription")}
-          icon={<Mail />}
-        />
-      </div>
+    <div className="border-b border-border px-4 py-3">
+      <Select<MailTab>
+        aria-label={t("sectionLabel", { section: t(`tabs.${active}.title`) })}
+        icon={TAB_ICON[active]}
+        options={options}
+        value={active}
+        onChange={(value) => {
+          if (value && value !== active) navigate(getMailTabPath(value));
+        }}
+        valueAddon={countBadge(active, true)}
+        renderOption={(option, state) => (
+          <span className="flex min-w-0 flex-1 items-center gap-2">
+            <span className="min-w-0 truncate">{option.label}</span>
+            {countBadge(option.value, state.selected)}
+          </span>
+        )}
+        className="font-semibold"
+      />
+    </div>
+  );
+};
 
-      {isCompactTabs ? (
-        <div className="mb-6 mt-5">
-          <button
-            type="button"
-            onClick={() => {
-              setIsCompactTabsOpen((prev) => !prev);
-            }}
-            style={activeTabData.activeWrapperStyle}
-            className={`flex min-h-14 w-full cursor-pointer items-center justify-between gap-3 rounded-2xl border px-4 py-3.5 transition-all duration-200 ${activeTabData.activeWrapperClassName}`}
-          >
-            <div className="flex min-w-0 items-center gap-3">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                {activeTabData.icon}
-              </span>
-              <span className="truncate text-left text-sm font-semibold leading-snug">
-                {activeTab === "old" && selectedBatchId === "all"
-                  ? t("oldBatchFilterPlaceholder")
-                  : t(activeTabData.labelKey)}
-              </span>
-            </div>
+/** Xodim qobig'i: sarlavha + bitta karta (tablar / telefonda bo'lim tanlagichi + tana). */
+const StaffMailsShell = ({ activeTab, isManager }: { activeTab: MailTab; isManager: boolean }) => {
+  const { t } = useTranslation("mailsShell");
+  const isPhone = useIsPhone();
+  const today = useTodayMails();
+  const refused = useRefusedMails();
+  const returnCount = useReturnRequestsCount();
 
-            <ChevronDown
-              size={18}
-              className={`shrink-0 transition-transform duration-200 ${
-                isCompactTabsOpen ? "rotate-180" : ""
-              }`}
-            />
-          </button>
+  const counts: MailCounts = {
+    today: today.isLoaded ? today.mails.length : undefined,
+    return: returnCount,
+    refused: refused.isLoaded ? refused.mails.length : undefined,
+  };
+  const items: TabItem<MailTab>[] = STAFF_TABS.map((tab) => ({
+    value: tab,
+    label: t(`tabs.${tab}.short`),
+    title: t(`tabs.${tab}.title`),
+    count: counts[tab],
+    to: getMailTabPath(tab),
+  }));
 
-          {activeTab === "old" && canUseOldBatchMode && (
-            <div className="mt-3">
-              <button
-                type="button"
-                onClick={() => setIsOldBatchMenuOpen((prev) => !prev)}
-                className="flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl border border-main/20 bg-primary px-4 py-3 text-left text-sm font-semibold text-main shadow-sm dark:border-white/10 dark:bg-[color:var(--color-card-surface-strong)] dark:text-white"
-              >
-                <span className="truncate">
-                  {selectedBatchId === "all" ? t("oldBatchFilterPlaceholder") : t("oldTab")}
-                </span>
-                <ChevronDown
-                  size={16}
-                  className={`shrink-0 transition-transform duration-200 ${isOldBatchMenuOpen ? "rotate-180" : ""}`}
-                />
-              </button>
-            </div>
-          )}
+  return (
+    <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
+      <PageHeader title={t("title")} description={t(isManager ? "description.manager" : "description.staff")} />
+      <Card as="section" padding="none" aria-label={t(`tabs.${activeTab}.title`)}>
+        {isPhone ? (
+          <MailSectionSelect tabs={STAFF_TABS} active={activeTab} counts={counts} />
+        ) : (
+          <Tabs items={items} value={activeTab} ariaLabel={t("tabsLabel")} listClassName="px-3" />
+        )}
+        <TabBody tab={activeTab} layout="card" canUseReturnTab />
+      </Card>
+    </div>
+  );
+};
 
-          {activeTab === "old" && canUseOldBatchMode && isOldBatchMenuOpen && (
-            <div className="mt-3 grid grid-cols-1 gap-3">
-              {batchOptions.map((option) => {
-                const isActive = selectedBatchId === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => handleBatchChange(option.value)}
-                    className={`flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3.5 text-left text-sm font-semibold transition-all duration-200 ${
-                      isActive
-                        ? "border-main bg-main text-primary shadow-lg shadow-main/25"
-                        : "border-gray-200 bg-primary text-gray-600 shadow-sm hover:border-main/20 dark:border-white/10 dark:bg-[color:var(--color-card-surface-strong)] dark:text-white/85 dark:hover:bg-white/10"
-                    }`}
-                  >
-                    <span className="truncate">{option.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+/** Kuryer qobig'i: sarlavha, sahifa fonidagi tablar (telefonda to'liq enli, qisqa nomlar) va tana. */
+const CourierMailsShell = ({ activeTab }: { activeTab: MailTab }) => {
+  const { t } = useTranslation("mailsShell");
+  const isPhone = useIsPhone();
+  const today = useTodayMails();
+  const refused = useRefusedMails();
 
-          {isCompactTabsOpen && (
-            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-              {visibleTabs.filter((tab) => tab.key !== activeTab).map((tab) => {
-                const isActive = activeTab === tab.key;
+  const counts: MailCounts = {
+    today: today.isLoaded ? today.mails.length : undefined,
+    refused: refused.isLoaded ? refused.mails.length : undefined,
+  };
+  const items: TabItem<MailTab>[] = COURIER_TABS.map((tab) => ({
+    value: tab,
+    label: t(isPhone ? `tabs.${tab}.short` : `tabs.${tab}.title`),
+    title: t(`tabs.${tab}.title`),
+    count: counts[tab],
+    to: getMailTabPath(tab),
+  }));
 
-                return (
-                  <button
-                    key={tab.key}
-                    type="button"
-                    onClick={() => handleTabChange(tab.key)}
-                    style={isActive ? tab.activeWrapperStyle : undefined}
-                    className={`flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3.5 transition-all duration-200 ${
-                      isActive
-                        ? tab.activeWrapperClassName
-                        : "border-gray-200 bg-primary text-gray-600 shadow-sm hover:border-main/20 dark:border-white/10 dark:bg-primarydark dark:text-gray-300"
-                    }`}
-                  >
-                    <span
-                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-                        isActive ? "bg-primary/15 text-primary" : tab.inactiveIconClassName
-                      }`}
-                    >
-                      {tab.icon}
-                    </span>
-                    <span className="text-left text-sm font-semibold leading-snug">
-                      {t(tab.labelKey)}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div
-          className={`mb-6 mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 ${
-            canUseReturnTab ? "xl:grid-cols-4" : "xl:grid-cols-3"
-          }`}
-        >
-          {visibleTabs.map((tab) => {
-            const isActive = activeTab === tab.key;
-            const isOldTabDropdown =
-              tab.key === "old" && isActive && canUseOldBatchMode;
+  return (
+    <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
+      <PageHeader title={t("title")} description={isPhone ? undefined : t("description.courier")} />
+      <Tabs items={items} value={activeTab} ariaLabel={t("tabsLabel")} background="bg" fullWidth={isPhone} />
+      <TabBody tab={activeTab} layout="page" canUseReturnTab={false} />
+    </div>
+  );
+};
 
-            if (isOldTabDropdown) {
-              return (
-                <div
-                  key={tab.key}
-                  style={tab.activeWrapperStyle}
-                  className={`relative flex min-h-14 w-full items-center gap-3 rounded-2xl border px-4 py-3.5 transition-all duration-200 ${tab.activeWrapperClassName}`}
-                >
-                  <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-primary">
-                    {tab.icon}
-                  </span>
+const Mails = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const role = useSelector((state: RootState) => state.role.role);
+  const isCourier = role === "courier";
+  const canUseReturnTab = !isCourier;
+  const canUseOldBatchMode = role === "admin" || role === "superadmin";
+  const tabParam = new URLSearchParams(location.search).get("tab");
+  const activeTab = normalizeMailTab(location.pathname.split("/").filter(Boolean).at(-1));
+  const selectedBatchMode = new URLSearchParams(location.search).get("batch_mode") ?? "";
 
-                  <div className="w-full min-w-0">
-                    <button
-                      type="button"
-                      onClick={() => setIsOldBatchMenuOpen((prev) => !prev)}
-                      className="flex w-full items-center justify-between gap-2 rounded-lg px-0 py-0 text-left text-sm font-semibold text-white"
-                    >
-                      <span className="truncate">
-                        {selectedBatchId === "all" ? t("oldBatchFilterPlaceholder") : t("oldTab")}
-                      </span>
-                      <ChevronDown
-                        size={16}
-                        className={`shrink-0 transition-transform duration-200 ${isOldBatchMenuOpen ? "rotate-180" : ""}`}
-                      />
-                    </button>
-                  </div>
+  // «Filial paketlari» rejimi (`batch_mode`) faqat admin va superadmin uchun — boshqa rolda URL'dan olinadi.
+  useEffect(() => {
+    if (canUseOldBatchMode || !selectedBatchMode) return;
+    const params = new URLSearchParams(location.search);
+    params.delete("batch_mode");
+    navigate(`${location.pathname}${params.toString() ? `?${params.toString()}` : ""}`, { replace: true });
+  }, [canUseOldBatchMode, selectedBatchMode, location.pathname, location.search, navigate]);
 
-                  {isOldBatchMenuOpen && (
-                    <div className="absolute left-0 top-[calc(100%+8px)] z-50 w-full overflow-hidden rounded-xl border border-gray-200 bg-white p-1 shadow-xl dark:border-white/10 dark:bg-[color:var(--color-card-surface-strong)]">
-                      {batchOptions.map((option) => {
-                        const isActiveOption = selectedBatchId === option.value;
-                        return (
-                          <button
-                            key={option.value}
-                            type="button"
-                            onClick={() => handleBatchChange(option.value)}
-                            className={`flex w-full items-center rounded-lg px-3 py-2 text-left text-sm font-semibold transition-colors ${
-                              isActiveOption
-                                ? "bg-main text-white"
-                                : "text-maindark hover:bg-main/10 dark:text-white/85 dark:hover:bg-white/10"
-                            }`}
-                          >
-                            {option.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            }
+  if (tabParam) {
+    return <Navigate replace to={getMailTabPath(!canUseReturnTab && tabParam === "return" ? "today" : tabParam)} />;
+  }
 
-            return (
-              <button
-                key={tab.key}
-                type="button"
-                onClick={() => handleTabChange(tab.key)}
-                style={isActive ? tab.activeWrapperStyle : undefined}
-                className={`relative flex min-h-14 w-full cursor-pointer items-center gap-3 rounded-2xl border px-4 py-3.5 transition-all duration-200 ${
-                  isActive
-                    ? tab.activeWrapperClassName
-                    : "border-gray-200 bg-primary text-gray-600 shadow-sm hover:border-main/20 dark:border-white/10 dark:bg-primarydark dark:text-gray-300"
-                }`}
-              >
-                <span
-                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-                    isActive ? "bg-primary/15 text-primary" : tab.inactiveIconClassName
-                  }`}
-                >
-                  {tab.icon}
-                </span>
-                <span className="text-left text-sm font-semibold leading-snug">
-                  {t(tab.labelKey)}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      )}
+  if (location.pathname === "/mails" || (!canUseReturnTab && activeTab === "return")) {
+    return <Navigate replace to={getMailTabPath("today")} />;
+  }
 
-      {activeTab === "today" && <TodaysMails />}
-      {canUseReturnTab && activeTab === "return" && <ReturnMails />}
-      {activeTab === "refused" && <RefusedMails />}
-      {activeTab === "old" && <OldMails />}
-    </PageContainer>
+  return isCourier ? (
+    <CourierMailsShell activeTab={activeTab} />
+  ) : (
+    <StaffMailsShell activeTab={activeTab} isManager={role === "manager"} />
   );
 };
 

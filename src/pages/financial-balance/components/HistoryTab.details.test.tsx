@@ -1,31 +1,22 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { AxiosError, type AxiosResponse } from "axios";
+import { fireEvent, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
 
 const mocks = vi.hoisted(() => ({
-  mutate: vi.fn(),
-  isPending: false,
-  download: vi.fn(() => Promise.resolve()),
   history: {} as unknown,
 }));
 
 vi.mock("../../../entities/payments/financeCoverage", () => ({
   useFinanceCoverage: () => ({
     useGetFinancialBalanceHistory: () => ({ data: mocks.history, isLoading: false, isError: false, refetch: vi.fn() }),
-    createFinancialBalanceEntry: { mutate: mocks.mutate, isPending: mocks.isPending },
   }),
-}));
-vi.mock("../../../shared/lib/exportFile", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../shared/lib/exportFile")>()),
-  downloadXlsx: mocks.download,
 }));
 
 import HistoryTab from "./HistoryTab";
 
 /**
- * Balans → Tarix: "Izoh", kim kiritgan, buyurtma havolasi, tafsilot (4WeT0Tv5);
- * Excel va "Yozuv qo'shish" (GtAoqHlk).
+ * Balans → Tarix: "Izoh", kim kiritgan, buyurtma havolasi, tafsilot (4WeT0Tv5) — dizayn v2.
+ * «Yozuv qo'shish» va Excel endi sahifa sarlavhasida: `FinancialEntryModal.test.tsx`, `index.test.tsx`.
  */
 
 const row = (overrides: Record<string, unknown>) => ({
@@ -42,21 +33,19 @@ const row = (overrides: Record<string, unknown>) => ({
   ...overrides,
 });
 
-const historyOf = (items: unknown[]) => ({
+const historyOf = (items: unknown[], total = items.length) => ({
   statusCode: 200,
-  data: { items, total: items.length, pagination: { total: items.length, page: 1, limit: 10, totalPages: 1 } },
+  data: { items, total, pagination: { total, page: 1, limit: 10, totalPages: Math.ceil(total / 10) } },
 });
 
 const open = (route = "/financial-balance?tab=history") => renderWithProviders(<HistoryTab />, { route });
 
 beforeEach(() => {
   Element.prototype.scrollIntoView = vi.fn();
-  mocks.mutate.mockReset();
-  mocks.download.mockClear();
   mocks.history = historyOf([
     row({}),
     row({ id: "66", source_type: "sell_profit", comment: null, created_by: null, created_by_user: null, order_id: "1001", amount: 15000, balance_before: 1545000, balance_after: 1560000 }),
-    row({ id: "67", created_by: "9", created_by_user: null, comment: "Ofis ijarasi" }),
+    row({ id: "67", created_by: "9", created_by_user: null, comment: "Ofis ijarasi", amount: 50000, balance_before: 1560000, balance_after: 1510000 }),
   ]);
 });
 
@@ -69,7 +58,7 @@ describe("HistoryTab — Izoh va kim kiritgan (4WeT0Tv5)", () => {
 
   it("izoh yo'q qatorda \"—\", bo'sh katak emas", () => {
     open();
-    const autoRow = screen.getByText("Buyurtma #1001").closest("tr") as HTMLElement;
+    const autoRow = screen.getByText("Buyurtma №1001").closest("tr") as HTMLElement;
     expect(within(autoRow).getAllByText("—").length).toBeGreaterThan(0);
   });
 
@@ -80,9 +69,27 @@ describe("HistoryTab — Izoh va kim kiritgan (4WeT0Tv5)", () => {
     expect(screen.getByText("#9")).toBeInTheDocument();
   });
 
-  it("order_id bor qator buyurtma sahifasiga havola beradi", () => {
+  it("order_id bor qator buyurtma sahifasiga havola beradi; qo'lda yozuv — «Qo'lda yozuv»", () => {
     open();
-    expect(screen.getByRole("link", { name: "Buyurtma #1001" })).toHaveAttribute("href", "/orders/edit/1001");
+    expect(screen.getByRole("link", { name: "Buyurtma №1001" })).toHaveAttribute("href", "/orders/edit/1001");
+    expect(screen.getAllByText("Qo'lda yozuv")).toHaveLength(2);
+  });
+
+  it("o'zgarish ishorali va rangli, qoldiq «oldingi → keyingi» (manfiy — haqiqiy minus)", () => {
+    open();
+    const expenseRow = screen.getByText("Ofis ijarasi").closest("tr") as HTMLElement;
+    expect(within(expenseRow).getByText("−50 000 so'm")).toHaveClass("text-danger-fg");
+    expect(within(expenseRow).getByText("1 560 000")).toBeInTheDocument();
+    expect(within(expenseRow).getByText("1 510 000 so'm")).toBeInTheDocument();
+    const autoRow = screen.getByText("Buyurtma №1001").closest("tr") as HTMLElement;
+    expect(within(autoRow).getByText("+15 000 so'm")).toHaveClass("text-success-fg");
+  });
+
+  it("karta sarlavhasi va jami soni, footer «1–3 / 3 ta yozuv»", () => {
+    open();
+    expect(screen.getByRole("heading", { name: "Yozuvlar" })).toBeInTheDocument();
+    expect(screen.getByText("3 ta")).toBeInTheDocument();
+    expect(screen.getByText("1–3 / 3 ta yozuv")).toBeInTheDocument();
   });
 
   it("qatorga bosilganda to'liq tafsilot oynasi ochiladi", () => {
@@ -92,104 +99,37 @@ describe("HistoryTab — Izoh va kim kiritgan (4WeT0Tv5)", () => {
     expect(within(dialog).getByText("#67")).toBeInTheDocument();
     expect(within(dialog).getByText("Ofis ijarasi")).toBeInTheDocument();
     expect(within(dialog).getByText("#9")).toBeInTheDocument();
+    expect(within(dialog).getByText("Qo'lda yozuv")).toBeInTheDocument();
+    expect(within(dialog).getByText("Chiqim")).toBeInTheDocument();
+    expect(within(dialog).getByText("Bog'lanmagan")).toBeInTheDocument();
+  });
+
+  it("«›» tugmasi (klaviatura yo'li) ham tafsilotni ochadi; avtomatik yozuvda buyurtma havolasi", () => {
+    open();
+    const autoRow = screen.getByText("Buyurtma №1001").closest("tr") as HTMLElement;
+    fireEvent.click(within(autoRow).getByRole("button", { name: /Pochta foydasi .* tafsilotini ochish/ }));
+    const dialog = screen.getByRole("dialog");
+    expect(within(dialog).getByText("#66")).toBeInTheDocument();
+    expect(within(dialog).getAllByText("Avtomatik").length).toBeGreaterThan(0);
+    expect(within(dialog).getByRole("link", { name: "№1001" })).toHaveAttribute("href", "/orders/edit/1001");
+    expect(within(dialog).getByText("Kirim")).toBeInTheDocument();
   });
 });
 
-describe("HistoryTab — Excel va qo'lda yozuv (GtAoqHlk)", () => {
-  it("Excel jadvaldagi AYNAN o'sha filtrlar bilan yuklanadi", async () => {
-    open(
-      "/financial-balance?tab=history&financialBalanceHistorySource=manual_expense&financialBalanceHistoryFrom=2026-10-01&financialBalanceHistoryTo=2026-10-05",
-    );
-    fireEvent.click(screen.getByRole("button", { name: "Excel" }));
-    await waitFor(() =>
-      expect(mocks.download).toHaveBeenCalledWith(
-        "export/financial-balance.xlsx",
-        { source_type: "manual_expense", from_date: "2026-10-01", to_date: "2026-10-05" },
-        "financial-balance.xlsx",
-      ),
-    );
+describe("HistoryTab — bo'sh holatlar", () => {
+  it("filtr faol va natija yo'q — «Filtrlarni tozalash» URL filtrlarini olib tashlaydi", () => {
+    mocks.history = historyOf([]);
+    open("/financial-balance?tab=history&financialBalanceHistorySource=salary");
+    expect(screen.getByText("Yozuvlar topilmadi")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Filtrlarni tozalash" }));
+    // Filtr URL'dan olindi — endi «filtrsiz bo'sh» holat.
+    expect(screen.queryByText("Yozuvlar topilmadi")).not.toBeInTheDocument();
+    expect(screen.getByText("Hali yozuv yo'q")).toBeInTheDocument();
   });
 
-  it("\"Yozuv qo'shish\" — qo'lda chiqim: payload AYNAN {amount, source_type, comment}, summa manfiy, Idempotency-Key bilan", () => {
+  it("filtrsiz bo'sh — «Hali yozuv yo'q»", () => {
+    mocks.history = historyOf([]);
     open();
-    fireEvent.click(screen.getByRole("button", { name: "Yozuv qo'shish" }));
-    const dialog = screen.getByRole("dialog");
-
-    fireEvent.change(within(dialog).getByLabelText("Summa"), { target: { value: "50 000" } });
-    fireEvent.change(within(dialog).getByLabelText("Izoh"), { target: { value: "  Ofis ijarasi  " } });
-    expect(within(dialog).getByText("Balansga ta'siri: -50 000 so'm")).toBeInTheDocument(); // dizayn v2: uz "so'm"
-    fireEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
-
-    expect(mocks.mutate).toHaveBeenCalledTimes(1);
-    const [{ data, idempotencyKey }] = mocks.mutate.mock.calls[0] as [{ data: unknown; idempotencyKey: string }];
-    expect(data).toStrictEqual({ amount: -50000, source_type: "manual_expense", comment: "Ofis ijarasi" });
-    expect(idempotencyKey).toEqual(expect.any(String));
-  });
-
-  it("qo'lda kirim musbat; tuzatishda yo'nalishni operator tanlaydi", () => {
-    open();
-    fireEvent.click(screen.getByRole("button", { name: "Yozuv qo'shish" }));
-    const dialog = screen.getByRole("dialog");
-    fireEvent.change(within(dialog).getByLabelText("Summa"), { target: { value: "1000" } });
-    fireEvent.change(within(dialog).getByLabelText("Izoh"), { target: { value: "Qaytim" } });
-
-    fireEvent.click(within(dialog).getByRole("button", { name: "Qo'lda kirim" }));
-    fireEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
-    expect((mocks.mutate.mock.calls[0][0] as { data: { amount: number } }).data.amount).toBe(1000);
-
-    fireEvent.click(within(dialog).getByRole("button", { name: "Tuzatish (rollback)" }));
-    fireEvent.click(within(dialog).getByRole("button", { name: "Kirim (+)" }));
-    fireEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
-    expect(mocks.mutate.mock.calls[1][0]).toMatchObject({ data: { amount: 1000, source_type: "correction" } });
-  });
-
-  it("summa yoki sabab bo'lmasa yuborilmaydi", () => {
-    open();
-    fireEvent.click(screen.getByRole("button", { name: "Yozuv qo'shish" }));
-    const dialog = screen.getByRole("dialog");
-    fireEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
-
-    expect(mocks.mutate).not.toHaveBeenCalled();
-    expect(within(dialog).getByText("Summani kiriting")).toBeInTheDocument();
-    expect(within(dialog).getByText("Sababini yozing (kamida 3 belgi)")).toBeInTheDocument();
-  });
-
-  it("server xatosi oynada ko'rinadi, oyna yopilmaydi", () => {
-    mocks.mutate.mockImplementation((_vars: unknown, options: { onError: (e: unknown) => void }) =>
-      options.onError(
-        new AxiosError("Request failed with status code 400", "ERR_BAD_REQUEST", undefined, undefined, {
-          status: 400,
-          data: { message: "property foo should not exist" },
-        } as AxiosResponse),
-      ),
-    );
-    open();
-    fireEvent.click(screen.getByRole("button", { name: "Yozuv qo'shish" }));
-    const dialog = screen.getByRole("dialog");
-    fireEvent.change(within(dialog).getByLabelText("Summa"), { target: { value: "1000" } });
-    fireEvent.change(within(dialog).getByLabelText("Izoh"), { target: { value: "Ijara" } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
-
-    expect(within(screen.getByRole("dialog")).getByRole("alert")).toHaveTextContent("property foo should not exist");
-  });
-
-  it("tarmoq xatosi: oynada xom \"Network Error\" emas, \"Tarmoq xatosi\"; qayta urinish o'sha kalit bilan", () => {
-    mocks.mutate.mockImplementationOnce((_vars: unknown, options: { onError: (e: unknown) => void }) =>
-      options.onError(new AxiosError("Network Error", "ERR_NETWORK")),
-    );
-    open();
-    fireEvent.click(screen.getByRole("button", { name: "Yozuv qo'shish" }));
-    const dialog = screen.getByRole("dialog");
-    fireEvent.change(within(dialog).getByLabelText("Summa"), { target: { value: "1000" } });
-    fireEvent.change(within(dialog).getByLabelText("Izoh"), { target: { value: "Ijara" } });
-    fireEvent.click(within(dialog).getByRole("button", { name: "Saqlash" }));
-
-    const alert = within(screen.getByRole("dialog")).getByRole("alert");
-    expect(alert).toHaveTextContent("Tarmoq xatosi");
-    expect(alert).not.toHaveTextContent("Network Error");
-
-    fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Saqlash" }));
-    const [first, second] = mocks.mutate.mock.calls.map((call) => call[0] as { idempotencyKey: string });
-    expect(second.idempotencyKey).toBe(first.idempotencyKey);
+    expect(screen.getByText("Hali yozuv yo'q")).toBeInTheDocument();
   });
 });

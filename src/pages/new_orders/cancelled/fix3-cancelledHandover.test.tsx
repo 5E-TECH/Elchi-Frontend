@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import i18n from "../../../i18n";
 import { renderWithProviders } from "../../../test/test-utils";
 import CancelledMarketDetail from "./detail";
-import NewOrders from "../index";
+import NewOrdersTabs from "../ui/NewOrdersTabs";
 
 /**
  * fix3 FE-RET-05 — RU/EN interfeysda ham qo'lda tanlash sababi backend enum
@@ -17,8 +17,14 @@ const mocks = vi.hoisted(() => ({
   handoverMutate: vi.fn(),
 }));
 
+/** Qobiq tablaridagi sonlar (`useNewOrdersTabs`) — bu testda son kerak emas, so'rov kutilmoqda holati. */
+const idleQuery = () => ({ status: "pending", data: undefined, isLoading: false, isError: false, refetch: vi.fn() });
+
 vi.mock("../../../entities/orders", () => ({
   useOrders: () => ({
+    useGetTodayOrders: idleQuery,
+    useGetTodayOrdersByMarket: idleQuery,
+    useCancelledMarkets: idleQuery,
     useCancelledOrdersByMarket: () => ({
       data: {
         data: [
@@ -79,14 +85,17 @@ describe("Bekor qilingan mollar — qo'lda tanlash sababi (fix3 FE-RET-05)", () 
     const user = userEvent.setup();
     renderDetail();
 
-    await user.click(screen.getByRole("button", { name: "QR поврежден" }));
-    const select = screen.getByRole("combobox");
+    await user.click(screen.getByRole("button", { name: "QR повреждён" }));
+    // Dizayn v2: sabab — radio-kartalar («Sabab *»), `select` emas.
+    const dialog = await screen.findByRole("dialog", { name: "Подтверждение повреждённого QR" });
+    const unreadable = within(dialog).getByRole("radio", { name: "QR не читается" });
     // Foydalanuvchi tarjimani ko'radi...
-    expect(within(select).getByRole("option", { name: "QR не читается" })).toBeInTheDocument();
+    expect(unreadable).toBeInTheDocument();
     // ...lekin qiymat — enum kodi.
-    await user.selectOptions(select, "QR o'qilmayapti");
-    await user.click(screen.getByRole("button", { name: "Подтвердить вручную" }));
-    await user.click(screen.getByRole("button", { name: /Отправить маркету \(1\)/ }));
+    expect(unreadable).toHaveAttribute("value", "QR o'qilmayapti");
+    await user.click(unreadable);
+    await user.click(within(dialog).getByRole("button", { name: "Подтвердить вручную" }));
+    await user.click(screen.getByRole("button", { name: /Отправить маркету — 1/ }));
 
     expect(mocks.handoverMutate).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -102,9 +111,12 @@ describe("Bekor qilingan mollar — qo'lda tanlash sababi (fix3 FE-RET-05)", () 
     const user = userEvent.setup();
     renderDetail();
 
-    await user.click(screen.getByRole("button", { name: "QR поврежден" }));
-    await user.click(screen.getByRole("button", { name: "Подтвердить вручную" }));
-    await user.click(screen.getByRole("button", { name: /Отправить маркету \(1\)/ }));
+    await user.click(screen.getByRole("button", { name: "QR повреждён" }));
+    const dialog = await screen.findByRole("dialog", { name: "Подтверждение повреждённого QR" });
+    // Sukut tanlangan radio — birinchi sabab (yorlig'i tarjima, qiymati enum kodi).
+    expect(within(dialog).getByRole("radio", { name: "QR порван" })).toBeChecked();
+    await user.click(within(dialog).getByRole("button", { name: "Подтвердить вручную" }));
+    await user.click(screen.getByRole("button", { name: /Отправить маркету — 1/ }));
 
     expect(mocks.handoverMutate).toHaveBeenCalledWith(
       expect.objectContaining({ manualOverrides: [{ order_id: "501", reason: "QR yirtilgan" }] }),
@@ -127,14 +139,23 @@ describe("Yangi buyurtmalar tablari — HQ registratori (fix3 CODE-16 / C4)", ()
       },
     }) as never;
 
+  // Dizayn v2: `/new-orders` da tablar bola sahifa kartasining boshida (`NewOrdersTabs`) — tab ko'rinishi
+  // shu komponentning o'zi orqali tekshiriladi.
   it("HQ registratori 'Bekor qilinganlar' tabini ko'radi", () => {
-    renderWithProviders(<NewOrders />, { route: "/new-orders", preloadedState: stateFor("registrator", "HQ") });
+    renderWithProviders(<NewOrdersTabs />, {
+      route: "/new-orders",
+      preloadedState: stateFor("registrator", "HQ"),
+    });
 
-    expect(screen.getByText("Bekor qilinganlar")).toBeInTheDocument();
+    const tabs = screen.getByRole("navigation", { name: "Qabul manbalari" });
+    expect(within(tabs).getByRole("link", { name: "Bekor qilinganlar" })).toHaveAttribute(
+      "href",
+      "/new-orders/cancelled",
+    );
   });
 
   it("REGIONAL registratorida tab yo'q (mollar HQ omborida)", () => {
-    renderWithProviders(<NewOrders />, {
+    renderWithProviders(<NewOrdersTabs />, {
       route: "/new-orders",
       preloadedState: stateFor("registrator", "REGIONAL"),
     });

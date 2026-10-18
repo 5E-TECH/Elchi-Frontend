@@ -360,6 +360,10 @@
   "createChangeMarketAria": "Изменить маркет",
   "createMarketLabel": "Маркет",
   "createMarketClearAria": "Очистить выбранный маркет",
+  "createMarketChangeTitle": "Сменить маркет?",
+  "createMarketChangeDescription": "Если выбрать «{{to}}», товары из каталога «{{from}}» ({{count}} шт.) будут удалены из заказа. Товары не из каталога останутся.",
+  "createMarketChangeConfirm": "Сменить маркет",
+  "createMarketChangeCancel": "Отмена",
   "createMarketSearchAria": "Поиск маркета",
   "createMarketListLabel": "Маркеты",
   "createCustomerName": "Имя клиента",
@@ -435,6 +439,7 @@
       "courier": "Курьер",
       "branch": "Филиал",
       "post": "Почта",
+      "postInSentence": "почту",
       "market": "Маркет",
       "user": "Пользователь",
       "phone": "Телефон"
@@ -537,9 +542,13 @@
   "filterBranch": "Филиал",
   "filterBranchPlaceholder": "Выберите филиал",
   "chipBranch": "Филиал",
-  "exportEmpty": "Заказы для экспорта не найдены",
-  "exportSuccess": "{{count}} заказов сохранено в Excel",
-  "exportError": "Произошла ошибка при сохранении заказов в Excel",
+  "exportEmpty": "Нет заказов по фильтру — файл Excel не создан",
+  "exportSuccess": "Заказов сохранено в Excel: {{count}}.",
+  "exportError": "Сервер не ответил. Попробуйте ещё раз чуть позже.",
+  "exportSuccessTitle": "Сохранено в Excel",
+  "exportTruncatedTitle": "Файл неполный",
+  "exportTruncated": "В файле {{count}} из {{total}} заказов — сузьте фильтр.",
+  "exportErrorTitle": "Файл Excel не загружен",
   "orderNumber": "Номер заказа",
   "copyOrderNumber": "Скопировать номер",
   "orderNumberCopied": "Номер заказа скопирован",
@@ -555,19 +564,7 @@
   "extraCostApprovalActionCancel": "Отмена",
   "sortLabel": "Сортировка:",
   "excel": {
-    "fileName": "vse_zakazy",
-    "headers": {
-      "number": "№",
-      "region": "Область",
-      "district": "Район",
-      "company": "Фирма",
-      "product": "Товар",
-      "phone": "Номер телефона",
-      "price": "Цена",
-      "courier": "Курьер",
-      "status": "Статус",
-      "date": "Дата"
-    }
+    "fileName": "vse_zakazy"
   },
   "aiModeManual": "Вручную",
   "aiModeAi": "С помощью AI",
@@ -742,6 +739,16 @@
     "readOnlyLocked": "Заказ отправлен в филиал, поэтому товары, сумма, клиент и адрес заблокированы.",
     "dateLabel": "Дата:",
     "addressLabel": "Адрес",
-    "noProducts": "В заказе нет товаров"
+    "noProducts": "В заказе нет товаров",
+    "notFoundTitle": "Заказ не найден",
+    "notFoundDescription": "Заказа №{{id}} нет или у вас нет доступа к нему.",
+    "backToOrders": "Вернуться к заказам"
+  },
+  "createCatalogEmpty": "Каталог этого маркета пуст",
+  "createCatalogEmptyHint": "Добавьте товар через поле «Товар не из каталога».",
+  "amountInput": {
+    "fraction": "Введите сумму целым числом — дробная часть не принимается",
+    "negative": "Сумма не может быть отрицательной",
+    "tooLong": "Слишком большая сумма — не более 12 цифр"
   }
 }

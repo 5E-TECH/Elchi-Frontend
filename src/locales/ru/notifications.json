@@ -229,5 +229,8 @@
     "explainConfirm": "Включить",
     "explainCancel": "Не сейчас",
     "toastOpen": "Открыть"
+  },
+  "realtime": {
+    "manyNew": "Новых уведомлений: {{count}}"
   }
 }

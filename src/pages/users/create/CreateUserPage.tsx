@@ -1,27 +1,13 @@
-import { memo } from 'react';
-import { UserPlus } from 'lucide-react';
-import { CreateUserWidget } from '../../../widgets/user-create/ui/CreateUserWidget';
-import HeaderName from '../../../shared/components/headerName';
-import { useTranslation } from 'react-i18next';
-import BackButton from '../../../shared/ui/BackButton';
+// dizayn-v2: superadmin-users-create, admin-users-create, manager-users-create-courier, manager-users-create-hybrid
+import { memo } from "react";
+import { CreateUserForm } from "../../../features/user/create-user/ui/CreateUserForm";
 
-const CreateUserPage = memo(() => {
-    const { t } = useTranslation("users");
+/**
+ * `/all-users/create-user` — yangi foydalanuvchi (dizayn v2). Sarlavha, rol kartasi va forma —
+ * `CreateUserForm` da (rolga va menejer filiali turiga bog'liq matnlar o'sha yerda hisoblanadi).
+ */
+const CreateUserPage = memo(() => <CreateUserForm />);
 
-    return (
-        <div className="rounded-2xl">
-            <div className="flex items-center gap-3 px-3 py-3 sm:px-4 sm:py-4 md:px-5">
-                <BackButton className="h-10 min-w-10 shrink-0 rounded-xl px-2" label="" />
-                <HeaderName
-                    name={t("createNewUser")}
-                    icon={<UserPlus />}
-                    description={t("createNewUserDescription")}
-                />
-            </div>
-
-            <CreateUserWidget />
-        </div>
-    );
-});
+CreateUserPage.displayName = "CreateUserPage";
 
 export default CreateUserPage;

@@ -13,6 +13,9 @@ const REGIONAL_MANAGER = {
   status: "active",
   branch_id: "12",
   branch: { id: "12", name: "Urganch filiali", type: "REGIONAL" },
+  // Sotish/bekor ruxsati (5c9faf0 dan beri tafsilot ham shu bayroqni talab qiladi) — bu yerda
+  // tugmalar faqat status va post_id ga qarab yashirilishi tekshiriladi, bayroq doim yoqiq.
+  can_sell_cancel: true,
 };
 
 // Filialda turgan buyurtma (kuryer qo'lida emas) — LC-04 qoidasi aralashmasin.

@@ -360,6 +360,10 @@
   "createChangeMarketAria": "Change market",
   "createMarketLabel": "Market",
   "createMarketClearAria": "Clear selected market",
+  "createMarketChangeTitle": "Change the market?",
+  "createMarketChangeDescription": "If you choose “{{to}}”, the items from the “{{from}}” catalog ({{count}}) will be removed from the order. Items not in the catalog stay.",
+  "createMarketChangeConfirm": "Change market",
+  "createMarketChangeCancel": "Cancel",
   "createMarketSearchAria": "Search market",
   "createMarketListLabel": "Markets",
   "createCustomerName": "Customer name",
@@ -435,6 +439,7 @@
       "courier": "Courier",
       "branch": "Branch",
       "post": "Post",
+      "postInSentence": "the post",
       "market": "Market",
       "user": "User",
       "phone": "Phone"
@@ -537,9 +542,13 @@
   "filterBranch": "Branch",
   "filterBranchPlaceholder": "Select branch",
   "chipBranch": "Branch",
-  "exportEmpty": "No orders found for export",
-  "exportSuccess": "{{count}} orders saved to Excel",
-  "exportError": "An error occurred while saving orders to Excel",
+  "exportEmpty": "No orders match the filter — Excel file not created",
+  "exportSuccess": "{{count}} orders saved to Excel.",
+  "exportError": "The server didn't respond. Please try again shortly.",
+  "exportSuccessTitle": "Saved to Excel",
+  "exportTruncatedTitle": "File is incomplete",
+  "exportTruncated": "The file has {{count}} of {{total}} orders — narrow the filter.",
+  "exportErrorTitle": "Excel file not downloaded",
   "orderNumber": "Order number",
   "copyOrderNumber": "Copy number",
   "orderNumberCopied": "Order number copied",
@@ -555,19 +564,7 @@
   "extraCostApprovalActionCancel": "Cancellation",
   "sortLabel": "Sort:",
   "excel": {
-    "fileName": "all_orders",
-    "headers": {
-      "number": "No.",
-      "region": "Region",
-      "district": "District",
-      "company": "Company",
-      "product": "Product",
-      "phone": "Phone number",
-      "price": "Price",
-      "courier": "Courier",
-      "status": "Status",
-      "date": "Date"
-    }
+    "fileName": "all_orders"
   },
   "aiModeManual": "Manual",
   "aiModeAi": "With AI",
@@ -742,6 +739,16 @@
     "readOnlyLocked": "The order has been sent to a branch, so products, amount, customer and address are locked.",
     "dateLabel": "Date:",
     "addressLabel": "Address",
-    "noProducts": "No products in the order"
+    "noProducts": "No products in the order",
+    "notFoundTitle": "Order not found",
+    "notFoundDescription": "Order №{{id}} does not exist or you do not have access to it.",
+    "backToOrders": "Back to orders"
+  },
+  "createCatalogEmpty": "This market's catalog is empty",
+  "createCatalogEmptyHint": "Add the product with the “Product not in catalog” field.",
+  "amountInput": {
+    "fraction": "Enter the amount as a whole number — decimals are not accepted",
+    "negative": "The amount cannot be negative",
+    "tooLong": "The amount is too large — 12 digits at most"
   }
 }

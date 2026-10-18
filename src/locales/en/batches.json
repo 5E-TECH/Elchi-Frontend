@@ -1,46 +1,101 @@
 {
   "title": "Batches",
-  "description": "List of batches created by branch and HQ staff",
-  "statBadge": "{{count}} batches",
+  "description_one": "{{value}} batch · created by branch and HQ staff",
+  "description_other": "{{value}} batches · created by branch and HQ staff",
+  "descriptionReturn_one": "{{value}} batch · batches in the return flow from branches · the same list as on the <page>Returns</page> page",
+  "descriptionReturn_other": "{{value}} batches · batches in the return flow from branches · the same list as on the <page>Returns</page> page",
+  "listLabel": "Batch list",
+  "tabsLabel": "Batch types",
   "tabs": {
     "new": "New",
     "old": "Old",
     "return": "Returned"
   },
-  "filter": {
+  "columns": {
+    "batch": "Batch",
+    "route": "Route",
+    "region": "Region",
     "status": "Status",
-    "direction": "Direction",
-    "date": "Date"
+    "orders": "Orders",
+    "amount": "Amount",
+    "open": "Open"
   },
-  "status": {
-    "new": "New",
-    "onTheWay": "On the way",
-    "received": "Received",
-    "cancelled": "Cancelled"
-  },
+  "qty": "{{value}}",
+  "ordersSub_one": "{{value}} order",
+  "ordersSub_other": "{{value}} orders",
+  "open": "Open batch {{id}}",
+  "pagination": "{{from}}–{{to}} of {{total}} batches",
+  "cardsLabel": "Batches",
+  "loading": "Loading batches",
+  "loadError": "Could not load batches",
+  "emptyTitle": "No batches",
+  "emptyDescription": "There are no batches in this section yet.",
   "direction": {
     "forward": "Forward",
     "return": "Return"
   },
-  "card": {
-    "orders": "Orders",
-    "piece": "pcs",
-    "amount": "Amount",
-    "direction": "Direction",
-    "region": "Region",
-    "route": "Route",
-    "created": "Created"
-  },
   "detail": {
     "title": "Batch {{id}}",
-    "notFound": "Batch not found",
+    "back": {
+      "batches": "Batches",
+      "returns": "Returns",
+      "mailsOld": "Old mail"
+    },
+    "createdAt": "Created: {{date}}",
+    "print": "Print",
+    "send": "Send to HQ — {{value}}",
+    "sending": "Sending to HQ…",
+    "infoTitle": "Batch details",
     "branch": "Branch",
     "destination": "Destination",
-    "orderCount": "{{count}} pcs",
-    "insideOrders": "Orders inside",
+    "region": "Region",
+    "direction": "Direction",
+    "orders": "Orders",
+    "amount": "Amount",
+    "deliveryBreakdown": "By delivery type",
+    "deliveryHome": "To the door",
+    "deliveryCenter": "To the center",
+    "qrCode": "QR code",
+    "qrImage": "QR code of batch {{id}}",
+    "qrFallback": "QR code",
+    "qrHint": "Print the sheet and stick it on the batch — {{to}} scans this QR code to receive the batch.",
+    "qrHintNoTarget": "Print the sheet and stick it on the batch — the receiving branch scans this QR code to receive the batch.",
+    "qrHintReturn": "Print the label and stick it on the batch.",
+    "ordersTitle": "Orders in the batch",
+    "ordersLabel": "Orders in the batch",
+    "scanHint": "Scan the QR code — the order is selected in the list",
+    "selectionHint": "Only the selected orders are sent to HQ",
+    "selectionHintReturn": "Only the selected ones are sent to HQ, the rest stay in the batch",
+    "emptyOrders": "No orders left in the batch",
+    "emptyOrdersHint": "All orders in the batch have been sent.",
     "history": "History",
     "historyEmpty": "No history yet",
-    "qrCode": "QR code"
+    "historyEmptyHint": "Every action appears here once the batch is sent and received.",
+    "notFound": "Batch not found",
+    "notFoundHint": "The batch was deleted or the link is wrong. Open it again from the batch list.",
+    "loading": "Loading batch",
+    "scanSelected": "Order selected",
+    "scanDuplicate": "Already selected",
+    "scanMissingTitle": "QR not found",
+    "scanMissing": "This QR code does not match the orders in this batch.",
+    "sendSuccess": "Batch sent to HQ",
+    "sendSuccessDescription_one": "{{value}} order sent to {{to}}",
+    "sendSuccessDescription_other": "{{value}} orders sent to {{to}}",
+    "sendSuccessDescriptionNoTarget_one": "{{value}} order sent to HQ",
+    "sendSuccessDescriptionNoTarget_other": "{{value}} orders sent to HQ",
+    "sendError": "Could not send the batch",
+    "sendErrorDescription": "The selection is kept — try again",
+    "historyCount": "{{value}}",
+    "historyLabel": "Batch history",
+    "historyAction": {
+      "created": "Batch created",
+      "createdReturn": "Return batch created",
+      "sent": "Batch sent",
+      "sentTo": "Batch sent to {{to}}",
+      "received": "Batch received",
+      "receivedAt": "Batch received at {{to}}",
+      "cancelled": "Batch cancelled"
+    }
   },
   "print": {
     "branch": "BRANCH:",
@@ -48,8 +103,5 @@
     "orders": "ORDERS:",
     "total": "TOTAL:",
     "date": "DATE:"
-  },
-  "loadError": "Could not load batches",
-  "emptyTitle": "No batches",
-  "emptyDescription": "No batches found for these filters yet."
+  }
 }

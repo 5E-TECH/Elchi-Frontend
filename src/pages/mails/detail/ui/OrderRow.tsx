@@ -1,525 +1,129 @@
-import { memo } from "react";
+// dizayn-v2: superadmin-mails-detail, superadmin-mails-detail-refused, superadmin-mails-detail-old, admin-mails-detail, admin-mails-old-detail, manager-mails-detail-receive, manager-mails-detail-refused-receive, registrator-mails-detail, courier-mails-detail-receive, courier-mails-detail-refused, courier-mails-detail-old
+import { memo, type ReactNode } from "react";
+import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import {
-  Phone,
-  Store,
-  User,
-  MapPin,
-  Building2,
-  Calendar,
-  Package2,
-  Warehouse,
-  House,
-  Trash2,
-  FileText,
-  Globe,
-} from "lucide-react";
-import type { PostOrder, OrderStatus } from "../../../../entities/mails";
-import PrintModeSelect, { type PrintSelectOption } from "../../../../shared/components/PrintModeSelect";
-import Checkbox from "./Checkbox";
-import { formatDate, formatPrice, getStatusLabel, getStatusStyle } from "../lib/helpers";
-import { HISTORY_TABLE_COLS, TABLE_COLS } from "./OrdersTable";
+import type { PostOrder } from "../../../../entities/mails";
+import { OrderStatusBadge } from "../../../../entities/order";
+import PrintModeSelect from "../../../../shared/components/PrintModeSelect";
+import { cx } from "../../../../shared/lib/cx";
 import type { PrintMode } from "../lib/printMode";
+import type { OrderRowView } from "../model/useOrderRowView";
+import { useMailPrintOptions } from "./printOptions";
 
-interface OrderRowProps {
+/**
+ * Pochta buyurtmasi qatorining telefon kartasi (`.el-list-item`, dizayn v2). Matnlar —
+ * `model/useOrderRowView.tsx` (jadval kataklari bilan bir xil).
+ *
+ *  - `OrderRow` — telefon kartasi: ism va summa; kuryerda telefon va vaqt; «№X · tuman · market»; holat va
+ *    yetkazish badge'lari; o'ngda chop etish / o'chirish. Xodimda karta matni buyurtma tafsilotiga havola
+ *    (maket `superadmin-mails-detail`), tarixda butun karta havola (`admin-mails-old-detail`).
+ *  - `RowPrintButton` — qatordagi chop etish menyusi (`PrintModeSelect variant="icon"`).
+ */
+
+/** Qatordagi chop etish menyusi; telefonda kuryer kartasida chegarali 44 px (maket `courier-mails-detail-*`). */
+export const RowPrintButton = ({
+  label,
+  onSelect,
+  bordered = false,
+}: {
+  label: string;
+  onSelect: (mode: PrintMode) => void;
+  bordered?: boolean;
+}) => {
+  const { t } = useTranslation("mails");
+  const options = useMailPrintOptions();
+  return (
+    <PrintModeSelect
+      variant="icon"
+      count={1}
+      onSelect={(mode) => onSelect(mode as PrintMode)}
+      buttonLabel={label}
+      menuLabel={t("detailPage.printMenuLabel")}
+      options={options}
+      iconSize={bordered ? "lg" : "sm"}
+      iconVariant={bordered ? "secondary" : "ghost"}
+    />
+  );
+};
+
+type OrderRowProps = {
   order: PostOrder;
-  checked: boolean;
-  onToggle: (id: string) => void;
-  onPrint?: (order: PostOrder, mode: PrintMode) => void;
-  onDelete?: (orderId: string) => void;
-  canDelete?: boolean;
-  variant?: "default" | "history";
-  readOnly?: boolean;
-}
+  view: OrderRowView;
+  /** Chapda tanlov belgisi bor (`DataTable` chizadi, 48 px) — matn undan keyin boshlanadi. */
+  selectable: boolean;
+  /** Eski pochta: holat badge'i yo'q, badge yonida sana. */
+  history?: boolean;
+  /** Kuryer kartasi: telefon raqami va vaqt alohida qatorda. */
+  courier?: boolean;
+  /** Buyurtma tafsiloti havolasi (kuryerda yo'q). */
+  href: string | null;
+  /**
+   * Izoh qatorlari: `place` — «№X · tuman · market» (pochta maketlari); `contact` — «№X · [market ·] telefon» va
+   * ostida manzil (paket maketlari `*-batches-detail*`, `manager-returns-batch-detail`).
+   */
+  meta?: "place" | "contact";
+  /** `meta="contact"`: market nomi izohda (faqat o'qish rejimi — jadvalda «Market» ustuni bor). */
+  showMarket?: boolean;
+  /** O'ngdagi amallar (chop etish, o'chirish). */
+  actions: ReactNode;
+};
 
-const OrderRow = memo(({
-  order,
-  checked,
-  onToggle,
-  onPrint,
-  onDelete,
-  canDelete = false,
-  variant = "default",
-  readOnly = false,
-}: OrderRowProps) => {
-  const { t } = useTranslation(["mails", "orders", "common"]);
-  const orderRecord = order as unknown as Record<string, unknown>;
-  const customerRecord =
-    order.customer && typeof order.customer === "object"
-      ? (order.customer as unknown as Record<string, unknown>)
-      : {};
-  const getText = (...values: unknown[]) => {
-    for (const value of values) {
-      if (typeof value === "string" && value.trim()) return value.trim();
-      if (typeof value === "number") return String(value);
-    }
+/** Telefon kartasi (< 768). */
+const OrderRow = memo((props: OrderRowProps) => {
+  const { order, view, selectable, history = false, courier = false, href, actions, meta = "place", showMarket = true } =
+    props;
+  const place = view.place(order);
+  const market = view.market(order);
+  const isContact = meta === "contact" && !courier;
+  const metaLine = isContact
+    ? [`№${order.id}`, showMarket ? market : null, view.customerPhone(order)].filter(Boolean).join(" · ")
+    : [`№${order.id}`, place, market].filter(Boolean).join(" · ");
+  const addressLine = isContact ? (view.address(order) ?? view.district(order)) : null;
+  // Kuryer: qabul va tarix maketlarida vaqt badge'lar qatorining o'ng chetida (`courier-mails-detail-receive`,
+  // `-old`), faqat o'qiladigan rad etilgan pochtada — telefon raqami yonida (`courier-mails-detail-refused`).
+  const courierDateOnBadges = courier && (history || selectable);
 
-    return "";
-  };
-  const customerName =
-    getText(
-      customerRecord.name,
-      customerRecord.full_name,
-      customerRecord.fullName,
-      orderRecord.customer_name,
-      orderRecord.customerName,
-      orderRecord.client_name,
-      orderRecord.clientName,
-      orderRecord.receiver_name,
-      orderRecord.receiverName,
-      orderRecord.name,
-    ) || "—";
-  const customerPhone =
-    getText(
-      customerRecord.phone_number,
-      customerRecord.phoneNumber,
-      customerRecord.phone,
-      orderRecord.customer_phone,
-      orderRecord.customerPhone,
-      orderRecord.phone_number,
-      orderRecord.phoneNumber,
-      orderRecord.phone,
-    ) || t("mails:phoneUnavailable");
-  const districtName = order.district?.name ?? "—";
-  const marketName = order.market?.name ?? "—";
-  const isAddressDelivery = order.where_deliver === "address";
-  const locationLabel = order.address?.trim() || districtName;
-  const isHistory = variant === "history";
-  const printOptions: PrintSelectOption[] = [
-    {
-      id: "browser",
-      label: t("mails:printOptions.browser.label"),
-      hint: t("mails:printOptions.browser.hint"),
-      icon: <Globe size={14} className="text-[var(--color-info)]" />,
-    },
-    {
-      id: "pdf_100x60",
-      label: t("mails:printOptions.labelPdf.label"),
-      hint: t("mails:printOptions.labelPdf.hint"),
-      icon: <FileText size={14} className="text-[var(--color-error)]" />,
-    },
-  ];
+  const body = (
+    <>
+      <span className="flex min-w-0 items-start justify-between gap-2">
+        <span className="min-w-0 font-semibold text-text">{view.customerName(order)}</span>
+        <span className="whitespace-nowrap font-semibold text-text">{view.money(order.total_price)}</span>
+      </span>
+      {courier ? (
+        <span className="flex min-w-0 items-center justify-between gap-2 text-[13px] text-text-muted">
+          <span className="whitespace-nowrap">{view.customerPhone(order)}</span>
+          {courierDateOnBadges ? null : <span className="whitespace-nowrap text-xs">{view.date(order)}</span>}
+        </span>
+      ) : null}
+      <span className="text-[13px] text-text-muted">{metaLine}</span>
+      {addressLine ? <span className="text-[13px] text-text-muted">{addressLine}</span> : null}
+      <span className="flex flex-wrap items-center gap-1.5">
+        {history ? null : <OrderStatusBadge status={order.status} />}
+        {view.deliveryBadge(order)}
+        {history && !courier ? <span className="text-xs text-text-muted">{view.date(order)}</span> : null}
+        {courierDateOnBadges ? (
+          <span className="ml-auto whitespace-nowrap text-xs text-text-muted">{view.date(order)}</span>
+        ) : null}
+      </span>
+    </>
+  );
 
-  if (isHistory) {
-    return (
-      <div className="rounded-[22px] border border-slate-200/70 bg-white shadow-[0_10px_30px_rgba(15,23,42,0.04)] dark:border-white/8 dark:bg-white/[0.03]">
-        <div className={`hidden xl:grid ${HISTORY_TABLE_COLS} items-center gap-4 px-6 py-4`}>
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="flex items-center justify-center w-8 h-8 rounded-full border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5 shrink-0">
-              <User size={14} className="text-slate-500 dark:text-white/70" />
-            </div>
-            <span className="text-[15px] font-semibold text-slate-800 dark:text-white truncate">
-              {customerName}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 min-w-0 text-slate-600 dark:text-white/75">
-            <Phone size={14} className="shrink-0" />
-            <span className="text-sm font-medium truncate">{customerPhone}</span>
-          </div>
-
-          <div className="flex items-center gap-2 min-w-0 text-slate-600 dark:text-white/75">
-            <MapPin size={14} className="shrink-0" />
-            <span className="text-sm font-medium truncate">{locationLabel}</span>
-          </div>
-
-          <div className="flex items-center gap-2 min-w-0 text-slate-600 dark:text-white/75">
-            <Store size={14} className="shrink-0" />
-            <span className="text-sm font-medium truncate">{marketName}</span>
-          </div>
-
-          <div className="text-sm font-bold text-slate-900 dark:text-white whitespace-nowrap">
-            {formatPrice(order.total_price)}
-          </div>
-
-          <div>
-            {isAddressDelivery ? (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 text-orange-600 border border-orange-100 dark:bg-orange-500/15 dark:text-orange-300 dark:border-orange-400/20">
-                <House size={12} />
-                <span className="text-xs font-semibold">{t("orders:deliveryToHome")}</span>
-              </div>
-            ) : (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-fuchsia-50 text-fuchsia-600 border border-fuchsia-100 dark:bg-fuchsia-500/15 dark:text-fuchsia-300 dark:border-fuchsia-400/20">
-                <Warehouse size={12} />
-                <span className="text-xs font-semibold">{t("orders:deliveryToCenter")}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 text-slate-600 dark:text-white/75 whitespace-nowrap">
-            <Calendar size={14} className="shrink-0" />
-            <span className="text-sm font-medium">{formatDate(order.updatedAt ?? order.createdAt).slice(0, 10)}</span>
-          </div>
-        </div>
-
-        <div className="xl:hidden px-4 py-4">
-          <div className="flex items-start gap-3">
-            <div className="flex items-center justify-center h-9 w-9 shrink-0 rounded-full border border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/5">
-              <User size={15} className="text-slate-500 dark:text-white/70" />
-            </div>
-
-            <div className="min-w-0 flex-1">
-              <p className="m-0 break-words text-sm font-extrabold text-slate-800 dark:text-white">
-                {customerName}
-              </p>
-              <p className="m-0 mt-1 flex items-center gap-1.5 break-all text-[12px] text-slate-600 dark:text-white/75">
-                <Phone size={12} className="shrink-0" />
-                {customerPhone}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <span className="inline-flex min-w-0 items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 dark:bg-white/10 text-[11px] font-semibold text-slate-600 dark:text-white/80">
-              <MapPin size={11} className="shrink-0" />
-              <span className="truncate">{locationLabel}</span>
-            </span>
-
-            <span className="inline-flex min-w-0 items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 dark:bg-white/10 text-[11px] font-semibold text-slate-600 dark:text-white/80">
-              <Store size={11} className="shrink-0" />
-              <span className="truncate">{marketName}</span>
-            </span>
-          </div>
-
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-            <span className="text-sm font-bold text-slate-900 dark:text-white">
-              {formatPrice(order.total_price)}
-            </span>
-
-            <span className="inline-flex items-center gap-1.5 break-words text-[12px] text-slate-600 dark:text-white/75">
-              <Calendar size={12} className="shrink-0" />
-              {formatDate(order.updatedAt ?? order.createdAt).slice(0, 10)}
-            </span>
-
-            {isAddressDelivery ? (
-              <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-orange-100 bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-600 dark:border-orange-400/20 dark:bg-orange-500/15 dark:text-orange-300">
-                <House size={12} />
-                {t("orders:deliveryToHome")}
-              </span>
-            ) : (
-              <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-fuchsia-100 bg-fuchsia-50 px-3 py-1 text-xs font-semibold text-fuchsia-600 dark:border-fuchsia-400/20 dark:bg-fuchsia-500/15 dark:text-fuchsia-300">
-                <Warehouse size={12} />
-                {t("orders:deliveryToCenter")}
-              </span>
-            )}
-          </div>
-
-        </div>
-      </div>
-    );
-  }
+  const bodyClass = "flex min-w-0 flex-1 flex-col gap-1 text-sm";
 
   return (
-    <div
-      className={`group rounded-xl border transition-all duration-200 cursor-pointer ${
-        checked
-          ? "bg-emerald-500/8 border-emerald-400/55 shadow-[0_0_0_1px_rgba(16,185,129,0.45),0_10px_26px_rgba(16,185,129,0.20)]"
-          : "bg-white dark:bg-white/4 border-gray-100 dark:border-white/8 hover:border-main/30 hover:bg-gray-50 dark:hover:bg-white/6"
-      }`}
-      onClick={() => {
-        if (!readOnly) onToggle(order.id);
-      }}
-    >
-      {/* XL table layout */}
-      <div className={`hidden xl:grid ${TABLE_COLS} items-center gap-2 px-3 xl:px-4 py-3.5`}>
-        <div className="flex items-center gap-2 min-w-0">
-          {!readOnly ? (
-            <Checkbox checked={checked} onChange={() => onToggle(order.id)} />
-          ) : null}
-          <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-100 dark:bg-white/10 shrink-0">
-            <User size={13} className="text-slate-500 dark:text-white/70" />
-          </div>
-          <span className="text-[13px] font-semibold text-gray-800 dark:text-white truncate">
-            {customerName}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1.5 min-w-0">
-          <Phone size={12} className="text-black dark:text-white/50 shrink-0" />
-          <span className="text-[14px] leading-none text-gray-500 dark:text-white/95 font-medium truncate">
-            {customerPhone}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1.5 min-w-0">
-          <MapPin size={12} className="text-black dark:text-white/50 shrink-0" />
-          <span className="text-[14px] leading-none text-gray-500 dark:text-white/95 font-medium truncate">
-            {districtName}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-1.5 min-w-0">
-          <Store size={12} className="text-black dark:text-white/50 shrink-0" />
-          <span className="text-[14px] leading-none text-gray-600 dark:text-white/95 font-semibold truncate">
-            {marketName}
-          </span>
-        </div>
-
-        <div>
-          <span className="text-[14px] font-bold text-gray-900 dark:text-white">
-            {formatPrice(order.total_price)}
-          </span>
-        </div>
-
-        <div>
-          {isAddressDelivery ? (
-            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-orange-500/15 border border-orange-500/30">
-              <House size={11} className="text-orange-400" />
-              <span className="text-[11px] text-orange-400 font-semibold">{t("orders:deliveryToHome")}</span>
-            </div>
-          ) : (
-            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-500/15 border border-slate-500/20">
-              <Building2 size={11} className="text-slate-500 dark:text-white/70" />
-              <span className="text-[11px] text-slate-600 dark:text-white/80 font-semibold">{t("orders:deliveryToCenter")}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1.5 whitespace-nowrap pl-1">
-          <Calendar size={11} className="text-black dark:text-white/50 shrink-0" />
-          <span className="text-[13px] text-black dark:text-white font-medium">
-            {formatDate(order.updatedAt ?? order.createdAt)}
-          </span>
-        </div>
-
-        <div className="flex justify-center">
-          <span
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[13px] font-semibold ${getStatusStyle(
-              order.status as OrderStatus,
-            )}`}
-            style={{ whiteSpace: "nowrap" }}
-          >
-            <Package2 size={11} />
-            {getStatusLabel(order.status as OrderStatus)}
-          </span>
-        </div>
-
-        <div
-          className="flex items-center justify-center gap-1.5"
-          onClick={(event) => event.stopPropagation()}
-        >
-          {onPrint ? (
-            <PrintModeSelect
-              variant="icon"
-              count={1}
-              onSelect={(mode) => onPrint(order, mode as PrintMode)}
-              buttonLabel={t("mails:print")}
-              menuLabel={t("mails:printMenu")}
-              options={printOptions}
-            />
-          ) : null}
-          {canDelete && onDelete ? (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.stopPropagation();
-                onDelete(order.id);
-              }}
-              // yokjwjXG: v2 (`.el-iconbtn-sm`, xavfli) — pochtadan o'chirish.
-              className="inline-flex size-8 flex-none items-center justify-center rounded-lg text-danger-fg transition-colors hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-action max-md:size-11"
-              aria-label={t("mails:deleteFromPostAction", { id: order.id })}
-            >
-              <Trash2 className="size-4" aria-hidden="true" />
-            </button>
-          ) : null}
-        </div>
-      </div>
-
-      {/* Compact layout (no horizontal scroll) */}
-      <div className="xl:hidden px-3 py-2.5">
-        <div className="lg:hidden">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex min-w-0 items-start gap-3">
-              {!readOnly ? (
-                <div className="pt-0.5">
-                  <Checkbox checked={checked} onChange={() => onToggle(order.id)} />
-                </div>
-              ) : null}
-              <div className="min-w-0">
-                <p className="m-0 truncate text-sm font-bold text-slate-900 dark:text-white">
-                  {customerName}
-                </p>
-                <p className="m-0 mt-0.5 flex items-center gap-1 text-[13px] font-medium text-slate-900 dark:text-white">
-                  <Phone size={13} className="shrink-0" />
-                  <span className="truncate">{customerPhone}</span>
-                </p>
-
-                <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                  <span className="inline-flex min-w-0 items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-900 dark:bg-white/10 dark:text-white">
-                    <Store size={11} className="shrink-0" />
-                    <span className="truncate">{marketName}</span>
-                  </span>
-                  <span className="inline-flex min-w-0 items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-900 dark:bg-white/10 dark:text-white">
-                    <MapPin size={11} className="shrink-0" />
-                    <span className="truncate">{districtName}</span>
-                  </span>
-                  {isAddressDelivery ? (
-                    <span className="inline-flex w-fit items-center gap-1 rounded-lg border border-orange-500/30 bg-orange-500/15 px-2 py-1 text-[11px] font-semibold text-orange-500">
-                      <House size={11} />
-                      {t("orders:deliveryToHome")}
-                    </span>
-                  ) : (
-                    <span className="inline-flex w-fit items-center gap-1 rounded-lg border border-slate-500/20 bg-slate-500/15 px-2 py-1 text-[11px] font-semibold text-slate-900 dark:text-white">
-                      <Warehouse size={11} />
-                      {t("orders:deliveryToCenter")}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex shrink-0 flex-col items-start gap-1.5">
-              <span
-                className={`inline-flex w-fit items-center gap-1 rounded-lg border px-2 py-0.5 text-[11px] font-semibold ${getStatusStyle(
-                  order.status as OrderStatus,
-                )}`}
-                style={{ whiteSpace: "nowrap" }}
-              >
-                <Package2 size={11} />
-                {getStatusLabel(order.status as OrderStatus)}
-              </span>
-
-              <span className="text-base font-bold text-slate-900 dark:text-white">
-                {formatPrice(order.total_price)}
-              </span>
-
-              <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-900 dark:text-white">
-                <Calendar size={11} className="shrink-0" />
-                {formatDate(order.updatedAt ?? order.createdAt)}
-              </span>
-
-              {(onPrint || (canDelete && onDelete)) && (
-                <div
-                  className="flex items-center gap-1.5"
-                  onClick={(event) => event.stopPropagation()}
-                >
-          {onPrint ? (
-                    <PrintModeSelect
-                      variant="icon"
-                      count={1}
-                      onSelect={(mode) => onPrint(order, mode as PrintMode)}
-                      buttonLabel={t("mails:print")}
-                      menuLabel={t("mails:printMenu")}
-                      options={printOptions}
-                    />
-                  ) : null}
-                  {canDelete && onDelete ? (
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        onDelete(order.id);
-                      }}
-                      className="inline-flex size-8 flex-none items-center justify-center rounded-lg text-danger-fg transition-colors hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-action max-md:size-11"
-                      aria-label={t("mails:deleteFromPostAction", { id: order.id })}
-                    >
-                      <Trash2 className="size-4" aria-hidden="true" />
-                    </button>
-                  ) : null}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="hidden lg:block">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex min-w-0 items-start gap-3">
-              {!readOnly ? (
-                <div className="pt-0.5">
-                  <Checkbox checked={checked} onChange={() => onToggle(order.id)} />
-                </div>
-              ) : null}
-              <div className="min-w-0">
-              <p className="m-0 truncate text-base font-bold text-slate-900 dark:text-white">
-                {customerName}
-              </p>
-              <p className="m-0 mt-1 flex items-center gap-1 text-[13px] font-medium text-slate-900 dark:text-white">
-                <Phone size={13} className="shrink-0" />
-                <span className="truncate">{customerPhone}</span>
-              </p>
-              </div>
-            </div>
-
-            <div className="flex shrink-0 items-start gap-3">
-              <span
-                className={`inline-flex w-fit items-center gap-1 rounded-lg border px-2 py-0.5 text-[11px] font-semibold ${getStatusStyle(
-                  order.status as OrderStatus,
-                )}`}
-                style={{ whiteSpace: "nowrap" }}
-              >
-                <Package2 size={11} />
-                {getStatusLabel(order.status as OrderStatus)}
-              </span>
-              <span className="text-lg font-bold text-slate-900 dark:text-white">
-                {formatPrice(order.total_price)}
-              </span>
-            </div>
-          </div>
-
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex min-w-0 items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-900 dark:bg-white/10 dark:text-white">
-              <Store size={11} className="shrink-0" />
-              <span className="truncate">{marketName}</span>
-            </span>
-            <span className="inline-flex min-w-0 items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-900 dark:bg-white/10 dark:text-white">
-              <MapPin size={11} className="shrink-0" />
-              <span className="truncate">{districtName}</span>
-            </span>
-            {isAddressDelivery ? (
-              <span className="inline-flex w-fit items-center gap-1 rounded-lg border border-orange-500/30 bg-orange-500/15 px-2 py-1 text-[11px] font-semibold text-orange-500">
-                <House size={11} />
-                {t("orders:deliveryToHome")}
-              </span>
-            ) : (
-              <span className="inline-flex w-fit items-center gap-1 rounded-lg border border-slate-500/20 bg-slate-500/15 px-2 py-1 text-[11px] font-semibold text-slate-900 dark:text-white">
-                <Warehouse size={11} />
-                {t("orders:deliveryToCenter")}
-              </span>
-            )}
-            <span className="ml-auto inline-flex items-center gap-1 text-[11px] font-medium text-slate-900 dark:text-white">
-              <Calendar size={11} className="shrink-0" />
-              {formatDate(order.updatedAt ?? order.createdAt)}
-            </span>
-          </div>
-
-          {(onPrint || (canDelete && onDelete)) && (
-            <div
-              className="mt-2 flex items-center justify-end gap-1.5"
-              onClick={(event) => event.stopPropagation()}
-            >
-          {onPrint ? (
-                <PrintModeSelect
-                  variant="icon"
-                  count={1}
-                  onSelect={(mode) => onPrint(order, mode as PrintMode)}
-                  buttonLabel={t("mails:print")}
-                  menuLabel={t("mails:printMenu")}
-                  options={printOptions}
-                />
-              ) : null}
-              {canDelete && onDelete ? (
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onDelete(order.id);
-                  }}
-                  className="inline-flex size-8 flex-none items-center justify-center rounded-lg text-danger-fg transition-colors hover:bg-danger-soft focus-visible:outline-2 focus-visible:outline-action max-md:size-11"
-                  aria-label={t("mails:deleteFromPostAction", { id: order.id })}
-                >
-                  <Trash2 className="size-4" aria-hidden="true" />
-                </button>
-              ) : null}
-            </div>
-          )}
-        </div>
-
-      </div>
+    <div className={cx("flex min-w-0 items-start gap-2 py-3 pr-4", selectable ? "pl-12" : "pl-4")}>
+      {href ? (
+        <Link to={href} className={cx(bodyClass, "text-text no-underline")}>
+          {body}
+        </Link>
+      ) : (
+        <div className={bodyClass}>{body}</div>
+      )}
+      {/* Amallar ustma-ust — matnga ko'proq joy qoladi (telefonda har tugma 44 px). */}
+      {actions ? <div className="-my-1 -mr-1 flex shrink-0 flex-col items-center gap-1">{actions}</div> : null}
     </div>
   );
 });
-
 OrderRow.displayName = "OrderRow";
 
 export default OrderRow;

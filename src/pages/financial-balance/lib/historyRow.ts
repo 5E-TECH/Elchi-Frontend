@@ -1,5 +1,7 @@
 /** Balans → Tarix qatori (4WeT0Tv5): jadval va tafsilot oynasi uchun umumiy. */
 
+import { isLedgerSourceType } from "./historyFilters";
+
 export interface HistoryRow {
   id: string;
   date: unknown;
@@ -31,14 +33,56 @@ export const toActorName = (item: Record<string, unknown>) => {
 /** Buyurtma tafsiloti sahifasi (`orders/edit/:orderId`). */
 export const orderLink = (orderId: string) => `/orders/edit/${orderId}`;
 
+/**
+ * Manba nomi (maket matnlari, `payments.v2Balance.sources.*`). Eski `sell` — «Pochta foydasi»;
+ * noma'lum qiymat o'zicha ko'rsatiladi (yangi backend turi yashirinmasin).
+ */
 export const toSourceTypeLabel = (value: string, t: (key: string) => string) => {
-  if (value === "sell" || value === "sell_profit") return t("financialBalanceSourceProfit");
-  if (value === "sell_extra_cost") return t("financialBalanceSourceExtraCost");
-  if (value === "cancel_extra_cost") return t("financialBalanceSourceExtraCost");
-  if (value === "manual_income") return t("financialBalanceSourceManualIncome");
-  if (value === "manual_expense") return t("financialBalanceSourceManualExpense");
-  if (value === "salary") return t("financialBalanceSourceSalary");
-  if (value === "correction") return t("financialBalanceSourceCorrection");
-  if (value === "bills") return t("financialBalanceSourceBills");
-  return value || "-";
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "sell") return t("v2Balance.sources.sell_profit");
+  if (isLedgerSourceType(normalized)) return t(`v2Balance.sources.${normalized}`);
+  return value || "—";
+};
+
+/**
+ * Ishorali o'zgarish: avval `balance_after − balance_before`, bo'lmasa turi bo'yicha (chiqim, maosh,
+ * tuzatish — manfiy). Mantiq v1 jadvalidagi bilan AYNAN bir xil.
+ */
+export const getSignedChange = (item: Record<string, unknown>) => {
+  const amount = Math.abs(Number(item.amount ?? 0));
+  const before = Number(item.balance_before ?? item.balanceBefore);
+  const after = Number(item.balance_after ?? item.balanceAfter);
+
+  if (Number.isFinite(before) && Number.isFinite(after) && before !== after) {
+    return after - before;
+  }
+
+  const operationType = String(item.operation_type ?? item.operationType ?? "").toLowerCase();
+  const sourceType = String(item.source_type ?? item.sourceType ?? "").toLowerCase();
+
+  if (operationType === "expense" || ["manual_expense", "salary", "correction"].includes(sourceType)) {
+    return -amount;
+  }
+
+  return amount;
+};
+
+/** API daftar yozuvi → jadval qatori. */
+export const toHistoryRow = (item: Record<string, unknown>): HistoryRow => {
+  const signedChange = getSignedChange(item);
+  const previousBalance = Number(item.balance_before ?? item.balanceBefore ?? 0);
+  const nextBalance = Number(item.balance_after ?? item.balanceAfter ?? previousBalance + signedChange);
+
+  return {
+    id: String(item.id ?? ""),
+    date: item.payment_date ?? item.paymentDate ?? item.createdAt ?? item.created_at ?? "",
+    sourceType: String(item.source_type ?? ""),
+    changeAmount: signedChange,
+    previousBalance,
+    nextBalance,
+    comment: toHistoryText(item.comment),
+    automatic: !toHistoryText(item.created_by),
+    actorName: toActorName(item),
+    orderId: toHistoryText(item.order_id),
+  };
 };

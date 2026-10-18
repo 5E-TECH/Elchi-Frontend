@@ -1,68 +1,110 @@
 {
+  "v2MyCashbox": {
+    "title": {
+      "market": "Платежи",
+      "courier": "Касса",
+      "manager": "Касса"
+    },
+    "subtitle": {
+      "market": "Касса маркета: баланс и история операций с Elchi",
+      "courier": "Касса курьера: деньги на руках и история операций",
+      "manager": "Касса филиала: баланс и история операций"
+    },
+    "dateAll": "Все",
+    "loading": "Загрузка данных кассы",
+    "loadError": "Не удалось загрузить данные кассы",
+    "balance": {
+      "title": "Общий баланс",
+      "hint": {
+        "market": "Сумма, которую Elchi должен вам выплатить",
+        "courier": "Деньги на руках",
+        "manager": "Деньги в кассе филиала"
+      },
+      "hide": "Скрыть баланс",
+      "show": "Показать баланс",
+      "hidden": "Баланс скрыт",
+      "note": {
+        "market": "Продажи увеличивают баланс; выплаты Elchi, отмены и расходы уменьшают его.",
+        "courier": "Продажи увеличивают баланс; деньги, сданные в филиал, и отмены уменьшают его."
+      },
+      "owner": "Владелец кассы",
+      "counterparty": "Контрагент",
+      "counterpartyHq": "Elchi HQ",
+      "cashboxType": "Тип кассы",
+      "today": "Сегодня",
+      "todayLabel": "Сегодня: приход {{income}}, расход {{expense}}",
+      "income": "Приход",
+      "expense": "Расход"
+    },
+    "history": {
+      "title": "История операций",
+      "subtitle": "Приходы и расходы вашей кассы",
+      "subtitleCourier": "Приходы и расходы вашей кассы. Нажмите на строку, чтобы открыть детали.",
+      "tabs": "Тип истории",
+      "all": "Все",
+      "transfers": "Денежные переводы",
+      "label": "История операций",
+      "cardsLabel": "Операции",
+      "columns": {
+        "date": "Дата",
+        "source": "Источник",
+        "operation": "Операция",
+        "type": "Тип",
+        "paymentType": "Способ оплаты",
+        "amount": "Сумма",
+        "balance": "Баланс",
+        "detail": "Детали"
+      },
+      "sortDate": "Сортировать по дате",
+      "sortAmount": "Сортировать по сумме",
+      "receivedBy": "Принял:",
+      "comment": "Комментарий:",
+      "correction": "Корректировка",
+      "titleWithOrder": "{{title}} · №{{id}}",
+      "openTitleWithOrder": "{{title}} №{{id}}",
+      "balanceAfter": "Баланс: {{amount}}",
+      "cardLabel": "{{title}}, {{method}}, {{direction}} {{amount}}, баланс {{balance}}, {{date}}",
+      "totalOperations": "Всего операций: {{total}}",
+      "totalTransfers": "Всего переводов: {{total}}",
+      "paginationTransfers": "{{from}}–{{to}} из {{total}} переводов",
+      "empty": "Операции не найдены",
+      "emptyDescription": "Здесь отображаются приходы и расходы вашей кассы",
+      "transfersEmptyDescription": "Здесь отображаются денежные переводы",
+      "filteredEmptyDescription": "За выбранный период операций нет",
+      "clearDates": "Сбросить даты"
+    }
+  },
   "title": "Платежи",
   "pageDescription": "Управление кассой и платежами",
   "toBeGiven": "К выдаче",
   "amountInCashbox": "Сумма в кассе",
-  "settlementStatus": "Состояние расчетов",
   "counterparty": "Контрагент",
   "toBeReceived": "К получению",
   "filters": "Фильтры",
-  "clearFilters": "Очистить фильтры",
   "selectPlaceholder": "Выберите",
-  "selectMarketDescription": "Выберите маркет",
   "selectCourierDescription": "Выберите курьера",
-  "selectBranchManagerDescription": "Выберите менеджера филиала",
   "selectEmployee": "Выберите сотрудника",
   "forSalaryPayment": "Для выплаты зарплаты",
-  "selectCourier": "Выберите курьера",
-  "receiveFromCourierDescription": "Принять от курьера",
   "selectMarket": "Выберите маркет",
-  "payToMarketDescription": "Оплатить маркету",
   "searchPlaceholder": "Поиск...",
   "selectLabel": "Выбрать",
   "cancelShort": "Отмена",
   "clear": "Очистить",
   "transactions": "Транзакции",
-  "filterByDate": "Фильтр по дате",
   "startDate": "Начало",
   "endDate": "Конец",
-  "dateRangeRequired": "Для применения фильтра нужно выбрать обе даты.",
-  "paymentHistoryTitle": "История платежей",
-  "countLabel": "{{count}} шт",
-  "quickActions": "Быстрые действия",
-  "mainCashboxManagement": "Управление основной кассой",
   "totalBalanceLabel": "Общий баланс",
   "hide": "Скрыть",
   "show": "Показать",
-  "cashBalance": "Баланс наличных",
-  "cardBalance": "Баланс карты",
-  "transactionsUpdating": "Данные обновляются по фильтру...",
-  "last30DaysChart": "График доходов/расходов за последние 30 дней",
-  "dailyDynamics": "Ежедневная динамика",
-  "ownerInfoTitle": "Информация о владельце кассы",
-  "ownerInfoDescription": "Имя, телефон и роль",
   "name": "Имя",
   "phone": "Телефон",
   "role": "Роль",
-  "amountLabel": "Сумма",
   "comment": "Комментарий",
-  "paymentHistoryNotFound": "История платежей не найдена",
-  "pageLabel": "Страница {{page}} / {{totalPages}}",
-  "previousPage": "Предыдущая страница",
-  "nextPage": "Следующая страница",
   "createdBy": "Создано",
   "amount": "Сумма",
   "paymentDate": "Дата платежа",
   "total": "всего",
-  "financeHistoryNotFound": "Финансовая история не найдена",
-  "historyLower": "история",
   "paymentHistory": "История платежей",
-  "allHistory": "Вся история",
-  "paymentTransfers": "Расчеты",
-  "lastOperations": "Последние операции",
-  "todayTransactions": "Сегодняшние транзакции",
-  "todayOperations": "Операции за сегодня",
-  "noOperations": "Операций нет",
   "today": "Сегодня",
   "thisWeek": "Эта неделя",
   "thisMonth": "Этот месяц",
@@ -77,141 +119,51 @@
   "paid": "Оплачено",
   "address": "Адрес",
   "qty": "Кол-во",
-  "detailLoading": "Загрузка деталей",
-  "detailLoadingDescription": "Получение деталей истории платежей с backend.",
-  "detailError": "Не удалось загрузить детали",
-  "detailErrorDescription": "Произошла ошибка при загрузке деталей финансовой истории.",
-  "balanceAfterTransaction": "Баланс после транзакции",
-  "commentLabel": "Комментарий",
-  "mainCashboxBadge": "Основная касса",
-  "spendOperation": "Операция расхода",
-  "incomeOperation": "Операция дохода",
-  "spendLabel": "Расход",
-  "incomeLabel": "Доход",
   "closeShiftTitle": "Закрыть смену",
-  "closeShiftDescription": "Завершение смены",
-  "closeShiftWarning": "При закрытии смены Excel-отчет будет загружен автоматически.",
   "optionalComment": "Комментарий (необязательно)",
-  "closeShiftPlaceholder": "Комментарий о смене...",
   "paymentTypeRequired": "Тип оплаты обязателен",
   "commentRequired": "Комментарий обязателен",
   "amountRequired": "Сумма обязательна",
-  "mainCashboxTitle": "Основная касса",
-  "mainCashboxDescription": "Управление основной кассой",
   "cashbox": "Касса",
   "mainCashbox": "Основная касса",
-  "cashDetail": "Детали кассы",
   "history": "История",
-  "historyDetail": "Детали истории",
   "income": "Доход",
   "expense": "Расход",
   "balance": "Баланс",
   "cash": "Наличные",
   "card": "Карта",
   "other": "Другое",
-  "openShift": "Открыть смену",
-  "closeShift": "Закрыть смену",
-  "currentShift": "Текущая смена",
-  "shiftHistory": "История смен",
   "fillCashbox": "Пополнить кассу",
   "spendFromCashbox": "Расход из кассы",
-  "paymentCourier": "Оплата курьеру",
-  "paymentMarket": "Оплата маркету",
   "courierToBranchTransfer": "Перевод от курьера в филиал",
   "hqToMarketTransfer": "Перевод из HQ в маркет",
-  "operationType": "Тип операции",
-  "sourceType": "Тип источника",
-  "cashboxType": "Тип кассы",
-  "financialBalance": "Финансовый баланс",
-  "financialBalanceOverview": "Общий обзор",
-  "financialBalanceAnalysis": "Анализ",
-  "financialBalanceCurrentSituation": "Текущая ситуация",
-  "financialBalanceMarketsAndCouriers": "Маркеты и курьеры",
-  "financialBalanceNegativeState": "Отрицательное состояние",
-  "financialBalancePositiveState": "Положительное состояние",
-  "financialBalanceCashbox": "Касса",
-  "financialBalanceCashAvailable": "Доступные средства",
-  "financialBalanceMarkets": "Маркеты",
-  "financialBalanceMarketsDebt": "(-) Мы должны",
-  "financialBalanceCouriers": "Курьеры",
-  "financialBalanceCouriersMoney": "(+) Наши деньги",
-  "financialBalanceReceivable": "Деньги в пути",
-  "financialBalanceReceivableHint": "(+) У курьеров, филиалов и карго",
   "cashDetailTypeUnknown": "Тип кассы не определён — форма оплаты скрыта для безопасности. Откройте кассу заново из списка.",
   "cashDetailNotMarketCashbox": "Это не касса маркета — платёж не отправлен.",
-  "financialBalanceIndicators": "Финансовые показатели",
-  "financialBalanceDistribution": "Распределение",
-  "financialBalanceTotal": "Общий баланс",
-  "financialBalanceTotalFormula": "Касса + Деньги в пути + Маркеты",
-  "financialBalanceMarketsSettlement": "Расчеты с маркетами",
-  "financialBalanceCouriersSettlement": "Расчеты с курьерами",
-  "financialBalanceListEmpty": "Данные не найдены",
-  "financialBalanceCountSuffix": "шт.",
-  "financialBalancePositiveImpact": "Положительное влияние (+)",
-  "financialBalanceNegativeImpact": "Отрицательное влияние (-)",
-  "financialBalanceNetChange": "Чистое изменение",
-  "financialBalanceTransactionsCount": "{{count}} транзакций",
-  "financialBalancePositiveSources": "Источники роста",
-  "financialBalanceNegativeSources": "Источники снижения",
-  "financialBalanceTopTransactions": "Транзакции с наибольшим влиянием",
-  "financialBalanceTotalTransactions": "Всего {{count}}",
-  "financialBalanceComingSoon": "Интерфейс для этого раздела будет добавлен на следующем этапе.",
-  "financialBalanceDate": "Дата",
-  "financialBalanceSource": "Источник",
-  "financialBalanceSourceType": "Тип источника",
-  "financialBalanceAllSources": "Все источники",
-  "financialBalanceChange": "Изменение",
-  "financialBalancePreviousBalance": "Предыдущий баланс",
-  "financialBalanceNextBalance": "Следующий баланс",
-  "financialBalanceComment": "Комментарий",
-  "financialBalanceHistoryEmpty": "История не найдена",
-  "financialBalanceSourceProfit": "Доход почты",
-  "financialBalanceSourceExtraCost": "Дополнительный расход",
   "financialBalanceSourceManualIncome": "Ручное поступление",
   "financialBalanceSourceManualExpense": "Ручной расход",
   "financialBalanceSourceSalary": "Зарплата",
   "financialBalanceSourceCorrection": "Корректировка (rollback)",
   "financialBalanceSourceBills": "Счета-фактуры",
-  "allInfo": "Вся информация",
   "report": "Отчет",
-  "exportReport": "Экспортировать отчет",
   "commentPlaceholder": "Комментарий...",
   "paymentType": "Тип оплаты",
-  "paymentTypePlaceholder": "тип оплаты",
-  "closeShiftComment": "Комментарий к закрытию смены",
   "amountPositiveValidation": "Сумма должна быть больше 0",
   "loadingLabel": "Загрузка...",
-  "cancelLabel": "Отмена",
-  "mainSection": "Основная касса",
-  "incomeSection": "Доход",
   "expenseSection": "Расход",
   "fromWhere": "Откуда",
   "toWhere": "Куда",
   "summaryIncome": "Общий доход",
   "summaryExpense": "Общий расход",
   "totalBalance": "Общий баланс",
-  "balanceVisible": "Баланс видим",
-  "balanceHidden": "Баланс скрыт",
-  "cashboxUser": "Пользователь кассы",
-  "transactionStatus": "Статус",
   "delivery": "Доставка",
-  "orderProducts": "Товары",
-  "financeHistory": "Финансовая история",
   "fillSuccess": "Касса успешно пополнена",
   "fillError": "Ошибка при пополнении кассы",
   "spendSuccess": "Расход успешно сохранен",
   "spendError": "Ошибка при сохранении расхода",
   "closeShiftSuccess": "Смена успешно закрыта",
   "closeShiftError": "Ошибка при закрытии смены",
-  "currency": "сум",
-  "mainCashboxReport": "Отчет по основной кассе"
-  ,"marketCashboxLabel": "Касса маркета"
-  ,"courierCashboxLabel": "Касса курьера"
-  ,"payAction": "Оплатить"
-  ,"receiveAction": "Принять"
+  "currency": "сум"
   ,"userFallback": "Пользователь"
-  ,"receiveFromCourier": "Принять от курьера"
-  ,"receiveFromBranchManager": "Принять от менеджера филиала"
   ,"payToMarket": "Оплатить маркету"
   ,"paySalary": "Выплатить зарплату"
   ,"monthlySalary": "Ежемесячная зарплата"
@@ -223,51 +175,26 @@
   ,"mainCard": "Основная карта"
   ,"selectCard": "Выберите карту"
   ,"cardRequired": "Выберите карту"
-  ,"courierShort": "Курьер"
-  ,"branchManagerShort": "Менеджер филиала"
-  ,"marketShort": "Маркет"
-  ,"expenseShort": "Расход"
-  ,"incomeShort": "Доход"
-  ,"salaryShort": "Зарплата"
   ,"excel": "Excel"
   ,"sell": "Продажа"
   ,"cancelOperation": "Отмена"
   ,"extraCost": "Доп. расход"
-  ,"transferOption": "Перевод"
-  ,"toMarketTransferOption": "Перевод в магазин"
   ,"marketRequired": "Выберите маркет"
   ,"receivePaymentSuccess": "Платеж от курьера успешно принят"
   ,"receivePaymentError": "Ошибка при приеме платежа от курьера"
   ,"marketPaymentSuccess": "Платеж маркету успешно отправлен"
   ,"marketPaymentError": "Ошибка при отправке платежа маркету"
-  ,"selectMainBranchDescription": "Выберите HQ для перевода средств"
-  ,"branchMainCashboxLabel": "Касса HQ"
-  ,"payToMainDescription": "Перевод средств из кассы филиала в основную кассу"
-  ,"payToMainAction": "Перевести в HQ"
   ,"branchToMainPaymentSuccess": "Платеж успешно переведен в HQ"
   ,"branchToMainPaymentError": "Ошибка при переводе платежа в HQ"
   ,"branchToMainSource": "Перевод из филиала в HQ"
   ,"mainBranchFallback": "Главный филиал"
   ,"unknown": "Неизвестно"
-  ,"cardHolder": "Владелец карты"
-  ,"transferSourceRequired": "Выберите источник перевода"
-  ,"transferCourierLabel": "Касса курьера"
-  ,"transferCourierPlaceholder": "Выберите курьера"
-  ,"transferMarketLabel": "Касса маркета"
-  ,"transferMarketPlaceholder": "Выберите маркет"
-  ,"customerRole": "Клиент"
-  ,"adminRole": "Админ"
-  ,"superAdminRole": "Супер админ"
-  ,"clickPayment": "Click"
-  ,"paymePayment": "Payme"
   ,"statusSold": "Продано"
   ,"statusCancelled": "Отменено"
   ,"statusPaid": "Оплачено"
   ,"statusPartlyPaid": "Частично оплачено"
   ,"statusNew": "Новый"
   ,"statusReceived": "Принято"
-  ,"deliveryAddress": "По адресу"
-  ,"deliveryCenter": "В центр"
   ,"region": "Регион"
   ,"no": "№"
   ,"currencyAmountSuffix": "сум"
@@ -286,33 +213,666 @@
   ,"openShiftTitle": "Открыть смену"
   ,"openShiftSuccess": "Смена открыта"
   ,"openShiftError": "Ошибка при открытии смены"
-  ,"financialBalanceCreatedBy": "Внёс"
-  ,"financialBalanceAutomatic": "Автоматически"
-  ,"financialBalanceOrder": "Заказ"
-  ,"financialBalanceOrderLink": "Заказ #{{id}}"
-  ,"financialBalanceCurrent": "Текущий баланс"
-  ,"financialBalanceCurrentHint": "Текущий остаток журнала (независимо от периода)"
-  ,"financialEntryAdd": "Добавить запись"
-  ,"financialEntryTitle": "Добавить запись вручную"
-  ,"financialEntryDirection": "Направление"
-  ,"financialEntryDirectionIncome": "Приход (+)"
-  ,"financialEntryDirectionExpense": "Расход (−)"
-  ,"financialEntryAmount": "Сумма"
   ,"financialEntryAmountRequired": "Введите сумму"
   ,"financialEntryAmountTooLarge": "Слишком большая сумма"
   ,"financialEntryCommentRequired": "Укажите причину (минимум 3 символа)"
-  ,"financialEntryCommentPlaceholder": "Например: аренда офиса, октябрь"
-  ,"financialEntryPreview": "Влияние на баланс: {{amount}}"
-  ,"financialEntrySubmit": "Сохранить"
   ,"financialEntryCreated": "Запись добавлена"
   ,"financialEntryFailed": "Не удалось сохранить запись"
-  ,"paymentConfirmTitle": "Подтвердить платёж?"
-  ,"paymentConfirmMessage": "{{amount}} сум — {{action}}: {{target}} ({{method}}). После подтверждения деньги будут переведены, отменить нельзя."
   ,"salaryConfirmTitle": "Подтвердите выплату зарплаты"
   ,"salaryConfirmDescription": "Проверьте данные — после подтверждения сумма сразу списывается из кассы, отменить нельзя."
+  ,"v2MainCashbox": {
+    "back": "Платежи",
+    "title": "Основная касса",
+    "subtitle": "Управление основной кассой",
+    "subtitleShiftOpen": "Управление основной кассой · смена открыта",
+    "subtitleShiftClosed": "Управление основной кассой · смена закрыта",
+    "subtitleBranch": "Управление основной кассой · {{branch}}",
+    "exportExcel": "Выгрузить в Excel",
+    "openShift": "Открыть смену",
+    "closeShift": "Закрыть смену",
+    "balance": {
+      "title": "Баланс кассы",
+      "subtitle": "На сегодня, {{time}} · график: остаток на конец дня",
+      "subtitleBranch": "На сегодня, {{time}} · {{branch}}",
+      "hide": "Скрыть баланс",
+      "show": "Показать баланс",
+      "view": "Вид баланса кассы",
+      "chart": "График",
+      "table": "Таблица",
+      "total": "Общий баланс",
+      "todayNet": "чистый поток за сегодня",
+      "cash": "Наличные",
+      "card": "Карта (Click)",
+      "split": "Наличные {{cash}} ({{cashShare}}), карта {{card}} ({{cardShare}})",
+      "chartLabel": "Баланс основной кассы на конец дня, {{from}} – {{to}}: с {{first}} до {{last}}",
+      "endOfDay": "на конец дня",
+      "income": "Приход",
+      "expense": "Расход",
+      "today": "Сегодня",
+      "point": "{{date}}: на конец дня {{balance}}, приход {{income}}, расход {{expense}}",
+      "chartEmpty": "Недостаточно данных для графика",
+      "chartEmptyHint": "Нужен остаток минимум за два дня",
+      "loadError": "Не удалось загрузить данные кассы",
+      "loading": "Загрузка баланса кассы",
+      "tableLabel": "Остаток на конец дня",
+      "columns": {
+        "date": "Дата",
+        "endOfDay": "На конец дня",
+        "income": "Приход",
+        "expense": "Расход"
+      }
+    },
+    "actions": {
+      "title": "Быстрые действия",
+      "subtitle": "Работа с основной кассой",
+      "receive": "Принять деньги",
+      "receiveHint": "От филиала или курьера HQ",
+      "receiveCourier": "Принять от курьера",
+      "receiveCourierHint": "Забрать деньги из кассы курьера филиала",
+      "payMarket": "Оплата маркету",
+      "payMarketHint": "Выбрать маркет и оплатить",
+      "spend": "Расход из кассы",
+      "spendHint": "Расходная операция",
+      "fill": "Пополнить кассу",
+      "fillHint": "Приходная операция",
+      "shiftOpen": "Смена открыта · с {{time}}",
+      "shiftOpenNoTime": "Смена открыта",
+      "shiftOpenedBy": "Открыл(а): {{name}}",
+      "shiftClosed": "Смена закрыта"
+    },
+    "periods": {
+      "label": "Приход и расход по периодам",
+      "today": "Сегодня",
+      "week": "Эта неделя",
+      "month": "Этот месяц",
+      "netFlow": "чистый поток",
+      "netFlowKept": "чистый поток · осталось {{percent}} прихода",
+      "income": "Приход",
+      "expense": "Расход",
+      "summary": "{{period}}: приход {{income}}, расход {{expense}}, чистый поток {{net}}",
+      "mobileTitle": "Приход и расход",
+      "mobileSubtitle": "{{period}} · {{range}}",
+      "segment": "Период",
+      "netChange": "чистое изменение"
+    },
+    "sources": {
+      "title": "Откуда пришли и куда ушли деньги",
+      "subtitle": "По типу источника · Этот месяц, {{range}}",
+      "income": "Источники прихода",
+      "expense": "Направления расхода",
+      "noIncome": "В этом месяце прихода нет",
+      "noExpense": "В этом месяце расхода нет",
+      "note": "Сгруппировано по столбцу «Источник» истории операций; подробности — в таблице ниже",
+      "loadError": "Не удалось загрузить данные"
+    },
+    "history": {
+      "title": "История операций",
+      "count": "Операций: {{n}}",
+      "allTime": "за всё время",
+      "dateFilter": "Фильтр по дате",
+      "clearFilters": "Сбросить фильтры",
+      "updating": "Данные обновляются по фильтру…",
+      "label": "История операций",
+      "cardsLabel": "Операции",
+      "columns": {
+        "date": "Дата",
+        "createdBy": "Создал",
+        "source": "Источник",
+        "paymentType": "Способ оплаты",
+        "operation": "Операция",
+        "amount": "Сумма",
+        "detail": "Детали"
+      },
+      "balanceAfter": "Баланс: {{amount}}",
+      "empty": "Операции не найдены",
+      "emptyDescription": "В основной кассе пока нет операций",
+      "filteredEmptyDescription": "За выбранный период операций нет",
+      "loadError": "Не удалось загрузить операции",
+      "loading": "Загрузка операций"
+    },
+    "form": {
+      "fillTitle": "Пополнить кассу",
+      "spendTitle": "Расход из кассы",
+      "fillSubtitle": "Приходная операция · Основная касса",
+      "spendSubtitle": "Расходная операция · Основная касса",
+      "amount": "Сумма",
+      "paymentType": "Способ оплаты",
+      "comment": "Комментарий",
+      "cash": "Наличные",
+      "card": "Карта (Click)",
+      "fillPlaceholder": "Например: сняли наличные с банковского счёта",
+      "spendPlaceholder": "Например: аренда офиса, октябрь",
+      "fillCommentRequired": "Комментарий обязателен — укажите, откуда пришли деньги",
+      "spendCommentRequired": "Комментарий обязателен — укажите, на что потрачены деньги",
+      "typeRequired": "Выберите способ оплаты",
+      "fillSubmit": "Сохранить приход",
+      "spendSubmit": "Сохранить расход",
+      "cancel": "Отмена",
+      "saving": "Сохранение…"
+    },
+    "confirm": {
+      "fillTitle": "Подтвердите приход",
+      "spendTitle": "Подтвердите расход",
+      "description": "Проверьте данные — после подтверждения сумма сразу отразится в кассе.",
+      "cashbox": "Касса",
+      "mainCashbox": "Основная касса",
+      "comment": "Комментарий",
+      "submit": "Подтвердить"
+    },
+    "shift": {
+      "title": "Закрыть смену",
+      "subtitle": "Текущая смена кассы будет завершена",
+      "current": "Текущая смена",
+      "since": "с {{time}}",
+      "openedBy": "Открыл(а)",
+      "cashboxTotal": "Сумма в кассе",
+      "excelNote": "При закрытии смены Excel-отчёт будет загружен автоматически.",
+      "comment": "Комментарий",
+      "commentPlaceholder": "Комментарий о смене...",
+      "cancel": "Отмена",
+      "submit": "Закрыть смену",
+      "closing": "Закрытие…"
+    },
+    "notify": {
+      "alreadyRecorded": "Эта операция уже записана — касса обновлена, проверьте сумму",
+      "outcomeUnknown": "Сервер не ответил — операция могла пройти. Касса обновлена, проверьте сумму: если повторно отправить эту же операцию, она не запишется дважды"
+    }
+  }
+  ,"v2Balance": {
+    "title": "Баланс",
+    "description": "Общий баланс по кассе, деньгам в пути и маркетам",
+    "export": "Выгрузить в Excel",
+    "addEntry": "Добавить запись",
+    "kpi": {
+      "label": "Показатели баланса",
+      "cash": "Касса",
+      "receivable": "Деньги в пути",
+      "marketsDebt": "Долг маркетам",
+      "total": "Общий баланс",
+      "positive": "Положительный",
+      "negative": "Отрицательный",
+      "formula": "Общий баланс = касса + деньги в пути − долг маркетам."
+    },
+    "tabs": { "label": "Разделы баланса", "overview": "Обзор", "history": "История", "analysis": "Анализ" },
+    "state": {
+      "loading": "Загрузка баланса",
+      "loadFailed": "Не удалось загрузить баланс",
+      "empty": "Нет данных баланса",
+      "emptyDescription": "Сервер не вернул показатели баланса. Откройте страницу чуть позже."
+    },
+    "composition": {
+      "title": "Структура баланса",
+      "subtitle": "Где находятся деньги и кому они принадлежат · на {{time}}",
+      "positive": "Положительное состояние",
+      "negative": "Отрицательное состояние",
+      "where": "Где деньги",
+      "whereSub": "Касса и деньги в пути",
+      "cash": "Касса",
+      "chain": "У курьеров и в филиалах",
+      "provider": "У карго",
+      "inTransit": "Деньги в пути",
+      "owner": "Кому принадлежат",
+      "ownerSub": "Маркетам и нам",
+      "marketsDebt": "Долг маркетам",
+      "total": "Общий баланс",
+      "debtExceeds": "Долг маркетам больше остатка денег — общий баланс отрицательный.",
+      "segment": "{{name}} {{value}} ({{percent}})",
+      "note": "Обе полосы равны — {{total}}. Деньги в пути: проданные, но ещё не поступившие в кассу деньги в цепочке курьеров и филиалов и у карго."
+    },
+    "markets": {
+      "title": "Расчёты с маркетами",
+      "subtitle": "Сколько мы должны маркетам · по сумме долга",
+      "share": "{{name}}: доля долга",
+      "empty": "Долгов перед маркетами нет"
+    },
+    "couriers": {
+      "title": "Расчёты с курьерами",
+      "subtitle": "Часть денег в пути, которая у курьеров",
+      "share": "{{name}}: доля денег в пути",
+      "negative": "отрицательный баланс",
+      "footNote": "Доля — от суммы положительных остатков: {{positive}}",
+      "footDebtor": "должники {{negative}}",
+      "empty": "У курьеров нет денег"
+    },
+    "rank": {
+      "count": "{{value}} шт.",
+      "total": "Итого",
+      "showMore": "Показать ещё · {{value}}",
+      "showLess": "Свернуть"
+    },
+    "history": {
+      "filters": "Фильтры истории",
+      "source": "Тип источника",
+      "allSources": "Все источники",
+      "date": "Период",
+      "title": "Записи",
+      "subtitle": "Новые сверху · в каждой записи остаток до → после",
+      "count": "{{value}} шт.",
+      "listLabel": "История баланса",
+      "cardsLabel": "Записи",
+      "loading": "Загрузка записей",
+      "col": {
+        "date": "Дата",
+        "source": "Источник",
+        "change": "Изменение",
+        "balance": "Остаток журнала",
+        "balanceSr": ": до → после",
+        "actor": "Внёс",
+        "comment": "Комментарий",
+        "open": "Подробнее"
+      },
+      "manual": "Ручная запись",
+      "automatic": "Автоматически",
+      "order": "Заказ №{{id}}",
+      "from": "было",
+      "balanceLine": "Остаток журнала: {{value}}",
+      "open": "Открыть подробности: {{source}} ({{date}})",
+      "pagination": "{{from}}–{{to}} из {{total}} записей",
+      "empty": "Записей пока нет",
+      "emptyDescription": "Записи в журнал поступают из продаж, расходов и ручных записей.",
+      "filteredEmpty": "Записи не найдены",
+      "filteredEmptyDescription": "По выбранным фильтрам записей нет.",
+      "clearFilters": "Сбросить фильтры"
+    },
+    "analysis": {
+      "period": "Период анализа",
+      "periodSeg": "Период",
+      "today": "Сегодня",
+      "week": "Эта неделя",
+      "month": "Этот месяц",
+      "all": "Все",
+      "allTime": "всё время",
+      "loading": "Загрузка анализа",
+      "flow": {
+        "title": "Движение остатка журнала",
+        "subtitle": "С начала периода до сейчас: какой источник сколько добавил и убавил · {{period}}",
+        "view": "Вид движения остатка журнала",
+        "chart": "График",
+        "table": "Таблица",
+        "current": "Остаток журнала",
+        "currentHint": "текущий остаток",
+        "positive": "Положительное влияние (+)",
+        "positiveHint": "поступления за период",
+        "negative": "Отрицательное влияние (−)",
+        "negativeHint": "расходы за период",
+        "net": "Чистое изменение",
+        "netHint": "транзакций: {{value}}",
+        "start": "Начало периода",
+        "end": "Сейчас",
+        "income": "Приход · {{value}}",
+        "expense": "Расход · {{value}}",
+        "legendTotal": "Остаток",
+        "legendUp": "Приход (+)",
+        "legendDown": "Расход (−)",
+        "note": "Начало периода = текущий остаток − чистое изменение",
+        "pastNote": "Период заканчивается раньше сегодняшнего дня — остаток на начало и конец не показывается",
+        "aria": "Остаток журнала, {{period}}: {{steps}}",
+        "step": "Этап",
+        "change": "Изменение",
+        "balance": "Остаток",
+        "empty": "За этот период записей нет",
+        "emptyDescription": "Выберите другой период."
+      },
+      "positive": {
+        "title": "Источники роста",
+        "total": "Итого",
+        "sources": "источников: {{n}}",
+        "share": "{{value}} прихода",
+        "shareAria": "{{name}}: {{value}} прихода",
+        "empty": "За этот период поступлений нет"
+      },
+      "negative": {
+        "title": "Источники снижения",
+        "total": "Итого",
+        "sources": "источников: {{n}}",
+        "share": "{{value}} расхода",
+        "shareAria": "{{name}}: {{value}} расхода",
+        "empty": "За этот период расходов нет"
+      },
+      "top": {
+        "title": "Транзакции с наибольшим влиянием",
+        "subtitle": "За выбранный период, по убыванию суммы",
+        "count": "всего {{value}}",
+        "listLabel": "Транзакции с наибольшим влиянием",
+        "loading": "Загрузка транзакций",
+        "col": {
+          "index": "#",
+          "source": "Источник",
+          "direction": "Направление",
+          "actor": "Внёс",
+          "date": "Дата",
+          "amount": "Сумма"
+        },
+        "income": "Приход",
+        "expense": "Расход",
+        "pagination": "{{from}}–{{to}} из {{total}} транзакций",
+        "empty": "Транзакций нет",
+        "emptyDescription": "За выбранный период записей в журнал не было."
+      }
+    },
+    "entry": {
+      "title": "Добавить запись вручную",
+      "source": "Тип источника",
+      "direction": "Направление",
+      "income": "Приход (+)",
+      "expense": "Расход (−)",
+      "amount": "Сумма",
+      "impact": "Влияние на баланс",
+      "comment": "Комментарий",
+      "commentPlaceholder": "Например: аренда офиса, октябрь",
+      "commentHint": "Укажите причину — минимум 3 символа.",
+      "save": "Сохранить"
+    },
+    "detail": {
+      "manual": "Ручная запись",
+      "automatic": "Автоматически",
+      "change": "Изменение",
+      "income": "Приход",
+      "expense": "Расход",
+      "date": "Дата",
+      "previous": "Предыдущий баланс",
+      "next": "Следующий баланс",
+      "actor": "Внёс",
+      "order": "Заказ",
+      "orderLink": "№{{id}}",
+      "notLinked": "Не привязан",
+      "comment": "Комментарий",
+      "close": "Закрыть"
+    },
+    "sources": {
+      "sell_profit": "Доход почты",
+      "sell_extra_cost": "Дополнительный расход",
+      "cancel_extra_cost": "Дополнительный расход",
+      "manual_income": "Ручное поступление",
+      "manual_expense": "Ручной расход",
+      "salary": "Зарплата",
+      "correction": "Корректировка",
+      "bills": "Счета-фактуры"
+    }
+  }
+  ,"v2Common": {
+    "income": "Приход",
+    "expense": "Расход",
+    "inactive": "Неактивен",
+    "orderNumber": "Заказ №{{id}}",
+    "openDetail": "Открыть детали: {{title}} ({{date}})",
+    "detail": "Детали",
+    "paginationOperations": "{{from}}–{{to}} из {{total}} операций",
+    "paymentMethod": {
+      "cash": "Наличные",
+      "transfer": "Перевод",
+      "cardClick": "Карта (Click)",
+      "toMarket": "Перевод маркету",
+      "payme": "Payme"
+    },
+    "cashbox": {
+      "main": "Основная касса",
+      "courier": "Касса курьера",
+      "market": "Касса маркета",
+      "branch": "Касса филиала"
+    },
+    "sourceType": {
+      "courierPayment": "Платёж курьера",
+      "courierToBranch": "Перевод от курьера в филиал",
+      "marketPayment": "Оплата маркету",
+      "hqToMarket": "Перевод из HQ маркету",
+      "branchToMain": "Перевод из филиала в HQ",
+      "manualIncome": "Ручной приход",
+      "manualExpense": "Ручной расход",
+      "correction": "Корректировка",
+      "salary": "Зарплата",
+      "sell": "Продажа",
+      "cancel": "Отмена",
+      "extraCost": "Доп. расход",
+      "bills": "Счета-фактуры"
+    },
+    "roles": {
+      "courier": "Курьер",
+      "market": "Маркет",
+      "manager": "Менеджер",
+      "registrator": "Регистратор",
+      "admin": "Админ",
+      "superadmin": "Суперадмин",
+      "customer": "Клиент",
+      "branch": "Касса филиала",
+      "main": "Основная касса"
+    }
+  }
+  ,"v2HistoryDetail": {
+    "incomeTitle": "Приходная операция",
+    "expenseTitle": "Расходная операция",
+    "operationTitle": "Операция",
+    "subtitle": "История операций · {{date}}",
+    "amount": "Сумма",
+    "balanceAfter": "Баланс после операции",
+    "sourceType": "Тип источника",
+    "cashboxType": "Тип кассы",
+    "from": "Откуда",
+    "to": "Куда",
+    "paymentType": "Способ оплаты",
+    "paymentDate": "Дата платежа",
+    "comment": "Комментарий",
+    "linkedOrder": "Связанный заказ",
+    "orderNumber": "№{{id}}",
+    "openOrder": "Открыть заказ №{{id}}",
+    "market": "Маркет",
+    "status": "Статус",
+    "district": "Район",
+    "address": "Адрес",
+    "customerPhone": "Телефон клиента",
+    "orderTotal": "Общая сумма",
+    "toBePaid": "К оплате",
+    "paid": "Оплачено",
+    "close": "Закрыть",
+    "loading": "Загрузка деталей",
+    "loadError": "Не удалось загрузить детали"
+  }
+  ,"v2Picker": {
+    "select": "Выбрать",
+    "cancel": "Отмена",
+    "total": "всего {{amount}}",
+    "loading": "Загрузка списка",
+    "noResults": "Ничего не найдено",
+    "empty": "Задолженности нет",
+    "loadError": "Не удалось загрузить список",
+    "receive": {
+      "title": "К получению",
+      "searchPlaceholder": "Имя, телефон или филиал",
+      "searchLabel": "Поиск менеджера филиала или курьера",
+      "listLabel": "Кассы для приёма",
+      "branches": "Филиалы",
+      "hqCouriers": "Курьеры HQ"
+    },
+    "give": {
+      "title": "К выдаче",
+      "description": "Выберите маркет для оплаты",
+      "summary": "маркетов: {{count}}, всего {{amount}}",
+      "searchPlaceholder": "Поиск...",
+      "searchLabel": "Поиск маркета по названию",
+      "listLabel": "Маркеты"
+    },
+    "courier": {
+      "title": "Выберите курьера",
+      "description": "К получению: всего {{amount}}",
+      "descriptionShort": "К получению",
+      "searchPlaceholder": "Имя, телефон или район",
+      "searchLabel": "Поиск курьера",
+      "listLabel": "Курьеры",
+      "group": "Курьеры филиала «{{branch}}» · {{count}}",
+      "groupFallback": "Курьеры · {{count}}"
+    }
+  }
+  ,"v2Overview": {
+    "receive": "Принять деньги",
+    "payMarket": "Оплата маркету",
+    "transferToHq": "Перевести в HQ",
+    "receiveFromCourier": "Принять от курьера",
+    "kpiLabel": "Показатели кассы",
+    "cashboxAmount": "Сумма в кассе",
+    "toReceive": "К получению",
+    "toGive": "К выдаче",
+    "mainCashbox": "Основная касса",
+    "mainCashboxShiftOpen": "Основная касса · смена открыта",
+    "mainCashboxShiftClosed": "Основная касса · смена закрыта",
+    "cash": "Наличные",
+    "card": "Карта",
+    "cashSplit": "Наличные {{cash}}, карта {{card}}",
+    "branches": "Филиалы",
+    "hqCouriers": "Курьеры HQ",
+    "receiveSplit": "Филиалы {{branches}}, курьеры HQ {{couriers}}",
+    "courierCount": "От курьеров филиала · у {{count}} курьеров",
+    "courierCountShort": "у {{count}} курьеров",
+    "otherCouriers": "Другие",
+    "courierShare": "Доля курьеров: {{list}}",
+    "giveMeta": "В {{hq}} · {{percent}} кассы",
+    "giveMetaHq": "В HQ · {{percent}} кассы",
+    "giveMeter": "Сумма к выдаче относительно суммы в кассе",
+    "remains": "Останется в кассе: {{amount}}",
+    "enough": "Достаточно",
+    "notEnough": "Недостаточно",
+    "cashboxSummary": "Сводка кассы",
+    "couriers": {
+      "title": "Деньги у курьеров",
+      "subtitle": "К получению · всего {{amount}}",
+      "listLabel": "Деньги в кассах курьеров",
+      "share": "{{name}}: доля денег у курьера",
+      "inactive": "Неактивен",
+      "debtor": "должник",
+      "inactiveDebtor": "Неактивен · должник",
+      "note": "Ещё у {{count}} курьеров денег нет · доля = сумма курьера / сумма положительных остатков",
+      "noteShare": "Доля = сумма курьера / сумма положительных остатков",
+      "all": "Все курьеры · {{count}}",
+      "empty": "У курьеров нет денег",
+      "loadError": "Не удалось загрузить список курьеров"
+    },
+    "history": {
+      "label": "История операций",
+      "tabs": "Тип операции",
+      "all": "Все",
+      "filters": "Фильтры истории",
+      "date": "Дата платежа",
+      "sourceType": "Тип источника",
+      "cashboxType": "Тип кассы",
+      "createdBy": "Создал",
+      "columns": {
+        "date": "Дата",
+        "createdBy": "Создал",
+        "source": "Источник",
+        "cashbox": "Касса",
+        "operation": "Операция",
+        "amount": "Сумма",
+        "detail": "Детали"
+      },
+      "cardsLabel": "Операции",
+      "loading": "Загрузка операций",
+      "empty": "Операции не найдены",
+      "emptyDescription": "Здесь отображаются приходы и расходы кассы",
+      "filteredEmptyDescription": "По выбранным фильтрам операций нет",
+      "loadError": "Не удалось загрузить операции"
+    }
+  }
+  ,"v2CashDetail": {
+    "back": "Платежи",
+    "header": {
+      "hqCashbox": "Касса HQ",
+      "branchFallback": "Касса филиала",
+      "hqCourier": "Курьер HQ",
+      "branchCourier": "Курьер филиала {{branch}}",
+      "manager": "Менеджер: {{name}}",
+      "hqTransfer": "Перевод денег из кассы филиала {{branch}} в HQ",
+      "hqTransferFallback": "Перевод денег из кассы филиала в HQ"
+    },
+    "settlement": {
+      "title": "Состояние расчётов",
+      "counterparty": "Контрагент: {{name}}",
+      "receiver": "Получатель: {{name}}",
+      "hide": "Скрыть суммы",
+      "splitLabel": "Сумма в кассе {{total}}: наличные {{cash}} ({{cashShare}}), перевод {{card}} ({{cardShare}})",
+      "versusCashbox": "Относительно денег в кассе",
+      "enough": "Кассы достаточно",
+      "notEnough": "Кассы недостаточно",
+      "meterLabel": "Сумма к выдаче относительно суммы в кассе",
+      "payableShare": "К выдаче · {{share}}",
+      "remains": "Останется в кассе · {{amount}}"
+    },
+    "form": {
+      "courierTitle": "Принять от курьера",
+      "courierToMain": "Деньги поступают из кассы курьера в основную кассу",
+      "courierToBranch": "Деньги поступают из кассы курьера в кассу филиала",
+      "marketTitle": "Оплата маркету",
+      "marketSubtitle": "Деньги переводятся из основной кассы маркету",
+      "marketInfo": "Оплата сначала закрывает самые старые заказы, затем новые.",
+      "branchTitle": "Принять от филиала",
+      "branchSubtitle": "Деньги поступают из кассы филиала в основную кассу",
+      "hqTitle": "Перевести в HQ",
+      "hqSubtitle": "Перевод денег из кассы филиала в кассу HQ",
+      "amount": "Сумма",
+      "limitHint": "Не более {{amount}} — сумма к получению",
+      "receivableHint": "К получению: {{amount}}",
+      "payableHint": "К выдаче: {{amount}}",
+      "payableCashboxHint": "К выдаче: {{amount}} · в кассе {{cashbox}}",
+      "paymentType": "Тип оплаты",
+      "paymentTypeRequired": "Выберите тип оплаты",
+      "market": "Маркет",
+      "marketPlaceholder": "Выберите маркет",
+      "marketHint": "Пока маркет не выбран, кнопка приёма неактивна",
+      "comment": "Комментарий",
+      "commentPlaceholder": "Комментарий...",
+      "receive": "Принять",
+      "receiveAmount": "Принять {{amount}}",
+      "pay": "Оплатить",
+      "hq": "Перевести в HQ",
+      "hqAmount": "Перевести {{amount}} в HQ",
+      "loading": "Загрузка…"
+    },
+    "confirm": {
+      "title": "Подтвердите платёж",
+      "description": "Проверьте данные — после подтверждения сумма сразу отразится в обеих кассах.",
+      "confirm": "Подтвердить",
+      "comment": "Комментарий",
+      "market": "Маркет"
+    },
+    "history": {
+      "title": "История операций",
+      "courier": "Приходы и расходы кассы курьера",
+      "market": "Приходы и расходы кассы маркета",
+      "branch": "Приходы и расходы кассы филиала",
+      "named": "Приходы и расходы кассы: {{name}}",
+      "excel": "Выгрузить в Excel",
+      "tabsLabel": "Тип истории",
+      "all": "Вся история",
+      "payments": "Платёжные переводы",
+      "empty": "Операции не найдены"
+    },
+    "movement": {
+      "title": "Движение баланса",
+      "courier": "Остаток после каждой операции: продажа увеличивает, сдача обнуляет",
+      "market": "Остаток после каждой операции: продажа увеличивает, оплата маркету уменьшает",
+      "branch": "Остаток после каждой операции: курьеры сдают деньги, перевод в HQ уменьшает",
+      "viewLabel": "Вид движения баланса",
+      "chart": "График",
+      "table": "Таблица",
+      "start": "На начало периода",
+      "income": "Приход",
+      "expense": "Расход",
+      "now": "Сейчас",
+      "chartLabel": "Движение баланса: на начало периода {{start}}, приход {{income}}, расход {{expense}}, сейчас {{now}}",
+      "balance": "остаток",
+      "date": "Дата",
+      "source": "Источник",
+      "change": "Изменение",
+      "balanceAfter": "Остаток",
+      "tableLabel": "Таблица движения баланса"
+    },
+    "list": {
+      "orderTitle": "{{title}} · №{{id}}",
+      "courier": "Курьер: {{name}}",
+      "rowLabel": "{{title}}, {{direction}} {{amount}}, {{date}}",
+      "rollback": "Корректировка"
+    }
+  }
   ,"paymentAckDisputed": "Неверно"
   ,"paymentAckDisputedHint": "Курьер ответил в боте на квитанцию «Неверно»"
   ,"paymentAckConfirmed": "Подтверждено"
   ,"paymentAckConfirmedHint": "Курьер подтвердил квитанцию в боте"
-  ,"historyCorrectionBadge": "Корректировка"
 }

@@ -59,6 +59,17 @@ const DAY_MS = 86_400_000;
 const dayKey = (p: WallClock) => `${p.year}-${p.month}-${p.day}`;
 
 /**
+ * Lahza Toshkent kalendarida bugunmi (`now` — sukut hozir). «Yangi buyurtmalar · bugun» kartasi uchun: backend
+ * `GET orders/markets/:id/new` sana filtrini bermaydi — eski «yangi» buyurtmalar ham keladi (D-07).
+ */
+export const isTashkentToday = (value: unknown, now: Date | number = Date.now()): boolean => {
+  const date = toDate(value);
+  const today = toDate(now);
+  if (!date || !today) return false;
+  return dayKey(tashkentWallClock(date)) === dayKey(tashkentWallClock(today));
+};
+
+/**
  * Tarix yozuvi vaqti (dizayn v2, `formatDateTimeLocalized` formati) — Toshkent zonasida:
  * bugun «Bugun, 14:32», kecha «Kecha, 18:30», eskiroq «20.07.2026, 13:38».
  * «Bugun / Kecha» ham Toshkent kalendar kuni bo'yicha (O'zbekistonda yozgi vaqt yo'q — 24 soat orqasi kecha).

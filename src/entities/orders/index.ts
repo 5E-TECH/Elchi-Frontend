@@ -119,8 +119,9 @@ export const useOrders = () => {
           .then((res) => res.data),
       enabled,
       // Kutilayotgan so'rov Telegram'da ham (✅/❌) hal qilinishi mumkin — oynaga qaytilganda va
-      // har 30 s da yangilanadi (global sukut `refetchOnWindowFocus: false`).
-      refetchInterval: status === "pending" ? 30000 : false,
+      // har 30 s da yangilanadi (global sukut `refetchOnWindowFocus: false`). Xato holatida 30 s lik
+      // yangilanish EMAS — aks holda xato kartasi har 30 s da skeletga aylanib qaytadi.
+      refetchInterval: (query) => (status === "pending" && query.state.status !== "error" ? 30000 : false),
       refetchOnWindowFocus: status === "pending" ? "always" : false,
     });
 
@@ -198,6 +199,9 @@ export const useOrders = () => {
       queryFn: () => api.get(API_ENDPOINTS.ORDERS.BY_ID(orderId)).then((res) => res.data),
       enabled: enabled && Boolean(orderId),
       refetchInterval: refetchInterval ? (query) => refetchInterval(query.state.data) : undefined,
+      // Tafsilot sahifasi xatoni o'zi ko'rsatadi (D-13: 404 — «Buyurtma topilmadi», boshqasi — «Qayta urinish»),
+      // global xabar takrorlanmaydi. 404 qayta so'ralmaydi — ilova sukuti (`shared/lib/queryRetry.ts`).
+      meta: { silentError: true },
     });
 
   // `GET orders/courier/orders`: holat, sahifa, qidiruv (ism, telefon, raqam) va sana oralig'i
@@ -213,19 +217,21 @@ export const useOrders = () => {
       refetchInterval: refetchInterval ? (query) => refetchInterval(query.state.data) : undefined,
     });
 
-  const useCancelledMarkets = (params?: { search?: string }) =>
+  // `options.enabled` — ixtiyoriy (sukut `true`): «Qabul va yaratish» tablaridagi son faqat tab ko'rinsa so'raladi.
+  const useCancelledMarkets = (params?: { search?: string }, options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: [orders, "markets", "cancelled", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.ORDERS.MARKETS_CANCELLED, { params }).then((res) => res.data),
+      enabled: options?.enabled ?? true,
     });
 
-  const useCancelledOrdersByMarket = (marketId: string | number) =>
+  const useCancelledOrdersByMarket = (marketId: string | number, options?: { enabled?: boolean }) =>
     useQuery({
       queryKey: [orders, "markets", marketId, "cancelled"],
       queryFn: () =>
         api.get(API_ENDPOINTS.ORDERS.MARKET_CANCELLED(marketId)).then((res) => res.data),
-      enabled: Boolean(marketId),
+      enabled: (options?.enabled ?? true) && Boolean(marketId),
     });
 
   const updateNewOrder = useMutation({

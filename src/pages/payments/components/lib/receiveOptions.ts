@@ -323,6 +323,8 @@ export const getReceiveDetailTarget = (item: ReceiveOption) => ({
       phone_number: item.phone_number,
       role: item.kind,
       amount: item.amount,
+      // Filial qatori: kassa sahifasi sarlavhasi uchun filial nomi (additiv; kuryer qatorida yo'q).
+      ...(item.kind === "branch" && item.branch_name ? { branch_name: item.branch_name } : {}),
     },
   },
 });
@@ -370,6 +372,10 @@ export const useReceiveOptions = ({ isManagerRole, enabled }: UseReceiveOptionsP
     ];
   }, [branchesQuery.data, couriersQuery.data, hqCouriersQuery.data, isManagerRole, managersQuery.data, t]);
 
+  // Asosiy ro'yxatlar (menejerda — kuryerlar; xodimda — menejerlar va HQ kuryerlari) yuklanmasa — xato holati.
+  const primaryQueries = isManagerRole ? [couriersQuery] : [managersQuery, hqCouriersQuery];
+  const isError = primaryQueries.some((query) => Boolean(query.isError));
+
   return {
     options,
     // Menejersiz filiallar qo'shimcha qatorlar — ularni kutib asosiy ro'yxat
@@ -377,6 +383,10 @@ export const useReceiveOptions = ({ isManagerRole, enabled }: UseReceiveOptionsP
     isLoading: isManagerRole
       ? couriersQuery.isLoading
       : managersQuery.isLoading || hqCouriersQuery.isLoading,
+    isError,
+    refetch: () => {
+      primaryQueries.forEach((query) => void query.refetch?.());
+    },
     description: isManagerRole
       ? t("selectCourierDescription")
       : t("selectReceiveSourceDescription"),

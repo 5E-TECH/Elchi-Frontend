@@ -1,17 +1,9 @@
+// dizayn-v2: superadmin-neworders-incoming-scan, admin-neworders-incoming-scan, manager-new-orders-incoming-scan
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router-dom";
+import { Trans, useTranslation } from "react-i18next";
+import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  CheckCircle2,
-  Circle,
-  Inbox,
-  Loader2,
-  RefreshCw,
-  ScanLine,
-} from "lucide-react";
+import { Check, Inbox, RefreshCw, TriangleAlert } from "lucide-react";
 import type { RootState } from "../../app/config/store";
 import { extractScannerToken } from "../../shared/lib/scanToken";
 // `shared/components/ScanFeedbackOverlay` ham aynan shu joydan import qiladi —
@@ -19,6 +11,8 @@ import { extractScannerToken } from "../../shared/lib/scanToken";
 // ham ishlaydi.
 import { playScanFeedback } from "../scan/lib/scanShared";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
+import { cx } from "../../shared/lib/cx";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../shared/lib/formatMoney";
 import {
   fetchExternalBatchScan,
   sourceLabel,
@@ -27,6 +21,22 @@ import {
   useReceiveByScan,
   type IncomingOrder,
 } from "../../entities/incoming-orders";
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  PageHeader,
+  QueryBoundary,
+  Skeleton,
+  SkeletonTable,
+  TONE_SOFT,
+} from "../../shared/ui/primitives";
+import { districtName, orderLabel } from "./lib";
+import IncomingTable from "./ui/IncomingTable";
+import ScanInput from "./ui/ScanInput";
+import { ScanMessage, type ScanMessageData } from "./ui/ScanMessage";
 
 /**
  * Bu ekranga kimlar kira oladi — backend guardi bilan BIR XIL bo'lishi shart.
@@ -47,16 +57,14 @@ const ALLOWED_ROLES = new Set([
   "manager",
 ]);
 
-const formatMoney = (value: unknown) =>
-  typeof value === "number" ? `${value.toLocaleString("uz-UZ")} so'm` : "—";
+/** `.el-overline` · `.el-stat-value` · `.el-stat-unit` (CODE-MAP 0.2, 2.4). */
+const OVERLINE = "text-xs font-semibold uppercase tracking-[.05em] text-text-muted";
+const STAT_VALUE = "m-0 whitespace-nowrap text-[28px] leading-9 font-bold tracking-[-.01em] text-text";
+const STAT_UNIT = "ml-1 text-sm font-semibold tracking-normal text-text-muted";
 
-const orderLabel = (order: IncomingOrder) =>
-  order.order_number ? `#${order.order_number}` : order.id.slice(0, 8);
-
-const districtName = (order: IncomingOrder) =>
-  order.customer?.district?.name ?? order.district?.name ?? "—";
-
-type Message = { tone: "success" | "error" | "warn"; text: string };
+/** Muvaffaqiyatli skan xabarining kulrang davomi: «Rustam Jo'rayev, Olmazor tumani». */
+const orderDetail = (order: IncomingOrder) =>
+  [order.customer?.name, districtName(order)].filter((part) => part && part !== "—").join(", ") || undefined;
 
 /**
  * HAMKORDAN KELGAN BUYURTMALARNI SKANERLAB QABUL QILISH (HQ).
@@ -77,16 +85,20 @@ type Message = { tone: "success" | "error" | "warn"; text: string };
  * yuklanadi va skanerlangan token ro'yxatdagi `qr_code_token` bilan solishtiriladi.
  * Sabab: (a) skaner tez ishlaydi, har skanda so'rov kutish operatorni sekinlashtiradi;
  * (b) bu ro'yxatda YO'Q posilkani tasodifan qabul qilishning oldini oladi.
+ *
+ * KO'RINISH (dizayn v2, maket `superadmin-neworders-incoming-scan`): o'z sarlavhasi
+ * («← Kiruvchi posilkalar» · manba nomi, qobiq tablarisiz), «Skanerlash» kartasi (USB skaner
+ * maydoni, «Kelgan» / «Skanerlangan», chiziq, oxirgi skan natijasi) va «Kelgan posilkalar»
+ * jadvali. Kamera rejimi bu ekranda hali yo'q (`*-incoming-scan-camera` alohida ish) — shu bois
+ * «Qabul qilish» har kenglikda yagona asosiy tugma, telefonda ham skaner maydoni ko'rinadi.
  */
 const IncomingOrdersPage = () => {
   const { t } = useTranslation("common");
-  const navigate = useNavigate();
   const { marketId } = useParams<{ marketId: string }>();
   const role = useSelector((state: RootState) => state.role.role);
   const allowed = Boolean(role && ALLOWED_ROLES.has(role));
 
   const inputRef = useRef<HTMLInputElement>(null);
-  const [input, setInput] = useState("");
   /**
    * ⚠️ ID VA TOKEN IKKISI HAM SAQLANADI.
    *
@@ -99,7 +111,7 @@ const IncomingOrdersPage = () => {
    */
   const [scannedIds, setScannedIds] = useState<Set<string>>(new Set());
   const [scannedTokens, setScannedTokens] = useState<string[]>([]);
-  const [message, setMessage] = useState<Message | null>(null);
+  const [message, setMessage] = useState<ScanMessageData | null>(null);
 
   /**
    * ⚠️ `market_id` — manba filtri. Hamkor posilka yaratganda `elchi_market_id`
@@ -124,12 +136,13 @@ const IncomingOrdersPage = () => {
   // qolmasligi kerak — buzuq tizim va bo'sh ro'yxat alohida ko'rsatiladi.
   const listFailed = query.isError && orders.length === 0;
   const listStale = query.isError && orders.length > 0;
+  // Raqamlar faqat ro'yxat bor bo'lsa: yuklanish va xato paytida «0» yolg'on bo'lardi — «—».
+  const listReady = !query.isLoading && !listFailed;
   // Server javob bergan bo'lsa uning sababi ko'rsatiladi; tarmoq xatosi yoki
   // timeout'da esa axios'ning inglizcha "Network Error" matni o'rniga
-  // tushunarli xabar.
+  // tushunarli xabar (`ErrorState` turi bo'yicha).
   const hasServerResponse = Boolean((query.error as { response?: unknown } | null)?.response);
-  const listErrorText =
-    (hasServerResponse ? getBackendErrorMessage(query.error) : undefined) ?? t("incomingLoadError");
+  const listErrorReason = hasServerResponse ? getBackendErrorMessage(query.error) : undefined;
 
   /**
    * Qop (batch) tokeni → shu qopdagi KUTAYOTGAN posilkalar. Ro'yxat faqat
@@ -162,11 +175,14 @@ const IncomingOrdersPage = () => {
   }, [allowed]);
 
   // Ro'yxat yangilanganda skanerlanganlar tozalanadi (qabul qilingandan keyin
-  // eski belgilar qolib, operatorni chalg'itmasin).
-  useEffect(() => {
+  // eski belgilar qolib, operatorni chalg'itmasin). Effekt emas — render paytida
+  // (React tavsiyasi): eski belgilar bir kadr ham yangi ro'yxat ustida turmaydi.
+  const [listVersion, setListVersion] = useState(query.dataUpdatedAt);
+  if (listVersion !== query.dataUpdatedAt) {
+    setListVersion(query.dataUpdatedAt);
     setScannedIds(new Set());
     setScannedTokens([]);
-  }, [query.dataUpdatedAt]);
+  }
 
   /**
    * QOP SKANI: qopdagi hali belgilanmagan posilkalar belgilanadi. Serverga har
@@ -257,6 +273,7 @@ const IncomingOrdersPage = () => {
     setMessage({
       tone: "success",
       text: `${orderLabel(order)} — ${t("incomingScanAdded")}`,
+      detail: orderDetail(order),
     });
   };
 
@@ -278,7 +295,11 @@ const IncomingOrdersPage = () => {
             .join("; ");
           setMessage({
             tone: result.received > 0 ? "warn" : "error",
-            text: `${result.received} qabul qilindi, ${result.unmatched.length} o'tmadi: ${detail}`,
+            text: t("incoming.receivePartial", {
+              received: result.received,
+              failed: result.unmatched.length,
+              detail,
+            }),
           });
         } else {
           setMessage({
@@ -303,241 +324,193 @@ const IncomingOrdersPage = () => {
   };
 
   if (!allowed) {
-    return (
-      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-8 text-center dark:bg-primarydark">
-        <AlertTriangle className="mx-auto text-amber-500" size={32} />
-        <p className="m-0 mt-4 text-sm font-semibold text-maindark dark:text-white">
-          {t("incomingNoAccess")}
-        </p>
-      </div>
-    );
+    return <ErrorState kind="forbidden" framed title={t("incomingNoAccess")} description={null} />;
   }
 
   const scannedCount = scannedIds.size;
+  const scannedPercent = orders.length ? Math.min(100, (scannedCount / orders.length) * 100) : 0;
+  const scannerReady = listReady && orders.length > 0;
+  const ordersSum = orders.reduce(
+    (sum, order) => sum + (typeof order.total_price === "number" ? order.total_price : 0),
+    0,
+  );
+  const unit = t("incoming.unitTa");
+  const refetch = () => void query.refetch();
+
+  // Manba nomi manbalar ro'yxatidan: yuklanayotganda — skelet (boshqa manba nomi miltillamasin).
+  const title = source ? (
+    sourceLabel(source)
+  ) : sources.isLoading ? (
+    <>
+      <span className="sr-only">{t("incoming.sourcesTitle")}</span>
+      <Skeleton shape="block" width={180} height={28} className="inline-block align-middle" />
+    </>
+  ) : (
+    t("incoming.untitledSource", { id: marketId })
+  );
 
   return (
-    <div className="space-y-4">
-      {/* ===== Sarlavha + skaner ===== */}
-      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm sm:rounded-[28px] sm:p-6 dark:bg-primarydark">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => navigate("/new-orders/incoming")}
-              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] text-maindark transition hover:bg-main/5 dark:text-white"
-              title="Manbalar ro'yxatiga qaytish"
+    <div className="flex flex-col gap-6 max-md:gap-4">
+      <PageHeader
+        back="/new-orders/incoming"
+        backLabel={t("incoming.sourcesTitle")}
+        title={title}
+        description={t("incomingSubtitle")}
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              leftIcon={RefreshCw}
+              loading={query.isFetching && !query.isLoading}
+              onClick={refetch}
             >
-              <ArrowLeft size={18} />
-            </button>
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-main/10 text-main dark:text-primary">
-              <Inbox size={22} />
-            </div>
-            <div>
-              <h1 className="m-0 text-lg font-extrabold text-maindark dark:text-white">
-                {source ? sourceLabel(source) : t("incomingTitle")}
-              </h1>
-              <p className="m-0 mt-1 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                {t("incomingSubtitle")}
-              </p>
+              {t("refresh")}
+            </Button>
+            <Button
+              leftIcon={Check}
+              disabled={scannedCount === 0}
+              loading={receiveByScan.isPending}
+              loadingText={t("incomingReceiving")}
+              onClick={handleReceive}
+            >
+              {t("incoming.receive", { count: scannedCount })}
+              <span className="max-md:hidden">{t("incoming.receiveUnit", { count: scannedCount })}</span>
+            </Button>
+          </>
+        }
+      />
+
+      {/* ===== Skaner + raqamlar + oxirgi natija ===== */}
+      <Card aria-label={t("incoming.scanCardLabel")} bodyClassName="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center gap-x-8 gap-y-4">
+          <div className="flex min-w-0 flex-[1_1_420px] flex-col gap-2">
+            <ScanInput
+              inputRef={inputRef}
+              onScan={handleScan}
+              placeholder={t("incomingScanPlaceholder")}
+              label={t("incoming.scanInputLabel")}
+            />
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 max-md:hidden">
+              {scannerReady ? (
+                <Badge tone="success" dot role="status">
+                  {t("incoming.scannerReady")}
+                </Badge>
+              ) : null}
+              <span className="text-xs text-text-muted">{t("incoming.scannerHint")}</span>
             </div>
           </div>
 
           {/* Raqamlar doim ko'rinadi — operator taxmin qilmasligi kerak. */}
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="m-0 text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                {t("incomingArrived")}
-              </p>
-              <p className="m-0 text-xl font-extrabold text-maindark dark:text-white">
-                {listFailed ? "—" : total}
-              </p>
+          <dl className="m-0 flex items-end gap-8">
+            <div className="flex flex-col gap-0.5">
+              <dt className={OVERLINE}>{t("incomingArrived")}</dt>
+              <dd className={STAT_VALUE}>
+                {listReady ? (
+                  <>
+                    {formatNumberLocalized(total)}
+                    {unit ? <span className={STAT_UNIT}>{unit}</span> : null}
+                  </>
+                ) : (
+                  "—"
+                )}
+              </dd>
             </div>
-            <div className="text-right">
-              <p className="m-0 text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                {t("incomingScanned")}
-              </p>
-              <p className="m-0 text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
-                {listFailed ? "—" : `${scannedCount} / ${orders.length}`}
-              </p>
+            <div className="flex flex-col gap-0.5">
+              <dt className={OVERLINE}>{t("incomingScanned")}</dt>
+              <dd className={STAT_VALUE}>
+                {listReady ? (
+                  <>
+                    <span className="text-success-fg">{formatNumberLocalized(scannedCount)}</span>
+                    <span className={STAT_UNIT}>/ {formatNumberLocalized(orders.length)}</span>
+                  </>
+                ) : (
+                  "—"
+                )}
+              </dd>
             </div>
-            <button
-              type="button"
-              onClick={() => void query.refetch()}
-              disabled={query.isFetching}
-              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] text-maindark transition hover:bg-main/5 disabled:opacity-50 dark:text-white"
-              title={t("refresh")}
-            >
-              <RefreshCw
-                size={18}
-                className={query.isFetching ? "animate-spin" : ""}
-              />
-            </button>
-          </div>
+          </dl>
         </div>
 
-        <form
-          className="mt-4 flex items-center gap-2"
-          onSubmit={(event) => {
-            event.preventDefault();
-            handleScan(input);
-            setInput("");
-          }}
-        >
-          <div className="relative flex-1">
-            <ScanLine
-              size={18}
-              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-main"
-            />
-            <input
-              ref={inputRef}
-              value={input}
-              onChange={(event) => setInput(event.target.value)}
-              placeholder={t("incomingScanPlaceholder")}
-              autoComplete="off"
-              className="w-full rounded-2xl border border-[color:var(--color-border-soft)] bg-white py-4 pl-12 pr-4 text-base font-semibold text-maindark outline-none transition focus:border-main dark:bg-white/[0.04] dark:text-white"
-            />
-          </div>
-        </form>
-
-        {message ? (
+        {scannerReady ? (
           <div
-            className={`mt-3 rounded-2xl border px-4 py-3 text-sm font-semibold ${
-              message.tone === "success"
-                ? "border-emerald-400/30 bg-emerald-500/12 text-emerald-700 dark:text-emerald-200"
-                : message.tone === "warn"
-                  ? "border-amber-400/30 bg-amber-500/12 text-amber-700 dark:text-amber-200"
-                  : "border-red-400/30 bg-red-500/12 text-red-700 dark:text-red-200"
-            }`}
+            role="progressbar"
+            aria-label={t("incoming.progressLabel")}
+            aria-valuemin={0}
+            aria-valuemax={orders.length}
+            aria-valuenow={scannedCount}
+            className="h-2 overflow-hidden rounded-full bg-sunken"
           >
-            <div className="flex items-start gap-2">
-              {message.tone === "success" ? (
-                <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
-              ) : (
-                <AlertTriangle size={18} className="mt-0.5 shrink-0" />
-              )}
-              <span className="[overflow-wrap:anywhere]">{message.text}</span>
-            </div>
+            <span
+              className="block h-full rounded-full bg-success transition-[width] duration-150 motion-reduce:transition-none"
+              style={{ width: `${scannedPercent}%` }}
+            />
           </div>
         ) : null}
-      </div>
+
+        {message ? <ScanMessage message={message} /> : null}
+      </Card>
 
       {/* ===== Ro'yxat ===== */}
       {listStale ? (
         <div
           role="alert"
-          className="flex flex-wrap items-center gap-2 rounded-2xl border border-amber-400/30 bg-amber-500/12 px-4 py-3 text-sm font-semibold text-amber-700 dark:text-amber-200"
+          className={cx("flex flex-wrap items-center gap-3 rounded-xl px-4 py-3 text-sm", TONE_SOFT.warning)}
         >
-          <AlertTriangle size={18} className="shrink-0" />
-          <span className="flex-1 [overflow-wrap:anywhere]">{t("incomingStaleWarning")}</span>
-          <button
-            type="button"
-            onClick={() => void query.refetch()}
-            disabled={query.isFetching}
-            className="rounded-xl border border-current px-3 py-1.5 text-xs font-bold disabled:opacity-50"
-          >
+          <TriangleAlert size={20} aria-hidden="true" className="shrink-0" />
+          <span className="min-w-0 flex-1 font-semibold text-text [overflow-wrap:anywhere]">
+            {t("incomingStaleWarning")}
+          </span>
+          <Button variant="secondary" size="sm" leftIcon={RefreshCw} loading={query.isFetching} onClick={refetch}>
             {t("retry")}
-          </button>
+          </Button>
         </div>
       ) : null}
-      <div className="overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-primary shadow-sm sm:rounded-[28px] dark:bg-primarydark">
-        {query.isLoading ? (
-          <div className="flex min-h-[220px] items-center justify-center">
-            <Loader2 className="animate-spin text-main" size={28} />
-          </div>
-        ) : listFailed ? (
-          <div
-            role="alert"
-            className="flex min-h-[220px] flex-col items-center justify-center gap-3 border-l-4 border-red-500 bg-red-500/8 px-4 text-center"
-          >
-            <AlertTriangle size={32} className="text-red-600 dark:text-red-400" />
-            <p className="m-0 text-sm font-bold text-red-700 dark:text-red-200 [overflow-wrap:anywhere]">
-              {listErrorText}
-            </p>
-            <button
-              type="button"
-              onClick={() => void query.refetch()}
-              disabled={query.isFetching}
-              className="inline-flex items-center gap-2 rounded-xl bg-main px-4 py-2.5 text-sm font-bold text-white transition hover:bg-main/90 disabled:opacity-50"
-            >
-              <RefreshCw size={16} className={query.isFetching ? "animate-spin" : ""} />
-              {t("retry")}
-            </button>
-          </div>
-        ) : orders.length === 0 ? (
-          <div className="flex min-h-[220px] flex-col items-center justify-center gap-3 text-center">
-            <Inbox
-              size={32}
-              className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
-            />
-            <p className="m-0 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-              {t("incomingEmpty")}
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-[color:var(--color-border-soft)] dark:divide-white/10">
-            {orders.map((order) => {
-              const scanned = scannedIds.has(order.id);
-              return (
-                <div
-                  key={order.id}
-                  data-testid="incoming-row"
-                  data-order-id={order.id}
-                  data-scanned={scanned ? "true" : "false"}
-                  className={`flex flex-wrap items-center gap-3 px-4 py-3 transition ${
-                    scanned ? "bg-emerald-500/8" : ""
-                  }`}
-                >
-                  <div className="shrink-0">
-                    {scanned ? (
-                      <CheckCircle2
-                        size={22}
-                        className="text-emerald-600 dark:text-emerald-400"
-                      />
-                    ) : (
-                      <Circle
-                        size={22}
-                        className="text-[color:var(--color-text-muted)]/40 dark:text-[color:var(--color-text-muted-dark)]/40"
-                      />
-                    )}
-                  </div>
-                  <p className="m-0 w-24 shrink-0 font-mono text-sm font-bold text-maindark dark:text-white">
-                    {orderLabel(order)}
-                  </p>
-                  <p className="m-0 min-w-[8rem] flex-1 text-sm font-semibold text-maindark dark:text-white [overflow-wrap:anywhere]">
-                    {order.customer?.name ?? "—"}
-                  </p>
-                  <p className="m-0 w-32 shrink-0 text-sm text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                    {districtName(order)}
-                  </p>
-                  <p className="m-0 w-32 shrink-0 text-right text-sm font-bold tabular-nums text-maindark dark:text-white">
-                    {formatMoney(order.total_price)}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
 
-      {/* ===== Qabul qilish ===== */}
-      <button
-        type="button"
-        onClick={handleReceive}
-        disabled={scannedCount === 0 || receiveByScan.isPending}
-        className="flex w-full items-center justify-center gap-3 rounded-[24px] bg-emerald-600 px-6 py-5 text-base font-extrabold uppercase tracking-wide text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+      <Card
+        padding="none"
+        title={t("incoming.listTitle")}
+        actions={
+          listReady && orders.length > 0 ? (
+            <p className="m-0 text-[13px] text-text-muted">
+              <Trans
+                t={t}
+                i18nKey="incoming.listSummary"
+                values={{ count: orders.length, sum: formatMoneyLocalized(ordersSum) }}
+                components={{ b: <strong className="font-semibold text-text" /> }}
+              />
+            </p>
+          ) : null
+        }
       >
-        {receiveByScan.isPending ? (
-          <>
-            <Loader2 size={18} className="animate-spin" />
-            {t("incomingReceiving")}
-          </>
-        ) : (
-          <>
-            <CheckCircle2 size={18} />
-            {t("incomingReceive")} ({scannedCount})
-          </>
-        )}
-      </button>
+        <QueryBoundary
+          query={query}
+          isEmpty={(data) => data.items.length === 0}
+          // Boshqa manbaga o'tilsa (`:marketId` almashdi) oldingi manbaning ro'yxati ko'rsatilmaydi: jadval
+          // sahifaning joriy `orders` idan chiziladi, skan ham faqat joriy ro'yxat bilan solishtiriladi — skelet.
+          keepPreviousData={false}
+          loading={
+            <SkeletonTable
+              framed={false}
+              rows={6}
+              columns={["", t("incoming.colOrder"), t("incoming.colCustomer"), t("incoming.colDistrict"), t("incoming.colAmount")]}
+            />
+          }
+          empty={<EmptyState icon={Inbox} title={t("incomingEmpty")} />}
+          error={(error, retry) => (
+            <ErrorState
+              error={error}
+              title={t("incomingLoadError")}
+              description={listErrorReason}
+              onRetry={retry}
+              retrying={query.isFetching}
+            />
+          )}
+        >
+          {(_data, { isRefetching }) => (
+            <IncomingTable orders={orders} scannedIds={scannedIds} busy={isRefetching} />
+          )}
+        </QueryBoundary>
+      </Card>
     </div>
   );
 };

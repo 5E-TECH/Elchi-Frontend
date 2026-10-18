@@ -1,31 +1,12 @@
 {
   "title": "Dashboard",
   "overview": "Overview",
-  "todayRevenue": "Today's revenue",
-  "todayOrders": "Today's orders",
-  "weekRevenue": "This week's revenue",
-  "compareYesterday": "Compared with yesterday",
-  "compareLastWeek": "Compared with last week",
-  "totalRevenue": "Total revenue",
   "orders": "Orders",
   "sold": "Sold",
-  "statistics": "Statistics",
-  "financialAnalysis": "Financial analysis",
   "period": "Period",
   "daily": "Daily",
   "weekly": "Weekly",
   "monthly": "Monthly",
-  "growth": "Growth",
-  "decline": "Decline",
-  "analytics": "Analytics",
-  "serviceName": "Mail service",
-  "testMessage": "Translation system is working",
-  "page_title_today": "Today's statistics",
-  "page_title_filtered": "Statistics for the selected period",
-  "page_subtitle_today": "Today's metrics",
-  "page_subtitle_filtered": "Based on the selected date range",
-  "page_title_all": "Overall statistics",
-  "page_subtitle_all": "Metrics for all time",
   "load_error": "Dashboard data could not be loaded.",
   "courier_stats_unavailable": "Courier statistics are currently unavailable.",
   "quickRanges": {
@@ -36,85 +17,19 @@
     "all": "All",
     "clear": "Clear"
   },
-  "datePicker": {
-    "from": "Start",
-    "to": "End"
-  },
-  "currency_value": "{{value}} UZS",
   "currency": "UZS",
-  "currency_sum": "UZS",
   "unit": {
     "orders": "pcs"
   },
-  "status": {
-    "title": "Order statuses",
-    "center": "Total accepted"
-  },
-  "featured": {
-    "delivered": "Delivered",
-    "delivered_hint": "Sold and closed orders"
-  },
   "cards": {
     "total_orders": "Total orders",
-    "accepted": "Accepted",
-    "accepted_hint": "Orders accepted in the selected period",
     "sold": "Sold",
-    "success_rate": "Success rate",
     "cancelled": "Cancelled",
-    "cancellation_rate": "Cancellation rate",
-    "in_progress": "In progress",
-    "in_progress_hint": "Orders still on the way, not yet delivered",
     "profit": "Net profit",
-    "courier_profit": "Profit",
-    "total_revenue": "Total revenue",
-    "total_revenue_hint": "Value of all sold orders",
-    "profit_hint": "Market tariff − courier tariff (sold only)",
-    "avg_order_value": "Average order value",
-    "avg_order_value_hint": "Average revenue per sold order",
-    "avg_fulfillment": "Average delivery time",
-    "avg_fulfillment_hint": "Average time from accept to sold",
-    "on_time": "On time (SLA)",
-    "on_time_badge": "24 hours",
-    "on_time_hint": "Share of orders delivered within 24 hours",
-    "lost_revenue": "Lost revenue",
-    "lost_revenue_hint": "Estimated value of cancelled orders"
-  },
-  "top": {
-    "markets_title": "Top markets",
-    "couriers_title": "Top couriers",
-    "branches_title": "Top branches",
-    "operators_title": "Top operators",
-    "you": "You",
-    "limited": "Data is still limited — rankings may change.",
-    "empty": "Data is still limited (at least 30 orders are needed for rankings)."
-  },
-  "region": {
-    "title": "By region",
-    "subtitle": "Orders and sales metrics across provinces"
+    "courier_profit": "Profit"
   },
   "performance": {
-    "title": "Market/courier comparison",
-    "markets_title": "Sell-through rate by market",
-    "couriers_title": "Sell-through rate by courier",
-    "rate_label": "Sell-through rate",
-    "orders_label": "orders",
-    "empty": "Not enough data to compare yet.",
-    "couriers_all_time_unavailable": "The courier breakdown is not calculated for the “All” period — pick a date range.",
-    "show_more": "Show more",
-    "show_less": "Show less"
-  },
-  "balance": {
-    "title": "Cashbox balance",
-    "main": "Post cashbox",
-    "main_hint": "Current balance of the central cashbox",
-    "markets": "Markets balance",
-    "markets_hint": "Amount payable to markets",
-    "couriers": "Couriers balance",
-    "couriers_hint": "Current amount held by couriers",
-    "branches": "Branches balance",
-    "branches_hint": "Amount receivable from branches",
-    "current": "Current state",
-    "current_hint": "Overall financial state (cash − debts)"
+    "couriers_all_time_unavailable": "The courier breakdown is not calculated for the “All” period — pick a date range."
   },
   "periods": {
     "daily": "Daily",
@@ -122,58 +37,11 @@
     "monthly": "Monthly",
     "yearly": "Yearly"
   },
-  "period_stats": {
-    "title": "Chart period",
-    "subtitle": "statistics",
-    "total_revenue": "Total revenue:",
-    "orders": "Orders:",
-    "sold": "Sold:"
-  },
-  "chart": {
-    "title": "Daily revenue trend",
-    "description": "Revenue = Market tariff − Courier tariff (only sold orders are counted)",
-    "tooltip_value": "{{value}}M UZS",
-    "types": {
-      "area": "Area",
-      "bar": "Bar",
-      "combo": "Mixed"
-    }
-  },
-  "financial_analysis": {
-    "title": "Financial analysis",
-    "subtitle": "Period analysis"
-  },
   "comparison": {
     "toggle": "Compare",
-    "current": "Current period",
-    "previous": "Previous period",
-    "total_revenue": "Total revenue",
-    "total_orders": "Orders",
-    "avg_revenue": "Average period revenue",
-    "load_error": "Could not load the previous period.",
-    "loading": "Loading..."
-  },
-  "financial_cards": {
-    "today_revenue": {
-      "title": "Today's revenue",
-      "subtitle": "Compared with yesterday",
-      "value_label": "Today"
-    },
-    "today_orders": {
-      "title": "Today's orders",
-      "subtitle": "Compared with yesterday",
-      "value_label": "Today"
-    },
-    "week_revenue": {
-      "title": "This week's revenue",
-      "subtitle": "Compared with last week",
-      "value_label": "This week"
-    }
+    "load_error": "Could not load the previous period."
   },
   "market": {
-    "page_title": "My Dashboard",
-    "page_subtitle": "Today's orders and metrics",
-    "add_order": "Add Order",
     "view_orders": "View Orders",
     "quick_actions": "Quick Actions",
     "extra_cost_approvals": "Extra cost approvals",
@@ -225,5 +93,245 @@
     "extra_cost_rejected": "Request rejected",
     "extra_cost_already_decided": "The request is already decided",
     "extra_cost_already_decided_hint": "This request was decided elsewhere (for example, in Telegram). The list has been refreshed."
+  },
+  "v2Charts": {
+    "zone": {
+      "good": "Good · 70% and above",
+      "mid": "Average · 40–70%",
+      "low": "Low · below 40%"
+    },
+    "showMore": "Show more · {{count}}",
+    "showLess": "Show less",
+    "viewChart": "Chart",
+    "viewTable": "Table",
+    "viewLabel": "View",
+    "countTa": "{{value}}"
+  },
+  "v2Dashboard": {
+    "header": {
+      "title": "Home",
+      "company": "{{headline}} · whole company",
+      "scoped": "{{headline}} · {{scope}}",
+      "periodLabel": "Period",
+      "year": "Year",
+      "yearLabel": "Select year",
+      "rangePlaceholder": "Start → End",
+      "rangeCourier": "Date range"
+    },
+    "headline": {
+      "today": "Today's figures",
+      "filtered": "Selected period figures",
+      "all": "All-time figures"
+    },
+    "period": {
+      "today": "Today",
+      "week": "This week",
+      "month": "This month",
+      "all": "All time",
+      "year": "Year {{year}}"
+    },
+    "vsYesterday": "vs yesterday",
+    "vsPrevious": "vs previous period",
+    "yesterday": "Yesterday",
+    "previousPeriod": "Previous period",
+    "pp": "{{value}} pp",
+    "duration": "{{h}} h {{m}} min",
+    "durationHours": "{{h}} h",
+    "durationMinutes": "{{m}} min",
+    "partOfTotal": "{{part}} / {{total}}",
+    "retry": "Try again",
+    "kpi": {
+      "label": "Key figures",
+      "courierLabel": "Figures, {{period}}",
+      "totalRevenue": "Total revenue",
+      "netProfit": "Net profit",
+      "avgOrder": "Average order"
+    },
+    "success": {
+      "title": "Success rate",
+      "subAccepted": "{{period}} · sold / accepted",
+      "subAcceptedShort": "sold / accepted",
+      "subTotal": "{{period}} · sold / total orders",
+      "subScoped": "{{period}} · {{scope}}",
+      "gaugeAccepted": "Sold / accepted",
+      "gaugeTotal": "Sold / total orders",
+      "threshold": "Good threshold · 70%",
+      "zonesNote": "Zones: below 40% — low · 40–70% — average · 70% and above — good",
+      "aria": "Success rate: {{rate}}. Sold {{sold}}, cancelled {{cancelled}}"
+    },
+    "status": {
+      "title": "Order status",
+      "subAccepted": "{{period}}: accepted",
+      "centerAccepted": "Total accepted",
+      "list": "List",
+      "legend": "Breakdown by status",
+      "sold": "Sold",
+      "inProgress": "In progress",
+      "cancelled": "Cancelled",
+      "inProgressNote": "In progress = on the way, pending and held at a branch",
+      "aria": "{{label}}: {{total}} — {{list}}"
+    },
+    "quality": {
+      "title": "Delivery quality",
+      "onTime": "On time (SLA)",
+      "onTimeHint": "within 24 hours",
+      "cancelRate": "Cancellation rate",
+      "duration": "Delivery time",
+      "durationHint": "from acceptance to sale",
+      "allTimeTitle": "Quality figures are not calculated for all time",
+      "allTimeHint": "Pick a day, week or month"
+    },
+    "results": {
+      "title": "Delivery results",
+      "sub": "{{period}} · of all accepted",
+      "delivered": "Delivered",
+      "deliveredHint": "sold and closed",
+      "inProgressHint": "{{share}} · not delivered"
+    },
+    "finance": {
+      "title": "Financial analysis",
+      "subtitle": "Revenue · compared with the previous period",
+      "periodLabel": "Chart period",
+      "viewLabel": "Financial analysis view",
+      "revenueDays": "Revenue · {{count}} days",
+      "orders": "Orders",
+      "average": {
+        "daily": "Average daily revenue",
+        "weekly": "Average weekly revenue",
+        "monthly": "Average monthly revenue",
+        "yearly": "Average yearly revenue"
+      },
+      "previousValue": "previous: {{value}}",
+      "current": "Current",
+      "previous": "Previous",
+      "previousPoint": "{{label}} · previous",
+      "currentRange": "Current period · {{range}}",
+      "previousRange": "Previous period · {{range}}",
+      "compareAria": "Compare with the previous period",
+      "tableDate": "Date",
+      "chartAria": "Revenue, {{range}}",
+      "empty": "No revenue data for this period"
+    },
+    "cash": {
+      "title": "Cash balance",
+      "asOf": "as of {{time}}",
+      "positive": "Positive",
+      "negative": "Negative",
+      "formula": "Current position = cash + money in transit − markets",
+      "main": "Post cash desk",
+      "transit": "Money in transit",
+      "markets": "Markets",
+      "marketsBalance": "Markets balance",
+      "current": "Current position",
+      "open": "Open balance",
+      "empty": "No cash desk data received",
+      "aria": "Current position {{current}}: post cash desk {{main}}, plus money in transit {{transit}}, minus markets balance {{markets}}"
+    },
+    "top": {
+      "markets": "Top markets",
+      "branches": "Top branches",
+      "couriers": "Top couriers",
+      "operators": "Top operators",
+      "sub": "Sell-through · sold / total",
+      "courierSub": "{{scope}}{{period}} · sell-through",
+      "limited": "Not much data yet — rankings may change",
+      "emptyTitle": "Not enough data for a ranking yet",
+      "emptyHint": "The ranking appears here once there are more orders",
+      "couriersAllTimeTitle": "Courier breakdown is not calculated for all time",
+      "you": "You",
+      "yourPlace": "Your place",
+      "place": "#{{rank}}",
+      "gapToNext": "{{gap}} to #{{rank}}",
+      "periodLastDays": "last {{count}} days",
+      "emptyPeriod": "No orders for the ranking in this period"
+    },
+    "courier": {
+      "planToday": "Today's plan",
+      "planPeriod": "Plan for the period",
+      "planSub": "{{count}} orders assigned to you",
+      "remaining": "{{count}} left",
+      "done": "{{done}} / {{total}} completed",
+      "remainingOnWay": "Remaining · on the way",
+      "remainingOrders": "Remaining orders",
+      "planLegend": "Order status",
+      "planAria": "Plan: {{done}} of {{total}} orders completed ({{share}}) — sold {{sold}}, cancelled {{cancelled}}; {{remaining}} left"
+    },
+    "courierCash": {
+      "title": "Cash desk",
+      "open": "Open cash desk",
+      "inHand": "Money in hand · handed over to the branch",
+      "start": "Start of day",
+      "sales": "Sales",
+      "handed": "Handed over",
+      "other": "Other",
+      "balance": "In hand",
+      "startRow": "Start of day",
+      "salesRow": "Income from sales",
+      "handedRow": "Handed over to the branch",
+      "otherRow": "Other movements",
+      "empty": "No cash desk data received",
+      "aria": "Today's cash desk: {{start}} at start of day, {{sales}} from sales, {{handed}} handed over to the branch, {{balance}} in hand"
+    },
+    "region": {
+      "title": "By region",
+      "subtitle": "Orders and sales by region · {{period}}",
+      "metricLabel": "Map metric",
+      "metric": {
+        "orders": "Orders",
+        "success": "Success",
+        "revenue": "Revenue"
+      },
+      "mapAria": "Map of orders by region of Uzbekistan: {{list}}",
+      "tileAria": "{{name}}: {{count}} orders",
+      "ordersWord": "orders",
+      "soldWord": "sold",
+      "soldWithRevenue": "sold · {{revenue}}",
+      "scaleAria": "Colour scale: {{metric}}",
+      "scaleLow": "Few",
+      "scaleHigh": "Many",
+      "clickNote": "Click a region to open the district breakdown",
+      "topOrders": "Most orders",
+      "topOrdersMeta": "{{count}} · {{share}} of all",
+      "lowestSuccess": "Lowest sales (10+)",
+      "mostCancelled": "Highest cancellation share (10+)",
+      "rateMeta": "{{rate}} · {{part}} / {{total}}",
+      "activeCouriers": "Active couriers",
+      "inRegions": "in {{count}} regions",
+      "colRegion": "Region",
+      "colOrders": "Orders",
+      "colPending": "In progress",
+      "colCancelled": "Cancelled",
+      "colSuccess": "Sales",
+      "colRevenue": "Revenue",
+      "total": "Total · {{count}} regions",
+      "phoneRank": "Most active regions",
+      "soldShare": "{{rate}} sold",
+      "showAll": "All {{count}} regions",
+      "empty": "No orders by region for this period"
+    }
+  },
+  "v2Market": {
+    "headerSub": "Orders and figures · {{name}}",
+    "createOrder": "Create order",
+    "statusSub": "{{period}} · {{count}} orders",
+    "statusCenter": "Total orders",
+    "operatorRate": "Operator sell-through",
+    "marketAverage": "{{name}} average · {{rate}}",
+    "yourMarket": "Market",
+    "quick": {
+      "viewHint": "Your orders in Intake and creation",
+      "createHint": "Manually or with AI"
+    },
+    "sales": {
+      "title": "Sell-through by market",
+      "sub": "Sold / total orders · highest first · {{count}} markets",
+      "viewLabel": "Sell-through view",
+      "good": "Good · 70% and above",
+      "mid": "Average · 50–69%",
+      "low": "Low · below 50%",
+      "colMarket": "Market",
+      "colRate": "Sell-through",
+      "colPart": "Sold / total"
+    }
   }
 }

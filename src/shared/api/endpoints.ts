@@ -47,6 +47,7 @@ export const API_ENDPOINTS = {
     ADD_ORDER: (id: string | number) => `markets/${id}/add-order`, // PATCH
     CANCELLED_HANDOVER_QR: (id: string | number) => `markets/${id}/cancelled-handover-qr`, // PATCH
     EXPENSE_PROOF: (id: string | number) => `markets/${id}/expense-proof`, // PATCH proof conditions (guide §5)
+    TG_TOKEN: (id: string | number) => `markets/${id}/tg-token`, // GET — faqat SUPERADMIN (GvL6ZFAd)
     // PATCH { tg_group_show_customer_pii } — Telegram guruhi kartasida mijoz ismi/telefoni (ysBqD9Nx;
     // superadmin, admin, market — faqat o'zinikini)
     TELEGRAM_GROUP_PII: (id: string | number) => `markets/${id}/telegram-group-pii`,
@@ -65,6 +66,7 @@ export const API_ENDPOINTS = {
     BASE: "region", // GET all / POST create
     STATS_ALL: "region/stats/all",
     STATS_BY_ID: (regionId: string | number) => `region/stats/${regionId}`,
+    MY_DISTRICT_STATS: "region/my/district-stats", // GET — kuryer/menejerning o'z viloyati (tumanlar kesimida)
     BY_ID: (regionId: string | number) => `region/${regionId}`, // GET / PATCH update / DELETE
   },
   DISTRICTS: {
@@ -80,6 +82,7 @@ export const API_ENDPOINTS = {
   // ── Orders (role-dependent; see guide §11) ───────────────────────────────
   ORDERS: {
     BASE: "orders", // GET list (filters) / POST create
+    EXPORT_EXCEL: "orders/export/excel", // GET .xlsx — `GET /orders` filtrlari bilan, bitta so'rov (xWsCAA5N)
     BY_ID: (id: string | number) => `orders/${id}`, // GET / PATCH update (full incl. items) / DELETE
     FULL: (id: string | number) => `orders/${id}/full`, // PATCH update by id (full fields)
     TRACKING: (id: string | number) => `orders/${id}/tracking`, // GET history timeline
@@ -362,8 +365,7 @@ export const API_ENDPOINTS = {
     USERS: (id: string | number) => `branches/${id}/users`, // GET assigned / POST assign
     USER_BY_ID: (branchId: string | number, userId: string | number) =>
       `branches/${branchId}/users/${userId}`, // DELETE remove user from branch
-    // Branch config (was stale "branches/:id/settings")
-    SETTINGS: (id: string | number) => `branches/${id}/config`, // GET list / POST set
+    // Branch config — faqat `branchCoverage.useGetSettingById` (branch-ops) ishlatadi.
     SETTING_BY_ID: (branchId: string | number, key: string | number) =>
       `branches/${branchId}/config/${key}`, // GET / PATCH / DELETE by key
   },

@@ -1,0 +1,77 @@
+{
+  "title": "Почта",
+  "description": {
+    "staff": "Отправка и приём почты по областям",
+    "manager": "Просмотр и приём почты, пришедшей в филиал",
+    "courier": "Назначенная вам почта: приём, отказанная и история"
+  },
+  "tabsLabel": "Виды почты",
+  "sectionLabel": "Раздел почты: {{section}}",
+  "tabs": {
+    "today": { "short": "Сегодня", "title": "Сегодняшняя почта" },
+    "return": { "short": "Возврат", "title": "Запросы на возврат" },
+    "refused": { "short": "Отказанная", "title": "Отказанная почта" },
+    "old": { "short": "Старая", "title": "Старая почта" }
+  },
+  "table": {
+    "mail": "Почта",
+    "region": "Область",
+    "courier": "Курьер",
+    "status": "Статус",
+    "orders": "Заказы",
+    "amount": "Сумма",
+    "actions": "Действия",
+    "ordersCell": "{{value}} шт.",
+    "ordersSub_one": "{{value}} заказ",
+    "ordersSub_few": "{{value}} заказа",
+    "ordersSub_many": "{{value}} заказов",
+    "ordersSub_other": "{{value}} заказа",
+    "cardId": "{{header}} {{id}}",
+    "cardLabel": "{{id}}, {{region}}, {{date}}, {{orders}}, {{amount}} — открыть",
+    "sortDate": "Сортировать по дате",
+    "sortOrders": "Сортировать по количеству заказов",
+    "sortAmount": "Сортировать по сумме",
+    "sortStatus": "Сортировать по статусу"
+  },
+  "summary": {
+    "regions_one": "<b>{{value}}</b> область",
+    "regions_few": "<b>{{value}}</b> области",
+    "regions_many": "<b>{{value}}</b> областей",
+    "regions_other": "<b>{{value}}</b> области",
+    "mails_one": "<b>{{value}}</b> почта",
+    "mails_few": "<b>{{value}}</b> почты",
+    "mails_many": "<b>{{value}}</b> почт",
+    "mails_other": "<b>{{value}}</b> почты",
+    "orders_one": "<b>{{value}}</b> заказ",
+    "orders_few": "<b>{{value}}</b> заказа",
+    "orders_many": "<b>{{value}}</b> заказов",
+    "orders_other": "<b>{{value}}</b> заказа",
+    "total": "всего <b>{{value}}</b>"
+  },
+  "stats": {
+    "orders": "Заказы",
+    "amount": "Общая сумма",
+    "unit": "шт."
+  },
+  "filter": {
+    "region": "Область",
+    "all": "Все",
+    "clear": "Сбросить фильтр"
+  },
+  "openMail": "Открыть почту {{id}}",
+  "openCourierMail": "Открыть почту {{id}}",
+  "mailTitle": "Почта {{id}}",
+  "today": {
+    "loading": "Загружается сегодняшняя почта",
+    "courierTitle": "Нужно принять",
+    "courierDescription": "Откройте почту, проверьте заказы и примите их"
+  },
+  "refused": {
+    "loading": "Загружается отказанная почта",
+    "hint": "Почта, возвращённая курьерами. Откройте почту и примите заказы, отсканировав их.",
+    "open": "Открыть отказанную почту {{id}}",
+    "cardLabel": "Отказанная почта {{id}}, {{region}}, {{date}}, {{orders}}, {{amount}} — открыть",
+    "courierNote": "Почта с вашими отменёнными заказами. Её принимает филиал — вы можете только просматривать.",
+    "courierDescription": "Только для просмотра — приём выполняет филиал"
+  }
+}

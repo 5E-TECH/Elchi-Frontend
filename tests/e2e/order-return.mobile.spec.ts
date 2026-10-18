@@ -45,6 +45,23 @@ test.describe("Marketga qaytarish — 390px", () => {
     expect(leaked).toEqual([]);
   });
 
+  // CI (Ubuntu) da Manrope o'rniga keng zaxira shrift (DejaVu Sans) chiqadi: oyna amallari (nowrap tugmalar)
+  // sig'masa keyingi qatorga tushishi kerak, ekrandan chiqmasligi kerak (Dialog footer — flex-wrap).
+  test("keng shriftda ham QR oynasi amallari ekranga sig'adi", async ({ page }) => {
+    await mockOrderDetailApi(
+      page,
+      { ...ORDER_96, status: "waiting", return_requested: true, return_reason: "Mijoz rad etdi" },
+      { profile: MANAGER },
+    );
+    await openOrderDetail(page);
+    await page.addStyleTag({ content: '*{font-family:"DejaVu Sans","Verdana",sans-serif !important;letter-spacing:0.02em}' });
+    await page.getByTestId("mark-returned-button").click();
+    await expect(page.getByTestId("mark-returned-modal")).toBeVisible();
+    expect(
+      await outsideViewport(page, "[data-testid='mark-returned-modal'], [data-testid='mark-returned-modal'] button, [data-testid='mark-returned-modal'] input"),
+    ).toEqual([]);
+  });
+
   test("admin: \"Marketga qaytarish\" va sabab oynasi ekranga sig'adi", async ({ page }) => {
     const { leaked } = await mockOrderDetailApi(page, { ...ORDER_96, status: "waiting", return_requested: false });
     await openOrderDetail(page);

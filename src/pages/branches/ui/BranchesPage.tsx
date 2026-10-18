@@ -1,19 +1,17 @@
+// dizayn-v2: superadmin-branches-list-tree, superadmin-branches-list-table, superadmin-branches-create-dialog
 import { useEffect, useState } from "react";
-import { PlusOutlined } from "@ant-design/icons";
-import { Building2 } from "lucide-react";
+import { Plus } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import type { Branch } from "../../../entities/branch";
 import { BranchFormModal } from "../../../features/branch-create";
 import { BranchEditModal } from "../../../features/branch-edit";
-import Button from "../../../shared/components/button";
-import HeaderName from "../../../shared/components/headerName";
-import PageContainer from "../../../shared/ui/PageContainer";
-import { BranchListWidget } from "../../../widgets/branch-list";
-import { useTranslation } from "react-i18next";
+import { Button } from "../../../shared/ui/primitives";
+import { BranchListWidget, type BranchViewMode } from "../../../widgets/branch-list";
 
-type ViewMode = "table" | "card" | "tree";
-
+/** Ko'rinish tanlovi shu kalitda (e2e `tests/e2e/support/branchList.ts` ham shu kalit bilan rejim beradi). */
 const STORAGE_KEY = "branches-view-mode";
-const getStoredViewMode = (): ViewMode => {
+
+const getStoredViewMode = (): BranchViewMode => {
   if (typeof window === "undefined") {
     return "tree";
   }
@@ -26,11 +24,16 @@ const getStoredViewMode = (): ViewMode => {
   }
 };
 
+/**
+ * FILIALLAR — `/branches` (faqat superadmin, `canViewBranches`), dizayn v2.
+ * Ro'yxat (daraxt · jadval · kartalar) — `BranchListWidget`; «+ Yangi filial» — `BranchFormModal`,
+ * «Tahrirlash» — `BranchEditModal` (ikkalasi bitta v2 `BranchFormDialog` ko'rinishida).
+ */
 const BranchesPage = () => {
   const { t } = useTranslation("branches");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>(getStoredViewMode);
+  const [viewMode, setViewMode] = useState<BranchViewMode>(getStoredViewMode);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -45,36 +48,23 @@ const BranchesPage = () => {
   }, [viewMode]);
 
   return (
-    <PageContainer>
-      <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <HeaderName
-          name={t("page.title")}
-          description={t("page.description")}
-          icon={<Building2 size={22} />}
-        />
-        <Button
-          label={t("create.title")}
-          icon={<PlusOutlined />}
-          onClick={() => setIsCreateOpen(true)}
-          className="w-full sm:w-auto"
-        />
-      </div>
-
+    <>
       <BranchListWidget
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         onEdit={(branch) => setEditingBranch(branch)}
+        createAction={
+          <Button leftIcon={Plus} onClick={() => setIsCreateOpen(true)}>
+            {t("create.title")}
+          </Button>
+        }
       />
 
       {isCreateOpen ? <BranchFormModal open onClose={() => setIsCreateOpen(false)} /> : null}
       {editingBranch ? (
-        <BranchEditModal
-          open
-          initialData={editingBranch}
-          onClose={() => setEditingBranch(null)}
-        />
+        <BranchEditModal open initialData={editingBranch} onClose={() => setEditingBranch(null)} />
       ) : null}
-    </PageContainer>
+    </>
   );
 };
 

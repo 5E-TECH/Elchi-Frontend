@@ -1,28 +1,39 @@
 {
-  "title": "Return batchlar",
-  "description": "Filial bo'yicha qaytish oqimidagi paketlar ro'yxati",
-  "totalBatches": "{{count}} paket",
-  "empty": "Qaytarish paketlari topilmadi",
-  "emptyDescription": "Hozircha qaytarilgan orderlar topilmadi.",
-  "orderCountValue": "{{count}} ta",
-  "columns": {
-    "id": "ID",
-    "from": "Filialdan",
-    "to": "Qayerga",
-    "ordersCount": "Nechta order",
-    "totalPrice": "Umumiy narx",
-    "status": "Holat",
-    "createdAt": "Yaratilgan vaqt"
-  },
+  "title": "Qaytarishlar",
+  "descriptionAll": "Filiallardan qaytish oqimidagi paketlar",
+  "descriptionBranch": "{{branch}}dan chiqqan qaytarish paketlari",
+  "descriptionOwnBranch": "Filialingizdan chiqqan qaytarish paketlari",
+  "total": "jami {{value}} ta paket",
+  "listLabel": "Qaytarish paketlari ro'yxati",
+  "filtersLabel": "Filtrlar",
   "filters": {
     "status": "Holat",
-    "allStatuses": "Barchasi",
-    "from": "Dan",
-    "to": "Gacha"
+    "date": "Sana",
+    "all": "Barchasi"
   },
+  "columns": {
+    "batch": "Paket",
+    "from": "Filialdan",
+    "to": "Qayerga",
+    "status": "Holat",
+    "orders": "Buyurtmalar",
+    "amount": "Summa",
+    "open": "Ochish"
+  },
+  "qty": "{{value}} ta",
+  "open": "{{id}} paketini ochish",
+  "pagination": "{{from}}–{{to}} / {{total}} ta paket",
+  "cardsLabel": "Qaytarish paketlari",
+  "loading": "Qaytarish paketlari yuklanmoqda",
+  "empty": "Qaytarish paketlari topilmadi",
+  "emptyDescription": "Filial qaytarish paketini yaratganda u shu yerda paydo bo'ladi.",
+  "filteredEmpty": "Bu holatdagi qaytarish paketi yo'q",
+  "filteredEmptyDescription": "Boshqa holatni tanlang yoki filtrni tozalang.",
+  "filteredEmptyPeriod": "Bu davrda qaytarish paketi yo'q",
+  "filteredEmptyPeriodDescription": "Boshqa sanani tanlang yoki filtrlarni tozalang.",
+  "clearFilter": "Filtrni tozalash",
   "messages": {
-    "branchMissing": "Joriy foydalanuvchiga filial biriktirilmagan",
-    "loadFailed": "Return batchlar ro'yxatini yuklab bo'lmadi"
+    "loadFailed": "Qaytarish paketlari ro'yxatini yuklab bo'lmadi"
   },
   "opsReturnRequests": {
     "title": "Logistika — qaytarish so'rovlari",

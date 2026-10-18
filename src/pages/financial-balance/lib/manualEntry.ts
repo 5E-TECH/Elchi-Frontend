@@ -7,12 +7,13 @@
 export const MANUAL_ENTRY_SOURCES = ["manual_expense", "manual_income", "bills", "salary", "correction"] as const;
 export type ManualEntrySource = (typeof MANUAL_ENTRY_SOURCES)[number];
 
+/** Chip matnlari — maket (`superadmin-balance-entry-dialog`): «Tuzatish», «(rollback)» siz. */
 export const SOURCE_LABEL_KEYS: Record<ManualEntrySource, string> = {
-  manual_expense: "financialBalanceSourceManualExpense",
-  manual_income: "financialBalanceSourceManualIncome",
-  bills: "financialBalanceSourceBills",
-  salary: "financialBalanceSourceSalary",
-  correction: "financialBalanceSourceCorrection",
+  manual_expense: "v2Balance.sources.manual_expense",
+  manual_income: "v2Balance.sources.manual_income",
+  bills: "v2Balance.sources.bills",
+  salary: "v2Balance.sources.salary",
+  correction: "v2Balance.sources.correction",
 };
 
 /** Tuzatishdan boshqa turlarning ishorasi qat'iy. */

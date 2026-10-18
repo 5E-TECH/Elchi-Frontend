@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../../test/test-utils";
@@ -88,14 +88,14 @@ const typePassword = async (user: ReturnType<typeof userEvent.setup>, value: str
 };
 
 describe("UpdateUserModal — holat variantlari (fix3b)", () => {
-  it("faqat 'Faol' va 'Faol emas' — 'Bloklangan' yo'q", async () => {
+  it("faqat 'Faol' va 'Nofaol' — 'Bloklangan' yo'q", async () => {
     const user = userEvent.setup();
     renderModal(makeUser(), { role: "superadmin", id: "1" });
 
-    // v2 `Select searchable`: maydon — combobox, variantlar — option.
+    // v2 `Select`: maydon — combobox, variantlar — option (maket `superadmin-users-edit-dialog`: «Faol» / «Nofaol»).
     await user.click(screen.getByRole("combobox", { name: "Holat" }));
 
-    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(["Faol", "Faol emas"]);
+    expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(["Faol", "Nofaol"]);
     expect(screen.queryByRole("option", { name: "Bloklangan" })).not.toBeInTheDocument();
   });
 });
@@ -229,5 +229,112 @@ describe("UpdateUserModal — «To'lov kuni» 1–30 ro'yxati (ega qarori 2026-1
   it("noto'g'ri qiymat («abc») — maydon bo'sh, sahifa yiqilmaydi", () => {
     renderModal(makeUser({ id: "300", role: "admin", payment_day: "abc" }), { role: "superadmin", id: "1" });
     expect(dayField()).toHaveTextContent("To'lov kunini tanlang");
+  });
+});
+
+describe("UpdateUserModal — dizayn v2 oynasi (maket `superadmin-users-edit-dialog`)", () => {
+  beforeEach(() => {
+    mocks.updateUser.mockReset().mockResolvedValue({ statusCode: 200 });
+    mocks.logout.mockReset().mockResolvedValue(undefined);
+  });
+
+  it("sarlavha va izoh «{ism} · {rol}», bo'limlar va tugmalar maketdagidek", () => {
+    renderModal(
+      makeUser({ id: "40", name: "Baraka Shop", role: "market", default_tariff: "home" }),
+      { role: "superadmin", id: "1" },
+    );
+
+    const dialog = screen.getByRole("dialog", { name: "Foydalanuvchini tahrirlash" });
+    expect(dialog).toHaveAccessibleDescription("Baraka Shop · Market");
+    expect(screen.getByText("Asosiy ma'lumotlar")).toBeInTheDocument();
+    expect(screen.getByText("Market ma'lumotlari")).toBeInTheDocument();
+    expect(screen.getByText("Bo'sh qoldirilsa, parol o'zgarmaydi")).toBeInTheDocument();
+    expect(screen.getByText("Nofaol qilishdan oldin tasdiq so'raladi")).toBeInTheDocument();
+    // Eski `home` qiymati — «Uygacha» (API `address`).
+    expect(screen.getByRole("combobox", { name: "Asosiy tarif" })).toHaveTextContent("Uygacha");
+    expect(screen.getByRole("button", { name: "Bekor qilish" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "O'zgarishlarni saqlash" })).toBeInTheDocument();
+  });
+
+  it("faqat o'zgargan maydonlar yuboriladi: market tarifi va asosiy tarif (home → address o'zgarish emas)", async () => {
+    const user = userEvent.setup();
+    renderModal(
+      makeUser({ id: "40", name: "Baraka Shop", role: "market", default_tariff: "home", tariff_home: 35000, tariff_center: 25000 }),
+      { role: "superadmin", id: "1" },
+    );
+
+    const home = document.querySelector<HTMLInputElement>('input[name="tariff_home"]');
+    if (!home) throw new Error("tariff_home input not found");
+    expect(home).toHaveValue("35 000");
+    await user.clear(home);
+    await user.type(home, "40000");
+    await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
+
+    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
+    expect(mocks.updateUser).toHaveBeenCalledWith({ id: "40", data: { tariff_home: 40000 } });
+  });
+
+  it("asosiy tarif «Markazgacha» tanlansa — `default_tariff: center`", async () => {
+    const user = userEvent.setup();
+    // Ba'zi javoblarda `address` keladi (tipda — `home`).
+    renderModal(makeUser({ id: "40", role: "market", default_tariff: "address" as never }), { role: "admin", id: "1" });
+
+    await user.click(screen.getByRole("combobox", { name: "Asosiy tarif" }));
+    await user.click(screen.getByRole("option", { name: "Markazgacha" }));
+    await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
+
+    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
+    expect(mocks.updateUser).toHaveBeenCalledWith({ id: "40", data: { default_tariff: "center" } });
+  });
+
+  it("holat «Nofaol» — avval tasdiq oynasi; tasdiqlansa `status: inactive` yuboriladi", async () => {
+    const user = userEvent.setup();
+    renderModal(makeUser({ id: "263", name: "E2E Kuryer" }), { role: "superadmin", id: "1" });
+
+    await user.click(screen.getByRole("combobox", { name: "Holat" }));
+    await user.click(screen.getByRole("option", { name: "Nofaol" }));
+    await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
+
+    const confirmDialog = await screen.findByRole("alertdialog", { name: "Nofaol qilishni tasdiqlang" });
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+    await user.click(within(confirmDialog).getByRole("button", { name: "Nofaol qilish" }));
+
+    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
+    expect(mocks.updateUser).toHaveBeenCalledWith({ id: "263", data: { status: "inactive" } });
+  });
+
+  it("telefon o'zgarsa `+998…` ko'rinishida yuboriladi; 9 raqamdan kam — xato", async () => {
+    const user = userEvent.setup();
+    renderModal(makeUser({ id: "263" }), { role: "superadmin", id: "1" });
+
+    const phone = document.querySelector<HTMLInputElement>('input[name="phone"]');
+    if (!phone) throw new Error("phone input not found");
+    expect(phone).toHaveValue("90 111 22 33");
+    await user.clear(phone);
+    await user.type(phone, "93512");
+    await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
+    expect(await screen.findByText("9 ta raqam kiriting")).toBeInTheDocument();
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+
+    await user.type(phone, "4408");
+    await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
+    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
+    expect(mocks.updateUser).toHaveBeenCalledWith({ id: "263", data: { phone_number: "+998935124408" } });
+  });
+
+  it("backend maydon xatosi maydon ostida ko'rinadi", async () => {
+    const user = userEvent.setup();
+    mocks.updateUser.mockRejectedValue({
+      response: { status: 400, data: { message: "Validation failed", errors: { phone_number: "Bu raqam band" } } },
+    });
+    renderModal(makeUser({ id: "263" }), { role: "superadmin", id: "1" });
+
+    const phone = document.querySelector<HTMLInputElement>('input[name="phone"]');
+    if (!phone) throw new Error("phone input not found");
+    await user.clear(phone);
+    await user.type(phone, "935124408");
+    await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
+
+    expect(await screen.findByText("Bu raqam band")).toBeInTheDocument();
   });
 });

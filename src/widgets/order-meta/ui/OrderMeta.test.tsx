@@ -53,6 +53,8 @@ describe("OrderMeta", () => {
     expect(row("meta-id").querySelector('button[aria-label="Buyurtma raqamini nusxalash"]')).toBeTruthy();
     expect(row("meta-market")).toHaveTextContent("Kimdur Kimdur");
     expect(row("meta-market").querySelector("a")!.getAttribute("href")).toBe("tel:+998992222222");
+    // D-14: telefon mijoz kartasidagidek formatlangan.
+    expect(row("meta-market").querySelector("a")).toHaveTextContent("+998 99 222 22 22");
     expect(row("meta-branch")).toHaveTextContent("HQ Toshkent");
     expect(row("meta-post").querySelector("a")!.getAttribute("href")).toBe("/mails/78");
     expect(row("meta-delivery")).toHaveTextContent("Markazgacha");
@@ -61,6 +63,7 @@ describe("OrderMeta", () => {
     // Kuryer nomi va telefoni `GET users/93` dan — bosiladigan tel: havola.
     await waitFor(() => expect(row("meta-courier")).toHaveTextContent("Xorazm Courier"));
     expect(row("meta-courier").querySelector("a")!.getAttribute("href")).toBe("tel:+998970000090");
+    expect(row("meta-courier").querySelector("a")).toHaveTextContent("+998 97 000 00 90");
     expect(row("meta-holder")).toHaveTextContent("Kuryerda: Xorazm Courier");
     expect(apiGet).toHaveBeenCalledTimes(1);
   });
@@ -110,7 +113,7 @@ describe("OrderMeta", () => {
       expect(label.parentElement, id).toBe(value.parentElement);
     }
     expect(row("meta-market").querySelector("[data-meta-value]")!.getAttribute("title")).toBe(
-      "Kimdur Kimdur · +998992222222",
+      "Kimdur Kimdur · +998 99 222 22 22",
     );
   });
 

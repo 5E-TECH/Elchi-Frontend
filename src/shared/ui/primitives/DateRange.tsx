@@ -46,11 +46,21 @@ import { useDatePicker } from "./date/useDatePicker";
  *
  *  `Field` ichida: `<Field label="Sana" labelAs="span">` — yorliq bosilganda panel ochilib ketmaydi,
  *  nom `aria-labelledby` orqali (yorliq + qiymat).
+ *
+ *  `selection="day"` (qisqartirilgan sana filtri — backend oraliq emas, faqat davr yoki bitta kun qabul qilsa,
+ *  masalan `/returns`: `period=today|week|month` | `date=YYYY-MM-DD`): tez tanlov chiplari o'sha-o'sha, taqvimda
+ *  BITTA kun — bir bosishda `{ from: kun, to: kun }` qo'llanadi va panel yopiladi (oraliq tanlab bo'lmaydi);
+ *  maydonda tez tanlovga mos qiymat uning nomi bilan («Bugun», «Bu hafta», «Bu oy»), aks holda — kun.
+ *  `inlineLabel` — maydon ichida kulrang «Sana:» (`Select` `inlineLabel` bilan bir xil). Ikkalasi ham ixtiyoriy,
+ *  sukut — oldingi xatti-harakat (oraliq, ichki yorliqsiz).
  */
 
 export type { DatePresetKey } from "./date/calendarMath";
 
 export type DateRangeChangeSource = "calendar" | "preset";
+
+/** `range` (sukut) — ikki bosishda oraliq; `day` — bitta kun (+ tez tanlov davrlari). */
+export type DateRangeSelection = "range" | "day";
 
 export type DateRangePanelProps = Omit<ComponentProps<"div">, "onChange" | "children"> & {
   value: Partial<ISODateRange> | null | undefined;
@@ -70,6 +80,8 @@ export type DateRangePanelProps = Omit<ComponentProps<"div">, "onChange" | "chil
    * `plain` (sukut) — yuzasiz, popover yoki varaqa ichida.
    */
   surface?: "raised" | "plain";
+  /** Taqvimda tanlov: `range` (sukut) — oraliq, `day` — bitta kun (bir bosishda qo'llanadi). */
+  selection?: DateRangeSelection;
 };
 
 const PANEL_SURFACE = {
@@ -98,6 +110,7 @@ export const DateRangePanel = ({
   today: todayProp,
   autoFocus = false,
   surface = "plain",
+  selection = "range",
   className,
   ...rest
 }: DateRangePanelProps) => {
@@ -110,8 +123,13 @@ export const DateRangePanel = ({
   const [preview, setPreview] = useState<ISODay>("");
   const presetList = presets === false ? [] : presets;
   const pressed = presetList.length ? matchPreset(range, presetList, today) : null;
+  const dayMode = selection === "day";
 
   const select = (day: ISODay) => {
+    if (dayMode) {
+      onChange({ from: day, to: day }, "calendar");
+      return;
+    }
     if (!draftStart) {
       setDraftStart(day);
       setPreview("");
@@ -129,8 +147,14 @@ export const DateRangePanel = ({
   };
 
   const full = formatRangeFull(range);
+  // Kun rejimida taqvimda faqat bitta kun belgilanadi (davr — bosilgan tez tanlov chipida ko'rinadi).
+  const singleDay = range.from && range.from === range.to ? range.from : "";
   let summary;
-  if (draftStart) {
+  if (dayMode && singleDay) {
+    summary = <span className="font-semibold text-text">{formatDay(singleDay)}</span>;
+  } else if (dayMode && !full) {
+    summary = <span>{t("date.datePlaceholder")}</span>;
+  } else if (draftStart) {
     summary = (
       <span>
         {`${formatDay(draftStart)}${RANGE_DASH}… · `}
@@ -180,21 +204,35 @@ export const DateRangePanel = ({
         </>
       ) : null}
 
-      <Calendar
-        mode="range"
-        months={months}
-        start={draftStart || range.from}
-        end={draftStart ? preview : range.to}
-        defaultActive={range.from || range.to || undefined}
-        onSelect={select}
-        onPreview={(day) => {
-          if (draftStart) setPreview(day ?? "");
-        }}
-        min={min}
-        max={max}
-        today={today}
-        autoFocus={autoFocus}
-      />
+      {dayMode ? (
+        <Calendar
+          mode="single"
+          months={months}
+          start={singleDay}
+          defaultActive={range.to || range.from || undefined}
+          onSelect={select}
+          min={min}
+          max={max}
+          today={today}
+          autoFocus={autoFocus}
+        />
+      ) : (
+        <Calendar
+          mode="range"
+          months={months}
+          start={draftStart || range.from}
+          end={draftStart ? preview : range.to}
+          defaultActive={range.from || range.to || undefined}
+          onSelect={select}
+          onPreview={(day) => {
+            if (draftStart) setPreview(day ?? "");
+          }}
+          min={min}
+          max={max}
+          today={today}
+          autoFocus={autoFocus}
+        />
+      )}
 
       <div
         aria-live="polite"
@@ -212,7 +250,7 @@ export type DateRangeProps = {
   onChange: (range: ISODateRange) => void;
   /** Bo'sh maydon matni (sukut «Sana oralig'ini tanlang»; dashboard — «Boshlanish → Tugash»). */
   placeholder?: string;
-  /** Tez tanlov; `false` — yo'q (yonida segment bo'lsa, `QuickDateRangeFilter`). */
+  /** Tez tanlov; `false` — yo'q (yonida davr segmenti bo'lsa, masalan dashboard sarlavhasi). */
   presets?: readonly DatePresetKey[] | false;
   min?: string;
   max?: string;
@@ -233,6 +271,13 @@ export type DateRangeProps = {
   className?: string;
   /** Maydon tugmasi klassi (masalan balandlik). */
   triggerClassName?: string;
+  /**
+   * `range` (sukut) — oraliq; `day` — bitta kun yoki tez tanlov davri (`/returns`: backend `period` | `date`).
+   * Kun rejimida sukut nomlar: «Sana», panel «Sanani tanlash», × «Sanani tozalash».
+   */
+  selection?: DateRangeSelection;
+  /** Maydon ichidagi kulrang yorliq («Sana:» — yorlig'i yashirin filtr, `Select` `inlineLabel` kabi). */
+  inlineLabel?: string;
 };
 
 /**
@@ -259,26 +304,38 @@ export const DateRange = ({
   today,
   className,
   triggerClassName,
+  selection = "range",
+  inlineLabel,
 }: DateRangeProps) => {
   const { t } = useTranslation("ui");
   const picker = useDatePicker();
   const { close } = picker;
   const range = normalizeRange(value);
   const empty = !range.from && !range.to;
+  const dayMode = selection === "day";
+  // Kun rejimi: tez tanlovga mos qiymat — uning nomi («Bugun», «Bu hafta», «Bu oy»), «Barchasi» — bo'sh qiymat.
+  const presetList = presets === false ? [] : presets.filter((preset) => preset !== "all");
+  const matchedPreset =
+    dayMode && !empty && presetList.length
+      ? matchPreset(range, presetList, normalizeISODay(today) || todayISODay())
+      : null;
+  const presetText = matchedPreset ? t(`date.presets.${matchedPreset}`) : null;
 
   const text =
+    presetText ??
     formatRangeShort(range) ??
     (range.from
       ? t("date.fromOnly", { date: formatDay(range.from) })
       : range.to
         ? t("date.toOnly", { date: formatDay(range.to) })
-        : (placeholder ?? t("date.placeholder")));
+        : (placeholder ?? t(dayMode ? "date.datePlaceholder" : "date.placeholder")));
   const spoken =
-    range.from && range.to && range.from !== range.to
+    presetText ??
+    (range.from && range.to && range.from !== range.to
       ? t("date.spokenRange", { from: formatDay(range.from), to: formatDay(range.to) })
       : range.from && range.to
         ? formatDay(range.from)
-        : text;
+        : text);
 
   return (
     <>
@@ -287,8 +344,8 @@ export const DateRange = ({
         text={text}
         empty={empty}
         spoken={spoken}
-        ariaLabel={ariaLabel ?? t("date.rangeLabel")}
-        clearLabel={t("date.clear")}
+        ariaLabel={ariaLabel ?? t(dayMode ? "date.dateLabel" : "date.rangeLabel")}
+        clearLabel={t(dayMode ? "date.clearDate" : "date.clear")}
         onClear={clearable ? () => onChange({ ...EMPTY_RANGE }) : undefined}
         id={id}
         invalid={invalid}
@@ -296,10 +353,11 @@ export const DateRange = ({
         required={required}
         className={className}
         triggerClassName={triggerClassName}
+        inlineLabel={inlineLabel}
       />
       <DatePickerLayer
         picker={picker}
-        label={dialogLabel ?? t("date.panelLabel")}
+        label={dialogLabel ?? t(dayMode ? "date.datePanelLabel" : "date.panelLabel")}
         popoverClassName={months === 2 ? "w-[652px]" : "w-[300px]"}
       >
         {({ phone }) => (
@@ -314,6 +372,7 @@ export const DateRange = ({
             max={max}
             months={phone ? 1 : months}
             today={today}
+            selection={selection}
             autoFocus
           />
         )}

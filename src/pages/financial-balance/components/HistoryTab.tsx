@@ -1,59 +1,53 @@
-import { memo, useCallback, useMemo, useState } from "react";
+// dizayn-v2: superadmin-balance-history, admin-balance-history
+import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { ArrowRight, ChevronRight, SearchX, History as HistoryIcon } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { CalendarDays, FileSpreadsheet, Funnel, Loader2, Plus } from "lucide-react";
-import { API_ENDPOINTS } from "../../../shared/api/endpoints";
-import { downloadXlsx, getExportErrorMessage } from "../../../shared/lib/exportFile";
-import { Table } from "../../../shared/components/Table/Table";
-import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
-import FilterSelect from "../../../shared/ui/FilterSelect";
-import FilterDateInput from "../../../shared/ui/FilterDateInput";
-import Pagination from "../../../shared/components/pagination";
-import QueryErrorState from "../../../shared/ui/QueryErrorState";
 import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
-import { usePagination } from "../../../shared/lib/usePagination";
+import { cx } from "../../../shared/lib/cx";
+import type { ISODateRange } from "../../../shared/lib/dateRange";
+import { formatDateTimeLocalized, type DateInput } from "../../../shared/lib/formatDateTime";
 import {
-  HISTORY_PARAM_PREFIX,
-  extractFinancialLedgerItems,
-  extractFinancialLedgerPagination,
-} from "../lib/financialBalance";
+  formatMoneyLocalized,
+  formatNumberLocalized,
+  formatSignedMoneyLocalized,
+} from "../../../shared/lib/formatMoney";
+import { scrollShellContentToTop, usePagination } from "../../../shared/lib/usePagination";
 import {
-  orderLink,
-  toActorName,
-  toHistoryText,
-  toSourceTypeLabel,
-  type HistoryRow,
-} from "../lib/historyRow";
-import FinancialEntryModal from "./FinancialEntryModal";
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  DateRange,
+  EmptyState,
+  ErrorState,
+  Field,
+  IconButton,
+  Pagination,
+  QueryBoundary,
+  Select,
+  SkeletonTable,
+  TONE_FG,
+  type DataTableColumn,
+  type SelectOption,
+} from "../../../shared/ui/primitives";
+import { extractFinancialLedgerItems, extractFinancialLedgerPagination } from "../lib/financialBalance";
+import {
+  HISTORY_FROM_PARAM,
+  HISTORY_LIMIT_PARAM,
+  HISTORY_PAGE_PARAM,
+  HISTORY_SOURCE_PARAM,
+  HISTORY_TO_PARAM,
+  LEDGER_SOURCE_TYPES,
+  readHistoryFilters,
+} from "../lib/historyFilters";
+import { orderLink, toHistoryRow, toSourceTypeLabel, type HistoryRow } from "../lib/historyRow";
 import FinancialHistoryDetail from "./FinancialHistoryDetail";
-import { notify } from "../../../shared/lib/notify";
 
-const PAGE_PARAM = `${HISTORY_PARAM_PREFIX}Page`;
-const LIMIT_PARAM = `${HISTORY_PARAM_PREFIX}Limit`;
-const FROM_PARAM = `${HISTORY_PARAM_PREFIX}From`;
-const TO_PARAM = `${HISTORY_PARAM_PREFIX}To`;
-const SOURCE_PARAM = `${HISTORY_PARAM_PREFIX}Source`;
+const PAGE_SIZES = [10, 25, 50, 100] as const;
 
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-const readDateParam = (value: string | null) => (value && DATE_PATTERN.test(value) ? value : "");
-
-// Backend FinancialSource_type enum qiymatlari va ularning yorliqlari.
-// URL'dan kelgan boshqa qiymat (eski yoki qo'lda tahrirlangan havola,
-// masalan "sell") backend'da 500 berardi — u "barcha manbalar" deb o'qiladi.
-const SOURCE_TYPE_LABEL_KEYS = {
-  sell_profit: "financialBalanceSourceProfit",
-  sell_extra_cost: "financialBalanceSourceExtraCost",
-  cancel_extra_cost: "financialBalanceSourceExtraCost",
-  manual_income: "financialBalanceSourceManualIncome",
-  manual_expense: "financialBalanceSourceManualExpense",
-  salary: "financialBalanceSourceSalary",
-  correction: "financialBalanceSourceCorrection",
-  bills: "financialBalanceSourceBills",
-} as const;
-const readSourceParam = (value: string | null) =>
-  value && Object.hasOwn(SOURCE_TYPE_LABEL_KEYS, value) ? value : "";
-
-
+/** Ishorali summa rangi: kirim — `success-fg`, chiqim — `danger-fg` (ishora matnda ham bor). */
+const changeClass = (value: number) => (value < 0 ? TONE_FG.danger : value > 0 ? TONE_FG.success : "text-text");
 
 const toPositiveNumber = (value: unknown) => {
   const parsed = Number(value);
@@ -61,113 +55,51 @@ const toPositiveNumber = (value: unknown) => {
   return Math.floor(parsed);
 };
 
-const normalizePagination = (
-  raw: Record<string, unknown> | undefined,
-  fallbackPage: number,
-  fallbackLimit: number,
-) => {
-  const total = toPositiveNumber(
-    raw?.total ??
-      raw?.totalItems ??
-      raw?.itemCount ??
-      raw?.count,
-  ) ?? 0;
-
-  const currentPage = toPositiveNumber(
-    raw?.page ??
-      raw?.currentPage,
-  ) ?? fallbackPage;
-
-  const limit = toPositiveNumber(
-    raw?.limit ??
-      raw?.perPage ??
-      raw?.pageSize,
-  ) ?? fallbackLimit;
-
-  const totalPages = toPositiveNumber(
-    raw?.totalPages ??
-      raw?.lastPage,
-  ) ?? Math.max(1, Math.ceil(total / Math.max(1, limit)));
-
-  return {
-    total,
-    page: currentPage,
-    limit,
-    totalPages,
-  };
+const normalizePagination = (raw: Record<string, unknown> | undefined, fallbackPage: number, fallbackLimit: number) => {
+  const total = toPositiveNumber(raw?.total ?? raw?.totalItems ?? raw?.itemCount ?? raw?.count) ?? 0;
+  const page = toPositiveNumber(raw?.page ?? raw?.currentPage) ?? fallbackPage;
+  const limit = toPositiveNumber(raw?.limit ?? raw?.perPage ?? raw?.pageSize) ?? fallbackLimit;
+  return { total, page, limit };
 };
 
-const formatDateTime = (value?: unknown) => {
-  if (!value) return "-";
-
-  try {
-    const date = new Date(typeof value === "number" ? value : String(value));
-    if (Number.isNaN(date.getTime())) return String(value);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    return `${day}.${month}.${year} ${hours}:${minutes}`;
-  } catch {
-    return String(value);
-  }
-};
-
-const getSignedChange = (item: Record<string, unknown>) => {
-  const amount = Math.abs(Number(item.amount ?? 0));
-  const before = Number(item.balance_before ?? item.balanceBefore);
-  const after = Number(item.balance_after ?? item.balanceAfter);
-
-  if (Number.isFinite(before) && Number.isFinite(after) && before !== after) {
-    return after - before;
-  }
-
-  const operationType = String(item.operation_type ?? item.operationType ?? "").toLowerCase();
-  const sourceType = String(item.source_type ?? item.sourceType ?? "").toLowerCase();
-
-  if (operationType === "expense" || ["manual_expense", "salary", "correction"].includes(sourceType)) {
-    return -amount;
-  }
-
-  return amount;
-};
-
-const toDisplayAmount = (value: number) =>
-  value.toLocaleString("ru-RU").replace(/\s/g, " ");
-
-
+/**
+ * BALANS → TARIX (dizayn v2, maket `superadmin-balance-history`; admin — o'sha fragment).
+ *
+ * Filtrlar (`role=group` «Tarix filtrlari»): sana oralig'i + «Manba turi» — faqat URL'da
+ * (`HISTORY_PARAM_PREFIX`), noto'g'ri sana/tur e'tiborsiz qoldiriladi, filtr o'zgarsa 1-sahifa (bitta
+ * `setSearchParams` chaqiruvi). «Yozuvlar» kartasi: server sahifalashli jadval (telefonda kartalar),
+ * qatorni bosish yoki «›» — `FinancialHistoryDetail`. «Daftar qoldig'i» grafigi maketda «Taklif» —
+ * chizilmaydi. «Excelga yuklash» va «Yozuv qo'shish» — sahifa sarlavhasida (`index.tsx`).
+ */
 const HistoryTab = () => {
-  const { t } = useTranslation("payments");
-  const currencyLabel = t("currency");
-  const [entryOpen, setEntryOpen] = useState(false);
+  const { t, i18n } = useTranslation("payments");
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const [selected, setSelected] = useState<HistoryRow | null>(null);
-  const [exporting, setExporting] = useState(false);
   const { useGetFinancialBalanceHistory } = useFinanceCoverage();
   const { page, limit, setPage, setLimit } = usePagination({
     key: "payments",
     defaultLimit: 10,
-    pageParam: PAGE_PARAM,
-    limitParam: LIMIT_PARAM,
+    pageParam: HISTORY_PAGE_PARAM,
+    limitParam: HISTORY_LIMIT_PARAM,
   });
 
-  // Filtrlar faqat URL'da yashaydi (lokal nusxa yo'q) — F5 yoki havola
-  // filtrni ham, sahifani ham birga tiklaydi.
+  // Filtrlar faqat URL'da yashaydi (lokal nusxa yo'q) — F5 yoki havola filtrni ham, sahifani ham tiklaydi.
   const [searchParams, setSearchParams] = useSearchParams();
-  const fromDate = readDateParam(searchParams.get(FROM_PARAM));
-  const toDate = readDateParam(searchParams.get(TO_PARAM));
-  const sourceType = readSourceParam(searchParams.get(SOURCE_PARAM));
+  const { fromDate, toDate, sourceType } = readHistoryFilters(searchParams);
+  const activeFilters = (fromDate || toDate ? 1 : 0) + (sourceType ? 1 : 0);
 
-  // Filtr va sahifa bitta setSearchParams chaqiruvida yangilanadi: ikkita
-  // alohida chaqiruv bir-birining o'zgarishini bosib ketishi mumkin.
-  const setFilter = useCallback(
-    (param: string, value: string) => {
+  // Filtr va sahifa bitta setSearchParams chaqiruvida yangilanadi: ikkita alohida chaqiruv
+  // bir-birining o'zgarishini bosib ketishi mumkin.
+  const setFilters = useCallback(
+    (patch: Record<string, string>) => {
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev);
-          if (value) next.set(param, value);
-          else next.delete(param);
-          next.delete(PAGE_PARAM);
+          for (const [param, value] of Object.entries(patch)) {
+            if (value) next.set(param, value);
+            else next.delete(param);
+          }
+          next.delete(HISTORY_PAGE_PARAM);
           return next;
         },
         { replace: true },
@@ -176,276 +108,316 @@ const HistoryTab = () => {
     [setSearchParams],
   );
 
+  const handleDateChange = useCallback(
+    (range: ISODateRange) => setFilters({ [HISTORY_FROM_PARAM]: range.from, [HISTORY_TO_PARAM]: range.to }),
+    [setFilters],
+  );
+  const handleSourceChange = useCallback(
+    (value: string | null) => setFilters({ [HISTORY_SOURCE_PARAM]: value ?? "" }),
+    [setFilters],
+  );
+  const clearFilters = useCallback(
+    () => setFilters({ [HISTORY_FROM_PARAM]: "", [HISTORY_TO_PARAM]: "", [HISTORY_SOURCE_PARAM]: "" }),
+    [setFilters],
+  );
+
   const queryParams = useMemo(() => {
     const params: Record<string, string | number> = { page, limit };
 
     if (sourceType) params.source_type = sourceType;
     // C2 / CODE-22: oddiy `YYYY-MM-DD` — backend uni Toshkent kuni deb oladi
-    // (UTC `T00:00:00.000Z` chegarasi 00:00–05:00 dagi yozuvni oldingi kunga
-    // tushirardi).
+    // (UTC `T00:00:00.000Z` chegarasi 00:00–05:00 dagi yozuvni oldingi kunga tushirardi).
     if (fromDate) params.fromDate = fromDate;
     if (toDate) params.toDate = toDate;
 
     return params;
   }, [fromDate, limit, page, sourceType, toDate]);
 
-  const { data, isLoading, isError, refetch } = useGetFinancialBalanceHistory(true, queryParams);
+  const historyQuery = useGetFinancialBalanceHistory(true, queryParams);
+  const { data, isLoading, isError, error, refetch } = historyQuery;
 
-  const rows = useMemo<HistoryRow[]>(
+  const rows = useMemo<HistoryRow[] | undefined>(
     () =>
-      (extractFinancialLedgerItems(data) as Record<string, unknown>[]).map((item) => {
-        const signedChange = getSignedChange(item);
-        const previousBalance = Number(item.balance_before ?? item.balanceBefore ?? 0);
-        const nextBalance = Number(item.balance_after ?? item.balanceAfter ?? previousBalance + signedChange);
-
-        return {
-          id: String(item.id ?? ""),
-          date: item.payment_date ?? item.paymentDate ?? item.createdAt ?? item.created_at ?? "",
-          sourceType: String(item.source_type ?? ""),
-          changeAmount: signedChange,
-          previousBalance,
-          nextBalance,
-          comment: toHistoryText(item.comment),
-          automatic: !toHistoryText(item.created_by),
-          actorName: toActorName(item),
-          orderId: toHistoryText(item.order_id),
-        };
-      }),
+      data === undefined || data === null
+        ? undefined
+        : (extractFinancialLedgerItems(data) as Record<string, unknown>[]).map(toHistoryRow),
     [data],
   );
 
   const pagination = useMemo(
-    () =>
-      normalizePagination(
-        extractFinancialLedgerPagination(data),
-        page,
-        limit,
-      ),
+    () => normalizePagination(extractFinancialLedgerPagination(data), page, limit),
     [data, limit, page],
   );
 
-  const columns = useMemo<ColumnConfig<HistoryRow>[]>(
-    () => [
-      {
-        key: "id",
-        label: "#",
-        width: "50px",
-        render: (_, __, index) => (
-          <span className="text-xs font-semibold text-gray-400">
-            {(pagination.page - 1) * pagination.limit + index + 1}
-          </span>
-        ),
-      },
-      {
-        key: "date",
-        label: t("financialBalanceDate"),
-        width: "170px",
-        render: (value) => (
-          <span className="block whitespace-nowrap text-[13px] font-medium text-gray-700 dark:text-gray-200">
-            {formatDateTime(value)}
-          </span>
-        ),
-      },
-      {
-        key: "sourceType",
-        label: t("financialBalanceSource"),
-        width: "190px",
-        render: (value, row) => (
-          <span className="flex flex-col">
-            <span className="block truncate text-sm font-medium text-main">{toSourceTypeLabel(value, t)}</span>
-            {row.orderId && (
-              <Link
-                to={orderLink(row.orderId)}
-                onClick={(event) => event.stopPropagation()}
-                className="text-xs font-semibold text-gray-500 underline-offset-2 hover:text-main hover:underline dark:text-white/50"
-              >
-                {t("financialBalanceOrderLink", { id: row.orderId })}
-              </Link>
-            )}
-          </span>
-        ),
-      },
-      {
-        key: "changeAmount",
-        label: t("financialBalanceChange"),
-        width: "180px",
-        render: (value) => (
-          <span
-            className={`block whitespace-nowrap text-sm font-bold font-mono ${
-              value < 0 ? "text-rose-400" : "text-emerald-400"
-            }`}
-          >
-            {value < 0 ? "-" : "+"}
-            {toDisplayAmount(Math.abs(value))} {currencyLabel}
-          </span>
-        ),
-      },
-      {
-        key: "previousBalance",
-        label: t("financialBalancePreviousBalance"),
-        width: "190px",
-        render: (value) => (
-          <span className="block whitespace-nowrap text-sm font-medium text-gray-700 dark:text-white/80">
-            {toDisplayAmount(value)} {currencyLabel}
-          </span>
-        ),
-      },
-      {
-        key: "nextBalance",
-        label: t("financialBalanceNextBalance"),
-        width: "190px",
-        render: (value) => (
-          <span className="block whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white">
-            {toDisplayAmount(value)} {currencyLabel}
-          </span>
-        ),
-      },
-      {
-        key: "comment",
-        label: t("financialBalanceComment"),
-        width: "240px",
-        render: (value) =>
-          value ? (
-            <span title={value} className="block max-w-[240px] truncate text-sm text-gray-700 dark:text-white/80">
-              {value}
-            </span>
-          ) : (
-            <span className="text-sm text-gray-400">—</span>
-          ),
-      },
-      {
-        key: "actorName",
-        label: t("financialBalanceCreatedBy"),
-        width: "160px",
-        render: (value, row) => (
-          <span className="block truncate text-sm text-gray-600 dark:text-white/70">
-            {row.automatic ? t("financialBalanceAutomatic") : value || "—"}
-          </span>
-        ),
-      },
-    ],
-    [currencyLabel, pagination.limit, pagination.page, t],
+  // ─── Ko'rinish ─────────────────────────────────────────────────────────────
+  const money = useCallback((value: number) => formatMoneyLocalized(value, { language }), [language]);
+  const number = useCallback(
+    (value: number) => formatMoneyLocalized(value, { language, withCurrency: false }),
+    [language],
+  );
+  const signed = useCallback((value: number) => formatSignedMoneyLocalized(value, { language }), [language]);
+  const dateTime = useCallback((value: unknown) => formatDateTimeLocalized(value as DateInput, { language }), [language]);
+  const sourceLabel = useCallback((row: HistoryRow) => toSourceTypeLabel(row.sourceType, t), [t]);
+  const openLabel = useCallback(
+    (row: HistoryRow) => t("v2Balance.history.open", { source: sourceLabel(row), date: dateTime(row.date) }),
+    [dateTime, sourceLabel, t],
   );
 
-  const exportExcel = async () => {
-    if (exporting) return;
-    setExporting(true);
-    try {
-      // Jadval bilan AYNAN bir xil filtrlar — qator soni `total` ga teng.
-      await downloadXlsx(
-        API_ENDPOINTS.EXPORT.FINANCIAL_BALANCE_XLSX,
-        {
-          ...(sourceType && { source_type: sourceType }),
-          ...(fromDate && { from_date: fromDate }),
-          ...(toDate && { to_date: toDate }),
-        },
-        "financial-balance.xlsx",
-      );
-    } catch (error) {
-      notify.error(t("excelExportError"), { description: await getExportErrorMessage(error) });
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const sourceTypeOptions = useMemo(
-    () =>
-      Object.entries(SOURCE_TYPE_LABEL_KEYS).map(([value, labelKey]) => ({
-        value,
-        label: t(labelKey),
-      })),
+  const sourceOptions = useMemo<SelectOption[]>(
+    () => [
+      { value: "", label: t("v2Balance.history.allSources") },
+      ...LEDGER_SOURCE_TYPES.map((value) => ({ value, label: toSourceTypeLabel(value, t) })),
+    ],
     [t],
   );
 
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="rounded-2xl border border-gray-200 bg-primary p-4 shadow-sm dark:border-primarydark/60 dark:bg-maindark">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <Funnel size={16} className="text-main" />
-            <p className="text-sm font-semibold text-gray-800 dark:text-white">
-              {t("filters")}
-            </p>
-          </div>
-          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
-            <button
-              type="button"
-              onClick={() => void exportExcel()}
-              disabled={exporting}
-              className="flex min-h-11 items-center justify-center gap-2 rounded-xl border-2 border-gray-200 px-4 text-sm font-semibold text-gray-700 transition hover:border-main/40 hover:text-main disabled:opacity-60 dark:border-white/10 dark:text-white/80 sm:min-h-10"
-            >
-              {exporting ? <Loader2 size={16} className="animate-spin" /> : <FileSpreadsheet size={16} />}
-              {t("excel")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setEntryOpen(true)}
-              className="flex min-h-11 items-center justify-center gap-2 rounded-xl bg-main px-4 text-sm font-bold text-primary transition hover:bg-main/90 sm:min-h-10"
-            >
-              <Plus size={16} />
-              {t("financialEntryAdd")}
-            </button>
-          </div>
-        </div>
+  const columns = useMemo<DataTableColumn<HistoryRow>[]>(
+    () => [
+      {
+        id: "date",
+        header: t("v2Balance.history.col.date"),
+        className: "whitespace-nowrap",
+        cell: (row) => dateTime(row.date),
+      },
+      {
+        id: "source",
+        header: t("v2Balance.history.col.source"),
+        cell: (row) => (
+          <span className="flex min-w-0 flex-col">
+            <span className="whitespace-nowrap font-semibold text-text">{sourceLabel(row)}</span>
+            {row.orderId ? (
+              <Link
+                to={orderLink(row.orderId)}
+                className="whitespace-nowrap text-[13px] font-semibold text-action-fg underline-offset-2 hover:underline"
+              >
+                {t("v2Balance.history.order", { id: row.orderId })}
+              </Link>
+            ) : !row.automatic ? (
+              <span className="text-[13px] text-text-muted">{t("v2Balance.history.manual")}</span>
+            ) : null}
+          </span>
+        ),
+      },
+      {
+        id: "change",
+        header: t("v2Balance.history.col.change"),
+        align: "end",
+        cell: (row) => <span className={cx("font-semibold", changeClass(row.changeAmount))}>{signed(row.changeAmount)}</span>,
+      },
+      {
+        id: "balance",
+        header: (
+          <>
+            {t("v2Balance.history.col.balance")}
+            <span className="sr-only max-lg:hidden">{t("v2Balance.history.col.balanceSr")}</span>
+          </>
+        ),
+        align: "end",
+        cell: (row) => (
+          <>
+            <span className="max-lg:hidden">
+              <span className="text-text-muted">{number(row.previousBalance)}</span>{" "}
+              <ArrowRight aria-hidden="true" size={14} className="inline-block align-[-2px] text-text-subtle" />
+              <span className="sr-only">{t("v2Balance.history.from")}</span>{" "}
+            </span>
+            <span className="font-semibold text-text">{money(row.nextBalance)}</span>
+          </>
+        ),
+      },
+      {
+        id: "actor",
+        header: t("v2Balance.history.col.actor"),
+        hideBelow: "lg",
+        cell: (row) =>
+          row.automatic ? (
+            <Badge>{t("v2Balance.history.automatic")}</Badge>
+          ) : (
+            <span className="whitespace-nowrap">{row.actorName || "—"}</span>
+          ),
+      },
+      {
+        id: "comment",
+        header: t("v2Balance.history.col.comment"),
+        hideBelow: "lg",
+        cell: (row) =>
+          row.comment ? (
+            <span title={row.comment} className="block max-w-[170px] truncate">
+              {row.comment}
+            </span>
+          ) : (
+            <span className="text-text-subtle">—</span>
+          ),
+      },
+      {
+        id: "open",
+        header: <span className="sr-only">{t("v2Balance.history.col.open")}</span>,
+        className: "w-14",
+        cellClassName: "text-right",
+        cell: (row) => (
+          <IconButton
+            size="sm"
+            variant="ghost"
+            icon={ChevronRight}
+            label={openLabel(row)}
+            onClick={() => setSelected(row)}
+          />
+        ),
+      },
+    ],
+    [dateTime, money, number, openLabel, signed, sourceLabel, t],
+  );
 
-        <div className="grid grid-cols-1 items-end gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(280px,0.95fr)]">
-          <FilterDateInput
-            label={t("startDate")}
-            value={fromDate}
-            onChange={(value) => setFilter(FROM_PARAM, value)}
-            placement="bottom"
+  // Telefon kartasi (maket `.el-list-item`): manba + o'zgarish; buyurtma/kiritgan · izoh; sana + qoldiq.
+  const renderCard = useCallback(
+    (row: HistoryRow) => {
+      const who = row.automatic ? t("v2Balance.history.automatic") : row.actorName || "—";
+      const meta = row.orderId
+        ? `${t("v2Balance.history.order", { id: row.orderId })} · ${who}`
+        : row.comment
+          ? `${who} · ${row.comment}`
+          : who;
+      return (
+        <button
+          type="button"
+          onClick={() => setSelected(row)}
+          aria-label={openLabel(row)}
+          className="flex w-full min-h-14 flex-col gap-1 px-4 py-3 text-left text-sm text-text"
+        >
+          <span className="flex w-full min-w-0 justify-between gap-2">
+            <span className="min-w-0 font-semibold">{sourceLabel(row)}</span>
+            <span className={cx("whitespace-nowrap font-semibold", changeClass(row.changeAmount))}>
+              {signed(row.changeAmount)}
+            </span>
+          </span>
+          <span className="line-clamp-2 text-[13px] text-text-muted">{meta}</span>
+          <span className="flex w-full flex-wrap justify-between gap-x-2 text-[13px] text-text-muted">
+            <span className="whitespace-nowrap">{dateTime(row.date)}</span>
+            <span className="whitespace-nowrap">{t("v2Balance.history.balanceLine", { value: money(row.nextBalance) })}</span>
+          </span>
+        </button>
+      );
+    },
+    [dateTime, money, openLabel, signed, sourceLabel, t],
+  );
+
+  const total = pagination.total;
+  const showTotal = rows !== undefined;
+  // Sahifa / qatorlar soni almashganda tarix kartasining boshi ko'rinsin (D-03).
+  const historyCardRef = useRef<HTMLElement>(null);
+  const handlePageChange = (next: number) => {
+    setPage(next);
+    scrollShellContentToTop(historyCardRef.current);
+  };
+  const handlePageSizeChange = (next: number) => {
+    setLimit(next);
+    scrollShellContentToTop(historyCardRef.current);
+  };
+
+  return (
+    <div className="flex flex-col gap-6 max-md:gap-4">
+      <div
+        role="group"
+        aria-label={t("v2Balance.history.filters")}
+        className="flex max-w-[640px] flex-wrap items-center gap-3"
+      >
+        <Field
+          label={t("v2Balance.history.date")}
+          hideLabel
+          labelAs="span"
+          className="min-w-0 flex-[1_1_200px] max-md:basis-full"
+        >
+          <DateRange value={{ from: fromDate, to: toDate }} onChange={handleDateChange} />
+        </Field>
+        <Field
+          label={t("v2Balance.history.source")}
+          hideLabel
+          labelAs="span"
+          className="min-w-0 flex-[1_1_240px] max-md:basis-full"
+        >
+          <Select
+            options={sourceOptions}
+            value={sourceType || null}
+            onChange={handleSourceChange}
+            placeholder={t("v2Balance.history.allSources")}
+            inlineLabel={t("v2Balance.history.source")}
           />
-          <FilterDateInput
-            label={t("endDate")}
-            value={toDate}
-            onChange={(value) => setFilter(TO_PARAM, value)}
-            minDate={fromDate || undefined}
-            placement="bottom"
-          />
-          <FilterSelect
-            name="financial_balance_source_type"
-            label={t("financialBalanceSourceType")}
-            value={sourceType}
-            onChange={(value) => setFilter(SOURCE_PARAM, value)}
-            options={sourceTypeOptions}
-            placeholder={t("financialBalanceAllSources")}
-            icon={CalendarDays}
-          />
-        </div>
+        </Field>
       </div>
 
-      {isError ? (
-        <QueryErrorState onRetry={() => void refetch()} />
-      ) : (
-        <div>
-          <Table<HistoryRow>
-            data={rows}
-            columns={columns}
-            loading={isLoading}
-            keyExtractor={(row) => row.id}
-            emptyMessage={t("financialBalanceHistoryEmpty")}
-            onRowClick={(row) => setSelected(row)}
-          />
-
-          <div className="mt-3 flex flex-col gap-3 rounded-2xl border border-gray-200 bg-primary px-4 py-4 shadow-sm dark:border-primarydark/60 dark:bg-maindark sm:flex-row sm:items-center sm:justify-between sm:px-5">
-            <span className="text-xs text-gray-500 dark:text-white/45">
-              {t("pageLabel", { page: pagination.page, totalPages: pagination.totalPages })}
-            </span>
-
+      <Card
+        ref={historyCardRef}
+        padding="none"
+        title={t("v2Balance.history.title")}
+        description={t("v2Balance.history.subtitle")}
+        actions={
+          showTotal ? <Badge>{t("v2Balance.history.count", { value: formatNumberLocalized(total, { language }) })}</Badge> : null
+        }
+        footer={
+          rows && total > 0 ? (
             <Pagination
-              totalItems={pagination.total}
-              itemsPerPage={pagination.limit}
-              currentPage={pagination.page}
-              onPageChange={setPage}
-              onItemsPerPageChange={setLimit}
-              className="w-full pt-0 sm:w-auto"
-              summary={null}
+              page={pagination.page}
+              pageSize={pagination.limit}
+              total={total}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              pageSizeOptions={PAGE_SIZES}
+              summary={(range) => t("v2Balance.history.pagination", range)}
             />
-          </div>
-        </div>
-      )}
+          ) : undefined
+        }
+      >
+        <QueryBoundary
+          query={{ data: rows, isLoading, isError, error, refetch }}
+          loadingLabel={t("v2Balance.history.loading")}
+          loading={
+            <SkeletonTable
+              framed={false}
+              columns={[
+                t("v2Balance.history.col.date"),
+                t("v2Balance.history.col.source"),
+                t("v2Balance.history.col.change"),
+                t("v2Balance.history.col.balance"),
+              ]}
+              rows={6}
+            />
+          }
+          empty={
+            activeFilters ? (
+              <EmptyState
+                icon={SearchX}
+                title={t("v2Balance.history.filteredEmpty")}
+                description={t("v2Balance.history.filteredEmptyDescription")}
+                action={
+                  <Button variant="secondary" onClick={clearFilters}>
+                    {t("v2Balance.history.clearFilters")}
+                  </Button>
+                }
+              />
+            ) : (
+              <EmptyState
+                icon={HistoryIcon}
+                title={t("v2Balance.history.empty")}
+                description={t("v2Balance.history.emptyDescription")}
+              />
+            )
+          }
+          error={(queryError, retry) => <ErrorState error={queryError} onRetry={retry} />}
+        >
+          {(list, { isRefetching }) => (
+            <DataTable
+              rows={list}
+              columns={columns}
+              getRowKey={(row, index) => row.id || String(index)}
+              label={t("v2Balance.history.listLabel")}
+              cardsLabel={t("v2Balance.history.cardsLabel")}
+              onRowClick={(row) => setSelected(row)}
+              renderCard={renderCard}
+              busy={isRefetching}
+            />
+          )}
+        </QueryBoundary>
+      </Card>
 
-      <FinancialEntryModal open={entryOpen} onClose={() => setEntryOpen(false)} />
       <FinancialHistoryDetail row={selected} onClose={() => setSelected(null)} />
     </div>
   );

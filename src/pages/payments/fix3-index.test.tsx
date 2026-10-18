@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useLocation } from "react-router-dom";
@@ -45,6 +44,8 @@ vi.mock("../../entities/payments", () => ({
       data: enabled ? page.hqCouriers : undefined,
       isLoading: false,
     }),
+    useGetCurrentShift: () => ({ isSuccess: false, data: undefined }),
+    useGetCashBoxMain: () => ({ data: undefined, isLoading: false }),
   }),
 }));
 
@@ -87,39 +88,6 @@ vi.mock("../../entities/branch/api/useBranches", () => ({
 
 vi.mock("./components/patmentHistoryTable", () => ({
   default: () => <div data-testid="payment-history-table" />,
-}));
-
-// Ochiq oyna qatorlari haqiqiy `renderItem` bilan chiziladi (belgini ko'rish uchun).
-vi.mock("../../shared/components/popupSelect", () => ({
-  default: ({
-    isOpen,
-    data,
-    title,
-    keyExtractor,
-    onSelect,
-    renderItem,
-  }: {
-    isOpen: boolean;
-    data?: { name: string }[];
-    title: string;
-    keyExtractor: (item: { name: string }) => string | number;
-    onSelect: (item: { name: string }) => void;
-    renderItem?: (item: { name: string }, isSelected: boolean) => ReactNode;
-  }) =>
-    isOpen ? (
-      <div role="dialog" aria-label={title}>
-        {(data ?? []).map((item) => (
-          <button
-            key={keyExtractor(item)}
-            type="button"
-            data-key={keyExtractor(item)}
-            onClick={() => onSelect(item)}
-          >
-            {renderItem ? renderItem(item, false) : item.name}
-          </button>
-        ))}
-      </div>
-    ) : null,
 }));
 
 const superadmin = { role: { id: "1", role: "superadmin", region: null, name: "Admin" } } as never;
@@ -165,8 +133,9 @@ const open = (preloadedState: never) =>
     { route: "/payments", preloadedState },
   );
 
+// v2 tanlash oynasi (`SettlementPickerDialog`): qatorlar `role="option"`, kalit `data-key` da.
 const rowKeys = (dialog: HTMLElement) =>
-  within(dialog).getAllByRole("button").map((row) => row.getAttribute("data-key"));
+  within(dialog).getAllByRole("option").map((row) => row.getAttribute("data-key"));
 
 beforeEach(() => {
   page.cashboxInfo = { data: {} };
@@ -199,10 +168,12 @@ describe("FE-PAY-13 — 'Berilishi kerak' lists blocked markets that are still o
 
     expect(page.marketParams.at(-1)).not.toHaveProperty("status");
     expect(rowKeys(dialog)).toEqual(["201", "202", "204"]);
-    const blockedRow = within(dialog).getByRole("button", { name: /Kimdur/ });
-    expect(within(blockedRow).getByText("Bloklangan")).toBeInTheDocument();
-    const activeRow = within(dialog).getByRole("button", { name: /Yandex/ });
-    expect(within(activeRow).queryByText("Bloklangan")).not.toBeInTheDocument();
+    const blockedRow = within(dialog).getByRole("option", { name: /Kimdur/ });
+    expect(within(blockedRow).getByText("Nofaol")).toBeInTheDocument();
+    const activeRow = within(dialog).getByRole("option", { name: /Yandex/ });
+    expect(within(activeRow).queryByText("Nofaol")).not.toBeInTheDocument();
+    // Izoh: musbat summali marketlar soni va jami (bloklanganniki ham — puli bor).
+    expect(within(dialog).getByText("2 ta market, jami 1 300 000 so'm")).toBeInTheDocument();
   });
 });
 
@@ -255,12 +226,12 @@ describe("FE-PAY-13 / CODE-19 / CODE-27 — 'Qabul qilinishi kerak' (superadmin)
     expect(page.managerParams.at(-1)).not.toHaveProperty("status");
     expect(rowKeys(dialog)).toEqual(["branch:15", "branch:17", "branch:19"]);
     expect(
-      within(within(dialog).getByRole("button", { name: /Bloklangan menejer/ })).getByText("Bloklangan"),
+      within(within(dialog).getByRole("option", { name: /Bloklangan menejer/ })).getByText("Nofaol"),
     ).toBeInTheDocument();
-    const unmanaged = within(dialog).getByRole("button", { name: /Menejersiz filial/ });
+    const unmanaged = within(dialog).getByRole("option", { name: /Menejersiz filial/ });
     expect(within(unmanaged).getByText("Menejer biriktirilmagan filial")).toBeInTheDocument();
 
-    await userEvent.setup().click(unmanaged);
+    await userEvent.setup().dblClick(unmanaged);
     expect(screen.getByTestId("pathname")).toHaveTextContent("/payments/cash-detail/19");
     expect(screen.getByTestId("search")).toHaveTextContent("?type=branch");
     expect(JSON.parse(screen.getByTestId("state").textContent || "null")).toEqual(
@@ -281,12 +252,15 @@ describe("FE-PAY-13 / CODE-19 / CODE-27 — 'Qabul qilinishi kerak' (superadmin)
     open(manager);
 
     await userEvent.setup().click(screen.getByText("Qabul qilinishi kerak"));
-    const dialog = await screen.findByRole("dialog", { name: "Qabul qilinishi kerak" });
+    const dialog = await screen.findByRole("dialog", { name: "Kuryerni tanlang" });
 
-    expect(page.courierParams.at(-1)).not.toHaveProperty("status");
+    expect(page.courierParams.length).toBeGreaterThan(0);
+    page.courierParams.forEach((params) => expect(params).not.toHaveProperty("status"));
     expect(rowKeys(dialog)).toEqual(["courier:209", "courier:210"]);
     expect(
-      within(within(dialog).getByRole("button", { name: /Bloklangan kuryer/ })).getByText("Bloklangan"),
+      within(within(dialog).getByRole("option", { name: /Bloklangan kuryer/ })).getByText("Nofaol"),
     ).toBeInTheDocument();
+    // Guruh sarlavhasi — profildagi filial nomi bilan.
+    expect(within(dialog).getByText("E2E REGIONAL Samarqand kuryerlari · 2 ta")).toBeInTheDocument();
   });
 });

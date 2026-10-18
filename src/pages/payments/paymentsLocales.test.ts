@@ -9,9 +9,9 @@ import en from "../../locales/en/payments.json";
  * kalitlar to'plami uchala tilda bir xil bo'lishi qulflanadi.
  */
 type Dict = Record<string, string>;
-const UZ = uz as Dict;
-const RU = ru as Dict;
-const EN = en as Dict;
+const UZ = uz as unknown as Dict;
+const RU = ru as unknown as Dict;
+const EN = en as unknown as Dict;
 
 /** HQ kuryerlaridan pul qabul qilish (superadmin/admin) uchun qo'shilgan kalitlar. */
 const HQ_COURIER_RECEIVE_KEYS = [
@@ -70,6 +70,47 @@ describe("payments locales", () => {
       ];
       expect(new Set(messages).size).toBe(messages.length);
     });
+  });
+
+  it("has the same NESTED key set (v2 objects) in uz, ru and en, with no empty values", () => {
+    // Yuqori darajadagi tekshiruv ichki obyektlar (`v2Common.*` …) farqini ko'rmaydi — chuqur solishtirish.
+    const flatten = (value: unknown, prefix = ""): string[] =>
+      Object.entries(value as Record<string, unknown>).flatMap(([key, child]) =>
+        child && typeof child === "object" ? flatten(child, `${prefix}${key}.`) : [`${prefix}${key}`],
+      );
+    const leaves = (value: unknown, prefix = ""): Array<[string, unknown]> =>
+      Object.entries(value as Record<string, unknown>).flatMap(([key, child]) =>
+        child && typeof child === "object" ? leaves(child, `${prefix}${key}.`) : [[`${prefix}${key}`, child]],
+      );
+    const uzKeys = flatten(uz).sort();
+
+    expect(flatten(ru).sort()).toEqual(uzKeys);
+    expect(flatten(en).sort()).toEqual(uzKeys);
+    [uz, ru, en].forEach((dict) => {
+      leaves(dict)
+        .filter(([key]) => key.startsWith("v2Common.") || key.startsWith("v2Overview.") || key.startsWith("v2Picker.") || key.startsWith("v2HistoryDetail."))
+        .forEach(([key, text]) => expect(String(text).trim(), key).toBeTruthy());
+    });
+  });
+
+  it("keeps the mockup Uzbek wording of the v2 /payments texts", () => {
+    const v2 = uz as unknown as {
+      v2Common: { sourceType: Record<string, string>; inactive: string; paginationOperations: string };
+      v2HistoryDetail: Record<string, string>;
+      v2Picker: { receive: Record<string, string>; give: Record<string, string>; courier: Record<string, string> };
+      v2Overview: { couriers: Record<string, string> } & Record<string, unknown>;
+    };
+    expect(v2.v2Common.sourceType.courierPayment).toBe("Kuryer to'lovi");
+    expect(v2.v2Common.sourceType.branchToMain).toBe("Filialdan HQ'ga o'tkazma");
+    expect(v2.v2Common.sourceType.hqToMarket).toBe("HQ'dan marketga o'tkazma");
+    expect(v2.v2Common.inactive).toBe("Nofaol");
+    expect(v2.v2Common.paginationOperations).toBe("{{from}}–{{to}} / {{total}} ta operatsiya");
+    expect(v2.v2HistoryDetail.incomeTitle).toBe("Kirim operatsiyasi");
+    expect(v2.v2HistoryDetail.balanceAfter).toBe("Operatsiyadan keyingi balans");
+    expect(v2.v2Picker.receive.searchPlaceholder).toBe("Ism, telefon yoki filial");
+    expect(v2.v2Picker.give.description).toBe("Pul to'lanadigan marketni tanlang");
+    expect(v2.v2Picker.courier.title).toBe("Kuryerni tanlang");
+    expect(v2.v2Overview.couriers.title).toBe("Kuryerlardagi pul");
   });
 
   it("interpolates the amount in the over-balance error in every language", () => {

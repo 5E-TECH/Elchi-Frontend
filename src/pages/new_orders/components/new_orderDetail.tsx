@@ -1,37 +1,70 @@
-import { memo, useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useTranslation } from "react-i18next";
-import PrintModeSelect, { type PrintSelectOption } from "../../../shared/components/PrintModeSelect";
-import { useNavigate, useParams } from "react-router-dom";
-import { Globe, FileText, CheckCircle2, Loader2, Plus } from "lucide-react";
-import { GlobalSearchInput, useDebounce } from "../../../features/search";
-import { useOrders } from "../../../entities/orders";
-import { OrderCard, Checkbox } from "./OrderCard";
-import type { ApiOrder } from "./OrderCard";
+// dizayn-v2: superadmin-neworders-market-orders, superadmin-neworders-receive-confirm-dialog, admin-neworders-market-detail, admin-neworders-market-confirm-dialog, manager-new-orders-market-detail, manager-new-orders-receive-confirm-dialog, manager-new-orders-delete-confirm-dialog, registrator-new-orders-market-detail, registrator-new-orders-market-detail-receive-dialog, registrator-new-orders-market-detail-delete-dialog, market-new-orders-list, market-new-orders-delete-dialog
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { Check, Info, ScanLine, SearchX } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
-import PopupConfirm from "../../../shared/components/popupConfirm";
+import { branchTypeOf, canViewBatchesPage } from "../../../app/lib/access";
+import { useOrders } from "../../../entities/orders";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { notify } from "../../../shared/lib/notify";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import {
-  normalizeScannerCandidates,
-  playMissingOrderFeedback,
-  playScanFeedback,
-} from "../../scan/lib/scanShared";
-import BackButton from "../../../shared/ui/BackButton";
-import { getBackendErrorMessage } from "../../../shared/lib/backendError";
-import { branchTypeOf } from "../../../app/lib/access";
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  PageHeader,
+  QueryBoundary,
+  Skeleton,
+  TextInput,
+  type DataTableSelection,
+  type DataTableSort,
+} from "../../../shared/ui/primitives";
+import { normalizeScannerCandidates, playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
+import { useHasNewOrdersTabs } from "../model/useNewOrdersTabs";
+import { listOf } from "../model/todayMarkets";
+import NewOrdersTabs from "../ui/NewOrdersTabs";
+import { DetailAlert } from "./detail/DetailAlert";
+import { DeleteOrderDialog, ReceiveConfirmDialog } from "./marketOrders/MarketOrderDialogs";
+import { MarketOrdersTable } from "./marketOrders/MarketOrdersTable";
+import { SelectionBar } from "./marketOrders/SelectionBar";
+import {
+  DEFAULT_MARKET_ORDERS_SORT,
+  matchesMarketOrderSearch,
+  pickUnselectedPreview,
+  readMarketName,
+  readUserBranchName,
+  sortMarketOrders,
+  sumTotalPrice,
+  type MarketOrder,
+} from "./marketOrders/marketOrdersModel";
 import { resolveReceiveMode } from "./newOrderReceiveRules";
-import { notify } from "../../../shared/lib/notify";
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+/**
+ * MARKETNING BUGUNGI YANGI BUYURTMALARI — `/new-orders/:marketId`, dizayn v2.
+ *
+ *  - Xodim (superadmin/admin/menejer/registrator; qobiq `bare`): «← Qabul va yaratish» · market nomi ·
+ *    «Bugungi yangi buyurtmalar · 6 ta · 1 050 000 so'm», asosiy amal «Qabul qilish — N ta buyurtma».
+ *    Karta: qidiruv + «QR skanerlansa…» + «USB skaner tayyor», tanlov paneli (chop etish), jadval/kartalar.
+ *    USB skaner (klaviatura) bilan o'qilgan buyurtma darhol qabul qilinadi (`useOrderQrScanner`).
+ *  - REGIONAL xodim: qabul yo'q — «Biriktirish» maslahati (`role="note"`), tanlov faqat chop etish uchun.
+ *  - Market (qobiq `hosted`): sarlavha qobiqda; karta «Yangi buyurtmalar / Bekor qilinganlar» tablari bilan
+ *    boshlanadi, tanlov va skaner yo'q, faqat o'chirish va ochish.
+ *
+ * Qabul usuli — `newOrderReceiveRules.ts` (HQ — `POST /orders/receive`, PICKUP/HYBRID — transfer-batches).
+ */
 const NewOrderDetail = () => {
-  const { t, i18n } = useTranslation(["newOrders", "orders"]);
+  const { t, i18n } = useTranslation(["newOrders", "orders", "common"]);
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const navigate = useNavigate();
-  const { marketId } = useParams();
+  const location = useLocation();
+  const { marketId = "" } = useParams();
   const roleState = useSelector((state: RootState) => state.role);
   const currentUser = useSelector((state: RootState) => state.user.user as Record<string, unknown> | null);
   const isMarketRole = roleState.role === "market";
-  // Market roli bo'lsa har doim order qo'sha oladi
-  const canAddOrder = isMarketRole;
   // Qabul usuli rol va filial turidan kelib chiqadi (newOrderReceiveRules.ts):
   // HQ menejer/registratori — POST /orders/receive (HQ ning ota filiali yo'q,
   // transfer-batches 400 qaytaradi); boshqa filiallarda — transfer-batches.
@@ -43,53 +76,44 @@ const NewOrderDetail = () => {
   // (backend transfer batch'ni doim 403 qiladi) — o'rniga /dispatch maslahati.
   const canReceive = !isMarketRole && receiveMode !== "none";
   const showReceiveViaDispatchHint = !isMarketRole && receiveMode === "none";
+  const canOpenBatches = useSelector(canViewBatchesPage);
+  const hasTabs = useHasNewOrdersTabs();
+  // Qabul oynasida filial nomi faqat to'g'ridan-to'g'ri qabulda (transferda buyurtma HQ'ga jo'natiladi).
+  const branchName = !isMarketRole && receiveMode === "receive" ? readUserBranchName(currentUser) : null;
+
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<MarketOrder | null>(null);
   const [isReceiveConfirmOpen, setIsReceiveConfirmOpen] = useState(false);
   const [receivedOrderIds, setReceivedOrderIds] = useState<Set<string>>(new Set());
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<DataTableSort | null>(DEFAULT_MARKET_ORDERS_SORT);
   const pendingScanOrderIdsRef = useRef<Set<string>>(new Set());
   const receivedScanKeysRef = useRef<Set<string>>(new Set());
   const selectedOrdersKeyRef = useRef("");
 
-  const { useGetTodayOrdersByMarket, deleteOrder, createReceiveOrder, createTransferBatch } = useOrders();
-  const receiveMutation = shouldUseBranchTransferReceive
-    ? createTransferBatch
-    : createReceiveOrder;
+  const { useGetTodayOrders, useGetTodayOrdersByMarket, deleteOrder, createReceiveOrder, createTransferBatch } =
+    useOrders();
+  const receiveMutation = shouldUseBranchTransferReceive ? createTransferBatch : createReceiveOrder;
 
-  // Redux dan search qiymatini olish
-  const searchQuery = useSelector((state: RootState) =>
-    (state.search["new_order_detail_search"] as string) || ""
-  );
-
-  // Backend ga yuborish uchun debounce (500ms)
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-  const applyDebounce = useDebounce((val: string) => setDebouncedSearch(val), 500);
-
-  useEffect(() => {
-    applyDebounce(searchQuery);
-  }, [searchQuery, applyDebounce]);
-
-  const params = debouncedSearch.trim() ? { search: debouncedSearch.trim() } : undefined;
-  const { data: res, isLoading, refetch } = useGetTodayOrdersByMarket(marketId ? Number(marketId) : 0, params);
-  const rawOrders = useMemo<ApiOrder[]>(() => res?.data ?? res ?? [], [res]);
+  // Qidiruv mijoz tomonida (backend `markets/:id/new` qidiruv parametrini qabul qilmaydi). Parametrsiz so'rov
+  // kaliti market tabidagi son bilan umumiy (`useNewOrdersTabs`).
+  const ordersQuery = useGetTodayOrdersByMarket(marketId ? Number(marketId) : 0);
+  const { data: res, refetch } = ordersQuery;
+  const rawOrders = useMemo(() => listOf<MarketOrder>(res), [res]);
   const orders = useMemo(
     () => rawOrders.filter((order) => !receivedOrderIds.has(order.id)),
     [rawOrders, receivedOrderIds],
   );
   const ordersKey = orders.map((order) => order.id).join("|");
+  const visibleRows = useMemo(
+    () => sortMarketOrders(orders.filter((order) => matchesMarketOrderSearch(order, search)), sort),
+    [orders, search, sort],
+  );
 
-  const toggleSelect = useCallback((id: string) => {
-    if (isMarketRole) return;
-    setSelectedIds((prev) => {
-      const s = new Set(prev);
-      if (s.has(id)) {
-        s.delete(id);
-      } else {
-        s.add(id);
-      }
-      return s;
-    });
-  }, [isMarketRole]);
+  // Sarlavhadagi market nomi: buyurtmadan; ro'yxat bo'sh bo'lsa — marketlar ro'yxati (kesh «Marketlar» bilan umumiy).
+  const nameFromOrders = readMarketName(rawOrders, undefined, marketId);
+  const marketsQuery = useGetTodayOrders(undefined, !isMarketRole && ordersQuery.isSuccess && !nameFromOrders);
+  const marketName = nameFromOrders ?? readMarketName([], marketsQuery.data, marketId);
 
   useEffect(() => {
     if (isMarketRole) return;
@@ -99,7 +123,7 @@ const NewOrderDetail = () => {
     setSelectedIds(new Set(orders.map((order) => order.id)));
   }, [isMarketRole, orders, ordersKey]);
 
-  const rememberReceivedScan = useCallback((order: ApiOrder, rawValue?: string) => {
+  const rememberReceivedScan = useCallback((order: MarketOrder, rawValue?: string) => {
     const keys = receivedScanKeysRef.current;
     keys.add(String(order.id).toLowerCase());
 
@@ -113,349 +137,433 @@ const NewOrderDetail = () => {
     }
   }, []);
 
-  const showAlreadyReceivedFeedback = useCallback((orderId?: string | number) => {
-    void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
-    notify.warning(t("common:scannerFeedbackDuplicate"), {
-      description: orderId ? `#${orderId}` : t("newOrderAlreadyReceivedDescription"),
-      duration: 2000,
-    });
-  }, [t]);
+  const showAlreadyReceivedFeedback = useCallback(
+    (orderId?: string | number) => {
+      void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
+      notify.warning(t("common:scannerFeedbackDuplicate"), {
+        description: orderId ? `№${orderId}` : t("newOrderAlreadyReceivedDescription"),
+        duration: 2000,
+      });
+    },
+    [t],
+  );
 
-  const handleMissingScannedOrder = useCallback((rawValue: string) => {
-    const isAlreadyReceived = normalizeScannerCandidates(rawValue, window.location.origin)
-      .some((candidate) => receivedScanKeysRef.current.has(candidate));
+  const handleMissingScannedOrder = useCallback(
+    (rawValue: string) => {
+      const isAlreadyReceived = normalizeScannerCandidates(rawValue, window.location.origin).some((candidate) =>
+        receivedScanKeysRef.current.has(candidate),
+      );
 
-    if (isAlreadyReceived) {
-      showAlreadyReceivedFeedback();
-      return;
-    }
+      if (isAlreadyReceived) {
+        showAlreadyReceivedFeedback();
+        return;
+      }
 
-    playMissingOrderFeedback();
-    notify.warning(t("newOrderScanMissing"), { duration: 3000 });
-  }, [showAlreadyReceivedFeedback, t]);
+      playMissingOrderFeedback();
+      notify.warning(t("newOrderScanMissing"), { duration: 3000 });
+    },
+    [showAlreadyReceivedFeedback, t],
+  );
 
-  const receiveScannedOrder = useCallback((order: ApiOrder, rawValue: string) => {
-    const orderId = order.id;
-    if (receivedOrderIds.has(orderId)) {
-      rememberReceivedScan(order, rawValue);
-      showAlreadyReceivedFeedback(orderId);
-      return;
-    }
+  const receiveScannedOrder = useCallback(
+    (order: MarketOrder, rawValue: string) => {
+      const orderId = order.id;
+      if (receivedOrderIds.has(orderId)) {
+        rememberReceivedScan(order, rawValue);
+        showAlreadyReceivedFeedback(orderId);
+        return;
+      }
 
-    if (pendingScanOrderIdsRef.current.has(orderId)) {
-      return;
-    }
+      if (pendingScanOrderIdsRef.current.has(orderId)) {
+        return;
+      }
 
-    pendingScanOrderIdsRef.current.add(orderId);
-    receiveMutation.mutate(
-      { orderIds: [orderId] },
-      {
-        onSuccess: () => {
-          rememberReceivedScan(order, rawValue);
-          void playScanFeedback("success", t("newOrderReceiveSuccess"));
-          setReceivedOrderIds((prev) => {
-            const next = new Set(prev);
-            next.add(orderId);
-            return next;
-          });
-          setSelectedIds((prev) => {
-            if (!prev.has(orderId)) return prev;
-            const next = new Set(prev);
-            next.delete(orderId);
-            return next;
-          });
-          void refetch();
-          notify.success(t("newOrderReceiveSuccess"), {
-            description: t("newOrderReceiveDescription"),
-            duration: 2000,
-          });
-        },
-        onError: (err: unknown) => {
-          const msg = getBackendErrorMessage(err) ?? t("receiveError");
-          const lowerMsg = msg.toLowerCase();
-          const isAlreadyReceived =
-            lowerMsg.includes("already") ||
-            lowerMsg.includes("allaqachon") ||
-            lowerMsg.includes("qabul qilingan");
-
-          if (isAlreadyReceived) {
+      pendingScanOrderIdsRef.current.add(orderId);
+      receiveMutation.mutate(
+        { orderIds: [orderId] },
+        {
+          onSuccess: () => {
             rememberReceivedScan(order, rawValue);
+            void playScanFeedback("success", t("newOrderReceiveSuccess"));
             setReceivedOrderIds((prev) => {
               const next = new Set(prev);
               next.add(orderId);
               return next;
             });
-            showAlreadyReceivedFeedback(orderId);
-            return;
-          }
+            setSelectedIds((prev) => {
+              if (!prev.has(orderId)) return prev;
+              const next = new Set(prev);
+              next.delete(orderId);
+              return next;
+            });
+            void refetch();
+            notify.success(t("newOrderReceiveSuccess"), {
+              description: t("newOrderReceiveDescription"),
+              duration: 2000,
+            });
+          },
+          onError: (err: unknown) => {
+            const msg = getBackendErrorMessage(err) ?? t("receiveError");
+            const lowerMsg = msg.toLowerCase();
+            const isAlreadyReceived =
+              lowerMsg.includes("already") || lowerMsg.includes("allaqachon") || lowerMsg.includes("qabul qilingan");
 
-          void playScanFeedback("error");
-          notify.error(t("receiveError"), { description: msg });
-        },
-        onSettled: () => {
-          pendingScanOrderIdsRef.current.delete(orderId);
-        },
-      },
-    );
-  }, [receiveMutation, receivedOrderIds, refetch, rememberReceivedScan, showAlreadyReceivedFeedback, t]);
+            if (isAlreadyReceived) {
+              rememberReceivedScan(order, rawValue);
+              setReceivedOrderIds((prev) => {
+                const next = new Set(prev);
+                next.add(orderId);
+                return next;
+              });
+              showAlreadyReceivedFeedback(orderId);
+              return;
+            }
 
+            void playScanFeedback("error");
+            notify.error(t("receiveError"), { description: msg });
+          },
+          onSettled: () => {
+            pendingScanOrderIdsRef.current.delete(orderId);
+          },
+        },
+      );
+    },
+    [receiveMutation, receivedOrderIds, refetch, rememberReceivedScan, showAlreadyReceivedFeedback, t],
+  );
+
+  const scannerEnabled = canReceive && rawOrders.length > 0;
   useOrderQrScanner({
     orders: rawOrders,
-    enabled: canReceive && rawOrders.length > 0,
+    enabled: scannerEnabled,
     onMatch: receiveScannedOrder,
     onMissing: handleMissingScannedOrder,
   });
 
+  // «Barchasini tanlash» — qabul qilinmagan barcha buyurtmalar (qidiruvdan qat'i nazar, avvalgidek).
+  const allSelected = orders.length > 0 && orders.every((order) => selectedIds.has(order.id));
   const toggleSelectAll = useCallback(() => {
     if (isMarketRole) return;
-    setSelectedIds((p) => p.size === orders.length ? new Set() : new Set(orders.map((o) => o.id)));
+    setSelectedIds((prev) =>
+      orders.length > 0 && orders.every((order) => prev.has(order.id))
+        ? new Set()
+        : new Set(orders.map((order) => order.id)),
+    );
   }, [isMarketRole, orders]);
 
-  const handleEdit = useCallback((id: string) => navigate(`/new-orders/${marketId}/edit/${id}`), [navigate, marketId]);
+  const selection = useMemo<DataTableSelection<MarketOrder> | undefined>(
+    () =>
+      isMarketRole
+        ? undefined
+        : {
+            isSelected: (order) => selectedIds.has(order.id),
+            onToggle: (order, checked) =>
+              setSelectedIds((prev) => {
+                const next = new Set(prev);
+                if (checked) next.add(order.id);
+                else next.delete(order.id);
+                return next;
+              }),
+            // Sarlavhadagi belgi — ko'rinib turgan (qidiruvdagi) qatorlar.
+            onToggleAll: (checked) =>
+              setSelectedIds((prev) => {
+                const next = new Set(prev);
+                visibleRows.forEach((order) => (checked ? next.add(order.id) : next.delete(order.id)));
+                return next;
+              }),
+            headerLabel: t("marketOrders.selectAllLabel"),
+            rowLabel: (order) => t("marketOrders.selectRow", { id: order.id }),
+          },
+    [isMarketRole, selectedIds, t, visibleRows],
+  );
 
-  // 1-bosqich: popup ochish
-  const handleDelete = useCallback((id: string) => {
-    setDeleteTargetId(id);
-  }, []);
+  // Xodimda qator (karta) bosilsa — tanlov (avvalgi kartadagidek); marketda — buyurtmani ochish.
+  const handleRowClick = useCallback(
+    (order: MarketOrder) => {
+      if (isMarketRole) {
+        navigate(`/new-orders/${marketId}/edit/${order.id}`);
+        return;
+      }
+      selection?.onToggle(order, !selectedIds.has(order.id));
+    },
+    [isMarketRole, marketId, navigate, selectedIds, selection],
+  );
 
-  // 2-bosqich: tasdiqlash → API
-  const handleConfirmDelete = useCallback(() => {
-    if (!deleteTargetId) return;
-    deleteOrder.mutate(deleteTargetId, {
-      onSuccess: () => setDeleteTargetId(null),
-      onError: () => setDeleteTargetId(null),
-    });
-  }, [deleteTargetId, deleteOrder]);
+  // Tasdiqlansa — API; xato bo'lsa oynada ko'rsatiladi va oyna ochiq qoladi.
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+    await deleteOrder.mutateAsync(deleteTarget.id);
+    setDeleteTarget(null);
+  }, [deleteOrder, deleteTarget]);
 
-  const allSelected = selectedIds.size === orders.length && orders.length > 0;
-  const totalSum = orders.reduce((s, o) => s + o.total_price, 0);
-  const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
-  const formattedTotalSum = `${totalSum.toLocaleString(locale)} ${t("currency", { ns: "orders" })}`;
-
+  const selectedOrders = useMemo(() => orders.filter((order) => selectedIds.has(order.id)), [orders, selectedIds]);
+  const selectedTotal = sumTotalPrice(selectedOrders);
+  const totalSum = sumTotalPrice(orders);
 
   const handleAccepted = useCallback(() => {
     // snapshot: setSelectedIds(new Set()) dan KEYIN selectedIds.size o'zgaradi,
     // lekin closure eski qiymatni ko'radi — shuning uchun oldindan saqlaymiz
     const ids = [...selectedIds];
     const isAll = ids.length === orders.length;
-    receiveMutation.mutate({ orderIds: ids }, {
-      onSuccess: () => {
-        setReceivedOrderIds((prev) => {
-          const next = new Set(prev);
-          ids.forEach((id) => next.add(id));
-          return next;
-        });
-        setIsReceiveConfirmOpen(false);
-        setSelectedIds(new Set());
-        if (isAll) {
-          navigate(-1);
-        } else {
-          refetch();
+    receiveMutation.mutate(
+      { orderIds: ids },
+      {
+        onSuccess: () => {
+          setReceivedOrderIds((prev) => {
+            const next = new Set(prev);
+            ids.forEach((id) => next.add(id));
+            return next;
+          });
+          setIsReceiveConfirmOpen(false);
+          setSelectedIds(new Set());
+          if (isAll) {
+            // Hammasi qabul qilindi — ro'yxatga qaytish (havoladan ochilgan bo'lsa — «Qabul va yaratish»).
+            if (location.key !== "default") navigate(-1);
+            else navigate("/new-orders");
+          } else {
+            void refetch();
+          }
+        },
+        onError: (err: unknown) => {
+          setIsReceiveConfirmOpen(false);
+          const msg = getBackendErrorMessage(err) ?? t("receiveError");
+          notify.error(t("receiveError"), { description: msg });
+        },
+      },
+    );
+  }, [location.key, navigate, orders.length, receiveMutation, refetch, selectedIds, t]);
+
+  const handlePrint = useCallback(
+    async (mode: string) => {
+      const printableOrders = selectedIds.size > 0 ? orders.filter((order) => selectedIds.has(order.id)) : orders;
+
+      if (!printableOrders.length) {
+        notify.warning(t("print"), { description: t("notFound") });
+        return;
+      }
+
+      if (mode === "pdf") {
+        try {
+          const { openOrdersLabelPdf } = await import("./lib/printLabelPdf");
+          await openOrdersLabelPdf(printableOrders);
+        } catch {
+          notify.error(t("print"), { description: t("printError") });
         }
-      },
-      onError: (err: unknown) => {
-        setIsReceiveConfirmOpen(false);
-        const msg = getBackendErrorMessage(err) ?? t("receiveError");
-        notify.error(t("receiveError"), { description: msg });
-      },
-    });
-  }, [selectedIds, orders.length, receiveMutation, navigate, refetch, t]);
+        return;
+      }
 
-  const handlePrint = useCallback(async (mode: string) => {
-    const printableOrders = selectedIds.size > 0
-      ? orders.filter((order) => selectedIds.has(order.id))
-      : orders;
-
-    if (!printableOrders.length) {
-      notify.warning(t("print"), { description: t("notFound") });
-      return;
-    }
-
-    if (mode === "pdf") {
+      // Brauzer orqali chop etish
       try {
-        const { openOrdersLabelPdf } = await import("./lib/printLabelPdf");
-        await openOrdersLabelPdf(printableOrders);
+        const { openOrdersLabelBrowserPrint } = await import("./lib/printLabelPdf");
+        openOrdersLabelBrowserPrint(printableOrders);
       } catch {
         notify.error(t("print"), { description: t("printError") });
       }
-      return;
-    }
-
-    // Browser print (fallback)
-    try {
-      const { openOrdersLabelBrowserPrint } = await import("./lib/printLabelPdf");
-      openOrdersLabelBrowserPrint(printableOrders);
-    } catch {
-      notify.error(t("print"), { description: t("printError") });
-    }
-  }, [orders, selectedIds, t]);
-
-  const printOptions = useMemo<PrintSelectOption[]>(
-    () => [
-      {
-        id: "browser",
-        label: t("browserPrint"),
-        hint: t("anyPrinter"),
-        icon: <Globe size={14} className="text-emerald-500" />,
-      },
-      {
-        id: "pdf",
-        label: t("pdfPrint"),
-        hint: t("gainschaPrinter"),
-        icon: <FileText size={14} className="text-amber-500" />,
-      },
-    ],
-    [t],
+    },
+    [orders, selectedIds, t],
   );
 
-  return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl">
+  // ─── Ko'rinish ───────────────────────────────────────────────────────────────
+  const qty = (count: number) => t("marketOrders.ordersQty", { value: formatNumberLocalized(count, { language }) });
+  const money = (value: number) => formatMoneyLocalized(value, { language });
+  const isLoaded = res !== undefined;
+  const cardTitle = marketName ?? t("marketOrders.titleFallback");
 
-      {/* Header */}
-      <div className="py-3 pb-3 sm:py-4 sm:pb-4 md:py-6 md:pb-4">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex min-w-0 items-start gap-3">
-            {!isMarketRole ? (
-              <BackButton className="mt-1 h-10 min-w-10 shrink-0 rounded-xl px-2" label="" />
-            ) : null}
-            <div className="group relative min-w-0 overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-surface-elevated)] p-3 dark:bg-[color:var(--color-surface-elevated-dark)] sm:p-4">
-              <div className="pointer-events-none absolute -left-6 top-1/2 h-14 w-14 -translate-y-1/2 rounded-full bg-main/12 blur-xl transition-all duration-300 group-hover:bg-main/18" />
-              <div className="relative flex items-start">
-                <div className="min-w-0">
-                  <h2 className="truncate text-lg font-extrabold leading-tight text-maindark dark:text-primary">
-                    {t("ordersHeader")}
-                  </h2>
-                  <p className="mt-1 text-xs font-semibold leading-relaxed text-maindark/65 dark:text-primary/70 sm:text-sm">
-                    {t("totalCount", { count: orders.length })} • {formattedTotalSum}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+  const searchField = (
+    <TextInput
+      mode="search"
+      value={search}
+      onValueChange={setSearch}
+      placeholder={isMarketRole ? t("marketOrders.marketSearchPlaceholder") : t("marketOrders.searchPlaceholder")}
+      aria-label={t("marketOrders.searchLabel")}
+      className="min-w-0 max-w-[480px] flex-[1_1_320px]"
+    />
+  );
 
-          <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-center lg:w-auto">
-            <div className="w-full sm:flex-1 lg:w-80 lg:flex-none">
-              <GlobalSearchInput searchKey="new_order_detail_search" placeholder={t("searchOrder")} />
-            </div>
-
-            {/* Market roli uchun buyurtma qo'shish tugmasi */}
-            {canAddOrder && (
-              <button
-                onClick={() => navigate("/new-orders/create")}
-                className="flex items-center justify-center gap-2 rounded-2xl bg-main px-4 py-2.5 text-sm font-bold text-white shadow-md shadow-main/20 transition-all duration-200 hover:-translate-y-0.5 hover:bg-main/90 active:translate-y-0 sm:w-auto"
-              >
-                <Plus size={16} />
-                {t("addOrderBtn")}
-              </button>
-            )}
-
-            {!isMarketRole && (
-              <PrintModeSelect
-                count={selectedIds.size}
-                onSelect={(mode) => {
-                  void handlePrint(mode);
-                }}
-                buttonLabel={t("print")}
-                menuLabel={t("print")}
-                options={printOptions}
-              />
-            )}
-          </div>
-        </div>
-
-        {/* Select All */}
-        {!isMarketRole && (
-          <div className="mt-4 flex flex-col gap-2 rounded-xl border border-gray-200 bg-white px-3 py-3 dark:border-white/5 dark:bg-maindark sm:flex-row sm:items-center sm:justify-between sm:px-4">
-            <div onClick={toggleSelectAll} className="flex items-center gap-3 cursor-pointer">
-              <Checkbox checked={allSelected} onChange={toggleSelectAll} />
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                {allSelected ? t("deselectAll") : t("selectAll")}
-              </span>
-            </div>
-            {selectedIds.size > 0 && (
-              <span className="text-xs font-bold text-white bg-main px-2.5 py-1 rounded-lg">{t("selectedCount", { count: selectedIds.size })}</span>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Orders List */}
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pb-24 sm:pb-28 md:pb-4">
-        {isLoading ? (
-          <div className="h-64 flex items-center justify-center">
-            <div className="w-8 h-8 rounded-full border-2 border-main/20 border-t-main animate-spin" />
-          </div>
-        ) : orders.length > 0 ? orders.map((order) => (
-          <OrderCard key={order.id} order={order}
-            isSelected={!isMarketRole && selectedIds.has(order.id)}
-            onToggle={() => toggleSelect(order.id)}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            showCheckbox={!isMarketRole}
+  const toolbar = isMarketRole ? (
+    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4 max-md:px-4">
+      {searchField}
+      {isLoaded ? (
+        <p className="text-sm text-text-muted">
+          <Trans
+            t={t}
+            i18nKey="marketOrders.marketSummary"
+            values={{ value: formatNumberLocalized(orders.length, { language }), sum: money(totalSum) }}
+            components={{ strong: <strong className="font-semibold text-text" /> }}
           />
-        )) : (
-          <div className="h-64 flex flex-col items-center justify-center text-gray-300 dark:text-gray-700">
-            <FileText size={48} className="mb-4 opacity-20" />
-            <p className="font-bold uppercase tracking-widest text-sm opacity-50">{t("notFound")}</p>
-          </div>
-        )}
-      </div>
-
-      {showReceiveViaDispatchHint && (
-        <div className="shrink-0 border-t border-gray-100 py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] dark:border-white/5 sm:py-4">
-          <p
-            role="note"
-            className="m-0 rounded-2xl border border-main/20 bg-main/10 px-4 py-3 text-sm font-semibold text-maindark dark:border-white/10 dark:bg-white/6 dark:text-white"
-          >
-            {t("receiveViaDispatchHint")}
-          </p>
+        </p>
+      ) : null}
+    </div>
+  ) : (
+    <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4 max-md:px-4">
+      {searchField}
+      {canReceive || scannerEnabled ? (
+        <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2">
+          {canReceive ? (
+            <p className="flex items-center gap-1.5 text-xs text-text-muted">
+              <ScanLine size={16} aria-hidden="true" className="shrink-0" />
+              <span>{t("marketOrders.scanHint")}</span>
+            </p>
+          ) : null}
+          {scannerEnabled ? (
+            <Badge tone="success" dot role="status" className="max-md:hidden">
+              {t("marketOrders.scannerReady")}
+            </Badge>
+          ) : null}
         </div>
-      )}
+      ) : null}
+    </div>
+  );
 
-      {/* Sticky Footer — doim pastda qotib turadi */}
-      {canReceive && (
-        <div className="shrink-0 border-t border-gray-100 bg-transparent py-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] dark:border-white/5 sm:py-4">
-          <button
-            onClick={() => setIsReceiveConfirmOpen(true)}
-            disabled={receiveMutation.isPending || selectedIds.size === 0}
-            className={`w-full flex items-center justify-center gap-3 rounded-2xl py-3.5 text-sm font-bold text-white sm:py-4 sm:text-base
-              bg-linear-to-r from-emerald-500 to-emerald-400 shadow-xl shadow-emerald-500/30
-              hover:shadow-emerald-500/50 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer
-              disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:translate-y-0
-              ${selectedIds.size === 0 ? "opacity-40" : "opacity-100"}`}
-          >
-            {receiveMutation.isPending
-              ? <Loader2 size={20} className="animate-spin" />
-              : <CheckCircle2 size={20} />}
-            {receiveMutation.isPending
-              ? t("receiving")
-              : selectedIds.size > 0
-                ? t("receiveOrders", { count: selectedIds.size })
-                : t("selectOrders")}
-          </button>
-        </div>
-      )}
+  const emptyState = (
+    <EmptyState
+      title={t("marketOrders.emptyTitle")}
+      description={isMarketRole ? t("marketOrders.marketEmptyDescription") : t("marketOrders.emptyDescription")}
+    />
+  );
 
-      {/* Delete tasdiqlash popupi */}
-      <PopupConfirm
-        isOpen={!!deleteTargetId}
-        onClose={() => setDeleteTargetId(null)}
-        onConfirm={handleConfirmDelete}
-        isLoading={deleteOrder.isPending}
-        title={t("deleteOrderTitle")}
-        message={t("deleteOrderMessage")}
+  const list = (
+    <QueryBoundary
+      query={{ ...ordersQuery, data: isLoaded ? orders : undefined }}
+      skeleton="table"
+      loadingLabel={t("marketOrders.loading")}
+      empty={emptyState}
+      className="border-t border-border"
+    >
+      {() =>
+        visibleRows.length > 0 ? (
+          <MarketOrdersTable
+            variant={isMarketRole ? "market" : "staff"}
+            rows={visibleRows}
+            marketId={marketId}
+            compactKeeps={roleState.role === "manager" || roleState.role === "registrator" ? "products" : "delivery"}
+            sort={sort}
+            onSortChange={setSort}
+            selection={selection}
+            onRowClick={handleRowClick}
+            onDelete={setDeleteTarget}
+            label={t("marketOrders.tableLabel")}
+            busy={ordersQuery.isFetching}
+          />
+        ) : (
+          <EmptyState
+            icon={SearchX}
+            title={t("marketOrders.noMatchTitle")}
+            description={t("marketOrders.noMatchDescription")}
+            action={
+              <Button variant="secondary" size="sm" onClick={() => setSearch("")}>
+                {t("marketOrders.clearSearch")}
+              </Button>
+            }
+          />
+        )
+      }
+    </QueryBoundary>
+  );
+
+  const deleteDialog = (
+    <DeleteOrderDialog
+      order={deleteTarget}
+      variant={isMarketRole ? "market" : "staff"}
+      marketName={marketName}
+      onCancel={() => setDeleteTarget(null)}
+      onConfirm={handleConfirmDelete}
+    />
+  );
+
+  // Market — sarlavha va sahifa ildizi qobiqda (`hosted`); karta tablar bilan boshlanadi.
+  if (isMarketRole) {
+    return (
+      <>
+        <Card
+          as="section"
+          padding="none"
+          aria-label={t("marketOrders.marketCardLabel")}
+          title={hasTabs ? undefined : t("marketOrders.marketHeadTitle")}
+        >
+          <NewOrdersTabs />
+          {toolbar}
+          {list}
+        </Card>
+        {deleteDialog}
+      </>
+    );
+  }
+
+  const receiveCount = formatNumberLocalized(selectedIds.size, { language });
+
+  return (
+    <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
+      <PageHeader
+        back="/new-orders"
+        backLabel={t("pageTitle")}
+        title={marketName ?? (ordersQuery.isLoading ? <Skeleton width={224} height={32} /> : cardTitle)}
+        description={
+          isLoaded ? (
+            <>
+              {t("marketOrders.todayNew")} · <span className="whitespace-nowrap">{qty(orders.length)}</span> ·{" "}
+              <span className="whitespace-nowrap">{money(totalSum)}</span>
+            </>
+          ) : null
+        }
+        actions={
+          canReceive ? (
+            <Button
+              leftIcon={Check}
+              aria-haspopup="dialog"
+              disabled={selectedIds.size === 0}
+              loading={receiveMutation.isPending}
+              loadingText={t("receiving")}
+              onClick={() => setIsReceiveConfirmOpen(true)}
+            >
+              <Trans
+                t={t}
+                i18nKey="marketOrders.receive"
+                values={{ value: receiveCount }}
+                count={selectedIds.size}
+                components={{ long: <span className="max-md:hidden" /> }}
+              />
+            </Button>
+          ) : null
+        }
       />
 
-      <PopupConfirm
-        isOpen={isReceiveConfirmOpen}
-        onClose={() => setIsReceiveConfirmOpen(false)}
-        onConfirm={handleAccepted}
-        isLoading={receiveMutation.isPending}
-        title={t("receiveOrderTitle")}
-        message={t("receiveOrderMessage")}
-        confirmLabel={t("receiveConfirm")}
-        variant="success"
-      />
+      {showReceiveViaDispatchHint ? (
+        <DetailAlert tone="info" icon={Info} role="note">
+          {t("receiveViaDispatchHint")}
+        </DetailAlert>
+      ) : null}
+
+      <Card as="section" padding="none" aria-label={t("marketOrders.cardLabel", { market: cardTitle })}>
+        {toolbar}
+        {orders.length > 0 ? (
+          <SelectionBar
+            selectedCount={selectedOrders.length}
+            selectedTotal={selectedTotal}
+            allSelected={allSelected}
+            onToggleAll={toggleSelectAll}
+            transferHint={receiveMode === "transfer"}
+            printOnly={!canReceive}
+            canOpenBatches={canOpenBatches}
+            onPrint={(mode) => void handlePrint(mode)}
+          />
+        ) : null}
+        {list}
+      </Card>
+
+      {canReceive ? (
+        <ReceiveConfirmDialog
+          open={isReceiveConfirmOpen}
+          marketName={cardTitle}
+          count={selectedOrders.length}
+          total={selectedTotal}
+          unselected={pickUnselectedPreview(orders, selectedIds)}
+          branchName={branchName}
+          loading={receiveMutation.isPending}
+          onCancel={() => setIsReceiveConfirmOpen(false)}
+          onConfirm={handleAccepted}
+        />
+      ) : null}
+      {deleteDialog}
     </div>
   );
 };

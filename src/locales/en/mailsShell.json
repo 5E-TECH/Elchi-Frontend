@@ -1,0 +1,69 @@
+{
+  "title": "Mail",
+  "description": {
+    "staff": "Send and receive mail by region",
+    "manager": "View and receive mail that arrived at the branch",
+    "courier": "Mail assigned to you: receiving, refused and history"
+  },
+  "tabsLabel": "Mail types",
+  "sectionLabel": "Mail section: {{section}}",
+  "tabs": {
+    "today": { "short": "Today", "title": "Today's mail" },
+    "return": { "short": "Returns", "title": "Return requests" },
+    "refused": { "short": "Refused", "title": "Refused mail" },
+    "old": { "short": "Old", "title": "Old mail" }
+  },
+  "table": {
+    "mail": "Mail",
+    "region": "Region",
+    "courier": "Courier",
+    "status": "Status",
+    "orders": "Orders",
+    "amount": "Amount",
+    "actions": "Actions",
+    "ordersCell": "{{value}}",
+    "ordersSub_one": "{{value}} order",
+    "ordersSub_other": "{{value}} orders",
+    "cardId": "{{header}} {{id}}",
+    "cardLabel": "{{id}}, {{region}}, {{date}}, {{orders}}, {{amount}} — open",
+    "sortDate": "Sort by date",
+    "sortOrders": "Sort by number of orders",
+    "sortAmount": "Sort by amount",
+    "sortStatus": "Sort by status"
+  },
+  "summary": {
+    "regions_one": "<b>{{value}}</b> region",
+    "regions_other": "<b>{{value}}</b> regions",
+    "mails_one": "<b>{{value}}</b> mail",
+    "mails_other": "<b>{{value}}</b> mails",
+    "orders_one": "<b>{{value}}</b> order",
+    "orders_other": "<b>{{value}}</b> orders",
+    "total": "total <b>{{value}}</b>"
+  },
+  "stats": {
+    "orders": "Orders",
+    "amount": "Total amount",
+    "unit": "pcs"
+  },
+  "filter": {
+    "region": "Region",
+    "all": "All",
+    "clear": "Clear filter"
+  },
+  "openMail": "Open mail {{id}}",
+  "openCourierMail": "Open mail {{id}}",
+  "mailTitle": "Mail {{id}}",
+  "today": {
+    "loading": "Loading today's mail",
+    "courierTitle": "To be received",
+    "courierDescription": "Open the mail, check the orders and receive them"
+  },
+  "refused": {
+    "loading": "Loading refused mail",
+    "hint": "Mail returned by couriers. Open the mail and receive the orders by scanning them.",
+    "open": "Open refused mail {{id}}",
+    "cardLabel": "Refused mail {{id}}, {{region}}, {{date}}, {{orders}}, {{amount}} — open",
+    "courierNote": "Mail with your cancelled orders. The branch receives it — you can only view it.",
+    "courierDescription": "View only — the branch does the receiving"
+  }
+}

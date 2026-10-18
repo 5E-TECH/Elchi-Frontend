@@ -1,4 +1,5 @@
-import type { PaymentRow } from "./patmentHistoryTable";
+import type { PaymentHistoryActor, PaymentRow } from "./patmentHistoryTable";
+import { isOrderLinkedSource } from "./paymentSourceType";
 
 const getActorName = (actor?: PaymentRow["created_by_user"]) => {
   if (!actor) return "";
@@ -26,4 +27,27 @@ export const resolvePaymentActorName = (row: PaymentRow) => {
   if (isMeaningfulName(createdBy)) return createdBy;
 
   return "-";
+};
+
+/** Ism: `name` → `full_name` → «ism familiya»; bo'lmasa — bo'sh satr. */
+export const getPaymentActorName = (actor?: Partial<PaymentHistoryActor> | null) =>
+  getActorName(actor as PaymentHistoryActor | null | undefined);
+
+/**
+ * Qarshi tomon (jadvaldagi «Manba» ostidagi qator, maket): buyurtma bo'yicha manbada «Buyurtma №{source_id}»
+ * (`orderLabel`), aks holda manba foydalanuvchisi (kuryer, market — backend faqat `courier_payment` /
+ * `market_payment` da beradi), so'ng izoh; hech biri yo'q — `null`.
+ */
+export const resolvePaymentCounterparty = (
+  row: PaymentRow,
+  orderLabel: (id: string) => string,
+): string | null => {
+  const sourceId = String(row.source_id ?? "").trim();
+  if (isOrderLinkedSource(row.source_type) && sourceId) return orderLabel(sourceId);
+
+  const sourceName = [row.source_user, row.sourceUser].map(getActorName).find(Boolean);
+  if (sourceName) return sourceName;
+
+  const comment = row.comment?.trim();
+  return comment || null;
 };

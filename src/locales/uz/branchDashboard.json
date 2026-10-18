@@ -1,51 +1,66 @@
 {
   "title": "Filial paneli",
   "subtitle": "Filial bo'yicha tanlangan davr ko'rsatkichlari",
-  "dashboardMode": "Ish rejimi",
-  "managerMode": "Manager paneli",
-  "operatorMode": "Operator paneli",
   "liveData": "Jonli ma'lumotlar yuklandi",
   "loading": "Ma'lumotlar yuklanmoqda...",
-  "loadError": "Filial dashboard ma'lumotlarini yuklab bo'lmadi.",
-  "previewMode": "Preview",
-  "previewModeText": "API tayyor bo'lguncha bu bloklar branch xodimi uchun UI ko'rinishini tekshirishga xizmat qiladi.",
+  "loadError": "Filial ko'rsatkichlarini yuklab bo'lmadi.",
   "branchFallback": "Filial",
-  "missingBranch": "Xodimga filial biriktirilmagan",
-  "missingBranchText": "Profil ma'lumotlarida filial ID topilmadi. Administrator filialni biriktirgandan keyin bu dashboard to'liq ishlaydi.",
-  "todayOrdersCount": "Bugungi orderlar",
-  "weekOrdersCount": "Haftalik orderlar",
-  "activeBatchesCount": "Faol paketlar",
   "totalOrdersCount": "Jami buyurtmalar",
-  "deliveredOrdersCount": "Sotilgan",
-  "cancelledOrdersCount": "Bekor qilingan",
-  "todayOrders": "Tanlangan davr orderlari",
-  "todayLoad": "Tanlangan davrdagi umumiy oqim",
-  "ordersEyebrow": "Orderlar",
-  "ordersUnit": "order",
   "new": "Yangi",
   "onTheRoad": "Yo'lda",
   "delivered": "Sotilgan",
   "returned": "Bekor qilingan",
   "markets": "Marketlar bo'yicha",
-  "marketsEyebrow": "Market ritmi",
-  "marketOrders": "Market kesimida orderlar",
-  "activePackages": "Faol paketlar",
-  "packagesEyebrow": "Paket oqimi",
   "onTheWayPackages": "Yo'ldagi paketlar",
   "waitingPackages": "Qabul kutayotganlar",
   "packagePlaceholder": "Paketlar sahifasini ochish",
-  "couriers": "Courierlar",
-  "couriersEyebrow": "Courier holati",
-  "totalCouriers": "Filial courierlari",
+  "couriers": "Kuryerlar",
   "activeCouriers": "Bugun faol bo'lganlar",
-  "money": {
-    "full": "{{value}} so'm",
-    "million": "{{value}} mln",
-    "thousand": "{{value}} ming"
-  },
-  "chartOrders": "Orderlar",
-  "chartAmount": "Jami: {{amount}}",
   "emptyMarkets": "Market statistikasi hozircha yo'q",
-  "emptyCouriers": "Courier statistikasi hozircha yo'q",
-  "statsUnavailable": "Statistika vaqtincha mavjud emas — sahifani yangilang"
+  "statsUnavailable": "Statistika vaqtincha mavjud emas — sahifani yangilang",
+  "v2": {
+    "subtitle": "{{branch}} · tanlangan davr ko'rsatkichlari",
+    "count": "{{value}} ta",
+    "success": {
+      "needed": "Yaxshi zonaga (70%) chiqish uchun yana {{count}} ta sotuv kerak"
+    },
+    "status": {
+      "sub": "{{period}} · filialdagi buyurtmalar oqimi",
+      "note": "Foiz — tanlangan davrdagi jami {{count}} ta buyurtmaga nisbatan"
+    },
+    "packages": {
+      "title": "Faol paketlar",
+      "sub": "Filial paketlari holati",
+      "unit": "ta faol paket",
+      "aria": "Faol paketlar {{total}} ta: yo'lda {{onTheWay}} ta, qabul kutayotganlar {{waiting}} ta"
+    },
+    "couriers": {
+      "title": "Kuryerlar",
+      "sub": "Bugungi faollik",
+      "activeOf": "{{active}} / {{total}} ta",
+      "total": "Filial kuryerlari",
+      "inactive": "Bugun faol emas"
+    },
+    "markets": {
+      "sub": "Market kesimida buyurtmalar soni va jami summa",
+      "metricLabel": "Grafik ko'rsatkichi",
+      "byOrders": "Buyurtmalar",
+      "byAmount": "Summa",
+      "viewLabel": "Marketlar bo'yicha ko'rinishi",
+      "totalAmount": "Jami summa",
+      "totalMeta": "{{markets}} ta market · {{orders}} ta buyurtma",
+      "topOrders": "Eng ko'p buyurtma",
+      "topOrdersMeta": "{{count}} ta · jamining {{share}}",
+      "topAmount": "Eng katta summa",
+      "topAmountMeta": "{{amount}} · o'rtacha {{average}}",
+      "noteOrders": "Chiziq uzunligi — buyurtmalar soni; summa bo'yicha solishtirish uchun «Summa»ni tanlang",
+      "noteAmount": "Chiziq uzunligi — jami summa; buyurtmalar soni bo'yicha solishtirish uchun «Buyurtmalar»ni tanlang",
+      "colMarket": "Market"
+    },
+    "top": {
+      "sub": "Sotuv foizi · top 5 va sizning filial",
+      "yourBranch": "Sizning filial",
+      "ownRankAria": "Sizning filialingiz o'rni"
+    }
+  }
 }

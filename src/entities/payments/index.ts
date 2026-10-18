@@ -274,11 +274,13 @@ export const useCashBox = () => {
       enabled: bool && Boolean(id),
     });
 
-  const useGetCashboxMyCashbox = (params?: any) =>
+  /** `silentError` — blok xatoni o'zi ko'rsatadi (`ErrorState`), global xabar takrorlanmaydi. */
+  const useGetCashboxMyCashbox = (params?: any, options?: { silentError?: boolean }) =>
     useQuery({
       queryKey: [cashbox, "my-cashbox", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.CASHBOX.MY_CASHBOX, { params }).then((res) => res.data),
+      ...(options?.silentError ? { meta: { silentError: true } } : {}),
     });
 
   const useGetCashBoxInfo = (bool: boolean = true, params?: any) =>
@@ -308,13 +310,22 @@ export const useCashBox = () => {
       enabled,
     });
 
+  // Ega qarori D3 (2026-10-17): «Kassadan xarajat» / «Kassani to'ldirish» ham
+  // `Idempotency-Key` bilan (gateway `cashbox/spend|fill` sarlavhani o'qiydi,
+  // takroriy kalitga `data.idempotent: true`). Kalit berilmasa so'rov avvalgidek.
   const cashboxSpand = useMutation({
-    mutationFn: ({ data }: { data: any }) => api.patch(API_ENDPOINTS.CASHBOX.SPEND, data),
+    mutationFn: ({ data, idempotencyKey }: { data: Record<string, unknown>; idempotencyKey?: string }) =>
+      idempotencyKey
+        ? api.patch(API_ENDPOINTS.CASHBOX.SPEND, data, idempotencyHeaders(idempotencyKey))
+        : api.patch(API_ENDPOINTS.CASHBOX.SPEND, data),
     onSuccess: refreshCashboxQueries,
   });
 
   const cashboxFill = useMutation({
-    mutationFn: ({ data }: { data: any }) => api.patch(API_ENDPOINTS.CASHBOX.FILL, data),
+    mutationFn: ({ data, idempotencyKey }: { data: Record<string, unknown>; idempotencyKey?: string }) =>
+      idempotencyKey
+        ? api.patch(API_ENDPOINTS.CASHBOX.FILL, data, idempotencyHeaders(idempotencyKey))
+        : api.patch(API_ENDPOINTS.CASHBOX.FILL, data),
     onSuccess: refreshCashboxQueries,
   });
 

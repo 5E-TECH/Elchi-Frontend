@@ -3,7 +3,8 @@ import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
-import FinancialAnalysis, { CustomTooltip } from "./FinancialAnalysis";
+import FinancialAnalysis from "./FinancialAnalysis";
+import { TrendTooltip } from "./FinancialTrendPlot";
 
 const getRevenueMock = vi.fn();
 
@@ -11,16 +12,16 @@ vi.mock("../../../entities/dashboard", () => ({
   useDashboard: () => ({ getRevenue: getRevenueMock }),
 }));
 
+// recharts — faqat plot chunk'ida; testda nuqtalar va oldingi chiziq ko'rinadigan qilib almashtiriladi.
 vi.mock("recharts", () => ({
   ResponsiveContainer: ({ children }: { children: ReactNode }) => <div>{children}</div>,
-  ComposedChart: ({ children, data }: { children: ReactNode; data: Array<{ previousRevenue?: number | null }> }) => (
-    <div data-testid="revenue-chart" data-previous={JSON.stringify(data.map((point) => point.previousRevenue))}>{children}</div>
+  ComposedChart: ({ children, data }: { children: ReactNode; data: Array<{ previous?: number | null }> }) => (
+    <div data-testid="revenue-chart" data-previous={JSON.stringify(data.map((point) => point.previous))}>
+      {children}
+    </div>
   ),
-  Area: () => null,
-  Bar: () => null,
-  Line: ({ dataKey, strokeOpacity }: { dataKey: string; strokeOpacity?: number }) => (
-    <div data-testid={dataKey === "previousRevenue" ? "previous-line" : "current-line"} data-opacity={strokeOpacity} />
-  ),
+  Area: () => <div data-testid="current-area" />,
+  Line: ({ dataKey }: { dataKey: string }) => <div data-testid={dataKey === "previous" ? "previous-line" : "other-line"} />,
   XAxis: () => null,
   YAxis: ({ tickFormatter }: { tickFormatter?: (value: number) => string }) => (
     <div data-testid="y-axis" data-sample-tick={tickFormatter ? tickFormatter(1_500_000) : undefined} />
@@ -33,6 +34,13 @@ const current = {
   data: {
     summary: { totalRevenue: 150000, totalOrders: 3, avgRevenue: 10000 },
     chart: { labels: ["01.09", "02.09"], values: [50000, 100000] },
+    finance: {
+      currentSituation: 22_543_000,
+      main: { balance: 24_615_000 },
+      markets: { marketsTotalBalans: 13_458_000 },
+      branches: { branchReceivable: 11_386_000 },
+      couriers: { couriersTotalBalanse: 0 },
+    },
   },
 };
 const previous = {
@@ -42,9 +50,12 @@ const previous = {
   },
 };
 
-describe("FinancialAnalysis comparison", () => {
+const revenueMetric = () => screen.getByText("Daromad · 15 kun").parentElement as HTMLElement;
+
+describe("FinancialAnalysis — v2 (oldingi davr bilan solishtirish)", () => {
   beforeEach(() => {
     window.localStorage.removeItem("dashboard-comparison");
+    getRevenueMock.mockReset();
     getRevenueMock.mockImplementation((params: { start_day: string }) => ({
       data: params.start_day === "2026-09-01" ? current : previous,
       isLoading: false,
@@ -53,10 +64,8 @@ describe("FinancialAnalysis comparison", () => {
     }));
   });
 
-  it("queries equal-length ranges and shows manually verified growth with a previous line", () => {
-    renderWithProviders(
-      <FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" analyticsScope="admin:1" />,
-    );
+  it("teng uzunlikdagi oraliqlarni so'raydi, o'sishni va oldingi chiziqni ko'rsatadi", async () => {
+    renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" analyticsScope="admin:1" />);
 
     expect(getRevenueMock).toHaveBeenCalledWith(
       { period: "daily", start_day: "2026-09-01", end_day: "2026-09-15" },
@@ -68,50 +77,58 @@ describe("FinancialAnalysis comparison", () => {
       true,
       "admin:1",
     );
-    const revenueCard = screen.getByText("Jami daromad").closest<HTMLElement>(".el-card");
-    expect(within(revenueCard!).getByText("+50.0%")).toBeInTheDocument();
-    expect(revenueCard).toHaveTextContent("100 000 so'm");
-    expect(screen.getByTestId("previous-line")).toHaveAttribute("data-opacity", "0.55");
+    // 150 000 / 100 000 → +50%
+    expect(within(revenueMetric()).getByText("+50%")).toHaveAttribute("data-direction", "up");
+    expect(revenueMetric()).toHaveTextContent("oldingi: 100 ming");
+    expect(await screen.findByTestId("previous-line")).toBeInTheDocument();
     expect(screen.getByTestId("revenue-chart")).toHaveAttribute("data-previous", "[40000,60000]");
+    expect(screen.getByText("Joriy davr · 01.09 – 15.09")).toBeInTheDocument();
+    expect(screen.getByText("Oldingi davr · 17.08 – 31.08")).toBeInTheDocument();
   });
 
-  it("uses a dash when the previous period has no orders", () => {
+  it("oldingi davrda buyurtma bo'lmasa — delta va oldingi chiziq yo'q", async () => {
     getRevenueMock.mockImplementation((params: { start_day: string }) => ({
-      data: params.start_day === "2026-09-01"
-        ? current
-        : { data: { summary: { totalRevenue: 0, totalOrders: 0, avgRevenue: 0 }, chart: { labels: ["17.08"], values: [0] } } },
+      data:
+        params.start_day === "2026-09-01"
+          ? current
+          : { data: { summary: { totalRevenue: 0, totalOrders: 0, avgRevenue: 0 }, chart: { labels: ["17.08"], values: [0] } } },
       isLoading: false,
       isError: false,
       refetch: vi.fn(),
     }));
     renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
 
-    const revenueCard = screen.getByText("Jami daromad").closest<HTMLElement>(".el-card");
-    expect(within(revenueCard!).getByText("—")).toBeInTheDocument();
+    await screen.findByTestId("revenue-chart");
+    expect(revenueMetric().querySelector("[data-delta]")).toBeNull();
+    expect(revenueMetric()).not.toHaveTextContent("oldingi:");
     expect(screen.queryByTestId("previous-line")).not.toBeInTheDocument();
   });
 
-  it("marks a decrease red with a downward arrow", () => {
+  it("kamayish — qizil, pastga o'q", () => {
     getRevenueMock.mockImplementation((params: { start_day: string }) => ({
-      data: params.start_day === "2026-09-01"
-        ? current
-        : { data: { ...previous.data, summary: { ...previous.data.summary, totalRevenue: 200000 } } },
+      data:
+        params.start_day === "2026-09-01"
+          ? current
+          : { data: { ...previous.data, summary: { ...previous.data.summary, totalRevenue: 200000 } } },
       isLoading: false,
       isError: false,
       refetch: vi.fn(),
     }));
     renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
 
-    const revenueCard = screen.getByText("Jami daromad").closest<HTMLElement>(".el-card");
-    expect(within(revenueCard!).getByText("-25.0%")).toBeInTheDocument();
-    expect(revenueCard?.querySelector(".lucide-trending-down")).toBeInTheDocument();
+    const chip = within(revenueMetric()).getByText("−25%");
+    expect(chip).toHaveAttribute("data-direction", "down");
+    expect(chip).toHaveClass("bg-danger-soft");
+    expect(chip.querySelector(".lucide-trending-down")).toBeInTheDocument();
   });
 
-  it("persists the comparison toggle and stops the previous query", async () => {
+  it("«Solishtirish» holati saqlanadi va o'chirilganda oldingi davr so'ralmaydi", async () => {
     const user = userEvent.setup();
     const view = renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
 
-    await user.click(screen.getByRole("button", { name: "Solishtirish" }));
+    const toggle = screen.getByRole("switch", { name: "Oldingi davr bilan solishtirish" });
+    expect(toggle).toHaveAttribute("aria-checked", "true");
+    await user.click(toggle);
     expect(window.localStorage.getItem("dashboard-comparison")).toBe("false");
     expect(screen.queryByTestId("previous-line")).not.toBeInTheDocument();
     expect(getRevenueMock).toHaveBeenLastCalledWith(
@@ -119,97 +136,150 @@ describe("FinancialAnalysis comparison", () => {
       false,
       undefined,
     );
+    expect(screen.queryByText(/Oldingi davr ·/)).not.toBeInTheDocument();
 
     view.unmount();
     renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
-    expect(screen.getByRole("button", { name: "Solishtirish" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("switch", { name: "Oldingi davr bilan solishtirish" })).toHaveAttribute("aria-checked", "false");
   });
 
-  it("keeps the controls and metric hints wrap-safe at a 390px viewport width", () => {
-    renderWithProviders(
-      <FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" analyticsScope="admin:1" />,
+  it("davr almashsa (Haftalik) — o'sha davr bilan qayta so'raladi", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" analyticsScope="admin:1" />);
+    await user.click(screen.getByRole("radio", { name: "Haftalik" }));
+    expect(getRevenueMock).toHaveBeenCalledWith(
+      { period: "weekly", start_day: "2026-09-01", end_day: "2026-09-15" },
+      true,
+      "admin:1",
     );
-
-    // Period + comparison toggle controls must wrap instead of overflowing on narrow screens.
-    const toggleButton = screen.getByRole("button", { name: "Solishtirish" });
-    expect(toggleButton.parentElement).toHaveClass("flex-wrap");
-
-    // Metric grid starts single-column (grid-cols-1) — only widens at sm/xl breakpoints.
-    const revenueCard = screen.getByText("Jami daromad").closest<HTMLElement>(".el-card")!;
-    const metricsGrid = revenueCard.closest("div.grid");
-    expect(metricsGrid).toHaveClass("grid-cols-1");
-
-    // Long hint text (previous-period label + amount) must wrap/clamp, not overflow.
-    const hint = within(revenueCard).getByText(/Oldingi davr \(/);
-    expect(hint).toHaveClass("break-words");
-    expect(hint).toHaveClass("line-clamp-2");
+    expect(screen.getByText("O'rtacha haftalik daromad")).toBeInTheDocument();
   });
 
-  it("formats the Y axis with compact numbers so it stays narrow on small screens", () => {
-    renderWithProviders(
-      <FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" analyticsScope="admin:1" />,
-    );
-
-    // formatCompactMoney(1_500_000) === "1,5 mln" (uz, dizayn v2) — must NOT be the raw "1 500 000".
-    expect(screen.getByTestId("y-axis")).toHaveAttribute("data-sample-tick", "1,5 mln");
+  it("Y o'qi ixcham sonlarda (telefonda tor qoladi)", async () => {
+    renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
+    expect(await screen.findByTestId("y-axis")).toHaveAttribute("data-sample-tick", "1,5 mln");
   });
 
-  it("hides the previous-period line when the chart arrays have mismatched lengths", () => {
+  it("nuqtalar soni teng bo'lmasa — oldingi chiziq yashiriladi va ogohlantirish yoziladi", async () => {
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     getRevenueMock.mockImplementation((params: { start_day: string }) => ({
-      data: params.start_day === "2026-09-01"
-        ? current
-        : {
-            data: {
-              summary: { totalRevenue: 100000, totalOrders: 2, avgRevenue: 5000 },
-              // Only 1 point vs current's 2 points — a real mismatch (e.g. weekly/monthly bucketing).
-              chart: { labels: ["17.08"], values: [40000] },
+      data:
+        params.start_day === "2026-09-01"
+          ? current
+          : {
+              data: {
+                summary: { totalRevenue: 100000, totalOrders: 2, avgRevenue: 5000 },
+                chart: { labels: ["17.08"], values: [40000] },
+              },
             },
-          },
       isLoading: false,
       isError: false,
       refetch: vi.fn(),
     }));
     renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
 
+    await screen.findByTestId("revenue-chart");
     expect(screen.queryByTestId("previous-line")).not.toBeInTheDocument();
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("moslik ishonchli emas"));
     warnSpy.mockRestore();
   });
 
-  it("shows a distinct loading state for the previous period instead of a false '—'", () => {
-    getRevenueMock.mockImplementation((params: { start_day: string }) => {
-      if (params.start_day === "2026-09-01") {
-        return { data: current, isLoading: false, isError: false, refetch: vi.fn() };
-      }
-      // Previous-period query still in flight: no data yet, isLoading true.
-      return { data: undefined, isLoading: true, isError: false, refetch: vi.fn() };
+  it("oldingi davr yuklanayotganda — «—» emas, skelet (yolg'on «ma'lumot yo'q» yo'q)", () => {
+    getRevenueMock.mockImplementation((params: { start_day: string }) =>
+      params.start_day === "2026-09-01"
+        ? { data: current, isLoading: false, isError: false, refetch: vi.fn() }
+        : { data: undefined, isLoading: true, isError: false, refetch: vi.fn() },
+    );
+    renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
+
+    expect(revenueMetric().querySelector("[data-skeleton]")).not.toBeNull();
+    expect(revenueMetric()).not.toHaveTextContent("—");
+    expect(screen.queryByTestId("previous-line")).not.toBeInTheDocument();
+  });
+
+  it("oldingi davr so'rovi yiqilsa — xabar va «Qayta urinish», joriy ma'lumot qoladi", async () => {
+    const refetchPrevious = vi.fn();
+    getRevenueMock.mockImplementation((params: { start_day: string }) =>
+      params.start_day === "2026-09-01"
+        ? { data: current, isLoading: false, isError: false, refetch: vi.fn() }
+        : { data: undefined, isLoading: false, isError: true, refetch: refetchPrevious },
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
+
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("Oldingi davr ma'lumotlarini yuklab bo'lmadi.");
+    await user.click(within(alert).getByRole("button", { name: "Qayta urinish" }));
+    expect(refetchPrevious).toHaveBeenCalled();
+    expect(revenueMetric()).toHaveTextContent("150 ming so'm");
+  });
+
+  it("«Jadval» ko'rinishi — har nuqta qatorda (grafik egizagi)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
+    await user.click(screen.getByRole("radio", { name: "Jadval" }));
+    const table = screen.getByRole("table", { name: "Moliyaviy tahlil" });
+    expect(within(table).getByText("02.09")).toBeInTheDocument();
+    expect(within(table).getByText("100 000 so'm")).toBeInTheDocument();
+    expect(within(table).getByText("60 000 so'm")).toBeInTheDocument();
+  });
+});
+
+describe("Kassa balansi (o'sha revenue javobidan)", () => {
+  beforeEach(() => {
+    getRevenueMock.mockReset();
+    getRevenueMock.mockImplementation((params: { start_day: string }) => ({
+      data: params.start_day === "2026-09-01" ? current : previous,
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+      dataUpdatedAt: Date.now(),
+    }));
+  });
+
+  it("joriy holat, sharshara va legenda-jadval — eski xarita formulasi bilan", () => {
+    renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
+    const card = screen.getByRole("heading", { name: "Kassa balansi" }).closest("section") as HTMLElement;
+    expect(within(card).getByText("Ijobiy")).toBeInTheDocument();
+    expect(card).toHaveTextContent("22 543 000so'm");
+    expect(within(card).getByRole("img", { name: /Joriy holat 22,5 mln/ })).toBeInTheDocument();
+    expect(card).toHaveTextContent("+11 386 000 so'm");
+    expect(card).toHaveTextContent("−13 458 000 so'm");
+    expect(within(card).getByRole("link", { name: /Balansni ochish/ })).toHaveAttribute("href", "/financial-balance");
+  });
+});
+
+describe("TrendTooltip", () => {
+  it("oldingi nuqta yo'q (null) — qator chizilmaydi, haqiqiy nol esa ko'rinadi", () => {
+    renderWithProviders(
+      <TrendTooltip
+        active
+        currentName="Joriy"
+        previousName="Oldingi"
+        showPrevious
+        payload={[{ payload: { label: "17.08", current: 0, previous: null } }]}
+      />,
+    );
+    expect(screen.getByText("0 so'm")).toBeInTheDocument();
+    expect(screen.queryByText("Oldingi")).not.toBeInTheDocument();
+  });
+});
+
+describe("FinancialAnalysis — qisman nosozlik (VkwhHqvW)", () => {
+  it("revenue `degraded` — moliya bo'lagi 0 lar bilan emas, xato va «Qayta urinish»", async () => {
+    const refetch = vi.fn();
+    getRevenueMock.mockReturnValue({
+      data: { data: { summary: { totalRevenue: 0, totalOrders: 0, avgRevenue: 0 }, chart: { labels: [], values: [] }, degraded: true, failedParts: ["finance"] } },
+      isLoading: false,
+      isError: false,
+      refetch,
     });
     renderWithProviders(<FinancialAnalysis startDate="2026-09-01" endDate="2026-09-15" />);
 
-    const revenueCard = screen.getByText("Jami daromad").closest<HTMLElement>(".el-card");
-    expect(within(revenueCard!).getByText("…")).toBeInTheDocument();
-    expect(within(revenueCard!).getByText((_, node) => node?.textContent === "Oldingi davr (2026-08-17 – 2026-08-31): Yuklanmoqda...")).toBeInTheDocument();
-    expect(screen.queryByTestId("previous-line")).not.toBeInTheDocument();
-    expect(screen.getByText("Yuklanmoqda...")).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("Ma'lumotni yuklab bo'lmadi");
+    expect(screen.queryByText("Jami daromad")).not.toBeInTheDocument();
+    await userEvent.setup().click(screen.getByRole("button", { name: "Qayta urinish" }));
+    expect(refetch).toHaveBeenCalled();
   });
 });
 
-describe("FinancialAnalysis CustomTooltip", () => {
-  it("distinguishes a missing (null) previous point from a genuine zero", () => {
-    renderWithProviders(
-      <CustomTooltip
-        active
-        label="17.08"
-        payload={[
-          { name: "Joriy davr", value: 0, color: "#000" },
-          { name: "Oldingi davr", value: null as unknown as number, color: "#999" },
-        ]}
-      />,
-    );
-
-    // Dizayn v2: uz valyutasi "so'm" (ilgari bu ekranda "UZS", boshqasida "so'm" edi).
-    expect(screen.getByText("Joriy davr: 0 so'm")).toBeInTheDocument();
-    expect(screen.getByText("Oldingi davr: —")).toBeInTheDocument();
-  });
-});

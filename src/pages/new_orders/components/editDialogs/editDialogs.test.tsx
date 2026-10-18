@@ -109,7 +109,8 @@ describe("EditAddressDialog (maket *-orders-detail-edit-address-dialog)", () => 
 
     await user.click(screen.getByRole("button", { name: "Saqlash" }));
     expect(district).toHaveAttribute("aria-invalid", "true");
-    expect(district).toHaveAccessibleErrorMessage("Tumanni tanlang");
+    // D-21: xato matni namuna matnidan («Tumanni tanlang») farq qiladi.
+    expect(district).toHaveAccessibleErrorMessage("Tuman tanlanmagan");
     expect(district).toHaveFocus();
     expect(mutations.updateNewOrder).not.toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();
@@ -352,15 +353,63 @@ describe("EditOrderDialog (maket *-orders-detail-edit-order-dialog, manager-…-
     expect(mutations.updateNewOrder).not.toHaveBeenCalled();
   });
 
-  it("hamma mahsulot olib tashlansa — «Ro'yxatda mahsulot qolmadi.»", async () => {
+  it("⭐ D-01: oxirgi mahsulotni olib tashlab bo'lmaydi — tugma o'chiq, sababi ostida; `items: []` ketmaydi", async () => {
     const user = userEvent.setup();
     renderOrder();
+    const hint = "Kamida bitta mahsulot qolishi kerak. Buyurtma kerak bo'lmasa, uni bekor qiling.";
+    expect(screen.queryByText(hint)).not.toBeInTheDocument();
+
     await user.click(screen.getByRole("button", { name: "Smartfon A15, 128 GB ni olib tashlash" }));
-    // Fokus keyingi qatorning «olib tashlash» tugmasiga o'tadi.
-    expect(screen.getByRole("button", { name: "Himoya g'ilofi ni olib tashlash" })).toHaveFocus();
-    await user.click(screen.getByRole("button", { name: "Himoya g'ilofi ni olib tashlash" }));
-    // Oxirgi qator ketdi — fokus `body` ga tushmaydi, bo'sh ro'yxat xabarida (oyna ichida) qoladi.
-    expect(screen.getByText("Ro'yxatda mahsulot qolmadi.")).toHaveFocus();
+    // Bitta qator qoldi: uning tugmasi o'chiq (sababi bilan bog'langan), fokus `body` ga emas — izohga.
+    const last = screen.getByRole("button", { name: "Himoya g'ilofi ni olib tashlash" });
+    expect(last).toBeDisabled();
+    expect(last).toHaveAccessibleDescription(hint);
+    expect(screen.getByText(hint)).toHaveFocus();
+
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+    expect(mutations.updateNewOrder).toHaveBeenCalledWith({
+      orderId: "10241",
+      data: { items: [{ product_id: "p2", quantity: 2 }] },
+    });
+  });
+
+  it("D-01: bitta mahsulotli buyurtma — «olib tashlash» darhol o'chiq", () => {
+    renderOrder({ ...baseOrder, items: [baseOrder.items[0]] });
+    expect(screen.getByRole("button", { name: "Smartfon A15, 128 GB ni olib tashlash" })).toBeDisabled();
+    expect(
+      screen.getByText("Kamida bitta mahsulot qolishi kerak. Buyurtma kerak bo'lmasa, uni bekor qiling."),
+    ).toBeInTheDocument();
+  });
+
+  it("⭐ D-17: summa — «.» va «-» jimgina tashlanmaydi (belgi rad, sababi ostida), 12 xonadan uzun — rad", async () => {
+    const user = userEvent.setup();
+    renderOrder();
+    const total = screen.getByLabelText(/^Umumiy summa/);
+    await user.clear(total);
+    await user.type(total, "12.");
+    // «.» rad etildi: qiymat «12» qoladi, sababi maydon ostida (ekran o'quvchiga ham).
+    expect(total).toHaveValue("12");
+    expect(total).toHaveAccessibleDescription("Summani butun son bilan kiriting — kasr qabul qilinmaydi");
+    await user.type(total, "5");
+    // Keyingi raqam yozilsa ham sababi ko'rinib turadi — «125» bo'lgani foydalanuvchiga ayon.
+    expect(total).toHaveValue("125");
+    expect(total).toHaveAccessibleDescription("Summani butun son bilan kiriting — kasr qabul qilinmaydi");
+
+    await user.clear(total);
+    expect(total).not.toHaveAccessibleDescription(/kasr/);
+    await user.type(total, "-");
+    expect(total).toHaveValue("");
+    expect(total).toHaveAccessibleDescription("Summa manfiy bo'lishi mumkin emas");
+
+    await user.type(total, "1234567890123");
+    expect(total).toHaveValue("123 456 789 012");
+    expect(total).toHaveAccessibleDescription("Summa juda katta — ko'pi bilan 12 xonali son");
+
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+    expect(mutations.updateNewOrder).toHaveBeenCalledWith({
+      orderId: "10241",
+      data: { total_price: 123456789012 },
+    });
   });
 
   it("katalogsiz mahsulot nomi (product: null) qatorda ko'rinadi", () => {

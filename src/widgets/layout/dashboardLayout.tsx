@@ -7,6 +7,7 @@ import BottomNav from "../Sidebar/ui/BottomNav";
 import MobileMenu from "../Sidebar/ui/MobileMenu";
 import { useMobileMenu } from "../Sidebar/model/shellNav";
 import { useShellScroll } from "./model/useShellScroll";
+import { setShellBannerSlot } from "../../shared/lib/shellBannerSlot";
 import RouteProgress, { RouteSuspenseFallback } from "./ui/RouteProgress";
 
 /** Yon menyu ko'rinadigan kenglik (Tailwind `lg`). Undan torda — menyu tugmasi + suriluvchi menyu. */
@@ -29,6 +30,10 @@ export const SHELL_DESKTOP_QUERY = "(min-width: 1024px)";
  *                   (taxta `tizim-motion` 08: «Ochiladigan» qatlam «Yopishqoq»dan yuqori; aks holda telefon
  *                   yotiq holatida profil menyusining pastki bandlari pastki menyu ostida qolardi);
  *                   yuqori chiziq (`RouteProgress`) `z-50`.
+ *   - `banner`    — sahifa bannerlari (taxta `tizim-feedback` 04: sessiya tugashi): yuqori panel ostida, oqimda,
+ *                   `shrink-0` — `<main>` dan tashqarida, shuning uchun skrollda panel bilan birga qoladi va sahifani
+ *                   pastga suradi («hech narsani yopmaydi»). Bo'sh bo'lsa balandligi 0. Bannerlar unga portal qiladi
+ *                   (`shared/lib/shellBannerSlot.ts`). Maket talabi bilan qo'shilgan slot (4-bosqich G3).
  *   - `<main>`    — YAGONA skroll konteyneri (`useShellScroll`: yo'l o'zgarsa tepaga).
  *   - `bottomnav` — faqat telefonda (< 768, `md:hidden`). `BottomNav` `fixed inset-x-0 bottom-0`,
  *                   balandligi 64px + `env(safe-area-inset-bottom)`; ustun pastdan shuncha joy qoldiradi
@@ -75,6 +80,8 @@ const DashboardLayout = () => {
         <div data-shell-slot="topbar" className="relative z-40 shrink-0">
           <Header onMenuClick={openMenu} />
         </div>
+
+        <div ref={setShellBannerSlot} data-shell-slot="banner" className="shrink-0" />
 
         <main ref={scrollRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain">
           <div

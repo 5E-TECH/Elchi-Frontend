@@ -9,32 +9,24 @@
   },
   "actions": {
     "save": "Saqlash",
-    "update": "Yangilash",
     "edit": "Tahrirlash",
     "delete": "O'chirish",
     "details": "Batafsil"
   },
   "page": {
-    "title": "Filiallar",
-    "description": "Filiallar ro'yxati va holatini boshqarish"
+    "title": "Filiallar"
   },
   "detail": {
     "notFound": "Filial topilmadi",
-    "description": "Filial ma'lumotlari, xodimlar va sozlamalarni bitta joydan boshqaring.",
     "location": "Joylashuv",
     "employees": "Xodimlar",
-    "assignedUsers": "filialga biriktirilgan foydalanuvchi",
-    "createdDate": "Yaratilgan sana",
-    "createdHint": "filial tizimga qo'shilgan vaqt",
-    "branchAndEmployees": "Filial va xodimlar"
+    "createdDate": "Yaratilgan sana"
   },
   "employee": {
     "title": "Filial xodimlari",
-    "description": "Biriktirilgan xodimlar ro'yxati va ularning lavozimlari.",
     "employee": "Xodim",
     "position": "Lavozim",
     "joinedDate": "Qo'shilgan sana",
-    "notFound": "Xodimlar topilmadi",
     "add": "Xodim qo'shish",
     "addDescription": "Filialga foydalanuvchini biriktiring.",
     "addAction": "Qo'shish",
@@ -42,7 +34,6 @@
     "user": "Foydalanuvchi",
     "selectUser": "Foydalanuvchini tanlang",
     "remove": "Olib tashlash",
-    "removeConfirm": "Xodimni filialdan olib tashlamoqchimisiz?",
     "removed": "Xodim olib tashlandi",
     "removeError": "Xodimni olib tashlab bo'lmadi",
     "addError": "Xodimni qo'shib bo'lmadi"
@@ -66,23 +57,16 @@
     "action": "O'tkazish",
     "success": "{{name}} '{{branch}}' filialiga o'tkazildi",
     "checkFailed": "Tekshirib bo'lmadi — birozdan so'ng qayta urinib ko'ring",
-    "retry": "Qayta tekshirish"
-  },
-  "settings": {
-    "title": "Filial sozlamalari",
-    "description": "Filialga tegishli kalit-qiymat sozlamalarini shu joydan boshqaring.",
-    "key": "Kalit",
-    "value": "Qiymat",
-    "add": "Sozlama qo'shish",
-    "edit": "Sozlamani tahrirlash",
-    "formDescription": "Filialga tegishli kalit va qiymatni kiriting.",
-    "created": "Sozlama qo'shildi",
-    "updated": "Sozlama yangilandi",
-    "deleted": "Sozlama o'chirildi",
-    "deleteConfirm": "Sozlamani o'chirmoqchimisiz?",
-    "notFound": "Sozlamalar topilmadi",
-    "keyRequired": "Kalit nomini kiriting",
-    "valueRequired": "Qiymatni kiriting"
+    "retry": "Qayta tekshirish",
+    "openButtonFor": "{{name}}ni boshqa filialga o'tkazish",
+    "courierRole": "Kuryer",
+    "ordersCount": "{{value}} ta",
+    "searchLabel": "Filialni qidirish",
+    "searchPlaceholder": "Filial nomini qidiring",
+    "noManagerHint": "Menejer yo'q — bu filialga o'tkazib bo'lmaydi",
+    "noTargets": "Mos filial topilmadi",
+    "submitTo": "{{branch}}ga o'tkazish",
+    "transferring": "O'tkazilmoqda…"
   },
   "delete": {
     "confirm": "Filialni o'chirmoqchimisiz?",
@@ -98,21 +82,17 @@
     "region": "Viloyat",
     "district": "Tuman",
     "address": "Manzil",
-    "status": "Holat",
-    "manager": "Mas'ul xodim"
+    "status": "Holat"
   },
   "placeholders": {
     "name": "Filial nomini kiriting",
     "parent": "Yuqori filialni tanlang",
     "parentForHq": "HQ uchun yuqori filial kerak emas",
-    "type": "Filial turini tanlang",
     "code": "Masalan: TSH-CHL",
     "phone": "90 123 45 67",
     "region": "Viloyatni tanlang",
     "district": "Tumanni tanlang",
-    "address": "Filial manzilini kiriting",
-    "status": "Holatni tanlang",
-    "manager": "Mas'ul xodimni tanlang"
+    "address": "Filial manzilini kiriting"
   },
   "branchTypes": {
     "HQ": "HQ",
@@ -137,7 +117,7 @@
     "updated": "Filial yangilandi"
   },
   "errors": {
-    "codeExists": "Bu code allaqachon mavjud",
+    "codeExists": "Bu qisqa nom allaqachon mavjud",
     "circularParent": "Aylanma bog'lanish aniqlandi",
     "generic": "Xatolik yuz berdi"
   },
@@ -152,10 +132,7 @@
     "tableView": "Jadval",
     "cardView": "Kartalar",
     "treeView": "Daraxt",
-    "notFound": "Filiallar topilmadi",
-    "emptyCount": "0 ta filial",
-    "paginationSummary": "{{from}}-{{to}} dan {{total}} tasi ko'rsatilmoqda",
-    "employeeCount": "{{count}} xodim"
+    "notFound": "Filiallar topilmadi"
   },
   "table": {
     "name": "Nomi",
@@ -166,13 +143,6 @@
   },
   "tree": {
     "level": "{{level}}-daraja",
-    "expand": "Ichki filiallarni ochish",
-    "collapse": "Ichki filiallarni yopish",
-    "childCount": "{{count}} ta ichki filial",
-    "showChildren": "Ko'rsatish",
-    "hideChildren": "Yopish",
-    "previousPage": "Oldingi filiallar",
-    "nextPage": "Keyingi filiallar",
     "regionGroup": "Viloyat",
     "districtGroup": "Shahar/Tuman"
   },
@@ -188,8 +158,80 @@
     "region": "Viloyatni tanlang",
     "district": "Tumanni tanlang",
     "address": "Manzilni kiriting",
-    "status": "Holat tanlang",
-    "manager": "Mas'ul xodimni tanlang",
     "completeForm": "Formani to'liq to'ldiring"
+  },
+  "v2": {
+    "list": {
+      "label": "Filiallar ro'yxati",
+      "cardsLabel": "Filiallar kartalari",
+      "viewLabel": "Ko'rinish",
+      "total": "Jami {{value}} ta filial",
+      "pagination": "{{from}}–{{to}} / {{total}} ta filial",
+      "searchLabel": "Filiallarni qidirish",
+      "loading": "Filiallar yuklanmoqda",
+      "loadFailed": "Filiallarni yuklab bo'lmadi",
+      "emptyDescription": "Birinchi filialni «Yangi filial» tugmasi bilan qo'shing.",
+      "filteredEmpty": "Mos filial topilmadi",
+      "filteredEmptyDescription": "Qidiruv yoki holat filtrini o'zgartirib ko'ring.",
+      "clearFilters": "Filtrlarni tozalash",
+      "employees": "{{value}} ta",
+      "employeesLong": "{{value}} ta xodim",
+      "rowActions": "{{name}} amallari",
+      "detailsFor": "Batafsil — {{name}}"
+    },
+    "tree": {
+      "label": "Filiallar daraxti",
+      "expand": "{{name}}: ichki filiallarni ochish",
+      "collapse": "{{name}}: ichki filiallarni yopish",
+      "childCount": "{{value}} ta ichki filial",
+      "groupCount": "{{value}} ta filial"
+    },
+    "columns": {
+      "branch": "Filial",
+      "type": "Turi",
+      "areaAddress": "Hudud va manzil",
+      "employees": "Xodimlar",
+      "status": "Holat",
+      "actions": "Amallar"
+    },
+    "delete": {
+      "description": "{{name}} filiallar ro'yxatidan o'chiriladi."
+    },
+    "form": {
+      "hqTypeLocked": "HQ turini o'zgartirib bo'lmaydi",
+      "parentHint": "Qabul punktlari yuqori filial bo'la olmaydi",
+      "parentEmpty": "Filial topilmadi"
+    },
+    "detail": {
+      "fallbackTitle": "Filial",
+      "parentLabel": "Yuqori filial:",
+      "infoLabel": "Filial ma'lumotlari",
+      "employeesHint": "filialga biriktirilgan",
+      "createdHint": "filial tizimga qo'shilgan",
+      "loading": "Filial yuklanmoqda",
+      "loadFailed": "Filial ma'lumotini yuklab bo'lmadi",
+      "notFoundHint": "Filial o'chirilgan yoki havola noto'g'ri. Filiallar ro'yxatiga qayting."
+    },
+    "employees": {
+      "description": "Biriktirilgan xodimlar ro'yxati va ularning lavozimlari",
+      "loading": "Xodimlar yuklanmoqda",
+      "loadFailed": "Xodimlarni yuklab bo'lmadi",
+      "empty": "Filialga hali xodim biriktirilmagan",
+      "emptyDescription": "Menejer, ro'yxatchi yoki kuryerni «Xodim qo'shish» tugmasi bilan biriktiring.",
+      "removeLabel": "{{name}}ni filialdan olib tashlash",
+      "removeTitle": "{{name}}ni filialdan olib tashlash?"
+    },
+    "addEmployee": {
+      "description": "{{branch}}ga foydalanuvchini biriktiring.",
+      "hint": "Faqat faol menejer, ro'yxatchi va kuryerlar ko'rsatiladi",
+      "listLabel": "Foydalanuvchilar",
+      "empty": "Foydalanuvchi topilmadi",
+      "noOptions": "Biriktirish mumkin bo'lgan faol xodim yo'q"
+    },
+    "positions": {
+      "MANAGER": "Menejer",
+      "REGISTRATOR": "Ro'yxatchi",
+      "COURIER": "Kuryer"
+    }
   }
 }

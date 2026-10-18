@@ -228,6 +228,107 @@ describe("DateRange — telefon", () => {
   });
 });
 
+describe("DateRange — kun rejimi (selection=\"day\") va ichki yorliq", () => {
+  /** `/returns` filtri: tez tanlov + bitta kun, «Sana: Barchasi». */
+  const DayFilter = (props: Partial<DateRangeProps> & { initial?: ISODateRange }) => (
+    <Field label="Sana" hideLabel labelAs="span">
+      <Controlled
+        selection="day"
+        presets={["today", "week", "month", "all"]}
+        months={1}
+        placeholder="Barchasi"
+        inlineLabel="Sana"
+        {...props}
+      />
+    </Field>
+  );
+  const dayTrigger = () => screen.getByRole("button", { name: /^Sana / });
+
+  it("bo'sh: «Sana:» (aria-hidden, kulrang) + «Barchasi» (subtle emas); nomi Field yorlig'idan", () => {
+    render(<DayFilter />);
+    const button = dayTrigger();
+    expect(button).toHaveAccessibleName("Sana Barchasi");
+    expect(button).toHaveTextContent("Sana:Barchasi");
+    const label = button.querySelector("[data-date-inline-label]");
+    expect(label).toHaveTextContent("Sana:");
+    expect(label).toHaveAttribute("aria-hidden", "true");
+    expect(label).toHaveClass("text-text-muted");
+    // Ichki yorliq bilan bo'sh qiymat matni (`Barchasi`) — oddiy matn rangi (Select `inlineLabel` kabi).
+    expect(label?.nextElementSibling).toHaveTextContent("Barchasi");
+    expect(label?.nextElementSibling).not.toHaveClass("text-text-subtle");
+  });
+
+  it("taqvimda bitta bosish — { kun, kun } qo'llanadi va panel yopiladi (oraliq yo'q)", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<DayFilter onChange={onChange} />);
+
+    await user.click(dayTrigger());
+    const dialog = screen.getByRole("dialog", { name: "Sanani tanlash" });
+    expect(within(dialog).getAllByRole("grid")).toHaveLength(1);
+    expect(dialog).toHaveTextContent("Sanani tanlang");
+    expect(within(dialog).getByRole("button", { name: "Barchasi" })).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(within(dialog).getByRole("gridcell", { name: "3-oktabr" }));
+    expect(onChange).toHaveBeenCalledTimes(1);
+    expect(onChange).toHaveBeenCalledWith({ from: "2026-10-03", to: "2026-10-03" });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(document.activeElement).toBe(dayTrigger());
+    expect(dayTrigger()).toHaveTextContent("Sana:03.10.2026");
+    expect(dayTrigger()).toHaveAccessibleName("Sana 03.10.2026");
+  });
+
+  it("tez tanlov darhol qo'llanadi; maydonda davr nomi («Bu hafta»), panelda chip bosilgan", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<DayFilter onChange={onChange} />);
+
+    await user.click(dayTrigger());
+    await user.click(screen.getByRole("button", { name: "Bu hafta" }));
+    expect(onChange).toHaveBeenLastCalledWith({ from: "2026-10-05", to: TODAY });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(dayTrigger()).toHaveTextContent("Sana:Bu hafta");
+    expect(dayTrigger()).toHaveAccessibleName("Sana Bu hafta");
+
+    await user.click(dayTrigger());
+    const dialog = screen.getByRole("dialog", { name: "Sanani tanlash" });
+    expect(within(dialog).getByRole("button", { name: "Bu hafta" })).toHaveAttribute("aria-pressed", "true");
+    expect(dialog).toHaveTextContent("05.10.2026 – 08.10.2026");
+    // Davrda taqvimda bitta kun belgilanmaydi.
+    expect(within(dialog).queryAllByRole("gridcell", { selected: true })).toHaveLength(0);
+  });
+
+  it("bitta kun tanlangan: taqvimda belgilangan, pastda sana; «Bugun» — davr nomi", async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<DayFilter initial={{ from: "2026-10-03", to: "2026-10-03" }} />);
+    await user.click(dayTrigger());
+    const dialog = screen.getByRole("dialog", { name: "Sanani tanlash" });
+    expect(within(dialog).getByRole("gridcell", { name: "3-oktabr", selected: true })).toBeInTheDocument();
+    expect(dialog).toHaveTextContent("03.10.2026");
+    unmount();
+
+    render(<DayFilter initial={{ from: TODAY, to: TODAY }} />);
+    expect(dayTrigger()).toHaveTextContent("Sana:Bugun");
+  });
+
+  it("× «Sanani tozalash» — bo'sh qiymat, yana «Barchasi»", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    render(<DayFilter onChange={onChange} initial={{ from: "2026-10-01", to: TODAY }} />);
+
+    expect(dayTrigger()).toHaveTextContent("Sana:Bu oy");
+    await user.click(screen.getByRole("button", { name: "Sanani tozalash" }));
+    expect(onChange).toHaveBeenLastCalledWith({ from: "", to: "" });
+    expect(dayTrigger()).toHaveTextContent("Sana:Barchasi");
+  });
+
+  it("sukut (range) o'zgarmagan: ichki yorliq yo'q, tez tanlov oralig'i sana bilan ko'rinadi", () => {
+    render(<Controlled initial={{ from: "2026-10-05", to: TODAY }} />);
+    expect(trigger()).toHaveTextContent("05.10 – 08.10.2026");
+    expect(trigger().querySelector("[data-date-inline-label]")).toBeNull();
+  });
+});
+
 describe("DateRangePanel — sahifadagi ochiq namuna", () => {
   it("o'z yuzasi bilan chiziladi va tanlov onChange ga boradi", async () => {
     const user = userEvent.setup();

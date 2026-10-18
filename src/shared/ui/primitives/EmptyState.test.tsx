@@ -67,4 +67,14 @@ describe("EmptyState", () => {
     expect(root).toHaveClass("rounded-[14px]", "border", "border-border", "bg-surface");
     expect(root.querySelector("[data-state-icon]")).toHaveClass("bg-danger-soft", "text-danger-fg");
   });
+
+  it("ixcham (inline): gorizontal, balandlik cho'zilmaydi, doira kulrang yuzada ko'rinadi", () => {
+    const { container } = render(<EmptyState size="inline" title="Bu davrda reyting uchun buyurtma yo'q" />);
+    const root = container.firstElementChild as HTMLElement;
+    expect(root).toHaveClass("flex", "items-center", "bg-sunken", "px-4", "py-3");
+    expect(root).not.toHaveClass("flex-col");
+    expect(root.className).not.toMatch(/min-h-/);
+    expect(root.querySelector("[data-state-icon]")).toHaveClass("size-10", "bg-surface");
+    expect(screen.getByText("Bu davrda reyting uchun buyurtma yo'q")).toHaveClass("text-sm", "font-semibold");
+  });
 });

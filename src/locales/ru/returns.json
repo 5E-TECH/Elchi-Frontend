@@ -1,28 +1,42 @@
 {
-  "title": "Возвратные батчи",
-  "description": "Список пакетов возвратного потока для текущего филиала",
-  "totalBatches": "{{count}} пакет",
-  "empty": "Возвратные батчи не найдены",
-  "emptyDescription": "Возвращенные заказы пока не найдены.",
-  "orderCountValue": "{{count}} заказов",
-  "columns": {
-    "id": "ID",
-    "from": "Откуда",
-    "to": "Куда",
-    "ordersCount": "Кол-во заказов",
-    "totalPrice": "Общая сумма",
-    "status": "Статус",
-    "createdAt": "Время создания"
-  },
+  "title": "Возвраты",
+  "descriptionAll": "Пакеты возвратного потока из филиалов",
+  "descriptionBranch": "Возвратные пакеты филиала «{{branch}}»",
+  "descriptionOwnBranch": "Возвратные пакеты вашего филиала",
+  "total_one": "всего {{value}} пакет",
+  "total_few": "всего {{value}} пакета",
+  "total_many": "всего {{value}} пакетов",
+  "total_other": "всего {{value}} пакета",
+  "listLabel": "Список возвратных пакетов",
+  "filtersLabel": "Фильтры",
   "filters": {
     "status": "Статус",
-    "allStatuses": "Все",
-    "from": "С",
-    "to": "До"
+    "date": "Дата",
+    "all": "Все"
   },
+  "columns": {
+    "batch": "Пакет",
+    "from": "Из филиала",
+    "to": "Куда",
+    "status": "Статус",
+    "orders": "Заказы",
+    "amount": "Сумма",
+    "open": "Открыть"
+  },
+  "qty": "{{value}} шт.",
+  "open": "Открыть пакет {{id}}",
+  "pagination": "{{from}}–{{to}} из {{total}} пакетов",
+  "cardsLabel": "Возвратные пакеты",
+  "loading": "Загрузка возвратных пакетов",
+  "empty": "Возвратные пакеты не найдены",
+  "emptyDescription": "Когда филиал создаст возвратный пакет, он появится здесь.",
+  "filteredEmpty": "Нет возвратных пакетов с этим статусом",
+  "filteredEmptyDescription": "Выберите другой статус или сбросьте фильтр.",
+  "filteredEmptyPeriod": "За этот период нет возвратных пакетов",
+  "filteredEmptyPeriodDescription": "Выберите другую дату или сбросьте фильтры.",
+  "clearFilter": "Сбросить фильтр",
   "messages": {
-    "branchMissing": "Текущему пользователю не назначен филиал",
-    "loadFailed": "Не удалось загрузить возвратные батчи"
+    "loadFailed": "Не удалось загрузить список возвратных пакетов"
   },
   "opsReturnRequests": {
     "title": "Логистика — запросы на возврат",

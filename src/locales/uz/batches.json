@@ -1,55 +1,102 @@
 {
   "title": "Paketlar",
-  "description": "Filial va HQ xodimlari yaratgan paketlar ro'yxati",
-  "statBadge": "{{count}} paket",
+  "description": "{{value}} ta paket · filial va HQ xodimlari tomonidan yaratilgan",
+  "descriptionReturn": "{{value}} ta paket · filiallardan qaytish oqimidagi paketlar · <page>Qaytarishlar</page> sahifasidagi ro'yxatning o'zi",
+  "listLabel": "Paketlar ro'yxati",
+  "tabsLabel": "Paket turlari",
   "tabs": {
     "new": "Yangi",
     "old": "Eski",
     "return": "Qaytarilgan"
   },
-  "filter": {
+  "columns": {
+    "batch": "Paket",
+    "route": "Marshrut",
+    "region": "Viloyat",
     "status": "Holat",
-    "direction": "Yo'nalish",
-    "date": "Sana"
+    "orders": "Buyurtmalar",
+    "amount": "Summa",
+    "open": "Ochish"
   },
-  "status": {
-    "new": "Yangi",
-    "onTheWay": "Yo'lda",
-    "received": "Qabul qilindi",
-    "cancelled": "Bekor qilindi"
-  },
+  "qty": "{{value}} ta",
+  "ordersSub": "{{value}} ta buyurtma",
+  "open": "{{id}} paketini ochish",
+  "pagination": "{{from}}–{{to}} / {{total}} ta paket",
+  "cardsLabel": "Paketlar",
+  "loading": "Paketlar yuklanmoqda",
+  "loadError": "Paketlar ro'yxatini yuklab bo'lmadi",
+  "emptyTitle": "Paketlar yo'q",
+  "emptyDescription": "Bu bo'limda hozircha paket yo'q.",
   "direction": {
     "forward": "Oldinga",
     "return": "Qaytarish"
   },
-  "card": {
-    "orders": "Orderlar",
-    "piece": "ta",
-    "amount": "Summa",
-    "direction": "Yo'nalish",
-    "region": "Viloyat",
-    "route": "Yo'nalish",
-    "created": "Yaratilgan"
-  },
   "detail": {
     "title": "Paket {{id}}",
-    "notFound": "Paket topilmadi",
+    "back": {
+      "batches": "Paketlar",
+      "returns": "Qaytarishlar",
+      "mailsOld": "Eski pochtalar"
+    },
+    "createdAt": "Yaratilgan: {{date}}",
+    "print": "Chop etish",
+    "send": "HQ'ga yuborish — {{value}} ta",
+    "sending": "HQ'ga yuborilmoqda…",
+    "infoTitle": "Paket ma'lumotlari",
     "branch": "Filial",
     "destination": "Qayerga",
-    "orderCount": "{{count}} ta",
-    "insideOrders": "Ichidagi orderlar",
+    "region": "Viloyat",
+    "direction": "Yo'nalish",
+    "orders": "Buyurtmalar",
+    "amount": "Summa",
+    "deliveryBreakdown": "Yetkazish turi bo'yicha",
+    "deliveryHome": "Uygacha",
+    "deliveryCenter": "Markazgacha",
+    "qrCode": "QR kod",
+    "qrImage": "{{id}} paketining QR kodi",
+    "qrFallback": "QR kod",
+    "qrHint": "Varaqni chop etib paketga yopishtiring — {{to}} shu QR kodni skanerlab paketni qabul qiladi.",
+    "qrHintNoTarget": "Varaqni chop etib paketga yopishtiring — qabul qiluvchi filial shu QR kodni skanerlab paketni qabul qiladi.",
+    "qrHintReturn": "Yorliqni chop etib, paket ustiga yopishtiring.",
+    "ordersTitle": "Paketdagi buyurtmalar",
+    "ordersLabel": "Paketdagi buyurtmalar",
+    "scanHint": "QR kodni skanerlang — buyurtma ro'yxatda tanlanadi",
+    "selectionHint": "HQ'ga faqat tanlangan buyurtmalar yuboriladi",
+    "selectionHintReturn": "Faqat tanlanganlar HQ'ga yuboriladi, qolganlari paketda qoladi",
+    "emptyOrders": "Paketda buyurtma qolmadi",
+    "emptyOrdersHint": "Paketdagi barcha buyurtmalar yuborilgan.",
     "history": "Tarix",
     "historyEmpty": "Tarix hozircha mavjud emas",
-    "qrCode": "QR kod"
+    "historyEmptyHint": "Paket yuborilgach va qabul qilingach, har bir harakat shu yerda ko'rinadi.",
+    "notFound": "Paket topilmadi",
+    "notFoundHint": "Paket o'chirilgan yoki havola noto'g'ri. Paketlar ro'yxatidan qayta oching.",
+    "loading": "Paket yuklanmoqda",
+    "scanSelected": "Buyurtma tanlandi",
+    "scanDuplicate": "Allaqachon tanlangan",
+    "scanMissingTitle": "QR topilmadi",
+    "scanMissing": "Bu QR kod ushbu paketdagi buyurtmalarga mos kelmadi.",
+    "sendSuccess": "Paket HQ'ga yuborildi",
+    "sendSuccessDescription": "{{value}} ta buyurtma {{to}}'ga yuborildi",
+    "sendSuccessDescriptionNoTarget": "{{value}} ta buyurtma HQ'ga yuborildi",
+    "sendError": "Paketni yuborishda xatolik bo'ldi",
+    "sendErrorDescription": "Tanlov saqlanadi — qayta urinib ko'ring",
+    "historyCount": "{{value}} ta",
+    "historyLabel": "Paket tarixi",
+    "historyAction": {
+      "created": "Paket yaratildi",
+      "createdReturn": "Qaytarish paketi yaratildi",
+      "sent": "Paket jo'natildi",
+      "sentTo": "Paket {{to}}'ga jo'natildi",
+      "received": "Paket qabul qilindi",
+      "receivedAt": "Paket {{to}}'da qabul qilindi",
+      "cancelled": "Paket bekor qilindi"
+    }
   },
   "print": {
     "branch": "FILIAL:",
     "region": "VILOYAT:",
-    "orders": "ORDER:",
+    "orders": "BUYURTMALAR:",
     "total": "JAMI:",
     "date": "SANA:"
-  },
-  "loadError": "Paketlar ro'yxatini yuklab bo'lmadi",
-  "emptyTitle": "Paketlar yo'q",
-  "emptyDescription": "Hozircha bu filterlar bo'yicha paketlar topilmadi."
+  }
 }

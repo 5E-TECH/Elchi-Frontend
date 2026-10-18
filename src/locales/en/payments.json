@@ -1,68 +1,110 @@
 {
+  "v2MyCashbox": {
+    "title": {
+      "market": "Payments",
+      "courier": "Cashbox",
+      "manager": "Cashbox"
+    },
+    "subtitle": {
+      "market": "Market cashbox: balance and history of operations with Elchi",
+      "courier": "Courier cashbox: cash on hand and operation history",
+      "manager": "Branch cashbox: balance and operation history"
+    },
+    "dateAll": "All",
+    "loading": "Loading cashbox data",
+    "loadError": "Could not load the cashbox data",
+    "balance": {
+      "title": "Total balance",
+      "hint": {
+        "market": "The amount Elchi owes you",
+        "courier": "Cash on hand",
+        "manager": "Cash in the branch cashbox"
+      },
+      "hide": "Hide balance",
+      "show": "Show balance",
+      "hidden": "Balance hidden",
+      "note": {
+        "market": "Sales increase the balance; payouts from Elchi, cancellations and expenses decrease it.",
+        "courier": "Sales increase the balance; money handed over to the branch and cancellations decrease it."
+      },
+      "owner": "Cashbox owner",
+      "counterparty": "Counterparty",
+      "counterpartyHq": "Elchi HQ",
+      "cashboxType": "Cashbox type",
+      "today": "Today",
+      "todayLabel": "Today: income {{income}}, expense {{expense}}",
+      "income": "Income",
+      "expense": "Expense"
+    },
+    "history": {
+      "title": "Operation history",
+      "subtitle": "Income and expenses in your cashbox",
+      "subtitleCourier": "Income and expenses in your cashbox. Click a row to open the details.",
+      "tabs": "History type",
+      "all": "All",
+      "transfers": "Payment transfers",
+      "label": "Operation history",
+      "cardsLabel": "Operations",
+      "columns": {
+        "date": "Date",
+        "source": "Source",
+        "operation": "Operation",
+        "type": "Type",
+        "paymentType": "Payment type",
+        "amount": "Amount",
+        "balance": "Balance",
+        "detail": "Details"
+      },
+      "sortDate": "Sort by date",
+      "sortAmount": "Sort by amount",
+      "receivedBy": "Received by:",
+      "comment": "Comment:",
+      "correction": "Correction",
+      "titleWithOrder": "{{title}} · №{{id}}",
+      "openTitleWithOrder": "{{title}} №{{id}}",
+      "balanceAfter": "Balance: {{amount}}",
+      "cardLabel": "{{title}}, {{method}}, {{direction}} {{amount}}, balance {{balance}}, {{date}}",
+      "totalOperations": "Total: {{total}} operations",
+      "totalTransfers": "Total: {{total}} transfers",
+      "paginationTransfers": "{{from}}–{{to}} of {{total}} transfers",
+      "empty": "No operations found",
+      "emptyDescription": "Income and expenses in your cashbox appear here",
+      "transfersEmptyDescription": "Payment transfers appear here",
+      "filteredEmptyDescription": "No operations in the selected date range",
+      "clearDates": "Clear dates"
+    }
+  },
   "title": "Payments",
   "pageDescription": "Manage cashboxes and payments",
   "toBeGiven": "To be given",
   "amountInCashbox": "Amount in cashbox",
-  "settlementStatus": "Settlement status",
   "counterparty": "Counterparty",
   "toBeReceived": "To be received",
   "filters": "Filters",
-  "clearFilters": "Clear filters",
   "selectPlaceholder": "Select",
-  "selectMarketDescription": "Select a market",
   "selectCourierDescription": "Select a courier",
-  "selectBranchManagerDescription": "Select a branch manager",
   "selectEmployee": "Select employee",
   "forSalaryPayment": "For salary payment",
-  "selectCourier": "Select courier",
-  "receiveFromCourierDescription": "Receive from courier",
   "selectMarket": "Select market",
-  "payToMarketDescription": "Pay to market",
   "searchPlaceholder": "Search...",
   "selectLabel": "Select",
   "cancelShort": "Cancel",
   "clear": "Clear",
   "transactions": "Transactions",
-  "filterByDate": "Filter by date",
   "startDate": "Start date",
   "endDate": "End date",
-  "dateRangeRequired": "Both dates must be selected to apply the filter.",
-  "paymentHistoryTitle": "Payment history",
-  "countLabel": "{{count}} items",
-  "quickActions": "Quick actions",
-  "mainCashboxManagement": "Main cashbox management",
   "totalBalanceLabel": "Total balance",
   "hide": "Hide",
   "show": "Show",
-  "cashBalance": "Cash balance",
-  "cardBalance": "Card balance",
-  "transactionsUpdating": "Updating data by filter...",
-  "last30DaysChart": "Income/expense chart for the last 30 days",
-  "dailyDynamics": "Daily dynamics",
-  "ownerInfoTitle": "Cashbox owner information",
-  "ownerInfoDescription": "Name, phone and role",
   "name": "Name",
   "phone": "Phone",
   "role": "Role",
-  "amountLabel": "Amount",
   "comment": "Comment",
-  "paymentHistoryNotFound": "Payment history not found",
-  "pageLabel": "Page {{page}} / {{totalPages}}",
-  "previousPage": "Previous page",
-  "nextPage": "Next page",
   "createdBy": "Created by",
   "amount": "Amount",
   "paymentDate": "Payment date",
   "total": "total",
-  "financeHistoryNotFound": "Finance history not found",
-  "historyLower": "history",
   "paymentHistory": "Payment history",
-  "allHistory": "All history",
-  "paymentTransfers": "Transfers",
-  "lastOperations": "Recent operations",
-  "todayTransactions": "Today's transactions",
-  "todayOperations": "Today's operations",
-  "noOperations": "No operations",
   "today": "Today",
   "thisWeek": "This week",
   "thisMonth": "This month",
@@ -77,141 +119,51 @@
   "paid": "Paid",
   "address": "Address",
   "qty": "Qty",
-  "detailLoading": "Loading detail",
-  "detailLoadingDescription": "Fetching payment history detail from backend.",
-  "detailError": "Failed to load detail",
-  "detailErrorDescription": "An error occurred while loading finance history detail.",
-  "balanceAfterTransaction": "Balance after transaction",
-  "commentLabel": "Comment",
-  "mainCashboxBadge": "Main cashbox",
-  "spendOperation": "Expense operation",
-  "incomeOperation": "Income operation",
-  "spendLabel": "Expense",
-  "incomeLabel": "Income",
   "closeShiftTitle": "Close shift",
-  "closeShiftDescription": "Finish current shift",
-  "closeShiftWarning": "When you close the shift, an Excel report will be downloaded automatically.",
   "optionalComment": "Comment (optional)",
-  "closeShiftPlaceholder": "Comment about the shift...",
   "paymentTypeRequired": "Payment type is required",
   "commentRequired": "Comment is required",
   "amountRequired": "Amount is required",
-  "mainCashboxTitle": "Main Cashbox",
-  "mainCashboxDescription": "Main cashbox management",
   "cashbox": "Cashbox",
   "mainCashbox": "Main cashbox",
-  "cashDetail": "Cashbox details",
   "history": "History",
-  "historyDetail": "History details",
   "income": "Income",
   "expense": "Expense",
   "balance": "Balance",
   "cash": "Cash",
   "card": "Card",
   "other": "Other",
-  "openShift": "Open shift",
-  "closeShift": "Close shift",
-  "currentShift": "Current shift",
-  "shiftHistory": "Shift history",
   "fillCashbox": "Fill cashbox",
   "spendFromCashbox": "Spend from cashbox",
-  "paymentCourier": "Courier payment",
-  "paymentMarket": "Market payment",
   "courierToBranchTransfer": "Courier to branch transfer",
   "hqToMarketTransfer": "HQ to market transfer",
-  "operationType": "Operation type",
-  "sourceType": "Source type",
-  "cashboxType": "Cashbox type",
-  "financialBalance": "Financial balance",
-  "financialBalanceOverview": "Overview",
-  "financialBalanceAnalysis": "Analysis",
-  "financialBalanceCurrentSituation": "Current situation",
-  "financialBalanceMarketsAndCouriers": "Markets and Couriers",
-  "financialBalanceNegativeState": "Negative state",
-  "financialBalancePositiveState": "Positive state",
-  "financialBalanceCashbox": "Cashbox",
-  "financialBalanceCashAvailable": "Available funds",
-  "financialBalanceMarkets": "Markets",
-  "financialBalanceMarketsDebt": "(-) We owe",
-  "financialBalanceCouriers": "Couriers",
-  "financialBalanceCouriersMoney": "(+) Our money",
-  "financialBalanceReceivable": "Money in transit",
-  "financialBalanceReceivableHint": "(+) With couriers, branches and cargo",
   "cashDetailTypeUnknown": "Cashbox type could not be determined — the payment form is hidden for safety. Open the cashbox again from the list.",
   "cashDetailNotMarketCashbox": "This is not a market cashbox — the payment was not sent.",
-  "financialBalanceIndicators": "Financial indicators",
-  "financialBalanceDistribution": "Distribution",
-  "financialBalanceTotal": "Total balance",
-  "financialBalanceTotalFormula": "Cashbox + Money in transit + Markets",
-  "financialBalanceMarketsSettlement": "Settlements with markets",
-  "financialBalanceCouriersSettlement": "Settlements with couriers",
-  "financialBalanceListEmpty": "No data found",
-  "financialBalanceCountSuffix": "items",
-  "financialBalancePositiveImpact": "Positive impact (+)",
-  "financialBalanceNegativeImpact": "Negative impact (-)",
-  "financialBalanceNetChange": "Net change",
-  "financialBalanceTransactionsCount": "{{count}} transactions",
-  "financialBalancePositiveSources": "Positive source drivers",
-  "financialBalanceNegativeSources": "Negative source drivers",
-  "financialBalanceTopTransactions": "Transactions with the biggest impact",
-  "financialBalanceTotalTransactions": "{{count}} total",
-  "financialBalanceComingSoon": "UI for this section will be added in the next stage.",
-  "financialBalanceDate": "Date",
-  "financialBalanceSource": "Source",
-  "financialBalanceSourceType": "Source type",
-  "financialBalanceAllSources": "All sources",
-  "financialBalanceChange": "Change",
-  "financialBalancePreviousBalance": "Previous balance",
-  "financialBalanceNextBalance": "Next balance",
-  "financialBalanceComment": "Comment",
-  "financialBalanceHistoryEmpty": "No history data found",
-  "financialBalanceSourceProfit": "Post profit",
-  "financialBalanceSourceExtraCost": "Extra cost",
   "financialBalanceSourceManualIncome": "Manual income",
   "financialBalanceSourceManualExpense": "Manual expense",
   "financialBalanceSourceSalary": "Salary",
   "financialBalanceSourceCorrection": "Correction (rollback)",
   "financialBalanceSourceBills": "Invoices",
-  "allInfo": "All information",
   "report": "Report",
-  "exportReport": "Export report",
   "commentPlaceholder": "Comment...",
   "paymentType": "Payment type",
-  "paymentTypePlaceholder": "payment type",
-  "closeShiftComment": "Shift closing comment",
   "amountPositiveValidation": "Amount must be greater than 0",
   "loadingLabel": "Loading...",
-  "cancelLabel": "Cancel",
-  "mainSection": "Main cashbox",
-  "incomeSection": "Income",
   "expenseSection": "Expense",
   "fromWhere": "From where",
   "toWhere": "To where",
   "summaryIncome": "Total income",
   "summaryExpense": "Total expense",
   "totalBalance": "Total balance",
-  "balanceVisible": "Balance visible",
-  "balanceHidden": "Balance hidden",
-  "cashboxUser": "Cashbox user",
-  "transactionStatus": "Status",
   "delivery": "Delivery",
-  "orderProducts": "Products",
-  "financeHistory": "Financial history",
   "fillSuccess": "Cashbox filled successfully",
   "fillError": "An error occurred while filling the cashbox",
   "spendSuccess": "Expense saved successfully",
   "spendError": "An error occurred while saving the expense",
   "closeShiftSuccess": "Shift closed successfully",
   "closeShiftError": "An error occurred while closing the shift",
-  "currency": "UZS",
-  "mainCashboxReport": "Main cashbox report"
-  ,"marketCashboxLabel": "Market cashbox"
-  ,"courierCashboxLabel": "Courier cashbox"
-  ,"payAction": "Pay"
-  ,"receiveAction": "Receive"
+  "currency": "UZS"
   ,"userFallback": "User"
-  ,"receiveFromCourier": "Receive from courier"
-  ,"receiveFromBranchManager": "Receive from branch manager"
   ,"payToMarket": "Pay to market"
   ,"paySalary": "Pay salary"
   ,"monthlySalary": "Monthly salary"
@@ -223,51 +175,26 @@
   ,"mainCard": "Main card"
   ,"selectCard": "Select a card"
   ,"cardRequired": "Please select a card"
-  ,"courierShort": "Courier"
-  ,"branchManagerShort": "Branch manager"
-  ,"marketShort": "Market"
-  ,"expenseShort": "Expense"
-  ,"incomeShort": "Income"
-  ,"salaryShort": "Salary"
   ,"excel": "Excel"
   ,"sell": "Sale"
   ,"cancelOperation": "Cancel"
   ,"extraCost": "Extra cost"
-  ,"transferOption": "Transfer"
-  ,"toMarketTransferOption": "Transfer to store"
   ,"marketRequired": "Please select a market"
   ,"receivePaymentSuccess": "Payment from courier was accepted successfully"
   ,"receivePaymentError": "Failed to accept payment from courier"
   ,"marketPaymentSuccess": "Payment to market was sent successfully"
   ,"marketPaymentError": "Failed to send payment to market"
-  ,"selectMainBranchDescription": "Select HQ to transfer funds"
-  ,"branchMainCashboxLabel": "HQ cashbox"
-  ,"payToMainDescription": "Transfer funds from branch cashbox to the main cashbox"
-  ,"payToMainAction": "Transfer to HQ"
   ,"branchToMainPaymentSuccess": "Payment was transferred to HQ successfully"
   ,"branchToMainPaymentError": "Failed to transfer payment to HQ"
   ,"branchToMainSource": "Branch to HQ transfer"
   ,"mainBranchFallback": "HQ branch"
   ,"unknown": "Unknown"
-  ,"cardHolder": "Card holder"
-  ,"transferSourceRequired": "Select a transfer source"
-  ,"transferCourierLabel": "Courier cashbox"
-  ,"transferCourierPlaceholder": "Select a courier"
-  ,"transferMarketLabel": "Market cashbox"
-  ,"transferMarketPlaceholder": "Select a market"
-  ,"customerRole": "Customer"
-  ,"adminRole": "Admin"
-  ,"superAdminRole": "Super Admin"
-  ,"clickPayment": "Click"
-  ,"paymePayment": "Payme"
   ,"statusSold": "Sold"
   ,"statusCancelled": "Cancelled"
   ,"statusPaid": "Paid"
   ,"statusPartlyPaid": "Partly paid"
   ,"statusNew": "New"
   ,"statusReceived": "Received"
-  ,"deliveryAddress": "To address"
-  ,"deliveryCenter": "To center"
   ,"region": "Region"
   ,"no": "No"
   ,"currencyAmountSuffix": "UZS"
@@ -286,33 +213,666 @@
   ,"openShiftTitle": "Open shift"
   ,"openShiftSuccess": "Shift opened"
   ,"openShiftError": "An error occurred while opening the shift"
-  ,"financialBalanceCreatedBy": "Entered by"
-  ,"financialBalanceAutomatic": "Automatic"
-  ,"financialBalanceOrder": "Order"
-  ,"financialBalanceOrderLink": "Order #{{id}}"
-  ,"financialBalanceCurrent": "Current balance"
-  ,"financialBalanceCurrentHint": "Current ledger balance (regardless of period)"
-  ,"financialEntryAdd": "Add entry"
-  ,"financialEntryTitle": "Add a manual entry"
-  ,"financialEntryDirection": "Direction"
-  ,"financialEntryDirectionIncome": "Income (+)"
-  ,"financialEntryDirectionExpense": "Expense (−)"
-  ,"financialEntryAmount": "Amount"
   ,"financialEntryAmountRequired": "Enter the amount"
   ,"financialEntryAmountTooLarge": "The amount is too large"
   ,"financialEntryCommentRequired": "Write the reason (at least 3 characters)"
-  ,"financialEntryCommentPlaceholder": "For example: office rent, October"
-  ,"financialEntryPreview": "Effect on balance: {{amount}}"
-  ,"financialEntrySubmit": "Save"
   ,"financialEntryCreated": "Entry added"
   ,"financialEntryFailed": "Could not save the entry"
-  ,"paymentConfirmTitle": "Confirm the payment?"
-  ,"paymentConfirmMessage": "{{amount}} UZS — {{action}}: {{target}} ({{method}}). Once confirmed the money is transferred and cannot be undone."
   ,"salaryConfirmTitle": "Confirm the salary payment"
   ,"salaryConfirmDescription": "Check the details — once confirmed, the amount leaves the cashbox immediately and cannot be undone."
+  ,"v2MainCashbox": {
+    "back": "Payments",
+    "title": "Main cashbox",
+    "subtitle": "Main cashbox management",
+    "subtitleShiftOpen": "Main cashbox management · shift open",
+    "subtitleShiftClosed": "Main cashbox management · shift closed",
+    "subtitleBranch": "Main cashbox management · {{branch}}",
+    "exportExcel": "Export to Excel",
+    "openShift": "Open shift",
+    "closeShift": "Close shift",
+    "balance": {
+      "title": "Cashbox balance",
+      "subtitle": "As of today, {{time}} · chart: end-of-day balance",
+      "subtitleBranch": "As of today, {{time}} · {{branch}}",
+      "hide": "Hide balance",
+      "show": "Show balance",
+      "view": "Cashbox balance view",
+      "chart": "Chart",
+      "table": "Table",
+      "total": "Total balance",
+      "todayNet": "today's net flow",
+      "cash": "Cash",
+      "card": "Card (Click)",
+      "split": "Cash {{cash}} ({{cashShare}}), card {{card}} ({{cardShare}})",
+      "chartLabel": "Main cashbox end-of-day balance, {{from}} – {{to}}: from {{first}} to {{last}}",
+      "endOfDay": "end of day",
+      "income": "Income",
+      "expense": "Expense",
+      "today": "Today",
+      "point": "{{date}}: end of day {{balance}}, income {{income}}, expense {{expense}}",
+      "chartEmpty": "Not enough data for the chart",
+      "chartEmptyHint": "At least two days of balance are needed",
+      "loadError": "Could not load the cashbox data",
+      "loading": "Loading the cashbox balance",
+      "tableLabel": "End-of-day balance",
+      "columns": {
+        "date": "Date",
+        "endOfDay": "End of day",
+        "income": "Income",
+        "expense": "Expense"
+      }
+    },
+    "actions": {
+      "title": "Quick actions",
+      "subtitle": "Working with the main cashbox",
+      "receive": "Receive money",
+      "receiveHint": "From a branch or an HQ courier",
+      "receiveCourier": "Receive from a courier",
+      "receiveCourierHint": "Collect money from a branch courier's cashbox",
+      "payMarket": "Pay a market",
+      "payMarketHint": "Choose a market and pay",
+      "spend": "Cashbox expense",
+      "spendHint": "Expense operation",
+      "fill": "Fill the cashbox",
+      "fillHint": "Income operation",
+      "shiftOpen": "Shift open · since {{time}}",
+      "shiftOpenNoTime": "Shift open",
+      "shiftOpenedBy": "Opened by: {{name}}",
+      "shiftClosed": "Shift closed"
+    },
+    "periods": {
+      "label": "Income and expense by period",
+      "today": "Today",
+      "week": "This week",
+      "month": "This month",
+      "netFlow": "net flow",
+      "netFlowKept": "net flow · {{percent}} of income kept",
+      "income": "Income",
+      "expense": "Expense",
+      "summary": "{{period}}: income {{income}}, expense {{expense}}, net {{net}}",
+      "mobileTitle": "Income and expense",
+      "mobileSubtitle": "{{period}} · {{range}}",
+      "segment": "Period",
+      "netChange": "net change"
+    },
+    "sources": {
+      "title": "Where the money came from and went",
+      "subtitle": "By source type · This month, {{range}}",
+      "income": "Income sources",
+      "expense": "Expense destinations",
+      "noIncome": "No income this month",
+      "noExpense": "No expense this month",
+      "note": "Grouped by the «Source» column of the operation history; details are in the table below",
+      "loadError": "Could not load the data"
+    },
+    "history": {
+      "title": "Operation history",
+      "count": "{{n}} operations",
+      "allTime": "all time",
+      "dateFilter": "Filter by date",
+      "clearFilters": "Clear filters",
+      "updating": "Updating data by filter…",
+      "label": "Operation history",
+      "cardsLabel": "Operations",
+      "columns": {
+        "date": "Date",
+        "createdBy": "Created by",
+        "source": "Source",
+        "paymentType": "Payment type",
+        "operation": "Operation",
+        "amount": "Amount",
+        "detail": "Details"
+      },
+      "balanceAfter": "Balance: {{amount}}",
+      "empty": "No operations found",
+      "emptyDescription": "The main cashbox has no operations yet",
+      "filteredEmptyDescription": "No operations in the selected date range",
+      "loadError": "Could not load the operations",
+      "loading": "Loading operations"
+    },
+    "form": {
+      "fillTitle": "Fill the cashbox",
+      "spendTitle": "Cashbox expense",
+      "fillSubtitle": "Income operation · Main cashbox",
+      "spendSubtitle": "Expense operation · Main cashbox",
+      "amount": "Amount",
+      "paymentType": "Payment type",
+      "comment": "Comment",
+      "cash": "Cash",
+      "card": "Card (Click)",
+      "fillPlaceholder": "For example: cash withdrawn from the bank account",
+      "spendPlaceholder": "For example: office rent, October",
+      "fillCommentRequired": "A comment is required — write where the money came from",
+      "spendCommentRequired": "A comment is required — write what the money was spent on",
+      "typeRequired": "Choose the payment type",
+      "fillSubmit": "Save income",
+      "spendSubmit": "Save expense",
+      "cancel": "Cancel",
+      "saving": "Saving…"
+    },
+    "confirm": {
+      "fillTitle": "Confirm the income",
+      "spendTitle": "Confirm the expense",
+      "description": "Check the details — once confirmed, the amount shows in the cashbox immediately.",
+      "cashbox": "Cashbox",
+      "mainCashbox": "Main cashbox",
+      "comment": "Comment",
+      "submit": "Confirm"
+    },
+    "shift": {
+      "title": "Close shift",
+      "subtitle": "The current cashbox shift will be finished",
+      "current": "Current shift",
+      "since": "since {{time}}",
+      "openedBy": "Opened by",
+      "cashboxTotal": "Amount in the cashbox",
+      "excelNote": "When you close the shift, an Excel report is downloaded automatically.",
+      "comment": "Comment",
+      "commentPlaceholder": "Comment about the shift...",
+      "cancel": "Cancel",
+      "submit": "Close shift",
+      "closing": "Closing…"
+    },
+    "notify": {
+      "alreadyRecorded": "This operation has already been recorded — the cashbox was refreshed, please check the amount",
+      "outcomeUnknown": "The server did not respond — the operation may have gone through. The cashbox was refreshed, please check the amount: resending this same operation will not record it twice"
+    }
+  }
+  ,"v2Balance": {
+    "title": "Balance",
+    "description": "Overall balance across the cashbox, money in transit and markets",
+    "export": "Export to Excel",
+    "addEntry": "Add entry",
+    "kpi": {
+      "label": "Balance indicators",
+      "cash": "Cashbox",
+      "receivable": "Money in transit",
+      "marketsDebt": "Owed to markets",
+      "total": "Overall balance",
+      "positive": "Positive",
+      "negative": "Negative",
+      "formula": "Overall balance = cashbox + money in transit − owed to markets."
+    },
+    "tabs": { "label": "Balance sections", "overview": "Overview", "history": "History", "analysis": "Analysis" },
+    "state": {
+      "loading": "Loading the balance",
+      "loadFailed": "Could not load the balance",
+      "empty": "No balance data",
+      "emptyDescription": "The server returned no balance indicators. Try again a little later."
+    },
+    "composition": {
+      "title": "Balance structure",
+      "subtitle": "Where the money is and whom it belongs to · as of {{time}}",
+      "positive": "Positive state",
+      "negative": "Negative state",
+      "where": "Where the money is",
+      "whereSub": "Cashbox and money in transit",
+      "cash": "Cashbox",
+      "chain": "With couriers and branches",
+      "provider": "With cargo",
+      "inTransit": "Money in transit",
+      "owner": "Whom it belongs to",
+      "ownerSub": "Markets' and ours",
+      "marketsDebt": "Owed to markets",
+      "total": "Overall balance",
+      "debtExceeds": "The debt to markets exceeds the money on hand — the overall balance is negative.",
+      "segment": "{{name}} {{value}} ({{percent}})",
+      "note": "Both bars are equal — {{total}}. Money in transit: sold but not yet in the cashbox — in the courier and branch chain and with cargo."
+    },
+    "markets": {
+      "title": "Settlements with markets",
+      "subtitle": "What we owe markets · by debt",
+      "share": "{{name}}: share of the debt",
+      "empty": "Nothing is owed to markets"
+    },
+    "couriers": {
+      "title": "Settlements with couriers",
+      "subtitle": "The part of money in transit held by couriers",
+      "share": "{{name}}: share of money in transit",
+      "negative": "negative balance",
+      "footNote": "Share of the positive balances total: {{positive}}",
+      "footDebtor": "in debt {{negative}}",
+      "empty": "Couriers hold no money"
+    },
+    "rank": {
+      "count": "{{value}}",
+      "total": "Total",
+      "showMore": "Show more · {{value}}",
+      "showLess": "Show less"
+    },
+    "history": {
+      "filters": "History filters",
+      "source": "Source type",
+      "allSources": "All sources",
+      "date": "Date range",
+      "title": "Entries",
+      "subtitle": "Newest first · each entry shows the balance before → after",
+      "count": "{{value}}",
+      "listLabel": "Balance history",
+      "cardsLabel": "Entries",
+      "loading": "Loading entries",
+      "col": {
+        "date": "Date",
+        "source": "Source",
+        "change": "Change",
+        "balance": "Ledger balance",
+        "balanceSr": ": before → after",
+        "actor": "Entered by",
+        "comment": "Comment",
+        "open": "Details"
+      },
+      "manual": "Manual entry",
+      "automatic": "Automatic",
+      "order": "Order №{{id}}",
+      "from": "from",
+      "balanceLine": "Ledger balance: {{value}}",
+      "open": "Open details: {{source}} ({{date}})",
+      "pagination": "{{from}}–{{to}} of {{total}} entries",
+      "empty": "No entries yet",
+      "emptyDescription": "Entries come from sales, expenses and manual records.",
+      "filteredEmpty": "No entries found",
+      "filteredEmptyDescription": "No entries match the selected filters.",
+      "clearFilters": "Clear filters"
+    },
+    "analysis": {
+      "period": "Analysis period",
+      "periodSeg": "Period",
+      "today": "Today",
+      "week": "This week",
+      "month": "This month",
+      "all": "All",
+      "allTime": "all time",
+      "loading": "Loading the analysis",
+      "flow": {
+        "title": "Ledger balance movement",
+        "subtitle": "From the start of the period until now: what each source added and removed · {{period}}",
+        "view": "Ledger balance movement view",
+        "chart": "Chart",
+        "table": "Table",
+        "current": "Ledger balance",
+        "currentHint": "current balance",
+        "positive": "Positive impact (+)",
+        "positiveHint": "income in the selected period",
+        "negative": "Negative impact (−)",
+        "negativeHint": "expenses in the selected period",
+        "net": "Net change",
+        "netHint": "{{value}} transactions",
+        "start": "Period start",
+        "end": "Now",
+        "income": "Income · {{value}}",
+        "expense": "Expenses · {{value}}",
+        "legendTotal": "Balance",
+        "legendUp": "Income (+)",
+        "legendDown": "Expense (−)",
+        "note": "Period start = current balance − net change",
+        "pastNote": "The period ends before today — the start and end balances are not shown",
+        "aria": "Ledger balance, {{period}}: {{steps}}",
+        "step": "Step",
+        "change": "Change",
+        "balance": "Balance",
+        "empty": "No entries in this period",
+        "emptyDescription": "Choose another period."
+      },
+      "positive": {
+        "title": "Sources pulling the balance up",
+        "total": "Total",
+        "sources": "{{n}} sources",
+        "share": "{{value}} of income",
+        "shareAria": "{{name}}: {{value}} of income",
+        "empty": "No income in this period"
+      },
+      "negative": {
+        "title": "Sources pulling the balance down",
+        "total": "Total",
+        "sources": "{{n}} sources",
+        "share": "{{value}} of expenses",
+        "shareAria": "{{name}}: {{value}} of expenses",
+        "empty": "No expenses in this period"
+      },
+      "top": {
+        "title": "Transactions with the biggest impact",
+        "subtitle": "Selected period, largest amount first",
+        "count": "{{value}} in total",
+        "listLabel": "Transactions with the biggest impact",
+        "loading": "Loading transactions",
+        "col": {
+          "index": "#",
+          "source": "Source",
+          "direction": "Direction",
+          "actor": "Entered by",
+          "date": "Date",
+          "amount": "Amount"
+        },
+        "income": "Income",
+        "expense": "Expense",
+        "pagination": "{{from}}–{{to}} of {{total}} transactions",
+        "empty": "No transactions",
+        "emptyDescription": "Nothing was recorded in the ledger in the selected period."
+      }
+    },
+    "entry": {
+      "title": "Add a manual entry",
+      "source": "Source type",
+      "direction": "Direction",
+      "income": "Income (+)",
+      "expense": "Expense (−)",
+      "amount": "Amount",
+      "impact": "Effect on balance",
+      "comment": "Comment",
+      "commentPlaceholder": "For example: office rent, October",
+      "commentHint": "Write the reason — at least 3 characters.",
+      "save": "Save"
+    },
+    "detail": {
+      "manual": "Manual entry",
+      "automatic": "Automatic",
+      "change": "Change",
+      "income": "Income",
+      "expense": "Expense",
+      "date": "Date",
+      "previous": "Previous balance",
+      "next": "Next balance",
+      "actor": "Entered by",
+      "order": "Order",
+      "orderLink": "№{{id}}",
+      "notLinked": "Not linked",
+      "comment": "Comment",
+      "close": "Close"
+    },
+    "sources": {
+      "sell_profit": "Post profit",
+      "sell_extra_cost": "Extra cost",
+      "cancel_extra_cost": "Extra cost",
+      "manual_income": "Manual income",
+      "manual_expense": "Manual expense",
+      "salary": "Salary",
+      "correction": "Correction",
+      "bills": "Invoices"
+    }
+  }
+  ,"v2Common": {
+    "income": "Income",
+    "expense": "Expense",
+    "inactive": "Inactive",
+    "orderNumber": "Order №{{id}}",
+    "openDetail": "Open details: {{title}} ({{date}})",
+    "detail": "Details",
+    "paginationOperations": "{{from}}–{{to}} of {{total}} operations",
+    "paymentMethod": {
+      "cash": "Cash",
+      "transfer": "Transfer",
+      "cardClick": "Card (Click)",
+      "toMarket": "Transfer to market",
+      "payme": "Payme"
+    },
+    "cashbox": {
+      "main": "Main cashbox",
+      "courier": "Courier cashbox",
+      "market": "Market cashbox",
+      "branch": "Branch cashbox"
+    },
+    "sourceType": {
+      "courierPayment": "Courier payment",
+      "courierToBranch": "Courier to branch transfer",
+      "marketPayment": "Market payment",
+      "hqToMarket": "HQ to market transfer",
+      "branchToMain": "Branch to HQ transfer",
+      "manualIncome": "Manual income",
+      "manualExpense": "Manual expense",
+      "correction": "Correction",
+      "salary": "Salary",
+      "sell": "Sale",
+      "cancel": "Cancellation",
+      "extraCost": "Extra cost",
+      "bills": "Invoices"
+    },
+    "roles": {
+      "courier": "Courier",
+      "market": "Market",
+      "manager": "Manager",
+      "registrator": "Registrar",
+      "admin": "Admin",
+      "superadmin": "Superadmin",
+      "customer": "Customer",
+      "branch": "Branch cashbox",
+      "main": "Main cashbox"
+    }
+  }
+  ,"v2HistoryDetail": {
+    "incomeTitle": "Income operation",
+    "expenseTitle": "Expense operation",
+    "operationTitle": "Operation",
+    "subtitle": "Operation history · {{date}}",
+    "amount": "Amount",
+    "balanceAfter": "Balance after the operation",
+    "sourceType": "Source type",
+    "cashboxType": "Cashbox type",
+    "from": "From",
+    "to": "To",
+    "paymentType": "Payment method",
+    "paymentDate": "Payment date",
+    "comment": "Comment",
+    "linkedOrder": "Linked order",
+    "orderNumber": "№{{id}}",
+    "openOrder": "Open order №{{id}}",
+    "market": "Market",
+    "status": "Status",
+    "district": "District",
+    "address": "Address",
+    "customerPhone": "Customer phone",
+    "orderTotal": "Total amount",
+    "toBePaid": "To be paid",
+    "paid": "Paid",
+    "close": "Close",
+    "loading": "Loading details",
+    "loadError": "Could not load the details"
+  }
+  ,"v2Picker": {
+    "select": "Select",
+    "cancel": "Cancel",
+    "total": "total {{amount}}",
+    "loading": "Loading the list",
+    "noResults": "Nothing found",
+    "empty": "No outstanding balances",
+    "loadError": "Could not load the list",
+    "receive": {
+      "title": "To be received",
+      "searchPlaceholder": "Name, phone or branch",
+      "searchLabel": "Search branch managers or couriers",
+      "listLabel": "Cashboxes to receive from",
+      "branches": "Branches",
+      "hqCouriers": "HQ couriers"
+    },
+    "give": {
+      "title": "To be given",
+      "description": "Select the market to pay",
+      "summary": "{{count}} markets, total {{amount}}",
+      "searchPlaceholder": "Search...",
+      "searchLabel": "Search markets by name",
+      "listLabel": "Markets"
+    },
+    "courier": {
+      "title": "Select a courier",
+      "description": "To be received: total {{amount}}",
+      "descriptionShort": "To be received",
+      "searchPlaceholder": "Name, phone or district",
+      "searchLabel": "Search couriers",
+      "listLabel": "Couriers",
+      "group": "{{branch}} couriers · {{count}}",
+      "groupFallback": "Couriers · {{count}}"
+    }
+  }
+  ,"v2Overview": {
+    "receive": "Receive money",
+    "payMarket": "Pay a market",
+    "transferToHq": "Transfer to HQ",
+    "receiveFromCourier": "Receive from a courier",
+    "kpiLabel": "Cashbox indicators",
+    "cashboxAmount": "Amount in cashbox",
+    "toReceive": "To be received",
+    "toGive": "To be given",
+    "mainCashbox": "Main cashbox",
+    "mainCashboxShiftOpen": "Main cashbox · shift open",
+    "mainCashboxShiftClosed": "Main cashbox · shift closed",
+    "cash": "Cash",
+    "card": "Card",
+    "cashSplit": "Cash {{cash}}, card {{card}}",
+    "branches": "Branches",
+    "hqCouriers": "HQ couriers",
+    "receiveSplit": "Branches {{branches}}, HQ couriers {{couriers}}",
+    "courierCount": "From branch couriers · held by {{count}} couriers",
+    "courierCountShort": "held by {{count}} couriers",
+    "otherCouriers": "Others",
+    "courierShare": "Courier shares: {{list}}",
+    "giveMeta": "To {{hq}} · {{percent}} of the cashbox",
+    "giveMetaHq": "To HQ · {{percent}} of the cashbox",
+    "giveMeter": "Amount to be given relative to the cashbox amount",
+    "remains": "Left in cashbox: {{amount}}",
+    "enough": "Enough",
+    "notEnough": "Not enough",
+    "cashboxSummary": "Cashbox summary",
+    "couriers": {
+      "title": "Money held by couriers",
+      "subtitle": "To be received · total {{amount}}",
+      "listLabel": "Money in courier cashboxes",
+      "share": "{{name}}: share of money held",
+      "inactive": "Inactive",
+      "debtor": "in debt",
+      "inactiveDebtor": "Inactive · in debt",
+      "note": "{{count}} more couriers hold no money · share = courier amount / sum of positive balances",
+      "noteShare": "Share = courier amount / sum of positive balances",
+      "all": "All couriers · {{count}}",
+      "empty": "Couriers hold no money",
+      "loadError": "Could not load the couriers"
+    },
+    "history": {
+      "label": "Operation history",
+      "tabs": "Operation type",
+      "all": "All",
+      "filters": "History filters",
+      "date": "Payment date",
+      "sourceType": "Source type",
+      "cashboxType": "Cashbox type",
+      "createdBy": "Created by",
+      "columns": {
+        "date": "Date",
+        "createdBy": "Created by",
+        "source": "Source",
+        "cashbox": "Cashbox",
+        "operation": "Operation",
+        "amount": "Amount",
+        "detail": "Details"
+      },
+      "cardsLabel": "Operations",
+      "loading": "Loading operations",
+      "empty": "No operations found",
+      "emptyDescription": "Cashbox income and expenses appear here",
+      "filteredEmptyDescription": "No operations match the selected filters",
+      "loadError": "Could not load the operations"
+    }
+  }
+  ,"v2CashDetail": {
+    "back": "Payments",
+    "header": {
+      "hqCashbox": "HQ cashbox",
+      "branchFallback": "Branch cashbox",
+      "hqCourier": "HQ courier",
+      "branchCourier": "{{branch}} courier",
+      "manager": "Manager: {{name}}",
+      "hqTransfer": "Transfer money from the {{branch}} cashbox to HQ",
+      "hqTransferFallback": "Transfer money from the branch cashbox to HQ"
+    },
+    "settlement": {
+      "title": "Settlement status",
+      "counterparty": "Counterparty: {{name}}",
+      "receiver": "Receiver: {{name}}",
+      "hide": "Hide amounts",
+      "splitLabel": "Amount in cashbox {{total}}: cash {{cash}} ({{cashShare}}), transfer {{card}} ({{cardShare}})",
+      "versusCashbox": "Compared with cash on hand",
+      "enough": "Cashbox is enough",
+      "notEnough": "Cashbox is not enough",
+      "meterLabel": "Amount to be given compared with the cashbox amount",
+      "payableShare": "To be given · {{share}}",
+      "remains": "Stays in cashbox · {{amount}}"
+    },
+    "form": {
+      "courierTitle": "Receive from courier",
+      "courierToMain": "Money moves from the courier cashbox to the main cashbox",
+      "courierToBranch": "Money moves from the courier cashbox to the branch cashbox",
+      "marketTitle": "Pay the market",
+      "marketSubtitle": "Money is transferred from the main cashbox to the market",
+      "marketInfo": "The payment closes the oldest orders first, then the newer ones.",
+      "branchTitle": "Receive from branch",
+      "branchSubtitle": "Money moves from the branch cashbox to the main cashbox",
+      "hqTitle": "Transfer to HQ",
+      "hqSubtitle": "Transfer money from the branch cashbox to the HQ cashbox",
+      "amount": "Amount",
+      "limitHint": "At most {{amount}} — the amount to be received",
+      "receivableHint": "To be received: {{amount}}",
+      "payableHint": "To be given: {{amount}}",
+      "payableCashboxHint": "To be given: {{amount}} · in cashbox {{cashbox}}",
+      "paymentType": "Payment type",
+      "paymentTypeRequired": "Choose a payment type",
+      "market": "Market",
+      "marketPlaceholder": "Select a market",
+      "marketHint": "The receive button stays disabled until a market is selected",
+      "comment": "Comment",
+      "commentPlaceholder": "Comment...",
+      "receive": "Receive",
+      "receiveAmount": "Receive {{amount}}",
+      "pay": "Pay",
+      "hq": "Transfer to HQ",
+      "hqAmount": "Transfer {{amount}} to HQ",
+      "loading": "Loading…"
+    },
+    "confirm": {
+      "title": "Confirm the payment",
+      "description": "Check the details — once confirmed, the amount shows up in both cashboxes immediately.",
+      "confirm": "Confirm",
+      "comment": "Comment",
+      "market": "Market"
+    },
+    "history": {
+      "title": "Operations history",
+      "courier": "Courier cashbox income and expenses",
+      "market": "Market cashbox income and expenses",
+      "branch": "Branch cashbox income and expenses",
+      "named": "{{name}} cashbox income and expenses",
+      "excel": "Export to Excel",
+      "tabsLabel": "History type",
+      "all": "All history",
+      "payments": "Payment transfers",
+      "empty": "No operations found"
+    },
+    "movement": {
+      "title": "Balance movement",
+      "courier": "Balance after each operation: sales raise it, handovers bring it to zero",
+      "market": "Balance after each operation: sales raise it, payments to the market lower it",
+      "branch": "Balance after each operation: couriers hand over money, transfers to HQ lower it",
+      "viewLabel": "Balance movement view",
+      "chart": "Chart",
+      "table": "Table",
+      "start": "At period start",
+      "income": "Income",
+      "expense": "Expense",
+      "now": "Now",
+      "chartLabel": "Balance movement: at period start {{start}}, income {{income}}, expense {{expense}}, now {{now}}",
+      "balance": "balance",
+      "date": "Date",
+      "source": "Source",
+      "change": "Change",
+      "balanceAfter": "Balance",
+      "tableLabel": "Balance movement table"
+    },
+    "list": {
+      "orderTitle": "{{title}} · #{{id}}",
+      "courier": "Courier: {{name}}",
+      "rowLabel": "{{title}}, {{direction}} {{amount}}, {{date}}",
+      "rollback": "Correction"
+    }
+  }
   ,"paymentAckDisputed": "Disputed"
   ,"paymentAckDisputedHint": "The courier marked the bot receipt as wrong"
   ,"paymentAckConfirmed": "Confirmed"
   ,"paymentAckConfirmedHint": "The courier confirmed the bot receipt"
-  ,"historyCorrectionBadge": "Correction"
 }

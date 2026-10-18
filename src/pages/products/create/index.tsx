@@ -1,487 +1,388 @@
-// Migrated to React Hook Form
-import {
-  memo,
-  useState,
-  useEffect,
-  useMemo,
-  useCallback,
-  useRef,
-} from "react";
-import { Controller, useForm, type Resolver } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
-import * as yup from "yup";
-import { useParams } from "react-router-dom";
-import { Box, Image, X, Trash2, Edit } from "lucide-react";
+// dizayn-v2: superadmin-products-create, admin-products-create, manager-products-create, registrator-products-create, market-products-create
+import { memo, useCallback, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Pencil, Store, Tag, Trash2, TriangleAlert } from "lucide-react";
+import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import Button from "../../../shared/components/button";
-import { Table } from "../../../shared/components/Table/Table";
-import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
-import { useProducts } from "../../../entities/product";
-import { useMarkets } from "../../../entities/markets";
-import PopupConfirm from "../../../shared/components/popupConfirm";
-import i18n from "../../../i18n";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
-import { isInactiveMarketStatus, unwrapMarketPayload } from "../../../shared/lib/marketStatus";
-import BackButton from "../../../shared/ui/BackButton";
+import { PRODUCT_LIST_MAX_LIMIT, useProducts } from "../../../entities/product";
+import { useMarkets } from "../../../entities/markets";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
-import { resolveAssetUrl } from "../../../shared/lib/assetUrl";
+import { cx } from "../../../shared/lib/cx";
+import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { isInactiveMarketStatus, unwrapMarketPayload } from "../../../shared/lib/marketStatus";
 import { notify } from "../../../shared/lib/notify";
+import {
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  EmptyState,
+  ErrorState,
+  Field,
+  IconButton,
+  PageHeader,
+  QueryBoundary,
+  Skeleton,
+  SkeletonTable,
+  TextInput,
+  TONE_SOFT,
+  type DataTableColumn,
+} from "../../../shared/ui/primitives";
+import { getProductImageUrl, getProductList, getProductMarketName, getProductMeta, type Product } from "../model/productView";
+import { usePickedImage } from "../model/usePickedImage";
+import { ProductImageField } from "../ui/ProductImageField";
+import { ProductThumb } from "../ui/ProductThumb";
+import { useDeleteProductConfirm } from "../ui/useDeleteProductConfirm";
 
-interface ExistingProduct {
-  id: number;
-  name: string;
-  image?: string | null;
-  image_url?: string | null;
-  imageUrl?: string | null;
-  photo?: string | null;
-  photo_url?: string | null;
-  file?: string | null;
-  url?: string | null;
-}
+type CreateFormValues = { name: string };
 
-interface CreateProductFormValues {
-  name: string;
-  image: File | null;
-}
+/**
+ * O'ng ro'yxat — sahifalashsiz (maket «Jami N ta»), bitta so'rovda hammasi: `limit` bermasak server 10 tasini
+ * berardi va 11-mahsulot ko'rinmasdi (3qDsJpfW); 500 — server chegarasi.
+ */
+const LIST_PARAMS = { limit: PRODUCT_LIST_MAX_LIMIT };
 
-const createProductSchema: yup.ObjectSchema<CreateProductFormValues> = yup.object({
-  name: yup.string().trim().required(i18n.t("products:validationNameRequired")),
-  image: yup.mixed<File>().nullable().defined(),
-});
-
-// ─── Cell Components ────────────────────────────────────────────────────────────
-
-const getProductImageUrl = (product: ExistingProduct): string | undefined =>
-  resolveAssetUrl(
-    product.image_url
-      ?? product.imageUrl
-      ?? product.image
-      ?? product.photo_url
-      ?? product.photo
-      ?? product.file
-      ?? product.url,
-  );
-
-const ProductNameCell = memo(({ item }: { item: ExistingProduct }) => {
-  const [hasImageError, setHasImageError] = useState(false);
-  const imageUrl = getProductImageUrl(item);
-
-  return (
-    <div className="flex items-center gap-2">
-      {imageUrl && !hasImageError ? (
-        <img
-          src={imageUrl}
-          alt={item.name}
-          className="w-8 h-8 rounded-lg object-cover border border-white/10 bg-main/10"
-          loading="lazy"
-          onError={() => setHasImageError(true)}
-        />
-      ) : (
-        <Box className="w-8 h-8 text-gray-400" />
-      )}
-      <span>{item.name}</span>
-    </div>
-  );
-});
-ProductNameCell.displayName = "ProductNameCell";
-
-
-// ─── Main Component ─────────────────────────────────────────────────────────────
-
+/**
+ * MAHSULOT YARATISH — `/products/create-product/:id` (`:id` — market), dizayn v2.
+ *
+ * Maketlar: `superadmin-products-create` (= admin, menejer, registrator), `market-products-create`.
+ * «← Mahsulotlar», sarlavha: xodim «Yangi mahsulot» + market nomi, market «Mahsulot yaratish» + «Tanlangan market: …».
+ * Ikki ustun (telefonda ustma-ust): chapda forma («Mahsulot ma'lumotlari» / market «Yangi mahsulot»: nom, rasm;
+ * «Tozalash» / «Saqlash»), o'ngda ro'yxat («Market mahsulotlari» + «N ta» / market «Mavjud mahsulotlar» + izoh +
+ * «Jami N ta»): qalam — mahsulot formada tahrirlanadi («Bekor qilish» tahrirdan chiqadi), savat — o'chirish tasdig'i.
+ *
+ * Xulq (avvalgidek): FormData `name` + xodimda `market_id` (yangi mahsulotda) + tanlangan `image`; tahrir — xodim
+ * `PATCH product/:id`, market `PATCH product/my/:id`; nofaol market — ogohlantirish, maydonlar va «Saqlash» o'chiq,
+ * yuborilsa `notify.warning`. Ro'yxat: xodim `GET product/market/:id`, market `GET product/my-products`.
+ */
 const CreateProductPage = () => {
-  const { t } = useTranslation("products");
+  const { t, i18n } = useTranslation("products");
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const navigate = useNavigate();
+  const location = useLocation();
+  const queryClient = useQueryClient();
   const roleState = useSelector((state: RootState) => state.role);
   const profile = useSelector((state: RootState) => state.user.user);
   const isMarketRole = roleState.role === "market";
-  const [preview, setPreview] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<ExistingProduct | null>(null);
-  const [editTarget, setEditTarget] = useState<ExistingProduct | null>(null);
+  const [editTarget, setEditTarget] = useState<Product | null>(null);
+  const [picked, pick] = usePickedImage();
+  const confirmDelete = useDeleteProductConfirm();
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const prevPreviewRef = useRef<string | null>(null);
-
-  const {
-    createProduct,
-    updateProduct,
-    updateMyProduct,
-    useGetByMarketId,
-    useGetMyProducts,
-    deleteProduct,
-  } = useProducts();
+  const { createProduct, updateProduct, updateMyProduct, useGetByMarketId, useGetMyProducts } = useProducts();
   const { id } = useParams<{ id: string }>();
   const marketIdFromState = roleState.id ?? profile?.id;
-  const effectiveMarketId = id ?? marketIdFromState ?? "";
+  const effectiveMarketId = id ?? (marketIdFromState ? String(marketIdFromState) : "");
 
-  const { data: marketD } = useGetByMarketId(
-    effectiveMarketId || undefined,
-    !isMarketRole && Boolean(effectiveMarketId),
-  );
-  const { data: myProductsData } = useGetMyProducts(isMarketRole);
-
-  const marketData = useMemo<ExistingProduct[]>(() => {
-    if (isMarketRole) {
-      const source = myProductsData?.data?.items ?? myProductsData?.data ?? [];
-      return Array.isArray(source) ? source : [];
-    }
-
-    const source = marketD?.data ?? [];
-    return Array.isArray(source) ? source : [];
-  }, [isMarketRole, marketD?.data, myProductsData?.data]);
-
-  const marketName: string | null = useMemo(() => {
-    if (isMarketRole) {
-      return profile?.name ?? roleState.name ?? null;
-    }
-
-    if (!Array.isArray(marketD?.data) || !marketD.data.length) return null;
-    return marketD.data[0]?.market?.name ?? null;
-  }, [isMarketRole, marketD?.data, profile?.name, roleState.name]);
+  // ─── Ro'yxat va market ───────────────────────────────────────────────────────
+  // Xato ro'yxat kartasida (`ErrorState`) — global xabar takrorlanmaydi.
+  const marketListQuery = useGetByMarketId(effectiveMarketId || undefined, !isMarketRole, LIST_PARAMS, {
+    silentError: true,
+  });
+  const myListQuery = useGetMyProducts(isMarketRole, LIST_PARAMS, { keepPreviousData: true, silentError: true });
+  const listQuery = isMarketRole ? myListQuery : marketListQuery;
+  const listResponse = listQuery.data;
+  const rows = useMemo(() => (listResponse === undefined ? undefined : getProductList(listResponse)), [listResponse]);
+  const listTotal = getProductMeta(listResponse, { page: 1, limit: PRODUCT_LIST_MAX_LIMIT })?.total;
 
   const { useGetMarketById } = useMarkets();
   const { data: selectedMarketData, isLoading: isMarketStatusLoading } = useGetMarketById(
     Number(effectiveMarketId),
     !isMarketRole && Boolean(effectiveMarketId),
   );
-  const selectedMarket = unwrapMarketPayload(selectedMarketData);
+  const selectedMarket = unwrapMarketPayload<{ status?: string | null; name?: string | null }>(selectedMarketData);
   const selectedMarketStatus = isMarketRole ? profile?.status : selectedMarket?.status;
   const isInactiveMarket = isInactiveMarketStatus(selectedMarketStatus);
+  const marketName: string | null = isMarketRole
+    ? (profile?.name ?? roleState.name ?? null)
+    : (selectedMarket?.name?.trim() || (rows?.length ? getProductMarketName(rows[0]) : null));
+
+  // ─── Forma ───────────────────────────────────────────────────────────────────
   const {
     control,
-    register,
     handleSubmit,
     reset,
-    setValue,
+    setFocus,
     formState: { errors },
-  } = useForm<CreateProductFormValues>({
-    defaultValues: {
-      name: "",
-      image: null,
-    },
-    resolver: yupResolver(createProductSchema) as Resolver<CreateProductFormValues>,
-  });
+  } = useForm<CreateFormValues>({ defaultValues: { name: "" } });
 
-  const isPending =
-    createProduct.isPending || updateProduct.isPending || updateMyProduct.isPending;
-
-  useEffect(() => {
-    const prev = prevPreviewRef.current;
-    return () => {
-      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
-    };
-  }, [preview]);
-
-  useEffect(() => {
-    prevPreviewRef.current = preview;
-  }, [preview]);
-
-  // ─── Delete Handlers ────────────────────────────────────────────────────
-
-  const handleDeleteRequest = useCallback((product: ExistingProduct) => {
-    setDeleteTarget(product);
-  }, []);
-
-  const handleDeleteConfirm = useCallback(() => {
-    if (!deleteTarget) return;
-    deleteProduct.mutate(deleteTarget.id, {
-      onSuccess: () => setDeleteTarget(null),
-    });
-  }, [deleteTarget, deleteProduct]);
-
-  const handleDeleteCancel = useCallback(() => {
-    setDeleteTarget(null);
-  }, []);
-
-  const handleEdit = useCallback((product: ExistingProduct) => {
-    setEditTarget(product);
-    reset({ name: product.name, image: null });
-    setPreview((current) => {
-      if (current?.startsWith("blob:")) URL.revokeObjectURL(current);
-      return product.image || null;
-    });
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }, [reset]);
-
-  // ─── Table Columns ─────────────────────────────────────────────────────
-
-  const columns = useMemo<ColumnConfig<ExistingProduct>[]>(
-    () => [
-      {
-        key: "id",
-        label: "#",
-        width: "5%",
-        render: (_: number, __: ExistingProduct, index: number) => index + 1,
-      },
-      {
-        key: "name",
-        label: t("name"),
-        width: "45%",
-        render: (_: string, item: ExistingProduct) => (
-          <ProductNameCell item={item} />
-        ),
-      },
-      {
-        key: "actions" as keyof ExistingProduct,
-        label: t("action"),
-        width: "20%",
-        render: (_: unknown, item: ExistingProduct) => (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => handleEdit(item)}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg text-gray-500 transition-colors"
-              aria-label={t("editProductAria")}
-            >
-              <Edit size={18} />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDeleteRequest(item)}
-              className="p-2 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg text-red-500 transition-colors"
-              aria-label={t("deleteProductAria")}
-            >
-              <Trash2 size={18} />
-            </button>
-          </div>
-        ),
-      },
-    ],
-    [handleEdit, handleDeleteRequest, t],
-  );
-
-  const keyExtractor = useCallback((item: ExistingProduct) => item.id, []);
-
-  // ─── Form Handlers ─────────────────────────────────────────────────────
+  const isPending = createProduct.isPending || updateProduct.isPending || updateMyProduct.isPending;
+  const blocked = isMarketStatusLoading || isInactiveMarket;
 
   const resetForm = useCallback(() => {
     setEditTarget(null);
-    reset({
-      name: "",
-      image: null,
-    });
-    setPreview((prev) => {
-      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
-      return null;
-    });
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }, [reset]);
+    reset({ name: "" });
+    pick(null);
+  }, [pick, reset]);
 
-  const handleImageChange = useCallback(
-    (file: File | null) => {
-      if (!file) return;
+  const handleEdit = useCallback(
+    (product: Product) => {
+      setEditTarget(product);
+      reset({ name: product.name });
+      pick(null);
+      // Telefonda forma ro'yxatdan yuqorida — fokus nom maydoniga (ko'rinishga ham shu olib keladi).
+      window.requestAnimationFrame(() => setFocus("name"));
+    },
+    [pick, reset, setFocus],
+  );
 
-      setPreview((prev) => {
-        if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
-        return URL.createObjectURL(file);
+  const handleDelete = useCallback(
+    async (product: Product) => {
+      if (!(await confirmDelete(product, getProductMarketName(product) ?? marketName))) return;
+      if (editTarget?.id === product.id) resetForm();
+      // `deleteProduct` faqat `[products]` ni yangilaydi — xodim ro'yxati (`["market", id, …]`) ham yangilansin.
+      void queryClient.invalidateQueries({ queryKey: ["market"] });
+      notify.success(t("deleteSuccess"));
+    },
+    [confirmDelete, editTarget?.id, marketName, queryClient, resetForm, t],
+  );
+
+  const onSubmit = handleSubmit(async ({ name }) => {
+    if (isPending || isMarketStatusLoading) return;
+
+    if (isInactiveMarket) {
+      notify.warning(t("inactiveMarketCreateBlocked"));
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("name", name.trim());
+    if (!editTarget && !isMarketRole && effectiveMarketId) {
+      formData.append("market_id", effectiveMarketId);
+    }
+    if (picked) formData.append("image", picked.file);
+
+    try {
+      if (editTarget) {
+        const mutation = isMarketRole ? updateMyProduct : updateProduct;
+        await mutation.mutateAsync({ id: editTarget.id, data: formData });
+        notify.success(t("updateSuccess"));
+      } else {
+        await createProduct.mutateAsync(formData);
+        notify.success(t("createSuccess"));
+      }
+      resetForm();
+    } catch (error) {
+      notify.error(t(editTarget ? "updateError" : "createError"), {
+        description: getBackendErrorMessage(error),
       });
-      setValue("image", file, { shouldValidate: true });
-    },
-    [setValue],
+    }
+  });
+
+  // ─── Ro'yxat ustunlari ───────────────────────────────────────────────────────
+  const actions = useCallback(
+    (product: Product) => (
+      <span className="flex shrink-0 items-center justify-end gap-1 max-md:gap-0">
+        <IconButton
+          size="sm"
+          icon={Pencil}
+          label={t("v2.list.editAria", { name: product.name })}
+          aria-pressed={editTarget?.id === product.id}
+          onClick={() => handleEdit(product)}
+        />
+        <IconButton
+          size="sm"
+          variant="danger"
+          icon={Trash2}
+          label={t("v2.list.deleteAria", { name: product.name })}
+          onClick={() => void handleDelete(product)}
+        />
+      </span>
+    ),
+    [editTarget?.id, handleDelete, handleEdit, t],
   );
 
-  const handleRemoveImage = useCallback(() => {
-    setPreview((prev) => {
-      if (prev?.startsWith("blob:")) URL.revokeObjectURL(prev);
-      return null;
-    });
-    setValue("image", null, { shouldValidate: true });
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }, [setValue]);
+  const nameCell = useCallback(
+    (product: Product) => (
+      <span className="flex min-w-0 items-center gap-3">
+        <ProductThumb product={product} />
+        {/* Tor ekranda «Tahrirlanmoqda» belgisi nom ostiga o'tadi. */}
+        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="min-w-0 font-semibold text-text wrap-break-word">{product.name}</span>
+          {editTarget?.id === product.id ? (
+            <Badge tone="info" size="sm" className="shrink-0">
+              {t("v2.create.editing")}
+            </Badge>
+          ) : null}
+        </span>
+      </span>
+    ),
+    [editTarget?.id, t],
+  );
 
-  const onSubmit = useCallback(
-    async (values: CreateProductFormValues) => {
-      if (isPending || isMarketStatusLoading) return;
-
-      if (isInactiveMarket) {
-        notify.warning(t("inactiveMarketCreateBlocked"));
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("name", values.name.trim());
-      if (!editTarget && !isMarketRole && effectiveMarketId) {
-        formData.append("market_id", effectiveMarketId);
-      }
-      if (values.image) formData.append("image", values.image);
-
-      try {
-        if (editTarget) {
-          const mutation = isMarketRole ? updateMyProduct : updateProduct;
-          await mutation.mutateAsync({ id: editTarget.id, data: formData });
-          notify.success(t("updateSuccess"));
-        } else {
-          await createProduct.mutateAsync(formData);
-          notify.success(t("createSuccess"));
-        }
-        resetForm();
-      } catch (error) {
-        notify.error(t(editTarget ? "updateError" : "createError"), {
-          description: getBackendErrorMessage(error),
-        });
-      }
-    },
-    [
-      createProduct,
-      editTarget,
-      effectiveMarketId,
-      isInactiveMarket,
-      isMarketRole,
-      isMarketStatusLoading,
-      isPending,
-      resetForm,
-      t,
-      updateMyProduct,
-      updateProduct,
+  const columns = useMemo<DataTableColumn<Product>[]>(
+    () => [
+      {
+        id: "index",
+        header: t("v2.list.columns.index"),
+        className: "w-16",
+        cell: (_product, index) => <span className="font-semibold text-text-subtle">{index + 1}</span>,
+      },
+      { id: "name", header: t("v2.list.columns.name"), cell: nameCell },
+      {
+        id: "actions",
+        header: <span className="sr-only">{t("v2.list.columns.actions")}</span>,
+        className: "w-[104px]",
+        cellClassName: "text-right",
+        cell: actions,
+      },
     ],
+    [actions, nameCell, t],
   );
+
+  const renderCard = useCallback(
+    (product: Product) => (
+      <div className="flex min-h-14 items-center gap-3 py-2 pl-4 pr-2 text-sm">
+        <span className="min-w-0 flex-1">{nameCell(product)}</span>
+        {actions(product)}
+      </div>
+    ),
+    [actions, nameCell],
+  );
+
+  // ─── Ko'rinish ───────────────────────────────────────────────────────────────
+  const goBack = () => {
+    // Ro'yxatdan kelingan bo'lsa — o'sha filtrlar bilan orqaga; havoladan ochilgan bo'lsa — ro'yxatga.
+    if (location.key !== "default") navigate(-1);
+    else navigate("/products");
+  };
+
+  const marketLabel = marketName ? (
+    isMarketRole ? (
+      <>
+        {t("v2.create.selectedMarket")} <span className="font-semibold text-text">{marketName}</span>
+      </>
+    ) : (
+      <span className="inline-flex items-center gap-2">
+        <Store size={16} strokeWidth={2} aria-hidden="true" className="shrink-0" />
+        {marketName}
+      </span>
+    )
+  ) : listQuery.isLoading || isMarketStatusLoading ? (
+    <Skeleton width={128} height={14} className="inline-block align-middle" />
+  ) : null;
+
+  const formTitle = editTarget
+    ? t("v2.create.formTitleEdit")
+    : isMarketRole
+      ? t("v2.create.formTitleMarket")
+      : t("v2.create.formTitle");
+
+  const count =
+    listTotal !== undefined
+      ? t(isMarketRole ? "v2.create.countMarket" : "v2.create.count", {
+          value: formatNumberLocalized(listTotal, { language }),
+        })
+      : null;
 
   return (
-    <div className="space-y-8">
-      {/* Product Information Section */}
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className="bg-sidebar dark:bg-maindark rounded-2xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-800"
-      >
-        {/* Header with gradient bar */}
-        <div
-          className="px-6 py-4 flex items-center gap-3"
-          style={{
-            background: 'linear-gradient(90deg, #576adb 0%, #4c5798 100%)',
-          }}
-        >
-          <BackButton
-            className="h-10 min-w-10 shrink-0 rounded-xl border-white/20 bg-white/10 px-2 text-white hover:border-white/35 hover:bg-white/15 hover:text-white dark:bg-white/10 dark:text-white"
-            label=""
-          />
-          <div>
-            <h2 className="text-lg font-bold text-white m-0">
-              {t(editTarget ? "edit" : "createTitle")}
-            </h2>
-            <p className="text-white/60 text-sm m-0">
-              {marketName ?? t("createSubtitleFallback")}
-            </p>
-          </div>
-        </div>
+    <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
+      <PageHeader
+        back={goBack}
+        backLabel={t("v2.create.back")}
+        title={isMarketRole ? t("v2.create.titleMarket") : t("v2.create.title")}
+        description={marketLabel}
+      />
 
-        {/* Form content */}
-        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-          {isInactiveMarket && (
-            <div className="md:col-span-2 rounded-xl border border-amber-400/30 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-700 dark:bg-amber-400/10 dark:text-amber-200">
-              {t("inactiveMarketCreateBlocked")}
-            </div>
-          )}
-          {/* Product Name Input */}
-          <div className="space-y-2">
-            <label className="text-gray-700 dark:text-gray-300 font-medium text-sm">
-              {t("name")} <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <Box
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                size={20}
-              />
-              <input
-                id="product-name"
-                disabled={isPending || isMarketStatusLoading || isInactiveMarket}
-                placeholder={t("namePlaceholder")}
-                {...register("name")}
-                className="w-full bg-gray-50 dark:bg-primarydark text-gray-900 dark:text-white pl-10 pr-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 focus:outline-none focus:border-main transition-colors disabled:opacity-50"
-              />
-            </div>
-            {errors.name && (
-              <p className="text-xs text-red-500">{errors.name.message}</p>
-            )}
-          </div>
-
-          {/* Product Image Upload */}
-          <div className="flex flex-col">
-            <label className="text-sm mb-2 font-medium text-gray-700 dark:text-gray-300">
-              {t("categoryImage")}
-            </label>
-            <Controller
-              control={control}
-              name="image"
-              render={() => (
-                <div className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-2xl h-30 md:h-37.5 flex items-center justify-center cursor-pointer hover:bg-gray-50 dark:hover:bg-primarydark transition overflow-hidden relative">
-                  {preview ? (
-                    <>
-                      <img
-                        src={preview}
-                        alt="preview"
-                        className="h-full w-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={handleRemoveImage}
-                        className="absolute top-2 right-2 p-1 bg-white/80 dark:bg-black/50 rounded-full hover:bg-white dark:hover:bg-black/70 transition-colors"
-                      >
-                        <X size={16} className="text-red-500" />
-                      </button>
-                    </>
-                  ) : (
-                    <label className="w-full h-full flex flex-col items-center justify-center cursor-pointer">
-                      <div className="flex flex-col items-center gap-1">
-                        <Image size={24} className="text-gray-400" />
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {t("uploadImage")}
-                        </span>
-                      </div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handleImageChange(e.target.files?.[0] ?? null)}
-                        ref={fileInputRef}
-                        disabled={isPending || isMarketStatusLoading || isInactiveMarket}
-                      />
-                    </label>
-                  )}
+      <div className="flex min-w-0 flex-wrap items-start gap-6 max-md:gap-4">
+        <form onSubmit={onSubmit} noValidate className="min-w-0 flex-[1_1_340px]">
+          <Card
+            as="div"
+            padding="none"
+            title={formTitle}
+            footer={
+              <div className="flex w-full justify-end gap-3 max-md:grid max-md:grid-cols-2">
+                <Button variant="secondary" onClick={resetForm} disabled={isPending}>
+                  {editTarget ? t("v2.create.cancelEdit") : t("v2.create.clear")}
+                </Button>
+                <Button type="submit" loading={isPending} loadingText={t("v2.create.saving")} disabled={blocked}>
+                  {t("v2.create.save")}
+                </Button>
+              </div>
+            }
+          >
+            <div className="flex flex-col gap-5 p-5 max-md:p-4">
+              {isInactiveMarket ? (
+                <div
+                  role="status"
+                  className={cx("flex min-w-0 items-start gap-3 rounded-xl px-4 py-3 text-sm", TONE_SOFT.warning)}
+                >
+                  <TriangleAlert size={18} aria-hidden="true" className="mt-px shrink-0" />
+                  <span className="min-w-0 text-[13px] leading-[18px] text-text">
+                    {t("inactiveMarketCreateBlocked")}
+                  </span>
                 </div>
-              )}
-            />
-          </div>
-        </div>
+              ) : null}
+              <Controller
+                control={control}
+                name="name"
+                rules={{ validate: (value) => value.trim().length > 0 || t("validationNameRequired") }}
+                render={({ field }) => (
+                  <Field id="product-name" label={t("v2.create.name")} required error={errors.name?.message}>
+                    <TextInput
+                      name={field.name}
+                      ref={field.ref}
+                      value={field.value}
+                      onValueChange={field.onChange}
+                      onBlur={field.onBlur}
+                      placeholder={t("v2.create.namePlaceholder")}
+                      autoComplete="off"
+                      disabled={blocked}
+                      readOnly={isPending}
+                    />
+                  </Field>
+                )}
+              />
+              <ProductImageField
+                label={t("v2.create.image")}
+                picked={picked}
+                existingUrl={getProductImageUrl(editTarget)}
+                onPick={pick}
+                disabled={blocked || isPending}
+              />
+            </div>
+          </Card>
+        </form>
 
-        {/* Footer buttons */}
-        <div className="p-6 border-t border-gray-200 dark:border-gray-800 flex justify-end gap-3 bg-white dark:bg-maindark">
-          <Button
-            label={t(editTarget ? "cancel" : "clear")}
-            type="button"
-            className="border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-white hover:bg-gray-50 dark:hover:bg-white/5"
-            icon={<X size={18} />}
-            onClick={resetForm}
-          />
-          <Button
-            label={isPending ? t("saving") : t("save")}
-            icon={<Box size={18} />}
-            type="submit"
-            disabled={isPending || isMarketStatusLoading || isInactiveMarket}
-          />
-        </div>
-      </form>
-
-      {/* Existing Products Table Section */}
-      <Table<ExistingProduct>
-        data={marketData}
-        columns={columns}
-        keyExtractor={keyExtractor}
-        hoverable
-        className="border-none"
-      />
-
-      {/* Delete Confirmation Popup */}
-      <PopupConfirm
-        isOpen={!!deleteTarget}
-        onClose={handleDeleteCancel}
-        onConfirm={handleDeleteConfirm}
-        title={t("deleteConfirmTitle")}
-        message={
-          <>
-            {t("deleteConfirmMessage", { name: deleteTarget?.name ?? "" })}
-          </>
-        }
-        isLoading={deleteProduct.isPending}
-      />
+        <Card
+          as="section"
+          padding="none"
+          title={isMarketRole ? t("v2.create.listTitleMarket") : t("v2.create.listTitle")}
+          description={isMarketRole ? t("v2.create.listHintMarket") : undefined}
+          actions={count ? <Badge>{count}</Badge> : undefined}
+          className="min-w-0 flex-[999_1_480px]"
+        >
+          <QueryBoundary
+            query={{
+              data: rows,
+              isLoading: listQuery.isLoading,
+              isError: listQuery.isError,
+              error: listQuery.error,
+              refetch: listQuery.refetch,
+            }}
+            loadingLabel={t("v2.create.listLoading")}
+            loading={
+              <SkeletonTable framed={false} columns={[t("v2.list.columns.index"), t("v2.list.columns.name")]} rows={6} />
+            }
+            empty={<EmptyState icon={Tag} title={t("v2.create.empty")} description={t("v2.create.emptyDescription")} />}
+            error={(error, retry) => <ErrorState error={error} title={t("v2.create.loadFailed")} onRetry={retry} />}
+          >
+            {(list, { isRefetching }) => (
+              <DataTable
+                rows={list}
+                columns={columns}
+                getRowKey={(product) => String(product.id)}
+                label={isMarketRole ? t("v2.create.listTitleMarket") : t("v2.create.listTitle")}
+                rowClassName={(product) => (editTarget?.id === product.id ? "bg-action-soft" : null)}
+                renderCard={renderCard}
+                busy={isRefetching}
+              />
+            )}
+          </QueryBoundary>
+        </Card>
+      </div>
     </div>
   );
 };

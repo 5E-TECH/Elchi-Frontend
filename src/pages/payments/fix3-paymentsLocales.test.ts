@@ -4,7 +4,7 @@ import ru from "../../locales/ru/payments.json";
 import en from "../../locales/en/payments.json";
 
 type Dict = Record<string, string>;
-const DICTS = { uz: uz as Dict, ru: ru as Dict, en: en as Dict };
+const DICTS = { uz: uz as unknown as Dict, ru: ru as unknown as Dict, en: en as unknown as Dict };
 
 /** FIX3 da qo'shilgan kalitlar (FE-PAY-03, FE-PAY-16, CODE-27). */
 const FIX3_KEYS = ["paymentOutcomeUnknown", "excelExportError", "branchWithoutManager"];

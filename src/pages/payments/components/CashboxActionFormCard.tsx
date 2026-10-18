@@ -1,4 +1,5 @@
-import { memo } from "react";
+// dizayn-v2: superadmin-payments-cash-detail-courier, superadmin-payments-cash-detail-market, superadmin-payments-cash-detail-branch, admin-payments-cash-detail-courier, admin-payments-cash-detail-market, admin-payments-cash-detail-branch, manager-payments-cash-detail-courier, manager-payments-cash-detail-branch
+import { memo, useId, type ReactNode } from "react";
 import { Controller } from "react-hook-form";
 import type {
   Control,
@@ -6,10 +7,34 @@ import type {
   UseFormHandleSubmit,
   UseFormRegister,
 } from "react-hook-form";
-import { ArrowLeftRight, Banknote, CreditCard, Landmark, PackageCheck, Send, Store } from "lucide-react";
-import FilterSelect from "../../../shared/ui/FilterSelect";
-import { formatAmountInput } from "./lib/amountInput";
+import {
+  ArrowDownLeft,
+  ArrowLeftRight,
+  ArrowUpRight,
+  Banknote,
+  CircleX,
+  CreditCard,
+  Info,
+  Store,
+  type LucideIcon,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { cx } from "../../../shared/lib/cx";
+import { Button, Card, Field, Select, TextInput } from "../../../shared/ui/primitives";
+
+/**
+ * KASSA AMALI FORMASI — dizayn v2 (maket `*-payments-cash-detail-*`: «Kuryerdan qabul qilish»,
+ * «Marketga to'lov», «Filialdan qabul qilish», «HQ'ga o'tkazish»).
+ *
+ * Karta: sarlavha + izoh; «Summa *» (katta maydon, mingliklar bilan, o'ngda valyuta) + ko'rsatma;
+ * ixtiyoriy info ogohlantirish (market: «To'lov avval eng eski buyurtmalarni yopadi…»); «To'lov turi *» —
+ * radio kartalar (`fieldset` + `legend`, ≥ 48px); «Marketga o'tkazma» tanlansa «Market *» tanlovi; «Izoh
+ * (ixtiyoriy)»; asosiy tugma (blok, katta). Yuborilayotganda tugmada spinner + «Yuklanmoqda…» va u bosilmaydi
+ * (ikki marta yuborish yo'q).
+ *
+ * Forma qiymatlari va react-hook-form props'lari o'zgarmagan (`CashboxActionFormValues`); summa satr
+ * ko'rinishida saqlanadi (`parseAmountInput` o'qiydi). `transferSource*` — eski props, ishlatilmaydi.
+ */
 
 export interface CashboxActionFormValues {
   amount: string;
@@ -21,18 +46,35 @@ export interface CashboxActionFormValues {
 
 interface CashboxActionFormCardProps {
   type: "market" | "courier" | "branch";
-  actionGradient: string;
+  /** v1 (gradient) — e'tiborsiz. */
+  actionGradient?: string;
+  /** Karta sarlavhasi («Kuryerdan qabul qilish»); `title` berilsa — u. */
   actionLabel: string;
+  /** Sarlavha ostidagi izoh; `subtitle` berilsa — u. */
   actionSubLabel: string;
+  title?: string;
+  subtitle?: string;
+  /** Tugma matni («1 155 000 so'm qabul qilish», «To'lash», «HQ'ga o'tkazish»). */
   submitLabel: string;
+  /** Tugma ikonkasi (sukut: kuryer/filial — `ArrowDownLeft`, market — `ArrowUpRight`). */
+  submitIcon?: LucideIcon;
   amountLabel: string;
+  /** Summa ko'rsatmasi: «Ko'pi bilan 1 155 000 so'm — …», «Berilishi kerak: …». */
+  amountHint?: ReactNode;
+  /** Summa ostidagi info ogohlantirish (market). */
+  infoAlert?: ReactNode;
+  /** Forma tepasidagi ogohlantirish (masalan «Tekshiruv xizmati javob bermadi»). */
+  alert?: ReactNode;
   paymentTypeLabel: string;
-  paymentTypePlaceholder: string;
+  /** v1 radiogroup izohi — e'tiborsiz (radio kartalar `legend` bilan nomlanadi). */
+  paymentTypePlaceholder?: string;
   commentLabel: string;
   commentPlaceholder: string;
   showMarketSelect?: boolean;
   marketLabel?: string;
   marketPlaceholder?: string;
+  /** Market tanlanmagan paytdagi izoh: «Market tanlanmaguncha qabul qilish tugmasi faol emas». */
+  marketHint?: string;
   marketOptions?: { value: string; label: string }[];
   marketLoading?: boolean;
   showTransferSourceSelect?: boolean;
@@ -50,243 +92,201 @@ interface CashboxActionFormCardProps {
   onSubmit: (values: CashboxActionFormValues) => void;
 }
 
-const sectionClassName =
-  "rounded-[1.35rem] border border-[color:var(--color-border-soft)] bg-primary shadow-sm dark:bg-primarydark";
-
-const fieldClassName =
-  "w-full rounded-2xl border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] px-4 py-3 text-sm font-semibold text-maindark outline-none transition-all placeholder:text-[color:var(--color-text-muted)] focus:border-main focus:ring-2 focus:ring-main/15 dark:border-white/10 dark:bg-white/[0.055] dark:text-primary dark:placeholder:text-white/35 dark:focus:border-main dark:focus:ring-main/20";
-
-const paymentTypeIconMap = {
+const PAYMENT_TYPE_ICONS: Record<string, LucideIcon> = {
   cash: Banknote,
   card: CreditCard,
-  click: CreditCard,
+  click: ArrowLeftRight,
   transfer: ArrowLeftRight,
   click_to_market: Store,
-} as const;
+};
 
-const getPaymentTypeIcon = (value: string) =>
-  paymentTypeIconMap[value as keyof typeof paymentTypeIconMap] ?? CreditCard;
+/** `.el-choice-card` (CODE-MAP 2.7): tanlanganda `action` chegarasi va `action-soft` fon. */
+const CHOICE_CARD = cx(
+  "group relative flex min-h-12 cursor-pointer items-center gap-3 rounded-xl border border-border-strong bg-surface px-3.5 py-2.5",
+  "transition-[background-color,border-color] duration-150 hover:bg-row-hover motion-reduce:transition-none",
+  "has-[:checked]:border-action has-[:checked]:bg-action-soft",
+  "has-[:focus-visible]:ring-3 has-[:focus-visible]:ring-action/30",
+);
 
 const CashboxActionFormCard = ({
   type,
-  actionGradient,
   actionLabel,
   actionSubLabel,
+  title,
+  subtitle,
   submitLabel,
+  submitIcon,
   amountLabel,
+  amountHint,
+  infoAlert,
+  alert,
   paymentTypeLabel,
-  paymentTypePlaceholder,
   commentLabel,
   commentPlaceholder,
   showMarketSelect = false,
   marketLabel = "",
   marketPlaceholder = "",
+  marketHint,
   marketOptions = [],
   marketLoading = false,
-  showTransferSourceSelect = false,
-  transferSourceLabel = "",
-  transferSourcePlaceholder = "",
-  transferSourceOptions = [],
-  transferSourceLoading = false,
   submitLoading = false,
   submitDisabled = false,
   paymentTypeOptions,
   control,
-  register,
   errors,
   handleSubmit,
   onSubmit,
 }: CashboxActionFormCardProps) => {
   const { t } = useTranslation("payments");
-  const headerIcon =
-    type === "market" ? (
-      <CreditCard size={17} />
-    ) : type === "branch" ? (
-      <Landmark size={17} />
-    ) : (
-      <PackageCheck size={17} />
-    );
+  const titleId = useId();
+  const paymentTypeErrorId = useId();
+  const SubmitIcon = submitIcon ?? (type === "market" ? ArrowUpRight : ArrowDownLeft);
+  const paymentTypeError = errors.paymentType?.message;
 
   return (
-    <div className={`${sectionClassName} w-full max-w-[540px] xl:max-w-none`}>
-      <div className={`rounded-t-[1.35rem] bg-linear-to-r ${actionGradient} px-4 py-3`}>
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/16 text-primary shadow-inner">
-            {headerIcon}
-          </div>
-          <div>
-            <p className="text-sm font-extrabold leading-tight text-primary">{actionLabel}</p>
-            <p className="mt-0.5 text-[11px] font-semibold leading-tight text-primary/75">
-              {actionSubLabel}
-            </p>
-          </div>
-        </div>
-      </div>
+    <Card title={<span id={titleId}>{title ?? actionLabel}</span>} description={subtitle ?? actionSubLabel}>
+      <form
+        noValidate
+        aria-labelledby={titleId}
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-col gap-5"
+      >
+        {alert}
 
-      <div className="space-y-3.5 p-3.5">
-        <div>
-          <label className="mb-1.5 block text-xs font-bold text-[color:var(--color-table-label)] dark:text-[color:var(--color-table-label-dark)]">
-            {amountLabel} <span className="text-rose-400">*</span>
-          </label>
-          <div className="relative">
-            <Controller
-              control={control}
-              name="amount"
-              render={({ field }) => (
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="0"
-                  value={formatAmountInput(field.value)}
-                  onChange={(event) => field.onChange(event.target.value)}
-                  className={`${fieldClassName} pr-16`}
-                />
-              )}
-            />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[color:var(--color-text-muted)] dark:text-white/45">
-              {t("currency")}
-            </span>
-          </div>
-          {errors.amount && (
-            <p className="mt-1 text-xs text-error">{errors.amount.message}</p>
+        <Controller
+          control={control}
+          name="amount"
+          render={({ field }) => (
+            <Field label={amountLabel} required hint={amountHint} error={errors.amount?.message}>
+              <TextInput
+                size="lg"
+                mode="money"
+                name={field.name}
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder="0"
+                autoComplete="off"
+              />
+            </Field>
           )}
-        </div>
+        />
 
-        <div>
-          <p className="mb-2 block text-xs font-bold uppercase tracking-wide text-[color:var(--color-table-label)] dark:text-[color:var(--color-table-label-dark)]">
-            {paymentTypeLabel} <span className="text-rose-400">*</span>
-          </p>
+        {infoAlert ? (
+          <div role="note" className="flex items-start gap-3 rounded-xl bg-info-soft px-3.5 py-2.5 text-sm text-info-fg">
+            <Info aria-hidden="true" size={18} className="mt-0.5 shrink-0" />
+            <div className="min-w-0 text-text">{infoAlert}</div>
+          </div>
+        ) : null}
+
+        <Controller
+          control={control}
+          name="paymentType"
+          render={({ field }) => (
+            <fieldset
+              className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0"
+              aria-describedby={paymentTypeError ? paymentTypeErrorId : undefined}
+            >
+              <legend className="mb-1.5 p-0 text-[13px] font-semibold text-text">
+                {paymentTypeLabel}
+                <span aria-hidden="true" className="text-danger-fg">
+                  {" *"}
+                </span>
+              </legend>
+              {paymentTypeOptions.map((option) => {
+                const Icon = PAYMENT_TYPE_ICONS[option.value] ?? CreditCard;
+                return (
+                  <label key={option.value} className={CHOICE_CARD}>
+                    <input
+                      type="radio"
+                      name={field.name}
+                      value={option.value}
+                      checked={field.value === option.value}
+                      onChange={() => field.onChange(option.value)}
+                      onBlur={field.onBlur}
+                      // Shaffof, butun karta ustida: bosish va klaviatura — haqiqiy radio; ko'rinish — doira.
+                      className="absolute inset-0 z-10 m-0 size-full cursor-pointer appearance-none rounded-xl opacity-0"
+                    />
+                    {/* Maketdagi radio doirasi (20px, 2px chegara; tanlanganda `action` + ichki nuqta). */}
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex size-5 shrink-0 items-center justify-center rounded-full border-2 border-border-strong group-has-[:checked]:border-action"
+                    >
+                      <span className="hidden size-2.5 rounded-full bg-action group-has-[:checked]:block" />
+                    </span>
+                    <Icon aria-hidden="true" size={18} className="shrink-0 text-text-muted" />
+                    <span className="min-w-0 text-sm font-semibold text-text">{option.label}</span>
+                  </label>
+                );
+              })}
+              {paymentTypeError ? (
+                <div id={paymentTypeErrorId} className="flex items-start gap-1.5 text-xs font-semibold text-danger-fg">
+                  <CircleX aria-hidden="true" size={16} className="mt-px shrink-0" />
+                  <span className="min-w-0">{paymentTypeError}</span>
+                </div>
+              ) : null}
+            </fieldset>
+          )}
+        />
+
+        {showMarketSelect ? (
           <Controller
             control={control}
-            name="paymentType"
+            name="marketId"
             render={({ field }) => (
-              <div
-                className="grid grid-cols-1 gap-2 sm:grid-cols-2"
-                role="radiogroup"
-                aria-label={`${paymentTypeLabel}: ${paymentTypePlaceholder}`}
+              <Field
+                label={marketLabel}
+                required
+                hint={field.value ? undefined : marketHint}
+                error={errors.marketId?.message}
               >
-                {paymentTypeOptions.map((option) => {
-                  const Icon = getPaymentTypeIcon(option.value);
-                  const isSelected = field.value === option.value;
-
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      role="radio"
-                      aria-checked={isSelected}
-                      onClick={() => field.onChange(option.value)}
-                      className={`group flex min-h-14 items-center gap-3 rounded-2xl border px-3.5 py-3 text-left transition-all focus:outline-none focus:ring-2 focus:ring-main/25 ${
-                        isSelected
-                          ? "border-main bg-main text-white shadow-lg shadow-main/20"
-                          : "border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] text-maindark hover:border-main/50 hover:bg-main/8 dark:border-white/10 dark:bg-white/[0.055] dark:text-primary dark:hover:bg-white/10"
-                      }`}
-                    >
-                      <span
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
-                          isSelected
-                            ? "bg-white/18 text-white"
-                            : "bg-main/10 text-main dark:bg-white/8 dark:text-primary"
-                        }`}
-                      >
-                        <Icon size={18} />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-extrabold">
-                          {option.label}
-                        </span>
-                      </span>
-                      <span
-                        className={`h-3 w-3 shrink-0 rounded-full border transition-all ${
-                          isSelected
-                            ? "border-white bg-white shadow-[0_0_0_4px_rgba(255,255,255,0.22)]"
-                            : "border-main/40 group-hover:border-main dark:border-white/25"
-                        }`}
-                      />
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          />
-          {errors.paymentType && (
-            <p className="mt-1 text-xs font-semibold text-error">
-              {errors.paymentType.message}
-            </p>
-          )}
-        </div>
-
-        {showMarketSelect && (
-          <div>
-            <Controller
-              control={control}
-              name="marketId"
-              render={({ field }) => (
-                <FilterSelect
-                  label={marketLabel}
+                <Select
+                  searchable
                   name={field.name}
-                  value={field.value}
-                  onChange={field.onChange}
                   options={marketOptions}
+                  value={field.value || null}
+                  onChange={(value) => field.onChange(value ?? "")}
+                  onBlur={field.onBlur}
                   placeholder={marketPlaceholder}
                   loading={marketLoading}
-                  size="sm"
                 />
-              )}
-            />
-            {errors.marketId?.message && (
-              <p className="mt-1 text-xs text-error">{errors.marketId.message}</p>
+              </Field>
             )}
-          </div>
-        )}
-
-        {showTransferSourceSelect && (
-          <div>
-            <Controller
-              control={control}
-              name="transferSourceId"
-              render={({ field }) => (
-                <FilterSelect
-                  label={transferSourceLabel}
-                  name={field.name}
-                  value={field.value}
-                  onChange={field.onChange}
-                  options={transferSourceOptions}
-                  placeholder={transferSourcePlaceholder}
-                  loading={transferSourceLoading}
-                  size="sm"
-                />
-              )}
-            />
-            {errors.transferSourceId?.message && (
-              <p className="mt-1 text-xs text-error">{errors.transferSourceId.message}</p>
-            )}
-          </div>
-        )}
-
-        <div>
-          <label className="mb-1.5 block text-xs font-bold text-(--color-table-label) dark:text-[color:var(--color-table-label-dark)]">
-            {commentLabel}
-          </label>
-          <textarea
-            placeholder={commentPlaceholder}
-            rows={2}
-            {...register("comment")}
-            className={`${fieldClassName} min-h-[4.5rem] resize-none`}
           />
-        </div>
+        ) : null}
 
-        <button
-          type="button"
-          onClick={handleSubmit(onSubmit)}
-          disabled={submitDisabled || submitLoading}
-          className={`flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-linear-to-r text-sm font-extrabold text-white shadow-lg transition-all hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60 ${actionGradient}`}
+        <Controller
+          control={control}
+          name="comment"
+          render={({ field }) => (
+            <Field label={commentLabel} optional>
+              <TextInput
+                multiline
+                rows={2}
+                name={field.name}
+                value={field.value}
+                onValueChange={field.onChange}
+                onBlur={field.onBlur}
+                placeholder={commentPlaceholder}
+                className="min-h-[72px]"
+              />
+            </Field>
+          )}
+        />
+
+        <Button
+          type="submit"
+          size="lg"
+          fullWidth
+          leftIcon={SubmitIcon}
+          loading={submitLoading}
+          loadingText={t("v2CashDetail.form.loading")}
+          disabled={submitDisabled}
         >
-          <Send size={16} />
-          {submitLoading ? t("loadingLabel") : submitLabel}
-        </button>
-      </div>
-    </div>
+          {submitLabel}
+        </Button>
+      </form>
+    </Card>
   );
 };
 

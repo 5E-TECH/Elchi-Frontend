@@ -1,8 +1,10 @@
+// dizayn-v2: superadmin-mails-detail, superadmin-mails-detail-send-dialog, superadmin-mails-detail-refused, superadmin-mails-detail-old, admin-mails-detail, admin-mails-send-branch-dialog, admin-mails-refused-detail, admin-mails-old-detail, manager-mails-detail-receive, manager-mails-detail-refused-receive, manager-mails-detail-old, registrator-mails-detail, registrator-mails-detail-send-dialog, registrator-mails-detail-refused, registrator-mails-detail-old, courier-mails-detail-receive, courier-mails-detail-refused, courier-mails-detail-old, courier-mails-detail-print-menu
 import { Fragment, memo, useEffect, useMemo, useCallback, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CircleX, FileText, Globe, Lock, ScanLine, Trash2 } from "lucide-react";
+import { CircleX, Info, Lock, Trash2, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useSelector } from "react-redux";
 import {
   useDeleteOrdersFromPost,
   useMails,
@@ -11,32 +13,30 @@ import {
   useReceiveCanceledPost,
   useReceivePost,
 } from "../../../entities/mails";
-import { useBatchRemainingDetail, useSendTransferBatch } from "../../../entities/batch";
-import { mapBatchOrdersToPostOrders } from "../../batches/lib/batchOrderMailAdapter";
-import { Badge, PageHeader, StatusBadge } from "../../../shared/ui/primitives";
-import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
-import { getPostStatusBadge } from "./lib/postStatus";
-import PrintModeSelect, { type PrintSelectOption } from "../../../shared/components/PrintModeSelect";
-
-// ─── UI komponentlar ──────────────────────────────────────────────────────────
-import MailStatCards from "./ui/MailStatCards";
-import OrdersTable from "./ui/OrdersTable";
-import SendButton from "./ui/SendButton";
-import SendPostModal from "./ui/SendPostModal";
-import { printOrders, type PrintMode } from "./lib/printMode";
-import { resolveDispatchRegionId } from "./lib/dispatchRegion";
-import { extractNotReceivedOrderIds, hasOnTheRoadOrders } from "./lib/receiveResult";
-
-// ─── Model ────────────────────────────────────────────────────────────────────
-import { useMailDetailState } from "./model/useMailDetailState";
-import { useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
-import DeleteFromPostDialog from "./ui/DeleteFromPostDialog";
-import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
+import { canDispatchPostToBranch } from "../../../app/lib/access";
 import { getDispatchDestinations, type Branch } from "../../../entities/branch";
 import { getUserBranchType } from "../../../widgets/Sidebar/model/menuConfig";
-import { canDispatchPostToBranch } from "../../../app/lib/access";
+import PrintModeSelect from "../../../shared/components/PrintModeSelect";
+import { api } from "../../../shared/api/api";
+import { API_ENDPOINTS } from "../../../shared/api";
+import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
+import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { notify } from "../../../shared/lib/notify";
+import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
+import {
+  Badge,
+  Button,
+  ErrorState,
+  PageHeader,
+  Skeleton,
+  SkeletonTable,
+  StatCard,
+  StatusBadge,
+} from "../../../shared/ui/primitives";
+import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
+import { DetailAlert } from "../../new_orders/components/detail/DetailAlert";
 import {
   playMissingOrderFeedback,
   playScanFeedback,
@@ -44,10 +44,47 @@ import {
 } from "../../scan/lib/scanShared";
 import { fetchScanDetail, getBackendErrorMessage } from "../../scan/lib/scanResource";
 import { getMailTabPath, normalizeMailTab, type MailTab } from "../lib/navigation";
-import PageContainer from "../../../shared/ui/PageContainer";
-import { api } from "../../../shared/api/api";
-import { API_ENDPOINTS } from "../../../shared/api";
-import { notify } from "../../../shared/lib/notify";
+
+// ─── UI komponentlar ──────────────────────────────────────────────────────────
+import MailStatCards from "./ui/MailStatCards";
+import OrdersTable, { type OrdersTableColumn } from "./ui/OrdersTable";
+import SendButton from "./ui/SendButton";
+import SendPostModal from "./ui/SendPostModal";
+import DeleteFromPostDialog from "./ui/DeleteFromPostDialog";
+import { useMailPrintOptions } from "./ui/printOptions";
+import { getPostStatusBadge } from "./lib/postStatus";
+import { printOrders, type PrintMode } from "./lib/printMode";
+import { resolveDispatchRegionId } from "./lib/dispatchRegion";
+import { extractNotReceivedOrderIds, hasOnTheRoadOrders } from "./lib/receiveResult";
+import {
+  REFUSED_MAIL_ORDER_STATUSES,
+  TODAY_MAIL_ORDER_STATUSES,
+  extractOrderItems,
+  getOrderIdentifiers,
+  isSameCustomerMarketOrder,
+  normalizeMatchText,
+  toText,
+  unwrapScannedOrder,
+} from "./lib/scanMatch";
+
+// ─── Model ────────────────────────────────────────────────────────────────────
+import { useMailDetailState } from "./model/useMailDetailState";
+
+/**
+ * POCHTA TAFSILOTI — `/mails/:id` (dizayn v2, sahifa shell ichida).
+ *
+ * Rejim rol va URL/holatdan (`?type=refused`, `?view=old`, `?view=old-all-batches`; URL tozalanib holatda saqlanadi):
+ *  - jo'natish (superadmin/admin/HQ registratori) — «Pochtani jo'natish — n ta» → «Filialni tanlang» oynasi;
+ *  - qabul (kuryer, filial menejeri) — faqat yo'ldagi buyurtmalar, «Pochtani qabul qilish — n ta»;
+ *    kuryer telefonida tugma pastki menyu ustidagi panelda;
+ *  - rad etilgan pochtani qabul qilish — info ogohlantirish, `POST post/cancel/receive/:id`;
+ *  - kuryerning rad etilgan pochtasi — faqat o'qish, «Barchasini chop etish»;
+ *  - eski pochta (tarix) — faqat o'qish; qolib ketgan yo'ldagi buyurtma bo'lsa qabul qayta ochiladi (fix3b).
+ *
+ * Tuzilma: `PageHeader` (orqaga — kelingan tab, holat badge'i, chop etish + bitta asosiy amal) → ogohlantirishlar →
+ * `MailStatCards` → `OrdersTable` (skaner izohi, tanlov paneli, jadval / telefonda kartalar). USB (HID) skaner —
+ * `useOrderQrScanner`; kamera rejimi (`*-camera` maketlari) bu bosqichda yo'q.
+ */
 
 /** «← …» havolasi — qaytiladigan bo'lim nomi (taxta `tizim-states-navigation`). */
 const MAIL_TAB_LABEL_KEYS: Record<MailTab, string> = {
@@ -57,194 +94,61 @@ const MAIL_TAB_LABEL_KEYS: Record<MailTab, string> = {
   old: "oldTab",
 };
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-const MailDetailSkeleton = memo(() => (
-  <div className="flex flex-col gap-5 animate-pulse">
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      {[1, 2, 3].map((i) => (
-        <div key={i} className="h-20 rounded-2xl bg-gray-200 dark:bg-white/8" />
-      ))}
-    </div>
-    <div className="h-10 rounded-xl bg-gray-200 dark:bg-white/8" />
-    {Array.from({ length: 5 }).map((_, i) => (
-      <div key={i} className="h-14 rounded-xl bg-gray-200 dark:bg-white/8" />
-    ))}
-  </div>
-));
-MailDetailSkeleton.displayName = "MailDetailSkeleton";
+/** Kuryer maketlari: «Tuman» (manzilsiz), «Holat» planshetda yashirin; eski pochtada «Holat» yo'q. */
+const COURIER_COLUMNS: readonly OrdersTableColumn[] = ["order", "customer", "district", "market", "delivery", "status", "amount"];
+const COURIER_HISTORY_COLUMNS: readonly OrdersTableColumn[] = ["order", "customer", "district", "market", "delivery", "amount"];
+const COURIER_TABLET_HIDDEN: readonly OrdersTableColumn[] = ["district", "market", "status"];
+/** Menejer qabul maketi: «Yetkazish» «Holat» dan oldin va planshetda ham ko'rinadi. */
+const MANAGER_COLUMNS: readonly OrdersTableColumn[] = [
+  "order",
+  "customer",
+  "districtAddress",
+  "market",
+  "delivery",
+  "status",
+  "amount",
+];
+const MANAGER_TABLET_HIDDEN: readonly OrdersTableColumn[] = ["districtAddress", "market"];
 
-const asRecord = (value: unknown): Record<string, unknown> =>
-  value && typeof value === "object" ? value as Record<string, unknown> : {};
-
-const toText = (value: unknown) => {
-  if (typeof value === "string" && value.trim()) return value.trim();
-  if (typeof value === "number") return String(value);
-  return "";
-};
-
-const normalizeMatchText = (value: unknown) => toText(value).toLowerCase();
-
-const unwrapScannedOrder = (payload: unknown) => {
-  const source = asRecord(payload);
-  const data = asRecord(source.data ?? source);
-  const nestedData = asRecord(data.data ?? data);
-  return asRecord(nestedData.order ?? data.order ?? nestedData);
-};
-
-const addOrderIdentifiers = (target: Set<string>, value: unknown) => {
-  const record = asRecord(value);
-  [
-    "id",
-    "qr_code_token",
-    "qrCodeToken",
-    "token",
-    "order_token",
-    "orderToken",
-    "parent_order_id",
-    "parentOrderId",
-    "original_order_id",
-    "originalOrderId",
-    "source_order_id",
-    "sourceOrderId",
-    "split_from_order_id",
-    "splitFromOrderId",
-    "cancelled_from_order_id",
-    "cancelledFromOrderId",
-    "partly_sold_order_id",
-    "partlySoldOrderId",
-    "root_order_id",
-    "rootOrderId",
-    "base_order_id",
-    "baseOrderId",
-  ].forEach((key) => {
-    const text = normalizeMatchText(record[key]);
-    if (text) target.add(text);
-  });
-
-  [
-    "order",
-    "parent_order",
-    "parentOrder",
-    "original_order",
-    "originalOrder",
-    "source_order",
-    "sourceOrder",
-    "split_from_order",
-    "splitFromOrder",
-    "cancelled_from_order",
-    "cancelledFromOrder",
-  ].forEach((key) => {
-    const nested = asRecord(record[key]);
-    ["id", "qr_code_token", "qrCodeToken", "token"].forEach((nestedKey) => {
-      const text = normalizeMatchText(nested[nestedKey]);
-      if (text) target.add(text);
-    });
-  });
-};
-
-const getOrderIdentifiers = (value: unknown) => {
-  const identifiers = new Set<string>();
-  addOrderIdentifiers(identifiers, value);
-  return identifiers;
-};
-
-const getComparableOrderInfo = (value: unknown) => {
-  const order = asRecord(value);
-  const customer = asRecord(order.customer);
-  const market = asRecord(order.market);
-  const district = asRecord(order.district);
-
-  return {
-    customerId: normalizeMatchText(order.customer_id ?? order.customerId ?? customer.id),
-    name: normalizeMatchText(
-      customer.name ??
-        customer.full_name ??
-        customer.fullName ??
-        order.customer_name ??
-        order.customerName ??
-        order.name,
-    ),
-    phone: normalizeMatchText(
-      customer.phone_number ??
-        customer.phoneNumber ??
-        customer.phone ??
-        order.customer_phone ??
-        order.customerPhone ??
-        order.phone_number ??
-        order.phone,
-    ),
-    marketId: normalizeMatchText(order.market_id ?? order.marketId ?? market.id),
-    marketName: normalizeMatchText(market.name),
-    districtId: normalizeMatchText(order.district_id ?? order.districtId ?? district.id),
-    districtName: normalizeMatchText(district.name),
-  };
-};
-
-const isSameCustomerMarketOrder = (left: unknown, right: unknown) => {
-  const a = getComparableOrderInfo(left);
-  const b = getComparableOrderInfo(right);
-  const sameCustomer =
-    Boolean(a.customerId && a.customerId === b.customerId) ||
-    Boolean(a.phone && a.phone === b.phone) ||
-    Boolean(a.name && a.name === b.name);
-  const sameMarket = Boolean(a.marketId && a.marketId === b.marketId) || Boolean(a.marketName && a.marketName === b.marketName);
-  const sameDistrict =
-    !a.districtId && !a.districtName && !b.districtId && !b.districtName
-      ? true
-      : Boolean(a.districtId && a.districtId === b.districtId) ||
-        Boolean(a.districtName && a.districtName === b.districtName);
-
-  return sameCustomer && sameMarket && sameDistrict;
-};
-
-const extractOrderItems = (payload: unknown): PostOrder[] => {
-  const response = payload as
-    | PostOrder[]
-    | {
-      data?: PostOrder[] | { items?: PostOrder[]; data?: PostOrder[] };
-      items?: PostOrder[];
-    };
-
-  if (Array.isArray(response)) return response;
-  if (Array.isArray(response?.data)) return response.data;
-  if (!Array.isArray(response?.data) && Array.isArray(response?.data?.items)) return response.data.items;
-  if (!Array.isArray(response?.data) && Array.isArray(response?.data?.data)) return response.data.data;
-  if (Array.isArray(response?.items)) return response.items;
-
-  return [];
-};
-
-const TODAY_MAIL_ORDER_STATUSES = new Set(["on the road", "new", "received", "waiting"]);
-const REFUSED_MAIL_ORDER_STATUSES = new Set(["cancelled", "cancelled (sent)", "canceled", "canceled (sent)", "rejected"]);
-
-// ─── Xatolik holati ───────────────────────────────────────────────────────────
-const ErrorState = memo(() => {
-  const { t } = useTranslation(["mails", "newOrders"]);
-
+// ─── Yuklanish holati: sarlavha, ko'rsatkichlar va jadval skeletlari ──────────
+const MailDetailSkeleton = memo(() => {
+  const { t } = useTranslation("mails");
   return (
-    <div className="flex flex-col items-center justify-center py-20 gap-4">
-      <div className="w-16 h-16 rounded-2xl bg-red-500/10 flex items-center justify-center">
-        <AlertTriangle size={32} className="text-red-400" />
+    <div className="flex min-w-0 flex-col gap-6 max-md:gap-4" aria-busy="true">
+      <div className="flex min-w-0 flex-col gap-2">
+        <Skeleton width={128} height={14} />
+        <Skeleton width={300} height={28} className="max-w-full" />
+        <Skeleton width={220} height={14} />
       </div>
-      <div className="text-center">
-        <p className="text-gray-700 dark:text-white font-semibold">
-          {t("loadError")}
-        </p>
-        <p className="text-gray-400 dark:text-white/60 text-sm mt-1">
-          {t("refreshHint")}
-        </p>
+      <div className="grid grid-cols-3 gap-4 max-md:hidden">
+        <StatCard loading label={t("detailPage.statSelected")} />
+        <StatCard loading label={t("detailPage.statHome")} />
+        <StatCard loading label={t("detailPage.statCenter")} />
       </div>
+      <SkeletonTable
+        rows={6}
+        columns={[
+          t("detailPage.columns.order"),
+          t("detailPage.columns.customer"),
+          t("detailPage.columns.districtAddress"),
+          t("detailPage.columns.market"),
+          t("detailPage.columns.status"),
+          t("detailPage.columns.amount"),
+        ]}
+      />
     </div>
   );
 });
-ErrorState.displayName = "ErrorState";
+MailDetailSkeleton.displayName = "MailDetailSkeleton";
 
 // ─── Asosiy Page ──────────────────────────────────────────────────────────────
 const MailDetailPage = () => {
   const { t, i18n } = useTranslation(["mails", "newOrders", "orders"]);
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
   const navigate = useNavigate();
+  const isPhone = useIsPhone();
   const postId = id;
   const { role } = useSelector((state: RootState) => state.role);
   const user = useSelector((state: RootState) => state.user.user);
@@ -266,7 +170,6 @@ const MailDetailPage = () => {
   // (backend bilan bir xil). Boshqa registratorlar uchun server doim 403
   // qaytaradi, shuning uchun ularga "jo'natish" tugmasi ko'rsatilmaydi.
   const canDispatchToBranch = useSelector(canDispatchPostToBranch);
-  const isBranchTransferRole = false;
   const navState = location.state as {
     fromTab?: string;
     type?: string;
@@ -294,26 +197,11 @@ const MailDetailPage = () => {
     data: regularResponse,
     isLoading: regularLoading,
     isError: regularError,
+    error: regularErrorValue,
     refetch: refetchRegularDetail,
-  } = useMailDetail(
-    !isBranchTransferRole && !isRefusedDetail && !isAllBatchesDetail
-      ? postId ?? ""
-      : "",
-  );
-  const {
-    data: refusedResponse,
-    isLoading: refusedLoading,
-    isError: refusedError,
-  } = useGetRefusedMailsCourierByPostId(
-    isRefusedDetail ? postId ?? "" : "",
-  );
-  const {
-    data: transferBatchResponse,
-    isLoading: transferBatchLoading,
-    isError: transferBatchError,
-    refetch: refetchTransferBatchDetail,
-  } = useBatchRemainingDetail(isBranchTransferRole ? postId : undefined);
-  const sendTransferBatch = useSendTransferBatch();
+  } = useMailDetail(!isRefusedDetail && !isAllBatchesDetail ? postId ?? "" : "");
+  const refusedQuery = useGetRefusedMailsCourierByPostId(isRefusedDetail ? postId ?? "" : "");
+  const { data: refusedResponse, isLoading: refusedLoading, isError: refusedError } = refusedQuery;
   const { apiRequest } = useAppNotification();
 
   // URL ni tozalash: /mails/:id?from=... -> /mails/:id (state orqali saqlab qolamiz)
@@ -334,8 +222,11 @@ const MailDetailPage = () => {
   }, []);
 
   const [sentOrderIds, setSentOrderIds] = useState<Set<string>>(new Set());
-  const regularOrdersFromPost = regularResponse?.data?.allOrdersByPostId ?? [];
-  const refusedOrdersFromPost = refusedResponse?.data ?? [];
+  const regularOrdersFromPost = useMemo(
+    () => regularResponse?.data?.allOrdersByPostId ?? [],
+    [regularResponse],
+  );
+  const refusedOrdersFromPost = useMemo<PostOrder[]>(() => refusedResponse?.data ?? [], [refusedResponse]);
   /**
    * fix3b LC-11: eski yozuvlarda filial/kuryer qabulidan keyin pochta RECEIVED
    * bo'lib qolgan, ichida esa hamon yo'lda (ON_THE_ROAD) buyurtma bor (bitta
@@ -359,13 +250,11 @@ const MailDetailPage = () => {
   const shouldReceiveCurrentPost = isEffectiveRefusedDetail ? canReceiveRefusedPost : isCourierLikeReceiver;
   // Qabul rejimi (kuryer/menejer, bekor qilingan pochta) — hozirgidek hammaga;
   // "jo'natish" rejimi — faqat filialga jo'nata oladiganlarga.
-  const canShowActionButton =
-    shouldReceiveCurrentPost || isEffectiveRefusedDetail || isBranchTransferRole || canDispatchToBranch;
+  const canShowActionButton = shouldReceiveCurrentPost || isEffectiveRefusedDetail || canDispatchToBranch;
   const fallbackRegionId = toText(navState?.fallbackRegionId);
   const fallbackRegionName = toText(navState?.fallbackRegionName);
   const shouldLoadRegionFallback =
     !isAllBatchesDetail &&
-    !isBranchTransferRole &&
     !isEffectiveRefusedDetail &&
     !isOldDetail &&
     !regularLoading &&
@@ -388,7 +277,6 @@ const MailDetailPage = () => {
   });
   const shouldLoadRefusedRegionFallback =
     !isAllBatchesDetail &&
-    !isBranchTransferRole &&
     isEffectiveRefusedDetail &&
     !isOldDetail &&
     !refusedLoading &&
@@ -424,12 +312,9 @@ const MailDetailPage = () => {
     [refusedRegionFallbackResponse],
   );
   const rawOrders = useMemo<PostOrder[]>(() => {
+    // «Hamma batchlar» dan ochilgan tarix — pochta emas, ro'yxat bo'sh (v1 dagidek).
     if (isAllBatchesDetail) {
       return [];
-    }
-
-    if (isBranchTransferRole) {
-      return mapBatchOrdersToPostOrders(transferBatchResponse);
     }
 
     if (isRefusedDetail) {
@@ -443,8 +328,6 @@ const MailDetailPage = () => {
       : regionFallbackOrders;
   }, [
     isAllBatchesDetail,
-    isBranchTransferRole,
-    transferBatchResponse,
     isRefusedDetail,
     refusedOrdersFromPost,
     refusedRegionFallbackOrders,
@@ -462,7 +345,6 @@ const MailDetailPage = () => {
           shouldReceiveCurrentPost &&
           !isEffectiveRefusedDetail &&
           !isOldDetail &&
-          !isBranchTransferRole &&
           order.status !== "on the road"
         ) {
           return false;
@@ -476,7 +358,6 @@ const MailDetailPage = () => {
       shouldReceiveCurrentPost,
       isEffectiveRefusedDetail,
       isOldDetail,
-      isBranchTransferRole,
     ],
   );
   const homeStats = useMemo(() => {
@@ -533,7 +414,12 @@ const MailDetailPage = () => {
   const postMeta = regularResponse?.data?.post ?? null;
   const postStatus = postMeta?.status ?? null;
   // Holat badge'i: server holati birlamchi; u yo'q, lekin pochta rad etilgan deb aniqlangan bo'lsa — «Rad etilgan».
-  const headerStatus = getPostStatusBadge(postStatus ?? (isEffectiveRefusedDetail ? "canceled" : null));
+  // Menejerga jo'natilgan (`sent`) pochta uning qabul ekranida «Yangi» (`manager-mails-detail-receive`, ro'yxatdagidek).
+  const isManagerIncoming =
+    role === "manager" && !isOldDetail && !isEffectiveRefusedDetail && String(postStatus ?? "").toLowerCase() === "sent";
+  const headerStatus = getPostStatusBadge(
+    isManagerIncoming ? "new" : (postStatus ?? (isEffectiveRefusedDetail ? "canceled" : null)),
+  );
   const canDeleteFromPost =
     role === "superadmin" && !isEffectiveRefusedDetail && !isOldDetail && postStatus === "new";
 
@@ -541,13 +427,13 @@ const MailDetailPage = () => {
   // `regionLabel` — aniq viloyat (yo'q bo'lsa `null`); `regionName` — sarlavha uchun, pochta raqami bilan to'ldirilgan.
   const regionLabel = useMemo(
     () =>
-      (isBranchTransferRole
-        ? transferBatchResponse?.to_branch?.name
-        : null) ??
+      // 4YZcTTDQ: pochtaning o'z viloyati (`data.post.region`) birlamchi — buyurtmalar bo'sh yoki tuman
+      // boshqa viloyatga o'tkazilgan bo'lsa ham to'g'ri; qolganlari — eski backend uchun zaxira.
+      postMeta?.region?.name ??
       orders[0]?.district?.region?.name ??
       orders[0]?.region?.name ??
       (fallbackRegionName || null),
-    [isBranchTransferRole, transferBatchResponse, orders, fallbackRegionName],
+    [postMeta, orders, fallbackRegionName],
   );
   const regionName =
     regionLabel ??
@@ -559,17 +445,9 @@ const MailDetailPage = () => {
   // fix3 LC-09: pochtaning o'z viloyati (tuman qayta biriktirilgan bo'lsa ham
   // to'g'ri), birinchi buyurtmaning geografik viloyati EMAS.
   const regionId = useMemo(
-    () => resolveDispatchRegionId(fallbackRegionId, orders),
-    [fallbackRegionId, orders],
+    () => resolveDispatchRegionId(postMeta?.region_id || fallbackRegionId, orders),
+    [postMeta, fallbackRegionId, orders],
   );
-
-  const handleManualToggleOne = useCallback((id: string) => {
-    toggleOne(id);
-  }, [toggleOne]);
-
-  const handleManualToggleAll = useCallback(() => {
-    toggleAll();
-  }, [toggleAll]);
 
   const selectScannedOrder = useCallback((order: PostOrder) => {
     if (selectedIds.has(order.id)) {
@@ -621,9 +499,10 @@ const MailDetailPage = () => {
     }
   }, [orders, selectScannedOrder, t]);
 
+  const scannerEnabled = orders.length > 0 && !isOldDetail && !isReadOnlyRefusedCourier;
   useOrderQrScanner({
     orders,
-    enabled: orders.length > 0 && !isOldDetail && !isReadOnlyRefusedCourier,
+    enabled: scannerEnabled,
     onMatch: selectScannedOrder,
     onMissing: (rawValue) => {
       void handleMissingScannedOrder(rawValue);
@@ -634,7 +513,7 @@ const MailDetailPage = () => {
     navigate(`${getMailTabPath(normalizeMailTab(fromTab))}${fromSearch}`);
   }, [fromSearch, fromTab, navigate]);
 
-  // ─── Pochtani qabul qilish (faqat courier uchun) ─────────────────────────
+  // ─── Pochtani qabul qilish (kuryer, menejer, rad etilgan pochta) ─────────
   const handleReceive = useCallback(() => {
     if (selectedIds.size === 0 || !postId) return;
     const receivedIds = Array.from(selectedIds);
@@ -731,27 +610,8 @@ const MailDetailPage = () => {
     }
   }, [clearSelection, navigate, refetchRegularDetail, selectedIds]);
 
-  // ─── Modal ochish (Send — courier bo'lmaganlar uchun) ─────────────────────
+  // ─── «Filialni tanlang» oynasini ochish (jo'natish) ───────────────────────
   const handleSend = useCallback(() => {
-    if (isBranchTransferRole) {
-      if (selectedIds.size === 0 || !postId || sendTransferBatch.isPending) return;
-
-      apiRequest({
-        request: () =>
-          sendTransferBatch.mutateAsync({
-            batchId: postId,
-            orderIds: Array.from(selectedIds),
-          }),
-        successMessage: t("batchSendMainSuccess"),
-        errorMessage: t("batchSendMainError"),
-        onSuccess: async () => {
-          clearSelection();
-          await refetchTransferBatchDetail();
-        },
-      });
-      return;
-    }
-
     if (selectedIds.size === 0 || !postId || !regionId || isCheckingCouriers) return;
 
     setIsCheckingCouriers(true);
@@ -783,40 +643,13 @@ const MailDetailPage = () => {
       .finally(() => {
         setIsCheckingCouriers(false);
       });
-  }, [
-    isBranchTransferRole,
-    selectedIds,
-    postId,
-    sendTransferBatch,
-    apiRequest,
-    clearSelection,
-    refetchTransferBatchDetail,
-    regionId,
-    isCheckingCouriers,
-    t,
-  ]);
+  }, [selectedIds, postId, regionId, isCheckingCouriers, t]);
 
   const selectedOrders = useMemo(
     () => orders.filter((order: PostOrder) => selectedIds.has(order.id)),
     [orders, selectedIds],
   );
-  const printOptions = useMemo<PrintSelectOption[]>(
-    () => [
-      {
-        id: "browser",
-        label: t("printOptions.browser.label"),
-        hint: t("printOptions.browser.hint"),
-        icon: <Globe size={14} className="text-info" />,
-      },
-      {
-        id: "pdf_100x60",
-        label: t("printOptions.labelPdf.label"),
-        hint: t("printOptions.labelPdf.hint"),
-        icon: <FileText size={14} className="text-error" />,
-      },
-    ],
-    [t],
-  );
+  const printOptions = useMailPrintOptions();
 
   const handlePrintOrders = useCallback((mode: PrintMode, printTargets: PostOrder[]) => {
     if (printTargets.length === 0) return;
@@ -828,6 +661,14 @@ const MailDetailPage = () => {
       handlePrintOrders(mode, selectedOrders);
     },
     [handlePrintOrders, selectedOrders],
+  );
+
+  // D16: kuryerning rad etilgan pochtasida tanlov yo'q — «Barchasini chop etish» hamma buyurtmani oladi.
+  const handlePrintAll = useCallback(
+    (mode: PrintMode) => {
+      handlePrintOrders(mode, orders);
+    },
+    [handlePrintOrders, orders],
   );
 
   const handlePrintOne = useCallback(
@@ -887,38 +728,52 @@ const MailDetailPage = () => {
     [postId, deleteTargetIds, deleteFromPost, closeDeleteConfirm, clearSelection, t, navigate, refetchRegularDetail],
   );
 
-  // ─── Loading ──────────────────────────────────────────────────────────────
-  if (regularLoading || refusedLoading || transferBatchLoading || regionFallbackLoading || refusedRegionFallbackLoading)
-    return (
-      <PageContainer>
-        <MailDetailSkeleton />
-      </PageContainer>
-    );
+  const count = useCallback((value: number) => formatNumberLocalized(value, { language }), [language]);
 
-  // ─── Error ────────────────────────────────────────────────────────────────
-  if (regularError || refusedError || transferBatchError)
+  // ─── Yuklanish ────────────────────────────────────────────────────────────
+  if (regularLoading || refusedLoading || regionFallbackLoading || refusedRegionFallbackLoading)
+    return <MailDetailSkeleton />;
+
+  // ─── Xato ─────────────────────────────────────────────────────────────────
+  if (regularError || refusedError)
     return (
-      <PageContainer>
-        <ErrorState />
-      </PageContainer>
+      <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
+        <PageHeader
+          back={handleBack}
+          backLabel={t(MAIL_TAB_LABEL_KEYS[normalizeMailTab(fromTab)])}
+          title={t("mailNumberWithId", { id: postId })}
+        />
+        <ErrorState
+          framed
+          error={regularErrorValue ?? refusedQuery.error}
+          title={t("loadError")}
+          onRetry={() => {
+            if (regularError) void refetchRegularDetail();
+            if (refusedError) void refusedQuery.refetch?.();
+          }}
+        />
+      </div>
     );
 
   // ─── Sarlavha (dizayn v2) ─────────────────────────────────────────────────
   // Holat birlamchi manbasi — serverdagi `data.post` (4YZcTTDQ). Maketlar rolga qarab:
   //  - superadmin/admin/registrator (`*-mails-detail`, `-refused`, `-old`): viloyat sarlavhasi,
   //    holat badge'i, eski pochtada «Faqat o'qish», izohda «Pochta №… · N ta buyurtma»;
-  //  - kuryer (`courier-mails-detail-*`): badge yo'q, rad etilganda izoh oldida qizil ikonka;
+  //  - kuryer (`courier-mails-detail-*`): badge yo'q, rad etilganda izoh oldida qizil ikonka,
+  //    rad etilgan / eski pochtada «N ta rad etilgan buyurtma» / «N ta buyurtma»;
   //  - menejer (`manager-mails-detail-receive`, `-refused-receive`): sarlavhada pochta raqami,
   //    izohda viloyat va sana; eski pochtasi — adminniki kabi (`admin-mails-old-detail`).
   const mailNumber = postId ? t("mailNumberWithId", { id: postMeta?.id ?? postId }) : null;
   const isManagerHeader = role === "manager" && !isOldDetail && Boolean(mailNumber);
-  const ordersCountText = isOldDetail
-    ? t("oldOrdersCount", { count: orders.length })
-    : isManagerHeader
-      ? t(isEffectiveRefusedDetail ? "headerRefusedOrdersCount" : "headerOrdersCount", { count: orders.length })
-      : isEffectiveRefusedDetail
-        ? t("refusedOrdersCount", { count: orders.length })
-        : t("ordersCount", { count: orders.length });
+  const ordersCountText = isCourier && isOldDetail
+    ? t("headerOrdersCount", { count: orders.length })
+    : isOldDetail
+      ? t("oldOrdersCount", { count: orders.length })
+      : isManagerHeader || (isCourier && isEffectiveRefusedDetail)
+        ? t(isEffectiveRefusedDetail ? "headerRefusedOrdersCount" : "headerOrdersCount", { count: orders.length })
+        : isEffectiveRefusedDetail
+          ? t("refusedOrdersCount", { count: orders.length })
+          : t("ordersCount", { count: orders.length });
   const headerParts = (
     isManagerHeader
       ? [
@@ -931,9 +786,114 @@ const MailDetailPage = () => {
   const showStatusBadge = !isCourier && headerStatus !== null;
   const showReadOnlyBadge = !isCourier && isOldDetail;
 
+  // ─── Rejimlar (maket) ─────────────────────────────────────────────────────
+  const isManager = role === "manager";
+  const isCourierHistory = isCourier && (isOldDetail || isReadOnlyRefusedCourier);
+  const showPrimaryAction = orders.length > 0 && !isOldDetail && !isReadOnlyRefusedCourier && canShowActionButton;
+  const primaryIsReceive = shouldReceiveCurrentPost || isEffectiveRefusedDetail;
+  const selectedCount = selectedIds.size;
+  const selectedValue = count(selectedCount);
+  const totalSum = orders.reduce((sum, order) => sum + (Number(order.total_price) || 0), 0);
+  const selectedSum = selectedOrders.reduce((sum, order) => sum + (Number(order.total_price) || 0), 0);
+
+  const primaryButton = showPrimaryAction ? (
+    <SendButton
+      selectedCount={selectedCount}
+      isCourier={shouldReceiveCurrentPost}
+      mode={isEffectiveRefusedDetail ? "receive" : "send"}
+      onSend={handleSend}
+      onReceive={handleReceive}
+      disabled={isEffectiveRefusedDetail && !canReceiveRefusedPost}
+      isBusy={primaryIsReceive ? isReceiving : isCheckingCouriers}
+      block={isCourier && isPhone}
+    />
+  ) : null;
+
+  // Chop etish: tanlanganlar (menyu; telefonda pastki varaqa). Kuryerning rad etilgan pochtasida — barchasi.
+  const renderPrintSelected = (className?: string, compact = false) => (
+    <PrintModeSelect
+      count={selectedCount}
+      onSelect={(mode) => handlePrint(mode as PrintMode)}
+      buttonLabel={t("print")}
+      ariaLabel={isCourier ? t("detailPage.printSelectedLabel", { value: selectedValue, count: selectedCount }) : undefined}
+      menuLabel={t("detailPage.printMenuLabel")}
+      menuTitle={t(isCourier ? "detailPage.printMenuTitleLabels" : "detailPage.printMenuTitle", {
+        value: selectedValue,
+        count: selectedCount,
+      })}
+      sheetTitle={t("detailPage.printSheetTitle")}
+      sheetDescription={t("detailPage.printSheetDescription", { value: selectedValue, count: selectedCount })}
+      options={printOptions}
+      className={className}
+      compact={compact}
+    />
+  );
+  const printAll = (
+    <PrintModeSelect
+      count={orders.length}
+      hideCount
+      onSelect={(mode) => handlePrintAll(mode as PrintMode)}
+      buttonLabel={t("detailPage.printAll")}
+      ariaLabel={t("detailPage.printAllLabel", { value: count(orders.length), count: orders.length })}
+      menuLabel={t("detailPage.printMenuLabel")}
+      menuTitle={t("detailPage.printAllMenuTitle", { value: count(orders.length), count: orders.length })}
+      sheetTitle={t("detailPage.printSheetTitle")}
+      sheetDescription={t("detailPage.printAllSheetDescription", { value: count(orders.length), count: orders.length })}
+      options={printOptions}
+      className="w-full"
+    />
+  );
+
+  // Sarlavha amallari: telefonda kuryer uchun yo'q (chop etish — kartada, qabul — pastki panelda).
+  const headerActions = isOldDetail
+    ? null
+    : isReadOnlyRefusedCourier
+      ? isPhone || orders.length === 0
+        ? null
+        : printAll
+      : isCourier && isPhone
+        ? null
+        : (
+            <div className="flex flex-wrap items-center gap-2 max-md:w-full max-md:flex-col max-md:items-stretch">
+              {renderPrintSelected("max-md:w-full")}
+              {primaryButton}
+            </div>
+          );
+
+  // Karta: sarlavha, skaner izohi va tanlov izohi rejimga qarab (maketlar).
+  const ordersTitle =
+    isCourier && !isEffectiveRefusedDetail && !isCourierHistory ? t("detailPage.onTheRoadTitle") : undefined;
+  const ordersAria = isOldDetail
+    ? t("detailPage.oldOrdersAria")
+    : isEffectiveRefusedDetail
+      ? t("detailPage.refusedOrdersAria")
+      : undefined;
+  const scanHint =
+    scannerEnabled && !isEffectiveRefusedDetail
+      ? t(isCourier ? "detailPage.scanHintCourier" : isManager ? "detailPage.scanHintManager" : "detailPage.scanHintStaff")
+      : undefined;
+  const selectionHint = isEffectiveRefusedDetail
+    ? t("detailPage.selectionHintRefused")
+    : isCourier
+      ? t("detailPage.selectionHintReceiveShort")
+      : shouldReceiveCurrentPost
+        ? t("detailPage.selectionHintReceive")
+        : t("detailPage.selectionHintSend");
+  const tableColumns = isCourier
+    ? isOldDetail
+      ? COURIER_HISTORY_COLUMNS
+      : COURIER_COLUMNS
+    : isManager && !isOldDetail
+      ? MANAGER_COLUMNS
+      : undefined;
+  const tabletHidden = isCourier ? COURIER_TABLET_HIDDEN : isManager && !isOldDetail ? MANAGER_TABLET_HIDDEN : undefined;
+  const readOnlyBadge = isCourierHistory ? (
+    <Badge icon={Lock}>{t("detailPage.readOnly")}</Badge>
+  ) : null;
+
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <PageContainer className="flex flex-col gap-5">
+    <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
       <PageHeader
         back={handleBack}
         backLabel={t(MAIL_TAB_LABEL_KEYS[normalizeMailTab(fromTab)])}
@@ -965,56 +925,48 @@ const MailDetailPage = () => {
             ))}
           </span>
         }
-        actions={
-          !isOldDetail ? (
-            <PrintModeSelect
-              count={selectedIds.size}
-              onSelect={(mode) => handlePrint(mode as PrintMode)}
-              buttonLabel={t("print")}
-              menuLabel={t("printMenu")}
-              options={printOptions}
-            />
-          ) : null
-        }
-      />
-
-      {/* Stat kartalar */}
-      <MailStatCards
-        totalOrders={orders.length}
-        selectedCount={selectedIds.size}
-        homeStats={homeStats}
-        centerStats={centerStats}
-        showSelectionCard={!isOldDetail}
+        actions={headerActions}
       />
 
       {canManualSelectRefusedOrder ? (
-        <div className="flex items-center gap-3 rounded-2xl border border-main/20 bg-main/10 px-4 py-3 text-main dark:text-white">
-          <ScanLine size={20} className="shrink-0" />
-          <p className="m-0 text-sm font-semibold">{t("refusedScanHint")}</p>
-        </div>
+        <DetailAlert tone="info" icon={Info} role="note" title={t("detailPage.refusedAlertTitle")} titleBlock>
+          {t("detailPage.refusedAlertText")}
+        </DetailAlert>
       ) : null}
 
       {hasStuckOnTheRoadOrders && orders.length > 0 ? (
-        <div
+        <DetailAlert
+          tone="warning"
+          icon={TriangleAlert}
           role="note"
-          className="flex items-center gap-3 rounded-2xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-amber-800 dark:border-amber-400/25 dark:bg-amber-400/10 dark:text-amber-100"
+          titleBlock
+          title={t("detailPage.leftoversTitle", { value: count(orders.length), count: orders.length })}
         >
-          <AlertTriangle size={20} className="shrink-0" />
-          <p className="m-0 text-sm font-semibold">
-            {t("receivedPostLeftoversHint", { count: orders.length })}
-          </p>
-        </div>
+          <span className="text-[13px]">{t("detailPage.leftoversText")}</span>
+        </DetailAlert>
       ) : null}
 
-      {/* Jadval */}
+      <MailStatCards
+        totalOrders={orders.length}
+        selectedCount={selectedCount}
+        homeStats={homeStats}
+        centerStats={centerStats}
+        showSelectionCard={!isOldDetail && !isReadOnlyRefusedCourier}
+        layout={isCourier ? "courier" : "staff"}
+        leadCard={isCourier ? (isOldDetail ? "total" : isReadOnlyRefusedCourier ? "refused" : "selected") : undefined}
+        selectedSum={selectedSum}
+        totalSum={totalSum}
+      />
+
       <OrdersTable
         orders={orders}
         selectedIds={selectedIds}
         allSelected={allSelected}
         someSelected={someSelected}
-        onToggleAll={handleManualToggleAll}
-        onToggleOne={handleManualToggleOne}
-        onPrintOne={handlePrintOne}
+        onToggleAll={toggleAll}
+        onToggleOne={toggleOne}
+        onClearSelection={clearSelection}
+        onPrintOne={isOldDetail ? undefined : handlePrintOne}
         onDeleteOne={handleDeleteOne}
         // yokjwjXG: savat = buyurtmani SHU pochtadan o'chirish (`POST /post/delete`),
         // `POST /post/cancel` (bekor qilinganlarni qaytarish) EMAS. Faqat
@@ -1022,52 +974,64 @@ const MailDetailPage = () => {
         canDelete={canDeleteFromPost}
         variant={isOldDetail ? "history" : "default"}
         readOnly={isOldDetail || isReadOnlyRefusedCourier}
+        title={ordersTitle}
+        ariaLabel={ordersAria}
+        headerExtra={readOnlyBadge}
+        scanHint={scanHint}
+        scannerReady={scannerEnabled && (!isEffectiveRefusedDetail || isManager)}
+        scannerReadyLabel={isEffectiveRefusedDetail ? t("detailPage.scannerReadyShort") : undefined}
+        selectionHint={selectionHint}
+        columns={tableColumns}
+        tabletHidden={tabletHidden}
+        orderHref={isCourier ? null : undefined}
+        sortable={isCourier}
+        cardVariant={isCourier ? "courier" : "default"}
+        notice={
+          isReadOnlyRefusedCourier ? (
+            <>
+              <Info aria-hidden="true" size={16} className="shrink-0 text-text-subtle" />
+              <span className="min-w-0">{t("detailPage.courierRefusedNote")}</span>
+            </>
+          ) : undefined
+        }
+        phoneHeaderAction={isReadOnlyRefusedCourier && isPhone && orders.length > 0 ? printAll : undefined}
+        phoneSelectionAction={isCourier && isPhone ? renderPrintSelected("shrink-0", true) : undefined}
+        printLabel={isCourier ? (order) => t("detailPage.printRowLabel", { id: order.id }) : undefined}
       />
 
-      {/* Tanlanganlarni pochtadan o'chirish — alohida v2 blok (eski jadval tegilmaydi). */}
-      {canDeleteFromPost && selectedIds.size > 0 ? (
+      {/* Tanlanganlarni pochtadan o'chirish (superadmin, NEW pochta). */}
+      {canDeleteFromPost && selectedCount > 0 ? (
         <div
           data-testid="mail-delete-selected"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-border bg-surface px-4 py-3"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-[14px] border border-border bg-surface px-5 py-3 max-md:px-4"
         >
           <span className="text-sm font-semibold text-text">
-            {t("selectedCountLabel", { count: selectedIds.size })}
+            {t("selectedCountLabel", { count: selectedCount })}
           </span>
-          <button
-            type="button"
+          <Button
+            variant="danger-soft"
+            leftIcon={Trash2}
+            aria-haspopup="dialog"
             onClick={() => openDeleteConfirm(Array.from(selectedIds))}
-            className="inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-[10px] border border-transparent bg-danger-soft px-4 text-sm font-semibold text-danger-fg transition-colors duration-150 hover:bg-danger hover:text-on-solid focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action max-md:min-h-11 max-md:w-full"
+            className="max-md:w-full"
           >
-            <Trash2 className="size-4" aria-hidden="true" />
             {t("deleteSelectedFromPost")}
-          </button>
+          </Button>
         </div>
       ) : null}
 
-      {/* Rol asosida tugma. "Jo'natish" rejimi faqat filialga jo'nata oladiganlarga
-          (superadmin/admin, HQ registratori); qabul rejimlari o'zgarmagan. */}
-      {orders.length > 0 && !isOldDetail && !isReadOnlyRefusedCourier && canShowActionButton && (
-        <div className="flex flex-col gap-3">
-          <SendButton
-            selectedCount={selectedIds.size}
-            isCourier={shouldReceiveCurrentPost}
-            mode={isEffectiveRefusedDetail ? "receive" : "send"}
-            onSend={handleSend}
-            onReceive={handleReceive}
-            disabled={isEffectiveRefusedDetail && !canReceiveRefusedPost}
-            isBusy={
-              shouldReceiveCurrentPost || isEffectiveRefusedDetail
-                ? isReceiving
-                : isBranchTransferRole
-                  ? sendTransferBatch.isPending
-                  : isCheckingCouriers
-            }
-          />
-        </div>
-      )}
+      {/* Kuryer telefoni: «Pochtani qabul qilish — n ta» pastki menyu ustidagi panelda (maket `courier-mails-detail-receive`). */}
+      {isCourier && isPhone && primaryButton ? (
+        <>
+          <div aria-hidden="true" className="h-[72px] shrink-0" />
+          <div className="fixed inset-x-0 bottom-[var(--shell-bottomnav-h)] z-30 border-t border-border bg-surface px-4 py-3">
+            {primaryButton}
+          </div>
+        </>
+      ) : null}
 
-      {/* Pochta jo'natish modali — filial tanlash */}
-      {canDispatchToBranch && !isCourierLikeReceiver && !isEffectiveRefusedDetail && !isOldDetail && !isBranchTransferRole && (
+      {/* Pochta jo'natish oynasi — filial tanlash */}
+      {canDispatchToBranch && !isCourierLikeReceiver && !isEffectiveRefusedDetail && !isOldDetail && (
         <SendPostModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
@@ -1075,6 +1039,7 @@ const MailDetailPage = () => {
           branches={branchRecipients}
           selectedIds={selectedIds}
           onSuccess={handleSendSuccess}
+          regionName={regionLabel}
         />
       )}
 
@@ -1086,7 +1051,7 @@ const MailDetailPage = () => {
         onCancel={closeDeleteConfirm}
         onConfirm={(reason) => void handleDeleteFromPost(reason)}
       />
-    </PageContainer>
+    </div>
   );
 };
 
