@@ -71,7 +71,8 @@
   "delete": {
     "confirm": "Filialni o'chirmoqchimisiz?",
     "success": "Filial o'chirildi",
-    "error": "Filialni o'chirishda xatolik yuz berdi"
+    "error": "Filialni o'chirishda xatolik yuz berdi",
+    "retryLater": "Hozir tekshirib bo'lmadi. Keyinroq qayta urinib ko'ring."
   },
   "fields": {
     "name": "Filial nomi",

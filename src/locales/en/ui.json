@@ -868,7 +868,9 @@
       "runtime": {
         "overline": "Unexpected error",
         "title": "This page couldn't be displayed",
-        "description": "An unexpected error occurred in the app. Please try again."
+        "description": "An unexpected error occurred in the app. Please try again.",
+        "repeatedDescription": "This page keeps failing. Please contact your administrator.",
+        "code": "Error code: {{code}}"
       }
     }
   },

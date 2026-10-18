@@ -13,12 +13,12 @@ export interface FinancialBalanceData {
     marketsTotalBalans: number;
     marketsTotalBalance: number;
     items: FinancialBalanceParty[];
-  };
+  } & FinancialBalanceListMeta;
   couriers: {
     couriersTotalBalanse: number;
     couriersTotalBalance: number;
     items: FinancialBalanceParty[];
-  };
+  } & FinancialBalanceListMeta;
   /**
    * Holat formulasidagi musbat qism — sotilgan, lekin hali kassaga yetmagan
    * pul (kuryer, filial yoki kargo qo'lida). Backend `chain` bersa
@@ -30,6 +30,15 @@ export interface FinancialBalanceData {
    * Eski javobda `null` — «Balans tarkibi» bitta «Yo'ldagi pul» qatorini chizadi.
    */
   chain: { chainReceivable: number; providerReceivable: number } | null;
+}
+
+/**
+ * Ro'yxat sanog'i (IaMK2tf2): backend faqat eng katta kassalarni qaytarishi mumkin — `nonZeroCount` noldan farqli
+ * kassalarning HAQIQIY soni, `truncated` — ro'yxat kesilgan (`items` undan kam). Eski javobda — yuklangan qatorlar.
+ */
+export interface FinancialBalanceListMeta {
+  nonZeroCount: number;
+  truncated: boolean;
 }
 
 type UnknownRecord = Record<string, unknown>;
@@ -147,7 +156,10 @@ const normalizePartyItems = (items: unknown[], mode: "market" | "courier"): Fina
       const rawBalance = toFinancialNumber(
         row.balance ?? row.amount ?? row.totalBalance ?? row.totalBalans ?? row.total_balance,
       );
-      const balance = mode === "market" ? -Math.abs(rawBalance) : rawBalance;
+      // IaMK2tf2: backend kassaning IMZOLI balansini beradi — market uchun musbat = biz marketga qarzmiz (maketda
+      // «−4 820 000 so'm»), manfiy = market oldindan to'lagan / bizga qarzdor. Ishora teskari olinadi, majburan
+      // manfiy qilinmaydi (`-Math.abs` oldindan to'lagan marketni ham qarz qilib ko'rsatardi).
+      const balance = mode === "market" ? (rawBalance === 0 ? 0 : -rawBalance) : rawBalance;
 
       return {
         id: String(row.id ?? user.id ?? market.id ?? index),
@@ -157,6 +169,15 @@ const normalizePartyItems = (items: unknown[], mode: "market" | "courier"): Fina
       };
     }),
   ).filter((item) => item.name);
+
+const pickListMeta = (source: UnknownRecord, loaded: number): FinancialBalanceListMeta => {
+  const count = pickNumber(source, ["nonZeroCount", "non_zero_count"]);
+  return {
+    // Sanoq yuklangan qatorlardan kam bo'lolmaydi (noto'g'ri javobda ham ro'yxat bilan zid emas).
+    nonZeroCount: Math.max(loaded, count ?? loaded),
+    truncated: source.truncated === true,
+  };
+};
 
 const pickPartyItems = (
   source: unknown,
@@ -287,11 +308,13 @@ export const normalizeFinancialBalance = (response: unknown): FinancialBalanceDa
       marketsTotalBalans: marketsBalance,
       marketsTotalBalance: marketsBalance,
       items: marketItems,
+      ...pickListMeta(markets, marketItems.length),
     },
     couriers: {
       couriersTotalBalanse: couriersBalance,
       couriersTotalBalance: couriersBalance,
       items: courierItems,
+      ...pickListMeta(couriers, courierItems.length),
     },
     receivable,
     chain: chainReceivable !== undefined ? { chainReceivable, providerReceivable } : null,

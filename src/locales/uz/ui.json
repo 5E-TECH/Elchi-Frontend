@@ -868,7 +868,9 @@
       "runtime": {
         "overline": "Kutilmagan xato",
         "title": "Sahifani ko'rsatib bo'lmadi",
-        "description": "Ilovada kutilmagan xato yuz berdi. Qayta urinib ko'ring."
+        "description": "Ilovada kutilmagan xato yuz berdi. Qayta urinib ko'ring.",
+        "repeatedDescription": "Bu sahifa takroran xato bermoqda. Administratorga murojaat qiling.",
+        "code": "Xato kodi: {{code}}"
       }
     }
   },

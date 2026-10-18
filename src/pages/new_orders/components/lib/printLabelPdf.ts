@@ -612,20 +612,20 @@ const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
 
             <div class="right">
               <table class="top-table">
-                <tr><td class="k">${escapeHtml(tLabel("labelFullName"))}</td><td class="v">${fullName}</td></tr>
-                <tr><td class="k">${escapeHtml(tLabel("labelPhone"))}</td><td class="v">${phone}${extraPhone ? `<div class="v-sub">${extraPhone}</div>` : ""}</td></tr>
-                <tr><td class="k">${escapeHtml(tLabel("labelAddress"))}</td><td class="v">${region}${street ? `<div class="v-sub">${street}</div>` : ""}</td></tr>
-                <tr><td class="k">${escapeHtml(tLabel("labelTotal"))}</td><td class="v">${total}<div class="v-strong">${cod}</div></td></tr>
-                <tr><td class="k">${escapeHtml(tLabel("labelSender"))}</td><td class="v">${sender}<div class="v-sub">${contact}</div></td></tr>
+                <tr class="r-name"><td class="k">${escapeHtml(tLabel("labelFullName"))}</td><td class="v"><div class="one big">${fullName}</div></td></tr>
+                <tr class="r-phone"><td class="k">${escapeHtml(tLabel("labelPhone"))}</td><td class="v">${extraPhone ? `<div class="one">${phone}</div><div class="one sub">${extraPhone}</div>` : `<div class="one big">${phone}</div>`}</td></tr>
+                <tr class="r-address"><td class="k">${escapeHtml(tLabel("labelAddress"))}</td><td class="v">${street ? `<div class="one">${region}</div><div class="one sub">${street}</div>` : `<div class="two">${region}</div>`}</td></tr>
+                <tr class="r-total"><td class="k">${escapeHtml(tLabel("labelTotal"))}</td><td class="v"><div class="one mid">${total}</div><div class="one strong">${cod}</div></td></tr>
+                <tr class="r-sender"><td class="k">${escapeHtml(tLabel("labelSender"))}</td><td class="v"><div class="one small">${sender}</div><div class="one small">${contact}</div></td></tr>
               </table>
             </div>
           </div>
 
           <table class="bottom-table">
-            <tr><td class="k">${escapeHtml(tLabel("labelProduct"))}</td><td class="v">${product}</td></tr>
-            <tr><td class="k">${escapeHtml(tLabel("labelLandmark"))}</td><td class="v">${landmark}</td></tr>
-            <tr><td class="k">${escapeHtml(tLabel("labelComment"))}</td><td class="v">${comment}</td></tr>
-            <tr><td class="k">${escapeHtml(tLabel("labelLogist"))}</td><td class="v">${logist}</td></tr>
+            <tr class="r-product"><td class="k">${escapeHtml(tLabel("labelProduct"))}</td><td class="v"><div class="two">${product}</div></td></tr>
+            <tr class="r-line"><td class="k">${escapeHtml(tLabel("labelLandmark"))}</td><td class="v"><div class="one">${landmark}</div></td></tr>
+            <tr class="r-line"><td class="k">${escapeHtml(tLabel("labelComment"))}</td><td class="v"><div class="one">${comment}</div></td></tr>
+            <tr class="r-line"><td class="k">${escapeHtml(tLabel("labelLogist"))}</td><td class="v"><div class="one">${logist}</div></td></tr>
           </table>
         </section>
       `;
@@ -657,11 +657,18 @@ const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
           font-size: 12px;
           cursor: pointer;
         }
+        /* Har yorliq — o'z 100×60 mm sahifasi: ichidagi hech narsa keyingisiga toshmaydi (CKIflHFL). */
         .sheet {
           width: 100mm;
           height: 60mm;
           padding: 2mm;
+          overflow: hidden;
+          break-after: page;
           page-break-after: always;
+        }
+        .sheet:last-of-type {
+          break-after: auto;
+          page-break-after: auto;
         }
         .label {
           width: 100%;
@@ -676,7 +683,8 @@ const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
           display: flex;
           flex-direction: column;
           align-items: center;
-          padding: 0.6mm 1mm 0.8mm;
+          padding: 0.3mm 1mm 0;
+          overflow: hidden;
         }
         .brand {
           width: 100%;
@@ -684,11 +692,11 @@ const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
           align-items: flex-start;
           justify-content: center;
           gap: 1.2mm;
-          margin-bottom: 1.2mm;
+          margin-bottom: 0.4mm;
         }
         .brand-icon {
-          width: 7mm;
-          height: 7mm;
+          width: 6.4mm;
+          height: 6.4mm;
           object-fit: contain;
         }
         .brand-name {
@@ -703,25 +711,28 @@ const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
           line-height: 1.05;
         }
         .qr {
-          width: 19.8mm;
-          height: 19.8mm;
+          width: 19mm;
+          height: 19mm;
+          flex: none;
           display: block;
           image-rendering: pixelated;
         }
         .order-no {
-          margin-top: 1.4mm;
-          font-size: 10.4pt;
+          margin-top: 0.5mm;
+          font-size: 9.6pt;
           font-weight: 900;
           letter-spacing: .1pt;
           line-height: 1;
           text-align: center;
+          white-space: nowrap;
         }
         .date {
-          margin-top: 1.4mm;
-          font-size: 9pt;
+          margin-top: 0.4mm;
+          font-size: 8.2pt;
           font-weight: 800;
           letter-spacing: .2pt;
           line-height: 1;
+          white-space: nowrap;
         }
         .right { min-width: 0; }
         table {
@@ -734,7 +745,7 @@ const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
         .bottom-table td {
           border-bottom: 0.16mm solid #111;
           vertical-align: top;
-          padding: 0.85mm 1.1mm;
+          padding: 0.3mm 1.1mm;
           color: #000;
         }
         .top-table tr:last-child td,
@@ -743,44 +754,60 @@ const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
         }
         .top-table .k,
         .bottom-table .k {
-          width: 14mm;
+          width: 15mm;
+          padding-left: 0.7mm;
+          padding-right: 0.7mm;
+          overflow: hidden;
           font-size: 6.8pt;
           font-weight: 800;
           border-right: 0.16mm solid #111;
           white-space: nowrap;
         }
-        .top-table .v {
-          font-size: 9.3pt;
-          font-weight: 900;
-          line-height: 1.14;
-          word-break: break-word;
-        }
-        .top-table .v-sub {
-          font-size: 7.6pt;
-          font-weight: 800;
-          line-height: 1.12;
-          word-break: break-word;
-        }
-        .top-table .v-strong {
-          font-size: 10.2pt;
+        /*
+         * Qator balandligi PDF variantidagidek qat'iy (zoneARows: 14/20/24/22/16 pt ≈ 34 mm; pastda 22 mm):
+         * qiymat katakka sig'masa kesiladi («…», ko'pi bilan 2 qator) — jadval cho'zilib pastki jadval
+         * ustiga chiqmaydi (CKIflHFL).
+         */
+        .v {
           font-weight: 900;
           line-height: 1.1;
-          word-break: break-word;
+          overflow: hidden;
         }
+        .v .one {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .v .two {
+          display: -webkit-box;
+          -webkit-box-orient: vertical;
+          -webkit-line-clamp: 2;
+          line-clamp: 2;
+          overflow: hidden;
+          overflow-wrap: anywhere;
+        }
+        .top-table .v { font-size: 8.6pt; }
+        .top-table .big { font-size: 9.3pt; }
+        .top-table .sub { font-size: 7.4pt; font-weight: 800; }
+        .top-table .mid { font-size: 8pt; }
+        .top-table .strong { font-size: 9.8pt; }
+        .top-table .small { font-size: 7.2pt; }
+        .r-name { height: 4.5mm; }
+        .r-phone { height: 6.8mm; }
+        .r-address { height: 7.3mm; }
+        .r-total { height: 7.6mm; }
+        .r-sender { height: 6.2mm; }
         .bottom-table {
           width: 100%;
           height: 22mm;
           border: 0.22mm solid #111;
         }
-        .bottom-table .v {
-          font-size: 8.5pt;
-          font-weight: 900;
-          line-height: 1.14;
-          word-break: break-word;
-        }
+        .bottom-table .v { font-size: 8.2pt; }
+        .bottom-table .two { font-size: 7.6pt; }
+        .r-product { height: 6.6mm; }
+        .r-line { height: 4.6mm; }
         @media print {
           #printBtn { display: none; }
-          html, body { width: 100mm; height: 60mm; overflow: hidden; }
         }
       </style>
     </head>
@@ -788,6 +815,15 @@ const openBrowserLabelPrintWindow = (orders: LabelOrder[]) => {
       <button id="printBtn" type="button">${escapeHtml(tLabel("printButton"))}</button>
       ${sheets}
       <script>
+        // Uzun yorliq («Jo'natuvchi:», «Комментарий:») ustunga sig'guncha kichrayadi — PDF'dagi fitFontSize
+        // kabi; aks holda qo'shni katakka chiqib, matnlar ustma-ust tushadi (CKIflHFL).
+        document.querySelectorAll('.k').forEach((cell) => {
+          let size = parseFloat(getComputedStyle(cell).fontSize);
+          while (cell.scrollWidth > cell.clientWidth && size > 6) {
+            size -= 0.25;
+            cell.style.fontSize = size + 'px';
+          }
+        });
         const triggerPrint = () => {
           try { window.focus(); } catch {}
           try { window.print(); } catch {}
