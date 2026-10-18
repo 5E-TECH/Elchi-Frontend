@@ -147,6 +147,11 @@ export type DispatchPayload = {
   broadcast?: true;
   /** Faqat market tanlanganda; yo'q bo'lsa backend Telegram'ni shaxsiy chatga yuboradi. */
   telegram?: { market_id: string };
+  /**
+   * Urinish UUID'si (takror himoyasi) — `buildDispatchPayload` qo'ymaydi, forma yuborish paytida qo'shadi
+   * (`model/clientRequestId.ts`).
+   */
+  client_request_id?: string;
 };
 
 export const buildDispatchPayload = (values: DispatchFormValues): DispatchPayload => {

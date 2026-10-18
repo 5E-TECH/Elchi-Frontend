@@ -3,30 +3,28 @@ import { memo, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useMarkets } from "../../../entities/markets";
-import { getIntegrationErrorMessage, type CreateIntegrationPayload, useCreateIntegration } from "../../../entities/integrations";
+import {
+  getIntegrationErrorMessage,
+  type CreateIntegrationPayload,
+  type IntegrationAuthType,
+  useCreateIntegration,
+} from "../../../entities/integrations";
 import { formatPhone } from "../../../shared/lib/formatPhone";
 import { notify } from "../../../shared/lib/notify";
 import { Button, Card, Field, PageHeader, Select, TextInput, type SelectOption } from "../../../shared/ui/primitives";
 import { SecretInput, Switch } from "../../integrations/ui";
+import { LEGACY_AUTH_LABEL_KEY, LEGACY_AUTH_TYPES, buildLegacyAuthCreate } from "./legacyAuth";
 
 /**
  * ESKI TASHQI MANBA — yaratish (maket `*-integrations-legacy-source-create`; admin/menejer/registrator — shu).
  *
  * Uch bo'lim bitta kartada: «Asosiy ma'lumotlar» (nom, slug — nomdan avtomatik, market), «Ulanish sozlamalari»
  * (API manzili, avtorizatsiya turi → login/parol yoki token), «Integratsiya holati» (kalit). Saqlangach —
- * `/integrations/sources` (kanonik yo'l). Payload avvalgidek (`type: "api"`, `credentials`, `market_id`).
+ * `/integrations/sources` (kanonik yo'l). Payload: `type: "api"`, `credentials`, `market_id`; avtorizatsiya turi —
+ * backend qiymatlari `login` | `api_key`, token `credentials.api_key` da (`legacyAuth.ts`).
  */
 
 type MarketOptionSource = { id?: string | number; name?: string; username?: string | null; phone_number?: string | null };
-
-const AUTH_TYPES = ["none", "bearer", "basic"] as const;
-type AuthType = (typeof AUTH_TYPES)[number];
-
-const AUTH_LABEL_KEY: Record<AuthType, string> = {
-  none: "legacySources.authNone",
-  bearer: "legacySources.authToken",
-  basic: "legacySources.authBasic",
-};
 
 const makeSlug = (value: string) =>
   value
@@ -64,7 +62,7 @@ const ExternalIntegrationCreatePage = () => {
     slug: "",
     api_url: "",
     auth_url: "",
-    auth_type: "basic" as AuthType,
+    auth_type: "login" as IntegrationAuthType,
     username: "",
     password: "",
     token: "",
@@ -84,8 +82,8 @@ const ExternalIntegrationCreatePage = () => {
       })),
     [marketsQuery.data],
   );
-  const authOptions = useMemo<SelectOption<AuthType>[]>(
-    () => AUTH_TYPES.map((value) => ({ value, label: t(AUTH_LABEL_KEY[value]) })),
+  const authOptions = useMemo<SelectOption<IntegrationAuthType>[]>(
+    () => LEGACY_AUTH_TYPES.map((value) => ({ value, label: t(LEGACY_AUTH_LABEL_KEY[value]) })),
     [t],
   );
 
@@ -97,26 +95,13 @@ const ExternalIntegrationCreatePage = () => {
     if (!form.name.trim() || !form.slug.trim() || !form.api_url.trim() || !form.market_id) return;
     if (createIntegration.isPending) return;
     try {
-      const credentials: Record<string, string> = {};
-      const authUrl = form.auth_url.trim();
-      const username = form.username.trim();
-      const password = form.password.trim();
-      const token = form.token.trim();
-      if (authUrl) credentials.auth_url = authUrl;
-      if (form.auth_type === "basic") {
-        if (username) credentials.username = username;
-        if (password) credentials.password = password;
-      }
-      if (form.auth_type === "bearer" && token) credentials.token = token;
-
       const payload: CreateIntegrationPayload = {
         name: form.name.trim(),
         slug: form.slug.trim(),
         type: "api",
         status: form.is_active ? "active" : "inactive",
         base_url: form.api_url.trim(),
-        auth_type: form.auth_type,
-        credentials,
+        ...buildLegacyAuthCreate(form),
         market_id: form.market_id,
         is_active: form.is_active,
       };
@@ -208,7 +193,7 @@ const ExternalIntegrationCreatePage = () => {
                 <Select
                   options={authOptions}
                   value={form.auth_type}
-                  onChange={(value) => setForm((f) => ({ ...f, auth_type: value ?? "none", token: value === "bearer" ? f.token : "" }))}
+                  onChange={(value) => setForm((f) => ({ ...f, auth_type: value ?? "login", token: value === "api_key" ? f.token : "" }))}
                 />
               </Field>
               <Field label={t("legacySources.authUrl")} hint={t("legacySources.optional")}>
@@ -220,7 +205,7 @@ const ExternalIntegrationCreatePage = () => {
                   placeholder="https://api.example.com/auth"
                 />
               </Field>
-              {form.auth_type === "basic" ? (
+              {form.auth_type === "login" ? (
                 <>
                   <Field label={t("legacySources.username")}>
                     <TextInput value={form.username} onValueChange={(value) => set("username", value)} placeholder={t("legacySources.usernamePlaceholder")} autoComplete="off" />
@@ -230,8 +215,8 @@ const ExternalIntegrationCreatePage = () => {
                   </Field>
                 </>
               ) : null}
-              {form.auth_type === "bearer" ? (
-                <Field label={t("legacySources.token")} className="md:col-span-2">
+              {form.auth_type === "api_key" ? (
+                <Field label={t("legacySources.token")} hint={t("legacySources.tokenHint")} className="md:col-span-2">
                   <SecretInput value={form.token} onValueChange={(value) => set("token", value)} placeholder={t("legacySources.tokenPlaceholder")} />
                 </Field>
               ) : null}

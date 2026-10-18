@@ -9,6 +9,13 @@ export type DispatchResult = {
   recipient_ids: string[];
   channels: string[];
   telegram: unknown;
+  /**
+   * Ayni `client_request_id` bilan avvalgi urinish bor edi — backend QAYTA YUBORMADI va tarixdagi natijani qaytardi
+   * (200). `status` — o'sha urinishning tarixdagi holati: `sent` · `partial` · `inbox_only` · `skipped` (yuborilgan),
+   * `running` (hali yuborilmoqda), `failed` (xato bilan tugagan).
+   */
+  duplicate: boolean;
+  status: string | null;
 };
 
 const asRecord = (value: unknown): Record<string, unknown> =>
@@ -22,7 +29,8 @@ const unwrap = (payload: unknown) => {
 /**
  * ⚠️ `retry: 0` (mutatsiya standarti) — ATAYLAB. Rol/hammaga yuborish sekin:
  * gateway 504 qaytarsa ham qatorlar baribir yozilib ketadi. Avtomatik qayta
- * yuborish dublikat demak.
+ * yuborish dublikat demak. Qo'lda qayta yuborishni `client_request_id`
+ * (payload'da, forma qo'yadi) himoyalaydi.
  */
 export const useDispatchNotification = () => {
   const queryClient = useQueryClient();
@@ -36,6 +44,8 @@ export const useDispatchNotification = () => {
         recipient_ids: Array.isArray(data.recipient_ids) ? data.recipient_ids.map(String) : [],
         channels: Array.isArray(data.channels) ? data.channels.map(String) : [],
         telegram: data.telegram ?? null,
+        duplicate: data.duplicate === true,
+        status: typeof data.status === "string" ? data.status : null,
       };
     },
     retry: 0,

@@ -136,6 +136,13 @@ export type IntegrationParams = {
   limit?: number;
 };
 
+/**
+ * Chiquvchi so'rovlar avtorizatsiyasi — backend `AuthType` (integration-service): faqat shu ikkisi. `login` —
+ * `auth_url` ga login/parol yuborib token olinadi; `api_key` — saqlangan `api_key` `Authorization` sarlavhasida ketadi
+ * (bo'sh bo'lsa — sarlavhasiz). Backend boshqa har qiymatni `api_key` qiladi.
+ */
+export type IntegrationAuthType = "api_key" | "login";
+
 export type CreateIntegrationPayload = {
   name: string;
   slug: string;
@@ -148,7 +155,7 @@ export type CreateIntegrationPayload = {
   integration_mode?: IntegrationMode;
   status: string;
   base_url: string;
-  auth_type: string;
+  auth_type: IntegrationAuthType;
   credentials: Record<string, string>;
   market_id?: string | null;
   is_active?: boolean;
@@ -160,6 +167,14 @@ export type CreateIntegrationPayload = {
 export type UpdateIntegrationPayload = Partial<CreateIntegrationPayload> & {
   webhook_enabled?: boolean;
   reconcile_enabled?: boolean;
+  /**
+   * Yassi kirish maydonlari (`UpdateIntegrationDto`). Sirlar (`password`, `api_key`) serverdan qaytmaydi — faqat yangi
+   * qiymat yozilganda yuboriladi.
+   */
+  auth_url?: string;
+  username?: string;
+  password?: string;
+  api_key?: string;
 };
 
 export type IntegrationsMeta = {

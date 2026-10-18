@@ -108,6 +108,53 @@ describe("Tashqi manbalar — o'chirish va tahrirlash", () => {
         }),
       ),
     );
+    // Eski `none` — backendda `api_key` (tokensiz); `credentials` butunlay almashtirilmaydi.
+    const payload = api.patch.mock.calls[0][1] as Record<string, unknown>;
+    expect(payload.auth_type).toBe("api_key");
+    expect(payload).not.toHaveProperty("credentials");
+    expect(payload).not.toHaveProperty("api_key");
     expect(await screen.findByText("Integratsiya yangilandi")).toBeInTheDocument();
+  });
+
+  it("tahrirlash (login): maskalangan parol (`***`) qaytib yuborilmaydi, yangisi yozilsa — yuboriladi", async () => {
+    const LOGIN_SOURCE = {
+      ...SOURCE,
+      auth_type: "login",
+      auth_url: "https://api.uzum.uz/auth",
+      username: "elchi_sync",
+      credentials: { auth_url: "https://api.uzum.uz/auth", username: "elchi_sync", password: "***", auth_type: "login" },
+    };
+    api.get.mockImplementation((url: string) => {
+      if (url === "integrations") {
+        return Promise.resolve({ data: { statusCode: 200, data: { items: [LOGIN_SOURCE], meta: { total: 1, page: 1, limit: 10 } } } });
+      }
+      if (url === "markets") return Promise.resolve({ data: { data: { items: [{ id: "12", name: "Baraka Shop" }] } } });
+      return Promise.resolve({ data: {} });
+    });
+    const user = userEvent.setup();
+    render();
+
+    expect((await screen.findAllByText("Login va parol")).length).toBeGreaterThan(0);
+    const [edit] = await screen.findAllByRole("button", { name: "Uzum Market — tahrirlash" });
+    await user.click(edit);
+    const dialog = await screen.findByRole("dialog", { name: "Integratsiyani tahrirlash" });
+    expect(within(dialog).getByRole("combobox", { name: "Avtorizatsiya turi" })).toHaveTextContent("Login va parol");
+    const password = within(dialog).getByLabelText("Parol");
+    expect(password).toHaveValue("");
+
+    await user.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+    await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(1));
+    const first = api.patch.mock.calls[0][1] as Record<string, unknown>;
+    expect(first).toMatchObject({ auth_type: "login", auth_url: "https://api.uzum.uz/auth", username: "elchi_sync" });
+    expect(first).not.toHaveProperty("password");
+    expect(first).not.toHaveProperty("credentials");
+
+    const [again] = await screen.findAllByRole("button", { name: "Uzum Market — tahrirlash" });
+    await user.click(again);
+    const second = await screen.findByRole("dialog", { name: "Integratsiyani tahrirlash" });
+    await user.type(within(second).getByLabelText("Parol"), "YangiParol1");
+    await user.click(within(second).getByRole("button", { name: "Saqlash" }));
+    await waitFor(() => expect(api.patch).toHaveBeenCalledTimes(2));
+    expect(api.patch.mock.calls[1][1]).toMatchObject({ auth_type: "login", password: "YangiParol1" });
   });
 });

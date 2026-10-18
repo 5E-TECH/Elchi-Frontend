@@ -896,6 +896,7 @@
     "subtitle": "QR kod orqali tashqi buyurtmalarni qidirish uchun integratsiyani tanlang",
     "title": "Tashqi manbalar",
     "token": "Token",
+    "tokenHint": "Bo'sh qoldirilsa, so'rovlar tokensiz yuboriladi",
     "tokenPlaceholder": "Tokenni kiriting",
     "updateError": "Integratsiyani yangilashda xatolik",
     "updateSuccess": "Integratsiya yangilandi",

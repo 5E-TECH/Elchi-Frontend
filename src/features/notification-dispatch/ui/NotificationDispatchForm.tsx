@@ -35,6 +35,7 @@ import {
   type DispatchResult,
   type RecipientUser,
 } from "../api/useDispatchNotification";
+import { createDispatchAttempts, dispatchFingerprint } from "../model/clientRequestId";
 import {
   DISABLED_DISPATCH_ROLES,
   DISPATCH_LIMITS,
@@ -149,6 +150,12 @@ type NotificationDispatchFormProps = {
  * Tasdiq oynasi (`Dialog role="alertdialog"`): Kimga · Qabul qiluvchilar taxminan · Kanallar · to'liq xabar; «Hamma» da qizil
  * ogohlantirish va qizil tugma. Ikki marta yuborilmaydi (`submittingRef` + `isPending`); javobsiz / 502–504 — natija
  * noma'lum, qayta yuborilmaydi, forma «Yangi xabar» gacha qulflanadi (avvalgidek).
+ *
+ * Takror himoyasi — `client_request_id` (`model/clientRequestId.ts`): har yuborish urinishiga bitta UUID, mazmunga
+ * bog'langan. Xatodan keyin aynan shu mazmun qayta yuborilsa — o'sha id (backend ikkinchi marta yubormaydi); mazmun
+ * o'zgarsa, muvaffaqiyatdan yoki «Yangi xabar» dan keyin — yangi id. Backend takrorni tarixdagi natija bilan qaytaradi
+ * (`duplicate`): yuborilgan — natija; `running` — hali yuborilmoqda (forma qulflanadi); `failed` — avvalgi urinish xato
+ * bilan tugagan (xato ko'rsatiladi, keyingi «Yuborish» — yangi urinish).
  */
 const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormProps) => {
   const { t, i18n } = useTranslation("notifications");
@@ -184,15 +191,17 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
   const dispatchMutation = useDispatchNotification();
   const [confirmPayload, setConfirmPayload] = useState<DispatchPayload | null>(null);
   const [result, setResult] = useState<DispatchResult | null>(null);
-  const [unknownOutcome, setUnknownOutcome] = useState(false);
+  /** Natija noma'lum: `timeout` — javob kelmadi (502–504); `running` — backend «hali yuborilmoqda» dedi. */
+  const [unknownOutcome, setUnknownOutcome] = useState<"timeout" | "running" | null>(null);
   const [sendError, setSendError] = useState("");
   const submittingRef = useRef(false);
+  const [attempts] = useState(createDispatchAttempts);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const [previewCreatedAt] = useState(() => new Date().toISOString());
 
   // Yuborilgan (yoki natijasi noma'lum) xabar shu formadan qayta yuborilmaydi —
   // faqat "Yangi xabar" orqali (yangi guruh kaliti bilan).
-  const locked = unknownOutcome || Boolean(result);
+  const locked = Boolean(unknownOutcome) || Boolean(result);
 
   const roleLabel = (role?: string) => (role ? tUsers(ROLE_LABEL_KEYS[role] ?? role) : "");
   const userLabel = (user: RecipientUser) =>
@@ -259,18 +268,33 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
   const confirmSend = () => {
     if (!confirmPayload || submittingRef.current || dispatchMutation.isPending) return;
     submittingRef.current = true;
-    dispatchMutation.mutate(confirmPayload, {
+    // Bitta urinish — bitta id: xatodan keyin aynan shu mazmun qayta yuborilsa o'sha id ketadi.
+    const fingerprint = dispatchFingerprint(confirmPayload);
+    const request = { ...confirmPayload, client_request_id: attempts.take(fingerprint) };
+    dispatchMutation.mutate(request, {
       onSuccess: (response) => {
-        setResult(response);
         setConfirmPayload(null);
+        if (response.duplicate && response.status === "running") {
+          // Ayni id bilan avvalgi so'rov hali ishlanmoqda — natija noma'lum, qayta yuborilmaydi.
+          setUnknownOutcome("running");
+          return;
+        }
+        attempts.settle(fingerprint);
+        if (response.duplicate && response.status === "failed") {
+          // Avvalgi urinish xato bilan tugagan, backend qayta yubormadi. Keyingi «Yuborish» — yangi urinish (yangi id).
+          setSendError(t("dispatch.duplicateFailed"));
+          return;
+        }
+        setResult(response);
       },
       onError: (error) => {
         const status = (error as AxiosError).response?.status;
         setConfirmPayload(null);
+        // Id saqlanadi (`settle` yo'q): aynan shu mazmun qayta yuborilsa backend uni ikkinchi marta yubormaydi.
         // Javobsiz / 502-504: qatorlar yozilgan bo'lishi mumkin — natija
         // noma'lum. QAYTA YUBORILMAYDI, tugma bloklanadi.
         if (!status || status >= 502) {
-          setUnknownOutcome(true);
+          setUnknownOutcome("timeout");
           return;
         }
         setSendError(getBackendErrorMessage(error) ?? t("dispatch.sendFailed"));
@@ -283,8 +307,9 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
 
   const startNewMessage = () => {
     reset(createDefaultValues());
+    attempts.clear();
     setResult(null);
-    setUnknownOutcome(false);
+    setUnknownOutcome(null);
     setSendError("");
     setSelectedUsers({});
     setDebouncedSearch("");
@@ -711,13 +736,26 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
 
             {result ? (
               <NoticeAlert tone="success" title={t("dispatch.sent", { count: result.dispatched })}>
-                {result.channels.length
-                  ? t("dispatch.sentChannels", { channels: channelLabels(result.channels) })
-                  : null}
+                {result.duplicate || result.channels.length ? (
+                  <>
+                    {result.duplicate ? (
+                      <span className="block">{t("dispatch.duplicateSent")}</span>
+                    ) : null}
+                    {result.channels.length
+                      ? t("dispatch.sentChannels", { channels: channelLabels(result.channels) })
+                      : null}
+                  </>
+                ) : null}
               </NoticeAlert>
             ) : null}
             {unknownOutcome ? (
-              <NoticeAlert tone="warning">{t("dispatch.unknownOutcome")}</NoticeAlert>
+              <NoticeAlert tone="warning">
+                {t(
+                  unknownOutcome === "running"
+                    ? "dispatch.duplicateRunning"
+                    : "dispatch.unknownOutcome",
+                )}
+              </NoticeAlert>
             ) : null}
             {sendError ? <NoticeAlert tone="danger">{sendError}</NoticeAlert> : null}
 
