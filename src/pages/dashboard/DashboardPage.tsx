@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../../app/config/store";
 import { useDashboard } from "../../entities/dashboard";
+import { hasFailedPart } from "../../entities/dashboard/lib/partialFailure";
 import {
   comparisonHint,
   percentChange,
@@ -23,6 +24,7 @@ import { CURRENCY_LABEL, formatMoneyLocalized, formatNumberLocalized, resolveMon
 import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
 import DeferredMount from "../../shared/ui/DeferredMount";
 import { Card, EmptyState, ErrorState, StatCard } from "../../shared/ui/primitives";
+import { DashboardPartError } from "../../widgets/dashboard-part-error/ui/DashboardPartError";
 import RegionOverviewCard from "../../widgets/dashboard-region/ui/RegionOverviewCard";
 import DashboardHeader from "../../widgets/dashboard-statistics/ui/DashboardHeader";
 import { CardRow, KpiRow, LoadingChartCard } from "../../widgets/dashboard-statistics/ui/DashboardGrid";
@@ -35,6 +37,7 @@ import {
   sortByRate,
   toRankItems,
 } from "../../widgets/dashboard-top-performers/lib/rankItems";
+import { isLowDataRanking, rankingDescription } from "../../widgets/dashboard-top-performers/model/ranking";
 import TopRankCard from "../../widgets/dashboard-top-performers/ui/TopRankCard";
 import FinancialAnalysis from "../../widgets/financial-analysis/ui/FinancialAnalysis";
 import CourierCashCard from "./ui/CourierCashCard";
@@ -51,7 +54,19 @@ import DeliveryResultsCard from "./ui/DeliveryResultsCard";
  * kartalar (backend operatorni filialga cheklamaydi), kuryer — `myStat` + `topCouriers`.
  * Oldingi teng davr (delta, «Kecha · %») — ega savoli 1 sukuti: ikkinchi so'rov joriy javobdan keyin.
  * Grafiklar — `shared/ui/charts` (oddiy SVG); recharts faqat «Moliyaviy tahlil» plotida (lazy, §1.9).
+ * Qisman nosozlik (VkwhHqvW): `failedParts` dagi bo'lak 0 lar bilan emas, o'z kartasi joyida
+ * `DashboardPartError` («Ma'lumotni yuklab bo'lmadi» + «Qayta urinish») bilan chiziladi.
  */
+/**
+ * KPI javobida statistikada chiziladigan ko'rsatkichlar olinmadimi (VkwhHqvW): `fulfillment` — yetkazish
+ * vaqti / SLA, yoki qaysi bo'lak ekani aytilmagan. Boshqa bo'lak (masalan `marketRating`) hisobga olinmaydi.
+ */
+const kpiStatsMissing = (kpi: { degraded?: boolean; failedParts?: string[] } | undefined) => {
+  if (!kpi?.degraded) return false;
+  const parts = kpi.failedParts ?? [];
+  return parts.length === 0 || hasFailedPart(parts, "fulfillment", "averageOrderValue", "averageFulfillmentHours", "onTimeRate");
+};
+
 const DashboardPage = () => {
   const { t, i18n } = useTranslation("dashboard");
   const language = i18n.language;
@@ -108,6 +123,7 @@ const DashboardPage = () => {
   const {
     data,
     isLoading,
+    isFetching: dashboardFetching,
     isError: dashboardError,
     refetch: refetchDashboard,
   } = getDashboard(analyticsParams, needsDashboard, analyticsScope);
@@ -131,9 +147,24 @@ const DashboardPage = () => {
   const orders = data?.data?.orders;
   const courierStat = data?.data?.myStat;
   const kpi = kpiData?.data;
-  const previousOrders = wantsPrevious ? previousData?.data?.orders : undefined;
-  const previousCourierStat = wantsPrevious ? previousData?.data?.myStat : undefined;
-  const previousKpi = previousKpiData?.data;
+  // Oldingi davr bo'lagi olinmagan bo'lsa (VkwhHqvW) — 0 bilan solishtirilmaydi, delta yashiriladi.
+  const previousFailed = previousData?.data?.failedParts;
+  const previousOrders =
+    wantsPrevious && !hasFailedPart(previousFailed, "orders") ? previousData?.data?.orders : undefined;
+  const previousCourierStat =
+    wantsPrevious && !hasFailedPart(previousFailed, "myStat") ? previousData?.data?.myStat : undefined;
+  const previousKpi = kpiStatsMissing(previousKpiData?.data) ? undefined : previousKpiData?.data;
+
+  // Qisman nosozlik (VkwhHqvW): olinmagan bo'lak 0 lar bilan emas, joyida xato holati bilan chiziladi.
+  const failedParts = data?.data?.failedParts;
+  // KPI: faqat statistikada chiziladigan ko'rsatkichlar olinmasa — boshqa bo'lak statistikani yashirmaydi.
+  const kpiStatsFailed = kpiStatsMissing(kpiData?.data);
+  const statsFailed =
+    dashboardError || hasFailedPart(failedParts, "orders") || (!isAllTime && (kpiError || kpiStatsFailed));
+  const retryDashboard = () => void refetchDashboard();
+  const partError = (title: string, testId: string) => (
+    <DashboardPartError data-testid={testId} title={title} onRetry={retryDashboard} retrying={dashboardFetching} />
+  );
 
   const periodText = periodLabel(t, period);
   const hint = comparisonHint(t, period);
@@ -208,7 +239,7 @@ const DashboardPage = () => {
 
   const renderStats = () => {
     if (!widgets.stats || isCourier) return null;
-    if (dashboardError || (!isAllTime && kpiError)) {
+    if (statsFailed) {
       return (
         <Card>
           <ErrorState
@@ -294,51 +325,73 @@ const DashboardPage = () => {
     if (isLoading) {
       return (
         <CardRow>
-          {showMarketsBranches ? <LoadingChartCard title={t("v2Dashboard.top.markets")} /> : null}
-          {showMarketsBranches ? <LoadingChartCard title={t("v2Dashboard.top.branches")} /> : null}
-          {showCouriers ? <LoadingChartCard title={t("v2Dashboard.top.couriers")} /> : null}
+          {showMarketsBranches ? <LoadingChartCard data-testid="ranking-markets" title={t("v2Dashboard.top.markets")} /> : null}
+          {showMarketsBranches ? <LoadingChartCard data-testid="ranking-branches" title={t("v2Dashboard.top.branches")} /> : null}
+          {showCouriers ? <LoadingChartCard data-testid="ranking-couriers" title={t("v2Dashboard.top.couriers")} /> : null}
         </CardRow>
       );
     }
     const sub = t("v2Dashboard.top.sub");
+    const lastDays = (count: number) => t("v2Dashboard.top.periodLastDays", { count });
     const limitedNote = t("v2Dashboard.top.limited");
     const rankOptions = { t, language };
-    // «Top marketlar» — backend reytingi (chegara bilan); «Yana ko'rsatish» — to'liq `markets` statistikasi.
+    // «Top marketlar» — backend reytingi (chegara bilan); «Yana ko'rsatish» — to'liq `markets` statistikasi
+    // (`markets` bo'lagi olinmagan bo'lsa — faqat reyting, ro'yxat ochilmaydi).
     const topMarketRows = marketRows(data?.data?.topMarkets);
-    const allMarketRows = sortByRate(marketRows(data?.data?.markets));
+    const allMarketRows = hasFailedPart(failedParts, "markets") ? [] : sortByRate(marketRows(data?.data?.markets));
     const marketItems = toRankItems(topMarketRows.length ? topMarketRows : allMarketRows, rankOptions);
     const allMarketItems = toRankItems(allMarketRows.length ? allMarketRows : topMarketRows, rankOptions);
-    const branchItems = toRankItems(branchRows(data?.data?.topBranches), rankOptions);
+    const topBranchRows = branchRows(data?.data?.topBranches);
+    const branchItems = toRankItems(topBranchRows, rankOptions);
     const branchMeta = data?.data?.topBranchesMeta;
     const marketMeta = data?.data?.topMarketsMeta;
     // SA/admin uchun backend `topCouriers` yubormaydi — `couriers` (courier_stats) dan saralanadi.
     const allCourierRows = sortByRate(courierRows(data?.data?.couriers?.length ? data.data.couriers : data?.data?.topCouriers));
+    const couriersFailed = hasFailedPart(failedParts, "couriers") && !data?.data?.topCouriers?.length;
     const courierItems = toRankItems(allCourierRows, rankOptions);
     const emptyRanking = <EmptyState size="chart" icon={Trophy} title={t("v2Dashboard.top.emptyTitle")} description={t("v2Dashboard.top.emptyHint")} />;
+    // «Top marketlar / filiallar» bo'sh — ixcham holat (9zbSDkUI), karta qo'shnisiga cho'zilmaydi.
+    const emptyPeriodRanking = <EmptyState size="inline" icon={Trophy} title={t("v2Dashboard.top.emptyPeriod")} />;
     return (
       <CardRow>
         {showMarketsBranches ? (
-          <TopRankCard
-            title={t("v2Dashboard.top.markets")}
-            description={sub}
-            items={marketItems}
-            expandedItems={showCouriers ? allMarketItems : undefined}
-            expandable={showCouriers}
-            empty={emptyRanking}
-            note={(marketMeta?.filtered_out ?? 0) > 0 ? limitedNote : undefined}
-          />
+          hasFailedPart(failedParts, "topMarkets") ? (
+            partError(t("v2Dashboard.top.markets"), "ranking-markets")
+          ) : (
+            <TopRankCard
+              data-testid="ranking-markets"
+              title={t("v2Dashboard.top.markets")}
+              description={rankingDescription(sub, marketMeta, lastDays)}
+              items={marketItems}
+              expandedItems={showCouriers ? allMarketItems : undefined}
+              expandable={showCouriers}
+              empty={emptyPeriodRanking}
+              note={isLowDataRanking(topMarketRows, marketMeta) ? limitedNote : undefined}
+            />
+          )
         ) : null}
         {showMarketsBranches ? (
-          <TopRankCard
-            title={t("v2Dashboard.top.branches")}
-            description={sub}
-            items={branchItems}
-            empty={emptyRanking}
-            note={branchItems.length > 0 && ((branchMeta?.filtered_out ?? 0) > 0 || branchItems.length < 5) ? limitedNote : undefined}
-          />
+          hasFailedPart(failedParts, "topBranches") ? (
+            partError(t("v2Dashboard.top.branches"), "ranking-branches")
+          ) : (
+            <TopRankCard
+              data-testid="ranking-branches"
+              title={t("v2Dashboard.top.branches")}
+              description={rankingDescription(sub, branchMeta, lastDays)}
+              items={branchItems}
+              empty={emptyPeriodRanking}
+              note={
+                branchItems.length > 0 && (isLowDataRanking(topBranchRows, branchMeta) || branchItems.length < 5)
+                  ? limitedNote
+                  : undefined
+              }
+            />
+          )
         ) : null}
-        {showCouriers ? (
+        {showCouriers && couriersFailed ? partError(t("v2Dashboard.top.couriers"), "ranking-couriers") : null}
+        {showCouriers && !couriersFailed ? (
           <TopRankCard
+            data-testid="ranking-couriers"
             title={t("v2Dashboard.top.couriers")}
             description={sub}
             items={courierItems}
@@ -393,6 +446,7 @@ const DashboardPage = () => {
     const above = myRank && myRank > 1 ? topCouriers[myRank - 2] : undefined;
     const gap = above && myRanking ? Math.max(0, Number(above.success_rate) - Number(myRanking.success_rate)) : null;
     const meta = data?.data?.topCouriersMeta;
+    const courierRankingFailed = hasFailedPart(failedParts, "topCouriers");
     return (
       <>
         <KpiRow count={4} label={t("v2Dashboard.kpi.courierLabel", { period: periodText })}>
@@ -453,8 +507,10 @@ const DashboardPage = () => {
             <CourierCashCard />
           </CardRow>
         ) : null}
-        {topCouriers.length > 0 ? (
+        {courierRankingFailed ? partError(t("v2Dashboard.top.couriers"), "courier-ranking-failed") : null}
+        {!courierRankingFailed && topCouriers.length > 0 ? (
           <TopRankCard
+            data-testid="courier-ranking"
             title={t("v2Dashboard.top.couriers")}
             description={t("v2Dashboard.top.courierSub", {
               scope: branchName ? `${branchName} · ` : "",
@@ -480,7 +536,7 @@ const DashboardPage = () => {
                 </p>
               ) : undefined
             }
-            note={(meta?.filtered_out ?? 0) > 0 || topCouriers.length < 5 ? t("v2Dashboard.top.limited") : undefined}
+            note={isLowDataRanking(courierRows(topCouriers), meta) || topCouriers.length < 5 ? t("v2Dashboard.top.limited") : undefined}
           />
         ) : null}
       </>

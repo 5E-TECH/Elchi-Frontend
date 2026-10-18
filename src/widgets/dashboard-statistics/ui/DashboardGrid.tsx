@@ -39,8 +39,16 @@ export const CardRow = ({ children, className }: { children: ReactNode; classNam
 );
 
 /** Yuklanayotgan grafik kartasi: sarlavha joyida, tanada `SkeletonChart`. */
-export const LoadingChartCard = ({ title, description }: { title: string; description?: string }) => (
-  <Card divided={false} title={title} description={description} aria-busy="true">
+export const LoadingChartCard = ({
+  title,
+  description,
+  "data-testid": testId,
+}: {
+  title: string;
+  description?: string;
+  "data-testid"?: string;
+}) => (
+  <Card divided={false} title={title} description={description} aria-busy="true" data-testid={testId}>
     <SkeletonChart />
   </Card>
 );

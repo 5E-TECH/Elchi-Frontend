@@ -39,10 +39,6 @@
   "finalizeSuccessDescription_many": "{{count}} заказов успешно завершены",
   "finalizeSuccessDescription_other": "{{count}} заказа успешно завершены",
   "finalizeErrorTitle": "Ошибка завершения",
-  "finalizeErrorDescription_one": "Ошибка в {{count}} заказе",
-  "finalizeErrorDescription_few": "Ошибка в {{count}} заказах",
-  "finalizeErrorDescription_many": "Ошибка в {{count}} заказах",
-  "finalizeErrorDescription_other": "Ошибка в {{count}} заказа",
   "finalizeNothing": "Нечего завершать — отложенные на завтра заказы остаются в ожидании.",
   "finalizeTomorrowKept": "Заказов отложено на завтра: {{count}}.",
   "page": {
@@ -119,5 +115,21 @@
     "soldMarked": "Перейдут в статус «Продан»",
     "irreversibleTitle": "Это действие нельзя отменить",
     "irreversibleText": "Статус заказов ({{count}}) изменится сразу."
-  }
+  },
+  "orderLabel": "№{{id}} · {{name}}",
+  "actionSell": "Продажа",
+  "actionCancel": "Отмена",
+  "proofTitle": "Загрузите подтверждение",
+  "proofDescription": "Маркет требует фото или видео подтверждение для заказов: {{count}}",
+  "proofProgress": "Подтверждений выбрано: {{done}} / {{total}}",
+  "proofProgressHint": "Выберите фото или видео для каждого заказа",
+  "proofListLabel": "Заказы, требующие подтверждения",
+  "proofHintSell": "Маркет требует подтверждение при продаже",
+  "proofHintCancel": "Маркет требует подтверждение при отмене",
+  "proofPlainNote": "Остальные заказы ({{count}}) будут завершены без подтверждения.",
+  "proofSubmit": "Завершить",
+  "resultDescription": "Не завершено заказов: {{count}} — они остались в списке со своей отметкой",
+  "resultListLabel": "Незавершённые заказы",
+  "resultReasonUnknown": "Сервер не указал причину",
+  "resultClose": "Понятно"
 }

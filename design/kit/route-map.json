@@ -190,7 +190,9 @@
         "src/pages/dashboard/ui/CourierCashCard.tsx",
         "src/pages/dashboard/ui/MarketSalesCard.tsx",
         "src/pages/dashboard/ui/QuickActions.tsx",
-        "src/pages/dashboard/ui/ExtraCostApprovalsCard.tsx",
+        "src/pages/dashboard/ui/ExtraCostApprovals.tsx",
+        "src/pages/dashboard/ui/ExtraCostRejectDialog.tsx",
+        "src/widgets/dashboard-part-error/ui/DashboardPartError.tsx",
         "src/shared/ui/charts/index.ts"
       ],
       "roles": { "superadmin": "", "admin": "", "manager": "→ /branch-dashboard", "registrator": "", "market": "", "courier": "" },
@@ -205,7 +207,7 @@
       "roleNotes": {
         "manager": "DashboardEntry menejerni /branch-dashboard ga yo'naltiradi."
       },
-      "note": "DashboardEntry (routes.tsx): market → MarketDashboardPage (xarajat tasdiqlari shu sahifada), qolganlar → DashboardPage (kuryer — alohida tarmoq isCourier). Dizayn v2 (G1): grafiklar — src/shared/ui/charts (recharts faqat «Moliyaviy tahlil» trendida, FinancialTrendPlot lazy + DeferredMount rootMargin 0; bundle byudjeti 450 KB — tests/e2e/dashboard-bundle.preview.spec.ts), viloyat oynasi — umumiy RegionDetailDialog (lazy, faqat bosilganda; registratorda daromadsiz — showRevenue=false, eski oyna xulqi). Reytinglar top 5 (telefonda top 3) + «Yana ko'rsatish». Chizilmaganlar (Taklif yoki API yo'q, spec §6): «Buyurtmalar vaqti» issiqlik xaritasi, KPI «Yo'qotilgan daromad», KPI sparkline, «maqsad 80%», «Sof foyda» qatori, market «Reytingdagi o'rningiz» / «Buyurtmalar dinamikasi», xarajat so'rovida so'rovchi ismi va buyurtma raqami, kuryer «Oxirgi 7 kun». Ega savollari — sukut javoblari qo'llangan (spec §9): Q1 delta va «Kecha» — oldingi davr uchun ikkinchi analytics so'rovi («Barchasi»da yo'q); Q2 gauge belgisi «Yaxshi chegarasi · 70%»; Q3 registrator sarlavha izohida filial nomi (backend registratorni filialga cheklaydi); Q4 «Moliyaviy tahlil» izohi «Daromad · oldingi davr bilan solishtirish», qator «Daromad»; Q5 kuryer «Kassa» sharsharasi faqat my-cashbox bugungi tarixni bersa, aks holda «Qo'lingizdagi pul»; Q6 market «Tasdiqlash / Rad etish» tasdiq oynasisiz (maketdagidek); Q7 «Barchasi»da «Yetkazish sifati» o'rnida bo'sh holat, «Moliyaviy tahlil» va «Kassa» yashirin."
+      "note": "DashboardEntry (routes.tsx): market → MarketDashboardPage (xarajat tasdiqlari shu sahifada), qolganlar → DashboardPage (kuryer — alohida tarmoq isCourier). Dizayn v2 (G1): grafiklar — src/shared/ui/charts (recharts faqat «Moliyaviy tahlil» trendida, FinancialTrendPlot lazy + DeferredMount rootMargin 0; bundle byudjeti 450 KB — tests/e2e/dashboard-bundle.preview.spec.ts), viloyat oynasi — umumiy RegionDetailDialog (lazy, faqat bosilganda; registratorda daromadsiz — showRevenue=false, eski oyna xulqi). Reytinglar top 5 (telefonda top 3) + «Yana ko'rsatish». Chizilmaganlar (Taklif yoki API yo'q, spec §6): «Buyurtmalar vaqti» issiqlik xaritasi, KPI «Yo'qotilgan daromad», KPI sparkline, «maqsad 80%», «Sof foyda» qatori, market «Reytingdagi o'rningiz» / «Buyurtmalar dinamikasi», xarajat so'rovida so'rovchi ismi va buyurtma raqami, kuryer «Oxirgi 7 kun». Ega savollari — sukut javoblari qo'llangan (spec §9): Q1 delta va «Kecha» — oldingi davr uchun ikkinchi analytics so'rovi («Barchasi»da yo'q); Q2 gauge belgisi «Yaxshi chegarasi · 70%»; Q3 registrator sarlavha izohida filial nomi (backend registratorni filialga cheklaydi); Q4 «Moliyaviy tahlil» izohi «Daromad · oldingi davr bilan solishtirish», qator «Daromad»; Q5 kuryer «Kassa» sharsharasi faqat my-cashbox bugungi tarixni bersa, aks holda «Qo'lingizdagi pul»; Q6 market «Tasdiqlash» — pul amali, tasdiq oynasi bilan (useConfirm), «Rad etish» — sabab oynasi ExtraCostRejectDialog; 409 «allaqachon hal qilingan» — qayta yuklash + info toast; market_operator — faqat ko'rish (dev, Urozov04); Q7 «Barchasi»da «Yetkazish sifati» o'rnida bo'sh holat, «Moliyaviy tahlil» va «Kassa» yashirin."
     },
     {
       "path": "/branch-dashboard",
@@ -218,6 +220,7 @@
         "src/pages/branch-dashboard/ui/branchDashboardAdapter.ts",
         "src/widgets/dashboard-statistics/ui/DashboardHeader.tsx",
         "src/widgets/dashboard-top-performers/ui/TopRankCard.tsx",
+        "src/widgets/dashboard-part-error/ui/DashboardPartError.tsx",
         "src/shared/ui/charts/index.ts"
       ],
       "views": {
@@ -236,7 +239,6 @@
         "src/pages/orders/list/OrderFiltersSheet.tsx",
         "src/pages/orders/list/OrdersTable.tsx",
         "src/pages/orders/list/orderFilterModel.ts",
-        "src/pages/orders/lib/exportOrdersToExcel.ts",
         "src/pages/orders/list/courier/index.tsx",
         "src/pages/orders/list/courier/list/tabs.tsx",
         "src/pages/orders/list/courier/list/ordertable/pendingOrderTable.tsx",
@@ -715,6 +717,8 @@
         "src/pages/courier-bulk/ui/CourierBulkOrders.tsx",
         "src/pages/courier-bulk/ui/ResultControl.tsx",
         "src/pages/courier-bulk/ui/BulkAlert.tsx",
+        "src/pages/courier-bulk/ui/CourierBulkProofDialog.tsx",
+        "src/pages/courier-bulk/ui/CourierBulkResultDialog.tsx",
         "src/pages/courier-bulk/ui/segmentTint.ts",
         "src/pages/courier-bulk/model/useIsBelowLg.ts",
         "src/shared/components/ScannerCameraModal.tsx"
@@ -724,7 +728,7 @@
         "courier": ["courier-bulk-main", "courier-bulk-scanner-camera", "courier-bulk-scanner-camera-list", "courier-bulk-confirm-dialog"],
         "tizim": ["scanner"]
       },
-      "note": "Dizayn v2 (G3): kuryer va menejer uchun bitta tartib (courier-courier-bulk-main). Ega savoli Q8 sukuti: menejerda ham kuryer maketi (4 stat karta, qidiruv + «Natija» filtri, saralash — hammasi mijoz tomonida, yangi API parametri yo'q); «Kutilayotgan» izohi menejerda «Filial kuryerlarida, yakunlanmagan». Q9: «Faqat bekorlarni qo'llash» olib tashlandi (maketlarda yo'q). Telefonda «Kunni yakunlash» pastki menyu ustidagi yopishqoq panelda (DOM'da bitta tugma). Tasdiq — useConfirm (courier-courier-bulk-confirm-dialog matnlari); «Ertaga» so'rov yubormaydi. Kamera oynasi va skan topilmaganda chiqadigan umumiy qoplama (common:scannerFeedbackMissing «Bu pochtada yo'q» matni) — alohida kamera ishi."
+      "note": "Dizayn v2 (G3): kuryer va menejer uchun bitta tartib (courier-courier-bulk-main). Ega savoli Q8 sukuti: menejerda ham kuryer maketi (4 stat karta, qidiruv + «Natija» filtri, saralash — hammasi mijoz tomonida, yangi API parametri yo'q); «Kutilayotgan» izohi menejerda «Filial kuryerlarida, yakunlanmagan». Q9: «Faqat bekorlarni qo'llash» olib tashlandi (maketlarda yo'q). Telefonda «Kunni yakunlash» pastki menyu ustidagi yopishqoq panelda (DOM'da bitta tugma). Tasdiq — useConfirm (courier-courier-bulk-confirm-dialog matnlari); «Ertaga» so'rov yubormaydi. Tasdiqdan keyingi isbot qadami (CourierBulkProofDialog — market expense_proof_conditions talab qilgan buyurtmalarga har biriga bitta ProofField, hammasida fayl bo'lmaguncha «Yakunlash» o'chiq) va xatolar ro'yxati (CourierBulkResultDialog — har xato backend sababi bilan) uchun maket yo'q — eng yaqini: tizim-states-forms + courier-courier-bulk-confirm-dialog (dev j9KFyqlS). Isbot kerak bo'lmasa qo'shimcha qadam yo'q; ommaviy sotish/bekor so'rovlarida X-Request-Source: courier-bulk. Kamera oynasi va skan topilmaganda chiqadigan umumiy qoplama (common:scannerFeedbackMissing «Bu pochtada yo'q» matni) — alohida kamera ishi."
     },
     {
       "path": "/scan",
@@ -781,9 +785,32 @@
         "tizim": ["scanner"]
       },
       "roleNotes": {
+        "admin": "superadmin-scan-result maketi (views.json: admin-scan-result = superadmin fragmenti) — bitta xodim tartibi.",
         "market": "Maket yo'q — market skanerlamaydi. URL orqali ochilsa — xodimning faqat o'qish tartibi (amallarsiz, holat tarixisiz, tafsilot havolasisiz)."
       },
       "note": "Dizayn v2 (G3): barcha rollar uchun bitta tartib (menejer/kuryer maketlari tuzilmasi), rol farqi faqat mazmunda; admin — superadmin maketi (superadmin-scan-result). «O'zimga olish» faqat kuryerda; boshqa kuryerga biriktirilgan buyurtma xatosi — backend matni amallar kartasida. Paket → ScanPackageDetail, pochta → ScanPostDetail; xodimda paket nomlari GET transfer-batches/:id bilan to'ldiriladi (ixtiyoriy, xatosi global xabarsiz — silentError). Ega savollari sukuti: Q2 menejerda «Sotish / Bekor qilish» buyurtma tafsilotidagi qoidalar bilan (can_sell_cancel, REGIONAL/HYBRID, kuryer qo'lida emas); Q3 «Kuryerga biriktirish» → /dispatch (buyurtma qo'shilib tanlanadi; buyurtma holati bo'yicha cheklanmagan — spec sukuti); Q4 superadmin/admin/registrator xulosasida «To'langan» ham, «Yaratilgan» ham; Q5 kuryerga paketni «Qabul qilish» yo'q (backend 403) — faqat o'qish."
+    },
+    {
+      "path": "/tg/scan",
+      "section": "scan",
+      "title": "Telegram skan Mini App — kuryer uzluksiz skanerlab buyurtmalarni o'ziga oladi (shell'siz, to'liq ekran)",
+      "public": true,
+      "entry": "Telegram bot → «Skaner» web_app tugmasi (`/ishim`; URL backend `TELEGRAM_SCAN_WEBAPP_URL` dan, tokensiz). Kirish — Telegram initData (`POST /auth/telegram`), asosiy sessiyasiz",
+      "components": [
+        "src/pages/tg-scan/index.tsx",
+        "src/features/tg-scan/ui/TgScanner.tsx",
+        "src/features/tg-scan/ui/CameraSurface.tsx",
+        "src/features/tg-scan/ui/ScanListSheet.tsx",
+        "src/features/tg-scan/model/useTelegramAuth.ts",
+        "src/features/tg-scan/model/useScanAssign.ts",
+        "src/features/tg-scan/model/telegramWebApp.ts",
+        "src/features/tg-scan/api/tgScanApi.ts"
+      ],
+      "views": {
+        "courier": ["scan-active", "scan-starting", "scan-permission-denied", "scan-success-flash", "scan-other-courier", "scan-invalid"],
+        "tizim": ["scanner"]
+      },
+      "note": "Faqat kuryer (boshqa rol Telegram orqali kirsa — «Skaner faqat kuryerlar uchun»). Telegram'dan tashqarida (initData bo'sh) — «Bu sahifa faqat Telegram ichida ochiladi», kamera ochilmaydi. Hisoblagich «N ta qabul qilindi», «Ro'yxat» varag'i va «Tayyor» maketda yo'q (dizayn ziddiyati kartada qayd etilgan) — eng yaqin namuna `courier-courier-bulk-scanner-camera` va `-camera-list`. Kamera ochilmasa — Telegram skaneri (`showScanQrPopup`). «Juda tez» holati yo'q: uzluksiz rejimda kamera QR'ni qayta o'qiydi va pauza o'tgach o'zi qabul qiladi. Qo'lda kiritish yo'q: `scan-assign` faqat QR tokenni qabul qiladi (yorliqdagi raqam bilan qidirmaydi)."
     },
     {
       "path": "/payments",
@@ -838,6 +865,7 @@
         "src/pages/payments/components/cashDetail.tsx",
         "src/pages/payments/components/CashboxActionFormCard.tsx",
         "src/pages/payments/components/PaymentHistoryList.tsx",
+        "src/pages/payments/components/PaymentAckBadge.tsx",
         "src/pages/payments/components/FinanceHistoryDetailPopup.tsx",
         "src/pages/payments/components/lib/paymentIdempotency.ts"
       ],
@@ -854,6 +882,7 @@
       "title": "O'z kassam — market va kuryer (Barcha tarix · Oldi-berdi)",
       "components": [
         "src/pages/payments/components/MyCashboxPage.tsx",
+        "src/pages/payments/components/PaymentAckBadge.tsx",
         "src/pages/payments/components/FinanceHistoryDetailPopup.tsx",
         "src/pages/payments/components/paymentSourceType.ts"
       ],
@@ -972,6 +1001,7 @@
         "src/pages/users/detail/UserDetailPage.tsx",
         "src/widgets/user-detail/ui/UserDetailView.tsx",
         "src/widgets/user-detail/ui/MarketTelegramTokenCard.tsx",
+        "src/widgets/user-detail/model/useMarketTelegramGroupPiiToggle.ts",
         "src/features/user/update-user/ui/UpdateUserModal.tsx",
         "src/features/courier-transfer-branch/ui/TransferCourierButton.tsx",
         "src/features/courier-transfer-branch/ui/TransferCourierModal.tsx"
@@ -1223,6 +1253,7 @@
         "src/pages/notifications/ui/NotificationsPage.tsx",
         "src/widgets/notification-table/ui/NotificationTable.tsx",
         "src/features/notification-create/ui/NotificationFormModal.tsx",
+        "src/features/notification-edit/ui/NotificationEditModal.tsx",
         "src/features/notification-delete/ui/DeleteNotificationButton.tsx"
       ],
       "views": {
@@ -1273,7 +1304,9 @@
       "components": [
         "src/pages/activity-logs/index.tsx",
         "src/widgets/activity-log/ui/ActivityLogViewer.tsx",
-        "src/widgets/activity-log/ui/ActivityLogDetail.tsx"
+        "src/widgets/activity-log/ui/ActivityLogFilters.tsx",
+        "src/widgets/activity-log/ui/ActivityLogDetail.tsx",
+        "src/entities/activity-log/ui/ActivityActionBadge.tsx"
       ],
       "views": {
         "superadmin": ["activity-logs-list", "activity-logs-row-expanded"],
@@ -1492,7 +1525,7 @@
     "registrator-dashboard-main": "src/pages/dashboard/DashboardPage.tsx",
     "courier-dashboard-home": "src/pages/dashboard/DashboardPage.tsx",
     "market-dashboard-home": "src/pages/dashboard/MarketDashboardPage.tsx",
-    "market-dashboard-extra-cost-approvals": "src/pages/dashboard/ui/ExtraCostApprovalsCard.tsx",
+    "market-dashboard-extra-cost-approvals": "src/pages/dashboard/ui/ExtraCostApprovals.tsx",
     "superadmin-dashboard-region-modal": "src/widgets/region-detail/ui/RegionDetailDialog.tsx",
     "superadmin-regions-region-modal": "src/widgets/region-detail/ui/RegionDetailDialog.tsx",
     "admin-regions-region-detail-dialog": "src/widgets/region-detail/ui/RegionDetailDialog.tsx",

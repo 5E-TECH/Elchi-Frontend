@@ -141,6 +141,15 @@
   "sellExtraCostProofRequired": "Sotishda qo'shimcha harajat isboti",
   "cancelExtraCostProofRequired": "Bekor qilishda qo'shimcha harajat isboti",
   "permissions": "Ruxsatlar",
+  "tgGroupCardTitle": "Telegram guruhi",
+  "changesSaveInstantly": "O'zgarish darhol saqlanadi",
+  "tgGroupPiiLabel": "Guruhda mijoz ismi va telefoni",
+  "tgGroupPiiHint": "O'chirilsa, Telegram guruhidagi buyurtma kartalarida mijoz ismi va telefoni yashiriladi",
+  "tgGroupPiiSaved": "Saqlandi",
+  "tgGroupPiiShownDescription": "Guruhdagi buyurtma kartalarida mijoz ismi va telefoni ko'rinadi",
+  "tgGroupPiiHiddenDescription": "Guruhdagi buyurtma kartalarida mijoz ismi va telefoni yashiriladi",
+  "tgGroupPiiSaveError": "Saqlanmadi",
+  "tgGroupPiiSaveErrorDescription": "Sozlamani saqlab bo'lmadi. Qayta urinib ko'ring",
   "telegramTokenTitle": "Telegram token",
   "telegramTokenShow": "Ko'rsatish",
   "telegramTokenHide": "Yashirish",
@@ -349,7 +358,8 @@
     "token": {
       "maskedLabel": "Token yashirilgan",
       "hint": "Market Telegram guruhiga botni qo'shib, shu tokenni yuborsin. Token — maxfiy kalit, uni faqat shu marketga bering.",
-      "loadError": "Tokenni olib bo'lmadi"
+      "loadError": "Tokenni olib bo'lmadi",
+      "loadErrorHint": "Birozdan keyin qayta urinib ko'ring."
     },
     "edit": {
       "description": "{{name}} · {{role}}",

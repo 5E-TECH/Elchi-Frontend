@@ -102,6 +102,8 @@ describe("CourierBulkPage — «Kunni yakunlash»", () => {
     expect(mocks.sell).toHaveBeenCalledWith({
       orderId: "10",
       data: { comment: "Kuryer tezkor amal orqali sotildi deb yakunladi", extraCost: 0 },
+      // Ommaviy yopish — audit sarlavhasi (j9KFyqlS).
+      headers: { "X-Request-Source": "courier-bulk" },
     });
     expect(await screen.findByText("Kun yakunlandi")).toBeInTheDocument();
   });
@@ -136,6 +138,7 @@ describe("CourierBulkPage — «Kunni yakunlash»", () => {
     expect(mocks.cancel).toHaveBeenCalledWith({
       orderId: "10",
       data: { comment: "Kuryer tezkor amal orqali bekor qildi", extraCost: 0 },
+      headers: { "X-Request-Source": "courier-bulk" },
     });
     await waitFor(() => expect(mocks.sell).toHaveBeenCalledTimes(1));
     expect(mocks.sell).toHaveBeenCalledWith(expect.objectContaining({ orderId: "12" }));

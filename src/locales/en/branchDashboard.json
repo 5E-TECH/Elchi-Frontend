@@ -59,7 +59,8 @@
     },
     "top": {
       "sub": "Sell-through · top 5 and your branch",
-      "yourBranch": "Your branch"
+      "yourBranch": "Your branch",
+      "ownRankAria": "Your branch's place"
     }
   }
 }

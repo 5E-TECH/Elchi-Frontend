@@ -19,7 +19,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
 | Bosqich | Holat |
 |---|---|
 | 0 tokenlar, 1 primitivlar, 2 shell, 3 forma/dialog/holatlar | tayyor, dev'da |
-| 4 sahifalar migratsiyasi | jarayonda: G1 tayyor; G2, G3 alohida worktree'larda qurilmoqda |
+| 4 sahifalar migratsiyasi | jarayonda: G1 va G3 tayyor; G2 alohida worktree'da qurilmoqda |
 | 5 qo'shimcha qo'riqchilar (ESLint, vizual snapshot) | 4 tugashi bilan darhol (ega: kutilmaydi) |
 
 **4-bosqichda ko'chirilgan sahifalar** (ro'yxat `AGENTS.md` 4-qatorida ham bor):
@@ -33,6 +33,9 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   `/financial-balance`
 - G1: `/`, `/branch-dashboard`, `/all-users*` (+ `/new-orders/userDetail/:id`), `/branches*`, `/products*`, `/regions*`
   (umumiy `shared/ui/charts`, `widgets/region-detail`; dashboard bundle 418 KB ≤ 450)
+- G3: `/login` (+ «Sessiya tugadi» ekrani, sessiya banneri shell'ning `[data-shell-slot=banner]` slotida),
+  `/scan/:token`, `/dispatch`, `/courier-bulk` (+ dev'ning isbot qadami va xato berganlar oynasi, `X-Request-Source`);
+  butun `/scan` kamera ekrani — alohida kamera ishi
 
 **Yo'l-yo'lakay qo'shilganlar:**
 
@@ -182,6 +185,15 @@ bilan **alohida ish**.
   - filial config kodi o'chirildi;
   - `/all-users` da «Filial» ustuni yo'q (users'da filial maydoni yo'q);
   - market tariflari majburiy.
+- **G3 spec §9 sukutlari (egaga ko'rsatiladi):**
+  - butun `/scan` (kamera holatlari, qo'lda kiritish, oflayn navbat) — alohida kamera ishi;
+  - menejer skaner natijasida «Sotish / Bekor qilish» — buyurtma tafsilotidagi qoidalar bilan;
+  - «Kuryerga biriktirish» → `/dispatch` buyurtma qo'shilgan va tanlangan holda;
+  - xodim skaner natijasida «To'langan» ham, «Yaratilgan» ham;
+  - kuryerga paket «Qabul qilish» yashirilgan (backend 403);
+  - «© 2026 Elchi Pochta» chizilmaydi;
+  - `/dispatch` telefonda bitta yopishqoq panel «Kamera N ta» + «Biriktirish — K ta»;
+  - `/courier-bulk` menejerda kuryer maketi; «Faqat bekorlarni qo'llash» olib tashlandi.
 - Ochiq savollar (javob olinmagan), ehtiyot bo'lib birga so'rash mumkin:
   - chop etish menyusi izohlari: xodim maketi «Faqat jadvalni chop etadi», kuryer maketi «Brauzerning chop etish
     oynasi ochiladi». Kod kuryer matnini ishlatadi, chunki u to'g'ri;

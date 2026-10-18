@@ -7,7 +7,8 @@ import { expect, type Page, type Route } from "@playwright/test";
  * `region_id` siz), `GET orders/qr-code/:token` (USB skaner → buyurtma), `POST orders/assign-to-courier
  * { courier_id, order_ids }`.
  * `/courier-bulk` — kuryer: `GET orders/courier/orders?status=waiting` (100 talik sahifalar), «Kunni yakunlash» →
- * `POST orders/sell/:id` / `POST orders/cancel/:id` (`{ comment, extraCost: 0 }`); «Ertaga» so'rov yubormaydi.
+ * `POST orders/sell/:id` / `POST orders/cancel/:id` (`{ comment, extraCost: 0 }`; isbotli — avval `POST files/upload`,
+ * keyin `proofFileKeys`; har biri `X-Request-Source: courier-bulk`); «Ertaga» so'rov yubormaydi.
  * Boshqa yozish so'rovi — `leaked` (403).
  */
 const ORIGIN = "http://127.0.0.1:4173";
@@ -53,7 +54,7 @@ const signIn = (page: Page) =>
     window.localStorage.setItem("theme-version", "2");
   });
 
-type Handler = (route: Route, path: string, method: string, url: URL) => Promise<void> | void | false;
+type Handler = (route: Route, path: string, method: string, url: URL) => Promise<void | false> | void | false;
 
 const routeApi = async (page: Page, profile: Body, handle: Handler) => {
   const leaked: string[] = [];
@@ -146,28 +147,49 @@ export const openDispatch = async (page: Page) => {
   await expect(page.getByText("Buyurtma QR kodlarini skanerlang")).toBeVisible();
 };
 
-export const mockCourierBulkApi = async (page: Page) => {
+type CourierBulkMockOptions = {
+  /** Shu buyurtmalar marketi sotishda isbot talab qiladi (`expense_proof_conditions: ["sell_any"]`, j9KFyqlS). */
+  sellProofIds?: string[];
+  /** Shu buyurtmalar amali backend xatosi bilan rad etiladi (400 + `message`). */
+  failWith?: Record<string, string>;
+};
+
+export const mockCourierBulkApi = async (page: Page, { sellProofIds = [], failWith = {} }: CourierBulkMockOptions = {}) => {
+  const withProof = (id: string) =>
+    sellProofIds.includes(id) ? { market: { name: "Baraka Shop", expense_proof_conditions: ["sell_any"] } } : {};
   const state = {
     orders: [
-      order("10401", "Feruza Mirzayeva", { status: "waiting" }),
-      order("10402", "Ali Valiyev", { status: "waiting" }),
-      order("10403", "Dilnoza Rahimova", { status: "waiting" }),
+      order("10401", "Feruza Mirzayeva", { status: "waiting", ...withProof("10401") }),
+      order("10402", "Ali Valiyev", { status: "waiting", ...withProof("10402") }),
+      order("10403", "Dilnoza Rahimova", { status: "waiting", ...withProof("10403") }),
     ],
   };
   const listQueries: Array<Record<string, string>> = [];
   const sells: Array<{ id: string; body: Body }> = [];
   const cancels: Array<{ id: string; body: Body }> = [];
+  /** Har sotish/bekor so'rovi: `X-Request-Source` sarlavhasi; isbot — avval `files/upload`, keyin `proofFileKeys`. */
+  const requests: Array<{ action: string; id: string; source: string | null }> = [];
+  const uploads: string[] = [];
   const leaked = await routeApi(
     page,
     { id: "26", role: "courier", name: "TEST Kuryer", status: "active" },
-    (route, path, method, url) => {
+    async (route, path, method, url) => {
       if (path === "orders/courier/orders" && method === "GET") {
         listQueries.push(Object.fromEntries(url.searchParams));
         return reply(route, { statusCode: 200, data: state.orders, total: state.orders.length, page: 1, limit: 100 });
       }
+      if (path === "files/upload" && method === "POST") {
+        const key = `proof/e2e-${uploads.length + 1}.jpg`;
+        uploads.push(key);
+        return reply(route, { statusCode: 201, data: { key } });
+      }
       const action = /^orders\/(sell|cancel)\/(\w+)$/.exec(path);
       if (action && method === "POST") {
-        const body = route.request().postDataJSON() as Body;
+        const request = route.request();
+        const headers = await request.allHeaders();
+        requests.push({ action: action[1], id: action[2], source: headers["x-request-source"] ?? null });
+        if (failWith[action[2]]) return reply(route, { statusCode: 400, message: failWith[action[2]] }, 400);
+        const body = request.postDataJSON() as Body;
         (action[1] === "sell" ? sells : cancels).push({ id: action[2], body });
         state.orders = state.orders.filter((item) => item.id !== action[2]);
         return reply(route, {
@@ -178,7 +200,7 @@ export const mockCourierBulkApi = async (page: Page) => {
       return false;
     },
   );
-  return { state, listQueries, sells, cancels, leaked };
+  return { state, listQueries, sells, cancels, requests, uploads, leaked };
 };
 
 export const openCourierBulk = async (page: Page) => {

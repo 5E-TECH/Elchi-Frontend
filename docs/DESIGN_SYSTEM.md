@@ -523,7 +523,12 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   `CourierPickerDialog`, bitta faol kuryer — darhol biriktirish, telefonda pastki menyu ustida yopishqoq panel.
   `/courier-bulk` (`pages/courier-bulk/ui/*`): 4 stat karta, «Skanerlash rejimi», qator natijasi «Sotildi | Bekor |
   Ertaga» (`SegmentedControl`), mijoz tomonida qidiruv / filtr / saralash, «Kunni yakunlash» — `useConfirm` tasdig'i
-  (DOM'da bitta tugma; telefonda yopishqoq panelda). So'rov tanalari, skaner vaqtlari va ovozlar o'zgarmagan.
+  (DOM'da bitta tugma; telefonda yopishqoq panelda). Tasdiqdan keyin **isbot qadami** (maket yo'q — eng yaqini
+  `tizim-states-forms` + `courier-courier-bulk-confirm-dialog`): market `expense_proof_conditions` talab qilgan
+  buyurtmalar uchun `CourierBulkProofDialog` (har biriga bitta `ProofField`, hammasida fayl bo'lmaguncha «Yakunlash»
+  o'chiq; isbot kerak bo'lmasa qadam yo'q); xato berganlar `CourierBulkResultDialog` da backend sababi bilan;
+  ommaviy sotish/bekor so'rovlarida `X-Request-Source: courier-bulk`, isbotlilar 2 tadan, qolganlari 6 tadan parallel.
+  Skaner vaqtlari va ovozlar o'zgarmagan.
   Ega savollariga sukut javoblari (spec §9) — `route-map.json` izohlarida. Chiqarilgan v1: `ScannerActionButton`,
   `.login-field` CSS, `logo yozuvlik qora.png`, o'lik `auth` / `dispatch` / `courierBulk` / `common:scanner*`
   kalitlari; en/ru ko'plik shakllari («1 order», «2 orders»).

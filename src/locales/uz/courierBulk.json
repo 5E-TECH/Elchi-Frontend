@@ -36,7 +36,6 @@
   "finalizeSuccessTitle": "Kun yakunlandi",
   "finalizeSuccessDescription": "{{count}} ta buyurtma muvaffaqiyatli yakunlandi",
   "finalizeErrorTitle": "Yakunlashda xatolik",
-  "finalizeErrorDescription": "{{count}} ta buyurtmada xatolik yuz berdi",
   "finalizeNothing": "Yakunlanadigan buyurtma yo'q — ertaga qoldirilganlar kutilmoqda holatida qoladi.",
   "finalizeTomorrowKept": "{{count}} ta buyurtma ertaga qoldirildi.",
   "page": {
@@ -113,5 +112,21 @@
     "soldMarked": "Sotilgan holatiga o'tadi",
     "irreversibleTitle": "Bu amalni ortga qaytarib bo'lmaydi",
     "irreversibleText": "{{count}} ta buyurtma holati darhol o'zgaradi."
-  }
+  },
+  "orderLabel": "№{{id}} · {{name}}",
+  "actionSell": "Sotish",
+  "actionCancel": "Bekor qilish",
+  "proofTitle": "Isbot yuklang",
+  "proofDescription": "{{count}} ta buyurtma uchun market rasm yoki video isbot talab qiladi",
+  "proofProgress": "Isbot tanlandi: {{done}} / {{total}}",
+  "proofProgressHint": "Har bir buyurtmaga rasm yoki video tanlang",
+  "proofListLabel": "Isbot talab qilinadigan buyurtmalar",
+  "proofHintSell": "Market sotishda isbot talab qiladi",
+  "proofHintCancel": "Market bekor qilishda isbot talab qiladi",
+  "proofPlainNote": "Qolgan {{count}} ta buyurtma isbotsiz yakunlanadi.",
+  "proofSubmit": "Yakunlash",
+  "resultDescription": "{{count}} ta buyurtma yakunlanmadi — ular belgisi bilan ro'yxatda qoldi",
+  "resultListLabel": "Yakunlanmagan buyurtmalar",
+  "resultReasonUnknown": "Server sababini ko'rsatmadi",
+  "resultClose": "Tushunarli"
 }

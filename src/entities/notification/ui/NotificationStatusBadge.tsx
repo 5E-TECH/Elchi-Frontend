@@ -1,11 +1,23 @@
-import { Badge } from "antd";
+// dizayn-v2: superadmin-notifications-telegram-groups
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
+import { StatusBadge } from "../../../shared/ui/primitives";
 
-const NotificationStatusBadge = ({ status }: { status: "active" | "inactive" }) => {
-  const { t } = useTranslation("common");
+/**
+ * Guruh ulanishi holati (Trello 9HIaV80X): «Faol» — `success`; «Nofaol» — `danger`.
+ *
+ * Ton (DESIGN_SYSTEM §8): nofaollik bu yerda ataylab yopilgan holat (neytral) emas, yetkazish XATOSI —
+ * bot guruhdan chiqarilgan yoki guruhga yetib bo'lmaydi, xabarlar bormayapti va admin qayta ulashi kerak
+ * (backend shu payt «Telegram guruhi nofaol» muhim bildirishnomasini ham yuboradi). Xato → `danger`.
+ */
+const NotificationStatusBadge = ({ active }: { active: boolean }) => {
+  const { t } = useTranslation("notifications");
 
-  return <Badge status={status === "active" ? "success" : "default"} text={status === "active" ? t("active") : t("inactive")} />;
+  return active ? (
+    <StatusBadge tone="success" label={t("telegramGroups.status.active")} />
+  ) : (
+    <StatusBadge tone="danger" label={t("telegramGroups.status.inactive")} />
+  );
 };
 
 export default memo(NotificationStatusBadge);

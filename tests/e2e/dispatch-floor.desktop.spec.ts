@@ -81,4 +81,36 @@ test.describe("Biriktirish va Tezkor amal — 1440px", () => {
     await expect(page.getByRole("radiogroup", { name: "Dilnoza Rahimova: natija" })).toBeVisible();
     expect(api.leaked).toEqual([]);
   });
+
+  test("⭐ /courier-bulk: xato berganlar oynasi — backend sababi bilan, bajarilganlar soni; xato bergan belgi qoladi", async ({ page }) => {
+    const api = await mockCourierBulkApi(page, { failWith: { "10402": "Buyurtma holati bekor qilishga mos emas" } });
+    await openCourierBulk(page);
+
+    await markResult(page, "Ali Valiyev", "Bekor");
+    await markResult(page, "Dilnoza Rahimova", "Ertaga");
+    await page.getByRole("button", { name: "Kunni yakunlash" }).click();
+    await page
+      .getByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" })
+      .getByRole("button", { name: "Tasdiqlash" })
+      .click();
+
+    const dialog = page.getByRole("dialog", { name: "Yakunlashda xatolik" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText("1 ta buyurtma yakunlanmadi");
+    await expect(dialog).toContainText("1 ta buyurtma muvaffaqiyatli yakunlandi");
+    await expect(dialog).toContainText("1 ta buyurtma ertaga qoldirildi.");
+    const rows = dialog.getByRole("list", { name: "Yakunlanmagan buyurtmalar" }).getByRole("listitem");
+    await expect(rows).toHaveCount(1);
+    await expect(rows.first()).toContainText("№10402 · Ali Valiyev");
+    await expect(rows.first()).toContainText("Buyurtma holati bekor qilishga mos emas");
+    expect(api.requests.every((request) => request.source === "courier-bulk")).toBe(true);
+
+    await dialog.getByRole("button", { name: "Tushunarli" }).click();
+    await expect(dialog).toHaveCount(0);
+    // Xato bergan buyurtma «Bekor» belgisi bilan ro'yxatda qoladi (qayta urinishda «sotildi» bo'lib ketmaydi).
+    await expect(
+      page.getByRole("radiogroup", { name: "Ali Valiyev: natija" }).getByRole("radio", { name: "Bekor" }),
+    ).toHaveAttribute("aria-checked", "true");
+    expect(api.leaked).toEqual([]);
+  });
 });

@@ -46,6 +46,100 @@
   },
   "inboxTitle": "Bildirishnomalar",
   "inboxDescription": "Sizga kelgan bildirishnomalar",
+  "telegramGroups": {
+    "title": "Bildirishnomalar",
+    "subtitle": "Marketlarning Telegram guruhlari: yangi va bekor qilingan buyurtmalar haqida xabar shu yerga boradi",
+    "add": "Bildirishnoma qo'shish",
+    "listTitle": "Ulangan guruhlar",
+    "listHint": "Bitta market uchun yangi va bekor qilingan buyurtmalar guruhini alohida ulash mumkin",
+    "listLabel": "Ulangan Telegram guruhlari",
+    "paginationSummary_one": "{{from}}–{{to}} / {{total}} ta guruh",
+    "paginationSummary_other": "{{from}}–{{to}} / {{total}} ta guruh",
+    "emptyTitle": "Hali guruh ulanmagan",
+    "emptyHint": "Marketning Telegram guruhini ulash uchun «Bildirishnoma qo'shish» tugmasini bosing",
+    "columns": {
+      "market": "Market",
+      "groupId": "Telegram guruh ID",
+      "type": "Xabar turi",
+      "status": "Holat",
+      "date": "Sana",
+      "actions": "Amallar"
+    },
+    "type": {
+      "create": "Yangi buyurtma",
+      "cancel": "Bekor qilingan buyurtma"
+    },
+    "typeChoice": {
+      "create": "Yangi buyurtmalar guruhi",
+      "cancel": "Bekor qilinganlar guruhi"
+    },
+    "typeGroup": {
+      "create": "yangi buyurtma",
+      "cancel": "bekor qilingan"
+    },
+    "status": {
+      "active": "Faol",
+      "inactive": "Nofaol",
+      "inactiveHint": "Bot guruhdan chiqarilgan — qayta ulang"
+    },
+    "actions": {
+      "edit": "Tahrirlash",
+      "delete": "O'chirish",
+      "editLabel": "{{market}} — {{type}} guruhi: tahrirlash",
+      "deleteLabel": "{{market}} — {{type}} guruhi: o'chirish"
+    },
+    "delete": {
+      "title": "Haqiqatan ham o'chirmoqchimisiz?",
+      "descriptionCreate": "{{market}}'ning yangi buyurtmalari haqidagi xabarlar bu guruhga endi yuborilmaydi. Guruhni keyin qayta ulash mumkin.",
+      "descriptionCancel": "{{market}}'ning bekor qilingan buyurtmalari haqidagi xabarlar bu guruhga endi yuborilmaydi. Guruhni keyin qayta ulash mumkin.",
+      "groupId": "Guruh ID: {{id}}",
+      "confirm": "O'chirish",
+      "loading": "O'chirilmoqda…",
+      "success": "Bildirishnoma o'chirildi"
+    },
+    "create": {
+      "title": "Bildirishnoma qo'shish",
+      "introTitle": "Telegram guruhga bildirishnoma ulash",
+      "intro": "Marketni va xabar turini tanlang, so'ng bir martalik havolani oching — bot guruhga qo'shiladi va uni o'zi ulaydi.",
+      "market": "Market",
+      "marketPlaceholder": "Marketni tanlang",
+      "marketList": "Marketlar",
+      "marketRequired": "Marketni tanlang",
+      "type": "Xabar turi",
+      "typeHint": "Bitta market uchun yangi va bekor qilingan buyurtmalar guruhini alohida ulash mumkin.",
+      "getLink": "Ulash havolasini olish",
+      "gettingLink": "Havola olinmoqda…",
+      "newLink": "Yangi havola olish",
+      "open": "Telegram'da ochish",
+      "linkTitle": "Bir martalik havola tayyor",
+      "qrAlt": "Telegram guruhini ulash havolasining QR kodi",
+      "step1": "Havolani oching yoki QR kodni telefonda skanerlang.",
+      "step2": "Guruhni tanlang — bot guruhga qo'shiladi.",
+      "step3": "Bot guruhni o'zi ulaydi, ro'yxat yangilanadi.",
+      "expiresAt": "{{time}} gacha amal qiladi",
+      "waiting": "Guruh ulanishi kutilmoqda…",
+      "expired": "Havola muddati tugadi",
+      "expiredHint": "Havola 10 daqiqa amal qiladi va bir marta ishlatiladi. Yangisini oling.",
+      "command": "Botni guruhga qo'shing va guruhga shu buyruqni yuboring:",
+      "existsTitle": "Bu turdagi guruh allaqachon ulangan",
+      "exists": "{{market}} uchun bu turdagi guruh ulangan (ID: {{groupId}}). Bot uni almashtirmaydi — ro'yxatda tahrirlang yoki o'chirib, qayta ulang.",
+      "linkError": "Havolani olib bo'lmadi",
+      "connected": "Guruh ulandi",
+      "connectedDescription": "{{market}} — {{type}}"
+    },
+    "editDialog": {
+      "title": "Bildirishnomani tahrirlash",
+      "groupId": "Telegram guruh ID",
+      "groupIdPlaceholder": "-1001234567890",
+      "groupIdHint": "Masalan: -1001234567890. Guruhda /id yozsangiz, bot guruh ID sini ko'rsatadi.",
+      "groupIdRequired": "Guruh ID sini kiriting",
+      "submit": "O'zgarishlarni saqlash",
+      "saving": "Saqlanmoqda…",
+      "success": "Bildirishnoma yangilandi",
+      "error": "Bildirishnomani saqlab bo'lmadi"
+    },
+    "cancel": "Bekor qilish"
+  },
   "dispatch": {
     "pageTitle": "Xabar yuborish",
     "pageDescription": "Tizim ichidagi foydalanuvchilarga bildirishnoma",
@@ -78,7 +172,7 @@
     "providerMissing": "Provayder hali ulanmagan",
     "telegramMarket": "Telegram guruhi (market)",
     "telegramMarketPlaceholder": "Marketni tanlang",
-    "telegramHint": "Telegram faqat tanlangan marketning ulangan guruhiga yuboriladi.",
+    "telegramHint": "Market tanlansa — o'sha marketning Telegram guruhiga; tanlanmasa — har bir qabul qiluvchining shaxsiy Telegram'iga (ulanmagan bo'lsa o'tkazib yuboriladi).",
     "title": "Sarlavha",
     "titlePlaceholder": "Masalan: Ertaga ish vaqti o'zgaradi",
     "body": "Matn",
@@ -114,7 +208,6 @@
       "recipient": "Qabul qiluvchini tanlang",
       "recipients": "Kamida bitta qabul qiluvchini tanlang",
       "roles": "Kamida bitta rolni tanlang",
-      "telegramMarket": "Telegram uchun marketni tanlang",
       "title": "Sarlavhani kiriting",
       "groupKey": "Guruh kalitini kiriting",
       "tooLong": "{{max}} belgidan oshmasin"
@@ -134,5 +227,8 @@
     "explainConfirm": "Yoqish",
     "explainCancel": "Hozir emas",
     "toastOpen": "Ochish"
+  },
+  "realtime": {
+    "manyNew": "{{count}} ta yangi bildirishnoma"
   }
 }

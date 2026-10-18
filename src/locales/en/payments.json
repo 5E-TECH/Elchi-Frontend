@@ -868,7 +868,11 @@
       "orderTitle": "{{title}} · #{{id}}",
       "courier": "Courier: {{name}}",
       "rowLabel": "{{title}}, {{direction}} {{amount}}, {{date}}",
-      "rollback": "Rollback"
+      "rollback": "Correction"
     }
   }
+  ,"paymentAckDisputed": "Disputed"
+  ,"paymentAckDisputedHint": "The courier marked the bot receipt as wrong"
+  ,"paymentAckConfirmed": "Confirmed"
+  ,"paymentAckConfirmedHint": "The courier confirmed the bot receipt"
 }

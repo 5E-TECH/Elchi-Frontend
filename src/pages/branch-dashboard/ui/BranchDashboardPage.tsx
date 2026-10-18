@@ -6,6 +6,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { canViewBatchesPage } from "../../../app/lib/access";
 import type { RootState } from "../../../app/config/store";
 import { useDashboard } from "../../../entities/dashboard";
+import { hasFailedPart } from "../../../entities/dashboard/lib/partialFailure";
 import { periodLabel, resolveDashboardPeriod, share } from "../../../entities/dashboard/lib/period";
 import { readProfileBranchName } from "../../../entities/dashboard/lib/profile";
 import { getCurrentBranchId } from "../../../shared/lib/currentBranch";
@@ -13,11 +14,13 @@ import { getTodayRange } from "../../../shared/lib/dateRange";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { removeFilterValue, setMultipleFilters } from "../../../shared/model/filterSlice";
 import { Card, EmptyState, ErrorState } from "../../../shared/ui/primitives";
+import { DashboardPartError } from "../../../widgets/dashboard-part-error/ui/DashboardPartError";
 import DashboardHeader from "../../../widgets/dashboard-statistics/ui/DashboardHeader";
 import { CardRow, LoadingChartCard } from "../../../widgets/dashboard-statistics/ui/DashboardGrid";
 import OrderStatusCard from "../../../widgets/dashboard-statistics/ui/OrderStatusCard";
 import SuccessRateCard from "../../../widgets/dashboard-statistics/ui/SuccessRateCard";
 import { branchRows, toRankItems } from "../../../widgets/dashboard-top-performers/lib/rankItems";
+import { isLowDataRanking, rankingDescription } from "../../../widgets/dashboard-top-performers/model/ranking";
 import TopRankCard from "../../../widgets/dashboard-top-performers/ui/TopRankCard";
 import { adaptBranchDashboard } from "./branchDashboardAdapter";
 import { ActivePackagesCard, CouriersCard, MarketsBreakdownCard } from "./BranchCards";
@@ -29,7 +32,8 @@ const GOOD_ZONE = 0.7;
  *
  * Saqlanadigan xulq: davr redux'da, sukut — bugun (`getTodayRange`), «Barchasi» — aniq sanalar (`all` emas),
  * `branch_id` so'rovda; ma'lumot `adaptBranchDashboard` (o'zgarmaydi); filial paneli kelmasa yoki
- * `stats_unavailable` — nollar o'rniga `ErrorState` «Statistika vaqtincha mavjud emas» (fix3 C9);
+ * `stats_unavailable` yoki `failed_parts: branchDashboard` (VkwhHqvW) — nollar o'rniga `ErrorState`
+ * «Statistika vaqtincha mavjud emas» (fix3 C9); `failed_parts: topBranches` — reyting joyida xato kartasi;
  * kartalar `visibility.*` bo'yicha; so'rov xatosi — `loadError` + «Qayta urinish».
  */
 const BranchDashboardPage = () => {
@@ -62,10 +66,16 @@ const BranchDashboardPage = () => {
     [branchId, fromDate, hasDateFilter, toDate],
   );
   const { getDashboard } = useDashboard();
-  const { data, isLoading, isError, refetch } = getDashboard(analyticsParams, true, analyticsScope);
+  const { data, isLoading, isFetching, isError, refetch } = getDashboard(analyticsParams, true, analyticsScope);
   const rawBranchDashboard = data?.data?.branchDashboard;
+  const failedParts = data?.data?.failedParts;
   // fix3 C9 (CODE-23): filial raqamlari olinmadi — nollar haqiqiy emas, ko'rsatilmaydi.
-  const isStatsUnavailable = Boolean(data) && (!rawBranchDashboard || rawBranchDashboard.stats_unavailable === true);
+  const isStatsUnavailable =
+    Boolean(data) &&
+    (!rawBranchDashboard ||
+      rawBranchDashboard.stats_unavailable === true ||
+      // VkwhHqvW: backend `failed_parts: ['branchDashboard']` — filial raqamlari olinmadi.
+      hasFailedPart(failedParts, "branchDashboard"));
   const dashboard = adaptBranchDashboard(rawBranchDashboard, userRole || "OPERATOR", undefined, false);
 
   const applyRange = useCallback(
@@ -138,6 +148,7 @@ const BranchDashboardPage = () => {
   const visibility = dashboard.visibility;
   const showOrders = visibility.orders;
   const showSide = visibility.packages || visibility.couriers;
+  const rankingClassName = !isStatsUnavailable && visibility.markets ? undefined : "lg:col-span-3";
 
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">
@@ -194,16 +205,33 @@ const BranchDashboardPage = () => {
           {!isStatsUnavailable && visibility.markets ? (
             <MarketsBreakdownCard markets={dashboard.markets} className="lg:col-span-2" />
           ) : null}
-          <TopRankCard
-            className={!isStatsUnavailable && visibility.markets ? undefined : "lg:col-span-3"}
-            title={tDash("v2Dashboard.top.branches")}
-            description={t("v2.top.sub")}
-            items={items}
-            pinned={pinned}
-            expandable
-            empty={<EmptyState size="chart" icon={Trophy} title={tDash("v2Dashboard.top.emptyTitle")} />}
-            note={items.length > 0 && ((meta?.filtered_out ?? 0) > 0 || items.length < 5) ? tDash("v2Dashboard.top.limited") : undefined}
-          />
+          {hasFailedPart(failedParts, "topBranches") ? (
+            <DashboardPartError
+              data-testid="ranking-branches"
+              className={rankingClassName}
+              title={tDash("v2Dashboard.top.branches")}
+              onRetry={() => void refetch()}
+              retrying={isFetching}
+            />
+          ) : (
+            <TopRankCard
+              data-testid="ranking-branches"
+              className={rankingClassName}
+              title={tDash("v2Dashboard.top.branches")}
+              description={rankingDescription(t("v2.top.sub"), meta, (count) => tDash("v2Dashboard.top.periodLastDays", { count }))}
+              items={items}
+              pinned={pinned}
+              pinnedLabel={t("v2.top.ownRankAria")}
+              expandable
+              // Bo'sh — ixcham holat (9zbSDkUI): «Bu davrda reyting uchun buyurtma yo'q».
+              empty={<EmptyState size="inline" icon={Trophy} title={tDash("v2Dashboard.top.emptyPeriod")} />}
+              note={
+                items.length > 0 && (isLowDataRanking(rows.slice(0, 5), meta) || items.length < 5)
+                  ? tDash("v2Dashboard.top.limited")
+                  : undefined
+              }
+            />
+          )}
         </div>
       ) : null}
     </div>

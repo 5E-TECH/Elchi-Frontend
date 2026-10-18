@@ -46,6 +46,100 @@
   },
   "inboxTitle": "Notifications",
   "inboxDescription": "Notifications you have received",
+  "telegramGroups": {
+    "title": "Notifications",
+    "subtitle": "Markets' Telegram groups: messages about new and cancelled orders go here",
+    "add": "Add notification",
+    "listTitle": "Connected groups",
+    "listHint": "A market can have separate groups for new and cancelled orders",
+    "listLabel": "Connected Telegram groups",
+    "paginationSummary_one": "{{from}}–{{to}} / {{total}} group",
+    "paginationSummary_other": "{{from}}–{{to}} / {{total}} groups",
+    "emptyTitle": "No groups connected yet",
+    "emptyHint": "To connect a market's Telegram group, click «Add notification»",
+    "columns": {
+      "market": "Market",
+      "groupId": "Telegram group ID",
+      "type": "Message type",
+      "status": "Status",
+      "date": "Date",
+      "actions": "Actions"
+    },
+    "type": {
+      "create": "New order",
+      "cancel": "Cancelled order"
+    },
+    "typeChoice": {
+      "create": "New orders group",
+      "cancel": "Cancelled orders group"
+    },
+    "typeGroup": {
+      "create": "new orders",
+      "cancel": "cancelled orders"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "inactiveHint": "The bot was removed from the group — reconnect it"
+    },
+    "actions": {
+      "edit": "Edit",
+      "delete": "Delete",
+      "editLabel": "{{market}} — {{type}} group: edit",
+      "deleteLabel": "{{market}} — {{type}} group: delete"
+    },
+    "delete": {
+      "title": "Are you sure you want to delete it?",
+      "descriptionCreate": "Messages about {{market}}'s new orders will no longer be sent to this group. You can reconnect the group later.",
+      "descriptionCancel": "Messages about {{market}}'s cancelled orders will no longer be sent to this group. You can reconnect the group later.",
+      "groupId": "Group ID: {{id}}",
+      "confirm": "Delete",
+      "loading": "Deleting…",
+      "success": "Notification deleted"
+    },
+    "create": {
+      "title": "Add notification",
+      "introTitle": "Connect notifications to a Telegram group",
+      "intro": "Choose the market and the message type, then open the one-time link — the bot joins the group and connects it by itself.",
+      "market": "Market",
+      "marketPlaceholder": "Choose a market",
+      "marketList": "Markets",
+      "marketRequired": "Choose a market",
+      "type": "Message type",
+      "typeHint": "A market can have separate groups for new and cancelled orders.",
+      "getLink": "Get connection link",
+      "gettingLink": "Getting the link…",
+      "newLink": "Get a new link",
+      "open": "Open in Telegram",
+      "linkTitle": "One-time link is ready",
+      "qrAlt": "QR code of the Telegram group connection link",
+      "step1": "Open the link or scan the QR code with your phone.",
+      "step2": "Choose the group — the bot joins it.",
+      "step3": "The bot connects the group by itself, the list refreshes.",
+      "expiresAt": "Valid until {{time}}",
+      "waiting": "Waiting for the group to connect…",
+      "expired": "The link has expired",
+      "expiredHint": "The link is valid for 10 minutes and works once. Get a new one.",
+      "command": "Add the bot to the group and send this command there:",
+      "existsTitle": "A group of this type is already connected",
+      "exists": "{{market}} already has a group of this type (ID: {{groupId}}). The bot does not replace it — edit it in the list, or delete it and connect again.",
+      "linkError": "Could not get the link",
+      "connected": "Group connected",
+      "connectedDescription": "{{market}} — {{type}}"
+    },
+    "editDialog": {
+      "title": "Edit notification",
+      "groupId": "Telegram group ID",
+      "groupIdPlaceholder": "-1001234567890",
+      "groupIdHint": "For example: -1001234567890. Send /id in the group and the bot shows its ID.",
+      "groupIdRequired": "Enter the group ID",
+      "submit": "Save changes",
+      "saving": "Saving…",
+      "success": "Notification updated",
+      "error": "Could not save the notification"
+    },
+    "cancel": "Cancel"
+  },
   "dispatch": {
     "pageTitle": "Send message",
     "pageDescription": "Notification to users of the system",
@@ -78,7 +172,7 @@
     "providerMissing": "Provider not connected yet",
     "telegramMarket": "Telegram group (market)",
     "telegramMarketPlaceholder": "Choose a market",
-    "telegramHint": "Telegram is sent only to the connected group of the chosen market.",
+    "telegramHint": "With a market chosen — to that market's Telegram group; without one — to each recipient's personal Telegram (recipients who have not connected are skipped).",
     "title": "Title",
     "titlePlaceholder": "E.g. Working hours change tomorrow",
     "body": "Text",
@@ -114,7 +208,6 @@
       "recipient": "Choose a recipient",
       "recipients": "Choose at least one recipient",
       "roles": "Choose at least one role",
-      "telegramMarket": "Choose a market for Telegram",
       "title": "Enter a title",
       "groupKey": "Enter a group key",
       "tooLong": "At most {{max}} characters"
@@ -134,5 +227,8 @@
     "explainConfirm": "Turn on",
     "explainCancel": "Not now",
     "toastOpen": "Open"
+  },
+  "realtime": {
+    "manyNew": "{{count}} new notifications"
   }
 }

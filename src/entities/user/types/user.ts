@@ -76,11 +76,18 @@ export interface User {
   cancelled_handover_qr_required?: boolean;
   expense_proof_conditions?: ExpenseProofCondition[] | null;
   /**
-   * Marketning Telegram maxfiy tokeni (`group_token-<hex>`). Backend uni FAQAT
-   * SUPERADMIN/ADMIN so'rovida va faqat market qatorida (GET /users/:id)
-   * qaytaradi — admin uni marketga beradi.
+   * Shaxsiy Telegram botga ulanganmi (td89SKXQ). Backend xom `telegram_id` ni
+   * qaytarmaydi — faqat shu holat; `telegram_username` va `telegram_linked_at`
+   * esa ulangan bo'lsa keladi (`GET /auth/my-profile`).
    */
-  market_tg_token?: string | null;
+  telegram_linked?: boolean;
+  telegram_username?: string | null;
+  telegram_linked_at?: string | null;
+  /**
+   * (ysBqD9Nx) Market Telegram GURUHIDAGI buyurtma kartalarida mijoz ismi va telefoni ko'rinadimi.
+   * Backend sukuti `true`; `false` — ism yashirin, telefon niqoblangan. Faqat market qatorida.
+   */
+  tg_group_show_customer_pii?: boolean;
   default_tariff: "home" | "center";
   region_id?: string | null;
   region?: Region | null;

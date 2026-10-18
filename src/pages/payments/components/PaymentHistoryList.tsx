@@ -25,6 +25,7 @@ import {
   Pagination,
   SkeletonList,
 } from "../../../shared/ui/primitives";
+import { PaymentAckBadge } from "./PaymentAckBadge";
 
 /**
  * KASSA OPERATSIYALARI RO'YXATI — dizayn v2 (maket `*-payments-cash-detail-*`, «Operatsiyalar tarixi»
@@ -123,6 +124,16 @@ const HistoryRow = memo(
     const extra = sourceUserName ? t("v2CashDetail.list.courier", { name: sourceUserName }) : comment.text;
     const date = formatDateTimeLocalized(getHistoryRowDate(row));
     const Icon = isIncome ? ArrowDownLeft : ArrowUpRight;
+    // Tugma nomi (aria-label) qator belgilarini ham aytsin: «Tuzatish», kvitansiya javobi (2crjWf7v).
+    const badgeLabels = [
+      comment.isRollback ? t("v2CashDetail.list.rollback") : "",
+      row.payment_ack === "disputed"
+        ? t("paymentAckDisputed")
+        : row.payment_ack === "confirmed"
+          ? t("paymentAckConfirmed")
+          : "",
+    ].filter(Boolean);
+    const labelTitle = badgeLabels.length ? `${title} (${badgeLabels.join(", ")})` : title;
 
     return (
       <li>
@@ -130,7 +141,7 @@ const HistoryRow = memo(
           type="button"
           onClick={() => onOpen(row)}
           aria-label={t("v2CashDetail.list.rowLabel", {
-            title,
+            title: labelTitle,
             direction: t(isIncome ? "v2Common.income" : "v2Common.expense"),
             amount: signedAmount,
             date,
@@ -152,9 +163,16 @@ const HistoryRow = memo(
             {extra ? (
               <span className="mt-0.5 text-xs whitespace-pre-line [overflow-wrap:anywhere] text-text-muted">{extra}</span>
             ) : null}
-            {comment.isRollback ? (
-              <span className="mt-1">
-                <Badge size="sm">{t("v2CashDetail.list.rollback")}</Badge>
+            {/* Belgilar: «Tuzatish» (`[ROLLBACK]`, maket `courier-cashbox-my-all` → `.el-badge-outline`) va
+                kuryer kvitansiyasi javobi (2crjWf7v: «Noto'g'ri» / «Tasdiqlangan»). */}
+            {comment.isRollback || row.payment_ack ? (
+              <span className="mt-1 flex flex-wrap items-center gap-2">
+                {comment.isRollback ? (
+                  <Badge variant="outline" size="sm">
+                    {t("v2CashDetail.list.rollback")}
+                  </Badge>
+                ) : null}
+                <PaymentAckBadge ack={row.payment_ack} size="sm" />
               </span>
             ) : null}
           </span>

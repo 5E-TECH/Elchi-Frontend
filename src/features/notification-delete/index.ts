@@ -1,2 +1,3 @@
 export { default as DeleteNotificationButton } from "./ui/DeleteNotificationButton";
+export type { DeleteNotificationButtonProps } from "./ui/DeleteNotificationButton";
 export { useDeleteNotification } from "./api/useDeleteNotification";

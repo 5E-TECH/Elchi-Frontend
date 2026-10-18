@@ -142,7 +142,7 @@
   "financialBalanceSourceManualIncome": "Qo'lda kirim",
   "financialBalanceSourceManualExpense": "Qo'lda chiqim",
   "financialBalanceSourceSalary": "Maosh",
-  "financialBalanceSourceCorrection": "Tuzatish (rollback)",
+  "financialBalanceSourceCorrection": "Tuzatish",
   "financialBalanceSourceBills": "Hisob-fakturalar",
   "report": "Hisobot",
   "commentPlaceholder": "Izoh...",
@@ -868,7 +868,11 @@
       "orderTitle": "{{title}} · №{{id}}",
       "courier": "Kuryer: {{name}}",
       "rowLabel": "{{title}}, {{direction}} {{amount}}, {{date}}",
-      "rollback": "Qaytarish"
+      "rollback": "Tuzatish"
     }
   }
+  ,"paymentAckDisputed": "Noto'g'ri"
+  ,"paymentAckDisputedHint": "Kuryer botdagi kvitansiyaga «Noto'g'ri» deb javob berdi"
+  ,"paymentAckConfirmed": "Tasdiqlangan"
+  ,"paymentAckConfirmedHint": "Kuryer botdagi kvitansiyani tasdiqladi"
 }

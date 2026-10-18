@@ -59,7 +59,8 @@
     },
     "top": {
       "sub": "Sotuv foizi · top 5 va sizning filial",
-      "yourBranch": "Sizning filial"
+      "yourBranch": "Sizning filial",
+      "ownRankAria": "Sizning filialingiz o'rni"
     }
   }
 }

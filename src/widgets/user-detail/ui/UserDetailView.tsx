@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-users-detail, admin-users-detail, manager-users-detail
-import { memo, useMemo, useState, type ReactNode } from "react";
+import { memo, useId, useMemo, useState, type ReactNode } from "react";
 import { useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { Calendar, History, Pencil, Phone, type LucideIcon } from "lucide-react";
@@ -27,6 +27,7 @@ import {
   type DataTableColumn,
   type Tone,
 } from "../../../shared/ui/primitives";
+import { useMarketTelegramGroupPiiToggle } from "../model/useMarketTelegramGroupPiiToggle";
 import { MarketTelegramTokenCard } from "./MarketTelegramTokenCard";
 
 const STATUS_TONE: Record<UserStatus, Tone> = { active: "success", inactive: "neutral", blocked: "danger" };
@@ -46,39 +47,47 @@ const SettingSwitch = ({
   disabled?: boolean;
   busy?: boolean;
   onToggle?: () => void;
-}) => (
-  <div className="flex min-h-16 items-center gap-4 border-t border-border px-5 py-3 first:border-t-0 max-md:px-4">
-    <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-      <h3 className="m-0 text-sm font-semibold text-text">{title}</h3>
-      {description ? <p className="m-0 text-[13px] text-text-muted">{description}</p> : null}
-    </div>
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={title}
-      aria-busy={busy || undefined}
-      disabled={disabled || !onToggle}
-      onClick={onToggle}
-      className="group relative inline-flex h-11 w-12 shrink-0 items-center justify-center disabled:cursor-not-allowed"
-    >
-      <span
-        aria-hidden="true"
-        className={cx(
-          "relative h-5 w-9 rounded-full transition-colors duration-150 motion-reduce:transition-none group-disabled:opacity-45",
-          checked ? "bg-action" : "bg-border-strong",
-        )}
+}) => {
+  const descriptionId = useId();
+  return (
+    <div className="flex min-h-16 items-center gap-4 border-t border-border px-5 py-3 first:border-t-0 max-md:px-4">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <h3 className="m-0 text-sm font-semibold text-text">{title}</h3>
+        {description ? (
+          <p id={descriptionId} className="m-0 text-[13px] text-text-muted">
+            {description}
+          </p>
+        ) : null}
+      </div>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        aria-label={title}
+        aria-describedby={description ? descriptionId : undefined}
+        aria-busy={busy || undefined}
+        disabled={disabled || !onToggle}
+        onClick={onToggle}
+        className="group relative inline-flex h-11 w-12 shrink-0 items-center justify-center disabled:cursor-not-allowed"
       >
         <span
+          aria-hidden="true"
           className={cx(
-            "absolute left-0.5 top-0.5 size-4 rounded-full bg-on-solid transition-transform duration-150 motion-reduce:transition-none",
-            checked && "translate-x-4",
+            "relative h-5 w-9 rounded-full transition-colors duration-150 motion-reduce:transition-none group-disabled:opacity-45",
+            checked ? "bg-action" : "bg-border-strong",
           )}
-        />
-      </span>
-    </button>
-  </div>
-);
+        >
+          <span
+            className={cx(
+              "absolute left-0.5 top-0.5 size-4 rounded-full bg-on-solid transition-transform duration-150 motion-reduce:transition-none",
+              checked && "translate-x-4",
+            )}
+          />
+        </span>
+      </button>
+    </div>
+  );
+};
 
 /** «Aloqa va sanalar» bandi (`.el-stat-icon` + yorliq + qiymat). */
 const ContactItem = ({ icon: Icon, label, value }: { icon: LucideIcon; label: string; value: ReactNode }) => (
@@ -148,6 +157,9 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   // Admin filial sahifalarini ocha olmaydi — kuryerni o'tkazishning uning uchun yagona kirish joyi shu sahifa.
   const canTransferCourier = isCourier && canManagePrivilegedToggles;
   const canSeeMarketTelegramToken = isMarket && currentRole === "superadmin";
+  // ysBqD9Nx: Telegram guruhida mijoz ismi/telefoni — market qatorida; kim o'zgartira olishi hook'da
+  // (superadmin/admin — istalgan market, market — faqat o'zi; qolganlar faqat ko'radi).
+  const groupPii = useMarketTelegramGroupPiiToggle(user);
   const proofConditions = useMemo(
     () => (Array.isArray(user.expense_proof_conditions) ? user.expense_proof_conditions : []),
     [user.expense_proof_conditions],
@@ -290,6 +302,14 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
               disabled={updateMarketCancelledHandoverQr.isPending}
               onToggle={canManagePrivilegedToggles ? () => void handleToggleMarketCancelledHandoverQr() : undefined}
             />
+            <SettingSwitch
+              title={t("tgGroupPiiLabel")}
+              description={t("tgGroupPiiHint")}
+              checked={groupPii.checked}
+              busy={groupPii.isSaving}
+              disabled={groupPii.isSaving}
+              onToggle={groupPii.canEdit ? () => void groupPii.toggle() : undefined}
+            />
             {canManagePrivilegedToggles ? (
               <>
                 <div className="flex flex-col gap-0.5 border-t border-border px-5 pb-1 pt-4 max-md:px-4">
@@ -387,7 +407,8 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
     ) : null;
 
   const sideCards = [profileCard, tariffCard, canSeeMarketTelegramToken ? (
-    <MarketTelegramTokenCard key="token" token={user.market_tg_token} marketId={user.id} />
+    // `key`: boshqa marketga o'tilsa (sahifa qayta o'rnatilmaydi) oldingi marketning tokeni qolmaydi.
+    <MarketTelegramTokenCard key={`token-${user.id}`} marketId={String(user.id)} />
   ) : null].filter(Boolean);
 
   return (

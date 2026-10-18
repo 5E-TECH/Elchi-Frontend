@@ -64,4 +64,53 @@ test.describe("Biriktirish va Tezkor amal — 390px", () => {
     expect(api.cancels).toEqual([]);
     expect(api.leaked).toEqual([]);
   });
+
+  test("⭐ /courier-bulk: isbot qadami — pastki varaqa, fayl tanlanmaguncha «Yakunlash» o'chiq; so'rovlarda X-Request-Source", async ({ page }) => {
+    const api = await mockCourierBulkApi(page, { sellProofIds: ["10402"] });
+    await openCourierBulk(page);
+
+    await markResult(page, "Dilnoza Rahimova", "Ertaga");
+    await page.getByRole("button", { name: "Kunni yakunlash", exact: true }).click();
+    await page
+      .getByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" })
+      .getByRole("button", { name: "Tasdiqlash" })
+      .click();
+
+    const dialog = page.getByRole("dialog", { name: "Isbot yuklang" });
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText("1 ta buyurtma uchun market rasm yoki video isbot talab qiladi");
+    await expect(dialog).toContainText("Qolgan 1 ta buyurtma isbotsiz yakunlanadi.");
+    // Telefonda — pastdan chiqadigan varaqa, gorizontal skroll yo'q.
+    const box = (await dialog.boundingBox())!;
+    expect(box.y + box.height).toBeGreaterThanOrEqual(844 - 1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+    const submit = dialog.getByRole("button", { name: "Yakunlash" });
+    await expect(submit).toBeDisabled();
+    expect(api.requests).toEqual([]);
+    const submitBox = (await submit.boundingBox())!;
+    expect(submitBox.height).toBeGreaterThanOrEqual(44);
+
+    await dialog
+      .getByRole("group", { name: "№10402 · Ali Valiyev" })
+      .locator('input[type="file"]')
+      .setInputFiles({ name: "isbot_10402.jpg", mimeType: "image/jpeg", buffer: Buffer.from("e2e") });
+    await expect(dialog).toContainText("Isbot tanlandi: 1 / 1");
+    await expect(submit).toBeEnabled();
+    await submit.click();
+
+    await expect(toast(page, "Kun yakunlandi")).toBeVisible();
+    await expect(dialog).toHaveCount(0);
+    expect([...api.requests].sort((a, b) => a.id.localeCompare(b.id))).toEqual([
+      { action: "sell", id: "10401", source: "courier-bulk" },
+      { action: "sell", id: "10402", source: "courier-bulk" },
+    ]);
+    // Isbot faqat isbot talab qiladigan buyurtmaga: bitta yuklash, uning kaliti №10402 so'roviga.
+    expect(api.uploads).toEqual(["proof/e2e-1.jpg"]);
+    expect([...api.sells].sort((a, b) => a.id.localeCompare(b.id))).toEqual([
+      { id: "10401", body: { comment: BULK_SOLD_COMMENT, extraCost: 0 } },
+      { id: "10402", body: { comment: BULK_SOLD_COMMENT, extraCost: 0, proofFileKeys: ["proof/e2e-1.jpg"] } },
+    ]);
+    expect(api.leaked).toEqual([]);
+  });
 });

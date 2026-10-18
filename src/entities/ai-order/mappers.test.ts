@@ -88,6 +88,18 @@ describe("buildAiConfirmPayload", () => {
     });
   });
 
+  it("vncdmXOy: `draft_id` bilan preview o'rni `ai_item_index` bo'lib ketadi; `draft_id` siz yoki 0..29 dan tashqari — yo'q", () => {
+    const build = (over: Partial<AiPreviewOrder>) => buildAiConfirmPayload([preview(over)], { includeMarketId: false }).orders[0];
+    expect(build({ draft_id: "d-1", index: 0 })).toMatchObject({ draft_id: "d-1", ai_item_index: 0 });
+    expect(build({ draft_id: "d-1", index: 29 }).ai_item_index).toBe(29);
+    expect(build({ index: 3 })).not.toHaveProperty("ai_item_index");
+    expect(build({ draft_id: "d-1", index: 30 })).not.toHaveProperty("ai_item_index");
+    expect(build({ draft_id: "d-1", index: 1.5 })).not.toHaveProperty("ai_item_index");
+    expect(build({ draft_id: "d-1" })).not.toHaveProperty("ai_item_index");
+    // UI/AI metadata emas — `index` kalitining o'zi payloadga tushmaydi.
+    expect(build({ draft_id: "d-1", index: 2 })).not.toHaveProperty("index");
+  });
+
   it.each(["+998 (90) 123-45-67", "90 123 45 67", "901234567", "+998901234567"])(
     "telefon %j → +998901234567",
     (phone) => {
