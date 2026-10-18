@@ -28,7 +28,7 @@ import {
   type Tone,
 } from "../../../shared/ui/primitives";
 import { useMarketTelegramGroupPiiToggle } from "../model/useMarketTelegramGroupPiiToggle";
-import { MarketTelegramTokenCard } from "./MarketTelegramTokenCard";
+import { MarketTelegramGroupLinkCard } from "./MarketTelegramGroupLinkCard";
 
 const STATUS_TONE: Record<UserStatus, Tone> = { active: "success", inactive: "neutral", blocked: "danger" };
 
@@ -156,7 +156,8 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   const canReceiveSellCancelPermission = user.role === "manager";
   // Admin filial sahifalarini ocha olmaydi — kuryerni o'tkazishning uning uchun yagona kirish joyi shu sahifa.
   const canTransferCourier = isCourier && canManagePrivilegedToggles;
-  const canSeeMarketTelegramToken = isMarket && currentRole === "superadmin";
+  // Guruhni bir martalik havola bilan ulash (eski «Telegram token» o'rnida) — faqat superadmin.
+  const canLinkMarketTelegramGroup = isMarket && currentRole === "superadmin";
   // ysBqD9Nx: Telegram guruhida mijoz ismi/telefoni — market qatorida; kim o'zgartira olishi hook'da
   // (superadmin/admin — istalgan market, market — faqat o'zi; qolganlar faqat ko'radi).
   const groupPii = useMarketTelegramGroupPiiToggle(user);
@@ -406,9 +407,9 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
       </Card>
     ) : null;
 
-  const sideCards = [profileCard, tariffCard, canSeeMarketTelegramToken ? (
-    // `key`: boshqa marketga o'tilsa (sahifa qayta o'rnatilmaydi) oldingi marketning tokeni qolmaydi.
-    <MarketTelegramTokenCard key={`token-${user.id}`} marketId={String(user.id)} />
+  const sideCards = [profileCard, tariffCard, canLinkMarketTelegramGroup ? (
+    // `key`: boshqa marketga o'tilsa (sahifa qayta o'rnatilmaydi) oyna holati qolmaydi.
+    <MarketTelegramGroupLinkCard key={`tg-group-${user.id}`} marketId={String(user.id)} />
   ) : null].filter(Boolean);
 
   return (

@@ -191,6 +191,7 @@
         "src/pages/dashboard/ui/MarketSalesCard.tsx",
         "src/pages/dashboard/ui/QuickActions.tsx",
         "src/pages/dashboard/ui/ExtraCostApprovals.tsx",
+        "src/pages/dashboard/ui/AutoApprovedExtraCosts.tsx",
         "src/pages/dashboard/ui/ExtraCostRejectDialog.tsx",
         "src/widgets/dashboard-part-error/ui/DashboardPartError.tsx",
         "src/shared/ui/charts/index.ts"
@@ -506,7 +507,7 @@
       "components": [
         "src/pages/users/detail/UserDetailPage.tsx",
         "src/widgets/user-detail/ui/UserDetailView.tsx",
-        "src/widgets/user-detail/ui/MarketTelegramTokenCard.tsx"
+        "src/widgets/user-detail/ui/MarketTelegramGroupLinkCard.tsx"
       ],
       "views": {},
       "note": "Alohida maket yo'q — <rol>-users-detail maketlari (superadmin-users-detail). /all-users/:id bilan bir xil v2 sahifa (UserDetailView); «Qabul va yaratish» qobig'i bu yo'lda bare — sarlavha va «Buyurtma yaratish» takrorlanmaydi (newOrdersShell.ts), «←» — navigate(-1)."
@@ -1000,7 +1001,7 @@
       "components": [
         "src/pages/users/detail/UserDetailPage.tsx",
         "src/widgets/user-detail/ui/UserDetailView.tsx",
-        "src/widgets/user-detail/ui/MarketTelegramTokenCard.tsx",
+        "src/widgets/user-detail/ui/MarketTelegramGroupLinkCard.tsx",
         "src/widgets/user-detail/model/useMarketTelegramGroupPiiToggle.ts",
         "src/features/user/update-user/ui/UpdateUserModal.tsx",
         "src/features/courier-transfer-branch/ui/TransferCourierButton.tsx",

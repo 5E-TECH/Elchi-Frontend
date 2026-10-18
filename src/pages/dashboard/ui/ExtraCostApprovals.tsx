@@ -1,6 +1,6 @@
 // dizayn-v2: market-dashboard-extra-cost-approvals
 import { memo, useId, useState, type ReactNode } from "react";
-import { ArrowRight, CircleCheck, CircleX, Clock, Lock, Receipt } from "lucide-react";
+import { ArrowRight, CircleCheck, CircleX, Clock, Lock, Receipt, TimerReset } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
@@ -147,6 +147,16 @@ const ApprovalRow = ({ approval, canDecide, approving, rejecting, onApprove, onR
           {approval.createdAt ? (
             <span className="whitespace-nowrap text-xs text-text-muted">
               {formatDateTimeLocalized(approval.createdAt, { language })}
+            </span>
+          ) : null}
+          {approval.auto_approve_at ? (
+            // 1tnpaIqd (ega qarori): muddat o'tsa so'rov avtomatik tasdiqlanadi — market buni ko'rsin.
+            <span
+              data-testid={`approval-deadline-${approval.id}`}
+              className="flex items-center gap-1 text-xs font-semibold text-warning-fg"
+            >
+              <TimerReset size={14} className="flex-none" aria-hidden="true" />
+              {t("market.extra_cost_auto_at", { time: formatDateTimeLocalized(approval.auto_approve_at, { language }) })}
             </span>
           ) : null}
         </div>

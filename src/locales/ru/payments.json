@@ -651,6 +651,8 @@
     "to": "Куда",
     "paymentType": "Способ оплаты",
     "paymentDate": "Дата платежа",
+    "paymentAck": "Ответ на квитанцию",
+    "paymentAckNone": "Нет ответа",
     "comment": "Комментарий",
     "linkedOrder": "Связанный заказ",
     "orderNumber": "№{{id}}",

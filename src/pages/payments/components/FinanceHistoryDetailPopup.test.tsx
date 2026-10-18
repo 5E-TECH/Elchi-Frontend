@@ -205,3 +205,45 @@ describe("FinanceHistoryDetailPopup (v2)", () => {
     expect(within(dialog).queryByText("Jasur Tursunov")).not.toBeInTheDocument();
   });
 });
+
+describe("FinanceHistoryDetailPopup — kuryer kvitansiyasi javobi (2crjWf7v)", () => {
+  const courierPayment = (payment_ack: PaymentRow["payment_ack"] | undefined): PaymentRow => ({
+    id: "47",
+    amount: 1000,
+    operation_type: "expense",
+    source_type: "courier_payment",
+    cashbox_id: "9",
+    cashbox_type: "couriers",
+    payment_method: "cash",
+    payment_date: "2026-10-17T07:34:00.000Z",
+    ...(payment_ack === undefined ? {} : { payment_ack }),
+  });
+
+  it("disputed → «Kvitansiya javobi: Noto'g'ri» (ro'yxatdagi belgi bilan bir xil)", async () => {
+    open(courierPayment("disputed"), "manager");
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    const badge = within(valueOf(dialog, "Kvitansiya javobi")).getByText("Noto'g'ri");
+    expect(badge).toHaveAttribute("data-payment-ack", "disputed");
+  });
+
+  it("confirmed → «Tasdiqlangan»", async () => {
+    open(courierPayment("confirmed"), "courier", { hideCashboxType: true });
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    expect(within(valueOf(dialog, "Kvitansiya javobi")).getByText("Tasdiqlangan")).toHaveAttribute(
+      "data-payment-ack",
+      "confirmed",
+    );
+  });
+
+  it("javob yo'q (null) → «Javob yo'q»; maydon kelmagan qatorda qator umuman yo'q", async () => {
+    open(courierPayment(null), "manager");
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    expect(valueOf(dialog, "Kvitansiya javobi")).toHaveTextContent("Javob yo'q");
+  });
+
+  it("boshqa qatorda (payment_ack yo'q) «Kvitansiya javobi» chizilmaydi", async () => {
+    open(courierPayment(undefined), "manager");
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    expect(within(dialog).queryByText("Kvitansiya javobi", { selector: "dt" })).not.toBeInTheDocument();
+  });
+});

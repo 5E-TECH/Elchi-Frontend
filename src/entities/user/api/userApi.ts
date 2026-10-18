@@ -208,18 +208,6 @@ const fetchUserList = async (params?: IUserFilter) => {
   };
 };
 
-/**
- * Marketning Telegram tokeni (GvL6ZFAd): umumiy javoblarda (`/users`, `/users/:id`, `/markets`) YO'Q —
- * faqat `GET /markets/:id/tg-token` (faqat SUPERADMIN, har ko'rish audit jurnaliga yoziladi,
- * `Cache-Control: no-store`). Shuning uchun so'rov faqat «Ko'rsatish»/«Nusxalash» bosilganda va keshsiz.
- */
-export const fetchMarketTelegramToken = async (marketId: string): Promise<string | null> => {
-  const response = await api.get(API_ENDPOINTS.MARKETS.TG_TOKEN(marketId));
-  const body = (response.data ?? {}) as { data?: { market_tg_token?: unknown }; market_tg_token?: unknown };
-  const token = body.data?.market_tg_token ?? body.market_tg_token;
-  return typeof token === "string" && token.trim() ? token.trim() : null;
-};
-
 export const useUser = () => {
   const client = useQueryClient();
   const dispatch = useDispatch();

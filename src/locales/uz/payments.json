@@ -651,6 +651,8 @@
     "to": "Qayerga",
     "paymentType": "To'lov turi",
     "paymentDate": "To'lov sanasi",
+    "paymentAck": "Kvitansiya javobi",
+    "paymentAckNone": "Javob yo'q",
     "comment": "Izoh",
     "linkedOrder": "Bog'langan buyurtma",
     "orderNumber": "№{{id}}",

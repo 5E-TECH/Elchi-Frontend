@@ -17,6 +17,7 @@ vi.mock("../../entities/dashboard", () => ({
 
 vi.mock("../../entities/orders", () => ({
   useOrders: () => ({
+    useAutoApprovedExtraCostApprovals: () => ({ data: undefined }),
     useExtraCostApprovals: () => approvalsState,
     approveExtraCostApproval: approveState,
     rejectExtraCostApproval: rejectState,

@@ -23,6 +23,8 @@ import GroupLinkQr from "./GroupLinkQr";
 interface NotificationFormModalProps {
   open: boolean;
   onClose: () => void;
+  /** Market oldindan tanlangan holda ochish (market sahifasidagi «Telegram guruhi» kartasi). */
+  marketId?: string;
 }
 
 /**
@@ -37,13 +39,13 @@ interface NotificationFormModalProps {
  * foydalanuvchiga ro'yxatda tahrirlash yoki o'chirish aytiladi. Qo'lda «Telegram guruh ID» maydoni va
  * `VITE_TELEGRAM_NOTIFICATION_BOT_USERNAME` endi kerak emas (maketdagi qo'lda oqim o'rniga — kartadagi qaror).
  */
-const CreateGroupLinkDialog = ({ open, onClose }: NotificationFormModalProps) => {
+const CreateGroupLinkDialog = ({ open, onClose, marketId: initialMarketId }: NotificationFormModalProps) => {
   const { t } = useTranslation("notificationGroups");
   const queryClient = useQueryClient();
   const { options, getName, isLoading: marketsLoading } = useNotificationMarkets(open);
   const requestLink = useRequestGroupLink();
 
-  const [marketId, setMarketId] = useState<string | null>(null);
+  const [marketId, setMarketId] = useState<string | null>(initialMarketId ?? null);
   const [groupType, setGroupType] = useState<NotificationGroupType>("create");
   const [marketMissing, setMarketMissing] = useState(false);
   const [link, setLink] = useState<GroupLinkCode | null>(null);
@@ -261,7 +263,7 @@ const CreateGroupLinkDialog = ({ open, onClose }: NotificationFormModalProps) =>
  * Har ochilishda holat yangidan (market, tur, havola) — ichki oyna har ochilishda qayta o'rnatiladi;
  * yopilish harakati paytida esa eski holat ko'rinib turadi.
  */
-const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) => {
+const NotificationFormModal = ({ open, onClose, marketId }: NotificationFormModalProps) => {
   const [session, setSession] = useState(0);
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
@@ -269,7 +271,7 @@ const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) =>
     if (open) setSession((value) => value + 1);
   }
 
-  return <CreateGroupLinkDialog key={session} open={open} onClose={onClose} />;
+  return <CreateGroupLinkDialog key={session} open={open} onClose={onClose} marketId={marketId} />;
 };
 
 export default NotificationFormModal;

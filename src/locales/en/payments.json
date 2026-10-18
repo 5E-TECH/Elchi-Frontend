@@ -651,6 +651,8 @@
     "to": "To",
     "paymentType": "Payment method",
     "paymentDate": "Payment date",
+    "paymentAck": "Receipt answer",
+    "paymentAckNone": "No answer",
     "comment": "Comment",
     "linkedOrder": "Linked order",
     "orderNumber": "№{{id}}",
