@@ -18,16 +18,17 @@ test.describe("Dashboard qisman nosozligi — 1440px", () => {
     await expect(markets).toContainText("Top marketlar");
     await expect(markets).toContainText("Ma'lumotni yuklab bo'lmadi");
     await expect(markets).not.toContainText("Bu davrda reyting uchun buyurtma yo'q");
-    const chart = page.getByTestId("performance-markets-failed");
-    await expect(chart).toContainText("Ma'lumotni yuklab bo'lmadi");
-    // Olingan bo'laklar joyida.
+    // Dizayn v2: admin dashboardida alohida «solishtiruv grafigi» yo'q — `markets` faqat «Top marketlar»
+    // ning «Yana ko'rsatish» ro'yxati. Olingan bo'laklar (filiallar, kuryerlar) joyida.
     await expect(page.getByTestId("ranking-branches")).toContainText("Urgut filiali");
+    await expect(page.getByTestId("ranking-couriers")).toContainText("Jasur Tursunov");
 
+    const callsBeforeRetry = dashboardCalls();
     await markets.getByRole("button", { name: "Qayta urinish" }).click();
     await expect(markets.getByText("Baraka Shop")).toBeVisible();
     await expect(markets).not.toHaveAttribute("data-part-failed");
-    await expect(chart).toHaveCount(0);
-    expect(dashboardCalls()).toBe(2);
+    // «Qayta urinish» — joriy davr so'rovi bir marta qayta yuboriladi (oldingi davr so'rovi — alohida).
+    expect(dashboardCalls()).toBe(callsBeforeRetry + 1);
     expect(leaked).toEqual([]);
   });
 
@@ -36,8 +37,8 @@ test.describe("Dashboard qisman nosozligi — 1440px", () => {
     await openDashboard(page);
 
     const content = page.locator("[data-shell-slot=content]");
-    await expect(content.getByText("Dashboard ma'lumotlarini yuklab bo'lmadi.")).toBeVisible({ timeout: 60_000 });
-    await expect(page.getByTestId("dashboard-rankings")).toHaveCount(0);
+    await expect(content.getByText("Bosh sahifa ma'lumotlarini yuklab bo'lmadi.")).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByTestId("ranking-markets")).toHaveCount(0);
     await content.getByRole("button", { name: "Qayta urinish" }).first().click();
     await expect(page.getByTestId("ranking-markets")).toContainText("Baraka Shop");
   });
@@ -46,8 +47,10 @@ test.describe("Dashboard qisman nosozligi — 1440px", () => {
     await mockDegradedDashboard(page, { role: "market", failedParts: ["topMarkets", "markets"] });
     await openDashboard(page);
 
-    await expect(page.getByTestId("market-ranking-failed")).toContainText("Ma'lumotni yuklab bo'lmadi", { timeout: 60_000 });
-    await expect(page.getByTestId("performance-markets-failed")).toContainText("Ma'lumotni yuklab bo'lmadi");
+    // Dizayn v2: reyting va o'z qatori bitta «Marketlar bo'yicha sotuv foizi» kartasida — joyida bitta xato kartasi.
+    const sales = page.getByTestId("market-ranking-failed");
+    await expect(sales).toContainText("Ma'lumotni yuklab bo'lmadi", { timeout: 60_000 });
+    await expect(sales).toContainText("Marketlar bo'yicha sotuv foizi");
     await expect(page.getByTestId("market-stats-grid")).toBeVisible();
   });
 

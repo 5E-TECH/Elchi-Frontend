@@ -119,11 +119,16 @@ const GRIP: Record<DialogLayout, string | null> = {
   sheet: "flex",
 };
 
-/** `.el-dialog-foot`: o'ngga tekislangan; telefonda (varaqada) tugmalar teng enli, bir qatorda. */
+/**
+ * `.el-dialog-foot`: o'ngga tekislangan; telefonda (varaqada) tugmalar teng enli, bir qatorda.
+ * Qator `flex-wrap` — tugma matni `nowrap` bo'lgani uchun sig'masa (uzun fe'l, keng zaxira shrift — masalan
+ * Manrope yuklanmaganda DejaVu Sans) ikkinchi tugma keyingi qatorga to'liq enli tushadi, ekrandan chiqmaydi.
+ * Sig'sa — ko'rinish o'zgarmaydi (bir qator, teng enli).
+ */
 const FOOT: Record<DialogLayout, string> = {
   dialog: "flex shrink-0 flex-wrap justify-end gap-2 @max-sm/dialog:[&>*]:flex-1",
-  auto: "flex shrink-0 flex-wrap justify-end gap-2 max-md:flex-nowrap max-md:[&>*]:flex-1",
-  sheet: "flex shrink-0 flex-nowrap justify-end gap-2 [&>*]:flex-1",
+  auto: "flex shrink-0 flex-wrap justify-end gap-2 max-md:[&>*]:flex-1",
+  sheet: "flex shrink-0 flex-wrap justify-end gap-2 [&>*]:flex-1",
 };
 
 /** Tana aylanayotganda amallar ustidagi chiziq (telefonda chetdan chetga — `superadmin-users-edit-dialog`). */

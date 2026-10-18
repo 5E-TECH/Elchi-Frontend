@@ -26,9 +26,11 @@ import {
   LEGACY_ORDER_STATUS_URL_KEY,
   matchOrderStatusTab,
   normalizeFilterStatuses,
+  normalizeOrderSearch,
   ORDER_FILTER_KEYS,
   ORDER_STATUS_URL_KEY,
   parseStatusValues,
+  sanitizeDayParam,
   type OrderFilterValues,
 } from "./orderFilterModel";
 import { OrderFiltersSheet } from "./OrderFiltersSheet";
@@ -155,11 +157,13 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
       courierId: getParam(ORDER_FILTER_KEYS.courierId) ?? "",
       deliveryType: isDeliveryType(deliveryType) ? deliveryType : "",
       statuses: parseStatusValues(urlStatus),
-      dateFrom: getParam(ORDER_FILTER_KEYS.dateFrom) ?? getParam(LEGACY_DATE_FROM_KEY) ?? "",
-      dateTo: getParam(ORDER_FILTER_KEYS.dateTo) ?? getParam(LEGACY_DATE_TO_KEY) ?? "",
+      // Noto'g'ri sana (`?startDay=falonchi`) — filtr yo'q (sahifa API'ga ham yubormaydi, D-08).
+      dateFrom: sanitizeDayParam(getParam(ORDER_FILTER_KEYS.dateFrom) ?? getParam(LEGACY_DATE_FROM_KEY)),
+      dateTo: sanitizeDayParam(getParam(ORDER_FILTER_KEYS.dateTo) ?? getParam(LEGACY_DATE_TO_KEY)),
     };
   }, [getParam, urlStatus]);
-  const search = getParam(ORDER_FILTER_KEYS.search) ?? "";
+  // Qo'llangan qidiruv (sahifa API'ga shuni yuboradi): bo'shliqlarsiz, boshidagi «№» / «#» siz (D-11).
+  const search = normalizeOrderSearch(getParam(ORDER_FILTER_KEYS.search));
 
   // Holat tab orqali tanlanganmi (tab to'plamiga aynan mos) — unda u «Filtrlar» soniga va chiplarga kirmaydi.
   const statusFromTab = statusTabs && values.statuses.length > 0 && matchOrderStatusTab(values.statuses) !== null;
@@ -185,9 +189,10 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
   const [searchText, setSearchText] = useState(search);
   const [prevSearch, setPrevSearch] = useState(search);
   if (prevSearch !== search) {
-    // URL tashqaridan o'zgardi (tozalash, back/forward) — maydon ham.
+    // URL tashqaridan o'zgardi (tozalash, back/forward) — maydon ham. O'zimiz yozgan qiymat bo'lsa (maydonda
+    // «№53» yoki oxirida bo'shliq bilan «Ali » — qo'llangani «53» / «Ali») yozilayotgan matn o'zgarmaydi.
     setPrevSearch(search);
-    setSearchText(search);
+    if (normalizeOrderSearch(searchText) !== search) setSearchText(search);
   }
   const searchTimer = useTimer();
   const cancelPendingSearch = searchTimer.cancel;
@@ -235,7 +240,8 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
       { dateFrom: from, dateTo: to },
     );
 
-  const updateSearch = (value: string) => {
+  const updateSearch = (raw: string) => {
+    const value = normalizeOrderSearch(raw);
     dispatch(setSearchValue({ key: ORDER_FILTER_KEYS.search, value }));
     setMultipleParams({ [ORDER_FILTER_KEYS.search]: value });
   };
@@ -578,7 +584,9 @@ const OrderFilters = memo(({ statusTabs = true }: Props) => {
           aria-label={t("filters.active", { ns: "ui" })}
           className={cx(
             "flex flex-wrap items-center gap-2 px-5 pb-4",
-            chipsScroll && "max-md:flex-nowrap max-md:overflow-x-auto max-md:scrollbar-hide",
+            // Skroll chizig'i yashirin (maket `scrollbar-width: none`): `scrollbar-hide` Tailwind v4 da utilita emas.
+            chipsScroll &&
+              "max-md:flex-nowrap max-md:overflow-x-auto max-md:[scrollbar-width:none] max-md:[&::-webkit-scrollbar]:hidden",
           )}
         >
           {chips.map(({ key, ...item }) => (

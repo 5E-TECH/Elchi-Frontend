@@ -237,6 +237,13 @@ describe("Tabs — son", () => {
     expect(screen.getByText("1 248")).toHaveClass("bg-action-soft", "text-action-fg");
     expect(screen.getByText("32")).toHaveClass("bg-sunken", "text-text-muted");
   });
+
+  it("sahifa fonida (`background=\"bg\"`) nofaol son — yuza + chegara (maket `courier-mails-today`), faoli o'zgarmaydi", () => {
+    render(<Controlled background="bg" />);
+    expect(screen.getByText("1 248")).toHaveClass("bg-action-soft", "text-action-fg");
+    expect(screen.getByText("32")).toHaveClass("bg-surface", "border", "border-border", "text-text-muted");
+    expect(screen.getByText("32")).not.toHaveClass("bg-sunken");
+  });
 });
 
 describe("Tabs — panel id sxemasi", () => {
@@ -345,6 +352,18 @@ describe("Tabs — sig'maganda", () => {
     expect(screen.getByRole("button", { name: "Oldingi tablar" })).toHaveAttribute("tabindex", "-1");
   });
 
+  it("chetdagi qoplama karta burchagini bo'yamaydi: tashqi yuqori burchagi ichki radius bo'yicha kesilgan", () => {
+    const { container } = render(<Controlled />);
+    const list = screen.getByRole("tablist");
+    const { setScrollLeft } = fakeLayout(list, { scrollWidth: 900, clientWidth: 300 });
+    act(() => setScrollLeft(300));
+    const end = container.querySelector('[data-tabs-edge="end"]');
+    const start = container.querySelector('[data-tabs-edge="start"]');
+    expect(end).toHaveClass("right-0", "overflow-hidden", "rounded-tr-[13px]");
+    expect(end).not.toHaveClass("rounded-tl-[13px]");
+    expect(start).toHaveClass("left-0", "overflow-hidden", "rounded-tl-[13px]");
+  });
+
   it("o'q tugmasi ro'yxatni ~80% enga suradi", () => {
     render(<Controlled />);
     const list = screen.getByRole("tablist");
@@ -367,6 +386,57 @@ describe("Tabs — sig'maganda", () => {
     await user.keyboard("{End}");
     // 800 (tab oxiri) − 300 (ko'rinadigan en) + 32 (telefondagi xiralashish)
     expect(scrollTo).toHaveBeenLastCalledWith({ left: 532, behavior: "smooth" });
+  });
+
+  describe("tab sonlari keyin yuklanib, tablar kengaysa", () => {
+    /** jsdom'da ResizeObserver yo'q — chaqiriqni qo'lda yuboramiz. */
+    const installResizeObserver = () => {
+      const callbacks: ResizeObserverCallback[] = [];
+      class ManualResizeObserver {
+        constructor(callback: ResizeObserverCallback) {
+          callbacks.push(callback);
+        }
+        observe() {}
+        unobserve() {}
+        disconnect() {
+          const index = callbacks.length - 1;
+          if (index >= 0) callbacks.splice(index, 1);
+        }
+      }
+      globalThis.ResizeObserver = ManualResizeObserver as unknown as typeof ResizeObserver;
+      return () => act(() => callbacks.forEach((callback) => callback([], {} as ResizeObserver)));
+    };
+
+    const mountWithLateCounts = () => {
+      const fire = installResizeObserver();
+      render(<Controlled initial="waiting" />);
+      const list = screen.getByRole("tablist");
+      const { scrollTo } = fakeLayout(list, { scrollWidth: 900, clientWidth: 300 });
+      const active = tab(/^Kutilmoqda/);
+      // Sonlar yuklangach tablar kengaydi — faol tab ko'rinadigan qismdan chiqdi.
+      Object.defineProperty(active, "offsetLeft", { configurable: true, value: 700 });
+      Object.defineProperty(active, "offsetWidth", { configurable: true, value: 100 });
+      return { list, scrollTo, fire };
+    };
+
+    // setup.ts dagi umumiy mock boshqa testlar uchun qaytariladi.
+    const sharedResizeObserver = globalThis.ResizeObserver;
+    afterEach(() => {
+      globalThis.ResizeObserver = sharedResizeObserver;
+    });
+
+    it("faol tab qayta ko'rinishga suriladi (darhol, silliq emas)", () => {
+      const { scrollTo, fire } = mountWithLateCounts();
+      fire();
+      expect(scrollTo).toHaveBeenLastCalledWith({ left: 532, behavior: "auto" });
+    });
+
+    it("foydalanuvchi ro'yxatni o'zi sursa — o'lcham o'zgarishi uni qaytarib tortmaydi", () => {
+      const { list, scrollTo, fire } = mountWithLateCounts();
+      fireEvent.wheel(list);
+      fire();
+      expect(scrollTo).not.toHaveBeenCalled();
+    });
   });
 });
 

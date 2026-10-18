@@ -1,289 +1,116 @@
-import { memo, useCallback, useEffect, useMemo, useState } from "react";
+// dizayn-v2: superadmin-dashboard-main, admin-dashboard-main
+import { lazy, memo, Suspense, useEffect, useMemo, useState, type ComponentProps } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  ComposedChart,
-  Area,
-  Bar,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import {
-  Wallet,
-  Store,
-  Building2,
-  Scale,
-  BarChart2,
-  Receipt,
-  TrendingUp,
-} from "lucide-react";
-import {
-  useDashboard,
-  type RevenueParams,
-  type RevenuePoint,
-} from "../../../entities/dashboard";
-import {
-  formatCompactMoney, formatCompactAxisMoney,
-  formatNumber,
-  formatPercent,
-  toneAccent,
-  toneSoftBg,
-  type Tone,
-  TYPO,
-  TEXT,
-} from "../../../shared/config/designSystem";
-import QueryErrorState from "../../../shared/ui/QueryErrorState";
-import MetricCard from "../../../shared/ui/MetricCard";
+import { useDashboard, type RevenueParams, type RevenuePoint, type RevenueResponse } from "../../../entities/dashboard";
+import { formatShortRange, rangeDays } from "../../../entities/dashboard/lib/period";
+import { cx } from "../../../shared/lib/cx";
 import { getPreviousPeriodRange, getTodayRange } from "../../../shared/lib/dateRange";
+import {
+  formatCompactMoneyLocalized,
+  formatMoneyLocalized,
+  formatNumberLocalized,
+} from "../../../shared/lib/formatMoney";
 import {
   readStoredDashboardComparison,
   writeStoredDashboardComparison,
 } from "../../../shared/lib/preferencesStorage";
+import DeferredMount from "../../../shared/ui/DeferredMount";
+import { ChartLegend, DeltaChip, ViewToggle, type ChartView } from "../../../shared/ui/charts";
+import {
+  Button,
+  Card,
+  DataTable,
+  EmptyState,
+  QueryBoundary,
+  SegmentedControl,
+  Skeleton,
+  SkeletonChart,
+} from "../../../shared/ui/primitives";
 import { calculatePercentChange } from "../lib/periodComparison";
+import CashBalanceCard from "./CashBalanceCard";
+import type { TrendPoint } from "./FinancialTrendPlot";
 
 /**
- * FinancialAnalysis — moliyaviy tahlil bo'limi.
- *
- * Eski versiyada bu yerda DashboardStatistics bilan TAKRORLANADIGAN kartalar
- * bor edi (bugungi daromad/buyurtma, haftalik daromad, davr statistikasi).
- * Ular olib tashlandi. Endi bu bo'lim FAQAT noyob ma'lumotni ko'rsatadi:
- *   1) Kassa balansi holati (Pochta / marketlar / kuryerlar / joriy holat),
- *   2) Daromad trendi grafigi.
+ * recharts FAQAT shu plotda va u alohida chunk: plot maydoni ekranga kirgandagina yuklanadi
+ * (`DeferredMount rootMargin="0px"`). 1440×900 da plot birinchi ekrandan pastda — dashboard birinchi
+ * ochilishida recharts yuklanmaydi (§1.9 byudjeti, `tests/e2e/dashboard-bundle.preview.spec.ts`).
  */
+const FinancialTrendPlot = lazy(() => import("./FinancialTrendPlot"));
 
-type ChartType = "Area" | "Bar" | "Combo";
 export type RevenuePeriod = "daily" | "weekly" | "monthly" | "yearly";
-
-const CHART_TYPES: ChartType[] = ["Area", "Bar", "Combo"];
-const PERIODS: RevenuePeriod[] = ["daily", "weekly", "monthly", "yearly"];
-
-const MAIN_COLOR = "var(--color-main)";
-const GREEN_COLOR = "var(--color-success)";
-const PREVIOUS_COLOR = "var(--color-dashboard-chart-axis)";
-
-const AXIS_PROPS = {
-  tick: { fill: "var(--color-dashboard-chart-axis)", fontSize: 12, fontWeight: 600 },
-  axisLine: false as const,
-  tickLine: false as const,
-};
-
-const GRID_PROPS = {
-  stroke: "var(--color-dashboard-chart-grid)",
-  strokeDasharray: "4 4",
-  vertical: false,
-};
-
-const formatCurrency = (value: number) => value.toLocaleString("uz-UZ");
-
-// ─── CustomTooltip ────────────────────────────────────────────────────────────
-
-interface RevenueTooltipProps {
-  active?: boolean;
-  payload?: Array<{
-    color?: string;
-    name?: string;
-    value?: number | string;
-  }>;
-  label?: string | number;
-}
-
-export const CustomTooltip = ({ active, payload, label }: RevenueTooltipProps) => {
-  const { t } = useTranslation("dashboard");
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="el-card-soft rounded-xl px-3 py-2 text-[11px]">
-      <p className="mb-1 font-semibold" style={{ color: TEXT.strong }}>
-        {label}
-      </p>
-      {payload.map((entry, i) => {
-        const isMissing = entry.value === null || entry.value === undefined;
-        return (
-          <p key={i} className="font-bold" style={{ color: entry.color }}>
-            {entry.name}: {isMissing ? "—" : t("currency_value", { value: formatCurrency(Number(entry.value)) })}
-          </p>
-        );
-      })}
-    </div>
-  );
-};
-
-// ─── Chart Variants ───────────────────────────────────────────────────────────
-
-interface ChartPoint {
-  date: string;
-  revenue: number;
-  previousRevenue?: number | null;
-}
-
-interface ChartVariantProps {
-  data: ChartPoint[];
-  showPrevious: boolean;
-  currentLabel: string;
-  previousLabel: string;
-}
-
-const PreviousLine = ({ name }: { name: string }) => (
-  <Line
-    type="monotone"
-    dataKey="previousRevenue"
-    name={name}
-    stroke={PREVIOUS_COLOR}
-    strokeOpacity={0.55}
-    strokeDasharray="5 5"
-    strokeWidth={2}
-    dot={false}
-    connectNulls={false}
-    isAnimationActive={false}
-  />
-);
-
-const AreaVariant = ({ data, showPrevious, currentLabel, previousLabel }: ChartVariantProps) => (
-  <ComposedChart data={data}>
-    <defs>
-      <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor={MAIN_COLOR} stopOpacity={0.3} />
-        <stop offset="100%" stopColor={MAIN_COLOR} stopOpacity={0} />
-      </linearGradient>
-    </defs>
-    <CartesianGrid {...GRID_PROPS} />
-    <XAxis dataKey="date" {...AXIS_PROPS} interval={2} />
-    <YAxis tickFormatter={formatCompactAxisMoney} {...AXIS_PROPS} width={54} />
-    <Tooltip content={<CustomTooltip />} />
-    <Area
-      type="monotone"
-      dataKey="revenue"
-      name={currentLabel}
-      stroke={MAIN_COLOR}
-      strokeWidth={2}
-      fill="url(#revenueGrad)"
-      dot={false}
-      activeDot={{ r: 5, fill: MAIN_COLOR, stroke: "var(--color-primary)", strokeWidth: 2 }}
-    />
-    {showPrevious && <PreviousLine name={previousLabel} />}
-  </ComposedChart>
-);
-
-const BarVariant = ({ data, showPrevious, currentLabel, previousLabel }: ChartVariantProps) => (
-  <ComposedChart data={data} barSize={10}>
-    <CartesianGrid {...GRID_PROPS} />
-    <XAxis dataKey="date" {...AXIS_PROPS} interval={2} />
-    <YAxis tickFormatter={formatCompactAxisMoney} {...AXIS_PROPS} width={54} />
-    <Tooltip content={<CustomTooltip />} />
-    <Bar dataKey="revenue" name={currentLabel} fill={MAIN_COLOR} fillOpacity={0.7} radius={[3, 3, 0, 0]} />
-    {showPrevious && <PreviousLine name={previousLabel} />}
-  </ComposedChart>
-);
-
-const ComboVariant = ({ data, showPrevious, currentLabel, previousLabel }: ChartVariantProps) => (
-  <ComposedChart data={data} barSize={10}>
-    <CartesianGrid {...GRID_PROPS} />
-    <XAxis dataKey="date" {...AXIS_PROPS} interval={2} />
-    <YAxis tickFormatter={formatCompactAxisMoney} {...AXIS_PROPS} width={54} />
-    <Tooltip content={<CustomTooltip />} />
-    <Bar dataKey="revenue" name={currentLabel} fill={MAIN_COLOR} fillOpacity={0.35} radius={[3, 3, 0, 0]} />
-    <Line
-      type="monotone"
-      dataKey="revenue"
-      name={currentLabel}
-      stroke={GREEN_COLOR}
-      strokeWidth={2}
-      dot={false}
-      activeDot={{ r: 4, fill: GREEN_COLOR }}
-    />
-    {showPrevious && <PreviousLine name={previousLabel} />}
-  </ComposedChart>
-);
-
-// ─── RevenueChart ─────────────────────────────────────────────────────────────
-
-const RevenueChart = memo(({ data, showPrevious, previousLabel, previousLoading }: { data: ChartPoint[]; showPrevious: boolean; previousLabel: string; previousLoading?: boolean }) => {
-  const { t } = useTranslation("dashboard");
-  const [activeType, setActiveType] = useState<ChartType>("Area");
-
-  const chart = useCallback(() => {
-    const props = { data, showPrevious, currentLabel: t("comparison.current"), previousLabel };
-    if (activeType === "Bar") return <BarVariant {...props} />;
-    if (activeType === "Combo") return <ComboVariant {...props} />;
-    return <AreaVariant {...props} />;
-  }, [activeType, data, previousLabel, showPrevious, t]);
-
-  return (
-    <div className="el-card flex h-full flex-col rounded-2xl p-5">
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-2">
-        <h3 className={`${TYPO.sectionTitle} text-maindark dark:text-primary`}>
-          {t("chart.title")}
-        </h3>
-        <div className="el-segmented">
-          {CHART_TYPES.map((type) => (
-            <button
-              key={type}
-              onClick={() => setActiveType(type)}
-              className={`el-segmented-button px-3.5 py-1 text-xs font-semibold ${
-                activeType === type ? "el-segmented-button-active" : ""
-              }`}
-            >
-              {t(`chart.types.${type.toLowerCase()}`)}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <ResponsiveContainer width="100%" height={260}>
-        {chart()}
-      </ResponsiveContainer>
-
-      {showPrevious && (
-        <div className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs" style={{ color: TEXT.soft }}>
-          <span><span className="mr-1 inline-block h-0.5 w-4 align-middle" style={{ background: MAIN_COLOR }} />{t("comparison.current")}</span>
-          <span><span className="mr-1 inline-block h-0.5 w-4 align-middle opacity-50" style={{ background: PREVIOUS_COLOR }} />{previousLabel}</span>
-        </div>
-      )}
-
-      {/* Solishtirish yoqilgan-u, oldingi davr chizig'i hali ko'rinmasa (yuklanmoqda) —
-          "ma'lumot yo'q" bilan chalkashtirmaslik uchun alohida holat ko'rsatiladi. */}
-      {!showPrevious && previousLoading && (
-        <p className="mt-2 text-center text-xs" style={{ color: TEXT.soft }}>
-          {t("comparison.loading")}
-        </p>
-      )}
-
-      <p className="mt-3 text-center text-[13px] tracking-[0.2px]" style={{ color: TEXT.strong }}>
-        {t("chart.description")}
-      </p>
-    </div>
-  );
-});
-
-RevenueChart.displayName = "RevenueChart";
-
-// ─── FinancialAnalysis ────────────────────────────────────────────────────────
+const PERIODS: readonly RevenuePeriod[] = ["daily", "weekly", "monthly", "yearly"];
+const PLOT_HEIGHT = { desktop: 300, phone: 180 } as const;
 
 export interface FinancialAnalysisProps {
   startDate?: string;
   endDate?: string;
   analyticsScope?: string;
-  isAllTime?: boolean;
 }
 
-const FinancialAnalysis = memo(({
-  startDate,
-  endDate,
-  analyticsScope,
-  isAllTime = false,
-}: FinancialAnalysisProps) => {
-  const { t } = useTranslation("dashboard");
+/** Joriy javobdan grafik nuqtalari (`chart.labels/values`, bo'lmasa xom `RevenuePoint` lar). */
+const toChartData = (payload: RevenueResponse["data"] | undefined) => {
+  if (!payload) return [];
+  if (payload.chart?.labels?.length && payload.chart?.values?.length) {
+    return payload.chart.labels.map((label, index) => ({ date: label, revenue: Number(payload.chart?.values?.[index] ?? 0) }));
+  }
+  return Object.values(payload)
+    .filter((item): item is RevenuePoint => typeof item === "object" && item !== null && "label" in item && "revenue" in item)
+    .map((item) => ({ date: item.label, revenue: Number(item.revenue ?? 0) }));
+};
+
+/**
+ * Qisman nosozlik (VkwhHqvW): revenue javobida shu bo'laklardan biri olinmadimi (`degraded` + `failedParts`;
+ * qaysi bo'lak aytilmasa — hammasi olinmagan hisoblanadi).
+ */
+const isPartFailed = (payload: RevenueResponse["data"] | undefined, ...parts: string[]) => {
+  if (!payload?.degraded) return false;
+  const failed = payload.failedParts ?? [];
+  return failed.length === 0 || failed.some((part) => parts.includes(part));
+};
+
+/** «Solishtirish» almashtirgichi (`.el-switch`) — telefonda to'liq enli qator. */
+const ComparisonSwitch = ({ checked, onToggle, label, ariaLabel }: { checked: boolean; onToggle: () => void; label: string; ariaLabel: string }) => (
+  <button
+    type="button"
+    role="switch"
+    aria-checked={checked}
+    aria-label={ariaLabel}
+    onClick={onToggle}
+    className="ml-auto inline-flex min-h-9 items-center gap-2.5 rounded-lg text-[13px] font-semibold text-text max-md:ml-0 max-md:min-h-11 max-md:w-full max-md:justify-between"
+  >
+    {label}
+    <span
+      aria-hidden="true"
+      className={cx(
+        "relative inline-flex h-6 w-10 shrink-0 items-center rounded-full p-0.5 transition-colors duration-150 motion-reduce:transition-none",
+        checked ? "bg-action" : "bg-border-strong",
+      )}
+    >
+      <span
+        className={cx(
+          "block size-5 rounded-full bg-surface transition-transform duration-150 motion-reduce:transition-none",
+          checked && "translate-x-4",
+        )}
+      />
+    </span>
+  </button>
+);
+
+/**
+ * «MOLIYAVIY TAHLIL» (2/3) + «KASSA BALANSI» (1/3) — faqat SA/admin, «Barchasi»dan tashqari davrda.
+ *
+ * Saqlanadigan xulq (eski `FinancialAnalysis.tsx:278-319`): davr holati (Kunlik … Yillik), oldingi teng
+ * davr `getPreviousPeriodRange`, solishtirish so'rovi faqat yoqilganda, holat `preferencesStorage` da,
+ * nuqtalar soni teng bo'lmasa oldingi chiziq yashiriladi, foiz o'zgarishi `calculatePercentChange`.
+ * Ega savoli 4 sukuti: qator — daromad (`SUM(total_price)`), sarlavha «Moliyaviy tahlil».
+ */
+const FinancialAnalysis = ({ startDate, endDate, analyticsScope }: FinancialAnalysisProps) => {
+  const { t, i18n } = useTranslation("dashboard");
+  const language = i18n.language;
   const { getRevenue } = useDashboard();
   const [period, setPeriod] = useState<RevenuePeriod>("daily");
-  const [comparisonEnabled, setComparisonEnabled] = useState(
-    () => readStoredDashboardComparison() ?? true,
-  );
-
-  useEffect(() => {
-    if (isAllTime) setPeriod("yearly");
-  }, [isAllTime]);
+  const [view, setView] = useState<ChartView>("chart");
+  const [comparisonEnabled, setComparisonEnabled] = useState(() => readStoredDashboardComparison() ?? true);
 
   const todayRange = getTodayRange();
   const effectiveStart = startDate || todayRange.from;
@@ -297,30 +124,30 @@ const FinancialAnalysis = memo(({
     [effectiveEnd, effectiveStart, period],
   );
   const previousParams = useMemo<RevenueParams>(
-    () => ({
-      period,
-      start_day: previousRange?.from,
-      end_day: previousRange?.to,
-    }),
+    () => ({ period, start_day: previousRange?.from, end_day: previousRange?.to }),
     [period, previousRange],
   );
 
-  const { data, isLoading, isError, refetch } = getRevenue(
-    revenueParams,
-    true,
-    analyticsScope,
-  );
-  const revenuePayload = data?.data;
-  const {
-    data: previousData,
-    isLoading: previousLoading,
-    isError: previousError,
-    refetch: refetchPrevious,
-  } = getRevenue(previousParams, comparisonEnabled && Boolean(previousRange), analyticsScope);
-  const previousPayload = previousData?.data;
-  // Faqat so'rov haqiqatan bajarilayotganda "yuklanmoqda" — o'chirilgan holatda
-  // react-query oldingi (stale) isLoading qiymatini saqlab qolishi mumkin.
-  const isPreviousLoading = comparisonEnabled && Boolean(previousRange) && previousLoading;
+  const revenueQuery = getRevenue(revenueParams, true, analyticsScope);
+  const previousQuery = getRevenue(previousParams, comparisonEnabled && Boolean(previousRange), analyticsScope);
+  const revenuePayload = revenueQuery.data?.data;
+  const previousPayload = previousQuery.data?.data;
+  // Qisman nosozlik (VkwhHqvW): olinmagan bo'lak 0 lar bilan emas, o'z kartasi joyida xato + «Qayta urinish».
+  // `summary`/`chart` — «Moliyaviy tahlil», `finance` — «Kassa balansi»; qaysi bo'lak aytilmasa — ikkalasi.
+  const trendFailed = useMemo(() => isPartFailed(revenuePayload, "summary", "chart"), [revenuePayload]);
+  const cashFailed = useMemo(() => isPartFailed(revenuePayload, "finance"), [revenuePayload]);
+  // Olinmagan bo'lak — `QueryBoundary` uchun xato holati (ma'lumotsiz), «Qayta urinish» — o'sha so'rov.
+  const failedRevenue = {
+    data: undefined,
+    isError: true,
+    isLoading: false,
+    isFetching: revenueQuery.isFetching,
+    refetch: revenueQuery.refetch,
+  };
+  const trendQuery = trendFailed ? failedRevenue : revenueQuery;
+  const cashQuery = cashFailed ? failedRevenue : revenueQuery;
+  // Faqat so'rov haqiqatan bajarilayotganda «yuklanmoqda» (o'chirilganda eski isLoading qolishi mumkin).
+  const isPreviousLoading = comparisonEnabled && Boolean(previousRange) && previousQuery.isLoading;
 
   const toggleComparison = () => {
     const next = !comparisonEnabled;
@@ -328,33 +155,15 @@ const FinancialAnalysis = memo(({
     writeStoredDashboardComparison(next);
   };
 
-  // Daromad grafigi nuqtalari
-  const chartData = useMemo(() => {
-    const rawRevenuePoints = Object.values(revenuePayload ?? {}).filter(
-      (item): item is RevenuePoint =>
-        typeof item === "object" && item !== null && "label" in item && "revenue" in item,
-    );
-
-    return revenuePayload?.chart?.labels?.length && revenuePayload?.chart?.values?.length
-      ? revenuePayload.chart.labels.map((label, index) => ({
-          date: label,
-          revenue: Number(revenuePayload.chart?.values?.[index] ?? 0),
-        }))
-      : rawRevenuePoints.map((item) => ({
-          date: item.label,
-          revenue: Number(item.revenue ?? 0),
-        }));
-  }, [revenuePayload]);
-
+  const chartData = useMemo(() => toChartData(revenuePayload), [revenuePayload]);
   const currentSummary = revenuePayload?.summary;
   const previousSummary = previousPayload?.summary;
-  const previousHasData = Boolean(previousSummary && previousSummary.totalOrders > 0);
+  // Oldingi davrning daromad bo'lagi olinmagan bo'lsa — 0 bilan solishtirilmaydi (delta va chiziq yo'q).
+  const previousFailed = useMemo(() => isPartFailed(previousPayload, "summary", "chart"), [previousPayload]);
+  const previousHasData = !previousFailed && Boolean(previousSummary && previousSummary.totalOrders > 0);
   const previousValues = previousPayload?.chart?.values;
-  // Nuqtalar joriy va oldingi davr o'rtasida FAQAT indeks bo'yicha moslashtiriladi (sana
-  // bo'yicha emas), shu sababli ikkala massiv bir xil uzunlikda bo'lgandagina ishonchli.
-  // getPreviousPeriodRange kunlar sonini teng qilib beradi, lekin backend `weekly`/
-  // `monthly`/`yearly` davrlar uchun turli sondagi bucket qaytarishi mumkin — bunda
-  // moslikni noto'g'ri taqdim etmaslik uchun oldingi chiziqni butunlay o'chiramiz.
+  const previousLabels = previousPayload?.chart?.labels;
+  // Nuqtalar faqat indeks bo'yicha moslashtiriladi — uzunlik teng bo'lmasa oldingi chiziq yashiriladi.
   const previousLengthMatches = Boolean(previousValues?.length) && previousValues!.length === chartData.length;
   const previousLengthMismatch = Boolean(
     comparisonEnabled && previousHasData && previousValues?.length && !previousLengthMatches,
@@ -369,255 +178,212 @@ const FinancialAnalysis = memo(({
     }
   }, [previousLengthMismatch, previousValues?.length, chartData.length]);
 
-  const comparisonChartData: ChartPoint[] = useMemo(
-    () => chartData.map((point, index) => ({
-      ...point,
-      previousRevenue: showPreviousLine ? (previousValues?.[index] ?? null) : null,
-    })),
-    [chartData, previousValues, showPreviousLine],
+  const points: TrendPoint[] = useMemo(
+    () =>
+      chartData.map((point, index) => ({
+        label: point.date,
+        current: point.revenue,
+        previous: showPreviousLine ? (previousValues?.[index] ?? null) : null,
+        previousLabel: showPreviousLine && previousLabels?.[index]
+          ? t("v2Dashboard.finance.previousPoint", { label: previousLabels[index] })
+          : undefined,
+      })),
+    [chartData, previousLabels, previousValues, showPreviousLine, t],
   );
-  const previousLabel = previousRange
-    ? `${t("comparison.previous")} (${previousRange.from} – ${previousRange.to})`
-    : t("comparison.previous");
 
-  const comparisonMetrics = [
+  const currentRangeText = formatShortRange({ from: effectiveStart, to: effectiveEnd });
+  const previousRangeText = previousRange ? formatShortRange(previousRange) : "";
+  const days = rangeDays({ from: effectiveStart, to: effectiveEnd });
+
+  const metrics = [
     {
-      title: t("comparison.total_revenue"),
+      key: "revenue",
+      label: t("v2Dashboard.finance.revenueDays", { count: days }),
       value: currentSummary?.totalRevenue ?? 0,
       previous: previousHasData ? previousSummary?.totalRevenue : undefined,
-      icon: <Wallet size={20} />,
-      suffix: t("currency_sum"),
-      tone: "brand" as Tone,
+      format: (value: number) => formatCompactMoneyLocalized(value, { language }),
+      formatPrevious: (value: number) => formatCompactMoneyLocalized(value, { language, withCurrency: false }),
     },
     {
-      title: t("comparison.total_orders"),
+      key: "orders",
+      label: t("v2Dashboard.finance.orders"),
       value: currentSummary?.totalOrders ?? 0,
       previous: previousHasData ? previousSummary?.totalOrders : undefined,
-      icon: <Receipt size={20} />,
-      suffix: t("unit.orders"),
-      tone: "info" as Tone,
+      format: (value: number) => t("v2Charts.countTa", { value: formatNumberLocalized(value, { language }) }),
+      formatPrevious: (value: number) => t("v2Charts.countTa", { value: formatNumberLocalized(value, { language }) }),
     },
     {
-      title: t("comparison.avg_revenue"),
+      key: "average",
+      label: t(`v2Dashboard.finance.average.${period}`),
       value: currentSummary?.avgRevenue ?? 0,
       previous: previousHasData ? previousSummary?.avgRevenue : undefined,
-      icon: <TrendingUp size={20} />,
-      suffix: t("currency_sum"),
-      tone: "success" as Tone,
+      format: (value: number) => formatCompactMoneyLocalized(value, { language }),
+      formatPrevious: (value: number) => formatCompactMoneyLocalized(value, { language, withCurrency: false }),
     },
   ];
 
-  // Noyob moliyaviy balans ma'lumotlari (kassa holati) — DashboardStatistics'da YO'Q
-  const finance = revenuePayload?.finance;
-  const hasFinance = Boolean(finance);
-  const mainBalance = Number(finance?.main?.balance ?? 0);
-  const marketsBalance = Number(finance?.markets?.marketsTotalBalans ?? 0);
-  const branchesBalance = Number(
-    finance?.branches?.branchReceivable ?? finance?.couriers?.couriersTotalBalanse ?? 0,
-  );
-  const currentSituation = Number(finance?.currentSituation ?? 0);
-
-  const balanceRows: Array<{
-    title: string;
-    value: number;
-    icon: React.ReactNode;
-    tone: Tone;
-  }> = [
-    { title: t("balance.main"), value: mainBalance, icon: <Wallet size={16} />, tone: "brand" },
-    { title: t("balance.markets"), value: marketsBalance, icon: <Store size={16} />, tone: "info" },
-    { title: t("balance.branches"), value: branchesBalance, icon: <Building2 size={16} />, tone: "warning" },
-    {
-      title: t("balance.current"),
-      value: currentSituation,
-      icon: <Scale size={16} />,
-      tone: currentSituation < 0 ? "danger" : "success",
-    },
-  ];
-
-  // Qisman nosozlik (VkwhHqvW): moliya bo'lagi olinmasa — 0 lar emas, xato va «Qayta urinish».
-  if (isError || data?.data?.degraded) {
-    return (
-      <QueryErrorState
-        description={t("load_error")}
-        onRetry={() => void refetch()}
+  const controls = (
+    <div className="flex flex-wrap items-center gap-2 max-md:w-full">
+      <SegmentedControl<RevenuePeriod>
+        ariaLabel={t("v2Dashboard.finance.periodLabel")}
+        value={period}
+        onValueChange={setPeriod}
+        options={PERIODS.map((value) => ({ value, label: t(`periods.${value}`) }))}
       />
-    );
-  }
-
-  if (isLoading) {
-    return <div className="h-80 animate-pulse rounded-2xl bg-main/10" />;
-  }
-
-  return (
-    <section>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <BarChart2 size={18} style={{ color: "var(--color-main)" }} />
-          <div>
-            <h2 className={`${TYPO.sectionTitle} text-maindark dark:text-primary`}>
-              {t("financial_analysis.title")}
-            </h2>
-            <p className="mt-1 text-xs" style={{ color: TEXT.soft }}>
-              {t("financial_analysis.subtitle")}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex max-w-full flex-wrap items-center gap-2">
-          <button
-            type="button"
-            aria-pressed={comparisonEnabled}
-            onClick={toggleComparison}
-            className={`rounded-xl px-3 py-1.5 text-xs font-semibold ${comparisonEnabled ? "bg-main text-white" : "el-glass-control text-maindark dark:text-primary"}`}
-          >
-            {t("comparison.toggle")}
-          </button>
-          <div className="el-segmented max-w-full flex-wrap">
-            {PERIODS.filter((p) => !isAllTime || p === "monthly" || p === "yearly").map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPeriod(p)}
-                className={`el-segmented-button px-3.5 py-1.5 text-xs font-semibold ${
-                  period === p ? "el-segmented-button-active" : ""
-                }`}
-              >
-                {t(`periods.${p}`)}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {comparisonEnabled && Boolean(previousRange) && previousError && (
-        <div className="mb-4">
-          <QueryErrorState description={t("comparison.load_error")} onRetry={() => void refetchPrevious()} />
-        </div>
-      )}
-
-      <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {comparisonMetrics.map((metric) => {
-          const delta = comparisonEnabled
-            ? calculatePercentChange(metric.value, metric.previous)
-            : null;
-          // "Hali yuklanmoqda" holati "ma'lumot yo'q" (—) dan alohida ko'rsatiladi,
-          // aks holda foydalanuvchi ikkalasini bir xil deb o'qiydi.
-          const badge = !comparisonEnabled
-            ? undefined
-            : isPreviousLoading
-              ? "…"
-              : delta === null
-                ? "—"
-                : `${delta > 0 ? "+" : ""}${formatPercent(delta)}`;
-          return (
-            <MetricCard
-              key={metric.title}
-              title={metric.title}
-              value={formatNumber(metric.value)}
-              suffix={metric.suffix}
-              icon={metric.icon}
-              tone={metric.tone}
-              badge={badge}
-              badgeUp={isPreviousLoading || delta === null || delta === 0 ? undefined : delta > 0}
-              compact
-              hint={comparisonEnabled
-                ? `${previousLabel}: ${
-                    isPreviousLoading
-                      ? t("comparison.loading")
-                      : metric.previous === undefined
-                        ? "—"
-                        : `${formatNumber(metric.previous)} ${metric.suffix}`
-                  }`
-                : undefined}
-            />
-          );
-        })}
-      </div>
-
-      {/* Bento: keng daromad grafigi + tor kassa balansi paneli */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <div className={hasFinance ? "lg:col-span-8" : "lg:col-span-12"}>
-          <RevenueChart
-            data={comparisonChartData}
-            showPrevious={showPreviousLine}
-            previousLabel={previousLabel}
-            previousLoading={isPreviousLoading}
-          />
-        </div>
-        {hasFinance && (
-          <div className="lg:col-span-4">
-            <FinanceBalancePanel
-              title={t("balance.title")}
-              rows={balanceRows}
-              currency={t("currency_sum")}
-            />
-          </div>
-        )}
-      </div>
-    </section>
-  );
-});
-
-// ─── FinanceBalancePanel ──────────────────────────────────────────────────────
-// Kassa balanslari — gorizontal mini-bar ko'rinishida (grafiklar xilma-xilligi).
-
-interface FinanceBalancePanelProps {
-  title: string;
-  currency: string;
-  rows: Array<{ title: string; value: number; icon: React.ReactNode; tone: Tone }>;
-}
-
-const FinanceBalancePanel = memo(({ title, currency, rows }: FinanceBalancePanelProps) => {
-  const maxAbs = Math.max(1, ...rows.map((r) => Math.abs(r.value)));
-  return (
-    <div className="el-card flex h-full flex-col rounded-2xl p-5">
-      <div className="mb-5 flex items-center gap-2">
-        <Wallet size={16} style={{ color: "var(--color-main)" }} />
-        <h3 className={`${TYPO.sectionTitle} text-maindark dark:text-primary`}>{title}</h3>
-      </div>
-
-      <div className="flex flex-1 flex-col justify-between gap-4">
-        {rows.map((r) => {
-          const accent = toneAccent(r.tone);
-          const width = Math.max(6, (Math.abs(r.value) / maxAbs) * 100);
-          return (
-            <div key={r.title}>
-              <div className="mb-1.5 flex items-center justify-between">
-                <span className="flex items-center gap-2 text-[12px] font-semibold" style={{ color: TEXT.strong }}>
-                  <span
-                    className="flex h-6 w-6 items-center justify-center rounded-lg"
-                    style={{ background: toneSoftBg(r.tone, 16), color: accent }}
-                  >
-                    {r.icon}
-                  </span>
-                  {r.title}
-                </span>
-                <span className="text-[13px] font-bold text-maindark dark:text-primary">
-                  {formatCompactMoney(r.value)}
-                  <span className="ml-1 text-[10px] font-semibold uppercase" style={{ color: TEXT.soft }}>
-                    {currency}
-                  </span>
-                </span>
-              </div>
-              <div
-                className="h-2 w-full overflow-hidden rounded-full"
-                style={{ background: toneSoftBg(r.tone, 14) }}
-              >
-                <div
-                  className="h-full rounded-full transition-all duration-500"
-                  style={{ width: `${width}%`, background: accent }}
-                />
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      <ViewToggle value={view} onChange={setView} ariaLabel={t("v2Dashboard.finance.viewLabel")} />
     </div>
   );
-});
 
-FinanceBalancePanel.displayName = "FinanceBalancePanel";
+  const previousError = comparisonEnabled && Boolean(previousRange) && previousQuery.isError;
 
-FinancialAnalysis.displayName = "FinancialAnalysis";
+  return (
+    <div className="grid min-w-0 gap-4 lg:grid-cols-3 max-md:gap-3">
+      <Card
+        divided={false}
+        className="lg:col-span-2"
+        title={t("v2Dashboard.finance.title")}
+        description={t("v2Dashboard.finance.subtitle")}
+        actions={controls}
+        bodyClassName="flex flex-col gap-4"
+      >
+        <QueryBoundary query={trendQuery} skeleton="chart" size="chart" isEmpty={() => false}>
+          {(_data, { isRefetching }) => (
+            <div className={cx("flex flex-col gap-4 transition-opacity", isRefetching && "opacity-45")}>
+              <dl className="m-0 grid grid-cols-3 gap-4 max-md:grid-cols-1 max-md:gap-0">
+                {metrics.map((metric) => {
+                  const delta = comparisonEnabled ? calculatePercentChange(metric.value, metric.previous) : null;
+                  return (
+                    <div
+                      key={metric.key}
+                      className="flex min-w-0 flex-col gap-1 max-md:flex-row max-md:items-center max-md:justify-between max-md:gap-3 max-md:border-t max-md:border-border max-md:py-2 max-md:first:border-t-0"
+                    >
+                      <dt className="text-xs text-text-muted max-md:text-[13px]">{metric.label}</dt>
+                      <dd className="m-0 flex min-w-0 flex-col gap-1 max-md:flex-row max-md:items-center max-md:gap-2">
+                        <span className="whitespace-nowrap text-xl leading-7 font-bold text-text proportional-nums max-md:text-sm max-md:leading-5">
+                          {metric.format(metric.value)}
+                        </span>
+                        {comparisonEnabled ? (
+                          <span className="flex flex-wrap items-center gap-2 text-xs text-text-muted">
+                            {isPreviousLoading ? (
+                              <Skeleton shape="line" width={88} />
+                            ) : delta != null ? (
+                              <DeltaChip value={delta} />
+                            ) : null}
+                            {!isPreviousLoading && metric.previous != null ? (
+                              <span className="max-md:hidden">
+                                {t("v2Dashboard.finance.previousValue", { value: metric.formatPrevious(metric.previous) })}
+                              </span>
+                            ) : null}
+                          </span>
+                        ) : null}
+                      </dd>
+                    </div>
+                  );
+                })}
+              </dl>
 
-export default FinancialAnalysis;
+              {previousError ? (
+                <div role="alert" className="flex flex-wrap items-center gap-3 rounded-xl bg-warning-soft px-4 py-3 text-sm text-warning-fg">
+                  <span className="min-w-0 flex-1">{t("comparison.load_error")}</span>
+                  <Button variant="secondary" size="sm" onClick={() => void previousQuery.refetch()}>
+                    {t("v2Dashboard.retry")}
+                  </Button>
+                </div>
+              ) : null}
+
+              {points.length === 0 ? (
+                <EmptyState size="chart" title={t("v2Dashboard.finance.empty")} />
+              ) : view === "chart" ? (
+                <figure
+                  className="m-0 min-w-0"
+                  aria-label={t("v2Dashboard.finance.chartAria", { range: currentRangeText })}
+                >
+                  <DeferredMount
+                    minHeight={PLOT_HEIGHT.desktop}
+                    rootMargin="0px"
+                    className="h-[300px] max-md:h-[180px]"
+                  >
+                    <Suspense fallback={<SkeletonChart className="h-full" />}>
+                      <PlotSizer
+                        points={points}
+                        showPrevious={showPreviousLine}
+                        currentName={t("v2Dashboard.finance.current")}
+                        previousName={t("v2Dashboard.finance.previous")}
+                      />
+                    </Suspense>
+                  </DeferredMount>
+                </figure>
+              ) : (
+                <DataTable
+                  rows={points}
+                  getRowKey={(row, index) => `${row.label}-${index}`}
+                  label={t("v2Dashboard.finance.title")}
+                  density="compact"
+                  columns={[
+                    { id: "label", header: t("v2Dashboard.finance.tableDate"), cell: (row) => row.label },
+                    {
+                      id: "current",
+                      header: t("v2Dashboard.finance.current"),
+                      align: "end",
+                      cell: (row) => formatMoneyLocalized(row.current, { language }),
+                    },
+                    ...(showPreviousLine
+                      ? [
+                          {
+                            id: "previous",
+                            header: t("v2Dashboard.finance.previous"),
+                            align: "end" as const,
+                            cell: (row: TrendPoint) => (row.previous == null ? "—" : formatMoneyLocalized(row.previous, { language })),
+                          },
+                        ]
+                      : []),
+                  ]}
+                />
+              )}
+            </div>
+          )}
+        </QueryBoundary>
+
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border pt-4">
+          <ChartLegend
+            items={[
+              {
+                key: "current",
+                tone: "action",
+                line: true,
+                keyClassName: "bg-chart-1",
+                label: t("v2Dashboard.finance.currentRange", { range: currentRangeText }),
+              },
+              ...(comparisonEnabled && previousRange
+                ? [
+                    {
+                      key: "previous",
+                      tone: "neutral" as const,
+                      line: true,
+                      keyClassName: "bg-chart-muted",
+                      label: t("v2Dashboard.finance.previousRange", { range: previousRangeText }),
+                    },
+                  ]
+                : []),
+            ]}
+          />
+          <ComparisonSwitch
+            checked={comparisonEnabled}
+            onToggle={toggleComparison}
+            label={t("comparison.toggle")}
+            ariaLabel={t("v2Dashboard.finance.compareAria")}
+          />
+        </div>
+      </Card>
+      <CashBalanceCard query={cashQuery} />
+    </div>
+  );
+};
+
+/** Plot balandligi: desktop 300, telefon 180 (o'lcham bir marta, ochilganda). */
+const PlotSizer = (props: Omit<ComponentProps<typeof FinancialTrendPlot>, "height">) => {
+  const phone = typeof window !== "undefined" && window.matchMedia?.("(max-width: 767px)").matches === true;
+  return <FinancialTrendPlot {...props} height={phone ? PLOT_HEIGHT.phone : PLOT_HEIGHT.desktop} />;
+};
+
+export default memo(FinancialAnalysis);

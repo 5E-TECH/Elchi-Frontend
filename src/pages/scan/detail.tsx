@@ -1,498 +1,196 @@
-import { useIsMutating, useMutation, useQuery } from "@tanstack/react-query";
-import {
-  AlertTriangle,
-  Building2,
-  CalendarDays,
-  CheckCircle2,
-  MapPin,
-  Package,
-  Phone,
-  Receipt,
-  RefreshCw,
-  ScanLine,
-  Sparkles,
-  Store,
-  Truck,
-  UserRound,
-} from "lucide-react";
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+// dizayn-v2: superadmin-scan-result, manager-scan-result, registrator-scan-result, courier-scan-order-detail
+import { useIsMutating, useQuery } from "@tanstack/react-query";
+import { TriangleAlert } from "lucide-react";
+import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
-import {
-  extractScannerToken,
-  playScanFeedback,
-} from "./lib/scanShared";
-import {
-  fetchScanDetail,
-  getBackendErrorMessage,
-  getScanDetailQueryKey,
-  getScanResourceType,
-  scanAssignOrder,
-} from "./lib/scanResource";
+import type { RootState } from "../../app/config/store";
+import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
+import { QueryBoundary } from "../../shared/ui/primitives";
+import { normalizeOrderDetail, type OrderDetail } from "../new_orders/components/detail/orderDetailModel";
+import { fetchScanDetail, getScanDetailQueryKey, getScanResourceType, type ScanResourceType } from "./lib/scanResource";
+import { extractScannerToken, playScanFeedback } from "./lib/scanShared";
+import { buildScanPackageView, buildScanPostView } from "./model/scanBatchView";
+import { getScanRoleKind } from "./model/scanOrderView";
+import { ScanAlert } from "./ui/ScanAlert";
+import { ScanOrderResult } from "./ui/ScanOrderResult";
 import ScanPackageDetail from "./ui/ScanPackageDetail";
 import ScanPostDetail from "./ui/ScanPostDetail";
-import BackButton from "../../shared/ui/BackButton";
-import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
-import type { RootState } from "../../app/config/store";
+import { ScanLoadingCard, ScanNotFoundCard } from "./ui/ScanStates";
 
-type ScanOrderView = {
-  id: string;
-  customerName: string;
-  phone: string;
-  address: string;
-  total: string;
-  delivery: string;
-  sender: string;
-  market: string;
-  products: string;
-  comment: string;
-  createdAt: string;
-  status: string;
+/** Skan javobi → sahifa tanasi; `null` — javob keldi, lekin ichida ma'lumot yo'q («topilmadi»). */
+type ResolvedScan =
+  | { kind: "order"; order: OrderDetail }
+  | { kind: "package"; data: unknown; type: ScanResourceType }
+  | { kind: "post"; data: unknown };
+
+const resolveScan = (response: { type: ScanResourceType; data: unknown } | undefined): ResolvedScan | null | undefined => {
+  if (!response) return undefined;
+  if (response.type === "package" || response.type === "returned-package") {
+    return buildScanPackageView(response.data, response.type) ? { kind: "package", data: response.data, type: response.type } : null;
+  }
+  if (response.type === "post") {
+    return buildScanPostView(response.data) ? { kind: "post", data: response.data } : null;
+  }
+  const order = normalizeOrderDetail(response.data);
+  return order ? { kind: "order", order } : null;
 };
 
-const safe = (value: unknown, fallback = "—") => {
-  if (typeof value === "string" && value.trim()) return value.trim();
-  if (typeof value === "number") return String(value);
-  return fallback;
-};
-
-const formatMoney = (value: unknown) => {
-  if (typeof value !== "number") return safe(value);
-  return `${value.toLocaleString("uz-UZ")} so'm`;
-};
-
-const formatDate = (value: unknown) => {
-  if (typeof value !== "string" || !value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("uz-UZ", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const getDeliveryLabel = (value: unknown) => {
-  if (value === "center") return "Markazga";
-  if (value === "home" || value === "address") return "Uyga";
-  return safe(value);
-};
-
-const getStatusLabel = (value: unknown) => {
-  if (value === "new") return "Yangi";
-  if (value === "received") return "Qabul qilingan";
-  if (value === "on the road") return "Yo'lda";
-  if (value === "sold") return "Sotilgan";
-  if (value === "cancelled") return "Bekor qilingan";
-  return safe(value);
-};
-
-const normalizeOrder = (response: any): ScanOrderView => {
-  const source = response?.data ?? response;
-  const payload = source?.data ?? source?.order ?? source;
-  const order = payload?.order ?? payload;
-  const customer = order?.customer ?? {};
-  const market = order?.market ?? order?.sender ?? {};
-  const district = customer?.district ?? order?.district;
-  const region = customer?.region ?? order?.region ?? district?.region;
-  const address = [region?.name, district?.name, order?.address].filter(Boolean).join(", ");
-  const items = Array.isArray(order?.items)
-    ? order.items
-        .map((item: any) => {
-          // `product_name` — hamkor buyurtmasi (katalogsiz mahsulot).
-          const name = item?.product?.name ?? item?.product_name ?? item?.name;
-          const quantity = item?.quantity ? ` x${item.quantity}` : "";
-          return name ? `${name}${quantity}` : null;
-        })
-        .filter(Boolean)
-        .join(", ")
-    : "—";
-
-  return {
-    id: safe(order?.id),
-    customerName: safe(customer?.name),
-    phone: safe(customer?.phone_number),
-    address: safe(address),
-    total: formatMoney(order?.total_price),
-    delivery: getDeliveryLabel(order?.where_deliver),
-    sender: safe(market?.name ?? order?.operator),
-    market: safe(market?.name),
-    products: safe(items),
-    comment: safe(order?.comment),
-    createdAt: formatDate(order?.createdAt ?? order?.updatedAt),
-    status: getStatusLabel(order?.status),
-  };
-};
-
+/**
+ * SKANER NATIJASI — `/scan/:token` (dizayn v2). Kamera ekrani (`/scan`) — alohida ish, bu yerda emas.
+ *
+ * Token turi bo'yicha (`getScanResourceType`): buyurtma (`GET orders/qr-code/:token`), paket `BTB-` /
+ * qaytarilgan paket `BTR-` (`GET scan/:token`), pochta `PST-` (`GET post/scan/:id`). Ko'rinishlar —
+ * `ui/ScanOrderResult` (rol bo'yicha mazmun), `ui/ScanPackageDetail`, `ui/ScanPostDetail`; holatlar —
+ * yuklanish va «… topilmadi» kartasi («Qayta urinish» + «Skanerga qaytish»).
+ *
+ * USB (HID) skaner sahifa ochiq turganda ham ishlaydi: yangi token — o'sha posilka ochiladi; shu token —
+ * «takror» ovozi; yaroqsiz QR — xato ovozi va tepada ogohlantirish (keyingi to'g'ri skangacha); biror amal
+ * so'rovi ketayotgan bo'lsa — «kuting» va o'tilmaydi (natija operatorga ko'rinmay qolmasin). Sotish/bekor
+ * oynasi ochiq turganda skaner to'xtaydi. Natija bloki token bilan qayta o'rnatiladi (`key`) — eski
+ * sahifaning «skanerga qaytish» taymeri yangi posilkada ishlab ketmaydi.
+ */
 const ScanDetailPage = () => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation("scan");
   const navigate = useNavigate();
   const { token = "" } = useParams();
   const normalizedToken = extractScannerToken(token) ?? token.trim();
   const resourceType = getScanResourceType(normalizedToken);
-  const isPackageResource = resourceType === "package" || resourceType === "returned-package";
-  const loadingText = isPackageResource
-    ? t("scannerPackageLoading")
-    : resourceType === "post"
-      ? t("scannerPostLoading")
-      : t("scannerOrderLoading");
-  const notFoundTitle = isPackageResource
-    ? t("scannerPackageNotFound")
-    : resourceType === "post"
-      ? t("scannerPostNotFound")
-      : t("scannerOrderNotFound");
-  const notFoundText = isPackageResource
-    ? t("scannerPackageNotFoundText")
-    : resourceType === "post"
-      ? t("scannerPostNotFoundText")
-      : t("scannerOrderNotFoundText");
+  const role = useSelector((state: RootState) => state.role.role);
+  const roleKind = getScanRoleKind(role);
+  const textKey = resourceType === "package" || resourceType === "returned-package" ? "package" : resourceType;
 
-  const { data, isLoading, isError, refetch } = useQuery({
+  const query = useQuery({
     queryKey: getScanDetailQueryKey(normalizedToken),
     queryFn: () => fetchScanDetail(normalizedToken),
     enabled: Boolean(normalizedToken),
+    // Sahifaning o'zi «… topilmadi» kartasini ko'rsatadi — global xato xabari (backend matni) takrorlanmaydi.
+    meta: { silentError: true },
   });
+  const resolved = useMemo(() => resolveScan(query.data), [query.data]);
 
-  // P1b — "O'zimga olish". Faqat KURYER uchun: backend guardi ham
-  // `@Roles(COURIER)`, shu bois boshqa rolga tugma ko'rsatish chalg'ituvchi
-  // bo'lardi (bosgan zahoti 403 olardi).
-  const role = useSelector((state: RootState) => state.role.role);
-  const isCourier = role === "courier";
-  const assignRedirectRef = useRef<number | null>(null);
   const pendingMutations = useIsMutating();
-  const [assignMessage, setAssignMessage] = useState<
-    { tone: "success" | "error"; text: string } | null
-  >(null);
-
-  const assignMutation = useMutation({
-    mutationFn: () => scanAssignOrder(normalizedToken),
-    onSuccess: () => {
-      void playScanFeedback("success");
-      setAssignMessage({ tone: "success", text: t("scannerOrderAssignSuccess") });
-      // Kuryer ketma-ket bir necha buyurtma skan qiladi — skanerga qaytaramiz.
-      assignRedirectRef.current = window.setTimeout(() => navigate("/scan"), 1500);
-    },
-    onError: (error) => {
-      void playScanFeedback("error");
-      // Backend xabari ATAYLAB ko'rsatiladi: u aniq sababni aytadi
-      // ("paket hali jo'natilmagan", "boshqa filial orderi", "allaqachon
-      // boshqa kuryerga biriktirilgan"). Umumiy xabar bilan almashtirish
-      // kuryerni ko'r qoldirardi.
-      setAssignMessage({
-        tone: "error",
-        text: getBackendErrorMessage(error) ?? t("scannerOrderAssignError"),
-      });
-    },
-  });
-
-  useEffect(() => {
-    setAssignMessage(null);
-  }, [normalizedToken]);
-
-  useEffect(() => () => {
-    if (assignRedirectRef.current) window.clearTimeout(assignRedirectRef.current);
-  }, []);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [invalidScan, setInvalidScan] = useState(false);
+  const [shownToken, setShownToken] = useState(normalizedToken);
+  if (shownToken !== normalizedToken) {
+    setShownToken(normalizedToken);
+    setInvalidScan(false);
+  }
 
   /**
-   * Detal ochiq turganda HID skaneri bilan keyingi posilka skanerlansa, u
-   * JIMGINA yo'qolmasin (ilgari bu sahifa skanerni umuman tinglamasdi —
-   * /scan'dan tez ketma-ket kelgan ikkinchi skan shu yerda izsiz yo'qolardi):
-   * o'sha posilka ochiladi.
+   * Detal ochiq turganda HID skaneri bilan keyingi posilka skanerlansa, u JIMGINA yo'qolmasin (ilgari bu
+   * sahifa skanerni umuman tinglamasdi — /scan'dan tez ketma-ket kelgan ikkinchi skan shu yerda izsiz
+   * yo'qolardi): o'sha posilka ochiladi.
    */
   const handleNextScan = useCallback(
     (rawValue: string) => {
       const nextToken = extractScannerToken(rawValue, window.location.origin);
       if (!nextToken) {
-        void playScanFeedback("error", t("scannerInvalidQr"));
+        void playScanFeedback("error", t("invalidQrTitle"));
+        setInvalidScan(true);
         return true;
       }
       if (nextToken === normalizedToken) {
         void playScanFeedback("duplicate");
+        setInvalidScan(false);
         return true;
       }
       if (pendingMutations > 0) {
-        // "O'zimga olish" yoki paketni qabul qilish so'rovi tugamasdan
-        // sahifadan ketilsa, natijasi operatorga ko'rinmay qolardi.
-        void playScanFeedback("error", t("scannerWaitForAction"));
+        // «O'zimga olish» yoki paketni qabul qilish so'rovi tugamasdan sahifadan ketilsa, natijasi
+        // operatorga ko'rinmay qolardi.
+        void playScanFeedback("error", t("waitForAction"));
         return true;
       }
-      if (assignRedirectRef.current) {
-        window.clearTimeout(assignRedirectRef.current);
-        assignRedirectRef.current = null;
-      }
       void playScanFeedback("success");
+      setInvalidScan(false);
       navigate(`/scan/${encodeURIComponent(nextToken)}`);
       return true;
     },
     [navigate, normalizedToken, pendingMutations, t],
   );
 
-  useKeyboardScanner({ enabled: true, onScan: handleNextScan });
+  useKeyboardScanner({ enabled: !dialogOpen, onScan: handleNextScan });
 
   useEffect(() => {
-    if (isError) {
+    if (query.isError) {
       void playScanFeedback("error");
     }
-  }, [isError]);
+  }, [query.isError]);
 
-  if (data?.type === "package" || data?.type === "returned-package") {
-    return (
-      <ScanPackageDetail
-        data={data.data}
-        token={normalizedToken}
-        type={data.type}
+  const { refetch: refetchScan } = query;
+  const refetch = useCallback(() => {
+    void refetchScan();
+  }, [refetchScan]);
+
+  const invalidAlert: ReactNode = invalidScan ? (
+    <ScanAlert tone="danger" icon={TriangleAlert} role="alert" title={t("invalidQrTitle")} data-testid="scan-invalid-qr">
+      {t("invalidQrText")}
+    </ScanAlert>
+  ) : null;
+
+  const notFound = (retry: () => void) => (
+    <div className="flex flex-col gap-4">
+      {invalidAlert}
+      <ScanNotFoundCard
+        title={t(`${textKey}.notFoundTitle`)}
+        text={t(`${textKey}.notFoundText`)}
+        onRetry={retry}
+        retrying={query.isFetching}
       />
-    );
-  }
-
-  if (data?.type === "post") {
-    return <ScanPostDetail data={data.data} />;
-  }
-
-  const order = data ? normalizeOrder(data.data) : null;
-
-  if (isLoading) {
-    return (
-      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm sm:rounded-[32px] sm:p-8 dark:bg-primarydark">
-        <div className="flex min-h-[360px] items-center justify-center">
-          <div className="flex flex-col items-center gap-4 text-maindark dark:text-white">
-            <div className="h-11 w-11 animate-spin rounded-full border-2 border-main/20 border-t-main" />
-            <p className="m-0 text-sm font-semibold text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-              {loadingText}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isError || !order) {
-    return (
-      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm sm:rounded-[32px] sm:p-8 dark:bg-primarydark">
-        <div className="mx-auto flex min-h-[360px] max-w-xl flex-col items-center justify-center text-center text-maindark dark:text-white">
-          <div className="flex h-18 w-18 items-center justify-center rounded-[28px] border border-red-300/20 bg-red-500/12 text-red-200">
-            <AlertTriangle size={36} />
-          </div>
-          <h2 className="m-0 mt-6 text-2xl font-extrabold">
-            {notFoundTitle}
-          </h2>
-          <p className="m-0 mt-3 max-w-md text-sm leading-6 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-            {notFoundText}
-          </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={() => void refetch()}
-              className="inline-flex items-center gap-2 rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark transition hover:border-main/30 hover:bg-main/5 dark:bg-white/6 dark:text-white dark:hover:bg-white/10"
-            >
-              <RefreshCw size={15} />
-              {t("retry")}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate("/scan")}
-              className="inline-flex items-center gap-2 rounded-2xl border border-emerald-300/20 bg-emerald-500/12 px-4 py-3 text-sm font-semibold text-emerald-100 transition hover:bg-emerald-500/18"
-            >
-              <ScanLine size={15} />
-              {t("scannerBackToScanner")}
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    </div>
+  );
 
   return (
-    <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary)_94%,var(--color-main)_6%)_0%,color-mix(in_srgb,var(--color-sidebar)_88%,var(--color-main)_12%)_100%)] shadow-sm sm:rounded-[32px] dark:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-maindark)_92%,var(--color-main)_8%)_0%,color-mix(in_srgb,var(--color-primarydark)_88%,var(--color-maindark)_12%)_100%)]">
-      <div className="flex items-center justify-between gap-3 border-b border-[color:var(--color-border-soft)] px-3 py-3 sm:px-5 sm:py-4 md:px-7">
-        <div className="flex items-center gap-3">
-          <BackButton to="/scan" className="shrink-0 bg-white dark:bg-maindark" label="" />
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-500/15 text-emerald-600 ring-1 ring-emerald-500/15 dark:text-emerald-100">
-            <CheckCircle2 size={20} />
-          </div>
-          <div>
-            <p className="m-0 text-lg font-extrabold tracking-tight text-maindark dark:text-white">
-              {t("scannerOrderTitle")}
-            </p>
-            <p className="m-0 mt-0.5 text-sm text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-              {t("scannerOrderSubtitle")}
-            </p>
-          </div>
+    <QueryBoundary<ResolvedScan>
+      query={{
+        data: resolved,
+        isLoading: query.isLoading,
+        isError: query.isError,
+        error: query.error,
+        isFetching: query.isFetching,
+        refetch: refetchScan,
+      }}
+      keepPreviousData={false}
+      loadingLabel={t(`${textKey}.loading`)}
+      loading={
+        <div className="flex flex-col gap-4">
+          {invalidAlert}
+          <ScanLoadingCard text={t(`${textKey}.loading`)} />
         </div>
-
-        <div className="rounded-full border border-emerald-500/15 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-100">
-          {t("scannerScannedOk")}
-        </div>
-      </div>
-
-      <div className="grid gap-4 px-3 py-3 sm:px-5 sm:py-5 md:px-7 md:py-7 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]">
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-maindark p-4 shadow-sm sm:rounded-[30px] sm:p-6 dark:bg-maindark">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <p className="m-0 text-xs font-bold uppercase tracking-[0.22em] text-emerald-200/70">
-                  {t("scannerOrderId")}
-                </p>
-                <h2 className="m-0 mt-3 text-3xl font-extrabold text-white">
-                  {order.customerName}
-                </h2>
-                <p className="m-0 mt-2 text-sm text-white/60">
-                  #{order.id}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3 text-right">
-                <p className="m-0 text-xs font-bold uppercase tracking-[0.18em] text-white/45">
-                  {t("scannerDelivery")}
-                </p>
-                <p className="m-0 mt-2 text-lg font-extrabold text-white">
-                  {order.delivery}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 grid gap-3 md:grid-cols-2">
-              {[
-                { icon: <Phone size={16} />, label: t("phone"), value: order.phone },
-                { icon: <Receipt size={16} />, label: t("amount"), value: order.total },
-                { icon: <Store size={16} />, label: t("scannerSender"), value: order.sender },
-                { icon: <CalendarDays size={16} />, label: t("date"), value: order.createdAt },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3"
-                >
-                  <div className="flex items-center gap-2 text-white/55">
-                    {item.icon}
-                    <p className="m-0 text-xs font-bold uppercase tracking-[0.16em]">
-                      {item.label}
-                    </p>
-                  </div>
-                  <p className="m-0 mt-3 text-base font-bold text-white [overflow-wrap:anywhere]">
-                    {item.value}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white/80 p-4 shadow-sm sm:rounded-[30px] sm:p-6 dark:bg-white/[0.04]">
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(14rem,0.8fr)]">
-              <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-4 dark:border-white/10 dark:bg-white/[0.03]">
-                <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/55">
-                  <MapPin size={16} />
-                  <p className="m-0 text-xs font-bold uppercase tracking-[0.16em]">
-                    {t("address")}
-                  </p>
-                </div>
-                <p className="m-0 mt-3 text-base font-bold leading-7 text-maindark dark:text-white [overflow-wrap:anywhere]">
-                  {order.address}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-4 dark:border-white/10 dark:bg-white/[0.03]">
-                <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/55">
-                  <Package size={16} />
-                  <p className="m-0 text-xs font-bold uppercase tracking-[0.16em]">
-                    {t("scannerProducts")}
-                  </p>
-                </div>
-                <p className="m-0 mt-3 text-base font-bold leading-7 text-maindark dark:text-white [overflow-wrap:anywhere]">
-                  {order.products}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white/80 p-4 shadow-sm sm:rounded-[30px] sm:p-6 dark:bg-white/[0.04]">
-            <div className="flex items-center gap-2 text-maindark dark:text-white">
-              <Sparkles size={16} className="text-main dark:text-primary" />
-              <p className="m-0 text-sm font-bold uppercase tracking-[0.22em] text-[color:var(--color-text-muted)] dark:text-white/55">
-                {t("scannerResultLabel")}
-              </p>
-            </div>
-            <h3 className="m-0 mt-3 text-2xl font-extrabold leading-tight text-maindark dark:text-white">
-              {t("scannerOrderSubtitle")}
-            </h3>
-            <p className="m-0 mt-2 text-sm leading-6 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-              {t("scannerGuideText")}
-            </p>
-          </div>
-
-          {[
-            { icon: <UserRound size={16} />, label: t("scannerCustomer"), value: order.customerName },
-            { icon: <Truck size={16} />, label: t("status"), value: order.status },
-            { icon: <Building2 size={16} />, label: t("scannerMarket"), value: order.market },
-            { icon: <Store size={16} />, label: t("comment"), value: order.comment },
-          ].map((item) => (
-            <div
-              key={item.label}
-              className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white/80 px-4 py-4 shadow-sm dark:border-white/10 dark:bg-white/[0.03]"
-            >
-              <div className="flex items-center gap-2 text-[color:var(--color-text-muted)] dark:text-white/55">
-                {item.icon}
-                <p className="m-0 text-xs font-bold uppercase tracking-[0.16em]">
-                  {item.label}
-                </p>
-              </div>
-              <p className="m-0 mt-3 text-base font-bold text-maindark dark:text-white [overflow-wrap:anywhere]">
-                {item.value}
-              </p>
-            </div>
-          ))}
-
-          {isCourier ? (
-            <div className="space-y-3">
-              {assignMessage ? (
-                <div
-                  className={`rounded-2xl border px-4 py-3 text-sm font-semibold ${
-                    assignMessage.tone === "success"
-                      ? "border-emerald-400/30 bg-emerald-500/12 text-emerald-700 dark:text-emerald-200"
-                      : "border-red-400/30 bg-red-500/12 text-red-700 dark:text-red-200"
-                  }`}
-                >
-                  <div className="flex items-start gap-2">
-                    {assignMessage.tone === "success" ? (
-                      <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
-                    ) : (
-                      <AlertTriangle size={18} className="mt-0.5 shrink-0" />
-                    )}
-                    <span className="[overflow-wrap:anywhere]">
-                      {assignMessage.text}
-                    </span>
-                  </div>
-                </div>
-              ) : null}
-
-              <button
-                type="button"
-                onClick={() => assignMutation.mutate()}
-                disabled={
-                  assignMutation.isPending || assignMessage?.tone === "success"
-                }
-                className="flex w-full items-center justify-center gap-3 rounded-[28px] bg-emerald-600 px-6 py-5 text-base font-extrabold uppercase tracking-wide text-white shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                {assignMutation.isPending ? (
-                  <>
-                    <ScanLine size={18} className="animate-pulse" />
-                    {t("scannerOrderAssigning")}
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 size={18} />
-                    {t("scannerOrderAssign")}
-                  </>
-                )}
-              </button>
-            </div>
-          ) : null}
-        </div>
-      </div>
-    </div>
+      }
+      empty={notFound(refetch)}
+      error={(_error, retry) => notFound(retry)}
+    >
+      {(scan) => {
+        if (scan.kind === "package") {
+          return (
+            <ScanPackageDetail
+              key={normalizedToken}
+              data={scan.data}
+              type={scan.type}
+              roleKind={roleKind}
+              topNotice={invalidAlert}
+            />
+          );
+        }
+        if (scan.kind === "post") {
+          return <ScanPostDetail key={normalizedToken} data={scan.data} topNotice={invalidAlert} />;
+        }
+        return (
+          <ScanOrderResult
+            key={normalizedToken}
+            order={scan.order}
+            token={normalizedToken}
+            roleKind={roleKind}
+            topNotice={invalidAlert}
+            onChanged={refetch}
+            onDialogOpenChange={setDialogOpen}
+          />
+        );
+      }}
+    </QueryBoundary>
   );
 };
 

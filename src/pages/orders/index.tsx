@@ -20,10 +20,13 @@ import {
   LEGACY_DATE_TO_KEY,
   LEGACY_ORDER_STATUS_URL_KEY,
   matchOrderStatusTab,
+  normalizeOrderSearch,
   ORDER_FILTER_KEYS,
+  ORDER_LIST_LIMITS,
   ORDER_STATUS_TABS,
   ORDER_STATUS_URL_KEY,
   parseStatusValues,
+  sanitizeDayParam,
   type OrderFilterValues,
   type OrderStatusTabId,
 } from "./list/orderFilterModel";
@@ -32,7 +35,7 @@ import { useQueryParams } from "../../shared/lib/useQueryParams";
 import type { RootState } from "../../app/config/store";
 import { canCreateOrders } from "../../app/lib/access";
 import CourierOrders from "./list/courier/index";
-import { usePagination } from "../../shared/lib/usePagination";
+import { scrollShellContentToTop, usePagination } from "../../shared/lib/usePagination";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { getUserBranchType } from "../../widgets/Sidebar/model/menuConfig";
@@ -273,10 +276,27 @@ const Orders = () => {
   const canUseManagerBulkSend =
     role === "manager" && Boolean(branchType && MANAGER_BULK_SEND_BRANCH_TYPES.has(branchType));
 
+  // `?limit=5000` kabi backend qabul qilmaydigan qiymat e'tiborsiz (D-08) — aks holda 400 va o'tmaydigan xato.
   const { page, limit, setPage, setLimit, resetPagination } = usePagination({
     key: "orders",
     defaultLimit: LIMIT,
+    allowedLimits: ORDER_LIST_LIMITS,
   });
+  // Sahifa / sahifadagi qatorlar soni almashganda ro'yxat boshidan ko'rinsin (D-03, telefonda pastda qolib ketardi).
+  const handlePageChange = useCallback(
+    (nextPage: number) => {
+      setPage(nextPage);
+      scrollShellContentToTop();
+    },
+    [setPage],
+  );
+  const handlePageSizeChange = useCallback(
+    (nextLimit: number) => {
+      setLimit(nextLimit);
+      scrollShellContentToTop();
+    },
+    [setLimit],
+  );
   const previousFiltersKeyRef = useRef("");
 
   // URL params
@@ -288,9 +308,10 @@ const Orders = () => {
   const urlCourierId = urlParams[ORDER_FILTER_KEYS.courierId] ?? "";
   const urlStatusRaw = urlParams[ORDER_STATUS_URL_KEY] ?? urlParams[LEGACY_ORDER_STATUS_URL_KEY] ?? "";
   const urlDeliveryType = urlParams[ORDER_FILTER_KEYS.deliveryType] ?? "";
-  const urlDateFrom = urlParams[ORDER_FILTER_KEYS.dateFrom] ?? urlParams[LEGACY_DATE_FROM_KEY] ?? "";
-  const urlDateTo = urlParams[ORDER_FILTER_KEYS.dateTo] ?? urlParams[LEGACY_DATE_TO_KEY] ?? "";
-  const urlSearch = urlParams[ORDER_FILTER_KEYS.search] ?? "";
+  // Noto'g'ri sana (`?startDay=falonchi`) va bo'sh / «№53» qidiruv API'ga xom ketmaydi (D-08, D-11).
+  const urlDateFrom = sanitizeDayParam(urlParams[ORDER_FILTER_KEYS.dateFrom] ?? urlParams[LEGACY_DATE_FROM_KEY]);
+  const urlDateTo = sanitizeDayParam(urlParams[ORDER_FILTER_KEYS.dateTo] ?? urlParams[LEGACY_DATE_TO_KEY]);
+  const urlSearch = normalizeOrderSearch(urlParams[ORDER_FILTER_KEYS.search]);
   const urlSortBy = urlParams[ORDER_SORT_BY_KEY] ?? "";
   const urlSortDir = urlParams[ORDER_SORT_DIR_KEY] ?? "";
   const sortConfig: DataTableSort | null =
@@ -955,8 +976,8 @@ const Orders = () => {
               page={currentPage}
               pageSize={itemsPerPage}
               total={total}
-              onPageChange={setPage}
-              onPageSizeChange={setLimit}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
               summary={(range) => t("ordersList.summary", range)}
             />
           ) : undefined

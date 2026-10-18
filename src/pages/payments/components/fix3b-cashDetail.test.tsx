@@ -24,6 +24,7 @@ const state = vi.hoisted(() => ({
   cashbox: undefined as unknown,
   historyCalls: [] as HistoryCall[],
   managerPayable: undefined as unknown,
+  managerSettlement: undefined as unknown,
   usersEnabled: [] as boolean[],
 }));
 const cashboxRefetch = vi.hoisted(() => vi.fn(async () => ({ data: state.cashbox })));
@@ -55,6 +56,7 @@ vi.mock("../../../entities/payments/financeCoverage", () => ({
       isLoading: false,
       refetch: vi.fn(async () => ({ data: state.managerPayable })),
     }),
+    useGetManagerSettlement: () => ({ data: state.managerSettlement, isLoading: false, refetch: vi.fn() }),
   }),
 }));
 vi.mock("../../../entities/markets", () => ({
@@ -131,10 +133,18 @@ const OUTCOME_UNKNOWN =
   "Server javob bermadi — to'lov o'tgan bo'lishi mumkin. Kassa yangilandi, summani tekshiring: aynan shu to'lovni qayta yuborsangiz, u ikki marta yozilmaydi";
 const BRANCH_SUCCESS = "Asosiy filialga to'lov muvaffaqiyatli o'tkazildi";
 const RECEIVE_SUCCESS = "Kuryerdan to'lov muvaffaqiyatli qabul qilindi";
-const TO_MARKET = "Do'konga o'tkazma";
+// Dizayn v2 (maket): «Do'konga o'tkazma» → «Marketga o'tkazma».
+const TO_MARKET = "Marketga o'tkazma";
+const CONFIRM_TITLE = "To'lovni tasdiqlang";
+/** Menejer → HQ: «{summa} HQ'ga o'tkazish» (summa yo'q bo'lsa «HQ'ga o'tkazish»). */
+const TRANSFER_TO_HQ = /HQ'ga o'tkazish$/;
+const RECEIVE = /qabul qilish$/i;
 const CARD_PICKER = "Kartani tanlang";
 
-const renderAt = (route: string, preloadedState: never = superadmin) =>
+const renderAt = (
+  route: string | { pathname: string; search?: string; state?: unknown },
+  preloadedState: never = superadmin,
+) =>
   renderWithProviders(
     <Routes>
       <Route path="/payments/cash-detail/:id" element={<CashDetail />} />
@@ -146,12 +156,15 @@ const setAmount = (amount: string) =>
   fireEvent.change(screen.getByPlaceholderText("0"), { target: { value: amount } });
 const chooseMethod = (method: string) =>
   userEvent.setup().click(screen.getByRole("radio", { name: method }));
-/** Forma tugmasi → (5hBeDuyn) tasdiq oynasi ochilsa, undagi tasdiq tugmasi. */
-const submit = async (label: string) => {
+/** Forma tugmasi → (5hBeDuyn) tasdiq oynasi ochilsa, undagi «Tasdiqlash». */
+const submit = async (label: string | RegExp) => {
   const user = userEvent.setup();
   await user.click(screen.getByRole("button", { name: label }));
-  const dialog = screen.queryByRole("dialog");
-  if (dialog) await user.click(within(dialog).getByRole("button", { name: label }));
+  const dialog = await screen.findByRole("alertdialog", { name: CONFIRM_TITLE }).catch(() => null);
+  if (dialog) {
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument());
+  }
 };
 const callsOf = (mock: { mutateAsync: ReturnType<typeof vi.fn> }) =>
   mock.mutateAsync.mock.calls.map(([arg]) => arg as PaymentArg);
@@ -161,6 +174,7 @@ beforeEach(() => {
   state.cashbox = undefined;
   state.historyCalls = [];
   state.managerPayable = undefined;
+  state.managerSettlement = undefined;
   state.usersEnabled = [];
   cashboxRefetch.mockClear();
   marketPayment.mutateAsync.mockReset();
@@ -186,7 +200,7 @@ describe("FE-PAY-01 reverted — the manager's own HQ handover screen is as befo
 
     setAmount("100000");
     await chooseMethod("Naqd");
-    await submit("HQga o'tkazish");
+    await submit(TRANSFER_TO_HQ);
 
     await waitFor(() => expect(branchPayment.mutateAsync).toHaveBeenCalledTimes(1));
     const [call] = callsOf(branchPayment);
@@ -226,7 +240,7 @@ describe("FE-PAY-01 reverted — the manager's own HQ handover screen is as befo
 
     setAmount("100000");
     await chooseMethod("Naqd");
-    await submit("HQga o'tkazish");
+    await submit(TRANSFER_TO_HQ);
 
     expect(
       await screen.findByText("Siz faqat o'z branch'ingiz pulini HQ ga topshira olasiz"),
@@ -266,7 +280,7 @@ describe("Courier 'O'tkazma' — no card-owner picker (its value was never sent)
     expect(screen.queryByLabelText(CARD_PICKER)).not.toBeInTheDocument();
     expect(screen.queryByText(CARD_PICKER)).not.toBeInTheDocument();
 
-    await submit("Qabul qilish");
+    await submit(RECEIVE);
     await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1));
     expect(callsOf(courierPayment)[0].data).toEqual({
       courier_id: "263",
@@ -289,7 +303,7 @@ describe("Courier 'O'tkazma' — no card-owner picker (its value was never sent)
     await chooseMethod("O'tkazma");
     expect(screen.queryByLabelText(CARD_PICKER)).not.toBeInTheDocument();
 
-    await submit("Qabul qilish");
+    await submit(RECEIVE);
     await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1));
     const [call] = callsOf(courierPayment);
     expect(call.data).toEqual(
@@ -303,5 +317,72 @@ describe("Courier 'O'tkazma' — no card-owner picker (its value was never sent)
     expect(call.data).not.toHaveProperty("source_user_id");
     expect(call.idempotencyKey).toEqual(expect.any(String));
     expect(state.usersEnabled.some(Boolean)).toBe(false);
+  });
+});
+
+/**
+ * Dizayn v2 — menejer → HQ (maket `manager-payments-cash-detail-branch`): sarlavha HQ nomi, «HQ kassasi»,
+ * «{filial} kassasidan HQ'ga pul o'tkazish»; kassa (GET manager/settlement) — «Kassa yetarli», ko'rsatma,
+ * tasdiqda filial kassasi → HQ kassasi. Payload yuqoridagi testda (URL id = branch_id).
+ */
+describe("Dizayn v2 — menejer → HQ sahifasi", () => {
+  beforeEach(() => {
+    state.managerPayable = { data: { counterparty: "HQ", berilishi_kerak: 3_460_000 } };
+    state.managerSettlement = {
+      data: {
+        counterparty: "HQ",
+        kassa: { cash: 3_000_000, card: 785_000, total: 3_785_000 },
+        berilishi_kerak: 3_460_000,
+        olinishi_kerak: 2_940_000,
+      },
+    };
+  });
+
+  it("sarlavha, kassa yetarliligi, ko'rsatma va tasdiq yo'nalishi; Excel yo'q", async () => {
+    branchPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+    renderAt(
+      {
+        pathname: "/payments/cash-detail/3",
+        search: "?type=branch",
+        state: { type: "branch", entity: { id: "3", name: "Toshkent HQ", role: "branch", type: "branch" } },
+      },
+      manager,
+    );
+
+    expect(screen.getByRole("heading", { level: 1, name: "Toshkent HQ" })).toBeInTheDocument();
+    expect(screen.getByText("HQ kassasi")).toBeInTheDocument();
+    expect(screen.getByText("E2E REGIONAL Samarqand kassasidan HQ'ga pul o'tkazish")).toBeInTheDocument();
+    expect(screen.getByText("Qarshi tomon: Toshkent HQ")).toBeInTheDocument();
+    expect(screen.getByText("Kassa yetarli")).toBeInTheDocument();
+    expect(screen.getByRole("meter", { name: "Berilishi kerak summa kassadagi summaga nisbatan" })).toHaveAttribute(
+      "aria-valuenow",
+      "91.4",
+    );
+    expect(screen.getByText(/^Kassada qoladi · 325\D000 so'm$/)).toBeInTheDocument();
+    expect(screen.getByText(/^Berilishi kerak: 3\D460\D000 so'm · kassada 3\D785\D000 so'm$/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "HQ'ga o'tkazish" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Excel/ })).not.toBeInTheDocument();
+    expect(screen.getByText("E2E REGIONAL Samarqand kassasidagi kirim va chiqimlar")).toBeInTheDocument();
+
+    setAmount("100000");
+    await chooseMethod("Naqd");
+    const user = userEvent.setup();
+    await user.click(screen.getByRole("button", { name: /^100\D000 so'm HQ'ga o'tkazish$/ }));
+    const dialog = await screen.findByRole("alertdialog", { name: CONFIRM_TITLE });
+    expect(dialog).toHaveTextContent(/Qayerdan\s*Filial kassasi\s*E2E REGIONAL Samarqand/);
+    expect(dialog).toHaveTextContent(/Qayerga\s*HQ kassasi\s*Toshkent HQ/);
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+    await waitFor(() => expect(branchPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    expect(callsOf(branchPayment)[0].data).toEqual(
+      expect.objectContaining({ branch_id: "3", amount: 100_000, payment_method: "cash" }),
+    );
+  });
+
+  it("berilishi kerak kassadan ko'p bo'lsa — «Kassa yetarli emas»", () => {
+    state.managerPayable = { data: { counterparty: "HQ", berilishi_kerak: 4_000_000 } };
+    renderAt("/payments/cash-detail/3?type=branch", manager);
+
+    expect(screen.getByText("Kassa yetarli emas")).toBeInTheDocument();
+    expect(screen.getByText(/^Kassada qoladi · 0 so'm$/)).toBeInTheDocument();
   });
 });

@@ -1,152 +1,246 @@
-import { ApartmentOutlined, AppstoreOutlined, BarsOutlined } from "@ant-design/icons";
-import { Empty, Spin } from "antd";
-import { useMemo, useState } from "react";
-import type { ReactNode } from "react";
+// dizayn-v2: superadmin-branches-list-tree, superadmin-branches-list-table
+import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { Building2, SearchX } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { useBranches, type Branch, type BranchParams } from "../../../entities/branch";
-import Pagination from "../../../shared/components/pagination";
-import FilterSearch from "../../../shared/ui/FilterSearch";
-import FilterSelect from "../../../shared/ui/FilterSelect";
+import { useDeleteBranchAction } from "../../../features/branch-delete";
+import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { useDebounce } from "../../../shared/lib/useDebounce";
+import {
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  Field,
+  PageHeader,
+  Pagination,
+  QueryBoundary,
+  SegmentedControl,
+  Select,
+  Skeleton,
+  SkeletonTable,
+  TextInput,
+  type SegmentedOption,
+  type SelectOption,
+} from "../../../shared/ui/primitives";
+import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import BranchCards from "./BranchCards";
 import BranchTable from "./BranchTable";
 import BranchTree from "./BranchTree";
 
-type ViewMode = "table" | "card" | "tree";
+export type BranchViewMode = "table" | "card" | "tree";
 
+/** Sahifa hajmlari (e2e `branch-list.*.spec.ts`): jadval 12, kartalar 8; daraxt — bitta so'rovda 100 tagacha. */
 const TABLE_PAGE_SIZE = 12;
 const CARD_PAGE_SIZE = 8;
+const TREE_LIMIT = 100;
+const TABLE_PAGE_SIZES = [12, 24, 48, 96] as const;
+const CARD_PAGE_SIZES = [8, 16, 32, 64] as const;
+const SEARCH_DEBOUNCE_MS = 400;
+
+const pageSizeFor = (mode: BranchViewMode) => (mode === "card" ? CARD_PAGE_SIZE : TABLE_PAGE_SIZE);
 
 interface BranchListWidgetProps {
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
+  viewMode: BranchViewMode;
+  onViewModeChange: (mode: BranchViewMode) => void;
   onEdit: (branch: Branch) => void;
+  /** Sarlavhadagi asosiy amal («+ Yangi filial») — sahifa beradi (oynani o'zi ochadi). */
+  createAction?: ReactNode;
 }
 
-const BranchListWidget = ({
-  viewMode,
-  onViewModeChange,
-  onEdit,
-}: BranchListWidgetProps) => {
-  const { t } = useTranslation("branches");
-  const [params, setParams] = useState<BranchParams>({
+/**
+ * FILIALLAR RO'YXATI — `/branches` (faqat superadmin), dizayn v2.
+ *
+ * Maketlar: `superadmin-branches-list-tree` (daraxt), `superadmin-branches-list-table` (jadval / kartalar).
+ * Sarlavha «Filiallar» + «Jami {n} ta filial»; amallar: «Daraxt · Jadval · Kartalar» (telefonda karta ichida,
+ * filtrlardan keyin) va «+ Yangi filial». Karta: qidiruv «Filial nomi yoki manzil bo'yicha qidirish» (0,4 s
+ * kutib) + «Holat: Barchasi» (Faol / Nofaol); o'zgarsa sahifa 1 ga qaytadi. Daraxtda sahifalash yo'q (100 tagacha
+ * bitta so'rovda), jadval 12 / kartalar 8 tadan — `Pagination` («1–12 / 13 ta filial» + sahifa hajmi).
+ *
+ * So'rov: `GET /branches?search&status&page&limit` (`useBranches`). Ko'rinish tanlovini sahifa saqlaydi
+ * (`localStorage` «branches-view-mode»). O'chirish — `useDeleteBranchAction` (tasdiq oynasi).
+ */
+const BranchListWidget = ({ viewMode, onViewModeChange, onEdit, createAction }: BranchListWidgetProps) => {
+  const { t, i18n } = useTranslation("branches");
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const navigate = useNavigate();
+  const isPhone = useIsPhone();
+  const deleteBranch = useDeleteBranchAction();
+  const [searchInput, setSearchInput] = useState("");
+  const [params, setParams] = useState<BranchParams>(() => ({
     page: 1,
-    limit: viewMode === "card" ? CARD_PAGE_SIZE : TABLE_PAGE_SIZE,
+    limit: pageSizeFor(viewMode),
     search: "",
     status: "",
-  });
+  }));
   const queryParams = useMemo(
-    () => (viewMode === "tree" ? { ...params, page: 1, limit: 100 } : params),
+    () => (viewMode === "tree" ? { ...params, page: 1, limit: TREE_LIMIT } : params),
     [params, viewMode],
   );
-  const { data, isLoading } = useBranches(queryParams);
-  const currentPage = data?.page ?? params.page ?? 1;
-  const currentLimit = data?.limit ?? params.limit ?? TABLE_PAGE_SIZE;
-  const totalItems = data?.total ?? 0;
-  const from = totalItems === 0 ? 0 : (currentPage - 1) * currentLimit + 1;
-  const to = totalItems === 0 ? 0 : Math.min(currentPage * currentLimit, totalItems);
-  const statusOptions = useMemo(
+  // Xato ro'yxat kartasida (`ErrorState`) — global xabar takrorlanmaydi.
+  const { data, isLoading, isError, error, refetch } = useBranches(queryParams, true, { silentError: true });
+  const total = data?.total;
+  const hasFilters = Boolean(params.search) || Boolean(params.status);
+
+  const applySearch = useDebounce((search: string) => {
+    setParams((prev) => (prev.search === search ? prev : { ...prev, search, page: 1 }));
+  }, SEARCH_DEBOUNCE_MS);
+
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
+    applySearch(value.trim());
+  };
+
+  const handleViewChange = (mode: BranchViewMode) => {
+    onViewModeChange(mode);
+    setParams((prev) => ({ ...prev, page: 1, limit: pageSizeFor(mode) }));
+  };
+
+  const clearFilters = () => {
+    setSearchInput("");
+    setParams((prev) => ({ ...prev, search: "", status: "", page: 1 }));
+  };
+
+  const openBranch = useCallback(
+    (branch: Branch) => navigate(`/branches/${encodeURIComponent(branch.id)}`),
+    [navigate],
+  );
+  const removeBranch = useCallback((branch: Branch) => void deleteBranch(branch), [deleteBranch]);
+
+  const statusOptions = useMemo<SelectOption[]>(
     () => [
+      { value: "", label: t("list.allStatuses") },
       { value: "active", label: t("status.active") },
       { value: "inactive", label: t("status.inactive") },
     ],
     [t],
   );
-  const viewModeOptions: { value: ViewMode; icon: ReactNode; label: string }[] = useMemo(
+  const viewOptions = useMemo<SegmentedOption<BranchViewMode>[]>(
     () => [
-      { value: "tree", icon: <ApartmentOutlined />, label: t("list.treeView") },
-      { value: "table", icon: <BarsOutlined />, label: t("list.tableView") },
-      { value: "card", icon: <AppstoreOutlined />, label: t("list.cardView") },
+      { value: "tree", label: t("list.treeView") },
+      { value: "table", label: t("list.tableView") },
+      { value: "card", label: t("list.cardView") },
     ],
     [t],
   );
+  const viewSwitch = (
+    <SegmentedControl
+      ariaLabel={t("v2.list.viewLabel")}
+      options={viewOptions}
+      value={viewMode}
+      onValueChange={handleViewChange}
+      fullWidth={isPhone}
+    />
+  );
+
+  const description =
+    total !== undefined ? (
+      t("v2.list.total", { count: total, value: formatNumberLocalized(total, { language }) })
+    ) : isLoading ? (
+      <Skeleton width={120} height={14} className="inline-block align-middle" />
+    ) : null;
+
+  const pageSizes = viewMode === "card" ? CARD_PAGE_SIZES : TABLE_PAGE_SIZES;
+  const footer =
+    viewMode !== "tree" && data && data.total > 0 ? (
+      <Pagination
+        page={data.page || params.page || 1}
+        pageSize={data.limit || params.limit || pageSizeFor(viewMode)}
+        total={data.total}
+        onPageChange={(page) => setParams((prev) => ({ ...prev, page }))}
+        onPageSizeChange={(limit) => setParams((prev) => ({ ...prev, limit, page: 1 }))}
+        pageSizeOptions={pageSizes}
+        summary={(range) => t("v2.list.pagination", range)}
+      />
+    ) : undefined;
+
+  const listLabel = viewMode === "tree" ? t("v2.tree.label") : t("v2.list.label");
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-gray-200 bg-primary shadow-sm dark:border-primarydark/60 dark:bg-maindark">
-      <div className="border-b border-gray-200 p-4 dark:border-primarydark/60 sm:p-5">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-end">
-          <div className="min-w-0 xl:flex-1">
-            <FilterSearch
-              value={params.search ?? ""}
+    <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
+      <PageHeader
+        title={t("page.title")}
+        description={description}
+        actions={
+          <>
+            {isPhone ? null : viewSwitch}
+            {createAction}
+          </>
+        }
+      />
+
+      <Card as="section" padding="none" aria-label={listLabel} footer={footer}>
+        <div className="flex flex-wrap items-center gap-3 px-5 py-4 max-md:px-4">
+          <Field label={t("v2.list.searchLabel")} hideLabel className="min-w-0 flex-[6_1_320px] max-md:basis-full">
+            <TextInput
+              mode="search"
+              value={searchInput}
+              onValueChange={handleSearchChange}
               placeholder={t("list.searchPlaceholder")}
-              onChange={(search) => setParams((prev) => ({ ...prev, search, page: 1 }))}
-              debounceDelay={400}
             />
-          </div>
-          <div className="w-full xl:w-[280px]">
-            <FilterSelect
-              name="branch_status"
-              label={t("fields.status")}
-              value={params.status ?? ""}
-              onChange={(status) => setParams((prev) => ({ ...prev, status: status as BranchParams["status"], page: 1 }))}
+          </Field>
+          <Field
+            label={t("fields.status")}
+            hideLabel
+            labelAs="span"
+            className="min-w-0 flex-[1_1_200px] max-md:basis-full"
+          >
+            <Select
               options={statusOptions}
+              value={params.status || null}
+              onChange={(status) =>
+                setParams((prev) => ({ ...prev, status: (status ?? "") as BranchParams["status"], page: 1 }))
+              }
               placeholder={t("list.allStatuses")}
+              inlineLabel={t("fields.status")}
             />
-          </div>
-          <div className="flex xl:pb-[1px]">
-            <div className="inline-flex h-12 items-center rounded-xl border-2 border-gray-200 bg-white p-1 shadow-sm dark:border-primarydark/30 dark:bg-primarydark">
-              {viewModeOptions.map((option) => {
-                const isActive = viewMode === option.value;
-
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => {
-                      onViewModeChange(option.value);
-                      setParams((prev) => ({
-                        ...prev,
-                        page: 1,
-                        limit: option.value === "card" ? CARD_PAGE_SIZE : TABLE_PAGE_SIZE,
-                      }));
-                    }}
-                    aria-label={option.label}
-                    title={option.label}
-                    className={`flex h-10 w-10 items-center justify-center self-center rounded-lg text-base transition-all duration-200 ${
-                      isActive
-                        ? "bg-main text-white shadow-[0_10px_25px_rgba(109,72,217,0.28)]"
-                        : "text-text-muted hover:bg-main-soft hover:text-main dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white"
-                    }`}
-                  >
-                    {option.icon}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          </Field>
+          {isPhone ? <div className="basis-full">{viewSwitch}</div> : null}
         </div>
-      </div>
 
-      <div className="min-w-0 p-2.5 sm:p-5">
-        <Spin spinning={isLoading}>
-          {viewMode === "table" ? (
-            <BranchTable data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
-          ) : viewMode === "card" ? (
-            <BranchCards data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
-          ) : (
-            <BranchTree data={data?.data ?? []} loading={isLoading} onEdit={onEdit} />
+        <QueryBoundary
+          query={{ data: data?.data, isLoading, isError, error, refetch }}
+          loadingLabel={t("v2.list.loading")}
+          loading={
+            <SkeletonTable
+              framed={false}
+              rows={6}
+              columns={[t("v2.columns.branch"), t("v2.columns.type"), t("v2.columns.employees"), t("v2.columns.status")]}
+            />
+          }
+          empty={
+            hasFilters ? (
+              <EmptyState
+                icon={SearchX}
+                title={t("v2.list.filteredEmpty")}
+                description={t("v2.list.filteredEmptyDescription")}
+                action={
+                  <Button variant="secondary" onClick={clearFilters}>
+                    {t("v2.list.clearFilters")}
+                  </Button>
+                }
+              />
+            ) : (
+              <EmptyState icon={Building2} title={t("list.notFound")} description={t("v2.list.emptyDescription")} />
+            )
+          }
+          error={(queryError, retry) => (
+            <ErrorState error={queryError} title={t("v2.list.loadFailed")} onRetry={retry} />
           )}
-        </Spin>
-
-        {viewMode === "card" && data && !data.data.length ? <Empty description={t("list.notFound")} /> : null}
-      </div>
-
-      {viewMode !== "tree" ? (
-        <div className="border-t border-gray-200 px-4 py-4 sm:px-6 dark:border-primarydark/60">
-          <Pagination
-            totalItems={totalItems}
-            itemsPerPage={currentLimit}
-            currentPage={currentPage}
-            onPageChange={(page) => setParams((prev) => ({ ...prev, page }))}
-            onItemsPerPageChange={(limit) => setParams((prev) => ({ ...prev, limit, page: 1 }))}
-            summary={
-              totalItems > 0
-                ? t("list.paginationSummary", { from, to, total: totalItems })
-                : t("list.emptyCount")
-            }
-            pageSizeOptions={viewMode === "card" ? [8, 16, 32, 64] : [12, 24, 48, 96]}
-          />
-        </div>
-      ) : null}
+          className="border-t border-border"
+        >
+          {(list, { isRefetching }) =>
+            viewMode === "table" ? (
+              <BranchTable data={list} onEdit={onEdit} onDelete={removeBranch} onOpen={openBranch} busy={isRefetching} />
+            ) : viewMode === "card" ? (
+              <BranchCards data={list} onEdit={onEdit} onDelete={removeBranch} onOpen={openBranch} busy={isRefetching} />
+            ) : (
+              <BranchTree data={list} onEdit={onEdit} onDelete={removeBranch} onOpen={openBranch} busy={isRefetching} />
+            )
+          }
+        </QueryBoundary>
+      </Card>
     </div>
   );
 };

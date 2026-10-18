@@ -33,7 +33,8 @@ const hasRefreshTokenExpired = () => {
  */
 const handleRefreshFailure = async (refreshError: unknown) => {
   if (!isTransientAuthFailure(refreshError)) {
-    await logoutAndRedirect();
+    // Sessiya haqiqatan tugagan — login sahifasida «Sessiya tugadi» ekrani (dizayn v2 `common-session-expired`).
+    await logoutAndRedirect({ reason: "sessionExpired" });
   } else if (isNetworkFailure(refreshError)) {
     // `authClient` da interceptor yo'q — "Tarmoq xatosi" shu yerdan chiqadi.
     emitNetworkError(refreshError);
@@ -62,7 +63,7 @@ const shouldAttemptRefresh = (error: AxiosError) => {
 export const setupAuthInterceptors = (api: AxiosInstance) => {
   api.interceptors.request.use(async (config) => {
     if (hasRefreshTokenExpired()) {
-      await logoutAndRedirect();
+      await logoutAndRedirect({ reason: "sessionExpired" });
       return Promise.reject(new Error("Refresh token expired"));
     }
 

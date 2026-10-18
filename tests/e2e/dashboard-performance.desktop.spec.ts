@@ -1,9 +1,11 @@
 import { expect, test, type Page, type Route } from "@playwright/test";
 
 /**
- * DASHBOARD TAQQOSLASH GRAFIGI (PMa5dgYQ) — 1440px.
- * - 10 tadan ortiq market/kuryer → 10 ta ustun + "Yana ko'rsatish" → hammasi → "Kamroq ko'rsatish" → 10.
- * - Market roli: grafik TO'LIQ `markets` statistikasidan (topMarkets bo'sh bo'lsa ham).
+ * DASHBOARD REYTINGLARI (PMa5dgYQ) — 1440px, dizayn v2 (`RankList`, maket `superadmin-dashboard-main`).
+ * - Top 5 dan ortiq market/kuryer → 5 ta qator + "Yana ko'rsatish · {n} ta" → hammasi → "Kamroq ko'rsatish" → 5.
+ *   (v1 recharts grafigi 10 ta ustun ko'rsatardi; v2 maketida reyting top 5, telefonda top 3.)
+ * - Market roli: «Marketlar bo'yicha sotuv foizi» TO'LIQ `markets` statistikasidan — o'z qatori
+ *   (topMarkets bo'sh bo'lsa ham), kuryerlar bo'limi yo'q.
  */
 const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
@@ -61,7 +63,7 @@ test.describe("Dashboard — taqqoslash grafigi, 1440px", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
   test.describe.configure({ timeout: 90_000 });
 
-  test("⭐ TC5: 10 tadan ortiq bo'lganda \"Yana ko'rsatish\" hammasini ochadi, \"Kamroq ko'rsatish\" yana 10 ga qaytaradi", async ({ page }) => {
+  test("⭐ TC5: top 5 dan ortiq bo'lganda \"Yana ko'rsatish\" hammasini ochadi, \"Kamroq ko'rsatish\" yana 5 ga qaytaradi", async ({ page }) => {
     const leaked = await mockDashboard(
       page,
       { id: "1", role: "superadmin", name: "Bosh admin", status: "active" },
@@ -69,37 +71,38 @@ test.describe("Dashboard — taqqoslash grafigi, 1440px", () => {
     );
     await page.goto("/");
 
-    for (const title of ["Marketlar bo'yicha sotuv foizi", "Kuryerlar bo'yicha sotuv foizi"]) {
+    for (const title of ["Top marketlar", "Top kuryerlar"]) {
       const block = section(page, title);
-      await page.getByRole("heading", { name: title }).scrollIntoViewIfNeeded({ timeout: 60_000 });
-      const bars = block.locator(".recharts-bar-rectangle");
-      await expect(bars, title).toHaveCount(10);
+      const rows = block.locator("[data-rank-row]");
+      // Yuklanish kartasi (skelet) o'rnini haqiqiy karta egallaguncha kutiladi, keyin skroll.
+      await expect(rows, title).toHaveCount(5, { timeout: 60_000 });
+      await block.scrollIntoViewIfNeeded();
 
-      await block.getByRole("button", { name: "Yana ko'rsatish" }).click();
-      await expect(bars, title).toHaveCount(12);
+      await block.getByRole("button", { name: "Yana ko'rsatish · 7 ta" }).click();
+      await expect(rows, title).toHaveCount(12);
       await expect(block.getByRole("button", { name: "Kamroq ko'rsatish" })).toBeVisible();
 
       await block.getByRole("button", { name: "Kamroq ko'rsatish" }).click();
-      await expect(bars, title).toHaveCount(10);
-      await expect(block.getByRole("button", { name: "Yana ko'rsatish" })).toBeVisible();
+      await expect(rows, title).toHaveCount(5);
+      await expect(block.getByRole("button", { name: /Yana ko'rsatish/ })).toBeVisible();
     }
     expect(leaked).toEqual([]);
   });
 
-  test("10 ta yoki kam bo'lsa \"Yana ko'rsatish\" tugmasi chiqmaydi", async ({ page }) => {
+  test("5 ta yoki kam bo'lsa \"Yana ko'rsatish\" tugmasi chiqmaydi (desktop)", async ({ page }) => {
     await mockDashboard(
       page,
       { id: "1", role: "superadmin", name: "Bosh admin", status: "active" },
-      { orders: { acceptedCount: 200 }, markets: markets.slice(0, 10), couriers: couriers.slice(0, 4) },
+      { orders: { acceptedCount: 200 }, markets: markets.slice(0, 5), couriers: couriers.slice(0, 4) },
     );
     await page.goto("/");
-    const block = section(page, "Marketlar bo'yicha sotuv foizi");
-    await page.getByRole("heading", { name: "Marketlar bo'yicha sotuv foizi" }).scrollIntoViewIfNeeded({ timeout: 60_000 });
-    await expect(block.locator(".recharts-bar-rectangle")).toHaveCount(10);
-    await expect(block.getByRole("button", { name: "Yana ko'rsatish" })).toHaveCount(0);
+    const block = section(page, "Top marketlar");
+    await expect(block.locator("[data-rank-row]")).toHaveCount(5, { timeout: 60_000 });
+    await block.scrollIntoViewIfNeeded();
+    await expect(block.getByRole("button", { name: /Yana ko'rsatish/ })).toHaveCount(0);
   });
 
-  test("⭐ market roli: o'z statistikasi grafikda (topMarkets bo'sh bo'lsa ham), kuryerlar bo'limi yo'q", async ({ page }) => {
+  test("⭐ market roli: o'z statistikasi sotuv foizida (topMarkets bo'sh bo'lsa ham), kuryerlar bo'limi yo'q", async ({ page }) => {
     const leaked = await mockDashboard(
       page,
       { id: "37", role: "market", name: "TEST Claude Market", status: "active" },
@@ -111,16 +114,18 @@ test.describe("Dashboard — taqqoslash grafigi, 1440px", () => {
       },
     );
     await page.goto("/");
-    await page.getByRole("heading", { name: "Marketlar bo'yicha sotuv foizi" }).scrollIntoViewIfNeeded({ timeout: 60_000 });
     const block = section(page, "Marketlar bo'yicha sotuv foizi");
-    await expect(block.locator(".recharts-bar-rectangle")).toHaveCount(1);
-    await expect(block.getByText("Hali solishtirish uchun yetarli ma'lumot yo'q.")).toHaveCount(0);
-    await expect(page.getByRole("heading", { name: "Kuryerlar bo'yicha sotuv foizi" })).toHaveCount(0);
+    await expect(block.locator("[data-hbar-row]")).toHaveCount(1, { timeout: 60_000 });
+    await block.scrollIntoViewIfNeeded();
+    await expect(block.getByText("Reyting uchun ma'lumot hali kam")).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Top kuryerlar" })).toHaveCount(0);
 
-    // Tooltip API qiymatini ko'rsatadi: 36.4% · 4/11.
-    await block.locator(".recharts-bar-rectangle").first().hover();
-    await expect(block.getByText(/36\.4%/)).toBeVisible();
-    await expect(block.getByText(/4\/11/)).toBeVisible();
+    // Qatorda API qiymati: 36,4% · 4 / 11 ta, o'z qatori «Siz».
+    const row = block.locator("[data-hbar-row]").first();
+    await expect(row).toContainText("TEST Claude Market");
+    await expect(row).toContainText("Siz");
+    await expect(row).toContainText("36,4%");
+    await expect(row).toContainText("4 / 11 ta");
     expect(leaked).toEqual([]);
   });
 });

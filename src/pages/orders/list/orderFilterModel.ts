@@ -71,6 +71,31 @@ export const normalizeFilterStatuses = (values: readonly string[]): OrderStatus[
 
 export const isDeliveryType = (value: string): value is DeliveryType => value === "center" || value === "address";
 
+/** `GET /orders` qabul qiladigan `limit` qiymatlari (gateway `DEFAULT_ALLOWED_LIMITS`, boshqasi — 400). */
+export const ORDER_LIST_LIMITS: readonly number[] = [10, 25, 50, 100];
+
+const DAY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/**
+ * URL'dagi sana (`startDay` / `endDay`) — faqat haqiqiy `YYYY-MM-DD`; boshqasi (`?startDay=falonchi`,
+ * `2026-02-30`) bo'sh: backend 400 qaytarardi va sahifa hech qachon o'tmaydigan xatoda qolardi (D-08).
+ */
+export const sanitizeDayParam = (value: string | null | undefined): string => {
+  const text = (value ?? "").trim();
+  const match = DAY_PATTERN.exec(text);
+  if (!match) return "";
+  const [year, month, day] = [Number(match[1]), Number(match[2]), Number(match[3])];
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day ? text : "";
+};
+
+/**
+ * Qidiruv matni → `search` parametri (D-11): chetlaridagi bo'shliqlar olinadi (faqat bo'shliq — qidiruv yo'q),
+ * boshidagi «№» / «#» tashlanadi — ro'yxatda raqam «№53» ko'rinishida, backend esa «53» ni qidiradi.
+ */
+export const normalizeOrderSearch = (value: string | null | undefined): string =>
+  (value ?? "").trim().replace(/^[№#]+\s*/u, "").trim();
+
 // ── Holat tablari (maket: «Barchasi · Yangi · Qabul qilindi · Yo'lda · Kutilmoqda · Sotilgan · To'langan ·
 //    Bekor qilingan») ────────────────────────────────────────────────────────
 export type OrderStatusTabId =

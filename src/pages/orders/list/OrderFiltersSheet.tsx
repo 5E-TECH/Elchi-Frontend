@@ -16,6 +16,7 @@ import {
   hasDateRange,
   matchQuickPeriod,
   normalizeFilterStatuses,
+  ORDER_LIST_LIMITS,
   QUICK_PERIODS,
   readOrdersTotal,
   type OrderFilterValues,
@@ -37,6 +38,9 @@ import { useOrderFilterOptions, type FilterOption } from "./useOrderFilterOption
 const ALL = "all";
 /** Qo'lda tanlangan oraliq — segmentda hech biri tanlanmagan. */
 const CUSTOM = "custom";
+
+/** Son so'rovi uchun eng kichik ruxsat etilgan `limit` (`ORDER_LIST_LIMITS`). */
+const PREVIEW_LIMIT = Math.min(...ORDER_LIST_LIMITS);
 
 /** `.el-label` — `Field` yorlig'i bilan bir xil. */
 const LABEL = "min-w-0 text-[13px] font-semibold text-text";
@@ -94,8 +98,10 @@ export const OrderFiltersSheet = ({ open, onClose, initial, role, withDate, sear
   // Kuryerlar qoralamadagi viloyat bo'yicha (yopiq varaqada — URL'dagisi, ortiqcha so'rov ketmasin).
   const options = useOrderFilterOptions(role, open ? draft.regionId : initial.regionId);
   const { useGetOrders } = useOrders();
+  // Faqat `total` kerak, lekin `limit` backend ro'yxatidan bo'lishi shart (10 · 25 · 50 · 100): `limit=1` 400 olardi
+  // va «Natijalarni ko'rsatish (N)» soni hech qachon chiqmasdi (D-10). Eng kichigi — 10.
   const previewParams = useMemo(
-    () => buildOrderListParams({ ...draft, search }, role, { page: 1, limit: 1 }),
+    () => buildOrderListParams({ ...draft, search }, role, { page: 1, limit: PREVIEW_LIMIT }),
     [draft, role, search],
   );
   // Son — yordamchi: xatoda u yashirinadi, umumiy «Ma'lumotni yuklab bo'lmadi» xabari varaqa ustiga chiqmaydi.

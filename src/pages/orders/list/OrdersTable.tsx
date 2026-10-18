@@ -28,6 +28,46 @@ import {
 
 const EMPTY_SELECTED_IDS = new Set<string>();
 
+/**
+ * Uzun matn (mijoz, tuman, viloyat, market) — bir qatorda, sig'masa `…` (to'liq matn `title` da). Real
+ * ma'lumotda 280 px li ism 1440 px dan tor desktopda (yon menyu ochiq) jadvalni gorizontal aylantirib, «Summa»
+ * ni ekrandan chiqarib yuborardi (D-02).
+ *
+ * `grid` + `minmax(0,1fr)`: matn ustunning eng kichik kengligiga (min-content) qo'shilmaydi, lekin joy bo'lsa
+ * to'liq ko'rinadi (max-content) — jadval avval bo'sh joyni beradi, yetmasa faqat kerakli qadar kesadi.
+ * `max-w` — bitta juda uzun qiymat ustunni haddan tashqari kengaytirmasin.
+ */
+const FitText = ({
+    text,
+    wide = false,
+    tabletOnly = false,
+    className,
+}: {
+    text?: string | null;
+    wide?: boolean;
+    /** Faqat < 1024 da (market jadvalida mijoz ostidagi tuman). */
+    tabletOnly?: boolean;
+    className?: string;
+}) => (
+    <div
+        className={cx(
+            tabletOnly ? "hidden max-lg:grid" : "grid",
+            "grid-cols-[minmax(0,1fr)]",
+            wide ? "max-w-[260px]" : "max-w-[220px]",
+            className,
+        )}
+    >
+        <span className="truncate" title={text ?? undefined}>
+            {text || "—"}
+        </span>
+    </div>
+);
+/**
+ * 1024–1439 da katak chekkasi `tight` zichlikdagidek (ichki 8, birinchi/oxirgi 16 px) — 7 ustun shunda sig'adi.
+ * Faqat sukut zichlikda (amallar/tanlov ustuni bor jadval allaqachon `tight`).
+ */
+const CELL_PAD_BELOW_1440 = "lg:max-[1439px]:px-2 lg:max-[1439px]:first:pl-4 lg:max-[1439px]:last:pr-4";
+
 /** Server sukuti (OpenAPI `GET /orders`: «default created_at desc») — URL'da saralash yo'q bo'lsa shu ko'rinadi. */
 const DEFAULT_SORT: DataTableSort = { key: "createdAt", direction: "desc" };
 
@@ -113,6 +153,8 @@ const OrdersTable = ({
     const isMarket = role === "market";
     const hasActions = Boolean(onSellOrder || onCancelOrder || onRollbackOrder);
     const hasSelection = Boolean(isSelectable && onSelectChange && onSelectAll);
+    const density = hasActions || hasSelection ? "tight" : isMarket ? "tablet-tight" : "default";
+    const cellPad = density === "default" ? CELL_PAD_BELOW_1440 : undefined;
     // Menejer jadvalida (amallar ustuni) planshetda summa ostida market yo'q (maket `manager-orders-list-*`).
     const showTabletMarket = !isMarket && !hasActions;
 
@@ -261,6 +303,7 @@ const OrdersTable = ({
             {
                 id: "createdAt",
                 header: t("ordersList.columns.order"),
+                className: cellPad,
                 sortable: true,
                 firstDirection: "desc",
                 sortTitle: t("ordersList.sortByDate"),
@@ -290,16 +333,15 @@ const OrdersTable = ({
             {
                 id: "customer",
                 header: t("ordersList.columns.customer"),
+                className: cellPad,
                 cell: (order) => (
                     <>
-                        <div className="whitespace-nowrap font-semibold text-text">{order.customer?.name ?? "—"}</div>
+                        <FitText wide text={order.customer?.name} className="font-semibold text-text" />
                         <div className="whitespace-nowrap text-[13px] text-text-muted">
                             {formatPhone(order.customer?.phone_number) || "—"}
                         </div>
                         {isMarket ? (
-                            <div className="hidden whitespace-nowrap text-[13px] text-text-muted max-lg:block">
-                                {order.district?.name ?? "—"}
-                            </div>
+                            <FitText tabletOnly text={order.district?.name} className="text-[13px] text-text-muted" />
                         ) : null}
                     </>
                 ),
@@ -308,11 +350,12 @@ const OrdersTable = ({
                 id: "area",
                 header: t("ordersList.columns.area"),
                 hideBelow: "lg",
+                className: cellPad,
                 cell: (order) => (
                     <>
-                        <div className="whitespace-nowrap">{order.district?.name ?? "—"}</div>
+                        <FitText text={order.district?.name} />
                         {order.district?.region?.name ? (
-                            <div className="whitespace-nowrap text-[13px] text-text-muted">{order.district.region.name}</div>
+                            <FitText text={order.district.region.name} className="text-[13px] text-text-muted" />
                         ) : null}
                     </>
                 ),
@@ -324,8 +367,10 @@ const OrdersTable = ({
                 id: "market",
                 header: t("ordersList.columns.market"),
                 hideBelow: "lg",
-                className: "whitespace-nowrap",
-                cell: (order) => order.market?.name ?? "—",
+                className: cellPad,
+                cell: (order) => (
+                    <FitText text={order.market?.name} />
+                ),
             });
         }
 
@@ -333,12 +378,14 @@ const OrdersTable = ({
             {
                 id: "status",
                 header: t("ordersList.columns.status"),
+                className: cellPad,
                 sortable: true,
                 cell: (order) => <div className="flex flex-wrap items-center gap-1">{statusBadges(order)}</div>,
             },
             {
                 id: "delivery",
                 header: t("ordersList.columns.delivery"),
+                className: cellPad,
                 // Market jadvalida planshetda ham ko'rinadi (maket `market-orders-list`).
                 hideBelow: isMarket ? undefined : "lg",
                 cell: deliveryBadge,
@@ -354,13 +401,17 @@ const OrdersTable = ({
                 ) : (
                     t("ordersList.columns.amount")
                 ),
+                className: cellPad,
                 sortable: true,
                 align: "end",
                 cell: (order) => (
                     <>
                         <div className="font-semibold text-text">{money(order.total_price)}</div>
                         {showTabletMarket ? (
-                            <div className="hidden text-[13px] font-normal text-text-muted max-lg:block">
+                            <div
+                                className="ml-auto hidden max-w-[160px] truncate text-[13px] font-normal text-text-muted max-lg:block"
+                                title={order.market?.name ?? undefined}
+                            >
                                 {order.market?.name ?? "—"}
                             </div>
                         ) : null}
@@ -385,6 +436,7 @@ const OrdersTable = ({
         exactBadge,
         getOrderHref,
         handleCopyOrderId,
+        cellPad,
         hasActions,
         isMarket,
         isPinned,
@@ -417,7 +469,10 @@ const OrdersTable = ({
                         className={cx("flex min-w-0 flex-col gap-1 px-4 py-3 text-text", selectable && "pl-12")}
                     >
                         <span className="flex min-w-0 justify-between gap-2">
-                            <span className="min-w-0 font-semibold">{order.customer?.name ?? "—"}</span>
+                            {/* Uzun ism kartani cho'zmaydi — ko'pi bilan 2 qator, to'liq matn `title` da (D-02 telefonda). */}
+                            <span className="line-clamp-2 min-w-0 font-semibold wrap-break-word" title={order.customer?.name ?? undefined}>
+                                {order.customer?.name ?? "—"}
+                            </span>
                             <span className="whitespace-nowrap font-semibold">{money(order.total_price)}</span>
                         </span>
                         <span className="text-[13px] text-text-muted">
@@ -530,7 +585,7 @@ const OrdersTable = ({
                     label={label}
                     sort={onSortChange ? (sortConfig ?? DEFAULT_SORT) : undefined}
                     onSortChange={onSortChange}
-                    density={hasActions || hasSelection ? "tight" : isMarket ? "tablet-tight" : "default"}
+                    density={density}
                     selection={selection}
                     onRowClick={onRowClick}
                     renderCard={renderCard}

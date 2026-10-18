@@ -38,6 +38,8 @@ export interface DashboardMyStat {
   canceledOrders: number;
   profit: number;
   successRate: number;
+  /** Market: hali yakunlanmagan (yo'lda, kutilmoqda, filialda) buyurtmalar — backend `market_stat`. */
+  inProgress?: number;
 }
 
 export interface BranchDashboardOrdersCard {
@@ -137,9 +139,10 @@ export interface TopBranch {
 }
 
 /**
- * Reyting davri (9zbSDkUI) — backend `topMarketsMeta` / `topBranchesMeta`.
- * `last_30_days`: qisqa davr tanlanganda reyting oxirgi 30 kun bo'yicha;
- * `selected_range`: tanlangan oraliq (`from` / `to`). Eski backendda yo'q — `null`.
+ * Reyting meta'si (9zbSDkUI, PQt3n1N0) — backend `topMarketsMeta` / `topBranchesMeta` / `topCouriersMeta`.
+ * `last_30_days`: qisqa davr tanlanganda reyting oxirgi 30 kun bo'yicha; `selected_range`: tanlangan oraliq
+ * (`from` / `to`). `minOrders` — reytingga kirish chegarasi, `filteredOut` — chegaradan o'tmay chetda
+ * qolganlar soni. Eski backendda yo'q — `null`.
  */
 export interface RankingMeta {
   periodRule: string | null;
@@ -147,6 +150,7 @@ export interface RankingMeta {
   from: string | null;
   to: string | null;
   minOrders: number | null;
+  filteredOut: number | null;
 }
 
 export interface DashboardResponse {
@@ -164,6 +168,10 @@ export interface DashboardResponse {
     topMarketsMeta?: RankingMeta | null;
     topBranchesMeta?: RankingMeta | null;
     branchDashboard?: BranchDashboardPayload | null;
+    topCouriersMeta?: RankingMeta | null;
+    /** Kuryer: reytingdagi o'rni (top-10 dan tashqarida ham), ro'yxatda bo'lmasa `null`. */
+    myRank?: number | null;
+    myRanking?: TopCourier | null;
     /** Qisman nosozlik (VkwhHqvW): bo'lak olinmadi — raqamlar 0 emas, «olinmadi» ko'rsatiladi. */
     degraded?: boolean;
     /** Olinmagan bo'laklar — javob kalitlari (`topMarkets`, `couriers`, `branchDashboard` …). */
@@ -355,7 +363,7 @@ const normalizeTopOperator = (value: unknown): TopOperator => {
 const toOptionalText = (value: unknown): string | null =>
   typeof value === "string" && value.trim() ? value.trim() : null;
 
-/** `topMarketsMeta` / `topBranchesMeta` (snake_case ham): obyekt bo'lmasa — `null`. */
+/** `topMarketsMeta` / `topBranchesMeta` / `topCouriersMeta` (snake_case ham): obyekt bo'lmasa — `null`. */
 export const normalizeRankingMeta = (value: unknown): RankingMeta | null => {
   if (!value || typeof value !== "object") return null;
   const meta = value as UnknownRecord;
@@ -365,6 +373,7 @@ export const normalizeRankingMeta = (value: unknown): RankingMeta | null => {
     from: toOptionalText(meta.from ?? meta.selected_from ?? meta.selectedFrom),
     to: toOptionalText(meta.to ?? meta.selected_to ?? meta.selectedTo),
     minOrders: toOptionalNumber(meta.min_orders ?? meta.minOrders) ?? null,
+    filteredOut: toOptionalNumber(meta.filtered_out ?? meta.filteredOut) ?? null,
   };
 };
 
@@ -513,6 +522,7 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
             canceledOrders: toNumber(myStat.canceledOrders ?? myStat.canceled_orders),
             profit: toNumber(myStat.profit),
             successRate: toNumber(myStat.successRate ?? myStat.success_rate),
+            inProgress: toOptionalNumber(myStat.inProgress ?? myStat.in_progress),
           }
         : undefined,
       orders: {
@@ -611,6 +621,12 @@ export const normalizeDashboardResponse = (payload: unknown): DashboardResponse 
       topMarketsMeta: normalizeRankingMeta(data.topMarketsMeta ?? data.top_markets_meta),
       topBranchesMeta: normalizeRankingMeta(data.topBranchesMeta ?? data.top_branches_meta),
       branchDashboard: normalizeBranchDashboard(branchDashboard),
+      topCouriersMeta: normalizeRankingMeta(data.topCouriersMeta ?? data.top_couriers_meta),
+      myRank: toOptionalNumber(data.myRank ?? data.my_rank) ?? null,
+      myRanking:
+        Object.keys(asRecord(data.myRanking ?? data.my_ranking)).length > 0
+          ? normalizeTopCourier(data.myRanking ?? data.my_ranking)
+          : null,
       ...readPartialFailure(response, data, DASHBOARD_PARTS),
     },
   };
@@ -713,6 +729,8 @@ const useGetDashboard = (params?: AnalyticsDateParams, enabled = true, scope = "
     enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+    // Dashboard bloklari xatoni o'zi ko'rsatadi (`ErrorState`); oldingi davr so'rovi — faqat delta yashirinadi.
+    meta: { silentError: true },
   });
 
 const useGetKpi = (params?: AnalyticsDateParams, enabled = true, scope = "anonymous") =>
@@ -725,6 +743,8 @@ const useGetKpi = (params?: AnalyticsDateParams, enabled = true, scope = "anonym
     enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+    // Dashboard bloklari xatoni o'zi ko'rsatadi (`ErrorState`); oldingi davr so'rovi — faqat delta yashirinadi.
+    meta: { silentError: true },
   });
 
 const useGetRevenue = (params: RevenueParams, enabled = true, scope = "anonymous") =>
@@ -737,6 +757,8 @@ const useGetRevenue = (params: RevenueParams, enabled = true, scope = "anonymous
     enabled,
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+    // Dashboard bloklari xatoni o'zi ko'rsatadi (`ErrorState`); oldingi davr so'rovi — faqat delta yashirinadi.
+    meta: { silentError: true },
   });
 
 export const useDashboard = () => {

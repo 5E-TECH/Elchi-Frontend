@@ -94,7 +94,8 @@ test.describe("Market mahsulotlari: sahifa va qidiruv (3qDsJpfW) — 1440px", ()
     await p.goto("/products");
     await expect(p.getByText("Mahsulot 01", { exact: true })).toBeVisible({ timeout: 90_000 });
 
-    await p.getByPlaceholder("Qidirish...").fill("Mahsulot 13");
+    // Dizayn v2 `/products` (maket `market-products-list`): qidiruv maydoni — `searchbox`, nomi locale'dan.
+    await p.getByRole("searchbox", { name: "Mahsulotlarni nomi bo'yicha qidirish" }).fill("Mahsulot 13");
 
     await expect.poll(() => requests.at(-1)?.get("search")).toBe("Mahsulot 13");
     expect(requests.at(-1)?.get("page")).toBe("1");

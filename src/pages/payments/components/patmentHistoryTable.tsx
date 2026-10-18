@@ -1,44 +1,28 @@
-import { memo, useMemo, useState } from "react";
-import { Banknote, Calendar, History, UserRound } from "lucide-react";
-import { Table } from "../../../shared/components/Table/Table";
-import type { ColumnConfig } from "../../../shared/components/Table/Table.types";
-import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
+// dizayn-v2: superadmin-payments-overview, admin-payments-overview, manager-payments-overview
+import { memo, useCallback, useMemo, useState, type ReactNode } from "react";
+import { ArrowDownLeft, ArrowUpRight, ChevronRight, Inbox, ListFilter } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import Pagination from "../../../shared/components/pagination";
-import { resolvePaymentActorName } from "./paymentHistoryActor";
-import { getPaymentSourceTypeLabel } from "./paymentSourceType";
+import { cx } from "../../../shared/lib/cx";
+import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
+import { formatSignedMoneyLocalized } from "../../../shared/lib/formatMoney";
+import {
+  Badge,
+  Button,
+  DataTable,
+  EmptyState,
+  ErrorState,
+  IconButton,
+  Pagination as PaginationControl,
+  QueryBoundary,
+  SkeletonTable,
+  type DataTableColumn,
+} from "../../../shared/ui/primitives";
+import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
+import { resolvePaymentActorName, resolvePaymentCounterparty } from "./paymentHistoryActor";
+import { getCashboxTypeLabel, getPaymentSourceTitle, getViewerOperationType } from "./paymentSourceType";
 import type { PaymentAck } from "./paymentAck";
 
-// ─── Utils ────────────────────────────────────────────────────────────────────
-
-const fmt = (n: number) => n.toLocaleString("uz-UZ");
-
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return "-";
-  try {
-    const date = new Date(dateStr);
-    const day = String(date.getDate()).padStart(2, "0");
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, "0");
-    const minutes = String(date.getMinutes()).padStart(2, "0");
-    const seconds = String(date.getSeconds()).padStart(2, "0");
-    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-  } catch {
-    return dateStr;
-  }
-};
-
-const getCashboxTypeLabel = (value: string | undefined, t: (key: string) => string) => {
-  if (!value) return "-";
-  if (value === "main") return t("mainCashbox");
-  if (value === "couriers" || value === "courier") return t("courierShort");
-  if (value === "markets" || value === "market") return t("marketShort");
-  if (value === "branch") return t("branchMainCashboxLabel");
-  return value;
-};
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Types (boshqa «Moliya» fayllari import qiladi — o'zgarmaydi, faqat additiv) ───────────────
 
 export interface PaymentRow {
   id: string;
@@ -102,12 +86,41 @@ interface PaymentHistoryTableProps {
   onPageChange?: (page: number) => void;
   onItemsPerPageChange?: (limit: number) => void;
   currentPage?: number;
+  /** So'rov xatosi (`ErrorState` turi: tarmoq, server …). */
+  error?: unknown;
+  /** Fonda yangilanmoqda (sahifa/filtr almashdi) — ro'yxat xiralashadi. */
+  isFetching?: boolean;
+  /** Joriy foydalanuvchi roli — manba va kassa yorliqlari maketdagidek (`getPaymentSourceTitle`). */
+  viewerRole?: string | null;
+  /** Filtr faol: bo'sh holatda «Filtrlarni tozalash» amali. */
+  onClearFilters?: () => void;
+  clearFiltersLabel?: string;
 }
 
-// ─── PaymentHistoryTable ──────────────────────────────────────────────────────
+const PAGE_SIZES = [10, 20, 50, 100] as const;
 
+const rowDate = (row: PaymentRow) => row.payment_date || row.createdAt || row.created_at || "";
+
+const rowCashboxType = (row: PaymentRow) => row.cashbox_type || row.cashbox?.cashbox_type;
+
+/** Yaratgan xodim ismi; noma'lum — «—». */
+const actorName = (row: PaymentRow) => {
+  const name = resolvePaymentActorName(row);
+  return name === "-" ? "—" : name;
+};
+
+/**
+ * «OPERATSIYALAR TARIXI» RO'YXATI — /payments (dizayn v2, maketlar `*-payments-overview`).
+ *
+ * Kartaning tana qismi: `DataTable` (Sana · Yaratgan · Manba · Kassa · Operatsiya · Summa · ›), sahifalash
+ * («1–10 / 128 ta operatsiya», qatorlar soni, sahifalar) va qator tafsiloti (`FinanceHistoryDetailPopup`).
+ * Planshetda (< 1024) «Yaratgan» Sana ostida, «Kassa» yashirin (menejerda — Operatsiya ostida); telefonda —
+ * kartalar: «sarlavha · summa», «qarshi tomon · kassa», «badge · sana · yaratgan». Tablar va filtrlar —
+ * sahifada (karta boshida). Holatlar: skelet, bo'sh («Operatsiyalar topilmadi»; filtr bo'lsa — tozalash),
+ * xato + «Qayta urinish».
+ */
 const PaymentHistoryTable = ({
-  data = [],
+  data,
   isLoading = false,
   isError = false,
   onRetry,
@@ -115,219 +128,264 @@ const PaymentHistoryTable = ({
   onPageChange,
   onItemsPerPageChange,
   currentPage,
+  error,
+  isFetching = false,
+  viewerRole,
+  onClearFilters,
+  clearFiltersLabel,
 }: PaymentHistoryTableProps) => {
-  const { t } = useTranslation("payments");
+  const { t, i18n } = useTranslation("payments");
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const [selectedRow, setSelectedRow] = useState<PaymentRow | null>(null);
+  const isManager = String(viewerRole ?? "").toLowerCase() === "manager";
 
-  const activePage = pagination?.page ?? currentPage ?? 1;
-  const safeLimit = pagination?.limit ?? 20;
-  const safeTotal = pagination?.total ?? data.length;
-  const totalPages =
-    pagination?.totalPages ?? Math.max(1, Math.ceil(safeTotal / safeLimit));
-  const hasPagination = Boolean(pagination && onPageChange);
-  const rowOffset = (activePage - 1) * safeLimit;
+  const dateText = useCallback(
+    (row: PaymentRow) => {
+      const value = rowDate(row);
+      return value ? formatDateTimeLocalized(value, { language }) : "—";
+    },
+    [language],
+  );
+  const sourceTitle = useCallback(
+    (row: PaymentRow) => getPaymentSourceTitle(row.source_type, t, { role: viewerRole, cashboxType: rowCashboxType(row) }),
+    [t, viewerRole],
+  );
+  const cashboxLabel = useCallback(
+    (row: PaymentRow) => getCashboxTypeLabel(rowCashboxType(row), t, viewerRole),
+    [t, viewerRole],
+  );
+  const counterparty = useCallback(
+    (row: PaymentRow) => resolvePaymentCounterparty(row, (id) => t("v2Common.orderNumber", { id })),
+    [t],
+  );
+  const direction = useCallback((row: PaymentRow) => getViewerOperationType(row, viewerRole), [viewerRole]);
 
-  const columns = useMemo<ColumnConfig<PaymentRow>[]>(
+  const operationBadge = useCallback(
+    (row: PaymentRow) => {
+      const value = direction(row);
+      if (!value) return <span className="text-text-muted">—</span>;
+      return (
+        <Badge icon={value === "income" ? ArrowDownLeft : ArrowUpRight}>
+          {t(value === "income" ? "v2Common.income" : "v2Common.expense")}
+        </Badge>
+      );
+    },
+    [direction, t],
+  );
+
+  const amountNode = useCallback(
+    (row: PaymentRow) => {
+      const value = direction(row);
+      const amount = Math.abs(Number(row.amount) || 0);
+      return (
+        <span
+          className={cx(
+            "whitespace-nowrap font-semibold",
+            value === "income" ? "text-success-fg" : value === "expense" ? "text-danger-fg" : "text-text",
+          )}
+        >
+          {formatSignedMoneyLocalized(value === "expense" ? -amount : amount, { language })}
+        </span>
+      );
+    },
+    [direction, language],
+  );
+
+  const openLabel = useCallback(
+    (row: PaymentRow) => t("v2Common.openDetail", { title: sourceTitle(row), date: dateText(row) }),
+    [dateText, sourceTitle, t],
+  );
+
+  const columns = useMemo<DataTableColumn<PaymentRow>[]>(
     () => [
       {
-        key: "id",
-        label: "#",
-        width: "52px",
-        render: (_, __, i) => (
-          <span className="text-sm font-bold text-main">
-            {rowOffset + i + 1}
-          </span>
+        id: "date",
+        header: t("v2Overview.history.columns.date"),
+        className: "whitespace-nowrap",
+        cell: (row) => (
+          <>
+            <div>{dateText(row)}</div>
+            <div className="hidden text-[13px] text-text-muted max-lg:block">{actorName(row)}</div>
+          </>
         ),
       },
       {
-        key: "created_by",
-        label: t("createdBy"),
-        width: "200px",
-        render: (_, row) => (
-          <span className="text-sm font-semibold text-gray-900 dark:text-white truncate block max-w-45">
-            {resolvePaymentActorName(row)}
-          </span>
-        ),
+        id: "createdBy",
+        header: t("v2Overview.history.columns.createdBy"),
+        hideBelow: "lg",
+        className: "whitespace-nowrap",
+        cell: (row) => actorName(row),
       },
       {
-        key: "source_type",
-        label: t("sourceType"),
-        width: "140px",
-        render: (val) => (
-          <span className="text-sm text-main/80 font-medium">
-            {getPaymentSourceTypeLabel(val as string | undefined, t)}
-          </span>
-        ),
-      },
-      {
-        key: "cashbox_type",
-        label: t("cashboxType"),
-        width: "150px",
-        render: (val, row) => {
-          const type = (val || row.cashbox?.cashbox_type) as string | undefined;
+        id: "source",
+        header: t("v2Overview.history.columns.source"),
+        cell: (row) => {
+          const sub = counterparty(row);
           return (
-            <span className="text-sm text-gray-700 dark:text-white/70">
-              {getCashboxTypeLabel(type, t)}
-            </span>
+            <>
+              <button
+                type="button"
+                onClick={() => setSelectedRow(row)}
+                className="text-left font-semibold text-text hover:text-action-fg hover:underline"
+              >
+                {sourceTitle(row)}
+              </button>
+              {sub ? <div className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{sub}</div> : null}
+            </>
           );
         },
       },
       {
-        key: "operation_type",
-        label: t("operationType"),
-        width: "160px",
-        render: (val) => {
-          const isIncome = val === "income";
-          return (
-            <span
-              className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-semibold whitespace-nowrap ${isIncome
-                ? "bg-emerald-500/15 text-emerald-400"
-                : "bg-rose-500/15 text-rose-400"
-                }`}
-            >
-              {val ? (isIncome ? t("income") : t("expense")) : "-"}
-            </span>
-          );
-        },
+        id: "cashbox",
+        header: t("v2Overview.history.columns.cashbox"),
+        hideBelow: "lg",
+        className: "whitespace-nowrap",
+        cell: (row) => (rowCashboxType(row) ? cashboxLabel(row) : "—"),
       },
       {
-        key: "amount",
-        label: t("amount"),
-        width: "180px",
-        render: (val, row) => {
-          const isIncome = row.operation_type === "income";
-          return (
-            <span
-              className={`text-sm font-bold whitespace-nowrap ${isIncome ? "text-emerald-400" : "text-rose-400"
-                }`}
-            >
-              {isIncome ? "+" : "-"}
-              {fmt(Math.abs(val))} {t("currency")}
-            </span>
-          );
-        },
+        id: "operation",
+        header: t("v2Overview.history.columns.operation"),
+        cell: (row) => (
+          <>
+            <div>{operationBadge(row)}</div>
+            {isManager && rowCashboxType(row) ? (
+              <div className="mt-1 hidden text-[13px] text-text-muted max-lg:block">{cashboxLabel(row)}</div>
+            ) : null}
+          </>
+        ),
       },
       {
-        key: "payment_date",
-        label: t("paymentDate"),
-        width: "210px",
-        render: (val, row) => (
-          <span className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap">
-            <Calendar size={14} className="shrink-0" />
-            {formatDate(
-              (val || row.createdAt || row.created_at || "") as string,
-            )}
-          </span>
+        id: "amount",
+        header: t("v2Overview.history.columns.amount"),
+        align: "end",
+        cell: amountNode,
+      },
+      {
+        id: "detail",
+        header: <span className="sr-only">{t("v2Overview.history.columns.detail")}</span>,
+        className: "w-14",
+        cellClassName: "text-right",
+        cell: (row) => (
+          <IconButton
+            size="sm"
+            variant="ghost"
+            icon={ChevronRight}
+            label={openLabel(row)}
+            onClick={() => setSelectedRow(row)}
+            className="text-text-muted"
+          />
         ),
       },
     ],
-    [rowOffset, t],
+    [amountNode, cashboxLabel, counterparty, dateText, isManager, openLabel, operationBadge, sourceTitle, t],
+  );
+
+  // Telefon kartasi (maket `.el-list-item`): sarlavha + summa · qarshi tomon · kassa · badge + sana · yaratgan.
+  const renderCard = useCallback(
+    (row: PaymentRow) => {
+      const sub = [counterparty(row), rowCashboxType(row) ? cashboxLabel(row) : null].filter(Boolean).join(" · ");
+      return (
+        <button
+          type="button"
+          aria-label={openLabel(row)}
+          onClick={() => setSelectedRow(row)}
+          className="flex min-h-14 w-full flex-col gap-1 px-4 py-3 text-left text-sm text-text hover:bg-row-hover"
+        >
+          <span className="flex w-full min-w-0 justify-between gap-2">
+            <span className="min-w-0 font-semibold">{sourceTitle(row)}</span>
+            {amountNode(row)}
+          </span>
+          {sub ? <span className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{sub}</span> : null}
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            {operationBadge(row)}
+            <span className="text-[13px] text-text-muted">
+              <span className="whitespace-nowrap">{dateText(row)}</span> · {actorName(row)}
+            </span>
+          </span>
+        </button>
+      );
+    },
+    [amountNode, cashboxLabel, counterparty, dateText, openLabel, operationBadge, sourceTitle],
+  );
+
+  const total = pagination?.total ?? data?.length ?? 0;
+  const page = pagination?.page ?? currentPage ?? 1;
+  const pageSize = pagination?.limit ?? 10;
+  const showPagination = Boolean(pagination && onPageChange && total > 0 && !isError);
+
+  const emptyState: ReactNode = onClearFilters ? (
+    <EmptyState
+      icon={ListFilter}
+      title={t("v2Overview.history.empty")}
+      description={t("v2Overview.history.filteredEmptyDescription")}
+      action={
+        <Button variant="secondary" onClick={onClearFilters}>
+          {clearFiltersLabel}
+        </Button>
+      }
+    />
+  ) : (
+    <EmptyState
+      icon={Inbox}
+      title={t("v2Overview.history.empty")}
+      description={t("v2Overview.history.emptyDescription")}
+    />
   );
 
   return (
     <>
-      <div className="bg-primary dark:bg-maindark rounded-2xl border border-gray-200 dark:border-glass-border shadow-sm overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-glass-border">
-          <div className="flex items-center gap-2">
-            <History size={16} className="text-main" />
-            <span className="text-sm font-bold text-gray-700 dark:text-white/70">
-              {t("historyLower")}
-            </span>
-            {pagination && (
-              <span className="text-xs text-gray-400 dark:text-white/40 ml-1">
-                ·{" "}
-                <span className="font-bold text-main">{pagination.total}</span>{" "}
-                {t("total")}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Table */}
-        <Table<PaymentRow>
-          data={data}
-          columns={columns}
-          loading={isLoading}
-          error={isError}
-          onRetry={onRetry}
-          dense
-          keyExtractor={(row) => row.id}
-          emptyMessage={t("financeHistoryNotFound")}
-          onRowClick={(row) => setSelectedRow(row)}
-          mobileRowRender={(row, index) => {
-            const isIncome = row.operation_type === "income";
-            const rowNumber = rowOffset + index + 1;
-            const paymentDate = formatDate(
-              (row.payment_date || row.createdAt || row.created_at || "") as string,
-            );
-            const sourceLabel = getPaymentSourceTypeLabel(row.source_type, t);
-            const cashboxLabel = getCashboxTypeLabel(row.cashbox_type || row.cashbox?.cashbox_type, t);
-
-            return (
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex min-w-0 items-start gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-main/15 bg-main/10 text-main shadow-sm dark:border-white/10 dark:bg-white/8 dark:text-white">
-                    <UserRound size={16} />
-                  </div>
-
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
-                      {resolvePaymentActorName(row)}
-                    </p>
-                    <p className="mt-0.5 flex items-center gap-1 text-[13px] font-medium text-slate-500 dark:text-white/65">
-                      <Calendar size={13} />
-                      <span className="truncate">{paymentDate}</span>
-                    </p>
-                    <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-white/60">
-                      <span>{sourceLabel}</span>
-                      <span>•</span>
-                      <span>{cashboxLabel}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex shrink-0 flex-col items-end gap-2">
-                  <span className="text-xs font-semibold text-main">#{rowNumber}</span>
-                  <span
-                    className={`inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-semibold ${isIncome ? "bg-emerald-500/15 text-emerald-400" : "bg-rose-500/15 text-rose-400"}`}
-                  >
-                    {row.operation_type ? (isIncome ? t("income") : t("expense")) : "-"}
-                  </span>
-                  <span className={`inline-flex items-center gap-1 text-sm font-bold ${isIncome ? "text-emerald-400" : "text-rose-400"}`}>
-                    <Banknote size={13} />
-                    {isIncome ? "+" : "-"}{fmt(Math.abs(row.amount))} {t("currency")}
-                  </span>
-                </div>
-              </div>
-            );
-          }}
-        />
-
-        {/* Pagination */}
-        {hasPagination && onPageChange && (
-          <div className="flex items-center justify-between px-5 py-3.5 border-t border-gray-100 dark:border-glass-border">
-            <span className="text-xs text-gray-500 dark:text-white/40">
-              {t("pageLabel", { page: activePage, totalPages })}
-            </span>
-            <Pagination
-              totalItems={safeTotal}
-              itemsPerPage={safeLimit}
-              currentPage={activePage}
-              onPageChange={onPageChange}
-              onItemsPerPageChange={onItemsPerPageChange}
-              className="w-full pt-0 sm:w-auto"
-              summary={null}
-            />
-          </div>
+      <QueryBoundary
+        query={{ data, isLoading, isError, error, refetch: onRetry, isFetching }}
+        loadingLabel={t("v2Overview.history.loading")}
+        loading={
+          <SkeletonTable
+            framed={false}
+            rows={8}
+            columns={[
+              t("v2Overview.history.columns.date"),
+              t("v2Overview.history.columns.createdBy"),
+              t("v2Overview.history.columns.source"),
+              t("v2Overview.history.columns.operation"),
+              t("v2Overview.history.columns.amount"),
+            ]}
+          />
+        }
+        empty={emptyState}
+        error={(queryError, retry) => (
+          <ErrorState error={queryError} title={t("v2Overview.history.loadError")} onRetry={retry} />
         )}
-      </div>
+        className="border-t border-border"
+      >
+        {(rows, { isRefetching }) => (
+          <DataTable
+            rows={rows}
+            columns={columns}
+            getRowKey={(row, index) => String(row.id ?? index)}
+            label={t("v2Overview.history.label")}
+            cardsLabel={t("v2Overview.history.cardsLabel")}
+            onRowClick={(row) => setSelectedRow(row)}
+            renderCard={renderCard}
+            busy={isRefetching}
+          />
+        )}
+      </QueryBoundary>
 
-      {/* Detail popup */}
-      <FinanceHistoryDetailPopup
-        row={selectedRow}
-        onClose={() => setSelectedRow(null)}
-      />
+      {showPagination && onPageChange ? (
+        <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-3 max-md:px-4">
+          <PaginationControl
+            page={page}
+            pageSize={pageSize}
+            total={total}
+            onPageChange={onPageChange}
+            onPageSizeChange={onItemsPerPageChange}
+            pageSizeOptions={PAGE_SIZES}
+            summary={(range) => t("v2Common.paginationOperations", range)}
+            className="w-full"
+          />
+        </div>
+      ) : null}
+
+      <FinanceHistoryDetailPopup row={selectedRow} onClose={() => setSelectedRow(null)} />
     </>
   );
 };

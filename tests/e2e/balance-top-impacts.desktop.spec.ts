@@ -70,18 +70,22 @@ test.describe("Balans → Tahlil: tranzaksiyalar sahifalashi (vmLTsAok) — 1440
     });
     await page.goto("/financial-balance?tab=analysis");
 
+    // Dizayn v2: jadval (`DataTable`) — birinchi ustun tartib raqami («#» belgisiz), sahifalagich — `Pagination`
+    // primitivi (1-sahifada «1 2 3 … 19», «Keyingi sahifa»).
+    const table = page.getByRole("table", { name: "Eng katta ta'sir ko'rsatgan tranzaksiyalar" });
+    const indexCell = (value: string) => table.getByRole("cell", { name: value, exact: true });
     await expect(page.getByText("186 ta jami")).toBeVisible({ timeout: 90_000 });
-    await expect(page.getByText("#10", { exact: true })).toBeVisible();
-    await expect(page.getByText("#11", { exact: true })).toHaveCount(0);
+    await expect(indexCell("10")).toBeVisible();
+    await expect(indexCell("11")).toHaveCount(0);
     expect(requests.every((params) => Number(params.get("limit")) <= 100)).toBe(true);
     await expect(page.getByRole("button", { name: "19", exact: true })).toBeVisible();
 
-    await page.getByRole("button", { name: "5", exact: true }).click();
-    for (let step = 0; step < 6; step += 1) await page.getByRole("button", { name: "Keyingi" }).click();
+    for (let step = 0; step < 10; step += 1) await page.getByRole("button", { name: "Keyingi sahifa" }).click();
 
     await expect.poll(() => requests.at(-1)?.get("page")).toBe("11");
-    await expect(page.getByText("#101", { exact: true })).toBeVisible();
-    await expect(page.getByText("#110", { exact: true })).toBeVisible();
+    await expect(indexCell("101")).toBeVisible();
+    await expect(indexCell("110")).toBeVisible();
+    await expect(indexCell("100")).toHaveCount(0);
     expect(requests.at(-1)?.get("limit")).toBe("10");
   });
 });

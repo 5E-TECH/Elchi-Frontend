@@ -1,68 +1,110 @@
 {
+  "v2MyCashbox": {
+    "title": {
+      "market": "To'lovlar",
+      "courier": "Kassa",
+      "manager": "Kassa"
+    },
+    "subtitle": {
+      "market": "Market kassasi: balans va Elchi bilan operatsiyalar tarixi",
+      "courier": "Kuryer kassasi: qo'lingizdagi pul va operatsiyalar tarixi",
+      "manager": "Filial kassasi: balans va operatsiyalar tarixi"
+    },
+    "dateAll": "Barchasi",
+    "loading": "Kassa ma'lumoti yuklanmoqda",
+    "loadError": "Kassa ma'lumotini yuklab bo'lmadi",
+    "balance": {
+      "title": "Umumiy balans",
+      "hint": {
+        "market": "Elchi sizga to'lashi kerak bo'lgan summa",
+        "courier": "Qo'lingizdagi pul",
+        "manager": "Filial kassasidagi pul"
+      },
+      "hide": "Balansni yashirish",
+      "show": "Balansni ko'rsatish",
+      "hidden": "Balans yashirilgan",
+      "note": {
+        "market": "Sotuvlar balansni oshiradi; Elchi o'tkazgan to'lovlar, bekor qilishlar va xarajatlar kamaytiradi.",
+        "courier": "Sotuvlar balansni oshiradi; filialga topshirilgan pul va bekor qilishlar kamaytiradi."
+      },
+      "owner": "Kassa egasi",
+      "counterparty": "Qarshi tomon",
+      "counterpartyHq": "Elchi HQ",
+      "cashboxType": "Kassa turi",
+      "today": "Bugun",
+      "todayLabel": "Bugun: kirim {{income}}, chiqim {{expense}}",
+      "income": "Kirim",
+      "expense": "Chiqim"
+    },
+    "history": {
+      "title": "Operatsiyalar tarixi",
+      "subtitle": "Kassangizdagi kirim va chiqimlar",
+      "subtitleCourier": "Kassangizdagi kirim va chiqimlar. Qatorni bosib tafsilotni oching.",
+      "tabs": "Tarix turi",
+      "all": "Barchasi",
+      "transfers": "To'lov o'tkazmalari",
+      "label": "Operatsiyalar tarixi",
+      "cardsLabel": "Operatsiyalar",
+      "columns": {
+        "date": "Sana",
+        "source": "Manba",
+        "operation": "Operatsiya",
+        "type": "Turi",
+        "paymentType": "To'lov turi",
+        "amount": "Summa",
+        "balance": "Balans",
+        "detail": "Tafsilot"
+      },
+      "sortDate": "Sana bo'yicha saralash",
+      "sortAmount": "Summa bo'yicha saralash",
+      "receivedBy": "Qabul qildi:",
+      "comment": "Izoh:",
+      "correction": "Tuzatish",
+      "titleWithOrder": "{{title}} · №{{id}}",
+      "openTitleWithOrder": "{{title}} №{{id}}",
+      "balanceAfter": "Balans: {{amount}}",
+      "cardLabel": "{{title}}, {{method}}, {{direction}} {{amount}}, balans {{balance}}, {{date}}",
+      "totalOperations": "Jami {{total}} ta operatsiya",
+      "totalTransfers": "Jami {{total}} ta o'tkazma",
+      "paginationTransfers": "{{from}}–{{to}} / {{total}} ta o'tkazma",
+      "empty": "Operatsiyalar topilmadi",
+      "emptyDescription": "Kassangizdagi kirim va chiqimlar shu yerda ko'rinadi",
+      "transfersEmptyDescription": "To'lov o'tkazmalari shu yerda ko'rinadi",
+      "filteredEmptyDescription": "Tanlangan sana oralig'ida operatsiya yo'q",
+      "clearDates": "Sanani tozalash"
+    }
+  },
   "title": "To'lovlar",
   "pageDescription": "Kassa va to'lovlarni boshqarish",
   "toBeGiven": "Berilishi kerak",
   "amountInCashbox": "Kassadagi summa",
-  "settlementStatus": "Hisob-kitob holati",
   "counterparty": "Qarshi tomon",
   "toBeReceived": "Qabul qilinishi kerak",
   "filters": "Filtrlar",
-  "clearFilters": "Filterlarni tozalash",
   "selectPlaceholder": "Tanlang",
-  "selectMarketDescription": "Marketni tanlang",
   "selectCourierDescription": "Kuryerni tanlang",
-  "selectBranchManagerDescription": "Branch managerni tanlang",
   "selectEmployee": "Xodimni tanlang",
   "forSalaryPayment": "Maosh to'lash uchun",
-  "selectCourier": "Kuryer tanlang",
-  "receiveFromCourierDescription": "Kuryerdan qabul qilish",
   "selectMarket": "Market tanlang",
-  "payToMarketDescription": "Marketga to'lov qilish",
   "searchPlaceholder": "Qidirish...",
   "selectLabel": "Tanlash",
   "cancelShort": "Bekor",
   "clear": "Tozalash",
   "transactions": "Tranzaksiyalar",
-  "filterByDate": "Sana bo'yicha filtrlash",
   "startDate": "Boshlanish",
   "endDate": "Tugash",
-  "dateRangeRequired": "Filtr qo'llanishi uchun ikkala sana ham tanlanishi kerak.",
-  "paymentHistoryTitle": "To'lov tarixi",
-  "countLabel": "{{count}} ta",
-  "quickActions": "Tezkor amallar",
-  "mainCashboxManagement": "Asosiy kassa boshqaruvi",
   "totalBalanceLabel": "Umumiy balans",
   "hide": "Yashirish",
   "show": "Ko'rsatish",
-  "cashBalance": "Naqd balans",
-  "cardBalance": "Karta balans",
-  "transactionsUpdating": "Filtr bo'yicha ma'lumot yangilanmoqda...",
-  "last30DaysChart": "Oxirgi 30 kunlik kirim/chiqim grafigi",
-  "dailyDynamics": "Kunlik dinamika",
-  "ownerInfoTitle": "Kassa egasi ma'lumotlari",
-  "ownerInfoDescription": "Ism, telefon va rol",
   "name": "Ism",
   "phone": "Telefon",
   "role": "Rol",
-  "amountLabel": "Summa",
   "comment": "Izoh",
-  "paymentHistoryNotFound": "To'lov tarixi topilmadi",
-  "pageLabel": "{{page}}-sahifa / {{totalPages}}",
-  "previousPage": "Oldingi sahifa",
-  "nextPage": "Keyingi sahifa",
   "createdBy": "Yaratgan",
   "amount": "Summa",
   "paymentDate": "To'lov sanasi",
   "total": "jami",
-  "financeHistoryNotFound": "Finance tarixi topilmadi",
-  "historyLower": "history",
   "paymentHistory": "To'lov tarixi",
-  "allHistory": "Barcha tarix",
-  "paymentTransfers": "Oldi-berdi",
-  "lastOperations": "So'nggi operatsiyalar",
-  "todayTransactions": "Bugungi tranzaksiyalar",
-  "todayOperations": "Bugungi operatsiyalar",
-  "noOperations": "Operatsiyalar yo'q",
   "today": "Bugun",
   "thisWeek": "Bu hafta",
   "thisMonth": "Bu oy",
@@ -76,142 +118,52 @@
   "toBePaid": "To'lanishi kerak",
   "paid": "To'langan",
   "address": "Manzil",
-  "qty": "Qty",
-  "detailLoading": "Detail yuklanmoqda",
-  "detailLoadingDescription": "Backenddan payment history detail olinmoqda.",
-  "detailError": "Detail yuklanmadi",
-  "detailErrorDescription": "finance history detailini olishda xatolik bo'ldi.",
-  "balanceAfterTransaction": "Balance after transaction",
-  "commentLabel": "Comment",
-  "mainCashboxBadge": "Asosiy kassa",
-  "spendOperation": "Chiqim operatsiyasi",
-  "incomeOperation": "Kirim operatsiyasi",
-  "spendLabel": "Chiqim",
-  "incomeLabel": "Kirim",
+  "qty": "Soni",
   "closeShiftTitle": "Smenani yopish",
-  "closeShiftDescription": "Smena yakunlash",
-  "closeShiftWarning": "Smenani yopganingizda avtomatik ravishda Excel hisobot yuklab olinadi.",
   "optionalComment": "Izoh (ixtiyoriy)",
-  "closeShiftPlaceholder": "Smena haqida izoh...",
-  "paymentTypeRequired": "payment type majburiy",
+  "paymentTypeRequired": "To'lov turi majburiy",
   "commentRequired": "Izoh majburiy",
   "amountRequired": "Summa majburiy",
-  "mainCashboxTitle": "Asosiy kassa",
-  "mainCashboxDescription": "Asosiy kassa boshqaruvi",
   "cashbox": "Kassa",
   "mainCashbox": "Asosiy kassa",
-  "cashDetail": "Kassa tafsilotlari",
   "history": "Tarix",
-  "historyDetail": "Tarix tafsiloti",
   "income": "Kirim",
   "expense": "Chiqim",
   "balance": "Balans",
   "cash": "Naqd",
   "card": "Karta",
   "other": "Boshqa",
-  "openShift": "Smena ochish",
-  "closeShift": "Smena yopish",
-  "currentShift": "Joriy smena",
-  "shiftHistory": "Smena tarixi",
   "fillCashbox": "Kassani to'ldirish",
   "spendFromCashbox": "Kassadan xarajat",
-  "paymentCourier": "Kuryer to'lovi",
-  "paymentMarket": "Market to'lovi",
   "courierToBranchTransfer": "Kuryerdan filialga o'tkazma",
   "hqToMarketTransfer": "HQdan marketga o'tkazma",
-  "operationType": "Operatsiya turi",
-  "sourceType": "Manba turi",
-  "cashboxType": "Kassa turi",
-  "financialBalance": "Moliyaviy balans",
-  "financialBalanceOverview": "Umumiy ko'rinish",
-  "financialBalanceAnalysis": "Tahlil",
-  "financialBalanceCurrentSituation": "Joriy holat",
-  "financialBalanceMarketsAndCouriers": "Marketlar va kuryerlar",
-  "financialBalanceNegativeState": "Salbiy holat",
-  "financialBalancePositiveState": "Ijobiy holat",
-  "financialBalanceCashbox": "Kassa",
-  "financialBalanceCashAvailable": "Mavjud mablag'",
-  "financialBalanceMarkets": "Marketlar",
-  "financialBalanceMarketsDebt": "(-) Biz qarzmiz",
-  "financialBalanceCouriers": "Kuryerlar",
-  "financialBalanceCouriersMoney": "(+) Bizning pul",
-  "financialBalanceReceivable": "Yo'ldagi pul",
-  "financialBalanceReceivableHint": "(+) Kuryer, filial va kargoda",
   "cashDetailTypeUnknown": "Kassa turi aniqlanmadi — xavfsizlik uchun to'lov formasi ko'rsatilmaydi. Kassalar ro'yxatidan qaytadan oching.",
   "cashDetailNotMarketCashbox": "Bu market kassasi emas — to'lov yuborilmadi.",
-  "financialBalanceIndicators": "Moliyaviy ko'rsatkichlar",
-  "financialBalanceDistribution": "Taqsimot",
-  "financialBalanceTotal": "Umumiy balans",
-  "financialBalanceTotalFormula": "Kassa + Yo'ldagi pul + Marketlar",
-  "financialBalanceMarketsSettlement": "Marketlar bilan hisob-kitob",
-  "financialBalanceCouriersSettlement": "Kuryerlar bilan hisob-kitob",
-  "financialBalanceListEmpty": "Ma'lumot topilmadi",
-  "financialBalanceCountSuffix": "ta",
-  "financialBalancePositiveImpact": "Musbat ta'sir (+)",
-  "financialBalanceNegativeImpact": "Manfiy ta'sir (-)",
-  "financialBalanceNetChange": "Sof o'zgarish",
-  "financialBalanceTransactionsCount": "{{count}} ta tranzaksiya",
-  "financialBalancePositiveSources": "Musbatga tortuvchi manbalar",
-  "financialBalanceNegativeSources": "Manfiyga tortuvchi manbalar",
-  "financialBalanceTopTransactions": "Eng katta ta'sir ko'rsatgan tranzaksiyalar",
-  "financialBalanceTotalTransactions": "{{count}} ta jami",
-  "financialBalanceComingSoon": "Bu bo'lim uchun UI keyingi bosqichda qo'shiladi.",
-  "financialBalanceDate": "Sana",
-  "financialBalanceSource": "Manba",
-  "financialBalanceSourceType": "Manba turi",
-  "financialBalanceAllSources": "Barcha manbalar",
-  "financialBalanceChange": "O'zgarish",
-  "financialBalancePreviousBalance": "Oldingi balans",
-  "financialBalanceNextBalance": "Keyingi balans",
-  "financialBalanceComment": "Izoh",
-  "financialBalanceHistoryEmpty": "Tarix ma'lumotlari topilmadi",
-  "financialBalanceSourceProfit": "Pochta foydasi",
-  "financialBalanceSourceExtraCost": "Qo'shimcha xarajat",
   "financialBalanceSourceManualIncome": "Qo'lda kirim",
   "financialBalanceSourceManualExpense": "Qo'lda chiqim",
   "financialBalanceSourceSalary": "Maosh",
-  "financialBalanceSourceCorrection": "Tuzatish (rollback)",
+  "financialBalanceSourceCorrection": "Tuzatish",
   "financialBalanceSourceBills": "Hisob-fakturalar",
-  "allInfo": "Barcha ma'lumotlar",
   "report": "Hisobot",
-  "exportReport": "Hisobotni eksport qilish",
   "commentPlaceholder": "Izoh...",
   "paymentType": "To'lov turi",
-  "paymentTypePlaceholder": "To'lov turini tanlang",
-  "closeShiftComment": "Smena yopish izohi",
   "amountPositiveValidation": "Summa 0 dan katta bo'lishi kerak",
   "loadingLabel": "Yuklanmoqda...",
-  "cancelLabel": "Bekor qilish",
-  "mainSection": "Asosiy kassa",
-  "incomeSection": "Kirim",
   "expenseSection": "Xarajat",
   "fromWhere": "Qayerdan",
   "toWhere": "Qayerga",
   "summaryIncome": "Jami kirim",
   "summaryExpense": "Jami chiqim",
   "totalBalance": "Jami balans",
-  "balanceVisible": "Balans ko'rinadi",
-  "balanceHidden": "Balans yashirilgan",
-  "cashboxUser": "Kassa foydalanuvchisi",
-  "transactionStatus": "Holat",
   "delivery": "Yetkazish",
-  "orderProducts": "Mahsulotlar",
-  "financeHistory": "Moliyaviy tarix",
   "fillSuccess": "Kassa muvaffaqiyatli to'ldirildi",
   "fillError": "Kassani to'ldirishda xatolik yuz berdi",
   "spendSuccess": "Xarajat muvaffaqiyatli saqlandi",
   "spendError": "Xarajatni saqlashda xatolik yuz berdi",
   "closeShiftSuccess": "Smena muvaffaqiyatli yopildi",
   "closeShiftError": "Smenani yopishda xatolik yuz berdi",
-  "currency": "so'm",
-  "mainCashboxReport": "Asosiy kassa hisobot"
-  ,"marketCashboxLabel": "Market kassasi"
-  ,"courierCashboxLabel": "Kuryer kassasi"
-  ,"payAction": "To'lash"
-  ,"receiveAction": "Qabul qilish"
+  "currency": "so'm"
   ,"userFallback": "Foydalanuvchi"
-  ,"receiveFromCourier": "Kuryerdan qabul qilish"
-  ,"receiveFromBranchManager": "Branch managerdan qabul qilish"
   ,"payToMarket": "Marketga to'lov"
   ,"paySalary": "Maosh to'lash"
   ,"monthlySalary": "Oylik maosh"
@@ -223,53 +175,28 @@
   ,"mainCard": "Asosiy karta"
   ,"selectCard": "Kartani tanlang"
   ,"cardRequired": "Kartani tanlang"
-  ,"courierShort": "Kuryer"
-  ,"branchManagerShort": "Branch manager"
-  ,"marketShort": "Market"
-  ,"expenseShort": "Chiqim"
-  ,"incomeShort": "Kirim"
-  ,"salaryShort": "Maosh"
   ,"excel": "Excel"
   ,"sell": "Sotuv"
   ,"cancelOperation": "Bekor qilish"
   ,"extraCost": "Qo'shimcha xarajat"
-  ,"transferOption": "O'tkazma"
-  ,"toMarketTransferOption": "Do'konga o'tkazma"
   ,"marketRequired": "Marketni tanlang"
   ,"receivePaymentSuccess": "Kuryerdan to'lov muvaffaqiyatli qabul qilindi"
   ,"receivePaymentError": "Kuryerdan to'lovni qabul qilishda xatolik yuz berdi"
   ,"marketPaymentSuccess": "Marketga to'lov muvaffaqiyatli amalga oshirildi"
   ,"marketPaymentError": "Marketga to'lovni yuborishda xatolik yuz berdi"
-  ,"selectMainBranchDescription": "Asosiy filialga pul o'tkazish uchun tanlang"
-  ,"branchMainCashboxLabel": "Asosiy filial kassasi"
-  ,"payToMainDescription": "Filial kassasidan asosiy kassaga pul o'tkazish"
-  ,"payToMainAction": "HQga o'tkazish"
   ,"branchToMainPaymentSuccess": "Asosiy filialga to'lov muvaffaqiyatli o'tkazildi"
   ,"branchToMainPaymentError": "Asosiy filialga to'lov o'tkazishda xatolik yuz berdi"
   ,"branchToMainSource": "Filialdan HQga o'tkazma"
   ,"mainBranchFallback": "Asosiy filial"
   ,"unknown": "Noma'lum"
-  ,"cardHolder": "Karta egasi"
-  ,"transferSourceRequired": "O'tkazma manbasini tanlang"
-  ,"transferCourierLabel": "Kuryer kassasi"
-  ,"transferCourierPlaceholder": "Kuryerni tanlang"
-  ,"transferMarketLabel": "Market kassasi"
-  ,"transferMarketPlaceholder": "Marketni tanlang"
-  ,"customerRole": "Mijoz"
-  ,"adminRole": "Admin"
-  ,"superAdminRole": "Super Admin"
-  ,"clickPayment": "Click"
-  ,"paymePayment": "Payme"
   ,"statusSold": "Sotilgan"
   ,"statusCancelled": "Bekor qilingan"
   ,"statusPaid": "To'langan"
   ,"statusPartlyPaid": "Qisman to'langan"
   ,"statusNew": "Yangi"
   ,"statusReceived": "Qabul qilingan"
-  ,"deliveryAddress": "Manzilga"
-  ,"deliveryCenter": "Markazga"
   ,"region": "Hudud"
-  ,"no": "No"
+  ,"no": "№"
   ,"currencyAmountSuffix": "so'm"
   ,"selectReceiveSourceDescription": "Filial menejeri yoki HQ kuryerini tanlang"
   ,"hqCourierLabel": "HQ kuryeri"
@@ -286,33 +213,666 @@
   ,"openShiftTitle": "Smenani ochish"
   ,"openShiftSuccess": "Smena ochildi"
   ,"openShiftError": "Smenani ochishda xatolik yuz berdi"
-  ,"financialBalanceCreatedBy": "Kiritgan"
-  ,"financialBalanceAutomatic": "Avtomatik"
-  ,"financialBalanceOrder": "Buyurtma"
-  ,"financialBalanceOrderLink": "Buyurtma #{{id}}"
-  ,"financialBalanceCurrent": "Joriy balans"
-  ,"financialBalanceCurrentHint": "Daftarning hozirgi qoldig'i (davrdan qat'i nazar)"
-  ,"financialEntryAdd": "Yozuv qo'shish"
-  ,"financialEntryTitle": "Qo'lda yozuv qo'shish"
-  ,"financialEntryDirection": "Yo'nalish"
-  ,"financialEntryDirectionIncome": "Kirim (+)"
-  ,"financialEntryDirectionExpense": "Chiqim (−)"
-  ,"financialEntryAmount": "Summa"
   ,"financialEntryAmountRequired": "Summani kiriting"
   ,"financialEntryAmountTooLarge": "Summa juda katta"
   ,"financialEntryCommentRequired": "Sababini yozing (kamida 3 belgi)"
-  ,"financialEntryCommentPlaceholder": "Masalan: ofis ijarasi, oktabr"
-  ,"financialEntryPreview": "Balansga ta'siri: {{amount}}"
-  ,"financialEntrySubmit": "Saqlash"
   ,"financialEntryCreated": "Yozuv qo'shildi"
   ,"financialEntryFailed": "Yozuvni saqlab bo'lmadi"
-  ,"paymentConfirmTitle": "To'lovni tasdiqlaysizmi?"
-  ,"paymentConfirmMessage": "{{amount}} so'm — {{action}}: {{target}} ({{method}}). Tasdiqlangach pul o'tkaziladi va bekor qilib bo'lmaydi."
   ,"salaryConfirmTitle": "Maosh to'lovini tasdiqlang"
   ,"salaryConfirmDescription": "Tekshirib chiqing — tasdiqlangach, summa kassadan darhol chiqariladi va bekor qilib bo'lmaydi."
+  ,"v2MainCashbox": {
+    "back": "To'lovlar",
+    "title": "Asosiy kassa",
+    "subtitle": "Asosiy kassa boshqaruvi",
+    "subtitleShiftOpen": "Asosiy kassa boshqaruvi · smena ochiq",
+    "subtitleShiftClosed": "Asosiy kassa boshqaruvi · smena yopiq",
+    "subtitleBranch": "Asosiy kassa boshqaruvi · {{branch}}",
+    "exportExcel": "Excelga yuklash",
+    "openShift": "Smenani ochish",
+    "closeShift": "Smenani yopish",
+    "balance": {
+      "title": "Kassa balansi",
+      "subtitle": "Bugun, {{time}} holatiga · grafik: kun oxiridagi qoldiq",
+      "subtitleBranch": "Bugun, {{time}} holatiga · {{branch}}",
+      "hide": "Balansni yashirish",
+      "show": "Balansni ko'rsatish",
+      "view": "Kassa balansi ko'rinishi",
+      "chart": "Grafik",
+      "table": "Jadval",
+      "total": "Umumiy balans",
+      "todayNet": "bugungi sof oqim",
+      "cash": "Naqd",
+      "card": "Karta (Click)",
+      "split": "Naqd {{cash}} ({{cashShare}}), karta {{card}} ({{cardShare}})",
+      "chartLabel": "Asosiy kassa balansi, kun oxirida, {{from}} – {{to}}: {{first}} dan {{last}} gacha",
+      "endOfDay": "kun oxirida",
+      "income": "Kirim",
+      "expense": "Chiqim",
+      "today": "Bugun",
+      "point": "{{date}}: kun oxirida {{balance}}, kirim {{income}}, chiqim {{expense}}",
+      "chartEmpty": "Grafik uchun ma'lumot yetarli emas",
+      "chartEmptyHint": "Kamida ikki kunlik qoldiq kerak",
+      "loadError": "Kassa ma'lumotini yuklab bo'lmadi",
+      "loading": "Kassa balansi yuklanmoqda",
+      "tableLabel": "Kun oxiridagi qoldiq",
+      "columns": {
+        "date": "Sana",
+        "endOfDay": "Kun oxirida",
+        "income": "Kirim",
+        "expense": "Chiqim"
+      }
+    },
+    "actions": {
+      "title": "Tezkor amallar",
+      "subtitle": "Asosiy kassa bilan ishlash",
+      "receive": "Pul qabul qilish",
+      "receiveHint": "Filial yoki HQ kuryeridan",
+      "receiveCourier": "Kuryerdan qabul qilish",
+      "receiveCourierHint": "Filial kuryeri kassasidagi pulni olish",
+      "payMarket": "Marketga to'lov",
+      "payMarketHint": "Marketni tanlab to'lash",
+      "spend": "Kassadan xarajat",
+      "spendHint": "Chiqim operatsiyasi",
+      "fill": "Kassani to'ldirish",
+      "fillHint": "Kirim operatsiyasi",
+      "shiftOpen": "Smena ochiq · {{time}} dan",
+      "shiftOpenNoTime": "Smena ochiq",
+      "shiftOpenedBy": "Ochgan xodim: {{name}}",
+      "shiftClosed": "Smena yopiq"
+    },
+    "periods": {
+      "label": "Davrlar bo'yicha kirim va chiqim",
+      "today": "Bugun",
+      "week": "Bu hafta",
+      "month": "Bu oy",
+      "netFlow": "sof oqim",
+      "netFlowKept": "sof oqim · kirimning {{percent}}i qoldi",
+      "income": "Kirim",
+      "expense": "Chiqim",
+      "summary": "{{period}}: kirim {{income}}, chiqim {{expense}}, sof {{net}}",
+      "mobileTitle": "Kirim va chiqim",
+      "mobileSubtitle": "{{period}} · {{range}}",
+      "segment": "Davr",
+      "netChange": "sof o'zgarish"
+    },
+    "sources": {
+      "title": "Pul qayerdan keldi, qayerga ketdi",
+      "subtitle": "Manba turi bo'yicha · Bu oy, {{range}}",
+      "income": "Kirim manbalari",
+      "expense": "Chiqim yo'nalishlari",
+      "noIncome": "Bu oyda kirim yo'q",
+      "noExpense": "Bu oyda chiqim yo'q",
+      "note": "Operatsiyalar tarixidagi «Manba» ustuni bo'yicha jamlangan; tafsilot — pastdagi jadvalda",
+      "loadError": "Ma'lumotni yuklab bo'lmadi"
+    },
+    "history": {
+      "title": "Operatsiyalar tarixi",
+      "count": "{{n}} ta operatsiya",
+      "allTime": "barcha vaqt",
+      "dateFilter": "Sana bo'yicha filtrlash",
+      "clearFilters": "Filtrlarni tozalash",
+      "updating": "Filtr bo'yicha ma'lumot yangilanmoqda…",
+      "label": "Operatsiyalar tarixi",
+      "cardsLabel": "Operatsiyalar",
+      "columns": {
+        "date": "Sana",
+        "createdBy": "Yaratgan",
+        "source": "Manba",
+        "paymentType": "To'lov turi",
+        "operation": "Operatsiya",
+        "amount": "Summa",
+        "detail": "Tafsilot"
+      },
+      "balanceAfter": "Balans: {{amount}}",
+      "empty": "Operatsiyalar topilmadi",
+      "emptyDescription": "Asosiy kassada hali operatsiya yo'q",
+      "filteredEmptyDescription": "Tanlangan sana oralig'ida operatsiya yo'q",
+      "loadError": "Operatsiyalarni yuklab bo'lmadi",
+      "loading": "Operatsiyalar yuklanmoqda"
+    },
+    "form": {
+      "fillTitle": "Kassani to'ldirish",
+      "spendTitle": "Kassadan xarajat",
+      "fillSubtitle": "Kirim operatsiyasi · Asosiy kassa",
+      "spendSubtitle": "Chiqim operatsiyasi · Asosiy kassa",
+      "amount": "Summa",
+      "paymentType": "To'lov turi",
+      "comment": "Izoh",
+      "cash": "Naqd",
+      "card": "Karta (Click)",
+      "fillPlaceholder": "Masalan: bank hisobidan naqd olindi",
+      "spendPlaceholder": "Masalan: ofis ijarasi, oktabr",
+      "fillCommentRequired": "Izoh majburiy — pul qayerdan kelganini yozing",
+      "spendCommentRequired": "Izoh majburiy — pul nimaga sarflanganini yozing",
+      "typeRequired": "To'lov turini tanlang",
+      "fillSubmit": "Kirimni saqlash",
+      "spendSubmit": "Xarajatni saqlash",
+      "cancel": "Bekor qilish",
+      "saving": "Saqlanmoqda…"
+    },
+    "confirm": {
+      "fillTitle": "Kirimni tasdiqlang",
+      "spendTitle": "Xarajatni tasdiqlang",
+      "description": "Tekshirib chiqing — tasdiqlangach, summa kassada darhol aks etadi.",
+      "cashbox": "Kassa",
+      "mainCashbox": "Asosiy kassa",
+      "comment": "Izoh",
+      "submit": "Tasdiqlash"
+    },
+    "shift": {
+      "title": "Smenani yopish",
+      "subtitle": "Joriy kassa smenasi yakunlanadi",
+      "current": "Joriy smena",
+      "since": "{{time}} dan",
+      "openedBy": "Ochgan xodim",
+      "cashboxTotal": "Kassadagi summa",
+      "excelNote": "Smenani yopganingizda Excel hisobot avtomatik ravishda yuklab olinadi.",
+      "comment": "Izoh",
+      "commentPlaceholder": "Smena haqida izoh...",
+      "cancel": "Bekor qilish",
+      "submit": "Smenani yopish",
+      "closing": "Yopilmoqda…"
+    },
+    "notify": {
+      "alreadyRecorded": "Bu operatsiya allaqachon yozilgan — kassa yangilandi, summani tekshiring",
+      "outcomeUnknown": "Server javob bermadi — operatsiya o'tgan bo'lishi mumkin. Kassa yangilandi, summani tekshiring: aynan shu operatsiyani qayta yuborsangiz, u ikki marta yozilmaydi"
+    }
+  }
+  ,"v2Balance": {
+    "title": "Balans",
+    "description": "Kassa, yo'ldagi pul va marketlar bo'yicha umumiy balans",
+    "export": "Excelga yuklash",
+    "addEntry": "Yozuv qo'shish",
+    "kpi": {
+      "label": "Balans ko'rsatkichlari",
+      "cash": "Kassa",
+      "receivable": "Yo'ldagi pul",
+      "marketsDebt": "Marketlar qarzi",
+      "total": "Umumiy balans",
+      "positive": "Ijobiy",
+      "negative": "Salbiy",
+      "formula": "Umumiy balans = kassa + yo'ldagi pul − marketlar qarzi."
+    },
+    "tabs": { "label": "Balans bo'limlari", "overview": "Umumiy ko'rinish", "history": "Tarix", "analysis": "Tahlil" },
+    "state": {
+      "loading": "Balans yuklanmoqda",
+      "loadFailed": "Balansni yuklab bo'lmadi",
+      "empty": "Balans ma'lumoti yo'q",
+      "emptyDescription": "Server balans ko'rsatkichlarini qaytarmadi. Birozdan keyin qayta oching."
+    },
+    "composition": {
+      "title": "Balans tarkibi",
+      "subtitle": "Pul qayerda turibdi va kimga tegishli · {{time}} holatiga",
+      "positive": "Ijobiy holat",
+      "negative": "Salbiy holat",
+      "where": "Pul qayerda",
+      "whereSub": "Kassa va yo'ldagi pul",
+      "cash": "Kassa",
+      "chain": "Kuryer va filialda",
+      "provider": "Kargoda",
+      "inTransit": "Yo'ldagi pul",
+      "owner": "Kimga tegishli",
+      "ownerSub": "Marketlarniki va bizniki",
+      "marketsDebt": "Marketlar qarzi",
+      "total": "Umumiy balans",
+      "debtExceeds": "Marketlar qarzi pul qoldig'idan katta — umumiy balans manfiy.",
+      "segment": "{{name}} {{value}} ({{percent}})",
+      "note": "Ikkala chiziq bir xil — {{total}}. Yo'ldagi pul: kuryer va filial zanjiridagi hamda kargo qo'lidagi sotilgan, lekin kassaga hali yetmagan pul."
+    },
+    "markets": {
+      "title": "Marketlar bilan hisob-kitob",
+      "subtitle": "Marketlarga to'lashimiz kerak · qarz bo'yicha",
+      "share": "{{name}}: qarz ulushi",
+      "empty": "Marketlarga qarz yo'q"
+    },
+    "couriers": {
+      "title": "Kuryerlar bilan hisob-kitob",
+      "subtitle": "Yo'ldagi pulning kuryerlar qo'lidagi qismi",
+      "share": "{{name}}: yo'ldagi pul ulushi",
+      "negative": "manfiy balans",
+      "footNote": "Ulush musbat qoldiqlar jamidan: {{positive}}",
+      "footDebtor": "qarzdor {{negative}}",
+      "empty": "Kuryerlarda pul yo'q"
+    },
+    "rank": {
+      "count": "{{value}} ta",
+      "total": "Jami",
+      "showMore": "Yana ko'rsatish · {{value}} ta",
+      "showLess": "Kamroq ko'rsatish"
+    },
+    "history": {
+      "filters": "Tarix filtrlari",
+      "source": "Manba turi",
+      "allSources": "Barcha manbalar",
+      "date": "Sana oralig'i",
+      "title": "Yozuvlar",
+      "subtitle": "Eng yangisi yuqorida · har yozuvda qoldiq oldin → keyin",
+      "count": "{{value}} ta",
+      "listLabel": "Balans tarixi",
+      "cardsLabel": "Yozuvlar",
+      "loading": "Yozuvlar yuklanmoqda",
+      "col": {
+        "date": "Sana",
+        "source": "Manba",
+        "change": "O'zgarish",
+        "balance": "Daftar qoldig'i",
+        "balanceSr": ": oldingi → keyingi",
+        "actor": "Kiritgan",
+        "comment": "Izoh",
+        "open": "Tafsilot"
+      },
+      "manual": "Qo'lda yozuv",
+      "automatic": "Avtomatik",
+      "order": "Buyurtma №{{id}}",
+      "from": "dan",
+      "balanceLine": "Daftar qoldig'i: {{value}}",
+      "open": "{{source}} ({{date}}) tafsilotini ochish",
+      "pagination": "{{from}}–{{to}} / {{total}} ta yozuv",
+      "empty": "Hali yozuv yo'q",
+      "emptyDescription": "Daftarga yozuvlar sotuv, xarajat va qo'lda kiritilgan yozuvlardan tushadi.",
+      "filteredEmpty": "Yozuvlar topilmadi",
+      "filteredEmptyDescription": "Tanlangan filtrlar bo'yicha yozuv yo'q.",
+      "clearFilters": "Filtrlarni tozalash"
+    },
+    "analysis": {
+      "period": "Tahlil davri",
+      "periodSeg": "Davr",
+      "today": "Bugun",
+      "week": "Bu hafta",
+      "month": "Bu oy",
+      "all": "Barchasi",
+      "allTime": "barcha vaqt",
+      "loading": "Tahlil yuklanmoqda",
+      "flow": {
+        "title": "Daftar qoldig'i harakati",
+        "subtitle": "Davr boshidan hozirgacha: qaysi manba qancha qo'shdi va ayirdi · {{period}}",
+        "view": "Daftar qoldig'i harakati ko'rinishi",
+        "chart": "Grafik",
+        "table": "Jadval",
+        "current": "Daftar qoldig'i",
+        "currentHint": "hozirgi qoldiq",
+        "positive": "Musbat ta'sir (+)",
+        "positiveHint": "tanlangan davrdagi kirimlar",
+        "negative": "Manfiy ta'sir (−)",
+        "negativeHint": "tanlangan davrdagi chiqimlar",
+        "net": "Sof o'zgarish",
+        "netHint": "{{value}} ta tranzaksiya",
+        "start": "Davr boshi",
+        "end": "Hozir",
+        "income": "Kirim · {{value}}",
+        "expense": "Chiqim · {{value}}",
+        "legendTotal": "Qoldiq",
+        "legendUp": "Kirim (+)",
+        "legendDown": "Chiqim (−)",
+        "note": "Davr boshi = hozirgi qoldiq − sof o'zgarish",
+        "pastNote": "Davr bugungacha davom etmaydi — davr boshi va oxiridagi qoldiq ko'rsatilmaydi",
+        "aria": "Daftar qoldig'i, {{period}}: {{steps}}",
+        "step": "Bosqich",
+        "change": "O'zgarish",
+        "balance": "Qoldiq",
+        "empty": "Bu davrda yozuv yo'q",
+        "emptyDescription": "Boshqa davrni tanlang."
+      },
+      "positive": {
+        "title": "Musbatga tortuvchi manbalar",
+        "total": "Jami",
+        "sources": "{{n}} ta manba",
+        "share": "kirimning {{value}}",
+        "shareAria": "{{name}}: kirimning {{value}}",
+        "empty": "Bu davrda kirim yo'q"
+      },
+      "negative": {
+        "title": "Manfiyga tortuvchi manbalar",
+        "total": "Jami",
+        "sources": "{{n}} ta manba",
+        "share": "chiqimning {{value}}",
+        "shareAria": "{{name}}: chiqimning {{value}}",
+        "empty": "Bu davrda chiqim yo'q"
+      },
+      "top": {
+        "title": "Eng katta ta'sir ko'rsatgan tranzaksiyalar",
+        "subtitle": "Tanlangan davr, summa bo'yicha kamayish tartibida",
+        "count": "{{value}} ta jami",
+        "listLabel": "Eng katta ta'sir ko'rsatgan tranzaksiyalar",
+        "loading": "Tranzaksiyalar yuklanmoqda",
+        "col": {
+          "index": "#",
+          "source": "Manba",
+          "direction": "Yo'nalish",
+          "actor": "Kiritgan",
+          "date": "Sana",
+          "amount": "Summa"
+        },
+        "income": "Kirim",
+        "expense": "Chiqim",
+        "pagination": "{{from}}–{{to}} / {{total}} ta tranzaksiya",
+        "empty": "Tranzaksiyalar yo'q",
+        "emptyDescription": "Tanlangan davrda daftarga yozuv tushmagan."
+      }
+    },
+    "entry": {
+      "title": "Qo'lda yozuv qo'shish",
+      "source": "Manba turi",
+      "direction": "Yo'nalish",
+      "income": "Kirim (+)",
+      "expense": "Chiqim (−)",
+      "amount": "Summa",
+      "impact": "Balansga ta'siri",
+      "comment": "Izoh",
+      "commentPlaceholder": "Masalan: ofis ijarasi, oktabr",
+      "commentHint": "Sababini yozing — kamida 3 belgi.",
+      "save": "Saqlash"
+    },
+    "detail": {
+      "manual": "Qo'lda yozuv",
+      "automatic": "Avtomatik",
+      "change": "O'zgarish",
+      "income": "Kirim",
+      "expense": "Chiqim",
+      "date": "Sana",
+      "previous": "Oldingi balans",
+      "next": "Keyingi balans",
+      "actor": "Kiritgan",
+      "order": "Buyurtma",
+      "orderLink": "№{{id}}",
+      "notLinked": "Bog'lanmagan",
+      "comment": "Izoh",
+      "close": "Yopish"
+    },
+    "sources": {
+      "sell_profit": "Pochta foydasi",
+      "sell_extra_cost": "Qo'shimcha xarajat",
+      "cancel_extra_cost": "Qo'shimcha xarajat",
+      "manual_income": "Qo'lda kirim",
+      "manual_expense": "Qo'lda chiqim",
+      "salary": "Maosh",
+      "correction": "Tuzatish",
+      "bills": "Hisob-fakturalar"
+    }
+  }
+  ,"v2Common": {
+    "income": "Kirim",
+    "expense": "Chiqim",
+    "inactive": "Nofaol",
+    "orderNumber": "Buyurtma №{{id}}",
+    "openDetail": "{{title}} ({{date}}) tafsilotini ochish",
+    "detail": "Tafsilot",
+    "paginationOperations": "{{from}}–{{to}} / {{total}} ta operatsiya",
+    "paymentMethod": {
+      "cash": "Naqd",
+      "transfer": "O'tkazma",
+      "cardClick": "Karta (Click)",
+      "toMarket": "Marketga o'tkazma",
+      "payme": "Payme"
+    },
+    "cashbox": {
+      "main": "Asosiy kassa",
+      "courier": "Kuryer kassasi",
+      "market": "Market kassasi",
+      "branch": "Filial kassasi"
+    },
+    "sourceType": {
+      "courierPayment": "Kuryer to'lovi",
+      "courierToBranch": "Kuryerdan filialga o'tkazma",
+      "marketPayment": "Market to'lovi",
+      "hqToMarket": "HQ'dan marketga o'tkazma",
+      "branchToMain": "Filialdan HQ'ga o'tkazma",
+      "manualIncome": "Qo'lda kirim",
+      "manualExpense": "Qo'lda chiqim",
+      "correction": "Tuzatish",
+      "salary": "Maosh",
+      "sell": "Sotuv",
+      "cancel": "Bekor qilish",
+      "extraCost": "Qo'shimcha xarajat",
+      "bills": "Hisob-fakturalar"
+    },
+    "roles": {
+      "courier": "Kuryer",
+      "market": "Market",
+      "manager": "Menejer",
+      "registrator": "Registrator",
+      "admin": "Admin",
+      "superadmin": "Superadmin",
+      "customer": "Mijoz",
+      "branch": "Filial kassasi",
+      "main": "Asosiy kassa"
+    }
+  }
+  ,"v2HistoryDetail": {
+    "incomeTitle": "Kirim operatsiyasi",
+    "expenseTitle": "Chiqim operatsiyasi",
+    "operationTitle": "Operatsiya",
+    "subtitle": "Operatsiyalar tarixi · {{date}}",
+    "amount": "Summa",
+    "balanceAfter": "Operatsiyadan keyingi balans",
+    "sourceType": "Manba turi",
+    "cashboxType": "Kassa turi",
+    "from": "Qayerdan",
+    "to": "Qayerga",
+    "paymentType": "To'lov turi",
+    "paymentDate": "To'lov sanasi",
+    "comment": "Izoh",
+    "linkedOrder": "Bog'langan buyurtma",
+    "orderNumber": "№{{id}}",
+    "openOrder": "Buyurtma №{{id}} ni ochish",
+    "market": "Market",
+    "status": "Holat",
+    "district": "Tuman",
+    "address": "Manzil",
+    "customerPhone": "Mijoz telefoni",
+    "orderTotal": "Jami summa",
+    "toBePaid": "To'lanishi kerak",
+    "paid": "To'langan",
+    "close": "Yopish",
+    "loading": "Tafsilot yuklanmoqda",
+    "loadError": "Tafsilotni yuklab bo'lmadi"
+  }
+  ,"v2Picker": {
+    "select": "Tanlash",
+    "cancel": "Bekor qilish",
+    "total": "jami {{amount}}",
+    "loading": "Ro'yxat yuklanmoqda",
+    "noResults": "Hech narsa topilmadi",
+    "empty": "Qarzdorlik yo'q",
+    "loadError": "Ro'yxatni yuklab bo'lmadi",
+    "receive": {
+      "title": "Qabul qilinishi kerak",
+      "searchPlaceholder": "Ism, telefon yoki filial",
+      "searchLabel": "Filial menejeri yoki kuryerni qidirish",
+      "listLabel": "Qabul qilinadigan kassalar",
+      "branches": "Filiallar",
+      "hqCouriers": "HQ kuryerlari"
+    },
+    "give": {
+      "title": "Berilishi kerak",
+      "description": "Pul to'lanadigan marketni tanlang",
+      "summary": "{{count}} ta market, jami {{amount}}",
+      "searchPlaceholder": "Qidirish...",
+      "searchLabel": "Marketni nomi bo'yicha qidirish",
+      "listLabel": "Marketlar"
+    },
+    "courier": {
+      "title": "Kuryerni tanlang",
+      "description": "Qabul qilinishi kerak: jami {{amount}}",
+      "descriptionShort": "Qabul qilinishi kerak",
+      "searchPlaceholder": "Ism, telefon yoki tuman",
+      "searchLabel": "Kuryerni qidirish",
+      "listLabel": "Kuryerlar",
+      "group": "{{branch}} kuryerlari · {{count}} ta",
+      "groupFallback": "Kuryerlar · {{count}} ta"
+    }
+  }
+  ,"v2Overview": {
+    "receive": "Pul qabul qilish",
+    "payMarket": "Marketga to'lov",
+    "transferToHq": "HQ'ga o'tkazish",
+    "receiveFromCourier": "Kuryerdan qabul qilish",
+    "kpiLabel": "Kassa ko'rsatkichlari",
+    "cashboxAmount": "Kassadagi summa",
+    "toReceive": "Qabul qilinishi kerak",
+    "toGive": "Berilishi kerak",
+    "mainCashbox": "Asosiy kassa",
+    "mainCashboxShiftOpen": "Asosiy kassa · smena ochiq",
+    "mainCashboxShiftClosed": "Asosiy kassa · smena yopiq",
+    "cash": "Naqd",
+    "card": "Karta",
+    "cashSplit": "Naqd {{cash}}, karta {{card}}",
+    "branches": "Filiallar",
+    "hqCouriers": "HQ kuryerlari",
+    "receiveSplit": "Filiallar {{branches}}, HQ kuryerlari {{couriers}}",
+    "courierCount": "Filial kuryerlaridan · {{count}} ta kuryerda",
+    "courierCountShort": "{{count}} ta kuryerda",
+    "otherCouriers": "Boshqa",
+    "courierShare": "Kuryerlar ulushi: {{list}}",
+    "giveMeta": "{{hq}}'ga · kassaning {{percent}}i",
+    "giveMetaHq": "HQ'ga · kassaning {{percent}}i",
+    "giveMeter": "Berilishi kerak summa kassadagi summaga nisbatan",
+    "remains": "Kassada qoladi: {{amount}}",
+    "enough": "Yetarli",
+    "notEnough": "Yetarli emas",
+    "cashboxSummary": "Kassa xulosasi",
+    "couriers": {
+      "title": "Kuryerlardagi pul",
+      "subtitle": "Qabul qilinishi kerak · jami {{amount}}",
+      "listLabel": "Kuryerlar kassasidagi pul",
+      "share": "{{name}}: kuryerdagi pul ulushi",
+      "inactive": "Nofaol",
+      "debtor": "qarzdor",
+      "inactiveDebtor": "Nofaol · qarzdor",
+      "note": "Yana {{count}} ta kuryerda pul yo'q · ulush = kuryer summasi / musbat qoldiqlar jami",
+      "noteShare": "Ulush = kuryer summasi / musbat qoldiqlar jami",
+      "all": "Barcha kuryerlar · {{count}} ta",
+      "empty": "Kuryerlarda pul yo'q",
+      "loadError": "Kuryerlar ro'yxatini yuklab bo'lmadi"
+    },
+    "history": {
+      "label": "Operatsiyalar tarixi",
+      "tabs": "Operatsiya turi",
+      "all": "Barchasi",
+      "filters": "Tarix filtrlari",
+      "date": "To'lov sanasi",
+      "sourceType": "Manba turi",
+      "cashboxType": "Kassa turi",
+      "createdBy": "Yaratgan",
+      "columns": {
+        "date": "Sana",
+        "createdBy": "Yaratgan",
+        "source": "Manba",
+        "cashbox": "Kassa",
+        "operation": "Operatsiya",
+        "amount": "Summa",
+        "detail": "Tafsilot"
+      },
+      "cardsLabel": "Operatsiyalar",
+      "loading": "Operatsiyalar yuklanmoqda",
+      "empty": "Operatsiyalar topilmadi",
+      "emptyDescription": "Kassa kirim va chiqimlari shu yerda ko'rinadi",
+      "filteredEmptyDescription": "Tanlangan filtrlar bo'yicha operatsiya yo'q",
+      "loadError": "Operatsiyalarni yuklab bo'lmadi"
+    }
+  }
+  ,"v2CashDetail": {
+    "back": "To'lovlar",
+    "header": {
+      "hqCashbox": "HQ kassasi",
+      "branchFallback": "Filial kassasi",
+      "hqCourier": "HQ kuryeri",
+      "branchCourier": "{{branch}} kuryeri",
+      "manager": "Menejer: {{name}}",
+      "hqTransfer": "{{branch}} kassasidan HQ'ga pul o'tkazish",
+      "hqTransferFallback": "Filial kassasidan HQ'ga pul o'tkazish"
+    },
+    "settlement": {
+      "title": "Hisob-kitob holati",
+      "counterparty": "Qarshi tomon: {{name}}",
+      "receiver": "Qabul qiluvchi: {{name}}",
+      "hide": "Summalarni yashirish",
+      "splitLabel": "Kassadagi summa {{total}}: naqd {{cash}} ({{cashShare}}), o'tkazma {{card}} ({{cardShare}})",
+      "versusCashbox": "Kassadagi pulga nisbatan",
+      "enough": "Kassa yetarli",
+      "notEnough": "Kassa yetarli emas",
+      "meterLabel": "Berilishi kerak summa kassadagi summaga nisbatan",
+      "payableShare": "Berilishi kerak · {{share}}",
+      "remains": "Kassada qoladi · {{amount}}"
+    },
+    "form": {
+      "courierTitle": "Kuryerdan qabul qilish",
+      "courierToMain": "Pul kuryer kassasidan asosiy kassaga tushadi",
+      "courierToBranch": "Pul kuryer kassasidan filial kassasiga tushadi",
+      "marketTitle": "Marketga to'lov",
+      "marketSubtitle": "Pul asosiy kassadan marketga o'tkaziladi",
+      "marketInfo": "To'lov avval eng eski buyurtmalarni yopadi, keyin yangilarini.",
+      "branchTitle": "Filialdan qabul qilish",
+      "branchSubtitle": "Pul filial kassasidan asosiy kassaga tushadi",
+      "hqTitle": "HQ'ga o'tkazish",
+      "hqSubtitle": "Filial kassasidan HQ kassasiga pul o'tkazish",
+      "amount": "Summa",
+      "limitHint": "Ko'pi bilan {{amount}} — qabul qilinishi kerak bo'lgan summa",
+      "receivableHint": "Qabul qilinishi kerak: {{amount}}",
+      "payableHint": "Berilishi kerak: {{amount}}",
+      "payableCashboxHint": "Berilishi kerak: {{amount}} · kassada {{cashbox}}",
+      "paymentType": "To'lov turi",
+      "paymentTypeRequired": "To'lov turini tanlang",
+      "market": "Market",
+      "marketPlaceholder": "Market tanlang",
+      "marketHint": "Market tanlanmaguncha qabul qilish tugmasi faol emas",
+      "comment": "Izoh",
+      "commentPlaceholder": "Izoh...",
+      "receive": "Qabul qilish",
+      "receiveAmount": "{{amount}} qabul qilish",
+      "pay": "To'lash",
+      "hq": "HQ'ga o'tkazish",
+      "hqAmount": "{{amount}} HQ'ga o'tkazish",
+      "loading": "Yuklanmoqda…"
+    },
+    "confirm": {
+      "title": "To'lovni tasdiqlang",
+      "description": "Tekshirib chiqing — tasdiqlangach, summa ikkala kassada darhol aks etadi.",
+      "confirm": "Tasdiqlash",
+      "comment": "Izoh",
+      "market": "Market"
+    },
+    "history": {
+      "title": "Operatsiyalar tarixi",
+      "courier": "Kuryer kassasidagi kirim va chiqimlar",
+      "market": "Market kassasidagi kirim va chiqimlar",
+      "branch": "Filial kassasidagi kirim va chiqimlar",
+      "named": "{{name}} kassasidagi kirim va chiqimlar",
+      "excel": "Excelga yuklash",
+      "tabsLabel": "Tarix turi",
+      "all": "Barcha tarix",
+      "payments": "To'lov o'tkazmalari",
+      "empty": "Operatsiyalar topilmadi"
+    },
+    "movement": {
+      "title": "Balans harakati",
+      "courier": "Har operatsiyadan keyingi qoldiq: sotuv oshiradi, topshirish nolga tushiradi",
+      "market": "Har operatsiyadan keyingi qoldiq: sotuv oshiradi, marketga to'lov kamaytiradi",
+      "branch": "Har operatsiyadan keyingi qoldiq: kuryerlar topshiradi, HQ'ga o'tkazma kamaytiradi",
+      "viewLabel": "Balans harakati ko'rinishi",
+      "chart": "Grafik",
+      "table": "Jadval",
+      "start": "Davr boshida",
+      "income": "Kirim",
+      "expense": "Chiqim",
+      "now": "Hozir",
+      "chartLabel": "Balans harakati: davr boshida {{start}}, kirim {{income}}, chiqim {{expense}}, hozir {{now}}",
+      "balance": "qoldiq",
+      "date": "Sana",
+      "source": "Manba",
+      "change": "O'zgarish",
+      "balanceAfter": "Qoldiq",
+      "tableLabel": "Balans harakati jadvali"
+    },
+    "list": {
+      "orderTitle": "{{title}} · №{{id}}",
+      "courier": "Kuryer: {{name}}",
+      "rowLabel": "{{title}}, {{direction}} {{amount}}, {{date}}",
+      "rollback": "Tuzatish"
+    }
+  }
   ,"paymentAckDisputed": "Noto'g'ri"
   ,"paymentAckDisputedHint": "Kuryer botdagi kvitansiyaga «Noto'g'ri» deb javob berdi"
   ,"paymentAckConfirmed": "Tasdiqlangan"
   ,"paymentAckConfirmedHint": "Kuryer botdagi kvitansiyani tasdiqladi"
-  ,"historyCorrectionBadge": "Tuzatish"
 }

@@ -1,40 +1,10 @@
-import type { RankingMeta, TopBranch, TopMarket } from "../../../entities/dashboard";
+import type { RankingMeta } from "../../../entities/dashboard";
 import { getAllTimeRange } from "../../../shared/lib/dateRange";
 import { formatRangeShort } from "../../../shared/ui/primitives/date/calendarMath";
+import type { PerformerRow } from "../lib/rankItems";
 
-/** Reyting qatori (9zbSDkUI) — marketlar va filiallar uchun bitta ko'rinish. */
-export type RankingRow = {
-  id: string;
-  name: string;
-  /** Sotuv foizi, 0–100. */
-  rate: number;
-  successful: number;
-  total: number;
-};
-
-const toFinite = (value: unknown) => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-};
-
-const toRow = (id: string, name: string | null, total: unknown, successful: unknown, rate: unknown): RankingRow => ({
-  id,
-  name: name?.trim() || "—",
-  rate: Math.min(100, Math.max(0, toFinite(rate))),
-  successful: toFinite(successful),
-  total: toFinite(total),
-});
-
-/** Backend tartibi saqlanadi. */
-export const toMarketRankingRows = (markets: readonly TopMarket[]): RankingRow[] =>
-  markets.map((market, index) =>
-    toRow(market.market_id || `market-${index}`, market.market_name, market.total_orders, market.successful_orders, market.success_rate),
-  );
-
-export const toBranchRankingRows = (branches: readonly TopBranch[]): RankingRow[] =>
-  branches.map((branch, index) =>
-    toRow(branch.branch_id || `branch-${index}`, branch.branch_name, branch.total_orders, branch.successful_orders, branch.success_rate),
-  );
+/** Taxta `tizim-charts` «Kam ma'lumot»: shundan kam buyurtmali qator bo'lsa, reyting taxminiy ekani aytiladi. */
+export const LOW_DATA_ORDERS = 30;
 
 /** `YYYY-MM-DD` Toshkent bo'yicha (`en-CA` — ISO tartibi). */
 const TASHKENT_DAY = new Intl.DateTimeFormat("en-CA", {
@@ -56,8 +26,8 @@ const toTashkentDay = (value: string | null) => {
 };
 
 /**
- * Izohdagi davr (taxta `tizim-charts`: «izoh — hisob formulasi va davr»): qisqa davrda backend reytingni
- * oxirgi 30 kun bo'yicha beradi (`last_30_days`) — «oxirgi 30 kun»; aks holda tanlangan oraliq
+ * Izohdagi davr (9zbSDkUI, taxta `tizim-charts`: «izoh — hisob formulasi va davr»): qisqa davrda backend
+ * reytingni oxirgi 30 kun bo'yicha beradi (`last_30_days`) — «oxirgi 30 kun»; aks holda tanlangan oraliq
  * («12.10 – 15.10.2026»). Meta yo'q yoki sanasiz — davr yozilmaydi. «Barchasi» (sana filtri
  * `1970-01-01` dan) — oraliq emas: «01.01.1970 – …» yozilmaydi.
  */
@@ -72,3 +42,17 @@ export const rankingPeriodLabel = (
   if (!from || !to || from <= getAllTimeRange().from) return null;
   return formatRangeShort({ from, to });
 };
+
+/** Reyting kartasi izohi: formula + davr («Sotuv foizi · sotilgan / jami · oxirgi 30 kun»). */
+export const rankingDescription = (
+  formula: string,
+  meta: RankingMeta | null | undefined,
+  lastDaysLabel: (count: number) => string,
+): string => [formula, rankingPeriodLabel(meta, lastDaysLabel)].filter(Boolean).join(" · ");
+
+/**
+ * «Ma'lumot hali kam» izohi kerakmi: backend chegaradan o'tmaganlarni chetga qoldirgan (`filteredOut`)
+ * yoki ko'rinayotgan qatorlardan birida 30 dan kam buyurtma (taxta «Kam ma'lumot»).
+ */
+export const isLowDataRanking = (rows: readonly PerformerRow[], meta: RankingMeta | null | undefined): boolean =>
+  (meta?.filteredOut ?? 0) > 0 || rows.some((row) => row.total < LOW_DATA_ORDERS);

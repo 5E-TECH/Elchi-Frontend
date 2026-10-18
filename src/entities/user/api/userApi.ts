@@ -224,12 +224,14 @@ export const useUser = () => {
   const dispatch = useDispatch();
   const reduxStore = useStore<RootState>();
 
-  const useGetUser = (params?: IUserFilter, enabled: boolean = true) =>
+  /** `silentError` — sahifa xatoni o'zi ko'rsatadi (`ErrorState`), global xabar takrorlanmaydi. */
+  const useGetUser = (params?: IUserFilter, enabled: boolean = true, options?: { silentError?: boolean }) =>
     useQuery({
       queryKey: [user, params],
       queryFn: () => fetchUserList(params),
       enabled,
       placeholderData: (prev) => prev,
+      ...(options?.silentError ? { meta: { silentError: true } } : {}),
     });
 
   const useGetCouriers = (params?: IUserFilter, enabled: boolean = true) =>
@@ -298,12 +300,17 @@ export const useUser = () => {
       enabled,
     });
 
-  const useGetUserById = (id: string, params?: Pick<IUserFilter, "fromDate" | "toDate">) =>
+  const useGetUserById = (
+    id: string,
+    params?: Pick<IUserFilter, "fromDate" | "toDate">,
+    options?: { silentError?: boolean },
+  ) =>
     useQuery({
       queryKey: [user, "detail", id, params],
       queryFn: () =>
         api.get(API_ENDPOINTS.USERS.BY_ID(id), { params }).then((res) => res.data),
       enabled: !!id,
+      ...(options?.silentError ? { meta: { silentError: true } } : {}),
     });
 
   const useGetMyProfile = () =>

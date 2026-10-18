@@ -1,9 +1,9 @@
-// dizayn-v2: superadmin-orders-detail, admin-orders-detail, manager-orders-detail, registrator-orders-detail, market-orders-detail, courier-orders-detail, manager-orders-sell-dialog, manager-orders-cancel-dialog, manager-orders-rollback-dialog
+// dizayn-v2: superadmin-orders-detail, admin-orders-detail, manager-orders-detail, registrator-orders-detail, market-orders-detail, courier-orders-detail, manager-orders-sell-dialog, manager-orders-cancel-dialog, manager-orders-rollback-dialog, superadmin-neworders-market-order-edit, registrator-new-orders-market-order-edit, market-new-orders-edit
 import { memo, useCallback, useMemo, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Check, PackageCheck, RotateCcw, SearchX, Undo2, X } from "lucide-react";
+import { Check, PackageCheck, RotateCcw, Undo2, X } from "lucide-react";
 import type { RootState } from "../../../app/config/store";
 import { readProofFiles } from "../../../entities/order";
 import { useOrders } from "../../../entities/orders";
@@ -18,7 +18,7 @@ import { getSellPaymentStatus, SELL_PAYMENT_NOTICE_KEYS, type SellOrderPayload }
 import { InitiateReturnModal, MarkReturnedModal } from "../../../features/order-return";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { notify } from "../../../shared/lib/notify";
-import { Button, EmptyState, QueryBoundary } from "../../../shared/ui/primitives";
+import { Button, QueryBoundary } from "../../../shared/ui/primitives";
 import { OrderMeta, readOrderMeta } from "../../../widgets/order-meta";
 import { OrderTracking } from "../../../widgets/order-tracking";
 import { getSidebarConfigForUser } from "../../../widgets/Sidebar/model/menuConfig";
@@ -30,6 +30,7 @@ import { AddressCard } from "./detail/AddressCard";
 import { CourierContactCard, CourierPaymentCard, CourierProductsCard } from "./detail/CourierCards";
 import { CustomerCard } from "./detail/CustomerCard";
 import { DetailAlerts } from "./detail/DetailAlerts";
+import { DetailErrorState, DetailNotFound } from "./detail/DetailErrorState";
 import { DetailHeader } from "./detail/DetailHeader";
 import { DetailSkeleton } from "./detail/DetailSkeleton";
 import {
@@ -43,6 +44,7 @@ import {
   buildTrackingAccess,
   buildTrackingContext,
   normalizeOrderDetail,
+  readOrderMarket,
   type OrderDetail,
 } from "./detail/orderDetailModel";
 import { PaymentCard } from "./detail/PaymentCard";
@@ -64,6 +66,11 @@ import { EditAddressDialog, EditCustomerDialog, EditOrderDialog } from "./editDi
  *
  * Ruxsat va qulf qoidalari — `detail/orderDetailAccess.ts`; xom javob tozalanadi
  * (`detail/orderDetailModel.ts`): `id` yo'q javob «topilmadi», sahifa yiqilmaydi.
+ *
+ * `/new-orders/:marketId/edit/:orderId` (maketlar `superadmin-neworders-market-order-edit`,
+ * `registrator-new-orders-market-order-edit`, `market-new-orders-edit`): orqaga — market nomi (marketda
+ * «Qabul va yaratish»), «Buyurtma ma'lumotlari» kartasi yo'q, qulf bo'lmasa xodimga «Tahrirlash ochiq.»,
+ * marketga «Faqat ko'rish uchun» + «Yangi buyurtmalar ro'yxatidan o'chirib, qaytadan yarating».
  */
 
 type EditDialogKind = "customer" | "address" | "order" | null;
@@ -73,6 +80,8 @@ const NewOrderUpdate = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { orderId = "", marketId } = useParams<{ orderId: string; marketId?: string }>();
+  /** «Qabul va yaratish» ichidagi yangi buyurtma (`/new-orders/:marketId/edit/:orderId`). */
+  const isNewOrdersRoute = Boolean(marketId);
   const role = useSelector((state: RootState) => state.role.role);
   const user = useSelector((state: RootState) => state.user.user);
   const menu = useMemo(() => getSidebarConfigForUser(role, user), [role, user]);
@@ -303,9 +312,24 @@ const NewOrderUpdate = () => {
       variant={variant}
     />
   );
-  const meta = (className?: string) => (
-    <OrderMeta order={order} role={role} self={user} canOpenMails={canOpenMails} className={className} />
-  );
+  // `/new-orders/:marketId/edit` maketlarida «Buyurtma ma'lumotlari» kartasi yo'q.
+  const meta = (className?: string) =>
+    isNewOrdersRoute ? null : (
+      <OrderMeta order={order} role={role} self={user} canOpenMails={canOpenMails} className={className} />
+    );
+  /** «Buyurtma topilmadi» holatidagi qaytish manzili — sarlavhadagi «←» bilan bir ro'yxat. */
+  const notFoundBackTo = marketId ? `/new-orders/${marketId}` : "/orders";
+  const newOrdersBackLabel = isNewOrdersRoute
+    ? access.layout === "market"
+      ? t("orderEdit.backToNewOrders")
+      : (readOrderMarket(order)?.name ?? t("orderEdit.backToNewOrders"))
+    : undefined;
+  const editOpen =
+    isNewOrdersRoute && access.layout === "default" && access.canEditOrderFull
+      ? access.canEditCustomer
+        ? "full"
+        : "limited"
+      : null;
   const proofs = proofKeys.length > 0 ? <ProofCard keys={proofKeys} /> : null;
 
   const renderDefault = (detail: OrderDetail) => (
@@ -385,6 +409,7 @@ const NewOrderUpdate = () => {
         order={order}
         layout={access.layout}
         onBack={handleBack}
+        backLabel={newOrdersBackLabel}
         actions={headerActions}
       />
 
@@ -396,6 +421,8 @@ const NewOrderUpdate = () => {
           destinationLocked={access.destinationLocked}
           canEditCustomer={access.canEditCustomer}
           parentOrderId={parentOrderId}
+          editOpen={editOpen}
+          marketListHref={isNewOrdersRoute && access.layout === "market" ? `/new-orders/${marketId}` : null}
         />
       ) : null}
 
@@ -403,7 +430,11 @@ const NewOrderUpdate = () => {
         query={{ ...orderQuery, data: order }}
         keepPreviousData={false}
         loading={<DetailSkeleton />}
-        empty={<EmptyState icon={SearchX} title={t("notFound")} size="page" />}
+        // D-13: bo'sh javob va 404 — «Buyurtma topilmadi» («Buyurtmalarga qaytish»); boshqa xato — «Qayta urinish».
+        empty={<DetailNotFound orderId={orderId} backTo={notFoundBackTo} />}
+        error={(error, retry) => (
+          <DetailErrorState orderId={orderId} backTo={notFoundBackTo} error={error} onRetry={retry} />
+        )}
         size="page"
       >
         {(detail) =>

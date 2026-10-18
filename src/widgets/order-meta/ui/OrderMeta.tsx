@@ -18,6 +18,7 @@ import {
 import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { cx } from "../../../shared/lib/cx";
 import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
+import { formatPhone } from "../../../shared/lib/formatPhone";
 import { notify } from "../../../shared/lib/notify";
 import { Card, IconButton } from "../../../shared/ui/primitives";
 import { formatTrackingDate } from "../../../features/order-tracking";
@@ -96,9 +97,10 @@ const Fit = ({ children }: { children: ReactNode }) => <span className="min-w-0 
 /** Telefonda havola nishoni 44px, qator balandligi esa o'zgarmaydi (manfiy vertikal chekka). */
 const PHONE_TAP = "max-md:-my-3 max-md:inline-flex max-md:min-h-11 max-md:min-w-11 max-md:items-center max-md:justify-end";
 
+/** Telefon — mijoz kartasidagidek formatlangan («+998 88 700 91 13», D-14); havola xom raqam bilan. */
 const PhoneLink = ({ phone }: { phone: string }) => (
   <a href={telHref(phone)} className={cx("shrink-0 text-[13px] font-semibold tabular-nums text-action-fg hover:underline", PHONE_TAP)}>
-    {phone}
+    {formatPhone(phone) || phone}
   </a>
 );
 
@@ -210,7 +212,9 @@ const OrderMeta = ({ order, role, self, canOpenMails = false, className }: Order
             icon={<Store size={15} aria-hidden="true" />}
             label={t("metaMarket")}
             testId="meta-market"
-            title={[meta.market.name, meta.market.phone].filter(Boolean).join(" · ")}
+            title={[meta.market.name, meta.market.phone ? formatPhone(meta.market.phone) || meta.market.phone : null]
+              .filter(Boolean)
+              .join(" · ")}
           >
             <Fit>{meta.market.name ?? "—"}</Fit>
             {meta.market.phone ? <PhoneLink phone={meta.market.phone} /> : null}
@@ -246,7 +250,9 @@ const OrderMeta = ({ order, role, self, canOpenMails = false, className }: Order
           testId="meta-courier"
           title={
             meta.courierId
-              ? [courier?.name ?? `#${meta.courierId}`, courier?.phone].filter(Boolean).join(" · ")
+              ? [courier?.name ?? `#${meta.courierId}`, courier?.phone ? formatPhone(courier.phone) || courier.phone : null]
+                  .filter(Boolean)
+                  .join(" · ")
               : undefined
           }
         >

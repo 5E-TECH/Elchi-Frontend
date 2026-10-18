@@ -1,23 +1,24 @@
-import { memo } from "react";
-import { useNavigate } from "react-router-dom";
+// dizayn-v2: superadmin-neworders-incoming-sources, admin-neworders-incoming-sources, manager-new-orders-incoming-sources
+import { memo, useMemo } from "react";
+import { Inbox, Info, RefreshCw } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import {
-  AlertTriangle,
-  ChevronRight,
-  Clock,
-  Inbox,
-  Loader2,
-  Package,
-  RefreshCw,
-} from "lucide-react";
 import type { RootState } from "../../app/config/store";
+import { useIncomingSources } from "../../entities/incoming-orders";
 import {
-  sourceLabel,
-  useIncomingSources,
-  type IncomingSource,
-} from "../../entities/incoming-orders";
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  QueryBoundary,
+  SkeletonTable,
+} from "../../shared/ui/primitives";
 import { useConnections } from "../integrations/useConnections";
-import { waitingFor } from "./lib";
+import { useNewOrdersTabKeys } from "../new_orders/model/useNewOrdersTabs";
+import NewOrdersTabs from "../new_orders/ui/NewOrdersTabs";
+import IdleSources from "./ui/IdleSources";
+import SourcesSummary from "./ui/SourcesSummary";
+import SourcesTable from "./ui/SourcesTable";
 
 /**
  * QAYSI MANBADAN QABUL QILAMIZ?
@@ -33,9 +34,15 @@ import { waitingFor } from "./lib";
  * Endi: manba tanlanadi → o'sha manbaning posilkalari skanerlanadi.
  *
  * ⚠️ RO'YXAT BUYURTMALARDAN CHIQADI, ulanishlar sozlamasidan emas. Ya'ni
- * posilkasi yo'q manba ko'rinmaydi (bo'sh ekranga olib boradigan karta
+ * posilkasi yo'q manba ko'rinmaydi (bo'sh ekranga olib boradigan qator
  * bo'lardi), va ulanishi o'chirilgan manbaning kutayotgan posilkasi
  * YASHIRILMAYDI — u haqiqatan omborda turgan bo'lishi mumkin.
+ *
+ * KO'RINISH (dizayn v2, maket `superadmin-neworders-incoming-sources`): sahifa «Qabul va yaratish»
+ * qobig'i ichida (sarlavha va «Buyurtma yaratish» qobiqda). Karta qobiq tablari bilan boshlanadi;
+ * «Kiruvchi posilkalar» tabi bu rolga ko'rinmasa (menejer, registrator — tab faqat superadmin/admin'da)
+ * karta o'z sarlavhasini chizadi. So'ng izoh + «Yangilash», taqsimot xulosasi (halqa, jami summa,
+ * eng uzoq kutayotgan), manbalar jadvali va pastda — ulangan, lekin posilkasiz manbalar.
  */
 
 /** Backend guardi bilan BIR XIL — MARKET bu yerda YO'Q (u qabul qilmaydi). */
@@ -46,215 +53,122 @@ const ALLOWED_ROLES = new Set([
   "manager",
 ]);
 
-const money = (value: number) => `${value.toLocaleString("uz-UZ")} so'm`;
-
 const SourcePicker = () => {
-  const navigate = useNavigate();
+  const { t } = useTranslation("common");
   const role = useSelector((state: RootState) => state.role.role);
   const allowed = Boolean(role && ALLOWED_ROLES.has(role));
+  // Qobiq tablari orasida shu sahifaning tabi bo'lmasa — kartaning o'z sarlavhasi.
+  const ownHeading = !useNewOrdersTabKeys().includes("incoming");
 
   const query = useIncomingSources();
-  const sources = query.data ?? [];
-  const totalParcels = sources.reduce((sum, s) => sum + s.orders_count, 0);
+  const sources = useMemo(() => query.data ?? [], [query.data]);
 
   /**
    * ULANGAN, LEKIN POSILKASI YO'Q MANBALAR.
    *
-   * NEGA KERAK BO'LDI. Yuqoridagi kartalar BUYURTMALARdan chiqadi — ya'ni
+   * NEGA KERAK BO'LDI. Yuqoridagi ro'yxat BUYURTMALARdan chiqadi — ya'ni
    * posilka yubormagan manba ko'rinmaydi. Foydalanuvchi buni muammo deb
-   * topdi: "nega faqat beepost turibdi?". Kartalar to'g'ri edi, lekin ekran
+   * topdi: "nega faqat beepost turibdi?". Ro'yxat to'g'ri edi, lekin ekran
    * SABABINI aytmasdi va odam "ulanish buzilganmi?" deb o'ylardi.
    *
    * ⚠️ FAQAT CHIQUVCHI YOZUVLAR (`integration`) sanaladi. Hamkor yozuvida
    * (`partners`) Elchi market bog'lanishi YO'Q — u har posilkada
-   * `elchi_market_id` bilan keladi. Ya'ni hamkorni yuqoridagi karta bilan
+   * `elchi_market_id` bilan keladi. Ya'ni hamkorni yuqoridagi ro'yxat bilan
    * solishtirib bo'lmaydi va uni bu ro'yxatga qo'shsak, posilkasi BOR
    * hamkor (BeePost) ikki joyda ko'rinardi.
    */
   const { connections } = useConnections();
-  const shownMarkets = new Set(sources.map((s) => String(s.market_id)));
-  const idleSources = connections.filter((c) => {
-    if (c.kind !== "integration" || c.role !== "source") return false;
-    const marketId = (c.raw as { market_id?: string | null }).market_id;
-    return !marketId || !shownMarkets.has(String(marketId));
-  });
+  const idleSources = useMemo(() => {
+    const shownMarkets = new Set(sources.map((s) => String(s.market_id)));
+    return connections
+      .filter((c) => {
+        if (c.kind !== "integration" || c.role !== "source") return false;
+        const marketId = (c.raw as { market_id?: string | null }).market_id;
+        return !marketId || !shownMarkets.has(String(marketId));
+      })
+      .map((c) => ({ key: c.uid, name: c.name }));
+  }, [connections, sources]);
 
   if (!allowed) {
-    return (
-      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-8 text-center dark:bg-primarydark">
-        <AlertTriangle className="mx-auto text-amber-500" size={32} />
-        <p className="m-0 mt-4 text-sm font-semibold text-maindark dark:text-white">
-          Bu bo'limga ruxsatingiz yo'q
-        </p>
-      </div>
-    );
+    return <ErrorState kind="forbidden" framed title={t("incomingNoAccess")} description={null} />;
   }
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 shadow-sm sm:rounded-[28px] sm:p-6 dark:bg-primarydark">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-main/10 text-main dark:text-primary">
-              <Inbox size={22} />
-            </div>
-            <div>
-              <h1 className="m-0 text-lg font-extrabold text-maindark dark:text-white">
-                Kiruvchi posilkalar
-              </h1>
-              <p className="m-0 mt-1 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                Qaysi manbadan qabul qilamiz? Manbani tanlang, so'ng
-                posilkalarni skanerlang.
-              </p>
-            </div>
+    <div className="flex flex-col gap-6 max-md:gap-4">
+      <Card padding="none" aria-label={t("incoming.sourcesCardLabel")}>
+        <NewOrdersTabs />
+        {ownHeading ? (
+          <div className="flex min-w-0 items-center border-b border-border px-5 py-4">
+            <h2 className="m-0 text-base font-bold text-text">{t("incoming.sourcesTitle")}</h2>
           </div>
+        ) : null}
 
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="m-0 text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                Kutilmoqda
-              </p>
-              <p className="m-0 text-xl font-extrabold tabular-nums text-maindark dark:text-white">
-                {totalParcels}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => void query.refetch()}
-              disabled={query.isFetching}
-              className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] text-maindark transition hover:bg-main/5 disabled:opacity-50 dark:text-white"
-              title="Yangilash"
-            >
-              <RefreshCw
-                size={18}
-                className={query.isFetching ? "animate-spin" : ""}
-              />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {query.isLoading ? (
-        <div className="flex min-h-[220px] items-center justify-center">
-          <Loader2 className="animate-spin text-main" size={28} />
-        </div>
-      ) : query.isError ? (
-        <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-4 text-sm font-semibold text-red-700 dark:text-red-300">
-          Manbalar ro'yxatini olib bo'lmadi.
-          <button
-            type="button"
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4">
+          <p className="m-0 min-w-0 flex-[1_1_320px] text-[13px] text-text-muted">{t("incoming.sourcesIntro")}</p>
+          <Button
+            variant="secondary"
+            size="sm"
+            leftIcon={RefreshCw}
+            loading={query.isFetching && !query.isLoading}
             onClick={() => void query.refetch()}
-            className="ml-2 underline underline-offset-2"
           >
-            Qayta urinish
-          </button>
+            {t("refresh")}
+          </Button>
         </div>
-      ) : sources.length === 0 ? (
-        /*
-          Bo'sh holat O'RGATADI. "Manba yo'q" deb qoldirish operatorni
-          "tizim buzilganmi?" degan savol bilan qoldirardi.
-        */
-        <div className="rounded-2xl border border-dashed border-[color:var(--color-border-soft)] p-8 text-center">
-          <Inbox
-            size={32}
-            className="mx-auto text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
-          />
-          <p className="m-0 mt-3 text-sm font-bold text-maindark dark:text-white">
-            Qabul kutayotgan posilka yo'q
-          </p>
-          <p className="m-0 mt-1.5 text-xs leading-relaxed text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-            Tashqi tizim posilka yuborganda u shu yerda manbasi bilan
-            ko'rinadi. Ulanish sozlangan bo'lsa ham, posilka kelmaguncha bu
-            yerda karta chiqmaydi — bu normal holat. Manba umuman ulanmagan
-            bo'lsa, Integratsiyalar bo'limida ulanish qo'shiladi.
-          </p>
-        </div>
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {sources.map((source) => (
-            <SourceCard
-              key={source.market_id}
-              source={source}
-              onPick={() =>
-                navigate(`/new-orders/incoming/${source.market_id}`)
-              }
+
+        <QueryBoundary
+          query={query}
+          loading={
+            <SkeletonTable
+              framed={false}
+              rows={3}
+              className="border-t border-border"
+              columns={[
+                t("incoming.colSource"),
+                t("incoming.colParcels"),
+                t("incoming.colSum"),
+                t("incoming.colOldest"),
+              ]}
             />
-          ))}
-        </div>
-      )}
+          }
+          /*
+            Bo'sh holat O'RGATADI. "Manba yo'q" deb qoldirish operatorni
+            "tizim buzilganmi?" degan savol bilan qoldirardi.
+          */
+          empty={
+            <EmptyState
+              icon={Inbox}
+              title={t("incoming.sourcesEmptyTitle")}
+              description={t("incoming.sourcesEmptyText")}
+              className="border-t border-border"
+            />
+          }
+          error={(error, retry) => (
+            <ErrorState
+              error={error}
+              title={t("incoming.sourcesLoadError")}
+              onRetry={retry}
+              retrying={query.isFetching}
+              className="border-t border-border"
+            />
+          )}
+        >
+          {(data) => (
+            <>
+              <SourcesSummary sources={data} />
+              <SourcesTable sources={data} />
+              <p className="m-0 flex items-start gap-2 border-t border-border px-5 py-3 text-xs text-text-subtle max-md:hidden">
+                <Info size={14} aria-hidden="true" className="mt-px shrink-0" />
+                {t("incoming.thresholdNote")}
+              </p>
+            </>
+          )}
+        </QueryBoundary>
+      </Card>
 
       {/* ═══ ULANGAN, LEKIN POSILKASI YO'Q ═══ */}
-      {idleSources.length > 0 && (
-        <div className="rounded-2xl border border-dashed border-[color:var(--color-border-soft)] p-4">
-          <p className="m-0 text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-            Ulangan manbalar — hozircha posilka yo'q
-          </p>
-          <p className="m-0 mt-1 text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-            Yuqoridagi kartalar faqat qabul kutayotgan posilkasi bor manbalarni
-            ko'rsatadi. Quyidagilar ulangan, lekin hali posilka yubormagan.
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {idleSources.map((c) => (
-              <span
-                key={c.uid}
-                className="inline-flex items-center gap-1.5 rounded-full border border-[color:var(--color-border-soft)] px-3 py-1 text-xs font-semibold text-maindark dark:text-white"
-              >
-                <Package size={12} className="text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]" />
-                {c.name}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+      {idleSources.length > 0 ? <IdleSources names={idleSources} /> : null}
     </div>
-  );
-};
-
-const SourceCard = ({
-  source,
-  onPick,
-}: {
-  source: IncomingSource;
-  onPick: () => void;
-}) => {
-  const waiting = waitingFor(source.oldest_at);
-
-  return (
-    <button
-      type="button"
-      onClick={onPick}
-      className="flex w-full items-center gap-3 rounded-2xl border border-[color:var(--color-border-soft)] bg-primary p-4 text-left transition hover:border-main/50 hover:shadow-sm dark:bg-primarydark"
-    >
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-main/10 text-main">
-        <Package size={20} />
-      </span>
-
-      <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-extrabold text-maindark dark:text-white">
-          {sourceLabel(source)}
-        </span>
-        <span className="mt-0.5 block text-xs text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-          {source.orders_count} posilka · {money(source.total_price_sum)}
-        </span>
-        {/* Uzoq kutgan posilka alohida belgilanadi. */}
-        <span
-          className={`mt-1 flex items-center gap-1 text-[11px] font-semibold ${
-            waiting.stale
-              ? "text-amber-600 dark:text-amber-300"
-              : "text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
-          }`}
-        >
-          <Clock size={11} />
-          {waiting.text}
-          {waiting.stale ? " kutmoqda" : ""}
-        </span>
-      </span>
-
-      <ChevronRight
-        size={18}
-        className="shrink-0 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]"
-      />
-    </button>
   );
 };
 

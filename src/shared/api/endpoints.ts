@@ -66,6 +66,7 @@ export const API_ENDPOINTS = {
     BASE: "region", // GET all / POST create
     STATS_ALL: "region/stats/all",
     STATS_BY_ID: (regionId: string | number) => `region/stats/${regionId}`,
+    MY_DISTRICT_STATS: "region/my/district-stats", // GET — kuryer/menejerning o'z viloyati (tumanlar kesimida)
     BY_ID: (regionId: string | number) => `region/${regionId}`, // GET / PATCH update / DELETE
   },
   DISTRICTS: {
@@ -364,8 +365,7 @@ export const API_ENDPOINTS = {
     USERS: (id: string | number) => `branches/${id}/users`, // GET assigned / POST assign
     USER_BY_ID: (branchId: string | number, userId: string | number) =>
       `branches/${branchId}/users/${userId}`, // DELETE remove user from branch
-    // Branch config (was stale "branches/:id/settings")
-    SETTINGS: (id: string | number) => `branches/${id}/config`, // GET list / POST set
+    // Branch config — faqat `branchCoverage.useGetSettingById` (branch-ops) ishlatadi.
     SETTING_BY_ID: (branchId: string | number, key: string | number) =>
       `branches/${branchId}/config/${key}`, // GET / PATCH / DELETE by key
   },

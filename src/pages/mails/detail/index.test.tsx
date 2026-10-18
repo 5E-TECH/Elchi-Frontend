@@ -143,10 +143,14 @@ describe("MailDetailPage — pochtani filialga jo'natish", () => {
     expect(mocks.getBranches).not.toHaveBeenCalled();
     expect(mocks.getActiveManagerBranchIds).not.toHaveBeenCalled();
 
-    const dialog = await screen.findByRole("dialog");
-    expect(within(dialog).getByText("Filialni tanlang")).toBeInTheDocument();
-    await user.click(within(dialog).getByRole("button", { name: /E2E Filial Sirdaryo/ }));
-    await user.click(within(dialog).getByRole("button", { name: /^Jo'natish/ }));
+    const dialog = await screen.findByRole("dialog", { name: "Filialni tanlang" });
+    expect(within(dialog).getByText("2 ta buyurtma tanlangan filialga jo'natiladi")).toBeInTheDocument();
+    expect(within(dialog).getByRole("group", { name: "Sirdaryo viloyatidagi faol filiallar" })).toBeInTheDocument();
+    const submit = within(dialog).getByRole("button", { name: "Jo'natish — 2 ta" });
+    expect(submit).toBeDisabled();
+    await user.click(within(dialog).getByRole("radio", { name: /E2E Filial Sirdaryo/ }));
+    expect(within(dialog).getByRole("radio", { name: /E2E Filial Sirdaryo/ })).toBeChecked();
+    await user.click(submit);
 
     await waitFor(() =>
       expect(mocks.dispatchMutateAsync).toHaveBeenCalledWith({
@@ -174,7 +178,7 @@ describe("MailDetailPage — pochtani filialga jo'natish", () => {
 
       expect(screen.getByTestId("orders-count")).toHaveTextContent("2");
       expect(screen.queryByRole("button", { name: /Pochtani jo'natish/ })).not.toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: /Pochta qabul qilish/ })).not.toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /Pochtani qabul qilish/ })).not.toBeInTheDocument();
       expect(mocks.getDispatchDestinations).not.toHaveBeenCalled();
     },
   );
@@ -232,7 +236,7 @@ describe("MailDetailPage — bekor qilingan pochta (o'zgarmagan)", () => {
     renderPage(stateFor("registrator", "HQ"), `/mails/${POST_ID}?type=refused`);
 
     await user.click(await screen.findByRole("button", { name: "test-select-all" }));
-    const receiveButton = screen.getByRole("button", { name: /Pochta qabul qilish/ });
+    const receiveButton = screen.getByRole("button", { name: /Pochtani qabul qilish/ });
     expect(receiveButton).toBeEnabled();
     expect(screen.queryByRole("button", { name: /Pochtani jo'natish/ })).not.toBeInTheDocument();
 
@@ -253,6 +257,6 @@ describe("MailDetailPage — bekor qilingan pochta (o'zgarmagan)", () => {
 
     await user.click(await screen.findByRole("button", { name: "test-select-all" }));
 
-    expect(screen.getByRole("button", { name: /Pochta qabul qilish/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Pochtani qabul qilish/ })).toBeDisabled();
   });
 });

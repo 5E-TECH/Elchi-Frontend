@@ -7,8 +7,8 @@ describe("formatFinancialAmount", () => {
     expect(formatFinancialAmount(95348635.57)).toBe("95 348 636");
   });
 
-  it("keeps the minus sign", () => {
-    expect(formatFinancialAmount(-112232400)).toBe("-112 232 400");
+  it("keeps the minus sign — dizayn v2: haqiqiy minus «−» (U+2212, formatMoneyLocalized)", () => {
+    expect(formatFinancialAmount(-112232400)).toBe("\u2212112 232 400");
   });
 
   it("0, NaN, undefined and garbage → '0' (never '-0' or 'NaN')", () => {
@@ -35,7 +35,7 @@ describe("formatFinancialAmount", () => {
 
   it("never mixes separators: only digits, spaces and a leading minus", () => {
     for (const value of [1, 999, 1000, 1234567.89, -5000000.5, 95348635.57]) {
-      expect(formatFinancialAmount(value)).toMatch(/^-?\d{1,3}( \d{3})*$/);
+      expect(formatFinancialAmount(value)).toMatch(/^\u2212?\d{1,3}( \d{3})*$/);
     }
   });
 });

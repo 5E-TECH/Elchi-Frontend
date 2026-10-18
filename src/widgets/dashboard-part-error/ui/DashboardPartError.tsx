@@ -4,7 +4,7 @@ import { TriangleAlert } from "lucide-react";
 import { Card, ErrorState } from "../../../shared/ui/primitives";
 
 export type DashboardPartErrorProps = {
-  /** Blok sarlavhasi — karta joyida qoladi («Top marketlar», «Marketlar va kuryerlar» …). */
+  /** Blok sarlavhasi — karta joyida qoladi («Top marketlar», «Marketlar bo'yicha sotuv foizi» …). */
   title: string;
   onRetry: () => void;
   retrying?: boolean;
@@ -15,8 +15,8 @@ export type DashboardPartErrorProps = {
 /**
  * Dashboard bo'lagi olinmadi (VkwhHqvW): backend javobida `degraded` + `failed_parts` — blok 0 lar bilan
  * chizilmaydi, joyida xato holati turadi (taxta `tizim-charts` «Xato»: «Ma'lumotni yuklab bo'lmadi» +
- * «Qayta urinish», ogohlantirish uchburchagi, karta o'z joyida). v1 widget (TopPerformers, PerformanceChart …) o'rniga butun karta
- * sifatida turadi — eski kartaga aralashtirilmaydi (AGENTS.md).
+ * «Qayta urinish», ogohlantirish uchburchagi, karta o'z joyida). bo'lak kartasi (`TopRankCard`, `MarketSalesCard` …)
+ * o'rniga butun karta sifatida turadi (sarlavha o'sha kartaniki).
  */
 export const DashboardPartError = memo(
   ({ title, onRetry, retrying, className, "data-testid": testId }: DashboardPartErrorProps) => (

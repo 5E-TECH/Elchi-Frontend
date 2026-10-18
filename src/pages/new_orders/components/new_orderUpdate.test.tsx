@@ -551,11 +551,45 @@ describe("NewOrderUpdate — so'rov holatlari (dizayn v2)", () => {
     orderState.status = undefined;
   });
 
-  it("⭐ bo'sh javob `{}` (mock API) — sahifa yiqilmaydi, «Ma'lumot topilmadi»", () => {
+  it("⭐ bo'sh javob `{}` (mock API) — sahifa yiqilmaydi, «Buyurtma topilmadi» (D-13)", () => {
     orderState.query = { data: {}, isLoading: false };
     renderPage("manager");
-    expect(screen.getByText("Ma'lumot topilmadi")).toBeInTheDocument();
+    expect(screen.getByText("Buyurtma topilmadi")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Buyurtmalarga qaytish" })).toHaveAttribute("href", "/orders");
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("№1251175");
+  });
+
+  it("⭐ 404 — «Buyurtma topilmadi», backend matni yo'q, «Qayta urinish» o'rniga «Buyurtmalarga qaytish» (D-13)", () => {
+    const refetch = vi.fn();
+    orderState.query = {
+      data: undefined,
+      isLoading: false,
+      isError: true,
+      error: { response: { status: 404, data: { message: "Order #1251175 topilmadi" } } },
+      refetch,
+    };
+    renderPage("admin");
+
+    expect(screen.getByText("Buyurtma topilmadi")).toBeInTheDocument();
+    expect(screen.getByText(/№1251175 raqamli buyurtma yo'q/)).toBeInTheDocument();
+    expect(screen.queryByText(/Order #/)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Qayta urinish" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Buyurtmalarga qaytish" })).toHaveAttribute("href", "/orders");
+    // Raqamni nusxalash — buyurtma yo'q, tugma ham yo'q.
+    expect(screen.queryByRole("button", { name: "Raqamni nusxalash" })).not.toBeInTheDocument();
+  });
+
+  it("404 — «Qabul va yaratish» ichida (`/new-orders/:marketId/edit/:orderId`) qaytish market ro'yxatiga", () => {
+    orderState.query = { data: undefined, isLoading: false, isError: true, error: { response: { status: 404 } } };
+    renderWithProviders(
+      <Routes>
+        <Route path="/new-orders/:marketId/edit/:orderId" element={<NewOrderUpdate />} />
+      </Routes>,
+      { route: "/new-orders/121/edit/1251175" },
+    );
+
+    expect(screen.getByText("Buyurtma topilmadi")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Buyurtmalarga qaytish" })).toHaveAttribute("href", "/new-orders/121");
   });
 
   it("⭐ xato — ErrorState va «Qayta urinish» so'rovni qayta yuboradi (ilgari «topilmadi» chiqardi)", async () => {
@@ -564,7 +598,7 @@ describe("NewOrderUpdate — so'rov holatlari (dizayn v2)", () => {
     orderState.query = { data: undefined, isLoading: false, isError: true, error: { response: { status: 500 } }, refetch };
     renderPage("admin");
 
-    expect(screen.queryByText("Ma'lumot topilmadi")).not.toBeInTheDocument();
+    expect(screen.queryByText("Buyurtma topilmadi")).not.toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Qayta urinish" }));
     expect(refetch).toHaveBeenCalled();
   });

@@ -1,84 +1,102 @@
+// dizayn-v2: superadmin-mails-today, manager-mails-today, courier-mails-today, superadmin-mails-refused, courier-mails-refused
 import { memo } from "react";
-import { useTranslation } from "react-i18next";
-import { BarChart3, MapPinned, Wallet } from "lucide-react";
+import { Mail, Package, Wallet } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
+import { cx } from "../../../shared/lib/cx";
+import {
+  CURRENCY_LABEL,
+  formatMoneyLocalized,
+  formatNumberLocalized,
+  resolveMoneyLanguage,
+} from "../../../shared/lib/formatMoney";
+import { StatCard } from "../../../shared/ui/primitives";
+import type { MailRowsSummary } from "../model/mailsLists";
 
-interface MailSummaryStatsProps {
-  totalRegions: number;
-  totalOrders: number;
-  totalPrice: string;
-  isCourier: boolean;
-  accent: "success" | "error";
-}
-
-interface StatChipProps {
-  icon: React.ReactNode;
-  value: string | number;
-  label: string;
-  tone?: "main" | "success" | "error";
-}
-
-const StatChip = ({ icon, value, label, tone = "main" }: StatChipProps) => {
-  const toneClassName =
-    tone === "error"
-      ? "text-error"
-      : tone === "success"
-        ? "text-success"
-        : "text-maindark dark:text-primary";
-
-  const iconClassName =
-    tone === "error"
-      ? "bg-error/10 text-error"
-      : tone === "success"
-        ? "bg-success/10 text-success"
-        : "bg-main/10 text-main";
-
-  return (
-    <div className="flex min-w-0 items-center gap-1.5 rounded-full bg-primary/8 px-2 py-1 dark:bg-primary/6">
-      <span className={`flex h-5.5 w-5.5 shrink-0 items-center justify-center rounded-full ${iconClassName}`}>
-        {icon}
-      </span>
-      <div className="flex min-w-0 items-baseline gap-1.5">
-        <span className={`truncate text-[0.96rem] font-bold leading-none ${toneClassName}`}>
-          {value}
-        </span>
-        <span className="truncate text-[11px] font-medium text-text-muted dark:text-text-muted-dark">
-          {label}
-        </span>
-      </div>
-    </div>
-  );
+/**
+ * POCHTALAR XULOSASI — ikki ko'rinish (dizayn v2):
+ *
+ *  - `line` — matn qatori (`.el-small .el-muted`, sonlar `.el-strong`): «8 ta viloyat · 182 ta buyurtma ·
+ *    jami 34 760 000 so'm» (`unit="mails"` — «ta pochta»). Xodim maketlarida telefonda ikki qator
+ *    («… ta buyurtma» / «jami …», `stackOnPhone`); kuryerda bitta o'raluvchi qator.
+ *  - `cards` — kuryerning uchta `StatCard` i: «Bugungi pochtalar» N ta · «Buyurtmalar» N ta ·
+ *    «Jami summa» X so'm (maket `courier-mails-today`, `courier-mails-refused`).
+ */
+type LineProps = {
+  variant: "line";
+  summary: MailRowsSummary;
+  /** Birinchi son: turli viloyatlar yoki pochtalar. */
+  unit: "regions" | "mails";
+  /** Telefonda «jami …» alohida qatorda (xodim maketlari). */
+  stackOnPhone?: boolean;
+  className?: string;
 };
 
-const MailSummaryStats = ({
-  totalRegions,
-  totalOrders,
-  totalPrice,
-  isCourier,
-  accent,
-}: MailSummaryStatsProps) => {
-  const { t } = useTranslation("mails");
+type CardsProps = {
+  variant: "cards";
+  summary: MailRowsSummary;
+  /** Birinchi kartaning nomi: «Bugungi pochtalar» / «Rad etilgan pochtalar». */
+  mailsLabel: string;
+  className?: string;
+};
 
+export type MailSummaryStatsProps = LineProps | CardsProps;
+
+const STRONG = <strong className="font-semibold text-text" />;
+
+const MailSummaryStats = (props: MailSummaryStatsProps) => {
+  const { t, i18n } = useTranslation("mailsShell");
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const { summary } = props;
+  const count = (value: number) => formatNumberLocalized(value, { language });
+
+  if (props.variant === "cards") {
+    return (
+      <div className={cx("grid grid-cols-3 gap-4", props.className)}>
+        <StatCard label={props.mailsLabel} value={count(summary.mails)} unit={t("stats.unit")} icon={Mail} />
+        <StatCard label={t("stats.orders")} value={count(summary.orders)} unit={t("stats.unit")} icon={Package} />
+        <StatCard
+          label={t("stats.amount")}
+          value={formatMoneyLocalized(summary.amount, { language, withCurrency: false })}
+          unit={CURRENCY_LABEL[resolveMoneyLanguage(language)]}
+          icon={Wallet}
+        />
+      </div>
+    );
+  }
+
+  const first = props.unit === "regions" ? summary.regions : summary.mails;
+  const stack = props.stackOnPhone ?? false;
   return (
-    <div className="flex flex-wrap items-center gap-2 px-1">
-      <StatChip
-        icon={<MapPinned size={14} />}
-        value={totalRegions}
-        label={isCourier ? t("mailCountLabel") : t("regionCountLabel")}
-      />
-      <div className="hidden h-6 w-px bg-border-soft sm:block" />
-      <StatChip
-        icon={<BarChart3 size={14} />}
-        value={totalOrders}
-        label={t("orderCountLabel")}
-      />
-      <div className="hidden h-6 w-px bg-border-soft sm:block" />
-      <StatChip
-        icon={<Wallet size={14} />}
-        value={totalPrice}
-        label={t("amountLabel")}
-        tone={accent}
-      />
-    </div>
+    <p className={cx("text-[13px] text-text-muted", props.className)}>
+      <span className="whitespace-nowrap">
+        <Trans
+          t={t}
+          i18nKey={props.unit === "regions" ? "summary.regions" : "summary.mails"}
+          values={{ value: count(first) }}
+          count={first}
+          components={{ b: STRONG }}
+        />
+      </span>
+      {" · "}
+      <span className="whitespace-nowrap">
+        <Trans
+          t={t}
+          i18nKey="summary.orders"
+          values={{ value: count(summary.orders) }}
+          count={summary.orders}
+          components={{ b: STRONG }}
+        />
+      </span>
+      <span className={cx(stack && "max-md:hidden")}>{" · "}</span>
+      <span className={cx("whitespace-nowrap", stack && "max-md:block")}>
+        <Trans
+          t={t}
+          i18nKey="summary.total"
+          values={{ value: formatMoneyLocalized(summary.amount, { language }) }}
+          components={{ b: STRONG }}
+        />
+      </span>
+    </p>
   );
 };
 

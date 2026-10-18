@@ -80,7 +80,7 @@ test.describe("Buyurtma ma'lumotlari — qabul mezonlari (1440px)", () => {
     await expect(courier).toContainText("Xorazm Courier");
     const phone = courier.locator('a[href^="tel:"]');
     await expect(phone).toHaveAttribute("href", "tel:+998970000090");
-    await expect(phone).toHaveText("+998970000090");
+    await expect(phone).toHaveText("+998 97 000 00 90");
     // Bosiladigan: ko'rinadi, ustida boshqa element yo'q (trial click — haqiqiy qo'ng'iroq ochilmaydi).
     await phone.click({ trial: true });
     expect(leaked).toEqual([]);

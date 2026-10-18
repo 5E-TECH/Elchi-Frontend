@@ -13,6 +13,11 @@ export default defineConfig({
   testDir: "./tests/e2e",
   timeout: 30_000,
   fullyParallel: true,
+  // CI (GitHub Actions, 2 yadro): 2 ishchi; tasodifiy tarmoq/taymer tebranishi uchun bitta qayta urinish
+  // (`trace: on-first-retry` shu qayta urinishda iz yozadi). Lokalda qayta urinish yo'q — yiqilish darhol ko'rinadi.
+  workers: process.env.CI ? 2 : undefined,
+  retries: process.env.CI ? 1 : 0,
+  forbidOnly: !!process.env.CI,
   use: {
     baseURL: "http://127.0.0.1:4173",
     trace: "on-first-retry",

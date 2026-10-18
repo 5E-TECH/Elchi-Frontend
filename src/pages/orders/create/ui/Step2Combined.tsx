@@ -5,7 +5,7 @@ import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useLogistics } from "../../../../entities/logistics/api/logisticsApi";
-import { useProducts } from "../../../../entities/product";
+import { PRODUCT_LIST_MAX_LIMIT, useProducts } from "../../../../entities/product";
 import type { DeliveryType } from "../../../../entities/order/types/order";
 import type { RootState } from "../../../../app/config/store";
 import { cx } from "../../../../shared/lib/cx";
@@ -29,6 +29,12 @@ type OrderItemValue = OrderCreateFormValues["details"]["items"][number];
 type CatalogProduct = { id: string | number; name?: string; price?: number | string | null };
 
 type AreaItem = { id: string | number; name?: string; sato_code?: string | null };
+
+/**
+ * Katalog to'liq olinadi (gateway chegarasi 500): `limit` siz server 10 tasini berardi va qidiruv faqat shu
+ * 10 ta ichida ishlardi (D-20). Qidiruv — mijozda, olingan ro'yxat bo'yicha.
+ */
+const CATALOG_PARAMS = { limit: PRODUCT_LIST_MAX_LIMIT };
 
 /** Mavjud naqsh: `nom • sato_code` — operator viloyat/tumanni kod bilan tekshira oladi. */
 const toAreaOptions = (items: AreaItem[]): SelectOption[] =>
@@ -170,8 +176,8 @@ const Step2Combined = () => {
   const { data: districts, isLoading: distLoading } = useGetDistricts(selectedRegionId);
 
   const { useGetByMarketId, useGetMyProducts } = useProducts();
-  const marketProductsQuery = useGetByMarketId(productSourceMarketId, !isMarketRole);
-  const myProductsQuery = useGetMyProducts(isMarketRole);
+  const marketProductsQuery = useGetByMarketId(productSourceMarketId, !isMarketRole, CATALOG_PARAMS);
+  const myProductsQuery = useGetMyProducts(isMarketRole, CATALOG_PARAMS);
   const productsData = isMarketRole ? myProductsQuery.data : marketProductsQuery.data;
   const prodLoading = isMarketRole ? myProductsQuery.isLoading : marketProductsQuery.isLoading;
 
@@ -469,6 +475,15 @@ const Step2Combined = () => {
                     </span>
                   </li>
                 ))
+              ) : allProducts.length === 0 ? (
+                // Katalog umuman bo'sh — «Topilmadi» emas (hech narsa qidirilmagan), qayerdan qo'shish aytiladi (D-19).
+                <li>
+                  <EmptyState
+                    icon={ShoppingBag}
+                    title={t("createCatalogEmpty")}
+                    description={t("createCatalogEmptyHint")}
+                  />
+                </li>
               ) : filteredProducts.length === 0 ? (
                 <li>
                   <EmptyState icon={ShoppingBag} title={t("notFound", { ns: "common" })} />

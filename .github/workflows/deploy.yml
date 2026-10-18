@@ -4,7 +4,7 @@
 # `npm run deploy` yozardi. Oxirgi marta 24-avgustda qilingan — ya'ni
 # `main`ga qo'shilgan kod ikki hafta productionga chiqmay turgan.
 #
-# Endi: `main`ga push -> sifat darvozasi -> deploy. PR'da faqat tekshiruv.
+# Endi: `main`ga push -> sifat darvozasi -> deploy. PR'da faqat tekshiruv (+ Playwright e2e).
 #
 # Kerakli GitHub Secrets (Settings -> Secrets and variables -> Actions):
 #   CLOUDFLARE_API_TOKEN   — "Edit Cloudflare Workers" shablonidagi token
@@ -30,7 +30,8 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # PR'da e2e ham yuradi (~5 daqiqa brauzer o'rnatish bilan) — zaxira bilan 30.
+    timeout-minutes: 30
     permissions:
       contents: read
 
@@ -68,6 +69,38 @@ jobs:
 
       # Bundle byudjeti: entry ≤ 600 KB gzip, index.html da jsPDF yo'q.
       - run: npm run check:bundle
+
+      # E2E (Playwright, tests/e2e) — faqat PR'da, yiqilsa merge bo'lmaydi (ega qarori 2026-10-17).
+      # API so'rovlari testlarning o'zida mock qilinadi (tests/e2e/support/*), backend kerak emas;
+      # dev server'ni playwright.config.ts dagi `webServer` o'zi ko'taradi. Ilgari e2e faqat lokalda
+      # yurardi va dizayn v2 bosqichlarida 18 ta test jimgina sinib qolgan edi.
+      - name: Playwright brauzeri keshi
+        if: github.event_name == 'pull_request'
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Playwright brauzerini o'rnatish
+        if: github.event_name == 'pull_request' && steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Playwright tizim kutubxonalari (keshdan)
+        if: github.event_name == 'pull_request' && steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: E2E (Playwright)
+        if: github.event_name == 'pull_request'
+        run: npx playwright test --reporter=line
+
+      - name: E2E natijalari (yiqilganda)
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: test-results/
+          retention-days: 7
 
       # Wrangler package.json dagi versiyadan olinadi (npm ci o'rnatgan), ya'ni
       # versiya bitta joyda turadi va workflow repodan uzilib qolmaydi.

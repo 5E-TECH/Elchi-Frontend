@@ -1,52 +1,59 @@
+// dizayn-v2: manager-branch-dashboard-main
+import { CircleCheck, CircleX, PackagePlus, Trophy, Truck } from "lucide-react";
 import { memo, useCallback, useMemo, useState } from "react";
-import { Building2, CalendarRange, PackageCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
-import HeaderName from "../../../shared/components/headerName";
+import { canViewBatchesPage } from "../../../app/lib/access";
+import type { RootState } from "../../../app/config/store";
 import { useDashboard } from "../../../entities/dashboard";
 import { hasFailedPart } from "../../../entities/dashboard/lib/partialFailure";
-import {
-  ActivePackagesCard,
-  CourierActivityCard,
-  MarketsPerformanceCard,
-  OrdersOverviewCard,
-} from "./BranchDashboardCards";
-import { adaptBranchDashboard } from "./branchDashboardAdapter";
-import PageContainer from "../../../shared/ui/PageContainer";
-import QuickDateRangeFilter from "../../../shared/ui/QuickDateRangeFilter";
-import QueryErrorState from "../../../shared/ui/QueryErrorState";
-import { RankingCard } from "../../../widgets/dashboard-top-performers/ui/RankingCard";
-import { DashboardPartError } from "../../../widgets/dashboard-part-error/ui/DashboardPartError";
+import { periodLabel, resolveDashboardPeriod, share } from "../../../entities/dashboard/lib/period";
+import { readProfileBranchName } from "../../../entities/dashboard/lib/profile";
 import { getCurrentBranchId } from "../../../shared/lib/currentBranch";
 import { getTodayRange } from "../../../shared/lib/dateRange";
+import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { removeFilterValue, setMultipleFilters } from "../../../shared/model/filterSlice";
-import type { RootState } from "../../../app/config/store";
+import { Card, EmptyState, ErrorState } from "../../../shared/ui/primitives";
+import { DashboardPartError } from "../../../widgets/dashboard-part-error/ui/DashboardPartError";
+import DashboardHeader from "../../../widgets/dashboard-statistics/ui/DashboardHeader";
+import { CardRow, LoadingChartCard } from "../../../widgets/dashboard-statistics/ui/DashboardGrid";
+import OrderStatusCard from "../../../widgets/dashboard-statistics/ui/OrderStatusCard";
+import SuccessRateCard from "../../../widgets/dashboard-statistics/ui/SuccessRateCard";
+import { branchRows, toRankItems } from "../../../widgets/dashboard-top-performers/lib/rankItems";
+import { isLowDataRanking, rankingDescription } from "../../../widgets/dashboard-top-performers/model/ranking";
+import TopRankCard from "../../../widgets/dashboard-top-performers/ui/TopRankCard";
+import { adaptBranchDashboard } from "./branchDashboardAdapter";
+import { ActivePackagesCard, CouriersCard, MarketsBreakdownCard } from "./BranchCards";
 
-const statCardClassName =
-  "rounded-2xl border border-[color:var(--color-border-soft)] bg-white/70 px-4 py-3 shadow-sm dark:border-white/10 dark:bg-white/[0.05]";
+const GOOD_ZONE = 0.7;
 
+/**
+ * FILIAL PANELI — menejer (`/branch-dashboard`, maket `manager-branch-dashboard-main`).
+ *
+ * Saqlanadigan xulq: davr redux'da, sukut — bugun (`getTodayRange`), «Barchasi» — aniq sanalar (`all` emas),
+ * `branch_id` so'rovda; ma'lumot `adaptBranchDashboard` (o'zgarmaydi); filial paneli kelmasa yoki
+ * `stats_unavailable` yoki `failed_parts: branchDashboard` (VkwhHqvW) — nollar o'rniga `ErrorState`
+ * «Statistika vaqtincha mavjud emas» (fix3 C9); `failed_parts: topBranches` — reyting joyida xato kartasi;
+ * kartalar `visibility.*` bo'yicha; so'rov xatosi — `loadError` + «Qayta urinish».
+ */
 const BranchDashboardPage = () => {
-  const { t } = useTranslation("branchDashboard");
+  const { t, i18n } = useTranslation("branchDashboard");
+  const { t: tDash } = useTranslation("dashboard");
+  const language = i18n.language;
   const dispatch = useDispatch();
   const userRole = useSelector((state: RootState) => state.role.role);
-  const userId = useSelector((state: RootState) => state.user.user?.id);
+  const user = useSelector((state: RootState) => state.user.user);
+  const userId = user?.id;
   const branchId = useSelector(getCurrentBranchId);
-  const storedFromDate = useSelector(
-    (state: RootState) => state.filter.dashboardFromDate,
-  );
-  const storedToDate = useSelector(
-    (state: RootState) => state.filter.dashboardToDate,
-  );
+  const canOpenBatches = useSelector(canViewBatchesPage);
+  const storedFromDate = useSelector((state: RootState) => state.filter.dashboardFromDate);
+  const storedToDate = useSelector((state: RootState) => state.filter.dashboardToDate);
   const defaultDateRange = useMemo(() => getTodayRange(), []);
   const [fromDate, setFromDate] = useState(
-    typeof storedFromDate === "string" && storedFromDate
-      ? storedFromDate
-      : defaultDateRange.from,
+    typeof storedFromDate === "string" && storedFromDate ? storedFromDate : defaultDateRange.from,
   );
   const [toDate, setToDate] = useState(
-    typeof storedToDate === "string" && storedToDate
-      ? storedToDate
-      : defaultDateRange.to,
+    typeof storedToDate === "string" && storedToDate ? storedToDate : defaultDateRange.to,
   );
   const hasDateFilter = Boolean(fromDate && toDate);
   const analyticsScope = `${userRole || "unknown"}:${userId || "unknown"}`;
@@ -59,43 +66,23 @@ const BranchDashboardPage = () => {
     [branchId, fromDate, hasDateFilter, toDate],
   );
   const { getDashboard } = useDashboard();
-  const { data, isLoading, isFetching, isError, refetch } = getDashboard(
-    analyticsParams,
-    true,
-    analyticsScope,
-  );
+  const { data, isLoading, isFetching, isError, refetch } = getDashboard(analyticsParams, true, analyticsScope);
   const rawBranchDashboard = data?.data?.branchDashboard;
-  /**
-   * fix3 C9 (CODE-23): filial raqamlari olinmadi — order-service javob bermadi
-   * (`stats_unavailable`) yoki filial paneli umuman kelmadi. Avval bunda
-   * jimgina nollar yoki BOSHQA doiradagi `data.orders` (filialniki emas)
-   * ko'rsatilardi va menejer "bugun 0 ta" deb o'ylardi.
-   */
   const failedParts = data?.data?.failedParts;
+  // fix3 C9 (CODE-23): filial raqamlari olinmadi — nollar haqiqiy emas, ko'rsatilmaydi.
   const isStatsUnavailable =
     Boolean(data) &&
     (!rawBranchDashboard ||
       rawBranchDashboard.stats_unavailable === true ||
       // VkwhHqvW: backend `failed_parts: ['branchDashboard']` — filial raqamlari olinmadi.
       hasFailedPart(failedParts, "branchDashboard"));
-  const branchDashboard = useMemo(
-    () => adaptBranchDashboard(rawBranchDashboard, userRole || "OPERATOR", undefined, false),
-    [rawBranchDashboard, userRole],
-  );
-  const displayDashboard = branchDashboard;
+  const dashboard = adaptBranchDashboard(rawBranchDashboard, userRole || "OPERATOR", undefined, false);
 
-  const isManager = displayDashboard.role === "MANAGER";
-  const topBranches = data?.data?.topBranches ?? [];
   const applyRange = useCallback(
     (range: { from: string; to: string }) => {
       setFromDate(range.from);
       setToDate(range.to);
-      dispatch(
-        setMultipleFilters({
-          dashboardFromDate: range.from,
-          dashboardToDate: range.to,
-        }),
-      );
+      dispatch(setMultipleFilters({ dashboardFromDate: range.from, dashboardToDate: range.to }));
     },
     [dispatch],
   );
@@ -106,129 +93,148 @@ const BranchDashboardPage = () => {
     dispatch(removeFilterValue("dashboardToDate"));
   }, [defaultDateRange.from, defaultDateRange.to, dispatch]);
 
+  const period = resolveDashboardPeriod(fromDate, toDate);
+  const periodText = periodLabel(tDash, period);
+  const branchName = readProfileBranchName(user) ?? t("branchFallback");
+  const count = (value: number) => formatNumberLocalized(value, { language });
+  const summary = dashboard.orderSummary;
+  const rate = share(summary.delivered, summary.total);
+  const needed = Math.ceil(GOOD_ZONE * summary.total) - summary.delivered;
+
+  const description = (
+    <>
+      <span>{t("v2.subtitle", { branch: branchName })}</span>{" "}
+      <span className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] font-semibold text-success-fg">
+        <span aria-hidden="true" className="size-2 rounded-full bg-success" />
+        {isLoading ? t("loading") : t("liveData")}
+      </span>
+    </>
+  );
+
+  const header = (
+    <DashboardHeader
+      description={description}
+      fromDate={fromDate}
+      toDate={toDate}
+      onChange={applyRange}
+      onClear={clearRange}
+      showYear={false}
+      clearable={!(fromDate === defaultDateRange.from && toDate === defaultDateRange.to)}
+    />
+  );
+
   if (isError) {
     return (
-      <PageContainer>
-        <QueryErrorState
-          description={t("loadError")}
-          onRetry={() => void refetch()}
-        />
-      </PageContainer>
+      <div className="flex flex-col gap-6 max-md:gap-4">
+        {header}
+        <Card>
+          <ErrorState description={t("loadError")} onRetry={() => void refetch()} />
+        </Card>
+      </div>
     );
   }
 
+  // «Top filiallar»: top 5 + o'z filiali 6-qator (top 5 da bo'lmasa).
+  const rows = branchRows(data?.data?.topBranches);
+  const ownIndex = branchId ? rows.findIndex((row) => row.id === String(branchId)) : -1;
+  const selfBadge = { label: t("v2.top.yourBranch"), tone: "neutral" as const, outline: true };
+  const items = toRankItems(rows.slice(0, 5), { t: tDash, language, selfId: branchId, selfBadge });
+  const pinned =
+    ownIndex >= 5
+      ? toRankItems([rows[ownIndex]], { t: tDash, language, selfId: branchId, selfBadge, startRank: ownIndex + 1 })[0]
+      : undefined;
+  const meta = data?.data?.topBranchesMeta;
+
+  const visibility = dashboard.visibility;
+  const showOrders = visibility.orders;
+  const showSide = visibility.packages || visibility.couriers;
+  const rankingClassName = !isStatsUnavailable && visibility.markets ? undefined : "lg:col-span-3";
+
   return (
-    <PageContainer className="flex flex-col">
-      <section className="mb-3 overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-main)_18%,var(--color-primary)_82%)_0%,color-mix(in_srgb,var(--color-sidebar)_92%,white_8%)_100%)] p-3.5 shadow-[0_18px_40px_rgba(87,106,219,0.12)] xl:shrink-0 dark:bg-[linear-gradient(135deg,color-mix(in_srgb,var(--color-main)_22%,var(--color-primarydark)_78%)_0%,color-mix(in_srgb,var(--color-maindark)_95%,var(--color-primarydark)_5%)_100%)]">
-        <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
-          <div className="space-y-3">
-            <HeaderName
-              name={t("title")}
-              description={t("subtitle")}
-              icon={<Building2 />}
-            />
-
-            {isStatsUnavailable ? null : (
-              <div className="grid gap-2.5 sm:grid-cols-3">
-                <div className={statCardClassName}>
-                  <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                    <CalendarRange size={14} />
-                    <span>{t("totalOrdersCount")}</span>
-                  </div>
-                  <p className="mt-1.5 text-[1.7rem] font-black leading-none text-maindark dark:text-white">
-                    {displayDashboard.orderSummary.total}
-                  </p>
-                </div>
-
-                <div className={statCardClassName}>
-                  <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                    <PackageCheck size={14} />
-                    <span>{t("deliveredOrdersCount")}</span>
-                  </div>
-                  <p className="mt-1.5 text-[1.7rem] font-black leading-none text-maindark dark:text-white">
-                    {displayDashboard.orderSummary.delivered}
-                  </p>
-                </div>
-
-                <div className={statCardClassName}>
-                  <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-                    <PackageCheck size={14} />
-                    <span>{t("cancelledOrdersCount")}</span>
-                  </div>
-                  <p className="mt-1.5 text-[1.7rem] font-black leading-none text-maindark dark:text-white">
-                    {displayDashboard.orderSummary.returned}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-col items-start gap-2.5 xl:items-end">
-            <span className="inline-flex w-max rounded-xl border border-main/20 bg-main/10 px-3.5 py-2 text-sm font-extrabold text-main dark:text-white">
-              {isManager ? t("managerMode") : t("operatorMode")}
-            </span>
-            <QuickDateRangeFilter
-              fromDate={fromDate}
-              toDate={toDate}
-              onChange={applyRange}
-              onClear={clearRange}
-              includeAll
-              className="xl:items-end"
-              pickerClassName="w-full sm:w-88"
-              clearClassName="sm:w-auto"
-            />
-            <div className="rounded-2xl border border-dashed border-main/20 bg-white/45 px-4 py-2.5 text-sm font-medium text-[color:var(--color-text-muted)] shadow-sm dark:border-white/10 dark:bg-white/[0.04] dark:text-[color:var(--color-text-muted-dark)]">
-              {isLoading ? t("loading") : t("liveData")}
-            </div>
-          </div>
-        </div>
-      </section>
+    <div className="flex flex-col gap-6 max-md:gap-4">
+      {header}
 
       {isStatsUnavailable ? (
-        // `QueryErrorState` (v2 `ErrorState`) o'zi `role="alert"` — qo'shimcha o'ram kerak emas.
-        <QueryErrorState
-          description={t("statsUnavailable")}
-          onRetry={() => void refetch()}
-        />
+        <Card>
+          <ErrorState description={t("statsUnavailable")} onRetry={() => void refetch()} />
+        </Card>
+      ) : isLoading ? (
+        <CardRow>
+          <LoadingChartCard title={tDash("v2Dashboard.success.title")} />
+          <LoadingChartCard title={tDash("v2Dashboard.status.title")} />
+        </CardRow>
       ) : (
-        <div className="grid content-start gap-3 xl:grid-cols-2">
-          {displayDashboard.visibility.orders ? (
-            <OrdersOverviewCard summary={displayDashboard.orderSummary} />
+        <CardRow>
+          {showOrders ? (
+            <SuccessRateCard
+              rate={rate}
+              sold={summary.delivered}
+              cancelled={summary.returned}
+              description={tDash("v2Dashboard.success.subScoped", { period: periodText, scope: branchName })}
+              gaugeLabel={tDash("v2Dashboard.success.gaugeTotal")}
+              showThreshold={false}
+              note={summary.total > 0 && needed > 0 ? t("v2.success.needed", { count: needed }) : undefined}
+            />
           ) : null}
-          {displayDashboard.visibility.markets ? (
-            <MarketsPerformanceCard markets={displayDashboard.markets} />
+          {showOrders ? (
+            <OrderStatusCard
+              total={summary.total}
+              description={t("v2.status.sub", { period: periodText })}
+              centerLabel={t("totalOrdersCount")}
+              listHref="/orders"
+              note={t("v2.status.note", { count: count(summary.total) })}
+              segments={[
+                { key: "new", label: t("new"), value: summary.new, tone: "info", icon: PackagePlus },
+                { key: "road", label: t("onTheRoad"), value: summary.onTheRoad, tone: "warning", icon: Truck },
+                { key: "sold", label: t("delivered"), value: summary.delivered, tone: "success", icon: CircleCheck },
+                { key: "cancelled", label: t("returned"), value: summary.returned, tone: "danger", icon: CircleX },
+              ]}
+            />
           ) : null}
-          {displayDashboard.visibility.packages ? (
-            <ActivePackagesCard packages={displayDashboard.packages} />
+          {showSide ? (
+            <div className="flex min-w-0 flex-col gap-4 max-md:gap-3">
+              {visibility.packages ? <ActivePackagesCard packages={dashboard.packages} canOpenBatches={canOpenBatches} /> : null}
+              {visibility.couriers ? <CouriersCard couriers={dashboard.couriers} /> : null}
+            </div>
           ) : null}
-          {displayDashboard.visibility.couriers ? (
-            <CourierActivityCard couriers={displayDashboard.couriers} />
-          ) : null}
-        </div>
+        </CardRow>
       )}
 
-      {/* Reyting — dizayn v2 (9zbSDkUI, `manager-branch-dashboard-main`): o'z filiali belgilangan. */}
-      <div className="mt-3 xl:shrink-0">
-        {hasFailedPart(failedParts, "topBranches") ? (
-          <DashboardPartError
-            data-testid="ranking-branches"
-            title={t("dashboard:top.branches_title")}
-            onRetry={() => void refetch()}
-            retrying={isFetching}
-          />
-        ) : (
-          <RankingCard
-            data-testid="ranking-branches"
-            title={t("dashboard:top.branches_title")}
-            branches={topBranches}
-            meta={data?.data?.topBranchesMeta}
-            ownId={branchId ? String(branchId) : null}
-            ownFormula={t("dashboard:ranking.formulaWithOwn")}
-            loading={isLoading}
-          />
-        )}
-      </div>
-    </PageContainer>
+      {!isLoading ? (
+        <div className="grid gap-4 lg:grid-cols-3 max-md:gap-3">
+          {!isStatsUnavailable && visibility.markets ? (
+            <MarketsBreakdownCard markets={dashboard.markets} className="lg:col-span-2" />
+          ) : null}
+          {hasFailedPart(failedParts, "topBranches") ? (
+            <DashboardPartError
+              data-testid="ranking-branches"
+              className={rankingClassName}
+              title={tDash("v2Dashboard.top.branches")}
+              onRetry={() => void refetch()}
+              retrying={isFetching}
+            />
+          ) : (
+            <TopRankCard
+              data-testid="ranking-branches"
+              className={rankingClassName}
+              title={tDash("v2Dashboard.top.branches")}
+              description={rankingDescription(t("v2.top.sub"), meta, (count) => tDash("v2Dashboard.top.periodLastDays", { count }))}
+              items={items}
+              pinned={pinned}
+              pinnedLabel={t("v2.top.ownRankAria")}
+              expandable
+              // Bo'sh — ixcham holat (9zbSDkUI): «Bu davrda reyting uchun buyurtma yo'q».
+              empty={<EmptyState size="inline" icon={Trophy} title={tDash("v2Dashboard.top.emptyPeriod")} />}
+              note={
+                items.length > 0 && (isLowDataRanking(rows.slice(0, 5), meta) || items.length < 5)
+                  ? tDash("v2Dashboard.top.limited")
+                  : undefined
+              }
+            />
+          )}
+        </div>
+      ) : null}
+    </div>
   );
 };
 

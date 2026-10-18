@@ -47,15 +47,16 @@ export const extractCancelledOrders = (response: unknown): OrderListItem[] =>
  *
  * `value` — backend `CancelledManualOverrideReasonDto` enum qiymati: AYNAN shu
  * o'zbekcha matnlar (`@IsEnum`). Foydalanuvchiga faqat `labelKey` tarjimasi
- * ko'rsatiladi. Ilgari tarjima qilingan YORLIQ yuborilardi: RU/EN
+ * (`newOrders:cancelled.manualReasons.*`) ko'rsatiladi. Ilgari tarjima qilingan YORLIQ yuborilardi: RU/EN
  * interfeysda ("QR порван") butun topshirish — to'g'ri skanerlanganlari bilan
  * birga — 400 olardi va mollar HQ da qolib ketardi.
  */
 export const CANCELLED_MANUAL_REASONS = [
-  { value: "QR yirtilgan", labelKey: "cancelledManualReasonTorn" },
-  { value: "QR o'qilmayapti", labelKey: "cancelledManualReasonUnreadable" },
-  { value: "Label yo'qolgan", labelKey: "cancelledManualReasonMissing" },
-  { value: "QR namlangan yoki xiralashgan", labelKey: "cancelledManualReasonWet" },
+  { value: "QR yirtilgan", labelKey: "cancelled.manualReasons.torn" },
+  { value: "QR o'qilmayapti", labelKey: "cancelled.manualReasons.unreadable" },
+  // Kod o'zgarmaydi («Label …» — backend enum), yorliq maketdagidek «Yorliq yo'qolgan».
+  { value: "Label yo'qolgan", labelKey: "cancelled.manualReasons.missing" },
+  { value: "QR namlangan yoki xiralashgan", labelKey: "cancelled.manualReasons.wet" },
 ] as const;
 
 export type CancelledManualReason = (typeof CANCELLED_MANUAL_REASONS)[number]["value"];

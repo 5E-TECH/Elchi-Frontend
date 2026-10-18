@@ -1,77 +1,129 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
+import type { RegionItem } from "../../../entities/region";
+import { toRegionRows } from "../model/regionsModel";
 import UzbekistanRegionMap from "./UzbekistanRegionMap";
-import css from "../../../index.css?raw";
 
-// Highcharts jsdom'da chizilmaydi — seriyaning birinchi nuqtasini tugma qilib, uning `click` hodisasini chaqiramiz.
+type MockPoint = Record<string, unknown> & { rowId?: string; color?: string; name?: string };
+type MockSeries = {
+  data?: MockPoint[];
+  nullColor?: string;
+  point?: { events?: { click?: (this: MockPoint) => void } };
+  dataLabels?: { formatter?: (this: MockPoint) => string };
+};
+type MockOptions = {
+  series?: MockSeries[];
+  tooltip?: { formatter?: (this: MockPoint) => string | false };
+};
+
+const lastOptions = vi.hoisted(() => ({ current: null as MockOptions | null }));
+
+// Highcharts jsdom'da chizilmaydi — har nuqtani tugma qilib, uning `click` hodisasini chaqiramiz.
 vi.mock("highcharts-react-official", () => ({
-  default: ({ options }: { options: { series?: Array<{ data?: Array<Record<string, unknown>>; point?: { events?: { click?: () => void } } }> } }) => {
-    const series = options?.series?.find((item) => item.point?.events?.click);
-    const point = series?.data?.[0];
-    return point ? (
-      <button type="button" onClick={() => series?.point?.events?.click?.call(point)}>
-        map-point
-      </button>
-    ) : null;
+  default: ({ options }: { options: MockOptions }) => {
+    lastOptions.current = options;
+    const series = options.series?.[0];
+    return (
+      <div>
+        {(series?.data ?? []).map((point) => (
+          <button
+            key={String(point["hc-key"])}
+            type="button"
+            onClick={() => series?.point?.events?.click?.call(point)}
+          >
+            {`map-point-${String(point["hc-key"])}`}
+          </button>
+        ))}
+      </div>
+    );
   },
 }));
 
-const apiGet = vi.hoisted(() => vi.fn());
-vi.mock("../../../shared/api/api", () => ({ api: { get: (...args: unknown[]) => apiGet(...args) } }));
+const region = (
+  id: string,
+  name: string,
+  ordersCount: number,
+  deliveredOrders: number,
+): RegionItem => ({
+  id,
+  name,
+  districtCount: 10,
+  activeCouriers: 3,
+  ordersCount,
+  deliveredOrders,
+  cancelledOrders: 1,
+  pendingOrders: 0,
+  totalRevenue: 1_000_000,
+  successRate: 0,
+});
 
-/**
- * index.css dagi token qiymati: `.dark` blokida qayta aniqlangan bo'lsa o'shani, aks holda umumiy qiymatni oladi.
- * Dizayn v2'da eski nomlar `var(--color-…)` alias — havola zanjiri ham shu tartibda yechiladi.
- */
-const darkBlock = css.slice(css.indexOf("\n.dark {"), css.indexOf("\n}", css.indexOf("\n.dark {")));
-const tokenValue = (name: string, dark: boolean): string | undefined => {
-  const re = new RegExp(`--color-${name}:\\s*(#[0-9a-fA-F]{6}|var\\(--color-([\\w-]+)\\))`);
-  const match = (dark && darkBlock.match(re)) || css.match(re);
-  if (!match) return undefined;
-  return match[2] ? tokenValue(match[2], dark) : match[1];
-};
-const luminance = (hex: string) => {
-  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-};
-const contrast = (a: string, b: string) => {
-  const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p);
-  return (x + 0.05) / (y + 0.05);
-};
-const darkToken = (className: string, prefix: "bg" | "text") => className.match(new RegExp(`(?:^|\\s)dark:${prefix}-([a-z]+)(?:\\s|$)`))?.[1];
+const rows = toRegionRows([
+  region("1", "Toshkent shahri", 112, 91),
+  region("6", "Samarqand viloyati", 31, 24),
+  region("9", "Qoraqalpog'iston Respublikasi", 0, 0),
+  region("99", "Noma'lum hudud", 4, 1),
+]);
 
-describe("UzbekistanRegionMap detail modal in dark mode", () => {
+describe("UzbekistanRegionMap (v2: faqat xarita, ranglar region-map tokenlaridan)", () => {
   beforeEach(() => {
-    document.documentElement.classList.add("dark");
-    apiGet.mockResolvedValue({
-      data: { data: { summary: { totalOrders: 4321, deliveredOrders: 4000, cancelledOrders: 21, pendingOrders: 300, totalRevenue: 1000000, successRate: 92 } } },
-    });
+    const root = document.documentElement.style;
+    root.setProperty("--color-sunken", "#eef1f8");
+    root.setProperty("--color-region-map-low", "#cde2fb");
+    root.setProperty("--color-region-map-medium", "#86b6ef");
+    root.setProperty("--color-region-map-high", "#3987e5");
+    root.setProperty("--color-region-map-xhigh", "#1c5cab");
   });
-  afterEach(() => document.documentElement.classList.remove("dark"));
 
-  it("paints every metric value readable on its card (dark background token, ≥ 4.5:1)", async () => {
-    const user = userEvent.setup();
+  it("colours each known region by its order step and skips names without a map key", () => {
     renderWithProviders(
       <UzbekistanRegionMap
-        regions={[{ id: "3", name: "Andijon viloyati", stats: { districtCount: 14, activeCouriers: 3, orderCount: 4321 } }]}
+        rows={rows}
+        metric="orders"
+        maxRevenue={1_000_000}
+        valueLabels={new Map(rows.map((row) => [row.id, String(row.orders)]))}
+        tooltipHtml={() => ""}
+        onSelect={() => undefined}
+        ariaLabel="Xarita"
       />,
     );
 
-    await user.click(await screen.findByRole("button", { name: "map-point" }));
-    const value = await screen.findByText("4321");
-    await waitFor(() => expect(apiGet).toHaveBeenCalled());
+    const data = lastOptions.current?.series?.[0]?.data ?? [];
+    const byKey = Object.fromEntries(data.map((point) => [point["hc-key"], point.color]));
+    expect(byKey).toEqual({
+      "uz-tk": "#1c5cab", // 112 ta → 80+
+      "uz-sa": "#3987e5", // 31 ta → 30–79
+      "uz-qr": "#eef1f8", // buyurtma yo'q → sunken
+    });
+    expect(lastOptions.current?.series?.[0]?.nullColor).toBe("#eef1f8");
+    expect(screen.getByRole("img", { name: "Xarita" })).toBeInTheDocument();
+  });
 
-    const valueClass = value.className;
-    const card = value.parentElement!;
-    const bgToken = darkToken(card.className, "bg");
-    const textToken = darkToken(valueClass, "text");
-    // Ilgari karta `bg-primary` (dark'da ham #ffffff) + qiymat `dark:text-primary` (#ffffff) — 1.0:1.
-    expect(bgToken).toBeDefined();
-    expect(textToken).toBeDefined();
-    const bg = tokenValue(bgToken!, true)!;
-    const fg = tokenValue(textToken!, true)!;
-    expect(contrast(fg, bg)).toBeGreaterThanOrEqual(4.5);
+  it("opens the region on click and renders label + tooltip from the caller", async () => {
+    const user = userEvent.setup();
+    const onSelect = vi.fn();
+    const tooltipHtml = vi.fn((row: (typeof rows)[number]) => `<b>${row.name}</b>`);
+    renderWithProviders(
+      <UzbekistanRegionMap
+        rows={rows}
+        metric="orders"
+        maxRevenue={1_000_000}
+        valueLabels={new Map([["6", "31"]])}
+        tooltipHtml={tooltipHtml}
+        onSelect={onSelect}
+        ariaLabel="Xarita"
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "map-point-uz-sa" }));
+    expect(onSelect).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "6", name: "Samarqand viloyati" }),
+    );
+
+    const series = lastOptions.current?.series?.[0];
+    const point = series?.data?.find((item) => item.rowId === "6") as MockPoint;
+    expect(series?.dataLabels?.formatter?.call(point)).toBe("Samarqand<br/>31");
+    expect(lastOptions.current?.tooltip?.formatter?.call(point)).toBe("<b>Samarqand viloyati</b>");
   });
 });

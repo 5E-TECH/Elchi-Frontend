@@ -1,28 +1,21 @@
+// dizayn-v2: courier-courier-bulk-main, manager-courier-bulk-main, courier-courier-bulk-confirm-dialog
 import { memo, useCallback, useMemo, useRef, useState } from "react";
+import { useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
-import {
-  CalendarClock,
-  CheckCircle2,
-  CircleX,
-  Clock3,
-  Loader2,
-  PackageCheck,
-  RotateCcw,
-  ScanLine,
-  SearchX,
-  XCircle,
-  Zap,
-} from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { CalendarClock, Check, CircleX, PackageCheck, RotateCcw, ScanLine, Zap } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 import { useOrders } from "../../entities/orders";
 import type { OrderListItem } from "../../entities/order/types/order";
+import type { RootState } from "../../app/config/store";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
-import PageContainer from "../../shared/ui/PageContainer";
 import ScannerCameraModal from "../../shared/components/ScannerCameraModal";
 import { useOrderQrScanner } from "../../shared/lib/useOrderQrScanner";
 import { normalizeScannerCandidates } from "../../shared/lib/scanToken";
-import { getBackendErrorMessage } from "../scan/lib/scanResource";
+import { formatNumberLocalized } from "../../shared/lib/formatMoney";
+import { notify } from "../../shared/lib/notify";
+import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
+import { Button, PageHeader, useConfirm, type ConfirmConsequence } from "../../shared/ui/primitives";
 import { playScanFeedback } from "../scan/lib/scanShared";
 import {
   COURIER_BULK_CONCURRENCY,
@@ -33,11 +26,11 @@ import {
   findCourierBulkOrderByScanCandidates,
   getCourierBulkActionsAfterFinalize,
   getCourierBulkCounts,
-  getCourierBulkFinalizeLabelCounts,
   getCourierBulkFinalizeTasks,
-  getCourierBulkOrderAction,
   getCourierBulkProofKey,
+  getCourierBulkUnmarkedCount,
   hasAllCourierBulkProofs,
+  isCourierBulkOrderMarked,
   mergeCourierBulkOrders,
   runLimited,
   splitCourierBulkTasksByProof,
@@ -45,62 +38,18 @@ import {
   type CourierBulkAction,
   type CourierBulkFinalizeTask,
   type CourierBulkOrder,
+  type CourierBulkScanMode,
 } from "./model/courierBulk";
+import { useIsBelowLg } from "./model/useIsBelowLg";
+import { BulkAlert } from "./ui/BulkAlert";
+import { CourierBulkOrders } from "./ui/CourierBulkOrders";
 import { CourierBulkProofDialog } from "./ui/CourierBulkProofDialog";
 import { CourierBulkResultDialog, type CourierBulkResult } from "./ui/CourierBulkResultDialog";
-import { notify } from "../../shared/lib/notify";
-import { useConfirm, type ConfirmConsequence } from "../../shared/ui/primitives";
-
-const formatMoney = (value: unknown, locale: string, currency: string) =>
-  `${Number(value || 0).toLocaleString(locale)} ${currency}`;
-
-const getOrderDate = (order: CourierBulkOrder) => {
-  const rawDate = order.created_at ?? order.createdAt;
-  if (!rawDate) return "";
-
-  const date = new Date(rawDate);
-  if (Number.isNaN(date.getTime())) return "";
-
-  return date.toLocaleDateString("uz-UZ", {
-    day: "2-digit",
-    month: "2-digit",
-  });
-};
-
-const getOrderTime = (order: CourierBulkOrder) => {
-  const rawDate = order.created_at ?? order.createdAt;
-  if (!rawDate) return "";
-
-  const date = new Date(rawDate);
-  if (Number.isNaN(date.getTime())) return "";
-
-  return date.toLocaleTimeString("uz-UZ", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const getDistrictName = (order: CourierBulkOrder) =>
-  order.district?.name ?? order.region?.name ?? "-";
-
-const getMarketName = (order: CourierBulkOrder) => order.market?.name ?? "-";
-
-const actionClasses: Record<CourierBulkAction, string> = {
-  sold: "border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface-strong)] dark:border-white/10 dark:bg-white/5",
-  cancel: "border-error/30 bg-error/8 dark:border-error/35 dark:bg-error/12",
-  tomorrow: "border-main/30 bg-main/10 dark:border-main/40 dark:bg-main/18",
-};
-
-const surfaceClass =
-  "border border-[color:var(--color-border-soft)] bg-[color:var(--color-page-surface)] shadow-xl shadow-[color:var(--color-card-shadow)] dark:border-white/10 dark:bg-[color:var(--color-surface-elevated-dark)] dark:shadow-black/10";
-const controlIdleClass =
-  "border border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface)] text-[color:var(--color-maindark)] hover:border-main/40 hover:bg-main/10 dark:border-white/10 dark:bg-white/5 dark:text-primary dark:hover:bg-white/10";
-const strongTextClass = "text-maindark dark:text-white";
-const mutedTextClass = "text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]";
+import { CourierBulkSummary } from "./ui/CourierBulkSummary";
 
 type FinalizeTask = CourierBulkFinalizeTask<CourierBulkOrder>;
 
-/** Isbot qadami: tasdiqdan keyin isbot talab qilinadigan buyurtmalar bo'lsa ochiladi. */
+/** Isbot qadami: tasdiqdan keyin isbot talab qilinadigan buyurtmalar bo'lsa ochiladi (j9KFyqlS). */
 type ProofStep = {
   open: boolean;
   tasks: FinalizeTask[];
@@ -138,19 +87,43 @@ const fetchAllCourierWaitingOrders = async () => {
   return mergeCourierBulkOrders(pages);
 };
 
+/**
+ * «TEZKOR AMAL» — `/courier-bulk` (kuryer; REGIONAL/HYBRID menejer — filial kuryerlarining kutilayotganlari, backend
+ * filialga cheklaydi). Kun yakunida har buyurtma natijasi belgilanadi: belgilanmagani sotiladi, «Bekor» — bekor
+ * qilinadi, «Ertaga» — so'rovsiz kutilmoqda holatida qoladi (FE-CB-09). Belgilash: qatordagi «Sotildi | Bekor |
+ * Ertaga», USB skaner yoki kamera (skanerlash rejimi bo'yicha).
+ *
+ * Maketlar: `courier-courier-bulk-main` (ikkala rol uchun bitta tartib; menejerda faqat «Kutilayotgan» izohi
+ * boshqa — Q8), tasdiq oynasi `courier-courier-bulk-confirm-dialog` (`useConfirm`). Kamera oynasi
+ * (`ScannerCameraModal`) — kamera ishi, o'zgarmagan.
+ *
+ * Saqlangan: barcha sahifalarni yig'ish (100 tadan, 50 sahifagacha), skan takrori / topilmadi, yakunlash
+ * `runLimited` + so'rov tanalari, xato bergan va «ertaga» belgilari qoladi. «Faqat bekorlarni qo'llash»
+ * olib tashlandi (maketlarda yo'q — Q9).
+ *
+ * Isbot (j9KFyqlS, dev cf13e85): tasdiqdan keyin market isbot talab qiladigan buyurtmalar bo'lsa — isbot qadami
+ * (`CourierBulkProofDialog`, har buyurtmaga `ProofField`; hammasiga fayl tanlanmaguncha «Yakunlash» o'chiq).
+ * Isbotlilar ko'pi bilan 2 tadan, qolganlari 6 tadan parallel; har so'rovda `X-Request-Source: courier-bulk`.
+ * Xato berganlar — `CourierBulkResultDialog` (har biri backend sababi bilan, sahifa tartibida). Tanlangan isbot
+ * shu buyurtma + amal uchun muvaffaqiyatgacha saqlanadi. Ikkala oynaga maket yo'q — eng yaqini:
+ * `tizim-states-forms` + `courier-courier-bulk-confirm-dialog`.
+ */
 const CourierBulkPage = () => {
   const { t, i18n } = useTranslation("courierBulk");
-  const locale = i18n.language === "ru" ? "ru-RU" : i18n.language === "en" ? "en-US" : "uz-UZ";
-  const currency = t("currency");
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const role = useSelector((state: RootState) => state.role.role);
+  const isPhone = useIsPhone();
+  const isBelowLg = useIsBelowLg();
   const { SellOrder, CancelOrder } = useOrders();
   const confirm = useConfirm();
-  const { data: orders = [], isLoading, isFetching, isError, error, refetch } = useQuery({
+  const ordersQuery = useQuery({
     queryKey: ["orders", "courier", "bulk", "waiting"],
     queryFn: fetchAllCourierWaitingOrders,
     staleTime: 15_000,
   });
+  const { data: orders = [], isLoading, isFetching, refetch } = ordersQuery;
 
-  const [scanMode, setScanMode] = useState<Exclude<CourierBulkAction, "sold">>("cancel");
+  const [scanMode, setScanMode] = useState<CourierBulkScanMode>("cancel");
   const [actions, setActions] = useState<Record<string, CourierBulkAction>>({});
   const [scanError, setScanError] = useState("");
   const [isCameraOpen, setIsCameraOpen] = useState(false);
@@ -164,42 +137,47 @@ const CourierBulkPage = () => {
   const scannedTokenRef = useRef<Set<string>>(new Set());
 
   const counts = useMemo(() => getCourierBulkCounts(orders, actions), [actions, orders]);
-  const finalizeCounts = getCourierBulkFinalizeLabelCounts(counts);
+  const unmarkedCount = useMemo(() => getCourierBulkUnmarkedCount(orders, actions), [actions, orders]);
+  const hasMarks = useMemo(() => orders.some((order) => isCourierBulkOrderMarked(order.id, actions)), [actions, orders]);
   const isInitialLoading = isLoading && orders.length === 0;
-  const isBusy =
-    isFinalizing ||
-    SellOrder.isPending ||
-    CancelOrder.isPending;
+  const isBusy = isFinalizing || SellOrder.isPending || CancelOrder.isPending;
 
-  const selectedCount = counts.cancel + counts.tomorrow;
-
-  const setOrderAction = useCallback((order: OrderListItem, action: Exclude<CourierBulkAction, "sold">) => {
+  /** Skan: tanlangan rejim belgisi; xuddi shu belgi qayta skanerlansa — aniq «sotildi». */
+  const toggleScanAction = useCallback((order: OrderListItem, action: CourierBulkScanMode) => {
     setActions((prev) => ({
       ...prev,
       [order.id]: prev[order.id] === action ? "sold" : action,
     }));
   }, []);
 
-  const handleScanMatch = useCallback((order: OrderListItem, rawValue: string) => {
-    const tokenKey = rawValue.trim().toLowerCase() || order.id.toLowerCase();
+  /** Qatordagi natija tanlovi — aniq belgi (`sold` ham). */
+  const setOrderAction = useCallback((order: CourierBulkOrder, action: CourierBulkAction) => {
+    setActions((prev) => ({ ...prev, [order.id]: action }));
+  }, []);
 
-    if (scannedTokenRef.current.has(tokenKey)) {
-      notify.warning(t("duplicateTitle"), { description: t("duplicateDescription") });
-      void playScanFeedback("duplicate");
-      return;
-    }
+  const handleScanMatch = useCallback(
+    (order: OrderListItem, rawValue: string) => {
+      const tokenKey = rawValue.trim().toLowerCase() || order.id.toLowerCase();
 
-    scannedTokenRef.current.add(tokenKey);
-    setOrderAction(order, scanMode);
-    setScanError("");
-    notify.success(t("scanSuccessTitle"), {
-      description: t(scanMode === "cancel" ? "markedCancel" : "markedTomorrow", {
-        name: order.customer?.name ?? `#${order.id}`,
-      }),
-      duration: 2000,
-    });
-    void playScanFeedback("success");
-  }, [scanMode, setOrderAction, t]);
+      if (scannedTokenRef.current.has(tokenKey)) {
+        notify.warning(t("duplicateTitle"), { description: t("duplicateDescription") });
+        void playScanFeedback("duplicate");
+        return;
+      }
+
+      scannedTokenRef.current.add(tokenKey);
+      toggleScanAction(order, scanMode);
+      setScanError("");
+      notify.success(t("scanSuccessTitle"), {
+        description: t(scanMode === "cancel" ? "markedCancel" : "markedTomorrow", {
+          name: order.customer?.name ?? `#${order.id}`,
+        }),
+        duration: 2000,
+      });
+      void playScanFeedback("success");
+    },
+    [scanMode, t, toggleScanAction],
+  );
 
   const handleScanMissing = useCallback(() => {
     setScanError(t("scanMissing"));
@@ -209,6 +187,7 @@ const CourierBulkPage = () => {
 
   useOrderQrScanner({
     orders,
+    // Isbot / natija oynasi ochiq bo'lsa USB skan belgilarni o'zgartirmaydi.
     enabled: !isBusy && !proofStep?.open && !isResultOpen && orders.length > 0,
     onMatch: handleScanMatch,
     onMissing: handleScanMissing,
@@ -225,37 +204,39 @@ const CourierBulkPage = () => {
   }, []);
 
   /**
-   * So'rovlarni yuborish. Isbotsiz buyurtmalar avvalgidek 6 tadan, isbotlilar (fayl yuklash + amal)
-   * ko'pi bilan 2 tadan parallel; har so'rov `X-Request-Source: courier-bulk` bilan (audit).
+   * So'rovlarni yuborish. Isbotsiz buyurtmalar 6 tadan, isbotlilar (fayl yuklash + amal) ko'pi bilan 2 tadan
+   * parallel; har so'rov `X-Request-Source: courier-bulk` bilan (audit).
    */
   const runFinalize = async (tasks: FinalizeTask[], tomorrowCount: number) => {
     setIsFinalizing(true);
     const { proofTasks, plainTasks } = splitCourierBulkTasksByProof(tasks);
 
     // Isbot faqat isbot talab qilinadigan buyurtmaga yuboriladi (keraksiz fayl yuklanmaydi).
-    const runTask = (withProof: boolean) => async ({ order, action }: FinalizeTask) => {
-      const proof = withProof ? proofs[getCourierBulkProofKey({ order, action })] : undefined;
-      const proofData = proof instanceof File ? { proof } : {};
-      if (action === "cancel") {
-        await CancelOrder.mutateAsync({
-          orderId: order.id,
-          data: { comment: t("bulkCancelComment"), extraCost: 0, ...proofData },
-          headers: COURIER_BULK_REQUEST_HEADERS,
-        });
-      } else {
-        await SellOrder.mutateAsync({
-          orderId: order.id,
-          data: { comment: t("bulkSoldComment"), extraCost: 0, ...proofData },
-          headers: COURIER_BULK_REQUEST_HEADERS,
-        });
-      }
-    };
+    const runTask =
+      (withProof: boolean) =>
+      async ({ order, action }: FinalizeTask) => {
+        const proof = withProof ? proofs[getCourierBulkProofKey({ order, action })] : undefined;
+        const proofData = proof instanceof File ? { proof } : {};
+        if (action === "cancel") {
+          await CancelOrder.mutateAsync({
+            orderId: order.id,
+            data: { comment: t("bulkCancelComment"), extraCost: 0, ...proofData },
+            headers: COURIER_BULK_REQUEST_HEADERS,
+          });
+        } else {
+          await SellOrder.mutateAsync({
+            orderId: order.id,
+            data: { comment: t("bulkSoldComment"), extraCost: 0, ...proofData },
+            headers: COURIER_BULK_REQUEST_HEADERS,
+          });
+        }
+      };
 
     const [plainResults, proofResults] = await Promise.all([
       runLimited(plainTasks, COURIER_BULK_CONCURRENCY, runTask(false)),
       runLimited(proofTasks, COURIER_BULK_PROOF_CONCURRENCY, runTask(true)),
     ]);
-    // Natija har vazifaga o'zi bilan bog'lanadi; xatolar ro'yxati sahifadagi tartibda.
+    // Natija har vazifaga o'zi bilan bog'lanadi (`runLimited` — kirish tartibida); xatolar ro'yxati sahifa tartibida.
     const settled = new Map<FinalizeTask, PromiseSettledResult<unknown>>();
     plainTasks.forEach((task, index) => settled.set(task, plainResults[index]));
     proofTasks.forEach((task, index) => settled.set(task, proofResults[index]));
@@ -311,11 +292,23 @@ const CourierBulkPage = () => {
     // «Kunni yakunlash» — tasdiqlash oynasi orqali (maket `courier-courier-bulk-confirm-dialog`).
     const cancelTasks = tasks.filter((task) => task.action === "cancel");
     const soldCount = tasks.length - cancelTasks.length;
+    const unmarked = getCourierBulkUnmarkedCount(orders, actions);
     const consequences: ConfirmConsequence[] = [];
     if (soldCount > 0) {
       consequences.push({
         text: t("confirmSold", { count: soldCount }),
-        hint: t("confirmSoldHint"),
+        hint:
+          unmarked > 0 ? (
+            <Trans
+              t={t}
+              ns="courierBulk"
+              i18nKey="confirm.soldUnmarked"
+              count={unmarked}
+              components={{ strong: <strong className="font-semibold text-text" /> }}
+            />
+          ) : (
+            t("confirm.soldMarked")
+          ),
         tone: "success",
         icon: PackageCheck,
       });
@@ -346,14 +339,19 @@ const CourierBulkPage = () => {
       size: "md",
       closable: true,
       consequences,
-      irreversible: t("confirmIrreversible", { count: tasks.length }),
+      children: (
+        <BulkAlert tone="warning" role="note" title={t("confirm.irreversibleTitle")}>
+          {t("confirm.irreversibleText", { count: tasks.length })}
+        </BulkAlert>
+      ),
       confirmLabel: t("confirmAction"),
+      confirmIcon: Check,
       cancelLabel: t("confirmBack"),
     });
     if (!confirmed) return;
 
-    // Market isbot talab qiladigan buyurtmalar (j9KFyqlS): isbotsiz backend 400 qaytaradi —
-    // avval isbot qadami. Isbot kerak bo'lmasa — avvalgidek darhol yakunlanadi.
+    // Market isbot talab qiladigan buyurtmalar (j9KFyqlS): isbotsiz backend 400 qaytaradi — avval isbot
+    // qadami. Isbot kerak bo'lmasa — qo'shimcha qadamsiz darhol yakunlanadi.
     const { proofTasks, plainTasks } = splitCourierBulkTasksByProof(tasks);
     if (proofTasks.length > 0) {
       setProofStep({ open: true, tasks, proofTasks, plainCount: plainTasks.length, tomorrowCount });
@@ -368,211 +366,123 @@ const CourierBulkPage = () => {
     void runFinalize(proofStep.tasks, proofStep.tomorrowCount);
   };
 
+  const handleCameraDecode = (value: string) => {
+    const matched = findCourierBulkOrderByScanCandidates(orders, normalizeScannerCandidates(value, window.location.origin));
+    if (matched) {
+      handleScanMatch(matched, value);
+      setIsCameraOpen(false);
+      return;
+    }
+    handleScanMissing();
+  };
+
+  // «Kunni yakunlash» — DOM'da BITTA tugma: ≥ 768 sarlavhada, telefonda pastki menyu ustidagi panelda.
+  const finalizeButton = (
+    <Button
+      size={isPhone ? "lg" : "md"}
+      fullWidth={isPhone}
+      leftIcon={Zap}
+      aria-haspopup="dialog"
+      disabled={orders.length === 0}
+      loading={isBusy}
+      onClick={() => void handleFinalize()}
+    >
+      {t("page.finalize")}
+    </Button>
+  );
+
+  const markedCount = counts.total - unmarkedCount;
+  const isManager = role === "manager";
+
   return (
-    <PageContainer>
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-main text-white shadow-lg shadow-main/25">
-              <Zap size={22} />
-            </div>
-            <div>
-              <h1 className={`text-2xl font-bold ${strongTextClass}`}>{t("title")}</h1>
-              <p className={`text-sm font-medium ${mutedTextClass}`}>{t("subtitle")}</p>
-            </div>
-          </div>
+    <div className="flex flex-col gap-6 max-md:gap-4">
+      <PageHeader
+        title={t("title")}
+        description={t("subtitle")}
+        actions={
+          isPhone ? undefined : (
+            <>
+              <Button variant="ghost" leftIcon={RotateCcw} disabled={!hasMarks || isBusy} onClick={clearActions}>
+                {t("page.clearMarks")}
+              </Button>
+              {finalizeButton}
+            </>
+          )
+        }
+      />
 
-          <button
-            type="button"
-            onClick={clearActions}
-            disabled={selectedCount === 0 || isBusy}
-            className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-slate-500 transition hover:text-maindark disabled:cursor-not-allowed disabled:opacity-45 dark:hover:text-white"
-          >
-            <RotateCcw size={15} />
-            {t("clear")}
-          </button>
-        </div>
+      <CourierBulkSummary
+        counts={counts}
+        unmarked={unmarkedCount}
+        viewer={isManager ? "manager" : "courier"}
+        scanMode={scanMode}
+        onScanModeChange={setScanMode}
+        onOpenCamera={() => setIsCameraOpen(true)}
+        busy={isBusy}
+        isPhone={isPhone}
+        isBelowLg={isBelowLg}
+      />
 
-        <section className={`rounded-2xl p-5 ${surfaceClass}`}>
-          <div className="grid gap-2 md:grid-cols-2">
-            <button
-              type="button"
-              onClick={() => setScanMode("cancel")}
-              className={`flex items-center justify-center gap-2 rounded-xl px-5 py-5 text-base font-bold transition ${
-                scanMode === "cancel"
-                  ? "bg-error text-on-solid shadow-lg shadow-error/25"
-                  : controlIdleClass
-              }`}
-            >
-              <XCircle size={18} />
-              {t("cancelMode", { count: counts.cancel })}
-            </button>
+      {/* Skan topilmadi — keyingi muvaffaqiyatli skangacha turadi (+ xabar, maket «Buyurtma topilmadi»). */}
+      {scanError ? (
+        <BulkAlert tone="danger" data-testid="courier-bulk-scan-error">
+          {scanError}
+        </BulkAlert>
+      ) : null}
 
-            <button
-              type="button"
-              onClick={() => setScanMode("tomorrow")}
-              className={`flex items-center justify-center gap-2 rounded-xl px-5 py-5 text-base font-bold transition ${
-                scanMode === "tomorrow"
-                  ? "bg-main text-white shadow-lg shadow-main/25"
-                  : controlIdleClass
-              }`}
-            >
-              <Clock3 size={18} />
-              {t("tomorrowMode", { count: counts.tomorrow })}
-            </button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setIsCameraOpen(true)}
-            disabled={isBusy}
-            className={`mt-3 flex w-full items-center justify-center gap-3 rounded-xl border border-dashed px-5 py-5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-              scanMode === "cancel"
-                ? "border-error/75 text-error hover:bg-error/10 dark:text-error"
-                : "border-main/75 text-main hover:bg-main/10 dark:border-main/75 dark:text-primary"
-            }`}
-          >
-            <ScanLine size={18} />
-            {t(scanMode === "cancel" ? "scanCancelReady" : "scanTomorrowReady")}
-          </button>
-
-          {scanError ? (
-            <div className="mt-3 rounded-xl border border-error/25 bg-error/10 px-4 py-3 text-sm font-semibold text-error dark:text-error">
-              {scanError}
-            </div>
+      {isPhone ? (
+        <Button
+          size="lg"
+          fullWidth
+          leftIcon={ScanLine}
+          aria-haspopup="dialog"
+          aria-label={
+            isManager
+              ? t("scanMode.cameraPhoneMarked", { marked: markedCount, total: counts.total })
+              : undefined
+          }
+          disabled={isBusy}
+          onClick={() => setIsCameraOpen(true)}
+        >
+          {t("scanMode.cameraPhone")}
+          {isManager ? (
+            // Maket `manager-courier-bulk-main`: asosiy tugma ichidagi belgi (`on-solid` fon, `action-fg` matn).
+            <span className="ml-1 inline-flex h-5 items-center rounded-md bg-on-solid px-1.5 text-xs font-semibold text-action-fg">
+              {t("scanMode.markedOfTotal", {
+                marked: formatNumberLocalized(markedCount, { language }),
+                total: formatNumberLocalized(counts.total, { language }),
+              })}
+            </span>
           ) : null}
-        </section>
+        </Button>
+      ) : null}
 
-        <section className={`overflow-hidden rounded-2xl ${surfaceClass}`}>
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[color:var(--color-border-soft)] px-4 py-3 dark:border-white/5">
-            <h2 className={`text-base font-bold ${strongTextClass}`}>
-              {t("ordersTitle", { count: counts.total })}
-            </h2>
-            <div className="flex items-center gap-3 text-xs font-bold">
-              <span className="flex items-center gap-1 text-error"><span className="h-2 w-2 rounded-full bg-error" />{counts.cancel}</span>
-              <span className="flex items-center gap-1 text-main dark:text-primary"><span className="h-2 w-2 rounded-full bg-main dark:bg-primary" />{counts.tomorrow}</span>
-              <span className="flex items-center gap-1 text-success"><span className="h-2 w-2 rounded-full bg-success" />{counts.sold}</span>
-            </div>
-          </div>
+      <CourierBulkOrders
+        query={ordersQuery}
+        orders={orders}
+        actions={actions}
+        onSetAction={setOrderAction}
+        busy={isBusy}
+        refreshing={isFetching && !isInitialLoading}
+        isPhone={isPhone}
+        isBelowLg={isBelowLg}
+        onClearMarks={clearActions}
+        clearDisabled={!hasMarks || isBusy}
+      />
 
-          <div className="max-h-[48vh] overflow-y-auto p-1">
-            {isInitialLoading ? (
-              <div className={`flex min-h-56 flex-col items-center justify-center gap-3 ${mutedTextClass}`}>
-                <Loader2 className="animate-spin text-main" size={30} />
-                <span className="text-sm font-semibold">{t("loading")}</span>
-              </div>
-            ) : isError ? (
-              <div className={`flex min-h-56 flex-col items-center justify-center gap-3 px-4 text-center ${mutedTextClass}`}>
-                <SearchX size={34} className="text-rose-400" />
-                <span className="text-sm font-semibold">
-                  {getBackendErrorMessage(error) ?? t("loadError")}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => void refetch()}
-                  className="rounded-xl bg-main px-4 py-2 text-sm font-bold text-white transition hover:bg-main/90"
-                >
-                  {t("retry")}
-                </button>
-              </div>
-            ) : orders.length === 0 ? (
-              <div className={`flex min-h-56 flex-col items-center justify-center gap-3 ${mutedTextClass}`}>
-                <SearchX size={34} className="text-main" />
-                <span className="text-sm font-semibold">{t("empty")}</span>
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {orders.map((order) => {
-                  const action = getCourierBulkOrderAction(order.id, actions);
-
-                  return (
-                    <article
-                      key={order.id}
-                      className={`flex items-center justify-between gap-3 rounded-lg border px-4 py-3 transition ${actionClasses[action]}`}
-                    >
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className={`truncate text-base font-bold ${strongTextClass}`}>
-                            {order.customer?.name ?? `#${order.id}`}
-                          </h3>
-                          {action === "cancel" ? <XCircle size={15} className="text-error" /> : null}
-                          {action === "tomorrow" ? <CalendarClock size={15} className="text-main dark:text-primary" /> : null}
-                          {action === "sold" ? <CheckCircle2 size={15} className="text-success" /> : null}
-                        </div>
-                        <p className={`mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium ${mutedTextClass}`}>
-                          <span className="text-maindark dark:text-primary">{order.customer?.phone_number ?? "-"}</span>
-                          <span>{getDistrictName(order)}</span>
-                          <span className="font-bold text-main dark:text-primary">{getMarketName(order)}</span>
-                          <span>{getOrderDate(order)} {getOrderTime(order)}</span>
-                        </p>
-                      </div>
-                      <div className={`shrink-0 text-right text-base font-extrabold ${strongTextClass}`}>
-                        {formatMoney(order.total_price, locale, currency)}
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            )}
+      {isPhone ? (
+        <>
+          <div aria-hidden="true" className="h-[72px] shrink-0" />
+          <div className="fixed inset-x-0 bottom-[var(--shell-bottomnav-h)] z-30 border-t border-border bg-surface px-4 py-3">
+            {finalizeButton}
           </div>
-          <div className="border-t border-[color:var(--color-border-soft)] bg-[color:var(--color-card-surface)] px-4 py-3 dark:border-white/10 dark:bg-white/5">
-            <div className="mb-3 flex flex-wrap gap-3 text-xs font-bold">
-              <span className="text-error">{t("summaryCancel", { count: counts.cancel })}</span>
-              <span className="text-success">{t("summarySold", { count: counts.sold })}</span>
-              <span className="text-main dark:text-primary">{t("summaryTomorrow", { count: counts.tomorrow })}</span>
-              {isFetching && !isInitialLoading ? (
-                <span className={mutedTextClass}>{t("refreshing")}</span>
-              ) : null}
-            </div>
-            <div className="grid gap-2 md:grid-cols-2">
-              <button
-                type="button"
-                disabled={counts.cancel === 0 || isBusy}
-                onClick={() => {
-                  const cancelOnly = Object.fromEntries(
-                    Object.entries(actions).filter(([, action]) => action === "cancel"),
-                  ) as Record<string, CourierBulkAction>;
-                  setActions(cancelOnly);
-                }}
-                className={`flex items-center justify-center gap-2 rounded-xl px-5 py-4 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-45 ${controlIdleClass}`}
-              >
-                <XCircle size={17} />
-                {t("applyCancelOnly", { count: counts.cancel })}
-              </button>
-              <button
-                type="button"
-                disabled={orders.length === 0 || isBusy}
-                onClick={() => void handleFinalize()}
-                className="flex items-center justify-center gap-2 rounded-xl bg-main px-5 py-4 text-sm font-extrabold text-white shadow-lg shadow-main/25 transition hover:bg-main/90 disabled:cursor-not-allowed disabled:opacity-55"
-              >
-                {isBusy ? <Loader2 size={17} className="animate-spin" /> : <Zap size={17} />}
-                {t("finalizeDay", {
-                  changed: finalizeCounts.changed,
-                  sold: finalizeCounts.sold,
-                })}
-              </button>
-            </div>
-          </div>
-        </section>
-      </div>
+        </>
+      ) : null}
 
       <ScannerCameraModal
         isOpen={isCameraOpen}
         onClose={() => setIsCameraOpen(false)}
-        onDecode={(value) => {
-          const matched = findCourierBulkOrderByScanCandidates(
-            orders,
-            normalizeScannerCandidates(value, window.location.origin),
-          );
-
-          if (matched) {
-            handleScanMatch(matched, value);
-            setIsCameraOpen(false);
-            return;
-          }
-
-          handleScanMissing();
-        }}
+        onDecode={handleCameraDecode}
         title={t("scannerTitle")}
         subtitle={t("scannerSubtitle")}
         waitingText={t("scannerWaiting")}
@@ -601,7 +511,7 @@ const CourierBulkPage = () => {
         onClose={() => setIsResultOpen(false)}
         onExited={() => setResult(null)}
       />
-    </PageContainer>
+    </div>
   );
 };
 

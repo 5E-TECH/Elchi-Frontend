@@ -26,9 +26,12 @@ test.describe("Dashboard reytinglari — 1440px", () => {
     await markets.getByRole("button", { name: "Kamroq ko'rsatish" }).click();
     await expect(markets.getByRole("listitem").filter({ visible: true })).toHaveCount(5);
 
+    // Dizayn v2: joriy javobdan keyin oldingi teng davr ham so'raladi (KPI deltasi) — reyting izohi
+    // joriy davr so'rovidan, ya'ni bosilgandan keyingi BIRINCHI so'rovdan.
+    const callsBefore = dashboardParams.length;
     await page.getByRole("radio", { name: "Bu hafta" }).click();
-    await expect.poll(() => dashboardParams.length).toBeGreaterThan(1);
-    const { start_day: from, end_day: to } = dashboardParams[dashboardParams.length - 1];
+    await expect.poll(() => dashboardParams.length).toBeGreaterThan(callsBefore);
+    const { start_day: from, end_day: to } = dashboardParams[callsBefore];
     const expected = from === to ? "oxirgi 30 kun" : shortRange(from, to);
     await expect(markets.getByText(`Sotuv foizi · sotilgan / jami · ${expected}`)).toBeVisible();
     expect(leaked).toEqual([]);

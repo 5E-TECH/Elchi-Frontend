@@ -1,4 +1,4 @@
-import type { SearchableSelectOption } from "../../../../shared/ui/SearchableSelect";
+import type { SelectOption } from "../../../../shared/ui/primitives";
 
 interface MailRegionSource {
   region?: {
@@ -7,10 +7,12 @@ interface MailRegionSource {
   } | null;
 }
 
-export const buildRegionFilterOptions = <T extends MailRegionSource>(
-  items: T[],
-): SearchableSelectOption[] => {
-  const uniqueRegions = new Map<string, SearchableSelectOption>();
+/**
+ * Ro'yxatdagi pochtalar viloyatlari → filtr variantlari (takrorsiz, nom bo'yicha o'zbekcha tartibda).
+ * Variant shakli `{ value, label }` — v2 `Select` ham, v1 `SearchableSelect` ham shuni oladi.
+ */
+export const buildRegionFilterOptions = <T extends MailRegionSource>(items: readonly T[]): SelectOption[] => {
+  const uniqueRegions = new Map<string, SelectOption>();
 
   items.forEach((item) => {
     const id = item.region?.id;
@@ -21,7 +23,5 @@ export const buildRegionFilterOptions = <T extends MailRegionSource>(
     }
   });
 
-  return Array.from(uniqueRegions.values()).sort((left, right) =>
-      left.label.localeCompare(right.label, "uz"),
-    );
+  return Array.from(uniqueRegions.values()).sort((left, right) => left.label.localeCompare(right.label, "uz"));
 };

@@ -200,10 +200,19 @@ describe("OrderCreate — rejim tablari", () => {
                   total_price: 232500,
                   paid_amount: 0,
                   to_be_paid: 232500,
-                  createdAt: "2026-01-02T09:49:00.000Z",
+                  createdAt: new Date().toISOString(),
                   comment: null,
                   address: null,
                   customer: { id: "c1", name: "Ozoda Qayumova", phone_number: "+998901112233", district: { name: "Zangiota" } },
+                },
+                {
+                  // ⭐ D-07: eski (06.10) «yangi» buyurtma — «· bugun» kartasida chiqmaydi.
+                  id: "10101",
+                  status: "new",
+                  where_deliver: "address",
+                  total_price: 99000,
+                  createdAt: "2026-01-02T09:49:00.000Z",
+                  customer: { id: "c2", name: "Eski Mijoz", phone_number: "+998901112244", district: { name: "Olmazor" } },
                 },
               ],
             },
@@ -219,6 +228,7 @@ describe("OrderCreate — rejim tablari", () => {
     expect(row).toHaveTextContent(/№10259 · Zangiota · /);
     expect(row).toHaveTextContent("Markazgacha");
     expect(within(card).getByText("Jami 1 ta")).toBeInTheDocument();
+    expect(within(card).queryByRole("link", { name: /Eski Mijoz/ })).not.toBeInTheDocument();
   });
 
   it("segment telefonda sarlavha ostida to'liq enli (dropdown yo'q), ikonkali variantlar", () => {
@@ -378,7 +388,11 @@ describe("OrderCreate — 1-qadam: market tanlash (admin)", () => {
     expect(screen.getByRole("navigation", { name: "Qadamlar" }).parentElement).toHaveFocus();
   });
 
-  it("1-qadamga qaytib BOSHQA market tanlansa eski market katalog mahsulotlari olib tashlanadi, katalogsiz mahsulot qoladi", async () => {
+  // Tasdiq oynasi `trigger("market")` (yup) dan keyin ochiladi — to'liq suite yuklamasida 1 s sukut yetmay qolgan.
+  const findMarketChangeDialog = () =>
+    screen.findByRole("alertdialog", { name: "Marketni almashtirasizmi?" }, { timeout: 5000 });
+
+  it("1-qadamga qaytib BOSHQA market tanlansa — tasdiq oynasi; tasdiqlansa eski market katalog mahsulotlari olib tashlanadi, katalogsiz mahsulot qoladi", async () => {
     mocks.get.mockImplementation(getWithMarkets);
     const user = userEvent.setup();
     renderWithProviders(<OrderCreate />, { preloadedState: adminState });
@@ -399,10 +413,62 @@ describe("OrderCreate — 1-qadam: market tanlash (admin)", () => {
     await user.click(screen.getByRole("button", { name: "Oldingi" }));
     await chooseMarket(user, "Nur Elektronika");
     await user.click(screen.getByRole("button", { name: "Keyingi" }));
-    const selected = screen.getByRole("list", { name: "Tanlangan mahsulotlar" });
+
+    // Jimgina o'chmaydi: avval tasdiq (ega qarori 2026-10-17).
+    const dialog = await findMarketChangeDialog();
+    expect(dialog).toHaveTextContent(
+      "«Nur Elektronika» tanlansa, «Baraka Shop» katalogidan qo'shilgan mahsulotlar (1 ta) buyurtmadan olib tashlanadi. Katalogda yo'q mahsulotlar qoladi.",
+    );
+    await user.click(within(dialog).getByRole("button", { name: "Marketni almashtirish" }));
+
+    const selected = await screen.findByRole("list", { name: "Tanlangan mahsulotlar" });
     expect(within(selected).getAllByRole("listitem")).toHaveLength(1);
     expect(within(selected).getByText("Bant")).toBeInTheDocument();
     expect(within(selected).queryByText("Telefon ushlagich")).not.toBeInTheDocument();
+    expect(screen.getByRole("navigation", { name: "Qadamlar" })).toHaveTextContent("Nur Elektronika");
+  });
+
+  it("market almashtirish tasdig'i bekor qilinsa — market eskisiga qaytadi, mahsulotlar o'chmaydi", async () => {
+    mocks.get.mockImplementation(getWithMarkets);
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: adminState });
+    await chooseMarket(user);
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+
+    const catalog = await screen.findByRole("list", { name: "Baraka Shop katalogi" });
+    await user.click(await within(catalog).findByRole("button", { name: /Telefon ushlagich/ }));
+
+    await user.click(screen.getByRole("button", { name: "Oldingi" }));
+    await chooseMarket(user, "Nur Elektronika");
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+    const dialog = await findMarketChangeDialog();
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+
+    // 1-qadamda qolinadi, tanlov eski marketga qaytdi.
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument(), { timeout: 5000 });
+    expect(screen.getByRole("region", { name: "Market tanlang" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Market.*Baraka Shop/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    const selected = await screen.findByRole("list", { name: "Tanlangan mahsulotlar" });
+    expect(within(selected).getByText("Telefon ushlagich")).toBeInTheDocument();
+  });
+
+  it("katalog mahsuloti yo'q bo'lsa market almashtirishda tasdiq so'ralmaydi", async () => {
+    mocks.get.mockImplementation(getWithMarkets);
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: adminState });
+    await chooseMarket(user);
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+    await user.type(await screen.findByLabelText("Katalogda yo'q mahsulot"), "Bant{Enter}");
+
+    await user.click(screen.getByRole("button", { name: "Oldingi" }));
+    await chooseMarket(user, "Nur Elektronika");
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+    expect(within(screen.getByRole("list", { name: "Tanlangan mahsulotlar" })).getByText("Bant")).toBeInTheDocument();
   });
 
   it("2-qadamdan qaytib kelganda tuman SAQLANADI (qayta mount tumanni tozalamaydi), viloyat almashsa tozalanadi", async () => {
@@ -469,6 +535,25 @@ describe("OrderCreate — 2-qadam: mijoz, manzil, mahsulotlar va xulosa", () => 
 
     await user.click(within(selected).getByRole("button", { name: "Telefon ushlagichni olib tashlash" }));
     expect(screen.queryByRole("list", { name: "Tanlangan mahsulotlar" })).not.toBeInTheDocument();
+  });
+
+  it("⭐ D-20: katalog to'liq so'raladi (`limit=500`, server sukuti 10 emas)", async () => {
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+    await screen.findByRole("button", { name: /Telefon ushlagich/ });
+    expect(mocks.get).toHaveBeenCalledWith("product/my-products", { params: { limit: 500 } });
+  });
+
+  it("⭐ D-19: bo'sh katalog — «Topilmadi» emas, «katalogi bo'sh» va qayerdan qo'shish", async () => {
+    mocks.get.mockImplementation((url: string) =>
+      url.startsWith("product/")
+        ? Promise.resolve({ data: { data: [], total: 0, page: 1, limit: 500 } })
+        : aiApiGet(url),
+    );
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+    const catalog = await screen.findByRole("list", { name: "Test market katalogi" });
+    expect(await within(catalog).findByText("Bu marketning katalogi bo'sh")).toBeInTheDocument();
+    expect(within(catalog).getByText("Mahsulotni «Katalogda yo'q mahsulot» maydoni orqali qo'shing.")).toBeInTheDocument();
+    expect(within(catalog).queryByText("Topilmadi")).not.toBeInTheDocument();
   });
 
   it("katalogda yo'q mahsulot: nom + soni, Enter yoki «Qo'shish» bilan; «Katalogdan tashqari»", async () => {
@@ -545,6 +630,55 @@ describe("OrderCreate — 2-qadam: mijoz, manzil, mahsulotlar va xulosa", () => 
       address: "Chilonzor 19-kvartal",
     });
     await waitFor(() => expect(screen.getByLabelText(/^Mijoz ismi/)).toHaveValue(""));
+  });
+
+  it("⭐ D-06: «Uygacha» + bo'sh manzil yoki 9 raqamdan kam telefon — «tayyor» emas, tugma o'chiq", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+    const aside = screen.getByRole("complementary", { name: "Buyurtma xulosasi" });
+    const status = () => within(aside).getByRole("status");
+    const submit = () => within(aside).getByRole("button", { name: "Buyurtma yaratish" });
+
+    await user.type(screen.getByRole("textbox", { name: /^Telefon/ }), "90123456");
+    await user.type(screen.getByLabelText(/^Mijoz ismi/), "Aliyev Vali");
+    await pickOption(user, "customer.region_id", "Toshkent shahri • 1726");
+    await pickOption(user, "customer.district_id", "Chilonzor • 1726269");
+    await user.click(await screen.findByRole("button", { name: /Telefon ushlagich/ }));
+    await user.type(screen.getByLabelText(/^Umumiy summa/), "150000");
+
+    // Telefon 8 raqam — hali tayyor emas.
+    expect(status()).toHaveTextContent("Majburiy maydonlarni to'ldirib, mahsulot tanlang");
+    expect(submit()).toBeDisabled();
+
+    await user.type(screen.getByRole("textbox", { name: /^Telefon/ }), "7");
+    expect(status()).toHaveTextContent("Buyurtma yuborishga tayyor");
+    expect(submit()).toBeEnabled();
+
+    // «Uygacha» — manzil majburiy: bo'sh manzil bilan tayyor emas.
+    fireEvent.click(within(screen.getByRole("group", { name: /Yetkazish turi/ })).getByRole("radio", { name: /Uygacha/ }));
+    expect(status()).toHaveTextContent("Majburiy maydonlarni to'ldirib, mahsulot tanlang");
+    expect(submit()).toBeDisabled();
+
+    await user.type(screen.getByLabelText(/^Manzil/), "Chilonzor 19-kvartal");
+    expect(status()).toHaveTextContent("Buyurtma yuborishga tayyor");
+    expect(mocks.post).not.toHaveBeenCalled();
+  });
+
+  it("⭐ D-17: summa maydoni «.» va «-» ni jimgina tashlamaydi — sababi maydon ostida", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+    const total = screen.getByLabelText(/^Umumiy summa/);
+    expect(total).toHaveAccessibleDescription("Mijozdan olinadigan jami summa");
+
+    await user.type(total, "12.");
+    expect(total).toHaveValue("12");
+    expect(total).toHaveAccessibleDescription("Summani butun son bilan kiriting — kasr qabul qilinmaydi");
+    await user.clear(total);
+    await user.type(total, "-1");
+    expect(total).toHaveValue("1");
+    expect(total).toHaveAccessibleDescription("Summa manfiy bo'lishi mumkin emas");
+    await user.tab();
+    expect(total).toHaveAccessibleDescription("Mijozdan olinadigan jami summa");
   });
 
   it("server xatosi forma tepasida v2 ogohlantirish («Buyurtma yaratilmadi»), maydon xatosi maydonda", async () => {

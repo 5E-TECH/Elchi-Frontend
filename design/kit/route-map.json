@@ -102,12 +102,15 @@
       "components": [
         "src/features/auth/index.tsx",
         "src/features/auth/ui/LoginForm.tsx",
+        "src/features/auth/ui/SessionExpiredScreen.tsx",
         "src/auth/loginNotice.ts",
-        "src/auth/SessionExpiryCountdown.tsx"
+        "src/auth/SessionExpiryCountdown.tsx",
+        "src/shared/lib/shellBannerSlot.ts"
       ],
       "views": {
         "common": ["login", "login-error", "session-expired"]
-      }
+      },
+      "note": "Dizayn v2 (G3): kirish formasi (common-login, xato holati common-login-error) va «Sessiya tugadi» ekrani (SessionExpiredScreen — logoutAndRedirect({ reason: 'sessionExpired' }) → loginNotice; qo'lda «Chiqish» — to'g'ridan-to'g'ri forma). Sessiya banneri (SessionExpiryCountdown, taxta tizim-feedback 04) butun ilovada: DashboardLayout'da yuqori panel ostidagi shell slotiga ([data-shell-slot=banner], shared/lib/shellBannerSlot.ts) portal — sahifani pastga suradi, hech narsani yopmaydi (maket talabi bilan qo'shilgan shell sloti); ScanLayout'da oqimda, sticky. Ega savoli Q6 sukuti: «© 2026 Elchi Pochta» chizilmaydi (2026-10-16 «footer olib tashlangan»). Kirmagan foydalanuvchining noma'lum yo'li → /login (routes.tsx dagi mavjud xulq, o'zgartirilmadi)."
     },
     {
       "path": "/403",
@@ -165,21 +168,32 @@
     {
       "path": "/",
       "section": "dashboard",
-      "title": "Bosh sahifa — rolga qarab: DashboardPage yoki MarketDashboardPage",
+      "title": "Bosh sahifa — rolga qarab: DashboardPage yoki MarketDashboardPage (dizayn v2)",
       "components": [
         "src/app/lib/routes.tsx",
         "src/pages/dashboard/DashboardPage.tsx",
         "src/pages/dashboard/MarketDashboardPage.tsx",
-        "src/widgets/dashboard-statistics/ui/DashboardStatistics.tsx",
-        "src/widgets/dashboard-statistics/ui/OrderStatusDonut.tsx",
-        "src/widgets/dashboard-statistics/ui/SuccessGauge.tsx",
+        "src/widgets/dashboard-statistics/ui/DashboardHeader.tsx",
+        "src/widgets/dashboard-statistics/ui/DashboardGrid.tsx",
+        "src/widgets/dashboard-statistics/ui/SuccessRateCard.tsx",
+        "src/widgets/dashboard-statistics/ui/OrderStatusCard.tsx",
+        "src/pages/dashboard/ui/DeliveryQualityCard.tsx",
+        "src/pages/dashboard/ui/DeliveryResultsCard.tsx",
         "src/widgets/financial-analysis/ui/FinancialAnalysis.tsx",
-        "src/widgets/dashboard-top-performers/ui/TopPerformers.tsx",
-        "src/widgets/dashboard-top-performers/ui/RankingCard.tsx",
+        "src/widgets/financial-analysis/ui/FinancialTrendPlot.tsx",
+        "src/widgets/financial-analysis/ui/CashBalanceCard.tsx",
+        "src/widgets/dashboard-top-performers/ui/TopRankCard.tsx",
+        "src/widgets/dashboard-region/ui/RegionOverviewCard.tsx",
+        "src/widgets/dashboard-region/ui/RegionTiles.tsx",
+        "src/widgets/region-detail/ui/RegionDetailDialog.tsx",
+        "src/pages/dashboard/ui/CourierPlanCard.tsx",
+        "src/pages/dashboard/ui/CourierCashCard.tsx",
+        "src/pages/dashboard/ui/MarketSalesCard.tsx",
+        "src/pages/dashboard/ui/QuickActions.tsx",
+        "src/pages/dashboard/ui/ExtraCostApprovals.tsx",
+        "src/pages/dashboard/ui/ExtraCostRejectDialog.tsx",
         "src/widgets/dashboard-part-error/ui/DashboardPartError.tsx",
-        "src/widgets/dashboard-performance-chart/ui/PerformanceChart.tsx",
-        "src/widgets/dashboard-region/ui/RegionStatsCard.tsx",
-        "src/pages/region/ui/UzbekistanRegionMap.tsx"
+        "src/shared/ui/charts/index.ts"
       ],
       "roles": { "superadmin": "", "admin": "", "manager": "→ /branch-dashboard", "registrator": "", "market": "", "courier": "" },
       "views": {
@@ -193,24 +207,27 @@
       "roleNotes": {
         "manager": "DashboardEntry menejerni /branch-dashboard ga yo'naltiradi."
       },
-      "note": "DashboardEntry (routes.tsx): market → MarketDashboardPage (xarajat tasdiqlari shu sahifada), qolganlar → DashboardPage (kuryer — alohida tarmoq isCourier)."
+      "note": "DashboardEntry (routes.tsx): market → MarketDashboardPage (xarajat tasdiqlari shu sahifada), qolganlar → DashboardPage (kuryer — alohida tarmoq isCourier). Dizayn v2 (G1): grafiklar — src/shared/ui/charts (recharts faqat «Moliyaviy tahlil» trendida, FinancialTrendPlot lazy + DeferredMount rootMargin 0; bundle byudjeti 450 KB — tests/e2e/dashboard-bundle.preview.spec.ts), viloyat oynasi — umumiy RegionDetailDialog (lazy, faqat bosilganda; registratorda daromadsiz — showRevenue=false, eski oyna xulqi). Reytinglar top 5 (telefonda top 3) + «Yana ko'rsatish». Chizilmaganlar (Taklif yoki API yo'q, spec §6): «Buyurtmalar vaqti» issiqlik xaritasi, KPI «Yo'qotilgan daromad», KPI sparkline, «maqsad 80%», «Sof foyda» qatori, market «Reytingdagi o'rningiz» / «Buyurtmalar dinamikasi», xarajat so'rovida so'rovchi ismi va buyurtma raqami, kuryer «Oxirgi 7 kun». Ega savollari — sukut javoblari qo'llangan (spec §9): Q1 delta va «Kecha» — oldingi davr uchun ikkinchi analytics so'rovi («Barchasi»da yo'q); Q2 gauge belgisi «Yaxshi chegarasi · 70%»; Q3 registrator sarlavha izohida filial nomi (backend registratorni filialga cheklaydi); Q4 «Moliyaviy tahlil» izohi «Daromad · oldingi davr bilan solishtirish», qator «Daromad»; Q5 kuryer «Kassa» sharsharasi faqat my-cashbox bugungi tarixni bersa, aks holda «Qo'lingizdagi pul»; Q6 market «Tasdiqlash» — pul amali, tasdiq oynasi bilan (useConfirm), «Rad etish» — sabab oynasi ExtraCostRejectDialog; 409 «allaqachon hal qilingan» — qayta yuklash + info toast; market_operator — faqat ko'rish (dev, Urozov04); Q7 «Barchasi»da «Yetkazish sifati» o'rnida bo'sh holat, «Moliyaviy tahlil» va «Kassa» yashirin."
     },
     {
       "path": "/branch-dashboard",
       "section": "dashboard",
-      "title": "Filial paneli (menejer bosh sahifasi)",
+      "title": "Filial paneli (menejer bosh sahifasi, dizayn v2)",
       "components": [
+        "src/pages/branch-dashboard/index.tsx",
         "src/pages/branch-dashboard/ui/BranchDashboardPage.tsx",
-        "src/pages/branch-dashboard/ui/BranchDashboardCards.tsx",
+        "src/pages/branch-dashboard/ui/BranchCards.tsx",
         "src/pages/branch-dashboard/ui/branchDashboardAdapter.ts",
-        "src/widgets/dashboard-top-performers/ui/TopPerformers.tsx",
-        "src/widgets/dashboard-top-performers/ui/RankingCard.tsx",
-        "src/widgets/dashboard-part-error/ui/DashboardPartError.tsx"
+        "src/widgets/dashboard-statistics/ui/DashboardHeader.tsx",
+        "src/widgets/dashboard-top-performers/ui/TopRankCard.tsx",
+        "src/widgets/dashboard-part-error/ui/DashboardPartError.tsx",
+        "src/shared/ui/charts/index.ts"
       ],
       "views": {
         "manager": ["branch-dashboard-main"],
         "tizim": ["charts"]
-      }
+      },
+      "note": "Asosiy fayl — ui/BranchDashboardPage.tsx (index.tsx faqat qayta eksport). «Sizning filial» — reytingda pinned qator; stats_unavailable — ErrorState «Statistika vaqtincha mavjud emas»; davr sukuti — bugun."
     },
     {
       "path": "/orders",
@@ -292,7 +309,12 @@
       "path": "/new-orders",
       "section": "newOrders",
       "title": "Qabul va yaratish — tablar (layout) + Marketlar tabi",
-      "components": ["src/pages/new_orders/markets/index.tsx", "src/pages/new_orders/index.tsx"],
+      "components": [
+        "src/pages/new_orders/markets/index.tsx",
+        "src/pages/new_orders/index.tsx",
+        "src/pages/new_orders/ui/NewOrdersHeader.tsx",
+        "src/pages/new_orders/ui/NewOrdersTabs.tsx"
+      ],
       "views": {
         "superadmin": ["neworders-markets"],
         "admin": ["neworders-markets"],
@@ -302,7 +324,7 @@
       "roleNotes": {
         "market": "Market /new-orders/:marketId (o'z marketi) ga yo'naltiriladi — o'sha route'ga qarang."
       },
-      "note": "Tablar (Marketlar · Kiruvchi posilkalar · Filial paketlari · Bekor qilinganlar) va «Buyurtma yaratish» tugmasi — src/pages/new_orders/index.tsx (barcha /new-orders/* uchun layout)."
+      "note": "Qobiq (src/pages/new_orders/index.tsx, barcha /new-orders/* uchun) rejimi yo'lga qarab — model/newOrdersShell.ts: «Qabul va yaratish» sarlavhasi + «Buyurtma yaratish» havolasi (NewOrdersHeader.tsx); tablar (Marketlar · Kiruvchi posilkalar · Filial paketlari · Bekor qilinganlar, sonlari bilan; market — Yangi buyurtmalar · Bekor qilinganlar) bola sahifaning birinchi kartasida (NewOrdersTabs.tsx). Bitta tabli rol (menejer, HQ bo'lmagan registrator) — tablar o'rnida karta sarlavhasi «Marketlar»."
     },
     {
       "path": "/new-orders/create",
@@ -339,7 +361,7 @@
       "path": "/new-orders/incoming",
       "section": "newOrders",
       "title": "Kiruvchi posilkalar — manba tanlash",
-      "components": ["src/pages/incoming-orders/SourcePicker.tsx", "src/pages/incoming-orders/lib.ts"],
+      "components": ["src/pages/incoming-orders/SourcePicker.tsx", "src/pages/incoming-orders/lib.ts", "src/pages/incoming-orders/ui/SourcesSummary.tsx", "src/pages/incoming-orders/ui/SourcesTable.tsx", "src/pages/incoming-orders/ui/sourceVisuals.tsx", "src/pages/incoming-orders/ui/sourceFormat.ts", "src/pages/incoming-orders/ui/IdleSources.tsx"],
       "views": {
         "superadmin": ["neworders-incoming-sources"],
         "admin": ["neworders-incoming-sources"],
@@ -353,7 +375,7 @@
       "path": "/new-orders/incoming/:marketId",
       "section": "newOrders",
       "title": "Kiruvchi posilkalarni skanerlab qabul qilish (tanlangan manba)",
-      "components": ["src/pages/incoming-orders/index.tsx", "src/pages/incoming-orders/lib.ts"],
+      "components": ["src/pages/incoming-orders/index.tsx", "src/pages/incoming-orders/lib.ts", "src/pages/incoming-orders/ui/ScanInput.tsx", "src/pages/incoming-orders/ui/ScanMessage.tsx", "src/pages/incoming-orders/ui/IncomingTable.tsx"],
       "views": {
         "superadmin": ["neworders-incoming-scan", "neworders-incoming-scan-camera"],
         "admin": ["neworders-incoming-scan", "neworders-incoming-scan-camera"],
@@ -368,7 +390,7 @@
       "path": "/new-orders/branches",
       "section": "newOrders",
       "title": "Filial paketlari — filiallar",
-      "components": ["src/pages/new_orders/branches/index.tsx"],
+      "components": ["src/pages/new_orders/branches/index.tsx", "src/pages/new_orders/ui/SourceListCard.tsx", "src/pages/new_orders/branches/branchBatchesModel.ts"],
       "views": {
         "superadmin": ["neworders-branches"],
         "admin": ["neworders-branches"]
@@ -378,7 +400,7 @@
       "path": "/new-orders/branches/:branchId",
       "section": "newOrders",
       "title": "Filial paketlari ro'yxati",
-      "components": ["src/pages/new_orders/branches/batches.tsx"],
+      "components": ["src/pages/new_orders/branches/batches.tsx", "src/shared/ui/SelectionRegion.tsx", "src/pages/new_orders/branches/branchBatchesModel.ts"],
       "views": {
         "superadmin": ["neworders-branch-batches"],
         "admin": ["neworders-branch-batches"]
@@ -388,7 +410,7 @@
       "path": "/new-orders/branches/:branchId/batches/:batchId",
       "section": "newOrders",
       "title": "Filial paketi tafsiloti (qabul)",
-      "components": ["src/pages/new_orders/branches/batchDetail.tsx"],
+      "components": ["src/pages/new_orders/branches/batchDetail.tsx", "src/shared/ui/SelectionRegion.tsx", "src/pages/new_orders/branches/branchBatchesModel.ts"],
       "views": {
         "superadmin": ["neworders-branch-batch-detail", "neworders-branch-batch-detail-camera"],
         "admin": ["neworders-branch-batch-detail", "neworders-branch-batch-detail-camera"],
@@ -399,7 +421,7 @@
       "path": "/new-orders/cancelled",
       "section": "newOrders",
       "title": "Bekor qilinganlar — marketlar",
-      "components": ["src/pages/new_orders/cancelled/index.tsx", "src/pages/new_orders/cancelled/utils.ts"],
+      "components": ["src/pages/new_orders/cancelled/index.tsx", "src/pages/new_orders/ui/SourceListCard.tsx", "src/pages/new_orders/cancelled/utils.ts"],
       "views": {
         "superadmin": ["neworders-cancelled-markets"],
         "admin": ["neworders-cancelled"],
@@ -412,6 +434,12 @@
       "title": "Bekor qilinganlarni marketga topshirish (market rolida — o'z bekorlari va QR kod)",
       "components": [
         "src/pages/new_orders/cancelled/detail.tsx",
+        "src/pages/new_orders/cancelled/cancelledModel.ts",
+        "src/pages/new_orders/cancelled/ui/HandoverStatusAlert.tsx",
+        "src/pages/new_orders/cancelled/ui/CancelledOrdersTable.tsx",
+        "src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx",
+        "src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx",
+        "src/shared/ui/SelectionRegion.tsx",
         "src/pages/new_orders/cancelled/utils.ts",
         "src/shared/components/ScannerCameraModal.tsx",
         "src/app/lib/routes.tsx"
@@ -424,7 +452,7 @@
         "market": ["new-orders-cancelled", "new-orders-cancelled-qr-dialog"],
         "tizim": ["scanner"]
       },
-      "note": "Kirish NewOrdersCancelledDetailEntry (routes.tsx) da: canHandoverCancelledToMarket yoki o'z marketi; boshqalar → /403."
+      "note": "Kirish NewOrdersCancelledDetailEntry (routes.tsx) da: canHandoverCancelledToMarket yoki o'z marketi; boshqalar → /403. Qobiq: xodimda `bare` (o'z sarlavhasi), marketda `hosted` (tablar kartada). Marketga jo'natish faqat market QR skanerlangach (marketda QR o'chirilgan bo'lmasa); buzilgan buyurtma QR — «QR buzilganini tasdiqlash» oynasi (sabab — backend enum kodi). Kamera rejimi (`*-camera`) — keyinroq, `ScannerCameraModal` o'zgarmagan."
     },
     {
       "path": "/new-orders/:marketId",
@@ -432,10 +460,12 @@
       "title": "Market yangi buyurtmalari — qabul (market rolida: o'z yangi buyurtmalari)",
       "components": [
         "src/pages/new_orders/components/new_orderDetail.tsx",
-        "src/pages/new_orders/components/OrderCard.tsx",
         "src/pages/new_orders/components/newOrderReceiveRules.ts",
         "src/pages/new_orders/components/lib/printLabelPdf.ts",
-        "src/shared/components/popupConfirm.tsx",
+        "src/pages/new_orders/components/marketOrders/MarketOrdersTable.tsx",
+        "src/pages/new_orders/components/marketOrders/SelectionBar.tsx",
+        "src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx",
+        "src/pages/new_orders/components/marketOrders/marketOrdersModel.ts",
         "src/app/lib/routes.tsx"
       ],
       "roles": { "superadmin": "", "admin": "", "manager": "HQ · PICKUP · HYBRID", "registrator": "", "market": "faqat o'z marketi" },
@@ -472,10 +502,14 @@
     {
       "path": "/new-orders/userDetail/:id",
       "section": "newOrders",
-      "title": "Foydalanuvchi tafsiloti (eski havola, /new-orders ichida)",
-      "components": ["src/pages/users/detail/UserDetailPage.tsx", "src/widgets/user-detail/ui/UserDetailWidget.tsx"],
+      "title": "Foydalanuvchi tafsiloti (eski havola, /new-orders ichida; dizayn v2)",
+      "components": [
+        "src/pages/users/detail/UserDetailPage.tsx",
+        "src/widgets/user-detail/ui/UserDetailView.tsx",
+        "src/widgets/user-detail/ui/MarketTelegramTokenCard.tsx"
+      ],
       "views": {},
-      "note": "Alohida maket yo'q — <rol>-users-detail maketlariga qarang (superadmin-users-detail)."
+      "note": "Alohida maket yo'q — <rol>-users-detail maketlari (superadmin-users-detail). /all-users/:id bilan bir xil v2 sahifa (UserDetailView); «Qabul va yaratish» qobig'i bu yo'lda bare — sarlavha va «Buyurtma yaratish» takrorlanmaydi (newOrdersShell.ts), «←» — navigate(-1)."
     },
     {
       "path": "/mails",
@@ -493,8 +527,12 @@
       "components": [
         "src/pages/mails/index.tsx",
         "src/pages/mails/components/todaysMails.tsx",
-        "src/pages/mails/components/MailGridCard.tsx",
-        "src/pages/mails/components/MailSummaryStats.tsx"
+        "src/pages/mails/components/MailsListBody.tsx",
+        "src/pages/mails/components/MailsTable.tsx",
+        "src/pages/mails/components/MailSummaryStats.tsx",
+        "src/pages/mails/model/mailsLists.ts",
+        "src/pages/mails/model/mailsLayout.ts",
+        "src/pages/mails/components/lib/regionFilterOptions.ts"
       ],
       "views": {
         "superadmin": ["mails-today"],
@@ -503,13 +541,13 @@
         "registrator": ["mails-today"],
         "courier": ["mails-today", "mails-tab-switcher-open"]
       },
-      "note": "Tablar (Bugungi · Qaytarish · Rad etilgan · Eski) — src/pages/mails/index.tsx; tor ekranda (< 1280px) tablar ochiladigan ixcham tanlagichga aylanadi (courier-mails-tab-switcher-open)."
+      "note": "Qobiq — src/pages/mails/index.tsx: xodimda sarlavha + bitta karta (sonli tablar «Bugungi · Qaytarish · Rad etilgan · Eski»; telefonda bo'lim tanlagichi — Select «Pochta bo'limi: …»), kuryerda tablar sahifa fonida («Qaytarish» yo'q; telefonda to'liq enli qisqa tablar — courier-mails-tab-switcher-open). Tab sonlari model/mailsLists.ts hooklaridan (tanalar bilan bir xil queryKey). Ega qarori 2026-10-17 (Pochta birxillashtirishi, barcha xodim rollarida maketlardan ustun): filtrlar — ichki yorliqli Select («Viloyat: …»); xulosa qatori barcha xodimlarda. «Kuryer» ustuni hozirgidek — faqat backend kuryer yuborsa (YANGI pochtada courier_id='0', post/new kuryer bermaydi)."
     },
     {
       "path": "/mails/return",
       "section": "mails",
       "title": "Pochta — Qaytarish so'rovlari",
-      "components": ["src/pages/mails/index.tsx", "src/pages/mails/components/returnMails.tsx"],
+      "components": ["src/pages/mails/index.tsx", "src/pages/mails/components/returnMails.tsx", "src/shared/ui/SelectionRegion.tsx", "src/pages/mails/model/mailsLists.ts"],
       "views": {
         "superadmin": ["mails-return"],
         "admin": ["mails-return"],
@@ -518,28 +556,40 @@
       },
       "roleNotes": {
         "courier": "Kuryerda bu tab yo'q — /mails/today ga qaytariladi."
-      }
+      },
+      "note": "Ega qarori 2026-10-17 (Pochta birxillashtirishi): «Qaytarish» tabida bitta doimiy tanlov paneli (0 ta — tugmalar o'chiq) — har kuryer guruhidagi alohida tugmalar o'rniga; xulosa qatori barcha xodimlarda. Maketdagi «Marketga» manzili chizilmaydi: backend faqat HQ/BRANCH doirasini beradi va tasdiq buyurtmani o'z omboriga qaytaradi."
     },
     {
       "path": "/mails/refused",
       "section": "mails",
       "title": "Pochta — Rad etilgan pochtalar",
-      "components": ["src/pages/mails/index.tsx", "src/pages/mails/components/refusedMails.tsx"],
+      "components": [
+        "src/pages/mails/index.tsx",
+        "src/pages/mails/components/refusedMails.tsx",
+        "src/pages/mails/components/MailsListBody.tsx",
+        "src/pages/mails/components/MailsTable.tsx",
+        "src/pages/mails/components/MailSummaryStats.tsx",
+        "src/pages/mails/model/mailsLists.ts"
+      ],
       "views": {
         "superadmin": ["mails-refused"],
         "admin": ["mails-refused"],
         "manager": ["mails-refused"],
         "registrator": ["mails-refused"],
         "courier": ["mails-refused"]
-      }
+      },
+      "note": "Ega qarori 2026-10-17 (Pochta birxillashtirishi): xulosa qatori barcha xodimlarda; filtr qo'shilsa — ichki yorliqli Select."
     },
     {
       "path": "/mails/old",
       "section": "mails",
-      "title": "Pochta — Eski pochtalar (admin/superadmin: «Hamma batchlar» rejimi)",
+      "title": "Pochta — Eski pochtalar (admin/superadmin: «Filial paketlari» rejimi)",
       "components": [
         "src/pages/mails/index.tsx",
         "src/pages/mails/components/oldMails.tsx",
+        "src/pages/mails/components/OldMailsFiltersSheet.tsx",
+        "src/pages/mails/components/MailsTable.tsx",
+        "src/pages/mails/model/oldMailsModel.ts",
         "src/pages/mails/components/lib/exportOldMailsToExcel.ts",
         "src/pages/mails/components/lib/regionFilterOptions.ts"
       ],
@@ -549,7 +599,8 @@
         "manager": ["mails-old"],
         "registrator": ["mails-old"],
         "courier": ["mails-old"]
-      }
+      },
+      "note": "Ega qarori 2026-10-17 (Pochta birxillashtirishi): filtrlar — ichki yorliqli Select («Viloyat: … · Kuryer: … · Holati: …») + sana oralig'i; «Excelga yuklash» karta asboblar qatorida (telefonda ikonka); xulosa qatori barcha xodimlarda; admin/superadmin — «Pochtalar | Filial paketlari» almashtirgichi (?batch_mode=all); paket qatori /batches/:id ni ochadi («← Eski pochtalar» filtrlar bilan). Filtr va sahifalash server tomonida (GET /post, GET /post/courier/old-posts — Trello YfrqN70i), Excel barcha filtrlangan qatorlarni 100 talab sahifalab oladi. Pochtalar xulosasi hozircha faqat «N ta pochta» (API buyurtma/summa yig'indisini bermaydi — egaga savol Q1). «Filial paketlari» — GET transfer-batches ning barcha sahifalari (fetchAllTransferBatches), filtr mijoz tomonida."
     },
     {
       "path": "/mails/:id",
@@ -558,14 +609,17 @@
       "components": [
         "src/pages/mails/detail/index.tsx",
         "src/pages/mails/detail/model/useMailDetailState.ts",
-        "src/pages/mails/detail/ui/MailDetailHeader.tsx",
+        "src/pages/mails/detail/model/useOrderRowView.tsx",
         "src/pages/mails/detail/ui/MailStatCards.tsx",
         "src/pages/mails/detail/ui/OrdersTable.tsx",
         "src/pages/mails/detail/ui/OrderRow.tsx",
         "src/pages/mails/detail/ui/SendButton.tsx",
         "src/pages/mails/detail/ui/SendPostModal.tsx",
-        "src/pages/mails/detail/ui/PrintOnlyOrders.tsx",
+        "src/pages/mails/detail/ui/DeleteFromPostDialog.tsx",
+        "src/pages/mails/detail/ui/printOptions.tsx",
         "src/pages/mails/detail/lib/printMode.ts",
+        "src/pages/mails/detail/lib/scanMatch.ts",
+        "src/shared/ui/SelectionRegion.tsx",
         "src/shared/components/PrintModeSelect.tsx"
       ],
       "views": {
@@ -576,13 +630,13 @@
         "courier": ["mails-detail-receive", "mails-detail-receive-camera", "mails-detail-refused", "mails-detail-old", "mails-detail-print-menu"],
         "tizim": ["scanner"]
       },
-      "note": "Rejim URL'dan: ?type=refused → rad etilgan, ?view=old → tarix (faqat o'qish), ?view=old-all-batches → «Hamma batchlar»dan ochilgan tarix (admin/superadmin; *-mails-detail-old / admin-mails-old-detail maketi). «Filialga jo'natish» oynasi faqat superadmin/admin/HQ registrator (canDispatchPostToBranch). Chop etish menyusi — PrintModeSelect."
+      "note": "Rejim URL'dan: ?type=refused → rad etilgan, ?view=old → tarix (faqat o'qish), ?view=old-all-batches → eski pochtalarning «Filial paketlari» rejimidan ochilgan tarix (admin/superadmin; *-mails-detail-old / admin-mails-old-detail maketi). «Filialga jo'natish» oynasi faqat superadmin/admin/HQ registrator (canDispatchPostToBranch). Chop etish menyusi — PrintModeSelect."
     },
     {
       "path": "/batches",
       "section": "batches",
       "title": "Paketlar — Yangi · Eski · Qaytarilgan",
-      "components": ["src/pages/batches/ui/BatchesPage.tsx", "src/pages/batches/lib/batchFormat.ts"],
+      "components": ["src/pages/batches/ui/BatchesPage.tsx", "src/pages/batches/model/batchView.ts", "src/pages/batches/lib/batchFormat.ts", "src/entities/batch/model/batchStatus.ts"],
       "views": {
         "superadmin": ["batches-new", "batches-old", "batches-return"],
         "admin": ["batches-new", "batches-old", "batches-return"],
@@ -596,9 +650,16 @@
       "title": "Paket tafsiloti (menejer: asosiy filialga jo'natish yoki faqat o'qish; qaytarish paketi ham shu sahifa)",
       "components": [
         "src/pages/batches/ui/BatchDetailPage.tsx",
+        "src/pages/batches/ui/BatchInfoCard.tsx",
+        "src/pages/batches/ui/BatchQrCard.tsx",
+        "src/pages/batches/ui/BatchHistoryCard.tsx",
         "src/pages/batches/ui/BatchPrintSheet.tsx",
         "src/pages/batches/ui/BatchQrCode.tsx",
-        "src/pages/batches/lib/batchOrderMailAdapter.ts"
+        "src/pages/batches/lib/batchOrderMailAdapter.ts",
+        "src/pages/mails/detail/ui/OrdersTable.tsx",
+        "src/pages/mails/detail/ui/MailStatCards.tsx",
+        "src/pages/mails/detail/ui/SendButton.tsx",
+        "src/pages/mails/detail/model/useMailDetailState.ts"
       ],
       "views": {
         "superadmin": ["batches-detail"],
@@ -606,19 +667,19 @@
         "manager": ["batches-detail-send", "batches-detail-send-camera", "batches-detail-readonly", "returns-batch-detail"],
         "tizim": ["scanner"]
       },
-      "note": "Jo'natish rejimi: paket holati «new» va rol menejer/registrator (canSendToMainBranch); aks holda faqat o'qish. /returns qatori ham shu sahifani ochadi."
+      "note": "Jo'natish rejimi: paket holati «new» va rol menejer/registrator (canSendToMainBranch); aks holda faqat o'qish. /returns qatori ham shu sahifani ochadi. Buyurtmalar kartasi, statistika va jo'natish tugmasi /mails/:id bilan umumiy (pages/mails/detail/ui — batchOrderMailAdapter.ts orqali)."
     },
     {
       "path": "/returns",
       "section": "batches",
       "title": "Qaytarishlar (qaytarish paketlari ro'yxati)",
-      "components": ["src/pages/returns/index.tsx"],
+      "components": ["src/pages/returns/index.tsx", "src/pages/returns/model/returnBatches.ts"],
       "views": {
         "superadmin": ["returns-list"],
         "admin": ["returns-list"],
         "manager": ["returns-list"]
       },
-      "note": "Qator bosilsa → /batches/:id (manager-returns-batch-detail)."
+      "note": "Qator bosilsa → /batches/:id (manager-returns-batch-detail; «← Qaytarishlar» filtrlar bilan). Filtrlar «Holat: …» va «Sana: …» (ega qarori 2026-10-17 F2) — URL ?status&period|date, o'zgarsa sahifa 1; sana qisqartirilgan: Bugun / Bu hafta / Bu oy (period) yoki bitta kun (date) — GET transfer-batches from/to oralig'ini olmaydi; telefonda ham ikkalasi qatorda (≤ 2 filtr, maket). Holat bo'sh yoki «Yangi» bo'lsa backend PENDING paketlarni sahifa ichida yig'adi va meta.total sahifaga xos — «jami N ta paket» va sahifalash to'liq emas (egaga savol Q2)."
     },
     {
       "path": "/dispatch",
@@ -626,8 +687,12 @@
       "title": "Biriktirish — buyurtmalarni skanerlab kuryerga berish",
       "components": [
         "src/pages/dispatch/index.tsx",
-        "src/shared/components/ScannerCameraModal.tsx",
-        "src/shared/components/popupSelect.tsx"
+        "src/pages/dispatch/ui/DispatchStats.tsx",
+        "src/pages/dispatch/ui/DispatchOrdersTable.tsx",
+        "src/pages/dispatch/ui/CourierPickerDialog.tsx",
+        "src/pages/dispatch/ui/DispatchAlert.tsx",
+        "src/pages/dispatch/model/dispatchModel.ts",
+        "src/shared/components/ScannerCameraModal.tsx"
       ],
       "views": {
         "manager": ["dispatch-scan", "dispatch-courier-dialog", "dispatch-camera-dialog"],
@@ -635,9 +700,10 @@
         "tizim": ["scanner"]
       },
       "roleNotes": {
-        "superadmin": "Menyuda yo'q (faqat URL) — registrator-dispatch-list ga qarang.",
-        "admin": "Menyuda yo'q (faqat URL) — registrator-dispatch-list ga qarang."
-      }
+        "superadmin": "Menyuda yo'q (faqat URL) — registrator-dispatch-list tartibi (barcha rollar uchun bitta tartib).",
+        "admin": "Menyuda yo'q (faqat URL) — registrator-dispatch-list tartibi (barcha rollar uchun bitta tartib)."
+      },
+      "note": "Dizayn v2 (G3): barcha rollar uchun bitta tartib — registrator maketlari (dispatch-list, dispatch-empty) + menejer dispatch-scan matnlari, «Kuryerni tanlang» oynasi — CourierPickerDialog (Dialog, telefonda pastki varaqa). Ega savoli Q7 sukuti: telefonda pastki menyu ustida yopishqoq panel «Kamera N ta» + «Biriktirish — K ta» (har rolda), sarlavhadagi tugma ≥ 768 da. Bitta faol kuryer — oynasiz darhol biriktiriladi. /scan/:token dan «Kuryerga biriktirish» (Q3) → state.scanToken bir marta qo'shiladi va tanlanadi. Ro'yxat sahifa holati — sahifadan chiqilsa yo'qoladi (menejer maketidagi «biriktirish savati» saqlanishi — ega qarori kutiladi). Kamera oynasi (ScannerCameraModal, umumiy) — alohida kamera ishi."
     },
     {
       "path": "/courier-bulk",
@@ -646,13 +712,23 @@
       "components": [
         "src/pages/courier-bulk/index.tsx",
         "src/pages/courier-bulk/model/courierBulk.ts",
+        "src/pages/courier-bulk/ui/CourierBulkSummary.tsx",
+        "src/pages/courier-bulk/ui/ScanModeControl.tsx",
+        "src/pages/courier-bulk/ui/CourierBulkOrders.tsx",
+        "src/pages/courier-bulk/ui/ResultControl.tsx",
+        "src/pages/courier-bulk/ui/BulkAlert.tsx",
+        "src/pages/courier-bulk/ui/CourierBulkProofDialog.tsx",
+        "src/pages/courier-bulk/ui/CourierBulkResultDialog.tsx",
+        "src/pages/courier-bulk/ui/segmentTint.ts",
+        "src/pages/courier-bulk/model/useIsBelowLg.ts",
         "src/shared/components/ScannerCameraModal.tsx"
       ],
       "views": {
         "manager": ["courier-bulk-main", "courier-bulk-camera-dialog"],
         "courier": ["courier-bulk-main", "courier-bulk-scanner-camera", "courier-bulk-scanner-camera-list", "courier-bulk-confirm-dialog"],
         "tizim": ["scanner"]
-      }
+      },
+      "note": "Dizayn v2 (G3): kuryer va menejer uchun bitta tartib (courier-courier-bulk-main). Ega savoli Q8 sukuti: menejerda ham kuryer maketi (4 stat karta, qidiruv + «Natija» filtri, saralash — hammasi mijoz tomonida, yangi API parametri yo'q); «Kutilayotgan» izohi menejerda «Filial kuryerlarida, yakunlanmagan». Q9: «Faqat bekorlarni qo'llash» olib tashlandi (maketlarda yo'q). Telefonda «Kunni yakunlash» pastki menyu ustidagi yopishqoq panelda (DOM'da bitta tugma). Tasdiq — useConfirm (courier-courier-bulk-confirm-dialog matnlari); «Ertaga» so'rov yubormaydi. Tasdiqdan keyingi isbot qadami (CourierBulkProofDialog — market expense_proof_conditions talab qilgan buyurtmalarga har biriga bitta ProofField, hammasida fayl bo'lmaguncha «Yakunlash» o'chiq) va xatolar ro'yxati (CourierBulkResultDialog — har xato backend sababi bilan) uchun maket yo'q — eng yaqini: tizim-states-forms + courier-courier-bulk-confirm-dialog (dev j9KFyqlS). Isbot kerak bo'lmasa qo'shimcha qadam yo'q; ommaviy sotish/bekor so'rovlarida X-Request-Source: courier-bulk. Kamera oynasi va skan topilmaganda chiqadigan umumiy qoplama (common:scannerFeedbackMissing «Bu pochtada yo'q» matni) — alohida kamera ishi."
     },
     {
       "path": "/scan",
@@ -676,7 +752,7 @@
       "roleNotes": {
         "market": "Maket yo'q — market skanerlamaydi (roles.json: persona.scan = false)."
       },
-      "note": "Kirish: yuqori panel «Skanerlash» tugmasi va telefon menyusi. Holatlar (ishga tushmoqda, faol, topildi, noto'g'ri QR, juda tez, kamera xatosi) bitta komponentda."
+      "note": "Kirish: yuqori panel «Skanerlash» tugmasi va telefon menyusi. Holatlar (ishga tushmoqda, faol, topildi, noto'g'ri QR, juda tez, kamera xatosi) bitta komponentda. Butun /scan sahifasi (barcha kamera holatlari, «Qo'lda kiritish», «Oxirgi skanerlar», oflayn navbat) — alohida kamera ishi (ega qarori 2026-10-16; G3 Q1 sukuti); 4-bosqichda faqat /scan/:token. Buyurtma raqami bilan qo'lda qidirish uchun API yo'q (QR faqat qr_code_token bo'yicha)."
     },
     {
       "path": "/scan/:token",
@@ -684,8 +760,20 @@
       "title": "Skanerlangan obyekt — buyurtma / paket / pochta",
       "components": [
         "src/pages/scan/detail.tsx",
+        "src/pages/scan/ui/ScanOrderResult.tsx",
+        "src/pages/scan/ui/ScanResultHeader.tsx",
+        "src/pages/scan/ui/ScanActionCard.tsx",
+        "src/pages/scan/ui/ScanStickyBar.tsx",
+        "src/pages/scan/ui/ScanAlert.tsx",
+        "src/pages/scan/ui/ScanStates.tsx",
+        "src/pages/scan/ui/ScanOrdersCard.tsx",
+        "src/pages/scan/ui/ScanBatchSummary.tsx",
+        "src/pages/scan/ui/ScanTrackingCard.tsx",
+        "src/pages/scan/ui/ManagerOrderDialogs.tsx",
         "src/pages/scan/ui/ScanPackageDetail.tsx",
         "src/pages/scan/ui/ScanPostDetail.tsx",
+        "src/pages/scan/model/scanOrderView.ts",
+        "src/pages/scan/model/scanBatchView.ts",
         "src/pages/scan/lib/scanResource.ts"
       ],
       "views": {
@@ -697,9 +785,10 @@
         "tizim": ["scanner"]
       },
       "roleNotes": {
-        "market": "Maket yo'q — market skanerlamaydi."
+        "admin": "superadmin-scan-result maketi (views.json: admin-scan-result = superadmin fragmenti) — bitta xodim tartibi.",
+        "market": "Maket yo'q — market skanerlamaydi. URL orqali ochilsa — xodimning faqat o'qish tartibi (amallarsiz, holat tarixisiz, tafsilot havolasisiz)."
       },
-      "note": "«O'zimga olish» tugmasi faqat kuryerda. Paket → ScanPackageDetail, pochta → ScanPostDetail."
+      "note": "Dizayn v2 (G3): barcha rollar uchun bitta tartib (menejer/kuryer maketlari tuzilmasi), rol farqi faqat mazmunda; admin — superadmin maketi (superadmin-scan-result). «O'zimga olish» faqat kuryerda; boshqa kuryerga biriktirilgan buyurtma xatosi — backend matni amallar kartasida. Paket → ScanPackageDetail, pochta → ScanPostDetail; xodimda paket nomlari GET transfer-batches/:id bilan to'ldiriladi (ixtiyoriy, xatosi global xabarsiz — silentError). Ega savollari sukuti: Q2 menejerda «Sotish / Bekor qilish» buyurtma tafsilotidagi qoidalar bilan (can_sell_cancel, REGIONAL/HYBRID, kuryer qo'lida emas); Q3 «Kuryerga biriktirish» → /dispatch (buyurtma qo'shilib tanlanadi; buyurtma holati bo'yicha cheklanmagan — spec sukuti); Q4 superadmin/admin/registrator xulosasida «To'langan» ham, «Yaratilgan» ham; Q5 kuryerga paketni «Qabul qilish» yo'q (backend 403) — faqat o'qish."
     },
     {
       "path": "/tg/scan",
@@ -732,16 +821,18 @@
         "src/pages/payments/components/PaymentSummaryCards.tsx",
         "src/pages/payments/components/patmentHistoryTable.tsx",
         "src/pages/payments/components/FinanceHistoryDetailPopup.tsx",
+        "src/pages/payments/components/SettlementPickerDialog.tsx",
         "src/pages/payments/components/InactiveBadge.tsx",
-        "src/pages/payments/components/lib/receiveOptions.ts",
-        "src/shared/components/popupSelect.tsx"
+        "src/pages/payments/components/paymentSourceType.ts",
+        "src/pages/payments/components/paymentHistoryActor.ts",
+        "src/pages/payments/components/lib/receiveOptions.ts"
       ],
       "views": {
         "superadmin": ["payments-overview", "payments-market-picker-dialog", "payments-to-give-dialog", "payments-history-detail-dialog"],
         "admin": ["payments-overview", "payments-to-give-dialog", "payments-to-receive-dialog", "payments-history-detail-dialog"],
         "manager": ["payments-overview", "payments-courier-select-dialog", "payments-history-detail-dialog"]
       },
-      "note": "Berilishi kerak / Qabul qilinishi kerak tanlash oynalari — PopupSelect (payments/index.tsx). Ruxsati yo'q rol (market, kuryer) → /cash-box."
+      "note": "Tanlash oynalari (Qabul qilinishi kerak · Berilishi kerak · Kuryerni tanlang) — SettlementPickerDialog (kind receive | give | courier), tafsilot — FinanceHistoryDetailPopup (barcha Moliya sahifalari uchun umumiy). Birxillashtirish (spec §0.5): filtr qatori barcha rollarda tarix kartasi ichida (menejer maketi naqshi), «Sana» filtri — GET finance/history from_date/to_date. Ega qarori D1 (2026-10-17): superadmin/admin tarixi kassa tanlanmagan bo'lsa server tomonida faqat asosiy kassa (gateway sukuti cashbox_type=main); «Kassa turi» filtri boshqa kassani tanlaydi; menejerda server doim filial kassasini beradi. Tab sonlari chizilmaydi (API bermaydi, Trello GaBIPi3Z). Ruxsati yo'q rol (market, kuryer) → /cash-box."
     },
     {
       "path": "/payments/main-cashbox",
@@ -749,18 +840,22 @@
       "title": "Asosiy kassa (to'ldirish / xarajat / smenani yopish)",
       "components": [
         "src/pages/payments/components/mainCashbox.tsx",
-        "src/pages/payments/components/CashboxSummaryCard.tsx",
+        "src/pages/payments/components/MainCashboxBalanceChart.tsx",
+        "src/pages/payments/components/lib/mainCashboxStats.ts",
         "src/pages/payments/components/CashboxFormPopup.tsx",
         "src/pages/payments/components/CloseShiftPopup.tsx",
+        "src/pages/payments/components/SettlementPickerDialog.tsx",
+        "src/pages/payments/components/FinanceHistoryDetailPopup.tsx",
         "src/pages/payments/components/SalaryPaymentPopup.tsx",
-        "src/pages/payments/components/PaymentHistoryList.tsx",
+        "src/shared/components/popupSelect.tsx",
         "src/pages/payments/components/lib/exportMainCashboxReport.ts"
       ],
       "views": {
         "superadmin": ["payments-main-cashbox", "payments-main-cashbox-fill-dialog", "payments-main-cashbox-shift-dialog"],
         "admin": ["payments-main-cashbox", "payments-cashbox-form-dialog", "payments-shift-dialog"],
         "manager": ["payments-main-cashbox", "payments-cashbox-form-dialog", "payments-close-shift-dialog"]
-      }
+      },
+      "note": "Ega qarori D1 (2026-10-17): superadmin/admin — faqat asosiy kassa operatsiyalari (GET finance/history?cashbox_type=main): ro'yxat, «Bugun / Bu hafta / Bu oy», «Pul qayerdan keldi, qayerga ketdi» va Excel hisobot; menejerda filial kassasi (server majburlaydi, o'zgarmagan). D3: «Kassani to'ldirish» / «Kassadan xarajat» — tasdiq oynasi (useConfirm) + Idempotency-Key (paymentIdempotency, qayta urinishda o'sha kalit). Birxillashtirish (spec §10 Q2): «Kassa balansi» chizig'i va manba bloklari menejerda ham; telefonda davrlar — bitta karta + SegmentedControl. Smena faqat superadmin/admin (Q4 — menejerda yo'q). «Maosh to'lash» yashirin (SalaryPaymentPopup + PopupSelect — v1, yetib bo'lmaydi). 18 talik xarajat kategoriyasi va nomli kartalar (card_id) chizilmaydi."
     },
     {
       "path": "/payments/cash-detail/:id",
@@ -768,16 +863,18 @@
       "title": "Kassa tafsiloti — kuryer / market / filial",
       "components": [
         "src/pages/payments/components/cashDetail.tsx",
-        "src/pages/payments/components/CashboxRolePageLayout.tsx",
         "src/pages/payments/components/CashboxActionFormCard.tsx",
-        "src/pages/payments/components/PaymentHistoryList.tsx"
+        "src/pages/payments/components/PaymentHistoryList.tsx",
+        "src/pages/payments/components/PaymentAckBadge.tsx",
+        "src/pages/payments/components/FinanceHistoryDetailPopup.tsx",
+        "src/pages/payments/components/lib/paymentIdempotency.ts"
       ],
       "views": {
         "superadmin": ["payments-cash-detail-courier", "payments-cash-detail-market", "payments-cash-detail-branch"],
         "admin": ["payments-cash-detail-courier", "payments-cash-detail-market", "payments-cash-detail-branch"],
         "manager": ["payments-cash-detail-courier", "payments-cash-detail-branch"]
       },
-      "note": "Tur URL'da: ?type=courier|market|branch."
+      "note": "Tur URL'da: ?type=courier|market|branch (noma'lum tur — forma yo'q). Pul o'tkazish — «To'lovni tasdiqlang» oynasi (useConfirm, from → to) + Idempotency-Key. Birxillashtirish (spec §10 Q2): «Balans harakati» va «Barcha tarix | To'lov o'tkazmalari» menejerda ham. Menejerda mijoz tomonidagi summa chegarasi yo'q (Q8 — backend chegaralaydi); tarix tab sonlari, kuryer «kechaga nisbatan» va sparkline chizilmaydi (API bermaydi). Excel faqat superadmin/admin."
     },
     {
       "path": "/cash-box",
@@ -785,9 +882,9 @@
       "title": "O'z kassam — market va kuryer (Barcha tarix · Oldi-berdi)",
       "components": [
         "src/pages/payments/components/MyCashboxPage.tsx",
-        "src/pages/payments/components/CashboxRolePageLayout.tsx",
-        "src/pages/payments/components/PaymentHistoryList.tsx",
-        "src/pages/payments/components/FinanceHistoryDetailPopup.tsx"
+        "src/pages/payments/components/PaymentAckBadge.tsx",
+        "src/pages/payments/components/FinanceHistoryDetailPopup.tsx",
+        "src/pages/payments/components/paymentSourceType.ts"
       ],
       "views": {
         "market": ["cashbox-my", "cashbox-history-detail-dialog"],
@@ -796,7 +893,7 @@
       "roleNotes": {
         "manager": "Maket yo'q. Ayni komponent menejerga filial kassasini ko'rsatadi, lekin menyudagi «To'lovlar» bandi /payments ga olib boradi (HQ · REGIONAL · HYBRID; PICKUP menejerida bu band yo'q, sahifa faqat URL orqali). Eng yaqin maket — market-cashbox-my (ayni tuzilma) va manager-payments-cash-detail-branch."
       },
-      "note": "Tarix tablari: «all» → cashbox-my-all, «payments» → cashbox-my-transfers. Ruxsati yo'q rol → /payments."
+      "note": "Tarix tablari: «all» → cashbox-my-all, «payments» → cashbox-my-transfers (sourceTypes). Ega qarori D2 (2026-10-17): marketning o'z kassasida HQ → market o'tkazmasi (market_payment) — «Chiqim −» (market balansi = Elchining qarzi), ro'yxatda ham, tafsilot oynasida ham (getViewerOperationType); boshqa rollarda yo'nalish o'zgarmagan. Kuryer tafsilotida «Kassa turi» yo'q (hideCashboxType). «Umumiy balans» grafigi, «Davr/Kassa oqimi», delta va sparkline — Taklif, chizilmaydi. Ruxsati yo'q rol → /payments."
     },
     {
       "path": "/financial-balance",
@@ -807,24 +904,33 @@
         "src/pages/financial-balance/components/Statistics.tsx",
         "src/pages/financial-balance/components/HistoryTab.tsx",
         "src/pages/financial-balance/components/AnalysisTab.tsx",
+        "src/pages/financial-balance/components/LedgerFlow.tsx",
+        "src/pages/financial-balance/components/SettlementRanks.tsx",
         "src/pages/financial-balance/components/FinancialEntryModal.tsx",
-        "src/pages/financial-balance/components/FinancialHistoryDetail.tsx"
+        "src/pages/financial-balance/components/FinancialHistoryDetail.tsx",
+        "src/pages/financial-balance/lib/financialBalance.ts",
+        "src/pages/financial-balance/lib/analytics.ts",
+        "src/pages/financial-balance/lib/manualEntry.ts"
       ],
       "views": {
         "superadmin": ["balance-overview", "balance-history", "balance-entry-dialog", "balance-analysis", "balance-history-detail-dialog"],
         "admin": ["balance-overview", "balance-history", "balance-analysis", "balance-entry-dialog", "balance-history-detail-dialog"],
         "tizim": ["charts"]
-      }
+      },
+      "note": "Tab URL'da: ?tab= (Umumiy ko'rinish · Tarix · Tahlil). «Excelga yuklash» va «Yozuv qo'shish» sarlavhada, har tabda; Excel faol tab paramlari bilan. Tahlil davri «Bugun / Bu hafta / Bu oy / Barchasi» (spec §10 Q7); eng katta ta'sirli tranzaksiyalar server sahifalashida (top-impacts limit ≤ 100); o'tgan davrda waterfall davr boshi/«Hozir» ustunlarisiz (currentBalance — bugungi qoldiq). Qo'lda yozuvga alohida tasdiq yo'q (Q5c — oynaning o'zi «Balansga ta'siri» bilan). KPI delta/sparkline, «Daftar qoldig'i» va «Kunlik kirim va chiqim» grafiklari — Taklif, chizilmaydi."
     },
     {
       "path": "/products",
       "section": "products",
-      "title": "Mahsulotlar ro'yxati (tahrirlash, o'chirish, yaratish uchun market tanlash)",
+      "title": "Mahsulotlar ro'yxati (tahrirlash, o'chirish, yaratish uchun market tanlash; dizayn v2)",
       "components": [
         "src/pages/products/list/index.tsx",
-        "src/shared/components/popupSelect.tsx",
-        "src/shared/components/popupConfirm.tsx",
-        "src/shared/components/popupUpdate.tsx"
+        "src/pages/products/list/ui/SelectMarketDialog.tsx",
+        "src/pages/products/list/ui/EditProductDialog.tsx",
+        "src/pages/products/ui/useDeleteProductConfirm.tsx",
+        "src/pages/products/ui/ProductImageField.tsx",
+        "src/pages/products/ui/ProductThumb.tsx",
+        "src/pages/products/model/productView.ts"
       ],
       "views": {
         "superadmin": ["products-list", "products-select-market-dialog", "products-edit-dialog", "products-delete-dialog"],
@@ -832,46 +938,53 @@
         "manager": ["products-list", "products-market-select-dialog", "products-edit-dialog", "products-delete-dialog"],
         "registrator": ["products-list", "products-market-select-dialog", "products-edit-dialog", "products-delete-dialog"],
         "market": ["products-list", "products-edit-dialog", "products-delete-dialog"]
-      }
+      },
+      "note": "Market rolida GET product/my-products (search/page/limit), xodimda GET product + market filtri (URL market_id). Ro'yxat so'rovlari entities/product hook'lari (keepPreviousData, silentError)."
     },
     {
       "path": "/products/create-product/:id",
       "section": "products",
-      "title": "Mahsulot yaratish (:id — market)",
-      "components": ["src/pages/products/create/index.tsx"],
+      "title": "Mahsulot yaratish (:id — market; dizayn v2)",
+      "components": [
+        "src/pages/products/create/index.tsx",
+        "src/pages/products/ui/ProductImageField.tsx",
+        "src/pages/products/ui/ProductThumb.tsx",
+        "src/pages/products/ui/useDeleteProductConfirm.tsx"
+      ],
       "views": {
         "superadmin": ["products-create"],
         "admin": ["products-create"],
         "manager": ["products-create"],
         "registrator": ["products-create"],
         "market": ["products-create"]
-      }
+      },
+      "note": "O'ngdagi «Market mahsulotlari» ro'yxati bitta so'rovda (limit 500 — PRODUCT_LIST_MAX_LIMIT); qalam — forma tahrir rejimi; nofaol market — yaratish bloklanadi."
     },
     {
       "path": "/all-users",
       "section": "users",
-      "title": "Foydalanuvchilar ro'yxati",
+      "title": "Foydalanuvchilar ro'yxati (dizayn v2)",
       "components": [
         "src/pages/users/list/UserListPage.tsx",
         "src/widgets/user-list/ui/UserListTable.tsx",
-        "src/widgets/user-list/ui/UserStats.tsx",
-        "src/shared/components/popupConfirm.tsx"
+        "src/widgets/user-list/ui/UserListKpi.tsx",
+        "src/widgets/user-list/ui/UserRowMenu.tsx",
+        "src/features/user/update-user/ui/UpdateUserModal.tsx"
       ],
       "views": {
         "superadmin": ["users-list", "users-delete-dialog"],
         "admin": ["users-list", "users-delete-dialog"],
         "manager": ["users-list"]
-      }
+      },
+      "note": "Tablar, qidiruv va holat — URL'da (role, search, status); menejerda amallar yo'q, GET branches so'ralmaydi. Chizilmaganlar (backend ro'yxatda superadmin va mijozni bermaydi, spec §6): KPI «shundan {n} ta mijoz», segbar «Mijozlar», tablar «Superadminlar», «Mijozlar». Ega savoli Q8 sukuti: sarlavha izohi maketdagidek («… va mijozlar hisoblarini boshqarish»)."
     },
     {
       "path": "/all-users/create-user",
       "section": "users",
-      "title": "Foydalanuvchi yaratish",
+      "title": "Foydalanuvchi yaratish (dizayn v2)",
       "components": [
         "src/pages/users/create/CreateUserPage.tsx",
-        "src/widgets/user-create/ui/CreateUserWidget.tsx",
-        "src/features/user/create-user/ui/CreateUserForm.tsx",
-        "src/features/user/create-user/ui/RoleSelector.tsx"
+        "src/features/user/create-user/ui/CreateUserForm.tsx"
       ],
       "views": {
         "superadmin": ["users-create"],
@@ -883,11 +996,12 @@
     {
       "path": "/all-users/:id",
       "section": "users",
-      "title": "Foydalanuvchi tafsiloti",
+      "title": "Foydalanuvchi tafsiloti (dizayn v2)",
       "components": [
         "src/pages/users/detail/UserDetailPage.tsx",
-        "src/widgets/user-detail/ui/UserDetailWidget.tsx",
+        "src/widgets/user-detail/ui/UserDetailView.tsx",
         "src/widgets/user-detail/ui/MarketTelegramTokenCard.tsx",
+        "src/widgets/user-detail/model/useMarketTelegramGroupPiiToggle.ts",
         "src/features/user/update-user/ui/UpdateUserModal.tsx",
         "src/features/courier-transfer-branch/ui/TransferCourierButton.tsx",
         "src/features/courier-transfer-branch/ui/TransferCourierModal.tsx"
@@ -896,17 +1010,27 @@
         "superadmin": ["users-detail", "users-edit-dialog", "users-courier-transfer-dialog"],
         "admin": ["users-detail", "users-edit-dialog", "users-transfer-courier-dialog"],
         "manager": ["users-detail", "users-edit-dialog"]
-      }
+      },
+      "note": "Yangi v2 UserDetailView; eski UserDetailWidget faqat /profile uchun muzlatilgan. «Faoliyat» (Taklif) chizilmaydi. Ega savoli Q9 sukuti: menejer xodimidagi «Oylik maosh» kartasi (to'plangan / kun qoldi) chizilmaydi — faqat «Profil ma'lumotlari»dagi maosh va to'lov kuni. Mijoz (customer) — maket yo'q, eng yaqini superadmin-users-detail."
     },
     {
       "path": "/regions",
       "section": "regions",
-      "title": "Hududlar — xarita va statistika (menejer/kuryer: o'z hududi)",
+      "title": "Hududlar — xarita va statistika (menejer/kuryer: o'z viloyati; dizayn v2)",
       "components": [
         "src/pages/region/index.tsx",
+        "src/pages/region/ui/RegionsOverview.tsx",
+        "src/pages/region/ui/RegionsMapCard.tsx",
+        "src/pages/region/ui/RegionsSuccessCards.tsx",
         "src/pages/region/ui/UzbekistanRegionMap.tsx",
-        "src/pages/region/ui/ScopedRegionStatistics.tsx",
-        "src/pages/region/model/regionScope.ts"
+        "src/pages/region/ui/RegionPeriodControls.tsx",
+        "src/pages/region/ui/regionBlocks.tsx",
+        "src/pages/region/ui/ScopedRegionView.tsx",
+        "src/pages/region/ui/ScopedDistricts.tsx",
+        "src/pages/region/model/regionsModel.ts",
+        "src/pages/region/model/scopedModel.ts",
+        "src/pages/region/model/regionPeriod.ts",
+        "src/widgets/region-detail/ui/RegionDetailDialog.tsx"
       ],
       "views": {
         "superadmin": ["regions-map", "regions-region-modal"],
@@ -915,13 +1039,17 @@
         "courier": ["regions-scoped"],
         "tizim": ["charts"]
       },
-      "note": "Viloyat oynasi — UzbekistanRegionMap.tsx ichidagi Modal (bosh sahifadagi xarita ham shu)."
+      "note": "Viloyat oynasi — umumiy RegionDetailDialog (widgets/region-detail, lazy; bosh sahifa kartogrammasi ham shu). Menejer va kuryer — GET region/my/district-stats (stats/all va orders so'rovlari yo'q). Ega savollari sukuti: Q11 xarita — Highcharts lazy, v2 tokenlar; Q12 scoped sarlavhalarda filial / «sizga tegishli» da'vosi yo'q («{viloyat} buyurtmalari · …» — backend butun viloyat raqamlarini beradi). Chizilmagan: oynadagi «Kunlik buyurtmalar» (Taklif), scoped filial/kuryer kesimi (API yo'q)."
     },
     {
       "path": "/regions/districts",
       "section": "regions",
       "title": "Tumanlar boshqaruvi",
-      "components": ["src/pages/region/pages/districts/index.tsx"],
+      "components": [
+        "src/pages/region/pages/districts/index.tsx",
+        "src/pages/region/ui/DistrictBoard.tsx",
+        "src/pages/region/model/boardModel.ts"
+      ],
       "roles": { "superadmin": "" },
       "views": {
         "superadmin": ["regions-districts"]
@@ -932,56 +1060,70 @@
       "path": "/regions/sato-management",
       "section": "regions",
       "title": "Tumanlarni o'tkazish (SATO)",
-      "components": ["src/pages/region/pages/sato-management/index.tsx"],
+      "components": [
+        "src/pages/region/pages/sato-management/index.tsx",
+        "src/pages/region/ui/DistrictBoard.tsx",
+        "src/pages/region/ui/MoveDistrictDialog.tsx",
+        "src/pages/region/model/boardModel.ts"
+      ],
       "roles": { "superadmin": "", "admin": "" },
       "views": {
         "superadmin": ["regions-sato-management"],
         "admin": ["regions-sato-management"]
       },
-      "note": "Komponent ichida: superadmin/admin bo'lmasa → /regions."
+      "note": "Komponent ichida: superadmin/admin bo'lmasa → /regions. Telefonda sudrash o'rniga ⇆ — MoveDistrictDialog (maket yo'q — eng yaqini superadmin-regions-sato-management)."
     },
     {
       "path": "/regions/logist-assignment",
       "section": "regions",
       "title": "Logist biriktirish",
-      "components": ["src/pages/region/pages/logist-assignment/index.tsx"],
+      "components": [
+        "src/pages/region/pages/logist-assignment/index.tsx"
+      ],
       "roles": { "superadmin": "", "admin": "" },
       "views": {
         "superadmin": ["regions-logist-assignment"],
         "admin": ["regions-logist-assignment"]
       },
-      "note": "Komponent ichida: superadmin/admin bo'lmasa → /regions."
+      "note": "Komponent ichida: superadmin/admin bo'lmasa → /regions. Ega savoli Q13 sukuti: maketdagi bo'sh holat «Bo'lim hali ishga tushmagan» + «Hududlarga qaytish» (backend'da GET /logists, PATCH region/{id}/logist bor — ishlaydigan sahifa uchun maket kerak)."
     },
     {
       "path": "/branches",
       "section": "branches",
-      "title": "Filiallar — daraxt / jadval / kartalar",
+      "title": "Filiallar — daraxt / jadval / kartalar (dizayn v2)",
       "components": [
         "src/pages/branches/ui/BranchesPage.tsx",
         "src/widgets/branch-list/ui/BranchListWidget.tsx",
+        "src/widgets/branch-list/ui/BranchSummaryCard.tsx",
         "src/widgets/branch-list/ui/BranchTree.tsx",
         "src/widgets/branch-list/ui/BranchTable.tsx",
         "src/widgets/branch-list/ui/BranchCards.tsx",
-        "src/features/branch-create/ui/BranchFormModal.tsx"
+        "src/widgets/branch-list/ui/BranchRowMenu.tsx",
+        "src/features/branch-create/ui/BranchFormModal.tsx",
+        "src/features/branch/ui/BranchFormDialog.tsx",
+        "src/features/branch-edit/ui/BranchEditModal.tsx"
       ],
       "views": {
         "superadmin": ["branches-list-tree", "branches-list-table", "branches-create-dialog"]
-      }
+      },
+      "note": "Tahrirlash oynasi — yaratish oynasi bilan bir xil forma (BranchFormDialog; maket yo'q — eng yaqini superadmin-branches-create-dialog)."
     },
     {
       "path": "/branches/:id",
       "section": "branches",
-      "title": "Filial tafsiloti",
+      "title": "Filial tafsiloti (dizayn v2)",
       "components": [
         "src/pages/branches/ui/BranchDetailPage.tsx",
         "src/widgets/branch-detail/ui/BranchDetailWidget.tsx",
         "src/widgets/branch-detail/ui/BranchEmployeesSection.tsx",
-        "src/widgets/branch-detail/ui/BranchSettingsSection.tsx",
-        "src/features/branch-add-employee/ui/AddEmployeeModal.tsx"
+        "src/features/branch-add-employee/ui/AddEmployeeModal.tsx",
+        "src/features/branch-remove-employee/ui/RemoveEmployeeButton.tsx",
+        "src/features/courier-transfer-branch/ui/TransferCourierButton.tsx"
       ],
       "views": {
         "superadmin": ["branches-detail", "branches-add-employee-dialog"]
-      }
+      },
+      "note": "404 — sahifada «Filial topilmadi» (global xabar takrorlanmaydi). Ega savollari sukuti: Q10 «Filial ko'rsatkichlari» bo'limi (KPI, daromad trendi, holat, kuryerlar reytingi) chizilmaydi — analytics branch_id qabul qilmaydi (backend kartasi kerak); Q14 filial sozlamalari (config) — sahifada hech qachon chizilmagan, o'lik kod sifatida o'chirildi."
     },
     {
       "path": "/integrations/connections",
@@ -1336,37 +1478,57 @@
     "manager-new-orders-incoming-scan-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri.",
     "superadmin-neworders-branch-batch-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
     "admin-neworders-branch-batch-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
-    "superadmin-mails-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
-    "admin-mails-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
-    "registrator-mails-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
-    "manager-mails-detail-receive-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
-    "courier-mails-detail-receive-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
-    "manager-batches-detail-send-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
     "courier-courier-bulk-scanner-camera-list": "Kamera oynasida «skanerlanganlar ro'yxati» varag'i yo'q (ScannerCameraModal faqat kamera).",
-    "courier-courier-bulk-confirm-dialog": "«Kunni yakunlash» oldidan tasdiqlash oynasi yo'q (ega tasdiqlagan UX qo'shimchasi).",
     "courier-scan-offline": "Internet yo'qda skanlarni navbatga qo'yish yo'q.",
     "courier-scan-manual-entry": "Kodni qo'lda kiritish yo'q."
   },
   "partialViews": {
-    "courier-scan-other-courier": "Alohida holat yo'q — backend xato matni umumiy xato blokida chiqadi (scan/detail.tsx).",
-    "common-session-expired": "Alohida ekran yo'q — SessionExpiryCountdown taymeri, keyin /login ga qaytarish.",
+    "registrator-new-orders-market-detail": "Registrator boshqa xodim rollari (superadmin/admin/menejer) bilan bir xil v2 ko'rinishda — maketdagi farqlar (sarlavhada «Chop etish», «Buyurtmalar N ta» karta sarlavhasi, «5 / 6 ta» tanlov xulosasi, qator kebab menyusi) ega qaroriga qadar kiritilmagan.",
+    "registrator-new-orders-market-detail-receive-dialog": "Umumiy xodim qabul oynasi (MarketOrderDialogs.tsx) — tasdiq tugmasi «Tasdiqlash»; maketdagi «Qabul qilish — N ta» varianti ega qaroriga qadar kiritilmagan.",
+    "courier-scan-other-courier": "Alohida holat yo'q — «O'zimga olish» rad etilsa backend xato matni amallar kartasida chiqadi (ScanActionCard). Kamera ekranidagi ko'rinishi — alohida kamera ishi.",
+    "courier-scan-not-found": "Maket holati kamera ekranida chizilgan — kamera ishi. /scan/:token da «Buyurtma topilmadi» kartasi (ScanStates: «Qayta urinish» + «Skanerga qaytish») v2.",
+    "manager-dispatch-camera-dialog": "Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish.",
+    "registrator-dispatch-camera-scanner-dialog": "Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish.",
+    "manager-courier-bulk-camera-dialog": "Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish.",
+    "courier-courier-bulk-scanner-camera": "Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish.",
     "common-settings-scanner": "Alohida tab yo'q — skaner ovozlari hozir «Interfeys» tabida.",
-    "superadmin-neworders-market-order-edit": "Ayni komponent /orders/edit/:orderId bilan — sahifa v2 da, lekin shu route'ning o'z maketi (tahrirlash formasi) hali ko'chirilmagan: tafsilot ko'rinishi (`superadmin-orders-detail`) chiqadi.",
-    "registrator-new-orders-market-order-edit": "Ayni komponent /orders/edit/:orderId bilan — sahifa v2 da, lekin shu route'ning o'z maketi hali ko'chirilmagan: tafsilot ko'rinishi (`registrator-orders-detail`) chiqadi.",
-    "market-new-orders-edit": "Ayni komponent /orders/edit/:orderId bilan — sahifa v2 da, lekin shu route'ning o'z maketi hali ko'chirilmagan: tafsilot ko'rinishi (`market-orders-detail`) chiqadi.",
-    "common-profile-password-dialog": "Alohida «Parolni o'zgartirish» oynasi (yangi parol + takrorlash, saqlangach chiqish) yo'q — parol umumiy tahrirlash oynasida (UpdateUserModal)."
+    "common-profile-password-dialog": "Alohida «Parolni o'zgartirish» oynasi (yangi parol + takrorlash, saqlangach chiqish) yo'q — parol umumiy tahrirlash oynasida (UpdateUserModal).",
+    "superadmin-neworders-cancelled-handover-camera": "Sahifa qismi (sarlavha, «Market QR» holati, «USB skaner tayyor» qatori, tanlov, jadval) v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
+    "admin-neworders-cancelled-detail-camera": "Sahifa qismi (sarlavha, «Market QR» holati, «USB skaner tayyor» qatori, tanlov, jadval) v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
+    "superadmin-neworders-cancelled-scanner-dialog": "Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
+    "admin-neworders-cancelled-scanner-dialog": "Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
+    "registrator-new-orders-cancelled-scanner-dialog": "Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
+    "superadmin-mails-detail-camera": "Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida.",
+    "admin-mails-detail-camera": "Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida.",
+    "registrator-mails-detail-camera": "Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida.",
+    "manager-mails-detail-receive-camera": "Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida.",
+    "courier-mails-detail-receive-camera": "Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida.",
+    "manager-batches-detail-send-camera": "Sahifa qismi (sarlavha, paket ma'lumoti, QR, «Buyurtmalar» kartasi — /mails/:id bilan umumiy OrdersTable, «Skaner tayyor» belgisi, tanlov) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida."
   },
   "viewFiles": {
     "$comment": "Maket → uni chizadigan aniq fayl, agar route'ning asosiy faylidan farq qilsa (rolga xos komponent, alohida oyna fayli). SCREENS.md 2- va 4-bo'limlarida ko'rsatiladi.",
+    "superadmin-neworders-receive-confirm-dialog": "src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx",
+    "admin-neworders-market-confirm-dialog": "src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx",
+    "manager-new-orders-receive-confirm-dialog": "src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx",
+    "manager-new-orders-delete-confirm-dialog": "src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx",
+    "registrator-new-orders-market-detail-receive-dialog": "src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx",
+    "registrator-new-orders-market-detail-delete-dialog": "src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx",
+    "superadmin-neworders-cancelled-manual-dialog": "src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx",
+    "admin-neworders-cancelled-manual-dialog": "src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx",
+    "registrator-new-orders-cancelled-manual-dialog": "src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx",
+    "market-new-orders-cancelled-qr-dialog": "src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx",
+    "superadmin-neworders-cancelled-handover-camera": "src/shared/components/ScannerCameraModal.tsx",
+    "admin-neworders-cancelled-detail-camera": "src/shared/components/ScannerCameraModal.tsx",
+    "market-new-orders-delete-dialog": "src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx",
     "superadmin-dashboard-main": "src/pages/dashboard/DashboardPage.tsx",
     "admin-dashboard-main": "src/pages/dashboard/DashboardPage.tsx",
     "registrator-dashboard-main": "src/pages/dashboard/DashboardPage.tsx",
     "courier-dashboard-home": "src/pages/dashboard/DashboardPage.tsx",
     "market-dashboard-home": "src/pages/dashboard/MarketDashboardPage.tsx",
-    "market-dashboard-extra-cost-approvals": "src/pages/dashboard/MarketDashboardPage.tsx",
-    "superadmin-dashboard-region-modal": "src/pages/region/ui/UzbekistanRegionMap.tsx",
-    "superadmin-regions-region-modal": "src/pages/region/ui/UzbekistanRegionMap.tsx",
-    "admin-regions-region-detail-dialog": "src/pages/region/ui/UzbekistanRegionMap.tsx",
+    "market-dashboard-extra-cost-approvals": "src/pages/dashboard/ui/ExtraCostApprovals.tsx",
+    "superadmin-dashboard-region-modal": "src/widgets/region-detail/ui/RegionDetailDialog.tsx",
+    "superadmin-regions-region-modal": "src/widgets/region-detail/ui/RegionDetailDialog.tsx",
+    "admin-regions-region-detail-dialog": "src/widgets/region-detail/ui/RegionDetailDialog.tsx",
     "courier-dashboard-mobile-menu": "src/widgets/Sidebar/ui/MobileMenu.tsx",
     "courier-dashboard-mobile-search": "src/widgets/header/ui/SearchScreen.tsx",
     "common-bell-dropdown": "src/widgets/header/ui/NotificationsMenu.tsx",
@@ -1419,6 +1581,32 @@
     "admin-mails-send-branch-dialog": "src/pages/mails/detail/ui/SendPostModal.tsx",
     "registrator-mails-detail-send-dialog": "src/pages/mails/detail/ui/SendPostModal.tsx",
     "courier-mails-detail-print-menu": "src/shared/components/PrintModeSelect.tsx",
+    "superadmin-mails-today": "src/pages/mails/components/todaysMails.tsx",
+    "superadmin-mails-return": "src/pages/mails/components/returnMails.tsx",
+    "superadmin-mails-refused": "src/pages/mails/components/refusedMails.tsx",
+    "superadmin-mails-old": "src/pages/mails/components/oldMails.tsx",
+    "admin-mails-today": "src/pages/mails/components/todaysMails.tsx",
+    "admin-mails-return": "src/pages/mails/components/returnMails.tsx",
+    "admin-mails-refused": "src/pages/mails/components/refusedMails.tsx",
+    "admin-mails-old": "src/pages/mails/components/oldMails.tsx",
+    "manager-mails-today": "src/pages/mails/components/todaysMails.tsx",
+    "manager-mails-return": "src/pages/mails/components/returnMails.tsx",
+    "manager-mails-refused": "src/pages/mails/components/refusedMails.tsx",
+    "manager-mails-old": "src/pages/mails/components/oldMails.tsx",
+    "registrator-mails-today": "src/pages/mails/components/todaysMails.tsx",
+    "registrator-mails-return": "src/pages/mails/components/returnMails.tsx",
+    "registrator-mails-refused": "src/pages/mails/components/refusedMails.tsx",
+    "registrator-mails-old": "src/pages/mails/components/oldMails.tsx",
+    "courier-mails-today": "src/pages/mails/components/todaysMails.tsx",
+    "courier-mails-refused": "src/pages/mails/components/refusedMails.tsx",
+    "courier-mails-old": "src/pages/mails/components/oldMails.tsx",
+    "superadmin-mails-old-batches": "src/pages/mails/components/oldMails.tsx",
+    "admin-mails-old-all-batches": "src/pages/mails/components/oldMails.tsx",
+    "superadmin-payments-market-picker-dialog": "src/pages/payments/components/SettlementPickerDialog.tsx",
+    "superadmin-payments-to-give-dialog": "src/pages/payments/components/SettlementPickerDialog.tsx",
+    "admin-payments-to-give-dialog": "src/pages/payments/components/SettlementPickerDialog.tsx",
+    "admin-payments-to-receive-dialog": "src/pages/payments/components/SettlementPickerDialog.tsx",
+    "manager-payments-courier-select-dialog": "src/pages/payments/components/SettlementPickerDialog.tsx",
     "superadmin-payments-main-cashbox-fill-dialog": "src/pages/payments/components/CashboxFormPopup.tsx",
     "admin-payments-cashbox-form-dialog": "src/pages/payments/components/CashboxFormPopup.tsx",
     "manager-payments-cashbox-form-dialog": "src/pages/payments/components/CashboxFormPopup.tsx",
@@ -1445,8 +1633,30 @@
     "manager-users-edit-dialog": "src/features/user/update-user/ui/UpdateUserModal.tsx",
     "superadmin-users-courier-transfer-dialog": "src/features/courier-transfer-branch/ui/TransferCourierModal.tsx",
     "admin-users-transfer-courier-dialog": "src/features/courier-transfer-branch/ui/TransferCourierModal.tsx",
+    "manager-branch-dashboard-main": "src/pages/branch-dashboard/ui/BranchDashboardPage.tsx",
+    "manager-regions-scoped": "src/pages/region/ui/ScopedRegionView.tsx",
+    "courier-regions-scoped": "src/pages/region/ui/ScopedRegionView.tsx",
+    "superadmin-users-delete-dialog": "src/widgets/user-list/ui/UserListTable.tsx",
+    "admin-users-delete-dialog": "src/widgets/user-list/ui/UserListTable.tsx",
+    "superadmin-products-select-market-dialog": "src/pages/products/list/ui/SelectMarketDialog.tsx",
+    "admin-products-market-select-dialog": "src/pages/products/list/ui/SelectMarketDialog.tsx",
+    "manager-products-market-select-dialog": "src/pages/products/list/ui/SelectMarketDialog.tsx",
+    "registrator-products-market-select-dialog": "src/pages/products/list/ui/SelectMarketDialog.tsx",
+    "superadmin-products-edit-dialog": "src/pages/products/list/ui/EditProductDialog.tsx",
+    "admin-products-edit-dialog": "src/pages/products/list/ui/EditProductDialog.tsx",
+    "manager-products-edit-dialog": "src/pages/products/list/ui/EditProductDialog.tsx",
+    "registrator-products-edit-dialog": "src/pages/products/list/ui/EditProductDialog.tsx",
+    "market-products-edit-dialog": "src/pages/products/list/ui/EditProductDialog.tsx",
+    "superadmin-products-delete-dialog": "src/pages/products/ui/useDeleteProductConfirm.tsx",
+    "admin-products-delete-dialog": "src/pages/products/ui/useDeleteProductConfirm.tsx",
+    "manager-products-delete-dialog": "src/pages/products/ui/useDeleteProductConfirm.tsx",
+    "registrator-products-delete-dialog": "src/pages/products/ui/useDeleteProductConfirm.tsx",
+    "market-products-delete-dialog": "src/pages/products/ui/useDeleteProductConfirm.tsx",
+    "superadmin-branches-list-tree": "src/widgets/branch-list/ui/BranchTree.tsx",
+    "superadmin-branches-list-table": "src/widgets/branch-list/ui/BranchTable.tsx",
+    "superadmin-regions-districts": "src/pages/region/pages/districts/index.tsx",
     "common-profile-password-dialog": "src/features/user/update-user/ui/UpdateUserModal.tsx",
-    "superadmin-branches-create-dialog": "src/features/branch-create/ui/BranchFormModal.tsx",
+    "superadmin-branches-create-dialog": "src/features/branch/ui/BranchFormDialog.tsx",
     "superadmin-branches-add-employee-dialog": "src/features/branch-add-employee/ui/AddEmployeeModal.tsx",
     "superadmin-notifications-create-dialog": "src/features/notification-create/ui/NotificationFormModal.tsx",
     "superadmin-notifications-delete-dialog": "src/features/notification-delete/ui/DeleteNotificationButton.tsx",
@@ -1493,7 +1703,7 @@
     },
     "charts": {
       "defines": "Qaysi grafik qachon, kategorial palitra (chart-1…8, kunduzgi/tungi), ketma-ket va ikki qutbli shkalalar, holat ranglari, grafik anatomiyasi, galereya (spidometr, donut, KPI, chiziq, ustunlar, reyting, issiqlik xaritasi, xarita, sharshara, voronka, sparkline), holatlar (yuklanmoqda, bo'sh, xato), «Grafik | Jadval» egizagi, telefon.",
-      "code": "CHART_PALETTE (src/shared/config/themeTokens.ts), src/widgets/dashboard-*/*, src/widgets/financial-analysis/*, src/pages/region/ui/UzbekistanRegionMap.tsx, docs/DESIGN_SYSTEM.md §3"
+      "code": "src/shared/ui/charts (Gauge, Donut, RankList, Meter, SegBar, HBarList, Waterfall, RingStat, ChartLegend, ChartNote, ViewToggle, DeltaChip), CHART_PALETTE (src/shared/config/themeTokens.ts), src/widgets/dashboard-*/*, src/widgets/financial-analysis/* (recharts — faqat FinancialTrendPlot), src/pages/region/ui/UzbekistanRegionMap.tsx, docs/DESIGN_SYSTEM.md §3"
     },
     "states-buttons": {
       "defines": "Tugma va havolalar: 12 tur × 6 holat, o'lchamlar (32/40/48), tugmalar guruhi, forma/oyna oxiri, sahifa sarlavhasi, xavfli juftlik, telefon pastki paneli, qilinmaydigan narsalar.",

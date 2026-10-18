@@ -24,8 +24,8 @@ import {
 import { ExtraCostRejectDialog, type ExtraCostRejectPayload } from "./ExtraCostRejectDialog";
 
 /**
- * «QO'SHIMCHA XARAJAT TASDIQLARI» — market dashboardidagi alohida v2 blok (maket
- * `market-dashboard-extra-cost-approvals`; sahifaning qolgan qismi hali v1).
+ * «QO'SHIMCHA XARAJAT TASDIQLARI» — market dashboardidagi v2 blok (maket
+ * `market-dashboard-extra-cost-approvals`). Sahifa oralig'i — `MarketDashboardPage` ning `gap` i (o'z `margin` i yo'q).
  *
  * Kuryer/menejer sotish yoki bekor qilishda qo'shimcha xarajat yozsa, amal market tasdig'iga tushadi
  * (DuST9k8j, 1tnpaIqd). Market egasi shu yerda tasdiqlaydi (pul amali — `useConfirm`) yoki sabab
@@ -70,7 +70,7 @@ type CardShellProps = {
 const ApprovalsCard = ({ title, count, hint, children }: CardShellProps) => {
   const titleId = useId();
   return (
-    <Card padding="none" aria-labelledby={titleId} className="mb-5 overflow-hidden">
+    <Card padding="none" aria-labelledby={titleId} className="overflow-hidden">
       <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-border bg-warning-soft px-5 py-4">
         <div className="flex min-w-0 flex-[1_1_auto] items-center gap-3">
           <span className="inline-flex size-10 flex-none items-center justify-center rounded-[10px] bg-surface text-warning-fg">

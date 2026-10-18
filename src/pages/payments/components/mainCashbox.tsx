@@ -1,60 +1,158 @@
-import { memo, useMemo, useState, useCallback } from "react";
+// dizayn-v2: superadmin-payments-main-cashbox, admin-payments-main-cashbox, manager-payments-main-cashbox
+import { memo, useCallback, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import {
-  Wallet,
-  Download,
-  LogIn,
-  LogOut,
+  ArrowDownLeft,
+  ArrowUpRight,
   Banknote,
-  ArrowLeftRight,
-  Truck,
-  Landmark,
-  Store,
+  ChartColumn,
+  ChevronRight,
+  Clock,
+  CreditCard,
+  Download,
+  Eye,
+  EyeOff,
+  Inbox,
+  Info,
+  List,
+  ListFilter,
   Minus,
   Plus,
-  DollarSign,
-  User,
+  Timer,
   TrendingUp,
-  TrendingDown,
+  Truck,
+  type LucideIcon,
 } from "lucide-react";
-import HeaderName from "../../../shared/components/headerName";
-import BackButton from "../../../shared/ui/BackButton";
-import DateRangePicker from "../../../shared/ui/DateRangePicker";
+import { useTranslation } from "react-i18next";
 import PopupSelect from "../../../shared/components/popupSelect";
+import { cx } from "../../../shared/lib/cx";
+import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { formatDateTimeLocalized, formatTimeLocalized } from "../../../shared/lib/formatDateTime";
+import {
+  CURRENCY_LABEL,
+  formatCompactMoneyLocalized,
+  formatMoneyLocalized,
+  formatNumberLocalized,
+  formatPercentLocalized,
+  formatSignedMoneyLocalized,
+  resolveMoneyLanguage,
+} from "../../../shared/lib/formatMoney";
+import { notify } from "../../../shared/lib/notify";
+import { scrollShellContentToTop } from "../../../shared/lib/usePagination";
+import {
+  Badge,
+  Button,
+  Card,
+  DataTable,
+  DateRange,
+  EmptyState,
+  ErrorState,
+  IconButton,
+  PageHeader,
+  Pagination,
+  QueryBoundary,
+  SegmentedControl,
+  Skeleton,
+  SkeletonLines,
+  SkeletonTable,
+  type DataTableColumn,
+} from "../../../shared/ui/primitives";
+import { useUser } from "../../../entities/user/api/userApi";
+import { useCashBox } from "../../../entities/payments";
+import type { RootState } from "../../../app/config/store";
 import CashboxFormPopup from "./CashboxFormPopup";
 import CloseShiftPopup from "./CloseShiftPopup";
-import CashboxSummaryCard from "./CashboxSummaryCard";
+import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
+import MainCashboxBalanceChart, { type BalanceChartView } from "./MainCashboxBalanceChart";
 import SalaryPaymentPopup, { type SalaryCardSource } from "./SalaryPaymentPopup";
-import { useUser } from "../../../entities/user/api/userApi";
-import { useMarkets } from "../../../entities/markets";
-import { useCashBox } from "../../../entities/payments";
+import SettlementPickerDialog, {
+  type SettlementPickerKind,
+  type SettlementPickerTarget,
+} from "./SettlementPickerDialog";
 import type { PaymentRow } from "./patmentHistoryTable";
-import PaymentHistoryList from "./PaymentHistoryList";
+import { resolvePaymentActorName, resolvePaymentCounterparty } from "./paymentHistoryActor";
+import { getPaymentMethodLabel, getPaymentSourceTitle, getViewerOperationType } from "./paymentSourceType";
 import { exportMainCashboxReport } from "./lib/exportMainCashboxReport";
 import {
-  RECEIVE_SEARCH_KEYS,
-  getReceiveDetailTarget,
-  isInactiveStatus,
-  isListedSettlementRow,
-  useReceiveOptions,
-  type ReceiveOption,
-} from "./lib/receiveOptions";
-import InactiveBadge from "./InactiveBadge";
-import { useTranslation } from "react-i18next";
-import type { RootState } from "../../../app/config/store";
-import { useAppNotification } from "../../../app/providers/notification/NotificationProvider";
+  buildDailyBalanceSeries,
+  computePeriodStats,
+  filterRowsFrom,
+  groupBySource,
+  PERIOD_KEYS,
+  rowDateValue,
+  toNumber,
+  type FlowTotals,
+  type PeriodKey,
+  type PeriodStats,
+  type SourceBucket,
+} from "./lib/mainCashboxStats";
+import {
+  isIdempotentReplay,
+  isUncertainPaymentError,
+  settlePaymentKey,
+  takePaymentKey,
+} from "./lib/paymentIdempotency";
 
-// ─── Utils ────────────────────────────────────────────────────────────────────
+/**
+ * «ASOSIY KASSA» — /payments/main-cashbox (dizayn v2; maketlar `superadmin-payments-main-cashbox` =
+ * `admin-payments-main-cashbox`, `manager-payments-main-cashbox`; rollar orasida layout bir xil, xulq rolga qarab).
+ *
+ *  - Sarlavha: «← To'lovlar», «Asosiy kassa» + smena holati (SA/admin) yoki filial nomi (menejer); «Excelga
+ *    yuklash» (hisobot AYNAN eskidek), SA/admin — «Smenani yopish» / «Smenani ochish» (holat ma'lum bo'lsagina).
+ *  - «Kassa balansi»: umumiy balans + bugungi sof oqim, naqd/karta segment chizig'i, kun oxiridagi qoldiq
+ *    grafigi (`Grafik | Jadval`), ko'z tugmasi summalarni yashiradi. «Tezkor amallar»: qabul (SA/admin — filial
+ *    yoki HQ kuryeri, menejer — kuryer), «Marketga to'lov» (faqat SA/admin — backend menejerga 403), xarajat,
+ *    to'ldirish; SA/admin — smena holati bloki.
+ *  - «Bugun / Bu hafta / Bu oy» (telefonda bitta karta + segment), «Pul qayerdan keldi, qayerga ketdi»
+ *    (bu oy, manba turi bo'yicha), «Operatsiyalar tarixi» (sana filtri, jadval → telefonda kartalar, tafsilot).
+ *
+ * Ega qarorlari (2026-10-17): D1 — SA/admin tarixi FAQAT asosiy kassa (`GET finance/history?cashbox_type=main`),
+ * jadval, davrlar, manbalar va Excel shu qatorlardan; menejer so'rovi o'zgarmagan (gateway filial kassasini o'zi
+ * qo'yadi). D3 — «Kassani to'ldirish» / «Kassadan xarajat» `Idempotency-Key` bilan (`paymentIdempotency`
+ * yordamchilari: kalit shu operatsiya javob olguncha saqlanadi — qayta yuborishda o'sha kalit, keyingi yangi
+ * operatsiyaga yangi kalit).
+ */
 
-const fmt = (n: number) =>
-  n.toLocaleString("uz-UZ", { maximumFractionDigits: 0 });
 const FULL_LIST_LIMIT = 10000;
+const HISTORY_PAGE_SIZES = [10, 25, 50, 100] as const;
+const MASK = "••••••";
 
-const toNumber = (v: unknown, fallback = 0): number => {
-  const n = typeof v === "number" ? v : Number(v);
-  return Number.isFinite(n) ? n : fallback;
-};
+type ActionLabel = "receiveFromBranchManager" | "payToMarket" | "spendFromCashbox" | "fillCashbox" | "paySalary";
+
+const ACTION_ORDER: readonly ActionLabel[] = [
+  "receiveFromBranchManager",
+  "payToMarket",
+  "spendFromCashbox",
+  "fillCashbox",
+  "paySalary",
+];
+
+/**
+ * Backend'da hali ishlaydigan yo'li yo'q amallar — ko'rsatilmaydi (har bosishda
+ * xato berardi):
+ *  - "Maosh to'lash" (FE-PAY-07): POST /finance/salary maosh SOZLAMASINI
+ *    yaratadi ({ user_id, salary_amount, have_to_pay?, payment_day? }), pul
+ *    to'lamaydi; popup esa { amount, type, comment, source_user_id } yuborib
+ *    har doim 400 olardi (menejer — 403). Maosh to'lovi endpoint'i paydo
+ *    bo'lguncha vaqtincha "Kassadan chiqim" ishlatiladi.
+ */
+const UNAVAILABLE_ACTIONS: ReadonlySet<ActionLabel> = new Set<ActionLabel>(["paySalary"]);
+
+type ManualOperation = "fill" | "spend";
+
+/** «Maosh to'lash» oqimidagi xodim (`SalaryPaymentPopup` bilan bir xil shakl, qolgan maydonlar saqlanadi). */
+type SalaryEmployee = Record<string, unknown> & { id: string; name?: string; role?: string };
+
+/**
+ * Qo'lda kassa operatsiyasining barmoq izi (D3): tur + kassa egasi + summa + to'lov turi. Izoh kirmaydi
+ * (`paymentIdempotency` qoidasi — operatsiyaning o'zini o'zgartirmaydi). Prefiks kuryer/market/filial
+ * izlari bilan to'qnashmaydi.
+ */
+const manualOperationFingerprint = (operation: ManualOperation, scope: string, amount: number, type?: string) =>
+  JSON.stringify([`cashbox-${operation}`, scope, amount, type ?? ""]);
+
+// ─── Yordamchilar ─────────────────────────────────────────────────────────────
 
 const asRecord = (value: unknown): Record<string, unknown> =>
   value && typeof value === "object" ? (value as Record<string, unknown>) : {};
@@ -73,18 +171,6 @@ const toDataItems = (value: unknown): unknown[] => {
   return [];
 };
 
-const toIsoDate = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-const parseIsoDate = (value: string) => {
-  const [year, month, day] = value.split("-").map(Number);
-  if (!year || !month || !day) return null;
-  return new Date(year, month - 1, day);
-};
-
 const getPersonName = (item: Record<string, unknown>, fallback: string) =>
   String(
     item.name ??
@@ -94,117 +180,154 @@ const getPersonName = (item: Record<string, unknown>, fallback: string) =>
       fallback,
   ).trim() || fallback;
 
-const buildRangeStart = (type: "today" | "week" | "month") => {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+const getText = (value: unknown) => (typeof value === "string" && value.trim() ? value.trim() : "");
 
-  if (type === "today") return toIsoDate(today);
-
-  if (type === "week") {
-    const weekStart = new Date(today);
-    const weekday = weekStart.getDay();
-    const diff = weekday === 0 ? 6 : weekday - 1;
-    weekStart.setDate(weekStart.getDate() - diff);
-    return toIsoDate(weekStart);
-  }
-
-  return toIsoDate(new Date(today.getFullYear(), today.getMonth(), 1));
+/** «01.10 – 08.10.2026» (bir yil ichida), bitta kun — «08.10.2026». */
+const formatShortRange = (from: string, to: string) => {
+  const [fy, fm, fd] = from.split("-");
+  const [ty, tm, td] = to.split("-");
+  if (!fy || !ty) return "";
+  if (from === to) return `${td}.${tm}.${ty}`;
+  return fy === ty ? `${fd}.${fm} – ${td}.${tm}.${ty}` : `${fd}.${fm}.${fy} – ${td}.${tm}.${ty}`;
 };
 
-const summarizeHistory = (items: PaymentRow[] = []) =>
-  items.reduce(
-    (accumulator, item) => {
-      const amount = Math.abs(toNumber(item.amount));
-      if (item.operation_type === "income") accumulator.income += amount;
-      else if (item.operation_type === "expense") accumulator.expense += amount;
-      return accumulator;
-    },
-    { income: 0, expense: 0 },
-  );
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-type ActionLabel =
-  | "receiveFromBranchManager"
-  | "payToMarket"
-  | "spendFromCashbox"
-  | "fillCashbox"
-  | "paySalary";
-
-const ACTIONS: {
-  icon: React.ReactNode;
-  label: ActionLabel;
-  shortLabelKey: string;
-  color: string;
-  bg: string;
-}[] = [
-  {
-    // Superadmin/admin: filial menejeri yoki HQ kuryeridan; menejer: kuryerdan
-    // (yozuv va ikonka render'da rolga qarab almashtiriladi).
-    icon: <Landmark size={20} />,
-    label: "receiveFromBranchManager",
-    shortLabelKey: "receiveShort",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/15 hover:bg-emerald-500/25",
-  },
-  {
-    icon: <Store size={20} />,
-    label: "payToMarket",
-    shortLabelKey: "marketShort",
-    color: "text-blue-400",
-    bg: "bg-blue-500/15 hover:bg-blue-500/25",
-  },
-  {
-    icon: <Minus size={20} />,
-    label: "spendFromCashbox",
-    shortLabelKey: "expenseShort",
-    color: "text-rose-400",
-    bg: "bg-rose-500/15 hover:bg-rose-500/25",
-  },
-  {
-    icon: <Plus size={20} />,
-    label: "fillCashbox",
-    shortLabelKey: "incomeShort",
-    color: "text-teal-400",
-    bg: "bg-teal-500/15 hover:bg-teal-500/25",
-  },
-  {
-    icon: <DollarSign size={20} />,
-    label: "paySalary",
-    shortLabelKey: "salaryShort",
-    color: "text-amber-400",
-    bg: "bg-amber-500/15 hover:bg-amber-500/25",
-  },
-];
-
-/**
- * Backend'da hali ishlaydigan yo'li yo'q amallar — ko'rsatilmaydi (har bosishda
- * xato berardi):
- *  - "Maosh to'lash" (FE-PAY-07): POST /finance/salary maosh SOZLAMASINI
- *    yaratadi ({ user_id, salary_amount, have_to_pay?, payment_day? }), pul
- *    to'lamaydi; popup esa { amount, type, comment, source_user_id } yuborib
- *    har doim 400 olardi (menejer — 403). Maosh to'lovi endpoint'i paydo
- *    bo'lguncha vaqtincha "Kassadan chiqim" ishlatiladi.
- */
-const UNAVAILABLE_ACTIONS: ReadonlySet<ActionLabel> = new Set<ActionLabel>(["paySalary"]);
-
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
-const Skeleton = ({ className }: { className?: string }) => (
+/** Kirim yoki chiqim summasi (ishora va rang birga). */
+const SignedAmount = ({ value, language, className }: { value: number; language: string; className?: string }) => (
   <span
-    className={`inline-block rounded-lg bg-white/10 animate-pulse ${className}`}
-  />
+    className={cx(
+      "whitespace-nowrap font-semibold",
+      value > 0 ? "text-success-fg" : value < 0 ? "text-danger-fg" : "text-text",
+      className,
+    )}
+  >
+    {formatSignedMoneyLocalized(value, { language })}
+  </span>
 );
+
+/** `.el-kpi-value` + `.el-kpi-unit`. */
+const KpiValue = ({ value, unit, className }: { value: ReactNode; unit?: ReactNode; className?: string }) => (
+  <span
+    className={cx(
+      "whitespace-nowrap text-[28px] leading-9 font-bold tracking-[-.01em] text-text proportional-nums max-md:text-[22px] max-md:leading-[30px]",
+      className,
+    )}
+  >
+    {value}
+    {unit ? <span className="ml-1 text-sm font-semibold tracking-normal text-text-muted max-md:text-[13px]">{unit}</span> : null}
+  </span>
+);
+
+/** `.el-meter` — kirim (`chart-1`, trek `action-soft`) yoki chiqim (`chart-8`, trek `danger-soft`). */
+const FlowMeter = ({ ratio, tone }: { ratio: number; tone: "income" | "expense" }) => (
+  <span
+    aria-hidden="true"
+    className={cx("block h-2 w-full overflow-hidden rounded-full", tone === "income" ? "bg-action-soft" : "bg-danger-soft")}
+  >
+    <span
+      className={cx("block h-full rounded-full", tone === "income" ? "bg-chart-1" : "bg-chart-8")}
+      style={{ width: `${Math.max(0, Math.min(100, ratio * 100))}%` }}
+    />
+  </span>
+);
+
+/** «Kirim +X» / «Chiqim −Y» qatori + meter (davr kartalari). */
+const FlowLines = ({ totals, language, labels }: { totals: FlowTotals; language: string; labels: { income: string; expense: string } }) => {
+  const max = Math.max(totals.income, totals.expense);
+  const lines: Array<{ key: "income" | "expense"; label: string; value: number }> = [
+    { key: "income", label: labels.income, value: totals.income },
+    { key: "expense", label: labels.expense, value: -totals.expense },
+  ];
+  return (
+    <div className="flex flex-col gap-2.5">
+      {lines.map((line) => (
+        <div key={line.key} className="flex flex-col gap-1.5">
+          <div className="flex items-baseline justify-between gap-2">
+            <span className="inline-flex items-center gap-1.5 text-[13px] text-text-muted">
+              <span
+                aria-hidden="true"
+                className={cx("size-2.5 rounded-[3px]", line.key === "income" ? "bg-chart-1" : "bg-chart-8")}
+              />
+              {line.label}
+            </span>
+            <SignedAmount value={line.value} language={language} className="text-[13px]" />
+          </div>
+          <FlowMeter ratio={max > 0 ? Math.abs(line.value) / max : 0} tone={line.key} />
+        </div>
+      ))}
+    </div>
+  );
+};
+
+/** `.el-hbar` — manba nomi, chiziq, «18,4 mln · 45%». */
+const SourceBars = ({
+  buckets,
+  tone,
+  label,
+  emptyText,
+  sourceLabel,
+  language,
+}: {
+  buckets: SourceBucket[];
+  tone: "income" | "expense";
+  label: string;
+  emptyText: string;
+  sourceLabel: (sourceType: string) => string;
+  language: string;
+}) => {
+  if (buckets.length === 0) return <p className="m-0 text-[13px] text-text-muted">{emptyText}</p>;
+  const max = buckets[0]?.amount ?? 0;
+  return (
+    <ol aria-label={label} className="m-0 flex list-none flex-col gap-3 p-0">
+      {buckets.map((bucket) => {
+        const ratio = max > 0 ? bucket.amount / max : 0;
+        return (
+          <li
+            key={bucket.sourceType}
+            className="grid min-h-6 grid-cols-[minmax(80px,32%)_minmax(0,1fr)] items-center gap-3 text-[13px]"
+          >
+            <span className="truncate text-text" title={sourceLabel(bucket.sourceType)}>
+              {sourceLabel(bucket.sourceType)}
+            </span>
+            <span className="flex min-w-0 items-center gap-2">
+              <span
+                aria-hidden="true"
+                className={cx("block h-4 flex-none rounded-r-[4px]", tone === "income" ? "bg-chart-1" : "bg-chart-8")}
+                style={{ width: `max(4px, calc((100% - 112px) * ${ratio.toFixed(4)}))` }}
+              />
+              <span className="whitespace-nowrap font-semibold text-text">
+                {formatCompactMoneyLocalized(bucket.amount, { language, withCurrency: false })}{" "}
+                <span className="font-normal text-text-muted">
+                  · {formatPercentLocalized(bucket.share, { language, fractionDigits: 0 })}
+                </span>
+              </span>
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+};
+
+const ACTION_TILE =
+  "flex min-h-16 w-full items-center gap-3 rounded-[10px] border border-border-strong bg-surface p-3 text-left text-sm font-semibold text-text " +
+  "transition-[background-color,border-color,color,box-shadow,opacity] duration-150 motion-reduce:transition-none hover:bg-sunken active:bg-border";
 
 // ─── MainCashbox ──────────────────────────────────────────────────────────────
 
 const MainCashbox = () => {
-  const { t } = useTranslation("payments");
+  const { t, i18n } = useTranslation("payments");
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const currency = CURRENCY_LABEL[resolveMoneyLanguage(language)];
+  const navigate = useNavigate();
+  const balanceTitleId = useId();
+
   const [balanceVisible, setBalanceVisible] = useState(true);
+  const [balanceView, setBalanceView] = useState<BalanceChartView>("chart");
+  const [mobilePeriod, setMobilePeriod] = useState<PeriodKey>("today");
   const [isSalaryPopupOpen, setIsSalaryPopupOpen] = useState(false);
-  const [selectedSalaryEmployee, setSelectedSalaryEmployee] = useState<any>(null);
-  const [isBranchManagerPopupOpen, setIsBranchManagerPopupOpen] = useState(false);
-  const [isMarketPopupOpen, setIsMarketPopupOpen] = useState(false);
+  const [selectedSalaryEmployee, setSelectedSalaryEmployee] = useState<SalaryEmployee | null>(null);
+  const [pickerKind, setPickerKind] = useState<SettlementPickerKind>("receive");
+  const [pickerOpen, setPickerOpen] = useState(false);
   const [isSpendPopupOpen, setIsSpendPopupOpen] = useState(false);
   const [isRefillPopupOpen, setIsRefillPopupOpen] = useState(false);
   // Yopilayotgan smena ID si — "Smenani yopish" bosilgan paytdagi ochiq smena
@@ -212,24 +335,35 @@ const MainCashbox = () => {
   const [closingShiftId, setClosingShiftId] = useState<string | null>(null);
   const [draftHistoryFrom, setDraftHistoryFrom] = useState("");
   const [draftHistoryTo, setDraftHistoryTo] = useState("");
-  const navigate = useNavigate();
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyPageSize, setHistoryPageSize] = useState<number>(HISTORY_PAGE_SIZES[0]);
+  const [selectedRow, setSelectedRow] = useState<PaymentRow | null>(null);
+  // Tarix sahifasi almashganda karta boshi ko'rinsin (D-03; tarix balans, amallar va davrlar ostida).
+  const historyCardRef = useRef<HTMLElement>(null);
+  // Qo'lda operatsiya (to'ldirish/xarajat) yuborilmoqda — ikkinchi yuborish e'tiborsiz.
+  const manualPendingRef = useRef(false);
+
   const role = useSelector((state: RootState) => state.role.role);
+  const roleName = useSelector((state: RootState) => state.role.name);
+  const profile = useSelector((state: RootState) => state.user.user);
   const profileUserId = useSelector((state: RootState) => state.user.user?.id);
   const roleUserId = useSelector((state: RootState) => state.role.id);
   const normalizedRole = String(role).toLowerCase();
   const isManagerRole = normalizedRole === "manager";
+  const isStaffRole = normalizedRole === "superadmin" || normalizedRole === "admin";
   // FE-PAY-06: smena ochish/yopish — faqat superadmin/admin (gateway menejerga
   // 403 qaytaradi). Smena foydalanuvchining o'ziga yoziladi (`opened_by` /
   // `closed_by` = o'z ID si); ID noma'lum bo'lsa tugma ko'rsatilmaydi.
   const currentUserId = String(profileUserId ?? roleUserId ?? "").trim();
-  const shiftUserId =
-    (normalizedRole === "superadmin" || normalizedRole === "admin") && /^\d+$/.test(currentUserId)
-      ? currentUserId
-      : "";
-  const { apiRequest } = useAppNotification();
+  const shiftUserId = isStaffRole && /^\d+$/.test(currentUserId) ? currentUserId : "";
+
+  const profileRecord = asRecord(profile);
+  const currentUserName = getText(profileRecord.name) || getText(roleName);
+  // Menejer profili: `branch` — branch_users qatori, filial nomi ichki `branch.branch.name` da.
+  const ownBranch = asRecord(profileRecord.branch);
+  const ownBranchName = getText(asRecord(ownBranch.branch).name) || getText(ownBranch.name) || undefined;
 
   const { useGetUser } = useUser();
-  const { useGetMarkets } = useMarkets();
   const {
     cashboxSpand,
     cashboxFill,
@@ -245,32 +379,22 @@ const MainCashbox = () => {
   // yoki xato bergan paytda noto'g'ri amal (ochiq smenani qayta ochish /
   // yo'q smenani yopish) taklif qilinmaydi.
   const isShiftStateKnown = Boolean(shiftUserId) && currentShiftQuery.isSuccess;
+  const openShiftRow = useMemo(
+    () =>
+      toDataItems(currentShiftQuery.data)
+        .map(asRecord)
+        .find((item) => String(item.status ?? "").toLowerCase() === "open") ?? null,
+    [currentShiftQuery.data],
+  );
   const openShiftId = useMemo(() => {
-    const openRow = toDataItems(currentShiftQuery.data)
-      .map(asRecord)
-      .find((item) => String(item.status ?? "").toLowerCase() === "open");
-    const id = openRow?.id;
+    const id = openShiftRow?.id;
     return id === undefined || id === null || id === "" ? null : String(id);
-  }, [currentShiftQuery.data]);
+  }, [openShiftRow]);
+  const openShiftOpenedAt = getText(openShiftRow?.opened_at) || undefined;
 
-  // ── Data fetching ──────────────────────────────────────────────────────────
-  const { data: usersData, isLoading: usersLoading } = useGetUser(
-    { limit: FULL_LIST_LIMIT },
-    isSalaryPopupOpen,
-  );
-  // "Qabul qilinishi kerak": menejerga o'z kuryerlari; superadmin/admin'ga
-  // filial menejerlari + HQ kuryerlari (/payments bilan bitta manba).
-  const {
-    options: receiveOptions,
-    isLoading: isReceiveLoading,
-    description: receiveDescription,
-  } = useReceiveOptions({ isManagerRole, enabled: isBranchManagerPopupOpen });
-  // `status: "active"` YO'Q (FE-PAY-13): bloklangan, lekin puli qolgan
-  // market ham to'lanishi kerak — u belgi bilan ko'rsatiladi.
-  const { data: marketsData, isLoading: marketsLoading } = useGetMarkets(
-    { limit: FULL_LIST_LIMIT },
-    isMarketPopupOpen,
-  );
+  // ── Ma'lumot ────────────────────────────────────────────────────────────────
+  const { data: usersData } = useGetUser({ limit: FULL_LIST_LIMIT }, isSalaryPopupOpen);
+  const hasDateFilter = Boolean(draftHistoryFrom && draftHistoryTo);
   const mainCashboxParams = useMemo(
     () => ({
       ...(draftHistoryFrom && draftHistoryTo && { fromDate: draftHistoryFrom, toDate: draftHistoryTo }),
@@ -278,81 +402,69 @@ const MainCashbox = () => {
     [draftHistoryFrom, draftHistoryTo],
   );
 
-  const { data: cashboxInfoRes, isLoading: cashboxInfoLoading } = useGetCashBoxInfo();
-  const { data: mainCashboxRes, isLoading: mainCashboxLoading } = useGetCashBoxMain(mainCashboxParams);
+  const cashboxInfoQuery = useGetCashBoxInfo();
+  const mainCashboxQuery = useGetCashBoxMain(mainCashboxParams);
   const historyParams = useMemo(
     () => ({
       page: 1,
       limit: FULL_LIST_LIMIT,
+      // D1: superadmin/admin — faqat asosiy kassa operatsiyalari (kuryer/market kassalaridagi sotuv va
+      // bekorlar aralashmasin). Menejerda param yo'q — gateway o'z filiali kassasini qo'yadi.
+      ...(isStaffRole ? { cashbox_type: "main" } : {}),
       ...(draftHistoryFrom && draftHistoryTo && { fromDate: draftHistoryFrom, toDate: draftHistoryTo }),
     }),
-    [draftHistoryFrom, draftHistoryTo],
+    [draftHistoryFrom, draftHistoryTo, isStaffRole],
   );
-  const {
-    data: historyRes,
-    isLoading: historyLoading,
-    isFetching: historyFetching,
-  } = useGetFinanceHistory(historyParams);
+  const historyQuery = useGetFinanceHistory(historyParams);
+  const historyLoading = Boolean(historyQuery.isLoading);
+  const historyFetching = Boolean(historyQuery.isFetching);
+  const historyIsError = Boolean(historyQuery.isError);
 
-  const employees = useMemo(
+  const userItems = useMemo(() => {
+    const items = asRecord(asRecord(usersData).data).items;
+    return Array.isArray(items) ? items.map(asRecord) : [];
+  }, [usersData]);
+  const employees = useMemo<SalaryEmployee[]>(
     () =>
-      (usersData?.data?.items ?? []).filter((employee: any) => {
-        const role = String(employee?.role ?? "").toLowerCase();
-        return role !== "market" && role !== "courier";
-      }),
-    [usersData?.data?.items],
-  );
-  const receiveIcon = isManagerRole ? <Truck size={20} /> : <Landmark size={20} />;
-  const markets = useMemo(
-    () =>
-      toDataItems(marketsData).map((market) => {
-        const item = asRecord(market);
-        const cashbox = asRecord(item.cashbox);
-
-        return {
-          ...item,
-          id: String(item.id ?? ""),
-          name: String(item.name ?? ""),
-          amount: toNumber(
-            item.berilishi_kerak ??
-              cashbox.berilishi_kerak ??
-              cashbox.balance ??
-              item.amount,
-          ),
-          is_inactive: isInactiveStatus(item.status),
-        };
-      }).filter((market) => market.id && isListedSettlementRow(market)),
-    [marketsData],
+      userItems
+        .filter((employee) => {
+          const employeeRole = String(employee.role ?? "").toLowerCase();
+          return employeeRole !== "market" && employeeRole !== "courier";
+        })
+        .map((employee) => ({
+          ...employee,
+          id: String(employee.id ?? ""),
+          name: getText(employee.name) || undefined,
+          role: getText(employee.role) || undefined,
+        })),
+    [userItems],
   );
 
-  // ── Cashbox balances ───────────────────────────────────────────────────────
-  const cashboxInfoData = cashboxInfoRes?.data ?? {};
-  const mainCashboxData = useMemo(
-    () => mainCashboxRes?.data ?? {},
-    [mainCashboxRes?.data],
-  );
-  const mainCashbox = useMemo(
-    () => mainCashboxData?.cashbox ?? {},
-    [mainCashboxData],
-  );
+  // ── Kassa balansi ───────────────────────────────────────────────────────────
+  const cashboxInfoData = asRecord(cashboxInfoQuery.data?.data);
+  const mainCashboxData = useMemo(() => asRecord(mainCashboxQuery.data?.data), [mainCashboxQuery.data?.data]);
+  const mainCashbox = useMemo(() => asRecord(mainCashboxData.cashbox), [mainCashboxData]);
   const totalBalance = toNumber(
-    (mainCashbox as any)?.balance ??
-      (mainCashboxData as any)?.balance ??
-      cashboxInfoData?.mainCashboxTotal ??
-      (mainCashboxData as any)?.total,
+    mainCashbox.balance ?? mainCashboxData.balance ?? cashboxInfoData.mainCashboxTotal ?? mainCashboxData.total,
   );
   const cashBalance = toNumber(
-    (mainCashbox as any)?.balance_cash ??
-      (mainCashboxData as any)?.balance_cash ??
-      (mainCashboxData as any)?.balanceCash ??
-      (mainCashboxData as any)?.cash,
+    mainCashbox.balance_cash ?? mainCashboxData.balance_cash ?? mainCashboxData.balanceCash ?? mainCashboxData.cash,
   );
   const transferBalance = toNumber(
-    (mainCashbox as any)?.balance_card ??
-      (mainCashboxData as any)?.balance_card ??
-      (mainCashboxData as any)?.balanceCard ??
-      (mainCashboxData as any)?.transfer,
+    mainCashbox.balance_card ??
+      mainCashboxData.balance_card ??
+      mainCashboxData.balanceCard ??
+      mainCashboxData.transfer,
   );
+  const balanceLoading = Boolean(mainCashboxQuery.isLoading || cashboxInfoQuery.isLoading);
+  // «Qabul qilinishi kerak» oynasi izohidagi jami (SA/admin, /payments bilan bir xil manba).
+  const receiveTotal = useMemo(() => {
+    if (isManagerRole) return undefined;
+    const value = cashboxInfoData.olinishi_kerak ?? cashboxInfoData.courierCashboxTotal;
+    const parsed = Number(value);
+    return value === undefined || value === null || value === "" || !Number.isFinite(parsed) ? undefined : parsed;
+  }, [cashboxInfoData, isManagerRole]);
+
   const salaryCardSources = useMemo<SalaryCardSource[]>(() => {
     const adminRoles = new Set(["admin", "superadmin", "manager", "registrator"]);
     const selectedEmployeeId = String(selectedSalaryEmployee?.id ?? "");
@@ -364,99 +476,85 @@ const MainCashbox = () => {
       balance: transferBalance,
     });
 
-    (usersData?.data?.items ?? []).forEach((source: any) => {
-      const item = asRecord(source);
+    userItems.forEach((item) => {
       const id = String(item.id ?? "");
-      const role = String(item.role ?? "").toLowerCase();
-      if (!id || id === selectedEmployeeId || !adminRoles.has(role)) return;
+      const sourceRole = String(item.role ?? "").toLowerCase();
+      if (!id || id === selectedEmployeeId || !adminRoles.has(sourceRole)) return;
 
       const cashbox = asRecord(item.cashbox ?? item.cashBox ?? item.cash_box ?? item.kassa);
       sourceMap.set(id, {
         id,
         name: getPersonName(item, t("userFallback")),
         balance: toNumber(
-          cashbox.balance_card ??
-            item.balance_card ??
-            cashbox.balance ??
-            item.balance ??
-            item.amount,
+          cashbox.balance_card ?? item.balance_card ?? cashbox.balance ?? item.balance ?? item.amount,
         ),
       });
     });
 
     return Array.from(sourceMap.values());
-  }, [selectedSalaryEmployee?.id, t, transferBalance, usersData?.data?.items]);
-  // ── History ────────────────────────────────────────────────────────────────
+  }, [selectedSalaryEmployee?.id, t, transferBalance, userItems]);
+
+  // ── Tarix ───────────────────────────────────────────────────────────────────
+  const historyItems = asRecord(historyQuery.data?.data).items;
   const historyRows: PaymentRow[] = useMemo(
-    () => ((historyRes?.data?.items ?? []) as PaymentRow[]),
-    [historyRes?.data?.items],
+    () => (Array.isArray(historyItems) ? (historyItems as PaymentRow[]) : []),
+    [historyItems],
   );
-  const { filteredIncome, filteredExpense, weeklyStats, monthlyStats } = useMemo(() => {
-    const todayStart = buildRangeStart("today");
-    const weekStart = buildRangeStart("week");
-    const monthStart = buildRangeStart("month");
-    const todayEnd = toIsoDate(new Date());
+  const periods = useMemo(() => computePeriodStats(historyRows), [historyRows]);
+  const todayNet = periods.today.income - periods.today.expense;
+  const monthRows = useMemo(() => filterRowsFrom(historyRows, periods.month.from), [historyRows, periods.month.from]);
+  const incomeSources = useMemo(() => groupBySource(monthRows, "income"), [monthRows]);
+  const expenseSources = useMemo(() => groupBySource(monthRows, "expense"), [monthRows]);
 
-    const safeRows = historyRows.filter((row) => {
-      const rawDate = row.payment_date || row.createdAt || row.created_at;
-      if (!rawDate) return false;
-      const parsed = new Date(rawDate);
-      return Number.isFinite(parsed.getTime());
-    });
+  const cashboxHistory = useMemo(() => toDataItems(mainCashboxData.cashboxHistory), [mainCashboxData]);
+  const balancePoints = useMemo(
+    () => buildDailyBalanceSeries(cashboxHistory, { from: draftHistoryFrom, to: draftHistoryTo }),
+    [cashboxHistory, draftHistoryFrom, draftHistoryTo],
+  );
 
-    const filterByRange = (fromDate: string) =>
-      safeRows.filter((row) => {
-        const rawDate = row.payment_date || row.createdAt || row.created_at;
-        if (!rawDate) return false;
-        const isoDate = toIsoDate(new Date(rawDate));
-        return isoDate >= fromDate && isoDate <= todayEnd;
-      });
+  const pageCount = Math.max(1, Math.ceil(historyRows.length / historyPageSize));
+  const currentPage = Math.min(historyPage, pageCount);
+  const pageRows = useMemo(
+    () => historyRows.slice((currentPage - 1) * historyPageSize, currentPage * historyPageSize),
+    [currentPage, historyPageSize, historyRows],
+  );
 
-    const todayStats = summarizeHistory(filterByRange(todayStart));
-    return {
-      filteredIncome: todayStats.income,
-      filteredExpense: todayStats.expense,
-      weeklyStats: summarizeHistory(filterByRange(weekStart)),
-      monthlyStats: summarizeHistory(filterByRange(monthStart)),
-    };
-  }, [historyRows]);
-
-  // ── Handlers ───────────────────────────────────────────────────────────────
-  const handleActionClick = useCallback((label: ActionLabel) => {
-    const map: Record<ActionLabel, () => void> = {
-      paySalary: () => setIsSalaryPopupOpen(true),
-      receiveFromBranchManager: () => setIsBranchManagerPopupOpen(true),
-      payToMarket: () => setIsMarketPopupOpen(true),
-      spendFromCashbox: () => setIsSpendPopupOpen(true),
-      fillCashbox: () => setIsRefillPopupOpen(true),
-    };
-    map[label]?.();
+  // ── Amallar ─────────────────────────────────────────────────────────────────
+  const openPicker = useCallback((kind: SettlementPickerKind) => {
+    setPickerKind(kind);
+    setPickerOpen(true);
   }, []);
 
+  const handleActionClick = useCallback(
+    (label: ActionLabel) => {
+      const map: Record<ActionLabel, () => void> = {
+        paySalary: () => setIsSalaryPopupOpen(true),
+        // Superadmin/admin: filial menejeri yoki HQ kuryeri; menejer: o'z filiali kuryerlari.
+        receiveFromBranchManager: () => openPicker(isManagerRole ? "courier" : "receive"),
+        payToMarket: () => openPicker("give"),
+        spendFromCashbox: () => setIsSpendPopupOpen(true),
+        fillCashbox: () => setIsRefillPopupOpen(true),
+      };
+      map[label]?.();
+    },
+    [isManagerRole, openPicker],
+  );
+
   const visibleActions = useMemo(() => {
-    const availableActions = ACTIONS.filter((action) => !UNAVAILABLE_ACTIONS.has(action.label));
+    const availableActions = ACTION_ORDER.filter((action) => !UNAVAILABLE_ACTIONS.has(action));
     // "Marketga to'lov" (POST /finance/cashbox/payment/market) faqat
     // SUPERADMIN/ADMIN uchun — menejerga (HQ menejeri ham) backend 403
     // qaytaradi, shuning uchun filial turidan qat'i nazar ko'rsatilmaydi.
     if (!isManagerRole) return availableActions;
 
-    return availableActions.filter((action) => action.label !== "payToMarket");
+    return availableActions.filter((action) => action !== "payToMarket");
   }, [isManagerRole]);
 
-  const handleBranchManagerSelect = useCallback(
-    (item: ReceiveOption) => {
-      setIsBranchManagerPopupOpen(false);
-      // Tur qatorning o'zidan (filial yoki kuryer) — roldan emas.
-      const target = getReceiveDetailTarget(item);
+  const handlePickerSelect = useCallback(
+    (target: SettlementPickerTarget) => {
+      setPickerOpen(false);
+      // Tur qatorning o'zidan (filial, kuryer yoki market) — roldan emas.
       navigate(target.path, { state: target.state });
-    },
-    [navigate],
-  );
-
-  const handleMarketSelect = useCallback(
-    (market: any) => {
-      setIsMarketPopupOpen(false);
-      navigate(`/payments/cash-detail/${market.id}?type=market`, { state: { type: "market", entity: market } });
     },
     [navigate],
   );
@@ -488,529 +586,898 @@ const MainCashbox = () => {
         summaryExpense: t("summaryExpense"),
       },
     });
-  }, [
-    historyRows,
-    totalBalance,
-    cashBalance,
-    transferBalance,
-    draftHistoryFrom,
-    draftHistoryTo,
-    t,
-  ]);
+  }, [historyRows, totalBalance, cashBalance, transferBalance, draftHistoryFrom, draftHistoryTo, t]);
 
-  const handleSpend = useCallback(
-    async ({ amount, type, comment }: { amount: number; type?: string; comment: string }) => {
-      const result = await apiRequest({
-        request: () => cashboxSpand.mutateAsync({ data: { amount, type, comment } }),
-        successMessage: t("spendSuccess"),
-        errorMessage: t("spendError"),
-      });
-      if (result) setIsSpendPopupOpen(false);
+  const refetchCashboxState = useCallback(async () => {
+    await Promise.allSettled([
+      mainCashboxQuery.refetch?.(),
+      historyQuery.refetch?.(),
+      cashboxInfoQuery.refetch?.(),
+    ]);
+  }, [cashboxInfoQuery, historyQuery, mainCashboxQuery]);
+
+  /**
+   * Qo'lda kirim/chiqim (tasdiqdan keyin). Payload eski shaklda `{ amount, type, comment }`; D3 — `Idempotency-Key`
+   * barmoq iziga bog'langan: javob kelmasa (504, tarmoq) kalit saqlanadi va aynan shu operatsiya qayta
+   * yuborilganda backend uni bir marta yozadi (`idempotent: true` — «allaqachon yozilgan» ogohlantirishi).
+   */
+  const submitManualOperation = useCallback(
+    async (operation: ManualOperation, { amount, type, comment }: { amount: number; type?: string; comment: string }) => {
+      if (manualPendingRef.current) return;
+      manualPendingRef.current = true;
+      const mutation = operation === "fill" ? cashboxFill : cashboxSpand;
+      const close = operation === "fill" ? () => setIsRefillPopupOpen(false) : () => setIsSpendPopupOpen(false);
+      const fingerprint = manualOperationFingerprint(operation, currentUserId || normalizedRole, amount, type);
+      try {
+        const idempotencyKey = takePaymentKey(fingerprint);
+        let response: Awaited<ReturnType<typeof mutation.mutateAsync>>;
+        try {
+          response = await mutation.mutateAsync({ data: { amount, type, comment }, idempotencyKey });
+        } catch (error) {
+          // Kalit saqlanadi: aynan shu operatsiya qayta yuborilsa backend uni bir marta yozadi.
+          notify.error(t("common:error"), {
+            description: getBackendErrorMessage(error) ?? t(operation === "fill" ? "fillError" : "spendError"),
+          });
+          if (isUncertainPaymentError(error)) {
+            notify.warning(t("common:warning"), {
+              description: t("v2MainCashbox.notify.outcomeUnknown"),
+              duration: 10000,
+            });
+            await refetchCashboxState();
+          }
+          return;
+        }
+
+        settlePaymentKey(fingerprint);
+        if (isIdempotentReplay(response)) {
+          notify.warning(t("common:warning"), { description: t("v2MainCashbox.notify.alreadyRecorded"), duration: 8000 });
+          close();
+          await refetchCashboxState();
+          return;
+        }
+        notify.success(t("common:success"), {
+          description: t(operation === "fill" ? "fillSuccess" : "spendSuccess"),
+        });
+        close();
+      } finally {
+        manualPendingRef.current = false;
+      }
     },
-    [apiRequest, cashboxSpand, t],
+    [cashboxFill, cashboxSpand, currentUserId, normalizedRole, refetchCashboxState, t],
   );
 
+  const handleSpend = useCallback(
+    (payload: { amount: number; type?: string; comment: string }) => submitManualOperation("spend", payload),
+    [submitManualOperation],
+  );
   const handleRefill = useCallback(
-    async ({ amount, type, comment }: { amount: number; type?: string; comment: string }) => {
-      const result = await apiRequest({
-        request: () => cashboxFill.mutateAsync({ data: { amount, type, comment } }),
-        successMessage: t("fillSuccess"),
-        errorMessage: t("fillError"),
-      });
-      if (result) setIsRefillPopupOpen(false);
-    },
-    [apiRequest, cashboxFill, t],
+    (payload: { amount: number; type?: string; comment: string }) => submitManualOperation("fill", payload),
+    [submitManualOperation],
   );
 
   const handleOpenShift = useCallback(async () => {
     if (!shiftUserId || openShift.isPending) return;
-    await apiRequest({
-      request: () => openShift.mutateAsync({ opened_by: shiftUserId }),
-      successMessage: t("openShiftSuccess"),
-      errorMessage: t("openShiftError"),
-    });
-  }, [apiRequest, openShift, shiftUserId, t]);
+    try {
+      await openShift.mutateAsync({ opened_by: shiftUserId });
+      notify.success(t("common:success"), { description: t("openShiftSuccess") });
+    } catch (error) {
+      notify.error(t("common:error"), { description: getBackendErrorMessage(error) ?? t("openShiftError") });
+    }
+  }, [openShift, shiftUserId, t]);
 
   const handleCloseShift = useCallback(
     async (comment: string) => {
       if (!shiftUserId || !closingShiftId) return;
-      const result = await apiRequest({
-        request: () =>
-          closeShift.mutateAsync({
-            closed_by: shiftUserId,
-            shift_id: closingShiftId,
-            comment: comment || undefined,
-          }),
-        successMessage: t("closeShiftSuccess"),
-        errorMessage: t("closeShiftError"),
-      });
-      if (!result) return;
-
+      try {
+        await closeShift.mutateAsync({
+          closed_by: shiftUserId,
+          shift_id: closingShiftId,
+          comment: comment || undefined,
+        });
+      } catch (error) {
+        notify.error(t("common:error"), { description: getBackendErrorMessage(error) ?? t("closeShiftError") });
+        return;
+      }
+      notify.success(t("common:success"), { description: t("closeShiftSuccess") });
       setClosingShiftId(null);
       handleExportExcel();
     },
-    [apiRequest, closeShift, closingShiftId, handleExportExcel, shiftUserId, t],
+    [closeShift, closingShiftId, handleExportExcel, shiftUserId, t],
   );
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-  return (
-    <div className="p-5 bg-sidebar dark:bg-maindark min-h-full flex flex-col gap-5 rounded-2xl">
-      {/* ── Header ── */}
-      <div className="bg-primary dark:bg-primarydark rounded-2xl border border-gray-200 dark:border-glass-border px-4 shadow-sm">
-        <div className="flex items-center gap-3 py-2">
-          <BackButton className="h-10 min-w-10 shrink-0 rounded-xl px-2" label="" />
-          <HeaderName
-            name={t("mainCashboxTitle")}
-            description={t("mainCashboxDescription")}
-            icon={<Wallet />}
-            onIconClick={() => navigate(-1)}
+  const setHistoryRange = useCallback((from: string, to: string) => {
+    setDraftHistoryFrom(from);
+    setDraftHistoryTo(to);
+    setHistoryPage(1);
+  }, []);
+  const clearHistoryRange = useCallback(() => setHistoryRange("", ""), [setHistoryRange]);
+
+  // ── Ko'rinish yordamchilari ─────────────────────────────────────────────────
+  const money = (value: number) => (balanceVisible ? formatMoneyLocalized(value, { language }) : MASK);
+  const viewerCashboxType = isManagerRole ? "branch" : "main";
+  const sourceLabel = (sourceType: string) =>
+    getPaymentSourceTitle(sourceType === "unknown" ? "" : sourceType, t, {
+      role: normalizedRole,
+      cashboxType: viewerCashboxType,
+    });
+  const rowSourceTitle = (row: PaymentRow) =>
+    getPaymentSourceTitle(row.source_type, t, {
+      role: normalizedRole,
+      cashboxType: row.cashbox_type || row.cashbox?.cashbox_type || viewerCashboxType,
+    });
+  // Asosiy kassa sahifasida `click` — «Karta (Click)» (maket), qolganlari umumiy yorliq.
+  const paymentMethodLabel = (value?: string | null) =>
+    String(value ?? "").trim().toLowerCase() === "click"
+      ? t("v2Common.paymentMethod.cardClick")
+      : getPaymentMethodLabel(value, t);
+  const actorName = (row: PaymentRow) => {
+    const name = resolvePaymentActorName(row);
+    return name === "-" ? "—" : name;
+  };
+  const rowDateText = (row: PaymentRow) => {
+    const value = rowDateValue(row);
+    return value ? formatDateTimeLocalized(value, { language }) : "—";
+  };
+  const rowDirection = (row: PaymentRow) => getViewerOperationType(row, normalizedRole);
+  const rowCounterparty = (row: PaymentRow) =>
+    resolvePaymentCounterparty(row, (id) => t("v2Common.orderNumber", { id }));
+  const openLabel = (row: PaymentRow) =>
+    t("v2Common.openDetail", { title: rowSourceTitle(row), date: rowDateText(row) });
+
+  const operationBadge = (row: PaymentRow) => {
+    const direction = rowDirection(row);
+    if (!direction) return <span className="text-text-muted">—</span>;
+    return (
+      <Badge icon={direction === "income" ? ArrowDownLeft : ArrowUpRight}>
+        {t(direction === "income" ? "v2Common.income" : "v2Common.expense")}
+      </Badge>
+    );
+  };
+  const amountNode = (row: PaymentRow) => {
+    const direction = rowDirection(row);
+    const amount = Math.abs(toNumber(row.amount));
+    return (
+      <span
+        className={cx(
+          "whitespace-nowrap font-semibold",
+          direction === "income" ? "text-success-fg" : direction === "expense" ? "text-danger-fg" : "text-text",
+        )}
+      >
+        {formatSignedMoneyLocalized(direction === "expense" ? -amount : amount, { language })}
+      </span>
+    );
+  };
+  const balanceAfterText = (row: PaymentRow) => {
+    const value = row.balance_after;
+    if (value === undefined || value === null || !Number.isFinite(Number(value))) return null;
+    return t("v2MainCashbox.history.balanceAfter", { amount: formatMoneyLocalized(value, { language }) });
+  };
+
+  const historyColumns: DataTableColumn<PaymentRow>[] = [
+    {
+      id: "date",
+      header: t("v2MainCashbox.history.columns.date"),
+      className: "whitespace-nowrap",
+      cell: (row) => (
+        <>
+          <div>{rowDateText(row)}</div>
+          <div className="hidden text-[13px] text-text-muted max-lg:block">{actorName(row)}</div>
+        </>
+      ),
+    },
+    {
+      id: "createdBy",
+      header: t("v2MainCashbox.history.columns.createdBy"),
+      hideBelow: "lg",
+      className: "whitespace-nowrap",
+      cell: (row) => actorName(row),
+    },
+    {
+      id: "source",
+      header: t("v2MainCashbox.history.columns.source"),
+      cell: (row) => {
+        const sub = rowCounterparty(row);
+        return (
+          <>
+            <button
+              type="button"
+              onClick={() => setSelectedRow(row)}
+              className="text-left font-semibold text-text hover:text-action-fg hover:underline"
+            >
+              {rowSourceTitle(row)}
+            </button>
+            {sub ? <div className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{sub}</div> : null}
+            <div className="hidden text-[13px] text-text-muted max-lg:block">{paymentMethodLabel(row.payment_method)}</div>
+          </>
+        );
+      },
+    },
+    {
+      id: "paymentType",
+      header: t("v2MainCashbox.history.columns.paymentType"),
+      hideBelow: "lg",
+      className: "whitespace-nowrap",
+      cell: (row) => paymentMethodLabel(row.payment_method),
+    },
+    {
+      id: "operation",
+      header: t("v2MainCashbox.history.columns.operation"),
+      cell: (row) => operationBadge(row),
+    },
+    {
+      id: "amount",
+      header: t("v2MainCashbox.history.columns.amount"),
+      align: "end",
+      cell: (row) => {
+        const balance = balanceAfterText(row);
+        return (
+          <>
+            {amountNode(row)}
+            {balance ? <div className="text-[13px] text-text-muted">{balance}</div> : null}
+          </>
+        );
+      },
+    },
+    {
+      id: "detail",
+      header: <span className="sr-only">{t("v2MainCashbox.history.columns.detail")}</span>,
+      className: "w-14",
+      cellClassName: "text-right",
+      cell: (row) => (
+        <IconButton
+          size="sm"
+          variant="ghost"
+          icon={ChevronRight}
+          label={openLabel(row)}
+          onClick={() => setSelectedRow(row)}
+          className="text-text-muted"
+        />
+      ),
+    },
+  ];
+
+  // Telefon kartasi (maket `.el-list-item`): sarlavha + summa · qarshi tomon · to'lov turi · badge + sana · yaratgan.
+  const renderHistoryCard = (row: PaymentRow) => {
+    const sub = [rowCounterparty(row), paymentMethodLabel(row.payment_method)].filter(Boolean).join(" · ");
+    return (
+      <button
+        type="button"
+        aria-label={openLabel(row)}
+        onClick={() => setSelectedRow(row)}
+        className="flex min-h-14 w-full flex-col gap-1 px-4 py-3 text-left text-sm text-text hover:bg-row-hover"
+      >
+        <span className="flex w-full min-w-0 justify-between gap-2">
+          <span className="min-w-0 font-semibold">{rowSourceTitle(row)}</span>
+          {amountNode(row)}
+        </span>
+        {sub ? <span className="text-[13px] text-text-muted [overflow-wrap:anywhere]">{sub}</span> : null}
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          {operationBadge(row)}
+          <span className="text-[13px] text-text-muted">
+            <span className="whitespace-nowrap">{rowDateText(row)}</span> · {actorName(row)}
+          </span>
+        </span>
+      </button>
+    );
+  };
+
+  // ── Sarlavha ────────────────────────────────────────────────────────────────
+  const headerDescription = isManagerRole
+    ? ownBranchName
+      ? t("v2MainCashbox.subtitleBranch", { branch: ownBranchName })
+      : t("v2MainCashbox.subtitle")
+    : isShiftStateKnown
+      ? t(openShiftId ? "v2MainCashbox.subtitleShiftOpen" : "v2MainCashbox.subtitleShiftClosed")
+      : t("v2MainCashbox.subtitle");
+
+  // FE-PAY-06: smena — faqat superadmin/admin. Ochiq smena yo'q bo'lsa "Smenani ochish" (POST /finance/shift/open
+  // { opened_by }), bor bo'lsa "Smenani yopish" (POST /finance/shift/close { closed_by, shift_id, comment? }),
+  // yopilgach Excel hisobot yuklanadi. Holat noma'lum (so'rov kutilmoqda / xato) — tugma yo'q.
+  const shiftAction = isShiftStateKnown ? (
+    openShiftId ? (
+      <Button variant="secondary" leftIcon={Timer} onClick={() => setClosingShiftId(openShiftId)}>
+        {t("v2MainCashbox.closeShift")}
+      </Button>
+    ) : (
+      <Button variant="secondary" leftIcon={Timer} onClick={handleOpenShift} disabled={openShift.isPending}>
+        {t("v2MainCashbox.openShift")}
+      </Button>
+    )
+  ) : null;
+
+  // ── Kassa balansi ───────────────────────────────────────────────────────────
+  const updatedAt = Number(mainCashboxQuery.dataUpdatedAt) || Date.now();
+  const timeText = formatTimeLocalized(updatedAt, { language });
+  const balanceSubtitle = isManagerRole
+    ? ownBranchName
+      ? t("v2MainCashbox.balance.subtitleBranch", { time: timeText, branch: ownBranchName })
+      : t("v2MainCashbox.balance.subtitle", { time: timeText })
+    : t("v2MainCashbox.balance.subtitle", { time: timeText });
+  const splitTotal = Math.max(0, cashBalance) + Math.max(0, transferBalance);
+  const cashShare = splitTotal > 0 ? (Math.max(0, cashBalance) / splitTotal) * 100 : 0;
+  const cardShare = splitTotal > 0 ? (Math.max(0, transferBalance) / splitTotal) * 100 : 0;
+  const percent = (value: number) => formatPercentLocalized(value, { language });
+  const splitRows: Array<{ key: string; icon: LucideIcon; label: string; value: number; share: number; color: string }> = [
+    { key: "cash", icon: Banknote, label: t("v2MainCashbox.balance.cash"), value: cashBalance, share: cashShare, color: "bg-chart-1" },
+    { key: "card", icon: CreditCard, label: t("v2MainCashbox.balance.card"), value: transferBalance, share: cardShare, color: "bg-chart-2" },
+  ];
+
+  const deltaClass =
+    todayNet > 0 ? "bg-success-soft text-success-fg" : todayNet < 0 ? "bg-danger-soft text-danger-fg" : "bg-sunken text-text-muted";
+
+  // Sarlavha qatori qo'lda (`.el-chart-head`): telefonda boshqaruvlar to'liq enli (ko'z + «Grafik | Jadval»).
+  const balanceCard = (
+    <Card
+      divided={false}
+      aria-labelledby={balanceTitleId}
+      bodyClassName="flex flex-col gap-4"
+      className="min-w-0"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
+        <div className="flex min-w-0 flex-[1_1_200px] flex-col gap-0.5">
+          <h2 id={balanceTitleId} className="text-base font-bold text-text">
+            {t("v2MainCashbox.balance.title")}
+          </h2>
+          <p className="text-[13px] leading-[18px] text-text-muted">{balanceSubtitle}</p>
+        </div>
+        <div className="flex items-center gap-2 max-md:w-full">
+          <IconButton
+            variant="secondary"
+            size="sm"
+            icon={balanceVisible ? Eye : EyeOff}
+            label={t(balanceVisible ? "v2MainCashbox.balance.hide" : "v2MainCashbox.balance.show")}
+            aria-pressed={!balanceVisible}
+            onClick={() => setBalanceVisible((value) => !value)}
+            className="shrink-0 max-md:size-11"
+          />
+          <SegmentedControl<BalanceChartView>
+            ariaLabel={t("v2MainCashbox.balance.view")}
+            value={balanceView}
+            onValueChange={setBalanceView}
+            className="max-md:min-w-0 max-md:flex-1"
+            options={[
+              { value: "chart", label: t("v2MainCashbox.balance.chart"), icon: ChartColumn },
+              { value: "table", label: t("v2MainCashbox.balance.table"), icon: List },
+            ]}
           />
         </div>
       </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* ════ LEFT COLUMN ════ */}
-        <div className="flex flex-col gap-4 lg:col-span-5 xl:col-span-4">
-
-          {/* ── Balance card ── */}
-          <div className="flex flex-col gap-3">
-            <CashboxSummaryCard
-              accentClass="bg-main/30"
-              accentIcon={<Wallet size={18} className="text-white" />}
-              title="ELCHI"
-              subtitle={t("mainCashbox")}
-              holderName={t("mainCashboxTitle")}
-              balance={totalBalance}
-              balanceVisible={balanceVisible}
-              onToggleVisibility={() => setBalanceVisible((v) => !v)}
+      <div className="flex flex-wrap items-start gap-x-8 gap-y-4">
+        <div className="flex min-w-0 flex-[1_1_220px] flex-col gap-1">
+          <span className="text-[13px] font-semibold text-text-muted">{t("v2MainCashbox.balance.total")}</span>
+          {balanceLoading ? (
+            <Skeleton shape="line" width={180} height={32} />
+          ) : (
+            <KpiValue
+              value={balanceVisible ? formatMoneyLocalized(totalBalance, { language, withCurrency: false }) : MASK}
+              unit={balanceVisible ? currency : undefined}
             />
-
-            <div className="grid grid-cols-2 gap-2.5">
-              {[
-                { icon: <Banknote size={14} />, label: t("cash"), amount: cashBalance },
-                { icon: <ArrowLeftRight size={14} />, label: t("card"), amount: transferBalance },
-              ].map(({ icon, label, amount }) => (
-                <div
-                  key={label}
-                  className="rounded-xl border border-white/10 bg-white/[0.06] p-3 backdrop-blur-sm"
-                >
-                  <div className="mb-1.5 flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-white/55">
-                    {icon} {label}
-                  </div>
-                  {mainCashboxLoading || cashboxInfoLoading ? (
-                    <Skeleton className="h-4 w-20" />
-                  ) : (
-                    <p className="text-sm font-bold text-white">
-                      {balanceVisible ? `${fmt(amount)} ${t("currency")}` : "••••••"}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* ── Quick actions ── */}
-          <div className="bg-primary dark:bg-primarydark rounded-2xl border border-gray-200 dark:border-glass-border p-4">
-            <p className="text-xs font-bold text-gray-500 dark:text-white/40 uppercase tracking-wider mb-3">
-              {t("quickActions")}
-            </p>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-4 xl:gap-1.5">
-              {visibleActions.map(({ icon, label, shortLabelKey, color, bg }) => {
-                const isReceiveAction = label === "receiveFromBranchManager";
-                const actionIcon = isReceiveAction && isManagerRole ? <Truck size={20} /> : icon;
-                const actionShortLabelKey = isReceiveAction && isManagerRole ? "courierShort" : shortLabelKey;
-                const actionTitleKey =
-                  isReceiveAction && !isManagerRole ? "receiveFromBranchOrHqCourier" : label;
-
-                return (
-                <button
-                  key={label}
-                  onClick={() => handleActionClick(label)}
-                  title={t(actionTitleKey)}
-                  className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl ${bg} ${color} transition-all duration-150 active:scale-95`}
-                >
-                  <span className="text-current">{actionIcon}</span>
-                  <span className="text-[10px] font-semibold text-center leading-tight text-gray-600 dark:text-white/60">
-                    {t(actionShortLabelKey)}
-                  </span>
-                </button>
-              )})}
-            </div>
-          </div>
-
-          {/* ── Export + Shift ── */}
-          {/*
-            FE-PAY-06: smena — faqat superadmin/admin. Ochiq smena yo'q bo'lsa
-            "Smenani ochish" (POST /finance/shift/open { opened_by }), bor
-            bo'lsa "Smenani yopish" (POST /finance/shift/close { closed_by,
-            shift_id, comment? }), yopilgach Excel hisobot yuklanadi.
-          */}
-          <div className="flex gap-2.5">
-            <button
-              onClick={handleExportExcel}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-main/60 text-main text-sm font-semibold hover:bg-main/10 transition-colors"
-            >
-              <Download size={15} />
-              {t("excel")}
-            </button>
-            {isShiftStateKnown ? (
-              openShiftId ? (
-                <button
-                  type="button"
-                  onClick={() => setClosingShiftId(openShiftId)}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-orange-500/60 text-orange-400 text-sm font-semibold hover:bg-orange-500/10 transition-colors"
-                >
-                  <LogOut size={15} />
-                  {t("closeShiftTitle")}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleOpenShift}
-                  disabled={openShift.isPending}
-                  className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border border-emerald-500/60 text-emerald-500 text-sm font-semibold hover:bg-emerald-500/10 transition-colors disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  <LogIn size={15} />
-                  {t("openShiftTitle")}
-                </button>
-              )
-            ) : null}
-          </div>
+          )}
+          <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-text-muted">
+            {historyLoading ? (
+              <Skeleton shape="line" width={96} height={22} />
+            ) : historyIsError ? (
+              // Tarix yuklanmadi — bugungi oqim noma'lum («0 so'm» deb ko'rsatilmaydi).
+              <span className="inline-flex h-[22px] items-center rounded-md bg-sunken px-1.5 text-xs font-bold text-text-muted">
+                —
+              </span>
+            ) : (
+              <span
+                className={cx(
+                  "inline-flex h-[22px] items-center gap-1 whitespace-nowrap rounded-md px-1.5 text-xs font-bold",
+                  deltaClass,
+                )}
+              >
+                <TrendingUp aria-hidden="true" size={14} className={todayNet < 0 ? "-scale-y-100" : undefined} />
+                {balanceVisible ? formatSignedMoneyLocalized(todayNet, { language }) : MASK}
+              </span>
+            )}
+            <span>{t("v2MainCashbox.balance.todayNet")}</span>
+          </span>
         </div>
-
-        {/* ════ RIGHT COLUMN ════ */}
-        <div className="flex flex-col gap-4 lg:col-span-7 xl:col-span-8">
-
-          {/* ── Income / Expense summary cards ── */}
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-            <div className="rounded-2xl p-4 bg-linear-to-br from-emerald-500 to-emerald-700 shadow-lg border border-white/10 flex flex-col justify-between min-h-25">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white/70 uppercase tracking-wider">{t("today")}</span>
-                <TrendingUp size={16} className="text-white/50" />
+        <div className="flex min-w-0 flex-[1_1_260px] flex-col gap-1">
+          {balanceLoading ? (
+            <SkeletonLines lines={3} />
+          ) : (
+            <>
+              <div
+                role="img"
+                aria-label={t("v2MainCashbox.balance.split", {
+                  cash: money(cashBalance),
+                  cashShare: percent(cashShare),
+                  card: money(transferBalance),
+                  cardShare: percent(cardShare),
+                })}
+                className="flex h-2.5 gap-0.5 overflow-hidden rounded-[4px] bg-sunken"
+              >
+                {splitTotal > 0
+                  ? splitRows
+                      .filter((row) => row.share > 0)
+                      .map((row) => (
+                        <span
+                          key={row.key}
+                          className={cx("block h-full min-w-1 first:rounded-l-[4px] last:rounded-r-[4px]", row.color)}
+                          style={{ flex: `${row.share} 1 0` }}
+                        />
+                      ))
+                  : null}
               </div>
-              <div>
-                <p className="text-lg font-black text-white tabular-nums leading-none">
-                  +{fmt(filteredIncome)}
-                </p>
-                <p className="mt-1 text-[11px] text-white/70">
-                  -{fmt(filteredExpense)} {t("currency")}
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-2xl p-4 bg-linear-to-br from-main to-primarydark shadow-lg border border-white/10 flex flex-col justify-between min-h-25">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white/70 uppercase tracking-wider">{t("thisWeek")}</span>
-                <TrendingUp size={16} className="text-white/50" />
-              </div>
-              <div>
-                <p className="text-lg font-black text-white tabular-nums leading-none">
-                  +{fmt(weeklyStats.income)}
-                </p>
-                <p className="mt-1 text-[11px] text-white/70">
-                  -{fmt(weeklyStats.expense)} {t("currency")}
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-2xl p-4 bg-linear-to-br from-rose-500 to-fuchsia-600 shadow-lg border border-white/10 flex flex-col justify-between min-h-25">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white/70 uppercase tracking-wider">{t("thisMonth")}</span>
-                <TrendingDown size={16} className="text-white/50" />
-              </div>
-              <div>
-                <p className="text-lg font-black text-white tabular-nums leading-none">
-                  +{fmt(monthlyStats.income)}
-                </p>
-                <p className="mt-1 text-[11px] text-white/70">
-                  -{fmt(monthlyStats.expense)} {t("currency")}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Date filter ── */}
-          <div className="bg-primary dark:bg-primarydark rounded-2xl border border-gray-200 dark:border-glass-border overflow-hidden">
-            <div className="px-5 py-3 border-b border-gray-100 dark:border-glass-border flex items-center justify-between">
-              <div>
-                <p className="text-sm font-bold text-gray-900 dark:text-white">
-                  {t("transactions")}
-                </p>
-                <p className="text-[11px] text-gray-400 dark:text-white/40">
-                  {t("filterByDate")}
-                </p>
-              </div>
-              {(draftHistoryFrom || draftHistoryTo) && (
-                <button
-                  onClick={() => {
-                    setDraftHistoryFrom("");
-                    setDraftHistoryTo("");
-                  }}
-                  className="text-xs text-rose-400 hover:text-rose-300 font-medium transition-colors"
-                >
-                  {t("clear")}
-                </button>
-              )}
-            </div>
-            <div className="p-4">
-              <DateRangePicker
-                value={{
-                  startDate: draftHistoryFrom ? parseIsoDate(draftHistoryFrom) : null,
-                  endDate: draftHistoryTo ? parseIsoDate(draftHistoryTo) : null,
-                }}
-                onChange={({ startDate, endDate }) => {
-                  setDraftHistoryFrom(startDate ? toIsoDate(startDate) : "");
-                  setDraftHistoryTo(endDate ? toIsoDate(endDate) : "");
-                }}
-                placeholder={`${t("startDate")} → ${t("endDate")}`}
-                className="w-full"
-              />
-            </div>
-            {((draftHistoryFrom && !draftHistoryTo) || (!draftHistoryFrom && draftHistoryTo)) && (
-              <p className="px-4 pb-4 text-xs text-gray-500 dark:text-white/45">
-                {t("dateRangeRequired")}
-              </p>
-            )}
-          </div>
-
-          {/* ── Payment history table ── */}
-          <div className="bg-primary dark:bg-primarydark rounded-2xl border border-gray-200 dark:border-glass-border overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-glass-border">
-              <p className="text-sm font-bold text-gray-900 dark:text-white">
-                {t("paymentHistoryTitle")}
-              </p>
-              {historyRows.length > 0 && (
-                <span className="text-xs bg-main/15 text-main font-bold px-2.5 py-1 rounded-full">
-                  {t("countLabel", { count: historyRows.length })}
-                </span>
-              )}
-            </div>
-            <PaymentHistoryList
-              data={historyRows}
-              isLoading={historyLoading}
-              withContainer={false}
-            />
-
-            {historyFetching && historyRows.length > 0 && (
-              <div className="px-5 pb-4 text-xs text-gray-500 dark:text-white/40">
-                {t("transactionsUpdating")}
-              </div>
-            )}
-          </div>
+              <ul className="m-0 flex list-none flex-col p-0">
+                {splitRows.map((row) => {
+                  const Icon = row.icon;
+                  return (
+                    <li
+                      key={row.key}
+                      className="grid min-h-10 grid-cols-[12px_minmax(0,1fr)_auto_52px] items-center gap-2.5 border-t border-border py-1.5 text-sm first:border-t-0"
+                    >
+                      <span aria-hidden="true" className={cx("size-3 rounded-[3px]", row.color)} />
+                      <span className="inline-flex min-w-0 items-center gap-2 text-text">
+                        <Icon aria-hidden="true" size={16} className="shrink-0 text-text-muted" />
+                        <span className="truncate">{row.label}</span>
+                      </span>
+                      <span className="whitespace-nowrap font-semibold text-text">{money(row.value)}</span>
+                      <span className="text-right text-[13px] text-text-muted">{percent(row.share)}</span>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
         </div>
       </div>
-
-      {/* ════ POPUPS ════ */}
-
-      {/* Pay Salary */}
-      <PopupSelect
-        isOpen={isSalaryPopupOpen}
-        onClose={() => setIsSalaryPopupOpen(false)}
-        data={usersLoading ? [] : employees}
-        title={t("selectEmployee")}
-        description={t("forSalaryPayment")}
-        icon={<User size={20} />}
-        keyExtractor={(emp: any) => emp.id}
-        searchKeys={["name"]}
-        labelKey="name"
-        secondaryLabelKey="role"
-        onSelect={(employee: any) => {
-          setSelectedSalaryEmployee(employee);
-          setIsSalaryPopupOpen(false);
-        }}
-        immediateSelection
-        placeholder={t("searchPlaceholder")}
-        selectLabel={t("selectLabel")}
-        cancelLabel={t("cancelShort")}
-        renderItem={(emp: any, isSelected: boolean) => (
-          <div className="flex items-center gap-3 w-full">
-            <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 transition-colors ${
-                isSelected ? "bg-white/20 text-white" : "bg-amber-500/15 text-amber-500"
-              }`}
-            >
-              {emp.name?.charAt(0)?.toUpperCase() ?? <User size={16} />}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className={`font-semibold text-sm truncate ${isSelected ? "text-white" : "text-gray-900 dark:text-white"}`}>
-                {emp.name}
-              </p>
-              {emp.role && (
-                <p className={`text-xs mt-0.5 capitalize ${isSelected ? "text-white/60" : "text-main"}`}>
-                  {emp.role}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
+      <MainCashboxBalanceChart
+        points={balancePoints}
+        view={balanceView}
+        hidden={!balanceVisible}
+        isLoading={Boolean(mainCashboxQuery.isLoading)}
+        isError={Boolean(mainCashboxQuery.isError)}
+        error={mainCashboxQuery.error}
+        onRetry={() => void mainCashboxQuery.refetch?.()}
       />
+    </Card>
+  );
 
-      <SalaryPaymentPopup
-        employee={selectedSalaryEmployee}
-        isOpen={Boolean(selectedSalaryEmployee)}
-        onClose={() => setSelectedSalaryEmployee(null)}
-        cardSources={salaryCardSources}
-      />
+  // ── Tezkor amallar ──────────────────────────────────────────────────────────
+  const actionCopy: Record<Exclude<ActionLabel, "paySalary">, { icon: LucideIcon; title: string; hint: string }> = {
+    receiveFromBranchManager: isManagerRole
+      ? {
+          icon: Truck,
+          title: t("v2MainCashbox.actions.receiveCourier"),
+          hint: t("v2MainCashbox.actions.receiveCourierHint"),
+        }
+      : { icon: ArrowDownLeft, title: t("v2MainCashbox.actions.receive"), hint: t("v2MainCashbox.actions.receiveHint") },
+    payToMarket: { icon: ArrowUpRight, title: t("v2MainCashbox.actions.payMarket"), hint: t("v2MainCashbox.actions.payMarketHint") },
+    spendFromCashbox: { icon: Minus, title: t("v2MainCashbox.actions.spend"), hint: t("v2MainCashbox.actions.spendHint") },
+    fillCashbox: { icon: Plus, title: t("v2MainCashbox.actions.fill"), hint: t("v2MainCashbox.actions.fillHint") },
+  };
 
-      {/* Receive from branch manager / HQ courier (superadmin/admin) or courier (manager) */}
-      <PopupSelect<ReceiveOption>
-        isOpen={isBranchManagerPopupOpen}
-        onClose={() => setIsBranchManagerPopupOpen(false)}
-        data={isReceiveLoading ? [] : receiveOptions}
-        title={t("toBeReceived")}
-        description={isReceiveLoading ? t("loadingLabel") : receiveDescription}
-        icon={receiveIcon}
-        // `${kind}:${id}` — filial 15 va kuryer 15 aralashib ketmasin.
-        keyExtractor={(c) => c.key}
-        searchKeys={RECEIVE_SEARCH_KEYS}
-        onSelect={handleBranchManagerSelect}
-        placeholder={t("searchPlaceholder")}
-        selectLabel={t("selectLabel")}
-        cancelLabel={t("cancelShort")}
-        renderItem={(c, isSelected) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                  isSelected ? "bg-white/20" : "bg-orange-500/10"
-                }`}
+  const shiftStatus =
+    isStaffRole && isShiftStateKnown ? (
+      <div className="mt-auto flex items-center gap-2.5 rounded-xl bg-sunken px-3.5 py-3">
+        <Clock aria-hidden="true" size={18} className="shrink-0 text-text-subtle" />
+        <span className="flex min-w-0 flex-col">
+          <span className="text-sm font-semibold text-text">
+            {openShiftId
+              ? openShiftOpenedAt
+                ? t("v2MainCashbox.actions.shiftOpen", {
+                    time: formatDateTimeLocalized(openShiftOpenedAt, { language }),
+                  })
+                : t("v2MainCashbox.actions.shiftOpenNoTime")
+              : t("v2MainCashbox.actions.shiftClosed")}
+          </span>
+          {openShiftId && currentUserName ? (
+            <span className="text-xs text-text-muted">
+              {t("v2MainCashbox.actions.shiftOpenedBy", { name: currentUserName })}
+            </span>
+          ) : null}
+        </span>
+      </div>
+    ) : null;
+
+  const actionsCard = (
+    <Card
+      divided={false}
+      title={t("v2MainCashbox.actions.title")}
+      description={t("v2MainCashbox.actions.subtitle")}
+      bodyClassName="flex flex-1 flex-col gap-4"
+      className="min-w-0"
+    >
+      <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr))]">
+        {visibleActions.map((label) => {
+          if (label === "paySalary") return null;
+          const copy = actionCopy[label];
+          const Icon = copy.icon;
+          return (
+            <button key={label} type="button" onClick={() => handleActionClick(label)} className={ACTION_TILE}>
+              <span
+                aria-hidden="true"
+                className="inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-sunken text-text-muted"
               >
-                {c.kind === "courier" ? (
-                  <Truck
-                    size={16}
-                    className={isSelected ? "text-white" : "text-orange-400"}
-                  />
-                ) : (
-                  <Landmark
-                    size={16}
-                    className={isSelected ? "text-white" : "text-orange-400"}
-                  />
-                )}
-              </div>
-              <div>
-                <p
-                  className={`font-medium text-sm ${
-                    isSelected ? "text-white" : "text-gray-800 dark:text-white"
-                  }`}
-                >
-                  {c.name}
-                  {c.is_inactive ? <InactiveBadge isSelected={isSelected} /> : null}
-                </p>
-                <p
-                  className={`text-xs ${
-                    isSelected ? "text-white/70" : "text-gray-500 dark:text-white/75"
-                  }`}
-                >
-                  {c.subtitle}
-                </p>
-              </div>
+                <Icon size={18} />
+              </span>
+              <span className="flex min-w-0 flex-col gap-0.5">
+                <span>{copy.title}</span>
+                <span className="text-xs font-normal text-text-muted">{copy.hint}</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+      {shiftStatus}
+    </Card>
+  );
+
+  // ── Davrlar ─────────────────────────────────────────────────────────────────
+  const periodLabel = (key: PeriodKey) => t(`v2MainCashbox.periods.${key}`);
+  const flowLabels = { income: t("v2MainCashbox.periods.income"), expense: t("v2MainCashbox.periods.expense") };
+  const netMeta = (stats: PeriodStats) => {
+    const net = stats.income - stats.expense;
+    if (stats.income > 0 && net >= 0) {
+      return t("v2MainCashbox.periods.netFlowKept", {
+        percent: formatPercentLocalized(Math.round((net / stats.income) * 100), { language, fractionDigits: 0 }),
+      });
+    }
+    return t("v2MainCashbox.periods.netFlow");
+  };
+  const periodSummary = (key: PeriodKey, stats: PeriodStats) =>
+    t("v2MainCashbox.periods.summary", {
+      period: periodLabel(key),
+      income: formatMoneyLocalized(stats.income, { language }),
+      expense: formatMoneyLocalized(stats.expense, { language }),
+      net: formatSignedMoneyLocalized(stats.income - stats.expense, { language }),
+    });
+  const netValue = (stats: PeriodStats) =>
+    historyIsError ? "—" : formatSignedMoneyLocalized(stats.income - stats.expense, { language, withCurrency: false });
+
+  const periodCards = (
+    <section
+      aria-label={t("v2MainCashbox.periods.label")}
+      className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr))] max-md:hidden"
+    >
+      {PERIOD_KEYS.map((key) => {
+        const stats = periods[key];
+        return (
+          <div
+            key={key}
+            className="flex min-w-0 flex-col gap-1.5 rounded-[14px] border border-border bg-surface px-5 py-4"
+          >
+            <div className="flex min-h-9 items-center justify-between gap-2">
+              <span className="min-w-0 text-[13px] font-semibold text-text-muted">{periodLabel(key)}</span>
+              <span className="whitespace-nowrap text-xs text-text-subtle">{formatShortRange(stats.from, stats.to)}</span>
             </div>
-            <span
-              className={`text-sm font-semibold ${
-                c.amount < 0
-                  ? "text-rose-400"
-                  : isSelected
-                    ? "text-white/85"
-                    : "text-gray-500 dark:text-white/80"
-              }`}
-            >
-              {c.amount < 0 ? "-" : ""}
-              {fmt(Math.abs(c.amount))} {t("currency")}
-            </span>
+            {historyLoading ? (
+              <>
+                <Skeleton shape="line" width={160} height={32} />
+                <SkeletonLines lines={3} />
+              </>
+            ) : (
+              <>
+                <KpiValue value={netValue(stats)} unit={historyIsError ? undefined : currency} />
+                {historyIsError ? null : (
+                  <>
+                    <span className="text-xs text-text-muted">{netMeta(stats)}</span>
+                    <div role="img" aria-label={periodSummary(key, stats)} className="mt-2">
+                      <FlowLines totals={stats} language={language} labels={flowLabels} />
+                    </div>
+                  </>
+                )}
+              </>
+            )}
           </div>
+        );
+      })}
+    </section>
+  );
+
+  const mobileStats = periods[mobilePeriod];
+  const mobilePeriodCard = (
+    <div className="md:hidden">
+      <Card
+        divided={false}
+        title={t("v2MainCashbox.periods.mobileTitle")}
+        description={t("v2MainCashbox.periods.mobileSubtitle", {
+          period: periodLabel(mobilePeriod),
+          range: formatShortRange(mobileStats.from, mobileStats.to),
+        })}
+        bodyClassName="flex flex-col gap-3.5"
+      >
+        <SegmentedControl<PeriodKey>
+          ariaLabel={t("v2MainCashbox.periods.segment")}
+          value={mobilePeriod}
+          onValueChange={setMobilePeriod}
+          fullWidth
+          options={PERIOD_KEYS.map((key) => ({ value: key, label: periodLabel(key) }))}
+        />
+        {historyLoading ? (
+          <SkeletonLines lines={3} />
+        ) : (
+          <>
+            <div className="flex items-baseline justify-between gap-2">
+              <KpiValue value={netValue(mobileStats)} unit={historyIsError ? undefined : currency} />
+              <span className="text-xs text-text-muted">{t("v2MainCashbox.periods.netChange")}</span>
+            </div>
+            {historyIsError ? null : (
+              <div role="img" aria-label={periodSummary(mobilePeriod, mobileStats)}>
+                <FlowLines totals={mobileStats} language={language} labels={flowLabels} />
+              </div>
+            )}
+          </>
         )}
+      </Card>
+    </div>
+  );
+
+  // ── Pul qayerdan keldi, qayerga ketdi ───────────────────────────────────────
+  const sourcesCard = (
+    <Card
+      divided={false}
+      title={t("v2MainCashbox.sources.title")}
+      description={t("v2MainCashbox.sources.subtitle", {
+        range: formatShortRange(periods.month.from, periods.month.to),
+      })}
+      bodyClassName="flex flex-col gap-4"
+    >
+      {historyLoading ? (
+        <SkeletonLines lines={6} />
+      ) : historyIsError ? (
+        <ErrorState
+          error={historyQuery.error}
+          title={t("v2MainCashbox.sources.loadError")}
+          onRetry={() => void historyQuery.refetch?.()}
+        />
+      ) : (
+        <>
+          <div className="flex flex-wrap gap-x-12 gap-y-6">
+            {(
+              [
+                { key: "income", label: t("v2MainCashbox.sources.income"), total: periods.month.income, buckets: incomeSources, empty: t("v2MainCashbox.sources.noIncome") },
+                { key: "expense", label: t("v2MainCashbox.sources.expense"), total: -periods.month.expense, buckets: expenseSources, empty: t("v2MainCashbox.sources.noExpense") },
+              ] as const
+            ).map((column) => (
+              <div key={column.key} className="flex min-w-0 flex-[1_1_300px] flex-col gap-3.5">
+                <div className="flex items-baseline justify-between gap-2 border-b border-border pb-2.5">
+                  <h3 className="m-0 inline-flex items-center gap-2 text-sm font-semibold text-text">
+                    <span
+                      aria-hidden="true"
+                      className={cx("size-2.5 rounded-[3px]", column.key === "income" ? "bg-chart-1" : "bg-chart-8")}
+                    />
+                    {column.label}
+                  </h3>
+                  <SignedAmount value={column.total} language={language} />
+                </div>
+                <SourceBars
+                  buckets={[...column.buckets]}
+                  tone={column.key}
+                  label={column.label}
+                  emptyText={column.empty}
+                  sourceLabel={sourceLabel}
+                  language={language}
+                />
+              </div>
+            ))}
+          </div>
+          <p className="m-0 flex items-start gap-2 text-xs text-text-subtle">
+            <Info aria-hidden="true" size={14} className="mt-px shrink-0" />
+            {t("v2MainCashbox.sources.note")}
+          </p>
+        </>
+      )}
+    </Card>
+  );
+
+  // ── Operatsiyalar tarixi ────────────────────────────────────────────────────
+  const historyCountText = t("v2MainCashbox.history.count", {
+    n: formatNumberLocalized(historyRows.length, { language }),
+  });
+  const historyRangeText = hasDateFilter
+    ? formatShortRange(draftHistoryFrom, draftHistoryTo)
+    : t("v2MainCashbox.history.allTime");
+  // Soni faqat ro'yxat yuklangach (yuklanish / xato paytida «0 ta operatsiya» deyilmaydi).
+  const historyDescription =
+    historyQuery.data && !historyIsError ? `${historyCountText} · ${historyRangeText}` : historyRangeText;
+  const dateFilter = (className?: string) => (
+    <DateRange
+      value={{ from: draftHistoryFrom, to: draftHistoryTo }}
+      onChange={({ from, to }) => setHistoryRange(from, to)}
+      aria-label={t("v2MainCashbox.history.dateFilter")}
+      className={className}
+    />
+  );
+  const clearButton = hasDateFilter ? (
+    <Button variant="link" size="sm" onClick={clearHistoryRange} className="max-md:min-h-11">
+      {t("v2MainCashbox.history.clearFilters")}
+    </Button>
+  ) : null;
+
+  const historyEmpty = hasDateFilter ? (
+    <EmptyState
+      icon={ListFilter}
+      title={t("v2MainCashbox.history.empty")}
+      description={t("v2MainCashbox.history.filteredEmptyDescription")}
+      action={
+        <Button variant="secondary" onClick={clearHistoryRange}>
+          {t("v2MainCashbox.history.clearFilters")}
+        </Button>
+      }
+    />
+  ) : (
+    <EmptyState
+      icon={Inbox}
+      title={t("v2MainCashbox.history.empty")}
+      description={t("v2MainCashbox.history.emptyDescription")}
+    />
+  );
+
+  const historyCard = (
+    <Card
+      ref={historyCardRef}
+      padding="none"
+      title={t("v2MainCashbox.history.title")}
+      description={historyDescription}
+      actions={
+        <div className="flex flex-wrap items-center gap-2 max-md:hidden">
+          {dateFilter("w-[260px]")}
+          {clearButton}
+        </div>
+      }
+      footer={
+        historyRows.length > 0 && !historyIsError ? (
+          <Pagination
+            page={currentPage}
+            pageSize={historyPageSize}
+            total={historyRows.length}
+            onPageChange={(next) => {
+              setHistoryPage(next);
+              scrollShellContentToTop(historyCardRef.current);
+            }}
+            onPageSizeChange={(size) => {
+              setHistoryPageSize(size);
+              setHistoryPage(1);
+              scrollShellContentToTop(historyCardRef.current);
+            }}
+            pageSizeOptions={HISTORY_PAGE_SIZES}
+            summary={(range) => t("v2Common.paginationOperations", range)}
+            className="w-full"
+          />
+        ) : undefined
+      }
+    >
+      <div className="flex flex-col gap-2 border-b border-border px-4 py-3 md:hidden">
+        {dateFilter("w-full")}
+        {clearButton ? <div>{clearButton}</div> : null}
+      </div>
+      {historyFetching && historyRows.length > 0 ? (
+        <div role="status" className="flex items-center gap-2 border-b border-border bg-sunken px-5 py-2 max-md:px-4">
+          <span
+            aria-hidden="true"
+            className="size-3.5 animate-spin rounded-full border-2 border-border-strong border-t-transparent motion-reduce:animate-none"
+          />
+          <span className="text-xs text-text-muted">{t("v2MainCashbox.history.updating")}</span>
+        </div>
+      ) : null}
+      <QueryBoundary
+        query={{
+          data: historyQuery.data ? pageRows : undefined,
+          isLoading: historyLoading,
+          isError: historyIsError,
+          error: historyQuery.error,
+          refetch: historyQuery.refetch,
+          isFetching: historyFetching,
+        }}
+        loadingLabel={t("v2MainCashbox.history.loading")}
+        loading={
+          <SkeletonTable
+            framed={false}
+            rows={8}
+            columns={[
+              t("v2MainCashbox.history.columns.date"),
+              t("v2MainCashbox.history.columns.createdBy"),
+              t("v2MainCashbox.history.columns.source"),
+              t("v2MainCashbox.history.columns.operation"),
+              t("v2MainCashbox.history.columns.amount"),
+            ]}
+          />
+        }
+        empty={historyEmpty}
+        error={(queryError, retry) => (
+          <ErrorState error={queryError} title={t("v2MainCashbox.history.loadError")} onRetry={retry} />
+        )}
+      >
+        {(rows, { isRefetching }) => (
+          <DataTable
+            rows={rows}
+            columns={historyColumns}
+            getRowKey={(row, index) => String(row.id ?? index)}
+            label={t("v2MainCashbox.history.label")}
+            cardsLabel={t("v2MainCashbox.history.cardsLabel")}
+            onRowClick={(row) => setSelectedRow(row)}
+            renderCard={renderHistoryCard}
+            busy={isRefetching}
+          />
+        )}
+      </QueryBoundary>
+    </Card>
+  );
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+  const manualFormProps = {
+    sourceTypes: [
+      { id: "cash", name: t("v2MainCashbox.form.cash") },
+      { id: "click", name: t("v2MainCashbox.form.card") },
+    ],
+    typeLabel: t("v2MainCashbox.form.paymentType"),
+    typeRequiredMessage: t("v2MainCashbox.form.typeRequired"),
+    requireType: true,
+    requireComment: true,
+  };
+  const confirmCashboxLabel = isManagerRole && ownBranchName ? ownBranchName : t("v2MainCashbox.confirm.mainCashbox");
+
+  return (
+    <div className="flex flex-col gap-6 max-md:gap-4">
+      <PageHeader
+        back={() => navigate(-1)}
+        backLabel={t("v2MainCashbox.back")}
+        title={t("v2MainCashbox.title")}
+        description={headerDescription}
+        actions={
+          <>
+            <Button variant="secondary" leftIcon={Download} onClick={handleExportExcel}>
+              {t("v2MainCashbox.exportExcel")}
+            </Button>
+            {shiftAction}
+          </>
+        }
       />
 
-      {/* Pay to market */}
-      <PopupSelect
-        isOpen={isMarketPopupOpen}
-        onClose={() => setIsMarketPopupOpen(false)}
-        data={marketsLoading ? [] : markets}
-        title={t("toBeGiven")}
-        description={marketsLoading ? t("loadingLabel") : t("selectMarketDescription")}
-        icon={<Store size={20} />}
-        keyExtractor={(m: any) => m.id}
-        searchKeys={["name"]}
-        onSelect={handleMarketSelect}
-        placeholder={t("searchPlaceholder")}
-        selectLabel={t("selectLabel")}
-        cancelLabel={t("cancelShort")}
-        renderItem={(m: any, isSelected: boolean) => (
-          <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ${isSelected ? "bg-white/20 text-white" : "bg-blue-500/15 text-blue-500"}`}>
-                {m.name?.charAt(0)?.toUpperCase() ?? "?"}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className={`font-semibold text-sm truncate ${isSelected ? "text-white" : "text-gray-900 dark:text-white"}`}>
-                  {m.name}
-                  {m.is_inactive ? <InactiveBadge isSelected={isSelected} /> : null}
-                </p>
-                {m.role && (
-                  <p className={`text-xs mt-0.5 capitalize ${isSelected ? "text-white/60" : "text-blue-400"}`}>
-                    {m.role}
-                  </p>
-                )}
-              </div>
-            </div>
-            <span
-              className={`text-sm font-semibold ${
-                m.amount < 0
-                  ? "text-rose-400"
-                  : isSelected
-                    ? "text-white/85"
-                    : "text-gray-500 dark:text-white/80"
-              }`}
-            >
-              {m.amount < 0 ? "-" : ""}
-              {fmt(Math.abs(m.amount))} {t("currency")}
-            </span>
-          </div>
-        )}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        {balanceCard}
+        {actionsCard}
+      </div>
+
+      {periodCards}
+      {mobilePeriodCard}
+      {sourcesCard}
+      {historyCard}
+
+      {/* ════ Oynalar ════ */}
+
+      <SettlementPickerDialog
+        kind={pickerKind}
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onSelect={handlePickerSelect}
+        total={pickerKind === "receive" ? receiveTotal : undefined}
+        branchName={ownBranchName}
       />
 
-      {/* Spend from cashbox */}
       <CashboxFormPopup
         isOpen={isSpendPopupOpen}
         onClose={() => setIsSpendPopupOpen(false)}
-        title={t("spendFromCashbox")}
-        description={t("spendOperation")}
-        icon={<Minus size={20} />}
-        accentColor="from-rose-500 to-rose-600"
-        submitLabel={t("spendLabel")}
-        submitIcon={<Minus size={16} />}
-        typeLabel={t("operationType")}
-        typePlaceholder={t("paymentTypePlaceholder")}
-        sourceTypes={[
-          { id: "cash", name: t("cash") },
-          { id: "click", name: t("clickPayment") },
-        ]}
-        requireType
-        requireComment
+        variant="spend"
+        title={t("v2MainCashbox.form.spendTitle")}
+        description={t("v2MainCashbox.form.spendSubtitle")}
+        submitLabel={t("v2MainCashbox.form.spendSubmit")}
+        commentPlaceholder={t("v2MainCashbox.form.spendPlaceholder")}
+        commentRequiredMessage={t("v2MainCashbox.form.spendCommentRequired")}
+        confirm={{ title: t("v2MainCashbox.confirm.spendTitle"), cashboxLabel: confirmCashboxLabel }}
         isLoading={cashboxSpand.isPending}
         onSubmit={handleSpend}
+        {...manualFormProps}
       />
 
-      {/* Refill cashbox */}
       <CashboxFormPopup
         isOpen={isRefillPopupOpen}
         onClose={() => setIsRefillPopupOpen(false)}
-        title={t("fillCashbox")}
-        description={t("incomeOperation")}
-        icon={<Plus size={20} />}
-        accentColor="from-emerald-500 to-teal-500"
-        submitLabel={t("incomeLabel")}
-        submitIcon={<Plus size={16} />}
-        typeLabel={t("operationType")}
-        typePlaceholder={t("paymentTypePlaceholder")}
-        sourceTypes={[
-          { id: "cash", name: t("cash") },
-          { id: "click", name: t("clickPayment") },
-        ]}
-        requireType
-        requireComment
+        variant="fill"
+        title={t("v2MainCashbox.form.fillTitle")}
+        description={t("v2MainCashbox.form.fillSubtitle")}
+        submitLabel={t("v2MainCashbox.form.fillSubmit")}
+        commentPlaceholder={t("v2MainCashbox.form.fillPlaceholder")}
+        commentRequiredMessage={t("v2MainCashbox.form.fillCommentRequired")}
+        confirm={{ title: t("v2MainCashbox.confirm.fillTitle"), cashboxLabel: confirmCashboxLabel }}
         isLoading={cashboxFill.isPending}
         onSubmit={handleRefill}
+        {...manualFormProps}
       />
 
       <CloseShiftPopup
@@ -1018,6 +1485,39 @@ const MainCashbox = () => {
         onClose={() => setClosingShiftId(null)}
         isLoading={closeShift.isPending}
         onConfirm={handleCloseShift}
+        openedAt={openShiftOpenedAt}
+        openedByName={currentUserName}
+        cashboxTotal={totalBalance}
+      />
+
+      <FinanceHistoryDetailPopup row={selectedRow} onClose={() => setSelectedRow(null)} />
+
+      {/* «Maosh to'lash» yashirin (UNAVAILABLE_ACTIONS) — oqim o'chirilmagan, endpoint paydo bo'lguncha yetib bo'lmaydi. */}
+      <PopupSelect
+        isOpen={isSalaryPopupOpen}
+        onClose={() => setIsSalaryPopupOpen(false)}
+        data={employees}
+        title={t("selectEmployee")}
+        description={t("forSalaryPayment")}
+        keyExtractor={(emp) => emp.id}
+        searchKeys={["name"]}
+        labelKey="name"
+        secondaryLabelKey="role"
+        onSelect={(employee) => {
+          setSelectedSalaryEmployee(employee);
+          setIsSalaryPopupOpen(false);
+        }}
+        immediateSelection
+        placeholder={t("searchPlaceholder")}
+        selectLabel={t("selectLabel")}
+        cancelLabel={t("cancelShort")}
+      />
+
+      <SalaryPaymentPopup
+        employee={selectedSalaryEmployee}
+        isOpen={Boolean(selectedSalaryEmployee)}
+        onClose={() => setSelectedSalaryEmployee(null)}
+        cardSources={salaryCardSources}
       />
     </div>
   );

@@ -82,11 +82,18 @@ describe("UserDetailWidget — market Telegram tokeni (GvL6ZFAd)", () => {
     expect(value).toHaveTextContent("••••••••••••••••");
     expect(value).toHaveTextContent("Token yashirilgan");
     expect(tokenCalls()).toHaveLength(0);
-    expect(screen.getByText(/Market Telegram guruhiga botni qo'shib, shu tokenni yuborsin/)).toBeInTheDocument();
+    // Dizayn v2 kartasi (maket `superadmin-users-detail`): izoh maketdagi to'liq matn.
+    expect(
+      screen.getByText(
+        "Market Telegram guruhiga botni qo'shib, shu tokenni yuborsin. Token — maxfiy kalit, uni faqat shu marketga bering.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Ko'rsatish" })).toHaveAttribute("aria-pressed", "false");
 
     await user.click(screen.getByRole("button", { name: "Ko'rsatish" }));
     await waitFor(() => expect(screen.getByTestId("telegram-token-value")).toHaveTextContent(TOKEN));
-    expect(screen.getByRole("button", { name: "Yashirish" })).toBeInTheDocument();
+    // Maketdagidek `aria-pressed` — ochiq holat.
+    expect(screen.getByRole("button", { name: "Yashirish" })).toHaveAttribute("aria-pressed", "true");
 
     await user.click(screen.getByRole("button", { name: "Nusxalash" }));
     expect(writeText).toHaveBeenCalledWith(TOKEN);
@@ -144,6 +151,7 @@ describe("UserDetailWidget — market Telegram tokeni (GvL6ZFAd)", () => {
     await user.click(screen.getByRole("button", { name: "Ko'rsatish" }));
 
     expect(await screen.findByText("Bu marketda Telegram token hali yo'q")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Telegram token" })).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Nusxalash" })).not.toBeInTheDocument();
   });
 

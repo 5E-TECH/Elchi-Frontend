@@ -44,8 +44,6 @@ vi.mock("../../entities/orders", () => ({
   }),
 }));
 
-vi.mock("../../widgets/dashboard-performance-chart/ui/PerformanceChart", () => ({ default: () => null }));
-
 vi.mock("../../entities/settings", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../entities/settings")>()),
   useSettings: () => ({ data: undefined }),

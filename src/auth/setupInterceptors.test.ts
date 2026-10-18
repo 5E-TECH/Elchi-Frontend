@@ -6,7 +6,7 @@ const mocks = vi.hoisted(() => ({
   getAccessToken: vi.fn<() => string | null>(),
   getSessionMetadata: vi.fn(),
   refreshAccessToken: vi.fn<() => Promise<string>>(),
-  logoutAndRedirect: vi.fn<() => Promise<void>>(),
+  logoutAndRedirect: vi.fn<(options?: { reason?: "sessionExpired" }) => Promise<void>>(),
 }));
 
 vi.mock("./tokenStorage", () => ({
@@ -72,6 +72,19 @@ describe("setupAuthInterceptors", () => {
       expect(config.headers.Authorization).toBe("Bearer tok123");
     });
 
+    it("an expired refresh token rejects the request and logs out with the sessionExpired reason", async () => {
+      mocks.getAccessToken.mockReturnValue("tok123");
+      mocks.getSessionMetadata.mockReturnValue({
+        accessTokenExpiresAt: null,
+        refreshTokenExpiresAt: Date.now() - 1_000,
+        refreshTokenWarnAt: null,
+      });
+      const { runRequest } = wireInterceptors();
+
+      await expect(runRequest({ headers: {} })).rejects.toThrow("Refresh token expired");
+      expect(mocks.logoutAndRedirect).toHaveBeenCalledWith({ reason: "sessionExpired" });
+    });
+
     it("does not attach an Authorization header when there is no token", async () => {
       mocks.getAccessToken.mockReturnValue(null);
       const { runRequest } = wireInterceptors();
@@ -132,6 +145,26 @@ describe("setupAuthInterceptors", () => {
       ).rejects.toThrow("refresh failed");
 
       expect(mocks.logoutAndRedirect).toHaveBeenCalledTimes(1);
+      // Login sahifasida «Sessiya tugadi» ekrani chiqsin (dizayn v2 common-session-expired).
+      expect(mocks.logoutAndRedirect).toHaveBeenCalledWith({ reason: "sessionExpired" });
+      expect(api).not.toHaveBeenCalled();
+    });
+
+    it("logs out with the sessionExpired reason when the refresh token has already expired (response path)", async () => {
+      mocks.getAccessToken.mockReturnValue("stale");
+      mocks.getSessionMetadata.mockReturnValue({
+        accessTokenExpiresAt: null,
+        refreshTokenExpiresAt: Date.now() - 1_000,
+        refreshTokenWarnAt: null,
+      });
+      const { api, runResponseError } = wireInterceptors();
+
+      await expect(
+        runResponseError({ response: { status: 401 }, config: { url: "/orders", headers: {} } }),
+      ).rejects.toThrow("Refresh token expired");
+
+      expect(mocks.refreshAccessToken).not.toHaveBeenCalled();
+      expect(mocks.logoutAndRedirect).toHaveBeenCalledWith({ reason: "sessionExpired" });
       expect(api).not.toHaveBeenCalled();
     });
 

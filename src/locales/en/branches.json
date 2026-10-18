@@ -9,32 +9,24 @@
   },
   "actions": {
     "save": "Save",
-    "update": "Update",
     "edit": "Edit",
     "delete": "Delete",
     "details": "Details"
   },
   "page": {
-    "title": "Branches",
-    "description": "Manage the branch list and statuses"
+    "title": "Branches"
   },
   "detail": {
     "notFound": "Branch not found",
-    "description": "Manage branch information, employees, and settings in one place.",
     "location": "Location",
     "employees": "Employees",
-    "assignedUsers": "users assigned to this branch",
-    "createdDate": "Created date",
-    "createdHint": "when the branch was added to the system",
-    "branchAndEmployees": "Branch and employees"
+    "createdDate": "Created date"
   },
   "employee": {
     "title": "Branch employees",
-    "description": "Assigned employees and their positions.",
     "employee": "Employee",
     "position": "Position",
     "joinedDate": "Joined date",
-    "notFound": "No employees found",
     "add": "Add employee",
     "addDescription": "Assign a user to this branch.",
     "addAction": "Add",
@@ -42,7 +34,6 @@
     "user": "User",
     "selectUser": "Select user",
     "remove": "Remove",
-    "removeConfirm": "Remove this employee from the branch?",
     "removed": "Employee removed",
     "removeError": "Could not remove the employee",
     "addError": "Could not add the employee"
@@ -66,23 +57,16 @@
     "action": "Move",
     "success": "{{name}} was moved to the “{{branch}}” branch",
     "checkFailed": "Could not check — please try again shortly",
-    "retry": "Check again"
-  },
-  "settings": {
-    "title": "Branch settings",
-    "description": "Manage branch-specific key-value settings here.",
-    "key": "Key",
-    "value": "Value",
-    "add": "Add setting",
-    "edit": "Edit setting",
-    "formDescription": "Enter the key and value for this branch.",
-    "created": "Setting added",
-    "updated": "Setting updated",
-    "deleted": "Setting deleted",
-    "deleteConfirm": "Delete this setting?",
-    "notFound": "No settings found",
-    "keyRequired": "Enter key name",
-    "valueRequired": "Enter value"
+    "retry": "Check again",
+    "openButtonFor": "Move {{name}} to another branch",
+    "courierRole": "Courier",
+    "ordersCount": "{{value}}",
+    "searchLabel": "Search branches",
+    "searchPlaceholder": "Search by branch name",
+    "noManagerHint": "No manager — the courier cannot be moved here",
+    "noTargets": "No matching branch",
+    "submitTo": "Move to {{branch}}",
+    "transferring": "Moving…"
   },
   "delete": {
     "confirm": "Delete this branch?",
@@ -98,21 +82,17 @@
     "region": "Region",
     "district": "District",
     "address": "Address",
-    "status": "Status",
-    "manager": "Responsible employee"
+    "status": "Status"
   },
   "placeholders": {
     "name": "Enter branch name",
     "parent": "Select parent branch",
     "parentForHq": "HQ does not need a parent branch",
-    "type": "Select branch type",
     "code": "Example: TSH-CHL",
     "phone": "90 123 45 67",
     "region": "Select region",
     "district": "Select district",
-    "address": "Enter branch address",
-    "status": "Select status",
-    "manager": "Select responsible employee"
+    "address": "Enter branch address"
   },
   "branchTypes": {
     "HQ": "HQ",
@@ -152,10 +132,7 @@
     "tableView": "Table",
     "cardView": "Cards",
     "treeView": "Tree",
-    "notFound": "No branches found",
-    "emptyCount": "0 branches",
-    "paginationSummary": "Showing {{from}}-{{to}} of {{total}}",
-    "employeeCount": "{{count}} employees"
+    "notFound": "No branches found"
   },
   "table": {
     "name": "Name",
@@ -166,13 +143,6 @@
   },
   "tree": {
     "level": "Level {{level}}",
-    "expand": "Expand child branches",
-    "collapse": "Collapse child branches",
-    "childCount": "{{count}} child branches",
-    "showChildren": "Show",
-    "hideChildren": "Hide",
-    "previousPage": "Previous branches",
-    "nextPage": "Next branches",
     "regionGroup": "Region",
     "districtGroup": "City/District"
   },
@@ -188,8 +158,84 @@
     "region": "Select region",
     "district": "Select district",
     "address": "Enter address",
-    "status": "Select status",
-    "manager": "Select responsible employee",
     "completeForm": "Complete the form"
+  },
+  "v2": {
+    "list": {
+      "label": "Branch list",
+      "cardsLabel": "Branch cards",
+      "viewLabel": "View",
+      "total_one": "{{value}} branch in total",
+      "total_other": "{{value}} branches in total",
+      "pagination": "{{from}}–{{to}} of {{total}} branches",
+      "searchLabel": "Search branches",
+      "loading": "Loading branches",
+      "loadFailed": "Couldn't load branches",
+      "emptyDescription": "Add the first branch with the “New Branch” button.",
+      "filteredEmpty": "No matching branches",
+      "filteredEmptyDescription": "Try a different search or status filter.",
+      "clearFilters": "Clear filters",
+      "employees": "{{value}}",
+      "employeesLong_one": "{{value}} employee",
+      "employeesLong_other": "{{value}} employees",
+      "rowActions": "{{name}} actions",
+      "detailsFor": "Details — {{name}}"
+    },
+    "tree": {
+      "label": "Branch tree",
+      "expand": "{{name}}: expand child branches",
+      "collapse": "{{name}}: collapse child branches",
+      "childCount_one": "{{value}} child branch",
+      "childCount_other": "{{value}} child branches",
+      "groupCount_one": "{{value}} branch",
+      "groupCount_other": "{{value}} branches"
+    },
+    "columns": {
+      "branch": "Branch",
+      "type": "Type",
+      "areaAddress": "Region and address",
+      "employees": "Employees",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "delete": {
+      "description": "{{name}} will be removed from the branch list."
+    },
+    "form": {
+      "hqTypeLocked": "The HQ type can't be changed",
+      "parentHint": "A pickup point can't be a parent branch",
+      "parentEmpty": "No branch found"
+    },
+    "detail": {
+      "fallbackTitle": "Branch",
+      "parentLabel": "Parent branch:",
+      "infoLabel": "Branch details",
+      "employeesHint": "assigned to the branch",
+      "createdHint": "added to the system",
+      "loading": "Loading branch",
+      "loadFailed": "Couldn't load the branch",
+      "notFoundHint": "The branch was deleted or the link is wrong. Go back to the branch list."
+    },
+    "employees": {
+      "description": "Assigned employees and their positions",
+      "loading": "Loading employees",
+      "loadFailed": "Couldn't load employees",
+      "empty": "No employees assigned yet",
+      "emptyDescription": "Assign a manager, registrar or courier with the “Add employee” button.",
+      "removeLabel": "Remove {{name}} from the branch",
+      "removeTitle": "Remove {{name}} from the branch?"
+    },
+    "addEmployee": {
+      "description": "Assign a user to {{branch}}.",
+      "hint": "Only active managers, registrars and couriers are shown",
+      "listLabel": "Users",
+      "empty": "No user found",
+      "noOptions": "No active employees to assign"
+    },
+    "positions": {
+      "MANAGER": "Manager",
+      "REGISTRATOR": "Registrar",
+      "COURIER": "Courier"
+    }
   }
 }

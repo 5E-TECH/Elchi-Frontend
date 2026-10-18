@@ -73,6 +73,33 @@ describe("OrdersTable", () => {
     expect(headers[6]).toHaveClass("text-right");
   });
 
+  it("⭐ D-02: uzun mijoz / tuman / market matni kesiladi (`truncate` + eng ko'p kenglik), to'liq matn `title` da", () => {
+    const long = "Abdurahmonova Gulchehraxon Abdumalikovna Xolmatova";
+    renderWithProviders(
+      <OrdersTable
+        data={[
+          {
+            ...orders[0],
+            customer: { name: long, phone_number: "+998901112233" },
+            market: { name: "Juda uzun nomli market MChJ filial savdo" },
+            district: { name: "Mirzo Ulug'bek tumani", region: { name: "Toshkent shahri" } },
+          } as never,
+        ]}
+        isLoading={false}
+      />,
+    );
+    const name = screen.getByText(long);
+    expect(name).toHaveClass("truncate");
+    expect(name).toHaveAttribute("title", long);
+    // O'ram ustunning eng kichik kengligiga qo'shilmaydi (`minmax(0,1fr)`), lekin haddan oshmaydi.
+    expect(name.parentElement).toHaveClass("grid", "grid-cols-[minmax(0,1fr)]", "max-w-[260px]");
+    // Market ustuni va planshetdagi «Summa / market» qatori — ikkalasi ham kesiladi.
+    for (const market of screen.getAllByText("Juda uzun nomli market MChJ filial savdo")) {
+      expect(market).toHaveClass("truncate");
+    }
+    expect(screen.getByText("Mirzo Ulug'bek tumani")).toHaveClass("truncate");
+  });
+
   it("renders loading skeletons", () => {
     renderWithProviders(<OrdersTable data={[]} isLoading />);
 

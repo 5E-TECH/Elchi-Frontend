@@ -8,7 +8,8 @@ import { toPaymentAck } from "./paymentAck";
 /**
  * 2crjWf7v — kuryer kassasi tarixida kuryerning bot kvitansiyasiga javobi:
  * `disputed` → «Noto'g'ri» (danger), `confirmed` → «Tasdiqlangan» (success),
- * `null` / maydon yo'q → belgi yo'q. Qator belgilari guruhi dizayn v2 da.
+ * `null` / maydon yo'q → belgi yo'q. Qator — dizayn v2 (`.el-list`, maket `*-payments-cash-detail-*`):
+ * tugma nomi (aria-label) «{sarlavha} ({belgilar}), {yo'nalish} {summa}, {sana}», ostida «{yaratgan} · {to'lov turi}».
  */
 
 // Tafsilot oynasi o'z so'rovini yuboradi — bu testga aloqasi yo'q.
@@ -25,7 +26,9 @@ const row = (id: string, overrides: Partial<PaymentRow> = {}): PaymentRow => ({
   ...overrides,
 });
 
-const rowButton = (name: string) => screen.getByRole("button", { name: new RegExp(name) });
+/** Qator tugmasi — «{yaratgan} · {to'lov turi}» qatori bo'yicha (sarlavha hamma kuryer to'lovida bir xil). */
+const rowButton = (actor: string) =>
+  screen.getByText(new RegExp(`^${actor}( ·|$)`)).closest("button") as HTMLButtonElement;
 
 describe("toPaymentAck", () => {
   it("keeps confirmed / disputed, maps null and unknown values to null, absent to undefined", () => {
@@ -41,11 +44,14 @@ describe("PaymentHistoryList — courier receipt answer badge (2crjWf7v)", () =>
   it("shows «Noto'g'ri» (danger, with icon) for a disputed courier payment", () => {
     renderWithProviders(<PaymentHistoryList data={[row("1", { payment_ack: "disputed" })]} />);
 
-    const badge = within(rowButton("Menejer 1")).getByText("Noto'g'ri");
+    const button = rowButton("Menejer 1");
+    const badge = within(button).getByText("Noto'g'ri");
     expect(badge).toHaveAttribute("data-payment-ack", "disputed");
     expect(badge).toHaveClass("bg-danger-soft", "text-danger-fg");
     expect(badge.querySelector("svg")).not.toBeNull();
     expect(badge).toHaveAttribute("title", "Kuryer botdagi kvitansiyaga «Noto'g'ri» deb javob berdi");
+    // Ekran o'quvchi uchun ham: belgi tugma nomida.
+    expect(button).toHaveAccessibleName(/\(Noto'g'ri\), Chiqim/);
     expect(screen.queryByText("Tasdiqlangan")).not.toBeInTheDocument();
   });
 
@@ -55,6 +61,7 @@ describe("PaymentHistoryList — courier receipt answer badge (2crjWf7v)", () =>
     const badge = within(rowButton("Menejer 2")).getByText("Tasdiqlangan");
     expect(badge).toHaveAttribute("data-payment-ack", "confirmed");
     expect(badge).toHaveClass("bg-success-soft", "text-success-fg");
+    expect(rowButton("Menejer 2")).toHaveAccessibleName(/\(Tasdiqlangan\)/);
     expect(screen.queryByText("Noto'g'ri")).not.toBeInTheDocument();
   });
 
@@ -72,6 +79,7 @@ describe("PaymentHistoryList — courier receipt answer badge (2crjWf7v)", () =>
     expect(document.querySelector("[data-payment-ack]")).toBeNull();
     expect(screen.queryByText("Noto'g'ri")).not.toBeInTheDocument();
     expect(screen.queryByText("Tasdiqlangan")).not.toBeInTheDocument();
+    expect(rowButton("Menejer 3")).not.toHaveAccessibleName(/\(/);
   });
 
   it("marks each row independently", () => {
@@ -99,11 +107,12 @@ describe("PaymentHistoryList — v2 badge group", () => {
 
     const button = rowButton("Menejer 8");
     expect(within(button).getByText("Tuzatish")).toHaveClass("ring-1", "ring-inset");
-    expect(within(button).queryByText("ROLLBACK")).not.toBeInTheDocument();
+    expect(within(button).queryByText(/ROLLBACK/)).not.toBeInTheDocument();
     expect(within(button).getByText("Buyurtma qaytarildi")).toBeInTheDocument();
+    expect(button).toHaveAccessibleName(/\(Tuzatish\)/);
   });
 
-  it("renders payment method and «Kirim»/«Chiqim» as neutral v2 badges (colour stays on the amount)", () => {
+  it("payment method and «Kirim»/«Chiqim» stay neutral (colour stays on the amount)", () => {
     renderWithProviders(
       <PaymentHistoryList
         data={[
@@ -113,11 +122,17 @@ describe("PaymentHistoryList — v2 badge group", () => {
       />,
     );
 
-    const expense = within(rowButton("Menejer 9")).getByText("Chiqim");
-    const income = within(rowButton("Menejer 10")).getByText("Kirim");
-    for (const badge of [expense, income]) {
-      expect(badge).toHaveClass("bg-sunken", "text-text-muted", "text-xs");
+    const expense = rowButton("Menejer 9");
+    const income = rowButton("Menejer 10");
+    // Yo'nalish — tugma nomida va neytral ikonka qutisida; rangni faqat summa oladi.
+    expect(expense).toHaveAccessibleName(/Chiqim −150 000 so'm/);
+    expect(income).toHaveAccessibleName(/Kirim \+120 000 so'm/);
+    for (const button of [expense, income]) {
+      expect(button.querySelector("[aria-hidden='true']")).toHaveClass("bg-sunken", "text-text-muted");
     }
-    expect(within(rowButton("Menejer 9")).getByText("Naqd")).toHaveClass("bg-sunken", "text-text-muted");
+    expect(within(expense).getByText("−150 000 so'm")).toHaveClass("text-danger-fg");
+    expect(within(income).getByText("+120 000 so'm")).toHaveClass("text-success-fg");
+    // To'lov turi — neytral matn («{yaratgan} · Naqd»).
+    expect(within(expense).getByText("Menejer 9 · Naqd")).toHaveClass("text-text-muted");
   });
 });

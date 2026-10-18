@@ -79,5 +79,6 @@ export const mockBranchListApi = async (page: Page, viewMode: "table" | "card") 
 
 export const openBranchList = async (page: Page) => {
   await page.goto("/branches");
-  await expect(page.getByText(/dan \d+ tasi ko'rsatilmoqda/)).toBeVisible({ timeout: 60_000 });
+  // Dizayn v2 `Pagination` xulosasi: «1–12 / 13 ta filial».
+  await expect(page.getByText(/^\d+–\d+ \/ \d+ ta filial$/)).toBeVisible({ timeout: 60_000 });
 };

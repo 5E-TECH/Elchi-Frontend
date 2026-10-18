@@ -34,6 +34,16 @@ const CONTRACT_KEYS = [
   "success",
   "checkFailed",
   "retry",
+  // Dizayn v2 (G1 users): ism bilan tugma nomi va oyna matnlari (maket `superadmin-users-courier-transfer-dialog`).
+  "openButtonFor",
+  "courierRole",
+  "ordersCount",
+  "searchLabel",
+  "searchPlaceholder",
+  "noManagerHint",
+  "noTargets",
+  "submitTo",
+  "transferring",
 ];
 
 describe("branches.courierTransfer locales", () => {
@@ -58,6 +68,8 @@ describe("branches.courierTransfer locales", () => {
     expect(UZ.branchPayHint).toBe("Pulni '{{branch}}' filiali menejeri qabul qilishi kerak");
     expect(UZ.openButton).toBe("Filialni o'zgartirish");
     expect(UZ.rowButton).toBe("Boshqa filialga o'tkazish");
+    expect(UZ.noManagerHint).toBe("Menejer yo'q — bu filialga o'tkazib bo'lmaydi");
+    expect(UZ.searchPlaceholder).toBe("Filial nomini qidiring");
   });
 
   it("interpolates the same placeholders in every language", () => {
@@ -65,6 +77,9 @@ describe("branches.courierTransfer locales", () => {
       expect(dict.branchPayHint).toContain("{{branch}}");
       expect(dict.success).toContain("{{name}}");
       expect(dict.success).toContain("{{branch}}");
+      expect(dict.openButtonFor).toContain("{{name}}");
+      expect(dict.submitTo).toContain("{{branch}}");
+      expect(dict.ordersCount).toContain("{{value}}");
     });
   });
 });

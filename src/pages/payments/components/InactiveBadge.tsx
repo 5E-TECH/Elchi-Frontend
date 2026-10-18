@@ -1,21 +1,21 @@
+// dizayn-v2: superadmin-payments-market-picker-dialog, superadmin-payments-to-give-dialog, admin-payments-to-give-dialog, admin-payments-to-receive-dialog, manager-payments-courier-select-dialog
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
+import { Badge } from "../../../shared/ui/primitives";
 
 /**
- * Pul oynalaridagi (Berilishi / Qabul qilinishi kerak) faol bo'lmagan market,
- * menejer yoki kuryer belgisi — qator puli qolgani uchun ko'rsatiladi.
+ * Pul oynalaridagi (Berilishi / Qabul qilinishi kerak) faol bo'lmagan market, menejer yoki kuryer belgisi —
+ * qator puli qolgani uchun ko'rsatiladi. Maket: neytral nuqtali badge «Nofaol».
+ *
+ * `isSelected` — eski (v1) chaqiruvchilar uchun saqlangan; v2 badge tanlangan qatorda ham bir xil ko'rinadi.
  */
 const InactiveBadge = ({ isSelected = false }: { isSelected?: boolean }) => {
-  const { t } = useTranslation("common");
+  const { t } = useTranslation("payments");
 
   return (
-    <span
-      className={`ml-2 inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5 align-middle text-[10px] font-bold uppercase tracking-wide ${
-        isSelected ? "bg-white/20 text-white" : "bg-rose-500/15 text-rose-500 dark:text-rose-300"
-      }`}
-    >
-      {t("blocked")}
-    </span>
+    <Badge dot className="align-middle" data-selected={isSelected || undefined}>
+      {t("v2Common.inactive")}
+    </Badge>
   );
 };
 

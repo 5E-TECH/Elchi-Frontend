@@ -89,7 +89,15 @@ export const scanToken = async (page: Page, token: string) => {
   await input.press("Enter");
 };
 
+/** Belgilangan posilkalar (jadval qatorida ham, telefon kartasida ham skan belgisi `incoming-parcel`). */
 export const scannedRowIds = (page: Page) =>
   page
-    .locator('[data-testid="incoming-row"][data-scanned="true"]')
+    .locator('[data-testid="incoming-parcel"][data-scanned="true"]')
     .evaluateAll((rows) => rows.map((row) => (row as HTMLElement).dataset.orderId));
+
+/** «Skanerlangan N / M» — chiziq (`progressbar`) qiymatlari. */
+export const expectScanned = async (page: Page, scanned: number, total: number) => {
+  const bar = page.getByRole("progressbar", { name: "Skanerlangan posilkalar" });
+  await expect(bar).toHaveAttribute("aria-valuenow", String(scanned));
+  await expect(bar).toHaveAttribute("aria-valuemax", String(total));
+};

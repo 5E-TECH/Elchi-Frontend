@@ -129,6 +129,12 @@ type SelectBaseProps<V extends string> = {
    * Bunda bo'sh maydon matni oddiy rangda: «Barchasi» — holat, taklif emas.
    */
   inlineLabel?: string;
+  /**
+   * Oddiy (qidiruvsiz, bitta tanlovli) maydonda tanlangan nomdan keyin — masalan bo'lim sonining belgisi
+   * (maket `superadmin-mails-today` telefonda: «Bugungi pochtalar ⟨8⟩»). Bezak: ekran o'quvchi nomini
+   * `aria-label` dan oladi. Qidiruvli va ko'p tanlovli maydonda e'tiborga olinmaydi.
+   */
+  valueAddon?: ReactNode;
   /** Ro'yxat qayerda ochiladi (sig'masa baribir ag'dariladi). Sukut — pastda. */
   placement?: "bottom" | "top";
   /** Ro'yxat ochiqligi (boshqariladigan). */
@@ -368,6 +374,7 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
     size = "md",
     icon,
     inlineLabel,
+    valueAddon,
     placement = "bottom",
     open: openProp,
     defaultOpen = false,
@@ -950,9 +957,20 @@ export const Select = <V extends string = string>(props: SelectProps<V>) => {
         >
           {icon ? <ButtonIcon icon={icon} px={18} className="text-text-subtle" /> : null}
           {inlineLabelNode}
-          <span className={cx("min-w-0 flex-1 truncate", !selectedLabel && !inlineLabel && "text-text-subtle")}>
-            {selectedLabel ?? placeholderText}
-          </span>
+          {valueAddon != null && valueAddon !== false ? (
+            <span className="flex min-w-0 flex-1 items-center gap-2">
+              <span className={cx("min-w-0 truncate", !selectedLabel && !inlineLabel && "text-text-subtle")}>
+                {selectedLabel ?? placeholderText}
+              </span>
+              <span aria-hidden="true" data-select-addon="" className="flex shrink-0 items-center">
+                {valueAddon}
+              </span>
+            </span>
+          ) : (
+            <span className={cx("min-w-0 flex-1 truncate", !selectedLabel && !inlineLabel && "text-text-subtle")}>
+              {selectedLabel ?? placeholderText}
+            </span>
+          )}
         </button>
         {clearButton ?? (
           <span aria-hidden="true" className="pointer-events-none flex shrink-0 items-center">

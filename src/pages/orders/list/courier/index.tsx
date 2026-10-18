@@ -26,7 +26,7 @@ import {
   resolveOrderActionResponse,
 } from "../../../../entities/orders/extraCostApproval";
 import { useQueryParams } from "../../../../shared/lib/useQueryParams";
-import { usePagination } from "../../../../shared/lib/usePagination";
+import { scrollShellContentToTop, usePagination } from "../../../../shared/lib/usePagination";
 import { useDebounce } from "../../../../shared/lib/useDebounce";
 import { useOrderQrScanner } from "../../../../shared/lib/useOrderQrScanner";
 import { fetchScanDetail, getBackendErrorMessage } from "../../../scan/lib/scanResource";
@@ -841,8 +841,15 @@ const CourierOrders = () => {
               page={currentPage}
               pageSize={itemsPerPage}
               total={totalItems}
-              onPageChange={setPage}
-              onPageSizeChange={setLimit}
+              // Sahifa almashganda ro'yxat boshidan ko'rinsin (D-03 — telefonda pastda qolib ketardi).
+              onPageChange={(next) => {
+                setPage(next);
+                scrollShellContentToTop();
+              }}
+              onPageSizeChange={(next) => {
+                setLimit(next);
+                scrollShellContentToTop();
+              }}
               summary={(range) => t("paginationSummary", range)}
             />
           ) : undefined
