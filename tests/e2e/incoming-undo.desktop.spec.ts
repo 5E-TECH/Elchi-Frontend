@@ -27,7 +27,9 @@ test.describe("Kiruvchi posilkalar — olib tashlash va yangilash, 1440px", () =
     const firstRow = page.getByRole("row").filter({ hasText: "Andijon mijoz 1" });
     await expect(firstRow).toContainText(BATCH_REF);
     await expect(page.getByRole("row").filter({ hasText: "Boshqa qop mijozi" })).toContainText("—");
-    await expect(page.getByLabel("Kelgan posilkalar", { exact: true })).toContainText("7 ta · 1 ta qop · jami 1 149 000 so'm");
+    await expect(page.getByRole("region", { name: "Kelgan posilkalar" })).toContainText(
+      "7 ta · 1 ta qop · jami 1 149 000 so'm",
+    );
 
     await scanToken(page, BATCH_ORDERS[0].qr_code_token);
     await scanToken(page, OTHER_ORDER.qr_code_token);
@@ -76,7 +78,7 @@ test.describe("Kiruvchi posilkalar — olib tashlash va yangilash, 1440px", () =
     items = items.filter((order) => (order as { id: string }).id !== BATCH_ORDERS[1].id);
     await page.getByRole("button", { name: "Yangilash" }).click();
 
-    await expect(page.getByText("Andijon mijoz 2")).toHaveCount(0);
+    await expect(page.getByRole("row").filter({ hasText: "Andijon mijoz 2" })).toHaveCount(0);
     await expectScanned(page, 1, 6);
     expect(await scannedRowIds(page)).toEqual([BATCH_ORDERS[0].id]);
     await expect(page.getByPlaceholder("QR kodni skanerlang yoki kiriting...")).toBeFocused();
