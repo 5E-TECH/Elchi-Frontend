@@ -40,6 +40,18 @@ window.matchMedia = window.matchMedia || ((query: string) => ({
   dispatchEvent: vi.fn(),
 }));
 
+// Unit testlar haqiqiy tarmoqqa chiqmaydi (`.env.test` → `127.0.0.1:9`). Mock qilinmagan so'rov testni yiqitadi: aks holda
+// uning xatosi tasodifiy vaqtda keyingi testga «Internet aloqasi yo'q» xabarini tashlardi (deploy PR #311, ikki
+// «Qayta urinish»). Faqat jsdom muhitida (`XMLHttpRequest` bor).
+const realRequests: string[] = [];
+if (typeof XMLHttpRequest !== "undefined") {
+  const nativeOpen = XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open = function (this: XMLHttpRequest, ...args: unknown[]) {
+    realRequests.push(`${String(args[0])} ${String(args[1])}`);
+    return (nativeOpen as (...rest: unknown[]) => void).apply(this, args);
+  } as typeof XMLHttpRequest.prototype.open;
+}
+
 afterEach(() => {
   cleanup();
   // `notify()` va `confirm()` do'konlari modul darajasida — testlar bir-biriga xabar/oyna qoldirmasin.
@@ -48,4 +60,8 @@ afterEach(() => {
   for (const request of getConfirmSnapshot().requests) removeConfirm(request.id);
   toastStore.reset();
   vi.clearAllMocks();
+  if (realRequests.length > 0) {
+    const list = realRequests.splice(0).join(", ");
+    throw new Error(`Unit testda haqiqiy tarmoq so'rovi: ${list} — so'rovni mock qiling (masalan vi.spyOn(api, "get"))`);
+  }
 });

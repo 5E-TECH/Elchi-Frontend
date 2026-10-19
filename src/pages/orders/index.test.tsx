@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useLocation } from "react-router-dom";
 import { vi, type MockInstance } from "vitest";
@@ -467,11 +467,16 @@ describe("Orders list — URL sanitizatsiyasi va sahifa almashishi (QA D-03, D-0
   });
 
   it("⭐ D-11: faqat bo'shliqli qidiruv — `search` ketmaydi; «№53» → «53»", () => {
+    // «53» — to'liq raqam: sahifa aniq buyurtmani `GET orders/53` bilan alohida oladi (hOGoAoq4). Mock'siz bu so'rov
+    // tarmoqqa chiqib, xatosi keyingi testlarga «Internet aloqasi yo'q» xabarini tashlardi (deploy PR #311).
+    const getSpy = vi.spyOn(api, "get").mockResolvedValue({ data: null });
     open("/orders?orderSearch=%20%20%20");
     expect(getOrdersMock.mock.lastCall?.[0]).not.toHaveProperty("search");
 
     open("/orders?orderSearch=%E2%84%9653");
     expect(getOrdersMock).toHaveBeenLastCalledWith(expect.objectContaining({ search: "53" }));
+    expect(getSpy).toHaveBeenCalledWith("orders/53");
+    getSpy.mockRestore();
   });
 
   it("⭐ D-03: sahifa almashganda shell kontenti tepaga qaytadi", async () => {
@@ -494,6 +499,12 @@ describe("Orders list — URL sanitizatsiyasi va sahifa almashishi (QA D-03, D-0
     expect(main.scrollTop).toBe(0);
   });
 });
+
+/** Eksport xatosi xabaridagi «Qayta urinish» — boshqa xabar (masalan global tarmoq xabari) tugmasi bilan adashmasin. */
+const exportErrorRetry = async () => {
+  const title = (await screen.findAllByText("Excel fayl yuklanmadi"))[0];
+  return within(title.closest("[data-tone]") as HTMLElement).getByRole("button", { name: "Qayta urinish" });
+};
 
 describe("Orders list — Excel eksporti (xWsCAA5N)", () => {
   let getSpy: MockInstance;
@@ -593,7 +604,7 @@ describe("Orders list — Excel eksporti (xWsCAA5N)", () => {
     expect(screen.getAllByText("Eksportga ruxsat yo'q").length).toBeGreaterThan(0);
     expect(downloads).toHaveLength(0);
 
-    await user.click(screen.getByRole("button", { name: "Qayta urinish" }));
+    await user.click(await exportErrorRetry());
     await waitFor(() => expect(exportCalls()).toHaveLength(2));
   });
 
@@ -607,7 +618,7 @@ describe("Orders list — Excel eksporti (xWsCAA5N)", () => {
     open("/orders");
 
     await user.click(screen.getByRole("button", { name: "Excelga yuklash" }));
-    const staleRetry = await screen.findByRole("button", { name: "Qayta urinish" });
+    const staleRetry = await exportErrorRetry();
 
     // Yangi eksport boshlandi (javob hali yo'q) — eski xabardagi «Qayta urinish» bosilsa ham so'rov qo'shilmaydi.
     await user.click(screen.getByRole("button", { name: "Excelga yuklash" }));
