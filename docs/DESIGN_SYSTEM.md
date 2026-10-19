@@ -1,9 +1,9 @@
 # Elchi CRM — Dizayn tizimi v2
 
-> Holat (2026-10-18): **0–5 bosqichlar tayyor.** 4 (sahifalar): 77 route'dan 75 tasi v2 — G1, G2, G3 birlashtirildi
-> (`design/SCREENS.md`); 5 (qo'riqchilar, §12): ESLint `design-v2/*` butun `src` da xato, `V2_SCOPES` + `named-colour`,
-> vizual snapshotlar (CI «Visual», 23 sahna). Qolgan ish (§14): kamera rejimlari (alohida ish), yopiq
-> `/market-operators`, v1 ratchet ro'yxatlari (§12.2, §12.3), «Visual» baseline'lari va required tekshiruv (§12.5).
+> Holat (2026-10-19): **0–5 bosqichlar tayyor.** 4 (sahifalar): 77 route'dan 76 tasi v2 — G1, G2, G3 birlashtirildi,
+> `/scan` skaner 1-bosqichida (`design/SCREENS.md`); 5 (qo'riqchilar, §12): ESLint `design-v2/*` butun `src` da xato,
+> `V2_SCOPES` + `named-colour`, vizual snapshotlar (CI «Visual», 23 sahna). Qolgan ish (§14): oqimlardagi kamera
+> (skaner 2–3-bosqich), yopiq `/market-operators`, v1 ratchet ro'yxatlari (§12.2, §12.3), «Visual» baseline'lari va required tekshiruv (§12.5).
 > Trello: «Dizayn v2» kartalari.
 
 Bu hujjat — yangi UI yozayotgan har bir frontchi va AI agent uchun **majburiy** qoidalar. Qisqa versiyasi
@@ -297,7 +297,7 @@ sinonimlarning o'rnini bosuvchilari — `design/icon-registry.json` (132 ikonka,
 | 1 | primitivlar, formatlovchilar, namuna sahifasi `/ops/ui-kit` | `src/shared/ui/primitives`, `src/entities/order`, `src/shared/lib/format*.ts` | tayyor |
 | 2 | shell: kanvas, yon / pastki menyu, yuqori panel | `src/widgets/layout`, `src/widgets/Sidebar`, `src/widgets/header` | tayyor |
 | 3 | forma, dialog, xabar, holatlar, xato sahifalari | `src/shared/ui/primitives`, `src/app/providers/UiHost.tsx`, `src/shared/lib/notify.ts` | tayyor |
-| 4 | sahifalar migratsiyasi (har sahifa alohida PR, `// dizayn-v2:`) | `src/pages/**`, `src/widgets/**`; jurnal — Ilova A, route bo'yicha — `design/SCREENS.md` | tayyor: 75 / 77 route v2 (G1, G2, G3); qolgan `/scan` — kamera ishi, `/market-operators` — yopiq |
+| 4 | sahifalar migratsiyasi (har sahifa alohida PR, `// dizayn-v2:`) | `src/pages/**`, `src/widgets/**`; jurnal — Ilova A, route bo'yicha — `design/SCREENS.md` | tayyor: 76 / 77 route v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi, 2026-10-19); qolgan `/market-operators` — yopiq |
 | 5 | qo'riqchilar: ESLint `design-v2/*` + `Pressable`, `V2_SCOPES` + `named-colour`, vizual snapshotlar (CI «Visual») | `eslint.config.js`, `scripts/eslint-design-v2.mjs`, `scripts/design-guard.mjs`, `playwright.visual.config.ts`, `tests/visual/`, `.github/workflows/visual.yml` | tayyor (§12; qolgan ish — §14) |
 
 Palitra testi va ratchet qo'riqchisi 0-bosqichdan beri ishlaydi: eski kodga tegmaydi, lekin yangi buzilish qo'shilsa
@@ -374,9 +374,9 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   `confirm`/`alert`/`prompt` — xato.
 
 **4-bosqich — tayyor (sahifalar).** Har sahifa alohida PR, faylning birinchi qatorida `// dizayn-v2: <ekran>`.
-77 route'dan 75 tasi v2 (`design/SCREENS.md`); qolgan ikkitasi — `/scan` (butun kamera ekrani, alohida kamera ishi) va
-yopiq `/market-operators` (ko'chirilmaydi). Boshqa sahifalardagi kamera rejimlari (`*-camera`, `ScannerCameraModal`)
-ham kamera ishida (§14).
+77 route'dan 76 tasi v2 (`design/SCREENS.md`); `/scan` skaner 1-bosqichida ko'chirildi (2026-10-19), qolgani — yopiq
+`/market-operators` (ko'chirilmaydi). Oqimlardagi kamera rejimlari (`*-camera`, `ScannerCameraModal`) — skaner
+2–3-bosqichida (§14).
 
 - **Ro'yxat standarti** — `DataTable` (ustunlar, `density`, server saralashi, tanlov, telefonda `renderCard` →
   kartalar) + `Pagination` (`Card footer`, «10 ta» tanlovi, 5 o'rinli sahifalar), `src/shared/ui/primitives` barrelidan;
@@ -456,9 +456,10 @@ o'ramlari — ichi v2) va 2-bosqich shell (`src/widgets/layout/**`, `src/widgets
 `tests/`, `scripts/`, `design/` — qamrovdan tashqari.
 
 **Ratchet (faqat qisqaradi).** `RAW_CONTROL_RATCHET` — xom element hali qolgan v1 fayllar, kalit — fayl, qiymat —
-sabab (`scripts/eslint-design-v2.mjs`, hozir 5 ta, `MAX_RAW = 5`):
+sabab (`scripts/eslint-design-v2.mjs`, hozir 4 ta, `MAX_RAW = 4`):
 
-- kamera ishi — `src/pages/scan/index.tsx` (butun `/scan` kamera ekrani), `src/shared/components/ScannerCameraModal.tsx`;
+- kamera ishi — `src/shared/components/ScannerCameraModal.tsx` (skaner 2-bosqichida olinadi; `src/pages/scan/index.tsx`
+  1-bosqichda chiqdi);
 - yopiq `/market-operators` (`src/pages/market-operators/index.tsx`, ko'chirilmaydi) va yetib bo'lmaydigan
   `src/pages/payments/components/SalaryPaymentPopup.tsx` («Maosh to'lash» yashirin);
 - v1 o'rami `src/shared/components/PrintModeSelect.tsx` (ichi v2, menyu bandlari; `shared/ui` ga ko'chirilguncha).
@@ -540,11 +541,11 @@ ko'chirilgan slice'larda **har fayl** — `// dizayn-v2:` belgisiz `.ts` yordamc
 `colour`, `palette`, `dark-pair`, `legacy`, `gradient`, `named-colour`) ruxsat 0; boshqa qoidalar (`money`,
 `tiny-text`, `weight`, `v1-helper` …) baseline bo'yicha qoladi. Ro'yxatlar — `scripts/design-guard.mjs`:
 
-- `V2_SCOPES` — 80 papka (`src/<qatlam>/<slice>`, qatlamdan tashqari yagona — `src/auth`; `src/shared/ui`
-  butunligicha emas — `primitives`, `charts`, `error-page`; yopiq `src/pages/market-operators` yo'q). Scope faylining
+- `V2_SCOPES` — 82 papka (`src/<qatlam>/<slice>`, qatlamdan tashqari yagona — `src/auth`; `src/shared/ui`
+  butunligicha emas — `primitives`, `charts`, `error-page`, `camera`; yopiq `src/pages/market-operators` yo'q). Scope faylining
   rang soni `--update` da baseline'ga yozilmaydi; buzilish «(V2_SCOPES: rang qoidalarida ruxsat 0)» deb chiqadi.
 - `V2_SCOPE_PENDING` — scope ichida hali v1 qolgan fayllar (sabab bilan, `≤ MAX_PENDING`): baseline ruxsati saqlanadi.
-  Hozir 2 ta: `SalaryPaymentPopup.tsx` (yetib bo'lmaydigan), `pages/scan/index.tsx` (kamera ishi); v1
+  Hozir 1 ta: `SalaryPaymentPopup.tsx` (yetib bo'lmaydigan; `pages/scan/index.tsx` skaner 1-bosqichida chiqdi); v1
   `entities/orders/ui/ExtraCostApproval.tsx` iste'molchisiz qolib o'chirildi.
 - `OUTPUT_FORMAT_FILES` — ilova mavzusidan tashqari chiqish formatlari (chop etish HTML'i, termal yorliq / PDF, Excel
   ARGB): rang qoidalari qo'llanmaydi (oq qog'ozdagi qora matn to'g'ri). Faqat `/lib/` dagi `print|export|pdf|label`
@@ -725,8 +726,8 @@ karta yo'q · kunduzgi / tungi / 390px skrinshot · to'liq `npm test` + `npm run
 | Ko'rsatkich | Son | Manba |
 |---|---|---|
 | v2 ga ko'chirilgan route | 76 / 77 (qolgan: `/market-operators` — yopiq; `/scan` skaner 1-bosqichida, 2026-10-19) | `design/SCREENS.md` |
-| `// dizayn-v2:` belgili fayllar | 367 / 822 qo'riqlanadigan | `npm run design:guard` |
-| `V2_SCOPES` | 80 papka (ichida 680 fayl) | `scripts/design-guard.mjs` |
+| `// dizayn-v2:` belgili fayllar | 375 / 843 qo'riqlanadigan (skaner 1-bosqichi, 2026-10-19) | `npm run design:guard` |
+| `V2_SCOPES` | 82 papka (ichida 697 fayl; `src/widgets/scanner`, `src/shared/ui/camera` qo'shildi) | `scripts/design-guard.mjs` |
 | `V2_SCOPE_PENDING` | 1 (`MAX_PENDING = 1`; `pages/scan/index.tsx` chiqdi) | `scripts/design-guard.mjs` |
 | `OUTPUT_FORMAT_FILES` | 4 (`MAX_OUTPUT_FORMAT = 4`) | `scripts/design-guard.mjs` |
 | `RAW_CONTROL_RATCHET` / `UI_IMPORT_RATCHET` | 4 / 0 (`MAX_RAW = 4`, `MAX_UI = 0`) | `scripts/eslint-design-v2.mjs` |
@@ -977,3 +978,11 @@ da §11 dan o'zgarishsiz ko'chirildi, G2 va G3 yozuvlari birlashtirishda qo'shil
   Ega savollariga sukut javoblari (spec §9) — `route-map.json` izohlarida. Chiqarilgan v1: `ScannerActionButton`,
   `.login-field` CSS, `logo yozuvlik qora.png`, o'lik `auth` / `dispatch` / `courierBulk` / `common:scanner*`
   kalitlari; en/ru ko'plik shakllari («1 order», «2 orders»).
+- **Ko'chirilgan:** skaner 1-bosqichi (Trello v1eLN2tV, 2026-10-19) — universal `/scan` (maketlar `superadmin-scan-camera`,
+  `courier-scan-*`): telefonda `ScannerCamera presentation="page"` (to'liq ekran, «Oxirgi: …», [Qo'lda kiritish]
+  [Chiroq]), planshet/desktop — sarlavha, kamera bloki va yon kartalar («Natija», «USB skaner ham tayyor» + qo'lda
+  kiritish, «Oxirgi skanerlar · Shu qurilmada»); faqat «Ma'lumot» rejimi, topilgan kod → `/scan/:token`; begona sayt
+  havolasi — so'rovsiz «yaroqsiz». Infratuzilma: skan maqsadlari reyestri (`shared/lib/scanner`), kontekstli markaziy
+  tugma va `widgets/scanner/ScannerHost` (shell, ega roziligi), v2 `ScannerCamera` (`shared/ui/camera`). Batafsil va
+  maketdan farqlar — §14 «Kamera ishi». Chiqarilgan v1: `pages/scan/lib/scanShared.ts` (`playScanFeedback` →
+  `shared/lib/scanner/feedback.ts`), `/scan` ning `RAW_CONTROL_RATCHET` va `V2_SCOPE_PENDING` yozuvlari.

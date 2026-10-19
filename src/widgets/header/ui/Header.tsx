@@ -8,6 +8,7 @@ import type { RootState } from "../../../app/config/store";
 import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
 import { openScanner } from "../../../shared/lib/scanner/scannerHost";
 import { useActiveScanTarget } from "../../../shared/lib/scanner/scanTargets";
+import { preloadScannerCamera } from "../../../shared/ui/camera/loadScannerCamera";
 import { useLogout } from "../../../shared/lib/useLogout";
 import { Button, IconButton } from "../../../shared/ui/primitives";
 import { useMobileMenu } from "../../Sidebar/model/shellNav";
@@ -185,6 +186,9 @@ const Header = ({ onMenuClick }: HeaderProps) => {
           aria-label={scanTarget ? t("shell.scanFor", { action: t("header.scan"), target: scanTarget.title }) : undefined}
           aria-haspopup={scanTarget ? "dialog" : undefined}
           onClick={() => openScanner({ navigate })}
+          // Kamera alohida bo'lak — sekin tarmoqda birinchi bosish «hech narsa bo'lmadi» bo'lib qolmasin.
+          onPointerEnter={scanTarget ? preloadScannerCamera : undefined}
+          onFocus={scanTarget ? preloadScannerCamera : undefined}
           className="max-md:hidden"
         >
           {t("header.scan")}

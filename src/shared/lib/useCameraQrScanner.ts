@@ -11,6 +11,11 @@ type CameraQrScannerOptions = {
   videoRef: RefObject<HTMLVideoElement | null>;
   onDecode: (value: string) => void;
   startErrorMessage: string;
+  /**
+   * Chiroqni yoqib/o'chirib bo'lmadi. Berilsa shu chaqiriladi va kamera xatosi YOZILMAYDI (kamera ishlab
+   * turibdi — «Kamera ochilmadi» holati noto'g'ri bo'lardi). Berilmasa — eski xatti-harakat.
+   */
+  onTorchError?: () => void;
 };
 
 export const useCameraQrScanner = ({
@@ -18,9 +23,11 @@ export const useCameraQrScanner = ({
   videoRef,
   onDecode,
   startErrorMessage,
+  onTorchError,
 }: CameraQrScannerOptions) => {
   const scannerRef = useRef<QrScanner | null>(null);
   const onDecodeRef = useRef(onDecode);
+  const onTorchErrorRef = useRef(onTorchError);
   const [session, setSession] = useState(0);
   const [isStarting, setIsStarting] = useState(false);
   const [torchEnabled, setTorchEnabled] = useState(false);
@@ -32,6 +39,10 @@ export const useCameraQrScanner = ({
   useEffect(() => {
     onDecodeRef.current = onDecode;
   }, [onDecode]);
+
+  useEffect(() => {
+    onTorchErrorRef.current = onTorchError;
+  }, [onTorchError]);
 
   const stopScanner = useCallback(() => {
     const activeScanner = scannerRef.current;
@@ -66,6 +77,10 @@ export const useCameraQrScanner = ({
       await scanner.toggleFlash();
       setTorchEnabled(scanner.isFlashOn());
     } catch {
+      if (onTorchErrorRef.current) {
+        onTorchErrorRef.current();
+        return;
+      }
       setCameraErrorKind("unknown");
       setCameraError(startErrorMessage);
     }

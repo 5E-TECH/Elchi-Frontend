@@ -14,6 +14,18 @@ export const RESULT_VISIBLE_MS = 2500;
 /** Ramka rangi + belgi — keyingi skangacha (700 ms). */
 export const FLASH_MS = 700;
 
+/**
+ * Ruxsat izohi shu sahifa yuklanishida bir marta: «Kamerani yoqish» bosilgach keyingi ochilishlarda (oyna qayta
+ * ochildi, 768 px chegarasi kesildi — `/scan` kamerani qayta yaratadi) brauzer o'zi so'raydi. iOS Safari doimiy
+ * ruxsatsiz `prompt` qaytaradi — aks holda karta har ochilishda chiqardi.
+ */
+let permissionExplained = false;
+
+/** Faqat testlar uchun. */
+export const resetCameraPermissionExplained = () => {
+  permissionExplained = false;
+};
+
 export type CameraResult = {
   id: number;
   /** `tooFast` — kamera o'zi rad etgan skan (sahifaga yetmaydi). */
@@ -35,10 +47,20 @@ type Options = {
   videoRef: RefObject<HTMLVideoElement | null>;
   /** Kamera yoqilsinmi (varaq ochiq bo'lsa — to'xtaydi). */
   active: boolean;
+  /**
+   * `false` — kamera ishlayveradi, lekin o'qilgan kodlar hech qayerga yuborilmaydi (masalan maqsad almashish
+   * oralig'ida: eski sahifa yopilgan, yangisi hali ro'yxatdan o'tmagan — skan noto'g'ri marketga tushmasin).
+   */
+  scanEnabled?: boolean;
+  /**
+   * `<video>` elementi almashadigan ko'rinish kaliti (telefon ↔ keng oyna, 768 px chegarasi). O'zgarsa skaner
+   * yangi elementda qayta ishga tushadi — aks holda oqim olib tashlangan `<video>` da qolib, ekran qora bo'lardi.
+   */
+  layoutKey?: string | number | boolean;
   onScan: (raw: string, source: ScanSource) => void | Promise<void>;
 };
 
-export const useScannerCameraSession = ({ videoRef, active, onScan }: Options) => {
+export const useScannerCameraSession = ({ videoRef, active, scanEnabled = true, layoutKey, onScan }: Options) => {
   const { t } = useTranslation("ui");
   const [gate, setGate] = useState<CameraGate>("checking");
   const [checkSession, setCheckSession] = useState(0);
@@ -50,11 +72,23 @@ export const useScannerCameraSession = ({ videoRef, active, onScan }: Options) =
   const resultTimerRef = useRef<number | null>(null);
   const flashTimerRef = useRef<number | null>(null);
   const resultIdRef = useRef(0);
-  const { evaluateScan } = useScannerGate({ cooldownMs: CAMERA_COOLDOWN_MS, duplicateCooldownMs: CAMERA_DUPLICATE_MS });
+  // Kadrda turgan kod jim (takror oynasi suriladi) — kod ramkada turgan ekan qayta yuborilmaydi.
+  const { evaluateScan } = useScannerGate({
+    cooldownMs: CAMERA_COOLDOWN_MS,
+    duplicateCooldownMs: CAMERA_DUPLICATE_MS,
+    slidingDuplicate: true,
+  });
+  const scanEnabledRef = useRef(scanEnabled);
+  /** «Juda tez» bildirilgan oxirgi kod — keyingi kadrlari jim (kamera sekundiga ~25 kadr o'qiydi). */
+  const tooFastTokenRef = useRef<string | null>(null);
 
   useEffect(() => {
     onScanRef.current = onScan;
   }, [onScan]);
+
+  useEffect(() => {
+    scanEnabledRef.current = scanEnabled;
+  }, [scanEnabled]);
 
   const showResult = useCallback((type: CameraResult["type"], message?: string) => {
     resultIdRef.current += 1;
@@ -96,14 +130,13 @@ export const useScannerCameraSession = ({ videoRef, active, onScan }: Options) =
   }, []);
 
   // Ruxsat: oldindan so'raladi («prompt» — izoh kartasi; «denied» — yo'riqnoma, kamera yoqilmaydi).
-  // «Kamerani yoqish» yoki «Qayta urinish» bosilgandan keyin izoh kartasi qaytmaydi — brauzer o'zi so'raydi.
-  const explainedRef = useRef(false);
+  // «Kamerani yoqish» yoki «Qayta urinish» bosilgandan keyin izoh kartasi qaytmaydi (`permissionExplained`).
   useEffect(() => {
     let cancelled = false;
     void queryCameraPermission().then((permission: CameraPermission) => {
       if (cancelled) return;
       if (permission === "denied") setGate("denied");
-      else if (permission === "prompt" && !explainedRef.current) setGate("prompt");
+      else if (permission === "prompt" && !permissionExplained) setGate("prompt");
       else setGate("ready");
     });
     return () => {
@@ -123,15 +156,21 @@ export const useScannerCameraSession = ({ videoRef, active, onScan }: Options) =
 
   const handleDecode = useCallback(
     (raw: string) => {
+      if (!scanEnabledRef.current) return;
       const verdict = evaluateScan(raw);
       // Kamera bir kodni har kadrda qayta o'qiydi — takror jim (taxta 04.6).
       if (verdict === "duplicate") return;
       if (verdict === "cooldown") {
-        // Jim tashlamaymiz: operator qayta skanerlashi kerak (taxta 04.10).
+        // Jim tashlamaymiz: operator bilsin (taxta 04.10). Lekin bir kod uchun bir marta — kod kadrda qolsa
+        // keyingi kadrlar jim, pauza tugagach u o'zi qabul qilinadi (har kadrga xato ovozi chalinmaydi).
+        const key = raw.trim().toLowerCase();
+        if (tooFastTokenRef.current === key) return;
+        tooFastTokenRef.current = key;
         playScanSignal("error");
         showResult("tooFast");
         return;
       }
+      tooFastTokenRef.current = null;
       void Promise.resolve()
         .then(() => onScanRef.current(raw, "camera"))
         .catch(() => undefined);
@@ -144,25 +183,39 @@ export const useScannerCameraSession = ({ videoRef, active, onScan }: Options) =
     videoRef,
     onDecode: handleDecode,
     startErrorMessage: t("camera.failed.text"),
+    // Chiroq yoqilmadi — kamera ishlayveradi, «Kamera ochilmadi» kartasi emas, qisqa xabar.
+    onTorchError: () => {
+      playScanSignal("error");
+      showResult("error", t("camera.torchFailed"));
+    },
   });
+
+  // Ko'rinish almashdi (768 px chegarasi): `<video>` boshqa joyda qayta yaratildi — skaner yangisiga ulanadi.
+  const { restartScanner: restartOnLayout } = camera;
+  const layoutKeyRef = useRef(layoutKey);
+  useEffect(() => {
+    if (layoutKeyRef.current === layoutKey) return;
+    layoutKeyRef.current = layoutKey;
+    setFeedLive(false);
+    restartOnLayout();
+  }, [layoutKey, restartOnLayout]);
 
   const deniedOnStart = camera.cameraErrorKind === "denied";
   const denied = gate === "denied" || deniedOnStart;
   const failedKind = denied ? null : camera.cameraUnavailable ? "unsupported" : camera.cameraErrorKind;
 
-  // Ruxsat rad etilgan holat — xato ovozi (taxta 04.2 «Ovoz: xato»), bir marta.
-  const deniedSignalledRef = useRef(false);
+  // Ruxsat rad etilgan, kamera band yoki ochilmadi — xato ovozi (taxta 04.2, 04.14 «Ovoz: xato»), bir marta.
+  // «Qo'llab-quvvatlanmaydi» — qurilma xususiyati, ovozsiz.
+  const failure = denied ? "denied" : failedKind && failedKind !== "unsupported" ? failedKind : null;
+  const signalledRef = useRef<string | null>(null);
   useEffect(() => {
-    if (denied && !deniedSignalledRef.current) {
-      deniedSignalledRef.current = true;
-      playScanSignal("error");
-    }
-    if (!denied) deniedSignalledRef.current = false;
-  }, [denied]);
+    if (failure && signalledRef.current !== failure) playScanSignal("error");
+    signalledRef.current = failure;
+  }, [failure]);
 
   /** «Kamerani yoqish» (izoh kartasi) — brauzer ruxsat so'raydi. */
   const enable = useCallback(() => {
-    explainedRef.current = true;
+    permissionExplained = true;
     setFeedLive(false);
     setGate("ready");
   }, []);
@@ -170,7 +223,7 @@ export const useScannerCameraSession = ({ videoRef, active, onScan }: Options) =
   /** «Qayta urinish»: ruxsat qayta tekshiriladi va kamera qaytadan ishga tushadi. */
   const { restartScanner } = camera;
   const retry = useCallback(() => {
-    explainedRef.current = true;
+    permissionExplained = true;
     setFeedLive(false);
     setGate("checking");
     setCheckSession((value) => value + 1);

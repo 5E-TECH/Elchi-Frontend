@@ -18,8 +18,9 @@ type UseOrderQrScannerOptions<TOrder extends OrderQrScannerItem> = {
   /**
    * Kamera (kontekstli markaziy tugma, Trello v1eLN2tV): berilsa hook o'zi skan maqsadini ro'yxatdan
    * o'tkazadi (`useScanTarget`). Kamera o'qigan kod USB bilan AYNAN bir xil moslashdan o'tadi
-   * (topildi → `onMatch`, aks holda `onMissing`). USB o'chiq bo'lsa (`enabled=false` yoki ro'yxat bo'sh)
-   * maqsad ham yo'q — markaziy tugma universal `/scan` ni ochadi.
+   * (topildi → `onMatch`, aks holda `onMissing`). Maqsad faqat `enabled=false` bo'lsa yo'q (markaziy tugma
+   * universal `/scan` ni ochadi). Ro'yxat bo'shligi (yuklanmoqda, hammasi qabul qilindi, bo'sh market) maqsadni
+   * OLMAYDI: kamera ochiq qoladi («Qoldi 0», «Tugatish» ko'rinadi), skan esa `onMissing` ga tushadi.
    */
   camera?: Omit<ScanTarget, "onScan">;
 };
@@ -59,7 +60,9 @@ export const useOrderQrScanner = <TOrder extends OrderQrScannerItem>({
       return true;
     }
 
-    if (rawValue.trim().length < minLength && !rawValue.includes("/scan/")) {
+    // USB: qisqa qiymat — maydonga odam yozgan matn, jim. Kamera / qo'lda kiritish esa ataylab berilgan kod —
+    // jim qolmaydi, «topilmadi» bo'ladi (aks holda kamera hech qanday javob bermasdi).
+    if (source === "keyboard" && rawValue.trim().length < minLength && !rawValue.includes("/scan/")) {
       return false;
     }
 
@@ -68,16 +71,15 @@ export const useOrderQrScanner = <TOrder extends OrderQrScannerItem>({
   }, [minLength, onMatch, onMissing, orderScanIndex]);
 
   const handleKeyboardScan = useCallback((rawValue: string) => matchScan(rawValue, "keyboard"), [matchScan]);
-  const active = enabled && orders.length > 0;
 
   useKeyboardScanner({
-    enabled: active,
+    enabled: enabled && orders.length > 0,
     captureEditableTargets,
     onScan: handleKeyboardScan,
   });
 
   useScanTarget(
-    camera && active
+    camera && enabled
       ? {
           ...camera,
           onScan: (rawValue, source) => {

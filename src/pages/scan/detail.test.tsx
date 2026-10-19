@@ -10,6 +10,7 @@ const navigateMock = vi.fn();
 const feedbackMock = vi.fn();
 const assignMock = vi.fn();
 const receiveMock = vi.fn();
+const invalidateMock = vi.fn(async () => undefined);
 const fetchMock = vi.fn();
 const batchDetailMock = vi.fn<(...args: unknown[]) => { data: undefined }>(() => ({ data: undefined }));
 
@@ -28,6 +29,8 @@ vi.mock("./lib/scanResource", async () => ({
   fetchScanDetail: (...args: unknown[]) => fetchMock(...args),
   scanAssignOrder: (...args: unknown[]) => assignMock(...args),
   receiveScannedPackage: (...args: unknown[]) => receiveMock(...args),
+  // Amaldan keyin boshqa ekranlar keshi yangilanadi (6qypMFeT) — chaqirilgani tekshiriladi.
+  invalidateAfterScanAction: (...args: unknown[]) => invalidateMock(...(args as [])),
 }));
 
 // «Holat tarixi» o'z testlarida (`features/order-tracking`, `widgets/order-tracking`); bu yerda faqat joyi.
@@ -78,6 +81,7 @@ beforeEach(() => {
   feedbackMock.mockReset();
   assignMock.mockReset();
   receiveMock.mockReset();
+  invalidateMock.mockClear();
   batchDetailMock.mockClear();
   fetchMock.mockReset().mockResolvedValue({ type: "order", data: ORDER });
 });
@@ -177,6 +181,7 @@ describe("ScanDetailPage — O'ZIMGA OLISH rad etilganda", () => {
     expect(assignMock).toHaveBeenCalledWith("PARCEL-A");
     expect(await screen.findByText("Buyurtma sizga biriktirildi")).toBeInTheDocument();
     expect(feedbackMock).toHaveBeenCalledWith("success");
+    expect(invalidateMock).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("button", { name: /O'zimga olish/ })).toBeDisabled();
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/scan"), { timeout: 3000 });
   });
@@ -317,6 +322,7 @@ describe("ScanDetailPage — paket va pochta", () => {
 
     expect(receiveMock).toHaveBeenCalledWith("137");
     expect(await screen.findByText("Paket qabul qilindi")).toBeInTheDocument();
+    expect(invalidateMock).toHaveBeenCalledTimes(1);
     // Ixtiyoriy nom to'ldirish (`GET transfer-batches/:id`) xatosi global xabar bermaydi.
     expect(batchDetailMock).toHaveBeenCalledWith("137", { silentError: true });
   });

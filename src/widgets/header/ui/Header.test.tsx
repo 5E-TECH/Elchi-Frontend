@@ -152,6 +152,9 @@ beforeEach(() => {
 afterEach(() => {
   window.matchMedia = originalMatchMedia;
   document.documentElement.classList.remove("dark", "light");
+  // Modul darajasidagi holat (skan maqsadi, ochiq oyna) keyingi testlarga o'tmasin — tekshiruv yiqilsa ham.
+  resetScanTargets();
+  resetScannerHost();
 });
 
 describe("Header bar (.el-topbar)", () => {
@@ -241,8 +244,6 @@ describe("Header bar (.el-topbar)", () => {
     await user.click(scan);
     expect(isScannerOverlayOpen()).toBe(true);
     expect(screen.getByTestId("path")).toHaveTextContent("/mails/2493");
-    resetScanTargets();
-    resetScannerHost();
   });
 
   it("market rolida «Skanerlash» yo'q (maket: persona.scan=false, ega qarori)", () => {

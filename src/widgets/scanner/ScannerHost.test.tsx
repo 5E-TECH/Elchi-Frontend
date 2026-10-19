@@ -11,8 +11,12 @@ import ScannerHost from "./ScannerHost";
 
 /** Kontekstli skaner oynasi (shell): maqsad bor — sahifa ustida kamera; yo'q — `/scan`. */
 
+const camera = vi.hoisted(() => ({ onDecode: null as null | ((value: string) => void) }));
+
 vi.mock("../../shared/lib/useCameraQrScanner", () => ({
-  useCameraQrScanner: () => ({
+  useCameraQrScanner: ({ onDecode }: { onDecode: (value: string) => void }) => {
+    camera.onDecode = onDecode;
+    return {
     isStarting: false,
     torchEnabled: false,
     hasTorch: false,
@@ -23,23 +27,31 @@ vi.mock("../../shared/lib/useCameraQrScanner", () => ({
     toggleTorch: vi.fn(),
     stopScanner: vi.fn(),
     setCameraError: vi.fn(),
-  }),
+    };
+  },
 }));
 
 const onScan = vi.fn();
 
 const MARKETS: Record<string, string> = { "7": "Urgut Savdo", "8": "Baraka Shop" };
 
-const FlowPage = ({ marketId }: { marketId: string }) => {
+/** `delayMs` — sahifa maqsadini kechikib ro'yxatdan o'tkazadi (ro'yxat yuklanmoqda, lazy route). */
+const FlowPage = ({ marketId, delayMs = 0, scan = onScan }: { marketId: string; delayMs?: number; scan?: typeof onScan }) => {
   const [enabled, setEnabled] = useState(true);
+  const [ready, setReady] = useState(delayMs === 0);
   const navigate = useNavigate();
+  useEffect(() => {
+    if (delayMs === 0) return undefined;
+    const timer = window.setTimeout(() => setReady(true), delayMs);
+    return () => window.clearTimeout(timer);
+  }, [delayMs]);
   useScanTarget(
-    enabled
+    enabled && ready
       ? {
           id: `new-orders:market:${marketId}`,
           title: "Qabul qilish",
           context: MARKETS[marketId],
-          onScan,
+          onScan: scan,
           switcher: {
             label: MARKETS[marketId],
             value: marketId,
@@ -66,12 +78,15 @@ const Path = () => {
   return <span data-testid="path">{useLocation().pathname}</span>;
 };
 
-const renderShell = (route = "/new-orders/7") =>
+const onScanB = vi.fn();
+
+const renderShell = (route = "/new-orders/7", { delayB = 0 }: { delayB?: number } = {}) =>
   renderWithProviders(
     <>
       <Routes>
-        <Route path="/new-orders/7" element={<FlowPage marketId="7" />} />
-        <Route path="/new-orders/8" element={<FlowPage marketId="8" />} />
+        {/* `key` — har market alohida sahifa nusxasi (B o'z ro'yxatini noldan yuklaydi). */}
+        <Route path="/new-orders/7" element={<FlowPage key="7" marketId="7" />} />
+        <Route path="/new-orders/8" element={<FlowPage key="8" marketId="8" delayMs={delayB} scan={onScanB} />} />
         <Route path="*" element={null} />
       </Routes>
       <ScannerHost />
@@ -88,7 +103,18 @@ beforeAll(async () => {
 afterEach(() => {
   resetScanTargets();
   resetScannerHost();
+  onScan.mockReset();
+  onScanB.mockReset();
+  camera.onDecode = null;
 });
+
+const switchToB = async (user: ReturnType<typeof userEvent.setup>) => {
+  const dialog = await screen.findByRole("dialog", { name: "Qabul qilish" });
+  await user.click(within(dialog).getByRole("button", { name: "Urgut Savdo — almashtirish" }));
+  const sheet = await screen.findByRole("dialog", { name: "Marketni tanlang" });
+  await user.click(within(sheet).getByRole("button", { name: /Baraka Shop/ }));
+  await waitFor(() => expect(screen.getByTestId("path")).toHaveTextContent("/new-orders/8"));
+};
 
 describe("ScannerHost", () => {
   it("faol maqsad — kamera sahifa ustida, navigatsiyasiz; «Skanerni yopish» yopadi", async () => {
@@ -156,5 +182,39 @@ describe("ScannerHost", () => {
     });
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument(), { timeout: 3000 });
     expect(isScannerOverlayOpen()).toBe(false);
+  });
+
+  it("almashish oralig'ida (yangi sahifa maqsadi hali yo'q) — kamera ochiq, lekin skan eski sahifaga yetmaydi", async () => {
+    const user = userEvent.setup();
+    renderShell("/new-orders/7", { delayB: 400 });
+    act(() => {
+      openScanner();
+    });
+    await switchToB(user);
+
+    const dialog = await screen.findByRole("dialog", { name: "Qabul qilish" });
+    expect(within(dialog).getByText("Yuklanmoqda")).toBeInTheDocument();
+    act(() => camera.onDecode?.("65f0c1aa22bb33cc44dd55ee"));
+    await new Promise((done) => setTimeout(done, 0));
+    expect(onScan).not.toHaveBeenCalled();
+    expect(onScanB).not.toHaveBeenCalled();
+
+    // Yangi sahifa maqsadini ro'yxatdan o'tkazdi (< 1 s) — kamera yopilmagan, skan endi B ga.
+    await waitFor(() => expect(within(screen.getByRole("dialog", { name: "Qabul qilish" })).queryByText("Yuklanmoqda")).not.toBeInTheDocument());
+    expect(isScannerOverlayOpen()).toBe(true);
+    act(() => camera.onDecode?.("ffffffffffffffffffffffff"));
+    await waitFor(() => expect(onScanB).toHaveBeenCalledWith("ffffffffffffffffffffffff", "camera"));
+    expect(onScan).not.toHaveBeenCalled();
+  });
+
+  it("yangi sahifa maqsadi 1 s dan kech kelsa — oyna yopiladi", async () => {
+    const user = userEvent.setup();
+    renderShell("/new-orders/7", { delayB: 1600 });
+    act(() => {
+      openScanner();
+    });
+    await switchToB(user);
+    await waitFor(() => expect(isScannerOverlayOpen()).toBe(false), { timeout: 3000 });
+    expect(screen.queryByRole("dialog", { name: "Qabul qilish" })).not.toBeInTheDocument();
   });
 });

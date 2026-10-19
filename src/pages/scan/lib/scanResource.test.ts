@@ -6,6 +6,7 @@ const apiMock = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn() }));
 vi.mock("../../../shared/api/api", () => ({ api: apiMock }));
 
 import { BATCH_KEY } from "../../../entities/batch";
+import { queryKeys } from "../../../shared/config/queryKeys";
 import {
   SCAN_ACTION_QUERY_PREFIXES,
   fetchScanDetail,
@@ -132,7 +133,7 @@ describe("invalidateAfterScanAction (6qypMFeT)", () => {
     expect(SCAN_ACTION_QUERY_PREFIXES).toContainEqual([BATCH_KEY]);
   });
 
-  it("marks orders, mails, batches and scan results stale without refetching the open result", async () => {
+  it("marks orders, mails, batches, branch packages, dashboard and scan results stale without refetching the open result", async () => {
     const client = new QueryClient();
     const spy = vi.spyOn(client, "invalidateQueries");
 
@@ -142,7 +143,14 @@ describe("invalidateAfterScanAction (6qypMFeT)", () => {
       { queryKey: ["orders"], refetchType: "active" },
       { queryKey: ["mails"], refetchType: "active" },
       { queryKey: ["batches"], refetchType: "active" },
+      { queryKey: ["branches", "with-sent-batches"], refetchType: "active" },
+      { queryKey: ["dashboard"], refetchType: "active" },
       { queryKey: ["scan-detail"], refetchType: "none" },
     ]);
+  });
+
+  it("covers the «Filial paketlari» list key (prefix of queryKeys.branches.withSentBatches)", () => {
+    const key = queryKeys.branches.withSentBatches({ page: 1 });
+    expect(SCAN_ACTION_QUERY_PREFIXES.some((prefix) => prefix.every((part, index) => key[index] === part))).toBe(true);
   });
 });

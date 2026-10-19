@@ -3,12 +3,13 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import i18n, { i18nReady } from "../../../i18n";
 import { renderWithProviders } from "../../../test/test-utils";
-import { playScanFeedback } from "../../lib/scanner/feedback";
+import { playScanFeedback, playScanSignal } from "../../lib/scanner/feedback";
 import { isScannerCameraMounted } from "../../lib/scanner/scannerHost";
 import type { ScanTarget } from "../../lib/scanner/scanTargets";
 import type { CameraErrorKind } from "../../lib/qrScanner";
 import { PHONE_QUERY } from "../primitives/date/useIsPhone";
 import { ScannerCamera } from "./ScannerCamera";
+import { resetCameraPermissionExplained } from "./useScannerCameraSession";
 
 /**
  * `ScannerCamera` — taxta `tizim-scanner` (§03 anatomiya, §04 holatlar, §06 desktop oynasi). Kamera kutubxonasi
@@ -18,6 +19,7 @@ import { ScannerCamera } from "./ScannerCamera";
 const camera = vi.hoisted(() => ({
   isActive: false,
   onDecode: null as null | ((value: string) => void),
+  onTorchError: null as null | (() => void),
   state: {
     isStarting: false,
     torchEnabled: false,
@@ -30,10 +32,17 @@ const camera = vi.hoisted(() => ({
   toggleTorch: vi.fn(async () => undefined),
 }));
 
+vi.mock("../../lib/scanner/feedback", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../lib/scanner/feedback")>()),
+  // Ovoz / tebranish o'rniga — necha marta chalingani sanaladi.
+  playScanSignal: vi.fn(),
+}));
+
 vi.mock("../../lib/useCameraQrScanner", () => ({
-  useCameraQrScanner: (options: { isActive: boolean; onDecode: (value: string) => void }) => {
+  useCameraQrScanner: (options: { isActive: boolean; onDecode: (value: string) => void; onTorchError?: () => void }) => {
     camera.isActive = options.isActive;
     camera.onDecode = options.onDecode;
+    camera.onTorchError = options.onTorchError ?? null;
     return {
       ...camera.state,
       restartScanner: camera.restart,
@@ -97,6 +106,9 @@ beforeEach(() => {
   };
   camera.isActive = false;
   camera.onDecode = null;
+  camera.restart.mockClear();
+  resetCameraPermissionExplained();
+  vi.mocked(playScanSignal).mockClear();
   setPhone(false);
   setPermission(null);
 });
@@ -246,6 +258,18 @@ describe("ScannerCamera — ruxsat va xato holatlari (§04.1, 04.2, 04.14)", () 
     expect(camera.isActive).toBe(false);
     await user.click(screen.getByRole("button", { name: "Kamerani yoqish" }));
     await waitFor(() => expect(camera.isActive).toBe(true));
+  });
+
+  it("izoh kartasi sahifa yuklanishida bir marta: «Kamerani yoqish» dan keyin qayta ochilganda brauzer o'zi so'raydi", async () => {
+    setPermission("prompt");
+    const user = userEvent.setup();
+    const { unmount } = renderWithProviders(<ScannerCamera target={makeTarget()} onClose={vi.fn()} />);
+    await user.click(await screen.findByRole("button", { name: "Kamerani yoqish" }));
+    unmount();
+
+    renderWithProviders(<ScannerCamera target={makeTarget()} onClose={vi.fn()} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    expect(screen.queryByText("Kameraga ruxsat bering")).not.toBeInTheDocument();
   });
 
   it("ruxsat rad etilgan — 3 qadam (desktop: qulf belgisi), «Qayta urinish» va «Qo'lda kiritish»", async () => {
@@ -421,3 +445,183 @@ describe("ScannerCamera — kontekstni almashtirish va hisoblagich qatori (ega, 
   });
 });
 
+/** Ekran kengligi test davomida o'zgaradigan `matchMedia` (telefonni burish, oyna o'lchami). */
+const liveViewport = (initialPhone: boolean) => {
+  let phone = initialPhone;
+  const listeners = new Set<() => void>();
+  window.matchMedia = ((query: string) => ({
+    get matches() {
+      return phone && query === PHONE_QUERY;
+    },
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: (_type: string, listener: () => void) => listeners.add(listener),
+    removeEventListener: (_type: string, listener: () => void) => listeners.delete(listener),
+    dispatchEvent: vi.fn(),
+  })) as unknown as typeof window.matchMedia;
+  return (next: boolean) => {
+    phone = next;
+    act(() => listeners.forEach((listener) => listener()));
+  };
+};
+
+describe("ScannerCamera — uzluksiz skan va review tuzatishlari", () => {
+  it("«Juda tez» bir kod uchun bir marta: B kodining ketma-ket kadrlari 700 ms ichida — bitta ovoz, bitta xabar", async () => {
+    const target = makeTarget();
+    renderWithProviders(<ScannerCamera target={target} onClose={vi.fn()} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    feedPlaying();
+
+    act(() => camera.onDecode?.("65f0c1aa22bb33cc44dd55ee"));
+    await waitFor(() => expect(target.onScan).toHaveBeenCalledTimes(1));
+    // Kamera sekundiga ~25 kadr o'qiydi: A ham, B ham kadrda.
+    act(() => {
+      for (let frame = 0; frame < 8; frame += 1) {
+        camera.onDecode?.("65f0c1aa22bb33cc44dd55ee");
+        camera.onDecode?.("ffffffffffffffffffffffff");
+      }
+    });
+    expect(await screen.findByText("Juda tez — skan qabul qilinmadi")).toBeInTheDocument();
+    expect(vi.mocked(playScanSignal).mock.calls.filter(([type]) => type === "error")).toHaveLength(1);
+    expect(screen.getAllByText("Juda tez — skan qabul qilinmadi")).toHaveLength(1);
+    expect(target.onScan).toHaveBeenCalledTimes(1);
+  });
+
+  it("kadrda turgan kod 1,8 s dan keyin ham qayta yuborilmaydi (takror oynasi suriladi)", async () => {
+    const target = makeTarget();
+    renderWithProviders(<ScannerCamera target={target} onClose={vi.fn()} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    feedPlaying();
+
+    const now = vi.spyOn(Date, "now");
+    let clock = 1_000_000;
+    now.mockImplementation(() => clock);
+    act(() => {
+      for (; clock < 1_005_000; clock += 200) camera.onDecode?.("65f0c1aa22bb33cc44dd55ee");
+    });
+    await waitFor(() => expect(target.onScan).toHaveBeenCalledTimes(1));
+    await new Promise((done) => setTimeout(done, 0));
+    expect(target.onScan).toHaveBeenCalledTimes(1);
+  });
+
+  it("768 px chegarasi kesib o'tilsa (oyna rejimi) — skaner yangi <video> da qayta ishga tushadi", async () => {
+    const setViewport = liveViewport(false);
+    renderWithProviders(<ScannerCamera target={makeTarget()} onClose={vi.fn()} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    const before = document.querySelector("video");
+    expect(camera.restart).not.toHaveBeenCalled();
+
+    setViewport(true);
+    await waitFor(() => expect(camera.restart).toHaveBeenCalledTimes(1));
+    expect(document.querySelector("video")).not.toBe(before);
+    expect(await screen.findByText("Kamera ishga tushmoqda")).toBeInTheDocument();
+  });
+
+  it("suspended (maqsad almashmoqda) — kamera ochiq, lekin skan va qo'lda kiritish yuborilmaydi", async () => {
+    const target = makeTarget();
+    const user = userEvent.setup();
+    renderWithProviders(<ScannerCamera target={target} suspended onClose={vi.fn()} />);
+    const dialog = await screen.findByRole("dialog", { name: "Qabul qilish" });
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    expect(within(dialog).getByText("Yuklanmoqda")).toBeInTheDocument();
+
+    act(() => camera.onDecode?.("65f0c1aa22bb33cc44dd55ee"));
+    await user.click(within(dialog).getByRole("button", { name: "Qo'lda kiritish" }));
+    const sheet = await screen.findByRole("dialog", { name: "Kodni qo'lda kiriting" });
+    await user.type(within(sheet).getByLabelText("Buyurtma raqami yoki yorliqdagi kod"), "P-0412");
+    await user.click(within(sheet).getByRole("button", { name: "Qo'shish" }));
+    await new Promise((done) => setTimeout(done, 0));
+    expect(target.onScan).not.toHaveBeenCalled();
+  });
+
+  it("chiroq yoqilmadi — kamera ishlayveradi, «Kamera ochilmadi» kartasi emas, qisqa xabar", async () => {
+    camera.state.hasTorch = true;
+    renderWithProviders(<ScannerCamera target={makeTarget()} onClose={vi.fn()} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    feedPlaying();
+
+    act(() => camera.onTorchError?.());
+    expect(await screen.findByText("Chiroqni yoqib bo'lmadi")).toBeInTheDocument();
+    expect(screen.queryByText("Kamera ochilmadi")).not.toBeInTheDocument();
+    expect(camera.isActive).toBe(true);
+  });
+
+  it("kamera band — xato ovozi bir marta", async () => {
+    camera.state.cameraErrorKind = "busy";
+    renderWithProviders(<ScannerCamera target={makeTarget()} onClose={vi.fn()} />);
+    expect(await screen.findByText("Kamera band")).toBeInTheDocument();
+    expect(vi.mocked(playScanSignal).mock.calls.filter(([type]) => type === "error")).toHaveLength(1);
+  });
+
+  it("Esc ichki varaqda (qo'lda kiritish) — faqat varaq yopiladi, kamera ochiq qoladi", async () => {
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(<ScannerCamera target={makeTarget()} onClose={onClose} />);
+    const dialog = await screen.findByRole("dialog", { name: "Qabul qilish" });
+    await user.click(within(dialog).getByRole("button", { name: "Qo'lda kiritish" }));
+    await screen.findByRole("dialog", { name: "Kodni qo'lda kiriting" });
+
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Kodni qo'lda kiriting" })).not.toBeInTheDocument());
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog", { name: "Qabul qilish" })).toBeInTheDocument();
+  });
+});
+
+describe("ScannerCamera — telefon pastki paneli karta holatiga qarab (04.1, 04.2, 04.14)", () => {
+  it("ruxsat rad etilgan — pastki panel yo'q: bitta «Qo'lda kiritish», bitta asosiy amal", async () => {
+    setPhone(true);
+    setPermission("denied");
+    renderWithProviders(<ScannerCamera target={makeTarget({ finish: { label: "Tugatish", onFinish: vi.fn() } })} onClose={vi.fn()} />);
+    await screen.findByText("Kameraga ruxsat berilmagan");
+    expect(screen.getAllByRole("button", { name: "Qo'lda kiritish" })).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: "Tugatish" })).not.toBeInTheDocument();
+  });
+
+  it("ruxsat izohi — pastki panel yo'q", async () => {
+    setPhone(true);
+    setPermission("prompt");
+    renderWithProviders(<ScannerCamera target={makeTarget()} onClose={vi.fn()} />);
+    await screen.findByText("Kameraga ruxsat bering");
+    expect(screen.getAllByRole("button", { name: "Qo'lda kiritish" })).toHaveLength(1);
+    expect(screen.queryByRole("button", { name: "Yopish" })).not.toBeInTheDocument();
+  });
+
+  it("kamera band — faqat hisoblagich qatori qoladi, amallar qatori yo'q", async () => {
+    setPhone(true);
+    camera.state.cameraErrorKind = "busy";
+    renderWithProviders(
+      <ScannerCamera
+        target={makeTarget({ list: [{ key: "1", title: "№10254 · Sanjar Mirzayev" }], finish: { label: "Tugatish", onFinish: vi.fn() } })}
+        onClose={vi.fn()}
+      />,
+    );
+    const dialog = await screen.findByRole("dialog", { name: "Qabul qilish" });
+    await within(dialog).findByText("Kamera band");
+    expect(within(dialog).getByText("/ 6")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: "Ro'yxat" })).toBeInTheDocument();
+    expect(within(dialog).getAllByRole("button", { name: "Qo'lda kiritish" })).toHaveLength(1);
+    expect(within(dialog).queryByRole("button", { name: "Tugatish" })).not.toBeInTheDocument();
+  });
+});
+
+describe("ScannerCamera — presentation=page, telefon (§08)", () => {
+  it("fokus «Skanerni yopish» da, Esc yopadi; varaq ochiq bo'lsa Esc faqat varaqni yopadi", async () => {
+    setPhone(true);
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(<ScannerCamera presentation="page" target={makeTarget()} onClose={onClose} />);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Skanerni yopish" })).toHaveFocus());
+
+    await user.click(screen.getByRole("button", { name: "Qo'lda kiritish" }));
+    await screen.findByRole("dialog", { name: "Kodni qo'lda kiriting" });
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Kodni qo'lda kiriting" })).not.toBeInTheDocument());
+    expect(onClose).not.toHaveBeenCalled();
+
+    await user.keyboard("{Escape}");
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});

@@ -13,7 +13,9 @@ export type { ScanSource } from "./feedback";
  * Kamera o'qigan har kod `target.onScan(raw, "camera")` ga tushadi — USB skaner bilan aynan bir xil handler.
  *
  * Redux EMAS: bu UI holati, sahifa almashganda o'zi tozalanadi (komponent o'chdi → maqsad olindi).
- * Stack: oxirgi ro'yxatdan o'tgan ustun (sahifa ochiq turganda ochilgan oynaning maqsadi sahifanikidan ustun).
+ * Stack: avval qatlam (`layer: "dialog"` — oyna ichidagi maqsad doim sahifanikidan ustun, hatto ikkalasi bir
+ * commit'da o'rnatilsa yoki sahifa maqsadi oyna ochiq turganda qayta yoqilsa ham), qatlam ichida — oxirgi
+ * ro'yxatdan o'tgan ustun.
  *
  *   useScanTarget(enabled ? { id: "new-orders:market:7", title: "Qabul qilish", onScan } : null);
  *   const target = useActiveScanTarget();
@@ -54,9 +56,13 @@ export type ScanTargetSwitcher = {
 /** Hisoblagich kengaytmasi: «Qabul qilindi 3 · Qoldi 3 · Topilmadi 1». */
 export type ScanTargetStat = { key: string; label: string; value: number; tone?: ScanTargetTone };
 
+export type ScanTargetLayer = "page" | "dialog";
+
 export interface ScanTarget {
   /** Barqaror kalit (masalan `"new-orders:market:7"`). */
   id: string;
+  /** Qatlam (sukut `"page"`): oyna (`Dialog`) ichidagi maqsad `"dialog"` — u sahifanikidan doim ustun. */
+  layer?: ScanTargetLayer;
   /** Kamera sarlavhasi — maketdagi matn: «Qabul qilish». */
   title: string;
   /** Sarlavha ostidagi kontekst: «Urgut Savdo · 6 ta buyurtma». */
@@ -128,6 +134,7 @@ const sameSwitcher = (a: ScanTargetSwitcher | undefined, b: ScanTargetSwitcher |
 /** Funksiyasiz «ma'lumot» qismi teng bo'lsa — ko'rinish yangilanmaydi (har render yangi obyekt keladi). */
 const sameData = (a: ScanTarget, b: ScanTarget) =>
   a.id === b.id &&
+  (a.layer ?? "page") === (b.layer ?? "page") &&
   a.title === b.title &&
   a.context === b.context &&
   a.hint === b.hint &&
@@ -217,8 +224,15 @@ export const unregisterScanTarget = (key: number) => {
   emit();
 };
 
-/** Stack tepasidagi (faol) maqsad yoki `null`. React'dan tashqarida ham (`openScanner`). */
-export const getActiveScanTarget = (): ScanTarget | null => stack[stack.length - 1]?.view ?? null;
+const LAYER_RANK: Record<ScanTargetLayer, number> = { page: 0, dialog: 1 };
+const rankOf = (entry: Entry) => LAYER_RANK[entry.view.layer ?? "page"];
+
+/** Faol maqsad (eng yuqori qatlamning oxirgisi) yoki `null`. React'dan tashqarida ham (`openScanner`). */
+export const getActiveScanTarget = (): ScanTarget | null => {
+  let top: Entry | undefined;
+  for (const entry of stack) if (!top || rankOf(entry) >= rankOf(top)) top = entry;
+  return top?.view ?? null;
+};
 
 /** Faqat testlar uchun: reyestrni tozalaydi. */
 export const resetScanTargets = () => {

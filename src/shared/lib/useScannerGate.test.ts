@@ -36,4 +36,37 @@ describe("useScannerGate.evaluateScan", () => {
     expect(result.current.canAcceptScan("TOKEN-A")).toBe(true);
     expect(result.current.canAcceptScan("TOKEN-B")).toBe(false);
   });
+
+  it("slidingDuplicate (kamera): kadrda turgan kod 5 s davomida faqat bir marta qabul qilinadi", () => {
+    vi.useFakeTimers();
+    const { result } = renderHook(() =>
+      useScannerGate({ cooldownMs: 700, duplicateCooldownMs: 1800, slidingDuplicate: true }),
+    );
+
+    const verdicts: string[] = [];
+    for (let elapsed = 0; elapsed <= 5000; elapsed += 200) {
+      verdicts.push(result.current.evaluateScan("TOKEN-A"));
+      vi.advanceTimersByTime(200);
+    }
+    expect(verdicts.filter((verdict) => verdict === "accepted")).toHaveLength(1);
+
+    // Kod ramkadan chiqdi — takror oynasi tugagach yana qabul qilinadi.
+    vi.advanceTimersByTime(1800);
+    expect(result.current.evaluateScan("TOKEN-A")).toBe("accepted");
+  });
+
+  it("slidingDuplicate: A kadrda qolsa ham pauza faqat qabul qilingan skandan — B 700 ms dan keyin qabul", () => {
+    vi.useFakeTimers();
+    const { result } = renderHook(() =>
+      useScannerGate({ cooldownMs: 700, duplicateCooldownMs: 1800, slidingDuplicate: true }),
+    );
+
+    expect(result.current.evaluateScan("TOKEN-A")).toBe("accepted");
+    vi.advanceTimersByTime(400);
+    expect(result.current.evaluateScan("TOKEN-A")).toBe("duplicate");
+    expect(result.current.evaluateScan("TOKEN-B")).toBe("cooldown");
+    vi.advanceTimersByTime(400);
+    expect(result.current.evaluateScan("TOKEN-A")).toBe("duplicate");
+    expect(result.current.evaluateScan("TOKEN-B")).toBe("accepted");
+  });
 });

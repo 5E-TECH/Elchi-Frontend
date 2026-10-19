@@ -1,5 +1,5 @@
 // dizayn-v2: shell
-import { lazy, memo, Suspense, useEffect, useState } from "react";
+import { lazy, memo, Suspense, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   closeScanner,
@@ -23,6 +23,9 @@ const ScannerCamera = lazy(loadScannerCamera);
  * Faol maqsad almashsa (ega, «F»: kamera ichida market tanlandi → `/new-orders/:boshqaMarketId`, yangi sahifa o'z
  * maqsadini ro'yxatdan o'tkazdi) — kamera OCHIQ qoladi va yangi maqsad bilan davom etadi (oqim uzilmaydi).
  * Maqsad umuman yo'qolsa (boshqa bo'limga o'tildi, oqim tugadi) — `SCANNER_TARGET_SWITCH_GRACE_MS` dan keyin yopiladi.
+ * Shu oraliqda kamera faqat KO'RINADI (`suspended`): eski maqsadning sarlavhasi va hisoblagichi turadi, lekin
+ * skan, qo'lda kiritish, «Bekor qilish», almashtirish va «Tugatish» eski sahifaning handler'lariga yetmaydi
+ * (aks holda o'qilgan kod yopilgan sahifaga — masalan oldingi marketning ro'yxatiga — tushardi).
  * Kamera kodi alohida bo'lak (`lazy`): shell bilan QR kutubxonasi yuklanmaydi.
  */
 const ScannerHost = () => {
@@ -44,14 +47,30 @@ const ScannerHost = () => {
   // Shell yopilsa (chiqish, boshqa layout) oyna ochiq holatda qolib ketmasin.
   useEffect(() => () => closeScanner(), []);
 
-  const shown = target ?? held;
+  const frozen = useMemo(() => (held ? freezeTarget(held) : null), [held]);
+  const shown = target ?? frozen;
   if (!open || !shown) return null;
 
   return (
     <Suspense fallback={null}>
-      <ScannerCamera presentation="overlay" target={shown} onClose={closeScanner} />
+      <ScannerCamera presentation="overlay" target={shown} suspended={!target} onClose={closeScanner} />
     </Suspense>
   );
 };
+
+/** Almashish oralig'i uchun maqsad nusxasi: faqat ko'rinish, hech bir handler eski sahifaga yetmaydi. */
+const freezeTarget = (target: ScanTarget): ScanTarget => ({
+  id: target.id,
+  title: target.title,
+  context: target.context,
+  hint: target.hint,
+  icon: target.icon,
+  progress: target.progress,
+  stats: target.stats,
+  note: target.note,
+  listTitle: target.listTitle,
+  list: target.list?.map((item) => ({ key: item.key, title: item.title, subtitle: item.subtitle, tone: item.tone })),
+  onScan: () => undefined,
+});
 
 export default memo(ScannerHost);

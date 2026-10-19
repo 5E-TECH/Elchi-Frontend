@@ -1148,7 +1148,9 @@
       "torchOn": "Flashlight on",
       "paused": "Camera paused",
       "offline": "No internet",
-      "usbReady": "USB scanner is ready too"
+      "usbReady": "USB scanner is ready too",
+      "switching": "Loading",
+      "off": "Camera off"
     },
     "hint": {
       "aim": "Bring the QR code into the frame",
@@ -1249,6 +1251,7 @@
       "error": "The list did not load",
       "retry": "Try again",
       "current": "Selected"
-    }
+    },
+    "torchFailed": "Couldn't switch the flashlight"
   }
 }

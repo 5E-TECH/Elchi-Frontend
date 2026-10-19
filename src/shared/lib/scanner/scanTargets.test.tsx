@@ -46,6 +46,19 @@ describe("scanTargets", () => {
     page.unmount();
   });
 
+  it("layer=dialog — oyna maqsadi sahifanikidan doim ustun (bir commit'da o'rnatilsa ham, sahifa qayta yoqilsa ham)", () => {
+    // Bola (oyna) effekti ota (sahifa) effektidan oldin ishlaydi — tartib bo'yicha sahifa tepaga chiqardi.
+    const Page = ({ pageOn }: { pageOn: boolean }) => {
+      useScanTarget(pageOn ? target("page") : null);
+      return <Register value={target("dialog", { layer: "dialog" })} />;
+    };
+    const { rerender } = render(<Page pageOn />);
+    expect(getActiveScanTarget()?.id).toBe("dialog");
+    rerender(<Page pageOn={false} />);
+    rerender(<Page pageOn />);
+    expect(getActiveScanTarget()?.id).toBe("dialog");
+  });
+
   it("`null` — ro'yxatdan chiqadi (USB o'chiq: maqsad ham yo'q)", () => {
     const { rerender } = render(<Register value={target("page")} />);
     rerender(<Register value={null} />);

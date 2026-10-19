@@ -70,7 +70,8 @@ export const ScanOutcomeCard = ({ outcome }: { outcome: ScanOutcome }) => {
       actions={<span className="text-xs text-text-muted">{formatDateTimeLocalized(outcome.at, { language })}</span>}
       bodyClassName="flex flex-col gap-3"
     >
-      <ScanAlert tone={outcome.kind === "market-qr" ? "warning" : "danger"} icon={icon} title={title} role="alert">
+      {/* Jonli hudud emas: natijani kamera xabari (`role="status"`) allaqachon o'qiydi — ikki marta aytilmasin. */}
+      <ScanAlert tone={outcome.kind === "market-qr" ? "warning" : "danger"} icon={icon} title={title}>
         {text}
       </ScanAlert>
       <div className="flex flex-col gap-0.5 rounded-xl bg-sunken px-3 py-2.5">
@@ -127,7 +128,8 @@ export const ScanUsbCard = ({ onSubmit, showTips }: { onSubmit: (code: string) =
         </div>
       </div>
       <div aria-hidden="true" className="h-px bg-border" />
-      <form noValidate onSubmit={submit} aria-label={t("scanner.manualLabel")}>
+      {/* `data-scanner-ignore` — odam tez yozib Enter bossa ham bu forma, USB skaner emas (forma o'zi yuboradi). */}
+      <form noValidate onSubmit={submit} aria-label={t("scanner.manualLabel")} data-scanner-ignore="">
         <Field
           label={t("scanner.manualLabel")}
           hint={t("scanner.manualHint")}

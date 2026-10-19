@@ -35,40 +35,36 @@ const US_SYMBOLS: Record<string, readonly [string, string]> = {
   Semicolon: [";", ":"],
 };
 
-const isPrintableAscii = (value: string) => value.length === 1 && value >= " " && value <= "~";
-const isAsciiLetter = (value: string) => /^[A-Za-z]$/.test(value);
-
-/** Caps Lock yoqiqmi (sintetik hodisada `getModifierState` bo'lmasligi mumkin). */
-const isCapsLockOn = (event: KeyboardEvent) =>
-  typeof event.getModifierState === "function" && event.getModifierState("CapsLock");
-
-const invertCase = (value: string) => (value === value.toUpperCase() ? value.toLowerCase() : value.toUpperCase());
-
 /**
  * Skaner yuborgan belgini tiklaydi:
- *   - lotin harfi: Caps Lock yoqiq bo'lsa registr teskari (skaner katta harfni Shift bilan yuboradi,
- *     Caps Lock uni kichik qilib qo'yadi — token boshqa bo'lib qoladi);
- *   - lotin bo'lmagan belgi (kirill) va `KeyA..KeyZ` — US harfi, katta-kichikligi Shift bo'yicha;
+ *   - harf tugmasi (`KeyA..KeyZ`) — harf DOIM `event.code` dan, katta-kichikligi faqat Shift'dan. Shunda:
+ *     Caps Lock ta'sir qilmaydi (Windows/Linux'da Caps+Shift kichik, macOS'da katta harf beradi — `event.key`
+ *     ga ishonib bo'lmaydi), kirill tartibida «ф» o'rniga «a», QWERTZ'da y/z almashmaydi;
  *   - raqam/tinish tugmasi (`Digit*`, `Minus`, `Slash` …) US belgisiga mos kelmasa — US belgisi (Shift bilan).
- * Boshqa hollarda `event.key` o'zgarmaydi. Bitta belgi bo'lmasa — `null`.
+ * Boshqa hollarda (`code` yo'q — ekran klaviaturasi) `event.key` o'zgarmaydi. Bitta belgi bo'lmasa — `null`.
+ * Maydonga yozilayotgan matn o'zgarmaydi — faqat skaner buferi.
  */
 export const readScannerKey = (event: KeyboardEvent): string | null => {
   const { key, code } = event;
   if (key.length !== 1) return null;
 
   const letter = /^Key([A-Z])$/.exec(code ?? "")?.[1];
-  if (letter && !isPrintableAscii(key)) {
-    return event.shiftKey ? letter : letter.toLowerCase();
-  }
+  if (letter) return event.shiftKey ? letter : letter.toLowerCase();
 
   const symbols = code ? US_SYMBOLS[code] : undefined;
   if (symbols && !symbols.includes(key)) {
     return symbols[event.shiftKey ? 1 : 0];
   }
 
-  if (isAsciiLetter(key) && isCapsLockOn(event)) return invertCase(key);
   return key;
 };
+
+/**
+ * Skaner tinglamaydigan joy (`data-scanner-ignore`): qo'lda kiritish maydoni — odam tez yozib Enter bossa,
+ * bufer uni «skan» deb olib, formani to'xtatib qo'ymasin (forma o'zi yuboradi).
+ */
+const isIgnoredTarget = (target: EventTarget | null) =>
+  target instanceof Element && target.closest("[data-scanner-ignore]") !== null;
 
 const isEditableTarget = (target: EventTarget | null) => {
   if (!(target instanceof HTMLElement)) return false;
@@ -119,7 +115,8 @@ export const useKeyboardScanner = ({
         event.ctrlKey ||
         event.metaKey ||
         event.altKey ||
-        (!captureEditableTargets && isEditableTarget(event.target))
+        (!captureEditableTargets && isEditableTarget(event.target)) ||
+        isIgnoredTarget(event.target)
       ) {
         return;
       }

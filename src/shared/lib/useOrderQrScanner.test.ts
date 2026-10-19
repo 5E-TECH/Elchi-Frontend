@@ -58,21 +58,23 @@ describe("useOrderQrScanner", () => {
     await target?.onScan("deadbeefdeadbeef", "manual");
     expect(onMissing).toHaveBeenCalledWith("deadbeefdeadbeef", "manual");
 
-    // Juda qisqa begona matn (USB'dagidek) — jim.
+    // Kamera o'qigan qisqa begona kod jim qolmaydi — «topilmadi» (USB'da esa qisqa matn jim).
     await target?.onScan("ab", "camera");
-    expect(onMissing).toHaveBeenCalledTimes(1);
+    expect(onMissing).toHaveBeenLastCalledWith("ab", "camera");
+    scan("abc");
+    expect(onMissing).toHaveBeenCalledTimes(2);
   });
 
-  it("enabled=false yoki ro'yxat bo'sh — maqsad ham yo'q", () => {
+  it("faqat enabled=false maqsadni oladi; bo'sh ro'yxat (yuklanmoqda, hammasi qabul qilindi) — maqsad turadi", () => {
     const camera = { id: "x", title: "Qabul qilish" };
     const { rerender } = renderHook(
       ({ enabled, orders }) => useOrderQrScanner({ orders, enabled, onMatch: vi.fn(), onMissing: vi.fn(), camera }),
       { initialProps: { enabled: true, orders: ORDERS } },
     );
     expect(getActiveScanTarget()?.id).toBe("x");
-    rerender({ enabled: false, orders: ORDERS });
-    expect(getActiveScanTarget()).toBeNull();
     rerender({ enabled: true, orders: [] });
+    expect(getActiveScanTarget()?.id).toBe("x");
+    rerender({ enabled: false, orders: ORDERS });
     expect(getActiveScanTarget()).toBeNull();
   });
 });

@@ -12,8 +12,9 @@ import {
   Info,
   Keyboard,
   List,
+  RefreshCw,
+  Repeat,
   ScanLine,
-  SearchX,
   Timer,
   TriangleAlert,
   Undo2,
@@ -109,6 +110,11 @@ export type ScannerCameraProps = {
   phoneSecondary?: "primary" | "torch";
   /** «Kodni qo'lda kiriting» varag'i matnlari (sukut — oqim: «Qo'shish»; universal skaner: «Ochish»). */
   manual?: ScannerCameraManualText;
+  /**
+   * Maqsad vaqtincha yo'q (`ScannerHost` almashish oralig'i: eski sahifa yopildi, yangisi hali yuklanmoqda).
+   * Kamera ishlayveradi, lekin skan va qo'lda kiritish hech qayerga yuborilmaydi; chipda «Yuklanmoqda».
+   */
+  suspended?: boolean;
 };
 
 export type ScannerCameraManualText = { label?: string; hint?: string; submitLabel?: string };
@@ -123,8 +129,8 @@ const RESULT_TONE: Record<CameraResult["type"], CameraTone> = {
 
 const RESULT_ICON: Record<CameraResult["type"], LucideIcon> = {
   success: Check,
-  duplicate: Info,
-  missing: SearchX,
+  duplicate: Repeat,
+  missing: X,
   error: CircleX,
   tooFast: Timer,
 };
@@ -145,6 +151,7 @@ export const ScannerCamera = ({
   lastScan,
   phoneSecondary = "primary",
   manual,
+  suspended = false,
 }: ScannerCameraProps) => {
   const { t } = useTranslation("ui");
   const isPhone = useIsPhone();
@@ -153,9 +160,36 @@ export const ScannerCamera = ({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const [sheet, setSheet] = useState<"manual" | "list" | "switcher" | null>(null);
-  const session = useScannerCameraSession({ videoRef, active: sheet === null, onScan: target.onScan });
+  const session = useScannerCameraSession({
+    videoRef,
+    active: sheet === null,
+    scanEnabled: !suspended,
+    // Telefon ↔ keng ko'rinish almashsa `<video>` boshqa joyda qayta yaratiladi — skaner yangisiga ulanadi.
+    layoutKey: isPhone,
+    onScan: target.onScan,
+  });
 
   useEffect(() => markScannerCameraMounted(), []);
+
+  // `page` (universal skaner, telefonda to'liq ekran): fokus «Skanerni yopish» da, Esc yopadi (taxta §08).
+  // Oyna (`overlay`) buni `useFocusTrap` bilan qiladi. Varaq ochiq bo'lsa Esc faqat varaqni yopadi (o'zi).
+  const pageCloses = !overlay && isPhone && Boolean(onClose);
+  useEffect(() => {
+    if (pageCloses) closeRef.current?.focus();
+  }, [pageCloses]);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+  useEffect(() => {
+    if (!pageCloses || sheet !== null) return undefined;
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      onCloseRef.current?.();
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [pageCloses, sheet]);
 
   const trapRef = useFocusTrap<HTMLDivElement>(overlay, {
     onEscape: onClose,
@@ -199,15 +233,17 @@ export const ScannerCamera = ({
         {target.finish.label}
       </Button>
     ) : (
-      <Button size={size} compact={size === "md"} leftIcon={X} onClick={close} className={className}>
+      // «Tugatish» yo'q — yopish ikkinchi darajali (tepada «Skanerni yopish» ham bor, bitta asosiy amal).
+      <Button variant="secondary" size={size} compact={size === "md"} leftIcon={X} onClick={close} className={className}>
         {t("camera.action.close")}
       </Button>
     );
 
-  const undoButton = (item: ScanTargetListItem, size: "sm" | "lg" = "sm") =>
+  // Har qatorda 44 px (taxta §03 «Bekor qilish»: telefon ham, yon panel ham).
+  const undoButton = (item: ScanTargetListItem) =>
     item.onUndo ? (
       <IconButton
-        size={size}
+        size="lg"
         variant="ghost"
         icon={Undo2}
         label={`${t("camera.last.undo")} — ${item.title}`}
@@ -220,7 +256,7 @@ export const ScannerCamera = ({
   const statusChips: ReactNode[] = [];
   if (!session.online) {
     statusChips.push(
-      <CameraChip key="offline" dot="error" icon={WifiOff}>
+      <CameraChip key="offline" dot="warning" icon={WifiOff}>
         {t("camera.chip.offline")}
       </CameraChip>,
     );
@@ -254,7 +290,7 @@ export const ScannerCamera = ({
         text={platform === "telegram" ? t("camera.denied.telegramText") : t("camera.denied.text")}
         actions={
           <>
-            <Button size="lg" leftIcon={ScanLine} onClick={session.retry}>
+            <Button size="lg" leftIcon={RefreshCw} onClick={session.retry}>
               {t("camera.action.retry")}
             </Button>
             {manualButton("lg")}
@@ -274,14 +310,14 @@ export const ScannerCamera = ({
     const kind = session.failedKind === "unknown" ? "failed" : session.failedKind;
     card = (
       <CameraCard
-        tone={kind === "busy" ? "warning" : kind === "unsupported" ? "neutral" : "error"}
+        tone={kind === "busy" || kind === "unsupported" ? "warning" : "error"}
         icon={CameraOff}
         title={t(`camera.${kind}.title`)}
         text={t(`camera.${kind}.text`)}
         actions={
           <>
             {kind !== "unsupported" ? (
-              <Button size="lg" leftIcon={ScanLine} onClick={session.retry}>
+              <Button size="lg" leftIcon={RefreshCw} onClick={session.retry}>
                 {t("camera.action.retry")}
               </Button>
             ) : null}
@@ -297,10 +333,14 @@ export const ScannerCamera = ({
   let stage: ReactNode;
   let headChip: ReactNode;
   if (card) {
-    headChip = null;
+    // Keng oynada kamera ustidagi chip (maket `courier-scan-permission-denied`: «Kamera o'chiq»).
+    headChip = session.denied ? <CameraChip dot="error">{t("camera.chip.off")}</CameraChip> : null;
     stage = card;
+  } else if (suspended) {
+    headChip = <CameraChip dot="info">{t("camera.chip.switching")}</CameraChip>;
+    stage = <ScanFinder paused mark={<Spinner size="lg" />} />;
   } else if (paused || waiting) {
-    headChip = paused ? <CameraChip dot="info">{t("camera.chip.paused")}</CameraChip> : null;
+    headChip = paused ? <CameraChip>{t("camera.chip.paused")}</CameraChip> : null;
     stage = <ScanFinder paused mark={waiting ? <Spinner size="lg" /> : undefined} />;
   } else if (session.starting) {
     headChip = <CameraChip dot="info">{t("camera.chip.starting")}</CameraChip>;
@@ -409,6 +449,69 @@ export const ScannerCamera = ({
       <CameraProgress done={progress.done} total={progress.total} label={target.listTitle ?? t("camera.meter.progress")} />
     ) : null;
 
+  // Pastki panel karta holatiga qarab (maketlar `courier-scan-permission-denied`, taxta 04.1 / 04.2 / 04.14):
+  //   - ruxsat izohi va rad etilgan — panel yo'q (amallar kartaning o'zida, ikkinchi «Qo'lda kiritish» yo'q);
+  //   - kamera band / ochilmadi / qo'llab-quvvatlanmaydi — faqat rejim va hisoblagich qatori;
+  //   - qolgani — to'liq panel (oxirgi skan, [Qo'lda kiritish] [Tugatish | Chiroq]).
+  const counterRow =
+    counter || list.length > 0 ? (
+      <div className="flex min-w-0 items-center gap-3">
+        {counter ?? <span className="min-w-0 flex-1" />}
+        {list.length > 0 ? (
+          <Button variant="ghost" size="sm" leftIcon={List} aria-haspopup="dialog" onClick={() => setSheet("list")}>
+            {t("camera.list.open")}
+          </Button>
+        ) : null}
+      </div>
+    ) : null;
+  let lastRow: ReactNode = lastScan ?? null;
+  if (target.list) {
+    const LatestIcon = latest ? listTone(latest).icon : History;
+    lastRow = latest ? (
+      <CameraLastScan
+        icon={<LatestIcon aria-hidden="true" size={18} />}
+        tone={listTone(latest).camera}
+        title={latest.title}
+        subtitle={latest.subtitle}
+        action={undoButton(latest)}
+      />
+    ) : (
+      <CameraLastScan
+        icon={<History aria-hidden="true" size={18} />}
+        title={t("camera.last.emptyTitle")}
+        subtitle={t("camera.last.emptyText")}
+      />
+    );
+  }
+  let phoneBottom: ReactNode;
+  if (session.gate === "prompt" || session.denied) {
+    phoneBottom = undefined;
+  } else if (card) {
+    phoneBottom =
+      modes || counterRow || progressBar || stats ? (
+        <CameraBottom>
+          {modes}
+          {counterRow}
+          {progressBar}
+          {stats}
+        </CameraBottom>
+      ) : undefined;
+  } else {
+    phoneBottom = (
+      <CameraBottom>
+        {modes}
+        {counterRow}
+        {progressBar}
+        {stats}
+        {lastRow}
+        <div className="flex min-w-0 gap-2 [&>*]:min-w-0 [&>*]:flex-1">
+          {manualButton("lg")}
+          {phoneSecondaryButton}
+        </div>
+      </CameraBottom>
+    );
+  }
+
   /* ─── Telefon: to'liq ekran ─────────────────────────────────────────────── */
 
   const phoneSurface = (
@@ -438,52 +541,11 @@ export const ScannerCamera = ({
           </Pressable>
         ) : null
       }
-      bottom={
-        <CameraBottom>
-          {modes}
-          {counter || list.length > 0 ? (
-            <div className="flex min-w-0 items-center gap-3">
-              {counter ?? <span className="min-w-0 flex-1" />}
-              {list.length > 0 ? (
-                <Button variant="ghost" size="sm" leftIcon={List} aria-haspopup="dialog" onClick={() => setSheet("list")}>
-                  {t("camera.list.open")}
-                </Button>
-              ) : null}
-            </div>
-          ) : null}
-          {progressBar}
-          {stats}
-          {target.list ? (
-            latest ? (
-              <CameraLastScan
-                icon={(() => {
-                  const Icon = listTone(latest).icon;
-                  return <Icon aria-hidden="true" size={18} />;
-                })()}
-                tone={listTone(latest).camera}
-                title={latest.title}
-                subtitle={latest.subtitle}
-                action={undoButton(latest, "lg")}
-              />
-            ) : (
-              <CameraLastScan
-                icon={<History aria-hidden="true" size={18} />}
-                title={t("camera.last.emptyTitle")}
-                subtitle={t("camera.last.emptyText")}
-              />
-            )
-          ) : (
-            (lastScan ?? null)
-          )}
-          <div className="flex min-w-0 gap-2 [&>*]:min-w-0 [&>*]:flex-1">
-            {manualButton("lg")}
-            {phoneSecondaryButton}
-          </div>
-        </CameraBottom>
-      }
+      bottom={phoneBottom}
     >
       <CameraStatus>
-        {headChip}
+        {/* Telefonda karta butun sahnani egallaydi — «Kamera o'chiq» chipi faqat keng oynada. */}
+        {card ? null : headChip}
         {torchChip}
         {statusChips}
       </CameraStatus>
@@ -645,6 +707,7 @@ export const ScannerCamera = ({
         onClose={() => setSheet(null)}
         onSubmit={(code) => {
           setSheet(null);
+          if (suspended) return;
           void Promise.resolve()
             .then(() => target.onScan(code, "manual"))
             .catch(() => undefined);
@@ -683,7 +746,7 @@ export const ScannerCamera = ({
                     <span className="truncate text-sm leading-5 font-semibold text-text">{item.title}</span>
                     {item.subtitle ? <span className="truncate text-[13px] leading-[18px] text-text-muted">{item.subtitle}</span> : null}
                   </span>
-                  {undoButton(item, isPhone ? "lg" : "sm")}
+                  {undoButton(item)}
                 </li>
               );
             })}
@@ -880,7 +943,7 @@ const SwitcherDialog = ({
                     {option.meta ? <span className="truncate text-[13px] text-text-muted">{option.meta}</span> : null}
                   </span>
                   {current ? (
-                    <Check aria-label={t("camera.switcher.current")} size={18} strokeWidth={2} className="shrink-0 text-action-fg" />
+                    <Check role="img" aria-label={t("camera.switcher.current")} size={18} strokeWidth={2} className="shrink-0 text-action-fg" />
                   ) : null}
                 </Pressable>
               </li>
@@ -951,7 +1014,9 @@ const ManualEntryDialog = ({
         </>
       }
     >
+      {/* `data-scanner-ignore` — odam tez yozib Enter bossa USB skaner deb olinmasin (forma o'zi yuboradi). */}
       <Field
+        data-scanner-ignore=""
         label={text?.label ?? t("camera.manual.label")}
         hint={text?.hint ?? t("camera.manual.hint")}
         error={error ? t("camera.manual.required") : undefined}

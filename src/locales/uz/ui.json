@@ -1148,7 +1148,9 @@
       "torchOn": "Chiroq yoqilgan",
       "paused": "Kamera to'xtatildi",
       "offline": "Internet yo'q",
-      "usbReady": "USB skaner ham tayyor"
+      "usbReady": "USB skaner ham tayyor",
+      "switching": "Yuklanmoqda",
+      "off": "Kamera o'chiq"
     },
     "hint": {
       "aim": "QR kodni ramka ichiga olib keling",
@@ -1249,6 +1251,7 @@
       "error": "Ro'yxat yuklanmadi",
       "retry": "Qayta urinish",
       "current": "Tanlangan"
-    }
+    },
+    "torchFailed": "Chiroqni yoqib bo'lmadi"
   }
 }

@@ -161,13 +161,22 @@ export const receiveScannedPackage = async (packageIdOrToken: string) =>
 /**
  * Skaner amalidan keyin (kuryer «O'zimga olish», paket «Qabul qilish») boshqa ekranlar eskirib qolmasin
  * (Trello 6qypMFeT; global `staleTime` 30 s, oyna fokusida qayta so'ralmaydi): buyurtmalar, pochtalar,
- * paketlar va skan natijalari keshi eskirgan deb belgilanadi. Ochiq natija sahifasi (`scan-detail`) darhol
- * qayta so'ralmaydi — amal xabari («Paket qabul qilindi») va «skanerga qaytish» taymeri o'z joyida qoladi;
- * keyingi ochilishda yangisi olinadi.
+ * paketlar, «Filial paketlari» ro'yxati va tab soni, bosh sahifa ko'rsatkichlari va skan natijalari keshi
+ * eskirgan deb belgilanadi. Skan natijasi keshi (`scan-detail`) darhol qayta so'ralmaydi — keyingi ochilishda
+ * yangisi olinadi. Ochiq paket sahifasi esa o'z `["batches", id]` so'rovi bilan yangi holatni darhol oladi
+ * (faol so'rov) — amal xabari («Paket qabul qilindi») o'z joyida qoladi.
  */
 // `"batches"` — `entities/batch` dagi `BATCH_KEY` (import qilinmaydi: ko'p sahifa testlari `entities/batch` ni
-// soxtalaydi; tenglik `scanResource.test.ts` da tekshiriladi).
-export const SCAN_ACTION_QUERY_PREFIXES = [["orders"], ["mails"], ["batches"], ["scan-detail"]] as const;
+// soxtalaydi; tenglik `scanResource.test.ts` da tekshiriladi). `["branches", "with-sent-batches"]` —
+// `queryKeys.branches.withSentBatches`, `["dashboard"]` — bosh sahifa (`entities/order` ham shuni yangilaydi).
+export const SCAN_ACTION_QUERY_PREFIXES = [
+  ["orders"],
+  ["mails"],
+  ["batches"],
+  ["branches", "with-sent-batches"],
+  ["dashboard"],
+  ["scan-detail"],
+] as const;
 
 export const invalidateAfterScanAction = (queryClient: QueryClient) =>
   Promise.all(

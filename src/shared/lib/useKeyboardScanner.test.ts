@@ -48,10 +48,17 @@ describe("readScannerKey", () => {
     expect(readScannerKey(keyEvent({ key: "Shift", code: "ShiftLeft" }))).toBeNull();
   });
 
-  it("Caps Lock yoqiq — lotin harfining registri teskari (raqamga tegmaydi)", () => {
+  it("Caps Lock ta'sir qilmaydi: harf `code` dan, registr faqat Shift'dan (raqamga tegmaydi)", () => {
     expect(readScannerKey(keyEvent({ key: "A", code: "KeyA", capsLock: true }))).toBe("a");
+    // Windows / Linux: Caps + Shift → kichik «b» keladi; macOS: Caps + Shift → katta «B». Ikkalasi ham «B».
     expect(readScannerKey(keyEvent({ key: "b", code: "KeyB", shiftKey: true, capsLock: true }))).toBe("B");
+    expect(readScannerKey(keyEvent({ key: "B", code: "KeyB", shiftKey: true, capsLock: true }))).toBe("B");
     expect(readScannerKey(keyEvent({ key: "7", code: "Digit7", capsLock: true }))).toBe("7");
+  });
+
+  it("QWERTZ (nemis) tartibi — y/z almashmaydi (skaner US tugma kodini yuboradi)", () => {
+    expect(readScannerKey(keyEvent({ key: "z", code: "KeyY" }))).toBe("y");
+    expect(readScannerKey(keyEvent({ key: "Y", code: "KeyZ", shiftKey: true }))).toBe("Z");
   });
 
   it("kirill tartib — `event.code` bo'yicha US harfi, katta-kichikligi Shift bo'yicha", () => {
@@ -172,5 +179,21 @@ describe("useKeyboardScanner", () => {
     for (const key of ["q", "Enter"]) press({ key });
     expect(onScan).toHaveBeenCalledTimes(1);
     input.remove();
+  });
+
+  it("`data-scanner-ignore` ichida (qo'lda kiritish maydoni) — bufer yig'ilmaydi, Enter forma uchun", () => {
+    const onScan = vi.fn(() => true);
+    renderHook(() => useKeyboardScanner({ onScan, captureEditableTargets: true }));
+    const wrapper = document.createElement("div");
+    wrapper.setAttribute("data-scanner-ignore", "");
+    const input = document.createElement("input");
+    wrapper.append(input);
+    document.body.append(wrapper);
+
+    for (const key of "P-0412") press({ key }, input);
+    const enter = press({ key: "Enter", code: "Enter" }, input);
+    expect(onScan).not.toHaveBeenCalled();
+    expect(enter.defaultPrevented).toBe(false);
+    wrapper.remove();
   });
 });

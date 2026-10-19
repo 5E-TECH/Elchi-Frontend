@@ -13,6 +13,7 @@ export {
 export type {
   ScanSource,
   ScanTarget,
+  ScanTargetLayer,
   ScanTargetListItem,
   ScanTargetMode,
   ScanTargetStat,

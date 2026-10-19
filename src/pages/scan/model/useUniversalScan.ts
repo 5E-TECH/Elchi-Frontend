@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { playScanFeedback, type ScanSource } from "../../../shared/lib/scanner";
-import { extractScannerToken } from "../../../shared/lib/scanToken";
+import { extractScannerToken, isForeignScanUrl } from "../../../shared/lib/scanToken";
 import { useScannerGate } from "../../../shared/lib/useScannerGate";
 import {
   fetchScanDetail,
@@ -66,7 +66,9 @@ export const useUniversalScan = () => {
 
   const handleScan = useCallback(
     async (raw: string, source: ScanSource) => {
-      const extracted = extractScannerToken(raw, window.location.origin);
+      // Begona sayt havolasi (Elchi yorlig'i emas) — so'rovsiz «yaroqsiz»: oxirgi bo'lagi token emas.
+      const foreign = isForeignScanUrl(raw, window.location.origin);
+      const extracted = foreign ? null : extractScannerToken(raw, window.location.origin);
       const token = extracted ? normalizeScanToken(extracted) : null;
 
       if (openingRef.current) {

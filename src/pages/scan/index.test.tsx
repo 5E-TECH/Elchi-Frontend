@@ -200,6 +200,20 @@ describe("ScanPage — universal skaner (desktop)", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it("a foreign site QR (no /scan/) is «yaroqsiz» with its full text — its last path segment is never looked up", async () => {
+    const user = userEvent.setup();
+    renderScan();
+
+    await user.type(screen.getByRole("textbox", { name: "Kodni qo'lda kiriting" }), "https://barakashop.uz/mahsulot/48213");
+    await user.click(screen.getByRole("button", { name: "Ochish" }));
+
+    const card = await screen.findByRole("region", { name: "Natija" });
+    expect(within(card).getByText("Bu QR kod skaner uchun yaroqsiz")).toBeInTheDocument();
+    expect(within(card).getByText("https://barakashop.uz/mahsulot/48213")).toBeInTheDocument();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(feedbackMock).toHaveBeenCalledWith("error", "Bu QR kod skaner uchun yaroqsiz", "manual");
+  });
+
   it("never peeks a market QR (MCR-): it is single-use — points to the Cancelled page instead", async () => {
     renderScan("registrator");
 
