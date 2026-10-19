@@ -37,9 +37,11 @@ const US_SYMBOLS: Record<string, readonly [string, string]> = {
 
 /**
  * Skaner yuborgan belgini tiklaydi:
- *   - harf tugmasi (`KeyA..KeyZ`) — harf DOIM `event.code` dan, katta-kichikligi faqat Shift'dan. Shunda:
- *     Caps Lock ta'sir qilmaydi (Windows/Linux'da Caps+Shift kichik, macOS'da katta harf beradi — `event.key`
- *     ga ishonib bo'lmaydi), kirill tartibida «ф» o'rniga «a», QWERTZ'da y/z almashmaydi;
+ *   - harf tugmasi (`KeyA..KeyZ`) — harf DOIM `event.code` dan (kirill tartibida «ф» o'rniga «a», QWERTZ'da
+ *     y/z almashmaydi). Katta-kichikligi: Caps Lock yoqiq bo'lsa — faqat Shift'dan (Windows/Linux'da Caps+Shift
+ *     kichik, macOS'da katta harf beradi — `event.key` ga ishonib bo'lmaydi); Caps Lock o'chiq bo'lsa —
+ *     `event.key` ning registridan (Shift'siz katta harf yuboradigan skaner va dasturiy kiritish ham to'g'ri),
+ *     registrsiz belgida — Shift'dan;
  *   - raqam/tinish tugmasi (`Digit*`, `Minus`, `Slash` …) US belgisiga mos kelmasa — US belgisi (Shift bilan).
  * Boshqa hollarda (`code` yo'q — ekran klaviaturasi) `event.key` o'zgarmaydi. Bitta belgi bo'lmasa — `null`.
  * Maydonga yozilayotgan matn o'zgarmaydi — faqat skaner buferi.
@@ -49,7 +51,12 @@ export const readScannerKey = (event: KeyboardEvent): string | null => {
   if (key.length !== 1) return null;
 
   const letter = /^Key([A-Z])$/.exec(code ?? "")?.[1];
-  if (letter) return event.shiftKey ? letter : letter.toLowerCase();
+  if (letter) {
+    const capsLock = typeof event.getModifierState === "function" && event.getModifierState("CapsLock");
+    const hasCase = key.toLowerCase() !== key.toUpperCase();
+    const upper = !capsLock && hasCase ? key === key.toUpperCase() : event.shiftKey;
+    return upper ? letter : letter.toLowerCase();
+  }
 
   const symbols = code ? US_SYMBOLS[code] : undefined;
   if (symbols && !symbols.includes(key)) {

@@ -48,6 +48,11 @@ describe("readScannerKey", () => {
     expect(readScannerKey(keyEvent({ key: "Shift", code: "ShiftLeft" }))).toBeNull();
   });
 
+  it("Caps Lock o'chiq — Shift'siz kelgan katta harf katta qoladi (skaner sozlamasi, dasturiy kiritish)", () => {
+    expect(readScannerKey(keyEvent({ key: "M", code: "KeyM" }))).toBe("M");
+    expect(readScannerKey(keyEvent({ key: "Ф", code: "KeyA" }))).toBe("A");
+  });
+
   it("Caps Lock ta'sir qilmaydi: harf `code` dan, registr faqat Shift'dan (raqamga tegmaydi)", () => {
     expect(readScannerKey(keyEvent({ key: "A", code: "KeyA", capsLock: true }))).toBe("a");
     // Windows / Linux: Caps + Shift → kichik «b» keladi; macOS: Caps + Shift → katta «B». Ikkalasi ham «B».
