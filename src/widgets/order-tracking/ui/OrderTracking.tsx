@@ -13,6 +13,7 @@ import {
   EmptyState,
   ErrorState,
   IconButton,
+  Pressable,
   QueryBoundary,
   Skeleton,
 } from "../../../shared/ui/primitives";
@@ -130,8 +131,7 @@ export const OrderTracking = ({ orderId, context, variant = "default", className
       </div>
 
       {isCourier ? (
-        <button
-          type="button"
+        <Pressable
           aria-expanded={open}
           aria-controls={bodyId}
           onClick={toggle}
@@ -154,7 +154,7 @@ export const OrderTracking = ({ orderId, context, variant = "default", className
             <ChevronDown size={20} className={cx("transition-transform duration-150", open && "rotate-180")} />
           </span>
           <span className="sr-only">{toggleLabel}</span>
-        </button>
+        </Pressable>
       ) : null}
 
       <div id={bodyId} data-testid="tracking-body" className={cx(!open && "hidden")}>

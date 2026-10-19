@@ -27,6 +27,7 @@ import {
   EmptyState,
   IconButton,
   PageHeader,
+  Pressable,
   SkeletonTable,
   StatCard,
   StatusBadge,
@@ -349,8 +350,7 @@ const ConnectionsPage = () => {
 
   /** `stretched` — telefon kartasida tugmaning bosiladigan maydoni butun karta (≥ 44 px, ichida boshqa tugma yo'q). */
   const nameButton = (c: Connection, stretched = false) => (
-    <button
-      type="button"
+    <Pressable
       onClick={() => select(c.uid)}
       aria-current={c.uid === active?.uid ? "true" : undefined}
       className={cx(
@@ -359,7 +359,7 @@ const ConnectionsPage = () => {
       )}
     >
       {c.name}
-    </button>
+    </Pressable>
   );
 
   const columns: DataTableColumn<Connection>[] = [

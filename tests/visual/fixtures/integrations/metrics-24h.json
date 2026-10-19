@@ -1,0 +1,170 @@
+{
+  "statusCode": 200,
+  "message": "ok",
+  "data": {
+    "window_hours": 24,
+    "totals": {
+      "events": 2615,
+      "failed": 6,
+      "queued": 48
+    },
+    "connections": [
+      {
+        "uid": "partner:1",
+        "kind": "partner",
+        "id": "1",
+        "events": 37,
+        "delivered": 0,
+        "failed": 0,
+        "queued": 37,
+        "success_rate": null,
+        "avg_ms": null,
+        "last_event_at": "2026-10-15T04:05:00.000Z"
+      },
+      {
+        "uid": "partner:2",
+        "kind": "partner",
+        "id": "2",
+        "events": 212,
+        "delivered": 209,
+        "failed": 3,
+        "queued": 0,
+        "success_rate": 98.6,
+        "avg_ms": 240,
+        "last_event_at": "2026-10-15T04:31:00.000Z"
+      },
+      {
+        "uid": "partner:3",
+        "kind": "partner",
+        "id": "3",
+        "events": 0,
+        "delivered": 0,
+        "failed": 0,
+        "queued": 0,
+        "success_rate": null,
+        "avg_ms": null,
+        "last_event_at": "2026-10-05T04:12:00.000Z"
+      },
+      {
+        "uid": "partner:4",
+        "kind": "partner",
+        "id": "4",
+        "events": 1120,
+        "delivered": 1120,
+        "failed": 0,
+        "queued": 0,
+        "success_rate": 100,
+        "avg_ms": 180,
+        "last_event_at": "2026-10-15T04:31:00.000Z"
+      },
+      {
+        "uid": "partner:5",
+        "kind": "partner",
+        "id": "5",
+        "events": 486,
+        "delivered": 486,
+        "failed": 0,
+        "queued": 0,
+        "success_rate": 100,
+        "avg_ms": 210,
+        "last_event_at": "2026-10-15T04:27:00.000Z"
+      },
+      {
+        "uid": "integration:11",
+        "kind": "integration",
+        "id": "11",
+        "events": 310,
+        "delivered": 302,
+        "failed": 3,
+        "queued": 5,
+        "success_rate": 99,
+        "avg_ms": null,
+        "last_event_at": "2026-10-15T04:52:00.000Z"
+      },
+      {
+        "uid": "integration:12",
+        "kind": "integration",
+        "id": "12",
+        "events": 180,
+        "delivered": 178,
+        "failed": 0,
+        "queued": 2,
+        "success_rate": 100,
+        "avg_ms": null,
+        "last_event_at": "2026-10-15T04:48:00.000Z"
+      },
+      {
+        "uid": "integration:13",
+        "kind": "integration",
+        "id": "13",
+        "events": 96,
+        "delivered": 94,
+        "failed": 0,
+        "queued": 2,
+        "success_rate": 100,
+        "avg_ms": null,
+        "last_event_at": "2026-10-15T04:20:00.000Z"
+      },
+      {
+        "uid": "integration:14",
+        "kind": "integration",
+        "id": "14",
+        "events": 64,
+        "delivered": 63,
+        "failed": 0,
+        "queued": 1,
+        "success_rate": 100,
+        "avg_ms": null,
+        "last_event_at": "2026-10-15T04:44:00.000Z"
+      },
+      {
+        "uid": "integration:15",
+        "kind": "integration",
+        "id": "15",
+        "events": 40,
+        "delivered": 39,
+        "failed": 0,
+        "queued": 1,
+        "success_rate": 100,
+        "avg_ms": null,
+        "last_event_at": "2026-10-15T04:10:00.000Z"
+      },
+      {
+        "uid": "integration:16",
+        "kind": "integration",
+        "id": "16",
+        "events": 0,
+        "delivered": 0,
+        "failed": 0,
+        "queued": 0,
+        "success_rate": null,
+        "avg_ms": null,
+        "last_event_at": "2026-09-28T09:00:00.000Z"
+      },
+      {
+        "uid": "integration:21",
+        "kind": "integration",
+        "id": "21",
+        "events": 50,
+        "delivered": 50,
+        "failed": 0,
+        "queued": 0,
+        "success_rate": 100,
+        "avg_ms": null,
+        "last_event_at": "2026-10-15T04:36:00.000Z"
+      },
+      {
+        "uid": "integration:22",
+        "kind": "integration",
+        "id": "22",
+        "events": 20,
+        "delivered": 20,
+        "failed": 0,
+        "queued": 0,
+        "success_rate": 100,
+        "avg_ms": null,
+        "last_event_at": "2026-10-15T03:58:00.000Z"
+      }
+    ]
+  }
+}

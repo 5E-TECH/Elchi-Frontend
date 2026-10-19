@@ -10,7 +10,13 @@ import {
   formatNumberLocalized,
   formatPercentLocalized,
 } from "../../../shared/lib/formatMoney";
-import { Button, Card, SegmentedControl, SkeletonChart } from "../../../shared/ui/primitives";
+import {
+  Button,
+  Card,
+  Pressable,
+  SegmentedControl,
+  SkeletonChart,
+} from "../../../shared/ui/primitives";
 import {
   ChartNote,
   RankList,
@@ -380,13 +386,12 @@ const RegionsMapCard = ({ rows, summary, periodLower, onSelect }: RegionsMapCard
                   className="transition-colors duration-150 hover:bg-row-hover motion-reduce:transition-none"
                 >
                   <td className="h-11 border-b border-border px-3 py-1.5 align-middle">
-                    <button
-                      type="button"
+                    <Pressable
                       onClick={() => onSelect(row)}
                       className="min-h-11 text-left font-semibold text-text hover:underline md:min-h-0"
                     >
                       {row.name}
-                    </button>
+                    </Pressable>
                   </td>
                   <td className="h-11 whitespace-nowrap border-b border-border px-3 py-1.5 text-right align-middle font-semibold text-text">
                     {number(row.orders)}

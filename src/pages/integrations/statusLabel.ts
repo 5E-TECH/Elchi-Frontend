@@ -14,8 +14,8 @@ import { useTranslation } from "react-i18next";
  * bo'lardi.
  *
  * ⚠️ TARJIMA MANBAI YAGONA: `locales/uz/orders.json`. Bu yerda faqat
- * status → kalit xaritasi bor (u `pages/orders/list/OrderStatusBadge.tsx`
- * dagi xarita bilan bir xil). Sahifa i18n'ga to'liq o'tkazilganda bu fayl
+ * status → kalit xaritasi bor (eski v1 `OrderStatusBadge` xaritasi bilan bir
+ * xil edi; u iste'molchisiz qolib o'chirildi). Sahifa i18n'ga to'liq o'tkazilganda bu fayl
  * o'sha umumiy yordamchiga almashtiriladi.
  */
 

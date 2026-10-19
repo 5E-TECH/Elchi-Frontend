@@ -41,6 +41,7 @@ import {
   IconButton,
   PageHeader,
   Pagination,
+  Pressable,
   QueryBoundary,
   Skeleton,
   SkeletonLines,
@@ -668,14 +669,13 @@ const MyCashboxPage = () => {
         return (
           <>
             <span className="inline-flex flex-wrap items-center gap-2">
-              <button
-                type="button"
+              <Pressable
                 aria-haspopup="dialog"
                 onClick={() => setSelectedRow(row)}
                 className="text-left font-semibold text-text hover:text-action-fg hover:underline"
               >
                 {sourceTitle(row)}
-              </button>
+              </Pressable>
               {correctionBadge(row)}
               {ackBadge(row)}
             </span>
@@ -797,15 +797,14 @@ const MyCashboxPage = () => {
       </>
     );
     return (
-      <button
-        type="button"
+      <Pressable
         aria-haspopup="dialog"
         aria-label={cardLabel(row)}
         onClick={() => setSelectedRow(row)}
         className="flex min-h-14 w-full flex-col gap-1 px-4 py-3 text-left text-sm text-text hover:bg-row-hover"
       >
         {body}
-      </button>
+      </Pressable>
     );
   };
 

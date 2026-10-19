@@ -1,10 +1,10 @@
 // dizayn-v2: superadmin-integrations-catalog, admin-integrations-catalog
-import { createElement, useMemo, type KeyboardEvent } from "react";
+import { createElement, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Check, ChevronRight, CreditCard, Download, Handshake, Inbox, Store, Truck, type LucideIcon } from "lucide-react";
 import { CATEGORY_LABEL, ROLE_META, type IntegrationRole } from "../../entities/integrations";
-import { Badge, EmptyState, PageHeader } from "../../shared/ui/primitives";
+import { Badge, EmptyState, PageHeader, Pressable } from "../../shared/ui/primitives";
 import { CONNECTION_TYPES, type ConnectionTypeMeta } from "./connections";
 
 /**
@@ -14,8 +14,9 @@ import { CONNECTION_TYPES, type ConnectionTypeMeta } from "./connections";
  * Marketplace), katalog esa faqat o'sha tabga mos turlarni YASSI ro'yxatda ko'rsatadi. Hamkor (BeePost)
  * yaratish katalogsiz — konsoldagi «Yangi hamkor» oynasi orqali.
  *
- * Kartalar klaviatura bilan ochiladi (Enter / Bo'shliq, `keyboardAccess.test.tsx`): karta ichida sarlavha,
- * teglar va ro'yxat bor — `<button>` ichida blok elementlar noto'g'ri semantika, shuning uchun ARIA naqshi.
+ * Karta — `Pressable` (haqiqiy `<button>`): fokus, Enter / Bo'shliq brauzerning o'zida (`keyboardAccess.test.tsx`).
+ * Ichida faqat `<span>` (frazali kontent — tugma ichida to'g'ri); nomi `aria-label` da. `items-stretch text-left` —
+ * tugmaning brauzer sukutlari (`text-align: center`) avvalgi `div` ko'rinishini o'zgartirmasin.
  */
 
 type Scope = "partner" | "external" | "marketplace";
@@ -85,21 +86,12 @@ const CatalogPage = () => {
 
 const TypeCard = ({ type, onPick }: { type: ConnectionTypeMeta; onPick: () => void }) => {
   const { t } = useTranslation("integrations");
-  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      onPick();
-    }
-  };
   return (
     <div role="listitem" className="flex min-w-0">
-      <div
-        role="button"
-        tabIndex={0}
+      <Pressable
         onClick={onPick}
-        onKeyDown={onKeyDown}
         aria-label={t("catCardAria", { name: t(type.labelKey) })}
-        className="flex w-full min-w-0 cursor-pointer flex-col rounded-[14px] border border-border bg-surface text-text transition-[background-color,border-color] duration-150 hover:border-border-strong hover:bg-row-hover motion-reduce:transition-none"
+        className="flex w-full min-w-0 cursor-pointer flex-col items-stretch rounded-[14px] border border-border bg-surface text-left text-text transition-[background-color,border-color] duration-150 hover:border-border-strong hover:bg-row-hover motion-reduce:transition-none"
       >
         <span className="flex flex-col gap-3 px-5 pb-4 pt-5 max-md:px-4">
           <span className="flex items-center gap-3">
@@ -127,7 +119,7 @@ const TypeCard = ({ type, onPick }: { type: ConnectionTypeMeta; onPick: () => vo
             ))}
           </span>
         </span>
-      </div>
+      </Pressable>
     </div>
   );
 };

@@ -40,7 +40,15 @@ import {
 } from "../../../shared/lib/formatMoney";
 import { formatPhone, toTelHref } from "../../../shared/lib/formatPhone";
 import { notify } from "../../../shared/lib/notify";
-import { Badge, Button, Card, IconButton, SkeletonLines, buttonClasses } from "../../../shared/ui/primitives";
+import {
+  Badge,
+  Button,
+  Card,
+  IconButton,
+  Pressable,
+  SkeletonLines,
+  buttonClasses,
+} from "../../../shared/ui/primitives";
 import { buildTrackingContext, type OrderDetail } from "../../new_orders/components/detail/orderDetailModel";
 import { getBackendErrorMessage, scanAssignOrder } from "../lib/scanResource";
 import { playScanFeedback } from "../lib/scanShared";
@@ -422,9 +430,9 @@ const ManagerMoreCard = ({
       <ul className="m-0 flex list-none flex-col p-0">
         {dispatchInList ? (
           <li className="border-b border-border">
-            <button type="button" className={cx(rowClass, "border-b-0")} onClick={onDispatch}>
+            <Pressable className={cx(rowClass, "border-b-0")} onClick={onDispatch}>
               {rowBody(Truck, t("manager.dispatch"), t("manager.dispatchSub"))}
-            </button>
+            </Pressable>
           </li>
         ) : null}
         <li>

@@ -1,6 +1,7 @@
 // dizayn-v2: common-settings-appearance, common-settings-dashboard, common-settings-interface, common-settings-scanner, common-settings-notifications
 import { useId, type ReactNode } from "react";
 import { cx } from "../../../shared/lib/cx";
+import { Pressable } from "../../../shared/ui/primitives";
 
 /**
  * Sozlamalar sahifasining umumiy bo'laklari (maketlar `common-settings-*`, CODE-MAP: `.el-switch`,
@@ -69,8 +70,7 @@ export const SwitchRow = ({
   const titleId = useId();
   const hintId = useId();
   return (
-    <button
-      type="button"
+    <Pressable
       role="switch"
       aria-checked={checked}
       aria-labelledby={titleId}
@@ -103,7 +103,7 @@ export const SwitchRow = ({
         ) : null}
       </span>
       <SwitchTrack />
-    </button>
+    </Pressable>
   );
 };
 

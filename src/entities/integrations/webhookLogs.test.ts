@@ -67,7 +67,7 @@ describe("webhookOutcome", () => {
 
   it("buyurtma yaratilgani YASHIL", () => {
     const out = webhookOutcome(row({ error: "apply: inbound_created" }));
-    expect(out).toEqual({ labelKey: "woOrderCreated", color: "green" });
+    expect(out).toEqual({ labelKey: "woOrderCreated", tone: "success" });
     expectTranslated(out.labelKey);
   });
 
@@ -77,8 +77,8 @@ describe("webhookOutcome", () => {
      * asosiy oqim, ogohlantirish emas. Uni qizil qilsak jadval soxta
      * signal bilan to'lib, haqiqiy xato ko'rinmay qolardi.
      */
-    expect(webhookOutcome(row({ error: "apply: inbound_no_gate" })).color).toBe("red");
-    expect(webhookOutcome(row({ error: "apply: inbound_stage_skipped" })).color).toBe("default");
+    expect(webhookOutcome(row({ error: "apply: inbound_no_gate" })).tone).toBe("danger");
+    expect(webhookOutcome(row({ error: "apply: inbound_stage_skipped" })).tone).toBe("neutral");
   });
 
   it("⭐ TIMEOUT sariq — 'yiqildi' emas, 'tekshirish kerak'", () => {
@@ -88,7 +88,7 @@ describe("webhookOutcome", () => {
      * noto'g'ri xulosaga olib borardi.
      */
     const out = webhookOutcome(row({ error: "apply: inbound_timeout" }));
-    expect(out.color).toBe("orange");
+    expect(out.tone).toBe("warning");
     expect(out.labelKey).toBe("woTimeout");
     expect(dictOf("uz")[out.labelKey]).toContain("tekshirish");
   });
@@ -98,7 +98,7 @@ describe("webhookOutcome", () => {
     const out = webhookOutcome(
       row({ error: "apply: inbound_failed — integration.market_id is required" }),
     );
-    expect(out).toEqual({ labelKey: "woNotCreated", color: "red" });
+    expect(out).toEqual({ labelKey: "woNotCreated", tone: "danger" });
   });
 
   it("xato yo'q bo'lsa toza qo'llanildi", () => {
@@ -108,6 +108,6 @@ describe("webhookOutcome", () => {
   it("noma'lum natija QIZIL bo'lib qoladi", () => {
     // Yangi natija qo'shilib, xarita yangilanmasa — jimgina yashil
     // ko'rsatishdan ko'ra "xato" deb ko'rsatish xavfsizroq.
-    expect(webhookOutcome(row({ error: "apply: something_new" })).color).toBe("red");
+    expect(webhookOutcome(row({ error: "apply: something_new" })).tone).toBe("danger");
   });
 });

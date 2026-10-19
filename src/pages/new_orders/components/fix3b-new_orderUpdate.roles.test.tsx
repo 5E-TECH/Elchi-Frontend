@@ -1,9 +1,18 @@
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import NewOrderUpdate from "./new_orderUpdate";
 import { renderWithProviders } from "../../../test/test-utils";
+import { api } from "../../../shared/api/api";
+
+// Kuryer / filial nomlari (`order-meta`: `GET users/:id`, `branches/:id`) — haqiqiy tarmoqqa chiqmasin
+// (`src/test/setup.ts` qo'riqchisi).
+let metaGetSpy: MockInstance;
+beforeEach(() => {
+  metaGetSpy = vi.spyOn(api, "get").mockResolvedValue({ data: null });
+});
+afterEach(() => metaGetSpy.mockRestore());
 
 /**
  * fix3b FE-ORD-12 — manzil va buyurtma/mahsulotlar oynasi PATCH

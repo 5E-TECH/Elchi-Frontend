@@ -21,8 +21,8 @@ import type { OrderStatus } from "../types/order";
  * ────────────────────────────────────────────────────────────────────────────
  *
  *  Har holatning toni, yorlig'i (`status` nomlar fazosi) va ikonkasi FAQAT shu
- *  yerdan olinadi — sahifalar o'z rang xaritasini yozmaydi (v1:
- *  `shared/config/statusColorMap.ts`, `pages/orders/list/OrderStatusBadge.tsx`).
+ *  yerdan olinadi — sahifalar o'z rang xaritasini yozmaydi (v1 `statusColorMap`
+ *  va `pages/orders/list/OrderStatusBadge` 5-bosqichda o'chirildi).
  *
  *  Tonlar EGA tomonidan qulflangan (`docs/DESIGN_SYSTEM.md` §8,
  *  `design/kit/AUTHORING.md` «Order status → badge»):

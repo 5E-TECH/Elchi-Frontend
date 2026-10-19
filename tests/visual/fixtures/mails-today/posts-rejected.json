@@ -1,0 +1,27 @@
+{
+  "statusCode": 200,
+  "message": "ok",
+  "data": [
+    {
+      "id": "2471",
+      "createdAt": "2026-10-14T11:30:00.000Z",
+      "updatedAt": "2026-10-14T11:30:00.000Z",
+      "courier_id": "",
+      "post_total_price": 540000,
+      "order_quantity": 3,
+      "qr_code_token": "post-2471",
+      "region_id": "12",
+      "region": {
+        "id": "12",
+        "name": "Farg'ona viloyati",
+        "sato_code": "1730"
+      },
+      "status": "canceled",
+      "courier": {
+        "id": "61",
+        "name": "Sardor Aliyev",
+        "phone_number": "+998911234561"
+      }
+    }
+  ]
+}

@@ -49,5 +49,17 @@ export default defineConfig({
         hasTouch: true,
       },
     },
+    // Safari (WebKit, iPhone 12) — faqat `PLAYWRIGHT_WEBKIT=1` bilan: CI faqat Chromium o'rnatadi.
+    // Bosish maydoni testi (aA5njZNo) ikkala dvigatelda bir xil o'tishi kerak.
+    ...(process.env.PLAYWRIGHT_WEBKIT
+      ? [
+          {
+            name: "webkit-iphone",
+            testMatch: /tap-targets\.mobile\.spec\.ts$/,
+            // `--host-resolver-rules` — Chromium bayrog'i; WebKit'da soxtalanmagan so'rov `route.abort` bilan to'xtaydi.
+            use: { ...devices["iPhone 12"], launchOptions: {} },
+          },
+        ]
+      : []),
   ],
 });

@@ -46,8 +46,23 @@ describe("IdentityOps page", () => {
     await waitFor(() => {
       expect(apiPatchMock.mock.calls[0][0]).toBe("markets/m1/add-order");
     });
+    // Backend DTO `add_order: boolean` majburiy — bo'sh tana 400 qaytarardi (hxOGVwMt, NJJ2qc72).
+    expect(apiPatchMock.mock.calls[0][1]).toEqual({ add_order: true });
     expect(await screen.findByText("Ruxsat berildi")).toBeInTheDocument();
     expect(screen.getByText("Market m1 endi o'zi buyurtma qo'sha oladi")).toBeInTheDocument();
+  });
+
+  it("backend xatosida «Ruxsat berildi» chiqmaydi, tugma yana bosiladigan bo'ladi", async () => {
+    apiPatchMock.mockRejectedValueOnce(Object.assign(new Error("400"), { response: { status: 400, data: { message: "add_order must be a boolean value" } } }));
+    const user = userEvent.setup();
+    renderWithProviders(<IdentityOpsPage />);
+
+    await user.type(screen.getByRole("textbox", { name: /Market ID/ }), "m2");
+    await user.click(screen.getByRole("button", { name: "Ruxsat berish" }));
+
+    await waitFor(() => expect(apiPatchMock).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Ruxsat berish" })).toBeEnabled());
+    expect(screen.queryByText("Ruxsat berildi")).toBeNull();
   });
 
   it("direct route — «← Ops vositalari»; `embedded` — no page header", () => {

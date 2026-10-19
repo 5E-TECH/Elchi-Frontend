@@ -17,6 +17,7 @@ import {
   EmptyState,
   Field,
   IconButton,
+  Pressable,
   Select,
   Skeleton,
   TextInput,
@@ -493,8 +494,7 @@ const Step2Combined = () => {
                   const isAdded = items.some((item) => item.product_id === String(product.id));
                   return (
                     <li key={product.id}>
-                      <button
-                        type="button"
+                      <Pressable
                         onClick={() => addProduct(product)}
                         className={cx(
                           "flex min-h-13 w-full items-center gap-3 rounded-[10px] px-3 py-2 text-left",
@@ -519,7 +519,7 @@ const Step2Combined = () => {
                             {t("createProductAdd")}
                           </span>
                         )}
-                      </button>
+                      </Pressable>
                     </li>
                   );
                 })

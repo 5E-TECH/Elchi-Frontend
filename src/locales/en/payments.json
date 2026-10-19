@@ -438,7 +438,8 @@
       "count": "{{value}}",
       "total": "Total",
       "showMore": "Show more · {{value}}",
-      "showLess": "Show less"
+      "showLess": "Show less",
+      "topShown": "Showing the {{shown}} largest · {{total}} in total"
     },
     "history": {
       "filters": "History filters",

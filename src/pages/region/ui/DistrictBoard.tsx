@@ -11,7 +11,7 @@ import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../../shared/lib/cx";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
-import { Badge, IconButton } from "../../../shared/ui/primitives";
+import { Badge, IconButton, Pressable } from "../../../shared/ui/primitives";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import MoveDistrictDialog, { type MoveDistrictTarget } from "./MoveDistrictDialog";
 
@@ -116,8 +116,7 @@ const DistrictBoard = ({
                 className="border-t border-border first:border-t-0"
               >
                 <h3 className="m-0">
-                  <button
-                    type="button"
+                  <Pressable
                     aria-expanded={open}
                     aria-controls={listId}
                     onClick={() =>
@@ -145,7 +144,7 @@ const DistrictBoard = ({
                         className="shrink-0 text-text-muted"
                       />
                     )}
-                  </button>
+                  </Pressable>
                 </h3>
                 {open ? (
                   <ul

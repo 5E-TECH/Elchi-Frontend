@@ -71,7 +71,8 @@
   "delete": {
     "confirm": "Delete this branch?",
     "success": "Branch deleted",
-    "error": "Failed to delete branch"
+    "error": "Failed to delete branch",
+    "retryLater": "Couldn't check right now. Try again later."
   },
   "fields": {
     "name": "Branch name",

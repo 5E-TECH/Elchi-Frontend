@@ -1,7 +1,7 @@
 // dizayn-v2: superadmin-integrations-panel-settings, superadmin-integrations-legacy-source-create
 import type { ReactNode } from "react";
 import { cx } from "../../../shared/lib/cx";
-import { useFieldControl } from "../../../shared/ui/primitives";
+import { Pressable, useFieldControl } from "../../../shared/ui/primitives";
 
 export type SwitchProps = {
   checked: boolean;
@@ -24,8 +24,7 @@ export type SwitchProps = {
 export const Switch = ({ checked, onChange, label, description, disabled, className, id, ...rest }: SwitchProps) => {
   const control = useFieldControl({ id, disabled });
   return (
-    <button
-      type="button"
+    <Pressable
       role="switch"
       aria-checked={checked}
       aria-label={rest["aria-label"]}
@@ -54,7 +53,7 @@ export const Switch = ({ checked, onChange, label, description, disabled, classN
           {description != null ? <span className="text-[13px] leading-[18px] text-text-muted">{description}</span> : null}
         </span>
       ) : null}
-    </button>
+    </Pressable>
   );
 };
 

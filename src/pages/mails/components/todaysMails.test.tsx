@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { useLocation } from "react-router-dom";
 import TodaysMails from "./todaysMails";
 import { renderWithProviders } from "../../../test/test-utils";
+import { api } from "../../../shared/api/api";
 
 const getNewMailsMock = vi.fn();
 const getNewMailsCourierMock = vi.fn();
@@ -175,6 +176,10 @@ describe("TodaysMails", () => {
   });
 
   it("manager: «ta pochta» summary, no courier column, phone card «Pochta №X»", () => {
+    // Menejer zaxirasi `GET orders?status=on the road` — tarmoqqa chiqmasin; xatosi keyingi testga «Internet aloqasi
+    // yo'q» xabarini (ikkinchi «Qayta urinish») tashlardi.
+    const fallbackSpy = vi.spyOn(api, "get").mockResolvedValue({ data: { data: [] } });
+    onTestFinished(() => fallbackSpy.mockRestore());
     getNewMailsMock.mockReturnValue(loaded([{ ...MAILS[0], courier: { id: "7", name: "Jasur Tursunov" } }]));
 
     const { unmount } = renderToday("card", "manager");

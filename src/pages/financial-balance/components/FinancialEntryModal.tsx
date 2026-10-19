@@ -7,7 +7,15 @@ import { getActionErrorMessage } from "../../../shared/lib/actionError";
 import { cx } from "../../../shared/lib/cx";
 import { formatSignedMoneyLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
-import { Button, Dialog, Field, SegmentedControl, TextInput, TONE_FG } from "../../../shared/ui/primitives";
+import {
+  Button,
+  Dialog,
+  Field,
+  Pressable,
+  SegmentedControl,
+  TextInput,
+  TONE_FG,
+} from "../../../shared/ui/primitives";
 import {
   FIXED_DIRECTION,
   MANUAL_ENTRY_SOURCES,
@@ -140,16 +148,15 @@ const FinancialEntryModal = ({ open, onClose }: FinancialEntryModalProps) => {
           </legend>
           <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-2">
             {MANUAL_ENTRY_SOURCES.map((value) => (
-              <button
+              <Pressable
                 key={value}
-                type="button"
                 aria-pressed={source === value}
                 onClick={() => setSource(value)}
                 disabled={pending}
                 className={CHIP}
               >
                 <span className="truncate">{t(SOURCE_LABEL_KEYS[value])}</span>
-              </button>
+              </Pressable>
             ))}
           </div>
         </fieldset>

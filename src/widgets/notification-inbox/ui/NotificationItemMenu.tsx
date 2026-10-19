@@ -2,7 +2,13 @@
 import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Ellipsis, type LucideIcon } from "lucide-react";
 import { cx } from "../../../shared/lib/cx";
-import { IconButton, Portal, useDismiss, usePopover } from "../../../shared/ui/primitives";
+import {
+  IconButton,
+  Portal,
+  Pressable,
+  useDismiss,
+  usePopover,
+} from "../../../shared/ui/primitives";
 
 export type ItemMenuAction = {
   id: string;
@@ -109,12 +115,11 @@ export const NotificationItemMenu = ({
             {actions.map((action, index) => {
               const Icon = action.icon;
               return (
-                <button
+                <Pressable
                   key={action.id}
                   ref={(element) => {
                     itemsRef.current[index] = element;
                   }}
-                  type="button"
                   role="menuitem"
                   tabIndex={-1}
                   onClick={() => {
@@ -130,7 +135,7 @@ export const NotificationItemMenu = ({
                 >
                   <Icon size={16} aria-hidden="true" />
                   {action.label}
-                </button>
+                </Pressable>
               );
             })}
           </div>

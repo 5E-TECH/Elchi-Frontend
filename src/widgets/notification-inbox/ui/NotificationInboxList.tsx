@@ -20,6 +20,7 @@ import {
   EmptyState,
   ErrorState,
   Pagination,
+  Pressable,
   QueryBoundary,
   Tabs,
 } from "../../../shared/ui/primitives";
@@ -77,9 +78,8 @@ const CategoryChips = ({
         const active = category === null ? !value : value === category;
         const unread = unreadOf(counts, category);
         return (
-          <button
+          <Pressable
             key={category ?? "all"}
-            type="button"
             aria-pressed={active}
             onClick={() => onChange(category === null || active ? undefined : category)}
             className={cx("group", CHIP)}
@@ -92,7 +92,7 @@ const CategoryChips = ({
                 <span className="sr-only">{t("filters.unreadCount")}</span>
               </span>
             ) : null}
-          </button>
+          </Pressable>
         );
       })}
     </div>
@@ -245,8 +245,7 @@ const NotificationInboxList = () => {
         >
           {category ? t("filters.toggleActive", { count: 1 }) : t("filters.toggle")}
         </Button>
-        <button
-          type="button"
+        <Pressable
           role="switch"
           aria-checked={important}
           onClick={() => setFilter("important", important ? null : "1")}
@@ -262,7 +261,7 @@ const NotificationInboxList = () => {
               <span className="sr-only">{t("filters.unreadCount")}</span>
             </span>
           ) : null}
-        </button>
+        </Pressable>
       </div>
 
       <QueryBoundary<InboxListResult>

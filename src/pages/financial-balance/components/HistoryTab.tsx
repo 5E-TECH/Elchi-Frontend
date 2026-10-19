@@ -24,6 +24,7 @@ import {
   Field,
   IconButton,
   Pagination,
+  Pressable,
   QueryBoundary,
   Select,
   SkeletonTable,
@@ -277,8 +278,7 @@ const HistoryTab = () => {
           ? `${who} · ${row.comment}`
           : who;
       return (
-        <button
-          type="button"
+        <Pressable
           onClick={() => setSelected(row)}
           aria-label={openLabel(row)}
           className="flex w-full min-h-14 flex-col gap-1 px-4 py-3 text-left text-sm text-text"
@@ -294,7 +294,7 @@ const HistoryTab = () => {
             <span className="whitespace-nowrap">{dateTime(row.date)}</span>
             <span className="whitespace-nowrap">{t("v2Balance.history.balanceLine", { value: money(row.nextBalance) })}</span>
           </span>
-        </button>
+        </Pressable>
       );
     },
     [dateTime, money, openLabel, signed, sourceLabel, t],

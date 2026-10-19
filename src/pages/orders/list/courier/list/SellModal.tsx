@@ -5,7 +5,14 @@ import { useTranslation } from "react-i18next";
 import { cx } from "../../../../../shared/lib/cx";
 import { getOrderItemName } from "../../../../../shared/lib/orderItemName";
 import { formatMoneyLocalized } from "../../../../../shared/lib/formatMoney";
-import { Button, Dialog, Field, IconButton, TextInput } from "../../../../../shared/ui/primitives";
+import {
+  Button,
+  Dialog,
+  Field,
+  IconButton,
+  Pressable,
+  TextInput,
+} from "../../../../../shared/ui/primitives";
 import {
   getActivePendingApproval,
   usePendingExtraCostApprovals,
@@ -107,8 +114,7 @@ const PartialSwitch = ({
   onToggle: () => void;
   label: string;
 }) => (
-  <button
-    type="button"
+  <Pressable
     role="switch"
     aria-checked={checked}
     aria-describedby={descriptionId}
@@ -131,7 +137,7 @@ const PartialSwitch = ({
     >
       <span className="absolute left-0.5 top-0.5 size-4 rounded-full bg-on-solid transition-transform duration-150 group-aria-checked:translate-x-4 motion-reduce:transition-none" />
     </span>
-  </button>
+  </Pressable>
 );
 
 type SellDialogProps = Omit<SellModalProps, "order"> & { order: ActionOrder; variant: OrderActionVariant };

@@ -4,10 +4,9 @@ import { Route, Routes, useLocation } from "react-router-dom";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import i18n from "../../i18n";
 import { renderWithProviders } from "../../test/test-utils";
-import FilterMultiSelect from "./FilterMultiSelect";
 import FilterSelect from "./FilterSelect";
 
-/** FilterSelect / FilterMultiSelect — eski API (Redux + URL), ichi v2 `Field` + `Select`. */
+/** FilterSelect — eski API (Redux + URL), ichi v2 `Field` + `Select`. */
 
 beforeAll(async () => {
   await i18n.changeLanguage("uz");
@@ -122,44 +121,5 @@ describe("FilterSelect (v2 ichida)", () => {
     screen.getByRole("combobox", { name: "Tur" }).focus();
     await user.keyboard("{ArrowDown}{ArrowDown}{Enter}");
     expect(onChange).toHaveBeenCalledWith("card");
-  });
-});
-
-describe("FilterMultiSelect (v2 ichida)", () => {
-  const STATUSES = [
-    { value: "new", label: "Yangi" },
-    { value: "on the road", label: "Yo'lda" },
-    { value: "waiting", label: "Kutilmoqda" },
-  ];
-
-  it("bo'sh — «Barchasi» (iste'molchi namunasi «Holatni tanlang» bo'lsa ham; maket superadmin-orders-list)", () => {
-    renderWithProviders(
-      <FilterMultiSelect label="Holat" name="status" value={[]} onChange={() => undefined} options={STATUSES} placeholder="Holatni tanlang" />,
-    );
-    // Ko'rinadigan namuna va ekran o'quvchi uchun tugma ichidagi xulosa — ikkalasi «Barchasi».
-    expect(screen.getByRole("combobox", { name: "Holat" })).toHaveTextContent("Barchasi");
-    expect(screen.getAllByText("Barchasi").some((node) => !node.closest("button"))).toBe(true);
-    expect(screen.queryByText("Holatni tanlang")).not.toBeInTheDocument();
-  });
-
-  it("belgilar, «+N», × — hammasini tozalash; ro'yxatda belgilash", async () => {
-    const user = userEvent.setup();
-    const onChange = vi.fn();
-    renderWithProviders(
-      <FilterMultiSelect
-        label="Holat"
-        name="status"
-        value={["new", "on the road", "waiting"]}
-        onChange={onChange}
-        options={STATUSES}
-        placeholder="Holatni tanlang"
-      />,
-    );
-    expect(screen.getByText("+1")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Barchasini tozalash" }));
-    expect(onChange).toHaveBeenLastCalledWith([]);
-    await user.click(screen.getByRole("combobox", { name: "Holat" }));
-    await user.click(screen.getByRole("option", { name: "Yangi" }));
-    expect(onChange).toHaveBeenLastCalledWith(["on the road", "waiting"]);
   });
 });

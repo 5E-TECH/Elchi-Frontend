@@ -1,0 +1,126 @@
+{
+  "statusCode": 200,
+  "message": "ok",
+  "data": {
+    "items": [
+      {
+        "id": "11",
+        "name": "Tez Yetkaz",
+        "slug": "tez-yetkaz",
+        "type": "api",
+        "role": "carrier",
+        "category": "cargo",
+        "status": "active",
+        "is_active": true,
+        "base_url": "https://api.tez-yetkaz.example",
+        "auth_type": "api_key",
+        "market_id": null,
+        "last_sync_at": "2026-10-15T04:40:00.000Z"
+      },
+      {
+        "id": "12",
+        "name": "Yo'lchi Kargo",
+        "slug": "yolchi-kargo",
+        "type": "api",
+        "role": "carrier",
+        "category": "cargo",
+        "status": "active",
+        "is_active": true,
+        "base_url": "https://api.yolchi-kargo.example",
+        "auth_type": "api_key",
+        "market_id": null,
+        "last_sync_at": "2026-10-15T04:40:00.000Z"
+      },
+      {
+        "id": "13",
+        "name": "Sharq Ekspress",
+        "slug": "sharq-ekspress",
+        "type": "api",
+        "role": "carrier",
+        "category": "cargo",
+        "status": "active",
+        "is_active": true,
+        "base_url": "https://api.sharq-ekspress.example",
+        "auth_type": "api_key",
+        "market_id": null,
+        "last_sync_at": "2026-10-15T04:40:00.000Z"
+      },
+      {
+        "id": "14",
+        "name": "Hamyon To'lov",
+        "slug": "hamyon-tolov",
+        "type": "api",
+        "role": "payment",
+        "category": "payment",
+        "status": "active",
+        "is_active": true,
+        "base_url": "https://api.hamyon-tolov.example",
+        "auth_type": "api_key",
+        "market_id": null,
+        "last_sync_at": "2026-10-15T04:40:00.000Z"
+      },
+      {
+        "id": "15",
+        "name": "Ombor Jadvali",
+        "slug": "ombor-jadvali",
+        "type": "api",
+        "role": "mirror",
+        "category": "spreadsheet",
+        "status": "active",
+        "is_active": true,
+        "base_url": "https://api.ombor-jadvali.example",
+        "auth_type": "api_key",
+        "market_id": null,
+        "last_sync_at": "2026-10-15T04:40:00.000Z"
+      },
+      {
+        "id": "16",
+        "name": "Toshkent Kuryer",
+        "slug": "toshkent-kuryer",
+        "type": "api",
+        "role": "carrier",
+        "category": "cargo",
+        "status": "inactive",
+        "is_active": false,
+        "base_url": "https://api.toshkent-kuryer.example",
+        "auth_type": "api_key",
+        "market_id": null,
+        "last_sync_at": "2026-10-15T04:40:00.000Z"
+      },
+      {
+        "id": "21",
+        "name": "Bozor Online",
+        "slug": "bozor-online",
+        "type": "api",
+        "role": "source",
+        "category": "marketplace",
+        "status": "active",
+        "is_active": true,
+        "base_url": "https://api.bozor-online.example",
+        "auth_type": "api_key",
+        "market_id": null,
+        "last_sync_at": "2026-10-15T04:40:00.000Z"
+      },
+      {
+        "id": "22",
+        "name": "Savdo Markaz",
+        "slug": "savdo-markaz",
+        "type": "api",
+        "role": "source",
+        "category": "marketplace",
+        "status": "active",
+        "is_active": true,
+        "base_url": "https://api.savdo-markaz.example",
+        "auth_type": "api_key",
+        "market_id": null,
+        "last_sync_at": "2026-10-15T04:40:00.000Z"
+      }
+    ],
+    "meta": {
+      "total": 8,
+      "page": 1,
+      "limit": 100,
+      "totalPages": 1
+    }
+  }
+}

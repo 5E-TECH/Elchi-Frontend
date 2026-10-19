@@ -17,7 +17,16 @@ import {
   resolveMoneyLanguage,
 } from "../../../shared/lib/formatMoney";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
-import { Badge, Button, Card, EmptyState, ErrorState, Skeleton, StatCard } from "../../../shared/ui/primitives";
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  Pressable,
+  Skeleton,
+  StatCard,
+} from "../../../shared/ui/primitives";
 import type { ReceiveOption } from "./lib/receiveOptions";
 
 /**
@@ -229,8 +238,7 @@ const PaymentSummaryCards = ({
             )}
           </Link>
           <div className="flex flex-col px-4">
-            <button
-              type="button"
+            <Pressable
               onClick={() => onCardClick(null, "received")}
               className="flex min-h-14 flex-col gap-2 border-t border-border py-3 text-left text-text"
             >
@@ -258,9 +266,8 @@ const PaymentSummaryCards = ({
                   <Legend segments={withShare(courierSegments)} small />
                 </>
               ) : null}
-            </button>
-            <button
-              type="button"
+            </Pressable>
+            <Pressable
               onClick={() => onCardClick(null, "given")}
               className="flex min-h-14 flex-col gap-2 border-t border-border py-3 text-left text-text"
             >
@@ -283,7 +290,7 @@ const PaymentSummaryCards = ({
                 </span>
               </span>
               {givePercent !== null ? <Meter percent={givePercent} thin /> : null}
-            </button>
+            </Pressable>
           </div>
         </section>
       );

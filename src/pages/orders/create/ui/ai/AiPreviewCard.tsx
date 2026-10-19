@@ -14,6 +14,7 @@ import {
   Card,
   Field,
   IconButton,
+  Pressable,
   SegmentedControl,
   Select,
   TextInput,
@@ -289,8 +290,7 @@ const AiPreviewCard = ({
       </header>
 
       {!mustStayOpen ? (
-        <button
-          type="button"
+        <Pressable
           data-testid="ai-card-toggle"
           aria-expanded={expanded}
           aria-controls={bodyId}
@@ -314,7 +314,7 @@ const AiPreviewCard = ({
           ) : (
             <ChevronDown size={16} aria-hidden="true" className="shrink-0 text-text-subtle" />
           )}
-        </button>
+        </Pressable>
       ) : null}
 
       <div

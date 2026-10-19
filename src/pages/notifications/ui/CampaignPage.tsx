@@ -78,6 +78,7 @@ const VarInput = ({
     >
       <span className="shrink-0 text-sm whitespace-nowrap text-text-muted">{`{{${name}}}`}</span>
       <span aria-hidden="true" className="h-5 w-px shrink-0 bg-border-strong" />
+      {/* eslint-disable-next-line design-v2/raw-control -- TextInput'da matn prefiksi («{{nom}}» + ajratkich) slot'i yo'q; quti TextInput klasslarida — prefiks slot'i qo'shilganda TextInput ga o'tadi (5-bosqich B, follow-up) */}
       <input
         type="text"
         aria-label={name}

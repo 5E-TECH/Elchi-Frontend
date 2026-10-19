@@ -25,6 +25,10 @@ export type {
 export { IconButton } from "./IconButton";
 export type { IconButtonProps, IconButtonVariant } from "./IconButton";
 
+// 5-bosqich: uslubsiz bosiladigan yuza (karta, qator, chip, menyu bandi, kalit) — xom <button> o'rniga.
+export { Pressable } from "./Pressable";
+export type { PressableProps } from "./Pressable";
+
 export { Spinner } from "./Spinner";
 export type { SpinnerProps, SpinnerSize } from "./Spinner";
 

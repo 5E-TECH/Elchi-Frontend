@@ -107,7 +107,9 @@ const renderPage = (role: string, options: StaffOptions = {}) =>
 
 const receiveAllOrders = async () => {
   const user = userEvent.setup();
-  await user.click(await screen.findByRole("button", { name: "Qabul qilish — 2 ta buyurtma" }));
+  // Sukut — hech narsa tanlanmagan (QMvu5Ajx): avval «Barchasini tanlash».
+  await user.click(await screen.findByRole("button", { name: "Barchasini tanlash" }));
+  await user.click(screen.getByRole("button", { name: "Qabul qilish — 2 ta buyurtma" }));
   await user.click(await screen.findByRole("button", { name: "Tasdiqlash" }));
 };
 
@@ -217,25 +219,30 @@ describe("NewOrderDetail — xodim sahifasi (dizayn v2)", () => {
     );
   });
 
-  it("tanlov paneli: hammasi oldindan tanlangan — ko'k; tanlov bekor qilinsa — neytral «tanlanmagan»", async () => {
+  it("⭐ sahifa ochilganda hech bir buyurtma tanlanmagan (QMvu5Ajx): panel neytral, qabul tugmasi o'chiq; belgilansa — ko'k", async () => {
     const user = userEvent.setup();
     renderPage("superadmin");
 
-    await screen.findByRole("checkbox", { name: "№o2 ni tanlash" });
+    const o1 = await screen.findByRole("checkbox", { name: "№o1 ni tanlash" });
     const region = () => screen.getByRole("region", { name: "Tanlangan buyurtmalar" });
-    expect(region()).toHaveClass("bg-action-soft");
-
-    await user.click(within(region()).getByRole("button", { name: "Tanlovni bekor qilish" }));
+    expect(o1).not.toBeChecked();
+    expect(screen.getByRole("checkbox", { name: "№o2 ni tanlash" })).not.toBeChecked();
     // Bo'sh tanlov — neytral (ko'k faqat tanlov bo'lganda; maket `*-cancelled-scanner-dialog`).
     expect(region()).toHaveClass("bg-sunken");
     expect(region()).not.toHaveClass("bg-action-soft");
+    expect(region()).toHaveTextContent("Buyurtma tanlanmagan");
+    expect(screen.getByRole("button", { name: "Qabul qilish — 0 ta buyurtma" })).toBeDisabled();
+
+    await user.click(o1);
+    expect(region()).toHaveClass("bg-action-soft");
+    expect(screen.getByRole("button", { name: "Qabul qilish — 1 ta buyurtma" })).toBeEnabled();
   });
 
   it("qabul oynasi: market, son, summa; tanlanmaganlar eslatmasi va faqat tanlanganlar yuboriladi", async () => {
     const user = userEvent.setup();
     renderPage("superadmin");
 
-    await user.click(await screen.findByRole("checkbox", { name: "№o2 ni tanlash" }));
+    await user.click(await screen.findByRole("checkbox", { name: "№o1 ni tanlash" }));
     expect(screen.getByRole("region", { name: "Tanlangan buyurtmalar" })).toHaveTextContent(
       /1 ta buyurtma tanlandi · 50\s000 so'm/,
     );
@@ -256,7 +263,8 @@ describe("NewOrderDetail — xodim sahifasi (dizayn v2)", () => {
     const user = userEvent.setup();
     renderPage("registrator", { branchType: "HQ", branchName: "Toshkent HQ" });
 
-    await user.click(await screen.findByRole("button", { name: "Qabul qilish — 2 ta buyurtma" }));
+    await user.click(await screen.findByRole("button", { name: "Barchasini tanlash" }));
+    await user.click(screen.getByRole("button", { name: "Qabul qilish — 2 ta buyurtma" }));
     expect(await screen.findByRole("alertdialog", { name: "Qo'lda qabul qilish" })).toHaveTextContent(
       "Ular Toshkent HQ pochtasiga o'tkaziladi.",
     );
@@ -266,12 +274,37 @@ describe("NewOrderDetail — xodim sahifasi (dizayn v2)", () => {
     const user = userEvent.setup();
     renderPage("superadmin");
 
-    await user.click(await screen.findByRole("button", { name: "Tanlovni bekor qilish" }));
-    expect(screen.getByText("Buyurtma tanlanmagan")).toBeInTheDocument();
+    expect(await screen.findByText("Buyurtma tanlanmagan")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Qabul qilish — 0 ta buyurtma" })).toBeDisabled();
 
     await user.click(screen.getByRole("button", { name: "Barchasini tanlash" }));
     expect(screen.getByRole("button", { name: "Qabul qilish — 2 ta buyurtma" })).toBeEnabled();
+
+    await user.click(screen.getByRole("button", { name: "Tanlovni bekor qilish" }));
+    expect(screen.getByText("Buyurtma tanlanmagan")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Qabul qilish — 0 ta buyurtma" })).toBeDisabled();
+  });
+
+  it("tanlangan buyurtma ro'yxatdan chiqsa (boshqa joyda qabul qilingan) — son va qabul faqat qolganlardan", async () => {
+    const user = userEvent.setup();
+    renderPage("superadmin");
+
+    await user.click(await screen.findByRole("button", { name: "Barchasini tanlash" }));
+    expect(screen.getByRole("button", { name: "Qabul qilish — 2 ta buyurtma" })).toBeEnabled();
+
+    // Yangilangan javobda №o2 yo'q; sahifa qayta chiziladi (qidiruv maydoni orqali).
+    mocks.orders = baseOrders().filter((order) => order.id === "o1");
+    const search = screen.getByRole("searchbox", { name: "Buyurtmalarni qidirish" });
+    await user.type(search, "A");
+    await user.clear(search);
+
+    expect(screen.queryByRole("checkbox", { name: "№o2 ni tanlash" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Qabul qilish — 1 ta buyurtma" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Qo'lda qabul qilish" });
+    expect(dialog).toHaveTextContent(/Buyurtmalar\s*1 ta/);
+    expect(dialog).toHaveTextContent(/Jami summa\s*50\s000 so'm/);
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+    expect(mocks.receiveMutate).toHaveBeenCalledWith({ orderIds: ["o1"] }, expect.any(Object));
   });
 
   it("qidiruv: mijoz bo'yicha filtrlaydi; topilmasa — «Qidiruvni tozalash»", async () => {
@@ -361,9 +394,11 @@ describe("NewOrderDetail — EN tugma matni (birlik/ko'plik)", () => {
     const user = userEvent.setup();
     renderPage("superadmin");
 
-    expect(await screen.findByRole("button", { name: "Receive — 2 orders" })).toBeEnabled();
+    expect(await screen.findByRole("button", { name: "Receive — 0 orders" })).toBeDisabled();
     await user.click(screen.getByRole("checkbox", { name: "Select №o2" }));
     expect(screen.getByRole("button", { name: "Receive — 1 order" })).toBeEnabled();
+    await user.click(screen.getByRole("checkbox", { name: "Select №o1" }));
+    expect(screen.getByRole("button", { name: "Receive — 2 orders" })).toBeEnabled();
   });
 });
 

@@ -661,6 +661,7 @@ const CancelledMarketDetail = () => {
             </Button>
           </div>
           {/* Telefon: kamera — to'liq enli yumshoq tugma (ikkinchi to'liq rangli tugma yo'q), tanlov soni bilan. */}
+          {/* eslint-disable-next-line design-v2/raw-control -- kamera ishi: telefondagi «Kamera» tugmasi ScannerCameraModal bilan birga ko'chiriladi (ega 2026-10-16) */}
           <button
             type="button"
             aria-haspopup="dialog"

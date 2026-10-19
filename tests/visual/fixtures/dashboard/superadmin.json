@@ -1,0 +1,582 @@
+{
+  "dashboard": {
+    "current": {
+      "statusCode": 200,
+      "message": "ok",
+      "data": {
+        "orders": {
+          "acceptedCount": 4680,
+          "soldAndPaid": 3613,
+          "cancelled": 374,
+          "profit": 73500000,
+          "totalRevenue": 705300000
+        },
+        "markets": [
+          {
+            "market_id": "31",
+            "market_name": "Baraka Shop",
+            "total_orders": 45,
+            "successful_orders": 38,
+            "success_rate": 84.44
+          },
+          {
+            "market_id": "32",
+            "market_name": "Nur Elektronika",
+            "total_orders": 38,
+            "successful_orders": 31,
+            "success_rate": 81.58
+          },
+          {
+            "market_id": "5",
+            "market_name": "Ipak Yo'li Savdo",
+            "total_orders": 34,
+            "successful_orders": 27,
+            "success_rate": 79.41
+          },
+          {
+            "market_id": "34",
+            "market_name": "Chilonzor Market",
+            "total_orders": 31,
+            "successful_orders": 24,
+            "success_rate": 77.42
+          },
+          {
+            "market_id": "35",
+            "market_name": "Oila Market",
+            "total_orders": 30,
+            "successful_orders": 23,
+            "success_rate": 76.67
+          },
+          {
+            "market_id": "36",
+            "market_name": "Samarqand Savdo",
+            "total_orders": 31,
+            "successful_orders": 22,
+            "success_rate": 70.97
+          },
+          {
+            "market_id": "37",
+            "market_name": "Zamon Mebel",
+            "total_orders": 24,
+            "successful_orders": 16,
+            "success_rate": 66.67
+          },
+          {
+            "market_id": "38",
+            "market_name": "Farg'ona Bozori",
+            "total_orders": 26,
+            "successful_orders": 16,
+            "success_rate": 61.54
+          }
+        ],
+        "couriers": [
+          {
+            "courier_id": "c1",
+            "courier_name": "Rustam Qosimov",
+            "total_orders": 21,
+            "successful_orders": 19,
+            "success_rate": 90.48
+          },
+          {
+            "courier_id": "c2",
+            "courier_name": "Eldor Mahmudov",
+            "total_orders": 21,
+            "successful_orders": 18,
+            "success_rate": 85.71
+          },
+          {
+            "courier_id": "c3",
+            "courier_name": "Farrux Sobirov",
+            "total_orders": 20,
+            "successful_orders": 17,
+            "success_rate": 85
+          },
+          {
+            "courier_id": "c4",
+            "courier_name": "Ulug'bek Hamidov",
+            "total_orders": 18,
+            "successful_orders": 15,
+            "success_rate": 83.33
+          },
+          {
+            "courier_id": "c5",
+            "courier_name": "Akmal Yusupov",
+            "total_orders": 16,
+            "successful_orders": 13,
+            "success_rate": 81.25
+          },
+          {
+            "courier_id": "c6",
+            "courier_name": "Jasur Tursunov",
+            "total_orders": 19,
+            "successful_orders": 14,
+            "success_rate": 73.68
+          },
+          {
+            "courier_id": "c7",
+            "courier_name": "Sardor Aliyev",
+            "total_orders": 15,
+            "successful_orders": 10,
+            "success_rate": 66.67
+          }
+        ],
+        "topMarkets": [
+          {
+            "market_id": "31",
+            "market_name": "Baraka Shop",
+            "total_orders": 45,
+            "successful_orders": 38,
+            "success_rate": 84.44
+          },
+          {
+            "market_id": "32",
+            "market_name": "Nur Elektronika",
+            "total_orders": 38,
+            "successful_orders": 31,
+            "success_rate": 81.58
+          },
+          {
+            "market_id": "5",
+            "market_name": "Ipak Yo'li Savdo",
+            "total_orders": 34,
+            "successful_orders": 27,
+            "success_rate": 79.41
+          },
+          {
+            "market_id": "34",
+            "market_name": "Chilonzor Market",
+            "total_orders": 31,
+            "successful_orders": 24,
+            "success_rate": 77.42
+          },
+          {
+            "market_id": "35",
+            "market_name": "Oila Market",
+            "total_orders": 30,
+            "successful_orders": 23,
+            "success_rate": 76.67
+          }
+        ],
+        "topBranches": [
+          {
+            "branch_id": "b1",
+            "branch_name": "Toshkent HQ",
+            "total_orders": 209,
+            "successful_orders": 166,
+            "success_rate": 79.43
+          },
+          {
+            "branch_id": "b2",
+            "branch_name": "Samarqand filiali",
+            "total_orders": 34,
+            "successful_orders": 25,
+            "success_rate": 73.53
+          },
+          {
+            "branch_id": "b3",
+            "branch_name": "Andijon filiali",
+            "total_orders": 22,
+            "successful_orders": 16,
+            "success_rate": 72.73
+          },
+          {
+            "branch_id": "11",
+            "branch_name": "Farg'ona filiali",
+            "total_orders": 29,
+            "successful_orders": 21,
+            "success_rate": 72.41
+          },
+          {
+            "branch_id": "b5",
+            "branch_name": "Buxoro filiali",
+            "total_orders": 18,
+            "successful_orders": 13,
+            "success_rate": 72.22
+          }
+        ],
+        "topCouriers": [],
+        "topOperators": [],
+        "topMarketsMeta": {
+          "period_rule": "selected_range",
+          "period_days": null,
+          "from": "2026-10-01T00:00:00.000+05:00",
+          "to": "2026-10-15T23:59:59.999+05:00",
+          "min_orders": 1
+        },
+        "topBranchesMeta": {
+          "period_rule": "selected_range",
+          "period_days": null,
+          "from": "2026-10-01T00:00:00.000+05:00",
+          "to": "2026-10-15T23:59:59.999+05:00",
+          "min_orders": 1
+        }
+      }
+    },
+    "previous": {
+      "statusCode": 200,
+      "message": "ok",
+      "data": {
+        "orders": {
+          "acceptedCount": 4410,
+          "soldAndPaid": 3299,
+          "cancelled": 397,
+          "profit": 62800000,
+          "totalRevenue": 638600000
+        },
+        "markets": [
+          {
+            "market_id": "31",
+            "market_name": "Baraka Shop",
+            "total_orders": 45,
+            "successful_orders": 38,
+            "success_rate": 84.44
+          },
+          {
+            "market_id": "32",
+            "market_name": "Nur Elektronika",
+            "total_orders": 38,
+            "successful_orders": 31,
+            "success_rate": 81.58
+          },
+          {
+            "market_id": "5",
+            "market_name": "Ipak Yo'li Savdo",
+            "total_orders": 34,
+            "successful_orders": 27,
+            "success_rate": 79.41
+          },
+          {
+            "market_id": "34",
+            "market_name": "Chilonzor Market",
+            "total_orders": 31,
+            "successful_orders": 24,
+            "success_rate": 77.42
+          },
+          {
+            "market_id": "35",
+            "market_name": "Oila Market",
+            "total_orders": 30,
+            "successful_orders": 23,
+            "success_rate": 76.67
+          },
+          {
+            "market_id": "36",
+            "market_name": "Samarqand Savdo",
+            "total_orders": 31,
+            "successful_orders": 22,
+            "success_rate": 70.97
+          },
+          {
+            "market_id": "37",
+            "market_name": "Zamon Mebel",
+            "total_orders": 24,
+            "successful_orders": 16,
+            "success_rate": 66.67
+          },
+          {
+            "market_id": "38",
+            "market_name": "Farg'ona Bozori",
+            "total_orders": 26,
+            "successful_orders": 16,
+            "success_rate": 61.54
+          }
+        ],
+        "couriers": [
+          {
+            "courier_id": "c1",
+            "courier_name": "Rustam Qosimov",
+            "total_orders": 21,
+            "successful_orders": 19,
+            "success_rate": 90.48
+          },
+          {
+            "courier_id": "c2",
+            "courier_name": "Eldor Mahmudov",
+            "total_orders": 21,
+            "successful_orders": 18,
+            "success_rate": 85.71
+          },
+          {
+            "courier_id": "c3",
+            "courier_name": "Farrux Sobirov",
+            "total_orders": 20,
+            "successful_orders": 17,
+            "success_rate": 85
+          },
+          {
+            "courier_id": "c4",
+            "courier_name": "Ulug'bek Hamidov",
+            "total_orders": 18,
+            "successful_orders": 15,
+            "success_rate": 83.33
+          },
+          {
+            "courier_id": "c5",
+            "courier_name": "Akmal Yusupov",
+            "total_orders": 16,
+            "successful_orders": 13,
+            "success_rate": 81.25
+          },
+          {
+            "courier_id": "c6",
+            "courier_name": "Jasur Tursunov",
+            "total_orders": 19,
+            "successful_orders": 14,
+            "success_rate": 73.68
+          },
+          {
+            "courier_id": "c7",
+            "courier_name": "Sardor Aliyev",
+            "total_orders": 15,
+            "successful_orders": 10,
+            "success_rate": 66.67
+          }
+        ],
+        "topMarkets": [
+          {
+            "market_id": "31",
+            "market_name": "Baraka Shop",
+            "total_orders": 45,
+            "successful_orders": 38,
+            "success_rate": 84.44
+          },
+          {
+            "market_id": "32",
+            "market_name": "Nur Elektronika",
+            "total_orders": 38,
+            "successful_orders": 31,
+            "success_rate": 81.58
+          },
+          {
+            "market_id": "5",
+            "market_name": "Ipak Yo'li Savdo",
+            "total_orders": 34,
+            "successful_orders": 27,
+            "success_rate": 79.41
+          },
+          {
+            "market_id": "34",
+            "market_name": "Chilonzor Market",
+            "total_orders": 31,
+            "successful_orders": 24,
+            "success_rate": 77.42
+          },
+          {
+            "market_id": "35",
+            "market_name": "Oila Market",
+            "total_orders": 30,
+            "successful_orders": 23,
+            "success_rate": 76.67
+          }
+        ],
+        "topBranches": [
+          {
+            "branch_id": "b1",
+            "branch_name": "Toshkent HQ",
+            "total_orders": 209,
+            "successful_orders": 166,
+            "success_rate": 79.43
+          },
+          {
+            "branch_id": "b2",
+            "branch_name": "Samarqand filiali",
+            "total_orders": 34,
+            "successful_orders": 25,
+            "success_rate": 73.53
+          },
+          {
+            "branch_id": "b3",
+            "branch_name": "Andijon filiali",
+            "total_orders": 22,
+            "successful_orders": 16,
+            "success_rate": 72.73
+          },
+          {
+            "branch_id": "11",
+            "branch_name": "Farg'ona filiali",
+            "total_orders": 29,
+            "successful_orders": 21,
+            "success_rate": 72.41
+          },
+          {
+            "branch_id": "b5",
+            "branch_name": "Buxoro filiali",
+            "total_orders": 18,
+            "successful_orders": 13,
+            "success_rate": 72.22
+          }
+        ],
+        "topCouriers": [],
+        "topOperators": [],
+        "topMarketsMeta": {
+          "period_rule": "selected_range",
+          "period_days": null,
+          "from": "2026-10-01T00:00:00.000+05:00",
+          "to": "2026-10-15T23:59:59.999+05:00",
+          "min_orders": 1
+        },
+        "topBranchesMeta": {
+          "period_rule": "selected_range",
+          "period_days": null,
+          "from": "2026-10-01T00:00:00.000+05:00",
+          "to": "2026-10-15T23:59:59.999+05:00",
+          "min_orders": 1
+        }
+      }
+    }
+  },
+  "kpi": {
+    "current": {
+      "statusCode": 200,
+      "message": "ok",
+      "data": {
+        "averageOrderValue": 201700,
+        "averageFulfillmentHours": 5.67,
+        "onTimeRate": 86.4,
+        "cancellationRate": 8,
+        "courierEfficiency": 0,
+        "marketRating": []
+      }
+    },
+    "previous": {
+      "statusCode": 200,
+      "message": "ok",
+      "data": {
+        "averageOrderValue": 198300,
+        "averageFulfillmentHours": 6.08,
+        "onTimeRate": 85.2,
+        "cancellationRate": 9,
+        "courierEfficiency": 0,
+        "marketRating": []
+      }
+    }
+  },
+  "revenue": {
+    "current": {
+      "statusCode": 200,
+      "message": "ok",
+      "data": {
+        "summary": {
+          "totalRevenue": 705300000,
+          "totalOrders": 4680,
+          "avgRevenue": 47020000
+        },
+        "chart": {
+          "labels": [
+            "01.10",
+            "02.10",
+            "03.10",
+            "04.10",
+            "05.10",
+            "06.10",
+            "07.10",
+            "08.10",
+            "09.10",
+            "10.10",
+            "11.10",
+            "12.10",
+            "13.10",
+            "14.10",
+            "15.10"
+          ],
+          "values": [
+            42100000,
+            46300000,
+            44800000,
+            50700000,
+            38900000,
+            41200000,
+            49500000,
+            52400000,
+            47800000,
+            44100000,
+            51600000,
+            48700000,
+            45300000,
+            53100000,
+            48800000
+          ]
+        },
+        "finance": {
+          "currentSituation": 22543000,
+          "main": {
+            "balance": 24615000
+          },
+          "markets": {
+            "marketsTotalBalans": 13458000
+          },
+          "branches": {
+            "branchReceivable": 11386000
+          },
+          "couriers": {
+            "couriersTotalBalanse": 11386000
+          },
+          "difference": 0
+        }
+      }
+    },
+    "previous": {
+      "statusCode": 200,
+      "message": "ok",
+      "data": {
+        "summary": {
+          "totalRevenue": 638600000,
+          "totalOrders": 4410,
+          "avgRevenue": 42573333
+        },
+        "chart": {
+          "labels": [
+            "16.09",
+            "17.09",
+            "18.09",
+            "19.09",
+            "20.09",
+            "21.09",
+            "22.09",
+            "23.09",
+            "24.09",
+            "25.09",
+            "26.09",
+            "27.09",
+            "28.09",
+            "29.09",
+            "30.09"
+          ],
+          "values": [
+            39800000,
+            41200000,
+            43500000,
+            40600000,
+            37200000,
+            44100000,
+            45900000,
+            41800000,
+            42700000,
+            46300000,
+            40200000,
+            43800000,
+            45100000,
+            42400000,
+            44000000
+          ]
+        },
+        "finance": {
+          "currentSituation": 22543000,
+          "main": {
+            "balance": 24615000
+          },
+          "markets": {
+            "marketsTotalBalans": 13458000
+          },
+          "branches": {
+            "branchReceivable": 11386000
+          },
+          "couriers": {
+            "couriersTotalBalanse": 11386000
+          },
+          "difference": 0
+        }
+      }
+    }
+  }
+}

@@ -21,7 +21,7 @@ import { useDeleteInboxNotification, useMarkInboxRead } from "../../../features/
 import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { notify } from "../../../shared/lib/notify";
-import { Badge, IconButton, useConfirm } from "../../../shared/ui/primitives";
+import { Badge, IconButton, Pressable, useConfirm } from "../../../shared/ui/primitives";
 import { NotificationItemMenu } from "./NotificationItemMenu";
 
 type NotificationInboxItemProps = {
@@ -156,13 +156,12 @@ const NotificationInboxItem = ({ notification, preview = false }: NotificationIn
       <span aria-hidden="true" className={cx(STAT_ICON, "bg-sunken max-md:hidden")}>
         <Icon size={20} />
       </span>
-      <button
-        type="button"
+      <Pressable
         onClick={handleOpen}
         className="flex min-w-0 flex-1 flex-col gap-1 rounded-md text-left"
       >
         {content}
-      </button>
+      </Pressable>
       <div className="flex flex-none items-center gap-1">
         {isUnread ? (
           <IconButton

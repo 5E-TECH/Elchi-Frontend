@@ -127,6 +127,9 @@
     "sentChannels": "Channels: {{channels}}",
     "sendFailed": "Could not send the message",
     "unknownOutcome": "The server did not answer in time. The message may still have been sent — it is not re-sent automatically. Check Notifications first; if needed, send again via \"New message\".",
+    "duplicateSent": "This message was already sent in an earlier attempt — it was not sent again.",
+    "duplicateRunning": "This message is already being sent — it is not sent again. Check the result in Notifications.",
+    "duplicateFailed": "The previous attempt failed — the message was not sent again. Press \"Send\" to try again.",
     "errors": {
       "recipient": "Choose a recipient",
       "recipients": "Choose at least one recipient",

@@ -127,6 +127,9 @@
     "sentChannels": "Kanallar: {{channels}}",
     "sendFailed": "Xabarni yuborib bo'lmadi",
     "unknownOutcome": "Server javobi kelmadi (vaqt tugadi). Xabar baribir yuborilgan bo'lishi mumkin — avtomatik qayta yuborilmaydi. Avval Bildirishnomalar sahifasini tekshiring; kerak bo'lsa \"Yangi xabar\" orqali qayta yuboring.",
+    "duplicateSent": "Bu xabar avvalgi urinishda yuborilgan — qayta yuborilmadi.",
+    "duplicateRunning": "Bu xabar allaqachon yuborilmoqda — qayta yuborilmaydi. Natijani Bildirishnomalar sahifasida tekshiring.",
+    "duplicateFailed": "Avvalgi urinish xato bilan tugagan — xabar qayta yuborilmadi. Yana urinish uchun «Yuborish» ni bosing.",
     "errors": {
       "recipient": "Qabul qiluvchini tanlang",
       "recipients": "Kamida bitta qabul qiluvchini tanlang",

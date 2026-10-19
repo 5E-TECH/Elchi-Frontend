@@ -1,0 +1,14 @@
+{
+  "statusCode": 200,
+  "message": "ok",
+  "data": {
+    "kassadagi_summa": 24615000,
+    "olinishi_kerak": 9870000,
+    "berilishi_kerak": 13458000,
+    "branch_managers_receivable": 8770000,
+    "hq_couriers_receivable": 1100000,
+    "mainCashboxTotal": 24615000,
+    "courierCashboxTotal": 9870000,
+    "marketCashboxTotal": 13458000
+  }
+}

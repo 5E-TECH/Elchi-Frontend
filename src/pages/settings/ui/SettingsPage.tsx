@@ -37,6 +37,7 @@ import {
   getPanelId,
   getTabId,
   PageHeader,
+  Pressable,
   Spinner,
   Tabs,
 } from "../../../shared/ui/primitives";
@@ -206,12 +207,11 @@ const SettingsPage = () => {
             {TABS.map(({ id, icon: Icon }, index) => {
               const selected = activeTab === id;
               return (
-                <button
+                <Pressable
                   key={id}
                   ref={(element) => {
                     navRefs.current[index] = element;
                   }}
-                  type="button"
                   role="tab"
                   id={`${idPrefix}-nav-${id}`}
                   aria-selected={selected}
@@ -236,7 +236,7 @@ const SettingsPage = () => {
                       {t(`tabs_desc.${id}`)}
                     </span>
                   </span>
-                </button>
+                </Pressable>
               );
             })}
           </div>

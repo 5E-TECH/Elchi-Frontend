@@ -12,6 +12,7 @@ import {
   useGetIntegrations,
   useUpdateIntegration,
   type Integration,
+  type IntegrationAuthType,
   type IntegrationCategory,
   type IntegrationParams,
   type IntegrationRole,
@@ -34,6 +35,7 @@ import {
   IconButton,
   PageHeader,
   Pagination,
+  Pressable,
   QueryBoundary,
   SegmentedControl,
   Select,
@@ -47,6 +49,13 @@ import {
   type TabItem,
 } from "../../../shared/ui/primitives";
 import { SecretInput, Switch } from "../../integrations/ui";
+import {
+  LEGACY_AUTH_LABEL_KEY,
+  LEGACY_AUTH_TYPES,
+  buildLegacyAuthUpdate,
+  legacyAuthLabelKey,
+  toLegacyAuthType,
+} from "./legacyAuth";
 
 /**
  * ESKI TASHQI MANBALAR (zaxira sahifa) — maket `*-integrations-legacy-sources`.
@@ -62,16 +71,9 @@ import { SecretInput, Switch } from "../../integrations/ui";
 
 const DEFAULT_LIMIT = 10;
 const PAGE_SIZES = [10, 20, 50] as const;
-const AUTH_TYPES = ["none", "bearer", "basic"] as const;
 const INTEGRATION_VIEW_MODE_KEY = "elchi_integrations_view_mode";
 type IntegrationViewMode = "table" | "cards";
 type RoleTab = "all" | IntegrationRole;
-
-const AUTH_LABEL_KEY: Record<string, string> = {
-  none: "legacySources.authNone",
-  bearer: "legacySources.authToken",
-  basic: "legacySources.authBasic",
-};
 
 type IntegrationEditForm = {
   name: string;
@@ -81,10 +83,13 @@ type IntegrationEditForm = {
   /** Tizim turi — marketplace / CRM / cargo / to'lov / jadval. */
   category: string;
   base_url: string;
-  auth_type: string;
+  /** Backend qiymati (`login` | `api_key`); eski `basic`/`bearer`/`none` ochilganda shunga o'giriladi. */
+  auth_type: IntegrationAuthType;
   auth_url: string;
   username: string;
+  /** Sir — serverdan qaytmaydi (`***`), shuning uchun forma doim bo'sh ochiladi; bo'sh qolsa saqlangani o'zgarmaydi. */
   password: string;
+  /** `api_key` — xuddi parol kabi. */
   token: string;
   market_id: string;
   is_active: boolean;
@@ -101,7 +106,6 @@ const getMarketItems = (value: unknown): MarketOptionSource[] => {
 
 const getInitialEditForm = (integration?: Integration | null): IntegrationEditForm => {
   const credentials = integration?.credentials ?? {};
-  const authType = integration?.auth_type === "api_key" ? "bearer" : integration?.auth_type || "none";
   return {
     name: integration?.name ?? "",
     slug: integration?.slug ?? "",
@@ -109,11 +113,11 @@ const getInitialEditForm = (integration?: Integration | null): IntegrationEditFo
     role: integration?.role ?? "carrier",
     category: integration?.category ?? "cargo",
     base_url: integration?.base_url || integration?.api_url || "",
-    auth_type: authType,
+    auth_type: toLegacyAuthType(integration?.auth_type),
     auth_url: integration?.auth_url ?? credentials.auth_url ?? "",
     username: integration?.username ?? credentials.username ?? "",
-    password: credentials.password ?? "",
-    token: credentials.token ?? credentials.api_key ?? "",
+    password: "",
+    token: "",
     market_id: integration?.market_id ? String(integration.market_id) : "",
     is_active: Boolean(integration?.is_active),
   };
@@ -210,18 +214,6 @@ const ExternalOrdersPage = () => {
     event?.preventDefault();
     if (!editTarget || updateIntegration.isPending) return;
     try {
-      const credentials: Record<string, string> = {};
-      const authUrl = editForm.auth_url.trim();
-      const username = editForm.username.trim();
-      const password = editForm.password.trim();
-      const token = editForm.token.trim();
-      if (authUrl) credentials.auth_url = authUrl;
-      if (editForm.auth_type === "basic") {
-        if (username) credentials.username = username;
-        if (password) credentials.password = password;
-      }
-      if (editForm.auth_type === "bearer" && token) credentials.token = token;
-
       await updateIntegration.mutateAsync({
         id: editTarget.id,
         payload: {
@@ -233,8 +225,7 @@ const ExternalOrdersPage = () => {
           category: editForm.category as IntegrationCategory,
           status: editForm.is_active ? "active" : "inactive",
           base_url: editForm.base_url.trim(),
-          auth_type: editForm.auth_type,
-          credentials,
+          ...buildLegacyAuthUpdate(editForm),
           market_id: editForm.market_id || null,
           is_active: editForm.is_active,
         },
@@ -271,8 +262,8 @@ const ExternalOrdersPage = () => {
 
   const authLabel = (value?: string | null) => {
     // Backend `AuthType` — `api_key` | `login`; eski forma qiymatlari (`bearer`/`basic`/`none`) ham shu yerda o'qiladi.
-    const normalized = value === "api_key" ? "bearer" : value === "login" ? "basic" : value || "none";
-    return AUTH_LABEL_KEY[normalized] ? t(AUTH_LABEL_KEY[normalized]) : normalized;
+    const key = legacyAuthLabelKey(value);
+    return key ? t(key) : String(value);
   };
   const lastSync = (value?: string | null) => (value ? formatDateTimeLocalized(value, { language }) : t("legacySources.notSynced"));
   const statusBadge = (active?: boolean) => (
@@ -291,14 +282,13 @@ const ExternalOrdersPage = () => {
     </div>
   );
   const nameLink = (row: Integration) => (
-    <button
-      type="button"
+    <Pressable
       onClick={() => navigate(detailHref(row))}
       // Telefonda (kartalar) bosiladigan balandlik 44 px.
       className="text-left font-semibold text-text hover:text-action-fg hover:underline max-md:inline-flex max-md:min-h-11 max-md:items-center"
     >
       {row.name}
-    </button>
+    </Pressable>
   );
 
   const columns: DataTableColumn<Integration>[] = [
@@ -369,7 +359,10 @@ const ExternalOrdersPage = () => {
       })),
     [marketsQuery.data],
   );
-  const authOptions: SelectOption[] = AUTH_TYPES.map((value) => ({ value, label: t(AUTH_LABEL_KEY[value]) }));
+  const authOptions: SelectOption<IntegrationAuthType>[] = LEGACY_AUTH_TYPES.map((value) => ({
+    value,
+    label: t(LEGACY_AUTH_LABEL_KEY[value]),
+  }));
   const roleOptions: SelectOption[] = (Object.keys(ROLE_META) as IntegrationRole[]).map((key) => ({ value: key, label: t(ROLE_META[key].labelKey) }));
   const categoryOptions: SelectOption[] = (Object.keys(CATEGORY_LABEL) as IntegrationCategory[]).map((key) => ({
     value: key,
@@ -701,8 +694,8 @@ const ExternalOrdersPage = () => {
               options={authOptions}
               value={editForm.auth_type}
               onChange={(v) => {
-                updateEditForm("auth_type", v ?? "none");
-                if (v !== "bearer") updateEditForm("token", "");
+                updateEditForm("auth_type", v ?? "login");
+                if (v !== "api_key") updateEditForm("token", "");
               }}
             />
           </Field>
@@ -718,18 +711,18 @@ const ExternalOrdersPage = () => {
           <Field label={t("legacySources.authUrl")} hint={t("legacySources.optional")} className="md:col-span-2">
             <TextInput type="url" inputMode="url" value={editForm.auth_url} onValueChange={(v) => updateEditForm("auth_url", v)} placeholder="https://api.example.com/auth" />
           </Field>
-          {editForm.auth_type === "basic" ? (
+          {editForm.auth_type === "login" ? (
             <>
               <Field label={t("legacySources.username")}>
                 <TextInput value={editForm.username} onValueChange={(v) => updateEditForm("username", v)} placeholder={t("legacySources.usernamePlaceholder")} autoComplete="off" />
               </Field>
-              <Field label={t("legacySources.password")}>
+              <Field label={t("legacySources.password")} hint={t("fApiKeyHint")}>
                 <SecretInput value={editForm.password} onValueChange={(v) => updateEditForm("password", v)} placeholder={t("legacySources.passwordPlaceholder")} />
               </Field>
             </>
           ) : null}
-          {editForm.auth_type === "bearer" ? (
-            <Field label={t("legacySources.token")} className="md:col-span-2">
+          {editForm.auth_type === "api_key" ? (
+            <Field label={t("legacySources.token")} hint={t("fApiKeyHint")} className="md:col-span-2">
               <SecretInput value={editForm.token} onValueChange={(v) => updateEditForm("token", v)} placeholder={t("legacySources.tokenPlaceholder")} />
             </Field>
           ) : null}

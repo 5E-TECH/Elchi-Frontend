@@ -1,0 +1,25 @@
+{
+  "statusCode": 200,
+  "data": {
+    "items": [
+      {
+        "id": "31",
+        "name": "Ipak Yo'li Savdo"
+      },
+      {
+        "id": "32",
+        "name": "Baraka Market"
+      },
+      {
+        "id": "33",
+        "name": "Samo Textile"
+      }
+    ],
+    "meta": {
+      "page": 1,
+      "limit": 100,
+      "total": 3,
+      "totalPages": 1
+    }
+  }
+}

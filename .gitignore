@@ -16,6 +16,10 @@ dist-ssr
 coverage
 test-results
 playwright-report
+# Vizual snapshotlar (5-bosqich): alohida bundle va natijalar; baseline'lar (tests/visual/__screenshots__) commit qilinadi
+dist-visual
+test-results-visual
+playwright-report-visual
 
 # Editor / tooling local config
 .vscode/*
