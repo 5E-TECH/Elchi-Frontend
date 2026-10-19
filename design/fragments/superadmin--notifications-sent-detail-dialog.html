@@ -1,0 +1,380 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <a class="el-back" href="@notifications-inbox"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Bildirishnomalar</a>
+    <h1 class="el-h1">Yuborilganlar</h1>
+    <p class="el-sub">Qo'lda yuborilgan xabarlar va kimga yetgani</p>
+  </div>
+  <div class="el-actions">
+    <a class="el-btn el-btn-primary" href="@notifications-send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>Xabar yuborish</a>
+  </div>
+</div>
+
+<div class="el-hide-mobile" role="group" aria-label="Yuborilganlar filtrlari" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; max-width: 640px">
+  <button class="el-input el-select" type="button" style="flex: 1 1 220px; width: auto" aria-haspopup="listbox" aria-expanded="false" aria-label="Natija: barchasi"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap"><span class="el-muted">Natija:</span>Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+  <button class="el-input el-select" type="button" style="flex: 1 1 220px; width: auto" aria-haspopup="listbox" aria-expanded="false" aria-label="Kim yubordi: barchasi"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap"><span class="el-muted">Kim yubordi:</span>Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+</div>
+<div class="el-show-mobile" style="flex-wrap: wrap; gap: 8px; align-items: center">
+  <button class="el-btn el-btn-secondary" type="button" style="flex: 1 1 100%" aria-expanded="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/></svg>Filtrlar</button>
+</div>
+
+<section class="el-card" aria-labelledby="ns-list-title" style="overflow: hidden">
+  <div class="el-card-head">
+    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+      <h2 class="el-h2" id="ns-list-title">Yuborilgan xabarlar</h2>
+      <p class="el-small el-muted">Eng yangisi yuqorida · natija har kanal bo'yicha</p>
+    </div>
+    <span class="el-badge el-tone-neutral">64 ta</span>
+  </div>
+  <div class="el-table-wrap el-hide-mobile">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th>Sana</th>
+          <th>Sarlavha</th>
+          <th class="el-hide-tablet">Kim yubordi</th>
+          <th>Kimga</th>
+          <th class="el-hide-tablet">Kanallar</th>
+          <th>Natija</th>
+          <th class="el-hide-tablet" style="width: 56px"><span class="el-sr">Tafsilot</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="white-space: nowrap">Bugun, 14:20</td>
+          <td><a class="el-cell-title" href="@notifications-sent-detail-dialog" style="display: block; max-width: 240px; min-width: 180px; text-decoration: none; color: var(--text)">Marketlarga: yangi tariflar</a><div class="el-cell-sub" style="max-width: 240px; overflow: hidden; text-overflow: ellipsis">1-noyabrdan Toshkent shahri ichida yetkazish 25 000 so'm bo'ladi.</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Shodiyor Ergashev</div><div class="el-cell-sub">Superadmin</div></td>
+          <td style="min-width: 128px"><div>Rol: Market</div><div class="el-cell-sub" style="white-space: normal">486 ta qabul qiluvchi</div></td>
+          <td class="el-hide-tablet" style="max-width: 168px"><span style="display: flex; flex-wrap: wrap; gap: 4px"><span class="el-badge el-tone-neutral">Darhol</span><span class="el-badge el-tone-neutral">Telegram</span></span></td>
+          <td><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Yuborilmoqda</span><div class="el-cell-sub" style="margin-top: 4px; white-space: normal; max-width: 180px">Bugun, 14:20 dan beri</div></td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@notifications-sent-detail-dialog" aria-label="«Marketlarga: yangi tariflar» (Bugun, 14:20) natijasini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap">Bugun, 14:15</td>
+          <td><a class="el-cell-title" href="@notifications-sent-detail-dialog" style="display: block; max-width: 240px; min-width: 180px; text-decoration: none; color: var(--text)">Ertaga qabul punkti 10:00 dan ishlaydi</a><div class="el-cell-sub" style="max-width: 240px; overflow: hidden; text-overflow: ellipsis">9-oktabr kuni Toshkent HQ qabul punkti 10:00 dan 19:00 gacha ishlaydi.</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Shodiyor Ergashev</div><div class="el-cell-sub">Superadmin</div></td>
+          <td style="min-width: 128px"><div>Rol: Kuryer, Market</div><div class="el-cell-sub" style="white-space: normal">148 ta qabul qiluvchi</div></td>
+          <td class="el-hide-tablet" style="max-width: 168px"><span style="display: flex; flex-wrap: wrap; gap: 4px"><span class="el-badge el-tone-neutral">Darhol</span><span class="el-badge el-tone-neutral">Telegram</span><span class="el-badge el-tone-neutral">SMS</span></span></td>
+          <td><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Qisman yuborildi</span><div class="el-cell-sub" style="margin-top: 4px; white-space: normal; max-width: 180px">O'tkazib yuborildi: Telegram 17, SMS 9</div></td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@notifications-sent-detail-dialog" aria-label="«Ertaga qabul punkti 10:00 dan ishlaydi» (Bugun, 14:15) natijasini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap">Bugun, 09:40</td>
+          <td><a class="el-cell-title" href="@notifications-sent-detail-dialog" style="display: block; max-width: 240px; min-width: 180px; text-decoration: none; color: var(--text)">Kunni yakunlashni 19:00 gacha tugating</a><div class="el-cell-sub" style="max-width: 240px; overflow: hidden; text-overflow: ellipsis">Bugun kassa 19:30 da yopiladi. Kechikkan kuryerlar ertaga topshiradi.</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Nilufar Rashidova</div><div class="el-cell-sub">Admin</div></td>
+          <td style="min-width: 128px"><div>Rol: Kuryer</div><div class="el-cell-sub" style="white-space: normal">62 ta qabul qiluvchi</div></td>
+          <td class="el-hide-tablet" style="max-width: 168px"><span style="display: flex; flex-wrap: wrap; gap: 4px"><span class="el-badge el-tone-neutral">Darhol</span><span class="el-badge el-tone-neutral">Push</span></span></td>
+          <td><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Yuborildi</span></td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@notifications-sent-detail-dialog" aria-label="«Kunni yakunlashni 19:00 gacha tugating» (Bugun, 09:40) natijasini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap">Kecha, 18:04</td>
+          <td><a class="el-cell-title" href="@notifications-sent-detail-dialog" style="display: block; max-width: 240px; min-width: 180px; text-decoration: none; color: var(--text)">Bugun 23:00–23:30 tizimda texnik ishlar</a><div class="el-cell-sub" style="max-width: 240px; overflow: hidden; text-overflow: ellipsis">Shu vaqt oralig'ida CRM ochilmaydi. Kunni yakunlashni 23:00 gacha tugating.</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Shodiyor Ergashev</div><div class="el-cell-sub">Superadmin</div></td>
+          <td style="min-width: 128px"><div>Hamma</div><div class="el-cell-sub" style="white-space: normal">1 312 ta qabul qiluvchi</div></td>
+          <td class="el-hide-tablet" style="max-width: 168px"><span style="display: flex; flex-wrap: wrap; gap: 4px"><span class="el-badge el-tone-neutral">Darhol</span><span class="el-badge el-tone-neutral">SMS</span></span></td>
+          <td><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>Faqat ilova ichida</span><div class="el-cell-sub" style="margin-top: 4px; white-space: normal; max-width: 180px">SMS: provayder ulanmagan</div></td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@notifications-sent-detail-dialog" aria-label="«Bugun 23:00–23:30 tizimda texnik ishlar» (Kecha, 18:04) natijasini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap">Kecha, 11:20</td>
+          <td><a class="el-cell-title" href="@notifications-sent-detail-dialog" style="display: block; max-width: 240px; min-width: 180px; text-decoration: none; color: var(--text)">Yangi kuryerlar uchun qo'llanma</a><div class="el-cell-sub" style="max-width: 240px; overflow: hidden; text-overflow: ellipsis">Ilovadagi «Tezkor amal» bo'limi orqali buyurtmani bir bosishda topshiring.</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Nilufar Rashidova</div><div class="el-cell-sub">Admin</div></td>
+          <td style="min-width: 128px"><div>Tanlangan ro'yxat</div><div class="el-cell-sub" style="white-space: normal">14 ta qabul qiluvchi</div></td>
+          <td class="el-hide-tablet" style="max-width: 168px"><span style="display: flex; flex-wrap: wrap; gap: 4px"><span class="el-badge el-tone-neutral">Darhol</span><span class="el-badge el-tone-neutral">Telegram</span></span></td>
+          <td><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Yuborildi</span></td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@notifications-sent-detail-dialog" aria-label="«Yangi kuryerlar uchun qo'llanma» (Kecha, 11:20) natijasini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap">17.10.2026, 16:45</td>
+          <td><a class="el-cell-title" href="@notifications-sent-detail-dialog" style="display: block; max-width: 240px; min-width: 180px; text-decoration: none; color: var(--text)">Ombor inventarizatsiyasi shanba kuni</a><div class="el-cell-sub" style="max-width: 240px; overflow: hidden; text-overflow: ellipsis">Shanba kuni 10:00–14:00 ombor yopiq, qabul to'xtatiladi.</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Nilufar Rashidova</div><div class="el-cell-sub">Admin</div></td>
+          <td style="min-width: 128px"><div>Rol: Ro'yxatchi</div><div class="el-cell-sub" style="white-space: normal">3 ta qabul qiluvchi</div></td>
+          <td class="el-hide-tablet" style="max-width: 168px"><span style="display: flex; flex-wrap: wrap; gap: 4px"><span class="el-badge el-tone-neutral">Push</span></span></td>
+          <td><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>O'tkazib yuborildi</span><div class="el-cell-sub" style="margin-top: 4px; white-space: normal; max-width: 180px">Bildirishnomani o'chirganlar: 3</div></td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@notifications-sent-detail-dialog" aria-label="«Ombor inventarizatsiyasi shanba kuni» (17.10.2026, 16:45) natijasini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap">16.10.2026, 10:05</td>
+          <td><a class="el-cell-title" href="@notifications-sent-detail-dialog" style="display: block; max-width: 240px; min-width: 180px; text-decoration: none; color: var(--text)">Kuryerlar yig'ilishi soat 9:00 da</a><div class="el-cell-sub" style="max-width: 240px; overflow: hidden; text-overflow: ellipsis">Ertaga soat 9:00 da Toshkent HQ da umumiy yig'ilish bo'ladi.</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Shodiyor Ergashev</div><div class="el-cell-sub">Superadmin</div></td>
+          <td style="min-width: 128px"><div>Rol: Kuryer</div><div class="el-cell-sub" style="white-space: normal">Qabul qiluvchi yo'q</div></td>
+          <td class="el-hide-tablet" style="max-width: 168px"><span style="display: flex; flex-wrap: wrap; gap: 4px"><span class="el-badge el-tone-neutral">Darhol</span><span class="el-badge el-tone-neutral">Telegram</span></span></td>
+          <td><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>Xato</span><div class="el-cell-sub" style="margin-top: 4px; white-space: normal; max-width: 180px">Hech kimga ketmadi — qayta yuboring</div></td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@notifications-sent-detail-dialog" aria-label="«Kuryerlar yig'ilishi soat 9:00 da» (16.10.2026, 10:05) natijasini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap">15.10.2026, 12:30</td>
+          <td><a class="el-cell-title" href="@notifications-sent-detail-dialog" style="display: block; max-width: 240px; min-width: 180px; text-decoration: none; color: var(--text)">Samarqand filiali yangi manzilda</a><div class="el-cell-sub" style="max-width: 240px; overflow: hidden; text-overflow: ellipsis">7-oktabrdan Samarqand filiali Registon ko'chasi 12-uyda ishlaydi.</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Shodiyor Ergashev</div><div class="el-cell-sub">Superadmin</div></td>
+          <td style="min-width: 128px"><div>Rol: Market</div><div class="el-cell-sub" style="white-space: normal">212 ta qabul qiluvchi</div></td>
+          <td class="el-hide-tablet" style="max-width: 168px"><span style="display: flex; flex-wrap: wrap; gap: 4px"><span class="el-badge el-tone-neutral">Darhol</span><span class="el-badge el-tone-neutral">Telegram</span></span></td>
+          <td><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Yuborildi</span></td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@notifications-sent-detail-dialog" aria-label="«Samarqand filiali yangi manzilda» (15.10.2026, 12:30) natijasini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap">14.10.2026, 17:10</td>
+          <td><a class="el-cell-title" href="@notifications-sent-detail-dialog" style="display: block; max-width: 240px; min-width: 180px; text-decoration: none; color: var(--text)">Bayram kuni ish tartibi</a><div class="el-cell-sub" style="max-width: 240px; overflow: hidden; text-overflow: ellipsis">14-oktabr kuni filiallar 14:00 gacha ishlaydi.</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Shodiyor Ergashev</div><div class="el-cell-sub">Superadmin</div></td>
+          <td style="min-width: 128px"><div>Hamma</div><div class="el-cell-sub" style="white-space: normal">1 296 ta qabul qiluvchi</div></td>
+          <td class="el-hide-tablet" style="max-width: 168px"><span style="display: flex; flex-wrap: wrap; gap: 4px"><span class="el-badge el-tone-neutral">Darhol</span><span class="el-badge el-tone-neutral">Push</span></span></td>
+          <td><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Qisman yuborildi</span><div class="el-cell-sub" style="margin-top: 4px; white-space: normal; max-width: 180px">Push: provayder ulanmagan</div></td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@notifications-sent-detail-dialog" aria-label="«Bayram kuni ish tartibi» (14.10.2026, 17:10) natijasini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap">13.10.2026, 09:00</td>
+          <td><a class="el-cell-title" href="@notifications-sent-detail-dialog" style="display: block; max-width: 240px; min-width: 180px; text-decoration: none; color: var(--text)">Maosh 15-oktabrda beriladi</a><div class="el-cell-sub" style="max-width: 240px; overflow: hidden; text-overflow: ellipsis">Sentabr oyi maoshi 15-oktabr kuni filial kassasidan beriladi.</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Nilufar Rashidova</div><div class="el-cell-sub">Admin</div></td>
+          <td style="min-width: 128px"><div>Rol: Kuryer, Menejer</div><div class="el-cell-sub" style="white-space: normal">86 ta qabul qiluvchi</div></td>
+          <td class="el-hide-tablet" style="max-width: 168px"><span style="display: flex; flex-wrap: wrap; gap: 4px"><span class="el-badge el-tone-neutral">Darhol</span><span class="el-badge el-tone-neutral">Telegram</span></span></td>
+          <td><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Yuborildi</span></td>
+          <td class="el-hide-tablet"><a class="el-iconbtn el-iconbtn-sm" href="@notifications-sent-detail-dialog" aria-label="«Maosh 15-oktabrda beriladi» (13.10.2026, 09:00) natijasini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="el-list el-show-mobile" style="flex-direction: column">
+    <a class="el-list-item" href="@notifications-sent-detail-dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px"><span class="el-cell-title">Marketlarga: yangi tariflar</span><span class="el-cell-sub" style="flex: none">Bugun, 14:20</span></div>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>Yuborilmoqda</span><span class="el-cell-sub" style="white-space: normal">Bugun, 14:20 dan beri</span></div>
+        <div class="el-small" style="white-space: normal"><span class="el-muted">Kimga:</span> Rol: Market · 486 ta qabul qiluvchi</div>
+        <div class="el-cell-sub" style="white-space: normal">Darhol, Telegram · Shodiyor Ergashev</div>
+      </div>
+    </a>
+    <a class="el-list-item" href="@notifications-sent-detail-dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px"><span class="el-cell-title">Ertaga qabul punkti 10:00 dan ishlaydi</span><span class="el-cell-sub" style="flex: none">Bugun, 14:15</span></div>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Qisman yuborildi</span><span class="el-cell-sub" style="white-space: normal">O'tkazib yuborildi: Telegram 17, SMS 9</span></div>
+        <div class="el-small" style="white-space: normal"><span class="el-muted">Kimga:</span> Rol: Kuryer, Market · 148 ta qabul qiluvchi</div>
+        <div class="el-cell-sub" style="white-space: normal">Darhol, Telegram, SMS · Shodiyor Ergashev</div>
+      </div>
+    </a>
+    <a class="el-list-item" href="@notifications-sent-detail-dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px"><span class="el-cell-title">Kunni yakunlashni 19:00 gacha tugating</span><span class="el-cell-sub" style="flex: none">Bugun, 09:40</span></div>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Yuborildi</span></div>
+        <div class="el-small" style="white-space: normal"><span class="el-muted">Kimga:</span> Rol: Kuryer · 62 ta qabul qiluvchi</div>
+        <div class="el-cell-sub" style="white-space: normal">Darhol, Push · Nilufar Rashidova</div>
+      </div>
+    </a>
+    <a class="el-list-item" href="@notifications-sent-detail-dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px"><span class="el-cell-title">Bugun 23:00–23:30 tizimda texnik ishlar</span><span class="el-cell-sub" style="flex: none">Kecha, 18:04</span></div>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>Faqat ilova ichida</span><span class="el-cell-sub" style="white-space: normal">SMS: provayder ulanmagan</span></div>
+        <div class="el-small" style="white-space: normal"><span class="el-muted">Kimga:</span> Hamma · 1 312 ta qabul qiluvchi</div>
+        <div class="el-cell-sub" style="white-space: normal">Darhol, SMS · Shodiyor Ergashev</div>
+      </div>
+    </a>
+    <a class="el-list-item" href="@notifications-sent-detail-dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px"><span class="el-cell-title">Yangi kuryerlar uchun qo'llanma</span><span class="el-cell-sub" style="flex: none">Kecha, 11:20</span></div>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Yuborildi</span></div>
+        <div class="el-small" style="white-space: normal"><span class="el-muted">Kimga:</span> Tanlangan ro'yxat · 14 ta qabul qiluvchi</div>
+        <div class="el-cell-sub" style="white-space: normal">Darhol, Telegram · Nilufar Rashidova</div>
+      </div>
+    </a>
+    <a class="el-list-item" href="@notifications-sent-detail-dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px"><span class="el-cell-title">Ombor inventarizatsiyasi shanba kuni</span><span class="el-cell-sub" style="flex: none">17.10.2026, 16:45</span></div>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>O'tkazib yuborildi</span><span class="el-cell-sub" style="white-space: normal">Bildirishnomani o'chirganlar: 3</span></div>
+        <div class="el-small" style="white-space: normal"><span class="el-muted">Kimga:</span> Rol: Ro'yxatchi · 3 ta qabul qiluvchi</div>
+        <div class="el-cell-sub" style="white-space: normal">Push · Nilufar Rashidova</div>
+      </div>
+    </a>
+    <a class="el-list-item" href="@notifications-sent-detail-dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px"><span class="el-cell-title">Kuryerlar yig'ilishi soat 9:00 da</span><span class="el-cell-sub" style="flex: none">16.10.2026, 10:05</span></div>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>Xato</span><span class="el-cell-sub" style="white-space: normal">Hech kimga ketmadi — qayta yuboring</span></div>
+        <div class="el-small" style="white-space: normal"><span class="el-muted">Kimga:</span> Rol: Kuryer · Qabul qiluvchi yo'q</div>
+        <div class="el-cell-sub" style="white-space: normal">Darhol, Telegram · Shodiyor Ergashev</div>
+      </div>
+    </a>
+  </div>
+  <div class="el-card-foot el-pagination">
+    <span>1–10 / 64 ta xabar</span>
+    <nav class="el-pages" aria-label="Sahifalar">
+      <button class="el-page" type="button" disabled aria-label="Oldingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+      <button class="el-page" type="button" aria-current="page">1</button><button class="el-page" type="button">2</button><button class="el-page" type="button">3</button><span class="el-subtle" aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 32px">…</span><button class="el-page" type="button">7</button>
+      <button class="el-page" type="button" aria-label="Keyingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+    </nav>
+  </div>
+</section>
+
+<div class="el-overlay" style="position: absolute; z-index: 30">
+  <div class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="nd-title" style="width: min(760px, 100%); max-height: 92%; overflow: auto">
+    <div class="el-dialog-head">
+      <span class="el-stat-icon" style="flex: none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg></span>
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1">
+        <h2 class="el-h2" id="nd-title">Ertaga qabul punkti 10:00 dan ishlaydi</h2>
+        <span class="el-small el-muted">Bugun, 14:15 · Shodiyor Ergashev, Superadmin</span>
+      </div>
+      <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Yopish" style="margin: -4px -8px 0 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px"><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Qisman yuborildi</span><span class="el-small el-muted">33 ta qabul qiluvchiga kamida bitta kanal yetmadi</span></div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch">
+      <dl style="flex: 1 1 300px; min-width: 0; margin: 0; padding: 4px 16px; border-radius: 12px; background: var(--sunken); display: flex; flex-direction: column"><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0;"><dt class="el-muted">Kimga</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right">Rol: Kuryer, Market</dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border);"><dt class="el-muted">Qabul qiluvchilar</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right">148 ta</dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border);"><dt class="el-muted">Qutiga yozildi</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right">148 ta</dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border);"><dt class="el-muted">Bildirishnomani o'chirganlar</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right">0</dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border);"><dt class="el-muted">Kategoriya · muhimlik</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right">Filial · Yuqori</dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border);"><dt class="el-muted">Havola</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right"><span class="el-subtle">Yo'q</span></dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border);"><dt class="el-muted">Yakunlandi</dt><dd class="el-strong" style="margin: 0 0 0 auto; text-align: right">Bugun, 14:15</dd></div></dl>
+      <div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+        <span class="el-label">Xabar</span>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; border-radius: 12px; background: var(--sunken)">
+          <p class="el-strong">Ertaga qabul punkti 10:00 dan ishlaydi</p>
+          <p class="el-small el-muted">9-oktabr kuni Toshkent HQ qabul punkti 10:00 dan 19:00 gacha ishlaydi. Buyurtmalarni topshirish vaqtini shunga moslang.</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px"><h3 class="el-h3">Kanallar bo'yicha</h3><span class="el-xs el-muted">Holat jonli — Telegram va SMS yetkazilgach yangilanadi</span></div>
+    <ul aria-label="Kanallar bo'yicha natija" style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+      <li style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 14px 0;">
+        <div style="flex: 1 1 260px; min-width: 0; display: flex; align-items: center; gap: 12px">
+          <span class="el-stat-icon" style="flex: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg></span>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span class="el-strong">Darhol (ochiq ekranga)</span><span class="el-xs el-muted">148 ta qabul qiluvchi</span></div>
+          <span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Yuborildi</span>
+        </div>
+        <div style="flex: 2 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+          <div class="el-segbar" role="img" aria-label="Darhol (ochiq ekranga): yuborildi 148"><span style="flex: 148 1 0; background: var(--success)"></span></div>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px 16px"><span class="el-small" style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap"><span aria-hidden="true" style="width: 8px; height: 8px; flex: none; border-radius: 999px; background: var(--success)"></span>Yuborildi <span class="el-strong">148</span></span></div>
+          <p class="el-xs el-muted">Ilovasi ochiq bo'lganlarga uzatildi — o'qilgani tasdiqlanmaydi</p>
+        </div>
+      </li>
+      <li style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 14px 0; border-top: 1px solid var(--border);">
+        <div style="flex: 1 1 260px; min-width: 0; display: flex; align-items: center; gap: 12px">
+          <span class="el-stat-icon" style="flex: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg></span>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span class="el-strong">Telegram</span><span class="el-xs el-muted">148 ta · shaxsiy chatga</span></div>
+          <span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Qisman</span>
+        </div>
+        <div style="flex: 2 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+          <div class="el-segbar" role="img" aria-label="Telegram: yuborildi 125, xato 6, o'tkazib yuborildi 17"><span style="flex: 125 1 0; background: var(--success)"></span><span style="flex: 6 1 0; background: var(--danger)"></span><span style="flex: 17 1 0; background: var(--chart-muted)"></span></div>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px 16px"><span class="el-small" style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap"><span aria-hidden="true" style="width: 8px; height: 8px; flex: none; border-radius: 999px; background: var(--success)"></span>Yuborildi <span class="el-strong">125</span></span><span class="el-small" style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap"><span aria-hidden="true" style="width: 8px; height: 8px; flex: none; border-radius: 999px; background: var(--danger)"></span>Xato <span class="el-strong">6</span></span><span class="el-small" style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap"><span aria-hidden="true" style="width: 8px; height: 8px; flex: none; border-radius: 999px; background: var(--chart-muted)"></span>O'tkazib yuborildi <span class="el-strong">17</span></span></div>
+          
+        </div>
+      </li>
+      <li style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 14px 0; border-top: 1px solid var(--border);">
+        <div style="flex: 1 1 260px; min-width: 0; display: flex; align-items: center; gap: 12px">
+          <span class="el-stat-icon" style="flex: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/></svg></span>
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><span class="el-strong">SMS</span><span class="el-xs el-muted">148 ta qabul qiluvchi</span></div>
+          <span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>Qisman</span>
+        </div>
+        <div style="flex: 2 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+          <div class="el-segbar" role="img" aria-label="SMS: yuborildi 136, xato 3, o'tkazib yuborildi 9"><span style="flex: 136 1 0; background: var(--success)"></span><span style="flex: 3 1 0; background: var(--danger)"></span><span style="flex: 9 1 0; background: var(--chart-muted)"></span></div>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px 16px"><span class="el-small" style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap"><span aria-hidden="true" style="width: 8px; height: 8px; flex: none; border-radius: 999px; background: var(--success)"></span>Yuborildi <span class="el-strong">136</span></span><span class="el-small" style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap"><span aria-hidden="true" style="width: 8px; height: 8px; flex: none; border-radius: 999px; background: var(--danger)"></span>Xato <span class="el-strong">3</span></span><span class="el-small" style="display: inline-flex; align-items: center; gap: 6px; white-space: nowrap"><span aria-hidden="true" style="width: 8px; height: 8px; flex: none; border-radius: 999px; background: var(--chart-muted)"></span>O'tkazib yuborildi <span class="el-strong">9</span></span></div>
+          
+        </div>
+      </li>
+    </ul>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--border); padding-top: 16px">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px"><h3 class="el-h3">Yetkazilmaganlar</h3><span class="el-badge el-tone-neutral">33 ta</span></div>
+      <div class="el-table-wrap el-hide-mobile">
+      <table class="el-table is-compact">
+        <thead><tr><th>Qabul qiluvchi</th><th>Rol</th><th>Yetmagan kanal va sabab</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="el-cell-title" style="white-space: nowrap">Aziz Rahimov</span></td>
+            <td><span class="el-badge el-tone-neutral">Kuryer</span></td>
+            <td><div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 0"><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong" style="min-width: 72px">Telegram</span><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>Xato</span><span class="el-small el-muted">Botni bloklagan</span></span></div></td>
+          </tr>
+          <tr>
+            <td><span class="el-cell-title" style="white-space: nowrap">Baraka Shop</span></td>
+            <td><span class="el-badge el-tone-neutral">Market</span></td>
+            <td><div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 0"><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong" style="min-width: 72px">Telegram</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>O'tkazib yuborildi</span><span class="el-small el-muted">Telegram ulanmagan</span></span></div></td>
+          </tr>
+          <tr>
+            <td><span class="el-cell-title" style="white-space: nowrap">Jasur Tursunov</span></td>
+            <td><span class="el-badge el-tone-neutral">Kuryer</span></td>
+            <td><div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 0"><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong" style="min-width: 72px">Telegram</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>O'tkazib yuborildi</span><span class="el-small el-muted">Telegram ulanmagan</span></span><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong" style="min-width: 72px">SMS</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>O'tkazib yuborildi</span><span class="el-small el-muted">Telefon raqami yo'q</span></span></div></td>
+          </tr>
+          <tr>
+            <td><span class="el-cell-title" style="white-space: nowrap">Dilnoza Karimova</span></td>
+            <td><span class="el-badge el-tone-neutral">Kuryer</span></td>
+            <td><div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 0"><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong" style="min-width: 72px">SMS</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>O'tkazib yuborildi</span><span class="el-small el-muted">Telefon raqami yo'q</span></span></div></td>
+          </tr>
+          <tr>
+            <td><span class="el-cell-title" style="white-space: nowrap">Nur Elektronika</span></td>
+            <td><span class="el-badge el-tone-neutral">Market</span></td>
+            <td><div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 0"><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong" style="min-width: 72px">Telegram</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>O'tkazib yuborildi</span><span class="el-small el-muted">Botni bloklagan</span></span></div></td>
+          </tr>
+          <tr>
+            <td><span class="el-cell-title" style="white-space: nowrap">Sherzod Nazarov</span></td>
+            <td><span class="el-badge el-tone-neutral">Kuryer</span></td>
+            <td><div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 0"><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong" style="min-width: 72px">Telegram</span><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>Xato</span><span class="el-small el-muted">Botni bloklagan</span></span></div></td>
+          </tr>
+          <tr>
+            <td><span class="el-cell-title" style="white-space: nowrap">Chilonzor Market</span></td>
+            <td><span class="el-badge el-tone-neutral">Market</span></td>
+            <td><div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 0"><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong" style="min-width: 72px">SMS</span><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>Xato</span><span class="el-small el-muted">SMS yetkazilmadi</span></span></div></td>
+          </tr>
+          <tr>
+            <td><span class="el-cell-title" style="white-space: nowrap">Bekzod Aliyev</span></td>
+            <td><span class="el-badge el-tone-neutral">Kuryer</span></td>
+            <td><div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 0"><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong" style="min-width: 72px">Telegram</span><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>Xato</span><span class="el-small el-muted">Telegram xatosi</span></span></div></td>
+          </tr>
+          <tr>
+            <td><span class="el-cell-title" style="white-space: nowrap">Ipak Yo'li Savdo</span></td>
+            <td><span class="el-badge el-tone-neutral">Market</span></td>
+            <td><div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 0"><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong" style="min-width: 72px">Telegram</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>O'tkazib yuborildi</span><span class="el-small el-muted">Telegram ulanmagan</span></span></div></td>
+          </tr>
+          <tr>
+            <td><span class="el-cell-title" style="white-space: nowrap">Madina Yusupova</span></td>
+            <td><span class="el-badge el-tone-neutral">Kuryer</span></td>
+            <td><div style="display: flex; flex-direction: column; gap: 6px; padding: 4px 0"><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong" style="min-width: 72px">Telegram</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>O'tkazib yuborildi</span><span class="el-small el-muted">Telegram ulanmagan</span></span></div></td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+      <ul class="el-list el-show-mobile" style="flex-direction: column; margin: 0; padding: 0; list-style: none">
+        <li class="el-list-item" style="align-items: flex-start; padding: 12px 0">
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="el-cell-title">Aziz Rahimov</span><span class="el-badge el-tone-neutral">Kuryer</span></div>
+            <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong" style="min-width: 72px">Telegram</span><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>Xato</span><span class="el-small el-muted">Botni bloklagan</span></span>
+          </div>
+        </li>
+        <li class="el-list-item" style="align-items: flex-start; padding: 12px 0">
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="el-cell-title">Baraka Shop</span><span class="el-badge el-tone-neutral">Market</span></div>
+            <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong" style="min-width: 72px">Telegram</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>O'tkazib yuborildi</span><span class="el-small el-muted">Telegram ulanmagan</span></span>
+          </div>
+        </li>
+        <li class="el-list-item" style="align-items: flex-start; padding: 12px 0">
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="el-cell-title">Jasur Tursunov</span><span class="el-badge el-tone-neutral">Kuryer</span></div>
+            <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong" style="min-width: 72px">Telegram</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>O'tkazib yuborildi</span><span class="el-small el-muted">Telegram ulanmagan</span></span><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong" style="min-width: 72px">SMS</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>O'tkazib yuborildi</span><span class="el-small el-muted">Telefon raqami yo'q</span></span>
+          </div>
+        </li>
+        <li class="el-list-item" style="align-items: flex-start; padding: 12px 0">
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="el-cell-title">Dilnoza Karimova</span><span class="el-badge el-tone-neutral">Kuryer</span></div>
+            <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong" style="min-width: 72px">SMS</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>O'tkazib yuborildi</span><span class="el-small el-muted">Telefon raqami yo'q</span></span>
+          </div>
+        </li>
+        <li class="el-list-item" style="align-items: flex-start; padding: 12px 0">
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="el-cell-title">Nur Elektronika</span><span class="el-badge el-tone-neutral">Market</span></div>
+            <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong" style="min-width: 72px">Telegram</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>O'tkazib yuborildi</span><span class="el-small el-muted">Botni bloklagan</span></span>
+          </div>
+        </li>
+        <li class="el-list-item" style="align-items: flex-start; padding: 12px 0">
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="el-cell-title">Sherzod Nazarov</span><span class="el-badge el-tone-neutral">Kuryer</span></div>
+            <span style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px"><span class="el-strong" style="min-width: 72px">Telegram</span><span class="el-badge el-tone-danger"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>Xato</span><span class="el-small el-muted">Botni bloklagan</span></span>
+          </div>
+        </li>
+      </ul>
+      <div class="el-pagination" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px">
+        <span class="el-small el-muted">1–10 / 33 ta</span>
+        <nav class="el-pages" aria-label="Yetkazilmaganlar sahifalari">
+          <button class="el-page" type="button" disabled aria-label="Oldingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+          <button class="el-page" type="button" aria-current="page">1</button><button class="el-page" type="button">2</button><button class="el-page" type="button">3</button><button class="el-page" type="button">4</button>
+          <button class="el-page" type="button" aria-label="Keyingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+        </nav>
+      </div>
+    </div>
+
+    <div class="el-dialog-foot">
+      <button class="el-btn el-btn-secondary" type="button">Yopish</button>
+    </div>
+  </div>
+</div>

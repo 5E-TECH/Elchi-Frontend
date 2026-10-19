@@ -1,3 +1,4 @@
+<div style="display: flex; flex-direction: column; gap: inherit; max-height: calc(var(--pair-h, 950px) - 88px); margin-bottom: -48px; overflow: hidden; min-width: 0">
 <div class="el-pagehead">
   <div class="el-pagehead-text">
     <a class="el-back" href="@payments-overview"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>To'lovlar</a>
@@ -300,35 +301,62 @@
     </a>
   </div>
 </section>
-  
-
+</div>
 <div class="el-overlay" style="position: absolute; z-index: 30">
-  <div class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="sh-title" aria-describedby="sh-desc">
+  <div class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="sh-title" aria-describedby="sh-desc" style="width: min(600px, 100%); overflow: hidden">
     <div class="el-dialog-head">
       <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg></span>
       <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1">
         <h2 class="el-h2" id="sh-title">Smenani yopish</h2>
-        <p class="el-small el-muted" id="sh-desc">Joriy kassa smenasi yakunlanadi</p>
+        <p class="el-small el-muted" id="sh-desc">Kassani sanang va sanalgan summani kiriting</p>
       </div>
       <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Yopish" style="margin: -4px -8px 0 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
     </div>
+    <div style="flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; margin: 0 -4px; padding: 0 4px">
     <dl style="margin: 0; padding: 4px 16px; border-radius:12px; background: var(--sunken); display: flex; flex-direction: column">
-      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0"><dt class="el-muted">Joriy smena</dt><dd class="el-strong" style="margin: 0">Bugun, 09:00 dan</dd></div>
-      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Ochgan xodim</dt><dd class="el-strong" style="margin: 0">Shodiyor Ergashev</dd></div>
-      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Kassadagi summa</dt><dd class="el-strong" style="margin: 0; white-space: nowrap">24 615 000 so'm</dd></div>
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0"><dt class="el-muted">Joriy smena</dt><dd class="el-strong" style="margin: 0; white-space: nowrap">Bugun, 09:00 dan</dd></div>
+      <div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Ochgan xodim</dt><dd class="el-strong" style="margin: 0; white-space: nowrap">Shodiyor Ergashev</dd></div>
     </dl>
-    <div class="el-alert el-tone-info" role="note">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 1px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-      <div class="el-alert-body el-small">Smenani yopganingizda Excel hisobot avtomatik ravishda yuklab olinadi.</div>
+    <div style="display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr))">
+      <div class="el-field">
+        <label class="el-label" for="sh-cash" style="display: inline-flex; align-items: center; gap: 6px"><span style="display: inline-flex; color: var(--text-muted)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg></span>Sanalgan naqd <span class="el-req">*</span></label>
+        <div style="position: relative; display: flex; align-items: center">
+          <input class="el-input el-input-lg" id="sh-cash" type="text" inputmode="numeric" autocomplete="off" value="18 090 000" placeholder="0" aria-describedby="sh-cash-exp sh-cash-diff" style="padding-right: 64px">
+          <span class="el-badge el-tone-neutral" style="position: absolute; right: 12px">so'm</span>
+        </div>
+        <span class="el-hint" id="sh-cash-exp">Tizim bo'yicha kutilgan: <span class="el-strong" style="white-space: nowrap">18 240 000 so'm</span></span>
+        <div id="sh-cash-diff" role="status" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 8px; padding: 8px 12px; border-radius:10px; background: var(--sunken)">
+          <span class="el-small el-muted">Farq</span>
+          <span style="display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px"><span class="el-strong" style="white-space: nowrap; color: var(--danger-fg)">−150 000 so'm</span><span class="el-badge el-badge-dot el-tone-danger">Kamomad</span></span>
+        </div>
+      </div>
+      <div class="el-field">
+        <label class="el-label" for="sh-card" style="display: inline-flex; align-items: center; gap: 6px"><span style="display: inline-flex; color: var(--text-muted)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg></span>Sanalgan karta <span class="el-muted" style="font-weight: 400">(ixtiyoriy)</span></label>
+        <div style="position: relative; display: flex; align-items: center">
+          <input class="el-input el-input-lg" id="sh-card" type="text" inputmode="numeric" autocomplete="off" value="6 375 000" placeholder="0" aria-describedby="sh-card-exp sh-card-diff" style="padding-right: 64px">
+          <span class="el-badge el-tone-neutral" style="position: absolute; right: 12px">so'm</span>
+        </div>
+        <span class="el-hint" id="sh-card-exp">Tizim bo'yicha kutilgan: <span class="el-strong" style="white-space: nowrap">6 375 000 so'm</span></span>
+        <div id="sh-card-diff" role="status" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 8px; padding: 8px 12px; border-radius:10px; background: var(--sunken)">
+          <span class="el-small el-muted">Farq</span>
+          <span style="display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px"><span class="el-strong" style="white-space: nowrap">0 so'm</span><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Mos keldi</span></span>
+        </div>
+      </div>
+    </div>
+    <div class="el-alert el-tone-warning" role="status">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 1px; flex: none"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+      <div class="el-alert-body"><div class="el-alert-title">Farq bor — sababini izohga yozing</div></div>
     </div>
     <div class="el-field">
-      <label class="el-label" for="sh-comment">Izoh (ixtiyoriy)</label>
-      <textarea class="el-input el-textarea is-focus" id="sh-comment" rows="3" placeholder="Smena haqida izoh..." style="min-height: 88px"></textarea>
+      <label class="el-label" for="sh-comment">Izoh <span class="el-req">*</span></label>
+      <textarea class="el-input el-textarea" id="sh-comment" rows="3" aria-describedby="sh-comment-hint" style="min-height: 88px">Naqd ikki marta sanaldi, 150 000 so'm yetishmadi. Kun davomidagi cheklar tekshiriladi.</textarea>
+      <span class="el-hint" id="sh-comment-hint">Farq bo'lsa izoh majburiy. Farq bo'lmasa — ixtiyoriy.</span>
     </div>
-    <div class="el-dialog-foot">
+    <p class="el-xs el-muted" style="margin: 0; display: flex; align-items: flex-start; gap: 8px"><span style="display: inline-flex; flex: none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg></span>Kutilgan — kassaning joriy qoldig'i, yakuniy farq yopish paytida hisoblanadi. Karta bo'sh qolsa — «Sanalmadi», karta farqi hisoblanmaydi. Smena yopilgach Excel hisobot avtomatik yuklab olinadi.</p>
+    </div>
+    <div class="el-dialog-foot" style="padding-top: 16px; border-top: 1px solid var(--border)">
       <button class="el-btn el-btn-secondary" type="button">Bekor qilish</button>
       <button class="el-btn el-btn-primary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg>Smenani yopish</button>
     </div>
   </div>
 </div>
-  

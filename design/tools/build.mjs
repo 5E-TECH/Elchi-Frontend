@@ -71,7 +71,7 @@ function topbar(role) {
     ? `<button class="el-btn el-btn-secondary el-hide-mobile" type="button">${raw(ICON.scan, 18)}Skanerlash</button>` : '';
   return `<header class="el-topbar">
     <button class="el-iconbtn el-show-tablet" type="button" aria-label="Menyuni ochish">${raw(ICON.menu)}</button>
-    <label class="el-search">${raw(ICON.search, 18)}<input class="el-input" type="search" placeholder="Ism, telefon yoki buyurtma raqami" aria-label="Qidiruv"></label>
+    ${p.search === false ? '' : `<label class="el-search">${raw(ICON.search, 18)}<input class="el-input" type="search" placeholder="Ism, telefon yoki buyurtma raqami" aria-label="Qidiruv"></label>`}
     <div class="el-topbar-spacer"></div>
     ${scan}
     <button class="el-iconbtn" type="button" aria-label="Bildirishnomalar, 3 ta yangi">${svg('bell')}<span class="el-dotcount">3</span></button>
@@ -91,7 +91,9 @@ function bottomNav(role, activeKey) {
     const fv = firstViewOf(role, it.key);
     return `<a href="${fv ? '@' + fv.viewId : '#'}"${it.key === activeKey ? ' aria-current="page"' : ''}>${svg(it.icon, 22)}<span class="el-bn-label">${short(it)}</span></a>`;
   }).join('');
-  return `<nav class="el-bottomnav" aria-label="Asosiy bo'limlar">${links}</nav>`;
+  // 5 tadan kam katak (masalan investor: 3 bo'lim + Menyu) — katakchalar teng bo'linadi; ilovadagi BottomNav ham `auto-cols-fr grid-flow-col`
+  const cols = keys.length !== 5 ? ` style="grid-template-columns: repeat(${keys.length}, minmax(0, 1fr))"` : '';
+  return `<nav class="el-bottomnav" aria-label="Asosiy bo'limlar"${cols}>${links}</nav>`;
 }
 
 function desktopShell(role, activeKey, content) {

@@ -1,0 +1,222 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <a class="el-back" href="@regions-map" style="min-height: clamp(0px, (767.5px - 100cqw) * 999, 44px); margin-top: clamp(-12px, (100cqw - 767.5px) * 999, 0px); margin-bottom: clamp(-8px, (100cqw - 767.5px) * 999, 4px)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Hududlar</a>
+    <h1 class="el-h1">Tumanlar va SATO kodlari</h1>
+    <p class="el-sub">Tumanlarni viloyatlarga biriktirish va rasmiy SATO kodlarini yozish</p>
+  </div>
+  <div class="el-actions">
+    <a class="el-btn el-btn-primary" href="@regions-sato-codes-apply-dialog" aria-haspopup="dialog" style="padding: 0 12px; gap: 6px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>SATO kodlarini yozish <span class="el-tab-count" style="background: var(--surface); color: var(--action-fg)">12</span></a>
+  </div>
+</div>
+
+<div class="el-tabs" role="tablist" aria-label="Tumanlar bo'limlari">
+  <a class="el-tab" href="@regions-sato-management" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Tumanlarni o'tkazish</a>
+  <a class="el-tab" href="@regions-sato-codes" role="tab" aria-selected="true" style="text-decoration: none; color: var(--text)">SATO kodlari</a>
+</div>
+
+<section class="el-kpi-row" aria-label="SATO solishtirish natijasi" style="grid-template-columns: repeat(auto-fit, minmax(calc(150px + clamp(0px, (1023.5px - 100cqw) * 999, 50px) - clamp(0px, (767.5px - 100cqw) * 999, 50px)), 1fr))">
+<div class="el-kpi">
+  <div class="el-kpi-top"><span class="el-kpi-label">Bazada</span><span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg></span></div>
+  <div class="el-kpi-value">204<span class="el-kpi-unit">ta</span></div>
+  <div class="el-kpi-meta"><span>Elchi tumanlari</span></div>
+</div>
+<div class="el-kpi">
+  <div class="el-kpi-top"><span class="el-kpi-label">SATO'da</span><span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span></div>
+  <div class="el-kpi-value">203<span class="el-kpi-unit">ta</span></div>
+  <div class="el-kpi-meta"><span>Rasmiy ro'yxat</span></div>
+</div>
+<div class="el-kpi">
+  <div class="el-kpi-top"><span class="el-kpi-label">Mos keldi</span><span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span></div>
+  <div class="el-kpi-value">197<span class="el-kpi-unit">ta</span></div>
+  <div class="el-kpi-meta"><span>185 tasida kod bor</span></div><div style="margin-top: auto; padding-top: 6px"><div class="el-meter is-thin is-success" role="meter" aria-label="Mos kelganlar ulushi" aria-valuemin="0" aria-valuemax="100" aria-valuenow="96.6"><span style="width: 96.6%"></span></div></div>
+</div>
+<div class="el-kpi">
+  <div class="el-kpi-top"><span class="el-kpi-label">Mos kelmadi</span><span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="5" cy="6" r="3"/><path d="M12 6h5a2 2 0 0 1 2 2v7"/><path d="m15 9-3-3 3-3"/><circle cx="19" cy="18" r="3"/><path d="M12 18H7a2 2 0 0 1-2-2V9"/><path d="m9 15 3 3-3 3"/></svg></span></div>
+  <div class="el-kpi-value">3<span class="el-kpi-unit">ta</span></div>
+  <div class="el-kpi-meta"><span>Kod qo'lda kiritiladi</span></div>
+</div>
+<div class="el-kpi">
+  <div class="el-kpi-top"><span class="el-kpi-label">Takroriy</span><span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span></div>
+  <div class="el-kpi-value">4<span class="el-kpi-unit">ta</span></div>
+  <div class="el-kpi-meta"><span>Yozuv · 2 ta nomda</span></div>
+</div>
+<div class="el-kpi">
+  <div class="el-kpi-top"><span class="el-kpi-label">Bazada yo'q</span><span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13.5 8.5-5 5"/><path d="m8.5 8.5 5 5"/><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span></div>
+  <div class="el-kpi-value">4<span class="el-kpi-unit">ta</span></div>
+  <div class="el-kpi-meta"><span>Faqat SATO'da</span></div>
+</div>
+</section>
+
+<section class="el-card" aria-label="Dublikat tumanlar">
+  <div class="el-tabs el-hide-mobile" role="tablist" aria-label="SATO holati bo'yicha" style="padding: 0 12px">
+    <a class="el-tab" href="@regions-sato-codes" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Topildi <span class="el-tab-count">12</span></a>
+    <a class="el-tab" href="@regions-sato-codes-not-found" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Topilmadi <span class="el-tab-count">3</span></a>
+    <a class="el-tab" href="@regions-sato-codes-edit" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Kodi bor <span class="el-tab-count">185</span></a>
+    <a class="el-tab" href="@regions-sato-codes-duplicates" role="tab" aria-selected="true" style="text-decoration: none; color: var(--text)">Takroriy nomlar <span class="el-tab-count">2</span></a>
+    <a class="el-tab" href="@regions-sato-codes-missing" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Bazada yo'q <span class="el-tab-count">4</span></a>
+  </div>
+  <div class="el-show-mobile" style="padding: 12px 16px; border-bottom: 1px solid var(--border)">
+    <button class="el-input el-select" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="SATO bo'limi: Takroriy nomlar"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap"><span class="el-strong">Takroriy nomlar</span><span class="el-tab-count" style="background: var(--action-soft); color: var(--action-fg)">2</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px 20px">
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end">
+      <label class="el-search" style="flex: 1 1 260px; max-width: 520px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        <input class="el-input" type="search" placeholder="Tuman, viloyat yoki kod" aria-label="Tuman, viloyat yoki SATO kodi bo'yicha qidirish">
+      </label>
+      <button class="el-input el-select" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Viloyat: Barchasi" style="flex: 0 1 220px; width: auto; min-width: clamp(0px, (767.5px - 100cqw) * 999, 100%); gap: 12px"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap"><span class="el-muted">Viloyat:</span><span class="el-select-placeholder">Barchasi</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    </div>
+    <p class="el-small el-muted" style="display: flex; gap: 8px; align-items: flex-start; margin: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>Bir xil nomli tumanlarga kod avtomatik yozilmaydi. Bitta viloyatdagi ortiqcha yozuvni «Birlashtirish» bilan qo'shing — buyurtmalar ko'chadi, kodli yozuv qoladi. Turli viloyatdagilarga kodni qo'lda kiriting.</span></p>
+  </div>
+  <div class="el-table-wrap el-hide-mobile" style="border-top: 1px solid var(--border)">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th>Tuman</th>
+          <th>Viloyat</th>
+          <th>SATO kodi</th>
+          <th class="el-num"><span class="el-sr">Amallar</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="rowgroup" colspan="4" style="height: 52px; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--text); background: var(--sunken)"><span style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span style="display: inline-flex; align-items: center; gap: 8px"><span class="el-strong">Chilonzor tumani</span><span class="el-badge el-badge-dot el-tone-danger">2 ta yozuv</span><span class="el-small el-muted" style="font-weight: 400">Toshkent sh., Toshkent viloyati</span></span><span class="el-small el-muted" style="font-weight: 400; white-space: nowrap">Turli viloyatda — birlashtirilmaydi</span></span></th>
+        </tr>
+        <tr>
+          <td><div class="el-cell-title" style="white-space: nowrap">Chilonzor tumani</div><div class="el-cell-sub">ID 31</div></td>
+          <td style="white-space: nowrap">Toshkent sh.</td>
+          <td><span class="el-strong" style="white-space: nowrap">1726294</span></td>
+          <td class="el-num"><div style="display: flex; justify-content: flex-end"><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Chilonzor tumani (Toshkent sh.) — SATO kodini o'zgartirish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button></div></td>
+        </tr>
+        <tr>
+          <td><div class="el-cell-title" style="white-space: nowrap">Chilonzor tumani</div><div class="el-cell-sub">ID 188</div></td>
+          <td style="white-space: nowrap">Toshkent viloyati</td>
+          <td><span class="el-subtle">Kod yo'q</span></td>
+          <td class="el-num"><div style="display: flex; justify-content: flex-end"><button class="el-btn el-btn-ghost el-btn-sm" type="button" aria-label="Chilonzor tumani (Toshkent viloyati) — SATO kodini kiritish" style="white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h.01"/><path d="M12 12h.01"/><path d="M14 8h.01"/><path d="M16 12h.01"/><path d="M18 8h.01"/><path d="M6 8h.01"/><path d="M7 16h10"/><path d="M8 12h.01"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg>Kod kiritish</button></div></td>
+        </tr>
+        <tr>
+          <th scope="rowgroup" colspan="4" style="height: 52px; text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--text); background: var(--sunken)"><span style="display: flex; align-items: center; justify-content: space-between; gap: 12px"><span style="display: inline-flex; align-items: center; gap: 8px"><span class="el-strong">Bo'ka tumani</span><span class="el-badge el-badge-dot el-tone-danger">2 ta yozuv</span><span class="el-small el-muted" style="font-weight: 400">Toshkent viloyati</span></span><a class="el-btn el-btn-secondary el-btn-sm" href="@regions-sato-codes-merge-dialog" aria-haspopup="dialog" aria-label="Bo'ka tumani yozuvlarini birlashtirish" style="white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6 4-4 4 4"/><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22"/><path d="m20 22-5-5"/></svg>Birlashtirish</a></span></th>
+        </tr>
+        <tr>
+          <td><div class="el-cell-title" style="white-space: nowrap">Bo'ka tumani</div><div class="el-cell-sub">ID 142</div></td>
+          <td style="white-space: nowrap">Toshkent viloyati</td>
+          <td><span class="el-strong" style="white-space: nowrap">1727228</span></td>
+          <td class="el-num"><div style="display: flex; justify-content: flex-end"><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Bo'ka tumani (Toshkent viloyati) — SATO kodini o'zgartirish"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button></div></td>
+        </tr>
+        <tr>
+          <td><div class="el-cell-title" style="white-space: nowrap">Bo'ka tumani</div><div class="el-cell-sub">ID 203</div></td>
+          <td style="white-space: nowrap">Toshkent viloyati</td>
+          <td><span class="el-subtle">Kod yo'q</span></td>
+          <td class="el-num"><div style="display: flex; justify-content: flex-end"><button class="el-btn el-btn-ghost el-btn-sm" type="button" aria-label="Bo'ka tumani (Toshkent viloyati) — SATO kodini kiritish" style="white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h.01"/><path d="M12 12h.01"/><path d="M14 8h.01"/><path d="M16 12h.01"/><path d="M18 8h.01"/><path d="M6 8h.01"/><path d="M7 16h10"/><path d="M8 12h.01"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg>Kod kiritish</button></div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="el-list el-show-mobile" style="flex-direction: column; border-top: 1px solid var(--border)">
+    <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; background: var(--sunken); border-bottom: 1px solid var(--border)">
+      <span style="display: flex; align-items: center; justify-content: space-between; gap: 8px"><span class="el-strong">Chilonzor tumani</span><span class="el-badge el-badge-dot el-tone-danger">2 ta yozuv</span></span>
+      <span class="el-xs el-muted">Toshkent sh., Toshkent viloyati · Turli viloyatda — birlashtirilmaydi</span>
+    </div>
+    <div class="el-list-item" style="display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding: 12px 16px">
+      <div style="display: flex; align-items: center; gap: 12px">
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+          <span class="el-cell-title">Chilonzor tumani</span>
+          <span class="el-cell-sub" style="white-space: normal">Toshkent sh. · ID 31 · 1726294</span>
+          
+        </div>
+        <button class="el-iconbtn el-iconbtn-lg el-iconbtn-bordered" type="button" aria-label="Chilonzor tumani (Toshkent sh.) — SATO kodini o'zgartirish"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button>
+      </div>
+    </div>
+    <div class="el-list-item" style="display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding: 12px 16px">
+      <div style="display: flex; align-items: center; gap: 12px">
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+          <span class="el-cell-title">Chilonzor tumani</span>
+          <span class="el-cell-sub" style="white-space: normal">Toshkent viloyati · ID 188 · Kod yo'q</span>
+          
+        </div>
+        <button class="el-iconbtn el-iconbtn-lg el-iconbtn-bordered" type="button" aria-label="Chilonzor tumani (Toshkent viloyati) — SATO kodini kiritish"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h.01"/><path d="M12 12h.01"/><path d="M14 8h.01"/><path d="M16 12h.01"/><path d="M18 8h.01"/><path d="M6 8h.01"/><path d="M7 16h10"/><path d="M8 12h.01"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg></button>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; background: var(--sunken); border-bottom: 1px solid var(--border)">
+      <span style="display: flex; align-items: center; justify-content: space-between; gap: 8px"><span class="el-strong">Bo'ka tumani</span><span class="el-badge el-badge-dot el-tone-danger">2 ta yozuv</span></span>
+      <span class="el-xs el-muted">Toshkent viloyati</span><span style="display: flex; padding-top: 8px"><a class="el-btn el-btn-secondary el-btn-lg" href="@regions-sato-codes-merge-dialog" aria-haspopup="dialog" aria-label="Bo'ka tumani yozuvlarini birlashtirish" style="width: 100%"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6 4-4 4 4"/><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22"/><path d="m20 22-5-5"/></svg>Birlashtirish</a></span>
+    </div>
+    <div class="el-list-item" style="display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding: 12px 16px">
+      <div style="display: flex; align-items: center; gap: 12px">
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+          <span class="el-cell-title">Bo'ka tumani</span>
+          <span class="el-cell-sub" style="white-space: normal">Toshkent viloyati · ID 142 · 1727228</span>
+          
+        </div>
+        <button class="el-iconbtn el-iconbtn-lg el-iconbtn-bordered" type="button" aria-label="Bo'ka tumani (Toshkent viloyati) — SATO kodini o'zgartirish"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg></button>
+      </div>
+    </div>
+    <div class="el-list-item" style="display: flex; flex-direction: column; align-items: stretch; gap: 12px; padding: 12px 16px">
+      <div style="display: flex; align-items: center; gap: 12px">
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+          <span class="el-cell-title">Bo'ka tumani</span>
+          <span class="el-cell-sub" style="white-space: normal">Toshkent viloyati · ID 203 · Kod yo'q</span>
+          
+        </div>
+        <button class="el-iconbtn el-iconbtn-lg el-iconbtn-bordered" type="button" aria-label="Bo'ka tumani (Toshkent viloyati) — SATO kodini kiritish"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 8h.01"/><path d="M12 12h.01"/><path d="M14 8h.01"/><path d="M16 12h.01"/><path d="M18 8h.01"/><path d="M6 8h.01"/><path d="M7 16h10"/><path d="M8 12h.01"/><rect width="20" height="16" x="2" y="4" rx="2"/></svg></button>
+      </div>
+    </div>
+  </div>
+  <div class="el-card-foot el-pagination">
+    <span>2 ta nom · 4 ta yozuv</span>
+  </div>
+</section>
+
+<div class="el-overlay" style="position: absolute; z-index: 30">
+  <div class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="dm-title" aria-describedby="dm-title-text" style="width: min(520px, 100%)">
+    <div class="el-dialog-head">
+      <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6 4-4 4 4"/><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22"/><path d="m20 22-5-5"/></svg></span>
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1">
+        <h2 class="el-h2" id="dm-title">Tumanni birlashtirish</h2>
+        <p class="el-small el-muted" id="dm-title-text">Bo'ka tumani (ID 203) dagi hamma narsa tanlangan tumanga ko'chadi, ID 203 yozuvi o'chiriladi.</p>
+      </div>
+      <a class="el-iconbtn el-iconbtn-sm" href="@regions-sato-codes-duplicates" role="button" aria-label="Yopish" style="margin: -4px -8px 0 0; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; background: var(--sunken); border-radius:10px">
+        <span class="el-stat-icon" aria-hidden="true" style="background: var(--surface)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.106 5.553a2 2 0 0 0 1.788 0l3.659-1.83A1 1 0 0 1 21 4.619v12.764a1 1 0 0 1-.553.894l-4.553 2.277a2 2 0 0 1-1.788 0l-4.212-2.106a2 2 0 0 0-1.788 0l-3.659 1.83A1 1 0 0 1 3 19.381V6.618a1 1 0 0 1 .553-.894l4.553-2.277a2 2 0 0 1 1.788 0z"/><path d="M15 5.764v15"/><path d="M9 3.236v15"/></svg></span>
+        <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+          <span class="el-xs el-muted" style="font-weight: 600">O'chiriladigan tuman</span><span class="el-strong">Bo'ka tumani · ID 203</span>
+          <span class="el-small el-muted">Toshkent viloyati · Kod yo'q</span>
+        </span>
+      </div>
+      <span class="el-subtle" style="display: flex; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></span>
+      <div class="el-field">
+        <span class="el-label" id="dm-target-l">Maqsad tuman <span class="el-req">*</span></span>
+        <button class="el-input el-select" type="button" aria-labelledby="dm-target-l" aria-haspopup="listbox" aria-describedby="dm-target-h"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap; overflow: hidden"><span>Bo'ka tumani · ID 142</span><span class="el-muted">1727228</span></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+        <span class="el-hint" id="dm-target-h">Faqat Toshkent viloyati tumanlari. SATO kodi 1727228 saqlanadi.</span>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <p class="el-overline" style="margin: 0">Bo'ka tumani (ID 142) ga ko'chadi</p>
+      <ul aria-label="Ko'chiriladiganlar" style="list-style: none; margin: 0; padding: 0 12px; border: 1px solid var(--border); border-radius:12px">
+        <li style="border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 6px 0">
+          <span class="el-muted" style="display: inline-flex; flex: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 10a4 4 0 0 1-8 0"/><path d="M3.103 6.034h17.794"/><path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z"/></svg></span>
+          <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0"><span class="el-small el-strong">Buyurtmalar</span></span>
+          <span class="el-strong" style="white-space: nowrap">42 ta</span>
+        </li>
+        <li style="display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 6px 0">
+          <span class="el-muted" style="display: inline-flex; flex: none"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg></span>
+          <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0"><span class="el-small el-strong">Foydalanuvchilar</span><span class="el-xs el-muted">Mijoz, kuryer va market</span></span>
+          <span class="el-strong" style="white-space: nowrap">3 ta</span>
+        </li>
+      </ul>
+    </div>
+    <div class="el-alert el-tone-warning" role="note">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+      <div class="el-alert-body">
+        <div class="el-alert-title">Bu amalni qaytarib bo'lmaydi</div>
+        <span class="el-small">ID 203 yozuvi butunlay o'chiriladi. Birlashtirish 2 daqiqagacha davom etishi mumkin.</span>
+      </div>
+    </div>
+    <div class="el-dialog-foot">
+      <a class="el-btn el-btn-secondary" href="@regions-sato-codes-duplicates" role="button">Bekor qilish</a>
+      <a class="el-btn el-btn-danger" href="@regions-districts-merge-progress" role="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 6 4-4 4 4"/><path d="M12 2v10.3a4 4 0 0 1-1.172 2.872L4 22"/><path d="m20 22-5-5"/></svg>Birlashtirish</a>
+    </div>
+  </div>
+</div>

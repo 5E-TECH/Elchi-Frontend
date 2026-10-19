@@ -1,14 +1,21 @@
 <div class="el-pagehead">
   <div class="el-pagehead-text">
     <a class="el-back" href="@regions-map" style="min-height: clamp(0px, (767.5px - 100cqw) * 999, 44px); margin-top: clamp(-12px, (100cqw - 767.5px) * 999, 0px); margin-bottom: clamp(-8px, (100cqw - 767.5px) * 999, 4px)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Hududlar</a>
-    <h1 class="el-h1">Tumanlarni o'tkazish</h1>
-    <p class="el-sub">Tumanlarni viloyatlar bo'yicha boshqarish: tumanni ushlab olib kerakli viloyat ustiga tashlang</p>
+    <h1 class="el-h1">Tumanlar va SATO kodlari</h1>
+    <p class="el-sub">Tumanlarni viloyatlarga biriktirish va rasmiy SATO kodlarini yozish</p>
   </div>
   <div class="el-actions" aria-label="Umumiy son">
     <span class="el-badge el-tone-neutral" style="height: 32px; padding: 0 12px; gap: 6px">Viloyatlar <span class="el-strong">14</span></span>
     <span class="el-badge el-tone-neutral" style="height: 32px; padding: 0 12px; gap: 6px">Tumanlar <span class="el-strong">204</span></span>
   </div>
 </div>
+
+<div class="el-tabs" role="tablist" aria-label="Tumanlar bo'limlari">
+  <a class="el-tab" href="@regions-sato-management" role="tab" aria-selected="true" style="text-decoration: none; color: var(--text)">Tumanlarni o'tkazish</a>
+  <a class="el-tab" href="@regions-sato-codes" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">SATO kodlari</a>
+</div>
+
+<p class="el-small el-muted" style="display: flex; gap: 8px; align-items: flex-start; margin: 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg><span>Tumanni ushlab olib kerakli viloyat ustiga tashlang yoki uning o'tkazish tugmasini bosing.</span></p>
 
 <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
   <label class="el-search" style="flex: 1 1 320px; max-width: 520px">

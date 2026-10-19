@@ -1,0 +1,331 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <a class="el-back" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Qabul va yaratish</a>
+    <h1 class="el-h1">Yangi buyurtma</h1>
+    <p class="el-sub">Majburiy maydonlar <span class="el-req">*</span> bilan belgilangan</p>
+  </div>
+  <div class="el-actions">
+    <div class="el-seg" role="group" aria-label="Yaratish usuli" style="width: 100%">
+      <button type="button" aria-pressed="true" style="flex: 1; height: clamp(38px, (767.5px - 100cqw) * 999, 44px); display: inline-flex; align-items: center; justify-content: center; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/></svg>Qo'lda</button>
+      <button type="button" aria-pressed="false" style="flex: 1; height: clamp(38px, (767.5px - 100cqw) * 999, 44px); display: inline-flex; align-items: center; justify-content: center; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/></svg>AI bilan</button>
+    </div>
+  </div>
+</div>
+
+<form aria-label="Buyurtma yaratish formasi" style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+  <div style="flex: 3 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+
+    <nav class="el-card" aria-label="Qadamlar">
+      <ol style="list-style: none; margin: 0; padding: 16px 20px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px">
+        <li style="display: flex; align-items: center; gap: 12px; min-width: 0">
+          <span aria-hidden="true" style="width: 32px; height: 32px; border-radius:999px; display: inline-flex; align-items: center; justify-content: center; flex: none; background: var(--success-soft); color: var(--success-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>
+          <span style="display: flex; flex-direction: column; min-width: 0">
+            <span class="el-xs el-muted">1-qadam · Market</span>
+            <span class="el-strong">Baraka Shop</span>
+          </span>
+          <a class="el-btn el-btn-link" href="#" aria-label="Marketni o'zgartirish" style="height: 44px; padding: 0 8px; margin-left: 4px">O'zgartirish</a>
+        </li>
+        <li class="el-hide-mobile" aria-hidden="true" style="flex: 1 1 32px; height: 2px; border-radius:999px; background: var(--border)"></li>
+        <li aria-current="step" style="display: flex; align-items: center; gap: 12px; min-width: 0">
+          <span aria-hidden="true" class="el-small el-strong" style="width: 32px; height: 32px; border-radius:999px; display: inline-flex; align-items: center; justify-content: center; flex: none; background: var(--action); color: var(--on-solid)">2</span>
+          <span style="display: flex; flex-direction: column; min-width: 0">
+            <span class="el-xs el-muted">2-qadam</span>
+            <span class="el-strong">Mijoz va mahsulotlar</span>
+          </span>
+        </li>
+      </ol>
+    </nav>
+    <section class="el-card" aria-labelledby="mijoz-title" style="overflow: visible">
+      <div class="el-card-head"><div style="min-width: 0"><h2 class="el-h2" id="mijoz-title">Mijoz ma'lumotlari</h2><p class="el-small el-muted">Telefon raqamni kiriting — mavjud mijoz topilsa, ma'lumotlari o'zi to'ladi</p></div></div>
+      <div class="el-card-pad" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 16px">
+        <div class="el-field" style="position: relative">
+          <label class="el-label" for="mijoz-tel">Telefon <span class="el-req">*</span></label>
+          <div class="el-input is-focus" style="gap: 10px; outline: none">
+            <span class="el-muted" style="white-space: nowrap">+998</span>
+            <span aria-hidden="true" style="width: 1px; height: 20px; background: var(--border-strong)"></span>
+            <input class="el-input" id="mijoz-tel" type="tel" inputmode="numeric" value="90 345 67" placeholder="XX XXX XX XX" role="combobox" aria-expanded="true" aria-controls="mijoz-takliflar" aria-autocomplete="list" style="border: 0; padding: 0; height: clamp(38px, (767.5px - 100cqw) * 999, 42px); min-height: 0; flex: 1; width: auto; min-width: 0; outline: none">
+          </div>
+          <div class="el-options el-hide-mobile" role="listbox" id="mijoz-takliflar" aria-label="Mijoz takliflari" style="position: absolute; top: calc(100% + 4px); left: 0; z-index: 5; width: max(100%, min(400px, calc(100cqw - 72px))); max-height: none">
+            <div class="el-xs el-muted" style="padding: 6px 10px 4px">Barcha mijozlar · buyurtmalar soni Baraka Shop bo'yicha</div>
+              <button class="el-option is-hover" type="button" role="option" aria-selected="false" style="align-items: flex-start; min-height: 56px; padding: 8px 10px">
+                <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+                  <span class="el-strong">Shahnoza Abdullayeva</span>
+                  <span class="el-small el-muted" style="white-space: normal">+998 90 345 67 21 · Chilonzor tumani</span>
+                  
+                </span>
+                <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none"><span class="el-xs el-muted" style="white-space: nowrap">4 ta buyurtma</span><span class="el-badge el-badge-dot el-tone-warning">1 ta yangi</span></span>
+              </button>
+              <button class="el-option" type="button" role="option" aria-selected="false" style="align-items: flex-start; min-height: 56px; padding: 8px 10px">
+                <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+                  <span class="el-strong">Dilnoza Karimova</span>
+                  <span class="el-small el-muted" style="white-space: normal">+998 90 345 67 05 · Yashnobod tumani</span>
+                  
+                </span>
+                <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none"><span class="el-xs el-muted" style="white-space: nowrap">1 ta buyurtma</span></span>
+              </button>
+              <button class="el-option" type="button" role="option" aria-selected="false" style="align-items: flex-start; min-height: 56px; padding: 8px 10px">
+                <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+                  <span class="el-strong">Bobur Rahimov</span>
+                  <span class="el-small el-muted" style="white-space: normal">+998 90 345 67 29 · Yunusobod tumani</span>
+                  <span class="el-xs el-subtle">Bu marketda hali buyurtmasi yo'q</span>
+                </span>
+                <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none"><span class="el-xs el-muted" style="white-space: nowrap">0 ta buyurtma</span></span>
+              </button>
+              <button class="el-option" type="button" role="option" aria-selected="false" style="align-items: flex-start; min-height: 56px; padding: 8px 10px">
+                <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+                  <span class="el-strong">Malika Yusupova</span>
+                  <span class="el-small el-muted" style="white-space: normal">+998 93 512 40 18 · Mirzo Ulug'bek tumani</span>
+                  <span class="el-xs el-muted" style="display: inline-flex; align-items: center; gap: 4px; white-space: normal"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Qo'shimcha raqam: <span class="el-strong">+998 90 345 67 44</span></span>
+                </span>
+                <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none"><span class="el-xs el-muted" style="white-space: nowrap">2 ta buyurtma</span></span>
+              </button>
+            <div class="el-menu-sep"></div>
+            <button class="el-option" type="button" role="option" aria-selected="false" style="justify-content: flex-start; min-height: 44px; color: var(--action-fg)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg><span>Yangi mijoz sifatida davom etish</span></button>
+          </div>
+        </div>
+        <div class="el-field">
+          <label class="el-label" for="mijoz-tel2">Qo'shimcha raqam</label>
+          <div class="el-input" style="gap: 10px">
+            <span class="el-muted" style="white-space: nowrap">+998</span>
+            <span aria-hidden="true" style="width: 1px; height: 20px; background: var(--border-strong)"></span>
+            <input class="el-input" id="mijoz-tel2" type="tel" inputmode="numeric" placeholder="XX XXX XX XX" style="border: 0; padding: 0; height: clamp(38px, (767.5px - 100cqw) * 999, 42px); min-height: 0; flex: 1; width: auto; min-width: 0; outline: none">
+          </div>
+        </div>
+        <div class="el-field">
+          <label class="el-label" for="mijoz-ism">Mijoz ismi <span class="el-req">*</span></label>
+          <input class="el-input" id="mijoz-ism" type="text" placeholder="Ism kiriting">
+        </div>
+      </div>
+
+      <div style="padding: 16px 20px; border-top: 1px solid var(--border)"><h3 class="el-h3">Yetkazish manzili</h3></div>
+      <div style="padding: 0 20px 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 16px">
+        <div class="el-field">
+          <label class="el-label" for="viloyat">Viloyat <span class="el-req">*</span></label>
+          <button class="el-input el-select" id="viloyat" type="button" aria-haspopup="listbox"><span class="el-select-placeholder">Viloyat tanlang</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+        </div>
+        <div class="el-field">
+          <label class="el-label" for="tuman">Tuman <span class="el-req">*</span></label>
+          <button class="el-input el-select" id="tuman" type="button" aria-haspopup="listbox"><span class="el-select-placeholder">Tuman tanlang</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+        </div>
+
+        <fieldset style="grid-column: 1 / -1; border: 0; margin: 0; padding: 0; min-width: 0">
+          <legend class="el-label" style="padding: 0; margin-bottom: 6px">Yetkazish turi <span class="el-req">*</span></legend>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 16px">
+            <label class="el-input" style="height: auto; min-height: 64px; padding: 12px 16px; gap: 12px; cursor: pointer">
+              <input class="el-sr" type="radio" name="yetkazish-turi" value="center"><span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--border-strong)"></span>
+              <span style="display: flex; flex-direction: column; min-width: 0; flex: 1">
+                <span class="el-strong">Markazgacha</span>
+                <span class="el-xs el-muted">Manzil ixtiyoriy</span>
+              </span>
+              <span style="display: flex; flex-direction: column; align-items: flex-end; text-align: right; flex: none"><span class="el-strong" style="white-space: nowrap">25 000 so'm</span><span class="el-xs el-muted">standart</span></span>
+            </label>
+            <label class="el-input" style="height: auto; min-height: 64px; padding: 12px 16px; gap: 12px; cursor: pointer; border-color: var(--action); background: var(--action-soft)">
+              <input class="el-sr" type="radio" name="yetkazish-turi" value="address" checked><span aria-hidden="true" style="width: 20px; height: 20px; flex: none; border-radius:999px; border: 2px solid var(--action); display: inline-flex; align-items: center; justify-content: center"><span style="width: 10px; height: 10px; border-radius:999px; background: var(--action)"></span></span>
+              <span style="display: flex; flex-direction: column; min-width: 0; flex: 1">
+                <span class="el-strong">Uygacha</span>
+                <span class="el-xs el-muted">Manzil majburiy</span>
+              </span>
+              <span style="display: flex; flex-direction: column; align-items: flex-end; text-align: right; flex: none"><span class="el-strong" style="white-space: nowrap">35 000 so'm</span><span class="el-xs el-muted">standart</span></span>
+            </label>
+          </div>
+          <p class="el-hint" style="margin: 6px 0 0">Baraka Shop standart narxi — og'ir yoki katta posilkada oshadi. Sukut bo'yicha: Uygacha</p>
+        </fieldset>
+
+        <div class="el-field">
+          <label class="el-label" for="manzil">Manzil <span class="el-req">*</span></label>
+          <textarea class="el-input el-textarea" id="manzil" rows="2" placeholder="To'liq manzil kiriting..."></textarea>
+        </div>
+        <div class="el-field">
+          <label class="el-label" for="izoh">Izoh</label>
+          <textarea class="el-input el-textarea" id="izoh" rows="2" placeholder="Izoh..."></textarea>
+        </div>
+      </div>
+    </section>
+    <section class="el-card" aria-labelledby="tafsilot-title">
+      <div class="el-card-head">
+        <div style="min-width: 0"><h2 class="el-h2" id="tafsilot-title">Buyurtma tafsilotlari <span class="el-req">*</span></h2><p class="el-small el-muted">4 ta mahsulot tanlangan</p></div>
+      </div>
+      <div class="el-card-pad" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); gap: 24px; align-items: start">
+        <div style="display: flex; flex-direction: column; gap: 16px; min-width: 0">
+          <div class="el-field">
+            <label class="el-label" for="katalog-qidiruv">Mahsulot qo'shish</label>
+            <div class="el-search">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input class="el-input" id="katalog-qidiruv" type="search" placeholder="Mahsulot qidiring...">
+            </div>
+          </div>
+          <ul aria-label="Baraka Shop katalogi" style="list-style: none; margin: 0; padding: 4px; border-radius:12px; background: var(--sunken); display: flex; flex-direction: column; gap: 2px">
+            <li><button type="button" style="width: 100%; min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 0; border-radius:10px; background: transparent; font: inherit; color: inherit; text-align: left; cursor: pointer"><img src="/_blob/a6c61d1a590fb9d7769f50f19ddc51f9" alt="" width="40" height="40" style="width: 40px; height: 40px; flex: none; border-radius:10px; object-fit: cover; border: 1px solid var(--border)"><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="el-strong">Simsiz quloqchin</span><span class="el-cell-sub">185 000 so'm</span></span><span class="el-small el-strong" style="display: inline-flex; align-items: center; gap: 6px; color: var(--action-fg); white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Qo'shilgan</span></button></li>
+            <li><button type="button" style="width: 100%; min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 0; border-radius:10px; background: transparent; font: inherit; color: inherit; text-align: left; cursor: pointer"><img src="/_blob/f65fbe7dd784d6330d639089c695a0ff" alt="" width="40" height="40" style="width: 40px; height: 40px; flex: none; border-radius:10px; object-fit: cover; border: 1px solid var(--border)"><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="el-strong">Telefon g'ilofi</span><span class="el-cell-sub">45 000 so'm</span></span><span class="el-small el-strong" style="display: inline-flex; align-items: center; gap: 6px; color: var(--action-fg); white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Qo'shilgan</span></button></li>
+            <li><button type="button" style="width: 100%; min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 0; border-radius:10px; background: transparent; font: inherit; color: inherit; text-align: left; cursor: pointer"><img src="/_blob/fbd41c8916e6590cd73f3cdf1a9aba7f" alt="" width="40" height="40" style="width: 40px; height: 40px; flex: none; border-radius:10px; object-fit: cover; border: 1px solid var(--border)"><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="el-strong">Quvvatlagich 20 W</span><span class="el-cell-sub">120 000 so'm</span></span><span class="el-small el-strong" style="display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Qo'shish</span></button></li>
+            <li><button type="button" style="width: 100%; min-height: 56px; display: flex; align-items: center; gap: 12px; padding: 8px 12px; border: 0; border-radius:10px; background: transparent; font: inherit; color: inherit; text-align: left; cursor: pointer"><span aria-hidden="true" style="width: 40px; height: 40px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius:10px; background: var(--sunken); border: 1px solid var(--border); color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span><span style="flex: 1; min-width: 0; display: flex; flex-direction: column"><span class="el-strong">USB-C kabel 1 m</span></span><span class="el-small el-strong" style="display: inline-flex; align-items: center; gap: 6px; color: var(--action-fg); white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Qo'shilgan</span></button></li>
+          </ul>
+          <div class="el-field">
+            <label class="el-label" for="maxsus-nomi">Katalogda yo'q mahsulot</label>
+            <input class="el-input" id="maxsus-nomi" type="text" placeholder="Mahsulot nomi">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px">
+              <span class="el-small el-muted">Soni</span>
+              <div role="group" aria-label="Yangi mahsulot soni" style="display: inline-flex; align-items: center; border: 1px solid var(--border-strong); border-radius:12px; background: var(--surface)"><button class="el-iconbtn el-iconbtn-lg" type="button" aria-label="Yangi mahsulot sonini kamaytirish" disabled style="opacity: .45; cursor: not-allowed"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button><span class="el-strong" style="min-width: 28px; text-align: center">1</span><button class="el-iconbtn el-iconbtn-lg" type="button" aria-label="Yangi mahsulot sonini oshirish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button></div>
+              <button class="el-btn el-btn-secondary" type="button" disabled style="height: 44px; flex: 1 1 120px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Qo'shish</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; min-width: 0">
+          <h3 class="el-label" style="padding-bottom: 12px">Tanlangan mahsulotlar</h3>
+          <ul aria-label="Tanlangan mahsulotlar" style="list-style: none; margin: 0; padding: 0">
+            <li style="display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; column-gap: 12px; row-gap: 8px; align-items: center; padding: 12px 0; border-top: 1px solid var(--border)">
+              <img src="/_blob/a6c61d1a590fb9d7769f50f19ddc51f9" alt="" width="40" height="40" style="width: 40px; height: 40px; flex: none; border-radius:10px; object-fit: cover; border: 1px solid var(--border)">
+              <div style="min-width: 0"><div class="el-cell-title">Simsiz quloqchin</div><div class="el-cell-sub">185 000 so'm</div></div>
+              <button class="el-iconbtn el-iconbtn-lg" type="button" aria-label="Simsiz quloqchin — olib tashlash"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
+              <div style="grid-column: 2 / 4"><div role="group" aria-label="Simsiz quloqchin soni" style="display: inline-flex; align-items: center; border: 1px solid var(--border-strong); border-radius:12px; background: var(--surface)"><button class="el-iconbtn el-iconbtn-lg" type="button" aria-label="Simsiz quloqchin sonini kamaytirish" disabled style="opacity: .45; cursor: not-allowed"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button><span class="el-strong" style="min-width: 28px; text-align: center">1</span><button class="el-iconbtn el-iconbtn-lg" type="button" aria-label="Simsiz quloqchin sonini oshirish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button></div></div>
+            </li>
+            <li style="display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; column-gap: 12px; row-gap: 8px; align-items: center; padding: 12px 0; border-top: 1px solid var(--border)">
+              <img src="/_blob/f65fbe7dd784d6330d639089c695a0ff" alt="" width="40" height="40" style="width: 40px; height: 40px; flex: none; border-radius:10px; object-fit: cover; border: 1px solid var(--border)">
+              <div style="min-width: 0"><div class="el-cell-title">Telefon g'ilofi</div><div class="el-cell-sub">2 × 45 000 so'm</div></div>
+              <button class="el-iconbtn el-iconbtn-lg" type="button" aria-label="Telefon g'ilofi — olib tashlash"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
+              <div style="grid-column: 2 / 4"><div role="group" aria-label="Telefon g'ilofi soni" style="display: inline-flex; align-items: center; border: 1px solid var(--border-strong); border-radius:12px; background: var(--surface)"><button class="el-iconbtn el-iconbtn-lg" type="button" aria-label="Telefon g'ilofi sonini kamaytirish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button><span class="el-strong" style="min-width: 28px; text-align: center">2</span><button class="el-iconbtn el-iconbtn-lg" type="button" aria-label="Telefon g'ilofi sonini oshirish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button></div></div>
+            </li>
+            <li style="display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; column-gap: 12px; row-gap: 8px; align-items: center; padding: 12px 0; border-top: 1px solid var(--border)">
+              <span aria-hidden="true" style="width: 40px; height: 40px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius:10px; background: var(--sunken); border: 1px solid var(--border); color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+              <div style="min-width: 0"><div class="el-cell-title">USB-C kabel 1 m</div><div class="el-cell-sub">Narxi kiritilmagan</div></div>
+              <button class="el-iconbtn el-iconbtn-lg" type="button" aria-label="USB-C kabel 1 m — olib tashlash"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
+              <div style="grid-column: 2 / 4"><div role="group" aria-label="USB-C kabel 1 m soni" style="display: inline-flex; align-items: center; border: 1px solid var(--border-strong); border-radius:12px; background: var(--surface)"><button class="el-iconbtn el-iconbtn-lg" type="button" aria-label="USB-C kabel 1 m sonini kamaytirish" disabled style="opacity: .45; cursor: not-allowed"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button><span class="el-strong" style="min-width: 28px; text-align: center">1</span><button class="el-iconbtn el-iconbtn-lg" type="button" aria-label="USB-C kabel 1 m sonini oshirish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button></div></div>
+            </li>
+            <li style="display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; column-gap: 12px; row-gap: 8px; align-items: center; padding: 12px 0 0; border-top: 1px solid var(--border)">
+              <span aria-hidden="true" style="width: 40px; height: 40px; flex: none; display: inline-flex; align-items: center; justify-content: center; border-radius:10px; background: var(--sunken); border: 1px solid var(--border); color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg></span>
+              <div style="min-width: 0"><div class="el-cell-title">Sovg'a qadog'i</div><div class="el-cell-sub">Katalogdan tashqari · narxsiz</div></div>
+              <button class="el-iconbtn el-iconbtn-lg" type="button" aria-label="Sovg'a qadog'i — olib tashlash"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg></button>
+              <div style="grid-column: 2 / 4"><div role="group" aria-label="Sovg'a qadog'i soni" style="display: inline-flex; align-items: center; border: 1px solid var(--border-strong); border-radius:12px; background: var(--surface)"><button class="el-iconbtn el-iconbtn-lg" type="button" aria-label="Sovg'a qadog'i sonini kamaytirish" disabled style="opacity: .45; cursor: not-allowed"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button><span class="el-strong" style="min-width: 28px; text-align: center">1</span><button class="el-iconbtn el-iconbtn-lg" type="button" aria-label="Sovg'a qadog'i sonini oshirish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button></div></div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <aside aria-label="Buyurtma xulosasi" style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 24px; position: sticky; top: 24px">
+    <section class="el-card" aria-labelledby="xulosa-title">
+      <div class="el-card-head"><h2 class="el-h2" id="xulosa-title">Buyurtma xulosasi</h2></div>
+      <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 16px">
+        <dl class="el-kv" style="margin: 0">
+          <dt>Market</dt><dd>Baraka Shop</dd>
+          <dt>Mahsulotlar</dt><dd>4 ta · 5 dona</dd>
+          <dt>Yetkazish</dt><dd><span class="el-badge el-tone-neutral">Uygacha</span></dd>
+          <dt>Tuman</dt><dd><span class="el-muted">Tanlanmagan</span></dd>
+        </dl>
+        <div role="group" aria-labelledby="yn-narx" style="display: flex; flex-direction: column; gap: 4px">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 4px 12px">
+            <span style="display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-width: 0"><span class="el-small el-muted" id="yn-narx">Yetkazish narxi</span></span>
+            <span class="el-strong" style="white-space: nowrap; margin-left: auto">≈ 43 000 so'm</span>
+          </div>
+          <p class="el-xs el-muted" style="margin: 0">Standart 35 000 + vazn uchun 8 000 so'm</p>
+          <p class="el-xs el-subtle" style="margin: 0">Hisob vazni 2,4 kg · hajm bo'yicha</p>
+          <p class="el-xs el-subtle" style="margin: 0">Marketdan yechiladi · yakuniy narx sotuvda qotiriladi</p>
+          <span class="el-badge el-tone-neutral" style="align-self: flex-start; margin-top: 4px">Taklif · backend kerak</span>
+        </div>
+        <hr class="el-divider">
+        <div class="el-field">
+          <label class="el-label" for="umumiy-summa">Umumiy summa <span class="el-req">*</span></label>
+          <div class="el-input el-input-lg" style="gap: 10px">
+            <input class="el-input el-input-lg" id="umumiy-summa" type="text" inputmode="numeric" value="290 000" placeholder="0" aria-describedby="umumiy-summa-izoh" style="border: 0; padding: 0; height: 46px; min-height: 0; flex: 1; width: auto; min-width: 0">
+            <span class="el-muted" style="white-space: nowrap">so'm</span>
+          </div>
+          <div class="el-small" style="display: flex; flex-wrap: wrap; align-items: center; gap: 0 6px">
+            <span class="el-muted">Mahsulotlar bo'yicha:</span><span class="el-strong">275 000 so'm</span><span class="el-subtle" aria-hidden="true">·</span><button class="el-btn el-btn-link" type="button" aria-label="Mahsulotlar bo'yicha summani qo'llash: 275 000 so'm" style="height: clamp(24px, (767.5px - 100cqw) * 999, 44px); padding: 0 2px">Qo'llash</button>
+          </div>
+          <span class="el-hint" id="umumiy-summa-izoh">Mijozdan olinadigan jami summa. Narxsiz 2 ta mahsulot hisobga kirmadi</span>
+        </div>
+        <div class="el-field">
+          <label class="el-label" for="operator">Operator</label>
+          <input class="el-input" id="operator" type="text" value="Kamola" placeholder="Operator ismi">
+        </div>
+        <hr class="el-divider">
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <button class="el-btn el-btn-primary el-btn-block" type="submit" aria-describedby="yaratish-holat"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Buyurtma yaratish</button>
+          <p class="el-small el-muted" id="yaratish-holat" role="status" style="text-align: center; padding: 4px 0; margin: 0">Mijoz ismi, tuman va manzilni kiriting</p>
+          <a class="el-btn el-btn-secondary el-btn-block" href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Oldingi</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="el-card" aria-labelledby="bugun-title">
+      <div class="el-card-head">
+        <div style="min-width: 0"><h2 class="el-h2" id="bugun-title">Yangi buyurtmalar</h2><p class="el-small el-muted">Baraka Shop · bugun</p></div>
+        <span class="el-badge el-tone-neutral">3 ta</span>
+      </div>
+      <div class="el-list">
+        <a class="el-list-item" href="#" style="text-decoration: none; color: var(--text); padding: 12px 20px">
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Shahnoza Abdullayeva</span><span class="el-strong" style="white-space: nowrap">290 000 so'm</span></div>
+            <div class="el-cell-sub" style="white-space: normal">№10260 · Chilonzor tumani · <span style="white-space: nowrap">Bugun, 14:52</span></div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px"><span class="el-badge el-badge-dot el-tone-info">Yangi</span><span class="el-badge el-tone-neutral">Uygacha</span></div>
+          </div>
+        </a>
+        <a class="el-list-item" href="#" style="text-decoration: none; color: var(--text); padding: 12px 20px">
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Ozoda Qayumova</span><span class="el-strong" style="white-space: nowrap">232 500 so'm</span></div>
+            <div class="el-cell-sub" style="white-space: normal">№10259 · Zangiota tumani · <span style="white-space: nowrap">Bugun, 14:49</span></div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px"><span class="el-badge el-badge-dot el-tone-info">Yangi</span><span class="el-badge el-tone-neutral">Markazgacha</span></div>
+          </div>
+        </a>
+        <a class="el-list-item" href="#" style="text-decoration: none; color: var(--text); padding: 12px 20px">
+          <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+            <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Umida Sobirova</span><span class="el-strong" style="white-space: nowrap">125 000 so'm</span></div>
+            <div class="el-cell-sub" style="white-space: normal">№10258 · Qibray tumani · <span style="white-space: nowrap">Bugun, 14:44</span></div>
+            <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px"><span class="el-badge el-badge-dot el-tone-info">Yangi</span><span class="el-badge el-tone-neutral">Uygacha</span></div>
+          </div>
+        </a>
+      </div>
+    </section>
+  </aside>
+</form>
+
+<div class="el-overlay el-show-mobile" style="position: absolute">
+  <div class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="mt-title" aria-describedby="mt-desc">
+    <div class="el-dialog-head">
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1">
+        <h2 class="el-h2" id="mt-title">Mijozni tanlang</h2>
+        <p class="el-small el-muted" id="mt-desc">+998 90 345 67 · 4 ta mos keldi</p>
+      </div>
+      <button class="el-iconbtn el-iconbtn-lg" type="button" aria-label="Yopish" style="margin: -8px -8px 0 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </div>
+    <div role="listbox" aria-label="Mijoz takliflari" style="display: flex; flex-direction: column; gap: 2px; margin: 0 -8px">
+      <div class="el-xs el-muted" style="padding: 0 10px 4px">Barcha mijozlar · buyurtmalar soni Baraka Shop bo'yicha</div>
+      <button class="el-option is-hover" type="button" role="option" aria-selected="false" style="align-items: flex-start; min-height: 56px; padding: 8px 10px">
+        <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+          <span class="el-strong">Shahnoza Abdullayeva</span>
+          <span class="el-small el-muted" style="white-space: normal">+998 90 345 67 21 · Chilonzor tumani</span>
+          
+        </span>
+        <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none"><span class="el-xs el-muted" style="white-space: nowrap">4 ta buyurtma</span><span class="el-badge el-badge-dot el-tone-warning">1 ta yangi</span></span>
+      </button>
+      <button class="el-option" type="button" role="option" aria-selected="false" style="align-items: flex-start; min-height: 56px; padding: 8px 10px">
+        <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+          <span class="el-strong">Dilnoza Karimova</span>
+          <span class="el-small el-muted" style="white-space: normal">+998 90 345 67 05 · Yashnobod tumani</span>
+          
+        </span>
+        <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none"><span class="el-xs el-muted" style="white-space: nowrap">1 ta buyurtma</span></span>
+      </button>
+      <button class="el-option" type="button" role="option" aria-selected="false" style="align-items: flex-start; min-height: 56px; padding: 8px 10px">
+        <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+          <span class="el-strong">Bobur Rahimov</span>
+          <span class="el-small el-muted" style="white-space: normal">+998 90 345 67 29 · Yunusobod tumani</span>
+          <span class="el-xs el-subtle">Bu marketda hali buyurtmasi yo'q</span>
+        </span>
+        <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none"><span class="el-xs el-muted" style="white-space: nowrap">0 ta buyurtma</span></span>
+      </button>
+      <button class="el-option" type="button" role="option" aria-selected="false" style="align-items: flex-start; min-height: 56px; padding: 8px 10px">
+        <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1">
+          <span class="el-strong">Malika Yusupova</span>
+          <span class="el-small el-muted" style="white-space: normal">+998 93 512 40 18 · Mirzo Ulug'bek tumani</span>
+          <span class="el-xs el-muted" style="display: inline-flex; align-items: center; gap: 4px; white-space: normal"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex: none"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Qo'shimcha raqam: <span class="el-strong">+998 90 345 67 44</span></span>
+        </span>
+        <span style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex: none"><span class="el-xs el-muted" style="white-space: nowrap">2 ta buyurtma</span></span>
+      </button>
+    </div>
+    <button class="el-btn el-btn-secondary el-btn-block" type="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" x2="19" y1="8" y2="14"/><line x1="22" x2="16" y1="11" y2="11"/></svg>Yangi mijoz sifatida davom etish</button>
+  </div>
+</div>

@@ -104,10 +104,19 @@
       <div class="el-card-pad">
         <dl class="el-kv" style="margin: 0; grid-template-columns: minmax(120px, 45%) 1fr; row-gap: 14px">
           <dt>Asosiy tarif</dt><dd><span class="el-badge el-tone-neutral">Uygacha</span></dd>
-          <dt>Uyga tarif</dt><dd>35 000 so'm</dd>
-          <dt>Markazga tarif</dt><dd>25 000 so'm</dd>
+          <dt>Uyga standart narx</dt><dd>35 000 so'm</dd>
+          <dt>Markazga standart narx</dt><dd>25 000 so'm</dd>
         </dl>
       </div>
+      <hr class="el-divider">
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px">
+        <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+          <span class="el-h3" id="p-weight">Vazn va hajm bo'yicha narx</span>
+          <span class="el-small el-muted" id="p-weight-h">Yoqiq: og'ir yoki katta posilkada yetkazish narxi standartdan oshadi. O'chiq: faqat standart narx (kelishuv bo'yicha).</span>
+        </span>
+        <button class="el-switch" id="sw-weight" type="button" role="switch" aria-checked="true" aria-labelledby="p-weight" aria-describedby="p-weight-h"></button>
+      </div>
+      <p class="el-xs el-muted" style="margin: 0; padding: 0 20px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px"><span>Masalan: standart 25 000 + vazn uchun 8 000 so'm. Yaratishda narx shu qoida bo'yicha ko'rsatiladi.</span><span class="el-badge el-tone-neutral">Taklif · backend kerak</span></p>
     </section>
 
     <section class="el-card" aria-labelledby="ud-token">

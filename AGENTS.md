@@ -35,8 +35,9 @@ Trello'dagi «Dizayn v2» kartalari bosqichlarni kuzatadi. **Joriy holat, ega qa
 
 ## Dizaynni qayerdan ko'rish
 
-- **`design/`**: 411 ekran (superadmin, admin, manager, registrator, market, courier, umumiy ekranlar va `tizim-*`
-  dizayn tizimi taxtalari). Har biri desktop 1440 / planshet 768 / telefon 390, kunduzgi va tungi. Tavsif:
+- **`design/`**: 654 ekran (superadmin, admin, manager, registrator, market, market_operator, courier, logist,
+  investor, umumiy ekranlar va `tizim-*` dizayn tizimi taxtalari; 2026-10-19 da ega tasdiqlagan 19 guruh qo'shildi —
+  kodda hali yo'qlari `route-map.json` → `newViews`, `plannedMenu`, `plannedBottomNav`). Har biri desktop 1440 / planshet 768 / telefon 390, kunduzgi va tungi. Tavsif:
   `design/README.md`.
 - **Ekranni topish:** `design/SCREENS.md` (route / sahifa fayli → `<rol>-<viewId>`).
 - **Ko'rish:** `npm run design:preview` (http://127.0.0.1:4199, barcha ekranlar ro'yxati) yoki

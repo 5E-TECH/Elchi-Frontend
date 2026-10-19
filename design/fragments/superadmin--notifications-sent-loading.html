@@ -1,0 +1,138 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <a class="el-back" href="@notifications-inbox"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Bildirishnomalar</a>
+    <h1 class="el-h1">Yuborilganlar</h1>
+    <p class="el-sub">Qo'lda yuborilgan xabarlar va kimga yetgani</p>
+  </div>
+  <div class="el-actions">
+    <a class="el-btn el-btn-primary" href="@notifications-send"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>Xabar yuborish</a>
+  </div>
+</div>
+
+<div class="el-hide-mobile" role="group" aria-label="Yuborilganlar filtrlari" style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; max-width: 640px">
+  <button class="el-input el-select" type="button" disabled style="flex: 1 1 220px; width: auto" aria-haspopup="listbox" aria-expanded="false" aria-label="Natija: barchasi"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap"><span class="el-muted">Natija:</span>Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+  <button class="el-input el-select" type="button" disabled style="flex: 1 1 220px; width: auto" aria-haspopup="listbox" aria-expanded="false" aria-label="Kim yubordi: barchasi"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap"><span class="el-muted">Kim yubordi:</span>Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+</div>
+<div class="el-show-mobile" style="flex-wrap: wrap; gap: 8px; align-items: center">
+  <button class="el-btn el-btn-secondary" type="button" disabled style="flex: 1 1 100%" aria-expanded="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 20a1 1 0 0 0 .553.895l2 1A1 1 0 0 0 14 21v-7a2 2 0 0 1 .517-1.341L21.74 4.67A1 1 0 0 0 21 3H3a1 1 0 0 0-.742 1.67l7.225 7.989A2 2 0 0 1 10 14z"/></svg>Filtrlar</button>
+</div>
+
+<section class="el-card" aria-labelledby="ns-list-title" style="overflow: hidden">
+  <div class="el-card-head">
+    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+      <h2 class="el-h2" id="ns-list-title">Yuborilgan xabarlar</h2>
+      <p class="el-small el-muted">Eng yangisi yuqorida · natija har kanal bo'yicha</p>
+    </div>
+    
+  </div>
+  <span class="el-sr" role="status">Yuborilganlar yuklanmoqda</span>
+  <div class="el-table-wrap el-hide-mobile">
+    <table class="el-table">
+      <thead>
+        <tr><th>Sana</th><th>Sarlavha</th><th class="el-hide-tablet">Kim yubordi</th><th>Kimga</th><th class="el-hide-tablet">Kanallar</th><th>Natija</th><th class="el-hide-tablet" style="width: 56px"><span class="el-sr">Tafsilot</span></th></tr>
+      </thead>
+      <tbody aria-hidden="true">
+        <tr>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 96px; height: 12px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 220px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 160px; height: 10px; margin-top: 8px"></span></td>
+          <td class="el-hide-tablet"><span class="el-skel-line el-shimmer" style="display: block; width: 120px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 10px; margin-top: 8px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 128px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 96px; height: 10px; margin-top: 8px"></span></td>
+          <td class="el-hide-tablet"><span class="el-skel-line el-shimmer" style="display: block; width: 120px; height: 24px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 112px; height: 24px"></span></td>
+          <td class="el-hide-tablet"></td>
+        </tr>
+        <tr>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 88px; height: 12px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 260px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 120px; height: 10px; margin-top: 8px"></span></td>
+          <td class="el-hide-tablet"><span class="el-skel-line el-shimmer" style="display: block; width: 120px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 10px; margin-top: 8px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 128px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 96px; height: 10px; margin-top: 8px"></span></td>
+          <td class="el-hide-tablet"><span class="el-skel-line el-shimmer" style="display: block; width: 120px; height: 24px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 112px; height: 24px"></span></td>
+          <td class="el-hide-tablet"></td>
+        </tr>
+        <tr>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 104px; height: 12px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 200px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 180px; height: 10px; margin-top: 8px"></span></td>
+          <td class="el-hide-tablet"><span class="el-skel-line el-shimmer" style="display: block; width: 120px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 10px; margin-top: 8px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 128px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 96px; height: 10px; margin-top: 8px"></span></td>
+          <td class="el-hide-tablet"><span class="el-skel-line el-shimmer" style="display: block; width: 120px; height: 24px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 112px; height: 24px"></span></td>
+          <td class="el-hide-tablet"></td>
+        </tr>
+        <tr>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 92px; height: 12px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 240px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 140px; height: 10px; margin-top: 8px"></span></td>
+          <td class="el-hide-tablet"><span class="el-skel-line el-shimmer" style="display: block; width: 120px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 10px; margin-top: 8px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 128px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 96px; height: 10px; margin-top: 8px"></span></td>
+          <td class="el-hide-tablet"><span class="el-skel-line el-shimmer" style="display: block; width: 120px; height: 24px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 112px; height: 24px"></span></td>
+          <td class="el-hide-tablet"></td>
+        </tr>
+        <tr>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 84px; height: 12px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 210px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 170px; height: 10px; margin-top: 8px"></span></td>
+          <td class="el-hide-tablet"><span class="el-skel-line el-shimmer" style="display: block; width: 120px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 10px; margin-top: 8px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 128px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 96px; height: 10px; margin-top: 8px"></span></td>
+          <td class="el-hide-tablet"><span class="el-skel-line el-shimmer" style="display: block; width: 120px; height: 24px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 112px; height: 24px"></span></td>
+          <td class="el-hide-tablet"></td>
+        </tr>
+        <tr>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 100px; height: 12px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 250px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 130px; height: 10px; margin-top: 8px"></span></td>
+          <td class="el-hide-tablet"><span class="el-skel-line el-shimmer" style="display: block; width: 120px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 10px; margin-top: 8px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 128px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 96px; height: 10px; margin-top: 8px"></span></td>
+          <td class="el-hide-tablet"><span class="el-skel-line el-shimmer" style="display: block; width: 120px; height: 24px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 112px; height: 24px"></span></td>
+          <td class="el-hide-tablet"></td>
+        </tr>
+        <tr>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 90px; height: 12px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 230px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 150px; height: 10px; margin-top: 8px"></span></td>
+          <td class="el-hide-tablet"><span class="el-skel-line el-shimmer" style="display: block; width: 120px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 10px; margin-top: 8px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 128px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 96px; height: 10px; margin-top: 8px"></span></td>
+          <td class="el-hide-tablet"><span class="el-skel-line el-shimmer" style="display: block; width: 120px; height: 24px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 112px; height: 24px"></span></td>
+          <td class="el-hide-tablet"></td>
+        </tr>
+        <tr>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 96px; height: 12px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 190px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 160px; height: 10px; margin-top: 8px"></span></td>
+          <td class="el-hide-tablet"><span class="el-skel-line el-shimmer" style="display: block; width: 120px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 10px; margin-top: 8px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 128px; height: 12px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 96px; height: 10px; margin-top: 8px"></span></td>
+          <td class="el-hide-tablet"><span class="el-skel-line el-shimmer" style="display: block; width: 120px; height: 24px"></span></td>
+          <td><span class="el-skel-line el-shimmer" style="display: block; width: 112px; height: 24px"></span></td>
+          <td class="el-hide-tablet"></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="el-list el-show-mobile" aria-hidden="true" style="flex-direction: column">
+    <div class="el-list-item" style="align-items: flex-start"><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; justify-content: space-between; gap: 12px"><span class="el-skel-line el-shimmer" style="display: block; width: 60%; height: 14px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 12px"></span></div>
+      <span class="el-skel-line el-shimmer" style="display: block; width: 112px; height: 24px"></span>
+      <span class="el-skel-line el-shimmer" style="display: block; width: 80%; height: 10px"></span>
+    </div></div>
+    <div class="el-list-item" style="align-items: flex-start"><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; justify-content: space-between; gap: 12px"><span class="el-skel-line el-shimmer" style="display: block; width: 60%; height: 14px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 12px"></span></div>
+      <span class="el-skel-line el-shimmer" style="display: block; width: 112px; height: 24px"></span>
+      <span class="el-skel-line el-shimmer" style="display: block; width: 80%; height: 10px"></span>
+    </div></div>
+    <div class="el-list-item" style="align-items: flex-start"><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; justify-content: space-between; gap: 12px"><span class="el-skel-line el-shimmer" style="display: block; width: 60%; height: 14px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 12px"></span></div>
+      <span class="el-skel-line el-shimmer" style="display: block; width: 112px; height: 24px"></span>
+      <span class="el-skel-line el-shimmer" style="display: block; width: 80%; height: 10px"></span>
+    </div></div>
+    <div class="el-list-item" style="align-items: flex-start"><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; justify-content: space-between; gap: 12px"><span class="el-skel-line el-shimmer" style="display: block; width: 60%; height: 14px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 12px"></span></div>
+      <span class="el-skel-line el-shimmer" style="display: block; width: 112px; height: 24px"></span>
+      <span class="el-skel-line el-shimmer" style="display: block; width: 80%; height: 10px"></span>
+    </div></div>
+    <div class="el-list-item" style="align-items: flex-start"><div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; justify-content: space-between; gap: 12px"><span class="el-skel-line el-shimmer" style="display: block; width: 60%; height: 14px"></span><span class="el-skel-line el-shimmer" style="display: block; width: 72px; height: 12px"></span></div>
+      <span class="el-skel-line el-shimmer" style="display: block; width: 112px; height: 24px"></span>
+      <span class="el-skel-line el-shimmer" style="display: block; width: 80%; height: 10px"></span>
+    </div></div>
+  </div>
+
+</section>

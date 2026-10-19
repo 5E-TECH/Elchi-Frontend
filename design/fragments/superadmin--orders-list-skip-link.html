@@ -1,0 +1,275 @@
+<a class="el-btn el-btn-secondary is-focus" href="#main-content" style="position: absolute; top: 12px; left: 12px; z-index: 60"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>Asosiy kontentga o'tish</a>
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">Buyurtmalar</h1>
+    <p class="el-sub">Jami 1 248 ta buyurtma</p>
+  </div>
+  <div class="el-actions">
+    <button class="el-btn el-btn-secondary" type="button" style="padding: 0 12px; gap: 6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Excelga yuklash</button>
+    <a class="el-btn el-btn-primary" href="@neworders-create-manual-step1" style="padding: 0 12px; gap: 6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Buyurtma yaratish</a>
+  </div>
+</div>
+
+<section class="el-card" aria-label="Buyurtmalar ro'yxati">
+  <div class="el-tabs" role="tablist" aria-label="Holat bo'yicha" style="padding: 0 12px">
+    <button class="el-tab" type="button" role="tab" aria-selected="true">Barchasi <span class="el-tab-count">1 248</span></button>
+    <button class="el-tab" type="button" role="tab" aria-selected="false">Yangi <span class="el-tab-count">32</span></button>
+    <button class="el-tab" type="button" role="tab" aria-selected="false">Qabul qilindi <span class="el-tab-count">120</span></button>
+    <button class="el-tab" type="button" role="tab" aria-selected="false">Yo'lda <span class="el-tab-count">86</span></button>
+    <button class="el-tab" type="button" role="tab" aria-selected="false">Kutilmoqda <span class="el-tab-count">14</span></button>
+    <button class="el-tab" type="button" role="tab" aria-selected="false">Sotilgan <span class="el-tab-count">734</span></button>
+    <button class="el-tab" type="button" role="tab" aria-selected="false" title="To'langan va qisman to'langan buyurtmalar">To'langan <span class="el-tab-count">168</span></button>
+    <button class="el-tab" type="button" role="tab" aria-selected="false" title="Bekor qilingan va bekor — jo'natilgan buyurtmalar">Bekor qilingan <span class="el-tab-count">94</span></button>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 12px; padding: 16px 20px; align-items: center">
+    <label class="el-search" style="flex: 1 1 240px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+      <input class="el-input" type="search" placeholder="Shu ro'yxatdan qidirish" aria-label="Buyurtmalarni ism, telefon yoki raqam bo'yicha qidirish">
+    </label>
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; flex: 1 1 360px; max-width: 420px">
+      <button class="el-input el-select el-hide-mobile" type="button" style="flex: 1 1 200px; width: auto" aria-label="Sana oralig'i: 01.10.2026 dan 08.10.2026 gacha"><span style="display: inline-flex; align-items: center; gap: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>01.10 – 08.10.2026</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+      <button class="el-btn el-btn-secondary is-active el-hide-mobile" type="button" style="flex: 1 0 auto" aria-expanded="true" aria-controls="ord-filters"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5h20"/><path d="M6 12h12"/><path d="M9 19h6"/></svg>Filtrlar <span class="el-tab-count" style="background: var(--action-soft); color: var(--action-fg)">2</span></button>
+      <a class="el-btn el-btn-secondary el-show-mobile" href="@orders-filters-mobile" aria-haspopup="dialog" style="flex: 1 0 auto"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 5h20"/><path d="M6 12h12"/><path d="M9 19h6"/></svg>Filtrlar <span class="el-tab-count" style="background: var(--action-soft); color: var(--action-fg)">3</span></a>
+    </div>
+  </div>
+
+  <div class="el-hide-mobile" id="ord-filters" style="padding: 0 20px 16px">
+    <div role="group" aria-label="Qo'shimcha filtrlar" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: 12px; padding: 16px; background: var(--sunken); border-radius:12px">
+      <div class="el-field">
+        <span class="el-label" id="f-market">Market</span>
+        <button class="el-input el-select" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="f-market"><span class="el-select-placeholder">Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+      <div class="el-field">
+        <span class="el-label" id="f-branch">Filial</span>
+        <button class="el-input el-select" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="f-branch"><span>Toshkent HQ</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+      <div class="el-field">
+        <span class="el-label" id="f-region">Viloyat</span>
+        <button class="el-input el-select" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="f-region"><span>Toshkent sh.</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+      <div class="el-field">
+        <span class="el-label" id="f-courier">Kuryer</span>
+        <button class="el-input el-select" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="f-courier"><span class="el-select-placeholder">Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+      <div class="el-field">
+        <span class="el-label" id="f-deliv">Yetkazish turi</span>
+        <button class="el-input el-select" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="f-deliv"><span class="el-select-placeholder">Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+      <div class="el-field">
+        <span class="el-label" id="f-status">Holat</span>
+        <button class="el-input el-select" type="button" aria-haspopup="listbox" aria-expanded="false" aria-labelledby="f-status"><span class="el-select-placeholder">Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <div class="el-hide-mobile" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 0 20px 16px; align-items: center">
+    <span class="el-chip el-chip-active">Filial: Toshkent HQ<button class="el-chip-x" type="button" style="width: 28px; height: 28px; margin-right: -8px" aria-label="Filial filtrini olib tashlash"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span>
+    <span class="el-chip el-chip-active">Viloyat: Toshkent sh.<button class="el-chip-x" type="button" style="width: 28px; height: 28px; margin-right: -8px" aria-label="Viloyat filtrini olib tashlash"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span>
+    <button class="el-btn el-btn-link el-btn-sm" type="button">Filtrlarni tozalash</button>
+  </div>
+  <div class="el-show-mobile" role="group" aria-label="Faol filtrlar" style="flex-wrap: nowrap; gap: 8px; padding: 0 20px 16px; align-items: center; overflow-x: auto; scrollbar-width: none">
+    <span class="el-chip el-chip-active" style="flex: none">01.10 – 08.10.2026<button class="el-chip-x" type="button" style="width: 28px; height: 28px; margin-right: -8px" aria-label="Sana filtrini olib tashlash"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span>
+    <span class="el-chip el-chip-active" style="flex: none">Filial: Toshkent HQ<button class="el-chip-x" type="button" style="width: 28px; height: 28px; margin-right: -8px" aria-label="Filial filtrini olib tashlash"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span>
+    <span class="el-chip el-chip-active" style="flex: none">Viloyat: Toshkent sh.<button class="el-chip-x" type="button" style="width: 28px; height: 28px; margin-right: -8px" aria-label="Viloyat filtrini olib tashlash"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></span>
+    <button class="el-btn el-btn-link el-btn-sm" type="button" style="flex: none">Filtrlarni tozalash</button>
+  </div>
+
+  <div class="el-table-wrap el-hide-mobile" style="border-top: 1px solid var(--border)">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th aria-sort="descending"><button class="el-th-sort" type="button" aria-pressed="true" title="Sana bo'yicha saralash">Buyurtma<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg></button></th>
+          <th>Mijoz</th>
+          <th class="el-hide-tablet">Tuman / viloyat</th>
+          <th class="el-hide-tablet">Market</th>
+          <th><button class="el-th-sort" type="button" aria-pressed="false">Holat<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></button></th>
+          <th class="el-hide-tablet">Yetkazish</th>
+          <th class="el-num"><button class="el-th-sort" type="button" aria-pressed="false">Summa<span class="el-show-tablet">/ market</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m21 16-4 4-4-4"/><path d="M17 20V4"/><path d="m3 8 4-4 4 4"/><path d="M7 4v16"/></svg></button></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 2px"><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">№10242</a><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="№10242 raqamini nusxalash" style="width: 28px; height: 28px; margin: -4px 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div><div class="el-cell-sub">Bugun, 14:40</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Sevara Tursunova</div><div class="el-cell-sub">+998 90 562 14 07</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Chilonzor tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Nur Elektronika</td>
+          <td><span class="el-badge el-badge-dot el-tone-info">Yangi</span></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Uygacha</span></td>
+          <td class="el-num"><div class="el-strong">1 150 000 so'm</div><div class="el-show-tablet el-cell-sub">Nur Elektronika</div></td>
+        </tr>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 2px"><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">№10241</a><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="№10241 raqamini nusxalash" style="width: 28px; height: 28px; margin: -4px 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div><div class="el-cell-sub">Bugun, 14:15</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Dilnoza Karimova</div><div class="el-cell-sub">+998 90 123 45 67</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Chilonzor tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Baraka Shop</td>
+          <td><span class="el-badge el-badge-dot el-tone-info">Qabul qilindi</span></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Uygacha</span></td>
+          <td class="el-num"><div class="el-strong">185 000 so'm</div><div class="el-show-tablet el-cell-sub">Baraka Shop</div></td>
+        </tr>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 2px"><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">№10238</a><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="№10238 raqamini nusxalash" style="width: 28px; height: 28px; margin: -4px 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div><div class="el-cell-sub">Bugun, 11:20</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Javohir Toshmatov</div><div class="el-cell-sub">+998 97 701 33 45</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Mirobod tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Nur Elektronika</td>
+          <td><span class="el-badge el-badge-dot el-tone-warning">Yo'lda</span></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Uygacha</span></td>
+          <td class="el-num"><div class="el-strong">1 280 000 so'm</div><div class="el-show-tablet el-cell-sub">Nur Elektronika</div></td>
+        </tr>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 2px"><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">№10236</a><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="№10236 raqamini nusxalash" style="width: 28px; height: 28px; margin: -4px 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div><div class="el-cell-sub">Kecha, 19:10</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Aziz Rahimov</div><div class="el-cell-sub">+998 93 456 12 08</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Olmazor tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Ipak Yo'li Savdo</td>
+          <td><span class="el-badge el-badge-dot el-tone-warning">Kutilmoqda</span></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Markazgacha</span></td>
+          <td class="el-num"><div class="el-strong">232 500 so'm</div><div class="el-show-tablet el-cell-sub">Ipak Yo'li Savdo</div></td>
+        </tr>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 2px"><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">№10235</a><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="№10235 raqamini nusxalash" style="width: 28px; height: 28px; margin: -4px 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div><div class="el-cell-sub">Kecha, 18:04</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Malika Yusupova</div><div class="el-cell-sub">+998 99 812 40 11</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Sergeli tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Baraka Shop</td>
+          <td><span class="el-badge el-badge-dot el-tone-danger">Bekor qilingan</span></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Uygacha</span></td>
+          <td class="el-num"><div class="el-strong">96 000 so'm</div><div class="el-show-tablet el-cell-sub">Baraka Shop</div></td>
+        </tr>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 2px"><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">№10231</a><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="№10231 raqamini nusxalash" style="width: 28px; height: 28px; margin: -4px 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div><div class="el-cell-sub">Kecha, 14:05</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Shahnoza Ergasheva</div><div class="el-cell-sub">+998 95 204 77 19</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Uchtepa tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Ipak Yo'li Savdo</td>
+          <td><span class="el-badge el-badge-dot el-tone-danger el-badge-outline">Bekor — jo'natilgan</span></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Uygacha</span></td>
+          <td class="el-num"><div class="el-strong">320 000 so'm</div><div class="el-show-tablet el-cell-sub">Ipak Yo'li Savdo</div></td>
+        </tr>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 2px"><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">№10230</a><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="№10230 raqamini nusxalash" style="width: 28px; height: 28px; margin: -4px 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div><div class="el-cell-sub">Kecha, 12:15</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Nodira Saidova</div><div class="el-cell-sub">+998 94 655 18 90</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Yakkasaroy tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Chilonzor Market</td>
+          <td><span class="el-badge el-badge-dot el-tone-info">Yaratilgan</span></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Markazgacha</span></td>
+          <td class="el-num"><div class="el-strong">150 000 so'm</div><div class="el-show-tablet el-cell-sub">Chilonzor Market</div></td>
+        </tr>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 2px"><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">№10228</a><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="№10228 raqamini nusxalash" style="width: 28px; height: 28px; margin: -4px 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div><div class="el-cell-sub">06.10.2026, 19:40</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Otabek Nazarov</div><div class="el-cell-sub">+998 90 318 64 22</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Yashnobod tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Ipak Yo'li Savdo</td>
+          <td><span class="el-badge el-badge-dot el-tone-warning">Qisman to'langan</span></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Markazgacha</span></td>
+          <td class="el-num"><div class="el-strong">540 000 so'm</div><div class="el-show-tablet el-cell-sub">Ipak Yo'li Savdo</div></td>
+        </tr>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 2px"><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">№10227</a><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="№10227 raqamini nusxalash" style="width: 28px; height: 28px; margin: -4px 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div><div class="el-cell-sub">06.10.2026, 17:30</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Sardor Qodirov</div><div class="el-cell-sub">+998 90 977 02 36</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Yangihayot tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Nur Elektronika</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">Sotilgan</span></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Uygacha</span></td>
+          <td class="el-num"><div class="el-strong">640 000 so'm</div><div class="el-show-tablet el-cell-sub">Nur Elektronika</div></td>
+        </tr>
+        <tr>
+          <td><div style="display: flex; align-items: center; gap: 2px"><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text); white-space: nowrap">№10224</a><button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="№10224 raqamini nusxalash" style="width: 28px; height: 28px; margin: -4px 0"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg></button></div><div class="el-cell-sub">06.10.2026, 10:02</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Gulnora Ismoilova</div><div class="el-cell-sub">+998 93 241 56 03</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Bektemir tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Baraka Shop</td>
+          <td><span class="el-badge el-badge-dot el-tone-success">To'langan</span></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Markazgacha</span></td>
+          <td class="el-num"><div class="el-strong">275 000 so'm</div><div class="el-show-tablet el-cell-sub">Baraka Shop</div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="el-list el-show-mobile" style="flex-direction: column; border-top: 1px solid var(--border)">
+    <div class="el-list-item" style="display: block; padding: 0">
+      <a href="@orders-detail" style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Sevara Tursunova</span><span class="el-strong" style="white-space: nowrap">1 150 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10242 · Chilonzor tumani · Nur Elektronika</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center"><span class="el-badge el-badge-dot el-tone-info">Yangi</span><span class="el-badge el-tone-neutral">Uygacha</span><span class="el-xs el-muted" style="margin-left: auto; white-space: nowrap">Bugun, 14:40</span></span>
+      </a>
+    </div>
+    <div class="el-list-item" style="display: block; padding: 0">
+      <a href="@orders-detail" style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Dilnoza Karimova</span><span class="el-strong" style="white-space: nowrap">185 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10241 · Chilonzor tumani · Baraka Shop</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center"><span class="el-badge el-badge-dot el-tone-info">Qabul qilindi</span><span class="el-badge el-tone-neutral">Uygacha</span><span class="el-xs el-muted" style="margin-left: auto; white-space: nowrap">Bugun, 14:15</span></span>
+      </a>
+    </div>
+    <div class="el-list-item" style="display: block; padding: 0">
+      <a href="@orders-detail" style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Javohir Toshmatov</span><span class="el-strong" style="white-space: nowrap">1 280 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10238 · Mirobod tumani · Nur Elektronika</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center"><span class="el-badge el-badge-dot el-tone-warning">Yo'lda</span><span class="el-badge el-tone-neutral">Uygacha</span><span class="el-xs el-muted" style="margin-left: auto; white-space: nowrap">Bugun, 11:20</span></span>
+      </a>
+    </div>
+    <div class="el-list-item" style="display: block; padding: 0">
+      <a href="@orders-detail" style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Aziz Rahimov</span><span class="el-strong" style="white-space: nowrap">232 500 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10236 · Olmazor tumani · Ipak Yo'li Savdo</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center"><span class="el-badge el-badge-dot el-tone-warning">Kutilmoqda</span><span class="el-badge el-tone-neutral">Markazgacha</span><span class="el-xs el-muted" style="margin-left: auto; white-space: nowrap">Kecha, 19:10</span></span>
+      </a>
+    </div>
+    <div class="el-list-item" style="display: block; padding: 0">
+      <a href="@orders-detail" style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Malika Yusupova</span><span class="el-strong" style="white-space: nowrap">96 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10235 · Sergeli tumani · Baraka Shop</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center"><span class="el-badge el-badge-dot el-tone-danger">Bekor qilingan</span><span class="el-badge el-tone-neutral">Uygacha</span><span class="el-xs el-muted" style="margin-left: auto; white-space: nowrap">Kecha, 18:04</span></span>
+      </a>
+    </div>
+    <div class="el-list-item" style="display: block; padding: 0">
+      <a href="@orders-detail" style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Shahnoza Ergasheva</span><span class="el-strong" style="white-space: nowrap">320 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10231 · Uchtepa tumani · Ipak Yo'li Savdo</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center"><span class="el-badge el-badge-dot el-tone-danger el-badge-outline">Bekor — jo'natilgan</span><span class="el-badge el-tone-neutral">Uygacha</span><span class="el-xs el-muted" style="margin-left: auto; white-space: nowrap">Kecha, 14:05</span></span>
+      </a>
+    </div>
+    <div class="el-list-item" style="display: block; padding: 0">
+      <a href="@orders-detail" style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Nodira Saidova</span><span class="el-strong" style="white-space: nowrap">150 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10230 · Yakkasaroy tumani · Chilonzor Market</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center"><span class="el-badge el-badge-dot el-tone-info">Yaratilgan</span><span class="el-badge el-tone-neutral">Markazgacha</span><span class="el-xs el-muted" style="margin-left: auto; white-space: nowrap">Kecha, 12:15</span></span>
+      </a>
+    </div>
+    <div class="el-list-item" style="display: block; padding: 0">
+      <a href="@orders-detail" style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Otabek Nazarov</span><span class="el-strong" style="white-space: nowrap">540 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10228 · Yashnobod tumani · Ipak Yo'li Savdo</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center"><span class="el-badge el-badge-dot el-tone-warning">Qisman to'langan</span><span class="el-badge el-tone-neutral">Markazgacha</span><span class="el-xs el-muted" style="margin-left: auto; white-space: nowrap">06.10.2026, 19:40</span></span>
+      </a>
+    </div>
+    <div class="el-list-item" style="display: block; padding: 0">
+      <a href="@orders-detail" style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Sardor Qodirov</span><span class="el-strong" style="white-space: nowrap">640 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10227 · Yangihayot tumani · Nur Elektronika</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center"><span class="el-badge el-badge-dot el-tone-success">Sotilgan</span><span class="el-badge el-tone-neutral">Uygacha</span><span class="el-xs el-muted" style="margin-left: auto; white-space: nowrap">06.10.2026, 17:30</span></span>
+      </a>
+    </div>
+    <div class="el-list-item" style="display: block; padding: 0">
+      <a href="@orders-detail" style="display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; text-decoration: none; color: var(--text)">
+        <span style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Gulnora Ismoilova</span><span class="el-strong" style="white-space: nowrap">275 000 so'm</span></span>
+        <span class="el-cell-sub" style="white-space: normal">№10224 · Bektemir tumani · Baraka Shop</span>
+        <span style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center"><span class="el-badge el-badge-dot el-tone-success">To'langan</span><span class="el-badge el-tone-neutral">Markazgacha</span><span class="el-xs el-muted" style="margin-left: auto; white-space: nowrap">06.10.2026, 10:02</span></span>
+      </a>
+    </div>
+  </div>
+
+  <div class="el-card-foot el-pagination">
+    <span>1–10 / 1 248 ta buyurtma</span>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px">
+      <button class="el-input el-select el-btn-sm el-hide-mobile" type="button" style="width: auto; height: 32px; gap: 8px" aria-label="Sahifadagi qatorlar soni: 10 ta">10 ta<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+      <nav class="el-pages" aria-label="Sahifalar">
+        <button class="el-page" type="button" disabled aria-label="Oldingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button class="el-page" type="button" aria-current="page">1</button>
+        <button class="el-page" type="button">2</button>
+        <button class="el-page" type="button">3</button>
+        <span class="el-subtle" aria-hidden="true" style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 32px">…</span>
+        <button class="el-page" type="button">125</button>
+        <button class="el-page" type="button" aria-label="Keyingi sahifa"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+      </nav>
+    </div>
+  </div>
+</section>
+  

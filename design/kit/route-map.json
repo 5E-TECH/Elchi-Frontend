@@ -5,20 +5,21 @@
     "views: rol → [viewId] (design/kit/views.json dagi rol va viewId; 'common' — barcha rollar, 'tizim' — dizayn tizimi taxtalari),",
     "roles (ixtiyoriy) — guard hisobidan farq qilsa (komponent ichidagi qo'shimcha tekshiruv), roleNotes — maketi yo'q rol uchun izoh, redirectsTo — komponent o'zi yo'naltirsa (menyu bandi shu manzilga bog'lanadi), entry — menyuda bo'lmasa, sahifa qayerdan ochiladi,",
     "Holat: sukut 'eski'. Sahifa v2 ga ko'chirilsa (4-bosqich), asosiy faylning birinchi qatoriga `// dizayn-v2: <ekran>` yoziladi — skript uni o'zi topib 'v2' qiladi (yoki shu yerda \"status\": \"v2\"). Keyin npm run design:screens.",
-    "newViews — chizilgan, lekin kodda hali yo'q ekranlar; partialViews — kodda qisman bor; viewFiles — maketni chizadigan aniq fayl (route'ning asosiy faylidan farq qilsa). Route qo'shsangiz yoki maket qo'shilsa — shu faylni yangilang (skript farqni topib, xato beradi)."
+    "newViews — chizilgan, lekin kodda hali yo'q ekranlar; partialViews — kodda qisman bor; viewFiles — maketni chizadigan aniq fayl (route'ning asosiy faylidan farq qilsa). Route qo'shsangiz yoki maket qo'shilsa — shu faylni yangilang (skript farqni topib, xato beradi).",
+    "Rejadagi (kodda hali yo'q) route — path qavs bilan boshlanadi: \"(taklif) /yo'l\" (routes.tsx bilan solishtirilmaydi). plannedMenu — maketdagi menyuda bor, lekin kodda (menuConfig.tsx) hali yo'q bandlar: rol → [kalit]; band kodga qo'shilgach shu ro'yxatdan olinadi (skript eslatadi). plannedBottomNav — shunday, pastki menyu kataklari uchun (kodda — BottomNav.tsx); menyu testlari (src/widgets/Sidebar) ikkalasini o'tkazib, kodda yo'q rollarni (butun menyusi plannedMenu da) chetlaydi. Guard roles qiymatidagi «taklif — …» — ega tasdiqlagan, kodda hali yo'q ruxsat."
   ],
-  "roleOrder": ["superadmin", "admin", "manager", "registrator", "market", "courier"],
+  "roleOrder": ["superadmin", "admin", "manager", "registrator", "market", "market_operator", "courier", "logist", "investor"],
   "statusValues": {
     "eski": "sahifa hali eski dizaynda — tegsangiz, maket bo'yicha v2 ga ko'chiring",
     "v2": "sahifa dizayn v2 ga ko'chirilgan — maketdan chetga chiqmang"
   },
   "guards": {
-    "canViewOrders": { "source": "access.ts → canViewOrders", "roles": { "superadmin": "", "admin": "", "manager": "", "registrator": "", "market": "", "courier": "" } },
-    "canViewMails": { "source": "access.ts → canViewMails", "roles": { "superadmin": "", "admin": "", "manager": "HQ · REGIONAL · HYBRID", "registrator": "", "courier": "" } },
+    "canViewOrders": { "source": "access.ts → canViewOrders", "roles": { "superadmin": "", "admin": "", "manager": "", "registrator": "", "market": "", "courier": "", "logist": "taklif — logist faqat ko'radi (LG-S1), kodda yo'q" } },
+    "canViewMails": { "source": "access.ts → canViewMails", "roles": { "superadmin": "", "admin": "", "manager": "HQ · REGIONAL · HYBRID", "registrator": "", "courier": "", "logist": "taklif — logist faqat ko'radi (LG-S1), kodda yo'q" } },
     "canViewUsers": { "source": "access.ts → canViewUsers", "roles": { "superadmin": "", "admin": "", "manager": "filial turi aniq bo'lsa" } },
     "canManageUsers": { "source": "access.ts → canViewUsers", "roles": { "superadmin": "", "admin": "", "manager": "filial turi aniq bo'lsa" } },
     "canViewFinancialBalance": { "source": "access.ts → canViewFinancialBalance", "roles": { "superadmin": "", "admin": "" } },
-    "canViewNotifications": { "source": "access.ts → canViewNotifications", "roles": { "superadmin": "" } },
+    "canViewNotifications": { "source": "access.ts → canViewNotifications", "roles": { "superadmin": "", "admin": "taklif — NG-S2, kodda yo'q" } },
     "canSendNotifications": { "source": "access.ts → canSendNotifications", "roles": { "superadmin": "", "admin": "" } },
     "canViewBranches": { "source": "access.ts → canViewBranches", "roles": { "superadmin": "" } },
     "canViewLogs": { "source": "access.ts → canViewLogs", "roles": { "superadmin": "" } },
@@ -26,18 +27,18 @@
     "canViewDispatch": { "source": "access.ts → canViewDispatchPage", "roles": { "superadmin": "", "admin": "", "manager": "REGIONAL · HYBRID", "registrator": "HQ · REGIONAL · HYBRID" } },
     "canViewCourierBulk": { "source": "access.ts → canViewCourierBulkPage", "roles": { "manager": "REGIONAL · HYBRID", "courier": "" } },
     "isPaymentsManager": { "source": "access.ts → canViewPaymentsPage", "roles": { "superadmin": "", "admin": "", "manager": "HQ · REGIONAL · HYBRID" } },
-    "canViewBatches": { "source": "access.ts → canViewBatchesPage", "roles": { "superadmin": "", "admin": "", "manager": "HQ · PICKUP · HYBRID" } },
+    "canViewBatches": { "source": "access.ts → canViewBatchesPage", "roles": { "superadmin": "", "admin": "", "manager": "HQ · PICKUP · HYBRID", "logist": "taklif — logist faqat ko'radi (LG-S1), kodda yo'q" } },
     "canViewReturns": { "source": "access.ts → canViewReturnsPage", "roles": { "superadmin": "", "admin": "", "manager": "HQ · PICKUP · HYBRID" } },
-    "canCreateOrdersByRoleAndBranchType": { "source": "access.ts → canCreateOrders", "roles": { "superadmin": "", "admin": "", "manager": "HQ · PICKUP · HYBRID", "registrator": "", "market": "" } },
+    "canCreateOrdersByRoleAndBranchType": { "source": "access.ts → canCreateOrders", "roles": { "superadmin": "", "admin": "", "manager": "HQ · PICKUP · HYBRID", "registrator": "", "market": "", "market_operator": "taklif — MO-S3, kodda yo'q (backend POST /orders ruxsati kerak)" } },
     "canManageExternalIntegrations": { "source": "access.ts → canReceiveExternalOrders", "roles": { "superadmin": "", "admin": "", "manager": "HQ · PICKUP · HYBRID", "registrator": "" } },
     "canHandoverCancelledToMarket": { "source": "access.ts → canHandoverCancelledToMarket", "roles": { "superadmin": "", "admin": "", "registrator": "faqat HQ" } },
     "canCreateProducts": { "source": "access.ts → canCreateProducts", "roles": { "superadmin": "", "admin": "", "manager": "", "registrator": "", "market": "" } },
-    "canManageProducts": { "source": "routes.tsx → canManageProducts", "roles": { "superadmin": "", "admin": "", "manager": "", "registrator": "", "market": "" } },
+    "canManageProducts": { "source": "routes.tsx → canManageProducts", "roles": { "superadmin": "", "admin": "", "manager": "", "registrator": "", "market": "", "market_operator": "taklif — faqat ko'rish" } },
     "canViewBranchDashboard": { "source": "routes.tsx → canViewBranchDashboard", "roles": { "manager": "" } },
     "canViewOps": { "source": "routes.tsx → canViewOps", "roles": { "superadmin": "", "admin": "" } },
     "canViewOpsPages": { "source": "routes.tsx → canViewOpsPages", "roles": { "superadmin": "" } },
     "canViewAdminNewOrderTabs": { "source": "routes.tsx → canViewAdminNewOrderTabs", "roles": { "superadmin": "", "admin": "" } },
-    "canViewRegionStats": { "source": "routes.tsx → canViewRegionStats", "roles": { "superadmin": "", "admin": "", "manager": "", "courier": "" } },
+    "canViewRegionStats": { "source": "routes.tsx → canViewRegionStats", "roles": { "superadmin": "", "admin": "", "manager": "", "courier": "", "logist": "taklif — o'z viloyatlari (LG-S3), kodda yo'q" } },
     "hasSelfCashboxAccess": { "source": "routes.tsx → hasSelfCashboxAccess", "roles": { "manager": "", "market": "", "courier": "" } },
     "canViewMarketOperators": { "source": "routes.tsx → canViewMarketOperators (doim false)", "roles": {} }
   },
@@ -81,7 +82,9 @@
         "src/widgets/header/ui/UserMenu.tsx"
       ],
       "views": {
+        "market": ["dashboard-mobile-menu"],
         "courier": ["dashboard-mobile-menu", "dashboard-mobile-search"],
+        "investor": ["dashboard-mobile-menu"],
         "common": ["bell-dropdown"],
         "tizim": ["states-navigation", "responsive"]
       },
@@ -91,7 +94,9 @@
         "admin": "Qobiq har sahifa maketida chizilgan — masalan admin-orders-list.",
         "manager": "Qobiq har sahifa maketida chizilgan — masalan manager-orders-list-all (pastki menyuda «Skaner» va «Biriktirish»).",
         "registrator": "Qobiq har sahifa maketida chizilgan — masalan registrator-orders-list.",
-        "market": "Qobiq har sahifa maketida chizilgan — masalan market-orders-list (pastki menyuda skaner yo'q)."
+        "market": "Pastki menyu — ega qarori 2026-10-19 (MO-S1): Bosh sahifa · Buyurtmalar · Yaratish · To'lovlar · Menyu; «Mahsulotlar» va yangi «Operatorlar» — «Menyu» varag'ida (6-band 5 katakka sig'maydi). Planshetda yon panel (drawer), telefonda pastki varaq — dashboard-mobile-menu; varaqda global qidiruv maydoni, profil, 6 bo'lim plitkasi, Bildirishnomalar, Sozlamalar, Chiqish.",
+        "market_operator": "Yangi rol qobig'i: yon menyu Bosh sahifa · Buyurtmalar · Buyurtma yaratish · Mahsulotlar · Daromadim; pastki menyu 5 oddiy katak (Skaner va Menyu yo'q) — Yaratish · Mahsulotlar · Daromadim. Bildirishnomalar, Sozlamalar va Chiqish faqat yuqori paneldan (qo'ng'iroqcha, profil menyusi) — eski market xatti-harakati kabi. Profil satri «Market operatori» (profil market nomini qaytarmaydi).",
+        "investor": "Yangi rol qobig'i (kodda hali yo'q; menuConfig.tsx ga investor bo'limi roles.json bilan birga qo'shiladi): yon menyu guruhsiz — Bosh sahifa · Investitsiyalar · Foyda tarixi; pastki menyu 4 teng katak — Bosh sahifa · Investitsiya · Foyda · Menyu (skaner yo'q; ilovadagi BottomNav auto-cols-fr, maket build.mjs ham katak sonini bandlardan oladi). Yuqori panelda global qidiruv va Ctrl K YO'Q — investorda buyurtma va foydalanuvchi ruxsati yo'q (qidiruv 403 beradi); qo'ng'iroqcha va profil menyusi (mavzu, til, «Chiqish») bor. «Menyu» varag'i — investor-dashboard-mobile-menu: profil satri «Investor», 3 bo'lim plitkasi, Bildirishnomalar (/inbox), Sozlamalar (/settings), «Chiqish»; qidiruv maydoni yo'q."
       }
     },
     {
@@ -196,19 +201,52 @@
         "src/widgets/dashboard-part-error/ui/DashboardPartError.tsx",
         "src/shared/ui/charts/index.ts"
       ],
-      "roles": { "superadmin": "", "admin": "", "manager": "→ /branch-dashboard", "registrator": "", "market": "", "courier": "" },
+      "roles": { "superadmin": "", "admin": "", "manager": "→ /branch-dashboard", "registrator": "", "market": "", "courier": "", "logist": "logist roli PR'ida qo'shiladi (DashboardEntry → logist bosh sahifasi)", "investor": "investor roli PR'ida qo'shiladi (DashboardEntry → InvestorDashboardPage)" },
       "views": {
         "superadmin": ["dashboard-main", "dashboard-region-modal"],
         "admin": ["dashboard-main"],
         "registrator": ["dashboard-main"],
         "market": ["dashboard-home", "dashboard-extra-cost-approvals"],
-        "courier": ["dashboard-home"],
+        "courier": ["dashboard-home", "dashboard-pwa-install"],
+        "logist": ["dashboard-main", "dashboard-mobile-menu", "dashboard-mobile-search"],
+        "investor": ["dashboard-home", "dashboard-home-table", "dashboard-loading", "dashboard-empty", "dashboard-error", "dashboard-forbidden", "dashboard-not-linked"],
         "tizim": ["charts"]
       },
       "roleNotes": {
-        "manager": "DashboardEntry menejerni /branch-dashboard ga yo'naltiradi."
+        "manager": "DashboardEntry menejerni /branch-dashboard ga yo'naltiradi.",
+        "market_operator": "Maket yo'q — eng yaqini: market-dashboard-home. GET analytics/dashboard market_operator'ga ochiq (DASHBOARD_ROLES). Faqat ko'rish: qo'shimcha xarajat tasdiqlari ro'yxati tugmasiz (ExtraCostApprovals — market_operator qaror qilmaydi, mavjud qaror Q6); «To'lovlar»/kassa kartasi va moliya havolalari yo'q (finance ruxsati yo'q). Bosh sahifadagi «Buyurtma yaratish» — /new-orders/create (Qo'lda va AI bilan — MO-S3, quyida).",
+        "logist": "Logist bosh sahifasi (ega javobi LG-S1..S3, 2026-10-19; kodda hali yo'q — dzyVftBx, mDfjKeQi): faqat O'Z viloyatlari; moliyaviy ko'rsatkich yo'q («Umumiy tushum» KPI va «Tushum» ustuni olib tashlandi → «Faol kuryerlar»). «So'nggi buyurtmalar» kartasi (GET /orders, logist viloyatlari) → buyurtma kuzatuvi. Yuqori panelda to'liq global qidiruv (buyurtma, mijoz, telefon; moliyaviy natijasiz) — GET /search da logist doirasi backendda yo'q. GET region/stats/all logistga hozir 14 viloyatni qaytaradi (resolveRegionStatsScope) — backend logist_id = me bo'yicha cheklashi kerak (LG-S3). «Jarayonda» = total − delivered − cancelled. Viloyat yo'q — EmptyState «Sizga hali viloyat biriktirilmagan».",
+        "investor": "Investor bosh sahifasi (vpKijXce, mDfjKeQi; kodda hali yo'q) — boshqa rollar kabi «/» da, DashboardEntry investorni InvestorDashboardPage ga beradi (alohida /investor yo'li yo'q). Ma'lumot: GET investors/me/dashboard?months=6|12|24 (1..36, sukut 12) — KPI summary (total_invested, investments_count, last_invested_at → «Mening investitsiyam»; current_percentage → «Ulush» — foyda stavkasi; total_paid_profit, last_paid_at → «To'langan foyda»; total_unpaid_profit → «Kutilayotgan foyda») + monthly [{ month, paid_amount, unpaid_amount }] — ustunli grafik (To'langan · Kutilmoqda, steklangan) va jadval egizagi (dashboard-home-table; telefonda kartalar, oyda ikkala qism > 0 bo'lsa ikkalasi alohida qatorda). «So'nggi investitsiyalar» — GET investors/me/investments?limit=3, «Foyda tarixi» — GET investors/me/profits?limit=5 (tartib serverda qat'iy: invested_at DESC / period_start DESC — sarlavhada saralash tugmasi yo'q). Holatlar: yuklanish — skelet (telefonda kartalar skeleti), bo'sh — KPI 0 va grafik o'rnida EmptyState (davr va Grafik | Jadval boshqaruvlari yashirin), xato — ErrorState + «Qayta urinish» (ro'yxat bloklari mustaqil), 403 (investor profili nofaol) — dashboard-forbidden, 404 (login investor profiliga bog'lanmagan) — dashboard-not-linked; 409 (bitta loginga bir nechta investor profili) — o'sha not-linked ko'rinishi, matn «Hisobingizga bir nechta investor profili ulangan — administrator tuzatishi kerak». Pul — formatMoney / formatCompactMoney, foiz — formatPercentLocalized."
       },
-      "note": "DashboardEntry (routes.tsx): market → MarketDashboardPage (xarajat tasdiqlari shu sahifada), qolganlar → DashboardPage (kuryer — alohida tarmoq isCourier). Dizayn v2 (G1): grafiklar — src/shared/ui/charts (recharts faqat «Moliyaviy tahlil» trendida, FinancialTrendPlot lazy + DeferredMount rootMargin 0; bundle byudjeti 450 KB — tests/e2e/dashboard-bundle.preview.spec.ts), viloyat oynasi — umumiy RegionDetailDialog (lazy, faqat bosilganda; registratorda daromadsiz — showRevenue=false, eski oyna xulqi). Reytinglar top 5 (telefonda top 3) + «Yana ko'rsatish». Chizilmaganlar (Taklif yoki API yo'q, spec §6): «Buyurtmalar vaqti» issiqlik xaritasi, KPI «Yo'qotilgan daromad», KPI sparkline, «maqsad 80%», «Sof foyda» qatori, market «Reytingdagi o'rningiz» / «Buyurtmalar dinamikasi», xarajat so'rovida so'rovchi ismi va buyurtma raqami, kuryer «Oxirgi 7 kun». Ega savollari — sukut javoblari qo'llangan (spec §9): Q1 delta va «Kecha» — oldingi davr uchun ikkinchi analytics so'rovi («Barchasi»da yo'q); Q2 gauge belgisi «Yaxshi chegarasi · 70%»; Q3 registrator sarlavha izohida filial nomi (backend registratorni filialga cheklaydi); Q4 «Moliyaviy tahlil» izohi «Daromad · oldingi davr bilan solishtirish», qator «Daromad»; Q5 kuryer «Kassa» sharsharasi faqat my-cashbox bugungi tarixni bersa, aks holda «Qo'lingizdagi pul»; Q6 market «Tasdiqlash» — pul amali, tasdiq oynasi bilan (useConfirm), «Rad etish» — sabab oynasi ExtraCostRejectDialog; 409 «allaqachon hal qilingan» — qayta yuklash + info toast; market_operator — faqat ko'rish (dev, Urozov04); Q7 «Barchasi»da «Yetkazish sifati» o'rnida bo'sh holat, «Moliyaviy tahlil» va «Kassa» yashirin."
+      "note": "DashboardEntry (routes.tsx): market → MarketDashboardPage (xarajat tasdiqlari shu sahifada), qolganlar → DashboardPage (kuryer — alohida tarmoq isCourier). Dizayn v2 (G1): grafiklar — src/shared/ui/charts (recharts faqat «Moliyaviy tahlil» trendida, FinancialTrendPlot lazy + DeferredMount rootMargin 0; bundle byudjeti 450 KB — tests/e2e/dashboard-bundle.preview.spec.ts), viloyat oynasi — umumiy RegionDetailDialog (lazy, faqat bosilganda; registratorda daromadsiz — showRevenue=false, eski oyna xulqi). Reytinglar top 5 (telefonda top 3) + «Yana ko'rsatish». Chizilmaganlar (Taklif yoki API yo'q, spec §6): «Buyurtmalar vaqti» issiqlik xaritasi, KPI «Yo'qotilgan daromad», KPI sparkline, «maqsad 80%», «Sof foyda» qatori, market «Reytingdagi o'rningiz» / «Buyurtmalar dinamikasi», xarajat so'rovida so'rovchi ismi va buyurtma raqami, kuryer «Oxirgi 7 kun». Ega savollari — sukut javoblari qo'llangan (spec §9): Q1 delta va «Kecha» — oldingi davr uchun ikkinchi analytics so'rovi («Barchasi»da yo'q); Q2 gauge belgisi «Yaxshi chegarasi · 70%»; Q3 registrator sarlavha izohida filial nomi (backend registratorni filialga cheklaydi); Q4 «Moliyaviy tahlil» izohi «Daromad · oldingi davr bilan solishtirish», qator «Daromad»; Q5 kuryer «Kassa» sharsharasi faqat my-cashbox bugungi tarixni bersa, aks holda «Qo'lingizdagi pul»; Q6 market «Tasdiqlash» — pul amali, tasdiq oynasi bilan (useConfirm), «Rad etish» — sabab oynasi ExtraCostRejectDialog; 409 «allaqachon hal qilingan» — qayta yuklash + info toast; market_operator — faqat ko'rish (dev, Urozov04); Q7 «Barchasi»da «Yetkazish sifati» o'rnida bo'sh holat, «Moliyaviy tahlil» va «Kassa» yashirin. Ega tasdig'i 2026-10-19 (small-p1 S3): «Ilovani o'rnatish» taklifi kuryer bosh sahifasida bir marta (yopiladi, courier-dashboard-pwa-install); Sozlamalar va Bildirishnomalarda doim."
+    },
+    {
+      "path": "(taklif) /investments",
+      "entry": "investor menyusi «Investitsiyalar» (roles.json investor.menu → investments), telefonda pastki menyuning 2-katagi",
+      "section": "finance",
+      "title": "Investitsiyalar — investorning o'z investitsiyalari (yangi route, kodda yo'q)",
+      "components": [
+        "src/app/lib/routes.tsx"
+      ],
+      "roles": { "investor": "taklif — yangi rol, yangi route" },
+      "views": {
+        "investor": ["investments-list", "investments-list-loading", "investments-list-filtered-empty"]
+      },
+      "note": "Ega qarori 2026-10-19: investor bosh sahifasi quriladi; ro'yxat sahifalari menyudan (Investitsiyalar · Foyda tarixi). Yo'l nomi taklif — kod yozilganda haqiqiy yo'l bilan almashtiriladi. GET investors/me/investments (@Roles INVESTOR): from_date, to_date, page, limit; tartib invested_at DESC (saralash parametri yo'q — sarlavhada saralash tugmasi yo'q). Ustun «Jamidagi hissasi» = amount / summary.total_amount — frontendda hisoblanadi (backend maydoni emas); «Ulush» so'zi faqat KPI dagi foyda stavkasi (current_percentage) uchun. Holatlar: yuklanish — investments-list-loading (jadval skeleti, telefonda kartalar), sana oralig'i bo'yicha bo'sh — investments-list-filtered-empty («Filtrni tozalash»), umuman bo'sh / xato / 403 / 404 — bosh sahifa holatlari matni bilan (investor-dashboard-empty, -error, -forbidden, -not-linked). Sahifalash — Pagination (page/limit)."
+    },
+    {
+      "path": "(taklif) /profits",
+      "entry": "investor menyusi «Foyda tarixi» (roles.json investor.menu → profits), telefonda pastki menyuning 3-katagi",
+      "section": "finance",
+      "title": "Foyda tarixi — investorning foyda yozuvlari (yangi route, kodda yo'q)",
+      "components": [
+        "src/app/lib/routes.tsx"
+      ],
+      "roles": { "investor": "taklif — yangi rol, yangi route" },
+      "views": {
+        "investor": ["profits-list", "profits-list-filtered-empty"]
+      },
+      "note": "Ega qarori 2026-10-19 (investor roli). Yo'l nomi taklif. GET investors/me/profits (@Roles INVESTOR): is_paid (Barchasi · To'langan · Kutilmoqda — telefonda to'liq kenglik, 44px), page, limit; tartib period_start DESC (saralash tugmasi yo'q); sana filtri backendda yo'q — chizilmagan. Qator: davr (period_start – period_end), foiz, summa, holat (is_paid), to'langan sana (paid_at). Holatlar: filtr bo'yicha bo'sh — profits-list-filtered-empty; yuklanish — investments-list-loading naqshi; umuman bo'sh / xato / 403 / 404 — bosh sahifa holatlari. Sahifalash — Pagination."
     },
     {
       "path": "/branch-dashboard",
@@ -255,15 +293,20 @@
         "src/entities/order/ui/ReturnRequestedTag.tsx"
       ],
       "views": {
-        "superadmin": ["orders-list", "orders-filters-mobile"],
+        "superadmin": ["orders-list", "orders-list-refreshing", "orders-list-refresh-error", "orders-filters-mobile", "orders-list-skip-link"],
         "admin": ["orders-list", "orders-filters-mobile"],
-        "manager": ["orders-list-all", "orders-list-pending", "orders-list-cancelled", "orders-sell-dialog", "orders-cancel-dialog", "orders-rollback-dialog"],
+        "manager": ["orders-list-all", "orders-list-all-refreshing", "orders-list-all-refresh-error", "orders-list-pending", "orders-list-cancelled", "orders-sell-dialog", "orders-cancel-dialog", "orders-rollback-dialog"],
         "registrator": ["orders-list", "orders-filters-mobile"],
         "market": ["orders-list"],
-        "courier": ["orders-pending", "orders-tab-switcher-open", "orders-all", "orders-cancelled", "orders-sell-dialog", "orders-sell-extra-cost-dialog", "orders-sell-partial-dialog", "orders-action-approval-pending", "orders-cancel-dialog", "orders-rollback-confirm"],
+        "courier": ["orders-pending", "orders-pending-refreshing", "orders-pending-refresh-error", "orders-tab-switcher-open", "orders-all", "orders-cancelled", "orders-sell-dialog", "orders-sell-extra-cost-dialog", "orders-sell-partial-dialog", "orders-action-approval-pending", "orders-cancel-dialog", "orders-rollback-confirm"],
+        "logist": ["orders-list"],
         "tizim": ["states-data"]
       },
-      "note": "Kuryer ro'yxati — list/courier/index.tsx (tablar list/courier/list/tabs.tsx). Kuryerdan boshqa barcha rollarda bir xil 8 holat tabi (Barchasi · Yangi · Qabul qilindi · Yo'lda · Kutilmoqda · Sotilgan · To'langan · Bekor qilingan; tab sonlari API'da yo'q — chizilmaydi). Menejerning qatordagi sotish/bekor/qaytarish amallari faqat REGIONAL · HYBRID filialda va can_sell_cancel yoqilganda; «Bekor qilingan» tabida HQ'ga yuborish (tanlov + QR skaner) ham faqat REGIONAL · HYBRID. Qator bosilsa → /orders/edit/:orderId."
+      "roleNotes": {
+        "market_operator": "Maket yo'q — eng yaqini: market-orders-list va market-orders-detail. GET orders — JwtAuthGuard, ichida operator o'z marketiga cheklanadi (resolveMarketOperatorMarketId); tafsilot assertCanViewOrder — faqat o'z marketi. Excel eksport bor (GET orders/export/excel @Roles … MARKET_OPERATOR). Market tafsilotidagi amallar (tahrirlash, bekor qilish, qaytarish so'rovi) — faqat backend ruxsat bergani ko'rinadi, aks holda yashiriladi.",
+        "logist": "Logist (LG-S1, kodda yo'q): faqat ko'rish — «Buyurtma yaratish», Excel, sotish/bekor yo'q; «Summa» o'rniga «Kuryer» ustuni; «To'langan» tabi yo'q («Sotilgan» = sold + paid + partly_paid). Viloyat filtri — faqat o'z viloyatlari. GET /orders logistga hozir 403 (resolveOrderListRequest) — backend kerak."
+      },
+      "note": "Kuryer ro'yxati — list/courier/index.tsx (tablar list/courier/list/tabs.tsx). Kuryerdan boshqa barcha rollarda bir xil 8 holat tabi (Barchasi · Yangi · Qabul qilindi · Yo'lda · Kutilmoqda · Sotilgan · To'langan · Bekor qilingan; tab sonlari API'da yo'q — chizilmaydi). Menejerning qatordagi sotish/bekor/qaytarish amallari faqat REGIONAL · HYBRID filialda va can_sell_cancel yoqilganda; «Bekor qilingan» tabida HQ'ga yuborish (tanlov + QR skaner) ham faqat REGIONAL · HYBRID. Qator bosilsa → /orders/edit/:orderId. Sarlavhada qo'lda «Yangilash» (ghost, RefreshCw; telefonda h1 yonida chegarali ikonka) va «Oxirgi yangilanish: HH:mm» (oxirgi muvaffaqiyatli yuklash vaqti) — barcha rollar va tablarda bir xil; avtomatik yangilanish yo'q (refetchOnWindowFocus: false). Holatlar: *-refreshing — h1 yonida «Yangilanmoqda…» belgisi faqat so'rov 400 ms dan uzoq cho'zilsa (tizim--loading 11-namuna), tugma band; *-refresh-error — ro'yxat kartasi ustida warning el-alert «Ro'yxat yangilanmadi» + «Qayta urinish», eski ma'lumot ko'rinib turadi (tizim--main «Xabar bloklari»; incomingStaleWarning bilan bir xil)."
     },
     {
       "path": "/orders/edit/:orderId",
@@ -302,7 +345,11 @@
         "manager": ["orders-detail", "orders-detail-edit-address-dialog", "orders-detail-edit-products-dialog", "orders-sell-dialog", "orders-cancel-dialog", "orders-rollback-dialog"],
         "registrator": ["orders-detail", "orders-detail-edit-order-dialog", "orders-detail-edit-address-dialog"],
         "market": ["orders-detail"],
-        "courier": ["orders-detail"]
+        "courier": ["orders-detail"],
+        "logist": ["orders-detail"]
+      },
+      "roleNotes": {
+        "logist": "Logist (LG-S1, kodda yo'q): faqat ko'rish — tahrirlash, «To'lov» kartasi, amallar yo'q; «Kuzatuv» (GET /orders/:id/tracking) birinchi, «Hozir qayerda» qatori. GET /orders/:id (assertCanViewOrder) va /tracking (@Roles) logistga hozir 403 — backend kerak."
       },
       "note": "Mijozni tahrirlash — faqat superadmin/admin; buyurtma va manzilni tahrirlash — superadmin/admin/registrator/menejer; market va kuryer — faqat o'qish. Sotish/bekor/qaytarish — REGIONAL · HYBRID menejeri. Ayni komponent /new-orders/:marketId/edit/:orderId da ham ishlatiladi."
     },
@@ -325,7 +372,7 @@
       "roleNotes": {
         "market": "Market /new-orders/:marketId (o'z marketi) ga yo'naltiriladi — o'sha route'ga qarang."
       },
-      "note": "Qobiq (src/pages/new_orders/index.tsx, barcha /new-orders/* uchun) rejimi yo'lga qarab — model/newOrdersShell.ts: «Qabul va yaratish» sarlavhasi + «Buyurtma yaratish» havolasi (NewOrdersHeader.tsx); tablar (Marketlar · Kiruvchi posilkalar · Filial paketlari · Bekor qilinganlar, sonlari bilan; market — Yangi buyurtmalar · Bekor qilinganlar) bola sahifaning birinchi kartasida (NewOrdersTabs.tsx). Bitta tabli rol (menejer, HQ bo'lmagan registrator) — tablar o'rnida karta sarlavhasi «Marketlar»."
+      "note": "Qobiq (src/pages/new_orders/index.tsx, barcha /new-orders/* uchun) rejimi yo'lga qarab — model/newOrdersShell.ts: «Qabul va yaratish» sarlavhasi + «Buyurtma yaratish» havolasi (NewOrdersHeader.tsx); tablar (Marketlar · Kiruvchi posilkalar · Filial paketlari · Bekor qilinganlar, sonlari bilan; market — Yangi buyurtmalar · Bekor qilinganlar) bola sahifaning birinchi kartasida (NewOrdersTabs.tsx). Bitta tabli rol (menejer, HQ bo'lmagan registrator) — tablar o'rnida karta sarlavhasi «Marketlar». Ega qarori (2026-10-19, S1; DamKku7C/xQ045luf, maket: manager-new-orders-markets, registrator-new-orders-markets): «Kiruvchi posilkalar» tabi posilka qabul qiladigan hamma xodimga — superadmin, admin, intake'li menejer (HQ · PICKUP · HYBRID; MANAGER_CAPABILITIES «intake») «Marketlar · Kiruvchi posilkalar», har qanday registrator «Marketlar · Kiruvchi posilkalar» (+ HQ registratorida «Bekor qilinganlar»). REGIONAL menejerda tab yo'q. Backend tayyor: GET orders/external, orders/external/sources va POST orders/external/receive-by-scan da MANAGER va REGISTRATOR bor; kodda (resolveNewOrdersTabKeys) hali faqat superadmin/admin."
     },
     {
       "path": "/new-orders/create",
@@ -350,13 +397,17 @@
         "src/pages/orders/create/model/orderCreateForm.ts"
       ],
       "views": {
-        "superadmin": ["neworders-create-manual-step1", "neworders-create-market-picker-dialog", "neworders-create-manual-step2", "neworders-create-ai-input", "neworders-create-ai-preview", "neworders-create-ai-confirm-dialog"],
-        "admin": ["neworders-create-manual", "neworders-create-market-picker", "neworders-create-ai", "neworders-create-ai-confirm-dialog"],
-        "manager": ["new-orders-create-manual-step1", "new-orders-create-manual-step2", "new-orders-create-ai", "new-orders-create-ai-confirm-dialog"],
-        "registrator": ["new-orders-create-step1", "new-orders-create-market-picker-dialog", "new-orders-create-step2", "new-orders-create-ai", "new-orders-create-ai-confirm-dialog"],
-        "market": ["new-orders-create-manual", "new-orders-create-ai-input", "new-orders-create-ai-preview", "new-orders-create-ai-confirm-dialog"]
+        "superadmin": ["neworders-create-manual-step1", "neworders-create-market-picker-dialog", "neworders-create-manual-step2", "neworders-create-ai-input", "neworders-create-ai-preview", "neworders-create-ai-confirm-dialog", "neworders-create-manual-step2-customer-suggest", "neworders-create-manual-step2-existing-customer", "neworders-create-manual-step2-customer-update-dialog"],
+        "admin": ["neworders-create-manual", "neworders-create-market-picker", "neworders-create-ai", "neworders-create-ai-confirm-dialog", "neworders-create-manual-step2-customer-suggest", "neworders-create-manual-step2-existing-customer", "neworders-create-manual-step2-customer-update-dialog"],
+        "manager": ["new-orders-create-manual-step1", "new-orders-create-manual-step2", "new-orders-create-ai", "new-orders-create-ai-confirm-dialog", "new-orders-create-manual-step2-customer-suggest", "new-orders-create-manual-step2-existing-customer", "new-orders-create-manual-step2-customer-update-dialog"],
+        "registrator": ["new-orders-create-step1", "new-orders-create-market-picker-dialog", "new-orders-create-step2", "new-orders-create-ai", "new-orders-create-ai-confirm-dialog", "new-orders-create-step2-customer-suggest", "new-orders-create-step2-existing-customer", "new-orders-create-step2-customer-update-dialog"],
+        "market": ["new-orders-create-manual", "new-orders-create-ai-input", "new-orders-create-ai-preview", "new-orders-create-ai-confirm-dialog", "new-orders-create-manual-customer-suggest", "new-orders-create-manual-existing-customer", "new-orders-create-manual-customer-update-dialog"],
+        "market_operator": ["new-orders-create-manual"]
       },
-      "note": "Market rolida 1-qadam (market tanlash) yo'q — forma darhol 2-qadamdan ochiladi. Market tanlash oynasi — MarketPicker.tsx (Step1Market.tsx ochadi); 2-qadam o'ng ustuni — Step2Summary.tsx + TodayOrdersCard.tsx; AI tasdiqlash oynasi — AiConfirmBar.tsx. «Oldingi» / «O'zgartirish» 1-qadamga qaytaradi (market va forma saqlanadi)."
+      "roleNotes": {
+        "market_operator": "Ega qarori 2026-10-19 (MO-S3): market operatori QO'LDA ham, AI bilan ham yaratadi. Maket — market_operator-new-orders-create-manual (market-new-orders-create-manual asosida: «Qo'lda · AI bilan» tanlovi, market tanlash qadami yo'q, sarlavhada «Baraka Shop nomidan», «Operator» maydoni o'zi — o'qish uchun, «Siz — avtomatik yoziladi»); AI rejimi — market-new-orders-create-ai-input, -ai-preview, -ai-confirm-dialog bilan bir xil. Menyu bandi «Buyurtma yaratish» (marketdagi «Qabul va yaratish» emas — operatorda qabul/bekorlar yo'q) to'g'ridan-to'g'ri shu sahifaga olib boradi. POST orders/ai-parse va ai-confirm MARKET_OPERATOR'ga ochiq (market serverda user.market_id dan). TAKLIF · BACKEND KERAK: qo'lda yaratish POST orders @Roles(ADMIN, SUPERADMIN, REGISTRATOR, MARKET, MANAGER, BRANCH) — MARKET_OPERATOR yo'q (order-gateway.controller.ts @Post()); kerak: MARKET_OPERATOR qo'shilsin, market_id va operator serverda tokendan (resolveMarketOperatorMarketId, user.name), mijozdan kelgan market_id e'tiborsiz."
+      },
+      "note": "Market rolida 1-qadam (market tanlash) yo'q — forma darhol 2-qadamdan ochiladi. Market tanlash oynasi — MarketPicker.tsx (Step1Market.tsx ochadi); 2-qadam o'ng ustuni — Step2Summary.tsx + TodayOrdersCard.tsx; AI tasdiqlash oynasi — AiConfirmBar.tsx. «Oldingi» / «O'zgartirish» 1-qadamga qaytaradi (market va forma saqlanadi). Ega tasdig'i 2026-10-19 (create-step2): 2-qadamda mijoz takliflari (*-customer-suggest; qo'shimcha raqam bo'yicha ham — S4, backend karta), mavjud mijoz tanlangach tarif, taxminiy yetkazish narxi va mahsulot rasmi (*-existing-customer). Narx (S1): market yaratilganda standart uy va markaz narxi; sukut — vazn yoki hajm bo'yicha avtomatik (katta bo'lsa oshadi), market sozlamasida «Vazn va hajm bo'yicha narx» toggle (sukut yoqiq) o'chirilsa — faqat standart narx; backend narx dvigateli (DAqXPeSy) va market maydoni kerak. Xulosada bitta «Yetkazish narxi» qatori, vazn/hajm hisobi yoqilgan bo'lsa ostida izoh (S2). Mijozni yaratuvchi har rol tanlay oladi, lekin market mijozning faqat o'z marketidagi buyurtmalari tarixini ko'radi (S3 — taklifdagi soni ham shu bo'yicha). Mavjud mijoz ma'lumoti o'zgartirilsa — «Mijoz kartasi ham yangilansinmi?» (Ha / Faqat shu buyurtmada, *-customer-update-dialog, S5). «Taklif · backend kerak» belgisi kodga ko'chirilmaydi."
     },
     {
       "path": "/new-orders/incoming",
@@ -366,11 +417,10 @@
       "views": {
         "superadmin": ["neworders-incoming-sources"],
         "admin": ["neworders-incoming-sources"],
-        "manager": ["new-orders-incoming-sources"]
+        "manager": ["new-orders-incoming-sources"],
+        "registrator": ["new-orders-incoming-sources"]
       },
-      "roleNotes": {
-        "registrator": "Maket yo'q (tab faqat admin/superadmin'ga ko'rinadi, URL ochiq) — admin-neworders-incoming-sources ga qarang."
-      }
+      "note": "Menejer va registrator maketlarida «Ulangan manbalar — hozircha posilka yo'q» kartasi yo'q: uning manbasi GET /integrations — backendda @Roles(SUPERADMIN, ADMIN), bu rollarga ro'yxat kelmaydi (IdleSources chizilmaydi)."
     },
     {
       "path": "/new-orders/incoming/:marketId",
@@ -378,15 +428,13 @@
       "title": "Kiruvchi posilkalarni skanerlab qabul qilish (tanlangan manba)",
       "components": ["src/pages/incoming-orders/index.tsx", "src/pages/incoming-orders/lib.ts", "src/pages/incoming-orders/ui/ScanInput.tsx", "src/pages/incoming-orders/ui/ScanMessage.tsx", "src/pages/incoming-orders/ui/IncomingTable.tsx"],
       "views": {
-        "superadmin": ["neworders-incoming-scan", "neworders-incoming-scan-camera"],
-        "admin": ["neworders-incoming-scan", "neworders-incoming-scan-camera"],
-        "manager": ["new-orders-incoming-scan", "new-orders-incoming-scan-camera"],
+        "superadmin": ["neworders-incoming-scan", "neworders-incoming-scan-camera", "neworders-incoming-scan-partial", "neworders-incoming-scan-partial-confirm-dialog", "neworders-incoming-scan-undo"],
+        "admin": ["neworders-incoming-scan", "neworders-incoming-scan-camera", "neworders-incoming-scan-partial", "neworders-incoming-scan-partial-confirm-dialog", "neworders-incoming-scan-undo"],
+        "manager": ["new-orders-incoming-scan", "new-orders-incoming-scan-camera", "new-orders-incoming-scan-partial", "new-orders-incoming-scan-partial-confirm-dialog", "new-orders-incoming-scan-undo"],
+        "registrator": ["new-orders-incoming-scan", "new-orders-incoming-scan-camera", "new-orders-incoming-scan-partial", "new-orders-incoming-scan-partial-confirm-dialog", "new-orders-incoming-scan-undo"],
         "tizim": ["scanner"]
       },
-      "roleNotes": {
-        "registrator": "Maket yo'q — admin-neworders-incoming-scan ga qarang."
-      },
-      "note": "Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan)."
+      "note": "Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan). Chala qop va skanni olib tashlash (DamKku7C, eo3eeJxs): «Qop» ustuni (external_batch_ref, bo'lmasa external_batch_token ning 8 belgisi + «…»; «kelgan/aytilgan» — external_batch_size bilan), skanerlangan qatorda va oxirgi skan xabarida «Olib tashlash» + «Qaytarish» xabari, chala qop ogohlantirishi va qabul tasdig'i. «N tasi keldi» — qopning shu ro'yxatdagi va ilgari qabul qilingan a'zolari birga, faqat ro'yxatdagi NEW buyurtmalar emas; manba — backend GET orders/external javobida har qop uchun received_count (ega S3, 2026-10-19; Taklif · backend kerak — hozir yo'q, frontend o'zi sanamaydi). Ega qarorlari (2026-10-19): S2 — chala qop bilan qabulda tasdiq yetarli, yetishmagan posilka kutilayotgan bo'lib qoladi (hamkorga avtomatik xabar yo'q); S4 — «Olib tashlandi» xabaridagi «Qaytarish» 5 soniya (tizim-scanner 05.2); S5 — chala qop QR'i skanerlanganda oxirgi skan xabari darhol sariq («Qop BP-24817: 2/3 keldi», maket: *-incoming-scan-partial) + ogohlantirish ovozi (Sozlamalar → Skaner dagi xato ovozi) va telefonda tebranish 60·45·80 ms; to'liq qop QR'i — odatdagi yashil xabar va muvaffaqiyat ovozi."
     },
     {
       "path": "/new-orders/branches",
@@ -542,7 +590,11 @@
         "admin": ["mails-today"],
         "manager": ["mails-today"],
         "registrator": ["mails-today"],
-        "courier": ["mails-today", "mails-tab-switcher-open"]
+        "courier": ["mails-today", "mails-tab-switcher-open"],
+        "logist": ["mails-list"]
+      },
+      "roleNotes": {
+        "logist": "Logist (kodda yo'q): bitta ro'yxat — holat tablari Barchasi · Yangi · Jo'natilgan · Qabul qilingan · Rad etilgan; faqat ko'rish, «Summa», chek va Excel yo'q. GET /post logistga 403 — backend kerak."
       },
       "note": "Qobiq — src/pages/mails/index.tsx: xodimda sarlavha + bitta karta (sonli tablar «Bugungi · Qaytarish · Rad etilgan · Eski»; telefonda bo'lim tanlagichi — Select «Pochta bo'limi: …»), kuryerda tablar sahifa fonida («Qaytarish» yo'q; telefonda to'liq enli qisqa tablar — courier-mails-tab-switcher-open). Tab sonlari model/mailsLists.ts hooklaridan (tanalar bilan bir xil queryKey). Ega qarori 2026-10-17 (Pochta birxillashtirishi, barcha xodim rollarida maketlardan ustun): filtrlar — ichki yorliqli Select («Viloyat: …»); xulosa qatori barcha xodimlarda. «Kuryer» ustuni hozirgidek — faqat backend kuryer yuborsa (YANGI pochtada courier_id='0', post/new kuryer bermaydi)."
     },
@@ -626,14 +678,18 @@
         "src/shared/components/PrintModeSelect.tsx"
       ],
       "views": {
-        "superadmin": ["mails-detail", "mails-detail-camera", "mails-detail-send-dialog", "mails-detail-refused", "mails-detail-old"],
-        "admin": ["mails-detail", "mails-detail-camera", "mails-send-branch-dialog", "mails-refused-detail", "mails-old-detail"],
-        "manager": ["mails-detail-receive", "mails-detail-receive-camera", "mails-detail-refused-receive", "mails-detail-old"],
-        "registrator": ["mails-detail", "mails-detail-camera", "mails-detail-send-dialog", "mails-detail-refused", "mails-detail-old"],
+        "superadmin": ["mails-detail", "mails-detail-duplicates", "mails-detail-search", "mails-detail-search-empty", "mails-detail-camera", "mails-detail-send-dialog", "mails-detail-refused", "mails-detail-old"],
+        "admin": ["mails-detail", "mails-detail-duplicates", "mails-detail-search", "mails-detail-search-empty", "mails-detail-camera", "mails-send-branch-dialog", "mails-refused-detail", "mails-old-detail"],
+        "manager": ["mails-detail-receive", "mails-detail-receive-duplicates", "mails-detail-receive-search", "mails-detail-receive-search-empty", "mails-detail-receive-camera", "mails-detail-refused-receive", "mails-detail-old"],
+        "registrator": ["mails-detail", "mails-detail-duplicates", "mails-detail-search", "mails-detail-search-empty", "mails-detail-camera", "mails-detail-send-dialog", "mails-detail-refused", "mails-detail-old"],
         "courier": ["mails-detail-receive", "mails-detail-receive-camera", "mails-detail-refused", "mails-detail-old", "mails-detail-print-menu"],
+        "logist": ["mails-detail"],
         "tizim": ["scanner"]
       },
-      "note": "Rejim URL'dan: ?type=refused → rad etilgan, ?view=old → tarix (faqat o'qish), ?view=old-all-batches → eski pochtalarning «Filial paketlari» rejimidan ochilgan tarix (admin/superadmin; *-mails-detail-old / admin-mails-old-detail maketi). «Filialga jo'natish» oynasi faqat superadmin/admin/HQ registrator (canDispatchPostToBranch). Chop etish menyusi — PrintModeSelect. Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan)."
+      "roleNotes": {
+        "logist": "Logist (kodda yo'q): faqat ko'rish — skaner, jo'natish, o'chirish, summa yo'q. GET /post/:id va /post/orders/:id logistga 403 — backend kerak."
+      },
+      "note": "Rejim URL'dan: ?type=refused → rad etilgan, ?view=old → tarix (faqat o'qish), ?view=old-all-batches → eski pochtalarning «Filial paketlari» rejimidan ochilgan tarix (admin/superadmin; *-mails-detail-old / admin-mails-old-detail maketi). «Filialga jo'natish» oynasi faqat superadmin/admin/HQ registrator (canDispatchPostToBranch). Chop etish menyusi — PrintModeSelect. Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan). Qidiruv («Buyurtmalar N ta» kartasida, × bilan, «natija yo'q» holati) va takroriy telefon raqamlar banneri (*-mails-detail-duplicates / -search / -search-empty, menejerda *-receive-*) — klient tomonda, pochta ichidagi buyurtmalar bo'yicha (sahifa barcha buyurtmalarni yuklaydi; +998 siz raqamlar normallashtiriladi), backend maydoni kerak emas. Qoida: pochtada takroriy raqam bo'lsa banner qidiruvdan qat'i nazar turadi, chiplari filtr — faol chip = joriy qidiruv."
     },
     {
       "path": "/batches",
@@ -643,7 +699,11 @@
       "views": {
         "superadmin": ["batches-new", "batches-old", "batches-return"],
         "admin": ["batches-new", "batches-old", "batches-return"],
-        "manager": ["batches-new", "batches-old", "batches-return"]
+        "manager": ["batches-new", "batches-old", "batches-return"],
+        "logist": ["batches-list"]
+      },
+      "roleNotes": {
+        "logist": "Logist (kodda yo'q): viloyatlariga yo'naltirilgan filial paketlari, faqat ko'rish, «Summa» yo'q, tafsilot havolasi yo'q. GET /transfer-batches logistga 403 — backend kerak."
       },
       "note": "Tab URL'da: ?tab=new|old|return."
     },
@@ -848,7 +908,10 @@
       "views": {
         "superadmin": ["payments-overview", "payments-market-picker-dialog", "payments-to-give-dialog", "payments-history-detail-dialog"],
         "admin": ["payments-overview", "payments-to-give-dialog", "payments-to-receive-dialog", "payments-history-detail-dialog"],
-        "manager": ["payments-overview", "payments-courier-select-dialog", "payments-history-detail-dialog"]
+        "manager": ["payments-overview", "payments-overview-shift-closed", "payments-courier-select-dialog", "payments-history-detail-dialog"]
+      },
+      "roleNotes": {
+        "market_operator": "Yo'q — market_operator'da kassa va to'lovlar bo'limi yo'q (menyuda emas, finance ruxsati yo'q); o'z hisobi — «Daromadim» ((taklif) /my-earnings)."
       },
       "note": "Tanlash oynalari (Qabul qilinishi kerak · Berilishi kerak · Kuryerni tanlang) — SettlementPickerDialog (kind receive | give | courier), tafsilot — FinanceHistoryDetailPopup (barcha Moliya sahifalari uchun umumiy). Birxillashtirish (spec §0.5): filtr qatori barcha rollarda tarix kartasi ichida (menejer maketi naqshi), «Sana» filtri — GET finance/history from_date/to_date. Ega qarori D1 (2026-10-17): superadmin/admin tarixi kassa tanlanmagan bo'lsa server tomonida faqat asosiy kassa (gateway sukuti cashbox_type=main); «Kassa turi» filtri boshqa kassani tanlaydi; menejerda server doim filial kassasini beradi. Tab sonlari chizilmaydi (API bermaydi, Trello GaBIPi3Z). Ruxsati yo'q rol (market, kuryer) → /cash-box."
     },
@@ -869,11 +932,11 @@
         "src/pages/payments/components/lib/exportMainCashboxReport.ts"
       ],
       "views": {
-        "superadmin": ["payments-main-cashbox", "payments-main-cashbox-fill-dialog", "payments-main-cashbox-shift-dialog"],
-        "admin": ["payments-main-cashbox", "payments-cashbox-form-dialog", "payments-shift-dialog"],
-        "manager": ["payments-main-cashbox", "payments-cashbox-form-dialog", "payments-close-shift-dialog"]
+        "superadmin": ["payments-main-cashbox", "payments-main-cashbox-fill-dialog", "payments-main-cashbox-shift-dialog", "payments-main-cashbox-shift-closed", "payments-main-cashbox-shift-open-dialog", "payments-main-cashbox-shift-result-dialog"],
+        "admin": ["payments-main-cashbox", "payments-cashbox-form-dialog", "payments-shift-dialog", "payments-main-cashbox-shift-closed", "payments-main-cashbox-shift-open-dialog", "payments-main-cashbox-shift-result-dialog"],
+        "manager": ["payments-main-cashbox", "payments-cashbox-form-dialog", "payments-close-shift-dialog", "payments-main-cashbox-shift-closed", "payments-main-cashbox-shift-open-dialog", "payments-main-cashbox-shift-result-dialog"]
       },
-      "note": "Ega qarori D1 (2026-10-17): superadmin/admin — faqat asosiy kassa operatsiyalari (GET finance/history?cashbox_type=main): ro'yxat, «Bugun / Bu hafta / Bu oy», «Pul qayerdan keldi, qayerga ketdi» va Excel hisobot; menejerda filial kassasi (server majburlaydi, o'zgarmagan). D3: «Kassani to'ldirish» / «Kassadan xarajat» — tasdiq oynasi (useConfirm) + Idempotency-Key (paymentIdempotency, qayta urinishda o'sha kalit). Birxillashtirish (spec §10 Q2): «Kassa balansi» chizig'i va manba bloklari menejerda ham; telefonda davrlar — bitta karta + SegmentedControl. Smena faqat superadmin/admin (Q4 — menejerda yo'q). «Maosh to'lash» yashirin (SalaryPaymentPopup + PopupSelect — v1, yetib bo'lmaydi). 18 talik xarajat kategoriyasi va nomli kartalar (card_id) chizilmaydi."
+      "note": "Ega qarori D1 (2026-10-17): superadmin/admin — faqat asosiy kassa operatsiyalari (GET finance/history?cashbox_type=main): ro'yxat, «Bugun / Bu hafta / Bu oy», «Pul qayerdan keldi, qayerga ketdi» va Excel hisobot; menejerda filial kassasi (server majburlaydi, o'zgarmagan). D3: «Kassani to'ldirish» / «Kassadan xarajat» — tasdiq oynasi (useConfirm) + Idempotency-Key (paymentIdempotency, qayta urinishda o'sha kalit). Birxillashtirish (spec §10 Q2): «Kassa balansi» chizig'i va manba bloklari menejerda ham; telefonda davrlar — bitta karta + SegmentedControl. Smena (kfdfYDik; ega javoblari CB-S1…S5, 2026-10-19): smena HAMMA kassada majburiy (asosiy va filial; production FINANCE_REQUIRE_OPEN_SHIFT=all) — `required: false` holati chizilmaydi (…-shift-optional olib tashlandi). Holat — GET finance/shift/current (`shift` — faqat OCHIQ smena yoki null). Smena yo'q → «Smena boshlanmagan» (warning) banneri, tezkor amallar o'chiq, «Smenani ochish» — asosiy tugma (…-shift-closed). Menejer o'z filiali kassasida smenani ochadi va sanalgan pul bilan yopadi (CB-S1, backend R6 — o'z filiali doirasi JWT'dan). Yopish oynasi: «Sanalgan naqd» majburiy, «Sanalgan karta» ixtiyoriy (CB-S5): bo'sh → discrepancy_card null, natijada «Sanalmadi» (neutral). «Tizim bo'yicha kutilgan» = kassaning jonli balance_cash / balance_card; yakuniy qiymatlar POST finance/shift/close javobidan. Farq bo'lsa izoh majburiy (frontend qoidasi). Oxirgi yopilgan smena (CB-S2): «Smena yopildi · … · Natija» kartasi, ochish oynasidagi «Oxirgi smena … bilan yopilgan» va natija oynasi sahifa qayta yuklangandan keyin ham — barcha rollarda (menejer ham) GET finance/shift/current `last_closed` dan (Taklif · backend kerak, karta); ro'yxat uchun GET finance/shift cashbox_user_id filtri + closed_at saralash (CB-S3, backend karta). Xodim ismi: opened_by / closed_by — faqat ID; joriy foydalanuvchi bo'lsa — o'z profili, aks holda GET users/:id; topilmasa «—». Xatolar: ochish/yopish xatosi — Dialog ichida qoladi + notify.error; loadingText «Ochilmoqda…» / «Yopilmoqda…». «Maosh to'lash» yashirin (SalaryPaymentPopup + PopupSelect — v1, yetib bo'lmaydi). 18 talik xarajat kategoriyasi va nomli kartalar (card_id) chizilmaydi."
     },
     {
       "path": "/payments/cash-detail/:id",
@@ -888,11 +951,11 @@
         "src/pages/payments/components/lib/paymentIdempotency.ts"
       ],
       "views": {
-        "superadmin": ["payments-cash-detail-courier", "payments-cash-detail-market", "payments-cash-detail-branch"],
-        "admin": ["payments-cash-detail-courier", "payments-cash-detail-market", "payments-cash-detail-branch"],
-        "manager": ["payments-cash-detail-courier", "payments-cash-detail-branch"]
+        "superadmin": ["payments-cash-detail-courier", "payments-cash-detail-market", "payments-cash-detail-branch", "payments-cash-detail-branch-shift-closed"],
+        "admin": ["payments-cash-detail-courier", "payments-cash-detail-market", "payments-cash-detail-branch", "payments-cash-detail-branch-shift-closed"],
+        "manager": ["payments-cash-detail-courier", "payments-cash-detail-branch", "payments-cash-detail-courier-ack", "payments-history-detail-dialog-ack", "payments-cash-detail-branch-shift-closed", "payments-cash-detail-courier-shift-closed"]
       },
-      "note": "Tur URL'da: ?type=courier|market|branch (noma'lum tur — forma yo'q). Pul o'tkazish — «To'lovni tasdiqlang» oynasi (useConfirm, from → to) + Idempotency-Key. Birxillashtirish (spec §10 Q2): «Balans harakati» va «Barcha tarix | To'lov o'tkazmalari» menejerda ham. Menejerda mijoz tomonidagi summa chegarasi yo'q (Q8 — backend chegaralaydi); tarix tab sonlari, kuryer «kechaga nisbatan» va sparkline chizilmaydi (API bermaydi). Excel faqat superadmin/admin."
+      "note": "Tur URL'da: ?type=courier|market|branch (noma'lum tur — forma yo'q). Pul o'tkazish — «To'lovni tasdiqlang» oynasi (useConfirm, from → to) + Idempotency-Key. Birxillashtirish (spec §10 Q2): «Balans harakati» va «Barcha tarix | To'lov o'tkazmalari» menejerda ham. Menejerda mijoz tomonidagi summa chegarasi yo'q (Q8 — backend chegaralaydi); tarix tab sonlari, kuryer «kechaga nisbatan» va sparkline chizilmaydi (API bermaydi). Excel faqat superadmin/admin. Smena (ega javobi CB-S4, 2026-10-19 — hamma kassada majburiy, FINANCE_REQUIRE_OPEN_SHIFT=all): menejer — filial kassasida smena ochilmagan bo'lsa forma o'rnida «Smena boshlanmagan» + «Smenani ochish» (asosiy, ayni ochish oynasi), tarix ko'rinadi (manager …-branch-shift-closed, …-courier-shift-closed; holat — GET finance/shift/current, menejer doirasi o'z filiali). Superadmin/admin «Filialdan qabul qilish» — «Filial smenasi ochilmagan» (tugmasiz: filial smenasini faqat menejer ochadi) — Taklif · backend kerak: shift/current ni ixtiyoriy filial (cashbox_user_id) uchun privileged rolga ochish; backend bo'lmaguncha — POST javobidagi 400 «Smena ochilmagan! … filial kassasida …» xabari Dialog/notify.error orqali. Asosiy kassada smena yo'q bo'lsa (privileged) — ayni blok «Smena boshlanmagan» + «Smenani ochish» asosiy kassa oynasi. Kvitansiya javobi (payment_ack, kodda bor — PaymentAckBadge, paymentAck.ts): kuryer → filial o'tkazmasi (courier_payment) qatorida va tafsilot oynasida «Tasdiqlangan» (success) / «Noto'g'ri» (danger) belgisi, javob bo'lmasa qatorda belgi yo'q; maket — manager-payments-cash-detail-courier-ack va manager-payments-history-detail-dialog-ack («Noto'g'ri» holati chizilgan). Oynadagi «Kvitansiya javobi» qatori qolgan holatlarda ham shu joyda: «Tasdiqlangan» — success belgi, javob yo'q — neytral «Javob yo'q» (v2HistoryDetail.paymentAckNone). superadmin/admin kuryer kassasida ham ayni qator va oyna (ayni komponent)."
     },
     {
       "path": "/cash-box",
@@ -906,12 +969,27 @@
       ],
       "views": {
         "market": ["cashbox-my", "cashbox-history-detail-dialog"],
-        "courier": ["cashbox-my-all", "cashbox-my-transfers", "cashbox-history-detail"]
+        "courier": ["cashbox-my-all", "cashbox-my-transfers", "cashbox-history-detail", "cashbox-my-transfers-ack"]
       },
       "roleNotes": {
-        "manager": "Maket yo'q. Ayni komponent menejerga filial kassasini ko'rsatadi, lekin menyudagi «To'lovlar» bandi /payments ga olib boradi (HQ · REGIONAL · HYBRID; PICKUP menejerida bu band yo'q, sahifa faqat URL orqali). Eng yaqin maket — market-cashbox-my (ayni tuzilma) va manager-payments-cash-detail-branch."
+        "manager": "Maket yo'q. Ayni komponent menejerga filial kassasini ko'rsatadi, lekin menyudagi «To'lovlar» bandi /payments ga olib boradi (HQ · REGIONAL · HYBRID; PICKUP menejerida bu band yo'q, sahifa faqat URL orqali). Eng yaqin maket — market-cashbox-my (ayni tuzilma) va manager-payments-cash-detail-branch.",
+        "market_operator": "Yo'q — market_operator'da kassa va to'lovlar bo'limi yo'q (menyuda emas, finance ruxsati yo'q); o'z hisobi — «Daromadim» ((taklif) /my-earnings)."
       },
-      "note": "Tarix tablari: «all» → cashbox-my-all, «payments» → cashbox-my-transfers (sourceTypes). Ega qarori D2 (2026-10-17): marketning o'z kassasida HQ → market o'tkazmasi (market_payment) — «Chiqim −» (market balansi = Elchining qarzi), ro'yxatda ham, tafsilot oynasida ham (getViewerOperationType); boshqa rollarda yo'nalish o'zgarmagan. Kuryer tafsilotida «Kassa turi» yo'q (hideCashboxType). «Umumiy balans» grafigi, «Davr/Kassa oqimi», delta va sparkline — Taklif, chizilmaydi. Ruxsati yo'q rol → /payments."
+      "note": "Tarix tablari: «all» → cashbox-my-all, «payments» → cashbox-my-transfers (sourceTypes). Ega qarori D2 (2026-10-17): marketning o'z kassasida HQ → market o'tkazmasi (market_payment) — «Chiqim −» (market balansi = Elchining qarzi), ro'yxatda ham, tafsilot oynasida ham (getViewerOperationType); boshqa rollarda yo'nalish o'zgarmagan. Kuryer tafsilotida «Kassa turi» yo'q (hideCashboxType). «Umumiy balans» grafigi, «Davr/Kassa oqimi», delta va sparkline — Taklif, chizilmaydi. Ruxsati yo'q rol → /payments. Kvitansiya javobi (payment_ack, kodda bor): kuryerning «Oldi-berdi» qatorlarida «Tasdiqlangan» / «Noto'g'ri» belgisi — courier-cashbox-my-transfers-ack; javobni kuryerning o'zi botda beradi, izoh hozir faqat tooltip (telefonda ko'rinmaydi — ega savoli). Kuryer tafsilot oynasi (courier-cashbox-history-detail) ayni FinanceHistoryDetailPopup — «Kvitansiya javobi» qatori manager-payments-history-detail-dialog-ack dagidek."
+    },
+    {
+      "path": "(taklif) /my-earnings",
+      "entry": "market_operator menyusi «Daromadim» (roles.json market_operator.menu → earnings), telefonda pastki menyuning 5-katagi",
+      "section": "finance",
+      "title": "Daromadim — market operatorining komissiya hisobi (yangi route, kodda yo'q)",
+      "components": [
+        "src/app/lib/routes.tsx"
+      ],
+      "roles": { "market_operator": "taklif — yangi rol, yangi route" },
+      "views": {
+        "market_operator": ["earnings", "earnings-no-commission"]
+      },
+      "note": "Ega qarori 2026-10-19: market_operator «Daromadim» oladi. Route nomi taklif (/my-earnings) — kod yozilganda haqiqiy yo'l bilan almashtiriladi. REAL: «Stavkam» kartasi — GET auth/my-profile (findOwnProfile → sanitize(user): commission_type, commission_value keladi); «Belgilaydi: Market egasi» — profil faqat market_id qaytaradi, market nomi yo'q, shuning uchun nom yozilmadi. TAKLIF · BACKEND KERAK (maketda badge bilan): «Hisob» (Qoldiq · Daromad · To'langan), «To'lovlar», «Daromadlar» — GET finance/operators/:operator_id/{balance,earnings,payments} faqat @Roles(SUPERADMIN, ADMIN, MANAGER), market_operator 403 oladi, /me ko'rinishi yo'q. Kerak: GET finance/operators/me/{balance,earnings,payments} (operator_id = token sub) yoki shu yo'llarga MARKET_OPERATOR'ni faqat o'z operator_id'si bilan qo'shish. Maydonlar mavjud: balance → { earned, paid, balance }; earnings → { rows: [order_id, amount, commission_type, commission_value, order_total_price, createdAt], total, limit, offset }; payments → { rows: [amount, note, createdAt], total }. «82 ta sotilgan buyurtmadan» = earnings.total, «Oxirgisi: …» = payments.rows[0].createdAt (alohida maydon emas). Sahifalash — limit/offset. Atamalar barcha breakpointda bir xil: Qoldiq · Daromad · To'langan (ru: Остаток · Доход · Выплачено; en: Balance · Earned · Paid). Daromad summasi neytral matn, ishora «+» bilan (yashil emas). earnings-no-commission — commission_type null: ogohlantirish «Komissiya belgilanmagan — daromad yozilmaydi», bo'sh holatlar «Hali to'lov yo'q», «Hali daromad yo'q»."
     },
     {
       "path": "/financial-balance",
@@ -955,9 +1033,14 @@
         "admin": ["products-list", "products-market-select-dialog", "products-edit-dialog", "products-delete-dialog"],
         "manager": ["products-list", "products-market-select-dialog", "products-edit-dialog", "products-delete-dialog"],
         "registrator": ["products-list", "products-market-select-dialog", "products-edit-dialog", "products-delete-dialog"],
-        "market": ["products-list", "products-edit-dialog", "products-delete-dialog"]
+        "market": ["products-list"],
+        "market_operator": ["products-list", "products-unassigned"]
       },
-      "note": "Market rolida GET product/my-products (search/page/limit), xodimda GET product + market filtri (URL market_id). Ro'yxat so'rovlari entities/product hook'lari (keepPreviousData, silentError)."
+      "roleNotes": {
+        "market": "Faqat ko'rish (ega qarori 2026-10-15): yaratish, tahrirlash, o'chirish va «Amallar» ustuni yo'q.",
+        "market_operator": "Faqat ko'rish (ega qarori 2026-10-15): tahrirlash, o'chirish, yaratish yo'q, garchi backend POST product va PATCH product/my/:id ni MARKET_OPERATOR'ga ochsa ham. Ma'lumot — GET product/my-products. Market biriktirilmagan bo'lsa — products-unassigned."
+      },
+      "note": "Market rolida GET product/my-products (search/page/limit), xodimda GET product + market filtri (URL market_id). Ro'yxat so'rovlari entities/product hook'lari (keepPreviousData, silentError). Maket taklifi (2026-10-19): ro'yxatda Narx, Og'irlik, O'lcham, Hisob vazni ustunlari; planshetda market nomi mahsulot nomi ostida. «Taklif · backend kerak» belgisi va uning izoh qatori — faqat maket annotatsiyasi, kodga ko'chirilmaydi."
     },
     {
       "path": "/products/create-product/:id",
@@ -970,13 +1053,15 @@
         "src/pages/products/ui/useDeleteProductConfirm.tsx"
       ],
       "views": {
-        "superadmin": ["products-create"],
-        "admin": ["products-create"],
-        "manager": ["products-create"],
-        "registrator": ["products-create"],
-        "market": ["products-create"]
+        "superadmin": ["products-create", "products-create-errors"],
+        "admin": ["products-create", "products-create-errors"],
+        "manager": ["products-create", "products-create-errors"],
+        "registrator": ["products-create", "products-create-errors"]
       },
-      "note": "O'ngdagi «Market mahsulotlari» ro'yxati bitta so'rovda (limit 500 — PRODUCT_LIST_MAX_LIMIT); qalam — forma tahrir rejimi; nofaol market — yaratish bloklanadi."
+      "note": "O'ngdagi «Market mahsulotlari» ro'yxati bitta so'rovda (limit 500 — PRODUCT_LIST_MAX_LIMIT); qalam — forma tahrir rejimi; nofaol market — yaratish bloklanadi. Maket taklifi (2026-10-19): og'irlik (kg), U × K × B (sm), «Hajmga qarab hisoblash», jonli «Hajmli vazn» va «Hisob vazni», «Narx». products-create-errors — «Saqlash» bosilgandan keyingi holat; tahrirlash oynasi (products-edit-dialog) xatolari shu bilan bir xil (maydon ostida qizil matn, yuqorida xulosa). «Taklif · backend kerak» belgisi kodga ko'chirilmaydi.",
+      "roleNotes": {
+        "market": "Yaratish yo'q — faqat ko'rish (ega qarori 2026-10-15)."
+      }
     },
     {
       "path": "/all-users",
@@ -990,11 +1075,11 @@
         "src/features/user/update-user/ui/UpdateUserModal.tsx"
       ],
       "views": {
-        "superadmin": ["users-list", "users-delete-dialog"],
-        "admin": ["users-list", "users-delete-dialog"],
+        "superadmin": ["users-list", "users-delete-dialog", "users-list-roles", "users-list-role-select", "users-list-telegram"],
+        "admin": ["users-list", "users-delete-dialog", "users-list-telegram"],
         "manager": ["users-list"]
       },
-      "note": "Tablar, qidiruv va holat — URL'da (role, search, status); menejerda amallar yo'q, GET branches so'ralmaydi. Chizilmaganlar (backend ro'yxatda superadmin va mijozni bermaydi, spec §6): KPI «shundan {n} ta mijoz», segbar «Mijozlar», tablar «Superadminlar», «Mijozlar». Ega savoli Q8 sukuti: sarlavha izohi maketdagidek («… va mijozlar hisoblarini boshqarish»)."
+      "note": "Tablar, qidiruv va holat — URL'da (role, search, status); menejerda amallar yo'q, GET branches so'ralmaydi. Chizilmaganlar (backend ro'yxatda superadmin va mijozni bermaydi, spec §6): KPI «shundan {n} ta mijoz», segbar «Mijozlar», tablar «Superadminlar», «Mijozlar». Ega savoli Q8 sukuti: sarlavha izohi maketdagidek («… va mijozlar hisoblarini boshqarish»). Ega tasdig'i 2026-10-19 (tg-link S4): «Telegram» ustuni va filtri (*-users-list-telegram) — backend telegram_linked parametri kerak (karta)."
     },
     {
       "path": "/all-users/create-user",
@@ -1005,11 +1090,11 @@
         "src/features/user/create-user/ui/CreateUserForm.tsx"
       ],
       "views": {
-        "superadmin": ["users-create"],
-        "admin": ["users-create"],
-        "manager": ["users-create-courier", "users-create-hybrid"]
+        "superadmin": ["users-create", "users-create-courier-district", "users-create-logist"],
+        "admin": ["users-create", "users-create-logist"],
+        "manager": ["users-create-courier", "users-create-hybrid", "users-create-courier-district"]
       },
-      "note": "Menejer: oddiy filialda — kuryer; HYBRID filialda — rol tanlash (kuryer yoki registrator)."
+      "note": "Menejer: oddiy filialda — kuryer; HYBRID filialda — rol tanlash (kuryer yoki registrator). «Logist» rol kartasi (superadmin, admin; users-create-logist; kodda hali yo'q): POST /logists (SUPERADMIN | ADMIN) — ism, telefon, parol, maosh, to'lov kuni; filial yo'q. Muvaffaqiyat → notify.success «Logist yaratildi» va /regions/logist-assignment?logist=<id> (yangi logist tanlangan). 409 «Bu telefon raqam allaqachon mavjud» — telefon maydoni ostida, forma saqlanib qoladi."
     },
     {
       "path": "/all-users/:id",
@@ -1025,11 +1110,11 @@
         "src/features/courier-transfer-branch/ui/TransferCourierModal.tsx"
       ],
       "views": {
-        "superadmin": ["users-detail", "users-edit-dialog", "users-courier-transfer-dialog"],
-        "admin": ["users-detail", "users-edit-dialog", "users-transfer-courier-dialog"],
+        "superadmin": ["users-detail", "users-edit-dialog", "users-courier-transfer-dialog", "users-edit-role", "users-role-confirm-dialog", "users-role-confirm-logist", "users-edit-role-error", "users-edit-role-branch", "users-edit-courier-district", "users-edit-courier-district-phone", "users-edit-market-ai", "users-edit-market-ai-phone", "users-detail-telegram", "users-detail-telegram-group-dialog", "users-detail-telegram-group-expired-dialog"],
+        "admin": ["users-detail", "users-edit-dialog", "users-transfer-courier-dialog", "users-detail-telegram", "users-detail-telegram-group-dialog", "users-detail-telegram-group-expired-dialog"],
         "manager": ["users-detail", "users-edit-dialog"]
       },
-      "note": "Yangi v2 UserDetailView (eski UserDetailWidget G2 da o'chirildi — iste'molchisi qolmadi). «Faoliyat» (Taklif) chizilmaydi. Ega savoli Q9 sukuti: menejer xodimidagi «Oylik maosh» kartasi (to'plangan / kun qoldi) chizilmaydi — faqat «Profil ma'lumotlari»dagi maosh va to'lov kuni. Mijoz (customer) — maket yo'q, eng yaqini superadmin-users-detail."
+      "note": "Yangi v2 UserDetailView (eski UserDetailWidget G2 da o'chirildi — iste'molchisi qolmadi). «Faoliyat» (Taklif) chizilmaydi. Ega savoli Q9 sukuti: menejer xodimidagi «Oylik maosh» kartasi (to'plangan / kun qoldi) chizilmaydi — faqat «Profil ma'lumotlari»dagi maosh va to'lov kuni. Mijoz (customer) — maket yo'q, eng yaqini superadmin-users-detail. Ega tasdig'i 2026-10-19 (tg-link): market tafsilotida «Telegram guruhi» kartasi — har xabar turi qatorida to'g'ridan-to'g'ri «Ulash» (S5), bir martalik havola + QR oynasi, muddati tugasa — qayta yaratish (*-users-detail-telegram-group-dialog / -expired-dialog); admin ham ulaydi (S2); «Guruhda mijoz ismi va telefoni» kaliti shu kartaga ko'chadi (S3)."
     },
     {
       "path": "/regions",
@@ -1055,7 +1140,11 @@
         "admin": ["regions-map", "regions-region-detail-dialog"],
         "manager": ["regions-scoped"],
         "courier": ["regions-scoped"],
+        "logist": ["regions-detail", "couriers-list"],
         "tizim": ["charts"]
+      },
+      "roleNotes": {
+        "logist": "Logist (kodda hali yo'q): menyu ildizi — orqaga havolasiz. Tepada o'z viloyatlari tanlovi (desktop seg, telefonda Select) — ro'yxat stats/all dan logist_id === me.id bo'yicha. Viloyat — GET region/stats/:id (logistga 403 bermaydi): tumanlar va kuryerlar kesimi. Tanlangan viloyatning logist_id ≠ me.id bo'lsa (boshqa logistga o'tkazilgan) — EmptyState «Bu viloyat endi sizga biriktirilmagan». Xato — ErrorState + «Qayta urinish». Kuryerlar ro'yxati (couriers-list, LG-S1) — TAKLIF: yangi route (masalan /couriers, menyu «Kuryerlar»), kodda yo'q; route qo'shilgach shu yerdan ko'chiriladi. Moliyaviy ustunlar («Tushum») olib tashlandi; tanlangan tuman panelida «Tuman buyurtmalari» → /orders."
       },
       "note": "Viloyat oynasi — umumiy RegionDetailDialog (widgets/region-detail, lazy; bosh sahifa kartogrammasi ham shu). Menejer va kuryer — GET region/my/district-stats (stats/all va orders so'rovlari yo'q). Ega savollari sukuti: Q11 xarita — Highcharts lazy, v2 tokenlar; Q12 scoped sarlavhalarda filial / «sizga tegishli» da'vosi yo'q («{viloyat} buyurtmalari · …» — backend butun viloyat raqamlarini beradi). Chizilmagan: oynadagi «Kunlik buyurtmalar» (Taklif), scoped filial/kuryer kesimi (API yo'q)."
     },
@@ -1068,16 +1157,17 @@
         "src/pages/region/ui/DistrictBoard.tsx",
         "src/pages/region/model/boardModel.ts"
       ],
-      "roles": { "superadmin": "" },
+      "roles": { "superadmin": "", "admin": "" },
       "views": {
-        "superadmin": ["regions-districts"]
+        "superadmin": ["regions-districts", "regions-districts-delete-blocked", "regions-districts-merge-dialog", "regions-districts-merge-target", "regions-districts-merge-progress", "regions-districts-merge-result", "regions-districts-merge-error", "regions-districts-merge-error-unavailable", "regions-districts-merge-error-manual", "regions-districts-merge-unknown"],
+        "admin": ["regions-districts", "regions-districts-delete-blocked", "regions-districts-merge-dialog", "regions-districts-merge-target", "regions-districts-merge-progress", "regions-districts-merge-result", "regions-districts-merge-error", "regions-districts-merge-error-unavailable", "regions-districts-merge-error-manual", "regions-districts-merge-unknown"]
       },
-      "note": "Komponent ichida: superadmin bo'lmasa → /regions."
+      "note": "Ega qarori (2026-10-19): admin sahifada hamma amalni bajaradi — tuman qo'shish, tahrirlash, o'chirish, birlashtirish (backend POST/PATCH/DELETE district va POST district/:id/merge ga ADMIN ruxsat beradi; kodda superadmin guard'i olinadi — src/pages/region/pages/districts/index.tsx); admin kirishi — «Hududlar» sarlavhasidagi «Tumanlar» tugmasi. O'chirish 400 bersa (data.usage {orders, users, branches}) — «Tumanni o'chirib bo'lmaydi» oynasi; birlashtirish oynasi shu holatdan (va SATO sahifasidagi takroriy tumanlardan) ochiladi. Maqsad tuman — faqat shu viloyatdan (ega qarori). Birlashtirish so'rovi timeout'i ≥ 125 soniya (gateway 120 s; global API_TIMEOUT_MS emas). Natijadagi «Ko'chirildi» — faqat tirik yozuvlar (ega qarori; backend moved o'chirilganlarni ham sanaydi — tirik sonlar kerak). 409/503/chala qoldi — «Sabab» qatori details.reason kodi va sonlaridan (Taklif · backend kerak); backend matni faqat «Xabarni nusxalash» orqali. Faoliyat jurnali: uz «Tuman birlashtirildi» / «Tuman birlashtirish chala qoldi», ru «Район объединён» / «Объединение района не завершено», en «District merged» / «District merge incomplete» (muvaffaqiyatli birlashtirish uchun alohida district.merge amali — backend kerak)."
     },
     {
       "path": "/regions/sato-management",
       "section": "regions",
-      "title": "Tumanlarni o'tkazish (SATO)",
+      "title": "Tumanlar va SATO kodlari",
       "components": [
         "src/pages/region/pages/sato-management/index.tsx",
         "src/pages/region/ui/DistrictBoard.tsx",
@@ -1086,10 +1176,10 @@
       ],
       "roles": { "superadmin": "", "admin": "" },
       "views": {
-        "superadmin": ["regions-sato-management"],
-        "admin": ["regions-sato-management"]
+        "superadmin": ["regions-sato-management", "regions-sato-codes", "regions-sato-codes-not-found", "regions-sato-codes-apply-dialog", "regions-sato-codes-edit", "regions-sato-codes-duplicates", "regions-sato-codes-merge-dialog", "regions-sato-codes-missing", "regions-sato-codes-add-dialog"],
+        "admin": ["regions-sato-management", "regions-sato-codes", "regions-sato-codes-edit"]
       },
-      "note": "Komponent ichida: superadmin/admin bo'lmasa → /regions. Telefonda sudrash o'rniga ⇆ — MoveDistrictDialog (maket yo'q — eng yaqini superadmin-regions-sato-management)."
+      "note": "Komponent ichida: superadmin/admin bo'lmasa → /regions. Telefonda sudrash o'rniga ⇆ — MoveDistrictDialog (maket yo'q — eng yaqini superadmin-regions-sato-management). TAKLIF (2xlYlBst): sahifada bitta sarlavha «Tumanlar va SATO kodlari» va ikki tab — «Tumanlarni o'tkazish» (sukut) va «SATO kodlari» (?tab=sato); tab almashsa faqat amallar joyi o'zgaradi (o'tkazishda — sonlar, SATO'da superadminga «SATO kodlarini yozish N»). Superadmin: GET district/sato-match/preview (faqat superadmin) GET /district bilan dbId=id bo'yicha birlashtiriladi — nom, viloyat va sato_code /district dan olinadi, dbName satri parse qilinmaydi. KPI = preview.stats (totalDb, totalSato, matchedCount, unmatchedCount, duplicatesCount — yozuvlar soni, missingCount); «185 tasida kod bor» — matched dagi satoName '(allaqachon mavjud)'. Tablar (ega S2): «Topildi» = matched (yangi kod, hali saqlanmagan; sukut tab) va «Topilmadi» = unmatched (qo'lda kod) — ikki alohida tab; «Kodi bor» = matched '(allaqachon mavjud)' (takroriylar kirmaydi); «Takroriy nomlar» = duplicates[] (yozuvlar /district dan, sato_code ham); «Bazada yo'q» = missingSatoEntries. Qidiruv va viloyat filtri, sahifalash — klientda. «SATO kodlarini yozish N» (N = yangi kodli matched): N=0 bo'lsa tugma o'chiq; tasdiq oynasi → POST district/sato-match/apply (server qayta moslaydi; xabar appliedCount bilan; activity log logistics.sato_bulk_apply), bosilgach tugma «Yozilmoqda…», oyna yopilmaydi. Qo'lda kod: PATCH district/sato/:id {sato_code} (admin + superadmin); klientda faqat raqam (DTO ^\\d+$); 409 «District sato_code already exists» kelsa, GET district/sato/:code bilan egasi olinib «Bu kod band: <tuman>, <viloyat>» ko'rsatiladi. «Tuman qo'shish» (Bazada yo'q) — POST /district {name, region_id, sato_code} oynasi qatordan to'ldiriladi (viloyat SATO nomi bo'yicha region_id ga moslanadi). Takroriylar (ega S4): «Takroriy nomlar» tabida bitta viloyatdagi guruh qatorida «Birlashtirish» — districts-merge to'plamidagi umumiy «Tumanni birlashtirish» oynasi (POST district/:id/merge {target_district_id}); sukut: kodsiz yozuv o'chadi, kodli yozuv maqsad (kod saqlanadi), maqsad faqat shu viloyatdan; jarayon/natija/xato holatlari — regions-districts-merge-* maketlari. Turli viloyatdagi bir xil nomlar (preview duplicates viloyatsiz guruhlaydi) birlashtirilmaydi — «Turli viloyatda — birlashtirilmaydi», har biriga kod qo'lda. «Bazada yo'q» va «Takroriy nomlar» faqat superadmin (ega S3). Admin: preview/apply yo'q — ro'yxat GET /district dan, tablar «Kodsiz» va «Kodi bor» (takroriylar ham kiradi), faqat qo'lda kod; holatlar umumiy komponentdan (admin-regions-sato-codes «Boshqa holatlar»)."
     },
     {
       "path": "/regions/logist-assignment",
@@ -1100,10 +1190,10 @@
       ],
       "roles": { "superadmin": "", "admin": "" },
       "views": {
-        "superadmin": ["regions-logist-assignment"],
-        "admin": ["regions-logist-assignment"]
+        "superadmin": ["regions-logist-assignment", "regions-logist-assignment-confirm-dialog", "regions-logist-assignment-empty"],
+        "admin": ["regions-logist-assignment", "regions-logist-assignment-confirm-dialog", "regions-logist-assignment-empty"]
       },
-      "note": "Komponent ichida: superadmin/admin bo'lmasa → /regions. Ega savoli Q13 sukuti: maketdagi bo'sh holat «Bo'lim hali ishga tushmagan» + «Hududlarga qaytish» (backend'da GET /logists, PATCH region/{id}/logist bor — ishlaydigan sahifa uchun maket kerak)."
+      "note": "Komponent ichida: superadmin/admin bo'lmasa → /regions. Ma'lumot: chapda GET /logists (ism, telefon, faollik); viloyatlar — GET /region (har qatorda logist_id; logistdagi viloyatlar soni shundan). Saqlash — POST /region/logist/bulk { logist_id, region_ids } (region_ids dagilar unga o'tadi, ro'yxatda yo'q eski viloyatlaridan u olinadi). «Saqlash» o'zgarish bo'lmaguncha o'chiq. Tasdiq qoidasi: faqat qo'shish bo'lsa — darhol saqlanadi + notify.success «Saqlandi»; olib tashlash yoki boshqa logistdan o'tkazish bo'lsa — avval tasdiq oynasi (…-confirm-dialog, o'zgarishlar ro'yxati bilan). Saqlanmagan o'zgarish bor paytda boshqa logist tanlansa — useConfirm «O'zgarishlar saqlanmaydi» (Qolish / O'zgarishsiz o'tish). Nofaol logist tanlansa — ogohlantirish, viloyat kartalari va «Saqlash» o'chiq (server rad etishi — zaxira). Telefon: logist — Select (pastki varaqa, qidiruv), filtr seg 44px, o'zgarish bo'lsa pastki menyu ustida yopishqoq panel («N ta o'zgarish» + Bekor qilish / Saqlash). ?logist=<id> — shu logist tanlangan holda ochiladi. Logist yo'q — EmptyState «Logist yo'q» + «Logist yaratish» (…-empty). Eski «Bo'lim hali ishga tushmagan» bo'sh holati olib tashlanadi."
     },
     {
       "path": "/branches",
@@ -1170,14 +1260,14 @@
         "src/pages/integrations/ui/Switch.tsx"
       ],
       "views": {
-        "superadmin": ["integrations-partners-console", "integrations-external-console", "integrations-marketplace-console", "integrations-panel-settings", "integrations-panel-shipments", "integrations-panel-events", "integrations-panel-settlement", "integrations-settlement-pay-dialog", "integrations-panel-control", "integrations-panel-security", "integrations-rotate-key-dialog", "integrations-new-partner-dialog"],
-        "admin": ["integrations-partners", "integrations-external", "integrations-marketplace", "integrations-conn-settings", "integrations-conn-shipments", "integrations-conn-log", "integrations-conn-settlement", "integrations-settlement-pay-dialog", "integrations-conn-control", "integrations-conn-security", "integrations-new-partner-dialog"]
+        "superadmin": ["integrations-partners-console", "integrations-external-console", "integrations-marketplace-console", "integrations-panel-settings", "integrations-panel-shipments", "integrations-panel-events", "integrations-panel-settlement", "integrations-settlement-pay-dialog", "integrations-settlement-pay-overpay-dialog", "integrations-settlement-pay-result-dialog", "integrations-settlement-cancel-dialog", "integrations-panel-control", "integrations-panel-security", "integrations-rotate-key-dialog", "integrations-new-partner-dialog"],
+        "admin": ["integrations-partners", "integrations-external", "integrations-marketplace", "integrations-conn-settings", "integrations-conn-shipments", "integrations-conn-log", "integrations-conn-settlement", "integrations-settlement-pay-dialog", "integrations-settlement-pay-overpay-dialog", "integrations-settlement-pay-result-dialog", "integrations-settlement-cancel-dialog", "integrations-conn-control", "integrations-conn-security", "integrations-new-partner-dialog"]
       },
       "roleNotes": {
         "manager": "Menyuda yo'q (faqat URL) — admin-integrations-* maketlariga qarang.",
         "registrator": "Menyuda yo'q (faqat URL) — admin-integrations-* maketlariga qarang."
       },
-      "note": "?scope=partner|external|marketplace → *-console / admin-integrations-{partners,external,marketplace}; ?t=settings|shipments|log|settlement|control|security → panel maketlari (log = «Hodisalar»); ?t=overview (sukut) — konsol maketining o'zi. Dizayn v2 (G2): eski ui.ts / OverviewPage / ConnectionSubNav / FilterPills o'chirildi; scope tablari konsol kartasi ichida (D2, layout index.tsx faqat Outlet). KPI «kechaga nisbatan» — qo'shimcha GET integrations/metrics?hours=48 (kecha = 48 − 24 soat; ikkinchi so'rov yiqilsa meta qatori yashirinadi; ega savoli 8 — sukut: ha). Kalitni yangilash, to'xtatish va hisob-kitob to'lovi — tasdiq oynasi orqali. Chizilmagan (Taklif / API yo'q, spec §5): KPI sparklinelari, «Hodisalar · oxirgi 7 kun», «Soatlar bo'yicha», «O'rtacha javob vaqti» trendi (avg_ms — bitta son), «Qarz harakati · 30 kun». Sahifadagi xato holatlari global xabarni takrorlamaydi (meta.silentError)."
+      "note": "?scope=partner|external|marketplace → *-console / admin-integrations-{partners,external,marketplace}; ?t=settings|shipments|log|settlement|control|security → panel maketlari (log = «Hodisalar»); ?t=overview (sukut) — konsol maketining o'zi. Dizayn v2 (G2): eski ui.ts / OverviewPage / ConnectionSubNav / FilterPills o'chirildi; scope tablari konsol kartasi ichida (D2, layout index.tsx faqat Outlet). KPI «kechaga nisbatan» — qo'shimcha GET integrations/metrics?hours=48 (kecha = 48 − 24 soat; ikkinchi so'rov yiqilsa meta qatori yashirinadi; ega savoli 8 — sukut: ha). Kalitni yangilash, to'xtatish va hisob-kitob to'lovi — tasdiq oynasi orqali. Chizilmagan (Taklif / API yo'q, spec §5): KPI sparklinelari, «Hodisalar · oxirgi 7 kun», «Soatlar bo'yicha», «O'rtacha javob vaqti» trendi (avg_ms — bitta son), «Qarz harakati · 30 kun». Sahifadagi xato holatlari global xabarni takrorlamaydi (meta.silentError). Hisob-kitob (DxdZFdIk, utIffRFx): «To'lov olindi» MAIN kassaga kirim yozadi (N3yNa6rO) — eski «Bu ekran kassa emas» matni o'chirildi; javobda cashbox_posted (false → «Kassaga yozilmadi» + «Asosiy kassa tarixini tekshiring»). «Olingan to'lovlar» — GET integrations/:id/remittances (sana, amount, settled_count/settled_amount, unapplied_amount, advance_applied, reference, note, status, cashbox_posted, cancel_reason); bekor qilish — POST integrations/:id/remittances/:rid/cancel (reason), reverse_cashbox faqat eski yozuvda (cashbox_posted = null, aks holda 409). Bekor qilingan eski yozuvda (cashbox_posted = null) kassa holati saqlanmaydi → «Kassa: eski yozuv». «Kim kiritdi / bekor qildi» ismi — Taklif · backend kerak (javobda faqat created_by / cancelled_by id; created_by_name / cancelled_by_name so'raladi). Ortiqcha summa — sukut A: backend ortig'ini hamkor avansiga o'tkazadi (bloklash — faqat ega savoli). Panelda «barchasi» chipi ikkala guruhda «Barchasi» (integrations.filterAll i18n almashadi). To'lov raqamlari «№82» ko'rinishida."
     },
     {
       "path": "/integrations/new",
@@ -1287,9 +1377,13 @@
         "src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx"
       ],
       "views": {
-        "superadmin": ["notifications-telegram-groups", "notifications-create-dialog", "notifications-delete-dialog"]
+        "superadmin": ["notifications-telegram-groups", "notifications-row-menu", "notifications-row-menu-inactive", "notifications-connected", "notifications-empty", "notifications-loading", "notifications-error", "notifications-create-dialog", "notifications-create-link-dialog", "notifications-create-expired-dialog", "notifications-create-exists-dialog", "notifications-create-exists-inactive-dialog", "notifications-deactivate-dialog", "notifications-activate-dialog", "notifications-delete-dialog"],
+        "admin": ["notifications-telegram-groups", "notifications-row-menu", "notifications-row-menu-inactive", "notifications-connected", "notifications-empty", "notifications-loading", "notifications-error", "notifications-create-dialog", "notifications-create-link-dialog", "notifications-create-expired-dialog", "notifications-create-exists-dialog", "notifications-create-exists-inactive-dialog", "notifications-deactivate-dialog", "notifications-activate-dialog", "notifications-delete-dialog"]
       },
-      "note": "Dizayn v2 (G2): jadval + sahifalash (DataTable / Pagination; telefonda kartalar), «Holat» ustuni (Faol / Nofaol + «Bot guruhdan chiqarilgan — qayta ulang»), market nomlari GET /markets dan (qatorda faqat market_id), o'chirish — tasdiq oynasi (maket matni). dev birlashtirishi (ega qoidasi): qo'shish oynasi maketdagi qo'lda guruh ID formasi EMAS — bir martalik Telegram havolasi: market + xabar turi → POST /telegram/link-code {purpose: market_group} → QR, «Telegram'da ochish», qadamlar, muddat; oyna ochiqligida GET /notifications har 4 s, guruh paydo bo'lsa yopiladi («Guruh ulandi»); shu (market, tur) ulangan bo'lsa havola berilmaydi. Tahrirlash — qo'shish oynasi qolipida (D6, maket yo'q: NotificationEditModal `(maket yo'q) superadmin-notifications-create-dialog`). Ustun saralashi chizilmaydi (GET /notifications da sort yo'q). Matnlar — notificationGroups.json."
+      "note": "Dizayn v2 (G2): jadval + sahifalash (DataTable / Pagination; telefonda kartalar), «Holat» ustuni (Faol / Nofaol + «Bot guruhdan chiqarilgan — qayta ulang»), market nomlari GET /markets dan (qatorda faqat market_id), o'chirish — tasdiq oynasi (maket matni). dev birlashtirishi (ega qoidasi): qo'shish oynasi maketdagi qo'lda guruh ID formasi EMAS — bir martalik Telegram havolasi: market + xabar turi → POST /telegram/link-code {purpose: market_group} → QR, «Telegram'da ochish», qadamlar, muddat; oyna ochiqligida GET /notifications har 4 s, guruh paydo bo'lsa yopiladi («Guruh ulandi»); shu (market, tur) ulangan bo'lsa havola berilmaydi. Tahrirlash — qo'shish oynasi qolipida (D6, maket yo'q: NotificationEditModal `(maket yo'q) superadmin-notifications-create-dialog`). Ustun saralashi chizilmaydi (GET /notifications da sort yo'q). Matnlar — notificationGroups.json. Ega tasdig'i 2026-10-19 (notif-groups): NG-S1 — nofaol sababi «Holat» ustunida (backend inactive_reason); NG-S2 — /notifications adminga ochiladi (menyu «Bildirishnomalar», guard canViewNotifications — kodda hali faqat superadmin); NG-S3 — shu tur ulangan, lekin nofaol bo'lsa asosiy tugma «Faollashtirish» (tasdiq bilan, *-create-exists-inactive-dialog → *-activate-dialog); NG-S4 — «Tahrirlash» (qo'lda guruh ID, NotificationEditModal) olib tashlanadi, faqat bot havolasi (*-create-link-dialog, muddati tugasa *-create-expired-dialog). Qator menyusi — *-row-menu / *-row-menu-inactive; nofaol qilish / faollashtirish — tasdiq oynasi.",
+      "roleNotes": {
+        "admin": "NG-S2 (ega, 2026-10-19): superadmin bilan bir xil maket (superadmin fragmentlari); kodda admin hali kira olmaydi."
+      }
     },
     {
       "path": "/notifications/send",
@@ -1302,12 +1396,28 @@
         "src/widgets/notification-inbox/ui/NotificationInboxItem.tsx"
       ],
       "views": {
-        "superadmin": ["notifications-send", "notifications-send-confirm-dialog"]
+        "superadmin": ["notifications-send", "notifications-send-confirm-dialog", "notifications-send-audience", "notifications-send-schedule", "notifications-send-audience-sample-dialog", "notifications-send-audience-save-dialog", "notifications-send-confirm-scheduled-dialog", "notifications-campaign-cancel-dialog", "notifications-campaign-report-dialog", "notifications-send-states", "notifications-send-result", "notifications-send-unknown"],
+        "admin": ["notifications-send", "notifications-send-confirm-dialog", "notifications-send-result", "notifications-send-unknown"]
       },
       "roleNotes": {
         "admin": "Maket yo'q — superadmin-notifications-send ga qarang (kirish: /inbox sahifasidagi havola)."
       },
-      "note": "Dizayn v2 (G2): 4 rejim, kanallar, ko'rinish (NotificationInboxItem preview), yuborish — tasdiq oynasi (hammaga — danger), ikki marta yuborilmaydi. Ega savoli 10 — sukut: «← Bildirishnomalar» /inbox ga qaytaradi (kirish nuqtasi /inbox; admin /notifications ni ocholmaydi)."
+      "note": "Dizayn v2 (G2): 4 rejim, kanallar, ko'rinish (NotificationInboxItem preview), yuborish — tasdiq oynasi (hammaga — danger), ikki marta yuborilmaydi. Ega savoli 10 — sukut: «← Bildirishnomalar» /inbox ga qaytaradi (kirish nuqtasi /inbox; admin /notifications ni ocholmaydi). Ega tasdig'i 2026-10-19 (notif-send): yuborishdan keyin natija bloki (*-send-result: kanal bo'yicha yuborildi / navbatda / o'tkazib yuborildi / xato; «Yetkazilmaganlar» darhol — S1, qo'shimcha so'rov bilan); javob kelmasa (504) — *-send-unknown, «Qayta urinish» ayni client_request_id bilan (S5). Ranglar (S3): navbatda / yuborilmoqda — warning, o'tkazib yuborildi / provayder ulanmagan — neytral, xato — danger, yetkazildi — success. Xato matni faqat tushunarli o'zbekcha (S4). Sarlavhadagi «Yuborilganlar» havolasi → (taklif) /notifications/sent."
+    },
+    {
+      "path": "(taklif) /notifications/sent",
+      "entry": "«Xabar yuborish» sahifasi sarlavhasidagi «Yuborilganlar» havolasi (menyu bandi emas)",
+      "section": "notifications",
+      "title": "Yuborilganlar — qo'lda yuborilgan xabarlar va natija (yangi route, kodda yo'q)",
+      "components": [
+        "src/app/lib/routes.tsx"
+      ],
+      "roles": { "superadmin": "taklif — yangi route", "admin": "taklif — yangi route (canSendNotifications)" },
+      "views": {
+        "superadmin": ["notifications-sent", "notifications-sent-loading", "notifications-sent-empty", "notifications-sent-error", "notifications-sent-detail-dialog", "notifications-sent-detail-states"],
+        "admin": ["notifications-sent", "notifications-sent-loading", "notifications-sent-empty", "notifications-sent-error", "notifications-sent-detail-dialog", "notifications-sent-detail-states"]
+      },
+      "note": "Ega tasdig'i 2026-10-19 (notif-send): ro'yxat — sana, sarlavha, kim yubordi, «Kimga» (S2 — backend ro'yxat javobiga auditoriyani qo'shadi; hozir faqat tafsilotda), kanallar, natija; filtrlar «Natija» va «Kim yubordi». Ro'yxatdagi channel_status — saqlangan nusxa, tafsilot oynasidagi — jonli (Telegram yakuniy holati failed + tushunarli sabab). Holatlar: yuklanish, bo'sh, xato (QueryBoundary). Yo'l nomi taklif — kod yozilganda haqiqiy yo'l bilan almashtiriladi."
     },
     {
       "path": "/notifications/sms",
@@ -1324,7 +1434,7 @@
         "src/shared/ui/SmsMeter.tsx"
       ],
       "views": {
-        "superadmin": ["notifications-sms-campaign", "notifications-sms-campaign-confirm-dialog", "notifications-sms-templates", "notifications-sms-report", "notifications-sms-settings"]
+        "superadmin": ["notifications-sms-campaign", "notifications-sms-campaign-confirm-dialog", "notifications-sms-templates", "notifications-sms-report", "notifications-sms-settings", "notifications-sms-campaign-segment"]
       },
       "roleNotes": {
         "admin": "Maket yo'q — superadmin-notifications-sms-* ga qarang."
@@ -1358,7 +1468,7 @@
       "title": "Ops vositalari markazi (tablar: ?tab=finance|integrations|investors|logistics|branches|identity|system|auth; dizayn v2)",
       "components": ["src/pages/ops/index.tsx", "src/pages/ops/tabs.ts", "src/pages/ops/ui/OpsToolPage.tsx"],
       "views": {
-        "superadmin": ["ops-finance-operators", "ops-integrations", "ops-investors", "ops-logistics", "ops-branches", "ops-identity", "ops-system", "ops-auth-diagnostics"]
+        "superadmin": ["ops-finance-operators", "ops-integrations", "ops-investors", "ops-logistics", "ops-logistics-approve-dialog", "ops-logistics-approve-result", "ops-branches", "ops-identity", "ops-system", "ops-system-loading", "ops-system-error", "ops-system-partial", "ops-system-down", "ops-system-critical", "ops-system-ai-config", "ops-system-ai-cap", "ops-auth-diagnostics"]
       },
       "note": "Har tab quyidagi to'g'ridan-to'g'ri sahifani `embedded` rejimda (sarlavhasiz panel) chizadi (/finance-operators … /logs). Desktopda 8 tab, telefonda tablar → Select (D8); auth tabi yorlig'i «Kirish diagnostikasi». Ega savoli 1 — sukut: to'g'ridan-to'g'ri yo'llar redirect emas, o'sha panel + «← Ops vositalari» (/ops?tab=<k>)."
     },
@@ -1421,9 +1531,9 @@
       "title": "Ops — Logistika (qaytarish so'rovlari)",
       "components": ["src/pages/logistics-ops/index.tsx", "src/pages/logistics-ops/lib/returnRequestRows.ts"],
       "views": {
-        "superadmin": ["ops-logistics"]
+        "superadmin": ["ops-logistics", "ops-logistics-approve-dialog", "ops-logistics-approve-result"]
       },
-      "note": "Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Tanlangan qaytarish so'rovlarini tasdiqlash — POST post/return-requests/approve { order_ids }."
+      "note": "Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Tanlangan qaytarish so'rovlarini tasdiqlash — POST post/return-requests/approve { order_ids }. Ega tasdig'i 2026-10-19 (ops-system): tasdiq oynasi (*-ops-logistics-approve-dialog), natija — toast «N ta tasdiqlandi, M tasi o'tkazib yuborildi» (S5) va qisman natija ro'yxati (*-approve-result)."
     },
     {
       "path": "/branch-ops",
@@ -1455,9 +1565,9 @@
         "src/pages/system-ops/lib/systemOps.ts"
       ],
       "views": {
-        "superadmin": ["ops-system"]
+        "superadmin": ["ops-system", "ops-system-loading", "ops-system-error", "ops-system-partial", "ops-system-down", "ops-system-critical", "ops-system-ai-config", "ops-system-ai-cap"]
       },
-      "note": "Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). «Kuryer samaradorligi» (D3, ega savoli 5 — sukut): API foiz bermaydi (analytics courierEfficiency = kuryerga o'rtacha buyurtma soni) — «O'rtacha N ta buyurtma», maketdagi halqa chizilmaydi. Yetkazish bo'lmaganda backend onTimeRate = 0 yuboradi (0% ko'rinadi)."
+      "note": "Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). «Kuryer samaradorligi» (D3, ega savoli 5 — sukut): API foiz bermaydi (analytics courierEfficiency = kuryerga o'rtacha buyurtma soni) — «O'rtacha N ta buyurtma», maketdagi halqa chizilmaydi. Yetkazish bo'lmaganda backend onTimeRate = 0 yuboradi (0% ko'rinadi). Ega tasdig'i 2026-10-19 (ops-system): asosiy xizmatlar Identity, Order, Finance, Logistics — biri ishlamasa «Ishlamayapti» (S1, *-ops-system-critical / -down); holatlar: yuklanish, xato, qisman (zaif AI modeli), AI limiti tugadi (*-ai-cap; limitni oshirish faqat serverda, Ops'da tugma yo'q — S2), kalit yo'q / noto'g'ri — «AI o'chiq» va «AI bilan» tabi yashiriladi (S3, *-ai-config). Dollar summalari formatMoney + valyuta («12,40 $», S4)."
     },
     {
       "path": "/logs",
@@ -1471,11 +1581,15 @@
     },
     {
       "path": "/market-operators",
-      "section": "system",
-      "title": "Market operatorlari — YOPIQ sahifa",
+      "section": "users",
+      "title": "Operatorlar — market o'z operatorlarini boshqaradi (ega qarori 2026-10-19; kodda hozir YOPIQ)",
+      "entry": "Market menyusi «Operatorlar» (yangi band, roles.json market.menu → operators); telefonda — «Menyu» varag'i",
       "components": ["src/pages/market-operators/index.tsx"],
-      "views": {},
-      "note": "canViewMarketOperators = () => false (fix3 RBAC-18): hech kim ocholmaydi, maket yo'q. Backendda market operatorlari yo'li paydo bo'lsa — avval maket chiziladi."
+      "roles": { "market": "taklif — ega qarori 2026-10-19; kodda hozir canViewMarketOperators = () => false, guard market'ga ochilishi kerak" },
+      "views": {
+        "market": ["operators-list", "operators-empty", "operators-create-dialog", "operators-commission-dialog", "operators-commission-fixed-dialog", "operators-delete-dialog", "operators-deactivate-dialog", "operators-activate-dialog"]
+      },
+      "note": "Ega qarori 2026-10-19: market operatorlarini MARKET o'zi boshqaradi (superadmin «Ops» emas). Backend (origin/main, market-operator-gateway.controller.ts, hammasi @Roles(MARKET), faqat o'z operatorlari): GET market-operators (search, status, page, limit → { items, meta: { page, limit, total, totalPages } }; maydonlar: id, name, phone_number, status, commission_type, commission_value, createdAt), POST market-operators (name, phone_number, password — kamida 4 belgi), PATCH market-operators/:id/commission (commission_type percent | fixed, commission_value; PERCENT 0..100, FIXED 0..1 000 000 so'm, ko'pi bilan 2 kasr; ikkalasi null — komissiyani olib tashlash), DELETE market-operators/:id (soft delete). Ro'yxat: DataTable + Pagination (Card footer) — total > limit bo'lsa; pastki satr faqat «N ta operator» (meta.total); «N tasi faol» soni backendda yo'q, chizilmadi. «Nofaol» holat — user.status. Ega qarori 2026-10-19 (MO-S4): market o'z operatorini nofaol / faol qiladi — qator menyusida «Nofaol qilish» (faol operatorda) yoki «Faollashtirish» (nofaol operatorda), useConfirm tasdig'i bilan: operators-deactivate-dialog (tone danger, «Nofaol qilish») va operators-activate-dialog (oddiy, «Faollashtirish»). TAKLIF · BACKEND KERAK: market uchun endpoint yo'q — PATCH users/:id/status faqat @Roles(SUPERADMIN, ADMIN); kerak: PATCH market-operators/:id/status { status: active | inactive } @Roles(MARKET), faqat o'z operatori (find_by_market kabi tekshiruv), nofaol qilinganda operator sessiyalari bekor bo'lsin. Ega qarori (MO-S5): «Operator qo'shish» oynasida ixtiyoriy «Komissiya» (Foiz | Qat'iy summa + qiymat; bo'sh — belgilanmagan). Hozirgi backend bilan ikki so'rov: POST market-operators (CreateMarketOperatorDto: name, phone_number, password — komissiya maydoni yo'q, javobda operator id) → PATCH market-operators/:id/commission; ikkinchisi yiqilsa operator komissiyasiz qoladi va notify.error «Operator qo'shildi, komissiya saqlanmadi» + «Belgilash». Tavsiya (backend): CreateMarketOperatorDto ga ixtiyoriy commission_type, commission_value (UpdateMarketOperatorCommissionDto chegaralari bilan) — bitta atomar so'rov. O'chirilgan operator ro'yxatda ko'rinmaydi. Ogohlantirish «Komissiya belgilanmagan — daromad yozilmaydi»: 1 ta operator bo'lsa — ismi bilan va «Belgilash» shu operatorning Komissiya oynasini ochadi; 2+ bo'lsa — «N ta operatorda komissiya belgilanmagan» + «Faqat ularni ko'rsatish» (backendda komissiya filtri yo'q → mijoz tomonda, joriy sahifa ichida). Komissiya oynasi: operators-commission-dialog — Foiz (belgilanmagan operator), operators-commission-fixed-dialog — Qat'iy summa, so'm qo'shimchasi, limit izohi va xato holati (1 000 000 dan oshdi), komissiyasi bor operatorda «Komissiyani olib tashlash» (PATCH ikkalasi null) — useConfirm tasdig'i bilan: «Komissiyani olib tashlaysizmi?», tavsif «Keyingi sotuvlari uchun daromad yozilmaydi. Avvalgi daromadlar saqlanadi.», tugma «Olib tashlash», tone danger. «Yangi stavka faqat keyingi sotuvlarga» — backend tasdiqlaydi: finance recordOperatorEarning sotuv paytida stavkani OperatorEarning qatoriga yozib qo'yadi (snapshot); faqat SOLD↔PARTLY_PAID qayta sotuvida joriy stavka bilan qayta hisoblanadi. O'chirish — ConfirmDialog (alertdialog), tone danger. src/pages/market-operators/index.tsx hozirgi (eski, yopiq) sahifa — v2 da qayta yoziladi."
     },
     {
       "path": "/profile",
@@ -1494,9 +1608,10 @@
         "src/widgets/user-detail/ui/MarketTelegramGroupPiiCard.tsx"
       ],
       "views": {
-        "common": ["profile", "profile-password-dialog"]
+        "market": ["profile", "profile-telegram-status", "profile-telegram-group-dialog", "profile-telegram-group-expired-dialog"],
+        "common": ["profile", "profile-password-dialog", "profile-telegram", "profile-telegram-link-dialog", "profile-telegram-command-dialog", "profile-telegram-expired-dialog", "profile-telegram-linked", "profile-telegram-unlink-dialog"]
       },
-      "note": "Dizayn v2 (G2): ma'lumot kartasi (GET /auth/my-profile), maosh bloki faqat salary > 0; parol — alohida oyna (≥ 4 belgi, mos kelish, saqlangach chiqish); profilni tahrirlash — alohida oyna (Ism, Telefon; D7, maket yo'q: EditProfileDialog `(maket yo'q) common-profile-password-dialog`). UpdateUserModal profilda ishlatilmaydi. «Login» — username bo'lsa. dev birlashtirishi: «Xavfsizlik» ostida yana bir qator — o'z Telegram'ini ulash/uzish (TelegramLinkCard, mijoz/investordan boshqa rollar; POST users/me/telegram/link-code, oyna ochiqligida profil har 3 s) va market uchun «Guruhda mijoz ismi va telefoni» (MarketTelegramGroupPiiCard, PATCH markets/:id/telegram-group-pii) — maket yo'q, eng yaqini «Xavfsizlik» kartasi (`(maket yo'q) common-profile`)."
+      "note": "Dizayn v2 (G2): ma'lumot kartasi (GET /auth/my-profile), maosh bloki faqat salary > 0; parol — alohida oyna (≥ 4 belgi, mos kelish, saqlangach chiqish); profilni tahrirlash — alohida oyna (Ism, Telefon; D7, maket yo'q: EditProfileDialog `(maket yo'q) common-profile-password-dialog`). UpdateUserModal profilda ishlatilmaydi. «Login» — username bo'lsa. dev birlashtirishi: «Xavfsizlik» ostida yana bir qator — o'z Telegram'ini ulash/uzish (TelegramLinkCard, mijoz/investordan boshqa rollar; POST users/me/telegram/link-code, oyna ochiqligida profil har 3 s) va market uchun «Guruhda mijoz ismi va telefoni» (MarketTelegramGroupPiiCard, PATCH markets/:id/telegram-group-pii) — maket yo'q, eng yaqini «Xavfsizlik» kartasi (`(maket yo'q) common-profile`). Ega tasdig'i 2026-10-19 (tg-link): o'z Telegram'ini ulash — ulanmagan / ulangan holatlari, havola + QR oynasi (muddat bilan), bot nomi yo'q bo'lsa buyruq oynasi, havola eskirsa — qayta yaratish, uzish — tasdiq oynasi (common-profile-telegram*). Market rolida /profile maketi — market-profile (common-profile o'rniga): «Telegram guruhlari» holati (S1 — backendga endpoint so'raladi), har xabar turi qatorida «Ulash» (S5), «Guruhda mijoz ismi va telefoni» kaliti «Telegram guruhi» kartasida (S3)."
     },
     {
       "path": "/settings",
@@ -1514,9 +1629,9 @@
         "src/features/push-notifications/ui/PushPermissionButton.tsx"
       ],
       "views": {
-        "common": ["settings-appearance", "settings-dashboard", "settings-interface", "settings-scanner", "settings-notifications"]
+        "common": ["settings-appearance", "settings-dashboard", "settings-interface", "settings-scanner", "settings-notifications", "settings-notifications-pwa"]
       },
-      "note": "Dizayn v2 (G2): 5 tab (desktopda chap navigatsiya, telefonda gorizontal), komponent holatida — URL'da emas; «Saqlandi» belgisi, mavzu/til darhol. «Skaner» alohida tab (D5): ovozlar «Interfeys» dan ko'chdi; «Kamera» kartasi — skaner 4-bosqichi (common-settings-scanner): «Kamerani sinash» → /scan (marketda yo'q), asosiy kamera, «Chiroq — avtomatik» (ega qarori: yorug'lik kam bo'lsa yoqish taklifi, o'zi yoqilmaydi — izoh matni shunga moslangan), «Uzluksiz skanerlash» (o'chiq — oqim kamerasi bitta koddan keyin yopiladi), «Ovoz», «Tebranish», «Ramka o'lchami» (ramka va skan hududi); hisobga saqlanadi (entities/settings scanner.camera / scanner.feedback, backend jsonb ochiq) + localStorage ko'zgusi — maketdagi «shu qurilmada saqlanadi» o'rniga «hisobingizda saqlanadi». Tab izohi maketdagidek «Kamera, ovoz va tebranish». Ega savoli 3 — sukut: «Bildirishnomalar» tabida maketdagi qurilma blokidan keyin kodda bor kanallar / kategoriyalar / reklama / sokin soatlar maket uslubidagi kartalarda saqlanadi. «Bosh sahifa bloklari» tartibi bosh sahifadagi (G1) tartib bilan bir xil; «Buyurtmalar vaqti» — Taklif, chizilmaydi."
+      "note": "Dizayn v2 (G2): 5 tab (desktopda chap navigatsiya, telefonda gorizontal), komponent holatida — URL'da emas; «Saqlandi» belgisi, mavzu/til darhol. «Skaner» alohida tab (D5): ovozlar «Interfeys» dan ko'chdi; «Kamera» kartasi — skaner 4-bosqichi (common-settings-scanner): «Kamerani sinash» → /scan (marketda yo'q), asosiy kamera, «Chiroq — avtomatik» (ega qarori: yorug'lik kam bo'lsa yoqish taklifi, o'zi yoqilmaydi — izoh matni shunga moslangan), «Uzluksiz skanerlash» (o'chiq — oqim kamerasi bitta koddan keyin yopiladi), «Ovoz», «Tebranish», «Ramka o'lchami» (ramka va skan hududi); hisobga saqlanadi (entities/settings scanner.camera / scanner.feedback, backend jsonb ochiq) + localStorage ko'zgusi — maketdagi «shu qurilmada saqlanadi» o'rniga «hisobingizda saqlanadi». Tab izohi maketdagidek «Kamera, ovoz va tebranish». Ega savoli 3 — sukut: «Bildirishnomalar» tabida maketdagi qurilma blokidan keyin kodda bor kanallar / kategoriyalar / reklama / sokin soatlar maket uslubidagi kartalarda saqlanadi. «Bosh sahifa bloklari» tartibi bosh sahifadagi (G1) tartib bilan bir xil; «Buyurtmalar vaqti» — Taklif, chizilmaydi. Taklif (kodda yo'q, faqat mijoz tomoni — manifest.webmanifest va sw.js bor, backend kerak emas): «Bildirishnomalar» tabida qurilma blokidan keyin «Ilova» kartasi — «O'rnatilgan» (display-mode: standalone) / «O'rnatilmagan» + «O'rnatish» (beforeinstallprompt) / iOS — «Qanday qo'shiladi» (common-settings-notifications-pwa → courier-inbox-pwa-ios-dialog) / brauzer qo'llab-quvvatlamasa — «Qo'llab-quvvatlanmaydi», tugmasiz; tab izohi «Shu qurilmaga xabarlar · ilova»."
     },
     {
       "path": "/inbox",
@@ -1533,18 +1648,273 @@
       ],
       "views": {
         "superadmin": ["notifications-inbox", "notifications-push-explain-dialog"],
-        "courier": ["inbox-list", "inbox-push-explain-dialog"],
+        "courier": ["inbox-list", "inbox-push-explain-dialog", "inbox-pwa-install", "inbox-pwa-ios-dialog"],
         "common": ["inbox"]
       },
-      "note": "Dizayn v2 (G2): tablar, kategoriya chiplari (URL'da), «Faqat muhim», qator amallari, sahifalash; push holat bloki barcha rollarda holatga qarab (D4). Ega savoli 9 — sukut: sarlavha barcha rollarda «Bildirishnomalar» (superadmin maketidagi «Bildirishnomalar qutisi» emas); «SMS» va «Xabar yuborish» faqat canSendNotifications. Push ruxsati tushuntirish oynasi — PushExplainDialog (sozlamalarda ham)."
+      "note": "Dizayn v2 (G2): tablar, kategoriya chiplari (URL'da), «Faqat muhim», qator amallari, sahifalash; push holat bloki barcha rollarda holatga qarab (D4). Ega savoli 9 — sukut: sarlavha barcha rollarda «Bildirishnomalar» (superadmin maketidagi «Bildirishnomalar qutisi» emas); «SMS» va «Xabar yuborish» faqat canSendNotifications. Push ruxsati tushuntirish oynasi — PushExplainDialog (sozlamalarda ham). Taklif (kodda yo'q): ilovani o'rnatish kartasi — barcha rollarda, ilova o'rnatilmagan bo'lsa push blokidan keyin; Android/kompyuter — «Keyinroq» + «O'rnatish» (ikkinchi darajali tugma, beforeinstallprompt) — courier-inbox-pwa-install; iPhone/iPad (Safari) — «Qanday qo'shiladi» → 3 qadamli oyna «Bosh ekranga qo'shing» («Keyinroq» / «Tushunarli», telefonda pastki varaqa) — courier-inbox-pwa-ios-dialog. iOS'da ilova o'rnatilmagan bo'lsa push bloki («Bildirishnomalar yoqilgan / yoqish») yashiriladi — push faqat o'rnatilgan ilovada ishlaydi, uning o'rnida o'rnatish kartasi turadi (bu ataylab). «Keyinroq» yoki o'rnatilgach karta shu qurilmada boshqa chiqmaydi (holat — localStorage), qayta o'rnatish — sozlamalardagi «Ilova» kartasidan."
     }
   ],
+  "plannedMenu": {
+    "$comment": "Maketda bor, kodda hali yo'q menyu bandlari (ega tasdig'i 2026-10-19). Faqat qisqaradi: band menuConfig.tsx ga qo'shilgach — shu yerdan olinadi.",
+    "admin": ["notifications"],
+    "market": ["operators"],
+    "market_operator": ["dashboard", "orders", "newOrders", "products", "earnings"],
+    "logist": ["dashboard", "orders", "mails", "batches", "couriers", "regions"],
+    "investor": ["dashboard", "investments", "profits"]
+  },
+  "plannedBottomNav": {
+    "$comment": "Maketda o'zgargan, kodda (src/widgets/Sidebar/ui/BottomNav.tsx) hali eski pastki menyu: rol → maketdagi kataklar (roles.json → bottomNav bilan bir xil; ega tasdig'i 2026-10-19). Faqat qisqaradi: kod maketga yetgach — shu yerdan olinadi (src/test/designMenu.test.ts eslatadi).",
+    "market": ["dashboard", "orders", "newOrders", "payments", "@menu"]
+  },
   "newViews": {
-    "courier-scan-offline": "Oflayn chip bor («Internet yo'q»); skanlarni navbatga qo'yish yo'q."
+    "superadmin-neworders-incoming-scan-partial": "Chala qop ogohlantirishi, «2/3» belgisi va chala qop QR'i skanerlanganda sariq xabar + ogohlantirish ovozi yo'q (DamKku7C, ega S5) — kodda faqat qop skanida «N tadan M tasi» xabari; «keldi» soni uchun backend received_count kerak (ega S3).",
+    "superadmin-neworders-incoming-scan-partial-confirm-dialog": "Chala qop bilan qabul tasdig'i yo'q — qabul darhol yuboriladi, keyin «receivePartial» xabari. Ega S2: tasdiq yetarli, yetishmagan posilka kutilayotgan bo'lib qoladi.",
+    "superadmin-neworders-incoming-scan-undo": "Skanni olib tashlash va «Qaytarish» xabari yo'q (eo3eeJxs).",
+    "admin-neworders-incoming-scan-partial": "Chala qop ogohlantirishi, «2/3» belgisi va chala qop QR'i skanerlanganda sariq xabar + ogohlantirish ovozi yo'q (DamKku7C, ega S5) — kodda faqat qop skanida «N tadan M tasi» xabari; «keldi» soni uchun backend received_count kerak (ega S3).",
+    "admin-neworders-incoming-scan-partial-confirm-dialog": "Chala qop bilan qabul tasdig'i yo'q — qabul darhol yuboriladi, keyin «receivePartial» xabari. Ega S2: tasdiq yetarli, yetishmagan posilka kutilayotgan bo'lib qoladi.",
+    "admin-neworders-incoming-scan-undo": "Skanni olib tashlash va «Qaytarish» xabari yo'q (eo3eeJxs).",
+    "manager-new-orders-incoming-scan-partial": "Chala qop ogohlantirishi, «2/3» belgisi va chala qop QR'i skanerlanganda sariq xabar + ogohlantirish ovozi yo'q (DamKku7C, ega S5) — kodda faqat qop skanida «N tadan M tasi» xabari; «keldi» soni uchun backend received_count kerak (ega S3).",
+    "manager-new-orders-incoming-scan-partial-confirm-dialog": "Chala qop bilan qabul tasdig'i yo'q — qabul darhol yuboriladi, keyin «receivePartial» xabari. Ega S2: tasdiq yetarli, yetishmagan posilka kutilayotgan bo'lib qoladi.",
+    "manager-new-orders-incoming-scan-undo": "Skanni olib tashlash va «Qaytarish» xabari yo'q (eo3eeJxs).",
+    "registrator-new-orders-incoming-scan-partial": "Chala qop ogohlantirishi, «2/3» belgisi va chala qop QR'i skanerlanganda sariq xabar + ogohlantirish ovozi yo'q (DamKku7C, ega S5) — kodda faqat qop skanida «N tadan M tasi» xabari; «keldi» soni uchun backend received_count kerak (ega S3).",
+    "registrator-new-orders-incoming-scan-partial-confirm-dialog": "Chala qop bilan qabul tasdig'i yo'q — qabul darhol yuboriladi, keyin «receivePartial» xabari. Ega S2: tasdiq yetarli, yetishmagan posilka kutilayotgan bo'lib qoladi.",
+    "registrator-new-orders-incoming-scan-undo": "Skanni olib tashlash va «Qaytarish» xabari yo'q (eo3eeJxs).",
+    "registrator-new-orders-incoming-scan-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri.",
+    "logist-dashboard-mobile-menu": "Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz.",
+    "logist-dashboard-mobile-search": "Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz.",
+    "logist-orders-list": "Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz.",
+    "logist-orders-detail": "Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz.",
+    "logist-mails-list": "Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz.",
+    "logist-mails-detail": "Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz.",
+    "logist-batches-list": "Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz.",
+    "logist-couriers-list": "Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz.",
+    "investor-dashboard-home": "Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi).",
+    "investor-dashboard-home-table": "Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi).",
+    "investor-dashboard-loading": "Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi).",
+    "investor-dashboard-empty": "Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi).",
+    "investor-dashboard-error": "Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi).",
+    "investor-dashboard-forbidden": "Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi).",
+    "investor-dashboard-not-linked": "Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi).",
+    "investor-dashboard-mobile-menu": "Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi).",
+    "investor-investments-list": "Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi).",
+    "investor-investments-list-loading": "Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi).",
+    "investor-investments-list-filtered-empty": "Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi).",
+    "investor-profits-list": "Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi).",
+    "investor-profits-list-filtered-empty": "Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi).",
+    "superadmin-users-list-roles": "Taklif (users-roles): rol tablari — FY-S1 tartibi (Hammasi · Adminlar · Menejerlar · Ro'yxatchilar · Kuryerlar · Logistlar · Marketlar · Market operatorlari · Investorlar); market operatori qatorida market nomi (FY-S3, GET /users da market nomi yo'q — backend); qator menyusida «Nofaol qilish» (FY-S2, PATCH /users/:id/status).",
+    "superadmin-users-list-role-select": "Taklif (users-roles): telefonda rol tanlash — Select popover, avval «Xodimlar», so'ng «Tashqi hisoblar».",
+    "superadmin-users-edit-role": "Taklif (users-roles): tahrirlash oynasida «Rol» (faqat superadmin, PATCH /users/:id/role — backend bor).",
+    "superadmin-users-role-confirm-dialog": "Taklif (users-roles): rolni o'zgartirish tasdig'i (useConfirm).",
+    "superadmin-users-role-confirm-logist": "Taklif (users-roles): Logist → Admin tasdig'i, viloyatlar bo'shatiladi.",
+    "superadmin-users-edit-role-error": "Taklif (users-roles): 409 — filialga biriktirilgan, rol o'zgarmadi.",
+    "superadmin-users-edit-role-branch": "Taklif (users-roles): filialga biriktirilgan — rol maydoni qulf.",
+    "superadmin-users-edit-courier-district": "Taklif (users-roles): kuryer «Tuman» maydoni — backend kerak; filial «Boshqa filialga o'tkazish» oynasi orqali (FY-S4).",
+    "superadmin-users-edit-courier-district-phone": "Taklif (users-roles): kuryer «Tuman» ro'yxati, telefon — backend kerak.",
+    "superadmin-users-edit-market-ai": "Taklif (users-roles): market «AI narxi (1 buyurtma)» — faqat marketga belgilangan qiymat, sukut narx matni yo'q (FY-S5).",
+    "superadmin-users-edit-market-ai-phone": "Taklif (users-roles): «AI narxi», telefon (FY-S5).",
+    "superadmin-users-create-courier-district": "Taklif (users-roles): yaratishda Logist roli kartasi va kuryer «Ish hududi» (Tuman — backend kerak).",
+    "manager-users-create-courier-district": "Taklif (users-roles): menejer kuryer yaratishda «Tuman» — backend kerak.",
+    "courier-inbox-pwa-install": "Ilovani o'rnatish kartasi yo'q (beforeinstallprompt ishlatilmaydi) — Taklif, faqat mijoz tomoni.",
+    "courier-inbox-pwa-ios-dialog": "iOS uchun «Bosh ekranga qo'shing» oynasi yo'q — Taklif, faqat mijoz tomoni.",
+    "common-settings-notifications-pwa": "Sozlamalarda «Ilova» kartasi (o'rnatilgan / o'rnatilmagan) yo'q — Taklif, faqat mijoz tomoni.",
+    "superadmin-orders-list-skip-link": "«Asosiy kontentga o'tish» havolasi yo'q. U shell'da (widgets/layout — ega roziligi bilan): shell'ning birinchi fokuslanadigan elementi, faqat :focus-visible da chap yuqorida ko'rinadi (ikkinchi darajali tugma + fokus halqasi — sahifaning asosiy amali bilan raqobat qilmaydi), nishon — [data-shell-slot=content] (id=\"main-content\", tabindex=-1); barcha rollar va sahifalarda bir xil, maket bitta sahifada chizilgan.",
+    "courier-scan-offline": "Oflayn chip bor («Internet yo'q»); skanlarni navbatga qo'yish yo'q.",
+    "superadmin-notifications-send-audience": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
+    "superadmin-notifications-send-schedule": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
+    "superadmin-notifications-send-audience-sample-dialog": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
+    "superadmin-notifications-send-audience-save-dialog": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
+    "superadmin-notifications-send-confirm-scheduled-dialog": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
+    "superadmin-notifications-campaign-cancel-dialog": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
+    "superadmin-notifications-campaign-report-dialog": "Taklif (ega KM-S1, 2026-10-19) — kodda yo'q: kampaniya hisoboti (GET /notifications/campaigns/:id/report, /undelivered, /undelivered/export)",
+    "superadmin-notifications-send-states": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
+    "superadmin-notifications-sms-campaign-segment": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
+    "superadmin-products-create-errors": "Maket taklifi (2026-10-19): og'irlik va o'lcham maydonlari backendda hali yo'q — validatsiya holati shu maydonlar bilan.",
+    "admin-products-create-errors": "Maket taklifi (2026-10-19): og'irlik va o'lcham maydonlari backendda hali yo'q — validatsiya holati shu maydonlar bilan.",
+    "manager-products-create-errors": "Maket taklifi (2026-10-19): og'irlik va o'lcham maydonlari backendda hali yo'q — validatsiya holati shu maydonlar bilan.",
+    "registrator-products-create-errors": "Maket taklifi (2026-10-19): og'irlik va o'lcham maydonlari backendda hali yo'q — validatsiya holati shu maydonlar bilan.",
+    "market_operator-products-list": "Maket taklifi (2026-10-19): market_operator roli menyusi kodda hali yo'q; market--products-list bilan bitta fragment.",
+    "market_operator-products-unassigned": "Maket taklifi (2026-10-19): market biriktirilmagan market_operator holati kodda yo'q.",
+    "superadmin-regions-logist-assignment": "Kodda hali «Bo'lim hali ishga tushmagan» bo'sh holati — ishlaydigan biriktirish sahifasi (dzyVftBx).",
+    "admin-regions-logist-assignment": "Kodda hali «Bo'lim hali ishga tushmagan» bo'sh holati — ishlaydigan biriktirish sahifasi (dzyVftBx).",
+    "superadmin-regions-logist-assignment-confirm-dialog": "Saqlashni tasdiqlash oynasi (olib tashlash / o'tkazish) — kodda yo'q.",
+    "admin-regions-logist-assignment-confirm-dialog": "Saqlashni tasdiqlash oynasi (olib tashlash / o'tkazish) — kodda yo'q.",
+    "superadmin-regions-logist-assignment-empty": "«Logist yo'q» holati — kodda yo'q.",
+    "admin-regions-logist-assignment-empty": "«Logist yo'q» holati — kodda yo'q.",
+    "superadmin-users-create-logist": "«Logist» rol kartasi va formasi (POST /logists) — kodda yo'q.",
+    "admin-users-create-logist": "«Logist» rol kartasi va formasi (POST /logists) — kodda yo'q.",
+    "logist-dashboard-main": "Logist roli (menuConfig, routes, guard) kodda hali yo'q — dzyVftBx, mDfjKeQi.",
+    "logist-regions-detail": "Logist roli (menuConfig, routes, guard) kodda hali yo'q — dzyVftBx, mDfjKeQi.",
+    "market-operators-list": "Kodda yo'q: /market-operators yopiq (canViewMarketOperators = false), market menyusida «Operatorlar» yo'q.",
+    "market-operators-empty": "Kodda yo'q (yopiq sahifa).",
+    "market-operators-create-dialog": "Kodda yo'q (yopiq sahifa); POST market-operators bor; ixtiyoriy «Komissiya» — keyingi PATCH :id/commission bilan (POST da komissiya maydoni yo'q).",
+    "market-operators-commission-dialog": "Kodda yo'q; PATCH market-operators/:id/commission bor.",
+    "market-operators-commission-fixed-dialog": "Kodda yo'q; qat'iy summa, xato holati, «Komissiyani olib tashlash» (PATCH null).",
+    "market-operators-delete-dialog": "Kodda yo'q; DELETE market-operators/:id bor.",
+    "market-operators-deactivate-dialog": "Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak).",
+    "market-operators-activate-dialog": "Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak).",
+    "market_operator-new-orders-create-manual": "Kodda yo'q: market_operator roli frontendda yo'q; POST orders MARKET_OPERATOR'ga yopiq (Taklif · backend kerak).",
+    "market_operator-earnings": "Kodda yo'q: market_operator roli frontendda yo'q; balans/daromad/to'lov uchun /me endpoint kerak.",
+    "market_operator-earnings-no-commission": "Kodda yo'q (market_operator roli frontendda yo'q).",
+    "superadmin-notifications-row-menu": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "superadmin-notifications-row-menu-inactive": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "superadmin-notifications-connected": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "superadmin-notifications-empty": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "superadmin-notifications-loading": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "superadmin-notifications-error": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "superadmin-notifications-create-link-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "superadmin-notifications-create-expired-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "superadmin-notifications-create-exists-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "superadmin-notifications-create-exists-inactive-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "superadmin-notifications-deactivate-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "superadmin-notifications-activate-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "admin-notifications-row-menu": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "admin-notifications-row-menu-inactive": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "admin-notifications-connected": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "admin-notifications-empty": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "admin-notifications-loading": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "admin-notifications-error": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "admin-notifications-create-link-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "admin-notifications-create-expired-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "admin-notifications-create-exists-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "admin-notifications-create-exists-inactive-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "admin-notifications-deactivate-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "admin-notifications-activate-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
+    "admin-notifications-telegram-groups": "Admin uchun (NG-S2) — kodda yo'q: canViewNotifications faqat superadmin.",
+    "admin-notifications-create-dialog": "Admin uchun (NG-S2) — kodda yo'q: canViewNotifications faqat superadmin.",
+    "admin-notifications-delete-dialog": "Admin uchun (NG-S2) — kodda yo'q: canViewNotifications faqat superadmin.",
+    "superadmin-notifications-send-result": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
+    "superadmin-notifications-send-unknown": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
+    "superadmin-notifications-sent": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
+    "superadmin-notifications-sent-loading": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
+    "superadmin-notifications-sent-empty": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
+    "superadmin-notifications-sent-error": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
+    "superadmin-notifications-sent-detail-dialog": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
+    "superadmin-notifications-sent-detail-states": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
+    "admin-notifications-send-result": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
+    "admin-notifications-send-unknown": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
+    "admin-notifications-sent": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
+    "admin-notifications-sent-loading": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
+    "admin-notifications-sent-empty": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
+    "admin-notifications-sent-error": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
+    "admin-notifications-sent-detail-dialog": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
+    "admin-notifications-sent-detail-states": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
+    "superadmin-ops-system-loading": "Taklif (ops-system, ega S1..S5) — kodda yo'q.",
+    "superadmin-ops-system-error": "Taklif (ops-system, ega S1..S5) — kodda yo'q.",
+    "superadmin-ops-system-partial": "Taklif (ops-system, ega S1..S5) — kodda yo'q.",
+    "superadmin-ops-system-down": "Taklif (ops-system, ega S1..S5) — kodda yo'q.",
+    "superadmin-ops-system-critical": "Taklif (ops-system, ega S1..S5) — kodda yo'q.",
+    "superadmin-ops-system-ai-config": "Taklif (ops-system, ega S1..S5) — kodda yo'q.",
+    "superadmin-ops-system-ai-cap": "Taklif (ops-system, ega S1..S5) — kodda yo'q.",
+    "superadmin-ops-logistics-approve-dialog": "Taklif (ops-system, ega S1..S5) — kodda yo'q.",
+    "superadmin-ops-logistics-approve-result": "Taklif (ops-system, ega S1..S5) — kodda yo'q.",
+    "superadmin-neworders-create-manual-step2-customer-suggest": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
+    "superadmin-neworders-create-manual-step2-existing-customer": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
+    "superadmin-neworders-create-manual-step2-customer-update-dialog": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
+    "admin-neworders-create-manual-step2-customer-suggest": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
+    "admin-neworders-create-manual-step2-existing-customer": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
+    "admin-neworders-create-manual-step2-customer-update-dialog": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
+    "manager-new-orders-create-manual-step2-customer-suggest": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
+    "manager-new-orders-create-manual-step2-existing-customer": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
+    "manager-new-orders-create-manual-step2-customer-update-dialog": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
+    "registrator-new-orders-create-step2-customer-suggest": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
+    "registrator-new-orders-create-step2-existing-customer": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
+    "registrator-new-orders-create-step2-customer-update-dialog": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
+    "market-new-orders-create-manual-customer-suggest": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
+    "market-new-orders-create-manual-existing-customer": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
+    "market-new-orders-create-manual-customer-update-dialog": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
+    "superadmin-users-list-telegram": "Taklif (tg-link S4) — kodda yo'q: «Telegram» ustuni va filtri; backend telegram_linked kerak.",
+    "superadmin-users-detail-telegram-group-dialog": "Taklif (tg-link) — havola + QR oynasi, kodda yo'q.",
+    "superadmin-users-detail-telegram-group-expired-dialog": "Taklif (tg-link) — havola muddati tugadi holati, kodda yo'q.",
+    "admin-users-list-telegram": "Taklif (tg-link S4) — kodda yo'q: «Telegram» ustuni va filtri; backend telegram_linked kerak.",
+    "admin-users-detail-telegram-group-dialog": "Taklif (tg-link) — havola + QR oynasi, kodda yo'q.",
+    "admin-users-detail-telegram-group-expired-dialog": "Taklif (tg-link) — havola muddati tugadi holati, kodda yo'q.",
+    "common-profile-telegram-link-dialog": "Taklif (tg-link) — kodda yo'q.",
+    "common-profile-telegram-command-dialog": "Taklif (tg-link) — kodda yo'q.",
+    "common-profile-telegram-expired-dialog": "Taklif (tg-link) — kodda yo'q.",
+    "common-profile-telegram-unlink-dialog": "Taklif (tg-link) — kodda yo'q.",
+    "market-profile-telegram-status": "Taklif (tg-link S1, S5) — kodda yo'q; backend guruhlar holati endpointi kerak.",
+    "market-profile-telegram-group-dialog": "Taklif (tg-link S1, S5) — kodda yo'q; backend guruhlar holati endpointi kerak.",
+    "market-profile-telegram-group-expired-dialog": "Taklif (tg-link S1, S5) — kodda yo'q; backend guruhlar holati endpointi kerak.",
+    "courier-dashboard-pwa-install": "Taklif (small-p1 S3) — kodda yo'q: bir martalik «Ilovani o'rnatish» kartasi.",
+    "superadmin-orders-list-refreshing": "Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan.",
+    "superadmin-orders-list-refresh-error": "Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan.",
+    "manager-orders-list-all-refreshing": "Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan.",
+    "manager-orders-list-all-refresh-error": "Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan.",
+    "courier-orders-pending-refreshing": "Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan.",
+    "courier-orders-pending-refresh-error": "Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan.",
+    "superadmin-mails-detail-duplicates": "Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi).",
+    "superadmin-mails-detail-search": "Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi).",
+    "superadmin-mails-detail-search-empty": "Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi).",
+    "admin-mails-detail-duplicates": "Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi).",
+    "admin-mails-detail-search": "Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi).",
+    "admin-mails-detail-search-empty": "Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi).",
+    "registrator-mails-detail-duplicates": "Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi).",
+    "registrator-mails-detail-search": "Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi).",
+    "registrator-mails-detail-search-empty": "Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi).",
+    "manager-mails-detail-receive-duplicates": "Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi).",
+    "manager-mails-detail-receive-search": "Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi).",
+    "manager-mails-detail-receive-search-empty": "Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi).",
+    "superadmin-payments-main-cashbox-shift-closed": "Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari.",
+    "superadmin-payments-main-cashbox-shift-open-dialog": "Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari.",
+    "superadmin-payments-main-cashbox-shift-result-dialog": "Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari.",
+    "admin-payments-main-cashbox-shift-closed": "Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari.",
+    "admin-payments-main-cashbox-shift-open-dialog": "Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari.",
+    "admin-payments-main-cashbox-shift-result-dialog": "Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari.",
+    "manager-payments-main-cashbox-shift-closed": "Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari.",
+    "manager-payments-main-cashbox-shift-open-dialog": "Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari.",
+    "manager-payments-main-cashbox-shift-result-dialog": "Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari.",
+    "superadmin-payments-cash-detail-branch-shift-closed": "Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari.",
+    "admin-payments-cash-detail-branch-shift-closed": "Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari.",
+    "manager-payments-cash-detail-branch-shift-closed": "Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari.",
+    "manager-payments-overview-shift-closed": "Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari.",
+    "manager-payments-cash-detail-courier-shift-closed": "Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari.",
+    "superadmin-regions-districts-delete-blocked": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "superadmin-regions-districts-merge-dialog": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "superadmin-regions-districts-merge-target": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "superadmin-regions-districts-merge-progress": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "superadmin-regions-districts-merge-result": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "superadmin-regions-districts-merge-error": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "superadmin-regions-districts-merge-error-unavailable": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "superadmin-regions-districts-merge-error-manual": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "superadmin-regions-districts-merge-unknown": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "admin-regions-districts-delete-blocked": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "admin-regions-districts-merge-dialog": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "admin-regions-districts-merge-target": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "admin-regions-districts-merge-progress": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "admin-regions-districts-merge-result": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "admin-regions-districts-merge-error": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "admin-regions-districts-merge-error-unavailable": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "admin-regions-districts-merge-error-manual": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "admin-regions-districts-merge-unknown": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "admin-regions-districts": "Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi.",
+    "superadmin-regions-sato-codes": "Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin.",
+    "superadmin-regions-sato-codes-not-found": "Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin.",
+    "superadmin-regions-sato-codes-apply-dialog": "Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin.",
+    "superadmin-regions-sato-codes-edit": "Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin.",
+    "superadmin-regions-sato-codes-duplicates": "Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin.",
+    "superadmin-regions-sato-codes-merge-dialog": "Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin.",
+    "superadmin-regions-sato-codes-missing": "Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin.",
+    "superadmin-regions-sato-codes-add-dialog": "Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin.",
+    "admin-regions-sato-codes": "Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin.",
+    "admin-regions-sato-codes-edit": "Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin.",
+    "superadmin-integrations-settlement-pay-overpay-dialog": "Taklif (integ-settlement, ega S1..S3) — kodda yo'q: ortiqcha to'lov avansga, natija oynasi, bekor qilishda kassa tanlovi.",
+    "superadmin-integrations-settlement-pay-result-dialog": "Taklif (integ-settlement, ega S1..S3) — kodda yo'q: ortiqcha to'lov avansga, natija oynasi, bekor qilishda kassa tanlovi.",
+    "superadmin-integrations-settlement-cancel-dialog": "Taklif (integ-settlement, ega S1..S3) — kodda yo'q: ortiqcha to'lov avansga, natija oynasi, bekor qilishda kassa tanlovi.",
+    "admin-integrations-settlement-pay-overpay-dialog": "Taklif (integ-settlement, ega S1..S3) — kodda yo'q: ortiqcha to'lov avansga, natija oynasi, bekor qilishda kassa tanlovi.",
+    "admin-integrations-settlement-pay-result-dialog": "Taklif (integ-settlement, ega S1..S3) — kodda yo'q: ortiqcha to'lov avansga, natija oynasi, bekor qilishda kassa tanlovi.",
+    "admin-integrations-settlement-cancel-dialog": "Taklif (integ-settlement, ega S1..S3) — kodda yo'q: ortiqcha to'lov avansga, natija oynasi, bekor qilishda kassa tanlovi."
   },
   "partialViews": {
     "courier-scan-manual-entry": "«Kodni qo'lda kiriting» varag'i v2 (token yoki /scan/<token> havolasi, «Ochish»); maketdagi raqamli klaviatura va «Harflar» yo'q — buyurtma raqami bo'yicha qidiruv API'si yo'q, ega qarori kutiladi.",
     "courier-scan-active": "/scan kuryer «O'zimga olish» rejimi (skaner 3-bosqich, useCourierTake): kamera, chiroq chipi, «Oxirgi» qatori va «Ro'yxat» — «Sizga biriktirildi» / «Allaqachon sizda» / «Boshqa kuryerda», hisoblagich «N ta biriktirildi», «Tugatish» → xulosa. Farq: biriktirilganlar qurilma tarixiga («Oxirgi skanerlar · Shu qurilmada») yozilmaydi — keng ekranda ular «Skanerlanganlar» kartasida (shu sessiya); telefonda pastda «Chiroq» o'rnida «Tugatish» (chiroq tepada).",
+    "superadmin-neworders-incoming-scan": "Kodda «Qop» ustuni, skanerlangan qatorni olib tashlash va oxirgi skan xabaridagi «Olib tashlash» hali yo'q (DamKku7C, eo3eeJxs) — qolgani v2.",
+    "admin-neworders-incoming-scan": "Kodda «Qop» ustuni, skanerlangan qatorni olib tashlash va oxirgi skan xabaridagi «Olib tashlash» hali yo'q (DamKku7C, eo3eeJxs) — qolgani v2.",
+    "manager-new-orders-incoming-scan": "Kodda «Qop» ustuni, skanerlangan qatorni olib tashlash va oxirgi skan xabaridagi «Olib tashlash» hali yo'q (DamKku7C, eo3eeJxs) — qolgani v2.",
+    "registrator-new-orders-incoming-scan": "Kodda «Qop» ustuni, skanerlangan qatorni olib tashlash va oxirgi skan xabaridagi «Olib tashlash» hali yo'q (DamKku7C, eo3eeJxs) — qolgani v2.",
+    "manager-new-orders-markets": "Kodda menejerda tablar qatori yo'q (karta sarlavhasi «Marketlar») — intake'li menejerga (HQ · PICKUP · HYBRID) «Kiruvchi posilkalar» tabi, ega S1 (xQ045luf).",
+    "registrator-new-orders-markets": "Kodda HQ registratorida «Marketlar · Bekor qilinganlar», boshqa registratorda tablar qatori yo'q — «Kiruvchi posilkalar» tabi har qanday registratorga (ega S1, xQ045luf).",
+    "manager-new-orders-incoming-sources": "Kodda menejerda tablar qatori yo'q (karta o'z sarlavhasi bilan) — intake'li menejerga «Marketlar · Kiruvchi posilkalar» tablari, ega S1.",
+    "registrator-new-orders-incoming-sources": "Kodda registratorda tablar qatori yo'q (karta o'z sarlavhasi bilan) — «Marketlar · Kiruvchi posilkalar» (+ HQ da «Bekor qilinganlar») tablari, ega S1.",
     "registrator-new-orders-market-detail": "Registrator boshqa xodim rollari (superadmin/admin/menejer) bilan bir xil v2 ko'rinishda — maketdagi farqlar (sarlavhada «Chop etish», «Buyurtmalar N ta» karta sarlavhasi, «5 / 6 ta» tanlov xulosasi, qator kebab menyusi) ega qaroriga qadar kiritilmagan.",
     "registrator-new-orders-market-detail-receive-dialog": "Umumiy xodim qabul oynasi (MarketOrderDialogs.tsx) — tasdiq tugmasi «Tasdiqlash»; maketdagi «Qabul qilish — N ta» varianti ega qaroriga qadar kiritilmagan.",
     "courier-scan-other-courier": "/scan/:token — alohida holat yo'q, «O'zimga olish» rad etilsa backend matni amallar kartasida (ScanActionCard). Kamera ekrani — /scan kuryer «O'zimga olish» rejimi (skaner 3-bosqich): qizil xabar «Boshqa kuryerga biriktirilgan» + izoh «№… · <kuryer>. Menejerga xabar bering.» (raqam va kuryer buyurtmani bir marta o'qib olingach, xabar ovozsiz yangilanadi), ro'yxatda qizil UserX qator «Boshqa kuryerda: <ism>», xulosada «Biriktirilmadi». Maketdagi keng ekran «Natija» kartasi (mijoz, summa, «Biriktirilgan kuryer») yo'q — natija «Skanerlanganlar» kartasida.",
@@ -1563,6 +1933,7 @@
     "manager-mails-detail-receive-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q.",
     "courier-mails-detail-receive-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q.",
     "manager-batches-detail-send-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. «HQ'ga yuborish · Paket B-… · <filial>», skan tanlaydi, «Bu paketda yo'q · tanlanmadi»; yuborish — sahifadagi tugma.",
+    "market-dashboard-mobile-menu": "MobileMenu komponenti bor, lekin market pastki menyusida «Menyu» katagi yo'q — roles.json bottomNav o'zgarishi bilan keladi.",
     "superadmin-neworders-market-orders-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan = darhol qabul; «Qabul qilindi N · Qoldi M · Topilmadi K», boshqa marketning buyurtmasi rad etiladi, kamera ichida market almashtirish.",
     "admin-neworders-market-detail-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan = darhol qabul; «Qabul qilindi N · Qoldi M · Topilmadi K», boshqa marketning buyurtmasi rad etiladi, kamera ichida market almashtirish.",
     "manager-new-orders-market-detail-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan = darhol qabul; «Qabul qilindi N · Qoldi M · Topilmadi K», boshqa marketning buyurtmasi rad etiladi, kamera ichida market almashtirish.",
@@ -1572,7 +1943,17 @@
     "manager-new-orders-incoming-scan-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan faqat belgilaydi, qabul — sahifadagi «Qabul qilish»; kamera ichida manba almashtirish, «Qopda yetishmaydi».",
     "superadmin-neworders-branch-batch-detail-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi, «N / jami ta tanlandi», «Hammasi tanlandi»; qabul — sahifadagi tugma.",
     "admin-neworders-branch-batch-detail-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi, «N / jami ta tanlandi», «Hammasi tanlandi»; qabul — sahifadagi tugma.",
-    "courier-courier-bulk-scanner-camera-list": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. «Skanerlanganlar · N / M · K ta bekor, L ta ertaga» varag'i, «Bekor qilish» belgini oladi, «Skanerlanmagan N ta buyurtma sotilgan deb belgilanadi»."
+    "courier-courier-bulk-scanner-camera-list": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. «Skanerlanganlar · N / M · K ta bekor, L ta ertaga» varag'i, «Bekor qilish» belgini oladi, «Skanerlanmagan N ta buyurtma sotilgan deb belgilanadi».",
+    "superadmin-notifications-telegram-groups": "Kodda bor (v2); taklif: «Holat» ustunida nofaol sababi (inactive_reason, NG-S1), qo'shish — faqat bot havolasi, «Tahrirlash» olib tashlanadi (NG-S4).",
+    "superadmin-notifications-create-dialog": "Kodda bor (v2); taklif: «Holat» ustunida nofaol sababi (inactive_reason, NG-S1), qo'shish — faqat bot havolasi, «Tahrirlash» olib tashlanadi (NG-S4).",
+    "superadmin-notifications-delete-dialog": "Kodda bor (v2); taklif: «Holat» ustunida nofaol sababi (inactive_reason, NG-S1), qo'shish — faqat bot havolasi, «Tahrirlash» olib tashlanadi (NG-S4).",
+    "admin-notifications-send": "Kodda bor (canSendNotifications admin'ni o'tkazadi); natija bloki va «Yuborilganlar» havolasi — taklif (notif-send).",
+    "admin-notifications-send-confirm-dialog": "Kodda bor (canSendNotifications admin'ni o'tkazadi); natija bloki va «Yuborilganlar» havolasi — taklif (notif-send).",
+    "superadmin-users-detail-telegram": "Kodda bor (MarketTelegramGroupLinkCard, MarketTelegramGroupPiiCard); taklif: har xabar turi qatorida «Ulash», PII kaliti shu kartada (tg-link S3, S5).",
+    "admin-users-detail-telegram": "Kodda bor (MarketTelegramGroupLinkCard, MarketTelegramGroupPiiCard); taklif: har xabar turi qatorida «Ulash», PII kaliti shu kartada (tg-link S3, S5).",
+    "common-profile-telegram": "Kodda bor (ProfilePage — o'z Telegram'ini ulash); taklif: holat kartasi maket bo'yicha (tg-link).",
+    "common-profile-telegram-linked": "Kodda bor (ProfilePage — o'z Telegram'ini ulash); taklif: holat kartasi maket bo'yicha (tg-link).",
+    "market-profile": "Kodda bor (marketda «Guruhda mijoz ismi va telefoni»); taklif: «Telegram guruhlari» holati (tg-link S1 — backend endpoint kerak)."
   },
   "viewFiles": {
     "$comment": "Maket → uni chizadigan aniq fayl, agar route'ning asosiy faylidan farq qilsa (rolga xos komponent, alohida oyna fayli). SCREENS.md 2- va 4-bo'limlarida ko'rsatiladi.",
@@ -1715,12 +2096,10 @@
     "admin-products-edit-dialog": "src/pages/products/list/ui/EditProductDialog.tsx",
     "manager-products-edit-dialog": "src/pages/products/list/ui/EditProductDialog.tsx",
     "registrator-products-edit-dialog": "src/pages/products/list/ui/EditProductDialog.tsx",
-    "market-products-edit-dialog": "src/pages/products/list/ui/EditProductDialog.tsx",
     "superadmin-products-delete-dialog": "src/pages/products/ui/useDeleteProductConfirm.tsx",
     "admin-products-delete-dialog": "src/pages/products/ui/useDeleteProductConfirm.tsx",
     "manager-products-delete-dialog": "src/pages/products/ui/useDeleteProductConfirm.tsx",
     "registrator-products-delete-dialog": "src/pages/products/ui/useDeleteProductConfirm.tsx",
-    "market-products-delete-dialog": "src/pages/products/ui/useDeleteProductConfirm.tsx",
     "superadmin-branches-list-tree": "src/widgets/branch-list/ui/BranchTree.tsx",
     "superadmin-branches-list-table": "src/widgets/branch-list/ui/BranchTable.tsx",
     "superadmin-regions-districts": "src/pages/region/pages/districts/index.tsx",
@@ -1743,6 +2122,12 @@
     "admin-integrations-conn-settlement": "src/pages/integrations/panels/ConnectionSettlement.tsx",
     "superadmin-integrations-settlement-pay-dialog": "src/pages/integrations/panels/ConnectionSettlement.tsx",
     "admin-integrations-settlement-pay-dialog": "src/pages/integrations/panels/ConnectionSettlement.tsx",
+    "superadmin-integrations-settlement-pay-overpay-dialog": "src/pages/integrations/panels/ConnectionSettlement.tsx",
+    "admin-integrations-settlement-pay-overpay-dialog": "src/pages/integrations/panels/ConnectionSettlement.tsx",
+    "superadmin-integrations-settlement-pay-result-dialog": "src/pages/integrations/panels/ConnectionSettlement.tsx",
+    "admin-integrations-settlement-pay-result-dialog": "src/pages/integrations/panels/ConnectionSettlement.tsx",
+    "superadmin-integrations-settlement-cancel-dialog": "src/pages/integrations/panels/ConnectionSettlement.tsx",
+    "admin-integrations-settlement-cancel-dialog": "src/pages/integrations/panels/ConnectionSettlement.tsx",
     "superadmin-integrations-panel-control": "src/pages/integrations/panels/ConnectionControl.tsx",
     "admin-integrations-conn-control": "src/pages/integrations/panels/ConnectionControl.tsx",
     "superadmin-integrations-panel-security": "src/pages/integrations/panels/ConnectionSecurity.tsx",
