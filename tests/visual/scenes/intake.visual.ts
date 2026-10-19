@@ -17,9 +17,12 @@ defineScene({
   api: {
     "GET orders/markets/7/new": fixture("market-new-orders/orders.json"),
   },
-  // Sahifa hammasini o'zi tanlaydi; maketdagidek bittasi (№10320) tanlovdan chiqariladi → «5 ta buyurtma tanlandi».
+  // Sukut — hech narsa tanlanmagan (QMvu5Ajx): «Barchasini tanlash», so'ng maketdagidek bittasi (№10320)
+  // tanlovdan chiqariladi → «5 ta buyurtma tanlandi».
   act: async (page) => {
     const row = page.getByRole("checkbox", { name: "№10320 ni tanlash" });
+    await expect(row).not.toBeChecked();
+    await page.getByRole("button", { name: "Barchasini tanlash" }).first().click();
     await expect(row).toBeChecked();
     await row.uncheck();
     await expect(row).not.toBeChecked();

@@ -896,6 +896,7 @@
     "subtitle": "Choose an integration to search external orders by QR code",
     "title": "External sources",
     "token": "Token",
+    "tokenHint": "Leave empty to send requests without a token",
     "tokenPlaceholder": "Enter the token",
     "updateError": "Could not update the integration",
     "updateSuccess": "Integration updated",

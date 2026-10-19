@@ -15,4 +15,5 @@ defineScene({
   api: {},
   maxHeight: 12_000,
   allowBusy: "bo'lim yuklanish holatlarini ataylab ko'rsatadi (SkeletonTable / SkeletonLines / SkeletonChart namunalari)",
+  allowErrors: "bo'lim xato holatlarini ataylab ko'rsatadi (ErrorState namunalari: bo'lim, grafik, umumiy)",
 });

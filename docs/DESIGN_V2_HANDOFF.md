@@ -10,8 +10,8 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   push qilamiz (ega ruxsati: yashil tekshiruvli har commit so'ramasdan push), `main`/`dev` ga hech qachon.
 - **Ish branchi** (lokal, asosiy papka): `design-v2/phase-4-moliya`. 4-bosqich to'liq (G1, G2, G3 + Bahodir/Dilshod
   dev ishi) `9443388` da — PR #305 orqali `dev` ga tushgan. 5-bosqich (A — `b450e90`, B — shu commit) uning ustida.
-- `dev` 2026-10-18 da `9443388` dan 2 commit oldinda (`0156b8e`, `2468cfd` — Telegram guruh havolasi kartasi va
-  boshqalar): keyingi PR'dan oldin `origin/dev` ni birlashtiring.
+- `origin/dev` (`2dee343`, Bahodir #312) `shodiyor` ga birlashtirilgan (`5b7ada4`). Har PR'dan oldin
+  `git merge-base --is-ancestor origin/dev HEAD` — dev oldinga ketgan bo'lsa, avval birlashtiring.
 - **Jonli tekshiruv:** front lokal (`127.0.0.1:4173`), backend — server (`api.elchipochta.uz`, test ma'lumot) lokal
   proksi orqali: production CORS lokal manzillarni bloklaydi. Login'ni ega brauzerda o'zi qiladi, agent parol
   kiritmaydi. Proksi sukut bo'yicha faqat o'qish rejimida.
@@ -50,7 +50,8 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
 - design-guard `named-colour` + `V2_SCOPES` (80 papka, ichidagi har fayl rangda 0), `V2_SCOPE_PENDING` 2,
   `OUTPUT_FORMAT_FILES` 4; `design/guard-baseline.json` faqat kamaydi (87 → 17 fayl yozuvi).
 - Vizual snapshotlar: 23 sahna × kunduzgi/tungi × 1440/390 = 92 (`tests/visual/`, mock API), CI «Visual»
-  (`.github/workflows/visual.yml`); baseline'lar hali commit qilinmagan.
+  (`.github/workflows/visual.yml`); baseline'lar `shodiyor` da (bot commit `a107f5e`, `616bc03` da yaratilgan;
+  `47bcb53` gacha bironta sahna o'zgarmagani lokal A/B chizish bilan tasdiqlangan), `dev` da hali yo'q.
 - Bosqich B integratsiyasida iste'molchisi qolmagan 61 v1 fayl o'chirildi (testlari bilan): `PhoneInput`,
   `SearchableSelect`, `DateRangePicker`, `CustomDatePicker`, `FilterDateRange`, `FilterSearch`, `GlobalSearchInput`,
   `FilterClearButton`, `PageStatBadge`, v1 `EmptyState` / `QueryErrorState` / `TableSkeleton` / `Loader`,
@@ -69,20 +70,36 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   - `/mails/old` server filtrlari, sahifalash va to'liq Excel;
   - F5: avvalgi 6 ta bo'shliq `origin/main` da ham bor.
 - Real foydalanuvchi QA'si («Buyurtmalar», tafsilot, yaratish) topgan nuqsonlar tuzatildi (`b1a599a`).
+- «Visual» beqarorliklari tuzatildi (2026-10-18; faqat harness, baseline o'zgarmagan):
+  - **xost Wi-Fi'si uzilsa:** React Query so'rovni to'xtatardi va «Internet aloqasi yo'q» suratga tushardi (`order-create`).
+    Endi `pinOnline` bor.
+  - **lazy grafik va `DeferredMount`:** oyna cho'zilgach ochilib, kech chizilardi (`dashboard` balandligi 32 px qisqa,
+    telefonda grafik o'rnida skelet). Endi «band» shartnomasi kengaytirilgan va balandlik barqarorlashguncha
+    kutiladi.
+  - **xato holati:** endi suratga tushmaydi, sahna sababi bilan yiqiladi.
+
+  Batafsil: `docs/DESIGN_SYSTEM.md` §12.5 «Determinizm».
 
 ## 2. Navbatdagi ish (shu tartibda)
 
-### 2.1 «Visual» baseline'lari (ega, GitHub'da)
+### 2.1 «Visual» — deploy PR'ini yashil qilish (ega, GitHub'da)
 
-1. `visual.yml` `dev` ga tushishi kerak: GitHub «Run workflow» tugmasini faqat default branch'dagi workflow uchun
-   ko'rsatadi. Uni olib kiradigan birinchi PR'da «Visual» neytral (baseline yo'q — yashil).
-2. Shundan keyin: GitHub → **Actions** → **Visual** → **Run workflow** → branch `shodiyor`, «update» ✓ → Run.
-   Workflow 92 PNG'ni Playwright Docker obrazida yaratadi va shu branchga commit qiladi
-   («test(visual): baseline'lar yangilandi [skip ci]»). So'ng lokalda `git pull`.
-3. Determinizm: yana bir marta «Run workflow (update)» — yangi commit chiqmasligi kerak (PNG'lar bayt-bayt bir xil);
-   keyingi oddiy push'da «Visual» solishtiradi va yashil bo'lishi kerak.
-4. 5 ta ketma-ket yashil PR yugurishidan keyin: GitHub → Settings → Branches → `dev` qoidasi → required checks ga
-   «Visual / visual» qo'shiladi. Shungacha «Visual» maslahat.
+`visual.yml` dev'da, baseline'lar `shodiyor` da (§1). 2026-10-18 holati: deploy PR #311 (`dev` → `main`) da
+«Visual» qizil. Sabab: Bahodir'ning #312 i `/new-orders/:marketId` da sukut tanlovni olib tashlagan (QMvu5Ajx),
+`market-new-orders` sahnasi esa yangilanmagan. «Visual» required emas, shuning uchun qizil holda merge bo'lgan.
+Sahna `shodiyor` da tuzatilgan (`5b7ada4`).
+
+1. `shodiyor` → `dev` PR oching. Head bot commit'i bo'lmasin, chunki `[skip ci]` li head'da PR tekshiruvlari yurmaydi.
+   «Visual» `shodiyor` dagi baseline'lar bilan solishtiradi va yashil bo'lishi kerak.
+2. **«Create a merge commit»** bilan merge qiling, squash qilmang. Squash xabariga bot commit'ining `[skip ci]` i
+   tushadi, natijada `dev` head'i #311 tekshiruvlarini ham, `main` deploy'ini ham o'chiradi.
+3. #311 dev'ning yangi head'i bilan qayta yuradi va yashil bo'lishi kerak.
+4. Bir necha ketma-ket yashil yugurishdan keyin (AGENTS.md: 5 ta): Settings → Branches → `dev` va `main` →
+   required checks ga «Visual / visual» va «Deploy / deploy». Shungacha qoida: qizil «Visual» bilan merge yo'q.
+   Sahnaga tegadigan xatti-harakat o'zgarsa, sahna fayli o'sha PR'da yangilanadi; farq kutilgan bo'lsa
+   «Run workflow (update)» o'z branch'ida yuritiladi.
+5. Run workflow (update) faqat ishchi branch'da yuritiladi (`dev` va `main` da emas). U tugaguncha shu branch'ga
+   push qilmang, aks holda bot push'i rad etiladi.
 
 Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUAL_DRY=1` (`AGENTS.md`).
 
@@ -92,14 +109,18 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
   `cancelled/detail.tsx` dagi «Kamera» tugmasi (`docs/DESIGN_SYSTEM.md` §14).
 - **To'liq QA** — Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.
 - Follow-up: `Switch`, `FilterChip`, `Checkbox` primitivlari, `TextInput` prefiks sloti (`CampaignPage` istisnosi).
+- **Chek (yorliq) dizayni — keyinga qoldirilgan** (ega, 2026-10-18). 5 ta taklif rad etilgan: «havodor» va eski
+  chek / BeePost jadvali uslubidagi 4 variant. Hozirgi chek — Bahodir #312 versiyasi. Ega qaytmaguncha bu ishga
+  vaqt sarflanmaydi.
+- Vizual harness'ning qolgan bo'shliqlari (ixtiyoriy): «band» tekshiruvi oyna (portal) ichidagi yuklanishni
+  ko'rmaydi; `tests/visual` hech bir `tsconfig` ga kirmaydi (CI `tsc -b` uni tekshirmaydi).
 
 ### 2.3 Ega tasdiqlagan, dizayndan keyin bitta to'plamda
 
-- Trello: 2 ta yangi Backend kartasi va 4 ta karta izohi.
-  - Yangi kartalar: `GET /transfer-batches` statussiz bo'lganda `meta.total` sahifaga xos; `GET /post` javobida
-    `orders_total`/`amount_total` yo'q.
-  - `FoCaUF10` Done → Backend: «EL-…» raqami bilan qidiruv ishlamaydi.
-  - Izohlar: `rwAy8Qyk`, `3qDsJpfW`, `Ho5qcDn4`.
+- **Bajarilgan** (2026-10-18): backend bo'shliqlari bo'yicha Trello'ga yangi Backend kartalari ochildi va mavjud
+  kartalarga izoh yozildi. `FoCaUF10` Done → Backend; izohlar `rwAy8Qyk`, `3qDsJpfW`, `Ho5qcDn4` va boshqalar.
+  Ro'yxat: `backend-gaps.md` (ega papkasi `Hujjatlar/elchi-v2-specs`).
+- `/mails/old` Excel 20 000 qator chegarasida «Fayl to'liq emas» ogohlantirishi bor (`old.exportCapped`).
 - Ochiq: D-12 — yangi to'lanmagan buyurtmada «To'lanishi kerak 0» (`to_be_paid` semantikasi, backend bilan).
 
 ## 3. Ish usuli (o'zini oqlagan)

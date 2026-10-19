@@ -89,6 +89,20 @@ const submitAndConfirm = async (user: User) => {
 };
 
 const sentPayload = () => postSpy.mock.calls[0]?.[1] as Record<string, unknown>;
+const sentRequestId = (call: number) =>
+  (postSpy.mock.calls[call]?.[1] as Record<string, unknown> | undefined)?.client_request_id;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+const httpError = (status: number, message: string) =>
+  Object.assign(new Error(message), {
+    isAxiosError: true,
+    response: { status, data: { message } },
+  });
+const dispatched = (data: Record<string, unknown>) => ({ data: { statusCode: 201, data } });
+const confirmInDialog = async (user: User) => {
+  const dialog = await submitAndConfirm(user);
+  await user.click(within(dialog).getByRole("button", { name: /Ha, yuborish/ }));
+};
 
 describe("NotificationDispatchForm — recipients", () => {
   it("sends recipient_id for one searched person", async () => {
@@ -387,6 +401,7 @@ describe("NotificationDispatchForm — sending", () => {
 
     expect(await screen.findByText(/Xabar baribir yuborilgan bo'lishi mumkin/)).toBeInTheDocument();
     expect(postSpy).toHaveBeenCalledTimes(1);
+    expect(sentRequestId(0)).toMatch(UUID_RE);
     expect(screen.getByRole("button", { name: /^Yuborish/ })).toBeDisabled();
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(postSpy).toHaveBeenCalledTimes(1);
@@ -413,5 +428,124 @@ describe("NotificationDispatchForm — sending", () => {
 
     expect(await screen.findByText("Qabul qiluvchi topilmadi")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /^Yuborish/ })).not.toBeDisabled();
+  });
+});
+
+describe("NotificationDispatchForm — client_request_id (takror himoyasi)", () => {
+  it("sends a UUID; a retry of the same message after an error reuses it", async () => {
+    const user = userEvent.setup();
+    postSpy
+      .mockRejectedValueOnce(httpError(500, "Ichki xato"))
+      .mockResolvedValueOnce(
+        dispatched({ dispatched: 250, recipient_ids: [], channels: ["in_app"] }),
+      );
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+
+    await confirmInDialog(user);
+    expect(await screen.findByText("Ichki xato")).toBeInTheDocument();
+    expect(sentRequestId(0)).toMatch(UUID_RE);
+
+    // Xuddi shu mazmun qayta yuboriladi — o'sha urinish, o'sha id (backend ikkinchi marta yubormaydi).
+    await confirmInDialog(user);
+    expect(await screen.findByText("Yuborildi: 250 ta qabul qiluvchi.")).toBeInTheDocument();
+    expect(postSpy).toHaveBeenCalledTimes(2);
+    expect(sentRequestId(1)).toBe(sentRequestId(0));
+  });
+
+  it("uses a new id after a successful send («Yangi xabar») and when the message changes", async () => {
+    const user = userEvent.setup();
+    postSpy
+      .mockResolvedValueOnce(dispatched({ dispatched: 1, recipient_ids: [], channels: ["in_app"] }))
+      .mockRejectedValueOnce(httpError(400, "Qabul qiluvchi topilmadi"))
+      .mockResolvedValueOnce(
+        dispatched({ dispatched: 1, recipient_ids: [], channels: ["in_app"] }),
+      );
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    expect(await screen.findByText("Yuborildi: 1 ta qabul qiluvchi.")).toBeInTheDocument();
+
+    // Muvaffaqiyatdan keyin — yangi xabar, yangi urinish.
+    await user.click(screen.getByRole("button", { name: "Yangi xabar" }));
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    expect(await screen.findByText("Qabul qiluvchi topilmadi")).toBeInTheDocument();
+    expect(sentRequestId(1)).toMatch(UUID_RE);
+    expect(sentRequestId(1)).not.toBe(sentRequestId(0));
+
+    // Mazmun o'zgardi — bu boshqa xabar, boshqa id.
+    await user.type(titleInput(), " (tuzatildi)");
+    await confirmInDialog(user);
+    await waitFor(() => expect(postSpy).toHaveBeenCalledTimes(3));
+    expect(sentRequestId(2)).toMatch(UUID_RE);
+    expect(sentRequestId(2)).not.toBe(sentRequestId(1));
+  });
+
+  it("a duplicate of a failed attempt is an error, not «Yuborildi»; the next send is a new attempt", async () => {
+    const user = userEvent.setup();
+    postSpy
+      .mockRejectedValueOnce(httpError(500, "Ichki xato"))
+      .mockResolvedValueOnce({
+        data: {
+          statusCode: 200,
+          data: { duplicate: true, status: "failed", dispatched: 0, channels: ["in_app"] },
+        },
+      })
+      .mockResolvedValueOnce(
+        dispatched({ dispatched: 250, recipient_ids: [], channels: ["in_app"] }),
+      );
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+
+    await confirmInDialog(user);
+    expect(await screen.findByText("Ichki xato")).toBeInTheDocument();
+    await confirmInDialog(user);
+    expect(await screen.findByText(/Avvalgi urinish xato bilan tugagan/)).toBeInTheDocument();
+    expect(screen.queryByText(/^Yuborildi/)).not.toBeInTheDocument();
+    expect(sentRequestId(1)).toBe(sentRequestId(0));
+    expect(screen.getByRole("button", { name: /^Yuborish/ })).not.toBeDisabled();
+
+    await confirmInDialog(user);
+    expect(await screen.findByText("Yuborildi: 250 ta qabul qiluvchi.")).toBeInTheDocument();
+    expect(sentRequestId(2)).toMatch(UUID_RE);
+    expect(sentRequestId(2)).not.toBe(sentRequestId(0));
+  });
+
+  it("a duplicate that is still running locks the form; a sent duplicate shows the stored result", async () => {
+    const user = userEvent.setup();
+    postSpy.mockResolvedValueOnce({
+      data: {
+        statusCode: 200,
+        data: { duplicate: true, status: "running", dispatched: 0, channels: ["in_app"] },
+      },
+    });
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+
+    expect(await screen.findByText(/allaqachon yuborilmoqda/)).toBeInTheDocument();
+    expect(screen.queryByText(/^Yuborildi/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Yuborish/ })).toBeDisabled();
+
+    postSpy.mockResolvedValueOnce({
+      data: {
+        statusCode: 200,
+        data: { duplicate: true, status: "sent", dispatched: 7, channels: ["in_app"] },
+      },
+    });
+    await user.click(screen.getByRole("button", { name: "Yangi xabar" }));
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    expect(await screen.findByText("Yuborildi: 7 ta qabul qiluvchi.")).toBeInTheDocument();
+    expect(
+      screen.getByText(/avvalgi urinishda yuborilgan — qayta yuborilmadi/),
+    ).toBeInTheDocument();
   });
 });

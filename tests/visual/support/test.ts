@@ -6,7 +6,15 @@ import { assertManropeLoaded } from "./fonts";
 import { installMockApi, type ApiTable } from "./mockApi";
 import { assertModeAllowed, snapshotAction } from "./policy";
 import { installSession, profileFor, type BranchType, type Role, type Theme } from "./session";
-import { DEFAULT_MAX_HEIGHT, expandToContent, FIXED_NOW, GLOBAL_MASK, waitForReady } from "./stabilize";
+import {
+  DEFAULT_MAX_HEIGHT,
+  expandToContent,
+  FIXED_NOW,
+  GLOBAL_MASK,
+  pinOnline,
+  queryErrors,
+  waitForReady,
+} from "./stabilize";
 
 /**
  * Vizual snapshotlar — sahna shartnomasi (docs/DESIGN_SYSTEM.md §12.5).
@@ -48,6 +56,8 @@ export interface Scene {
   maxDiffPixels?: number;
   /** Sahifa yuklanish holatlarini ataylab ko'rsatadi — sabab (masalan `ui-kit`). */
   allowBusy?: string;
+  /** Xato holatlarini (`ErrorState`) ataylab ko'rsatadi — sabab (masalan `ui-kit`); aks holda xato holati yiqitadi. */
+  allowErrors?: string;
   /** Kutilgan konsol xatolari — har biri sababi bilan. */
   allowConsole?: ReadonlyArray<{ pattern: RegExp; reason: string }>;
 }
@@ -121,6 +131,7 @@ const runScene = async (page: Page, theme: Theme, scene: Scene, testInfo: TestIn
   };
   const network = await installMockApi(context, { appOrigin, table });
   await installSession(context, { role: scene.role, theme });
+  await pinOnline(context);
   await page.clock.setFixedTime(FIXED_NOW);
 
   const errors: string[] = [];
@@ -146,7 +157,15 @@ const runScene = async (page: Page, theme: Theme, scene: Scene, testInfo: TestIn
   );
 
   const capture = scene.capture ?? "content";
-  if (capture === "content") await expandToContent(page, scene.maxHeight ?? DEFAULT_MAX_HEIGHT);
+  if (capture === "content") await expandToContent(page, scene.maxHeight ?? DEFAULT_MAX_HEIGHT, ready);
+  // Suratdan OLDIN: so'rov xato bergan yoki oflayn kutib turgan blok bo'lsa snapshot olinmaydi — xato holati
+  // («Internet aloqasi yo'q», «0 ta») jim suratga tushmasin, test aniq sabab bilan yiqilsin.
+  if (!scene.allowErrors) {
+    expect(
+      await queryErrors(page),
+      `Vizual «${scene.id}»: xato / oflayn holat chizilgan (data-query-state="error" / ErrorState) — fixture yoki mock'ni tekshiring`,
+    ).toEqual([]);
+  }
   const mask = [...GLOBAL_MASK, ...(scene.mask ?? [])].map((selector) => page.locator(selector));
   const name = `${scene.id}.png`;
   const baseline = testInfo.snapshotPath(name, { kind: "screenshot" });
