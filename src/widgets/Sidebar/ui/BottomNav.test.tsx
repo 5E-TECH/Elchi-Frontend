@@ -7,7 +7,7 @@ import { renderWithProviders } from "../../../test/test-utils";
 import { isScannerOverlayOpen, resetScannerHost } from "../../../shared/lib/scanner/scannerHost";
 import { resetScanTargets, useScanTarget } from "../../../shared/lib/scanner/scanTargets";
 import type { User } from "../../../entities/user/model/types";
-import designRoles from "../../../../design/kit/roles.json";
+import { CODE_DESIGN_ROLES, designRoleInCode, isBottomNavPlanned } from "../../../test/designMenu";
 import { getSidebarConfigForUser, type BranchType } from "../model/menuConfig";
 import BottomNav from "./BottomNav";
 
@@ -28,7 +28,15 @@ vi.mock("../../../shared/lib/navigationPending", async (importOriginal) => ({
 
 type DesignRole = "superadmin" | "admin" | "manager" | "registrator" | "market" | "courier";
 type DesignMenuItem = { key: string; label: string; short?: { uz: string; ru: string; en: string } };
-const ROLES = designRoles.roles as unknown as Record<DesignRole, { menu: DesignMenuItem[]; bottomNav: string[] }>;
+// Maket menyusi — kodda bor rollar, kodda hali yo'q bandlarsiz (`route-map.json` → `plannedMenu`).
+const ROLES = Object.fromEntries(CODE_DESIGN_ROLES.map((role) => [role, designRoleInCode(role)])) as unknown as Record<
+  DesignRole,
+  { menu: DesignMenuItem[]; bottomNav: string[] }
+>;
+const ALL_ROLES = Object.keys(ROLES) as DesignRole[];
+/** Pastki menyusi maketda yangilangan, kodda hali eski rollar (`route-map.json` → `plannedBottomNav`). */
+const PLANNED_BOTTOM_NAV_ROLES = ALL_ROLES.filter((role) => isBottomNavPlanned(role));
+const CURRENT_ROLES = ALL_ROLES.filter((role) => !isBottomNavPlanned(role));
 
 /** `app-shot` dagi sukut filial turlari (maket personasi): menejer — to'liq menyu, registrator — HQ, kuryer — REGIONAL. */
 const DEFAULT_BRANCH: Partial<Record<DesignRole, BranchType>> = {
@@ -76,9 +84,7 @@ afterAll(async () => {
 });
 
 describe("BottomNav — maketdagi bandlar (roles.json → bottomNav)", () => {
-  const roles = Object.keys(ROLES) as DesignRole[];
-
-  it.each(roles)("%s: 5 ta katak, tartibi, manzili va qisqa yorlig'i maketdagidek", (role) => {
+  it.each(CURRENT_ROLES)("%s: 5 ta katak, tartibi, manzili va qisqa yorlig'i maketdagidek", (role) => {
     const branchType = DEFAULT_BRANCH[role] ?? null;
     renderNav(role, { branchType });
     const menu = getSidebarConfigForUser(role, userOf(role, branchType));
@@ -110,7 +116,7 @@ describe("BottomNav — maketdagi bandlar (roles.json → bottomNav)", () => {
   it.each(["ru", "en"] as const)("%s: qisqa yorliqlar maketdagidek (roles.json → short)", async (lang) => {
     await i18n.changeLanguage(lang);
     try {
-      for (const role of Object.keys(ROLES) as DesignRole[]) {
+      for (const role of CURRENT_ROLES) {
         const { unmount } = renderNav(role, { branchType: DEFAULT_BRANCH[role] ?? null });
         ROLES[role].bottomNav.forEach((key, index) => {
           const short = ROLES[role].menu.find((item) => item.key === key)?.short?.[lang];
@@ -120,6 +126,24 @@ describe("BottomNav — maketdagi bandlar (roles.json → bottomNav)", () => {
       }
     } finally {
       await i18n.changeLanguage("uz");
+    }
+  });
+
+  it("plannedBottomNav: kod hali maketdagi kataklarga yetmagan (yetgach — ro'yxatdan oling)", () => {
+    for (const role of PLANNED_BOTTOM_NAV_ROLES) {
+      const branchType = DEFAULT_BRANCH[role] ?? null;
+      const { unmount } = renderNav(role, { branchType });
+      const menu = getSidebarConfigForUser(role, userOf(role, branchType));
+      const expected = ROLES[role].bottomNav.map((key) =>
+        key === "@scan" ? "/scan" : key === "@menu" ? "button:Menyu" : menu.find((item) => item.label === key)?.to,
+      );
+      const actual = cells().map((cell) =>
+        cell.tagName === "BUTTON" && cell.textContent?.includes("Menyu") ? "button:Menyu" : cell.getAttribute("href"),
+      );
+      expect(actual, `${role}: kod maketdagi pastki menyuga yetdi — route-map.json → plannedBottomNav dan oling`).not.toEqual(
+        expected,
+      );
+      unmount();
     }
   });
 

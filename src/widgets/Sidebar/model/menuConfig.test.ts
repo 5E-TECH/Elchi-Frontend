@@ -22,7 +22,7 @@ import {
   Zap,
   type LucideIcon,
 } from "lucide-react";
-import designRoles from "../../../../design/kit/roles.json";
+import { designRoleInCode } from "../../../test/designMenu";
 import {
   MANAGER_CAPABILITIES,
   SIDEBAR_CONFIG,
@@ -310,8 +310,8 @@ describe("sidebar menu icons — roles.json bilan bir xil", () => {
     MapPinned,
   };
   type DesignItem = { key: string; icon: string };
-  const designMenu = (role: string): DesignItem[] =>
-    (designRoles as unknown as { roles: Record<string, { menu: DesignItem[] }> }).roles[role].menu;
+  // Maketdagi, kodda hali yo'q bandlar (`route-map.json` → `plannedMenu`) chiqariladi.
+  const designMenu = (role: string): DesignItem[] => designRoleInCode(role).menu;
 
   it.each([
     ["superadmin", null],

@@ -35,7 +35,8 @@ Qoidalar: [`AGENTS.md`](../AGENTS.md) va [`docs/DESIGN_SYSTEM.md`](../docs/DESIG
 Rollar (ekranlar soni): `superadmin` 218 · `admin` 152 · `manager` 85 · `registrator` 54 · `market` 32 ·
 `market_operator` 5 · `courier` 53 · `logist` 10 · `investor` 13 · `common` 19 (umumiy: kirish, bildirishnomalar, profil…) ·
 `tizim` 13 (dizayn tizimi taxtalari). `market_operator`, `logist`, `investor` — ega 2026-10-19 da tasdiqlagan yangi rollar,
-kodda hali yo'q (menyulari — `kit/route-map.json` → `plannedMenu`).
+kodda hali yo'q (menyulari — `kit/route-map.json` → `plannedMenu`; marketning yangi pastki menyusi — `plannedBottomNav`;
+menyu testlari `src/widgets/Sidebar` ularni `src/test/designMenu.ts` orqali chetlaydi).
 
 ## Ekran nomi
 

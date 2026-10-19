@@ -6,7 +6,7 @@
     "roles (ixtiyoriy) — guard hisobidan farq qilsa (komponent ichidagi qo'shimcha tekshiruv), roleNotes — maketi yo'q rol uchun izoh, redirectsTo — komponent o'zi yo'naltirsa (menyu bandi shu manzilga bog'lanadi), entry — menyuda bo'lmasa, sahifa qayerdan ochiladi,",
     "Holat: sukut 'eski'. Sahifa v2 ga ko'chirilsa (4-bosqich), asosiy faylning birinchi qatoriga `// dizayn-v2: <ekran>` yoziladi — skript uni o'zi topib 'v2' qiladi (yoki shu yerda \"status\": \"v2\"). Keyin npm run design:screens.",
     "newViews — chizilgan, lekin kodda hali yo'q ekranlar; partialViews — kodda qisman bor; viewFiles — maketni chizadigan aniq fayl (route'ning asosiy faylidan farq qilsa). Route qo'shsangiz yoki maket qo'shilsa — shu faylni yangilang (skript farqni topib, xato beradi).",
-    "Rejadagi (kodda hali yo'q) route — path qavs bilan boshlanadi: \"(taklif) /yo'l\" (routes.tsx bilan solishtirilmaydi). plannedMenu — maketdagi menyuda bor, lekin kodda (menuConfig.tsx) hali yo'q bandlar: rol → [kalit]; band kodga qo'shilgach shu ro'yxatdan olinadi (skript eslatadi). Guard roles qiymatidagi «taklif — …» — ega tasdiqlagan, kodda hali yo'q ruxsat."
+    "Rejadagi (kodda hali yo'q) route — path qavs bilan boshlanadi: \"(taklif) /yo'l\" (routes.tsx bilan solishtirilmaydi). plannedMenu — maketdagi menyuda bor, lekin kodda (menuConfig.tsx) hali yo'q bandlar: rol → [kalit]; band kodga qo'shilgach shu ro'yxatdan olinadi (skript eslatadi). plannedBottomNav — shunday, pastki menyu kataklari uchun (kodda — BottomNav.tsx); menyu testlari (src/widgets/Sidebar) ikkalasini o'tkazib, kodda yo'q rollarni (butun menyusi plannedMenu da) chetlaydi. Guard roles qiymatidagi «taklif — …» — ega tasdiqlagan, kodda hali yo'q ruxsat."
   ],
   "roleOrder": ["superadmin", "admin", "manager", "registrator", "market", "market_operator", "courier", "logist", "investor"],
   "statusValues": {
@@ -1661,6 +1661,10 @@
     "market_operator": ["dashboard", "orders", "newOrders", "products", "earnings"],
     "logist": ["dashboard", "orders", "mails", "batches", "couriers", "regions"],
     "investor": ["dashboard", "investments", "profits"]
+  },
+  "plannedBottomNav": {
+    "$comment": "Maketda o'zgargan, kodda (src/widgets/Sidebar/ui/BottomNav.tsx) hali eski pastki menyu: rol → maketdagi kataklar (roles.json → bottomNav bilan bir xil; ega tasdig'i 2026-10-19). Faqat qisqaradi: kod maketga yetgach — shu yerdan olinadi (src/test/designMenu.test.ts eslatadi).",
+    "market": ["dashboard", "orders", "newOrders", "payments", "@menu"]
   },
   "newViews": {
     "superadmin-neworders-incoming-scan-partial": "Chala qop ogohlantirishi, «2/3» belgisi va chala qop QR'i skanerlanganda sariq xabar + ogohlantirish ovozi yo'q (DamKku7C, ega S5) — kodda faqat qop skanida «N tadan M tasi» xabari; «keldi» soni uchun backend received_count kerak (ega S3).",
