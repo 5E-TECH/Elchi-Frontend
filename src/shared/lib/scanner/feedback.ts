@@ -82,6 +82,13 @@ export type ScanFeedbackDetail = {
   type: ScanFeedbackType;
   message?: string;
   source?: ScanSource;
+  /** Xabar ostidagi izoh qatori (kamera xabari): «№10251 · Sherzod Nazarov. Menejerga xabar bering.» */
+  text?: string;
+  /**
+   * Oraliq qadam (masalan bekorlarni topshirishda market QR'i qabul qilindi): «Uzluksiz skanerlash» o'chiq
+   * bo'lsa ham kamera bunda yopilmaydi — keyingi qadam (buyurtmalar) shu kamerada davom etadi.
+   */
+  step?: boolean;
 };
 
 export const SCAN_FEEDBACK_EVENT = "elchi:scan-feedback";
@@ -180,7 +187,8 @@ const getFeedbackTones = (type: ScanFeedbackType): Tone[] => {
 
 const FEEDBACK_VIBRATION: Record<ScanFeedbackType, number | number[]> = {
   success: 40,
-  error: [60, 45, 80],
+  // Maket `common-settings-scanner`: «xato — uch marta».
+  error: [60, 45, 60, 45, 80],
   missing: [35, 55, 35, 55, 70],
   duplicate: [35, 55, 35, 55, 70],
 };
@@ -239,6 +247,17 @@ export type ScanSignalOptions = {
   preview?: boolean;
 };
 
+/** `playScanFeedback` qo'shimchalari: izoh qatori, oraliq qadam, ovozsiz yangilash. */
+export type ScanFeedbackOptions = ScanSignalOptions & {
+  text?: string;
+  step?: boolean;
+  /**
+   * Ovoz va tebranishsiz — faqat ekrandagi xabar yangilanadi (masalan rad etilgan buyurtma raqami keyinroq
+   * aniqlandi: o'sha natija ikkinchi marta jiringlamasin).
+   */
+  silent?: boolean;
+};
+
 /**
  * Faqat ovoz va tebranish (hodisasiz) — natija ekranda boshqa yo'l bilan ko'rsatilganda
  * (masalan kamera «ruxsat berilmagan» kartasi: xabar qatori kerak emas, xato ovozi kerak).
@@ -267,15 +286,16 @@ export const playScanFeedback = (
   type: ScanFeedbackType,
   message?: string,
   source?: ScanSource,
-  options?: ScanSignalOptions,
+  options: ScanFeedbackOptions = {},
 ) => {
+  const { text, step, silent, ...signal } = options;
   if (typeof window !== "undefined") {
     window.dispatchEvent(
       new CustomEvent<ScanFeedbackDetail>(SCAN_FEEDBACK_EVENT, {
-        detail: { type, message, source },
+        detail: { type, message, source, ...(text ? { text } : {}), ...(step ? { step } : {}) },
       }),
     );
   }
 
-  playScanSignal(type, options);
+  if (!silent) playScanSignal(type, signal);
 };

@@ -3,6 +3,7 @@ import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { extractScannerToken } from "../../../shared/lib/scanToken";
+import { todayMarketsQueryOptions } from "../../../entities/orders";
 export { getBackendErrorMessage } from "../../../shared/lib/backendError";
 
 /**
@@ -150,19 +151,12 @@ export const scanAssignOrder = async (qrToken: string) =>
 
 /**
  * Universal skaner «Qabul qilish» rejimi (3-bosqich) — market varag'i: `GET orders/markets/new` (bugun yangi
- * buyurtmasi bor marketlar, har birida son). Kalit `useOrders().useGetTodayOrders()` niki bilan bir xil
- * (`["orders", undefined]`) — kelgan `/new-orders/:marketId` sahifasi va «Marketlar» ro'yxati shu javobni oladi.
- * Varaq har ochilganda yangi ro'yxat (`staleTime: 0`).
+ * buyurtmasi bor marketlar, har birida son). Kalit va so'rov `useOrders().useGetTodayOrders()` bilan bitta
+ * (`todayMarketsQueryOptions`) — kelgan `/new-orders/:marketId` sahifasi va «Marketlar» ro'yxati shu javobni
+ * oladi. Varaq har ochilganda yangi ro'yxat (`staleTime: 0`).
  */
-export const NEW_ORDER_MARKETS_QUERY_KEY = ["orders", undefined] as const;
-
 export const fetchNewOrderMarkets = (queryClient: QueryClient) =>
-  queryClient.fetchQuery({
-    queryKey: [...NEW_ORDER_MARKETS_QUERY_KEY],
-    queryFn: () => api.get(API_ENDPOINTS.ORDERS.MARKETS_NEW).then((res) => res.data),
-    staleTime: 0,
-    retry: false,
-  });
+  queryClient.fetchQuery({ ...todayMarketsQueryOptions(), staleTime: 0, retry: false });
 
 /**
  * Paketni qabul qilish — gateway `@Post('transfer-batches/:id/receive')`

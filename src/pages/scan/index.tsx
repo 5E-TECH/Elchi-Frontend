@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import type { RootState } from "../../app/config/store";
 import { cx } from "../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../shared/lib/formatDateTime";
@@ -27,11 +27,11 @@ import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
 import { CameraLastScan } from "../../shared/ui/camera";
 // Bu sahifa o'zi alohida (lazy) bo'lak — kamera to'g'ridan-to'g'ri, `loadScannerCamera` siz.
 import { ScannerCamera } from "../../shared/ui/camera/ScannerCamera";
-import { Button, Dialog, EmptyState, Pressable, Spinner, buttonClasses } from "../../shared/ui/primitives";
+import { Button, Dialog, EmptyState, Spinner, buttonClasses } from "../../shared/ui/primitives";
 import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
 import { extractTodayMarkets } from "../new_orders/model/todayMarkets";
 import { fetchNewOrderMarkets, getScanResourceType, normalizeScanToken } from "./lib/scanResource";
-import { useScanMode, useScanModes } from "./model/scanModes";
+import { requestedScanMode, useScanMode, useScanModes } from "./model/scanModes";
 import { useScanHistory } from "./model/scanHistory";
 import { scanHistoryTitle } from "./model/scanHistoryText";
 import { useCourierTake } from "./model/useCourierTake";
@@ -116,13 +116,15 @@ const UniversalScanner = () => {
   const { t, i18n } = useTranslation("scan");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const isPhone = useIsPhone();
   const isBelowLg = useIsBelowLg();
   const userId = useSelector((state: RootState) => state.user.user?.id ?? null);
   const { entries } = useScanHistory(userId);
   const modes = useScanModes();
-  const [mode, setMode] = useScanMode(modes, userId);
+  // Router state'dagi rejim (Sozlamalar «Kamerani sinash» — «Ma'lumot») faqat shu ochilish uchun.
+  const [mode, setMode] = useScanMode(modes, userId, requestedScanMode(location.state));
   // «Qabul qilish»: market varag'ini ochish so'rovi (rejim tanlandi, «Marketni tanlang», market tanlanmay skan).
   const [switcherKey, setSwitcherKey] = useState(0);
   const [summaryOpen, setSummaryOpen] = useState(false);
@@ -206,7 +208,10 @@ const UniversalScanner = () => {
     return extractTodayMarkets(response).map((row) => ({
       value: row.market_id,
       label: row.name,
-      meta: t("scanner.receive.pickMeta", { value: formatNumberLocalized(row.orders_count, { language }) }),
+      meta: t("scanner.receive.pickMeta", {
+        count: row.orders_count,
+        value: formatNumberLocalized(row.orders_count, { language }),
+      }),
     }));
   }, [language, queryClient, t]);
 
@@ -267,26 +272,36 @@ const UniversalScanner = () => {
         progress: { done: take.summary.assigned, label: t("scanner.take.meter") },
         list: take.list,
         listTitle: t("scanner.take.listTitle"),
+        // «2 ta biriktirildi · 3 ta skan» — son birligi bilan (ro'yxatda xato qatorlar ham bor).
+        listDescription: `${formatNumberLocalized(take.summary.assigned, { language })} ${t("scanner.take.meter")} · ${t(
+          "scanner.take.scans",
+          { count: take.list.length, value: formatNumberLocalized(take.list.length, { language }) },
+        )}`,
         finish: { label: t("scanner.take.finish"), keepOpen: true, onFinish: () => void finishTake() },
       };
     }
     return { ...base, title: t("scanner.title"), context: t("scanner.context") };
-  }, [finishTake, goToMarket, handleModeChange, loadMarkets, mode, modeOptions, showModes, submit, t, take.list, take.summary.assigned]);
+  }, [
+    finishTake,
+    goToMarket,
+    handleModeChange,
+    language,
+    loadMarkets,
+    mode,
+    modeOptions,
+    showModes,
+    submit,
+    t,
+    take.list,
+    take.summary.assigned,
+  ]);
 
   const dispatchLinkState = scannerArrivalState({ targetId: DISPATCH_TARGET_ID });
   const latest = entries[0];
   let lastScan: ReactNode;
   if (mode === "receive") {
-    lastScan = (
-      <Pressable aria-haspopup="dialog" onClick={openMarketPicker} className="block w-full rounded-[14px] text-left">
-        <CameraLastScan
-          icon={<Store aria-hidden="true" size={18} />}
-          title={t("scanner.receive.pick")}
-          subtitle={t("scanner.receive.pickText")}
-          action={<ChevronRight aria-hidden="true" size={18} className="mr-1.5 shrink-0 opacity-70" />}
-        />
-      </Pressable>
-    );
+    // Market tanlovi — sarlavhadagi almashtirish chipida (pastda takror «Marketni tanlang» qatori yo'q).
+    lastScan = null;
   } else if (mode === "dispatch") {
     lastScan = (
       <Link to={DISPATCH_ROUTE} state={dispatchLinkState} className="block rounded-[14px]">
@@ -329,12 +344,19 @@ const UniversalScanner = () => {
     );
   }
 
-  const manualText =
+  const manualSubmitLabel =
     mode === "take"
-      ? { label: t("scanner.manualDialogLabel"), hint: t("scanner.manualDialogHint"), submitLabel: t("scanner.take.manualSubmit") }
-      : mode === "info"
-        ? { label: t("scanner.manualDialogLabel"), hint: t("scanner.manualDialogHint"), submitLabel: t("scanner.manualSubmit") }
-        : { label: t("scanner.manualDialogLabel"), hint: t("scanner.manualDialogHint") };
+      ? t("scanner.take.manualSubmit")
+      : mode === "dispatch"
+        ? t("scanner.dispatch.manualSubmit")
+        : mode === "info"
+          ? t("scanner.manualSubmit")
+          : undefined;
+  const manualText = {
+    label: t("scanner.manualDialogLabel"),
+    hint: t("scanner.manualDialogHint"),
+    ...(manualSubmitLabel ? { submitLabel: manualSubmitLabel } : {}),
+  };
 
   const camera = (
     <ScannerCamera
@@ -346,6 +368,9 @@ const UniversalScanner = () => {
       phoneSecondary={mode === "take" ? "primary" : "torch"}
       manual={manualText}
       switcherOpenKey={switcherKey}
+      // Kamera to'xtaydi: «Qabul qilish» — market tanlanmaguncha skan hech qayerga ketmaydi (kamera market
+      // sahifasida ochiladi); kuryer xulosasi / «Tugatish» — skanlar qabul qilinmaydi, «Skanerlash faol» yolg'on.
+      paused={mode === "receive" || (mode === "take" && (summaryOpen || finishing))}
     />
   );
 
@@ -353,20 +378,22 @@ const UniversalScanner = () => {
     <Dialog
       open={summaryOpen}
       onClose={() => setSummaryOpen(false)}
-      size="sm"
+      size="md"
       className={isPhone ? "dark" : undefined}
       icon={CircleCheck}
       iconTone="success"
       title={t("scanner.take.summary.title")}
       description={t("scanner.take.summary.text", {
+        count: take.summary.assigned,
         value: formatNumberLocalized(take.summary.assigned, { language }),
       })}
       footer={
         <>
-          <Button variant="secondary" size="lg" onClick={() => setSummaryOpen(false)}>
+          {/* Keng ekranda oddiy o'lcham — ikki tugma bir qatorga sig'adi; telefonda varaqa tugmalari katta. */}
+          <Button variant="secondary" size={isPhone ? "lg" : "md"} onClick={() => setSummaryOpen(false)}>
             {t("scanner.take.summary.continue")}
           </Button>
-          <Button size="lg" leftIcon={ListChecks} onClick={() => navigate(ORDERS_ROUTE)}>
+          <Button size={isPhone ? "lg" : "md"} leftIcon={ListChecks} onClick={() => navigate(ORDERS_ROUTE)}>
             {t("scanner.take.summary.orders")}
           </Button>
         </>
@@ -426,7 +453,8 @@ const UniversalScanner = () => {
           </Link>
           <div className="flex min-w-0 flex-col">
             <h1 className="text-2xl/8 font-bold tracking-[-.01em] text-text">{t("scanner.title")}</h1>
-            <p className="text-sm text-text-muted">{t("scanner.subtitle")}</p>
+            {/* Rejimda sahifa ochilmaydi — izoh rejimniki («Buyurtma darhol sizga biriktiriladi»). */}
+            <p className="text-sm text-text-muted">{t(mode === "info" ? "scanner.subtitle" : `scanner.${mode}.context`)}</p>
           </div>
         </div>
         <Link to="/settings" state={{ tab: "scanner" }} className={buttonClasses({ variant: "ghost" })}>
@@ -471,12 +499,21 @@ const UniversalScanner = () => {
               />
             </div>
           ) : null}
-          <ScanUsbCard
-            onSubmit={(code) => submit(code, "manual")}
-            showTips={!isBelowLg && !(mode === "info" && outcome) && !showModes}
-            submitLabel={mode === "take" ? t("scanner.take.manualSubmit") : undefined}
-          />
-          {mode !== "take" ? <ScanRecentCard entries={entries} limit={isBelowLg ? 2 : 4} /> : null}
+          {/* «Qabul qilish»: market tanlanmaguncha kod hech qayerga ketmaydi — qo'lda kiritish ham yo'q. */}
+          {mode !== "receive" ? (
+            <ScanUsbCard
+              onSubmit={(code) => submit(code, "manual")}
+              showTips={!isBelowLg && !(mode === "info" && outcome) && !showModes}
+              submitLabel={manualSubmitLabel}
+            />
+          ) : null}
+          {mode !== "take" ? (
+            <ScanRecentCard
+              entries={entries}
+              limit={isBelowLg ? 2 : 4}
+              emptyText={mode === "info" ? undefined : t("scanner.recentEmptyModeText")}
+            />
+          ) : null}
         </aside>
       </div>
       {summaryDialog}

@@ -661,7 +661,8 @@ qiymat oshirilmaydi; shovqinli grafik sahnasi — sahna `maxDiffPixels` (sabab i
 **Sahna qachon qo'shiladi yoki o'zgaradi:** yangi rolning bosh ekrani; yangi v2 pattern (ro'yxat, filtr + chiplar,
 forma + qadamlar, dialog → telefonda varaqa, tanlov paneli, skaner holati, KPI + grafik); sahna sahifasi qayta
 tuzilsa (route, holat, maket). id global va kebab-case (PNG nomi, `defineScene` takrorni rad etadi). Faqat v2
-sahifalar; kamera ko'rinishlari yo'q (alohida ish).
+sahifalar; kamera ko'rinishlari sahnalarda yo'q (soxta kamera tasviri piksel bo'yicha beqaror) — ular unit va
+e2e (`FAKE_CAMERA`) testlarida tekshiriladi.
 
 **Holati:** «Visual / visual» hozircha maslahat (required emas): baseline'lar yaratilib (0- va 2-qadam), 5 ta ketma-ket
 yashil PR yugurishidan so'ng ega GitHub sozlamalarida `dev` uchun required qiladi. Har draft bo'lmagan PR push'ida

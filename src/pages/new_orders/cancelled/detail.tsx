@@ -235,7 +235,8 @@ const CancelledMarketDetail = () => {
       setAuthorizationExpiresAt(authorization.expiresAt);
       setSelectedIds(new Set(selectableOrders.map((order) => order.id)));
       setIsHandoverQrScanned(true);
-      void playScanFeedback("success", t("cancelled.notify.qrAccepted"));
+      // Oraliq qadam: «Uzluksiz skanerlash» o'chiq bo'lsa ham kamera yopilmaydi — buyurtmalar shu kamerada.
+      void playScanFeedback("success", t("cancelled.notify.qrAccepted"), undefined, { step: true });
       scanNotify.success(t("cancelled.notify.qrAccepted"), {
         description: t("cancelled.notify.qrAcceptedDescription", {
           count: selectableOrders.length,

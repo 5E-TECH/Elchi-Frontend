@@ -40,7 +40,9 @@ vi.mock("../../shared/lib/scanner/feedback", async (importOriginal) => {
     playScanFeedback: (...args: Parameters<typeof actual.playScanFeedback>) => {
       feedbackMock(...args);
       window.dispatchEvent(
-        new CustomEvent(actual.SCAN_FEEDBACK_EVENT, { detail: { type: args[0], message: args[1], source: args[2] } }),
+        new CustomEvent(actual.SCAN_FEEDBACK_EVENT, {
+          detail: { type: args[0], message: args[1], source: args[2], text: args[3]?.text, step: args[3]?.step },
+        }),
       );
     },
     playScanSignal: vi.fn(),
@@ -57,6 +59,9 @@ vi.mock("./lib/scanResource", async (importOriginal) => ({
     return Promise.resolve();
   },
 }));
+
+// Kadr yorqinligi o'lchanmaydi (jsdom'da canvas yo'q — «getContext not implemented» shovqini).
+vi.mock("../../shared/ui/camera/useLowLight", () => ({ useLowLight: () => false }));
 
 vi.mock("../../shared/lib/useCameraQrScanner", () => ({
   useCameraQrScanner: ({ onDecode }: { onDecode: (value: string) => void }) => {
@@ -548,8 +553,8 @@ describe("ScanPage — kuryer «O'zimga olish» (telefon)", () => {
     await waitFor(() => expect(assignMock).toHaveBeenCalledTimes(2));
     expect(await screen.findByText("№10172 · Sardor Qodirov")).toBeInTheDocument();
     expect(screen.getByText("Allaqachon sizda · Yunusobod tumani")).toBeInTheDocument();
-    // Hisoblagich faqat yangi biriktirilganlarni sanaydi.
-    expect(screen.getByText("ta biriktirildi")).toBeInTheDocument();
+    // Hisoblagich faqat yangi biriktirilganlarni sanaydi («Allaqachon sizda» — yo'q).
+    expect(screen.getByText("ta biriktirildi").parentElement).toHaveTextContent(/^1\s*ta biriktirildi$/);
     expect(fetchMock).not.toHaveBeenCalled();
     expect(navigateMock).not.toHaveBeenCalled();
   });
@@ -557,7 +562,10 @@ describe("ScanPage — kuryer «O'zimga olish» (telefon)", () => {
   it("boshqa kuryerniki — «Boshqa kuryerda: <ism>» (buyurtma bir marta o'qiladi), so'rov takrorlanmaydi", async () => {
     const user = userEvent.setup();
     setPhone(true);
-    assignMock.mockRejectedValueOnce(otherCourier());
+    assignMock
+      .mockRejectedValueOnce(otherCourier())
+      .mockResolvedValueOnce(assignOk("10191", "Lobar Yusupova"))
+      .mockRejectedValueOnce(otherCourier());
     fetchMock.mockResolvedValue({
       type: "order",
       data: { ...ORDER, id: "10251", customer: { name: "Gulnora Tojiboyeva" }, courier: { name: "Sherzod Nazarov" } },
@@ -568,7 +576,29 @@ describe("ScanPage — kuryer «O'zimga olish» (telefon)", () => {
 
     expect(await screen.findByText("Boshqa kuryerda: Sherzod Nazarov")).toBeInTheDocument();
     expect(screen.getByText("№10251 · Gulnora Tojiboyeva")).toBeInTheDocument();
-    expect(feedbackMock).toHaveBeenCalledWith("error", "Boshqa kuryerga biriktirilgan. Menejerga xabar bering.");
+    // Maket `courier-scan-other-courier`: sarlavha + izoh; raqam va kuryer aniqlangach izoh ovozsiz yangilanadi.
+    expect(feedbackMock).toHaveBeenCalledWith("error", "Boshqa kuryerga biriktirilgan", undefined, {
+      text: "Menejerga xabar bering.",
+    });
+    await waitFor(() =>
+      expect(feedbackMock).toHaveBeenCalledWith("error", "Boshqa kuryerga biriktirilgan", undefined, {
+        text: "№10251 · Sherzod Nazarov. Menejerga xabar bering.",
+        silent: true,
+      }),
+    );
+    expect(await screen.findByText("№10251 · Sherzod Nazarov. Menejerga xabar bering.")).toBeInTheDocument();
+
+    // Boshqa kod, keyin yana o'sha kod — buyurtma qayta o'qilmaydi, izoh darhol to'liq.
+    await enterManual(user, OTHER_TOKEN, "Olish");
+    await screen.findByText("№10191 · Lobar Yusupova");
+    feedbackMock.mockClear();
+    await enterManual(user, TOKEN, "Olish");
+    await waitFor(() => expect(assignMock).toHaveBeenCalledTimes(3));
+    await waitFor(() =>
+      expect(feedbackMock).toHaveBeenCalledWith("error", "Boshqa kuryerga biriktirilgan", undefined, {
+        text: "№10251 · Sherzod Nazarov. Menejerga xabar bering.",
+      }),
+    );
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
@@ -602,12 +632,16 @@ describe("ScanPage — kuryer «O'zimga olish» (telefon)", () => {
     await enterManual(user, TOKEN, "Olish");
     await screen.findByText("№10191 · Lobar Yusupova");
     await enterManual(user, OTHER_TOKEN, "Olish");
-    await screen.findByText("Boshqa kuryerga biriktirilgan");
+    await screen.findAllByText("Boshqa kuryerga biriktirilgan");
+    // Raqam aniqlanmadi (404) — xom token emas, «Buyurtma».
+    expect(screen.getByText("Buyurtma")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Tugatish" }));
 
     const summary = await screen.findByRole("dialog", { name: "Skanerlash yakunlandi" });
     expect(within(summary).getByText("1 ta buyurtma sizga biriktirildi")).toBeInTheDocument();
+    // Xulosa ochiq — kamera to'xtatilgan («Skanerlash faol» yolg'on bo'lardi, skanlar jim yo'qolardi).
+    expect(screen.getByText("Kamera to'xtatildi")).toBeInTheDocument();
     expect(within(summary).getByText("Biriktirilmadi").nextSibling).toHaveTextContent("1");
     expect(invalidateMock).toHaveBeenCalledTimes(1);
     // Kamera sahifasi yopilmaydi (xulosa uning ustida).

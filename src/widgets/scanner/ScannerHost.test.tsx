@@ -5,7 +5,12 @@ import { Route, Routes, useLocation, useNavigate, type NavigateFunction } from "
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import i18n, { i18nReady } from "../../i18n";
 import { renderWithProviders } from "../../test/test-utils";
-import { isScannerOverlayOpen, openScanner, resetScannerHost } from "../../shared/lib/scanner/scannerHost";
+import {
+  isScannerOverlayOpen,
+  openScanner,
+  resetScannerHost,
+  SCANNER_ARRIVAL_TIMEOUT_MS,
+} from "../../shared/lib/scanner/scannerHost";
 import { resetScanTargets, useScanTarget } from "../../shared/lib/scanner/scanTargets";
 import ScannerHost from "./ScannerHost";
 
@@ -270,6 +275,25 @@ describe("ScannerHost — «kelganda och» (universal skaner rejimlari, 3-bosqic
     await new Promise((done) => setTimeout(done, 50));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(isScannerOverlayOpen()).toBe(false);
+  });
+
+  it("bayroq tarixdan darhol tozalanadi (maqsad hali yo'q) — kutish faqat xotirada", async () => {
+    renderArrival({ openScanner: { targetId: "dispatch" } }, 150);
+    await waitFor(() => expect(screen.getByTestId("state")).toHaveTextContent("null"));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(await screen.findByRole("dialog", { name: "Kuryerga biriktirish" })).toBeInTheDocument();
+  });
+
+  it("maqsad `SCANNER_ARRIVAL_TIMEOUT_MS` dan keyin kelsa — kamera ochilmaydi", async () => {
+    const start = Date.now();
+    const now = vi.spyOn(Date, "now").mockReturnValue(start);
+    renderArrival({ openScanner: { targetId: "dispatch" } }, 120);
+    await waitFor(() => expect(screen.getByTestId("state")).toHaveTextContent("null"));
+    now.mockReturnValue(start + SCANNER_ARRIVAL_TIMEOUT_MS + 1);
+    await new Promise((done) => setTimeout(done, 200));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(isScannerOverlayOpen()).toBe(false);
+    now.mockRestore();
   });
 
   it("bayroqsiz kelinsa — kamera o'zi ochilmaydi", async () => {

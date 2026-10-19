@@ -28,6 +28,8 @@ export type ScanTargetListItem = {
   title: string;
   subtitle?: string;
   tone?: ScanTargetTone;
+  /** Ohang ikonkasi o'rniga (masalan «Boshqa kuryerda» — `UserX`, maket `courier-scan-other-courier`). */
+  icon?: LucideIcon;
   /** Berilsa — qatorda «Bekor qilish» (tanlovdan chiqarish; server amali emas). */
   onUndo?: () => void;
 };

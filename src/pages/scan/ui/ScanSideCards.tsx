@@ -183,7 +183,16 @@ export const ScanUsbCard = ({
 };
 
 /** «Oxirgi skanerlar · Shu qurilmada» — bosilsa `/scan/:token`. Planshetda 2 ta, desktopda 4 tagacha. */
-export const ScanRecentCard = ({ entries, limit }: { entries: ScanHistoryEntry[]; limit: number }) => {
+export const ScanRecentCard = ({
+  entries,
+  limit,
+  emptyText,
+}: {
+  entries: ScanHistoryEntry[];
+  limit: number;
+  /** Bo'sh holat izohi (sukut — «Ma'lumot» rejimi: «Kod topilishi bilan natija shu yerda chiqadi»). */
+  emptyText?: string;
+}) => {
   const { t, i18n } = useTranslation("scan");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const shown = entries.slice(0, limit);
@@ -196,7 +205,7 @@ export const ScanRecentCard = ({ entries, limit }: { entries: ScanHistoryEntry[]
       className="overflow-hidden"
     >
       {shown.length === 0 ? (
-        <EmptyState icon={History} title={t("scanner.recentEmptyTitle")} description={t("scanner.recentEmptyText")} />
+        <EmptyState icon={History} title={t("scanner.recentEmptyTitle")} description={emptyText ?? t("scanner.recentEmptyText")} />
       ) : (
         <ul className="divide-y divide-border border-t border-border">
           {shown.map((entry) => {

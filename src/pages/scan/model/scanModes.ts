@@ -56,6 +56,13 @@ const STORAGE_PREFIX = "elchi:scan-mode:v1:";
 
 export const scanModeStorageKey = (userId: string | null | undefined) => `${STORAGE_PREFIX}${userId || "anon"}`;
 
+/** `/scan` ni ma'lum rejimda ochish (`navigate("/scan", { state: scanModeState("info") })`), saqlanmaydi. */
+export const scanModeState = (mode: UniversalScanMode) => ({ scanMode: mode });
+
+/** Router state'dagi so'ralgan rejim. */
+export const requestedScanMode = (state: unknown): unknown =>
+  state && typeof state === "object" ? (state as { scanMode?: unknown }).scanMode : undefined;
+
 const isMode = (value: unknown): value is UniversalScanMode =>
   value === "info" || value === "receive" || value === "dispatch" || value === "take";
 
@@ -94,9 +101,17 @@ export const useScanModes = (): UniversalScanMode[] => {
 /**
  * Tanlangan rejim: qurilmada saqlangani (hozir ruxsat etilgan bo'lsa), aks holda sukut. `setMode` qurilmaga
  * yozadi. Ruxsat o'zgarsa (filial turi aniqlandi) — ro'yxatda yo'q rejim sukutga qaytadi.
+ * `requested` — shu ochilish uchun rejim (router state `scanModeState`, masalan Sozlamalardagi «Kamerani
+ * sinash» — «Ma'lumot», kuryer sinov skanida buyurtmani o'ziga olib qo'ymasin); qurilmaga yozilmaydi.
  */
-export const useScanMode = (modes: readonly UniversalScanMode[], userId: string | null | undefined) => {
-  const [chosen, setChosen] = useState<UniversalScanMode | null>(() => readStoredScanMode(userId));
+export const useScanMode = (
+  modes: readonly UniversalScanMode[],
+  userId: string | null | undefined,
+  requested?: unknown,
+) => {
+  const [chosen, setChosen] = useState<UniversalScanMode | null>(() =>
+    isMode(requested) ? requested : readStoredScanMode(userId),
+  );
   const mode = chosen && modes.includes(chosen) ? chosen : defaultScanMode(modes);
   const setMode = useCallback(
     (next: UniversalScanMode) => {

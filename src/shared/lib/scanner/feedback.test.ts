@@ -59,7 +59,7 @@ describe("Sozlamalar → Skaner: «Ovoz» va «Tebranish» kalitlari", () => {
     playScanSignal("success");
     playScanSignal("error");
     expect(vibrate).toHaveBeenNthCalledWith(1, 40);
-    expect(vibrate).toHaveBeenNthCalledWith(2, [60, 45, 80]);
+    expect(vibrate).toHaveBeenNthCalledWith(2, [60, 45, 60, 45, 80]);
   });
 
   it("«Tebranish» o'chiq — tebranmaydi; «Eshitib ko'rish» (preview) baribir signal beradi", () => {
@@ -70,6 +70,17 @@ describe("Sozlamalar → Skaner: «Ovoz» va «Tebranish» kalitlari", () => {
     expect(vibrate).not.toHaveBeenCalled();
     playScanFeedback("success", "Qabul qilindi", undefined, { preview: true });
     expect(vibrate).toHaveBeenCalledTimes(1);
+  });
+
+  it("`silent` — faqat ekrandagi xabar (izoh qatori bilan), ovoz va tebranish yo'q", () => {
+    const vibrate = mockVibrate();
+    const { details, stop } = listen();
+    playScanFeedback("error", "Boshqa kuryerga biriktirilgan", "camera", { text: "№10251", silent: true });
+    stop();
+    expect(vibrate).not.toHaveBeenCalled();
+    expect(details).toEqual([
+      expect.objectContaining({ type: "error", message: "Boshqa kuryerga biriktirilgan", text: "№10251" }),
+    ]);
   });
 
   it("«Ovoz» o'chiq — ohang chalinmaydi (AudioContext yaratilmaydi), ekrandagi xabar hodisasi qoladi", () => {

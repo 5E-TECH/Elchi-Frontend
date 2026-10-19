@@ -92,7 +92,7 @@ const Choice = ({
 );
 
 /**
- * «KAMERA» kartasi (maket `common-settings-scanner`, skaner ishi 4-bosqichi): «Kamerani sinash» → `/scan`,
+ * «KAMERA» kartasi (maket `common-settings-scanner`, skaner ishi 4-bosqichi): «Kamerani sinash» → `/scan` («Ma'lumot»),
  * asosiy kamera (orqa / old), kalitlar (chiroq — avtomatik, uzluksiz skanerlash, ovoz, tebranish) va ramka
  * o'lchami. Qiymatlar `entities/settings` da (hisobga yoziladi) + `localStorage` ko'zgusi — kamera
  * (`ScannerCamera`) va skan signali shundan o'qiydi; har tanlov darhol saqlanadi.
@@ -149,7 +149,13 @@ const CameraSection = ({
         hint={t("scanner.camera.hint")}
         aside={
           canTestCamera ? (
-            <Link to="/scan" className={buttonClasses({ variant: "secondary", className: "flex-none" })}>
+            // «Ma'lumot» rejimida (saqlanmaydi; `pages/scan` `scanModeState`): kuryer sinov skanida buyurtmani
+            // `scan-assign` bilan o'ziga olib qo'ymasin.
+            <Link
+              to="/scan"
+              state={{ scanMode: "info" }}
+              className={buttonClasses({ variant: "secondary", className: "flex-none" })}
+            >
               <ScanLine aria-hidden="true" size={18} />
               {t("scanner.camera.test")}
             </Link>

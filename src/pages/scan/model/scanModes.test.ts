@@ -1,3 +1,4 @@
+import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { RootState } from "../../../app/config/store";
 import {
@@ -5,7 +6,10 @@ import {
   readStoredScanMode,
   resolveScanModes,
   scanModeAccessOf,
+  requestedScanMode,
+  scanModeState,
   scanModeStorageKey,
+  useScanMode,
   writeStoredScanMode,
 } from "./scanModes";
 
@@ -90,5 +94,28 @@ describe("tanlangan rejim — qurilmada", () => {
     });
     expect(() => writeStoredScanMode("u-1", "info")).not.toThrow();
     expect(readStoredScanMode("u-1")).toBeNull();
+  });
+});
+
+describe("so'ralgan rejim (router state) — shu ochilish uchun", () => {
+  afterEach(() => window.localStorage.clear());
+
+  it("Sozlamalar «Kamerani sinash»: kuryer «Ma'lumot» da ochiladi, saqlangan «O'zimga olish» o'zgarmaydi", () => {
+    writeStoredScanMode("u-1", "take");
+    const requested = requestedScanMode(scanModeState("info"));
+    const { result } = renderHook(() => useScanMode(["take", "info"], "u-1", requested));
+    expect(result.current[0]).toBe("info");
+    expect(readStoredScanMode("u-1")).toBe("take");
+
+    // Foydalanuvchi o'zi tanlasa — odatdagidek saqlanadi.
+    act(() => result.current[1]("take"));
+    expect(result.current[0]).toBe("take");
+    expect(readStoredScanMode("u-1")).toBe("take");
+  });
+
+  it("noma'lum yoki ruxsatsiz so'rov e'tiborsiz", () => {
+    expect(requestedScanMode(null)).toBeUndefined();
+    const { result } = renderHook(() => useScanMode(["take", "info"], "u-1", "dispatch"));
+    expect(result.current[0]).toBe("take");
   });
 });

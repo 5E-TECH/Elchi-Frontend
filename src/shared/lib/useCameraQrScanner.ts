@@ -30,6 +30,46 @@ type CameraQrScannerOptions = {
   calculateScanRegion?: (video: HTMLVideoElement) => QrScanRegion;
 };
 
+/** O'lcham o'zgarishlari to'xtagach skan hududi qayta hisoblanadi (burish animatsiyasi davomida emas). */
+const REGION_UPDATE_DELAY_MS = 150;
+
+/**
+ * Ko'rinish o'zgarishini kuzatish: `<video>` elementi o'lchami (ResizeObserver — oyna, planshet burilishi,
+ * brauzer paneli), oqim o'lchami (`resize` — Android'da burilganda kadr eni/bo'yi almashadi) va
+ * `orientationchange`. Har biri — kechiktirilgan `update` (bir nechta hodisa bitta qayta hisob).
+ */
+const watchVideoLayout = (video: HTMLVideoElement, update: () => void) => {
+  let timer: number | null = null;
+  const schedule = () => {
+    if (timer !== null) window.clearTimeout(timer);
+    timer = window.setTimeout(() => {
+      timer = null;
+      update();
+    }, REGION_UPDATE_DELAY_MS);
+  };
+  let firstObservation = true;
+  const observer =
+    typeof ResizeObserver === "function"
+      ? new ResizeObserver(() => {
+          // `observe()` darhol bir marta chaqiradi — hudud hozirgina hisoblangan, qayta hisob shart emas.
+          if (firstObservation) {
+            firstObservation = false;
+            return;
+          }
+          schedule();
+        })
+      : null;
+  observer?.observe(video);
+  video.addEventListener("resize", schedule);
+  window.addEventListener("orientationchange", schedule);
+  return () => {
+    if (timer !== null) window.clearTimeout(timer);
+    observer?.disconnect();
+    video.removeEventListener("resize", schedule);
+    window.removeEventListener("orientationchange", schedule);
+  };
+};
+
 export const useCameraQrScanner = ({
   isActive,
   videoRef,
@@ -143,6 +183,7 @@ export const useCameraQrScanner = ({
 
     let cancelled = false;
     let restartTimeout: number | null = null;
+    let unwatchLayout: (() => void) | null = null;
 
     const startScanner = async () => {
       setIsStarting(true);
@@ -187,6 +228,13 @@ export const useCameraQrScanner = ({
         }
 
         setCameraUnavailable(false);
+        // Hudud ekrandagi ramkaga bog'langan — ko'rinish o'zgarsa qayta hisoblanadi (kutubxona o'zi qilmaydi).
+        const video = videoRef.current;
+        if (initialRegion && video) {
+          unwatchLayout = watchVideoLayout(video, () => {
+            if (!cancelled && scannerRef.current === scanner) scanner.updateScanRegion();
+          });
+        }
         setHasTorch(await scanner.hasFlash().catch(() => false));
         // Bir nechta kamera bo'lsa — «Kamerani almashtirish» tugmasi (soxta skaner testlarda bu usulsiz).
         const cameraCount = await Promise.resolve()
@@ -225,6 +273,7 @@ export const useCameraQrScanner = ({
 
     return () => {
       cancelled = true;
+      unwatchLayout?.();
       stopScanner();
       if (restartTimeout) {
         window.clearTimeout(restartTimeout);

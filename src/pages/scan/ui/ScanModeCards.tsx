@@ -94,7 +94,7 @@ export const ScanTakeCard = ({
         <ul className="max-h-[360px] divide-y divide-border overflow-y-auto border-t border-border">
           {list.map((item) => {
             const tone = ROW_TONE[item.tone ?? "neutral"];
-            const Icon = tone.icon;
+            const Icon = item.icon ?? tone.icon;
             return (
               <li key={item.key} className="flex min-h-14 min-w-0 items-center gap-3 px-5 py-2.5">
                 <Icon aria-hidden="true" size={18} strokeWidth={2} className={cx("shrink-0", tone.className)} />

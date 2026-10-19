@@ -77,6 +77,8 @@ import { FLASH_MS, useScannerCameraSession, type CameraResult } from "./useScann
 
 /** Yon panelda (planshet/desktop) ko'rinadigan so'nggi qatorlar soni; qolgani — «Ro'yxat» varag'ida. */
 const SIDE_LIST_LIMIT = 4;
+/** Kamera yuborgan skanning natijasi shuncha vaqt kutiladi (keyin «bitta kod» rejimi uni hisoblamaydi). */
+const AWAIT_RESULT_MS = 5_000;
 
 /**
  * KAMERA SKANERI (dizayn v2) — taxta `tizim-scanner`: anatomiya (§03, 10 qism), holatlar (§04), uzluksiz skan
@@ -132,6 +134,11 @@ export type ScannerCameraProps = {
    */
   suspended?: boolean;
   /**
+   * Kamera vaqtincha to'xtatilgan (masalan kuryer xulosa oynasi ochiq): oqim to'xtaydi, chipda «Kamera
+   * to'xtatildi», ramka xira — skanlar jim yo'qolib, «Skanerlash faol» deb turmasin.
+   */
+  paused?: boolean;
+  /**
    * Almashtirish varag'ini tashqaridan ochish (`target.switcher` bo'lsa): qiymat o'zgarsa (0 dan katta) varaq
    * ochiladi. Universal skaner «Qabul qilish» rejimi — rejim tanlanganda yoki yon paneldagi «Marketni tanlang»
    * bosilganda market varag'i (keng `page` ko'rinishida sarlavha chipi yo'q, tugma sahifaning o'zida).
@@ -164,7 +171,11 @@ const LIST_TONE: Record<ScanTargetTone, { icon: LucideIcon; className: string; c
   neutral: { icon: Info, className: "text-text-muted", camera: null },
 };
 
-const listTone = (item: ScanTargetListItem) => LIST_TONE[item.tone ?? "neutral"];
+/** Qator ohangi; `item.icon` berilsa — ohangning ikonkasi o'rniga (masalan «Boshqa kuryerda» — `UserX`). */
+const listTone = (item: ScanTargetListItem) => {
+  const tone = LIST_TONE[item.tone ?? "neutral"];
+  return item.icon ? { ...tone, icon: item.icon } : tone;
+};
 
 export const ScannerCamera = ({
   target,
@@ -174,6 +185,7 @@ export const ScannerCamera = ({
   phoneSecondary = "primary",
   manual,
   suspended = false,
+  paused: pausedProp = false,
   switcherOpenKey = 0,
 }: ScannerCameraProps) => {
   const { t, i18n } = useTranslation("ui");
@@ -188,10 +200,14 @@ export const ScannerCamera = ({
   const [prefs] = useState(readStoredScannerCameraPrefs);
   /** «Uzluksiz skanerlash» o'chiq — oqim oynasi birinchi muvaffaqiyatli koddan keyin yopiladi. */
   const singleShot = overlay && !prefs.continuous && Boolean(onClose);
-  /** Shu kamera yuborgan skan (kamera yoki qo'lda) natijasi kutilmoqda — USB skan natijasi yopmasin. */
-  const awaitingResultRef = useRef(false);
+  /**
+   * Shu kamera yuborgan skan (kamera yoki qo'lda) natijasi kutilmoqda — USB skan natijasi yopmasin. Vaqt
+   * belgisi: sahifa javobsiz qolsa (masalan skanni jim tashladi), belgi `AWAIT_RESULT_MS` dan keyin eskiradi —
+   * keyingi USB natijasi kamerani yopib yubormasin.
+   */
+  const awaitingResultRef = useRef(0);
   const forwardScan = (raw: string, source: ScanSource) => {
-    awaitingResultRef.current = true;
+    awaitingResultRef.current = Date.now();
     return target.onScan(raw, source);
   };
 
@@ -210,7 +226,7 @@ export const ScannerCamera = ({
 
   const session = useScannerCameraSession({
     videoRef,
-    active: sheet === null,
+    active: sheet === null && !pausedProp,
     scanEnabled: !suspended,
     // Telefon ↔ keng ko'rinish almashsa `<video>` boshqa joyda qayta yaratiladi — skaner yangisiga ulanadi.
     layoutKey: isPhone,
@@ -255,13 +271,17 @@ export const ScannerCamera = ({
   // Bitta kod rejimi: natija kelgach (yashil ramka ko'rinib ulgursin — `FLASH_MS`) oyna yopiladi.
   const resultId = session.result?.id;
   const resultType = session.result?.type;
+  // Oraliq qadam (market QR'i qabul qilindi) — kamera yopilmaydi, keyingi qadam shu yerda davom etadi.
+  const resultStep = session.result?.step === true;
   const singleShotTimerRef = useRef<number | null>(null);
   useEffect(() => {
-    if (resultId === undefined || resultType === "tooFast" || !awaitingResultRef.current) return;
-    awaitingResultRef.current = false;
-    if (!singleShot || resultType !== "success" || singleShotTimerRef.current !== null) return;
+    if (resultId === undefined || resultType === "tooFast") return;
+    const awaitingSince = awaitingResultRef.current;
+    if (!awaitingSince || Date.now() - awaitingSince > AWAIT_RESULT_MS) return;
+    awaitingResultRef.current = 0;
+    if (!singleShot || resultType !== "success" || resultStep || singleShotTimerRef.current !== null) return;
     singleShotTimerRef.current = window.setTimeout(() => onCloseRef.current?.(), FLASH_MS);
-  }, [resultId, resultType, singleShot]);
+  }, [resultId, resultType, resultStep, singleShot]);
   useEffect(
     () => () => {
       if (singleShotTimerRef.current !== null) window.clearTimeout(singleShotTimerRef.current);
@@ -415,7 +435,7 @@ export const ScannerCamera = ({
     );
   }
 
-  const paused = sheet !== null;
+  const paused = sheet !== null || pausedProp;
   const waiting = session.gate === "checking";
   let stage: ReactNode;
   let headChip: ReactNode;
@@ -488,7 +508,7 @@ export const ScannerCamera = ({
               ? t("camera.result.tooFastTitle")
               : (result.message ?? t(`camera.result.${result.type}`))
           }
-          text={result.type === "tooFast" ? t("camera.result.tooFastText") : undefined}
+          text={result.type === "tooFast" ? t("camera.result.tooFastText") : result.text}
         />
       ) : null}
     </CameraToasts>

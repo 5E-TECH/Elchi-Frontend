@@ -154,6 +154,7 @@
     "recentScope": "On this device",
     "recentEmptyTitle": "No scans yet",
     "recentEmptyText": "The camera is waiting for a QR code. The result appears here as soon as a code is found.",
+    "recentEmptyModeText": "Codes read in «Info» mode appear here.",
     "phoneEmptyTitle": "No scans yet",
     "phoneEmptyText": "The right page opens as soon as a code is found",
     "lastTitle": "Last: {{title}}",
@@ -205,10 +206,11 @@
     "receive": {
       "title": "Receive",
       "context": "Choose a market first",
-      "hint": "Choose a market — the camera opens on its page",
+      "hint": "Choose a market first",
       "pick": "Choose a market",
       "pickText": "Markets with new orders",
-      "pickMeta": "{{value}} new orders",
+      "pickMeta_one": "{{value}} new order",
+      "pickMeta_other": "{{value}} new orders",
       "pickFirst": "Choose a market first"
     },
     "dispatch": {
@@ -217,13 +219,16 @@
       "hint": "Read the order QR code — the assignment page opens",
       "open": "Open assignment",
       "openText": "The basket is kept on this device",
-      "notOrder": "This is not an order QR code — only orders go to the basket"
+      "notOrder": "This is not an order QR code — only orders go to the basket",
+      "manualSubmit": "Add to basket"
     },
     "take": {
       "title": "Take myself",
       "context": "Orders are assigned to you at once",
       "hint": "Read the order QR code — it is assigned to you at once",
       "meter": "assigned",
+      "scans_one": "{{value}} scan",
+      "scans_other": "{{value}} scans",
       "listTitle": "Scanned",
       "emptyText": "Scanned orders appear here",
       "assigned": "Assigned to you",
@@ -233,7 +238,9 @@
       "repeatToast": "{{ref}} already scanned",
       "otherCourier": "With another courier: {{name}}",
       "otherCourierUnknown": "Assigned to another courier",
-      "otherCourierToast": "Assigned to another courier. Tell your manager.",
+      "otherCourierHint": "Tell your manager.",
+      "otherCourierText": "{{who}}. Tell your manager.",
+      "orderFallback": "Order",
       "notOrder": "This is not an order QR code — open it in «Info» mode",
       "offline": "No internet — scan the code again",
       "timeout": "The server did not answer — scan the code again",
@@ -242,7 +249,8 @@
       "finish": "Finish",
       "summary": {
         "title": "Scanning finished",
-        "text": "{{value}} orders assigned to you",
+        "text_one": "{{value}} order assigned to you",
+        "text_other": "{{value}} orders assigned to you",
         "assigned": "Assigned",
         "already": "Already yours",
         "failed": "Not assigned",

@@ -32,6 +32,10 @@ export type CameraResult = {
   /** `tooFast` — kamera o'zi rad etgan skan (sahifaga yetmaydi). */
   type: ScanFeedbackDetail["type"] | "tooFast";
   message?: string;
+  /** Xabar ostidagi izoh qatori (`playScanFeedback(..., { text })`). */
+  text?: string;
+  /** Oraliq qadam — «bitta kod» rejimida kamera yopilmaydi. */
+  step?: boolean;
 };
 
 /**
@@ -103,9 +107,9 @@ export const useScannerCameraSession = ({
     scanEnabledRef.current = scanEnabled;
   }, [scanEnabled]);
 
-  const showResult = useCallback((type: CameraResult["type"], message?: string) => {
+  const showResult = useCallback((type: CameraResult["type"], message?: string, extra?: Pick<CameraResult, "text" | "step">) => {
     resultIdRef.current += 1;
-    setResult({ id: resultIdRef.current, type, message });
+    setResult({ id: resultIdRef.current, type, message, ...extra });
     setFlash(type);
     if (resultTimerRef.current) window.clearTimeout(resultTimerRef.current);
     if (flashTimerRef.current) window.clearTimeout(flashTimerRef.current);
@@ -126,7 +130,7 @@ export const useScannerCameraSession = ({
     const handleFeedback = (event: Event) => {
       const detail = (event as CustomEvent<ScanFeedbackDetail>).detail;
       if (!detail?.type) return;
-      showResult(detail.type, detail.message);
+      showResult(detail.type, detail.message, { text: detail.text, step: detail.step });
     };
     window.addEventListener(SCAN_FEEDBACK_EVENT, handleFeedback);
     return () => window.removeEventListener(SCAN_FEEDBACK_EVENT, handleFeedback);

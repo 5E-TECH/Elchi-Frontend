@@ -36,7 +36,10 @@ const ScannerCamera = lazy(loadScannerCamera);
  *
  * «Kelganda och» (3-bosqich): universal skaner (`/scan`, shell'dan tashqarida) rejimidan kelingan bo'lsa
  * (router holatida `scannerArrivalState`) — kelgan sahifaning maqsadi ro'yxatdan o'tgach kamera ochiladi,
- * `/scan` da o'qilgan kod (`pendingScan`) kamera chizilgach sahifa handler'iga beriladi, bayroq tozalanadi.
+ * `/scan` da o'qilgan kod (`pendingScan`) kamera chizilgach sahifa handler'iga beriladi. Bayroq tarixdan
+ * DARHOL tozalanadi (`replace`), kutish faqat xotirada: maqsad kelmay sahifadan ketilsa, oldinga/orqaga
+ * qaytish yoki yangilash kamerani kutilmaganda ochmaydi. Kutish `SCANNER_ARRIVAL_TIMEOUT_MS` dan keyin yoki
+ * boshqa sahifaga o'tilsa bekor bo'ladi.
  */
 const ScannerHost = () => {
   const navigate = useNavigate();
@@ -46,6 +49,8 @@ const ScannerHost = () => {
   const cameraMounted = useScannerCameraMounted();
   // Kamera chizilishini kutayotgan kod (natija xabari kamera ichida ko'rinsin).
   const pendingScanRef = useRef<{ targetId: string; scan: NonNullable<ScannerArrival["pendingScan"]> } | null>(null);
+  // Kelgan sahifa maqsadini kutish (bayroq tarixdan olingan): qaysi sahifada va qachongacha.
+  const awaitingRef = useRef<{ arrival: ScannerArrival; pathname: string; deadline: number } | null>(null);
 
   // Oxirgi faol maqsad — almashish oralig'ida (maqsad vaqtincha yo'q) kamera shu bilan turadi.
   const [held, setHeld] = useState<ScanTarget | null>(target);
@@ -55,22 +60,25 @@ const ScannerHost = () => {
 
   useEffect(() => {
     const arrival = readScannerArrival(location.state);
-    if (!arrival) return undefined;
-    // Bayroq tozalanadi (`replace`): orqaga qaytish yoki yangilash kamerani qayta ochmaydi.
-    const clear = () =>
+    if (arrival) {
+      awaitingRef.current = { arrival, pathname: location.pathname, deadline: Date.now() + SCANNER_ARRIVAL_TIMEOUT_MS };
+      // Bayroq darhol tozalanadi (`replace`): orqaga/oldinga qaytish yoki yangilash kamerani qayta ochmaydi.
       navigate(
         { pathname: location.pathname, search: location.search, hash: location.hash },
         { replace: true, state: withoutScannerArrival(location.state) },
       );
-    if (target && (!arrival.targetId || target.id === arrival.targetId)) {
-      const pending = arrival.pendingScan;
-      pendingScanRef.current = pending ? { targetId: target.id, scan: pending } : null;
-      openScanner();
-      clear();
-      return undefined;
     }
-    const timer = window.setTimeout(clear, SCANNER_ARRIVAL_TIMEOUT_MS);
-    return () => window.clearTimeout(timer);
+    const awaiting = awaitingRef.current;
+    if (!awaiting) return;
+    if (location.pathname !== awaiting.pathname || Date.now() > awaiting.deadline) {
+      awaitingRef.current = null;
+      return;
+    }
+    if (!target || (awaiting.arrival.targetId && target.id !== awaiting.arrival.targetId)) return;
+    awaitingRef.current = null;
+    const pending = awaiting.arrival.pendingScan;
+    pendingScanRef.current = pending ? { targetId: target.id, scan: pending } : null;
+    openScanner();
   }, [location, navigate, target]);
 
   useEffect(() => {
@@ -117,7 +125,13 @@ const freezeTarget = (target: ScanTarget): ScanTarget => ({
   listTitle: target.listTitle,
   listDescription: target.listDescription,
   listNote: target.listNote,
-  list: target.list?.map((item) => ({ key: item.key, title: item.title, subtitle: item.subtitle, tone: item.tone })),
+  list: target.list?.map((item) => ({
+    key: item.key,
+    title: item.title,
+    subtitle: item.subtitle,
+    tone: item.tone,
+    icon: item.icon,
+  })),
   onScan: () => undefined,
 });
 

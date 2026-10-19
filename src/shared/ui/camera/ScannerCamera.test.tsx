@@ -1,5 +1,6 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { useState } from "react";
+import { UserX } from "lucide-react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import i18n, { i18nReady } from "../../../i18n";
@@ -831,6 +832,62 @@ describe("ScannerCamera — Sozlamalar → Skaner → «Kamera» (4-bosqich)", (
     await waitFor(() => expect(target.onScan).toHaveBeenCalledTimes(2));
     act(() => playScanFeedback("success", "Qabul qilindi"));
     await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+  });
+
+  it("«Uzluksiz skanerlash» o'chiq: oraliq qadam (`step`, market QR) yopmaydi; javobsiz skan eskiradi", async () => {
+    window.localStorage.setItem("scanner-continuous", "false");
+    const onClose = vi.fn();
+    const target = makeTarget();
+    renderWithProviders(<ScannerCamera target={target} onClose={onClose} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    feedPlaying();
+
+    act(() => camera.onDecode?.("65f0c1aa22bb33cc44dd55ee"));
+    await waitFor(() => expect(target.onScan).toHaveBeenCalledTimes(1));
+    act(() => playScanFeedback("success", "Market QR qabul qilindi", undefined, { step: true }));
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    expect(onClose).not.toHaveBeenCalled();
+
+    // Sahifa skanni jim tashladi (natija yo'q) — 5 s dan keyin kelgan USB natijasi kamerani yopmaydi.
+    await new Promise((resolve) => setTimeout(resolve, 1900));
+    const start = Date.now();
+    act(() => camera.onDecode?.("ffffffffffffffffffffffff"));
+    await waitFor(() => expect(target.onScan).toHaveBeenCalledTimes(2));
+    const now = vi.spyOn(Date, "now").mockReturnValue(start + 10_000);
+    act(() => playScanFeedback("success", "Qabul qilindi", "keyboard"));
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    expect(onClose).not.toHaveBeenCalled();
+    now.mockRestore();
+  });
+
+  it("`paused` — kamera to'xtaydi, chipda «Kamera to'xtatildi» (skanlar jim yo'qolmaydi)", async () => {
+    const { rerender } = renderWithProviders(<ScannerCamera target={makeTarget()} presentation="page" />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    rerender(<ScannerCamera target={makeTarget()} presentation="page" paused />);
+    await waitFor(() => expect(camera.isActive).toBe(false));
+    expect(screen.getByText("Kamera to'xtatildi")).toBeInTheDocument();
+    expect(screen.queryByText("Skanerlash faol")).not.toBeInTheDocument();
+  });
+
+  it("natija izohi (`text`) xabar ostida; qator ikonkasi `item.icon` bilan almashadi", async () => {
+    renderWithProviders(
+      <ScannerCamera
+        target={makeTarget({
+          list: [{ key: "a", title: "№10251", subtitle: "Boshqa kuryerda: Sherzod Nazarov", tone: "danger", icon: UserX }],
+        })}
+        onClose={vi.fn()}
+      />,
+    );
+    const dialog = await screen.findByRole("dialog", { name: "Qabul qilish" });
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    feedPlaying();
+    act(() =>
+      playScanFeedback("error", "Boshqa kuryerga biriktirilgan", undefined, {
+        text: "№10251 · Sherzod Nazarov. Menejerga xabar bering.",
+      }),
+    );
+    expect(await within(dialog).findByText("№10251 · Sherzod Nazarov. Menejerga xabar bering.")).toBeInTheDocument();
+    expect(dialog.querySelector(".lucide-user-x")).not.toBeNull();
   });
 
   it("«Uzluksiz skanerlash» yoqiq (sukut) — muvaffaqiyatdan keyin ham ochiq", async () => {

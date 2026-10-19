@@ -65,12 +65,14 @@ interface QrScannerOptions {
 
 export default class QrScanner {
   private readonly scanner: BrowserQrScanner;
+  private readonly video: HTMLVideoElement;
 
   constructor(
     video: HTMLVideoElement,
     onDecode: (result: string | ScanResult) => void,
     options?: QrScannerOptions,
   ) {
+    this.video = video;
     this.scanner = new BrowserQrScanner(
       video,
       (result) => {
@@ -143,6 +145,16 @@ export default class QrScanner {
   /** Kamerani almashtirish (oqim qayta ochiladi, ko'zgu va skan hududi yangilanadi). */
   setCamera(facing: CameraFacing): Promise<void> {
     return this.scanner.setCamera(facing);
+  }
+
+  /**
+   * Skan hududini qayta hisoblash (`calculateScanRegion`). Kutubxona uni faqat `play` / `loadedmetadata` da
+   * hisoblaydi, o'lcham o'zgarishida (`resize`) — yo'q: planshet burilsa, oyna kattalashsa yoki brauzer paneli
+   * yashirilsa eski piksel to'rtburchagi qolib ketardi. Kutubxonaning o'z `loadedmetadata` ishlovchisi hududni
+   * va ustki qatlamni yangilaydi (oqim to'xtamaydi).
+   */
+  updateScanRegion(): void {
+    this.video.dispatchEvent(new Event("loadedmetadata"));
   }
 
   hasFlash(): Promise<boolean> {

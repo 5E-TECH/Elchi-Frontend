@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 // Mini App oqimi (`features/tg-scan`) — modul yo'li bilan: indeks Mini App UI'sini ham olib keladi.
 import { parseScanAssignResponse } from "../../../features/tg-scan/api/tgScanApi";
@@ -28,9 +29,15 @@ import {
  *   - ro'yxat: «Sizga biriktirildi», «Allaqachon sizda» (`idempotent`), «Boshqa kuryerda: <ism>» yoki xato
  *     sababi. Backend boshqa kuryer nomini aytmaydi — rad etilgach buyurtma bir marta o'qiladi
  *     (`GET orders/qr-code/:token`), ism bo'lsa qatorga yoziladi;
+ *   - «Boshqa kuryerga biriktirilgan» (maket `courier-scan-other-courier`) — bitta ohang: qizil xabar, qizil
+ *     `UserX` qator, xulosada «Biriktirilmadi». Buyurtma raqami va kuryer ismi aniqlangach (xabar hali
+ *     ekranda bo'lsa) xabar izohi ovozsiz yangilanadi: «№10251 · Sherzod Nazarov. Menejerga xabar bering.»;
  *   - buyurtma emas (paket, pochta, market QR) — so'rovsiz rad (`scan-assign` faqat buyurtma oladi);
+ *   - ovoz va tebranish faqat `playScanFeedback` (Sozlamalar «Ovoz» / «Tebranish» kalitlari bilan) — oqimning
+ *     o'z tebranishi o'chiq (`haptics: false`); kamera skanlari sessiyada pauzadan o'tgan (`cameraGated`);
  *   - «Tugatish» → yo'ldagi so'rovlar kutiladi, buyurtmalar/pochta keshi yangilanadi (6qypMFeT), xulosa.
- *     Rejimdan chiqilsa yoki sahifa yopilsa ham, biriktirilgan bo'lsa — kesh yangilanadi.
+ *     Sahifa yopilsa (hook o'chsa) va oxirgi yangilanishdan keyin yangi biriktirilgan bo'lsa — kesh yana
+ *     yangilanadi. Rejim almashganda hook o'chmaydi (`enabled: false`) — kesh «Tugatish» yoki chiqishda.
  */
 
 /** Backend matni: «Order allaqachon boshqa courierga biriktirilgan» (sabab kodi ochiq emas). */
@@ -38,6 +45,9 @@ const OTHER_COURIER_PATTERN = /boshqa\s+(courier|kuryer)/i;
 
 export const isOtherCourierError = (error: TgScanErrorInfo) =>
   error.kind === "message" && OTHER_COURIER_PATTERN.test(error.message);
+
+/** Rad etilgan buyurtma raqami shu vaqt ichida aniqlansa — ekrandagi xabar izohi yangilanadi. */
+const OTHER_COURIER_DETAIL_MS = 4_000;
 
 /** «№10191» — backend raqami `#`/`№` bilan kelsa ham bitta belgi. */
 const orderRef = (value: string) => `№${value.replace(/^[#№]\s*/u, "")}`;
@@ -69,7 +79,14 @@ export const useCourierTake = ({ enabled }: { enabled: boolean }) => {
   const queryClient = useQueryClient();
   const [lookups, setLookups] = useState<Record<string, OtherCourierInfo>>({});
   const lookedUpRef = useRef(new Set<string>());
+  /** Yangi biriktirilgan noyob buyurtmalar (natija kelishi bilan — React holatini kutmasdan). */
+  const assignedIdsRef = useRef(new Set<string>());
+  /** Kesh oxirgi yangilanganda nechta biriktirilgan edi. */
   const invalidatedCountRef = useRef(0);
+  /** Oxirgi «boshqa kuryerda» xabari: buyurtma aniqlansa izohi yangilanadi (boshqa skan kelmagan bo'lsa). */
+  const lastOtherRef = useRef<{ token: string; at: number } | null>(null);
+  /** Aniqlangan «boshqa kuryerda» buyurtmalari (izoh uchun; holat `lookups` ning ko'zgusi). */
+  const otherDetailRef = useRef(new Map<string, string>());
 
   const errorText = useCallback(
     (error: TgScanErrorInfo) => {
@@ -84,18 +101,26 @@ export const useCourierTake = ({ enabled }: { enabled: boolean }) => {
 
   const onFeedback = useCallback(
     (feedback: ScanFeedback) => {
+      lastOtherRef.current = null;
       if (feedback.kind === "invalid") {
         void playScanFeedback("error", t("scanner.invalid.title"));
         return;
       }
       if (feedback.kind === "failed") {
         const error = feedback.entry.error;
-        void playScanFeedback(
-          "error",
-          isOtherCourierError(error) ? t("scanner.take.otherCourierToast") : errorText(error),
-        );
+        if (isOtherCourierError(error)) {
+          const token = feedback.entry.token;
+          lastOtherRef.current = { token, at: Date.now() };
+          const who = otherDetailRef.current.get(token);
+          void playScanFeedback("error", t("scanner.take.otherCourierUnknown"), undefined, {
+            text: who ? t("scanner.take.otherCourierText", { who }) : t("scanner.take.otherCourierHint"),
+          });
+          return;
+        }
+        void playScanFeedback("error", errorText(error));
         return;
       }
+      if (feedback.kind === "assigned") assignedIdsRef.current.add(feedback.entry.orderId);
       const order = feedback.entry.order;
       const ref = orderRef(order?.order_number ?? feedback.entry.orderId);
       if (feedback.kind === "assigned") {
@@ -120,7 +145,16 @@ export const useCourierTake = ({ enabled }: { enabled: boolean }) => {
     void playScanFeedback("error", t("scanner.take.unknown"));
   }, [t]);
 
-  const flow = useScanAssign({ webApp: null, enabled, onSessionExpired, assign, onFeedback });
+  const flow = useScanAssign({
+    webApp: null,
+    enabled,
+    onSessionExpired,
+    assign,
+    onFeedback,
+    // Ovoz va tebranish — `playScanFeedback` (Sozlamalar bo'yicha); kamera pauzasi — `useScannerCameraSession`.
+    haptics: false,
+    cameraGated: true,
+  });
   const { entries, settle } = flow;
   const handleFlowScan = flow.handleScan;
 
@@ -131,6 +165,7 @@ export const useCourierTake = ({ enabled }: { enabled: boolean }) => {
       const extracted = extractScannerToken(raw, window.location.origin);
       const token = extracted ? normalizeScanToken(extracted) : null;
       if (token && getScanResourceType(token) !== "order") {
+        lastOtherRef.current = null;
         void playScanFeedback("error", t("scanner.take.notOrder"), source);
         return;
       }
@@ -154,17 +189,26 @@ export const useCourierTake = ({ enabled }: { enabled: boolean }) => {
               ? (courier as { name?: unknown }).name
               : null;
           const customer = order?.customer?.name?.trim();
-          setLookups((previous) => ({
-            ...previous,
-            [token]: {
-              title: order ? [orderRef(String(order.id)), customer].filter(Boolean).join(" · ") : null,
-              courier: typeof name === "string" && name.trim() ? name.trim() : null,
-            },
-          }));
+          const info: OtherCourierInfo = {
+            title: order ? [orderRef(String(order.id)), customer].filter(Boolean).join(" · ") : null,
+            courier: typeof name === "string" && name.trim() ? name.trim() : null,
+          };
+          setLookups((previous) => ({ ...previous, [token]: info }));
+          if (!order) return;
+          const who = [orderRef(String(order.id)), info.courier].filter(Boolean).join(" · ");
+          otherDetailRef.current.set(token, who);
+          // Xabar hali ekranda (shu kod oxirgi natija) — izohga raqam va kuryer, ovozsiz.
+          const last = lastOtherRef.current;
+          if (last?.token === token && Date.now() - last.at < OTHER_COURIER_DETAIL_MS) {
+            void playScanFeedback("error", t("scanner.take.otherCourierUnknown"), undefined, {
+              text: t("scanner.take.otherCourierText", { who }),
+              silent: true,
+            });
+          }
         })
         .catch(() => undefined);
     }
-  }, [entries]);
+  }, [entries, t]);
 
   const summary = useMemo(() => summarizeTakeEntries(entries), [entries]);
 
@@ -177,13 +221,15 @@ export const useCourierTake = ({ enabled }: { enabled: boolean }) => {
           const lookup = lookups[entry.token];
           return {
             key: entry.key,
-            title: lookup?.title ?? entry.token,
+            // Xom 24 belgili token kuryerga hech narsa demaydi — raqam aniqlanmaguncha «Buyurtma».
+            title: lookup?.title ?? t("scanner.take.orderFallback"),
             subtitle: other
               ? lookup?.courier
                 ? t("scanner.take.otherCourier", { name: lookup.courier })
                 : t("scanner.take.otherCourierUnknown")
               : errorText(entry.error),
-            tone: other ? "warning" : "danger",
+            tone: "danger",
+            ...(other ? { icon: UserX } : {}),
           };
         }
         const order = entry.order;
@@ -202,25 +248,17 @@ export const useCourierTake = ({ enabled }: { enabled: boolean }) => {
     [entries, errorText, lookups, t],
   );
 
-  const invalidate = useCallback(() => {
-    invalidatedCountRef.current = summary.assigned;
-    return invalidateAfterScanAction(queryClient);
-  }, [queryClient, summary.assigned]);
-
-  /** «Tugatish»: yo'ldagi so'rovlar tugaydi, kesh yangilanadi; xulosa sonlari qaytadi. */
+  /** «Tugatish»: yo'ldagi so'rovlar tugaydi (ular ham hisobga kiradi), keyin kesh yangilanadi. */
   const finish = useCallback(async () => {
     await settle();
-    await invalidate();
-  }, [invalidate, settle]);
+    invalidatedCountRef.current = assignedIdsRef.current.size;
+    await invalidateAfterScanAction(queryClient);
+  }, [queryClient, settle]);
 
-  // Rejimdan chiqildi yoki sahifa yopildi — yangi biriktirilgan bo'lsa, ro'yxatlar eskirib qolmasin.
-  const assignedRef = useRef(summary.assigned);
-  useEffect(() => {
-    assignedRef.current = summary.assigned;
-  }, [summary.assigned]);
+  // Sahifa yopildi — oxirgi yangilanishdan keyin yangi biriktirilgan bo'lsa, ro'yxatlar eskirib qolmasin.
   useEffect(
     () => () => {
-      if (assignedRef.current > invalidatedCountRef.current) void invalidateAfterScanAction(queryClient);
+      if (assignedIdsRef.current.size > invalidatedCountRef.current) void invalidateAfterScanAction(queryClient);
     },
     [queryClient],
   );
