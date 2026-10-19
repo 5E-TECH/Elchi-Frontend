@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **244** · qisman: **56** · v2 ga ko'chirilgan route: **76 / 77**
+**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **235** · qisman: **62** · v2 ga ko'chirilgan route: **76 / 77**
 
 ## Qanday ishlatiladi
 
@@ -994,7 +994,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/payments/main-cashbox` — Asosiy kassa (to'ldirish / xarajat / smenani yopish)
 
-- **Fayllar:** `src/pages/payments/components/mainCashbox.tsx` · `src/pages/payments/components/MainCashboxBalanceChart.tsx` · `src/pages/payments/components/lib/mainCashboxStats.ts` · `src/pages/payments/components/CashboxFormPopup.tsx` · `src/pages/payments/components/CloseShiftPopup.tsx` · `src/pages/payments/components/SettlementPickerDialog.tsx` · `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` · `src/pages/payments/components/SalaryPaymentPopup.tsx` · `src/shared/components/popupSelect.tsx` · `src/pages/payments/components/lib/exportMainCashboxReport.ts`
+- **Fayllar:** `src/pages/payments/components/mainCashbox.tsx` · `src/pages/payments/components/MainCashboxBalanceChart.tsx` · `src/pages/payments/components/lib/mainCashboxStats.ts` · `src/pages/payments/components/CashboxFormPopup.tsx` · `src/pages/payments/components/CloseShiftPopup.tsx` · `src/pages/payments/components/OpenShiftDialog.tsx` · `src/pages/payments/components/ShiftResultDialog.tsx` · `src/pages/payments/components/ShiftBanner.tsx` · `src/pages/payments/components/lib/useCashboxShift.ts` · `src/pages/payments/components/SettlementPickerDialog.tsx` · `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` · `src/pages/payments/components/SalaryPaymentPopup.tsx` · `src/shared/components/popupSelect.tsx` · `src/pages/payments/components/lib/exportMainCashboxReport.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `isPaymentsManager` (access.ts → canViewPaymentsPage) · ruxsat bo'lmasa → `/cash-box`
 - **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
@@ -1006,21 +1006,21 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox` — Asosiy kassa | [design/fragments/superadmin--payments-main-cashbox.html](fragments/superadmin--payments-main-cashbox.html) | sahifa | v2 |
 | `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-fill-dialog` — Kassani to'ldirish / Kassadan xarajat (popup)<br>↳ `src/pages/payments/components/CashboxFormPopup.tsx` | [design/fragments/superadmin--payments-main-cashbox-fill-dialog.html](fragments/superadmin--payments-main-cashbox-fill-dialog.html) | oyna | v2 |
 | `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-shift-dialog` — Smenani yopish (popup)<br>↳ `src/pages/payments/components/CloseShiftPopup.tsx` | [design/fragments/superadmin--payments-main-cashbox-shift-dialog.html](fragments/superadmin--payments-main-cashbox-shift-dialog.html) | oyna | v2 |
-| `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-shift-closed` — Asosiy kassa — smena yopiq | [design/fragments/superadmin--payments-main-cashbox-shift-closed.html](fragments/superadmin--payments-main-cashbox-shift-closed.html) | sahifa | yangi (kodda yo'q) |
-| `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-shift-open-dialog` — Smenani ochish (popup) | [design/fragments/superadmin--payments-main-cashbox-shift-open-dialog.html](fragments/superadmin--payments-main-cashbox-shift-open-dialog.html) | oyna | yangi (kodda yo'q) |
-| `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-shift-result-dialog` — Smena yopildi — natija (popup) | [design/fragments/superadmin--payments-main-cashbox-shift-result-dialog.html](fragments/superadmin--payments-main-cashbox-shift-result-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-shift-closed` — Asosiy kassa — smena yopiq | [design/fragments/superadmin--payments-main-cashbox-shift-closed.html](fragments/superadmin--payments-main-cashbox-shift-closed.html) | sahifa | qisman |
+| `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-shift-open-dialog` — Smenani ochish (popup)<br>↳ `src/pages/payments/components/OpenShiftDialog.tsx` | [design/fragments/superadmin--payments-main-cashbox-shift-open-dialog.html](fragments/superadmin--payments-main-cashbox-shift-open-dialog.html) | oyna | qisman |
+| `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-shift-result-dialog` — Smena yopildi — natija (popup)<br>↳ `src/pages/payments/components/ShiftResultDialog.tsx` | [design/fragments/superadmin--payments-main-cashbox-shift-result-dialog.html](fragments/superadmin--payments-main-cashbox-shift-result-dialog.html) | oyna | v2 |
 | `/payments/main-cashbox` | admin | `admin-payments-main-cashbox` — Asosiy kassa | [design/fragments/admin--payments-main-cashbox.html](fragments/admin--payments-main-cashbox.html) | sahifa | v2 |
 | `/payments/main-cashbox` | admin | `admin-payments-cashbox-form-dialog` — Kassadan xarajat / Kassani to'ldirish<br>↳ `src/pages/payments/components/CashboxFormPopup.tsx` | [design/fragments/admin--payments-cashbox-form-dialog.html](fragments/admin--payments-cashbox-form-dialog.html) | oyna | v2 |
 | `/payments/main-cashbox` | admin | `admin-payments-shift-dialog` — Smenani yopish<br>↳ `src/pages/payments/components/CloseShiftPopup.tsx` | [design/fragments/admin--payments-shift-dialog.html](fragments/admin--payments-shift-dialog.html) | oyna | v2 |
-| `/payments/main-cashbox` | admin | `admin-payments-main-cashbox-shift-closed` — Asosiy kassa — smena yopiq | [design/fragments/admin--payments-main-cashbox-shift-closed.html](fragments/admin--payments-main-cashbox-shift-closed.html) | sahifa | yangi (kodda yo'q) |
-| `/payments/main-cashbox` | admin | `admin-payments-main-cashbox-shift-open-dialog` — Smenani ochish | [design/fragments/admin--payments-main-cashbox-shift-open-dialog.html](fragments/admin--payments-main-cashbox-shift-open-dialog.html) | oyna | yangi (kodda yo'q) |
-| `/payments/main-cashbox` | admin | `admin-payments-main-cashbox-shift-result-dialog` — Smena yopildi — natija | [design/fragments/admin--payments-main-cashbox-shift-result-dialog.html](fragments/admin--payments-main-cashbox-shift-result-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/payments/main-cashbox` | admin | `admin-payments-main-cashbox-shift-closed` — Asosiy kassa — smena yopiq | [design/fragments/admin--payments-main-cashbox-shift-closed.html](fragments/admin--payments-main-cashbox-shift-closed.html) | sahifa | qisman |
+| `/payments/main-cashbox` | admin | `admin-payments-main-cashbox-shift-open-dialog` — Smenani ochish<br>↳ `src/pages/payments/components/OpenShiftDialog.tsx` | [design/fragments/admin--payments-main-cashbox-shift-open-dialog.html](fragments/admin--payments-main-cashbox-shift-open-dialog.html) | oyna | qisman |
+| `/payments/main-cashbox` | admin | `admin-payments-main-cashbox-shift-result-dialog` — Smena yopildi — natija<br>↳ `src/pages/payments/components/ShiftResultDialog.tsx` | [design/fragments/admin--payments-main-cashbox-shift-result-dialog.html](fragments/admin--payments-main-cashbox-shift-result-dialog.html) | oyna | v2 |
 | `/payments/main-cashbox` | manager | `manager-payments-main-cashbox` — Asosiy kassa (filial) | [design/fragments/manager--payments-main-cashbox.html](fragments/manager--payments-main-cashbox.html) | sahifa | v2 |
 | `/payments/main-cashbox` | manager | `manager-payments-cashbox-form-dialog` — Kassadan xarajat / to'ldirish oynasi<br>↳ `src/pages/payments/components/CashboxFormPopup.tsx` | [design/fragments/manager--payments-cashbox-form-dialog.html](fragments/manager--payments-cashbox-form-dialog.html) | oyna | v2 |
 | `/payments/main-cashbox` | manager | `manager-payments-close-shift-dialog` — Smenani yopish oynasi<br>↳ `src/pages/payments/components/CloseShiftPopup.tsx` | [design/fragments/manager--payments-close-shift-dialog.html](fragments/manager--payments-close-shift-dialog.html) | oyna | v2 |
-| `/payments/main-cashbox` | manager | `manager-payments-main-cashbox-shift-closed` — Asosiy kassa (filial) — smena yopiq | [design/fragments/manager--payments-main-cashbox-shift-closed.html](fragments/manager--payments-main-cashbox-shift-closed.html) | sahifa | yangi (kodda yo'q) |
-| `/payments/main-cashbox` | manager | `manager-payments-main-cashbox-shift-open-dialog` — Smenani ochish oynasi | [design/fragments/manager--payments-main-cashbox-shift-open-dialog.html](fragments/manager--payments-main-cashbox-shift-open-dialog.html) | oyna | yangi (kodda yo'q) |
-| `/payments/main-cashbox` | manager | `manager-payments-main-cashbox-shift-result-dialog` — Smena yopildi — natija oynasi | [design/fragments/manager--payments-main-cashbox-shift-result-dialog.html](fragments/manager--payments-main-cashbox-shift-result-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/payments/main-cashbox` | manager | `manager-payments-main-cashbox-shift-closed` — Asosiy kassa (filial) — smena yopiq | [design/fragments/manager--payments-main-cashbox-shift-closed.html](fragments/manager--payments-main-cashbox-shift-closed.html) | sahifa | qisman |
+| `/payments/main-cashbox` | manager | `manager-payments-main-cashbox-shift-open-dialog` — Smenani ochish oynasi<br>↳ `src/pages/payments/components/OpenShiftDialog.tsx` | [design/fragments/manager--payments-main-cashbox-shift-open-dialog.html](fragments/manager--payments-main-cashbox-shift-open-dialog.html) | oyna | qisman |
+| `/payments/main-cashbox` | manager | `manager-payments-main-cashbox-shift-result-dialog` — Smena yopildi — natija oynasi<br>↳ `src/pages/payments/components/ShiftResultDialog.tsx` | [design/fragments/manager--payments-main-cashbox-shift-result-dialog.html](fragments/manager--payments-main-cashbox-shift-result-dialog.html) | oyna | v2 |
 
 #### `/payments/cash-detail/:id` — Kassa tafsiloti — kuryer / market / filial
 
@@ -1905,7 +1905,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-222 ta maket · kodda bor: 124 · kodda yo'q: 98
+222 ta maket · kodda bor: 127 · kodda yo'q: 95
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -1977,9 +1977,9 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-payments-main-cashbox` | Asosiy kassa | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | v2 |
 | `superadmin-payments-main-cashbox-fill-dialog` | Kassani to'ldirish / Kassadan xarajat (popup) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/CashboxFormPopup.tsx` | v2 |
 | `superadmin-payments-main-cashbox-shift-dialog` | Smenani yopish (popup) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/CloseShiftPopup.tsx` | v2 |
-| `superadmin-payments-main-cashbox-shift-closed` | Asosiy kassa — smena yopiq | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
-| `superadmin-payments-main-cashbox-shift-open-dialog` | Smenani ochish (popup) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
-| `superadmin-payments-main-cashbox-shift-result-dialog` | Smena yopildi — natija (popup) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
+| `superadmin-payments-main-cashbox-shift-closed` | Asosiy kassa — smena yopiq | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | qisman — Kodda bor (CB-1): «Smena boshlanmagan» banneri, «Tezkor amallar» qulfi («Smena ochilgach ishlaydi»), «Smenani ochish» asosiy tugma (GET finance/shift/current). Oxirgi yopilgan smena kartasi «Smena yopildi · … · Natija» chizilmagan — Taklif · backend kerak (`last_closed`, BD2-8 → CB-3). |
+| `superadmin-payments-main-cashbox-shift-open-dialog` | Smenani ochish (popup) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/OpenShiftDialog.tsx` | qisman — Kodda bor (CB-1, OpenShiftDialog): ochadigan xodim, «Boshlanish: hozir», ochilish qoldig'i (jonli balans), izoh. «Oxirgi smena … bilan yopilgan» ogohlantirishi chizilmagan — Taklif · backend kerak (`last_closed`, BD2-8 → CB-3). |
+| `superadmin-payments-main-cashbox-shift-result-dialog` | Smena yopildi — natija (popup) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/ShiftResultDialog.tsx` | v2 |
 | `superadmin-payments-cash-detail-courier` | Kuryer kassasi (qabul qilish) | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
 | `superadmin-payments-cash-detail-market` | Market kassasi (to'lov berish) | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
 | `superadmin-payments-cash-detail-branch` | Filial kassasi (filialdan qabul) | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
@@ -2134,7 +2134,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### admin — Admin
 
-152 ta maket · kodda bor: 93 · kodda yo'q: 59
+152 ta maket · kodda bor: 96 · kodda yo'q: 56
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2196,9 +2196,9 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-payments-main-cashbox` | Asosiy kassa | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | v2 |
 | `admin-payments-cashbox-form-dialog` | Kassadan xarajat / Kassani to'ldirish | oyna | `/payments/main-cashbox` | `src/pages/payments/components/CashboxFormPopup.tsx` | v2 |
 | `admin-payments-shift-dialog` | Smenani yopish | oyna | `/payments/main-cashbox` | `src/pages/payments/components/CloseShiftPopup.tsx` | v2 |
-| `admin-payments-main-cashbox-shift-closed` | Asosiy kassa — smena yopiq | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
-| `admin-payments-main-cashbox-shift-open-dialog` | Smenani ochish | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
-| `admin-payments-main-cashbox-shift-result-dialog` | Smena yopildi — natija | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
+| `admin-payments-main-cashbox-shift-closed` | Asosiy kassa — smena yopiq | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | qisman — Kodda bor (CB-1): «Smena boshlanmagan» banneri, «Tezkor amallar» qulfi («Smena ochilgach ishlaydi»), «Smenani ochish» asosiy tugma (GET finance/shift/current). Oxirgi yopilgan smena kartasi «Smena yopildi · … · Natija» chizilmagan — Taklif · backend kerak (`last_closed`, BD2-8 → CB-3). |
+| `admin-payments-main-cashbox-shift-open-dialog` | Smenani ochish | oyna | `/payments/main-cashbox` | `src/pages/payments/components/OpenShiftDialog.tsx` | qisman — Kodda bor (CB-1, OpenShiftDialog): ochadigan xodim, «Boshlanish: hozir», ochilish qoldig'i (jonli balans), izoh. «Oxirgi smena … bilan yopilgan» ogohlantirishi chizilmagan — Taklif · backend kerak (`last_closed`, BD2-8 → CB-3). |
+| `admin-payments-main-cashbox-shift-result-dialog` | Smena yopildi — natija | oyna | `/payments/main-cashbox` | `src/pages/payments/components/ShiftResultDialog.tsx` | v2 |
 | `admin-payments-cash-detail-market` | Market kassasi | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
 | `admin-payments-cash-detail-courier` | Kuryer kassasi | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
 | `admin-payments-cash-detail-branch` | Filial kassasi (HQ qabul) | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
@@ -2293,7 +2293,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### manager — Menejer
 
-86 ta maket · kodda bor: 66 · kodda yo'q: 20
+86 ta maket · kodda bor: 69 · kodda yo'q: 17
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2358,9 +2358,9 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-payments-main-cashbox` | Asosiy kassa (filial) | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | v2 |
 | `manager-payments-cashbox-form-dialog` | Kassadan xarajat / to'ldirish oynasi | oyna | `/payments/main-cashbox` | `src/pages/payments/components/CashboxFormPopup.tsx` | v2 |
 | `manager-payments-close-shift-dialog` | Smenani yopish oynasi | oyna | `/payments/main-cashbox` | `src/pages/payments/components/CloseShiftPopup.tsx` | v2 |
-| `manager-payments-main-cashbox-shift-closed` | Asosiy kassa (filial) — smena yopiq | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
-| `manager-payments-main-cashbox-shift-open-dialog` | Smenani ochish oynasi | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
-| `manager-payments-main-cashbox-shift-result-dialog` | Smena yopildi — natija oynasi | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
+| `manager-payments-main-cashbox-shift-closed` | Asosiy kassa (filial) — smena yopiq | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | qisman — Kodda bor (CB-1): «Smena boshlanmagan» banneri, «Tezkor amallar» qulfi («Smena ochilgach ishlaydi»), «Smenani ochish» asosiy tugma (GET finance/shift/current). Oxirgi yopilgan smena kartasi «Smena yopildi · … · Natija» chizilmagan — Taklif · backend kerak (`last_closed`, BD2-8 → CB-3). |
+| `manager-payments-main-cashbox-shift-open-dialog` | Smenani ochish oynasi | oyna | `/payments/main-cashbox` | `src/pages/payments/components/OpenShiftDialog.tsx` | qisman — Kodda bor (CB-1, OpenShiftDialog): ochadigan xodim, «Boshlanish: hozir», ochilish qoldig'i (jonli balans), izoh. «Oxirgi smena … bilan yopilgan» ogohlantirishi chizilmagan — Taklif · backend kerak (`last_closed`, BD2-8 → CB-3). |
+| `manager-payments-main-cashbox-shift-result-dialog` | Smena yopildi — natija oynasi | oyna | `/payments/main-cashbox` | `src/pages/payments/components/ShiftResultDialog.tsx` | v2 |
 | `manager-payments-cash-detail-branch` | Kassa tafsiloti — HQ'ga o'tkazish | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
 | `manager-payments-cash-detail-branch-shift-closed` | Kassa tafsiloti — HQ'ga o'tkazish · smena yopiq | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
 | `manager-payments-cash-detail-courier` | Kassa tafsiloti — kuryerdan qabul | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
@@ -2910,16 +2910,20 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/payments/components/InactiveBadge.tsx` | `/payments` |
 | `src/pages/payments/components/MainCashboxBalanceChart.tsx` | `/payments/main-cashbox` |
 | `src/pages/payments/components/MyCashboxPage.tsx` | `/cash-box` |
+| `src/pages/payments/components/OpenShiftDialog.tsx` | `/payments/main-cashbox` |
 | `src/pages/payments/components/PaymentAckBadge.tsx` | `/payments/cash-detail/:id`, `/cash-box` |
 | `src/pages/payments/components/PaymentHistoryList.tsx` | `/payments/cash-detail/:id` |
 | `src/pages/payments/components/PaymentSummaryCards.tsx` | `/payments` |
 | `src/pages/payments/components/SalaryPaymentPopup.tsx` | `/payments/main-cashbox` |
 | `src/pages/payments/components/SettlementPickerDialog.tsx` | `/payments`, `/payments/main-cashbox` |
+| `src/pages/payments/components/ShiftBanner.tsx` | `/payments/main-cashbox` |
+| `src/pages/payments/components/ShiftResultDialog.tsx` | `/payments/main-cashbox` |
 | `src/pages/payments/components/cashDetail.tsx` | `/payments/cash-detail/:id` |
 | `src/pages/payments/components/lib/exportMainCashboxReport.ts` | `/payments/main-cashbox` |
 | `src/pages/payments/components/lib/mainCashboxStats.ts` | `/payments/main-cashbox` |
 | `src/pages/payments/components/lib/paymentIdempotency.ts` | `/payments/cash-detail/:id` |
 | `src/pages/payments/components/lib/receiveOptions.ts` | `/payments` |
+| `src/pages/payments/components/lib/useCashboxShift.ts` | `/payments/main-cashbox` |
 | `src/pages/payments/components/mainCashbox.tsx` | `/payments/main-cashbox` |
 | `src/pages/payments/components/patmentHistoryTable.tsx` | `/payments` |
 | `src/pages/payments/components/paymentHistoryActor.ts` | `/payments` |

@@ -28,6 +28,7 @@ const emptyQuery = { data: undefined, isLoading: false, isFetching: false };
 vi.mock("../../../entities/user/api/userApi", () => ({
   useUser: () => ({
     useGetUser: () => emptyQuery,
+    useGetUserById: () => emptyQuery,
     useGetManagers: (_params: unknown, enabled: boolean) => ({
       data: enabled ? lists.managers : undefined,
       isLoading: false,
@@ -48,14 +49,15 @@ vi.mock("../../../entities/markets", () => ({
   useMarkets: () => ({ useGetMarkets: () => emptyQuery }),
 }));
 
-vi.mock("../../../entities/payments", () => ({
+vi.mock("../../../entities/payments", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../entities/payments")>()),
   useCashBox: () => ({
     cashboxSpand: idleMutation,
     cashboxFill: idleMutation,
     openShift: idleMutation,
     closeShift: idleMutation,
     // Smena holati (FE-PAY-06) — bu testlarda ahamiyatsiz, tugma chiqmaydi.
-    useGetCurrentShift: () => ({ data: undefined, isLoading: false, isSuccess: false }),
+    useGetCurrentShift: () => ({ data: undefined, isLoading: false, isSuccess: false, isError: false, refetch: vi.fn() }),
     useGetCashBoxInfo: () => emptyQuery,
     useGetFinanceHistory: () => emptyQuery,
     useGetFinanceHistoryById: () => emptyQuery,
