@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-neworders-markets, admin-neworders-markets, registrator-new-orders-markets, market-new-orders-list
+// dizayn-v2: superadmin-neworders-markets, admin-neworders-markets, manager-new-orders-markets, registrator-new-orders-markets, market-new-orders-list
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
@@ -17,9 +17,9 @@ type Props = {
  * «Qabul va yaratish» bo'limlari — havola tablar (har tab alohida route, `aria-current="page"`).
  *
  * Bola sahifa birinchi kartasini shu bilan boshlaydi (maket: `.el-tabs` karta ichida, 12 px chekka).
- * Bitta yoki undan kam tab bo'lsa `null` — bola o'z karta sarlavhasini chizadi (`useHasNewOrdersTabs`;
- * maket `manager-new-orders-markets`). Market telefonda ikki tab teng bo'lib to'liq enni egallaydi
- * (maket `market-new-orders-list`).
+ * Bitta yoki undan kam tab bo'lsa (faqat market id si yo'q market) `null`. Xodimlarning hammasida kamida
+ * «Marketlar · Kiruvchi posilkalar» (maketlar `manager-new-orders-markets`, `registrator-new-orders-markets`).
+ * Market telefonda ikki tab teng bo'lib to'liq enni egallaydi (maket `market-new-orders-list`).
  */
 const NewOrdersTabs = ({ listClassName, className }: Props) => {
   const { t } = useTranslation("newOrders");

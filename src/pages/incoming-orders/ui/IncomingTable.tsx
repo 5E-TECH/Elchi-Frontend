@@ -1,12 +1,12 @@
-// dizayn-v2: superadmin-neworders-incoming-scan, admin-neworders-incoming-scan, manager-new-orders-incoming-scan
+// dizayn-v2: superadmin-neworders-incoming-scan, admin-neworders-incoming-scan, manager-new-orders-incoming-scan, registrator-new-orders-incoming-scan, superadmin-neworders-incoming-scan-undo, admin-neworders-incoming-scan-undo, manager-new-orders-incoming-scan-undo, registrator-new-orders-incoming-scan-undo
 import { memo, useMemo } from "react";
-import { Circle, CircleCheck } from "lucide-react";
+import { Circle, CircleCheck, Undo2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { IncomingOrder } from "../../../entities/incoming-orders";
 import { cx } from "../../../shared/lib/cx";
 import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
-import { DataTable, type DataTableColumn } from "../../../shared/ui/primitives";
-import { districtName, orderLabel } from "../lib";
+import { DataTable, IconButton, type DataTableColumn } from "../../../shared/ui/primitives";
+import { bagLabel, districtName, orderLabel } from "../lib";
 
 /** Summa: son bo'lmasa (hamkor bermagan) — «—», «0 so'm» emas. */
 const money = (value: unknown) => (typeof value === "number" ? formatMoneyLocalized(value) : "—");
@@ -35,23 +35,38 @@ ScanMark.displayName = "ScanMark";
 type Props = {
   orders: readonly IncomingOrder[];
   scannedIds: ReadonlySet<string>;
+  /** Skanerlangan qatordagi «Olib tashlash» (`Undo2`) — belgini oladi. Barqaror funksiya bo'lsin (`memo`). */
+  onUnscan: (order: IncomingOrder) => void;
   /** Fonda yangilanmoqda (masalan qabuldan keyin) — ro'yxat xiralashadi. */
   busy?: boolean;
+};
+
+/** Qop yorlig'i: «BP-24817» / «3733ff7b…»; qopsiz — kulrang «—». */
+const BagCell = ({ order }: { order: IncomingOrder }) => {
+  const label = bagLabel(order);
+  return label ? (
+    <span className="whitespace-nowrap text-text-muted">{label}</span>
+  ) : (
+    <span className="text-text-subtle">—</span>
+  );
 };
 
 /**
  * KELGAN POSILKALAR JADVALI (maket `superadmin-neworders-incoming-scan` → «Kelgan posilkalar»).
  *
- * Desktop/planshet — jadval (skan belgisi · Buyurtma · Mijoz · Tuman · Summa), telefonda — ro'yxat
- * (ism + summa, ostida «№… · tuman»). Skanerlangan qator yashil fonda.
+ * Desktop/planshet — jadval (skan belgisi · Buyurtma · Qop · Mijoz · Tuman · Summa · amal; planshetda «Tuman»
+ * yashirin), telefonda — ro'yxat (ism + summa, ostida «№… · tuman», «Qop …»). Skanerlangan qator yashil fonda,
+ * oxirida «Olib tashlash» (`Undo2`, maket `*-incoming-scan-undo`; telefonda 44 px). Qopdagi «2/3» belgisi —
+ * backend `received_count` kelgach (IP-2, «Taklif · backend kerak»), hozir faqat qop yorlig'i.
  *
  * ⚠️ `memo`: ro'yxat faqat posilkalar yoki skanerlanganlar o'zgarganda qayta chiziladi — takroriy skan
  * xabari yoki skaner maydonidagi harflar uni qayta chizmaydi (250 posilkali qop).
  */
-const IncomingTable = ({ orders, scannedIds, busy = false }: Props) => {
+const IncomingTable = ({ orders, scannedIds, onUnscan, busy = false }: Props) => {
   const { t } = useTranslation("common");
   const scannedLabel = t("incoming.scanned");
   const notScannedLabel = t("incoming.notScanned");
+  const unscanLabel = (order: IncomingOrder) => t("incoming.unscanLabel", { order: orderLabel(order) });
 
   const columns = useMemo<DataTableColumn<IncomingOrder>[]>(
     () => [
@@ -67,8 +82,14 @@ const IncomingTable = ({ orders, scannedIds, busy = false }: Props) => {
       {
         id: "order",
         header: t("incoming.colOrder"),
-        className: "w-[18%] whitespace-nowrap",
+        className: "w-[13%] whitespace-nowrap",
         cell: (order) => <span className="font-semibold">{orderLabel(order)}</span>,
+      },
+      {
+        id: "bag",
+        header: t("incoming.colBag"),
+        className: "w-[20%]",
+        cell: (order) => <BagCell order={order} />,
       },
       {
         id: "customer",
@@ -79,6 +100,7 @@ const IncomingTable = ({ orders, scannedIds, busy = false }: Props) => {
       {
         id: "district",
         header: t("incoming.colDistrict"),
+        hideBelow: "lg",
         cellClassName: "whitespace-nowrap text-text-muted",
         cell: (order) => districtName(order),
       },
@@ -89,18 +111,34 @@ const IncomingTable = ({ orders, scannedIds, busy = false }: Props) => {
         cellClassName: "font-semibold",
         cell: (order) => money(order.total_price),
       },
+      {
+        id: "actions",
+        header: <span className="sr-only">{t("incoming.colActions")}</span>,
+        className: "w-14",
+        align: "end",
+        cell: (order) =>
+          scannedIds.has(order.id) ? (
+            <IconButton
+              icon={Undo2}
+              size="sm"
+              label={t("incoming.unscanLabel", { order: orderLabel(order) })}
+              onClick={() => onUnscan(order)}
+            />
+          ) : null,
+      },
     ],
-    [notScannedLabel, scannedIds, scannedLabel, t],
+    [notScannedLabel, onUnscan, scannedIds, scannedLabel, t],
   );
 
   const renderCard = (order: IncomingOrder) => {
     const scanned = scannedIds.has(order.id);
+    const bag = bagLabel(order);
     return (
-      <div className="flex min-h-14 min-w-0 items-start gap-3 px-4 py-3 text-sm text-text">
+      <div className="flex min-h-14 min-w-0 items-start gap-3 py-3 pl-4 pr-2 text-sm text-text">
         <span className="mt-0.5 inline-flex">
           <ScanMark order={order} scanned={scanned} label={scanned ? scannedLabel : notScannedLabel} />
         </span>
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="flex min-w-0 justify-between gap-2">
             <span className="min-w-0 font-semibold [overflow-wrap:anywhere]">{order.customer?.name ?? "—"}</span>
             <span className="whitespace-nowrap font-semibold">{money(order.total_price)}</span>
@@ -108,7 +146,13 @@ const IncomingTable = ({ orders, scannedIds, busy = false }: Props) => {
           <span className="text-[13px] text-text-muted">
             {orderLabel(order)} · {districtName(order)}
           </span>
+          {bag ? <span className="text-[13px] text-text-muted">{t("incoming.bagLabel", { bag })}</span> : null}
         </span>
+        {scanned ? (
+          <IconButton icon={Undo2} label={unscanLabel(order)} className="-mt-0.5 shrink-0" onClick={() => onUnscan(order)} />
+        ) : (
+          <span aria-hidden="true" className="block w-11 shrink-0" />
+        )}
       </div>
     );
   };

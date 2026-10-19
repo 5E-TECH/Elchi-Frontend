@@ -1,9 +1,10 @@
-// dizayn-v2: superadmin-neworders-incoming-sources, admin-neworders-incoming-sources, manager-new-orders-incoming-sources
+// dizayn-v2: superadmin-neworders-incoming-sources, admin-neworders-incoming-sources, manager-new-orders-incoming-sources, registrator-new-orders-incoming-sources
 import { memo, useMemo } from "react";
 import { Inbox, Info, RefreshCw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../app/config/store";
+import { canReceiveExternalOrders } from "../../app/lib/access";
 import { useIncomingSources } from "../../entities/incoming-orders";
 import {
   Button,
@@ -14,7 +15,6 @@ import {
   SkeletonTable,
 } from "../../shared/ui/primitives";
 import { useConnections } from "../integrations/useConnections";
-import { useNewOrdersTabKeys } from "../new_orders/model/useNewOrdersTabs";
 import NewOrdersTabs from "../new_orders/ui/NewOrdersTabs";
 import IdleSources from "./ui/IdleSources";
 import SourcesSummary from "./ui/SourcesSummary";
@@ -39,26 +39,19 @@ import SourcesTable from "./ui/SourcesTable";
  * YASHIRILMAYDI — u haqiqatan omborda turgan bo'lishi mumkin.
  *
  * KO'RINISH (dizayn v2, maket `superadmin-neworders-incoming-sources`): sahifa «Qabul va yaratish»
- * qobig'i ichida (sarlavha va «Buyurtma yaratish» qobiqda). Karta qobiq tablari bilan boshlanadi;
- * «Kiruvchi posilkalar» tabi bu rolga ko'rinmasa (menejer, registrator — tab faqat superadmin/admin'da)
- * karta o'z sarlavhasini chizadi. So'ng izoh + «Yangilash», taqsimot xulosasi (halqa, jami summa,
- * eng uzoq kutayotgan), manbalar jadvali va pastda — ulangan, lekin posilkasiz manbalar.
+ * qobig'i ichida (sarlavha va «Buyurtma yaratish» qobiqda). Karta qobiq tablari bilan boshlanadi
+ * («Kiruvchi posilkalar» tabi qabul qiladigan hamma xodimda — ega qarori S1). So'ng izoh + «Yangilash»,
+ * taqsimot xulosasi (halqa, jami summa, eng uzoq kutayotgan), manbalar jadvali va pastda (faqat
+ * superadmin/admin) — ulangan, lekin posilkasiz manbalar.
  */
-
-/** Backend guardi bilan BIR XIL — MARKET bu yerda YO'Q (u qabul qilmaydi). */
-const ALLOWED_ROLES = new Set([
-  "superadmin",
-  "admin",
-  "registrator",
-  "manager",
-]);
 
 const SourcePicker = () => {
   const { t } = useTranslation("common");
   const role = useSelector((state: RootState) => state.role.role);
-  const allowed = Boolean(role && ALLOWED_ROLES.has(role));
-  // Qobiq tablari orasida shu sahifaning tabi bo'lmasa — kartaning o'z sarlavhasi.
-  const ownHeading = !useNewOrdersTabKeys().includes("incoming");
+  // Route guard (`canReceiveExternalOrders`) bilan bir xil — MARKET bu yerda YO'Q (u qabul qilmaydi).
+  const allowed = useSelector(canReceiveExternalOrders);
+  // Ulanishlar ro'yxati (`admin/partners`, `integrations`) backendda faqat SUPERADMIN va ADMIN ga ochiq.
+  const canSeeConnections = role === "superadmin" || role === "admin";
 
   const query = useIncomingSources();
   const sources = useMemo(() => query.data ?? [], [query.data]);
@@ -76,8 +69,11 @@ const SourcePicker = () => {
    * `elchi_market_id` bilan keladi. Ya'ni hamkorni yuqoridagi ro'yxat bilan
    * solishtirib bo'lmaydi va uni bu ro'yxatga qo'shsak, posilkasi BOR
    * hamkor (BeePost) ikki joyda ko'rinardi.
+   *
+   * ⚠️ Menejer va registratorda so'ralmaydi: ikkala ro'yxat ularga 403 qaytarardi va sahifada ikkita global
+   * xato xabari chiqardi (ularning maketlarida bu karta yo'q).
    */
-  const { connections } = useConnections();
+  const { connections } = useConnections({ enabled: canSeeConnections });
   const idleSources = useMemo(() => {
     const shownMarkets = new Set(sources.map((s) => String(s.market_id)));
     return connections
@@ -97,11 +93,6 @@ const SourcePicker = () => {
     <div className="flex flex-col gap-6 max-md:gap-4">
       <Card padding="none" aria-label={t("incoming.sourcesCardLabel")}>
         <NewOrdersTabs />
-        {ownHeading ? (
-          <div className="flex min-w-0 items-center border-b border-border px-5 py-4">
-            <h2 className="m-0 text-base font-bold text-text">{t("incoming.sourcesTitle")}</h2>
-          </div>
-        ) : null}
 
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 px-5 py-4">
           <p className="m-0 min-w-0 flex-[1_1_320px] text-[13px] text-text-muted">{t("incoming.sourcesIntro")}</p>
