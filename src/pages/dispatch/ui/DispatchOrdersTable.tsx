@@ -23,8 +23,8 @@ type DispatchOrdersTableProps = {
  *
  *  - Planshetda (< 1024) «Tuman / viloyat», «Market», «Yetkazish» yashirin — «Mijoz» ostida «tuman · yetkazish».
  *  - Qatorni bosish — tanlov (belgi bilan bir xil amal; klaviaturada belgining o'zi).
- *  - «№…» oddiy matn: ro'yxat faqat shu sahifa xotirasida — tafsilotga o'tilsa skanerlanganlar yo'qoladi
- *    (yangi tabda esa sessiya yo'q: token `sessionStorage` da).
+ *  - «№…» oddiy matn: ro'yxat — qurilmadagi biriktirish savati (`features/dispatch-basket`), lekin qatordan
+ *    tafsilotga o'tish maketda yo'q.
  */
 export const DispatchOrdersTable = ({ rows, selectedIds, onToggle, onToggleAll, onRemove }: DispatchOrdersTableProps) => {
   const { t, i18n } = useTranslation(["dispatch", "orders"]);

@@ -1,9 +1,9 @@
 // dizayn-v2: superadmin-neworders-cancelled-handover, superadmin-neworders-cancelled-manual-dialog, superadmin-neworders-cancelled-scanner-dialog, admin-neworders-cancelled-detail, admin-neworders-cancelled-manual-dialog, admin-neworders-cancelled-scanner-dialog, registrator-new-orders-cancelled-detail, registrator-new-orders-cancelled-manual-dialog, registrator-new-orders-cancelled-scanner-dialog, market-new-orders-cancelled, market-new-orders-cancelled-qr-dialog
-import { memo, useCallback, useEffect, useId, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Trans, useTranslation } from "react-i18next";
-import { Camera, QrCode, RotateCcw, ScanLine, Send } from "lucide-react";
+import { QrCode, RotateCcw, ScanLine, Send } from "lucide-react";
 import { useOrders } from "../../../entities/orders";
 import {
   CANCELLED_MANUAL_REASONS,
@@ -11,13 +11,12 @@ import {
   extractCancelledOrders,
   toCancelledManualReason,
 } from "./utils";
-import ScannerCameraModal from "../../../shared/components/ScannerCameraModal";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
-import { normalizeScannerCandidates } from "../../../shared/lib/scanToken";
-import { useScannerGate } from "../../../shared/lib/useScannerGate";
+import { scanNotify } from "../../../shared/lib/scanner/scanSession";
+import type { ScanTargetListItem } from "../../../shared/lib/scanner/scanTargets";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
-import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
+import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
 import { getBackendErrorMessage } from "../../scan/lib/scanResource";
 import type { RootState } from "../../../app/config/store";
 import type { OrderListItem } from "../../../entities/order/types/order";
@@ -44,6 +43,7 @@ import { SelectionRegion } from "../../../shared/ui/SelectionRegion";
 import {
   canSendHandover,
   extractMarketCancelledQrToken,
+  formatCountdown,
   getDecodedScannerText,
   normalizeCancelledAuthorization,
   normalizeCancelledMarketQr,
@@ -63,7 +63,14 @@ import { MarketQrDialog } from "./ui/MarketQrDialog";
  *  - Xodim (superadmin/admin/HQ registratori; qobiq `bare`): «← Bekor qilinganlar» · market nomi ·
  *    «6 ta bekor qilingan buyurtma · jami …», asosiy amal «Marketga jo'natish — N ta». Ostida market QR
  *    holati (`HandoverStatusAlert`: kerak / skanerlandi + taymer / talab qilinmaydi), so'ng karta
- *    «Bekor qilingan buyurtmalarni tayyorlash»: «USB skaner tayyor» + «Kamera», tanlov qatori, jadval.
+ *    «Bekor qilingan buyurtmalarni tayyorlash»: «USB skaner tayyor», tanlov qatori, jadval.
+ *  - KAMERA (Trello v1eLN2tV 2-bosqich; maketlar `*-neworders-cancelled-scanner-dialog`,
+ *    `superadmin-neworders-cancelled-handover-camera`, `admin-neworders-cancelled-detail-camera`): v1 «Kamera»
+ *    tugmalari, sarlavhadagi «Market QR skanerlash» va `ScannerCameraModal` olib tashlandi (ega qarori — oqim
+ *    ichida kamera tugmasi yo'q, tizim-scanner §09). Faqat markaziy «Skaner» (desktopda «Skanerlash») shu
+ *    sahifaning skan maqsadini ochadi; kamera skani USB bilan aynan bir yo'l (`useOrderQrScanner`: buyurtma QR → tanlov, `MCR-` → market QR
+ *    tekshiruvi). Matn holatga qarab: avval «Market QR skanerlash», QR'dan keyin «Buyurtmalarni tanlash · QR 04:12
+ *    amal qiladi» — kamera yopilmaydi.
  *  - Market (qobiq `hosted`): karta «Yangi buyurtmalar / Bekor qilinganlar» tablari bilan; «Bekor qilingan
  *    buyurtmalarni pochtaga topshirish» bloki («Qabul qilish» → QR oynasi) va o'z ro'yxati.
  *
@@ -96,14 +103,19 @@ const CancelledMarketDetail = () => {
   const [manualConfirmOrder, setManualConfirmOrder] = useState<MarketOrder | null>(null);
   const [manualReason, setManualReason] = useState("");
   const [sentIds, setSentIds] = useState<Set<string>>(new Set());
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isQrOpen, setIsQrOpen] = useState(false);
-  const [scanError, setScanError] = useState("");
   const [handoverQr, setHandoverQr] = useState<CancelledMarketQr | null>(null);
   const [isHandoverQrScanned, setIsHandoverQrScanned] = useState(false);
   const [authorizationToken, setAuthorizationToken] = useState("");
   const [authorizationExpiresAt, setAuthorizationExpiresAt] = useState<number | null>(null);
   const [authorizationRemainingSeconds, setAuthorizationRemainingSeconds] = useState(0);
+  // Market QR ruxsati hozir amaldami (token + skanerlandi) — skan callback'lari uchun sinxron nusxa: kamera QR'dan
+  // keyin ochiq qoladi, shu market QR yana o'qilsa ikkinchi so'rov yuborilmaydi (backend «QR allaqachon
+  // ishlatilgan» deydi va xato tirik ruxsatni o'chirib yubormasin).
+  const authorizationLiveRef = useRef(false);
+  useEffect(() => {
+    authorizationLiveRef.current = Boolean(authorizationToken) && isHandoverQrScanned;
+  }, [authorizationToken, isHandoverQrScanned]);
   const [marketSort, setMarketSort] = useState<DataTableSort | null>(DEFAULT_MARKET_ORDERS_SORT);
   const rawOrders = useMemo(() => extractCancelledOrders(query.data), [query.data]);
   const orders = useMemo(
@@ -114,18 +126,6 @@ const CancelledMarketDetail = () => {
     () => orders,
     [orders],
   );
-  const scanIndex = useMemo(() => {
-    const index = new Map<string, OrderListItem>();
-
-    selectableOrders.forEach((order) => {
-      index.set(String(order.id).toLowerCase(), order);
-      if (order.qr_code_token?.trim()) {
-        index.set(order.qr_code_token.trim().toLowerCase(), order);
-      }
-    });
-
-    return index;
-  }, [selectableOrders]);
   const isMarketRole = role === "market";
   // Sarlavhadagi nom: buyurtmadan; ro'yxat bo'sh bo'lsa (hammasi jo'natilgan) — marketlar ro'yxatidan
   // (kalit «Bekor qilinganlar» sahifasi va tab soni bilan umumiy — kesh bitta).
@@ -156,11 +156,6 @@ const CancelledMarketDetail = () => {
       manualReasonOptions.find((option) => option.value === value)?.label ?? value,
     [manualReasonOptions],
   );
-  const { canAcceptScan } = useScannerGate({
-    cooldownMs: 200,
-    duplicateCooldownMs: 1800,
-  });
-
   useEffect(() => {
     if (!authorizationToken || !authorizationExpiresAt) {
       setAuthorizationRemainingSeconds(0);
@@ -187,7 +182,7 @@ const CancelledMarketDetail = () => {
   const selectOrder = useCallback((order: OrderListItem) => {
     if (selectedIds.has(order.id)) {
       void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
-      notify.warning(t("common:scannerFeedbackDuplicate"), { description: `#${order.id}`, duration: 2000 });
+      scanNotify.warning(t("common:scannerFeedbackDuplicate"), { description: `#${order.id}`, duration: 2000 });
       return;
     }
 
@@ -196,8 +191,7 @@ const CancelledMarketDetail = () => {
       next.add(order.id);
       return next;
     });
-    setScanError("");
-    void playScanFeedback("success");
+    void playScanFeedback("success", t("cancelled.camera.selected", { id: order.id }));
   }, [selectedIds, t]);
 
   const isGeneratedQrMatch = useCallback((rawValue: string) => {
@@ -226,17 +220,24 @@ const CancelledMarketDetail = () => {
     const qrToken = extractMarketCancelledQrToken(rawValue) || handoverQr?.token || handoverQr?.payload || "";
     if (!qrToken) return false;
 
+    // Ruxsat tirik — takror skan: so'rov yo'q, holat o'zgarmaydi.
+    if (authorizationLiveRef.current) {
+      void playScanFeedback("duplicate", t("cancelled.camera.qrAlreadyAccepted"));
+      return true;
+    }
+
     try {
       const response = await scanMarketCancelledQr.mutateAsync(qrToken);
       const authorization = normalizeCancelledAuthorization(response);
 
+      authorizationLiveRef.current = Boolean(authorization.authorizationToken);
       setAuthorizationToken(authorization.authorizationToken);
       setAuthorizationExpiresAt(authorization.expiresAt);
       setSelectedIds(new Set(selectableOrders.map((order) => order.id)));
       setIsHandoverQrScanned(true);
-      setScanError("");
-      void playScanFeedback("success");
-      notify.success(t("cancelled.notify.qrAccepted"), {
+      // Oraliq qadam: «Uzluksiz skanerlash» o'chiq bo'lsa ham kamera yopilmaydi — buyurtmalar shu kamerada.
+      void playScanFeedback("success", t("cancelled.notify.qrAccepted"), undefined, { step: true });
+      scanNotify.success(t("cancelled.notify.qrAccepted"), {
         description: t("cancelled.notify.qrAcceptedDescription", {
           count: selectableOrders.length,
           value: formatNumberLocalized(selectableOrders.length, { language }),
@@ -247,13 +248,15 @@ const CancelledMarketDetail = () => {
       return true;
     } catch (error: unknown) {
       const message = getBackendErrorMessage(error) ?? t("cancelled.notify.scanMissing");
-      setAuthorizationToken("");
-      setAuthorizationExpiresAt(null);
-      setIsHandoverQrScanned(false);
-      setScanError(message);
-      playMissingOrderFeedback();
+      // Shu orada (parallel skan) ruxsat olingan bo'lsa — u o'chirilmaydi.
+      if (!authorizationLiveRef.current) {
+        setAuthorizationToken("");
+        setAuthorizationExpiresAt(null);
+        setIsHandoverQrScanned(false);
+      }
+      void playScanFeedback("missing", message);
       // Skaner oqimi: xato qisqa turadi (v1 dagidek 4 s) — keyingi skanerlashda ekran to'silib qolmasin.
-      notify.error(t("cancelled.notify.qrNotFound"), { description: message, duration: 4000 });
+      scanNotify.error(t("cancelled.notify.qrNotFound"), { description: message, duration: 4000 });
       return true;
     }
   }, [
@@ -274,38 +277,9 @@ const CancelledMarketDetail = () => {
     }
 
     const message = t("cancelled.notify.scanMissing");
-    setScanError(message);
-    playMissingOrderFeedback();
-    notify.warning(t("cancelled.notify.qrNotFound"), { description: message, duration: 3000 });
+    void playScanFeedback("missing", t("cancelled.camera.missing"));
+    scanNotify.warning(t("cancelled.notify.qrNotFound"), { description: message, duration: 3000 });
   }, [t, verifyHandoverQr]);
-
-  const scannerEnabled = !isMarketRole && !handoverCancelledOrders.isPending && !scanMarketCancelledQr.isPending;
-  useOrderQrScanner({
-    orders: selectableOrders,
-    enabled: scannerEnabled,
-    onMatch: selectOrder,
-    onMissing: handleMissingOrder,
-  });
-
-  const handleCameraDecode = useCallback(async (rawValue: string) => {
-    if (!canAcceptScan(rawValue)) return;
-
-    if (await verifyHandoverQr(rawValue)) {
-      setIsCameraOpen(false);
-      return;
-    }
-
-    const matchedOrder = normalizeScannerCandidates(rawValue, window.location.origin)
-      .map((candidate) => scanIndex.get(candidate))
-      .find(Boolean);
-
-    if (!matchedOrder) {
-      handleMissingOrder(rawValue);
-      return;
-    }
-
-    selectOrder(matchedOrder);
-  }, [canAcceptScan, handleMissingOrder, scanIndex, selectOrder, verifyHandoverQr]);
 
   const confirmManualSelect = useCallback(() => {
     if (!manualConfirmOrder || !canManualSelectDamagedQr || selectedIds.has(manualConfirmOrder.id)) return;
@@ -443,9 +417,26 @@ const CancelledMarketDetail = () => {
     t,
   ]);
 
-  const openCamera = useCallback(() => {
-    setScanError("");
-    setIsCameraOpen(true);
+  /** Kamera «Bekor qilish»: tanlovdan chiqariladi (jo'natish hali bo'lmagan); qo'lda tasdiq sababi ham olinadi. */
+  const deselectOrder = useCallback((orderId: string) => {
+    setSelectedIds((previous) => {
+      if (!previous.has(orderId)) return previous;
+      const next = new Set(previous);
+      next.delete(orderId);
+      return next;
+    });
+    setManualSelectedIds((previous) => {
+      if (!previous.has(orderId)) return previous;
+      const next = new Set(previous);
+      next.delete(orderId);
+      return next;
+    });
+    setManualOverrideReasons((previous) => {
+      if (!(orderId in previous)) return previous;
+      const { [orderId]: _removed, ...rest } = previous;
+      void _removed;
+      return rest;
+    });
   }, []);
 
   // ─── Ko'rinish ───────────────────────────────────────────────────────────────
@@ -459,6 +450,70 @@ const CancelledMarketDetail = () => {
   const titleText = marketName ?? t("cancelled.titleFallback");
 
   const listQuery = { ...query, data: isLoaded ? rows : undefined };
+
+  const stage = resolveHandoverQrStage({
+    qrRequired: isCancelledHandoverQrRequired,
+    qrScanned: isHandoverQrScanned,
+    authorizationToken,
+  });
+  const cameraMarket = marketName ?? t("cancelled.titleFallback");
+  const cameraCount = number(orders.length);
+  const cameraList = useMemo<ScanTargetListItem[]>(
+    () =>
+      rows
+        .filter((order) => selectedIds.has(order.id))
+        .map((order) => ({
+          key: order.id,
+          title: [`№${order.id}`, order.customer?.name?.trim()].filter(Boolean).join(" · "),
+          subtitle: manualSelectedIds.has(order.id)
+            ? t("cancelled.camera.manualRow")
+            : [order.district?.name?.trim() || order.region?.name?.trim(), formatMoneyLocalized(order.total_price, { language })]
+                .filter(Boolean)
+                .join(" · "),
+          tone: manualSelectedIds.has(order.id) ? "warning" : "success",
+          onUndo: () => deselectOrder(order.id),
+        })),
+    [deselectOrder, language, manualSelectedIds, rows, selectedIds, t],
+  );
+  const qrTime = formatCountdown(authorizationRemainingSeconds);
+  // Kamera maqsadi holatga qarab: market QR kutilmoqda → «Market QR skanerlash»; QR skanerlangan yoki talab
+  // qilinmaydi → «Buyurtmalarni tanlash» (hisoblagich, ro'yxat, «Tugatish»). Kamera bir maqsadda qoladi (id bir xil).
+  const waitingForMarketQr = stage === "required";
+  const scannerEnabled = !isMarketRole && !handoverCancelledOrders.isPending && !scanMarketCancelledQr.isPending;
+  useOrderQrScanner({
+    orders: selectableOrders,
+    enabled: !isMarketRole,
+    // Server amali ketayotganda skan e'tiborsiz (avvalgidek), lekin ochiq kamera yopilmaydi.
+    paused: handoverCancelledOrders.isPending || scanMarketCancelledQr.isPending,
+    onMatch: selectOrder,
+    onMissing: handleMissingOrder,
+    camera: waitingForMarketQr
+      ? {
+          id: `cancelled-handover:${marketId}`,
+          title: t("cancelled.camera.qrTitle"),
+          context: t("cancelled.camera.qrContext", { market: cameraMarket, value: cameraCount }),
+          hint: t("cancelled.camera.qrHint"),
+          note: { title: t("cancelled.camera.qrNoteTitle", { market: cameraMarket }), text: t("cancelled.camera.qrNoteText") },
+          icon: QrCode,
+        }
+      : {
+          id: `cancelled-handover:${marketId}`,
+          title: t("cancelled.camera.selectTitle"),
+          context: t("cancelled.camera.selectContext", { market: cameraMarket, value: cameraCount }),
+          hint: stage === "scanned" ? t("cancelled.camera.selectHintQr", { time: qrTime }) : undefined,
+          note: {
+            title: t("cancelled.camera.selectNoteTitle"),
+            text:
+              stage === "scanned"
+                ? t("cancelled.camera.selectNoteTextQr", { market: cameraMarket, time: qrTime })
+                : t("cancelled.camera.selectNoteText", { market: cameraMarket }),
+          },
+          progress: { done: selectedIds.size, total: orders.length, label: t("cancelled.camera.meter") },
+          list: cameraList,
+          listTitle: t("cancelled.camera.listTitle"),
+          finish: { label: t("ui:camera.action.finish"), onFinish: () => undefined },
+        },
+  });
 
   // Market — sarlavha va sahifa ildizi qobiqda (`hosted`); karta tablar bilan boshlanadi.
   if (isMarketRole) {
@@ -573,11 +628,6 @@ const CancelledMarketDetail = () => {
     );
   }
 
-  const stage = resolveHandoverQrStage({
-    qrRequired: isCancelledHandoverQrRequired,
-    qrScanned: isHandoverQrScanned,
-    authorizationToken,
-  });
   const canSend = canSendHandover({
     selectedCount: selectedIds.size,
     pending: false,
@@ -604,25 +654,18 @@ const CancelledMarketDetail = () => {
           ) : null
         }
         actions={
-          <>
-            {stage === "required" && hasOrders ? (
-              <Button variant="secondary" leftIcon={ScanLine} aria-haspopup="dialog" onClick={openCamera}>
-                {t("cancelled.scanMarketQr")}
-              </Button>
-            ) : null}
-            <Button
-              leftIcon={Send}
-              disabled={!canSend}
-              aria-describedby={stage === "required" && hasOrders ? hintId : undefined}
-              loading={handoverCancelledOrders.isPending}
-              loadingText={t("cancelled.sending")}
-              onClick={handleSendToMarket}
-            >
-              {selectedCount > 0
-                ? t("cancelled.send", { count: selectedCount, value: number(selectedCount) })
-                : t("cancelled.sendNone")}
-            </Button>
-          </>
+          <Button
+            leftIcon={Send}
+            disabled={!canSend}
+            aria-describedby={stage === "required" && hasOrders ? hintId : undefined}
+            loading={handoverCancelledOrders.isPending}
+            loadingText={t("cancelled.sending")}
+            onClick={handleSendToMarket}
+          >
+            {selectedCount > 0
+              ? t("cancelled.send", { count: selectedCount, value: number(selectedCount) })
+              : t("cancelled.sendNone")}
+          </Button>
         }
       />
 
@@ -645,8 +688,8 @@ const CancelledMarketDetail = () => {
               {canManualSelectDamagedQr ? t("cancelled.card.hint") : t("cancelled.card.hintScanOnly")}
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 max-md:hidden">
-            {scannerEnabled ? (
+          {scannerEnabled ? (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 max-md:hidden">
               <Badge
                 tone="success"
                 dot
@@ -655,28 +698,8 @@ const CancelledMarketDetail = () => {
               >
                 {t("cancelled.card.scannerReady")}
               </Badge>
-            ) : null}
-            <Button variant="secondary" leftIcon={Camera} aria-haspopup="dialog" onClick={openCamera}>
-              {t("cancelled.card.camera")}
-            </Button>
-          </div>
-          {/* Telefon: kamera — to'liq enli yumshoq tugma (ikkinchi to'liq rangli tugma yo'q), tanlov soni bilan. */}
-          {/* eslint-disable-next-line design-v2/raw-control -- kamera ishi: telefondagi «Kamera» tugmasi ScannerCameraModal bilan birga ko'chiriladi (ega 2026-10-16) */}
-          <button
-            type="button"
-            aria-haspopup="dialog"
-            onClick={openCamera}
-            className="hidden h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-action-soft px-5 text-[15px] font-semibold text-action-fg transition-[background-color,color] duration-150 hover:bg-action hover:text-on-solid motion-reduce:transition-none max-md:inline-flex"
-          >
-            <ScanLine size={18} aria-hidden="true" className="shrink-0" />
-            {t("cancelled.card.cameraPhone")}
-            {selectedCount > 0 ? (
-              <span className="inline-flex h-6 items-center rounded-full bg-action px-2 text-[13px] text-on-solid">
-                <span className="sr-only">{t("cancelled.card.selectedSr")}</span>
-                {number(selectedCount)} / {number(orders.length)}
-              </span>
-            ) : null}
-          </button>
+            </div>
+          ) : null}
         </div>
 
         {hasOrders ? (
@@ -740,21 +763,6 @@ const CancelledMarketDetail = () => {
         onConfirm={confirmManualSelect}
       />
 
-      <ScannerCameraModal
-        isOpen={isCameraOpen}
-        onClose={() => setIsCameraOpen(false)}
-        onDecode={handleCameraDecode}
-        title={t("scanCancelledHandoverQr")}
-        subtitle={t("cancelledHandoverScannerSubtitle")}
-        waitingText={t("cancelledScanHint")}
-        closeLabel={t("closeScanner")}
-        torchOnLabel={t("torchOn")}
-        torchOffLabel={t("torchOff")}
-        invalidQrMessage={t("cancelledScanMissing")}
-        loading={handoverCancelledOrders.isPending || scanMarketCancelledQr.isPending}
-        loadingText={t("cancelledSending")}
-        error={scanError}
-      />
     </div>
   );
 };

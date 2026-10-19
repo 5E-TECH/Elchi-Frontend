@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-scan-result, manager-scan-result, registrator-scan-result, courier-scan-order-detail
 import { lazy, Suspense, useEffect, useId, useMemo, useState, type ReactNode } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Banknote,
   Calendar,
@@ -28,6 +28,7 @@ import { useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
 import { canViewDispatchPage } from "../../../app/lib/access";
+import { addToDispatchBasket, normalizeDispatchOrder, useDispatchBasketScope } from "../../../features/dispatch-basket";
 import { OrderStatusBadge } from "../../../entities/order";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { cx } from "../../../shared/lib/cx";
@@ -50,8 +51,8 @@ import {
   buttonClasses,
 } from "../../../shared/ui/primitives";
 import { buildTrackingContext, type OrderDetail } from "../../new_orders/components/detail/orderDetailModel";
-import { getBackendErrorMessage, scanAssignOrder } from "../lib/scanResource";
-import { playScanFeedback } from "../lib/scanShared";
+import { getBackendErrorMessage, invalidateAfterScanAction, scanAssignOrder } from "../lib/scanResource";
+import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
 import { DISPATCH_ROUTE, orderDetailRoute } from "../model/routes";
 import {
   buildScanOrderView,
@@ -75,7 +76,7 @@ const ManagerOrderDialogs = lazy(() => import("./ManagerOrderDialogs"));
 
 type ScanOrderResultProps = {
   order: OrderDetail;
-  /** Skanerlangan (normallashtirilgan) token — «Kuryerga biriktirish» uni `/dispatch` ga beradi. */
+  /** Skanerlangan (normallashtirilgan) token — «Kuryerga biriktirish» buyurtmani shu token bilan savatga qo'yadi. */
   token: string;
   roleKind: ScanRoleKind;
   /** Sarlavha ostidagi xabar (USB skaner bilan yaroqsiz QR o'qildi). */
@@ -109,10 +110,13 @@ const ResultAlert = ({ result }: { result: ResultMessage }) => (
 const useCourierAssign = (token: string) => {
   const { t } = useTranslation("scan");
   const scheduleRedirect = useScanRedirect(1500);
+  const queryClient = useQueryClient();
   const [result, setResult] = useState<ResultMessage | null>(null);
   const mutation = useMutation({
     mutationFn: () => scanAssignOrder(token),
     onSuccess: () => {
+      // Buyurtma kuryerga o'tdi (filial qabuli ham) — ro'yxatlar, pochta va paketlar eskirmasin (6qypMFeT).
+      void invalidateAfterScanAction(queryClient);
       void playScanFeedback("success");
       setResult({ tone: "success", text: t("courier.assignSuccess") });
       scheduleRedirect();
@@ -513,7 +517,14 @@ export const ScanOrderResult = ({
     return () => onDialogOpenChange(false);
   }, [dialog, onDialogOpenChange]);
 
-  const goDispatch = () => navigate(DISPATCH_ROUTE, { state: { scanToken: token } });
+  // «Kuryerga biriktirish» («Buyurtma biriktirish savatiga qo'shiladi»): savat qurilmada (ega qarori D2) —
+  // buyurtma `/dispatch` savatiga qo'shiladi (bor bo'lsa — tanlanadi), so'ng savat ochiladi.
+  const dispatchBasketScope = useDispatchBasketScope();
+  const goDispatch = () => {
+    const basketOrder = normalizeDispatchOrder(order, token);
+    if (basketOrder) addToDispatchBasket(dispatchBasketScope, basketOrder);
+    navigate(DISPATCH_ROUTE);
+  };
 
   const copyNumber = () => {
     void copyToClipboard(view.id).then((copied) => {

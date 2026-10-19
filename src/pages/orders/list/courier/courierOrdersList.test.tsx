@@ -1,9 +1,10 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useLocation } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import CourierOrders from "./index";
 import { renderWithProviders } from "../../../../test/test-utils";
+import { getActiveScanTarget } from "../../../../shared/lib/scanner/scanTargets";
 import { PHONE_QUERY } from "../../../../shared/ui/primitives/date/useIsPhone";
 import {
   clearPendingExtraCostApproval,
@@ -392,6 +393,37 @@ describe("Kuryer buyurtmalari — bekor qilinganlarni pochtaga yuborish (v2)", (
     await user.click(within(bar).getByRole("button", { name: "Tanlovni bekor qilish" }));
     expect(screen.queryByRole("region", { name: "Tanlangan buyurtmalar" })).toBeNull();
     expect(screen.getByRole("checkbox", { name: "№2001 ni tanlash" })).not.toBeChecked();
+  });
+
+  it("kamera (markaziy «Skaner»): «Pochtaga yuborish» maqsadi, skan tanlaydi, ro'yxatda «Bekor qilish»", async () => {
+    state.rows = cancelledRows();
+    renderPage("/orders?status=cancelled");
+
+    expect(getActiveScanTarget()).toMatchObject({
+      id: "courier-orders:cancelled-to-post",
+      title: "Pochtaga yuborish",
+      context: "Bekor qilingan buyurtmalar · 2 ta",
+      progress: { done: 0, total: 2, label: "ta tanlandi" },
+      finish: { label: "Tugatish" },
+    });
+
+    act(() => {
+      void getActiveScanTarget()!.onScan("2001", "camera");
+    });
+    expect(screen.getByRole("checkbox", { name: "№2001 ni tanlash" })).toBeChecked();
+    await waitFor(() =>
+      expect(getActiveScanTarget()?.list?.[0]).toMatchObject({ key: "order:2001", title: "№2001 · Malika Yusupova" }),
+    );
+    expect(getActiveScanTarget()?.progress).toMatchObject({ done: 1, total: 2 });
+
+    act(() => getActiveScanTarget()!.list![0].onUndo!());
+    expect(screen.getByRole("checkbox", { name: "№2001 ni tanlash" })).not.toBeChecked();
+  });
+
+  it("boshqa tabda kamera maqsadi yo'q (markaziy tugma universal skanerni ochadi)", () => {
+    state.rows = [order("1001", "Laylo Hasanova")];
+    renderPage("/orders?status=waiting");
+    expect(getActiveScanTarget()).toBeNull();
   });
 
   it("bekor qilinganlar jadvalida amallar ustuni yo'q", () => {

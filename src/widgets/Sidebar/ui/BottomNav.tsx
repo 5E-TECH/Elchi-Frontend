@@ -7,6 +7,9 @@ import { Menu, ScanLine, type LucideIcon } from "lucide-react";
 import type { RootState } from "../../../app/config/store";
 import { preloadRoute } from "../../../app/lib/routePreload";
 import { cx } from "../../../shared/lib/cx";
+import { openScanner, UNIVERSAL_SCANNER_PATH } from "../../../shared/lib/scanner/scannerHost";
+import { getActiveScanTarget, useActiveScanTarget } from "../../../shared/lib/scanner/scanTargets";
+import { preloadScannerCamera } from "../../../shared/ui/camera/loadScannerCamera";
 import { useShellBottomInsetSource } from "../../../shared/ui/primitives";
 import {
     getSidebarConfigForUser,
@@ -29,7 +32,10 @@ import { getActiveNavPath, useMobileMenu, useNavPathname } from "../model/shellN
  * - Ochiq bo'lim: ikonka va yorliq `action-fg` (`aria-current="page"`), fon o'zgarmaydi; qolganlari `text-muted`.
  *   Faol band `useNavPathname()` dan — bosilgan katak sahifa yuklanguncha ham darhol tanlangan ko'rinadi.
  * - Skaner rollarida markazda ko'tarilgan «Skaner» (52px `action` doira, 4px `surface` hoshiya, soya) —
- *   universal skaner `/scan` (telefonda to'liq ekran, pastki menyusiz). Marketda skaner yo'q: 5 ta bo'lim.
+ *   KONTEKSTLI (ega roziligi 2026-10-19, skaner 1-bosqichi): sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa
+ *   (`useScanTarget`) kamera shu sahifa ustida o'sha maqsad bilan ochiladi (`openScanner`, `ScannerHost`),
+ *   `aria-label` uni aytadi («Skaner — Qabul qilish»); aks holda universal skaner `/scan` (telefonda to'liq
+ *   ekran, pastki menyusiz). Ko'rinish o'zgarmaydi. Marketda skaner yo'q: 5 ta bo'lim.
  * - Oxirgi katak «Menyu» — qolgan bo'limlar suriluvchi menyuda (`useMobileMenu().open()`, shell shartnomasi).
  * - Fokus faqat klaviaturada: 2px `action` halqa katak ICHIDA (−6px oraliq), burchak 12px.
  *
@@ -47,7 +53,7 @@ const MENU: BottomNavSlot = { kind: "menu" };
 const link = (...keys: string[]): LinkSlot => ({ kind: "link", keys });
 
 /** Universal skaner (`ScanLayout`, telefonda to'liq ekran kamera). */
-const SCANNER_PATH = "/scan";
+const SCANNER_PATH = UNIVERSAL_SCANNER_PATH;
 
 const SCANNER_ROLE_SLOTS: readonly BottomNavSlot[] = [link("dashboard"), link("orders"), SCAN, link("newOrders"), MENU];
 
@@ -131,6 +137,7 @@ const BottomNav = () => {
     const user = useSelector((state: RootState) => state.user.user);
     const { isOpen: isMenuOpen, open: openMenu } = useMobileMenu();
     const pathname = useNavPathname();
+    const scanTarget = useActiveScanTarget();
 
     // ⚠️ "admin" ga fallback YO'Q: menyusi yo'q rol (masalan operator) avval
     // telefonda admin havolalarini ko'rardi va ularning hammasi 403 berardi.
@@ -205,16 +212,29 @@ const BottomNav = () => {
                 const preload = () => preloadRoute(entry.to);
 
                 if (entry.kind === "scan") {
+                    // Faol skan maqsadi bor — kamera shu sahifa ustida (havola o'tishi to'xtatiladi); yo'q — `/scan`.
+                    const preloadScanner = () => (getActiveScanTarget() ? preloadScannerCamera() : preload());
                     return (
                         <Link
                             key={entry.key}
                             to={entry.to}
                             aria-current={isActive ? "page" : undefined}
+                            aria-label={
+                                scanTarget
+                                    ? t("ui:shell.scanFor", { action: entry.label, target: scanTarget.title })
+                                    : undefined
+                            }
+                            aria-haspopup={scanTarget ? "dialog" : undefined}
                             title={entry.label}
                             data-bottomnav-scan
-                            onPointerEnter={preload}
-                            onFocus={preload}
-                            onTouchStart={preload}
+                            onClick={(event) => {
+                                if (!getActiveScanTarget()) return;
+                                event.preventDefault();
+                                openScanner();
+                            }}
+                            onPointerEnter={preloadScanner}
+                            onFocus={preloadScanner}
+                            onTouchStart={preloadScanner}
                             className={cx(ITEM, "text-text")}
                         >
                             <span className={FAB}>

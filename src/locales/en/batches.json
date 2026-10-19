@@ -95,7 +95,16 @@
       "received": "Batch received",
       "receivedAt": "Batch received at {{to}}",
       "cancelled": "Batch cancelled"
-    }
+    },
+    "cameraTitle": "Send to HQ",
+    "cameraNoteTitle": "Scan the QR code of an order in the package",
+    "cameraNoteText": "It is selected for sending to HQ. Codes from another package are not accepted.",
+    "cameraMeter": "selected",
+    "cameraListTitle": "Recent scans",
+    "cameraSelected": "Selected №{{id}}",
+    "cameraNotInBatch": "Not in this package · {{code}}",
+    "cameraRejectedTitle": "{{code}} · Not in this package",
+    "cameraRejectedText": "No match · not selected"
   },
   "print": {
     "branch": "BRANCH:",

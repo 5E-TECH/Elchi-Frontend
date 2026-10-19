@@ -17,13 +17,6 @@
   "confirmTomorrowHint": "Останутся в статусе «Ожидает»",
   "confirmAction": "Подтвердить",
   "confirmBack": "Назад",
-  "scannerTitle": "Сканировать заказ",
-  "scannerSubtitle": "Считайте QR-код заказа камерой",
-  "scannerWaiting": "Ожидание QR-кода...",
-  "scannerClose": "Закрыть",
-  "torchOn": "Включить фонарь",
-  "torchOff": "Выключить фонарь",
-  "invalidQr": "Не удалось считать QR-код",
   "scanMissingTitle": "Заказ не найден",
   "scanMissing": "Этот QR-код не найден среди ожидающих заказов",
   "duplicateTitle": "Повторное сканирование",
@@ -70,11 +63,7 @@
     "tomorrow": "Оставить на завтра",
     "cancelShort": "Отмена",
     "tomorrowShort": "Завтра",
-    "usbReady": "USB-сканер готов",
-    "camera": "Камера",
-    "cameraPhone": "Сканировать камерой",
-    "cameraPhoneMarked": "Сканировать камерой, отмечено {{marked}} из {{total}}",
-    "markedOfTotal": "{{marked}} / {{total}}"
+    "usbReady": "USB-сканер готов"
   },
   "list": {
     "title": "Ожидающие заказы",
@@ -131,5 +120,15 @@
   "resultDescription": "Не завершено заказов: {{count}} — они остались в списке со своей отметкой",
   "resultListLabel": "Незавершённые заказы",
   "resultReasonUnknown": "Сервер не указал причину",
-  "resultClose": "Понятно"
+  "resultClose": "Понятно",
+  "camera": {
+    "context": "Ожидающих заказов: {{value}}",
+    "meter": "отсканировано",
+    "unscanned": "Неотсканированные заказы ({{value}}) будут отмечены как проданные.",
+    "listTitle": "Отсканированные",
+    "listDescription": "{{done}} / {{total}} · отмена: {{cancel}}, на завтра: {{tomorrow}}",
+    "markedCancel": "Отмечен к отмене №{{id}} · {{name}}",
+    "markedTomorrow": "Оставлен на завтра №{{id}} · {{name}}",
+    "markedSold": "Отмечен как продан №{{id}} · {{name}}"
+  }
 }

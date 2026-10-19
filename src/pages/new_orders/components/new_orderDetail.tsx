@@ -23,9 +23,14 @@ import {
   type DataTableSelection,
   type DataTableSort,
 } from "../../../shared/ui/primitives";
-import { normalizeScannerCandidates, playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
+import { extractScannerToken, normalizeScannerCandidates } from "../../../shared/lib/scanToken";
+import { getErrorStatus } from "../../../shared/lib/errorKind";
+import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
+import { scanNotify } from "../../../shared/lib/scanner/scanSession";
+import type { ScanTargetListItem } from "../../../shared/lib/scanner/scanTargets";
+import { fetchScanDetail } from "../../scan/lib/scanResource";
 import { useHasNewOrdersTabs } from "../model/useNewOrdersTabs";
-import { listOf } from "../model/todayMarkets";
+import { extractTodayMarkets, listOf } from "../model/todayMarkets";
 import NewOrdersTabs from "../ui/NewOrdersTabs";
 import { DetailAlert } from "./detail/DetailAlert";
 import { DeleteOrderDialog, ReceiveConfirmDialog } from "./marketOrders/MarketOrderDialogs";
@@ -36,6 +41,8 @@ import {
   matchesMarketOrderSearch,
   pickUnselectedPreview,
   readMarketName,
+  readOrderDistrict,
+  readOrderRegion,
   readUserBranchName,
   sortMarketOrders,
   sumTotalPrice,
@@ -55,6 +62,18 @@ import { resolveReceiveMode } from "./newOrderReceiveRules";
  *    boshlanadi, tanlov va skaner yo'q, faqat o'chirish va ochish.
  *
  * Qabul usuli — `newOrderReceiveRules.ts` (HQ — `POST /orders/receive`, PICKUP/HYBRID — transfer-batches).
+ *
+ * KAMERA (Trello v1eLN2tV 2-bosqich, ega 2026-10-19; maketlar `superadmin-neworders-market-orders-camera`,
+ * `admin-neworders-market-detail-camera`, `manager-new-orders-market-detail-camera`,
+ * `registrator-new-orders-market-detail-camera`): sahifada kamera tugmasi YO'Q — pastki menyuning markaziy
+ * «Skaner» tugmasi (desktopda yuqoridagi «Skanerlash») shu sahifaning skan maqsadini ochadi. Kamera skani USB
+ * bilan aynan bir xil yo'ldan o'tadi (`useOrderQrScanner`): «skan = darhol qabul».
+ *   - hisoblagich «Qabul qilindi N · Qoldi M · Topilmadi K», «N / jami ta qabul qilindi»;
+ *   - ro'yxatda yo'q kod serverdan tekshiriladi (`GET orders/qr-code/:token`): boshqa marketniki — RAD etiladi
+ *     («Boshqa market: … — qabul qilinmadi», hisobga kirmaydi), topilmasa — «Topilmadi» (hisoblanadi);
+ *   - kamera ichida market almashtiriladi (yangi buyurtmasi bor marketlar, `GET orders/markets/new`) —
+ *     `/new-orders/:id` ga o'tiladi, kamera ochiq qoladi va yangi sahifaning maqsadi bilan davom etadi.
+ * Market almashsa sahifa holati (qabul qilinganlar, topilmaganlar) yangidan boshlanadi — `key={marketId}`.
  */
 const NewOrderDetail = () => {
   const { t, i18n } = useTranslation(["newOrders", "orders", "common"]);
@@ -89,6 +108,10 @@ const NewOrderDetail = () => {
   const [sort, setSort] = useState<DataTableSort | null>(DEFAULT_MARKET_ORDERS_SORT);
   const pendingScanOrderIdsRef = useRef<Set<string>>(new Set());
   const receivedScanKeysRef = useRef<Set<string>>(new Set());
+  // Kamera hisoblagichi va ro'yxati: shu sessiyada qabul qilinganlar (yangisi oxirida) va topilmagan kodlar.
+  const [receivedLog, setReceivedLog] = useState<MarketOrder[]>([]);
+  const [missingCodes, setMissingCodes] = useState<string[]>([]);
+  const lookupKeysRef = useRef<Set<string>>(new Set());
 
   const { useGetTodayOrders, useGetTodayOrdersByMarket, deleteOrder, createReceiveOrder, createTransferBatch } =
     useOrders();
@@ -112,6 +135,16 @@ const NewOrderDetail = () => {
   const nameFromOrders = readMarketName(rawOrders, undefined, marketId);
   const marketsQuery = useGetTodayOrders(undefined, !isMarketRole && ordersQuery.isSuccess && !nameFromOrders);
   const marketName = nameFromOrders ?? readMarketName([], marketsQuery.data, marketId);
+  const marketsData = marketsQuery.data;
+  const refetchMarkets = marketsQuery.refetch;
+
+  const logReceived = useCallback((received: readonly MarketOrder[]) => {
+    if (received.length === 0) return;
+    setReceivedLog((prev) => {
+      const known = new Set(prev.map((order) => order.id));
+      return [...prev, ...received.filter((order) => !known.has(order.id))];
+    });
+  }, []);
 
   const rememberReceivedScan = useCallback((order: MarketOrder, rawValue?: string) => {
     const keys = receivedScanKeysRef.current;
@@ -130,7 +163,7 @@ const NewOrderDetail = () => {
   const showAlreadyReceivedFeedback = useCallback(
     (orderId?: string | number) => {
       void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
-      notify.warning(t("common:scannerFeedbackDuplicate"), {
+      scanNotify.warning(t("common:scannerFeedbackDuplicate"), {
         description: orderId ? `№${orderId}` : t("newOrderAlreadyReceivedDescription"),
         duration: 2000,
       });
@@ -138,21 +171,15 @@ const NewOrderDetail = () => {
     [t],
   );
 
-  const handleMissingScannedOrder = useCallback(
+  const markMissingCode = useCallback(
     (rawValue: string) => {
-      const isAlreadyReceived = normalizeScannerCandidates(rawValue, window.location.origin).some((candidate) =>
-        receivedScanKeysRef.current.has(candidate),
-      );
-
-      if (isAlreadyReceived) {
-        showAlreadyReceivedFeedback();
-        return;
-      }
-
-      playMissingOrderFeedback();
-      notify.warning(t("newOrderScanMissing"), { duration: 3000 });
+      const code = extractScannerToken(rawValue) ?? rawValue.trim();
+      setMissingCodes((prev) => (prev.includes(code) ? prev : [...prev, code]));
+      const message = t("marketOrders.camera.notFound");
+      void playScanFeedback("missing", t("marketOrders.camera.notFoundCode", { code }));
+      scanNotify.warning(message, { description: code, duration: 3000 });
     },
-    [showAlreadyReceivedFeedback, t],
+    [t],
   );
 
   const receiveScannedOrder = useCallback(
@@ -174,7 +201,8 @@ const NewOrderDetail = () => {
         {
           onSuccess: () => {
             rememberReceivedScan(order, rawValue);
-            void playScanFeedback("success", t("newOrderReceiveSuccess"));
+            logReceived([order]);
+            void playScanFeedback("success", t("marketOrders.camera.received", { id: orderId }));
             setReceivedOrderIds((prev) => {
               const next = new Set(prev);
               next.add(orderId);
@@ -187,7 +215,7 @@ const NewOrderDetail = () => {
               return next;
             });
             void refetch();
-            notify.success(t("newOrderReceiveSuccess"), {
+            scanNotify.success(t("newOrderReceiveSuccess"), {
               description: t("newOrderReceiveDescription"),
               duration: 2000,
             });
@@ -209,8 +237,8 @@ const NewOrderDetail = () => {
               return;
             }
 
-            void playScanFeedback("error");
-            notify.error(t("receiveError"), { description: msg });
+            void playScanFeedback("error", msg);
+            scanNotify.error(t("receiveError"), { description: msg });
           },
           onSettled: () => {
             pendingScanOrderIdsRef.current.delete(orderId);
@@ -218,15 +246,160 @@ const NewOrderDetail = () => {
         },
       );
     },
-    [receiveMutation, receivedOrderIds, refetch, rememberReceivedScan, showAlreadyReceivedFeedback, t],
+    [logReceived, receiveMutation, receivedOrderIds, refetch, rememberReceivedScan, showAlreadyReceivedFeedback, t],
+  );
+
+  /**
+   * Ro'yxatda yo'q kod: avval shu sahifada qabul qilinganmi (takror), so'ng server — qaysi marketniki?
+   *   - boshqa market — RAD («Boshqa market: … — qabul qilinmadi»), «Topilmadi» ga kirmaydi;
+   *   - shu marketning yangi buyurtmasi (ro'yxat hali yangilanmagan) — odatdagidek darhol qabul;
+   *   - topilmadi (404) yoki shu marketning yangi bo'lmagan buyurtmasi — «Topilmadi», hisoblanadi;
+   *   - tekshirib bo'lmadi (tarmoq, 5xx) — xato, hisobga kirmaydi (qayta skanerlash mumkin).
+   */
+  const handleMissingScannedOrder = useCallback(
+    async (rawValue: string) => {
+      const candidates = normalizeScannerCandidates(rawValue, window.location.origin);
+      if (candidates.some((candidate) => receivedScanKeysRef.current.has(candidate))) {
+        showAlreadyReceivedFeedback();
+        return;
+      }
+
+      const code = extractScannerToken(rawValue) ?? rawValue.trim();
+      const lookupKey = code.toLowerCase();
+      // Kamera va USB bir kodni ketma-ket yuborsa — bitta so'rov.
+      if (!code || lookupKeysRef.current.has(lookupKey)) return;
+      lookupKeysRef.current.add(lookupKey);
+
+      try {
+        const detail = await fetchScanDetail(code);
+        const scanned = detail.type === "order" ? unwrapScannedMarketOrder(detail.data) : null;
+        if (!scanned) {
+          markMissingCode(rawValue);
+          return;
+        }
+
+        // Shu sahifada (ommaviy «Qabul qilish» yoki skan bilan) qabul qilingan — takror, «Topilmadi» emas.
+        const scannedId = String(scanned.id);
+        if (receivedOrderIds.has(scannedId) || receivedLog.some((order) => String(order.id) === scannedId)) {
+          rememberReceivedScan(scanned, rawValue);
+          showAlreadyReceivedFeedback(scanned.id);
+          return;
+        }
+
+        const scannedMarketId = String(scanned.market_id ?? scanned.market?.id ?? "").trim();
+        if (scannedMarketId && scannedMarketId !== String(marketId)) {
+          const otherName =
+            scanned.market?.name?.trim() ||
+            extractTodayMarkets(marketsData).find((row) => row.market_id === scannedMarketId)?.name ||
+            t("marketOrders.camera.otherMarketFallback");
+          const message = t("marketOrders.camera.otherMarket", { market: otherName });
+          void playScanFeedback("error", message);
+          scanNotify.error(message, { description: `№${scanned.id}`, duration: 3000 });
+          return;
+        }
+
+        if (scannedMarketId === String(marketId) && String(scanned.status ?? "").toLowerCase() === "new") {
+          receiveScannedOrder(scanned, rawValue);
+          return;
+        }
+
+        markMissingCode(rawValue);
+      } catch (error) {
+        if (getErrorStatus(error) === 404) {
+          markMissingCode(rawValue);
+          return;
+        }
+        const message = t("marketOrders.camera.checkFailed");
+        void playScanFeedback("error", message);
+        scanNotify.error(message, { description: code, duration: 3000 });
+      } finally {
+        lookupKeysRef.current.delete(lookupKey);
+      }
+    },
+    [
+      marketId,
+      marketsData,
+      markMissingCode,
+      receiveScannedOrder,
+      receivedLog,
+      receivedOrderIds,
+      rememberReceivedScan,
+      showAlreadyReceivedFeedback,
+      t,
+    ],
   );
 
   const scannerEnabled = canReceive && rawOrders.length > 0;
+  const remainingCount = orders.length;
+  const receivedCount = receivedLog.length;
+  const cameraMarketName = marketName ?? t("marketOrders.titleFallback");
+  const cameraMoney = useCallback((value: number) => formatMoneyLocalized(value, { language }), [language]);
+  const cameraList = useMemo<ScanTargetListItem[]>(() => {
+    const received = receivedLog.map<ScanTargetListItem>((order) => ({
+      key: `received:${order.id}`,
+      title: [`№${order.id}`, order.customer?.name?.trim()].filter(Boolean).join(" · "),
+      subtitle: [readOrderDistrict(order) ?? readOrderRegion(order), cameraMoney(Number(order.total_price) || 0)]
+        .filter(Boolean)
+        .join(" · "),
+      tone: "success",
+    }));
+    const missing = missingCodes.map<ScanTargetListItem>((code) => ({
+      key: `missing:${code}`,
+      title: code,
+      subtitle: t("marketOrders.camera.notFound"),
+      tone: "danger",
+    }));
+    // Yangisi birinchi: qabul qilinganlar va topilmaganlar alohida tartibda — ikkalasi ham oxirgisi tepada.
+    return [...received.reverse(), ...missing.reverse()];
+  }, [cameraMoney, missingCodes, receivedLog, t]);
+
+  const isTransfer = receiveMode === "transfer";
   useOrderQrScanner({
     orders: rawOrders,
-    enabled: scannerEnabled,
+    enabled: canReceive,
     onMatch: receiveScannedOrder,
-    onMissing: handleMissingScannedOrder,
+    onMissing: (rawValue: string) => {
+      void handleMissingScannedOrder(rawValue);
+    },
+    camera: {
+      id: `new-orders:market:${marketId}`,
+      title: isTransfer ? t("marketOrders.camera.titleTransfer") : t("marketOrders.camera.title"),
+      context: t("marketOrders.camera.context", {
+        market: cameraMarketName,
+        value: formatNumberLocalized(receivedCount + remainingCount, { language }),
+      }),
+      note: {
+        title: isTransfer ? t("marketOrders.camera.noteTitleTransfer") : t("marketOrders.camera.noteTitle"),
+        text: isTransfer
+          ? t("marketOrders.camera.noteTextTransfer", { market: cameraMarketName })
+          : t("marketOrders.camera.noteText", { market: cameraMarketName }),
+      },
+      progress: { done: receivedCount, total: receivedCount + remainingCount, label: t("marketOrders.camera.meter") },
+      stats: [
+        { key: "received", label: t("marketOrders.camera.statReceived"), value: receivedCount, tone: "success" },
+        { key: "left", label: t("marketOrders.camera.statLeft"), value: remainingCount },
+        { key: "missing", label: t("marketOrders.camera.statMissing"), value: missingCodes.length, tone: "danger" },
+      ],
+      list: cameraList,
+      listTitle: t("marketOrders.camera.listTitle"),
+      switcher: {
+        label: cameraMarketName,
+        value: String(marketId),
+        title: t("marketOrders.camera.switcherTitle"),
+        // Varaq ochilganda yangi ro'yxat (so'rov sahifa ochilganda emas, faqat shu yerda).
+        options: async () => {
+          const result = await refetchMarkets();
+          if (result.isError && result.data === undefined) throw result.error;
+          return extractTodayMarkets(result.data).map((row) => ({
+            value: row.market_id,
+            label: row.name,
+            meta: t("marketOrders.camera.switcherMeta", { value: formatNumberLocalized(row.orders_count, { language }) }),
+          }));
+        },
+        onSelect: (value) => navigate(`/new-orders/${value}`),
+      },
+      finish: { label: t("ui:camera.action.finish"), onFinish: () => undefined },
+    },
   });
 
   // «Barchasini tanlash» — qabul qilinmagan barcha buyurtmalar (qidiruvdan qat'i nazar, avvalgidek).
@@ -294,7 +467,8 @@ const NewOrderDetail = () => {
   const handleAccepted = useCallback(() => {
     // snapshot: setSelectedIds(new Set()) dan KEYIN tanlov o'zgaradi,
     // lekin closure eski qiymatni ko'radi — shuning uchun oldindan saqlaymiz
-    const ids = selectedOrders.map((order) => order.id);
+    const accepted = selectedOrders;
+    const ids = accepted.map((order) => order.id);
     const isAll = ids.length === orders.length;
     receiveMutation.mutate(
       { orderIds: ids },
@@ -305,6 +479,9 @@ const NewOrderDetail = () => {
             ids.forEach((id) => next.add(id));
             return next;
           });
+          logReceived(accepted);
+          // Ommaviy qabul ham skan kalitlariga yoziladi: keyin skanerlansa — «Topilmadi» emas, takror ogohlantirish.
+          accepted.forEach((order) => rememberReceivedScan(order));
           setIsReceiveConfirmOpen(false);
           setSelectedIds(new Set());
           if (isAll) {
@@ -322,7 +499,7 @@ const NewOrderDetail = () => {
         },
       },
     );
-  }, [location.key, navigate, orders.length, receiveMutation, refetch, selectedOrders, t]);
+  }, [location.key, logReceived, navigate, orders.length, receiveMutation, refetch, rememberReceivedScan, selectedOrders, t]);
 
   const handlePrint = useCallback(
     async (mode: string) => {
@@ -560,4 +737,25 @@ const NewOrderDetail = () => {
   );
 };
 
-export default memo(NewOrderDetail);
+/** QR javobidagi buyurtma (`{ data: order }` o'ramlari bilan) — id bo'lmasa `null`. */
+type ScannedMarketOrder = MarketOrder & { market_id?: string | number | null };
+const unwrapScannedMarketOrder = (payload: unknown): ScannedMarketOrder | null => {
+  let current: unknown = payload;
+  for (let depth = 0; depth < 3; depth += 1) {
+    if (!current || typeof current !== "object") return null;
+    const record = current as Record<string, unknown>;
+    if (record.id !== undefined && record.id !== null && (record.qr_code_token !== undefined || record.market_id !== undefined || record.status !== undefined)) {
+      return { ...(record as unknown as ScannedMarketOrder), id: String(record.id) };
+    }
+    current = record.order ?? record.data;
+  }
+  return null;
+};
+
+/** Market almashsa (kamera ichidagi tanlov ham) — sahifa holati yangidan: qabul qilinganlar, topilmaganlar, tanlov. */
+const NewOrderDetailRoute = () => {
+  const { marketId = "" } = useParams();
+  return <NewOrderDetail key={marketId} />;
+};
+
+export default memo(NewOrderDetailRoute);

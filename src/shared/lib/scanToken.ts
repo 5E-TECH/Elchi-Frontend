@@ -63,3 +63,21 @@ export const normalizeScannerCandidates = (value: string, origin?: string) => {
 
   return [...candidates];
 };
+
+/**
+ * Begona havola: to'liq `http(s)` manzil, unda `/scan/` bo'lagi yo'q va u ilovaning o'z manzili emas
+ * (masalan market yoki ishlab chiqaruvchi sayti `https://barakashop.uz/mahsulot/48213`). Bunday QR Elchi
+ * yorlig'i emas — `extractScannerToken` uning oxirgi bo'lagini token deb olmasin (maket `courier-scan-invalid`).
+ */
+export const isForeignScanUrl = (value: string, origin?: string) => {
+  const trimmed = value.trim();
+  if (!/^https?:\/\//i.test(trimmed)) return false;
+  let url: URL;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    return false;
+  }
+  if (url.pathname.split("/").some((part) => part.toLowerCase() === "scan")) return false;
+  return !origin || url.origin !== new URL(origin).origin;
+};

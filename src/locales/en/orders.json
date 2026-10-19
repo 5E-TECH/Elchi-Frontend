@@ -58,7 +58,16 @@
     "truncatedTitle": "Results are incomplete.",
     "truncatedText": "Too many customers match the search — type the name, phone or number in full.",
     "summary": "{{from}}–{{to}} of {{total}} orders",
-    "clearFilters": "Clear filters"
+    "clearFilters": "Clear filters",
+    "cameraContext": "Cancelled orders · {{value}}",
+    "cameraNoteTitle": "Scan the QR code of a cancelled order",
+    "cameraNoteText": "It is selected for sending to HQ. Send with the «Send to HQ» button on the page.",
+    "cameraMeter": "selected",
+    "cameraListTitle": "Recent scans",
+    "cameraSelected": "Selected №{{id}}",
+    "cameraRejected": "Rejected · {{reason}}",
+    "cameraReasonMissing": "not in the list",
+    "cameraReasonNotSendable": "cannot be sent"
   },
   "list": "Order list",
   "create": "Create order",
@@ -336,7 +345,17 @@
     "selectAll": "Select all",
     "selectRow": "Select №{{id}}",
     "notFound": "No orders found",
-    "clearFilters": "Clear filters"
+    "clearFilters": "Clear filters",
+    "cameraTitle": "Send to mail",
+    "cameraContext": "Cancelled orders · {{value}}",
+    "cameraNoteTitle": "Scan the QR code of a cancelled order",
+    "cameraNoteText": "It is selected for sending to mail. Send with the button on the page.",
+    "cameraMeter": "selected",
+    "cameraListTitle": "Recent scans",
+    "cameraSelected": "Selected №{{id}}",
+    "cameraRejected": "Rejected · {{reason}}",
+    "cameraReasonMissing": "not in the list",
+    "cameraReasonNotSendable": "cannot be sent to mail"
   },
   "createSubmitting": "Saving order, please wait",
   "stepReadyMessage": "Data is ready for the next step",
@@ -750,5 +769,7 @@
     "fraction": "Enter the amount as a whole number — decimals are not accepted",
     "negative": "The amount cannot be negative",
     "tooLong": "The amount is too large — 12 digits at most"
-  }
+  },
+  "returnHandoverQrAccepted": "Market QR accepted — handing over",
+  "returnHandoverCameraNote": "Scan the QR code shown in the market app — the permission lasts 5 minutes"
 }

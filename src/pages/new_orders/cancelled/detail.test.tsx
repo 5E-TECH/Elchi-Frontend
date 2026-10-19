@@ -14,8 +14,20 @@ import CancelledMarketDetail from "./detail";
 type ScannerOptions = {
   orders: { id: string }[];
   enabled?: boolean;
+  paused?: boolean;
   onMatch: (order: { id: string }, raw: string) => void;
   onMissing: (raw: string) => void;
+  /** Kamera maqsadi (markaziy «Skaner» tugmasi) — `useOrderQrScanner` uni USB bilan bir yo'ldan o'tkazadi. */
+  camera?: {
+    id: string;
+    title: string;
+    context?: string;
+    hint?: string;
+    note?: { title: string; text?: string };
+    progress?: { done: number; total?: number; label?: string };
+    list?: { key: string; title: string; subtitle?: string; onUndo?: () => void }[];
+    finish?: { label: string };
+  };
 };
 
 const mocks = vi.hoisted(() => ({
@@ -23,7 +35,6 @@ const mocks = vi.hoisted(() => ({
   scanMutateAsync: vi.fn(),
   generateMutate: vi.fn(),
   playScanFeedback: vi.fn(),
-  playMissingOrderFeedback: vi.fn(),
   scanner: { current: null as ScannerOptions | null },
   qrRequired: { current: true as boolean | undefined },
 }));
@@ -82,9 +93,9 @@ vi.mock("../../../shared/lib/useOrderQrScanner", () => ({
   },
 }));
 
-vi.mock("../../scan/lib/scanShared", () => ({
+vi.mock("../../../shared/lib/scanner/feedback", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../shared/lib/scanner/feedback")>()),
   playScanFeedback: mocks.playScanFeedback,
-  playMissingOrderFeedback: mocks.playMissingOrderFeedback,
 }));
 
 const staffState = (role: string) =>
@@ -125,7 +136,8 @@ describe("Bekor qilinganlarni topshirish — market QR (biznes qoida)", () => {
     const send = screen.getByRole("button", { name: "Marketga jo'natish" });
     expect(send).toBeDisabled();
     expect(send).toHaveAccessibleDescription(/Jo'natish uchun avval market chiqargan QR kodni skanerlang/);
-    expect(screen.getByRole("button", { name: "Market QR skanerlash" })).toBeInTheDocument();
+    // Sahifada skan tugmasi yo'q — kamera faqat markaziy «Skaner» orqali (tizim-scanner §09).
+    expect(screen.queryByRole("button", { name: "Market QR skanerlash" })).not.toBeInTheDocument();
     const region = screen.getByRole("region", { name: "Tanlangan buyurtmalar" });
     expect(within(region).getByText("Hali buyurtma tanlanmagan")).toBeInTheDocument();
     // Maket `*-scanner-dialog`: tanlov yo'q — kulrang (`sunken`) qator, ko'k emas (ko'k faqat tanlov bo'lsa).
@@ -150,8 +162,7 @@ describe("Bekor qilinganlarni topshirish — market QR (biznes qoida)", () => {
     const selectedRegion = screen.getByRole("region", { name: "Tanlangan buyurtmalar" });
     expect(within(selectedRegion).getByText("2 ta buyurtma tanlandi")).toBeInTheDocument();
     expect(selectedRegion).toHaveClass("bg-action-soft");
-    expect(screen.queryByRole("button", { name: "Market QR skanerlash" })).not.toBeInTheDocument();
-    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success");
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", expect.any(String), undefined, { step: true });
 
     await user.click(screen.getByRole("button", { name: "Marketga jo'natish — 2 ta" }));
     expect(mocks.handoverMutate).toHaveBeenCalledWith(
@@ -167,7 +178,7 @@ describe("Bekor qilinganlarni topshirish — market QR (biznes qoida)", () => {
     await scan("MCR-boshqa");
 
     expect(await screen.findByText("QR topilmadi")).toBeInTheDocument();
-    expect(mocks.playMissingOrderFeedback).toHaveBeenCalled();
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("missing", expect.any(String));
     expect(screen.getByText("Market QR kerak")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Marketga jo'natish" })).toBeDisabled();
   });
@@ -179,7 +190,79 @@ describe("Bekor qilinganlarni topshirish — market QR (biznes qoida)", () => {
 
     expect(screen.getByRole("checkbox", { name: "№501 ni tanlovdan chiqarish" })).toBeChecked();
     expect(screen.getByRole("button", { name: "Marketga jo'natish — 1 ta" })).toBeDisabled();
-    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success");
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", expect.any(String));
+  });
+});
+
+describe("Bekor qilinganlarni topshirish — kamera (markaziy «Skaner» tugmasi)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.qrRequired.current = true;
+    mocks.scanner.current = null;
+  });
+
+  it("sahifada skan tugmasi yo'q: v1 «Kamera» ham, sarlavhadagi «Market QR skanerlash» ham", () => {
+    renderDetail();
+
+    expect(screen.queryByRole("button", { name: "Kamera" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Kamera bilan skanerlash/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Market QR skanerlash" })).not.toBeInTheDocument();
+  });
+
+  it("market QR qabul qilingach shu QR yana o'qilsa — ikkinchi so'rov yo'q, ruxsat va jo'natish saqlanadi", async () => {
+    mocks.scanMutateAsync.mockResolvedValueOnce({ data: { authorization_token: "auth-1", remaining_seconds: 252 } });
+    // Backend ikkinchi foydalanishni rad etadi — so'rov ketsa, ruxsat o'chib ketardi.
+    mocks.scanMutateAsync.mockRejectedValue(new Error("QR allaqachon ishlatilgan"));
+    const user = userEvent.setup();
+    renderDetail();
+
+    await scan("MCR-baraka-201");
+    expect(await screen.findByText("Market QR skanerlandi")).toBeInTheDocument();
+
+    await scan("MCR-baraka-201");
+
+    expect(mocks.scanMutateAsync).toHaveBeenCalledTimes(1);
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("duplicate", "Market QR allaqachon qabul qilingan");
+    expect(screen.getByText("Market QR skanerlandi")).toBeInTheDocument();
+    const send = screen.getByRole("button", { name: "Marketga jo'natish — 2 ta" });
+    expect(send).toBeEnabled();
+    await user.click(send);
+    expect(mocks.handoverMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ authorizationToken: "auth-1" }),
+      expect.any(Object),
+    );
+  });
+
+  it("maqsad matni holatga qarab: «Market QR skanerlash» → QR'dan keyin «Buyurtmalarni tanlash · QR 04:12»", async () => {
+    mocks.scanMutateAsync.mockResolvedValue({ data: { authorization_token: "auth-1", remaining_seconds: 252 } });
+    renderDetail();
+
+    const before = mocks.scanner.current!;
+    expect(before.paused).toBe(false);
+    expect(before.camera).toMatchObject({
+      id: "cancelled-handover:201",
+      title: "Market QR skanerlash",
+      context: "Baraka Shop · 2 ta buyurtma",
+      hint: "Market QR kodini ramka ichiga olib keling",
+      note: { title: "Faqat Baraka Shop QR kodi" },
+    });
+    expect(before.camera?.finish).toBeUndefined();
+
+    await scan("MCR-baraka-201");
+
+    const after = mocks.scanner.current!.camera!;
+    expect(after.id).toBe("cancelled-handover:201");
+    expect(after.title).toBe("Buyurtmalarni tanlash");
+    expect(after.hint).toMatch(/^Buyurtmalarni tanlang · QR 04:1\d amal qiladi$/);
+    expect(after.progress).toMatchObject({ done: 2, total: 2, label: "ta tanlandi" });
+    expect(after.finish).toMatchObject({ label: "Tugatish" });
+    expect(after.list?.map((item) => item.key)).toEqual(["501", "502"]);
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", "Market QR qabul qilindi", undefined, { step: true });
+
+    // «Bekor qilish» — tanlovdan chiqaradi (jo'natish hali bo'lmagan).
+    act(() => after.list![0].onUndo!());
+    expect(screen.getByRole("checkbox", { name: "№501 ni qo'lda tanlash" })).not.toBeChecked();
+    expect(mocks.scanner.current!.camera!.progress).toMatchObject({ done: 1, total: 2 });
   });
 });
 
@@ -204,7 +287,7 @@ describe("Bekor qilinganlarni topshirish — skaner (QR talab qilinmaydi)", () =
     expect(await screen.findByText("#501")).toBeInTheDocument();
 
     await scan("nomalum-qr-123");
-    expect(mocks.playMissingOrderFeedback).toHaveBeenCalled();
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("missing", expect.any(String));
     expect(await screen.findByText("QR topilmadi")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Marketga jo'natish — 1 ta" }));

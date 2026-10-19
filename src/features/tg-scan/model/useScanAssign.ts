@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { extractScannerToken } from "../../../shared/lib/scanToken";
 import { useScannerGate } from "../../../shared/lib/useScannerGate";
-import { scanAssignOrder, type ScanOrderSummary } from "../api/tgScanApi";
+import { scanAssignOrder, type ScanAssignResult, type ScanOrderSummary } from "../api/tgScanApi";
 import { describeTgScanError, type TgScanErrorInfo } from "./scanError";
 import { scanHaptic, type TelegramWebApp } from "./telegramWebApp";
 
@@ -77,14 +77,43 @@ const FLASH_OF: Record<FeedbackInput["kind"], ScanFlashTone> = {
 };
 
 type UseScanAssignOptions = {
-  accessToken: string;
+  /** Mini App JWT (o'z mijozi). `assign` berilsa ishlatilmaydi. */
+  accessToken?: string;
   webApp: TelegramWebApp | null;
   /** `false` — yangi skanlar qabul qilinmaydi (masalan «Tayyor» yuborilmoqda). */
   enabled: boolean;
   onSessionExpired: () => void;
+  /**
+   * So'rov (sukut — Mini App mijozi `scanAssignOrder(accessToken, token)`). Asosiy ilovadagi universal skaner
+   * (kuryer «O'zimga olish», `pages/scan`) asosiy `api` bilan beradi — oqim mantig'i bitta.
+   */
+  assign?: (token: string) => Promise<ScanAssignResult>;
+  /** Har natija xabari (ovoz, kamera xabari — asosiy ilovada `playScanFeedback`). */
+  onFeedback?: (feedback: ScanFeedback) => void;
+  /**
+   * `false` — oqim o'zi tebratmaydi (`scanHaptic`). Asosiy ilova: ovoz va tebranishni `playScanFeedback`
+   * Sozlamalar (`Ovoz`, `Tebranish`) bo'yicha beradi — bu yerda yana `navigator.vibrate` chaqirilsa,
+   * o'chirilgan tebranish ishlab ketadi va yoqilganida ikki marta tebranadi. Sukut `true` — Mini App.
+   */
+  haptics?: boolean;
+  /**
+   * `true` — kamera skanlari tepada (v2 kamera sessiyasi, `useScannerCameraSession`) allaqachon pauza va
+   * takror filtridan o'tgan: bu yerda umumiy pauza qayta qo'llanmaydi (ikki pauza orasidagi tirqishda kod
+   * jim yo'qolmasin). Takror filtri va «kamerada turib qolgan kod» tekshiruvi ishlayveradi.
+   */
+  cameraGated?: boolean;
 };
 
-export const useScanAssign = ({ accessToken, webApp, enabled, onSessionExpired }: UseScanAssignOptions) => {
+export const useScanAssign = ({
+  accessToken = "",
+  webApp,
+  enabled,
+  onSessionExpired,
+  assign,
+  onFeedback,
+  haptics = true,
+  cameraGated = false,
+}: UseScanAssignOptions) => {
   const { evaluateScan, resetScannerGate } = useScannerGate({
     cooldownMs: CAMERA_COOLDOWN_MS,
     duplicateCooldownMs: DUPLICATE_COOLDOWN_MS,
@@ -105,11 +134,17 @@ export const useScanAssign = ({ accessToken, webApp, enabled, onSessionExpired }
   const feedbackTimerRef = useRef(0);
   const flashTimerRef = useRef(0);
   const mountedRef = useRef(true);
-  const optionsRef = useRef({ accessToken, webApp, enabled, onSessionExpired });
+  const optionsRef = useRef({ accessToken, webApp, enabled, onSessionExpired, assign, onFeedback, haptics, cameraGated });
 
   useEffect(() => {
-    optionsRef.current = { accessToken, webApp, enabled, onSessionExpired };
-  }, [accessToken, webApp, enabled, onSessionExpired]);
+    optionsRef.current = { accessToken, webApp, enabled, onSessionExpired, assign, onFeedback, haptics, cameraGated };
+  }, [accessToken, webApp, enabled, onSessionExpired, assign, onFeedback, haptics, cameraGated]);
+
+  /** Tebranish — faqat `haptics` yoqiq bo'lsa (asosiy ilovada `playScanFeedback` beradi). */
+  const vibrate = useCallback((kind: Parameters<typeof scanHaptic>[1]) => {
+    const { haptics: enabledHaptics, webApp: app } = optionsRef.current;
+    if (enabledHaptics) scanHaptic(app, kind);
+  }, []);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -123,7 +158,9 @@ export const useScanAssign = ({ accessToken, webApp, enabled, onSessionExpired }
 
   const show = useCallback((input: FeedbackInput) => {
     sequenceRef.current += 1;
-    setFeedback({ ...input, key: sequenceRef.current } as ScanFeedback);
+    const next = { ...input, key: sequenceRef.current } as ScanFeedback;
+    setFeedback(next);
+    optionsRef.current.onFeedback?.(next);
     setFlash(FLASH_OF[input.kind]);
     window.clearTimeout(feedbackTimerRef.current);
     window.clearTimeout(flashTimerRef.current);
@@ -136,11 +173,11 @@ export const useScanAssign = ({ accessToken, webApp, enabled, onSessionExpired }
 
   const submit = useCallback(
     async (token: string) => {
-      const { accessToken: jwt, webApp: app } = optionsRef.current;
+      const { accessToken: jwt, assign: request } = optionsRef.current;
       pendingRef.current.add(token);
       setPendingCount((count) => count + 1);
       try {
-        const result = await scanAssignOrder(jwt, token);
+        const result = await (request ? request(token) : scanAssignOrder(jwt, token));
         if (!mountedRef.current) return;
         const entry: ScanSuccessEntry = {
           key: `${Date.now()}-${sequenceRef.current}-${token}`,
@@ -157,7 +194,7 @@ export const useScanAssign = ({ accessToken, webApp, enabled, onSessionExpired }
           setAcceptedOrderIds(acceptedRef.current);
         }
         show({ kind: entry.status, entry });
-        scanHaptic(app, result.idempotent ? "light" : "success");
+        vibrate(result.idempotent ? "light" : "success");
       } catch (error) {
         if (!mountedRef.current) return;
         const info = describeTgScanError(error);
@@ -174,21 +211,21 @@ export const useScanAssign = ({ accessToken, webApp, enabled, onSessionExpired }
         };
         setEntries((previous) => [entry, ...previous].slice(0, MAX_ENTRIES));
         show({ kind: "failed", entry });
-        scanHaptic(app, "error");
+        vibrate("error");
       } finally {
         pendingRef.current.delete(token);
         if (mountedRef.current) setPendingCount((count) => Math.max(0, count - 1));
       }
     },
-    [show],
+    [show, vibrate],
   );
 
   /** Kamera, Telegram skaneri yoki USB skaner o'qigan xom qiymat. */
   const handleScan = useCallback(
     (rawValue: string, source: ScanSource) => {
-      const { enabled: isEnabled, webApp: app } = optionsRef.current;
+      const { enabled: isEnabled, cameraGated: gatedUpstream } = optionsRef.current;
       if (!isEnabled) return;
-      const verdict = evaluateScan(rawValue, { ignoreCooldown: source !== "camera" });
+      const verdict = evaluateScan(rawValue, { ignoreCooldown: source !== "camera" || gatedUpstream });
       if (verdict !== "accepted") return;
       const token = extractScannerToken(rawValue, window.location.origin);
       if (source === "camera") {
@@ -200,13 +237,13 @@ export const useScanAssign = ({ accessToken, webApp, enabled, onSessionExpired }
       }
       if (!token) {
         show({ kind: "invalid" });
-        scanHaptic(app, "error");
+        vibrate("error");
         return;
       }
       const known = assignedRef.current.get(token);
       if (known) {
         show({ kind: "repeat", entry: known });
-        scanHaptic(app, "light");
+        vibrate("light");
         return;
       }
       if (pendingRef.current.has(token)) return;
@@ -214,7 +251,7 @@ export const useScanAssign = ({ accessToken, webApp, enabled, onSessionExpired }
       inflightRef.current.add(request);
       void request.finally(() => inflightRef.current.delete(request));
     },
-    [evaluateScan, show, submit],
+    [evaluateScan, show, submit, vibrate],
   );
 
   /**

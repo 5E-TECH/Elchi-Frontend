@@ -1,8 +1,9 @@
-import { screen, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import Orders from "./index";
 import { renderWithProviders } from "../../test/test-utils";
+import { getActiveScanTarget } from "../../shared/lib/scanner/scanTargets";
 
 /**
  * Bekor qilinganlarni HQ'ga yuborish (menejer, HYBRID/REGIONAL filial, «Bekor qilingan» tabi) — dizayn v2
@@ -131,12 +132,44 @@ describe("Orders — bekor qilinganlarni HQ'ga yuborish", () => {
     expect(screen.queryByRole("region", { name: "Tanlangan buyurtmalar" })).not.toBeInTheDocument();
   });
 
+  it("kamera (markaziy «Skaner»): «HQ'ga yuborish» maqsadi, skan tanlaydi; jo'natilgani rad etiladi", async () => {
+    renderWithProviders(<Orders />, {
+      route: "/orders?status=cancelled,cancelled%20(sent)",
+      preloadedState: managerState("HYBRID"),
+    });
+
+    expect(getActiveScanTarget()).toMatchObject({
+      id: "orders:cancelled-to-hq",
+      title: "HQ'ga yuborish",
+      context: "Bekor qilingan buyurtmalar · 2 ta",
+      progress: { done: 0, total: 2, label: "ta tanlandi" },
+    });
+
+    act(() => {
+      void getActiveScanTarget()!.onScan("10298", "camera");
+    });
+    expect(screen.getByRole("checkbox", { name: "№10298 ni tanlash" })).toBeChecked();
+    act(() => {
+      void getActiveScanTarget()!.onScan("10295", "manual");
+    });
+    await waitFor(() =>
+      expect(getActiveScanTarget()?.list?.map((item) => [item.title, item.subtitle ?? "", item.tone])).toEqual([
+        ["№10295", "Rad etildi · yuborib bo'lmaydi", "danger"],
+        ["№10298 · Bekzod Aliyev", "Urgut tumani · 96 000 so'm", "success"],
+      ]),
+    );
+
+    act(() => getActiveScanTarget()!.list![1].onUndo!());
+    expect(screen.getByRole("checkbox", { name: "№10298 ni tanlash" })).not.toBeChecked();
+  });
+
   it("HQ/PICKUP menejerida va boshqa tablarda tanlov yo'q", () => {
     const { unmount } = renderWithProviders(<Orders />, {
       route: "/orders?status=cancelled,cancelled%20(sent)",
       preloadedState: managerState("PICKUP"),
     });
     expect(screen.queryByRole("checkbox")).not.toBeInTheDocument();
+    expect(getActiveScanTarget()).toBeNull();
     unmount();
 
     renderWithProviders(<Orders />, { route: "/orders", preloadedState: managerState("HYBRID") });

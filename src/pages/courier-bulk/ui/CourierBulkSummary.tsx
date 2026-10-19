@@ -1,10 +1,10 @@
 // dizayn-v2: courier-courier-bulk-main, manager-courier-bulk-main
 import { useId } from "react";
-import { CalendarClock, Camera, CircleX, Package, PackageCheck, ScanLine } from "lucide-react";
+import { CalendarClock, CircleX, Package, PackageCheck, ScanLine } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { cx } from "../../../shared/lib/cx";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
-import { Badge, Button, Card, StatCard } from "../../../shared/ui/primitives";
+import { Badge, Card, StatCard } from "../../../shared/ui/primitives";
 import type { CourierBulkCounts, CourierBulkScanMode } from "../model/courierBulk";
 import { ScanModeControl, ScanModeHint } from "./ScanModeControl";
 
@@ -16,8 +16,6 @@ type CourierBulkSummaryProps = {
   viewer: "courier" | "manager";
   scanMode: CourierBulkScanMode;
   onScanModeChange: (mode: CourierBulkScanMode) => void;
-  onOpenCamera: () => void;
-  busy: boolean;
   isPhone: boolean;
   /** < 1024: kartalardagi ikonkalar yashirin (maket `el-hide-tablet`). */
   isBelowLg: boolean;
@@ -26,7 +24,8 @@ type CourierBulkSummaryProps = {
 /**
  * Kun yakuni ko'rsatkichlari va skanerlash rejimi (maket `courier-courier-bulk-main`).
  *  - ≥ 768: to'rtta `StatCard` («Kutilayotgan», «Sotiladi», «Bekor qilinadi», «Ertaga qoladi») + «Skanerlash rejimi»
- *    kartasi (rejim, «USB skaner tayyor», «Kamera»).
+ *    kartasi (rejim, «USB skaner tayyor»). Maketdagi «Kamera» tugmasi yo'q — kamera yuqori paneldagi «Skanerlash»
+ *    (telefonda markaziy «Skaner») orqali shu sahifa maqsadi bilan ochiladi (ega qarori 2026-10-19).
  *  - telefon: bitta karta — uch ustun (Sotildi / Bekor / Ertaga) va ostida rejim tanlovi.
  */
 export const CourierBulkSummary = ({
@@ -35,8 +34,6 @@ export const CourierBulkSummary = ({
   viewer,
   scanMode,
   onScanModeChange,
-  onOpenCamera,
-  busy,
   isPhone,
   isBelowLg,
 }: CourierBulkSummaryProps) => {
@@ -155,9 +152,6 @@ export const CourierBulkSummary = ({
               <Badge tone="success" dot>
                 {t("scanMode.usbReady")}
               </Badge>
-              <Button variant="secondary" leftIcon={Camera} aria-haspopup="dialog" disabled={busy} onClick={onOpenCamera}>
-                {t("scanMode.camera")}
-              </Button>
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ import Header from "../header/ui/Header";
 import Sidebar from "../Sidebar/ui/Sidebar";
 import BottomNav from "../Sidebar/ui/BottomNav";
 import MobileMenu from "../Sidebar/ui/MobileMenu";
+import { ScannerHost } from "../scanner";
 import { useMobileMenu } from "../Sidebar/model/shellNav";
 import { useShellScroll } from "./model/useShellScroll";
 import { setShellBannerSlot } from "../../shared/lib/shellBannerSlot";
@@ -40,6 +41,8 @@ export const SHELL_DESKTOP_QUERY = "(min-width: 1024px)";
  *                   (`--shell-bottomnav-h`), kontent pastki menyu ostida qolmaydi.
  *   - `MobileMenu` — < 1024, holati `useMobileMenu()` (redux `sidebar.isMobileMenuOpen`). Ochiq paytda
  *                   orqa fon `inert`.
+ *   - `ScannerHost` — kontekstli skaner oynasi (ega roziligi 2026-10-19, skaner 1-bosqichi): «Skaner» /
+ *                   «Skanerlash» faol skan maqsadi bo'lsa kamerani shu sahifa ustida ochadi (`openScanner`).
  */
 const DashboardLayout = () => {
   const { isOpen: isMenuOpen, open: openMenu, close: closeMenu } = useMobileMenu();
@@ -100,6 +103,8 @@ const DashboardLayout = () => {
       </div>
 
       <MobileMenu isOpen={isMenuOpen} onClose={closeMenu} />
+
+      <ScannerHost />
     </div>
   );
 };

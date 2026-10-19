@@ -1,7 +1,7 @@
 // dizayn-v2: superadmin-neworders-incoming-scan, admin-neworders-incoming-scan, manager-new-orders-incoming-scan
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Check, Inbox, RefreshCw, TriangleAlert } from "lucide-react";
 import type { RootState } from "../../app/config/store";
@@ -9,7 +9,8 @@ import { extractScannerToken } from "../../shared/lib/scanToken";
 // `shared/components/ScanFeedbackOverlay` ham aynan shu joydan import qiladi —
 // ovozli/vizual qaytarma app darajasida mount qilingan, shu bois bu sahifadan
 // ham ishlaydi.
-import { playScanFeedback } from "../scan/lib/scanShared";
+import { playScanFeedback } from "../../shared/lib/scanner/feedback";
+import { useScanTarget, type ScanTargetListItem } from "../../shared/lib/scanner/scanTargets";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import { cx } from "../../shared/lib/cx";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../shared/lib/formatMoney";
@@ -89,11 +90,18 @@ const orderDetail = (order: IncomingOrder) =>
  * KO'RINISH (dizayn v2, maket `superadmin-neworders-incoming-scan`): o'z sarlavhasi
  * («← Kiruvchi posilkalar» · manba nomi, qobiq tablarisiz), «Skanerlash» kartasi (USB skaner
  * maydoni, «Kelgan» / «Skanerlangan», chiziq, oxirgi skan natijasi) va «Kelgan posilkalar»
- * jadvali. Kamera rejimi bu ekranda hali yo'q (`*-incoming-scan-camera` alohida ish) — shu bois
- * «Qabul qilish» har kenglikda yagona asosiy tugma, telefonda ham skaner maydoni ko'rinadi.
+ * jadvali. «Qabul qilish» har kenglikda yagona asosiy tugma, telefonda ham skaner maydoni ko'rinadi.
+ *
+ * KAMERA (Trello v1eLN2tV 2-bosqich; maketlar `superadmin-neworders-incoming-scan-camera`,
+ * `manager-new-orders-incoming-scan-camera`): sahifada kamera tugmasi yo'q — markaziy «Skaner» tugmasi
+ * (desktopda «Skanerlash») shu sahifaning maqsadini ochadi. Kamera o'qigan kod `ScanInput` dagi AYNAN
+ * `handleScan` ga tushadi (faqat belgilaydi, qabul — sahifadagi «Qabul qilish»). Kamera ichida manba
+ * almashtiriladi (`/new-orders/incoming/:id`, kamera ochiq qoladi); qop to'liq emas bo'lsa — ogohlantirish.
  */
 const IncomingOrdersPage = () => {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const navigate = useNavigate();
   const { marketId } = useParams<{ marketId: string }>();
   const role = useSelector((state: RootState) => state.role.role);
   const allowed = Boolean(role && ALLOWED_ROLES.has(role));
@@ -112,6 +120,14 @@ const IncomingOrdersPage = () => {
   const [scannedIds, setScannedIds] = useState<Set<string>>(new Set());
   const [scannedTokens, setScannedTokens] = useState<string[]>([]);
   const [message, setMessage] = useState<ScanMessageData | null>(null);
+  /**
+   * Oxirgi qop skani: qop a'zolari va qopdagi jami posilka. «Qopda yetishmaydi N» shundan har renderda hisoblanadi —
+   * kamerada qopdagi posilka «Bekor qilish» bilan olinsa ham son to'g'ri qoladi.
+   */
+  const [lastBag, setLastBag] = useState<{ memberIds: string[]; total: number } | null>(null);
+  const bagShortage = lastBag
+    ? Math.max(0, lastBag.total - lastBag.memberIds.filter((id) => scannedIds.has(id)).length)
+    : 0;
 
   /**
    * ⚠️ `market_id` — manba filtri. Hamkor posilka yaratganda `elchi_market_id`
@@ -182,6 +198,7 @@ const IncomingOrdersPage = () => {
     setListVersion(query.dataUpdatedAt);
     setScannedIds(new Set());
     setScannedTokens([]);
+    setLastBag(null);
   }
 
   /**
@@ -193,11 +210,11 @@ const IncomingOrdersPage = () => {
     const fresh = members.filter((order) => !scannedIds.has(order.id) && String(order.qr_code_token ?? "").trim());
     const total = Math.max(size ?? 0, members.length);
     if (!fresh.length) {
-      void playScanFeedback("error");
-      setMessage({ tone: "warn", text: t("incomingBatchAlready", { size: total, count: members.length }) });
+      const text = t("incomingBatchAlready", { size: total, count: members.length });
+      void playScanFeedback("error", text);
+      setMessage({ tone: "warn", text });
       return;
     }
-    void playScanFeedback("success");
     setScannedIds((prev) => {
       const next = new Set(prev);
       fresh.forEach((order) => next.add(order.id));
@@ -205,9 +222,12 @@ const IncomingOrdersPage = () => {
     });
     setScannedTokens((prev) => [...prev, ...fresh.map((order) => String(order.qr_code_token).trim())]);
     const marked = members.filter((order) => scannedIds.has(order.id)).length + fresh.length;
+    const text = t("incomingBatchMarked", { size: total, count: marked });
+    void playScanFeedback("success", text);
+    setLastBag({ memberIds: members.map((order) => order.id), total });
     setMessage({
       tone: marked < total ? "warn" : "success",
-      text: t("incomingBatchMarked", { size: total, count: marked }),
+      text,
     });
   };
 
@@ -228,7 +248,7 @@ const IncomingOrdersPage = () => {
         )
       : [];
     if (!batch || !members.length) {
-      void playScanFeedback("missing");
+      void playScanFeedback("missing", t("incoming.cameraNotInList"));
       setMessage({ tone: "error", text: t("incomingScanNotFound") });
       return;
     }
@@ -242,7 +262,7 @@ const IncomingOrdersPage = () => {
     // Ro'yxat yuklanmagan bo'lsa "ro'yxatda yo'q" deyish yolg'on bo'lardi —
     // posilkani hali hech narsa bilan solishtirib bo'lmaydi.
     if (query.isLoading || listFailed) {
-      void playScanFeedback("error");
+      void playScanFeedback("error", t("incoming.cameraListNotReady"));
       setMessage({ tone: "error", text: t("incomingScanListNotReady") });
       return;
     }
@@ -259,15 +279,16 @@ const IncomingOrdersPage = () => {
       return;
     }
     if (scannedIds.has(order.id)) {
-      void playScanFeedback("error");
+      const text = `${orderLabel(order)} — ${t("incomingScanDuplicate")}`;
+      void playScanFeedback("error", text);
       setMessage({
         tone: "warn",
-        text: `${orderLabel(order)} — ${t("incomingScanDuplicate")}`,
+        text,
       });
       return;
     }
 
-    void playScanFeedback("success");
+    void playScanFeedback("success", `${orderLabel(order)} — ${t("incomingScanAdded")}`);
     setScannedIds((prev) => new Set(prev).add(order.id));
     setScannedTokens((prev) => [...prev, token]);
     setMessage({
@@ -309,6 +330,7 @@ const IncomingOrdersPage = () => {
         }
         setScannedIds(new Set());
         setScannedTokens([]);
+        setLastBag(null);
         void query.refetch();
         inputRef.current?.focus();
       },
@@ -322,6 +344,76 @@ const IncomingOrdersPage = () => {
       },
     });
   };
+
+  /** Kamera «Bekor qilish»: belgi olinadi (server amali hali yo'q — qabul sahifadagi tugma bilan). */
+  const unscan = (order: IncomingOrder) => {
+    const token = String(order.qr_code_token ?? "").trim();
+    setScannedIds((prev) => {
+      const next = new Set(prev);
+      next.delete(order.id);
+      return next;
+    });
+    setScannedTokens((prev) => prev.filter((item) => item !== token));
+  };
+
+  // Kamera ro'yxati — skanerlash tartibida, yangisi birinchi (token — tartib manbai).
+  const cameraList: ScanTargetListItem[] = [...scannedTokens]
+    .reverse()
+    .map((token) => byToken.get(token))
+    .filter((order): order is IncomingOrder => Boolean(order))
+    .map((order) => ({
+      key: order.id,
+      title: [orderLabel(order), order.customer?.name?.trim()].filter(Boolean).join(" · "),
+      subtitle: [districtName(order), typeof order.total_price === "number" ? formatMoneyLocalized(order.total_price, { language }) : null]
+        .filter((part) => part && part !== "—")
+        .join(" · "),
+      tone: "success",
+      onUndo: () => unscan(order),
+    }));
+  const cameraSource = source ? sourceLabel(source) : t("incoming.untitledSource", { id: marketId });
+  const cameraArrived = listReady ? total : orders.length;
+
+  useScanTarget(
+    allowed
+      ? {
+          id: `incoming:${marketId}`,
+          title: t("incoming.cameraTitle"),
+          context: t("incoming.cameraContext", {
+            source: cameraSource,
+            count: cameraArrived,
+            value: formatNumberLocalized(cameraArrived, { language }),
+          }),
+          note: { title: t("incoming.cameraNoteTitle"), text: t("incoming.cameraNoteText", { source: cameraSource }) },
+          progress: { done: scannedIds.size, total: orders.length, label: t("incoming.cameraMeter") },
+          stats:
+            bagShortage > 0
+              ? [{ key: "bag", label: t("incoming.cameraBagShortage"), value: bagShortage, tone: "warning" }]
+              : undefined,
+          list: cameraList,
+          listTitle: t("incoming.cameraListTitle"),
+          switcher: {
+            label: cameraSource,
+            value: String(marketId ?? ""),
+            title: t("incoming.cameraSwitcherTitle"),
+            options: async () => {
+              const result = await sources.refetch();
+              if (result.isError && result.data === undefined) throw result.error;
+              return (result.data ?? []).map((item) => ({
+                value: item.market_id,
+                label: sourceLabel(item),
+                meta: t("incoming.parcelsCount", {
+                  count: item.orders_count,
+                  value: formatNumberLocalized(item.orders_count, { language }),
+                }),
+              }));
+            },
+            onSelect: (value) => navigate(`/new-orders/incoming/${value}`),
+          },
+          onScan: (raw) => handleScan(raw),
+          finish: { label: t("ui:camera.action.finish"), onFinish: () => undefined },
+        }
+      : null,
+  );
 
   if (!allowed) {
     return <ErrorState kind="forbidden" framed title={t("incomingNoAccess")} description={null} />;
@@ -515,4 +607,10 @@ const IncomingOrdersPage = () => {
   );
 };
 
-export default memo(IncomingOrdersPage);
+/** Manba almashsa (kamera ichidagi tanlov ham) — skanerlanganlar va xabar yangidan (`key={marketId}`). */
+const IncomingOrdersRoute = () => {
+  const { marketId } = useParams<{ marketId: string }>();
+  return <IncomingOrdersPage key={marketId} />;
+};
+
+export default memo(IncomingOrdersRoute);

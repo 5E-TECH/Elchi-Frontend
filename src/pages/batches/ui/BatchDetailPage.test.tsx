@@ -15,8 +15,18 @@ import BatchDetailPage from "./BatchDetailPage";
 type ScannerOptions = {
   orders: { id: string; qr_code_token?: string | null }[];
   enabled?: boolean;
+  paused?: boolean;
   onMatch: (row: { id: string }, raw: string) => void;
   onMissing: (raw: string) => void;
+  /** Kamera maqsadi (markaziy «Skaner» tugmasi) — `useOrderQrScanner` uni USB bilan bir yo'ldan o'tkazadi. */
+  camera?: {
+    id: string;
+    title: string;
+    context?: string;
+    progress?: { done: number; total?: number; label?: string };
+    list?: { key: string; title: string; subtitle?: string; tone?: string; onUndo?: () => void }[];
+    finish?: { label: string };
+  };
 };
 
 const mocks = vi.hoisted(() => ({
@@ -24,7 +34,6 @@ const mocks = vi.hoisted(() => ({
   patch: vi.fn(),
   scanner: null as ScannerOptions | null,
   playScanFeedback: vi.fn(),
-  playMissingOrderFeedback: vi.fn(),
 }));
 
 vi.mock("../../../shared/api/api", () => ({
@@ -39,10 +48,9 @@ vi.mock("../../../shared/lib/useOrderQrScanner", () => ({
   },
 }));
 
-vi.mock("../../scan/lib/scanShared", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../scan/lib/scanShared")>()),
+vi.mock("../../../shared/lib/scanner/feedback", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../shared/lib/scanner/feedback")>()),
   playScanFeedback: mocks.playScanFeedback,
-  playMissingOrderFeedback: mocks.playMissingOrderFeedback,
 }));
 
 const local = (day: number, h: number, m: number) => new Date(2026, 9, day, h, m).toISOString();
@@ -126,7 +134,6 @@ afterEach(() => {
   mocks.get.mockReset();
   mocks.patch.mockReset();
   mocks.playScanFeedback.mockReset();
-  mocks.playMissingOrderFeedback.mockReset();
 });
 
 describe("BatchDetailPage — /batches/:id", () => {
@@ -213,7 +220,7 @@ describe("BatchDetailPage — /batches/:id", () => {
     act(() => mocks.scanner!.onMatch(scanned("10165"), "qr-10165"));
     expect(await screen.findByText("Buyurtma tanlandi")).toBeInTheDocument();
     expect(within(ordersCard()).getByRole("checkbox", { name: "№10165 ni tanlash" })).toBeChecked();
-    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success");
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", "Tanlandi №10165");
 
     act(() => mocks.scanner!.onMatch(scanned("10165"), "qr-10165"));
     expect(await screen.findByText("Allaqachon tanlangan")).toBeInTheDocument();
@@ -221,7 +228,38 @@ describe("BatchDetailPage — /batches/:id", () => {
     act(() => mocks.scanner!.onMissing("qr-boshqa"));
     expect(await screen.findByText("QR topilmadi")).toBeInTheDocument();
     expect(screen.getByText("Bu QR kod ushbu paketdagi buyurtmalarga mos kelmadi.")).toBeInTheDocument();
-    expect(mocks.playMissingOrderFeedback).toHaveBeenCalled();
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("missing", "Bu paketda yo'q · qr-boshqa");
+  });
+
+  it("kamera maqsadi: «HQ'ga yuborish · Paket B-172», «N / jami ta tanlandi», ro'yxat va «Bu paketda yo'q»", async () => {
+    respond();
+    renderPage("manager");
+    await screen.findByRole("heading", { level: 1, name: "Paket B-172" });
+
+    expect(mocks.scanner?.camera).toMatchObject({
+      id: "batch-send:172",
+      title: "HQ'ga yuborish",
+      context: "Paket B-172 · Urgut filiali",
+      progress: { done: 0, total: 3, label: "ta tanlandi" },
+      finish: { label: "Tugatish" },
+    });
+
+    act(() => mocks.scanner!.onMatch(scanned("10165"), "qr-10165"));
+    act(() => mocks.scanner!.onMissing("qr-boshqa"));
+    expect(mocks.scanner?.camera?.progress).toMatchObject({ done: 1, total: 3 });
+    // Yangisi birinchi: rad etilgan kod, so'ng tanlangan buyurtma.
+    expect(mocks.scanner?.camera?.list?.map((item) => [item.key, item.tone])).toEqual([
+      ["missing:qr-boshqa", "danger"],
+      ["order:10165", "success"],
+    ]);
+    expect(mocks.scanner?.camera?.list?.[0]).toMatchObject({
+      title: "qr-boshqa · Bu paketda yo'q",
+      subtitle: "Mos kelmadi · tanlanmadi",
+    });
+
+    act(() => mocks.scanner!.camera!.list![1].onUndo!());
+    expect(within(ordersCard()).getByRole("checkbox", { name: "№10165 ni tanlash" })).not.toBeChecked();
+    expect(mocks.scanner?.camera?.progress).toMatchObject({ done: 0, total: 3 });
   });
 
   it("superadmin — doim faqat o'qish: tanlov, skaner va yuborish yo'q; market ustuni", async () => {

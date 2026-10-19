@@ -169,7 +169,7 @@ brauzer `confirm()` / `alert()` / `prompt()` (ESLint xato beradi — `notify`, `
 - `@ant-design/icons` va boshqa ikonka kutubxonalari — butun `src` da.
 - Xom element taqiqidan dizayn tizimi qatlami (`src/shared/ui/**`, shell) va testlar istisno (antd / ikonka
   taqiqidan — faqat testlar); v1 fayllar — ratchet ro'yxatlari (faqat
-  qisqaradi; kamera ishi, yopiq `/market-operators`, `SalaryPaymentPopup`, `PrintModeSelect`). Boshqa hamma joyda — **xato**, `warn` yo'q (yangi
+  qisqaradi; yopiq `/market-operators`, `SalaryPaymentPopup`, `PrintModeSelect`). Boshqa hamma joyda — **xato**, `warn` yo'q (yangi
   qurilayotgan sahifada ham). Bitta qator istisnosi faqat sabab bilan (`-- <sabab>`, test tekshiradi).
 
 Ko'chirilgan papkalarda (`V2_SCOPES`, `scripts/design-guard.mjs`) `// dizayn-v2:` belgisiz yordamchi fayl ham rang

@@ -1,11 +1,73 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import QrScanner from "./qrScanner";
+import i18n from "../../i18n";
+import QrScanner, {
+  classifyCameraError,
+  type CameraErrorKind,
+  type CameraFacing,
+  type QrScanRegion,
+} from "./qrScanner";
+
+/** Sabab → foydalanuvchiga ko'rinadigan matn (`ui:camera.error.*`); `unknown` — chaqiruvchining `startErrorMessage`. */
+const cameraErrorText = (kind: CameraErrorKind, fallback: string) =>
+  kind === "unknown" ? fallback : i18n.t(`ui:camera.error.${kind}`, { defaultValue: fallback });
 
 type CameraQrScannerOptions = {
   isActive: boolean;
   videoRef: RefObject<HTMLVideoElement | null>;
   onDecode: (value: string) => void;
   startErrorMessage: string;
+  /**
+   * Chiroqni yoqib/o'chirib bo'lmadi. Berilsa shu chaqiriladi va kamera xatosi YOZILMAYDI (kamera ishlab
+   * turibdi — «Kamera ochilmadi» holati noto'g'ri bo'lardi). Berilmasa — eski xatti-harakat.
+   */
+  onTorchError?: () => void;
+  /**
+   * Ochilishda yoqiladigan kamera (Sozlamalar → Skaner → «Asosiy kamera»; sukut — orqa). Faqat sessiya
+   * boshida o'qiladi: «Kamerani almashtirish» (`switchCamera`) uni shu ochilish uchun vaqtincha o'zgartiradi.
+   */
+  preferredCamera?: CameraFacing;
+  /** Skan hududi (ekrandagi ramka, `shared/ui/camera/scanRegion`). Berilmasa — kutubxona sukuti. */
+  calculateScanRegion?: (video: HTMLVideoElement) => QrScanRegion;
+};
+
+/** O'lcham o'zgarishlari to'xtagach skan hududi qayta hisoblanadi (burish animatsiyasi davomida emas). */
+const REGION_UPDATE_DELAY_MS = 150;
+
+/**
+ * Ko'rinish o'zgarishini kuzatish: `<video>` elementi o'lchami (ResizeObserver — oyna, planshet burilishi,
+ * brauzer paneli), oqim o'lchami (`resize` — Android'da burilganda kadr eni/bo'yi almashadi) va
+ * `orientationchange`. Har biri — kechiktirilgan `update` (bir nechta hodisa bitta qayta hisob).
+ */
+const watchVideoLayout = (video: HTMLVideoElement, update: () => void) => {
+  let timer: number | null = null;
+  const schedule = () => {
+    if (timer !== null) window.clearTimeout(timer);
+    timer = window.setTimeout(() => {
+      timer = null;
+      update();
+    }, REGION_UPDATE_DELAY_MS);
+  };
+  let firstObservation = true;
+  const observer =
+    typeof ResizeObserver === "function"
+      ? new ResizeObserver(() => {
+          // `observe()` darhol bir marta chaqiradi — hudud hozirgina hisoblangan, qayta hisob shart emas.
+          if (firstObservation) {
+            firstObservation = false;
+            return;
+          }
+          schedule();
+        })
+      : null;
+  observer?.observe(video);
+  video.addEventListener("resize", schedule);
+  window.addEventListener("orientationchange", schedule);
+  return () => {
+    if (timer !== null) window.clearTimeout(timer);
+    observer?.disconnect();
+    video.removeEventListener("resize", schedule);
+    window.removeEventListener("orientationchange", schedule);
+  };
 };
 
 export const useCameraQrScanner = ({
@@ -13,19 +75,36 @@ export const useCameraQrScanner = ({
   videoRef,
   onDecode,
   startErrorMessage,
+  onTorchError,
+  preferredCamera = "environment",
+  calculateScanRegion,
 }: CameraQrScannerOptions) => {
   const scannerRef = useRef<QrScanner | null>(null);
   const onDecodeRef = useRef(onDecode);
+  const onTorchErrorRef = useRef(onTorchError);
   const [session, setSession] = useState(0);
   const [isStarting, setIsStarting] = useState(false);
   const [torchEnabled, setTorchEnabled] = useState(false);
   const [hasTorch, setHasTorch] = useState(false);
   const [cameraError, setCameraError] = useState("");
+  const [cameraErrorKind, setCameraErrorKind] = useState<CameraErrorKind | null>(null);
   const [cameraUnavailable, setCameraUnavailable] = useState(false);
+  const facingRef = useRef<CameraFacing>(preferredCamera);
+  const [facing, setFacing] = useState<CameraFacing>(preferredCamera);
+  const [canSwitchCamera, setCanSwitchCamera] = useState(false);
+  const regionRef = useRef(calculateScanRegion);
+
+  useEffect(() => {
+    regionRef.current = calculateScanRegion;
+  }, [calculateScanRegion]);
 
   useEffect(() => {
     onDecodeRef.current = onDecode;
   }, [onDecode]);
+
+  useEffect(() => {
+    onTorchErrorRef.current = onTorchError;
+  }, [onTorchError]);
 
   const stopScanner = useCallback(() => {
     const activeScanner = scannerRef.current;
@@ -44,6 +123,7 @@ export const useCameraQrScanner = ({
 
     setHasTorch(false);
     setTorchEnabled(false);
+    setCanSwitchCamera(false);
   }, [videoRef]);
 
   const restartScanner = useCallback(() => {
@@ -60,9 +140,39 @@ export const useCameraQrScanner = ({
       await scanner.toggleFlash();
       setTorchEnabled(scanner.isFlashOn());
     } catch {
+      if (onTorchErrorRef.current) {
+        onTorchErrorRef.current();
+        return;
+      }
+      setCameraErrorKind("unknown");
       setCameraError(startErrorMessage);
     }
   }, [hasTorch, startErrorMessage]);
+
+  /**
+   * «Kamerani almashtirish»: orqa ↔ old (shu ochilish uchun). Oqim qayta ochiladi; old kamerada odatda chiroq
+   * yo'q — chiroq holati qayta tekshiriladi. Almashtirib bo'lmasa — avvalgi kamera bilan qayta ishga tushadi.
+   */
+  const switchCamera = useCallback(async () => {
+    const scanner = scannerRef.current;
+    if (!scanner) return;
+    const previous = facingRef.current;
+    const next: CameraFacing = previous === "environment" ? "user" : "environment";
+    facingRef.current = next;
+    setFacing(next);
+    setTorchEnabled(false);
+    try {
+      await scanner.setCamera(next);
+      if (scannerRef.current !== scanner) return;
+      setHasTorch(await scanner.hasFlash().catch(() => false));
+    } catch {
+      if (scannerRef.current !== scanner) return;
+      facingRef.current = previous;
+      setFacing(previous);
+      stopScanner();
+      setSession((prev) => prev + 1);
+    }
+  }, [stopScanner]);
 
   useEffect(() => {
     if (!isActive) {
@@ -73,10 +183,12 @@ export const useCameraQrScanner = ({
 
     let cancelled = false;
     let restartTimeout: number | null = null;
+    let unwatchLayout: (() => void) | null = null;
 
     const startScanner = async () => {
       setIsStarting(true);
       setCameraError("");
+      setCameraErrorKind(null);
 
       try {
         if (!videoRef.current) {
@@ -86,16 +198,20 @@ export const useCameraQrScanner = ({
         const supportError = await QrScanner.getSupportError();
         if (supportError) {
           setCameraUnavailable(true);
-          throw new Error(supportError);
+          throw supportError;
         }
 
+        const initialRegion = regionRef.current;
         const scanner = new QrScanner(
           videoRef.current,
           (result: string | { data: string }) => {
             onDecodeRef.current(typeof result === "string" ? result : result.data);
           },
           {
-            preferredCamera: "environment",
+            preferredCamera: facingRef.current,
+            ...(initialRegion
+              ? { calculateScanRegion: (video: HTMLVideoElement) => (regionRef.current ?? initialRegion)(video) }
+              : {}),
             returnDetailedScanResult: true,
             highlightScanRegion: false,
             highlightCodeOutline: false,
@@ -112,7 +228,19 @@ export const useCameraQrScanner = ({
         }
 
         setCameraUnavailable(false);
+        // Hudud ekrandagi ramkaga bog'langan — ko'rinish o'zgarsa qayta hisoblanadi (kutubxona o'zi qilmaydi).
+        const video = videoRef.current;
+        if (initialRegion && video) {
+          unwatchLayout = watchVideoLayout(video, () => {
+            if (!cancelled && scannerRef.current === scanner) scanner.updateScanRegion();
+          });
+        }
         setHasTorch(await scanner.hasFlash().catch(() => false));
+        // Bir nechta kamera bo'lsa — «Kamerani almashtirish» tugmasi (soxta skaner testlarda bu usulsiz).
+        const cameraCount = await Promise.resolve()
+          .then(() => QrScanner.countCameras())
+          .catch(() => 0);
+        if (!cancelled) setCanSwitchCamera(cameraCount > 1);
       } catch (error) {
         // Bekor qilingan ishga tushirish (StrictMode'ning ikkinchi effekti, `restartScanner`, `isActive` o'chdi):
         // eski skaner yo'q qilingani uchun `start()` rad etadi — bu kamera xatosi EMAS. Aks holda kechikkan rad
@@ -130,7 +258,10 @@ export const useCameraQrScanner = ({
           return;
         }
 
-        setCameraError(messageText || startErrorMessage);
+        // Xom brauzer matni (inglizcha `DOMException`) ekranga chiqmaydi — sababga qarab tarjima qilingan matn.
+        const kind = classifyCameraError(error);
+        setCameraErrorKind(kind);
+        setCameraError(cameraErrorText(kind, startErrorMessage));
       } finally {
         if (!cancelled) {
           setIsStarting(false);
@@ -142,6 +273,7 @@ export const useCameraQrScanner = ({
 
     return () => {
       cancelled = true;
+      unwatchLayout?.();
       stopScanner();
       if (restartTimeout) {
         window.clearTimeout(restartTimeout);
@@ -154,10 +286,14 @@ export const useCameraQrScanner = ({
     torchEnabled,
     hasTorch,
     cameraError,
+    cameraErrorKind,
     cameraUnavailable,
     stopScanner,
     restartScanner,
     toggleTorch,
     setCameraError,
+    facing,
+    canSwitchCamera,
+    switchCamera,
   };
 };

@@ -265,6 +265,19 @@
       "noManager": "No manager assigned — assign a manager first",
       "noManagerRegistrator": "No manager assigned — contact an admin",
       "submit": "Send — {{value}}"
-    }
+    },
+    "cameraTitle": {
+      "send": "Send mail",
+      "receive": "Receive mail",
+      "refused": "Receive refused mail"
+    },
+    "cameraNoteTitle": "Scan the QR code of an order in this mail — it is selected in the list",
+    "cameraNoteText": "Codes from another mail are not accepted.",
+    "cameraMeter": "selected",
+    "cameraListTitle": "Recent scans",
+    "cameraSelected": "Order selected №{{id}}",
+    "cameraNotInMail": "Not in this mail",
+    "cameraRejectedTitle": "{{code}} · Not in this mail",
+    "cameraRejectedText": "Belongs to another mail · rejected"
   }
 }

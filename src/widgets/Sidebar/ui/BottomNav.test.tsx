@@ -1,9 +1,11 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useLocation } from "react-router-dom";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import i18n, { i18nReady } from "../../../i18n";
 import { renderWithProviders } from "../../../test/test-utils";
+import { isScannerOverlayOpen, resetScannerHost } from "../../../shared/lib/scanner/scannerHost";
+import { resetScanTargets, useScanTarget } from "../../../shared/lib/scanner/scanTargets";
 import type { User } from "../../../entities/user/model/types";
 import designRoles from "../../../../design/kit/roles.json";
 import { getSidebarConfigForUser, type BranchType } from "../model/menuConfig";
@@ -287,5 +289,53 @@ describe("BottomNav — ko'rinish (maket `.el-bottomnav`)", () => {
     // (kunduzgi mavzuda oq fonda ko'rinmaydi).
     expect(fab).toHaveClass("group-active:scale-[.94]", "group-active:bg-action-hover", "group-active:ring-6", "group-active:ring-focus");
     expect(fab?.className).not.toMatch(/ring-action-soft/);
+  });
+});
+
+describe("BottomNav — kontekstli «Skaner» (ega qarori 2026-10-19)", () => {
+  const ScanTargetProbe = () => {
+    useScanTarget({ id: "new-orders:market:7", title: "Qabul qilish", onScan: vi.fn() });
+    return null;
+  };
+  const LocationProbe = () => <span data-testid="path">{useLocation().pathname}</span>;
+
+  afterEach(() => {
+    resetScanTargets();
+    resetScannerHost();
+  });
+
+  it("sahifada skan maqsadi bor — kamera shu sahifa ustida (o'tish yo'q), nomi kontekstni aytadi", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <ScanTargetProbe />
+        <BottomNav />
+        <LocationProbe />
+      </>,
+      { route: "/new-orders/7", preloadedState: stateOf("superadmin") },
+    );
+    const scan = screen.getByRole("link", { name: "Skaner — Qabul qilish" });
+    expect(scan).toHaveAttribute("href", "/scan");
+    expect(scan).toHaveAttribute("aria-haspopup", "dialog");
+    expect(scan).toHaveAttribute("title", "Skaner");
+    await user.click(scan);
+    expect(isScannerOverlayOpen()).toBe(true);
+    expect(screen.getByTestId("path")).toHaveTextContent("/new-orders/7");
+  });
+
+  it("maqsad yo'q — universal /scan ga o'tadi", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <BottomNav />
+        <LocationProbe />
+      </>,
+      { route: "/", preloadedState: stateOf("courier", "REGIONAL") },
+    );
+    const scan = screen.getByRole("link", { name: "Skaner" });
+    expect(scan).not.toHaveAttribute("aria-haspopup");
+    await user.click(scan);
+    expect(isScannerOverlayOpen()).toBe(false);
+    expect(screen.getByTestId("path")).toHaveTextContent("/scan");
   });
 });

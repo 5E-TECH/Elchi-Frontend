@@ -14,6 +14,15 @@ export {
 
 const orders = "orders";
 
+/**
+ * `GET orders/markets/new` (bugun yangi buyurtmasi bor marketlar) so'rovi — kalit va `queryFn` bitta joyda:
+ * `useGetTodayOrders` va universal skaner «Qabul qilish» varag'i (`pages/scan`) bir kesh yozuvini ulashadi.
+ */
+export const todayMarketsQueryOptions = (params?: unknown) => ({
+  queryKey: [orders, params] as const,
+  queryFn: () => api.get(API_ENDPOINTS.ORDERS.MARKETS_NEW, { params }).then((res) => res.data),
+});
+
 export type ExtraCostApproval = {
   id: string;
   order_id: string;
@@ -191,11 +200,7 @@ export const useOrders = () => {
   });
 
   const useGetTodayOrders = (params?: any, enabled: boolean = true) =>
-    useQuery({
-      queryKey: [orders, params],
-      queryFn: () => api.get(API_ENDPOINTS.ORDERS.MARKETS_NEW, { params }).then((res) => res.data),
-      enabled,
-    });
+    useQuery({ ...todayMarketsQueryOptions(params), enabled });
 
   const useGetTodayOrdersByMarket = (
     marketId: string | number,

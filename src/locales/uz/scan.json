@@ -124,5 +124,149 @@
     "loading": "Pochta ma'lumotlari yuklanmoqda",
     "notFoundTitle": "Pochta topilmadi",
     "notFoundText": "Bu QR kod bo'yicha pochta ma'lumoti kelmadi yoki u allaqachon yopilgan bo'lishi mumkin."
+  },
+  "scanner": {
+    "title": "QR skaner",
+    "subtitle": "Buyurtma, paket yoki pochta QR kodini o'qing — sahifa o'zi ochiladi",
+    "context": "Buyurtma, paket yoki pochta",
+    "back": "Orqaga",
+    "sound": "Skaner ovozi",
+    "cameraLabel": "Kamera skaneri",
+    "sideLabel": "Skaner yordamchisi",
+    "usbTitle": "USB skaner ham tayyor",
+    "usbBadge": "Tinglanmoqda",
+    "usbText": "Kodni o'qiting — kamera bilan birga ishlaydi. Kursor qayerda turganining farqi yo'q.",
+    "manualLabel": "Kodni qo'lda kiriting",
+    "manualPlaceholder": "Yorliqdagi kod yoki havola",
+    "manualHint": "QR shikastlangan bo'lsa, yorliqdagi kodni yozing",
+    "manualDialogLabel": "Yorliqdagi kod yoki havola",
+    "manualDialogHint": "QR ostidagi kodni yoki skaner havolasini yozing",
+    "manualSubmit": "Ochish",
+    "manualRequired": "Kodni kiriting",
+    "tips": {
+      "light": "Yorug'lik yetarli bo'lsin",
+      "center": "Kod ramka markaziga yaqin tursin",
+      "hold": "Posilkani qimirlatmasdan ushlang"
+    },
+    "recentTitle": "Oxirgi skanerlar",
+    "recentScope": "Shu qurilmada",
+    "recentEmptyTitle": "Hali skan yo'q",
+    "recentEmptyText": "Kamera QR kodni kutyapti. Kod topilishi bilan natija shu yerda chiqadi.",
+    "recentEmptyModeText": "«Ma'lumot» rejimida o'qilgan kodlar shu yerda chiqadi.",
+    "phoneEmptyTitle": "Hali skan yo'q",
+    "phoneEmptyText": "Kod topilishi bilan kerakli sahifa o'zi ochiladi",
+    "lastTitle": "Oxirgi: {{title}}",
+    "opening": "Tegishli ekran ochilmoqda",
+    "searching": "Kod tekshirilmoqda",
+    "found": "{{title}} topildi",
+    "previousOpening": "Oldingi kod ochilmoqda — bu skan qabul qilinmadi. Qayta skanerlang.",
+    "resultTitle": "Natija",
+    "readText": "O'qilgan matn",
+    "scannedCode": "Skanerlangan kod",
+    "invalid": {
+      "title": "Bu QR kod skaner uchun yaroqsiz",
+      "text": "Bu Elchi kodi emas — ehtimol market yoki ishlab chiqaruvchi yorlig'i. Elchi yorlig'idagi QR kodni skanerlang."
+    },
+    "marketQr": {
+      "title": "Bu market QR kodi",
+      "text": "U bekor qilingan buyurtmalarni marketga topshirish uchun — uni Bekor qilinganlar sahifasida skanerlang.",
+      "open": "Bekor qilinganlarni ochish"
+    },
+    "error": {
+      "title": "Kodni tekshirib bo'lmadi",
+      "text": "Internetni tekshiring va kodni qayta skanerlang."
+    },
+    "entry": {
+      "order": "№{{ref}} · Buyurtma",
+      "package": "Paket {{ref}}",
+      "returnedPackage": "Qaytarilgan paket {{ref}}",
+      "post": "Pochta №{{ref}}",
+      "bag": "Qop · {{value}} ta posilka",
+      "bagSub": "Tashqi posilkalar qopi"
+    },
+    "marketBlocked": {
+      "title": "Skaner market roli uchun emas",
+      "text": "Buyurtmalaringiz holatini «Buyurtmalar» bo'limida kuzating.",
+      "action": "Bosh sahifaga"
+    },
+    "modes": {
+      "label": "Skaner rejimi",
+      "info": "Ma'lumot",
+      "receive": "Qabul qilish",
+      "dispatch": "Biriktirish",
+      "take": "O'zimga olish",
+      "infoText": "Bitta kod — tegishli sahifa o'zi ochiladi.",
+      "receiveText": "Avval marketni tanlang — uning yangi buyurtmalari ochiladi va kamera o'sha yerda davom etadi. Skanerlangan buyurtma darhol qabul qilinadi.",
+      "dispatchText": "Skanerlangan buyurtma biriktirish savatiga qo'shiladi — savat shu qurilmada saqlanadi. Kuryerni «Biriktirish» sahifasida tanlaysiz.",
+      "takeText": "Har skanerlangan buyurtma darhol sizga biriktiriladi. Kamera yopilmaydi — keyingi posilkani skanerlang."
+    },
+    "receive": {
+      "title": "Qabul qilish",
+      "context": "Avval marketni tanlang",
+      "hint": "Avval marketni tanlang",
+      "pick": "Marketni tanlang",
+      "pickText": "Yangi buyurtmasi bor marketlar",
+      "pickMeta": "{{value}} ta yangi buyurtma",
+      "pickFirst": "Avval marketni tanlang"
+    },
+    "dispatch": {
+      "title": "Kuryerga biriktirish",
+      "context": "Buyurtmalar savatga qo'shiladi",
+      "hint": "Buyurtma QR kodini o'qing — biriktirish sahifasi ochiladi",
+      "open": "Biriktirishni ochish",
+      "openText": "Savat shu qurilmada saqlanadi",
+      "notOrder": "Bu buyurtma QR kodi emas — savatga faqat buyurtma qo'shiladi",
+      "manualSubmit": "Savatga qo'shish"
+    },
+    "take": {
+      "title": "O'zimga olish",
+      "context": "Buyurtma darhol sizga biriktiriladi",
+      "hint": "Buyurtma QR kodini o'qing — u darhol sizga biriktiriladi",
+      "meter": "ta biriktirildi",
+      "scans": "{{value}} ta skan",
+      "listTitle": "Skanerlanganlar",
+      "emptyText": "Skanerlangan buyurtmalar shu yerda chiqadi",
+      "assigned": "Sizga biriktirildi",
+      "already": "Allaqachon sizda",
+      "assignedToast": "{{ref}} sizga biriktirildi",
+      "alreadyToast": "{{ref}} allaqachon sizda",
+      "repeatToast": "{{ref}} allaqachon skanerlangan",
+      "otherCourier": "Boshqa kuryerda: {{name}}",
+      "otherCourierUnknown": "Boshqa kuryerga biriktirilgan",
+      "otherCourierHint": "Menejerga xabar bering.",
+      "otherCourierText": "{{who}}. Menejerga xabar bering.",
+      "orderFallback": "Buyurtma",
+      "notOrder": "Bu buyurtma QR kodi emas — uni «Ma'lumot» rejimida oching",
+      "offline": "Internet yo'q — kodni qayta skanerlang",
+      "timeout": "Server javob bermadi — kodni qayta skanerlang",
+      "unknown": "Buyurtmani o'zingizga olib bo'lmadi",
+      "manualSubmit": "Olish",
+      "finish": "Tugatish",
+      "summary": {
+        "title": "Skanerlash yakunlandi",
+        "text": "{{value}} ta buyurtma sizga biriktirildi",
+        "assigned": "Biriktirildi",
+        "already": "Allaqachon sizda edi",
+        "failed": "Biriktirilmadi",
+        "continue": "Davom etish",
+        "orders": "Buyurtmalarimga o'tish"
+      }
+    }
+  },
+  "bag": {
+    "title": "Tashqi posilkalar qopi",
+    "phoneSub": "Skanerlangan qop",
+    "sub": "QR muvaffaqiyatli o'qildi · qop yorlig'i",
+    "alertText": "Qop ichidagi posilkalar ro'yxati",
+    "summary": "Qop ma'lumotlari",
+    "parcels": "{{value}} ta posilka",
+    "pending": "{{value}} tasi qabul qilinmagan",
+    "token": "Qop kodi",
+    "membersTitle": "Qopdagi posilkalar",
+    "membersEmpty": "Qopda posilka topilmadi",
+    "qrColumn": "QR kod",
+    "actionTitle": "Qopni qabul qilish",
+    "actionText": "Posilkalar «Kiruvchi posilkalar» sahifasida qabul qilinadi: manbani tanlang va qop yorlig'ini skanerlang — qopdagi hamma posilka belgilanadi.",
+    "open": "Kiruvchi posilkalarda ochish"
   }
 }

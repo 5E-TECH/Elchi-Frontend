@@ -20,10 +20,7 @@
   "scanCard": {
     "title": "Skanerlangan buyurtmalar",
     "description": "Buyurtma QR kodini USB skaner yoki kamera bilan o'qing — u ro'yxatga qo'shiladi va tanlanadi",
-    "usbReady": "USB skaner tayyor",
-    "camera": "Kamera",
-    "cameraPhone": "Kamera bilan skanerlash, ro'yxatda {{count}} ta buyurtma",
-    "cameraCount": "{{count}} ta"
+    "usbReady": "USB skaner tayyor"
   },
   "selection": {
     "label": "Tanlangan buyurtmalar",
@@ -49,7 +46,7 @@
   },
   "empty": {
     "title": "Buyurtma QR kodlarini skanerlang",
-    "description": "USB skaner bilan o'qiting yoki «Kamera» tugmasini bosing — buyurtmalar shu ro'yxatga qo'shiladi. Telefonda «Kamera bilan skanerlash»."
+    "description": "USB skaner bilan o'qiting yoki «Skaner» tugmasi bilan kamerani oching — buyurtmalar shu ro'yxatga qo'shiladi."
   },
   "lookup": {
     "checking": "{{count}} ta buyurtma tekshirilmoqda...",
@@ -58,7 +55,6 @@
   "scanErrors": {
     "duplicate": "Bu buyurtma allaqachon ro'yxatga qo'shilgan",
     "wrongType": "Faqat buyurtma QR kodlarini skanerlash mumkin",
-    "invalidQr": "Bu QR kod biriktirish uchun yaroqsiz",
     "lookup": "Buyurtma ma'lumotini olib bo'lmadi"
   },
   "couriers": {
@@ -87,11 +83,19 @@
   },
   "camera": {
     "title": "Biriktirish",
-    "subtitle": "Faqat buyurtma QR kodi qabul qilinadi",
-    "waiting": "Buyurtma yorlig'idagi QR kodni ramkaga oling",
-    "close": "Kamerani yopish",
-    "torchOn": "Chiroqni yoqish",
-    "torchOff": "Chiroqni o'chirish",
-    "loading": "Buyurtma tekshirilmoqda..."
+    "context": "{{branch}} · savatda {{value}} ta",
+    "contextNoBranch": "Savatda {{value}} ta",
+    "hint": "Buyurtma yorlig'idagi QR kodni ramkaga oling",
+    "noteTitle": "Faqat buyurtma QR kodi qabul qilinadi.",
+    "noteText": "Kuryer savat to'lgach tanlanadi.",
+    "meter": "ta skanerlandi · {{value}} tasi tanlangan",
+    "listTitle": "Oxirgi skanerlar",
+    "added": "Qo'shildi №{{id}}",
+    "wrongType": "Noto'g'ri QR turi — buyurtma yorlig'idagi QR kodni skanerlang",
+    "rejectedPackage": "Paket {{code}}",
+    "rejectedPost": "Pochta {{code}}",
+    "rejectedMarketQr": "Market QR {{code}}",
+    "rejectedWrongType": "buyurtma QR kodi emas",
+    "rejected": "Rad etildi · {{reason}}"
   }
 }

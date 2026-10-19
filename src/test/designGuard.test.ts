@@ -702,7 +702,7 @@ describe("design guard engine", () => {
       ]);
     });
 
-    it("bosqich B: G2/G3 papkalari scope'da; /scan kamera ekrani pending; eski antd rang nomi qaytmaydi", () => {
+    it("bosqich B: G2/G3 papkalari scope'da; /scan kamera ekrani ham v2 (skaner 1-bosqich); eski antd rang nomi qaytmaydi", () => {
       for (const file of [
         "src/entities/integrations/payments.ts", // belgisiz yordamchi (ilgari `color: "red"` xaritasi)
         "src/pages/integrations/panels/ConnectionLog.tsx",
@@ -717,10 +717,10 @@ describe("design guard engine", () => {
         expect(isInV2Scope(file), file).toBe(true);
       }
       expect(isInV2Scope("src/authX/a.ts")).toBe(false); // papka chegarasi
-      // Kamera ishi (ega qarori) — scope ichida, lekin baseline ruxsati saqlanadi.
+      // Universal skaner (`/scan`) skaner 1-bosqichida v2 ga o'tdi (2026-10-19): pending emas, rangda 0.
       const camera = "src/pages/scan/index.tsx";
-      expect(camera in V2_SCOPE_PENDING).toBe(true);
-      expect(scanSource(camera, "export {};").scoped).toBe(false);
+      expect(camera in V2_SCOPE_PENDING).toBe(false);
+      expect(scanSource(camera, "export {};").scoped).toBe(true);
       // Haqiqiy payments.ts: toza; eski baseline'dagi named-colour ruxsati endi hisobga olinmaydi.
       const file = "src/entities/integrations/payments.ts";
       const text = Object.values(

@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import CourierBulkPage from "./index";
 import { renderWithProviders } from "../../test/test-utils";
+import { getActiveScanTarget, resetScanTargets } from "../../shared/lib/scanner/scanTargets";
 
 /**
  * «Kunni yakunlash» — tasdiqlash oynasi orqali (DESIGN_SYSTEM §8, maket `courier-courier-bulk-confirm-dialog`):
@@ -26,12 +27,14 @@ vi.mock("../../entities/orders", () => ({
   }),
 }));
 
-vi.mock("../scan/lib/scanShared", () => ({ playScanFeedback: mocks.feedback }));
-
-// Kamera oynasi yopiq — QR kutubxonasi testga kerak emas.
-vi.mock("../../shared/components/ScannerCameraModal", () => ({
-  default: () => null,
+vi.mock("../../shared/lib/scanner/feedback", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../shared/lib/scanner/feedback")>()),
+  playScanFeedback: mocks.feedback,
 }));
+
+beforeEach(() => {
+  resetScanTargets();
+});
 
 const order = (id: string, name: string, over: Record<string, unknown> = {}) => ({
   id,
@@ -229,5 +232,108 @@ describe("CourierBulkPage — «Kunni yakunlash»", () => {
     expect(await screen.findByText("Buyurtmalarni yuklashda xatolik")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Qayta urinish" }));
     expect(await screen.findByText("Ali")).toBeInTheDocument();
+  });
+});
+
+describe("CourierBulkPage — kamera (markaziy «Skaner» tugmasi)", () => {
+  beforeEach(() => {
+    mocks.get.mockReset();
+    respondWith([
+      order("10", "Ali", { district: { id: "1", name: "Toshkent tumani" }, total_price: 310000 }),
+      order("11", "Vali"),
+      order("12", "Soli"),
+    ]);
+  });
+
+  const target = () => {
+    const active = getActiveScanTarget();
+    if (!active) throw new Error("kamera maqsadi yo'q");
+    return active;
+  };
+
+  it("maqsad: «Kunni yakunlash · N ta kutilayotgan buyurtma», «Bekor / Ertaga» rejimi; sahifada «Kamera» tugmasi yo'q", async () => {
+    renderWithProviders(<CourierBulkPage />);
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
+
+    expect(target()).toMatchObject({
+      id: "courier-bulk",
+      title: "Kunni yakunlash",
+      context: "3 ta kutilayotgan buyurtma",
+      modes: [
+        { value: "cancel", label: "Bekor" },
+        { value: "tomorrow", label: "Ertaga" },
+      ],
+      mode: "cancel",
+      progress: { done: 0, total: 3, label: "ta skanerlandi" },
+      listTitle: "Skanerlanganlar",
+      finish: { label: "Tugatish" },
+    });
+    expect(screen.queryByRole("button", { name: /Kamera/ })).not.toBeInTheDocument();
+  });
+
+  it("kamera skani: rejim bo'yicha belgilaydi, ro'yxat «4 / 7 · …», «Bekor qilish» belgini oladi", async () => {
+    renderWithProviders(<CourierBulkPage />);
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
+
+    await act(async () => {
+      await target().onScan("tok-10-qr", "camera");
+    });
+    expect(mocks.feedback).toHaveBeenLastCalledWith("success", "Bekor qilishga belgilandi №10 · Ali");
+    expect(within(screen.getByRole("radiogroup", { name: "Ali: natija" })).getByRole("radio", { name: "Bekor" })).toBeChecked();
+
+    // Rejim kamera ichida almashtiriladi — sahifadagi rejim ham (bitta holat).
+    act(() => target().onModeChange?.("tomorrow"));
+    await waitFor(() => expect(target().mode).toBe("tomorrow"));
+    await act(async () => {
+      await target().onScan("tok-11-qr", "manual");
+    });
+    expect(mocks.feedback).toHaveBeenLastCalledWith("success", "Ertaga qoldirishga belgilandi №11 · Vali");
+
+    await waitFor(() => expect(target().progress).toMatchObject({ done: 2, total: 3 }));
+    expect(target().listDescription).toBe("2 / 3 · 1 ta bekor, 1 ta ertaga");
+    expect(target().listNote).toBe("Skanerlanmagan 1 ta buyurtma sotilgan deb belgilanadi.");
+    expect(target().list?.map((item) => [item.key, item.tone])).toEqual([
+      ["11", "warning"],
+      ["10", "danger"],
+    ]);
+    expect(target().list?.[1]).toMatchObject({ title: "№10 · Ali", subtitle: "Bekor · Toshkent tumani · 310 000 so'm" });
+
+    // «Bekor qilish» — belgi olinadi, shu buyurtmani qayta skanerlash mumkin (takror deb rad etilmaydi).
+    act(() => target().list![1].onUndo!());
+    await waitFor(() => expect(within(rowOf("Ali")).getByText("Belgilanmagan")).toBeInTheDocument());
+    await act(async () => {
+      await target().onScan("tok-10-qr", "camera");
+    });
+    expect(mocks.feedback).toHaveBeenLastCalledWith("success", "Ertaga qoldirishga belgilandi №10 · Ali");
+  });
+
+  it("qatorda qo'lda belgilangan — «skanerlandi» ga kirmaydi, kamera ro'yxatida yo'q", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CourierBulkPage />);
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
+
+    await user.click(within(screen.getByRole("radiogroup", { name: "Vali: natija" })).getByRole("radio", { name: "Bekor" }));
+    expect(target().progress).toMatchObject({ done: 0, total: 3 });
+    expect(target().list).toEqual([]);
+
+    await act(async () => {
+      await target().onScan("tok-10-qr", "camera");
+    });
+    await waitFor(() => expect(target().progress).toMatchObject({ done: 1, total: 3 }));
+    expect(target().list?.map((item) => item.key)).toEqual(["10"]);
+    expect(target().listDescription).toBe("1 / 3 · 1 ta bekor, 0 ta ertaga");
+    // Qo'lda «Bekor» qilingan Vali sotilgan deb hisoblanmaydi.
+    expect(target().listNote).toBe("Skanerlanmagan 1 ta buyurtma sotilgan deb belgilanadi.");
+  });
+
+  it("topilmagan kod — xato signali matn bilan, belgi yo'q", async () => {
+    renderWithProviders(<CourierBulkPage />);
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
+
+    await act(async () => {
+      await target().onScan("boshqa-kuryer-qr", "camera");
+    });
+    expect(mocks.feedback).toHaveBeenLastCalledWith("missing", "Bu QR kod kutilayotgan buyurtmalar ichida topilmadi");
+    expect(target().progress?.done).toBe(0);
   });
 });

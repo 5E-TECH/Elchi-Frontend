@@ -19,6 +19,10 @@ import {
 export type ThemeMode = "light" | "dark";
 export type Language = "uz" | "ru" | "en";
 export type ScannerSoundId = "classic" | "soft" | "digital" | "bell" | "pulse" | "bright";
+/** Skaner ochilganda yoqiladigan kamera: orqa (tavsiya) yoki old. */
+export type ScannerCameraFacing = "environment" | "user";
+/** Skaner ramkasi: kichik · o'rta (sukut) · katta. */
+export type ScannerFrameSize = "sm" | "md" | "lg";
 
 /** Dashboard widget identifikatorlari (ko'rsatish/yashirish uchun). */
 export const DASHBOARD_WIDGET_IDS = [
@@ -64,6 +68,24 @@ export interface AppSettings {
       success: ScannerSoundId;
       error: ScannerSoundId;
     };
+    /**
+     * «Kamera» kartasi (maket `common-settings-scanner`). Backend `admins.settings` jsonb ni ochiq saqlaydi
+     * (`PATCH auth/my-settings`, kalitlar tekshirilmaydi) — shu sababli hisobga yoziladi, qurilmada esa
+     * `localStorage` ko'zgusi (`SettingsSync`), kamerani `shared` qatlami shundan o'qiydi.
+     */
+    camera: {
+      facing: ScannerCameraFacing;
+      frame: ScannerFrameSize;
+      /** Chiroqli qurilmada yorug'lik kam bo'lsa chiroqni yoqish taklif qilinadi. */
+      torchAuto: boolean;
+      /** `false` — oqim ichidagi kamera bitta muvaffaqiyatli koddan keyin yopiladi. */
+      continuous: boolean;
+    };
+    /** Skan signali: ovoz va tebranish (kamera ham, USB skaner ham). */
+    feedback: {
+      sound: boolean;
+      vibration: boolean;
+    };
   };
   notifications: {
     /** Web push (telefon/brauzer) yoqilganmi — davC9QOX. Push KANALI ham shu. */
@@ -95,6 +117,8 @@ export interface AppSettingsPatch {
   interface?: Partial<AppSettings["interface"]>;
   scanner?: {
     sounds?: Partial<AppSettings["scanner"]["sounds"]>;
+    camera?: Partial<AppSettings["scanner"]["camera"]>;
+    feedback?: Partial<AppSettings["scanner"]["feedback"]>;
   };
   notifications?: {
     push?: boolean;
@@ -126,6 +150,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
       success: "classic",
       error: "classic",
     },
+    camera: { facing: "environment", frame: "md", torchAuto: true, continuous: true },
+    feedback: { sound: true, vibration: true },
   },
   notifications: {
     push: false,
@@ -141,6 +167,12 @@ const readBool = (value: unknown, fallback: boolean): boolean =>
 
 const readClock = (value: unknown, fallback: ClockTime): ClockTime =>
   typeof value === "string" && CLOCK_TIME.test(value) ? value : fallback;
+
+const readFacing = (value: unknown): ScannerCameraFacing =>
+  value === "environment" || value === "user" ? value : DEFAULT_SETTINGS.scanner.camera.facing;
+
+const readFrame = (value: unknown): ScannerFrameSize =>
+  value === "sm" || value === "md" || value === "lg" ? value : DEFAULT_SETTINGS.scanner.camera.frame;
 
 /** Faqat ma'lum kategoriyalar, takrorsiz, katalog tartibida. */
 const readCategories = (value: unknown): NotificationCategory[] => {
@@ -214,6 +246,16 @@ export const mergeSettings = (raw: unknown): AppSettings => {
           s.scanner?.sounds?.success ?? DEFAULT_SETTINGS.scanner.sounds.success,
         error: s.scanner?.sounds?.error ?? DEFAULT_SETTINGS.scanner.sounds.error,
       },
+      camera: {
+        facing: readFacing(s.scanner?.camera?.facing),
+        frame: readFrame(s.scanner?.camera?.frame),
+        torchAuto: readBool(s.scanner?.camera?.torchAuto, DEFAULT_SETTINGS.scanner.camera.torchAuto),
+        continuous: readBool(s.scanner?.camera?.continuous, DEFAULT_SETTINGS.scanner.camera.continuous),
+      },
+      feedback: {
+        sound: readBool(s.scanner?.feedback?.sound, DEFAULT_SETTINGS.scanner.feedback.sound),
+        vibration: readBool(s.scanner?.feedback?.vibration, DEFAULT_SETTINGS.scanner.feedback.vibration),
+      },
     },
     // ⚠️ mergeSettings OQ RO'YXAT: shu yerda sanalmagan kalit jimgina tashlanadi.
     notifications: mergeNotifications(s.notifications),
@@ -231,6 +273,8 @@ export const applySettingsPatch = (
   interface: { ...current.interface, ...patch.interface },
   scanner: {
     sounds: { ...current.scanner.sounds, ...patch.scanner?.sounds },
+    camera: { ...current.scanner.camera, ...patch.scanner?.camera },
+    feedback: { ...current.scanner.feedback, ...patch.scanner?.feedback },
   },
   notifications: {
     push: patch.notifications?.push ?? current.notifications.push,

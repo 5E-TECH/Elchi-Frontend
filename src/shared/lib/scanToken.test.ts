@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { extractScannerToken, normalizeScannerCandidates } from "./scanToken";
+import { extractScannerToken, isForeignScanUrl, normalizeScannerCandidates } from "./scanToken";
 
 describe("extractScannerToken", () => {
   it("extracts the token from a /scan/ URL or path", () => {
@@ -28,5 +28,21 @@ describe("normalizeScannerCandidates", () => {
 
   it("returns an empty list for blank input", () => {
     expect(normalizeScannerCandidates("")).toEqual([]);
+  });
+});
+
+describe("isForeignScanUrl", () => {
+  const origin = "https://app.elchi.uz";
+
+  it("treats another site's link without /scan/ as foreign (not an Elchi label)", () => {
+    expect(isForeignScanUrl("https://barakashop.uz/mahsulot/48213", origin)).toBe(true);
+    expect(isForeignScanUrl("http://example.com/", origin)).toBe(true);
+  });
+
+  it("keeps label links, app links and bare tokens", () => {
+    expect(isForeignScanUrl("https://elchi.uz/scan/BTB-a8c3d4e5", origin)).toBe(false);
+    expect(isForeignScanUrl("https://app.elchi.uz/orders/10241", origin)).toBe(false);
+    expect(isForeignScanUrl("65f0c1aa22bb33cc44dd55ee", origin)).toBe(false);
+    expect(isForeignScanUrl("POST-1a2b3c", origin)).toBe(false);
   });
 });

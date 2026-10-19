@@ -11,6 +11,68 @@ interface UseKeyboardScannerOptions {
 const DEFAULT_IDLE_MS = 80;
 const DEFAULT_CLEAR_MS = 350;
 
+/**
+ * US tartibidagi belgi (`event.code` → [Shift'siz, Shift bilan]). USB/Bluetooth skaner (HID) tugma
+ * KODINI yuboradi va US tartibni nazarda tutadi; OS da boshqa tartib yoqilgan bo'lsa `event.key` boshqa
+ * belgi bo'lib keladi (rus/o'zbek kirill: «ф» o'rniga «a», `Slash` → «.»). Kod bo'yicha qaytariladi (rQX8TqRV).
+ */
+const US_SYMBOLS: Record<string, readonly [string, string]> = {
+  Digit1: ["1", "!"],
+  Digit2: ["2", "@"],
+  Digit3: ["3", "#"],
+  Digit4: ["4", "$"],
+  Digit5: ["5", "%"],
+  Digit6: ["6", "^"],
+  Digit7: ["7", "&"],
+  Digit8: ["8", "*"],
+  Digit9: ["9", "("],
+  Digit0: ["0", ")"],
+  Minus: ["-", "_"],
+  Equal: ["=", "+"],
+  Slash: ["/", "?"],
+  Period: [".", ">"],
+  Comma: [",", "<"],
+  Semicolon: [";", ":"],
+};
+
+/**
+ * Skaner yuborgan belgini tiklaydi:
+ *   - harf tugmasi (`KeyA..KeyZ`) — harf DOIM `event.code` dan (kirill tartibida «ф» o'rniga «a», QWERTZ'da
+ *     y/z almashmaydi). Katta-kichikligi: Caps Lock yoqiq bo'lsa — faqat Shift'dan (Windows/Linux'da Caps+Shift
+ *     kichik, macOS'da katta harf beradi — `event.key` ga ishonib bo'lmaydi); Caps Lock o'chiq bo'lsa —
+ *     `event.key` ning registridan (Shift'siz katta harf yuboradigan skaner va dasturiy kiritish ham to'g'ri),
+ *     registrsiz belgida — Shift'dan;
+ *   - raqam/tinish tugmasi (`Digit*`, `Minus`, `Slash` …) US belgisiga mos kelmasa — US belgisi (Shift bilan).
+ * Boshqa hollarda (`code` yo'q — ekran klaviaturasi) `event.key` o'zgarmaydi. Bitta belgi bo'lmasa — `null`.
+ * Maydonga yozilayotgan matn o'zgarmaydi — faqat skaner buferi.
+ */
+export const readScannerKey = (event: KeyboardEvent): string | null => {
+  const { key, code } = event;
+  if (key.length !== 1) return null;
+
+  const letter = /^Key([A-Z])$/.exec(code ?? "")?.[1];
+  if (letter) {
+    const capsLock = typeof event.getModifierState === "function" && event.getModifierState("CapsLock");
+    const hasCase = key.toLowerCase() !== key.toUpperCase();
+    const upper = !capsLock && hasCase ? key === key.toUpperCase() : event.shiftKey;
+    return upper ? letter : letter.toLowerCase();
+  }
+
+  const symbols = code ? US_SYMBOLS[code] : undefined;
+  if (symbols && !symbols.includes(key)) {
+    return symbols[event.shiftKey ? 1 : 0];
+  }
+
+  return key;
+};
+
+/**
+ * Skaner tinglamaydigan joy (`data-scanner-ignore`): qo'lda kiritish maydoni — odam tez yozib Enter bossa,
+ * bufer uni «skan» deb olib, formani to'xtatib qo'ymasin (forma o'zi yuboradi).
+ */
+const isIgnoredTarget = (target: EventTarget | null) =>
+  target instanceof Element && target.closest("[data-scanner-ignore]") !== null;
+
 const isEditableTarget = (target: EventTarget | null) => {
   if (!(target instanceof HTMLElement)) return false;
 
@@ -60,7 +122,8 @@ export const useKeyboardScanner = ({
         event.ctrlKey ||
         event.metaKey ||
         event.altKey ||
-        (!captureEditableTargets && isEditableTarget(event.target))
+        (!captureEditableTargets && isEditableTarget(event.target)) ||
+        isIgnoredTarget(event.target)
       ) {
         return;
       }
@@ -78,14 +141,15 @@ export const useKeyboardScanner = ({
         return;
       }
 
-      if (event.key.length !== 1) return;
+      const char = readScannerKey(event);
+      if (char === null) return;
 
       const now = Date.now();
       if (now - scannerLastKeyAtRef.current > idleMs) {
         scannerBufferRef.current = "";
       }
 
-      scannerBufferRef.current += event.key;
+      scannerBufferRef.current += char;
       scannerLastKeyAtRef.current = now;
       scheduleScannerClear();
     };
