@@ -26,6 +26,7 @@ const CLOSED: ReturnPath = {
   pending: null,
   currentPlace: null,
   market: "Baraka Shop",
+  hqName: "Toshkent HQ",
   steps: [
     step({
       kind: "cancelled",
@@ -69,7 +70,7 @@ describe("OrderReturnPathCard", () => {
     ]);
     expect(steps[0]).toHaveTextContent("Bekor qilindi");
     expect(steps[0]).toHaveTextContent("Kuryer Akmal Rahimov · Chilonzor tumani");
-    expect(steps[0]).toHaveTextContent("Sabab: Mijoz javob bermadi");
+    expect(steps[0]).toHaveTextContent("Sabab: mijoz javob bermadi");
     expect(steps[1]).toHaveTextContent("Kuryer Akmal Rahimov → Toshkent HQ");
     expect(within(steps[1]).getByText("Pochta №2098")).toBeInTheDocument();
     expect(steps[2]).toHaveTextContent("Toshkent HQ · Ro'yxatchi Bobur Xolmatov");
@@ -87,6 +88,7 @@ describe("OrderReturnPathCard", () => {
           stage: "branch",
           closed: false,
           market: "Nur Elektronika",
+          hqName: null,
           currentPlace: "Samarqand filiali",
           pending: { kind: "handover", place: "Samarqand filiali", days: 2, atBranch: true },
           steps: [step({ kind: "cancelled", actor: "Jasur Tursunov", role: "courier" })],
@@ -112,6 +114,7 @@ describe("OrderReturnPathCard", () => {
           stage: "hq",
           closed: false,
           market: "Baraka Shop",
+          hqName: null,
           currentPlace: "Toshkent HQ",
           pending: { kind: "handover", place: "Toshkent HQ", days: 3, atBranch: false },
           steps: [],
@@ -139,6 +142,7 @@ describe("OrderReturnPathCard", () => {
           stage: "in_transit",
           closed: false,
           market: null,
+          hqName: null,
           currentPlace: null,
           pending: { kind: "receive", place: "Toshkent HQ", days: null, atBranch: false },
           steps: [],

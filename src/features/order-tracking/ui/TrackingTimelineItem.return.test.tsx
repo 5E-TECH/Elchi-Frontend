@@ -141,6 +141,29 @@ describe("TrackingTimelineItem — marketga qaytarish", () => {
     expect(screen.getByTestId("tracking-event")).toHaveTextContent("marketga topshirish uchun HQ'da qabul qildi");
   });
 
+  it("⭐ filial registratori o'z filialida qabul qildi (`received_by_hq: false`) — HQ nomi emas, filial", () => {
+    const event = {
+      ...base,
+      action: "cancelled_post_received",
+      from_status: "cancelled (sent)",
+      to_status: "cancelled",
+      changed_by_role: "registrator",
+      actor: { name: "Dilshod Karimov", role: "registrator" },
+      old_value: { status: "cancelled (sent)" },
+      new_value: { status: "cancelled" },
+      note: "Canceled order received by branch",
+      metadata: { destination_branch: "Urgut filiali (UR, ID: 12)", received_by_hq: false },
+    } as TrackingEvent;
+    renderWithProviders(
+      <ol>
+        <TrackingTimelineItem event={event} isLast context={{ hqName: "Toshkent HQ" }} />
+      </ol>,
+    );
+    const item = screen.getByTestId("tracking-event");
+    expect(item).toHaveTextContent("bekor qilingan buyurtmani qabul qildi — Urgut filiali");
+    expect(item).not.toHaveTextContent("Toshkent HQ");
+  });
+
   it("boshqa izohli hodisalar avvalgidek (qaytarish deb belgilanmaydi)", () => {
     render({
       action: "note",

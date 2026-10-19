@@ -5,7 +5,12 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { Check, PackageCheck, RotateCcw, Undo2, X } from "lucide-react";
 import type { RootState } from "../../../app/config/store";
-import { readProofFiles, resolveCancelReturnStage, useCancelHandoverMethodLabel } from "../../../entities/order";
+import {
+  normalizeOrderStatus,
+  readProofFiles,
+  resolveCancelReturnStage,
+  useCancelHandoverMethodLabel,
+} from "../../../entities/order";
 import { useOrders } from "../../../entities/orders";
 import type { CancelOrderPayload } from "../../../entities/orders/cancelReason";
 import {
@@ -106,7 +111,6 @@ const NewOrderUpdate = () => {
   const lockIds = getLockAlertIds(access.productsLocked, access.destinationLocked);
 
   const actionOrder = useMemo(() => buildActionOrder(order), [order]);
-  const trackingContext = useMemo(() => buildTrackingContext(order), [order]);
   const trackingAccess = useMemo(() => buildTrackingAccess(order), [order]);
   /** Qisman sotuvdan tug'ilgan bo'lsa — asosiy buyurtma id'si. */
   const parentOrderId = useMemo(() => readOrderMeta(order)?.parentOrderId ?? null, [order]);
@@ -137,6 +141,24 @@ const NewOrderUpdate = () => {
   const handoverMethodLabel = useCancelHandoverMethodLabel();
   const handoverStep = returnPath.path?.steps.find((step) => step.kind === "handed") ?? null;
   const handoverMethod = handoverStep ? handoverMethodLabel(handoverStep.handover) : null;
+  // Topshirish vaqti — tarixdagi hodisadan (`mark-returned-to-market` `last_handover_at` ni yangilamaydi);
+  // tarix kelgach topshirish hodisasi bo'lmasa — `last_handover_at` (bulk topshirish uni yozadi).
+  const handoverAt =
+    handoverStep?.at ?? (returnPath.isLoading ? null : (order?.last_handover_at ?? order?.lastHandoverAt ?? null));
+  // Tarix jumlalaridagi HQ nomi «Qaytarish yo'li» bilan bir xil bo'lsin (topshirilgandan keyin ham «— Toshkent HQ»).
+  const returnPathHqName = returnPath.path?.hqName ?? null;
+  const trackingContext = useMemo(() => {
+    const context = buildTrackingContext(order);
+    return context.hqName || !returnPathHqName ? context : { ...context, hqName: returnPathHqName };
+  }, [order, returnPathHqName]);
+  // Qulf sababi holatdan ham: qabulgacha bekor qilingan (bosqichsiz) buyurtma «filialga jo'natilgan» emas.
+  const normalizedStatus = normalizeOrderStatus(order?.status);
+  const lockReason =
+    cancelStage === "market" || normalizedStatus === "returned_to_market"
+      ? "returned"
+      : cancelStage || normalizedStatus === "cancelled" || normalizedStatus === "cancelled (sent)"
+        ? "cancelled"
+        : null;
   const closeEdit = useCallback(() => setEditing(null), []);
 
   const handleBack = useCallback(() => {
@@ -324,12 +346,20 @@ const NewOrderUpdate = () => {
       access={trackingAccess}
       context={trackingContext}
       variant={variant}
+      defaultCollapsed={Boolean(returnPath.path)}
     />
   );
   // `/new-orders/:marketId/edit` maketlarida «Buyurtma ma'lumotlari» kartasi yo'q.
   const meta = (className?: string) =>
     isNewOrdersRoute ? null : (
-      <OrderMeta order={order} role={role} self={user} canOpenMails={canOpenMails} className={className} />
+      <OrderMeta
+        order={order}
+        role={role}
+        self={user}
+        canOpenMails={canOpenMails}
+        handoverAt={handoverAt}
+        className={className}
+      />
     );
   /** «Buyurtma topilmadi» holatidagi qaytish manzili — sarlavhadagi «←» bilan bir ro'yxat. */
   const notFoundBackTo = marketId ? `/new-orders/${marketId}` : "/orders";
@@ -438,6 +468,7 @@ const NewOrderUpdate = () => {
         backLabel={newOrdersBackLabel}
         actions={headerActions}
         handoverMethod={handoverMethod}
+        handoverAt={handoverAt}
       />
 
       {order ? (
@@ -450,7 +481,7 @@ const NewOrderUpdate = () => {
           parentOrderId={parentOrderId}
           editOpen={editOpen}
           marketListHref={isNewOrdersRoute && access.layout === "market" ? `/new-orders/${marketId}` : null}
-          lockReason={cancelStage === "market" ? "returned" : cancelStage ? "cancelled" : null}
+          lockReason={lockReason}
         />
       ) : null}
 

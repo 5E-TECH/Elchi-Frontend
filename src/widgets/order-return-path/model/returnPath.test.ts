@@ -86,6 +86,7 @@ const HQ_ORDER = {
   id: "10305",
   status: "cancelled",
   holder_type: "HQ",
+  post_id: "78",
   branch: { id: "1", name: "Toshkent HQ" },
   market: { name: "Nur Elektronika" },
   district: { name: "Urgut tumani" },
@@ -210,6 +211,7 @@ describe("buildReturnPath", () => {
       id: "1",
       status: "cancelled",
       holder_type: "BRANCH",
+      post_id: "78",
       branch: { name: "Samarqand filiali" },
     });
     expect(path!.steps).toEqual([]);
@@ -249,5 +251,80 @@ describe("buildReturnPath — HQ nomi buyurtmadan", () => {
       branch: { id: "12", name: "Urgut filiali" },
     });
     expect(path!.steps.at(-1)).toMatchObject({ kind: "handed", place: "Urgut filiali" });
+  });
+});
+
+describe("buildReturnPath — review tuzatishlari", () => {
+  it("aniqlangan HQ nomi `hqName` da (tarix jumlalari ham shuni aytadi); noma'lum bo'lsa — `null`", () => {
+    const handed = [
+      ...BRANCH_TO_HQ,
+      ev("2026-10-19T11:20:00+05:00", { ...status("cancelled", "returned_to_market"), actor: registrator }),
+    ];
+    expect(
+      buildReturnPath(handed, { ...HQ_ORDER, status: "returned_to_market", holder_type: "MARKET" })!.hqName,
+    ).toBe("Toshkent HQ");
+    expect(buildReturnPath([], { ...HQ_ORDER, branch: null })!.hqName).toBeNull();
+  });
+
+  it("bekor qilinib, tiklangan va keyin `/returns` oqimida topshirilgan — eski bekor zanjiri olinmaydi", () => {
+    const events = [
+      ...BRANCH_TO_HQ.slice(0, 1),
+      ev("2026-10-05T15:00:00+05:00", { ...status("cancelled", "waiting"), actor: manager }),
+      ev("2026-10-07T10:00:00+05:00", { ...status("waiting", "returned_to_market"), actor: manager }),
+    ];
+    const path = buildReturnPath(events, { ...HQ_ORDER, status: "returned_to_market", holder_type: "MARKET" });
+    expect(path!.steps.map((step) => step.kind)).toEqual(["handed"]);
+  });
+
+  it("tiklanib, yana bekor qilingan — zanjir oxirgi bekor qilishdan", () => {
+    const events = [
+      ...BRANCH_TO_HQ.slice(0, 1),
+      ev("2026-10-05T15:00:00+05:00", { ...status("cancelled", "waiting"), actor: manager }),
+      ev("2026-10-06T09:00:00+05:00", { ...status("waiting", "cancelled"), actor: courier }),
+    ];
+    const path = buildReturnPath(events, {
+      ...HQ_ORDER,
+      holder_type: "COURIER",
+      holder_courier_id: "5",
+    });
+    expect(path!.steps.map((step) => [step.kind, step.at])).toEqual([["cancelled", "2026-10-06T09:00:00+05:00"]]);
+  });
+
+  it("jo'natishga ENG yaqin custody hodisasi olinadi (±60 s ichida bir nechta bo'lsa)", () => {
+    const events = [
+      BRANCH_TO_HQ[0],
+      custody(
+        "2026-10-05T18:04:10+05:00",
+        { holder_type: "COURIER", holder_courier: "Jasur Tursunov, role: courier, ID: 5" },
+        { holder_type: "BRANCH", holder_branch: "Samarqand filiali (SM, ID: 3)" },
+      ),
+      ev("2026-10-05T18:05:00+05:00", {
+        ...status("cancelled", "cancelled (sent)"),
+        actor: courier,
+        changed_by_role: "courier",
+      }),
+      custody(
+        "2026-10-05T18:05:01+05:00",
+        { holder_type: "COURIER", holder_courier: "Jasur Tursunov, role: courier, ID: 5" },
+        { holder_type: "BRANCH", holder_branch: "Urgut filiali (UR, ID: 12)" },
+      ),
+    ];
+    const path = buildReturnPath(events, {
+      ...HQ_ORDER,
+      status: "cancelled (sent)",
+      holder_type: "BRANCH",
+      canceled_post_id: "2107",
+    });
+    expect(path!.steps[1]).toMatchObject({ kind: "sent", to: "Urgut filiali" });
+  });
+
+  it("kuryerda kutilayotgan qadamda kun yo'q (`last_handover_at` — kuryerga biriktirilgan vaqt)", () => {
+    const path = buildReturnPath(BRANCH_TO_HQ.slice(0, 1), {
+      ...HQ_ORDER,
+      holder_type: "COURIER",
+      holder_courier_id: "5",
+      last_handover_at: "2026-09-30T09:00:00+05:00",
+    });
+    expect(path!.pending).toMatchObject({ kind: "send", days: null });
   });
 });

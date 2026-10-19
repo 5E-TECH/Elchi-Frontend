@@ -43,6 +43,8 @@ export const ORDER_AT_HQ = {
   holder_type: "HQ",
   holder_branch_id: null,
   holder_courier_id: null,
+  // Qabul dalili: `post_id` yo'q bo'lsa (qabulgacha bekor) bosqich chiqmaydi.
+  post_id: "2050",
   canceled_post_id: null,
   branch: { id: "1", name: "Toshkent HQ" },
   return_reason: "CUSTOMER_REFUSED",
@@ -65,7 +67,8 @@ export const ORDER_HANDED = {
   status: "returned_to_market",
   holder_type: "MARKET",
   branch: { id: "1", name: "Toshkent HQ" },
-  last_handover_at: "2026-10-06T06:20:00.000Z",
+  // Eski custody vaqti (`mark-returned-to-market` uni yangilamaydi) — tafsilot vaqtni tarixdan oladi.
+  last_handover_at: "2026-10-01T06:20:00.000Z",
 };
 
 const event = (id: string, at: string, fields: Record<string, unknown>) => ({

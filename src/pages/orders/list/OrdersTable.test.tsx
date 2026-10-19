@@ -437,6 +437,7 @@ describe("OrdersTable", () => {
               id: "c-1",
               status: "cancelled",
               holder_type: "HQ",
+              post_id: "78",
               branch: { id: "1", name: "Toshkent HQ" },
               last_handover_at: twoDaysAgo,
             },

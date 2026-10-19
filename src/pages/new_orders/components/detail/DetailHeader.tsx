@@ -28,6 +28,8 @@ type DetailHeaderProps = {
   actions?: ReactNode;
   /** «Marketga topshirildi» usuli (tarixdan: «QR orqali» …) — sarlavhadagi joy qatori oxirida. */
   handoverMethod?: string | null;
+  /** «Marketga topshirildi» vaqti (tarixdagi topshirish hodisasi; yo'q bo'lsa sahifa `last_handover_at` beradi). */
+  handoverAt?: unknown;
 };
 
 /**
@@ -36,7 +38,16 @@ type DetailHeaderProps = {
  * `courier-orders-detail`) desktopda holat + yetkazish turi va «Market · sana», telefonda esa
  * badge'lar To'lov kartasiga tushadi, izoh — «Buyurtma tafsilotlari».
  */
-export const DetailHeader = ({ orderId, order, layout, onBack, backLabel, actions, handoverMethod }: DetailHeaderProps) => {
+export const DetailHeader = ({
+  orderId,
+  order,
+  layout,
+  onBack,
+  backLabel,
+  actions,
+  handoverMethod,
+  handoverAt,
+}: DetailHeaderProps) => {
   const { t, i18n } = useTranslation(["orders", "newOrders"]);
   const placeText = useCancelReturnPlaceText();
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -57,7 +68,7 @@ export const DetailHeader = ({ orderId, order, layout, onBack, backLabel, action
   // Bekor bosqichi (maketlar `*-orders-detail-cancelled`): belgi yonida «Toshkent HQ · 3 kun» /
   // «Toshkent HQ · Bugun, 11:20 · QR orqali». Kuryer tafsilotida bosqich yo'q (maket o'zgarmagan).
   const stage = order && !isCourier ? resolveCancelReturnStage(order) : null;
-  const place = stage ? placeText(resolveCancelReturnPlace(order, stage)) : null;
+  const place = stage ? placeText(resolveCancelReturnPlace(order, stage, { handoverAt })) : null;
   const stageLine = stage
     ? [place?.name, place?.extra, stage === "market" ? handoverMethod : null].filter(Boolean).join(" · ")
     : "";

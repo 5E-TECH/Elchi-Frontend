@@ -119,6 +119,11 @@ export const OrderReturnPathCard = ({
   const language = i18n.resolvedLanguage ?? i18n.language;
   const methodLabel = useCancelHandoverMethodLabel();
   const time = (value: string) => formatTrackingDateTime(value, { language });
+  /** Ro'yxatdagi sabab gap o'rtasida — kichik harf bilan («Sabab: mijoz rad etdi»); erkin matn o'zgarmaydi. */
+  const reasonText = (reason: string) => {
+    const label = t(`cancelReasons.${reason}`, { defaultValue: "" });
+    return label ? label.charAt(0).toLocaleLowerCase(language) + label.slice(1) : reason;
+  };
 
   const subtitle = path.closed
     ? t("returnPath.subtitleClosed")
@@ -138,9 +143,7 @@ export const OrderReturnPathCard = ({
             ) : null}
             {step.reason ? (
               <p className="m-0 text-[13px] text-text-muted">
-                {t("returnPath.reason", {
-                  reason: t(`cancelReasons.${step.reason}`, { defaultValue: step.reason }),
-                })}
+                {t("returnPath.reason", { reason: reasonText(step.reason) })}
               </p>
             ) : null}
           </>
@@ -232,7 +235,7 @@ export const OrderReturnPathCard = ({
       data-stage={path.stage}
       footer={
         showQr && qrHref ? (
-          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3">
+          <div className="flex w-full flex-wrap items-center justify-between gap-x-4 gap-y-3">
             <p className="m-0 text-[13px] text-text-muted">{t("returnPath.qrHint")}</p>
             <Link
               to={qrHref}

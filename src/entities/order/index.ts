@@ -38,6 +38,7 @@ export type {
   CancelReturnPlace,
   CancelReturnStage,
   CancelReturnStageMeta,
+  ResolveCancelReturnPlaceOptions,
 } from "./model/cancelReturnStage";
 export { OrderReturnPlace, OrderStatusBadge } from "./ui/OrderStatusBadge";
 export { useCancelReturnPlaceText } from "./ui/useCancelReturnPlaceText";

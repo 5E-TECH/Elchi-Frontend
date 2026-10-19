@@ -458,11 +458,13 @@ const getSentenceTemplate = (
     const role = normalizeKey(event.actor?.role ?? event.changed_by_role);
     const note = normalizeKey(event.note ?? event.description);
     const metadata = isRecord(event.metadata) ? event.metadata : {};
+    // Aniq bayroq ustun: filial registratori o'z filialida qabul qilsa `received_by_hq: false` — joy filial.
     const isHqReceiver =
-      metadata.received_by_hq === true ||
-      ["admin", "superadmin", "registrator"].includes(role) ||
-      note.includes("market_handover") ||
-      note.includes("received_by_hq");
+      typeof metadata.received_by_hq === "boolean"
+        ? metadata.received_by_hq
+        : ["admin", "superadmin", "registrator"].includes(role) ||
+          note.includes("market_handover") ||
+          note.includes("received_by_hq");
     // Joy nomi (`metadata.destination_branch`, «Urgut filiali (UR, ID: 12)» → «Urgut filiali»); HQ'da — HQ nomi.
     const place = isHqReceiver
       ? (context?.hqName ?? null)

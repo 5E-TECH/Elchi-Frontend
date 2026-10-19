@@ -27,9 +27,9 @@ const stageSample = (stage: CancelReturnStage): Record<string, unknown> => {
     case "in_transit":
       return { status: "cancelled (sent)", branch: { name: "Toshkent HQ" } };
     case "branch":
-      return { status: "cancelled", holder_type: "BRANCH", branch: { name: "Samarqand filiali" }, last_handover_at: ago(2) };
+      return { status: "cancelled", holder_type: "BRANCH", post_id: "41", branch: { name: "Samarqand filiali" }, last_handover_at: ago(2) };
     case "hq":
-      return { status: "cancelled", holder_type: "HQ", branch: { name: "Toshkent HQ" }, last_handover_at: ago(3) };
+      return { status: "cancelled", holder_type: "HQ", post_id: "41", branch: { name: "Toshkent HQ" }, last_handover_at: ago(3) };
     default:
       return { status: "returned_to_market", holder_type: "MARKET", branch: { name: "Toshkent HQ" }, last_handover_at: Date.now() };
   }

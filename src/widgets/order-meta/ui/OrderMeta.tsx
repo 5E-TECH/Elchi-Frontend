@@ -57,6 +57,11 @@ interface OrderMetaProps {
   self?: { id?: string | number | null; name?: string | null; phone_number?: string | null } | null;
   /** Pochta (`/mails/:id`) sahifasiga ruxsat bormi — bo'lmasa raqam matn bo'lib qoladi. */
   canOpenMails?: boolean;
+  /**
+   * «Marketga topshirildi» vaqti — tafsilot sahifasi tarixdagi topshirish hodisasidan beradi
+   * (`last_handover_at` ni `mark-returned-to-market` yangilamaydi). Berilmasa — vaqtsiz.
+   */
+  handoverAt?: unknown;
   className?: string;
 }
 
@@ -117,7 +122,7 @@ const TARIFF_LABEL: Record<TariffField, string> = {
   branchShare: "metaShareBranch",
 };
 
-const OrderMeta = ({ order, role, self, canOpenMails = false, className }: OrderMetaProps) => {
+const OrderMeta = ({ order, role, self, canOpenMails = false, handoverAt, className }: OrderMetaProps) => {
   const { t } = useTranslation("orders");
   const [showTariffs, setShowTariffs] = useState(false);
   const meta = readOrderMeta(order);
@@ -194,7 +199,7 @@ const OrderMeta = ({ order, role, self, canOpenMails = false, className }: Order
   const holderValue = (() => {
     if (!stage) return holderText;
     const label = t(CANCEL_RETURN_STAGES[stage].labelKey, { ns: "status" });
-    const place = placeText(resolveCancelReturnPlace(order, stage));
+    const place = placeText(resolveCancelReturnPlace(order, stage, { handoverAt }));
     const fallbackName = stage === "branch" || stage === "courier" ? holderName : null;
     const where = [place?.name ?? fallbackName, place?.extra].filter(Boolean).join(" · ");
     return where ? t("metaHolderStage", { stage: label, place: where }) : label;
@@ -301,7 +306,12 @@ const OrderMeta = ({ order, role, self, canOpenMails = false, className }: Order
         </Row>
 
         <Row icon={<PackageCheck size={15} aria-hidden="true" />} label={t("metaHolder")} testId="meta-holder" title={holderValue}>
-          <Fit>{holderValue}</Fit>
+          {stage ? (
+            // Bosqich + joy + vaqt uzun: telefonda kesilmasin — 2 qatorgacha o'raladi (`title` sensorda yordam bermaydi).
+            <span className="line-clamp-2 min-w-0 whitespace-normal">{holderValue}</span>
+          ) : (
+            <Fit>{holderValue}</Fit>
+          )}
         </Row>
 
         {meta.whereDeliver ? (

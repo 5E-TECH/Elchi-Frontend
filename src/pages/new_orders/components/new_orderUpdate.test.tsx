@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
 import { vi } from "vitest";
@@ -69,7 +69,13 @@ vi.mock("../../../entities/logistics/api/logisticsApi", () => ({
 }));
 
 vi.mock("../../../widgets/order-tracking", () => ({
-  OrderTracking: () => null,
+  OrderTracking: ({ defaultCollapsed, context }: { defaultCollapsed?: boolean; context?: { hqName?: string | null } }) => (
+    <div
+      data-testid="order-tracking-stub"
+      data-default-collapsed={String(Boolean(defaultCollapsed))}
+      data-hq-name={context?.hqName ?? ""}
+    />
+  ),
 }));
 
 vi.mock("../../orders/list/courier/list/SellModal", () => ({
@@ -740,6 +746,7 @@ describe("NewOrderUpdate — bekor bosqichi va «Qaytarish yo'li» (maketlar *-o
     orderState.status = "cancelled";
     orderState.extra = {
       holder_type: "HQ",
+      post_id: "78",
       branch: { id: "1", name: "Toshkent HQ" },
       market: { id: "m7", name: "Nur Elektronika" },
       last_handover_at: new Date(Date.now() - 3 * 86_400_000 - 60_000).toISOString(),
@@ -789,15 +796,42 @@ describe("NewOrderUpdate — bekor bosqichi va «Qaytarish yo'li» (maketlar *-o
     );
   });
 
+  it("qabulgacha bekor qilingan (holder HQ, `post_id` yo'q): bosqich yo'q — «Bekor qilingan», qulf «bekor qilingan»", async () => {
+    orderState.status = "cancelled";
+    orderState.extra = { holder_type: "HQ", post_id: null, branch: { id: "1", name: "Toshkent HQ" } };
+    renderPage("superadmin");
+
+    const header = screen.getByRole("banner");
+    expect(within(header).getByText("Bekor qilingan")).toBeInTheDocument();
+    expect(within(header).queryByText("Bekor · HQ'da")).toBeNull();
+    expect(within(header).queryByTestId("detail-stage-place")).toBeNull();
+    expect(screen.getByText(/Buyurtma bekor qilingan — mijoz, manzil/)).toBeInTheDocument();
+    expect(screen.queryByText(/filialga jo'natilgan/)).toBeNull();
+    expect(screen.queryByTestId("order-return-path")).toBeNull();
+  });
+
   it("superadmin: «Marketga topshirildi» (neytral) + «… · QR orqali» sarlavhada, zanjir yopildi", async () => {
     orderState.status = "returned_to_market";
     orderState.extra = {
       holder_type: "MARKET",
       branch: { id: "1", name: "Toshkent HQ" },
       market: { name: "Baraka Shop" },
-      last_handover_at: "2026-10-06T11:20:00+05:00",
+      // Eski custody vaqti (`mark-returned-to-market` uni yangilamaydi) — sarlavha vaqtni tarixdan oladi.
+      last_handover_at: "2026-10-01T09:00:00+05:00",
     };
     returnPathEvents.list = [
+      {
+        id: "r1",
+        order_id: "1251175",
+        action: "cancelled_post_received",
+        from_status: "cancelled (sent)",
+        to_status: "cancelled",
+        changed_by: "9",
+        changed_by_role: "registrator",
+        actor: { name: "Bobur Xolmatov", role: "registrator" },
+        metadata: { canceled_post_id: "2115", destination_branch: null, received_by_hq: true },
+        created_at: "2026-10-05T23:40:00+05:00",
+      },
       {
         id: "h1",
         order_id: "1251175",
@@ -808,7 +842,7 @@ describe("NewOrderUpdate — bekor bosqichi va «Qaytarish yo'li» (maketlar *-o
         changed_by_role: "registrator",
         actor: { name: "Bobur Xolmatov", role: "registrator" },
         note: "Bekor qilingan order market 7ga QR tasdiqi bilan topshirildi",
-        created_at: "2026-10-19T11:20:00+05:00",
+        created_at: "2026-10-06T11:20:00+05:00",
       },
     ];
     renderPage("superadmin");
@@ -816,7 +850,14 @@ describe("NewOrderUpdate — bekor bosqichi va «Qaytarish yo'li» (maketlar *-o
     const header = screen.getByRole("banner");
     expect(within(header).getByText("Marketga topshirildi")).toHaveClass("bg-sunken", "text-text-muted");
     // «Toshkent HQ · <topshirilgan vaqt> · QR orqali» — usul tarixdan kelgach qo'shiladi.
-    expect(await within(header).findByText(/^Toshkent HQ · \d{2}\.\d{2}\.\d{4}, \d{2}:\d{2} · QR orqali$/)).toBeInTheDocument();
+    expect(await within(header).findByText(/^Toshkent HQ · 06\.10\.2026, \d{2}:\d{2} · QR orqali$/)).toBeInTheDocument();
+    expect(within(header).queryByText(/01\.10\.2026/)).toBeNull();
+    // «Hozir kimda» ham tarixdagi vaqt bilan.
+    expect(screen.getByTestId("meta-holder")).toHaveTextContent(/06\.10\.2026/);
+    // Tarix jumlasidagi HQ nomi «Qaytarish yo'li» bilan bir xil; «Buyurtma tarixi» bu sahifada yig'ilgan.
+    const trackingStub = screen.getByTestId("order-tracking-stub");
+    expect(trackingStub).toHaveAttribute("data-default-collapsed", "true");
+    await waitFor(() => expect(trackingStub).toHaveAttribute("data-hq-name", "Toshkent HQ"));
     expect(screen.getByText(/Buyurtma marketga topshirilgan — mijoz, manzil/)).toBeInTheDocument();
     const card = await screen.findByTestId("order-return-path");
     expect(card).toHaveTextContent("Zanjir yopildi — posilka marketga qaytdi");
@@ -826,7 +867,7 @@ describe("NewOrderUpdate — bekor bosqichi va «Qaytarish yo'li» (maketlar *-o
 
   it("market: «Posilka hozir: Toshkent HQ — olib ketishingiz mumkin» va «QR kodni ochish» havolasi", async () => {
     orderState.status = "cancelled";
-    orderState.extra = { holder_type: "HQ", market_id: "m7", branch: { id: "1", name: "Toshkent HQ" } };
+    orderState.extra = { holder_type: "HQ", post_id: "78", market_id: "m7", branch: { id: "1", name: "Toshkent HQ" } };
     renderPage("market");
 
     const card = await screen.findByTestId("order-return-path");

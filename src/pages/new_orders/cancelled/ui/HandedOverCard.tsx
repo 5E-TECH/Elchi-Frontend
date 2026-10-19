@@ -116,6 +116,14 @@ export const HandedOverCard = ({ rows }: { rows: readonly HandedOverOrder[] }) =
   );
 
   const count = formatNumberLocalized(rows.length, { language });
+  const totalLine = (
+    <Trans
+      t={t}
+      i18nKey="cancelled.done.total"
+      values={{ sum: money(total) }}
+      components={{ strong: <strong className="font-semibold text-text" /> }}
+    />
+  );
 
   return (
     <Card
@@ -123,17 +131,16 @@ export const HandedOverCard = ({ rows }: { rows: readonly HandedOverOrder[] }) =
       padding="none"
       title={t("cancelled.done.title")}
       titleAddon={<Badge>{t("cancelled.done.count", { count: rows.length, value: count })}</Badge>}
-      description={t("cancelled.done.hint")}
-      actions={
-        <p className="m-0 whitespace-nowrap text-[13px] text-text-muted">
-          <Trans
-            t={t}
-            i18nKey="cancelled.done.total"
-            values={{ sum: money(total) }}
-            components={{ strong: <strong className="font-semibold text-text" /> }}
-          />
-        </p>
+      description={
+        <>
+          {t("cancelled.done.hint")}
+          {/* Telefonda jami izoh ostida (maketda sarlavha bloki `flex: 1 1 360px` — o'ngdagi jami pastga tushadi). */}
+          <span className="mt-1 block md:hidden" data-testid="handed-over-total-phone">
+            {totalLine}
+          </span>
+        </>
       }
+      actions={<p className="m-0 whitespace-nowrap text-[13px] text-text-muted max-md:hidden">{totalLine}</p>}
       data-testid="handed-over-card"
     >
       <DataTable

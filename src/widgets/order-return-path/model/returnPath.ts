@@ -67,6 +67,8 @@ export interface ReturnPath {
   currentPlace: string | null;
   /** Buyurtma marketining nomi («Nur Elektronika olib ketishi kutilmoqda»). */
   market: string | null;
+  /** Aniqlangan HQ nomi (`HQ_FALLBACK` emas) — tarix jumlalari ham shu nomni aytsin. */
+  hqName: string | null;
 }
 
 /** HQ nomi noma'lum bo'lsa — «HQ» (uchala tilda bir xil). */
@@ -124,9 +126,18 @@ const isCancelEvent = (event: TrackingEvent) => {
   return from !== "cancelled" && from !== "cancelled (sent)";
 };
 
+/** Bekor oqimidagi holatlar — ulardan tashqariga o'tish eski bekor zanjirini uzadi. */
+const CANCEL_FLOW_STATUSES = new Set<string>(["cancelled", "cancelled (sent)", "returned_to_market", "closed"]);
+
 const isHandoverEvent = (event: TrackingEvent) =>
   readCancelHandoverInfo(event) !== null ||
   (fromStatusOf(event) === "cancelled (sent)" && toStatusOf(event) === "closed");
+
+const isFlowBreak = (event: TrackingEvent) => {
+  if (isReceiveEvent(event) || isHandoverEvent(event)) return false;
+  const to = toStatusOf(event);
+  return to !== null && !CANCEL_FLOW_STATUSES.has(to);
+};
 
 const actorOf = (event: TrackingEvent) => {
   const name = text(event.actor?.name) || text(event.actor?.username) || text(event.user_name);
@@ -169,16 +180,32 @@ export const buildReturnPath = (
   const custody = events.filter(isCustodyEvent);
   const status = events.filter((event) => !isCustodyEvent(event));
 
-  // Zanjir oxirgi bekor qilishdan boshlanadi (qayta tiklanib, yana bekor qilingan bo'lishi mumkin).
-  let start = -1;
+  /**
+   * Zanjir oxirgi bekor qilishdan boshlanadi (qayta tiklanib, yana bekor qilingan bo'lishi mumkin). Bekor
+   * qilishdan keyin bekor oqimidan tashqari holatga o'tilgan bo'lsa (tiklangan; `/returns` oqimi:
+   * `waiting → returned_to_market`), o'sha eski bekor zanjiri olinmaydi — zanjir oxirgi shunday o'tishdan keyin.
+   */
+  let lastCancel = -1;
+  let lastBreak = -1;
   status.forEach((event, index) => {
-    if (isCancelEvent(event)) start = index;
+    if (isCancelEvent(event)) lastCancel = index;
+    else if (isFlowBreak(event)) lastBreak = index;
   });
-  const chain = start >= 0 ? status.slice(start) : status;
+  const chain = status.slice(lastCancel > lastBreak ? lastCancel : lastBreak + 1);
 
+  /** Jo'natish hodisasiga ENG yaqin custody hodisasi (±60 s). */
   const custodyNear = (event: TrackingEvent) => {
     const at = timeOf(event);
-    return custody.find((item) => Math.abs(timeOf(item) - at) <= 60_000) ?? null;
+    let best: TrackingEvent | null = null;
+    let bestGap = Infinity;
+    for (const item of custody) {
+      const gap = Math.abs(timeOf(item) - at);
+      if (gap <= 60_000 && gap < bestGap) {
+        best = item;
+        bestGap = gap;
+      }
+    }
+    return best;
   };
 
   /**
@@ -251,7 +278,7 @@ export const buildReturnPath = (
     }
   });
 
-  const placeNow = resolveCancelReturnPlace(order, stage, options.now);
+  const placeNow = resolveCancelReturnPlace(order, stage, { now: options.now });
   const closed = stage === "market";
   const pending: ReturnPathPending | null = (() => {
     switch (stage) {
@@ -291,5 +318,6 @@ export const buildReturnPath = (
     closed,
     currentPlace: stage === "branch" || stage === "hq" ? (pending?.place ?? null) : null,
     market: marketName,
+    hqName: hq === HQ_FALLBACK ? null : hq,
   };
 };

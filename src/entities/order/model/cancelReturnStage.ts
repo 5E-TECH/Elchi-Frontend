@@ -21,9 +21,13 @@ import { normalizeOrderStatus } from "./statusRegistry";
  *
  *    1 `courier`    «Bekor · kuryerda»   status=cancelled, holder COURIER
  *    2 `in_transit` «Bekor · yo'lda»     cancelled (sent) — detalda status, ro'yxatda `transport_status`
- *    3 `branch`     «Bekor · filialda»   status=cancelled, holder BRANCH, `canceled_post_id` yo'q
- *    4 `hq`         «Bekor · HQ'da»      status=cancelled, holder HQ
- *    5 `market`     «Marketga topshirildi» status=returned_to_market yoki holder MARKET
+ *    3 `branch`     «Bekor · filialda»   status=cancelled, holder BRANCH, `post_id` bor, `canceled_post_id` yo'q
+ *    4 `hq`         «Bekor · HQ'da»      status=cancelled, holder HQ, `post_id` (yoki `canceled_post_id`) bor
+ *    5 `market`     «Marketga topshirildi» status=returned_to_market yoki holder MARKET (eski `closed` ham)
+ *
+ *  Qabulgacha bekor qilingan (`created`/`new` → `cancelled`, backend `cancelPreDeliveryOrder`) buyurtmada
+ *  `holder_*` yaratilishdagicha (HQ yoki filial) qoladi, `post_id` esa bo'sh — posilka marketdan chiqmagan.
+ *  Shuning uchun filial/HQ bosqichi faqat qabul dalili (`post_id`, qabulda yoziladi) bo'lsa; aks holda `null`.
  *
  *  Ton (DESIGN_SYSTEM §8): 1–4 — danger (zanjir yopilmagan), ikonka va matn bilan
  *  ajraladi; «yo'lda» chegarali (`Bekor — jo'natilgan` kabi); 5 — neytral (kulrang,
@@ -96,15 +100,20 @@ export const resolveCancelReturnStage = (order: unknown): CancelReturnStage | nu
   const holder = holderTypeOf(record);
 
   if (status === "returned_to_market") return "market";
+  // F4 dan oldingi topshirishlar: `closed` + holder MARKET (holder MARKET ni faqat topshirish yo'llari yozadi).
+  if (status === "closed" && holder === "MARKET") return "market";
   if (status !== "cancelled" && status !== "cancelled (sent)") return null;
   if (holder === "MARKET") return "market";
   if (status === "cancelled (sent)" || transport === "cancelled (sent)") return "in_transit";
 
+  const cancelledPostId = text(record.canceled_post_id ?? record.cancelled_post_id);
+  const received = Boolean(text(record.post_id ?? record.postId) || cancelledPostId);
+
   switch (holder) {
     case "HQ":
-      return "hq";
+      return received ? "hq" : null;
     case "BRANCH":
-      return text(record.canceled_post_id ?? record.cancelled_post_id) ? null : "branch";
+      return received && !cancelledPostId ? "branch" : null;
     case "COURIER":
       return "courier";
     default:
@@ -142,24 +151,37 @@ export interface CancelReturnPlace {
   name: string | null;
   /** «Yo'lda» — nom maqsad bo'lib, «→ Toshkent HQ» shaklida. */
   arrow: boolean;
-  /** Joyda necha kun (`last_handover_at` dan, butun kun; < 1 kun — `null`). */
+  /**
+   * Joyda necha kun (`last_handover_at` dan, butun kun; < 1 kun — `null`). Faqat filial / HQ: kuryerda
+   * `last_handover_at` — kuryerga biriktirilgan vaqt (bekor qilish custody'ni o'zgartirmaydi) — `null`.
+   */
   days: number | null;
-  /** «Marketga topshirildi» — topshirilgan vaqt (`last_handover_at`). */
+  /** «Marketga topshirildi» — topshirilgan vaqt; faqat `options.handoverAt` berilsa (tafsilot, tarixdan). */
   at: number | null;
+}
+
+export interface ResolveCancelReturnPlaceOptions {
+  now?: number;
+  /**
+   * «Marketga topshirildi» vaqti — tafsilotda tarixdagi topshirish hodisasidan. `last_handover_at` ni
+   * `mark-returned-to-market` yangilamaydi (eski custody vaqti qoladi), shuning uchun ro'yxatda vaqt yo'q (BG2).
+   */
+  handoverAt?: unknown;
 }
 
 /**
  * Bosqich ostidagi joy qatori uchun ma'lumot — FAQAT javobda bor maydonlardan (1-bosqich,
  * backendsiz): joy nomi `branch.name` (bekor oqimida `branch_id` har jo'natish va qabulda
  * maqsad/joriy filialga almashadi; HQ ham filial — `findHqBranchId`), kuryer —
- * `courier.name`; muddat — `last_handover_at`. Nom yo'q bo'lsa `name: null` (taxmin yo'q).
+ * `courier.name`; muddat (filial / HQ) — `last_handover_at`. Nom yo'q bo'lsa `name: null` (taxmin yo'q).
  */
 export const resolveCancelReturnPlace = (
   order: unknown,
   stage: CancelReturnStage | null = resolveCancelReturnStage(order),
-  now: number = Date.now(),
+  options: ResolveCancelReturnPlaceOptions = {},
 ): CancelReturnPlace | null => {
   if (!stage) return null;
+  const now = options.now ?? Date.now();
   const record = asRecord(order);
   const branch = asRecord(record.branch);
   const branchId = text(branch.id);
@@ -177,7 +199,7 @@ export const resolveCancelReturnPlace = (
       return {
         name: sameCourier ? text(courier.name) || null : null,
         arrow: false,
-        days,
+        days: null,
         at: null,
       };
     }
@@ -194,7 +216,7 @@ export const resolveCancelReturnPlace = (
     case "hq":
       return { name: branchName, arrow: false, days, at: null };
     case "market":
-      return { name: branchName, arrow: false, days: null, at: handoverAt };
+      return { name: branchName, arrow: false, days: null, at: toTime(options.handoverAt) };
     default:
       return null;
   }

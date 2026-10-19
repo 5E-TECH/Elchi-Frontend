@@ -141,8 +141,8 @@ describe("OrderStatusBadge — bekor bosqichi (tizim-states-data §09)", () => {
   it.each([
     ["courier", "cancelled", { holder_type: "COURIER" }, "Bekor · kuryerda"],
     ["in_transit", "cancelled (sent)", {}, "Bekor · yo'lda"],
-    ["branch", "cancelled", { holder_type: "BRANCH" }, "Bekor · filialda"],
-    ["hq", "cancelled", { holder_type: "HQ" }, "Bekor · HQ'da"],
+    ["branch", "cancelled", { holder_type: "BRANCH", post_id: "41" }, "Bekor · filialda"],
+    ["hq", "cancelled", { holder_type: "HQ", post_id: "41" }, "Bekor · HQ'da"],
   ] as const)("%s — danger, ikonka bilan: «%s»", (stage, status, order, label) => {
     renderStage(status, order);
     const el = screen.getByTestId("badge");
@@ -170,7 +170,7 @@ describe("OrderStatusBadge — bekor bosqichi (tizim-states-data §09)", () => {
 
   it("joy qatori: «Toshkent HQ · 2 kun»", () => {
     const twoDaysAgo = new Date(Date.now() - 2 * 86_400_000 - 3_600_000).toISOString();
-    renderStage("cancelled", { holder_type: "HQ", branch: { id: "1", name: "Toshkent HQ" }, last_handover_at: twoDaysAgo }, true);
+    renderStage("cancelled", { holder_type: "HQ", post_id: "41", branch: { id: "1", name: "Toshkent HQ" }, last_handover_at: twoDaysAgo }, true);
     expect(screen.getByTestId("badge")).toHaveTextContent("Bekor · HQ'da");
     expect(screen.getByTestId("cancel-return-place")).toHaveTextContent("Toshkent HQ · 2 kun");
   });
@@ -182,7 +182,7 @@ describe("OrderStatusBadge — bekor bosqichi (tizim-states-data §09)", () => {
   });
 
   it("ma'lumot yo'q bo'lsa joy qatori chizilmaydi", () => {
-    renderStage("cancelled", { holder_type: "HQ" }, true);
+    renderStage("cancelled", { holder_type: "HQ", post_id: "41" }, true);
     expect(screen.queryByTestId("cancel-return-place")).toBeNull();
   });
 
@@ -193,7 +193,7 @@ describe("OrderStatusBadge — bekor bosqichi (tizim-states-data §09)", () => {
     await i18n.changeLanguage(lang);
     try {
       const at = new Date(Date.now() - 3 * 86_400_000 - 60_000).toISOString();
-      renderStage("cancelled", { holder_type: "HQ", branch: { name: "Toshkent HQ" }, last_handover_at: at }, true);
+      renderStage("cancelled", { holder_type: "HQ", post_id: "41", branch: { name: "Toshkent HQ" }, last_handover_at: at }, true);
       expect(screen.getByTestId("badge")).toHaveTextContent(label);
       expect(screen.getByTestId("cancel-return-place")).toHaveTextContent(place);
     } finally {

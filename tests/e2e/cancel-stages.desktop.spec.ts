@@ -71,7 +71,7 @@ test.describe("Bekor bosqichi — 1440px", () => {
     await expect(steps).toHaveCount(3);
     await expect(steps.nth(0)).toContainText("Bekor qilindi");
     await expect(steps.nth(0)).toContainText("Kuryer Akmal Rahimov · Sergeli tumani");
-    await expect(steps.nth(0)).toContainText("Sabab: Mijoz rad etdi");
+    await expect(steps.nth(0)).toContainText("Sabab: mijoz rad etdi");
     await expect(steps.nth(1)).toContainText("Kuryer Akmal Rahimov → Toshkent HQ");
     await expect(steps.nth(1)).toContainText("Pochta №2098");
     await expect(steps.nth(2)).toContainText("Toshkent HQ · Ro'yxatchi Bobur Xolmatov");
@@ -98,7 +98,7 @@ test.describe("Bekor bosqichi — 1440px", () => {
     const badge = header.getByText("Marketga topshirildi", { exact: true });
     await expect(badge).toBeVisible({ timeout: 60_000 });
     await expect(badge).toHaveClass(/bg-sunken/);
-    await expect(header.getByTestId("detail-stage-place")).toHaveText(/^Toshkent HQ · 06\.10\.2026, \d{2}:\d{2} · QR orqali$/);
+    await expect(header.getByTestId("detail-stage-place")).toHaveText(/^Toshkent HQ · 07\.10\.2026, \d{2}:\d{2} · QR orqali$/);
     await expect(page.getByText("Buyurtma marketga topshirilgan — mijoz, manzil, summa va mahsulotlarni o'zgartirib bo'lmaydi.")).toBeVisible();
 
     const card = page.getByTestId("order-return-path");

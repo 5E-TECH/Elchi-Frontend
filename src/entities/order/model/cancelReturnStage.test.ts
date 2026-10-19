@@ -42,23 +42,39 @@ describe("resolveCancelReturnStage — §3.2 jadvali", () => {
       "in_transit",
     ],
     [
-      "filialda (pochtasiz)",
-      { status: "cancelled", holder_type: "BRANCH", canceled_post_id: null },
+      "filialda (qabul qilingan, bekor pochtasiz)",
+      { status: "cancelled", holder_type: "BRANCH", post_id: "8", canceled_post_id: null },
       "branch",
     ],
     [
       "filialda, lekin pochtaga biriktirilgan — aniqlanmaydi",
-      { status: "cancelled", holder_type: "BRANCH", canceled_post_id: "41" },
+      { status: "cancelled", holder_type: "BRANCH", post_id: "8", canceled_post_id: "41" },
       null,
     ],
-    ["HQ'da", { status: "cancelled", holder_type: "HQ" }, "hq"],
-    ["holder kichik harf bilan", { status: "canceled", holder_type: "hq" }, "hq"],
+    ["HQ'da", { status: "cancelled", holder_type: "HQ", post_id: "8" }, "hq"],
+    [
+      "HQ'da — bekor pochtasi bilan qabul qilingan",
+      { status: "cancelled", holder_type: "HQ", post_id: null, canceled_post_id: "41" },
+      "hq",
+    ],
+    ["holder kichik harf bilan", { status: "canceled", holder_type: "hq", post_id: 8 }, "hq"],
+    [
+      "qabulgacha bekor (cancelPreDeliveryOrder): holder HQ, post_id yo'q — bosqich yo'q",
+      { status: "cancelled", holder_type: "HQ", post_id: null },
+      null,
+    ],
+    [
+      "qabulgacha bekor: holder BRANCH (filial uchun yaratilgan), post_id yo'q — bosqich yo'q",
+      { status: "cancelled", holder_type: "BRANCH", holder_branch_id: "12", post_id: null },
+      null,
+    ],
     ["topshirilgan", { status: "returned_to_market", holder_type: "MARKET" }, "market"],
     ["topshirilgan (holder yo'q)", { status: "RETURNED_TO_MARKET" }, "market"],
     ["bekor + holder MARKET", { status: "cancelled", holder_type: "MARKET" }, "market"],
     ["bekor, holder noma'lum", { status: "cancelled" }, null],
     ["bekor emas", { status: "waiting", holder_type: "COURIER" }, null],
-    ["yopilgan", { status: "closed", holder_type: "MARKET" }, null],
+    ["eski topshirish: closed + holder MARKET (F4 dan oldin)", { status: "closed", holder_type: "MARKET" }, "market"],
+    ["yopilgan (holder MARKET emas)", { status: "closed", holder_type: "HQ" }, null],
   ])("%s", (_name, order, expected) => {
     expect(resolveCancelReturnStage(order)).toBe(expected);
   });
@@ -157,11 +173,12 @@ describe("resolveCancelReturnPlace — joy qatori (faqat bor ma'lumotdan)", () =
         {
           status: "cancelled",
           holder_type: "HQ",
+          post_id: "8",
           branch: { id: "1", name: "Toshkent HQ" },
           last_handover_at: twoDaysAgo,
         },
         undefined,
-        now,
+        { now },
       ),
     ).toEqual({ name: "Toshkent HQ", arrow: false, days: 2, at: null });
   });
@@ -176,7 +193,7 @@ describe("resolveCancelReturnPlace — joy qatori (faqat bor ma'lumotdan)", () =
           last_handover_at: twoDaysAgo,
         },
         undefined,
-        now,
+        { now },
       ),
     ).toEqual({ name: "Toshkent HQ", arrow: true, days: null, at: null });
   });
@@ -185,14 +202,31 @@ describe("resolveCancelReturnPlace — joy qatori (faqat bor ma'lumotdan)", () =
     const base = {
       status: "cancelled",
       holder_type: "BRANCH",
+      post_id: "8",
       branch: { id: "12", name: "Urgut filiali" },
     };
     expect(
-      resolveCancelReturnPlace({ ...base, holder_branch_id: "12" }, undefined, now)?.name,
+      resolveCancelReturnPlace({ ...base, holder_branch_id: "12" }, undefined, { now })?.name,
     ).toBe("Urgut filiali");
     expect(
-      resolveCancelReturnPlace({ ...base, holder_branch_id: "99" }, undefined, now)?.name,
+      resolveCancelReturnPlace({ ...base, holder_branch_id: "99" }, undefined, { now })?.name,
     ).toBeNull();
+  });
+
+  it("kuryerda: kun yo'q — `last_handover_at` kuryerga biriktirilgan vaqt, bekor qilingan vaqt emas", () => {
+    expect(
+      resolveCancelReturnPlace(
+        {
+          status: "cancelled",
+          holder_type: "COURIER",
+          holder_courier_id: "7",
+          courier: { id: "7", name: "Ali" },
+          last_handover_at: "2026-10-10T09:00:00+05:00",
+        },
+        undefined,
+        { now },
+      ),
+    ).toEqual({ name: "Ali", arrow: false, days: null, at: null });
   });
 
   it("kuryerda: kuryer ismi (boshqa kuryer bo'lsa — yo'q)", () => {
@@ -202,14 +236,14 @@ describe("resolveCancelReturnPlace — joy qatori (faqat bor ma'lumotdan)", () =
       courier: { id: "7", name: "Jasur Tursunov" },
     };
     expect(
-      resolveCancelReturnPlace({ ...base, holder_courier_id: "7" }, undefined, now)?.name,
+      resolveCancelReturnPlace({ ...base, holder_courier_id: "7" }, undefined, { now })?.name,
     ).toBe("Jasur Tursunov");
     expect(
-      resolveCancelReturnPlace({ ...base, holder_courier_id: "8" }, undefined, now)?.name,
+      resolveCancelReturnPlace({ ...base, holder_courier_id: "8" }, undefined, { now })?.name,
     ).toBeNull();
   });
 
-  it("topshirilgan: joy va topshirilgan vaqt", () => {
+  it("topshirilgan (ro'yxat): joy, vaqtsiz — `mark-returned-to-market` `last_handover_at` ni yangilamaydi", () => {
     const place = resolveCancelReturnPlace(
       {
         status: "returned_to_market",
@@ -217,24 +251,36 @@ describe("resolveCancelReturnPlace — joy qatori (faqat bor ma'lumotdan)", () =
         last_handover_at: "1760845200000",
       },
       undefined,
-      now,
+      { now },
     );
-    expect(place).toEqual({ name: "Toshkent HQ", arrow: false, days: null, at: 1760845200000 });
+    expect(place).toEqual({ name: "Toshkent HQ", arrow: false, days: null, at: null });
+  });
+
+  it("topshirilgan: vaqt faqat tarixdan berilsa (`handoverAt`), `last_handover_at` emas", () => {
+    const order = {
+      status: "returned_to_market",
+      branch: { id: "1", name: "Toshkent HQ" },
+      last_handover_at: "1760845200000",
+    };
+    expect(
+      resolveCancelReturnPlace(order, undefined, { now, handoverAt: "2026-10-19T11:20:00+05:00" })?.at,
+    ).toBe(Date.parse("2026-10-19T11:20:00+05:00"));
+    expect(resolveCancelReturnPlace(order, undefined, { now, handoverAt: null })?.at).toBeNull();
   });
 
   it("bir kundan kam — kun yozilmaydi; sana yo'q yoki buzuq — kun yo'q", () => {
-    const base = { status: "cancelled", holder_type: "HQ", branch: { name: "Toshkent HQ" } };
+    const base = { status: "cancelled", holder_type: "HQ", post_id: "8", branch: { name: "Toshkent HQ" } };
     expect(
       resolveCancelReturnPlace(
         { ...base, last_handover_at: "2026-10-19T08:00:00+05:00" },
         undefined,
-        now,
+        { now },
       )?.days,
     ).toBeNull();
     expect(
-      resolveCancelReturnPlace({ ...base, last_handover_at: "falonchi" }, undefined, now)?.days,
+      resolveCancelReturnPlace({ ...base, last_handover_at: "falonchi" }, undefined, { now })?.days,
     ).toBeNull();
-    expect(resolveCancelReturnPlace(base, undefined, now)?.days).toBeNull();
+    expect(resolveCancelReturnPlace(base, undefined, { now })?.days).toBeNull();
   });
 
   it("bekor emas — `null`", () => {

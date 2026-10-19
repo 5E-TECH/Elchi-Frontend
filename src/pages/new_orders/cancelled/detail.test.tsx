@@ -347,6 +347,8 @@ describe("Bekor qilinganlarni topshirish — «Topshirildi (N)» (maket superadm
     expect(within(card).getByText("2 ta")).toBeInTheDocument();
     expect(card).toHaveTextContent("Sahifa yangilansa, ro'yxat tozalanadi");
     expect(card).toHaveTextContent(/jami 341\s000 so'm/);
+    // Telefonda jami izoh ostida (o'ngdagi ustun md dan kichikda yashirin).
+    expect(within(card).getByTestId("handed-over-total-phone")).toHaveTextContent(/jami 341\s000 so'm/);
     const table = within(card).getByRole("table", { name: "Topshirilgan buyurtmalar" });
     expect(within(table).getByRole("link", { name: "№501" })).toHaveAttribute("href", "/orders/edit/501");
     expect(within(table).getAllByText("Marketga topshirildi")).toHaveLength(2);
