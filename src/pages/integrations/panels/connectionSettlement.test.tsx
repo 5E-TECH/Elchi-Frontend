@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { createInstance } from "i18next";
+import uzLocale from "../../../locales/uz/integrations.json";
+import ruLocale from "../../../locales/ru/integrations.json";
+import enLocale from "../../../locales/en/integrations.json";
 import ConnectionSettlement from "./ConnectionSettlement";
 import { renderWithProviders } from "../../../test/test-utils";
 import type { Connection } from "../useConnections";
@@ -130,6 +134,28 @@ describe("ConnectionSettlement — to'lov oynasi", () => {
     expect(text).toContain("To'lanishi kerak4 510 000 so'm");
     expect(text).toContain("Qarzlar eng eskisidan boshlab yopiladi, hamkor avansi ham hisobga olinadi.");
     expect(within(dialog).getByRole("button", { name: "Orqaga" })).toBeInTheDocument();
+  });
+
+  it("qarz yo'q — oynada ham avans ishorasiz (panel bilan bir xil)", async () => {
+    balance = { integration_id: "7", outstanding_amount: 0, outstanding_count: 0, advance_balance: 490000, payable_amount: 0 };
+    const { dialog } = await openPayDialog();
+    await waitFor(() => expect(norm(dialog.textContent)).toContain("Hamkor avansi490 000 so'm"));
+    expect(norm(dialog.textContent)).not.toContain("−490 000");
+  });
+
+  it("yozuvlar soni ko'plik shakli bilan (en «1 record», ru «2 записи»)", async () => {
+    const resources = Object.fromEntries(
+      Object.entries({ uz: uzLocale, ru: ruLocale, en: enLocale }).map(([lng, ns]) => [lng, { integrations: ns }]),
+    );
+    const i18n = createInstance();
+    await i18n.init({ resources, lng: "en", ns: ["integrations"], defaultNS: "integrations", interpolation: { escapeValue: false } });
+    const tr = (lng: string, key: string, count: number) => i18n.getFixedT(lng)(key, { count });
+    expect(tr("en", "stlPayRecords", 1)).toBe("1 record");
+    expect(tr("en", "console.pendingRecords", 5)).toBe("5 records pending");
+    expect(tr("ru", "stlPayRecords", 2)).toBe("2 записи");
+    expect(tr("ru", "stlPayRecords", 5)).toBe("5 записей");
+    expect(tr("ru", "console.pendingRecords", 1)).toBe("1 запись ожидает");
+    expect(tr("uz", "stlPayRecords", 3)).toBe("3 ta yozuv");
   });
 
   it("qoldiq o'qilmasa — oynada «0 so'm» emas «—», tafsilot yo'q; panelda xato matni", async () => {

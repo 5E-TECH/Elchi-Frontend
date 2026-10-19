@@ -58,10 +58,11 @@ import type { Connection } from "../useConnections";
  */
 
 /**
- * Matn ichidagi havola (maket alert ichidagi `<a>`): ko'k, tagi chizilgan. ⚠️ Tarjimadagi teg nomi `<cashbox>`,
+ * Matn ichidagi havola (maket alert ichidagi `<a>`): ko'k, tagi chizilgan, oddiy qalinlikda (maketdagi kabi). Telefonda
+ * balandligi 44px dan kichik — matn ichidagi havola (WCAG 2.5.8 «inline» istisnosi). ⚠️ Tarjimadagi teg nomi `<cashbox>`,
  * `<link>` EMAS — `<link>` HTML'da bo'sh (void) teg, Trans uning ichidagi matnni havoladan tashqariga chiqaradi.
  */
-const INLINE_LINK = "font-semibold text-action-fg underline underline-offset-2 hover:text-action-hover";
+const INLINE_LINK = "text-action-fg underline underline-offset-2 hover:text-action-hover";
 const STRONG = <strong className="font-semibold text-text" />;
 
 const STATUS_TAG: Record<string, { tone: Tone; labelKey: string }> = {
@@ -246,6 +247,13 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
   );
 };
 
+/**
+ * «Hamkor avansi» summasi — panel va to'lov oynasida bir xil: qarz bor — avans undan ayriladi («−N»); qarz yo'q —
+ * avans kutib turgan summa (ishorasiz).
+ */
+const advanceValue = ({ advance, noDebt }: BalanceSummary, language: string) =>
+  noDebt ? formatMoneyLocalized(advance, { language }) : formatSignedMoneyLocalized(-advance, { language });
+
 /** Qoldiq tafsiloti qatori (maket `<dl>`: chapda nom, o'ngda qalin summa va ixtiyoriy izoh). */
 const BalanceRow = ({
   label,
@@ -330,8 +338,7 @@ const BalanceBlock = ({
         <BalanceRow first label={t("stlOutstanding")} value={money(outstanding)} />
         <BalanceRow
           label={t("stlAdvance")}
-          // Qarz bor — avans undan ayriladi («−N»); qarz yo'q — avans kutib turgan summa (ishorasiz).
-          value={noDebt ? money(advance) : formatSignedMoneyLocalized(-advance, { language })}
+          value={advanceValue(summary, language)}
           note={advance > 0 ? t(noDebt ? "stlAdvanceAppliesNext" : "stlAdvanceFromPrevious") : undefined}
         />
       </dl>
@@ -466,7 +473,7 @@ const PayDialog = ({
               value={money(summary.outstanding)}
               note={t("stlPayRecords", { count: summary.outstandingCount })}
             />
-            <BalanceRow label={t("stlAdvance")} value={formatSignedMoneyLocalized(-summary.advance, { language })} />
+            <BalanceRow label={t("stlAdvance")} value={advanceValue(summary, language)} />
             <BalanceRow strong label={t("stlPayable")} value={money(summary.payable)} />
           </dl>
         ) : null}
