@@ -1,17 +1,26 @@
 // dizayn-v2: superadmin-integrations-panel-settlement, superadmin-integrations-settlement-pay-dialog, admin-integrations-conn-settlement, admin-integrations-settlement-pay-dialog
 import { useState, type FormEvent } from "react";
-import { useTranslation } from "react-i18next";
-import { Banknote, CircleCheck, Clock, Plus, ReceiptText, Wallet, CircleX } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
+import { Banknote, CircleCheck, Clock, Info, Plus, ReceiptText, Wallet, CircleX } from "lucide-react";
 import {
+  resolveBalance,
   toAmount,
   useCreateRemittance,
   useReceivableBalance,
   useReceivables,
+  type BalanceSummary,
   type ReceivableRow,
 } from "../../../entities/integrations/settlement";
-import { getBackendErrorMessage } from "../../../shared/lib/backendError";
+import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
-import { CURRENCY_LABEL, formatMoneyLocalized, formatNumberLocalized, resolveMoneyLanguage } from "../../../shared/lib/formatMoney";
+import {
+  CURRENCY_LABEL,
+  formatMoneyLocalized,
+  formatNumberLocalized,
+  formatSignedMoneyLocalized,
+  resolveMoneyLanguage,
+} from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
 import {
   Badge,
@@ -36,15 +45,24 @@ import type { Connection } from "../useConnections";
 /**
  * HISOB-KITOB — tashuvchi yig'gan pul va bizga qarzi (maket `*-panel-settlement`).
  *
- *   «Bu ekran kassa emas» → «Qoldiq» (yopilmagan qarz + «To'lov olindi») → «Qarz yozuvlari» (chiplar + jadval
- *   + «Shu sahifada …» + sahifalash). «Qarz harakati · oxirgi 30 kun» — «Taklif» (seriya API'da yo'q), chizilmaydi.
+ *   «To'lov asosiy kassaga o'zi yoziladi» → «Qoldiq» (to'lanishi kerak, yopilmagan qarz, hamkor avansi, formula
+ *   + «To'lov olindi») → «Qarz yozuvlari» (chiplar + jadval + «Shu sahifada …» + sahifalash).
+ *   Hali kodda yo'q (keyingi PR'lar): «Olingan to'lovlar» va bekor qilish (IS-3), «To'lov №» ustuni, ortiqcha
+ *   summa va natija oynasi (IS-2). «Kim kiritdi» ismi va «Qarz harakati» grafigi — Taklif, chizilmaydi.
  *
- * ⚠️ BU EKRAN KASSAGA YOZMAYDI. Backend ham shunday: «Reconciliation only — does not post to a cashbox».
- * Buni ekranda AYTISH shart, aks holda operator pulni ikki marta kiritganini bilmay qoladi.
+ * ⚠️ «To'lov olindi» summasi ASOSIY KASSAGA O'ZI YOZILADI (backend N3yNa6rO). Ekran buni aytadi — aks holda
+ * operator pulni kassaga qo'lda qayta kiritib, ikki marta yozadi.
  *
- * To'lov oynasi (`*-settlement-pay-dialog`) o'zi pul amalining tasdig'i: summa, «Kassaga yozilmaydi»,
- * «Yozish» — alohida «Ishonchingiz komilmi?» oynasi maketda yo'q.
+ * To'lov oynasi (`*-settlement-pay-dialog`) o'zi pul amalining tasdig'i: summa, «Summa asosiy kassaga kirim
+ * bo'ladi», qoldiq tafsiloti, «Yozish» — alohida «Ishonchingiz komilmi?» oynasi maketda yo'q.
  */
+
+/**
+ * Matn ichidagi havola (maket alert ichidagi `<a>`): ko'k, tagi chizilgan. ⚠️ Tarjimadagi teg nomi `<cashbox>`,
+ * `<link>` EMAS — `<link>` HTML'da bo'sh (void) teg, Trans uning ichidagi matnni havoladan tashqariga chiqaradi.
+ */
+const INLINE_LINK = "font-semibold text-action-fg underline underline-offset-2 hover:text-action-hover";
+const STRONG = <strong className="font-semibold text-text" />;
 
 const STATUS_TAG: Record<string, { tone: Tone; labelKey: string }> = {
   pending: { tone: "warning", labelKey: "settlePending" },
@@ -89,8 +107,7 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
 
   const rows = list.data?.items ?? [];
   const total = list.data?.pagination.total ?? rows.length;
-  const outstanding = toAmount(balance.data?.outstanding_amount ?? 0);
-  const outstandingCount = balance.data?.outstanding_count ?? 0;
+  const summary = resolveBalance(balance.data);
   const pageSum = rows.reduce((acc, r) => acc + toAmount(r.amount), 0);
 
   const statusBadge = (r: ReceivableRow) => {
@@ -113,46 +130,35 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
 
   return (
     <div className="flex min-w-0 flex-col">
-      <PanelSection>
-        <InlineAlert tone="info" title={t("stlNotCashbox")}>
-          {t("stlNotCashboxDesc")}
+      {/* ═══ KASSA OGOHLANTIRISHI + QOLDIQ (maketda bitta blok) ═══ */}
+      <PanelSection aria-label={t("stlBalance")} className="gap-5">
+        <InlineAlert tone="info" role="status" title={t("stlCashboxAutoTitle")}>
+          <Trans
+            t={t}
+            i18nKey="stlCashboxAutoDesc"
+            components={{ cashbox: <Link to="/payments/main-cashbox" className={INLINE_LINK} />, strong: STRONG }}
+          />
         </InlineAlert>
-      </PanelSection>
 
-      {/* ═══ QOLDIQ ═══ */}
-      <PanelSection aria-label={t("stlBalance")}>
-        <SectionHead
-          title={t("stlBalance")}
-          icon={Wallet}
-          actions={
-            <Button variant="secondary" leftIcon={Plus} onClick={() => setPayOpen(true)} className="max-md:min-h-11">
-              {t("console.paymentReceived")}
-            </Button>
-          }
-        />
-        <div className="flex flex-col gap-1">
-          <span className="text-[13px] font-semibold text-text-muted">{t("stlOutstanding")}</span>
-          {balance.isLoading ? (
-            <Skeleton width={180} height={36} />
-          ) : (
-            <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span className="whitespace-nowrap text-[28px] leading-9 font-bold text-text proportional-nums">
-                {formatNumberLocalized(outstanding, { language })}
-                <span className="sr-only"> </span>
-                <span className="ml-1 text-sm font-semibold text-text-muted">{CURRENCY_LABEL[resolveMoneyLanguage(language)]}</span>
-              </span>
-              {outstandingCount > 0 ? (
-                <Badge tone="warning" dot>
-                  {t("console.pendingRecords", { count: outstandingCount })}
-                </Badge>
-              ) : null}
+        <div className="flex min-w-0 flex-col gap-4">
+          <SectionHead
+            title={t("stlBalance")}
+            icon={Wallet}
+            actions={
+              <Button variant="secondary" leftIcon={Plus} onClick={() => setPayOpen(true)} className="max-md:min-h-11">
+                {t("console.paymentReceived")}
+              </Button>
+            }
+          />
+          <BalanceBlock summary={summary} loading={balance.isLoading} error={balance.isError} hasData={Boolean(balance.data)} />
+          <p className="flex items-start gap-2 text-[13px] leading-[18px] text-text-muted">
+            <Info size={16} aria-hidden="true" className="mt-px flex-none" />
+            <span>
+              {t("stlBalanceNoteA")} <strong className="font-semibold text-text">{t("stlBalanceNoteBold")}</strong>{" "}
+              {t("stlBalanceNoteB")}
             </span>
-          )}
-          {balance.isError ? <span className="text-xs text-danger-fg">{t("ovwBalanceError")}</span> : null}
+          </p>
         </div>
-        <p className="text-xs text-text-muted">
-          {t("stlBalanceNoteA")} {t("stlBalanceNoteBold")} {t("stlBalanceNoteB")}
-        </p>
       </PanelSection>
 
       {/* ═══ QARZ YOZUVLARI ═══ */}
@@ -228,7 +234,8 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
       <PayDialog
         open={payOpen}
         connection={connection}
-        outstanding={outstanding}
+        // Qoldiq o'qilmagan bo'lsa — oynada «0 so'm» emas, «—» (nol degani emas).
+        summary={balance.data ? summary : null}
         onClose={() => setPayOpen(false)}
         onPaid={() => {
           void balance.refetch();
@@ -239,22 +246,119 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
   );
 };
 
+/** Qoldiq tafsiloti qatori (maket `<dl>`: chapda nom, o'ngda qalin summa va ixtiyoriy izoh). */
+const BalanceRow = ({
+  label,
+  value,
+  note,
+  strong,
+  first,
+}: {
+  label: string;
+  value: string;
+  note?: string;
+  strong?: boolean;
+  first?: boolean;
+}) => (
+  <div className={cx("flex items-center justify-between gap-3 py-2.5", !first && "border-t border-border")}>
+    <dt className={cx("min-w-0 text-[13px] text-text", strong && "font-semibold")}>{label}</dt>
+    <dd className="m-0 flex flex-col items-end gap-0.5">
+      <span className="whitespace-nowrap font-semibold text-text proportional-nums">{value}</span>
+      {note ? <span className="text-right text-xs text-text-subtle">{note}</span> : null}
+    </dd>
+  </div>
+);
+
+/**
+ * «Qoldiq» bloki (maket `*-panel-settlement`): «To'lanishi kerak» (`payable_amount`) katta son + «N ta yozuv
+ * kutilmoqda» / «Qarz yo'q»; ostida «Yopilmagan qarz» va «Hamkor avansi» (qarz bor — «−N», izoh «oldingi to'lovdan
+ * ortib qolgan»; qarz yo'q — «N», izoh «keyingi qarzlarga o'zi qo'llanadi»), so'ng formula izohi (qarz bo'lsa).
+ */
+const BalanceBlock = ({
+  summary,
+  loading,
+  error,
+  hasData,
+}: {
+  summary: BalanceSummary;
+  loading: boolean;
+  error: boolean;
+  hasData: boolean;
+}) => {
+  const { t, i18n } = useTranslation("integrations");
+  const language = i18n.language;
+  const money = (value: number) => formatMoneyLocalized(value, { language });
+  const { payable, outstanding, outstandingCount, advance, noDebt } = summary;
+
+  if (loading) {
+    return (
+      <div className="flex w-full max-w-[560px] flex-col gap-3" aria-busy="true">
+        <Skeleton width={120} height={14} />
+        <Skeleton width={200} height={36} />
+        <Skeleton height={40} />
+      </div>
+    );
+  }
+  if (error && !hasData) {
+    return <p className="text-xs text-danger-fg">{t("ovwBalanceError")}</p>;
+  }
+
+  return (
+    <div className="flex w-full max-w-[560px] min-w-0 flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <span className="text-[13px] text-text-muted">{t("stlPayable")}</span>
+        <span className="whitespace-nowrap text-[28px] leading-9 font-bold tracking-[-.01em] text-text proportional-nums max-md:text-[22px] max-md:leading-[30px]">
+          {formatNumberLocalized(payable, { language })}
+          <span className="sr-only"> </span>
+          <span className="ml-1 text-sm font-semibold tracking-normal text-text-muted max-md:text-[13px]">
+            {CURRENCY_LABEL[resolveMoneyLanguage(language)]}
+          </span>
+        </span>
+        <span className="mt-1 flex flex-wrap gap-1.5">
+          {outstandingCount > 0 ? (
+            <Badge tone="warning" dot>
+              {t("console.pendingRecords", { count: outstandingCount })}
+            </Badge>
+          ) : noDebt ? (
+            <Badge tone="neutral" dot>
+              {t("stlNoDebt")}
+            </Badge>
+          ) : null}
+        </span>
+      </div>
+      <dl className="m-0 flex flex-col">
+        <BalanceRow first label={t("stlOutstanding")} value={money(outstanding)} />
+        <BalanceRow
+          label={t("stlAdvance")}
+          // Qarz bor — avans undan ayriladi («−N»); qarz yo'q — avans kutib turgan summa (ishorasiz).
+          value={noDebt ? money(advance) : formatSignedMoneyLocalized(-advance, { language })}
+          note={advance > 0 ? t(noDebt ? "stlAdvanceAppliesNext" : "stlAdvanceFromPrevious") : undefined}
+        />
+      </dl>
+      {noDebt ? null : <p className="text-xs text-text-subtle">{t("stlPayableFormula")}</p>}
+      {error ? <span className="text-xs text-danger-fg">{t("ovwBalanceError")}</span> : null}
+    </div>
+  );
+};
+
 /** «Tashuvchidan olingan to'lov» oynasi (maket `*-settlement-pay-dialog`; telefonda pastki varaqa). */
 const PayDialog = ({
   open,
   connection,
-  outstanding,
+  summary,
   onClose,
   onPaid,
 }: {
   open: boolean;
   connection: Connection;
-  outstanding: number;
+  /** `null` — qoldiq o'qilmagan: summalar o'rnida «—», tafsilot ko'rsatilmaydi. */
+  summary: BalanceSummary | null;
   onClose: () => void;
   onPaid: () => void;
 }) => {
   const { t, i18n } = useTranslation("integrations");
   const language = i18n.language;
+  const money = (value: number) => formatMoneyLocalized(value, { language });
   const createRemittance = useCreateRemittance();
   const [amount, setAmount] = useState("");
   const [reference, setReference] = useState("");
@@ -300,8 +404,9 @@ const PayDialog = ({
       reset();
       onClose();
       onPaid();
-    } catch (error) {
-      notify.error(getBackendErrorMessage(error) || t("console.paymentFailed"));
+    } catch {
+      // Xom backend matni (inglizcha `message`) ko'rsatilmaydi — faqat i18n matn.
+      notify.error(t("console.paymentFailed"), { description: t("stlPayFailedDesc") });
     }
   };
 
@@ -311,14 +416,17 @@ const PayDialog = ({
       onClose={close}
       busy={createRemittance.isPending}
       title={t("stlPayTitle")}
-      description={t("console.payDialogSub", { name: connection.name, amount: formatMoneyLocalized(outstanding, { language }) })}
+      description={t("console.payDialogSubPayable", {
+        name: connection.name,
+        amount: summary ? money(summary.payable) : "—",
+      })}
       icon={Wallet}
       size="md"
       onSubmit={(event) => void submit(event)}
       footer={
         <>
           <Button variant="secondary" onClick={close} disabled={createRemittance.isPending}>
-            {t("npCancel")}
+            {t("stlPayBack")}
           </Button>
           <Button type="submit" loading={createRemittance.isPending}>
             {t("stlPayOk")}
@@ -327,8 +435,8 @@ const PayDialog = ({
       }
     >
       <div className="flex flex-col gap-4">
-        <InlineAlert tone="warning" title={t("stlPayWarn")}>
-          {t("stlPayWarnDesc")}
+        <InlineAlert tone="info" role="status" title={t("stlPayCashboxTitle")}>
+          {t("stlPayCashboxDesc")}
         </InlineAlert>
         <Field label={t("stlAmount")} required error={amountError}>
           <TextInput
@@ -343,15 +451,30 @@ const PayDialog = ({
             placeholder="1 500 000"
           />
         </Field>
-        <Field label={t("stlReference")} hint={t("stlReferenceHint")}>
+        <Field label={t("stlPayReference")} hint={t("stlPayReferenceHint")}>
           <TextInput value={reference} onValueChange={setReference} placeholder="TXN-2026-0912" />
         </Field>
         <Field label={t("stlNote")}>
           <TextInput multiline value={note} onValueChange={setNote} placeholder={t("stlNotePlaceholder")} rows={2} />
         </Field>
-        <p className="text-xs text-text-muted">
-          {t("stlOldestFirstA")} {t("stlOldestFirstBold")} {t("stlOldestFirstB")}{" "}
-          <span className="font-semibold text-text">{formatMoneyLocalized(outstanding, { language })}</span>
+        {/* Qoldiq tafsiloti (maket `<dl>` `bg-sunken` ichida) — summani nimaga qarab yozish kerakligi. */}
+        {summary ? (
+          <dl className="m-0 flex flex-col rounded-[10px] bg-sunken px-3.5 py-1">
+            <BalanceRow
+              first
+              label={t("stlOutstanding")}
+              value={money(summary.outstanding)}
+              note={t("stlPayRecords", { count: summary.outstandingCount })}
+            />
+            <BalanceRow label={t("stlAdvance")} value={formatSignedMoneyLocalized(-summary.advance, { language })} />
+            <BalanceRow strong label={t("stlPayable")} value={money(summary.payable)} />
+          </dl>
+        ) : null}
+        <p className="flex items-start gap-2 text-[13px] leading-[18px] text-text-muted">
+          <Info size={16} aria-hidden="true" className="mt-px flex-none" />
+          <span>
+            <Trans t={t} i18nKey="stlPayOldestFirst" components={{ strong: STRONG }} />
+          </span>
         </p>
       </div>
     </Dialog>

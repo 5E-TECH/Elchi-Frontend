@@ -6,18 +6,15 @@ import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryE
 /**
  * HISOB-KITOB — tashuvchi yig'gan COD va bizga qarzi.
  *
- * NEGA KERAK. Tashuvchi (LDG kabi) posilkani yetkazadi va pulni MIJOZDAN
- * O'ZI yig'adi. O'sha pul bizga qarz bo'lib turadi, keyin davriy o'tkazma
- * bilan yopiladi. Ikki tomonning daftari ajralib ketmasligi uchun bitta
- * joyda solishtirish kerak — PCS'da aynan shunday ekran bor va u yaxshi
- * ishlaydi.
+ * Tashuvchi (LDG kabi) posilkani yetkazadi va pulni MIJOZDAN o'zi yig'adi. O'sha pul bizga qarz bo'lib turadi,
+ * keyin davriy o'tkazma («To'lov olindi») bilan yopiladi.
  *
- * ⚠️ BU EKRAN KASSA EMAS. Backend ham shunday deydi: "Reconciliation only —
- * does not post to a cashbox". Bu yerdagi to'lov yozuvi kassa balansiga
- * TEGMAYDI — u faqat "qancha yig'ildi / qancha to'landi" farqini yuritadi.
- * Kassa harakati alohida, odatdagi kassa oqimi orqali kiritiladi. Buni
- * ekranda ham aytish SHART, aks holda operator pulni ikki marta
- * kiritganini bilmay qoladi.
+ * ⚠️ TO'LOV ASOSIY KASSAGA O'ZI YOZILADI (N3yNa6rO): backend `createRemittance` summani MAIN kassaga kirim qiladi
+ * (javobda `cashbox_posted`), bekor qilinsa — teskari chiqim. Ekran operatorga buni aytadi: pulni kassaga qo'lda
+ * qayta kiritsa, u ikki marta yoziladi.
+ *
+ * Qoldiq (`receivable-balance`): `outstanding_amount` — yopilmagan qarz, `advance_balance` — oldingi to'lovlardan
+ * ortib qolgan hamkor avansi, `payable_amount = max(0, outstanding − advance)` — to'lanishi kerak.
  */
 
 export type ReceivableStatus = "pending" | "settled" | "cancelled";
@@ -38,8 +35,13 @@ export interface ReceivableRow {
 
 export interface ReceivableBalance {
   integration_id: string;
-  outstanding_amount: number;
+  /** Yopilmagan (PENDING) qarzlar yig'indisi. */
+  outstanding_amount: number | string;
   outstanding_count: number;
+  /** Hamkor avansi — oldingi to'lovlarning qarzga sig'magan qoldig'i (≥ 0). Eski backendda yo'q. */
+  advance_balance?: number | string | null;
+  /** To'lanishi kerak = max(0, yopilmagan qarz − avans). Eski backendda yo'q — `resolveBalance` o'zi hisoblaydi. */
+  payable_amount?: number | string | null;
 }
 
 const unwrap = <T>(raw: unknown, fallback: T): T => {
@@ -55,7 +57,32 @@ export const toAmount = (v: string | number | null | undefined): number => {
   return Number.isFinite(n) ? (n as number) : 0;
 };
 
-export const money = (v: number) => `${Math.round(v).toLocaleString("uz-UZ")} so'm`;
+export interface BalanceSummary {
+  /** Yopilmagan qarz. */
+  outstanding: number;
+  outstandingCount: number;
+  /** Hamkor avansi (≥ 0). */
+  advance: number;
+  /** To'lanishi kerak (≥ 0). */
+  payable: number;
+  /** Qarz ham, to'lanadigan summa ham yo'q — «Qarz yo'q». */
+  noDebt: boolean;
+}
+
+/**
+ * Qoldiq javobini ekran uchun songa keltiradi. `payable_amount` kelmasa (eski backend) — formuladan:
+ * `max(0, outstanding − advance)`; manfiy avans 0 deb olinadi (backend ham shunday qisadi).
+ */
+export const resolveBalance = (raw?: ReceivableBalance | null): BalanceSummary => {
+  const outstanding = toAmount(raw?.outstanding_amount ?? 0);
+  const outstandingCount = Math.max(0, Number(raw?.outstanding_count ?? 0) || 0);
+  const advance = Math.max(0, toAmount(raw?.advance_balance ?? 0));
+  const payable =
+    raw?.payable_amount === undefined || raw?.payable_amount === null
+      ? Math.max(0, outstanding - advance)
+      : Math.max(0, toAmount(raw.payable_amount));
+  return { outstanding, outstandingCount, advance, payable, noDebt: outstanding <= 0 && outstandingCount === 0 };
+};
 
 export const settlementKey = "integration-settlement";
 
@@ -69,6 +96,8 @@ export const useReceivableBalance = (integrationId?: string, options?: SilentErr
           integration_id: integrationId!,
           outstanding_amount: 0,
           outstanding_count: 0,
+          advance_balance: 0,
+          payable_amount: 0,
         }),
       ),
     ...silentErrorMeta(options),

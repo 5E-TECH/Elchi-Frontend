@@ -6,6 +6,9 @@ import { renderWithProviders } from "../../../test/test-utils";
 import type { Connection } from "../useConnections";
 
 /**
+ * IS-1 (N3yNa6rO): «To'lov olindi» summasi ASOSIY KASSAGA o'zi yoziladi — panel eski «Bu ekran kassa emas» matnini
+ * aytmaydi, «Qoldiq» bloki `payable_amount` / `advance_balance` ni ko'rsatadi, oyna «to'lanishi kerak» bilan.
+ *
  * Hisob-kitob → «Tashuvchidan olingan to'lov» oynasi (maket `*-settlement-pay-dialog`, spec §9 «to'lov dialogi
  * validatsiyasi»): bo'sh / 0 summa yuborilmaydi; to'g'ri summa — `POST integrations/:id/remittances`
  * `{ amount, reference?, note? }` (bo'sh matnlar yuborilmaydi), so'ng qoldiq va ro'yxat qayta o'qiladi;
@@ -33,13 +36,24 @@ const carrier = {
   raw: { slug: "elchi", base_url: "https://api.elchi.uz", auth_type: "api_key", last_sync_at: null },
 } as unknown as Connection;
 
-const BALANCE = { integration_id: "7", outstanding_amount: "5000000.00", outstanding_count: 3 };
+const BALANCE = {
+  integration_id: "7",
+  outstanding_amount: "4860000.00",
+  outstanding_count: 23,
+  advance_balance: 350000,
+  payable_amount: 4510000,
+};
+let balance: Record<string, unknown> = BALANCE;
+
+/** Pul matnidagi bo'linmas bo'sh joylarni oddiyga keltiradi. */
+const norm = (value: string | null | undefined) => (value ?? "").replace(/\s/g, " ");
 
 beforeEach(() => {
+  balance = BALANCE;
   apiGetMock.mockReset().mockImplementation((url: string) =>
     Promise.resolve(
       String(url).includes("receivable-balance")
-        ? { data: { statusCode: 200, data: BALANCE } }
+        ? { data: { statusCode: 200, data: balance } }
         : { data: { statusCode: 200, data: { items: [], pagination: { total: 0, page: 1, limit: 20 } } } },
     ),
   );
@@ -56,7 +70,80 @@ const openPayDialog = async () => {
 
 const balanceCalls = () => apiGetMock.mock.calls.filter(([url]) => String(url).includes("receivable-balance")).length;
 
+describe("ConnectionSettlement — kassa matni va «Qoldiq»", () => {
+  it("⭐ «To'lov asosiy kassaga o'zi yoziladi» — Asosiy kassa havolasi bilan; eski «kassa emas» matni yo'q", async () => {
+    renderWithProviders(<ConnectionSettlement connection={carrier} />);
+    const alert = await screen.findByText("To'lov asosiy kassaga o'zi yoziladi");
+    const box = alert.closest("[data-tone]") as HTMLElement;
+    expect(within(box).getByRole("link", { name: "Asosiy kassaga" })).toHaveAttribute("href", "/payments/main-cashbox");
+    expect(within(box).getByText("qo'lda qayta kiritmang").tagName).toBe("STRONG");
+    expect(screen.queryByText(/kassa emas/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Kassaga yozilmaydi/)).not.toBeInTheDocument();
+  });
+
+  it("⭐ to'lanishi kerak, yopilmagan qarz, hamkor avansi «−N» va formula", async () => {
+    renderWithProviders(<ConnectionSettlement connection={carrier} />);
+    const section = await screen.findByRole("region", { name: "Qoldiq" });
+    await within(section).findByText("To'lanishi kerak");
+    const text = norm(section.textContent);
+    expect(text).toContain("4 510 000");
+    expect(text).toContain("23 ta yozuv kutilmoqda");
+    expect(text).toContain("Yopilmagan qarz4 860 000 so'm");
+    expect(text).toContain("Hamkor avansi−350 000 so'moldingi to'lovdan ortib qolgan");
+    expect(text).toContain("To'lanishi kerak = yopilmagan qarz − hamkor avansi");
+    expect(within(section).queryByText("Qarz yo'q")).not.toBeInTheDocument();
+  });
+
+  it("qarz yo'q (ortiqcha to'lovdan keyin) — «Qarz yo'q», avans ishorasiz, formula yo'q", async () => {
+    balance = { integration_id: "7", outstanding_amount: 0, outstanding_count: 0, advance_balance: 490000, payable_amount: 0 };
+    renderWithProviders(<ConnectionSettlement connection={carrier} />);
+    const section = await screen.findByRole("region", { name: "Qoldiq" });
+    expect(await within(section).findByText("Qarz yo'q")).toBeInTheDocument();
+    const text = norm(section.textContent);
+    expect(text).toContain("Hamkor avansi490 000 so'mkeyingi qarzlarga o'zi qo'llanadi");
+    expect(text).not.toContain("−490 000");
+    expect(text).not.toContain("To'lanishi kerak = ");
+  });
+
+  it("eski backend (avanssiz) — to'lanishi kerak = yopilmagan qarz, avans 0", async () => {
+    balance = { integration_id: "7", outstanding_amount: "5000000.00", outstanding_count: 3 };
+    renderWithProviders(<ConnectionSettlement connection={carrier} />);
+    const section = await screen.findByRole("region", { name: "Qoldiq" });
+    await within(section).findByText("3 ta yozuv kutilmoqda");
+    const text = norm(section.textContent);
+    expect(text).toContain("To'lanishi kerak5 000 000");
+    expect(text).toContain("Hamkor avansi0 so'm");
+  });
+});
+
 describe("ConnectionSettlement — to'lov oynasi", () => {
+  it("⭐ «to'lanishi kerak» sarlavhasi, kassaga kirim haqida info, qoldiq tafsiloti, «Orqaga»", async () => {
+    const { dialog } = await openPayDialog();
+    await waitFor(() => expect(norm(dialog.textContent)).toContain("Elchi · to'lanishi kerak 4 510 000 so'm"));
+    const info = within(dialog).getByText("Summa asosiy kassaga kirim bo'ladi").closest("[data-tone]") as HTMLElement;
+    expect(info).toHaveAttribute("data-tone", "info");
+    expect(within(dialog).queryByText("Kassaga yozilmaydi")).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("textbox", { name: /To'lov raqami yoki chek/ })).toBeInTheDocument();
+    const text = norm(dialog.textContent);
+    expect(text).toContain("Yopilmagan qarz4 860 000 so'm23 ta yozuv");
+    expect(text).toContain("Hamkor avansi−350 000 so'm");
+    expect(text).toContain("To'lanishi kerak4 510 000 so'm");
+    expect(text).toContain("Qarzlar eng eskisidan boshlab yopiladi, hamkor avansi ham hisobga olinadi.");
+    expect(within(dialog).getByRole("button", { name: "Orqaga" })).toBeInTheDocument();
+  });
+
+  it("qoldiq o'qilmasa — oynada «0 so'm» emas «—», tafsilot yo'q; panelda xato matni", async () => {
+    apiGetMock.mockImplementation((url: string) =>
+      String(url).includes("receivable-balance")
+        ? Promise.reject(Object.assign(new Error("x"), { response: { status: 500, data: {} } }))
+        : Promise.resolve({ data: { statusCode: 200, data: { items: [], pagination: { total: 0, page: 1, limit: 20 } } } }),
+    );
+    const { dialog } = await openPayDialog();
+    expect(await screen.findByText(/Qarz qoldig'ini yuklab bo'lmadi/)).toBeInTheDocument();
+    expect(norm(dialog.textContent)).toContain("Elchi · to'lanishi kerak —");
+    expect(within(dialog).queryByText("Hamkor avansi")).not.toBeInTheDocument();
+  });
+
   it("bo'sh va 0 summa yuborilmaydi — maydon ostida xato", async () => {
     const { user, dialog } = await openPayDialog();
 
@@ -75,7 +162,7 @@ describe("ConnectionSettlement — to'lov oynasi", () => {
     const before = balanceCalls();
 
     await user.type(within(dialog).getByRole("textbox", { name: /Summa/ }), "1500000");
-    await user.type(within(dialog).getByRole("textbox", { name: /Havola/ }), "  TXN-1  ");
+    await user.type(within(dialog).getByRole("textbox", { name: /To'lov raqami yoki chek/ }), "  TXN-1  ");
     await user.click(within(dialog).getByRole("button", { name: "Yozish" }));
 
     await waitFor(() =>
@@ -88,7 +175,7 @@ describe("ConnectionSettlement — to'lov oynasi", () => {
     await waitFor(() => expect(balanceCalls()).toBeGreaterThan(before));
   });
 
-  it("server rad etsa — oyna ochiq, kiritilgan summa saqlanadi, backend matni xabarda", async () => {
+  it("server rad etsa — oyna ochiq, kiritilgan summa saqlanadi, xom backend matni EMAS, i18n xabar", async () => {
     apiPostMock.mockRejectedValueOnce(
       Object.assign(new Error("x"), { response: { status: 400, data: { message: "Qarz topilmadi" } } }),
     );
@@ -98,7 +185,9 @@ describe("ConnectionSettlement — to'lov oynasi", () => {
     await user.type(amount, "250000");
     await user.click(within(dialog).getByRole("button", { name: "Yozish" }));
 
-    expect(await screen.findByText("Qarz topilmadi")).toBeInTheDocument();
+    expect(await screen.findByText("To'lovni yozib bo'lmadi")).toBeInTheDocument();
+    expect(screen.getByText("Summa yozilmadi. Qayta urinib ko'ring.")).toBeInTheDocument();
+    expect(screen.queryByText("Qarz topilmadi")).not.toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: "Tashuvchidan olingan to'lov" })).toBeInTheDocument();
     expect(amount).toHaveValue("250 000");
     expect(apiPostMock).toHaveBeenCalledTimes(1);
