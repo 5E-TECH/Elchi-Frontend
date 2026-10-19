@@ -24,9 +24,41 @@ const reply = (route: Route, body: unknown, status = 200) =>
 
 const wrap = (data: unknown) => ({ statusCode: 200, message: "ok", data });
 
-export const mockOrderCreateApi = async (page: Page) => {
+/** `GET customers/suggest` namunasi (CS-A): mavjud mijoz, shu marketda 4 ta buyurtma, 1 tasi yangi. */
+export const SUGGESTED_CUSTOMER = {
+  id: "55",
+  name: "Shahnoza Abdullayeva",
+  phone_number: "+998903456721",
+  extra_number: "99-871-22-64",
+  address: "Chilonzor 9-kvartal, 14-uy",
+  region_id: null,
+  district_id: "101",
+  orders_count: 4,
+  new_orders_count: 1,
+  has_new_orders: true,
+  new_order_ids: ["10260"],
+  last_order_at: null,
+};
+
+/** `GET district/:id` — nom va viloyat (`aiDistrictsByRegion` bilan bir xil). */
+const districtById = (id: string) => {
+  for (const [regionId, districts] of Object.entries(aiDistrictsByRegion)) {
+    const found = districts.find((district) => String(district.id) === id);
+    if (found) return { ...found, region_id: Number(regionId) };
+  }
+  return null;
+};
+
+export const mockOrderCreateApi = async (
+  page: Page,
+  options: {
+    /** `customers/suggest` javobi (sukut — bo'sh: «Mijoz topilmadi», telefonda varaqa ochilmaydi). */
+    suggestions?: unknown[];
+  } = {},
+) => {
   const leaked: string[] = [];
   const createdOrders: Record<string, unknown>[] = [];
+  const suggestQueries: Record<string, string>[] = [];
   await page.context().route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -51,6 +83,12 @@ export const mockOrderCreateApi = async (page: Page) => {
     const region = path.match(/^region\/(\d+)$/);
     if (region) return reply(route, { districts: aiDistrictsByRegion[region[1]] ?? [] });
     if (path === "product/my-products") return reply(route, wrap(aiProducts));
+    if (path === "customers/suggest") {
+      suggestQueries.push(Object.fromEntries(url.searchParams));
+      return reply(route, wrap(options.suggestions ?? []));
+    }
+    const district = path.match(/^district\/(\d+)$/);
+    if (district) return reply(route, wrap(districtById(district[1])));
     if (path === "orders" && request.method() === "POST") {
       createdOrders.push(request.postDataJSON() as Record<string, unknown>);
       return reply(route, wrap({ id: "e2e-order-1", status: "new" }), 201);
@@ -61,7 +99,7 @@ export const mockOrderCreateApi = async (page: Page) => {
     }
     return reply(route, wrap([]));
   });
-  return { leaked, createdOrders };
+  return { leaked, createdOrders, suggestQueries };
 };
 
 /**

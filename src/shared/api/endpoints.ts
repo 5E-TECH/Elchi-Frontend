@@ -78,6 +78,13 @@ export const API_ENDPOINTS = {
     SATO_UPDATE: (id: string | number) => `district/sato/${id}`, // PATCH
   },
 
+  // ── Customers — buyurtma yaratishda mijoz taklifi (hiqRNhkI, CS-A) ─────────
+  CUSTOMERS: {
+    // GET ?phone=<kamida 7 raqam>&market_id= — ko'pi bilan 10 ta. Market rolida `market_id` yuborilmaydi
+    // (token); registrator/menejer uchun majburiy; admin uchun — xulosa (`orders_count`) uchun.
+    SUGGEST: "customers/suggest",
+  },
+
   // ── Orders (role-dependent; see guide §11) ───────────────────────────────
   ORDERS: {
     BASE: "orders", // GET list (filters) / POST create

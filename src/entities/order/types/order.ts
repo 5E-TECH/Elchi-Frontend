@@ -201,6 +201,12 @@ export interface CustomerPayload {
 
 export interface CreateOrderRequest {
     market_id?: string;
+    /**
+     * Taklifdan tanlangan va o'zgartirilmagan mavjud mijoz (`GET customers/suggest`, hiqRNhkI). Backend uni
+     * qabul qilsa `customer` e'tiborsiz — identity'dagi mijoz kartasi ustidan yozilmaydi; doiradan tashqari
+     * bo'lsa `customer` obyekti bo'yicha avvalgidek aniqlanadi.
+     */
+    customer_id?: string;
     customer: CustomerPayload;
     items: OrderItem[];
     address?: string;       // ixtiyoriy

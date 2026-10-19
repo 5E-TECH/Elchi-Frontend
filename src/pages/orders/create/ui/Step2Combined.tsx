@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-neworders-create-manual-step2, manager-new-orders-create-manual-step2, registrator-new-orders-create-step2, market-new-orders-create-manual
+// dizayn-v2: superadmin-neworders-create-manual-step2, manager-new-orders-create-manual-step2, registrator-new-orders-create-step2, market-new-orders-create-manual, superadmin-neworders-create-manual-step2-customer-suggest, superadmin-neworders-create-manual-step2-existing-customer
 import { memo, useMemo, useState, type ReactNode } from "react";
 import { Building2, Check, CircleX, MapPin, Minus, Plus, ShoppingBag, Tag, Trash2, type LucideIcon } from "lucide-react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
@@ -24,6 +24,8 @@ import {
   type SelectOption,
 } from "../../../../shared/ui/primitives";
 import { orderItemKey, toApiList, type OrderCreateFormValues } from "../model/orderCreateForm";
+import { CustomerPhoneSuggest, type CustomerSuggestScope } from "./CustomerPhoneSuggest";
+import { ExistingCustomerNotice } from "./ExistingCustomerNotice";
 
 type OrderItemValue = OrderCreateFormValues["details"]["items"][number];
 
@@ -146,7 +148,8 @@ const InlineError = ({ id, children }: { id?: string; children: ReactNode }) => 
 /**
  * 2-QADAM — MIJOZ VA MAHSULOTLAR (maket `*-create-manual-step2`, `market-new-orders-create-manual`):
  *  - «Mijoz ma'lumotlari»: telefon · qo'shimcha raqam · mijoz ismi (desktopda 3 ustun); «Yetkazish manzili»:
- *    viloyat · tuman (qidiruvli), yetkazish turi (2 radio-karta), manzil · izoh;
+ *    viloyat · tuman (qidiruvli), yetkazish turi (2 radio-karta), manzil · izoh; telefon bo'yicha mijoz taklifi
+ *    (`CustomerPhoneSuggest`) va tanlangan mavjud mijoz bloki (`ExistingCustomerNotice`, CS-A);
  *  - «Buyurtma tafsilotlari *»: chapda katalogdan qo'shish (qidiruv + ro'yxat) va katalogda yo'q mahsulot
  *    (nomi + soni), o'ngda tanlangan mahsulotlar (son tanlagich, olib tashlash).
  * Summa, operator va «Buyurtma yaratish» — yon ustundagi `Step2Summary` da.
@@ -169,6 +172,7 @@ const Step2Combined = () => {
   const selectedRegionId = useWatch({ control, name: "customer.region_id" }) ?? "";
   const role = useSelector((state: RootState) => state.role.role);
   const roleName = useSelector((state: RootState) => state.role.name);
+  const roleId = useSelector((state: RootState) => state.role.id);
   const isMarketRole = role === "market";
   const productSourceMarketId = market ? String(market.id) : "";
 
@@ -228,29 +232,20 @@ const Step2Combined = () => {
     id == null ? undefined : allProducts.find((product) => String(product.id) === id);
 
   const catalogOwner = isMarketRole ? roleName : market?.name;
+  // Taklif doirasi backend bilan bir xil: admin — barcha mijozlar, market — o'zi, qolganlar — tanlangan market.
+  const suggestScope: CustomerSuggestScope =
+    role === "superadmin" || role === "admin" ? "all" : isMarketRole ? "own" : "market";
   const itemsError = errors.details?.items?.message ?? errors.details?.items?.root?.message;
   const addressRequired = whereDeliver === "address";
 
   return (
     <>
-      <Card padding="none" title={t("customerInfo")} description={t("customerInfoSubtitle")}>
+      <Card padding="none" title={t("customerInfo")} description={t("createCustomer.cardSubtitle")}>
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(200px,100%),1fr))] gap-4 p-5">
-          <Controller
-            control={control}
-            name="customer.phone"
-            render={({ field }) => (
-              <Field id="customer.phone" label={t("phone")} required error={errors.customer?.phone?.message}>
-                <TextInput
-                  mode="phone"
-                  name={field.name}
-                  placeholder="XX XXX XX XX"
-                  value={field.value ? `+998${field.value}` : ""}
-                  onValueChange={(next) => field.onChange(getUzbekistanPhoneDigits(next))}
-                  onBlur={field.onBlur}
-                  ref={field.ref}
-                />
-              </Field>
-            )}
+          <CustomerPhoneSuggest
+            scope={suggestScope}
+            marketId={productSourceMarketId || null}
+            marketName={catalogOwner}
           />
           <Controller
             control={control}
@@ -284,6 +279,11 @@ const Step2Combined = () => {
                 />
               </Field>
             )}
+          />
+          <ExistingCustomerNotice
+            isMarketRole={isMarketRole}
+            marketId={isMarketRole ? roleId : productSourceMarketId || null}
+            marketName={catalogOwner}
           />
         </div>
 
