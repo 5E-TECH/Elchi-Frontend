@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from "react"
 import { useTranslation } from "react-i18next";
 import { playScanSignal, SCAN_FEEDBACK_EVENT, type ScanFeedbackDetail } from "../../lib/scanner/feedback";
 import type { ScanSource } from "../../lib/scanner/scanTargets";
+import type { CameraFacing, QrScanRegion } from "../../lib/qrScanner";
 import { useCameraQrScanner } from "../../lib/useCameraQrScanner";
 import { useScannerGate } from "../../lib/useScannerGate";
 import { queryCameraPermission, watchCameraPermission, type CameraPermission } from "./cameraPermission";
@@ -58,9 +59,21 @@ type Options = {
    */
   layoutKey?: string | number | boolean;
   onScan: (raw: string, source: ScanSource) => void | Promise<void>;
+  /** Ochilishdagi kamera (Sozlamalar → Skaner → «Asosiy kamera»). */
+  preferredCamera?: CameraFacing;
+  /** Skan hududi — ekrandagi ramka (`scanRegion.ts`). */
+  calculateScanRegion?: (video: HTMLVideoElement) => QrScanRegion;
 };
 
-export const useScannerCameraSession = ({ videoRef, active, scanEnabled = true, layoutKey, onScan }: Options) => {
+export const useScannerCameraSession = ({
+  videoRef,
+  active,
+  scanEnabled = true,
+  layoutKey,
+  onScan,
+  preferredCamera,
+  calculateScanRegion,
+}: Options) => {
   const { t } = useTranslation("ui");
   const [gate, setGate] = useState<CameraGate>("checking");
   const [checkSession, setCheckSession] = useState(0);
@@ -183,6 +196,8 @@ export const useScannerCameraSession = ({ videoRef, active, scanEnabled = true, 
     videoRef,
     onDecode: handleDecode,
     startErrorMessage: t("camera.failed.text"),
+    preferredCamera,
+    calculateScanRegion,
     // Chiroq yoqilmadi — kamera ishlayveradi, «Kamera ochilmadi» kartasi emas, qisqa xabar.
     onTorchError: () => {
       playScanSignal("error");
@@ -245,6 +260,8 @@ export const useScannerCameraSession = ({ videoRef, active, scanEnabled = true, 
     hasTorch: camera.hasTorch,
     torchEnabled: camera.torchEnabled,
     toggleTorch: camera.toggleTorch,
+    canSwitchCamera: camera.canSwitchCamera,
+    switchCamera: camera.switchCamera,
     setFeedLive,
     enable,
     retry,

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { applySettingsPatch, DEFAULT_SETTINGS, mergeSettings } from "./index";
 
 /**
@@ -143,5 +143,76 @@ describe("readStoredTheme — dizayn v2 versiya belgisi", () => {
     writeStoredTheme("dark");
     expect(readStoredTheme()).toBe("dark");
     window.localStorage.clear();
+  });
+});
+
+describe("scanner.camera / scanner.feedback — Sozlamalar → Skaner → «Kamera» (skaner 4-bosqichi)", () => {
+  it("eski sozlama (faqat ovozlar) — kamera va signal sukutlari: orqa, o'rta ramka, hammasi yoqiq", () => {
+    const merged = mergeSettings({ scanner: { sounds: { success: "bell", error: "soft" } } });
+    expect(merged.scanner).toEqual({
+      sounds: { success: "bell", error: "soft" },
+      camera: { facing: "environment", frame: "md", torchAuto: true, continuous: true },
+      feedback: { sound: true, vibration: true },
+    });
+  });
+
+  it("saqlangan qiymatlar o'qiladi, buzuqlari sukutga tushadi", () => {
+    const merged = mergeSettings({
+      scanner: {
+        camera: { facing: "user", frame: "xl", torchAuto: "ha", continuous: false },
+        feedback: { sound: false, vibration: 0 },
+      },
+    });
+    expect(merged.scanner.camera).toEqual({ facing: "user", frame: "md", torchAuto: true, continuous: false });
+    expect(merged.scanner.feedback).toEqual({ sound: false, vibration: true });
+  });
+
+  it("patch bitta qiymatni o'zgartiradi, qolganlari (ovozlar ham) tegilmaydi", () => {
+    const step1 = applySettingsPatch(DEFAULT_SETTINGS, { scanner: { camera: { frame: "lg" } } });
+    const step2 = applySettingsPatch(step1, { scanner: { feedback: { vibration: false } } });
+    expect(step2.scanner).toEqual({
+      sounds: DEFAULT_SETTINGS.scanner.sounds,
+      camera: { ...DEFAULT_SETTINGS.scanner.camera, frame: "lg" },
+      feedback: { sound: true, vibration: false },
+    });
+  });
+});
+
+describe("preferencesStorage — kamera ko'zgusi", () => {
+  it("bo'sh yoki buzuq localStorage — sukut; yozilgani o'qiladi; chiqishda tozalanadi", async () => {
+    const storage = await import("../../shared/lib/preferencesStorage");
+    window.localStorage.clear();
+    expect(storage.readStoredScannerCameraPrefs()).toEqual(storage.DEFAULT_SCANNER_CAMERA_PREFS);
+    expect(storage.readStoredScannerFeedbackPrefs()).toEqual({ sound: true, vibration: true });
+
+    window.localStorage.setItem("scanner-frame-size", "huge");
+    expect(storage.readStoredScannerCameraPrefs().frame).toBe("md");
+
+    storage.writeStoredScannerCameraPrefs({ facing: "user", frame: "sm", continuous: false });
+    storage.writeStoredScannerFeedbackPrefs({ vibration: false });
+    expect(storage.readStoredScannerCameraPrefs()).toEqual({
+      facing: "user",
+      frame: "sm",
+      torchAuto: true,
+      continuous: false,
+    });
+    expect(storage.readStoredScannerFeedbackPrefs()).toEqual({ sound: true, vibration: false });
+
+    storage.clearStoredUiPreferences();
+    expect(storage.readStoredScannerCameraPrefs()).toEqual(storage.DEFAULT_SCANNER_CAMERA_PREFS);
+  });
+
+  it("localStorage yopiq (xato tashlaydi) — sukut, yozish yiqilmaydi", async () => {
+    const storage = await import("../../shared/lib/preferencesStorage");
+    const get = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    const set = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("blocked");
+    });
+    expect(storage.readStoredScannerCameraPrefs()).toEqual(storage.DEFAULT_SCANNER_CAMERA_PREFS);
+    expect(() => storage.writeStoredScannerCameraPrefs({ frame: "lg" })).not.toThrow();
+    get.mockRestore();
+    set.mockRestore();
   });
 });

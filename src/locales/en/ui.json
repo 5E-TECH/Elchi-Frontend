@@ -1253,6 +1253,11 @@
       "retry": "Try again",
       "current": "Selected"
     },
-    "torchFailed": "Couldn't switch the flashlight"
+    "torchFailed": "Couldn't switch the flashlight",
+    "switchCamera": "Switch camera",
+    "lowLight": {
+      "text": "Low light",
+      "action": "Turn on flashlight"
+    }
   }
 }

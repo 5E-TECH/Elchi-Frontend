@@ -29,7 +29,9 @@ import {
 import { changeAppLanguage, normalizeLanguage } from "../../../i18n";
 import { cx } from "../../../shared/lib/cx";
 import {
+  writeStoredScannerCameraPrefs,
   writeStoredScannerErrorSound,
+  writeStoredScannerFeedbackPrefs,
   writeStoredScannerSuccessSound,
 } from "../../../shared/lib/preferencesStorage";
 import {
@@ -137,14 +139,26 @@ const SettingsPage = () => {
     else writeStoredScannerErrorSound(sound);
     persist({ scanner: { sounds: { [type]: sound } } });
   };
+  /** Kamera sozlamasi: qurilmadagi ko'zgu darhol (keyingi ochilgan kamera o'qiydi) + hisobga. */
+  const onScannerCamera = (patch: Partial<AppSettings["scanner"]["camera"]>) => {
+    writeStoredScannerCameraPrefs(patch);
+    persist({ scanner: { camera: patch } });
+  };
+  const onScannerFeedback = (patch: Partial<AppSettings["scanner"]["feedback"]>) => {
+    writeStoredScannerFeedbackPrefs(patch);
+    persist({ scanner: { feedback: patch } });
+  };
   /** Faqat chaladi: vaqtincha shu ovozni yozadi, 350 ms dan keyin saqlangan tanlov qaytadi. */
   const previewScannerSound = (type: "success" | "error", sound: ScannerSoundId) => {
     const previous = settings.scanner.sounds[type];
     if (type === "success") writeStoredScannerSuccessSound(sound);
     else writeStoredScannerErrorSound(sound);
+    // «Ovoz» kaliti o'chiq bo'lsa ham eshittiriladi — foydalanuvchi ohangni aniq so'radi.
     void playScanFeedback(
       type,
       t(`scanner.${type === "success" ? "success_preview" : "error_preview"}`),
+      undefined,
+      { preview: true },
     );
     window.setTimeout(() => {
       if (type === "success") writeStoredScannerSuccessSound(previous);
@@ -270,8 +284,14 @@ const SettingsPage = () => {
               ) : (
                 <ScannerPanel
                   sounds={settings.scanner.sounds}
+                  camera={settings.scanner.camera}
+                  feedback={settings.scanner.feedback}
+                  // Market skanerlamaydi — `/scan` unda bo'sh holat.
+                  canTestCamera={role !== "market"}
                   onSelect={onScannerSound}
                   onPreview={previewScannerSound}
+                  onCamera={onScannerCamera}
+                  onFeedback={onScannerFeedback}
                 />
               )}
             </Card>

@@ -1,5 +1,5 @@
 // dizayn-v2: tizim-scanner, superadmin-neworders-market-orders-camera, manager-dispatch-camera-dialog, courier-scan-permission-denied, courier-courier-bulk-scanner-camera-list
-import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   Camera,
   CameraOff,
@@ -15,6 +15,7 @@ import {
   RefreshCw,
   Repeat,
   ScanLine,
+  SwitchCamera,
   Timer,
   TriangleAlert,
   Undo2,
@@ -25,8 +26,10 @@ import {
 import { useTranslation } from "react-i18next";
 import { cx } from "../../lib/cx";
 import { formatNumberLocalized } from "../../lib/formatMoney";
+import { readStoredScannerCameraPrefs } from "../../lib/preferencesStorage";
 import { markScannerCameraMounted } from "../../lib/scanner/scannerHost";
 import type {
+  ScanSource,
   ScanTarget,
   ScanTargetListItem,
   ScanTargetStat,
@@ -61,13 +64,16 @@ import {
   CameraProgress,
   CameraStatus,
   CameraSteps,
+  CameraSuggestion,
   CameraSurface,
   CameraToast,
   CameraToasts,
   ScanFinder,
   type CameraTone,
 } from "./CameraSurface";
-import { useScannerCameraSession, type CameraResult } from "./useScannerCameraSession";
+import { scanRegionFromFinder } from "./scanRegion";
+import { useLowLight } from "./useLowLight";
+import { FLASH_MS, useScannerCameraSession, type CameraResult } from "./useScannerCameraSession";
 
 /** Yon panelda (planshet/desktop) ko'rinadigan so'nggi qatorlar soni; qolgani — «Ro'yxat» varag'ida. */
 const SIDE_LIST_LIMIT = 4;
@@ -89,6 +95,12 @@ const SIDE_LIST_LIMIT = 4;
  * har o'qilgan qiymat `target.onScan(raw, "camera")`, qo'lda kiritilgan — `"manual"`. Natija xabari sahifaning
  * `playScanFeedback(...)` hodisasidan (USB skan ham shu yerda ko'rinadi). Kamera ochiq turganda USB skaner
  * sahifaning o'z hook'i orqali ishlayveradi — kamera uni ikkinchi marta yubormaydi.
+ *
+ * Sozlamalar → Skaner → «Kamera» (maket `common-settings-scanner`, ochilishda bir marta o'qiladi —
+ * `preferencesStorage` ko'zgusi): asosiy kamera (orqa / old; «Kamerani almashtirish» — shu ochilish uchun), ramka
+ * o'lchami (ramka va skan hududi), «Chiroq — avtomatik» (yorug'lik kam bo'lsa chiroqni yoqish taklifi), «Uzluksiz
+ * skanerlash» o'chiq bo'lsa oqim oynasi (`overlay`) birinchi muvaffaqiyatli koddan keyin yopiladi. Ovoz va
+ * tebranish — `playScanSignal` ning o'zida.
  *
  * A11y: fokus «Yopish» da boshlanadi, Tab oyna ichida aylanadi, Esc yopadi, orqa sahifa aylanmaydi (`overlay`);
  * natija `role="status"`; chiroq kamera yopilganda o'zi o'chadi (oqim to'xtaydi).
@@ -170,14 +182,54 @@ export const ScannerCamera = ({
   const titleId = useId();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
+  const finderRef = useRef<HTMLDivElement | null>(null);
   const [sheet, setSheet] = useState<"manual" | "list" | "switcher" | null>(null);
+  // Sozlamalar → Skaner → «Kamera»: ochilishda bir marta (kamera ochiq turganda sozlama o'zgarmaydi).
+  const [prefs] = useState(readStoredScannerCameraPrefs);
+  /** «Uzluksiz skanerlash» o'chiq — oqim oynasi birinchi muvaffaqiyatli koddan keyin yopiladi. */
+  const singleShot = overlay && !prefs.continuous && Boolean(onClose);
+  /** Shu kamera yuborgan skan (kamera yoki qo'lda) natijasi kutilmoqda — USB skan natijasi yopmasin. */
+  const awaitingResultRef = useRef(false);
+  const forwardScan = (raw: string, source: ScanSource) => {
+    awaitingResultRef.current = true;
+    return target.onScan(raw, source);
+  };
+
+  // Skan hududi = ekrandagi ramka (+ zaxira). Kutubxona uni tasvir ochilganda (`play`, `loadedmetadata`) so'raydi.
+  const calculateScanRegion = useCallback(
+    (video: HTMLVideoElement) =>
+      scanRegionFromFinder({
+        videoWidth: video.videoWidth,
+        videoHeight: video.videoHeight,
+        videoRect: video.getBoundingClientRect(),
+        finderRect: finderRef.current?.getBoundingClientRect() ?? null,
+        mirrored: video.style.transform.includes("scaleX(-1)"),
+      }),
+    [],
+  );
+
   const session = useScannerCameraSession({
     videoRef,
     active: sheet === null,
     scanEnabled: !suspended,
     // Telefon ↔ keng ko'rinish almashsa `<video>` boshqa joyda qayta yaratiladi — skaner yangisiga ulanadi.
     layoutKey: isPhone,
-    onScan: target.onScan,
+    onScan: forwardScan,
+    preferredCamera: prefs.facing,
+    calculateScanRegion,
+  });
+
+  // «Chiroq — avtomatik»: chiroqli qurilmada yorug'lik kam bo'lsa — yoqish taklifi (o'zi yoqilmaydi). Chiroq bir
+  // marta qo'lda bosilsa yoki taklif yopilsa — shu ochilishda boshqa chiqmaydi.
+  const [torchTouched, setTorchTouched] = useState(false);
+  const toggleTorch = () => {
+    setTorchTouched(true);
+    void session.toggleTorch();
+  };
+  const lowLight = useLowLight({
+    videoRef,
+    enabled:
+      prefs.torchAuto && !torchTouched && session.hasTorch && session.running && !session.starting && !session.torchEnabled,
   });
 
   useEffect(() => markScannerCameraMounted(), []);
@@ -199,6 +251,23 @@ export const ScannerCamera = ({
   useEffect(() => {
     onCloseRef.current = onClose;
   });
+
+  // Bitta kod rejimi: natija kelgach (yashil ramka ko'rinib ulgursin — `FLASH_MS`) oyna yopiladi.
+  const resultId = session.result?.id;
+  const resultType = session.result?.type;
+  const singleShotTimerRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (resultId === undefined || resultType === "tooFast" || !awaitingResultRef.current) return;
+    awaitingResultRef.current = false;
+    if (!singleShot || resultType !== "success" || singleShotTimerRef.current !== null) return;
+    singleShotTimerRef.current = window.setTimeout(() => onCloseRef.current?.(), FLASH_MS);
+  }, [resultId, resultType, singleShot]);
+  useEffect(
+    () => () => {
+      if (singleShotTimerRef.current !== null) window.clearTimeout(singleShotTimerRef.current);
+    },
+    [],
+  );
   useEffect(() => {
     if (!pageCloses || sheet !== null) return undefined;
     const handleKey = (event: KeyboardEvent) => {
@@ -356,16 +425,20 @@ export const ScannerCamera = ({
     stage = card;
   } else if (suspended) {
     headChip = <CameraChip dot="info">{t("camera.chip.switching")}</CameraChip>;
-    stage = <ScanFinder paused mark={<Spinner size="lg" />} />;
+    stage = <ScanFinder paused frame={prefs.frame} finderRef={finderRef} mark={<Spinner size="lg" />} />;
   } else if (paused || waiting) {
     headChip = paused ? <CameraChip>{t("camera.chip.paused")}</CameraChip> : null;
-    stage = <ScanFinder paused mark={waiting ? <Spinner size="lg" /> : undefined} />;
+    stage = (
+      <ScanFinder paused frame={prefs.frame} finderRef={finderRef} mark={waiting ? <Spinner size="lg" /> : undefined} />
+    );
   } else if (session.starting) {
     headChip = <CameraChip dot="info">{t("camera.chip.starting")}</CameraChip>;
     stage = (
       <>
-        <ScanFinder paused mark={<Spinner size="lg" />} />
-        <CameraHint live>{t("camera.hint.starting")}</CameraHint>
+        <ScanFinder paused frame={prefs.frame} finderRef={finderRef} mark={<Spinner size="lg" />} />
+        <CameraHint live frame={prefs.frame}>
+          {t("camera.hint.starting")}
+        </CameraHint>
       </>
     );
   } else {
@@ -376,9 +449,23 @@ export const ScannerCamera = ({
       <>
         <ScanFinder
           tone={resultTone}
+          frame={prefs.frame}
+          finderRef={finderRef}
           mark={FlashIcon ? <FlashIcon aria-hidden="true" focusable="false" size={24} strokeWidth={2.5} /> : null}
         />
-        {!session.result ? <CameraHint>{target.hint ?? t("camera.hint.aim")}</CameraHint> : null}
+        {session.result ? null : lowLight ? (
+          <CameraSuggestion
+            frame={prefs.frame}
+            text={t("camera.lowLight.text")}
+            action={
+              <Button variant="secondary" leftIcon={Flashlight} onClick={toggleTorch}>
+                {t("camera.lowLight.action")}
+              </Button>
+            }
+          />
+        ) : (
+          <CameraHint frame={prefs.frame}>{target.hint ?? t("camera.hint.aim")}</CameraHint>
+        )}
       </>
     );
   }
@@ -413,9 +500,14 @@ export const ScannerCamera = ({
       icon={Flashlight}
       label={t("camera.torch")}
       aria-pressed={session.torchEnabled}
-      onClick={() => void session.toggleTorch()}
+      onClick={toggleTorch}
     />
   ) : null;
+  // «Kamerani almashtirish» (maket `superadmin-scan-camera`): bir nechta kamera bo'lsa, shu ochilish uchun.
+  const switchButton =
+    session.canSwitchCamera && session.running ? (
+      <CameraButton icon={SwitchCamera} label={t("camera.switchCamera")} onClick={() => void session.switchCamera()} />
+    ) : null;
   const torchInBottom = phoneSecondary === "torch";
   const phoneSecondaryButton = torchInBottom ? (
     torchAvailable ? (
@@ -424,7 +516,7 @@ export const ScannerCamera = ({
         size="lg"
         leftIcon={Flashlight}
         aria-pressed={session.torchEnabled}
-        onClick={() => void session.toggleTorch()}
+        onClick={toggleTorch}
       >
         {t("camera.torch")}
       </Button>
@@ -542,7 +634,12 @@ export const ScannerCamera = ({
       start={
         onClose ? <CameraButton ref={closeRef} icon={X} label={t("camera.close")} onClick={close} /> : undefined
       }
-      tools={torchInBottom ? null : torchButton}
+      tools={
+        <>
+          {switchButton}
+          {torchInBottom ? null : torchButton}
+        </>
+      }
       feed={feed}
       headingExtra={
         switcher ? (
@@ -590,7 +687,12 @@ export const ScannerCamera = ({
           {statusChips}
         </div>
       }
-      tools={torchButton}
+      tools={
+        <>
+          {switchButton}
+          {torchButton}
+        </>
+      }
       feed={feed}
       className={presentation === "page" ? "rounded-[20px]" : undefined}
     >
@@ -745,7 +847,7 @@ export const ScannerCamera = ({
           setSheet(null);
           if (suspended) return;
           void Promise.resolve()
-            .then(() => target.onScan(code, "manual"))
+            .then(() => forwardScan(code, "manual"))
             .catch(() => undefined);
         }}
       />

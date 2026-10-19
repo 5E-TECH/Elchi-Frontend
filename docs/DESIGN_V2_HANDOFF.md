@@ -38,7 +38,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   `/profile`, `/settings`, `/inbox`; `/market-operators` yopiq, ko'chirilmagan
 - G3: `/login` (+ «Sessiya tugadi» ekrani, sessiya banneri shell'ning `[data-shell-slot=banner]` slotida),
   `/scan/:token`, `/dispatch`, `/courier-bulk` (+ dev'ning isbot qadami va xato berganlar oynasi, `X-Request-Source`);
-  butun `/scan` kamera ekrani — skaner ishida (quyida §2.2)
+  butun `/scan` kamera ekrani — skaner ishida (1–4-bosqich tayyor, quyida §2.2)
 
 **5-bosqich** (`docs/DESIGN_SYSTEM.md` §12, §14):
 
@@ -124,8 +124,15 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     `scan-assign`, natija ro'yxati, «Tugatish» → xulosa + kesh). «Qabul qilish» / «Kuryerga biriktirish» —
     `/new-orders/<id>` / `/dispatch` ga kamera OCHIQ holda o'tadi (`scannerArrivalState` + `ScannerHost`). Batafsil —
     `docs/DESIGN_SYSTEM.md` §14.
-  - 4-bosqich — qolgan: Sozlamalar → Skaner → «Kamera» kartasi. Oflayn navbat, buyurtma raqami bo'yicha qo'lda
-    kiritish (API yo'q) — ega qarori kutiladi.
+  - 4-bosqich — tayyor (`design-v2/scanner-3` ichida): Sozlamalar → Skaner → «Kamera» kartasi (maket
+    `common-settings-scanner`): «Kamerani sinash» → `/scan`, asosiy kamera (orqa / old), «Chiroq — avtomatik»
+    (yorug'lik kam bo'lsa yoqish TAKLIFI, o'zi yoqilmaydi), «Uzluksiz skanerlash» (o'chiq — oqim kamerasi bitta
+    muvaffaqiyatli koddan keyin yopiladi), «Ovoz», «Tebranish», «Ramka o'lchami» (ramka va skan hududi). Qiymatlar
+    `entities/settings` (`scanner.camera`, `scanner.feedback`) → backend `admins.settings` (opaque jsonb, kalit
+    tekshirilmaydi) + `SettingsSync` orqali `localStorage` ko'zgusi; `ScannerCamera` va `playScanSignal` o'qiydi.
+    Kamera ichida «Kamerani almashtirish» (bir nechta kamera bo'lsa).
+  - **Kamera ishi yopildi** (1–4-bosqich): v1 kamera qolmadi. Ochiq qolgani (ega qarori kutiladi): oflayn navbat,
+    buyurtma raqami bo'yicha qo'lda kiritish (API yo'q); 2-bosqich follow-up'lari (yuqorida).
 - **To'liq QA** — Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.
 - Follow-up: `Switch`, `FilterChip`, `Checkbox` primitivlari, `TextInput` prefiks sloti (`CampaignPage` istisnosi).
 - **Chek (yorliq) dizayni — keyinga qoldirilgan** (ega, 2026-10-18). 5 ta taklif rad etilgan: «havodor» va eski
@@ -245,7 +252,7 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
   - market tariflari majburiy.
 - **G2 spec §10 sukutlari** — `design/kit/route-map.json` izohlarida (`docs/DESIGN_SYSTEM.md` §11, G2 bandi).
 - **G3 spec §9 sukutlari (egaga ko'rsatiladi):**
-  - butun `/scan` (kamera holatlari, qo'lda kiritish, oflayn navbat) — alohida kamera ishi;
+  - butun `/scan` (kamera holatlari, qo'lda kiritish) — kamera ishida tayyor (§2.2); oflayn navbat — ega qarori;
   - menejer skaner natijasida «Sotish / Bekor qilish» — buyurtma tafsilotidagi qoidalar bilan;
   - «Kuryerga biriktirish» → `/dispatch` buyurtma qo'shilgan va tanlangan holda (skaner 2-bosqichidan — qurilmadagi
     savat orqali);

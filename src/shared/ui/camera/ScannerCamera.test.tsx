@@ -31,6 +31,20 @@ const camera = vi.hoisted(() => ({
   },
   restart: vi.fn(),
   toggleTorch: vi.fn(async () => undefined),
+  preferredCamera: undefined as string | undefined,
+  calculateScanRegion: undefined as unknown,
+  canSwitchCamera: false,
+  switchCamera: vi.fn(async () => undefined),
+  lowLight: false,
+  lowLightEnabled: false,
+}));
+
+vi.mock("./useLowLight", () => ({
+  // Kadr yorqinligi o'lchanmaydi — test boshqaradi; `enabled` (taklif shartlari) yoziladi.
+  useLowLight: ({ enabled }: { enabled: boolean }) => {
+    camera.lowLightEnabled = enabled;
+    return enabled && camera.lowLight;
+  },
 }));
 
 vi.mock("../../lib/scanner/feedback", async (importOriginal) => ({
@@ -40,14 +54,24 @@ vi.mock("../../lib/scanner/feedback", async (importOriginal) => ({
 }));
 
 vi.mock("../../lib/useCameraQrScanner", () => ({
-  useCameraQrScanner: (options: { isActive: boolean; onDecode: (value: string) => void; onTorchError?: () => void }) => {
+  useCameraQrScanner: (options: {
+    isActive: boolean;
+    onDecode: (value: string) => void;
+    onTorchError?: () => void;
+    preferredCamera?: string;
+    calculateScanRegion?: unknown;
+  }) => {
     camera.isActive = options.isActive;
+    camera.preferredCamera = options.preferredCamera;
+    camera.calculateScanRegion = options.calculateScanRegion;
     camera.onDecode = options.onDecode;
     camera.onTorchError = options.onTorchError ?? null;
     return {
       ...camera.state,
       restartScanner: camera.restart,
       toggleTorch: camera.toggleTorch,
+      canSwitchCamera: camera.canSwitchCamera,
+      switchCamera: camera.switchCamera,
       stopScanner: vi.fn(),
       setCameraError: vi.fn(),
     };
@@ -108,6 +132,12 @@ beforeEach(() => {
   camera.isActive = false;
   camera.onDecode = null;
   camera.restart.mockClear();
+  camera.toggleTorch.mockClear();
+  camera.switchCamera.mockClear();
+  camera.canSwitchCamera = false;
+  camera.lowLight = false;
+  camera.lowLightEnabled = false;
+  window.localStorage.clear();
   resetCameraPermissionExplained();
   vi.mocked(playScanSignal).mockClear();
   setPhone(false);
@@ -733,5 +763,124 @@ describe("ScannerCamera — universal skaner rejimlari (3-bosqich)", () => {
     const group = screen.getByRole("radiogroup", { name: "O'zimga olish" });
     await user.click(within(group).getByRole("radio", { name: "Ma'lumot" }));
     expect(onModeChange).toHaveBeenCalledWith("info");
+  });
+});
+
+describe("ScannerCamera — Sozlamalar → Skaner → «Kamera» (4-bosqich)", () => {
+  const finder = () => document.querySelector("[data-finder-size]");
+
+  it("sukut: orqa kamera, o'rta ramka, skan hududi ramkaga bog'langan", async () => {
+    renderWithProviders(<ScannerCamera target={makeTarget()} onClose={vi.fn()} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    expect(camera.preferredCamera).toBe("environment");
+    expect(typeof camera.calculateScanRegion).toBe("function");
+    expect(finder()).toHaveAttribute("data-finder-size", "md");
+  });
+
+  it("saqlangan sozlama: old kamera va katta ramka (ramka va maslahat o'lchami)", async () => {
+    window.localStorage.setItem("scanner-camera-facing", "user");
+    window.localStorage.setItem("scanner-frame-size", "lg");
+    renderWithProviders(<ScannerCamera target={makeTarget()} onClose={vi.fn()} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    expect(camera.preferredCamera).toBe("user");
+    expect(finder()).toHaveAttribute("data-finder-size", "lg");
+    expect(finder()).toHaveClass("size-[288px]");
+    feedPlaying();
+    expect(await screen.findByText("Buyurtma yorlig'idagi QR kodni ramkaga oling")).toHaveClass("top-[calc(50%+160px)]");
+  });
+
+  it("bir nechta kamera — «Kamerani almashtirish» (shu ochilish uchun)", async () => {
+    camera.canSwitchCamera = true;
+    const user = userEvent.setup();
+    renderWithProviders(<ScannerCamera target={makeTarget()} onClose={vi.fn()} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    feedPlaying();
+    await user.click(await screen.findByRole("button", { name: "Kamerani almashtirish" }));
+    expect(camera.switchCamera).toHaveBeenCalledTimes(1);
+  });
+
+  it("bitta kamera — almashtirish tugmasi yo'q", async () => {
+    renderWithProviders(<ScannerCamera target={makeTarget()} onClose={vi.fn()} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    feedPlaying();
+    await screen.findByText("Skanerlash faol");
+    expect(screen.queryByRole("button", { name: "Kamerani almashtirish" })).not.toBeInTheDocument();
+  });
+
+  it("«Uzluksiz skanerlash» o'chiq: xato — ochiq qoladi; muvaffaqiyatli koddan keyin oyna yopiladi", async () => {
+    window.localStorage.setItem("scanner-continuous", "false");
+    const onClose = vi.fn();
+    const target = makeTarget();
+    renderWithProviders(<ScannerCamera target={target} onClose={onClose} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    feedPlaying();
+
+    // USB skan natijasi (kamera hech narsa yubormagan) — yopmaydi.
+    act(() => playScanFeedback("success", "Qabul qilindi", "keyboard"));
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    expect(onClose).not.toHaveBeenCalled();
+
+    act(() => camera.onDecode?.("65f0c1aa22bb33cc44dd55ee"));
+    await waitFor(() => expect(target.onScan).toHaveBeenCalledTimes(1));
+    act(() => playScanFeedback("error", "Bu marketniki emas"));
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    expect(onClose).not.toHaveBeenCalled();
+
+    await new Promise((resolve) => setTimeout(resolve, 1900));
+    act(() => camera.onDecode?.("ffffffffffffffffffffffff"));
+    await waitFor(() => expect(target.onScan).toHaveBeenCalledTimes(2));
+    act(() => playScanFeedback("success", "Qabul qilindi"));
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+  });
+
+  it("«Uzluksiz skanerlash» yoqiq (sukut) — muvaffaqiyatdan keyin ham ochiq", async () => {
+    const onClose = vi.fn();
+    const target = makeTarget();
+    renderWithProviders(<ScannerCamera target={target} onClose={onClose} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    feedPlaying();
+    act(() => camera.onDecode?.("65f0c1aa22bb33cc44dd55ee"));
+    await waitFor(() => expect(target.onScan).toHaveBeenCalledTimes(1));
+    act(() => playScanFeedback("success", "Qabul qilindi"));
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("«Chiroq — avtomatik»: yorug'lik kam — maslahat o'rnida «Chiroqni yoqish» taklifi; bosilsa chiroq yoqiladi", async () => {
+    camera.state.hasTorch = true;
+    camera.lowLight = true;
+    const user = userEvent.setup();
+    renderWithProviders(<ScannerCamera target={makeTarget()} onClose={vi.fn()} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    feedPlaying();
+    expect(await screen.findByText("Yorug'lik kam")).toBeInTheDocument();
+    expect(screen.queryByText("Buyurtma yorlig'idagi QR kodni ramkaga oling")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Chiroqni yoqish" }));
+    expect(camera.toggleTorch).toHaveBeenCalledTimes(1);
+    // Bir marta bosilgach shu ochilishda taklif qaytmaydi.
+    expect(camera.lowLightEnabled).toBe(false);
+    expect(screen.queryByText("Yorug'lik kam")).not.toBeInTheDocument();
+  });
+
+  it("taklif yo'q: sozlama o'chiq yoki qurilmada chiroq yo'q", async () => {
+    window.localStorage.setItem("scanner-torch-auto", "false");
+    camera.state.hasTorch = true;
+    camera.lowLight = true;
+    const first = renderWithProviders(<ScannerCamera target={makeTarget()} onClose={vi.fn()} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    feedPlaying();
+    await screen.findByText("Skanerlash faol");
+    expect(camera.lowLightEnabled).toBe(false);
+    expect(screen.queryByText("Yorug'lik kam")).not.toBeInTheDocument();
+    first.unmount();
+
+    window.localStorage.removeItem("scanner-torch-auto");
+    camera.state.hasTorch = false;
+    renderWithProviders(<ScannerCamera target={makeTarget()} onClose={vi.fn()} />);
+    await waitFor(() => expect(camera.isActive).toBe(true));
+    feedPlaying();
+    await screen.findByText("Skanerlash faol");
+    expect(camera.lowLightEnabled).toBe(false);
+    expect(screen.queryByText("Yorug'lik kam")).not.toBeInTheDocument();
   });
 });

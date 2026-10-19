@@ -42,8 +42,21 @@ export const classifyCameraError = (error: unknown): CameraErrorKind => {
   return "unknown";
 };
 
+export type CameraFacing = "environment" | "user";
+
+export type QrScanRegion = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  downScaledWidth: number;
+  downScaledHeight: number;
+};
+
 interface QrScannerOptions {
   preferredCamera?: string;
+  /** Faqat shu hudud o'qiladi (ekrandagi ramka) — berilmasa kutubxona sukuti. */
+  calculateScanRegion?: (video: HTMLVideoElement) => QrScanRegion;
   returnDetailedScanResult?: boolean;
   highlightScanRegion?: boolean;
   highlightCodeOutline?: boolean;
@@ -72,6 +85,7 @@ export default class QrScanner {
         preferredCamera: options?.preferredCamera === "user" ? "user" : "environment",
         returnDetailedScanResult: true,
         highlightScanRegion: options?.highlightScanRegion,
+        ...(options?.calculateScanRegion ? { calculateScanRegion: options.calculateScanRegion } : {}),
         highlightCodeOutline: options?.highlightCodeOutline,
         onDecodeError: options?.onDecodeError as ((error: Error | string) => void) | undefined,
       },
@@ -115,6 +129,20 @@ export default class QrScanner {
 
   destroy(): void {
     this.scanner.destroy();
+  }
+
+  /** Qurilmadagi kameralar soni (yorliqlarsiz — ruxsat so'ralmaydi). Xatoda 0. */
+  static async countCameras(): Promise<number> {
+    try {
+      return (await BrowserQrScanner.listCameras(false)).length;
+    } catch {
+      return 0;
+    }
+  }
+
+  /** Kamerani almashtirish (oqim qayta ochiladi, ko'zgu va skan hududi yangilanadi). */
+  setCamera(facing: CameraFacing): Promise<void> {
+    return this.scanner.setCamera(facing);
   }
 
   hasFlash(): Promise<boolean> {

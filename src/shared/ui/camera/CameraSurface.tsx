@@ -169,14 +169,70 @@ export const CameraChip = ({ dot, icon: Icon, children }: { dot?: CameraChipDot;
   </span>
 );
 
+/**
+ * Ramka o'lchami (Sozlamalar → Skaner → «Ramka o'lchami»): `md` — maketdagi 248 px (≥ 768: 280), `sm` / `lg` —
+ * yonma-yon yorliqlar uchun kichik, katta yorliq uchun katta. Maslahat ramka ostidan 16 px pastda turadi.
+ */
+export type ScanFrameSize = "sm" | "md" | "lg";
+
+const FINDER_SIZE: Record<ScanFrameSize, string> = {
+  sm: "size-[208px] md:size-[232px]",
+  md: "size-[248px] md:size-[280px]",
+  lg: "size-[288px] md:size-[320px]",
+};
+
+const HINT_TOP: Record<ScanFrameSize, string> = {
+  sm: "top-[calc(50%+120px)] md:top-[calc(50%+132px)]",
+  md: "top-[calc(50%+140px)] md:top-[calc(50%+156px)]",
+  lg: "top-[calc(50%+160px)] md:top-[calc(50%+176px)]",
+};
+
 /** `.el-cam-hint` — ramka ostidagi maslahat. */
-export const CameraHint = ({ children, live }: { children: ReactNode; live?: boolean }) => (
+export const CameraHint = ({
+  children,
+  live,
+  frame = "md",
+}: {
+  children: ReactNode;
+  live?: boolean;
+  frame?: ScanFrameSize;
+}) => (
   <p
     role={live ? "status" : undefined}
-    className="absolute top-[calc(50%+140px)] left-1/2 z-2 w-max max-w-[min(380px,calc(100%-32px))] -translate-x-1/2 rounded-full border border-text/20 bg-bg/60 px-3.5 py-2 text-center text-sm leading-5 font-semibold backdrop-blur-md md:top-[calc(50%+156px)]"
+    className={cx(
+      "absolute left-1/2 z-2 w-max max-w-[min(380px,calc(100%-32px))] -translate-x-1/2 rounded-full border border-text/20 bg-bg/60 px-3.5 py-2 text-center text-sm leading-5 font-semibold backdrop-blur-md",
+      HINT_TOP[frame],
+    )}
   >
     {children}
   </p>
+);
+
+/**
+ * Ramka ostidagi taklif (maslahat o'rnida): qisqa matn + bitta amal — «Yorug'lik kam» · [Chiroqni yoqish].
+ * `role="status"` — paydo bo'lganda ekran o'quvchi aytadi.
+ */
+export const CameraSuggestion = ({
+  text,
+  action,
+  frame = "md",
+}: {
+  text: ReactNode;
+  action: ReactNode;
+  frame?: ScanFrameSize;
+}) => (
+  <div
+    role="status"
+    className={cx(
+      "absolute left-1/2 z-2 flex w-max max-w-[calc(100%-32px)] -translate-x-1/2 flex-col items-center gap-2",
+      HINT_TOP[frame],
+    )}
+  >
+    <p className="rounded-full border border-text/20 bg-bg/60 px-3.5 py-2 text-center text-sm leading-5 font-semibold backdrop-blur-md">
+      {text}
+    </p>
+    {action}
+  </div>
 );
 
 const CORNERS = [
@@ -193,18 +249,25 @@ type ScanFinderProps = {
   paused?: boolean;
   /** Markazdagi 72px belgi (natija ikonkasi yoki spinner). */
   mark?: ReactNode;
+  /** Ramka o'lchami (sukut — `md`, maketdagi 248 / 280 px). */
+  frame?: ScanFrameSize;
+  /** Ramka elementi — skan hududini ekrandagi ramkaga moslash uchun (`scanRegion.ts`). */
+  finderRef?: Ref<HTMLDivElement>;
 };
 
 /**
- * `.el-cam-finder` — 248px (≥ 768: 280), radius 24, burchaklar 56/5px. Atrofdagi qorong'i parda — `overlay`.
+ * `.el-cam-finder` — 248px (≥ 768: 280; `frame` bilan kichik / katta), radius 24, burchaklar 56/5px. Atrofdagi qorong'i parda — `overlay`.
  * Skanerlash chizig'i — `nav-accent` (to'q fon ustidagi urg'u, DESIGN_SYSTEM §2).
  */
-export const ScanFinder = ({ tone, paused, mark }: ScanFinderProps) => (
+export const ScanFinder = ({ tone, paused, mark, frame = "md", finderRef }: ScanFinderProps) => (
   <div
+    ref={finderRef}
     aria-hidden="true"
     data-finder-tone={tone ?? (paused ? "paused" : "idle")}
+    data-finder-size={frame}
     className={cx(
-      "absolute top-1/2 left-1/2 z-1 size-[248px] -translate-x-1/2 -translate-y-1/2 rounded-3xl md:size-[280px]",
+      "absolute top-1/2 left-1/2 z-1 -translate-x-1/2 -translate-y-1/2 rounded-3xl",
+      FINDER_SIZE[frame],
       "shadow-[0_0_0_2400px_var(--color-overlay)] ring-1 ring-text/20 ring-inset transition-colors duration-200 motion-reduce:transition-none",
       tone && TONE_TINT[tone],
     )}

@@ -7,7 +7,9 @@ import { changeAppLanguage, normalizeLanguage } from "../../i18n";
 import { setSidebar } from "../../widgets/Sidebar/model/sidebarSlice";
 import type { RootState } from "../config/store";
 import {
+  writeStoredScannerCameraPrefs,
   writeStoredScannerErrorSound,
+  writeStoredScannerFeedbackPrefs,
   writeStoredScannerSuccessSound,
 } from "../../shared/lib/preferencesStorage";
 
@@ -35,6 +37,9 @@ const SettingsSync = () => {
     dispatch(setSidebar(effectiveSettings.interface.sidebarOpen));
     writeStoredScannerSuccessSound(effectiveSettings.scanner.sounds.success);
     writeStoredScannerErrorSound(effectiveSettings.scanner.sounds.error);
+    // Kamera va signal sozlamalari — `shared` (ScannerCamera, skan signali) shu ko'zgudan o'qiydi.
+    writeStoredScannerCameraPrefs(effectiveSettings.scanner.camera);
+    writeStoredScannerFeedbackPrefs(effectiveSettings.scanner.feedback);
   }, [effectiveSettings, dispatch, i18n.language, i18n.resolvedLanguage, setTheme, theme]);
 
   return null;

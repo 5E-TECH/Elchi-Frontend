@@ -1253,6 +1253,11 @@
       "retry": "Qayta urinish",
       "current": "Tanlangan"
     },
-    "torchFailed": "Chiroqni yoqib bo'lmadi"
+    "torchFailed": "Chiroqni yoqib bo'lmadi",
+    "switchCamera": "Kamerani almashtirish",
+    "lowLight": {
+      "text": "Yorug'lik kam",
+      "action": "Chiroqni yoqish"
+    }
   }
 }

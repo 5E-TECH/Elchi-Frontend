@@ -41,3 +41,46 @@ describe("scanner feedback (shared/lib/scanner/feedback)", () => {
     expect(SCANNER_SOUND_IDS).toEqual(["classic", "soft", "digital", "bell", "pulse", "bright"]);
   });
 });
+
+describe("Sozlamalar → Skaner: «Ovoz» va «Tebranish» kalitlari", () => {
+  afterEach(() => {
+    window.localStorage.clear();
+    Reflect.deleteProperty(navigator, "vibrate");
+  });
+
+  const mockVibrate = () => {
+    const vibrate = vi.fn(() => true);
+    Object.defineProperty(navigator, "vibrate", { configurable: true, value: vibrate });
+    return vibrate;
+  };
+
+  it("sukut — tebranadi (muvaffaqiyat: bir marta qisqa, xato: uch marta)", () => {
+    const vibrate = mockVibrate();
+    playScanSignal("success");
+    playScanSignal("error");
+    expect(vibrate).toHaveBeenNthCalledWith(1, 40);
+    expect(vibrate).toHaveBeenNthCalledWith(2, [60, 45, 80]);
+  });
+
+  it("«Tebranish» o'chiq — tebranmaydi; «Eshitib ko'rish» (preview) baribir signal beradi", () => {
+    window.localStorage.setItem("scanner-vibration", "false");
+    const vibrate = mockVibrate();
+    playScanSignal("success");
+    playScanFeedback("error");
+    expect(vibrate).not.toHaveBeenCalled();
+    playScanFeedback("success", "Qabul qilindi", undefined, { preview: true });
+    expect(vibrate).toHaveBeenCalledTimes(1);
+  });
+
+  it("«Ovoz» o'chiq — ohang chalinmaydi (AudioContext yaratilmaydi), ekrandagi xabar hodisasi qoladi", () => {
+    window.localStorage.setItem("scanner-sound-enabled", "false");
+    const ctor = vi.fn();
+    Object.defineProperty(window, "AudioContext", { configurable: true, writable: true, value: ctor });
+    const { details, stop } = listen();
+    playScanFeedback("success", "Qabul qilindi");
+    stop();
+    expect(ctor).not.toHaveBeenCalled();
+    expect(details).toHaveLength(1);
+    Reflect.deleteProperty(window, "AudioContext");
+  });
+});

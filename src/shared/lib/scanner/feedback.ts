@@ -1,5 +1,6 @@
 import {
   readStoredScannerErrorSound,
+  readStoredScannerFeedbackPrefs,
   readStoredScannerSuccessSound,
   type StoredScannerSound,
 } from "../preferencesStorage";
@@ -230,15 +231,28 @@ const scheduleFeedback = (context: AudioContext, type: ScanFeedbackType) => {
   });
 };
 
+export type ScanSignalOptions = {
+  /**
+   * Sozlamalardagi «Ovoz» / «Tebranish» kalitlariga qaramay chalinsin — faqat «Eshitib ko'rish» (Sozlamalar):
+   * foydalanuvchi ohangni aniq so'ragan.
+   */
+  preview?: boolean;
+};
+
 /**
  * Faqat ovoz va tebranish (hodisasiz) — natija ekranda boshqa yo'l bilan ko'rsatilganda
  * (masalan kamera «ruxsat berilmagan» kartasi: xabar qatori kerak emas, xato ovozi kerak).
+ * Sozlamalar → Skaner: «Ovoz» o'chiq — ohang yo'q, «Tebranish» o'chiq — tebranish yo'q.
  */
-export const playScanSignal = (type: ScanFeedbackType) => {
+export const playScanSignal = (type: ScanFeedbackType, options: ScanSignalOptions = {}) => {
+  const prefs = readStoredScannerFeedbackPrefs();
+  if (typeof window !== "undefined" && (prefs.vibration || options.preview)) {
+    window.navigator.vibrate?.(FEEDBACK_VIBRATION[type]);
+  }
+  if (!prefs.sound && !options.preview) return;
+
   const context = getAudioContext();
   if (!context) return;
-
-  window.navigator.vibrate?.(FEEDBACK_VIBRATION[type]);
 
   if (context.state === "running") {
     scheduleFeedback(context, type);
@@ -249,7 +263,12 @@ export const playScanSignal = (type: ScanFeedbackType) => {
 };
 
 /** Natija: `SCAN_FEEDBACK_EVENT` hodisasi (ekrandagi xabar) + ovoz va tebranish. */
-export const playScanFeedback = (type: ScanFeedbackType, message?: string, source?: ScanSource) => {
+export const playScanFeedback = (
+  type: ScanFeedbackType,
+  message?: string,
+  source?: ScanSource,
+  options?: ScanSignalOptions,
+) => {
   if (typeof window !== "undefined") {
     window.dispatchEvent(
       new CustomEvent<ScanFeedbackDetail>(SCAN_FEEDBACK_EVENT, {
@@ -258,5 +277,5 @@ export const playScanFeedback = (type: ScanFeedbackType, message?: string, sourc
     );
   }
 
-  playScanSignal(type);
+  playScanSignal(type, options);
 };

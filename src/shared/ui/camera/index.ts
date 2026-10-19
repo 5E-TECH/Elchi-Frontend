@@ -10,10 +10,11 @@ export {
   CameraProgress,
   CameraStatus,
   CameraSteps,
+  CameraSuggestion,
   CameraSurface,
   CameraToast,
   CameraToasts,
   ScanFinder,
 } from "./CameraSurface";
-export type { CameraCardTone, CameraChipDot, CameraTone } from "./CameraSurface";
+export type { CameraCardTone, CameraChipDot, CameraTone, ScanFrameSize } from "./CameraSurface";
 export { loadScannerCamera, preloadScannerCamera } from "./loadScannerCamera";

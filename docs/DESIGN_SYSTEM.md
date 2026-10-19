@@ -2,8 +2,8 @@
 
 > Holat (2026-10-19): **0–5 bosqichlar tayyor.** 4 (sahifalar): 77 route'dan 76 tasi v2 — G1, G2, G3 birlashtirildi,
 > `/scan` skaner 1-bosqichida (`design/SCREENS.md`); 5 (qo'riqchilar, §12): ESLint `design-v2/*` butun `src` da xato,
-> `V2_SCOPES` + `named-colour`, vizual snapshotlar (CI «Visual», 23 sahna). Qolgan ish (§14): oqimlardagi kamera
-> (skaner 2–3-bosqich), yopiq `/market-operators`, v1 ratchet ro'yxatlari (§12.2, §12.3), «Visual» baseline'lari va required tekshiruv (§12.5).
+> `V2_SCOPES` + `named-colour`, vizual snapshotlar (CI «Visual», 23 sahna). Kamera ishi (skaner 1–4-bosqich) tayyor.
+> Qolgan ish (§14): yopiq `/market-operators`, v1 ratchet ro'yxatlari (§12.2, §12.3), «Visual» baseline'lari va required tekshiruv (§12.5).
 > Trello: «Dizayn v2» kartalari.
 
 Bu hujjat — yangi UI yozayotgan har bir frontchi va AI agent uchun **majburiy** qoidalar. Qisqa versiyasi
@@ -376,7 +376,8 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
 **4-bosqich — tayyor (sahifalar).** Har sahifa alohida PR, faylning birinchi qatorida `// dizayn-v2: <ekran>`.
 77 route'dan 76 tasi v2 (`design/SCREENS.md`); `/scan` skaner 1-bosqichida ko'chirildi (2026-10-19), qolgani — yopiq
 `/market-operators` (ko'chirilmaydi). Oqimlardagi kamera rejimlari (`*-camera`) — skaner 2-bosqichida kontekstli
-markaziy tugma orqali qilindi, v1 `ScannerCameraModal` o'chirildi (§14); universal rejimlar — 3-bosqich.
+markaziy tugma orqali qilindi, v1 `ScannerCameraModal` o'chirildi (§14); universal rejimlar — 3-bosqich,
+Sozlamalar → Skaner → «Kamera» — 4-bosqich (kamera ishi yopildi).
 
 - **Ro'yxat standarti** — `DataTable` (ustunlar, `density`, server saralashi, tanlov, telefonda `renderCard` →
   kartalar) + `Pagination` (`Card footer`, «10 ta» tanlovi, 5 o'rinli sahifalar), `src/shared/ui/primitives` barrelidan;
@@ -797,7 +798,28 @@ karta yo'q · kunduzgi / tungi / 390px skrinshot · to'liq `npm test` + `npm run
       buyurtma bo'lmagan yorliq — so'rovsiz rad; «Tugatish» (`finish.keepOpen`) → kesh yangilanadi, xulosa
       «N ta buyurtma sizga biriktirildi» [Davom etish] [Buyurtmalarimga o'tish].
     - E2E: `tests/e2e/scanner-universal.mobile.spec.ts`.
-  - **4-bosqich — qolgan:** Sozlamalar → Skaner → «Kamera» kartasi (`common-settings-scanner`).
+  - **4-bosqich — tayyor:** Sozlamalar → Skaner → «Kamera» kartasi (`common-settings-scanner`,
+    `pages/settings/ui/ScannerPanel.tsx`): «Kamerani sinash» → `/scan` (marketda yo'q), «Asosiy kamera» (orqa —
+    sukut / old), kalitlar «Chiroq — avtomatik», «Uzluksiz skanerlash», «Ovoz», «Tebranish», «Ramka o'lchami»
+    (kichik 208/232 · o'rta 248/280 · katta 288/320 px).
+    - Saqlash: `entities/settings` → `scanner.camera { facing, frame, torchAuto, continuous }` va
+      `scanner.feedback { sound, vibration }`; backend `PATCH auth/my-settings` jsonb ni ochiq saqlaydi (origin/main
+      `updateOwnSettings` — kalit tekshiruvi yo'q), shuning uchun hisobga yoziladi. Qurilmada — `localStorage`
+      ko'zgusi (`shared/lib/preferencesStorage`, `SettingsSync` va sahifa yozadi); `shared` qatlami shundan o'qiydi.
+      Maket matni «shu qurilmada saqlanadi» → «hisobingizda saqlanadi» (haqiqiy xatti-harakat).
+    - `ScannerCamera` ochilishda o'qiydi: asosiy kamera (`preferredCamera`; kamera ichida «Kamerani almashtirish» —
+      shu ochilish uchun, bir nechta kamera bo'lsa, maket `superadmin-scan-camera`), ramka o'lchami — ramka,
+      maslahat o'rni va **skan hududi** (`shared/ui/camera/scanRegion.ts`: ekrandagi ramka `object-cover` hisobi bilan
+      tasvir pikseliga, ±10 % zaxira; maket «faqat ramka ichidagi QR»). «Chiroq — avtomatik» — ega qarori: o'zi
+      yoqilmaydi, chiroqli qurilmada kadr yorqinligi past bo'lsa (`useLowLight`, 1,2 s da bir o'lchov, ketma-ket 2
+      ta) maslahat o'rnida «Yorug'lik kam» + [Chiroqni yoqish]; chiroq bir marta bosilsa — shu ochilishda
+      qaytmaydi; kadrni o'qib bo'lmasa — faqat qo'lda. «Uzluksiz skanerlash» o'chiq — oqim oynasi (`overlay`) shu
+      kamera yuborgan kodning muvaffaqiyatli natijasidan 700 ms keyin yopiladi (xato — ochiq qoladi, USB natijasi
+      yopmaydi); universal `/scan` sahifasiga ta'sir qilmaydi. «Ovoz» / «Tebranish» — `playScanSignal` da
+      (kamera va USB; «Eshitib ko'rish» — `preview`, kalitga qaramaydi).
+    - E2E: `tests/e2e/scanner-settings.mobile.spec.ts` (saqlash; o'chiq uzluksizlikda bitta koddan keyin yopilish).
+  - **Kamera ishi yopildi:** v1 kamera kodi qolmadi (`ScannerCameraModal`, v1 «Kamera» tugmalari, `scanShared`
+    chiqarilgan). Ochiq (ega qarori): oflayn navbat, buyurtma raqami bo'yicha qo'lda kiritish (API yo'q).
   - Kamera ko'rinishlari vizual sahnalarda yo'q.
 - **Yopiq va yetib bo'lmaydigan v1:** `/market-operators` (ko'chirilmaydi, `V2_SCOPES` da yo'q), `SalaryPaymentPopup`
   («Maosh to'lash» yashirin) — ratchet va pending'da; o'chirish — alohida qaror.
