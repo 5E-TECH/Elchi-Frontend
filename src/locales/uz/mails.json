@@ -265,6 +265,19 @@
       "noManager": "Menejer biriktirilmagan — avval menejer biriktiring",
       "noManagerRegistrator": "Menejer biriktirilmagan — adminga murojaat qiling",
       "submit": "Jo'natish — {{value}} ta"
-    }
+    },
+    "cameraTitle": {
+      "send": "Pochtani jo'natish",
+      "receive": "Pochtani qabul qilish",
+      "refused": "Rad etilgan pochtani qabul qilish"
+    },
+    "cameraNoteTitle": "Pochtadagi buyurtma QR kodini skanerlang — u ro'yxatda tanlanadi",
+    "cameraNoteText": "Boshqa pochtaning kodi qabul qilinmaydi.",
+    "cameraMeter": "ta tanlandi",
+    "cameraListTitle": "Oxirgi skanerlar",
+    "cameraSelected": "Buyurtma tanlandi №{{id}}",
+    "cameraNotInMail": "Bu pochtada yo'q",
+    "cameraRejectedTitle": "{{code}} · Bu pochtada yo'q",
+    "cameraRejectedText": "Boshqa pochtaga tegishli · rad etildi"
   }
 }

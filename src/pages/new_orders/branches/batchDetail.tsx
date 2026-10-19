@@ -32,7 +32,9 @@ import {
 } from "../../../shared/ui/primitives";
 import { formatBatchDisplayId } from "../../batches/lib/batchFormat";
 import { getDeliveryLabelKey } from "../../orders/list/courier/list/orderActionModel";
-import { playMissingOrderFeedback, playScanFeedback } from "../../../shared/lib/scanner/feedback";
+import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
+import { orderByRecent, scanNotify, useRecentScans } from "../../../shared/lib/scanner/scanSession";
+import type { ScanTargetListItem } from "../../../shared/lib/scanner/scanTargets";
 import { SelectionRegion } from "../../../shared/ui/SelectionRegion";
 import {
   BATCH_STATUS_TONE,
@@ -57,7 +59,10 @@ const orderHref = (order: BatchOrder) => `/orders/edit/${order.id}`;
  * amal «Qabul qilish — N ta buyurtma» (tanlanganlar; tasdiq oynasi yo'q — v1 va maketdagidek).
  * Karta: «Yo'nalish {manba} → {manzil}» + skaner maslahati («USB skaner tayyor»), tanlov paneli, jadval
  * (telefonda kartalar). USB skaner (klaviatura) buyurtma QR'ini o'qisa — buyurtma ro'yxatda tanlanadi.
- * Kamera rejimi (maket `*-camera`, telefondagi «Kamera bilan skanerlash») — keyinroq, alohida.
+ * KAMERA (Trello v1eLN2tV 2-bosqich; maket `superadmin-neworders-branch-batch-detail-camera`): sahifada kamera
+ * tugmasi yo'q (ega qarori — maketdagi «Kamera bilan skanerlash» o'rniga markaziy «Skaner» / «Skanerlash»
+ * tugmasi shu sahifaning maqsadini ochadi). Kamera skani USB bilan aynan bir yo'l — buyurtma faqat tanlanadi;
+ * hammasi tanlansa «Hammasi tanlandi», «Tugatish» dan keyin sahifadagi «Qabul qilish».
  *
  * Ma'lumot: `GET transfer-batches/:id`, bo'lmasa `…/remaining` (v1 dagidek). Qabul:
  * `POST transfer-batches/:id/receive-orders { orderIds }` — qabul qilinganlar ro'yxatdan yashiriladi.
@@ -72,6 +77,7 @@ const BranchBatchDetailPage = () => {
   const sourceBranchQuery = useBranchDetail(branchId);
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
   const [receivedOrderIds, setReceivedOrderIds] = useState<Set<string>>(new Set());
+  const { recent: recentScanIds, touch: touchRecentScan } = useRecentScans();
 
   const data = useMemo<BatchDetail | undefined>(
     () => detailQuery.data ?? remainingQuery.data,
@@ -149,8 +155,8 @@ const BranchBatchDetailPage = () => {
   };
 
   const handleMissingScannedOrder = useCallback(() => {
-    playMissingOrderFeedback();
-    notify.warning(t("qrNotFound"), { description: t("branchBatches.detail.scanMissing"), duration: 3000 });
+    void playScanFeedback("missing", t("branchBatches.detail.cameraMissing"));
+    scanNotify.warning(t("qrNotFound"), { description: t("branchBatches.detail.scanMissing"), duration: 3000 });
   }, [t]);
 
   // Skaner chaqiruvlari joriy tanlovni o'qiydi: yon ta'sir (ovoz, xabar) `setState` ichida emas.
@@ -163,7 +169,7 @@ const BranchBatchDetailPage = () => {
     (order: BatchOrder) => {
       if (selectedRef.current.has(order.id)) {
         void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
-        notify.warning(t("common:scannerFeedbackDuplicate"), { description: `#${order.id}`, duration: 2000 });
+        scanNotify.warning(t("common:scannerFeedbackDuplicate"), { description: `#${order.id}`, duration: 2000 });
         return;
       }
       selectedRef.current = new Set(selectedRef.current).add(order.id);
@@ -172,17 +178,66 @@ const BranchBatchDetailPage = () => {
         next.add(order.id);
         return next;
       });
-      void playScanFeedback("success");
+      touchRecentScan(order.id);
+      void playScanFeedback("success", t("branchBatches.detail.cameraSelected", { id: order.id }));
     },
-    [t],
+    [t, touchRecentScan],
   );
 
+  const deselectOrder = useCallback((id: string) => {
+    selectedRef.current = new Set([...selectedRef.current].filter((item) => item !== id));
+    setSelectedOrderIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }, []);
+
   const scannerEnabled = orders.length > 0 && !receiveBatchOrders.isPending;
+  const selectedForCamera = useMemo(
+    () => orderByRecent(orders.filter((order) => selectedOrderIds.has(order.id)), (order) => order.id, recentScanIds),
+    [orders, recentScanIds, selectedOrderIds],
+  );
+  const cameraList = useMemo<ScanTargetListItem[]>(
+    () =>
+      selectedForCamera.map((order) => ({
+        key: order.id,
+        title: [`№${order.id}`, known(order.receiver)].filter(Boolean).join(" · "),
+        subtitle: [order.district ?? known(order.address), formatMoneyLocalized(order.price, { language })]
+          .filter(Boolean)
+          .join(" · "),
+        tone: "success",
+        onUndo: () => deselectOrder(order.id),
+      })),
+    [deselectOrder, language, selectedForCamera],
+  );
+  const allScanned = orders.length > 0 && selectedForCamera.length === orders.length;
+  const cameraOrdersCount = formatNumberLocalized(orders.length, { language });
   useOrderQrScanner({
     orders,
-    enabled: scannerEnabled,
+    // Qabul so'rovi ketayotganda skan e'tiborsiz (avvalgidek), lekin ochiq kamera yopilmaydi.
+    paused: receiveBatchOrders.isPending,
     onMatch: selectScannedOrder,
     onMissing: handleMissingScannedOrder,
+    camera: {
+      id: `branch-batch:${batchId}`,
+      title: t("branchBatches.detail.cameraTitle"),
+      context: t("branchBatches.detail.cameraContext", {
+        batch: formatBatchDisplayId(batchId),
+        value: cameraOrdersCount,
+      }),
+      note: allScanned
+        ? {
+            title: t("branchBatches.detail.cameraAllTitle"),
+            text: t("branchBatches.detail.cameraAllText", { value: cameraOrdersCount }),
+          }
+        : { title: t("branchBatches.detail.cameraNoteTitle"), text: t("branchBatches.detail.cameraNoteText") },
+      progress: { done: selectedForCamera.length, total: orders.length, label: t("branchBatches.detail.cameraMeter") },
+      list: cameraList,
+      listTitle: t("branchBatches.detail.cameraListTitle"),
+      finish: { label: t("ui:camera.action.finish"), onFinish: () => undefined },
+    },
   });
 
   // ─── Ko'rinish ───────────────────────────────────────────────────────────────

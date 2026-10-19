@@ -24,7 +24,9 @@ import {
   type DataTableSelection,
 } from "../../../shared/ui/primitives";
 import { formatBatchDisplayId } from "../../batches/lib/batchFormat";
-import { playMissingOrderFeedback, playScanFeedback } from "../../../shared/lib/scanner/feedback";
+import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
+import { orderByRecent, scanNotify, useRecentScans } from "../../../shared/lib/scanner/scanSession";
+import type { ScanTargetListItem } from "../../../shared/lib/scanner/scanTargets";
 import { SelectionRegion } from "../../../shared/ui/SelectionRegion";
 import {
   BATCH_STATUS_TONE,
@@ -54,6 +56,11 @@ type ScannableBatch = Batch & { qr_code_token: string | null };
  * So'rov: `transfer-batches?source_branch_id&status=SENT&direction=FORWARD&page=1&limit=100` (sahifalash yo'q,
  * 100 ta bilan cheklangan — v1 dagidek). Qabul: har paketga `POST transfer-batches/:id/receive`
  * (`Promise.allSettled`) — qabul qilinganlar ro'yxatdan yashiriladi, muvaffaqiyat va xato alohida xabar.
+ *
+ * KAMERA (Trello v1eLN2tV 2-bosqich): sahifada kamera tugmasi yo'q — markaziy «Skaner» tugmasi (desktopda
+ * «Skanerlash») shu sahifaning maqsadini ochadi; kamera skani USB bilan aynan bir yo'l (`useOrderQrScanner`) —
+ * paket faqat tanlanadi, «Tugatish» dan keyin sahifadagi «Qabul qilish». Maket yo'q — eng yaqini
+ * `superadmin-neworders-branch-batch-detail-camera` (shu oqimning paket ichidagi kamerasi).
  */
 const BranchSentBatchesPage = () => {
   const { branchId = "" } = useParams<{ branchId: string }>();
@@ -63,6 +70,7 @@ const BranchSentBatchesPage = () => {
   const [selectedBatchIds, setSelectedBatchIds] = useState<Set<string>>(new Set());
   const [receivedBatchIds, setReceivedBatchIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
+  const { recent: recentScanIds, touch: touchRecentScan } = useRecentScans();
   const receiveTransferBatch = useReceiveTransferBatch();
   const branchQuery = useBranchDetail(branchId);
 
@@ -146,15 +154,15 @@ const BranchSentBatchesPage = () => {
   };
 
   const handleMissingScannedBatch = useCallback(() => {
-    playMissingOrderFeedback();
-    notify.warning(t("qrNotFound"), { description: t("branchBatches.batches.scanMissing"), duration: 3000 });
+    void playScanFeedback("missing", t("branchBatches.batches.cameraMissing"));
+    scanNotify.warning(t("qrNotFound"), { description: t("branchBatches.batches.scanMissing"), duration: 3000 });
   }, [t]);
 
   const selectScannedBatch = useCallback(
     (batch: ScannableBatch) => {
       if (selectedRef.current.has(batch.id)) {
         void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
-        notify.warning(t("common:scannerFeedbackDuplicate"), { description: `#${batch.id}`, duration: 2000 });
+        scanNotify.warning(t("common:scannerFeedbackDuplicate"), { description: `#${batch.id}`, duration: 2000 });
         return;
       }
       selectedRef.current = new Set(selectedRef.current).add(batch.id);
@@ -163,17 +171,60 @@ const BranchSentBatchesPage = () => {
         next.add(batch.id);
         return next;
       });
-      void playScanFeedback("success");
+      touchRecentScan(batch.id);
+      void playScanFeedback("success", t("branchBatches.batches.cameraSelected", { id: formatBatchDisplayId(batch.id) }));
     },
-    [t],
+    [t, touchRecentScan],
   );
 
+  const deselectBatch = useCallback((id: string) => {
+    selectedRef.current = new Set([...selectedRef.current].filter((item) => item !== id));
+    setSelectedBatchIds((prev) => {
+      if (!prev.has(id)) return prev;
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }, []);
+
   const scannerEnabled = scannableRows.length > 0 && !receiveTransferBatch.isPending;
+  const selectedForCamera = useMemo(
+    () => orderByRecent(rows.filter((row) => selectedBatchIds.has(row.id)), (row) => row.id, recentScanIds),
+    [recentScanIds, rows, selectedBatchIds],
+  );
+  const cameraList = useMemo<ScanTargetListItem[]>(
+    () =>
+      selectedForCamera.map((batch) => ({
+        key: batch.id,
+        title: [formatBatchDisplayId(batch.id), readBatchRegion(batch)].filter(Boolean).join(" · "),
+        subtitle: [
+          t("branchBatches.batches.ordersSub", { count: batch.orders_count, value: formatNumberLocalized(batch.orders_count, { language }) }),
+          formatMoneyLocalized(batch.total_price, { language }),
+        ].join(" · "),
+        tone: "success",
+        onUndo: () => deselectBatch(batch.id),
+      })),
+    [deselectBatch, language, selectedForCamera, t],
+  );
   useOrderQrScanner({
     orders: scannableRows,
-    enabled: scannerEnabled,
+    // Qabul so'rovi ketayotganda skan e'tiborsiz (avvalgidek), lekin ochiq kamera yopilmaydi.
+    paused: receiveTransferBatch.isPending,
     onMatch: selectScannedBatch,
     onMissing: handleMissingScannedBatch,
+    camera: {
+      id: `branch-batches:${branchId}`,
+      title: t("branchBatches.batches.cameraTitle"),
+      context: t("branchBatches.batches.cameraContext", {
+        branch: knownBranchName ?? t("branchBatches.batches.branchFallback", { id: branchId }),
+        value: formatNumberLocalized(rows.length, { language }),
+      }),
+      note: { title: t("branchBatches.batches.cameraNoteTitle"), text: t("branchBatches.batches.cameraNoteText") },
+      progress: { done: selectedForCamera.length, total: rows.length, label: t("branchBatches.batches.cameraMeter") },
+      list: cameraList,
+      listTitle: t("branchBatches.batches.cameraListTitle"),
+      finish: { label: t("ui:camera.action.finish"), onFinish: () => undefined },
+    },
   });
 
   // ─── Ko'rinish ───────────────────────────────────────────────────────────────

@@ -11,6 +11,11 @@ type OrderQrScannerItem = {
 type UseOrderQrScannerOptions<TOrder extends OrderQrScannerItem> = {
   orders: TOrder[];
   enabled?: boolean;
+  /**
+   * Vaqtincha to'xtatish (server amali bajarilmoqda): USB skaner tinglanmaydi, kamera skani e'tiborsiz
+   * qoladi, lekin kamera maqsadi OLINMAYDI — ochiq kamera yopilmaydi (`enabled=false` dan farqi shu).
+   */
+  paused?: boolean;
   minLength?: number;
   captureEditableTargets?: boolean;
   onMatch: (order: TOrder, rawValue: string, source: ScanSource) => void;
@@ -28,6 +33,7 @@ type UseOrderQrScannerOptions<TOrder extends OrderQrScannerItem> = {
 export const useOrderQrScanner = <TOrder extends OrderQrScannerItem>({
   orders,
   enabled = true,
+  paused = false,
   minLength = 6,
   captureEditableTargets = true,
   onMatch,
@@ -50,6 +56,7 @@ export const useOrderQrScanner = <TOrder extends OrderQrScannerItem>({
   }, [orders]);
 
   const matchScan = useCallback((rawValue: string, source: ScanSource) => {
+    if (paused) return false;
     const candidates = normalizeScannerCandidates(rawValue, window.location.origin);
     const matchedOrder = candidates
       .map((candidate) => orderScanIndex.get(candidate))
@@ -68,12 +75,12 @@ export const useOrderQrScanner = <TOrder extends OrderQrScannerItem>({
 
     onMissing(rawValue, source);
     return true;
-  }, [minLength, onMatch, onMissing, orderScanIndex]);
+  }, [minLength, onMatch, onMissing, orderScanIndex, paused]);
 
   const handleKeyboardScan = useCallback((rawValue: string) => matchScan(rawValue, "keyboard"), [matchScan]);
 
   useKeyboardScanner({
-    enabled: enabled && orders.length > 0,
+    enabled: enabled && !paused && orders.length > 0,
     captureEditableTargets,
     onScan: handleKeyboardScan,
   });

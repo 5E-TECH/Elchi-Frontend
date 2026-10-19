@@ -77,4 +77,23 @@ describe("useOrderQrScanner", () => {
     rerender({ enabled: false, orders: ORDERS });
     expect(getActiveScanTarget()).toBeNull();
   });
+
+  it("paused — USB ham, kamera ham skanni e'tiborsiz qoldiradi, lekin maqsad turadi (kamera yopilmaydi)", async () => {
+    const onMatch = vi.fn();
+    const onMissing = vi.fn();
+    const camera = { id: "x", title: "Qabul qilish" };
+    const { rerender } = renderHook(
+      ({ paused }) => useOrderQrScanner({ orders: ORDERS, paused, onMatch, onMissing, camera }),
+      { initialProps: { paused: true } },
+    );
+    expect(getActiveScanTarget()?.id).toBe("x");
+    await getActiveScanTarget()?.onScan("10254", "camera");
+    scan("65f0c1aa22bb33cc44dd55ee");
+    expect(onMatch).not.toHaveBeenCalled();
+    expect(onMissing).not.toHaveBeenCalled();
+
+    rerender({ paused: false });
+    await getActiveScanTarget()?.onScan("10254", "camera");
+    expect(onMatch).toHaveBeenCalledWith(ORDERS[0], "10254", "camera");
+  });
 });

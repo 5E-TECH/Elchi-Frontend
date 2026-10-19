@@ -1,9 +1,12 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Link, Route, Routes } from "react-router-dom";
+import { Link, Route, Routes, useLocation } from "react-router-dom";
 import { vi } from "vitest";
 import IncomingOrdersPage from "./index";
 import { renderWithProviders } from "../../test/test-utils";
+import { getActiveScanTarget, resetScanTargets } from "../../shared/lib/scanner/scanTargets";
+
+const LocationProbe = () => <span data-testid="location">{useLocation().pathname}</span>;
 
 const apiGetMock = vi.fn();
 const apiPostMock = vi.fn();
@@ -505,5 +508,103 @@ describe("IncomingOrdersPage — dizayn v2", () => {
 
     expect(await screen.findByText("№10264 — ro'yxatga qo'shildi")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("QR kodni skanerlang yoki kiriting...")).toHaveValue("");
+  });
+});
+
+describe("IncomingOrdersPage — kamera (markaziy «Skaner» tugmasi)", () => {
+  const items = [
+    { id: "o-1", order_number: 10263, qr_code_token: "tok-1", total_price: 175000, customer: { name: "Rustam Jo'rayev", district: { name: "Olmazor tumani" } } },
+    { id: "o-2", order_number: 10264, qr_code_token: "tok-2", total_price: 96000, customer: { name: "Akmal Yo'ldoshev" }, external_batch_token: "qop-1", external_batch_size: 3 },
+    { id: "o-3", order_number: 10265, qr_code_token: "tok-3", total_price: 145000, customer: { name: "Farrux Ahmedov" }, external_batch_token: "qop-1", external_batch_size: 3 },
+  ];
+  const sources = [
+    { market_id: "121", orders_count: 3, total_price_sum: 416000, oldest_at: null, market: { name: "BeePost" } },
+    { market_id: "122", orders_count: 5, total_price_sum: 900000, oldest_at: null, market: { name: "Uzum" } },
+  ];
+  const mockApi = () =>
+    apiGetMock.mockImplementation((url: string) => {
+      if (url === "orders/external") return Promise.resolve({ data: { data: items, total: items.length } });
+      if (url === "orders/external/sources") return Promise.resolve({ data: sources });
+      return Promise.resolve({ data: [] });
+    });
+  const target = () => getActiveScanTarget()!;
+
+  beforeEach(() => {
+    apiGetMock.mockReset();
+    apiPostMock.mockReset();
+  });
+
+  afterEach(() => {
+    act(() => resetScanTargets());
+  });
+
+  it("maqsad: «Posilkalarni qabul qilish · BeePost · 3 ta kelgan»; kamera skani `ScanInput` bilan bir handler — faqat belgilaydi", async () => {
+    mockApi();
+    renderPage();
+    await screen.findByText("Rustam Jo'rayev");
+    await screen.findByRole("heading", { level: 1, name: "BeePost" });
+
+    expect(target()).toMatchObject({
+      id: "incoming:121",
+      title: "Posilkalarni qabul qilish",
+      context: "BeePost · 3 ta kelgan",
+      progress: { done: 0, total: 3, label: "ta skanerlandi" },
+      finish: { label: "Tugatish" },
+      switcher: { label: "BeePost", value: "121", title: "Manbani tanlang" },
+    });
+
+    await act(async () => {
+      await target().onScan("tok-1", "camera");
+    });
+
+    // Sahifadagi bilan AYNAN bir xil natija: xabar, belgi, «Qabul qilish — 1 ta» — server so'rovi yo'q.
+    expect(await screen.findByText("№10263 — ro'yxatga qo'shildi")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Qabul qilish — 1 ta posilka" })).toBeEnabled();
+    expect(apiPostMock).not.toHaveBeenCalled();
+    expect(target().progress).toMatchObject({ done: 1, total: 3 });
+    expect(target().list?.[0]).toMatchObject({ key: "o-1", title: "№10263 · Rustam Jo'rayev", tone: "success" });
+
+    // «Bekor qilish» — belgi olinadi (server amali hali yo'q).
+    act(() => target().list![0].onUndo!());
+    expect(screen.getByRole("button", { name: "Qabul qilish — 0 ta posilka" })).toBeDisabled();
+    expect(target().list).toEqual([]);
+  });
+
+  it("qop to'liq emas (3 dan 2 tasi) — kamera hisobida ogohlantirish «Qopda yetishmaydi 1»", async () => {
+    mockApi();
+    renderPage();
+    await screen.findByText("Rustam Jo'rayev");
+
+    await act(async () => {
+      await target().onScan("qop-1", "camera");
+    });
+
+    expect(await screen.findByText("Qop: 3 posilkadan 2 tasi belgilandi")).toBeInTheDocument();
+    expect(target().stats).toEqual([{ key: "bag", label: "Qopda yetishmaydi", value: 1, tone: "warning" }]);
+    expect(target().progress).toMatchObject({ done: 2, total: 3 });
+  });
+
+  it("manba almashtirish: variantlar manbalar ro'yxatidan, tanlansa — `/new-orders/incoming/:id`", async () => {
+    mockApi();
+    renderWithProviders(
+      <>
+        <Routes>
+          <Route path="/new-orders/incoming/:marketId" element={<IncomingOrdersPage />} />
+        </Routes>
+        <LocationProbe />
+      </>,
+      { route: "/new-orders/incoming/121", preloadedState: adminState },
+    );
+    await screen.findByText("Rustam Jo'rayev");
+
+    const options = target().switcher!.options as () => Promise<ReadonlyArray<{ value: string; label: string; meta?: string }>>;
+    await expect(options()).resolves.toEqual([
+      { value: "121", label: "BeePost", meta: "3 ta posilka" },
+      { value: "122", label: "Uzum", meta: "5 ta posilka" },
+    ]);
+
+    act(() => target().switcher!.onSelect("122"));
+    await waitFor(() => expect(screen.getByTestId("location")).toHaveTextContent("/new-orders/incoming/122"));
+    await waitFor(() => expect(target().id).toBe("incoming:122"));
   });
 });

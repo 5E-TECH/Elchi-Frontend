@@ -22,7 +22,7 @@ import PrintModeSelect from "../../../shared/components/PrintModeSelect";
 import { api } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
-import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import {
@@ -37,9 +37,12 @@ import {
 } from "../../../shared/ui/primitives";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import { DetailAlert } from "../../new_orders/components/detail/DetailAlert";
-import { normalizeScannerCandidates } from "../../../shared/lib/scanToken";
-import { playMissingOrderFeedback, playScanFeedback } from "../../../shared/lib/scanner/feedback";
+import { extractScannerToken, normalizeScannerCandidates } from "../../../shared/lib/scanToken";
+import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
+import { orderByRecent, scanNotify, useRecentScans } from "../../../shared/lib/scanner/scanSession";
+import type { ScanTargetListItem } from "../../../shared/lib/scanner/scanTargets";
 import { fetchScanDetail, getBackendErrorMessage } from "../../scan/lib/scanResource";
+import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { getMailTabPath, normalizeMailTab, type MailTab } from "../lib/navigation";
 
 // ─── UI komponentlar ──────────────────────────────────────────────────────────
@@ -80,7 +83,14 @@ import { useMailDetailState } from "./model/useMailDetailState";
  *
  * Tuzilma: `PageHeader` (orqaga — kelingan tab, holat badge'i, chop etish + bitta asosiy amal) → ogohlantirishlar →
  * `MailStatCards` → `OrdersTable` (skaner izohi, tanlov paneli, jadval / telefonda kartalar). USB (HID) skaner —
- * `useOrderQrScanner`; kamera rejimi (`*-camera` maketlari) bu bosqichda yo'q.
+ * `useOrderQrScanner`.
+ *
+ * KAMERA (Trello v1eLN2tV 2-bosqich; maketlar `superadmin-mails-detail-camera`, `registrator-mails-detail-camera`,
+ * `manager-mails-detail-receive-camera`, `courier-mails-detail-receive-camera`; rad etilgan pochta — maket yo'q,
+ * eng yaqini `manager-mails-detail-receive-camera`): sahifada kamera tugmasi yo'q — markaziy «Skaner» (desktopda
+ * «Skanerlash») shu sahifaning maqsadini ochadi. Kamera skani USB bilan aynan bir yo'l — buyurtma faqat tanlanadi
+ * (jo'natish / qabul — sahifadagi asosiy tugma). Pochtada yo'q kod ro'yxatda «Bu pochtada yo'q · rad etildi».
+ * Eski pochta, kuryerning rad etilgan pochtasi va amalsiz rejimda kamera maqsadi yo'q (markaziy tugma — `/scan`).
  */
 
 /** «← …» havolasi — qaytiladigan bo'lim nomi (taxta `tizim-states-navigation`). */
@@ -383,8 +393,11 @@ const MailDetailPage = () => {
   }, [orders]);
 
   // ─── Checkbox state ────────────────────────────────────────────────────────
-  const { selectedIds, allSelected, someSelected, toggleAll, toggleOne, selectOne, clearSelection } =
+  const { selectedIds, allSelected, someSelected, toggleAll, toggleOne, selectOne, deselectOne, clearSelection } =
     useMailDetailState(orders);
+  // Kamera ro'yxati: skan tartibi (`order:<id>` / `missing:<kod>`) va pochtada yo'q kodlar.
+  const { recent: recentScanKeys, touch: touchRecentScan } = useRecentScans();
+  const [rejectedCodes, setRejectedCodes] = useState<string[]>([]);
   const hasRefusedOrders = orders.some((order) => REFUSED_MAIL_ORDER_STATUSES.has(order.status));
   const canManualSelectRefusedOrder =
     !isOldDetail &&
@@ -449,14 +462,22 @@ const MailDetailPage = () => {
   const selectScannedOrder = useCallback((order: PostOrder) => {
     if (selectedIds.has(order.id)) {
       void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
-      notify.warning(t("common:scannerFeedbackDuplicate"), { description: `#${order.id}`, duration: 2000 });
+      scanNotify.warning(t("common:scannerFeedbackDuplicate"), { description: `#${order.id}`, duration: 2000 });
       return;
     }
 
     selectOne(order.id);
-    void playScanFeedback("success");
-    notify.success(t("orderSelected"), { description: `#${order.id}`, duration: 2000 });
-  }, [selectOne, selectedIds, t]);
+    touchRecentScan(`order:${order.id}`);
+    void playScanFeedback("success", t("detailPage.cameraSelected", { id: order.id }));
+    scanNotify.success(t("orderSelected"), { description: `#${order.id}`, duration: 2000 });
+  }, [selectOne, selectedIds, t, touchRecentScan]);
+
+  const rejectScannedCode = useCallback((rawValue: string) => {
+    const code = extractScannerToken(rawValue) ?? rawValue.trim();
+    setRejectedCodes((prev) => (prev.includes(code) ? prev : [...prev, code]));
+    touchRecentScan(`missing:${code}`);
+    void playScanFeedback("missing", t("detailPage.cameraNotInMail"));
+  }, [t, touchRecentScan]);
 
   const handleMissingScannedOrder = useCallback(async (rawValue: string) => {
     const rawCandidates = normalizeScannerCandidates(rawValue, window.location.origin);
@@ -484,26 +505,82 @@ const MailDetailPage = () => {
         return;
       }
 
-      playMissingOrderFeedback();
-      notify.warning(t("qrNotFound"), { description: t("mailScanMissing"), duration: 3000 });
+      rejectScannedCode(rawValue);
+      scanNotify.warning(t("qrNotFound"), { description: t("mailScanMissing"), duration: 3000 });
     } catch (error) {
-      void playScanFeedback("error");
+      // Server ham tanimadi (404) — bu pochtada yo'q kod (ro'yxatda «rad etildi»); boshqa xato — tekshirib bo'lmadi.
+      if (getErrorStatus(error) === 404) {
+        rejectScannedCode(rawValue);
+        scanNotify.warning(t("qrNotFound"), { description: t("mailScanMissing"), duration: 3000 });
+        return;
+      }
+      const message = getBackendErrorMessage(error) ?? t("mailScanMissing");
+      void playScanFeedback("error", message);
       // Skaner oqimi: xato qisqa turadi (v1 dagidek 3 s) — keyingi skanerlashda ekran to'silib qolmasin.
-      notify.error(t("qrNotFound"), {
-        description: getBackendErrorMessage(error) ?? t("mailScanMissing"),
+      scanNotify.error(t("qrNotFound"), {
+        description: message,
         duration: 3000,
       });
     }
-  }, [orders, selectScannedOrder, t]);
+  }, [orders, rejectScannedCode, selectScannedOrder, t]);
 
   const scannerEnabled = orders.length > 0 && !isOldDetail && !isReadOnlyRefusedCourier;
+  // Kamera — faqat amal bor rejimda (jo'natish, qabul, rad etilganni qabul): aks holda markaziy tugma `/scan`.
+  const cameraEnabled = !isOldDetail && !isReadOnlyRefusedCourier && canShowActionButton;
+  const cameraMode = isEffectiveRefusedDetail ? "refused" : shouldReceiveCurrentPost ? "receive" : "send";
+  const cameraList = useMemo<ScanTargetListItem[]>(() => {
+    const selectedItems = orders
+      .filter((order) => selectedIds.has(order.id))
+      .map<{ key: string; item: ScanTargetListItem }>((order) => ({
+        key: `order:${order.id}`,
+        item: {
+          key: `order:${order.id}`,
+          title: [`№${order.id}`, order.customer?.name?.trim()].filter(Boolean).join(" · "),
+          subtitle: [order.district?.name?.trim(), formatMoneyLocalized(Number(order.total_price) || 0, { language })]
+            .filter(Boolean)
+            .join(" · "),
+          tone: "success",
+          onUndo: () => deselectOne(order.id),
+        },
+      }));
+    const rejectedItems = rejectedCodes.map<{ key: string; item: ScanTargetListItem }>((code) => ({
+      key: `missing:${code}`,
+      item: {
+        key: `missing:${code}`,
+        title: t("detailPage.cameraRejectedTitle", { code }),
+        subtitle: t("detailPage.cameraRejectedText"),
+        tone: "danger",
+      },
+    }));
+    return orderByRecent([...selectedItems, ...rejectedItems], (entry) => entry.key, recentScanKeys).map(
+      (entry) => entry.item,
+    );
+  }, [deselectOne, language, orders, recentScanKeys, rejectedCodes, selectedIds, t]);
+  const cameraContext = [
+    postId ? t("mailNumberWithId", { id: postMeta?.id ?? postId }) : null,
+    regionLabel,
+  ]
+    .filter(Boolean)
+    .join(" · ");
   useOrderQrScanner({
     orders,
-    enabled: scannerEnabled,
+    enabled: !isOldDetail && !isReadOnlyRefusedCourier,
     onMatch: selectScannedOrder,
     onMissing: (rawValue) => {
       void handleMissingScannedOrder(rawValue);
     },
+    camera: cameraEnabled
+      ? {
+          id: `mail:${postId}:${cameraMode}`,
+          title: t(`detailPage.cameraTitle.${cameraMode}`),
+          context: cameraContext || undefined,
+          note: { title: t("detailPage.cameraNoteTitle"), text: t("detailPage.cameraNoteText") },
+          progress: { done: selectedIds.size, total: orders.length, label: t("detailPage.cameraMeter") },
+          list: cameraList,
+          listTitle: t("detailPage.cameraListTitle"),
+          finish: { label: t("ui:camera.action.finish"), onFinish: () => undefined },
+        }
+      : undefined,
   });
 
   const handleBack = useCallback(() => {

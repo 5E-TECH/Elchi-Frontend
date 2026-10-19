@@ -14,8 +14,19 @@ import BranchBatchDetailPage from "./batchDetail";
 type ScannerOptions = {
   orders: { id: string; qr_code_token?: string | null }[];
   enabled?: boolean;
+  paused?: boolean;
   onMatch: (row: { id: string }, raw: string) => void;
   onMissing: (raw: string) => void;
+  /** Kamera maqsadi (markaziy «Skaner» tugmasi) — `useOrderQrScanner` uni USB bilan bir yo'ldan o'tkazadi. */
+  camera?: {
+    id: string;
+    title: string;
+    context?: string;
+    note?: { title: string; text?: string };
+    progress?: { done: number; total?: number; label?: string };
+    list?: { key: string; title: string; subtitle?: string; onUndo?: () => void }[];
+    finish?: { label: string };
+  };
 };
 
 const mocks = vi.hoisted(() => ({
@@ -253,22 +264,46 @@ describe("Paket tafsiloti — USB skaner", () => {
     renderPage();
     await waitFor(() => expect(bodyRows()).toHaveLength(3));
 
-    expect(mocks.scanner?.enabled).toBe(true);
+    expect(mocks.scanner?.paused).toBe(false);
     expect(scanned("10172").qr_code_token).toBe("qr-10172-token");
 
     act(() => mocks.scanner!.onMatch(scanned("10172"), "qr-10172-token"));
     expect(screen.getByRole("checkbox", { name: "№10172 ni tanlash" })).toBeChecked();
-    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("success");
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("success", expect.any(String));
 
     act(() => mocks.scanner!.onMatch(scanned("10172"), "qr-10172-token"));
     expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("duplicate", "Allaqachon topilgan");
     expect(await screen.findByText("#10172")).toBeInTheDocument();
 
     act(() => mocks.scanner!.onMissing("qr-boshqa-paket"));
-    expect(mocks.playMissingOrderFeedback).toHaveBeenCalledTimes(1);
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("missing", expect.any(String));
     expect(await screen.findByText("QR topilmadi")).toBeInTheDocument();
     expect(screen.getByText("Bu QR kod shu paketdagi buyurtmalarga mos kelmadi.")).toBeInTheDocument();
     expect(mocks.post).not.toHaveBeenCalled();
+  });
+
+  it("kamera maqsadi: «Paketni qabul qilish», hisoblagich, ro'yxat; hammasi tanlansa «Hammasi tanlandi»", async () => {
+    renderPage();
+    await waitFor(() => expect(bodyRows()).toHaveLength(3));
+
+    expect(mocks.scanner?.camera).toMatchObject({
+      title: "Paketni qabul qilish",
+      progress: { done: 0, total: 3, label: "ta tanlandi" },
+      finish: { label: "Tugatish" },
+    });
+    expect(mocks.scanner?.camera?.context).toMatch(/^Paket B-.* · 3 ta buyurtma$/);
+
+    for (const id of ["10171", "10172", "10173"]) {
+      act(() => mocks.scanner!.onMatch(scanned(id), id));
+    }
+    expect(mocks.scanner?.camera?.progress).toMatchObject({ done: 3, total: 3 });
+    expect(mocks.scanner?.camera?.note?.title).toBe("Hammasi tanlandi");
+    // Yangisi birinchi.
+    expect(mocks.scanner?.camera?.list?.map((item) => item.key)).toEqual(["10173", "10172", "10171"]);
+
+    act(() => mocks.scanner!.camera!.list![0].onUndo!());
+    expect(screen.getByRole("checkbox", { name: "№10173 ni tanlash" })).not.toBeChecked();
+    expect(mocks.scanner?.camera?.progress).toMatchObject({ done: 2, total: 3 });
   });
 });
 

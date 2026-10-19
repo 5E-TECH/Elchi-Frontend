@@ -43,3 +43,4 @@ export {
   SCANNER_SOUND_IDS,
 } from "./feedback";
 export type { ScanFeedbackDetail, ScanFeedbackType, ScannerSoundId } from "./feedback";
+export { orderByRecent, scanNotify, useRecentScans } from "./scanSession";

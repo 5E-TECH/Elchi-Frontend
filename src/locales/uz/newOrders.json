@@ -42,13 +42,9 @@
   "marketsTab": "Marketlar",
   "cancelledTab": "Bekor qilinganlar",
   "scanCancelledHandoverQr": "Market QR skanerlash",
-  "cancelledScanHint": "Orderlarni faqat QR skaner orqali belgilang. QR buzilgan bo'lsa ruxsatli xodim qo'lda tasdiqlashi mumkin.",
-  "cancelledScanMissing": "Bu QR kod ushbu marketning jo'natilmagan bekor qilingan buyurtmalariga mos kelmadi.",
   "cancelledScannerSubtitle": "Marketiga jo'natiladigan bekor qilingan buyurtma QR kodini skanerlang",
   "cancelledManualSelectConfirm": "QR kod haqiqatdan ham o'qilmayaptimi? Bu order qo'lda tasdiqlanadi.",
-  "cancelledHandoverScannerSubtitle": "Market chiqargan qaytarish QR kodini skanerlang",
   "cancel": "Bekor qilish",
-  "cancelledSending": "Orderlar jo'natilmoqda...",
   "cancelledQrTokenFallback": "Backend QR rasm o'rniga token qaytardi. Shu qiymat skaner uchun ishlatiladi.",
   "closeScanner": "Skanerni yopish",
   "torchOn": "Yoritgichni yoqish",
@@ -328,7 +324,15 @@
       "receiveSuccessDescription": "{{value}} ta paket qabul qilindi.",
       "receiveError": "Paketlarni qabul qilishda xatolik",
       "receiveErrorDescription": "{{value}} ta paket qabul qilinmadi. Qayta urinib ko'ring.",
-      "scanMissing": "Bu QR kod shu filial paketlariga mos kelmadi."
+      "scanMissing": "Bu QR kod shu filial paketlariga mos kelmadi.",
+      "cameraTitle": "Paketlarni qabul qilish",
+      "cameraContext": "{{branch}} · {{value}} ta paket",
+      "cameraNoteTitle": "Paket QR kodini skanerlang — u ro'yxatda tanlanadi",
+      "cameraNoteText": "Faqat shu filialdan kelgan paketlar tanlanadi. «Tugatish»ni bosing, keyin sahifada «Qabul qilish» tugmasi bilan tasdiqlang.",
+      "cameraMeter": "ta tanlandi",
+      "cameraListTitle": "Tanlanganlar",
+      "cameraSelected": "Paket tanlandi {{id}}",
+      "cameraMissing": "Bu filial paketlarida yo'q"
     },
     "detail": {
       "title": "Paket {{id}}",
@@ -342,7 +346,17 @@
       "emptyDescription": "Bu paketdagi buyurtmalar qabul qilib bo'lingan.",
       "receiveSuccess": "Buyurtmalar qabul qilindi",
       "receiveSuccessDescription": "{{value}} ta buyurtma qabul qilindi.",
-      "scanMissing": "Bu QR kod shu paketdagi buyurtmalarga mos kelmadi."
+      "scanMissing": "Bu QR kod shu paketdagi buyurtmalarga mos kelmadi.",
+      "cameraTitle": "Paketni qabul qilish",
+      "cameraContext": "Paket {{batch}} · {{value}} ta buyurtma",
+      "cameraNoteTitle": "Buyurtma QR kodini skanerlang — u ro'yxatda tanlanadi",
+      "cameraNoteText": "Faqat shu paketdagi buyurtmalar tanlanadi. «Tugatish»ni bosing, keyin sahifada «Qabul qilish» tugmasi bilan tasdiqlang.",
+      "cameraAllTitle": "Hammasi tanlandi",
+      "cameraAllText": "Paketdagi {{value}} ta buyurtmaning barchasi tanlandi. «Tugatish»ni bosing, keyin sahifada «Qabul qilish» tugmasi bilan tasdiqlang.",
+      "cameraMeter": "ta tanlandi",
+      "cameraListTitle": "Tanlanganlar",
+      "cameraSelected": "Buyurtma tanlandi №{{id}}",
+      "cameraMissing": "Bu paketda yo'q"
     }
   },
   "cancelled": {
@@ -376,10 +390,7 @@
       "hintScanOnly": "Buyurtmalar faqat QR skaner orqali tanlanadi.",
       "scannerReady": "USB skaner tayyor",
       "scannerOrderTitle": "Buyurtma QR kodini skaner bilan o'qing — ro'yxat o'zi yangilanadi",
-      "scannerMarketTitle": "Market QR kodini USB skaner bilan o'qing — ro'yxat o'zi yangilanadi",
-      "camera": "Kamera",
-      "cameraPhone": "Kamera bilan skanerlash",
-      "selectedSr": "Tanlandi: "
+      "scannerMarketTitle": "Market QR kodini USB skaner bilan o'qing — ro'yxat o'zi yangilanadi"
     },
     "selection": {
       "region": "Tanlangan buyurtmalar",
@@ -456,6 +467,24 @@
       "imageLabel": "Bekor qilingan buyurtmalarni topshirish QR kodi",
       "empty": "QR kod ma'lumoti topilmadi.",
       "close": "Yopish"
+    },
+    "camera": {
+      "qrTitle": "Market QR skanerlash",
+      "qrContext": "{{market}} · {{value}} ta bekor qilingan buyurtma",
+      "qrHint": "Market QR kodini ramka ichiga olib keling",
+      "qrNoteTitle": "Faqat {{market}} QR kodi",
+      "qrNoteText": "Market chiqargan qaytarish QR kodini skanerlang. Boshqa marketning QR kodi qabul qilinmaydi.",
+      "selectTitle": "Buyurtmalarni tanlash",
+      "selectContext": "{{market}} · {{value}} ta bekor qilingan",
+      "selectHintQr": "Buyurtmalarni tanlang · QR {{time}} amal qiladi",
+      "selectNoteTitle": "Buyurtma QR kodini skanerlang — u ro'yxatda tanlanadi",
+      "selectNoteText": "Faqat {{market}}ning jo'natilmagan bekor qilingan buyurtmalari tanlanadi.",
+      "selectNoteTextQr": "Faqat {{market}}ning jo'natilmagan bekor qilingan buyurtmalari tanlanadi. Market QR yana {{time}} amal qiladi.",
+      "meter": "ta tanlandi",
+      "listTitle": "Tanlanganlar",
+      "manualRow": "QR buzilgan — qo'lda tasdiqlangan",
+      "selected": "Tanlandi №{{id}}",
+      "missing": "Bu marketning bekorlarida yo'q"
     }
   },
   "deleteIntegration": "Integratsiyani o'chirish",
@@ -534,7 +563,28 @@
     "detailTotal": "Jami summa",
     "unselectedNote": "Tanlanmagan {{value}} ta buyurtma ({{ids}}) ro'yxatda qoladi.",
     "deleteConfirm": "O'chirish",
-    "deleting": "O'chirilmoqda…"
+    "deleting": "O'chirilmoqda…",
+    "camera": {
+      "title": "Qabul qilish",
+      "titleTransfer": "Buyurtmalarni qabul qilish",
+      "context": "{{market}} · {{value}} ta buyurtma",
+      "noteTitle": "Skanerlangan buyurtma darhol qabul qilinadi",
+      "noteText": "U pochtaga o'tadi va ro'yxatdan chiqadi. Faqat {{market}} buyurtmalari qabul qilinadi.",
+      "noteTitleTransfer": "Skan — darhol qabul",
+      "noteTextTransfer": "Har bir skanerlangan buyurtma shu zahoti qabul qilinadi va HQ'ga jo'natish paketiga qo'shiladi. Faqat {{market}} buyurtmalari qabul qilinadi.",
+      "meter": "ta qabul qilindi",
+      "listTitle": "Qabul qilinganlar",
+      "statReceived": "Qabul qilindi",
+      "statLeft": "Qoldi",
+      "statMissing": "Topilmadi",
+      "received": "Qabul qilindi №{{id}}",
+      "notFound": "Topilmadi",
+      "otherMarket": "Boshqa market: {{market}} — qabul qilinmadi",
+      "otherMarketFallback": "boshqa market",
+      "checkFailed": "Tekshirib bo'lmadi — qayta skanerlang",
+      "switcherTitle": "Marketni tanlang",
+      "switcherMeta": "{{value}} ta"
+    }
   },
   "orderEdit": {
     "backToNewOrders": "Qabul va yaratish",

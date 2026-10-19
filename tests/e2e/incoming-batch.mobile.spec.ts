@@ -11,14 +11,15 @@ test.describe("Kiruvchi posilkalar — qop yorlig'i, 390px", () => {
 
     await scanToken(page, BATCH_TOKEN);
 
-    const note = page.getByText("Qop: 6 posilkadan 6 tasi belgilandi");
+    // Natija «Skanerlash» kartasida (xuddi shu matn qisqa vaqt global skan signalida ham chiqadi).
+    const note = page.getByLabel("Skanerlash", { exact: true }).getByText("Qop: 6 posilkadan 6 tasi belgilandi");
     await expect(note).toBeVisible();
     const box = (await note.boundingBox())!;
     expect(box.x).toBeGreaterThanOrEqual(0);
     expect(box.x + box.width).toBeLessThanOrEqual(390);
     expect(await scannedRowIds(page)).toEqual(BATCH_ORDERS.map((order) => order.id));
     await expectScanned(page, 6, 7);
-    // Telefonda ham «Qabul qilish» — yagona asosiy tugma (kamera rejimi hali yo'q), qisqa nom bilan.
+    // Telefonda ham «Qabul qilish» — yagona asosiy tugma (kamera — markaziy «Skaner» orqali), qisqa nom bilan.
     await expect(page.getByRole("button", { name: "Qabul qilish — 6 ta" })).toBeEnabled();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     expect(overflow).toBeLessThanOrEqual(0);

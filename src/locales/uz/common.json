@@ -184,7 +184,17 @@
     "colOrder": "Buyurtma",
     "colCustomer": "Mijoz",
     "colDistrict": "Tuman",
-    "colAmount": "Summa"
+    "colAmount": "Summa",
+    "cameraTitle": "Posilkalarni qabul qilish",
+    "cameraContext": "{{source}} · {{count}} ta kelgan",
+    "cameraNoteTitle": "Posilkadagi QR kodni skanerlang — u ro'yxatda belgilanadi",
+    "cameraNoteText": "Faqat shu ro'yxatdagi {{source}} posilkalari sanaladi. Posilkalar sahifadagi «Qabul qilish» bosilganda tizimga qabul qilinadi.",
+    "cameraMeter": "ta skanerlandi",
+    "cameraListTitle": "Oxirgi skanerlar",
+    "cameraBagShortage": "Qopda yetishmaydi",
+    "cameraNotInList": "Bu ro'yxatda yo'q",
+    "cameraListNotReady": "Ro'yxat hali yuklanmagan",
+    "cameraSwitcherTitle": "Manbani tanlang"
   },
   "partners": "Hamkorlar",
   "partnersTitle": "Partner API hamkorlari",
