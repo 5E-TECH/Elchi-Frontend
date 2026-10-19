@@ -191,8 +191,6 @@ export const V2_SCOPES = Object.freeze([
 export const V2_SCOPE_PENDING = Object.freeze({
   "src/pages/payments/components/SalaryPaymentPopup.tsx":
     "yetib bo'lmaydigan v1 — «Maosh to'lash» yashirin (Moliya spec §9)",
-  "src/pages/scan/index.tsx":
-    "kamera ishi — /scan butunlay kamera ekrani, alohida ish (ega qarori 2026-10-16)",
 });
 
 /** Ilova mavzusidan tashqari chiqish formatlari (chop etish, termal yorliq, Excel): rang qoidalari qo'llanmaydi —

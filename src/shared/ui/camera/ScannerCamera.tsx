@@ -97,7 +97,21 @@ export type ScannerCameraProps = {
   presentation?: ScannerCameraPresentation;
   /** «Yopish» (va Esc). `page` da ixtiyoriy — berilmasa telefonda yopish tugmasi yo'q. */
   onClose?: () => void;
+  /**
+   * Telefon pastidagi «Oxirgi» qatori (`target.list` bo'lmasa): universal skaner sahifasi o'z tarixini beradi
+   * (maket `superadmin-scan-camera` — «Oxirgi: №10241 · Buyurtma», bosilsa natija ochiladi).
+   */
+  lastScan?: ReactNode;
+  /**
+   * Telefonda «Qo'lda kiritish» yonidagi tugma: sukut — «Tugatish» / «Yopish»; `"torch"` — «Chiroq»
+   * (universal skaner maketi: yopish tepada, chiroq pastda; qurilmada chiroq bo'lmasa — faqat «Qo'lda kiritish»).
+   */
+  phoneSecondary?: "primary" | "torch";
+  /** «Kodni qo'lda kiriting» varag'i matnlari (sukut — oqim: «Qo'shish»; universal skaner: «Ochish»). */
+  manual?: ScannerCameraManualText;
 };
+
+export type ScannerCameraManualText = { label?: string; hint?: string; submitLabel?: string };
 
 const RESULT_TONE: Record<CameraResult["type"], CameraTone> = {
   success: "success",
@@ -124,7 +138,14 @@ const LIST_TONE: Record<ScanTargetTone, { icon: LucideIcon; className: string; c
 
 const listTone = (item: ScanTargetListItem) => LIST_TONE[item.tone ?? "neutral"];
 
-export const ScannerCamera = ({ target, presentation = "overlay", onClose }: ScannerCameraProps) => {
+export const ScannerCamera = ({
+  target,
+  presentation = "overlay",
+  onClose,
+  lastScan,
+  phoneSecondary = "primary",
+  manual,
+}: ScannerCameraProps) => {
   const { t } = useTranslation("ui");
   const isPhone = useIsPhone();
   const overlay = presentation === "overlay";
@@ -328,15 +349,31 @@ export const ScannerCamera = ({ target, presentation = "overlay", onClose }: Sca
     </CameraToasts>
   );
 
-  const torchButton =
-    session.hasTorch && session.running ? (
-      <CameraButton
-        icon={Flashlight}
-        label={t("camera.torch")}
+  const torchAvailable = session.hasTorch && session.running;
+  const torchButton = torchAvailable ? (
+    <CameraButton
+      icon={Flashlight}
+      label={t("camera.torch")}
+      aria-pressed={session.torchEnabled}
+      onClick={() => void session.toggleTorch()}
+    />
+  ) : null;
+  const torchInBottom = phoneSecondary === "torch";
+  const phoneSecondaryButton = torchInBottom ? (
+    torchAvailable ? (
+      <Button
+        variant="secondary"
+        size="lg"
+        leftIcon={Flashlight}
         aria-pressed={session.torchEnabled}
         onClick={() => void session.toggleTorch()}
-      />
-    ) : null;
+      >
+        {t("camera.torch")}
+      </Button>
+    ) : null
+  ) : (
+    primaryButton("lg")
+  );
 
   const feed = (
     <video
@@ -383,7 +420,7 @@ export const ScannerCamera = ({ target, presentation = "overlay", onClose }: Sca
       start={
         onClose ? <CameraButton ref={closeRef} icon={X} label={t("camera.close")} onClick={close} /> : undefined
       }
-      tools={torchButton}
+      tools={torchInBottom ? null : torchButton}
       feed={feed}
       headingExtra={
         switcher ? (
@@ -435,10 +472,12 @@ export const ScannerCamera = ({ target, presentation = "overlay", onClose }: Sca
                 subtitle={t("camera.last.emptyText")}
               />
             )
-          ) : null}
+          ) : (
+            (lastScan ?? null)
+          )}
           <div className="flex min-w-0 gap-2 [&>*]:min-w-0 [&>*]:flex-1">
             {manualButton("lg")}
-            {primaryButton("lg")}
+            {phoneSecondaryButton}
           </div>
         </CameraBottom>
       }
@@ -602,6 +641,7 @@ export const ScannerCamera = ({ target, presentation = "overlay", onClose }: Sca
       <ManualEntryDialog
         open={sheet === "manual"}
         dark={isPhone}
+        text={manual}
         onClose={() => setSheet(null)}
         onSubmit={(code) => {
           setSheet(null);
@@ -856,11 +896,13 @@ const SwitcherDialog = ({
 const ManualEntryDialog = ({
   open,
   dark,
+  text,
   onClose,
   onSubmit,
 }: {
   open: boolean;
   dark: boolean;
+  text?: ScannerCameraManualText;
   onClose: () => void;
   onSubmit: (code: string) => void;
 }) => {
@@ -904,12 +946,16 @@ const ManualEntryDialog = ({
             {t("camera.manual.cancel")}
           </Button>
           <Button type="submit" size="lg">
-            {t("camera.manual.submit")}
+            {text?.submitLabel ?? t("camera.manual.submit")}
           </Button>
         </>
       }
     >
-      <Field label={t("camera.manual.label")} hint={t("camera.manual.hint")} error={error ? t("camera.manual.required") : undefined}>
+      <Field
+        label={text?.label ?? t("camera.manual.label")}
+        hint={text?.hint ?? t("camera.manual.hint")}
+        error={error ? t("camera.manual.required") : undefined}
+      >
         <TextInput
           size="lg"
           value={value}

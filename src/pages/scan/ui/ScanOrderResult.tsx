@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-scan-result, manager-scan-result, registrator-scan-result, courier-scan-order-detail
 import { lazy, Suspense, useEffect, useId, useMemo, useState, type ReactNode } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Banknote,
   Calendar,
@@ -50,7 +50,7 @@ import {
   buttonClasses,
 } from "../../../shared/ui/primitives";
 import { buildTrackingContext, type OrderDetail } from "../../new_orders/components/detail/orderDetailModel";
-import { getBackendErrorMessage, scanAssignOrder } from "../lib/scanResource";
+import { getBackendErrorMessage, invalidateAfterScanAction, scanAssignOrder } from "../lib/scanResource";
 import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
 import { DISPATCH_ROUTE, orderDetailRoute } from "../model/routes";
 import {
@@ -109,10 +109,13 @@ const ResultAlert = ({ result }: { result: ResultMessage }) => (
 const useCourierAssign = (token: string) => {
   const { t } = useTranslation("scan");
   const scheduleRedirect = useScanRedirect(1500);
+  const queryClient = useQueryClient();
   const [result, setResult] = useState<ResultMessage | null>(null);
   const mutation = useMutation({
     mutationFn: () => scanAssignOrder(token),
     onSuccess: () => {
+      // Buyurtma kuryerga o'tdi (filial qabuli ham) — ro'yxatlar, pochta va paketlar eskirmasin (6qypMFeT).
+      void invalidateAfterScanAction(queryClient);
       void playScanFeedback("success");
       setResult({ tone: "success", text: t("courier.assignSuccess") });
       scheduleRedirect();

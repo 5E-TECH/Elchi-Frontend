@@ -1,45 +1,36 @@
+// dizayn-v2: (maket yo'q) tizim-scanner
 import { memo, useEffect, useRef, useState } from "react";
-import { Check, SearchCheck, SearchX, X } from "lucide-react";
+import { Check, SearchCheck, SearchX, X, type LucideIcon } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
+import { cx } from "../lib/cx";
 import { SCAN_FEEDBACK_EVENT, type ScanFeedbackDetail, type ScanFeedbackType } from "../lib/scanner/feedback";
 import { isScannerCameraMounted } from "../lib/scanner/scannerHost";
+import { TONE_SOLID, type Tone } from "../ui/primitives";
 
 const feedbackConfig: Record<
   ScanFeedbackType,
   {
-    icon: React.ReactNode;
+    icon: LucideIcon;
     labelKey: "scannerFeedbackSuccess" | "scannerFeedbackError" | "scannerFeedbackMissing" | "scannerFeedbackDuplicate";
-    surface: string;
-    glow: string;
+    tone: Tone;
   }
 > = {
-  success: {
-    icon: <Check className="h-[42%] w-[42%]" strokeWidth={3.5} />,
-    labelKey: "scannerFeedbackSuccess",
-    surface: "from-emerald-400 to-emerald-600",
-    glow: "shadow-[0_0_90px_rgba(16,185,129,0.48)]",
-  },
-  error: {
-    icon: <X className="h-[42%] w-[42%]" strokeWidth={3.5} />,
-    labelKey: "scannerFeedbackError",
-    surface: "from-red-400 to-red-600",
-    glow: "shadow-[0_0_90px_rgba(239,68,68,0.48)]",
-  },
-  missing: {
-    icon: <SearchX className="h-[42%] w-[42%]" strokeWidth={3} />,
-    labelKey: "scannerFeedbackMissing",
-    surface: "from-red-400 to-red-600",
-    glow: "shadow-[0_0_90px_rgba(239,68,68,0.48)]",
-  },
-  duplicate: {
-    icon: <SearchCheck className="h-[42%] w-[42%]" strokeWidth={3} />,
-    labelKey: "scannerFeedbackDuplicate",
-    surface: "from-amber-300 to-yellow-500",
-    glow: "shadow-[0_0_90px_rgba(234,179,8,0.5)]",
-  },
+  success: { icon: Check, labelKey: "scannerFeedbackSuccess", tone: "success" },
+  error: { icon: X, labelKey: "scannerFeedbackError", tone: "danger" },
+  missing: { icon: SearchX, labelKey: "scannerFeedbackMissing", tone: "danger" },
+  duplicate: { icon: SearchCheck, labelKey: "scannerFeedbackDuplicate", tone: "warning" },
 };
 
+/**
+ * USB skan natijasi — ekran markazidagi qisqa xabar (ilova darajasida bir marta, `app/lib/provider.tsx`).
+ * Maket yo'q — eng yaqini taxta `tizim-scanner` §07 (ovoz / tebranish jadvali) va §03 «Natija xabari»:
+ * tonli ikonka (rang doim ikonka va matn bilan birga) + qalin matn, `raised` yuza ustida; ostidagi sahifa
+ * `overlay` bilan xiralashadi. Muvaffaqiyat 0,9 s, qolgani 1,35 s.
+ *
+ * Kamera ochiq bo'lsa (`ScannerCamera` — universal `/scan` yoki oqim ustidagi oyna) bu xabar chiqmaydi: natija
+ * kamera ichidagi xabarda ko'rinadi, ustma-ust ikkinchisi bo'lmaydi.
+ */
 const ScanFeedbackOverlay = () => {
   const { t } = useTranslation("common");
   const [feedback, setFeedback] = useState<(ScanFeedbackDetail & { id: number }) | null>(null);
@@ -49,15 +40,11 @@ const ScanFeedbackOverlay = () => {
     const handleFeedback = (event: Event) => {
       const detail = (event as CustomEvent<ScanFeedbackDetail>).detail;
       if (!detail?.type) return;
-      // Kamera ochiq — natija kamera ichida ko'rsatiladi (`ScannerCamera`), ustma-ust ikkinchi xabar chiqmaydi.
       if (isScannerCameraMounted()) return;
 
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
       setFeedback({ ...detail, id: Date.now() });
-      hideTimerRef.current = setTimeout(
-        () => setFeedback(null),
-        detail.type === "success" ? 900 : 1350,
-      );
+      hideTimerRef.current = setTimeout(() => setFeedback(null), detail.type === "success" ? 900 : 1350);
     };
 
     window.addEventListener(SCAN_FEEDBACK_EVENT, handleFeedback);
@@ -70,21 +57,23 @@ const ScanFeedbackOverlay = () => {
   if (!feedback || typeof document === "undefined") return null;
 
   const config = feedbackConfig[feedback.type];
+  const Icon = config.icon;
 
   return createPortal(
     <div
       key={feedback.id}
       role="status"
       aria-live="assertive"
-      className="pointer-events-none fixed inset-0 z-[10050] flex items-center justify-center bg-[rgba(9,12,25,0.38)] px-5 backdrop-blur-[3px] animate-[scan-feedback-backdrop_180ms_ease-out]"
+      className="pointer-events-none fixed inset-0 z-[10050] flex items-center justify-center bg-overlay px-5 animate-[scan-feedback-backdrop_180ms_ease-out] motion-reduce:animate-none"
     >
-      <div className="flex max-w-[90vw] flex-col items-center text-center animate-[scan-feedback-pop_420ms_cubic-bezier(0.16,1,0.3,1)]">
-        <div
-          className={`flex h-[clamp(150px,24vw,260px)] w-[clamp(150px,24vw,260px)] items-center justify-center rounded-[38%] bg-linear-to-br ${config.surface} ${config.glow} text-white ring-[clamp(8px,1.5vw,16px)] ring-white/18`}
+      <div className="flex max-w-[min(90vw,420px)] flex-col items-center gap-4 rounded-[20px] border border-border bg-raised px-8 py-7 text-center shadow-xl animate-[scan-feedback-pop_420ms_cubic-bezier(0.16,1,0.3,1)] motion-reduce:animate-none">
+        <span
+          aria-hidden="true"
+          className={cx("inline-flex size-[clamp(88px,14vw,128px)] items-center justify-center rounded-full", TONE_SOLID[config.tone])}
         >
-          {config.icon}
-        </div>
-        <h2 className="m-0 mt-7 text-[clamp(28px,5vw,58px)] font-black tracking-tight text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.45)]">
+          <Icon className="size-[48%]" strokeWidth={3} />
+        </span>
+        <h2 className="text-[clamp(22px,3.4vw,32px)] leading-tight font-bold tracking-[-.01em] [overflow-wrap:anywhere] text-text">
           {feedback.message ?? t(config.labelKey)}
         </h2>
       </div>
