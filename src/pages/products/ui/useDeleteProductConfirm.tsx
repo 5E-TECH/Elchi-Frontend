@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-products-delete-dialog, admin-products-delete-dialog, manager-products-delete-dialog, registrator-products-delete-dialog, market-products-delete-dialog
+// dizayn-v2: superadmin-products-delete-dialog, admin-products-delete-dialog, manager-products-delete-dialog, registrator-products-delete-dialog
 import { useCallback } from "react";
 import { Store, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";

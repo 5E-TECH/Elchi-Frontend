@@ -21,6 +21,8 @@ import {
   canViewPaymentsPage,
   canHandoverCancelledToMarket,
   canCreateProducts,
+  canViewProducts,
+  canViewAdminDashboard,
   canViewUiKit,
 } from "./access";
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
@@ -207,17 +209,6 @@ const canManageUsers = canViewUsers;
 const canCreateOrdersByRoleAndBranchType = canCreateOrders;
 const canManageExternalIntegrations = canReceiveExternalOrders;
 
-const canManageProducts = (state: RootState) => {
-  const role = state.role.role;
-  return (
-    role === "admin" ||
-    role === "superadmin" ||
-    role === "market" ||
-    role === "registrator" ||
-    role === "manager"
-  );
-};
-
 const canViewAdminNewOrderTabs = (state: RootState) => {
   const role = state.role.role;
   return role === "admin" || role === "superadmin";
@@ -244,8 +235,15 @@ const canViewMarketOperators = () => false;
 const canViewCourierBulk = canViewCourierBulkPage;
 
 
+/**
+ * Bosh sahifa (`/`) — rolga qarab. Admin `DashboardPage` faqat `canViewAdminDashboard` rollarida: qolgan har
+ * rol (logist, market operatori, investor, menyusiz eski rollar) 403 ko'radi — `ForbiddenPage` shell ichida,
+ * yangi UI yo'q (taxta `tizim-errors`). O'z bosh sahifasi kelganda har rol shu yerga o'z tarmog'ini qo'shadi
+ * (LG-1 logist, MO-2 market operatori, IN-1 investor).
+ */
 const DashboardEntry = () => {
   const role = useSelector((state: RootState) => state.role.role);
+  const canViewAdmin = useSelector(canViewAdminDashboard);
 
   if (role === "manager") {
     return <Navigate replace to="/branch-dashboard" />;
@@ -255,7 +253,11 @@ const DashboardEntry = () => {
     return <MarketDashboardPage />;
   }
 
-  return <DashboardPage />;
+  if (canViewAdmin) {
+    return <DashboardPage />;
+  }
+
+  return <ForbiddenPage />;
 };
 
 /**
@@ -697,7 +699,7 @@ const AppRouter = () => {
                 {
                   index: true,
                   element: (
-                    <ProtectedRoute canActivate={canManageProducts}>
+                    <ProtectedRoute canActivate={canViewProducts}>
                       <ProductTable />
                     </ProtectedRoute>
                   ),

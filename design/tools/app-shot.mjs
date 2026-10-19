@@ -8,7 +8,7 @@
 //   npm run app:shot -- /ops/ui-kit --device phone --split 1200      (uzun sahifa: + -1.png, -2.png … bo'laklar)
 //   npm run app:shot -- / /orders --role manager --branch-type REGIONAL  (menejer/kuryer/registrator menyusi filial turiga bog'liq)
 //
-// Bayroqlar: --device desktop|tablet|phone · --theme light|dark · --role superadmin|admin|manager|registrator|market|courier
+// Bayroqlar: --device desktop|tablet|phone · --theme light|dark · --role superadmin|admin|manager|registrator|market|courier|logist|market_operator|investor
 //            (sukut superadmin) · --lang uz|ru|en (sukut uz) · --split <px>
 //            · --branch-type HQ|REGIONAL|HYBRID|PICKUP — profildagi filial turi (`menuConfig.tsx` →
 //              `getUserBranchType`). Sukut: manager HYBRID (maketdagi to'liq menyu), registrator HQ, courier REGIONAL;
@@ -44,7 +44,8 @@ const DEVICES = {
   phone: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true },
 };
 const THEMES = ['light', 'dark'];
-const ROLES = ['superadmin', 'admin', 'manager', 'registrator', 'market', 'courier'];
+// Yangi rollar (ROL-0): logist, market_operator, investor — qobiq, 403 va pastki menyuni ko'rish uchun.
+const ROLES = ['superadmin', 'admin', 'manager', 'registrator', 'market', 'courier', 'logist', 'market_operator', 'investor'];
 const LANGS = ['uz', 'ru', 'en'];
 const BRANCH_TYPES = ['HQ', 'REGIONAL', 'HYBRID', 'PICKUP'];
 /** Rol → sukut filial turi (maketdagi persona menyusi: menejer — to'liq, registrator — «Toshkent HQ»). */

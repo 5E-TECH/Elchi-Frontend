@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import type { RootState } from "../../../app/config/store";
 import { useUnreadCount } from "../../../entities/notification-inbox";
-import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
+import { getUserRoleLabelKey, roleHasGlobalSearch } from "../../../entities/user/lib/role";
 import { cx } from "../../../shared/lib/cx";
 import { useFocusTrap } from "../../../shared/lib/useFocusTrap";
 import { useLogout } from "../../../shared/lib/useLogout";
@@ -170,6 +170,8 @@ type VariantProps = {
   activeTo: string | null;
   persona: Persona;
   branchTypeMissing: boolean;
+  /** Menyu qidiruvi — global qidiruvi bor rolda (`roleHasGlobalSearch`; investor maketida yo'q). */
+  showSearch: boolean;
   label: (item: NavEntry) => string;
   /** Ixcham katak yorlig'i (qisqa shakl bo'lsa — u). */
   shortLabel: (item: NavEntry) => string;
@@ -205,6 +207,7 @@ const Drawer = ({
   activeTo,
   persona,
   branchTypeMissing,
+  showSearch,
   label,
   onClose,
   onSearch,
@@ -243,9 +246,11 @@ const Drawer = ({
         {t("menu")}
       </h2>
 
-      <div className="mt-1 mb-3">
-        <MenuSearch onSearch={onSearch} tone="nav" />
-      </div>
+      {showSearch ? (
+        <div className="mt-1 mb-3">
+          <MenuSearch onSearch={onSearch} tone="nav" />
+        </div>
+      ) : null}
 
       {branchTypeMissing ? (
         <div
@@ -365,6 +370,7 @@ const Sheet = ({
   activeTo,
   persona,
   branchTypeMissing,
+  showSearch,
   label,
   shortLabel,
   onClose,
@@ -394,7 +400,7 @@ const Sheet = ({
         <IconButton size="lg" label={t("closeMenu")} icon={X} onClick={onClose} />
       </div>
 
-      <MenuSearch onSearch={onSearch} tone="surface" />
+      {showSearch ? <MenuSearch onSearch={onSearch} tone="surface" /> : null}
 
       <Link
         to="/profile"
@@ -594,6 +600,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     activeTo,
     persona,
     branchTypeMissing,
+    showSearch: roleHasGlobalSearch(user?.role || role || roleState.role),
     label: (item) => t(item.labelKey),
     shortLabel: (item) => t(item.shortLabelKey ?? item.labelKey),
     onClose,

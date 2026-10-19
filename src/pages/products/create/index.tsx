@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-products-create, admin-products-create, manager-products-create, registrator-products-create, market-products-create
+// dizayn-v2: superadmin-products-create, admin-products-create, manager-products-create, registrator-products-create
 import { memo, useCallback, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Pencil, Store, Tag, Trash2, TriangleAlert } from "lucide-react";

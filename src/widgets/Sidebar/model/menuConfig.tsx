@@ -23,7 +23,20 @@ import {
 } from "lucide-react";
 import type { User } from "../../../entities/user/model/types";
 
-export type UserRole = "admin" | "superadmin" | "market" | "courier" | "registrator";
+export type UserRole =
+  | "admin"
+  | "superadmin"
+  | "market"
+  | "courier"
+  | "registrator"
+  /**
+   * Yangi rollar (ROL-0, ega 2026-10-19). Qobiq kaliti bor, bandlari hali BO'SH: har band o'z sahifasi bilan
+   * qo'shiladi (maketdagi to'liq menyu — `design/kit/route-map.json` → `plannedMenu.<rol>`):
+   * logist — LG-1/LG-3/LG-4/LG-5, market_operator — MO-2/MO-3, investor — IN-1/IN-2.
+   */
+  | "logist"
+  | "market_operator"
+  | "investor";
 export type BranchDashboardRole = "manager";
 export type SidebarUserRole = UserRole | BranchDashboardRole;
 
@@ -141,6 +154,15 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/products", icon: Tag, label: "products" },
     { to: "/regions", icon: MapIcon, label: "regions" },
   ],
+  /**
+   * Yangi rollar — bandlari hali yo'q (ROL-0). Menyu bandi faqat sahifasi bilan qo'shiladi (AGENTS): o'z bosh
+   * sahifasi kelguncha `/` da 403 (`routes.tsx` → `DashboardEntry`), shuning uchun bo'sh menyu admin
+   * havolalarini (hammasi 403) ko'rsatmaydi. Logist moliyadan butunlay yopiq (ega LG-S1) — bu yerga hech qachon
+   * `/payments`, `/cash-box`, `/financial-balance` qo'shilmaydi.
+   */
+  logist: [],
+  market_operator: [],
+  investor: [],
 };
 
 /**

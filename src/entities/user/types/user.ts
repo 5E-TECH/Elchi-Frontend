@@ -7,7 +7,13 @@ export type UserRole =
   | "courier"
   | "market"
   | "superadmin"
-  | "customer";
+  | "customer"
+  // Backend `Roles` (libs/common/enums): yangi rollar — logist (dzyVftBx), market operatori, investor
+  // va filial hisobi (`branch`, faqat yorliq). Ularning qobig'i `menuConfig.tsx` da (ROL-0).
+  | "logist"
+  | "market_operator"
+  | "investor"
+  | "branch";
 
 export type UserStatus = "active" | "inactive" | "blocked";
 

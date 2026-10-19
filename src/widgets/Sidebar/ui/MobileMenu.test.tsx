@@ -35,7 +35,16 @@ vi.mock("../../../entities/notification-inbox/api/inboxApi", async (importOrigin
   getInboxUnreadCount: vi.fn(async () => unread.count),
 }));
 
-type DesignRole = "superadmin" | "admin" | "manager" | "registrator" | "market" | "courier";
+type DesignRole =
+  | "superadmin"
+  | "admin"
+  | "manager"
+  | "registrator"
+  | "market"
+  | "courier"
+  | "logist"
+  | "market_operator"
+  | "investor";
 type DesignMenuItem = { key: string; label: string; group?: string };
 // Maket menyusi — kodda bor rollar, kodda hali yo'q bandlarsiz (`route-map.json` → `plannedMenu`).
 const ROLES = Object.fromEntries(CODE_DESIGN_ROLES.map((role) => [role, designRoleInCode(role)])) as unknown as Record<
@@ -207,9 +216,10 @@ describe("MobileMenu — planshet paneli (768–1023)", () => {
     const design = ROLES[role];
 
     expect(screen.getByRole("dialog").querySelector('[data-mobile-menu="drawer"]')).not.toBeNull();
+    // `queryAll` — yangi rollarning menyusi hali bo'sh (ROL-0; har band o'z sahifasi bilan keladi).
     expect(
       within(sectionsNav())
-        .getAllByRole("link")
+        .queryAllByRole("link")
         .map((link) => link.textContent),
     ).toEqual(design.menu.map((item) => item.label));
     const groups = design.grouped
@@ -363,6 +373,43 @@ describe("MobileMenu — telefon varaqasi (< 768)", () => {
       ).toHaveTextContent(/^Создать$/);
     } finally {
       await i18n.changeLanguage("uz");
+    }
+  });
+});
+
+describe("MobileMenu — rol personasi (ROL-0)", () => {
+  it.each([
+    ["investor", false],
+    ["logist", true],
+    ["market_operator", true],
+    ["market", true],
+    ["courier", true],
+  ] as const)("%s: menyu qidiruvi — %s (investor maketida qidiruv yo'q)", (role, hasSearch) => {
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, role);
+    if (hasSearch) expect(screen.getByRole("searchbox", { name: "Qidiruv" })).toBeInTheDocument();
+    else expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+  });
+
+  it("investor varaqasi (telefon): qidiruvsiz; profil (rol «Investor»), Bildirishnomalar, Sozlamalar, Chiqish", () => {
+    asPhone();
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "investor", { route: "/" });
+
+    expect(screen.getByRole("dialog").querySelector('[data-mobile-menu="sheet"]')).not.toBeNull();
+    expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Profilni ochish/ })).toHaveTextContent("Investor");
+    expect(screen.getByRole("link", { name: /Bildirishnomalar/ })).toHaveAttribute("href", "/inbox");
+    expect(screen.getByRole("link", { name: /Sozlamalar/ })).toHaveAttribute("href", "/settings");
+    expect(screen.getByRole("button", { name: "Chiqish" })).toBeInTheDocument();
+  });
+
+  it("yangi rollar menyusida moliya bo'limlari yo'q (logist — ega LG-S1)", () => {
+    for (const role of ["logist", "market_operator", "investor"]) {
+      const view = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, role, { route: "/" });
+      const hrefs = screen.getAllByRole("link").map((link) => link.getAttribute("href"));
+      for (const finance of ["/payments", "/cash-box", "/financial-balance"]) {
+        expect(hrefs, `${role}: ${finance}`).not.toContain(finance);
+      }
+      view.unmount();
     }
   });
 });
