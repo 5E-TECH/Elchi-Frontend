@@ -2,28 +2,27 @@
 import { memo, useCallback, useMemo, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { useQuery } from "@tanstack/react-query";
-import { CalendarClock, Check, CircleX, PackageCheck, RotateCcw, ScanLine, Zap } from "lucide-react";
+import { CalendarClock, Check, CircleX, PackageCheck, RotateCcw, Zap } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { useOrders } from "../../entities/orders";
 import type { OrderListItem } from "../../entities/order/types/order";
 import type { RootState } from "../../app/config/store";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
-import ScannerCameraModal from "../../shared/components/ScannerCameraModal";
 import { useOrderQrScanner } from "../../shared/lib/useOrderQrScanner";
-import { normalizeScannerCandidates } from "../../shared/lib/scanToken";
-import { formatNumberLocalized } from "../../shared/lib/formatMoney";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../shared/lib/formatMoney";
 import { notify } from "../../shared/lib/notify";
 import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
 import { Button, PageHeader, useConfirm, type ConfirmConsequence } from "../../shared/ui/primitives";
-import { playScanFeedback } from "../scan/lib/scanShared";
+import { playScanFeedback } from "../../shared/lib/scanner/feedback";
+import { orderByRecent, scanNotify, useRecentScans } from "../../shared/lib/scanner/scanSession";
+import type { ScanTargetListItem } from "../../shared/lib/scanner/scanTargets";
 import {
   COURIER_BULK_CONCURRENCY,
   COURIER_BULK_PROOF_CONCURRENCY,
   COURIER_BULK_REQUEST_HEADERS,
   extractCourierBulkOrders,
   extractCourierBulkTotal,
-  findCourierBulkOrderByScanCandidates,
   getCourierBulkActionsAfterFinalize,
   getCourierBulkCounts,
   getCourierBulkFinalizeTasks,
@@ -94,8 +93,15 @@ const fetchAllCourierWaitingOrders = async () => {
  * Ertaga», USB skaner yoki kamera (skanerlash rejimi bo'yicha).
  *
  * Maketlar: `courier-courier-bulk-main` (ikkala rol uchun bitta tartib; menejerda faqat «Kutilayotgan» izohi
- * boshqa — Q8), tasdiq oynasi `courier-courier-bulk-confirm-dialog` (`useConfirm`). Kamera oynasi
- * (`ScannerCameraModal`) — kamera ishi, o'zgarmagan.
+ * boshqa — Q8), tasdiq oynasi `courier-courier-bulk-confirm-dialog` (`useConfirm`).
+ *
+ * KAMERA (Trello v1eLN2tV 2-bosqich; maketlar `courier-courier-bulk-scanner-camera`, `…-camera-list`,
+ * `manager-courier-bulk-camera-dialog`): sahifada kamera tugmasi yo'q (ega qarori — maketdagi «Kamera» /
+ * «Kamera bilan skanerlash» o'rniga markaziy «Skaner» / «Skanerlash» shu sahifa maqsadini ochadi). Kamera ichida
+ * «Bekor / Ertaga» rejimi (sahifadagi rejim bilan bitta holat), har skandan keyin YOPILMAYDI; kamera skani USB bilan
+ * aynan bitta handler (`handleScanMatch`). «Ro'yxat» — «Skanerlanganlar · 4 / 7 · 2 ta bekor, 2 ta ertaga»,
+ * «Bekor qilish» belgini olib tashlaydi (server amali hali yo'q). «Tugatish» kamerani yopadi — yakunlash sahifadagi
+ * «Kunni yakunlash» (tasdiq oynasi) bilan.
  *
  * Saqlangan: barcha sahifalarni yig'ish (100 tadan, 50 sahifagacha), skan takrori / topilmadi, yakunlash
  * `runLimited` + so'rov tanalari, xato bergan va «ertaga» belgilari qoladi. «Faqat bekorlarni qo'llash»
@@ -126,7 +132,6 @@ const CourierBulkPage = () => {
   const [scanMode, setScanMode] = useState<CourierBulkScanMode>("cancel");
   const [actions, setActions] = useState<Record<string, CourierBulkAction>>({});
   const [scanError, setScanError] = useState("");
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [proofStep, setProofStep] = useState<ProofStep | null>(null);
   // Tanlangan isbotlar (kalit — buyurtma + amal): oyna yopilsa yoki amal xato bersa ham saqlanadi
@@ -134,7 +139,10 @@ const CourierBulkPage = () => {
   const [proofs, setProofs] = useState<Record<string, File | undefined>>({});
   const [result, setResult] = useState<CourierBulkResult | null>(null);
   const [isResultOpen, setIsResultOpen] = useState(false);
-  const scannedTokenRef = useRef<Set<string>>(new Set());
+  // Skanerlangan token → buyurtma (takror skan rad etiladi; kamera «Bekor qilish» shu buyurtma tokenlarini bo'shatadi).
+  const scannedTokenRef = useRef<Map<string, string>>(new Map());
+  const { recent: recentScanIds, touch: touchRecentScan, forget: forgetRecentScan, clear: clearRecentScans } =
+    useRecentScans();
 
   const counts = useMemo(() => getCourierBulkCounts(orders, actions), [actions, orders]);
   const unmarkedCount = useMemo(() => getCourierBulkUnmarkedCount(orders, actions), [actions, orders]);
@@ -142,60 +150,146 @@ const CourierBulkPage = () => {
   const isInitialLoading = isLoading && orders.length === 0;
   const isBusy = isFinalizing || SellOrder.isPending || CancelOrder.isPending;
 
-  /** Skan: tanlangan rejim belgisi; xuddi shu belgi qayta skanerlansa — aniq «sotildi». */
-  const toggleScanAction = useCallback((order: OrderListItem, action: CourierBulkScanMode) => {
-    setActions((prev) => ({
-      ...prev,
-      [order.id]: prev[order.id] === action ? "sold" : action,
-    }));
-  }, []);
 
   /** Qatordagi natija tanlovi — aniq belgi (`sold` ham). */
   const setOrderAction = useCallback((order: CourierBulkOrder, action: CourierBulkAction) => {
     setActions((prev) => ({ ...prev, [order.id]: action }));
   }, []);
 
+  /** Skan: tanlangan rejim belgisi; xuddi shu belgi qayta skanerlansa — aniq «sotildi». */
   const handleScanMatch = useCallback(
     (order: OrderListItem, rawValue: string) => {
       const tokenKey = rawValue.trim().toLowerCase() || order.id.toLowerCase();
+      const name = order.customer?.name ?? `#${order.id}`;
 
       if (scannedTokenRef.current.has(tokenKey)) {
-        notify.warning(t("duplicateTitle"), { description: t("duplicateDescription") });
-        void playScanFeedback("duplicate");
+        scanNotify.warning(t("duplicateTitle"), { description: t("duplicateDescription") });
+        void playScanFeedback("duplicate", t("duplicateDescription"));
         return;
       }
 
-      scannedTokenRef.current.add(tokenKey);
-      toggleScanAction(order, scanMode);
+      scannedTokenRef.current.set(tokenKey, order.id);
+      const next: CourierBulkAction = actions[order.id] === scanMode ? "sold" : scanMode;
+      setActions((prev) => ({ ...prev, [order.id]: prev[order.id] === scanMode ? "sold" : scanMode }));
+      touchRecentScan(order.id);
       setScanError("");
-      notify.success(t("scanSuccessTitle"), {
-        description: t(scanMode === "cancel" ? "markedCancel" : "markedTomorrow", {
-          name: order.customer?.name ?? `#${order.id}`,
+      scanNotify.success(t("scanSuccessTitle"), {
+        description: t(next === "cancel" ? "markedCancel" : next === "tomorrow" ? "markedTomorrow" : "camera.markedSold", {
+          name,
+          id: order.id,
         }),
         duration: 2000,
       });
-      void playScanFeedback("success");
+      void playScanFeedback(
+        "success",
+        t(next === "cancel" ? "camera.markedCancel" : next === "tomorrow" ? "camera.markedTomorrow" : "camera.markedSold", {
+          id: order.id,
+          name,
+        }),
+      );
     },
-    [scanMode, t, toggleScanAction],
+    [actions, scanMode, t, touchRecentScan],
   );
 
   const handleScanMissing = useCallback(() => {
     setScanError(t("scanMissing"));
-    notify.error(t("scanMissingTitle"), { description: t("scanMissing") });
-    void playScanFeedback("missing");
+    scanNotify.error(t("scanMissingTitle"), { description: t("scanMissing") });
+    void playScanFeedback("missing", t("scanMissing"));
   }, [t]);
+
+  /** Kamera «Bekor qilish»: belgi olinadi (server amali yo'q), shu buyurtmani qayta skanerlash mumkin. */
+  const unmarkScannedOrder = useCallback(
+    (orderId: string) => {
+      setActions((prev) => {
+        if (!(orderId in prev)) return prev;
+        const next = { ...prev };
+        delete next[orderId];
+        return next;
+      });
+      for (const [token, id] of scannedTokenRef.current) if (id === orderId) scannedTokenRef.current.delete(token);
+      forgetRecentScan(orderId);
+    },
+    [forgetRecentScan],
+  );
+
+  // Kamera ro'yxati — faqat SKAN bilan belgilanganlar (bekor / ertaga), yangisi birinchi. Qatordagi tanlov bilan
+  // qo'lda belgilanganlar «N / M ta skanerlandi» ga kirmaydi va kamera «Bekor qilish» ularga tegmaydi.
+  const scannedOrders = useMemo(() => {
+    const scannedIds = new Set(recentScanIds);
+    return orderByRecent(
+      orders.filter(
+        (order) =>
+          scannedIds.has(order.id) && (actions[order.id] === "cancel" || actions[order.id] === "tomorrow"),
+      ),
+      (order) => order.id,
+      recentScanIds,
+    );
+  }, [actions, orders, recentScanIds]);
+  const scannedCancelCount = scannedOrders.filter((order) => actions[order.id] === "cancel").length;
+  const scannedTomorrowCount = scannedOrders.length - scannedCancelCount;
+  const cameraList = useMemo<ScanTargetListItem[]>(
+    () =>
+      scannedOrders.map((order) => {
+        const action = actions[order.id];
+        return {
+          key: order.id,
+          title: [`№${order.id}`, order.customer?.name].filter(Boolean).join(" · "),
+          subtitle: [
+            t(action === "cancel" ? "list.cancel" : "list.tomorrow"),
+            order.district?.name ?? order.region?.name,
+            formatMoneyLocalized(Number(order.total_price) || 0, { language }),
+          ]
+            .filter(Boolean)
+            .join(" · "),
+          tone: action === "cancel" ? "danger" : "warning",
+          onUndo: () => unmarkScannedOrder(order.id),
+        };
+      }),
+    [actions, language, scannedOrders, t, unmarkScannedOrder],
+  );
+  const num = (value: number) => formatNumberLocalized(value, { language });
+  // «Skanerlanmagan N ta … sotilgan deb belgilanadi» — bekor / ertaga belgisi yo'qlar (skan yoki qatordagi tanlov).
+  const unscannedCount = orders.filter(
+    (order) => actions[order.id] !== "cancel" && actions[order.id] !== "tomorrow",
+  ).length;
 
   useOrderQrScanner({
     orders,
-    // Isbot / natija oynasi ochiq bo'lsa USB skan belgilarni o'zgartirmaydi.
-    enabled: !isBusy && !proofStep?.open && !isResultOpen && orders.length > 0,
+    // Isbot / natija oynasi ochiq bo'lsa skan belgilarni o'zgartirmaydi; yakunlash so'rovlari ketayotganda skan
+    // e'tiborsiz, lekin ochiq kamera yopilmaydi.
+    enabled: !proofStep?.open && !isResultOpen,
+    paused: isBusy,
     onMatch: handleScanMatch,
     onMissing: handleScanMissing,
+    camera: {
+      id: "courier-bulk",
+      title: t("page.finalize"),
+      context: t("camera.context", { value: num(orders.length) }),
+      modes: [
+        { value: "cancel", label: t("scanMode.cancelShort") },
+        { value: "tomorrow", label: t("scanMode.tomorrowShort") },
+      ],
+      mode: scanMode,
+      onModeChange: (value) => setScanMode(value === "tomorrow" ? "tomorrow" : "cancel"),
+      progress: { done: scannedOrders.length, total: orders.length, label: t("camera.meter") },
+      note: { title: t("camera.unscanned", { value: num(unscannedCount) }) },
+      list: cameraList,
+      listTitle: t("camera.listTitle"),
+      listDescription: t("camera.listDescription", {
+        done: num(scannedOrders.length),
+        total: num(orders.length),
+        cancel: num(scannedCancelCount),
+        tomorrow: num(scannedTomorrowCount),
+      }),
+      listNote: t("camera.unscanned", { value: num(unscannedCount) }),
+      finish: { label: t("ui:camera.action.finish"), onFinish: () => undefined },
+    },
   });
 
   const clearActions = () => {
     setActions({});
     scannedTokenRef.current.clear();
+    clearRecentScans();
     setScanError("");
   };
 
@@ -366,16 +460,6 @@ const CourierBulkPage = () => {
     void runFinalize(proofStep.tasks, proofStep.tomorrowCount);
   };
 
-  const handleCameraDecode = (value: string) => {
-    const matched = findCourierBulkOrderByScanCandidates(orders, normalizeScannerCandidates(value, window.location.origin));
-    if (matched) {
-      handleScanMatch(matched, value);
-      setIsCameraOpen(false);
-      return;
-    }
-    handleScanMissing();
-  };
-
   // «Kunni yakunlash» — DOM'da BITTA tugma: ≥ 768 sarlavhada, telefonda pastki menyu ustidagi panelda.
   const finalizeButton = (
     <Button
@@ -391,7 +475,6 @@ const CourierBulkPage = () => {
     </Button>
   );
 
-  const markedCount = counts.total - unmarkedCount;
   const isManager = role === "manager";
 
   return (
@@ -417,8 +500,6 @@ const CourierBulkPage = () => {
         viewer={isManager ? "manager" : "courier"}
         scanMode={scanMode}
         onScanModeChange={setScanMode}
-        onOpenCamera={() => setIsCameraOpen(true)}
-        busy={isBusy}
         isPhone={isPhone}
         isBelowLg={isBelowLg}
       />
@@ -428,33 +509,6 @@ const CourierBulkPage = () => {
         <BulkAlert tone="danger" data-testid="courier-bulk-scan-error">
           {scanError}
         </BulkAlert>
-      ) : null}
-
-      {isPhone ? (
-        <Button
-          size="lg"
-          fullWidth
-          leftIcon={ScanLine}
-          aria-haspopup="dialog"
-          aria-label={
-            isManager
-              ? t("scanMode.cameraPhoneMarked", { marked: markedCount, total: counts.total })
-              : undefined
-          }
-          disabled={isBusy}
-          onClick={() => setIsCameraOpen(true)}
-        >
-          {t("scanMode.cameraPhone")}
-          {isManager ? (
-            // Maket `manager-courier-bulk-main`: asosiy tugma ichidagi belgi (`on-solid` fon, `action-fg` matn).
-            <span className="ml-1 inline-flex h-5 items-center rounded-md bg-on-solid px-1.5 text-xs font-semibold text-action-fg">
-              {t("scanMode.markedOfTotal", {
-                marked: formatNumberLocalized(markedCount, { language }),
-                total: formatNumberLocalized(counts.total, { language }),
-              })}
-            </span>
-          ) : null}
-        </Button>
       ) : null}
 
       <CourierBulkOrders
@@ -478,20 +532,6 @@ const CourierBulkPage = () => {
           </div>
         </>
       ) : null}
-
-      <ScannerCameraModal
-        isOpen={isCameraOpen}
-        onClose={() => setIsCameraOpen(false)}
-        onDecode={handleCameraDecode}
-        title={t("scannerTitle")}
-        subtitle={t("scannerSubtitle")}
-        waitingText={t("scannerWaiting")}
-        closeLabel={t("scannerClose")}
-        torchOnLabel={t("torchOn")}
-        torchOffLabel={t("torchOff")}
-        invalidQrMessage={t("invalidQr")}
-        error={scanError}
-      />
 
       <CourierBulkProofDialog
         open={Boolean(proofStep?.open)}

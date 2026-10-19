@@ -81,15 +81,17 @@ test.describe("Biriktirish va Tezkor amal — 390px", () => {
     await expect(dialog).toContainText("1 ta buyurtma uchun market rasm yoki video isbot talab qiladi");
     await expect(dialog).toContainText("Qolgan 1 ta buyurtma isbotsiz yakunlanadi.");
     // Telefonda — pastdan chiqadigan varaqa, gorizontal skroll yo'q.
-    const box = (await dialog.boundingBox())!;
-    expect(box.y + box.height).toBeGreaterThanOrEqual(844 - 1);
+    await expect.poll(async () => {
+      const box = await dialog.boundingBox();
+      return box ? box.y + box.height : 0;
+    }).toBeGreaterThanOrEqual(844 - 1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
     const submit = dialog.getByRole("button", { name: "Yakunlash" });
     await expect(submit).toBeDisabled();
     expect(api.requests).toEqual([]);
-    const submitBox = (await submit.boundingBox())!;
-    expect(submitBox.height).toBeGreaterThanOrEqual(44);
+    // Varaqa ochilish animatsiyasi (transform) tugaguncha o'lcham kasr chiqishi mumkin (43,9999 px) — barqarorini kutamiz.
+    await expect.poll(async () => (await submit.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
 
     await dialog
       .getByRole("group", { name: "№10402 · Ali Valiyev" })

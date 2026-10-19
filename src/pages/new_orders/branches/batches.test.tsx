@@ -14,8 +14,19 @@ import BranchSentBatchesPage from "./batches";
 type ScannerOptions = {
   orders: { id: string; qr_code_token?: string | null }[];
   enabled?: boolean;
+  paused?: boolean;
   onMatch: (row: { id: string }, raw: string) => void;
   onMissing: (raw: string) => void;
+  /** Kamera maqsadi (markaziy «Skaner» tugmasi) — `useOrderQrScanner` uni USB bilan bir yo'ldan o'tkazadi. */
+  camera?: {
+    id: string;
+    title: string;
+    context?: string;
+    note?: { title: string; text?: string };
+    progress?: { done: number; total?: number; label?: string };
+    list?: { key: string; title: string; subtitle?: string; onUndo?: () => void }[];
+    finish?: { label: string };
+  };
 };
 
 const mocks = vi.hoisted(() => ({
@@ -23,7 +34,6 @@ const mocks = vi.hoisted(() => ({
   post: vi.fn(),
   scanner: null as ScannerOptions | null,
   playScanFeedback: vi.fn(),
-  playMissingOrderFeedback: vi.fn(),
 }));
 
 vi.mock("../../../shared/api/api", () => ({
@@ -38,10 +48,9 @@ vi.mock("../../../shared/lib/useOrderQrScanner", () => ({
   },
 }));
 
-vi.mock("../../scan/lib/scanShared", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../scan/lib/scanShared")>()),
+vi.mock("../../../shared/lib/scanner/feedback", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../shared/lib/scanner/feedback")>()),
   playScanFeedback: mocks.playScanFeedback,
-  playMissingOrderFeedback: mocks.playMissingOrderFeedback,
 }));
 
 const today = (h: number, m: number) => {
@@ -124,7 +133,6 @@ beforeEach(() => {
   mocks.get.mockReset();
   mocks.post.mockReset();
   mocks.playScanFeedback.mockReset();
-  mocks.playMissingOrderFeedback.mockReset();
   mocks.scanner = null;
   respond();
 });
@@ -223,7 +231,7 @@ describe("Filial paketlari — USB skaner", () => {
     renderPage();
     await waitFor(() => expect(bodyRows()).toHaveLength(3));
 
-    expect(mocks.scanner?.enabled).toBe(true);
+    expect(mocks.scanner?.paused).toBe(false);
     expect(scanned("147").qr_code_token).toBe("BTB-TOKEN147AA");
     expect(screen.getByRole("status", { name: "" })).toHaveTextContent(
       "Skaner tayyorQR kodni skanerlang — paket ro'yxatda tanlanadi",
@@ -232,8 +240,29 @@ describe("Filial paketlari — USB skaner", () => {
     act(() => mocks.scanner!.onMatch(scanned("147"), "BTB-TOKEN147AA"));
     expect(screen.getByRole("checkbox", { name: "B-147 paketini tanlash" })).toBeChecked();
     expect(rowOf("B-147")).toHaveAttribute("data-selected");
-    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success");
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("success", expect.any(String));
     expect(mocks.post).not.toHaveBeenCalled();
+  });
+
+  it("kamera maqsadi: «Paketlarni qabul qilish», «1 / 3 ta tanlandi», ro'yxatda «Bekor qilish» tanlovdan chiqaradi", async () => {
+    renderPage();
+    await waitFor(() => expect(bodyRows()).toHaveLength(3));
+
+    expect(mocks.scanner?.camera).toMatchObject({
+      title: "Paketlarni qabul qilish",
+      progress: { done: 0, total: 3, label: "ta tanlandi" },
+      list: [],
+      finish: { label: "Tugatish" },
+    });
+
+    act(() => mocks.scanner!.onMatch(scanned("147"), "BTB-TOKEN147AA"));
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("success", "Paket tanlandi B-147");
+    expect(mocks.scanner?.camera?.progress).toMatchObject({ done: 1, total: 3 });
+    expect(mocks.scanner?.camera?.list?.[0]).toMatchObject({ key: "147", title: expect.stringContaining("B-147") });
+
+    act(() => mocks.scanner!.camera!.list![0].onUndo!());
+    expect(screen.getByRole("checkbox", { name: "B-147 paketini tanlash" })).not.toBeChecked();
+    expect(mocks.scanner?.camera?.list).toEqual([]);
   });
 
   it("takroriy skan: «Allaqachon topilgan» ovozi va xabar «#147» (2 s)", async () => {
@@ -254,7 +283,7 @@ describe("Filial paketlari — USB skaner", () => {
     await waitFor(() => expect(bodyRows()).toHaveLength(3));
 
     act(() => mocks.scanner!.onMissing("BTB-BOSHQAFILIAL"));
-    expect(mocks.playMissingOrderFeedback).toHaveBeenCalledTimes(1);
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("missing", expect.any(String));
     expect(await screen.findByText("QR topilmadi")).toBeInTheDocument();
     expect(screen.getByText("Bu QR kod shu filial paketlariga mos kelmadi.")).toBeInTheDocument();
   });

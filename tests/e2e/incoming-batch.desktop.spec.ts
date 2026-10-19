@@ -12,7 +12,8 @@ test.describe("Kiruvchi posilkalar — qop yorlig'i, 1440px", () => {
 
     await scanToken(page, BATCH_TOKEN);
 
-    await expect(page.getByText("Qop: 6 posilkadan 6 tasi belgilandi")).toBeVisible();
+    // Natija «Skanerlash» kartasida (xuddi shu matn qisqa vaqt global skan signalida ham chiqadi).
+    await expect(page.getByLabel("Skanerlash", { exact: true }).getByText("Qop: 6 posilkadan 6 tasi belgilandi")).toBeVisible();
     expect(await scannedRowIds(page)).toEqual(BATCH_ORDERS.map((order) => order.id));
     await expectScanned(page, 6, 7);
 

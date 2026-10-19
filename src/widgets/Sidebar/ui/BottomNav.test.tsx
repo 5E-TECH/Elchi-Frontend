@@ -1,11 +1,13 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useLocation } from "react-router-dom";
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import i18n, { i18nReady } from "../../../i18n";
 import { renderWithProviders } from "../../../test/test-utils";
+import { isScannerOverlayOpen, resetScannerHost } from "../../../shared/lib/scanner/scannerHost";
+import { resetScanTargets, useScanTarget } from "../../../shared/lib/scanner/scanTargets";
 import type { User } from "../../../entities/user/model/types";
-import designRoles from "../../../../design/kit/roles.json";
+import { CODE_DESIGN_ROLES, designRoleInCode, isBottomNavPlanned } from "../../../test/designMenu";
 import { getSidebarConfigForUser, type BranchType } from "../model/menuConfig";
 import BottomNav from "./BottomNav";
 
@@ -26,7 +28,15 @@ vi.mock("../../../shared/lib/navigationPending", async (importOriginal) => ({
 
 type DesignRole = "superadmin" | "admin" | "manager" | "registrator" | "market" | "courier";
 type DesignMenuItem = { key: string; label: string; short?: { uz: string; ru: string; en: string } };
-const ROLES = designRoles.roles as unknown as Record<DesignRole, { menu: DesignMenuItem[]; bottomNav: string[] }>;
+// Maket menyusi — kodda bor rollar, kodda hali yo'q bandlarsiz (`route-map.json` → `plannedMenu`).
+const ROLES = Object.fromEntries(CODE_DESIGN_ROLES.map((role) => [role, designRoleInCode(role)])) as unknown as Record<
+  DesignRole,
+  { menu: DesignMenuItem[]; bottomNav: string[] }
+>;
+const ALL_ROLES = Object.keys(ROLES) as DesignRole[];
+/** Pastki menyusi maketda yangilangan, kodda hali eski rollar (`route-map.json` → `plannedBottomNav`). */
+const PLANNED_BOTTOM_NAV_ROLES = ALL_ROLES.filter((role) => isBottomNavPlanned(role));
+const CURRENT_ROLES = ALL_ROLES.filter((role) => !isBottomNavPlanned(role));
 
 /** `app-shot` dagi sukut filial turlari (maket personasi): menejer — to'liq menyu, registrator — HQ, kuryer — REGIONAL. */
 const DEFAULT_BRANCH: Partial<Record<DesignRole, BranchType>> = {
@@ -74,9 +84,7 @@ afterAll(async () => {
 });
 
 describe("BottomNav — maketdagi bandlar (roles.json → bottomNav)", () => {
-  const roles = Object.keys(ROLES) as DesignRole[];
-
-  it.each(roles)("%s: 5 ta katak, tartibi, manzili va qisqa yorlig'i maketdagidek", (role) => {
+  it.each(CURRENT_ROLES)("%s: 5 ta katak, tartibi, manzili va qisqa yorlig'i maketdagidek", (role) => {
     const branchType = DEFAULT_BRANCH[role] ?? null;
     renderNav(role, { branchType });
     const menu = getSidebarConfigForUser(role, userOf(role, branchType));
@@ -108,7 +116,7 @@ describe("BottomNav — maketdagi bandlar (roles.json → bottomNav)", () => {
   it.each(["ru", "en"] as const)("%s: qisqa yorliqlar maketdagidek (roles.json → short)", async (lang) => {
     await i18n.changeLanguage(lang);
     try {
-      for (const role of Object.keys(ROLES) as DesignRole[]) {
+      for (const role of CURRENT_ROLES) {
         const { unmount } = renderNav(role, { branchType: DEFAULT_BRANCH[role] ?? null });
         ROLES[role].bottomNav.forEach((key, index) => {
           const short = ROLES[role].menu.find((item) => item.key === key)?.short?.[lang];
@@ -118,6 +126,24 @@ describe("BottomNav — maketdagi bandlar (roles.json → bottomNav)", () => {
       }
     } finally {
       await i18n.changeLanguage("uz");
+    }
+  });
+
+  it("plannedBottomNav: kod hali maketdagi kataklarga yetmagan (yetgach — ro'yxatdan oling)", () => {
+    for (const role of PLANNED_BOTTOM_NAV_ROLES) {
+      const branchType = DEFAULT_BRANCH[role] ?? null;
+      const { unmount } = renderNav(role, { branchType });
+      const menu = getSidebarConfigForUser(role, userOf(role, branchType));
+      const expected = ROLES[role].bottomNav.map((key) =>
+        key === "@scan" ? "/scan" : key === "@menu" ? "button:Menyu" : menu.find((item) => item.label === key)?.to,
+      );
+      const actual = cells().map((cell) =>
+        cell.tagName === "BUTTON" && cell.textContent?.includes("Menyu") ? "button:Menyu" : cell.getAttribute("href"),
+      );
+      expect(actual, `${role}: kod maketdagi pastki menyuga yetdi — route-map.json → plannedBottomNav dan oling`).not.toEqual(
+        expected,
+      );
+      unmount();
     }
   });
 
@@ -287,5 +313,53 @@ describe("BottomNav — ko'rinish (maket `.el-bottomnav`)", () => {
     // (kunduzgi mavzuda oq fonda ko'rinmaydi).
     expect(fab).toHaveClass("group-active:scale-[.94]", "group-active:bg-action-hover", "group-active:ring-6", "group-active:ring-focus");
     expect(fab?.className).not.toMatch(/ring-action-soft/);
+  });
+});
+
+describe("BottomNav — kontekstli «Skaner» (ega qarori 2026-10-19)", () => {
+  const ScanTargetProbe = () => {
+    useScanTarget({ id: "new-orders:market:7", title: "Qabul qilish", onScan: vi.fn() });
+    return null;
+  };
+  const LocationProbe = () => <span data-testid="path">{useLocation().pathname}</span>;
+
+  afterEach(() => {
+    resetScanTargets();
+    resetScannerHost();
+  });
+
+  it("sahifada skan maqsadi bor — kamera shu sahifa ustida (o'tish yo'q), nomi kontekstni aytadi", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <ScanTargetProbe />
+        <BottomNav />
+        <LocationProbe />
+      </>,
+      { route: "/new-orders/7", preloadedState: stateOf("superadmin") },
+    );
+    const scan = screen.getByRole("link", { name: "Skaner — Qabul qilish" });
+    expect(scan).toHaveAttribute("href", "/scan");
+    expect(scan).toHaveAttribute("aria-haspopup", "dialog");
+    expect(scan).toHaveAttribute("title", "Skaner");
+    await user.click(scan);
+    expect(isScannerOverlayOpen()).toBe(true);
+    expect(screen.getByTestId("path")).toHaveTextContent("/new-orders/7");
+  });
+
+  it("maqsad yo'q — universal /scan ga o'tadi", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(
+      <>
+        <BottomNav />
+        <LocationProbe />
+      </>,
+      { route: "/", preloadedState: stateOf("courier", "REGIONAL") },
+    );
+    const scan = screen.getByRole("link", { name: "Skaner" });
+    expect(scan).not.toHaveAttribute("aria-haspopup");
+    await user.click(scan);
+    expect(isScannerOverlayOpen()).toBe(false);
+    expect(screen.getByTestId("path")).toHaveTextContent("/scan");
   });
 });

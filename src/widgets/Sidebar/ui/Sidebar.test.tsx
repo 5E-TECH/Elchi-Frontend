@@ -5,7 +5,7 @@ import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import i18n, { i18nReady } from "../../../i18n";
 import { renderWithProviders } from "../../../test/test-utils";
 import type { User } from "../../../entities/user/model/types";
-import designRoles from "../../../../design/kit/roles.json";
+import { CODE_DESIGN_ROLES, designRoleInCode } from "../../../test/designMenu";
 import { api } from "../../../shared/api/api";
 import { DEFAULT_SETTINGS, SETTINGS_KEY, type AppSettings } from "../../../entities/settings";
 import type { BranchType } from "../model/menuConfig";
@@ -28,7 +28,8 @@ vi.mock("../../../shared/lib/navigationPending", async (importOriginal) => ({
 
 type DesignRole = "superadmin" | "admin" | "manager" | "registrator" | "market" | "courier";
 type DesignMenuItem = { key: string; label: string; group?: string };
-const ROLES = designRoles.roles as unknown as Record<
+// Maket menyusi — kodda bor rollar, kodda hali yo'q bandlarsiz (`route-map.json` → `plannedMenu`).
+const ROLES = Object.fromEntries(CODE_DESIGN_ROLES.map((role) => [role, designRoleInCode(role)])) as unknown as Record<
   DesignRole,
   { grouped: boolean; menu: DesignMenuItem[] }
 >;

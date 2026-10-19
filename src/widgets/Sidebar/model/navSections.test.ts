@@ -10,7 +10,7 @@ import {
   getNavSections,
   getTileAccessibleName,
 } from "./navSections";
-import designRoles from "../../../../design/kit/roles.json";
+import { designRoleInCode } from "../../../test/designMenu";
 import uzSidebar from "../../../locales/uz/sidebar.json";
 import ruSidebar from "../../../locales/ru/sidebar.json";
 import enSidebar from "../../../locales/en/sidebar.json";
@@ -116,7 +116,6 @@ describe("getNavSections — maketdagi guruhlar (roles.json)", () => {
 
 describe("qisqa yorliq (telefon varaqasi katagi)", () => {
   type DesignItem = { key: string; short?: Record<"uz" | "ru" | "en", string> };
-  const DESIGN = designRoles.roles as unknown as Record<string, { menu: DesignItem[] }>;
   const LOCALES = { uz: uzSidebar, ru: ruSidebar, en: enSidebar } as Record<
     "uz" | "ru" | "en",
     Record<string, string>
@@ -131,7 +130,8 @@ describe("qisqa yorliq (telefon varaqasi katagi)", () => {
     const entries = getNavSections(role, userOf(role, DEFAULT_BRANCH[role] ?? null)).flatMap(
       (section) => section.items,
     );
-    const design = DESIGN[role].menu;
+    // Maketdagi, kodda hali yo'q bandlar (`route-map.json` → `plannedMenu`) chiqariladi.
+    const design: DesignItem[] = designRoleInCode(role).menu;
     expect(entries).toHaveLength(design.length);
     design.forEach((item, index) => {
       if (!item.short) return;

@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**77 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **12** · qisman: **20** · v2 ga ko'chirilgan route: **75 / 77**
+**77 ta route** (+ qobiq) · **654 ta maket** (406 sahifa, 235 oyna, 13 tizim taxtasi; 554 ta fragment fayli) · kodda yo'q: **236** · qisman: **49** · v2 ga ko'chirilgan route: **76 / 77**
 
 ## Qanday ishlatiladi
 
@@ -45,21 +45,21 @@
 
 | Route | Bo'lim | Asosiy fayl | Rollar | Maketlar | Holat |
 |---|---|---|---|---|---|
-| `(qobiq)` | Qobiq | `src/widgets/layout/dashboardLayout.tsx` | superadmin, admin, manager, registrator, market, courier | 5 | v2 |
+| `(qobiq)` | Qobiq | `src/widgets/layout/dashboardLayout.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 7 | v2 |
 | `/login` | Kirish va xato sahifalari | `src/features/auth/index.tsx` | hamma (kirishsiz) | 3 | v2 |
 | `/403` | Kirish va xato sahifalari | `src/shared/ui/Forbidden.tsx` | hamma (kirishsiz) | 1 | v2 |
 | `/404` | Kirish va xato sahifalari | `src/shared/ui/NotFound.tsx` | hamma (kirishsiz) | 1 | v2 |
 | `/500` | Kirish va xato sahifalari | `src/shared/ui/ServerError.tsx` | hamma (kirishsiz) | 1 | v2 |
 | `/runtime-error` | Kirish va xato sahifalari | `src/shared/ui/ErrorBoundaryPage.tsx` | hamma (kirishsiz) | 1 | v2 |
-| `/*` | Kirish va xato sahifalari | `src/shared/ui/NotFound.tsx` | superadmin, admin, manager, registrator, market, courier | 1 | v2 |
-| `/` | Bosh sahifa | `src/pages/dashboard/MarketDashboardPage.tsx` + `src/pages/dashboard/DashboardPage.tsx` | superadmin, admin, manager (→ /branch-dashboard), registrator, market, courier | 8 | v2 |
+| `/*` | Kirish va xato sahifalari | `src/shared/ui/NotFound.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 1 | v2 |
+| `/` | Bosh sahifa | `src/pages/dashboard/MarketDashboardPage.tsx` + `src/pages/dashboard/DashboardPage.tsx` | superadmin, admin, manager (→ /branch-dashboard), registrator, market, courier, logist (logist roli PR'ida qo'shiladi (DashboardEntry → logist bosh sahifasi)), investor (investor roli PR'ida qo'shiladi (DashboardEntry → InvestorDashboardPage)) | 19 | v2 |
 | `/branch-dashboard` | Bosh sahifa | `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` | manager | 2 | v2 |
-| `/orders` | Buyurtmalar | `src/pages/orders/index.tsx` | superadmin, admin, manager, registrator, market, courier | 24 | v2 |
-| `/orders/edit/:orderId` | Buyurtmalar | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager, registrator, market, courier | 19 | v2 |
-| `/new-orders` | Qabul va yaratish | `src/pages/new_orders/markets/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market | 4 | v2 |
-| `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market | 23 | v2 |
-| `/new-orders/incoming` | Qabul va yaratish | `src/pages/incoming-orders/SourcePicker.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 3 | v2 |
-| `/new-orders/incoming/:marketId` | Qabul va yaratish | `src/pages/incoming-orders/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 7 | v2 |
+| `/orders` | Buyurtmalar | `src/pages/orders/index.tsx` | superadmin, admin, manager, registrator, market, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 32 | v2 |
+| `/orders/edit/:orderId` | Buyurtmalar | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager, registrator, market, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 20 | v2 |
+| `/new-orders` | Qabul va yaratish | `src/pages/new_orders/markets/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (taklif — MO-S3, kodda yo'q (backend POST /orders ruxsati kerak)) | 4 | v2 |
+| `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (taklif — MO-S3, kodda yo'q (backend POST /orders ruxsati kerak)) | 39 | v2 |
+| `/new-orders/incoming` | Qabul va yaratish | `src/pages/incoming-orders/SourcePicker.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 4 | v2 |
+| `/new-orders/incoming/:marketId` | Qabul va yaratish | `src/pages/incoming-orders/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 21 | v2 |
 | `/new-orders/branches` | Qabul va yaratish | `src/pages/new_orders/branches/index.tsx` | superadmin, admin | 2 | v2 |
 | `/new-orders/branches/:branchId` | Qabul va yaratish | `src/pages/new_orders/branches/batches.tsx` | superadmin, admin | 2 | v2 |
 | `/new-orders/branches/:branchId/batches/:batchId` | Qabul va yaratish | `src/pages/new_orders/branches/batchDetail.tsx` | superadmin, admin | 5 | v2 |
@@ -67,62 +67,66 @@
 | `/new-orders/cancelled/:marketId` | Qabul va yaratish | `src/pages/new_orders/cancelled/detail.tsx` | superadmin, admin, registrator (faqat HQ), market (faqat o'z marketi) | 14 | v2 |
 | `/new-orders/:marketId` | Qabul va yaratish | `src/pages/new_orders/components/new_orderDetail.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi) | 17 | v2 |
 | `/new-orders/:marketId/edit/:orderId` | Qabul va yaratish | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi) | 3 | v2 |
-| `/new-orders/userDetail/:id` | Qabul va yaratish | `src/pages/users/detail/UserDetailPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market | 0 | v2 |
-| `/mails` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier | 0 | v2 |
-| `/mails/today` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier | 6 | v2 |
-| `/mails/return` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier | 4 | v2 |
-| `/mails/refused` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier | 5 | v2 |
-| `/mails/old` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier | 7 | v2 |
-| `/mails/:id` | Pochta | `src/pages/mails/detail/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier | 25 | v2 |
-| `/batches` | Paketlar va qaytarishlar | `src/pages/batches/ui/BatchesPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID) | 9 | v2 |
-| `/batches/:id` | Paketlar va qaytarishlar | `src/pages/batches/ui/BatchDetailPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID) | 7 | v2 |
+| `/new-orders/userDetail/:id` | Qabul va yaratish | `src/pages/users/detail/UserDetailPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (taklif — MO-S3, kodda yo'q (backend POST /orders ruxsati kerak)) | 0 | v2 |
+| `/mails` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 0 | v2 |
+| `/mails/today` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 7 | v2 |
+| `/mails/return` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 4 | v2 |
+| `/mails/refused` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 5 | v2 |
+| `/mails/old` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 7 | v2 |
+| `/mails/:id` | Pochta | `src/pages/mails/detail/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 38 | v2 |
+| `/batches` | Paketlar va qaytarishlar | `src/pages/batches/ui/BatchesPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 10 | v2 |
+| `/batches/:id` | Paketlar va qaytarishlar | `src/pages/batches/ui/BatchDetailPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 7 | v2 |
 | `/returns` | Paketlar va qaytarishlar | `src/pages/returns/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID) | 3 | v2 |
 | `/dispatch` | Biriktirish va tezkor amal | `src/pages/dispatch/index.tsx` | superadmin, admin, manager (REGIONAL · HYBRID), registrator (HQ · REGIONAL · HYBRID) | 8 | v2 |
 | `/courier-bulk` | Biriktirish va tezkor amal | `src/pages/courier-bulk/index.tsx` | manager (REGIONAL · HYBRID), courier | 7 | v2 |
-| `/scan` | Skaner | `src/pages/scan/index.tsx` | superadmin, admin, manager, registrator, market, courier | 14 | eski |
-| `/scan/:token` | Skaner | `src/pages/scan/detail.tsx` | superadmin, admin, manager, registrator, market, courier | 10 | v2 |
+| `/scan` | Skaner | `src/pages/scan/index.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 15 | v2 |
+| `/scan/:token` | Skaner | `src/pages/scan/detail.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 10 | v2 |
 | `/tg/scan` | Skaner | `src/pages/tg-scan/index.tsx` | hamma (kirishsiz) | 7 | v2 |
-| `/payments` | Moliya | `src/pages/payments/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 11 | v2 |
-| `/payments/main-cashbox` | Moliya | `src/pages/payments/components/mainCashbox.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 9 | v2 |
-| `/payments/cash-detail/:id` | Moliya | `src/pages/payments/components/cashDetail.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 8 | v2 |
-| `/cash-box` | Moliya | `src/pages/payments/components/MyCashboxPage.tsx` | manager, market, courier | 5 | v2 |
+| `(taklif) /investments` | Moliya | `src/app/lib/routes.tsx` | investor (taklif — yangi rol, yangi route) | 3 | eski |
+| `(taklif) /profits` | Moliya | `src/app/lib/routes.tsx` | investor (taklif — yangi rol, yangi route) | 2 | eski |
+| `/payments` | Moliya | `src/pages/payments/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 12 | v2 |
+| `/payments/main-cashbox` | Moliya | `src/pages/payments/components/mainCashbox.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 18 | v2 |
+| `/payments/cash-detail/:id` | Moliya | `src/pages/payments/components/cashDetail.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 14 | v2 |
+| `/cash-box` | Moliya | `src/pages/payments/components/MyCashboxPage.tsx` | manager, market, courier | 6 | v2 |
+| `(taklif) /my-earnings` | Moliya | `src/app/lib/routes.tsx` | market_operator (taklif — yangi rol, yangi route) | 2 | eski |
 | `/financial-balance` | Moliya | `src/pages/financial-balance/index.tsx` | superadmin, admin | 11 | v2 |
-| `/products` | Mahsulotlar | `src/pages/products/list/index.tsx` | superadmin, admin, manager, registrator, market | 19 | v2 |
-| `/products/create-product/:id` | Mahsulotlar | `src/pages/products/create/index.tsx` | superadmin, admin, manager, registrator, market | 5 | v2 |
-| `/all-users` | Foydalanuvchilar | `src/pages/users/list/UserListPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 5 | v2 |
-| `/all-users/create-user` | Foydalanuvchilar | `src/pages/users/create/CreateUserPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 4 | v2 |
-| `/all-users/:id` | Foydalanuvchilar | `src/pages/users/detail/UserDetailPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 8 | v2 |
-| `/regions` | Hududlar | `src/pages/region/index.tsx` | superadmin, admin, manager, courier | 7 | v2 |
-| `/regions/districts` | Hududlar | `src/pages/region/pages/districts/index.tsx` | superadmin | 1 | v2 |
-| `/regions/sato-management` | Hududlar | `src/pages/region/pages/sato-management/index.tsx` | superadmin, admin | 2 | v2 |
-| `/regions/logist-assignment` | Hududlar | `src/pages/region/pages/logist-assignment/index.tsx` | superadmin, admin | 2 | v2 |
+| `/products` | Mahsulotlar | `src/pages/products/list/index.tsx` | superadmin, admin, manager, registrator, market, market_operator (taklif — faqat ko'rish) | 19 | v2 |
+| `/products/create-product/:id` | Mahsulotlar | `src/pages/products/create/index.tsx` | superadmin, admin, manager, registrator, market | 8 | v2 |
+| `/all-users` | Foydalanuvchilar | `src/pages/users/list/UserListPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 9 | v2 |
+| `/all-users/create-user` | Foydalanuvchilar | `src/pages/users/create/CreateUserPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 8 | v2 |
+| `/all-users/:id` | Foydalanuvchilar | `src/pages/users/detail/UserDetailPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 23 | v2 |
+| `/market-operators` | Foydalanuvchilar | `src/pages/market-operators/index.tsx` | market (taklif — ega qarori 2026-10-19; kodda hozir canViewMarketOperators = () => false, guard market'ga ochilishi kerak) | 8 | eski |
+| `/regions` | Hududlar | `src/pages/region/index.tsx` | superadmin, admin, manager, courier, logist (taklif — o'z viloyatlari (LG-S3), kodda yo'q) | 9 | v2 |
+| `/regions/districts` | Hududlar | `src/pages/region/pages/districts/index.tsx` | superadmin, admin | 20 | v2 |
+| `/regions/sato-management` | Hududlar | `src/pages/region/pages/sato-management/index.tsx` | superadmin, admin | 12 | v2 |
+| `/regions/logist-assignment` | Hududlar | `src/pages/region/pages/logist-assignment/index.tsx` | superadmin, admin | 6 | v2 |
 | `/branches` | Filiallar | `src/pages/branches/ui/BranchesPage.tsx` | superadmin | 3 | v2 |
 | `/branches/:id` | Filiallar | `src/pages/branches/ui/BranchDetailPage.tsx` | superadmin | 2 | v2 |
-| `/integrations/connections` | Integratsiyalar | `src/pages/integrations/ConnectionsPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 23 | v2 |
+| `/integrations/connections` | Integratsiyalar | `src/pages/integrations/ConnectionsPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 29 | v2 |
 | `/integrations/new` | Integratsiyalar | `src/pages/integrations/CatalogPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 2 | v2 |
 | `/integrations/new/:typeKey` | Integratsiyalar | `src/pages/integrations/wizard/ConnectWizard.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 2 | v2 |
-| `/integrations/partners` | Integratsiyalar | `src/pages/partners/index.tsx` | superadmin, admin, manager, registrator, market, courier | 2 | v2 |
+| `/integrations/partners` | Integratsiyalar | `src/pages/partners/index.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 2 | v2 |
 | `/integrations/sources` | Integratsiyalar | `src/pages/new_orders/external_orders/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 2 | v2 |
 | `/integrations/sources/create` | Integratsiyalar | `src/pages/new_orders/external_orders/create.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 1 | v2 |
 | `/integrations/sources/:id` | Integratsiyalar | `src/pages/new_orders/external_orders/detail.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 1 | v2 |
-| `/notifications` | Bildirishnomalar | `src/pages/notifications/ui/NotificationsPage.tsx` | superadmin | 3 | v2 |
-| `/notifications/send` | Bildirishnomalar | `src/pages/notification-send/index.tsx` | superadmin, admin | 2 | v2 |
-| `/notifications/sms` | Bildirishnomalar | `src/pages/notifications/ui/SmsPage.tsx` | superadmin, admin | 5 | v2 |
+| `/notifications` | Bildirishnomalar | `src/pages/notifications/ui/NotificationsPage.tsx` | superadmin, admin (taklif — NG-S2, kodda yo'q) | 30 | v2 |
+| `/notifications/send` | Bildirishnomalar | `src/pages/notification-send/index.tsx` | superadmin, admin | 16 | v2 |
+| `(taklif) /notifications/sent` | Bildirishnomalar | `src/app/lib/routes.tsx` | superadmin (taklif — yangi route), admin (taklif — yangi route (canSendNotifications)) | 12 | eski |
+| `/notifications/sms` | Bildirishnomalar | `src/pages/notifications/ui/SmsPage.tsx` | superadmin, admin | 6 | v2 |
 | `/activity-logs` | Tizim | `src/pages/activity-logs/index.tsx` | superadmin, admin | 5 | v2 |
-| `/ops` | Tizim | `src/pages/ops/index.tsx` | superadmin | 8 | v2 |
+| `/ops` | Tizim | `src/pages/ops/index.tsx` | superadmin | 17 | v2 |
 | `/ops/ui-kit` | Tizim | `src/pages/ui-kit/index.tsx` | superadmin | 0 | v2 |
 | `/finance-operators` | Tizim | `src/pages/finance-operators/index.tsx` | superadmin | 1 | v2 |
 | `/integrations-ops` | Tizim | `src/pages/integrations-ops/index.tsx` | superadmin | 1 | v2 |
 | `/investors-ops` | Tizim | `src/pages/investors-ops/index.tsx` | superadmin | 1 | v2 |
-| `/logistics-ops` | Tizim | `src/pages/logistics-ops/index.tsx` | superadmin | 1 | v2 |
+| `/logistics-ops` | Tizim | `src/pages/logistics-ops/index.tsx` | superadmin | 3 | v2 |
 | `/branch-ops` | Tizim | `src/pages/branch-ops/index.tsx` | superadmin | 1 | v2 |
 | `/identity-ops` | Tizim | `src/pages/identity-ops/index.tsx` | superadmin | 1 | v2 |
-| `/system-ops` | Tizim | `src/pages/system-ops/index.tsx` | superadmin | 1 | v2 |
+| `/system-ops` | Tizim | `src/pages/system-ops/index.tsx` | superadmin | 8 | v2 |
 | `/logs` | Tizim | `src/pages/logs/index.tsx` | superadmin | 1 | v2 |
-| `/market-operators` | Tizim | `src/pages/market-operators/index.tsx` | hech kim (yopiq) | 0 | eski |
-| `/profile` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/profile/ui/ProfilePage.tsx` | superadmin, admin, manager, registrator, market, courier | 2 | v2 |
-| `/settings` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/settings/ui/SettingsPage.tsx` | superadmin, admin, manager, registrator, market, courier | 5 | v2 |
-| `/inbox` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/notifications/ui/NotificationInboxPage.tsx` | superadmin, admin, manager, registrator, market, courier | 5 | v2 |
+| `/profile` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/profile/ui/ProfilePage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 12 | v2 |
+| `/settings` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/settings/ui/SettingsPage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 6 | v2 |
+| `/inbox` | Profil, sozlamalar, bildirishnomalar qutisi | `src/pages/notifications/ui/NotificationInboxPage.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 7 | v2 |
 
 ## 2. Route bo'yicha maketlar (batafsil)
 
@@ -133,7 +137,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `(qobiq)` — Har sahifa atrofidagi qobiq: yon menyu, yuqori panel (qidiruv, skaner, qo'ng'iroqcha, profil), pastki menyu va telefon menyusi
 
 - **Fayllar:** `src/widgets/layout/dashboardLayout.tsx` · `src/widgets/layout/scanLayout.tsx` · `src/widgets/Sidebar/ui/Sidebar.tsx` · `src/widgets/Sidebar/ui/SidebarItem.tsx` · `src/widgets/Sidebar/ui/BottomNav.tsx` · `src/widgets/Sidebar/ui/MobileMenu.tsx` · `src/widgets/Sidebar/model/menuConfig.tsx` · `src/widgets/header/ui/Header.tsx` · `src/widgets/header/ui/HeaderSearch.tsx` · `src/widgets/header/ui/SearchScreen.tsx` · `src/widgets/header/ui/NotificationsMenu.tsx` · `src/widgets/header/ui/UserMenu.tsx`
-- **Rollar:** superadmin, admin, manager, registrator, market, courier
+- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
 - **Holat:** v2
 - **Izoh:** Maketlardagi yon menyu, yuqori panel va pastki menyu design/kit/roles.json dan chiziladi (bandlar, guruhlar, pastki menyu tartibi, persona). Menyu bandi qo'shsangiz — menuConfig.tsx bilan birga roles.json ni ham solishtiring.
 
@@ -143,9 +147,11 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `(qobiq)` | admin | — Qobiq har sahifa maketida chizilgan — masalan admin-orders-list. | — | — | v2 |
 | `(qobiq)` | manager | — Qobiq har sahifa maketida chizilgan — masalan manager-orders-list-all (pastki menyuda «Skaner» va «Biriktirish»). | — | — | v2 |
 | `(qobiq)` | registrator | — Qobiq har sahifa maketida chizilgan — masalan registrator-orders-list. | — | — | v2 |
-| `(qobiq)` | market | — Qobiq har sahifa maketida chizilgan — masalan market-orders-list (pastki menyuda skaner yo'q). | — | — | v2 |
+| `(qobiq)` | market | `market-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq | [design/fragments/market--dashboard-mobile-menu.html](fragments/market--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | qisman |
+| `(qobiq)` | market_operator | — Yangi rol qobig'i: yon menyu Bosh sahifa · Buyurtmalar · Buyurtma yaratish · Mahsulotlar · Daromadim; pastki menyu 5 oddiy katak (Skaner va Menyu yo'q) — Yaratish · Mahsulotlar · Daromadim. Bildirishnomalar, Sozlamalar va Chiqish faqat yuqori paneldan (qo'ng'iroqcha, profil menyusi) — eski market xatti-harakati kabi. Profil satri «Market operatori» (profil market nomini qaytarmaydi). | — | — | v2 |
 | `(qobiq)` | courier | `courier-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq<br>↳ `src/widgets/Sidebar/ui/MobileMenu.tsx` | [design/fragments/courier--dashboard-mobile-menu.html](fragments/courier--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | v2 |
 | `(qobiq)` | courier | `courier-dashboard-mobile-search` — Global qidiruv (telefon)<br>↳ `src/widgets/header/ui/SearchScreen.tsx` | [design/fragments/courier--dashboard-mobile-search.html](fragments/courier--dashboard-mobile-search.html) | oyna · faqat telefon | v2 |
+| `(qobiq)` | investor | `investor-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq | [design/fragments/investor--dashboard-mobile-menu.html](fragments/investor--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | yangi (kodda yo'q) |
 | `(qobiq)` | umumiy (barcha rollar) | `common-bell-dropdown` — Qo'ng'iroqcha ochiq (so'nggi bildirishnomalar)<br>↳ `src/widgets/header/ui/NotificationsMenu.tsx` | [design/fragments/common--bell-dropdown.html](fragments/common--bell-dropdown.html) | oyna | v2 |
 | `(qobiq)` | tizim taxtasi | `tizim-states-navigation` — Holatlar — navigatsiya | [design/fragments/tizim--states-navigation.html](fragments/tizim--states-navigation.html) | taxta | qoida |
 | `(qobiq)` | tizim taxtasi | `tizim-responsive` — Moslashuvchanlik — telefon, planshet, desktop | [design/fragments/tizim--responsive.html](fragments/tizim--responsive.html) | taxta | qoida |
@@ -218,7 +224,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 - **Fayllar:** `src/shared/ui/NotFound.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish)
-- **Rollar:** superadmin, admin, manager, registrator, market, courier
+- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
 
@@ -232,10 +238,10 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 - **Fayllar:** `src/app/lib/routes.tsx` · `src/pages/dashboard/DashboardPage.tsx` · `src/pages/dashboard/MarketDashboardPage.tsx` · `src/widgets/dashboard-statistics/ui/DashboardHeader.tsx` · `src/widgets/dashboard-statistics/ui/DashboardGrid.tsx` · `src/widgets/dashboard-statistics/ui/SuccessRateCard.tsx` · `src/widgets/dashboard-statistics/ui/OrderStatusCard.tsx` · `src/pages/dashboard/ui/DeliveryQualityCard.tsx` · `src/pages/dashboard/ui/DeliveryResultsCard.tsx` · `src/widgets/financial-analysis/ui/FinancialAnalysis.tsx` · `src/widgets/financial-analysis/ui/FinancialTrendPlot.tsx` · `src/widgets/financial-analysis/ui/CashBalanceCard.tsx` · `src/widgets/dashboard-top-performers/ui/TopRankCard.tsx` · `src/widgets/dashboard-region/ui/RegionOverviewCard.tsx` · `src/widgets/dashboard-region/ui/RegionTiles.tsx` · `src/widgets/region-detail/ui/RegionDetailDialog.tsx` · `src/pages/dashboard/ui/CourierPlanCard.tsx` · `src/pages/dashboard/ui/CourierCashCard.tsx` · `src/pages/dashboard/ui/MarketSalesCard.tsx` · `src/pages/dashboard/ui/QuickActions.tsx` · `src/pages/dashboard/ui/ExtraCostApprovals.tsx` · `src/pages/dashboard/ui/AutoApprovedExtraCosts.tsx` · `src/pages/dashboard/ui/ExtraCostRejectDialog.tsx` · `src/widgets/dashboard-part-error/ui/DashboardPartError.tsx` · `src/shared/ui/charts/index.ts`
 - **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish) · o'rovchi: `DashboardEntry`
-- **Rollar:** superadmin, admin, manager (→ /branch-dashboard), registrator, market, courier
+- **Rollar:** superadmin, admin, manager (→ /branch-dashboard), registrator, market, courier, logist (logist roli PR'ida qo'shiladi (DashboardEntry → logist bosh sahifasi)), investor (investor roli PR'ida qo'shiladi (DashboardEntry → InvestorDashboardPage))
 - **Menyuda:** «Bosh sahifa» (`dashboard`) — superadmin, admin, registrator, market, courier
 - **Holat:** v2
-- **Izoh:** DashboardEntry (routes.tsx): market → MarketDashboardPage (xarajat tasdiqlari shu sahifada), qolganlar → DashboardPage (kuryer — alohida tarmoq isCourier). Dizayn v2 (G1): grafiklar — src/shared/ui/charts (recharts faqat «Moliyaviy tahlil» trendida, FinancialTrendPlot lazy + DeferredMount rootMargin 0; bundle byudjeti 450 KB — tests/e2e/dashboard-bundle.preview.spec.ts), viloyat oynasi — umumiy RegionDetailDialog (lazy, faqat bosilganda; registratorda daromadsiz — showRevenue=false, eski oyna xulqi). Reytinglar top 5 (telefonda top 3) + «Yana ko'rsatish». Chizilmaganlar (Taklif yoki API yo'q, spec §6): «Buyurtmalar vaqti» issiqlik xaritasi, KPI «Yo'qotilgan daromad», KPI sparkline, «maqsad 80%», «Sof foyda» qatori, market «Reytingdagi o'rningiz» / «Buyurtmalar dinamikasi», xarajat so'rovida so'rovchi ismi va buyurtma raqami, kuryer «Oxirgi 7 kun». Ega savollari — sukut javoblari qo'llangan (spec §9): Q1 delta va «Kecha» — oldingi davr uchun ikkinchi analytics so'rovi («Barchasi»da yo'q); Q2 gauge belgisi «Yaxshi chegarasi · 70%»; Q3 registrator sarlavha izohida filial nomi (backend registratorni filialga cheklaydi); Q4 «Moliyaviy tahlil» izohi «Daromad · oldingi davr bilan solishtirish», qator «Daromad»; Q5 kuryer «Kassa» sharsharasi faqat my-cashbox bugungi tarixni bersa, aks holda «Qo'lingizdagi pul»; Q6 market «Tasdiqlash» — pul amali, tasdiq oynasi bilan (useConfirm), «Rad etish» — sabab oynasi ExtraCostRejectDialog; 409 «allaqachon hal qilingan» — qayta yuklash + info toast; market_operator — faqat ko'rish (dev, Urozov04); Q7 «Barchasi»da «Yetkazish sifati» o'rnida bo'sh holat, «Moliyaviy tahlil» va «Kassa» yashirin.
+- **Izoh:** DashboardEntry (routes.tsx): market → MarketDashboardPage (xarajat tasdiqlari shu sahifada), qolganlar → DashboardPage (kuryer — alohida tarmoq isCourier). Dizayn v2 (G1): grafiklar — src/shared/ui/charts (recharts faqat «Moliyaviy tahlil» trendida, FinancialTrendPlot lazy + DeferredMount rootMargin 0; bundle byudjeti 450 KB — tests/e2e/dashboard-bundle.preview.spec.ts), viloyat oynasi — umumiy RegionDetailDialog (lazy, faqat bosilganda; registratorda daromadsiz — showRevenue=false, eski oyna xulqi). Reytinglar top 5 (telefonda top 3) + «Yana ko'rsatish». Chizilmaganlar (Taklif yoki API yo'q, spec §6): «Buyurtmalar vaqti» issiqlik xaritasi, KPI «Yo'qotilgan daromad», KPI sparkline, «maqsad 80%», «Sof foyda» qatori, market «Reytingdagi o'rningiz» / «Buyurtmalar dinamikasi», xarajat so'rovida so'rovchi ismi va buyurtma raqami, kuryer «Oxirgi 7 kun». Ega savollari — sukut javoblari qo'llangan (spec §9): Q1 delta va «Kecha» — oldingi davr uchun ikkinchi analytics so'rovi («Barchasi»da yo'q); Q2 gauge belgisi «Yaxshi chegarasi · 70%»; Q3 registrator sarlavha izohida filial nomi (backend registratorni filialga cheklaydi); Q4 «Moliyaviy tahlil» izohi «Daromad · oldingi davr bilan solishtirish», qator «Daromad»; Q5 kuryer «Kassa» sharsharasi faqat my-cashbox bugungi tarixni bersa, aks holda «Qo'lingizdagi pul»; Q6 market «Tasdiqlash» — pul amali, tasdiq oynasi bilan (useConfirm), «Rad etish» — sabab oynasi ExtraCostRejectDialog; 409 «allaqachon hal qilingan» — qayta yuklash + info toast; market_operator — faqat ko'rish (dev, Urozov04); Q7 «Barchasi»da «Yetkazish sifati» o'rnida bo'sh holat, «Moliyaviy tahlil» va «Kassa» yashirin. Ega tasdig'i 2026-10-19 (small-p1 S3): «Ilovani o'rnatish» taklifi kuryer bosh sahifasida bir marta (yopiladi, courier-dashboard-pwa-install); Sozlamalar va Bildirishnomalarda doim.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -246,7 +252,19 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/` | registrator | `registrator-dashboard-main` — Dashboard — statistika<br>↳ `src/pages/dashboard/DashboardPage.tsx` | [design/fragments/registrator--dashboard-main.html](fragments/registrator--dashboard-main.html) | sahifa | v2 |
 | `/` | market | `market-dashboard-home` — Mening dashboardim<br>↳ `src/pages/dashboard/MarketDashboardPage.tsx` | [design/fragments/market--dashboard-home.html](fragments/market--dashboard-home.html) | sahifa | v2 |
 | `/` | market | `market-dashboard-extra-cost-approvals` — Dashboard · Xarajat tasdiqlari<br>↳ `src/pages/dashboard/ui/ExtraCostApprovals.tsx` | [design/fragments/market--dashboard-extra-cost-approvals.html](fragments/market--dashboard-extra-cost-approvals.html) | sahifa | v2 |
+| `/` | market_operator | — Maket yo'q — eng yaqini: market-dashboard-home. GET analytics/dashboard market_operator'ga ochiq (DASHBOARD_ROLES). Faqat ko'rish: qo'shimcha xarajat tasdiqlari ro'yxati tugmasiz (ExtraCostApprovals — market_operator qaror qilmaydi, mavjud qaror Q6); «To'lovlar»/kassa kartasi va moliya havolalari yo'q (finance ruxsati yo'q). Bosh sahifadagi «Buyurtma yaratish» — /new-orders/create (Qo'lda va AI bilan — MO-S3, quyida). | — | — | v2 |
 | `/` | courier | `courier-dashboard-home` — Bosh sahifa — kuryer statistikasi<br>↳ `src/pages/dashboard/DashboardPage.tsx` | [design/fragments/courier--dashboard-home.html](fragments/courier--dashboard-home.html) | sahifa | v2 |
+| `/` | courier | `courier-dashboard-pwa-install` — Bosh sahifa — ilovani o'rnatish taklifi (bir marta, yopiladi) | [design/fragments/courier--dashboard-pwa-install.html](fragments/courier--dashboard-pwa-install.html) | sahifa | yangi (kodda yo'q) |
+| `/` | logist | `logist-dashboard-main` — Bosh sahifa — viloyatlarim | [design/fragments/logist--dashboard-main.html](fragments/logist--dashboard-main.html) | sahifa | yangi (kodda yo'q) |
+| `/` | logist | `logist-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq | [design/fragments/logist--dashboard-mobile-menu.html](fragments/logist--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | yangi (kodda yo'q) |
+| `/` | logist | `logist-dashboard-mobile-search` — Global qidiruv (telefon) — buyurtma, mijoz, telefon | [design/fragments/logist--dashboard-mobile-search.html](fragments/logist--dashboard-mobile-search.html) | oyna · faqat telefon | yangi (kodda yo'q) |
+| `/` | investor | `investor-dashboard-home` — Bosh sahifa — investor kabineti | [design/fragments/investor--dashboard-home.html](fragments/investor--dashboard-home.html) | sahifa | yangi (kodda yo'q) |
+| `/` | investor | `investor-dashboard-home-table` — Bosh sahifa — oylik foyda jadvali | [design/fragments/investor--dashboard-home-table.html](fragments/investor--dashboard-home-table.html) | sahifa | yangi (kodda yo'q) |
+| `/` | investor | `investor-dashboard-loading` — Bosh sahifa — yuklanmoqda | [design/fragments/investor--dashboard-loading.html](fragments/investor--dashboard-loading.html) | sahifa | yangi (kodda yo'q) |
+| `/` | investor | `investor-dashboard-empty` — Bosh sahifa — ma'lumot yo'q | [design/fragments/investor--dashboard-empty.html](fragments/investor--dashboard-empty.html) | sahifa | yangi (kodda yo'q) |
+| `/` | investor | `investor-dashboard-error` — Bosh sahifa — yuklash xatosi | [design/fragments/investor--dashboard-error.html](fragments/investor--dashboard-error.html) | sahifa | yangi (kodda yo'q) |
+| `/` | investor | `investor-dashboard-forbidden` — Bosh sahifa — profil nofaol (403) | [design/fragments/investor--dashboard-forbidden.html](fragments/investor--dashboard-forbidden.html) | sahifa | yangi (kodda yo'q) |
+| `/` | investor | `investor-dashboard-not-linked` — Bosh sahifa — profil bog'lanmagan (404) | [design/fragments/investor--dashboard-not-linked.html](fragments/investor--dashboard-not-linked.html) | sahifa | yangi (kodda yo'q) |
 | `/` | tizim taxtasi | `tizim-charts` — Grafiklar — statistika va tahlil | [design/fragments/tizim--charts.html](fragments/tizim--charts.html) | taxta | qoida |
 
 #### `/branch-dashboard` — Filial paneli (menejer bosh sahifasi, dizayn v2)
@@ -269,18 +287,23 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 - **Fayllar:** `src/pages/orders/index.tsx` · `src/pages/orders/list/OrderFilters.tsx` · `src/pages/orders/list/OrderFiltersSheet.tsx` · `src/pages/orders/list/OrdersTable.tsx` · `src/pages/orders/list/orderFilterModel.ts` · `src/pages/orders/list/courier/index.tsx` · `src/pages/orders/list/courier/list/tabs.tsx` · `src/pages/orders/list/courier/list/ordertable/pendingOrderTable.tsx` · `src/pages/orders/list/courier/list/ordertable/AllOrdersTable.tsx` · `src/pages/orders/list/courier/list/ordertable/CancelledOrdersTable.tsx` · `src/pages/orders/list/courier/list/ordertable/CourierOrdersTable.tsx` · `src/pages/orders/list/courier/list/SellModal.tsx` · `src/pages/orders/list/courier/list/CancelModal.tsx` · `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` · `src/pages/orders/list/courier/list/OrderActionParts.tsx` · `src/entities/orders/ui/ExtraCostApprovalAlerts.tsx` · `src/entities/orders/ui/ExtraCostApprovalTag.tsx` · `src/entities/order/ui/ReturnRequestedTag.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOrders` (access.ts → canViewOrders)
-- **Rollar:** superadmin, admin, manager, registrator, market, courier
+- **Rollar:** superadmin, admin, manager, registrator, market, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** «Buyurtmalar» (`orders`) — superadmin, admin, manager, registrator, market, courier
 - **Holat:** v2
-- **Izoh:** Kuryer ro'yxati — list/courier/index.tsx (tablar list/courier/list/tabs.tsx). Kuryerdan boshqa barcha rollarda bir xil 8 holat tabi (Barchasi · Yangi · Qabul qilindi · Yo'lda · Kutilmoqda · Sotilgan · To'langan · Bekor qilingan; tab sonlari API'da yo'q — chizilmaydi). Menejerning qatordagi sotish/bekor/qaytarish amallari faqat REGIONAL · HYBRID filialda va can_sell_cancel yoqilganda; «Bekor qilingan» tabida HQ'ga yuborish (tanlov + QR skaner) ham faqat REGIONAL · HYBRID. Qator bosilsa → /orders/edit/:orderId.
+- **Izoh:** Kuryer ro'yxati — list/courier/index.tsx (tablar list/courier/list/tabs.tsx). Kuryerdan boshqa barcha rollarda bir xil 8 holat tabi (Barchasi · Yangi · Qabul qilindi · Yo'lda · Kutilmoqda · Sotilgan · To'langan · Bekor qilingan; tab sonlari API'da yo'q — chizilmaydi). Menejerning qatordagi sotish/bekor/qaytarish amallari faqat REGIONAL · HYBRID filialda va can_sell_cancel yoqilganda; «Bekor qilingan» tabida HQ'ga yuborish (tanlov + QR skaner) ham faqat REGIONAL · HYBRID. Qator bosilsa → /orders/edit/:orderId. Sarlavhada qo'lda «Yangilash» (ghost, RefreshCw; telefonda h1 yonida chegarali ikonka) va «Oxirgi yangilanish: HH:mm» (oxirgi muvaffaqiyatli yuklash vaqti) — barcha rollar va tablarda bir xil; avtomatik yangilanish yo'q (refetchOnWindowFocus: false). Holatlar: *-refreshing — h1 yonida «Yangilanmoqda…» belgisi faqat so'rov 400 ms dan uzoq cho'zilsa (tizim--loading 11-namuna), tugma band; *-refresh-error — ro'yxat kartasi ustida warning el-alert «Ro'yxat yangilanmadi» + «Qayta urinish», eski ma'lumot ko'rinib turadi (tizim--main «Xabar bloklari»; incomingStaleWarning bilan bir xil).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/orders` | superadmin | `superadmin-orders-list` — Buyurtmalar ro'yxati | [design/fragments/superadmin--orders-list.html](fragments/superadmin--orders-list.html) | sahifa | v2 |
+| `/orders` | superadmin | `superadmin-orders-list-refreshing` — Buyurtmalar ro'yxati — yangilanmoqda | [design/fragments/superadmin--orders-list-refreshing.html](fragments/superadmin--orders-list-refreshing.html) | sahifa | yangi (kodda yo'q) |
+| `/orders` | superadmin | `superadmin-orders-list-refresh-error` — Buyurtmalar ro'yxati — yangilanmadi | [design/fragments/superadmin--orders-list-refresh-error.html](fragments/superadmin--orders-list-refresh-error.html) | sahifa | yangi (kodda yo'q) |
 | `/orders` | superadmin | `superadmin-orders-filters-mobile` — Buyurtmalar — filtr paneli (telefon)<br>↳ `src/pages/orders/list/OrderFilters.tsx` | [design/fragments/superadmin--orders-filters-mobile.html](fragments/superadmin--orders-filters-mobile.html) | oyna · faqat telefon | v2 |
+| `/orders` | superadmin | `superadmin-orders-list-skip-link` — Buyurtmalar ro'yxati — «Asosiy kontentga o'tish» havolasi fokusda | [design/fragments/superadmin--orders-list-skip-link.html](fragments/superadmin--orders-list-skip-link.html) | sahifa | yangi (kodda yo'q) |
 | `/orders` | admin | `admin-orders-list` — Buyurtmalar ro'yxati | [design/fragments/admin--orders-list.html](fragments/admin--orders-list.html) | sahifa | v2 |
 | `/orders` | admin | `admin-orders-filters-mobile` — Buyurtmalar — filtr paneli (telefon)<br>↳ `src/pages/orders/list/OrderFilters.tsx` | [design/fragments/superadmin--orders-filters-mobile.html](fragments/superadmin--orders-filters-mobile.html) | oyna · faqat telefon | v2 |
 | `/orders` | manager | `manager-orders-list-all` — Buyurtmalar — Hamma buyurtmalar | [design/fragments/manager--orders-list-all.html](fragments/manager--orders-list-all.html) | sahifa | v2 |
+| `/orders` | manager | `manager-orders-list-all-refreshing` — Buyurtmalar — Hamma buyurtmalar, yangilanmoqda | [design/fragments/manager--orders-list-all-refreshing.html](fragments/manager--orders-list-all-refreshing.html) | sahifa | yangi (kodda yo'q) |
+| `/orders` | manager | `manager-orders-list-all-refresh-error` — Buyurtmalar — Hamma buyurtmalar, yangilanmadi | [design/fragments/manager--orders-list-all-refresh-error.html](fragments/manager--orders-list-all-refresh-error.html) | sahifa | yangi (kodda yo'q) |
 | `/orders` | manager | `manager-orders-list-pending` — Buyurtmalar — Kutilayotgan | [design/fragments/manager--orders-list-pending.html](fragments/manager--orders-list-pending.html) | sahifa | v2 |
 | `/orders` | manager | `manager-orders-list-cancelled` — Buyurtmalar — Bekor qilinganlar (HQ'ga yuborish) | [design/fragments/manager--orders-list-cancelled.html](fragments/manager--orders-list-cancelled.html) | sahifa | v2 |
 | `/orders` | manager | `manager-orders-sell-dialog` — Sotish oynasi<br>↳ `src/pages/orders/list/courier/list/SellModal.tsx` | [design/fragments/manager--orders-sell-dialog.html](fragments/manager--orders-sell-dialog.html) | oyna | v2 |
@@ -289,7 +312,10 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/orders` | registrator | `registrator-orders-list` — Buyurtmalar ro'yxati | [design/fragments/registrator--orders-list.html](fragments/registrator--orders-list.html) | sahifa | v2 |
 | `/orders` | registrator | `registrator-orders-filters-mobile` — Buyurtmalar — filtr paneli (telefon)<br>↳ `src/pages/orders/list/OrderFilters.tsx` | [design/fragments/registrator--orders-filters-mobile.html](fragments/registrator--orders-filters-mobile.html) | oyna · faqat telefon | v2 |
 | `/orders` | market | `market-orders-list` — Buyurtmalar ro'yxati | [design/fragments/market--orders-list.html](fragments/market--orders-list.html) | sahifa | v2 |
+| `/orders` | market_operator | — Maket yo'q — eng yaqini: market-orders-list va market-orders-detail. GET orders — JwtAuthGuard, ichida operator o'z marketiga cheklanadi (resolveMarketOperatorMarketId); tafsilot assertCanViewOrder — faqat o'z marketi. Excel eksport bor (GET orders/export/excel @Roles … MARKET_OPERATOR). Market tafsilotidagi amallar (tahrirlash, bekor qilish, qaytarish so'rovi) — faqat backend ruxsat bergani ko'rinadi, aks holda yashiriladi. | — | — | v2 |
 | `/orders` | courier | `courier-orders-pending` — Buyurtmalar — Kutilayotganlar<br>↳ `src/pages/orders/list/courier/index.tsx` | [design/fragments/courier--orders-pending.html](fragments/courier--orders-pending.html) | sahifa | v2 |
+| `/orders` | courier | `courier-orders-pending-refreshing` — Buyurtmalar — Kutilayotganlar, yangilanmoqda | [design/fragments/courier--orders-pending-refreshing.html](fragments/courier--orders-pending-refreshing.html) | sahifa | yangi (kodda yo'q) |
+| `/orders` | courier | `courier-orders-pending-refresh-error` — Buyurtmalar — Kutilayotganlar, yangilanmadi | [design/fragments/courier--orders-pending-refresh-error.html](fragments/courier--orders-pending-refresh-error.html) | sahifa | yangi (kodda yo'q) |
 | `/orders` | courier | `courier-orders-tab-switcher-open` — Buyurtmalar — tab almashtirildi, yuklanmoqda<br>↳ `src/pages/orders/list/courier/list/tabs.tsx` | [design/fragments/courier--orders-tab-switcher-open.html](fragments/courier--orders-tab-switcher-open.html) | sahifa · faqat telefon | v2 |
 | `/orders` | courier | `courier-orders-all` — Buyurtmalar — Hammasi<br>↳ `src/pages/orders/list/courier/index.tsx` | [design/fragments/courier--orders-all.html](fragments/courier--orders-all.html) | sahifa | v2 |
 | `/orders` | courier | `courier-orders-cancelled` — Buyurtmalar — Bekor qilinganlar<br>↳ `src/pages/orders/list/courier/index.tsx` | [design/fragments/courier--orders-cancelled.html](fragments/courier--orders-cancelled.html) | sahifa | v2 |
@@ -299,13 +325,14 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/orders` | courier | `courier-orders-action-approval-pending` — Market tasdig'i kutilmoqda<br>↳ `src/pages/orders/list/courier/list/SellModal.tsx` | [design/fragments/courier--orders-action-approval-pending.html](fragments/courier--orders-action-approval-pending.html) | oyna | v2 |
 | `/orders` | courier | `courier-orders-cancel-dialog` — Bekor qilish oynasi<br>↳ `src/pages/orders/list/courier/list/CancelModal.tsx` | [design/fragments/courier--orders-cancel-dialog.html](fragments/courier--orders-cancel-dialog.html) | oyna | v2 |
 | `/orders` | courier | `courier-orders-rollback-confirm` — Buyurtmani qaytarish tasdig'i<br>↳ `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` | [design/fragments/courier--orders-rollback-confirm.html](fragments/courier--orders-rollback-confirm.html) | oyna | v2 |
+| `/orders` | logist | `logist-orders-list` — Buyurtmalar — faqat ko'rish | [design/fragments/logist--orders-list.html](fragments/logist--orders-list.html) | sahifa | yangi (kodda yo'q) |
 | `/orders` | tizim taxtasi | `tizim-states-data` — Holatlar — jadval, ro'yxat, kartalar | [design/fragments/tizim--states-data.html](fragments/tizim--states-data.html) | taxta | qoida |
 
 #### `/orders/edit/:orderId` — Buyurtma tafsiloti va tahrirlash (alohida «detail» marshruti yo'q — tafsilot shu sahifa)
 
 - **Fayllar:** `src/pages/new_orders/components/new_orderUpdate.tsx` · `src/pages/new_orders/components/detail/DetailHeader.tsx` · `src/pages/new_orders/components/detail/DetailAlerts.tsx` · `src/pages/new_orders/components/detail/CustomerCard.tsx` · `src/pages/new_orders/components/detail/AddressCard.tsx` · `src/pages/new_orders/components/detail/PaymentCard.tsx` · `src/pages/new_orders/components/detail/ProductsCard.tsx` · `src/pages/new_orders/components/detail/ProofCard.tsx` · `src/pages/new_orders/components/detail/CourierCards.tsx` · `src/pages/new_orders/components/detail/orderDetailAccess.ts` · `src/pages/new_orders/components/detail/orderDetailModel.ts` · `src/pages/new_orders/components/newOrderUpdateRules.ts` · `src/pages/new_orders/components/editDialogs/index.ts` · `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` · `src/pages/new_orders/components/editDialogs/EditCustomerDialog.tsx` · `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` · `src/widgets/order-tracking/ui/OrderTracking.tsx` · `src/features/order-tracking/ui/TrackingTimelineItem.tsx` · `src/entities/order/ui/ProofGallery.tsx` · `src/widgets/order-meta/ui/OrderMeta.tsx` · `src/pages/orders/list/courier/list/SellModal.tsx` · `src/pages/orders/list/courier/list/CancelModal.tsx` · `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` · `src/features/order-return/ui/InitiateReturnModal.tsx` · `src/features/order-return/ui/MarkReturnedModal.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOrders` (access.ts → canViewOrders)
-- **Rollar:** superadmin, admin, manager, registrator, market, courier
+- **Rollar:** superadmin, admin, manager, registrator, market, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
 - **Izoh:** Mijozni tahrirlash — faqat superadmin/admin; buyurtma va manzilni tahrirlash — superadmin/admin/registrator/menejer; market va kuryer — faqat o'qish. Sotish/bekor/qaytarish — REGIONAL · HYBRID menejeri. Ayni komponent /new-orders/:marketId/edit/:orderId da ham ishlatiladi.
@@ -331,6 +358,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/orders/edit/:orderId` | registrator | `registrator-orders-detail-edit-address-dialog` — Manzilni tahrirlash oynasi<br>↳ `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | [design/fragments/registrator--orders-detail-edit-address-dialog.html](fragments/registrator--orders-detail-edit-address-dialog.html) | oyna | v2 |
 | `/orders/edit/:orderId` | market | `market-orders-detail` — Buyurtma tafsilotlari | [design/fragments/market--orders-detail.html](fragments/market--orders-detail.html) | sahifa | v2 |
 | `/orders/edit/:orderId` | courier | `courier-orders-detail` — Buyurtma tafsilotlari | [design/fragments/courier--orders-detail.html](fragments/courier--orders-detail.html) | sahifa | v2 |
+| `/orders/edit/:orderId` | logist | `logist-orders-detail` — Buyurtma tafsiloti va kuzatuv — faqat ko'rish | [design/fragments/logist--orders-detail.html](fragments/logist--orders-detail.html) | sahifa | yangi (kodda yo'q) |
 
 ### Qabul va yaratish
 
@@ -338,27 +366,28 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 - **Fayllar:** `src/pages/new_orders/markets/index.tsx` · `src/pages/new_orders/index.tsx` · `src/pages/new_orders/ui/NewOrdersHeader.tsx` · `src/pages/new_orders/ui/NewOrdersTabs.tsx`
 - **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders)
-- **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market
+- **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (taklif — MO-S3, kodda yo'q (backend POST /orders ruxsati kerak))
 - **Menyuda:** «Qabul va yaratish» (`newOrders`) — superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market
 - **Holat:** v2
-- **Izoh:** Qobiq (src/pages/new_orders/index.tsx, barcha /new-orders/* uchun) rejimi yo'lga qarab — model/newOrdersShell.ts: «Qabul va yaratish» sarlavhasi + «Buyurtma yaratish» havolasi (NewOrdersHeader.tsx); tablar (Marketlar · Kiruvchi posilkalar · Filial paketlari · Bekor qilinganlar, sonlari bilan; market — Yangi buyurtmalar · Bekor qilinganlar) bola sahifaning birinchi kartasida (NewOrdersTabs.tsx). Bitta tabli rol (menejer, HQ bo'lmagan registrator) — tablar o'rnida karta sarlavhasi «Marketlar».
+- **Izoh:** Qobiq (src/pages/new_orders/index.tsx, barcha /new-orders/* uchun) rejimi yo'lga qarab — model/newOrdersShell.ts: «Qabul va yaratish» sarlavhasi + «Buyurtma yaratish» havolasi (NewOrdersHeader.tsx); tablar (Marketlar · Kiruvchi posilkalar · Filial paketlari · Bekor qilinganlar, sonlari bilan; market — Yangi buyurtmalar · Bekor qilinganlar) bola sahifaning birinchi kartasida (NewOrdersTabs.tsx). Bitta tabli rol (menejer, HQ bo'lmagan registrator) — tablar o'rnida karta sarlavhasi «Marketlar». Ega qarori (2026-10-19, S1; DamKku7C/xQ045luf, maket: manager-new-orders-markets, registrator-new-orders-markets): «Kiruvchi posilkalar» tabi posilka qabul qiladigan hamma xodimga — superadmin, admin, intake'li menejer (HQ · PICKUP · HYBRID; MANAGER_CAPABILITIES «intake») «Marketlar · Kiruvchi posilkalar», har qanday registrator «Marketlar · Kiruvchi posilkalar» (+ HQ registratorida «Bekor qilinganlar»). REGIONAL menejerda tab yo'q. Backend tayyor: GET orders/external, orders/external/sources va POST orders/external/receive-by-scan da MANAGER va REGISTRATOR bor; kodda (resolveNewOrdersTabKeys) hali faqat superadmin/admin.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/new-orders` | superadmin | `superadmin-neworders-markets` — Qabul va yaratish — Marketlar | [design/fragments/superadmin--neworders-markets.html](fragments/superadmin--neworders-markets.html) | sahifa | v2 |
 | `/new-orders` | admin | `admin-neworders-markets` — Qabul — Marketlar tabi | [design/fragments/admin--neworders-markets.html](fragments/admin--neworders-markets.html) | sahifa | v2 |
-| `/new-orders` | manager | `manager-new-orders-markets` — Qabul va yaratish — Marketlar | [design/fragments/manager--new-orders-markets.html](fragments/manager--new-orders-markets.html) | sahifa | v2 |
-| `/new-orders` | registrator | `registrator-new-orders-markets` — Qabul va yaratish — Marketlar | [design/fragments/registrator--new-orders-markets.html](fragments/registrator--new-orders-markets.html) | sahifa | v2 |
+| `/new-orders` | manager | `manager-new-orders-markets` — Qabul va yaratish — Marketlar | [design/fragments/manager--new-orders-markets.html](fragments/manager--new-orders-markets.html) | sahifa | qisman |
+| `/new-orders` | registrator | `registrator-new-orders-markets` — Qabul va yaratish — Marketlar | [design/fragments/registrator--new-orders-markets.html](fragments/registrator--new-orders-markets.html) | sahifa | qisman |
 | `/new-orders` | market | — Market /new-orders/:marketId (o'z marketi) ga yo'naltiriladi — o'sha route'ga qarang. | — | — | v2 |
+| `/new-orders` | market_operator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
 
 #### `/new-orders/create` — Buyurtma yaratish — qo'lda (market → mijoz va mahsulot) yoki AI bilan
 
 - **Fayllar:** `src/pages/orders/create/index.tsx` · `src/pages/orders/create/ui/CreateModeTabs.tsx` · `src/pages/orders/create/ui/OrderStepper.tsx` · `src/pages/orders/create/ui/Step1Market.tsx` · `src/pages/orders/create/ui/MarketPicker.tsx` · `src/pages/orders/create/ui/Step2Combined.tsx` · `src/pages/orders/create/ui/Step2Summary.tsx` · `src/pages/orders/create/ui/TodayOrdersCard.tsx` · `src/pages/orders/create/ui/CreateAlert.tsx` · `src/pages/orders/create/ui/ai/AiCreatePanel.tsx` · `src/pages/orders/create/ui/ai/AiInputPanel.tsx` · `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` · `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` · `src/pages/orders/create/ui/ai/AiCreatedList.tsx` · `src/pages/orders/create/model/orderCreateForm.ts`
 - **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders)
-- **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market
+- **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (taklif — MO-S3, kodda yo'q (backend POST /orders ruxsati kerak))
 - **Menyuda:** yo'q — «Buyurtma yaratish» tugmasi (/new-orders sarlavhasi, market bosh sahifasi, market yangi buyurtmalari)
 - **Holat:** v2
-- **Izoh:** Market rolida 1-qadam (market tanlash) yo'q — forma darhol 2-qadamdan ochiladi. Market tanlash oynasi — MarketPicker.tsx (Step1Market.tsx ochadi); 2-qadam o'ng ustuni — Step2Summary.tsx + TodayOrdersCard.tsx; AI tasdiqlash oynasi — AiConfirmBar.tsx. «Oldingi» / «O'zgartirish» 1-qadamga qaytaradi (market va forma saqlanadi).
+- **Izoh:** Market rolida 1-qadam (market tanlash) yo'q — forma darhol 2-qadamdan ochiladi. Market tanlash oynasi — MarketPicker.tsx (Step1Market.tsx ochadi); 2-qadam o'ng ustuni — Step2Summary.tsx + TodayOrdersCard.tsx; AI tasdiqlash oynasi — AiConfirmBar.tsx. «Oldingi» / «O'zgartirish» 1-qadamga qaytaradi (market va forma saqlanadi). Ega tasdig'i 2026-10-19 (create-step2): 2-qadamda mijoz takliflari (*-customer-suggest; qo'shimcha raqam bo'yicha ham — S4, backend karta), mavjud mijoz tanlangach tarif, taxminiy yetkazish narxi va mahsulot rasmi (*-existing-customer). Narx (S1): market yaratilganda standart uy va markaz narxi; sukut — vazn yoki hajm bo'yicha avtomatik (katta bo'lsa oshadi), market sozlamasida «Vazn va hajm bo'yicha narx» toggle (sukut yoqiq) o'chirilsa — faqat standart narx; backend narx dvigateli (DAqXPeSy) va market maydoni kerak. Xulosada bitta «Yetkazish narxi» qatori, vazn/hajm hisobi yoqilgan bo'lsa ostida izoh (S2). Mijozni yaratuvchi har rol tanlay oladi, lekin market mijozning faqat o'z marketidagi buyurtmalari tarixini ko'radi (S3 — taklifdagi soni ham shu bo'yicha). Mavjud mijoz ma'lumoti o'zgartirilsa — «Mijoz kartasi ham yangilansinmi?» (Ha / Faqat shu buyurtmada, *-customer-update-dialog, S5). «Taklif · backend kerak» belgisi kodga ko'chirilmaydi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -368,23 +397,39 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/new-orders/create` | superadmin | `superadmin-neworders-create-ai-input` — Buyurtma yaratish — AI bilan (kiritish)<br>↳ `src/pages/orders/create/ui/ai/AiInputPanel.tsx` | [design/fragments/superadmin--neworders-create-ai-input.html](fragments/superadmin--neworders-create-ai-input.html) | sahifa | v2 |
 | `/new-orders/create` | superadmin | `superadmin-neworders-create-ai-preview` — Buyurtma yaratish — AI natijalari (preview)<br>↳ `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` | [design/fragments/superadmin--neworders-create-ai-preview.html](fragments/superadmin--neworders-create-ai-preview.html) | sahifa | v2 |
 | `/new-orders/create` | superadmin | `superadmin-neworders-create-ai-confirm-dialog` — AI — yaratishni tasdiqlash<br>↳ `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | [design/fragments/superadmin--neworders-create-ai-confirm-dialog.html](fragments/superadmin--neworders-create-ai-confirm-dialog.html) | oyna | v2 |
+| `/new-orders/create` | superadmin | `superadmin-neworders-create-manual-step2-customer-suggest` — Buyurtma yaratish — 2-qadam: mijoz takliflari (taklif) | [design/fragments/superadmin--neworders-create-manual-step2-customer-suggest.html](fragments/superadmin--neworders-create-manual-step2-customer-suggest.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/create` | superadmin | `superadmin-neworders-create-manual-step2-existing-customer` — Buyurtma yaratish — 2-qadam: mavjud mijoz, tarif, rasm (taklif) | [design/fragments/superadmin--neworders-create-manual-step2-existing-customer.html](fragments/superadmin--neworders-create-manual-step2-existing-customer.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/create` | superadmin | `superadmin-neworders-create-manual-step2-customer-update-dialog` — Buyurtma yaratish — 2-qadam: mijoz kartasini yangilash (taklif) | [design/fragments/superadmin--neworders-create-manual-step2-customer-update-dialog.html](fragments/superadmin--neworders-create-manual-step2-customer-update-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/new-orders/create` | admin | `admin-neworders-create-manual` — Buyurtma yaratish — Qo'lda | [design/fragments/admin--neworders-create-manual.html](fragments/admin--neworders-create-manual.html) | sahifa | v2 |
 | `/new-orders/create` | admin | `admin-neworders-create-market-picker` — Market tanlash oynasi<br>↳ `src/pages/orders/create/ui/MarketPicker.tsx` | [design/fragments/admin--neworders-create-market-picker.html](fragments/admin--neworders-create-market-picker.html) | oyna | v2 |
 | `/new-orders/create` | admin | `admin-neworders-create-ai` — Buyurtma yaratish — AI bilan | [design/fragments/admin--neworders-create-ai.html](fragments/admin--neworders-create-ai.html) | sahifa | v2 |
 | `/new-orders/create` | admin | `admin-neworders-create-ai-confirm-dialog` — AI yaratishni tasdiqlash<br>↳ `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | [design/fragments/admin--neworders-create-ai-confirm-dialog.html](fragments/admin--neworders-create-ai-confirm-dialog.html) | oyna | v2 |
+| `/new-orders/create` | admin | `admin-neworders-create-manual-step2-customer-suggest` — Buyurtma yaratish — 2-qadam: mijoz takliflari (taklif) | [design/fragments/superadmin--neworders-create-manual-step2-customer-suggest.html](fragments/superadmin--neworders-create-manual-step2-customer-suggest.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/create` | admin | `admin-neworders-create-manual-step2-existing-customer` — Buyurtma yaratish — 2-qadam: mavjud mijoz, tarif, rasm (taklif) | [design/fragments/superadmin--neworders-create-manual-step2-existing-customer.html](fragments/superadmin--neworders-create-manual-step2-existing-customer.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/create` | admin | `admin-neworders-create-manual-step2-customer-update-dialog` — Buyurtma yaratish — 2-qadam: mijoz kartasini yangilash (taklif) | [design/fragments/superadmin--neworders-create-manual-step2-customer-update-dialog.html](fragments/superadmin--neworders-create-manual-step2-customer-update-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/new-orders/create` | manager | `manager-new-orders-create-manual-step1` — Buyurtma yaratish — market tanlash<br>↳ `src/pages/orders/create/ui/Step1Market.tsx` | [design/fragments/manager--new-orders-create-manual-step1.html](fragments/manager--new-orders-create-manual-step1.html) | sahifa | v2 |
 | `/new-orders/create` | manager | `manager-new-orders-create-manual-step2` — Buyurtma yaratish — ma'lumotlar<br>↳ `src/pages/orders/create/ui/Step2Combined.tsx` | [design/fragments/manager--new-orders-create-manual-step2.html](fragments/manager--new-orders-create-manual-step2.html) | sahifa | v2 |
 | `/new-orders/create` | manager | `manager-new-orders-create-ai` — Buyurtma yaratish — AI bilan | [design/fragments/manager--new-orders-create-ai.html](fragments/manager--new-orders-create-ai.html) | sahifa | v2 |
 | `/new-orders/create` | manager | `manager-new-orders-create-ai-confirm-dialog` — AI buyurtmalarni tasdiqlash<br>↳ `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | [design/fragments/manager--new-orders-create-ai-confirm-dialog.html](fragments/manager--new-orders-create-ai-confirm-dialog.html) | oyna | v2 |
+| `/new-orders/create` | manager | `manager-new-orders-create-manual-step2-customer-suggest` — Buyurtma yaratish — mijoz takliflari (taklif) | [design/fragments/manager--new-orders-create-manual-step2-customer-suggest.html](fragments/manager--new-orders-create-manual-step2-customer-suggest.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/create` | manager | `manager-new-orders-create-manual-step2-existing-customer` — Buyurtma yaratish — mavjud mijoz, tarif, rasm (taklif) | [design/fragments/manager--new-orders-create-manual-step2-existing-customer.html](fragments/manager--new-orders-create-manual-step2-existing-customer.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/create` | manager | `manager-new-orders-create-manual-step2-customer-update-dialog` — Buyurtma yaratish — 2-qadam: mijoz kartasini yangilash (taklif) | [design/fragments/manager--new-orders-create-manual-step2-customer-update-dialog.html](fragments/manager--new-orders-create-manual-step2-customer-update-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/new-orders/create` | registrator | `registrator-new-orders-create-step1` — Buyurtma yaratish — market tanlash<br>↳ `src/pages/orders/create/ui/Step1Market.tsx` | [design/fragments/manager--new-orders-create-manual-step1.html](fragments/manager--new-orders-create-manual-step1.html) | sahifa | v2 |
 | `/new-orders/create` | registrator | `registrator-new-orders-create-market-picker-dialog` — Buyurtma yaratish — market tanlash oynasi<br>↳ `src/pages/orders/create/ui/MarketPicker.tsx` | [design/fragments/registrator--new-orders-create-market-picker-dialog.html](fragments/registrator--new-orders-create-market-picker-dialog.html) | oyna | v2 |
 | `/new-orders/create` | registrator | `registrator-new-orders-create-step2` — Buyurtma yaratish — qo'lda forma<br>↳ `src/pages/orders/create/ui/Step2Combined.tsx` | [design/fragments/registrator--new-orders-create-step2.html](fragments/registrator--new-orders-create-step2.html) | sahifa | v2 |
 | `/new-orders/create` | registrator | `registrator-new-orders-create-ai` — Buyurtma yaratish — AI rejimi | [design/fragments/registrator--new-orders-create-ai.html](fragments/registrator--new-orders-create-ai.html) | sahifa | v2 |
 | `/new-orders/create` | registrator | `registrator-new-orders-create-ai-confirm-dialog` — AI buyurtmalarni tasdiqlash<br>↳ `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | [design/fragments/manager--new-orders-create-ai-confirm-dialog.html](fragments/manager--new-orders-create-ai-confirm-dialog.html) | oyna | v2 |
+| `/new-orders/create` | registrator | `registrator-new-orders-create-step2-customer-suggest` — Buyurtma yaratish — mijoz takliflari (taklif) | [design/fragments/manager--new-orders-create-manual-step2-customer-suggest.html](fragments/manager--new-orders-create-manual-step2-customer-suggest.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/create` | registrator | `registrator-new-orders-create-step2-existing-customer` — Buyurtma yaratish — mavjud mijoz, tarif, rasm (taklif) | [design/fragments/manager--new-orders-create-manual-step2-existing-customer.html](fragments/manager--new-orders-create-manual-step2-existing-customer.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/create` | registrator | `registrator-new-orders-create-step2-customer-update-dialog` — Buyurtma yaratish — mijoz kartasini yangilash (taklif) | [design/fragments/manager--new-orders-create-manual-step2-customer-update-dialog.html](fragments/manager--new-orders-create-manual-step2-customer-update-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/new-orders/create` | market | `market-new-orders-create-manual` — Buyurtma yaratish · Qo'lda<br>↳ `src/pages/orders/create/ui/Step2Combined.tsx` | [design/fragments/market--new-orders-create-manual.html](fragments/market--new-orders-create-manual.html) | sahifa | v2 |
 | `/new-orders/create` | market | `market-new-orders-create-ai-input` — Buyurtma yaratish · AI kiritish<br>↳ `src/pages/orders/create/ui/ai/AiInputPanel.tsx` | [design/fragments/market--new-orders-create-ai-input.html](fragments/market--new-orders-create-ai-input.html) | sahifa | v2 |
 | `/new-orders/create` | market | `market-new-orders-create-ai-preview` — Buyurtma yaratish · AI natijalari<br>↳ `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` | [design/fragments/market--new-orders-create-ai-preview.html](fragments/market--new-orders-create-ai-preview.html) | sahifa | v2 |
 | `/new-orders/create` | market | `market-new-orders-create-ai-confirm-dialog` — AI · Yaratishni tasdiqlash<br>↳ `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | [design/fragments/market--new-orders-create-ai-confirm-dialog.html](fragments/market--new-orders-create-ai-confirm-dialog.html) | oyna | v2 |
+| `/new-orders/create` | market | `market-new-orders-create-manual-customer-suggest` — Buyurtma yaratish · mijoz takliflari (taklif) | [design/fragments/market--new-orders-create-manual-customer-suggest.html](fragments/market--new-orders-create-manual-customer-suggest.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/create` | market | `market-new-orders-create-manual-existing-customer` — Buyurtma yaratish · mavjud mijoz, tarif, rasm (taklif) | [design/fragments/market--new-orders-create-manual-existing-customer.html](fragments/market--new-orders-create-manual-existing-customer.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/create` | market | `market-new-orders-create-manual-customer-update-dialog` — Buyurtma yaratish · mijoz kartasini yangilash (taklif) | [design/fragments/market--new-orders-create-manual-customer-update-dialog.html](fragments/market--new-orders-create-manual-customer-update-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/create` | market_operator | `market_operator-new-orders-create-manual` — Buyurtma yaratish · Qo'lda | [design/fragments/market_operator--new-orders-create-manual.html](fragments/market_operator--new-orders-create-manual.html) | sahifa | yangi (kodda yo'q) |
 
 #### `/new-orders/incoming` — Kiruvchi posilkalar — manba tanlash
 
@@ -393,13 +438,14 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
+- **Izoh:** Menejer va registrator maketlarida «Ulangan manbalar — hozircha posilka yo'q» kartasi yo'q: uning manbasi GET /integrations — backendda @Roles(SUPERADMIN, ADMIN), bu rollarga ro'yxat kelmaydi (IdleSources chizilmaydi).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/new-orders/incoming` | superadmin | `superadmin-neworders-incoming-sources` — Kiruvchi posilkalar — manba tanlash | [design/fragments/superadmin--neworders-incoming-sources.html](fragments/superadmin--neworders-incoming-sources.html) | sahifa | v2 |
 | `/new-orders/incoming` | admin | `admin-neworders-incoming-sources` — Kiruvchi posilkalar — manba tanlash | [design/fragments/admin--neworders-incoming-sources.html](fragments/admin--neworders-incoming-sources.html) | sahifa | v2 |
-| `/new-orders/incoming` | manager | `manager-new-orders-incoming-sources` — Kiruvchi posilkalar — manba tanlash | [design/fragments/manager--new-orders-incoming-sources.html](fragments/manager--new-orders-incoming-sources.html) | sahifa | v2 |
-| `/new-orders/incoming` | registrator | — Maket yo'q (tab faqat admin/superadmin'ga ko'rinadi, URL ochiq) — admin-neworders-incoming-sources ga qarang. | — | — | v2 |
+| `/new-orders/incoming` | manager | `manager-new-orders-incoming-sources` — Kiruvchi posilkalar — manba tanlash | [design/fragments/manager--new-orders-incoming-sources.html](fragments/manager--new-orders-incoming-sources.html) | sahifa | qisman |
+| `/new-orders/incoming` | registrator | `registrator-new-orders-incoming-sources` — Kiruvchi posilkalar — manba tanlash | [design/fragments/registrator--new-orders-incoming-sources.html](fragments/registrator--new-orders-incoming-sources.html) | sahifa | qisman |
 
 #### `/new-orders/incoming/:marketId` — Kiruvchi posilkalarni skanerlab qabul qilish (tanlangan manba)
 
@@ -408,16 +454,30 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
+- **Izoh:** Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan). Chala qop va skanni olib tashlash (DamKku7C, eo3eeJxs): «Qop» ustuni (external_batch_ref, bo'lmasa external_batch_token ning 8 belgisi + «…»; «kelgan/aytilgan» — external_batch_size bilan), skanerlangan qatorda va oxirgi skan xabarida «Olib tashlash» + «Qaytarish» xabari, chala qop ogohlantirishi va qabul tasdig'i. «N tasi keldi» — qopning shu ro'yxatdagi va ilgari qabul qilingan a'zolari birga, faqat ro'yxatdagi NEW buyurtmalar emas; manba — backend GET orders/external javobida har qop uchun received_count (ega S3, 2026-10-19; Taklif · backend kerak — hozir yo'q, frontend o'zi sanamaydi). Ega qarorlari (2026-10-19): S2 — chala qop bilan qabulda tasdiq yetarli, yetishmagan posilka kutilayotgan bo'lib qoladi (hamkorga avtomatik xabar yo'q); S4 — «Olib tashlandi» xabaridagi «Qaytarish» 5 soniya (tizim-scanner 05.2); S5 — chala qop QR'i skanerlanganda oxirgi skan xabari darhol sariq («Qop BP-24817: 2/3 keldi», maket: *-incoming-scan-partial) + ogohlantirish ovozi (Sozlamalar → Skaner dagi xato ovozi) va telefonda tebranish 60·45·80 ms; to'liq qop QR'i — odatdagi yashil xabar va muvaffaqiyat ovozi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/new-orders/incoming/:marketId` | superadmin | `superadmin-neworders-incoming-scan` — Kiruvchi posilkalar — skanerlab qabul | [design/fragments/superadmin--neworders-incoming-scan.html](fragments/superadmin--neworders-incoming-scan.html) | sahifa | v2 |
-| `/new-orders/incoming/:marketId` | superadmin | `superadmin-neworders-incoming-scan-camera` — Kiruvchi posilkalar — skanerlab qabul — kamera | [design/fragments/superadmin--neworders-incoming-scan-camera.html](fragments/superadmin--neworders-incoming-scan-camera.html) | oyna | yangi (kodda yo'q) |
-| `/new-orders/incoming/:marketId` | admin | `admin-neworders-incoming-scan` — Kiruvchi posilkalarni skanerlash | [design/fragments/admin--neworders-incoming-scan.html](fragments/admin--neworders-incoming-scan.html) | sahifa | v2 |
-| `/new-orders/incoming/:marketId` | admin | `admin-neworders-incoming-scan-camera` — Kiruvchi posilkalarni skanerlash — kamera | [design/fragments/superadmin--neworders-incoming-scan-camera.html](fragments/superadmin--neworders-incoming-scan-camera.html) | oyna | yangi (kodda yo'q) |
-| `/new-orders/incoming/:marketId` | manager | `manager-new-orders-incoming-scan` — Kiruvchi posilkalar — skanerlash | [design/fragments/manager--new-orders-incoming-scan.html](fragments/manager--new-orders-incoming-scan.html) | sahifa | v2 |
-| `/new-orders/incoming/:marketId` | manager | `manager-new-orders-incoming-scan-camera` — Kiruvchi posilkalar — skanerlash — kamera | [design/fragments/manager--new-orders-incoming-scan-camera.html](fragments/manager--new-orders-incoming-scan-camera.html) | oyna | yangi (kodda yo'q) |
-| `/new-orders/incoming/:marketId` | registrator | — Maket yo'q — admin-neworders-incoming-scan ga qarang. | — | — | v2 |
+| `/new-orders/incoming/:marketId` | superadmin | `superadmin-neworders-incoming-scan` — Kiruvchi posilkalar — skanerlab qabul | [design/fragments/superadmin--neworders-incoming-scan.html](fragments/superadmin--neworders-incoming-scan.html) | sahifa | qisman |
+| `/new-orders/incoming/:marketId` | superadmin | `superadmin-neworders-incoming-scan-camera` — Kiruvchi posilkalar — skanerlab qabul — kamera | [design/fragments/superadmin--neworders-incoming-scan-camera.html](fragments/superadmin--neworders-incoming-scan-camera.html) | oyna | qisman |
+| `/new-orders/incoming/:marketId` | superadmin | `superadmin-neworders-incoming-scan-partial` — Kiruvchi posilkalar — chala qop ogohlantirishi | [design/fragments/superadmin--neworders-incoming-scan-partial.html](fragments/superadmin--neworders-incoming-scan-partial.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | superadmin | `superadmin-neworders-incoming-scan-partial-confirm-dialog` — Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | [design/fragments/superadmin--neworders-incoming-scan-partial-confirm-dialog.html](fragments/superadmin--neworders-incoming-scan-partial-confirm-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | superadmin | `superadmin-neworders-incoming-scan-undo` — Kiruvchi posilkalar — skan olib tashlandi | [design/fragments/superadmin--neworders-incoming-scan-undo.html](fragments/superadmin--neworders-incoming-scan-undo.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | admin | `admin-neworders-incoming-scan` — Kiruvchi posilkalarni skanerlash | [design/fragments/admin--neworders-incoming-scan.html](fragments/admin--neworders-incoming-scan.html) | sahifa | qisman |
+| `/new-orders/incoming/:marketId` | admin | `admin-neworders-incoming-scan-camera` — Kiruvchi posilkalarni skanerlash — kamera | [design/fragments/superadmin--neworders-incoming-scan-camera.html](fragments/superadmin--neworders-incoming-scan-camera.html) | oyna | qisman |
+| `/new-orders/incoming/:marketId` | admin | `admin-neworders-incoming-scan-partial` — Kiruvchi posilkalar — chala qop ogohlantirishi | [design/fragments/superadmin--neworders-incoming-scan-partial.html](fragments/superadmin--neworders-incoming-scan-partial.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | admin | `admin-neworders-incoming-scan-partial-confirm-dialog` — Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | [design/fragments/superadmin--neworders-incoming-scan-partial-confirm-dialog.html](fragments/superadmin--neworders-incoming-scan-partial-confirm-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | admin | `admin-neworders-incoming-scan-undo` — Kiruvchi posilkalar — skan olib tashlandi | [design/fragments/superadmin--neworders-incoming-scan-undo.html](fragments/superadmin--neworders-incoming-scan-undo.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | manager | `manager-new-orders-incoming-scan` — Kiruvchi posilkalar — skanerlash | [design/fragments/manager--new-orders-incoming-scan.html](fragments/manager--new-orders-incoming-scan.html) | sahifa | qisman |
+| `/new-orders/incoming/:marketId` | manager | `manager-new-orders-incoming-scan-camera` — Kiruvchi posilkalar — skanerlash — kamera | [design/fragments/manager--new-orders-incoming-scan-camera.html](fragments/manager--new-orders-incoming-scan-camera.html) | oyna | qisman |
+| `/new-orders/incoming/:marketId` | manager | `manager-new-orders-incoming-scan-partial` — Kiruvchi posilkalar — chala qop ogohlantirishi | [design/fragments/manager--new-orders-incoming-scan-partial.html](fragments/manager--new-orders-incoming-scan-partial.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | manager | `manager-new-orders-incoming-scan-partial-confirm-dialog` — Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | [design/fragments/manager--new-orders-incoming-scan-partial-confirm-dialog.html](fragments/manager--new-orders-incoming-scan-partial-confirm-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | manager | `manager-new-orders-incoming-scan-undo` — Kiruvchi posilkalar — skan olib tashlandi | [design/fragments/manager--new-orders-incoming-scan-undo.html](fragments/manager--new-orders-incoming-scan-undo.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | registrator | `registrator-new-orders-incoming-scan` — Kiruvchi posilkalar — skanerlash | [design/fragments/registrator--new-orders-incoming-scan.html](fragments/registrator--new-orders-incoming-scan.html) | sahifa | qisman |
+| `/new-orders/incoming/:marketId` | registrator | `registrator-new-orders-incoming-scan-camera` — Kiruvchi posilkalar — skanerlash — kamera | [design/fragments/manager--new-orders-incoming-scan-camera.html](fragments/manager--new-orders-incoming-scan-camera.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | registrator | `registrator-new-orders-incoming-scan-partial` — Kiruvchi posilkalar — chala qop ogohlantirishi | [design/fragments/manager--new-orders-incoming-scan-partial.html](fragments/manager--new-orders-incoming-scan-partial.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | registrator | `registrator-new-orders-incoming-scan-partial-confirm-dialog` — Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | [design/fragments/manager--new-orders-incoming-scan-partial-confirm-dialog.html](fragments/manager--new-orders-incoming-scan-partial-confirm-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | registrator | `registrator-new-orders-incoming-scan-undo` — Kiruvchi posilkalar — skan olib tashlandi | [design/fragments/manager--new-orders-incoming-scan-undo.html](fragments/manager--new-orders-incoming-scan-undo.html) | sahifa | yangi (kodda yo'q) |
 | `/new-orders/incoming/:marketId` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
 
 #### `/new-orders/branches` — Filial paketlari — filiallar
@@ -453,13 +513,14 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
+- **Izoh:** Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/new-orders/branches/:branchId/batches/:batchId` | superadmin | `superadmin-neworders-branch-batch-detail` — Filial paketi tafsiloti | [design/fragments/superadmin--neworders-branch-batch-detail.html](fragments/superadmin--neworders-branch-batch-detail.html) | sahifa | v2 |
-| `/new-orders/branches/:branchId/batches/:batchId` | superadmin | `superadmin-neworders-branch-batch-detail-camera` — Filial paketi tafsiloti — kamera | [design/fragments/superadmin--neworders-branch-batch-detail-camera.html](fragments/superadmin--neworders-branch-batch-detail-camera.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/branches/:branchId/batches/:batchId` | superadmin | `superadmin-neworders-branch-batch-detail-camera` — Filial paketi tafsiloti — kamera | [design/fragments/superadmin--neworders-branch-batch-detail-camera.html](fragments/superadmin--neworders-branch-batch-detail-camera.html) | oyna | qisman |
 | `/new-orders/branches/:branchId/batches/:batchId` | admin | `admin-neworders-branch-batch-detail` — Filial paketi tafsiloti | [design/fragments/superadmin--neworders-branch-batch-detail.html](fragments/superadmin--neworders-branch-batch-detail.html) | sahifa | v2 |
-| `/new-orders/branches/:branchId/batches/:batchId` | admin | `admin-neworders-branch-batch-detail-camera` — Filial paketi tafsiloti — kamera | [design/fragments/superadmin--neworders-branch-batch-detail-camera.html](fragments/superadmin--neworders-branch-batch-detail-camera.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/branches/:branchId/batches/:batchId` | admin | `admin-neworders-branch-batch-detail-camera` — Filial paketi tafsiloti — kamera | [design/fragments/superadmin--neworders-branch-batch-detail-camera.html](fragments/superadmin--neworders-branch-batch-detail-camera.html) | oyna | qisman |
 | `/new-orders/branches/:branchId/batches/:batchId` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
 
 #### `/new-orders/cancelled` — Bekor qilinganlar — marketlar
@@ -478,21 +539,21 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/new-orders/cancelled/:marketId` — Bekor qilinganlarni marketga topshirish (market rolida — o'z bekorlari va QR kod)
 
-- **Fayllar:** `src/pages/new_orders/cancelled/detail.tsx` · `src/pages/new_orders/cancelled/cancelledModel.ts` · `src/pages/new_orders/cancelled/ui/HandoverStatusAlert.tsx` · `src/pages/new_orders/cancelled/ui/CancelledOrdersTable.tsx` · `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` · `src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx` · `src/shared/ui/SelectionRegion.tsx` · `src/pages/new_orders/cancelled/utils.ts` · `src/shared/components/ScannerCameraModal.tsx` · `src/app/lib/routes.tsx`
+- **Fayllar:** `src/pages/new_orders/cancelled/detail.tsx` · `src/pages/new_orders/cancelled/cancelledModel.ts` · `src/pages/new_orders/cancelled/ui/HandoverStatusAlert.tsx` · `src/pages/new_orders/cancelled/ui/CancelledOrdersTable.tsx` · `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` · `src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx` · `src/shared/ui/SelectionRegion.tsx` · `src/pages/new_orders/cancelled/utils.ts` · `src/shared/ui/camera/ScannerCamera.tsx` · `src/app/lib/routes.tsx`
 - **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) · o'rovchi: `NewOrdersCancelledDetailEntry`
 - **Rollar:** superadmin, admin, registrator (faqat HQ), market (faqat o'z marketi)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Kirish NewOrdersCancelledDetailEntry (routes.tsx) da: canHandoverCancelledToMarket yoki o'z marketi; boshqalar → /403. Qobiq: xodimda `bare` (o'z sarlavhasi), marketda `hosted` (tablar kartada). Marketga jo'natish faqat market QR skanerlangach (marketda QR o'chirilgan bo'lmasa); buzilgan buyurtma QR — «QR buzilganini tasdiqlash» oynasi (sabab — backend enum kodi). Kamera rejimi (`*-camera`) — keyinroq, `ScannerCameraModal` o'zgarmagan.
+- **Izoh:** Kirish NewOrdersCancelledDetailEntry (routes.tsx) da: canHandoverCancelledToMarket yoki o'z marketi; boshqalar → /403. Qobiq: xodimda `bare` (o'z sarlavhasi), marketda `hosted` (tablar kartada). Marketga jo'natish faqat market QR skanerlangach (marketda QR o'chirilgan bo'lmasa); buzilgan buyurtma QR — «QR buzilganini tasdiqlash» oynasi (sabab — backend enum kodi). Kamera (`*-camera`, 2-bosqich): avval «Market QR skanerlash», QR qabul qilingach shu oynada «Buyurtmalarni tanlash · QR 04:12 amal qiladi» (kamera yopilmaydi); ruxsat amalda bo'lsa market QR qayta o'qilsa so'rov yuborilmaydi (takror ovozi, ruxsat saqlanadi). Sarlavhadagi «Market QR skanerlash» tugmasi olib tashlangan — kamera faqat markaziy tugmadan. Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/new-orders/cancelled/:marketId` | superadmin | `superadmin-neworders-cancelled-handover` — Bekor qilinganlarni marketga topshirish | [design/fragments/superadmin--neworders-cancelled-handover.html](fragments/superadmin--neworders-cancelled-handover.html) | sahifa | v2 |
-| `/new-orders/cancelled/:marketId` | superadmin | `superadmin-neworders-cancelled-handover-camera` — Bekor qilinganlarni marketga topshirish — kamera<br>↳ `src/shared/components/ScannerCameraModal.tsx` | [design/fragments/superadmin--neworders-cancelled-handover-camera.html](fragments/superadmin--neworders-cancelled-handover-camera.html) | oyna | qisman |
+| `/new-orders/cancelled/:marketId` | superadmin | `superadmin-neworders-cancelled-handover-camera` — Bekor qilinganlarni marketga topshirish — kamera<br>↳ `src/shared/ui/camera/ScannerCamera.tsx` | [design/fragments/superadmin--neworders-cancelled-handover-camera.html](fragments/superadmin--neworders-cancelled-handover-camera.html) | oyna | qisman |
 | `/new-orders/cancelled/:marketId` | superadmin | `superadmin-neworders-cancelled-manual-dialog` — QR buzilganini tasdiqlash (modal)<br>↳ `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | [design/fragments/superadmin--neworders-cancelled-manual-dialog.html](fragments/superadmin--neworders-cancelled-manual-dialog.html) | oyna | v2 |
 | `/new-orders/cancelled/:marketId` | superadmin | `superadmin-neworders-cancelled-scanner-dialog` — Kamera skaneri (modal) | [design/fragments/superadmin--neworders-cancelled-scanner-dialog.html](fragments/superadmin--neworders-cancelled-scanner-dialog.html) | oyna | qisman |
 | `/new-orders/cancelled/:marketId` | admin | `admin-neworders-cancelled-detail` — Bekor qilinganlarni marketga topshirish | [design/fragments/admin--neworders-cancelled-detail.html](fragments/admin--neworders-cancelled-detail.html) | sahifa | v2 |
-| `/new-orders/cancelled/:marketId` | admin | `admin-neworders-cancelled-detail-camera` — Bekor qilinganlarni marketga topshirish — kamera<br>↳ `src/shared/components/ScannerCameraModal.tsx` | [design/fragments/admin--neworders-cancelled-detail-camera.html](fragments/admin--neworders-cancelled-detail-camera.html) | oyna | qisman |
+| `/new-orders/cancelled/:marketId` | admin | `admin-neworders-cancelled-detail-camera` — Bekor qilinganlarni marketga topshirish — kamera<br>↳ `src/shared/ui/camera/ScannerCamera.tsx` | [design/fragments/admin--neworders-cancelled-detail-camera.html](fragments/admin--neworders-cancelled-detail-camera.html) | oyna | qisman |
 | `/new-orders/cancelled/:marketId` | admin | `admin-neworders-cancelled-manual-dialog` — QR buzilganini tasdiqlash<br>↳ `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | [design/fragments/admin--neworders-cancelled-manual-dialog.html](fragments/admin--neworders-cancelled-manual-dialog.html) | oyna | v2 |
 | `/new-orders/cancelled/:marketId` | admin | `admin-neworders-cancelled-scanner-dialog` — Market QR skaneri | [design/fragments/admin--neworders-cancelled-scanner-dialog.html](fragments/admin--neworders-cancelled-scanner-dialog.html) | oyna | qisman |
 | `/new-orders/cancelled/:marketId` | registrator | `registrator-new-orders-cancelled-detail` — Bekor qilinganlarni marketga topshirish (HQ) | [design/fragments/registrator--new-orders-cancelled-detail.html](fragments/registrator--new-orders-cancelled-detail.html) | sahifa | v2 |
@@ -509,22 +570,22 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** NewOrdersMarketAccessEntry (routes.tsx): market faqat o'z marketId sini ochadi. Qabul/o'chirish tasdig'i — PopupConfirm. Tahrirlash → /new-orders/:marketId/edit/:orderId.
+- **Izoh:** NewOrdersMarketAccessEntry (routes.tsx): market faqat o'z marketId sini ochadi. Qabul/o'chirish tasdig'i — PopupConfirm. Tahrirlash → /new-orders/:marketId/edit/:orderId. Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/new-orders/:marketId` | superadmin | `superadmin-neworders-market-orders` — Market yangi buyurtmalari (qabul) | [design/fragments/superadmin--neworders-market-orders.html](fragments/superadmin--neworders-market-orders.html) | sahifa | v2 |
-| `/new-orders/:marketId` | superadmin | `superadmin-neworders-market-orders-camera` — Market yangi buyurtmalari (qabul) — kamera | [design/fragments/superadmin--neworders-market-orders-camera.html](fragments/superadmin--neworders-market-orders-camera.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/:marketId` | superadmin | `superadmin-neworders-market-orders-camera` — Market yangi buyurtmalari (qabul) — kamera | [design/fragments/superadmin--neworders-market-orders-camera.html](fragments/superadmin--neworders-market-orders-camera.html) | oyna | qisman |
 | `/new-orders/:marketId` | superadmin | `superadmin-neworders-receive-confirm-dialog` — Qo'lda qabul qilish (tasdiq)<br>↳ `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | [design/fragments/superadmin--neworders-receive-confirm-dialog.html](fragments/superadmin--neworders-receive-confirm-dialog.html) | oyna | v2 |
 | `/new-orders/:marketId` | admin | `admin-neworders-market-detail` — Market yangi buyurtmalari | [design/fragments/admin--neworders-market-detail.html](fragments/admin--neworders-market-detail.html) | sahifa | v2 |
-| `/new-orders/:marketId` | admin | `admin-neworders-market-detail-camera` — Market yangi buyurtmalari — kamera | [design/fragments/admin--neworders-market-detail-camera.html](fragments/admin--neworders-market-detail-camera.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/:marketId` | admin | `admin-neworders-market-detail-camera` — Market yangi buyurtmalari — kamera | [design/fragments/admin--neworders-market-detail-camera.html](fragments/admin--neworders-market-detail-camera.html) | oyna | qisman |
 | `/new-orders/:marketId` | admin | `admin-neworders-market-confirm-dialog` — Qabul tasdig'i / buyurtmani o'chirish<br>↳ `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | [design/fragments/admin--neworders-market-confirm-dialog.html](fragments/admin--neworders-market-confirm-dialog.html) | oyna | v2 |
 | `/new-orders/:marketId` | manager | `manager-new-orders-market-detail` — Market buyurtmalari — qabul | [design/fragments/manager--new-orders-market-detail.html](fragments/manager--new-orders-market-detail.html) | sahifa | v2 |
-| `/new-orders/:marketId` | manager | `manager-new-orders-market-detail-camera` — Market buyurtmalari — qabul — kamera | [design/fragments/manager--new-orders-market-detail-camera.html](fragments/manager--new-orders-market-detail-camera.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/:marketId` | manager | `manager-new-orders-market-detail-camera` — Market buyurtmalari — qabul — kamera | [design/fragments/manager--new-orders-market-detail-camera.html](fragments/manager--new-orders-market-detail-camera.html) | oyna | qisman |
 | `/new-orders/:marketId` | manager | `manager-new-orders-receive-confirm-dialog` — Qo'lda qabul qilish tasdig'i<br>↳ `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | [design/fragments/manager--new-orders-receive-confirm-dialog.html](fragments/manager--new-orders-receive-confirm-dialog.html) | oyna | v2 |
 | `/new-orders/:marketId` | manager | `manager-new-orders-delete-confirm-dialog` — Buyurtmani o'chirish tasdig'i<br>↳ `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | [design/fragments/manager--new-orders-delete-confirm-dialog.html](fragments/manager--new-orders-delete-confirm-dialog.html) | oyna | v2 |
 | `/new-orders/:marketId` | registrator | `registrator-new-orders-market-detail` — Market buyurtmalari — qabul | [design/fragments/registrator--new-orders-market-detail.html](fragments/registrator--new-orders-market-detail.html) | sahifa | qisman |
-| `/new-orders/:marketId` | registrator | `registrator-new-orders-market-detail-camera` — Market buyurtmalari — qabul — kamera | [design/fragments/registrator--new-orders-market-detail-camera.html](fragments/registrator--new-orders-market-detail-camera.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/:marketId` | registrator | `registrator-new-orders-market-detail-camera` — Market buyurtmalari — qabul — kamera | [design/fragments/registrator--new-orders-market-detail-camera.html](fragments/registrator--new-orders-market-detail-camera.html) | oyna | qisman |
 | `/new-orders/:marketId` | registrator | `registrator-new-orders-market-detail-receive-dialog` — Qabul qilish tasdig'i<br>↳ `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | [design/fragments/registrator--new-orders-market-detail-receive-dialog.html](fragments/registrator--new-orders-market-detail-receive-dialog.html) | oyna | qisman |
 | `/new-orders/:marketId` | registrator | `registrator-new-orders-market-detail-delete-dialog` — Buyurtmani o'chirish tasdig'i<br>↳ `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | [design/fragments/registrator--new-orders-market-detail-delete-dialog.html](fragments/registrator--new-orders-market-detail-delete-dialog.html) | oyna | v2 |
 | `/new-orders/:marketId` | market | `market-new-orders-list` — Yangi buyurtmalar | [design/fragments/market--new-orders-list.html](fragments/market--new-orders-list.html) | sahifa | v2 |
@@ -551,7 +612,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 - **Fayllar:** `src/pages/users/detail/UserDetailPage.tsx` · `src/widgets/user-detail/ui/UserDetailView.tsx` · `src/widgets/user-detail/ui/MarketTelegramGroupLinkCard.tsx`
 - **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders)
-- **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market
+- **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (taklif — MO-S3, kodda yo'q (backend POST /orders ruxsati kerak))
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
 - **Izoh:** Alohida maket yo'q — <rol>-users-detail maketlari (superadmin-users-detail). /all-users/:id bilan bir xil v2 sahifa (UserDetailView); «Qabul va yaratish» qobig'i bu yo'lda bare — sarlavha va «Buyurtma yaratish» takrorlanmaydi (newOrdersShell.ts), «←» — navigate(-1).
@@ -562,7 +623,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 - **Fayllar:** `src/pages/mails/index.tsx` · `src/pages/mails/lib/navigation.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewMails` (access.ts → canViewMails)
-- **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier
+- **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** «Pochta» (`mails`) — superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier
 - **Holat:** v2
 - **Izoh:** Komponent darhol /mails/today ga yo'naltiradi.
@@ -571,7 +632,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 - **Fayllar:** `src/pages/mails/index.tsx` · `src/pages/mails/components/todaysMails.tsx` · `src/pages/mails/components/MailsListBody.tsx` · `src/pages/mails/components/MailsTable.tsx` · `src/pages/mails/components/MailSummaryStats.tsx` · `src/pages/mails/model/mailsLists.ts` · `src/pages/mails/model/mailsLayout.ts` · `src/pages/mails/components/lib/regionFilterOptions.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewMails` (access.ts → canViewMails)
-- **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier
+- **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** «Pochta» (`mails`, `/mails` orqali) — superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier
 - **Holat:** v2
 - **Izoh:** Qobiq — src/pages/mails/index.tsx: xodimda sarlavha + bitta karta (sonli tablar «Bugungi · Qaytarish · Rad etilgan · Eski»; telefonda bo'lim tanlagichi — Select «Pochta bo'limi: …»), kuryerda tablar sahifa fonida («Qaytarish» yo'q; telefonda to'liq enli qisqa tablar — courier-mails-tab-switcher-open). Tab sonlari model/mailsLists.ts hooklaridan (tanalar bilan bir xil queryKey). Ega qarori 2026-10-17 (Pochta birxillashtirishi, barcha xodim rollarida maketlardan ustun): filtrlar — ichki yorliqli Select («Viloyat: …»); xulosa qatori barcha xodimlarda. «Kuryer» ustuni hozirgidek — faqat backend kuryer yuborsa (YANGI pochtada courier_id='0', post/new kuryer bermaydi).
@@ -584,12 +645,13 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/mails/today` | registrator | `registrator-mails-today` — Pochta — Bugungi pochtalar<br>↳ `src/pages/mails/components/todaysMails.tsx` | [design/fragments/superadmin--mails-today.html](fragments/superadmin--mails-today.html) | sahifa | v2 |
 | `/mails/today` | courier | `courier-mails-today` — Pochta — Bugungi<br>↳ `src/pages/mails/components/todaysMails.tsx` | [design/fragments/courier--mails-today.html](fragments/courier--mails-today.html) | sahifa | v2 |
 | `/mails/today` | courier | `courier-mails-tab-switcher-open` — Pochta — tab tanlash ochiq | [design/fragments/courier--mails-tab-switcher-open.html](fragments/courier--mails-tab-switcher-open.html) | sahifa · faqat telefon | v2 |
+| `/mails/today` | logist | `logist-mails-list` — Pochta — viloyatlarim pochtalari | [design/fragments/logist--mails-list.html](fragments/logist--mails-list.html) | sahifa | yangi (kodda yo'q) |
 
 #### `/mails/return` — Pochta — Qaytarish so'rovlari
 
 - **Fayllar:** `src/pages/mails/index.tsx` · `src/pages/mails/components/returnMails.tsx` · `src/shared/ui/SelectionRegion.tsx` · `src/pages/mails/model/mailsLists.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewMails` (access.ts → canViewMails)
-- **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier
+- **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
 - **Izoh:** Ega qarori 2026-10-17 (Pochta birxillashtirishi): «Qaytarish» tabida bitta doimiy tanlov paneli (0 ta — tugmalar o'chiq) — har kuryer guruhidagi alohida tugmalar o'rniga; xulosa qatori barcha xodimlarda. Maketdagi «Marketga» manzili chizilmaydi: backend faqat HQ/BRANCH doirasini beradi va tasdiq buyurtmani o'z omboriga qaytaradi.
@@ -601,12 +663,13 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/mails/return` | manager | `manager-mails-return` — Pochta — Qaytarish so'rovlari<br>↳ `src/pages/mails/components/returnMails.tsx` | [design/fragments/superadmin--mails-return.html](fragments/superadmin--mails-return.html) | sahifa | v2 |
 | `/mails/return` | registrator | `registrator-mails-return` — Pochta — Qaytarish<br>↳ `src/pages/mails/components/returnMails.tsx` | [design/fragments/admin--mails-return.html](fragments/admin--mails-return.html) | sahifa | v2 |
 | `/mails/return` | courier | — Kuryerda bu tab yo'q — /mails/today ga qaytariladi. | — | — | v2 |
+| `/mails/return` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
 
 #### `/mails/refused` — Pochta — Rad etilgan pochtalar
 
 - **Fayllar:** `src/pages/mails/index.tsx` · `src/pages/mails/components/refusedMails.tsx` · `src/pages/mails/components/MailsListBody.tsx` · `src/pages/mails/components/MailsTable.tsx` · `src/pages/mails/components/MailSummaryStats.tsx` · `src/pages/mails/model/mailsLists.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewMails` (access.ts → canViewMails)
-- **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier
+- **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
 - **Izoh:** Ega qarori 2026-10-17 (Pochta birxillashtirishi): xulosa qatori barcha xodimlarda; filtr qo'shilsa — ichki yorliqli Select.
@@ -618,12 +681,13 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/mails/refused` | manager | `manager-mails-refused` — Pochta — Rad etilgan pochtalar<br>↳ `src/pages/mails/components/refusedMails.tsx` | [design/fragments/manager--mails-refused.html](fragments/manager--mails-refused.html) | sahifa | v2 |
 | `/mails/refused` | registrator | `registrator-mails-refused` — Pochta — Rad etilgan pochtalar<br>↳ `src/pages/mails/components/refusedMails.tsx` | [design/fragments/superadmin--mails-refused.html](fragments/superadmin--mails-refused.html) | sahifa | v2 |
 | `/mails/refused` | courier | `courier-mails-refused` — Pochta — Rad etilgan<br>↳ `src/pages/mails/components/refusedMails.tsx` | [design/fragments/courier--mails-refused.html](fragments/courier--mails-refused.html) | sahifa | v2 |
+| `/mails/refused` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
 
 #### `/mails/old` — Pochta — Eski pochtalar (admin/superadmin: «Filial paketlari» rejimi)
 
 - **Fayllar:** `src/pages/mails/index.tsx` · `src/pages/mails/components/oldMails.tsx` · `src/pages/mails/components/OldMailsFiltersSheet.tsx` · `src/pages/mails/components/MailsTable.tsx` · `src/pages/mails/model/oldMailsModel.ts` · `src/pages/mails/components/lib/exportOldMailsToExcel.ts` · `src/pages/mails/components/lib/regionFilterOptions.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewMails` (access.ts → canViewMails)
-- **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier
+- **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
 - **Izoh:** Ega qarori 2026-10-17 (Pochta birxillashtirishi): filtrlar — ichki yorliqli Select («Viloyat: … · Kuryer: … · Holati: …») + sana oralig'i; «Excelga yuklash» karta asboblar qatorida (telefonda ikonka); xulosa qatori barcha xodimlarda; admin/superadmin — «Pochtalar | Filial paketlari» almashtirgichi (?batch_mode=all); paket qatori /batches/:id ni ochadi («← Eski pochtalar» filtrlar bilan). Filtr va sahifalash server tomonida (GET /post, GET /post/courier/old-posts — Trello YfrqN70i), Excel barcha filtrlangan qatorlarni 100 talab sahifalab oladi. Pochtalar xulosasi hozircha faqat «N ta pochta» (API buyurtma/summa yig'indisini bermaydi — egaga savol Q1). «Filial paketlari» — GET transfer-batches ning barcha sahifalari (fetchAllTransferBatches), filtr mijoz tomonida.
@@ -637,33 +701,46 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/mails/old` | manager | `manager-mails-old` — Pochta — Eski pochtalar<br>↳ `src/pages/mails/components/oldMails.tsx` | [design/fragments/manager--mails-old.html](fragments/manager--mails-old.html) | sahifa | v2 |
 | `/mails/old` | registrator | `registrator-mails-old` — Pochta — Eski pochtalar<br>↳ `src/pages/mails/components/oldMails.tsx` | [design/fragments/registrator--mails-old.html](fragments/registrator--mails-old.html) | sahifa | v2 |
 | `/mails/old` | courier | `courier-mails-old` — Pochta — Eski<br>↳ `src/pages/mails/components/oldMails.tsx` | [design/fragments/courier--mails-old.html](fragments/courier--mails-old.html) | sahifa | v2 |
+| `/mails/old` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
 
 #### `/mails/:id` — Pochta tafsiloti — jo'natish / qabul qilish / rad etilgan / tarix
 
 - **Fayllar:** `src/pages/mails/detail/index.tsx` · `src/pages/mails/detail/model/useMailDetailState.ts` · `src/pages/mails/detail/model/useOrderRowView.tsx` · `src/pages/mails/detail/ui/MailStatCards.tsx` · `src/pages/mails/detail/ui/OrdersTable.tsx` · `src/pages/mails/detail/ui/OrderRow.tsx` · `src/pages/mails/detail/ui/SendButton.tsx` · `src/pages/mails/detail/ui/SendPostModal.tsx` · `src/pages/mails/detail/ui/DeleteFromPostDialog.tsx` · `src/pages/mails/detail/ui/printOptions.tsx` · `src/pages/mails/detail/lib/printMode.ts` · `src/pages/mails/detail/lib/scanMatch.ts` · `src/shared/ui/SelectionRegion.tsx` · `src/shared/components/PrintModeSelect.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewMails` (access.ts → canViewMails)
-- **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier
+- **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Rejim URL'dan: ?type=refused → rad etilgan, ?view=old → tarix (faqat o'qish), ?view=old-all-batches → eski pochtalarning «Filial paketlari» rejimidan ochilgan tarix (admin/superadmin; *-mails-detail-old / admin-mails-old-detail maketi). «Filialga jo'natish» oynasi faqat superadmin/admin/HQ registrator (canDispatchPostToBranch). Chop etish menyusi — PrintModeSelect.
+- **Izoh:** Rejim URL'dan: ?type=refused → rad etilgan, ?view=old → tarix (faqat o'qish), ?view=old-all-batches → eski pochtalarning «Filial paketlari» rejimidan ochilgan tarix (admin/superadmin; *-mails-detail-old / admin-mails-old-detail maketi). «Filialga jo'natish» oynasi faqat superadmin/admin/HQ registrator (canDispatchPostToBranch). Chop etish menyusi — PrintModeSelect. Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan). Qidiruv («Buyurtmalar N ta» kartasida, × bilan, «natija yo'q» holati) va takroriy telefon raqamlar banneri (*-mails-detail-duplicates / -search / -search-empty, menejerda *-receive-*) — klient tomonda, pochta ichidagi buyurtmalar bo'yicha (sahifa barcha buyurtmalarni yuklaydi; +998 siz raqamlar normallashtiriladi), backend maydoni kerak emas. Qoida: pochtada takroriy raqam bo'lsa banner qidiruvdan qat'i nazar turadi, chiplari filtr — faol chip = joriy qidiruv.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/mails/:id` | superadmin | `superadmin-mails-detail` — Pochta tafsiloti (jo'natish) | [design/fragments/superadmin--mails-detail.html](fragments/superadmin--mails-detail.html) | sahifa | v2 |
+| `/mails/:id` | superadmin | `superadmin-mails-detail-duplicates` — Pochta tafsiloti (jo'natish) — takroriy telefonlar | [design/fragments/superadmin--mails-detail-duplicates.html](fragments/superadmin--mails-detail-duplicates.html) | sahifa | yangi (kodda yo'q) |
+| `/mails/:id` | superadmin | `superadmin-mails-detail-search` — Pochta tafsiloti (jo'natish) — qidiruv | [design/fragments/superadmin--mails-detail-search.html](fragments/superadmin--mails-detail-search.html) | sahifa | yangi (kodda yo'q) |
+| `/mails/:id` | superadmin | `superadmin-mails-detail-search-empty` — Pochta tafsiloti (jo'natish) — qidiruvda natija yo'q | [design/fragments/superadmin--mails-detail-search-empty.html](fragments/superadmin--mails-detail-search-empty.html) | sahifa | yangi (kodda yo'q) |
 | `/mails/:id` | superadmin | `superadmin-mails-detail-camera` — Pochta tafsiloti (jo'natish) — kamera | [design/fragments/superadmin--mails-detail-camera.html](fragments/superadmin--mails-detail-camera.html) | oyna | qisman |
 | `/mails/:id` | superadmin | `superadmin-mails-detail-send-dialog` — Pochtani filialga jo'natish (modal)<br>↳ `src/pages/mails/detail/ui/SendPostModal.tsx` | [design/fragments/superadmin--mails-detail-send-dialog.html](fragments/superadmin--mails-detail-send-dialog.html) | oyna | v2 |
 | `/mails/:id` | superadmin | `superadmin-mails-detail-refused` — Rad etilgan pochta tafsiloti (qabul) | [design/fragments/superadmin--mails-detail-refused.html](fragments/superadmin--mails-detail-refused.html) | sahifa | v2 |
 | `/mails/:id` | superadmin | `superadmin-mails-detail-old` — Eski pochta tafsiloti (faqat o'qish) | [design/fragments/superadmin--mails-detail-old.html](fragments/superadmin--mails-detail-old.html) | sahifa | v2 |
 | `/mails/:id` | admin | `admin-mails-detail` — Pochta tafsiloti | [design/fragments/admin--mails-detail.html](fragments/admin--mails-detail.html) | sahifa | v2 |
+| `/mails/:id` | admin | `admin-mails-detail-duplicates` — Pochta tafsiloti — takroriy telefonlar | [design/fragments/superadmin--mails-detail-duplicates.html](fragments/superadmin--mails-detail-duplicates.html) | sahifa | yangi (kodda yo'q) |
+| `/mails/:id` | admin | `admin-mails-detail-search` — Pochta tafsiloti — qidiruv | [design/fragments/superadmin--mails-detail-search.html](fragments/superadmin--mails-detail-search.html) | sahifa | yangi (kodda yo'q) |
+| `/mails/:id` | admin | `admin-mails-detail-search-empty` — Pochta tafsiloti — qidiruvda natija yo'q | [design/fragments/superadmin--mails-detail-search-empty.html](fragments/superadmin--mails-detail-search-empty.html) | sahifa | yangi (kodda yo'q) |
 | `/mails/:id` | admin | `admin-mails-detail-camera` — Pochta tafsiloti — kamera | [design/fragments/superadmin--mails-detail-camera.html](fragments/superadmin--mails-detail-camera.html) | oyna | qisman |
 | `/mails/:id` | admin | `admin-mails-send-branch-dialog` — Pochtani filialga jo'natish<br>↳ `src/pages/mails/detail/ui/SendPostModal.tsx` | [design/fragments/admin--mails-send-branch-dialog.html](fragments/admin--mails-send-branch-dialog.html) | oyna | v2 |
 | `/mails/:id` | admin | `admin-mails-refused-detail` — Rad etilgan pochta tafsiloti | [design/fragments/admin--mails-refused-detail.html](fragments/admin--mails-refused-detail.html) | sahifa | v2 |
 | `/mails/:id` | admin | `admin-mails-old-detail` — Eski pochta tafsiloti (tarix) | [design/fragments/admin--mails-old-detail.html](fragments/admin--mails-old-detail.html) | sahifa | v2 |
 | `/mails/:id` | manager | `manager-mails-detail-receive` — Pochta tafsiloti — qabul qilish | [design/fragments/manager--mails-detail-receive.html](fragments/manager--mails-detail-receive.html) | sahifa | v2 |
+| `/mails/:id` | manager | `manager-mails-detail-receive-duplicates` — Pochta tafsiloti — qabul qilish — takroriy telefonlar | [design/fragments/manager--mails-detail-receive-duplicates.html](fragments/manager--mails-detail-receive-duplicates.html) | sahifa | yangi (kodda yo'q) |
+| `/mails/:id` | manager | `manager-mails-detail-receive-search` — Pochta tafsiloti — qabul qilish — qidiruv | [design/fragments/manager--mails-detail-receive-search.html](fragments/manager--mails-detail-receive-search.html) | sahifa | yangi (kodda yo'q) |
+| `/mails/:id` | manager | `manager-mails-detail-receive-search-empty` — Pochta tafsiloti — qabul qilish — qidiruvda natija yo'q | [design/fragments/manager--mails-detail-receive-search-empty.html](fragments/manager--mails-detail-receive-search-empty.html) | sahifa | yangi (kodda yo'q) |
 | `/mails/:id` | manager | `manager-mails-detail-receive-camera` — Pochta tafsiloti — qabul qilish — kamera | [design/fragments/manager--mails-detail-receive-camera.html](fragments/manager--mails-detail-receive-camera.html) | oyna | qisman |
 | `/mails/:id` | manager | `manager-mails-detail-refused-receive` — Rad etilgan pochta — qabul | [design/fragments/manager--mails-detail-refused-receive.html](fragments/manager--mails-detail-refused-receive.html) | sahifa | v2 |
 | `/mails/:id` | manager | `manager-mails-detail-old` — Eski pochta tafsiloti (tarix) | [design/fragments/admin--mails-old-detail.html](fragments/admin--mails-old-detail.html) | sahifa | v2 |
 | `/mails/:id` | registrator | `registrator-mails-detail` — Pochta tafsiloti — bugungi | [design/fragments/registrator--mails-detail.html](fragments/registrator--mails-detail.html) | sahifa | v2 |
+| `/mails/:id` | registrator | `registrator-mails-detail-duplicates` — Pochta tafsiloti — bugungi — takroriy telefonlar | [design/fragments/registrator--mails-detail-duplicates.html](fragments/registrator--mails-detail-duplicates.html) | sahifa | yangi (kodda yo'q) |
+| `/mails/:id` | registrator | `registrator-mails-detail-search` — Pochta tafsiloti — bugungi — qidiruv | [design/fragments/registrator--mails-detail-search.html](fragments/registrator--mails-detail-search.html) | sahifa | yangi (kodda yo'q) |
+| `/mails/:id` | registrator | `registrator-mails-detail-search-empty` — Pochta tafsiloti — bugungi — qidiruvda natija yo'q | [design/fragments/registrator--mails-detail-search-empty.html](fragments/registrator--mails-detail-search-empty.html) | sahifa | yangi (kodda yo'q) |
 | `/mails/:id` | registrator | `registrator-mails-detail-camera` — Pochta tafsiloti — bugungi — kamera | [design/fragments/registrator--mails-detail-camera.html](fragments/registrator--mails-detail-camera.html) | oyna | qisman |
 | `/mails/:id` | registrator | `registrator-mails-detail-send-dialog` — Pochtani filialga jo'natish (HQ)<br>↳ `src/pages/mails/detail/ui/SendPostModal.tsx` | [design/fragments/registrator--mails-detail-send-dialog.html](fragments/registrator--mails-detail-send-dialog.html) | oyna | v2 |
 | `/mails/:id` | registrator | `registrator-mails-detail-refused` — Pochta tafsiloti — rad etilgan | [design/fragments/registrator--mails-detail-refused.html](fragments/registrator--mails-detail-refused.html) | sahifa | v2 |
@@ -673,6 +750,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/mails/:id` | courier | `courier-mails-detail-refused` — Pochta tafsiloti — rad etilgan (faqat o'qish) | [design/fragments/courier--mails-detail-refused.html](fragments/courier--mails-detail-refused.html) | sahifa | v2 |
 | `/mails/:id` | courier | `courier-mails-detail-old` — Pochta tafsiloti — eski (tarix) | [design/fragments/courier--mails-detail-old.html](fragments/courier--mails-detail-old.html) | sahifa | v2 |
 | `/mails/:id` | courier | `courier-mails-detail-print-menu` — Chop etish menyusi<br>↳ `src/shared/components/PrintModeSelect.tsx` | [design/fragments/courier--mails-detail-print-menu.html](fragments/courier--mails-detail-print-menu.html) | oyna | v2 |
+| `/mails/:id` | logist | `logist-mails-detail` — Pochta tafsiloti — faqat ko'rish | [design/fragments/logist--mails-detail.html](fragments/logist--mails-detail.html) | sahifa | yangi (kodda yo'q) |
 | `/mails/:id` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
 
 ### Paketlar va qaytarishlar
@@ -681,7 +759,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 - **Fayllar:** `src/pages/batches/ui/BatchesPage.tsx` · `src/pages/batches/model/batchView.ts` · `src/pages/batches/lib/batchFormat.ts` · `src/entities/batch/model/batchStatus.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewBatches` (access.ts → canViewBatchesPage)
-- **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID)
+- **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** «Paketlar» (`batches`) — superadmin, admin, manager (HQ · PICKUP · HYBRID)
 - **Holat:** v2
 - **Izoh:** Tab URL'da: ?tab=new|old|return.
@@ -697,15 +775,16 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/batches` | manager | `manager-batches-new` — Paketlar — Yangi | [design/fragments/manager--batches-new.html](fragments/manager--batches-new.html) | sahifa | v2 |
 | `/batches` | manager | `manager-batches-old` — Paketlar — Eski | [design/fragments/manager--batches-old.html](fragments/manager--batches-old.html) | sahifa | v2 |
 | `/batches` | manager | `manager-batches-return` — Paketlar — Qaytarilgan | [design/fragments/manager--batches-return.html](fragments/manager--batches-return.html) | sahifa | v2 |
+| `/batches` | logist | `logist-batches-list` — Paketlar — viloyatlarimga | [design/fragments/logist--batches-list.html](fragments/logist--batches-list.html) | sahifa | yangi (kodda yo'q) |
 
 #### `/batches/:id` — Paket tafsiloti (menejer: asosiy filialga jo'natish yoki faqat o'qish; qaytarish paketi ham shu sahifa)
 
 - **Fayllar:** `src/pages/batches/ui/BatchDetailPage.tsx` · `src/pages/batches/ui/BatchInfoCard.tsx` · `src/pages/batches/ui/BatchQrCard.tsx` · `src/pages/batches/ui/BatchHistoryCard.tsx` · `src/pages/batches/ui/BatchPrintSheet.tsx` · `src/pages/batches/ui/BatchQrCode.tsx` · `src/pages/batches/lib/batchOrderMailAdapter.ts` · `src/pages/mails/detail/ui/OrdersTable.tsx` · `src/pages/mails/detail/ui/MailStatCards.tsx` · `src/pages/mails/detail/ui/SendButton.tsx` · `src/pages/mails/detail/model/useMailDetailState.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewBatches` (access.ts → canViewBatchesPage)
-- **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID)
+- **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Jo'natish rejimi: paket holati «new» va rol menejer/registrator (canSendToMainBranch); aks holda faqat o'qish. /returns qatori ham shu sahifani ochadi. Buyurtmalar kartasi, statistika va jo'natish tugmasi /mails/:id bilan umumiy (pages/mails/detail/ui — batchOrderMailAdapter.ts orqali).
+- **Izoh:** Jo'natish rejimi: paket holati «new» va rol menejer/registrator (canSendToMainBranch); aks holda faqat o'qish. /returns qatori ham shu sahifani ochadi. Buyurtmalar kartasi, statistika va jo'natish tugmasi /mails/:id bilan umumiy (pages/mails/detail/ui — batchOrderMailAdapter.ts orqali). Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -715,6 +794,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/batches/:id` | manager | `manager-batches-detail-send-camera` — Paket tafsiloti — asosiy filialga jo'natish — kamera | [design/fragments/manager--batches-detail-send-camera.html](fragments/manager--batches-detail-send-camera.html) | oyna | qisman |
 | `/batches/:id` | manager | `manager-batches-detail-readonly` — Paket tafsiloti (faqat o'qish) | [design/fragments/manager--batches-detail-readonly.html](fragments/manager--batches-detail-readonly.html) | sahifa | v2 |
 | `/batches/:id` | manager | `manager-returns-batch-detail` — Qaytarish paketi tafsiloti | [design/fragments/manager--returns-batch-detail.html](fragments/manager--returns-batch-detail.html) | sahifa | v2 |
+| `/batches/:id` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
 | `/batches/:id` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
 
 #### `/returns` — Qaytarishlar (qaytarish paketlari ro'yxati)
@@ -736,12 +816,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/dispatch` — Biriktirish — buyurtmalarni skanerlab kuryerga berish
 
-- **Fayllar:** `src/pages/dispatch/index.tsx` · `src/pages/dispatch/ui/DispatchStats.tsx` · `src/pages/dispatch/ui/DispatchOrdersTable.tsx` · `src/pages/dispatch/ui/CourierPickerDialog.tsx` · `src/pages/dispatch/ui/DispatchAlert.tsx` · `src/pages/dispatch/model/dispatchModel.ts` · `src/shared/components/ScannerCameraModal.tsx`
+- **Fayllar:** `src/pages/dispatch/index.tsx` · `src/pages/dispatch/ui/DispatchStats.tsx` · `src/pages/dispatch/ui/DispatchOrdersTable.tsx` · `src/pages/dispatch/ui/CourierPickerDialog.tsx` · `src/pages/dispatch/ui/DispatchAlert.tsx` · `src/pages/dispatch/model/dispatchModel.ts` · `src/features/dispatch-basket/model/dispatchBasket.ts` · `src/shared/ui/camera/ScannerCamera.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewDispatch` (access.ts → canViewDispatchPage)
 - **Rollar:** superadmin, admin, manager (REGIONAL · HYBRID), registrator (HQ · REGIONAL · HYBRID)
 - **Menyuda:** «Biriktirish» (`dispatch`) — manager (REGIONAL · HYBRID), registrator (HQ · REGIONAL · HYBRID)
 - **Holat:** v2
-- **Izoh:** Dizayn v2 (G3): barcha rollar uchun bitta tartib — registrator maketlari (dispatch-list, dispatch-empty) + menejer dispatch-scan matnlari, «Kuryerni tanlang» oynasi — CourierPickerDialog (Dialog, telefonda pastki varaqa). Ega savoli Q7 sukuti: telefonda pastki menyu ustida yopishqoq panel «Kamera N ta» + «Biriktirish — K ta» (har rolda), sarlavhadagi tugma ≥ 768 da. Bitta faol kuryer — oynasiz darhol biriktiriladi. /scan/:token dan «Kuryerga biriktirish» (Q3) → state.scanToken bir marta qo'shiladi va tanlanadi. Ro'yxat sahifa holati — sahifadan chiqilsa yo'qoladi (menejer maketidagi «biriktirish savati» saqlanishi — ega qarori kutiladi). Kamera oynasi (ScannerCameraModal, umumiy) — alohida kamera ishi.
+- **Izoh:** Dizayn v2 (G3): barcha rollar uchun bitta tartib — registrator maketlari (dispatch-list, dispatch-empty) + menejer dispatch-scan matnlari, «Kuryerni tanlang» oynasi — CourierPickerDialog (Dialog, telefonda pastki varaqa). Ega savoli Q7 sukuti: telefonda pastki menyu ustida yopishqoq panel «Biriktirish — K ta» (har rolda; kamera — markaziy «Skaner»), sarlavhadagi tugma ≥ 768 da. Bitta faol kuryer — oynasiz darhol biriktiriladi. /scan/:token dan «Kuryerga biriktirish» (Q3) → buyurtma savatga tanlangan holda yoziladi va /dispatch ochiladi. Savat qurilmada (ega qarori D2): features/dispatch-basket — foydalanuvchi + filial kaliti, localStorage, 12 soatdan eskisi tashlanadi; sahifa yangilansa yoki chiqib qaytilsa ham saqlanadi, boshqa tablar bilan sinxron. Kamera — markaziy «Skaner» orqali (ScannerCamera): qo'shilgan buyurtma darhol tanlanadi, rad etilgan kod ro'yxatda «Rad etildi». Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -758,12 +838,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/courier-bulk` — Tezkor amal — kunni yakunlash (skanerlab sotildi / bekor / ertaga)
 
-- **Fayllar:** `src/pages/courier-bulk/index.tsx` · `src/pages/courier-bulk/model/courierBulk.ts` · `src/pages/courier-bulk/ui/CourierBulkSummary.tsx` · `src/pages/courier-bulk/ui/ScanModeControl.tsx` · `src/pages/courier-bulk/ui/CourierBulkOrders.tsx` · `src/pages/courier-bulk/ui/ResultControl.tsx` · `src/pages/courier-bulk/ui/BulkAlert.tsx` · `src/pages/courier-bulk/ui/CourierBulkProofDialog.tsx` · `src/pages/courier-bulk/ui/CourierBulkResultDialog.tsx` · `src/pages/courier-bulk/ui/segmentTint.ts` · `src/pages/courier-bulk/model/useIsBelowLg.ts` · `src/shared/components/ScannerCameraModal.tsx`
+- **Fayllar:** `src/pages/courier-bulk/index.tsx` · `src/pages/courier-bulk/model/courierBulk.ts` · `src/pages/courier-bulk/ui/CourierBulkSummary.tsx` · `src/pages/courier-bulk/ui/ScanModeControl.tsx` · `src/pages/courier-bulk/ui/CourierBulkOrders.tsx` · `src/pages/courier-bulk/ui/ResultControl.tsx` · `src/pages/courier-bulk/ui/BulkAlert.tsx` · `src/pages/courier-bulk/ui/CourierBulkProofDialog.tsx` · `src/pages/courier-bulk/ui/CourierBulkResultDialog.tsx` · `src/pages/courier-bulk/ui/segmentTint.ts` · `src/pages/courier-bulk/model/useIsBelowLg.ts` · `src/shared/ui/camera/ScannerCamera.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewCourierBulk` (access.ts → canViewCourierBulkPage)
 - **Rollar:** manager (REGIONAL · HYBRID), courier
 - **Menyuda:** «Tezkor amal» (`quickAction`) — manager (REGIONAL · HYBRID), courier
 - **Holat:** v2
-- **Izoh:** Dizayn v2 (G3): kuryer va menejer uchun bitta tartib (courier-courier-bulk-main). Ega savoli Q8 sukuti: menejerda ham kuryer maketi (4 stat karta, qidiruv + «Natija» filtri, saralash — hammasi mijoz tomonida, yangi API parametri yo'q); «Kutilayotgan» izohi menejerda «Filial kuryerlarida, yakunlanmagan». Q9: «Faqat bekorlarni qo'llash» olib tashlandi (maketlarda yo'q). Telefonda «Kunni yakunlash» pastki menyu ustidagi yopishqoq panelda (DOM'da bitta tugma). Tasdiq — useConfirm (courier-courier-bulk-confirm-dialog matnlari); «Ertaga» so'rov yubormaydi. Tasdiqdan keyingi isbot qadami (CourierBulkProofDialog — market expense_proof_conditions talab qilgan buyurtmalarga har biriga bitta ProofField, hammasida fayl bo'lmaguncha «Yakunlash» o'chiq) va xatolar ro'yxati (CourierBulkResultDialog — har xato backend sababi bilan) uchun maket yo'q — eng yaqini: tizim-states-forms + courier-courier-bulk-confirm-dialog (dev j9KFyqlS). Isbot kerak bo'lmasa qo'shimcha qadam yo'q; ommaviy sotish/bekor so'rovlarida X-Request-Source: courier-bulk. Kamera oynasi va skan topilmaganda chiqadigan umumiy qoplama (common:scannerFeedbackMissing «Bu pochtada yo'q» matni) — alohida kamera ishi.
+- **Izoh:** Dizayn v2 (G3): kuryer va menejer uchun bitta tartib (courier-courier-bulk-main). Ega savoli Q8 sukuti: menejerda ham kuryer maketi (4 stat karta, qidiruv + «Natija» filtri, saralash — hammasi mijoz tomonida, yangi API parametri yo'q); «Kutilayotgan» izohi menejerda «Filial kuryerlarida, yakunlanmagan». Q9: «Faqat bekorlarni qo'llash» olib tashlandi (maketlarda yo'q). Telefonda «Kunni yakunlash» pastki menyu ustidagi yopishqoq panelda (DOM'da bitta tugma). Tasdiq — useConfirm (courier-courier-bulk-confirm-dialog matnlari); «Ertaga» so'rov yubormaydi. Tasdiqdan keyingi isbot qadami (CourierBulkProofDialog — market expense_proof_conditions talab qilgan buyurtmalarga har biriga bitta ProofField, hammasida fayl bo'lmaguncha «Yakunlash» o'chiq) va xatolar ro'yxati (CourierBulkResultDialog — har xato backend sababi bilan) uchun maket yo'q — eng yaqini: tizim-states-forms + courier-courier-bulk-confirm-dialog (dev j9KFyqlS). Isbot kerak bo'lmasa qo'shimcha qadam yo'q; ommaviy sotish/bekor so'rovlarida X-Request-Source: courier-bulk. Kamera — markaziy «Skaner» orqali (ScannerCamera): kamera ichida «Bekor · Ertaga» almashtirgichi, «N / M ta skanerlandi», ro'yxat varag'ida «Bekor qilish». Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -771,7 +851,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/courier-bulk` | manager | `manager-courier-bulk-camera-dialog` — Tezkor amal — kamera | [design/fragments/manager--courier-bulk-camera-dialog.html](fragments/manager--courier-bulk-camera-dialog.html) | oyna | qisman |
 | `/courier-bulk` | courier | `courier-courier-bulk-main` — Tezkor amal — kunni yakunlash | [design/fragments/courier--courier-bulk-main.html](fragments/courier--courier-bulk-main.html) | sahifa | v2 |
 | `/courier-bulk` | courier | `courier-courier-bulk-scanner-camera` — Tezkor amal — kamera skaneri | [design/fragments/courier--courier-bulk-scanner-camera.html](fragments/courier--courier-bulk-scanner-camera.html) | oyna | qisman |
-| `/courier-bulk` | courier | `courier-courier-bulk-scanner-camera-list` — Tezkor amal — kamera, skanerlanganlar ro'yxati | [design/fragments/courier--courier-bulk-scanner-camera-list.html](fragments/courier--courier-bulk-scanner-camera-list.html) | oyna · faqat telefon | yangi (kodda yo'q) |
+| `/courier-bulk` | courier | `courier-courier-bulk-scanner-camera-list` — Tezkor amal — kamera, skanerlanganlar ro'yxati | [design/fragments/courier--courier-bulk-scanner-camera-list.html](fragments/courier--courier-bulk-scanner-camera-list.html) | oyna · faqat telefon | qisman |
 | `/courier-bulk` | courier | `courier-courier-bulk-confirm-dialog` — Kunni yakunlash — tasdiqlash oynasi | [design/fragments/courier--courier-bulk-confirm-dialog.html](fragments/courier--courier-bulk-confirm-dialog.html) | oyna | v2 |
 | `/courier-bulk` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
 
@@ -779,39 +859,43 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/scan` — QR skaner — telefon kamerasi (to'liq ekran, ScanLayout)
 
-- **Fayllar:** `src/pages/scan/index.tsx` · `src/pages/scan/lib/scanShared.ts` · `src/shared/lib/useCameraQrScanner.ts` · `src/shared/components/ScanFeedbackOverlay.tsx`
+- **Fayllar:** `src/pages/scan/index.tsx` · `src/pages/scan/model/useUniversalScan.ts` · `src/pages/scan/model/scanHistory.ts` · `src/pages/scan/ui/ScanSideCards.tsx` · `src/pages/scan/ui/ScanModeCards.tsx` · `src/pages/scan/model/scanModes.ts` · `src/pages/scan/model/useCourierTake.ts` · `src/pages/scan/lib/scanResource.ts` · `src/shared/ui/camera/ScannerCamera.tsx` · `src/shared/ui/camera/scanRegion.ts` · `src/shared/ui/camera/useLowLight.ts` · `src/shared/lib/useCameraQrScanner.ts` · `src/shared/lib/scanner/feedback.ts` · `src/shared/components/ScanFeedbackOverlay.tsx`
 - **Qobiq:** ScanLayout · **Guard:** yo'q (faqat kirish)
-- **Rollar:** superadmin, admin, manager, registrator, market, courier
+- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
 - **Menyuda:** yo'q — yuqori panel → «Skanerlash» tugmasi; telefon menyusi; skaner natijasidan «Skanerga qaytish»
-- **Holat:** eski
-- **Izoh:** Kirish: yuqori panel «Skanerlash» tugmasi va telefon menyusi. Holatlar (ishga tushmoqda, faol, topildi, noto'g'ri QR, juda tez, kamera xatosi) bitta komponentda. Butun /scan sahifasi (barcha kamera holatlari, «Qo'lda kiritish», «Oxirgi skanerlar», oflayn navbat) — alohida kamera ishi (ega qarori 2026-10-16; G3 Q1 sukuti); 4-bosqichda faqat /scan/:token. Buyurtma raqami bilan qo'lda qidirish uchun API yo'q (QR faqat qr_code_token bo'yicha).
+- **Holat:** v2
+- **Izoh:** Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (v1 «Kamera» tugmalari va eski kamera oynasi 2-bosqichda olib tashlangan). Universal skaner (dizayn v2, 1-bosqich): faqat «Ma'lumot» rejimi — bitta kod aniqlanadi va natija sahifasi /scan/:token ochiladi («№… topildi · Tegishli ekran ochilmoqda»); topilmadi / yaroqsiz QR / market QR — skaner ochiq qoladi, natija kamerada va desktopda «Natija» kartasida. Rejimlar (3-bosqich, maket yo'q — eng yaqini courier-courier-bulk-scanner-camera segmenti): rol va filial bo'yicha segment (telefonda kamera ichida, planshet/desktopda yon paneldagi «Skaner rejimi»), tanlov qurilmada. «Ma'lumot» — kuryerdan boshqa hammada sukut; «Qabul qilish» (canCreateOrders, REGIONAL menejer/registratorda yo'q) — market varag'i (GET orders/markets/new) → /new-orders/:id, kamera o'sha sahifada ochiq; «Kuryerga biriktirish» (faqat menejer, registrator — backend assign-to-courier; superadmin/admin yo'q) — /dispatch, kamera ochiq, /scan da o'qilgan kod savatga dispatch handler'i bilan; kuryer — «O'zimga olish» (sukut): ketma-ket POST orders/scan-assign, ro'yxat «Sizga biriktirildi / Allaqachon sizda / Boshqa kuryerda: <ism> / sabab», «Tugatish» → kesh yangilanadi va xulosa. Telefonda to'liq ekran (ScannerCamera presentation=page; pastda «Oxirgi: …» qatori, [Qo'lda kiritish] [Chiroq]); planshet/desktopda kamera + «USB skaner ham tayyor» va qo'lda kiritish, «Oxirgi skanerlar · Shu qurilmada» (localStorage, foydalanuvchiga bog'langan, oxirgi 10 ta). Qo'lda kiritish — faqat token yoki /scan/<token> havolasi: buyurtma raqami bo'yicha qidiruv API'si yo'q (QR faqat qr_code_token bo'yicha), shuning uchun maketdagi raqamli klaviatura va «Harflar» kiritilmagan — ega qarori kutiladi. Resolver (scanResource.ts): POST-/PST- → GET post/scan/:token; MCR- — so'rovsiz «Bu market QR kodi» (backend bir martada yeydi); qolgani GET orders/qr-code/:token, 404 bo'lsa GET scan/:token zaxirasi (BeePost qop yorlig'i); 24 belgili hex token kichik harfga keltiriladi, token encodeURIComponent bilan. Oflayn: chip bor, navbat yo'q. Sozlamalar (4-bosqich): kamera ochilishda Sozlamalar → Skaner → «Kamera» ni o'qiydi — asosiy kamera (kamera ichida «Kamerani almashtirish», bir nechta kamera bo'lsa — maket superadmin-scan-camera), ramka o'lchami va skan hududi, chiroq taklifi; «Uzluksiz skanerlash» faqat oqim kamerasiga ta'sir qiladi (universal /scan sahifasi o'zgarmaydi).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/scan` | superadmin | `superadmin-scan-camera` — Skaner — kamera (umumiy) | [design/fragments/superadmin--scan-camera.html](fragments/superadmin--scan-camera.html) | sahifa | eski |
-| `/scan` | admin | `admin-scan-camera` — Skaner — kamera (umumiy) | [design/fragments/superadmin--scan-camera.html](fragments/superadmin--scan-camera.html) | sahifa | eski |
-| `/scan` | manager | `manager-scan-camera` — Skaner — kamera (umumiy) | [design/fragments/superadmin--scan-camera.html](fragments/superadmin--scan-camera.html) | sahifa | eski |
-| `/scan` | registrator | `registrator-scan-camera` — Skaner — kamera (umumiy) | [design/fragments/superadmin--scan-camera.html](fragments/superadmin--scan-camera.html) | sahifa | eski |
-| `/scan` | market | — Maket yo'q — market skanerlamaydi (roles.json: persona.scan = false). | — | — | eski |
-| `/scan` | courier | `courier-scan-camera` — Skaner — kamera | [design/fragments/courier--scan-camera.html](fragments/courier--scan-camera.html) | sahifa | eski |
-| `/scan` | courier | `courier-scan-starting` — Skaner — kamera ishga tushmoqda | [design/fragments/courier--scan-starting.html](fragments/courier--scan-starting.html) | sahifa | eski |
-| `/scan` | courier | `courier-scan-permission-denied` — Skaner — kameraga ruxsat yo'q | [design/fragments/courier--scan-permission-denied.html](fragments/courier--scan-permission-denied.html) | sahifa | eski |
-| `/scan` | courier | `courier-scan-active` — Skaner — skanerlanmoqda | [design/fragments/courier--scan-active.html](fragments/courier--scan-active.html) | sahifa | eski |
-| `/scan` | courier | `courier-scan-success-flash` — Skaner — muvaffaqiyatli o'qildi | [design/fragments/courier--scan-success-flash.html](fragments/courier--scan-success-flash.html) | sahifa | eski |
-| `/scan` | courier | `courier-scan-invalid` — Skaner — noto'g'ri QR | [design/fragments/courier--scan-invalid.html](fragments/courier--scan-invalid.html) | sahifa | eski |
-| `/scan` | courier | `courier-scan-too-fast` — Skaner — juda tez | [design/fragments/courier--scan-too-fast.html](fragments/courier--scan-too-fast.html) | sahifa | eski |
+| `/scan` | superadmin | `superadmin-scan-camera` — Skaner — kamera (umumiy) | [design/fragments/superadmin--scan-camera.html](fragments/superadmin--scan-camera.html) | sahifa | v2 |
+| `/scan` | admin | `admin-scan-camera` — Skaner — kamera (umumiy) | [design/fragments/superadmin--scan-camera.html](fragments/superadmin--scan-camera.html) | sahifa | v2 |
+| `/scan` | manager | `manager-scan-camera` — Skaner — kamera (umumiy) | [design/fragments/superadmin--scan-camera.html](fragments/superadmin--scan-camera.html) | sahifa | v2 |
+| `/scan` | registrator | `registrator-scan-camera` — Skaner — kamera (umumiy) | [design/fragments/superadmin--scan-camera.html](fragments/superadmin--scan-camera.html) | sahifa | v2 |
+| `/scan` | market | — Maket yo'q — market skanerlamaydi (roles.json: persona.scan = false). URL bilan ochilsa — «Skaner market roli uchun emas» bo'sh holati (kamera ochilmaydi). | — | — | v2 |
+| `/scan` | market_operator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
+| `/scan` | courier | `courier-scan-camera` — Skaner — kamera | [design/fragments/courier--scan-camera.html](fragments/courier--scan-camera.html) | sahifa | v2 |
+| `/scan` | courier | `courier-scan-starting` — Skaner — kamera ishga tushmoqda | [design/fragments/courier--scan-starting.html](fragments/courier--scan-starting.html) | sahifa | v2 |
+| `/scan` | courier | `courier-scan-permission-denied` — Skaner — kameraga ruxsat yo'q | [design/fragments/courier--scan-permission-denied.html](fragments/courier--scan-permission-denied.html) | sahifa | v2 |
+| `/scan` | courier | `courier-scan-active` — Skaner — skanerlanmoqda | [design/fragments/courier--scan-active.html](fragments/courier--scan-active.html) | sahifa | qisman |
+| `/scan` | courier | `courier-scan-success-flash` — Skaner — muvaffaqiyatli o'qildi | [design/fragments/courier--scan-success-flash.html](fragments/courier--scan-success-flash.html) | sahifa | v2 |
+| `/scan` | courier | `courier-scan-invalid` — Skaner — noto'g'ri QR | [design/fragments/courier--scan-invalid.html](fragments/courier--scan-invalid.html) | sahifa | v2 |
+| `/scan` | courier | `courier-scan-too-fast` — Skaner — juda tez | [design/fragments/courier--scan-too-fast.html](fragments/courier--scan-too-fast.html) | sahifa | v2 |
 | `/scan` | courier | `courier-scan-offline` — Skaner — internet yo'q (navbat) | [design/fragments/courier--scan-offline.html](fragments/courier--scan-offline.html) | sahifa | yangi (kodda yo'q) |
-| `/scan` | courier | `courier-scan-manual-entry` — Skaner — kodni qo'lda kiritish | [design/fragments/courier--scan-manual-entry.html](fragments/courier--scan-manual-entry.html) | sahifa | yangi (kodda yo'q) |
+| `/scan` | courier | `courier-scan-manual-entry` — Skaner — kodni qo'lda kiritish | [design/fragments/courier--scan-manual-entry.html](fragments/courier--scan-manual-entry.html) | sahifa | qisman |
+| `/scan` | courier | `courier-scan-not-found` — Skaner — topilmadi | [design/fragments/courier--scan-not-found.html](fragments/courier--scan-not-found.html) | sahifa | v2 |
+| `/scan` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
+| `/scan` | investor | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
 | `/scan` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
 
 #### `/scan/:token` — Skanerlangan obyekt — buyurtma / paket / pochta
 
-- **Fayllar:** `src/pages/scan/detail.tsx` · `src/pages/scan/ui/ScanOrderResult.tsx` · `src/pages/scan/ui/ScanResultHeader.tsx` · `src/pages/scan/ui/ScanActionCard.tsx` · `src/pages/scan/ui/ScanStickyBar.tsx` · `src/pages/scan/ui/ScanAlert.tsx` · `src/pages/scan/ui/ScanStates.tsx` · `src/pages/scan/ui/ScanOrdersCard.tsx` · `src/pages/scan/ui/ScanBatchSummary.tsx` · `src/pages/scan/ui/ScanTrackingCard.tsx` · `src/pages/scan/ui/ManagerOrderDialogs.tsx` · `src/pages/scan/ui/ScanPackageDetail.tsx` · `src/pages/scan/ui/ScanPostDetail.tsx` · `src/pages/scan/model/scanOrderView.ts` · `src/pages/scan/model/scanBatchView.ts` · `src/pages/scan/lib/scanResource.ts`
+- **Fayllar:** `src/pages/scan/detail.tsx` · `src/pages/scan/ui/ScanOrderResult.tsx` · `src/pages/scan/ui/ScanResultHeader.tsx` · `src/pages/scan/ui/ScanActionCard.tsx` · `src/pages/scan/ui/ScanStickyBar.tsx` · `src/pages/scan/ui/ScanAlert.tsx` · `src/pages/scan/ui/ScanStates.tsx` · `src/pages/scan/ui/ScanOrdersCard.tsx` · `src/pages/scan/ui/ScanBatchSummary.tsx` · `src/pages/scan/ui/ScanTrackingCard.tsx` · `src/pages/scan/ui/ManagerOrderDialogs.tsx` · `src/pages/scan/ui/ScanPackageDetail.tsx` · `src/pages/scan/ui/ScanPostDetail.tsx` · `src/pages/scan/model/scanOrderView.ts` · `src/pages/scan/model/scanBatchView.ts` · `src/pages/scan/lib/scanResource.ts` · `src/pages/scan/ui/ScanExternalBagDetail.tsx` · `src/pages/scan/ui/ScanMarketQrNotice.tsx` · `src/pages/scan/model/scanExternalBagView.ts` · `src/pages/scan/model/scanHistory.ts`
 - **Qobiq:** ScanLayout · **Guard:** yo'q (faqat kirish)
-- **Rollar:** superadmin, admin, manager, registrator, market, courier
+- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Dizayn v2 (G3): barcha rollar uchun bitta tartib (menejer/kuryer maketlari tuzilmasi), rol farqi faqat mazmunda; admin — superadmin maketi (superadmin-scan-result). «O'zimga olish» faqat kuryerda; boshqa kuryerga biriktirilgan buyurtma xatosi — backend matni amallar kartasida. Paket → ScanPackageDetail, pochta → ScanPostDetail; xodimda paket nomlari GET transfer-batches/:id bilan to'ldiriladi (ixtiyoriy, xatosi global xabarsiz — silentError). Ega savollari sukuti: Q2 menejerda «Sotish / Bekor qilish» buyurtma tafsilotidagi qoidalar bilan (can_sell_cancel, REGIONAL/HYBRID, kuryer qo'lida emas); Q3 «Kuryerga biriktirish» → /dispatch (buyurtma qo'shilib tanlanadi; buyurtma holati bo'yicha cheklanmagan — spec sukuti); Q4 superadmin/admin/registrator xulosasida «To'langan» ham, «Yaratilgan» ham; Q5 kuryerga paketni «Qabul qilish» yo'q (backend 403) — faqat o'qish.
+- **Izoh:** Dizayn v2 (G3): barcha rollar uchun bitta tartib (menejer/kuryer maketlari tuzilmasi), rol farqi faqat mazmunda; admin — superadmin maketi (superadmin-scan-result). «O'zimga olish» faqat kuryerda; boshqa kuryerga biriktirilgan buyurtma xatosi — backend matni amallar kartasida. Paket → ScanPackageDetail, pochta → ScanPostDetail; xodimda paket nomlari GET transfer-batches/:id bilan to'ldiriladi (ixtiyoriy, xatosi global xabarsiz — silentError). Ega savollari sukuti: Q2 menejerda «Sotish / Bekor qilish» buyurtma tafsilotidagi qoidalar bilan (can_sell_cancel, REGIONAL/HYBRID, kuryer qo'lida emas); Q3 «Kuryerga biriktirish» → /dispatch (buyurtma qo'shilib tanlanadi; buyurtma holati bo'yicha cheklanmagan — spec sukuti); Q4 superadmin/admin/registrator xulosasida «To'langan» ham, «Yaratilgan» ham; Q5 kuryerga paketni «Qabul qilish» yo'q (backend 403) — faqat o'qish. Skaner 1-bosqich: pochta tokeni POST-… (backend yaratadigan shakl) ham pochta sifatida ochiladi; tashqi qop yorlig'i (GET scan/:token zaxirasi, is_external_batch) — ScanExternalBagDetail (maket yo'q — eng yaqini courier-scan-package-detail: posilkalar soni, qabul qilinmaganlar, a'zolar ro'yxati; «Kiruvchi posilkalarda ochish» → /new-orders/incoming faqat canReceiveExternalOrders); market QR'i MCR- — ScanMarketQrNotice (so'rovsiz; «Bekor qilinganlarni ochish» faqat canHandoverCancelledToMarket). Kuryer «O'zimga olish» va paket «Qabul qilish» dan keyin orders / mails / batches / scan-detail keshi eskirgan deb belgilanadi (6qypMFeT). Ochilgan obyekt «Oxirgi skanerlar» tarixiga yoziladi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -820,16 +904,19 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/scan/:token` | manager | `manager-scan-result` — Skanerlangan buyurtma | [design/fragments/manager--scan-result.html](fragments/manager--scan-result.html) | sahifa | v2 |
 | `/scan/:token` | registrator | `registrator-scan-result` — Skanerlangan buyurtma | [design/fragments/registrator--scan-result.html](fragments/registrator--scan-result.html) | sahifa | v2 |
 | `/scan/:token` | market | — Maket yo'q — market skanerlamaydi. URL orqali ochilsa — xodimning faqat o'qish tartibi (amallarsiz, holat tarixisiz, tafsilot havolasisiz). | — | — | v2 |
+| `/scan/:token` | market_operator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
 | `/scan/:token` | courier | `courier-scan-order-detail` — Skanerlangan buyurtma — O'zimga olish | [design/fragments/courier--scan-order-detail.html](fragments/courier--scan-order-detail.html) | sahifa | v2 |
 | `/scan/:token` | courier | `courier-scan-package-detail` — Skanerlangan paket<br>↳ `src/pages/scan/ui/ScanPackageDetail.tsx` | [design/fragments/courier--scan-package-detail.html](fragments/courier--scan-package-detail.html) | sahifa | v2 |
 | `/scan/:token` | courier | `courier-scan-post-detail` — Skanerlangan pochta<br>↳ `src/pages/scan/ui/ScanPostDetail.tsx` | [design/fragments/courier--scan-post-detail.html](fragments/courier--scan-post-detail.html) | sahifa | v2 |
-| `/scan/:token` | courier | `courier-scan-not-found` — Skaner — topilmadi | [design/fragments/courier--scan-not-found.html](fragments/courier--scan-not-found.html) | sahifa | qisman |
+| `/scan/:token` | courier | `courier-scan-not-found` — Skaner — topilmadi | [design/fragments/courier--scan-not-found.html](fragments/courier--scan-not-found.html) | sahifa | v2 |
 | `/scan/:token` | courier | `courier-scan-other-courier` — Skaner — boshqa kuryerga biriktirilgan | [design/fragments/courier--scan-other-courier.html](fragments/courier--scan-other-courier.html) | sahifa | qisman |
+| `/scan/:token` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
+| `/scan/:token` | investor | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
 | `/scan/:token` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
 
 #### `/tg/scan` — Telegram skan Mini App — kuryer uzluksiz skanerlab buyurtmalarni o'ziga oladi (shell'siz, to'liq ekran)
 
-- **Fayllar:** `src/pages/tg-scan/index.tsx` · `src/features/tg-scan/ui/TgScanner.tsx` · `src/features/tg-scan/ui/CameraSurface.tsx` · `src/features/tg-scan/ui/ScanListSheet.tsx` · `src/features/tg-scan/model/useTelegramAuth.ts` · `src/features/tg-scan/model/useScanAssign.ts` · `src/features/tg-scan/model/telegramWebApp.ts` · `src/features/tg-scan/api/tgScanApi.ts`
+- **Fayllar:** `src/pages/tg-scan/index.tsx` · `src/features/tg-scan/ui/TgScanner.tsx` · `src/shared/ui/camera/CameraSurface.tsx` · `src/features/tg-scan/ui/ScanListSheet.tsx` · `src/features/tg-scan/model/useTelegramAuth.ts` · `src/features/tg-scan/model/useScanAssign.ts` · `src/features/tg-scan/model/telegramWebApp.ts` · `src/features/tg-scan/api/tgScanApi.ts`
 - **Qobiq:** qobiqsiz (kirishsiz) · **Guard:** yo'q (kirishsiz)
 - **Rollar:** hamma (kirishsiz)
 - **Holat:** v2
@@ -837,7 +924,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/tg/scan` | courier | `courier-scan-active` — Skaner — skanerlanmoqda | [design/fragments/courier--scan-active.html](fragments/courier--scan-active.html) | sahifa | v2 |
+| `/tg/scan` | courier | `courier-scan-active` — Skaner — skanerlanmoqda | [design/fragments/courier--scan-active.html](fragments/courier--scan-active.html) | sahifa | qisman |
 | `/tg/scan` | courier | `courier-scan-starting` — Skaner — kamera ishga tushmoqda | [design/fragments/courier--scan-starting.html](fragments/courier--scan-starting.html) | sahifa | v2 |
 | `/tg/scan` | courier | `courier-scan-permission-denied` — Skaner — kameraga ruxsat yo'q | [design/fragments/courier--scan-permission-denied.html](fragments/courier--scan-permission-denied.html) | sahifa | v2 |
 | `/tg/scan` | courier | `courier-scan-success-flash` — Skaner — muvaffaqiyatli o'qildi | [design/fragments/courier--scan-success-flash.html](fragments/courier--scan-success-flash.html) | sahifa | v2 |
@@ -846,6 +933,31 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/tg/scan` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
 
 ### Moliya — to'lovlar, kassa, balans
+
+#### `(taklif) /investments` — Investitsiyalar — investorning o'z investitsiyalari (yangi route, kodda yo'q)
+
+- **Fayllar:** `src/app/lib/routes.tsx`
+- **Rollar:** investor (taklif — yangi rol, yangi route)
+- **Holat:** eski
+- **Izoh:** Ega qarori 2026-10-19: investor bosh sahifasi quriladi; ro'yxat sahifalari menyudan (Investitsiyalar · Foyda tarixi). Yo'l nomi taklif — kod yozilganda haqiqiy yo'l bilan almashtiriladi. GET investors/me/investments (@Roles INVESTOR): from_date, to_date, page, limit; tartib invested_at DESC (saralash parametri yo'q — sarlavhada saralash tugmasi yo'q). Ustun «Jamidagi hissasi» = amount / summary.total_amount — frontendda hisoblanadi (backend maydoni emas); «Ulush» so'zi faqat KPI dagi foyda stavkasi (current_percentage) uchun. Holatlar: yuklanish — investments-list-loading (jadval skeleti, telefonda kartalar), sana oralig'i bo'yicha bo'sh — investments-list-filtered-empty («Filtrni tozalash»), umuman bo'sh / xato / 403 / 404 — bosh sahifa holatlari matni bilan (investor-dashboard-empty, -error, -forbidden, -not-linked). Sahifalash — Pagination (page/limit).
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `(taklif) /investments` | investor | `investor-investments-list` — Investitsiyalar | [design/fragments/investor--investments-list.html](fragments/investor--investments-list.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /investments` | investor | `investor-investments-list-loading` — Investitsiyalar — yuklanmoqda | [design/fragments/investor--investments-list-loading.html](fragments/investor--investments-list-loading.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /investments` | investor | `investor-investments-list-filtered-empty` — Investitsiyalar — filtr bo'yicha bo'sh | [design/fragments/investor--investments-list-filtered-empty.html](fragments/investor--investments-list-filtered-empty.html) | sahifa | yangi (kodda yo'q) |
+
+#### `(taklif) /profits` — Foyda tarixi — investorning foyda yozuvlari (yangi route, kodda yo'q)
+
+- **Fayllar:** `src/app/lib/routes.tsx`
+- **Rollar:** investor (taklif — yangi rol, yangi route)
+- **Holat:** eski
+- **Izoh:** Ega qarori 2026-10-19 (investor roli). Yo'l nomi taklif. GET investors/me/profits (@Roles INVESTOR): is_paid (Barchasi · To'langan · Kutilmoqda — telefonda to'liq kenglik, 44px), page, limit; tartib period_start DESC (saralash tugmasi yo'q); sana filtri backendda yo'q — chizilmagan. Qator: davr (period_start – period_end), foiz, summa, holat (is_paid), to'langan sana (paid_at). Holatlar: filtr bo'yicha bo'sh — profits-list-filtered-empty; yuklanish — investments-list-loading naqshi; umuman bo'sh / xato / 403 / 404 — bosh sahifa holatlari. Sahifalash — Pagination.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `(taklif) /profits` | investor | `investor-profits-list` — Foyda tarixi | [design/fragments/investor--profits-list.html](fragments/investor--profits-list.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /profits` | investor | `investor-profits-list-filtered-empty` — Foyda tarixi — filtr bo'yicha bo'sh | [design/fragments/investor--profits-list-filtered-empty.html](fragments/investor--profits-list-filtered-empty.html) | sahifa | yangi (kodda yo'q) |
 
 #### `/payments` — To'lovlar — umumiy (berilishi / qabul qilinishi kerak, operatsiyalar tarixi)
 
@@ -867,8 +979,10 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/payments` | admin | `admin-payments-to-receive-dialog` — Qabul qilinishi kerak — tanlash<br>↳ `src/pages/payments/components/SettlementPickerDialog.tsx` | [design/fragments/admin--payments-to-receive-dialog.html](fragments/admin--payments-to-receive-dialog.html) | oyna | v2 |
 | `/payments` | admin | `admin-payments-history-detail-dialog` — To'lov tarixi tafsiloti<br>↳ `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | [design/fragments/admin--payments-history-detail-dialog.html](fragments/admin--payments-history-detail-dialog.html) | oyna | v2 |
 | `/payments` | manager | `manager-payments-overview` — To'lovlar — umumiy | [design/fragments/manager--payments-overview.html](fragments/manager--payments-overview.html) | sahifa | v2 |
+| `/payments` | manager | `manager-payments-overview-shift-closed` — To'lovlar — smena yopiq | [design/fragments/manager--payments-overview-shift-closed.html](fragments/manager--payments-overview-shift-closed.html) | sahifa | yangi (kodda yo'q) |
 | `/payments` | manager | `manager-payments-courier-select-dialog` — Qabul qilish — kuryer tanlash<br>↳ `src/pages/payments/components/SettlementPickerDialog.tsx` | [design/fragments/manager--payments-courier-select-dialog.html](fragments/manager--payments-courier-select-dialog.html) | oyna | v2 |
 | `/payments` | manager | `manager-payments-history-detail-dialog` — Tranzaksiya tafsiloti<br>↳ `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | [design/fragments/manager--payments-history-detail-dialog.html](fragments/manager--payments-history-detail-dialog.html) | oyna | v2 |
+| `/payments` | market_operator | — Yo'q — market_operator'da kassa va to'lovlar bo'limi yo'q (menyuda emas, finance ruxsati yo'q); o'z hisobi — «Daromadim» ((taklif) /my-earnings). | — | — | v2 |
 
 #### `/payments/main-cashbox` — Asosiy kassa (to'ldirish / xarajat / smenani yopish)
 
@@ -877,19 +991,28 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Ega qarori D1 (2026-10-17): superadmin/admin — faqat asosiy kassa operatsiyalari (GET finance/history?cashbox_type=main): ro'yxat, «Bugun / Bu hafta / Bu oy», «Pul qayerdan keldi, qayerga ketdi» va Excel hisobot; menejerda filial kassasi (server majburlaydi, o'zgarmagan). D3: «Kassani to'ldirish» / «Kassadan xarajat» — tasdiq oynasi (useConfirm) + Idempotency-Key (paymentIdempotency, qayta urinishda o'sha kalit). Birxillashtirish (spec §10 Q2): «Kassa balansi» chizig'i va manba bloklari menejerda ham; telefonda davrlar — bitta karta + SegmentedControl. Smena faqat superadmin/admin (Q4 — menejerda yo'q). «Maosh to'lash» yashirin (SalaryPaymentPopup + PopupSelect — v1, yetib bo'lmaydi). 18 talik xarajat kategoriyasi va nomli kartalar (card_id) chizilmaydi.
+- **Izoh:** Ega qarori D1 (2026-10-17): superadmin/admin — faqat asosiy kassa operatsiyalari (GET finance/history?cashbox_type=main): ro'yxat, «Bugun / Bu hafta / Bu oy», «Pul qayerdan keldi, qayerga ketdi» va Excel hisobot; menejerda filial kassasi (server majburlaydi, o'zgarmagan). D3: «Kassani to'ldirish» / «Kassadan xarajat» — tasdiq oynasi (useConfirm) + Idempotency-Key (paymentIdempotency, qayta urinishda o'sha kalit). Birxillashtirish (spec §10 Q2): «Kassa balansi» chizig'i va manba bloklari menejerda ham; telefonda davrlar — bitta karta + SegmentedControl. Smena (kfdfYDik; ega javoblari CB-S1…S5, 2026-10-19): smena HAMMA kassada majburiy (asosiy va filial; production FINANCE_REQUIRE_OPEN_SHIFT=all) — `required: false` holati chizilmaydi (…-shift-optional olib tashlandi). Holat — GET finance/shift/current (`shift` — faqat OCHIQ smena yoki null). Smena yo'q → «Smena boshlanmagan» (warning) banneri, tezkor amallar o'chiq, «Smenani ochish» — asosiy tugma (…-shift-closed). Menejer o'z filiali kassasida smenani ochadi va sanalgan pul bilan yopadi (CB-S1, backend R6 — o'z filiali doirasi JWT'dan). Yopish oynasi: «Sanalgan naqd» majburiy, «Sanalgan karta» ixtiyoriy (CB-S5): bo'sh → discrepancy_card null, natijada «Sanalmadi» (neutral). «Tizim bo'yicha kutilgan» = kassaning jonli balance_cash / balance_card; yakuniy qiymatlar POST finance/shift/close javobidan. Farq bo'lsa izoh majburiy (frontend qoidasi). Oxirgi yopilgan smena (CB-S2): «Smena yopildi · … · Natija» kartasi, ochish oynasidagi «Oxirgi smena … bilan yopilgan» va natija oynasi sahifa qayta yuklangandan keyin ham — barcha rollarda (menejer ham) GET finance/shift/current `last_closed` dan (Taklif · backend kerak, karta); ro'yxat uchun GET finance/shift cashbox_user_id filtri + closed_at saralash (CB-S3, backend karta). Xodim ismi: opened_by / closed_by — faqat ID; joriy foydalanuvchi bo'lsa — o'z profili, aks holda GET users/:id; topilmasa «—». Xatolar: ochish/yopish xatosi — Dialog ichida qoladi + notify.error; loadingText «Ochilmoqda…» / «Yopilmoqda…». «Maosh to'lash» yashirin (SalaryPaymentPopup + PopupSelect — v1, yetib bo'lmaydi). 18 talik xarajat kategoriyasi va nomli kartalar (card_id) chizilmaydi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox` — Asosiy kassa | [design/fragments/superadmin--payments-main-cashbox.html](fragments/superadmin--payments-main-cashbox.html) | sahifa | v2 |
 | `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-fill-dialog` — Kassani to'ldirish / Kassadan xarajat (popup)<br>↳ `src/pages/payments/components/CashboxFormPopup.tsx` | [design/fragments/superadmin--payments-main-cashbox-fill-dialog.html](fragments/superadmin--payments-main-cashbox-fill-dialog.html) | oyna | v2 |
 | `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-shift-dialog` — Smenani yopish (popup)<br>↳ `src/pages/payments/components/CloseShiftPopup.tsx` | [design/fragments/superadmin--payments-main-cashbox-shift-dialog.html](fragments/superadmin--payments-main-cashbox-shift-dialog.html) | oyna | v2 |
+| `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-shift-closed` — Asosiy kassa — smena yopiq | [design/fragments/superadmin--payments-main-cashbox-shift-closed.html](fragments/superadmin--payments-main-cashbox-shift-closed.html) | sahifa | yangi (kodda yo'q) |
+| `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-shift-open-dialog` — Smenani ochish (popup) | [design/fragments/superadmin--payments-main-cashbox-shift-open-dialog.html](fragments/superadmin--payments-main-cashbox-shift-open-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/payments/main-cashbox` | superadmin | `superadmin-payments-main-cashbox-shift-result-dialog` — Smena yopildi — natija (popup) | [design/fragments/superadmin--payments-main-cashbox-shift-result-dialog.html](fragments/superadmin--payments-main-cashbox-shift-result-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/payments/main-cashbox` | admin | `admin-payments-main-cashbox` — Asosiy kassa | [design/fragments/admin--payments-main-cashbox.html](fragments/admin--payments-main-cashbox.html) | sahifa | v2 |
 | `/payments/main-cashbox` | admin | `admin-payments-cashbox-form-dialog` — Kassadan xarajat / Kassani to'ldirish<br>↳ `src/pages/payments/components/CashboxFormPopup.tsx` | [design/fragments/admin--payments-cashbox-form-dialog.html](fragments/admin--payments-cashbox-form-dialog.html) | oyna | v2 |
 | `/payments/main-cashbox` | admin | `admin-payments-shift-dialog` — Smenani yopish<br>↳ `src/pages/payments/components/CloseShiftPopup.tsx` | [design/fragments/admin--payments-shift-dialog.html](fragments/admin--payments-shift-dialog.html) | oyna | v2 |
+| `/payments/main-cashbox` | admin | `admin-payments-main-cashbox-shift-closed` — Asosiy kassa — smena yopiq | [design/fragments/admin--payments-main-cashbox-shift-closed.html](fragments/admin--payments-main-cashbox-shift-closed.html) | sahifa | yangi (kodda yo'q) |
+| `/payments/main-cashbox` | admin | `admin-payments-main-cashbox-shift-open-dialog` — Smenani ochish | [design/fragments/admin--payments-main-cashbox-shift-open-dialog.html](fragments/admin--payments-main-cashbox-shift-open-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/payments/main-cashbox` | admin | `admin-payments-main-cashbox-shift-result-dialog` — Smena yopildi — natija | [design/fragments/admin--payments-main-cashbox-shift-result-dialog.html](fragments/admin--payments-main-cashbox-shift-result-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/payments/main-cashbox` | manager | `manager-payments-main-cashbox` — Asosiy kassa (filial) | [design/fragments/manager--payments-main-cashbox.html](fragments/manager--payments-main-cashbox.html) | sahifa | v2 |
 | `/payments/main-cashbox` | manager | `manager-payments-cashbox-form-dialog` — Kassadan xarajat / to'ldirish oynasi<br>↳ `src/pages/payments/components/CashboxFormPopup.tsx` | [design/fragments/manager--payments-cashbox-form-dialog.html](fragments/manager--payments-cashbox-form-dialog.html) | oyna | v2 |
 | `/payments/main-cashbox` | manager | `manager-payments-close-shift-dialog` — Smenani yopish oynasi<br>↳ `src/pages/payments/components/CloseShiftPopup.tsx` | [design/fragments/manager--payments-close-shift-dialog.html](fragments/manager--payments-close-shift-dialog.html) | oyna | v2 |
+| `/payments/main-cashbox` | manager | `manager-payments-main-cashbox-shift-closed` — Asosiy kassa (filial) — smena yopiq | [design/fragments/manager--payments-main-cashbox-shift-closed.html](fragments/manager--payments-main-cashbox-shift-closed.html) | sahifa | yangi (kodda yo'q) |
+| `/payments/main-cashbox` | manager | `manager-payments-main-cashbox-shift-open-dialog` — Smenani ochish oynasi | [design/fragments/manager--payments-main-cashbox-shift-open-dialog.html](fragments/manager--payments-main-cashbox-shift-open-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/payments/main-cashbox` | manager | `manager-payments-main-cashbox-shift-result-dialog` — Smena yopildi — natija oynasi | [design/fragments/manager--payments-main-cashbox-shift-result-dialog.html](fragments/manager--payments-main-cashbox-shift-result-dialog.html) | oyna | yangi (kodda yo'q) |
 
 #### `/payments/cash-detail/:id` — Kassa tafsiloti — kuryer / market / filial
 
@@ -898,18 +1021,24 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Tur URL'da: ?type=courier|market|branch (noma'lum tur — forma yo'q). Pul o'tkazish — «To'lovni tasdiqlang» oynasi (useConfirm, from → to) + Idempotency-Key. Birxillashtirish (spec §10 Q2): «Balans harakati» va «Barcha tarix | To'lov o'tkazmalari» menejerda ham. Menejerda mijoz tomonidagi summa chegarasi yo'q (Q8 — backend chegaralaydi); tarix tab sonlari, kuryer «kechaga nisbatan» va sparkline chizilmaydi (API bermaydi). Excel faqat superadmin/admin.
+- **Izoh:** Tur URL'da: ?type=courier|market|branch (noma'lum tur — forma yo'q). Pul o'tkazish — «To'lovni tasdiqlang» oynasi (useConfirm, from → to) + Idempotency-Key. Birxillashtirish (spec §10 Q2): «Balans harakati» va «Barcha tarix | To'lov o'tkazmalari» menejerda ham. Menejerda mijoz tomonidagi summa chegarasi yo'q (Q8 — backend chegaralaydi); tarix tab sonlari, kuryer «kechaga nisbatan» va sparkline chizilmaydi (API bermaydi). Excel faqat superadmin/admin. Smena (ega javobi CB-S4, 2026-10-19 — hamma kassada majburiy, FINANCE_REQUIRE_OPEN_SHIFT=all): menejer — filial kassasida smena ochilmagan bo'lsa forma o'rnida «Smena boshlanmagan» + «Smenani ochish» (asosiy, ayni ochish oynasi), tarix ko'rinadi (manager …-branch-shift-closed, …-courier-shift-closed; holat — GET finance/shift/current, menejer doirasi o'z filiali). Superadmin/admin «Filialdan qabul qilish» — «Filial smenasi ochilmagan» (tugmasiz: filial smenasini faqat menejer ochadi) — Taklif · backend kerak: shift/current ni ixtiyoriy filial (cashbox_user_id) uchun privileged rolga ochish; backend bo'lmaguncha — POST javobidagi 400 «Smena ochilmagan! … filial kassasida …» xabari Dialog/notify.error orqali. Asosiy kassada smena yo'q bo'lsa (privileged) — ayni blok «Smena boshlanmagan» + «Smenani ochish» asosiy kassa oynasi. Kvitansiya javobi (payment_ack, kodda bor — PaymentAckBadge, paymentAck.ts): kuryer → filial o'tkazmasi (courier_payment) qatorida va tafsilot oynasida «Tasdiqlangan» (success) / «Noto'g'ri» (danger) belgisi, javob bo'lmasa qatorda belgi yo'q; maket — manager-payments-cash-detail-courier-ack va manager-payments-history-detail-dialog-ack («Noto'g'ri» holati chizilgan). Oynadagi «Kvitansiya javobi» qatori qolgan holatlarda ham shu joyda: «Tasdiqlangan» — success belgi, javob yo'q — neytral «Javob yo'q» (v2HistoryDetail.paymentAckNone). superadmin/admin kuryer kassasida ham ayni qator va oyna (ayni komponent).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/payments/cash-detail/:id` | superadmin | `superadmin-payments-cash-detail-courier` — Kuryer kassasi (qabul qilish) | [design/fragments/superadmin--payments-cash-detail-courier.html](fragments/superadmin--payments-cash-detail-courier.html) | sahifa | v2 |
 | `/payments/cash-detail/:id` | superadmin | `superadmin-payments-cash-detail-market` — Market kassasi (to'lov berish) | [design/fragments/superadmin--payments-cash-detail-market.html](fragments/superadmin--payments-cash-detail-market.html) | sahifa | v2 |
 | `/payments/cash-detail/:id` | superadmin | `superadmin-payments-cash-detail-branch` — Filial kassasi (filialdan qabul) | [design/fragments/superadmin--payments-cash-detail-branch.html](fragments/superadmin--payments-cash-detail-branch.html) | sahifa | v2 |
+| `/payments/cash-detail/:id` | superadmin | `superadmin-payments-cash-detail-branch-shift-closed` — Filial kassasi — filial smenasi ochilmagan · taklif (backend kerak) | [design/fragments/superadmin--payments-cash-detail-branch-shift-closed.html](fragments/superadmin--payments-cash-detail-branch-shift-closed.html) | sahifa | yangi (kodda yo'q) |
 | `/payments/cash-detail/:id` | admin | `admin-payments-cash-detail-courier` — Kuryer kassasi | [design/fragments/admin--payments-cash-detail-courier.html](fragments/admin--payments-cash-detail-courier.html) | sahifa | v2 |
 | `/payments/cash-detail/:id` | admin | `admin-payments-cash-detail-market` — Market kassasi | [design/fragments/admin--payments-cash-detail-market.html](fragments/admin--payments-cash-detail-market.html) | sahifa | v2 |
 | `/payments/cash-detail/:id` | admin | `admin-payments-cash-detail-branch` — Filial kassasi (HQ qabul) | [design/fragments/admin--payments-cash-detail-branch.html](fragments/admin--payments-cash-detail-branch.html) | sahifa | v2 |
+| `/payments/cash-detail/:id` | admin | `admin-payments-cash-detail-branch-shift-closed` — Filial kassasi — filial smenasi ochilmagan · taklif (backend kerak) | [design/fragments/admin--payments-cash-detail-branch-shift-closed.html](fragments/admin--payments-cash-detail-branch-shift-closed.html) | sahifa | yangi (kodda yo'q) |
 | `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-courier` — Kassa tafsiloti — kuryerdan qabul | [design/fragments/manager--payments-cash-detail-courier.html](fragments/manager--payments-cash-detail-courier.html) | sahifa | v2 |
 | `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-branch` — Kassa tafsiloti — HQ'ga o'tkazish | [design/fragments/manager--payments-cash-detail-branch.html](fragments/manager--payments-cash-detail-branch.html) | sahifa | v2 |
+| `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-courier-ack` — Kassa tafsiloti — kuryerdan qabul · kvitansiya javobi | [design/fragments/manager--payments-cash-detail-courier-ack.html](fragments/manager--payments-cash-detail-courier-ack.html) | sahifa | v2 |
+| `/payments/cash-detail/:id` | manager | `manager-payments-history-detail-dialog-ack` — Tranzaksiya tafsiloti — kvitansiya javobi «Kuryer: noto'g'ri» | [design/fragments/manager--payments-history-detail-dialog-ack.html](fragments/manager--payments-history-detail-dialog-ack.html) | oyna | v2 |
+| `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-branch-shift-closed` — Kassa tafsiloti — HQ'ga o'tkazish · smena yopiq | [design/fragments/manager--payments-cash-detail-branch-shift-closed.html](fragments/manager--payments-cash-detail-branch-shift-closed.html) | sahifa | yangi (kodda yo'q) |
+| `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-courier-shift-closed` — Kassa tafsiloti — kuryerdan qabul · smena yopiq | [design/fragments/manager--payments-cash-detail-courier-shift-closed.html](fragments/manager--payments-cash-detail-courier-shift-closed.html) | sahifa | yangi (kodda yo'q) |
 
 #### `/cash-box` — O'z kassam — market va kuryer (Barcha tarix · Oldi-berdi)
 
@@ -918,16 +1047,30 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** manager, market, courier
 - **Menyuda:** «To'lovlar» (`payments`) — market; «Kassa» (`payments`) — courier
 - **Holat:** v2
-- **Izoh:** Tarix tablari: «all» → cashbox-my-all, «payments» → cashbox-my-transfers (sourceTypes). Ega qarori D2 (2026-10-17): marketning o'z kassasida HQ → market o'tkazmasi (market_payment) — «Chiqim −» (market balansi = Elchining qarzi), ro'yxatda ham, tafsilot oynasida ham (getViewerOperationType); boshqa rollarda yo'nalish o'zgarmagan. Kuryer tafsilotida «Kassa turi» yo'q (hideCashboxType). «Umumiy balans» grafigi, «Davr/Kassa oqimi», delta va sparkline — Taklif, chizilmaydi. Ruxsati yo'q rol → /payments.
+- **Izoh:** Tarix tablari: «all» → cashbox-my-all, «payments» → cashbox-my-transfers (sourceTypes). Ega qarori D2 (2026-10-17): marketning o'z kassasida HQ → market o'tkazmasi (market_payment) — «Chiqim −» (market balansi = Elchining qarzi), ro'yxatda ham, tafsilot oynasida ham (getViewerOperationType); boshqa rollarda yo'nalish o'zgarmagan. Kuryer tafsilotida «Kassa turi» yo'q (hideCashboxType). «Umumiy balans» grafigi, «Davr/Kassa oqimi», delta va sparkline — Taklif, chizilmaydi. Ruxsati yo'q rol → /payments. Kvitansiya javobi (payment_ack, kodda bor): kuryerning «Oldi-berdi» qatorlarida «Tasdiqlangan» / «Noto'g'ri» belgisi — courier-cashbox-my-transfers-ack; javobni kuryerning o'zi botda beradi, izoh hozir faqat tooltip (telefonda ko'rinmaydi — ega savoli). Kuryer tafsilot oynasi (courier-cashbox-history-detail) ayni FinanceHistoryDetailPopup — «Kvitansiya javobi» qatori manager-payments-history-detail-dialog-ack dagidek.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/cash-box` | manager | — Maket yo'q. Ayni komponent menejerga filial kassasini ko'rsatadi, lekin menyudagi «To'lovlar» bandi /payments ga olib boradi (HQ · REGIONAL · HYBRID; PICKUP menejerida bu band yo'q, sahifa faqat URL orqali). Eng yaqin maket — market-cashbox-my (ayni tuzilma) va manager-payments-cash-detail-branch. | — | — | v2 |
 | `/cash-box` | market | `market-cashbox-my` — Market kassasi | [design/fragments/market--cashbox-my.html](fragments/market--cashbox-my.html) | sahifa | v2 |
 | `/cash-box` | market | `market-cashbox-history-detail-dialog` — Tranzaksiya tafsiloti<br>↳ `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | [design/fragments/market--cashbox-history-detail-dialog.html](fragments/market--cashbox-history-detail-dialog.html) | oyna | v2 |
+| `/cash-box` | market_operator | — Yo'q — market_operator'da kassa va to'lovlar bo'limi yo'q (menyuda emas, finance ruxsati yo'q); o'z hisobi — «Daromadim» ((taklif) /my-earnings). | — | — | v2 |
 | `/cash-box` | courier | `courier-cashbox-my-all` — Kassa — Barcha tarix | [design/fragments/courier--cashbox-my-all.html](fragments/courier--cashbox-my-all.html) | sahifa | v2 |
 | `/cash-box` | courier | `courier-cashbox-my-transfers` — Kassa — Oldi-berdi | [design/fragments/courier--cashbox-my-transfers.html](fragments/courier--cashbox-my-transfers.html) | sahifa | v2 |
 | `/cash-box` | courier | `courier-cashbox-history-detail` — Tranzaksiya tafsiloti<br>↳ `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | [design/fragments/courier--cashbox-history-detail.html](fragments/courier--cashbox-history-detail.html) | oyna | v2 |
+| `/cash-box` | courier | `courier-cashbox-my-transfers-ack` — Kassa — Oldi-berdi · kvitansiya javobi | [design/fragments/courier--cashbox-my-transfers-ack.html](fragments/courier--cashbox-my-transfers-ack.html) | sahifa | v2 |
+
+#### `(taklif) /my-earnings` — Daromadim — market operatorining komissiya hisobi (yangi route, kodda yo'q)
+
+- **Fayllar:** `src/app/lib/routes.tsx`
+- **Rollar:** market_operator (taklif — yangi rol, yangi route)
+- **Holat:** eski
+- **Izoh:** Ega qarori 2026-10-19: market_operator «Daromadim» oladi. Route nomi taklif (/my-earnings) — kod yozilganda haqiqiy yo'l bilan almashtiriladi. REAL: «Stavkam» kartasi — GET auth/my-profile (findOwnProfile → sanitize(user): commission_type, commission_value keladi); «Belgilaydi: Market egasi» — profil faqat market_id qaytaradi, market nomi yo'q, shuning uchun nom yozilmadi. TAKLIF · BACKEND KERAK (maketda badge bilan): «Hisob» (Qoldiq · Daromad · To'langan), «To'lovlar», «Daromadlar» — GET finance/operators/:operator_id/{balance,earnings,payments} faqat @Roles(SUPERADMIN, ADMIN, MANAGER), market_operator 403 oladi, /me ko'rinishi yo'q. Kerak: GET finance/operators/me/{balance,earnings,payments} (operator_id = token sub) yoki shu yo'llarga MARKET_OPERATOR'ni faqat o'z operator_id'si bilan qo'shish. Maydonlar mavjud: balance → { earned, paid, balance }; earnings → { rows: [order_id, amount, commission_type, commission_value, order_total_price, createdAt], total, limit, offset }; payments → { rows: [amount, note, createdAt], total }. «82 ta sotilgan buyurtmadan» = earnings.total, «Oxirgisi: …» = payments.rows[0].createdAt (alohida maydon emas). Sahifalash — limit/offset. Atamalar barcha breakpointda bir xil: Qoldiq · Daromad · To'langan (ru: Остаток · Доход · Выплачено; en: Balance · Earned · Paid). Daromad summasi neytral matn, ishora «+» bilan (yashil emas). earnings-no-commission — commission_type null: ogohlantirish «Komissiya belgilanmagan — daromad yozilmaydi», bo'sh holatlar «Hali to'lov yo'q», «Hali daromad yo'q».
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `(taklif) /my-earnings` | market_operator | `market_operator-earnings` — Daromadim | [design/fragments/market_operator--earnings.html](fragments/market_operator--earnings.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /my-earnings` | market_operator | `market_operator-earnings-no-commission` — Daromadim — komissiya belgilanmagan | [design/fragments/market_operator--earnings-no-commission.html](fragments/market_operator--earnings-no-commission.html) | sahifa | yangi (kodda yo'q) |
 
 #### `/financial-balance` — Balans — Umumiy · Tarix · Tahlil
 
@@ -958,10 +1101,10 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 - **Fayllar:** `src/pages/products/list/index.tsx` · `src/pages/products/list/ui/SelectMarketDialog.tsx` · `src/pages/products/list/ui/EditProductDialog.tsx` · `src/pages/products/ui/useDeleteProductConfirm.tsx` · `src/pages/products/ui/ProductImageField.tsx` · `src/pages/products/ui/ProductThumb.tsx` · `src/pages/products/model/productView.ts`
 - **Qobiq:** DashboardLayout · **Guard:** `canManageProducts` (routes.tsx → canManageProducts)
-- **Rollar:** superadmin, admin, manager, registrator, market
+- **Rollar:** superadmin, admin, manager, registrator, market, market_operator (taklif — faqat ko'rish)
 - **Menyuda:** «Mahsulotlar» (`products`) — superadmin, admin, manager, registrator, market
 - **Holat:** v2
-- **Izoh:** Market rolida GET product/my-products (search/page/limit), xodimda GET product + market filtri (URL market_id). Ro'yxat so'rovlari entities/product hook'lari (keepPreviousData, silentError).
+- **Izoh:** Market rolida GET product/my-products (search/page/limit), xodimda GET product + market filtri (URL market_id). Ro'yxat so'rovlari entities/product hook'lari (keepPreviousData, silentError). Maket taklifi (2026-10-19): ro'yxatda Narx, Og'irlik, O'lcham, Hisob vazni ustunlari; planshetda market nomi mahsulot nomi ostida. «Taklif · backend kerak» belgisi va uning izoh qatori — faqat maket annotatsiyasi, kodga ko'chirilmaydi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -982,8 +1125,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/products` | registrator | `registrator-products-edit-dialog` — Mahsulotni tahrirlash<br>↳ `src/pages/products/list/ui/EditProductDialog.tsx` | [design/fragments/admin--products-edit-dialog.html](fragments/admin--products-edit-dialog.html) | oyna | v2 |
 | `/products` | registrator | `registrator-products-delete-dialog` — Mahsulotni o'chirish<br>↳ `src/pages/products/ui/useDeleteProductConfirm.tsx` | [design/fragments/admin--products-delete-dialog.html](fragments/admin--products-delete-dialog.html) | oyna | v2 |
 | `/products` | market | `market-products-list` — Mahsulotlar | [design/fragments/market--products-list.html](fragments/market--products-list.html) | sahifa | v2 |
-| `/products` | market | `market-products-edit-dialog` — Mahsulotni tahrirlash<br>↳ `src/pages/products/list/ui/EditProductDialog.tsx` | [design/fragments/market--products-edit-dialog.html](fragments/market--products-edit-dialog.html) | oyna | v2 |
-| `/products` | market | `market-products-delete-dialog` — Mahsulotni o'chirish<br>↳ `src/pages/products/ui/useDeleteProductConfirm.tsx` | [design/fragments/admin--products-delete-dialog.html](fragments/admin--products-delete-dialog.html) | oyna | v2 |
+| `/products` | market_operator | `market_operator-products-list` — Mahsulotlar | [design/fragments/market--products-list.html](fragments/market--products-list.html) | sahifa | yangi (kodda yo'q) |
+| `/products` | market_operator | `market_operator-products-unassigned` — Mahsulotlar — market biriktirilmagan | [design/fragments/market_operator--products-unassigned.html](fragments/market_operator--products-unassigned.html) | sahifa | yangi (kodda yo'q) |
 
 #### `/products/create-product/:id` — Mahsulot yaratish (:id — market; dizayn v2)
 
@@ -992,15 +1135,19 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager, registrator, market
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** O'ngdagi «Market mahsulotlari» ro'yxati bitta so'rovda (limit 500 — PRODUCT_LIST_MAX_LIMIT); qalam — forma tahrir rejimi; nofaol market — yaratish bloklanadi.
+- **Izoh:** O'ngdagi «Market mahsulotlari» ro'yxati bitta so'rovda (limit 500 — PRODUCT_LIST_MAX_LIMIT); qalam — forma tahrir rejimi; nofaol market — yaratish bloklanadi. Maket taklifi (2026-10-19): og'irlik (kg), U × K × B (sm), «Hajmga qarab hisoblash», jonli «Hajmli vazn» va «Hisob vazni», «Narx». products-create-errors — «Saqlash» bosilgandan keyingi holat; tahrirlash oynasi (products-edit-dialog) xatolari shu bilan bir xil (maydon ostida qizil matn, yuqorida xulosa). «Taklif · backend kerak» belgisi kodga ko'chirilmaydi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/products/create-product/:id` | superadmin | `superadmin-products-create` — Mahsulot yaratish (market uchun) | [design/fragments/superadmin--products-create.html](fragments/superadmin--products-create.html) | sahifa | v2 |
+| `/products/create-product/:id` | superadmin | `superadmin-products-create-errors` — Mahsulot yaratish — xatolar | [design/fragments/admin--products-create-errors.html](fragments/admin--products-create-errors.html) | sahifa | yangi (kodda yo'q) |
 | `/products/create-product/:id` | admin | `admin-products-create` — Mahsulot yaratish | [design/fragments/admin--products-create.html](fragments/admin--products-create.html) | sahifa | v2 |
+| `/products/create-product/:id` | admin | `admin-products-create-errors` — Mahsulot yaratish — xatolar | [design/fragments/admin--products-create-errors.html](fragments/admin--products-create-errors.html) | sahifa | yangi (kodda yo'q) |
 | `/products/create-product/:id` | manager | `manager-products-create` — Mahsulot yaratish | [design/fragments/admin--products-create.html](fragments/admin--products-create.html) | sahifa | v2 |
+| `/products/create-product/:id` | manager | `manager-products-create-errors` — Mahsulot yaratish — xatolar | [design/fragments/admin--products-create-errors.html](fragments/admin--products-create-errors.html) | sahifa | yangi (kodda yo'q) |
 | `/products/create-product/:id` | registrator | `registrator-products-create` — Mahsulot yaratish | [design/fragments/admin--products-create.html](fragments/admin--products-create.html) | sahifa | v2 |
-| `/products/create-product/:id` | market | `market-products-create` — Mahsulot yaratish | [design/fragments/market--products-create.html](fragments/market--products-create.html) | sahifa | v2 |
+| `/products/create-product/:id` | registrator | `registrator-products-create-errors` — Mahsulot yaratish — xatolar | [design/fragments/admin--products-create-errors.html](fragments/admin--products-create-errors.html) | sahifa | yangi (kodda yo'q) |
+| `/products/create-product/:id` | market | — Yaratish yo'q — faqat ko'rish (ega qarori 2026-10-15). | — | — | v2 |
 
 ### Foydalanuvchilar
 
@@ -1011,14 +1158,18 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager (filial turi aniq bo'lsa)
 - **Menyuda:** «Foydalanuvchilar» (`users`) — superadmin, admin, manager (HQ · PICKUP · REGIONAL · HYBRID)
 - **Holat:** v2
-- **Izoh:** Tablar, qidiruv va holat — URL'da (role, search, status); menejerda amallar yo'q, GET branches so'ralmaydi. Chizilmaganlar (backend ro'yxatda superadmin va mijozni bermaydi, spec §6): KPI «shundan {n} ta mijoz», segbar «Mijozlar», tablar «Superadminlar», «Mijozlar». Ega savoli Q8 sukuti: sarlavha izohi maketdagidek («… va mijozlar hisoblarini boshqarish»).
+- **Izoh:** Tablar, qidiruv va holat — URL'da (role, search, status); menejerda amallar yo'q, GET branches so'ralmaydi. Chizilmaganlar (backend ro'yxatda superadmin va mijozni bermaydi, spec §6): KPI «shundan {n} ta mijoz», segbar «Mijozlar», tablar «Superadminlar», «Mijozlar». Ega savoli Q8 sukuti: sarlavha izohi maketdagidek («… va mijozlar hisoblarini boshqarish»). Ega tasdig'i 2026-10-19 (tg-link S4): «Telegram» ustuni va filtri (*-users-list-telegram) — backend telegram_linked parametri kerak (karta).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/all-users` | superadmin | `superadmin-users-list` — Foydalanuvchilar ro'yxati | [design/fragments/superadmin--users-list.html](fragments/superadmin--users-list.html) | sahifa | v2 |
 | `/all-users` | superadmin | `superadmin-users-delete-dialog` — Foydalanuvchini o'chirish (tasdiq)<br>↳ `src/widgets/user-list/ui/UserListTable.tsx` | [design/fragments/superadmin--users-delete-dialog.html](fragments/superadmin--users-delete-dialog.html) | oyna | v2 |
+| `/all-users` | superadmin | `superadmin-users-list-roles` — Foydalanuvchilar — barcha rollar tablari (taklif) | [design/fragments/superadmin--users-list-roles.html](fragments/superadmin--users-list-roles.html) | sahifa | yangi (kodda yo'q) |
+| `/all-users` | superadmin | `superadmin-users-list-role-select` — Foydalanuvchilar — rol tanlash ro'yxati (telefon, taklif) | [design/fragments/superadmin--users-list-role-select.html](fragments/superadmin--users-list-role-select.html) | sahifa · faqat telefon | yangi (kodda yo'q) |
+| `/all-users` | superadmin | `superadmin-users-list-telegram` — Foydalanuvchilar ro'yxati — Telegram ustuni | [design/fragments/superadmin--users-list-telegram.html](fragments/superadmin--users-list-telegram.html) | sahifa | yangi (kodda yo'q) |
 | `/all-users` | admin | `admin-users-list` — Foydalanuvchilar ro'yxati | [design/fragments/superadmin--users-list.html](fragments/superadmin--users-list.html) | sahifa | v2 |
 | `/all-users` | admin | `admin-users-delete-dialog` — Foydalanuvchini o'chirish<br>↳ `src/widgets/user-list/ui/UserListTable.tsx` | [design/fragments/admin--users-delete-dialog.html](fragments/admin--users-delete-dialog.html) | oyna | v2 |
+| `/all-users` | admin | `admin-users-list-telegram` — Foydalanuvchilar ro'yxati — Telegram ustuni | [design/fragments/superadmin--users-list-telegram.html](fragments/superadmin--users-list-telegram.html) | sahifa | yangi (kodda yo'q) |
 | `/all-users` | manager | `manager-users-list` — Foydalanuvchilar (filial xodimlari) | [design/fragments/manager--users-list.html](fragments/manager--users-list.html) | sahifa | v2 |
 
 #### `/all-users/create-user` — Foydalanuvchi yaratish (dizayn v2)
@@ -1028,14 +1179,18 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager (filial turi aniq bo'lsa)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Menejer: oddiy filialda — kuryer; HYBRID filialda — rol tanlash (kuryer yoki registrator).
+- **Izoh:** Menejer: oddiy filialda — kuryer; HYBRID filialda — rol tanlash (kuryer yoki registrator). «Logist» rol kartasi (superadmin, admin; users-create-logist; kodda hali yo'q): POST /logists (SUPERADMIN | ADMIN) — ism, telefon, parol, maosh, to'lov kuni; filial yo'q. Muvaffaqiyat → notify.success «Logist yaratildi» va /regions/logist-assignment?logist=<id> (yangi logist tanlangan). 409 «Bu telefon raqam allaqachon mavjud» — telefon maydoni ostida, forma saqlanib qoladi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/all-users/create-user` | superadmin | `superadmin-users-create` — Foydalanuvchi yaratish | [design/fragments/superadmin--users-create.html](fragments/superadmin--users-create.html) | sahifa | v2 |
+| `/all-users/create-user` | superadmin | `superadmin-users-create-courier-district` — Yangi foydalanuvchi — Logist roli va kuryer «Ish hududi» (taklif) | [design/fragments/superadmin--users-create-courier-district.html](fragments/superadmin--users-create-courier-district.html) | sahifa | yangi (kodda yo'q) |
+| `/all-users/create-user` | superadmin | `superadmin-users-create-logist` — Foydalanuvchi yaratish — Logist | [design/fragments/superadmin--users-create-logist.html](fragments/superadmin--users-create-logist.html) | sahifa | yangi (kodda yo'q) |
 | `/all-users/create-user` | admin | `admin-users-create` — Yangi foydalanuvchi | [design/fragments/admin--users-create.html](fragments/admin--users-create.html) | sahifa | v2 |
+| `/all-users/create-user` | admin | `admin-users-create-logist` — Foydalanuvchi yaratish — Logist | [design/fragments/superadmin--users-create-logist.html](fragments/superadmin--users-create-logist.html) | sahifa | yangi (kodda yo'q) |
 | `/all-users/create-user` | manager | `manager-users-create-courier` — Yangi xodim — kuryer | [design/fragments/manager--users-create-courier.html](fragments/manager--users-create-courier.html) | sahifa | v2 |
 | `/all-users/create-user` | manager | `manager-users-create-hybrid` — Yangi xodim — Aralash filial (rol tanlash) | [design/fragments/manager--users-create-hybrid.html](fragments/manager--users-create-hybrid.html) | sahifa | v2 |
+| `/all-users/create-user` | manager | `manager-users-create-courier-district` — Yangi xodim — kuryer, «Ish hududi» (taklif) | [design/fragments/manager--users-create-courier-district.html](fragments/manager--users-create-courier-district.html) | sahifa | yangi (kodda yo'q) |
 
 #### `/all-users/:id` — Foydalanuvchi tafsiloti (dizayn v2)
 
@@ -1044,18 +1199,53 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager (filial turi aniq bo'lsa)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Yangi v2 UserDetailView (eski UserDetailWidget G2 da o'chirildi — iste'molchisi qolmadi). «Faoliyat» (Taklif) chizilmaydi. Ega savoli Q9 sukuti: menejer xodimidagi «Oylik maosh» kartasi (to'plangan / kun qoldi) chizilmaydi — faqat «Profil ma'lumotlari»dagi maosh va to'lov kuni. Mijoz (customer) — maket yo'q, eng yaqini superadmin-users-detail.
+- **Izoh:** Yangi v2 UserDetailView (eski UserDetailWidget G2 da o'chirildi — iste'molchisi qolmadi). «Faoliyat» (Taklif) chizilmaydi. Ega savoli Q9 sukuti: menejer xodimidagi «Oylik maosh» kartasi (to'plangan / kun qoldi) chizilmaydi — faqat «Profil ma'lumotlari»dagi maosh va to'lov kuni. Mijoz (customer) — maket yo'q, eng yaqini superadmin-users-detail. Ega tasdig'i 2026-10-19 (tg-link): market tafsilotida «Telegram guruhi» kartasi — har xabar turi qatorida to'g'ridan-to'g'ri «Ulash» (S5), bir martalik havola + QR oynasi, muddati tugasa — qayta yaratish (*-users-detail-telegram-group-dialog / -expired-dialog); admin ham ulaydi (S2); «Guruhda mijoz ismi va telefoni» kaliti shu kartaga ko'chadi (S3).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/all-users/:id` | superadmin | `superadmin-users-detail` — Foydalanuvchi tafsilotlari | [design/fragments/superadmin--users-detail.html](fragments/superadmin--users-detail.html) | sahifa | v2 |
 | `/all-users/:id` | superadmin | `superadmin-users-edit-dialog` — Foydalanuvchini tahrirlash (modal)<br>↳ `src/features/user/update-user/ui/UpdateUserModal.tsx` | [design/fragments/superadmin--users-edit-dialog.html](fragments/superadmin--users-edit-dialog.html) | oyna | v2 |
 | `/all-users/:id` | superadmin | `superadmin-users-courier-transfer-dialog` — Kuryerni boshqa filialga o'tkazish<br>↳ `src/features/courier-transfer-branch/ui/TransferCourierModal.tsx` | [design/fragments/superadmin--users-courier-transfer-dialog.html](fragments/superadmin--users-courier-transfer-dialog.html) | oyna | v2 |
+| `/all-users/:id` | superadmin | `superadmin-users-edit-role` — Foydalanuvchini tahrirlash — «Rol» maydoni (taklif) | [design/fragments/superadmin--users-edit-role.html](fragments/superadmin--users-edit-role.html) | oyna | yangi (kodda yo'q) |
+| `/all-users/:id` | superadmin | `superadmin-users-role-confirm-dialog` — Rolni o'zgartirish — tasdiq (taklif) | [design/fragments/superadmin--users-role-confirm-dialog.html](fragments/superadmin--users-role-confirm-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/all-users/:id` | superadmin | `superadmin-users-role-confirm-logist` — Rolni o'zgartirish — Logist → Admin, viloyatlar bo'shatiladi (taklif) | [design/fragments/superadmin--users-role-confirm-logist.html](fragments/superadmin--users-role-confirm-logist.html) | oyna | yangi (kodda yo'q) |
+| `/all-users/:id` | superadmin | `superadmin-users-edit-role-error` — Foydalanuvchini tahrirlash — rol o'zgartirilmadi, 409 (taklif) | [design/fragments/superadmin--users-edit-role-error.html](fragments/superadmin--users-edit-role-error.html) | oyna | yangi (kodda yo'q) |
+| `/all-users/:id` | superadmin | `superadmin-users-edit-role-branch` — Foydalanuvchini tahrirlash — filialga biriktirilgan, rol qulf (taklif) | [design/fragments/superadmin--users-edit-role-branch.html](fragments/superadmin--users-edit-role-branch.html) | oyna | yangi (kodda yo'q) |
+| `/all-users/:id` | superadmin | `superadmin-users-edit-courier-district` — Kuryerni tahrirlash — «Tuman» maydoni (taklif) | [design/fragments/superadmin--users-edit-courier-district.html](fragments/superadmin--users-edit-courier-district.html) | oyna | yangi (kodda yo'q) |
+| `/all-users/:id` | superadmin | `superadmin-users-edit-courier-district-phone` — Kuryerni tahrirlash — «Tuman» ro'yxati, telefon (taklif) | [design/fragments/superadmin--users-edit-courier-district-phone.html](fragments/superadmin--users-edit-courier-district-phone.html) | oyna · faqat telefon | yangi (kodda yo'q) |
+| `/all-users/:id` | superadmin | `superadmin-users-edit-market-ai` — Marketni tahrirlash — «AI narxi (1 buyurtma)» | [design/fragments/superadmin--users-edit-market-ai.html](fragments/superadmin--users-edit-market-ai.html) | oyna | yangi (kodda yo'q) |
+| `/all-users/:id` | superadmin | `superadmin-users-edit-market-ai-phone` — Marketni tahrirlash — «AI narxi», telefon | [design/fragments/superadmin--users-edit-market-ai-phone.html](fragments/superadmin--users-edit-market-ai-phone.html) | oyna · faqat telefon | yangi (kodda yo'q) |
+| `/all-users/:id` | superadmin | `superadmin-users-detail-telegram` — Foydalanuvchi tafsilotlari — Telegram guruhi | [design/fragments/superadmin--users-detail-telegram.html](fragments/superadmin--users-detail-telegram.html) | sahifa | qisman |
+| `/all-users/:id` | superadmin | `superadmin-users-detail-telegram-group-dialog` — Telegram guruhini ulash (havola, QR) | [design/fragments/superadmin--users-detail-telegram-group-dialog.html](fragments/superadmin--users-detail-telegram-group-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/all-users/:id` | superadmin | `superadmin-users-detail-telegram-group-expired-dialog` — Telegram guruhini ulash — havola muddati tugadi | [design/fragments/superadmin--users-detail-telegram-group-expired-dialog.html](fragments/superadmin--users-detail-telegram-group-expired-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/all-users/:id` | admin | `admin-users-detail` — Foydalanuvchi tafsiloti | [design/fragments/admin--users-detail.html](fragments/admin--users-detail.html) | sahifa | v2 |
 | `/all-users/:id` | admin | `admin-users-edit-dialog` — Foydalanuvchini tahrirlash<br>↳ `src/features/user/update-user/ui/UpdateUserModal.tsx` | [design/fragments/admin--users-edit-dialog.html](fragments/admin--users-edit-dialog.html) | oyna | v2 |
 | `/all-users/:id` | admin | `admin-users-transfer-courier-dialog` — Kuryerni boshqa filialga o'tkazish<br>↳ `src/features/courier-transfer-branch/ui/TransferCourierModal.tsx` | [design/fragments/superadmin--users-courier-transfer-dialog.html](fragments/superadmin--users-courier-transfer-dialog.html) | oyna | v2 |
+| `/all-users/:id` | admin | `admin-users-detail-telegram` — Foydalanuvchi tafsiloti — Telegram guruhi | [design/fragments/admin--users-detail-telegram.html](fragments/admin--users-detail-telegram.html) | sahifa | qisman |
+| `/all-users/:id` | admin | `admin-users-detail-telegram-group-dialog` — Telegram guruhini ulash (havola, QR) | [design/fragments/admin--users-detail-telegram-group-dialog.html](fragments/admin--users-detail-telegram-group-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/all-users/:id` | admin | `admin-users-detail-telegram-group-expired-dialog` — Telegram guruhini ulash — havola muddati tugadi | [design/fragments/admin--users-detail-telegram-group-expired-dialog.html](fragments/admin--users-detail-telegram-group-expired-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/all-users/:id` | manager | `manager-users-detail` — Xodim tafsiloti | [design/fragments/manager--users-detail.html](fragments/manager--users-detail.html) | sahifa | v2 |
 | `/all-users/:id` | manager | `manager-users-edit-dialog` — Xodimni tahrirlash<br>↳ `src/features/user/update-user/ui/UpdateUserModal.tsx` | [design/fragments/manager--users-edit-dialog.html](fragments/manager--users-edit-dialog.html) | oyna | v2 |
+
+#### `/market-operators` — Operatorlar — market o'z operatorlarini boshqaradi (ega qarori 2026-10-19; kodda hozir YOPIQ)
+
+- **Fayllar:** `src/pages/market-operators/index.tsx`
+- **Qobiq:** DashboardLayout · **Guard:** `canViewMarketOperators` (routes.tsx → canViewMarketOperators (doim false))
+- **Rollar:** market (taklif — ega qarori 2026-10-19; kodda hozir canViewMarketOperators = () => false, guard market'ga ochilishi kerak)
+- **Menyuda:** yo'q — Market menyusi «Operatorlar» (yangi band, roles.json market.menu → operators); telefonda — «Menyu» varag'i
+- **Holat:** eski
+- **Izoh:** Ega qarori 2026-10-19: market operatorlarini MARKET o'zi boshqaradi (superadmin «Ops» emas). Backend (origin/main, market-operator-gateway.controller.ts, hammasi @Roles(MARKET), faqat o'z operatorlari): GET market-operators (search, status, page, limit → { items, meta: { page, limit, total, totalPages } }; maydonlar: id, name, phone_number, status, commission_type, commission_value, createdAt), POST market-operators (name, phone_number, password — kamida 4 belgi), PATCH market-operators/:id/commission (commission_type percent | fixed, commission_value; PERCENT 0..100, FIXED 0..1 000 000 so'm, ko'pi bilan 2 kasr; ikkalasi null — komissiyani olib tashlash), DELETE market-operators/:id (soft delete). Ro'yxat: DataTable + Pagination (Card footer) — total > limit bo'lsa; pastki satr faqat «N ta operator» (meta.total); «N tasi faol» soni backendda yo'q, chizilmadi. «Nofaol» holat — user.status. Ega qarori 2026-10-19 (MO-S4): market o'z operatorini nofaol / faol qiladi — qator menyusida «Nofaol qilish» (faol operatorda) yoki «Faollashtirish» (nofaol operatorda), useConfirm tasdig'i bilan: operators-deactivate-dialog (tone danger, «Nofaol qilish») va operators-activate-dialog (oddiy, «Faollashtirish»). TAKLIF · BACKEND KERAK: market uchun endpoint yo'q — PATCH users/:id/status faqat @Roles(SUPERADMIN, ADMIN); kerak: PATCH market-operators/:id/status { status: active | inactive } @Roles(MARKET), faqat o'z operatori (find_by_market kabi tekshiruv), nofaol qilinganda operator sessiyalari bekor bo'lsin. Ega qarori (MO-S5): «Operator qo'shish» oynasida ixtiyoriy «Komissiya» (Foiz | Qat'iy summa + qiymat; bo'sh — belgilanmagan). Hozirgi backend bilan ikki so'rov: POST market-operators (CreateMarketOperatorDto: name, phone_number, password — komissiya maydoni yo'q, javobda operator id) → PATCH market-operators/:id/commission; ikkinchisi yiqilsa operator komissiyasiz qoladi va notify.error «Operator qo'shildi, komissiya saqlanmadi» + «Belgilash». Tavsiya (backend): CreateMarketOperatorDto ga ixtiyoriy commission_type, commission_value (UpdateMarketOperatorCommissionDto chegaralari bilan) — bitta atomar so'rov. O'chirilgan operator ro'yxatda ko'rinmaydi. Ogohlantirish «Komissiya belgilanmagan — daromad yozilmaydi»: 1 ta operator bo'lsa — ismi bilan va «Belgilash» shu operatorning Komissiya oynasini ochadi; 2+ bo'lsa — «N ta operatorda komissiya belgilanmagan» + «Faqat ularni ko'rsatish» (backendda komissiya filtri yo'q → mijoz tomonda, joriy sahifa ichida). Komissiya oynasi: operators-commission-dialog — Foiz (belgilanmagan operator), operators-commission-fixed-dialog — Qat'iy summa, so'm qo'shimchasi, limit izohi va xato holati (1 000 000 dan oshdi), komissiyasi bor operatorda «Komissiyani olib tashlash» (PATCH ikkalasi null) — useConfirm tasdig'i bilan: «Komissiyani olib tashlaysizmi?», tavsif «Keyingi sotuvlari uchun daromad yozilmaydi. Avvalgi daromadlar saqlanadi.», tugma «Olib tashlash», tone danger. «Yangi stavka faqat keyingi sotuvlarga» — backend tasdiqlaydi: finance recordOperatorEarning sotuv paytida stavkani OperatorEarning qatoriga yozib qo'yadi (snapshot); faqat SOLD↔PARTLY_PAID qayta sotuvida joriy stavka bilan qayta hisoblanadi. O'chirish — ConfirmDialog (alertdialog), tone danger. src/pages/market-operators/index.tsx hozirgi (eski, yopiq) sahifa — v2 da qayta yoziladi.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `/market-operators` | market | `market-operators-list` — Operatorlar | [design/fragments/market--operators-list.html](fragments/market--operators-list.html) | sahifa | yangi (kodda yo'q) |
+| `/market-operators` | market | `market-operators-empty` — Operatorlar — bo'sh holat | [design/fragments/market--operators-empty.html](fragments/market--operators-empty.html) | sahifa | yangi (kodda yo'q) |
+| `/market-operators` | market | `market-operators-create-dialog` — Operator qo'shish | [design/fragments/market--operators-create-dialog.html](fragments/market--operators-create-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/market-operators` | market | `market-operators-commission-dialog` — Komissiya | [design/fragments/market--operators-commission-dialog.html](fragments/market--operators-commission-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/market-operators` | market | `market-operators-commission-fixed-dialog` — Komissiya — qat'iy summa, xato | [design/fragments/market--operators-commission-fixed-dialog.html](fragments/market--operators-commission-fixed-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/market-operators` | market | `market-operators-delete-dialog` — Operatorni o'chirish | [design/fragments/market--operators-delete-dialog.html](fragments/market--operators-delete-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/market-operators` | market | `market-operators-deactivate-dialog` — Operatorni nofaol qilish | [design/fragments/market--operators-deactivate-dialog.html](fragments/market--operators-deactivate-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/market-operators` | market | `market-operators-activate-dialog` — Operatorni faollashtirish | [design/fragments/market--operators-activate-dialog.html](fragments/market--operators-activate-dialog.html) | oyna | yangi (kodda yo'q) |
 
 ### Hududlar
 
@@ -1063,7 +1253,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 - **Fayllar:** `src/pages/region/index.tsx` · `src/pages/region/ui/RegionsOverview.tsx` · `src/pages/region/ui/RegionsMapCard.tsx` · `src/pages/region/ui/RegionsSuccessCards.tsx` · `src/pages/region/ui/UzbekistanRegionMap.tsx` · `src/pages/region/ui/RegionPeriodControls.tsx` · `src/pages/region/ui/regionBlocks.tsx` · `src/pages/region/ui/ScopedRegionView.tsx` · `src/pages/region/ui/ScopedDistricts.tsx` · `src/pages/region/model/regionsModel.ts` · `src/pages/region/model/scopedModel.ts` · `src/pages/region/model/regionPeriod.ts` · `src/widgets/region-detail/ui/RegionDetailDialog.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewRegionStats` (routes.tsx → canViewRegionStats)
-- **Rollar:** superadmin, admin, manager, courier
+- **Rollar:** superadmin, admin, manager, courier, logist (taklif — o'z viloyatlari (LG-S3), kodda yo'q)
 - **Menyuda:** «Hududlar» (`regions`) — superadmin, admin, manager, courier
 - **Holat:** v2
 - **Izoh:** Viloyat oynasi — umumiy RegionDetailDialog (widgets/region-detail, lazy; bosh sahifa kartogrammasi ham shu). Menejer va kuryer — GET region/my/district-stats (stats/all va orders so'rovlari yo'q). Ega savollari sukuti: Q11 xarita — Highcharts lazy, v2 tokenlar; Q12 scoped sarlavhalarda filial / «sizga tegishli» da'vosi yo'q («{viloyat} buyurtmalari · …» — backend butun viloyat raqamlarini beradi). Chizilmagan: oynadagi «Kunlik buyurtmalar» (Taklif), scoped filial/kuryer kesimi (API yo'q).
@@ -1076,34 +1266,65 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/regions` | admin | `admin-regions-region-detail-dialog` — Viloyat ma'lumotlari oynasi<br>↳ `src/widgets/region-detail/ui/RegionDetailDialog.tsx` | [design/fragments/admin--regions-region-detail-dialog.html](fragments/admin--regions-region-detail-dialog.html) | oyna | v2 |
 | `/regions` | manager | `manager-regions-scoped` — Hudud — tumanlar statistikasi<br>↳ `src/pages/region/ui/ScopedRegionView.tsx` | [design/fragments/manager--regions-scoped.html](fragments/manager--regions-scoped.html) | sahifa | v2 |
 | `/regions` | courier | `courier-regions-scoped` — Hududlar — o'z viloyatim<br>↳ `src/pages/region/ui/ScopedRegionView.tsx` | [design/fragments/courier--regions-scoped.html](fragments/courier--regions-scoped.html) | sahifa | v2 |
+| `/regions` | logist | `logist-regions-detail` — Viloyat — tumanlar va kuryerlar | [design/fragments/logist--regions-detail.html](fragments/logist--regions-detail.html) | sahifa | yangi (kodda yo'q) |
+| `/regions` | logist | `logist-couriers-list` — Kuryerlar — viloyatlarim | [design/fragments/logist--couriers-list.html](fragments/logist--couriers-list.html) | sahifa | yangi (kodda yo'q) |
 | `/regions` | tizim taxtasi | `tizim-charts` — Grafiklar — statistika va tahlil | [design/fragments/tizim--charts.html](fragments/tizim--charts.html) | taxta | qoida |
 
 #### `/regions/districts` — Tumanlar boshqaruvi
 
 - **Fayllar:** `src/pages/region/pages/districts/index.tsx` · `src/pages/region/ui/DistrictBoard.tsx` · `src/pages/region/model/boardModel.ts`
 - **Qobiq:** DashboardLayout › Region (`src/pages/region/index.tsx`) · **Guard:** `canViewRegionStats` (routes.tsx → canViewRegionStats)
-- **Rollar:** superadmin
+- **Rollar:** superadmin, admin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Komponent ichida: superadmin bo'lmasa → /regions.
+- **Izoh:** Ega qarori (2026-10-19): admin sahifada hamma amalni bajaradi — tuman qo'shish, tahrirlash, o'chirish, birlashtirish (backend POST/PATCH/DELETE district va POST district/:id/merge ga ADMIN ruxsat beradi; kodda superadmin guard'i olinadi — src/pages/region/pages/districts/index.tsx); admin kirishi — «Hududlar» sarlavhasidagi «Tumanlar» tugmasi. O'chirish 400 bersa (data.usage {orders, users, branches}) — «Tumanni o'chirib bo'lmaydi» oynasi; birlashtirish oynasi shu holatdan (va SATO sahifasidagi takroriy tumanlardan) ochiladi. Maqsad tuman — faqat shu viloyatdan (ega qarori). Birlashtirish so'rovi timeout'i ≥ 125 soniya (gateway 120 s; global API_TIMEOUT_MS emas). Natijadagi «Ko'chirildi» — faqat tirik yozuvlar (ega qarori; backend moved o'chirilganlarni ham sanaydi — tirik sonlar kerak). 409/503/chala qoldi — «Sabab» qatori details.reason kodi va sonlaridan (Taklif · backend kerak); backend matni faqat «Xabarni nusxalash» orqali. Faoliyat jurnali: uz «Tuman birlashtirildi» / «Tuman birlashtirish chala qoldi», ru «Район объединён» / «Объединение района не завершено», en «District merged» / «District merge incomplete» (muvaffaqiyatli birlashtirish uchun alohida district.merge amali — backend kerak).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/regions/districts` | superadmin | `superadmin-regions-districts` — Tumanlar boshqaruvi<br>↳ `src/pages/region/pages/districts/index.tsx` | [design/fragments/superadmin--regions-districts.html](fragments/superadmin--regions-districts.html) | sahifa | v2 |
+| `/regions/districts` | superadmin | `superadmin-regions-districts-delete-blocked` — Tumanni o'chirib bo'lmaydi | [design/fragments/superadmin--regions-districts-delete-blocked.html](fragments/superadmin--regions-districts-delete-blocked.html) | oyna | yangi (kodda yo'q) |
+| `/regions/districts` | superadmin | `superadmin-regions-districts-merge-dialog` — Tumanni birlashtirish | [design/fragments/superadmin--regions-districts-merge-dialog.html](fragments/superadmin--regions-districts-merge-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/regions/districts` | superadmin | `superadmin-regions-districts-merge-target` — Tumanni birlashtirish — maqsad tumanni tanlash | [design/fragments/superadmin--regions-districts-merge-target.html](fragments/superadmin--regions-districts-merge-target.html) | oyna | yangi (kodda yo'q) |
+| `/regions/districts` | superadmin | `superadmin-regions-districts-merge-progress` — Tumanni birlashtirish — jarayonda | [design/fragments/superadmin--regions-districts-merge-progress.html](fragments/superadmin--regions-districts-merge-progress.html) | oyna | yangi (kodda yo'q) |
+| `/regions/districts` | superadmin | `superadmin-regions-districts-merge-result` — Tumanni birlashtirish — natija | [design/fragments/superadmin--regions-districts-merge-result.html](fragments/superadmin--regions-districts-merge-result.html) | oyna | yangi (kodda yo'q) |
+| `/regions/districts` | superadmin | `superadmin-regions-districts-merge-error` — Tumanni birlashtirish — bekor qilindi | [design/fragments/superadmin--regions-districts-merge-error.html](fragments/superadmin--regions-districts-merge-error.html) | oyna | yangi (kodda yo'q) |
+| `/regions/districts` | superadmin | `superadmin-regions-districts-merge-error-unavailable` — Tumanni birlashtirish — servis javob bermadi | [design/fragments/superadmin--regions-districts-merge-error-unavailable.html](fragments/superadmin--regions-districts-merge-error-unavailable.html) | oyna | yangi (kodda yo'q) |
+| `/regions/districts` | superadmin | `superadmin-regions-districts-merge-error-manual` — Tumanni birlashtirish — qo'lda tuzatish kerak | [design/fragments/superadmin--regions-districts-merge-error-manual.html](fragments/superadmin--regions-districts-merge-error-manual.html) | oyna | yangi (kodda yo'q) |
+| `/regions/districts` | superadmin | `superadmin-regions-districts-merge-unknown` — Tumanni birlashtirish — natija noma'lum | [design/fragments/superadmin--regions-districts-merge-unknown.html](fragments/superadmin--regions-districts-merge-unknown.html) | oyna | yangi (kodda yo'q) |
+| `/regions/districts` | admin | `admin-regions-districts` — Tumanlar boshqaruvi | [design/fragments/superadmin--regions-districts.html](fragments/superadmin--regions-districts.html) | sahifa | yangi (kodda yo'q) |
+| `/regions/districts` | admin | `admin-regions-districts-delete-blocked` — Tumanni o'chirib bo'lmaydi | [design/fragments/superadmin--regions-districts-delete-blocked.html](fragments/superadmin--regions-districts-delete-blocked.html) | oyna | yangi (kodda yo'q) |
+| `/regions/districts` | admin | `admin-regions-districts-merge-dialog` — Tumanni birlashtirish | [design/fragments/superadmin--regions-districts-merge-dialog.html](fragments/superadmin--regions-districts-merge-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/regions/districts` | admin | `admin-regions-districts-merge-target` — Tumanni birlashtirish — maqsad tumanni tanlash | [design/fragments/superadmin--regions-districts-merge-target.html](fragments/superadmin--regions-districts-merge-target.html) | oyna | yangi (kodda yo'q) |
+| `/regions/districts` | admin | `admin-regions-districts-merge-progress` — Tumanni birlashtirish — jarayonda | [design/fragments/superadmin--regions-districts-merge-progress.html](fragments/superadmin--regions-districts-merge-progress.html) | oyna | yangi (kodda yo'q) |
+| `/regions/districts` | admin | `admin-regions-districts-merge-result` — Tumanni birlashtirish — natija | [design/fragments/superadmin--regions-districts-merge-result.html](fragments/superadmin--regions-districts-merge-result.html) | oyna | yangi (kodda yo'q) |
+| `/regions/districts` | admin | `admin-regions-districts-merge-error` — Tumanni birlashtirish — bekor qilindi | [design/fragments/superadmin--regions-districts-merge-error.html](fragments/superadmin--regions-districts-merge-error.html) | oyna | yangi (kodda yo'q) |
+| `/regions/districts` | admin | `admin-regions-districts-merge-error-unavailable` — Tumanni birlashtirish — servis javob bermadi | [design/fragments/superadmin--regions-districts-merge-error-unavailable.html](fragments/superadmin--regions-districts-merge-error-unavailable.html) | oyna | yangi (kodda yo'q) |
+| `/regions/districts` | admin | `admin-regions-districts-merge-error-manual` — Tumanni birlashtirish — qo'lda tuzatish kerak | [design/fragments/superadmin--regions-districts-merge-error-manual.html](fragments/superadmin--regions-districts-merge-error-manual.html) | oyna | yangi (kodda yo'q) |
+| `/regions/districts` | admin | `admin-regions-districts-merge-unknown` — Tumanni birlashtirish — natija noma'lum | [design/fragments/superadmin--regions-districts-merge-unknown.html](fragments/superadmin--regions-districts-merge-unknown.html) | oyna | yangi (kodda yo'q) |
 
-#### `/regions/sato-management` — Tumanlarni o'tkazish (SATO)
+#### `/regions/sato-management` — Tumanlar va SATO kodlari
 
 - **Fayllar:** `src/pages/region/pages/sato-management/index.tsx` · `src/pages/region/ui/DistrictBoard.tsx` · `src/pages/region/ui/MoveDistrictDialog.tsx` · `src/pages/region/model/boardModel.ts`
 - **Qobiq:** DashboardLayout › Region (`src/pages/region/index.tsx`) · **Guard:** `canViewRegionStats` (routes.tsx → canViewRegionStats)
 - **Rollar:** superadmin, admin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Komponent ichida: superadmin/admin bo'lmasa → /regions. Telefonda sudrash o'rniga ⇆ — MoveDistrictDialog (maket yo'q — eng yaqini superadmin-regions-sato-management).
+- **Izoh:** Komponent ichida: superadmin/admin bo'lmasa → /regions. Telefonda sudrash o'rniga ⇆ — MoveDistrictDialog (maket yo'q — eng yaqini superadmin-regions-sato-management). TAKLIF (2xlYlBst): sahifada bitta sarlavha «Tumanlar va SATO kodlari» va ikki tab — «Tumanlarni o'tkazish» (sukut) va «SATO kodlari» (?tab=sato); tab almashsa faqat amallar joyi o'zgaradi (o'tkazishda — sonlar, SATO'da superadminga «SATO kodlarini yozish N»). Superadmin: GET district/sato-match/preview (faqat superadmin) GET /district bilan dbId=id bo'yicha birlashtiriladi — nom, viloyat va sato_code /district dan olinadi, dbName satri parse qilinmaydi. KPI = preview.stats (totalDb, totalSato, matchedCount, unmatchedCount, duplicatesCount — yozuvlar soni, missingCount); «185 tasida kod bor» — matched dagi satoName '(allaqachon mavjud)'. Tablar (ega S2): «Topildi» = matched (yangi kod, hali saqlanmagan; sukut tab) va «Topilmadi» = unmatched (qo'lda kod) — ikki alohida tab; «Kodi bor» = matched '(allaqachon mavjud)' (takroriylar kirmaydi); «Takroriy nomlar» = duplicates[] (yozuvlar /district dan, sato_code ham); «Bazada yo'q» = missingSatoEntries. Qidiruv va viloyat filtri, sahifalash — klientda. «SATO kodlarini yozish N» (N = yangi kodli matched): N=0 bo'lsa tugma o'chiq; tasdiq oynasi → POST district/sato-match/apply (server qayta moslaydi; xabar appliedCount bilan; activity log logistics.sato_bulk_apply), bosilgach tugma «Yozilmoqda…», oyna yopilmaydi. Qo'lda kod: PATCH district/sato/:id {sato_code} (admin + superadmin); klientda faqat raqam (DTO ^\d+$); 409 «District sato_code already exists» kelsa, GET district/sato/:code bilan egasi olinib «Bu kod band: <tuman>, <viloyat>» ko'rsatiladi. «Tuman qo'shish» (Bazada yo'q) — POST /district {name, region_id, sato_code} oynasi qatordan to'ldiriladi (viloyat SATO nomi bo'yicha region_id ga moslanadi). Takroriylar (ega S4): «Takroriy nomlar» tabida bitta viloyatdagi guruh qatorida «Birlashtirish» — districts-merge to'plamidagi umumiy «Tumanni birlashtirish» oynasi (POST district/:id/merge {target_district_id}); sukut: kodsiz yozuv o'chadi, kodli yozuv maqsad (kod saqlanadi), maqsad faqat shu viloyatdan; jarayon/natija/xato holatlari — regions-districts-merge-* maketlari. Turli viloyatdagi bir xil nomlar (preview duplicates viloyatsiz guruhlaydi) birlashtirilmaydi — «Turli viloyatda — birlashtirilmaydi», har biriga kod qo'lda. «Bazada yo'q» va «Takroriy nomlar» faqat superadmin (ega S3). Admin: preview/apply yo'q — ro'yxat GET /district dan, tablar «Kodsiz» va «Kodi bor» (takroriylar ham kiradi), faqat qo'lda kod; holatlar umumiy komponentdan (admin-regions-sato-codes «Boshqa holatlar»).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/regions/sato-management` | superadmin | `superadmin-regions-sato-management` — Tumanlarni o'tkazish (SATO) | [design/fragments/superadmin--regions-sato-management.html](fragments/superadmin--regions-sato-management.html) | sahifa | v2 |
+| `/regions/sato-management` | superadmin | `superadmin-regions-sato-codes` — SATO kodlari — topildi | [design/fragments/superadmin--regions-sato-codes.html](fragments/superadmin--regions-sato-codes.html) | sahifa | yangi (kodda yo'q) |
+| `/regions/sato-management` | superadmin | `superadmin-regions-sato-codes-not-found` — SATO kodlari — topilmadi (qo'lda kiritish) | [design/fragments/superadmin--regions-sato-codes-not-found.html](fragments/superadmin--regions-sato-codes-not-found.html) | sahifa | yangi (kodda yo'q) |
+| `/regions/sato-management` | superadmin | `superadmin-regions-sato-codes-apply-dialog` — SATO kodlari — avtomatik yozish (tasdiq) | [design/fragments/superadmin--regions-sato-codes-apply-dialog.html](fragments/superadmin--regions-sato-codes-apply-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/regions/sato-management` | superadmin | `superadmin-regions-sato-codes-edit` — SATO kodlari — kodni tahrirlash («kod band») | [design/fragments/superadmin--regions-sato-codes-edit.html](fragments/superadmin--regions-sato-codes-edit.html) | sahifa | yangi (kodda yo'q) |
+| `/regions/sato-management` | superadmin | `superadmin-regions-sato-codes-duplicates` — SATO kodlari — takroriy nomlar | [design/fragments/superadmin--regions-sato-codes-duplicates.html](fragments/superadmin--regions-sato-codes-duplicates.html) | sahifa | yangi (kodda yo'q) |
+| `/regions/sato-management` | superadmin | `superadmin-regions-sato-codes-merge-dialog` — SATO kodlari — takroriy tumanni birlashtirish | [design/fragments/superadmin--regions-sato-codes-merge-dialog.html](fragments/superadmin--regions-sato-codes-merge-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/regions/sato-management` | superadmin | `superadmin-regions-sato-codes-missing` — SATO kodlari — bazada yo'q | [design/fragments/superadmin--regions-sato-codes-missing.html](fragments/superadmin--regions-sato-codes-missing.html) | sahifa | yangi (kodda yo'q) |
+| `/regions/sato-management` | superadmin | `superadmin-regions-sato-codes-add-dialog` — SATO kodlari — tuman qo'shish oynasi | [design/fragments/superadmin--regions-sato-codes-add-dialog.html](fragments/superadmin--regions-sato-codes-add-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/regions/sato-management` | admin | `admin-regions-sato-management` — Tumanlarni o'tkazish | [design/fragments/admin--regions-sato-management.html](fragments/admin--regions-sato-management.html) | sahifa | v2 |
+| `/regions/sato-management` | admin | `admin-regions-sato-codes` — SATO kodlari | [design/fragments/admin--regions-sato-codes.html](fragments/admin--regions-sato-codes.html) | sahifa | yangi (kodda yo'q) |
+| `/regions/sato-management` | admin | `admin-regions-sato-codes-edit` — SATO kodlari — kodni tahrirlash («kod band») | [design/fragments/admin--regions-sato-codes-edit.html](fragments/admin--regions-sato-codes-edit.html) | sahifa | yangi (kodda yo'q) |
 
 #### `/regions/logist-assignment` — Logist biriktirish
 
@@ -1112,12 +1333,16 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Komponent ichida: superadmin/admin bo'lmasa → /regions. Ega savoli Q13 sukuti: maketdagi bo'sh holat «Bo'lim hali ishga tushmagan» + «Hududlarga qaytish» (backend'da GET /logists, PATCH region/{id}/logist bor — ishlaydigan sahifa uchun maket kerak).
+- **Izoh:** Komponent ichida: superadmin/admin bo'lmasa → /regions. Ma'lumot: chapda GET /logists (ism, telefon, faollik); viloyatlar — GET /region (har qatorda logist_id; logistdagi viloyatlar soni shundan). Saqlash — POST /region/logist/bulk { logist_id, region_ids } (region_ids dagilar unga o'tadi, ro'yxatda yo'q eski viloyatlaridan u olinadi). «Saqlash» o'zgarish bo'lmaguncha o'chiq. Tasdiq qoidasi: faqat qo'shish bo'lsa — darhol saqlanadi + notify.success «Saqlandi»; olib tashlash yoki boshqa logistdan o'tkazish bo'lsa — avval tasdiq oynasi (…-confirm-dialog, o'zgarishlar ro'yxati bilan). Saqlanmagan o'zgarish bor paytda boshqa logist tanlansa — useConfirm «O'zgarishlar saqlanmaydi» (Qolish / O'zgarishsiz o'tish). Nofaol logist tanlansa — ogohlantirish, viloyat kartalari va «Saqlash» o'chiq (server rad etishi — zaxira). Telefon: logist — Select (pastki varaqa, qidiruv), filtr seg 44px, o'zgarish bo'lsa pastki menyu ustida yopishqoq panel («N ta o'zgarish» + Bekor qilish / Saqlash). ?logist=<id> — shu logist tanlangan holda ochiladi. Logist yo'q — EmptyState «Logist yo'q» + «Logist yaratish» (…-empty). Eski «Bo'lim hali ishga tushmagan» bo'sh holati olib tashlanadi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/regions/logist-assignment` | superadmin | `superadmin-regions-logist-assignment` — Logist biriktirish | [design/fragments/superadmin--regions-logist-assignment.html](fragments/superadmin--regions-logist-assignment.html) | sahifa | v2 |
-| `/regions/logist-assignment` | admin | `admin-regions-logist-assignment` — Logist biriktirish | [design/fragments/superadmin--regions-logist-assignment.html](fragments/superadmin--regions-logist-assignment.html) | sahifa | v2 |
+| `/regions/logist-assignment` | superadmin | `superadmin-regions-logist-assignment` — Logist biriktirish | [design/fragments/superadmin--regions-logist-assignment.html](fragments/superadmin--regions-logist-assignment.html) | sahifa | yangi (kodda yo'q) |
+| `/regions/logist-assignment` | superadmin | `superadmin-regions-logist-assignment-confirm-dialog` — Logist biriktirish — saqlashni tasdiqlash | [design/fragments/superadmin--regions-logist-assignment-confirm-dialog.html](fragments/superadmin--regions-logist-assignment-confirm-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/regions/logist-assignment` | superadmin | `superadmin-regions-logist-assignment-empty` — Logist biriktirish — logist yo'q | [design/fragments/superadmin--regions-logist-assignment-empty.html](fragments/superadmin--regions-logist-assignment-empty.html) | sahifa | yangi (kodda yo'q) |
+| `/regions/logist-assignment` | admin | `admin-regions-logist-assignment` — Logist biriktirish | [design/fragments/superadmin--regions-logist-assignment.html](fragments/superadmin--regions-logist-assignment.html) | sahifa | yangi (kodda yo'q) |
+| `/regions/logist-assignment` | admin | `admin-regions-logist-assignment-confirm-dialog` — Logist biriktirish — saqlashni tasdiqlash | [design/fragments/superadmin--regions-logist-assignment-confirm-dialog.html](fragments/superadmin--regions-logist-assignment-confirm-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/regions/logist-assignment` | admin | `admin-regions-logist-assignment-empty` — Logist biriktirish — logist yo'q | [design/fragments/superadmin--regions-logist-assignment-empty.html](fragments/superadmin--regions-logist-assignment-empty.html) | sahifa | yangi (kodda yo'q) |
 
 ### Filiallar
 
@@ -1159,7 +1384,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator
 - **Menyuda:** «Integratsiyalar» (`integrations`, `/integrations` orqali) — superadmin, admin
 - **Holat:** v2
-- **Izoh:** ?scope=partner|external|marketplace → *-console / admin-integrations-{partners,external,marketplace}; ?t=settings|shipments|log|settlement|control|security → panel maketlari (log = «Hodisalar»); ?t=overview (sukut) — konsol maketining o'zi. Dizayn v2 (G2): eski ui.ts / OverviewPage / ConnectionSubNav / FilterPills o'chirildi; scope tablari konsol kartasi ichida (D2, layout index.tsx faqat Outlet). KPI «kechaga nisbatan» — qo'shimcha GET integrations/metrics?hours=48 (kecha = 48 − 24 soat; ikkinchi so'rov yiqilsa meta qatori yashirinadi; ega savoli 8 — sukut: ha). Kalitni yangilash, to'xtatish va hisob-kitob to'lovi — tasdiq oynasi orqali. Chizilmagan (Taklif / API yo'q, spec §5): KPI sparklinelari, «Hodisalar · oxirgi 7 kun», «Soatlar bo'yicha», «O'rtacha javob vaqti» trendi (avg_ms — bitta son), «Qarz harakati · 30 kun». Sahifadagi xato holatlari global xabarni takrorlamaydi (meta.silentError).
+- **Izoh:** ?scope=partner|external|marketplace → *-console / admin-integrations-{partners,external,marketplace}; ?t=settings|shipments|log|settlement|control|security → panel maketlari (log = «Hodisalar»); ?t=overview (sukut) — konsol maketining o'zi. Dizayn v2 (G2): eski ui.ts / OverviewPage / ConnectionSubNav / FilterPills o'chirildi; scope tablari konsol kartasi ichida (D2, layout index.tsx faqat Outlet). KPI «kechaga nisbatan» — qo'shimcha GET integrations/metrics?hours=48 (kecha = 48 − 24 soat; ikkinchi so'rov yiqilsa meta qatori yashirinadi; ega savoli 8 — sukut: ha). Kalitni yangilash, to'xtatish va hisob-kitob to'lovi — tasdiq oynasi orqali. Chizilmagan (Taklif / API yo'q, spec §5): KPI sparklinelari, «Hodisalar · oxirgi 7 kun», «Soatlar bo'yicha», «O'rtacha javob vaqti» trendi (avg_ms — bitta son), «Qarz harakati · 30 kun». Sahifadagi xato holatlari global xabarni takrorlamaydi (meta.silentError). Hisob-kitob (DxdZFdIk, utIffRFx): «To'lov olindi» MAIN kassaga kirim yozadi (N3yNa6rO) — eski «Bu ekran kassa emas» matni o'chirildi; javobda cashbox_posted (false → «Kassaga yozilmadi» + «Asosiy kassa tarixini tekshiring»). «Olingan to'lovlar» — GET integrations/:id/remittances (sana, amount, settled_count/settled_amount, unapplied_amount, advance_applied, reference, note, status, cashbox_posted, cancel_reason); bekor qilish — POST integrations/:id/remittances/:rid/cancel (reason), reverse_cashbox faqat eski yozuvda (cashbox_posted = null, aks holda 409). Bekor qilingan eski yozuvda (cashbox_posted = null) kassa holati saqlanmaydi → «Kassa: eski yozuv». «Kim kiritdi / bekor qildi» ismi — Taklif · backend kerak (javobda faqat created_by / cancelled_by id; created_by_name / cancelled_by_name so'raladi). Ortiqcha summa — sukut A: backend ortig'ini hamkor avansiga o'tkazadi (bloklash — faqat ega savoli). Panelda «barchasi» chipi ikkala guruhda «Barchasi» (integrations.filterAll i18n almashadi). To'lov raqamlari «№82» ko'rinishida.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -1171,6 +1396,9 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/integrations/connections` | superadmin | `superadmin-integrations-panel-events` — Ulanish — Hodisalar paneli<br>↳ `src/pages/integrations/panels/ConnectionLog.tsx` | [design/fragments/superadmin--integrations-panel-events.html](fragments/superadmin--integrations-panel-events.html) | sahifa | v2 |
 | `/integrations/connections` | superadmin | `superadmin-integrations-panel-settlement` — Ulanish — Hisob-kitob paneli<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/superadmin--integrations-panel-settlement.html](fragments/superadmin--integrations-panel-settlement.html) | sahifa | v2 |
 | `/integrations/connections` | superadmin | `superadmin-integrations-settlement-pay-dialog` — Tashuvchidan olingan to'lov (modal)<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/superadmin--integrations-settlement-pay-dialog.html](fragments/superadmin--integrations-settlement-pay-dialog.html) | oyna | v2 |
+| `/integrations/connections` | superadmin | `superadmin-integrations-settlement-pay-overpay-dialog` — To'lov — ortiqcha summa (modal)<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/superadmin--integrations-settlement-pay-overpay-dialog.html](fragments/superadmin--integrations-settlement-pay-overpay-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/integrations/connections` | superadmin | `superadmin-integrations-settlement-pay-result-dialog` — To'lov natijasi — avans va kassa (modal)<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/superadmin--integrations-settlement-pay-result-dialog.html](fragments/superadmin--integrations-settlement-pay-result-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/integrations/connections` | superadmin | `superadmin-integrations-settlement-cancel-dialog` — To'lovni bekor qilish (tasdiq)<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/superadmin--integrations-settlement-cancel-dialog.html](fragments/superadmin--integrations-settlement-cancel-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/integrations/connections` | superadmin | `superadmin-integrations-panel-control` — Ulanish — Ish rejimi paneli<br>↳ `src/pages/integrations/panels/ConnectionControl.tsx` | [design/fragments/superadmin--integrations-panel-control.html](fragments/superadmin--integrations-panel-control.html) | sahifa | v2 |
 | `/integrations/connections` | superadmin | `superadmin-integrations-panel-security` — Ulanish — Xavfsizlik paneli<br>↳ `src/pages/integrations/panels/ConnectionSecurity.tsx` | [design/fragments/superadmin--integrations-panel-security.html](fragments/superadmin--integrations-panel-security.html) | sahifa | v2 |
 | `/integrations/connections` | superadmin | `superadmin-integrations-rotate-key-dialog` — Kalitni yangilash (tasdiq)<br>↳ `src/pages/integrations/panels/ConnectionSecurity.tsx` | [design/fragments/superadmin--integrations-rotate-key-dialog.html](fragments/superadmin--integrations-rotate-key-dialog.html) | oyna | v2 |
@@ -1183,6 +1411,9 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/integrations/connections` | admin | `admin-integrations-conn-log` — Ulanish — Hodisalar<br>↳ `src/pages/integrations/panels/ConnectionLog.tsx` | [design/fragments/admin--integrations-conn-log.html](fragments/admin--integrations-conn-log.html) | sahifa | v2 |
 | `/integrations/connections` | admin | `admin-integrations-conn-settlement` — Ulanish — Hisob-kitob<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/admin--integrations-conn-settlement.html](fragments/admin--integrations-conn-settlement.html) | sahifa | v2 |
 | `/integrations/connections` | admin | `admin-integrations-settlement-pay-dialog` — Tashuvchidan olingan to'lov<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/admin--integrations-settlement-pay-dialog.html](fragments/admin--integrations-settlement-pay-dialog.html) | oyna | v2 |
+| `/integrations/connections` | admin | `admin-integrations-settlement-pay-overpay-dialog` — To'lov — ortiqcha summa<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/admin--integrations-settlement-pay-overpay-dialog.html](fragments/admin--integrations-settlement-pay-overpay-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/integrations/connections` | admin | `admin-integrations-settlement-pay-result-dialog` — To'lov natijasi<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/admin--integrations-settlement-pay-result-dialog.html](fragments/admin--integrations-settlement-pay-result-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/integrations/connections` | admin | `admin-integrations-settlement-cancel-dialog` — To'lovni bekor qilish<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/admin--integrations-settlement-cancel-dialog.html](fragments/admin--integrations-settlement-cancel-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/integrations/connections` | admin | `admin-integrations-conn-control` — Ulanish — Ish rejimi<br>↳ `src/pages/integrations/panels/ConnectionControl.tsx` | [design/fragments/admin--integrations-conn-control.html](fragments/admin--integrations-conn-control.html) | sahifa | v2 |
 | `/integrations/connections` | admin | `admin-integrations-conn-security` — Ulanish — Xavfsizlik<br>↳ `src/pages/integrations/panels/ConnectionSecurity.tsx` | [design/fragments/admin--integrations-conn-security.html](fragments/admin--integrations-conn-security.html) | sahifa | v2 |
 | `/integrations/connections` | admin | `admin-integrations-new-partner-dialog` — Yangi hamkor oynasi<br>↳ `src/pages/integrations/NewPartnerModal.tsx` | [design/fragments/admin--integrations-new-partner-dialog.html](fragments/admin--integrations-new-partner-dialog.html) | oyna | v2 |
@@ -1225,7 +1456,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 - **Fayllar:** `src/pages/partners/index.tsx`
 - **Qobiq:** DashboardLayout › IntegrationsPage (`src/pages/integrations/index.tsx`) · **Guard:** yo'q (faqat kirish)
-- **Rollar:** superadmin, admin, manager, registrator, market, courier
+- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
 - **Izoh:** Marshrutda guard yo'q (faqat kirish) — menyuda ko'rinmaydi; yangi konsol to'liq tasdiqlanguncha zaxira. Ega savoli 6 — sukut: guard o'zgarmaydi (market/kuryer URL bilan ochsa API 403 → sahifadagi xato holati). Dizayn v2 (G2): «Eski sahifa» belgisi, webhook jurnali — DataTable expandable (qator ochiladi), hamkorni o'chirish va kalitni almashtirish — tasdiq oynasi.
@@ -1237,7 +1468,10 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/integrations/partners` | manager | — Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan. | — | — | v2 |
 | `/integrations/partners` | registrator | — Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan. | — | — | v2 |
 | `/integrations/partners` | market | — Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan. | — | — | v2 |
+| `/integrations/partners` | market_operator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
 | `/integrations/partners` | courier | — Menyuda yo'q (marshrutda guard yo'q, faqat URL) — maket chizilmagan. | — | — | v2 |
+| `/integrations/partners` | logist | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
+| `/integrations/partners` | investor | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
 
 #### `/integrations/sources` — Tashqi manbalar (eski: integratsiyalar ro'yxati)
 
@@ -1293,16 +1527,43 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 - **Fayllar:** `src/pages/notifications/ui/NotificationsPage.tsx` · `src/features/notification-create/ui/NotificationFormModal.tsx` · `src/features/notification-edit/ui/NotificationEditModal.tsx` · `src/features/notification-create/ui/GroupLinkQr.tsx` · `src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewNotifications` (access.ts → canViewNotifications)
-- **Rollar:** superadmin
+- **Rollar:** superadmin, admin (taklif — NG-S2, kodda yo'q)
 - **Menyuda:** «Bildirishnomalar» (`notifications`) — superadmin
 - **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): jadval + sahifalash (DataTable / Pagination; telefonda kartalar), «Holat» ustuni (Faol / Nofaol + «Bot guruhdan chiqarilgan — qayta ulang»), market nomlari GET /markets dan (qatorda faqat market_id), o'chirish — tasdiq oynasi (maket matni). dev birlashtirishi (ega qoidasi): qo'shish oynasi maketdagi qo'lda guruh ID formasi EMAS — bir martalik Telegram havolasi: market + xabar turi → POST /telegram/link-code {purpose: market_group} → QR, «Telegram'da ochish», qadamlar, muddat; oyna ochiqligida GET /notifications har 4 s, guruh paydo bo'lsa yopiladi («Guruh ulandi»); shu (market, tur) ulangan bo'lsa havola berilmaydi. Tahrirlash — qo'shish oynasi qolipida (D6, maket yo'q: NotificationEditModal `(maket yo'q) superadmin-notifications-create-dialog`). Ustun saralashi chizilmaydi (GET /notifications da sort yo'q). Matnlar — notificationGroups.json.
+- **Izoh:** Dizayn v2 (G2): jadval + sahifalash (DataTable / Pagination; telefonda kartalar), «Holat» ustuni (Faol / Nofaol + «Bot guruhdan chiqarilgan — qayta ulang»), market nomlari GET /markets dan (qatorda faqat market_id), o'chirish — tasdiq oynasi (maket matni). dev birlashtirishi (ega qoidasi): qo'shish oynasi maketdagi qo'lda guruh ID formasi EMAS — bir martalik Telegram havolasi: market + xabar turi → POST /telegram/link-code {purpose: market_group} → QR, «Telegram'da ochish», qadamlar, muddat; oyna ochiqligida GET /notifications har 4 s, guruh paydo bo'lsa yopiladi («Guruh ulandi»); shu (market, tur) ulangan bo'lsa havola berilmaydi. Tahrirlash — qo'shish oynasi qolipida (D6, maket yo'q: NotificationEditModal `(maket yo'q) superadmin-notifications-create-dialog`). Ustun saralashi chizilmaydi (GET /notifications da sort yo'q). Matnlar — notificationGroups.json. Ega tasdig'i 2026-10-19 (notif-groups): NG-S1 — nofaol sababi «Holat» ustunida (backend inactive_reason); NG-S2 — /notifications adminga ochiladi (menyu «Bildirishnomalar», guard canViewNotifications — kodda hali faqat superadmin); NG-S3 — shu tur ulangan, lekin nofaol bo'lsa asosiy tugma «Faollashtirish» (tasdiq bilan, *-create-exists-inactive-dialog → *-activate-dialog); NG-S4 — «Tahrirlash» (qo'lda guruh ID, NotificationEditModal) olib tashlanadi, faqat bot havolasi (*-create-link-dialog, muddati tugasa *-create-expired-dialog). Qator menyusi — *-row-menu / *-row-menu-inactive; nofaol qilish / faollashtirish — tasdiq oynasi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/notifications` | superadmin | `superadmin-notifications-telegram-groups` — Bildirishnomalar — Telegram guruhlari | [design/fragments/superadmin--notifications-telegram-groups.html](fragments/superadmin--notifications-telegram-groups.html) | sahifa | v2 |
-| `/notifications` | superadmin | `superadmin-notifications-create-dialog` — Bildirishnoma qo'shish (modal)<br>↳ `src/features/notification-create/ui/NotificationFormModal.tsx` | [design/fragments/superadmin--notifications-create-dialog.html](fragments/superadmin--notifications-create-dialog.html) | oyna | v2 |
-| `/notifications` | superadmin | `superadmin-notifications-delete-dialog` — Bildirishnomani o'chirish (tasdiq)<br>↳ `src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx` | [design/fragments/superadmin--notifications-delete-dialog.html](fragments/superadmin--notifications-delete-dialog.html) | oyna | v2 |
+| `/notifications` | superadmin | `superadmin-notifications-telegram-groups` — Bildirishnomalar — Telegram guruhlari | [design/fragments/superadmin--notifications-telegram-groups.html](fragments/superadmin--notifications-telegram-groups.html) | sahifa | qisman |
+| `/notifications` | superadmin | `superadmin-notifications-row-menu` — Guruh amallari menyusi | [design/fragments/superadmin--notifications-row-menu.html](fragments/superadmin--notifications-row-menu.html) | oyna | yangi (kodda yo'q) |
+| `/notifications` | superadmin | `superadmin-notifications-row-menu-inactive` — Guruh amallari menyusi — nofaol guruh | [design/fragments/superadmin--notifications-row-menu-inactive.html](fragments/superadmin--notifications-row-menu-inactive.html) | oyna | yangi (kodda yo'q) |
+| `/notifications` | superadmin | `superadmin-notifications-connected` — Bildirishnomalar — guruh ulandi | [design/fragments/superadmin--notifications-connected.html](fragments/superadmin--notifications-connected.html) | sahifa | yangi (kodda yo'q) |
+| `/notifications` | superadmin | `superadmin-notifications-empty` — Bildirishnomalar — bo'sh holat | [design/fragments/superadmin--notifications-empty.html](fragments/superadmin--notifications-empty.html) | sahifa | yangi (kodda yo'q) |
+| `/notifications` | superadmin | `superadmin-notifications-loading` — Bildirishnomalar — yuklanish | [design/fragments/superadmin--notifications-loading.html](fragments/superadmin--notifications-loading.html) | sahifa | yangi (kodda yo'q) |
+| `/notifications` | superadmin | `superadmin-notifications-error` — Bildirishnomalar — xato holati | [design/fragments/superadmin--notifications-error.html](fragments/superadmin--notifications-error.html) | sahifa | yangi (kodda yo'q) |
+| `/notifications` | superadmin | `superadmin-notifications-create-dialog` — Bildirishnoma qo'shish (modal)<br>↳ `src/features/notification-create/ui/NotificationFormModal.tsx` | [design/fragments/superadmin--notifications-create-dialog.html](fragments/superadmin--notifications-create-dialog.html) | oyna | qisman |
+| `/notifications` | superadmin | `superadmin-notifications-create-link-dialog` — Bildirishnoma qo'shish — havola tayyor, kutilmoqda | [design/fragments/superadmin--notifications-create-link-dialog.html](fragments/superadmin--notifications-create-link-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/notifications` | superadmin | `superadmin-notifications-create-expired-dialog` — Bildirishnoma qo'shish — havola muddati tugadi | [design/fragments/superadmin--notifications-create-expired-dialog.html](fragments/superadmin--notifications-create-expired-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/notifications` | superadmin | `superadmin-notifications-create-exists-dialog` — Bildirishnoma qo'shish — shu tur allaqachon ulangan | [design/fragments/superadmin--notifications-create-exists-dialog.html](fragments/superadmin--notifications-create-exists-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/notifications` | superadmin | `superadmin-notifications-create-exists-inactive-dialog` — Bildirishnoma qo'shish — shu tur ulangan, lekin nofaol | [design/fragments/superadmin--notifications-create-exists-inactive-dialog.html](fragments/superadmin--notifications-create-exists-inactive-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/notifications` | superadmin | `superadmin-notifications-deactivate-dialog` — Guruhni nofaol qilish (tasdiq) | [design/fragments/superadmin--notifications-deactivate-dialog.html](fragments/superadmin--notifications-deactivate-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/notifications` | superadmin | `superadmin-notifications-activate-dialog` — Guruhni faollashtirish (tasdiq) | [design/fragments/superadmin--notifications-activate-dialog.html](fragments/superadmin--notifications-activate-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/notifications` | superadmin | `superadmin-notifications-delete-dialog` — Bildirishnomani o'chirish (tasdiq)<br>↳ `src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx` | [design/fragments/superadmin--notifications-delete-dialog.html](fragments/superadmin--notifications-delete-dialog.html) | oyna | qisman |
+| `/notifications` | admin | `admin-notifications-telegram-groups` — Bildirishnomalar — Telegram guruhlari | [design/fragments/superadmin--notifications-telegram-groups.html](fragments/superadmin--notifications-telegram-groups.html) | sahifa | yangi (kodda yo'q) |
+| `/notifications` | admin | `admin-notifications-row-menu` — Guruh amallari menyusi | [design/fragments/superadmin--notifications-row-menu.html](fragments/superadmin--notifications-row-menu.html) | oyna | yangi (kodda yo'q) |
+| `/notifications` | admin | `admin-notifications-row-menu-inactive` — Guruh amallari menyusi — nofaol guruh | [design/fragments/superadmin--notifications-row-menu-inactive.html](fragments/superadmin--notifications-row-menu-inactive.html) | oyna | yangi (kodda yo'q) |
+| `/notifications` | admin | `admin-notifications-connected` — Bildirishnomalar — guruh ulandi | [design/fragments/superadmin--notifications-connected.html](fragments/superadmin--notifications-connected.html) | sahifa | yangi (kodda yo'q) |
+| `/notifications` | admin | `admin-notifications-empty` — Bildirishnomalar — bo'sh holat | [design/fragments/superadmin--notifications-empty.html](fragments/superadmin--notifications-empty.html) | sahifa | yangi (kodda yo'q) |
+| `/notifications` | admin | `admin-notifications-loading` — Bildirishnomalar — yuklanish | [design/fragments/superadmin--notifications-loading.html](fragments/superadmin--notifications-loading.html) | sahifa | yangi (kodda yo'q) |
+| `/notifications` | admin | `admin-notifications-error` — Bildirishnomalar — xato holati | [design/fragments/superadmin--notifications-error.html](fragments/superadmin--notifications-error.html) | sahifa | yangi (kodda yo'q) |
+| `/notifications` | admin | `admin-notifications-create-dialog` — Bildirishnoma qo'shish (modal) | [design/fragments/superadmin--notifications-create-dialog.html](fragments/superadmin--notifications-create-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/notifications` | admin | `admin-notifications-create-link-dialog` — Bildirishnoma qo'shish — havola tayyor, kutilmoqda | [design/fragments/superadmin--notifications-create-link-dialog.html](fragments/superadmin--notifications-create-link-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/notifications` | admin | `admin-notifications-create-expired-dialog` — Bildirishnoma qo'shish — havola muddati tugadi | [design/fragments/superadmin--notifications-create-expired-dialog.html](fragments/superadmin--notifications-create-expired-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/notifications` | admin | `admin-notifications-create-exists-dialog` — Bildirishnoma qo'shish — shu tur allaqachon ulangan | [design/fragments/superadmin--notifications-create-exists-dialog.html](fragments/superadmin--notifications-create-exists-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/notifications` | admin | `admin-notifications-create-exists-inactive-dialog` — Bildirishnoma qo'shish — shu tur ulangan, lekin nofaol | [design/fragments/superadmin--notifications-create-exists-inactive-dialog.html](fragments/superadmin--notifications-create-exists-inactive-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/notifications` | admin | `admin-notifications-deactivate-dialog` — Guruhni nofaol qilish (tasdiq) | [design/fragments/superadmin--notifications-deactivate-dialog.html](fragments/superadmin--notifications-deactivate-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/notifications` | admin | `admin-notifications-activate-dialog` — Guruhni faollashtirish (tasdiq) | [design/fragments/superadmin--notifications-activate-dialog.html](fragments/superadmin--notifications-activate-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/notifications` | admin | `admin-notifications-delete-dialog` — Bildirishnomani o'chirish (tasdiq) | [design/fragments/superadmin--notifications-delete-dialog.html](fragments/superadmin--notifications-delete-dialog.html) | oyna | yangi (kodda yo'q) |
 
 #### `/notifications/send` — Xabar yuborish (tizim ichidagi bildirishnoma)
 
@@ -1311,13 +1572,48 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin
 - **Menyuda:** yo'q — /inbox sahifasidagi «Xabar yuborish» havolasi
 - **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): 4 rejim, kanallar, ko'rinish (NotificationInboxItem preview), yuborish — tasdiq oynasi (hammaga — danger), ikki marta yuborilmaydi. Ega savoli 10 — sukut: «← Bildirishnomalar» /inbox ga qaytaradi (kirish nuqtasi /inbox; admin /notifications ni ocholmaydi).
+- **Izoh:** Dizayn v2 (G2): 4 rejim, kanallar, ko'rinish (NotificationInboxItem preview), yuborish — tasdiq oynasi (hammaga — danger), ikki marta yuborilmaydi. Ega savoli 10 — sukut: «← Bildirishnomalar» /inbox ga qaytaradi (kirish nuqtasi /inbox; admin /notifications ni ocholmaydi). Ega tasdig'i 2026-10-19 (notif-send): yuborishdan keyin natija bloki (*-send-result: kanal bo'yicha yuborildi / navbatda / o'tkazib yuborildi / xato; «Yetkazilmaganlar» darhol — S1, qo'shimcha so'rov bilan); javob kelmasa (504) — *-send-unknown, «Qayta urinish» ayni client_request_id bilan (S5). Ranglar (S3): navbatda / yuborilmoqda — warning, o'tkazib yuborildi / provayder ulanmagan — neytral, xato — danger, yetkazildi — success. Xato matni faqat tushunarli o'zbekcha (S4). Sarlavhadagi «Yuborilganlar» havolasi → (taklif) /notifications/sent.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/notifications/send` | superadmin | `superadmin-notifications-send` — Xabar yuborish | [design/fragments/superadmin--notifications-send.html](fragments/superadmin--notifications-send.html) | sahifa | v2 |
 | `/notifications/send` | superadmin | `superadmin-notifications-send-confirm-dialog` — Xabarni yuborishni tasdiqlang | [design/fragments/superadmin--notifications-send-confirm-dialog.html](fragments/superadmin--notifications-send-confirm-dialog.html) | oyna | v2 |
-| `/notifications/send` | admin | — Maket yo'q — superadmin-notifications-send ga qarang (kirish: /inbox sahifasidagi havola). | — | — | v2 |
+| `/notifications/send` | superadmin | `superadmin-notifications-send-audience` — Xabar yuborish — auditoriya konstruktori | [design/fragments/superadmin--notifications-send-audience.html](fragments/superadmin--notifications-send-audience.html) | sahifa | yangi (kodda yo'q) |
+| `/notifications/send` | superadmin | `superadmin-notifications-send-schedule` — Xabar yuborish — belgilangan vaqtda (soat tanlash ochiq) | [design/fragments/superadmin--notifications-send-schedule.html](fragments/superadmin--notifications-send-schedule.html) | sahifa | yangi (kodda yo'q) |
+| `/notifications/send` | superadmin | `superadmin-notifications-send-audience-sample-dialog` — Auditoriya namunasi (20 ta, maskalangan) | [design/fragments/superadmin--notifications-send-audience-sample-dialog.html](fragments/superadmin--notifications-send-audience-sample-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/notifications/send` | superadmin | `superadmin-notifications-send-audience-save-dialog` — Segmentni saqlash (oyna) | [design/fragments/superadmin--notifications-send-audience-save-dialog.html](fragments/superadmin--notifications-send-audience-save-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/notifications/send` | superadmin | `superadmin-notifications-send-confirm-scheduled-dialog` — Kampaniyani rejalashtirishni tasdiqlang | [design/fragments/superadmin--notifications-send-confirm-scheduled-dialog.html](fragments/superadmin--notifications-send-confirm-scheduled-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/notifications/send` | superadmin | `superadmin-notifications-campaign-cancel-dialog` — Kampaniyani bekor qilish (tasdiq) | [design/fragments/superadmin--notifications-campaign-cancel-dialog.html](fragments/superadmin--notifications-campaign-cancel-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/notifications/send` | superadmin | `superadmin-notifications-campaign-report-dialog` — Kampaniya hisoboti (oyna) | [design/fragments/superadmin--notifications-campaign-report-dialog.html](fragments/superadmin--notifications-campaign-report-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/notifications/send` | superadmin | `superadmin-notifications-send-states` — Xabar yuborish — auditoriya va yuborish holatlari | [design/fragments/superadmin--notifications-send-states.html](fragments/superadmin--notifications-send-states.html) | sahifa | yangi (kodda yo'q) |
+| `/notifications/send` | superadmin | `superadmin-notifications-send-result` — Xabar yuborish — natija | [design/fragments/superadmin--notifications-send-result.html](fragments/superadmin--notifications-send-result.html) | sahifa | yangi (kodda yo'q) |
+| `/notifications/send` | superadmin | `superadmin-notifications-send-unknown` — Xabar yuborish — natija noma'lum | [design/fragments/superadmin--notifications-send-unknown.html](fragments/superadmin--notifications-send-unknown.html) | sahifa | yangi (kodda yo'q) |
+| `/notifications/send` | admin | `admin-notifications-send` — Xabar yuborish | [design/fragments/superadmin--notifications-send.html](fragments/superadmin--notifications-send.html) | sahifa | qisman |
+| `/notifications/send` | admin | `admin-notifications-send-confirm-dialog` — Xabarni yuborishni tasdiqlang | [design/fragments/superadmin--notifications-send-confirm-dialog.html](fragments/superadmin--notifications-send-confirm-dialog.html) | oyna | qisman |
+| `/notifications/send` | admin | `admin-notifications-send-result` — Xabar yuborish — natija | [design/fragments/superadmin--notifications-send-result.html](fragments/superadmin--notifications-send-result.html) | sahifa | yangi (kodda yo'q) |
+| `/notifications/send` | admin | `admin-notifications-send-unknown` — Xabar yuborish — natija noma'lum | [design/fragments/superadmin--notifications-send-unknown.html](fragments/superadmin--notifications-send-unknown.html) | sahifa | yangi (kodda yo'q) |
+
+#### `(taklif) /notifications/sent` — Yuborilganlar — qo'lda yuborilgan xabarlar va natija (yangi route, kodda yo'q)
+
+- **Fayllar:** `src/app/lib/routes.tsx`
+- **Rollar:** superadmin (taklif — yangi route), admin (taklif — yangi route (canSendNotifications))
+- **Holat:** eski
+- **Izoh:** Ega tasdig'i 2026-10-19 (notif-send): ro'yxat — sana, sarlavha, kim yubordi, «Kimga» (S2 — backend ro'yxat javobiga auditoriyani qo'shadi; hozir faqat tafsilotda), kanallar, natija; filtrlar «Natija» va «Kim yubordi». Ro'yxatdagi channel_status — saqlangan nusxa, tafsilot oynasidagi — jonli (Telegram yakuniy holati failed + tushunarli sabab). Holatlar: yuklanish, bo'sh, xato (QueryBoundary). Yo'l nomi taklif — kod yozilganda haqiqiy yo'l bilan almashtiriladi.
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `(taklif) /notifications/sent` | superadmin | `superadmin-notifications-sent` — Yuborilganlar | [design/fragments/superadmin--notifications-sent.html](fragments/superadmin--notifications-sent.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /notifications/sent` | superadmin | `superadmin-notifications-sent-loading` — Yuborilganlar — yuklanmoqda | [design/fragments/superadmin--notifications-sent-loading.html](fragments/superadmin--notifications-sent-loading.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /notifications/sent` | superadmin | `superadmin-notifications-sent-empty` — Yuborilganlar — bo'sh | [design/fragments/superadmin--notifications-sent-empty.html](fragments/superadmin--notifications-sent-empty.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /notifications/sent` | superadmin | `superadmin-notifications-sent-error` — Yuborilganlar — xato | [design/fragments/superadmin--notifications-sent-error.html](fragments/superadmin--notifications-sent-error.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /notifications/sent` | superadmin | `superadmin-notifications-sent-detail-dialog` — Yuborilgan xabar tafsiloti | [design/fragments/superadmin--notifications-sent-detail-dialog.html](fragments/superadmin--notifications-sent-detail-dialog.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /notifications/sent` | superadmin | `superadmin-notifications-sent-detail-states` — Yuborilgan xabar tafsiloti — boshqa holatlar | [design/fragments/superadmin--notifications-sent-detail-states.html](fragments/superadmin--notifications-sent-detail-states.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /notifications/sent` | admin | `admin-notifications-sent` — Yuborilganlar | [design/fragments/superadmin--notifications-sent.html](fragments/superadmin--notifications-sent.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /notifications/sent` | admin | `admin-notifications-sent-loading` — Yuborilganlar — yuklanmoqda | [design/fragments/superadmin--notifications-sent-loading.html](fragments/superadmin--notifications-sent-loading.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /notifications/sent` | admin | `admin-notifications-sent-empty` — Yuborilganlar — bo'sh | [design/fragments/superadmin--notifications-sent-empty.html](fragments/superadmin--notifications-sent-empty.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /notifications/sent` | admin | `admin-notifications-sent-error` — Yuborilganlar — xato | [design/fragments/superadmin--notifications-sent-error.html](fragments/superadmin--notifications-sent-error.html) | sahifa | yangi (kodda yo'q) |
+| `(taklif) /notifications/sent` | admin | `admin-notifications-sent-detail-dialog` — Yuborilgan xabar tafsiloti | [design/fragments/superadmin--notifications-sent-detail-dialog.html](fragments/superadmin--notifications-sent-detail-dialog.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /notifications/sent` | admin | `admin-notifications-sent-detail-states` — Yuborilgan xabar tafsiloti — boshqa holatlar | [design/fragments/superadmin--notifications-sent-detail-states.html](fragments/superadmin--notifications-sent-detail-states.html) | sahifa | yangi (kodda yo'q) |
 
 #### `/notifications/sms` — SMS — Kampaniya · Shablonlar · Xarajat · Sozlamalar
 
@@ -1335,6 +1631,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/notifications/sms` | superadmin | `superadmin-notifications-sms-templates` — SMS — Shablonlar | [design/fragments/superadmin--notifications-sms-templates.html](fragments/superadmin--notifications-sms-templates.html) | sahifa | v2 |
 | `/notifications/sms` | superadmin | `superadmin-notifications-sms-report` — SMS — Xarajat | [design/fragments/superadmin--notifications-sms-report.html](fragments/superadmin--notifications-sms-report.html) | sahifa | v2 |
 | `/notifications/sms` | superadmin | `superadmin-notifications-sms-settings` — SMS — Sozlamalar | [design/fragments/superadmin--notifications-sms-settings.html](fragments/superadmin--notifications-sms-settings.html) | sahifa | v2 |
+| `/notifications/sms` | superadmin | `superadmin-notifications-sms-campaign-segment` — SMS — Kampaniya: mijozlar segmenti va yuborish vaqti | [design/fragments/superadmin--notifications-sms-campaign-segment.html](fragments/superadmin--notifications-sms-campaign-segment.html) | sahifa | yangi (kodda yo'q) |
 | `/notifications/sms` | admin | — Maket yo'q — superadmin-notifications-sms-* ga qarang. | — | — | v2 |
 
 ### Tizim — faoliyat jurnali va ops
@@ -1371,9 +1668,18 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/ops` | superadmin | `superadmin-ops-integrations` — Ops — Integratsiyalar | [design/fragments/superadmin--ops-integrations.html](fragments/superadmin--ops-integrations.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-investors` — Ops — Investorlar | [design/fragments/superadmin--ops-investors.html](fragments/superadmin--ops-investors.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-logistics` — Ops — Logistika (qaytarish so'rovlari) | [design/fragments/superadmin--ops-logistics.html](fragments/superadmin--ops-logistics.html) | sahifa | v2 |
+| `/ops` | superadmin | `superadmin-ops-logistics-approve-dialog` — Ops — Logistika: qaytarish so'rovlarini tasdiqlash | [design/fragments/superadmin--ops-logistics-approve-dialog.html](fragments/superadmin--ops-logistics-approve-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/ops` | superadmin | `superadmin-ops-logistics-approve-result` — Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | [design/fragments/superadmin--ops-logistics-approve-result.html](fragments/superadmin--ops-logistics-approve-result.html) | sahifa | yangi (kodda yo'q) |
 | `/ops` | superadmin | `superadmin-ops-branches` — Ops — Filiallar (partiya bekor qilish) | [design/fragments/superadmin--ops-branches.html](fragments/superadmin--ops-branches.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-identity` — Ops — Xodimlar ro'yxatlari | [design/fragments/superadmin--ops-identity.html](fragments/superadmin--ops-identity.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-system` — Ops — Tizim | [design/fragments/superadmin--ops-system.html](fragments/superadmin--ops-system.html) | sahifa | v2 |
+| `/ops` | superadmin | `superadmin-ops-system-loading` — Ops — Tizim: yuklanish | [design/fragments/superadmin--ops-system-loading.html](fragments/superadmin--ops-system-loading.html) | sahifa | yangi (kodda yo'q) |
+| `/ops` | superadmin | `superadmin-ops-system-error` — Ops — Tizim: holatni olib bo'lmadi, AI o'chiq | [design/fragments/superadmin--ops-system-error.html](fragments/superadmin--ops-system-error.html) | sahifa | yangi (kodda yo'q) |
+| `/ops` | superadmin | `superadmin-ops-system-partial` — Ops — Tizim: qisman ishlayapti, zaif AI modeli | [design/fragments/superadmin--ops-system-partial.html](fragments/superadmin--ops-system-partial.html) | sahifa | yangi (kodda yo'q) |
+| `/ops` | superadmin | `superadmin-ops-system-down` — Ops — Tizim: xizmatlar ishlamayapti | [design/fragments/superadmin--ops-system-down.html](fragments/superadmin--ops-system-down.html) | sahifa | yangi (kodda yo'q) |
+| `/ops` | superadmin | `superadmin-ops-system-critical` — Ops — Tizim: asosiy xizmat ishlamayapti, AI ulanmagan | [design/fragments/superadmin--ops-system-critical.html](fragments/superadmin--ops-system-critical.html) | sahifa | yangi (kodda yo'q) |
+| `/ops` | superadmin | `superadmin-ops-system-ai-config` — Ops — Tizim: kalit nomi noto'g'ri, noma'lum model | [design/fragments/superadmin--ops-system-ai-config.html](fragments/superadmin--ops-system-ai-config.html) | sahifa | yangi (kodda yo'q) |
+| `/ops` | superadmin | `superadmin-ops-system-ai-cap` — Ops — Tizim: AI kunlik limiti tugadi | [design/fragments/superadmin--ops-system-ai-cap.html](fragments/superadmin--ops-system-ai-cap.html) | sahifa | yangi (kodda yo'q) |
 | `/ops` | superadmin | `superadmin-ops-auth-diagnostics` — Ops — Auth diagnostikasi | [design/fragments/superadmin--ops-auth-diagnostics.html](fragments/superadmin--ops-auth-diagnostics.html) | sahifa | v2 |
 
 #### `/ops/ui-kit` — Komponentlar to'plami — dizayn v2 primitivlari namunasi (kunduzgi + tungi yonma-yon; ?section=<id>, ?theme-pair=0)
@@ -1435,11 +1741,13 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Tanlangan qaytarish so'rovlarini tasdiqlash — POST post/return-requests/approve { order_ids }.
+- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Tanlangan qaytarish so'rovlarini tasdiqlash — POST post/return-requests/approve { order_ids }. Ega tasdig'i 2026-10-19 (ops-system): tasdiq oynasi (*-ops-logistics-approve-dialog), natija — toast «N ta tasdiqlandi, M tasi o'tkazib yuborildi» (S5) va qisman natija ro'yxati (*-approve-result).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/logistics-ops` | superadmin | `superadmin-ops-logistics` — Ops — Logistika (qaytarish so'rovlari) | [design/fragments/superadmin--ops-logistics.html](fragments/superadmin--ops-logistics.html) | sahifa | v2 |
+| `/logistics-ops` | superadmin | `superadmin-ops-logistics-approve-dialog` — Ops — Logistika: qaytarish so'rovlarini tasdiqlash | [design/fragments/superadmin--ops-logistics-approve-dialog.html](fragments/superadmin--ops-logistics-approve-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/logistics-ops` | superadmin | `superadmin-ops-logistics-approve-result` — Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | [design/fragments/superadmin--ops-logistics-approve-result.html](fragments/superadmin--ops-logistics-approve-result.html) | sahifa | yangi (kodda yo'q) |
 
 #### `/branch-ops` — Ops — Filiallar (paketni bekor qilish)
 
@@ -1474,11 +1782,18 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). «Kuryer samaradorligi» (D3, ega savoli 5 — sukut): API foiz bermaydi (analytics courierEfficiency = kuryerga o'rtacha buyurtma soni) — «O'rtacha N ta buyurtma», maketdagi halqa chizilmaydi. Yetkazish bo'lmaganda backend onTimeRate = 0 yuboradi (0% ko'rinadi).
+- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). «Kuryer samaradorligi» (D3, ega savoli 5 — sukut): API foiz bermaydi (analytics courierEfficiency = kuryerga o'rtacha buyurtma soni) — «O'rtacha N ta buyurtma», maketdagi halqa chizilmaydi. Yetkazish bo'lmaganda backend onTimeRate = 0 yuboradi (0% ko'rinadi). Ega tasdig'i 2026-10-19 (ops-system): asosiy xizmatlar Identity, Order, Finance, Logistics — biri ishlamasa «Ishlamayapti» (S1, *-ops-system-critical / -down); holatlar: yuklanish, xato, qisman (zaif AI modeli), AI limiti tugadi (*-ai-cap; limitni oshirish faqat serverda, Ops'da tugma yo'q — S2), kalit yo'q / noto'g'ri — «AI o'chiq» va «AI bilan» tabi yashiriladi (S3, *-ai-config). Dollar summalari formatMoney + valyuta («12,40 $», S4).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/system-ops` | superadmin | `superadmin-ops-system` — Ops — Tizim | [design/fragments/superadmin--ops-system.html](fragments/superadmin--ops-system.html) | sahifa | v2 |
+| `/system-ops` | superadmin | `superadmin-ops-system-loading` — Ops — Tizim: yuklanish | [design/fragments/superadmin--ops-system-loading.html](fragments/superadmin--ops-system-loading.html) | sahifa | yangi (kodda yo'q) |
+| `/system-ops` | superadmin | `superadmin-ops-system-error` — Ops — Tizim: holatni olib bo'lmadi, AI o'chiq | [design/fragments/superadmin--ops-system-error.html](fragments/superadmin--ops-system-error.html) | sahifa | yangi (kodda yo'q) |
+| `/system-ops` | superadmin | `superadmin-ops-system-partial` — Ops — Tizim: qisman ishlayapti, zaif AI modeli | [design/fragments/superadmin--ops-system-partial.html](fragments/superadmin--ops-system-partial.html) | sahifa | yangi (kodda yo'q) |
+| `/system-ops` | superadmin | `superadmin-ops-system-down` — Ops — Tizim: xizmatlar ishlamayapti | [design/fragments/superadmin--ops-system-down.html](fragments/superadmin--ops-system-down.html) | sahifa | yangi (kodda yo'q) |
+| `/system-ops` | superadmin | `superadmin-ops-system-critical` — Ops — Tizim: asosiy xizmat ishlamayapti, AI ulanmagan | [design/fragments/superadmin--ops-system-critical.html](fragments/superadmin--ops-system-critical.html) | sahifa | yangi (kodda yo'q) |
+| `/system-ops` | superadmin | `superadmin-ops-system-ai-config` — Ops — Tizim: kalit nomi noto'g'ri, noma'lum model | [design/fragments/superadmin--ops-system-ai-config.html](fragments/superadmin--ops-system-ai-config.html) | sahifa | yangi (kodda yo'q) |
+| `/system-ops` | superadmin | `superadmin-ops-system-ai-cap` — Ops — Tizim: AI kunlik limiti tugadi | [design/fragments/superadmin--ops-system-ai-cap.html](fragments/superadmin--ops-system-ai-cap.html) | sahifa | yangi (kodda yo'q) |
 
 #### `/logs` — Ops — Kirish diagnostikasi (POST /auth/refresh sinovi; eski nomi «Loglar», jurnal emas)
 
@@ -1493,56 +1808,58 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 |---|---|---|---|---|---|
 | `/logs` | superadmin | `superadmin-ops-auth-diagnostics` — Ops — Auth diagnostikasi | [design/fragments/superadmin--ops-auth-diagnostics.html](fragments/superadmin--ops-auth-diagnostics.html) | sahifa | v2 |
 
-#### `/market-operators` — Market operatorlari — YOPIQ sahifa
-
-- **Fayllar:** `src/pages/market-operators/index.tsx`
-- **Qobiq:** DashboardLayout · **Guard:** `canViewMarketOperators` (routes.tsx → canViewMarketOperators (doim false))
-- **Rollar:** hech kim (yopiq)
-- **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
-- **Holat:** eski
-- **Izoh:** canViewMarketOperators = () => false (fix3 RBAC-18): hech kim ocholmaydi, maket yo'q. Backendda market operatorlari yo'li paydo bo'lsa — avval maket chiziladi.
-
 ### Profil, sozlamalar, bildirishnomalar qutisi
 
 #### `/profile` — Profil (yuqori panel → profil menyusi)
 
 - **Fayllar:** `src/pages/profile/ui/ProfilePage.tsx` · `src/pages/profile/ui/ProfileCards.tsx` · `src/pages/profile/ui/ChangePasswordDialog.tsx` · `src/pages/profile/ui/EditProfileDialog.tsx` · `src/pages/profile/lib/salaryCycle.ts` · `src/pages/profile/lib/profileView.ts` · `src/features/telegram-link/ui/TelegramLinkCard.tsx` · `src/features/telegram-link/ui/TelegramLinkDialog.tsx` · `src/widgets/user-detail/ui/MarketTelegramGroupPiiCard.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish)
-- **Rollar:** superadmin, admin, manager, registrator, market, courier
+- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
 - **Menyuda:** yo'q — yuqori panel → ism/avatar (profil)
 - **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): ma'lumot kartasi (GET /auth/my-profile), maosh bloki faqat salary > 0; parol — alohida oyna (≥ 4 belgi, mos kelish, saqlangach chiqish); profilni tahrirlash — alohida oyna (Ism, Telefon; D7, maket yo'q: EditProfileDialog `(maket yo'q) common-profile-password-dialog`). UpdateUserModal profilda ishlatilmaydi. «Login» — username bo'lsa. dev birlashtirishi: «Xavfsizlik» ostida yana bir qator — o'z Telegram'ini ulash/uzish (TelegramLinkCard, mijoz/investordan boshqa rollar; POST users/me/telegram/link-code, oyna ochiqligida profil har 3 s) va market uchun «Guruhda mijoz ismi va telefoni» (MarketTelegramGroupPiiCard, PATCH markets/:id/telegram-group-pii) — maket yo'q, eng yaqini «Xavfsizlik» kartasi (`(maket yo'q) common-profile`).
+- **Izoh:** Dizayn v2 (G2): ma'lumot kartasi (GET /auth/my-profile), maosh bloki faqat salary > 0; parol — alohida oyna (≥ 4 belgi, mos kelish, saqlangach chiqish); profilni tahrirlash — alohida oyna (Ism, Telefon; D7, maket yo'q: EditProfileDialog `(maket yo'q) common-profile-password-dialog`). UpdateUserModal profilda ishlatilmaydi. «Login» — username bo'lsa. dev birlashtirishi: «Xavfsizlik» ostida yana bir qator — o'z Telegram'ini ulash/uzish (TelegramLinkCard, mijoz/investordan boshqa rollar; POST users/me/telegram/link-code, oyna ochiqligida profil har 3 s) va market uchun «Guruhda mijoz ismi va telefoni» (MarketTelegramGroupPiiCard, PATCH markets/:id/telegram-group-pii) — maket yo'q, eng yaqini «Xavfsizlik» kartasi (`(maket yo'q) common-profile`). Ega tasdig'i 2026-10-19 (tg-link): o'z Telegram'ini ulash — ulanmagan / ulangan holatlari, havola + QR oynasi (muddat bilan), bot nomi yo'q bo'lsa buyruq oynasi, havola eskirsa — qayta yaratish, uzish — tasdiq oynasi (common-profile-telegram*). Market rolida /profile maketi — market-profile (common-profile o'rniga): «Telegram guruhlari» holati (S1 — backendga endpoint so'raladi), har xabar turi qatorida «Ulash» (S5), «Guruhda mijoz ismi va telefoni» kaliti «Telegram guruhi» kartasida (S3).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
+| `/profile` | market | `market-profile` — Profil — Telegram guruhlari holati (ulanmagan; taklif · backend kerak) | [design/fragments/market--profile.html](fragments/market--profile.html) | sahifa | qisman |
+| `/profile` | market | `market-profile-telegram-status` — Profil — Telegram guruhi: biri ulangan (taklif · backend kerak) | [design/fragments/market--profile-telegram-status.html](fragments/market--profile-telegram-status.html) | sahifa | yangi (kodda yo'q) |
+| `/profile` | market | `market-profile-telegram-group-dialog` — Telegram guruhini ulash (havola, QR, holat kutilmoqda) | [design/fragments/market--profile-telegram-group-dialog.html](fragments/market--profile-telegram-group-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/profile` | market | `market-profile-telegram-group-expired-dialog` — Telegram guruhini ulash — havola muddati tugadi | [design/fragments/market--profile-telegram-group-expired-dialog.html](fragments/market--profile-telegram-group-expired-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/profile` | umumiy (barcha rollar) | `common-profile` — Profil | [design/fragments/common--profile.html](fragments/common--profile.html) | sahifa | v2 |
 | `/profile` | umumiy (barcha rollar) | `common-profile-password-dialog` — Profil — parolni o'zgartirish<br>↳ `src/pages/profile/ui/ChangePasswordDialog.tsx` | [design/fragments/common--profile-password-dialog.html](fragments/common--profile-password-dialog.html) | oyna | v2 |
+| `/profile` | umumiy (barcha rollar) | `common-profile-telegram` — Profil — Telegram ulanmagan | [design/fragments/common--profile-telegram.html](fragments/common--profile-telegram.html) | sahifa | qisman |
+| `/profile` | umumiy (barcha rollar) | `common-profile-telegram-link-dialog` — Profil — Telegram'ni ulash (havola, QR, muddat) | [design/fragments/common--profile-telegram-link-dialog.html](fragments/common--profile-telegram-link-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/profile` | umumiy (barcha rollar) | `common-profile-telegram-command-dialog` — Profil — Telegram'ni ulash (bot nomi yo'q: buyruq) | [design/fragments/common--profile-telegram-command-dialog.html](fragments/common--profile-telegram-command-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/profile` | umumiy (barcha rollar) | `common-profile-telegram-expired-dialog` — Profil — Telegram havolasi eskirdi | [design/fragments/common--profile-telegram-expired-dialog.html](fragments/common--profile-telegram-expired-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/profile` | umumiy (barcha rollar) | `common-profile-telegram-linked` — Profil — Telegram ulangan (+ «Telegram ulandi» xabari) | [design/fragments/common--profile-telegram-linked.html](fragments/common--profile-telegram-linked.html) | sahifa | qisman |
+| `/profile` | umumiy (barcha rollar) | `common-profile-telegram-unlink-dialog` — Profil — Telegram'ni uzish (tasdiq) | [design/fragments/common--profile-telegram-unlink-dialog.html](fragments/common--profile-telegram-unlink-dialog.html) | oyna | yangi (kodda yo'q) |
 
 #### `/settings` — Sozlamalar — Ko'rinish · Bosh sahifa · Interfeys · Skaner · Bildirishnomalar (dizayn v2)
 
 - **Fayllar:** `src/pages/settings/ui/SettingsPage.tsx` · `src/pages/settings/ui/settingsUi.tsx` · `src/pages/settings/ui/AppearancePanel.tsx` · `src/pages/settings/ui/DashboardPanel.tsx` · `src/pages/settings/ui/InterfacePanel.tsx` · `src/pages/settings/ui/ScannerPanel.tsx` · `src/pages/settings/ui/NotificationsPanel.tsx` · `src/features/push-notifications/ui/PushPermissionButton.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish)
-- **Rollar:** superadmin, admin, manager, registrator, market, courier
+- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
 - **Menyuda:** yo'q — yuqori panel → «Sozlamalar» tugmasi; telefon menyusi
 - **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): 5 tab (desktopda chap navigatsiya, telefonda gorizontal), komponent holatida — URL'da emas; «Saqlandi» belgisi, mavzu/til darhol. «Skaner» alohida tab (D5): ovozlar «Interfeys» dan ko'chdi; «Kamera» kartasi — kamera ishi bilan (ega savoli 4 — sukut: tab izohi maketdagidek «Kamera, ovoz va tebranish»). Ega savoli 3 — sukut: «Bildirishnomalar» tabida maketdagi qurilma blokidan keyin kodda bor kanallar / kategoriyalar / reklama / sokin soatlar maket uslubidagi kartalarda saqlanadi. «Bosh sahifa bloklari» tartibi bosh sahifadagi (G1) tartib bilan bir xil; «Buyurtmalar vaqti» — Taklif, chizilmaydi.
+- **Izoh:** Dizayn v2 (G2): 5 tab (desktopda chap navigatsiya, telefonda gorizontal), komponent holatida — URL'da emas; «Saqlandi» belgisi, mavzu/til darhol. «Skaner» alohida tab (D5): ovozlar «Interfeys» dan ko'chdi; «Kamera» kartasi — skaner 4-bosqichi (common-settings-scanner): «Kamerani sinash» → /scan (marketda yo'q), asosiy kamera, «Chiroq — avtomatik» (ega qarori: yorug'lik kam bo'lsa yoqish taklifi, o'zi yoqilmaydi — izoh matni shunga moslangan), «Uzluksiz skanerlash» (o'chiq — oqim kamerasi bitta koddan keyin yopiladi), «Ovoz», «Tebranish», «Ramka o'lchami» (ramka va skan hududi); hisobga saqlanadi (entities/settings scanner.camera / scanner.feedback, backend jsonb ochiq) + localStorage ko'zgusi — maketdagi «shu qurilmada saqlanadi» o'rniga «hisobingizda saqlanadi». Tab izohi maketdagidek «Kamera, ovoz va tebranish». Ega savoli 3 — sukut: «Bildirishnomalar» tabida maketdagi qurilma blokidan keyin kodda bor kanallar / kategoriyalar / reklama / sokin soatlar maket uslubidagi kartalarda saqlanadi. «Bosh sahifa bloklari» tartibi bosh sahifadagi (G1) tartib bilan bir xil; «Buyurtmalar vaqti» — Taklif, chizilmaydi. Taklif (kodda yo'q, faqat mijoz tomoni — manifest.webmanifest va sw.js bor, backend kerak emas): «Bildirishnomalar» tabida qurilma blokidan keyin «Ilova» kartasi — «O'rnatilgan» (display-mode: standalone) / «O'rnatilmagan» + «O'rnatish» (beforeinstallprompt) / iOS — «Qanday qo'shiladi» (common-settings-notifications-pwa → courier-inbox-pwa-ios-dialog) / brauzer qo'llab-quvvatlamasa — «Qo'llab-quvvatlanmaydi», tugmasiz; tab izohi «Shu qurilmaga xabarlar · ilova».
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/settings` | umumiy (barcha rollar) | `common-settings-appearance` — Sozlamalar — Ko'rinish | [design/fragments/common--settings-appearance.html](fragments/common--settings-appearance.html) | sahifa | v2 |
 | `/settings` | umumiy (barcha rollar) | `common-settings-dashboard` — Sozlamalar — Bosh sahifa bloklari | [design/fragments/common--settings-dashboard.html](fragments/common--settings-dashboard.html) | sahifa | v2 |
 | `/settings` | umumiy (barcha rollar) | `common-settings-interface` — Sozlamalar — Interfeys | [design/fragments/common--settings-interface.html](fragments/common--settings-interface.html) | sahifa | v2 |
-| `/settings` | umumiy (barcha rollar) | `common-settings-scanner` — Sozlamalar — Skaner (kamera va ovoz) | [design/fragments/common--settings-scanner.html](fragments/common--settings-scanner.html) | sahifa | qisman |
+| `/settings` | umumiy (barcha rollar) | `common-settings-scanner` — Sozlamalar — Skaner (kamera va ovoz) | [design/fragments/common--settings-scanner.html](fragments/common--settings-scanner.html) | sahifa | v2 |
 | `/settings` | umumiy (barcha rollar) | `common-settings-notifications` — Sozlamalar — Bildirishnomalar | [design/fragments/common--settings-notifications.html](fragments/common--settings-notifications.html) | sahifa | v2 |
+| `/settings` | umumiy (barcha rollar) | `common-settings-notifications-pwa` — Sozlamalar — Bildirishnomalar · ilova o'rnatilgan / o'rnatilmagan | [design/fragments/common--settings-notifications-pwa.html](fragments/common--settings-notifications-pwa.html) | sahifa | yangi (kodda yo'q) |
 
 #### `/inbox` — Bildirishnomalar qutisi (qo'ng'iroqcha manzili)
 
 - **Fayllar:** `src/pages/notifications/ui/NotificationInboxPage.tsx` · `src/widgets/notification-inbox/ui/NotificationInboxList.tsx` · `src/widgets/notification-inbox/ui/NotificationInboxItem.tsx` · `src/widgets/notification-inbox/ui/NotificationItemMenu.tsx` · `src/features/push-notifications/ui/PushPermissionButton.tsx` · `src/features/push-notifications/ui/PushExplainDialog.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish)
-- **Rollar:** superadmin, admin, manager, registrator, market, courier
+- **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
 - **Menyuda:** yo'q — yuqori panel → qo'ng'iroqcha; telefon menyusi
 - **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): tablar, kategoriya chiplari (URL'da), «Faqat muhim», qator amallari, sahifalash; push holat bloki barcha rollarda holatga qarab (D4). Ega savoli 9 — sukut: sarlavha barcha rollarda «Bildirishnomalar» (superadmin maketidagi «Bildirishnomalar qutisi» emas); «SMS» va «Xabar yuborish» faqat canSendNotifications. Push ruxsati tushuntirish oynasi — PushExplainDialog (sozlamalarda ham).
+- **Izoh:** Dizayn v2 (G2): tablar, kategoriya chiplari (URL'da), «Faqat muhim», qator amallari, sahifalash; push holat bloki barcha rollarda holatga qarab (D4). Ega savoli 9 — sukut: sarlavha barcha rollarda «Bildirishnomalar» (superadmin maketidagi «Bildirishnomalar qutisi» emas); «SMS» va «Xabar yuborish» faqat canSendNotifications. Push ruxsati tushuntirish oynasi — PushExplainDialog (sozlamalarda ham). Taklif (kodda yo'q): ilovani o'rnatish kartasi — barcha rollarda, ilova o'rnatilmagan bo'lsa push blokidan keyin; Android/kompyuter — «Keyinroq» + «O'rnatish» (ikkinchi darajali tugma, beforeinstallprompt) — courier-inbox-pwa-install; iPhone/iPad (Safari) — «Qanday qo'shiladi» → 3 qadamli oyna «Bosh ekranga qo'shing» («Keyinroq» / «Tushunarli», telefonda pastki varaqa) — courier-inbox-pwa-ios-dialog. iOS'da ilova o'rnatilmagan bo'lsa push bloki («Bildirishnomalar yoqilgan / yoqish») yashiriladi — push faqat o'rnatilgan ilovada ishlaydi, uning o'rnida o'rnatish kartasi turadi (bu ataylab). «Keyinroq» yoki o'rnatilgach karta shu qurilmada boshqa chiqmaydi (holat — localStorage), qayta o'rnatish — sozlamalardagi «Ilova» kartasidan.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -1550,6 +1867,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/inbox` | superadmin | `superadmin-notifications-push-explain-dialog` — Bildirishnomalarni yoqasizmi? (tasdiq)<br>↳ `src/features/push-notifications/ui/PushExplainDialog.tsx` | [design/fragments/superadmin--notifications-push-explain-dialog.html](fragments/superadmin--notifications-push-explain-dialog.html) | oyna | v2 |
 | `/inbox` | courier | `courier-inbox-list` — Bildirishnomalar | [design/fragments/courier--inbox-list.html](fragments/courier--inbox-list.html) | sahifa | v2 |
 | `/inbox` | courier | `courier-inbox-push-explain-dialog` — Bildirishnomalarni yoqish oynasi<br>↳ `src/features/push-notifications/ui/PushExplainDialog.tsx` | [design/fragments/courier--inbox-push-explain-dialog.html](fragments/courier--inbox-push-explain-dialog.html) | oyna | v2 |
+| `/inbox` | courier | `courier-inbox-pwa-install` — Bildirishnomalar — ilovani o'rnatish taklifi (Android / kompyuter) | [design/fragments/courier--inbox-pwa-install.html](fragments/courier--inbox-pwa-install.html) | sahifa | yangi (kodda yo'q) |
+| `/inbox` | courier | `courier-inbox-pwa-ios-dialog` — Bosh ekranga qo'shish oynasi (iPhone / iPad) | [design/fragments/courier--inbox-pwa-ios-dialog.html](fragments/courier--inbox-pwa-ios-dialog.html) | oyna · faqat planshet + telefon | yangi (kodda yo'q) |
 | `/inbox` | umumiy (barcha rollar) | `common-inbox` — Bildirishnomalar qutisi | [design/fragments/common--inbox.html](fragments/common--inbox.html) | sahifa | v2 |
 
 ## 3. Yo'naltirishlar (eski havolalar)
@@ -1578,13 +1897,16 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-124 ta maket · kodda bor: 121 · kodda yo'q: 3
+218 ta maket · kodda bor: 124 · kodda yo'q: 94
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
 | `superadmin-dashboard-main` | Dashboard — Bugungi statistika | sahifa | `/` | `src/pages/dashboard/DashboardPage.tsx` | v2 |
 | `superadmin-dashboard-region-modal` | Dashboard — Viloyat tafsiloti (xarita) | oyna | `/` | `src/widgets/region-detail/ui/RegionDetailDialog.tsx` | v2 |
 | `superadmin-orders-list` | Buyurtmalar ro'yxati | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
+| `superadmin-orders-list-skip-link` | Buyurtmalar ro'yxati — «Asosiy kontentga o'tish» havolasi fokusda | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — «Asosiy kontentga o'tish» havolasi yo'q. U shell'da (widgets/layout — ega roziligi bilan): shell'ning birinchi fokuslanadigan elementi, faqat :focus-visible da chap yuqorida ko'rinadi (ikkinchi darajali tugma + fokus halqasi — sahifaning asosiy amali bilan raqobat qilmaydi), nishon — [data-shell-slot=content] (id="main-content", tabindex=-1); barcha rollar va sahifalarda bir xil, maket bitta sahifada chizilgan. |
+| `superadmin-orders-list-refreshing` | Buyurtmalar ro'yxati — yangilanmoqda | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan. |
+| `superadmin-orders-list-refresh-error` | Buyurtmalar ro'yxati — yangilanmadi | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan. |
 | `superadmin-orders-filters-mobile` | Buyurtmalar — filtr paneli (telefon) | oyna · faqat telefon | `/orders` | `src/pages/orders/list/OrderFilters.tsx` | v2 |
 | `superadmin-orders-detail` | Buyurtma tafsilotlari | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | v2 |
 | `superadmin-orders-detail-edit-order-dialog` | Buyurtmani tahrirlash (popup) | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` | v2 |
@@ -1592,34 +1914,43 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-orders-detail-edit-address-dialog` | Manzilni tahrirlash (popup) | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | v2 |
 | `superadmin-neworders-markets` | Qabul va yaratish — Marketlar | sahifa | `/new-orders` | `src/pages/new_orders/markets/index.tsx` | v2 |
 | `superadmin-neworders-market-orders` | Market yangi buyurtmalari (qabul) | sahifa | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | v2 |
-| `superadmin-neworders-market-orders-camera` | Market yangi buyurtmalari (qabul) — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — sahifa faqat USB/klaviatura skaneri bilan ishlaydi (useOrderQrScanner). |
+| `superadmin-neworders-market-orders-camera` | Market yangi buyurtmalari (qabul) — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan = darhol qabul; «Qabul qilindi N · Qoldi M · Topilmadi K», boshqa marketning buyurtmasi rad etiladi, kamera ichida market almashtirish. |
 | `superadmin-neworders-receive-confirm-dialog` | Qo'lda qabul qilish (tasdiq) | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | v2 |
 | `superadmin-neworders-market-order-edit` | Market buyurtmasini tahrirlash | sahifa | `/new-orders/:marketId/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | v2 |
 | `superadmin-neworders-create-manual-step1` | Buyurtma yaratish — 1-qadam: Market | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step1Market.tsx` | v2 |
 | `superadmin-neworders-create-market-picker-dialog` | Market tanlash (modal) | oyna | `/new-orders/create` | `src/pages/orders/create/ui/MarketPicker.tsx` | v2 |
 | `superadmin-neworders-create-manual-step2` | Buyurtma yaratish — 2-qadam: Mijoz va mahsulot | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step2Combined.tsx` | v2 |
+| `superadmin-neworders-create-manual-step2-existing-customer` | Buyurtma yaratish — 2-qadam: mavjud mijoz, tarif, rasm (taklif) | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak. |
+| `superadmin-neworders-create-manual-step2-customer-suggest` | Buyurtma yaratish — 2-qadam: mijoz takliflari (taklif) | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak. |
+| `superadmin-neworders-create-manual-step2-customer-update-dialog` | Buyurtma yaratish — 2-qadam: mijoz kartasini yangilash (taklif) | oyna | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak. |
 | `superadmin-neworders-create-ai-input` | Buyurtma yaratish — AI bilan (kiritish) | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiInputPanel.tsx` | v2 |
 | `superadmin-neworders-create-ai-preview` | Buyurtma yaratish — AI natijalari (preview) | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` | v2 |
 | `superadmin-neworders-create-ai-confirm-dialog` | AI — yaratishni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | v2 |
 | `superadmin-neworders-incoming-sources` | Kiruvchi posilkalar — manba tanlash | sahifa | `/new-orders/incoming` | `src/pages/incoming-orders/SourcePicker.tsx` | v2 |
-| `superadmin-neworders-incoming-scan` | Kiruvchi posilkalar — skanerlab qabul | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | v2 |
-| `superadmin-neworders-incoming-scan-camera` | Kiruvchi posilkalar — skanerlab qabul — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri. |
+| `superadmin-neworders-incoming-scan` | Kiruvchi posilkalar — skanerlab qabul | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kodda «Qop» ustuni, skanerlangan qatorni olib tashlash va oxirgi skan xabaridagi «Olib tashlash» hali yo'q (DamKku7C, eo3eeJxs) — qolgani v2. |
+| `superadmin-neworders-incoming-scan-camera` | Kiruvchi posilkalar — skanerlab qabul — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan faqat belgilaydi, qabul — sahifadagi «Qabul qilish»; kamera ichida manba almashtirish, «Qopda yetishmaydi». |
+| `superadmin-neworders-incoming-scan-partial` | Kiruvchi posilkalar — chala qop ogohlantirishi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Chala qop ogohlantirishi, «2/3» belgisi va chala qop QR'i skanerlanganda sariq xabar + ogohlantirish ovozi yo'q (DamKku7C, ega S5) — kodda faqat qop skanida «N tadan M tasi» xabari; «keldi» soni uchun backend received_count kerak (ega S3). |
+| `superadmin-neworders-incoming-scan-partial-confirm-dialog` | Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Chala qop bilan qabul tasdig'i yo'q — qabul darhol yuboriladi, keyin «receivePartial» xabari. Ega S2: tasdiq yetarli, yetishmagan posilka kutilayotgan bo'lib qoladi. |
+| `superadmin-neworders-incoming-scan-undo` | Kiruvchi posilkalar — skan olib tashlandi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Skanni olib tashlash va «Qaytarish» xabari yo'q (eo3eeJxs). |
 | `superadmin-neworders-branches` | Filial batchlari — filiallar | sahifa | `/new-orders/branches` | `src/pages/new_orders/branches/index.tsx` | v2 |
 | `superadmin-neworders-branch-batches` | Filial batchlari ro'yxati | sahifa | `/new-orders/branches/:branchId` | `src/pages/new_orders/branches/batches.tsx` | v2 |
 | `superadmin-neworders-branch-batch-detail` | Filial paketi tafsiloti | sahifa | `/new-orders/branches/:branchId/batches/:batchId` | `src/pages/new_orders/branches/batchDetail.tsx` | v2 |
-| `superadmin-neworders-branch-batch-detail-camera` | Filial paketi tafsiloti — kamera | oyna | `/new-orders/branches/:branchId/batches/:batchId` | `src/pages/new_orders/branches/batchDetail.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). |
+| `superadmin-neworders-branch-batch-detail-camera` | Filial paketi tafsiloti — kamera | oyna | `/new-orders/branches/:branchId/batches/:batchId` | `src/pages/new_orders/branches/batchDetail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi, «N / jami ta tanlandi», «Hammasi tanlandi»; qabul — sahifadagi tugma. |
 | `superadmin-neworders-cancelled-markets` | Bekor qilinganlar — marketlar | sahifa | `/new-orders/cancelled` | `src/pages/new_orders/cancelled/index.tsx` | v2 |
 | `superadmin-neworders-cancelled-handover` | Bekor qilinganlarni marketga topshirish | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | v2 |
-| `superadmin-neworders-cancelled-handover-camera` | Bekor qilinganlarni marketga topshirish — kamera | oyna | `/new-orders/cancelled/:marketId` | `src/shared/components/ScannerCameraModal.tsx` | qisman — Sahifa qismi (sarlavha, «Market QR» holati, «USB skaner tayyor» qatori, tanlov, jadval) v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida. |
+| `superadmin-neworders-cancelled-handover-camera` | Bekor qilinganlarni marketga topshirish — kamera | oyna | `/new-orders/cancelled/:marketId` | `src/shared/ui/camera/ScannerCamera.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Avval market QR, so'ng buyurtmalar («Buyurtmalarni tanlang · QR 04:12 amal qiladi»), ro'yxatda «Bekor qilish», «Tugatish». |
 | `superadmin-neworders-cancelled-manual-dialog` | QR buzilganini tasdiqlash (modal) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | v2 |
-| `superadmin-neworders-cancelled-scanner-dialog` | Kamera skaneri (modal) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | qisman — Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida. |
+| `superadmin-neworders-cancelled-scanner-dialog` | Kamera skaneri (modal) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Sarlavhadagi «Market QR skanerlash» tugmasi olib tashlangan (bitta ekranda ikkinchi skan tugmasi yo'q — tizim-scanner §09); market QR'dan keyin kamera yopilmaydi — buyurtmalarni tanlashga o'tadi. |
 | `superadmin-mails-today` | Pochta — Bugungi pochtalar | sahifa | `/mails/today` | `src/pages/mails/components/todaysMails.tsx` | v2 |
 | `superadmin-mails-return` | Pochta — Qaytarish so'rovlari | sahifa | `/mails/return` | `src/pages/mails/components/returnMails.tsx` | v2 |
 | `superadmin-mails-refused` | Pochta — Rad etilgan pochtalar | sahifa | `/mails/refused` | `src/pages/mails/components/refusedMails.tsx` | v2 |
 | `superadmin-mails-old` | Pochta — Eski pochtalar | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `superadmin-mails-old-batches` | Pochta — Hamma batchlar (eski) | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `superadmin-mails-detail` | Pochta tafsiloti (jo'natish) | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
-| `superadmin-mails-detail-camera` | Pochta tafsiloti (jo'natish) — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida. |
+| `superadmin-mails-detail-duplicates` | Pochta tafsiloti (jo'natish) — takroriy telefonlar | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
+| `superadmin-mails-detail-search` | Pochta tafsiloti (jo'natish) — qidiruv | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
+| `superadmin-mails-detail-search-empty` | Pochta tafsiloti (jo'natish) — qidiruvda natija yo'q | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
+| `superadmin-mails-detail-camera` | Pochta tafsiloti (jo'natish) — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q. |
 | `superadmin-mails-detail-send-dialog` | Pochtani filialga jo'natish (modal) | oyna | `/mails/:id` | `src/pages/mails/detail/ui/SendPostModal.tsx` | v2 |
 | `superadmin-mails-detail-refused` | Rad etilgan pochta tafsiloti (qabul) | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
 | `superadmin-mails-detail-old` | Eski pochta tafsiloti (faqat o'qish) | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
@@ -1634,9 +1965,13 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-payments-main-cashbox` | Asosiy kassa | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | v2 |
 | `superadmin-payments-main-cashbox-fill-dialog` | Kassani to'ldirish / Kassadan xarajat (popup) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/CashboxFormPopup.tsx` | v2 |
 | `superadmin-payments-main-cashbox-shift-dialog` | Smenani yopish (popup) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/CloseShiftPopup.tsx` | v2 |
+| `superadmin-payments-main-cashbox-shift-closed` | Asosiy kassa — smena yopiq | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
+| `superadmin-payments-main-cashbox-shift-open-dialog` | Smenani ochish (popup) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
+| `superadmin-payments-main-cashbox-shift-result-dialog` | Smena yopildi — natija (popup) | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
 | `superadmin-payments-cash-detail-courier` | Kuryer kassasi (qabul qilish) | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
 | `superadmin-payments-cash-detail-market` | Market kassasi (to'lov berish) | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
 | `superadmin-payments-cash-detail-branch` | Filial kassasi (filialdan qabul) | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
+| `superadmin-payments-cash-detail-branch-shift-closed` | Filial kassasi — filial smenasi ochilmagan · taklif (backend kerak) | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
 | `superadmin-payments-to-give-dialog` | Berilishi kerak — market tanlash | oyna | `/payments` | `src/pages/payments/components/SettlementPickerDialog.tsx` | v2 |
 | `superadmin-balance-overview` | Balans — Umumiy ko'rinish | sahifa | `/financial-balance` | `src/pages/financial-balance/components/Statistics.tsx` | v2 |
 | `superadmin-balance-history` | Balans — Tarix | sahifa | `/financial-balance` | `src/pages/financial-balance/components/HistoryTab.tsx` | v2 |
@@ -1647,18 +1982,40 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-products-select-market-dialog` | Mahsulot yaratish — market tanlash | oyna | `/products` | `src/pages/products/list/ui/SelectMarketDialog.tsx` | v2 |
 | `superadmin-products-edit-dialog` | Mahsulotni tahrirlash (popup) | oyna | `/products` | `src/pages/products/list/ui/EditProductDialog.tsx` | v2 |
 | `superadmin-products-create` | Mahsulot yaratish (market uchun) | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | v2 |
+| `superadmin-products-create-errors` | Mahsulot yaratish — xatolar | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | yangi (kodda yo'q) — Maket taklifi (2026-10-19): og'irlik va o'lcham maydonlari backendda hali yo'q — validatsiya holati shu maydonlar bilan. |
 | `superadmin-products-delete-dialog` | Mahsulotni o'chirish | oyna | `/products` | `src/pages/products/ui/useDeleteProductConfirm.tsx` | v2 |
 | `superadmin-users-list` | Foydalanuvchilar ro'yxati | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | v2 |
+| `superadmin-users-list-telegram` | Foydalanuvchilar ro'yxati — Telegram ustuni | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | yangi (kodda yo'q) — Taklif (tg-link S4) — kodda yo'q: «Telegram» ustuni va filtri; backend telegram_linked kerak. |
 | `superadmin-users-delete-dialog` | Foydalanuvchini o'chirish (tasdiq) | oyna | `/all-users` | `src/widgets/user-list/ui/UserListTable.tsx` | v2 |
 | `superadmin-users-create` | Foydalanuvchi yaratish | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | v2 |
 | `superadmin-users-detail` | Foydalanuvchi tafsilotlari | sahifa | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | v2 |
+| `superadmin-users-detail-telegram` | Foydalanuvchi tafsilotlari — Telegram guruhi | sahifa | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | qisman — Kodda bor (MarketTelegramGroupLinkCard, MarketTelegramGroupPiiCard); taklif: har xabar turi qatorida «Ulash», PII kaliti shu kartada (tg-link S3, S5). |
+| `superadmin-users-detail-telegram-group-dialog` | Telegram guruhini ulash (havola, QR) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (tg-link) — havola + QR oynasi, kodda yo'q. |
+| `superadmin-users-detail-telegram-group-expired-dialog` | Telegram guruhini ulash — havola muddati tugadi | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (tg-link) — havola muddati tugadi holati, kodda yo'q. |
 | `superadmin-users-edit-dialog` | Foydalanuvchini tahrirlash (modal) | oyna | `/all-users/:id` | `src/features/user/update-user/ui/UpdateUserModal.tsx` | v2 |
 | `superadmin-users-courier-transfer-dialog` | Kuryerni boshqa filialga o'tkazish | oyna | `/all-users/:id` | `src/features/courier-transfer-branch/ui/TransferCourierModal.tsx` | v2 |
 | `superadmin-regions-map` | Hududlar — xarita va statistika | sahifa | `/regions` | `src/pages/region/index.tsx` | v2 |
 | `superadmin-regions-region-modal` | Viloyat ma'lumotlari (modal) | oyna | `/regions` | `src/widgets/region-detail/ui/RegionDetailDialog.tsx` | v2 |
 | `superadmin-regions-districts` | Tumanlar boshqaruvi | sahifa | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | v2 |
+| `superadmin-regions-districts-delete-blocked` | Tumanni o'chirib bo'lmaydi | oyna | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
+| `superadmin-regions-districts-merge-dialog` | Tumanni birlashtirish | oyna | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
+| `superadmin-regions-districts-merge-target` | Tumanni birlashtirish — maqsad tumanni tanlash | oyna | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
+| `superadmin-regions-districts-merge-progress` | Tumanni birlashtirish — jarayonda | oyna | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
+| `superadmin-regions-districts-merge-result` | Tumanni birlashtirish — natija | oyna | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
+| `superadmin-regions-districts-merge-error` | Tumanni birlashtirish — bekor qilindi | oyna | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
+| `superadmin-regions-districts-merge-error-unavailable` | Tumanni birlashtirish — servis javob bermadi | oyna | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
+| `superadmin-regions-districts-merge-error-manual` | Tumanni birlashtirish — qo'lda tuzatish kerak | oyna | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
+| `superadmin-regions-districts-merge-unknown` | Tumanni birlashtirish — natija noma'lum | oyna | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
 | `superadmin-regions-sato-management` | Tumanlarni o'tkazish (SATO) | sahifa | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | v2 |
-| `superadmin-regions-logist-assignment` | Logist biriktirish | sahifa | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | v2 |
+| `superadmin-regions-sato-codes` | SATO kodlari — topildi | sahifa | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | yangi (kodda yo'q) — Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin. |
+| `superadmin-regions-sato-codes-not-found` | SATO kodlari — topilmadi (qo'lda kiritish) | sahifa | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | yangi (kodda yo'q) — Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin. |
+| `superadmin-regions-sato-codes-apply-dialog` | SATO kodlari — avtomatik yozish (tasdiq) | oyna | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | yangi (kodda yo'q) — Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin. |
+| `superadmin-regions-sato-codes-edit` | SATO kodlari — kodni tahrirlash («kod band») | sahifa | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | yangi (kodda yo'q) — Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin. |
+| `superadmin-regions-sato-codes-duplicates` | SATO kodlari — takroriy nomlar | sahifa | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | yangi (kodda yo'q) — Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin. |
+| `superadmin-regions-sato-codes-merge-dialog` | SATO kodlari — takroriy tumanni birlashtirish | oyna | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | yangi (kodda yo'q) — Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin. |
+| `superadmin-regions-sato-codes-missing` | SATO kodlari — bazada yo'q | sahifa | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | yangi (kodda yo'q) — Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin. |
+| `superadmin-regions-sato-codes-add-dialog` | SATO kodlari — tuman qo'shish oynasi | oyna | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | yangi (kodda yo'q) — Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin. |
+| `superadmin-regions-logist-assignment` | Logist biriktirish | sahifa | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | yangi (kodda yo'q) — Kodda hali «Bo'lim hali ishga tushmagan» bo'sh holati — ishlaydigan biriktirish sahifasi (dzyVftBx). |
 | `superadmin-branches-list-tree` | Filiallar — daraxt ko'rinishi | sahifa | `/branches` | `src/widgets/branch-list/ui/BranchTree.tsx` | v2 |
 | `superadmin-branches-list-table` | Filiallar — jadval / kartalar | sahifa | `/branches` | `src/widgets/branch-list/ui/BranchTable.tsx` | v2 |
 | `superadmin-branches-create-dialog` | Yangi filial (modal) | oyna | `/branches` | `src/features/branch/ui/BranchFormDialog.tsx` | v2 |
@@ -1672,6 +2029,9 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-integrations-panel-events` | Ulanish — Hodisalar paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionLog.tsx` | v2 |
 | `superadmin-integrations-panel-settlement` | Ulanish — Hisob-kitob paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | v2 |
 | `superadmin-integrations-settlement-pay-dialog` | Tashuvchidan olingan to'lov (modal) | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | v2 |
+| `superadmin-integrations-settlement-pay-overpay-dialog` | To'lov — ortiqcha summa (modal) | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | yangi (kodda yo'q) — Taklif (integ-settlement, ega S1..S3) — kodda yo'q: ortiqcha to'lov avansga, natija oynasi, bekor qilishda kassa tanlovi. |
+| `superadmin-integrations-settlement-pay-result-dialog` | To'lov natijasi — avans va kassa (modal) | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | yangi (kodda yo'q) — Taklif (integ-settlement, ega S1..S3) — kodda yo'q: ortiqcha to'lov avansga, natija oynasi, bekor qilishda kassa tanlovi. |
+| `superadmin-integrations-settlement-cancel-dialog` | To'lovni bekor qilish (tasdiq) | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | yangi (kodda yo'q) — Taklif (integ-settlement, ega S1..S3) — kodda yo'q: ortiqcha to'lov avansga, natija oynasi, bekor qilishda kassa tanlovi. |
 | `superadmin-integrations-panel-control` | Ulanish — Ish rejimi paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionControl.tsx` | v2 |
 | `superadmin-integrations-panel-security` | Ulanish — Xavfsizlik paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSecurity.tsx` | v2 |
 | `superadmin-integrations-rotate-key-dialog` | Kalitni yangilash (tasdiq) | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSecurity.tsx` | v2 |
@@ -1682,13 +2042,21 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-integrations-legacy-sources` | Tashqi manbalar (eski: Integratsiyalar ro'yxati) | sahifa | `/integrations/sources` | `src/pages/new_orders/external_orders/index.tsx` | v2 |
 | `superadmin-integrations-legacy-source-create` | Integratsiya yaratish (eski forma) | sahifa | `/integrations/sources/create` | `src/pages/new_orders/external_orders/create.tsx` | v2 |
 | `superadmin-integrations-legacy-source-detail` | Integratsiya — QR skaner (eski) | sahifa | `/integrations/sources/:id` | `src/pages/new_orders/external_orders/detail.tsx` | v2 |
-| `superadmin-notifications-telegram-groups` | Bildirishnomalar — Telegram guruhlari | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | v2 |
-| `superadmin-notifications-create-dialog` | Bildirishnoma qo'shish (modal) | oyna | `/notifications` | `src/features/notification-create/ui/NotificationFormModal.tsx` | v2 |
-| `superadmin-notifications-delete-dialog` | Bildirishnomani o'chirish (tasdiq) | oyna | `/notifications` | `src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx` | v2 |
+| `superadmin-notifications-telegram-groups` | Bildirishnomalar — Telegram guruhlari | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | qisman — Kodda bor (v2); taklif: «Holat» ustunida nofaol sababi (inactive_reason, NG-S1), qo'shish — faqat bot havolasi, «Tahrirlash» olib tashlanadi (NG-S4). |
+| `superadmin-notifications-create-dialog` | Bildirishnoma qo'shish (modal) | oyna | `/notifications` | `src/features/notification-create/ui/NotificationFormModal.tsx` | qisman — Kodda bor (v2); taklif: «Holat» ustunida nofaol sababi (inactive_reason, NG-S1), qo'shish — faqat bot havolasi, «Tahrirlash» olib tashlanadi (NG-S4). |
+| `superadmin-notifications-delete-dialog` | Bildirishnomani o'chirish (tasdiq) | oyna | `/notifications` | `src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx` | qisman — Kodda bor (v2); taklif: «Holat» ustunida nofaol sababi (inactive_reason, NG-S1), qo'shish — faqat bot havolasi, «Tahrirlash» olib tashlanadi (NG-S4). |
 | `superadmin-notifications-inbox` | Bildirishnomalar — Inbox (qo'ng'iroqcha) | sahifa | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | v2 |
 | `superadmin-notifications-push-explain-dialog` | Bildirishnomalarni yoqasizmi? (tasdiq) | oyna | `/inbox` | `src/features/push-notifications/ui/PushExplainDialog.tsx` | v2 |
 | `superadmin-notifications-send` | Xabar yuborish | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | v2 |
 | `superadmin-notifications-send-confirm-dialog` | Xabarni yuborishni tasdiqlang | oyna | `/notifications/send` | `src/pages/notification-send/index.tsx` | v2 |
+| `superadmin-notifications-send-result` | Xabar yuborish — natija | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `superadmin-notifications-send-unknown` | Xabar yuborish — natija noma'lum | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `superadmin-notifications-sent` | Yuborilganlar | sahifa | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `superadmin-notifications-sent-detail-dialog` | Yuborilgan xabar tafsiloti | oyna | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `superadmin-notifications-sent-detail-states` | Yuborilgan xabar tafsiloti — boshqa holatlar | sahifa | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `superadmin-notifications-sent-loading` | Yuborilganlar — yuklanmoqda | sahifa | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `superadmin-notifications-sent-empty` | Yuborilganlar — bo'sh | sahifa | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `superadmin-notifications-sent-error` | Yuborilganlar — xato | sahifa | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
 | `superadmin-notifications-sms-campaign` | SMS — Kampaniya | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | v2 |
 | `superadmin-notifications-sms-campaign-confirm-dialog` | SMS kampaniyani tasdiqlash | oyna | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | v2 |
 | `superadmin-notifications-sms-templates` | SMS — Shablonlar | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | v2 |
@@ -1700,16 +2068,61 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-ops-integrations` | Ops — Integratsiyalar | sahifa | `/ops`, `/integrations-ops` | `src/pages/ops/index.tsx`, `src/pages/integrations-ops/index.tsx` | v2 |
 | `superadmin-ops-investors` | Ops — Investorlar | sahifa | `/ops`, `/investors-ops` | `src/pages/ops/index.tsx`, `src/pages/investors-ops/index.tsx` | v2 |
 | `superadmin-ops-logistics` | Ops — Logistika (qaytarish so'rovlari) | sahifa | `/ops`, `/logistics-ops` | `src/pages/ops/index.tsx`, `src/pages/logistics-ops/index.tsx` | v2 |
+| `superadmin-ops-logistics-approve-dialog` | Ops — Logistika: qaytarish so'rovlarini tasdiqlash | oyna | `/ops`, `/logistics-ops` | `src/pages/ops/index.tsx`, `src/pages/logistics-ops/index.tsx` | yangi (kodda yo'q) — Taklif (ops-system, ega S1..S5) — kodda yo'q. |
+| `superadmin-ops-logistics-approve-result` | Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | sahifa | `/ops`, `/logistics-ops` | `src/pages/ops/index.tsx`, `src/pages/logistics-ops/index.tsx` | yangi (kodda yo'q) — Taklif (ops-system, ega S1..S5) — kodda yo'q. |
 | `superadmin-ops-branches` | Ops — Filiallar (partiya bekor qilish) | sahifa | `/ops`, `/branch-ops` | `src/pages/ops/index.tsx`, `src/pages/branch-ops/index.tsx` | v2 |
 | `superadmin-ops-identity` | Ops — Xodimlar ro'yxatlari | sahifa | `/ops`, `/identity-ops` | `src/pages/ops/index.tsx`, `src/pages/identity-ops/index.tsx` | v2 |
 | `superadmin-ops-system` | Ops — Tizim | sahifa | `/ops`, `/system-ops` | `src/pages/ops/index.tsx`, `src/pages/system-ops/index.tsx` | v2 |
+| `superadmin-ops-system-partial` | Ops — Tizim: qisman ishlayapti, zaif AI modeli | sahifa | `/ops`, `/system-ops` | `src/pages/ops/index.tsx`, `src/pages/system-ops/index.tsx` | yangi (kodda yo'q) — Taklif (ops-system, ega S1..S5) — kodda yo'q. |
+| `superadmin-ops-system-down` | Ops — Tizim: xizmatlar ishlamayapti | sahifa | `/ops`, `/system-ops` | `src/pages/ops/index.tsx`, `src/pages/system-ops/index.tsx` | yangi (kodda yo'q) — Taklif (ops-system, ega S1..S5) — kodda yo'q. |
+| `superadmin-ops-system-loading` | Ops — Tizim: yuklanish | sahifa | `/ops`, `/system-ops` | `src/pages/ops/index.tsx`, `src/pages/system-ops/index.tsx` | yangi (kodda yo'q) — Taklif (ops-system, ega S1..S5) — kodda yo'q. |
+| `superadmin-ops-system-error` | Ops — Tizim: holatni olib bo'lmadi, AI o'chiq | sahifa | `/ops`, `/system-ops` | `src/pages/ops/index.tsx`, `src/pages/system-ops/index.tsx` | yangi (kodda yo'q) — Taklif (ops-system, ega S1..S5) — kodda yo'q. |
+| `superadmin-ops-system-critical` | Ops — Tizim: asosiy xizmat ishlamayapti, AI ulanmagan | sahifa | `/ops`, `/system-ops` | `src/pages/ops/index.tsx`, `src/pages/system-ops/index.tsx` | yangi (kodda yo'q) — Taklif (ops-system, ega S1..S5) — kodda yo'q. |
+| `superadmin-ops-system-ai-config` | Ops — Tizim: kalit nomi noto'g'ri, noma'lum model | sahifa | `/ops`, `/system-ops` | `src/pages/ops/index.tsx`, `src/pages/system-ops/index.tsx` | yangi (kodda yo'q) — Taklif (ops-system, ega S1..S5) — kodda yo'q. |
+| `superadmin-ops-system-ai-cap` | Ops — Tizim: AI kunlik limiti tugadi | sahifa | `/ops`, `/system-ops` | `src/pages/ops/index.tsx`, `src/pages/system-ops/index.tsx` | yangi (kodda yo'q) — Taklif (ops-system, ega S1..S5) — kodda yo'q. |
 | `superadmin-ops-auth-diagnostics` | Ops — Auth diagnostikasi | sahifa | `/ops`, `/logs` | `src/pages/ops/index.tsx`, `src/pages/logs/index.tsx` | v2 |
-| `superadmin-scan-camera` | Skaner — kamera (umumiy) | sahifa | `/scan` | `src/pages/scan/index.tsx` | eski |
+| `superadmin-scan-camera` | Skaner — kamera (umumiy) | sahifa | `/scan` | `src/pages/scan/index.tsx` | v2 |
 | `superadmin-scan-result` | Skanerlangan buyurtma | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | v2 |
+| `superadmin-notifications-send-audience` | Xabar yuborish — auditoriya konstruktori | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi |
+| `superadmin-notifications-send-schedule` | Xabar yuborish — belgilangan vaqtda (soat tanlash ochiq) | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi |
+| `superadmin-notifications-send-audience-sample-dialog` | Auditoriya namunasi (20 ta, maskalangan) | oyna | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi |
+| `superadmin-notifications-send-audience-save-dialog` | Segmentni saqlash (oyna) | oyna | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi |
+| `superadmin-notifications-send-confirm-scheduled-dialog` | Kampaniyani rejalashtirishni tasdiqlang | oyna | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi |
+| `superadmin-notifications-campaign-cancel-dialog` | Kampaniyani bekor qilish (tasdiq) | oyna | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi |
+| `superadmin-notifications-campaign-report-dialog` | Kampaniya hisoboti (oyna) | oyna | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (ega KM-S1, 2026-10-19) — kodda yo'q: kampaniya hisoboti (GET /notifications/campaigns/:id/report, /undelivered, /undelivered/export) |
+| `superadmin-notifications-send-states` | Xabar yuborish — auditoriya va yuborish holatlari | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi |
+| `superadmin-notifications-sms-campaign-segment` | SMS — Kampaniya: mijozlar segmenti va yuborish vaqti | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | yangi (kodda yo'q) — Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi |
+| `superadmin-users-list-roles` | Foydalanuvchilar — barcha rollar tablari (taklif) | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): rol tablari — FY-S1 tartibi (Hammasi · Adminlar · Menejerlar · Ro'yxatchilar · Kuryerlar · Logistlar · Marketlar · Market operatorlari · Investorlar); market operatori qatorida market nomi (FY-S3, GET /users da market nomi yo'q — backend); qator menyusida «Nofaol qilish» (FY-S2, PATCH /users/:id/status). |
+| `superadmin-users-list-role-select` | Foydalanuvchilar — rol tanlash ro'yxati (telefon, taklif) | sahifa · faqat telefon | `/all-users` | `src/pages/users/list/UserListPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): telefonda rol tanlash — Select popover, avval «Xodimlar», so'ng «Tashqi hisoblar». |
+| `superadmin-users-edit-role` | Foydalanuvchini tahrirlash — «Rol» maydoni (taklif) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): tahrirlash oynasida «Rol» (faqat superadmin, PATCH /users/:id/role — backend bor). |
+| `superadmin-users-role-confirm-dialog` | Rolni o'zgartirish — tasdiq (taklif) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): rolni o'zgartirish tasdig'i (useConfirm). |
+| `superadmin-users-role-confirm-logist` | Rolni o'zgartirish — Logist → Admin, viloyatlar bo'shatiladi (taklif) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): Logist → Admin tasdig'i, viloyatlar bo'shatiladi. |
+| `superadmin-users-edit-role-error` | Foydalanuvchini tahrirlash — rol o'zgartirilmadi, 409 (taklif) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): 409 — filialga biriktirilgan, rol o'zgarmadi. |
+| `superadmin-users-edit-role-branch` | Foydalanuvchini tahrirlash — filialga biriktirilgan, rol qulf (taklif) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): filialga biriktirilgan — rol maydoni qulf. |
+| `superadmin-users-edit-courier-district` | Kuryerni tahrirlash — «Tuman» maydoni (taklif) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): kuryer «Tuman» maydoni — backend kerak; filial «Boshqa filialga o'tkazish» oynasi orqali (FY-S4). |
+| `superadmin-users-create-courier-district` | Yangi foydalanuvchi — Logist roli va kuryer «Ish hududi» (taklif) | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): yaratishda Logist roli kartasi va kuryer «Ish hududi» (Tuman — backend kerak). |
+| `superadmin-users-edit-market-ai` | Marketni tahrirlash — «AI narxi (1 buyurtma)» | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): market «AI narxi (1 buyurtma)» — faqat marketga belgilangan qiymat, sukut narx matni yo'q (FY-S5). |
+| `superadmin-users-edit-courier-district-phone` | Kuryerni tahrirlash — «Tuman» ro'yxati, telefon (taklif) | oyna · faqat telefon | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): kuryer «Tuman» ro'yxati, telefon — backend kerak. |
+| `superadmin-users-edit-market-ai-phone` | Marketni tahrirlash — «AI narxi», telefon | oyna · faqat telefon | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): «AI narxi», telefon (FY-S5). |
+| `superadmin-regions-logist-assignment-confirm-dialog` | Logist biriktirish — saqlashni tasdiqlash | oyna | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | yangi (kodda yo'q) — Saqlashni tasdiqlash oynasi (olib tashlash / o'tkazish) — kodda yo'q. |
+| `superadmin-regions-logist-assignment-empty` | Logist biriktirish — logist yo'q | sahifa | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | yangi (kodda yo'q) — «Logist yo'q» holati — kodda yo'q. |
+| `superadmin-users-create-logist` | Foydalanuvchi yaratish — Logist | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | yangi (kodda yo'q) — «Logist» rol kartasi va formasi (POST /logists) — kodda yo'q. |
+| `superadmin-notifications-row-menu` | Guruh amallari menyusi | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `superadmin-notifications-connected` | Bildirishnomalar — guruh ulandi | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `superadmin-notifications-empty` | Bildirishnomalar — bo'sh holat | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `superadmin-notifications-loading` | Bildirishnomalar — yuklanish | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `superadmin-notifications-error` | Bildirishnomalar — xato holati | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `superadmin-notifications-create-link-dialog` | Bildirishnoma qo'shish — havola tayyor, kutilmoqda | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `superadmin-notifications-create-expired-dialog` | Bildirishnoma qo'shish — havola muddati tugadi | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `superadmin-notifications-create-exists-dialog` | Bildirishnoma qo'shish — shu tur allaqachon ulangan | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `superadmin-notifications-deactivate-dialog` | Guruhni nofaol qilish (tasdiq) | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `superadmin-notifications-activate-dialog` | Guruhni faollashtirish (tasdiq) | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `superadmin-notifications-row-menu-inactive` | Guruh amallari menyusi — nofaol guruh | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `superadmin-notifications-create-exists-inactive-dialog` | Bildirishnoma qo'shish — shu tur ulangan, lekin nofaol | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
 
 ### admin — Admin
 
-91 ta maket · kodda bor: 88 · kodda yo'q: 3
+152 ta maket · kodda bor: 93 · kodda yo'q: 59
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -1722,21 +2135,27 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-orders-edit-address-dialog` | Manzilni tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | v2 |
 | `admin-neworders-markets` | Qabul — Marketlar tabi | sahifa | `/new-orders` | `src/pages/new_orders/markets/index.tsx` | v2 |
 | `admin-neworders-market-detail` | Market yangi buyurtmalari | sahifa | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | v2 |
-| `admin-neworders-market-detail-camera` | Market yangi buyurtmalari — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). |
+| `admin-neworders-market-detail-camera` | Market yangi buyurtmalari — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan = darhol qabul; «Qabul qilindi N · Qoldi M · Topilmadi K», boshqa marketning buyurtmasi rad etiladi, kamera ichida market almashtirish. |
 | `admin-neworders-market-confirm-dialog` | Qabul tasdig'i / buyurtmani o'chirish | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | v2 |
 | `admin-neworders-incoming-sources` | Kiruvchi posilkalar — manba tanlash | sahifa | `/new-orders/incoming` | `src/pages/incoming-orders/SourcePicker.tsx` | v2 |
-| `admin-neworders-incoming-scan` | Kiruvchi posilkalarni skanerlash | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | v2 |
-| `admin-neworders-incoming-scan-camera` | Kiruvchi posilkalarni skanerlash — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri. |
+| `admin-neworders-incoming-scan` | Kiruvchi posilkalarni skanerlash | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kodda «Qop» ustuni, skanerlangan qatorni olib tashlash va oxirgi skan xabaridagi «Olib tashlash» hali yo'q (DamKku7C, eo3eeJxs) — qolgani v2. |
+| `admin-neworders-incoming-scan-camera` | Kiruvchi posilkalarni skanerlash — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan faqat belgilaydi, qabul — sahifadagi «Qabul qilish»; kamera ichida manba almashtirish, «Qopda yetishmaydi». |
+| `admin-neworders-incoming-scan-partial` | Kiruvchi posilkalar — chala qop ogohlantirishi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Chala qop ogohlantirishi, «2/3» belgisi va chala qop QR'i skanerlanganda sariq xabar + ogohlantirish ovozi yo'q (DamKku7C, ega S5) — kodda faqat qop skanida «N tadan M tasi» xabari; «keldi» soni uchun backend received_count kerak (ega S3). |
+| `admin-neworders-incoming-scan-partial-confirm-dialog` | Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Chala qop bilan qabul tasdig'i yo'q — qabul darhol yuboriladi, keyin «receivePartial» xabari. Ega S2: tasdiq yetarli, yetishmagan posilka kutilayotgan bo'lib qoladi. |
+| `admin-neworders-incoming-scan-undo` | Kiruvchi posilkalar — skan olib tashlandi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Skanni olib tashlash va «Qaytarish» xabari yo'q (eo3eeJxs). |
 | `admin-neworders-branches` | Filial batchlari tabi | sahifa | `/new-orders/branches` | `src/pages/new_orders/branches/index.tsx` | v2 |
 | `admin-neworders-branch-batches` | Filial batchlari ro'yxati | sahifa | `/new-orders/branches/:branchId` | `src/pages/new_orders/branches/batches.tsx` | v2 |
 | `admin-neworders-branch-batch-detail` | Filial paketi tafsiloti | sahifa | `/new-orders/branches/:branchId/batches/:batchId` | `src/pages/new_orders/branches/batchDetail.tsx` | v2 |
-| `admin-neworders-branch-batch-detail-camera` | Filial paketi tafsiloti — kamera | oyna | `/new-orders/branches/:branchId/batches/:batchId` | `src/pages/new_orders/branches/batchDetail.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). |
+| `admin-neworders-branch-batch-detail-camera` | Filial paketi tafsiloti — kamera | oyna | `/new-orders/branches/:branchId/batches/:batchId` | `src/pages/new_orders/branches/batchDetail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi, «N / jami ta tanlandi», «Hammasi tanlandi»; qabul — sahifadagi tugma. |
 | `admin-neworders-cancelled` | Bekor qilinganlar tabi | sahifa | `/new-orders/cancelled` | `src/pages/new_orders/cancelled/index.tsx` | v2 |
 | `admin-neworders-cancelled-detail` | Bekor qilinganlarni marketga topshirish | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | v2 |
-| `admin-neworders-cancelled-detail-camera` | Bekor qilinganlarni marketga topshirish — kamera | oyna | `/new-orders/cancelled/:marketId` | `src/shared/components/ScannerCameraModal.tsx` | qisman — Sahifa qismi (sarlavha, «Market QR» holati, «USB skaner tayyor» qatori, tanlov, jadval) v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida. |
+| `admin-neworders-cancelled-detail-camera` | Bekor qilinganlarni marketga topshirish — kamera | oyna | `/new-orders/cancelled/:marketId` | `src/shared/ui/camera/ScannerCamera.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Avval market QR, so'ng buyurtmalar («Buyurtmalarni tanlang · QR 04:12 amal qiladi»), ro'yxatda «Bekor qilish», «Tugatish». |
 | `admin-neworders-cancelled-manual-dialog` | QR buzilganini tasdiqlash | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | v2 |
-| `admin-neworders-cancelled-scanner-dialog` | Market QR skaneri | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | qisman — Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida. |
+| `admin-neworders-cancelled-scanner-dialog` | Market QR skaneri | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Sarlavhadagi «Market QR skanerlash» tugmasi olib tashlangan (bitta ekranda ikkinchi skan tugmasi yo'q — tizim-scanner §09); market QR'dan keyin kamera yopilmaydi — buyurtmalarni tanlashga o'tadi. |
 | `admin-neworders-create-manual` | Buyurtma yaratish — Qo'lda | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | v2 |
+| `admin-neworders-create-manual-step2-existing-customer` | Buyurtma yaratish — 2-qadam: mavjud mijoz, tarif, rasm (taklif) | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak. |
+| `admin-neworders-create-manual-step2-customer-suggest` | Buyurtma yaratish — 2-qadam: mijoz takliflari (taklif) | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak. |
+| `admin-neworders-create-manual-step2-customer-update-dialog` | Buyurtma yaratish — 2-qadam: mijoz kartasini yangilash (taklif) | oyna | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak. |
 | `admin-neworders-create-market-picker` | Market tanlash oynasi | oyna | `/new-orders/create` | `src/pages/orders/create/ui/MarketPicker.tsx` | v2 |
 | `admin-neworders-create-ai` | Buyurtma yaratish — AI bilan | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | v2 |
 | `admin-neworders-create-ai-confirm-dialog` | AI yaratishni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | v2 |
@@ -1746,7 +2165,10 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-mails-old` | Pochta — Eski pochtalar | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `admin-mails-old-all-batches` | Eski pochtalar — Hamma batchlar | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `admin-mails-detail` | Pochta tafsiloti | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
-| `admin-mails-detail-camera` | Pochta tafsiloti — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida. |
+| `admin-mails-detail-duplicates` | Pochta tafsiloti — takroriy telefonlar | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
+| `admin-mails-detail-search` | Pochta tafsiloti — qidiruv | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
+| `admin-mails-detail-search-empty` | Pochta tafsiloti — qidiruvda natija yo'q | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
+| `admin-mails-detail-camera` | Pochta tafsiloti — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q. |
 | `admin-mails-old-detail` | Eski pochta tafsiloti (tarix) | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
 | `admin-mails-refused-detail` | Rad etilgan pochta tafsiloti | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
 | `admin-mails-send-branch-dialog` | Pochtani filialga jo'natish | oyna | `/mails/:id` | `src/pages/mails/detail/ui/SendPostModal.tsx` | v2 |
@@ -1762,9 +2184,13 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-payments-main-cashbox` | Asosiy kassa | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | v2 |
 | `admin-payments-cashbox-form-dialog` | Kassadan xarajat / Kassani to'ldirish | oyna | `/payments/main-cashbox` | `src/pages/payments/components/CashboxFormPopup.tsx` | v2 |
 | `admin-payments-shift-dialog` | Smenani yopish | oyna | `/payments/main-cashbox` | `src/pages/payments/components/CloseShiftPopup.tsx` | v2 |
+| `admin-payments-main-cashbox-shift-closed` | Asosiy kassa — smena yopiq | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
+| `admin-payments-main-cashbox-shift-open-dialog` | Smenani ochish | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
+| `admin-payments-main-cashbox-shift-result-dialog` | Smena yopildi — natija | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
 | `admin-payments-cash-detail-market` | Market kassasi | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
 | `admin-payments-cash-detail-courier` | Kuryer kassasi | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
 | `admin-payments-cash-detail-branch` | Filial kassasi (HQ qabul) | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
+| `admin-payments-cash-detail-branch-shift-closed` | Filial kassasi — filial smenasi ochilmagan · taklif (backend kerak) | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
 | `admin-balance-overview` | Balans — Umumiy ko'rinish | sahifa | `/financial-balance` | `src/pages/financial-balance/components/Statistics.tsx` | v2 |
 | `admin-balance-history` | Balans — Tarix | sahifa | `/financial-balance` | `src/pages/financial-balance/components/HistoryTab.tsx` | v2 |
 | `admin-balance-analysis` | Balans — Tahlil | sahifa | `/financial-balance` | `src/pages/financial-balance/components/AnalysisTab.tsx` | v2 |
@@ -1775,16 +2201,33 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-products-edit-dialog` | Mahsulotni tahrirlash | oyna | `/products` | `src/pages/products/list/ui/EditProductDialog.tsx` | v2 |
 | `admin-products-delete-dialog` | Mahsulotni o'chirish | oyna | `/products` | `src/pages/products/ui/useDeleteProductConfirm.tsx` | v2 |
 | `admin-products-create` | Mahsulot yaratish | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | v2 |
+| `admin-products-create-errors` | Mahsulot yaratish — xatolar | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | yangi (kodda yo'q) — Maket taklifi (2026-10-19): og'irlik va o'lcham maydonlari backendda hali yo'q — validatsiya holati shu maydonlar bilan. |
 | `admin-users-list` | Foydalanuvchilar ro'yxati | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | v2 |
+| `admin-users-list-telegram` | Foydalanuvchilar ro'yxati — Telegram ustuni | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | yangi (kodda yo'q) — Taklif (tg-link S4) — kodda yo'q: «Telegram» ustuni va filtri; backend telegram_linked kerak. |
 | `admin-users-delete-dialog` | Foydalanuvchini o'chirish | oyna | `/all-users` | `src/widgets/user-list/ui/UserListTable.tsx` | v2 |
 | `admin-users-create` | Yangi foydalanuvchi | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | v2 |
 | `admin-users-detail` | Foydalanuvchi tafsiloti | sahifa | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | v2 |
+| `admin-users-detail-telegram` | Foydalanuvchi tafsiloti — Telegram guruhi | sahifa | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | qisman — Kodda bor (MarketTelegramGroupLinkCard, MarketTelegramGroupPiiCard); taklif: har xabar turi qatorida «Ulash», PII kaliti shu kartada (tg-link S3, S5). |
+| `admin-users-detail-telegram-group-dialog` | Telegram guruhini ulash (havola, QR) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (tg-link) — havola + QR oynasi, kodda yo'q. |
+| `admin-users-detail-telegram-group-expired-dialog` | Telegram guruhini ulash — havola muddati tugadi | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (tg-link) — havola muddati tugadi holati, kodda yo'q. |
 | `admin-users-edit-dialog` | Foydalanuvchini tahrirlash | oyna | `/all-users/:id` | `src/features/user/update-user/ui/UpdateUserModal.tsx` | v2 |
 | `admin-users-transfer-courier-dialog` | Kuryerni boshqa filialga o'tkazish | oyna | `/all-users/:id` | `src/features/courier-transfer-branch/ui/TransferCourierModal.tsx` | v2 |
 | `admin-regions-map` | Hududlar xaritasi | sahifa | `/regions` | `src/pages/region/index.tsx` | v2 |
 | `admin-regions-region-detail-dialog` | Viloyat ma'lumotlari oynasi | oyna | `/regions` | `src/widgets/region-detail/ui/RegionDetailDialog.tsx` | v2 |
+| `admin-regions-districts` | Tumanlar boshqaruvi | sahifa | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
+| `admin-regions-districts-delete-blocked` | Tumanni o'chirib bo'lmaydi | oyna | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
+| `admin-regions-districts-merge-dialog` | Tumanni birlashtirish | oyna | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
+| `admin-regions-districts-merge-target` | Tumanni birlashtirish — maqsad tumanni tanlash | oyna | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
+| `admin-regions-districts-merge-progress` | Tumanni birlashtirish — jarayonda | oyna | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
+| `admin-regions-districts-merge-result` | Tumanni birlashtirish — natija | oyna | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
+| `admin-regions-districts-merge-error` | Tumanni birlashtirish — bekor qilindi | oyna | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
+| `admin-regions-districts-merge-error-unavailable` | Tumanni birlashtirish — servis javob bermadi | oyna | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
+| `admin-regions-districts-merge-error-manual` | Tumanni birlashtirish — qo'lda tuzatish kerak | oyna | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
+| `admin-regions-districts-merge-unknown` | Tumanni birlashtirish — natija noma'lum | oyna | `/regions/districts` | `src/pages/region/pages/districts/index.tsx` | yangi (kodda yo'q) — Taklif (districts-merge, ega S1..S5) — kodda yo'q: tumanni birlashtirish (maqsad — shu viloyatdan), aniq sabab va sonlar, jurnal yozuvi. |
 | `admin-regions-sato-management` | Tumanlarni o'tkazish | sahifa | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | v2 |
-| `admin-regions-logist-assignment` | Logist biriktirish | sahifa | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | v2 |
+| `admin-regions-sato-codes` | SATO kodlari | sahifa | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | yangi (kodda yo'q) — Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin. |
+| `admin-regions-sato-codes-edit` | SATO kodlari — kodni tahrirlash («kod band») | sahifa | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | yangi (kodda yo'q) — Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin. |
+| `admin-regions-logist-assignment` | Logist biriktirish | sahifa | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | yangi (kodda yo'q) — Kodda hali «Bo'lim hali ishga tushmagan» bo'sh holati — ishlaydigan biriktirish sahifasi (dzyVftBx). |
 | `admin-integrations-partners` | Integratsiyalar — Hamkorlar | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | v2 |
 | `admin-integrations-external` | Integratsiyalar — Tashqi tizimlar | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | v2 |
 | `admin-integrations-marketplace` | Integratsiyalar — Marketplace | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | v2 |
@@ -1793,6 +2236,9 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-integrations-conn-log` | Ulanish — Hodisalar | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionLog.tsx` | v2 |
 | `admin-integrations-conn-settlement` | Ulanish — Hisob-kitob | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | v2 |
 | `admin-integrations-settlement-pay-dialog` | Tashuvchidan olingan to'lov | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | v2 |
+| `admin-integrations-settlement-pay-overpay-dialog` | To'lov — ortiqcha summa | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | yangi (kodda yo'q) — Taklif (integ-settlement, ega S1..S3) — kodda yo'q: ortiqcha to'lov avansga, natija oynasi, bekor qilishda kassa tanlovi. |
+| `admin-integrations-settlement-pay-result-dialog` | To'lov natijasi | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | yangi (kodda yo'q) — Taklif (integ-settlement, ega S1..S3) — kodda yo'q: ortiqcha to'lov avansga, natija oynasi, bekor qilishda kassa tanlovi. |
+| `admin-integrations-settlement-cancel-dialog` | To'lovni bekor qilish | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | yangi (kodda yo'q) — Taklif (integ-settlement, ega S1..S3) — kodda yo'q: ortiqcha to'lov avansga, natija oynasi, bekor qilishda kassa tanlovi. |
 | `admin-integrations-conn-control` | Ulanish — Ish rejimi | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionControl.tsx` | v2 |
 | `admin-integrations-conn-security` | Ulanish — Xavfsizlik | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSecurity.tsx` | v2 |
 | `admin-integrations-new-partner-dialog` | Yangi hamkor oynasi | oyna | `/integrations/connections` | `src/pages/integrations/NewPartnerModal.tsx` | v2 |
@@ -1802,20 +2248,50 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-integrations-legacy-sources` | Integratsiyalar manbalari (eski) | sahifa | `/integrations/sources` | `src/pages/new_orders/external_orders/index.tsx` | v2 |
 | `admin-activity-logs-list` | Faoliyat jurnali | sahifa | `/activity-logs` | `src/pages/activity-logs/index.tsx` | v2 |
 | `admin-activity-logs-row-expanded` | Jurnal yozuvi ochilgan | sahifa | `/activity-logs` | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | v2 |
-| `admin-scan-camera` | Skaner — kamera (umumiy) | sahifa | `/scan` | `src/pages/scan/index.tsx` | eski |
+| `admin-notifications-send` | Xabar yuborish | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | qisman — Kodda bor (canSendNotifications admin'ni o'tkazadi); natija bloki va «Yuborilganlar» havolasi — taklif (notif-send). |
+| `admin-notifications-send-confirm-dialog` | Xabarni yuborishni tasdiqlang | oyna | `/notifications/send` | `src/pages/notification-send/index.tsx` | qisman — Kodda bor (canSendNotifications admin'ni o'tkazadi); natija bloki va «Yuborilganlar» havolasi — taklif (notif-send). |
+| `admin-notifications-send-result` | Xabar yuborish — natija | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `admin-notifications-send-unknown` | Xabar yuborish — natija noma'lum | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `admin-notifications-sent` | Yuborilganlar | sahifa | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `admin-notifications-sent-detail-dialog` | Yuborilgan xabar tafsiloti | oyna | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `admin-notifications-sent-detail-states` | Yuborilgan xabar tafsiloti — boshqa holatlar | sahifa | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `admin-notifications-sent-loading` | Yuborilganlar — yuklanmoqda | sahifa | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `admin-notifications-sent-empty` | Yuborilganlar — bo'sh | sahifa | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `admin-notifications-sent-error` | Yuborilganlar — xato | sahifa | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `admin-scan-camera` | Skaner — kamera (umumiy) | sahifa | `/scan` | `src/pages/scan/index.tsx` | v2 |
 | `admin-scan-result` | Skanerlangan buyurtma | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | v2 |
+| `admin-notifications-telegram-groups` | Bildirishnomalar — Telegram guruhlari | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Admin uchun (NG-S2) — kodda yo'q: canViewNotifications faqat superadmin. |
+| `admin-notifications-create-dialog` | Bildirishnoma qo'shish (modal) | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Admin uchun (NG-S2) — kodda yo'q: canViewNotifications faqat superadmin. |
+| `admin-notifications-delete-dialog` | Bildirishnomani o'chirish (tasdiq) | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Admin uchun (NG-S2) — kodda yo'q: canViewNotifications faqat superadmin. |
+| `admin-notifications-row-menu` | Guruh amallari menyusi | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `admin-notifications-row-menu-inactive` | Guruh amallari menyusi — nofaol guruh | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `admin-notifications-connected` | Bildirishnomalar — guruh ulandi | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `admin-notifications-empty` | Bildirishnomalar — bo'sh holat | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `admin-notifications-loading` | Bildirishnomalar — yuklanish | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `admin-notifications-error` | Bildirishnomalar — xato holati | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `admin-notifications-create-link-dialog` | Bildirishnoma qo'shish — havola tayyor, kutilmoqda | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `admin-notifications-create-expired-dialog` | Bildirishnoma qo'shish — havola muddati tugadi | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `admin-notifications-create-exists-dialog` | Bildirishnoma qo'shish — shu tur allaqachon ulangan | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `admin-notifications-create-exists-inactive-dialog` | Bildirishnoma qo'shish — shu tur ulangan, lekin nofaol | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `admin-notifications-deactivate-dialog` | Guruhni nofaol qilish (tasdiq) | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `admin-notifications-activate-dialog` | Guruhni faollashtirish (tasdiq) | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
+| `admin-regions-logist-assignment-confirm-dialog` | Logist biriktirish — saqlashni tasdiqlash | oyna | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | yangi (kodda yo'q) — Saqlashni tasdiqlash oynasi (olib tashlash / o'tkazish) — kodda yo'q. |
+| `admin-regions-logist-assignment-empty` | Logist biriktirish — logist yo'q | sahifa | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | yangi (kodda yo'q) — «Logist yo'q» holati — kodda yo'q. |
+| `admin-users-create-logist` | Foydalanuvchi yaratish — Logist | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | yangi (kodda yo'q) — «Logist» rol kartasi va formasi (POST /logists) — kodda yo'q. |
 
 ### manager — Menejer
 
-64 ta maket · kodda bor: 62 · kodda yo'q: 2
+85 ta maket · kodda bor: 66 · kodda yo'q: 19
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
 | `manager-branch-dashboard-main` | Filial paneli | sahifa | `/branch-dashboard` | `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` | v2 |
 | `manager-dispatch-scan` | Biriktirish — skan savati | sahifa | `/dispatch` | `src/pages/dispatch/index.tsx` | v2 |
 | `manager-dispatch-courier-dialog` | Kuryer tanlash oynasi | oyna | `/dispatch` | `src/pages/dispatch/index.tsx` | v2 |
-| `manager-dispatch-camera-dialog` | Biriktirish — kamera | oyna | `/dispatch` | `src/pages/dispatch/index.tsx` | qisman — Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish. |
+| `manager-dispatch-camera-dialog` | Biriktirish — kamera | oyna | `/dispatch` | `src/pages/dispatch/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. «Biriktirish · <filial> · savatda N ta», savat qurilmada (ega D2, /scan/:token «Kuryerga biriktirish» ham shu savatga), rad etilgan QR ro'yxatda «Paket … · Rad etildi»; kuryer — sahifadagi tugma. |
 | `manager-orders-list-all` | Buyurtmalar — Hamma buyurtmalar | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
+| `manager-orders-list-all-refreshing` | Buyurtmalar — Hamma buyurtmalar, yangilanmoqda | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan. |
+| `manager-orders-list-all-refresh-error` | Buyurtmalar — Hamma buyurtmalar, yangilanmadi | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan. |
 | `manager-orders-list-pending` | Buyurtmalar — Kutilayotgan | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
 | `manager-orders-list-cancelled` | Buyurtmalar — Bekor qilinganlar (HQ'ga yuborish) | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
 | `manager-orders-sell-dialog` | Sotish oynasi | oyna | `/orders`, `/orders/edit/:orderId` | `src/pages/orders/list/courier/list/SellModal.tsx` | v2 |
@@ -1825,46 +2301,64 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-orders-detail-edit-address-dialog` | Manzilni tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | v2 |
 | `manager-orders-detail-edit-products-dialog` | Buyurtmani tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` | v2 |
 | `manager-courier-bulk-main` | Tezkor amal | sahifa | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | v2 |
-| `manager-courier-bulk-camera-dialog` | Tezkor amal — kamera | oyna | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | qisman — Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish. |
-| `manager-new-orders-markets` | Qabul va yaratish — Marketlar | sahifa | `/new-orders` | `src/pages/new_orders/markets/index.tsx` | v2 |
+| `manager-courier-bulk-camera-dialog` | Tezkor amal — kamera | oyna | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Kamera ichida «Bekor / Ertaga» rejimi (sahifadagi bilan bitta), «N / M ta skanerlandi», ro'yxat; yakunlash — sahifadagi «Kunni yakunlash». |
+| `manager-new-orders-markets` | Qabul va yaratish — Marketlar | sahifa | `/new-orders` | `src/pages/new_orders/markets/index.tsx` | qisman — Kodda menejerda tablar qatori yo'q (karta sarlavhasi «Marketlar») — intake'li menejerga (HQ · PICKUP · HYBRID) «Kiruvchi posilkalar» tabi, ega S1 (xQ045luf). |
 | `manager-new-orders-market-detail` | Market buyurtmalari — qabul | sahifa | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | v2 |
-| `manager-new-orders-market-detail-camera` | Market buyurtmalari — qabul — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). |
+| `manager-new-orders-market-detail-camera` | Market buyurtmalari — qabul — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan = darhol qabul; «Qabul qilindi N · Qoldi M · Topilmadi K», boshqa marketning buyurtmasi rad etiladi, kamera ichida market almashtirish. |
 | `manager-new-orders-receive-confirm-dialog` | Qo'lda qabul qilish tasdig'i | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | v2 |
 | `manager-new-orders-delete-confirm-dialog` | Buyurtmani o'chirish tasdig'i | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | v2 |
 | `manager-new-orders-create-manual-step1` | Buyurtma yaratish — market tanlash | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step1Market.tsx` | v2 |
 | `manager-new-orders-create-manual-step2` | Buyurtma yaratish — ma'lumotlar | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step2Combined.tsx` | v2 |
+| `manager-new-orders-create-manual-step2-existing-customer` | Buyurtma yaratish — mavjud mijoz, tarif, rasm (taklif) | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak. |
+| `manager-new-orders-create-manual-step2-customer-suggest` | Buyurtma yaratish — mijoz takliflari (taklif) | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak. |
+| `manager-new-orders-create-manual-step2-customer-update-dialog` | Buyurtma yaratish — 2-qadam: mijoz kartasini yangilash (taklif) | oyna | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak. |
 | `manager-new-orders-create-ai` | Buyurtma yaratish — AI bilan | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | v2 |
 | `manager-new-orders-create-ai-confirm-dialog` | AI buyurtmalarni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | v2 |
-| `manager-new-orders-incoming-sources` | Kiruvchi posilkalar — manba tanlash | sahifa | `/new-orders/incoming` | `src/pages/incoming-orders/SourcePicker.tsx` | v2 |
-| `manager-new-orders-incoming-scan` | Kiruvchi posilkalar — skanerlash | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | v2 |
-| `manager-new-orders-incoming-scan-camera` | Kiruvchi posilkalar — skanerlash — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri. |
+| `manager-new-orders-incoming-sources` | Kiruvchi posilkalar — manba tanlash | sahifa | `/new-orders/incoming` | `src/pages/incoming-orders/SourcePicker.tsx` | qisman — Kodda menejerda tablar qatori yo'q (karta o'z sarlavhasi bilan) — intake'li menejerga «Marketlar · Kiruvchi posilkalar» tablari, ega S1. |
+| `manager-new-orders-incoming-scan` | Kiruvchi posilkalar — skanerlash | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kodda «Qop» ustuni, skanerlangan qatorni olib tashlash va oxirgi skan xabaridagi «Olib tashlash» hali yo'q (DamKku7C, eo3eeJxs) — qolgani v2. |
+| `manager-new-orders-incoming-scan-camera` | Kiruvchi posilkalar — skanerlash — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan faqat belgilaydi, qabul — sahifadagi «Qabul qilish»; kamera ichida manba almashtirish, «Qopda yetishmaydi». |
+| `manager-new-orders-incoming-scan-partial` | Kiruvchi posilkalar — chala qop ogohlantirishi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Chala qop ogohlantirishi, «2/3» belgisi va chala qop QR'i skanerlanganda sariq xabar + ogohlantirish ovozi yo'q (DamKku7C, ega S5) — kodda faqat qop skanida «N tadan M tasi» xabari; «keldi» soni uchun backend received_count kerak (ega S3). |
+| `manager-new-orders-incoming-scan-partial-confirm-dialog` | Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Chala qop bilan qabul tasdig'i yo'q — qabul darhol yuboriladi, keyin «receivePartial» xabari. Ega S2: tasdiq yetarli, yetishmagan posilka kutilayotgan bo'lib qoladi. |
+| `manager-new-orders-incoming-scan-undo` | Kiruvchi posilkalar — skan olib tashlandi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Skanni olib tashlash va «Qaytarish» xabari yo'q (eo3eeJxs). |
 | `manager-mails-today` | Pochta — Bugungi pochtalar | sahifa | `/mails/today` | `src/pages/mails/components/todaysMails.tsx` | v2 |
 | `manager-mails-return` | Pochta — Qaytarish so'rovlari | sahifa | `/mails/return` | `src/pages/mails/components/returnMails.tsx` | v2 |
 | `manager-mails-refused` | Pochta — Rad etilgan pochtalar | sahifa | `/mails/refused` | `src/pages/mails/components/refusedMails.tsx` | v2 |
 | `manager-mails-old` | Pochta — Eski pochtalar | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `manager-mails-detail-receive` | Pochta tafsiloti — qabul qilish | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
-| `manager-mails-detail-receive-camera` | Pochta tafsiloti — qabul qilish — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida. |
+| `manager-mails-detail-receive-duplicates` | Pochta tafsiloti — qabul qilish — takroriy telefonlar | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
+| `manager-mails-detail-receive-search` | Pochta tafsiloti — qabul qilish — qidiruv | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
+| `manager-mails-detail-receive-search-empty` | Pochta tafsiloti — qabul qilish — qidiruvda natija yo'q | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
+| `manager-mails-detail-receive-camera` | Pochta tafsiloti — qabul qilish — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q. |
 | `manager-mails-detail-refused-receive` | Rad etilgan pochta — qabul | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
 | `manager-mails-detail-old` | Eski pochta tafsiloti (tarix) | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
 | `manager-batches-new` | Paketlar — Yangi | sahifa | `/batches` | `src/pages/batches/ui/BatchesPage.tsx` | v2 |
 | `manager-batches-old` | Paketlar — Eski | sahifa | `/batches` | `src/pages/batches/ui/BatchesPage.tsx` | v2 |
 | `manager-batches-return` | Paketlar — Qaytarilgan | sahifa | `/batches` | `src/pages/batches/ui/BatchesPage.tsx` | v2 |
 | `manager-batches-detail-send` | Paket tafsiloti — asosiy filialga jo'natish | sahifa | `/batches/:id` | `src/pages/batches/ui/BatchDetailPage.tsx` | v2 |
-| `manager-batches-detail-send-camera` | Paket tafsiloti — asosiy filialga jo'natish — kamera | oyna | `/batches/:id` | `src/pages/batches/ui/BatchDetailPage.tsx` | qisman — Sahifa qismi (sarlavha, paket ma'lumoti, QR, «Buyurtmalar» kartasi — /mails/:id bilan umumiy OrdersTable, «Skaner tayyor» belgisi, tanlov) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida. |
+| `manager-batches-detail-send-camera` | Paket tafsiloti — asosiy filialga jo'natish — kamera | oyna | `/batches/:id` | `src/pages/batches/ui/BatchDetailPage.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. «HQ'ga yuborish · Paket B-… · <filial>», skan tanlaydi, «Bu paketda yo'q · tanlanmadi»; yuborish — sahifadagi tugma. |
 | `manager-batches-detail-readonly` | Paket tafsiloti (faqat o'qish) | sahifa | `/batches/:id` | `src/pages/batches/ui/BatchDetailPage.tsx` | v2 |
 | `manager-returns-list` | Return batchlar | sahifa | `/returns` | `src/pages/returns/index.tsx` | v2 |
 | `manager-returns-batch-detail` | Qaytarish paketi tafsiloti | sahifa | `/batches/:id` | `src/pages/batches/ui/BatchDetailPage.tsx` | v2 |
 | `manager-payments-overview` | To'lovlar — umumiy | sahifa | `/payments` | `src/pages/payments/index.tsx` | v2 |
+| `manager-payments-overview-shift-closed` | To'lovlar — smena yopiq | sahifa | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
 | `manager-payments-courier-select-dialog` | Qabul qilish — kuryer tanlash | oyna | `/payments` | `src/pages/payments/components/SettlementPickerDialog.tsx` | v2 |
 | `manager-payments-main-cashbox` | Asosiy kassa (filial) | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | v2 |
 | `manager-payments-cashbox-form-dialog` | Kassadan xarajat / to'ldirish oynasi | oyna | `/payments/main-cashbox` | `src/pages/payments/components/CashboxFormPopup.tsx` | v2 |
 | `manager-payments-close-shift-dialog` | Smenani yopish oynasi | oyna | `/payments/main-cashbox` | `src/pages/payments/components/CloseShiftPopup.tsx` | v2 |
+| `manager-payments-main-cashbox-shift-closed` | Asosiy kassa (filial) — smena yopiq | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
+| `manager-payments-main-cashbox-shift-open-dialog` | Smenani ochish oynasi | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
+| `manager-payments-main-cashbox-shift-result-dialog` | Smena yopildi — natija oynasi | oyna | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
 | `manager-payments-cash-detail-branch` | Kassa tafsiloti — HQ'ga o'tkazish | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
+| `manager-payments-cash-detail-branch-shift-closed` | Kassa tafsiloti — HQ'ga o'tkazish · smena yopiq | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
 | `manager-payments-cash-detail-courier` | Kassa tafsiloti — kuryerdan qabul | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
+| `manager-payments-cash-detail-courier-ack` | Kassa tafsiloti — kuryerdan qabul · kvitansiya javobi | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
+| `manager-payments-cash-detail-courier-shift-closed` | Kassa tafsiloti — kuryerdan qabul · smena yopiq | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
 | `manager-payments-history-detail-dialog` | Tranzaksiya tafsiloti | oyna | `/payments` | `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | v2 |
+| `manager-payments-history-detail-dialog-ack` | Tranzaksiya tafsiloti — kvitansiya javobi «Kuryer: noto'g'ri» | oyna | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
 | `manager-products-list` | Mahsulotlar ro'yxati | sahifa | `/products` | `src/pages/products/list/index.tsx` | v2 |
 | `manager-products-market-select-dialog` | Mahsulot uchun market tanlash | oyna | `/products` | `src/pages/products/list/ui/SelectMarketDialog.tsx` | v2 |
 | `manager-products-create` | Mahsulot yaratish | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | v2 |
+| `manager-products-create-errors` | Mahsulot yaratish — xatolar | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | yangi (kodda yo'q) — Maket taklifi (2026-10-19): og'irlik va o'lcham maydonlari backendda hali yo'q — validatsiya holati shu maydonlar bilan. |
 | `manager-products-edit-dialog` | Mahsulotni tahrirlash | oyna | `/products` | `src/pages/products/list/ui/EditProductDialog.tsx` | v2 |
 | `manager-products-delete-dialog` | Mahsulotni o'chirish | oyna | `/products` | `src/pages/products/ui/useDeleteProductConfirm.tsx` | v2 |
 | `manager-users-list` | Foydalanuvchilar (filial xodimlari) | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | v2 |
@@ -1873,38 +2367,48 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-users-detail` | Xodim tafsiloti | sahifa | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | v2 |
 | `manager-users-edit-dialog` | Xodimni tahrirlash | oyna | `/all-users/:id` | `src/features/user/update-user/ui/UpdateUserModal.tsx` | v2 |
 | `manager-regions-scoped` | Hudud — tumanlar statistikasi | sahifa | `/regions` | `src/pages/region/ui/ScopedRegionView.tsx` | v2 |
-| `manager-scan-camera` | Skaner — kamera (umumiy) | sahifa | `/scan` | `src/pages/scan/index.tsx` | eski |
+| `manager-scan-camera` | Skaner — kamera (umumiy) | sahifa | `/scan` | `src/pages/scan/index.tsx` | v2 |
 | `manager-scan-result` | Skanerlangan buyurtma | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | v2 |
+| `manager-users-create-courier-district` | Yangi xodim — kuryer, «Ish hududi» (taklif) | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): menejer kuryer yaratishda «Tuman» — backend kerak. |
 
 ### registrator — Registrator
 
-41 ta maket · kodda bor: 40 · kodda yo'q: 1
+54 ta maket · kodda bor: 43 · kodda yo'q: 11
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
 | `registrator-dashboard-main` | Dashboard — statistika | sahifa | `/` | `src/pages/dashboard/DashboardPage.tsx` | v2 |
 | `registrator-dispatch-list` | Biriktirish — skanerlangan buyurtmalar | sahifa | `/dispatch` | `src/pages/dispatch/index.tsx` | v2 |
 | `registrator-dispatch-empty` | Biriktirish — bo'sh holat | sahifa | `/dispatch` | `src/pages/dispatch/index.tsx` | v2 |
-| `registrator-dispatch-camera-scanner-dialog` | Biriktirish — kamera skaneri | oyna | `/dispatch` | `src/pages/dispatch/index.tsx` | qisman — Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish. |
+| `registrator-dispatch-camera-scanner-dialog` | Biriktirish — kamera skaneri | oyna | `/dispatch` | `src/pages/dispatch/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. «Biriktirish · <filial> · savatda N ta», savat qurilmada (ega D2, /scan/:token «Kuryerga biriktirish» ham shu savatga), rad etilgan QR ro'yxatda «Paket … · Rad etildi»; kuryer — sahifadagi tugma. |
 | `registrator-dispatch-courier-select-dialog` | Biriktirish — kuryer tanlash | oyna | `/dispatch` | `src/pages/dispatch/index.tsx` | v2 |
 | `registrator-orders-list` | Buyurtmalar ro'yxati | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
 | `registrator-orders-filters-mobile` | Buyurtmalar — filtr paneli (telefon) | oyna · faqat telefon | `/orders` | `src/pages/orders/list/OrderFilters.tsx` | v2 |
 | `registrator-orders-detail` | Buyurtma tafsiloti | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | v2 |
 | `registrator-orders-detail-edit-order-dialog` | Buyurtmani tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` | v2 |
 | `registrator-orders-detail-edit-address-dialog` | Manzilni tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | v2 |
-| `registrator-new-orders-markets` | Qabul va yaratish — Marketlar | sahifa | `/new-orders` | `src/pages/new_orders/markets/index.tsx` | v2 |
+| `registrator-new-orders-markets` | Qabul va yaratish — Marketlar | sahifa | `/new-orders` | `src/pages/new_orders/markets/index.tsx` | qisman — Kodda HQ registratorida «Marketlar · Bekor qilinganlar», boshqa registratorda tablar qatori yo'q — «Kiruvchi posilkalar» tabi har qanday registratorga (ega S1, xQ045luf). |
+| `registrator-new-orders-incoming-sources` | Kiruvchi posilkalar — manba tanlash | sahifa | `/new-orders/incoming` | `src/pages/incoming-orders/SourcePicker.tsx` | qisman — Kodda registratorda tablar qatori yo'q (karta o'z sarlavhasi bilan) — «Marketlar · Kiruvchi posilkalar» (+ HQ da «Bekor qilinganlar») tablari, ega S1. |
+| `registrator-new-orders-incoming-scan` | Kiruvchi posilkalar — skanerlash | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kodda «Qop» ustuni, skanerlangan qatorni olib tashlash va oxirgi skan xabaridagi «Olib tashlash» hali yo'q (DamKku7C, eo3eeJxs) — qolgani v2. |
+| `registrator-new-orders-incoming-scan-camera` | Kiruvchi posilkalar — skanerlash — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri. |
+| `registrator-new-orders-incoming-scan-partial` | Kiruvchi posilkalar — chala qop ogohlantirishi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Chala qop ogohlantirishi, «2/3» belgisi va chala qop QR'i skanerlanganda sariq xabar + ogohlantirish ovozi yo'q (DamKku7C, ega S5) — kodda faqat qop skanida «N tadan M tasi» xabari; «keldi» soni uchun backend received_count kerak (ega S3). |
+| `registrator-new-orders-incoming-scan-partial-confirm-dialog` | Kiruvchi posilkalar — chala qop bilan qabul tasdig'i | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Chala qop bilan qabul tasdig'i yo'q — qabul darhol yuboriladi, keyin «receivePartial» xabari. Ega S2: tasdiq yetarli, yetishmagan posilka kutilayotgan bo'lib qoladi. |
+| `registrator-new-orders-incoming-scan-undo` | Kiruvchi posilkalar — skan olib tashlandi | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Skanni olib tashlash va «Qaytarish» xabari yo'q (eo3eeJxs). |
 | `registrator-new-orders-market-detail` | Market buyurtmalari — qabul | sahifa | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | qisman — Registrator boshqa xodim rollari (superadmin/admin/menejer) bilan bir xil v2 ko'rinishda — maketdagi farqlar (sarlavhada «Chop etish», «Buyurtmalar N ta» karta sarlavhasi, «5 / 6 ta» tanlov xulosasi, qator kebab menyusi) ega qaroriga qadar kiritilmagan. |
-| `registrator-new-orders-market-detail-camera` | Market buyurtmalari — qabul — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). |
+| `registrator-new-orders-market-detail-camera` | Market buyurtmalari — qabul — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan = darhol qabul; «Qabul qilindi N · Qoldi M · Topilmadi K», boshqa marketning buyurtmasi rad etiladi, kamera ichida market almashtirish. |
 | `registrator-new-orders-market-detail-receive-dialog` | Qabul qilish tasdig'i | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | qisman — Umumiy xodim qabul oynasi (MarketOrderDialogs.tsx) — tasdiq tugmasi «Tasdiqlash»; maketdagi «Qabul qilish — N ta» varianti ega qaroriga qadar kiritilmagan. |
 | `registrator-new-orders-market-detail-delete-dialog` | Buyurtmani o'chirish tasdig'i | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | v2 |
 | `registrator-new-orders-market-order-edit` | Market buyurtmasini tahrirlash | sahifa | `/new-orders/:marketId/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | v2 |
 | `registrator-new-orders-cancelled` | Bekor qilinganlar — marketlar (HQ) | sahifa | `/new-orders/cancelled` | `src/pages/new_orders/cancelled/index.tsx` | v2 |
 | `registrator-new-orders-cancelled-detail` | Bekor qilinganlarni marketga topshirish (HQ) | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | v2 |
 | `registrator-new-orders-cancelled-manual-dialog` | QR buzilganini tasdiqlash (HQ) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | v2 |
-| `registrator-new-orders-cancelled-scanner-dialog` | Market QR skanerlash (HQ) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | qisman — Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida. |
+| `registrator-new-orders-cancelled-scanner-dialog` | Market QR skanerlash (HQ) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Sarlavhadagi «Market QR skanerlash» tugmasi olib tashlangan (bitta ekranda ikkinchi skan tugmasi yo'q — tizim-scanner §09); market QR'dan keyin kamera yopilmaydi — buyurtmalarni tanlashga o'tadi. |
 | `registrator-new-orders-create-step1` | Buyurtma yaratish — market tanlash | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step1Market.tsx` | v2 |
 | `registrator-new-orders-create-market-picker-dialog` | Buyurtma yaratish — market tanlash oynasi | oyna | `/new-orders/create` | `src/pages/orders/create/ui/MarketPicker.tsx` | v2 |
 | `registrator-new-orders-create-step2` | Buyurtma yaratish — qo'lda forma | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step2Combined.tsx` | v2 |
+| `registrator-new-orders-create-step2-existing-customer` | Buyurtma yaratish — mavjud mijoz, tarif, rasm (taklif) | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak. |
+| `registrator-new-orders-create-step2-customer-suggest` | Buyurtma yaratish — mijoz takliflari (taklif) | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak. |
+| `registrator-new-orders-create-step2-customer-update-dialog` | Buyurtma yaratish — mijoz kartasini yangilash (taklif) | oyna | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak. |
 | `registrator-new-orders-create-ai` | Buyurtma yaratish — AI rejimi | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | v2 |
 | `registrator-new-orders-create-ai-confirm-dialog` | AI buyurtmalarni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | v2 |
 | `registrator-mails-today` | Pochta — Bugungi pochtalar | sahifa | `/mails/today` | `src/pages/mails/components/todaysMails.tsx` | v2 |
@@ -1912,7 +2416,10 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `registrator-mails-refused` | Pochta — Rad etilgan pochtalar | sahifa | `/mails/refused` | `src/pages/mails/components/refusedMails.tsx` | v2 |
 | `registrator-mails-old` | Pochta — Eski pochtalar | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `registrator-mails-detail` | Pochta tafsiloti — bugungi | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
-| `registrator-mails-detail-camera` | Pochta tafsiloti — bugungi — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida. |
+| `registrator-mails-detail-duplicates` | Pochta tafsiloti — bugungi — takroriy telefonlar | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
+| `registrator-mails-detail-search` | Pochta tafsiloti — bugungi — qidiruv | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
+| `registrator-mails-detail-search-empty` | Pochta tafsiloti — bugungi — qidiruvda natija yo'q | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
+| `registrator-mails-detail-camera` | Pochta tafsiloti — bugungi — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q. |
 | `registrator-mails-detail-send-dialog` | Pochtani filialga jo'natish (HQ) | oyna | `/mails/:id` | `src/pages/mails/detail/ui/SendPostModal.tsx` | v2 |
 | `registrator-mails-detail-refused` | Pochta tafsiloti — rad etilgan | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
 | `registrator-mails-detail-old` | Pochta tafsiloti — tarix | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
@@ -1921,12 +2428,13 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `registrator-products-edit-dialog` | Mahsulotni tahrirlash | oyna | `/products` | `src/pages/products/list/ui/EditProductDialog.tsx` | v2 |
 | `registrator-products-delete-dialog` | Mahsulotni o'chirish | oyna | `/products` | `src/pages/products/ui/useDeleteProductConfirm.tsx` | v2 |
 | `registrator-products-create` | Mahsulot yaratish | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | v2 |
-| `registrator-scan-camera` | Skaner — kamera (umumiy) | sahifa | `/scan` | `src/pages/scan/index.tsx` | eski |
+| `registrator-products-create-errors` | Mahsulot yaratish — xatolar | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | yangi (kodda yo'q) — Maket taklifi (2026-10-19): og'irlik va o'lcham maydonlari backendda hali yo'q — validatsiya holati shu maydonlar bilan. |
+| `registrator-scan-camera` | Skaner — kamera (umumiy) | sahifa | `/scan` | `src/pages/scan/index.tsx` | v2 |
 | `registrator-scan-result` | Skanerlangan buyurtma | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | v2 |
 
 ### market — Market
 
-19 ta maket · kodda bor: 19 · kodda yo'q: 0
+32 ta maket · kodda bor: 18 · kodda yo'q: 14
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -1938,28 +2446,56 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `market-new-orders-delete-dialog` | Buyurtmani o'chirish | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | v2 |
 | `market-new-orders-edit` | Yangi buyurtma tafsiloti | sahifa | `/new-orders/:marketId/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | v2 |
 | `market-new-orders-create-manual` | Buyurtma yaratish · Qo'lda | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step2Combined.tsx` | v2 |
+| `market-new-orders-create-manual-existing-customer` | Buyurtma yaratish · mavjud mijoz, tarif, rasm (taklif) | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak. |
+| `market-new-orders-create-manual-customer-suggest` | Buyurtma yaratish · mijoz takliflari (taklif) | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak. |
+| `market-new-orders-create-manual-customer-update-dialog` | Buyurtma yaratish · mijoz kartasini yangilash (taklif) | oyna | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak. |
 | `market-new-orders-create-ai-input` | Buyurtma yaratish · AI kiritish | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiInputPanel.tsx` | v2 |
 | `market-new-orders-create-ai-preview` | Buyurtma yaratish · AI natijalari | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` | v2 |
 | `market-new-orders-create-ai-confirm-dialog` | AI · Yaratishni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | v2 |
 | `market-new-orders-cancelled` | Bekor qilinganlar | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | v2 |
 | `market-new-orders-cancelled-qr-dialog` | Bekor qilinganlar · QR kod | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx` | v2 |
 | `market-products-list` | Mahsulotlar | sahifa | `/products` | `src/pages/products/list/index.tsx` | v2 |
-| `market-products-edit-dialog` | Mahsulotni tahrirlash | oyna | `/products` | `src/pages/products/list/ui/EditProductDialog.tsx` | v2 |
-| `market-products-delete-dialog` | Mahsulotni o'chirish | oyna | `/products` | `src/pages/products/ui/useDeleteProductConfirm.tsx` | v2 |
-| `market-products-create` | Mahsulot yaratish | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | v2 |
 | `market-cashbox-my` | Market kassasi | sahifa | `/cash-box` | `src/pages/payments/components/MyCashboxPage.tsx` | v2 |
 | `market-cashbox-history-detail-dialog` | Tranzaksiya tafsiloti | oyna | `/cash-box` | `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | v2 |
+| `market-profile` | Profil — Telegram guruhlari holati (ulanmagan; taklif · backend kerak) | sahifa | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | qisman — Kodda bor (marketda «Guruhda mijoz ismi va telefoni»); taklif: «Telegram guruhlari» holati (tg-link S1 — backend endpoint kerak). |
+| `market-profile-telegram-group-dialog` | Telegram guruhini ulash (havola, QR, holat kutilmoqda) | oyna | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | yangi (kodda yo'q) — Taklif (tg-link S1, S5) — kodda yo'q; backend guruhlar holati endpointi kerak. |
+| `market-profile-telegram-group-expired-dialog` | Telegram guruhini ulash — havola muddati tugadi | oyna | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | yangi (kodda yo'q) — Taklif (tg-link S1, S5) — kodda yo'q; backend guruhlar holati endpointi kerak. |
+| `market-profile-telegram-status` | Profil — Telegram guruhi: biri ulangan (taklif · backend kerak) | sahifa | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | yangi (kodda yo'q) — Taklif (tg-link S1, S5) — kodda yo'q; backend guruhlar holati endpointi kerak. |
+| `market-operators-list` | Operatorlar | sahifa | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q: /market-operators yopiq (canViewMarketOperators = false), market menyusida «Operatorlar» yo'q. |
+| `market-operators-empty` | Operatorlar — bo'sh holat | sahifa | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q (yopiq sahifa). |
+| `market-operators-create-dialog` | Operator qo'shish | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q (yopiq sahifa); POST market-operators bor; ixtiyoriy «Komissiya» — keyingi PATCH :id/commission bilan (POST da komissiya maydoni yo'q). |
+| `market-operators-commission-dialog` | Komissiya | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q; PATCH market-operators/:id/commission bor. |
+| `market-operators-delete-dialog` | Operatorni o'chirish | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q; DELETE market-operators/:id bor. |
+| `market-operators-commission-fixed-dialog` | Komissiya — qat'iy summa, xato | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q; qat'iy summa, xato holati, «Komissiyani olib tashlash» (PATCH null). |
+| `market-dashboard-mobile-menu` | Menyu ochiq — yon panel / pastki varaq | oyna · faqat planshet + telefon | `(qobiq)` | `src/widgets/layout/dashboardLayout.tsx` | qisman — MobileMenu komponenti bor, lekin market pastki menyusida «Menyu» katagi yo'q — roles.json bottomNav o'zgarishi bilan keladi. |
+| `market-operators-deactivate-dialog` | Operatorni nofaol qilish | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak). |
+| `market-operators-activate-dialog` | Operatorni faollashtirish | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak). |
+
+### market_operator — Market operatori
+
+5 ta maket · kodda bor: 0 · kodda yo'q: 5
+
+| Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
+|---|---|---|---|---|---|
+| `market_operator-products-list` | Mahsulotlar | sahifa | `/products` | `src/pages/products/list/index.tsx` | yangi (kodda yo'q) — Maket taklifi (2026-10-19): market_operator roli menyusi kodda hali yo'q; market--products-list bilan bitta fragment. |
+| `market_operator-products-unassigned` | Mahsulotlar — market biriktirilmagan | sahifa | `/products` | `src/pages/products/list/index.tsx` | yangi (kodda yo'q) — Maket taklifi (2026-10-19): market biriktirilmagan market_operator holati kodda yo'q. |
+| `market_operator-earnings` | Daromadim | sahifa | `(taklif) /my-earnings` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Kodda yo'q: market_operator roli frontendda yo'q; balans/daromad/to'lov uchun /me endpoint kerak. |
+| `market_operator-earnings-no-commission` | Daromadim — komissiya belgilanmagan | sahifa | `(taklif) /my-earnings` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Kodda yo'q (market_operator roli frontendda yo'q). |
+| `market_operator-new-orders-create-manual` | Buyurtma yaratish · Qo'lda | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Kodda yo'q: market_operator roli frontendda yo'q; POST orders MARKET_OPERATOR'ga yopiq (Taklif · backend kerak). |
 
 ### courier — Kuryer
 
-47 ta maket · kodda bor: 44 · kodda yo'q: 3
+53 ta maket · kodda bor: 47 · kodda yo'q: 6
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
 | `courier-dashboard-home` | Bosh sahifa — kuryer statistikasi | sahifa | `/` | `src/pages/dashboard/DashboardPage.tsx` | v2 |
+| `courier-dashboard-pwa-install` | Bosh sahifa — ilovani o'rnatish taklifi (bir marta, yopiladi) | sahifa | `/` | `src/pages/dashboard/MarketDashboardPage.tsx + src/pages/dashboard/DashboardPage.tsx` | yangi (kodda yo'q) — Taklif (small-p1 S3) — kodda yo'q: bir martalik «Ilovani o'rnatish» kartasi. |
 | `courier-dashboard-mobile-menu` | Menyu ochiq — yon panel / pastki varaq | oyna · faqat planshet + telefon | `(qobiq)` | `src/widgets/Sidebar/ui/MobileMenu.tsx` | v2 |
 | `courier-dashboard-mobile-search` | Global qidiruv (telefon) | oyna · faqat telefon | `(qobiq)` | `src/widgets/header/ui/SearchScreen.tsx` | v2 |
 | `courier-orders-pending` | Buyurtmalar — Kutilayotganlar | sahifa | `/orders` | `src/pages/orders/list/courier/index.tsx` | v2 |
+| `courier-orders-pending-refreshing` | Buyurtmalar — Kutilayotganlar, yangilanmoqda | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan. |
+| `courier-orders-pending-refresh-error` | Buyurtmalar — Kutilayotganlar, yangilanmadi | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan. |
 | `courier-orders-tab-switcher-open` | Buyurtmalar — tab almashtirildi, yuklanmoqda | sahifa · faqat telefon | `/orders` | `src/pages/orders/list/courier/list/tabs.tsx` | v2 |
 | `courier-orders-all` | Buyurtmalar — Hammasi | sahifa | `/orders` | `src/pages/orders/list/courier/index.tsx` | v2 |
 | `courier-orders-cancelled` | Buyurtmalar — Bekor qilinganlar | sahifa | `/orders` | `src/pages/orders/list/courier/index.tsx` | v2 |
@@ -1971,42 +2507,82 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `courier-orders-rollback-confirm` | Buyurtmani qaytarish tasdig'i | oyna | `/orders` | `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` | v2 |
 | `courier-orders-detail` | Buyurtma tafsilotlari | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | v2 |
 | `courier-courier-bulk-main` | Tezkor amal — kunni yakunlash | sahifa | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | v2 |
-| `courier-courier-bulk-scanner-camera` | Tezkor amal — kamera skaneri | oyna | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | qisman — Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish. |
-| `courier-courier-bulk-scanner-camera-list` | Tezkor amal — kamera, skanerlanganlar ro'yxati | oyna · faqat telefon | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | yangi (kodda yo'q) — Kamera oynasida «skanerlanganlar ro'yxati» varag'i yo'q (ScannerCameraModal faqat kamera). |
+| `courier-courier-bulk-scanner-camera` | Tezkor amal — kamera skaneri | oyna | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Kamera ichida «Bekor / Ertaga» rejimi (sahifadagi bilan bitta), «N / M ta skanerlandi», ro'yxat; yakunlash — sahifadagi «Kunni yakunlash». |
+| `courier-courier-bulk-scanner-camera-list` | Tezkor amal — kamera, skanerlanganlar ro'yxati | oyna · faqat telefon | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. «Skanerlanganlar · N / M · K ta bekor, L ta ertaga» varag'i, «Bekor qilish» belgini oladi, «Skanerlanmagan N ta buyurtma sotilgan deb belgilanadi». |
 | `courier-courier-bulk-confirm-dialog` | Kunni yakunlash — tasdiqlash oynasi | oyna | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | v2 |
 | `courier-mails-today` | Pochta — Bugungi | sahifa | `/mails/today` | `src/pages/mails/components/todaysMails.tsx` | v2 |
 | `courier-mails-tab-switcher-open` | Pochta — tab tanlash ochiq | sahifa · faqat telefon | `/mails/today` | `src/pages/mails/index.tsx` | v2 |
 | `courier-mails-refused` | Pochta — Rad etilgan | sahifa | `/mails/refused` | `src/pages/mails/components/refusedMails.tsx` | v2 |
 | `courier-mails-old` | Pochta — Eski | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `courier-mails-detail-receive` | Pochta tafsiloti — qabul qilish | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
-| `courier-mails-detail-receive-camera` | Pochta tafsiloti — qabul qilish — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida. |
+| `courier-mails-detail-receive-camera` | Pochta tafsiloti — qabul qilish — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q. |
 | `courier-mails-detail-refused` | Pochta tafsiloti — rad etilgan (faqat o'qish) | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
 | `courier-mails-detail-old` | Pochta tafsiloti — eski (tarix) | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
 | `courier-mails-detail-print-menu` | Chop etish menyusi | oyna | `/mails/:id` | `src/shared/components/PrintModeSelect.tsx` | v2 |
 | `courier-cashbox-my-all` | Kassa — Barcha tarix | sahifa | `/cash-box` | `src/pages/payments/components/MyCashboxPage.tsx` | v2 |
 | `courier-cashbox-my-transfers` | Kassa — Oldi-berdi | sahifa | `/cash-box` | `src/pages/payments/components/MyCashboxPage.tsx` | v2 |
+| `courier-cashbox-my-transfers-ack` | Kassa — Oldi-berdi · kvitansiya javobi | sahifa | `/cash-box` | `src/pages/payments/components/MyCashboxPage.tsx` | v2 |
 | `courier-cashbox-history-detail` | Tranzaksiya tafsiloti | oyna | `/cash-box` | `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | v2 |
 | `courier-regions-scoped` | Hududlar — o'z viloyatim | sahifa | `/regions` | `src/pages/region/ui/ScopedRegionView.tsx` | v2 |
-| `courier-scan-camera` | Skaner — kamera | sahifa | `/scan` | `src/pages/scan/index.tsx` | eski |
+| `courier-scan-camera` | Skaner — kamera | sahifa | `/scan` | `src/pages/scan/index.tsx` | v2 |
 | `courier-scan-order-detail` | Skanerlangan buyurtma — O'zimga olish | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | v2 |
 | `courier-scan-package-detail` | Skanerlangan paket | sahifa | `/scan/:token` | `src/pages/scan/ui/ScanPackageDetail.tsx` | v2 |
 | `courier-scan-post-detail` | Skanerlangan pochta | sahifa | `/scan/:token` | `src/pages/scan/ui/ScanPostDetail.tsx` | v2 |
-| `courier-scan-not-found` | Skaner — topilmadi | sahifa | `/scan/:token` | `src/pages/scan/detail.tsx` | qisman — Maket holati kamera ekranida chizilgan — kamera ishi. /scan/:token da «Buyurtma topilmadi» kartasi (ScanStates: «Qayta urinish» + «Skanerga qaytish») v2. |
-| `courier-scan-starting` | Skaner — kamera ishga tushmoqda | sahifa | `/scan`, `/tg/scan` | `src/pages/scan/index.tsx`, `src/pages/tg-scan/index.tsx` | eski, v2 |
-| `courier-scan-permission-denied` | Skaner — kameraga ruxsat yo'q | sahifa | `/scan`, `/tg/scan` | `src/pages/scan/index.tsx`, `src/pages/tg-scan/index.tsx` | eski, v2 |
-| `courier-scan-active` | Skaner — skanerlanmoqda | sahifa | `/scan`, `/tg/scan` | `src/pages/scan/index.tsx`, `src/pages/tg-scan/index.tsx` | eski, v2 |
-| `courier-scan-success-flash` | Skaner — muvaffaqiyatli o'qildi | sahifa | `/scan`, `/tg/scan` | `src/pages/scan/index.tsx`, `src/pages/tg-scan/index.tsx` | eski, v2 |
-| `courier-scan-other-courier` | Skaner — boshqa kuryerga biriktirilgan | sahifa | `/scan/:token`, `/tg/scan` | `src/pages/scan/detail.tsx`, `src/pages/tg-scan/index.tsx` | qisman — Alohida holat yo'q — «O'zimga olish» rad etilsa backend xato matni amallar kartasida chiqadi (ScanActionCard). Kamera ekranidagi ko'rinishi — alohida kamera ishi. |
-| `courier-scan-invalid` | Skaner — noto'g'ri QR | sahifa | `/scan`, `/tg/scan` | `src/pages/scan/index.tsx`, `src/pages/tg-scan/index.tsx` | eski, v2 |
-| `courier-scan-too-fast` | Skaner — juda tez | sahifa | `/scan` | `src/pages/scan/index.tsx` | eski |
-| `courier-scan-offline` | Skaner — internet yo'q (navbat) | sahifa | `/scan` | `src/pages/scan/index.tsx` | yangi (kodda yo'q) — Internet yo'qda skanlarni navbatga qo'yish yo'q. |
-| `courier-scan-manual-entry` | Skaner — kodni qo'lda kiritish | sahifa | `/scan` | `src/pages/scan/index.tsx` | yangi (kodda yo'q) — Kodni qo'lda kiritish yo'q. |
+| `courier-scan-not-found` | Skaner — topilmadi | sahifa | `/scan`, `/scan/:token` | `src/pages/scan/index.tsx`, `src/pages/scan/detail.tsx` | v2 |
+| `courier-scan-starting` | Skaner — kamera ishga tushmoqda | sahifa | `/scan`, `/tg/scan` | `src/pages/scan/index.tsx`, `src/pages/tg-scan/index.tsx` | v2 |
+| `courier-scan-permission-denied` | Skaner — kameraga ruxsat yo'q | sahifa | `/scan`, `/tg/scan` | `src/pages/scan/index.tsx`, `src/pages/tg-scan/index.tsx` | v2 |
+| `courier-scan-active` | Skaner — skanerlanmoqda | sahifa | `/scan`, `/tg/scan` | `src/pages/scan/index.tsx`, `src/pages/tg-scan/index.tsx` | qisman — /scan kuryer «O'zimga olish» rejimi (skaner 3-bosqich, useCourierTake): kamera, chiroq chipi, «Oxirgi» qatori va «Ro'yxat» — «Sizga biriktirildi» / «Allaqachon sizda» / «Boshqa kuryerda», hisoblagich «N ta biriktirildi», «Tugatish» → xulosa. Farq: biriktirilganlar qurilma tarixiga («Oxirgi skanerlar · Shu qurilmada») yozilmaydi — keng ekranda ular «Skanerlanganlar» kartasida (shu sessiya); telefonda pastda «Chiroq» o'rnida «Tugatish» (chiroq tepada). |
+| `courier-scan-success-flash` | Skaner — muvaffaqiyatli o'qildi | sahifa | `/scan`, `/tg/scan` | `src/pages/scan/index.tsx`, `src/pages/tg-scan/index.tsx` | v2 |
+| `courier-scan-other-courier` | Skaner — boshqa kuryerga biriktirilgan | sahifa | `/scan/:token`, `/tg/scan` | `src/pages/scan/detail.tsx`, `src/pages/tg-scan/index.tsx` | qisman — /scan/:token — alohida holat yo'q, «O'zimga olish» rad etilsa backend matni amallar kartasida (ScanActionCard). Kamera ekrani — /scan kuryer «O'zimga olish» rejimi (skaner 3-bosqich): qizil xabar «Boshqa kuryerga biriktirilgan» + izoh «№… · <kuryer>. Menejerga xabar bering.» (raqam va kuryer buyurtmani bir marta o'qib olingach, xabar ovozsiz yangilanadi), ro'yxatda qizil UserX qator «Boshqa kuryerda: <ism>», xulosada «Biriktirilmadi». Maketdagi keng ekran «Natija» kartasi (mijoz, summa, «Biriktirilgan kuryer») yo'q — natija «Skanerlanganlar» kartasida. |
+| `courier-scan-invalid` | Skaner — noto'g'ri QR | sahifa | `/scan`, `/tg/scan` | `src/pages/scan/index.tsx`, `src/pages/tg-scan/index.tsx` | v2 |
+| `courier-scan-too-fast` | Skaner — juda tez | sahifa | `/scan` | `src/pages/scan/index.tsx` | v2 |
+| `courier-scan-offline` | Skaner — internet yo'q (navbat) | sahifa | `/scan` | `src/pages/scan/index.tsx` | yangi (kodda yo'q) — Oflayn chip bor («Internet yo'q»); skanlarni navbatga qo'yish yo'q. |
+| `courier-scan-manual-entry` | Skaner — kodni qo'lda kiritish | sahifa | `/scan` | `src/pages/scan/index.tsx` | qisman — «Kodni qo'lda kiriting» varag'i v2 (token yoki /scan/<token> havolasi, «Ochish»); maketdagi raqamli klaviatura va «Harflar» yo'q — buyurtma raqami bo'yicha qidiruv API'si yo'q, ega qarori kutiladi. |
 | `courier-inbox-list` | Bildirishnomalar | sahifa | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | v2 |
 | `courier-inbox-push-explain-dialog` | Bildirishnomalarni yoqish oynasi | oyna | `/inbox` | `src/features/push-notifications/ui/PushExplainDialog.tsx` | v2 |
+| `courier-inbox-pwa-install` | Bildirishnomalar — ilovani o'rnatish taklifi (Android / kompyuter) | sahifa | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | yangi (kodda yo'q) — Ilovani o'rnatish kartasi yo'q (beforeinstallprompt ishlatilmaydi) — Taklif, faqat mijoz tomoni. |
+| `courier-inbox-pwa-ios-dialog` | Bosh ekranga qo'shish oynasi (iPhone / iPad) | oyna · faqat planshet + telefon | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | yangi (kodda yo'q) — iOS uchun «Bosh ekranga qo'shing» oynasi yo'q — Taklif, faqat mijoz tomoni. |
+
+### logist — Logist
+
+10 ta maket · kodda bor: 0 · kodda yo'q: 10
+
+| Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
+|---|---|---|---|---|---|
+| `logist-dashboard-main` | Bosh sahifa — viloyatlarim | sahifa | `/` | `src/pages/dashboard/MarketDashboardPage.tsx + src/pages/dashboard/DashboardPage.tsx` | yangi (kodda yo'q) — Logist roli (menuConfig, routes, guard) kodda hali yo'q — dzyVftBx, mDfjKeQi. |
+| `logist-dashboard-mobile-menu` | Menyu ochiq — yon panel / pastki varaq | oyna · faqat planshet + telefon | `/` | `src/pages/dashboard/MarketDashboardPage.tsx + src/pages/dashboard/DashboardPage.tsx` | yangi (kodda yo'q) — Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz. |
+| `logist-dashboard-mobile-search` | Global qidiruv (telefon) — buyurtma, mijoz, telefon | oyna · faqat telefon | `/` | `src/pages/dashboard/MarketDashboardPage.tsx + src/pages/dashboard/DashboardPage.tsx` | yangi (kodda yo'q) — Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz. |
+| `logist-orders-list` | Buyurtmalar — faqat ko'rish | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz. |
+| `logist-orders-detail` | Buyurtma tafsiloti va kuzatuv — faqat ko'rish | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | yangi (kodda yo'q) — Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz. |
+| `logist-mails-list` | Pochta — viloyatlarim pochtalari | sahifa | `/mails/today` | `src/pages/mails/index.tsx` | yangi (kodda yo'q) — Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz. |
+| `logist-mails-detail` | Pochta tafsiloti — faqat ko'rish | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz. |
+| `logist-batches-list` | Paketlar — viloyatlarimga | sahifa | `/batches` | `src/pages/batches/ui/BatchesPage.tsx` | yangi (kodda yo'q) — Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz. |
+| `logist-couriers-list` | Kuryerlar — viloyatlarim | sahifa | `/regions` | `src/pages/region/index.tsx` | yangi (kodda yo'q) — Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz. |
+| `logist-regions-detail` | Viloyat — tumanlar va kuryerlar | sahifa | `/regions` | `src/pages/region/index.tsx` | yangi (kodda yo'q) — Logist roli (menuConfig, routes, guard) kodda hali yo'q — dzyVftBx, mDfjKeQi. |
+
+### investor — Investor
+
+13 ta maket · kodda bor: 0 · kodda yo'q: 13
+
+| Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
+|---|---|---|---|---|---|
+| `investor-dashboard-home` | Bosh sahifa — investor kabineti | sahifa | `/` | `src/pages/dashboard/MarketDashboardPage.tsx + src/pages/dashboard/DashboardPage.tsx` | yangi (kodda yo'q) — Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi). |
+| `investor-dashboard-home-table` | Bosh sahifa — oylik foyda jadvali | sahifa | `/` | `src/pages/dashboard/MarketDashboardPage.tsx + src/pages/dashboard/DashboardPage.tsx` | yangi (kodda yo'q) — Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi). |
+| `investor-dashboard-loading` | Bosh sahifa — yuklanmoqda | sahifa | `/` | `src/pages/dashboard/MarketDashboardPage.tsx + src/pages/dashboard/DashboardPage.tsx` | yangi (kodda yo'q) — Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi). |
+| `investor-dashboard-empty` | Bosh sahifa — ma'lumot yo'q | sahifa | `/` | `src/pages/dashboard/MarketDashboardPage.tsx + src/pages/dashboard/DashboardPage.tsx` | yangi (kodda yo'q) — Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi). |
+| `investor-dashboard-error` | Bosh sahifa — yuklash xatosi | sahifa | `/` | `src/pages/dashboard/MarketDashboardPage.tsx + src/pages/dashboard/DashboardPage.tsx` | yangi (kodda yo'q) — Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi). |
+| `investor-dashboard-forbidden` | Bosh sahifa — profil nofaol (403) | sahifa | `/` | `src/pages/dashboard/MarketDashboardPage.tsx + src/pages/dashboard/DashboardPage.tsx` | yangi (kodda yo'q) — Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi). |
+| `investor-dashboard-not-linked` | Bosh sahifa — profil bog'lanmagan (404) | sahifa | `/` | `src/pages/dashboard/MarketDashboardPage.tsx + src/pages/dashboard/DashboardPage.tsx` | yangi (kodda yo'q) — Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi). |
+| `investor-investments-list` | Investitsiyalar | sahifa | `(taklif) /investments` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi). |
+| `investor-profits-list` | Foyda tarixi | sahifa | `(taklif) /profits` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi). |
+| `investor-dashboard-mobile-menu` | Menyu ochiq — yon panel / pastki varaq | oyna · faqat planshet + telefon | `(qobiq)` | `src/widgets/layout/dashboardLayout.tsx` | yangi (kodda yo'q) — Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi). |
+| `investor-investments-list-loading` | Investitsiyalar — yuklanmoqda | sahifa | `(taklif) /investments` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi). |
+| `investor-investments-list-filtered-empty` | Investitsiyalar — filtr bo'yicha bo'sh | sahifa | `(taklif) /investments` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi). |
+| `investor-profits-list-filtered-empty` | Foyda tarixi — filtr bo'yicha bo'sh | sahifa | `(taklif) /profits` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi). |
 
 ### umumiy ekranlar (common — barcha rollar)
 
-12 ta maket · kodda bor: 12 · kodda yo'q: 0
+19 ta maket · kodda bor: 14 · kodda yo'q: 5
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2016,10 +2592,17 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `common-settings-appearance` | Sozlamalar — Ko'rinish | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | v2 |
 | `common-settings-dashboard` | Sozlamalar — Bosh sahifa bloklari | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | v2 |
 | `common-settings-interface` | Sozlamalar — Interfeys | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | v2 |
-| `common-settings-scanner` | Sozlamalar — Skaner (kamera va ovoz) | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | qisman — «Skaner» tabi bor (muvaffaqiyat/xato ovozlari, tebranish — ScannerPanel); «Kamera» kartasi yo'q — kamera rejimi keyinroq, alohida (spec D5 / G9). |
+| `common-settings-scanner` | Sozlamalar — Skaner (kamera va ovoz) | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | v2 |
 | `common-settings-notifications` | Sozlamalar — Bildirishnomalar | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | v2 |
+| `common-settings-notifications-pwa` | Sozlamalar — Bildirishnomalar · ilova o'rnatilgan / o'rnatilmagan | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | yangi (kodda yo'q) — Sozlamalarda «Ilova» kartasi (o'rnatilgan / o'rnatilmagan) yo'q — Taklif, faqat mijoz tomoni. |
 | `common-profile` | Profil | sahifa | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | v2 |
 | `common-profile-password-dialog` | Profil — parolni o'zgartirish | oyna | `/profile` | `src/pages/profile/ui/ChangePasswordDialog.tsx` | v2 |
+| `common-profile-telegram` | Profil — Telegram ulanmagan | sahifa | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | qisman — Kodda bor (ProfilePage — o'z Telegram'ini ulash); taklif: holat kartasi maket bo'yicha (tg-link). |
+| `common-profile-telegram-link-dialog` | Profil — Telegram'ni ulash (havola, QR, muddat) | oyna | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | yangi (kodda yo'q) — Taklif (tg-link) — kodda yo'q. |
+| `common-profile-telegram-expired-dialog` | Profil — Telegram havolasi eskirdi | oyna | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | yangi (kodda yo'q) — Taklif (tg-link) — kodda yo'q. |
+| `common-profile-telegram-command-dialog` | Profil — Telegram'ni ulash (bot nomi yo'q: buyruq) | oyna | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | yangi (kodda yo'q) — Taklif (tg-link) — kodda yo'q. |
+| `common-profile-telegram-linked` | Profil — Telegram ulangan (+ «Telegram ulandi» xabari) | sahifa | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | qisman — Kodda bor (ProfilePage — o'z Telegram'ini ulash); taklif: holat kartasi maket bo'yicha (tg-link). |
+| `common-profile-telegram-unlink-dialog` | Profil — Telegram'ni uzish (tasdiq) | oyna | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | yangi (kodda yo'q) — Taklif (tg-link) — kodda yo'q. |
 | `common-inbox` | Bildirishnomalar qutisi | sahifa | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | v2 |
 | `common-bell-dropdown` | Qo'ng'iroqcha ochiq (so'nggi bildirishnomalar) | oyna | `(qobiq)` | `src/widgets/header/ui/NotificationsMenu.tsx` | v2 |
 
@@ -2032,7 +2615,7 @@ Sahifa emas — qoidalar va komponent holatlari. Har UI ishida tegishli taxtani 
 | `Main` | Dizayn tizimi | Tamoyillar (rang = ma'no, bitta asosiy amal, faqat token), rang tokenlari (sirt, chiziq, matn, brend, amal, holat), tipografiya, 4px oraliq, radius, tugmalar, maydonlar, holat belgilari (buyurtma, yetkazish, foydalanuvchi), tab/segment/chip, statistika va jadval, xabar bloklari, tasdiqlash oynasi, bo'sh holat, format standarti. | src/index.css (@theme), src/shared/config/themeTokens.ts, src/shared/lib/formatMoney.ts, docs/DESIGN_SYSTEM.md; 1-bosqich primitivlari (Button, Badge/StatusBadge, Card/StatCard, PageHeader, Tabs) | barcha sahifalar |
 | `tizim-icons` | Ikonkalar katalogi | lucide ikonkalar katalogi: 12 guruh, o'lchamlar (16/18/20/22), rang va tugmadagi ikonka, eski sinonimlarni almashtirish jadvali. | design/icon-registry.json, lucide-react | barcha sahifalar |
 | `tizim-responsive` | Moslashuvchanlik — telefon, planshet, desktop | Breakpointlar (≥1024 · 768–1023 · <768), bitta sahifa uch kenglikda, dialog → pastdan oyna, yon/suriluvchi/pastki menyu, 70px yorliq qoidasi, yashirish sinflari, jadval o'rami, ≥44px bosish maydoni, asosiy amal pastda. | src/widgets/Sidebar/ui/{Sidebar,BottomNav,MobileMenu}.tsx, src/widgets/layout/dashboardLayout.tsx, docs/DESIGN_SYSTEM.md §6 | `(qobiq)` |
-| `tizim-scanner` | Kamera skaner — telefon kamerasi bilan skanerlash | Kamera va USB skaner qachon, kirish nuqtalari (pastki menyu «Skaner», yuqori panel «Skanerlash»), kamera anatomiyasi, barcha holatlar (ruxsat, ishga tushmoqda, tayyor, topildi, takroriy, topilmadi, noto'g'ri QR, boshqa kuryerniki, juda tez, kam yorug'lik, chiroq, oflayn navbat, kamera band, qo'lda kiritish), uzluksiz skanerlash (hisoblagich, ro'yxat, tugatish), desktop veb-kamera + USB. | src/pages/scan/*, src/shared/components/ScannerCameraModal.tsx, src/shared/lib/{useCameraQrScanner,useKeyboardScanner,useOrderQrScanner}.ts, src/pages/scan/lib/scanShared.ts | `/new-orders/incoming/:marketId`, `/new-orders/branches/:branchId/batches/:batchId`, `/new-orders/cancelled/:marketId`, `/new-orders/:marketId`, `/mails/:id`, `/batches/:id`, `/dispatch`, `/courier-bulk`, `/scan`, `/scan/:token`, `/tg/scan` |
+| `tizim-scanner` | Kamera skaner — telefon kamerasi bilan skanerlash | Kamera va USB skaner qachon, kirish nuqtalari (pastki menyu «Skaner», yuqori panel «Skanerlash»), kamera anatomiyasi, barcha holatlar (ruxsat, ishga tushmoqda, tayyor, topildi, takroriy, topilmadi, noto'g'ri QR, boshqa kuryerniki, juda tez, kam yorug'lik, chiroq, oflayn navbat, kamera band, qo'lda kiritish), uzluksiz skanerlash (hisoblagich, ro'yxat, tugatish), desktop veb-kamera + USB. | src/shared/ui/camera/{ScannerCamera,CameraSurface,useScannerCameraSession,cameraPermission}.ts(x), src/shared/lib/scanner/{scanTargets,scannerHost,feedback}.ts, src/widgets/scanner/ScannerHost.tsx, src/pages/scan/*, src/shared/lib/{useCameraQrScanner,useKeyboardScanner,useOrderQrScanner,qrScanner}.ts | `/new-orders/incoming/:marketId`, `/new-orders/branches/:branchId/batches/:batchId`, `/new-orders/cancelled/:marketId`, `/new-orders/:marketId`, `/mails/:id`, `/batches/:id`, `/dispatch`, `/courier-bulk`, `/scan`, `/scan/:token`, `/tg/scan` |
 | `tizim-charts` | Grafiklar — statistika va tahlil | Qaysi grafik qachon, kategorial palitra (chart-1…8, kunduzgi/tungi), ketma-ket va ikki qutbli shkalalar, holat ranglari, grafik anatomiyasi, galereya (spidometr, donut, KPI, chiziq, ustunlar, reyting, issiqlik xaritasi, xarita, sharshara, voronka, sparkline), holatlar (yuklanmoqda, bo'sh, xato), «Grafik \| Jadval» egizagi, telefon. | src/shared/ui/charts (Gauge, Donut, RankList, Meter, SegBar, HBarList, Waterfall, RingStat, ChartLegend, ChartNote, ViewToggle, DeltaChip), CHART_PALETTE (src/shared/config/themeTokens.ts), src/widgets/dashboard-*/*, src/widgets/financial-analysis/* (recharts — faqat FinancialTrendPlot), src/pages/region/ui/UzbekistanRegionMap.tsx, docs/DESIGN_SYSTEM.md §3 | `/`, `/branch-dashboard`, `/financial-balance`, `/regions` |
 | `tizim-states-buttons` | Holatlar — tugmalar va havolalar | Tugma va havolalar: 12 tur × 6 holat, o'lchamlar (32/40/48), tugmalar guruhi, forma/oyna oxiri, sahifa sarlavhasi, xavfli juftlik, telefon pastki paneli, qilinmaydigan narsalar. | src/shared/components/button.tsx (1-bosqich: Button, IconButton) | barcha sahifalar |
 | `tizim-states-forms` | Holatlar — forma elementlari | Forma elementlari: matn maydoni holatlari, qidiruv, telefon, son, ko'p qatorli matn, tanlash ro'yxati (yopiq/ochiq/ko'p tanlov), sana oralig'i, katak/radio/kalit/tanlov kartasi, fayl yuklash, forma xatolari xulosasi. | src/shared/ui/{Select,SearchableSelect,PhoneInput,DateRangePicker,Filter*,Toggle}.tsx, antd mavzusi (src/app/providers/theme) — 3-bosqich | barcha sahifalar |
@@ -2049,7 +2632,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 
 | Fayl | Route(lar) |
 |---|---|
-| `src/app/lib/routes.tsx` | `/`, `/new-orders/cancelled/:marketId`, `/new-orders/:marketId`, `/new-orders/:marketId/edit/:orderId` |
+| `src/app/lib/routes.tsx` | `/`, `(taklif) /investments`, `(taklif) /profits`, `/new-orders/cancelled/:marketId`, `/new-orders/:marketId`, `/new-orders/:marketId/edit/:orderId`, `(taklif) /my-earnings`, `(taklif) /notifications/sent` |
 | `src/auth/SessionExpiryCountdown.tsx` | `/login` |
 | `src/auth/loginNotice.ts` | `/login` |
 | `src/entities/activity-log/ui/ActivityActionBadge.tsx` | `/activity-logs` |
@@ -2068,6 +2651,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/features/branch/ui/BranchFormDialog.tsx` | `/branches` |
 | `src/features/courier-transfer-branch/ui/TransferCourierButton.tsx` | `/all-users/:id`, `/branches/:id` |
 | `src/features/courier-transfer-branch/ui/TransferCourierModal.tsx` | `/all-users/:id` |
+| `src/features/dispatch-basket/model/dispatchBasket.ts` | `/dispatch` |
 | `src/features/notification-create/ui/GroupLinkQr.tsx` | `/notifications` |
 | `src/features/notification-create/ui/NotificationFormModal.tsx` | `/notifications` |
 | `src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx` | `/notifications` |
@@ -2084,7 +2668,6 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/features/tg-scan/model/telegramWebApp.ts` | `/tg/scan` |
 | `src/features/tg-scan/model/useScanAssign.ts` | `/tg/scan` |
 | `src/features/tg-scan/model/useTelegramAuth.ts` | `/tg/scan` |
-| `src/features/tg-scan/ui/CameraSurface.tsx` | `/tg/scan` |
 | `src/features/tg-scan/ui/ScanListSheet.tsx` | `/tg/scan` |
 | `src/features/tg-scan/ui/TgScanner.tsx` | `/tg/scan` |
 | `src/features/user/create-user/ui/CreateUserForm.tsx` | `/all-users/create-user` |
@@ -2362,19 +2945,27 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/returns/model/returnBatches.ts` | `/returns` |
 | `src/pages/scan/detail.tsx` | `/scan/:token` |
 | `src/pages/scan/index.tsx` | `/scan` |
-| `src/pages/scan/lib/scanResource.ts` | `/scan/:token` |
-| `src/pages/scan/lib/scanShared.ts` | `/scan` |
+| `src/pages/scan/lib/scanResource.ts` | `/scan`, `/scan/:token` |
 | `src/pages/scan/model/scanBatchView.ts` | `/scan/:token` |
+| `src/pages/scan/model/scanExternalBagView.ts` | `/scan/:token` |
+| `src/pages/scan/model/scanHistory.ts` | `/scan`, `/scan/:token` |
+| `src/pages/scan/model/scanModes.ts` | `/scan` |
 | `src/pages/scan/model/scanOrderView.ts` | `/scan/:token` |
+| `src/pages/scan/model/useCourierTake.ts` | `/scan` |
+| `src/pages/scan/model/useUniversalScan.ts` | `/scan` |
 | `src/pages/scan/ui/ManagerOrderDialogs.tsx` | `/scan/:token` |
 | `src/pages/scan/ui/ScanActionCard.tsx` | `/scan/:token` |
 | `src/pages/scan/ui/ScanAlert.tsx` | `/scan/:token` |
 | `src/pages/scan/ui/ScanBatchSummary.tsx` | `/scan/:token` |
+| `src/pages/scan/ui/ScanExternalBagDetail.tsx` | `/scan/:token` |
+| `src/pages/scan/ui/ScanMarketQrNotice.tsx` | `/scan/:token` |
+| `src/pages/scan/ui/ScanModeCards.tsx` | `/scan` |
 | `src/pages/scan/ui/ScanOrderResult.tsx` | `/scan/:token` |
 | `src/pages/scan/ui/ScanOrdersCard.tsx` | `/scan/:token` |
 | `src/pages/scan/ui/ScanPackageDetail.tsx` | `/scan/:token` |
 | `src/pages/scan/ui/ScanPostDetail.tsx` | `/scan/:token` |
 | `src/pages/scan/ui/ScanResultHeader.tsx` | `/scan/:token` |
+| `src/pages/scan/ui/ScanSideCards.tsx` | `/scan` |
 | `src/pages/scan/ui/ScanStates.tsx` | `/scan/:token` |
 | `src/pages/scan/ui/ScanStickyBar.tsx` | `/scan/:token` |
 | `src/pages/scan/ui/ScanTrackingCard.tsx` | `/scan/:token` |
@@ -2403,8 +2994,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/users/list/UserListPage.tsx` | `/all-users` |
 | `src/shared/components/PrintModeSelect.tsx` | `/mails/:id` |
 | `src/shared/components/ScanFeedbackOverlay.tsx` | `/scan` |
-| `src/shared/components/ScannerCameraModal.tsx` | `/new-orders/cancelled/:marketId`, `/dispatch`, `/courier-bulk` |
 | `src/shared/components/popupSelect.tsx` | `/payments/main-cashbox` |
+| `src/shared/lib/scanner/feedback.ts` | `/scan` |
 | `src/shared/lib/shellBannerSlot.ts` | `/login` |
 | `src/shared/lib/useCameraQrScanner.ts` | `/scan` |
 | `src/shared/ui/ErrorBoundary.tsx` | `/runtime-error` |
@@ -2414,6 +3005,10 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/shared/ui/SelectionRegion.tsx` | `/new-orders/branches/:branchId`, `/new-orders/branches/:branchId/batches/:batchId`, `/new-orders/cancelled/:marketId`, `/mails/return`, `/mails/:id` |
 | `src/shared/ui/ServerError.tsx` | `/500` |
 | `src/shared/ui/SmsMeter.tsx` | `/notifications/sms` |
+| `src/shared/ui/camera/CameraSurface.tsx` | `/tg/scan` |
+| `src/shared/ui/camera/ScannerCamera.tsx` | `/new-orders/cancelled/:marketId`, `/dispatch`, `/courier-bulk`, `/scan` |
+| `src/shared/ui/camera/scanRegion.ts` | `/scan` |
+| `src/shared/ui/camera/useLowLight.ts` | `/scan` |
 | `src/shared/ui/charts/index.ts` | `/`, `/branch-dashboard` |
 | `src/shared/ui/error-page/ErrorPageFrame.tsx` | `/403`, `/404`, `/500` |
 | `src/widgets/Sidebar/model/menuConfig.tsx` | `(qobiq)` |
@@ -2476,21 +3071,21 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Band | Kalit | `to` | Route | Shart (filial turi) | superadmin maketlari |
 |---|---|---|---|---|---|
 | Bosh sahifa | `dashboard` | `/` | `/` | — | `superadmin-dashboard-main` (+1) |
-| Buyurtmalar | `orders` | `/orders` | `/orders` | — | `superadmin-orders-list` (+1) |
+| Buyurtmalar | `orders` | `/orders` | `/orders` | — | `superadmin-orders-list` (+4) |
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | `superadmin-neworders-markets` |
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `superadmin-mails-today` |
 | Paketlar | `batches` | `/batches` | `/batches` | — | `superadmin-batches-new` (+2) |
 | Qaytarishlar | `returns` | `/returns` | `/returns` | — | `superadmin-returns-list` |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `superadmin-products-list` (+3) |
-| Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `superadmin-users-list` (+1) |
+| Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `superadmin-users-list` (+4) |
 | To'lovlar | `payments` | `/payments` | `/payments` | — | `superadmin-payments-overview` (+3) |
 | Balans | `balance` | `/financial-balance` | `/financial-balance` | — | `superadmin-balance-overview` (+4) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `superadmin-regions-map` (+1) |
-| Bildirishnomalar | `notifications` | `/notifications` | `/notifications` | — | `superadmin-notifications-telegram-groups` (+2) |
+| Bildirishnomalar | `notifications` | `/notifications` | `/notifications` | — | `superadmin-notifications-telegram-groups` (+14) |
 | Filiallar | `branches` | `/branches` | `/branches` | — | `superadmin-branches-list-tree` (+2) |
-| Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `superadmin-integrations-partners-console` (+11) |
+| Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `superadmin-integrations-partners-console` (+14) |
 | Faoliyat jurnali | `activityLogs` | `/activity-logs` | `/activity-logs` | — | `superadmin-activity-logs-list` (+1) |
-| Ops vositalari | `ops` | `/ops` | `/ops` | — | `superadmin-ops-finance-operators` (+7) |
+| Ops vositalari | `ops` | `/ops` | `/ops` | — | `superadmin-ops-finance-operators` (+16) |
 
 ### admin — Admin
 
@@ -2503,12 +3098,14 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Paketlar | `batches` | `/batches` | `/batches` | — | `admin-batches-new` (+2) |
 | Qaytarishlar | `returns` | `/returns` | `/returns` | — | `admin-returns-list` |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `admin-products-list` (+3) |
-| Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `admin-users-list` (+1) |
+| Foydalanuvchilar | `users` | `/all-users` | `/all-users` | — | `admin-users-list` (+2) |
 | To'lovlar | `payments` | `/payments` | `/payments` | — | `admin-payments-overview` (+3) |
 | Balans | `balance` | `/financial-balance` | `/financial-balance` | — | `admin-balance-overview` (+4) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `admin-regions-map` (+1) |
-| Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `admin-integrations-partners` (+10) |
+| Integratsiyalar | `integrations` | `/integrations` | `/integrations/connections` | — | `admin-integrations-partners` (+13) |
 | Faoliyat jurnali | `activityLogs` | `/activity-logs` | `/activity-logs` | — | `admin-activity-logs-list` (+1) |
+
+Maketda bor, kodda hali yo'q (`plannedMenu`): Bildirishnomalar (`notifications`).
 
 ### manager — Menejer
 
@@ -2516,7 +3113,7 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 |---|---|---|---|---|---|
 | Bosh sahifa | `dashboard` | `/branch-dashboard` | `/branch-dashboard` | barchasi | `manager-branch-dashboard-main` |
 | Biriktirish | `dispatch` | `/dispatch` | `/dispatch` | REGIONAL · HYBRID | `manager-dispatch-scan` (+2) |
-| Buyurtmalar | `orders` | `/orders` | `/orders` | barchasi | `manager-orders-list-all` (+5) |
+| Buyurtmalar | `orders` | `/orders` | `/orders` | barchasi | `manager-orders-list-all` (+7) |
 | Tezkor amal | `quickAction` | `/courier-bulk` | `/courier-bulk` | REGIONAL · HYBRID | `manager-courier-bulk-main` (+1) |
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | HQ · PICKUP · HYBRID | `manager-new-orders-markets` |
 | Pochta | `mails` | `/mails` | `/mails/today` | HQ · REGIONAL · HYBRID | `manager-mails-today` |
@@ -2524,7 +3121,7 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Qaytarishlar | `returns` | `/returns` | `/returns` | HQ · PICKUP · HYBRID | `manager-returns-list` |
 | Mahsulotlar | `products` | `/products` | `/products` | barchasi | `manager-products-list` (+3) |
 | Foydalanuvchilar | `users` | `/all-users` | `/all-users` | HQ · PICKUP · REGIONAL · HYBRID | `manager-users-list` |
-| To'lovlar | `payments` | `/payments` | `/payments` | HQ · REGIONAL · HYBRID | `manager-payments-overview` (+2) |
+| To'lovlar | `payments` | `/payments` | `/payments` | HQ · REGIONAL · HYBRID | `manager-payments-overview` (+3) |
 | Hududlar | `regions` | `/regions` | `/regions` | barchasi | `manager-regions-scoped` |
 
 ### registrator — Registrator
@@ -2545,16 +3142,30 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Bosh sahifa | `dashboard` | `/` | `/` | — | `market-dashboard-home` (+1) |
 | Buyurtmalar | `orders` | `/orders` | `/orders` | — | `market-orders-list` |
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | izohga qarang |
-| Mahsulotlar | `products` | `/products` | `/products` | — | `market-products-list` (+2) |
+| Mahsulotlar | `products` | `/products` | `/products` | — | `market-products-list` |
 | To'lovlar | `payments` | `/cash-box` | `/cash-box` | — | `market-cashbox-my` (+1) |
+
+Maketda bor, kodda hali yo'q (`plannedMenu`): Operatorlar (`operators`).
+
+### market_operator — Market operatori
+
+Maketda bor, kodda hali yo'q (`plannedMenu`): Bosh sahifa (`dashboard`), Buyurtmalar (`orders`), Buyurtma yaratish (`newOrders`), Mahsulotlar (`products`), Daromadim (`earnings`).
 
 ### courier — Kuryer
 
 | Band | Kalit | `to` | Route | Shart (filial turi) | courier maketlari |
 |---|---|---|---|---|---|
-| Bosh sahifa | `dashboard` | `/` | `/` | — | `courier-dashboard-home` |
-| Buyurtmalar | `orders` | `/orders` | `/orders` | — | `courier-orders-pending` (+9) |
+| Bosh sahifa | `dashboard` | `/` | `/` | — | `courier-dashboard-home` (+1) |
+| Buyurtmalar | `orders` | `/orders` | `/orders` | — | `courier-orders-pending` (+11) |
 | Tezkor amal | `quickAction` | `/courier-bulk` | `/courier-bulk` | — | `courier-courier-bulk-main` (+3) |
 | Pochta | `mails` | `/mails` | `/mails/today` | — | `courier-mails-today` (+1) |
-| Kassa | `payments` | `/cash-box` | `/cash-box` | — | `courier-cashbox-my-all` (+2) |
+| Kassa | `payments` | `/cash-box` | `/cash-box` | — | `courier-cashbox-my-all` (+3) |
 | Hududlar | `regions` | `/regions` | `/regions` | — | `courier-regions-scoped` |
+
+### logist — Logist
+
+Maketda bor, kodda hali yo'q (`plannedMenu`): Bosh sahifa (`dashboard`), Buyurtmalar (`orders`), Pochta (`mails`), Paketlar (`batches`), Kuryerlar (`couriers`), Hududlar (`regions`).
+
+### investor — Investor
+
+Maketda bor, kodda hali yo'q (`plannedMenu`): Bosh sahifa (`dashboard`), Investitsiyalar (`investments`), Foyda tarixi (`profits`).

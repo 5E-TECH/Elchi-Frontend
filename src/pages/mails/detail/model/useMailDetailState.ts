@@ -47,6 +47,17 @@ export const useMailDetailState = (orders: PostOrder[]) => {
         });
     }, []);
 
+    /** Tanlovdan chiqarish (kamera «Bekor qilish») — tanlanmagan bo'lsa o'zgarmaydi. */
+    const deselectOne = useCallback((id: string) => {
+        setSelectedIds((prev) => {
+            if (!prev.has(id)) return prev;
+
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+        });
+    }, []);
+
     const clearSelection = useCallback(() => {
         setSelectedIds(new Set());
     }, []);
@@ -58,6 +69,7 @@ export const useMailDetailState = (orders: PostOrder[]) => {
         toggleAll,
         toggleOne,
         selectOne,
+        deselectOne,
         clearSelection,
     };
 };

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
 import { ThemeProvider } from "../../../app/providers/theme/ThemeContext";
-import type { AppSettings } from "../../../entities/settings";
+import { DEFAULT_SETTINGS, type AppSettings } from "../../../entities/settings";
 import SettingsPage from "./SettingsPage";
 
 const mocks = vi.hoisted(() => ({
@@ -204,6 +204,74 @@ describe("SettingsPage — Interfeys va Skaner", () => {
     await userEvent.click(within(error).getByRole("radio", { name: "Raqamli" }));
     expect(mocks.mutate).toHaveBeenCalledWith({ scanner: { sounds: { error: "digital" } } });
     expect(screen.getByText("USB skaner tayyor")).toBeInTheDocument();
+  });
+
+  it("«Kamera» kartasi (maket common-settings-scanner): sukut qiymatlari va «Kamerani sinash» → /scan", async () => {
+    await openTab(/^Skaner/);
+    const card = screen.getByRole("region", { name: "Kamera" });
+    expect(within(card).getByRole("link", { name: "Kamerani sinash" })).toHaveAttribute("href", "/scan");
+
+    const facing = within(card).getByRole("radiogroup", { name: "Asosiy kamera" });
+    expect(within(facing).getByRole("radio", { name: /^Orqa kamera/ })).toBeChecked();
+    expect(within(facing).getByRole("radio", { name: /^Old kamera/ })).not.toBeChecked();
+
+    for (const name of ["Chiroq — avtomatik", "Uzluksiz skanerlash", "Ovoz", "Tebranish"]) {
+      expect(within(card).getByRole("switch", { name })).toHaveAttribute("aria-checked", "true");
+    }
+
+    const frame = within(card).getByRole("radiogroup", { name: "Ramka o'lchami" });
+    expect(within(frame).getAllByRole("radio")).toHaveLength(3);
+    expect(within(frame).getByRole("radio", { name: /^O'rta/ })).toBeChecked();
+  });
+
+  it("kamera sozlamalari saqlanadi va qurilmadagi ko'zguga darhol yoziladi (kamera shundan o'qiydi)", async () => {
+    window.localStorage.clear();
+    await openTab(/^Skaner/);
+    const card = screen.getByRole("region", { name: "Kamera" });
+
+    await userEvent.click(within(card).getByRole("radio", { name: /^Old kamera/ }));
+    expect(mocks.mutate).toHaveBeenLastCalledWith({ scanner: { camera: { facing: "user" } } });
+    expect(window.localStorage.getItem("scanner-camera-facing")).toBe("user");
+
+    await userEvent.click(within(card).getByRole("radio", { name: /^Katta/ }));
+    expect(mocks.mutate).toHaveBeenLastCalledWith({ scanner: { camera: { frame: "lg" } } });
+    expect(window.localStorage.getItem("scanner-frame-size")).toBe("lg");
+
+    await userEvent.click(within(card).getByRole("switch", { name: "Uzluksiz skanerlash" }));
+    expect(mocks.mutate).toHaveBeenLastCalledWith({ scanner: { camera: { continuous: false } } });
+    expect(window.localStorage.getItem("scanner-continuous")).toBe("false");
+
+    await userEvent.click(within(card).getByRole("switch", { name: "Chiroq — avtomatik" }));
+    expect(mocks.mutate).toHaveBeenLastCalledWith({ scanner: { camera: { torchAuto: false } } });
+
+    await userEvent.click(within(card).getByRole("switch", { name: "Tebranish" }));
+    expect(mocks.mutate).toHaveBeenLastCalledWith({ scanner: { feedback: { vibration: false } } });
+    expect(window.localStorage.getItem("scanner-vibration")).toBe("false");
+
+    await userEvent.click(within(card).getByRole("switch", { name: "Ovoz" }));
+    expect(mocks.mutate).toHaveBeenLastCalledWith({ scanner: { feedback: { sound: false } } });
+    expect(window.localStorage.getItem("scanner-sound-enabled")).toBe("false");
+    window.localStorage.clear();
+  });
+
+  it("saqlangan kamera sozlamasi ko'rsatiladi; marketda «Kamerani sinash» yo'q", async () => {
+    mocks.settings = {
+      ...DEFAULT_SETTINGS,
+      scanner: {
+        ...DEFAULT_SETTINGS.scanner,
+        camera: { facing: "user", frame: "sm", torchAuto: false, continuous: false },
+        feedback: { sound: true, vibration: false },
+      },
+    };
+    renderPage({ preloadedState: { role: { id: "k1", role: "market", region: null, name: "k" } } as never });
+    await userEvent.click(within(desktopNav()).getByRole("tab", { name: /^Skaner/ }));
+    const card = screen.getByRole("region", { name: "Kamera" });
+    expect(within(card).queryByRole("link", { name: "Kamerani sinash" })).not.toBeInTheDocument();
+    expect(within(card).getByRole("radio", { name: /^Old kamera/ })).toBeChecked();
+    expect(within(card).getByRole("radio", { name: /^Kichik/ })).toBeChecked();
+    expect(within(card).getByRole("switch", { name: "Uzluksiz skanerlash" })).toHaveAttribute("aria-checked", "false");
+    expect(within(card).getByRole("switch", { name: "Tebranish" })).toHaveAttribute("aria-checked", "false");
+    expect(within(card).getByRole("switch", { name: "Ovoz" })).toHaveAttribute("aria-checked", "true");
   });
 });
 

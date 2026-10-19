@@ -18,13 +18,6 @@
   "confirmTomorrowHint": "Stay in the waiting status",
   "confirmAction": "Confirm",
   "confirmBack": "Back",
-  "scannerTitle": "Scan order",
-  "scannerSubtitle": "Read an order QR code with camera",
-  "scannerWaiting": "Waiting for QR code...",
-  "scannerClose": "Close",
-  "torchOn": "Turn light on",
-  "torchOff": "Turn light off",
-  "invalidQr": "Could not read QR code",
   "scanMissingTitle": "Order not found",
   "scanMissing": "This QR code was not found among the waiting orders",
   "duplicateTitle": "Duplicate scan",
@@ -70,11 +63,7 @@
     "tomorrow": "Keep for tomorrow",
     "cancelShort": "Cancel",
     "tomorrowShort": "Tomorrow",
-    "usbReady": "USB scanner ready",
-    "camera": "Camera",
-    "cameraPhone": "Scan with camera",
-    "cameraPhoneMarked": "Scan with camera, {{marked}} of {{total}} marked",
-    "markedOfTotal": "{{marked}} / {{total}}"
+    "usbReady": "USB scanner ready"
   },
   "list": {
     "title": "Waiting orders",
@@ -135,5 +124,15 @@
   "resultDescription_other": "{{count}} orders were not finished — they stay in the list with their mark",
   "resultListLabel": "Unfinished orders",
   "resultReasonUnknown": "The server did not give a reason",
-  "resultClose": "Got it"
+  "resultClose": "Got it",
+  "camera": {
+    "context": "Waiting orders: {{value}}",
+    "meter": "scanned",
+    "unscanned": "Unscanned orders ({{value}}) will be marked as sold.",
+    "listTitle": "Scanned",
+    "listDescription": "{{done}} / {{total}} · cancel: {{cancel}}, tomorrow: {{tomorrow}}",
+    "markedCancel": "Marked for cancellation №{{id}} · {{name}}",
+    "markedTomorrow": "Kept for tomorrow №{{id}} · {{name}}",
+    "markedSold": "Marked as sold №{{id}} · {{name}}"
+  }
 }

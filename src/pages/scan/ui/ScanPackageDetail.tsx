@@ -1,13 +1,13 @@
 // dizayn-v2: courier-scan-package-detail
 import { memo, useMemo, useState, type ReactNode } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Building2, Check, CircleCheck, MapPin, Package, ScanLine, TriangleAlert, Truck, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { BATCH_STATUS_TONE, useBatchDetail } from "../../../entities/batch";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { Badge, Button, buttonClasses } from "../../../shared/ui/primitives";
-import { receiveScannedPackage, type ScanResourceType } from "../lib/scanResource";
+import { invalidateAfterScanAction, receiveScannedPackage, type ScanResourceType } from "../lib/scanResource";
 import { SCANNER_ROUTE } from "../model/routes";
 import { buildScanPackageView, getPackageReceiveError, type ScanPackageView } from "../model/scanBatchView";
 import type { ScanRoleKind } from "../model/scanOrderView";
@@ -50,11 +50,14 @@ const PackageBody = ({
   const isBelowLg = useIsBelowLg();
   const isPhone = useIsBelowMd();
   const scheduleRedirect = useScanRedirect(2000);
+  const queryClient = useQueryClient();
   const [result, setResult] = useState<ReceiveResult | null>(null);
 
   const receiveMutation = useMutation({
     mutationFn: () => receiveScannedPackage(view.id),
     onSuccess: () => {
+      // Paket va ichidagi buyurtmalar filialga o'tdi — paketlar, buyurtmalar va pochta keshi yangilanadi (6qypMFeT).
+      void invalidateAfterScanAction(queryClient);
       setResult({ tone: "success", text: t("package.receiveSuccess") });
       // Skaner bilan keyingi posilka ochilsa (bu blok yangi token bilan qayta o'rnatiladi) — taymer bekor.
       scheduleRedirect();

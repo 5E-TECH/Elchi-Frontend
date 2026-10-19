@@ -386,7 +386,7 @@ body{margin:0}
   .el-pagehead .el-actions{width:100%}
   .el-pagehead .el-actions .el-btn{flex:1}
   .el-app{padding-bottom:64px}
-  .el-bottomnav{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));position:absolute;left:0;right:0;bottom:0;height:64px;background:var(--surface);border-top:1px solid var(--border);z-index:5}
+  .el-bottomnav{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);position:absolute;left:0;right:0;bottom:0;height:64px;background:var(--surface);border-top:1px solid var(--border);z-index:5}
   .el-overlay{align-items:flex-end;padding:0;z-index:20}
   .el-overlay > .el-dialog{width:100% !important;max-width:100% !important;border-radius:20px 20px 0 0;padding:20px 16px 24px;max-height:92%;overflow:auto}
   .el-dialog-foot .el-btn{flex:1}

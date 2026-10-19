@@ -147,6 +147,33 @@
   },
   {
    "role": "superadmin",
+   "viewId": "orders-list-skip-link",
+   "menuKey": "orders",
+   "title": "Buyurtmalar ro'yxati — «Asosiy kontentga o'tish» havolasi fokusda",
+   "fragment": "superadmin--orders-list-skip-link",
+   "order": 15,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "orders-list-refreshing",
+   "menuKey": "orders",
+   "title": "Buyurtmalar ro'yxati — yangilanmoqda",
+   "fragment": "superadmin--orders-list-refreshing",
+   "order": 15.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "orders-list-refresh-error",
+   "menuKey": "orders",
+   "title": "Buyurtmalar ro'yxati — yangilanmadi",
+   "fragment": "superadmin--orders-list-refresh-error",
+   "order": 15.2,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
    "viewId": "orders-filters-mobile",
    "menuKey": "orders",
    "title": "Buyurtmalar — filtr paneli (telefon)",
@@ -264,6 +291,33 @@
   },
   {
    "role": "superadmin",
+   "viewId": "neworders-create-manual-step2-existing-customer",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — 2-qadam: mavjud mijoz, tarif, rasm (taklif)",
+   "fragment": "superadmin--neworders-create-manual-step2-existing-customer",
+   "order": 28.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "neworders-create-manual-step2-customer-suggest",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — 2-qadam: mijoz takliflari (taklif)",
+   "fragment": "superadmin--neworders-create-manual-step2-customer-suggest",
+   "order": 28.2,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "neworders-create-manual-step2-customer-update-dialog",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — 2-qadam: mijoz kartasini yangilash (taklif)",
+   "fragment": "superadmin--neworders-create-manual-step2-customer-update-dialog",
+   "order": 28.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
    "viewId": "neworders-create-ai-input",
    "menuKey": "newOrders",
    "title": "Buyurtma yaratish — AI bilan (kiritish)",
@@ -315,6 +369,33 @@
    "fragment": "superadmin--neworders-incoming-scan-camera",
    "order": 34,
    "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "neworders-incoming-scan-partial",
+   "menuKey": "newOrders",
+   "title": "Kiruvchi posilkalar — chala qop ogohlantirishi",
+   "fragment": "superadmin--neworders-incoming-scan-partial",
+   "kind": "page",
+   "order": 34.1
+  },
+  {
+   "role": "superadmin",
+   "viewId": "neworders-incoming-scan-partial-confirm-dialog",
+   "menuKey": "newOrders",
+   "title": "Kiruvchi posilkalar — chala qop bilan qabul tasdig'i",
+   "fragment": "superadmin--neworders-incoming-scan-partial-confirm-dialog",
+   "kind": "dialog",
+   "order": 34.2
+  },
+  {
+   "role": "superadmin",
+   "viewId": "neworders-incoming-scan-undo",
+   "menuKey": "newOrders",
+   "title": "Kiruvchi posilkalar — skan olib tashlandi",
+   "fragment": "superadmin--neworders-incoming-scan-undo",
+   "kind": "page",
+   "order": 34.3
   },
   {
    "role": "superadmin",
@@ -449,6 +530,33 @@
    "title": "Pochta tafsiloti (jo'natish)",
    "fragment": "superadmin--mails-detail",
    "order": 49,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "mails-detail-duplicates",
+   "menuKey": "mails",
+   "title": "Pochta tafsiloti (jo'natish) — takroriy telefonlar",
+   "fragment": "superadmin--mails-detail-duplicates",
+   "order": 49.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "mails-detail-search",
+   "menuKey": "mails",
+   "title": "Pochta tafsiloti (jo'natish) — qidiruv",
+   "fragment": "superadmin--mails-detail-search",
+   "order": 49.2,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "mails-detail-search-empty",
+   "menuKey": "mails",
+   "title": "Pochta tafsiloti (jo'natish) — qidiruvda natija yo'q",
+   "fragment": "superadmin--mails-detail-search-empty",
+   "order": 49.3,
    "kind": "page"
   },
   {
@@ -588,6 +696,33 @@
   },
   {
    "role": "superadmin",
+   "viewId": "payments-main-cashbox-shift-closed",
+   "menuKey": "payments",
+   "title": "Asosiy kassa — smena yopiq",
+   "fragment": "superadmin--payments-main-cashbox-shift-closed",
+   "order": 64.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-main-cashbox-shift-open-dialog",
+   "menuKey": "payments",
+   "title": "Smenani ochish (popup)",
+   "fragment": "superadmin--payments-main-cashbox-shift-open-dialog",
+   "order": 64.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-main-cashbox-shift-result-dialog",
+   "menuKey": "payments",
+   "title": "Smena yopildi — natija (popup)",
+   "fragment": "superadmin--payments-main-cashbox-shift-result-dialog",
+   "order": 64.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
    "viewId": "payments-cash-detail-courier",
    "menuKey": "payments",
    "title": "Kuryer kassasi (qabul qilish)",
@@ -611,6 +746,15 @@
    "title": "Filial kassasi (filialdan qabul)",
    "fragment": "superadmin--payments-cash-detail-branch",
    "order": 67,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "payments-cash-detail-branch-shift-closed",
+   "menuKey": "payments",
+   "title": "Filial kassasi — filial smenasi ochilmagan · taklif (backend kerak)",
+   "fragment": "superadmin--payments-cash-detail-branch-shift-closed",
+   "order": 67.5,
    "kind": "page"
   },
   {
@@ -705,6 +849,15 @@
   },
   {
    "role": "superadmin",
+   "viewId": "products-create-errors",
+   "menuKey": "products",
+   "title": "Mahsulot yaratish — xatolar",
+   "fragment": "admin--products-create-errors",
+   "order": 77.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
    "viewId": "products-delete-dialog",
    "menuKey": "products",
    "title": "Mahsulotni o'chirish",
@@ -719,6 +872,15 @@
    "title": "Foydalanuvchilar ro'yxati",
    "fragment": "superadmin--users-list",
    "order": 79,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-list-telegram",
+   "menuKey": "users",
+   "title": "Foydalanuvchilar ro'yxati — Telegram ustuni",
+   "fragment": "superadmin--users-list-telegram",
+   "order": 79.1,
    "kind": "page"
   },
   {
@@ -747,6 +909,33 @@
    "fragment": "superadmin--users-detail",
    "order": 82,
    "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-detail-telegram",
+   "menuKey": "users",
+   "title": "Foydalanuvchi tafsilotlari — Telegram guruhi",
+   "fragment": "superadmin--users-detail-telegram",
+   "order": 82.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-detail-telegram-group-dialog",
+   "menuKey": "users",
+   "title": "Telegram guruhini ulash (havola, QR)",
+   "fragment": "superadmin--users-detail-telegram-group-dialog",
+   "order": 82.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-detail-telegram-group-expired-dialog",
+   "menuKey": "users",
+   "title": "Telegram guruhini ulash — havola muddati tugadi",
+   "fragment": "superadmin--users-detail-telegram-group-expired-dialog",
+   "order": 82.3,
+   "kind": "dialog"
   },
   {
    "role": "superadmin",
@@ -795,12 +984,165 @@
   },
   {
    "role": "superadmin",
+   "viewId": "regions-districts-delete-blocked",
+   "menuKey": "regions",
+   "title": "Tumanni o'chirib bo'lmaydi",
+   "fragment": "superadmin--regions-districts-delete-blocked",
+   "order": 87.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-districts-merge-dialog",
+   "menuKey": "regions",
+   "title": "Tumanni birlashtirish",
+   "fragment": "superadmin--regions-districts-merge-dialog",
+   "order": 87.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-districts-merge-target",
+   "menuKey": "regions",
+   "title": "Tumanni birlashtirish — maqsad tumanni tanlash",
+   "fragment": "superadmin--regions-districts-merge-target",
+   "order": 87.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-districts-merge-progress",
+   "menuKey": "regions",
+   "title": "Tumanni birlashtirish — jarayonda",
+   "fragment": "superadmin--regions-districts-merge-progress",
+   "order": 87.4,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-districts-merge-result",
+   "menuKey": "regions",
+   "title": "Tumanni birlashtirish — natija",
+   "fragment": "superadmin--regions-districts-merge-result",
+   "order": 87.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-districts-merge-error",
+   "menuKey": "regions",
+   "title": "Tumanni birlashtirish — bekor qilindi",
+   "fragment": "superadmin--regions-districts-merge-error",
+   "order": 87.6,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-districts-merge-error-unavailable",
+   "menuKey": "regions",
+   "title": "Tumanni birlashtirish — servis javob bermadi",
+   "fragment": "superadmin--regions-districts-merge-error-unavailable",
+   "order": 87.7,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-districts-merge-error-manual",
+   "menuKey": "regions",
+   "title": "Tumanni birlashtirish — qo'lda tuzatish kerak",
+   "fragment": "superadmin--regions-districts-merge-error-manual",
+   "order": 87.8,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-districts-merge-unknown",
+   "menuKey": "regions",
+   "title": "Tumanni birlashtirish — natija noma'lum",
+   "fragment": "superadmin--regions-districts-merge-unknown",
+   "order": 87.85,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
    "viewId": "regions-sato-management",
    "menuKey": "regions",
    "title": "Tumanlarni o'tkazish (SATO)",
    "fragment": "superadmin--regions-sato-management",
    "order": 88,
    "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-sato-codes",
+   "menuKey": "regions",
+   "title": "SATO kodlari — topildi",
+   "fragment": "superadmin--regions-sato-codes",
+   "order": 88,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-sato-codes-not-found",
+   "menuKey": "regions",
+   "title": "SATO kodlari — topilmadi (qo'lda kiritish)",
+   "fragment": "superadmin--regions-sato-codes-not-found",
+   "order": 88,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-sato-codes-apply-dialog",
+   "menuKey": "regions",
+   "title": "SATO kodlari — avtomatik yozish (tasdiq)",
+   "fragment": "superadmin--regions-sato-codes-apply-dialog",
+   "order": 88,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-sato-codes-edit",
+   "menuKey": "regions",
+   "title": "SATO kodlari — kodni tahrirlash («kod band»)",
+   "fragment": "superadmin--regions-sato-codes-edit",
+   "order": 88,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-sato-codes-duplicates",
+   "menuKey": "regions",
+   "title": "SATO kodlari — takroriy nomlar",
+   "fragment": "superadmin--regions-sato-codes-duplicates",
+   "order": 88,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-sato-codes-merge-dialog",
+   "menuKey": "regions",
+   "title": "SATO kodlari — takroriy tumanni birlashtirish",
+   "fragment": "superadmin--regions-sato-codes-merge-dialog",
+   "order": 88,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-sato-codes-missing",
+   "menuKey": "regions",
+   "title": "SATO kodlari — bazada yo'q",
+   "fragment": "superadmin--regions-sato-codes-missing",
+   "order": 88,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-sato-codes-add-dialog",
+   "menuKey": "regions",
+   "title": "SATO kodlari — tuman qo'shish oynasi",
+   "fragment": "superadmin--regions-sato-codes-add-dialog",
+   "order": 88,
+   "kind": "dialog"
   },
   {
    "role": "superadmin",
@@ -926,6 +1268,33 @@
    "title": "Tashuvchidan olingan to'lov (modal)",
    "fragment": "superadmin--integrations-settlement-pay-dialog",
    "order": 102,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "integrations-settlement-pay-overpay-dialog",
+   "menuKey": "integrations",
+   "title": "To'lov — ortiqcha summa (modal)",
+   "fragment": "superadmin--integrations-settlement-pay-overpay-dialog",
+   "order": 102.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "integrations-settlement-pay-result-dialog",
+   "menuKey": "integrations",
+   "title": "To'lov natijasi — avans va kassa (modal)",
+   "fragment": "superadmin--integrations-settlement-pay-result-dialog",
+   "order": 102.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "integrations-settlement-cancel-dialog",
+   "menuKey": "integrations",
+   "title": "To'lovni bekor qilish (tasdiq)",
+   "fragment": "superadmin--integrations-settlement-cancel-dialog",
+   "order": 102.3,
    "kind": "dialog"
   },
   {
@@ -1083,6 +1452,78 @@
   },
   {
    "role": "superadmin",
+   "viewId": "notifications-send-result",
+   "menuKey": "notifications",
+   "title": "Xabar yuborish — natija",
+   "fragment": "superadmin--notifications-send-result",
+   "order": 119.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-send-unknown",
+   "menuKey": "notifications",
+   "title": "Xabar yuborish — natija noma'lum",
+   "fragment": "superadmin--notifications-send-unknown",
+   "order": 119.2,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-sent",
+   "menuKey": "notifications",
+   "title": "Yuborilganlar",
+   "fragment": "superadmin--notifications-sent",
+   "order": 119.3,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-sent-detail-dialog",
+   "menuKey": "notifications",
+   "title": "Yuborilgan xabar tafsiloti",
+   "fragment": "superadmin--notifications-sent-detail-dialog",
+   "order": 119.4,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-sent-detail-states",
+   "menuKey": "notifications",
+   "title": "Yuborilgan xabar tafsiloti — boshqa holatlar",
+   "fragment": "superadmin--notifications-sent-detail-states",
+   "order": 119.45,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-sent-loading",
+   "menuKey": "notifications",
+   "title": "Yuborilganlar — yuklanmoqda",
+   "fragment": "superadmin--notifications-sent-loading",
+   "order": 119.5,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-sent-empty",
+   "menuKey": "notifications",
+   "title": "Yuborilganlar — bo'sh",
+   "fragment": "superadmin--notifications-sent-empty",
+   "order": 119.6,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-sent-error",
+   "menuKey": "notifications",
+   "title": "Yuborilganlar — xato",
+   "fragment": "superadmin--notifications-sent-error",
+   "order": 119.7,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
    "viewId": "notifications-sms-campaign",
    "menuKey": "notifications",
    "title": "SMS — Kampaniya",
@@ -1182,6 +1623,24 @@
   },
   {
    "role": "superadmin",
+   "viewId": "ops-logistics-approve-dialog",
+   "menuKey": "ops",
+   "title": "Ops — Logistika: qaytarish so'rovlarini tasdiqlash",
+   "fragment": "superadmin--ops-logistics-approve-dialog",
+   "order": 130,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-logistics-approve-result",
+   "menuKey": "ops",
+   "title": "Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi)",
+   "fragment": "superadmin--ops-logistics-approve-result",
+   "order": 130,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
    "viewId": "ops-branches",
    "menuKey": "ops",
    "title": "Ops — Filiallar (partiya bekor qilish)",
@@ -1204,6 +1663,69 @@
    "menuKey": "ops",
    "title": "Ops — Tizim",
    "fragment": "superadmin--ops-system",
+   "order": 133,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-system-partial",
+   "menuKey": "ops",
+   "title": "Ops — Tizim: qisman ishlayapti, zaif AI modeli",
+   "fragment": "superadmin--ops-system-partial",
+   "order": 133,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-system-down",
+   "menuKey": "ops",
+   "title": "Ops — Tizim: xizmatlar ishlamayapti",
+   "fragment": "superadmin--ops-system-down",
+   "order": 133,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-system-loading",
+   "menuKey": "ops",
+   "title": "Ops — Tizim: yuklanish",
+   "fragment": "superadmin--ops-system-loading",
+   "order": 133,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-system-error",
+   "menuKey": "ops",
+   "title": "Ops — Tizim: holatni olib bo'lmadi, AI o'chiq",
+   "fragment": "superadmin--ops-system-error",
+   "order": 133,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-system-critical",
+   "menuKey": "ops",
+   "title": "Ops — Tizim: asosiy xizmat ishlamayapti, AI ulanmagan",
+   "fragment": "superadmin--ops-system-critical",
+   "order": 133,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-system-ai-config",
+   "menuKey": "ops",
+   "title": "Ops — Tizim: kalit nomi noto'g'ri, noma'lum model",
+   "fragment": "superadmin--ops-system-ai-config",
+   "order": 133,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "ops-system-ai-cap",
+   "menuKey": "ops",
+   "title": "Ops — Tizim: AI kunlik limiti tugadi",
+   "fragment": "superadmin--ops-system-ai-cap",
    "order": 133,
    "kind": "page"
   },
@@ -1344,6 +1866,33 @@
   },
   {
    "role": "admin",
+   "viewId": "neworders-incoming-scan-partial",
+   "menuKey": "newOrders",
+   "title": "Kiruvchi posilkalar — chala qop ogohlantirishi",
+   "fragment": "superadmin--neworders-incoming-scan-partial",
+   "kind": "page",
+   "order": 148.1
+  },
+  {
+   "role": "admin",
+   "viewId": "neworders-incoming-scan-partial-confirm-dialog",
+   "menuKey": "newOrders",
+   "title": "Kiruvchi posilkalar — chala qop bilan qabul tasdig'i",
+   "fragment": "superadmin--neworders-incoming-scan-partial-confirm-dialog",
+   "kind": "dialog",
+   "order": 148.2
+  },
+  {
+   "role": "admin",
+   "viewId": "neworders-incoming-scan-undo",
+   "menuKey": "newOrders",
+   "title": "Kiruvchi posilkalar — skan olib tashlandi",
+   "fragment": "superadmin--neworders-incoming-scan-undo",
+   "kind": "page",
+   "order": 148.3
+  },
+  {
+   "role": "admin",
    "viewId": "neworders-branches",
    "menuKey": "newOrders",
    "title": "Filial batchlari tabi",
@@ -1434,6 +1983,33 @@
   },
   {
    "role": "admin",
+   "viewId": "neworders-create-manual-step2-existing-customer",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — 2-qadam: mavjud mijoz, tarif, rasm (taklif)",
+   "fragment": "superadmin--neworders-create-manual-step2-existing-customer",
+   "order": 158.1,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "neworders-create-manual-step2-customer-suggest",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — 2-qadam: mijoz takliflari (taklif)",
+   "fragment": "superadmin--neworders-create-manual-step2-customer-suggest",
+   "order": 158.2,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "neworders-create-manual-step2-customer-update-dialog",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — 2-qadam: mijoz kartasini yangilash (taklif)",
+   "fragment": "superadmin--neworders-create-manual-step2-customer-update-dialog",
+   "order": 158.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
    "viewId": "neworders-create-market-picker",
    "menuKey": "newOrders",
    "title": "Market tanlash oynasi",
@@ -1511,6 +2087,33 @@
    "title": "Pochta tafsiloti",
    "fragment": "admin--mails-detail",
    "order": 167,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "mails-detail-duplicates",
+   "menuKey": "mails",
+   "title": "Pochta tafsiloti — takroriy telefonlar",
+   "fragment": "superadmin--mails-detail-duplicates",
+   "order": 167.1,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "mails-detail-search",
+   "menuKey": "mails",
+   "title": "Pochta tafsiloti — qidiruv",
+   "fragment": "superadmin--mails-detail-search",
+   "order": 167.2,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "mails-detail-search-empty",
+   "menuKey": "mails",
+   "title": "Pochta tafsiloti — qidiruvda natija yo'q",
+   "fragment": "superadmin--mails-detail-search-empty",
+   "order": 167.3,
    "kind": "page"
   },
   {
@@ -1659,6 +2262,33 @@
   },
   {
    "role": "admin",
+   "viewId": "payments-main-cashbox-shift-closed",
+   "menuKey": "payments",
+   "title": "Asosiy kassa — smena yopiq",
+   "fragment": "admin--payments-main-cashbox-shift-closed",
+   "order": 183.1,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-main-cashbox-shift-open-dialog",
+   "menuKey": "payments",
+   "title": "Smenani ochish",
+   "fragment": "admin--payments-main-cashbox-shift-open-dialog",
+   "order": 183.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-main-cashbox-shift-result-dialog",
+   "menuKey": "payments",
+   "title": "Smena yopildi — natija",
+   "fragment": "admin--payments-main-cashbox-shift-result-dialog",
+   "order": 183.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
    "viewId": "payments-cash-detail-market",
    "menuKey": "payments",
    "title": "Market kassasi",
@@ -1682,6 +2312,15 @@
    "title": "Filial kassasi (HQ qabul)",
    "fragment": "admin--payments-cash-detail-branch",
    "order": 186,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "payments-cash-detail-branch-shift-closed",
+   "menuKey": "payments",
+   "title": "Filial kassasi — filial smenasi ochilmagan · taklif (backend kerak)",
+   "fragment": "admin--payments-cash-detail-branch-shift-closed",
+   "order": 186.5,
    "kind": "page"
   },
   {
@@ -1776,11 +2415,29 @@
   },
   {
    "role": "admin",
+   "viewId": "products-create-errors",
+   "menuKey": "products",
+   "title": "Mahsulot yaratish — xatolar",
+   "fragment": "admin--products-create-errors",
+   "order": 196.5,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
    "viewId": "users-list",
    "menuKey": "users",
    "title": "Foydalanuvchilar ro'yxati",
    "fragment": "superadmin--users-list",
    "order": 197,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "users-list-telegram",
+   "menuKey": "users",
+   "title": "Foydalanuvchilar ro'yxati — Telegram ustuni",
+   "fragment": "superadmin--users-list-telegram",
+   "order": 197.1,
    "kind": "page"
   },
   {
@@ -1809,6 +2466,33 @@
    "fragment": "admin--users-detail",
    "order": 200,
    "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "users-detail-telegram",
+   "menuKey": "users",
+   "title": "Foydalanuvchi tafsiloti — Telegram guruhi",
+   "fragment": "admin--users-detail-telegram",
+   "order": 200.1,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "users-detail-telegram-group-dialog",
+   "menuKey": "users",
+   "title": "Telegram guruhini ulash (havola, QR)",
+   "fragment": "admin--users-detail-telegram-group-dialog",
+   "order": 200.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "users-detail-telegram-group-expired-dialog",
+   "menuKey": "users",
+   "title": "Telegram guruhini ulash — havola muddati tugadi",
+   "fragment": "admin--users-detail-telegram-group-expired-dialog",
+   "order": 200.3,
+   "kind": "dialog"
   },
   {
    "role": "admin",
@@ -1848,10 +2532,118 @@
   },
   {
    "role": "admin",
+   "viewId": "regions-districts",
+   "menuKey": "regions",
+   "title": "Tumanlar boshqaruvi",
+   "fragment": "superadmin--regions-districts",
+   "order": 204.1,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-districts-delete-blocked",
+   "menuKey": "regions",
+   "title": "Tumanni o'chirib bo'lmaydi",
+   "fragment": "superadmin--regions-districts-delete-blocked",
+   "order": 204.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-districts-merge-dialog",
+   "menuKey": "regions",
+   "title": "Tumanni birlashtirish",
+   "fragment": "superadmin--regions-districts-merge-dialog",
+   "order": 204.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-districts-merge-target",
+   "menuKey": "regions",
+   "title": "Tumanni birlashtirish — maqsad tumanni tanlash",
+   "fragment": "superadmin--regions-districts-merge-target",
+   "order": 204.4,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-districts-merge-progress",
+   "menuKey": "regions",
+   "title": "Tumanni birlashtirish — jarayonda",
+   "fragment": "superadmin--regions-districts-merge-progress",
+   "order": 204.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-districts-merge-result",
+   "menuKey": "regions",
+   "title": "Tumanni birlashtirish — natija",
+   "fragment": "superadmin--regions-districts-merge-result",
+   "order": 204.6,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-districts-merge-error",
+   "menuKey": "regions",
+   "title": "Tumanni birlashtirish — bekor qilindi",
+   "fragment": "superadmin--regions-districts-merge-error",
+   "order": 204.7,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-districts-merge-error-unavailable",
+   "menuKey": "regions",
+   "title": "Tumanni birlashtirish — servis javob bermadi",
+   "fragment": "superadmin--regions-districts-merge-error-unavailable",
+   "order": 204.8,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-districts-merge-error-manual",
+   "menuKey": "regions",
+   "title": "Tumanni birlashtirish — qo'lda tuzatish kerak",
+   "fragment": "superadmin--regions-districts-merge-error-manual",
+   "order": 204.9,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-districts-merge-unknown",
+   "menuKey": "regions",
+   "title": "Tumanni birlashtirish — natija noma'lum",
+   "fragment": "superadmin--regions-districts-merge-unknown",
+   "order": 204.95,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
    "viewId": "regions-sato-management",
    "menuKey": "regions",
    "title": "Tumanlarni o'tkazish",
    "fragment": "admin--regions-sato-management",
+   "order": 205,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-sato-codes",
+   "menuKey": "regions",
+   "title": "SATO kodlari",
+   "fragment": "admin--regions-sato-codes",
+   "order": 205,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-sato-codes-edit",
+   "menuKey": "regions",
+   "title": "SATO kodlari — kodni tahrirlash («kod band»)",
+   "fragment": "admin--regions-sato-codes-edit",
    "order": 205,
    "kind": "page"
   },
@@ -1938,6 +2730,33 @@
   },
   {
    "role": "admin",
+   "viewId": "integrations-settlement-pay-overpay-dialog",
+   "menuKey": "integrations",
+   "title": "To'lov — ortiqcha summa",
+   "fragment": "admin--integrations-settlement-pay-overpay-dialog",
+   "order": 214.1,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "integrations-settlement-pay-result-dialog",
+   "menuKey": "integrations",
+   "title": "To'lov natijasi",
+   "fragment": "admin--integrations-settlement-pay-result-dialog",
+   "order": 214.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "integrations-settlement-cancel-dialog",
+   "menuKey": "integrations",
+   "title": "To'lovni bekor qilish",
+   "fragment": "admin--integrations-settlement-cancel-dialog",
+   "order": 214.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
    "viewId": "integrations-conn-control",
    "menuKey": "integrations",
    "title": "Ulanish — Ish rejimi",
@@ -2018,6 +2837,96 @@
    "kind": "page"
   },
   {
+   "role": "admin",
+   "viewId": "notifications-send",
+   "menuKey": "notifications",
+   "title": "Xabar yuborish",
+   "fragment": "superadmin--notifications-send",
+   "order": 223.01,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-send-confirm-dialog",
+   "menuKey": "notifications",
+   "title": "Xabarni yuborishni tasdiqlang",
+   "fragment": "superadmin--notifications-send-confirm-dialog",
+   "order": 223.02,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-send-result",
+   "menuKey": "notifications",
+   "title": "Xabar yuborish — natija",
+   "fragment": "superadmin--notifications-send-result",
+   "order": 223.1,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-send-unknown",
+   "menuKey": "notifications",
+   "title": "Xabar yuborish — natija noma'lum",
+   "fragment": "superadmin--notifications-send-unknown",
+   "order": 223.2,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-sent",
+   "menuKey": "notifications",
+   "title": "Yuborilganlar",
+   "fragment": "superadmin--notifications-sent",
+   "order": 223.3,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-sent-detail-dialog",
+   "menuKey": "notifications",
+   "title": "Yuborilgan xabar tafsiloti",
+   "fragment": "superadmin--notifications-sent-detail-dialog",
+   "order": 223.4,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-sent-detail-states",
+   "menuKey": "notifications",
+   "title": "Yuborilgan xabar tafsiloti — boshqa holatlar",
+   "fragment": "superadmin--notifications-sent-detail-states",
+   "order": 223.45,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-sent-loading",
+   "menuKey": "notifications",
+   "title": "Yuborilganlar — yuklanmoqda",
+   "fragment": "superadmin--notifications-sent-loading",
+   "order": 223.5,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-sent-empty",
+   "menuKey": "notifications",
+   "title": "Yuborilganlar — bo'sh",
+   "fragment": "superadmin--notifications-sent-empty",
+   "order": 223.6,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-sent-error",
+   "menuKey": "notifications",
+   "title": "Yuborilganlar — xato",
+   "fragment": "superadmin--notifications-sent-error",
+   "order": 223.7,
+   "kind": "page"
+  },
+  {
    "role": "manager",
    "viewId": "branch-dashboard-main",
    "menuKey": "dashboard",
@@ -2060,6 +2969,24 @@
    "title": "Buyurtmalar — Hamma buyurtmalar",
    "fragment": "manager--orders-list-all",
    "order": 228,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
+   "viewId": "orders-list-all-refreshing",
+   "menuKey": "orders",
+   "title": "Buyurtmalar — Hamma buyurtmalar, yangilanmoqda",
+   "fragment": "manager--orders-list-all-refreshing",
+   "order": 228.1,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
+   "viewId": "orders-list-all-refresh-error",
+   "menuKey": "orders",
+   "title": "Buyurtmalar — Hamma buyurtmalar, yangilanmadi",
+   "fragment": "manager--orders-list-all-refresh-error",
+   "order": 228.2,
    "kind": "page"
   },
   {
@@ -2217,6 +3144,33 @@
   },
   {
    "role": "manager",
+   "viewId": "new-orders-create-manual-step2-existing-customer",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — mavjud mijoz, tarif, rasm (taklif)",
+   "fragment": "manager--new-orders-create-manual-step2-existing-customer",
+   "order": 245.1,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
+   "viewId": "new-orders-create-manual-step2-customer-suggest",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — mijoz takliflari (taklif)",
+   "fragment": "manager--new-orders-create-manual-step2-customer-suggest",
+   "order": 245.2,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
+   "viewId": "new-orders-create-manual-step2-customer-update-dialog",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — 2-qadam: mijoz kartasini yangilash (taklif)",
+   "fragment": "manager--new-orders-create-manual-step2-customer-update-dialog",
+   "order": 245.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "manager",
    "viewId": "new-orders-create-ai",
    "menuKey": "newOrders",
    "title": "Buyurtma yaratish — AI bilan",
@@ -2262,6 +3216,33 @@
   },
   {
    "role": "manager",
+   "viewId": "new-orders-incoming-scan-partial",
+   "menuKey": "newOrders",
+   "title": "Kiruvchi posilkalar — chala qop ogohlantirishi",
+   "fragment": "manager--new-orders-incoming-scan-partial",
+   "kind": "page",
+   "order": 250.1
+  },
+  {
+   "role": "manager",
+   "viewId": "new-orders-incoming-scan-partial-confirm-dialog",
+   "menuKey": "newOrders",
+   "title": "Kiruvchi posilkalar — chala qop bilan qabul tasdig'i",
+   "fragment": "manager--new-orders-incoming-scan-partial-confirm-dialog",
+   "kind": "dialog",
+   "order": 250.2
+  },
+  {
+   "role": "manager",
+   "viewId": "new-orders-incoming-scan-undo",
+   "menuKey": "newOrders",
+   "title": "Kiruvchi posilkalar — skan olib tashlandi",
+   "fragment": "manager--new-orders-incoming-scan-undo",
+   "kind": "page",
+   "order": 250.3
+  },
+  {
+   "role": "manager",
    "viewId": "mails-today",
    "menuKey": "mails",
    "title": "Pochta — Bugungi pochtalar",
@@ -2303,6 +3284,33 @@
    "title": "Pochta tafsiloti — qabul qilish",
    "fragment": "manager--mails-detail-receive",
    "order": 255,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
+   "viewId": "mails-detail-receive-duplicates",
+   "menuKey": "mails",
+   "title": "Pochta tafsiloti — qabul qilish — takroriy telefonlar",
+   "fragment": "manager--mails-detail-receive-duplicates",
+   "order": 255.1,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
+   "viewId": "mails-detail-receive-search",
+   "menuKey": "mails",
+   "title": "Pochta tafsiloti — qabul qilish — qidiruv",
+   "fragment": "manager--mails-detail-receive-search",
+   "order": 255.2,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
+   "viewId": "mails-detail-receive-search-empty",
+   "menuKey": "mails",
+   "title": "Pochta tafsiloti — qabul qilish — qidiruvda natija yo'q",
+   "fragment": "manager--mails-detail-receive-search-empty",
+   "order": 255.3,
    "kind": "page"
   },
   {
@@ -2415,6 +3423,15 @@
   },
   {
    "role": "manager",
+   "viewId": "payments-overview-shift-closed",
+   "menuKey": "payments",
+   "title": "To'lovlar — smena yopiq",
+   "fragment": "manager--payments-overview-shift-closed",
+   "order": 267.5,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
    "viewId": "payments-courier-select-dialog",
    "menuKey": "payments",
    "title": "Qabul qilish — kuryer tanlash",
@@ -2451,11 +3468,47 @@
   },
   {
    "role": "manager",
+   "viewId": "payments-main-cashbox-shift-closed",
+   "menuKey": "payments",
+   "title": "Asosiy kassa (filial) — smena yopiq",
+   "fragment": "manager--payments-main-cashbox-shift-closed",
+   "order": 271.1,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
+   "viewId": "payments-main-cashbox-shift-open-dialog",
+   "menuKey": "payments",
+   "title": "Smenani ochish oynasi",
+   "fragment": "manager--payments-main-cashbox-shift-open-dialog",
+   "order": 271.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "manager",
+   "viewId": "payments-main-cashbox-shift-result-dialog",
+   "menuKey": "payments",
+   "title": "Smena yopildi — natija oynasi",
+   "fragment": "manager--payments-main-cashbox-shift-result-dialog",
+   "order": 271.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "manager",
    "viewId": "payments-cash-detail-branch",
    "menuKey": "payments",
    "title": "Kassa tafsiloti — HQ'ga o'tkazish",
    "fragment": "manager--payments-cash-detail-branch",
    "order": 272,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
+   "viewId": "payments-cash-detail-branch-shift-closed",
+   "menuKey": "payments",
+   "title": "Kassa tafsiloti — HQ'ga o'tkazish · smena yopiq",
+   "fragment": "manager--payments-cash-detail-branch-shift-closed",
+   "order": 272.5,
    "kind": "page"
   },
   {
@@ -2469,10 +3522,37 @@
   },
   {
    "role": "manager",
+   "viewId": "payments-cash-detail-courier-ack",
+   "menuKey": "payments",
+   "title": "Kassa tafsiloti — kuryerdan qabul · kvitansiya javobi",
+   "fragment": "manager--payments-cash-detail-courier-ack",
+   "order": 273,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
+   "viewId": "payments-cash-detail-courier-shift-closed",
+   "menuKey": "payments",
+   "title": "Kassa tafsiloti — kuryerdan qabul · smena yopiq",
+   "fragment": "manager--payments-cash-detail-courier-shift-closed",
+   "order": 273.5,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
    "viewId": "payments-history-detail-dialog",
    "menuKey": "payments",
    "title": "Tranzaksiya tafsiloti",
    "fragment": "manager--payments-history-detail-dialog",
+   "order": 274,
+   "kind": "dialog"
+  },
+  {
+   "role": "manager",
+   "viewId": "payments-history-detail-dialog-ack",
+   "menuKey": "payments",
+   "title": "Tranzaksiya tafsiloti — kvitansiya javobi «Kuryer: noto'g'ri»",
+   "fragment": "manager--payments-history-detail-dialog-ack",
    "order": 274,
    "kind": "dialog"
   },
@@ -2501,6 +3581,15 @@
    "title": "Mahsulot yaratish",
    "fragment": "admin--products-create",
    "order": 277,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
+   "viewId": "products-create-errors",
+   "menuKey": "products",
+   "title": "Mahsulot yaratish — xatolar",
+   "fragment": "admin--products-create-errors",
+   "order": 277.5,
    "kind": "page"
   },
   {
@@ -2676,6 +3765,60 @@
   },
   {
    "role": "registrator",
+   "viewId": "new-orders-incoming-sources",
+   "menuKey": "newOrders",
+   "title": "Kiruvchi posilkalar — manba tanlash",
+   "fragment": "registrator--new-orders-incoming-sources",
+   "kind": "page",
+   "order": 296.1
+  },
+  {
+   "role": "registrator",
+   "viewId": "new-orders-incoming-scan",
+   "menuKey": "newOrders",
+   "title": "Kiruvchi posilkalar — skanerlash",
+   "fragment": "registrator--new-orders-incoming-scan",
+   "kind": "page",
+   "order": 296.2
+  },
+  {
+   "role": "registrator",
+   "viewId": "new-orders-incoming-scan-camera",
+   "menuKey": "newOrders",
+   "title": "Kiruvchi posilkalar — skanerlash — kamera",
+   "fragment": "manager--new-orders-incoming-scan-camera",
+   "kind": "dialog",
+   "order": 296.3
+  },
+  {
+   "role": "registrator",
+   "viewId": "new-orders-incoming-scan-partial",
+   "menuKey": "newOrders",
+   "title": "Kiruvchi posilkalar — chala qop ogohlantirishi",
+   "fragment": "manager--new-orders-incoming-scan-partial",
+   "kind": "page",
+   "order": 296.4
+  },
+  {
+   "role": "registrator",
+   "viewId": "new-orders-incoming-scan-partial-confirm-dialog",
+   "menuKey": "newOrders",
+   "title": "Kiruvchi posilkalar — chala qop bilan qabul tasdig'i",
+   "fragment": "manager--new-orders-incoming-scan-partial-confirm-dialog",
+   "kind": "dialog",
+   "order": 296.5
+  },
+  {
+   "role": "registrator",
+   "viewId": "new-orders-incoming-scan-undo",
+   "menuKey": "newOrders",
+   "title": "Kiruvchi posilkalar — skan olib tashlandi",
+   "fragment": "manager--new-orders-incoming-scan-undo",
+   "kind": "page",
+   "order": 296.6
+  },
+  {
+   "role": "registrator",
    "viewId": "new-orders-market-detail",
    "menuKey": "newOrders",
    "title": "Market buyurtmalari — qabul",
@@ -2784,6 +3927,33 @@
   },
   {
    "role": "registrator",
+   "viewId": "new-orders-create-step2-existing-customer",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — mavjud mijoz, tarif, rasm (taklif)",
+   "fragment": "manager--new-orders-create-manual-step2-existing-customer",
+   "order": 308.1,
+   "kind": "page"
+  },
+  {
+   "role": "registrator",
+   "viewId": "new-orders-create-step2-customer-suggest",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — mijoz takliflari (taklif)",
+   "fragment": "manager--new-orders-create-manual-step2-customer-suggest",
+   "order": 308.2,
+   "kind": "page"
+  },
+  {
+   "role": "registrator",
+   "viewId": "new-orders-create-step2-customer-update-dialog",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish — mijoz kartasini yangilash (taklif)",
+   "fragment": "manager--new-orders-create-manual-step2-customer-update-dialog",
+   "order": 308.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "registrator",
    "viewId": "new-orders-create-ai",
    "menuKey": "newOrders",
    "title": "Buyurtma yaratish — AI rejimi",
@@ -2843,6 +4013,33 @@
    "title": "Pochta tafsiloti — bugungi",
    "fragment": "registrator--mails-detail",
    "order": 315,
+   "kind": "page"
+  },
+  {
+   "role": "registrator",
+   "viewId": "mails-detail-duplicates",
+   "menuKey": "mails",
+   "title": "Pochta tafsiloti — bugungi — takroriy telefonlar",
+   "fragment": "registrator--mails-detail-duplicates",
+   "order": 315.1,
+   "kind": "page"
+  },
+  {
+   "role": "registrator",
+   "viewId": "mails-detail-search",
+   "menuKey": "mails",
+   "title": "Pochta tafsiloti — bugungi — qidiruv",
+   "fragment": "registrator--mails-detail-search",
+   "order": 315.2,
+   "kind": "page"
+  },
+  {
+   "role": "registrator",
+   "viewId": "mails-detail-search-empty",
+   "menuKey": "mails",
+   "title": "Pochta tafsiloti — bugungi — qidiruvda natija yo'q",
+   "fragment": "registrator--mails-detail-search-empty",
+   "order": 315.3,
    "kind": "page"
   },
   {
@@ -2927,6 +4124,15 @@
    "kind": "page"
   },
   {
+   "role": "registrator",
+   "viewId": "products-create-errors",
+   "menuKey": "products",
+   "title": "Mahsulot yaratish — xatolar",
+   "fragment": "admin--products-create-errors",
+   "order": 324.5,
+   "kind": "page"
+  },
+  {
    "role": "market",
    "viewId": "dashboard-home",
    "menuKey": "dashboard",
@@ -3000,6 +4206,33 @@
   },
   {
    "role": "market",
+   "viewId": "new-orders-create-manual-existing-customer",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish · mavjud mijoz, tarif, rasm (taklif)",
+   "fragment": "market--new-orders-create-manual-existing-customer",
+   "order": 332.1,
+   "kind": "page"
+  },
+  {
+   "role": "market",
+   "viewId": "new-orders-create-manual-customer-suggest",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish · mijoz takliflari (taklif)",
+   "fragment": "market--new-orders-create-manual-customer-suggest",
+   "order": 332.2,
+   "kind": "page"
+  },
+  {
+   "role": "market",
+   "viewId": "new-orders-create-manual-customer-update-dialog",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish · mijoz kartasini yangilash (taklif)",
+   "fragment": "market--new-orders-create-manual-customer-update-dialog",
+   "order": 332.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "market",
    "viewId": "new-orders-create-ai-input",
    "menuKey": "newOrders",
    "title": "Buyurtma yaratish · AI kiritish",
@@ -3054,33 +4287,6 @@
   },
   {
    "role": "market",
-   "viewId": "products-edit-dialog",
-   "menuKey": "products",
-   "title": "Mahsulotni tahrirlash",
-   "fragment": "market--products-edit-dialog",
-   "order": 339,
-   "kind": "dialog"
-  },
-  {
-   "role": "market",
-   "viewId": "products-delete-dialog",
-   "menuKey": "products",
-   "title": "Mahsulotni o'chirish",
-   "fragment": "admin--products-delete-dialog",
-   "order": 340,
-   "kind": "dialog"
-  },
-  {
-   "role": "market",
-   "viewId": "products-create",
-   "menuKey": "products",
-   "title": "Mahsulot yaratish",
-   "fragment": "market--products-create",
-   "order": 341,
-   "kind": "page"
-  },
-  {
-   "role": "market",
    "viewId": "cashbox-my",
    "menuKey": "payments",
    "title": "Market kassasi",
@@ -3098,11 +4304,74 @@
    "kind": "dialog"
   },
   {
+   "role": "market_operator",
+   "viewId": "products-list",
+   "menuKey": "products",
+   "title": "Mahsulotlar",
+   "fragment": "market--products-list",
+   "order": 338.6,
+   "kind": "page"
+  },
+  {
+   "role": "market_operator",
+   "viewId": "products-unassigned",
+   "menuKey": "products",
+   "title": "Mahsulotlar — market biriktirilmagan",
+   "fragment": "market_operator--products-unassigned",
+   "order": 338.7,
+   "kind": "page"
+  },
+  {
+   "role": "market",
+   "viewId": "profile",
+   "menuKey": "profile",
+   "title": "Profil — Telegram guruhlari holati (ulanmagan; taklif · backend kerak)",
+   "fragment": "market--profile",
+   "order": 343.1,
+   "kind": "page"
+  },
+  {
+   "role": "market",
+   "viewId": "profile-telegram-group-dialog",
+   "menuKey": "profile",
+   "title": "Telegram guruhini ulash (havola, QR, holat kutilmoqda)",
+   "fragment": "market--profile-telegram-group-dialog",
+   "order": 343.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "market",
+   "viewId": "profile-telegram-group-expired-dialog",
+   "menuKey": "profile",
+   "title": "Telegram guruhini ulash — havola muddati tugadi",
+   "fragment": "market--profile-telegram-group-expired-dialog",
+   "order": 343.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "market",
+   "viewId": "profile-telegram-status",
+   "menuKey": "profile",
+   "title": "Profil — Telegram guruhi: biri ulangan (taklif · backend kerak)",
+   "fragment": "market--profile-telegram-status",
+   "order": 343.4,
+   "kind": "page"
+  },
+  {
    "role": "courier",
    "viewId": "dashboard-home",
    "menuKey": "dashboard",
    "title": "Bosh sahifa — kuryer statistikasi",
    "fragment": "courier--dashboard-home",
+   "order": 344,
+   "kind": "page"
+  },
+  {
+   "role": "courier",
+   "viewId": "dashboard-pwa-install",
+   "menuKey": "dashboard",
+   "title": "Bosh sahifa — ilovani o'rnatish taklifi (bir marta, yopiladi)",
+   "fragment": "courier--dashboard-pwa-install",
    "order": 344,
    "kind": "page"
   },
@@ -3131,6 +4400,24 @@
    "title": "Buyurtmalar — Kutilayotganlar",
    "fragment": "courier--orders-pending",
    "order": 347,
+   "kind": "page"
+  },
+  {
+   "role": "courier",
+   "viewId": "orders-pending-refreshing",
+   "menuKey": "orders",
+   "title": "Buyurtmalar — Kutilayotganlar, yangilanmoqda",
+   "fragment": "courier--orders-pending-refreshing",
+   "order": 347.1,
+   "kind": "page"
+  },
+  {
+   "role": "courier",
+   "viewId": "orders-pending-refresh-error",
+   "menuKey": "orders",
+   "title": "Buyurtmalar — Kutilayotganlar, yangilanmadi",
+   "fragment": "courier--orders-pending-refresh-error",
+   "order": 347.2,
    "kind": "page"
   },
   {
@@ -3360,6 +4647,15 @@
   },
   {
    "role": "courier",
+   "viewId": "cashbox-my-transfers-ack",
+   "menuKey": "payments",
+   "title": "Kassa — Oldi-berdi · kvitansiya javobi",
+   "fragment": "courier--cashbox-my-transfers-ack",
+   "order": 372,
+   "kind": "page"
+  },
+  {
+   "role": "courier",
    "viewId": "cashbox-history-detail",
    "menuKey": "payments",
    "title": "Tranzaksiya tafsiloti",
@@ -3521,6 +4817,28 @@
    "kind": "dialog"
   },
   {
+   "role": "courier",
+   "viewId": "inbox-pwa-install",
+   "menuKey": "inbox",
+   "title": "Bildirishnomalar — ilovani o'rnatish taklifi (Android / kompyuter)",
+   "fragment": "courier--inbox-pwa-install",
+   "order": 390,
+   "kind": "page"
+  },
+  {
+   "role": "courier",
+   "viewId": "inbox-pwa-ios-dialog",
+   "menuKey": "inbox",
+   "title": "Bosh ekranga qo'shish oynasi (iPhone / iPad)",
+   "fragment": "courier--inbox-pwa-ios-dialog",
+   "order": 390,
+   "kind": "dialog",
+   "devices": [
+    "tablet",
+    "phone"
+   ]
+  },
+  {
    "role": "common",
    "viewId": "login",
    "menuKey": "login",
@@ -3594,6 +4912,15 @@
   },
   {
    "role": "common",
+   "viewId": "settings-notifications-pwa",
+   "menuKey": "settings",
+   "title": "Sozlamalar — Bildirishnomalar · ilova o'rnatilgan / o'rnatilmagan",
+   "fragment": "common--settings-notifications-pwa",
+   "order": 398,
+   "kind": "page"
+  },
+  {
+   "role": "common",
    "viewId": "profile",
    "menuKey": "profile",
    "title": "Profil",
@@ -3608,6 +4935,60 @@
    "title": "Profil — parolni o'zgartirish",
    "fragment": "common--profile-password-dialog",
    "order": 400,
+   "kind": "dialog"
+  },
+  {
+   "role": "common",
+   "viewId": "profile-telegram",
+   "menuKey": "profile",
+   "title": "Profil — Telegram ulanmagan",
+   "fragment": "common--profile-telegram",
+   "order": 400.1,
+   "kind": "page"
+  },
+  {
+   "role": "common",
+   "viewId": "profile-telegram-link-dialog",
+   "menuKey": "profile",
+   "title": "Profil — Telegram'ni ulash (havola, QR, muddat)",
+   "fragment": "common--profile-telegram-link-dialog",
+   "order": 400.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "common",
+   "viewId": "profile-telegram-expired-dialog",
+   "menuKey": "profile",
+   "title": "Profil — Telegram havolasi eskirdi",
+   "fragment": "common--profile-telegram-expired-dialog",
+   "order": 400.3,
+   "kind": "dialog"
+  },
+  {
+   "role": "common",
+   "viewId": "profile-telegram-command-dialog",
+   "menuKey": "profile",
+   "title": "Profil — Telegram'ni ulash (bot nomi yo'q: buyruq)",
+   "fragment": "common--profile-telegram-command-dialog",
+   "order": 400.35,
+   "kind": "dialog"
+  },
+  {
+   "role": "common",
+   "viewId": "profile-telegram-linked",
+   "menuKey": "profile",
+   "title": "Profil — Telegram ulangan (+ «Telegram ulandi» xabari)",
+   "fragment": "common--profile-telegram-linked",
+   "order": 400.4,
+   "kind": "page"
+  },
+  {
+   "role": "common",
+   "viewId": "profile-telegram-unlink-dialog",
+   "menuKey": "profile",
+   "title": "Profil — Telegram'ni uzish (tasdiq)",
+   "fragment": "common--profile-telegram-unlink-dialog",
+   "order": 400.5,
    "kind": "dialog"
   },
   {
@@ -3665,6 +5046,141 @@
    "kind": "page"
   },
   {
+   "role": "admin",
+   "viewId": "notifications-telegram-groups",
+   "menuKey": "notifications",
+   "title": "Bildirishnomalar — Telegram guruhlari",
+   "fragment": "superadmin--notifications-telegram-groups",
+   "order": 113,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-create-dialog",
+   "menuKey": "notifications",
+   "title": "Bildirishnoma qo'shish (modal)",
+   "fragment": "superadmin--notifications-create-dialog",
+   "order": 114,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-delete-dialog",
+   "menuKey": "notifications",
+   "title": "Bildirishnomani o'chirish (tasdiq)",
+   "fragment": "superadmin--notifications-delete-dialog",
+   "order": 115,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-row-menu",
+   "menuKey": "notifications",
+   "title": "Guruh amallari menyusi",
+   "fragment": "superadmin--notifications-row-menu",
+   "order": 113.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-row-menu-inactive",
+   "menuKey": "notifications",
+   "title": "Guruh amallari menyusi — nofaol guruh",
+   "fragment": "superadmin--notifications-row-menu-inactive",
+   "order": 113.55,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-connected",
+   "menuKey": "notifications",
+   "title": "Bildirishnomalar — guruh ulandi",
+   "fragment": "superadmin--notifications-connected",
+   "order": 113.6,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-empty",
+   "menuKey": "notifications",
+   "title": "Bildirishnomalar — bo'sh holat",
+   "fragment": "superadmin--notifications-empty",
+   "order": 113.7,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-loading",
+   "menuKey": "notifications",
+   "title": "Bildirishnomalar — yuklanish",
+   "fragment": "superadmin--notifications-loading",
+   "order": 113.8,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-error",
+   "menuKey": "notifications",
+   "title": "Bildirishnomalar — xato holati",
+   "fragment": "superadmin--notifications-error",
+   "order": 113.9,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-create-link-dialog",
+   "menuKey": "notifications",
+   "title": "Bildirishnoma qo'shish — havola tayyor, kutilmoqda",
+   "fragment": "superadmin--notifications-create-link-dialog",
+   "order": 114.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-create-expired-dialog",
+   "menuKey": "notifications",
+   "title": "Bildirishnoma qo'shish — havola muddati tugadi",
+   "fragment": "superadmin--notifications-create-expired-dialog",
+   "order": 114.4,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-create-exists-dialog",
+   "menuKey": "notifications",
+   "title": "Bildirishnoma qo'shish — shu tur allaqachon ulangan",
+   "fragment": "superadmin--notifications-create-exists-dialog",
+   "order": 114.6,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-create-exists-inactive-dialog",
+   "menuKey": "notifications",
+   "title": "Bildirishnoma qo'shish — shu tur ulangan, lekin nofaol",
+   "fragment": "superadmin--notifications-create-exists-inactive-dialog",
+   "order": 114.7,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-deactivate-dialog",
+   "menuKey": "notifications",
+   "title": "Guruhni nofaol qilish (tasdiq)",
+   "fragment": "superadmin--notifications-deactivate-dialog",
+   "order": 115.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "notifications-activate-dialog",
+   "menuKey": "notifications",
+   "title": "Guruhni faollashtirish (tasdiq)",
+   "fragment": "superadmin--notifications-activate-dialog",
+   "order": 115.4,
+   "kind": "dialog"
+  },
+  {
    "role": "manager",
    "viewId": "scan-camera",
    "menuKey": "scan",
@@ -3699,6 +5215,681 @@
    "fragment": "registrator--scan-result",
    "order": 410,
    "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-send-audience",
+   "menuKey": "notifications",
+   "title": "Xabar yuborish — auditoriya konstruktori",
+   "fragment": "superadmin--notifications-send-audience",
+   "order": 205,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-send-schedule",
+   "menuKey": "notifications",
+   "title": "Xabar yuborish — belgilangan vaqtda (soat tanlash ochiq)",
+   "fragment": "superadmin--notifications-send-schedule",
+   "order": 206,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-send-audience-sample-dialog",
+   "menuKey": "notifications",
+   "title": "Auditoriya namunasi (20 ta, maskalangan)",
+   "fragment": "superadmin--notifications-send-audience-sample-dialog",
+   "order": 207,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-send-audience-save-dialog",
+   "menuKey": "notifications",
+   "title": "Segmentni saqlash (oyna)",
+   "fragment": "superadmin--notifications-send-audience-save-dialog",
+   "order": 208,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-send-confirm-scheduled-dialog",
+   "menuKey": "notifications",
+   "title": "Kampaniyani rejalashtirishni tasdiqlang",
+   "fragment": "superadmin--notifications-send-confirm-scheduled-dialog",
+   "order": 209,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-campaign-cancel-dialog",
+   "menuKey": "notifications",
+   "title": "Kampaniyani bekor qilish (tasdiq)",
+   "fragment": "superadmin--notifications-campaign-cancel-dialog",
+   "order": 210,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-campaign-report-dialog",
+   "menuKey": "notifications",
+   "title": "Kampaniya hisoboti (oyna)",
+   "fragment": "superadmin--notifications-campaign-report-dialog",
+   "order": 213,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-send-states",
+   "menuKey": "notifications",
+   "title": "Xabar yuborish — auditoriya va yuborish holatlari",
+   "fragment": "superadmin--notifications-send-states",
+   "order": 211,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-sms-campaign-segment",
+   "menuKey": "notifications",
+   "title": "SMS — Kampaniya: mijozlar segmenti va yuborish vaqti",
+   "fragment": "superadmin--notifications-sms-campaign-segment",
+   "order": 212,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-list-roles",
+   "menuKey": "users",
+   "title": "Foydalanuvchilar — barcha rollar tablari (taklif)",
+   "fragment": "superadmin--users-list-roles",
+   "order": 84.11,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-list-role-select",
+   "menuKey": "users",
+   "title": "Foydalanuvchilar — rol tanlash ro'yxati (telefon, taklif)",
+   "fragment": "superadmin--users-list-role-select",
+   "order": 84.12,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-edit-role",
+   "menuKey": "users",
+   "title": "Foydalanuvchini tahrirlash — «Rol» maydoni (taklif)",
+   "fragment": "superadmin--users-edit-role",
+   "order": 84.13,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-role-confirm-dialog",
+   "menuKey": "users",
+   "title": "Rolni o'zgartirish — tasdiq (taklif)",
+   "fragment": "superadmin--users-role-confirm-dialog",
+   "order": 84.14,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-role-confirm-logist",
+   "menuKey": "users",
+   "title": "Rolni o'zgartirish — Logist → Admin, viloyatlar bo'shatiladi (taklif)",
+   "fragment": "superadmin--users-role-confirm-logist",
+   "order": 84.15,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-edit-role-error",
+   "menuKey": "users",
+   "title": "Foydalanuvchini tahrirlash — rol o'zgartirilmadi, 409 (taklif)",
+   "fragment": "superadmin--users-edit-role-error",
+   "order": 84.16,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-edit-role-branch",
+   "menuKey": "users",
+   "title": "Foydalanuvchini tahrirlash — filialga biriktirilgan, rol qulf (taklif)",
+   "fragment": "superadmin--users-edit-role-branch",
+   "order": 84.17,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-edit-courier-district",
+   "menuKey": "users",
+   "title": "Kuryerni tahrirlash — «Tuman» maydoni (taklif)",
+   "fragment": "superadmin--users-edit-courier-district",
+   "order": 84.18,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-create-courier-district",
+   "menuKey": "users",
+   "title": "Yangi foydalanuvchi — Logist roli va kuryer «Ish hududi» (taklif)",
+   "fragment": "superadmin--users-create-courier-district",
+   "order": 84.19,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-edit-market-ai",
+   "menuKey": "users",
+   "title": "Marketni tahrirlash — «AI narxi (1 buyurtma)»",
+   "fragment": "superadmin--users-edit-market-ai",
+   "order": 84.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-edit-courier-district-phone",
+   "menuKey": "users",
+   "title": "Kuryerni tahrirlash — «Tuman» ro'yxati, telefon (taklif)",
+   "fragment": "superadmin--users-edit-courier-district-phone",
+   "order": 84.21,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-edit-market-ai-phone",
+   "menuKey": "users",
+   "title": "Marketni tahrirlash — «AI narxi», telefon",
+   "fragment": "superadmin--users-edit-market-ai-phone",
+   "order": 84.22,
+   "kind": "dialog"
+  },
+  {
+   "role": "manager",
+   "viewId": "users-create-courier-district",
+   "menuKey": "users",
+   "title": "Yangi xodim — kuryer, «Ish hududi» (taklif)",
+   "fragment": "manager--users-create-courier-district",
+   "order": 281.11,
+   "kind": "page"
+  },
+  {
+   "role": "investor",
+   "viewId": "dashboard-home",
+   "menuKey": "dashboard",
+   "title": "Bosh sahifa — investor kabineti",
+   "fragment": "investor--dashboard-home",
+   "order": 411,
+   "kind": "page"
+  },
+  {
+   "role": "investor",
+   "viewId": "dashboard-home-table",
+   "menuKey": "dashboard",
+   "title": "Bosh sahifa — oylik foyda jadvali",
+   "fragment": "investor--dashboard-home-table",
+   "order": 412,
+   "kind": "page"
+  },
+  {
+   "role": "investor",
+   "viewId": "dashboard-loading",
+   "menuKey": "dashboard",
+   "title": "Bosh sahifa — yuklanmoqda",
+   "fragment": "investor--dashboard-loading",
+   "order": 413,
+   "kind": "page"
+  },
+  {
+   "role": "investor",
+   "viewId": "dashboard-empty",
+   "menuKey": "dashboard",
+   "title": "Bosh sahifa — ma'lumot yo'q",
+   "fragment": "investor--dashboard-empty",
+   "order": 414,
+   "kind": "page"
+  },
+  {
+   "role": "investor",
+   "viewId": "dashboard-error",
+   "menuKey": "dashboard",
+   "title": "Bosh sahifa — yuklash xatosi",
+   "fragment": "investor--dashboard-error",
+   "order": 415,
+   "kind": "page"
+  },
+  {
+   "role": "investor",
+   "viewId": "dashboard-forbidden",
+   "menuKey": "dashboard",
+   "title": "Bosh sahifa — profil nofaol (403)",
+   "fragment": "investor--dashboard-forbidden",
+   "order": 416,
+   "kind": "page"
+  },
+  {
+   "role": "investor",
+   "viewId": "dashboard-not-linked",
+   "menuKey": "dashboard",
+   "title": "Bosh sahifa — profil bog'lanmagan (404)",
+   "fragment": "investor--dashboard-not-linked",
+   "order": 417,
+   "kind": "page"
+  },
+  {
+   "role": "investor",
+   "viewId": "investments-list",
+   "menuKey": "investments",
+   "title": "Investitsiyalar",
+   "fragment": "investor--investments-list",
+   "order": 418,
+   "kind": "page"
+  },
+  {
+   "role": "investor",
+   "viewId": "profits-list",
+   "menuKey": "profits",
+   "title": "Foyda tarixi",
+   "fragment": "investor--profits-list",
+   "order": 419,
+   "kind": "page"
+  },
+  {
+   "role": "investor",
+   "viewId": "dashboard-mobile-menu",
+   "menuKey": "dashboard",
+   "title": "Menyu ochiq — yon panel / pastki varaq",
+   "fragment": "investor--dashboard-mobile-menu",
+   "order": 420,
+   "kind": "dialog"
+  },
+  {
+   "role": "investor",
+   "viewId": "investments-list-loading",
+   "menuKey": "investments",
+   "title": "Investitsiyalar — yuklanmoqda",
+   "fragment": "investor--investments-list-loading",
+   "order": 421,
+   "kind": "page"
+  },
+  {
+   "role": "investor",
+   "viewId": "investments-list-filtered-empty",
+   "menuKey": "investments",
+   "title": "Investitsiyalar — filtr bo'yicha bo'sh",
+   "fragment": "investor--investments-list-filtered-empty",
+   "order": 422,
+   "kind": "page"
+  },
+  {
+   "role": "investor",
+   "viewId": "profits-list-filtered-empty",
+   "menuKey": "profits",
+   "title": "Foyda tarixi — filtr bo'yicha bo'sh",
+   "fragment": "investor--profits-list-filtered-empty",
+   "order": 423,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-logist-assignment-confirm-dialog",
+   "menuKey": "regions",
+   "title": "Logist biriktirish — saqlashni tasdiqlash",
+   "fragment": "superadmin--regions-logist-assignment-confirm-dialog",
+   "order": 411,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "regions-logist-assignment-empty",
+   "menuKey": "regions",
+   "title": "Logist biriktirish — logist yo'q",
+   "fragment": "superadmin--regions-logist-assignment-empty",
+   "order": 412,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "users-create-logist",
+   "menuKey": "users",
+   "title": "Foydalanuvchi yaratish — Logist",
+   "fragment": "superadmin--users-create-logist",
+   "order": 413,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-logist-assignment-confirm-dialog",
+   "menuKey": "regions",
+   "title": "Logist biriktirish — saqlashni tasdiqlash",
+   "fragment": "superadmin--regions-logist-assignment-confirm-dialog",
+   "order": 414,
+   "kind": "dialog"
+  },
+  {
+   "role": "admin",
+   "viewId": "regions-logist-assignment-empty",
+   "menuKey": "regions",
+   "title": "Logist biriktirish — logist yo'q",
+   "fragment": "superadmin--regions-logist-assignment-empty",
+   "order": 415,
+   "kind": "page"
+  },
+  {
+   "role": "admin",
+   "viewId": "users-create-logist",
+   "menuKey": "users",
+   "title": "Foydalanuvchi yaratish — Logist",
+   "fragment": "superadmin--users-create-logist",
+   "order": 416,
+   "kind": "page"
+  },
+  {
+   "role": "logist",
+   "viewId": "dashboard-main",
+   "menuKey": "dashboard",
+   "title": "Bosh sahifa — viloyatlarim",
+   "fragment": "logist--dashboard-main",
+   "order": 417,
+   "kind": "page"
+  },
+  {
+   "role": "logist",
+   "viewId": "dashboard-mobile-menu",
+   "menuKey": "dashboard",
+   "title": "Menyu ochiq — yon panel / pastki varaq",
+   "fragment": "logist--dashboard-mobile-menu",
+   "order": 418,
+   "kind": "dialog"
+  },
+  {
+   "role": "logist",
+   "viewId": "dashboard-mobile-search",
+   "menuKey": "dashboard",
+   "title": "Global qidiruv (telefon) — buyurtma, mijoz, telefon",
+   "fragment": "logist--dashboard-mobile-search",
+   "order": 419,
+   "kind": "dialog"
+  },
+  {
+   "role": "logist",
+   "viewId": "orders-list",
+   "menuKey": "orders",
+   "title": "Buyurtmalar — faqat ko'rish",
+   "fragment": "logist--orders-list",
+   "order": 420,
+   "kind": "page"
+  },
+  {
+   "role": "logist",
+   "viewId": "orders-detail",
+   "menuKey": "orders",
+   "title": "Buyurtma tafsiloti va kuzatuv — faqat ko'rish",
+   "fragment": "logist--orders-detail",
+   "order": 421,
+   "kind": "page"
+  },
+  {
+   "role": "logist",
+   "viewId": "mails-list",
+   "menuKey": "mails",
+   "title": "Pochta — viloyatlarim pochtalari",
+   "fragment": "logist--mails-list",
+   "order": 422,
+   "kind": "page"
+  },
+  {
+   "role": "logist",
+   "viewId": "mails-detail",
+   "menuKey": "mails",
+   "title": "Pochta tafsiloti — faqat ko'rish",
+   "fragment": "logist--mails-detail",
+   "order": 423,
+   "kind": "page"
+  },
+  {
+   "role": "logist",
+   "viewId": "batches-list",
+   "menuKey": "batches",
+   "title": "Paketlar — viloyatlarimga",
+   "fragment": "logist--batches-list",
+   "order": 424,
+   "kind": "page"
+  },
+  {
+   "role": "logist",
+   "viewId": "couriers-list",
+   "menuKey": "couriers",
+   "title": "Kuryerlar — viloyatlarim",
+   "fragment": "logist--couriers-list",
+   "order": 425,
+   "kind": "page"
+  },
+  {
+   "role": "logist",
+   "viewId": "regions-detail",
+   "menuKey": "regions",
+   "title": "Viloyat — tumanlar va kuryerlar",
+   "fragment": "logist--regions-detail",
+   "order": 426,
+   "kind": "page"
+  },
+  {
+   "role": "market",
+   "viewId": "operators-list",
+   "menuKey": "operators",
+   "title": "Operatorlar",
+   "fragment": "market--operators-list",
+   "order": 411,
+   "kind": "page"
+  },
+  {
+   "role": "market",
+   "viewId": "operators-empty",
+   "menuKey": "operators",
+   "title": "Operatorlar — bo'sh holat",
+   "fragment": "market--operators-empty",
+   "order": 412,
+   "kind": "page"
+  },
+  {
+   "role": "market",
+   "viewId": "operators-create-dialog",
+   "menuKey": "operators",
+   "title": "Operator qo'shish",
+   "fragment": "market--operators-create-dialog",
+   "order": 413,
+   "kind": "dialog"
+  },
+  {
+   "role": "market",
+   "viewId": "operators-commission-dialog",
+   "menuKey": "operators",
+   "title": "Komissiya",
+   "fragment": "market--operators-commission-dialog",
+   "order": 414,
+   "kind": "dialog"
+  },
+  {
+   "role": "market",
+   "viewId": "operators-delete-dialog",
+   "menuKey": "operators",
+   "title": "Operatorni o'chirish",
+   "fragment": "market--operators-delete-dialog",
+   "order": 415,
+   "kind": "dialog"
+  },
+  {
+   "role": "market",
+   "viewId": "operators-commission-fixed-dialog",
+   "menuKey": "operators",
+   "title": "Komissiya — qat'iy summa, xato",
+   "fragment": "market--operators-commission-fixed-dialog",
+   "order": 416,
+   "kind": "dialog"
+  },
+  {
+   "role": "market",
+   "viewId": "dashboard-mobile-menu",
+   "menuKey": "dashboard",
+   "title": "Menyu ochiq — yon panel / pastki varaq",
+   "fragment": "market--dashboard-mobile-menu",
+   "order": 417,
+   "kind": "dialog"
+  },
+  {
+   "role": "market_operator",
+   "viewId": "earnings",
+   "menuKey": "earnings",
+   "title": "Daromadim",
+   "fragment": "market_operator--earnings",
+   "order": 418,
+   "kind": "page"
+  },
+  {
+   "role": "market_operator",
+   "viewId": "earnings-no-commission",
+   "menuKey": "earnings",
+   "title": "Daromadim — komissiya belgilanmagan",
+   "fragment": "market_operator--earnings-no-commission",
+   "order": 419,
+   "kind": "page"
+  },
+  {
+   "role": "market",
+   "viewId": "operators-deactivate-dialog",
+   "menuKey": "operators",
+   "title": "Operatorni nofaol qilish",
+   "fragment": "market--operators-deactivate-dialog",
+   "order": 420,
+   "kind": "dialog"
+  },
+  {
+   "role": "market",
+   "viewId": "operators-activate-dialog",
+   "menuKey": "operators",
+   "title": "Operatorni faollashtirish",
+   "fragment": "market--operators-activate-dialog",
+   "order": 421,
+   "kind": "dialog"
+  },
+  {
+   "role": "market_operator",
+   "viewId": "new-orders-create-manual",
+   "menuKey": "newOrders",
+   "title": "Buyurtma yaratish · Qo'lda",
+   "fragment": "market_operator--new-orders-create-manual",
+   "order": 422,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-row-menu",
+   "menuKey": "notifications",
+   "title": "Guruh amallari menyusi",
+   "fragment": "superadmin--notifications-row-menu",
+   "order": 113.5,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-connected",
+   "menuKey": "notifications",
+   "title": "Bildirishnomalar — guruh ulandi",
+   "fragment": "superadmin--notifications-connected",
+   "order": 113.6,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-empty",
+   "menuKey": "notifications",
+   "title": "Bildirishnomalar — bo'sh holat",
+   "fragment": "superadmin--notifications-empty",
+   "order": 113.7,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-loading",
+   "menuKey": "notifications",
+   "title": "Bildirishnomalar — yuklanish",
+   "fragment": "superadmin--notifications-loading",
+   "order": 113.8,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-error",
+   "menuKey": "notifications",
+   "title": "Bildirishnomalar — xato holati",
+   "fragment": "superadmin--notifications-error",
+   "order": 113.9,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-create-link-dialog",
+   "menuKey": "notifications",
+   "title": "Bildirishnoma qo'shish — havola tayyor, kutilmoqda",
+   "fragment": "superadmin--notifications-create-link-dialog",
+   "order": 114.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-create-expired-dialog",
+   "menuKey": "notifications",
+   "title": "Bildirishnoma qo'shish — havola muddati tugadi",
+   "fragment": "superadmin--notifications-create-expired-dialog",
+   "order": 114.4,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-create-exists-dialog",
+   "menuKey": "notifications",
+   "title": "Bildirishnoma qo'shish — shu tur allaqachon ulangan",
+   "fragment": "superadmin--notifications-create-exists-dialog",
+   "order": 114.6,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-deactivate-dialog",
+   "menuKey": "notifications",
+   "title": "Guruhni nofaol qilish (tasdiq)",
+   "fragment": "superadmin--notifications-deactivate-dialog",
+   "order": 115.2,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-activate-dialog",
+   "menuKey": "notifications",
+   "title": "Guruhni faollashtirish (tasdiq)",
+   "fragment": "superadmin--notifications-activate-dialog",
+   "order": 115.4,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-row-menu-inactive",
+   "menuKey": "notifications",
+   "title": "Guruh amallari menyusi — nofaol guruh",
+   "fragment": "superadmin--notifications-row-menu-inactive",
+   "order": 113.55,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "notifications-create-exists-inactive-dialog",
+   "menuKey": "notifications",
+   "title": "Bildirishnoma qo'shish — shu tur ulangan, lekin nofaol",
+   "fragment": "superadmin--notifications-create-exists-inactive-dialog",
+   "order": 114.7,
+   "kind": "dialog"
   }
  ],
  "groupTitles": {
@@ -3746,6 +5937,7 @@
    "users": "Foydalanuvchilar",
    "regions": "Hududlar",
    "integrations": "Integratsiyalar",
+   "notifications": "Bildirishnomalar",
    "activityLogs": "Faoliyat jurnali",
    "scan": "Skaner (kamera va natija)"
   },
@@ -3778,7 +5970,16 @@
    "orders": "Buyurtmalar",
    "newOrders": "Qabul va yaratish",
    "products": "Mahsulotlar",
-   "payments": "To'lovlar"
+   "payments": "To'lovlar",
+   "operators": "Operatorlar",
+   "profile": "Profil"
+  },
+  "market_operator": {
+   "dashboard": "Bosh sahifa",
+   "orders": "Buyurtmalar",
+   "newOrders": "Buyurtma yaratish",
+   "products": "Mahsulotlar",
+   "earnings": "Daromadim"
   },
   "courier": {
    "dashboard": "Bosh sahifa",
@@ -3789,6 +5990,19 @@
    "regions": "Hududlar",
    "scan": "Skanerlash (barcha holatlar)",
    "inbox": "Bildirishnomalar"
+  },
+  "logist": {
+   "dashboard": "Bosh sahifa",
+   "orders": "Buyurtmalar",
+   "mails": "Pochta",
+   "batches": "Paketlar",
+   "couriers": "Kuryerlar",
+   "regions": "Hududlar"
+  },
+  "investor": {
+   "dashboard": "Bosh sahifa",
+   "investments": "Investitsiyalar",
+   "profits": "Foyda tarixi"
   },
   "common": {
    "login": "Tizimga kirish",

@@ -1,6 +1,10 @@
 export type StoredTheme = "light" | "dark";
 export type StoredLanguage = "uz" | "ru" | "en";
 export type StoredScannerSound = "classic" | "soft" | "digital" | "bell" | "pulse" | "bright";
+/** Asosiy kamera: orqa (`environment`, tavsiya) yoki old (`user`). */
+export type StoredCameraFacing = "environment" | "user";
+/** Skaner ramkasi o'lchami: kichik · o'rta · katta. */
+export type StoredScanFrameSize = "sm" | "md" | "lg";
 
 export const PREFERENCE_STORAGE_KEYS = {
   theme: "theme",
@@ -10,6 +14,12 @@ export const PREFERENCE_STORAGE_KEYS = {
   sidebar: "sidebarIsOpen",
   scannerSuccessSound: "scanner-success-sound",
   scannerErrorSound: "scanner-error-sound",
+  scannerCameraFacing: "scanner-camera-facing",
+  scannerFrameSize: "scanner-frame-size",
+  scannerTorchAuto: "scanner-torch-auto",
+  scannerContinuous: "scanner-continuous",
+  scannerSoundEnabled: "scanner-sound-enabled",
+  scannerVibration: "scanner-vibration",
   dashboardComparison: "dashboard-comparison",
 } as const;
 
@@ -110,6 +120,73 @@ export const readStoredScannerErrorSound = (): StoredScannerSound | null =>
 
 export const writeStoredScannerErrorSound = (sound: StoredScannerSound) => {
   write(PREFERENCE_STORAGE_KEYS.scannerErrorSound, sound);
+};
+
+/**
+ * KAMERA SOZLAMALARI (Sozlamalar → Skaner → «Kamera», maket `common-settings-scanner`). Manba — `entities/settings`
+ * (`scanner.camera`, `scanner.feedback`, backend `admins.settings`); bu yerda — ko'zgusi: `SettingsSync` va sozlamalar
+ * sahifasi yozadi, `shared` qatlami (kamera, skan signali) o'qiydi — `entities` ga bog'lanmasdan (FSD).
+ */
+export type StoredScannerCameraPrefs = {
+  facing: StoredCameraFacing;
+  frame: StoredScanFrameSize;
+  /** Chiroqli qurilmada yorug'lik kam bo'lsa chiroqni yoqish taklif qilinadi. */
+  torchAuto: boolean;
+  /** `false` — oqim ichidagi kamera bitta muvaffaqiyatli koddan keyin yopiladi. */
+  continuous: boolean;
+};
+
+export type StoredScannerFeedbackPrefs = {
+  sound: boolean;
+  vibration: boolean;
+};
+
+export const DEFAULT_SCANNER_CAMERA_PREFS: StoredScannerCameraPrefs = {
+  facing: "environment",
+  frame: "md",
+  torchAuto: true,
+  continuous: true,
+};
+
+export const DEFAULT_SCANNER_FEEDBACK_PREFS: StoredScannerFeedbackPrefs = {
+  sound: true,
+  vibration: true,
+};
+
+const readStoredBool = (key: string, fallback: boolean) => {
+  const value = read(key);
+  if (value === "true") return true;
+  if (value === "false") return false;
+  return fallback;
+};
+
+export const readStoredScannerCameraPrefs = (): StoredScannerCameraPrefs => {
+  const facing = read(PREFERENCE_STORAGE_KEYS.scannerCameraFacing);
+  const frame = read(PREFERENCE_STORAGE_KEYS.scannerFrameSize);
+  const d = DEFAULT_SCANNER_CAMERA_PREFS;
+  return {
+    facing: facing === "environment" || facing === "user" ? facing : d.facing,
+    frame: frame === "sm" || frame === "md" || frame === "lg" ? frame : d.frame,
+    torchAuto: readStoredBool(PREFERENCE_STORAGE_KEYS.scannerTorchAuto, d.torchAuto),
+    continuous: readStoredBool(PREFERENCE_STORAGE_KEYS.scannerContinuous, d.continuous),
+  };
+};
+
+export const writeStoredScannerCameraPrefs = (prefs: Partial<StoredScannerCameraPrefs>) => {
+  if (prefs.facing) write(PREFERENCE_STORAGE_KEYS.scannerCameraFacing, prefs.facing);
+  if (prefs.frame) write(PREFERENCE_STORAGE_KEYS.scannerFrameSize, prefs.frame);
+  if (prefs.torchAuto !== undefined) write(PREFERENCE_STORAGE_KEYS.scannerTorchAuto, String(prefs.torchAuto));
+  if (prefs.continuous !== undefined) write(PREFERENCE_STORAGE_KEYS.scannerContinuous, String(prefs.continuous));
+};
+
+export const readStoredScannerFeedbackPrefs = (): StoredScannerFeedbackPrefs => ({
+  sound: readStoredBool(PREFERENCE_STORAGE_KEYS.scannerSoundEnabled, DEFAULT_SCANNER_FEEDBACK_PREFS.sound),
+  vibration: readStoredBool(PREFERENCE_STORAGE_KEYS.scannerVibration, DEFAULT_SCANNER_FEEDBACK_PREFS.vibration),
+});
+
+export const writeStoredScannerFeedbackPrefs = (prefs: Partial<StoredScannerFeedbackPrefs>) => {
+  if (prefs.sound !== undefined) write(PREFERENCE_STORAGE_KEYS.scannerSoundEnabled, String(prefs.sound));
+  if (prefs.vibration !== undefined) write(PREFERENCE_STORAGE_KEYS.scannerVibration, String(prefs.vibration));
 };
 
 export const clearStoredUiPreferences = () => {

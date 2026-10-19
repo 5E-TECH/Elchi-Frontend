@@ -3,12 +3,15 @@ import userEvent from "@testing-library/user-event";
 import { Route, Routes } from "react-router-dom";
 import { vi } from "vitest";
 import ScanDetailPage from "./detail";
+import { readScanHistory } from "./model/scanHistory";
+import { resetDispatchBaskets } from "../../features/dispatch-basket";
 import { renderWithProviders } from "../../test/test-utils";
 
 const navigateMock = vi.fn();
 const feedbackMock = vi.fn();
 const assignMock = vi.fn();
 const receiveMock = vi.fn();
+const invalidateMock = vi.fn(async () => undefined);
 const fetchMock = vi.fn();
 const batchDetailMock = vi.fn<(...args: unknown[]) => { data: undefined }>(() => ({ data: undefined }));
 
@@ -17,8 +20,8 @@ vi.mock("react-router-dom", async () => ({
   useNavigate: () => navigateMock,
 }));
 
-vi.mock("./lib/scanShared", async () => ({
-  ...(await vi.importActual<typeof import("./lib/scanShared")>("./lib/scanShared")),
+vi.mock("../../shared/lib/scanner/feedback", async () => ({
+  ...(await vi.importActual<typeof import("../../shared/lib/scanner/feedback")>("../../shared/lib/scanner/feedback")),
   playScanFeedback: (...args: unknown[]) => feedbackMock(...args),
 }));
 
@@ -27,6 +30,8 @@ vi.mock("./lib/scanResource", async () => ({
   fetchScanDetail: (...args: unknown[]) => fetchMock(...args),
   scanAssignOrder: (...args: unknown[]) => assignMock(...args),
   receiveScannedPackage: (...args: unknown[]) => receiveMock(...args),
+  // Amaldan keyin boshqa ekranlar keshi yangilanadi (6qypMFeT) — chaqirilgani tekshiriladi.
+  invalidateAfterScanAction: (...args: unknown[]) => invalidateMock(...(args as [])),
 }));
 
 // «Holat tarixi» o'z testlarida (`features/order-tracking`, `widgets/order-tracking`); bu yerda faqat joyi.
@@ -73,10 +78,13 @@ const renderDetail = (
 const orderHeading = () => screen.findByRole("heading", { level: 1, name: "Buyurtma №1251175" });
 
 beforeEach(() => {
+  window.localStorage.clear();
+  resetDispatchBaskets();
   navigateMock.mockReset();
   feedbackMock.mockReset();
   assignMock.mockReset();
   receiveMock.mockReset();
+  invalidateMock.mockClear();
   batchDetailMock.mockClear();
   fetchMock.mockReset().mockResolvedValue({ type: "order", data: ORDER });
 });
@@ -176,6 +184,7 @@ describe("ScanDetailPage — O'ZIMGA OLISH rad etilganda", () => {
     expect(assignMock).toHaveBeenCalledWith("PARCEL-A");
     expect(await screen.findByText("Buyurtma sizga biriktirildi")).toBeInTheDocument();
     expect(feedbackMock).toHaveBeenCalledWith("success");
+    expect(invalidateMock).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("button", { name: /O'zimga olish/ })).toBeDisabled();
     await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/scan"), { timeout: 3000 });
   });
@@ -239,7 +248,12 @@ describe("ScanDetailPage — menejer amallari", () => {
     expect(screen.getByRole("button", { name: "Bekor qilish" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Kuryerga biriktirish" }));
 
-    expect(navigateMock).toHaveBeenCalledWith("/dispatch", { state: { scanToken: "PARCEL-A" } });
+    expect(navigateMock).toHaveBeenCalledWith("/dispatch");
+    // Savat qurilmada (ega D2): buyurtma `/dispatch` savatiga skanerlangan token bilan qo'shildi va tanlandi.
+    const [basket] = Object.keys(window.localStorage)
+      .filter((key) => key.startsWith("elchi:dispatch-basket:v1:"))
+      .map((key) => JSON.parse(window.localStorage.getItem(key) ?? "{}") as { items: { order: { id: string; token: string }; selected: boolean }[] });
+    expect(basket.items).toEqual([expect.objectContaining({ selected: true, order: expect.objectContaining({ token: "PARCEL-A" }) })]);
   });
 
   it("opens the same sell dialog as order detail", async () => {
@@ -316,6 +330,7 @@ describe("ScanDetailPage — paket va pochta", () => {
 
     expect(receiveMock).toHaveBeenCalledWith("137");
     expect(await screen.findByText("Paket qabul qilindi")).toBeInTheDocument();
+    expect(invalidateMock).toHaveBeenCalledTimes(1);
     // Ixtiyoriy nom to'ldirish (`GET transfer-batches/:id`) xatosi global xabar bermaydi.
     expect(batchDetailMock).toHaveBeenCalledWith("137", { silentError: true });
   });
@@ -357,5 +372,91 @@ describe("ScanDetailPage — paket va pochta", () => {
     renderDetail("market", { route: "/scan/PST-2493" });
     expect(await screen.findByRole("heading", { level: 1, name: "Pochta №2493" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Pochtani ochish" })).not.toBeInTheDocument();
+  });
+});
+
+describe("ScanDetailPage — yangi kod turlari (skaner 1-bosqich)", () => {
+  it("opens a POST- mail token as a post (backend creates POST-…, not PST-)", async () => {
+    fetchMock.mockResolvedValue({ type: "post", data: { data: { id: "2493", order_quantity: 6 } } });
+    renderDetail("courier", { route: "/scan/POST-k1x2-ab" });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Pochta №2493" })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith("POST-k1x2-ab");
+  });
+
+  it("external bag: parcel count, members and «Kiruvchi posilkalarda ochish» for intake roles", async () => {
+    fetchMock.mockResolvedValue({
+      type: "external-bag",
+      data: {
+        external_batch_token: "BAG-77",
+        is_external_batch: true,
+        count: 2,
+        members: [
+          { id: "501", qr_code_token: "P-501", status: "new" },
+          { id: "502", qr_code_token: "P-502", status: "received" },
+        ],
+      },
+    });
+    renderDetail("admin", { route: "/scan/BAG-77" });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Tashqi posilkalar qopi" })).toBeInTheDocument();
+    expect(screen.getByText("2 ta posilka")).toBeInTheDocument();
+    expect(screen.getByText("1 tasi qabul qilinmagan")).toBeInTheDocument();
+    expect(screen.getByText("№501")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Kiruvchi posilkalarda ochish" })).toHaveAttribute(
+      "href",
+      "/new-orders/incoming",
+    );
+  });
+
+  it("external bag: no intake link for a courier", async () => {
+    fetchMock.mockResolvedValue({
+      type: "external-bag",
+      data: { is_external_batch: true, count: 1, members: [{ id: "501", qr_code_token: "P-501", status: "new" }] },
+    });
+    renderDetail("courier", { route: "/scan/BAG-77" });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Tashqi posilkalar qopi" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Kiruvchi posilkalarda ochish" })).not.toBeInTheDocument();
+  });
+
+  it("market QR: explains it and links to the Cancelled page (the code is never sent anywhere)", async () => {
+    fetchMock.mockResolvedValue({ type: "market-qr", data: null });
+    renderDetail("admin", { route: "/scan/MCR-eyJtIjo3fQ" });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Bu market QR kodi" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Bekor qilinganlarni ochish/ })).toHaveAttribute(
+      "href",
+      "/new-orders/cancelled",
+    );
+    expect(screen.getByRole("link", { name: /Skanerga qaytish/ })).toHaveAttribute("href", "/scan");
+  });
+
+  it("market QR: a courier gets no handover link", async () => {
+    fetchMock.mockResolvedValue({ type: "market-qr", data: null });
+    renderDetail("courier", { route: "/scan/MCR-eyJtIjo3fQ" });
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Bu market QR kodi" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /Bekor qilinganlarni ochish/ })).not.toBeInTheDocument();
+  });
+
+  it("records the opened object in this user's «Oxirgi skanerlar» history", async () => {
+    window.localStorage.clear();
+    renderDetail("admin");
+    await orderHeading();
+
+    await waitFor(() =>
+      expect(readScanHistory("admin-1")[0]).toMatchObject({ token: "PARCEL-A", kind: "order", ref: "1251175", name: "Ali Valiyev" }),
+    );
+  });
+
+  it("treats a Caps Lock re-scan of the open internal token as the same parcel", async () => {
+    renderDetail("admin", { route: "/scan/a1b2c3d4e5f60718293a4b5c" });
+    await orderHeading();
+
+    hidScan("A1B2C3D4E5F60718293A4B5C");
+
+    expect(navigateMock).not.toHaveBeenCalled();
+    expect(feedbackMock).toHaveBeenCalledWith("duplicate");
   });
 });

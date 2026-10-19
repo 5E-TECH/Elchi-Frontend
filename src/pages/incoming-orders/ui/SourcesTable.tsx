@@ -4,7 +4,7 @@ import { ChevronRight, Package } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import { sourceLabel, type IncomingSource } from "../../../entities/incoming-orders";
-import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { DataTable, type DataTableColumn } from "../../../shared/ui/primitives";
 import { sourceColorIndex, waitingFor } from "../lib";
 import { waitingText } from "./sourceFormat";
@@ -128,7 +128,10 @@ const SourcesTable = ({ sources }: { sources: readonly IncomingSource[] }) => {
           </span>
           <span className="flex flex-wrap items-center gap-2">
             <span className="whitespace-nowrap text-[13px] text-text-muted">
-              {t("incoming.parcelsCount", { count: source.orders_count })}
+              {t("incoming.parcelsCount", {
+                count: source.orders_count,
+                value: formatNumberLocalized(source.orders_count),
+              })}
             </span>
             {waiting.unit === "none" ? null : <WaitingLabel t={t} waiting={waiting} />}
           </span>

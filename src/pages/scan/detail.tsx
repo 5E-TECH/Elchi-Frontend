@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-scan-result, manager-scan-result, registrator-scan-result, courier-scan-order-detail
+// dizayn-v2: superadmin-scan-result, manager-scan-result, registrator-scan-result, courier-scan-order-detail, courier-scan-package-detail, courier-scan-post-detail
 import { useIsMutating, useQuery } from "@tanstack/react-query";
 import { TriangleAlert } from "lucide-react";
 import { memo, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
@@ -9,11 +9,22 @@ import type { RootState } from "../../app/config/store";
 import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
 import { QueryBoundary } from "../../shared/ui/primitives";
 import { normalizeOrderDetail, type OrderDetail } from "../new_orders/components/detail/orderDetailModel";
-import { fetchScanDetail, getScanDetailQueryKey, getScanResourceType, type ScanResourceType } from "./lib/scanResource";
-import { extractScannerToken, playScanFeedback } from "./lib/scanShared";
+import {
+  fetchScanDetail,
+  getScanDetailQueryKey,
+  getScanResourceType,
+  normalizeScanToken,
+  type ScanResourceType,
+} from "./lib/scanResource";
+import { extractScannerToken } from "../../shared/lib/scanToken";
+import { playScanFeedback } from "../../shared/lib/scanner/feedback";
 import { buildScanPackageView, buildScanPostView } from "./model/scanBatchView";
+import { buildExternalBagView } from "./model/scanExternalBagView";
+import { recordScanHistory, toScanHistoryEntry } from "./model/scanHistory";
 import { getScanRoleKind } from "./model/scanOrderView";
 import { ScanAlert } from "./ui/ScanAlert";
+import ScanExternalBagDetail from "./ui/ScanExternalBagDetail";
+import ScanMarketQrNotice from "./ui/ScanMarketQrNotice";
 import { ScanOrderResult } from "./ui/ScanOrderResult";
 import ScanPackageDetail from "./ui/ScanPackageDetail";
 import ScanPostDetail from "./ui/ScanPostDetail";
@@ -23,7 +34,9 @@ import { ScanLoadingCard, ScanNotFoundCard } from "./ui/ScanStates";
 type ResolvedScan =
   | { kind: "order"; order: OrderDetail }
   | { kind: "package"; data: unknown; type: ScanResourceType }
-  | { kind: "post"; data: unknown };
+  | { kind: "post"; data: unknown }
+  | { kind: "external-bag"; data: unknown }
+  | { kind: "market-qr" };
 
 const resolveScan = (response: { type: ScanResourceType; data: unknown } | undefined): ResolvedScan | null | undefined => {
   if (!response) return undefined;
@@ -33,6 +46,10 @@ const resolveScan = (response: { type: ScanResourceType; data: unknown } | undef
   if (response.type === "post") {
     return buildScanPostView(response.data) ? { kind: "post", data: response.data } : null;
   }
+  if (response.type === "external-bag") {
+    return buildExternalBagView(response.data) ? { kind: "external-bag", data: response.data } : null;
+  }
+  if (response.type === "market-qr") return { kind: "market-qr" };
   const order = normalizeOrderDetail(response.data);
   return order ? { kind: "order", order } : null;
 };
@@ -40,10 +57,12 @@ const resolveScan = (response: { type: ScanResourceType; data: unknown } | undef
 /**
  * SKANER NATIJASI — `/scan/:token` (dizayn v2). Kamera ekrani (`/scan`) — alohida ish, bu yerda emas.
  *
- * Token turi bo'yicha (`getScanResourceType`): buyurtma (`GET orders/qr-code/:token`), paket `BTB-` /
- * qaytarilgan paket `BTR-` (`GET scan/:token`), pochta `PST-` (`GET post/scan/:id`). Ko'rinishlar —
- * `ui/ScanOrderResult` (rol bo'yicha mazmun), `ui/ScanPackageDetail`, `ui/ScanPostDetail`; holatlar —
- * yuklanish va «… topilmadi» kartasi («Qayta urinish» + «Skanerga qaytish»).
+ * Token turi bo'yicha (`getScanResourceType`, `fetchScanDetail`): buyurtma (`GET orders/qr-code/:token`; 404 bo'lsa
+ * `GET scan/:token` — tashqi qop yorlig'i), paket `BTB-` / qaytarilgan paket `BTR-` (`GET scan/:token`), pochta
+ * `POST-` / `PST-` (`GET post/scan/:token`), market QR'i `MCR-` (so'rovsiz — Bekor qilinganlarga yo'naltirish).
+ * Ko'rinishlar — `ui/ScanOrderResult` (rol bo'yicha mazmun), `ui/ScanPackageDetail`, `ui/ScanPostDetail`,
+ * `ui/ScanExternalBagDetail`, `ui/ScanMarketQrNotice`; holatlar — yuklanish va «… topilmadi» kartasi
+ * («Qayta urinish» + «Skanerga qaytish»). Ochilgan obyekt «Oxirgi skanerlar» tarixiga yoziladi (`/scan`).
  *
  * USB (HID) skaner sahifa ochiq turganda ham ishlaydi: yangi token — o'sha posilka ochiladi; shu token —
  * «takror» ovozi; yaroqsiz QR — xato ovozi va tepada ogohlantirish (keyingi to'g'ri skangacha); biror amal
@@ -55,11 +74,13 @@ const ScanDetailPage = () => {
   const { t } = useTranslation("scan");
   const navigate = useNavigate();
   const { token = "" } = useParams();
-  const normalizedToken = extractScannerToken(token) ?? token.trim();
+  const normalizedToken = normalizeScanToken(token);
   const resourceType = getScanResourceType(normalizedToken);
   const role = useSelector((state: RootState) => state.role.role);
+  const userId = useSelector((state: RootState) => state.user.user?.id ?? null);
   const roleKind = getScanRoleKind(role);
-  const textKey = resourceType === "package" || resourceType === "returned-package" ? "package" : resourceType;
+  const textKey =
+    resourceType === "package" || resourceType === "returned-package" ? "package" : resourceType === "post" ? "post" : "order";
 
   const query = useQuery({
     queryKey: getScanDetailQueryKey(normalizedToken),
@@ -69,6 +90,14 @@ const ScanDetailPage = () => {
     meta: { silentError: true },
   });
   const resolved = useMemo(() => resolveScan(query.data), [query.data]);
+
+  // «Oxirgi skanerlar · Shu qurilmada» (`/scan`): ochilgan obyekt tarixga — USB bilan shu sahifada
+  // skanerlangani ham. Market QR'i yozilmaydi (`toScanHistoryEntry` → `null`).
+  useEffect(() => {
+    if (!resolved || resolved.kind === "market-qr") return;
+    const entry = toScanHistoryEntry(normalizedToken, query.data);
+    if (entry) recordScanHistory(userId, entry);
+  }, [normalizedToken, query.data, resolved, userId]);
 
   const pendingMutations = useIsMutating();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -86,7 +115,8 @@ const ScanDetailPage = () => {
    */
   const handleNextScan = useCallback(
     (rawValue: string) => {
-      const nextToken = extractScannerToken(rawValue, window.location.origin);
+      const extracted = extractScannerToken(rawValue, window.location.origin);
+      const nextToken = extracted ? normalizeScanToken(extracted) : null;
       if (!nextToken) {
         void playScanFeedback("error", t("invalidQrTitle"));
         setInvalidScan(true);
@@ -177,6 +207,17 @@ const ScanDetailPage = () => {
         }
         if (scan.kind === "post") {
           return <ScanPostDetail key={normalizedToken} data={scan.data} topNotice={invalidAlert} />;
+        }
+        if (scan.kind === "external-bag") {
+          return <ScanExternalBagDetail key={normalizedToken} data={scan.data} topNotice={invalidAlert} />;
+        }
+        if (scan.kind === "market-qr") {
+          return (
+            <div className="flex flex-col gap-4">
+              {invalidAlert}
+              <ScanMarketQrNotice />
+            </div>
+          );
         }
         return (
           <ScanOrderResult

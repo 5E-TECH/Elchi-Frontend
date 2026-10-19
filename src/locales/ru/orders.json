@@ -58,7 +58,16 @@
     "truncatedTitle": "Результат неполный.",
     "truncatedText": "Под запрос подходит слишком много клиентов — введите имя, телефон или номер полнее.",
     "summary": "{{from}}–{{to}} из {{total}} заказов",
-    "clearFilters": "Сбросить фильтры"
+    "clearFilters": "Сбросить фильтры",
+    "cameraContext": "Отменённые заказы · {{value}}",
+    "cameraNoteTitle": "Сканируйте QR-код отменённого заказа",
+    "cameraNoteText": "Он будет выбран для отправки в HQ. Отправка — кнопкой «Отправить в HQ» на странице.",
+    "cameraMeter": "выбрано",
+    "cameraListTitle": "Последние сканы",
+    "cameraSelected": "Выбран №{{id}}",
+    "cameraRejected": "Отклонён · {{reason}}",
+    "cameraReasonMissing": "нет в списке",
+    "cameraReasonNotSendable": "нельзя отправить"
   },
   "list": "Список заказов",
   "create": "Создать заказ",
@@ -336,7 +345,17 @@
     "selectAll": "Выбрать все",
     "selectRow": "Выбрать №{{id}}",
     "notFound": "Заказы не найдены",
-    "clearFilters": "Сбросить фильтры"
+    "clearFilters": "Сбросить фильтры",
+    "cameraTitle": "Отправка на почту",
+    "cameraContext": "Отменённые заказы · {{value}}",
+    "cameraNoteTitle": "Сканируйте QR-код отменённого заказа",
+    "cameraNoteText": "Он будет выбран для отправки на почту. Отправка — кнопкой на странице.",
+    "cameraMeter": "выбрано",
+    "cameraListTitle": "Последние сканы",
+    "cameraSelected": "Выбран №{{id}}",
+    "cameraRejected": "Отклонён · {{reason}}",
+    "cameraReasonMissing": "нет в списке",
+    "cameraReasonNotSendable": "нельзя отправить на почту"
   },
   "createSubmitting": "Заказ сохраняется, пожалуйста подождите",
   "stepReadyMessage": "Данные готовы для следующего шага",
@@ -750,5 +769,7 @@
     "fraction": "Введите сумму целым числом — дробная часть не принимается",
     "negative": "Сумма не может быть отрицательной",
     "tooLong": "Слишком большая сумма — не более 12 цифр"
-  }
+  },
+  "returnHandoverQrAccepted": "QR магазина принят — идёт передача",
+  "returnHandoverCameraNote": "Сканируйте QR-код из приложения магазина — разрешение действует 5 минут"
 }

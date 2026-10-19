@@ -265,6 +265,19 @@
       "noManager": "Менеджер не назначен — сначала назначьте менеджера",
       "noManagerRegistrator": "Менеджер не назначен — обратитесь к администратору",
       "submit": "Отправить — {{value}}"
-    }
+    },
+    "cameraTitle": {
+      "send": "Отправка почты",
+      "receive": "Приём почты",
+      "refused": "Приём отклонённой почты"
+    },
+    "cameraNoteTitle": "Отсканируйте QR-код заказа из почты — он выберется в списке",
+    "cameraNoteText": "Код другой почты не принимается.",
+    "cameraMeter": "выбрано",
+    "cameraListTitle": "Последние сканы",
+    "cameraSelected": "Заказ выбран №{{id}}",
+    "cameraNotInMail": "Нет в этой почте",
+    "cameraRejectedTitle": "{{code}} · Нет в этой почте",
+    "cameraRejectedText": "Относится к другой почте · отклонён"
   }
 }

@@ -285,10 +285,12 @@ switcher sheet, the mobile menu, mobile search — never use it to skip a real d
 (`.el-bn-label`, 12px/600, ellipsis, must fit 70px in uz/ru/en). Long menu names use short forms: Qabul va yaratish → Qabul /
 Приём / Intake; market: Yaratish / Создать / Create; Kassa / Касса / Cashbox. Scanner roles (superadmin, admin, manager,
 registrator, courier) get a raised centre **Skaner** button (`.el-bn-fab`, 52px, action colour) that opens `@scan-camera`;
-the last cell is **Menyu** (full menu). Market has 5 plain cells (no scanner).
+the last cell is **Menyu** (full menu). Market has no scanner: 4 plain cells + **Menyu** (its 6th item «Operatorlar», ega qarori
+2026-10-19, does not fit 5 cells; Mahsulotlar moved into Menyu). Market operator (`market_operator`) has 5 plain cells, no Skaner, no Menyu.
 Per role: superadmin/admin: Bosh sahifa · Buyurtmalar · [Skaner] · Qabul · Menyu; manager: Bosh sahifa · Buyurtmalar · [Skaner] ·
 Biriktirish · Menyu; registrator: Bosh sahifa · Buyurtmalar · [Skaner] · Qabul · Menyu; market: Bosh sahifa · Buyurtmalar ·
-Yaratish · Mahsulotlar · To'lovlar; courier: Bosh sahifa · Buyurtmalar · [Skaner] · Tezkor amal · Menyu.
+Yaratish · To'lovlar · Menyu (Mahsulotlar, Operatorlar → Menyu); market_operator: Bosh sahifa · Buyurtmalar · Yaratish ·
+Mahsulotlar · Daromadim; courier: Bosh sahifa · Buyurtmalar · [Skaner] · Tezkor amal · Menyu.
 Any label you draw yourself in a compact nav/tab/segment must also never wrap mid-word: `white-space: nowrap` + ellipsis, or a shorter word.
 
 **Sharing:** one fragment can serve several views (admin re-uses many `superadmin--*` fragments). Before editing a fragment, check

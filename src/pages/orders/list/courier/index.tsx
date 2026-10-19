@@ -1,5 +1,5 @@
 // dizayn-v2: courier-orders-pending, courier-orders-all, courier-orders-cancelled, courier-orders-tab-switcher-open
-import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Inbox, ScanLine, SearchX, Send } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
@@ -30,7 +30,11 @@ import { scrollShellContentToTop, usePagination } from "../../../../shared/lib/u
 import { useDebounce } from "../../../../shared/lib/useDebounce";
 import { useOrderQrScanner } from "../../../../shared/lib/useOrderQrScanner";
 import { fetchScanDetail, getBackendErrorMessage } from "../../../scan/lib/scanResource";
-import { playScanFeedback } from "../../../scan/lib/scanShared";
+import { playScanFeedback } from "../../../../shared/lib/scanner/feedback";
+import { orderByRecent, scanNotify, useRecentScans } from "../../../../shared/lib/scanner/scanSession";
+import type { ScanTargetListItem } from "../../../../shared/lib/scanner/scanTargets";
+import { extractScannerToken } from "../../../../shared/lib/scanToken";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../../shared/lib/formatMoney";
 import { getActionErrorMessage } from "../../../../shared/lib/actionError";
 import { canCourierRestoreCancelledOrder } from "../../../../entities/orders/custody";
 import { getRollbackWarning } from "../../../../entities/orders/rollbackResult";
@@ -333,7 +337,8 @@ const PhoneListSkeleton = ({ withActions }: { withActions: boolean }) => (
 );
 
 const CourierOrders = () => {
-  const { t } = useTranslation("orders");
+  const { t, i18n } = useTranslation("orders");
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const navigate = useNavigate();
   const isPhone = useIsPhone();
   const { getParam, setParam, setMultipleParams, removeParam } = useQueryParams();
@@ -492,21 +497,33 @@ const CourierOrders = () => {
   const selectableOrders = orders.filter(isSelectableCancelledOrder);
   const selectedSendableCount = selectableOrders.filter((order) => selectedIds.has(order.id)).length;
 
+  // Kamera ro'yxati (Trello v1eLN2tV 2-bosqich): skan tartibi (`order:<id>` / `missing:<kod>`) va rad etilgan kodlar.
+  const { recent: recentScanKeys, touch: touchRecentScan, clear: clearRecentScans } = useRecentScans();
+  const [rejectedScans, setRejectedScans] = useState<{ code: string; reason: string }[]>([]);
+
+  /** Rad etilgan kod — kamera ro'yxatida «<kod> · Rad etildi · <sabab>» (tanlovga kirmaydi). */
+  const rejectScannedCode = useCallback((code: string, reason: string, message: string) => {
+    if (code) {
+      setRejectedScans((prev) => [...prev.filter((item) => item.code !== code), { code, reason }]);
+      touchRecentScan(`missing:${code}`);
+    }
+    void playScanFeedback("missing", message);
+  }, [touchRecentScan]);
+
   const selectScannedOrder = useCallback((order: Order) => {
     if (activeTab === "cancelled" && !isSelectableCancelledOrder(order)) {
-      notify.warning(t("scanNotFoundTitle"), { description: t("scanNotFoundDescription"), duration: 2500 });
-      void playScanFeedback("missing");
+      scanNotify.warning(t("scanNotFoundTitle"), { description: t("scanNotFoundDescription"), duration: 2500 });
+      rejectScannedCode(`№${order.id}`, t("courierList.cameraReasonNotSendable"), t("scanNotFoundDescription"));
       return;
     }
 
+    const name = order.customer?.name ?? `#${order.id}`;
     if (selectedIds.has(order.id)) {
-      notify.warning(t("scanAlreadySelectedTitle"), {
-        description: t("scanAlreadySelectedDescription", {
-          name: order.customer?.name ?? `#${order.id}`,
-        }),
+      scanNotify.warning(t("scanAlreadySelectedTitle"), {
+        description: t("scanAlreadySelectedDescription", { name }),
         duration: 2500,
       });
-      void playScanFeedback("duplicate");
+      void playScanFeedback("duplicate", t("scanAlreadySelectedDescription", { name }));
       return;
     }
 
@@ -515,14 +532,13 @@ const CourierOrders = () => {
       next.add(order.id);
       return next;
     });
-    notify.success(t("scanSelectedTitle"), {
-      description: t("scanSelectedDescription", {
-        name: order.customer?.name ?? `#${order.id}`,
-      }),
+    touchRecentScan(`order:${order.id}`);
+    scanNotify.success(t("scanSelectedTitle"), {
+      description: t("scanSelectedDescription", { name }),
       duration: 2000,
     });
-    void playScanFeedback("success");
-  }, [activeTab, selectedIds, t]);
+    void playScanFeedback("success", t("courierList.cameraSelected", { id: order.id }));
+  }, [activeTab, rejectScannedCode, selectedIds, t, touchRecentScan]);
 
   const handleMissingScannedOrder = useCallback(async (rawValue: string) => {
     const tokenKey = rawValue.trim().toLowerCase();
@@ -549,26 +565,70 @@ const CourierOrders = () => {
       }
 
       // Skaner oqimi: xato qisqa turadi (v1 dagidek 3 s) — keyingi skanerlashda ekran to'silib qolmasin.
-      notify.error(t("scanNotFoundTitle"), { description: t("scanNotFoundDescription"), duration: 3000 });
-      void playScanFeedback("missing");
+      scanNotify.error(t("scanNotFoundTitle"), { description: t("scanNotFoundDescription"), duration: 3000 });
+      rejectScannedCode(
+        extractScannerToken(rawValue) ?? rawValue.trim(),
+        t("courierList.cameraReasonMissing"),
+        t("scanNotFoundDescription"),
+      );
     } catch (error) {
-      notify.error(t("scanNotFoundTitle"), {
-        description: getBackendErrorMessage(error) ?? t("scanNotFoundDescription"),
-        duration: 3000,
-      });
-      void playScanFeedback("error");
+      const message = getBackendErrorMessage(error) ?? t("scanNotFoundDescription");
+      scanNotify.error(t("scanNotFoundTitle"), { description: message, duration: 3000 });
+      void playScanFeedback("error", message);
     } finally {
       scanLookupTokensRef.current.delete(tokenKey);
     }
-  }, [orders, selectScannedOrder, t]);
+  }, [orders, rejectScannedCode, selectScannedOrder, t]);
+
+  // KAMERA (Trello v1eLN2tV 2-bosqich; maket yo'q — `courier-orders-cancelled` dagi «Kamera bilan skanerlash»
+  // universal skanerga olib borardi, eng yaqini `courier-mails-detail-receive-camera`): faqat «Bekor qilingan» tabida.
+  // Sahifada kamera tugmasi yo'q — markaziy «Skaner» shu maqsadni ochadi; kamera skani USB bilan bir yo'l (faqat
+  // tanlaydi), yuborish — sahifadagi «… pochtaga yuborish».
+  const cameraList = useMemo<ScanTargetListItem[]>(() => {
+    const selectedItems = orders
+      .filter((order) => selectedIds.has(order.id) && isSelectableCancelledOrder(order))
+      .map<ScanTargetListItem>((order) => ({
+        key: `order:${order.id}`,
+        title: [`№${order.id}`, order.customer?.name?.trim()].filter(Boolean).join(" · "),
+        subtitle: [order.district?.name?.trim(), formatMoneyLocalized(Number(order.total_price) || 0, { language })]
+          .filter(Boolean)
+          .join(" · "),
+        tone: "success",
+        onUndo: () =>
+          setSelectedIds((prev) => {
+            if (!prev.has(order.id)) return prev;
+            const next = new Set(prev);
+            next.delete(order.id);
+            return next;
+          }),
+      }));
+    const rejectedItems = rejectedScans.map<ScanTargetListItem>(({ code, reason }) => ({
+      key: `missing:${code}`,
+      title: code,
+      subtitle: t("courierList.cameraRejected", { reason }),
+      tone: "danger",
+    }));
+    return orderByRecent([...selectedItems, ...rejectedItems], (item) => item.key, recentScanKeys);
+  }, [language, orders, recentScanKeys, rejectedScans, selectedIds, t]);
 
   const scannerEnabled = activeTab === "cancelled" && !isLoading;
   useOrderQrScanner({
     orders,
-    enabled: scannerEnabled,
+    enabled: activeTab === "cancelled",
+    paused: isLoading || isSendingToPost,
     onMatch: (order) => selectScannedOrder(order),
     onMissing: (rawValue) => {
       void handleMissingScannedOrder(rawValue);
+    },
+    camera: {
+      id: "courier-orders:cancelled-to-post",
+      title: t("courierList.cameraTitle"),
+      context: t("courierList.cameraContext", { value: formatNumberLocalized(selectableOrders.length, { language }) }),
+      note: { title: t("courierList.cameraNoteTitle"), text: t("courierList.cameraNoteText") },
+      progress: { done: selectedSendableCount, total: selectableOrders.length, label: t("courierList.cameraMeter") },
+      list: cameraList,
+      listTitle: t("courierList.cameraListTitle"),
+      finish: { label: t("ui:camera.action.finish"), onFinish: () => undefined },
     },
   });
 
@@ -730,6 +790,9 @@ const CourierOrders = () => {
           return next;
         });
         setSelectedIds(new Set());
+        // Yuborilgandan keyin kamera ro'yxati yangidan (eski «Rad etildi» qatorlari qolmaydi).
+        setRejectedScans([]);
+        clearRecentScans();
       },
       onError: notifyActionError,
     });

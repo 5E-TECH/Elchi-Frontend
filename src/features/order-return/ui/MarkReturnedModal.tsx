@@ -1,9 +1,11 @@
 // dizayn-v2: (maket yo'q) admin-neworders-cancelled-scanner-dialog
-import { memo, useEffect, useState, type FormEvent } from "react";
+import { memo, useEffect, useRef, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CircleCheck, PackageCheck, ScanQrCode } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import ScannerCameraModal from "../../../shared/components/ScannerCameraModal";
+import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
+import { closeScanner, openScanner } from "../../../shared/lib/scanner/scannerHost";
+import { useScanTarget } from "../../../shared/lib/scanner/scanTargets";
 import { Button, Dialog, Field, TextInput } from "../../../shared/ui/primitives";
 import { useOrders } from "../../../entities/orders";
 import { useOrdersCoverage } from "../../../entities/orders/ordersCoverage";
@@ -28,8 +30,14 @@ const AUTHORIZATION_TTL_MS = 5 * 60 * 1000 - 10_000;
  * 5 daqiqalik `authorization_token` olinadi va topshirish tasdiqlanadi.
  *
  * Dizayn v2: `Dialog` (telefonda pastki varaqa). Maket yo'q — eng yaqini
- * `admin-neworders-cancelled-scanner-dialog` (kamera tugmasi + qo'lda kiritish). Kamera — umumiy
- * `ScannerCameraModal` (oyna o'rnida ochiladi, ichma-ich emas).
+ * `admin-neworders-cancelled-scanner-dialog` (kamera tugmasi + qo'lda kiritish).
+ *
+ * KAMERA (Trello v1eLN2tV 2-bosqich) — EGA QARORIDAN ISTISNO: oqim ichida kamera tugmasi qilinmaydi (markaziy
+ * «Skaner» kontekstli), lekin bu oyna ochiq turganda telefonda markaziy tugma oyna (pastki varaqa) ostida qoladi va
+ * bosib bo'lmaydi. Shuning uchun oynaning o'z «Kamera bilan skanerlash» tugmasi qoladi: u oyna maqsadini
+ * (`layer: "dialog"` — sahifanikidan ustun) v2 `ScannerCamera` oynasida ochadi (`openScanner()`, umumiy
+ * `ScannerHost`; v1 `ScannerCameraModal` o'chirildi). Kamera skani qo'lda kiritish / USB bilan bitta yo'l
+ * (`submitQr`); ruxsat olingach yoki oyna yopilsa kamera yopiladi.
  */
 const MarkReturnedModal = ({ open, orderId, onClose, onDone }: Props) => {
   const { t } = useTranslation(["orders", "newOrders", "common"]);
@@ -38,7 +46,8 @@ const MarkReturnedModal = ({ open, orderId, onClose, onDone }: Props) => {
   const { markReturnedToMarket } = useOrdersCoverage();
   const [qrInput, setQrInput] = useState("");
   const [error, setError] = useState("");
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  // Kamerani shu oyna ochgan (oyna yopilsa yoki ruxsat olinsa — yopiladi).
+  const cameraRequestedRef = useRef(false);
   // QR bir martalik: topshirish yiqilsa, ruxsat saqlanadi va qayta skan shart emas.
   const [authorization, setAuthorization] = useState<{ token: string } | null>(null);
 
@@ -46,7 +55,6 @@ const MarkReturnedModal = ({ open, orderId, onClose, onDone }: Props) => {
     if (!open) return;
     setQrInput("");
     setError("");
-    setIsCameraOpen(false);
     setAuthorization(null);
   }, [open]);
 
@@ -73,11 +81,17 @@ const MarkReturnedModal = ({ open, orderId, onClose, onDone }: Props) => {
       },
     );
 
+  /** Xato — oynada va (kamera ochiq bo'lsa) kamera natija qatorida. */
+  const fail = (message: string) => {
+    setError(message);
+    void playScanFeedback("error", message);
+  };
+
   const submitQr = (rawValue: string) => {
     if (isPending) return;
     const qrToken = extractMarketQrToken(rawValue);
     if (!qrToken) {
-      setError(t("returnHandoverInvalidQr"));
+      fail(t("returnHandoverInvalidQr"));
       return;
     }
     setError("");
@@ -85,17 +99,48 @@ const MarkReturnedModal = ({ open, orderId, onClose, onDone }: Props) => {
       onSuccess: (response) => {
         const token = readHandoverAuthorization(response);
         if (!token) {
-          setError(t("orderActionError"));
+          fail(t("orderActionError"));
           return;
         }
+        void playScanFeedback("success", t("returnHandoverQrAccepted"));
         setAuthorization({ token });
         markReturned(token);
       },
-      onError: (mutationError) => setError(getBackendErrorMessage(mutationError) ?? t("returnHandoverInvalidQr")),
+      onError: (mutationError) => fail(getBackendErrorMessage(mutationError) ?? t("returnHandoverInvalidQr")),
     });
   };
 
   const hasLiveAuthorization = authorization !== null;
+
+  // Oyna maqsadi — faqat market QR kutilayotganda (ruxsat olingach skan kerak emas).
+  const cameraActive = open && !hasLiveAuthorization;
+  useScanTarget(
+    cameraActive
+      ? {
+          id: `mark-returned:${orderId}`,
+          layer: "dialog",
+          title: t("scanCancelledHandoverQr", { ns: "newOrders" }),
+          context: t("returnHandoverTitle", { id: orderId }),
+          hint: t("cancelled.camera.qrHint", { ns: "newOrders" }),
+          note: { title: t("returnHandoverCameraNote") },
+          onScan: (rawValue) => {
+            setQrInput(rawValue);
+            submitQr(rawValue);
+          },
+        }
+      : null,
+  );
+  useEffect(() => {
+    if (cameraActive || !cameraRequestedRef.current) return;
+    cameraRequestedRef.current = false;
+    closeScanner();
+  }, [cameraActive]);
+  useEffect(
+    () => () => {
+      if (cameraRequestedRef.current) closeScanner();
+    },
+    [],
+  );
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -106,32 +151,6 @@ const MarkReturnedModal = ({ open, orderId, onClose, onDone }: Props) => {
     }
     submitQr(qrInput);
   };
-
-  const handleCameraDecode = (rawValue: string) => {
-    setIsCameraOpen(false);
-    setQrInput(rawValue);
-    submitQr(rawValue);
-  };
-
-  if (open && isCameraOpen) {
-    return (
-      <ScannerCameraModal
-        isOpen
-        onClose={() => setIsCameraOpen(false)}
-        onDecode={handleCameraDecode}
-        title={t("scanCancelledHandoverQr", { ns: "newOrders" })}
-        subtitle={t("returnHandoverHint")}
-        waitingText={t("returnHandoverHint")}
-        closeLabel={t("closeScanner", { ns: "newOrders" })}
-        torchOnLabel={t("torchOn", { ns: "newOrders" })}
-        torchOffLabel={t("torchOff", { ns: "newOrders" })}
-        invalidQrMessage={t("returnHandoverInvalidQr")}
-        loading={isPending}
-        loadingText={t("loading", { ns: "common" })}
-        error={error}
-      />
-    );
-  }
 
   return (
     <Dialog
@@ -178,9 +197,10 @@ const MarkReturnedModal = ({ open, orderId, onClose, onDone }: Props) => {
             variant="secondary"
             leftIcon={ScanQrCode}
             fullWidth
+            aria-haspopup="dialog"
             onClick={() => {
               setError("");
-              setIsCameraOpen(true);
+              cameraRequestedRef.current = openScanner() === "overlay";
             }}
           >
             {t("returnHandoverScan")}

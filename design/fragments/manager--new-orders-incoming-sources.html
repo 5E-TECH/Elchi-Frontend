@@ -4,16 +4,14 @@
     <p class="el-sub">Buyurtma yaratish va marketlar, filiallar hamda hamkorlardan kelgan buyurtmalarni qabul qilish</p>
   </div>
   <div class="el-actions">
-    <a class="el-btn el-btn-primary" href="#"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Buyurtma yaratish</a>
+    <a class="el-btn el-btn-primary" href="@new-orders-create-manual-step1"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Buyurtma yaratish</a>
   </div>
 </div>
 
 <section class="el-card" aria-label="Qabul kutayotgan buyurtmalar">
   <div class="el-tabs" role="tablist" aria-label="Qabul manbalari" style="padding: 0 12px">
-    <a class="el-tab" role="tab" aria-selected="false" href="#" style="text-decoration: none; color: var(--text-muted)">Marketlar <span class="el-tab-count">7</span></a>
-    <a class="el-tab" role="tab" aria-selected="true" href="#" style="text-decoration: none; color: var(--text)">Kiruvchi posilkalar <span class="el-tab-count">12</span></a>
-    <a class="el-tab" role="tab" aria-selected="false" href="#" style="text-decoration: none; color: var(--text-muted)">Filial paketlari <span class="el-tab-count">3</span></a>
-    <a class="el-tab" role="tab" aria-selected="false" href="#" style="text-decoration: none; color: var(--text-muted)">Bekor qilinganlar <span class="el-tab-count">9</span></a>
+    <a class="el-tab" role="tab" aria-selected="false" href="@new-orders-markets" style="text-decoration: none; color: var(--text-muted)">Marketlar <span class="el-tab-count">4</span></a>
+    <a class="el-tab" role="tab" aria-selected="true" href="@new-orders-incoming-sources" style="text-decoration: none; color: var(--text)">Kiruvchi posilkalar <span class="el-tab-count">12</span></a>
   </div>
 
   <div style="display: flex; flex-wrap: wrap; gap: 12px 24px; padding: 16px 20px; align-items: center; justify-content: space-between">
@@ -54,25 +52,25 @@
       </thead>
       <tbody>
         <tr>
-          <td><div style="display: flex; align-items: center; gap: 12px"><span class="el-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></span><a class="el-cell-title" href="#" style="text-decoration: none; color: var(--text); display: inline-flex; align-items: center; gap: 8px"><span class="el-legend-key" style="background: var(--chart-1); width: 12px; height: 12px"></span>BeePost</a></div></td>
+          <td><div style="display: flex; align-items: center; gap: 12px"><span class="el-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></span><a class="el-cell-title" href="@new-orders-incoming-scan" style="text-decoration: none; color: var(--text); display: inline-flex; align-items: center; gap: 8px"><span class="el-legend-key" style="background: var(--chart-1); width: 12px; height: 12px"></span>BeePost</a></div></td>
           <td class="el-num">7 ta</td>
           <td class="el-num el-strong">1 845 000 so'm</td>
           <td style="padding-left: 40px"><div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start"><span class="el-muted" style="display: flex; align-items: center; gap: 6px; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></svg>3 soat</span><div class="el-meter is-thin" role="meter" aria-label="BeePost: eng eski posilka 3 soat kutmoqda, chegara 3 kun" aria-valuemin="0" aria-valuemax="96" aria-valuenow="3" style="width: 140px; --meter-c: var(--chart-axis); --meter-track: var(--sunken)"><span style="width: 3.1%"></span><span class="el-meter-target" style="left: 75.0%"></span></div></div></td>
-          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="#" aria-label="BeePost posilkalarini skanerlash" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@new-orders-incoming-scan" aria-label="BeePost posilkalarini skanerlash" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
         </tr>
         <tr>
-          <td><div style="display: flex; align-items: center; gap: 12px"><span class="el-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></span><a class="el-cell-title" href="#" style="text-decoration: none; color: var(--text); display: inline-flex; align-items: center; gap: 8px"><span class="el-legend-key" style="background: var(--chart-2); width: 12px; height: 12px"></span>Ipak Yo'li Savdo</a></div></td>
+          <td><div style="display: flex; align-items: center; gap: 12px"><span class="el-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></span><a class="el-cell-title" href="@new-orders-incoming-scan" style="text-decoration: none; color: var(--text); display: inline-flex; align-items: center; gap: 8px"><span class="el-legend-key" style="background: var(--chart-2); width: 12px; height: 12px"></span>Ipak Yo'li Savdo</a></div></td>
           <td class="el-num">3 ta</td>
           <td class="el-num el-strong">642 000 so'm</td>
           <td style="padding-left: 40px"><div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start"><span class="el-muted" style="display: flex; align-items: center; gap: 6px; white-space: nowrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></svg>20 soat</span><div class="el-meter is-thin" role="meter" aria-label="Ipak Yo'li Savdo: eng eski posilka 20 soat kutmoqda, chegara 3 kun" aria-valuemin="0" aria-valuemax="96" aria-valuenow="20" style="width: 140px; --meter-c: var(--chart-axis); --meter-track: var(--sunken)"><span style="width: 20.8%"></span><span class="el-meter-target" style="left: 75.0%"></span></div></div></td>
-          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="#" aria-label="Ipak Yo'li Savdo posilkalarini skanerlash" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@new-orders-incoming-scan" aria-label="Ipak Yo'li Savdo posilkalarini skanerlash" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
         </tr>
         <tr>
-          <td><div style="display: flex; align-items: center; gap: 12px"><span class="el-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></span><a class="el-cell-title" href="#" style="text-decoration: none; color: var(--text); display: inline-flex; align-items: center; gap: 8px"><span class="el-legend-key" style="background: var(--chart-3); width: 12px; height: 12px"></span>Nur Elektronika</a></div></td>
+          <td><div style="display: flex; align-items: center; gap: 12px"><span class="el-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></span><a class="el-cell-title" href="@new-orders-incoming-scan" style="text-decoration: none; color: var(--text); display: inline-flex; align-items: center; gap: 8px"><span class="el-legend-key" style="background: var(--chart-3); width: 12px; height: 12px"></span>Nur Elektronika</a></div></td>
           <td class="el-num">2 ta</td>
           <td class="el-num el-strong">1 160 000 so'm</td>
           <td style="padding-left: 40px"><div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start"><span class="el-badge el-tone-warning"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v6l4 2"/><circle cx="12" cy="12" r="10"/></svg>4 kun kutmoqda</span><div class="el-meter is-thin is-warning" role="meter" aria-label="Nur Elektronika: eng eski posilka 4 kun kutmoqda, chegara 3 kun" aria-valuemin="0" aria-valuemax="96" aria-valuenow="96" style="width: 140px"><span style="width: 100.0%"></span><span class="el-meter-target" style="left: 75.0%"></span></div></div></td>
-          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="#" aria-label="Nur Elektronika posilkalarini skanerlash" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+          <td style="text-align: right"><a class="el-iconbtn el-iconbtn-sm" href="@new-orders-incoming-scan" aria-label="Nur Elektronika posilkalarini skanerlash" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
         </tr>
       </tbody>
     </table>
@@ -81,7 +79,7 @@
 <p class="el-chart-note el-hide-mobile" style="padding: 12px 20px; border-top: 1px solid var(--border)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>Tik chiziq — 3 kunlik chegara: undan uzoq kutgan posilka unutilgan hisoblanadi va sariq belgilanadi</p>
 
   <div class="el-list el-show-mobile" style="flex-direction: column; border-top: 1px solid var(--border)">
-    <a class="el-list-item" href="#" style="text-decoration: none; color: var(--text); align-items: flex-start">
+    <a class="el-list-item" href="@new-orders-incoming-scan" style="text-decoration: none; color: var(--text); align-items: flex-start">
       <span class="el-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></span>
       <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
         <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title" style="display: inline-flex; align-items: center; gap: 8px"><span class="el-legend-key" style="background: var(--chart-1); width: 12px; height: 12px"></span>BeePost</span><span class="el-strong" style="white-space: nowrap">1 845 000 so'm</span></div>
@@ -89,7 +87,7 @@
       </div>
       <span class="el-subtle" style="display: inline-flex; margin-top: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
     </a>
-    <a class="el-list-item" href="#" style="text-decoration: none; color: var(--text); align-items: flex-start">
+    <a class="el-list-item" href="@new-orders-incoming-scan" style="text-decoration: none; color: var(--text); align-items: flex-start">
       <span class="el-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></span>
       <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
         <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title" style="display: inline-flex; align-items: center; gap: 8px"><span class="el-legend-key" style="background: var(--chart-2); width: 12px; height: 12px"></span>Ipak Yo'li Savdo</span><span class="el-strong" style="white-space: nowrap">642 000 so'm</span></div>
@@ -97,7 +95,7 @@
       </div>
       <span class="el-subtle" style="display: inline-flex; margin-top: 8px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></span>
     </a>
-    <a class="el-list-item" href="#" style="text-decoration: none; color: var(--text); align-items: flex-start">
+    <a class="el-list-item" href="@new-orders-incoming-scan" style="text-decoration: none; color: var(--text); align-items: flex-start">
       <span class="el-stat-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/></svg></span>
       <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
         <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title" style="display: inline-flex; align-items: center; gap: 8px"><span class="el-legend-key" style="background: var(--chart-3); width: 12px; height: 12px"></span>Nur Elektronika</span><span class="el-strong" style="white-space: nowrap">1 160 000 so'm</span></div>
@@ -107,19 +105,3 @@
     </a>
   </div>
 </section>
-
-<section class="el-card" aria-labelledby="idle-sources-title">
-  <div class="el-card-head">
-    <h2 class="el-h2" id="idle-sources-title">Ulangan manbalar — hozircha posilka yo'q</h2>
-    <a class="el-btn el-btn-link el-btn-sm" href="#" style="gap: 4px">Integratsiyalar<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a>
-  </div>
-  <div class="el-card-pad" style="display: flex; flex-direction: column; gap: 12px">
-    <p class="el-small el-muted">Yuqoridagi ro'yxat faqat qabul kutayotgan posilkasi bor manbalarni ko'rsatadi. Quyidagilar ulangan, lekin hali posilka yubormagan.</p>
-    <div style="display: flex; flex-wrap: wrap; gap: 8px">
-      <span class="el-badge el-tone-neutral" style="height: 28px; padding: 0 10px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-5"/><path d="M15 8V2"/><path d="M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1z"/><path d="M9 8V2"/></svg>Chilonzor Market</span>
-      <span class="el-badge el-tone-neutral" style="height: 28px; padding: 0 10px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-5"/><path d="M15 8V2"/><path d="M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1z"/><path d="M9 8V2"/></svg>Gulzor Kiyim</span>
-      <span class="el-badge el-tone-neutral" style="height: 28px; padding: 0 10px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22v-5"/><path d="M15 8V2"/><path d="M17 8a1 1 0 0 1 1 1v4a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V9a1 1 0 0 1 1-1z"/><path d="M9 8V2"/></svg>Mehr Kosmetika</span>
-    </div>
-  </div>
-</section>
-  

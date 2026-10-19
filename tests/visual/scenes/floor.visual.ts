@@ -32,7 +32,7 @@ defineScene({
   },
   act: async (page) => {
     await expect(page.getByText("Skanerlangan buyurtmalar", { exact: true })).toBeVisible();
-    // «USB skaner tayyor» belgisi faqat ≥ 768 da (telefonda «Kamera» pastki panelda, belgisiz).
+    // «USB skaner tayyor» belgisi faqat ≥ 768 da (telefonda belgisiz; kamera — markaziy «Skaner» tugmasi).
     if ((page.viewportSize()?.width ?? 1440) >= 768) {
       await expect(page.getByText("USB skaner tayyor", { exact: true })).toBeVisible();
     }

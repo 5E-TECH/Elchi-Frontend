@@ -105,7 +105,16 @@
       "received": "Пакет принят",
       "receivedAt": "Пакет принят: {{to}}",
       "cancelled": "Пакет отменён"
-    }
+    },
+    "cameraTitle": "Отправка в HQ",
+    "cameraNoteTitle": "Сканируйте QR-код заказа из пакета",
+    "cameraNoteText": "Он будет выбран для отправки в HQ. Коды из другого пакета не принимаются.",
+    "cameraMeter": "выбрано",
+    "cameraListTitle": "Последние сканы",
+    "cameraSelected": "Выбран №{{id}}",
+    "cameraNotInBatch": "Нет в этом пакете · {{code}}",
+    "cameraRejectedTitle": "{{code}} · Нет в этом пакете",
+    "cameraRejectedText": "Не совпал · не выбран"
   },
   "print": {
     "branch": "ФИЛИАЛ:",

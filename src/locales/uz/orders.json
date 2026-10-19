@@ -58,7 +58,16 @@
     "truncatedTitle": "Natija to'liq emas.",
     "truncatedText": "Qidiruvga juda ko'p mijoz mos keldi — ism, telefon yoki raqamni to'liqroq yozing.",
     "summary": "{{from}}–{{to}} / {{total}} ta buyurtma",
-    "clearFilters": "Filtrlarni tozalash"
+    "clearFilters": "Filtrlarni tozalash",
+    "cameraContext": "Bekor qilingan buyurtmalar · {{value}} ta",
+    "cameraNoteTitle": "Bekor qilingan buyurtma QR kodini skanerlang",
+    "cameraNoteText": "U HQ'ga yuborish uchun tanlanadi. Yuborish — sahifadagi «HQ'ga yuborish» tugmasi.",
+    "cameraMeter": "ta tanlandi",
+    "cameraListTitle": "Oxirgi skanerlar",
+    "cameraSelected": "Tanlandi №{{id}}",
+    "cameraRejected": "Rad etildi · {{reason}}",
+    "cameraReasonMissing": "ro'yxatda yo'q",
+    "cameraReasonNotSendable": "yuborib bo'lmaydi"
   },
   "list": "Buyurtmalar ro'yxati",
   "create": "Buyurtma yaratish",
@@ -336,7 +345,17 @@
     "selectAll": "Barchasini tanlash",
     "selectRow": "№{{id}} ni tanlash",
     "notFound": "Buyurtmalar topilmadi",
-    "clearFilters": "Filtrlarni tozalash"
+    "clearFilters": "Filtrlarni tozalash",
+    "cameraTitle": "Pochtaga yuborish",
+    "cameraContext": "Bekor qilingan buyurtmalar · {{value}} ta",
+    "cameraNoteTitle": "Bekor qilingan buyurtma QR kodini skanerlang",
+    "cameraNoteText": "U pochtaga yuborish uchun tanlanadi. Yuborish — sahifadagi tugma bilan.",
+    "cameraMeter": "ta tanlandi",
+    "cameraListTitle": "Oxirgi skanerlar",
+    "cameraSelected": "Tanlandi №{{id}}",
+    "cameraRejected": "Rad etildi · {{reason}}",
+    "cameraReasonMissing": "ro'yxatda yo'q",
+    "cameraReasonNotSendable": "pochtaga yuborib bo'lmaydi"
   },
   "createSubmitting": "Buyurtma saqlanmoqda, iltimos kuting",
   "stepReadyMessage": "Keyingi bosqichga o'tish uchun ma'lumotlar tayyor",
@@ -750,5 +769,7 @@
     "fraction": "Summani butun son bilan kiriting — kasr qabul qilinmaydi",
     "negative": "Summa manfiy bo'lishi mumkin emas",
     "tooLong": "Summa juda katta — ko'pi bilan 12 xonali son"
-  }
+  },
+  "returnHandoverQrAccepted": "Market QR qabul qilindi — topshirilmoqda",
+  "returnHandoverCameraNote": "Market ilovasida ko'rsatgan QR kodni skanerlang — ruxsat 5 daqiqa amal qiladi"
 }

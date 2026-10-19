@@ -1,9 +1,9 @@
 # Elchi CRM — Dizayn tizimi v2
 
-> Holat (2026-10-18): **0–5 bosqichlar tayyor.** 4 (sahifalar): 77 route'dan 75 tasi v2 — G1, G2, G3 birlashtirildi
-> (`design/SCREENS.md`); 5 (qo'riqchilar, §12): ESLint `design-v2/*` butun `src` da xato, `V2_SCOPES` + `named-colour`,
-> vizual snapshotlar (CI «Visual», 23 sahna). Qolgan ish (§14): kamera rejimlari (alohida ish), yopiq
-> `/market-operators`, v1 ratchet ro'yxatlari (§12.2, §12.3), «Visual» baseline'lari va required tekshiruv (§12.5).
+> Holat (2026-10-19): **0–5 bosqichlar tayyor.** 4 (sahifalar): 77 route'dan 76 tasi v2 — G1, G2, G3 birlashtirildi,
+> `/scan` skaner 1-bosqichida (`design/SCREENS.md`); 5 (qo'riqchilar, §12): ESLint `design-v2/*` butun `src` da xato,
+> `V2_SCOPES` + `named-colour`, vizual snapshotlar (CI «Visual», 23 sahna). Kamera ishi (skaner 1–4-bosqich) tayyor.
+> Qolgan ish (§14): yopiq `/market-operators`, v1 ratchet ro'yxatlari (§12.2, §12.3), «Visual» baseline'lari va required tekshiruv (§12.5).
 > Trello: «Dizayn v2» kartalari.
 
 Bu hujjat — yangi UI yozayotgan har bir frontchi va AI agent uchun **majburiy** qoidalar. Qisqa versiyasi
@@ -297,7 +297,7 @@ sinonimlarning o'rnini bosuvchilari — `design/icon-registry.json` (132 ikonka,
 | 1 | primitivlar, formatlovchilar, namuna sahifasi `/ops/ui-kit` | `src/shared/ui/primitives`, `src/entities/order`, `src/shared/lib/format*.ts` | tayyor |
 | 2 | shell: kanvas, yon / pastki menyu, yuqori panel | `src/widgets/layout`, `src/widgets/Sidebar`, `src/widgets/header` | tayyor |
 | 3 | forma, dialog, xabar, holatlar, xato sahifalari | `src/shared/ui/primitives`, `src/app/providers/UiHost.tsx`, `src/shared/lib/notify.ts` | tayyor |
-| 4 | sahifalar migratsiyasi (har sahifa alohida PR, `// dizayn-v2:`) | `src/pages/**`, `src/widgets/**`; jurnal — Ilova A, route bo'yicha — `design/SCREENS.md` | tayyor: 75 / 77 route v2 (G1, G2, G3); qolgan `/scan` — kamera ishi, `/market-operators` — yopiq |
+| 4 | sahifalar migratsiyasi (har sahifa alohida PR, `// dizayn-v2:`) | `src/pages/**`, `src/widgets/**`; jurnal — Ilova A, route bo'yicha — `design/SCREENS.md` | tayyor: 76 / 77 route v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi, 2026-10-19); qolgan `/market-operators` — yopiq |
 | 5 | qo'riqchilar: ESLint `design-v2/*` + `Pressable`, `V2_SCOPES` + `named-colour`, vizual snapshotlar (CI «Visual») | `eslint.config.js`, `scripts/eslint-design-v2.mjs`, `scripts/design-guard.mjs`, `playwright.visual.config.ts`, `tests/visual/`, `.github/workflows/visual.yml` | tayyor (§12; qolgan ish — §14) |
 
 Palitra testi va ratchet qo'riqchisi 0-bosqichdan beri ishlaydi: eski kodga tegmaydi, lekin yangi buzilish qo'shilsa
@@ -374,9 +374,10 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   `confirm`/`alert`/`prompt` — xato.
 
 **4-bosqich — tayyor (sahifalar).** Har sahifa alohida PR, faylning birinchi qatorida `// dizayn-v2: <ekran>`.
-77 route'dan 75 tasi v2 (`design/SCREENS.md`); qolgan ikkitasi — `/scan` (butun kamera ekrani, alohida kamera ishi) va
-yopiq `/market-operators` (ko'chirilmaydi). Boshqa sahifalardagi kamera rejimlari (`*-camera`, `ScannerCameraModal`)
-ham kamera ishida (§14).
+77 route'dan 76 tasi v2 (`design/SCREENS.md`); `/scan` skaner 1-bosqichida ko'chirildi (2026-10-19), qolgani — yopiq
+`/market-operators` (ko'chirilmaydi). Oqimlardagi kamera rejimlari (`*-camera`) — skaner 2-bosqichida kontekstli
+markaziy tugma orqali qilindi, v1 `ScannerCameraModal` o'chirildi (§14); universal rejimlar — 3-bosqich,
+Sozlamalar → Skaner → «Kamera» — 4-bosqich (kamera ishi yopildi).
 
 - **Ro'yxat standarti** — `DataTable` (ustunlar, `density`, server saralashi, tanlov, telefonda `renderCard` →
   kartalar) + `Pagination` (`Card footer`, «10 ta» tanlovi, 5 o'rinli sahifalar), `src/shared/ui/primitives` barrelidan;
@@ -456,9 +457,9 @@ o'ramlari — ichi v2) va 2-bosqich shell (`src/widgets/layout/**`, `src/widgets
 `tests/`, `scripts/`, `design/` — qamrovdan tashqari.
 
 **Ratchet (faqat qisqaradi).** `RAW_CONTROL_RATCHET` — xom element hali qolgan v1 fayllar, kalit — fayl, qiymat —
-sabab (`scripts/eslint-design-v2.mjs`, hozir 5 ta, `MAX_RAW = 5`):
+sabab (`scripts/eslint-design-v2.mjs`, hozir 3 ta, `MAX_RAW = 3`; kamera ishi chiqdi — `src/pages/scan/index.tsx`
+skaner 1-bosqichida v2 ga o'tdi, v1 `src/shared/components/ScannerCameraModal.tsx` 2-bosqichida o'chirildi):
 
-- kamera ishi — `src/pages/scan/index.tsx` (butun `/scan` kamera ekrani), `src/shared/components/ScannerCameraModal.tsx`;
 - yopiq `/market-operators` (`src/pages/market-operators/index.tsx`, ko'chirilmaydi) va yetib bo'lmaydigan
   `src/pages/payments/components/SalaryPaymentPopup.tsx` («Maosh to'lash» yashirin);
 - v1 o'rami `src/shared/components/PrintModeSelect.tsx` (ichi v2, menyu bandlari; `shared/ui` ga ko'chirilguncha).
@@ -474,10 +475,9 @@ Bosqich B integratsiyasida iste'molchisi qolmagan (o'lik) v1 fayllar — `UserIn
 
 **Bitta qator istisnosi** — `// eslint-disable-next-line design-v2/raw-control -- <sabab>` (JSX ichida
 `{/* … */}`), sabab ≥ 10 belgi (test tekshiradi). `reportUnusedDisableDirectives: "error"` — keraksiz bo'lib qolgan
-disable izohi ham xato. Hozir ikkita:
+disable izohi ham xato. Hozir bitta (bekorlardagi telefon «Kamera» tugmasining istisnosi skaner 2-bosqichida tugma
+bilan birga olindi — kamera markaziy «Skaner» orqali):
 
-- **kamera ishi** (ega qarori 2026-10-16, alohida ish) — `src/pages/new_orders/cancelled/detail.tsx` dagi telefon
-  «Kamera» tugmasi (`ScannerCameraModal` bilan birga ko'chiriladi);
 - `src/pages/notifications/ui/CampaignPage.tsx` dagi matn prefiksli maydon — `TextInput` da prefiks sloti yo'q, quti
   `TextInput` klasslarida; slot qo'shilganda `TextInput` ga o'tadi (follow-up).
 
@@ -540,11 +540,11 @@ ko'chirilgan slice'larda **har fayl** — `// dizayn-v2:` belgisiz `.ts` yordamc
 `colour`, `palette`, `dark-pair`, `legacy`, `gradient`, `named-colour`) ruxsat 0; boshqa qoidalar (`money`,
 `tiny-text`, `weight`, `v1-helper` …) baseline bo'yicha qoladi. Ro'yxatlar — `scripts/design-guard.mjs`:
 
-- `V2_SCOPES` — 80 papka (`src/<qatlam>/<slice>`, qatlamdan tashqari yagona — `src/auth`; `src/shared/ui`
-  butunligicha emas — `primitives`, `charts`, `error-page`; yopiq `src/pages/market-operators` yo'q). Scope faylining
+- `V2_SCOPES` — 82 papka (`src/<qatlam>/<slice>`, qatlamdan tashqari yagona — `src/auth`; `src/shared/ui`
+  butunligicha emas — `primitives`, `charts`, `error-page`, `camera`; yopiq `src/pages/market-operators` yo'q). Scope faylining
   rang soni `--update` da baseline'ga yozilmaydi; buzilish «(V2_SCOPES: rang qoidalarida ruxsat 0)» deb chiqadi.
 - `V2_SCOPE_PENDING` — scope ichida hali v1 qolgan fayllar (sabab bilan, `≤ MAX_PENDING`): baseline ruxsati saqlanadi.
-  Hozir 2 ta: `SalaryPaymentPopup.tsx` (yetib bo'lmaydigan), `pages/scan/index.tsx` (kamera ishi); v1
+  Hozir 1 ta: `SalaryPaymentPopup.tsx` (yetib bo'lmaydigan; `pages/scan/index.tsx` skaner 1-bosqichida chiqdi); v1
   `entities/orders/ui/ExtraCostApproval.tsx` iste'molchisiz qolib o'chirildi.
 - `OUTPUT_FORMAT_FILES` — ilova mavzusidan tashqari chiqish formatlari (chop etish HTML'i, termal yorliq / PDF, Excel
   ARGB): rang qoidalari qo'llanmaydi (oq qog'ozdagi qora matn to'g'ri). Faqat `/lib/` dagi `print|export|pdf|label`
@@ -661,7 +661,8 @@ qiymat oshirilmaydi; shovqinli grafik sahnasi — sahna `maxDiffPixels` (sabab i
 **Sahna qachon qo'shiladi yoki o'zgaradi:** yangi rolning bosh ekrani; yangi v2 pattern (ro'yxat, filtr + chiplar,
 forma + qadamlar, dialog → telefonda varaqa, tanlov paneli, skaner holati, KPI + grafik); sahna sahifasi qayta
 tuzilsa (route, holat, maket). id global va kebab-case (PNG nomi, `defineScene` takrorni rad etadi). Faqat v2
-sahifalar; kamera ko'rinishlari yo'q (alohida ish).
+sahifalar; kamera ko'rinishlari sahnalarda yo'q (soxta kamera tasviri piksel bo'yicha beqaror) — ular unit va
+e2e (`FAKE_CAMERA`) testlarida tekshiriladi.
 
 **Holati:** «Visual / visual» hozircha maslahat (required emas): baseline'lar yaratilib (0- va 2-qadam), 5 ta ketma-ket
 yashil PR yugurishidan so'ng ega GitHub sozlamalarida `dev` uchun required qiladi. Har draft bo'lmagan PR push'ida
@@ -724,13 +725,13 @@ karta yo'q · kunduzgi / tungi / 390px skrinshot · to'liq `npm test` + `npm run
 
 | Ko'rsatkich | Son | Manba |
 |---|---|---|
-| v2 ga ko'chirilgan route | 75 / 77 (qolgan: `/scan` — kamera ishi, `/market-operators` — yopiq) | `design/SCREENS.md` |
-| `// dizayn-v2:` belgili fayllar | 367 / 822 qo'riqlanadigan | `npm run design:guard` |
-| `V2_SCOPES` | 80 papka (ichida 680 fayl) | `scripts/design-guard.mjs` |
-| `V2_SCOPE_PENDING` | 2 (`MAX_PENDING = 2`) | `scripts/design-guard.mjs` |
+| v2 ga ko'chirilgan route | 76 / 77 (qolgan: `/market-operators` — yopiq; `/scan` skaner 1-bosqichida, 2026-10-19) | `design/SCREENS.md` |
+| `// dizayn-v2:` belgili fayllar | 375 / 846 qo'riqlanadigan (skaner 2-bosqichi, 2026-10-19) | `npm run design:guard` |
+| `V2_SCOPES` | 83 papka (1-bosqichda `src/widgets/scanner`, `src/shared/ui/camera`; 2-bosqichda `src/features/dispatch-basket` qo'shildi) | `scripts/design-guard.mjs` |
+| `V2_SCOPE_PENDING` | 1 (`MAX_PENDING = 1`; `pages/scan/index.tsx` chiqdi) | `scripts/design-guard.mjs` |
 | `OUTPUT_FORMAT_FILES` | 4 (`MAX_OUTPUT_FORMAT = 4`) | `scripts/design-guard.mjs` |
-| `RAW_CONTROL_RATCHET` / `UI_IMPORT_RATCHET` | 5 / 0 (`MAX_RAW = 5`, `MAX_UI = 0`) | `scripts/eslint-design-v2.mjs` |
-| `design-v2` bitta qator istisnolari | 2 (kamera tugmasi, `CampaignPage` prefiksli maydon) | `src/**` |
+| `RAW_CONTROL_RATCHET` / `UI_IMPORT_RATCHET` | 3 / 0 (`MAX_RAW = 3`, `MAX_UI = 0`; `ScannerCameraModal` o'chirildi) | `scripts/eslint-design-v2.mjs` |
+| `design-v2` bitta qator istisnolari | 1 (`CampaignPage` prefiksli maydon; bekorlardagi kamera tugmasi olindi) | `src/**` |
 | `STAGE_A_PENDING` | 0 (bo'sh bo'lishi shart) | `scripts/eslint-design-v2.mjs` |
 | Vizual sahnalar | 23 × 4 = 92 snapshot | `tests/visual/scenes/` |
 | Commit qilingan vizual baseline'lar | 0 — §12.5 0- va 2-qadamdan keyin 92 | `tests/visual/__screenshots__/` |
@@ -740,10 +741,87 @@ karta yo'q · kunduzgi / tungi / 390px skrinshot · to'liq `npm test` + `npm run
 - **«Visual» baseline'lari va required** (§12.5): `visual.yml` `dev` ga tushadi (birinchi PR — neytral) → ishchi
   branchda «Run workflow (update)» → 92 PNG commit → ketma-ket ikki yugurishda 0 farq (determinizm) → 5 ta yashil PR
   yugurishidan keyin ega `dev` uchun «Visual / visual» ni required qiladi. Shungacha «Visual» maslahat.
-- **Kamera ishi** (alohida, ega qarori 2026-10-16): `/scan` (`src/pages/scan/index.tsx` — `RAW_CONTROL_RATCHET` va
-  `V2_SCOPE_PENDING` da), boshqa sahifalardagi `*-camera` ko'rinishlari, `src/shared/components/ScannerCameraModal.tsx`
-  (ratchet'da), `cancelled/detail.tsx` dagi telefon «Kamera» tugmasi (bitta qator istisnosi). Kamera ko'rinishlari
-  vizual sahnalarda yo'q.
+- **Kamera ishi** (Trello v1eLN2tV; ega qarorlari 2026-10-19, qulflangan):
+  - **Markaziy tugma kontekstli.** Pastki menyuning «Skaner» tugmasi (planshet/desktop — yuqori paneldagi
+    «Skanerlash») sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa (`useScanTarget`, `src/shared/lib/scanner/`)
+    kamerani SHU sahifa ustida, USB skaner bilan aynan bir xil handler'da ochadi (`widgets/scanner/ScannerHost`);
+    aks holda universal `/scan`. **Oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI** — maket uni chizgan,
+    ega «ma'nosiz» dedi. Kamera ichida kontekstni almashtirish (market tanlash, «Qabul qilindi N · Qoldi M ·
+    Topilmadi K») — `ScanTarget.switcher` / `stats`.
+  - **1-bosqich — tayyor:** reyestr va `ScannerHost`, v2 `ScannerCamera` (`src/shared/ui/camera/`, `.el-cam*`,
+    taxta `tizim-scanner`: telefon to'liq ekran, planshet/desktop oyna + yon panel, ruxsat izohi, rad etilgan —
+    platformaga qarab 3 qadam, band / yo'q, oflayn chip, qo'lda kiritish, ro'yxat), `useKeyboardScanner` (Caps Lock,
+    lotin bo'lmagan tartib), universal `/scan` v2 («Ma'lumot» rejimi, «Oxirgi skanerlar · Shu qurilmada», qo'lda
+    kiritish — token yoki havola), resolver (`POST-` pochta, `MCR-` so'rovsiz, 404 → `GET scan/:token` qop yorlig'i,
+    hex kichik harf), `/scan/:token` da qop va market QR natijalari, skaner amalidan keyin kesh yangilanishi,
+    `ScanFeedbackOverlay` v2 (kamera ochiqda chiqmaydi). `/scan` `RAW_CONTROL_RATCHET` va `V2_SCOPE_PENDING` dan
+    chiqdi. Maketdan farq: qo'lda kiritishdagi raqamli klaviatura / «Harflar» yo'q (buyurtma raqami bo'yicha qidiruv
+    API'si yo'q — ega qarori kutiladi); oflayn navbat yo'q.
+  - **2-bosqich — tayyor:** USB skanli har oqim kamera maqsadi bo'ldi (`useOrderQrScanner({ camera })` yoki
+    `useScanTarget`; kamera skani USB handler'ini AYNAN chaqiradi, ikkinchi mantiq yo'q; kamera har skandan keyin
+    yopilmaydi; maketdagi `*-camera` matnlari — sarlavha, kontekst, yo'riqnoma, hisoblagich, ro'yxat «Bekor qilish»
+    bilan faqat server amali hali bajarilmagan bo'lsa, «Tugatish» kamerani yopadi):
+    - `/new-orders/:marketId` — skan = darhol qabul, «Qabul qilindi N · Qoldi M · Topilmadi K», ro'yxatda yo'q kod
+      `GET orders/qr-code/:token` bilan tekshiriladi (boshqa market — rad, 404 — «Topilmadi»), kamera ichida market
+      almashtirish (`GET orders/markets/new`) — kamera ochiq qoladi;
+    - `/new-orders/incoming/:marketId` (`ScanInput` dagi `handleScan`, manba almashtirish, «Qopda yetishmaydi»),
+      filial paketlari va paket ichidagi buyurtmalar, `/mails/:id` (jo'natish, qabul, rad etilganni qabul),
+      `/batches/:id` («HQ'ga yuborish»), `/orders` bekor tablari (HYBRID/REGIONAL menejer — «HQ'ga yuborish», kuryer —
+      «Pochtaga yuborish»; maket yo'q) — tanlash;
+    - `/new-orders/cancelled/:marketId` — avval market QR, so'ng buyurtmalar («QR 04:12 amal qiladi»);
+    - `/dispatch` — **savat qurilmada** (ega D2; `src/features/dispatch-basket`: `localStorage`, foydalanuvchi +
+      filial kaliti, 12 soatdan eskisi va buzilgan yozuv tashlanadi, boshqa varaq bilan sinxron), `/scan/:token`
+      dagi «Kuryerga biriktirish» shu savatga qo'shadi; rad etilgan QR ro'yxatda «Paket … · Rad etildi»;
+    - `/courier-bulk` — kamera ichida «Bekor / Ertaga» rejimi, «Skanerlanganlar · 4 / 7 · 2 ta bekor, 2 ta ertaga»,
+      «Skanerlanmagan N ta buyurtma sotilgan deb belgilanadi»; yakunlash — sahifadagi «Kunni yakunlash» (tasdiq).
+    - **Istisno — `MarkReturnedModal`** (`/orders/edit/:id`, «Marketga topshirish»): oyna ochiq turganda telefonda
+      markaziy tugma oyna ostida qoladi, shuning uchun oynaning o'z «Kamera bilan skanerlash» tugmasi qoldi — u oyna
+      maqsadini (`layer: "dialog"`) v2 `ScannerCamera` da ochadi (sabab fayl izohida).
+    - v1 «Kamera» tugmalari (dispatch, courier-bulk, cancelled — bitta qator istisnosi bilan) va
+      `src/shared/components/ScannerCameraModal.tsx` (ratchet va baseline yozuvi bilan) o'chirildi;
+      `ScanFeedbackOverlay` — umumiy `Portal` ning `toast` qatlamida (`z-[10050]` yo'q), matn — skan natijasi.
+    - E2E (390 px, mock API): `tests/e2e/new-orders-camera.mobile.spec.ts`, `tests/e2e/scanner-*.mobile.spec.ts`
+      (kamera soxta, kod «Qo'lda kiritish» bilan).
+  - **3-bosqich — tayyor:** universal `/scan` rejimlari (`src/pages/scan/model/scanModes.ts`; maket yo'q — eng yaqini
+    `courier-courier-bulk-scanner-camera` segmenti). Segment telefonda kamera ichida (`ScanTarget.modes`, ruxsat izohi
+    holatida ham), planshet/desktopda yon paneldagi «Skaner rejimi» kartasida; bitta rejim qolsa — chizilmaydi.
+    Tanlov qurilmada (`localStorage`, foydalanuvchi kaliti, `try/catch`); ruxsatdan tushgan rejim — sukutga.
+    - «Ma'lumot» (kuryerdan boshqa hammada sukut) — 1-bosqichdagidek;
+    - «Qabul qilish» — `canCreateOrders` va `resolveReceiveMode` ≠ `none` (REGIONAL menejer/registratorda yo'q):
+      market varag'i (`GET orders/markets/new`, son, qidiruv) → `/new-orders/<id>`, kamera O'SHA sahifada ochiq
+      (router holati `scannerArrivalState` → `ScannerHost` sahifa maqsadini kutadi, bayroqni tozalaydi); qabul — F1;
+    - «Kuryerga biriktirish» (segmentda «Biriktirish») — `/dispatch` ruxsati VA backend `assign-to-courier` roli
+      (menejer, registrator; superadmin/admin — yo'q, Trello 1gxmqLj5): tanlansa `/dispatch`, kamera ochiq; bu rejimda
+      `/scan` da o'qilgan buyurtma kodi `/dispatch` ga olib o'tiladi va savatga o'sha sahifa handler'i bilan tushadi;
+    - kuryer «O'zimga olish» (sukut) + «Ma'lumot»: ketma-ket `POST orders/scan-assign` (Mini App oqimi
+      `features/tg-scan/model/useScanAssign` — so'rov asosiy `api` bilan), ro'yxat «Sizga biriktirildi» / «Allaqachon
+      sizda» / «Boshqa kuryerda: <ism>» (ism backend xatosida yo'q — buyurtma bir marta o'qiladi) / xato sababi;
+      buyurtma bo'lmagan yorliq — so'rovsiz rad; «Tugatish» (`finish.keepOpen`) → kesh yangilanadi, xulosa
+      «N ta buyurtma sizga biriktirildi» [Davom etish] [Buyurtmalarimga o'tish].
+    - E2E: `tests/e2e/scanner-universal.mobile.spec.ts`.
+  - **4-bosqich — tayyor:** Sozlamalar → Skaner → «Kamera» kartasi (`common-settings-scanner`,
+    `pages/settings/ui/ScannerPanel.tsx`): «Kamerani sinash» → `/scan` (marketda yo'q), «Asosiy kamera» (orqa —
+    sukut / old), kalitlar «Chiroq — avtomatik», «Uzluksiz skanerlash», «Ovoz», «Tebranish», «Ramka o'lchami»
+    (kichik 208/232 · o'rta 248/280 · katta 288/320 px).
+    - Saqlash: `entities/settings` → `scanner.camera { facing, frame, torchAuto, continuous }` va
+      `scanner.feedback { sound, vibration }`; backend `PATCH auth/my-settings` jsonb ni ochiq saqlaydi (origin/main
+      `updateOwnSettings` — kalit tekshiruvi yo'q), shuning uchun hisobga yoziladi. Qurilmada — `localStorage`
+      ko'zgusi (`shared/lib/preferencesStorage`, `SettingsSync` va sahifa yozadi); `shared` qatlami shundan o'qiydi.
+      Maket matni «shu qurilmada saqlanadi» → «hisobingizda saqlanadi» (haqiqiy xatti-harakat).
+    - `ScannerCamera` ochilishda o'qiydi: asosiy kamera (`preferredCamera`; kamera ichida «Kamerani almashtirish» —
+      shu ochilish uchun, bir nechta kamera bo'lsa, maket `superadmin-scan-camera`), ramka o'lchami — ramka,
+      maslahat o'rni va **skan hududi** (`shared/ui/camera/scanRegion.ts`: ekrandagi ramka `object-cover` hisobi bilan
+      tasvir pikseliga, ±10 % zaxira; maket «faqat ramka ichidagi QR»). «Chiroq — avtomatik» — ega qarori: o'zi
+      yoqilmaydi, chiroqli qurilmada kadr yorqinligi past bo'lsa (`useLowLight`, 1,2 s da bir o'lchov, ketma-ket 2
+      ta) maslahat o'rnida «Yorug'lik kam» + [Chiroqni yoqish]; chiroq bir marta bosilsa — shu ochilishda
+      qaytmaydi; kadrni o'qib bo'lmasa — faqat qo'lda. «Uzluksiz skanerlash» o'chiq — oqim oynasi (`overlay`) shu
+      kamera yuborgan kodning muvaffaqiyatli natijasidan 700 ms keyin yopiladi (xato — ochiq qoladi, USB natijasi
+      yopmaydi); universal `/scan` sahifasiga ta'sir qilmaydi. «Ovoz» / «Tebranish» — `playScanSignal` da
+      (kamera va USB; «Eshitib ko'rish» — `preview`, kalitga qaramaydi).
+    - E2E: `tests/e2e/scanner-settings.mobile.spec.ts` (saqlash; o'chiq uzluksizlikda bitta koddan keyin yopilish).
+  - **Kamera ishi yopildi:** v1 kamera kodi qolmadi (`ScannerCameraModal`, v1 «Kamera» tugmalari, `scanShared`
+    chiqarilgan). Ochiq (ega qarori): oflayn navbat, buyurtma raqami bo'yicha qo'lda kiritish (API yo'q).
+  - Kamera ko'rinishlari vizual sahnalarda yo'q.
 - **Yopiq va yetib bo'lmaydigan v1:** `/market-operators` (ko'chirilmaydi, `V2_SCOPES` da yo'q), `SalaryPaymentPopup`
   («Maosh to'lash» yashirin) — ratchet va pending'da; o'chirish — alohida qaror.
 - **v1 o'rami:** `PrintModeSelect` (ratchet'da, `shared/ui` ga ko'chirilguncha). Iste'molchisi qolmagan (o'lik) v1
@@ -827,8 +905,8 @@ da §11 dan o'zgarishsiz ko'chirildi, G2 va G3 yozuvlari birlashtirishda qo'shil
   (`cancelled/index.tsx`) — bekor qilingan buyurtmasi bor marketlar (qidiruv mijozda — endpoint parametr olmaydi).
   `/new-orders/cancelled/:marketId` (`cancelled/detail.tsx` + `cancelledModel.ts` + `ui/`): `PageHeader` (market
   nomi, son · summa, yagona asosiy «Marketga jo'natish — N ta»), `HandoverStatusAlert` («Market QR kerak» → «Market QR
-  skanerlandi» + amal qilish taymeri; QR talab qilinmasa — neutral), «USB skaner tayyor» qatori + «Kamera» (kamera
-  oynasi `ScannerCameraModal` — v1, keyinroq), `CancelledOrdersTable` (tanlov faqat skaner orqali; «QR buzilgan»
+  skanerlandi» + amal qilish taymeri; QR talab qilinmasa — neutral), «USB skaner tayyor» qatori (kamera — faqat
+  markaziy «Skaner» orqali, skaner 2-bosqich; sahifada skan tugmasi yo'q), `CancelledOrdersTable` (tanlov faqat skaner orqali; «QR buzilgan»
   qatorlarida qo'lda tasdiq), `ManualConfirmDialog` («QR buzilganini tasdiqlash», sabab `Select` — backendga enum
   kodi, ko'rinadigani tarjima). Biznes qoidasi o'zgarmagan: jo'natish faqat market QR skanerlangach (u marketning
   barcha bekorlarini tanlaydi), so'rov tanasi, ovozlar, takroriy/noto'g'ri skan va kirish huquqlari v1 dagidek.
@@ -959,3 +1037,11 @@ da §11 dan o'zgarishsiz ko'chirildi, G2 va G3 yozuvlari birlashtirishda qo'shil
   Ega savollariga sukut javoblari (spec §9) — `route-map.json` izohlarida. Chiqarilgan v1: `ScannerActionButton`,
   `.login-field` CSS, `logo yozuvlik qora.png`, o'lik `auth` / `dispatch` / `courierBulk` / `common:scanner*`
   kalitlari; en/ru ko'plik shakllari («1 order», «2 orders»).
+- **Ko'chirilgan:** skaner 1-bosqichi (Trello v1eLN2tV, 2026-10-19) — universal `/scan` (maketlar `superadmin-scan-camera`,
+  `courier-scan-*`): telefonda `ScannerCamera presentation="page"` (to'liq ekran, «Oxirgi: …», [Qo'lda kiritish]
+  [Chiroq]), planshet/desktop — sarlavha, kamera bloki va yon kartalar («Natija», «USB skaner ham tayyor» + qo'lda
+  kiritish, «Oxirgi skanerlar · Shu qurilmada»); faqat «Ma'lumot» rejimi, topilgan kod → `/scan/:token`; begona sayt
+  havolasi — so'rovsiz «yaroqsiz». Infratuzilma: skan maqsadlari reyestri (`shared/lib/scanner`), kontekstli markaziy
+  tugma va `widgets/scanner/ScannerHost` (shell, ega roziligi), v2 `ScannerCamera` (`shared/ui/camera`). Batafsil va
+  maketdan farqlar — §14 «Kamera ishi». Chiqarilgan v1: `pages/scan/lib/scanShared.ts` (`playScanFeedback` →
+  `shared/lib/scanner/feedback.ts`), `/scan` ning `RAW_CONTROL_RATCHET` va `V2_SCOPE_PENDING` yozuvlari.

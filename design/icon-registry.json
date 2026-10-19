@@ -586,6 +586,12 @@
       "Headphones",
       "HeadphonesIcon"
      ]
+    },
+    {
+     "concept": "Logist",
+     "icon": "Route",
+     "usage": "Rol tanlash kartasi va rol belgisi: Logist (biriktirilgan viloyatlar nazorati)",
+     "replaces": []
     }
    ]
   },

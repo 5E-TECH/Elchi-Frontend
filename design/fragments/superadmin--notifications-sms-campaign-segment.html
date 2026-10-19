@@ -1,0 +1,204 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <h1 class="el-h1">SMS</h1>
+    <p class="el-sub">Kampaniyalar, shablonlar, xarajat va provayder sozlamalari</p>
+  </div>
+</div>
+
+<div class="el-tabs el-hide-mobile" role="tablist" aria-label="SMS bo'limlari">
+  <a class="el-tab" href="@notifications-sms-campaign" role="tab" aria-selected="true" style="text-decoration: none; color: var(--text)">Kampaniya</a>
+  <a class="el-tab" href="@notifications-sms-templates" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Shablonlar</a>
+  <a class="el-tab" href="@notifications-sms-report" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Xarajat</a>
+  <a class="el-tab" href="@notifications-sms-settings" role="tab" aria-selected="false" tabindex="-1" style="text-decoration: none; color: var(--text-muted)">Sozlamalar</a>
+</div>
+<div class="el-tabs el-show-mobile" role="tablist" aria-label="SMS bo'limlari" style="gap: 0">
+  <a class="el-tab" href="@notifications-sms-campaign" role="tab" aria-selected="true" style="flex: 1 1 auto; justify-content: center; padding: 0 8px; text-decoration: none; color: var(--text)">Kampaniya</a>
+  <a class="el-tab" href="@notifications-sms-templates" role="tab" aria-selected="false" tabindex="-1" style="flex: 1 1 auto; justify-content: center; padding: 0 8px; text-decoration: none; color: var(--text-muted)">Shablonlar</a>
+  <a class="el-tab" href="@notifications-sms-report" role="tab" aria-selected="false" tabindex="-1" style="flex: 1 1 auto; justify-content: center; padding: 0 8px; text-decoration: none; color: var(--text-muted)">Xarajat</a>
+  <a class="el-tab" href="@notifications-sms-settings" role="tab" aria-selected="false" tabindex="-1" style="flex: 1 1 auto; justify-content: center; padding: 0 8px; text-decoration: none; color: var(--text-muted)">Sozlamalar</a>
+</div>
+
+<section class="el-card" aria-labelledby="sc-new-title">
+  <div class="el-card-head"><h2 class="el-h2" id="sc-new-title">Yangi kampaniya</h2></div>
+  <div style="display: flex; flex-wrap: wrap; gap: 24px 32px; padding: 20px">
+    <div style="flex: 3 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr)); gap: 16px">
+        <div class="el-field">
+          <label class="el-label" for="sc-tpl">Shablon (ixtiyoriy)</label>
+          <button class="el-input el-select" type="button" id="sc-tpl" aria-haspopup="listbox" aria-expanded="false"><span>Shablonsiz — o'zim yozaman</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+        </div>
+        <div class="el-field">
+          <span class="el-label" id="sc-class-l">Xabar turi</span>
+          <div class="el-input is-readonly" aria-labelledby="sc-class-l" style="justify-content: space-between"><span>Reklama</span><span class="el-badge el-tone-neutral">Faqat reklama</span></div>
+          <span class="el-hint">Xizmat xabarlari tizim hodisalaridan o'zi ketadi</span>
+        </div>
+      </div>
+      <div class="el-field">
+        <label class="el-label" for="sc-text">Xabar matni <span class="el-req">*</span></label>
+        <textarea class="el-input el-textarea" id="sc-text" rows="3" maxlength="1000" placeholder="Masalan: Elchi: kuzgi chegirma 20%. Batafsil: elchipochta.uz" style="height: 96px; flex: none">Elchi: kuzgi chegirma 20%! Promokod &#123;&#123;promo&#125;&#125; bilan 31-oktabrgacha yetkazish bepul. Batafsil: elchipochta.uz</textarea>
+        <div aria-live="polite" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px"><span class="el-badge el-tone-neutral">GSM-7</span><span class="el-small el-muted">189 / 153 belgi</span><span class="el-small el-strong">2 bo'lak</span><span class="el-small el-muted">≈ 1 920 so'm (taxminiy)</span></div>
+      </div>
+      <div style="display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius:10px; background: var(--sunken)">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-muted); margin-top: 1px"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span class="el-small el-muted">Reklama faqat roziligi bor raqamlarga ketadi va oxiriga bekor qilish havolasi qo'shiladi.</span>
+      </div>
+      <div class="el-field">
+        <label class="el-label" for="sc-var-promo">O'zgaruvchilar</label>
+        <div class="el-input" style="gap: 10px">
+            <span class="el-muted" style="white-space: nowrap">&#123;&#123;promo&#125;&#125;</span>
+            <span aria-hidden="true" style="width: 1px; height: 20px; background: var(--border-strong)"></span>
+            <input class="el-input" id="sc-var-promo" type="text" value="KUZ20" style="border: 0; padding: 0; height: 38px; min-width: 0">
+          </div>
+      </div>
+    </div>
+    <div style="flex: 2 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+      <div class="el-field">
+        <span class="el-label" id="sc-aud-l">Kimga</span>
+        <div class="el-seg el-hide-mobile" role="group" aria-labelledby="sc-aud-l" style="display: grid; grid-template-columns: 1fr 1fr"><button type="button" aria-pressed="false">Raqamlar</button><button type="button" aria-pressed="true">Mijozlar segmenti</button></div><div class="el-seg el-show-mobile" role="group" aria-labelledby="sc-aud-l" style="width: 100%"><button type="button" style="flex: 1; height: 44px" aria-pressed="false">Raqamlar</button><button type="button" style="flex: 1; height: 44px" aria-pressed="true">Mijozlar segmenti</button></div>
+      </div>
+      <div class="el-field" style="min-width: 0"><label class="el-label" for="sc-seg" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px">Saqlangan segment<span class="el-badge el-tone-neutral">Taklif · backend kerak</span></label><button class="el-input el-select" type="button" id="sc-seg" aria-haspopup="listbox" aria-expanded="false"><span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Toshkent — faol mijozlar (2–10 buyurtma)</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button><span class="el-hint">Faqat mijoz shartli segmentlar chiqadi; tanlangan shart SMS formasiga ko'chiriladi</span></div>
+      <div style="display: flex; flex-direction: column; gap: 16px; padding-top: 16px; border-top: 1px solid var(--border)">
+        <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px">
+          <span class="el-h3">Mijoz filtrlari</span>
+          <span class="el-xs el-muted">Faqat mijozlarga qo'llanadi</span>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(140px, 100%), 1fr)); gap: 16px">
+          <div class="el-field" style="min-width: 0"><label class="el-label" for="sc-region">Viloyat</label><button class="el-input el-select" type="button" id="sc-region" aria-haspopup="listbox" aria-expanded="false"><span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Toshkent sh.</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button></div>
+          <div class="el-field" style="min-width: 0"><label class="el-label" for="sc-district">Tuman</label><button class="el-input el-select" type="button" id="sc-district" aria-haspopup="listbox" aria-expanded="false"><span style="min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">Chilonzor tumani</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button></div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 16px">
+          <div class="el-field" style="min-width: 0"><label class="el-label" for="sc-market">Market</label><button class="el-input el-select" type="button" id="sc-market" aria-haspopup="listbox" aria-expanded="false"><span style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; min-width: 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>Barchasi</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button></div>
+          <div class="el-field" style="min-width: 0"><label class="el-label" for="sc-range">Oxirgi buyurtma</label><button class="el-input el-select" type="button" id="sc-range" aria-haspopup="dialog" aria-expanded="false"><span style="display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; min-width: 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>01.07 – 30.09.2026</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button></div>
+          <div class="el-field" style="min-width: 0"><span class="el-label" id="sc-cnt-l" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px">Buyurtmalar soni</span><div style="display: flex; align-items: center; gap: 8px"><input class="el-input" id="sc-min" type="number" min="1" inputmode="numeric" placeholder="dan" aria-label="Buyurtmalar soni — dan" value="2" style="flex: 1 1 0; min-width: 0"><span class="el-muted" aria-hidden="true">–</span><input class="el-input" id="sc-max" type="number" min="1" inputmode="numeric" placeholder="gacha" aria-label="Buyurtmalar soni — gacha" value="10" style="flex: 1 1 0; min-width: 0"></div><span class="el-hint" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px"><span class="el-badge el-tone-neutral">Taklif · backend kerak</span>«gacha» SMS kampaniyada hali yo'q</span></div>
+        </div>
+      </div>
+      <div aria-live="polite" style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; padding: 12px 16px; border-radius: 12px; background: var(--sunken)">
+          <div style="display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 220px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-muted); flex: none"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></svg>
+            <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-h2">Auditoriya: 386 ta</span><span class="el-xs el-muted">Yana 41 tasida rozilik yo'q, 3 tasining raqami noto'g'ri — ularga yuborilmaydi</span></div>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px"><span class="el-badge el-tone-neutral">Taklif · backend kerak</span><a class="el-btn el-btn-secondary el-btn-sm" href="@notifications-send-audience-save-dialog" aria-haspopup="dialog"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z"/><path d="M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7"/><path d="M7 3v4a1 1 0 0 0 1 1h7"/></svg>Segmentni saqlash</a></div>
+          <div style="flex: 1 1 100%; min-width: 0; padding-top: 12px; border-top: 1px solid var(--border)"><div style="display: flex; flex-direction: column; gap: 6px; min-width: 0"><div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px"><span class="el-small" id="scq-ql"><span class="el-muted">SMS limiti · </span><span class="el-strong">Bugun qolgan: 420 / 500</span></span><span class="el-xs el-muted" style="white-space: nowrap">Kerak: 386 ta</span></div><div class="el-progress" role="progressbar" aria-labelledby="scq-ql" aria-valuemin="0" aria-valuemax="500" aria-valuenow="80"><span style="width: 16%; background: var(--action)"></span></div></div></div>
+        </div>
+    </div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 16px; padding: 20px; border-top: 1px solid var(--border)">
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px"><span class="el-h3" id="sc-when-l">Yuborish vaqti</span><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>Toshkent vaqti</span></div>
+    <div role="radiogroup" aria-labelledby="sc-when-l" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr)); gap: 8px">
+      <label class="el-choice-card is-selected" style="align-items: flex-start; min-width: 0"><input class="el-radio" type="radio" name="sc-when" checked style="flex-shrink: 0; margin-top: 2px"><span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span class="el-strong">Darhol</span><span class="el-xs el-muted">Tasdiqlangandan keyin navbatga qo'yiladi</span></span></label>
+      <label class="el-choice-card" style="align-items: flex-start; background: var(--sunken); border-color: var(--border); color: var(--text-subtle); cursor: not-allowed; min-width: 0"><input class="el-radio" type="radio" name="sc-when" disabled style="flex-shrink: 0; margin-top: 2px"><span style="display: flex; flex-direction: column; gap: 4px; min-width: 0"><span style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px"><span class="el-strong">Belgilangan vaqtda</span><span class="el-badge el-tone-neutral">Taklif · backend kerak</span></span><span class="el-xs">SMS kampaniyani hozircha rejalashtirib bo'lmaydi</span></span></label>
+    </div>
+    <div class="el-alert el-tone-warning" role="status"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 1px; flex: none"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg><div class="el-alert-body"><div class="el-alert-title">Hozir 19:10 — SMS ertaga, 09:00 da yuboriladi</div><span class="el-small">Reklama 18:00–09:00 oralig'ida yuborilmaydi</span></div></div>
+  </div>
+  <div class="el-card-foot" style="justify-content: flex-end">
+    <a class="el-btn el-btn-primary" href="@notifications-sms-campaign-confirm-dialog" aria-haspopup="dialog" style="flex: 0 1 calc((480px - 100%) * 999)">Ko'rib chiqish</a>
+  </div>
+</section>
+
+<section class="el-card" aria-labelledby="sc-hist-title" style="overflow: hidden">
+  <div class="el-card-head"><h2 class="el-h2" id="sc-hist-title">Kampaniyalar tarixi</h2><span class="el-badge el-tone-neutral">5 ta</span></div>
+  <div class="el-table-wrap el-hide-tablet">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th>Sana</th>
+          <th>Turi</th>
+          <th>Matn</th>
+          <th class="el-num">Navbatda</th>
+          <th class="el-num">Yetkazildi</th>
+          <th class="el-num">Xato</th>
+          <th class="el-num">Bloklangan</th>
+          <th class="el-num">Kutilmoqda</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="white-space: nowrap">Bugun, 11:20</td>
+          <td><span class="el-badge el-tone-neutral">Xizmat xabari</span></td>
+          <td><span style="display: block; max-width: 340px; min-width: 220px">Hurmatli mijoz, 10-oktabr kuni Toshkent HQ qabul punkti 10:00 dan ishlaydi.</span></td>
+          <td class="el-num el-strong">86</td>
+          <td class="el-num">61</td>
+          <td class="el-num"><span class="el-subtle">0</span></td>
+          <td class="el-num"><span class="el-subtle">0</span></td>
+          <td class="el-num el-strong" style="color: var(--warning-fg)">25</td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap">Kecha, 17:05</td>
+          <td><span class="el-badge el-tone-neutral">Reklama</span></td>
+          <td><span style="display: block; max-width: 340px; min-width: 220px">Elchi: Samarqand va Buxoroga yetkazish endi 2 kunda. Batafsil: elchipochta.uz</span></td>
+          <td class="el-num el-strong">2 480</td>
+          <td class="el-num">2 391</td>
+          <td class="el-num el-strong" style="color: var(--danger-fg)">89</td>
+          <td class="el-num">127</td>
+          <td class="el-num"><span class="el-subtle">0</span></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap">06.10.2026, 16:45</td>
+          <td><span class="el-badge el-tone-neutral">Xizmat xabari</span></td>
+          <td><span style="display: block; max-width: 340px; min-width: 220px">Elchi: 7-oktabrdan Samarqand filiali yangi manzilda ishlaydi. Batafsil: elchipochta.uz</span></td>
+          <td class="el-num el-strong">1 240</td>
+          <td class="el-num">1 198</td>
+          <td class="el-num el-strong" style="color: var(--danger-fg)">42</td>
+          <td class="el-num"><span class="el-subtle">0</span></td>
+          <td class="el-num"><span class="el-subtle">0</span></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap">02.10.2026, 12:00</td>
+          <td><span class="el-badge el-tone-neutral">Xizmat xabari</span></td>
+          <td><span style="display: block; max-width: 340px; min-width: 220px">Elchi: 3-oktabr kuni bayram munosabati bilan kuryerlar 14:00 gacha ishlaydi.</span></td>
+          <td class="el-num el-strong">312</td>
+          <td class="el-num">309</td>
+          <td class="el-num el-strong" style="color: var(--danger-fg)">3</td>
+          <td class="el-num"><span class="el-subtle">0</span></td>
+          <td class="el-num"><span class="el-subtle">0</span></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap">28.09.2026, 10:30</td>
+          <td><span class="el-badge el-tone-neutral">Reklama</span></td>
+          <td><span style="display: block; max-width: 340px; min-width: 220px">Elchi: Farg'ona vodiysida yangi filial ochildi. Batafsil: elchipochta.uz</span></td>
+          <td class="el-num el-strong">940</td>
+          <td class="el-num">925</td>
+          <td class="el-num el-strong" style="color: var(--danger-fg)">15</td>
+          <td class="el-num">58</td>
+          <td class="el-num"><span class="el-subtle">0</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <ul class="el-list el-show-tablet el-show-mobile" style="width: 100%; vertical-align: top; margin: 0; padding: 0; list-style: none; flex-direction: column">
+    <li class="el-list-item" style="align-items: flex-start; padding: 12px 20px">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="el-badge el-tone-neutral">Xizmat xabari</span><span class="el-cell-sub">Bugun, 11:20</span></div>
+        <span class="el-small">Hurmatli mijoz, 10-oktabr kuni Toshkent HQ qabul punkti 10:00 dan ishlaydi.</span>
+        <span class="el-xs el-muted" style="display: flex; flex-wrap: wrap; gap: 4px 12px"><span class="el-strong">Navbatda 86</span><span>Yetkazildi 61</span><span>Xato 0</span><span>Bloklangan 0</span><span style="color: var(--warning-fg)">Kutilmoqda 25</span></span>
+      </div>
+    </li>
+    <li class="el-list-item" style="align-items: flex-start; padding: 12px 20px">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="el-badge el-tone-neutral">Reklama</span><span class="el-cell-sub">Kecha, 17:05</span></div>
+        <span class="el-small">Elchi: Samarqand va Buxoroga yetkazish endi 2 kunda. Batafsil: elchipochta.uz</span>
+        <span class="el-xs el-muted" style="display: flex; flex-wrap: wrap; gap: 4px 12px"><span class="el-strong">Navbatda 2 480</span><span>Yetkazildi 2 391</span><span style="color: var(--danger-fg)">Xato 89</span><span>Bloklangan 127</span><span>Kutilmoqda 0</span></span>
+      </div>
+    </li>
+    <li class="el-list-item" style="align-items: flex-start; padding: 12px 20px">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="el-badge el-tone-neutral">Xizmat xabari</span><span class="el-cell-sub">06.10.2026, 16:45</span></div>
+        <span class="el-small">Elchi: 7-oktabrdan Samarqand filiali yangi manzilda ishlaydi. Batafsil: elchipochta.uz</span>
+        <span class="el-xs el-muted" style="display: flex; flex-wrap: wrap; gap: 4px 12px"><span class="el-strong">Navbatda 1 240</span><span>Yetkazildi 1 198</span><span style="color: var(--danger-fg)">Xato 42</span><span>Bloklangan 0</span><span>Kutilmoqda 0</span></span>
+      </div>
+    </li>
+    <li class="el-list-item" style="align-items: flex-start; padding: 12px 20px">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="el-badge el-tone-neutral">Xizmat xabari</span><span class="el-cell-sub">02.10.2026, 12:00</span></div>
+        <span class="el-small">Elchi: 3-oktabr kuni bayram munosabati bilan kuryerlar 14:00 gacha ishlaydi.</span>
+        <span class="el-xs el-muted" style="display: flex; flex-wrap: wrap; gap: 4px 12px"><span class="el-strong">Navbatda 312</span><span>Yetkazildi 309</span><span style="color: var(--danger-fg)">Xato 3</span><span>Bloklangan 0</span><span>Kutilmoqda 0</span></span>
+      </div>
+    </li>
+    <li class="el-list-item" style="align-items: flex-start; padding: 12px 20px">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px"><span class="el-badge el-tone-neutral">Reklama</span><span class="el-cell-sub">28.09.2026, 10:30</span></div>
+        <span class="el-small">Elchi: Farg'ona vodiysida yangi filial ochildi. Batafsil: elchipochta.uz</span>
+        <span class="el-xs el-muted" style="display: flex; flex-wrap: wrap; gap: 4px 12px"><span class="el-strong">Navbatda 940</span><span>Yetkazildi 925</span><span style="color: var(--danger-fg)">Xato 15</span><span>Bloklangan 58</span><span>Kutilmoqda 0</span></span>
+      </div>
+    </li>
+  </ul>
+</section>
