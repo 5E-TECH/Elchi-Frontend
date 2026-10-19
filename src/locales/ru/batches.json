@@ -112,7 +112,7 @@
     "cameraMeter": "выбрано",
     "cameraListTitle": "Последние сканы",
     "cameraSelected": "Выбран №{{id}}",
-    "cameraNotInBatch": "Нет в этом пакете — заказ не относится к нему",
+    "cameraNotInBatch": "Нет в этом пакете · {{code}}",
     "cameraRejectedTitle": "{{code}} · Нет в этом пакете",
     "cameraRejectedText": "Не совпал · не выбран"
   },

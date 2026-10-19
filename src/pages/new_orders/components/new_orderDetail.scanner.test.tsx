@@ -238,9 +238,38 @@ describe("Market yangi buyurtmalari — kamera maqsadi", () => {
     });
 
     await waitFor(() => expect(statsOf()).toEqual({ received: 0, left: 2, missing: 1 }));
-    expect(mocks.playScanFeedback).toHaveBeenCalledWith("missing", "Topilmadi");
+    expect(mocks.playScanFeedback).toHaveBeenCalledWith("missing", "Topilmadi: ccccccccccccccccccccccc0");
     expect(target().list?.[0]).toMatchObject({ title: "ccccccccccccccccccccccc0", subtitle: "Topilmadi", tone: "danger" });
     expect(mocks.receiveMutate).not.toHaveBeenCalled();
+  });
+
+  it("ommaviy «Qabul qilish» dan keyin (ro'yxat yangilangan) shu buyurtma skanerlansa — takror, «Topilmadi» emas", async () => {
+    // Qabul qilingan buyurtma serverda endi «received» — tekshiruvga borsa ham «Topilmadi» bo'lmasin.
+    mocks.fetchScanDetail.mockResolvedValue({
+      type: "order",
+      data: { data: { id: "o1", qr_code_token: "aaaaaaaaaaaaaaaaaaaaaaa1", status: "received", market_id: "121" } },
+    });
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByRole("heading", { level: 1, name: "Ipak Yo'li Savdo" });
+
+    await user.click(screen.getByRole("checkbox", { name: "№o1 ni tanlash" }));
+    await user.click(screen.getByRole("button", { name: "Qabul qilish — 1 ta buyurtma" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Qo'lda qabul qilish" });
+    // Qayta so'rov javobi — qabul qilingan buyurtmasiz.
+    mocks.responses.set("121", query({ data: [mocks.ordersByMarket["121"][1]] }));
+    await user.click(within(dialog).getByRole("button", { name: "Tasdiqlash" }));
+    expect(mocks.receiveMutate).toHaveBeenCalledWith({ orderIds: ["o1"] }, expect.any(Object));
+    await waitFor(() => expect(statsOf()).toEqual({ received: 1, left: 1, missing: 0 }));
+
+    await act(async () => {
+      await target().onScan("aaaaaaaaaaaaaaaaaaaaaaa1", "camera");
+    });
+
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("duplicate", expect.any(String));
+    expect(statsOf()).toEqual({ received: 1, left: 1, missing: 0 });
+    expect(target().list?.map((item) => item.key)).toEqual(["received:o1"]);
+    expect(mocks.receiveMutate).toHaveBeenCalledTimes(1);
   });
 
   it("shu marketning yangi buyurtmasi ro'yxatda hali yo'q — server tasdiqlasa darhol qabul qilinadi", async () => {

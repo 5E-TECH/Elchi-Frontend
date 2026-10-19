@@ -34,7 +34,6 @@ const mocks = vi.hoisted(() => ({
   post: vi.fn(),
   scanner: null as ScannerOptions | null,
   playScanFeedback: vi.fn(),
-  playMissingOrderFeedback: vi.fn(),
 }));
 
 vi.mock("../../../shared/api/api", () => ({
@@ -52,7 +51,6 @@ vi.mock("../../../shared/lib/useOrderQrScanner", () => ({
 vi.mock("../../../shared/lib/scanner/feedback", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../shared/lib/scanner/feedback")>()),
   playScanFeedback: mocks.playScanFeedback,
-  playMissingOrderFeedback: mocks.playMissingOrderFeedback,
 }));
 
 /** Mahalliy vaqt (test qaysi vaqt mintaqasida yurmasin — «04.10.2026, 11:20» o'zgarmaydi). */
@@ -163,7 +161,6 @@ beforeEach(() => {
   mocks.get.mockReset();
   mocks.post.mockReset();
   mocks.playScanFeedback.mockReset();
-  mocks.playMissingOrderFeedback.mockReset();
   mocks.scanner = null;
   respond();
 });

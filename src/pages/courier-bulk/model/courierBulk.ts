@@ -71,22 +71,6 @@ export const mergeCourierBulkOrders = (pages: CourierBulkOrder[][]): CourierBulk
   return [...byId.values()];
 };
 
-export const findCourierBulkOrderByScanCandidates = (
-  orders: CourierBulkOrder[],
-  candidates: string[],
-) => {
-  const normalizedCandidates = new Set(
-    candidates.map((candidate) => candidate.trim().toLowerCase()).filter(Boolean),
-  );
-
-  return orders.find((order) => {
-    if (normalizedCandidates.has(String(order.id).toLowerCase())) return true;
-
-    const token = order.qr_code_token?.trim().toLowerCase();
-    return Boolean(token && normalizedCandidates.has(token));
-  });
-};
-
 export const getCourierBulkCounts = (
   orders: Array<{ id: string }>,
   actions: Record<string, CourierBulkAction>,

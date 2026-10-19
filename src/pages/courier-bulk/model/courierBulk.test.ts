@@ -3,7 +3,6 @@ import {
   extractCourierBulkOrders,
   extractCourierBulkTotal,
   filterCourierBulkOrders,
-  findCourierBulkOrderByScanCandidates,
   getCourierBulkCounts,
   getCourierBulkFinalizeLabelCounts,
   getCourierBulkUnmarkedCount,
@@ -33,17 +32,6 @@ describe("courierBulk model", () => {
       [{ id: "1" } as any, { id: "2" } as any],
       [{ id: "2" } as any, { id: "3" } as any],
     ]).map((order) => order.id)).toEqual(["1", "2", "3"]);
-  });
-
-  it("finds order by scanner id or token candidates", () => {
-    const orders = [
-      { id: "1", qr_code_token: "abc-token" },
-      { id: "2", qr_code_token: "xyz-token" },
-    ] as any[];
-
-    expect(findCourierBulkOrderByScanCandidates(orders, ["2"])?.id).toBe("2");
-    expect(findCourierBulkOrderByScanCandidates(orders, ["abc-token"])?.id).toBe("1");
-    expect(findCourierBulkOrderByScanCandidates(orders, ["missing"])).toBeUndefined();
   });
 
   it("counts default sold and scanned actions", () => {

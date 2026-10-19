@@ -307,6 +307,25 @@ describe("CourierBulkPage — kamera (markaziy «Skaner» tugmasi)", () => {
     expect(mocks.feedback).toHaveBeenLastCalledWith("success", "Ertaga qoldirishga belgilandi №10 · Ali");
   });
 
+  it("qatorda qo'lda belgilangan — «skanerlandi» ga kirmaydi, kamera ro'yxatida yo'q", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<CourierBulkPage />);
+    expect(await screen.findByText("Ali")).toBeInTheDocument();
+
+    await user.click(within(screen.getByRole("radiogroup", { name: "Vali: natija" })).getByRole("radio", { name: "Bekor" }));
+    expect(target().progress).toMatchObject({ done: 0, total: 3 });
+    expect(target().list).toEqual([]);
+
+    await act(async () => {
+      await target().onScan("tok-10-qr", "camera");
+    });
+    await waitFor(() => expect(target().progress).toMatchObject({ done: 1, total: 3 }));
+    expect(target().list?.map((item) => item.key)).toEqual(["10"]);
+    expect(target().listDescription).toBe("1 / 3 · 1 ta bekor, 0 ta ertaga");
+    // Qo'lda «Bekor» qilingan Vali sotilgan deb hisoblanmaydi.
+    expect(target().listNote).toBe("Skanerlanmagan 1 ta buyurtma sotilgan deb belgilanadi.");
+  });
+
   it("topilmagan kod — xato signali matn bilan, belgi yo'q", async () => {
     renderWithProviders(<CourierBulkPage />);
     expect(await screen.findByText("Ali")).toBeInTheDocument();

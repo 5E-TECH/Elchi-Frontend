@@ -720,7 +720,7 @@ const Orders = () => {
   }, []);
 
   // Kamera ro'yxati (Trello v1eLN2tV 2-bosqich): skan tartibi (`order:<id>` / `missing:<kod>`) va ro'yxatda yo'q kodlar.
-  const { recent: recentScanKeys, touch: touchRecentScan } = useRecentScans();
+  const { recent: recentScanKeys, touch: touchRecentScan, clear: clearRecentScans } = useRecentScans();
   const [rejectedScans, setRejectedScans] = useState<{ code: string; reason: string }[]>([]);
 
   /** Rad etilgan kod — kamera ro'yxatida «<kod> · Rad etildi · <sabab>» (tanlovga kirmaydi). */
@@ -850,6 +850,9 @@ const Orders = () => {
     SendToPost.mutate(Array.from(selectedCancelledIds), {
       onSuccess: () => {
         setSelectedCancelledIds(new Set());
+        // Yuborilgandan keyin kamera ro'yxati yangidan (eski «Rad etildi» qatorlari qolmaydi).
+        setRejectedScans([]);
+        clearRecentScans();
         notify.success(t("sentToHqSuccess"));
       },
       onError: (error: unknown) => {
@@ -857,7 +860,7 @@ const Orders = () => {
         notify.error(backendMessage ?? t("sendToHqError"));
       },
     });
-  }, [SendToPost, selectedCancelledIds, t]);
+  }, [SendToPost, clearRecentScans, selectedCancelledIds, t]);
 
   // Bo'sh ro'yxatda «Filtrlarni tozalash»: holat tabi (navigatsiya) qoladi, Holat filtridan tanlangan to'plam
   // (`custom`) esa tozalanadi.

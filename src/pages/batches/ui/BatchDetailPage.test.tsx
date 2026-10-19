@@ -34,7 +34,6 @@ const mocks = vi.hoisted(() => ({
   patch: vi.fn(),
   scanner: null as ScannerOptions | null,
   playScanFeedback: vi.fn(),
-  playMissingOrderFeedback: vi.fn(),
 }));
 
 vi.mock("../../../shared/api/api", () => ({
@@ -52,7 +51,6 @@ vi.mock("../../../shared/lib/useOrderQrScanner", () => ({
 vi.mock("../../../shared/lib/scanner/feedback", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../../shared/lib/scanner/feedback")>()),
   playScanFeedback: mocks.playScanFeedback,
-  playMissingOrderFeedback: mocks.playMissingOrderFeedback,
 }));
 
 const local = (day: number, h: number, m: number) => new Date(2026, 9, day, h, m).toISOString();
@@ -136,7 +134,6 @@ afterEach(() => {
   mocks.get.mockReset();
   mocks.patch.mockReset();
   mocks.playScanFeedback.mockReset();
-  mocks.playMissingOrderFeedback.mockReset();
 });
 
 describe("BatchDetailPage — /batches/:id", () => {
@@ -231,7 +228,7 @@ describe("BatchDetailPage — /batches/:id", () => {
     act(() => mocks.scanner!.onMissing("qr-boshqa"));
     expect(await screen.findByText("QR topilmadi")).toBeInTheDocument();
     expect(screen.getByText("Bu QR kod ushbu paketdagi buyurtmalarga mos kelmadi.")).toBeInTheDocument();
-    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("missing", "Bu paketda yo'q — bu paketga tegishli emas");
+    expect(mocks.playScanFeedback).toHaveBeenLastCalledWith("missing", "Bu paketda yo'q · qr-boshqa");
   });
 
   it("kamera maqsadi: «HQ'ga yuborish · Paket B-172», «N / jami ta tanlandi», ro'yxat va «Bu paketda yo'q»", async () => {

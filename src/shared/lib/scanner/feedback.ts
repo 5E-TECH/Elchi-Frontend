@@ -260,7 +260,3 @@ export const playScanFeedback = (type: ScanFeedbackType, message?: string, sourc
 
   playScanSignal(type);
 };
-
-export const playMissingOrderFeedback = () => {
-  void playScanFeedback("missing");
-};

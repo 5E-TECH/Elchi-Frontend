@@ -113,12 +113,3 @@ export const openMarket = async (page: Page) => {
 
 /** Kamera oynasi (telefonda to'liq ekran) — sarlavha «Qabul qilish». */
 export const cameraDialog = (page: Page) => page.getByRole("dialog", { name: "Qabul qilish" });
-
-/** «Qo'lda kiritish» varag'i orqali kod (kamera ruxsatisiz ham ishlaydi). */
-export const enterManually = async (page: Page, code: string) => {
-  await cameraDialog(page).getByRole("button", { name: "Qo'lda kiritish" }).first().click();
-  const sheet = page.getByRole("dialog", { name: "Kodni qo'lda kiriting" });
-  await sheet.getByRole("textbox").fill(code);
-  await sheet.getByRole("button", { name: "Qo'shish" }).click();
-  await expect(sheet).toBeHidden();
-};

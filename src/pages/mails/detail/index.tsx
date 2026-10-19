@@ -396,8 +396,16 @@ const MailDetailPage = () => {
   const { selectedIds, allSelected, someSelected, toggleAll, toggleOne, selectOne, deselectOne, clearSelection } =
     useMailDetailState(orders);
   // Kamera ro'yxati: skan tartibi (`order:<id>` / `missing:<kod>`) va pochtada yo'q kodlar.
-  const { recent: recentScanKeys, touch: touchRecentScan } = useRecentScans();
+  const { recent: recentScanKeys, touch: touchRecentScan, clear: clearRecentScans } = useRecentScans();
   const [rejectedCodes, setRejectedCodes] = useState<string[]>([]);
+  // Boshqa pochta / paketga o'tilsa (sahifa qayta o'rnatilmaydi) — kamera ro'yxati yangidan. Effekt emas, render
+  // paytida (React tavsiyasi): oldingisining «… yo'q» qatorlari bir kadr ham yangisida turmaydi.
+  const [scanListOwner, setScanListOwner] = useState(id);
+  if (scanListOwner !== id) {
+    setScanListOwner(id);
+    setRejectedCodes([]);
+    clearRecentScans();
+  }
   const hasRefusedOrders = orders.some((order) => REFUSED_MAIL_ORDER_STATUSES.has(order.status));
   const canManualSelectRefusedOrder =
     !isOldDetail &&

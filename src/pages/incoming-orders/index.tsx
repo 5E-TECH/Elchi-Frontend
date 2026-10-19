@@ -99,7 +99,8 @@ const orderDetail = (order: IncomingOrder) =>
  * almashtiriladi (`/new-orders/incoming/:id`, kamera ochiq qoladi); qop to'liq emas bo'lsa — ogohlantirish.
  */
 const IncomingOrdersPage = () => {
-  const { t } = useTranslation("common");
+  const { t, i18n } = useTranslation("common");
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const navigate = useNavigate();
   const { marketId } = useParams<{ marketId: string }>();
   const role = useSelector((state: RootState) => state.role.role);
@@ -119,8 +120,14 @@ const IncomingOrdersPage = () => {
   const [scannedIds, setScannedIds] = useState<Set<string>>(new Set());
   const [scannedTokens, setScannedTokens] = useState<string[]>([]);
   const [message, setMessage] = useState<ScanMessageData | null>(null);
-  /** Oxirgi qop skani to'liq emas: qopda yana nechta posilka yetishmaydi (kamera ogohlantirishi). */
-  const [bagShortage, setBagShortage] = useState(0);
+  /**
+   * Oxirgi qop skani: qop a'zolari va qopdagi jami posilka. «Qopda yetishmaydi N» shundan har renderda hisoblanadi —
+   * kamerada qopdagi posilka «Bekor qilish» bilan olinsa ham son to'g'ri qoladi.
+   */
+  const [lastBag, setLastBag] = useState<{ memberIds: string[]; total: number } | null>(null);
+  const bagShortage = lastBag
+    ? Math.max(0, lastBag.total - lastBag.memberIds.filter((id) => scannedIds.has(id)).length)
+    : 0;
 
   /**
    * ⚠️ `market_id` — manba filtri. Hamkor posilka yaratganda `elchi_market_id`
@@ -191,7 +198,7 @@ const IncomingOrdersPage = () => {
     setListVersion(query.dataUpdatedAt);
     setScannedIds(new Set());
     setScannedTokens([]);
-    setBagShortage(0);
+    setLastBag(null);
   }
 
   /**
@@ -217,7 +224,7 @@ const IncomingOrdersPage = () => {
     const marked = members.filter((order) => scannedIds.has(order.id)).length + fresh.length;
     const text = t("incomingBatchMarked", { size: total, count: marked });
     void playScanFeedback("success", text);
-    setBagShortage(Math.max(0, total - marked));
+    setLastBag({ memberIds: members.map((order) => order.id), total });
     setMessage({
       tone: marked < total ? "warn" : "success",
       text,
@@ -323,7 +330,7 @@ const IncomingOrdersPage = () => {
         }
         setScannedIds(new Set());
         setScannedTokens([]);
-        setBagShortage(0);
+        setLastBag(null);
         void query.refetch();
         inputRef.current?.focus();
       },
@@ -357,7 +364,7 @@ const IncomingOrdersPage = () => {
     .map((order) => ({
       key: order.id,
       title: [orderLabel(order), order.customer?.name?.trim()].filter(Boolean).join(" · "),
-      subtitle: [districtName(order), typeof order.total_price === "number" ? formatMoneyLocalized(order.total_price) : null]
+      subtitle: [districtName(order), typeof order.total_price === "number" ? formatMoneyLocalized(order.total_price, { language }) : null]
         .filter((part) => part && part !== "—")
         .join(" · "),
       tone: "success",
@@ -371,7 +378,11 @@ const IncomingOrdersPage = () => {
       ? {
           id: `incoming:${marketId}`,
           title: t("incoming.cameraTitle"),
-          context: t("incoming.cameraContext", { source: cameraSource, count: cameraArrived }),
+          context: t("incoming.cameraContext", {
+            source: cameraSource,
+            count: cameraArrived,
+            value: formatNumberLocalized(cameraArrived, { language }),
+          }),
           note: { title: t("incoming.cameraNoteTitle"), text: t("incoming.cameraNoteText", { source: cameraSource }) },
           progress: { done: scannedIds.size, total: orders.length, label: t("incoming.cameraMeter") },
           stats:
@@ -390,7 +401,10 @@ const IncomingOrdersPage = () => {
               return (result.data ?? []).map((item) => ({
                 value: item.market_id,
                 label: sourceLabel(item),
-                meta: t("incoming.parcelsCount", { count: item.orders_count }),
+                meta: t("incoming.parcelsCount", {
+                  count: item.orders_count,
+                  value: formatNumberLocalized(item.orders_count, { language }),
+                }),
               }));
             },
             onSelect: (value) => navigate(`/new-orders/incoming/${value}`),

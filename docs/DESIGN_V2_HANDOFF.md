@@ -113,7 +113,12 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     boshqa market rad, kamera ichida market almashtirish; kiruvchi, filial paketlari, bekorlar, pochta, paket
     jo'natish, `/orders` bekor tablari — tanlash; `/dispatch` savati qurilmada va `/scan/:token` «Kuryerga
     biriktirish» shu savatga; `/courier-bulk` — kamera ichida «Bekor / Ertaga»). v1 «Kamera» tugmalari va
-    `ScannerCameraModal` o'chirildi. Istisno: `MarkReturnedModal` ning o'z kamera tugmasi (markaziy tugma oyna ostida).
+    `ScannerCameraModal` o'chirildi; bekorlardagi sarlavha «Market QR skanerlash» tugmasi ham olib tashlandi (bitta
+    ekranda ikkinchi skan tugmasi yo'q — tizim-scanner §09; 2026-10-17 dagi qaror shu bilan almashdi). Istisno:
+    `MarkReturnedModal` ning o'z kamera tugmasi (markaziy tugma oyna ostida).
+  - 2-bosqich follow-up (ega qarori kerak): `playScanFeedback` faqat bitta matn oladi — maketdagi «sarlavha + tafsilot»
+    natija qatori 1-bosqich API o'zgarishini talab qiladi; `/dispatch` savati chiqishda (logout) tozalanmaydi — sessiya
+    tugashi ham `logout()` orqali, savat D2 bo'yicha qurilmada qoladi.
   - 3-bosqich — qolgan: universal rejimlar «Ma'lumot · Qabul qilish · Kuryerga biriktirish» (savat —
     `src/features/dispatch-basket`), kuryerda «O'zimga olish»; oflayn navbat, buyurtma raqami bo'yicha qo'lda kiritish
     (API yo'q) — ega qarori kutiladi.

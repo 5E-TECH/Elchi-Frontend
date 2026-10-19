@@ -498,7 +498,7 @@ const CourierOrders = () => {
   const selectedSendableCount = selectableOrders.filter((order) => selectedIds.has(order.id)).length;
 
   // Kamera ro'yxati (Trello v1eLN2tV 2-bosqich): skan tartibi (`order:<id>` / `missing:<kod>`) va rad etilgan kodlar.
-  const { recent: recentScanKeys, touch: touchRecentScan } = useRecentScans();
+  const { recent: recentScanKeys, touch: touchRecentScan, clear: clearRecentScans } = useRecentScans();
   const [rejectedScans, setRejectedScans] = useState<{ code: string; reason: string }[]>([]);
 
   /** Rad etilgan kod — kamera ro'yxatida «<kod> · Rad etildi · <sabab>» (tanlovga kirmaydi). */
@@ -790,6 +790,9 @@ const CourierOrders = () => {
           return next;
         });
         setSelectedIds(new Set());
+        // Yuborilgandan keyin kamera ro'yxati yangidan (eski «Rad etildi» qatorlari qolmaydi).
+        setRejectedScans([]);
+        clearRecentScans();
       },
       onError: notifyActionError,
     });

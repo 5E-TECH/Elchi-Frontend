@@ -176,7 +176,7 @@ const NewOrderDetail = () => {
       const code = extractScannerToken(rawValue) ?? rawValue.trim();
       setMissingCodes((prev) => (prev.includes(code) ? prev : [...prev, code]));
       const message = t("marketOrders.camera.notFound");
-      void playScanFeedback("missing", message);
+      void playScanFeedback("missing", t("marketOrders.camera.notFoundCode", { code }));
       scanNotify.warning(message, { description: code, duration: 3000 });
     },
     [t],
@@ -278,6 +278,14 @@ const NewOrderDetail = () => {
           return;
         }
 
+        // Shu sahifada (ommaviy «Qabul qilish» yoki skan bilan) qabul qilingan — takror, «Topilmadi» emas.
+        const scannedId = String(scanned.id);
+        if (receivedOrderIds.has(scannedId) || receivedLog.some((order) => String(order.id) === scannedId)) {
+          rememberReceivedScan(scanned, rawValue);
+          showAlreadyReceivedFeedback(scanned.id);
+          return;
+        }
+
         const scannedMarketId = String(scanned.market_id ?? scanned.market?.id ?? "").trim();
         if (scannedMarketId && scannedMarketId !== String(marketId)) {
           const otherName =
@@ -308,7 +316,17 @@ const NewOrderDetail = () => {
         lookupKeysRef.current.delete(lookupKey);
       }
     },
-    [marketId, marketsData, markMissingCode, receiveScannedOrder, showAlreadyReceivedFeedback, t],
+    [
+      marketId,
+      marketsData,
+      markMissingCode,
+      receiveScannedOrder,
+      receivedLog,
+      receivedOrderIds,
+      rememberReceivedScan,
+      showAlreadyReceivedFeedback,
+      t,
+    ],
   );
 
   const scannerEnabled = canReceive && rawOrders.length > 0;
@@ -462,6 +480,8 @@ const NewOrderDetail = () => {
             return next;
           });
           logReceived(accepted);
+          // Ommaviy qabul ham skan kalitlariga yoziladi: keyin skanerlansa — «Topilmadi» emas, takror ogohlantirish.
+          accepted.forEach((order) => rememberReceivedScan(order));
           setIsReceiveConfirmOpen(false);
           setSelectedIds(new Set());
           if (isAll) {
@@ -479,7 +499,7 @@ const NewOrderDetail = () => {
         },
       },
     );
-  }, [location.key, logReceived, navigate, orders.length, receiveMutation, refetch, selectedOrders, t]);
+  }, [location.key, logReceived, navigate, orders.length, receiveMutation, refetch, rememberReceivedScan, selectedOrders, t]);
 
   const handlePrint = useCallback(
     async (mode: string) => {

@@ -865,8 +865,8 @@ da §11 dan o'zgarishsiz ko'chirildi, G2 va G3 yozuvlari birlashtirishda qo'shil
   (`cancelled/index.tsx`) — bekor qilingan buyurtmasi bor marketlar (qidiruv mijozda — endpoint parametr olmaydi).
   `/new-orders/cancelled/:marketId` (`cancelled/detail.tsx` + `cancelledModel.ts` + `ui/`): `PageHeader` (market
   nomi, son · summa, yagona asosiy «Marketga jo'natish — N ta»), `HandoverStatusAlert` («Market QR kerak» → «Market QR
-  skanerlandi» + amal qilish taymeri; QR talab qilinmasa — neutral), «USB skaner tayyor» qatori + «Kamera» (kamera
-  oynasi `ScannerCameraModal` — v1, keyinroq), `CancelledOrdersTable` (tanlov faqat skaner orqali; «QR buzilgan»
+  skanerlandi» + amal qilish taymeri; QR talab qilinmasa — neutral), «USB skaner tayyor» qatori (kamera — faqat
+  markaziy «Skaner» orqali, skaner 2-bosqich; sahifada skan tugmasi yo'q), `CancelledOrdersTable` (tanlov faqat skaner orqali; «QR buzilgan»
   qatorlarida qo'lda tasdiq), `ManualConfirmDialog` («QR buzilganini tasdiqlash», sabab `Select` — backendga enum
   kodi, ko'rinadigani tarjima). Biznes qoidasi o'zgarmagan: jo'natish faqat market QR skanerlangach (u marketning
   barcha bekorlarini tanlaydi), so'rov tanasi, ovozlar, takroriy/noto'g'ri skan va kirish huquqlari v1 dagidek.

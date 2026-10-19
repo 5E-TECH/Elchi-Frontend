@@ -212,16 +212,21 @@ const CourierBulkPage = () => {
     [forgetRecentScan],
   );
 
-  // Kamera ro'yxati — skan bilan belgilanganlar (bekor / ertaga), yangisi birinchi.
-  const scannedOrders = useMemo(
-    () =>
-      orderByRecent(
-        orders.filter((order) => actions[order.id] === "cancel" || actions[order.id] === "tomorrow"),
-        (order) => order.id,
-        recentScanIds,
+  // Kamera ro'yxati — faqat SKAN bilan belgilanganlar (bekor / ertaga), yangisi birinchi. Qatordagi tanlov bilan
+  // qo'lda belgilanganlar «N / M ta skanerlandi» ga kirmaydi va kamera «Bekor qilish» ularga tegmaydi.
+  const scannedOrders = useMemo(() => {
+    const scannedIds = new Set(recentScanIds);
+    return orderByRecent(
+      orders.filter(
+        (order) =>
+          scannedIds.has(order.id) && (actions[order.id] === "cancel" || actions[order.id] === "tomorrow"),
       ),
-    [actions, orders, recentScanIds],
-  );
+      (order) => order.id,
+      recentScanIds,
+    );
+  }, [actions, orders, recentScanIds]);
+  const scannedCancelCount = scannedOrders.filter((order) => actions[order.id] === "cancel").length;
+  const scannedTomorrowCount = scannedOrders.length - scannedCancelCount;
   const cameraList = useMemo<ScanTargetListItem[]>(
     () =>
       scannedOrders.map((order) => {
@@ -243,7 +248,10 @@ const CourierBulkPage = () => {
     [actions, language, scannedOrders, t, unmarkScannedOrder],
   );
   const num = (value: number) => formatNumberLocalized(value, { language });
-  const unscannedCount = orders.length - scannedOrders.length;
+  // «Skanerlanmagan N ta … sotilgan deb belgilanadi» — bekor / ertaga belgisi yo'qlar (skan yoki qatordagi tanlov).
+  const unscannedCount = orders.filter(
+    (order) => actions[order.id] !== "cancel" && actions[order.id] !== "tomorrow",
+  ).length;
 
   useOrderQrScanner({
     orders,
@@ -270,8 +278,8 @@ const CourierBulkPage = () => {
       listDescription: t("camera.listDescription", {
         done: num(scannedOrders.length),
         total: num(orders.length),
-        cancel: num(counts.cancel),
-        tomorrow: num(counts.tomorrow),
+        cancel: num(scannedCancelCount),
+        tomorrow: num(scannedTomorrowCount),
       }),
       listNote: t("camera.unscanned", { value: num(unscannedCount) }),
       finish: { label: t("ui:camera.action.finish"), onFinish: () => undefined },

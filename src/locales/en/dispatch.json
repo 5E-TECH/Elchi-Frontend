@@ -99,6 +99,7 @@
     "wrongType": "Wrong QR type — scan the QR code on the order label",
     "rejectedPackage": "Package {{code}}",
     "rejectedPost": "Mail {{code}}",
+    "rejectedMarketQr": "Market QR {{code}}",
     "rejectedWrongType": "not an order QR code",
     "rejected": "Rejected · {{reason}}"
   }

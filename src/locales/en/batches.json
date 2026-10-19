@@ -102,7 +102,7 @@
     "cameraMeter": "selected",
     "cameraListTitle": "Recent scans",
     "cameraSelected": "Selected №{{id}}",
-    "cameraNotInBatch": "Not in this package — the order belongs elsewhere",
+    "cameraNotInBatch": "Not in this package · {{code}}",
     "cameraRejectedTitle": "{{code}} · Not in this package",
     "cameraRejectedText": "No match · not selected"
   },

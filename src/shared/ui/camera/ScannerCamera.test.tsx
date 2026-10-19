@@ -207,6 +207,26 @@ describe("ScannerCamera — desktop/planshet oynasi (§06)", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it("o'ng panelda ko'pi bilan 4 qator, qolgani — «Yana N ta ro'yxatda» → «Ro'yxat» varag'ida hammasi", async () => {
+    const user = userEvent.setup();
+    const list = Array.from({ length: 6 }, (_, index) => ({
+      key: String(index),
+      title: `№${10250 + index}`,
+      tone: "success" as const,
+    }));
+    renderWithProviders(<ScannerCamera target={makeTarget({ list, listTitle: "Qabul qilinganlar" })} onClose={vi.fn()} />);
+    const dialog = await screen.findByRole("dialog", { name: "Qabul qilish" });
+    const panel = within(dialog).getByText("Qabul qilinganlar").parentElement!;
+    // Panel ro'yxati siqilmaydi (pastki chip va tugmalar ustiga chiqmaydi) — skroll yon panelning o'zida.
+    expect(panel).toHaveClass("shrink-0");
+    expect(within(panel).getAllByRole("listitem")).toHaveLength(4);
+    expect(within(panel).getByText("Yana 2 ta ro'yxatda")).toBeInTheDocument();
+
+    await user.click(within(panel).getByRole("button", { name: "Ro'yxat" }));
+    const sheet = await screen.findByRole("dialog", { name: "Qabul qilinganlar" });
+    expect(within(sheet).getAllByRole("listitem")).toHaveLength(6);
+  });
+
   it("`finish` yo'q — asosiy amal «Yopish»", async () => {
     const onClose = vi.fn();
     const user = userEvent.setup();

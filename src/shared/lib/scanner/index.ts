@@ -36,7 +36,6 @@ export {
 } from "./scannerHost";
 export type { OpenScannerResult } from "./scannerHost";
 export {
-  playMissingOrderFeedback,
   playScanFeedback,
   playScanSignal,
   SCAN_FEEDBACK_EVENT,

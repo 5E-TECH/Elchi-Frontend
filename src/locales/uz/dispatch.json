@@ -94,6 +94,7 @@
     "wrongType": "Noto'g'ri QR turi — buyurtma yorlig'idagi QR kodni skanerlang",
     "rejectedPackage": "Paket {{code}}",
     "rejectedPost": "Pochta {{code}}",
+    "rejectedMarketQr": "Market QR {{code}}",
     "rejectedWrongType": "buyurtma QR kodi emas",
     "rejected": "Rad etildi · {{reason}}"
   }

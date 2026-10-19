@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
-import { cameraDialog, enterManually, mockNewOrdersCameraApi, openMarket, OTHER_TOKEN, OWN_TOKEN } from "./support/newOrdersCamera";
+import { cameraDialog, mockNewOrdersCameraApi, openMarket, OTHER_TOKEN, OWN_TOKEN } from "./support/newOrdersCamera";
+import { enterCode, expectNoHorizontalScroll, FAKE_CAMERA } from "./support/scannerCamera";
 
 /**
  * 390px: `/new-orders/:marketId` — markaziy «Skaner» tugmasi kamerani SHU sahifa ustida ochadi (ega 2026-10-19).
@@ -7,16 +8,7 @@ import { cameraDialog, enterManually, mockNewOrdersCameraApi, openMarket, OTHER_
  * kamera ichida market almashtirilsa — boshqa sahifa, kamera ochiq.
  */
 // Soxta kamera (ruxsat berilgan): kamera faol holatda ochiladi — hisoblagich va natija xabari ko'rinadi.
-test.use({
-  permissions: ["camera"],
-  launchOptions: {
-    args: [
-      "--host-resolver-rules=MAP api.elchipochta.uz ~NOTFOUND",
-      "--use-fake-ui-for-media-stream",
-      "--use-fake-device-for-media-stream",
-    ],
-  },
-});
+test.use(FAKE_CAMERA);
 
 test.describe("Market yangi buyurtmalari — kamera, 390px", () => {
   test.describe.configure({ timeout: 90_000 });
@@ -32,12 +24,13 @@ test.describe("Market yangi buyurtmalari — kamera, 390px", () => {
     await expect(dialog.getByText("Ipak Yo'li Savdo · 2 ta buyurtma")).toBeVisible();
 
     // O'z marketining buyurtmasi — darhol qabul.
-    await enterManually(page, OWN_TOKEN);
+    await enterCode(page, dialog, OWN_TOKEN);
     await expect.poll(() => received).toEqual([["10254"]]);
-    await expect(dialog.getByText("Qabul qilindi №10254")).toBeVisible();
+    // Oxirgi skan qatori (barqaror) — 2–3 s lik natija qatori emas.
+    await expect(dialog.getByText(/№10254 · /).first()).toBeVisible();
 
     // Boshqa marketniki — server tekshiruvi, rad: qabul so'rovi yo'q.
-    await enterManually(page, OTHER_TOKEN);
+    await enterCode(page, dialog, OTHER_TOKEN);
     await expect(dialog.getByText("Boshqa market: Baraka Shop — qabul qilinmadi")).toBeVisible();
     expect(received).toEqual([["10254"]]);
 
@@ -49,10 +42,9 @@ test.describe("Market yangi buyurtmalari — kamera, 390px", () => {
     await expect(cameraDialog(page)).toBeVisible();
     await expect(cameraDialog(page).getByText("Baraka Shop · 1 ta buyurtma")).toBeVisible();
 
-    await enterManually(page, OTHER_TOKEN);
+    await enterCode(page, cameraDialog(page), OTHER_TOKEN);
     await expect.poll(() => received).toEqual([["10254"], ["10327"]]);
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-    expect(overflow).toBeLessThanOrEqual(0);
+    await expectNoHorizontalScroll(page);
     expect(leaked).toEqual([]);
   });
 });

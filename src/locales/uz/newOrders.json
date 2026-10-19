@@ -42,10 +42,7 @@
   "marketsTab": "Marketlar",
   "cancelledTab": "Bekor qilinganlar",
   "scanCancelledHandoverQr": "Market QR skanerlash",
-  "cancelledScannerSubtitle": "Marketiga jo'natiladigan bekor qilingan buyurtma QR kodini skanerlang",
-  "cancelledManualSelectConfirm": "QR kod haqiqatdan ham o'qilmayaptimi? Bu order qo'lda tasdiqlanadi.",
   "cancel": "Bekor qilish",
-  "cancelledQrTokenFallback": "Backend QR rasm o'rniga token qaytardi. Shu qiymat skaner uchun ishlatiladi.",
   "externalTab": "Tashqi buyurtmalar",
   "integrationsTitle": "Integratsiyalar",
   "integrationsSubtitle": "QR kod orqali tashqi buyurtmalarni qidirish uchun integratsiyani tanlang",
@@ -369,7 +366,6 @@
     "send": "Marketga jo'natish — {{value}} ta",
     "sendNone": "Marketga jo'natish",
     "sending": "Jo'natilmoqda…",
-    "scanMarketQr": "Market QR skanerlash",
     "titleFallback": "Bekor qilingan buyurtmalar",
     "alert": {
       "requiredTitle": "Market QR kerak",
@@ -467,7 +463,7 @@
     },
     "camera": {
       "qrTitle": "Market QR skanerlash",
-      "qrContext": "{{market}} · {{value}} ta bekor qilingan buyurtma",
+      "qrContext": "{{market}} · {{value}} ta buyurtma",
       "qrHint": "Market QR kodini ramka ichiga olib keling",
       "qrNoteTitle": "Faqat {{market}} QR kodi",
       "qrNoteText": "Market chiqargan qaytarish QR kodini skanerlang. Boshqa marketning QR kodi qabul qilinmaydi.",
@@ -475,13 +471,14 @@
       "selectContext": "{{market}} · {{value}} ta bekor qilingan",
       "selectHintQr": "Buyurtmalarni tanlang · QR {{time}} amal qiladi",
       "selectNoteTitle": "Buyurtma QR kodini skanerlang — u ro'yxatda tanlanadi",
-      "selectNoteText": "Faqat {{market}}ning jo'natilmagan bekor qilingan buyurtmalari tanlanadi.",
-      "selectNoteTextQr": "Faqat {{market}}ning jo'natilmagan bekor qilingan buyurtmalari tanlanadi. Market QR yana {{time}} amal qiladi.",
+      "selectNoteText": "Faqat {{market}}'ning jo'natilmagan bekor qilingan buyurtmalari tanlanadi.",
+      "selectNoteTextQr": "Faqat {{market}}'ning jo'natilmagan bekor qilingan buyurtmalari tanlanadi. Market QR yana {{time}} amal qiladi.",
       "meter": "ta tanlandi",
       "listTitle": "Tanlanganlar",
       "manualRow": "QR buzilgan — qo'lda tasdiqlangan",
       "selected": "Tanlandi №{{id}}",
-      "missing": "Bu marketning bekorlarida yo'q"
+      "missing": "Bu marketning bekorlarida yo'q",
+      "qrAlreadyAccepted": "Market QR allaqachon qabul qilingan"
     }
   },
   "deleteIntegration": "Integratsiyani o'chirish",
@@ -576,6 +573,7 @@
       "statMissing": "Topilmadi",
       "received": "Qabul qilindi №{{id}}",
       "notFound": "Topilmadi",
+      "notFoundCode": "Topilmadi: {{code}}",
       "otherMarket": "Boshqa market: {{market}} — qabul qilinmadi",
       "otherMarketFallback": "boshqa market",
       "checkFailed": "Tekshirib bo'lmadi — qayta skanerlang",

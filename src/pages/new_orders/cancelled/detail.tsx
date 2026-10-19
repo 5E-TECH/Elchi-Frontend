@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-neworders-cancelled-handover, superadmin-neworders-cancelled-manual-dialog, superadmin-neworders-cancelled-scanner-dialog, admin-neworders-cancelled-detail, admin-neworders-cancelled-manual-dialog, admin-neworders-cancelled-scanner-dialog, registrator-new-orders-cancelled-detail, registrator-new-orders-cancelled-manual-dialog, registrator-new-orders-cancelled-scanner-dialog, market-new-orders-cancelled, market-new-orders-cancelled-qr-dialog
-import { memo, useCallback, useEffect, useId, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Trans, useTranslation } from "react-i18next";
@@ -12,7 +12,6 @@ import {
   toCancelledManualReason,
 } from "./utils";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
-import { openScanner } from "../../../shared/lib/scanner/scannerHost";
 import { scanNotify } from "../../../shared/lib/scanner/scanSession";
 import type { ScanTargetListItem } from "../../../shared/lib/scanner/scanTargets";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
@@ -67,9 +66,9 @@ import { MarketQrDialog } from "./ui/MarketQrDialog";
  *    «Bekor qilingan buyurtmalarni tayyorlash»: «USB skaner tayyor», tanlov qatori, jadval.
  *  - KAMERA (Trello v1eLN2tV 2-bosqich; maketlar `*-neworders-cancelled-scanner-dialog`,
  *    `superadmin-neworders-cancelled-handover-camera`, `admin-neworders-cancelled-detail-camera`): v1 «Kamera»
- *    tugmalari va `ScannerCameraModal` olib tashlandi (ega qarori — oqim ichida kamera tugmasi yo'q). Markaziy
- *    «Skaner» (desktopda «Skanerlash») va sarlavhadagi «Market QR skanerlash» shu sahifaning skan maqsadini
- *    ochadi; kamera skani USB bilan aynan bir yo'l (`useOrderQrScanner`: buyurtma QR → tanlov, `MCR-` → market QR
+ *    tugmalari, sarlavhadagi «Market QR skanerlash» va `ScannerCameraModal` olib tashlandi (ega qarori — oqim
+ *    ichida kamera tugmasi yo'q, tizim-scanner §09). Faqat markaziy «Skaner» (desktopda «Skanerlash») shu
+ *    sahifaning skan maqsadini ochadi; kamera skani USB bilan aynan bir yo'l (`useOrderQrScanner`: buyurtma QR → tanlov, `MCR-` → market QR
  *    tekshiruvi). Matn holatga qarab: avval «Market QR skanerlash», QR'dan keyin «Buyurtmalarni tanlash · QR 04:12
  *    amal qiladi» — kamera yopilmaydi.
  *  - Market (qobiq `hosted`): karta «Yangi buyurtmalar / Bekor qilinganlar» tablari bilan; «Bekor qilingan
@@ -110,6 +109,13 @@ const CancelledMarketDetail = () => {
   const [authorizationToken, setAuthorizationToken] = useState("");
   const [authorizationExpiresAt, setAuthorizationExpiresAt] = useState<number | null>(null);
   const [authorizationRemainingSeconds, setAuthorizationRemainingSeconds] = useState(0);
+  // Market QR ruxsati hozir amaldami (token + skanerlandi) — skan callback'lari uchun sinxron nusxa: kamera QR'dan
+  // keyin ochiq qoladi, shu market QR yana o'qilsa ikkinchi so'rov yuborilmaydi (backend «QR allaqachon
+  // ishlatilgan» deydi va xato tirik ruxsatni o'chirib yubormasin).
+  const authorizationLiveRef = useRef(false);
+  useEffect(() => {
+    authorizationLiveRef.current = Boolean(authorizationToken) && isHandoverQrScanned;
+  }, [authorizationToken, isHandoverQrScanned]);
   const [marketSort, setMarketSort] = useState<DataTableSort | null>(DEFAULT_MARKET_ORDERS_SORT);
   const rawOrders = useMemo(() => extractCancelledOrders(query.data), [query.data]);
   const orders = useMemo(
@@ -214,10 +220,17 @@ const CancelledMarketDetail = () => {
     const qrToken = extractMarketCancelledQrToken(rawValue) || handoverQr?.token || handoverQr?.payload || "";
     if (!qrToken) return false;
 
+    // Ruxsat tirik — takror skan: so'rov yo'q, holat o'zgarmaydi.
+    if (authorizationLiveRef.current) {
+      void playScanFeedback("duplicate", t("cancelled.camera.qrAlreadyAccepted"));
+      return true;
+    }
+
     try {
       const response = await scanMarketCancelledQr.mutateAsync(qrToken);
       const authorization = normalizeCancelledAuthorization(response);
 
+      authorizationLiveRef.current = Boolean(authorization.authorizationToken);
       setAuthorizationToken(authorization.authorizationToken);
       setAuthorizationExpiresAt(authorization.expiresAt);
       setSelectedIds(new Set(selectableOrders.map((order) => order.id)));
@@ -234,9 +247,12 @@ const CancelledMarketDetail = () => {
       return true;
     } catch (error: unknown) {
       const message = getBackendErrorMessage(error) ?? t("cancelled.notify.scanMissing");
-      setAuthorizationToken("");
-      setAuthorizationExpiresAt(null);
-      setIsHandoverQrScanned(false);
+      // Shu orada (parallel skan) ruxsat olingan bo'lsa — u o'chirilmaydi.
+      if (!authorizationLiveRef.current) {
+        setAuthorizationToken("");
+        setAuthorizationExpiresAt(null);
+        setIsHandoverQrScanned(false);
+      }
       void playScanFeedback("missing", message);
       // Skaner oqimi: xato qisqa turadi (v1 dagidek 4 s) — keyingi skanerlashda ekran to'silib qolmasin.
       scanNotify.error(t("cancelled.notify.qrNotFound"), { description: message, duration: 4000 });
@@ -637,26 +653,18 @@ const CancelledMarketDetail = () => {
           ) : null
         }
         actions={
-          <>
-            {stage === "required" && hasOrders ? (
-              // Kontekstli skaner (markaziy tugma bilan bir xil): kamera shu sahifaning maqsadi bilan ochiladi.
-              <Button variant="secondary" leftIcon={ScanLine} aria-haspopup="dialog" onClick={() => openScanner()}>
-                {t("cancelled.scanMarketQr")}
-              </Button>
-            ) : null}
-            <Button
-              leftIcon={Send}
-              disabled={!canSend}
-              aria-describedby={stage === "required" && hasOrders ? hintId : undefined}
-              loading={handoverCancelledOrders.isPending}
-              loadingText={t("cancelled.sending")}
-              onClick={handleSendToMarket}
-            >
-              {selectedCount > 0
-                ? t("cancelled.send", { count: selectedCount, value: number(selectedCount) })
-                : t("cancelled.sendNone")}
-            </Button>
-          </>
+          <Button
+            leftIcon={Send}
+            disabled={!canSend}
+            aria-describedby={stage === "required" && hasOrders ? hintId : undefined}
+            loading={handoverCancelledOrders.isPending}
+            loadingText={t("cancelled.sending")}
+            onClick={handleSendToMarket}
+          >
+            {selectedCount > 0
+              ? t("cancelled.send", { count: selectedCount, value: number(selectedCount) })
+              : t("cancelled.sendNone")}
+          </Button>
         }
       />
 

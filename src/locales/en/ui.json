@@ -1177,6 +1177,7 @@
       "open": "List",
       "title": "Scanned",
       "continue": "Continue",
+      "more": "{{value}} more in the list",
       "emptyTitle": "No scans yet",
       "emptyText": "Scanned codes appear here."
     },

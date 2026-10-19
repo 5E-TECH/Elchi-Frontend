@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
-  playMissingOrderFeedback,
   playScanFeedback,
   playScanSignal,
   SCAN_FEEDBACK_EVENT,
@@ -29,13 +28,6 @@ describe("scanner feedback (shared/lib/scanner/feedback)", () => {
       { type: "success", message: "Qabul qilindi", source: "camera" },
       { type: "duplicate", message: undefined, source: undefined },
     ]);
-  });
-
-  it("playMissingOrderFeedback — `missing` hodisasi", () => {
-    const { details, stop } = listen();
-    playMissingOrderFeedback();
-    stop();
-    expect(details).toEqual([{ type: "missing", message: undefined, source: undefined }]);
   });
 
   it("playScanSignal — faqat ovoz/tebranish, ekrandagi xabar hodisasi yo'q", () => {

@@ -51,10 +51,7 @@
   "marketsTab": "Маркеты",
   "cancelledTab": "Отмененные",
   "scanCancelledHandoverQr": "Сканировать QR маркета",
-  "cancelledScannerSubtitle": "Сканируйте QR-код отмененного заказа для отправки маркету",
-  "cancelledManualSelectConfirm": "QR-код действительно не читается? Заказ будет подтвержден вручную.",
   "cancel": "Отмена",
-  "cancelledQrTokenFallback": "Backend вернул token вместо QR-изображения. Это значение используется для сканирования.",
   "externalTab": "Внешние заказы",
   "integrationsTitle": "Интеграции",
   "integrationsSubtitle": "Выберите интеграцию для поиска внешних заказов по QR-коду",
@@ -404,7 +401,6 @@
     "send": "Отправить маркету — {{value}}",
     "sendNone": "Отправить маркету",
     "sending": "Отправка…",
-    "scanMarketQr": "Сканировать QR маркета",
     "titleFallback": "Отменённые заказы",
     "alert": {
       "requiredTitle": "Нужен QR маркета",
@@ -508,7 +504,7 @@
     },
     "camera": {
       "qrTitle": "Сканировать QR маркета",
-      "qrContext": "{{market}} · отменённых заказов: {{value}}",
+      "qrContext": "{{market}} · заказов: {{value}}",
       "qrHint": "Наведите рамку на QR-код маркета",
       "qrNoteTitle": "Только QR-код {{market}}",
       "qrNoteText": "Отсканируйте QR-код возврата, выданный маркетом. QR-код другого маркета не принимается.",
@@ -522,7 +518,8 @@
       "listTitle": "Выбранные",
       "manualRow": "QR повреждён — подтверждено вручную",
       "selected": "Выбран №{{id}}",
-      "missing": "Нет среди отмен этого маркета"
+      "missing": "Нет среди отмен этого маркета",
+      "qrAlreadyAccepted": "QR маркета уже принят"
     }
   },
   "batchStatus": {
@@ -609,6 +606,7 @@
       "statMissing": "Не найдено",
       "received": "Принят №{{id}}",
       "notFound": "Не найдено",
+      "notFoundCode": "Не найдено: {{code}}",
       "otherMarket": "Другой маркет: {{market}} — не принят",
       "otherMarketFallback": "другой маркет",
       "checkFailed": "Не удалось проверить — отсканируйте ещё раз",

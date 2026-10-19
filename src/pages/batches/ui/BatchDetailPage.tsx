@@ -122,8 +122,16 @@ const BatchDetailPage = () => {
   const { selectedIds, allSelected, someSelected, toggleAll, toggleOne, selectOne, deselectOne, clearSelection } =
     useMailDetailState(orders);
   // Kamera ro'yxati: skan tartibi (`order:<id>` / `missing:<kod>`) va paketda yo'q kodlar.
-  const { recent: recentScanKeys, touch: touchRecentScan } = useRecentScans();
+  const { recent: recentScanKeys, touch: touchRecentScan, clear: clearRecentScans } = useRecentScans();
   const [rejectedCodes, setRejectedCodes] = useState<string[]>([]);
+  // Boshqa pochta / paketga o'tilsa (sahifa qayta o'rnatilmaydi) — kamera ro'yxati yangidan. Effekt emas, render
+  // paytida (React tavsiyasi): oldingisining «… yo'q» qatorlari bir kadr ham yangisida turmaydi.
+  const [scanListOwner, setScanListOwner] = useState(id);
+  if (scanListOwner !== id) {
+    setScanListOwner(id);
+    setRejectedCodes([]);
+    clearRecentScans();
+  }
 
   // Skaner chaqiruvlari joriy tanlovni o'qiydi: ketma-ket ikki skaner ham takror deb topilsin.
   const selectedRef = useRef(selectedIds);
@@ -139,7 +147,7 @@ const BatchDetailPage = () => {
         touchRecentScan(`missing:${code}`);
       }
       scanNotify.warning(t("detail.scanMissingTitle"), { description: t("detail.scanMissing"), duration: 3000 });
-      void playScanFeedback("missing", t("detail.cameraNotInBatch"));
+      void playScanFeedback("missing", t("detail.cameraNotInBatch", { code }));
     },
     [t, touchRecentScan],
   );

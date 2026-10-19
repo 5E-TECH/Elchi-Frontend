@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../lib/cx";
+import { formatNumberLocalized } from "../../lib/formatMoney";
 import { markScannerCameraMounted } from "../../lib/scanner/scannerHost";
 import type {
   ScanTarget,
@@ -67,6 +68,9 @@ import {
   type CameraTone,
 } from "./CameraSurface";
 import { useScannerCameraSession, type CameraResult } from "./useScannerCameraSession";
+
+/** Yon panelda (planshet/desktop) ko'rinadigan so'nggi qatorlar soni; qolgani — «Ro'yxat» varag'ida. */
+const SIDE_LIST_LIMIT = 4;
 
 /**
  * KAMERA SKANERI (dizayn v2) — taxta `tizim-scanner`: anatomiya (§03, 10 qism), holatlar (§04), uzluksiz skan
@@ -153,7 +157,7 @@ export const ScannerCamera = ({
   manual,
   suspended = false,
 }: ScannerCameraProps) => {
-  const { t } = useTranslation("ui");
+  const { t, i18n } = useTranslation("ui");
   const isPhone = useIsPhone();
   const overlay = presentation === "overlay";
   const titleId = useId();
@@ -646,13 +650,16 @@ export const ScannerCamera = ({
         </div>
       ) : null}
       {target.list ? (
-        <div className="flex min-h-0 flex-col">
+        // Panelda faqat so'nggi qatorlar (maketlar `manager-batches-detail-send-camera`, `superadmin-mails-detail-camera`):
+        // qolgani — «Yana N ta ro'yxatda» → «Ro'yxat» varag'i. `shrink-0` — uzun ro'yxat pastki chip va tugmalar
+        // ustiga chiqmaydi, panel o'zi skroll bo'ladi.
+        <div className="flex shrink-0 flex-col">
           <span className="pb-1 text-xs font-semibold tracking-[0.04em] text-text-muted uppercase">
             {target.listTitle ?? t("camera.list.title")}
           </span>
           {list.length > 0 ? (
             <ul className="divide-y divide-border border-t border-border">
-              {list.map((item) => {
+              {list.slice(0, SIDE_LIST_LIMIT).map((item) => {
                 const tone = listTone(item);
                 const Icon = tone.icon;
                 return (
@@ -670,6 +677,20 @@ export const ScannerCamera = ({
           ) : (
             <p className="border-t border-border pt-3 text-[13px] text-text-muted">{t("camera.last.emptyText")}</p>
           )}
+          {list.length > SIDE_LIST_LIMIT ? (
+            <div className="flex min-w-0 items-center gap-3 border-t border-border pt-2">
+              <span className="min-w-0 flex-1 text-[13px] text-text-muted">
+                {t("camera.list.more", {
+                  value: formatNumberLocalized(list.length - SIDE_LIST_LIMIT, {
+                    language: i18n.resolvedLanguage ?? i18n.language,
+                  }),
+                })}
+              </span>
+              <Button variant="ghost" size="sm" leftIcon={List} aria-haspopup="dialog" onClick={() => setSheet("list")}>
+                {t("camera.list.open")}
+              </Button>
+            </div>
+          ) : null}
         </div>
       ) : null}
       <div aria-hidden="true" className="flex-1" />

@@ -582,6 +582,11 @@ describe("IncomingOrdersPage — kamera (markaziy «Skaner» tugmasi)", () => {
     expect(await screen.findByText("Qop: 3 posilkadan 2 tasi belgilandi")).toBeInTheDocument();
     expect(target().stats).toEqual([{ key: "bag", label: "Qopda yetishmaydi", value: 1, tone: "warning" }]);
     expect(target().progress).toMatchObject({ done: 2, total: 3 });
+
+    // Qopdagi posilka kamerada «Bekor qilish» bilan olinsa — yetishmovchilik qayta hisoblanadi.
+    act(() => target().list![0].onUndo!());
+    expect(target().progress).toMatchObject({ done: 1, total: 3 });
+    expect(target().stats).toEqual([{ key: "bag", label: "Qopda yetishmaydi", value: 2, tone: "warning" }]);
   });
 
   it("manba almashtirish: variantlar manbalar ro'yxatidan, tanlansa — `/new-orders/incoming/:id`", async () => {

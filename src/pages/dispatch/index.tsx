@@ -161,7 +161,14 @@ const DispatchPage = () => {
         setScanNotice({ tone: "danger", text: t("scanErrors.wrongType") });
         rejectScan(
           normalizedToken,
-          t(resourceType === "post" ? "camera.rejectedPost" : "camera.rejectedPackage", { code: normalizedToken }),
+          t(
+            resourceType === "post"
+              ? "camera.rejectedPost"
+              : resourceType === "market-qr"
+                ? "camera.rejectedMarketQr"
+                : "camera.rejectedPackage",
+            { code: normalizedToken },
+          ),
           t("camera.rejectedWrongType"),
         );
         void playScanFeedback("error", t("camera.wrongType"));
@@ -263,10 +270,12 @@ const DispatchPage = () => {
     },
     list: cameraList,
     listTitle: t("camera.listTitle"),
+    listDescription: t("camera.contextNoBranch", { value: cameraCount }),
     onScan: (rawValue) => {
       void handleScanValue(rawValue);
     },
-    finish: { label: t("ui:camera.action.finish"), onFinish: () => undefined },
+    // Kamerada ko'rilgan rad etish xabari «Tugatish» dan keyin sahifada qolib ketmasin.
+    finish: { label: t("ui:camera.action.finish"), onFinish: () => setScanNotice(null) },
   });
 
   const handleComplete = async (courier: DispatchCourier) => {

@@ -94,6 +94,7 @@
     "wrongType": "Неверный тип QR — сканируйте QR-код с этикетки заказа",
     "rejectedPackage": "Пакет {{code}}",
     "rejectedPost": "Почта {{code}}",
+    "rejectedMarketQr": "QR маркета {{code}}",
     "rejectedWrongType": "не QR-код заказа",
     "rejected": "Отклонён · {{reason}}"
   }

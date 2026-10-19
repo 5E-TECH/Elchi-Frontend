@@ -45,10 +45,7 @@
   "marketsTab": "Markets",
   "cancelledTab": "Cancelled",
   "scanCancelledHandoverQr": "Scan market QR",
-  "cancelledScannerSubtitle": "Scan the cancelled order QR code to send it to its market",
-  "cancelledManualSelectConfirm": "Is the QR code really unreadable? This order will be confirmed manually.",
   "cancel": "Cancel",
-  "cancelledQrTokenFallback": "Backend returned a token instead of a QR image. This value is used for scanning.",
   "externalTab": "External Orders",
   "integrationsTitle": "Integrations",
   "integrationsSubtitle": "Select an integration to search external orders by QR code",
@@ -379,7 +376,6 @@
     "send": "Send to market — {{value}}",
     "sendNone": "Send to market",
     "sending": "Sending…",
-    "scanMarketQr": "Scan market QR",
     "titleFallback": "Cancelled orders",
     "alert": {
       "requiredTitle": "Market QR required",
@@ -482,7 +478,7 @@
     },
     "camera": {
       "qrTitle": "Scan market QR",
-      "qrContext": "{{market}} · {{value}} cancelled orders",
+      "qrContext": "{{market}} · {{value}} orders",
       "qrHint": "Bring the market QR code into the frame",
       "qrNoteTitle": "Only the {{market}} QR code",
       "qrNoteText": "Scan the return QR code issued by the market. Another market's QR code is not accepted.",
@@ -496,7 +492,8 @@
       "listTitle": "Selected",
       "manualRow": "QR damaged — confirmed manually",
       "selected": "Selected №{{id}}",
-      "missing": "Not among this market's cancellations"
+      "missing": "Not among this market's cancellations",
+      "qrAlreadyAccepted": "Market QR already accepted"
     }
   },
   "deleteIntegration": "Delete integration",
@@ -592,6 +589,7 @@
       "statMissing": "Not found",
       "received": "Received №{{id}}",
       "notFound": "Not found",
+      "notFoundCode": "Not found: {{code}}",
       "otherMarket": "Another market: {{market}} — not received",
       "otherMarketFallback": "another market",
       "checkFailed": "Could not check — scan again",
