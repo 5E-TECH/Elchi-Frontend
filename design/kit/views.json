@@ -147,6 +147,15 @@
   },
   {
    "role": "superadmin",
+   "viewId": "orders-list-cancelled",
+   "menuKey": "orders",
+   "title": "Buyurtmalar — Bekor qilinganlar: bosqich va joy (taklif)",
+   "fragment": "superadmin--orders-list-cancelled",
+   "order": 15.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
    "viewId": "orders-list-skip-link",
    "menuKey": "orders",
    "title": "Buyurtmalar ro'yxati — «Asosiy kontentga o'tish» havolasi fokusda",
@@ -188,6 +197,15 @@
    "title": "Buyurtma tafsilotlari",
    "fragment": "superadmin--orders-detail",
    "order": 17,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "orders-detail-cancelled",
+   "menuKey": "orders",
+   "title": "Buyurtma tafsilotlari — marketga topshirilgan, «Qaytarish yo'li» (taklif)",
+   "fragment": "superadmin--orders-detail-cancelled",
+   "order": 17.1,
    "kind": "page"
   },
   {
@@ -453,6 +471,15 @@
   },
   {
    "role": "superadmin",
+   "viewId": "neworders-cancelled-handover-done",
+   "menuKey": "newOrders",
+   "title": "Bekor qilinganlarni marketga topshirish — «Topshirildi» bo'limi (taklif)",
+   "fragment": "superadmin--neworders-cancelled-handover-done",
+   "order": 40.1,
+   "kind": "page"
+  },
+  {
+   "role": "superadmin",
    "viewId": "neworders-cancelled-handover-camera",
    "menuKey": "newOrders",
    "title": "Bekor qilinganlarni marketga topshirish — kamera",
@@ -476,6 +503,15 @@
    "title": "Kamera skaneri (modal)",
    "fragment": "superadmin--neworders-cancelled-scanner-dialog",
    "order": 43,
+   "kind": "dialog"
+  },
+  {
+   "role": "superadmin",
+   "viewId": "neworders-cancelled-pin-dialog",
+   "menuKey": "newOrders",
+   "title": "Market PIN kodi (modal, taklif)",
+   "fragment": "superadmin--neworders-cancelled-pin-dialog",
+   "order": 43.1,
    "kind": "dialog"
   },
   {
@@ -3045,6 +3081,15 @@
   },
   {
    "role": "manager",
+   "viewId": "orders-detail-cancelled",
+   "menuKey": "orders",
+   "title": "Buyurtma tafsiloti — bekor, HQ'da, «Qaytarish yo'li» (taklif)",
+   "fragment": "manager--orders-detail-cancelled",
+   "order": 234.1,
+   "kind": "page"
+  },
+  {
+   "role": "manager",
    "viewId": "orders-detail-edit-address-dialog",
    "menuKey": "orders",
    "title": "Manzilni tahrirlash oynasi",
@@ -4170,6 +4215,15 @@
   },
   {
    "role": "market",
+   "viewId": "orders-detail-cancelled",
+   "menuKey": "orders",
+   "title": "Buyurtma tafsilotlari — bekor, «Qaytarish yo'li» (taklif)",
+   "fragment": "market--orders-detail-cancelled",
+   "order": 328.1,
+   "kind": "page"
+  },
+  {
+   "role": "market",
    "viewId": "new-orders-list",
    "menuKey": "newOrders",
    "title": "Yangi buyurtmalar",
@@ -4265,6 +4319,24 @@
    "title": "Bekor qilinganlar",
    "fragment": "market--new-orders-cancelled",
    "order": 336,
+   "kind": "page"
+  },
+  {
+   "role": "market",
+   "viewId": "new-orders-cancelled-transit",
+   "menuKey": "newOrders",
+   "title": "Bekor qilinganlar · Yo'lda (taklif)",
+   "fragment": "market--new-orders-cancelled-transit",
+   "order": 336.1,
+   "kind": "page"
+  },
+  {
+   "role": "market",
+   "viewId": "new-orders-cancelled-received",
+   "menuKey": "newOrders",
+   "title": "Bekor qilinganlar · Olganlarim (taklif)",
+   "fragment": "market--new-orders-cancelled-received",
+   "order": 336.2,
    "kind": "page"
   },
   {
