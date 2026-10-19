@@ -48,7 +48,7 @@ import { clearAllSearch } from "../../shared/model/searchSlice";
 import { getOrderItemName } from "../../shared/lib/orderItemName";
 import { useOrderQrScanner } from "../../shared/lib/useOrderQrScanner";
 import { fetchScanDetail, getBackendErrorMessage } from "../scan/lib/scanResource";
-import { playScanFeedback } from "../scan/lib/scanShared";
+import { playScanFeedback } from "../../shared/lib/scanner/feedback";
 import { getActionErrorMessage } from "../../shared/lib/actionError";
 import { isCourierHeldOrder } from "../../entities/orders/custody";
 import type { CancelOrderPayload } from "../../entities/orders/cancelReason";

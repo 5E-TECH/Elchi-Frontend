@@ -4,6 +4,14 @@ import { extractScannerToken } from "./scanToken";
 type ScannerGateOptions = {
   cooldownMs?: number;
   duplicateCooldownMs?: number;
+  /**
+   * Kamera uchun (uzluksiz skaner, oyna har skandan keyin yopilmaydi): kadrda turgan kod har o'qilganda
+   * takror oynasi SURILADI — kod ramkada turgan ekan, u qayta qabul qilinmaydi (aks holda har 1,8 s da
+   * yana so'rov / «topilmadi» ovozi). Kod ramkadan chiqib, `duplicateCooldownMs` o'tgach — yana qabul.
+   * Takror pauzani uzaytirmaydi: pauza faqat QABUL qilingan skandan hisoblanadi, shunda A kodi kadrda
+   * qolib turganda B kodi «juda tez» ga tushib qolmaydi. Sukut (`false`) — USB va eski sahifalar o'zgarmaydi.
+   */
+  slidingDuplicate?: boolean;
 };
 
 /**
@@ -16,6 +24,7 @@ export type ScanGateVerdict = "accepted" | "cooldown" | "duplicate";
 export const useScannerGate = ({
   cooldownMs = 900,
   duplicateCooldownMs = 2200,
+  slidingDuplicate = false,
 }: ScannerGateOptions = {}) => {
   const nextAllowedScanAtRef = useRef(0);
   const lastTokenRef = useRef("");
@@ -40,7 +49,8 @@ export const useScannerGate = ({
       tokenKey === lastTokenRef.current &&
       now - lastTokenAtRef.current < duplicateCooldownMs
     ) {
-      nextAllowedScanAtRef.current = now + cooldownMs;
+      if (slidingDuplicate) lastTokenAtRef.current = now;
+      else nextAllowedScanAtRef.current = now + cooldownMs;
       return "duplicate";
     }
 
@@ -50,7 +60,7 @@ export const useScannerGate = ({
     lastTokenAtRef.current = now;
     nextAllowedScanAtRef.current = now + cooldownMs;
     return "accepted";
-  }, [cooldownMs, duplicateCooldownMs]);
+  }, [cooldownMs, duplicateCooldownMs, slidingDuplicate]);
 
   const canAcceptScan = useCallback(
     (rawValue: string) => evaluateScan(rawValue) === "accepted",

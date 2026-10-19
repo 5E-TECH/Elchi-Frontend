@@ -37,11 +37,8 @@ import {
 } from "../../../shared/ui/primitives";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import { DetailAlert } from "../../new_orders/components/detail/DetailAlert";
-import {
-  playMissingOrderFeedback,
-  playScanFeedback,
-  normalizeScannerCandidates,
-} from "../../scan/lib/scanShared";
+import { normalizeScannerCandidates } from "../../../shared/lib/scanToken";
+import { playMissingOrderFeedback, playScanFeedback } from "../../../shared/lib/scanner/feedback";
 import { fetchScanDetail, getBackendErrorMessage } from "../../scan/lib/scanResource";
 import { getMailTabPath, normalizeMailTab, type MailTab } from "../lib/navigation";
 

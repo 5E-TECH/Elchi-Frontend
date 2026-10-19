@@ -1,11 +1,21 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import QrScanner from "./qrScanner";
+import i18n from "../../i18n";
+import QrScanner, { classifyCameraError, type CameraErrorKind } from "./qrScanner";
+
+/** Sabab → foydalanuvchiga ko'rinadigan matn (`ui:camera.error.*`); `unknown` — chaqiruvchining `startErrorMessage`. */
+const cameraErrorText = (kind: CameraErrorKind, fallback: string) =>
+  kind === "unknown" ? fallback : i18n.t(`ui:camera.error.${kind}`, { defaultValue: fallback });
 
 type CameraQrScannerOptions = {
   isActive: boolean;
   videoRef: RefObject<HTMLVideoElement | null>;
   onDecode: (value: string) => void;
   startErrorMessage: string;
+  /**
+   * Chiroqni yoqib/o'chirib bo'lmadi. Berilsa shu chaqiriladi va kamera xatosi YOZILMAYDI (kamera ishlab
+   * turibdi — «Kamera ochilmadi» holati noto'g'ri bo'lardi). Berilmasa — eski xatti-harakat.
+   */
+  onTorchError?: () => void;
 };
 
 export const useCameraQrScanner = ({
@@ -13,19 +23,26 @@ export const useCameraQrScanner = ({
   videoRef,
   onDecode,
   startErrorMessage,
+  onTorchError,
 }: CameraQrScannerOptions) => {
   const scannerRef = useRef<QrScanner | null>(null);
   const onDecodeRef = useRef(onDecode);
+  const onTorchErrorRef = useRef(onTorchError);
   const [session, setSession] = useState(0);
   const [isStarting, setIsStarting] = useState(false);
   const [torchEnabled, setTorchEnabled] = useState(false);
   const [hasTorch, setHasTorch] = useState(false);
   const [cameraError, setCameraError] = useState("");
+  const [cameraErrorKind, setCameraErrorKind] = useState<CameraErrorKind | null>(null);
   const [cameraUnavailable, setCameraUnavailable] = useState(false);
 
   useEffect(() => {
     onDecodeRef.current = onDecode;
   }, [onDecode]);
+
+  useEffect(() => {
+    onTorchErrorRef.current = onTorchError;
+  }, [onTorchError]);
 
   const stopScanner = useCallback(() => {
     const activeScanner = scannerRef.current;
@@ -60,6 +77,11 @@ export const useCameraQrScanner = ({
       await scanner.toggleFlash();
       setTorchEnabled(scanner.isFlashOn());
     } catch {
+      if (onTorchErrorRef.current) {
+        onTorchErrorRef.current();
+        return;
+      }
+      setCameraErrorKind("unknown");
       setCameraError(startErrorMessage);
     }
   }, [hasTorch, startErrorMessage]);
@@ -77,6 +99,7 @@ export const useCameraQrScanner = ({
     const startScanner = async () => {
       setIsStarting(true);
       setCameraError("");
+      setCameraErrorKind(null);
 
       try {
         if (!videoRef.current) {
@@ -86,7 +109,7 @@ export const useCameraQrScanner = ({
         const supportError = await QrScanner.getSupportError();
         if (supportError) {
           setCameraUnavailable(true);
-          throw new Error(supportError);
+          throw supportError;
         }
 
         const scanner = new QrScanner(
@@ -130,7 +153,10 @@ export const useCameraQrScanner = ({
           return;
         }
 
-        setCameraError(messageText || startErrorMessage);
+        // Xom brauzer matni (inglizcha `DOMException`) ekranga chiqmaydi — sababga qarab tarjima qilingan matn.
+        const kind = classifyCameraError(error);
+        setCameraErrorKind(kind);
+        setCameraError(cameraErrorText(kind, startErrorMessage));
       } finally {
         if (!cancelled) {
           setIsStarting(false);
@@ -154,6 +180,7 @@ export const useCameraQrScanner = ({
     torchEnabled,
     hasTorch,
     cameraError,
+    cameraErrorKind,
     cameraUnavailable,
     stopScanner,
     restartScanner,

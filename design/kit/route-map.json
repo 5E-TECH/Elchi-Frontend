@@ -385,7 +385,8 @@
       },
       "roleNotes": {
         "registrator": "Maket yo'q — admin-neworders-incoming-scan ga qarang."
-      }
+      },
+      "note": "Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (mavjud v1 «Kamera» tugmalari 2-bosqichda olib tashlanadi)."
     },
     {
       "path": "/new-orders/branches",
@@ -416,7 +417,8 @@
         "superadmin": ["neworders-branch-batch-detail", "neworders-branch-batch-detail-camera"],
         "admin": ["neworders-branch-batch-detail", "neworders-branch-batch-detail-camera"],
         "tizim": ["scanner"]
-      }
+      },
+      "note": "Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (mavjud v1 «Kamera» tugmalari 2-bosqichda olib tashlanadi)."
     },
     {
       "path": "/new-orders/cancelled",
@@ -453,7 +455,7 @@
         "market": ["new-orders-cancelled", "new-orders-cancelled-qr-dialog"],
         "tizim": ["scanner"]
       },
-      "note": "Kirish NewOrdersCancelledDetailEntry (routes.tsx) da: canHandoverCancelledToMarket yoki o'z marketi; boshqalar → /403. Qobiq: xodimda `bare` (o'z sarlavhasi), marketda `hosted` (tablar kartada). Marketga jo'natish faqat market QR skanerlangach (marketda QR o'chirilgan bo'lmasa); buzilgan buyurtma QR — «QR buzilganini tasdiqlash» oynasi (sabab — backend enum kodi). Kamera rejimi (`*-camera`) — keyinroq, `ScannerCameraModal` o'zgarmagan."
+      "note": "Kirish NewOrdersCancelledDetailEntry (routes.tsx) da: canHandoverCancelledToMarket yoki o'z marketi; boshqalar → /403. Qobiq: xodimda `bare` (o'z sarlavhasi), marketda `hosted` (tablar kartada). Marketga jo'natish faqat market QR skanerlangach (marketda QR o'chirilgan bo'lmasa); buzilgan buyurtma QR — «QR buzilganini tasdiqlash» oynasi (sabab — backend enum kodi). Kamera rejimi (`*-camera`) — keyinroq, `ScannerCameraModal` o'zgarmagan. Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (mavjud v1 «Kamera» tugmalari 2-bosqichda olib tashlanadi)."
     },
     {
       "path": "/new-orders/:marketId",
@@ -478,7 +480,7 @@
         "market": ["new-orders-list", "new-orders-delete-dialog"],
         "tizim": ["scanner"]
       },
-      "note": "NewOrdersMarketAccessEntry (routes.tsx): market faqat o'z marketId sini ochadi. Qabul/o'chirish tasdig'i — PopupConfirm. Tahrirlash → /new-orders/:marketId/edit/:orderId."
+      "note": "NewOrdersMarketAccessEntry (routes.tsx): market faqat o'z marketId sini ochadi. Qabul/o'chirish tasdig'i — PopupConfirm. Tahrirlash → /new-orders/:marketId/edit/:orderId. Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (mavjud v1 «Kamera» tugmalari 2-bosqichda olib tashlanadi)."
     },
     {
       "path": "/new-orders/:marketId/edit/:orderId",
@@ -631,7 +633,7 @@
         "courier": ["mails-detail-receive", "mails-detail-receive-camera", "mails-detail-refused", "mails-detail-old", "mails-detail-print-menu"],
         "tizim": ["scanner"]
       },
-      "note": "Rejim URL'dan: ?type=refused → rad etilgan, ?view=old → tarix (faqat o'qish), ?view=old-all-batches → eski pochtalarning «Filial paketlari» rejimidan ochilgan tarix (admin/superadmin; *-mails-detail-old / admin-mails-old-detail maketi). «Filialga jo'natish» oynasi faqat superadmin/admin/HQ registrator (canDispatchPostToBranch). Chop etish menyusi — PrintModeSelect."
+      "note": "Rejim URL'dan: ?type=refused → rad etilgan, ?view=old → tarix (faqat o'qish), ?view=old-all-batches → eski pochtalarning «Filial paketlari» rejimidan ochilgan tarix (admin/superadmin; *-mails-detail-old / admin-mails-old-detail maketi). «Filialga jo'natish» oynasi faqat superadmin/admin/HQ registrator (canDispatchPostToBranch). Chop etish menyusi — PrintModeSelect. Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (mavjud v1 «Kamera» tugmalari 2-bosqichda olib tashlanadi)."
     },
     {
       "path": "/batches",
@@ -668,7 +670,7 @@
         "manager": ["batches-detail-send", "batches-detail-send-camera", "batches-detail-readonly", "returns-batch-detail"],
         "tizim": ["scanner"]
       },
-      "note": "Jo'natish rejimi: paket holati «new» va rol menejer/registrator (canSendToMainBranch); aks holda faqat o'qish. /returns qatori ham shu sahifani ochadi. Buyurtmalar kartasi, statistika va jo'natish tugmasi /mails/:id bilan umumiy (pages/mails/detail/ui — batchOrderMailAdapter.ts orqali)."
+      "note": "Jo'natish rejimi: paket holati «new» va rol menejer/registrator (canSendToMainBranch); aks holda faqat o'qish. /returns qatori ham shu sahifani ochadi. Buyurtmalar kartasi, statistika va jo'natish tugmasi /mails/:id bilan umumiy (pages/mails/detail/ui — batchOrderMailAdapter.ts orqali). Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (mavjud v1 «Kamera» tugmalari 2-bosqichda olib tashlanadi)."
     },
     {
       "path": "/returns",
@@ -704,7 +706,7 @@
         "superadmin": "Menyuda yo'q (faqat URL) — registrator-dispatch-list tartibi (barcha rollar uchun bitta tartib).",
         "admin": "Menyuda yo'q (faqat URL) — registrator-dispatch-list tartibi (barcha rollar uchun bitta tartib)."
       },
-      "note": "Dizayn v2 (G3): barcha rollar uchun bitta tartib — registrator maketlari (dispatch-list, dispatch-empty) + menejer dispatch-scan matnlari, «Kuryerni tanlang» oynasi — CourierPickerDialog (Dialog, telefonda pastki varaqa). Ega savoli Q7 sukuti: telefonda pastki menyu ustida yopishqoq panel «Kamera N ta» + «Biriktirish — K ta» (har rolda), sarlavhadagi tugma ≥ 768 da. Bitta faol kuryer — oynasiz darhol biriktiriladi. /scan/:token dan «Kuryerga biriktirish» (Q3) → state.scanToken bir marta qo'shiladi va tanlanadi. Ro'yxat sahifa holati — sahifadan chiqilsa yo'qoladi (menejer maketidagi «biriktirish savati» saqlanishi — ega qarori kutiladi). Kamera oynasi (ScannerCameraModal, umumiy) — alohida kamera ishi."
+      "note": "Dizayn v2 (G3): barcha rollar uchun bitta tartib — registrator maketlari (dispatch-list, dispatch-empty) + menejer dispatch-scan matnlari, «Kuryerni tanlang» oynasi — CourierPickerDialog (Dialog, telefonda pastki varaqa). Ega savoli Q7 sukuti: telefonda pastki menyu ustida yopishqoq panel «Kamera N ta» + «Biriktirish — K ta» (har rolda), sarlavhadagi tugma ≥ 768 da. Bitta faol kuryer — oynasiz darhol biriktiriladi. /scan/:token dan «Kuryerga biriktirish» (Q3) → state.scanToken bir marta qo'shiladi va tanlanadi. Ro'yxat sahifa holati — sahifadan chiqilsa yo'qoladi (menejer maketidagi «biriktirish savati» saqlanishi — ega qarori kutiladi). Kamera oynasi (ScannerCameraModal, umumiy) — alohida kamera ishi. Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (mavjud v1 «Kamera» tugmalari 2-bosqichda olib tashlanadi)."
     },
     {
       "path": "/courier-bulk",
@@ -729,7 +731,7 @@
         "courier": ["courier-bulk-main", "courier-bulk-scanner-camera", "courier-bulk-scanner-camera-list", "courier-bulk-confirm-dialog"],
         "tizim": ["scanner"]
       },
-      "note": "Dizayn v2 (G3): kuryer va menejer uchun bitta tartib (courier-courier-bulk-main). Ega savoli Q8 sukuti: menejerda ham kuryer maketi (4 stat karta, qidiruv + «Natija» filtri, saralash — hammasi mijoz tomonida, yangi API parametri yo'q); «Kutilayotgan» izohi menejerda «Filial kuryerlarida, yakunlanmagan». Q9: «Faqat bekorlarni qo'llash» olib tashlandi (maketlarda yo'q). Telefonda «Kunni yakunlash» pastki menyu ustidagi yopishqoq panelda (DOM'da bitta tugma). Tasdiq — useConfirm (courier-courier-bulk-confirm-dialog matnlari); «Ertaga» so'rov yubormaydi. Tasdiqdan keyingi isbot qadami (CourierBulkProofDialog — market expense_proof_conditions talab qilgan buyurtmalarga har biriga bitta ProofField, hammasida fayl bo'lmaguncha «Yakunlash» o'chiq) va xatolar ro'yxati (CourierBulkResultDialog — har xato backend sababi bilan) uchun maket yo'q — eng yaqini: tizim-states-forms + courier-courier-bulk-confirm-dialog (dev j9KFyqlS). Isbot kerak bo'lmasa qo'shimcha qadam yo'q; ommaviy sotish/bekor so'rovlarida X-Request-Source: courier-bulk. Kamera oynasi va skan topilmaganda chiqadigan umumiy qoplama (common:scannerFeedbackMissing «Bu pochtada yo'q» matni) — alohida kamera ishi."
+      "note": "Dizayn v2 (G3): kuryer va menejer uchun bitta tartib (courier-courier-bulk-main). Ega savoli Q8 sukuti: menejerda ham kuryer maketi (4 stat karta, qidiruv + «Natija» filtri, saralash — hammasi mijoz tomonida, yangi API parametri yo'q); «Kutilayotgan» izohi menejerda «Filial kuryerlarida, yakunlanmagan». Q9: «Faqat bekorlarni qo'llash» olib tashlandi (maketlarda yo'q). Telefonda «Kunni yakunlash» pastki menyu ustidagi yopishqoq panelda (DOM'da bitta tugma). Tasdiq — useConfirm (courier-courier-bulk-confirm-dialog matnlari); «Ertaga» so'rov yubormaydi. Tasdiqdan keyingi isbot qadami (CourierBulkProofDialog — market expense_proof_conditions talab qilgan buyurtmalarga har biriga bitta ProofField, hammasida fayl bo'lmaguncha «Yakunlash» o'chiq) va xatolar ro'yxati (CourierBulkResultDialog — har xato backend sababi bilan) uchun maket yo'q — eng yaqini: tizim-states-forms + courier-courier-bulk-confirm-dialog (dev j9KFyqlS). Isbot kerak bo'lmasa qo'shimcha qadam yo'q; ommaviy sotish/bekor so'rovlarida X-Request-Source: courier-bulk. Kamera oynasi va skan topilmaganda chiqadigan umumiy qoplama (common:scannerFeedbackMissing «Bu pochtada yo'q» matni) — alohida kamera ishi. Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (mavjud v1 «Kamera» tugmalari 2-bosqichda olib tashlanadi)."
     },
     {
       "path": "/scan",
@@ -738,8 +740,13 @@
       "title": "QR skaner — telefon kamerasi (to'liq ekran, ScanLayout)",
       "components": [
         "src/pages/scan/index.tsx",
-        "src/pages/scan/lib/scanShared.ts",
+        "src/pages/scan/model/useUniversalScan.ts",
+        "src/pages/scan/model/scanHistory.ts",
+        "src/pages/scan/ui/ScanSideCards.tsx",
+        "src/pages/scan/lib/scanResource.ts",
+        "src/shared/ui/camera/ScannerCamera.tsx",
         "src/shared/lib/useCameraQrScanner.ts",
+        "src/shared/lib/scanner/feedback.ts",
         "src/shared/components/ScanFeedbackOverlay.tsx"
       ],
       "views": {
@@ -747,13 +754,13 @@
         "admin": ["scan-camera"],
         "manager": ["scan-camera"],
         "registrator": ["scan-camera"],
-        "courier": ["scan-camera", "scan-starting", "scan-permission-denied", "scan-active", "scan-success-flash", "scan-invalid", "scan-too-fast", "scan-offline", "scan-manual-entry"],
+        "courier": ["scan-camera", "scan-starting", "scan-permission-denied", "scan-active", "scan-success-flash", "scan-invalid", "scan-too-fast", "scan-offline", "scan-manual-entry", "scan-not-found"],
         "tizim": ["scanner"]
       },
       "roleNotes": {
-        "market": "Maket yo'q — market skanerlamaydi (roles.json: persona.scan = false)."
+        "market": "Maket yo'q — market skanerlamaydi (roles.json: persona.scan = false). URL bilan ochilsa — «Skaner market roli uchun emas» bo'sh holati (kamera ochilmaydi)."
       },
-      "note": "Kirish: yuqori panel «Skanerlash» tugmasi va telefon menyusi. Holatlar (ishga tushmoqda, faol, topildi, noto'g'ri QR, juda tez, kamera xatosi) bitta komponentda. Butun /scan sahifasi (barcha kamera holatlari, «Qo'lda kiritish», «Oxirgi skanerlar», oflayn navbat) — alohida kamera ishi (ega qarori 2026-10-16; G3 Q1 sukuti); 4-bosqichda faqat /scan/:token. Buyurtma raqami bilan qo'lda qidirish uchun API yo'q (QR faqat qr_code_token bo'yicha)."
+      "note": "Ega qarori 2026-10-19 (skaner, Trello v1eLN2tV): pastki menyuning markaziy «Skaner» tugmasi (planshet/desktop — yuqori paneldagi «Skanerlash») kontekstli — sahifa skan maqsadini ro'yxatdan o'tkazgan bo'lsa kamera shu sahifa ustida, USB bilan bir xil handler'da ochiladi (ScannerHost); oqim ichidagi «Kamera bilan skanerlash» tugmasi QILINMAYDI (mavjud v1 «Kamera» tugmalari 2-bosqichda olib tashlanadi). Universal skaner (dizayn v2, 1-bosqich): faqat «Ma'lumot» rejimi — bitta kod aniqlanadi va natija sahifasi /scan/:token ochiladi («№… topildi · Tegishli ekran ochilmoqda»); topilmadi / yaroqsiz QR / market QR — skaner ochiq qoladi, natija kamerada va desktopda «Natija» kartasida. Rejim segmenti («Ma'lumot · Qabul qilish · Kuryerga biriktirish», kuryerda «O'zimga olish») — 3-bosqich, hozir chizilmaydi. Telefonda to'liq ekran (ScannerCamera presentation=page; pastda «Oxirgi: …» qatori, [Qo'lda kiritish] [Chiroq]); planshet/desktopda kamera + «USB skaner ham tayyor» va qo'lda kiritish, «Oxirgi skanerlar · Shu qurilmada» (localStorage, foydalanuvchiga bog'langan, oxirgi 10 ta). Qo'lda kiritish — faqat token yoki /scan/<token> havolasi: buyurtma raqami bo'yicha qidiruv API'si yo'q (QR faqat qr_code_token bo'yicha), shuning uchun maketdagi raqamli klaviatura va «Harflar» kiritilmagan — ega qarori kutiladi. Resolver (scanResource.ts): POST-/PST- → GET post/scan/:token; MCR- — so'rovsiz «Bu market QR kodi» (backend bir martada yeydi); qolgani GET orders/qr-code/:token, 404 bo'lsa GET scan/:token zaxirasi (BeePost qop yorlig'i); 24 belgili hex token kichik harfga keltiriladi, token encodeURIComponent bilan. Oflayn: chip bor, navbat yo'q."
     },
     {
       "path": "/scan/:token",
@@ -775,7 +782,11 @@
         "src/pages/scan/ui/ScanPostDetail.tsx",
         "src/pages/scan/model/scanOrderView.ts",
         "src/pages/scan/model/scanBatchView.ts",
-        "src/pages/scan/lib/scanResource.ts"
+        "src/pages/scan/lib/scanResource.ts",
+        "src/pages/scan/ui/ScanExternalBagDetail.tsx",
+        "src/pages/scan/ui/ScanMarketQrNotice.tsx",
+        "src/pages/scan/model/scanExternalBagView.ts",
+        "src/pages/scan/model/scanHistory.ts"
       ],
       "views": {
         "superadmin": ["scan-result"],
@@ -789,7 +800,7 @@
         "admin": "superadmin-scan-result maketi (views.json: admin-scan-result = superadmin fragmenti) — bitta xodim tartibi.",
         "market": "Maket yo'q — market skanerlamaydi. URL orqali ochilsa — xodimning faqat o'qish tartibi (amallarsiz, holat tarixisiz, tafsilot havolasisiz)."
       },
-      "note": "Dizayn v2 (G3): barcha rollar uchun bitta tartib (menejer/kuryer maketlari tuzilmasi), rol farqi faqat mazmunda; admin — superadmin maketi (superadmin-scan-result). «O'zimga olish» faqat kuryerda; boshqa kuryerga biriktirilgan buyurtma xatosi — backend matni amallar kartasida. Paket → ScanPackageDetail, pochta → ScanPostDetail; xodimda paket nomlari GET transfer-batches/:id bilan to'ldiriladi (ixtiyoriy, xatosi global xabarsiz — silentError). Ega savollari sukuti: Q2 menejerda «Sotish / Bekor qilish» buyurtma tafsilotidagi qoidalar bilan (can_sell_cancel, REGIONAL/HYBRID, kuryer qo'lida emas); Q3 «Kuryerga biriktirish» → /dispatch (buyurtma qo'shilib tanlanadi; buyurtma holati bo'yicha cheklanmagan — spec sukuti); Q4 superadmin/admin/registrator xulosasida «To'langan» ham, «Yaratilgan» ham; Q5 kuryerga paketni «Qabul qilish» yo'q (backend 403) — faqat o'qish."
+      "note": "Dizayn v2 (G3): barcha rollar uchun bitta tartib (menejer/kuryer maketlari tuzilmasi), rol farqi faqat mazmunda; admin — superadmin maketi (superadmin-scan-result). «O'zimga olish» faqat kuryerda; boshqa kuryerga biriktirilgan buyurtma xatosi — backend matni amallar kartasida. Paket → ScanPackageDetail, pochta → ScanPostDetail; xodimda paket nomlari GET transfer-batches/:id bilan to'ldiriladi (ixtiyoriy, xatosi global xabarsiz — silentError). Ega savollari sukuti: Q2 menejerda «Sotish / Bekor qilish» buyurtma tafsilotidagi qoidalar bilan (can_sell_cancel, REGIONAL/HYBRID, kuryer qo'lida emas); Q3 «Kuryerga biriktirish» → /dispatch (buyurtma qo'shilib tanlanadi; buyurtma holati bo'yicha cheklanmagan — spec sukuti); Q4 superadmin/admin/registrator xulosasida «To'langan» ham, «Yaratilgan» ham; Q5 kuryerga paketni «Qabul qilish» yo'q (backend 403) — faqat o'qish. Skaner 1-bosqich: pochta tokeni POST-… (backend yaratadigan shakl) ham pochta sifatida ochiladi; tashqi qop yorlig'i (GET scan/:token zaxirasi, is_external_batch) — ScanExternalBagDetail (maket yo'q — eng yaqini courier-scan-package-detail: posilkalar soni, qabul qilinmaganlar, a'zolar ro'yxati; «Kiruvchi posilkalarda ochish» → /new-orders/incoming faqat canReceiveExternalOrders); market QR'i MCR- — ScanMarketQrNotice (so'rovsiz; «Bekor qilinganlarni ochish» faqat canHandoverCancelledToMarket). Kuryer «O'zimga olish» va paket «Qabul qilish» dan keyin orders / mails / batches / scan-detail keshi eskirgan deb belgilanadi (6qypMFeT). Ochilgan obyekt «Oxirgi skanerlar» tarixiga yoziladi."
     },
     {
       "path": "/tg/scan",
@@ -800,7 +811,7 @@
       "components": [
         "src/pages/tg-scan/index.tsx",
         "src/features/tg-scan/ui/TgScanner.tsx",
-        "src/features/tg-scan/ui/CameraSurface.tsx",
+        "src/shared/ui/camera/CameraSurface.tsx",
         "src/features/tg-scan/ui/ScanListSheet.tsx",
         "src/features/tg-scan/model/useTelegramAuth.ts",
         "src/features/tg-scan/model/useScanAssign.ts",
@@ -1533,14 +1544,14 @@
     "superadmin-neworders-branch-batch-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
     "admin-neworders-branch-batch-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
     "courier-courier-bulk-scanner-camera-list": "Kamera oynasida «skanerlanganlar ro'yxati» varag'i yo'q (ScannerCameraModal faqat kamera).",
-    "courier-scan-offline": "Internet yo'qda skanlarni navbatga qo'yish yo'q.",
-    "courier-scan-manual-entry": "Kodni qo'lda kiritish yo'q."
+    "courier-scan-offline": "Oflayn chip bor («Internet yo'q»); skanlarni navbatga qo'yish yo'q."
   },
   "partialViews": {
+    "courier-scan-manual-entry": "«Kodni qo'lda kiriting» varag'i v2 (token yoki /scan/<token> havolasi, «Ochish»); maketdagi raqamli klaviatura va «Harflar» yo'q — buyurtma raqami bo'yicha qidiruv API'si yo'q, ega qarori kutiladi.",
+    "courier-scan-active": "Kamera, chiroq chipi, «Oxirgi: …» qatori v2 (/scan); «Oxirgi» qatoridagi «Sizga biriktirildi» holati yo'q — tarix faqat ochilgan obyektni saqlaydi; uzluksiz «O'zimga olish» — skaner 3-bosqich rejimi.",
     "registrator-new-orders-market-detail": "Registrator boshqa xodim rollari (superadmin/admin/menejer) bilan bir xil v2 ko'rinishda — maketdagi farqlar (sarlavhada «Chop etish», «Buyurtmalar N ta» karta sarlavhasi, «5 / 6 ta» tanlov xulosasi, qator kebab menyusi) ega qaroriga qadar kiritilmagan.",
     "registrator-new-orders-market-detail-receive-dialog": "Umumiy xodim qabul oynasi (MarketOrderDialogs.tsx) — tasdiq tugmasi «Tasdiqlash»; maketdagi «Qabul qilish — N ta» varianti ega qaroriga qadar kiritilmagan.",
-    "courier-scan-other-courier": "Alohida holat yo'q — «O'zimga olish» rad etilsa backend xato matni amallar kartasida chiqadi (ScanActionCard). Kamera ekranidagi ko'rinishi — alohida kamera ishi.",
-    "courier-scan-not-found": "Maket holati kamera ekranida chizilgan — kamera ishi. /scan/:token da «Buyurtma topilmadi» kartasi (ScanStates: «Qayta urinish» + «Skanerga qaytish») v2.",
+    "courier-scan-other-courier": "Alohida holat yo'q — «O'zimga olish» rad etilsa backend xato matni amallar kartasida chiqadi (ScanActionCard). Kamera ekranidagi ko'rinishi — kuryer «O'zimga olish» rejimi bilan (skaner 3-bosqich).",
     "manager-dispatch-camera-dialog": "Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish.",
     "registrator-dispatch-camera-scanner-dialog": "Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish.",
     "manager-courier-bulk-camera-dialog": "Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish.",
@@ -1752,7 +1763,7 @@
     },
     "scanner": {
       "defines": "Kamera va USB skaner qachon, kirish nuqtalari (pastki menyu «Skaner», yuqori panel «Skanerlash»), kamera anatomiyasi, barcha holatlar (ruxsat, ishga tushmoqda, tayyor, topildi, takroriy, topilmadi, noto'g'ri QR, boshqa kuryerniki, juda tez, kam yorug'lik, chiroq, oflayn navbat, kamera band, qo'lda kiritish), uzluksiz skanerlash (hisoblagich, ro'yxat, tugatish), desktop veb-kamera + USB.",
-      "code": "src/pages/scan/*, src/shared/components/ScannerCameraModal.tsx, src/shared/lib/{useCameraQrScanner,useKeyboardScanner,useOrderQrScanner}.ts, src/pages/scan/lib/scanShared.ts"
+      "code": "src/shared/ui/camera/{ScannerCamera,CameraSurface,useScannerCameraSession,cameraPermission}.ts(x), src/shared/lib/scanner/{scanTargets,scannerHost,feedback}.ts, src/widgets/scanner/ScannerHost.tsx, src/pages/scan/*, src/shared/lib/{useCameraQrScanner,useKeyboardScanner,useOrderQrScanner,qrScanner}.ts; v1 qoldig'i — src/shared/components/ScannerCameraModal.tsx (2-bosqichda olib tashlanadi)"
     },
     "charts": {
       "defines": "Qaysi grafik qachon, kategorial palitra (chart-1…8, kunduzgi/tungi), ketma-ket va ikki qutbli shkalalar, holat ranglari, grafik anatomiyasi, galereya (spidometr, donut, KPI, chiziq, ustunlar, reyting, issiqlik xaritasi, xarita, sharshara, voronka, sparkline), holatlar (yuklanmoqda, bo'sh, xato), «Grafik | Jadval» egizagi, telefon.",

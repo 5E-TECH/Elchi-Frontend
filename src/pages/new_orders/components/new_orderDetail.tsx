@@ -23,7 +23,8 @@ import {
   type DataTableSelection,
   type DataTableSort,
 } from "../../../shared/ui/primitives";
-import { normalizeScannerCandidates, playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
+import { normalizeScannerCandidates } from "../../../shared/lib/scanToken";
+import { playMissingOrderFeedback, playScanFeedback } from "../../../shared/lib/scanner/feedback";
 import { useHasNewOrdersTabs } from "../model/useNewOrdersTabs";
 import { listOf } from "../model/todayMarkets";
 import NewOrdersTabs from "../ui/NewOrdersTabs";

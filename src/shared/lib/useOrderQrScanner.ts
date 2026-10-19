@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { normalizeScannerCandidates } from "./scanToken";
+import { useScanTarget, type ScanSource, type ScanTarget } from "./scanner/scanTargets";
 import { useKeyboardScanner } from "./useKeyboardScanner";
 
 type OrderQrScannerItem = {
@@ -12,8 +13,16 @@ type UseOrderQrScannerOptions<TOrder extends OrderQrScannerItem> = {
   enabled?: boolean;
   minLength?: number;
   captureEditableTargets?: boolean;
-  onMatch: (order: TOrder, rawValue: string) => void;
-  onMissing: (rawValue: string) => void;
+  onMatch: (order: TOrder, rawValue: string, source: ScanSource) => void;
+  onMissing: (rawValue: string, source: ScanSource) => void;
+  /**
+   * Kamera (kontekstli markaziy tugma, Trello v1eLN2tV): berilsa hook o'zi skan maqsadini ro'yxatdan
+   * o'tkazadi (`useScanTarget`). Kamera o'qigan kod USB bilan AYNAN bir xil moslashdan o'tadi
+   * (topildi → `onMatch`, aks holda `onMissing`). Maqsad faqat `enabled=false` bo'lsa yo'q (markaziy tugma
+   * universal `/scan` ni ochadi). Ro'yxat bo'shligi (yuklanmoqda, hammasi qabul qilindi, bo'sh market) maqsadni
+   * OLMAYDI: kamera ochiq qoladi («Qoldi 0», «Tugatish» ko'rinadi), skan esa `onMissing` ga tushadi.
+   */
+  camera?: Omit<ScanTarget, "onScan">;
 };
 
 export const useOrderQrScanner = <TOrder extends OrderQrScannerItem>({
@@ -23,6 +32,7 @@ export const useOrderQrScanner = <TOrder extends OrderQrScannerItem>({
   captureEditableTargets = true,
   onMatch,
   onMissing,
+  camera,
 }: UseOrderQrScannerOptions<TOrder>) => {
   const orderScanIndex = useMemo(() => {
     const index = new Map<string, TOrder>();
@@ -39,28 +49,43 @@ export const useOrderQrScanner = <TOrder extends OrderQrScannerItem>({
     return index;
   }, [orders]);
 
-  const handleScan = useCallback((rawValue: string) => {
+  const matchScan = useCallback((rawValue: string, source: ScanSource) => {
     const candidates = normalizeScannerCandidates(rawValue, window.location.origin);
     const matchedOrder = candidates
       .map((candidate) => orderScanIndex.get(candidate))
       .find(Boolean);
 
     if (matchedOrder) {
-      onMatch(matchedOrder, rawValue);
+      onMatch(matchedOrder, rawValue, source);
       return true;
     }
 
-    if (rawValue.trim().length < minLength && !rawValue.includes("/scan/")) {
+    // USB: qisqa qiymat — maydonga odam yozgan matn, jim. Kamera / qo'lda kiritish esa ataylab berilgan kod —
+    // jim qolmaydi, «topilmadi» bo'ladi (aks holda kamera hech qanday javob bermasdi).
+    if (source === "keyboard" && rawValue.trim().length < minLength && !rawValue.includes("/scan/")) {
       return false;
     }
 
-    onMissing(rawValue);
+    onMissing(rawValue, source);
     return true;
   }, [minLength, onMatch, onMissing, orderScanIndex]);
+
+  const handleKeyboardScan = useCallback((rawValue: string) => matchScan(rawValue, "keyboard"), [matchScan]);
 
   useKeyboardScanner({
     enabled: enabled && orders.length > 0,
     captureEditableTargets,
-    onScan: handleScan,
+    onScan: handleKeyboardScan,
   });
+
+  useScanTarget(
+    camera && enabled
+      ? {
+          ...camera,
+          onScan: (rawValue, source) => {
+            matchScan(rawValue, source);
+          },
+        }
+      : null,
+  );
 };

@@ -16,7 +16,7 @@ import { formatNumberLocalized } from "../../shared/lib/formatMoney";
 import { notify } from "../../shared/lib/notify";
 import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
 import { Button, PageHeader, useConfirm, type ConfirmConsequence } from "../../shared/ui/primitives";
-import { playScanFeedback } from "../scan/lib/scanShared";
+import { playScanFeedback } from "../../shared/lib/scanner/feedback";
 import {
   COURIER_BULK_CONCURRENCY,
   COURIER_BULK_PROOF_CONCURRENCY,

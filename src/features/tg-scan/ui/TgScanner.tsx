@@ -43,7 +43,7 @@ import {
   CameraToasts,
   ScanFinder,
   type CameraTone,
-} from "./CameraSurface";
+} from "../../../shared/ui/camera";
 import { ScanListSheet } from "./ScanListSheet";
 
 /**

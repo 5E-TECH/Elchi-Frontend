@@ -176,12 +176,14 @@ export const V2_SCOPES = Object.freeze([
   "src/widgets/order-meta",
   "src/widgets/order-tracking",
   "src/widgets/region-detail",
+  "src/widgets/scanner",
   "src/widgets/user-detail",
   "src/widgets/user-list",
   // `src/shared/ui` butunligicha EMAS — u yerda v1 `BackButton.tsx` hali rang bilan (boshqa v1 o'ramlari o'chirildi).
   "src/shared/ui/primitives",
   "src/shared/ui/charts",
   "src/shared/ui/error-page",
+  "src/shared/ui/camera",
 ]);
 
 /** Scope ichida hali v1 qolgan fayllar — baseline'dagi rang ruxsati saqlanadi. FAQAT QISQARADI (sabab bilan;
@@ -189,8 +191,6 @@ export const V2_SCOPES = Object.freeze([
 export const V2_SCOPE_PENDING = Object.freeze({
   "src/pages/payments/components/SalaryPaymentPopup.tsx":
     "yetib bo'lmaydigan v1 — «Maosh to'lash» yashirin (Moliya spec §9)",
-  "src/pages/scan/index.tsx":
-    "kamera ishi — /scan butunlay kamera ekrani, alohida ish (ega qarori 2026-10-16)",
 });
 
 /** Ilova mavzusidan tashqari chiqish formatlari (chop etish, termal yorliq, Excel): rang qoidalari qo'llanmaydi —

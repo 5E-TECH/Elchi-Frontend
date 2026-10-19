@@ -1,345 +1,204 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { memo, useCallback, useEffect, useRef, useState } from "react";
-import {
-  AlertTriangle,
-  Camera,
-  CheckCircle2,
-  Flashlight,
-  FlashlightOff,
-  QrCode,
-  RefreshCw,
-  ScanLine,
-  Sparkles,
-} from "lucide-react";
+// dizayn-v2: superadmin-scan-camera, courier-scan-camera, courier-scan-starting, courier-scan-permission-denied, courier-scan-active, courier-scan-success-flash, courier-scan-invalid, courier-scan-too-fast, courier-scan-manual-entry, courier-scan-not-found
+import { memo, useCallback, useMemo, type ReactNode } from "react";
+import { ArrowLeft, ChevronRight, History, House, ScanLine, Volume2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
+import type { RootState } from "../../app/config/store";
+import { formatDateTimeLocalized } from "../../shared/lib/formatDateTime";
+import type { ScanSource, ScanTarget } from "../../shared/lib/scanner";
 import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
-import { useScannerGate } from "../../shared/lib/useScannerGate";
-import { useCameraQrScanner } from "../../shared/lib/useCameraQrScanner";
-import {
-  extractScannerToken,
-  playScanFeedback,
-} from "./lib/scanShared";
-import {
-  fetchScanDetail,
-  getScanDetailQueryKey,
-} from "./lib/scanResource";
-import BackButton from "../../shared/ui/BackButton";
+import { CameraLastScan } from "../../shared/ui/camera";
+// Bu sahifa o'zi alohida (lazy) bo'lak — kamera to'g'ridan-to'g'ri, `loadScannerCamera` siz.
+import { ScannerCamera } from "../../shared/ui/camera/ScannerCamera";
+import { EmptyState, Spinner, buttonClasses } from "../../shared/ui/primitives";
+import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
+import { useScanHistory } from "./model/scanHistory";
+import { scanHistoryTitle } from "./model/scanHistoryText";
+import { useUniversalScan } from "./model/useUniversalScan";
+import { useIsBelowLg } from "./model/useViewport";
+import { ScanOutcomeCard, ScanRecentCard, ScanUsbCard, scanDetailRoute } from "./ui/ScanSideCards";
 
-const CAMERA_SCAN_COOLDOWN_MS = 700;
-const DUPLICATE_SCAN_COOLDOWN_MS = 1800;
+/** Skanerdan chiqish («Orqaga», telefonda «Skanerni yopish») — maketdagi `@dashboard-main`. */
+const HOME_ROUTE = "/";
 
-type ScanSource = "camera" | "keyboard";
+/** USB skan deb hisoblanadigan eng qisqa qiymat (undan qisqasi — maydonga qo'lda yozilgan matn). */
+const MIN_KEYBOARD_SCAN_LENGTH = 4;
 
+/**
+ * UNIVERSAL SKANER — `/scan` (dizayn v2, Trello v1eLN2tV 1-bosqich). Maketlar: `superadmin-scan-camera`
+ * (superadmin, admin, menejer, registrator — bitta fragment) va `courier-scan-*` holatlari.
+ *
+ * Pastki menyuning markaziy «Skaner» tugmasi va yuqori paneldagi «Skanerlash» sahifada skan maqsadi bo'lmasa
+ * shu yerga olib keladi (maqsad bo'lsa kamera o'sha sahifa ustida ochiladi — `ScannerHost`). Bu yerda faqat
+ * «Ma'lumot» rejimi: bitta kod → natija sahifasi `/scan/:token` (rejim segmenti — 3-bosqich, hozir chizilmaydi).
+ *
+ * Ko'rinish:
+ *   - telefon (< 768) — `ScannerCamera presentation="page"`: to'liq ekran, tepada «Skanerni yopish» + sarlavha,
+ *     pastda «Oxirgi: …» qatori va [Qo'lda kiritish] [Chiroq];
+ *   - planshet / desktop — sarlavha («Orqaga», «Skaner ovozi»), kamera bloki va yon kartalar: «Natija»
+ *     (ochilmagan oxirgi skan), «USB skaner ham tayyor» + qo'lda kiritish, «Oxirgi skanerlar · Shu qurilmada»
+ *     (planshetda kamera ostida ikki ustun).
+ *
+ * Kirish yo'llari bitta handler'da (`useUniversalScan`): kamera (`ScannerCamera` ichida 700 / 1800 ms),
+ * USB (HID, kursor qayerda bo'lishidan qat'i nazar — `captureEditableTargets`), qo'lda kiritish (token yoki
+ * `/scan/<token>` havolasi; buyurtma raqami bo'yicha qidiruv API'si yo'q).
+ *
+ * Market roli skanerlamaydi (`roles.json` `persona.scan: false`): URL bilan ochilsa — bo'sh holat.
+ */
 const ScanPage = () => {
-  const { t } = useTranslation("common");
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const stopScannerRef = useRef<() => void>(() => undefined);
-  const redirectTimeoutRef = useRef<number | null>(null);
-  /**
-   * ⚠️ Ilgari har skandan keyin 1800 ms davomida keyingi skan JIM tashlanardi
-   * (≈0.55 skan/sek) — tez skanerlaganda posilkalarning bir qismi "skanerlandi"
-   * deb o'ylanib, aslida hech qayerga tushmasdi. Endi:
-   *  • kamera pauzasi 700 ms (bir QR'ni har kadrda qayta o'qimaslik uchun);
-   *  • HID (klaviatura) skanerida pauza YO'Q — u har skanni Enter bilan o'zi
-   *    chegaralaydi; faqat bir xil tokenning takrori ushlanadi;
-   *  • rad etilgan har bir skan ovoz + ekrandagi xabar bilan bildiriladi.
-   */
-  const { evaluateScan, blockScans, resetScannerGate } = useScannerGate({
-    cooldownMs: CAMERA_SCAN_COOLDOWN_MS,
-    duplicateCooldownMs: DUPLICATE_SCAN_COOLDOWN_MS,
-  });
-  // Posilka ochilayotgan (navigatsiya kutilayotgan) paytdagi token.
-  const openingTokenRef = useRef<string | null>(null);
+  const role = useSelector((state: RootState) => state.role.role);
+  if (role === "market") return <ScanMarketBlocked />;
+  return <UniversalScanner />;
+};
 
-  const [error, setError] = useState("");
-  const [scanResult, setScanResult] = useState("");
-  const [scannedId, setScannedId] = useState("");
-  const [scanState, setScanState] = useState<"idle" | "success" | "invalid">("idle");
-
-  const handleDecodedValue = useCallback((rawValue: string, source: ScanSource) => {
-    const nextToken = extractScannerToken(rawValue, window.location.origin);
-
-    // Oldingi posilka hali ochilmoqda — ikkinchi skanni ham "qabul qilindi"
-    // deb ko'rsatib yuborish yolg'on bo'lardi.
-    // Xabar ilova darajasidagi overlay'da chiqadi — u navigatsiyadan keyin
-    // ham ko'rinib turadi (sahifa 180 ms'da detalga o'tadi).
-    if (openingTokenRef.current) {
-      if (nextToken && nextToken !== openingTokenRef.current) {
-        void playScanFeedback("error", t("scannerPreviousOpening"));
-      }
-      return true;
-    }
-
-    const verdict = evaluateScan(rawValue, { ignoreCooldown: source === "keyboard" });
-    if (verdict === "duplicate") {
-      // Kamera bir QR'ni har kadrda qayta o'qiydi — bu signal emas. HID
-      // skanerda esa takror — operatorning ataylab qilgan harakati.
-      if (source === "keyboard") void playScanFeedback("duplicate");
-      return true;
-    }
-    if (verdict === "cooldown") {
-      setError(t("scannerTooFast"));
-      void playScanFeedback("error", t("scannerTooFast"));
-      return true;
-    }
-
-    if (nextToken) {
-      openingTokenRef.current = nextToken;
-      stopScannerRef.current();
-      setError("");
-      setScanState("success");
-      setScanResult(nextToken);
-      setScannedId(nextToken);
-      void playScanFeedback("success");
-      void queryClient.prefetchQuery({
-        queryKey: getScanDetailQueryKey(nextToken),
-        queryFn: () => fetchScanDetail(nextToken),
-      });
-      if (redirectTimeoutRef.current) {
-        window.clearTimeout(redirectTimeoutRef.current);
-      }
-      redirectTimeoutRef.current = window.setTimeout(() => {
-        navigate(`/scan/${encodeURIComponent(nextToken)}`);
-      }, 180);
-      return true;
-    }
-
-    setScanState("invalid");
-    setScanResult(rawValue);
-    setError(t("scannerInvalidQr"));
-    void playScanFeedback("error");
-    blockScans();
-    return true;
-  }, [blockScans, evaluateScan, navigate, queryClient, t]);
-
-  const handleKeyboardScan = useCallback(
-    (rawValue: string) => handleDecodedValue(rawValue, "keyboard"),
-    [handleDecodedValue],
+const ScanMarketBlocked = () => {
+  const { t } = useTranslation("scan");
+  return (
+    <div className="flex min-h-[70dvh] items-center justify-center">
+      <EmptyState
+        size="page"
+        icon={ScanLine}
+        title={t("scanner.marketBlocked.title")}
+        titleAs="h1"
+        description={t("scanner.marketBlocked.text")}
+        action={
+          <Link to={HOME_ROUTE} className={buttonClasses({ variant: "primary" })}>
+            <House size={18} aria-hidden="true" className="shrink-0" />
+            {t("scanner.marketBlocked.action")}
+          </Link>
+        }
+      />
+    </div>
   );
-  const handleCameraScan = useCallback(
-    (rawValue: string) => handleDecodedValue(rawValue, "camera"),
-    [handleDecodedValue],
+};
+
+const UniversalScanner = () => {
+  const { t, i18n } = useTranslation("scan");
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const navigate = useNavigate();
+  const isPhone = useIsPhone();
+  const isBelowLg = useIsBelowLg();
+  const userId = useSelector((state: RootState) => state.user.user?.id ?? null);
+  const { entries } = useScanHistory(userId);
+  const { handleScan, opening, outcome } = useUniversalScan();
+
+  const submit = useCallback(
+    (raw: string, source: ScanSource) => {
+      void handleScan(raw, source);
+    },
+    [handleScan],
   );
 
   useKeyboardScanner({
     enabled: true,
     captureEditableTargets: true,
-    onScan: handleKeyboardScan,
+    onScan: (raw) => {
+      // Qo'lda kiritish maydonida odam yozib Enter bosganda buferda 1–3 belgi qoladi — bu skan emas,
+      // forma o'zi yuboradi. Haqiqiy yorliq kodlari uzunroq (ichki token 24 belgi, `BTB-…`, `POST-…`).
+      if (raw.trim().length < MIN_KEYBOARD_SCAN_LENGTH) return false;
+      submit(raw, "keyboard");
+      return true;
+    },
   });
 
-  const {
-    isStarting,
-    torchEnabled,
-    hasTorch,
-    cameraError,
-    cameraUnavailable,
-    stopScanner,
-    restartScanner,
-    toggleTorch,
-  } = useCameraQrScanner({
-    isActive: true,
-    videoRef,
-    onDecode: handleCameraScan,
-    startErrorMessage: t("scannerStartError"),
-  });
+  const target = useMemo<ScanTarget>(
+    () => ({
+      id: "universal-scan",
+      title: t("scanner.title"),
+      context: t("scanner.context"),
+      onScan: submit,
+    }),
+    [submit, t],
+  );
 
-  useEffect(() => {
-    stopScannerRef.current = stopScanner;
-  }, [stopScanner]);
+  const latest = entries[0];
+  let lastScan: ReactNode;
+  if (opening) {
+    lastScan = (
+      <CameraLastScan
+        icon={<Spinner />}
+        tone="success"
+        title={t("scanner.opening")}
+        subtitle={opening.title ?? t("scanner.searching")}
+      />
+    );
+  } else if (latest) {
+    const who = latest.kind === "order" ? latest.name : latest.place;
+    lastScan = (
+      <Link to={scanDetailRoute(latest.token)} className="block rounded-[14px]">
+        <CameraLastScan
+          icon={<History aria-hidden="true" size={18} />}
+          title={t("scanner.lastTitle", { title: scanHistoryTitle(t, latest, language) })}
+          subtitle={[who, formatDateTimeLocalized(latest.at, { language })].filter(Boolean).join(" · ")}
+          action={<ChevronRight aria-hidden="true" size={18} className="mr-1.5 shrink-0 opacity-70" />}
+        />
+      </Link>
+    );
+  } else {
+    lastScan = (
+      <CameraLastScan
+        icon={<ScanLine aria-hidden="true" size={18} />}
+        title={t("scanner.phoneEmptyTitle")}
+        subtitle={t("scanner.phoneEmptyText")}
+      />
+    );
+  }
 
-  useEffect(() => {
-    resetScannerGate();
-  }, [resetScannerGate]);
+  const camera = (
+    <ScannerCamera
+      target={target}
+      presentation="page"
+      onClose={() => navigate(HOME_ROUTE)}
+      lastScan={lastScan}
+      phoneSecondary="torch"
+      manual={{
+        label: t("scanner.manualDialogLabel"),
+        hint: t("scanner.manualDialogHint"),
+        submitLabel: t("scanner.manualSubmit"),
+      }}
+    />
+  );
 
-  useEffect(() => {
-    return () => {
-      if (redirectTimeoutRef.current) {
-        window.clearTimeout(redirectTimeoutRef.current);
-        redirectTimeoutRef.current = null;
-      }
-    };
-  }, []);
-
-  const handleRestart = () => {
-    if (cameraUnavailable) return;
-    setError("");
-    setScanResult("");
-    setScannedId("");
-    setScanState("idle");
-    openingTokenRef.current = null;
-    resetScannerGate();
-    restartScanner();
-  };
-
-  const shownError = error || cameraError;
+  if (isPhone) return camera;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-primary)_92%,var(--color-main)_8%)_0%,color-mix(in_srgb,var(--color-sidebar)_86%,var(--color-main)_14%)_100%)] shadow-sm sm:rounded-[32px] dark:bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-maindark)_92%,var(--color-main)_8%)_0%,color-mix(in_srgb,var(--color-primarydark)_88%,var(--color-maindark)_12%)_100%)]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,color-mix(in_srgb,var(--color-main)_16%,transparent),transparent_34%),radial-gradient(circle_at_bottom_left,color-mix(in_srgb,var(--color-main)_10%,transparent),transparent_30%)] dark:bg-[radial-gradient(circle_at_top_right,color-mix(in_srgb,var(--color-main)_20%,transparent),transparent_34%),radial-gradient(circle_at_bottom_left,color-mix(in_srgb,var(--color-success)_10%,transparent),transparent_28%)]" />
-
-      <div className="relative flex items-center justify-between gap-3 border-b border-[color:var(--color-border-soft)] px-3 py-3 sm:px-5 sm:py-4 md:px-7">
-        <div className="flex items-center gap-3">
-          <BackButton to="/" className="bg-white dark:bg-maindark" label="" />
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-main/10 text-main ring-1 ring-main/10 dark:bg-white/10 dark:text-white dark:ring-white/10">
-            <QrCode size={20} />
-          </div>
-          <div>
-            <p className="m-0 text-lg font-extrabold tracking-tight text-maindark dark:text-white">
-              {t("scannerTitle")}
-            </p>
-            <p className="m-0 mt-0.5 text-sm text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-              {t("scannerSubtitle")}
-            </p>
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex min-w-0 items-center gap-4">
+          <Link to={HOME_ROUTE} className={buttonClasses({ variant: "secondary" })}>
+            <ArrowLeft size={18} aria-hidden="true" className="shrink-0" />
+            {t("scanner.back")}
+          </Link>
+          <div className="flex min-w-0 flex-col">
+            <h1 className="text-2xl/8 font-bold tracking-[-.01em] text-text">{t("scanner.title")}</h1>
+            <p className="text-sm text-text-muted">{t("scanner.subtitle")}</p>
           </div>
         </div>
-
-        {hasTorch ? (
-          <button
-            type="button"
-            onClick={() => void toggleTorch()}
-            className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[color:var(--color-border-soft)] bg-white text-[color:var(--color-text-muted)] transition hover:border-main/30 hover:bg-main/5 hover:text-main dark:bg-maindark dark:text-white/80 dark:hover:bg-white/12 dark:hover:text-white"
-            aria-label={t("scannerTorch")}
-          >
-            {torchEnabled ? <FlashlightOff size={18} /> : <Flashlight size={18} />}
-          </button>
-        ) : null}
-      </div>
-
-      <div className="relative grid gap-4 px-3 py-3 sm:px-5 sm:py-5 md:grid-cols-[1.12fr_0.88fr] md:gap-6 md:px-7 md:py-7">
-        <div className="relative overflow-hidden rounded-2xl border border-[color:var(--color-border-soft)] bg-maindark shadow-sm sm:rounded-[30px]">
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,color-mix(in_srgb,var(--color-main)_10%,transparent),rgba(15,23,42,0.22))]" />
-
-          <div className="relative aspect-[4/5] w-full md:aspect-[16/10]">
-            <video
-              ref={videoRef}
-              autoPlay
-              muted
-              playsInline
-              className="h-full w-full object-cover opacity-95"
-            />
-
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="relative h-[58%] w-[72%] max-w-[340px] rounded-[26px] border border-white/10 bg-white/[0.04] shadow-[0_0_0_9999px_rgba(7,10,24,0.34)] sm:w-[68%] sm:rounded-[34px]">
-                <div className="absolute left-0 top-0 h-12 w-12 rounded-tl-[30px] border-l-4 border-t-4 border-[color:var(--color-nav-accent)]" />
-                <div className="absolute right-0 top-0 h-12 w-12 rounded-tr-[30px] border-r-4 border-t-4 border-[color:var(--color-nav-accent)]" />
-                <div className="absolute bottom-0 left-0 h-12 w-12 rounded-bl-[30px] border-b-4 border-l-4 border-[color:var(--color-nav-accent)]" />
-                <div className="absolute bottom-0 right-0 h-12 w-12 rounded-br-[30px] border-b-4 border-r-4 border-[color:var(--color-nav-accent)]" />
-                <div
-                  className="absolute left-[8%] right-[8%] h-[2px] -translate-y-1/2 bg-[linear-gradient(90deg,transparent,rgba(124,140,255,0.98),transparent)] shadow-[0_0_24px_rgba(124,140,255,0.78)]"
-                  style={{ animation: "scanner-scan-line-y 2.2s ease-in-out infinite alternate" }}
-                />
-                <div
-                  className="absolute left-[14%] right-[14%] h-10 -translate-y-1/2 bg-[radial-gradient(circle,rgba(124,140,255,0.18),transparent_72%)] blur-md"
-                  style={{ animation: "scanner-scan-line-y 2.2s ease-in-out infinite alternate" }}
-                />
-              </div>
+        <Link to="/settings" state={{ tab: "scanner" }} className={buttonClasses({ variant: "ghost" })}>
+          <Volume2 size={18} aria-hidden="true" className="shrink-0" />
+          {t("scanner.sound")}
+        </Link>
+      </header>
+      <div className="grid grid-cols-[minmax(0,1fr)_380px] items-start gap-6 max-lg:grid-cols-1">
+        <section
+          aria-label={t("scanner.cameraLabel")}
+          className="h-[clamp(420px,calc(100dvh-190px),780px)] min-w-0 max-lg:h-[min(640px,62dvh)]"
+        >
+          {camera}
+        </section>
+        <aside
+          aria-label={t("scanner.sideLabel")}
+          className="flex min-w-0 flex-col gap-4 max-lg:grid max-lg:grid-cols-2 max-lg:items-start"
+        >
+          {outcome ? (
+            <div className="max-lg:col-span-2">
+              <ScanOutcomeCard outcome={outcome} />
             </div>
-
-            {scanState === "success" ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-emerald-500/18 backdrop-blur-[2px]">
-                <div className="flex flex-col items-center rounded-[28px] border border-emerald-300/30 bg-emerald-500/18 px-7 py-6 text-center shadow-[0_18px_40px_rgba(16,185,129,0.18)]">
-                  <CheckCircle2 size={54} className="text-emerald-200" />
-                  <p className="m-0 mt-4 text-xl font-extrabold text-white">
-                    {t("scannerScannedOk")}
-                  </p>
-                  <p className="m-0 mt-2 text-sm text-emerald-100/85">
-                    {t("scannerOpeningOrder")}
-                  </p>
-                </div>
-              </div>
-            ) : null}
-
-            <div className="absolute left-4 top-4 inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold text-emerald-100 backdrop-blur-md">
-              <ScanLine size={14} />
-              {isStarting
-                ? t("scannerStarting")
-                : scanState === "success"
-                  ? t("scannerSuccessState")
-                  : t("scannerReadyState")}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4">
-          <div className="rounded-[28px] border border-[color:var(--color-border-soft)] bg-white/80 p-5 shadow-sm dark:bg-white/[0.04]">
-            <div className="flex items-center gap-2 text-maindark dark:text-white">
-              <Sparkles size={16} className="text-main dark:text-primary" />
-              <p className="m-0 text-sm font-bold uppercase tracking-[0.22em] text-[color:var(--color-text-muted)] dark:text-white/55">
-                {t("scannerGuideTitle")}
-              </p>
-            </div>
-            <h3 className="m-0 mt-3 text-2xl font-extrabold leading-tight text-maindark dark:text-white">
-              {t("scannerGuideHeadline")}
-            </h3>
-            <p className="m-0 mt-2 text-sm leading-6 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-              {t("scannerGuideText")}
-            </p>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-3 md:gap-2">
-            {[t("scannerTipLight"), t("scannerTipCenter"), t("scannerTipHold")].map((tip) => (
-              <div
-                key={tip}
-                className="rounded-2xl border border-[color:var(--color-border-soft)] bg-white/80 px-4 py-3 text-sm font-medium leading-5 text-maindark dark:bg-white/[0.04] dark:text-white/70"
-              >
-                {tip}
-              </div>
-            ))}
-          </div>
-
-          <div className="rounded-[28px] border border-[color:var(--color-border-soft)] bg-white/80 p-5 dark:bg-white/[0.04]">
-            <div className="flex items-center gap-2 text-maindark/80 dark:text-white/80">
-              <Camera size={16} />
-              <p className="m-0 text-sm font-semibold">{t("scannerResultLabel")}</p>
-            </div>
-
-            {scanState === "success" ? (
-              <div className="mt-4 rounded-2xl border border-emerald-400/15 bg-emerald-500/10 px-4 py-3">
-                <p className="m-0 text-xs font-bold uppercase tracking-[0.2em] text-emerald-200/75">
-                  {t("success")}
-                </p>
-                <p className="m-0 mt-2 text-sm font-semibold text-maindark dark:text-white">
-                  {t("scannerDetectedCode")}
-                </p>
-                <p className="m-0 mt-1 break-all text-sm text-emerald-100/90">
-                  {scannedId || scanResult}
-                </p>
-              </div>
-            ) : shownError ? (
-              <div className="mt-4 rounded-2xl border border-red-400/20 bg-red-500/10 px-4 py-3 text-sm font-medium text-red-600 dark:text-red-100">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle size={16} className="mt-0.5 shrink-0" />
-                  <div>
-                    <p className="m-0">{shownError}</p>
-                    {scanState === "invalid" && scanResult ? (
-                      <p className="m-0 mt-2 break-all text-xs text-red-500/70 dark:text-red-100/70">
-                        {scanResult}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="mt-4 rounded-2xl border border-dashed border-[color:var(--color-border-soft)] px-4 py-5 text-sm leading-6 text-[color:var(--color-text-muted)] dark:text-white/48">
-                {t("scannerWaitingText")}
-              </div>
-            )}
-
-            {!cameraUnavailable ? (
-              <button
-                type="button"
-                onClick={handleRestart}
-                className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-[color:var(--color-border-soft)] bg-white px-4 py-3 text-sm font-semibold text-maindark transition hover:border-main/30 hover:bg-main/5 hover:text-main dark:bg-maindark dark:text-white/80 dark:hover:bg-white/[0.09] dark:hover:text-white"
-              >
-                <RefreshCw size={15} />
-                {t("retry")}
-              </button>
-            ) : null}
-          </div>
-        </div>
+          ) : null}
+          <ScanUsbCard onSubmit={(code) => submit(code, "manual")} showTips={!isBelowLg && !outcome} />
+          <ScanRecentCard entries={entries} limit={isBelowLg ? 2 : 4} />
+        </aside>
       </div>
     </div>
   );

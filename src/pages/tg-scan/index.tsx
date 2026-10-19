@@ -3,12 +3,6 @@ import { memo, useCallback, useRef } from "react";
 import { Clock, LockKeyhole, RefreshCw, Send, UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
-  CameraCard,
-  CameraChip,
-  CameraHint,
-  CameraStatus,
-  CameraSurface,
-  ScanFinder,
   TgScanner,
   closeTelegramWebApp,
   describeTgScanError,
@@ -16,6 +10,7 @@ import {
   useTelegramAuth,
   type TelegramAuthState,
 } from "../../features/tg-scan";
+import { CameraCard, CameraChip, CameraHint, CameraStatus, CameraSurface, ScanFinder } from "../../shared/ui/camera";
 import { Button, Spinner } from "../../shared/ui/primitives";
 
 /**
