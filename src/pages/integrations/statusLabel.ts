@@ -30,7 +30,8 @@ const STATUS_KEY: Record<string, string> = {
   sold: "statusSold",
   cancelled: "statusCancelled",
   "cancelled (sent)": "statusCancelledSent",
-  returned_to_market: "statusCancelled",
+  // Alohida holat «Marketga topshirildi» (ega qarori 2026-10-19), «Bekor qilingan» ga yaqinlashtirilmaydi.
+  returned_to_market: "statusReturnedToMarket",
   paid: "statusPaid",
   partly_paid: "statusPartlyPaid",
   closed: "statusClosed",

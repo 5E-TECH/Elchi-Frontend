@@ -11,6 +11,35 @@
     "cancelled": "Отменен",
     "cancelled_sent": "Отменен — отправлен",
     "closed": "Закрыт",
+    "returned_to_market": "Передан маркету",
     "unknown": "Неизвестно"
+  },
+  "cancelStage": {
+    "courier": "Отменён · у курьера",
+    "in_transit": "Отменён · в пути",
+    "branch": "Отменён · в филиале",
+    "hq": "Отменён · в HQ",
+    "market": "Передан маркету"
+  },
+  "cancelReturn": {
+    "towards": "→ {{name}}",
+    "days_one": "{{count}} день",
+    "days_few": "{{count}} дня",
+    "days_many": "{{count}} дней",
+    "days_other": "{{count}} дня",
+    "hq": "HQ",
+    "method": {
+      "qr": "По QR",
+      "manual": "Вручную — {{reason}}",
+      "manualNoReason": "Вручную",
+      "no_qr": "Без QR (настройка маркета)",
+      "pin": "По паролю"
+    },
+    "manualReason": {
+      "torn": "QR порван",
+      "unreadable": "QR не читается",
+      "missing": "Этикетка потеряна",
+      "wet": "QR намок или стёрся"
+    }
   }
 }

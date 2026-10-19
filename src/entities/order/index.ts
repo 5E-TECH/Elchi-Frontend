@@ -21,5 +21,25 @@ export {
   resolveDisplayOrderStatus,
 } from "./model/statusRegistry";
 export type { OrderStatusKey, OrderStatusMeta } from "./model/statusRegistry";
-export { OrderStatusBadge } from "./ui/OrderStatusBadge";
+export {
+  CANCEL_HANDOVER_MANUAL_REASON_KEYS,
+  CANCEL_RETURN_STAGES,
+  CANCEL_RETURN_STAGE_ORDER,
+  cleanBranchLabel,
+  isOpenCancelReturnStage,
+  formatCancelHandoverMethod,
+  readCancelHandoverInfo,
+  resolveCancelReturnPlace,
+  resolveCancelReturnStage,
+} from "./model/cancelReturnStage";
+export type {
+  CancelHandoverInfo,
+  CancelHandoverMethod,
+  CancelReturnPlace,
+  CancelReturnStage,
+  CancelReturnStageMeta,
+} from "./model/cancelReturnStage";
+export { OrderReturnPlace, OrderStatusBadge } from "./ui/OrderStatusBadge";
+export { useCancelReturnPlaceText } from "./ui/useCancelReturnPlaceText";
+export { useCancelHandoverMethodLabel } from "./ui/useCancelHandoverMethodLabel";
 export type { OrderStatusBadgeProps } from "./ui/OrderStatusBadge";

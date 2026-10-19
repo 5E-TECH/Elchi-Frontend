@@ -19,7 +19,7 @@ import {
  * maketdagi o'zbekcha yorliqlar, kanonik ikonkalar va API yozilishlari.
  */
 
-/** `OrderStatus` turidagi barcha 11 holat — `Record` bo'lgani uchun yangi holat qo'shilsa TS shu yerni ham talab qiladi. */
+/** `OrderStatus` turidagi barcha 12 holat — `Record` bo'lgani uchun yangi holat qo'shilsa TS shu yerni ham talab qiladi. */
 const ALL: Record<OrderStatus, true> = {
   created: true,
   new: true,
@@ -32,6 +32,7 @@ const ALL: Record<OrderStatus, true> = {
   paid: true,
   partly_paid: true,
   closed: true,
+  returned_to_market: true,
 };
 
 /** Ega qarori (2026-10-09) — o'zgartirish faqat ega roziligi bilan. */
@@ -47,6 +48,8 @@ const LOCKED_TONES: Record<OrderStatus, Tone> = {
   cancelled: "danger",
   "cancelled (sent)": "danger",
   closed: "neutral",
+  // Ega qarori 2026-10-19: bekor zanjiri yopildi — neytral (kulrang).
+  returned_to_market: "neutral",
 };
 
 /** Maket matni (`tizim-states-data` «Holat belgilari», DESIGN_SYSTEM §8). */
@@ -62,15 +65,22 @@ const UZ_LABELS: Record<OrderStatus, string> = {
   cancelled: "Bekor qilingan",
   "cancelled (sent)": "Bekor — jo'natilgan",
   closed: "Yopilgan",
+  returned_to_market: "Marketga topshirildi",
 };
 
 const lookup = (locale: object, key: string): unknown =>
   key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], locale);
 
-const keys = (obj: object, prefix = ""): string[] =>
-  Object.entries(obj).flatMap(([key, value]) =>
-    value && typeof value === "object" ? keys(value, `${prefix}${key}.`) : [`${prefix}${key}`],
-  );
+/** Kalitlar; ko'plik qo'shimchalari (`_one`, `_few`, `_many`, `_other`) bitta kalit sanaladi. */
+const keys = (obj: object, prefix = ""): string[] => [
+  ...new Set(
+    Object.entries(obj).flatMap(([key, value]) =>
+      value && typeof value === "object"
+        ? keys(value, `${prefix}${key}.`)
+        : [`${prefix}${key.replace(/_(one|few|many|other)$/, "")}`],
+    ),
+  ),
+];
 
 const canonicalIcons = new Set(
   (iconRegistry.groups as Array<{ items: Array<{ icon: string }> }>).flatMap((group) =>
@@ -79,10 +89,10 @@ const canonicalIcons = new Set(
 );
 
 describe("ORDER_STATUS_REGISTRY", () => {
-  it("11 holatning hammasi bor, ortiqchasi yo'q", () => {
+  it("12 holatning hammasi bor, ortiqchasi yo'q", () => {
     expect(Object.keys(ORDER_STATUS_REGISTRY).sort()).toEqual(Object.keys(ALL).sort());
     expect([...ORDER_STATUSES].sort()).toEqual(Object.keys(ALL).sort());
-    expect(new Set(ORDER_STATUSES).size).toBe(11);
+    expect(new Set(ORDER_STATUSES).size).toBe(12);
   });
 
   it("ORDER_STATUSES — maketdagi tartib", () => {
@@ -98,6 +108,7 @@ describe("ORDER_STATUS_REGISTRY", () => {
       "Bekor qilingan",
       "Bekor — jo'natilgan",
       "Yopilgan",
+      "Marketga topshirildi",
     ]);
   });
 
@@ -137,6 +148,7 @@ describe("ORDER_STATUS_REGISTRY", () => {
     expect(name("waiting")).toBe("Clock");
     expect(name("sold")).toBe("PackageCheck");
     expect(name("cancelled")).toBe("CircleX");
+    expect(name("returned_to_market")).toBe("PackageCheck");
   });
 });
 
@@ -212,7 +224,15 @@ describe("normalizeOrderStatus", () => {
     for (const status of ORDER_STATUSES) expect(normalizeOrderStatus(status)).toBe(status);
   });
 
-  it.each([undefined, null, "", "   ", 5, {}, [], "lost_in_transit", "waiting_customer", "returned_to_market"])(
+  it.each([
+    ["returned_to_market", "returned_to_market"],
+    ["RETURNED_TO_MARKET", "returned_to_market"],
+    ["returned to market", "returned_to_market"],
+  ] as const)("%j → %s (alohida holat, 2026-10-19)", (raw, expected) => {
+    expect(normalizeOrderStatus(raw)).toBe(expected);
+  });
+
+  it.each([undefined, null, "", "   ", 5, {}, [], "lost_in_transit", "waiting_customer"])(
     "%j → null (mantiq uchun boshqa holatga yaqinlashtirilmaydi)",
     (raw) => {
       expect(normalizeOrderStatus(raw)).toBeNull();
@@ -225,7 +245,8 @@ describe("resolveDisplayOrderStatus", () => {
     expect(resolveDisplayOrderStatus("ON_THE_ROAD")).toBe("on the road");
     expect(resolveDisplayOrderStatus("waiting_customer")).toBe("waiting");
     expect(resolveDisplayOrderStatus("WAITING_CUSTOMER")).toBe("waiting");
-    expect(resolveDisplayOrderStatus("returned_to_market")).toBe("cancelled");
+    // Endi «Bekor qilingan» ga yaqinlashtirilmaydi — o'z holati «Marketga topshirildi».
+    expect(resolveDisplayOrderStatus("returned_to_market")).toBe("returned_to_market");
     expect(resolveDisplayOrderStatus("lost_in_transit")).toBeNull();
     expect(resolveDisplayOrderStatus(null)).toBeNull();
   });

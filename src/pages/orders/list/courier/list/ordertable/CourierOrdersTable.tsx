@@ -158,7 +158,8 @@ const CourierOrdersTable = ({
   const nameOf = (order: Order) => order.customer?.name?.trim() || "—";
   const money = (order: Order) => formatMoneyLocalized(Number(order.total_price) || 0, { language });
   const delivery = (order: Order) => <Badge>{t(deliveryKey(order.where_deliver))}</Badge>;
-  const status = (order: Order) => <OrderStatusBadge status={getDisplayStatus(order)} />;
+  // Bekor bosqichi belgisi («Bekor · kuryerda», «Bekor · yo'lda»; joy qatorisiz — kuryerning o'z ro'yxati).
+  const status = (order: Order) => <OrderStatusBadge status={getDisplayStatus(order)} order={order} />;
 
   /** Jadval qatoridagi amallar (maket: `el-btn-sm`, planshetda «Bekor»). */
   const rowActions = (order: Order): ReactNode => {

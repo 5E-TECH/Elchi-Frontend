@@ -11,7 +11,7 @@ describe("BadgesSection", () => {
     renderWithProviders(<BadgesSection />, { route: "/ops/ui-kit?section=badges" });
     for (const panel of document.querySelectorAll("[data-kit-theme]")) {
       const keys = Array.from(panel.querySelectorAll("[data-order-status]"))
-        .slice(0, ORDER_STATUSES.length)
+        .slice(0, ORDER_STATUSES.length - 1)
         .map((el) => el.getAttribute("data-order-status"));
       expect(keys).toEqual([
         "new",
@@ -28,6 +28,18 @@ describe("BadgesSection", () => {
       ]);
     }
     expect(document.querySelectorAll("[data-kit-theme]")).toHaveLength(2);
+  });
+
+  it("bekor bosqichi (tizim-states-data §09): 5 belgi joy qatori bilan, «Marketga topshirildi» neytral", () => {
+    renderWithProviders(<BadgesSection />, { route: "/ops/ui-kit?section=badges" });
+    for (const panel of document.querySelectorAll("[data-kit-theme]")) {
+      const row = panel.querySelector("[data-kit-cancel-stages]") as HTMLElement;
+      const stages = Array.from(row.querySelectorAll("[data-cancel-stage]")).map((el) => el.getAttribute("data-cancel-stage"));
+      expect(stages).toEqual(["courier", "in_transit", "branch", "hq", "market"]);
+      expect(row).toHaveTextContent("Bekor · HQ'da");
+      expect(row).toHaveTextContent("Toshkent HQ · 3 kun");
+      expect(row).toHaveTextContent("→ Toshkent HQ");
+    }
   });
 
   it("matritsa: 5 ton × 3 ko'rinish × 2 o'lcham har panelda", () => {

@@ -121,7 +121,8 @@ describe("MailDetailPage v2 — rejimlar", () => {
     expect(screen.getByRole("region", { name: "Rad etilgan buyurtmalar" })).toBeInTheDocument();
     expect(screen.queryByText(/QR kodni skanerlasangiz/)).toBeNull();
     expect(screen.getByRole("button", { name: "Pochtani qabul qilish — 0 ta" })).toBeDisabled();
-    expect(screen.getByText("Bekor — jo'natilgan")).toBeInTheDocument();
+    // Bekor bosqichi (tizim-states-data §09): qaytarish pochtasidagi buyurtma — «Bekor · yo'lda».
+    expect(screen.getByText("Bekor · yo'lda")).toBeInTheDocument();
   });
 
   it("menejer qabul: sarlavha «Yo'ldagi» emas, «Buyurtmalar»; skaner izohi menejer matni (`manager-mails-detail-receive`)", () => {

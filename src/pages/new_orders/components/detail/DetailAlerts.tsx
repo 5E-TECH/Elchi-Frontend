@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-orders-detail, admin-orders-detail, manager-orders-detail, registrator-orders-detail, market-orders-detail, courier-orders-detail, superadmin-neworders-market-order-edit, registrator-new-orders-market-order-edit, market-new-orders-edit
+// dizayn-v2: superadmin-orders-detail, superadmin-orders-detail-cancelled, manager-orders-detail-cancelled, admin-orders-detail, manager-orders-detail, registrator-orders-detail, market-orders-detail, courier-orders-detail, superadmin-neworders-market-order-edit, registrator-new-orders-market-order-edit, market-new-orders-edit
 import { Clock, Info, Lock } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -30,6 +30,11 @@ type DetailAlertsProps = {
   editOpen?: "full" | "limited" | null;
   /** Marketning «Yangi buyurtmalar» ro'yxati — «Faqat ko'rish uchun» matniga «o'chirib, qaytadan yarating» havolasi. */
   marketListHref?: string | null;
+  /**
+   * Qulf sababi (maketlar `*-orders-detail-cancelled`): bekor qilingan — «Buyurtma bekor qilingan — …»,
+   * marketga topshirilgan — «Buyurtma marketga topshirilgan — …». Berilmasa — «filialga jo'natilgan».
+   */
+  lockReason?: "cancelled" | "returned" | null;
 };
 
 /**
@@ -46,6 +51,7 @@ export const DetailAlerts = ({
   parentOrderId,
   editOpen = null,
   marketListHref = null,
+  lockReason = null,
 }: DetailAlertsProps) => {
   const { t, i18n } = useTranslation(["orders", "newOrders"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -110,7 +116,11 @@ export const DetailAlerts = ({
     if (productsLocked && destinationLocked) {
       return (
         <DetailAlert tone="neutral" icon={Lock} role="status" id={LOCK_ALERT_ID.all} title={t("orderDetail.editClosedTitle")}>
-          {t("orderDetail.editClosedBody")}
+          {lockReason === "returned"
+            ? t("orderDetail.editClosedReturnedBody")
+            : lockReason === "cancelled"
+              ? t("orderDetail.editClosedCancelledBody")
+              : t("orderDetail.editClosedBody")}
         </DetailAlert>
       );
     }

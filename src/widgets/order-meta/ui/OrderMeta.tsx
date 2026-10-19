@@ -23,6 +23,12 @@ import { notify } from "../../../shared/lib/notify";
 import { Card, IconButton } from "../../../shared/ui/primitives";
 import { formatTrackingDate } from "../../../features/order-tracking";
 import {
+  CANCEL_RETURN_STAGES,
+  resolveCancelReturnPlace,
+  resolveCancelReturnStage,
+  useCancelReturnPlaceText,
+} from "../../../entities/order";
+import {
   canLookupBranches,
   canLookupUsers,
   readOrderMeta,
@@ -115,6 +121,7 @@ const OrderMeta = ({ order, role, self, canOpenMails = false, className }: Order
   const { t } = useTranslation("orders");
   const [showTariffs, setShowTariffs] = useState(false);
   const meta = readOrderMeta(order);
+  const placeText = useCancelReturnPlaceText();
 
   const selfId = self?.id !== null && self?.id !== undefined ? String(self.id) : null;
   const isCourier = (role ?? "").toLowerCase() === "courier";
@@ -144,28 +151,53 @@ const OrderMeta = ({ order, role, self, canOpenMails = false, className }: Order
 
   const courier = meta.courierId ? contactOf(meta.courierId) : null;
 
+  /** Filial / kuryer nomi (yoki `#id`) — «Hozir kimda» qatori va bekor bosqichi uchun. */
+  const holderName = (() => {
+    switch (meta.holderType) {
+      case "BRANCH":
+        return (
+          (meta.holderBranchId && meta.holderBranchId === meta.branch?.id ? meta.branch?.name : null) ??
+          (meta.holderBranchId ? branchNameById.get(meta.holderBranchId) : null) ??
+          (meta.holderBranchId ? `#${meta.holderBranchId}` : null)
+        );
+      case "COURIER":
+        return (
+          (meta.holderCourierId ? contactOf(meta.holderCourierId)?.name : null) ??
+          (meta.holderCourierId ? `#${meta.holderCourierId}` : null)
+        );
+      default:
+        return null;
+    }
+  })();
+
   const holderText = (() => {
     switch (meta.holderType) {
       case "HQ":
         return t("metaHolderHQ");
       case "MARKET":
         return t("metaHolderMarket");
-      case "BRANCH": {
-        const name =
-          (meta.holderBranchId && meta.holderBranchId === meta.branch?.id ? meta.branch?.name : null) ??
-          (meta.holderBranchId ? branchNameById.get(meta.holderBranchId) : null) ??
-          (meta.holderBranchId ? `#${meta.holderBranchId}` : "—");
-        return t("metaHolderBranch", { name });
-      }
-      case "COURIER": {
-        const name =
-          (meta.holderCourierId ? contactOf(meta.holderCourierId)?.name : null) ??
-          (meta.holderCourierId ? `#${meta.holderCourierId}` : "—");
-        return t("metaHolderCourier", { name });
-      }
+      case "BRANCH":
+        return t("metaHolderBranch", { name: holderName ?? "—" });
+      case "COURIER":
+        return t("metaHolderCourier", { name: holderName ?? "—" });
       default:
         return "—";
     }
+  })();
+
+  /**
+   * Bekor qilingan buyurtmada «Hozir kimda» bosqich bilan birlashadi (taklif §3.3): «Bekor · HQ'da — Toshkent HQ ·
+   * 3 kun», «Marketga topshirildi — Toshkent HQ · Bugun, 11:20». Joy nomi bo'lmasa — yuqoridagi filial / kuryer
+   * nomi, u ham bo'lmasa faqat bosqich.
+   */
+  const stage = resolveCancelReturnStage(order);
+  const holderValue = (() => {
+    if (!stage) return holderText;
+    const label = t(CANCEL_RETURN_STAGES[stage].labelKey, { ns: "status" });
+    const place = placeText(resolveCancelReturnPlace(order, stage));
+    const fallbackName = stage === "branch" || stage === "courier" ? holderName : null;
+    const where = [place?.name ?? fallbackName, place?.extra].filter(Boolean).join(" · ");
+    return where ? t("metaHolderStage", { stage: label, place: where }) : label;
   })();
 
   const tariffFields = visibleTariffs(role);
@@ -268,8 +300,8 @@ const OrderMeta = ({ order, role, self, canOpenMails = false, className }: Order
           )}
         </Row>
 
-        <Row icon={<PackageCheck size={15} aria-hidden="true" />} label={t("metaHolder")} testId="meta-holder" title={holderText}>
-          <Fit>{holderText}</Fit>
+        <Row icon={<PackageCheck size={15} aria-hidden="true" />} label={t("metaHolder")} testId="meta-holder" title={holderValue}>
+          <Fit>{holderValue}</Fit>
         </Row>
 
         {meta.whereDeliver ? (

@@ -51,17 +51,25 @@ const RECEIVED_OR_LATER = new Set([
   "cancelled",
   "cancelled (sent)",
   "closed",
+  "returned to market",
   "completed",
 ]);
 
+/**
+ * Filialga jo'natilgandan keyingi holatlar — mijoz va manzil ham qulflanadi. Bekor qilingan va marketga
+ * topshirilgan buyurtma ham (maketlar `*-orders-detail-cancelled`: «Tahrirlash yopiq. Buyurtma bekor
+ * qilingan / marketga topshirilgan — …»): kuryer yoki menejer bekor qilgan posilka allaqachon filialda bo'lgan.
+ */
 const SENT_TO_BRANCH_STATUSES = new Set([
   "on the road",
   "waiting",
   "sold",
   "paid",
   "partly paid",
+  "cancelled",
   "cancelled (sent)",
   "closed",
+  "returned to market",
   "completed",
 ]);
 

@@ -19,7 +19,9 @@ export type OrderStatus =
     | "cancelled (sent)"
     | "paid"
     | "partly_paid"
-    | "closed";
+    | "closed"
+    /** Bekor qilingan posilka marketga topshirildi (terminal; «Marketga topshirildi», neytral). */
+    | "returned_to_market";
 
 export interface OrderCustomer {
     id: string;
@@ -51,6 +53,12 @@ export interface OrderListItem {
     holder_type?: "HQ" | "BRANCH" | "COURIER" | "MARKET" | null;
     holder_branch_id?: string | null;
     holder_courier_id?: string | null;
+    /** Bekor posilka qaytarish pochtasida (`cancelled (sent)` yoki uning pochtasi). */
+    canceled_post_id?: string | null;
+    /** Kuryer ro'yxati: `cancelled` + `transport_status: "cancelled (sent)"` (gateway). */
+    transport_status?: string | null;
+    /** Oxirgi custody o'tishi (bekor bosqichidagi «N kun»). */
+    last_handover_at?: string | null;
     qr_code_token?: string | null;
     sell_requires_media?: boolean;
     cancel_requires_media?: boolean;
@@ -104,6 +112,12 @@ export interface OrderListItem {
         id: string;
         name: string;
     };
+    /** `courier_id` yoki pochta kuryeri (`enrichOrders`): faqat {id, name, phone_number}. */
+    courier?: {
+        id: string;
+        name?: string | null;
+        phone_number?: string | null;
+    } | null;
     district?: {
         id: string;
         name: string;

@@ -479,6 +479,20 @@
       "selected": "Tanlandi №{{id}}",
       "missing": "Bu marketning bekorlarida yo'q",
       "qrAlreadyAccepted": "Market QR allaqachon qabul qilingan"
+    },
+    "done": {
+      "title": "Topshirildi",
+      "count": "{{value}} ta",
+      "hint": "Shu sahifada topshirilganlar. Sahifa yangilansa, ro'yxat tozalanadi — buyurtmalar «Marketga topshirildi» holatida qoladi.",
+      "total": "jami <strong>{{sum}}</strong>",
+      "label": "Topshirilgan buyurtmalar",
+      "columns": {
+        "order": "Buyurtma",
+        "customer": "Mijoz",
+        "status": "Holat",
+        "time": "Vaqt",
+        "amount": "Summa"
+      }
     }
   },
   "deleteIntegration": "Integratsiyani o'chirish",

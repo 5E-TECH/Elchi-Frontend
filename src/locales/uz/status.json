@@ -11,6 +11,32 @@
     "cancelled": "Bekor qilingan",
     "cancelled_sent": "Bekor — jo'natilgan",
     "closed": "Yopilgan",
+    "returned_to_market": "Marketga topshirildi",
     "unknown": "Noma'lum"
+  },
+  "cancelStage": {
+    "courier": "Bekor · kuryerda",
+    "in_transit": "Bekor · yo'lda",
+    "branch": "Bekor · filialda",
+    "hq": "Bekor · HQ'da",
+    "market": "Marketga topshirildi"
+  },
+  "cancelReturn": {
+    "towards": "→ {{name}}",
+    "days": "{{count}} kun",
+    "hq": "HQ",
+    "method": {
+      "qr": "QR orqali",
+      "manual": "Qo'lda tasdiq — {{reason}}",
+      "manualNoReason": "Qo'lda tasdiq",
+      "no_qr": "QR'siz (market sozlamasi)",
+      "pin": "Parol orqali"
+    },
+    "manualReason": {
+      "torn": "QR yirtilgan",
+      "unreadable": "QR o'qilmayapti",
+      "missing": "Yorliq yo'qolgan",
+      "wet": "QR namlangan yoki xiralashgan"
+    }
   }
 }
