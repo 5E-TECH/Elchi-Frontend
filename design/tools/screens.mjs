@@ -244,8 +244,14 @@ for (const role of ROLE_ORDER) {
   // Maket menyusi (roles.json) ↔ kod menyusi (menuConfig.tsx): bandlar to'plami bir xil bo'lishi shart (tartib — guruhlash sababli farq qilishi mumkin).
   const designKeys = new Set((ROLES.roles[role]?.menu ?? []).map((m) => m.key));
   const codeKeys = new Set((MENU[role] ?? []).map((m) => m.key));
+  // route-map.json → plannedMenu: maketda bor, kodda hali yo'q bandlar (ega tasdiqlagan). Ro'yxat faqat qisqaradi.
+  const planned = new Set(MAP.plannedMenu?.[role] ?? []);
+  for (const k of planned) {
+    if (codeKeys.has(k)) errors.push(`route-map.json: plannedMenu.${role} dagi \`${k}\` endi kodda bor (${MENU_FILE}) — plannedMenu dan olib tashlang.`);
+    if (!designKeys.has(k)) errors.push(`route-map.json: plannedMenu.${role} dagi \`${k}\` maket menyusida (design/kit/roles.json) yo'q.`);
+  }
   const onlyCode = [...codeKeys].filter((k) => !designKeys.has(k));
-  const onlyDesign = [...designKeys].filter((k) => !codeKeys.has(k));
+  const onlyDesign = [...designKeys].filter((k) => !codeKeys.has(k) && !planned.has(k));
   if (onlyCode.length || onlyDesign.length) {
     errors.push(`${role} menyusi maketdan farq qiladi (design/kit/roles.json ↔ ${MENU_FILE}): ` +
       `${onlyCode.length ? `kodda bor, maketda yo'q: ${onlyCode.join(', ')}` : ''}${onlyCode.length && onlyDesign.length ? '; ' : ''}` +
@@ -546,15 +552,19 @@ L.push(`Manba: \`${MENU_FILE}\` (kod) va \`design/kit/roles.json\` (maketdagi me
   'registratorning «Biriktirish» bandi ham (`getSidebarConfigForUser`).', '');
 for (const role of ROLE_ORDER) {
   const items = MENU[role] ?? [];
-  if (!items.length) continue;
+  const plannedItems = MAP.plannedMenu?.[role] ?? [];
+  if (!items.length && !plannedItems.length) continue;
   L.push(`### ${role} — ${ROLES.roles[role]?.label ?? role}`, '');
-  L.push(`| Band | Kalit | \`to\` | Route | Shart (filial turi) | ${role} maketlari |`, '|---|---|---|---|---|---|');
-  for (const it of items) {
-    const ids = mapByPath.get(it.target)?.views?.[role] ?? [];
-    const first = ids.length ? code(keyOf(role, ids[0])) + (ids.length > 1 ? ` (+${ids.length - 1})` : '') : (mapByPath.get(it.target)?.roleNotes?.[role] ? 'izohga qarang' : '—');
-    L.push(`| ${cell(menuLabel(role, it.key))} | ${code(it.key)} | ${code(it.to)} | ${it.target ? code(it.target) : '—'} | ${it.cond || (role === 'manager' ? 'barchasi' : '—')} | ${first} |`);
+  if (items.length) {
+    L.push(`| Band | Kalit | \`to\` | Route | Shart (filial turi) | ${role} maketlari |`, '|---|---|---|---|---|---|');
+    for (const it of items) {
+      const ids = mapByPath.get(it.target)?.views?.[role] ?? [];
+      const first = ids.length ? code(keyOf(role, ids[0])) + (ids.length > 1 ? ` (+${ids.length - 1})` : '') : (mapByPath.get(it.target)?.roleNotes?.[role] ? 'izohga qarang' : '—');
+      L.push(`| ${cell(menuLabel(role, it.key))} | ${code(it.key)} | ${code(it.to)} | ${it.target ? code(it.target) : '—'} | ${it.cond || (role === 'manager' ? 'barchasi' : '—')} | ${first} |`);
+    }
+    L.push('');
   }
-  L.push('');
+  if (plannedItems.length) L.push(`Maketda bor, kodda hali yo'q (\`plannedMenu\`): ${plannedItems.map((k) => `${cell(menuLabel(role, k))} (${code(k)})`).join(', ')}.`, '');
 }
 
 const md = `${L.join('\n').replace(/\n{3,}/g, '\n\n').trimEnd()}\n`;

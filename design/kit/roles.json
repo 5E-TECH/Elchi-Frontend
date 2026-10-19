@@ -5,7 +5,10 @@
   "manager",
   "registrator",
   "market",
-  "courier"
+  "market_operator",
+  "courier",
+  "logist",
+  "investor"
  ],
  "roles": {
   "superadmin": {
@@ -284,6 +287,12 @@
      "label": "Integratsiyalar",
      "icon": "i13",
      "group": "Ma'lumotnoma"
+    },
+    {
+     "key": "notifications",
+     "label": "Bildirishnomalar",
+     "icon": "i14",
+     "group": "Tizim"
     },
     {
      "key": "activityLogs",
@@ -580,6 +589,85 @@
       "ru": "Платежи",
       "en": "Payments"
      }
+    },
+    {
+     "key": "operators",
+     "label": "Operatorlar",
+     "icon": "i10",
+     "short": {
+      "uz": "Operatorlar",
+      "ru": "Операторы",
+      "en": "Operators"
+     }
+    }
+   ],
+   "bottomNav": [
+    "dashboard",
+    "orders",
+    "newOrders",
+    "payments",
+    "@menu"
+   ]
+  },
+  "market_operator": {
+   "label": "Market operatori",
+   "persona": {
+    "initials": "MX",
+    "name": "Madina Xoliqova",
+    "role": "Market operatori",
+    "scan": false
+   },
+   "grouped": false,
+   "menu": [
+    {
+     "key": "dashboard",
+     "label": "Bosh sahifa",
+     "icon": "i1",
+     "short": {
+      "uz": "Bosh sahifa",
+      "ru": "Главная",
+      "en": "Home"
+     }
+    },
+    {
+     "key": "orders",
+     "label": "Buyurtmalar",
+     "icon": "i2",
+     "short": {
+      "uz": "Buyurtmalar",
+      "ru": "Заказы",
+      "en": "Orders"
+     }
+    },
+    {
+     "key": "newOrders",
+     "label": "Buyurtma yaratish",
+     "icon": "i3",
+     "short": {
+      "uz": "Yaratish",
+      "ru": "Создать",
+      "en": "Create"
+     }
+    },
+    {
+     "key": "products",
+     "label": "Mahsulotlar",
+     "icon": "i9",
+     "short": {
+      "uz": "Mahsulotlar",
+      "ru": "Товары",
+      "en": "Products"
+     }
+    },
+    {
+     "key": "earnings",
+     "label": "Daromadim",
+     "icon": "Banknote",
+     "short": {
+      "uz": "Daromadim",
+      "ru": "Мой доход",
+      "en": "Earnings"
+     }
     }
    ],
    "bottomNav": [
@@ -587,7 +675,7 @@
     "orders",
     "newOrders",
     "products",
-    "payments"
+    "earnings"
    ]
   },
   "courier": {
@@ -668,6 +756,134 @@
     "quickAction",
     "@menu"
    ]
+  },
+  "logist": {
+   "label": "Logist",
+   "persona": {
+    "initials": "AR",
+    "name": "Aziz Rahimov",
+    "role": "Logist · 4 viloyat",
+    "scan": false,
+    "search": true
+   },
+   "grouped": false,
+   "menu": [
+    {
+     "key": "dashboard",
+     "label": "Bosh sahifa",
+     "icon": "i1",
+     "short": {
+      "uz": "Bosh sahifa",
+      "ru": "Главная",
+      "en": "Home"
+     }
+    },
+    {
+     "key": "orders",
+     "label": "Buyurtmalar",
+     "icon": "i2",
+     "short": {
+      "uz": "Buyurtmalar",
+      "ru": "Заказы",
+      "en": "Orders"
+     }
+    },
+    {
+     "key": "mails",
+     "label": "Pochta",
+     "icon": "i4",
+     "short": {
+      "uz": "Pochta",
+      "ru": "Почта",
+      "en": "Mail"
+     }
+    },
+    {
+     "key": "batches",
+     "label": "Paketlar",
+     "icon": "i5",
+     "short": {
+      "uz": "Paketlar",
+      "ru": "Пакеты",
+      "en": "Batches"
+     }
+    },
+    {
+     "key": "couriers",
+     "label": "Kuryerlar",
+     "icon": "i17",
+     "short": {
+      "uz": "Kuryerlar",
+      "ru": "Курьеры",
+      "en": "Couriers"
+     }
+    },
+    {
+     "key": "regions",
+     "label": "Hududlar",
+     "icon": "i11",
+     "short": {
+      "uz": "Hududlar",
+      "ru": "Регионы",
+      "en": "Regions"
+     }
+    }
+   ],
+   "bottomNav": [
+    "dashboard",
+    "orders",
+    "couriers",
+    "regions",
+    "@menu"
+   ]
+  },
+  "investor": {
+   "label": "Investor",
+   "persona": {
+    "initials": "HN",
+    "name": "Habibulla Nazirov",
+    "role": "Investor",
+    "scan": false
+   },
+   "grouped": false,
+   "menu": [
+    {
+     "key": "dashboard",
+     "label": "Bosh sahifa",
+     "icon": "i1",
+     "short": {
+      "uz": "Bosh sahifa",
+      "ru": "Главная",
+      "en": "Home"
+     }
+    },
+    {
+     "key": "investments",
+     "label": "Investitsiyalar",
+     "icon": "PiggyBank",
+     "short": {
+      "uz": "Investitsiya",
+      "ru": "Инвестиции",
+      "en": "Investments"
+     }
+    },
+    {
+     "key": "profits",
+     "label": "Foyda tarixi",
+     "icon": "HandCoins",
+     "short": {
+      "uz": "Foyda",
+      "ru": "Прибыль",
+      "en": "Profit"
+     }
+    }
+   ],
+   "bottomNav": [
+    "dashboard",
+    "investments",
+    "profits",
+    "@menu"
+   ]
   }
  },
  "icons": {
@@ -692,6 +908,9 @@
   "i19": "<path d=\"M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1\"/><path d=\"M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4\"/>",
   "bell": "<path d=\"M10.268 21a2 2 0 0 0 3.464 0\"/><path d=\"M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326\"/>",
   "MapPinned": "<path d=\"M18 8c0 3.613-3.869 7.429-5.393 8.795a1 1 0 0 1-1.214 0C9.87 15.429 6 11.613 6 8a6 6 0 0 1 12 0\"/><circle cx=\"12\" cy=\"8\" r=\"2\"/><path d=\"M8.714 14h-3.71a1 1 0 0 0-.948.683l-2.004 6A1 1 0 0 0 3 22h18a1 1 0 0 0 .948-1.316l-2-6a1 1 0 0 0-.949-.684h-3.712\"/>",
-  "ScanLine": "<path d=\"M3 7V5a2 2 0 0 1 2-2h2\"/><path d=\"M17 3h2a2 2 0 0 1 2 2v2\"/><path d=\"M21 17v2a2 2 0 0 1-2 2h-2\"/><path d=\"M7 21H5a2 2 0 0 1-2-2v-2\"/><path d=\"M7 12h10\"/>"
+  "ScanLine": "<path d=\"M3 7V5a2 2 0 0 1 2-2h2\"/><path d=\"M17 3h2a2 2 0 0 1 2 2v2\"/><path d=\"M21 17v2a2 2 0 0 1-2 2h-2\"/><path d=\"M7 21H5a2 2 0 0 1-2-2v-2\"/><path d=\"M7 12h10\"/>",
+  "Banknote": "<rect width=\"20\" height=\"12\" x=\"2\" y=\"6\" rx=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"2\"/><path d=\"M6 12h.01M18 12h.01\"/>",
+  "PiggyBank": "<path d=\"M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z\"/><path d=\"M16 10h.01\"/><path d=\"M2 8v1a2 2 0 0 0 2 2h1\"/>",
+  "HandCoins": "<path d=\"M11 15h2a2 2 0 1 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 17\"/><path d=\"m7 21 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9\"/><path d=\"m2 16 6 6\"/><circle cx=\"16\" cy=\"9\" r=\"2.9\"/><circle cx=\"6\" cy=\"5\" r=\"3\"/>"
  }
 }

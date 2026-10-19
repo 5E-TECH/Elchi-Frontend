@@ -1,0 +1,346 @@
+<div style="display: flex; flex-direction: column; gap: inherit; max-height: calc(var(--pair-h, 950px) - 88px); margin-bottom: -48px; overflow: hidden; min-width: 0">
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <a class="el-back" href="@payments-overview"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>To'lovlar</a>
+    <h1 class="el-h1">Asosiy kassa</h1>
+    <p class="el-sub">Asosiy kassa boshqaruvi · smena yopiq</p>
+  </div>
+  <div class="el-actions">
+    <button class="el-btn el-btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Excelga yuklash</button>
+    <a class="el-btn el-btn-primary" href="@payments-main-cashbox-shift-open-dialog" aria-haspopup="dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="10" x2="14" y1="2" y2="2"/><line x1="12" x2="15" y1="14" y2="11"/><circle cx="12" cy="14" r="8"/></svg>Smenani ochish</a>
+  </div>
+</div>
+
+<div class="el-alert el-tone-warning" role="status">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="margin-top: 1px; flex: none"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+  <div class="el-alert-body"><div class="el-alert-title">Smena boshlanmagan</div><span class="el-small">Pul qabul qilish, marketga to'lov, xarajat va kassani to'ldirish smena ochilgandan keyin ishlaydi. Balans va operatsiyalar tarixi ko'rinib turadi.</span></div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 16px">
+  <section class="el-card el-chart" style="flex: 2 1 560px" aria-labelledby="mc-balance">
+    <div class="el-chart-head">
+      <div class="el-chart-titles"><h2 class="el-chart-title" id="mc-balance">Kassa balansi</h2><p class="el-chart-sub">Bugun, 18:10 holatiga · grafik: kun oxiridagi qoldiq</p></div>
+      <div class="el-chart-controls">
+        <button class="el-iconbtn el-iconbtn-sm el-iconbtn-bordered" type="button" aria-pressed="false" aria-label="Balansni yashirish"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/></svg></button>
+        <div class="el-viewtoggle" role="group" aria-label="Kassa balansi ko'rinishi"><button type="button" aria-pressed="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M7 11.207a.5.5 0 0 1 .146-.353l2-2a.5.5 0 0 1 .708 0l3.292 3.292a.5.5 0 0 0 .708 0l4.292-4.292a.5.5 0 0 1 .854.353V16a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1z"/></svg>Grafik</button><button type="button" aria-pressed="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18"/></svg>Jadval</button></div>
+      </div>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: flex-start">
+      <div style="flex: 1 1 220px; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span class="el-kpi-label">Umumiy balans</span>
+        <span class="el-kpi-value">24 615 000<span class="el-kpi-unit">so'm</span></span>
+        <span class="el-kpi-meta"><span class="el-delta is-up is-good"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 7h6v6"/><path d="m22 7-8.5 8.5-5-5L2 17"/></svg>+4 570 000 so'm</span><span>bugungi sof oqim</span></span>
+      </div>
+      <div style="flex: 1 1 260px; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <div class="el-segbar" role="img" aria-label="Naqd 18 240 000 so'm (74,1%), karta 6 375 000 so'm (25,9%)" style="height: 10px"><span style="flex: 18240 1 0; background: var(--chart-1)"></span><span style="flex: 6375 1 0; background: var(--chart-2)"></span></div>
+        <ul class="el-legend-list"><li class="el-legend-row"><span class="el-legend-key" style="background: var(--chart-1)"></span><span class="el-legend-name"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>Naqd</span><span class="el-legend-value">18 240 000 so'm</span><span class="el-legend-pct">74,1%</span></li><li class="el-legend-row"><span class="el-legend-key" style="background: var(--chart-2)"></span><span class="el-legend-name"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>Karta (Click)</span><span class="el-legend-value">6 375 000 so'm</span><span class="el-legend-pct">25,9%</span></li></ul>
+      </div>
+    </div>
+    <div class="el-plot is-direct" role="img" aria-label="Asosiy kassa balansi, kun oxirida, 01.10 – 08.10.2026: 10,4 mln so'mdan 24,6 mln so'mgacha o'sdi; yagona pasayish 07.10 da (−730 000 so'm); bugun 24 615 000 so'm" style="--plot-h: 280px; --plot-h-phone: 160px">
+  <div class="el-axis-y" aria-hidden="true"><span style="top: 0.00%">30 mln</span><span style="top: 33.33%">20 mln</span><span style="top: 66.67%">10 mln</span><span style="top: 100.00%">0</span></div>
+  <div class="el-plot-area"><span class="el-gridline" style="top: 0.00%"></span><span class="el-gridline" style="top: 33.33%"></span><span class="el-gridline" style="top: 66.67%"></span><span class="el-gridline is-base" style="top: 100.00%"></span><svg viewBox="0 0 1000 220" preserveAspectRatio="none" aria-hidden="true"><path class="el-wash" d="M 0.0 144.1 C 47.6 136.1 95.2 127.3 142.9 120.3 C 190.5 113.3 238.1 106.3 285.7 102.1 C 333.3 97.8 381.0 98.5 428.6 94.9 C 476.2 91.3 523.8 84.8 571.4 80.3 C 619.0 75.8 666.7 67.7 714.3 67.7 C 761.9 67.7 809.5 73.0 857.1 73.0 C 904.8 73.0 952.4 50.7 1000.0 39.5 L 1000.0 220 L 0.0 220 Z" fill="var(--chart-1)" stroke="none"/><path d="M 0.0 144.1 C 47.6 136.1 95.2 127.3 142.9 120.3 C 190.5 113.3 238.1 106.3 285.7 102.1 C 333.3 97.8 381.0 98.5 428.6 94.9 C 476.2 91.3 523.8 84.8 571.4 80.3 C 619.0 75.8 666.7 67.7 714.3 67.7 C 761.9 67.7 809.5 73.0 857.1 73.0 C 904.8 73.0 952.4 50.7 1000.0 39.5" fill="none" stroke="var(--chart-1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg><span class="el-crosshair el-hide-mobile" style="left: 85.71%"></span>
+<span class="el-dot el-hide-mobile" style="left: 85.71%; top: 33.18%"></span>
+<div class="el-tip el-hide-mobile" role="status" style="right: calc(14.29% + 14px); top: 50%">
+  <span class="el-tip-title">07.10.2026, chorshanba</span>
+  <div class="el-tip-row"><span class="el-tip-key" style="background: var(--chart-1)"></span><span class="el-tip-value">20 045 000 so'm</span><span class="el-tip-label">kun oxirida</span></div>
+  <div class="el-tip-sep"></div>
+  <div class="el-tip-row"><span class="el-tip-key is-box" style="background: var(--div-pos-2)"></span><span class="el-tip-value">+920 000 so'm</span><span class="el-tip-label">Kirim</span></div>
+  <div class="el-tip-row"><span class="el-tip-key is-box" style="background: var(--div-neg-2)"></span><span class="el-tip-value">−1 650 000 so'm</span><span class="el-tip-label">Chiqim</span></div>
+</div><span class="el-dot is-lg" style="left: 100.00%; top: 17.95%"></span><button class="el-hit" type="button" aria-label="01.10.2026: kun oxirida 10 355 000 so'm, kirim 7 920 000 so'm, chiqim 4 860 000 so'm" style="left: calc(0.00% - 12px); width: 24px"></button><button class="el-hit" type="button" aria-label="02.10.2026: kun oxirida 13 595 000 so'm, kirim 8 450 000 so'm, chiqim 5 210 000 so'm" style="left: calc(14.29% - 12px); width: 24px"></button><button class="el-hit" type="button" aria-label="03.10.2026: kun oxirida 16 080 000 so'm, kirim 6 830 000 so'm, chiqim 4 345 000 so'm" style="left: calc(28.57% - 12px); width: 24px"></button><button class="el-hit" type="button" aria-label="04.10.2026: kun oxirida 17 060 000 so'm, kirim 3 680 000 so'm, chiqim 2 700 000 so'm" style="left: calc(42.86% - 12px); width: 24px"></button><button class="el-hit" type="button" aria-label="05.10.2026: kun oxirida 19 050 000 so'm, kirim 3 140 000 so'm, chiqim 1 150 000 so'm" style="left: calc(57.14% - 12px); width: 24px"></button><button class="el-hit" type="button" aria-label="06.10.2026: kun oxirida 20 775 000 so'm, kirim 3 350 000 so'm, chiqim 1 625 000 so'm" style="left: calc(71.43% - 12px); width: 24px"></button><button class="el-hit" type="button" aria-label="07.10.2026: kun oxirida 20 045 000 so'm, kirim 920 000 so'm, chiqim 1 650 000 so'm" style="left: calc(85.71% - 12px); width: 24px"></button><button class="el-hit" type="button" aria-label="08.10.2026: kun oxirida 24 615 000 so'm, kirim 6 970 000 so'm, chiqim 2 400 000 so'm" style="left: calc(100.00% - 12px); width: 24px"></button></div>
+  <div class="el-plot-end" aria-hidden="true"><span class="el-endlabel" style="top: 17.95%"><strong>24,6 mln</strong></span></div>
+  <span></span>
+  <div class="el-axis-x" aria-hidden="true"><span class="is-start" style="left: 0.00%">01.10</span><span class="is-minor" style="left: 14.29%">02.10</span><span class="is-minor" style="left: 28.57%">03.10</span><span style="left: 42.86%">04.10</span><span class="is-minor" style="left: 57.14%">05.10</span><span class="is-minor" style="left: 71.43%">06.10</span><span class="is-minor" style="left: 85.71%">07.10</span><span class="is-end is-current" style="left: 100.00%">Bugun</span></div><span></span>
+</div>
+  </section>
+  <section class="el-card el-chart" style="flex: 1 1 320px" aria-labelledby="mc-actions">
+    <div class="el-chart-head">
+      <div class="el-chart-titles"><h2 class="el-chart-title" id="mc-actions">Tezkor amallar</h2><p class="el-chart-sub" id="mc-locked">Smena ochilgach ishlaydi</p></div>
+    </div>
+    <div style="display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr))">
+      <button class="el-btn el-btn-secondary" type="button" disabled aria-describedby="mc-locked" style="height: auto; min-height: 64px; justify-content: flex-start; gap: 12px; padding: 12px; white-space: normal; text-align: left">
+        <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 7 7 17"/><path d="M17 17H7V7"/></svg></span>
+        <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span>Pul qabul qilish</span><span class="el-xs el-muted">Filial yoki HQ kuryeridan</span></span>
+      </button>
+      <button class="el-btn el-btn-secondary" type="button" disabled aria-describedby="mc-locked" style="height: auto; min-height: 64px; justify-content: flex-start; gap: 12px; padding: 12px; white-space: normal; text-align: left">
+        <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg></span>
+        <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span>Marketga to'lov</span><span class="el-xs el-muted">Marketni tanlab to'lash</span></span>
+      </button>
+      <button class="el-btn el-btn-secondary" type="button" disabled aria-describedby="mc-locked" style="height: auto; min-height: 64px; justify-content: flex-start; gap: 12px; padding: 12px; white-space: normal; text-align: left">
+        <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></span>
+        <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span>Kassadan xarajat</span><span class="el-xs el-muted">Chiqim operatsiyasi</span></span>
+      </button>
+      <button class="el-btn el-btn-secondary" type="button" disabled aria-describedby="mc-locked" style="height: auto; min-height: 64px; justify-content: flex-start; gap: 12px; padding: 12px; white-space: normal; text-align: left">
+        <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg></span>
+        <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span>Kassani to'ldirish</span><span class="el-xs el-muted">Kirim operatsiyasi</span></span>
+      </button>
+    </div>
+    <div style="margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px 14px; border-radius:12px; background: var(--sunken)">
+      <span style="display: inline-flex; color: var(--text-subtle)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+      <span style="display: flex; flex-direction: column; min-width: 0; flex: 1 1 160px"><span class="el-small el-strong">Smena yopildi · Bugun, 18:05</span><span class="el-xs el-muted">Yopgan xodim: Shodiyor Ergashev</span><span class="el-xs el-strong" style="color: var(--danger-fg)">Naqd kamomadi: −150 000 so'm</span></span>
+      <a class="el-btn el-btn-ghost el-btn-sm" href="@payments-main-cashbox-shift-result-dialog" aria-haspopup="dialog" style="flex: none">Natija</a>
+    </div>
+  </section>
+</div>
+<section aria-label="Davrlar bo'yicha kirim va chiqim" style="display: flex; flex-wrap: wrap; gap: 16px">
+<div class="el-kpi" style="flex: 1 1 220px">
+  <div class="el-kpi-top"><span class="el-kpi-label">Bugun</span><span class="el-xs el-subtle" style="white-space: nowrap">08.10.2026</span></div>
+  <div class="el-kpi-value">+4 570 000<span class="el-kpi-unit">so'm</span></div>
+  <div class="el-kpi-meta"><span>sof oqim · kirimning 66%i qoldi</span></div>
+  <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px" role="img" aria-label="Bugun: kirim 6 970 000 so'm, chiqim 2 400 000 so'm, sof +4 570 000 so'm">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px"><span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 6px"><span class="el-legend-key" style="background: var(--div-pos-2)"></span>Kirim</span><span class="el-small el-strong" style="color: var(--success-fg); white-space: nowrap">+6 970 000 so'm</span></div>
+      <div class="el-meter" aria-hidden="true" style="--meter-c: var(--div-pos-2); --meter-track: var(--seq-100)"><span style="width: 100.00%"></span></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px"><span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 6px"><span class="el-legend-key" style="background: var(--div-neg-2)"></span>Chiqim</span><span class="el-small el-strong" style="color: var(--danger-fg); white-space: nowrap">−2 400 000 so'm</span></div>
+      <div class="el-meter" aria-hidden="true" style="--meter-c: var(--div-neg-2); --meter-track: var(--danger-soft)"><span style="width: 34.43%"></span></div>
+    </div>
+  </div>
+</div>
+<div class="el-kpi" style="flex: 1 1 220px">
+  <div class="el-kpi-top"><span class="el-kpi-label">Bu hafta</span><span class="el-xs el-subtle" style="white-space: nowrap">05.10 – 08.10.2026</span></div>
+  <div class="el-kpi-value">+7 555 000<span class="el-kpi-unit">so'm</span></div>
+  <div class="el-kpi-meta"><span>sof oqim · kirimning 53%i qoldi</span></div>
+  <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px" role="img" aria-label="Bu hafta: kirim 14 380 000 so'm, chiqim 6 825 000 so'm, sof +7 555 000 so'm">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px"><span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 6px"><span class="el-legend-key" style="background: var(--div-pos-2)"></span>Kirim</span><span class="el-small el-strong" style="color: var(--success-fg); white-space: nowrap">+14 380 000 so'm</span></div>
+      <div class="el-meter" aria-hidden="true" style="--meter-c: var(--div-pos-2); --meter-track: var(--seq-100)"><span style="width: 100.00%"></span></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px"><span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 6px"><span class="el-legend-key" style="background: var(--div-neg-2)"></span>Chiqim</span><span class="el-small el-strong" style="color: var(--danger-fg); white-space: nowrap">−6 825 000 so'm</span></div>
+      <div class="el-meter" aria-hidden="true" style="--meter-c: var(--div-neg-2); --meter-track: var(--danger-soft)"><span style="width: 47.46%"></span></div>
+    </div>
+  </div>
+</div>
+<div class="el-kpi" style="flex: 1 1 220px">
+  <div class="el-kpi-top"><span class="el-kpi-label">Bu oy</span><span class="el-xs el-subtle" style="white-space: nowrap">01.10 – 08.10.2026</span></div>
+  <div class="el-kpi-value">+17 320 000<span class="el-kpi-unit">so'm</span></div>
+  <div class="el-kpi-meta"><span>sof oqim · kirimning 42%i qoldi</span></div>
+  <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 8px" role="img" aria-label="Bu oy: kirim 41 260 000 so'm, chiqim 23 940 000 so'm, sof +17 320 000 so'm">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px"><span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 6px"><span class="el-legend-key" style="background: var(--div-pos-2)"></span>Kirim</span><span class="el-small el-strong" style="color: var(--success-fg); white-space: nowrap">+41 260 000 so'm</span></div>
+      <div class="el-meter" aria-hidden="true" style="--meter-c: var(--div-pos-2); --meter-track: var(--seq-100)"><span style="width: 100.00%"></span></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px"><span class="el-small el-muted" style="display: inline-flex; align-items: center; gap: 6px"><span class="el-legend-key" style="background: var(--div-neg-2)"></span>Chiqim</span><span class="el-small el-strong" style="color: var(--danger-fg); white-space: nowrap">−23 940 000 so'm</span></div>
+      <div class="el-meter" aria-hidden="true" style="--meter-c: var(--div-neg-2); --meter-track: var(--danger-soft)"><span style="width: 58.02%"></span></div>
+    </div>
+  </div>
+</div>
+</section>
+<section class="el-card el-chart" aria-labelledby="mc-src">
+  <div class="el-chart-head">
+    <div class="el-chart-titles"><h2 class="el-chart-title" id="mc-src">Pul qayerdan keldi, qayerga ketdi</h2><p class="el-chart-sub">Manba turi bo'yicha · Bu oy, 01.10 – 08.10.2026</p></div>
+  </div>
+  <div style="display: flex; flex-wrap: wrap; gap: 24px 48px">
+    <div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border)"><span class="el-h3" style="display: inline-flex; align-items: center; gap: 8px"><span class="el-legend-key" style="background: var(--div-pos-2)"></span>Kirim manbalari</span><span class="el-strong" style="color: var(--success-fg); white-space: nowrap">+41 260 000 so'm</span></div>
+      <ol class="el-hbars" aria-label="Kirim manbalari" style="gap: 12px"><li class="el-hbar"><span class="el-hbar-label">Kuryer to'lovi</span><span class="el-hbar-track"><span class="el-hbar-fill" style="width: calc((100% - 112px) * 1.0000); background: var(--div-pos-2)"></span><span class="el-hbar-value">18,4 mln <span class="el-hbar-sub">· 45%</span></span></span></li><li class="el-hbar"><span class="el-hbar-label">Filialdan HQ'ga</span><span class="el-hbar-track"><span class="el-hbar-fill" style="width: calc((100% - 112px) * 0.8664); background: var(--div-pos-2)"></span><span class="el-hbar-value">16,0 mln <span class="el-hbar-sub">· 39%</span></span></span></li><li class="el-hbar"><span class="el-hbar-label">Qo'lda kirim</span><span class="el-hbar-track"><span class="el-hbar-fill" style="width: calc((100% - 112px) * 0.3257); background: var(--div-pos-2)"></span><span class="el-hbar-value">6,0 mln <span class="el-hbar-sub">· 15%</span></span></span></li><li class="el-hbar"><span class="el-hbar-label">Tuzatish</span><span class="el-hbar-track"><span class="el-hbar-fill" style="width: calc((100% - 112px) * 0.0478); background: var(--div-pos-2)"></span><span class="el-hbar-value">0,9 mln <span class="el-hbar-sub">· 2%</span></span></span></li></ol>
+    </div>
+    <div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding-bottom: 10px; border-bottom: 1px solid var(--border)"><span class="el-h3" style="display: inline-flex; align-items: center; gap: 8px"><span class="el-legend-key" style="background: var(--div-neg-2)"></span>Chiqim yo'nalishlari</span><span class="el-strong" style="color: var(--danger-fg); white-space: nowrap">−23 940 000 so'm</span></div>
+      <ol class="el-hbars" aria-label="Chiqim yo'nalishlari" style="gap: 12px"><li class="el-hbar"><span class="el-hbar-label">Market to'lovi</span><span class="el-hbar-track"><span class="el-hbar-fill" style="width: calc((100% - 112px) * 1.0000); background: var(--div-neg-2)"></span><span class="el-hbar-value">16,5 mln <span class="el-hbar-sub">· 69%</span></span></span></li><li class="el-hbar"><span class="el-hbar-label">Qo'lda chiqim</span><span class="el-hbar-track"><span class="el-hbar-fill" style="width: calc((100% - 112px) * 0.4081); background: var(--div-neg-2)"></span><span class="el-hbar-value">6,8 mln <span class="el-hbar-sub">· 28%</span></span></span></li><li class="el-hbar"><span class="el-hbar-label">Tuzatish</span><span class="el-hbar-track"><span class="el-hbar-fill" style="width: calc((100% - 112px) * 0.0393); background: var(--div-neg-2)"></span><span class="el-hbar-value">0,7 mln <span class="el-hbar-sub">· 3%</span></span></span></li></ol>
+    </div>
+  </div>
+  <p class="el-chart-note"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>Operatsiyalar tarixidagi «Manba» ustuni bo'yicha jamlangan; tafsilot — pastdagi jadvalda</p>
+</section>
+<section class="el-card" aria-labelledby="mc-tx">
+  <div class="el-card-head" style="flex-wrap: wrap">
+    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+      <h2 class="el-h2" id="mc-tx">Operatsiyalar tarixi</h2>
+      <span class="el-small el-muted">128 ta operatsiya · 01.10 – 08.10.2026</span>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex: 0 1 380px">
+      <button class="el-input el-select" type="button" style="flex: 1 1 160px; width: auto" aria-haspopup="dialog" aria-expanded="false" aria-label="Sana bo'yicha filtrlash: 01.10.2026 dan 08.10.2026 gacha"><span style="display: inline-flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>01.10 – 08.10.2026</span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--text-subtle)"><path d="m6 9 6 6 6-6"/></svg></button>
+      <button class="el-btn el-btn-link el-btn-sm" type="button" style="flex: none">Filtrlarni tozalash</button>
+    </div>
+  </div>
+  <div class="el-table-wrap el-hide-mobile">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th>Sana</th>
+          <th class="el-hide-tablet">Yaratgan</th>
+          <th>Manba</th>
+          <th class="el-hide-tablet">To'lov turi</th>
+          <th>Operatsiya</th>
+          <th class="el-num">Summa</th>
+          <th style="width: 56px"><span class="el-sr">Tafsilot</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="white-space: nowrap"><div>Bugun, 14:32</div><div class="el-cell-sub el-show-tablet">Shodiyor Ergashev</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Shodiyor Ergashev</td>
+          <td><a class="el-cell-title" href="@payments-history-detail-dialog" style="text-decoration: none; color: var(--text)">Kuryer to'lovi</a><div class="el-cell-sub" style="white-space: normal">Jasur Tursunov</div><div class="el-cell-sub el-show-tablet">Naqd</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Naqd</td>
+          <td><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 7 7 17"/><path d="M17 17H7V7"/></svg>Kirim</span></td>
+          <td class="el-num"><span class="el-strong" style="color: var(--success-fg); white-space: nowrap">+1 850 000 so'm</span><div class="el-cell-sub">Balans: 24 615 000 so'm</div></td>
+          <td><a class="el-iconbtn el-iconbtn-sm" href="@payments-history-detail-dialog" aria-label="Kuryer to'lovi (Bugun, 14:32) tafsilotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap"><div>Bugun, 13:05</div><div class="el-cell-sub el-show-tablet">Shodiyor Ergashev</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Shodiyor Ergashev</td>
+          <td><a class="el-cell-title" href="@payments-history-detail-dialog" style="text-decoration: none; color: var(--text)">Market to'lovi</a><div class="el-cell-sub" style="white-space: normal">Baraka Shop</div><div class="el-cell-sub el-show-tablet">Marketga o'tkazma</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Marketga o'tkazma</td>
+          <td><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>Chiqim</span></td>
+          <td class="el-num"><span class="el-strong" style="color: var(--danger-fg); white-space: nowrap">−2 400 000 so'm</span><div class="el-cell-sub">Balans: 22 765 000 so'm</div></td>
+          <td><a class="el-iconbtn el-iconbtn-sm" href="@payments-history-detail-dialog" aria-label="Market to'lovi (Bugun, 13:05) tafsilotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap"><div>Bugun, 11:48</div><div class="el-cell-sub el-show-tablet">Nilufar Rashidova</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Nilufar Rashidova</td>
+          <td><a class="el-cell-title" href="@payments-history-detail-dialog" style="text-decoration: none; color: var(--text)">Filialdan HQ'ga o'tkazma</a><div class="el-cell-sub" style="white-space: normal">Samarqand filiali · Sherzod Karimov</div><div class="el-cell-sub el-show-tablet">Naqd</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Naqd</td>
+          <td><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 7 7 17"/><path d="M17 17H7V7"/></svg>Kirim</span></td>
+          <td class="el-num"><span class="el-strong" style="color: var(--success-fg); white-space: nowrap">+3 120 000 so'm</span><div class="el-cell-sub">Balans: 25 165 000 so'm</div></td>
+          <td><a class="el-iconbtn el-iconbtn-sm" href="@payments-history-detail-dialog" aria-label="Filialdan HQ'ga o'tkazma (Bugun, 11:48) tafsilotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap"><div>Bugun, 09:30</div><div class="el-cell-sub el-show-tablet">Shodiyor Ergashev</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Shodiyor Ergashev</td>
+          <td><a class="el-cell-title" href="@payments-history-detail-dialog" style="text-decoration: none; color: var(--text)">Qo'lda kirim</a><div class="el-cell-sub" style="white-space: normal">Bank hisobidan naqd olindi</div><div class="el-cell-sub el-show-tablet">Naqd</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Naqd</td>
+          <td><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 7 7 17"/><path d="M17 17H7V7"/></svg>Kirim</span></td>
+          <td class="el-num"><span class="el-strong" style="color: var(--success-fg); white-space: nowrap">+2 000 000 so'm</span><div class="el-cell-sub">Balans: 22 045 000 so'm</div></td>
+          <td><a class="el-iconbtn el-iconbtn-sm" href="@payments-history-detail-dialog" aria-label="Qo'lda kirim (Bugun, 09:30) tafsilotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap"><div>Kecha, 18:40</div><div class="el-cell-sub el-show-tablet">Nilufar Rashidova</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Nilufar Rashidova</td>
+          <td><a class="el-cell-title" href="@payments-history-detail-dialog" style="text-decoration: none; color: var(--text)">Qo'lda chiqim</a><div class="el-cell-sub" style="white-space: normal">Ofis ijarasi, oktabr</div><div class="el-cell-sub el-show-tablet">Karta (Click)</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Karta (Click)</td>
+          <td><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>Chiqim</span></td>
+          <td class="el-num"><span class="el-strong" style="color: var(--danger-fg); white-space: nowrap">−1 500 000 so'm</span><div class="el-cell-sub">Balans: 20 045 000 so'm</div></td>
+          <td><a class="el-iconbtn el-iconbtn-sm" href="@payments-history-detail-dialog" aria-label="Qo'lda chiqim (Kecha, 18:40) tafsilotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap"><div>Kecha, 16:12</div><div class="el-cell-sub el-show-tablet">Shodiyor Ergashev</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Shodiyor Ergashev</td>
+          <td><a class="el-cell-title" href="@payments-history-detail-dialog" style="text-decoration: none; color: var(--text)">Kuryer to'lovi</a><div class="el-cell-sub" style="white-space: normal">Rustam Qosimov</div><div class="el-cell-sub el-show-tablet">Naqd</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Naqd</td>
+          <td><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 7 7 17"/><path d="M17 17H7V7"/></svg>Kirim</span></td>
+          <td class="el-num"><span class="el-strong" style="color: var(--success-fg); white-space: nowrap">+920 000 so'm</span><div class="el-cell-sub">Balans: 21 545 000 so'm</div></td>
+          <td><a class="el-iconbtn el-iconbtn-sm" href="@payments-history-detail-dialog" aria-label="Kuryer to'lovi (Kecha, 16:12) tafsilotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap"><div>Kecha, 11:05</div><div class="el-cell-sub el-show-tablet">Shodiyor Ergashev</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Shodiyor Ergashev</td>
+          <td><a class="el-cell-title" href="@payments-history-detail-dialog" style="text-decoration: none; color: var(--text)">Tuzatish</a><div class="el-cell-sub" style="white-space: normal">№10198 bo'yicha xato yozuv qaytarildi</div><div class="el-cell-sub el-show-tablet">Naqd</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Naqd</td>
+          <td><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>Chiqim</span></td>
+          <td class="el-num"><span class="el-strong" style="color: var(--danger-fg); white-space: nowrap">−150 000 so'm</span><div class="el-cell-sub">Balans: 20 625 000 so'm</div></td>
+          <td><a class="el-iconbtn el-iconbtn-sm" href="@payments-history-detail-dialog" aria-label="Tuzatish (Kecha, 11:05) tafsilotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+        <tr>
+          <td style="white-space: nowrap"><div>06.10.2026, 17:30</div><div class="el-cell-sub el-show-tablet">Shodiyor Ergashev</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Shodiyor Ergashev</td>
+          <td><a class="el-cell-title" href="@payments-history-detail-dialog" style="text-decoration: none; color: var(--text)">Market to'lovi</a><div class="el-cell-sub" style="white-space: normal">Nur Elektronika</div><div class="el-cell-sub el-show-tablet">Marketga o'tkazma</div></td>
+          <td class="el-hide-tablet" style="white-space: nowrap">Marketga o'tkazma</td>
+          <td><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>Chiqim</span></td>
+          <td class="el-num"><span class="el-strong" style="color: var(--danger-fg); white-space: nowrap">−1 275 000 so'm</span><div class="el-cell-sub">Balans: 20 775 000 so'm</div></td>
+          <td><a class="el-iconbtn el-iconbtn-sm" href="@payments-history-detail-dialog" aria-label="Market to'lovi (06.10.2026, 17:30) tafsilotini ochish" style="color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="el-list el-show-mobile" style="flex-direction: column">
+    <a class="el-list-item" href="@payments-history-detail-dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Kuryer to'lovi</span><span class="el-strong" style="color: var(--success-fg); white-space: nowrap">+1 850 000 so'm</span></div>
+        <div class="el-cell-sub" style="white-space: normal">Jasur Tursunov · Naqd</div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap"><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 7 7 17"/><path d="M17 17H7V7"/></svg>Kirim</span><span class="el-cell-sub">Bugun, 14:32 · Shodiyor Ergashev</span></div>
+      </div>
+    </a>
+    <a class="el-list-item" href="@payments-history-detail-dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Market to'lovi</span><span class="el-strong" style="color: var(--danger-fg); white-space: nowrap">−2 400 000 so'm</span></div>
+        <div class="el-cell-sub" style="white-space: normal">Baraka Shop · Marketga o'tkazma</div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap"><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>Chiqim</span><span class="el-cell-sub">Bugun, 13:05 · Shodiyor Ergashev</span></div>
+      </div>
+    </a>
+    <a class="el-list-item" href="@payments-history-detail-dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Filialdan HQ'ga o'tkazma</span><span class="el-strong" style="color: var(--success-fg); white-space: nowrap">+3 120 000 so'm</span></div>
+        <div class="el-cell-sub" style="white-space: normal">Samarqand filiali · Sherzod Karimov · Naqd</div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap"><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 7 7 17"/><path d="M17 17H7V7"/></svg>Kirim</span><span class="el-cell-sub">Bugun, 11:48 · Nilufar Rashidova</span></div>
+      </div>
+    </a>
+    <a class="el-list-item" href="@payments-history-detail-dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Qo'lda kirim</span><span class="el-strong" style="color: var(--success-fg); white-space: nowrap">+2 000 000 so'm</span></div>
+        <div class="el-cell-sub" style="white-space: normal">Bank hisobidan naqd olindi · Naqd</div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap"><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 7 7 17"/><path d="M17 17H7V7"/></svg>Kirim</span><span class="el-cell-sub">Bugun, 09:30 · Shodiyor Ergashev</span></div>
+      </div>
+    </a>
+    <a class="el-list-item" href="@payments-history-detail-dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Qo'lda chiqim</span><span class="el-strong" style="color: var(--danger-fg); white-space: nowrap">−1 500 000 so'm</span></div>
+        <div class="el-cell-sub" style="white-space: normal">Ofis ijarasi, oktabr · Karta (Click)</div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap"><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>Chiqim</span><span class="el-cell-sub">Kecha, 18:40 · Nilufar Rashidova</span></div>
+      </div>
+    </a>
+    <a class="el-list-item" href="@payments-history-detail-dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Kuryer to'lovi</span><span class="el-strong" style="color: var(--success-fg); white-space: nowrap">+920 000 so'm</span></div>
+        <div class="el-cell-sub" style="white-space: normal">Rustam Qosimov · Naqd</div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap"><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 7 7 17"/><path d="M17 17H7V7"/></svg>Kirim</span><span class="el-cell-sub">Kecha, 16:12 · Shodiyor Ergashev</span></div>
+      </div>
+    </a>
+    <a class="el-list-item" href="@payments-history-detail-dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Tuzatish</span><span class="el-strong" style="color: var(--danger-fg); white-space: nowrap">−150 000 so'm</span></div>
+        <div class="el-cell-sub" style="white-space: normal">№10198 bo'yicha xato yozuv qaytarildi · Naqd</div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap"><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>Chiqim</span><span class="el-cell-sub">Kecha, 11:05 · Shodiyor Ergashev</span></div>
+      </div>
+    </a>
+    <a class="el-list-item" href="@payments-history-detail-dialog" style="text-decoration: none; color: var(--text); align-items: flex-start">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <div style="display: flex; justify-content: space-between; gap: 8px"><span class="el-cell-title">Market to'lovi</span><span class="el-strong" style="color: var(--danger-fg); white-space: nowrap">−1 275 000 so'm</span></div>
+        <div class="el-cell-sub" style="white-space: normal">Nur Elektronika · Marketga o'tkazma</div>
+        <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap"><span class="el-badge el-tone-neutral"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7h10v10"/><path d="M7 17 17 7"/></svg>Chiqim</span><span class="el-cell-sub">06.10.2026, 17:30 · Shodiyor Ergashev</span></div>
+      </div>
+    </a>
+  </div>
+</section>
+</div>
+<div class="el-overlay" style="position: absolute; z-index: 30">
+  <div class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="sr-title" aria-describedby="sr-desc" style="width: min(560px, 100%); overflow: hidden">
+    <div class="el-dialog-head">
+      <span class="el-stat-icon" style="background: var(--success-soft); color: var(--success-fg)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg></span>
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1">
+        <h2 class="el-h2" id="sr-title">Smena yopildi</h2>
+        <p class="el-small el-muted" id="sr-desc">Bugun, 09:00 – 18:05 · Asosiy kassa</p>
+      </div>
+      <button class="el-iconbtn el-iconbtn-sm" type="button" aria-label="Yopish" style="margin: -4px -8px 0 0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
+    </div>
+    <div style="flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; margin: 0 -4px; padding: 0 4px">
+    <div class="el-table-wrap el-hide-mobile" style="border: 1px solid var(--border); border-radius:12px">
+      <table class="el-table is-compact" aria-label="Smena natijasi: naqd va karta">
+        <thead><tr><th scope="col"><span class="el-sr">Ko'rsatkich</span></th><th scope="col" class="el-num">Naqd</th><th scope="col" class="el-num">Karta (Click)</th></tr></thead>
+        <tbody>
+          <tr><td class="el-muted">Ochilishda</td><td class="el-num"><span style="white-space: nowrap">11 270 000 so'm</span></td><td class="el-num"><span style="white-space: nowrap">8 775 000 so'm</span></td></tr>
+          <tr><td class="el-muted">Kirim</td><td class="el-num"><span style="white-space: nowrap; color: var(--success-fg)">+6 970 000 so'm</span></td><td class="el-num"><span style="white-space: nowrap">0 so'm</span></td></tr>
+          <tr><td class="el-muted">Chiqim</td><td class="el-num"><span style="white-space: nowrap">0 so'm</span></td><td class="el-num"><span style="white-space: nowrap; color: var(--danger-fg)">−2 400 000 so'm</span></td></tr>
+          <tr><td class="el-muted">Kutilgan</td><td class="el-num"><span class="el-strong" style="white-space: nowrap">18 240 000 so'm</span></td><td class="el-num"><span class="el-strong" style="white-space: nowrap">6 375 000 so'm</span></td></tr>
+          <tr><td class="el-muted">Sanalgan</td><td class="el-num"><span class="el-strong" style="white-space: nowrap">18 090 000 so'm</span></td><td class="el-num"><span class="el-strong" style="white-space: nowrap">6 375 000 so'm</span></td></tr>
+          <tr><td class="el-strong">Farq</td><td class="el-num"><div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px"><span class="el-strong" style="white-space: nowrap; color: var(--danger-fg)">−150 000 so'm</span><span class="el-badge el-badge-dot el-tone-danger">Kamomad</span></div></td><td class="el-num"><div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px"><span class="el-strong">0 so'm</span><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Mos keldi</span></div></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="el-show-mobile" style="flex-direction: column; gap: 16px">
+      <section aria-label="Naqd" style="display: flex; flex-direction: column; gap: 8px"><h3 class="el-h3" style="margin: 0; display: inline-flex; align-items: center; gap: 8px"><span style="display: inline-flex; color: var(--text-muted)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg></span>Naqd</h3><dl style="margin: 0; padding: 4px 16px; border-radius:12px; background: var(--sunken); display: flex; flex-direction: column"><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0"><dt class="el-muted">Ochilishda</dt><dd style="margin: 0"><span style="white-space: nowrap">11 270 000 so'm</span></dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Kirim</dt><dd style="margin: 0"><span style="white-space: nowrap; color: var(--success-fg)">+6 970 000 so'm</span></dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Chiqim</dt><dd style="margin: 0"><span style="white-space: nowrap">0 so'm</span></dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Kutilgan</dt><dd style="margin: 0"><span class="el-strong" style="white-space: nowrap">18 240 000 so'm</span></dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Sanalgan</dt><dd style="margin: 0"><span class="el-strong" style="white-space: nowrap">18 090 000 so'm</span></dd></div><div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-strong">Farq</dt><dd style="margin: 0; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px"><span class="el-strong" style="white-space: nowrap; color: var(--danger-fg)">−150 000 so'm</span><span class="el-badge el-badge-dot el-tone-danger">Kamomad</span></dd></div></dl></section>
+      <section aria-label="Karta (Click)" style="display: flex; flex-direction: column; gap: 8px"><h3 class="el-h3" style="margin: 0; display: inline-flex; align-items: center; gap: 8px"><span style="display: inline-flex; color: var(--text-muted)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg></span>Karta (Click)</h3><dl style="margin: 0; padding: 4px 16px; border-radius:12px; background: var(--sunken); display: flex; flex-direction: column"><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0"><dt class="el-muted">Ochilishda</dt><dd style="margin: 0"><span style="white-space: nowrap">8 775 000 so'm</span></dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Kirim</dt><dd style="margin: 0"><span style="white-space: nowrap">0 so'm</span></dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Chiqim</dt><dd style="margin: 0"><span style="white-space: nowrap; color: var(--danger-fg)">−2 400 000 so'm</span></dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Kutilgan</dt><dd style="margin: 0"><span class="el-strong" style="white-space: nowrap">6 375 000 so'm</span></dd></div><div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-muted">Sanalgan</dt><dd style="margin: 0"><span class="el-strong" style="white-space: nowrap">6 375 000 so'm</span></dd></div><div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; padding: 8px 0; border-top: 1px solid var(--border)"><dt class="el-strong">Farq</dt><dd style="margin: 0; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px"><span class="el-strong">0 so'm</span><span class="el-badge el-tone-success"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Mos keldi</span></dd></div></dl></section>
+    </div>
+    <dl class="el-kv" style="padding: 0 4px">
+      <dt>Ochgan xodim</dt><dd>Shodiyor Ergashev</dd>
+      <dt>Yopgan xodim</dt><dd>Shodiyor Ergashev</dd>
+      <dt>Izoh</dt><dd style="font-weight: 400">Naqd ikki marta sanaldi, 150 000 so'm yetishmadi. Kun davomidagi cheklar tekshiriladi.</dd>
+    </dl>
+    <p class="el-xs el-muted" style="margin: 0; display: flex; align-items: flex-start; gap: 8px"><span style="display: inline-flex; flex: none"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg></span>Excel hisobot yuklab olindi. Kerak bo'lsa qayta yuklang.</p>
+    </div>
+    <div class="el-dialog-foot" style="padding-top: 16px; border-top: 1px solid var(--border)">
+      <button class="el-btn el-btn-secondary" type="button"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg>Excelga yuklash</button>
+      <button class="el-btn el-btn-primary" type="button">Tayyor</button>
+    </div>
+  </div>
+</div>
