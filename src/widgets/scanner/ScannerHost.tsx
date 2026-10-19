@@ -1,11 +1,17 @@
 // dizayn-v2: shell
-import { lazy, memo, Suspense, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { lazy, memo, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   closeScanner,
+  openScanner,
+  readScannerArrival,
   registerScannerNavigator,
+  SCANNER_ARRIVAL_TIMEOUT_MS,
   SCANNER_TARGET_SWITCH_GRACE_MS,
+  useScannerCameraMounted,
   useScannerOverlayOpen,
+  withoutScannerArrival,
+  type ScannerArrival,
 } from "../../shared/lib/scanner/scannerHost";
 import { useActiveScanTarget, type ScanTarget } from "../../shared/lib/scanner/scanTargets";
 import { loadScannerCamera } from "../../shared/ui/camera/loadScannerCamera";
@@ -27,16 +33,56 @@ const ScannerCamera = lazy(loadScannerCamera);
  * skan, qo'lda kiritish, «Bekor qilish», almashtirish va «Tugatish» eski sahifaning handler'lariga yetmaydi
  * (aks holda o'qilgan kod yopilgan sahifaga — masalan oldingi marketning ro'yxatiga — tushardi).
  * Kamera kodi alohida bo'lak (`lazy`): shell bilan QR kutubxonasi yuklanmaydi.
+ *
+ * «Kelganda och» (3-bosqich): universal skaner (`/scan`, shell'dan tashqarida) rejimidan kelingan bo'lsa
+ * (router holatida `scannerArrivalState`) — kelgan sahifaning maqsadi ro'yxatdan o'tgach kamera ochiladi,
+ * `/scan` da o'qilgan kod (`pendingScan`) kamera chizilgach sahifa handler'iga beriladi, bayroq tozalanadi.
  */
 const ScannerHost = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const open = useScannerOverlayOpen();
   const target = useActiveScanTarget();
+  const cameraMounted = useScannerCameraMounted();
+  // Kamera chizilishini kutayotgan kod (natija xabari kamera ichida ko'rinsin).
+  const pendingScanRef = useRef<{ targetId: string; scan: NonNullable<ScannerArrival["pendingScan"]> } | null>(null);
+
   // Oxirgi faol maqsad — almashish oralig'ida (maqsad vaqtincha yo'q) kamera shu bilan turadi.
   const [held, setHeld] = useState<ScanTarget | null>(target);
   if (target && target !== held) setHeld(target);
 
   useEffect(() => registerScannerNavigator((to) => navigate(to)), [navigate]);
+
+  useEffect(() => {
+    const arrival = readScannerArrival(location.state);
+    if (!arrival) return undefined;
+    // Bayroq tozalanadi (`replace`): orqaga qaytish yoki yangilash kamerani qayta ochmaydi.
+    const clear = () =>
+      navigate(
+        { pathname: location.pathname, search: location.search, hash: location.hash },
+        { replace: true, state: withoutScannerArrival(location.state) },
+      );
+    if (target && (!arrival.targetId || target.id === arrival.targetId)) {
+      const pending = arrival.pendingScan;
+      pendingScanRef.current = pending ? { targetId: target.id, scan: pending } : null;
+      openScanner();
+      clear();
+      return undefined;
+    }
+    const timer = window.setTimeout(clear, SCANNER_ARRIVAL_TIMEOUT_MS);
+    return () => window.clearTimeout(timer);
+  }, [location, navigate, target]);
+
+  useEffect(() => {
+    const pending = pendingScanRef.current;
+    if (!pending || !open || !cameraMounted || !target) return;
+    pendingScanRef.current = null;
+    // Kutilgan maqsad o'rniga boshqasi (sahifadan ketildi) — kod hech qayerga yuborilmaydi.
+    if (target.id !== pending.targetId) return;
+    void Promise.resolve()
+      .then(() => target.onScan(pending.scan.raw, pending.scan.source))
+      .catch(() => undefined);
+  }, [cameraMounted, open, target]);
 
   useEffect(() => {
     if (!open || target) return undefined;

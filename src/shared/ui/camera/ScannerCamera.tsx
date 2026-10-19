@@ -119,6 +119,12 @@ export type ScannerCameraProps = {
    * Kamera ishlayveradi, lekin skan va qo'lda kiritish hech qayerga yuborilmaydi; chipda «Yuklanmoqda».
    */
   suspended?: boolean;
+  /**
+   * Almashtirish varag'ini tashqaridan ochish (`target.switcher` bo'lsa): qiymat o'zgarsa (0 dan katta) varaq
+   * ochiladi. Universal skaner «Qabul qilish» rejimi — rejim tanlanganda yoki yon paneldagi «Marketni tanlang»
+   * bosilganda market varag'i (keng `page` ko'rinishida sarlavha chipi yo'q, tugma sahifaning o'zida).
+   */
+  switcherOpenKey?: number;
 };
 
 export type ScannerCameraManualText = { label?: string; hint?: string; submitLabel?: string };
@@ -156,6 +162,7 @@ export const ScannerCamera = ({
   phoneSecondary = "primary",
   manual,
   suspended = false,
+  switcherOpenKey = 0,
 }: ScannerCameraProps) => {
   const { t, i18n } = useTranslation("ui");
   const isPhone = useIsPhone();
@@ -174,6 +181,13 @@ export const ScannerCamera = ({
   });
 
   useEffect(() => markScannerCameraMounted(), []);
+
+  // Tashqi so'rov (`switcherOpenKey` o'zgardi) — almashtirish varag'i shu renderdayoq ochiladi.
+  const [seenSwitcherKey, setSeenSwitcherKey] = useState(switcherOpenKey);
+  if (switcherOpenKey !== seenSwitcherKey) {
+    setSeenSwitcherKey(switcherOpenKey);
+    if (switcherOpenKey > 0 && target.switcher) setSheet("switcher");
+  }
 
   // `page` (universal skaner, telefonda to'liq ekran): fokus «Skanerni yopish» da, Esc yopadi (taxta §08).
   // Oyna (`overlay`) buni `useFocusTrap` bilan qiladi. Varaq ochiq bo'lsa Esc faqat varaqni yopadi (o'zi).
@@ -205,7 +219,7 @@ export const ScannerCamera = ({
   const close = () => onClose?.();
   const finish = () => {
     target.finish?.onFinish();
-    onClose?.();
+    if (!target.finish?.keepOpen) onClose?.();
   };
 
   const list = target.list ?? [];
@@ -454,7 +468,7 @@ export const ScannerCamera = ({
     ) : null;
 
   // Pastki panel karta holatiga qarab (maketlar `courier-scan-permission-denied`, taxta 04.1 / 04.2 / 04.14):
-  //   - ruxsat izohi va rad etilgan — panel yo'q (amallar kartaning o'zida, ikkinchi «Qo'lda kiritish» yo'q);
+  //   - ruxsat izohi va rad etilgan — faqat rejim segmenti (amallar kartaning o'zida, ikkinchi «Qo'lda kiritish» yo'q);
   //   - kamera band / ochilmadi / qo'llab-quvvatlanmaydi — faqat rejim va hisoblagich qatori;
   //   - qolgani — to'liq panel (oxirgi skan, [Qo'lda kiritish] [Tugatish | Chiroq]).
   const counterRow =
@@ -489,7 +503,8 @@ export const ScannerCamera = ({
   }
   let phoneBottom: ReactNode;
   if (session.gate === "prompt" || session.denied) {
-    phoneBottom = undefined;
+    // Amallar kartaning o'zida; rejim segmenti qoladi (3-bosqich: kamerasiz ham rejim tanlanadi — USB, qo'lda).
+    phoneBottom = modes ? <CameraBottom>{modes}</CameraBottom> : undefined;
   } else if (card) {
     phoneBottom =
       modes || counterRow || progressBar || stats ? (

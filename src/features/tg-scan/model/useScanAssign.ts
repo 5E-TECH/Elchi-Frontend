@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { extractScannerToken } from "../../../shared/lib/scanToken";
 import { useScannerGate } from "../../../shared/lib/useScannerGate";
-import { scanAssignOrder, type ScanOrderSummary } from "../api/tgScanApi";
+import { scanAssignOrder, type ScanAssignResult, type ScanOrderSummary } from "../api/tgScanApi";
 import { describeTgScanError, type TgScanErrorInfo } from "./scanError";
 import { scanHaptic, type TelegramWebApp } from "./telegramWebApp";
 
@@ -77,14 +77,29 @@ const FLASH_OF: Record<FeedbackInput["kind"], ScanFlashTone> = {
 };
 
 type UseScanAssignOptions = {
-  accessToken: string;
+  /** Mini App JWT (o'z mijozi). `assign` berilsa ishlatilmaydi. */
+  accessToken?: string;
   webApp: TelegramWebApp | null;
   /** `false` — yangi skanlar qabul qilinmaydi (masalan «Tayyor» yuborilmoqda). */
   enabled: boolean;
   onSessionExpired: () => void;
+  /**
+   * So'rov (sukut — Mini App mijozi `scanAssignOrder(accessToken, token)`). Asosiy ilovadagi universal skaner
+   * (kuryer «O'zimga olish», `pages/scan`) asosiy `api` bilan beradi — oqim mantig'i bitta.
+   */
+  assign?: (token: string) => Promise<ScanAssignResult>;
+  /** Har natija xabari (ovoz, kamera xabari — asosiy ilovada `playScanFeedback`). */
+  onFeedback?: (feedback: ScanFeedback) => void;
 };
 
-export const useScanAssign = ({ accessToken, webApp, enabled, onSessionExpired }: UseScanAssignOptions) => {
+export const useScanAssign = ({
+  accessToken = "",
+  webApp,
+  enabled,
+  onSessionExpired,
+  assign,
+  onFeedback,
+}: UseScanAssignOptions) => {
   const { evaluateScan, resetScannerGate } = useScannerGate({
     cooldownMs: CAMERA_COOLDOWN_MS,
     duplicateCooldownMs: DUPLICATE_COOLDOWN_MS,
@@ -105,11 +120,11 @@ export const useScanAssign = ({ accessToken, webApp, enabled, onSessionExpired }
   const feedbackTimerRef = useRef(0);
   const flashTimerRef = useRef(0);
   const mountedRef = useRef(true);
-  const optionsRef = useRef({ accessToken, webApp, enabled, onSessionExpired });
+  const optionsRef = useRef({ accessToken, webApp, enabled, onSessionExpired, assign, onFeedback });
 
   useEffect(() => {
-    optionsRef.current = { accessToken, webApp, enabled, onSessionExpired };
-  }, [accessToken, webApp, enabled, onSessionExpired]);
+    optionsRef.current = { accessToken, webApp, enabled, onSessionExpired, assign, onFeedback };
+  }, [accessToken, webApp, enabled, onSessionExpired, assign, onFeedback]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -123,7 +138,9 @@ export const useScanAssign = ({ accessToken, webApp, enabled, onSessionExpired }
 
   const show = useCallback((input: FeedbackInput) => {
     sequenceRef.current += 1;
-    setFeedback({ ...input, key: sequenceRef.current } as ScanFeedback);
+    const next = { ...input, key: sequenceRef.current } as ScanFeedback;
+    setFeedback(next);
+    optionsRef.current.onFeedback?.(next);
     setFlash(FLASH_OF[input.kind]);
     window.clearTimeout(feedbackTimerRef.current);
     window.clearTimeout(flashTimerRef.current);
@@ -136,11 +153,11 @@ export const useScanAssign = ({ accessToken, webApp, enabled, onSessionExpired }
 
   const submit = useCallback(
     async (token: string) => {
-      const { accessToken: jwt, webApp: app } = optionsRef.current;
+      const { accessToken: jwt, webApp: app, assign: request } = optionsRef.current;
       pendingRef.current.add(token);
       setPendingCount((count) => count + 1);
       try {
-        const result = await scanAssignOrder(jwt, token);
+        const result = await (request ? request(token) : scanAssignOrder(jwt, token));
         if (!mountedRef.current) return;
         const entry: ScanSuccessEntry = {
           key: `${Date.now()}-${sequenceRef.current}-${token}`,

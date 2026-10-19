@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import type { ScanSource } from "./feedback";
 import { getActiveScanTarget } from "./scanTargets";
 
 /**
@@ -87,6 +88,55 @@ export const markScannerCameraMounted = () => {
 export const isScannerCameraMounted = () => cameraCount > 0;
 
 export const useScannerCameraMounted = () => useSyncExternalStore(subscribe, isScannerCameraMounted, isScannerCameraMounted);
+
+/**
+ * «KELGANDA KAMERANI OCH» (3-bosqich, universal skaner rejimlari): `/scan` (`ScanLayout`) dan boshqa bo'limga
+ * o'tilganda kamera o'sha sahifada ochiq holda davom etishi kerak — «Qabul qilish» → `/new-orders/<marketId>`,
+ * «Kuryerga biriktirish» → `/dispatch`. `ScannerHost` esa dashboard shell'da, shuning uchun bayroq router
+ * holatida (`navigate(path, { state: scannerArrivalState(...) })`) yuboriladi. `ScannerHost` kelgan sahifaning
+ * maqsadi (`targetId` berilsa — aynan shu) ro'yxatdan o'tishini kutadi, kamerani ochadi va bayroqni tozalaydi
+ * (orqaga qaytish yoki sahifani yangilash kamerani qayta ochmaydi). `pendingScan` — `/scan` da o'qilgan kod:
+ * kamera ochilgach sahifa maqsadining `onScan` iga beriladi (sahifa handler'i — ikkinchi mantiq yozilmaydi).
+ */
+export const SCANNER_ARRIVAL_STATE_KEY = "openScanner";
+
+/** Maqsad shu vaqtda ro'yxatdan o'tmasa (ro'yxat bo'sh, ruxsat yo'q) bayroq tashlanadi — kamera ochilmaydi. */
+export const SCANNER_ARRIVAL_TIMEOUT_MS = 15_000;
+
+export type ScannerArrival = {
+  /** Kutiladigan maqsad (`ScanTarget.id`); berilmasa — birinchi faol maqsad. */
+  targetId?: string;
+  pendingScan?: { raw: string; source: ScanSource };
+};
+
+export const scannerArrivalState = (arrival: ScannerArrival = {}) => ({ [SCANNER_ARRIVAL_STATE_KEY]: arrival });
+
+/** Router holatidan bayroq (yo'q yoki buzilgan bo'lsa — `null`). */
+export const readScannerArrival = (state: unknown): ScannerArrival | null => {
+  if (!state || typeof state !== "object") return null;
+  const value = (state as Record<string, unknown>)[SCANNER_ARRIVAL_STATE_KEY];
+  if (!value || typeof value !== "object") return null;
+  const source = value as { targetId?: unknown; pendingScan?: unknown };
+  const pending = source.pendingScan as { raw?: unknown; source?: unknown } | undefined;
+  return {
+    targetId: typeof source.targetId === "string" ? source.targetId : undefined,
+    pendingScan:
+      pending && typeof pending.raw === "string" && pending.raw.trim()
+        ? {
+            raw: pending.raw,
+            source: pending.source === "keyboard" || pending.source === "manual" ? pending.source : "camera",
+          }
+        : undefined,
+  };
+};
+
+/** Router holatining bayroqsiz nusxasi (boshqa maydonlar saqlanadi); bo'sh qolsa — `null`. */
+export const withoutScannerArrival = (state: unknown): unknown => {
+  if (!state || typeof state !== "object") return state ?? null;
+  const rest: Record<string, unknown> = { ...(state as Record<string, unknown>) };
+  delete rest[SCANNER_ARRIVAL_STATE_KEY];
+  return Object.keys(rest).length > 0 ? rest : null;
+};
 
 /** Faqat testlar uchun. */
 export const resetScannerHost = () => {

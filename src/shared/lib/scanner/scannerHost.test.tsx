@@ -6,8 +6,11 @@ import {
   isScannerOverlayOpen,
   markScannerCameraMounted,
   openScanner,
+  readScannerArrival,
   registerScannerNavigator,
   resetScannerHost,
+  scannerArrivalState,
+  withoutScannerArrival,
 } from "./scannerHost";
 import { resetScanTargets, useScanTarget } from "./scanTargets";
 
@@ -57,5 +60,25 @@ describe("openScanner / closeScanner", () => {
     expect(isScannerCameraMounted()).toBe(true);
     releaseB();
     expect(isScannerCameraMounted()).toBe(false);
+  });
+});
+
+describe("«kelganda och» bayrog'i (router holati)", () => {
+  it("yoziladi va o'qiladi; buzilgan qiymat — null; manba noma'lum bo'lsa — kamera", () => {
+    const state = scannerArrivalState({ targetId: "dispatch", pendingScan: { raw: "abc", source: "keyboard" } });
+    expect(readScannerArrival(state)).toEqual({ targetId: "dispatch", pendingScan: { raw: "abc", source: "keyboard" } });
+    expect(readScannerArrival(null)).toBeNull();
+    expect(readScannerArrival({ openScanner: "ha" })).toBeNull();
+    expect(readScannerArrival({ openScanner: { pendingScan: { raw: "x", source: "?" } } })).toEqual({
+      targetId: undefined,
+      pendingScan: { raw: "x", source: "camera" },
+    });
+    expect(readScannerArrival({ openScanner: { pendingScan: { raw: "  " } } })?.pendingScan).toBeUndefined();
+  });
+
+  it("tozalashda boshqa maydonlar saqlanadi", () => {
+    expect(withoutScannerArrival({ ...scannerArrivalState(), tab: "scanner" })).toEqual({ tab: "scanner" });
+    expect(withoutScannerArrival(scannerArrivalState())).toBeNull();
+    expect(withoutScannerArrival(undefined)).toBeNull();
   });
 });

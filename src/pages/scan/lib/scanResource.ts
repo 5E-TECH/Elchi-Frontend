@@ -149,6 +149,22 @@ export const scanAssignOrder = async (qrToken: string) =>
     .then((res) => res.data);
 
 /**
+ * Universal skaner «Qabul qilish» rejimi (3-bosqich) — market varag'i: `GET orders/markets/new` (bugun yangi
+ * buyurtmasi bor marketlar, har birida son). Kalit `useOrders().useGetTodayOrders()` niki bilan bir xil
+ * (`["orders", undefined]`) — kelgan `/new-orders/:marketId` sahifasi va «Marketlar» ro'yxati shu javobni oladi.
+ * Varaq har ochilganda yangi ro'yxat (`staleTime: 0`).
+ */
+export const NEW_ORDER_MARKETS_QUERY_KEY = ["orders", undefined] as const;
+
+export const fetchNewOrderMarkets = (queryClient: QueryClient) =>
+  queryClient.fetchQuery({
+    queryKey: [...NEW_ORDER_MARKETS_QUERY_KEY],
+    queryFn: () => api.get(API_ENDPOINTS.ORDERS.MARKETS_NEW).then((res) => res.data),
+    staleTime: 0,
+    retry: false,
+  });
+
+/**
  * Paketni qabul qilish — gateway `@Post('transfer-batches/:id/receive')`
  * (paketlar sahifasi ham POST yuboradi). fix3 CODE-15: avval PATCH edi va
  * /scan dan qabul doim 404 berardi.

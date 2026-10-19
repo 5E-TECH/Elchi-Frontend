@@ -119,9 +119,13 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
   - 2-bosqich follow-up (ega qarori kerak): `playScanFeedback` faqat bitta matn oladi — maketdagi «sarlavha + tafsilot»
     natija qatori 1-bosqich API o'zgarishini talab qiladi; `/dispatch` savati chiqishda (logout) tozalanmaydi — sessiya
     tugashi ham `logout()` orqali, savat D2 bo'yicha qurilmada qoladi.
-  - 3-bosqich — qolgan: universal rejimlar «Ma'lumot · Qabul qilish · Kuryerga biriktirish» (savat —
-    `src/features/dispatch-basket`), kuryerda «O'zimga olish»; oflayn navbat, buyurtma raqami bo'yicha qo'lda kiritish
-    (API yo'q) — ega qarori kutiladi.
+  - 3-bosqich — tayyor (`design-v2/scanner-3`): universal `/scan` rejimlari — «Ma'lumot · Qabul qilish ·
+    Kuryerga biriktirish» (rol va filial bo'yicha, tanlov qurilmada), kuryerda «O'zimga olish» (ketma-ket
+    `scan-assign`, natija ro'yxati, «Tugatish» → xulosa + kesh). «Qabul qilish» / «Kuryerga biriktirish» —
+    `/new-orders/<id>` / `/dispatch` ga kamera OCHIQ holda o'tadi (`scannerArrivalState` + `ScannerHost`). Batafsil —
+    `docs/DESIGN_SYSTEM.md` §14.
+  - 4-bosqich — qolgan: Sozlamalar → Skaner → «Kamera» kartasi. Oflayn navbat, buyurtma raqami bo'yicha qo'lda
+    kiritish (API yo'q) — ega qarori kutiladi.
 - **To'liq QA** — Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.
 - Follow-up: `Switch`, `FilterChip`, `Checkbox` primitivlari, `TextInput` prefiks sloti (`CampaignPage` istisnosi).
 - **Chek (yorliq) dizayni — keyinga qoldirilgan** (ega, 2026-10-18). 5 ta taklif rad etilgan: «havodor» va eski

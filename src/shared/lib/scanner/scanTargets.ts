@@ -92,8 +92,11 @@ export interface ScanTarget {
   listDescription?: string;
   /** «Ro'yxat» varag'i ostidagi izoh: «Skanerlanmagan 3 ta buyurtma sotilgan deb belgilanadi.» */
   listNote?: string;
-  /** Asosiy amal («Tugatish»). Berilmasa — «Yopish». */
-  finish?: { label: string; onFinish: () => void };
+  /**
+   * Asosiy amal («Tugatish»). Berilmasa — «Yopish». Sukut bo'yicha `onFinish` dan keyin kamera yopiladi;
+   * `keepOpen: true` — yopilmaydi (masalan universal skanerda kuryer xulosasi kamera ustida ochiladi).
+   */
+  finish?: { label: string; onFinish: () => void; keepOpen?: boolean };
 }
 
 type Entry = {
@@ -161,6 +164,7 @@ const sameData = (a: ScanTarget, b: ScanTarget) =>
   }) &&
   a.finish?.label === b.finish?.label &&
   Boolean(a.finish) === Boolean(b.finish) &&
+  Boolean(a.finish?.keepOpen) === Boolean(b.finish?.keepOpen) &&
   (a.modes ?? []).length === (b.modes ?? []).length &&
   (a.modes ?? []).every((mode, index) => mode.value === b.modes?.[index]?.value && mode.label === b.modes?.[index]?.label) &&
   (a.list ?? []).length === (b.list ?? []).length &&
@@ -182,7 +186,9 @@ const buildView = (entry: Entry): ScanTarget => {
     ...target,
     onScan: (raw, source) => entry.latest.onScan(raw, source),
     onModeChange: target.onModeChange ? (value) => entry.latest.onModeChange?.(value) : undefined,
-    finish: target.finish ? { label: target.finish.label, onFinish: () => entry.latest.finish?.onFinish() } : undefined,
+    finish: target.finish
+      ? { label: target.finish.label, keepOpen: target.finish.keepOpen, onFinish: () => entry.latest.finish?.onFinish() }
+      : undefined,
     switcher: target.switcher
       ? {
           ...target.switcher,

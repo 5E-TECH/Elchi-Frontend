@@ -27,14 +27,19 @@ export {
   isScannerOverlayOpen,
   markScannerCameraMounted,
   openScanner,
+  readScannerArrival,
   registerScannerNavigator,
   resetScannerHost,
+  SCANNER_ARRIVAL_STATE_KEY,
+  SCANNER_ARRIVAL_TIMEOUT_MS,
   SCANNER_TARGET_SWITCH_GRACE_MS,
+  scannerArrivalState,
   UNIVERSAL_SCANNER_PATH,
   useScannerCameraMounted,
   useScannerOverlayOpen,
+  withoutScannerArrival,
 } from "./scannerHost";
-export type { OpenScannerResult } from "./scannerHost";
+export type { OpenScannerResult, ScannerArrival } from "./scannerHost";
 export {
   playScanFeedback,
   playScanSignal,

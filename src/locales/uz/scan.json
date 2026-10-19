@@ -187,6 +187,65 @@
       "title": "Skaner market roli uchun emas",
       "text": "Buyurtmalaringiz holatini «Buyurtmalar» bo'limida kuzating.",
       "action": "Bosh sahifaga"
+    },
+    "modes": {
+      "label": "Skaner rejimi",
+      "info": "Ma'lumot",
+      "receive": "Qabul qilish",
+      "dispatch": "Biriktirish",
+      "take": "O'zimga olish",
+      "infoText": "Bitta kod — tegishli sahifa o'zi ochiladi.",
+      "receiveText": "Avval marketni tanlang — uning yangi buyurtmalari ochiladi va kamera o'sha yerda davom etadi. Skanerlangan buyurtma darhol qabul qilinadi.",
+      "dispatchText": "Skanerlangan buyurtma biriktirish savatiga qo'shiladi — savat shu qurilmada saqlanadi. Kuryerni «Biriktirish» sahifasida tanlaysiz.",
+      "takeText": "Har skanerlangan buyurtma darhol sizga biriktiriladi. Kamera yopilmaydi — keyingi posilkani skanerlang."
+    },
+    "receive": {
+      "title": "Qabul qilish",
+      "context": "Avval marketni tanlang",
+      "hint": "Marketni tanlang — kamera uning sahifasida ochiladi",
+      "pick": "Marketni tanlang",
+      "pickText": "Yangi buyurtmasi bor marketlar",
+      "pickMeta": "{{value}} ta yangi buyurtma",
+      "pickFirst": "Avval marketni tanlang"
+    },
+    "dispatch": {
+      "title": "Kuryerga biriktirish",
+      "context": "Buyurtmalar savatga qo'shiladi",
+      "hint": "Buyurtma QR kodini o'qing — biriktirish sahifasi ochiladi",
+      "open": "Biriktirishni ochish",
+      "openText": "Savat shu qurilmada saqlanadi",
+      "notOrder": "Bu buyurtma QR kodi emas — savatga faqat buyurtma qo'shiladi"
+    },
+    "take": {
+      "title": "O'zimga olish",
+      "context": "Buyurtma darhol sizga biriktiriladi",
+      "hint": "Buyurtma QR kodini o'qing — u darhol sizga biriktiriladi",
+      "meter": "ta biriktirildi",
+      "listTitle": "Skanerlanganlar",
+      "emptyText": "Skanerlangan buyurtmalar shu yerda chiqadi",
+      "assigned": "Sizga biriktirildi",
+      "already": "Allaqachon sizda",
+      "assignedToast": "{{ref}} sizga biriktirildi",
+      "alreadyToast": "{{ref}} allaqachon sizda",
+      "repeatToast": "{{ref}} allaqachon skanerlangan",
+      "otherCourier": "Boshqa kuryerda: {{name}}",
+      "otherCourierUnknown": "Boshqa kuryerga biriktirilgan",
+      "otherCourierToast": "Boshqa kuryerga biriktirilgan. Menejerga xabar bering.",
+      "notOrder": "Bu buyurtma QR kodi emas — uni «Ma'lumot» rejimida oching",
+      "offline": "Internet yo'q — kodni qayta skanerlang",
+      "timeout": "Server javob bermadi — kodni qayta skanerlang",
+      "unknown": "Buyurtmani o'zingizga olib bo'lmadi",
+      "manualSubmit": "Olish",
+      "finish": "Tugatish",
+      "summary": {
+        "title": "Skanerlash yakunlandi",
+        "text": "{{value}} ta buyurtma sizga biriktirildi",
+        "assigned": "Biriktirildi",
+        "already": "Allaqachon sizda edi",
+        "failed": "Biriktirilmadi",
+        "continue": "Davom etish",
+        "orders": "Buyurtmalarimga o'tish"
+      }
     }
   },
   "bag": {

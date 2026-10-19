@@ -93,7 +93,16 @@ export const ScanOutcomeCard = ({ outcome }: { outcome: ScanOutcome }) => {
  * yashirin) — maket `superadmin-scan-camera` yon paneli. Kod yoki `/scan/<token>` havolasi qabul qilinadi
  * (buyurtma raqami bo'yicha qidiruv API'si yo'q — route-map izohi).
  */
-export const ScanUsbCard = ({ onSubmit, showTips }: { onSubmit: (code: string) => void; showTips: boolean }) => {
+export const ScanUsbCard = ({
+  onSubmit,
+  showTips,
+  submitLabel,
+}: {
+  onSubmit: (code: string) => void;
+  showTips: boolean;
+  /** Tugma matni (sukut «Ochish»; kuryer «O'zimga olish» rejimida — «Olish»). */
+  submitLabel?: string;
+}) => {
   const { t } = useTranslation("scan");
   const titleId = useId();
   const [value, setValue] = useState("");
@@ -150,7 +159,7 @@ export const ScanUsbCard = ({ onSubmit, showTips }: { onSubmit: (code: string) =
               className="min-w-0 flex-1"
             />
             <Button type="submit" variant="secondary">
-              {t("scanner.manualSubmit")}
+              {submitLabel ?? t("scanner.manualSubmit")}
             </Button>
           </div>
         </Field>

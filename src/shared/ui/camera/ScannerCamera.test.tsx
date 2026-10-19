@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { useState } from "react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import i18n, { i18nReady } from "../../../i18n";
@@ -663,5 +664,74 @@ describe("ScannerCamera — presentation=page, telefon (§08)", () => {
 
     await user.keyboard("{Escape}");
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("ScannerCamera — universal skaner rejimlari (3-bosqich)", () => {
+  const MODES = [
+    { value: "take", label: "O'zimga olish" },
+    { value: "info", label: "Ma'lumot" },
+  ];
+
+  it("«Tugatish» `keepOpen` — onFinish chaqiriladi, kamera yopilmaydi (xulosa uning ustida)", async () => {
+    const onFinish = vi.fn();
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <ScannerCamera target={makeTarget({ finish: { label: "Tugatish", onFinish, keepOpen: true } })} onClose={onClose} />,
+    );
+    const dialog = await screen.findByRole("dialog", { name: "Qabul qilish" });
+    await user.click(within(dialog).getByRole("button", { name: "Tugatish" }));
+    expect(onFinish).toHaveBeenCalledTimes(1);
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("`switcherOpenKey` o'zgarsa — almashtirish varag'i ochiladi (keng `page` ko'rinishida chip yo'q)", async () => {
+    const target = makeTarget({
+      switcher: {
+        label: "Marketni tanlang",
+        value: "",
+        title: "Marketni tanlang",
+        options: [{ value: "7", label: "Urgut Savdo", meta: "6 ta yangi buyurtma" }],
+        onSelect: vi.fn(),
+      },
+    });
+    // Sahifaning yon panelidagi «Marketni tanlang» tugmasi kabi: kalit oshiriladi.
+    const Host = () => {
+      const [key, setKey] = useState(0);
+      return (
+        <>
+          <button type="button" onClick={() => setKey((value) => value + 1)}>
+            Tashqi tugma
+          </button>
+          <ScannerCamera presentation="page" target={target} switcherOpenKey={key} />
+        </>
+      );
+    };
+    const user = userEvent.setup();
+    renderWithProviders(<Host />);
+    expect(screen.queryByRole("dialog", { name: "Marketni tanlang" })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Tashqi tugma" }));
+    const sheet = await screen.findByRole("dialog", { name: "Marketni tanlang" });
+    expect(within(sheet).getByText("6 ta yangi buyurtma")).toBeInTheDocument();
+  });
+
+  it("telefon: rejim segmenti pastki panelda; ruxsat izohi holatida ham qoladi (kamerasiz rejim tanlanadi)", async () => {
+    setPhone(true);
+    setPermission("prompt");
+    const onModeChange = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <ScannerCamera
+        presentation="page"
+        target={makeTarget({ title: "O'zimga olish", modes: MODES, mode: "take", onModeChange })}
+        onClose={vi.fn()}
+      />,
+    );
+    await screen.findByText("Kameraga ruxsat bering");
+    const group = screen.getByRole("radiogroup", { name: "O'zimga olish" });
+    await user.click(within(group).getByRole("radio", { name: "Ma'lumot" }));
+    expect(onModeChange).toHaveBeenCalledWith("info");
   });
 });

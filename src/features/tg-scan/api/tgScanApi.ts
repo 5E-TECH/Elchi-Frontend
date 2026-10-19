@@ -128,13 +128,12 @@ const toOrderSummary = (value: unknown): ScanOrderSummary | null => {
   };
 };
 
-export const scanAssignOrder = async (accessToken: string, qrToken: string): Promise<ScanAssignResult> => {
-  const response = await tgScanHttp.post(
-    API_ENDPOINTS.ORDERS.SCAN_ASSIGN,
-    { qr_token: qrToken },
-    { headers: authHeaders(accessToken) },
-  );
-  const data = unwrapData(response.data);
+/**
+ * `POST /orders/scan-assign` javobi → `ScanAssignResult`. Mini App (o'z mijozi) va asosiy ilovadagi universal
+ * skanerning kuryer «O'zimga olish» rejimi (asosiy `api`, `pages/scan`) bitta tahlilchidan foydalanadi.
+ */
+export const parseScanAssignResponse = (payload: unknown): ScanAssignResult => {
+  const data = unwrapData(payload);
   const order = toOrderSummary(data?.order);
   const orderId = text(data?.order_id) ?? order?.id;
   if (!orderId) throw new Error("order_id missing in /orders/scan-assign response");
@@ -145,6 +144,15 @@ export const scanAssignOrder = async (accessToken: string, qrToken: string): Pro
     post_created: data?.post_created === true,
     order,
   };
+};
+
+export const scanAssignOrder = async (accessToken: string, qrToken: string): Promise<ScanAssignResult> => {
+  const response = await tgScanHttp.post(
+    API_ENDPOINTS.ORDERS.SCAN_ASSIGN,
+    { qr_token: qrToken },
+    { headers: authHeaders(accessToken) },
+  );
+  return parseScanAssignResponse(response.data);
 };
 
 /**

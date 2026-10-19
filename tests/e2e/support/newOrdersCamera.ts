@@ -46,7 +46,20 @@ const ORDERS = {
   "122": [order("10327", OTHER_TOKEN, "Dilshod Rajabov", "122")],
 };
 
-export const mockNewOrdersCameraApi = async (page: Page) => {
+/** HQ menejeri (qabul — `POST orders/receive`, «Qabul qilish» rejimi universal skanerda) — 3-bosqich e2e. */
+export const HQ_MANAGER_PROFILE = {
+  id: "7",
+  role: "manager",
+  name: "Menejer",
+  status: "active",
+  branch_id: "1",
+  branch: { id: "1", name: "Toshkent HQ", type: "HQ" },
+};
+
+export const mockNewOrdersCameraApi = async (
+  page: Page,
+  { profile = { id: "1", role: "superadmin", name: "Bosh admin", status: "active" } }: { profile?: Record<string, unknown> } = {},
+) => {
   const leaked: string[] = [];
   const received: string[][] = [];
   const receivedIds = new Set<string>();
@@ -58,7 +71,7 @@ export const mockNewOrdersCameraApi = async (page: Page) => {
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const path = url.pathname.replace(/^\//, "");
     if (path === "auth/my-profile") {
-      return reply(route, wrap({ id: "1", role: "superadmin", name: "Bosh admin", status: "active" }));
+      return reply(route, wrap(profile));
     }
     const marketNew = /^orders\/markets\/(\d+)\/new$/.exec(path);
     if (marketNew) {

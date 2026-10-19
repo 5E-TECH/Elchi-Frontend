@@ -218,3 +218,63 @@ describe("ScannerHost", () => {
     expect(screen.queryByRole("dialog", { name: "Qabul qilish" })).not.toBeInTheDocument();
   });
 });
+
+describe("ScannerHost — «kelganda och» (universal skaner rejimlari, 3-bosqich)", () => {
+  const ArrivalPage = ({ delayMs = 0, scan = onScan }: { delayMs?: number; scan?: typeof onScan }) => {
+    const [ready, setReady] = useState(delayMs === 0);
+    useEffect(() => {
+      if (delayMs === 0) return undefined;
+      const timer = window.setTimeout(() => setReady(true), delayMs);
+      return () => window.clearTimeout(timer);
+    }, [delayMs]);
+    useScanTarget(ready ? { id: "dispatch", title: "Kuryerga biriktirish", onScan: scan } : null);
+    return null;
+  };
+
+  const StateProbe = () => <span data-testid="state">{JSON.stringify(useLocation().state ?? null)}</span>;
+
+  const renderArrival = (state: unknown, delayMs = 0) =>
+    renderWithProviders(
+      <>
+        <Routes>
+          <Route path="/dispatch" element={<ArrivalPage delayMs={delayMs} />} />
+          <Route path="*" element={null} />
+        </Routes>
+        <ScannerHost />
+        <Path />
+        <StateProbe />
+      </>,
+      { route: { pathname: "/dispatch", state } },
+    );
+
+  it("kelgan sahifa maqsadi ro'yxatdan o'tgach kamera ochiladi, bayroq tozalanadi", async () => {
+    renderArrival({ openScanner: { targetId: "dispatch" } }, 150);
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+
+    expect(await screen.findByRole("dialog", { name: "Kuryerga biriktirish" })).toBeInTheDocument();
+    expect(isScannerOverlayOpen()).toBe(true);
+    await waitFor(() => expect(screen.getByTestId("state")).toHaveTextContent("null"));
+  });
+
+  it("`/scan` da o'qilgan kod kamera chizilgach sahifa handler'iga beriladi (bir marta)", async () => {
+    renderArrival({ openScanner: { targetId: "dispatch", pendingScan: { raw: "65f0c1aa22bb33cc44dd55ee", source: "keyboard" } } });
+
+    await screen.findByRole("dialog", { name: "Kuryerga biriktirish" });
+    await waitFor(() => expect(onScan).toHaveBeenCalledWith("65f0c1aa22bb33cc44dd55ee", "keyboard"));
+    await new Promise((done) => setTimeout(done, 20));
+    expect(onScan).toHaveBeenCalledTimes(1);
+  });
+
+  it("boshqa maqsad kutilsa (id mos emas) — kamera ochilmaydi", async () => {
+    renderArrival({ openScanner: { targetId: "new-orders:market:7" } });
+    await new Promise((done) => setTimeout(done, 50));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(isScannerOverlayOpen()).toBe(false);
+  });
+
+  it("bayroqsiz kelinsa — kamera o'zi ochilmaydi", async () => {
+    renderArrival(null);
+    await new Promise((done) => setTimeout(done, 50));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+});

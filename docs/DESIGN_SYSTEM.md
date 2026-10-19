@@ -780,7 +780,24 @@ karta yo'q · kunduzgi / tungi / 390px skrinshot · to'liq `npm test` + `npm run
       `ScanFeedbackOverlay` — umumiy `Portal` ning `toast` qatlamida (`z-[10050]` yo'q), matn — skan natijasi.
     - E2E (390 px, mock API): `tests/e2e/new-orders-camera.mobile.spec.ts`, `tests/e2e/scanner-*.mobile.spec.ts`
       (kamera soxta, kod «Qo'lda kiritish» bilan).
-  - **3-bosqich:** universal rejimlar — «Ma'lumot · Qabul qilish · Kuryerga biriktirish», kuryerda «O'zimga olish».
+  - **3-bosqich — tayyor:** universal `/scan` rejimlari (`src/pages/scan/model/scanModes.ts`; maket yo'q — eng yaqini
+    `courier-courier-bulk-scanner-camera` segmenti). Segment telefonda kamera ichida (`ScanTarget.modes`, ruxsat izohi
+    holatida ham), planshet/desktopda yon paneldagi «Skaner rejimi» kartasida; bitta rejim qolsa — chizilmaydi.
+    Tanlov qurilmada (`localStorage`, foydalanuvchi kaliti, `try/catch`); ruxsatdan tushgan rejim — sukutga.
+    - «Ma'lumot» (kuryerdan boshqa hammada sukut) — 1-bosqichdagidek;
+    - «Qabul qilish» — `canCreateOrders` va `resolveReceiveMode` ≠ `none` (REGIONAL menejer/registratorda yo'q):
+      market varag'i (`GET orders/markets/new`, son, qidiruv) → `/new-orders/<id>`, kamera O'SHA sahifada ochiq
+      (router holati `scannerArrivalState` → `ScannerHost` sahifa maqsadini kutadi, bayroqni tozalaydi); qabul — F1;
+    - «Kuryerga biriktirish» (segmentda «Biriktirish») — `/dispatch` ruxsati VA backend `assign-to-courier` roli
+      (menejer, registrator; superadmin/admin — yo'q, Trello 1gxmqLj5): tanlansa `/dispatch`, kamera ochiq; bu rejimda
+      `/scan` da o'qilgan buyurtma kodi `/dispatch` ga olib o'tiladi va savatga o'sha sahifa handler'i bilan tushadi;
+    - kuryer «O'zimga olish» (sukut) + «Ma'lumot»: ketma-ket `POST orders/scan-assign` (Mini App oqimi
+      `features/tg-scan/model/useScanAssign` — so'rov asosiy `api` bilan), ro'yxat «Sizga biriktirildi» / «Allaqachon
+      sizda» / «Boshqa kuryerda: <ism>» (ism backend xatosida yo'q — buyurtma bir marta o'qiladi) / xato sababi;
+      buyurtma bo'lmagan yorliq — so'rovsiz rad; «Tugatish» (`finish.keepOpen`) → kesh yangilanadi, xulosa
+      «N ta buyurtma sizga biriktirildi» [Davom etish] [Buyurtmalarimga o'tish].
+    - E2E: `tests/e2e/scanner-universal.mobile.spec.ts`.
+  - **4-bosqich — qolgan:** Sozlamalar → Skaner → «Kamera» kartasi (`common-settings-scanner`).
   - Kamera ko'rinishlari vizual sahnalarda yo'q.
 - **Yopiq va yetib bo'lmaydigan v1:** `/market-operators` (ko'chirilmaydi, `V2_SCOPES` da yo'q), `SalaryPaymentPopup`
   («Maosh to'lash» yashirin) — ratchet va pending'da; o'chirish — alohida qaror.

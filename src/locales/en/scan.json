@@ -190,6 +190,65 @@
       "title": "The scanner is not for the shop role",
       "text": "Follow your orders in the Orders section.",
       "action": "Go to home"
+    },
+    "modes": {
+      "label": "Scanner mode",
+      "info": "Info",
+      "receive": "Receive",
+      "dispatch": "Assign",
+      "take": "Take myself",
+      "infoText": "One code — the right page opens by itself.",
+      "receiveText": "Choose a market first — its new orders open and the camera continues there. A scanned order is received at once.",
+      "dispatchText": "A scanned order is added to the assignment basket — the basket is kept on this device. You pick the courier on the «Assign» page.",
+      "takeText": "Every scanned order is assigned to you at once. The camera stays open — scan the next parcel."
+    },
+    "receive": {
+      "title": "Receive",
+      "context": "Choose a market first",
+      "hint": "Choose a market — the camera opens on its page",
+      "pick": "Choose a market",
+      "pickText": "Markets with new orders",
+      "pickMeta": "{{value}} new orders",
+      "pickFirst": "Choose a market first"
+    },
+    "dispatch": {
+      "title": "Assign to courier",
+      "context": "Orders are added to the basket",
+      "hint": "Read the order QR code — the assignment page opens",
+      "open": "Open assignment",
+      "openText": "The basket is kept on this device",
+      "notOrder": "This is not an order QR code — only orders go to the basket"
+    },
+    "take": {
+      "title": "Take myself",
+      "context": "Orders are assigned to you at once",
+      "hint": "Read the order QR code — it is assigned to you at once",
+      "meter": "assigned",
+      "listTitle": "Scanned",
+      "emptyText": "Scanned orders appear here",
+      "assigned": "Assigned to you",
+      "already": "Already yours",
+      "assignedToast": "{{ref}} assigned to you",
+      "alreadyToast": "{{ref}} is already yours",
+      "repeatToast": "{{ref}} already scanned",
+      "otherCourier": "With another courier: {{name}}",
+      "otherCourierUnknown": "Assigned to another courier",
+      "otherCourierToast": "Assigned to another courier. Tell your manager.",
+      "notOrder": "This is not an order QR code — open it in «Info» mode",
+      "offline": "No internet — scan the code again",
+      "timeout": "The server did not answer — scan the code again",
+      "unknown": "Could not take the order",
+      "manualSubmit": "Take",
+      "finish": "Finish",
+      "summary": {
+        "title": "Scanning finished",
+        "text": "{{value}} orders assigned to you",
+        "assigned": "Assigned",
+        "already": "Already yours",
+        "failed": "Not assigned",
+        "continue": "Continue",
+        "orders": "Go to my orders"
+      }
     }
   },
   "bag": {
