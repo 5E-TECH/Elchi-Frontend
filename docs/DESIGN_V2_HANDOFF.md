@@ -133,6 +133,24 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     Kamera ichida «Kamerani almashtirish» (bir nechta kamera bo'lsa).
   - **Kamera ishi yopildi** (1–4-bosqich): v1 kamera qolmadi. Ochiq qolgani (ega qarori kutiladi): oflayn navbat,
     buyurtma raqami bo'yicha qo'lda kiritish (API yo'q); 2-bosqich follow-up'lari (yuqorida).
+- **Trello «Frontend» auditi va dizayn takliflari (2026-10-19).**
+  - **Audit.** 118 kartaning hammasi kod va backend bilan solishtirildi. 15 tasi dalil bilan Done ga o'tkazildi.
+    Hisobot: ega papkasidagi `trello-audit/report.md`.
+  - **Dizayn takliflari.** 32 ta dizayn bo'shlig'idan 19 guruh `design/` nusxasida, kit qoidalari bo'yicha chizildi:
+    1-to'plam 11 guruh, 2-to'plam 8 guruh. Galereyalar: `Hujjatlar/elchi-dizayn-takliflar{,-2}/index.html`,
+    fragmentlar ham shu papkalarda.
+  - **Savollar.** Ega 83 ta savolning hammasiga javob berdi: `Hujjatlar/elchi-v2-specs/owner-answers.md`.
+  - **Tavsiyadan farq qilgan asosiy javoblar:**
+    - logist — buyurtmalar va holat tarixini ko'radi, moliya yopiq;
+    - yetkazish narxi — sukutda vazn yoki hajm bo'yicha; har marketda «faqat standart narx» tugmasi;
+    - mijozni har bir yaratuvchi rol tanlaydi, market esa faqat o'z tarixini ko'radi;
+    - kassa smenasi hamma kassada majburiy;
+    - mahsulot o'lchamlari doim majburiy.
+  - **Keyingi qadam.** Ega guruhlarni tasdiqlaydi → tasdiqlangan maketlar `design/` ga sinxron PR bilan kiradi →
+    kod yoziladi. Backend talablari Trello Backend ro'yxatiga yozilgan: 2026-10-19 da 22 + 8 karta va mavjud
+    kartalarga izohlar.
+- «Visual» baseline'lari skaner 2-bosqichidan keyin yangilangan (bot commit `1393ae0`, `/dispatch` va
+  `cancelled-handover` — «Kamera» tugmalari olib tashlangani uchun kutilgan farq).
 - **To'liq QA** — Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.
 - Follow-up: `Switch`, `FilterChip`, `Checkbox` primitivlari, `TextInput` prefiks sloti (`CampaignPage` istisnosi).
 - **Chek (yorliq) dizayni — keyinga qoldirilgan** (ega, 2026-10-18). 5 ta taklif rad etilgan: «havodor» va eski
