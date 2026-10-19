@@ -116,7 +116,8 @@ const IdentityOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
     event.preventDefault();
     if (!trimmed || addOrderToMarket.isPending) return;
     setGranted(null);
-    addOrderToMarket.mutate({ id: trimmed, data: {} }, { onSuccess: () => setGranted(trimmed) });
+    // Backend `UpdateMarketAddOrderRequestDto` — `add_order: boolean` majburiy (bo'sh tana → 400, hxOGVwMt).
+    addOrderToMarket.mutate({ id: trimmed, data: { add_order: true } }, { onSuccess: () => setGranted(trimmed) });
   };
 
   return (
