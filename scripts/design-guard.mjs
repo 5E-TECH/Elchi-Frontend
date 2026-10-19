@@ -115,6 +115,7 @@ export const V2_SCOPES = Object.freeze([
   "src/features/branch-edit",
   "src/features/branch-remove-employee",
   "src/features/courier-transfer-branch",
+  "src/features/dispatch-basket",
   "src/features/notification-create",
   "src/features/notification-delete",
   "src/features/notification-dispatch",

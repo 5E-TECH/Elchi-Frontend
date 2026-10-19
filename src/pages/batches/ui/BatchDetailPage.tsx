@@ -18,6 +18,9 @@ import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
+import { extractScannerToken } from "../../../shared/lib/scanToken";
+import { orderByRecent, scanNotify, useRecentScans } from "../../../shared/lib/scanner/scanSession";
+import type { ScanTargetListItem } from "../../../shared/lib/scanner/scanTargets";
 import { useOrderQrScanner } from "../../../shared/lib/useOrderQrScanner";
 import {
   Badge,
@@ -33,7 +36,7 @@ import {
 import { useMailDetailState } from "../../mails/detail/model/useMailDetailState";
 import OrdersTable, { type OrdersTableColumn } from "../../mails/detail/ui/OrdersTable";
 import SendButton from "../../mails/detail/ui/SendButton";
-import { playMissingOrderFeedback, playScanFeedback } from "../../../shared/lib/scanner/feedback";
+import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
 import { formatBatchDisplayId } from "../lib/batchFormat";
 import { mapBatchOrdersToPostOrders } from "../lib/batchOrderMailAdapter";
 import {
@@ -74,6 +77,12 @@ const branchLookupId = (branch: { id: string; name: string } | undefined) =>
  * Jo'natish rejimi: paket holati `new` va rol menejer yoki registrator (`canSendToMainBranch`) — tanlov, USB skaner
  * (buyurtma QR'i → tanlanadi) va `PATCH transfer-batches/:id/send { orderIds }`; yuborilganlar ro'yxatdan
  * yashiriladi, `…/remaining` qayta o'qiladi; xatoda tanlov saqlanadi. Superadmin va admin — doim faqat o'qish.
+ *
+ * KAMERA (Trello v1eLN2tV 2-bosqich; maket `manager-batches-detail-send-camera`): faqat jo'natish rejimida. Sahifada
+ * kamera tugmasi yo'q (ega qarori — maketdagi «Kamera» o'rniga markaziy «Skaner» / «Skanerlash» shu sahifa maqsadini
+ * ochadi). Kamera skani USB bilan aynan bir yo'l — buyurtma faqat tanlanadi («HQ'ga yuborish · Paket B-172 · <filial>»,
+ * «6 / 9 ta tanlandi», ro'yxatda «Bekor qilish» va «Bu paketda yo'q · tanlanmadi»); yuborish — sahifadagi tugma.
+ * Faqat o'qish rejimida maqsad yo'q (markaziy tugma universal `/scan` ni ochadi).
  * Ma'lumot: `GET transfer-batches/:id` va `…/remaining` (buyurtmalar — qolganlari, bo'lmasa hammasi; v1 dagidek).
  */
 const BatchDetailPage = () => {
@@ -110,8 +119,11 @@ const BatchDetailPage = () => {
   const delivery = useMemo(() => summarizeDelivery(mapBatchOrdersToPostOrders(batch)), [batch]);
   const hasMarket = useMemo(() => orders.some((order) => Boolean(order.market?.name)), [orders]);
 
-  const { selectedIds, allSelected, someSelected, toggleAll, toggleOne, selectOne, clearSelection } =
+  const { selectedIds, allSelected, someSelected, toggleAll, toggleOne, selectOne, deselectOne, clearSelection } =
     useMailDetailState(orders);
+  // Kamera ro'yxati: skan tartibi (`order:<id>` / `missing:<kod>`) va paketda yo'q kodlar.
+  const { recent: recentScanKeys, touch: touchRecentScan } = useRecentScans();
+  const [rejectedCodes, setRejectedCodes] = useState<string[]>([]);
 
   // Skaner chaqiruvlari joriy tanlovni o'qiydi: ketma-ket ikki skaner ham takror deb topilsin.
   const selectedRef = useRef(selectedIds);
@@ -119,33 +131,76 @@ const BatchDetailPage = () => {
     selectedRef.current = selectedIds;
   }, [selectedIds]);
 
-  const handleMissingScannedOrder = useCallback(() => {
-    notify.warning(t("detail.scanMissingTitle"), { description: t("detail.scanMissing"), duration: 3000 });
-    playMissingOrderFeedback();
-  }, [t]);
+  const handleMissingScannedOrder = useCallback(
+    (rawValue: string) => {
+      const code = extractScannerToken(rawValue) ?? rawValue.trim();
+      if (code) {
+        setRejectedCodes((prev) => (prev.includes(code) ? prev : [...prev, code]));
+        touchRecentScan(`missing:${code}`);
+      }
+      scanNotify.warning(t("detail.scanMissingTitle"), { description: t("detail.scanMissing"), duration: 3000 });
+      void playScanFeedback("missing", t("detail.cameraNotInBatch"));
+    },
+    [t, touchRecentScan],
+  );
 
   const selectScannedOrder = useCallback(
     (order: PostOrder) => {
       if (!canSendToMainBranch) return;
       if (selectedRef.current.has(order.id)) {
         void playScanFeedback("duplicate", t("common:scannerFeedbackDuplicate"));
-        notify.warning(t("detail.scanDuplicate"), { description: `№${order.id}`, duration: 2000 });
+        scanNotify.warning(t("detail.scanDuplicate"), { description: `№${order.id}`, duration: 2000 });
         return;
       }
       selectedRef.current = new Set(selectedRef.current).add(order.id);
       selectOne(order.id);
-      notify.success(t("detail.scanSelected"), { description: `№${order.id}`, duration: 2000 });
-      void playScanFeedback("success");
+      touchRecentScan(`order:${order.id}`);
+      scanNotify.success(t("detail.scanSelected"), { description: `№${order.id}`, duration: 2000 });
+      void playScanFeedback("success", t("detail.cameraSelected", { id: order.id }));
     },
-    [canSendToMainBranch, selectOne, t],
+    [canSendToMainBranch, selectOne, t, touchRecentScan],
   );
 
+  const displayId = formatBatchDisplayId(knownText(batch?.id) ?? id);
   const scannerEnabled = canSendToMainBranch && orders.length > 0;
+  const cameraList = useMemo<ScanTargetListItem[]>(() => {
+    const selectedItems = orders
+      .filter((order) => selectedIds.has(order.id))
+      .map((order) => ({
+        key: `order:${order.id}`,
+        title: [`№${order.id}`, order.customer?.name?.trim()].filter(Boolean).join(" · "),
+        subtitle: [order.district?.name?.trim(), formatMoneyLocalized(Number(order.total_price) || 0, { language })]
+          .filter(Boolean)
+          .join(" · "),
+        tone: "success" as const,
+        // Server amali hali yo'q — «Bekor qilish» faqat tanlovdan chiqaradi.
+        onUndo: () => deselectOne(order.id),
+      }));
+    const rejectedItems = rejectedCodes.map((code) => ({
+      key: `missing:${code}`,
+      title: t("detail.cameraRejectedTitle", { code }),
+      subtitle: t("detail.cameraRejectedText"),
+      tone: "danger" as const,
+    }));
+    return orderByRecent<ScanTargetListItem>([...selectedItems, ...rejectedItems], (item) => item.key, recentScanKeys);
+  }, [deselectOne, language, orders, recentScanKeys, rejectedCodes, selectedIds, t]);
   useOrderQrScanner({
     orders,
-    enabled: scannerEnabled,
+    // Faqat jo'natish rejimida; yuborish so'rovi ketayotganda skan e'tiborsiz, ochiq kamera yopilmaydi.
+    enabled: canSendToMainBranch,
+    paused: sendBatch.isPending,
     onMatch: selectScannedOrder,
     onMissing: handleMissingScannedOrder,
+    camera: {
+      id: `batch-send:${id}`,
+      title: t("detail.cameraTitle"),
+      context: [t("detail.title", { id: displayId }), fromName].filter(Boolean).join(" · "),
+      note: { title: t("detail.cameraNoteTitle"), text: t("detail.cameraNoteText") },
+      progress: { done: selectedIds.size, total: orders.length, label: t("detail.cameraMeter") },
+      list: cameraList,
+      listTitle: t("detail.cameraListTitle"),
+      finish: { label: t("ui:camera.action.finish"), onFinish: () => undefined },
+    },
   });
 
   const count = useCallback((value: number) => formatNumberLocalized(value, { language }), [language]);
@@ -186,7 +241,6 @@ const BatchDetailPage = () => {
 
   const back = resolveBatchBack(readBatchDetailState(location.state), batch);
   const backLabel = t(`detail.back.${back.label}`);
-  const displayId = formatBatchDisplayId(knownText(batch?.id) ?? id);
   const print = useCallback(() => window.print(), []);
 
   // ─── Yuklanish ───────────────────────────────────────────────────────────────

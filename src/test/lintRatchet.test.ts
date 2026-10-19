@@ -24,9 +24,10 @@ import {
 /**
  * Faqat kamaytiring. Bosqich B: 11 → 9 (`UserDetailWidget` G2 da o'chirildi, `TransferCourierButton` v2 ga o'tdi);
  * integratsiya: 9 → 5 (iste'molchisiz v1 `UserInfoCards`, `button.tsx`, `Table.tsx`, `pagination` o'chirildi);
- * skaner 1-bosqich: 5 → 4 (`pages/scan/index.tsx` v2 ga o'tdi).
+ * skaner 1-bosqich: 5 → 4 (`pages/scan/index.tsx` v2 ga o'tdi); skaner 2-bosqich: 4 → 3 (v1 `ScannerCameraModal`
+ * o'chirildi — kamera faqat v2 `ScannerCamera`).
  */
-const MAX_RAW = 4;
+const MAX_RAW = 3;
 /** Faqat kamaytiring. Bosqich B: 1 → 0 (`ConfirmButton` G2 da o'chirildi). */
 const MAX_UI = 0;
 const MIN_REASON = 10;

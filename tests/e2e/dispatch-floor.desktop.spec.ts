@@ -28,7 +28,10 @@ test.describe("Biriktirish va Tezkor amal — 1440px", () => {
     await expect(page.getByText("3 ta buyurtma tanlandi")).toBeVisible();
 
     await hidScan(page, "tok-10285");
-    await expect(page.getByText("Bu buyurtma allaqachon ro'yxatga qo'shilgan")).toBeVisible();
+    // Sahifadagi ogohlantirish (skan natijasi global ovoz/xabar qatlamida ham chiqadi — shuning uchun kontent ichida).
+    await expect(
+      page.locator("[data-shell-slot=content]").getByText("Bu buyurtma allaqachon ro'yxatga qo'shilgan"),
+    ).toBeVisible();
     expect(api.lookups).toEqual(["tok-10285", "tok-10316", "tok-10342"]);
 
     await page.getByRole("checkbox", { name: "№10342 ni tanlash" }).uncheck();
@@ -62,7 +65,7 @@ test.describe("Biriktirish va Tezkor amal — 1440px", () => {
     await markResult(page, "Ali Valiyev", "Bekor");
     await markResult(page, "Dilnoza Rahimova", "Ertaga");
 
-    const finalize = page.getByRole("button", { name: "Kunni yakunlash" });
+    const finalize = page.getByRole("button", { name: "Kunni yakunlash", exact: true });
     await finalize.click();
     let confirm = page.getByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" });
     await expect(confirm).toContainText("3 ta buyurtma: quyidagilar bajariladi");
@@ -88,7 +91,7 @@ test.describe("Biriktirish va Tezkor amal — 1440px", () => {
 
     await markResult(page, "Ali Valiyev", "Bekor");
     await markResult(page, "Dilnoza Rahimova", "Ertaga");
-    await page.getByRole("button", { name: "Kunni yakunlash" }).click();
+    await page.getByRole("button", { name: "Kunni yakunlash", exact: true }).click();
     await page
       .getByRole("alertdialog", { name: "Kunni yakunlashni tasdiqlang" })
       .getByRole("button", { name: "Tasdiqlash" })

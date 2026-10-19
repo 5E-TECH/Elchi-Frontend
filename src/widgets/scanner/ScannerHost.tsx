@@ -69,6 +69,8 @@ const freezeTarget = (target: ScanTarget): ScanTarget => ({
   stats: target.stats,
   note: target.note,
   listTitle: target.listTitle,
+  listDescription: target.listDescription,
+  listNote: target.listNote,
   list: target.list?.map((item) => ({ key: item.key, title: item.title, subtitle: item.subtitle, tone: item.tone })),
   onScan: () => undefined,
 });

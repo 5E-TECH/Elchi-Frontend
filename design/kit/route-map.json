@@ -444,7 +444,7 @@
         "src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx",
         "src/shared/ui/SelectionRegion.tsx",
         "src/pages/new_orders/cancelled/utils.ts",
-        "src/shared/components/ScannerCameraModal.tsx",
+        "src/shared/ui/camera/ScannerCamera.tsx",
         "src/app/lib/routes.tsx"
       ],
       "roles": { "superadmin": "", "admin": "", "registrator": "faqat HQ", "market": "faqat o'z marketi" },
@@ -695,7 +695,8 @@
         "src/pages/dispatch/ui/CourierPickerDialog.tsx",
         "src/pages/dispatch/ui/DispatchAlert.tsx",
         "src/pages/dispatch/model/dispatchModel.ts",
-        "src/shared/components/ScannerCameraModal.tsx"
+        "src/features/dispatch-basket/model/dispatchBasket.ts",
+        "src/shared/ui/camera/ScannerCamera.tsx"
       ],
       "views": {
         "manager": ["dispatch-scan", "dispatch-courier-dialog", "dispatch-camera-dialog"],
@@ -724,7 +725,7 @@
         "src/pages/courier-bulk/ui/CourierBulkResultDialog.tsx",
         "src/pages/courier-bulk/ui/segmentTint.ts",
         "src/pages/courier-bulk/model/useIsBelowLg.ts",
-        "src/shared/components/ScannerCameraModal.tsx"
+        "src/shared/ui/camera/ScannerCamera.tsx"
       ],
       "views": {
         "manager": ["courier-bulk-main", "courier-bulk-camera-dialog"],
@@ -1534,16 +1535,6 @@
     }
   ],
   "newViews": {
-    "superadmin-neworders-market-orders-camera": "Kamera rejimi yo'q — sahifa faqat USB/klaviatura skaneri bilan ishlaydi (useOrderQrScanner).",
-    "admin-neworders-market-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
-    "manager-new-orders-market-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
-    "registrator-new-orders-market-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
-    "superadmin-neworders-incoming-scan-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri.",
-    "admin-neworders-incoming-scan-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri.",
-    "manager-new-orders-incoming-scan-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri.",
-    "superadmin-neworders-branch-batch-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
-    "admin-neworders-branch-batch-detail-camera": "Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner).",
-    "courier-courier-bulk-scanner-camera-list": "Kamera oynasida «skanerlanganlar ro'yxati» varag'i yo'q (ScannerCameraModal faqat kamera).",
     "courier-scan-offline": "Oflayn chip bor («Internet yo'q»); skanlarni navbatga qo'yish yo'q."
   },
   "partialViews": {
@@ -1552,22 +1543,32 @@
     "registrator-new-orders-market-detail": "Registrator boshqa xodim rollari (superadmin/admin/menejer) bilan bir xil v2 ko'rinishda — maketdagi farqlar (sarlavhada «Chop etish», «Buyurtmalar N ta» karta sarlavhasi, «5 / 6 ta» tanlov xulosasi, qator kebab menyusi) ega qaroriga qadar kiritilmagan.",
     "registrator-new-orders-market-detail-receive-dialog": "Umumiy xodim qabul oynasi (MarketOrderDialogs.tsx) — tasdiq tugmasi «Tasdiqlash»; maketdagi «Qabul qilish — N ta» varianti ega qaroriga qadar kiritilmagan.",
     "courier-scan-other-courier": "Alohida holat yo'q — «O'zimga olish» rad etilsa backend xato matni amallar kartasida chiqadi (ScanActionCard). Kamera ekranidagi ko'rinishi — kuryer «O'zimga olish» rejimi bilan (skaner 3-bosqich).",
-    "manager-dispatch-camera-dialog": "Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish.",
-    "registrator-dispatch-camera-scanner-dialog": "Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish.",
-    "manager-courier-bulk-camera-dialog": "Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish.",
-    "courier-courier-bulk-scanner-camera": "Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish.",
+    "manager-dispatch-camera-dialog": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. «Biriktirish · <filial> · savatda N ta», savat qurilmada (ega D2, /scan/:token «Kuryerga biriktirish» ham shu savatga), rad etilgan QR ro'yxatda «Paket … · Rad etildi»; kuryer — sahifadagi tugma.",
+    "registrator-dispatch-camera-scanner-dialog": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. «Biriktirish · <filial> · savatda N ta», savat qurilmada (ega D2, /scan/:token «Kuryerga biriktirish» ham shu savatga), rad etilgan QR ro'yxatda «Paket … · Rad etildi»; kuryer — sahifadagi tugma.",
+    "manager-courier-bulk-camera-dialog": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Kamera ichida «Bekor / Ertaga» rejimi (sahifadagi bilan bitta), «N / M ta skanerlandi», ro'yxat; yakunlash — sahifadagi «Kunni yakunlash».",
+    "courier-courier-bulk-scanner-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Kamera ichida «Bekor / Ertaga» rejimi (sahifadagi bilan bitta), «N / M ta skanerlandi», ro'yxat; yakunlash — sahifadagi «Kunni yakunlash».",
     "common-settings-scanner": "«Skaner» tabi bor (muvaffaqiyat/xato ovozlari, tebranish — ScannerPanel); «Kamera» kartasi yo'q — kamera rejimi keyinroq, alohida (spec D5 / G9).",
-    "superadmin-neworders-cancelled-handover-camera": "Sahifa qismi (sarlavha, «Market QR» holati, «USB skaner tayyor» qatori, tanlov, jadval) v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
-    "admin-neworders-cancelled-detail-camera": "Sahifa qismi (sarlavha, «Market QR» holati, «USB skaner tayyor» qatori, tanlov, jadval) v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
-    "superadmin-neworders-cancelled-scanner-dialog": "Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
-    "admin-neworders-cancelled-scanner-dialog": "Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
-    "registrator-new-orders-cancelled-scanner-dialog": "Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida.",
-    "superadmin-mails-detail-camera": "Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida.",
-    "admin-mails-detail-camera": "Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida.",
-    "registrator-mails-detail-camera": "Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida.",
-    "manager-mails-detail-receive-camera": "Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida.",
-    "courier-mails-detail-receive-camera": "Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida.",
-    "manager-batches-detail-send-camera": "Sahifa qismi (sarlavha, paket ma'lumoti, QR, «Buyurtmalar» kartasi — /mails/:id bilan umumiy OrdersTable, «Skaner tayyor» belgisi, tanlov) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida."
+    "superadmin-neworders-cancelled-handover-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Avval market QR, so'ng buyurtmalar («Buyurtmalarni tanlang · QR 04:12 amal qiladi»), ro'yxatda «Bekor qilish», «Tugatish».",
+    "admin-neworders-cancelled-detail-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Avval market QR, so'ng buyurtmalar («Buyurtmalarni tanlang · QR 04:12 amal qiladi»), ro'yxatda «Bekor qilish», «Tugatish».",
+    "superadmin-neworders-cancelled-scanner-dialog": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Sarlavhadagi «Market QR skanerlash» ham shu kamerani ochadi; market QR'dan keyin kamera yopilmaydi — buyurtmalarni tanlashga o'tadi.",
+    "admin-neworders-cancelled-scanner-dialog": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Sarlavhadagi «Market QR skanerlash» ham shu kamerani ochadi; market QR'dan keyin kamera yopilmaydi — buyurtmalarni tanlashga o'tadi.",
+    "registrator-new-orders-cancelled-scanner-dialog": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Sarlavhadagi «Market QR skanerlash» ham shu kamerani ochadi; market QR'dan keyin kamera yopilmaydi — buyurtmalarni tanlashga o'tadi.",
+    "superadmin-mails-detail-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q.",
+    "admin-mails-detail-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q.",
+    "registrator-mails-detail-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q.",
+    "manager-mails-detail-receive-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q.",
+    "courier-mails-detail-receive-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q.",
+    "manager-batches-detail-send-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. «HQ'ga yuborish · Paket B-… · <filial>», skan tanlaydi, «Bu paketda yo'q · tanlanmadi»; yuborish — sahifadagi tugma.",
+    "superadmin-neworders-market-orders-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan = darhol qabul; «Qabul qilindi N · Qoldi M · Topilmadi K», boshqa marketning buyurtmasi rad etiladi, kamera ichida market almashtirish.",
+    "admin-neworders-market-detail-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan = darhol qabul; «Qabul qilindi N · Qoldi M · Topilmadi K», boshqa marketning buyurtmasi rad etiladi, kamera ichida market almashtirish.",
+    "manager-new-orders-market-detail-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan = darhol qabul; «Qabul qilindi N · Qoldi M · Topilmadi K», boshqa marketning buyurtmasi rad etiladi, kamera ichida market almashtirish.",
+    "registrator-new-orders-market-detail-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan = darhol qabul; «Qabul qilindi N · Qoldi M · Topilmadi K», boshqa marketning buyurtmasi rad etiladi, kamera ichida market almashtirish.",
+    "superadmin-neworders-incoming-scan-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan faqat belgilaydi, qabul — sahifadagi «Qabul qilish»; kamera ichida manba almashtirish, «Qopda yetishmaydi».",
+    "admin-neworders-incoming-scan-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan faqat belgilaydi, qabul — sahifadagi «Qabul qilish»; kamera ichida manba almashtirish, «Qopda yetishmaydi».",
+    "manager-new-orders-incoming-scan-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan faqat belgilaydi, qabul — sahifadagi «Qabul qilish»; kamera ichida manba almashtirish, «Qopda yetishmaydi».",
+    "superadmin-neworders-branch-batch-detail-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi, «N / jami ta tanlandi», «Hammasi tanlandi»; qabul — sahifadagi tugma.",
+    "admin-neworders-branch-batch-detail-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi, «N / jami ta tanlandi», «Hammasi tanlandi»; qabul — sahifadagi tugma.",
+    "courier-courier-bulk-scanner-camera-list": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. «Skanerlanganlar · N / M · K ta bekor, L ta ertaga» varag'i, «Bekor qilish» belgini oladi, «Skanerlanmagan N ta buyurtma sotilgan deb belgilanadi»."
   },
   "viewFiles": {
     "$comment": "Maket → uni chizadigan aniq fayl, agar route'ning asosiy faylidan farq qilsa (rolga xos komponent, alohida oyna fayli). SCREENS.md 2- va 4-bo'limlarida ko'rsatiladi.",
@@ -1581,8 +1582,8 @@
     "admin-neworders-cancelled-manual-dialog": "src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx",
     "registrator-new-orders-cancelled-manual-dialog": "src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx",
     "market-new-orders-cancelled-qr-dialog": "src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx",
-    "superadmin-neworders-cancelled-handover-camera": "src/shared/components/ScannerCameraModal.tsx",
-    "admin-neworders-cancelled-detail-camera": "src/shared/components/ScannerCameraModal.tsx",
+    "superadmin-neworders-cancelled-handover-camera": "src/shared/ui/camera/ScannerCamera.tsx",
+    "admin-neworders-cancelled-detail-camera": "src/shared/ui/camera/ScannerCamera.tsx",
     "market-new-orders-delete-dialog": "src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx",
     "superadmin-dashboard-main": "src/pages/dashboard/DashboardPage.tsx",
     "admin-dashboard-main": "src/pages/dashboard/DashboardPage.tsx",

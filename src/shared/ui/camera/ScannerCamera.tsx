@@ -720,7 +720,8 @@ export const ScannerCamera = ({
         className={isPhone ? "dark" : undefined}
         title={target.listTitle ?? t("camera.list.title")}
         description={
-          progress ? `${progress.done}${progress.total !== undefined ? ` / ${progress.total}` : ""} · ${target.title}` : target.title
+          target.listDescription ??
+          (progress ? `${progress.done}${progress.total !== undefined ? ` / ${progress.total}` : ""} · ${target.title}` : target.title)
         }
         footerDivider="auto"
         footer={
@@ -752,6 +753,12 @@ export const ScannerCamera = ({
             })}
           </ul>
         )}
+        {target.listNote ? (
+          <p role="note" className="mt-3 flex items-start gap-2 text-[13px] text-text-muted">
+            <Info aria-hidden="true" size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-info-fg" />
+            <span className="min-w-0">{target.listNote}</span>
+          </p>
+        ) : null}
       </Dialog>
     </>
   );

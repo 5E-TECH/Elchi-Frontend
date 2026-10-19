@@ -28,6 +28,7 @@ import { useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
 import { canViewDispatchPage } from "../../../app/lib/access";
+import { addToDispatchBasket, normalizeDispatchOrder, useDispatchBasketScope } from "../../../features/dispatch-basket";
 import { OrderStatusBadge } from "../../../entities/order";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { cx } from "../../../shared/lib/cx";
@@ -75,7 +76,7 @@ const ManagerOrderDialogs = lazy(() => import("./ManagerOrderDialogs"));
 
 type ScanOrderResultProps = {
   order: OrderDetail;
-  /** Skanerlangan (normallashtirilgan) token — «Kuryerga biriktirish» uni `/dispatch` ga beradi. */
+  /** Skanerlangan (normallashtirilgan) token — «Kuryerga biriktirish» buyurtmani shu token bilan savatga qo'yadi. */
   token: string;
   roleKind: ScanRoleKind;
   /** Sarlavha ostidagi xabar (USB skaner bilan yaroqsiz QR o'qildi). */
@@ -516,7 +517,14 @@ export const ScanOrderResult = ({
     return () => onDialogOpenChange(false);
   }, [dialog, onDialogOpenChange]);
 
-  const goDispatch = () => navigate(DISPATCH_ROUTE, { state: { scanToken: token } });
+  // «Kuryerga biriktirish» («Buyurtma biriktirish savatiga qo'shiladi»): savat qurilmada (ega qarori D2) —
+  // buyurtma `/dispatch` savatiga qo'shiladi (bor bo'lsa — tanlanadi), so'ng savat ochiladi.
+  const dispatchBasketScope = useDispatchBasketScope();
+  const goDispatch = () => {
+    const basketOrder = normalizeDispatchOrder(order, token);
+    if (basketOrder) addToDispatchBasket(dispatchBasketScope, basketOrder);
+    navigate(DISPATCH_ROUTE);
+  };
 
   const copyNumber = () => {
     void copyToClipboard(view.id).then((copied) => {

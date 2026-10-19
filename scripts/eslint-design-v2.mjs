@@ -59,7 +59,6 @@ export const UI_IMPORT_OPTIONS = {
  * testdagi `MAX_*` ni o'zgartirish (review'da ko'rinadi).
  */
 export const RAW_CONTROL_RATCHET = {
-  "src/shared/components/ScannerCameraModal.tsx": "kamera ishi — alohida (ega qarori 2026-10-16)",
   "src/pages/market-operators/index.tsx": "yopiq route (routes.tsx: guard doim false, maket yo'q) — ko'chirilmaydi (G2 spec §3.4)",
   "src/pages/payments/components/SalaryPaymentPopup.tsx": "yetib bo'lmaydigan v1 — «Maosh to'lash» UNAVAILABLE_ACTIONS da (Moliya spec §9)",
   "src/shared/components/PrintModeSelect.tsx": "v1 o'rami (ichi v2, menyu bandlari) — shared/ui ga ko'chirilguncha",

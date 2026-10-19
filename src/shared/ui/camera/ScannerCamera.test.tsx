@@ -354,6 +354,26 @@ describe("ScannerCamera — telefon (to'liq ekran) va sahifa ko'rinishi", () => 
     expect(onUndo).toHaveBeenCalledTimes(1);
   });
 
+  it("«Ro'yxat» varag'i: maqsad izohi («4 / 7 · 2 ta bekor, 2 ta ertaga») va ostidagi eslatma", async () => {
+    setPhone(true);
+    const user = userEvent.setup();
+    renderWithProviders(
+      <ScannerCamera
+        target={makeTarget({
+          list: [{ key: "1", title: "№10233 · Feruza Mirzayeva", subtitle: "Bekor · Toshkent tumani", tone: "danger" }],
+          listDescription: "4 / 7 · 2 ta bekor, 2 ta ertaga",
+          listNote: "Skanerlanmagan 3 ta buyurtma sotilgan deb belgilanadi.",
+        })}
+        onClose={vi.fn()}
+      />,
+    );
+    const dialog = await screen.findByRole("dialog", { name: "Qabul qilish" });
+    await user.click(within(dialog).getByRole("button", { name: "Ro'yxat" }));
+    const sheet = await screen.findByRole("dialog", { name: "Skanerlanganlar" });
+    expect(within(sheet).getByText("4 / 7 · 2 ta bekor, 2 ta ertaga")).toBeInTheDocument();
+    expect(within(sheet).getByRole("note")).toHaveTextContent("Skanerlanmagan 3 ta buyurtma sotilgan deb belgilanadi.");
+  });
+
   it("presentation=page (desktop) — oyna emas, faqat kamera bloki (yon panelsiz)", async () => {
     renderWithProviders(<ScannerCamera presentation="page" target={makeTarget()} />);
     expect(await screen.findByRole("region", { name: "Kamera skaneri" })).toBeInTheDocument();

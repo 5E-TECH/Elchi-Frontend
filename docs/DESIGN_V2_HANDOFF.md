@@ -19,7 +19,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
 | Bosqich | Holat |
 |---|---|
 | 0 tokenlar, 1 primitivlar, 2 shell, 3 forma/dialog/holatlar | tayyor, dev'da |
-| 4 sahifalar migratsiyasi | **tayyor**: 77 route'dan 75 tasi v2 (G1, G2, G3); qolgan `/scan` — kamera ishi, `/market-operators` — yopiq |
+| 4 sahifalar migratsiyasi | **tayyor**: 77 route'dan 76 tasi v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi); qolgan `/market-operators` — yopiq |
 | 5 qo'riqchilar (ESLint, palitra, vizual snapshot, CI) | **tayyor** (kod va tekshiruvlar); «Visual» baseline'lari — egada (§2.1) |
 
 **4-bosqichda ko'chirilgan sahifalar** (ro'yxat `AGENTS.md` 4-qatorida ham bor):
@@ -38,7 +38,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   `/profile`, `/settings`, `/inbox`; `/market-operators` yopiq, ko'chirilmagan
 - G3: `/login` (+ «Sessiya tugadi» ekrani, sessiya banneri shell'ning `[data-shell-slot=banner]` slotida),
   `/scan/:token`, `/dispatch`, `/courier-bulk` (+ dev'ning isbot qadami va xato berganlar oynasi, `X-Request-Source`);
-  butun `/scan` kamera ekrani — alohida kamera ishi
+  butun `/scan` kamera ekrani — skaner ishida (quyida §2.2)
 
 **5-bosqich** (`docs/DESIGN_SYSTEM.md` §12, §14):
 
@@ -47,6 +47,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   `QRCode`; boshqa ikonka kutubxonalari yo'q), `jsx-a11y/anchor-is-valid` — butun `src` da **xato**,
   `STAGE_A_PENDING = []`. Ratchet: `RAW_CONTROL_RATCHET` 5 (kamera ishi 2, `/market-operators`, `SalaryPaymentPopup`,
   `PrintModeSelect`), `UI_IMPORT_RATCHET` 0; bitta qator istisnolari 2 (kamera tugmasi, `CampaignPage` prefiksi).
+  Skaner 1–2-bosqichidan keyin: `RAW_CONTROL_RATCHET` 3 (kamera ishi chiqdi), bitta qator istisnosi 1 (`CampaignPage`).
 - design-guard `named-colour` + `V2_SCOPES` (80 papka, ichidagi har fayl rangda 0), `V2_SCOPE_PENDING` 2,
   `OUTPUT_FORMAT_FILES` 4; `design/guard-baseline.json` faqat kamaydi (87 → 17 fayl yozuvi).
 - Vizual snapshotlar: 23 sahna × kunduzgi/tungi × 1440/390 = 92 (`tests/visual/`, mock API), CI «Visual»
@@ -105,8 +106,17 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
 
 ### 2.2 Keyingi ishlar
 
-- **Kamera ishi** — alohida (ega qarori 2026-10-16): butun `/scan`, `*-camera` ko'rinishlari, `ScannerCameraModal`,
-  `cancelled/detail.tsx` dagi «Kamera» tugmasi (`docs/DESIGN_SYSTEM.md` §14).
+- **Kamera ishi (skaner, Trello v1eLN2tV)** — ega qarorlari 2026-10-19 (markaziy «Skaner» kontekstli, oqim ichida
+  kamera tugmasi yo'q), batafsil `docs/DESIGN_SYSTEM.md` §14:
+  - 1-bosqich — tayyor: skan maqsadlari reyestri, `ScannerHost`, v2 `ScannerCamera`, universal `/scan` v2.
+  - 2-bosqich — tayyor (`design-v2/scanner-2`): USB skanli har oqim kamera bilan ham (qabul — skan = darhol qabul,
+    boshqa market rad, kamera ichida market almashtirish; kiruvchi, filial paketlari, bekorlar, pochta, paket
+    jo'natish, `/orders` bekor tablari — tanlash; `/dispatch` savati qurilmada va `/scan/:token` «Kuryerga
+    biriktirish» shu savatga; `/courier-bulk` — kamera ichida «Bekor / Ertaga»). v1 «Kamera» tugmalari va
+    `ScannerCameraModal` o'chirildi. Istisno: `MarkReturnedModal` ning o'z kamera tugmasi (markaziy tugma oyna ostida).
+  - 3-bosqich — qolgan: universal rejimlar «Ma'lumot · Qabul qilish · Kuryerga biriktirish» (savat —
+    `src/features/dispatch-basket`), kuryerda «O'zimga olish»; oflayn navbat, buyurtma raqami bo'yicha qo'lda kiritish
+    (API yo'q) — ega qarori kutiladi.
 - **To'liq QA** — Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.
 - Follow-up: `Switch`, `FilterChip`, `Checkbox` primitivlari, `TextInput` prefiks sloti (`CampaignPage` istisnosi).
 - **Chek (yorliq) dizayni — keyinga qoldirilgan** (ega, 2026-10-18). 5 ta taklif rad etilgan: «havodor» va eski
@@ -228,11 +238,13 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
 - **G3 spec §9 sukutlari (egaga ko'rsatiladi):**
   - butun `/scan` (kamera holatlari, qo'lda kiritish, oflayn navbat) — alohida kamera ishi;
   - menejer skaner natijasida «Sotish / Bekor qilish» — buyurtma tafsilotidagi qoidalar bilan;
-  - «Kuryerga biriktirish» → `/dispatch` buyurtma qo'shilgan va tanlangan holda;
+  - «Kuryerga biriktirish» → `/dispatch` buyurtma qo'shilgan va tanlangan holda (skaner 2-bosqichidan — qurilmadagi
+    savat orqali);
   - xodim skaner natijasida «To'langan» ham, «Yaratilgan» ham;
   - kuryerga paket «Qabul qilish» yashirilgan (backend 403);
   - «© 2026 Elchi Pochta» chizilmaydi;
-  - `/dispatch` telefonda bitta yopishqoq panel «Kamera N ta» + «Biriktirish — K ta»;
+  - `/dispatch` telefonda bitta yopishqoq panel «Biriktirish — K ta» (skaner 2-bosqichida «Kamera N ta» olindi —
+    kamera markaziy «Skaner» orqali);
   - `/courier-bulk` menejerda kuryer maketi; «Faqat bekorlarni qo'llash» olib tashlandi.
 - Ochiq savollar (javob olinmagan), ehtiyot bo'lib birga so'rash mumkin:
   - chop etish menyusi izohlari: xodim maketi «Faqat jadvalni chop etadi», kuryer maketi «Brauzerning chop etish

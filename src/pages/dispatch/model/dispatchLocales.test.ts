@@ -53,7 +53,7 @@ describe("dispatch locale", () => {
     expect(t("lookup.checking", { count: 2 })).toBe("Checking 2 orders...");
     expect(t("assign.success", { count: 1, courier: "Ali" })).toBe("1 order assigned to Ali");
     expect(t("courierDialog.description", { count: 2 })).toBe("2 orders will be assigned to this courier");
-    expect(t("scanCard.cameraPhone", { count: 1 })).toBe("Scan with camera, 1 order in the list");
+    expect(t("camera.context", { branch: "Urgut branch", value: "6" })).toBe("Urgut branch · 6 in the basket");
   });
 
   it("uz and ru keep their count-neutral wording for every number", async () => {

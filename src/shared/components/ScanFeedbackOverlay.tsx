@@ -1,12 +1,11 @@
 // dizayn-v2: (maket yo'q) tizim-scanner
 import { memo, useEffect, useRef, useState } from "react";
 import { Check, SearchCheck, SearchX, X, type LucideIcon } from "lucide-react";
-import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { cx } from "../lib/cx";
 import { SCAN_FEEDBACK_EVENT, type ScanFeedbackDetail, type ScanFeedbackType } from "../lib/scanner/feedback";
 import { isScannerCameraMounted } from "../lib/scanner/scannerHost";
-import { TONE_SOLID, type Tone } from "../ui/primitives";
+import { Portal, TONE_SOLID, type Tone } from "../ui/primitives";
 
 const feedbackConfig: Record<
   ScanFeedbackType,
@@ -30,6 +29,10 @@ const feedbackConfig: Record<
  *
  * Kamera ochiq bo'lsa (`ScannerCamera` — universal `/scan` yoki oqim ustidagi oyna) bu xabar chiqmaydi: natija
  * kamera ichidagi xabarda ko'rinadi, ustma-ust ikkinchisi bo'lmaydi.
+ *
+ * Qatlam (skaner 2-bosqich): o'zboshimcha `z-[10050]` va `document.body` portali o'rniga umumiy `Portal` ning
+ * `toast` qatlami (taxta `tizim-motion` §08: xabar bosishni to'smaydi, fokusni olmaydi, oyna ochiq turganda ham
+ * ko'rinadi — `inert` uni chetlab o'tadi). Matn — skan natijasi (`playScanFeedback(type, message)`).
  */
 const ScanFeedbackOverlay = () => {
   const { t } = useTranslation("common");
@@ -54,31 +57,32 @@ const ScanFeedbackOverlay = () => {
     };
   }, []);
 
-  if (!feedback || typeof document === "undefined") return null;
+  if (!feedback) return null;
 
   const config = feedbackConfig[feedback.type];
   const Icon = config.icon;
 
-  return createPortal(
-    <div
-      key={feedback.id}
-      role="status"
-      aria-live="assertive"
-      className="pointer-events-none fixed inset-0 z-[10050] flex items-center justify-center bg-overlay px-5 animate-[scan-feedback-backdrop_180ms_ease-out] motion-reduce:animate-none"
-    >
-      <div className="flex max-w-[min(90vw,420px)] flex-col items-center gap-4 rounded-[20px] border border-border bg-raised px-8 py-7 text-center shadow-xl animate-[scan-feedback-pop_420ms_cubic-bezier(0.16,1,0.3,1)] motion-reduce:animate-none">
-        <span
-          aria-hidden="true"
-          className={cx("inline-flex size-[clamp(88px,14vw,128px)] items-center justify-center rounded-full", TONE_SOLID[config.tone])}
-        >
-          <Icon className="size-[48%]" strokeWidth={3} />
-        </span>
-        <h2 className="text-[clamp(22px,3.4vw,32px)] leading-tight font-bold tracking-[-.01em] [overflow-wrap:anywhere] text-text">
-          {feedback.message ?? t(config.labelKey)}
-        </h2>
+  return (
+    <Portal layer="toast">
+      <div
+        key={feedback.id}
+        role="status"
+        aria-live="assertive"
+        className="pointer-events-none fixed inset-0 flex items-center justify-center bg-overlay px-5 animate-[scan-feedback-backdrop_180ms_ease-out] motion-reduce:animate-none"
+      >
+        <div className="flex max-w-[min(90vw,420px)] flex-col items-center gap-4 rounded-[20px] border border-border bg-raised px-8 py-7 text-center shadow-xl animate-[scan-feedback-pop_420ms_cubic-bezier(0.16,1,0.3,1)] motion-reduce:animate-none">
+          <span
+            aria-hidden="true"
+            className={cx("inline-flex size-[clamp(88px,14vw,128px)] items-center justify-center rounded-full", TONE_SOLID[config.tone])}
+          >
+            <Icon className="size-[48%]" strokeWidth={3} />
+          </span>
+          <h2 className="text-[clamp(22px,3.4vw,32px)] leading-tight font-bold tracking-[-.01em] [overflow-wrap:anywhere] text-text">
+            {feedback.message ?? t(config.labelKey)}
+          </h2>
+        </div>
       </div>
-    </div>,
-    document.body,
+    </Portal>
   );
 };
 

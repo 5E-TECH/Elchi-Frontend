@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**77 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **11** · qisman: **21** · v2 ga ko'chirilgan route: **76 / 77**
+**77 ta route** (+ qobiq) · **411 ta maket** (264 sahifa, 134 oyna, 13 tizim taxtasi; 369 ta fragment fayli) · kodda yo'q: **1** · qisman: **31** · v2 ga ko'chirilgan route: **76 / 77**
 
 ## Qanday ishlatiladi
 
@@ -413,11 +413,11 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/new-orders/incoming/:marketId` | superadmin | `superadmin-neworders-incoming-scan` — Kiruvchi posilkalar — skanerlab qabul | [design/fragments/superadmin--neworders-incoming-scan.html](fragments/superadmin--neworders-incoming-scan.html) | sahifa | v2 |
-| `/new-orders/incoming/:marketId` | superadmin | `superadmin-neworders-incoming-scan-camera` — Kiruvchi posilkalar — skanerlab qabul — kamera | [design/fragments/superadmin--neworders-incoming-scan-camera.html](fragments/superadmin--neworders-incoming-scan-camera.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | superadmin | `superadmin-neworders-incoming-scan-camera` — Kiruvchi posilkalar — skanerlab qabul — kamera | [design/fragments/superadmin--neworders-incoming-scan-camera.html](fragments/superadmin--neworders-incoming-scan-camera.html) | oyna | qisman |
 | `/new-orders/incoming/:marketId` | admin | `admin-neworders-incoming-scan` — Kiruvchi posilkalarni skanerlash | [design/fragments/admin--neworders-incoming-scan.html](fragments/admin--neworders-incoming-scan.html) | sahifa | v2 |
-| `/new-orders/incoming/:marketId` | admin | `admin-neworders-incoming-scan-camera` — Kiruvchi posilkalarni skanerlash — kamera | [design/fragments/superadmin--neworders-incoming-scan-camera.html](fragments/superadmin--neworders-incoming-scan-camera.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | admin | `admin-neworders-incoming-scan-camera` — Kiruvchi posilkalarni skanerlash — kamera | [design/fragments/superadmin--neworders-incoming-scan-camera.html](fragments/superadmin--neworders-incoming-scan-camera.html) | oyna | qisman |
 | `/new-orders/incoming/:marketId` | manager | `manager-new-orders-incoming-scan` — Kiruvchi posilkalar — skanerlash | [design/fragments/manager--new-orders-incoming-scan.html](fragments/manager--new-orders-incoming-scan.html) | sahifa | v2 |
-| `/new-orders/incoming/:marketId` | manager | `manager-new-orders-incoming-scan-camera` — Kiruvchi posilkalar — skanerlash — kamera | [design/fragments/manager--new-orders-incoming-scan-camera.html](fragments/manager--new-orders-incoming-scan-camera.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/incoming/:marketId` | manager | `manager-new-orders-incoming-scan-camera` — Kiruvchi posilkalar — skanerlash — kamera | [design/fragments/manager--new-orders-incoming-scan-camera.html](fragments/manager--new-orders-incoming-scan-camera.html) | oyna | qisman |
 | `/new-orders/incoming/:marketId` | registrator | — Maket yo'q — admin-neworders-incoming-scan ga qarang. | — | — | v2 |
 | `/new-orders/incoming/:marketId` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
 
@@ -459,9 +459,9 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/new-orders/branches/:branchId/batches/:batchId` | superadmin | `superadmin-neworders-branch-batch-detail` — Filial paketi tafsiloti | [design/fragments/superadmin--neworders-branch-batch-detail.html](fragments/superadmin--neworders-branch-batch-detail.html) | sahifa | v2 |
-| `/new-orders/branches/:branchId/batches/:batchId` | superadmin | `superadmin-neworders-branch-batch-detail-camera` — Filial paketi tafsiloti — kamera | [design/fragments/superadmin--neworders-branch-batch-detail-camera.html](fragments/superadmin--neworders-branch-batch-detail-camera.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/branches/:branchId/batches/:batchId` | superadmin | `superadmin-neworders-branch-batch-detail-camera` — Filial paketi tafsiloti — kamera | [design/fragments/superadmin--neworders-branch-batch-detail-camera.html](fragments/superadmin--neworders-branch-batch-detail-camera.html) | oyna | qisman |
 | `/new-orders/branches/:branchId/batches/:batchId` | admin | `admin-neworders-branch-batch-detail` — Filial paketi tafsiloti | [design/fragments/superadmin--neworders-branch-batch-detail.html](fragments/superadmin--neworders-branch-batch-detail.html) | sahifa | v2 |
-| `/new-orders/branches/:branchId/batches/:batchId` | admin | `admin-neworders-branch-batch-detail-camera` — Filial paketi tafsiloti — kamera | [design/fragments/superadmin--neworders-branch-batch-detail-camera.html](fragments/superadmin--neworders-branch-batch-detail-camera.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/branches/:branchId/batches/:batchId` | admin | `admin-neworders-branch-batch-detail-camera` — Filial paketi tafsiloti — kamera | [design/fragments/superadmin--neworders-branch-batch-detail-camera.html](fragments/superadmin--neworders-branch-batch-detail-camera.html) | oyna | qisman |
 | `/new-orders/branches/:branchId/batches/:batchId` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
 
 #### `/new-orders/cancelled` — Bekor qilinganlar — marketlar
@@ -480,7 +480,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/new-orders/cancelled/:marketId` — Bekor qilinganlarni marketga topshirish (market rolida — o'z bekorlari va QR kod)
 
-- **Fayllar:** `src/pages/new_orders/cancelled/detail.tsx` · `src/pages/new_orders/cancelled/cancelledModel.ts` · `src/pages/new_orders/cancelled/ui/HandoverStatusAlert.tsx` · `src/pages/new_orders/cancelled/ui/CancelledOrdersTable.tsx` · `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` · `src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx` · `src/shared/ui/SelectionRegion.tsx` · `src/pages/new_orders/cancelled/utils.ts` · `src/shared/components/ScannerCameraModal.tsx` · `src/app/lib/routes.tsx`
+- **Fayllar:** `src/pages/new_orders/cancelled/detail.tsx` · `src/pages/new_orders/cancelled/cancelledModel.ts` · `src/pages/new_orders/cancelled/ui/HandoverStatusAlert.tsx` · `src/pages/new_orders/cancelled/ui/CancelledOrdersTable.tsx` · `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` · `src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx` · `src/shared/ui/SelectionRegion.tsx` · `src/pages/new_orders/cancelled/utils.ts` · `src/shared/ui/camera/ScannerCamera.tsx` · `src/app/lib/routes.tsx`
 - **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) · o'rovchi: `NewOrdersCancelledDetailEntry`
 - **Rollar:** superadmin, admin, registrator (faqat HQ), market (faqat o'z marketi)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
@@ -490,11 +490,11 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/new-orders/cancelled/:marketId` | superadmin | `superadmin-neworders-cancelled-handover` — Bekor qilinganlarni marketga topshirish | [design/fragments/superadmin--neworders-cancelled-handover.html](fragments/superadmin--neworders-cancelled-handover.html) | sahifa | v2 |
-| `/new-orders/cancelled/:marketId` | superadmin | `superadmin-neworders-cancelled-handover-camera` — Bekor qilinganlarni marketga topshirish — kamera<br>↳ `src/shared/components/ScannerCameraModal.tsx` | [design/fragments/superadmin--neworders-cancelled-handover-camera.html](fragments/superadmin--neworders-cancelled-handover-camera.html) | oyna | qisman |
+| `/new-orders/cancelled/:marketId` | superadmin | `superadmin-neworders-cancelled-handover-camera` — Bekor qilinganlarni marketga topshirish — kamera<br>↳ `src/shared/ui/camera/ScannerCamera.tsx` | [design/fragments/superadmin--neworders-cancelled-handover-camera.html](fragments/superadmin--neworders-cancelled-handover-camera.html) | oyna | qisman |
 | `/new-orders/cancelled/:marketId` | superadmin | `superadmin-neworders-cancelled-manual-dialog` — QR buzilganini tasdiqlash (modal)<br>↳ `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | [design/fragments/superadmin--neworders-cancelled-manual-dialog.html](fragments/superadmin--neworders-cancelled-manual-dialog.html) | oyna | v2 |
 | `/new-orders/cancelled/:marketId` | superadmin | `superadmin-neworders-cancelled-scanner-dialog` — Kamera skaneri (modal) | [design/fragments/superadmin--neworders-cancelled-scanner-dialog.html](fragments/superadmin--neworders-cancelled-scanner-dialog.html) | oyna | qisman |
 | `/new-orders/cancelled/:marketId` | admin | `admin-neworders-cancelled-detail` — Bekor qilinganlarni marketga topshirish | [design/fragments/admin--neworders-cancelled-detail.html](fragments/admin--neworders-cancelled-detail.html) | sahifa | v2 |
-| `/new-orders/cancelled/:marketId` | admin | `admin-neworders-cancelled-detail-camera` — Bekor qilinganlarni marketga topshirish — kamera<br>↳ `src/shared/components/ScannerCameraModal.tsx` | [design/fragments/admin--neworders-cancelled-detail-camera.html](fragments/admin--neworders-cancelled-detail-camera.html) | oyna | qisman |
+| `/new-orders/cancelled/:marketId` | admin | `admin-neworders-cancelled-detail-camera` — Bekor qilinganlarni marketga topshirish — kamera<br>↳ `src/shared/ui/camera/ScannerCamera.tsx` | [design/fragments/admin--neworders-cancelled-detail-camera.html](fragments/admin--neworders-cancelled-detail-camera.html) | oyna | qisman |
 | `/new-orders/cancelled/:marketId` | admin | `admin-neworders-cancelled-manual-dialog` — QR buzilganini tasdiqlash<br>↳ `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | [design/fragments/admin--neworders-cancelled-manual-dialog.html](fragments/admin--neworders-cancelled-manual-dialog.html) | oyna | v2 |
 | `/new-orders/cancelled/:marketId` | admin | `admin-neworders-cancelled-scanner-dialog` — Market QR skaneri | [design/fragments/admin--neworders-cancelled-scanner-dialog.html](fragments/admin--neworders-cancelled-scanner-dialog.html) | oyna | qisman |
 | `/new-orders/cancelled/:marketId` | registrator | `registrator-new-orders-cancelled-detail` — Bekor qilinganlarni marketga topshirish (HQ) | [design/fragments/registrator--new-orders-cancelled-detail.html](fragments/registrator--new-orders-cancelled-detail.html) | sahifa | v2 |
@@ -516,17 +516,17 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/new-orders/:marketId` | superadmin | `superadmin-neworders-market-orders` — Market yangi buyurtmalari (qabul) | [design/fragments/superadmin--neworders-market-orders.html](fragments/superadmin--neworders-market-orders.html) | sahifa | v2 |
-| `/new-orders/:marketId` | superadmin | `superadmin-neworders-market-orders-camera` — Market yangi buyurtmalari (qabul) — kamera | [design/fragments/superadmin--neworders-market-orders-camera.html](fragments/superadmin--neworders-market-orders-camera.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/:marketId` | superadmin | `superadmin-neworders-market-orders-camera` — Market yangi buyurtmalari (qabul) — kamera | [design/fragments/superadmin--neworders-market-orders-camera.html](fragments/superadmin--neworders-market-orders-camera.html) | oyna | qisman |
 | `/new-orders/:marketId` | superadmin | `superadmin-neworders-receive-confirm-dialog` — Qo'lda qabul qilish (tasdiq)<br>↳ `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | [design/fragments/superadmin--neworders-receive-confirm-dialog.html](fragments/superadmin--neworders-receive-confirm-dialog.html) | oyna | v2 |
 | `/new-orders/:marketId` | admin | `admin-neworders-market-detail` — Market yangi buyurtmalari | [design/fragments/admin--neworders-market-detail.html](fragments/admin--neworders-market-detail.html) | sahifa | v2 |
-| `/new-orders/:marketId` | admin | `admin-neworders-market-detail-camera` — Market yangi buyurtmalari — kamera | [design/fragments/admin--neworders-market-detail-camera.html](fragments/admin--neworders-market-detail-camera.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/:marketId` | admin | `admin-neworders-market-detail-camera` — Market yangi buyurtmalari — kamera | [design/fragments/admin--neworders-market-detail-camera.html](fragments/admin--neworders-market-detail-camera.html) | oyna | qisman |
 | `/new-orders/:marketId` | admin | `admin-neworders-market-confirm-dialog` — Qabul tasdig'i / buyurtmani o'chirish<br>↳ `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | [design/fragments/admin--neworders-market-confirm-dialog.html](fragments/admin--neworders-market-confirm-dialog.html) | oyna | v2 |
 | `/new-orders/:marketId` | manager | `manager-new-orders-market-detail` — Market buyurtmalari — qabul | [design/fragments/manager--new-orders-market-detail.html](fragments/manager--new-orders-market-detail.html) | sahifa | v2 |
-| `/new-orders/:marketId` | manager | `manager-new-orders-market-detail-camera` — Market buyurtmalari — qabul — kamera | [design/fragments/manager--new-orders-market-detail-camera.html](fragments/manager--new-orders-market-detail-camera.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/:marketId` | manager | `manager-new-orders-market-detail-camera` — Market buyurtmalari — qabul — kamera | [design/fragments/manager--new-orders-market-detail-camera.html](fragments/manager--new-orders-market-detail-camera.html) | oyna | qisman |
 | `/new-orders/:marketId` | manager | `manager-new-orders-receive-confirm-dialog` — Qo'lda qabul qilish tasdig'i<br>↳ `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | [design/fragments/manager--new-orders-receive-confirm-dialog.html](fragments/manager--new-orders-receive-confirm-dialog.html) | oyna | v2 |
 | `/new-orders/:marketId` | manager | `manager-new-orders-delete-confirm-dialog` — Buyurtmani o'chirish tasdig'i<br>↳ `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | [design/fragments/manager--new-orders-delete-confirm-dialog.html](fragments/manager--new-orders-delete-confirm-dialog.html) | oyna | v2 |
 | `/new-orders/:marketId` | registrator | `registrator-new-orders-market-detail` — Market buyurtmalari — qabul | [design/fragments/registrator--new-orders-market-detail.html](fragments/registrator--new-orders-market-detail.html) | sahifa | qisman |
-| `/new-orders/:marketId` | registrator | `registrator-new-orders-market-detail-camera` — Market buyurtmalari — qabul — kamera | [design/fragments/registrator--new-orders-market-detail-camera.html](fragments/registrator--new-orders-market-detail-camera.html) | oyna | yangi (kodda yo'q) |
+| `/new-orders/:marketId` | registrator | `registrator-new-orders-market-detail-camera` — Market buyurtmalari — qabul — kamera | [design/fragments/registrator--new-orders-market-detail-camera.html](fragments/registrator--new-orders-market-detail-camera.html) | oyna | qisman |
 | `/new-orders/:marketId` | registrator | `registrator-new-orders-market-detail-receive-dialog` — Qabul qilish tasdig'i<br>↳ `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | [design/fragments/registrator--new-orders-market-detail-receive-dialog.html](fragments/registrator--new-orders-market-detail-receive-dialog.html) | oyna | qisman |
 | `/new-orders/:marketId` | registrator | `registrator-new-orders-market-detail-delete-dialog` — Buyurtmani o'chirish tasdig'i<br>↳ `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | [design/fragments/registrator--new-orders-market-detail-delete-dialog.html](fragments/registrator--new-orders-market-detail-delete-dialog.html) | oyna | v2 |
 | `/new-orders/:marketId` | market | `market-new-orders-list` — Yangi buyurtmalar | [design/fragments/market--new-orders-list.html](fragments/market--new-orders-list.html) | sahifa | v2 |
@@ -738,7 +738,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/dispatch` — Biriktirish — buyurtmalarni skanerlab kuryerga berish
 
-- **Fayllar:** `src/pages/dispatch/index.tsx` · `src/pages/dispatch/ui/DispatchStats.tsx` · `src/pages/dispatch/ui/DispatchOrdersTable.tsx` · `src/pages/dispatch/ui/CourierPickerDialog.tsx` · `src/pages/dispatch/ui/DispatchAlert.tsx` · `src/pages/dispatch/model/dispatchModel.ts` · `src/shared/components/ScannerCameraModal.tsx`
+- **Fayllar:** `src/pages/dispatch/index.tsx` · `src/pages/dispatch/ui/DispatchStats.tsx` · `src/pages/dispatch/ui/DispatchOrdersTable.tsx` · `src/pages/dispatch/ui/CourierPickerDialog.tsx` · `src/pages/dispatch/ui/DispatchAlert.tsx` · `src/pages/dispatch/model/dispatchModel.ts` · `src/features/dispatch-basket/model/dispatchBasket.ts` · `src/shared/ui/camera/ScannerCamera.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewDispatch` (access.ts → canViewDispatchPage)
 - **Rollar:** superadmin, admin, manager (REGIONAL · HYBRID), registrator (HQ · REGIONAL · HYBRID)
 - **Menyuda:** «Biriktirish» (`dispatch`) — manager (REGIONAL · HYBRID), registrator (HQ · REGIONAL · HYBRID)
@@ -760,7 +760,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/courier-bulk` — Tezkor amal — kunni yakunlash (skanerlab sotildi / bekor / ertaga)
 
-- **Fayllar:** `src/pages/courier-bulk/index.tsx` · `src/pages/courier-bulk/model/courierBulk.ts` · `src/pages/courier-bulk/ui/CourierBulkSummary.tsx` · `src/pages/courier-bulk/ui/ScanModeControl.tsx` · `src/pages/courier-bulk/ui/CourierBulkOrders.tsx` · `src/pages/courier-bulk/ui/ResultControl.tsx` · `src/pages/courier-bulk/ui/BulkAlert.tsx` · `src/pages/courier-bulk/ui/CourierBulkProofDialog.tsx` · `src/pages/courier-bulk/ui/CourierBulkResultDialog.tsx` · `src/pages/courier-bulk/ui/segmentTint.ts` · `src/pages/courier-bulk/model/useIsBelowLg.ts` · `src/shared/components/ScannerCameraModal.tsx`
+- **Fayllar:** `src/pages/courier-bulk/index.tsx` · `src/pages/courier-bulk/model/courierBulk.ts` · `src/pages/courier-bulk/ui/CourierBulkSummary.tsx` · `src/pages/courier-bulk/ui/ScanModeControl.tsx` · `src/pages/courier-bulk/ui/CourierBulkOrders.tsx` · `src/pages/courier-bulk/ui/ResultControl.tsx` · `src/pages/courier-bulk/ui/BulkAlert.tsx` · `src/pages/courier-bulk/ui/CourierBulkProofDialog.tsx` · `src/pages/courier-bulk/ui/CourierBulkResultDialog.tsx` · `src/pages/courier-bulk/ui/segmentTint.ts` · `src/pages/courier-bulk/model/useIsBelowLg.ts` · `src/shared/ui/camera/ScannerCamera.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewCourierBulk` (access.ts → canViewCourierBulkPage)
 - **Rollar:** manager (REGIONAL · HYBRID), courier
 - **Menyuda:** «Tezkor amal» (`quickAction`) — manager (REGIONAL · HYBRID), courier
@@ -773,7 +773,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/courier-bulk` | manager | `manager-courier-bulk-camera-dialog` — Tezkor amal — kamera | [design/fragments/manager--courier-bulk-camera-dialog.html](fragments/manager--courier-bulk-camera-dialog.html) | oyna | qisman |
 | `/courier-bulk` | courier | `courier-courier-bulk-main` — Tezkor amal — kunni yakunlash | [design/fragments/courier--courier-bulk-main.html](fragments/courier--courier-bulk-main.html) | sahifa | v2 |
 | `/courier-bulk` | courier | `courier-courier-bulk-scanner-camera` — Tezkor amal — kamera skaneri | [design/fragments/courier--courier-bulk-scanner-camera.html](fragments/courier--courier-bulk-scanner-camera.html) | oyna | qisman |
-| `/courier-bulk` | courier | `courier-courier-bulk-scanner-camera-list` — Tezkor amal — kamera, skanerlanganlar ro'yxati | [design/fragments/courier--courier-bulk-scanner-camera-list.html](fragments/courier--courier-bulk-scanner-camera-list.html) | oyna · faqat telefon | yangi (kodda yo'q) |
+| `/courier-bulk` | courier | `courier-courier-bulk-scanner-camera-list` — Tezkor amal — kamera, skanerlanganlar ro'yxati | [design/fragments/courier--courier-bulk-scanner-camera-list.html](fragments/courier--courier-bulk-scanner-camera-list.html) | oyna · faqat telefon | qisman |
 | `/courier-bulk` | courier | `courier-courier-bulk-confirm-dialog` — Kunni yakunlash — tasdiqlash oynasi | [design/fragments/courier--courier-bulk-confirm-dialog.html](fragments/courier--courier-bulk-confirm-dialog.html) | oyna | v2 |
 | `/courier-bulk` | tizim taxtasi | `tizim-scanner` — Kamera skaner — telefon kamerasi bilan skanerlash | [design/fragments/tizim--scanner.html](fragments/tizim--scanner.html) | taxta | qoida |
 
@@ -1581,7 +1581,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-124 ta maket · kodda bor: 121 · kodda yo'q: 3
+124 ta maket · kodda bor: 124 · kodda yo'q: 0
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -1595,7 +1595,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-orders-detail-edit-address-dialog` | Manzilni tahrirlash (popup) | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | v2 |
 | `superadmin-neworders-markets` | Qabul va yaratish — Marketlar | sahifa | `/new-orders` | `src/pages/new_orders/markets/index.tsx` | v2 |
 | `superadmin-neworders-market-orders` | Market yangi buyurtmalari (qabul) | sahifa | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | v2 |
-| `superadmin-neworders-market-orders-camera` | Market yangi buyurtmalari (qabul) — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — sahifa faqat USB/klaviatura skaneri bilan ishlaydi (useOrderQrScanner). |
+| `superadmin-neworders-market-orders-camera` | Market yangi buyurtmalari (qabul) — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan = darhol qabul; «Qabul qilindi N · Qoldi M · Topilmadi K», boshqa marketning buyurtmasi rad etiladi, kamera ichida market almashtirish. |
 | `superadmin-neworders-receive-confirm-dialog` | Qo'lda qabul qilish (tasdiq) | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | v2 |
 | `superadmin-neworders-market-order-edit` | Market buyurtmasini tahrirlash | sahifa | `/new-orders/:marketId/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | v2 |
 | `superadmin-neworders-create-manual-step1` | Buyurtma yaratish — 1-qadam: Market | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step1Market.tsx` | v2 |
@@ -1606,23 +1606,23 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-neworders-create-ai-confirm-dialog` | AI — yaratishni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | v2 |
 | `superadmin-neworders-incoming-sources` | Kiruvchi posilkalar — manba tanlash | sahifa | `/new-orders/incoming` | `src/pages/incoming-orders/SourcePicker.tsx` | v2 |
 | `superadmin-neworders-incoming-scan` | Kiruvchi posilkalar — skanerlab qabul | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | v2 |
-| `superadmin-neworders-incoming-scan-camera` | Kiruvchi posilkalar — skanerlab qabul — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri. |
+| `superadmin-neworders-incoming-scan-camera` | Kiruvchi posilkalar — skanerlab qabul — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan faqat belgilaydi, qabul — sahifadagi «Qabul qilish»; kamera ichida manba almashtirish, «Qopda yetishmaydi». |
 | `superadmin-neworders-branches` | Filial batchlari — filiallar | sahifa | `/new-orders/branches` | `src/pages/new_orders/branches/index.tsx` | v2 |
 | `superadmin-neworders-branch-batches` | Filial batchlari ro'yxati | sahifa | `/new-orders/branches/:branchId` | `src/pages/new_orders/branches/batches.tsx` | v2 |
 | `superadmin-neworders-branch-batch-detail` | Filial paketi tafsiloti | sahifa | `/new-orders/branches/:branchId/batches/:batchId` | `src/pages/new_orders/branches/batchDetail.tsx` | v2 |
-| `superadmin-neworders-branch-batch-detail-camera` | Filial paketi tafsiloti — kamera | oyna | `/new-orders/branches/:branchId/batches/:batchId` | `src/pages/new_orders/branches/batchDetail.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). |
+| `superadmin-neworders-branch-batch-detail-camera` | Filial paketi tafsiloti — kamera | oyna | `/new-orders/branches/:branchId/batches/:batchId` | `src/pages/new_orders/branches/batchDetail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi, «N / jami ta tanlandi», «Hammasi tanlandi»; qabul — sahifadagi tugma. |
 | `superadmin-neworders-cancelled-markets` | Bekor qilinganlar — marketlar | sahifa | `/new-orders/cancelled` | `src/pages/new_orders/cancelled/index.tsx` | v2 |
 | `superadmin-neworders-cancelled-handover` | Bekor qilinganlarni marketga topshirish | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | v2 |
-| `superadmin-neworders-cancelled-handover-camera` | Bekor qilinganlarni marketga topshirish — kamera | oyna | `/new-orders/cancelled/:marketId` | `src/shared/components/ScannerCameraModal.tsx` | qisman — Sahifa qismi (sarlavha, «Market QR» holati, «USB skaner tayyor» qatori, tanlov, jadval) v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida. |
+| `superadmin-neworders-cancelled-handover-camera` | Bekor qilinganlarni marketga topshirish — kamera | oyna | `/new-orders/cancelled/:marketId` | `src/shared/ui/camera/ScannerCamera.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Avval market QR, so'ng buyurtmalar («Buyurtmalarni tanlang · QR 04:12 amal qiladi»), ro'yxatda «Bekor qilish», «Tugatish». |
 | `superadmin-neworders-cancelled-manual-dialog` | QR buzilganini tasdiqlash (modal) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | v2 |
-| `superadmin-neworders-cancelled-scanner-dialog` | Kamera skaneri (modal) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | qisman — Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida. |
+| `superadmin-neworders-cancelled-scanner-dialog` | Kamera skaneri (modal) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Sarlavhadagi «Market QR skanerlash» ham shu kamerani ochadi; market QR'dan keyin kamera yopilmaydi — buyurtmalarni tanlashga o'tadi. |
 | `superadmin-mails-today` | Pochta — Bugungi pochtalar | sahifa | `/mails/today` | `src/pages/mails/components/todaysMails.tsx` | v2 |
 | `superadmin-mails-return` | Pochta — Qaytarish so'rovlari | sahifa | `/mails/return` | `src/pages/mails/components/returnMails.tsx` | v2 |
 | `superadmin-mails-refused` | Pochta — Rad etilgan pochtalar | sahifa | `/mails/refused` | `src/pages/mails/components/refusedMails.tsx` | v2 |
 | `superadmin-mails-old` | Pochta — Eski pochtalar | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `superadmin-mails-old-batches` | Pochta — Hamma batchlar (eski) | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `superadmin-mails-detail` | Pochta tafsiloti (jo'natish) | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
-| `superadmin-mails-detail-camera` | Pochta tafsiloti (jo'natish) — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida. |
+| `superadmin-mails-detail-camera` | Pochta tafsiloti (jo'natish) — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q. |
 | `superadmin-mails-detail-send-dialog` | Pochtani filialga jo'natish (modal) | oyna | `/mails/:id` | `src/pages/mails/detail/ui/SendPostModal.tsx` | v2 |
 | `superadmin-mails-detail-refused` | Rad etilgan pochta tafsiloti (qabul) | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
 | `superadmin-mails-detail-old` | Eski pochta tafsiloti (faqat o'qish) | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
@@ -1712,7 +1712,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### admin — Admin
 
-91 ta maket · kodda bor: 88 · kodda yo'q: 3
+91 ta maket · kodda bor: 91 · kodda yo'q: 0
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -1725,20 +1725,20 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-orders-edit-address-dialog` | Manzilni tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | v2 |
 | `admin-neworders-markets` | Qabul — Marketlar tabi | sahifa | `/new-orders` | `src/pages/new_orders/markets/index.tsx` | v2 |
 | `admin-neworders-market-detail` | Market yangi buyurtmalari | sahifa | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | v2 |
-| `admin-neworders-market-detail-camera` | Market yangi buyurtmalari — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). |
+| `admin-neworders-market-detail-camera` | Market yangi buyurtmalari — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan = darhol qabul; «Qabul qilindi N · Qoldi M · Topilmadi K», boshqa marketning buyurtmasi rad etiladi, kamera ichida market almashtirish. |
 | `admin-neworders-market-confirm-dialog` | Qabul tasdig'i / buyurtmani o'chirish | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | v2 |
 | `admin-neworders-incoming-sources` | Kiruvchi posilkalar — manba tanlash | sahifa | `/new-orders/incoming` | `src/pages/incoming-orders/SourcePicker.tsx` | v2 |
 | `admin-neworders-incoming-scan` | Kiruvchi posilkalarni skanerlash | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | v2 |
-| `admin-neworders-incoming-scan-camera` | Kiruvchi posilkalarni skanerlash — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri. |
+| `admin-neworders-incoming-scan-camera` | Kiruvchi posilkalarni skanerlash — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan faqat belgilaydi, qabul — sahifadagi «Qabul qilish»; kamera ichida manba almashtirish, «Qopda yetishmaydi». |
 | `admin-neworders-branches` | Filial batchlari tabi | sahifa | `/new-orders/branches` | `src/pages/new_orders/branches/index.tsx` | v2 |
 | `admin-neworders-branch-batches` | Filial batchlari ro'yxati | sahifa | `/new-orders/branches/:branchId` | `src/pages/new_orders/branches/batches.tsx` | v2 |
 | `admin-neworders-branch-batch-detail` | Filial paketi tafsiloti | sahifa | `/new-orders/branches/:branchId/batches/:batchId` | `src/pages/new_orders/branches/batchDetail.tsx` | v2 |
-| `admin-neworders-branch-batch-detail-camera` | Filial paketi tafsiloti — kamera | oyna | `/new-orders/branches/:branchId/batches/:batchId` | `src/pages/new_orders/branches/batchDetail.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). |
+| `admin-neworders-branch-batch-detail-camera` | Filial paketi tafsiloti — kamera | oyna | `/new-orders/branches/:branchId/batches/:batchId` | `src/pages/new_orders/branches/batchDetail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi, «N / jami ta tanlandi», «Hammasi tanlandi»; qabul — sahifadagi tugma. |
 | `admin-neworders-cancelled` | Bekor qilinganlar tabi | sahifa | `/new-orders/cancelled` | `src/pages/new_orders/cancelled/index.tsx` | v2 |
 | `admin-neworders-cancelled-detail` | Bekor qilinganlarni marketga topshirish | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | v2 |
-| `admin-neworders-cancelled-detail-camera` | Bekor qilinganlarni marketga topshirish — kamera | oyna | `/new-orders/cancelled/:marketId` | `src/shared/components/ScannerCameraModal.tsx` | qisman — Sahifa qismi (sarlavha, «Market QR» holati, «USB skaner tayyor» qatori, tanlov, jadval) v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida. |
+| `admin-neworders-cancelled-detail-camera` | Bekor qilinganlarni marketga topshirish — kamera | oyna | `/new-orders/cancelled/:marketId` | `src/shared/ui/camera/ScannerCamera.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Avval market QR, so'ng buyurtmalar («Buyurtmalarni tanlang · QR 04:12 amal qiladi»), ro'yxatda «Bekor qilish», «Tugatish». |
 | `admin-neworders-cancelled-manual-dialog` | QR buzilganini tasdiqlash | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | v2 |
-| `admin-neworders-cancelled-scanner-dialog` | Market QR skaneri | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | qisman — Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida. |
+| `admin-neworders-cancelled-scanner-dialog` | Market QR skaneri | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Sarlavhadagi «Market QR skanerlash» ham shu kamerani ochadi; market QR'dan keyin kamera yopilmaydi — buyurtmalarni tanlashga o'tadi. |
 | `admin-neworders-create-manual` | Buyurtma yaratish — Qo'lda | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | v2 |
 | `admin-neworders-create-market-picker` | Market tanlash oynasi | oyna | `/new-orders/create` | `src/pages/orders/create/ui/MarketPicker.tsx` | v2 |
 | `admin-neworders-create-ai` | Buyurtma yaratish — AI bilan | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | v2 |
@@ -1749,7 +1749,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-mails-old` | Pochta — Eski pochtalar | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `admin-mails-old-all-batches` | Eski pochtalar — Hamma batchlar | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `admin-mails-detail` | Pochta tafsiloti | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
-| `admin-mails-detail-camera` | Pochta tafsiloti — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida. |
+| `admin-mails-detail-camera` | Pochta tafsiloti — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q. |
 | `admin-mails-old-detail` | Eski pochta tafsiloti (tarix) | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
 | `admin-mails-refused-detail` | Rad etilgan pochta tafsiloti | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
 | `admin-mails-send-branch-dialog` | Pochtani filialga jo'natish | oyna | `/mails/:id` | `src/pages/mails/detail/ui/SendPostModal.tsx` | v2 |
@@ -1810,14 +1810,14 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### manager — Menejer
 
-64 ta maket · kodda bor: 62 · kodda yo'q: 2
+64 ta maket · kodda bor: 64 · kodda yo'q: 0
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
 | `manager-branch-dashboard-main` | Filial paneli | sahifa | `/branch-dashboard` | `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` | v2 |
 | `manager-dispatch-scan` | Biriktirish — skan savati | sahifa | `/dispatch` | `src/pages/dispatch/index.tsx` | v2 |
 | `manager-dispatch-courier-dialog` | Kuryer tanlash oynasi | oyna | `/dispatch` | `src/pages/dispatch/index.tsx` | v2 |
-| `manager-dispatch-camera-dialog` | Biriktirish — kamera | oyna | `/dispatch` | `src/pages/dispatch/index.tsx` | qisman — Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish. |
+| `manager-dispatch-camera-dialog` | Biriktirish — kamera | oyna | `/dispatch` | `src/pages/dispatch/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. «Biriktirish · <filial> · savatda N ta», savat qurilmada (ega D2, /scan/:token «Kuryerga biriktirish» ham shu savatga), rad etilgan QR ro'yxatda «Paket … · Rad etildi»; kuryer — sahifadagi tugma. |
 | `manager-orders-list-all` | Buyurtmalar — Hamma buyurtmalar | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
 | `manager-orders-list-pending` | Buyurtmalar — Kutilayotgan | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
 | `manager-orders-list-cancelled` | Buyurtmalar — Bekor qilinganlar (HQ'ga yuborish) | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
@@ -1828,10 +1828,10 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-orders-detail-edit-address-dialog` | Manzilni tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | v2 |
 | `manager-orders-detail-edit-products-dialog` | Buyurtmani tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` | v2 |
 | `manager-courier-bulk-main` | Tezkor amal | sahifa | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | v2 |
-| `manager-courier-bulk-camera-dialog` | Tezkor amal — kamera | oyna | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | qisman — Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish. |
+| `manager-courier-bulk-camera-dialog` | Tezkor amal — kamera | oyna | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Kamera ichida «Bekor / Ertaga» rejimi (sahifadagi bilan bitta), «N / M ta skanerlandi», ro'yxat; yakunlash — sahifadagi «Kunni yakunlash». |
 | `manager-new-orders-markets` | Qabul va yaratish — Marketlar | sahifa | `/new-orders` | `src/pages/new_orders/markets/index.tsx` | v2 |
 | `manager-new-orders-market-detail` | Market buyurtmalari — qabul | sahifa | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | v2 |
-| `manager-new-orders-market-detail-camera` | Market buyurtmalari — qabul — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). |
+| `manager-new-orders-market-detail-camera` | Market buyurtmalari — qabul — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan = darhol qabul; «Qabul qilindi N · Qoldi M · Topilmadi K», boshqa marketning buyurtmasi rad etiladi, kamera ichida market almashtirish. |
 | `manager-new-orders-receive-confirm-dialog` | Qo'lda qabul qilish tasdig'i | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | v2 |
 | `manager-new-orders-delete-confirm-dialog` | Buyurtmani o'chirish tasdig'i | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | v2 |
 | `manager-new-orders-create-manual-step1` | Buyurtma yaratish — market tanlash | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step1Market.tsx` | v2 |
@@ -1840,20 +1840,20 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-new-orders-create-ai-confirm-dialog` | AI buyurtmalarni tasdiqlash | oyna | `/new-orders/create` | `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` | v2 |
 | `manager-new-orders-incoming-sources` | Kiruvchi posilkalar — manba tanlash | sahifa | `/new-orders/incoming` | `src/pages/incoming-orders/SourcePicker.tsx` | v2 |
 | `manager-new-orders-incoming-scan` | Kiruvchi posilkalar — skanerlash | sahifa | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | v2 |
-| `manager-new-orders-incoming-scan-camera` | Kiruvchi posilkalar — skanerlash — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri. |
+| `manager-new-orders-incoming-scan-camera` | Kiruvchi posilkalar — skanerlash — kamera | oyna | `/new-orders/incoming/:marketId` | `src/pages/incoming-orders/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan faqat belgilaydi, qabul — sahifadagi «Qabul qilish»; kamera ichida manba almashtirish, «Qopda yetishmaydi». |
 | `manager-mails-today` | Pochta — Bugungi pochtalar | sahifa | `/mails/today` | `src/pages/mails/components/todaysMails.tsx` | v2 |
 | `manager-mails-return` | Pochta — Qaytarish so'rovlari | sahifa | `/mails/return` | `src/pages/mails/components/returnMails.tsx` | v2 |
 | `manager-mails-refused` | Pochta — Rad etilgan pochtalar | sahifa | `/mails/refused` | `src/pages/mails/components/refusedMails.tsx` | v2 |
 | `manager-mails-old` | Pochta — Eski pochtalar | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `manager-mails-detail-receive` | Pochta tafsiloti — qabul qilish | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
-| `manager-mails-detail-receive-camera` | Pochta tafsiloti — qabul qilish — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida. |
+| `manager-mails-detail-receive-camera` | Pochta tafsiloti — qabul qilish — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q. |
 | `manager-mails-detail-refused-receive` | Rad etilgan pochta — qabul | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
 | `manager-mails-detail-old` | Eski pochta tafsiloti (tarix) | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
 | `manager-batches-new` | Paketlar — Yangi | sahifa | `/batches` | `src/pages/batches/ui/BatchesPage.tsx` | v2 |
 | `manager-batches-old` | Paketlar — Eski | sahifa | `/batches` | `src/pages/batches/ui/BatchesPage.tsx` | v2 |
 | `manager-batches-return` | Paketlar — Qaytarilgan | sahifa | `/batches` | `src/pages/batches/ui/BatchesPage.tsx` | v2 |
 | `manager-batches-detail-send` | Paket tafsiloti — asosiy filialga jo'natish | sahifa | `/batches/:id` | `src/pages/batches/ui/BatchDetailPage.tsx` | v2 |
-| `manager-batches-detail-send-camera` | Paket tafsiloti — asosiy filialga jo'natish — kamera | oyna | `/batches/:id` | `src/pages/batches/ui/BatchDetailPage.tsx` | qisman — Sahifa qismi (sarlavha, paket ma'lumoti, QR, «Buyurtmalar» kartasi — /mails/:id bilan umumiy OrdersTable, «Skaner tayyor» belgisi, tanlov) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida. |
+| `manager-batches-detail-send-camera` | Paket tafsiloti — asosiy filialga jo'natish — kamera | oyna | `/batches/:id` | `src/pages/batches/ui/BatchDetailPage.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. «HQ'ga yuborish · Paket B-… · <filial>», skan tanlaydi, «Bu paketda yo'q · tanlanmadi»; yuborish — sahifadagi tugma. |
 | `manager-batches-detail-readonly` | Paket tafsiloti (faqat o'qish) | sahifa | `/batches/:id` | `src/pages/batches/ui/BatchDetailPage.tsx` | v2 |
 | `manager-returns-list` | Return batchlar | sahifa | `/returns` | `src/pages/returns/index.tsx` | v2 |
 | `manager-returns-batch-detail` | Qaytarish paketi tafsiloti | sahifa | `/batches/:id` | `src/pages/batches/ui/BatchDetailPage.tsx` | v2 |
@@ -1881,14 +1881,14 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### registrator — Registrator
 
-41 ta maket · kodda bor: 40 · kodda yo'q: 1
+41 ta maket · kodda bor: 41 · kodda yo'q: 0
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
 | `registrator-dashboard-main` | Dashboard — statistika | sahifa | `/` | `src/pages/dashboard/DashboardPage.tsx` | v2 |
 | `registrator-dispatch-list` | Biriktirish — skanerlangan buyurtmalar | sahifa | `/dispatch` | `src/pages/dispatch/index.tsx` | v2 |
 | `registrator-dispatch-empty` | Biriktirish — bo'sh holat | sahifa | `/dispatch` | `src/pages/dispatch/index.tsx` | v2 |
-| `registrator-dispatch-camera-scanner-dialog` | Biriktirish — kamera skaneri | oyna | `/dispatch` | `src/pages/dispatch/index.tsx` | qisman — Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish. |
+| `registrator-dispatch-camera-scanner-dialog` | Biriktirish — kamera skaneri | oyna | `/dispatch` | `src/pages/dispatch/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. «Biriktirish · <filial> · savatda N ta», savat qurilmada (ega D2, /scan/:token «Kuryerga biriktirish» ham shu savatga), rad etilgan QR ro'yxatda «Paket … · Rad etildi»; kuryer — sahifadagi tugma. |
 | `registrator-dispatch-courier-select-dialog` | Biriktirish — kuryer tanlash | oyna | `/dispatch` | `src/pages/dispatch/index.tsx` | v2 |
 | `registrator-orders-list` | Buyurtmalar ro'yxati | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
 | `registrator-orders-filters-mobile` | Buyurtmalar — filtr paneli (telefon) | oyna · faqat telefon | `/orders` | `src/pages/orders/list/OrderFilters.tsx` | v2 |
@@ -1897,14 +1897,14 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `registrator-orders-detail-edit-address-dialog` | Manzilni tahrirlash oynasi | oyna | `/orders/edit/:orderId` | `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | v2 |
 | `registrator-new-orders-markets` | Qabul va yaratish — Marketlar | sahifa | `/new-orders` | `src/pages/new_orders/markets/index.tsx` | v2 |
 | `registrator-new-orders-market-detail` | Market buyurtmalari — qabul | sahifa | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | qisman — Registrator boshqa xodim rollari (superadmin/admin/menejer) bilan bir xil v2 ko'rinishda — maketdagi farqlar (sarlavhada «Chop etish», «Buyurtmalar N ta» karta sarlavhasi, «5 / 6 ta» tanlov xulosasi, qator kebab menyusi) ega qaroriga qadar kiritilmagan. |
-| `registrator-new-orders-market-detail-camera` | Market buyurtmalari — qabul — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | yangi (kodda yo'q) — Kamera rejimi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). |
+| `registrator-new-orders-market-detail-camera` | Market buyurtmalari — qabul — kamera | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/new_orderDetail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan = darhol qabul; «Qabul qilindi N · Qoldi M · Topilmadi K», boshqa marketning buyurtmasi rad etiladi, kamera ichida market almashtirish. |
 | `registrator-new-orders-market-detail-receive-dialog` | Qabul qilish tasdig'i | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | qisman — Umumiy xodim qabul oynasi (MarketOrderDialogs.tsx) — tasdiq tugmasi «Tasdiqlash»; maketdagi «Qabul qilish — N ta» varianti ega qaroriga qadar kiritilmagan. |
 | `registrator-new-orders-market-detail-delete-dialog` | Buyurtmani o'chirish tasdig'i | oyna | `/new-orders/:marketId` | `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` | v2 |
 | `registrator-new-orders-market-order-edit` | Market buyurtmasini tahrirlash | sahifa | `/new-orders/:marketId/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | v2 |
 | `registrator-new-orders-cancelled` | Bekor qilinganlar — marketlar (HQ) | sahifa | `/new-orders/cancelled` | `src/pages/new_orders/cancelled/index.tsx` | v2 |
 | `registrator-new-orders-cancelled-detail` | Bekor qilinganlarni marketga topshirish (HQ) | sahifa | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | v2 |
 | `registrator-new-orders-cancelled-manual-dialog` | QR buzilganini tasdiqlash (HQ) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` | v2 |
-| `registrator-new-orders-cancelled-scanner-dialog` | Market QR skanerlash (HQ) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | qisman — Desktop/planshetdagi sahifa holati («Market QR kerak», «USB skaner tayyor», «Hali buyurtma tanlanmagan», skan bilan tanlov) v2; telefondagi kamera skaneri oynasi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi keyinroq, alohida. |
+| `registrator-new-orders-cancelled-scanner-dialog` | Market QR skanerlash (HQ) | oyna | `/new-orders/cancelled/:marketId` | `src/pages/new_orders/cancelled/detail.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Sarlavhadagi «Market QR skanerlash» ham shu kamerani ochadi; market QR'dan keyin kamera yopilmaydi — buyurtmalarni tanlashga o'tadi. |
 | `registrator-new-orders-create-step1` | Buyurtma yaratish — market tanlash | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step1Market.tsx` | v2 |
 | `registrator-new-orders-create-market-picker-dialog` | Buyurtma yaratish — market tanlash oynasi | oyna | `/new-orders/create` | `src/pages/orders/create/ui/MarketPicker.tsx` | v2 |
 | `registrator-new-orders-create-step2` | Buyurtma yaratish — qo'lda forma | sahifa | `/new-orders/create` | `src/pages/orders/create/ui/Step2Combined.tsx` | v2 |
@@ -1915,7 +1915,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `registrator-mails-refused` | Pochta — Rad etilgan pochtalar | sahifa | `/mails/refused` | `src/pages/mails/components/refusedMails.tsx` | v2 |
 | `registrator-mails-old` | Pochta — Eski pochtalar | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `registrator-mails-detail` | Pochta tafsiloti — bugungi | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
-| `registrator-mails-detail-camera` | Pochta tafsiloti — bugungi — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida. |
+| `registrator-mails-detail-camera` | Pochta tafsiloti — bugungi — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q. |
 | `registrator-mails-detail-send-dialog` | Pochtani filialga jo'natish (HQ) | oyna | `/mails/:id` | `src/pages/mails/detail/ui/SendPostModal.tsx` | v2 |
 | `registrator-mails-detail-refused` | Pochta tafsiloti — rad etilgan | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
 | `registrator-mails-detail-old` | Pochta tafsiloti — tarix | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
@@ -1955,7 +1955,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### courier — Kuryer
 
-47 ta maket · kodda bor: 45 · kodda yo'q: 2
+47 ta maket · kodda bor: 46 · kodda yo'q: 1
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -1974,15 +1974,15 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `courier-orders-rollback-confirm` | Buyurtmani qaytarish tasdig'i | oyna | `/orders` | `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` | v2 |
 | `courier-orders-detail` | Buyurtma tafsilotlari | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | v2 |
 | `courier-courier-bulk-main` | Tezkor amal — kunni yakunlash | sahifa | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | v2 |
-| `courier-courier-bulk-scanner-camera` | Tezkor amal — kamera skaneri | oyna | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | qisman — Sahifa v2; kamera oynasining o'zi (ScannerCameraModal, umumiy) hali v1 — kamera rejimi alohida ish. |
-| `courier-courier-bulk-scanner-camera-list` | Tezkor amal — kamera, skanerlanganlar ro'yxati | oyna · faqat telefon | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | yangi (kodda yo'q) — Kamera oynasida «skanerlanganlar ro'yxati» varag'i yo'q (ScannerCameraModal faqat kamera). |
+| `courier-courier-bulk-scanner-camera` | Tezkor amal — kamera skaneri | oyna | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Kamera ichida «Bekor / Ertaga» rejimi (sahifadagi bilan bitta), «N / M ta skanerlandi», ro'yxat; yakunlash — sahifadagi «Kunni yakunlash». |
+| `courier-courier-bulk-scanner-camera-list` | Tezkor amal — kamera, skanerlanganlar ro'yxati | oyna · faqat telefon | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. «Skanerlanganlar · N / M · K ta bekor, L ta ertaga» varag'i, «Bekor qilish» belgini oladi, «Skanerlanmagan N ta buyurtma sotilgan deb belgilanadi». |
 | `courier-courier-bulk-confirm-dialog` | Kunni yakunlash — tasdiqlash oynasi | oyna | `/courier-bulk` | `src/pages/courier-bulk/index.tsx` | v2 |
 | `courier-mails-today` | Pochta — Bugungi | sahifa | `/mails/today` | `src/pages/mails/components/todaysMails.tsx` | v2 |
 | `courier-mails-tab-switcher-open` | Pochta — tab tanlash ochiq | sahifa · faqat telefon | `/mails/today` | `src/pages/mails/index.tsx` | v2 |
 | `courier-mails-refused` | Pochta — Rad etilgan | sahifa | `/mails/refused` | `src/pages/mails/components/refusedMails.tsx` | v2 |
 | `courier-mails-old` | Pochta — Eski | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `courier-mails-detail-receive` | Pochta tafsiloti — qabul qilish | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
-| `courier-mails-detail-receive-camera` | Pochta tafsiloti — qabul qilish — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Sahifa qismi (sarlavha, statistika, «Buyurtmalar» kartasi, «USB skaner tayyor» belgisi, tanlov tasmasi, jadval) v2; «Kamera» tugmasi va kamera oynasi yo'q — faqat USB/klaviatura skaneri (useOrderQrScanner). Kamera rejimi keyinroq, alohida. |
+| `courier-mails-detail-receive-camera` | Pochta tafsiloti — qabul qilish — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q. |
 | `courier-mails-detail-refused` | Pochta tafsiloti — rad etilgan (faqat o'qish) | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
 | `courier-mails-detail-old` | Pochta tafsiloti — eski (tarix) | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
 | `courier-mails-detail-print-menu` | Chop etish menyusi | oyna | `/mails/:id` | `src/shared/components/PrintModeSelect.tsx` | v2 |
@@ -2071,6 +2071,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/features/branch/ui/BranchFormDialog.tsx` | `/branches` |
 | `src/features/courier-transfer-branch/ui/TransferCourierButton.tsx` | `/all-users/:id`, `/branches/:id` |
 | `src/features/courier-transfer-branch/ui/TransferCourierModal.tsx` | `/all-users/:id` |
+| `src/features/dispatch-basket/model/dispatchBasket.ts` | `/dispatch` |
 | `src/features/notification-create/ui/GroupLinkQr.tsx` | `/notifications` |
 | `src/features/notification-create/ui/NotificationFormModal.tsx` | `/notifications` |
 | `src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx` | `/notifications` |
@@ -2410,7 +2411,6 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/users/list/UserListPage.tsx` | `/all-users` |
 | `src/shared/components/PrintModeSelect.tsx` | `/mails/:id` |
 | `src/shared/components/ScanFeedbackOverlay.tsx` | `/scan` |
-| `src/shared/components/ScannerCameraModal.tsx` | `/new-orders/cancelled/:marketId`, `/dispatch`, `/courier-bulk` |
 | `src/shared/components/popupSelect.tsx` | `/payments/main-cashbox` |
 | `src/shared/lib/scanner/feedback.ts` | `/scan` |
 | `src/shared/lib/shellBannerSlot.ts` | `/login` |
@@ -2423,7 +2423,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/shared/ui/ServerError.tsx` | `/500` |
 | `src/shared/ui/SmsMeter.tsx` | `/notifications/sms` |
 | `src/shared/ui/camera/CameraSurface.tsx` | `/tg/scan` |
-| `src/shared/ui/camera/ScannerCamera.tsx` | `/scan` |
+| `src/shared/ui/camera/ScannerCamera.tsx` | `/new-orders/cancelled/:marketId`, `/dispatch`, `/courier-bulk`, `/scan` |
 | `src/shared/ui/charts/index.ts` | `/`, `/branch-dashboard` |
 | `src/shared/ui/error-page/ErrorPageFrame.tsx` | `/403`, `/404`, `/500` |
 | `src/widgets/Sidebar/model/menuConfig.tsx` | `(qobiq)` |

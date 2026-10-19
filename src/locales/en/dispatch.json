@@ -21,11 +21,7 @@
   "scanCard": {
     "title": "Scanned orders",
     "description": "Read an order QR code with the USB scanner or the camera — it is added to the list and selected",
-    "usbReady": "USB scanner ready",
-    "camera": "Camera",
-    "cameraPhone_one": "Scan with camera, {{count}} order in the list",
-    "cameraPhone_other": "Scan with camera, {{count}} orders in the list",
-    "cameraCount": "{{count}} pcs"
+    "usbReady": "USB scanner ready"
   },
   "selection": {
     "label": "Selected orders",
@@ -52,7 +48,7 @@
   },
   "empty": {
     "title": "Scan order QR codes",
-    "description": "Read them with the USB scanner or press «Camera» — orders are added to this list. On a phone use «Scan with camera»."
+    "description": "Read them with the USB scanner or open the camera with the «Scanner» button — orders are added to this list."
   },
   "lookup": {
     "checking_one": "Checking {{count}} order...",
@@ -62,7 +58,6 @@
   "scanErrors": {
     "duplicate": "This order is already in the list",
     "wrongType": "Only order QR codes can be scanned",
-    "invalidQr": "This QR code is not valid for assignment",
     "lookup": "Failed to fetch order details"
   },
   "couriers": {
@@ -93,11 +88,18 @@
   },
   "camera": {
     "title": "Assignment",
-    "subtitle": "Only order QR codes are accepted",
-    "waiting": "Fit the QR code from the order label into the frame",
-    "close": "Close camera",
-    "torchOn": "Turn light on",
-    "torchOff": "Turn light off",
-    "loading": "Checking order..."
+    "context": "{{branch}} · {{value}} in the basket",
+    "contextNoBranch": "{{value}} in the basket",
+    "hint": "Fit the QR code from the order label into the frame",
+    "noteTitle": "Only order QR codes are accepted.",
+    "noteText": "The courier is chosen once the basket is ready.",
+    "meter": "scanned · {{value}} selected",
+    "listTitle": "Recent scans",
+    "added": "Added №{{id}}",
+    "wrongType": "Wrong QR type — scan the QR code on the order label",
+    "rejectedPackage": "Package {{code}}",
+    "rejectedPost": "Mail {{code}}",
+    "rejectedWrongType": "not an order QR code",
+    "rejected": "Rejected · {{reason}}"
   }
 }

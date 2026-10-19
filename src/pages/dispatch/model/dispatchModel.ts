@@ -1,3 +1,4 @@
+import type { DispatchOrder } from "../../../features/dispatch-basket";
 import { getBackendErrorMessage } from "../../scan/lib/scanResource";
 
 /**
@@ -5,25 +6,10 @@ import { getBackendErrorMessage } from "../../scan/lib/scanResource";
  * tozalash, ko'rsatkichlar, kuryer qidiruvi, xato matni. Sahifa holati `../index.tsx` da.
  */
 
-/** Ro'yxatdagi (savatdagi) buyurtma — `GET orders/qr-code/:token` javobidan. */
-export type DispatchOrder = {
-  id: string;
-  /** Skanerlangan token (takrorni aniqlash uchun). */
-  token: string;
-  market: string | null;
-  name: string | null;
-  phone: string | null;
-  district: string | null;
-  region: string | null;
-  amount: number;
-  /** Xom `where_deliver`: `address` / `home` — uygacha, `center` — markazgacha. */
-  deliveryKind: DispatchDeliveryKind | null;
-  /** Xom sana (ISO) — `formatDateTimeLocalized` uchun. */
-  createdAt: string | null;
-  status: string | null;
-};
-
-export type DispatchDeliveryKind = "home" | "center";
+// Savatdagi buyurtma va uni skan javobidan tozalash — `features/dispatch-basket` da (savat qurilmada saqlanadi,
+// `/scan/:token` ham ishlatadi); bu yerda eski importlar uchun qayta eksport.
+export { normalizeDispatchOrder, readDeliveryKind } from "../../../features/dispatch-basket";
+export type { DispatchDeliveryKind, DispatchOrder } from "../../../features/dispatch-basket";
 
 /** `GET /couriers` elementi (identity: `name`, `phone_number`, `region`). */
 export type DispatchCourier = {
@@ -42,47 +28,6 @@ const text = (value: unknown): string | null => {
   if (typeof value === "string" && value.trim()) return value.trim();
   if (typeof value === "number" && Number.isFinite(value)) return String(value);
   return null;
-};
-
-const unwrapOrderPayload = (payload: unknown) => {
-  const source = asRecord(payload);
-  const responseData = asRecord(source.data ?? source);
-  const responsePayload = asRecord(responseData.data ?? responseData);
-  return asRecord(responsePayload.order ?? responseData.order ?? responsePayload);
-};
-
-export const readDeliveryKind = (value: unknown): DispatchDeliveryKind | null => {
-  const raw = typeof value === "string" ? value.trim().toLowerCase() : "";
-  if (raw === "address" || raw === "home") return "home";
-  if (raw === "center") return "center";
-  return null;
-};
-
-/** Skan javobidan ro'yxat qatori; buyurtma `id` si bo'lmasa — `null`. */
-export const normalizeDispatchOrder = (payload: unknown, token: string): DispatchOrder | null => {
-  const order = unwrapOrderPayload(payload);
-  const id = text(order.id);
-  if (!id) return null;
-
-  const market = asRecord(order.market);
-  const sender = asRecord(order.sender);
-  const customer = asRecord(order.customer);
-  const district = asRecord(order.district ?? customer.district);
-  const region = asRecord(order.region ?? district.region ?? customer.region);
-
-  return {
-    id,
-    token,
-    market: text(market.name ?? sender.name),
-    name: text(customer.fullName ?? customer.full_name ?? customer.name ?? order.customer_name ?? order.name),
-    phone: text(customer.phone_number ?? customer.phone ?? order.phone_number ?? order.phone),
-    district: text(district.name ?? order.district_name),
-    region: text(region.name ?? order.region_name),
-    amount: Number(order.total_price ?? 0) || 0,
-    deliveryKind: readDeliveryKind(order.where_deliver ?? order.delivery_type ?? order.deliveryType),
-    createdAt: text(order.createdAt ?? order.created_at ?? order.updatedAt ?? order.updated_at),
-    status: text(order.status),
-  };
 };
 
 /** Ro'yxat javobining turli shakllari (`{ data: { items } }`, `{ data: [] }` …). */

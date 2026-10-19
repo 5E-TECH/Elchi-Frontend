@@ -28,6 +28,8 @@ describe("ScanFeedbackOverlay (dizayn v2)", () => {
     const status = screen.getByRole("status");
     expect(status).toHaveTextContent("Bu pochtada yo'q");
     expect(status.querySelector(".bg-danger")).not.toBeNull();
+    // Umumiy qatlamlar tizimida — `toast` (bosishni to'smaydi, oyna ochiq turganda `inert` emas).
+    expect(status.closest("[data-ui-layer]")).toHaveAttribute("data-ui-layer", "toast");
 
     act(() => vi.advanceTimersByTime(1400));
     expect(screen.queryByRole("status")).not.toBeInTheDocument();

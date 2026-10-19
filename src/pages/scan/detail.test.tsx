@@ -4,6 +4,7 @@ import { Route, Routes } from "react-router-dom";
 import { vi } from "vitest";
 import ScanDetailPage from "./detail";
 import { readScanHistory } from "./model/scanHistory";
+import { resetDispatchBaskets } from "../../features/dispatch-basket";
 import { renderWithProviders } from "../../test/test-utils";
 
 const navigateMock = vi.fn();
@@ -77,6 +78,8 @@ const renderDetail = (
 const orderHeading = () => screen.findByRole("heading", { level: 1, name: "Buyurtma №1251175" });
 
 beforeEach(() => {
+  window.localStorage.clear();
+  resetDispatchBaskets();
   navigateMock.mockReset();
   feedbackMock.mockReset();
   assignMock.mockReset();
@@ -245,7 +248,12 @@ describe("ScanDetailPage — menejer amallari", () => {
     expect(screen.getByRole("button", { name: "Bekor qilish" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Kuryerga biriktirish" }));
 
-    expect(navigateMock).toHaveBeenCalledWith("/dispatch", { state: { scanToken: "PARCEL-A" } });
+    expect(navigateMock).toHaveBeenCalledWith("/dispatch");
+    // Savat qurilmada (ega D2): buyurtma `/dispatch` savatiga skanerlangan token bilan qo'shildi va tanlandi.
+    const [basket] = Object.keys(window.localStorage)
+      .filter((key) => key.startsWith("elchi:dispatch-basket:v1:"))
+      .map((key) => JSON.parse(window.localStorage.getItem(key) ?? "{}") as { items: { order: { id: string; token: string }; selected: boolean }[] });
+    expect(basket.items).toEqual([expect.objectContaining({ selected: true, order: expect.objectContaining({ token: "PARCEL-A" }) })]);
   });
 
   it("opens the same sell dialog as order detail", async () => {

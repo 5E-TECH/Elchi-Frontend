@@ -88,6 +88,10 @@ export interface ScanTarget {
   list?: ReadonlyArray<ScanTargetListItem>;
   /** Ro'yxat sarlavhasi (sukut «Skanerlanganlar»). */
   listTitle?: string;
+  /** «Ro'yxat» varag'i izohi (sukut «3 / 7 · <sarlavha>»): «4 / 7 · 2 ta bekor, 2 ta ertaga». */
+  listDescription?: string;
+  /** «Ro'yxat» varag'i ostidagi izoh: «Skanerlanmagan 3 ta buyurtma sotilgan deb belgilanadi.» */
+  listNote?: string;
   /** Asosiy amal («Tugatish»). Berilmasa — «Yopish». */
   finish?: { label: string; onFinish: () => void };
 }
@@ -147,6 +151,8 @@ const sameData = (a: ScanTarget, b: ScanTarget) =>
   a.mode === b.mode &&
   Boolean(a.onModeChange) === Boolean(b.onModeChange) &&
   a.listTitle === b.listTitle &&
+  a.listDescription === b.listDescription &&
+  a.listNote === b.listNote &&
   sameSwitcher(a.switcher, b.switcher) &&
   (a.stats ?? []).length === (b.stats ?? []).length &&
   (a.stats ?? []).every((stat, index) => {

@@ -90,7 +90,16 @@
       "received": "Paket qabul qilindi",
       "receivedAt": "Paket {{to}}'da qabul qilindi",
       "cancelled": "Paket bekor qilindi"
-    }
+    },
+    "cameraTitle": "HQ'ga yuborish",
+    "cameraNoteTitle": "Paketdagi buyurtma QR kodini skanerlang",
+    "cameraNoteText": "U HQ'ga yuborish uchun tanlanadi. Boshqa paketning kodi qabul qilinmaydi.",
+    "cameraMeter": "ta tanlandi",
+    "cameraListTitle": "Oxirgi skanerlar",
+    "cameraSelected": "Tanlandi №{{id}}",
+    "cameraNotInBatch": "Bu paketda yo'q — bu paketga tegishli emas",
+    "cameraRejectedTitle": "{{code}} · Bu paketda yo'q",
+    "cameraRejectedText": "Mos kelmadi · tanlanmadi"
   },
   "print": {
     "branch": "FILIAL:",

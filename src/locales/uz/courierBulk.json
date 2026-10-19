@@ -17,13 +17,6 @@
   "confirmTomorrowHint": "Kutilmoqda holatida qoladi",
   "confirmAction": "Tasdiqlash",
   "confirmBack": "Orqaga",
-  "scannerTitle": "Buyurtmani skanerlang",
-  "scannerSubtitle": "QR kodni kamera orqali o'qing",
-  "scannerWaiting": "QR kod kutilmoqda...",
-  "scannerClose": "Yopish",
-  "torchOn": "Chiroqni yoqish",
-  "torchOff": "Chiroqni o'chirish",
-  "invalidQr": "QR kodni o'qib bo'lmadi",
   "scanMissingTitle": "Buyurtma topilmadi",
   "scanMissing": "Bu QR kod kutilayotgan buyurtmalar ichida topilmadi",
   "duplicateTitle": "Qayta skaner",
@@ -67,11 +60,7 @@
     "tomorrow": "Ertaga qoldirish",
     "cancelShort": "Bekor",
     "tomorrowShort": "Ertaga",
-    "usbReady": "USB skaner tayyor",
-    "camera": "Kamera",
-    "cameraPhone": "Kamera bilan skanerlash",
-    "cameraPhoneMarked": "Kamera bilan skanerlash, {{total}} tadan {{marked}} tasi belgilangan",
-    "markedOfTotal": "{{marked}} / {{total}}"
+    "usbReady": "USB skaner tayyor"
   },
   "list": {
     "title": "Kutilayotgan buyurtmalar",
@@ -128,5 +117,15 @@
   "resultDescription": "{{count}} ta buyurtma yakunlanmadi — ular belgisi bilan ro'yxatda qoldi",
   "resultListLabel": "Yakunlanmagan buyurtmalar",
   "resultReasonUnknown": "Server sababini ko'rsatmadi",
-  "resultClose": "Tushunarli"
+  "resultClose": "Tushunarli",
+  "camera": {
+    "context": "{{value}} ta kutilayotgan buyurtma",
+    "meter": "ta skanerlandi",
+    "unscanned": "Skanerlanmagan {{value}} ta buyurtma sotilgan deb belgilanadi.",
+    "listTitle": "Skanerlanganlar",
+    "listDescription": "{{done}} / {{total}} · {{cancel}} ta bekor, {{tomorrow}} ta ertaga",
+    "markedCancel": "Bekor qilishga belgilandi №{{id}} · {{name}}",
+    "markedTomorrow": "Ertaga qoldirishga belgilandi №{{id}} · {{name}}",
+    "markedSold": "Sotildi deb belgilandi №{{id}} · {{name}}"
+  }
 }

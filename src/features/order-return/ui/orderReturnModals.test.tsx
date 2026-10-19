@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { renderWithProviders } from "../../../test/test-utils";
+import { isScannerOverlayOpen, resetScannerHost } from "../../../shared/lib/scanner/scannerHost";
+import { getActiveScanTarget, resetScanTargets } from "../../../shared/lib/scanner/scanTargets";
 import InitiateReturnModal from "./InitiateReturnModal";
 import MarkReturnedModal from "./MarkReturnedModal";
 
@@ -127,5 +129,64 @@ describe("MarkReturnedModal — market QR → ruxsat → mark-returned-to-market
 
     await waitFor(() => expect(screen.getByTestId("mark-returned-error")).toHaveTextContent("QR muddati tugagan"));
     expect(apiPost).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("MarkReturnedModal — kamera (oynaning o'z tugmasi, v2 ScannerCamera)", () => {
+  beforeEach(() => {
+    apiPost.mockReset();
+    resetScanTargets();
+    resetScannerHost();
+  });
+
+  it("oyna ochiq — `dialog` qatlamidagi maqsad; «Kamera bilan skanerlash» kamera oynasini ochadi", () => {
+    renderWithProviders(<MarkReturnedModal open orderId="95" onClose={vi.fn()} />);
+
+    expect(getActiveScanTarget()).toMatchObject({
+      id: "mark-returned:95",
+      layer: "dialog",
+      title: "Market QR skanerlash",
+      context: "#95 — marketga topshirish",
+    });
+    fireEvent.click(screen.getByText("Kamera bilan skanerlash"));
+    expect(isScannerOverlayOpen()).toBe(true);
+  });
+
+  it("kamera skani qo'lda kiritish bilan bir yo'l: QR → ruxsat → topshirish, so'ng kamera va oyna yopiladi", async () => {
+    apiPost.mockImplementation((url: string) =>
+      url === "scan/market-cancelled"
+        ? Promise.resolve({ data: { data: { authorization_token: "MHA-1" } } })
+        : Promise.resolve({ data: { statusCode: 200, data: {} } }),
+    );
+    const onClose = vi.fn();
+    const { unmount } = renderWithProviders(<MarkReturnedModal open orderId="95" onClose={onClose} />);
+    fireEvent.click(screen.getByText("Kamera bilan skanerlash"));
+
+    await act(async () => {
+      await getActiveScanTarget()!.onScan("MCR-abc", "camera");
+    });
+
+    await waitFor(() => expect(onClose).toHaveBeenCalledTimes(1));
+    expect(apiPost.mock.calls).toEqual([
+      ["scan/market-cancelled", { qr_token: "MCR-abc" }],
+      ["orders/95/mark-returned-to-market", { authorization_token: "MHA-1" }],
+    ]);
+    // Ruxsat olindi — QR kutilmaydi, kamera yopildi.
+    expect(isScannerOverlayOpen()).toBe(false);
+    expect(getActiveScanTarget()).toBeNull();
+    unmount();
+  });
+
+  it("market QR emas — xato oynada, so'rov yo'q, kamera ochiq qoladi", async () => {
+    renderWithProviders(<MarkReturnedModal open orderId="95" onClose={vi.fn()} />);
+    fireEvent.click(screen.getByText("Kamera bilan skanerlash"));
+
+    await act(async () => {
+      await getActiveScanTarget()!.onScan("ORD-95", "camera");
+    });
+
+    expect(screen.getByTestId("mark-returned-error")).toHaveTextContent("MCR-");
+    expect(apiPost).not.toHaveBeenCalled();
+    expect(isScannerOverlayOpen()).toBe(true);
   });
 });
