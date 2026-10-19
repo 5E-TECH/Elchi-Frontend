@@ -24,7 +24,7 @@ import {
   type DataTableSelection,
 } from "../../../shared/ui/primitives";
 import { formatBatchDisplayId } from "../../batches/lib/batchFormat";
-import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
+import { playMissingOrderFeedback, playScanFeedback } from "../../../shared/lib/scanner/feedback";
 import { SelectionRegion } from "../../../shared/ui/SelectionRegion";
 import {
   BATCH_STATUS_TONE,

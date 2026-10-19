@@ -1,11 +1,13 @@
-// dizayn-v2: courier-scan-active, courier-scan-starting, courier-scan-permission-denied, courier-scan-success-flash, courier-scan-other-courier, courier-scan-invalid
+// dizayn-v2: tizim-scanner, courier-scan-active, courier-scan-starting, courier-scan-permission-denied, courier-scan-success-flash, courier-scan-other-courier, courier-scan-invalid
 import type { ComponentProps, ReactNode, Ref } from "react";
 import type { LucideIcon } from "lucide-react";
-import { cx } from "../../../shared/lib/cx";
-import { Pressable } from "../../../shared/ui/primitives";
+import { cx } from "../../lib/cx";
+import { Pressable } from "../primitives";
 
 /**
  * KAMERA YUZASI — maket `.el-cam*` (`design/CODE-MAP.md` 2.11, taxta `tizim-scanner`), telefon ko'rinishi.
+ * Telegram Mini App (`features/tg-scan`) va umumiy kamera (`ScannerCamera`) shu qismlardan yig'iladi
+ * (avval `features/tg-scan/ui` da edi — skaner 1-bosqichida shared'ga ko'chirildi, xatti-harakat o'zgarmagan).
  *
  * Yuza HAR DOIM tungi: ildizga `dark` klassi — ichidagi tokenlar tungi qiymat oladi (maketdagi
  * `--cam-*`: shisha `bg-bg/60`, panel `bg-bg/95`, chiziq `border-text/20`, yordamchi matn `text-text/75`,
@@ -57,6 +59,21 @@ type CameraSurfaceProps = {
   /** Pastki panel (hisoblagich, oxirgi skan, amal). */
   bottom?: ReactNode;
   surfaceRef?: Ref<HTMLElement>;
+  /**
+   * Yuqori panelning chap tomoni (`.el-cam-btn` «Yopish»). Berilmasa — 48 px bo'sh joy (Telegram'da
+   * chapda uning o'z «Yopish» tugmasi bor, sarlavha markazda qolsin).
+   */
+  start?: ReactNode;
+  /** `false` — sarlavha/kontekst yuqori panelda chizilmaydi (desktop oynasi: ular o'ng panelda). */
+  heading?: boolean;
+  /** Sarlavha ostidagi qo'shimcha (kontekstni almashtirish chipi «Urgut Savdo ▾»). */
+  headingExtra?: ReactNode;
+  /**
+   * `fullscreen` (sukut) — `fixed inset-0` (telefon, Telegram); `contained` — ota konteynerni to'ldiradi
+   * (`.el-cam-dialog` ning chap qismi yoki universal skaner sahifasidagi kamera bloki).
+   */
+  fit?: "fullscreen" | "contained";
+  className?: string;
 };
 
 /** `.el-cam` + `.el-cam-top` + `.el-cam-stage` — telefonda to'liq ekran (Telegram oynasi). */
@@ -70,23 +87,36 @@ export const CameraSurface = ({
   children,
   bottom,
   surfaceRef,
+  start,
+  heading = true,
+  headingExtra,
+  fit = "fullscreen",
+  className,
 }: CameraSurfaceProps) => (
   <section
     ref={surfaceRef}
     aria-label={label}
     aria-busy={busy || undefined}
-    className="dark fixed inset-0 isolate flex flex-col overflow-hidden bg-nav text-text"
+    className={cx(
+      "dark isolate flex flex-col overflow-hidden bg-nav text-text",
+      fit === "fullscreen" ? "fixed inset-0" : "relative size-full min-h-0",
+      className,
+    )}
   >
     {feed}
     <header className="relative z-3 flex min-h-18 shrink-0 items-center gap-2 p-3">
-      {/* Chap tomonda Telegram'ning o'z «Yopish» tugmasi bor — sarlavha markazda qolsin. */}
-      <span aria-hidden="true" className="size-12 shrink-0" />
-      <div className="flex min-w-0 flex-1 flex-col items-center gap-0.5 text-center">
-        <h1 className="max-w-full truncate text-base leading-[22px] font-bold">{title}</h1>
-        {context ? (
-          <p className="max-w-full truncate text-[13px] leading-[18px] font-medium text-text/75">{context}</p>
-        ) : null}
-      </div>
+      {start ?? <span aria-hidden="true" className="size-12 shrink-0" />}
+      {heading ? (
+        <div className="flex min-w-0 flex-1 flex-col items-center gap-0.5 text-center">
+          <h1 className="max-w-full truncate text-base leading-[22px] font-bold">{title}</h1>
+          {context ? (
+            <p className="max-w-full truncate text-[13px] leading-[18px] font-medium text-text/75">{context}</p>
+          ) : null}
+          {headingExtra}
+        </div>
+      ) : (
+        <div aria-hidden="true" className="min-w-0 flex-1" />
+      )}
       <div className="flex min-w-12 shrink-0 items-center justify-end gap-2">{tools}</div>
     </header>
     <div className="relative min-h-0 flex-1">{children}</div>
@@ -257,6 +287,7 @@ export const CameraCard = ({
   text,
   actions,
   alert = true,
+  children,
 }: {
   tone: CameraCardTone;
   icon: LucideIcon;
@@ -265,6 +296,8 @@ export const CameraCard = ({
   actions?: ReactNode;
   /** `role="alert"` (sukut) — xato darhol o'qilsin; `false` — oddiy holat. */
   alert?: boolean;
+  /** Matn va amallar orasidagi qism (masalan `CameraSteps`). */
+  children?: ReactNode;
 }) => (
   <div
     role={alert ? "alert" : undefined}
@@ -275,6 +308,7 @@ export const CameraCard = ({
     </span>
     <h2 className="text-lg leading-[26px] font-bold [overflow-wrap:anywhere]">{title}</h2>
     {text ? <p className="text-sm leading-[21px] text-text/75 [overflow-wrap:anywhere]">{text}</p> : null}
+    {children}
     {actions ? <div className="mt-1 flex w-full flex-col gap-2">{actions}</div> : null}
   </div>
 );
@@ -286,17 +320,19 @@ export const CameraBottom = ({ children }: { children: ReactNode }) => (
   </div>
 );
 
-/** `.el-cam-last` — oxirgi skan qatori. */
+/** `.el-cam-last` — oxirgi skan qatori (`action` — o'ngda «Bekor qilish» kabi ikonka tugma). */
 export const CameraLastScan = ({
   icon,
   tone,
   title,
   subtitle,
+  action,
 }: {
   icon: ReactNode;
   tone?: CameraTone | null;
   title: ReactNode;
   subtitle?: ReactNode;
+  action?: ReactNode;
 }) => (
   <div className="flex min-h-14 min-w-0 items-center gap-3 rounded-[14px] bg-text/7 py-1.5 pr-1.5 pl-2.5">
     <span
@@ -309,5 +345,49 @@ export const CameraLastScan = ({
       <span className="truncate text-sm leading-5 font-semibold">{title}</span>
       {subtitle ? <span className="truncate text-[13px] leading-[18px] text-text/75">{subtitle}</span> : null}
     </span>
+    {action}
+  </div>
+);
+
+/** `.el-cam-steps` + `.el-cam-step-n` — kartadagi raqamlangan qadamlar (ruxsat rad etilgan). */
+export const CameraSteps = ({ steps }: { steps: readonly ReactNode[] }) => (
+  <ol className="flex w-full flex-col gap-2.5 rounded-[14px] bg-text/7 p-3 text-left">
+    {steps.map((step, index) => (
+      <li key={index} className="flex items-start gap-2.5 text-sm leading-5">
+        <span
+          aria-hidden="true"
+          className="-mt-px inline-flex size-[22px] shrink-0 items-center justify-center rounded-full bg-action text-xs leading-none font-bold text-on-solid"
+        >
+          {index + 1}
+        </span>
+        <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{step}</span>
+      </li>
+    ))}
+  </ol>
+);
+
+/** `.el-cam-count` — hisoblagich: «12 / 40» (`total` bo'lsa) yoki «12» + yorliq («ta skanerlandi»). */
+export const CameraCount = ({ done, total, label }: { done: number; total?: number; label: ReactNode }) => (
+  <p className="flex min-w-0 flex-1 items-baseline gap-1.5">
+    <span className="text-[28px] leading-8 font-bold tracking-[-0.01em]">{done}</span>
+    {total !== undefined ? <span className="text-base leading-5 font-semibold text-text/75">/ {total}</span> : null}
+    <span className="ml-1 min-w-0 truncate text-[13px] leading-[18px] text-text/75">{label}</span>
+  </p>
+);
+
+/** `.el-progress` — hisoblagich ostidagi chiziq (faqat jami ma'lum bo'lsa). */
+export const CameraProgress = ({ done, total, label }: { done: number; total: number; label: string }) => (
+  <div
+    role="progressbar"
+    aria-label={label}
+    aria-valuemin={0}
+    aria-valuemax={total}
+    aria-valuenow={Math.min(done, total)}
+    className="h-2 w-full overflow-hidden rounded-full bg-text/10"
+  >
+    <span
+      className="block h-full rounded-full bg-action transition-[width] duration-300 motion-reduce:transition-none"
+      style={{ width: `${total > 0 ? Math.min(100, (done / total) * 100) : 0}%` }}
+    />
   </div>
 );

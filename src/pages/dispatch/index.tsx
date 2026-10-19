@@ -9,7 +9,7 @@ import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
 import { useScannerGate } from "../../shared/lib/useScannerGate";
 import { extractScannerToken } from "../../shared/lib/scanToken";
 import { fetchScanDetail, getScanResourceType, getBackendErrorMessage } from "../scan/lib/scanResource";
-import { playScanFeedback } from "../scan/lib/scanShared";
+import { playScanFeedback } from "../../shared/lib/scanner/feedback";
 import { useOrders } from "../../entities/order/api/orderApi";
 import { useUser } from "../../entities/user/api/userApi";
 import type { RootState } from "../../app/config/store";

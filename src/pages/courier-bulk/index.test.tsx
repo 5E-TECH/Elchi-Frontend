@@ -26,7 +26,10 @@ vi.mock("../../entities/orders", () => ({
   }),
 }));
 
-vi.mock("../scan/lib/scanShared", () => ({ playScanFeedback: mocks.feedback }));
+vi.mock("../../shared/lib/scanner/feedback", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../shared/lib/scanner/feedback")>()),
+  playScanFeedback: mocks.feedback,
+}));
 
 // Kamera oynasi yopiq — QR kutubxonasi testga kerak emas.
 vi.mock("../../shared/components/ScannerCameraModal", () => ({

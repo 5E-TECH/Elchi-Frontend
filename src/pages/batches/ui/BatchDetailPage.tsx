@@ -33,7 +33,7 @@ import {
 import { useMailDetailState } from "../../mails/detail/model/useMailDetailState";
 import OrdersTable, { type OrdersTableColumn } from "../../mails/detail/ui/OrdersTable";
 import SendButton from "../../mails/detail/ui/SendButton";
-import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
+import { playMissingOrderFeedback, playScanFeedback } from "../../../shared/lib/scanner/feedback";
 import { formatBatchDisplayId } from "../lib/batchFormat";
 import { mapBatchOrdersToPostOrders } from "../lib/batchOrderMailAdapter";
 import {

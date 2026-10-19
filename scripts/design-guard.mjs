@@ -176,12 +176,14 @@ export const V2_SCOPES = Object.freeze([
   "src/widgets/order-meta",
   "src/widgets/order-tracking",
   "src/widgets/region-detail",
+  "src/widgets/scanner",
   "src/widgets/user-detail",
   "src/widgets/user-list",
   // `src/shared/ui` butunligicha EMAS — u yerda v1 `BackButton.tsx` hali rang bilan (boshqa v1 o'ramlari o'chirildi).
   "src/shared/ui/primitives",
   "src/shared/ui/charts",
   "src/shared/ui/error-page",
+  "src/shared/ui/camera",
 ]);
 
 /** Scope ichida hali v1 qolgan fayllar — baseline'dagi rang ruxsati saqlanadi. FAQAT QISQARADI (sabab bilan;

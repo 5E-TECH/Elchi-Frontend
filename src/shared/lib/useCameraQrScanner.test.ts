@@ -1,12 +1,14 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import i18n, { i18nReady } from "../../i18n";
 import { useCameraQrScanner } from "./useCameraQrScanner";
 
 type Deferred = { promise: Promise<void>; resolve: () => void; reject: (error: Error) => void };
 
 const scanners = vi.hoisted(() => ({ starts: [] as Deferred[] }));
 
-vi.mock("./qrScanner", () => ({
+vi.mock("./qrScanner", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./qrScanner")>()),
   default: class FakeQrScanner {
     static getSupportError = async () => null;
     start() {
@@ -61,6 +63,27 @@ describe("useCameraQrScanner", () => {
     });
 
     expect(result.current.cameraError).toBe("");
+    unmount();
+    vi.restoreAllMocks();
+  });
+
+  it("ruxsat rad etilsa: sabab `denied`, matn tarjima qilingan (xom DOMException emas)", async () => {
+    await i18nReady;
+    await i18n.changeLanguage("uz");
+    vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(() => undefined);
+    vi.spyOn(HTMLMediaElement.prototype, "load").mockImplementation(() => undefined);
+    const videoRef = { current: document.createElement("video") };
+    const before = scanners.starts.length;
+    const { result, unmount } = renderHook(() =>
+      useCameraQrScanner({ isActive: true, videoRef, onDecode: () => undefined, startErrorMessage: "start failed" }),
+    );
+    await waitFor(() => expect(scanners.starts).toHaveLength(before + 1));
+    await act(async () => {
+      scanners.starts[before].reject(Object.assign(new Error("Permission denied"), { name: "NotAllowedError" }));
+    });
+
+    expect(result.current.cameraErrorKind).toBe("denied");
+    expect(result.current.cameraError).toBe("Kameraga ruxsat berilmagan");
     unmount();
     vi.restoreAllMocks();
   });

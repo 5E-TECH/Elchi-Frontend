@@ -5,7 +5,7 @@ import { useTranslation } from "react-i18next";
 import type { ScannerSoundId } from "../../../entities/settings";
 import { cx } from "../../../shared/lib/cx";
 import { Badge, IconButton } from "../../../shared/ui/primitives";
-import { SCANNER_SOUND_IDS } from "../../scan/lib/scanShared";
+import { SCANNER_SOUND_IDS } from "../../../shared/lib/scanner/feedback";
 import { FootNote, RadioDot, SectionHead } from "./settingsUi";
 
 type SoundType = "success" | "error";

@@ -38,8 +38,8 @@ vi.mock("../../../shared/lib/useOrderQrScanner", () => ({
   },
 }));
 
-vi.mock("../../scan/lib/scanShared", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../scan/lib/scanShared")>()),
+vi.mock("../../../shared/lib/scanner/feedback", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../shared/lib/scanner/feedback")>()),
   playScanFeedback: mocks.playScanFeedback,
   playMissingOrderFeedback: mocks.playMissingOrderFeedback,
 }));

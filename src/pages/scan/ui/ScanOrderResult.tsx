@@ -51,7 +51,7 @@ import {
 } from "../../../shared/ui/primitives";
 import { buildTrackingContext, type OrderDetail } from "../../new_orders/components/detail/orderDetailModel";
 import { getBackendErrorMessage, scanAssignOrder } from "../lib/scanResource";
-import { playScanFeedback } from "../lib/scanShared";
+import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
 import { DISPATCH_ROUTE, orderDetailRoute } from "../model/routes";
 import {
   buildScanOrderView,

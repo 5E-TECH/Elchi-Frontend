@@ -20,7 +20,8 @@
       "payments": "To'lovlar",
       "scanner": "Skaner",
       "menu": "Menyu"
-    }
+    },
+    "scanFor": "{{action}} — {{target}}"
   },
   "header": {
     "label": "Yuqori panel",
@@ -1134,6 +1135,120 @@
       "courier": "Kuryer",
       "manager": "Menejer",
       "registrator": "Ro'yxatchi"
+    }
+  },
+  "camera": {
+    "surfaceLabel": "Kamera skaneri",
+    "close": "Skanerni yopish",
+    "torch": "Chiroq",
+    "chip": {
+      "live": "Skanerlash faol",
+      "starting": "Kamera ishga tushmoqda",
+      "found": "QR topildi",
+      "torchOn": "Chiroq yoqilgan",
+      "paused": "Kamera to'xtatildi",
+      "offline": "Internet yo'q",
+      "usbReady": "USB skaner ham tayyor"
+    },
+    "hint": {
+      "aim": "QR kodni ramka ichiga olib keling",
+      "starting": "Bir lahza — kamera ochilmoqda"
+    },
+    "meter": {
+      "label": "ta skanerlandi",
+      "progress": "Skanerlanganlar"
+    },
+    "result": {
+      "success": "Skanerlandi",
+      "duplicate": "Allaqachon skanerlangan",
+      "missing": "Topilmadi",
+      "error": "Xatolik",
+      "tooFastTitle": "Juda tez — skan qabul qilinmadi",
+      "tooFastText": "Posilkani qayta skanerlang"
+    },
+    "last": {
+      "emptyTitle": "Hali skan yo'q",
+      "emptyText": "Skanerlangan kodlar shu yerda chiqadi",
+      "undo": "Bekor qilish"
+    },
+    "list": {
+      "open": "Ro'yxat",
+      "title": "Skanerlanganlar",
+      "continue": "Davom etish",
+      "emptyTitle": "Hali skan yo'q",
+      "emptyText": "Skanerlangan kodlar shu yerda chiqadi."
+    },
+    "action": {
+      "manual": "Qo'lda kiritish",
+      "finish": "Tugatish",
+      "close": "Yopish",
+      "retry": "Qayta urinish",
+      "enable": "Kamerani yoqish"
+    },
+    "manual": {
+      "title": "Kodni qo'lda kiriting",
+      "label": "Buyurtma raqami yoki yorliqdagi kod",
+      "hint": "Masalan: 10243, P-0412 yoki pochta kodi",
+      "cancel": "Bekor",
+      "submit": "Qo'shish",
+      "required": "Kodni kiriting"
+    },
+    "permission": {
+      "title": "Kameraga ruxsat bering",
+      "text": "Posilkadagi QR kodni o'qish uchun telefon kamerasi kerak. Tasvir saqlanmaydi va hech qayerga yuborilmaydi."
+    },
+    "denied": {
+      "title": "Kameraga ruxsat berilmagan",
+      "text": "Brauzer skanerga kamerani ishlatishga ruxsat bermadi. Ruxsatni yoqing yoki kodni qo'lda kiriting.",
+      "telegramText": "Telegram ichidagi brauzerda kamera ishlamaydi. Sahifani brauzerda oching yoki kodni qo'lda kiriting.",
+      "steps": {
+        "desktop": {
+          "1": "Manzil satridagi qulf belgisini bosing",
+          "2": "«Kamera» bandida «Ruxsat berish»ni tanlang",
+          "3": "«Qayta urinish» tugmasini bosing"
+        },
+        "android": {
+          "1": "Manzil satridagi qulf belgisini bosing",
+          "2": "«Ruxsatlar» → «Kamera» → «Ruxsat berish»",
+          "3": "«Qayta urinish»ni bosing"
+        },
+        "ios": {
+          "1": "«Sozlamalar» ilovasini oching",
+          "2": "«Safari» → «Kamera» → «Ruxsat berish»",
+          "3": "Brauzerga qaytib, «Qayta urinish»ni bosing"
+        },
+        "telegram": {
+          "1": "Yuqoridagi «⋯» menyusini oching",
+          "2": "«Brauzerda ochish»ni tanlang",
+          "3": "Brauzerda kameraga ruxsat bering"
+        }
+      }
+    },
+    "busy": {
+      "title": "Kamera band",
+      "text": "Kamera boshqa ilovada ochiq. Uni yoping va qayta urining."
+    },
+    "unsupported": {
+      "title": "Bu qurilmada kamera qo'llab-quvvatlanmaydi",
+      "text": "Kodni qo'lda kiriting yoki USB skaner ulang."
+    },
+    "failed": {
+      "title": "Kamera ochilmadi",
+      "text": "Kamerani ishga tushirib bo'lmadi. Qayta urining yoki kodni qo'lda kiriting."
+    },
+    "error": {
+      "denied": "Kameraga ruxsat berilmagan",
+      "busy": "Kamera band — u boshqa ilovada ochiq",
+      "unsupported": "Bu qurilmada kamera qo'llab-quvvatlanmaydi"
+    },
+    "switcher": {
+      "open": "{{label}} — almashtirish",
+      "search": "Qidirish",
+      "empty": "Hech narsa topilmadi",
+      "loading": "Ro'yxat yuklanmoqda",
+      "error": "Ro'yxat yuklanmadi",
+      "retry": "Qayta urinish",
+      "current": "Tanlangan"
     }
   }
 }

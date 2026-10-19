@@ -17,7 +17,7 @@ import { normalizeScannerCandidates } from "../../../shared/lib/scanToken";
 import { useScannerGate } from "../../../shared/lib/useScannerGate";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { notify } from "../../../shared/lib/notify";
-import { playMissingOrderFeedback, playScanFeedback } from "../../scan/lib/scanShared";
+import { playMissingOrderFeedback, playScanFeedback } from "../../../shared/lib/scanner/feedback";
 import { getBackendErrorMessage } from "../../scan/lib/scanResource";
 import type { RootState } from "../../../app/config/store";
 import type { OrderListItem } from "../../../entities/order/types/order";

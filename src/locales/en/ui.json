@@ -20,7 +20,8 @@
       "payments": "Payments",
       "scanner": "Scan",
       "menu": "Menu"
-    }
+    },
+    "scanFor": "{{action}} — {{target}}"
   },
   "header": {
     "label": "Top bar",
@@ -1134,6 +1135,120 @@
       "courier": "Courier",
       "manager": "Manager",
       "registrator": "Registrar"
+    }
+  },
+  "camera": {
+    "surfaceLabel": "Camera scanner",
+    "close": "Close scanner",
+    "torch": "Flashlight",
+    "chip": {
+      "live": "Scanning",
+      "starting": "Starting camera",
+      "found": "QR found",
+      "torchOn": "Flashlight on",
+      "paused": "Camera paused",
+      "offline": "No internet",
+      "usbReady": "USB scanner is ready too"
+    },
+    "hint": {
+      "aim": "Bring the QR code into the frame",
+      "starting": "One moment — opening the camera"
+    },
+    "meter": {
+      "label": "scanned",
+      "progress": "Scanned"
+    },
+    "result": {
+      "success": "Scanned",
+      "duplicate": "Already scanned",
+      "missing": "Not found",
+      "error": "Error",
+      "tooFastTitle": "Too fast — scan not accepted",
+      "tooFastText": "Scan the parcel again"
+    },
+    "last": {
+      "emptyTitle": "No scans yet",
+      "emptyText": "Scanned codes appear here",
+      "undo": "Undo"
+    },
+    "list": {
+      "open": "List",
+      "title": "Scanned",
+      "continue": "Continue",
+      "emptyTitle": "No scans yet",
+      "emptyText": "Scanned codes appear here."
+    },
+    "action": {
+      "manual": "Enter manually",
+      "finish": "Finish",
+      "close": "Close",
+      "retry": "Try again",
+      "enable": "Turn on camera"
+    },
+    "manual": {
+      "title": "Enter the code manually",
+      "label": "Order number or label code",
+      "hint": "For example: 10243, P-0412 or a mail code",
+      "cancel": "Cancel",
+      "submit": "Add",
+      "required": "Enter the code"
+    },
+    "permission": {
+      "title": "Allow camera access",
+      "text": "The phone camera is needed to read the QR code on the parcel. The image is not saved or sent anywhere."
+    },
+    "denied": {
+      "title": "Camera access denied",
+      "text": "The browser did not let the scanner use the camera. Turn access on or enter the code manually.",
+      "telegramText": "The camera does not work in the Telegram in-app browser. Open the page in a browser or enter the code manually.",
+      "steps": {
+        "desktop": {
+          "1": "Click the lock icon in the address bar",
+          "2": "Set «Camera» to «Allow»",
+          "3": "Press «Try again»"
+        },
+        "android": {
+          "1": "Tap the lock icon in the address bar",
+          "2": "«Permissions» → «Camera» → «Allow»",
+          "3": "Tap «Try again»"
+        },
+        "ios": {
+          "1": "Open the «Settings» app",
+          "2": "«Safari» → «Camera» → «Allow»",
+          "3": "Go back to the browser and tap «Try again»"
+        },
+        "telegram": {
+          "1": "Open the «⋯» menu at the top",
+          "2": "Choose «Open in browser»",
+          "3": "Allow camera access in the browser"
+        }
+      }
+    },
+    "busy": {
+      "title": "Camera is busy",
+      "text": "The camera is open in another app. Close it and try again."
+    },
+    "unsupported": {
+      "title": "Camera is not supported on this device",
+      "text": "Enter the code manually or connect a USB scanner."
+    },
+    "failed": {
+      "title": "Camera did not open",
+      "text": "Could not start the camera. Try again or enter the code manually."
+    },
+    "error": {
+      "denied": "Camera access denied",
+      "busy": "Camera is busy — it is open in another app",
+      "unsupported": "Camera is not supported on this device"
+    },
+    "switcher": {
+      "open": "{{label}} — change",
+      "search": "Search",
+      "empty": "Nothing found",
+      "loading": "Loading the list",
+      "error": "The list did not load",
+      "retry": "Try again",
+      "current": "Selected"
     }
   }
 }

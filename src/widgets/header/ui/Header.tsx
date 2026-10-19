@@ -6,6 +6,8 @@ import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
 import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
+import { openScanner } from "../../../shared/lib/scanner/scannerHost";
+import { useActiveScanTarget } from "../../../shared/lib/scanner/scanTargets";
 import { useLogout } from "../../../shared/lib/useLogout";
 import { Button, IconButton } from "../../../shared/ui/primitives";
 import { useMobileMenu } from "../../Sidebar/model/shellNav";
@@ -66,6 +68,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   const mobileMenu = useMobileMenu();
   const profile = useSelector((state: RootState) => state.user.user);
   const roleState = useSelector((state: RootState) => state.role);
+  const scanTarget = useActiveScanTarget();
 
   const searchId = useId();
   const search = useHeaderSearch(searchId);
@@ -173,9 +176,17 @@ const Header = ({ onMenuClick }: HeaderProps) => {
 
       <div aria-hidden="true" className="min-w-0 flex-1" />
 
-      {/* Market skanerlamaydi (maket: persona.scan=false; ega qarori 2026-10-16). */}
+      {/* Market skanerlamaydi (maket: persona.scan=false; ega qarori 2026-10-16). Kontekstli (ega roziligi
+          2026-10-19): sahifa skan maqsadi bo'lsa kamera shu sahifa ustida ochiladi, aks holda `/scan`. */}
       {String(role ?? "").toLowerCase() !== "market" ? (
-        <Button variant="secondary" leftIcon={ScanLine} onClick={() => navigate("/scan")} className="max-md:hidden">
+        <Button
+          variant="secondary"
+          leftIcon={ScanLine}
+          aria-label={scanTarget ? t("shell.scanFor", { action: t("header.scan"), target: scanTarget.title }) : undefined}
+          aria-haspopup={scanTarget ? "dialog" : undefined}
+          onClick={() => openScanner({ navigate })}
+          className="max-md:hidden"
+        >
           {t("header.scan")}
         </Button>
       ) : null}

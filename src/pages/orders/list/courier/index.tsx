@@ -30,7 +30,7 @@ import { scrollShellContentToTop, usePagination } from "../../../../shared/lib/u
 import { useDebounce } from "../../../../shared/lib/useDebounce";
 import { useOrderQrScanner } from "../../../../shared/lib/useOrderQrScanner";
 import { fetchScanDetail, getBackendErrorMessage } from "../../../scan/lib/scanResource";
-import { playScanFeedback } from "../../../scan/lib/scanShared";
+import { playScanFeedback } from "../../../../shared/lib/scanner/feedback";
 import { getActionErrorMessage } from "../../../../shared/lib/actionError";
 import { canCourierRestoreCancelledOrder } from "../../../../entities/orders/custody";
 import { getRollbackWarning } from "../../../../entities/orders/rollbackResult";

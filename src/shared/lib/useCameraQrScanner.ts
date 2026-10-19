@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
-import QrScanner from "./qrScanner";
+import i18n from "../../i18n";
+import QrScanner, { classifyCameraError, type CameraErrorKind } from "./qrScanner";
+
+/** Sabab → foydalanuvchiga ko'rinadigan matn (`ui:camera.error.*`); `unknown` — chaqiruvchining `startErrorMessage`. */
+const cameraErrorText = (kind: CameraErrorKind, fallback: string) =>
+  kind === "unknown" ? fallback : i18n.t(`ui:camera.error.${kind}`, { defaultValue: fallback });
 
 type CameraQrScannerOptions = {
   isActive: boolean;
@@ -21,6 +26,7 @@ export const useCameraQrScanner = ({
   const [torchEnabled, setTorchEnabled] = useState(false);
   const [hasTorch, setHasTorch] = useState(false);
   const [cameraError, setCameraError] = useState("");
+  const [cameraErrorKind, setCameraErrorKind] = useState<CameraErrorKind | null>(null);
   const [cameraUnavailable, setCameraUnavailable] = useState(false);
 
   useEffect(() => {
@@ -60,6 +66,7 @@ export const useCameraQrScanner = ({
       await scanner.toggleFlash();
       setTorchEnabled(scanner.isFlashOn());
     } catch {
+      setCameraErrorKind("unknown");
       setCameraError(startErrorMessage);
     }
   }, [hasTorch, startErrorMessage]);
@@ -77,6 +84,7 @@ export const useCameraQrScanner = ({
     const startScanner = async () => {
       setIsStarting(true);
       setCameraError("");
+      setCameraErrorKind(null);
 
       try {
         if (!videoRef.current) {
@@ -86,7 +94,7 @@ export const useCameraQrScanner = ({
         const supportError = await QrScanner.getSupportError();
         if (supportError) {
           setCameraUnavailable(true);
-          throw new Error(supportError);
+          throw supportError;
         }
 
         const scanner = new QrScanner(
@@ -130,7 +138,10 @@ export const useCameraQrScanner = ({
           return;
         }
 
-        setCameraError(messageText || startErrorMessage);
+        // Xom brauzer matni (inglizcha `DOMException`) ekranga chiqmaydi — sababga qarab tarjima qilingan matn.
+        const kind = classifyCameraError(error);
+        setCameraErrorKind(kind);
+        setCameraError(cameraErrorText(kind, startErrorMessage));
       } finally {
         if (!cancelled) {
           setIsStarting(false);
@@ -154,6 +165,7 @@ export const useCameraQrScanner = ({
     torchEnabled,
     hasTorch,
     cameraError,
+    cameraErrorKind,
     cameraUnavailable,
     stopScanner,
     restartScanner,

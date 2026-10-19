@@ -17,8 +17,8 @@ vi.mock("react-router-dom", async () => ({
   useNavigate: () => navigateMock,
 }));
 
-vi.mock("./lib/scanShared", async () => ({
-  ...(await vi.importActual<typeof import("./lib/scanShared")>("./lib/scanShared")),
+vi.mock("../../shared/lib/scanner/feedback", async () => ({
+  ...(await vi.importActual<typeof import("../../shared/lib/scanner/feedback")>("../../shared/lib/scanner/feedback")),
   playScanFeedback: (...args: unknown[]) => feedbackMock(...args),
 }));
 

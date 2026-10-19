@@ -7,6 +7,8 @@ import { ThemeProvider } from "../../../app/providers/theme/ThemeContext";
 import type { RootState } from "../../../app/config/store";
 import { DESKTOP_QUERY, PHONE_QUERY } from "../model/useMediaQuery";
 import { RECENT_SEARCHES_KEY } from "../model/recentSearches";
+import { isScannerOverlayOpen, resetScannerHost } from "../../../shared/lib/scanner/scannerHost";
+import { resetScanTargets, useScanTarget } from "../../../shared/lib/scanner/scanTargets";
 import Header from "./Header";
 
 /**
@@ -211,6 +213,36 @@ describe("Header bar (.el-topbar)", () => {
     expect(scan).toHaveAttribute("data-variant", "secondary");
     await user.click(scan);
     expect(screen.getByTestId("path")).toHaveTextContent("/scan");
+  });
+
+  it("sahifada skan maqsadi bor — «Skanerlash» kamerani shu sahifa ustida ochadi (o'tish yo'q)", async () => {
+    const ScanTargetProbe = () => {
+      useScanTarget({ id: "mails:2493", title: "Pochtani qabul qilish", onScan: vi.fn() });
+      return null;
+    };
+    const user = userEvent.setup();
+    setDevice("desktop");
+    renderWithProviders(
+      <ThemeProvider>
+        <ScanTargetProbe />
+        <Header />
+        <LocationProbe />
+      </ThemeProvider>,
+      {
+        route: "/mails/2493",
+        preloadedState: {
+          role: { id: "manager-1", role: "manager", region: null, name: "manager" },
+          user: userState("manager"),
+        } as Partial<RootState>,
+      },
+    );
+    const scan = screen.getByRole("button", { name: "Skanerlash — Pochtani qabul qilish" });
+    expect(scan).toHaveAttribute("aria-haspopup", "dialog");
+    await user.click(scan);
+    expect(isScannerOverlayOpen()).toBe(true);
+    expect(screen.getByTestId("path")).toHaveTextContent("/mails/2493");
+    resetScanTargets();
+    resetScannerHost();
   });
 
   it("market rolida «Skanerlash» yo'q (maket: persona.scan=false, ega qarori)", () => {

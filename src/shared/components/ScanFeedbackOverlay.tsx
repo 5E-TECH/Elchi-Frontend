@@ -2,11 +2,8 @@ import { memo, useEffect, useRef, useState } from "react";
 import { Check, SearchCheck, SearchX, X } from "lucide-react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import {
-  SCAN_FEEDBACK_EVENT,
-  type ScanFeedbackDetail,
-  type ScanFeedbackType,
-} from "../../pages/scan/lib/scanShared";
+import { SCAN_FEEDBACK_EVENT, type ScanFeedbackDetail, type ScanFeedbackType } from "../lib/scanner/feedback";
+import { isScannerCameraMounted } from "../lib/scanner/scannerHost";
 
 const feedbackConfig: Record<
   ScanFeedbackType,
@@ -52,6 +49,8 @@ const ScanFeedbackOverlay = () => {
     const handleFeedback = (event: Event) => {
       const detail = (event as CustomEvent<ScanFeedbackDetail>).detail;
       if (!detail?.type) return;
+      // Kamera ochiq — natija kamera ichida ko'rsatiladi (`ScannerCamera`), ustma-ust ikkinchi xabar chiqmaydi.
+      if (isScannerCameraMounted()) return;
 
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
       setFeedback({ ...detail, id: Date.now() });

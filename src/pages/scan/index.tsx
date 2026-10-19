@@ -16,10 +16,8 @@ import { useNavigate } from "react-router-dom";
 import { useKeyboardScanner } from "../../shared/lib/useKeyboardScanner";
 import { useScannerGate } from "../../shared/lib/useScannerGate";
 import { useCameraQrScanner } from "../../shared/lib/useCameraQrScanner";
-import {
-  extractScannerToken,
-  playScanFeedback,
-} from "./lib/scanShared";
+import { extractScannerToken } from "./lib/scanShared";
+import { playScanFeedback } from "../../shared/lib/scanner/feedback";
 import {
   fetchScanDetail,
   getScanDetailQueryKey,

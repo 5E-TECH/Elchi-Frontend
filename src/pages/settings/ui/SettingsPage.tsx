@@ -42,7 +42,7 @@ import {
   Tabs,
 } from "../../../shared/ui/primitives";
 import { setSidebar } from "../../../widgets/Sidebar/model/sidebarSlice";
-import { playScanFeedback } from "../../scan/lib/scanShared";
+import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
 import { AppearancePanel } from "./AppearancePanel";
 import { DashboardPanel } from "./DashboardPanel";
 import { InterfacePanel } from "./InterfacePanel";

@@ -9,7 +9,7 @@ import { extractScannerToken } from "../../shared/lib/scanToken";
 // `shared/components/ScanFeedbackOverlay` ham aynan shu joydan import qiladi —
 // ovozli/vizual qaytarma app darajasida mount qilingan, shu bois bu sahifadan
 // ham ishlaydi.
-import { playScanFeedback } from "../scan/lib/scanShared";
+import { playScanFeedback } from "../../shared/lib/scanner/feedback";
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import { cx } from "../../shared/lib/cx";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../shared/lib/formatMoney";
