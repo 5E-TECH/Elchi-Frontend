@@ -1,11 +1,10 @@
 // dizayn-v2: superadmin-ops-system, superadmin-ops-system-loading, superadmin-ops-system-error, superadmin-ops-system-partial, superadmin-ops-system-down, superadmin-ops-system-critical
-import { memo, useState, type FormEvent, type ReactNode } from "react";
+import { memo, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Banknote, CircleCheck, CircleX, Clock, Info, RefreshCw, Search, Trophy, Truck, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { BATCH_STATUS_TONE } from "../../entities/batch";
 import { useMiscCoverage } from "../../entities/coverage/miscCoverage";
 import { OrderStatusBadge } from "../../entities/order";
-import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import { getErrorStatus } from "../../shared/lib/errorKind";
 import { formatDateTimeLocalized } from "../../shared/lib/formatDateTime";
 import { formatMoneyLocalized, formatNumberLocalized, formatPercentLocalized } from "../../shared/lib/formatMoney";
@@ -127,6 +126,17 @@ const SystemOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const kpi = readAnalyticsKpi(kpiQuery.data);
   const scan = readScanResult(scanQuery.data);
 
+  // KPI xatosidan «Qayta urinish» bilan tiklansa — fokus «Analitika KPI» kartasiga (tugma yo'qolib, fokus `<body>` ga tushmasin).
+  const kpiCardRef = useRef<HTMLElement>(null);
+  const kpiFocusOnRecovery = useRef(false);
+  const hasKpi = kpi !== null;
+  useEffect(() => {
+    if (!hasKpi || !kpiFocusOnRecovery.current) return;
+    kpiFocusOnRecovery.current = false;
+    const active = document.activeElement;
+    if (!active || active === document.body) kpiCardRef.current?.focus();
+  }, [hasKpi]);
+
   const percent = (value: number) => formatPercentLocalized(value, { language });
 
   const submitScan = (event: FormEvent) => {
@@ -188,7 +198,16 @@ const SystemOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
                 <div className="font-bold">{t("system.kpi.loadError")}</div>
                 <div className="text-[13px] leading-[18px] text-text-muted">{t("system.kpi.loadErrorText")}</div>
               </div>
-              <Button variant="secondary" size="sm" leftIcon={RefreshCw} onClick={retry} loading={kpiQuery.isFetching}>
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={RefreshCw}
+                onClick={() => {
+                  kpiFocusOnRecovery.current = true;
+                  retry();
+                }}
+                loading={kpiQuery.isFetching}
+              >
                 {t("common.retry")}
               </Button>
             </div>
@@ -235,6 +254,8 @@ const SystemOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
                 </Card>
 
                 <Card
+                  ref={kpiCardRef}
+                  tabIndex={-1}
                   divided={false}
                   title={t("system.kpi.title")}
                   description={t("system.kpi.subtitle")}
@@ -366,7 +387,7 @@ const SystemOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
           </OpsAlert>
         ) : scanQuery.isError ? (
           <OpsAlert tone="danger" title={t("system.scan.error")}>
-            {getBackendErrorMessage(scanQuery.error)}
+            {t("system.scan.errorText")}
           </OpsAlert>
         ) : scan && activeToken ? (
           <div role="status" aria-label={t("system.scan.result")} className="flex min-w-0 flex-col gap-3 rounded-xl bg-sunken p-4">

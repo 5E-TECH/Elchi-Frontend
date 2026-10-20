@@ -1,8 +1,10 @@
+import { onlineManager } from "@tanstack/react-query";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import SystemOpsPage from "./index";
 import { HEALTH_SERVICE_KEYS } from "./lib/systemHealth";
+import i18n from "../../i18n";
 import { renderWithProviders } from "../../test/test-utils";
 
 const apiGetMock = vi.fn();
@@ -277,12 +279,64 @@ describe("SystemOps page", () => {
     expect(await within(card).findByText("Tizim holatini olib bo'lmadi")).toBeInTheDocument();
     expect(within(card).getByText("Noma'lum")).toBeInTheDocument();
     expect(within(card).getByText("Xato kodi: 504")).toBeInTheDocument();
-    expect(within(card).getByText("Oxirgi muvaffaqiyatli tekshiruv: —")).toBeInTheDocument();
+    // Hali birorta muvaffaqiyatli tekshiruv bo'lmagan — «—» emas, alohida matn.
+    expect(within(card).getByText("Muvaffaqiyatli tekshiruv hali bo'lmagan")).toBeInTheDocument();
+    expect(within(card).queryByText(/Oxirgi muvaffaqiyatli tekshiruv/)).toBeNull();
     expect(screen.queryByText(/Gateway Timeout upstream/)).toBeNull();
 
     await user.click(within(card).getByRole("button", { name: "Qayta urinish" }));
     expect(await within(card).findByText("Hamma xizmatlar ishlayapti")).toBeInTheDocument();
     expect(attempt).toBe(2);
+    // Tugma yo'qoldi — fokus `<body>` ga emas, kartaga o'tadi.
+    await waitFor(() => expect(card).toHaveFocus());
+  });
+
+  it("muvaffaqiyatdan keyin «Yangilash» xato bersa: xato holati, «Oxirgi muvaffaqiyatli tekshiruv: <vaqt>»", async () => {
+    const user = userEvent.setup();
+    let attempt = 0;
+    mockApi({
+      health: () => {
+        attempt += 1;
+        return attempt === 1
+          ? Promise.resolve(readiness())
+          : Promise.reject({ response: { status: 504, data: { message: "Gateway Timeout upstream" } } });
+      },
+    });
+    renderWithProviders(<SystemOpsPage />);
+    const card = healthCard();
+    await within(card).findByText("Hamma xizmatlar ishlayapti");
+    await user.click(within(card).getByRole("button", { name: "Yangilash" }));
+    expect(await within(card).findByText("Tizim holatini olib bo'lmadi")).toBeInTheDocument();
+    expect(within(card).getByText(/^Oxirgi muvaffaqiyatli tekshiruv: .*\d{2}:\d{2}$/)).toBeInTheDocument();
+    expect(within(card).getByText("Xato kodi: 504")).toBeInTheDocument();
+    expect(within(card).queryByText("Hamma xizmatlar ishlayapti")).toBeNull();
+  });
+
+  it.each([
+    ["HTML (SPA fallback)", "<!doctype html><html><body>app</body></html>"],
+    ["bo'sh `services`", { status: "ok", services: [] }],
+  ])("200, lekin %s — xato holati, kod ham, «tekshirildi» vaqti ham yo'q", async (_name, data) => {
+    mockApi({ health: () => Promise.resolve({ status: 200, data, config: {} }) });
+    renderWithProviders(<SystemOpsPage />);
+    const card = healthCard();
+    expect(await within(card).findByText("Tizim holatini olib bo'lmadi")).toBeInTheDocument();
+    expect(within(card).getByText("Muvaffaqiyatli tekshiruv hali bo'lmagan")).toBeInTheDocument();
+    expect(within(card).queryByText(/Xato kodi/)).toBeNull();
+    expect(within(card).queryByText(/tekshirildi/)).toBeNull();
+  });
+
+  it("oflayn (so'rov kutib turibdi): cheksiz skelet emas — «Internet aloqasi yo'q»", async () => {
+    onlineManager.setOnline(false);
+    try {
+      renderWithProviders(<SystemOpsPage />);
+      const card = healthCard();
+      expect(await within(card).findByText("Internet aloqasi yo'q")).toBeInTheDocument();
+      expect(card).not.toHaveAttribute("aria-busy");
+      expect(within(card).queryByText(/tekshirilmoqda…/)).toBeNull();
+      expect(within(card).queryByRole("status", { name: "Tizim holati tekshirilmoqda" })).toBeNull();
+    } finally {
+      onlineManager.setOnline(true);
+    }
   });
 
   it("`services` siz 503 — xato holati («Xato kodi: 503»)", async () => {
@@ -292,6 +346,61 @@ describe("SystemOps page", () => {
     expect(await within(card).findByText("Tizim holatini olib bo'lmadi")).toBeInTheDocument();
     expect(within(card).getByText("Xato kodi: 503")).toBeInTheDocument();
     expect(screen.queryByText("Service Unavailable")).toBeNull();
+  });
+
+  it("ro'yxat qo'lda yopilgan, keyin daraja o'zgarsa (qisman → asosiy) — yana ochiq (maket qoidasi)", async () => {
+    const user = userEvent.setup();
+    let attempt = 0;
+    mockApi({
+      health: () => {
+        attempt += 1;
+        return Promise.resolve(
+          attempt === 1
+            ? readiness({ SEARCH: { status: "down", latency_ms: 1502, error: "Timeout has occurred" } })
+            : readiness({ ORDER: { status: "down", latency_ms: 38, error: "x" } }),
+        );
+      },
+    });
+    renderWithProviders(<SystemOpsPage />);
+    const card = healthCard();
+    await within(card).findByText("1 ta xizmat javob bermayapti");
+    await user.click(within(card).getByRole("button", { name: /Xizmatlar ro'yxatini yashirish/ }));
+    expect(within(card).getByRole("button", { name: /Xizmatlar ro'yxati/ })).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(within(card).getByRole("button", { name: "Yangilash" }));
+    expect(await within(card).findByText("Asosiy xizmat ishlamayapti: Buyurtmalar")).toBeInTheDocument();
+    expect(within(card).getByRole("button", { name: /Xizmatlar ro'yxati/ })).toHaveAttribute("aria-expanded", "true");
+    expect(within(card).getByRole("table")).toBeInTheDocument();
+  });
+
+  it("ishlamayotgan yo'q, lekin ulanmagan bor: yashil «Ulangan xizmatlar ishlayapti»; bitta — «xizmati», ikkita — «xizmatlari»", async () => {
+    mockApi({ health: () => Promise.resolve(readiness({ AI: { status: "unknown", error: "client not registered" } })) });
+    const first = renderWithProviders(<SystemOpsPage />);
+    let card = healthCard();
+    expect(await within(card).findByText("Ulangan xizmatlar ishlayapti")).toBeInTheDocument();
+    expect(card).toHaveAttribute("data-health-level", "ok");
+    expect(
+      within(card).getByText("14 ta xizmatdan 13 tasi so'rovlarga javob bermoqda, AI xizmati bu muhitda ulanmagan."),
+    ).toBeInTheDocument();
+    expect(within(card).getByText("Noma'lum: 1")).toBeInTheDocument();
+    first.unmount();
+
+    mockApi({
+      health: () =>
+        Promise.resolve(
+          readiness({
+            SEARCH: { status: "unknown", error: "client not registered" },
+            AI: { status: "unknown", error: "client not registered" },
+          }),
+        ),
+    });
+    renderWithProviders(<SystemOpsPage />);
+    card = healthCard();
+    expect(
+      await within(card).findByText(
+        "14 ta xizmatdan 12 tasi so'rovlarga javob bermoqda, qidiruv va AI xizmatlari bu muhitda ulanmagan.",
+      ),
+    ).toBeInTheDocument();
   });
 
   it("«Yangilash» readiness'ni qayta so'raydi", async () => {
@@ -341,6 +450,24 @@ describe("SystemOps page", () => {
 
     await user.click(within(alert as HTMLElement).getByRole("button", { name: "Qayta urinish" }));
     expect(await screen.findByText("236 400 so'm")).toBeInTheDocument();
+    // Tugma yo'qoldi — fokus «Analitika KPI» kartasiga.
+    await waitFor(() => expect(screen.getByRole("region", { name: "Analitika KPI" })).toHaveFocus());
+  });
+
+  it("token xatosi (500): xom backend matni chiqmaydi — o'z matnimiz", async () => {
+    const user = userEvent.setup();
+    mockApi({
+      other: (url) =>
+        url.startsWith("scan/")
+          ? Promise.reject({ response: { status: 500, data: { message: "scan RPC exploded (raw)" } } })
+          : undefined,
+    });
+    renderWithProviders(<SystemOpsPage />);
+    await user.type(screen.getByRole("searchbox", { name: "Token" }), "t1");
+    await user.click(screen.getByRole("button", { name: "Tekshirish" }));
+    expect(await screen.findByText("Tokenni tekshirib bo'lmadi")).toBeInTheDocument();
+    expect(screen.getByText("Server javob bermadi yoki xato qaytardi. Birozdan keyin qayta urining.")).toBeInTheDocument();
+    expect(screen.queryByText(/scan RPC exploded/)).toBeNull();
   });
 
   it("types scan token and clicks Tekshirish — calls api.get with scan/t1 and lists the result fields", async () => {
@@ -380,5 +507,65 @@ describe("SystemOps page", () => {
     await user.click(screen.getByRole("button", { name: "Tekshirish" }));
 
     expect(await screen.findByText("Bu token bo'yicha buyurtma, paket yoki pochta topilmadi.")).toBeInTheDocument();
+  });
+
+  describe("ru/en matnlar", () => {
+    afterEach(async () => {
+      await i18n.changeLanguage("uz");
+    });
+
+    it("en: bitta xizmat — ko'plik xatosi yo'q («1 services» emas), gap o'rtasida bosh harf yo'q", async () => {
+      await i18n.changeLanguage("en");
+      mockApi({
+        health: () =>
+          Promise.resolve(readiness({ NOTIFICATION: { status: "down", latency_ms: 212, error: "reported degraded" } })),
+      });
+      renderWithProviders(<SystemOpsPage />);
+      const card = screen.getByRole("region", { name: "System health" });
+      expect(await within(card).findByText("Services not responding: 1")).toBeInTheDocument();
+      expect(within(card).getByText("13 of 14 services are running. Actions related to notifications may fail.")).toBeInTheDocument();
+      expect(within(card).getByText(/^Services: 14 · checked /)).toBeInTheDocument();
+      expect(card.textContent).not.toMatch(/\b1 services\b|\b1 supporting services\b/);
+    });
+
+    it("en: asosiy + bitta yordamchi — «Supporting services also down: 1.»", async () => {
+      await i18n.changeLanguage("en");
+      mockApi({
+        health: () =>
+          Promise.resolve(
+            readiness({
+              ORDER: { status: "down", latency_ms: 38, error: "x" },
+              SEARCH: { status: "down", latency_ms: 30, error: "reported down" },
+            }),
+          ),
+      });
+      renderWithProviders(<SystemOpsPage />);
+      const card = screen.getByRole("region", { name: "System health" });
+      expect(
+        await within(card).findByText(
+          "Creating orders, changing their status and selling don't work. Other services responding: 12. Supporting services also down: 1.",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    it("ru: yordamchi xizmatlar nomi gap o'rtasida kichik harf bilan", async () => {
+      await i18n.changeLanguage("ru");
+      mockApi({
+        health: () =>
+          Promise.resolve(
+            readiness({
+              NOTIFICATION: { status: "down", latency_ms: 212, error: "reported degraded" },
+              SEARCH: { status: "down", latency_ms: 1502, error: "Timeout has occurred" },
+            }),
+          ),
+      });
+      renderWithProviders(<SystemOpsPage />);
+      const card = screen.getByRole("region", { name: "Состояние системы" });
+      expect(
+        await within(card).findByText(
+          "Работают 12 из 14. Действия, связанные с разделами «уведомления и поиск», могут завершаться ошибкой.",
+        ),
+      ).toBeInTheDocument();
+    });
   });
 });

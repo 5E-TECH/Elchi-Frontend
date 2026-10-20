@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-ops-system, superadmin-ops-system-loading, superadmin-ops-system-error, superadmin-ops-system-partial, superadmin-ops-system-down, superadmin-ops-system-critical
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   ChevronDown,
   CircleCheck,
@@ -47,6 +47,11 @@ import {
  * xulosa qatori (ikonka, sarlavha, izoh, sanoq badge'lari); «Xizmatlar ro'yxati» ochiladi — desktop/planshetda
  * ixcham jadval, telefonda kartalar. Hammasi ishlasa ro'yxat yopiq, aks holda ochiq turadi (maketdagidek).
  * Xizmatning xom `error` matni ko'rsatilmaydi — faqat sabab turi bo'yicha i18n matn.
+ *
+ * Foydalanuvchi ro'yxatni qo'lda ochib/yopgan bo'lsa, bu tanlov faqat o'sha darajada (ok/partial/…) amal qiladi —
+ * daraja o'zgarsa yana maket qoidasi ishlaydi («biror narsa ishlamasa — ochiq»).
+ * Oflayn (so'rov `paused`) — cheksiz skelet emas, «Internet aloqasi yo'q». Xatodan «Qayta urinish» bilan tiklansa,
+ * fokus kartaga o'tadi (tugma yo'qolib, fokus `<body>` ga tushmasin).
  */
 
 const LEVEL_TONE: Record<HealthLevel, Tone> = { ok: "success", partial: "warning", critical: "danger", down: "danger" };
@@ -73,12 +78,23 @@ export const HealthCard = () => {
   const { useGetHealthReadiness } = useMiscCoverage();
   const query = useGetHealthReadiness({ silentError: true });
   const listId = useId();
-  const [expandedOverride, setExpandedOverride] = useState<boolean | null>(null);
+  const [expandedOverride, setExpandedOverride] = useState<{ level: HealthLevel; expanded: boolean } | null>(null);
+  const cardRef = useRef<HTMLElement>(null);
+  const focusOnRecovery = useRef(false);
 
   const summary = query.isError ? null : readReadiness(query.data);
-  const loading = query.isPending;
+  const offline = query.isPending && query.fetchStatus === "paused";
+  const loading = query.isPending && !offline;
   const failed = !loading && summary === null;
   const fetching = query.isFetching;
+
+  const hasSummary = summary !== null;
+  useEffect(() => {
+    if (!hasSummary || !focusOnRecovery.current) return;
+    focusOnRecovery.current = false;
+    const active = document.activeElement;
+    if (!active || active === document.body) cardRef.current?.focus();
+  }, [hasSummary]);
 
   const ms = (value: number) => t("system.health.ms", { value: formatNumberLocalized(value, { language }) });
   const serviceName = (service: HealthService) =>
@@ -86,12 +102,15 @@ export const HealthCard = () => {
   const serviceArea = (service: HealthService) =>
     service.known ? t(`system.health.services.${service.key}.area`) : service.key;
   const list = (items: readonly string[]) => joinList(items, t("system.health.and"));
-  const checkedAt =
-    query.dataUpdatedAt > 0 ? formatDateTimeLocalized(query.dataUpdatedAt, { language }) : t("system.health.never");
+  const checkedAt = query.dataUpdatedAt > 0 ? formatDateTimeLocalized(query.dataUpdatedAt, { language }) : null;
   const total = summary?.total ?? HEALTH_SERVICE_KEYS.length;
 
   const refresh = () => {
     void query.refetch();
+  };
+  const retry = () => {
+    focusOnRecovery.current = true;
+    refresh();
   };
 
   // ── Sarlavha ───────────────────────────────────────────────────────────────
@@ -106,8 +125,10 @@ export const HealthCard = () => {
   const meta = loading
     ? t("system.health.metaChecking", { count: total })
     : failed
-      ? t("system.health.lastSuccess", { time: checkedAt })
-      : t("system.health.meta", { count: total, time: checkedAt });
+      ? checkedAt
+        ? t("system.health.lastSuccess", { time: checkedAt })
+        : t("system.health.neverChecked")
+      : t("system.health.meta", { count: total, time: checkedAt ?? "" });
 
   const refreshButton = (
     <Button
@@ -129,11 +150,15 @@ export const HealthCard = () => {
       titleAddon={headerBadge}
       description={meta}
       actions={refreshButton}
+      ref={cardRef}
+      tabIndex={-1}
       aria-busy={loading || undefined}
-      data-health-level={summary?.level ?? (loading ? "loading" : "error")}
+      data-health-level={summary?.level ?? (loading ? "loading" : offline ? "offline" : "error")}
     >
       {loading ? (
         <HealthSkeleton label={t("system.health.loadingLabel")} />
+      ) : offline ? (
+        <ErrorState kind="offline" onRetry={retry} retrying={fetching} className="py-7" />
       ) : failed ? (
         <ErrorState
           icon={ServerOff}
@@ -148,7 +173,7 @@ export const HealthCard = () => {
               ) : null}
             </>
           }
-          onRetry={refresh}
+          onRetry={retry}
           retrying={fetching}
           retryLabel={t("common.retry")}
           className="py-7"
@@ -156,8 +181,15 @@ export const HealthCard = () => {
       ) : summary ? (
         <HealthBody
           summary={summary}
-          expanded={expandedOverride ?? summary.level !== "ok"}
-          onToggle={() => setExpandedOverride((prev) => !(prev ?? summary.level !== "ok"))}
+          expanded={
+            expandedOverride?.level === summary.level ? expandedOverride.expanded : summary.level !== "ok"
+          }
+          onToggle={() =>
+            setExpandedOverride((prev) => ({
+              level: summary.level,
+              expanded: !(prev?.level === summary.level ? prev.expanded : summary.level !== "ok"),
+            }))
+          }
           listId={listId}
           ms={ms}
           serviceName={serviceName}
@@ -221,7 +253,12 @@ const HealthBody = ({ summary, expanded, onToggle, listId, ms, serviceName, serv
         const impact = summary.coreDown.map((service) => t(`system.health.impact.${service.key}`)).join(" ");
         const rest =
           summary.unknownCount > 0
-            ? t("system.health.summary.criticalRestUnknown", { count: summary.okCount, names: unknownNames })
+            ? t(
+                summary.unknownCount > 1
+                  ? "system.health.summary.criticalRestUnknownMany"
+                  : "system.health.summary.criticalRestUnknown",
+                { count: summary.okCount, names: unknownNames },
+              )
             : t("system.health.summary.criticalRest", { count: summary.okCount });
         const aux =
           summary.auxDown.length > 0 ? ` ${t("system.health.summary.criticalAux", { count: summary.auxDown.length })}` : "";
@@ -235,20 +272,24 @@ const HealthBody = ({ summary, expanded, onToggle, listId, ms, serviceName, serv
           text: `${impact} ${rest}.${aux}`,
         };
       }
-      case "partial":
+      case "partial": {
+        // `areasStart` — gap boshida (uz), `areas` — gap o'rtasida (ru/en): bosh harf faqat gap boshida.
+        const areas = list(summary.auxDown.map(serviceArea));
         return {
           title: t("system.health.summary.partialTitle", { count: summary.downCount }),
           text: t("system.health.summary.partialText", {
             total: summary.total,
             ok: summary.okCount,
-            areas: capitalize(list(summary.auxDown.map(serviceArea))),
+            areas,
+            areasStart: capitalize(areas),
           }),
         };
+      }
       default:
         if (summary.unknownCount > 0) {
           return {
             title: t("system.health.summary.okUnknownTitle"),
-            text: t("system.health.summary.okUnknownText", {
+            text: t(summary.unknownCount > 1 ? "system.health.summary.okUnknownTextMany" : "system.health.summary.okUnknownText", {
               total: summary.total,
               ok: summary.okCount,
               names: unknownNames,

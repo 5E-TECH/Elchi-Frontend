@@ -127,7 +127,7 @@ export const useMiscCoverage = () => {
 
   /**
    * «Tizim holati» (Ops → Tizim): `GET /health/readiness` — 14 xizmat. Backend hammasi ishlasa 200, birortasi
-   * ishlamasa 503 qaytaradi (tanasi bir xil) — ikkalasi ham javob (`validateStatus`). `services` siz 503 — xato.
+   * ishlamasa 503 qaytaradi (tanasi bir xil) — ikkalasi ham javob (`validateStatus`). `services` siz yoki bo'sh (har qanday kodda) — xato.
    * Liveness (`GET /health`) doim yashil bo'lgani uchun olib tashlandi (OS-1).
    */
   const useGetHealthReadiness = (options?: SilentErrorOption) =>
@@ -138,13 +138,15 @@ export const useMiscCoverage = () => {
           .get(API_ENDPOINTS.HEALTH.READINESS, { validateStatus: isReadinessStatus })
           .then((res) => {
             const services = (res.data as { services?: unknown } | null | undefined)?.services;
-            if (res.status !== 200 && !Array.isArray(services)) {
+            // `services` yo'q yoki bo'sh — holat noma'lum (masalan proksi 200 bilan SPA/HTML qaytardi): xato.
+            // 200 da kod ko'rsatilmaydi («Xato kodi: 200» chalg'itadi) — `response` faqat 503 da beriladi.
+            if (!Array.isArray(services) || services.length === 0) {
               throw new AxiosError(
                 "Readiness javobida services yo'q",
                 AxiosError.ERR_BAD_RESPONSE,
                 res.config,
                 res.request,
-                res,
+                res.status === 200 ? undefined : res,
               );
             }
             return res.data;
