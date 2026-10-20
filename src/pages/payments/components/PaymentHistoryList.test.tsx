@@ -129,6 +129,34 @@ describe("PaymentHistoryList — courier receipt answer badge (2crjWf7v)", () =>
     expect(within(rowButton("Menejer 6")).getByText("Kuryer tasdiqladi")).toBeInTheDocument();
     expect(rowButton("Menejer 7").querySelector("[data-payment-ack]")).toBeNull();
   });
+
+  it("badges are the maket `.el-badge` height (24px, `md`), next to «Tuzatish» of the same height", () => {
+    renderWithProviders(
+      <PaymentHistoryList
+        data={[row("9", { payment_ack: "confirmed", comment: "[ROLLBACK] Buyurtma qaytarildi" })]}
+      />,
+    );
+
+    const button = rowButton("Menejer 9");
+    expect(within(button).getByText("Kuryer tasdiqladi")).toHaveClass("h-6");
+    expect(within(button).getByText("Kuryer tasdiqladi")).not.toHaveClass("h-5");
+    expect(within(button).getByText("Tuzatish")).toHaveClass("h-6");
+  });
+
+  it("a courier viewer sees their own answer («Siz: noto'g'ri» / «Siz tasdiqlagansiz»), also in the row name", () => {
+    renderWithProviders(
+      <PaymentHistoryList data={[row("10", { payment_ack: "disputed" }), row("11", { payment_ack: "confirmed" })]} />,
+      { preloadedState: { role: { id: "7", role: "courier", region: null, name: "Jasur" } } as never },
+    );
+
+    const disputed = within(rowButton("Menejer 10")).getByText("Siz: noto'g'ri");
+    expect(disputed).toHaveAttribute("title", "Botdagi kvitansiyaga siz «Noto'g'ri» deb javob bergansiz");
+    expect(rowButton("Menejer 10")).toHaveAccessibleName(/, Siz: noto'g'ri$/);
+    const confirmed = within(rowButton("Menejer 11")).getByText("Siz tasdiqlagansiz");
+    expect(confirmed).toHaveAttribute("title", "Botdagi kvitansiyani siz tasdiqlagansiz");
+    expect(rowButton("Menejer 11")).toHaveAccessibleName(/, Siz tasdiqlagansiz$/);
+    expect(screen.queryByText(/^Kuryer (tasdiqladi|: )/)).not.toBeInTheDocument();
+  });
 });
 
 describe("PaymentHistoryList — v2 badge group", () => {

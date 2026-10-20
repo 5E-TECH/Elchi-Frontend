@@ -19,8 +19,15 @@ export const MAIN_CONTENT_ID = "main-content";
  *   ekran o'quvchi va Tab uchun mavjud, sichqoncha bilan bosib bo'lmaydi.
  * - Bosilganda fokus `#main-content` ga o'tadi va u ko'rinadigan joyga suriladi. `preventDefault` — URL'ga `#hash`
  *   yozilmaydi (react-router yo'li va «Orqaga» tarixini buzmaydi).
+ * - `inert` — shell orqa foni bilan birga o'chadi (telefon menyusi ochiq): aks holda skrinrider kursori unga yetib,
+ *   `inert` nishonga fokus berolmay qolardi.
  */
-const SkipLink = () => {
+type SkipLinkProps = {
+  /** Orqa fon `inert` bo'lganda (masalan, `MobileMenu` ochiq) — havola ham `inert`. */
+  inert?: boolean;
+};
+
+const SkipLink = ({ inert = false }: SkipLinkProps) => {
   const { t } = useTranslation("sidebar");
 
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
@@ -35,6 +42,7 @@ const SkipLink = () => {
     <a
       href={`#${MAIN_CONTENT_ID}`}
       onClick={handleClick}
+      inert={inert}
       data-skip-link=""
       className={buttonClasses({
         variant: "secondary",

@@ -20,7 +20,6 @@ test("390: Tab → skip-link (≥ 44px, toshmaydi) → Enter → kontent", async
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(390);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  await page.screenshot({ path: "test-results/ki1-skip-link-390.png" });
 
   await page.keyboard.press("Enter");
   await expect(page.locator("#main-content")).toBeFocused();

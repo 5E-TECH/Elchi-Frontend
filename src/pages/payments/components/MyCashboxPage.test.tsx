@@ -172,6 +172,8 @@ describe("MyCashboxPage — market (ega qarori D2)", () => {
 
     const row = await rowOf("Bekor qilish");
     expect(within(row).getByText("Tuzatish")).toBeInTheDocument();
+    // Maketdagi `.el-badge` — 24px (`md`).
+    expect(within(row).getByText("Tuzatish")).toHaveClass("h-6");
     expect(row).toHaveTextContent("Buyurtma №10203 · Mijoz qaytardi");
     // Planshetda (`max-lg`) to'lov turi «Manba» ostida (market maketi), sana ostida emas (kuryer maketi).
     expect(row).toHaveTextContent("Mijoz qaytardi · Naqd");
@@ -410,6 +412,8 @@ describe("MyCashboxPage — courier receipt answer (2crjWf7v)", () => {
       "Botdagi kvitansiyani siz tasdiqlagansiz",
     );
     expect(within(table).queryByText(/^Kuryer (tasdiqladi|: )/)).not.toBeInTheDocument();
+    // Maketdagi `.el-badge` — 24px (`md`), `sm` (20px) emas.
+    expect(within(confirmed).getByText("Siz tasdiqlagansiz")).toHaveClass("h-6");
     expect(unanswered.querySelector("[data-payment-ack]")).toBeNull();
     expect(document.querySelectorAll("[data-payment-ack]")).toHaveLength(2);
   });
@@ -436,6 +440,7 @@ describe("MyCashboxPage — courier receipt answer (2crjWf7v)", () => {
       });
       const badge = within(card).getByText("Siz: noto'g'ri");
       expect(badge).toHaveAttribute("data-payment-ack", "disputed");
+      expect(badge).toHaveClass("h-6");
       const comment = within(card).getByText("Kunlik tushum");
       const received = within(card).getByText("Menejer 11");
       expect(received.compareDocumentPosition(comment) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

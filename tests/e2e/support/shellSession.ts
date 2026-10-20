@@ -1,18 +1,17 @@
-import type { Page, Route } from "@playwright/test";
+import { test, type Page, type Route } from "@playwright/test";
 
 /**
  * KI-1 e2e yordamchisi: soxta sessiya + soxta API (`route.fulfill`), yozish so'rovlari taqiqlangan.
  * `handlers` — yo'l (bosh `/` siz) → javob `data`si; qolgan GET'lar bo'sh ro'yxat oladi.
  */
-export const ORIGIN = "http://127.0.0.1:4173";
-const cors = {
-  "access-control-allow-origin": ORIGIN,
+/** Ilova manzili — `playwright.config.ts` dagi `baseURL` dan (port qo'lda takrorlanmaydi). */
+const appOrigin = () => new URL(test.info().project.use.baseURL ?? "http://127.0.0.1:4173").origin;
+const corsFor = (origin: string) => ({
+  "access-control-allow-origin": origin,
   "access-control-allow-credentials": "true",
   "access-control-allow-headers": "*",
   "access-control-allow-methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS",
-};
-const reply = (route: Route, body: unknown, status = 200) =>
-  route.fulfill({ status, contentType: "application/json", headers: cors, body: JSON.stringify(body) });
+});
 const wrap = (data: unknown) => ({ statusCode: 200, message: "ok", data });
 
 export const setupShellSession = async (
@@ -23,10 +22,14 @@ export const setupShellSession = async (
   profile: Record<string, unknown> = {},
 ) => {
   const leaked: string[] = [];
+  const origin = appOrigin();
+  const cors = corsFor(origin);
+  const reply = (route: Route, body: unknown, status = 200) =>
+    route.fulfill({ status, contentType: "application/json", headers: cors, body: JSON.stringify(body) });
   await page.context().route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
-    if (url.origin === ORIGIN) return route.continue();
+    if (url.origin === origin) return route.continue();
     if (!/api\.elchipochta\.uz|:3004$/.test(url.host)) return route.abort();
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const path = url.pathname.replace(/^\//, "");
@@ -51,10 +54,14 @@ export const setupShellSession = async (
   return { leaked };
 };
 
-const today = (hour: number) => {
-  const date = new Date();
-  date.setHours(hour, 5, 0, 0);
-  return date.toISOString();
+/**
+ * Bugungi, lekin O'TGAN vaqt: hozirdan `minutesAgo` daqiqa oldin (kelajakdagi qator bo'lmaydi). Yarim tundan keyin
+ * darhol ishga tushsa — kun boshiga qisiladi (sana «Bugun» bo'lib qoladi), tartib saqlanadi (kamroq = yangiroq).
+ */
+const today = (minutesAgo: number) => {
+  const now = Date.now();
+  const midnight = new Date(now).setHours(0, 0, 0, 0);
+  return new Date(Math.max(now - minutesAgo * 60_000, midnight + (60 - minutesAgo))).toISOString();
 };
 
 /**
@@ -75,7 +82,7 @@ export const courierCashboxWithAck = (cashboxType = "couriers") => ({
       balance_after: 640_000,
       payment_ack: "confirmed",
       createdByUser: { id: 7, name: "Mohira Qodirova", role: "manager" },
-      createdAt: today(12),
+      createdAt: today(5),
     },
     {
       id: "902",
@@ -87,7 +94,7 @@ export const courierCashboxWithAck = (cashboxType = "couriers") => ({
       balance_after: 1_527_500,
       payment_ack: "disputed",
       createdByUser: { id: 7, name: "Mohira Qodirova", role: "manager" },
-      createdAt: today(10),
+      createdAt: today(15),
     },
     {
       id: "903",
@@ -99,7 +106,7 @@ export const courierCashboxWithAck = (cashboxType = "couriers") => ({
       balance_after: 1_120_000,
       payment_ack: null,
       createdByUser: { id: 8, name: "Sanjar Aliqulov", role: "manager" },
-      createdAt: today(8),
+      createdAt: today(25),
     },
   ],
 });

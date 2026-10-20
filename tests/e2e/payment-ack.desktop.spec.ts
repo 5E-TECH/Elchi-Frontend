@@ -26,7 +26,6 @@ test("kuryer desktop: jadvalda «Siz …» belgilari va tafsilotdagi «Kvitansiy
     "Botdagi kvitansiyaga siz «Noto'g'ri» deb javob bergansiz",
   );
   await expect(table.locator("[data-payment-ack]")).toHaveCount(2);
-  await page.screenshot({ path: "test-results/ki1-courier-ack-desktop.png" });
 
   await table.locator("tr", { has: page.locator("[data-payment-ack=disputed]") }).getByRole("button").first().click();
   const dialog = page.getByRole("dialog");
@@ -55,11 +54,9 @@ test("menejer desktop: kuryer kassasi tafsilotida «Kuryer tasdiqladi» / «Kury
   const disputedRow = page.getByRole("button", { name: /, Kuryer: noto'g'ri$/ });
   await expect(disputedRow).toHaveCount(1);
   await disputedRow.scrollIntoViewIfNeeded();
-  await page.screenshot({ path: "test-results/ki1-manager-ack-desktop.png" });
 
   await disputedRow.click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.locator("[data-payment-ack=disputed]")).toHaveText("Kuryer: noto'g'ri");
-  await page.screenshot({ path: "test-results/ki1-manager-ack-detail-desktop.png" });
   expect(leaked).toEqual([]);
 });

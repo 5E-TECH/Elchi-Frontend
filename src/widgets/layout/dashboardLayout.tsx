@@ -72,7 +72,8 @@ const DashboardLayout = () => {
 
   return (
     <div className="flex h-dvh overflow-hidden bg-bg font-sans text-text [--shell-bottomnav-h:calc(4rem+env(safe-area-inset-bottom))]">
-      <SkipLink />
+      {/* Telefon menyusi ochiq bo'lsa havola ham `inert` (ustun va pastki menyu kabi). */}
+      <SkipLink inert={isMenuOpen} />
 
       <div data-shell-slot="sidebar" className="hidden h-full shrink-0 lg:flex">
         <Sidebar />

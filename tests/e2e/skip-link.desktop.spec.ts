@@ -32,7 +32,6 @@ test("superadmin: Tab → «Asosiy kontentga o'tish» → Enter → kontent", as
   expect(box.height).toBeGreaterThanOrEqual(40);
   // Fokus halqasi (global `:focus-visible`, 2px action).
   await expect(link).toHaveCSS("outline-style", "solid");
-  await page.screenshot({ path: "test-results/ki1-skip-link-desktop.png" });
 
   const urlBefore = page.url();
   await page.keyboard.press("Enter");
@@ -62,5 +61,21 @@ test("tungi mavzuda ham skip-link ko'rinadi (ikkinchi darajali tugma)", async ({
   await page.keyboard.press("Tab");
   await expect(skipLink(page)).toBeFocused();
   await expect(skipLink(page)).toHaveCSS("opacity", "1");
-  await page.screenshot({ path: "test-results/ki1-skip-link-desktop-dark.png" });
+});
+
+test("skaner qobig'i (`/scan`, ScanLayout): Tab → skip-link → Enter → kontent", async ({ page }) => {
+  const { leaked } = await setupShellSession(page, "courier", "Jasur Tursunov");
+  await page.goto("/scan");
+  await expect(page.locator("#main-content h1")).toBeVisible();
+
+  const link = skipLink(page);
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.keyboard.press("Tab");
+  await expect(link).toBeFocused();
+  await expect(link).toHaveCSS("opacity", "1");
+
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#main-content")).toBeFocused();
+  expect(page.url()).not.toContain("#");
+  expect(leaked).toEqual([]);
 });

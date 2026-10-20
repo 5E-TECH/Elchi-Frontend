@@ -165,15 +165,16 @@ const HistoryRow = memo(
               <span className="mt-0.5 text-xs whitespace-pre-line [overflow-wrap:anywhere] text-text-muted">{extra}</span>
             ) : null}
             {/* Belgilar: «Tuzatish» (`[ROLLBACK]`, maket `courier-cashbox-my-all` → `.el-badge-outline`) va
-                kuryer kvitansiyasi javobi (2crjWf7v, KI-S1: «Kuryer: noto'g'ri» / «Kuryer tasdiqladi»). */}
+                kuryer kvitansiyasi javobi (2crjWf7v, KI-S1: «Kuryer: noto'g'ri» / «Kuryer tasdiqladi»). Ikkalasi ham maketdagi
+                `.el-badge` — 24px (`md`). */}
             {comment.isRollback || row.payment_ack ? (
               <span className="mt-1 flex flex-wrap items-center gap-2">
                 {comment.isRollback ? (
-                  <Badge variant="outline" size="sm">
+                  <Badge variant="outline">
                     {t("v2CashDetail.list.rollback")}
                   </Badge>
                 ) : null}
-                <PaymentAckBadge ack={row.payment_ack} audience={ackAudience} size="sm" />
+                <PaymentAckBadge ack={row.payment_ack} audience={ackAudience} />
               </span>
             ) : null}
           </span>

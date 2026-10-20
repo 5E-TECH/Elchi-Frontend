@@ -566,7 +566,7 @@ const MyCashboxPage = () => {
 
   const correctionBadge = (row: PaymentRow) =>
     isCorrection(row) ? (
-      <Badge variant="outline" size="sm">
+      <Badge variant="outline">
         {t("v2MyCashbox.history.correction")}
       </Badge>
     ) : null;
@@ -574,10 +574,11 @@ const MyCashboxPage = () => {
   /**
    * Kuryer kvitansiyasi javobi (2crjWf7v): faqat `courier_payment` qatorida, javob bo'lsa. Matn ko'ruvchiga qarab
    * (KI-S1): kuryer — o'z javobi («Siz tasdiqlagansiz» / «Siz: noto'g'ri», maket `courier-cashbox-my-transfers-ack`),
-   * market va menejer — «Kuryer tasdiqladi» / «Kuryer: noto'g'ri».
+   * market va menejer — «Kuryer tasdiqladi» / «Kuryer: noto'g'ri». Balandligi «Tuzatish» bilan birga maketdagi
+   * `.el-badge` — 24px (`md`).
    */
   const ackAudience = paymentAckAudienceOf(role);
-  const ackBadge = (row: PaymentRow) => <PaymentAckBadge ack={row.payment_ack} audience={ackAudience} size="sm" />;
+  const ackBadge = (row: PaymentRow) => <PaymentAckBadge ack={row.payment_ack} audience={ackAudience} />;
   const ackText = (row: PaymentRow) => {
     const keys = paymentAckKeys(row.payment_ack, ackAudience);
     return keys ? t(keys.label) : "";

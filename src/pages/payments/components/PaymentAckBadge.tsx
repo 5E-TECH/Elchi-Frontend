@@ -16,7 +16,7 @@ import { paymentAckKeys, type PaymentAck, type PaymentAckAudience } from "./paym
  *  - `self` — kuryerning o'zi: «Siz tasdiqlagansiz» / «Siz: noto'g'ri» (maket `courier-cashbox-my-transfers-ack`).
  * Ton — DESIGN_SYSTEM §8: `disputed` → danger + `CircleX`, `confirmed` → success + `CircleCheck`.
  * `null` / yo'q → hech narsa (javob bermaganlar ko'p — har qatorda «Javob yo'q» shovqin bo'lardi).
- * `title` — maketdagi to'liq izoh. `size` — qo'shni «Tuzatish» badge'i bilan bir xil balandlik (zich qatorda `sm`).
+ * `title` — maketdagi to'liq izoh. `size` — sukut `md` (maketdagi `.el-badge`, 24px; qatorlarda ham, oynada ham).
  */
 export const PaymentAckBadge = memo(
   ({

@@ -145,10 +145,14 @@ describe("DashboardLayout (shell)", () => {
     expect(screen.getByRole("dialog", { name: "Menyu" })).toBeInTheDocument();
     expect(column).toHaveAttribute("inert");
     expect(container.querySelector('[data-shell-slot="bottomnav"]')).toHaveAttribute("inert");
+    // «Asosiy kontentga o'tish» ham orqa fon bilan birga `inert` (skrinrider kursori menyudan chiqmaydi).
+    const skipLink = container.querySelector("[data-skip-link]") as HTMLElement;
+    expect(skipLink).toHaveAttribute("inert");
 
     fireEvent.click(screen.getByRole("button", { name: "Yopish" }));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(column).not.toHaveAttribute("inert");
+    expect(skipLink).not.toHaveAttribute("inert");
   });
 
   it("⭐ bo'lim almashsa menyu o'zi yopiladi", async () => {

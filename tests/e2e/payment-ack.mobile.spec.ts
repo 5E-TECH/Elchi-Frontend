@@ -38,14 +38,12 @@ test("kuryer 390: «Siz tasdiqlagansiz» / «Siz: noto'g'ri», belgi kartada oxi
 
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await confirmed.scrollIntoViewIfNeeded();
-  await page.screenshot({ path: "test-results/ki1-courier-ack-390.png" });
 
   // Tafsilot oynasi (pastki varaqa): «Kvitansiya javobi» — o'sha matn.
   await confirmed.click();
   const dialog = page.getByRole("dialog");
   await expect(dialog.getByText("Kvitansiya javobi")).toBeVisible();
   await expect(dialog.locator("[data-payment-ack=confirmed]")).toHaveText("Siz tasdiqlagansiz");
-  await page.screenshot({ path: "test-results/ki1-courier-ack-detail-390.png" });
 
   expect(leaked).toEqual([]);
 });

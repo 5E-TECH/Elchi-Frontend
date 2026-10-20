@@ -79,7 +79,8 @@
         "src/widgets/header/ui/HeaderSearch.tsx",
         "src/widgets/header/ui/SearchScreen.tsx",
         "src/widgets/header/ui/NotificationsMenu.tsx",
-        "src/widgets/header/ui/UserMenu.tsx"
+        "src/widgets/header/ui/UserMenu.tsx",
+        "src/widgets/layout/ui/SkipLink.tsx"
       ],
       "views": {
         "market": ["dashboard-mobile-menu"],
@@ -2103,7 +2104,9 @@
     "market-cashbox-history-detail-dialog": "src/pages/payments/components/FinanceHistoryDetailPopup.tsx",
     "courier-cashbox-history-detail": "src/pages/payments/components/FinanceHistoryDetailPopup.tsx",
     "superadmin-orders-list-skip-link": "src/widgets/layout/ui/SkipLink.tsx",
-    "manager-payments-history-detail-dialog-ack": "src/pages/payments/components/FinanceHistoryDetailPopup.tsx",
+    "manager-payments-history-detail-dialog-ack": ["src/pages/payments/components/FinanceHistoryDetailPopup.tsx", "src/pages/payments/components/PaymentAckBadge.tsx"],
+    "manager-payments-cash-detail-courier-ack": ["src/pages/payments/components/cashDetail.tsx", "src/pages/payments/components/PaymentHistoryList.tsx", "src/pages/payments/components/PaymentAckBadge.tsx"],
+    "courier-cashbox-my-transfers-ack": ["src/pages/payments/components/MyCashboxPage.tsx", "src/pages/payments/components/PaymentAckBadge.tsx"],
     "superadmin-balance-overview": "src/pages/financial-balance/components/Statistics.tsx",
     "admin-balance-overview": "src/pages/financial-balance/components/Statistics.tsx",
     "superadmin-balance-history": "src/pages/financial-balance/components/HistoryTab.tsx",

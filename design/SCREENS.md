@@ -136,7 +136,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `(qobiq)` — Har sahifa atrofidagi qobiq: yon menyu, yuqori panel (qidiruv, skaner, qo'ng'iroqcha, profil), pastki menyu va telefon menyusi
 
-- **Fayllar:** `src/widgets/layout/dashboardLayout.tsx` · `src/widgets/layout/scanLayout.tsx` · `src/widgets/Sidebar/ui/Sidebar.tsx` · `src/widgets/Sidebar/ui/SidebarItem.tsx` · `src/widgets/Sidebar/ui/BottomNav.tsx` · `src/widgets/Sidebar/ui/MobileMenu.tsx` · `src/widgets/Sidebar/model/menuConfig.tsx` · `src/widgets/header/ui/Header.tsx` · `src/widgets/header/ui/HeaderSearch.tsx` · `src/widgets/header/ui/SearchScreen.tsx` · `src/widgets/header/ui/NotificationsMenu.tsx` · `src/widgets/header/ui/UserMenu.tsx`
+- **Fayllar:** `src/widgets/layout/dashboardLayout.tsx` · `src/widgets/layout/scanLayout.tsx` · `src/widgets/Sidebar/ui/Sidebar.tsx` · `src/widgets/Sidebar/ui/SidebarItem.tsx` · `src/widgets/Sidebar/ui/BottomNav.tsx` · `src/widgets/Sidebar/ui/MobileMenu.tsx` · `src/widgets/Sidebar/model/menuConfig.tsx` · `src/widgets/header/ui/Header.tsx` · `src/widgets/header/ui/HeaderSearch.tsx` · `src/widgets/header/ui/SearchScreen.tsx` · `src/widgets/header/ui/NotificationsMenu.tsx` · `src/widgets/header/ui/UserMenu.tsx` · `src/widgets/layout/ui/SkipLink.tsx`
 - **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
 - **Holat:** v2
 - **Izoh:** Maketlardagi yon menyu, yuqori panel va pastki menyu design/kit/roles.json dan chiziladi (bandlar, guruhlar, pastki menyu tartibi, persona). Menyu bandi qo'shsangiz — menuConfig.tsx bilan birga roles.json ni ham solishtiring.
@@ -1043,8 +1043,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/payments/cash-detail/:id` | admin | `admin-payments-cash-detail-branch-shift-closed` — Filial kassasi — filial smenasi ochilmagan · taklif (backend kerak) | [design/fragments/admin--payments-cash-detail-branch-shift-closed.html](fragments/admin--payments-cash-detail-branch-shift-closed.html) | sahifa | yangi (kodda yo'q) |
 | `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-courier` — Kassa tafsiloti — kuryerdan qabul | [design/fragments/manager--payments-cash-detail-courier.html](fragments/manager--payments-cash-detail-courier.html) | sahifa | v2 |
 | `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-branch` — Kassa tafsiloti — HQ'ga o'tkazish | [design/fragments/manager--payments-cash-detail-branch.html](fragments/manager--payments-cash-detail-branch.html) | sahifa | v2 |
-| `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-courier-ack` — Kassa tafsiloti — kuryerdan qabul · kvitansiya javobi | [design/fragments/manager--payments-cash-detail-courier-ack.html](fragments/manager--payments-cash-detail-courier-ack.html) | sahifa | v2 |
-| `/payments/cash-detail/:id` | manager | `manager-payments-history-detail-dialog-ack` — Tranzaksiya tafsiloti — kvitansiya javobi «Kuryer: noto'g'ri»<br>↳ `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | [design/fragments/manager--payments-history-detail-dialog-ack.html](fragments/manager--payments-history-detail-dialog-ack.html) | oyna | v2 |
+| `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-courier-ack` — Kassa tafsiloti — kuryerdan qabul · kvitansiya javobi<br>↳ `src/pages/payments/components/cashDetail.tsx`, `src/pages/payments/components/PaymentHistoryList.tsx`, `src/pages/payments/components/PaymentAckBadge.tsx` | [design/fragments/manager--payments-cash-detail-courier-ack.html](fragments/manager--payments-cash-detail-courier-ack.html) | sahifa | v2 |
+| `/payments/cash-detail/:id` | manager | `manager-payments-history-detail-dialog-ack` — Tranzaksiya tafsiloti — kvitansiya javobi «Kuryer: noto'g'ri»<br>↳ `src/pages/payments/components/FinanceHistoryDetailPopup.tsx`, `src/pages/payments/components/PaymentAckBadge.tsx` | [design/fragments/manager--payments-history-detail-dialog-ack.html](fragments/manager--payments-history-detail-dialog-ack.html) | oyna | v2 |
 | `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-branch-shift-closed` — Kassa tafsiloti — HQ'ga o'tkazish · smena yopiq | [design/fragments/manager--payments-cash-detail-branch-shift-closed.html](fragments/manager--payments-cash-detail-branch-shift-closed.html) | sahifa | yangi (kodda yo'q) |
 | `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-courier-shift-closed` — Kassa tafsiloti — kuryerdan qabul · smena yopiq | [design/fragments/manager--payments-cash-detail-courier-shift-closed.html](fragments/manager--payments-cash-detail-courier-shift-closed.html) | sahifa | yangi (kodda yo'q) |
 
@@ -1066,7 +1066,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/cash-box` | courier | `courier-cashbox-my-all` — Kassa — Barcha tarix | [design/fragments/courier--cashbox-my-all.html](fragments/courier--cashbox-my-all.html) | sahifa | v2 |
 | `/cash-box` | courier | `courier-cashbox-my-transfers` — Kassa — Oldi-berdi | [design/fragments/courier--cashbox-my-transfers.html](fragments/courier--cashbox-my-transfers.html) | sahifa | v2 |
 | `/cash-box` | courier | `courier-cashbox-history-detail` — Tranzaksiya tafsiloti<br>↳ `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | [design/fragments/courier--cashbox-history-detail.html](fragments/courier--cashbox-history-detail.html) | oyna | v2 |
-| `/cash-box` | courier | `courier-cashbox-my-transfers-ack` — Kassa — Oldi-berdi · kvitansiya javobi | [design/fragments/courier--cashbox-my-transfers-ack.html](fragments/courier--cashbox-my-transfers-ack.html) | sahifa | v2 |
+| `/cash-box` | courier | `courier-cashbox-my-transfers-ack` — Kassa — Oldi-berdi · kvitansiya javobi<br>↳ `src/pages/payments/components/MyCashboxPage.tsx`, `src/pages/payments/components/PaymentAckBadge.tsx` | [design/fragments/courier--cashbox-my-transfers-ack.html](fragments/courier--cashbox-my-transfers-ack.html) | sahifa | v2 |
 
 #### `(taklif) /my-earnings` — Daromadim — market operatorining komissiya hisobi (yangi route, kodda yo'q)
 
@@ -2364,10 +2364,10 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-payments-cash-detail-branch` | Kassa tafsiloti — HQ'ga o'tkazish | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
 | `manager-payments-cash-detail-branch-shift-closed` | Kassa tafsiloti — HQ'ga o'tkazish · smena yopiq | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
 | `manager-payments-cash-detail-courier` | Kassa tafsiloti — kuryerdan qabul | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
-| `manager-payments-cash-detail-courier-ack` | Kassa tafsiloti — kuryerdan qabul · kvitansiya javobi | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
+| `manager-payments-cash-detail-courier-ack` | Kassa tafsiloti — kuryerdan qabul · kvitansiya javobi | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx`, `src/pages/payments/components/PaymentHistoryList.tsx`, `src/pages/payments/components/PaymentAckBadge.tsx` | v2 |
 | `manager-payments-cash-detail-courier-shift-closed` | Kassa tafsiloti — kuryerdan qabul · smena yopiq | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
 | `manager-payments-history-detail-dialog` | Tranzaksiya tafsiloti | oyna | `/payments` | `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | v2 |
-| `manager-payments-history-detail-dialog-ack` | Tranzaksiya tafsiloti — kvitansiya javobi «Kuryer: noto'g'ri» | oyna | `/payments/cash-detail/:id` | `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | v2 |
+| `manager-payments-history-detail-dialog-ack` | Tranzaksiya tafsiloti — kvitansiya javobi «Kuryer: noto'g'ri» | oyna | `/payments/cash-detail/:id` | `src/pages/payments/components/FinanceHistoryDetailPopup.tsx`, `src/pages/payments/components/PaymentAckBadge.tsx` | v2 |
 | `manager-products-list` | Mahsulotlar ro'yxati | sahifa | `/products` | `src/pages/products/list/index.tsx` | v2 |
 | `manager-products-market-select-dialog` | Mahsulot uchun market tanlash | oyna | `/products` | `src/pages/products/list/ui/SelectMarketDialog.tsx` | v2 |
 | `manager-products-create` | Mahsulot yaratish | sahifa | `/products/create-product/:id` | `src/pages/products/create/index.tsx` | v2 |
@@ -2537,7 +2537,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `courier-mails-detail-print-menu` | Chop etish menyusi | oyna | `/mails/:id` | `src/shared/components/PrintModeSelect.tsx` | v2 |
 | `courier-cashbox-my-all` | Kassa — Barcha tarix | sahifa | `/cash-box` | `src/pages/payments/components/MyCashboxPage.tsx` | v2 |
 | `courier-cashbox-my-transfers` | Kassa — Oldi-berdi | sahifa | `/cash-box` | `src/pages/payments/components/MyCashboxPage.tsx` | v2 |
-| `courier-cashbox-my-transfers-ack` | Kassa — Oldi-berdi · kvitansiya javobi | sahifa | `/cash-box` | `src/pages/payments/components/MyCashboxPage.tsx` | v2 |
+| `courier-cashbox-my-transfers-ack` | Kassa — Oldi-berdi · kvitansiya javobi | sahifa | `/cash-box` | `src/pages/payments/components/MyCashboxPage.tsx`, `src/pages/payments/components/PaymentAckBadge.tsx` | v2 |
 | `courier-cashbox-history-detail` | Tranzaksiya tafsiloti | oyna | `/cash-box` | `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | v2 |
 | `courier-regions-scoped` | Hududlar — o'z viloyatim | sahifa | `/regions` | `src/pages/region/ui/ScopedRegionView.tsx` | v2 |
 | `courier-scan-camera` | Skaner — kamera | sahifa | `/scan` | `src/pages/scan/index.tsx` | v2 |
@@ -3070,7 +3070,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/widgets/header/ui/UserMenu.tsx` | `(qobiq)` |
 | `src/widgets/layout/dashboardLayout.tsx` | `(qobiq)` |
 | `src/widgets/layout/scanLayout.tsx` | `(qobiq)` |
-| `src/widgets/layout/ui/SkipLink.tsx` | `/orders` |
+| `src/widgets/layout/ui/SkipLink.tsx` | `(qobiq)`, `/orders` |
 | `src/widgets/notification-inbox/ui/NotificationInboxItem.tsx` | `/notifications/send`, `/inbox` |
 | `src/widgets/notification-inbox/ui/NotificationInboxList.tsx` | `/inbox` |
 | `src/widgets/notification-inbox/ui/NotificationItemMenu.tsx` | `/inbox` |
