@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **220** · qisman: **75** · v2 ga ko'chirilgan route: **76 / 77**
+**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **218** · qisman: **75** · v2 ga ko'chirilgan route: **76 / 77**
 
 ## Qanday ishlatiladi
 
@@ -1676,8 +1676,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/ops` | superadmin | `superadmin-ops-integrations` — Ops — Integratsiyalar | [design/fragments/superadmin--ops-integrations.html](fragments/superadmin--ops-integrations.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-investors` — Ops — Investorlar | [design/fragments/superadmin--ops-investors.html](fragments/superadmin--ops-investors.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-logistics` — Ops — Logistika (qaytarish so'rovlari) | [design/fragments/superadmin--ops-logistics.html](fragments/superadmin--ops-logistics.html) | sahifa | v2 |
-| `/ops` | superadmin | `superadmin-ops-logistics-approve-dialog` — Ops — Logistika: qaytarish so'rovlarini tasdiqlash | [design/fragments/superadmin--ops-logistics-approve-dialog.html](fragments/superadmin--ops-logistics-approve-dialog.html) | oyna | yangi (kodda yo'q) |
-| `/ops` | superadmin | `superadmin-ops-logistics-approve-result` — Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | [design/fragments/superadmin--ops-logistics-approve-result.html](fragments/superadmin--ops-logistics-approve-result.html) | sahifa | yangi (kodda yo'q) |
+| `/ops` | superadmin | `superadmin-ops-logistics-approve-dialog` — Ops — Logistika: qaytarish so'rovlarini tasdiqlash<br>↳ `src/pages/logistics-ops/index.tsx`, `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | [design/fragments/superadmin--ops-logistics-approve-dialog.html](fragments/superadmin--ops-logistics-approve-dialog.html) | oyna | v2 |
+| `/ops` | superadmin | `superadmin-ops-logistics-approve-result` — Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | [design/fragments/superadmin--ops-logistics-approve-result.html](fragments/superadmin--ops-logistics-approve-result.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-branches` — Ops — Filiallar (partiya bekor qilish) | [design/fragments/superadmin--ops-branches.html](fragments/superadmin--ops-branches.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-identity` — Ops — Xodimlar ro'yxatlari | [design/fragments/superadmin--ops-identity.html](fragments/superadmin--ops-identity.html) | sahifa | v2 |
 | `/ops` | superadmin | `superadmin-ops-system` — Ops — Tizim | [design/fragments/superadmin--ops-system.html](fragments/superadmin--ops-system.html) | sahifa | v2 |
@@ -1749,13 +1749,13 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Tanlangan qaytarish so'rovlarini tasdiqlash — POST post/return-requests/approve { order_ids }. Ega tasdig'i 2026-10-19 (ops-system): tasdiq oynasi (*-ops-logistics-approve-dialog), natija — toast «N ta tasdiqlandi, M tasi o'tkazib yuborildi» (S5) va qisman natija ro'yxati (*-approve-result).
+- **Izoh:** Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Tanlangan qaytarish so'rovlarini tasdiqlash — POST post/return-requests/approve { order_ids }. Ega tasdig'i 2026-10-19 (ops-system): tasdiq oynasi (*-ops-logistics-approve-dialog), natija — toast «N ta tasdiqlandi, M tasi o'tkazib yuborildi» (S5) va qisman natija ro'yxati (*-approve-result). OS-3: kodda — useConfirm + ApproveReturnSummary (HQ/filial — data.scope.type), natija notify.warning/success (skipped_order_ids), bo'sh ro'yxat EmptyState; maketdagi CircleCheckBig o'rniga ikonka reyestridagi CircleCheck.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/logistics-ops` | superadmin | `superadmin-ops-logistics` — Ops — Logistika (qaytarish so'rovlari) | [design/fragments/superadmin--ops-logistics.html](fragments/superadmin--ops-logistics.html) | sahifa | v2 |
-| `/logistics-ops` | superadmin | `superadmin-ops-logistics-approve-dialog` — Ops — Logistika: qaytarish so'rovlarini tasdiqlash | [design/fragments/superadmin--ops-logistics-approve-dialog.html](fragments/superadmin--ops-logistics-approve-dialog.html) | oyna | yangi (kodda yo'q) |
-| `/logistics-ops` | superadmin | `superadmin-ops-logistics-approve-result` — Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | [design/fragments/superadmin--ops-logistics-approve-result.html](fragments/superadmin--ops-logistics-approve-result.html) | sahifa | yangi (kodda yo'q) |
+| `/logistics-ops` | superadmin | `superadmin-ops-logistics-approve-dialog` — Ops — Logistika: qaytarish so'rovlarini tasdiqlash<br>↳ `src/pages/logistics-ops/index.tsx`, `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | [design/fragments/superadmin--ops-logistics-approve-dialog.html](fragments/superadmin--ops-logistics-approve-dialog.html) | oyna | v2 |
+| `/logistics-ops` | superadmin | `superadmin-ops-logistics-approve-result` — Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | [design/fragments/superadmin--ops-logistics-approve-result.html](fragments/superadmin--ops-logistics-approve-result.html) | sahifa | v2 |
 
 #### `/branch-ops` — Ops — Filiallar (paketni bekor qilish)
 
@@ -1905,7 +1905,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-222 ta maket · kodda bor: 130 · kodda yo'q: 92
+222 ta maket · kodda bor: 132 · kodda yo'q: 90
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2080,8 +2080,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-ops-integrations` | Ops — Integratsiyalar | sahifa | `/ops`, `/integrations-ops` | `src/pages/ops/index.tsx`, `src/pages/integrations-ops/index.tsx` | v2 |
 | `superadmin-ops-investors` | Ops — Investorlar | sahifa | `/ops`, `/investors-ops` | `src/pages/ops/index.tsx`, `src/pages/investors-ops/index.tsx` | v2 |
 | `superadmin-ops-logistics` | Ops — Logistika (qaytarish so'rovlari) | sahifa | `/ops`, `/logistics-ops` | `src/pages/ops/index.tsx`, `src/pages/logistics-ops/index.tsx` | v2 |
-| `superadmin-ops-logistics-approve-dialog` | Ops — Logistika: qaytarish so'rovlarini tasdiqlash | oyna | `/ops`, `/logistics-ops` | `src/pages/ops/index.tsx`, `src/pages/logistics-ops/index.tsx` | yangi (kodda yo'q) — Taklif (ops-system, ega S1..S5) — kodda yo'q. |
-| `superadmin-ops-logistics-approve-result` | Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | sahifa | `/ops`, `/logistics-ops` | `src/pages/ops/index.tsx`, `src/pages/logistics-ops/index.tsx` | yangi (kodda yo'q) — Taklif (ops-system, ega S1..S5) — kodda yo'q. |
+| `superadmin-ops-logistics-approve-dialog` | Ops — Logistika: qaytarish so'rovlarini tasdiqlash | oyna | `/ops`, `/logistics-ops` | `src/pages/logistics-ops/index.tsx`, `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | v2 |
+| `superadmin-ops-logistics-approve-result` | Ops — Logistika: tasdiqlash natijasi (qisman o'tkazib yuborildi) | sahifa | `/ops`, `/logistics-ops` | `src/pages/ops/index.tsx`, `src/pages/logistics-ops/index.tsx` | v2 |
 | `superadmin-ops-branches` | Ops — Filiallar (partiya bekor qilish) | sahifa | `/ops`, `/branch-ops` | `src/pages/ops/index.tsx`, `src/pages/branch-ops/index.tsx` | v2 |
 | `superadmin-ops-identity` | Ops — Xodimlar ro'yxatlari | sahifa | `/ops`, `/identity-ops` | `src/pages/ops/index.tsx`, `src/pages/identity-ops/index.tsx` | v2 |
 | `superadmin-ops-system` | Ops — Tizim | sahifa | `/ops`, `/system-ops` | `src/pages/ops/index.tsx`, `src/pages/system-ops/index.tsx` | v2 |
@@ -2785,8 +2785,9 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/integrations/wizard/ConnectWizard.tsx` | `/integrations/new/:typeKey` |
 | `src/pages/integrations/wizard/steps.ts` | `/integrations/new/:typeKey` |
 | `src/pages/investors-ops/index.tsx` | `/investors-ops` |
-| `src/pages/logistics-ops/index.tsx` | `/logistics-ops` |
+| `src/pages/logistics-ops/index.tsx` | `/logistics-ops`, `/ops` |
 | `src/pages/logistics-ops/lib/returnRequestRows.ts` | `/logistics-ops` |
+| `src/pages/logistics-ops/ui/ApproveReturnSummary.tsx` | `/ops`, `/logistics-ops` |
 | `src/pages/logs/index.tsx` | `/logs` |
 | `src/pages/mails/components/MailSummaryStats.tsx` | `/mails/today`, `/mails/refused` |
 | `src/pages/mails/components/MailsListBody.tsx` | `/mails/today`, `/mails/refused` |

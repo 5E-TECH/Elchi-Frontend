@@ -136,10 +136,17 @@ export const useLogisticsCoverage = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "posts"] }),
   });
 
+  // OS-3: backend buyurtmalarni bo'laklab yozadi (atomik emas) — xato bo'lsa ham bir qismi omborga
+  // qaytgan bo'lishi mumkin, shuning uchun ro'yxatlar har holda (onSettled) yangilanadi: Ops ro'yxati,
+  // «Pochta → Qaytarish» (`entities/mails` — `["mails", "return", …]`) va buyurtmalar.
   const approveReturnRequest = useMutation({
-    mutationFn: (data: unknown) =>
+    mutationFn: (data: { order_ids: string[] }) =>
       api.post(API_ENDPOINTS.POSTS.RETURN_REQUESTS_APPROVE, data),
-    onSuccess: () => client.invalidateQueries({ queryKey: [logiCov, "posts"] }),
+    onSettled: () => {
+      client.invalidateQueries({ queryKey: [logiCov, "posts"] });
+      client.invalidateQueries({ queryKey: ["mails", "return"] });
+      client.invalidateQueries({ queryKey: ["orders"] });
+    },
   });
 
   const useGetReturnRequestsList = (params?: any, options?: SilentErrorOption) =>

@@ -1,10 +1,12 @@
-// dizayn-v2: superadmin-ops-logistics
+// dizayn-v2: superadmin-ops-logistics, superadmin-ops-logistics-approve-dialog, superadmin-ops-logistics-approve-result
 import { memo, useState } from "react";
-import { Check } from "lucide-react";
+import { Check, CircleCheck, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { useLogisticsCoverage } from "../../entities/logistics/logisticsCoverage";
-import { getBackendErrorMessage } from "../../shared/lib/backendError";
+import { getErrorKind, getErrorStatus } from "../../shared/lib/errorKind";
+import { formatNumberLocalized } from "../../shared/lib/formatMoney";
+import { notify } from "../../shared/lib/notify";
 import {
   Badge,
   Button,
@@ -14,28 +16,45 @@ import {
   ErrorState,
   QueryBoundary,
   StatusBadge,
+  useConfirm,
   type DataTableColumn,
   type Tone,
 } from "../../shared/ui/primitives";
 import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
-import { OpsAlert, OpsIntro, OpsToolPage } from "../ops/ui/OpsToolPage";
-import { extractReturnRequestRows, type ReturnRequestRow } from "./lib/returnRequestRows";
+import { OpsIntro, OpsToolPage } from "../ops/ui/OpsToolPage";
+import {
+  extractReturnRequestRows,
+  extractReturnRequestScope,
+  parseApproveReturnResult,
+  type ApproveReturnResult,
+  type ReturnRequestRow,
+} from "./lib/returnRequestRows";
+import { ApproveReturnSummary } from "./ui/ApproveReturnSummary";
 
 /**
  * OPS → «Logistika» (maket `superadmin-ops-logistics`): qaytarish so'rovlari (`GET post/return-requests/list`
  * — kuryer bo'yicha guruhlangan `data.groups[].orders`) va tanlanganlarini tasdiqlash
  * (`POST post/return-requests/approve` — FAQAT `{ order_ids }`, fix3b CODE-09).
  *
- * Matnlar: sarlavha, ustunlar va natija xabarlari — `returns:opsReturnRequests.*` (o'qiladi); maketdagi yangi
- * matnlar — `ops:logistics.*`.
+ * OS-3: tasdiqlash — tasdiq oynasi orqali (`superadmin-ops-logistics-approve-dialog`: HQ yoki filial ombori
+ * `data.scope.type` dan, buyurtma va kuryer soni, kuryer guruhlari; xatoda oyna ochiq qoladi), natija — xabar
+ * (ega S5, `superadmin-ops-logistics-approve-result`): o'tkazib yuborilgan bo'lsa ogohlantirish
+ * «N ta tasdiqlandi, M tasi o'tkazib yuborildi», aks holda muvaffaqiyat. Xom backend matni ko'rsatilmaydi.
+ *
+ * Matnlar: sarlavha, ustunlar — `returns:opsReturnRequests.*`; maketdagi yangi matnlar — `ops:logistics.*`.
  */
 
 /** Qaytarish so'rovi holati (backend `RETURN_REQUEST_STATUSES`: WAITING, ON_THE_ROAD). */
 const STATUS_TONE: Record<string, Tone> = { waiting: "warning", on_the_road: "neutral" };
 
+/** Natija xabarida nomi bilan sanaladigan o'tkazib yuborilgan buyurtmalar (qolgani — «va yana N ta»). */
+const SKIPPED_LISTED = 3;
+
 const LogisticsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
-  const { t } = useTranslation(["ops", "returns"]);
+  const { t, i18n } = useTranslation(["ops", "returns"]);
   const isPhone = useIsPhone();
+  const confirm = useConfirm();
+  const number = (value: number) => formatNumberLocalized(value, { language: i18n.language });
   const { useGetReturnRequestsList, approveReturnRequest } = useLogisticsCoverage();
 
   const returnRequests = useGetReturnRequestsList(undefined, { silentError: true });
@@ -43,6 +62,7 @@ const LogisticsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
 
   // fix3 CODE-09 / C13: javob `data.groups[].orders` — kuryer bo'yicha guruhlangan.
   const rows = extractReturnRequestRows(returnRequests.data);
+  const scope = extractReturnRequestScope(returnRequests.data);
 
   // Tanlov faqat ro'yxatda hozir bor qatorlardan — yangilangan ro'yxatda yo'qolgan qator yuborilmaydi.
   const selectedRows = rows.filter((row) => selectedKeys.includes(row.key));
@@ -55,16 +75,72 @@ const LogisticsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
     );
   const toggleAll = (checked: boolean) => setSelectedKeys(checked ? rows.map((row) => row.key) : []);
 
-  /**
-   * fix3b CODE-09: tasdiqlash ilgari erkin JSON (`{"order_id": "..."}`) yuborardi,
-   * `ReturnRequestsActionRequestDto` esa faqat `{ order_ids: string[] }` qabul qiladi — har doim 400.
-   * Endi tanlangan qatorlarning buyurtma id lari yuboriladi.
-   */
-  const handleApprove = () => {
-    if (selectedCount === 0 || approveReturnRequest.isPending) return;
-    approveReturnRequest.mutate({ order_ids: selectedOrderIds }, { onSuccess: () => setSelectedKeys([]) });
+  /** Xato oynada qoladi — faqat i18n matn (xom backend matni emas). */
+  const approveErrorText = (error: unknown) => {
+    const status = getErrorStatus(error);
+    if (status === 403) return t("logistics.approve.errors.forbidden");
+    if (status === 404) return t("logistics.approve.errors.stale");
+    if (getErrorKind(error) === "server") return t("logistics.approve.errors.server");
+    return t("logistics.approve.errors.generic");
   };
 
+  const notifyResult = ({ approved, skippedOrderIds }: ApproveReturnResult) => {
+    const returned = t("logistics.approve.result.returned", { value: number(approved) });
+    if (skippedOrderIds.length === 0) {
+      notify.success(t("logistics.approve.result.successTitle", { value: number(approved) }), {
+        description: returned,
+      });
+      return;
+    }
+    const listed = skippedOrderIds
+      .slice(0, SKIPPED_LISTED)
+      .map((id) => t("logistics.list.orderLink", { id }))
+      .join(", ");
+    const rest = skippedOrderIds.length - SKIPPED_LISTED;
+    const orders = rest > 0 ? t("logistics.approve.result.skippedMore", { list: listed, value: number(rest) }) : listed;
+    notify.warning(
+      t("logistics.approve.result.partialTitle", {
+        approved: number(approved),
+        skipped: number(skippedOrderIds.length),
+      }),
+      { description: `${returned} ${t("logistics.approve.result.skippedReason", { orders })}` },
+    );
+  };
+
+  /**
+   * fix3b CODE-09: tasdiqlash faqat `{ order_ids: string[] }` yuboradi (`ReturnRequestsActionRequestDto`).
+   * OS-3: avval tasdiq oynasi; so'rov oynaning ichida ketadi (yuklanish, xato — oynada), muvaffaqiyatdan keyin
+   * tanlov tozalanadi va natija xabari chiqadi.
+   */
+  const handleApprove = async () => {
+    if (selectedCount === 0 || approveReturnRequest.isPending) return;
+    const rowsToApprove = selectedRows.filter((row) => row.order_id || row.id);
+    const orderIds = [...selectedOrderIds];
+    const count = orderIds.length;
+    const scopeKey = scope === "BRANCH" ? "branch" : scope === "HQ" ? "hq" : "unknown";
+    // Natija `onConfirm` ichida yoziladi (oyna yopilgach o'qiladi).
+    const outcome: { result: ApproveReturnResult | null } = { result: null };
+
+    const confirmed = await confirm({
+      title: t("logistics.approve.title"),
+      description: t(`logistics.approve.description.${scopeKey}`, { value: number(count) }),
+      icon: RotateCcw,
+      size: "md",
+      closable: true,
+      confirmLabel: t("logistics.approve.confirm", { value: number(count) }),
+      confirmIcon: Check,
+      loadingLabel: t("logistics.approve.loading"),
+      children: <ApproveReturnSummary rows={rowsToApprove} />,
+      errorMessage: approveErrorText,
+      onConfirm: async () => {
+        const response = await approveReturnRequest.mutateAsync({ order_ids: orderIds });
+        outcome.result = parseApproveReturnResult(response?.data, orderIds);
+      },
+    });
+    if (!confirmed || !outcome.result) return;
+    setSelectedKeys([]);
+    notifyResult(outcome.result);
+  };
 
   const statusBadge = (row: ReturnRequestRow) => (
     <StatusBadge
@@ -122,7 +198,13 @@ const LogisticsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
           query={returnRequests}
           skeleton="table"
           isEmpty={() => rows.length === 0}
-          empty={<EmptyState title={t("returns:opsReturnRequests.empty")} />}
+          empty={
+            <EmptyState
+              icon={CircleCheck}
+              title={t("returns:opsReturnRequests.empty")}
+              description={t("logistics.list.emptyText")}
+            />
+          }
           error={(error, retry) => (
             <ErrorState
               error={error}
@@ -160,24 +242,12 @@ const LogisticsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
                     leftIcon={Check}
                     disabled={selectedCount === 0}
                     loading={approveReturnRequest.isPending}
-                    onClick={handleApprove}
+                    onClick={() => void handleApprove()}
                   >
                     {t("logistics.list.approve", { count: selectedCount })}
                   </Button>
                 </div>
               </div>
-
-              {approveReturnRequest.isSuccess || approveReturnRequest.isError ? (
-                <div className="border-b border-border px-5 py-3 max-md:px-4">
-                  {approveReturnRequest.isError ? (
-                    <OpsAlert tone="danger" title={t("returns:opsReturnRequests.approveError")}>
-                      {getBackendErrorMessage(approveReturnRequest.error)}
-                    </OpsAlert>
-                  ) : (
-                    <OpsAlert tone="success" title={t("returns:opsReturnRequests.approveSuccess")} />
-                  )}
-                </div>
-              ) : null}
 
               {isPhone ? (
                 <label className="flex min-h-12 cursor-pointer items-center gap-1 border-b border-border bg-sunken py-0.5 pl-1 pr-4">

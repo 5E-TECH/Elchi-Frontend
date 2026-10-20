@@ -166,7 +166,40 @@
       "selectedOf": "{{selected}} / {{total}}",
       "selectRow": "Select request {{id}}",
       "orderLink": "№{{id}}",
-      "noCourier": "No courier assigned"
+      "noCourier": "No courier assigned",
+      "emptyText": "New requests will appear here."
+    },
+    "approve": {
+      "title": "Confirm return requests",
+      "description": {
+        "hq": "Orders ({{value}}) will be taken from couriers and returned to the HQ warehouse. Their status becomes “Waiting” and they are detached from the courier and the mail.",
+        "branch": "Orders ({{value}}) will be taken from couriers and returned to the branch warehouse. Their status becomes “Waiting” and they are detached from the courier and the mail.",
+        "unknown": "Orders ({{value}}) will be taken from couriers and returned to the warehouse. Their status becomes “Waiting” and they are detached from the courier and the mail."
+      },
+      "orders": "Orders",
+      "ordersValue": "{{value}}",
+      "couriers": "Couriers",
+      "couriersValue": "{{value}}",
+      "withoutCourier": "+ without a courier: {{value}}",
+      "groups": "By courier",
+      "groupCount": "{{value}}",
+      "more": "+ {{value}} more",
+      "note": "This action can't be undone. An order that another employee has reviewed meanwhile, or whose status has changed, is skipped and shown in the result.",
+      "confirm": "Approve {{value}}",
+      "loading": "Approving…",
+      "errors": {
+        "forbidden": "Some orders are with another branch's courier — that branch reviews them. The list has been refreshed.",
+        "stale": "The selected requests have already been reviewed or their status has changed. The list has been refreshed.",
+        "server": "Something went wrong while approving. Some orders may already be back in the warehouse — the list has been refreshed, check it and try again.",
+        "generic": "Could not approve the requests. Try again a bit later."
+      },
+      "result": {
+        "successTitle": "{{value}} approved",
+        "returned": "Returned to the warehouse: {{value}}.",
+        "partialTitle": "{{approved}} approved, {{skipped}} skipped",
+        "skippedReason": "{{orders}}: another employee reviewed it meanwhile or its status changed.",
+        "skippedMore": "{{list}} and {{value}} more"
+      }
     },
     "statuses": {
       "waiting": "Courier hasn't accepted",
