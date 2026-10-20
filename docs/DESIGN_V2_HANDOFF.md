@@ -172,8 +172,15 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     (`features/notification-toggle`, faqat `PATCH {is_active}`), «Tahrirlash» va `features/notification-edit` olindi;
     «Nofaol» — neytral, umumiy izoh (sabab — NG-C). Egaga: admin yon menyusi o'zgardi — admin «Visual» sahnalari
     (masalan `regions`) baseline'i «Run workflow (update)» bilan yangilanadi; `/inbox` alias'i adminda ham qabul qilindi.
-  - **Navbatda — 2-to'lqin** (4.1-bo'lim tartibi): KI-1 → NG-A → TG-A → DM-1 → NS-1 → OR-1 → MD-1 → FY-1 → MH-1 →
-    MO-1 → OS-1 → OS-3 → LG-1 → LG-2 → IN-1 → SA-1 → KM-1 → KI-2.
+  - **2-to'lqin, 1-to'plam tayyor (2026-10-21, `67d4d21d`):** KI-1 (kvitansiya yorliqlari rolga qarab — xodim
+    «Kuryer …», kuryer «Siz …»; shell'da «Asosiy kontentga o'tish», `#main-content`), NG-A (yuqorida), TG-A (shaxsiy
+    Telegram: teskari sanoq, QR, buyruq rejimi; umumiy havola qismlari `features/telegram-link`), NS-1 (yuborish
+    natijasi, «Natija noma'lum» — o'sha `client_request_id`, tafsilot oynasi; `entities/notification-dispatch`), OS-1
+    («Tizim holati» — `health/readiness`, 14 xizmat), OS-3 (qaytarish so'rovlarini tasdiqlash oynasi va natija
+    xabari). Integratsiyada: 5375 unit, 258 e2e yashil. Sukut bilan qilingan qarorlar va egaga savollar — ega
+    papkasidagi `elchi-v2-specs/ochiq-savollar-2-tolqin.md`.
+  - **Navbatda — 2-to'lqin, 2-to'plam** (ishda): DM-1, OR-1, MD-1, FY-1, MH-1, MO-1; keyin LG-1, LG-2, IN-1, SA-1,
+    KM-1, KI-2.
 - «Visual» baseline'lari skaner 2-bosqichidan keyin yangilangan (bot commit `1393ae0`, `/dispatch` va
   `cancelled-handover` — «Kamera» tugmalari olib tashlangani uchun kutilgan farq).
 - **To'liq QA** — Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.
