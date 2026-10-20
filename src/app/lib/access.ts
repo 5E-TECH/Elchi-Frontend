@@ -89,7 +89,11 @@ export const canViewUsers: Predicate = anyOf(
 
 export const canViewFinancialBalance: Predicate = hasRole("superadmin", "admin");
 
-export const canViewNotifications: Predicate = hasRole("superadmin");
+/**
+ * Telegram guruhlari (`/notifications`) — backend `GET|POST|PATCH|DELETE /notifications` `@Roles(SUPERADMIN, ADMIN)`
+ * bilan bir xil (ega NG-S2, 2026-10-19: adminga ham ochiladi).
+ */
+export const canViewNotifications: Predicate = hasRole("superadmin", "admin");
 
 /** Xabar yuborish (`/notifications/send`) — backend `POST /notifications/dispatch` `@Roles(SUPERADMIN, ADMIN)` bilan AYNAN bir xil. */
 export const canSendNotifications: Predicate = hasRole("superadmin", "admin");

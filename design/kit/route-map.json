@@ -19,7 +19,7 @@
     "canViewUsers": { "source": "access.ts → canViewUsers", "roles": { "superadmin": "", "admin": "", "manager": "filial turi aniq bo'lsa" } },
     "canManageUsers": { "source": "access.ts → canViewUsers", "roles": { "superadmin": "", "admin": "", "manager": "filial turi aniq bo'lsa" } },
     "canViewFinancialBalance": { "source": "access.ts → canViewFinancialBalance", "roles": { "superadmin": "", "admin": "" } },
-    "canViewNotifications": { "source": "access.ts → canViewNotifications", "roles": { "superadmin": "", "admin": "taklif — NG-S2, kodda yo'q" } },
+    "canViewNotifications": { "source": "access.ts → canViewNotifications", "roles": { "superadmin": "", "admin": "" } },
     "canSendNotifications": { "source": "access.ts → canSendNotifications", "roles": { "superadmin": "", "admin": "" } },
     "canViewBranches": { "source": "access.ts → canViewBranches", "roles": { "superadmin": "" } },
     "canViewLogs": { "source": "access.ts → canViewLogs", "roles": { "superadmin": "" } },
@@ -1379,17 +1379,18 @@
       "components": [
         "src/pages/notifications/ui/NotificationsPage.tsx",
         "src/features/notification-create/ui/NotificationFormModal.tsx",
-        "src/features/notification-edit/ui/NotificationEditModal.tsx",
+        "src/pages/notifications/ui/NotificationRowMenu.tsx",
         "src/features/notification-create/ui/GroupLinkQr.tsx",
+        "src/features/notification-toggle/ui/useToggleNotificationConfirm.tsx",
         "src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx"
       ],
       "views": {
         "superadmin": ["notifications-telegram-groups", "notifications-row-menu", "notifications-row-menu-inactive", "notifications-connected", "notifications-empty", "notifications-loading", "notifications-error", "notifications-create-dialog", "notifications-create-link-dialog", "notifications-create-expired-dialog", "notifications-create-exists-dialog", "notifications-create-exists-inactive-dialog", "notifications-deactivate-dialog", "notifications-activate-dialog", "notifications-delete-dialog"],
         "admin": ["notifications-telegram-groups", "notifications-row-menu", "notifications-row-menu-inactive", "notifications-connected", "notifications-empty", "notifications-loading", "notifications-error", "notifications-create-dialog", "notifications-create-link-dialog", "notifications-create-expired-dialog", "notifications-create-exists-dialog", "notifications-create-exists-inactive-dialog", "notifications-deactivate-dialog", "notifications-activate-dialog", "notifications-delete-dialog"]
       },
-      "note": "Dizayn v2 (G2): jadval + sahifalash (DataTable / Pagination; telefonda kartalar), «Holat» ustuni (Faol / Nofaol + «Bot guruhdan chiqarilgan — qayta ulang»), market nomlari GET /markets dan (qatorda faqat market_id), o'chirish — tasdiq oynasi (maket matni). dev birlashtirishi (ega qoidasi): qo'shish oynasi maketdagi qo'lda guruh ID formasi EMAS — bir martalik Telegram havolasi: market + xabar turi → POST /telegram/link-code {purpose: market_group} → QR, «Telegram'da ochish», qadamlar, muddat; oyna ochiqligida GET /notifications har 4 s, guruh paydo bo'lsa yopiladi («Guruh ulandi»); shu (market, tur) ulangan bo'lsa havola berilmaydi. Tahrirlash — qo'shish oynasi qolipida (D6, maket yo'q: NotificationEditModal `(maket yo'q) superadmin-notifications-create-dialog`). Ustun saralashi chizilmaydi (GET /notifications da sort yo'q). Matnlar — notificationGroups.json. Ega tasdig'i 2026-10-19 (notif-groups): NG-S1 — nofaol sababi «Holat» ustunida (backend inactive_reason); NG-S2 — /notifications adminga ochiladi (menyu «Bildirishnomalar», guard canViewNotifications — kodda hali faqat superadmin); NG-S3 — shu tur ulangan, lekin nofaol bo'lsa asosiy tugma «Faollashtirish» (tasdiq bilan, *-create-exists-inactive-dialog → *-activate-dialog); NG-S4 — «Tahrirlash» (qo'lda guruh ID, NotificationEditModal) olib tashlanadi, faqat bot havolasi (*-create-link-dialog, muddati tugasa *-create-expired-dialog). Qator menyusi — *-row-menu / *-row-menu-inactive; nofaol qilish / faollashtirish — tasdiq oynasi.",
+      "note": "Dizayn v2 (G2 + NG-A): jadval + sahifalash (DataTable / Pagination; telefonda kartalar), planshetda (< 1024) «Xabar turi» va «Sana» ustunlari yashirin (tur — market nomi ostida, sana — guruh ID ostida), «Holat» ustuni (Faol / Nofaol + umumiy neytral izoh «Xabarlar bu guruhga yuborilmayapti» — D1; nofaollik sababi inactive_reason backendda yo'q, G085w5Qr → NG-C), market nomlari GET /markets dan (qatorda faqat market_id). Qator menyusi (NotificationRowMenu, 64 px ustun): desktopda popover, telefonda pastki varaqa (bandlar ≥ 52 px, kebab 44 px) — faol guruhda «Nofaol qilish», nofaolida «Faollashtirish», so'ng «O'chirish»; nofaol qilish (danger) va faollashtirish (ogohlantirish bilan) — tasdiq oynalari, ikkalasi faqat PATCH /notifications/:id {is_active} (features/notification-toggle); o'chirish — tasdiq oynasi (maket matni). Xato matnlari faqat i18n (backend message ko'rsatilmaydi). Qo'shish oynasi maketdagi qo'lda guruh ID formasi EMAS — bir martalik Telegram havolasi: market + xabar turi → POST /telegram/link-code {purpose: market_group} → QR, «Telegram'da ochish», qadamlar, muddat; oyna ochiqligida GET /notifications har 4 s, guruh paydo bo'lsa yopiladi («Guruh ulandi» xabari — *-connected); shu (market, tur) ulangan bo'lsa havola berilmaydi. «Tahrirlash» (qo'lda guruh ID, NotificationEditModal) olib tashlandi (NG-S4). Ustun saralashi chizilmaydi (GET /notifications da sort yo'q). Matnlar — notificationGroups.json. Ega tasdig'i 2026-10-19 (notif-groups): NG-S1 — nofaol sababi «Holat» ustunida (backend inactive_reason — NG-C); NG-S2 — /notifications adminga ochiladi (menyu «Bildirishnomalar», guard canViewNotifications superadmin + admin — NG-A); NG-S3 — shu tur ulangan, lekin nofaol bo'lsa asosiy tugma «Faollashtirish» (*-create-exists-inactive-dialog → *-activate-dialog — NG-B); NG-S4 — faqat bot havolasi (*-create-link-dialog, *-create-expired-dialog — NG-B).",
       "roleNotes": {
-        "admin": "NG-S2 (ega, 2026-10-19): superadmin bilan bir xil maket (superadmin fragmentlari); kodda admin hali kira olmaydi."
+        "admin": "NG-S2 (ega, 2026-10-19; NG-A): superadmin bilan bir xil maket (superadmin fragmentlari) — admin menyusida «Bildirishnomalar» («Tizim» guruhi), guard canViewNotifications superadmin + admin."
       }
     },
     {
@@ -1663,7 +1664,6 @@
   ],
   "plannedMenu": {
     "$comment": "Maketda bor, kodda hali yo'q menyu bandlari (ega tasdig'i 2026-10-19). Faqat qisqaradi: band menuConfig.tsx ga qo'shilgach — shu yerdan olinadi.",
-    "admin": ["notifications"],
     "market": ["operators"],
     "market_operator": ["dashboard", "orders", "newOrders", "products", "earnings"],
     "logist": ["dashboard", "orders", "mails", "batches", "couriers", "regions"],
@@ -1759,33 +1759,14 @@
     "market_operator-new-orders-create-manual": "Kodda yo'q: market_operator roli frontendda yo'q; POST orders MARKET_OPERATOR'ga yopiq (Taklif · backend kerak).",
     "market_operator-earnings": "Kodda yo'q: market_operator roli frontendda yo'q; balans/daromad/to'lov uchun /me endpoint kerak.",
     "market_operator-earnings-no-commission": "Kodda yo'q (market_operator roli frontendda yo'q).",
-    "superadmin-notifications-row-menu": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
-    "superadmin-notifications-row-menu-inactive": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
-    "superadmin-notifications-connected": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
-    "superadmin-notifications-empty": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
-    "superadmin-notifications-loading": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
-    "superadmin-notifications-error": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
     "superadmin-notifications-create-link-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
     "superadmin-notifications-create-expired-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
     "superadmin-notifications-create-exists-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
     "superadmin-notifications-create-exists-inactive-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
-    "superadmin-notifications-deactivate-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
-    "superadmin-notifications-activate-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
-    "admin-notifications-row-menu": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
-    "admin-notifications-row-menu-inactive": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
-    "admin-notifications-connected": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
-    "admin-notifications-empty": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
-    "admin-notifications-loading": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
-    "admin-notifications-error": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
     "admin-notifications-create-link-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
     "admin-notifications-create-expired-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
     "admin-notifications-create-exists-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
     "admin-notifications-create-exists-inactive-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
-    "admin-notifications-deactivate-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
-    "admin-notifications-activate-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
-    "admin-notifications-telegram-groups": "Admin uchun (NG-S2) — kodda yo'q: canViewNotifications faqat superadmin.",
-    "admin-notifications-create-dialog": "Admin uchun (NG-S2) — kodda yo'q: canViewNotifications faqat superadmin.",
-    "admin-notifications-delete-dialog": "Admin uchun (NG-S2) — kodda yo'q: canViewNotifications faqat superadmin.",
     "superadmin-notifications-send-result": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
     "superadmin-notifications-send-unknown": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
     "superadmin-notifications-sent": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
@@ -1954,9 +1935,8 @@
     "superadmin-neworders-branch-batch-detail-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi, «N / jami ta tanlandi», «Hammasi tanlandi»; qabul — sahifadagi tugma.",
     "admin-neworders-branch-batch-detail-camera": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi, «N / jami ta tanlandi», «Hammasi tanlandi»; qabul — sahifadagi tugma.",
     "courier-courier-bulk-scanner-camera-list": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. «Skanerlanganlar · N / M · K ta bekor, L ta ertaga» varag'i, «Bekor qilish» belgini oladi, «Skanerlanmagan N ta buyurtma sotilgan deb belgilanadi».",
-    "superadmin-notifications-telegram-groups": "Kodda bor (v2); taklif: «Holat» ustunida nofaol sababi (inactive_reason, NG-S1), qo'shish — faqat bot havolasi, «Tahrirlash» olib tashlanadi (NG-S4).",
-    "superadmin-notifications-create-dialog": "Kodda bor (v2); taklif: «Holat» ustunida nofaol sababi (inactive_reason, NG-S1), qo'shish — faqat bot havolasi, «Tahrirlash» olib tashlanadi (NG-S4).",
-    "superadmin-notifications-delete-dialog": "Kodda bor (v2); taklif: «Holat» ustunida nofaol sababi (inactive_reason, NG-S1), qo'shish — faqat bot havolasi, «Tahrirlash» olib tashlanadi (NG-S4).",
+    "superadmin-notifications-create-dialog": "Kodda bor (v2): qo'shish — bir martalik bot havolasi (maketdagi qo'lda guruh ID formasi emas; «Tahrirlash» NG-A da olib tashlandi, NG-S4); havola tayyor / muddati tugadi / ulangan / ulangan, lekin nofaol oynalari — NG-B.",
+    "admin-notifications-create-dialog": "Kodda bor (v2): qo'shish — bir martalik bot havolasi (maketdagi qo'lda guruh ID formasi emas; «Tahrirlash» NG-A da olib tashlandi, NG-S4); havola tayyor / muddati tugadi / ulangan / ulangan, lekin nofaol oynalari — NG-B.",
     "admin-notifications-send": "Kodda bor (canSendNotifications admin'ni o'tkazadi); natija bloki va «Yuborilganlar» havolasi — taklif (notif-send).",
     "admin-notifications-send-confirm-dialog": "Kodda bor (canSendNotifications admin'ni o'tkazadi); natija bloki va «Yuborilganlar» havolasi — taklif (notif-send).",
     "superadmin-users-detail-telegram": "Kodda bor (MarketTelegramGroupLinkCard, MarketTelegramGroupPiiCard); taklif: har xabar turi qatorida «Ulash», PII kaliti shu kartada (tg-link S3, S5).",
@@ -1972,7 +1952,13 @@
     "market-new-orders-cancelled": "«Olib ketishga tayyor · Yo'lda · Olganlarim» chiplari (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md), ega javobi 2) — 2- va 3-chip Taklif · backend kerak (BG3); ro'yxatning o'zi kodda bor.",
     "market-new-orders-cancelled-qr-dialog": "QR ostida 6 xonali PIN (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md), ega javobi 1) — Taklif · backend kerak (BG6).",
     "superadmin-integrations-panel-settlement": "Kodda «Olingan to'lovlar» bloki va bekor qilish (IS-3), «Qarz yozuvlari» dagi «To'lov №» ustuni, ortiqcha summa va natija oynasi (IS-2) hali yo'q; «Kim kiritdi / bekor qildi» ismi — Taklif · backend kerak. Qolgani v2 (IS-1: «To'lov asosiy kassaga o'zi yoziladi» + Asosiy kassa havolasi, «Qoldiq» — to'lanishi kerak, yopilmagan qarz, hamkor avansi, formula, «Qarz yo'q»).",
-    "admin-integrations-conn-settlement": "Kodda «Olingan to'lovlar» bloki va bekor qilish (IS-3), «Qarz yozuvlari» dagi «To'lov №» ustuni, ortiqcha summa va natija oynasi (IS-2) hali yo'q; «Kim kiritdi / bekor qildi» ismi — Taklif · backend kerak. Qolgani v2 (IS-1: «To'lov asosiy kassaga o'zi yoziladi» + Asosiy kassa havolasi, «Qoldiq» — to'lanishi kerak, yopilmagan qarz, hamkor avansi, formula, «Qarz yo'q»)."
+    "admin-integrations-conn-settlement": "Kodda «Olingan to'lovlar» bloki va bekor qilish (IS-3), «Qarz yozuvlari» dagi «To'lov №» ustuni, ortiqcha summa va natija oynasi (IS-2) hali yo'q; «Kim kiritdi / bekor qildi» ismi — Taklif · backend kerak. Qolgani v2 (IS-1: «To'lov asosiy kassaga o'zi yoziladi» + Asosiy kassa havolasi, «Qoldiq» — to'lanishi kerak, yopilmagan qarz, hamkor avansi, formula, «Qarz yo'q»).",
+    "superadmin-notifications-telegram-groups": "Kodda bor (NG-A, v2). Farq: nofaollik sababi (inactive_reason + inactive_at — backend G085w5Qr, NG-C) API'da yo'q — maketdagi sababga bog'liq matnlar («Bot guruhdan chiqarilgan — …», «Qo'lda nofaol qilingan», «Guruh topilmadi — …») o'rniga umumiy neytral izoh «Xabarlar bu guruhga yuborilmayapti» (D1), «Nofaol» belgisi neytral ton; faollashtirish oynasidagi ogohlantirish sarlavhasi «Bot guruhda ekanini tekshiring».",
+    "superadmin-notifications-row-menu-inactive": "Kodda bor (NG-A, v2). Farq: nofaollik sababi (inactive_reason + inactive_at — backend G085w5Qr, NG-C) API'da yo'q — maketdagi sababga bog'liq matnlar («Bot guruhdan chiqarilgan — …», «Qo'lda nofaol qilingan», «Guruh topilmadi — …») o'rniga umumiy neytral izoh «Xabarlar bu guruhga yuborilmayapti» (D1), «Nofaol» belgisi neytral ton; faollashtirish oynasidagi ogohlantirish sarlavhasi «Bot guruhda ekanini tekshiring».",
+    "superadmin-notifications-activate-dialog": "Kodda bor (NG-A, v2). Farq: nofaollik sababi (inactive_reason + inactive_at — backend G085w5Qr, NG-C) API'da yo'q — maketdagi sababga bog'liq matnlar («Bot guruhdan chiqarilgan — …», «Qo'lda nofaol qilingan», «Guruh topilmadi — …») o'rniga umumiy neytral izoh «Xabarlar bu guruhga yuborilmayapti» (D1), «Nofaol» belgisi neytral ton; faollashtirish oynasidagi ogohlantirish sarlavhasi «Bot guruhda ekanini tekshiring».",
+    "admin-notifications-telegram-groups": "Kodda bor (NG-A, v2). Farq: nofaollik sababi (inactive_reason + inactive_at — backend G085w5Qr, NG-C) API'da yo'q — maketdagi sababga bog'liq matnlar («Bot guruhdan chiqarilgan — …», «Qo'lda nofaol qilingan», «Guruh topilmadi — …») o'rniga umumiy neytral izoh «Xabarlar bu guruhga yuborilmayapti» (D1), «Nofaol» belgisi neytral ton; faollashtirish oynasidagi ogohlantirish sarlavhasi «Bot guruhda ekanini tekshiring».",
+    "admin-notifications-row-menu-inactive": "Kodda bor (NG-A, v2). Farq: nofaollik sababi (inactive_reason + inactive_at — backend G085w5Qr, NG-C) API'da yo'q — maketdagi sababga bog'liq matnlar («Bot guruhdan chiqarilgan — …», «Qo'lda nofaol qilingan», «Guruh topilmadi — …») o'rniga umumiy neytral izoh «Xabarlar bu guruhga yuborilmayapti» (D1), «Nofaol» belgisi neytral ton; faollashtirish oynasidagi ogohlantirish sarlavhasi «Bot guruhda ekanini tekshiring».",
+    "admin-notifications-activate-dialog": "Kodda bor (NG-A, v2). Farq: nofaollik sababi (inactive_reason + inactive_at — backend G085w5Qr, NG-C) API'da yo'q — maketdagi sababga bog'liq matnlar («Bot guruhdan chiqarilgan — …», «Qo'lda nofaol qilingan», «Guruh topilmadi — …») o'rniga umumiy neytral izoh «Xabarlar bu guruhga yuborilmayapti» (D1), «Nofaol» belgisi neytral ton; faollashtirish oynasidagi ogohlantirish sarlavhasi «Bot guruhda ekanini tekshiring»."
   },
   "viewFiles": {
     "$comment": "Maket → uni chizadigan aniq fayl, agar route'ning asosiy faylidan farq qilsa (rolga xos komponent, alohida oyna fayli). SCREENS.md 2- va 4-bo'limlarida ko'rsatiladi.",
@@ -2171,7 +2157,17 @@
     "superadmin-integrations-new-partner-dialog": "src/pages/integrations/NewPartnerModal.tsx",
     "admin-integrations-new-partner-dialog": "src/pages/integrations/NewPartnerModal.tsx",
     "courier-scan-package-detail": "src/pages/scan/ui/ScanPackageDetail.tsx",
-    "courier-scan-post-detail": "src/pages/scan/ui/ScanPostDetail.tsx"
+    "courier-scan-post-detail": "src/pages/scan/ui/ScanPostDetail.tsx",
+    "superadmin-notifications-row-menu": "src/pages/notifications/ui/NotificationRowMenu.tsx",
+    "superadmin-notifications-row-menu-inactive": "src/pages/notifications/ui/NotificationRowMenu.tsx",
+    "superadmin-notifications-deactivate-dialog": "src/features/notification-toggle/ui/useToggleNotificationConfirm.tsx",
+    "superadmin-notifications-activate-dialog": "src/features/notification-toggle/ui/useToggleNotificationConfirm.tsx",
+    "admin-notifications-row-menu": "src/pages/notifications/ui/NotificationRowMenu.tsx",
+    "admin-notifications-row-menu-inactive": "src/pages/notifications/ui/NotificationRowMenu.tsx",
+    "admin-notifications-deactivate-dialog": "src/features/notification-toggle/ui/useToggleNotificationConfirm.tsx",
+    "admin-notifications-activate-dialog": "src/features/notification-toggle/ui/useToggleNotificationConfirm.tsx",
+    "admin-notifications-delete-dialog": "src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx",
+    "admin-notifications-create-dialog": "src/features/notification-create/ui/NotificationFormModal.tsx"
   },
   "tizim": {
     "main": {

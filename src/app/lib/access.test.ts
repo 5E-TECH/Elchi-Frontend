@@ -40,6 +40,8 @@ import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
  * yopiq (ega LG-S1) — `canViewPaymentsPage`, `canViewFinancialBalance` qatorlarida `lg` hech qachon ✓ bo'lmaydi.
  * Yangi qatorlar: `canViewProducts` (routes.tsx dagi qo'lda nusxa o'rniga) va `canViewAdminDashboard`
  * (admin bosh sahifasi — sizish yopildi, mDfjKeQi).
+ *
+ * 2026-10-21 (NG-A): `canViewNotifications` · admin — → ✓ (ega NG-S2; backend `/notifications` SUPERADMIN + ADMIN).
  */
 
 const state = (role: string | null, branchType?: BranchType): RootState =>
@@ -73,7 +75,7 @@ const MATRIX: Record<string, string> = {
   canViewMails: "   ✓   ✓   —   ✓   ✓   ✓   —   ✓   ✓   —   —   —   —",
   canViewUsers: "   ✓   ✓   —   —   —   ✓   ✓   ✓   ✓   —   —   —   —",
   canViewFinancialBalance: "✓ ✓   —   —   —   —   —   —   —   —   —   —   —",
-  canViewNotifications: "✓   —   —   —   —   —   —   —   —   —   —   —   —",
+  canViewNotifications: "✓   ✓   —   —   —   —   —   —   —   —   —   —   —",
   canSendNotifications: "✓   ✓   —   —   —   —   —   —   —   —   —   —   —",
   canViewBranches: "✓    —   —   —   —   —   —   —   —   —   —   —   —",
   canViewLogs: "    ✓   —   —   —   —   —   —   —   —   —   —   —   —",
