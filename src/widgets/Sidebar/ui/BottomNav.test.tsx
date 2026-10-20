@@ -26,7 +26,16 @@ vi.mock("../../../shared/lib/navigationPending", async (importOriginal) => ({
   },
 }));
 
-type DesignRole = "superadmin" | "admin" | "manager" | "registrator" | "market" | "courier";
+type DesignRole =
+  | "superadmin"
+  | "admin"
+  | "manager"
+  | "registrator"
+  | "market"
+  | "courier"
+  | "logist"
+  | "market_operator"
+  | "investor";
 type DesignMenuItem = { key: string; label: string; short?: { uz: string; ru: string; en: string } };
 // Maket menyusi — kodda bor rollar, kodda hali yo'q bandlarsiz (`route-map.json` → `plannedMenu`).
 const ROLES = Object.fromEntries(CODE_DESIGN_ROLES.map((role) => [role, designRoleInCode(role)])) as unknown as Record<
@@ -137,9 +146,13 @@ describe("BottomNav — maketdagi bandlar (roles.json → bottomNav)", () => {
       const expected = ROLES[role].bottomNav.map((key) =>
         key === "@scan" ? "/scan" : key === "@menu" ? "button:Menyu" : menu.find((item) => item.label === key)?.to,
       );
-      const actual = cells().map((cell) =>
-        cell.tagName === "BUTTON" && cell.textContent?.includes("Menyu") ? "button:Menyu" : cell.getAttribute("href"),
-      );
+      // Menyusi hali bo'sh yangi rol (ROL-0) — pastki menyu umuman chizilmaydi.
+      const nav = screen.queryByRole("navigation");
+      const actual = nav
+        ? (Array.from(nav.children) as HTMLElement[]).map((cell) =>
+            cell.tagName === "BUTTON" && cell.textContent?.includes("Menyu") ? "button:Menyu" : cell.getAttribute("href"),
+          )
+        : [];
       expect(actual, `${role}: kod maketdagi pastki menyuga yetdi — route-map.json → plannedBottomNav dan oling`).not.toEqual(
         expected,
       );
@@ -147,18 +160,34 @@ describe("BottomNav — maketdagi bandlar (roles.json → bottomNav)", () => {
     }
   });
 
-  it("skaner rollarida «Skaner» markazda, «Menyu» oxirida; marketda skaner ham, «Menyu» ham yo'q", () => {
+  it("skaner rollarida «Skaner» markazda, «Menyu» oxirida; marketda skaner yo'q", () => {
     for (const role of ["superadmin", "admin", "manager", "registrator", "courier"] as const) {
       const { unmount } = renderNav(role, { branchType: DEFAULT_BRANCH[role] ?? null });
       expect(cells()[2]).toHaveAttribute("href", "/scan");
       expect(cells()[4].tagName).toBe("BUTTON");
       unmount();
     }
-    renderNav("market");
-    expect(hrefs()).toEqual(["/", "/orders", "/new-orders", "/products", "/cash-box"]);
-    expect(screen.queryByRole("button")).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Yaratish" })).toHaveAttribute("href", "/new-orders");
   });
+
+  it("market (ega MO-S1): Bosh sahifa · Buyurtmalar · Yaratish · To'lovlar · Menyu; «Mahsulotlar» — Menyu varaqasida", () => {
+    renderNav("market");
+    expect(hrefs()).toEqual(["/", "/orders", "/new-orders", "/cash-box", "button:Menyu"]);
+    expect(screen.queryByRole("link", { name: "Skaner" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Mahsulotlar" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Yaratish" })).toHaveAttribute("href", "/new-orders");
+    expect(screen.getByRole("link", { name: "To'lovlar" })).toHaveAttribute("href", "/cash-box");
+    expect(screen.getByRole("button", { name: "Menyu" })).toHaveAttribute("aria-haspopup", "dialog");
+  });
+
+  it.each(["logist", "market_operator", "investor"] as const)(
+    "%s (ROL-0): menyusi hali bo'sh — pastki menyu chizilmaydi (yolg'iz «Menyu» yoki admin havolalari yo'q)",
+    (role) => {
+      renderNav(role);
+      expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+      expect(screen.queryAllByRole("link")).toHaveLength(0);
+      expect(screen.queryByRole("button")).not.toBeInTheDocument();
+    },
+  );
 });
 
 describe("BottomNav — filial turi va ruxsat", () => {

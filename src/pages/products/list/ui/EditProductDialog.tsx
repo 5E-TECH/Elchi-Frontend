@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-products-edit-dialog, admin-products-edit-dialog, manager-products-edit-dialog, registrator-products-edit-dialog, market-products-edit-dialog
+// dizayn-v2: superadmin-products-edit-dialog, admin-products-edit-dialog, manager-products-edit-dialog, registrator-products-edit-dialog
 import { useEffect, useState } from "react";
 import { Pencil } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";

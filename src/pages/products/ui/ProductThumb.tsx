@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-products-list, admin-products-list, market-products-list, superadmin-products-create, admin-products-create, market-products-create
+// dizayn-v2: superadmin-products-list, admin-products-list, market-products-list, superadmin-products-create, admin-products-create
 import { useState } from "react";
 import { Tag } from "lucide-react";
 import { cx } from "../../../shared/lib/cx";

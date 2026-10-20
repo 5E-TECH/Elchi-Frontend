@@ -17,6 +17,8 @@ import {
   canViewPaymentsPage,
   canViewReturnsPage,
   canViewUsers,
+  canViewProducts,
+  canViewAdminDashboard,
 } from "./access";
 import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
 
@@ -32,6 +34,12 @@ import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
  * noma'lum turni rad etardi. Endi marshrut shu predikatni ishlatadi, shuning
  * uchun matritsa haqiqiy guard bilan moslashtirildi. `canDispatchPostToBranch`
  * qatori yangi (HQ registratori pastdagi alohida blokda).
+ *
+ * 2026-10-19 (ROL-0): yangi rollar ustunlari — logist (lg), market operatori (mo), investor (in). Hozircha
+ * hammasi rad: har rol o'z sahifasi bilan o'z katagini ochadi (LG-1, MO-2, IN-1 …). Logist moliyadan butunlay
+ * yopiq (ega LG-S1) — `canViewPaymentsPage`, `canViewFinancialBalance` qatorlarida `lg` hech qachon ✓ bo'lmaydi.
+ * Yangi qatorlar: `canViewProducts` (routes.tsx dagi qo'lda nusxa o'rniga) va `canViewAdminDashboard`
+ * (admin bosh sahifasi — sizish yopildi, mDfjKeQi).
  */
 
 const state = (role: string | null, branchType?: BranchType): RootState =>
@@ -53,28 +61,34 @@ const CASES: Case[] = [
   ["manager/REGIONAL", state("manager", "REGIONAL")],
   ["manager/HYBRID", state("manager", "HYBRID")],
   ["manager/noma'lum", state("manager")],
+  ["logist", state("logist")],
+  ["market_operator", state("market_operator")],
+  ["investor", state("investor")],
 ];
 
 /** `✓` = ruxsat, `—` = rad. Ustunlar CASES tartibida. */
 const MATRIX: Record<string, string> = {
-  //                sa  ad  mk  rg  cr  HQ  PU  RG  HY  ???
-  canViewOrders: "  ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓",
-  canViewMails: "   ✓   ✓   —   ✓   ✓   ✓   —   ✓   ✓   —",
-  canViewUsers: "   ✓   ✓   —   —   —   ✓   ✓   ✓   ✓   —",
-  canViewFinancialBalance: "✓ ✓   —   —   —   —   —   —   —   —",
-  canViewNotifications: "✓   —   —   —   —   —   —   —   —   —",
-  canSendNotifications: "✓   ✓   —   —   —   —   —   —   —   —",
-  canViewBranches: "✓    —   —   —   —   —   —   —   —   —",
-  canViewLogs: "    ✓   —   —   —   —   —   —   —   —   —",
+  //                sa  ad  mk  rg  cr  HQ  PU  RG  HY  ???  lg  mo  in
+  canViewOrders: "  ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   —   —   —",
+  canViewMails: "   ✓   ✓   —   ✓   ✓   ✓   —   ✓   ✓   —   —   —   —",
+  canViewUsers: "   ✓   ✓   —   —   —   ✓   ✓   ✓   ✓   —   —   —   —",
+  canViewFinancialBalance: "✓ ✓   —   —   —   —   —   —   —   —   —   —   —",
+  canViewNotifications: "✓   —   —   —   —   —   —   —   —   —   —   —   —",
+  canSendNotifications: "✓   ✓   —   —   —   —   —   —   —   —   —   —   —",
+  canViewBranches: "✓    —   —   —   —   —   —   —   —   —   —   —   —",
+  canViewLogs: "    ✓   —   —   —   —   —   —   —   —   —   —   —   —",
   // rg = filial turi noma'lum registrator → rad (routes.tsx guardi bilan bir xil).
-  canViewDispatchPage: "✓ ✓   —   —   —   —   —   ✓   ✓   —",
-  canDispatchPostToBranch: "✓ ✓ —   —   —   —   —   —   —   —",
-  canViewCourierBulkPage: "— — —   —   ✓   —   —   ✓   ✓   —",
-  canViewBatchesPage: "✓  ✓   —   —   —   ✓   ✓   —   ✓   —",
-  canViewReturnsPage: "✓  ✓   —   —   —   ✓   ✓   —   ✓   —",
-  canViewPaymentsPage: "✓  ✓   —   —   —   ✓   —   ✓   ✓   —",
-  canCreateOrders: "  ✓   ✓   ✓   ✓   —   ✓   ✓   —   ✓   —",
-  canReceiveExternalOrders: "✓ ✓ — ✓   —   ✓   ✓   —   ✓   —",
+  canViewDispatchPage: "✓ ✓   —   —   —   —   —   ✓   ✓   —   —   —   —",
+  canDispatchPostToBranch: "✓ ✓ —   —   —   —   —   —   —   —   —   —   —",
+  canViewCourierBulkPage: "— — —   —   ✓   —   —   ✓   ✓   —   —   —   —",
+  canViewBatchesPage: "✓  ✓   —   —   —   ✓   ✓   —   ✓   —   —   —   —",
+  canViewReturnsPage: "✓  ✓   —   —   —   ✓   ✓   —   ✓   —   —   —   —",
+  canViewPaymentsPage: "✓  ✓   —   —   —   ✓   —   ✓   ✓   —   —   —   —",
+  canCreateOrders: "  ✓   ✓   ✓   ✓   —   ✓   ✓   —   ✓   —   —   —   —",
+  canReceiveExternalOrders: "✓ ✓ — ✓   —   ✓   ✓   —   ✓   —   —   —   —",
+  canViewProducts: "✓   ✓   ✓   ✓   —   ✓   ✓   ✓   ✓   ✓   —   —   —",
+  // Menejer — o'z bosh sahifasi (`/branch-dashboard`), market — `MarketDashboardPage`.
+  canViewAdminDashboard: "✓ ✓ —   ✓   ✓   —   —   —   —   —   —   —   —",
 };
 
 const PREDICATES = {
@@ -94,13 +108,15 @@ const PREDICATES = {
   canViewPaymentsPage,
   canCreateOrders,
   canReceiveExternalOrders,
+  canViewProducts,
+  canViewAdminDashboard,
 };
 
 describe("kirish huquqi matritsasi", () => {
   for (const [name, predicate] of Object.entries(PREDICATES)) {
     const expected = MATRIX[name].trim().split(/\s+/);
 
-    it(`${name} — 10 ta rol/filial kombinatsiyasi`, () => {
+    it(`${name} — ${CASES.length} ta rol/filial kombinatsiyasi`, () => {
       expect(expected).toHaveLength(CASES.length);
 
       CASES.forEach(([caseName, s], index) => {

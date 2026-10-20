@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { RootState } from "../config/store";
-import { canCreateProducts, canHandoverCancelledToMarket } from "./access";
+import { canCreateProducts, canHandoverCancelledToMarket, canViewProducts } from "./access";
 import { getSidebarConfigForUser, type BranchType } from "../../widgets/Sidebar/model/menuConfig";
 
 const state = (role: string | null, branchType?: BranchType): RootState =>
@@ -48,6 +48,33 @@ describe("canCreateProducts (fix3 RBAC-17)", () => {
     expect(canCreateProducts(state("registrator", "HQ"))).toBe(true);
     expect(canCreateProducts(state("manager", "HYBRID"))).toBe(true);
     expect(canCreateProducts(state("courier"))).toBe(false);
+  });
+});
+
+describe("canViewProducts (ROL-0: routes.tsx dagi qo'lda nusxa o'rniga yagona predikat)", () => {
+  const ROLES = ["superadmin", "admin", "market", "registrator", "manager", "courier", "logist", "market_operator", "investor"];
+
+  it("rollar avvalgidek: superadmin, admin, market, registrator, menejer — ha; kuryer — yo'q", () => {
+    expect(ROLES.filter((role) => canViewProducts(state(role)))).toEqual([
+      "superadmin",
+      "admin",
+      "market",
+      "registrator",
+      "manager",
+    ]);
+  });
+
+  it("yarata oladigan har rol ro'yxatni ham ko'radi (yaratish sahifasidan qaytishda 403 yo'q)", () => {
+    for (const role of ROLES) {
+      if (canCreateProducts(state(role))) expect(canViewProducts(state(role)), role).toBe(true);
+    }
+  });
+
+  it("yangi rollar (logist, market operatori, investor) — hozircha yo'q (MH-1 / MO-2 ochadi)", () => {
+    for (const role of ["logist", "market_operator", "investor"]) {
+      expect(canViewProducts(state(role)), role).toBe(false);
+      expect(canCreateProducts(state(role)), role).toBe(false);
+    }
   });
 });
 

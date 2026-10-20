@@ -168,6 +168,35 @@ export const canCreateProducts: Predicate = hasRole(
   "manager",
 );
 
+/**
+ * Mahsulotlar ro'yxati (`/products`) — avval `routes.tsx` da qo'lda nusxalangan `canManageProducts` edi (ROL-0
+ * shu yerga ko'chirdi, rollar o'zgarmadi). MH-1 marketni faqat ko'rishga, MO-2 market operatorini shu yerda
+ * o'zgartiradi.
+ */
+export const canViewProducts: Predicate = hasRole(
+  "superadmin",
+  "admin",
+  "market",
+  "registrator",
+  "manager",
+);
+
+/**
+ * Admin `DashboardPage` (`/`) — kompaniya bo'yicha tushum, viloyatlar kesimi (`RegionOverviewCard`) va
+ * reytinglar. Faqat sanab o'tilgan rollar: yangi rol (logist, market operatori, investor) unga tushib qolmaydi —
+ * avval `DashboardEntry` qolgan har rolni shu sahifaga yuborardi va logist kompaniya tushumini ko'rardi
+ * (mDfjKeQi). Ularning o'z bosh sahifasi kelguncha `/` da 403 (LG-1, MO-2, IN-1 shu yerga o'z tarmog'ini qo'shadi).
+ * `operator` — avvalgidek (sahifa uni alohida qisqartiradi: kompaniya bloklarisiz). Market va menejerning o'z
+ * bosh sahifasi bor (`DashboardEntry`).
+ */
+export const canViewAdminDashboard: Predicate = hasRole(
+  "superadmin",
+  "admin",
+  "registrator",
+  "courier",
+  "operator",
+);
+
 export const canViewCourierBulkPage: Predicate = anyOf(
   hasRole("courier"),
   managerCan("dispatch"),

@@ -7,7 +7,7 @@ import { renderWithProviders } from "../../../test/test-utils";
 
 /**
  * Mahsulot yaratish — `/products/create-product/:id` (dizayn v2, maketlar `superadmin-products-create`,
- * `market-products-create`): haqiqiy UI orqali; API — `shared/api/api` mock'i. FormData `name` + xodimda
+ * `admin-products-create`): haqiqiy UI orqali; API — `shared/api/api` mock'i. FormData `name` + xodimda
  * `market_id` (+ rasm), tahrir rejimi (qalam → forma), nofaol market bloki, o'chirish tasdig'i.
  */
 
