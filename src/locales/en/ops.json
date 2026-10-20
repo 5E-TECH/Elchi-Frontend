@@ -234,15 +234,154 @@
   },
   "system": {
     "intro": {
-      "title": "System — analytics and services",
-      "description": "System health, analytics indicators and the QR token check."
+      "title": "System — services and analytics",
+      "description": "Service health, AI settings, analytics indicators and the QR token check."
     },
     "health": {
       "title": "System health",
-      "ok": "Running",
-      "okHint": "The server is responding to requests",
-      "error": "Error",
-      "errorHint": "The server didn't respond"
+      "badge": {
+        "ok": "Running",
+        "partial": "Partially running",
+        "down": "Down",
+        "unknown": "Unknown"
+      },
+      "meta": "{{count}} services · checked {{time}}",
+      "metaChecking": "{{count}} services · checking…",
+      "lastSuccess": "Last successful check: {{time}}",
+      "never": "—",
+      "refresh": "Refresh",
+      "checking": "Checking",
+      "loadingLabel": "Checking system health",
+      "and": "and",
+      "summary": {
+        "okTitle": "All services are running",
+        "okText": "{{ok}} of {{total}} services are responding",
+        "okLatency": "average response {{value}}",
+        "okUnknownTitle": "Connected services are running",
+        "okUnknownText": "{{ok}} of {{total}} services are responding; not connected in this environment: {{names}}.",
+        "partialTitle": "{{count}} services are not responding",
+        "partialText": "{{ok}} of {{total}} services are running. Actions related to {{areas}} may fail.",
+        "criticalTitleOne": "Core service is down: {{names}}",
+        "criticalTitleMany": "Core services are down: {{names}}",
+        "criticalRest": "The remaining {{count}} services are responding",
+        "criticalRestUnknown": "The remaining {{count}} services are responding; not connected in this environment: {{names}}",
+        "criticalAux": "{{count}} supporting services are down as well.",
+        "downTitle": "No service is responding",
+        "downTextTimeout": "None of the {{count}} services responded within 1.5 seconds. This usually means the internal message queue or the server has stopped.",
+        "downText": "All {{count}} services are down. This usually means the internal message queue or the server has stopped."
+      },
+      "impact": {
+        "IDENTITY": "Sign-in and user management don't work.",
+        "ORDER": "Creating orders, changing their status and selling don't work.",
+        "FINANCE": "Payments, cashbox and balance operations don't work.",
+        "LOGISTICS": "Sending and receiving mail and batches don't work."
+      },
+      "counts": {
+        "ok": "Running: {{count}}",
+        "down": "Down: {{count}}",
+        "unknown": "Unknown: {{count}}"
+      },
+      "list": {
+        "show": "Service list",
+        "hide": "Hide service list",
+        "count": "· {{count}}",
+        "label": "Service health"
+      },
+      "columns": {
+        "service": "Service",
+        "status": "Status",
+        "latency": "Response time",
+        "error": "Error"
+      },
+      "core": "core",
+      "ms": "{{value}} ms",
+      "state": {
+        "ok": "Running",
+        "down": "Down",
+        "unknown": "Unknown"
+      },
+      "problem": {
+        "timeout": {
+          "title": "No response in time",
+          "hint": "Took longer than 1.5 seconds"
+        },
+        "reported": {
+          "title": "The service reported itself unhealthy",
+          "hint": "A related system may have failed its check",
+          "hintNotification": "The bot token or a related system may have failed its check"
+        },
+        "notRegistered": {
+          "title": "Service not connected",
+          "hint": "The {{area}} service isn't configured in this environment"
+        },
+        "failed": {
+          "title": "The service returned an error",
+          "hint": "The detailed reason is in the server log"
+        }
+      },
+      "error": {
+        "title": "Couldn't get the system health",
+        "text": "The health request got no answer. It's impossible to tell right now whether services are running — try again a bit later.",
+        "code": "Error code: {{status}}"
+      },
+      "services": {
+        "IDENTITY": {
+          "name": "Users and sign-in",
+          "area": "sign-in"
+        },
+        "ORDER": {
+          "name": "Orders",
+          "area": "orders"
+        },
+        "CATALOG": {
+          "name": "Product catalogue",
+          "area": "products"
+        },
+        "LOGISTICS": {
+          "name": "Logistics — mail and batches",
+          "area": "mail and batches"
+        },
+        "FINANCE": {
+          "name": "Finance and cashbox",
+          "area": "finance and cashbox"
+        },
+        "NOTIFICATION": {
+          "name": "Notifications and Telegram bot",
+          "area": "notifications"
+        },
+        "INTEGRATION": {
+          "name": "Integrations",
+          "area": "integrations"
+        },
+        "ANALYTICS": {
+          "name": "Analytics",
+          "area": "analytics"
+        },
+        "BRANCH": {
+          "name": "Branches",
+          "area": "branches"
+        },
+        "INVESTOR": {
+          "name": "Investors",
+          "area": "investors"
+        },
+        "FILE": {
+          "name": "Files",
+          "area": "files"
+        },
+        "C2C": {
+          "name": "Customer-to-customer sales (C2C)",
+          "area": "C2C sales"
+        },
+        "SEARCH": {
+          "name": "Search",
+          "area": "search"
+        },
+        "AI": {
+          "name": "AI orders",
+          "area": "AI"
+        }
+      }
     },
     "sla": {
       "title": "On time (SLA)",
@@ -272,7 +411,9 @@
       "ratingEmpty": "No data — the rating hasn't been calculated yet",
       "degradedTitle": "Some indicators weren't calculated",
       "degradedText": "Some services didn't respond — the values are incomplete.",
-      "loadError": "Couldn't load analytics indicators"
+      "loadError": "Couldn't load analytics indicators",
+      "loadErrorText": "The analytics service didn't respond.",
+      "loadingLabel": "Loading analytics indicators"
     },
     "scan": {
       "title": "Check by token",

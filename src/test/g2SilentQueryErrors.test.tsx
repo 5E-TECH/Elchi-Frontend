@@ -151,7 +151,7 @@ describe("G2 so'rovlari — sahifadagi xato bilan global xabar takrorlanmaydi", 
       () => useLogisticsCoverage().useGetReturnRequestsList(undefined, S),
     ],
     ["tizim KPI (ops)", () => useMiscCoverage().useGetAnalyticsKpi(undefined, S)],
-    ["tizim holati (ops)", () => useMiscCoverage().useGetHealthLiveness(S)],
+    ["tizim holati — readiness (ops)", () => useMiscCoverage().useGetHealthReadiness(S)],
     ["token bo'yicha skan (ops)", () => useMiscCoverage().useGetScanByToken("abc", true, S)],
     // Hisob
     ["profil", () => useUser().useGetMyProfile(S)],

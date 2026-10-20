@@ -234,15 +234,154 @@
   },
   "system": {
     "intro": {
-      "title": "Tizim — analitika va xizmatlar",
-      "description": "Tizim holati, analitika ko'rsatkichlari va QR-token tekshirish oynasi."
+      "title": "Tizim — xizmatlar va analitika",
+      "description": "Xizmatlar holati, AI sozlamalari, analitika ko'rsatkichlari va QR-token tekshirish."
     },
     "health": {
       "title": "Tizim holati",
-      "ok": "Ishlayapti",
-      "okHint": "Server so'rovlarga javob bermoqda",
-      "error": "Xatolik",
-      "errorHint": "Server javob bermadi"
+      "badge": {
+        "ok": "Ishlayapti",
+        "partial": "Qisman ishlayapti",
+        "down": "Ishlamayapti",
+        "unknown": "Noma'lum"
+      },
+      "meta": "{{count}} ta xizmat · {{time}} tekshirildi",
+      "metaChecking": "{{count}} ta xizmat · tekshirilmoqda…",
+      "lastSuccess": "Oxirgi muvaffaqiyatli tekshiruv: {{time}}",
+      "never": "—",
+      "refresh": "Yangilash",
+      "checking": "Tekshirilmoqda",
+      "loadingLabel": "Tizim holati tekshirilmoqda",
+      "and": "va",
+      "summary": {
+        "okTitle": "Hamma xizmatlar ishlayapti",
+        "okText": "{{total}} ta xizmatdan {{ok}} tasi so'rovlarga javob bermoqda",
+        "okLatency": "o'rtacha javob {{value}}",
+        "okUnknownTitle": "Ulangan xizmatlar ishlayapti",
+        "okUnknownText": "{{total}} ta xizmatdan {{ok}} tasi so'rovlarga javob bermoqda, {{names}} xizmati bu muhitda ulanmagan.",
+        "partialTitle": "{{count}} ta xizmat javob bermayapti",
+        "partialText": "{{total}} ta xizmatdan {{ok}} tasi ishlayapti. {{areas}} bilan bog'liq amallar xato berishi mumkin.",
+        "criticalTitleOne": "Asosiy xizmat ishlamayapti: {{names}}",
+        "criticalTitleMany": "Asosiy xizmatlar ishlamayapti: {{names}}",
+        "criticalRest": "Qolgan {{count}} ta xizmat javob bermoqda",
+        "criticalRestUnknown": "Qolgan {{count}} ta xizmat javob bermoqda, {{names}} xizmati bu muhitda ulanmagan",
+        "criticalAux": "Yordamchi xizmatlardan {{count}} tasi ham ishlamayapti.",
+        "downTitle": "Hech bir xizmat javob bermayapti",
+        "downTextTimeout": "Barcha {{count}} ta xizmat 1,5 soniya ichida javob bermadi. Odatda bu ichki xabarlar navbati yoki server to'xtaganini bildiradi.",
+        "downText": "Barcha {{count}} ta xizmat ishlamayapti. Odatda bu ichki xabarlar navbati yoki server to'xtaganini bildiradi."
+      },
+      "impact": {
+        "IDENTITY": "Tizimga kirish va foydalanuvchilarni boshqarish ishlamaydi.",
+        "ORDER": "Buyurtma yaratish, holatini o'zgartirish va sotish ishlamaydi.",
+        "FINANCE": "To'lovlar, kassa va balans amallari ishlamaydi.",
+        "LOGISTICS": "Pochta va paketlarni jo'natish hamda qabul qilish ishlamaydi."
+      },
+      "counts": {
+        "ok": "Ishlayapti: {{count}}",
+        "down": "Ishlamayapti: {{count}}",
+        "unknown": "Noma'lum: {{count}}"
+      },
+      "list": {
+        "show": "Xizmatlar ro'yxati",
+        "hide": "Xizmatlar ro'yxatini yashirish",
+        "count": "· {{count}} ta",
+        "label": "Xizmatlar holati"
+      },
+      "columns": {
+        "service": "Xizmat",
+        "status": "Holat",
+        "latency": "Javob vaqti",
+        "error": "Xato"
+      },
+      "core": "asosiy",
+      "ms": "{{value}} ms",
+      "state": {
+        "ok": "Ishlayapti",
+        "down": "Ishlamayapti",
+        "unknown": "Noma'lum"
+      },
+      "problem": {
+        "timeout": {
+          "title": "Javob kutilgan vaqtda kelmadi",
+          "hint": "1,5 soniyadan oshdi"
+        },
+        "reported": {
+          "title": "Xizmat o'zini nosoz deb bildirdi",
+          "hint": "Bog'liq tizim tekshiruvdan o'tmagan bo'lishi mumkin",
+          "hintNotification": "Bot tokeni yoki bog'liq tizim tekshiruvdan o'tmagan bo'lishi mumkin"
+        },
+        "notRegistered": {
+          "title": "Xizmat ulanmagan",
+          "hint": "Bu muhitda {{area}} xizmati sozlanmagan"
+        },
+        "failed": {
+          "title": "Xizmat xato qaytardi",
+          "hint": "Batafsil sabab server jurnalida"
+        }
+      },
+      "error": {
+        "title": "Tizim holatini olib bo'lmadi",
+        "text": "Holat so'rovi javobsiz qoldi. Xizmatlar ishlayotgan yoki ishlamayotganini hozir aytib bo'lmaydi — birozdan keyin qayta urining.",
+        "code": "Xato kodi: {{status}}"
+      },
+      "services": {
+        "IDENTITY": {
+          "name": "Foydalanuvchilar va kirish",
+          "area": "tizimga kirish"
+        },
+        "ORDER": {
+          "name": "Buyurtmalar",
+          "area": "buyurtmalar"
+        },
+        "CATALOG": {
+          "name": "Mahsulotlar katalogi",
+          "area": "mahsulotlar"
+        },
+        "LOGISTICS": {
+          "name": "Logistika — pochta va paketlar",
+          "area": "pochta va paketlar"
+        },
+        "FINANCE": {
+          "name": "Moliya va kassa",
+          "area": "moliya va kassa"
+        },
+        "NOTIFICATION": {
+          "name": "Bildirishnomalar va Telegram bot",
+          "area": "bildirishnomalar"
+        },
+        "INTEGRATION": {
+          "name": "Integratsiyalar",
+          "area": "integratsiyalar"
+        },
+        "ANALYTICS": {
+          "name": "Analitika",
+          "area": "analitika"
+        },
+        "BRANCH": {
+          "name": "Filiallar",
+          "area": "filiallar"
+        },
+        "INVESTOR": {
+          "name": "Investorlar",
+          "area": "investorlar"
+        },
+        "FILE": {
+          "name": "Fayllar",
+          "area": "fayllar"
+        },
+        "C2C": {
+          "name": "Mijozlararo savdo (C2C)",
+          "area": "C2C savdo"
+        },
+        "SEARCH": {
+          "name": "Qidiruv",
+          "area": "qidiruv"
+        },
+        "AI": {
+          "name": "AI buyurtma",
+          "area": "AI"
+        }
+      }
     },
     "sla": {
       "title": "O'z vaqtida (SLA)",
@@ -272,7 +411,9 @@
       "ratingEmpty": "Ma'lumot yo'q — reyting hali hisoblanmagan",
       "degradedTitle": "Ko'rsatkichlarning bir qismi hisoblanmadi",
       "degradedText": "Ba'zi xizmatlar javob bermadi — qiymatlar to'liq emas.",
-      "loadError": "Analitika ko'rsatkichlarini olib bo'lmadi"
+      "loadError": "Analitika ko'rsatkichlarini olib bo'lmadi",
+      "loadErrorText": "Analitika xizmati javob bermadi.",
+      "loadingLabel": "Analitika ko'rsatkichlari yuklanmoqda"
     },
     "scan": {
       "title": "Token orqali tekshirish",
