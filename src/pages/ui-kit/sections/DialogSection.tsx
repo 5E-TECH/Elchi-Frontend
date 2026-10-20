@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { ArrowLeftRight, CalendarClock, Check, Download, Timer, Trash2, UserX } from "lucide-react";
-import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
+import { ArrowLeftRight, CalendarClock, Check, Download, Timer, Trash2, TriangleAlert, UserX } from "lucide-react";
+import { formatMoneyLocalized, formatSignedMoneyLocalized } from "../../../shared/lib/formatMoney";
 import {
   Badge,
   Button,
@@ -72,15 +72,32 @@ const PhoneStage = ({ children }: { children: ReactNode }) => (
 const SUMMARY = "m-0 flex flex-col rounded-xl bg-sunken px-4 py-1 text-sm";
 const SUMMARY_ROW = "flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 py-2";
 
-/** «Smenani yopish» oynasining tanasi (maket `manager-payments-close-shift-dialog`). */
+/**
+ * «Smenani yopish» oynasining tanasi (maket `manager-payments-close-shift-dialog`): sanalgan naqd (majburiy) va
+ * karta (ixtiyoriy), ostida kutilgan summa va «Farq» bloki, farq bo'lsa ogohlantirish va majburiy izoh.
+ * Haqiqiy oyna — `pages/payments/components/CloseShiftPopup.tsx`.
+ */
 const CloseShiftBody = () => {
   const { t } = useTranslation("ui");
+  const [cash, setCash] = useState("2925000");
+  const [card, setCard] = useState("");
   const [comment, setComment] = useState("");
   const rows: Array<[string, string]> = [
     [t("dialogs.demo.shiftCurrent"), t("dialogs.demo.shiftCurrentValue")],
     [t("dialogs.demo.shiftOpenedBy"), t("dialogs.demo.shiftOpenedByValue")],
-    [t("dialogs.demo.shiftCash"), formatMoneyLocalized(3785000)],
   ];
+  const expected = (amount: number) => (
+    <>
+      {t("dialogs.demo.shiftExpected")}{" "}
+      <span className="whitespace-nowrap font-semibold text-text">{formatMoneyLocalized(amount)}</span>
+    </>
+  );
+  const diffRow = (value: ReactNode) => (
+    <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5 rounded-[10px] bg-sunken px-3 py-2">
+      <span className="text-[13px] text-text-muted">{t("dialogs.demo.shiftDiff")}</span>
+      <span className="inline-flex flex-wrap items-center gap-2">{value}</span>
+    </div>
+  );
   return (
     <>
       <dl className={SUMMARY}>
@@ -91,11 +108,34 @@ const CloseShiftBody = () => {
           </div>
         ))}
       </dl>
-      <div role="note" className="flex items-start gap-3 rounded-xl bg-info-soft px-4 py-3 text-info-fg">
-        <Download aria-hidden="true" size={18} className="mt-px shrink-0" />
-        <p className="m-0 min-w-0 text-[13px] text-text">{t("dialogs.demo.shiftExcel")}</p>
+      <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(220px,100%),1fr))]">
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <Field label={t("dialogs.demo.shiftCountedCash")} required hint={expected(2905000)}>
+            <TextInput mode="money" size="lg" value={cash} onValueChange={setCash} placeholder="0" />
+          </Field>
+          {diffRow(
+            <>
+              <span className="whitespace-nowrap font-semibold text-warning-fg">
+                {formatSignedMoneyLocalized(20000)}
+              </span>
+              <Badge tone="warning" dot>
+                {t("dialogs.demo.shiftSurplus")}
+              </Badge>
+            </>,
+          )}
+        </div>
+        <div className="flex min-w-0 flex-col gap-1.5">
+          <Field label={t("dialogs.demo.shiftCountedCard")} optional hint={expected(880000)}>
+            <TextInput mode="money" size="lg" value={card} onValueChange={setCard} placeholder="0" />
+          </Field>
+          {diffRow(<Badge>{t("dialogs.demo.shiftNotCounted")}</Badge>)}
+        </div>
       </div>
-      <Field label={t("dialogs.demo.shiftComment")} optional>
+      <div role="note" className="flex items-start gap-3 rounded-xl bg-warning-soft px-4 py-3 text-sm text-warning-fg">
+        <TriangleAlert aria-hidden="true" size={18} className="mt-px shrink-0" />
+        <span className="min-w-0 font-bold text-text">{t("dialogs.demo.shiftDiffAlert")}</span>
+      </div>
+      <Field label={t("dialogs.demo.shiftComment")} required hint={t("dialogs.demo.shiftCommentHint")}>
         <TextInput
           multiline
           rows={3}
@@ -104,6 +144,10 @@ const CloseShiftBody = () => {
           placeholder={t("dialogs.demo.shiftCommentPlaceholder")}
         />
       </Field>
+      <p className="m-0 flex items-start gap-2 text-xs text-text-muted">
+        <Download aria-hidden="true" size={16} className="mt-px shrink-0" />
+        <span className="min-w-0">{t("dialogs.demo.shiftNote")}</span>
+      </p>
     </>
   );
 };
@@ -201,6 +245,7 @@ const LiveDemo = () => {
         title={t("dialogs.demo.shiftTitle")}
         description={t("dialogs.demo.shiftDescription")}
         icon={Timer}
+        size="lg"
         onSubmit={(event) => {
           event.preventDefault();
           setDialogOpen(false);

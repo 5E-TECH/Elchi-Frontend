@@ -179,9 +179,9 @@ export const API_ENDPOINTS = {
     MAIN: "finance/cashbox/main", // was stale "cashbox/main"
     SPEND: "finance/cashbox/spend",
     FILL: "finance/cashbox/fill",
-    // Shifts (smena) — repointed from stale "cashbox/shift/*" to "finance/shift/*".
-    // Backend has no "current shift" route; GET /finance/shift (filters) is used.
-    SHIFT_CURRENT: "finance/shift",
+    // Smena (kfdfYDik): joriy holat — `GET finance/shift/current` (`data.shift` — ochiq smena yoki null,
+    // `data.required`); kassa doirasi JWT'dan (SA/admin — MAIN, menejer — o'z filiali). Ro'yxat — `finance/shift`.
+    SHIFT_CURRENT: "finance/shift/current",
     SHIFT_HISTORY: "finance/shift",
     SHIFT_OPEN: "finance/shift/open",
     SHIFT_CLOSE: "finance/shift/close",
@@ -209,10 +209,6 @@ export const API_ENDPOINTS = {
     // Salary
     SALARY: "finance/salary", // POST create / PATCH update
     SALARY_BY_USER: (userId: string | number) => `finance/salary/${userId}`,
-    // Shifts
-    SHIFT: "finance/shift",
-    SHIFT_OPEN: "finance/shift/open",
-    SHIFT_CLOSE: "finance/shift/close",
     // Operators (commission) — read by admins; operator reads own
     OPERATOR_PAYMENTS: "finance/operator-payments", // POST payout to operator
     OPERATOR_BALANCE: (operatorId: string | number) => `finance/operators/${operatorId}/balance`,
