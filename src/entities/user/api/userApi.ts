@@ -145,67 +145,13 @@ const normalizeUserListResponse = (
   };
 };
 
-const dedupeUsersById = (items: User[]) => {
-  const usersById = new Map<string, User>();
-
-  items.forEach((item, index) => {
-    const record = asRecord(item);
-    const id = String(record.id ?? record._id ?? index);
-    usersById.set(id, item);
-  });
-
-  return Array.from(usersById.values());
-};
-
-const fetchUserList = async (params?: IUserFilter) => {
-  const normalizedRole = String(params?.role ?? "").toLowerCase();
-  const shouldMergeMarketRoles = normalizedRole === "market" || normalizedRole === "marketing";
-
-  if (!shouldMergeMarketRoles) {
-    const response = await api.get(API_ENDPOINTS.USERS.BASE, { params });
-    return normalizeUserListResponse(response.data, params);
-  }
-
-  const page = Math.max(1, toNumber(params?.page, 1));
-  const limit = Math.max(1, toNumber(params?.limit, 100));
-  const fetchLimit = Math.max(limit * page, 1000);
-  const baseParams = { ...params, page: 1, limit: fetchLimit };
-
-  const responses = await Promise.all(
-    ["market", "marketing"].map((role) =>
-      api.get(API_ENDPOINTS.USERS.BASE, {
-        params: {
-          ...baseParams,
-          role,
-        },
-      }),
-    ),
-  );
-
-  const normalizedResponses = responses.map((response) =>
-    normalizeUserListResponse(response.data, baseParams),
-  );
-  const items = dedupeUsersById(
-    normalizedResponses.flatMap((response) => response.data.items),
-  );
-  const total = items.length;
-  const start = (page - 1) * limit;
-  const pagedItems = items.slice(start, start + limit);
-
-  return {
-    ...normalizedResponses[0],
-    data: {
-      items: pagedItems,
-      meta: {
-        ...normalizedResponses[0].data.meta,
-        page,
-        limit,
-        total,
-        totalPages: Math.max(1, Math.ceil(total / limit)),
-        totalMarket: total,
-      },
-    },
-  };
+/**
+ * `GET /users` ro'yxati — bitta so'rov, server sahifalashi (FY-1). Backend `Roles` da `marketing` roli yo'q:
+ * avvalgi «market + marketing» ikki so'rovi va klientdagi sahifalash olib tashlandi (`role=market` — oddiy so'rov).
+ */
+export const fetchUserList = async (params?: IUserFilter) => {
+  const response = await api.get(API_ENDPOINTS.USERS.BASE, { params });
+  return normalizeUserListResponse(response.data, params);
 };
 
 export const useUser = () => {

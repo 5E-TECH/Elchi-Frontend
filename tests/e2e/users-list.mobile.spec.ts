@@ -63,3 +63,46 @@ test("⭐ 390px: gorizontal oqib ketish yo'q", async ({ page }) => {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   expect(await page.locator("[data-shell-slot=content]").evaluate((node) => node.scrollWidth <= node.clientWidth)).toBe(true);
 });
+
+/**
+ * FY-1 (maket `superadmin-users-list-role-select`): telefonda 9 ta tab o'rnida «Rol: Hammasi» tanlovi —
+ * «Hammasi», so'ng «Xodimlar» va «Tashqi hisoblar» guruhlari; tanlov URL `role` ga yoziladi (o'sha kalit).
+ */
+test("⭐ 390 FY-1: tablar o'rnida «Rol» tanlovi, guruhlar, tanlangan rol so'rovga ketadi", async ({ page }) => {
+  const { listQueries } = await openUsers(page);
+  const content = page.locator("[data-shell-slot=content]");
+
+  await expect(content.getByRole("tablist", { name: "Rol bo'yicha" })).toBeHidden();
+  const select = content.getByRole("combobox", { name: "Rol" });
+  await expect(select).toBeVisible();
+  await expect(select).toContainText("Hammasi");
+  const box = await select.boundingBox();
+  expect(Math.round(box?.height ?? 0)).toBeGreaterThanOrEqual(44);
+
+  await select.click();
+  const list = page.getByRole("listbox", { name: "Rol bo'yicha" });
+  await expect(list).toBeVisible();
+  await expect(list.getByRole("group", { name: "Xodimlar" }).getByRole("option")).toHaveText([
+    "Adminlar",
+    "Menejerlar",
+    "Ro'yxatchilar",
+    "Kuryerlar",
+    "Logistlar",
+  ]);
+  await expect(list.getByRole("group", { name: "Tashqi hisoblar" }).getByRole("option")).toHaveText([
+    "Marketlar",
+    "Market operatorlari",
+    "Investorlar",
+  ]);
+  for (const option of await list.getByRole("option").all()) {
+    expect(Math.round((await option.boundingBox())?.height ?? 0)).toBeGreaterThanOrEqual(44);
+  }
+
+  await list.getByRole("option", { name: "Logistlar" }).click();
+  await expect(page).toHaveURL(/[?&]role=logist\b/);
+  await expect.poll(() => listQueries.at(-1)?.get("role")).toBe("logist");
+  await expect(select).toContainText("Logistlar");
+  await expect(content.getByText("Foydalanuvchi 6", { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  expect(tooSmall(await tapTargets(page))).toEqual([]);
+});

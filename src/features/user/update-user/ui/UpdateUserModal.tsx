@@ -1,9 +1,10 @@
-// dizayn-v2: superadmin-users-edit-dialog, admin-users-edit-dialog, manager-users-edit-dialog
+// dizayn-v2: superadmin-users-edit-dialog, admin-users-edit-dialog, manager-users-edit-dialog, superadmin-users-edit-market-ai, superadmin-users-edit-market-ai-phone, superadmin-users-edit-courier-district
 import { memo, useEffect, useState, type ReactNode } from "react";
 import { Controller, useForm, type Path } from "react-hook-form";
 import { useSelector } from "react-redux";
 import { Eye, EyeOff, Pencil, UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { formatMoneyLocalized } from "../../../../shared/lib/formatMoney";
 import { useUser } from "../../../../entities/user/api/userApi";
 import type { UpdateUserRequest, User as UserType } from "../../../../entities/user/types/user";
 import { unwrapUserResponse } from "../../../../entities/user/lib/normalizeUser";
@@ -43,6 +44,9 @@ const toDigits = (value: unknown): string => {
 
 const parseAmount = (value: string): number => Number(value.replace(/\D/g, ""));
 
+/** Backend chegarasi (`AI_PRICE_PER_ORDER_MAX_UZS`, `UpdateAdminRequestDto.ai_price_per_order` maximum). */
+export const AI_PRICE_MAX_UZS = 1_000_000;
+
 /** Asosiy tarif: API `center` / `address` (eski yozuvlarda `home` — «Uygacha» bilan bir xil). */
 const toTariffOption = (value: unknown): "" | "center" | "address" =>
   value === "center" ? "center" : value === "address" || value === "home" ? "address" : "";
@@ -65,7 +69,8 @@ interface UpdateUserFormValues {
   tariff_home: string;
   tariff_center: string;
   default_tariff: string;
-  region_id: string;
+  /** Market AI buyurtma narxi (so'm). Bo'sh — global narx (`null`), sukut narx ko'rsatilmaydi (FY-S5). */
+  ai_price: string;
 }
 
 const INITIAL_VALUES: UpdateUserFormValues = {
@@ -79,7 +84,7 @@ const INITIAL_VALUES: UpdateUserFormValues = {
   tariff_home: "",
   tariff_center: "",
   default_tariff: "",
-  region_id: "",
+  ai_price: "",
 };
 
 const SERVER_FIELD_NAME_MAP: Record<string, Path<UpdateUserFormValues>> = {
@@ -92,11 +97,10 @@ const SERVER_FIELD_NAME_MAP: Record<string, Path<UpdateUserFormValues>> = {
   status: "status",
   salary: "salary",
   payment_day: "payment_day",
-  region: "region_id",
-  region_id: "region_id",
   tariff_home: "tariff_home",
   tariff_center: "tariff_center",
   default_tariff: "default_tariff",
+  ai_price_per_order: "ai_price",
 };
 
 /** Bo'lim sarlavhasi (`.el-overline`) va maydonlar to'ri (maket: `repeat(auto-fit, minmax(260px, 1fr))`). */
@@ -123,6 +127,12 @@ const FormSection = ({ title, compact = false, children }: { title: string; comp
  * «Nofaol qilishdan oldin tasdiq so'raladi»); rolga qarab «Market ma'lumotlari» / maosh va to'lov kuni / kuryer
  * tarifi; «Bekor qilish» · «O'zgarishlarni saqlash».
  *
+ * FY-1: market — «Market nomi *» va «AI narxi (1 buyurtma)» (`superadmin-users-edit-market-ai`; faqat superadmin/
+ * admin — backend boshqasiga 403; bo'sh → `null`, ya'ni global narx; sukut 300 ko'rsatilmaydi — FY-S5); logist —
+ * «Maosh va to'lov kuni»; kuryer — «Ish hududi» faqat o'qish (viloyat; tuman — backend kerak, maket
+ * `superadmin-users-edit-courier-district` qisman), filial «Boshqa filialga o'tkazish» orqali (FY-S4). O'lik
+ * `region_id` maydoni olib tashlandi (identity `updateUser` uni e'tiborsiz qoldiradi).
+ *
  * Props va xulq o'zgarmagan (spec §8.4; `/profile` ham shu oynani ochadi): faqat o'zgargan maydonlar
  * yuboriladi; nofaol qilish — tasdiq oynasi; o'z parolini o'zgartirgan foydalanuvchi darhol chiqariladi
  * (fix3b RBAC-09); backend maydon xatolari maydonga (`applyBackendFieldErrors`); to'lov kuni 1–30.
@@ -133,7 +143,8 @@ export const UpdateUserModal = memo(({
   initialUser = null,
   isOwnProfile = false,
 }: UpdateUserModalProps) => {
-  const { t } = useTranslation(["users", "common"]);
+  const { t, i18n } = useTranslation(["users", "common"]);
+  const language = i18n.resolvedLanguage ?? i18n.language;
   const authRole = useSelector((state: RootState) => state.role.role);
   const currentUserId = useSelector(
     (state: RootState) => state.user.user?.id ?? state.role.id,
@@ -148,7 +159,13 @@ export const UpdateUserModal = memo(({
     Boolean(userId && currentUserId && String(userId) === String(currentUserId));
 
   const shouldFetchUser = Boolean(userId && !initialUser);
-  const { data: rawUser, isLoading: isUserLoading } = useGetUserById(shouldFetchUser ? userId ?? "" : "");
+  // Ro'yxat qatorida (`GET /users`) kuryer viloyati yo'q — «Ish hududi» uchun tafsilot so'raladi (`GET /users/:id`).
+  const needsCourierRegion = Boolean(
+    userId && initialUser && !isOwnProfile && initialUser.role === "courier" && initialUser.region === undefined,
+  );
+  const { data: rawUser, isLoading: isUserLoading } = useGetUserById(
+    shouldFetchUser || needsCourierRegion ? userId ?? "" : "",
+  );
 
   const methods = useForm<UpdateUserFormValues>({
     defaultValues: INITIAL_VALUES,
@@ -167,11 +184,19 @@ export const UpdateUserModal = memo(({
   const isLoading = shouldFetchUser ? isUserLoading : false;
 
   const role = userData?.role ?? "";
-  const isAdmin = !isOwnProfile && (role === "admin" || role === "manager" || role === "registrator");
+  // Maosh va to'lov kuni: admin, menejer, ro'yxatchi va logist (FY-1, `POST /logists` ham maosh oladi).
+  const isAdmin =
+    !isOwnProfile && (role === "admin" || role === "manager" || role === "registrator" || role === "logist");
   const isSuperAdmin = role === "superadmin";
   const isCourier = !isOwnProfile && role === "courier";
   const isMarket = !isOwnProfile && (role === "market" || role === "marketing");
   const isCustomer = role === "customer";
+  // NFiXfmq6: AI narxini faqat superadmin/admin o'zgartiradi (menejerda maydon yashirin).
+  const canEditAiPrice = isMarket && (authRole === "admin" || authRole === "superadmin");
+  const fetchedUser = needsCourierRegion ? unwrapUserResponse(rawUser) : null;
+  const courierRegion = userData?.region ?? fetchedUser?.region ?? null;
+  const courierRegionLoading = needsCourierRegion && isUserLoading;
+  const initialAiPrice = userData?.ai_price_per_order != null ? toDigits(userData.ai_price_per_order) : "";
   const canEditManagerFinancial =
     !isOwnProfile &&
     role === "manager" &&
@@ -191,7 +216,7 @@ export const UpdateUserModal = memo(({
       tariff_home: userData.tariff_home != null ? toDigits(userData.tariff_home) : "",
       tariff_center: userData.tariff_center != null ? toDigits(userData.tariff_center) : "",
       default_tariff: toTariffOption(userData.default_tariff),
-      region_id: "",
+      ai_price: userData.ai_price_per_order != null ? toDigits(userData.ai_price_per_order) : "",
     });
   }, [reset, userData]);
 
@@ -246,6 +271,13 @@ export const UpdateUserModal = memo(({
         setError("tariff_center", { message: t("centerTariffRequired") });
         valid = false;
       }
+    }
+
+    if (canEditAiPrice && values.ai_price.trim() && parseAmount(values.ai_price) > AI_PRICE_MAX_UZS) {
+      setError("ai_price", {
+        message: t("v2.edit.aiPriceRange", { max: formatMoneyLocalized(AI_PRICE_MAX_UZS, { language }) }),
+      });
+      valid = false;
     }
 
     return valid;
@@ -319,6 +351,12 @@ export const UpdateUserModal = memo(({
 
     if (isMarket && values.default_tariff && values.default_tariff !== toTariffOption(userData.default_tariff)) {
       payload.default_tariff = values.default_tariff as "address" | "center";
+    }
+
+    // AI narxi: faqat o'zgargan bo'lsa (saqlangan kasr qiymat butun songa yaxlitlanib jimgina yozilmasin);
+    // bo'sh — `null` (global narx).
+    if (canEditAiPrice && values.ai_price.trim() !== initialAiPrice) {
+      payload.ai_price_per_order = values.ai_price.trim() ? parseAmount(values.ai_price) : null;
     }
 
     if (Object.keys(payload).length === 0) {
@@ -432,13 +470,13 @@ export const UpdateUserModal = memo(({
               control={control}
               name="name"
               render={({ field, fieldState }) => (
-                <Field label={t("v2.edit.name")} required error={fieldState.error?.message}>
+                <Field label={t(isMarket ? "v2.edit.marketName" : "v2.edit.name")} required error={fieldState.error?.message}>
                   <TextInput
                     name={field.name}
                     value={field.value}
                     onValueChange={field.onChange}
                     onBlur={field.onBlur}
-                    placeholder={t("v2.create.fields.namePlaceholder")}
+                    placeholder={t(isMarket ? "v2.edit.marketNamePlaceholder" : "v2.create.fields.namePlaceholder")}
                     autoComplete="off"
                   />
                 </Field>
@@ -545,13 +583,23 @@ export const UpdateUserModal = memo(({
           ) : null}
 
           {isCourier ? (
+            // FY-S4: «Ish hududi» faqat o'qish — viloyat (filial biriktiruvidan); filial «Boshqa filialga o'tkazish»
+            // oynasi orqali. «Tuman» tanlovi (maketda «Taklif · backend kerak») chizilmaydi.
+            <FormSection title={t("v2.edit.workArea")}>
+              <Field label={t("v2.edit.region")} hint={t("v2.edit.regionHint")}>
+                {courierRegionLoading ? (
+                  <SkeletonLines lines={1} />
+                ) : (
+                  <TextInput readOnly value={courierRegion?.name || t("v2.edit.regionEmpty")} />
+                )}
+              </Field>
+            </FormSection>
+          ) : null}
+
+          {isCourier ? (
             <FormSection title={t("courierTariff")} compact>
               {renderMoneyField("tariff_home", t("v2.edit.homeTariff"))}
               {renderMoneyField("tariff_center", t("v2.edit.centerTariff"))}
-              {/*
-                fix3 CODE-21: kuryerning "Hudud" maydoni olib tashlandi — identity `updateUser` `region_id` ni
-                e'tiborsiz qoldiradi, kuryer hududi filial biriktiruvidan keladi (R3).
-              */}
             </FormSection>
           ) : null}
 
@@ -574,6 +622,24 @@ export const UpdateUserModal = memo(({
               />
               {renderMoneyField("tariff_home", t("v2.edit.homeTariff"), true)}
               {renderMoneyField("tariff_center", t("v2.edit.centerTariff"), true)}
+              {canEditAiPrice ? (
+                <Controller
+                  control={control}
+                  name="ai_price"
+                  render={({ field, fieldState }) => (
+                    <Field label={t("v2.edit.aiPrice")} hint={t("v2.edit.aiPriceHint")} error={fieldState.error?.message}>
+                      <TextInput
+                        mode="money"
+                        name={field.name}
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        onBlur={field.onBlur}
+                        placeholder={t("v2.edit.aiPricePlaceholder")}
+                      />
+                    </Field>
+                  )}
+                />
+              ) : null}
             </FormSection>
           ) : null}
         </div>

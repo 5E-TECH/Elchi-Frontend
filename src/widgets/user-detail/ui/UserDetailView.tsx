@@ -131,6 +131,10 @@ export interface UserDetailViewProps {
  * xarajat», «Tarif»), `manager-users-detail` (rol va holat badge'lari, «{filial} · {telefon}», «Profil
  * ma'lumotlari»). «Faoliyat» (Taklif) va menejerdagi «Oylik maosh» kartasi CHIZILMAYDI (spec §6, §9.9).
  * Mijoz (`customer`, maket yo'q — eng yaqini `superadmin-users-detail`): «Aloqa va sanalar» + buyurtmalar jadvali.
+ * FY-1: market «Tarif» kartasida «AI narxi (1 buyurtma)» (`superadmin-users-edit-market-ai`) — faqat marketga
+ * belgilangan qiymat; `null` (global narx) bo'lsa qator yo'q (FY-S5); faqat superadmin/admin (tahrirda ham menejerda
+ * yashirin). Logist — «Profil ma'lumotlari»da maosh va
+ * to'lov kuni (xodimlar kabi).
  *
  * Xulq (eski, o'chirilgan `UserDetailWidget` dan): ruxsat bayroqlari, har kalit mutatsiyasi va
  * xabarlari, kutish holatlari, «Tahrirlash» — `UpdateUserModal`, kuryer o'tkazish — `TransferCourierButton`.
@@ -367,6 +371,9 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
     ) : null;
 
   const hasTariffs = user.tariff_home != null || user.tariff_center != null;
+  // AI narxi: `null` / bo'sh — global narx, sukut (300) ko'rsatilmaydi (FY-S5); 0 — bepul («0 so'm»).
+  const aiPrice = user.ai_price_per_order == null || user.ai_price_per_order === "" ? null : Number(user.ai_price_per_order);
+  const hasAiPrice = aiPrice !== null && Number.isFinite(aiPrice);
   const tariffCard =
     isMarket || isCourier || (user.role === "manager" && hasTariffs) ? (
       <Card as="section" title={t("v2.detail.tariff")} divided>
@@ -381,6 +388,7 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
           ) : null}
           <InfoRow label={t("v2.detail.homeTariff")} value={money(user.tariff_home)} />
           <InfoRow label={t("v2.detail.centerTariff")} value={money(user.tariff_center)} />
+          {isMarket && hasAiPrice && canManagePrivilegedToggles ? <InfoRow label={t("v2.edit.aiPrice")} value={money(aiPrice)} /> : null}
         </dl>
       </Card>
     ) : null;
@@ -388,7 +396,8 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
   const paymentDay = Number(user.payment_day);
   const hasPaymentDay = Number.isInteger(paymentDay) && paymentDay >= 1 && paymentDay <= 31;
   const hasSalary = Number(user.salary ?? 0) > 0;
-  const isStaff = user.role === "admin" || user.role === "manager" || user.role === "registrator";
+  const isStaff =
+    user.role === "admin" || user.role === "manager" || user.role === "registrator" || user.role === "logist";
   const profileCard =
     !isCustomer && !isMarket && (isStaff || hasSalary || hasPaymentDay || (isManagerViewer && viewerBranchName)) ? (
       <Card as="section" title={t("v2.detail.profile")} divided>

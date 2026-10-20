@@ -183,12 +183,19 @@
       "tabsLabel": "By role",
       "tabs": {
         "all": "All",
-        "market": "Markets",
-        "courier": "Couriers",
+        "admin": "Admins",
         "manager": "Managers",
         "registrator": "Registrars",
-        "operator": "Operators",
-        "admin": "Admins"
+        "courier": "Couriers",
+        "logist": "Logists",
+        "market": "Markets",
+        "marketOperator": "Market operators",
+        "investor": "Investors"
+      },
+      "roleFilter": "Role",
+      "roleGroups": {
+        "staff": "Staff",
+        "external": "External accounts"
       },
       "filtersLabel": "Filters",
       "searchLabel": "Search users",
@@ -365,7 +372,17 @@
       "defaultTariff": "Main tariff",
       "homeTariff": "Home tariff",
       "centerTariff": "Centre tariff",
-      "saving": "Saving…"
+      "saving": "Saving…",
+      "marketName": "Market name",
+      "marketNamePlaceholder": "For example: Baraka Shop",
+      "aiPrice": "AI price (per order)",
+      "aiPriceHint": "For this market · 0 — free",
+      "aiPricePlaceholder": "For example: 250",
+      "aiPriceRange": "Enter a value from 0 to {{max}}",
+      "workArea": "Work area",
+      "region": "Region",
+      "regionHint": "The branch is changed via “Transfer to another branch”",
+      "regionEmpty": "Not assigned"
     }
   },
   "tgGroupLinkAction": "Get connection link",

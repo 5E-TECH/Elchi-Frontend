@@ -226,6 +226,36 @@ describe("UserListTable (dizayn v2)", () => {
     expect(dialog).toHaveTextContent("Ali Valiyev · Admin");
   });
 
+  it.each([
+    ["market_operator", "Market operatori", "Kamola Yusupova"],
+    ["logist", "Logist", "Dilshod Karimov"],
+    ["investor", "Investor", "Sherzod Umarov"],
+  ])("yangi rol (%s) qatorida — rol yorlig'i va to'liq qator menyusi (FY-S2)", async (role, label, name) => {
+    updateUserStatusMutateMock.mockImplementation((_vars, options: { onSuccess?: () => void; onSettled?: () => void }) => {
+      options.onSuccess?.();
+      options.onSettled?.();
+    });
+    const user = userEvent.setup();
+    const row = { id: "77", name, phone_number: "+998993715264", role, status: "active", createdAt: "2026-08-28T19:25:00.000Z" };
+    renderWithProviders(<UserListTable users={[row] as never} canManage />);
+
+    const table = screen.getByRole("table", { name: "Foydalanuvchilar ro'yxati" });
+    expect(within(within(table).getByText(name).closest("tr") as HTMLElement).getByText(label)).toBeInTheDocument();
+
+    const menu = await openMenu(user, name);
+    expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
+      "Tahrirlash",
+      "Nofaol qilish",
+      "O'chirish",
+    ]);
+
+    // Superadmin market operatorini (va boshqa yangi rollarni) nofaol qila oladi — tasdiq bilan (FY-S2).
+    await user.click(within(menu).getByRole("menuitem", { name: "Nofaol qilish" }));
+    const dialog = await screen.findByRole("alertdialog", { name: "Nofaol qilishni tasdiqlang" });
+    await user.click(within(dialog).getByRole("button", { name: "Nofaol qilish" }));
+    expect(updateUserStatusMutateMock).toHaveBeenCalledWith({ id: "77", status: "inactive" }, expect.any(Object));
+  });
+
   it("boshqarish huquqi bo'lmasa (menejer, fix3 RBAC-16) — amallar menyusi yo'q, faqat «Ochish»", () => {
     renderWithProviders(<UserListTable users={users as never} />);
 

@@ -407,3 +407,50 @@ describe("UserDetailView — mijoz", () => {
     expect(within(orders).getByRole("link", { name: "№10225" })).toHaveAttribute("href", "/new-orders/5/edit/10225");
   });
 });
+
+describe("UserDetailView — FY-1: «AI narxi» va logist maoshi", () => {
+  it("market «Tarif» kartasida «AI narxi (1 buyurtma)» — belgilangan qiymat (maket `superadmin-users-edit-market-ai`)", () => {
+    renderView(makeUser("market", { ai_price_per_order: 250 }), "superadmin");
+
+    const tariff = screen.getByRole("region", { name: "Tarif" });
+    expect(within(tariff).getByText("AI narxi (1 buyurtma)")).toBeInTheDocument();
+    expect(tariff).toHaveTextContent("250 so'm");
+  });
+
+  it("AI narxi 0 — «0 so'm» (bepul); admin ham ko'radi", () => {
+    renderView(makeUser("market", { ai_price_per_order: "0.00" }), "admin");
+
+    const tariff = screen.getByRole("region", { name: "Tarif" });
+    expect(within(tariff).getByText("AI narxi (1 buyurtma)").nextElementSibling).toHaveTextContent("0 so'm");
+  });
+
+  it("AI narxi `null` / yo'q — qator yo'q, sukut narx (300) ko'rsatilmaydi (FY-S5)", () => {
+    const { unmount } = renderView(makeUser("market", { ai_price_per_order: null }), "superadmin");
+    expect(screen.queryByText("AI narxi (1 buyurtma)")).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Tarif" })).not.toHaveTextContent("300");
+    unmount();
+
+    renderView(makeUser("market"), "superadmin");
+    expect(screen.queryByText("AI narxi (1 buyurtma)")).not.toBeInTheDocument();
+  });
+
+  it("menejer marketni ko'rsa — «AI narxi» qatori yo'q (tahrirda ham yashirin)", () => {
+    renderView(makeUser("market", { ai_price_per_order: 250 }), "manager", "Urgut filiali");
+
+    expect(screen.queryByText("AI narxi (1 buyurtma)")).not.toBeInTheDocument();
+  });
+
+  it("logist — «Profil ma'lumotlari»da maosh va to'lov kuni (maosh 0 bo'lsa ham qator bor)", () => {
+    const { unmount } = renderView(
+      makeUser("logist", { name: "Dilshod Karimov", salary: 3000000, payment_day: "10" }),
+      "superadmin",
+    );
+    const profile = screen.getByRole("region", { name: "Profil ma'lumotlari" });
+    expect(profile).toHaveTextContent("3 000 000 so'm");
+    expect(profile).toHaveTextContent("Har oyning 10-kuni");
+    unmount();
+
+    renderView(makeUser("logist", { name: "Dilshod Karimov", salary: 0 }), "admin");
+    expect(screen.getByRole("region", { name: "Profil ma'lumotlari" })).toHaveTextContent("0 so'm");
+  });
+});

@@ -2,8 +2,10 @@ import { expect, test, type Route } from "@playwright/test";
 
 /**
  * YEThmZBn — kuryer tafsiloti (`/all-users/:id`, v2): «Tahrirlash» oynasi joriy qiymatlar bilan ochiladi
- * (ism, telefon, tariflar); kuryer hududi bu oynada YO'Q va so'rovda `region_id` yuborilmaydi — u faqat
- * «Boshqa filialga o'tkazish» orqali o'zgaradi (fix3 CODE-21). Soxta backend, serverga so'rov ketmaydi.
+ * (ism, telefon, tariflar); kuryer hududini bu oynada O'ZGARTIRIB BO'LMAYDI va so'rovda `region_id` yuborilmaydi —
+ * u faqat «Boshqa filialga o'tkazish» orqali o'zgaradi (fix3 CODE-21). FY-1 (FY-S4, maket
+ * `superadmin-users-edit-courier-district` qisman): «Ish hududi» — viloyat faqat o'qish + o'tkazish izohi; «Tuman»
+ * tanlovi (backend kerak) yo'q. Soxta backend, serverga so'rov ketmaydi.
  */
 const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
@@ -37,7 +39,7 @@ const COURIER = {
 test.use({ viewport: { width: 1440, height: 900 } });
 test.describe.configure({ timeout: 180_000 });
 
-test("⭐ kuryer: «Tahrirlash» joriy qiymatlar bilan, hudud maydoni yo'q; saqlashda region_id yuborilmaydi", async ({ page }) => {
+test("⭐ kuryer: «Tahrirlash» joriy qiymatlar bilan, «Ish hududi» faqat o'qish; saqlashda region_id yuborilmaydi", async ({ page }) => {
   const patches: Array<Record<string, unknown>> = [];
   await page.context().routeWebSocket(/\/socket\.io\//, (ws) => ws.close());
   await page.context().route("**/*", async (route) => {
@@ -80,7 +82,14 @@ test("⭐ kuryer: «Tahrirlash» joriy qiymatlar bilan, hudud maydoni yo'q; saql
   await expect(dialog.getByLabel("Uyga tarif")).toHaveValue(/^35\s?000$/);
   await expect(dialog.getByLabel("Markazga tarif")).toHaveValue(/^25\s?000$/);
   await expect(dialog.getByText("Kuryer tarifi")).toBeVisible();
-  await expect(dialog.getByText(/^(Hudud|Viloyat|Tuman)$/)).toHaveCount(0);
+  // «Ish hududi»: viloyat faqat o'qish, izohi — o'tkazish oynasi; tanlanadigan hudud / tuman maydoni yo'q.
+  await expect(dialog.getByText("Ish hududi")).toBeVisible();
+  const region = dialog.getByRole("textbox", { name: "Viloyat" });
+  await expect(region).toHaveValue("Samarqand viloyati");
+  await expect(region).toHaveAttribute("readonly", "");
+  await expect(region).toHaveAccessibleDescription("Filial «Boshqa filialga o'tkazish» orqali o'zgaradi");
+  await expect(dialog.getByRole("combobox", { name: /^(Hudud|Viloyat|Tuman)$/ })).toHaveCount(0);
+  await expect(dialog.getByText(/^(Hudud|Tuman)$/)).toHaveCount(0);
 
   await dialog.getByLabel("Ism familiya").fill("Sherzod Alimov (kuryer)");
   await dialog.getByRole("button", { name: "O'zgarishlarni saqlash" }).click();

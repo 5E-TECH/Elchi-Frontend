@@ -48,15 +48,6 @@
         "updatedAt": "2026-09-29T05:00:00.000Z"
       },
       {
-        "id": "32",
-        "name": "Nur Elektronika",
-        "phone_number": "+998936041872",
-        "role": "market",
-        "status": "active",
-        "createdAt": "2026-09-24T11:45:00.000Z",
-        "updatedAt": "2026-09-24T11:45:00.000Z"
-      },
-      {
         "id": "305",
         "name": "Bobur Xolmatov",
         "phone_number": "+998945520761",
@@ -73,16 +64,43 @@
         "status": "active",
         "createdAt": "2026-09-03T09:00:00.000Z",
         "updatedAt": "2026-09-03T09:00:00.000Z"
+      },
+      {
+        "id": "307",
+        "name": "Dilshod Karimov",
+        "phone_number": "+998972146308",
+        "role": "logist",
+        "status": "active",
+        "createdAt": "2026-09-24T11:45:00.000Z",
+        "updatedAt": "2026-09-24T11:45:00.000Z"
+      },
+      {
+        "id": "308",
+        "name": "Kamola Yusupova",
+        "phone_number": "+998993715264",
+        "role": "market_operator",
+        "status": "active",
+        "createdAt": "2026-08-28T14:25:00.000Z",
+        "updatedAt": "2026-08-28T14:25:00.000Z"
+      },
+      {
+        "id": "309",
+        "name": "Sherzod Umarov",
+        "phone_number": "+998953307146",
+        "role": "investor",
+        "status": "inactive",
+        "createdAt": "2026-08-14T07:30:00.000Z",
+        "updatedAt": "2026-08-14T07:30:00.000Z"
       }
     ],
     "meta": {
       "page": 1,
       "limit": 10,
-      "total": 8,
+      "total": 10,
       "totalPages": 1,
-      "totalUsers": 8,
-      "totalMarket": 3,
-      "totalEmployees": 5
+      "totalUsers": 10,
+      "totalMarket": 2,
+      "totalEmployees": 8
     }
   }
 }
