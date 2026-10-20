@@ -79,7 +79,7 @@ describe("batchOrderMailAdapter — paket buyurtmasi → PostOrder", () => {
         })),
       ),
     );
-    expect(rows.map((row) => row.status)).toEqual(["sold", "on the road", "waiting", "cancelled (sent)", "new", "new"]);
+    expect(rows.map((row) => row.status)).toEqual(["sold", "on the road", "waiting_customer", "cancelled (sent)", "new", "new"]);
   });
 
   it("paket yo'q — bo'sh ro'yxat", () => {

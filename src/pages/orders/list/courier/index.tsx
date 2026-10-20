@@ -9,6 +9,7 @@ import Tabs from "./list/tabs";
 import SellModal from "./list/SellModal";
 import CancelModal from "./list/CancelModal";
 import RollbackOrderDialog from "./list/RollbackOrderDialog";
+import type { RollbackTarget } from "../../../../entities/orders/rollbackTarget";
 import { notifyOrderActionDone } from "./list/orderActionModel";
 import PendingOrdersTable from "./list/ordertable/pendingOrderTable";
 import AllOrdersTable from "./list/ordertable/AllOrdersTable";
@@ -673,10 +674,10 @@ const CourierOrders = () => {
     );
   };
 
-  const handleRollbackConfirm = () => {
+  const handleRollbackConfirm = (targetStatus: RollbackTarget) => {
     if (!rollbackOrder) return;
     const order = rollbackOrder;
-    rollbackMutate(order.id, {
+    rollbackMutate({ orderId: order.id, targetStatus }, {
       onSuccess: (response) => {
         setRollbackOrder(null);
         // fix3b L1 / CODE-14: rollback bajarildi, lekin bekor qilinganlar

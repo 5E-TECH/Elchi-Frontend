@@ -554,6 +554,7 @@
     "entry": {
       "title": "Add a manual entry",
       "source": "Source type",
+      "cashboxAutoNote": "Cashbox income and expenses are logged automatically — enter only entries that don't touch the cashbox here.",
       "direction": "Direction",
       "income": "Income (+)",
       "expense": "Expense (−)",
@@ -582,8 +583,8 @@
     },
     "sources": {
       "sell_profit": "Post profit",
-      "sell_extra_cost": "Extra cost",
-      "cancel_extra_cost": "Extra cost",
+      "sell_extra_cost": "Extra cost (sale)",
+      "cancel_extra_cost": "Extra cost (cancellation)",
       "manual_income": "Manual income",
       "manual_expense": "Manual expense",
       "salary": "Salary",

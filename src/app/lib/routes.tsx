@@ -26,6 +26,8 @@ import {
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
 import { RUNTIME_ERROR_PATH } from "../../shared/lib/runtimeError";
 import ErrorBoundary from "../../shared/ui/ErrorBoundary";
+// ✅ Login page: `lazy` + to'g'ridan-to'g'ri `/login` da oldindan yuklash.
+import Login from "./loginPage";
 
 // ✅ Auth component (Protected route):
 const Auth = lazy(() => import("../../features/auth/page"));
@@ -46,8 +48,6 @@ const OpsPage = lazy(() => import("../../pages/ops"));
 const UiKitPage = lazy(() => import("../../pages/ui-kit"));
 const ActivityLogsPage = lazy(() => import("../../pages/activity-logs"));
 
-// ✅ Login page:
-const Login = lazy(() => import("../../features/auth"));
 // Telegram skan Mini App (MWYaqprw) — kirishsiz: Telegram `initData` orqali o'z qisqa tokeni bilan ishlaydi.
 const TgScanPage = lazy(() => import("../../pages/tg-scan"));
 

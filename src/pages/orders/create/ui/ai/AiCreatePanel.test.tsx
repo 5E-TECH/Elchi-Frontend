@@ -413,6 +413,38 @@ describe("AiCreatePanel", () => {
     expect(within(second).getByText(/Mijoz tumani buyurtma tumani bilan bir xil emas/)).toBeInTheDocument();
   });
 
+  it("⭐ j3WEDIpt duplicate_recent: karta «Mavjud (#48)», «Bu kartani yaratish» o'chiq, №48 ga havola; xulosa warning; qayta yuborilmaydi", async () => {
+    parseOrders = [order(1), order(2)];
+    confirmResponse = () => ({
+      results: [
+        { index: 0, ok: false, code: "duplicate_recent", order_id: "48", reason: "server matni" },
+        { index: 1, ok: true, order_id: "901" },
+      ],
+    });
+    renderPanel();
+    await parse(2);
+    fireEvent.click(screen.getByRole("button", { name: "Tayyorlarini yaratish — 2 ta" }));
+
+    const summary = await screen.findByText("1 ta yaratildi · 1 ta xato");
+    expect(summary.closest("[data-tone]")).toHaveAttribute("data-tone", "warning");
+    const [card] = screen.getAllByTestId("ai-preview-card");
+    expect(card).toHaveAttribute("data-existing", "");
+    expect(within(card).getByText("Mavjud (#48)")).toBeInTheDocument();
+    expect(within(card).queryByText("Tayyor")).not.toBeInTheDocument();
+    expect(within(card).getByRole("button", { name: "Bu kartani yaratish" })).toBeDisabled();
+    expect(within(card).getByText("Bu buyurtma allaqachon bor").closest("[data-tone]")).toHaveAttribute("data-tone", "warning");
+    expect(within(card).getByRole("link", { name: "№48 ni ochish" })).toHaveAttribute("href", "/orders/edit/48");
+    // Yaratish paneli uni na tayyor, na to'ldirilmagan deb sanaydi — yuboradigan narsa yo'q.
+    expect(screen.getByRole("button", { name: /Tayyorlarini yaratish/ })).toBeDisabled();
+    expect(screen.queryByRole("button", { name: /To'ldirilmagan/ })).not.toBeInTheDocument();
+    expect(confirmCalls()).toHaveLength(1);
+
+    // Ma'lumot tuzatilsa — yangi urinish: karta yana «Tayyor», yaratish mumkin.
+    fireEvent.change(within(card).getByRole("textbox", { name: "Mijoz ismi" }), { target: { value: "Boshqa mijoz" } });
+    expect(within(card).getByText("Tayyor")).toBeInTheDocument();
+    expect(within(card).getByRole("button", { name: "Bu kartani yaratish" })).toBeEnabled();
+  });
+
   it("xodim market tanlamagan bo'lsa: ko'rsatma va market tanlash maydoni, AI kirish paneli yo'q", () => {
     // Market maydoni sahifaning umumiy formasida — panel uni shu yerdan o'qiydi.
     const Harness = () => {

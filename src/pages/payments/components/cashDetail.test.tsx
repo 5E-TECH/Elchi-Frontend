@@ -58,7 +58,11 @@ vi.mock("../../../entities/markets", () => ({
   useMarkets: () => ({ useGetMarkets: () => ({ data: marketsState.data, isLoading: false }) }),
 }));
 vi.mock("../../../entities/user/api/userApi", () => ({
-  useUser: () => ({ useGetUser: () => ({ data: undefined, isLoading: false }) }),
+  useUser: () => ({
+    useGetUser: () => ({ data: undefined, isLoading: false }),
+    // Menejer kuryer kassasi summasi (T2VHX1Y7) — `GET /couriers`.
+    useGetCouriers: () => ({ data: undefined, isLoading: false }),
+  }),
 }));
 
 const superadmin = { role: { id: "1", role: "superadmin", region: null, name: "Admin" } } as never;

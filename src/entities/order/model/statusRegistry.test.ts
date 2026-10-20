@@ -19,33 +19,40 @@ import {
  * maketdagi o'zbekcha yorliqlar, kanonik ikonkalar va API yozilishlari.
  */
 
-/** `OrderStatus` turidagi barcha 11 holat — `Record` bo'lgani uchun yangi holat qo'shilsa TS shu yerni ham talab qiladi. */
+/** `OrderStatus` turidagi barcha 13 holat — `Record` bo'lgani uchun yangi holat qo'shilsa TS shu yerni ham talab qiladi. */
 const ALL: Record<OrderStatus, true> = {
   created: true,
   new: true,
   received: true,
   "on the road": true,
   waiting: true,
+  waiting_customer: true,
   sold: true,
   cancelled: true,
   "cancelled (sent)": true,
+  returned_to_market: true,
   paid: true,
   partly_paid: true,
   closed: true,
 };
 
-/** Ega qarori (2026-10-09) — o'zgartirish faqat ega roziligi bilan. */
+/**
+ * Ega qarori (2026-10-09) — o'zgartirish faqat ega roziligi bilan. Maketda yo'q ikki backend holati — alohida
+ * yorliq (SllBYhnt, 2026-10-19), ton tafsilot va tarixdagidek.
+ */
 const LOCKED_TONES: Record<OrderStatus, Tone> = {
   new: "info",
   created: "info",
   received: "info",
   "on the road": "warning",
   waiting: "warning",
+  waiting_customer: "warning",
   partly_paid: "warning",
   sold: "success",
   paid: "success",
   cancelled: "danger",
   "cancelled (sent)": "danger",
+  returned_to_market: "neutral",
   closed: "neutral",
 };
 
@@ -56,11 +63,13 @@ const UZ_LABELS: Record<OrderStatus, string> = {
   received: "Qabul qilindi",
   "on the road": "Yo'lda",
   waiting: "Kutilmoqda",
+  waiting_customer: "Mijoz kutilmoqda",
   partly_paid: "Qisman to'langan",
   sold: "Sotilgan",
   paid: "To'langan",
   cancelled: "Bekor qilingan",
   "cancelled (sent)": "Bekor — jo'natilgan",
+  returned_to_market: "Marketga qaytarilgan",
   closed: "Yopilgan",
 };
 
@@ -79,10 +88,10 @@ const canonicalIcons = new Set(
 );
 
 describe("ORDER_STATUS_REGISTRY", () => {
-  it("11 holatning hammasi bor, ortiqchasi yo'q", () => {
+  it("13 holatning hammasi bor, ortiqchasi yo'q", () => {
     expect(Object.keys(ORDER_STATUS_REGISTRY).sort()).toEqual(Object.keys(ALL).sort());
     expect([...ORDER_STATUSES].sort()).toEqual(Object.keys(ALL).sort());
-    expect(new Set(ORDER_STATUSES).size).toBe(11);
+    expect(new Set(ORDER_STATUSES).size).toBe(13);
   });
 
   it("ORDER_STATUSES — maketdagi tartib", () => {
@@ -92,11 +101,13 @@ describe("ORDER_STATUS_REGISTRY", () => {
       "Qabul qilindi",
       "Yo'lda",
       "Kutilmoqda",
+      "Mijoz kutilmoqda",
       "Qisman to'langan",
       "Sotilgan",
       "To'langan",
       "Bekor qilingan",
       "Bekor — jo'natilgan",
+      "Marketga qaytarilgan",
       "Yopilgan",
     ]);
   });
@@ -187,6 +198,11 @@ describe("normalizeOrderStatus", () => {
     ["onTheRoad", "on the road"],
     ["on  the   road", "on the road"],
     ["waiting", "waiting"],
+    ["waiting_customer", "waiting_customer"],
+    ["WAITING_CUSTOMER", "waiting_customer"],
+    ["waiting customer", "waiting_customer"],
+    ["returned_to_market", "returned_to_market"],
+    ["RETURNED_TO_MARKET", "returned_to_market"],
     ["sold", "sold"],
     ["cancelled", "cancelled"],
     ["canceled", "cancelled"],
@@ -212,7 +228,7 @@ describe("normalizeOrderStatus", () => {
     for (const status of ORDER_STATUSES) expect(normalizeOrderStatus(status)).toBe(status);
   });
 
-  it.each([undefined, null, "", "   ", 5, {}, [], "lost_in_transit", "waiting_customer", "returned_to_market"])(
+  it.each([undefined, null, "", "   ", 5, {}, [], "lost_in_transit"])(
     "%j → null (mantiq uchun boshqa holatga yaqinlashtirilmaydi)",
     (raw) => {
       expect(normalizeOrderStatus(raw)).toBeNull();
@@ -221,11 +237,12 @@ describe("normalizeOrderStatus", () => {
 });
 
 describe("resolveDisplayOrderStatus", () => {
-  it("normalizeOrderStatus bilan bir xil + backend ichki holatlari", () => {
+  it("normalizeOrderStatus bilan bir xil; backend holatlari o'z nomi bilan (boshqa holatga bog'lanmaydi)", () => {
     expect(resolveDisplayOrderStatus("ON_THE_ROAD")).toBe("on the road");
-    expect(resolveDisplayOrderStatus("waiting_customer")).toBe("waiting");
-    expect(resolveDisplayOrderStatus("WAITING_CUSTOMER")).toBe("waiting");
-    expect(resolveDisplayOrderStatus("returned_to_market")).toBe("cancelled");
+    expect(resolveDisplayOrderStatus("waiting_customer")).toBe("waiting_customer");
+    expect(resolveDisplayOrderStatus("WAITING_CUSTOMER")).toBe("waiting_customer");
+    expect(resolveDisplayOrderStatus("returned_to_market")).toBe("returned_to_market");
+    expect(resolveDisplayOrderStatus("Returned To Market")).toBe("returned_to_market");
     expect(resolveDisplayOrderStatus("lost_in_transit")).toBeNull();
     expect(resolveDisplayOrderStatus(null)).toBeNull();
   });

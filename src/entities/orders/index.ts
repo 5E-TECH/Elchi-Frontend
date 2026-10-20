@@ -4,6 +4,7 @@ import { API_ENDPOINTS } from "../../shared/api";
 import type { CancelOrderPayload } from "./cancelReason";
 import type { SellOrderPayload } from "./sellPayment";
 import type { ExtraCostRejectReason } from "./extraCostDecision";
+import type { RollbackTarget } from "./rollbackTarget";
 
 export {
   EXTRA_COST_REJECT_REASONS,
@@ -300,9 +301,10 @@ export const useOrders = () => {
     onSuccess: invalidateMoney,
   });
 
+  // Ortga qaytarish (y2RarzlT): `target_status` — «Kutilmoqda» (sukut), «Bekor qilish», kuryerda «Bekor — jo'natilgan».
   const RollbackOrder = useMutation({
-    mutationFn: (orderId: string) =>
-      api.post(API_ENDPOINTS.ORDERS.ROLLBACK(orderId)).then((res) => res.data),
+    mutationFn: ({ orderId, targetStatus }: { orderId: string; targetStatus: RollbackTarget }) =>
+      api.post(API_ENDPOINTS.ORDERS.ROLLBACK(orderId), { target_status: targetStatus }).then((res) => res.data),
     onSuccess: invalidateMoney,
   });
 

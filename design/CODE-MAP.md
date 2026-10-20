@@ -288,9 +288,9 @@ kichik maydonga fokus berilganda sahifani kattalashtiradi. `src/test/inputFontGu
 
 Yangi dialog — faqat `Dialog` (forma, tanlash, tafsilot) yoki `useConfirm()` / `ConfirmDialog` (tasdiq). Overlay,
 fokus, `inert`, skroll qulfi va telefon varaqasini qo'lda yozmang. Eski `Popup` faqat v1 paneli bor joylar uchun
-(4-bosqichda sahifa bilan birga `Dialog` ga o'tadi). v2 oyna ichidagi antd ro'yxatlari (`Select`, `DatePicker`) oyna
-ustida ochiladi (`dialog/AntdLayer.tsx`); ular ochiq turganda Esc faqat ro'yxatni yopadi — oyna emas
-(`overlay/foreignPopups.ts`: antd `DatePicker` Esc ni to'xtatmaydi, `Dropdown` uni `window` da tinglaydi).
+(4-bosqichda sahifa bilan birga `Dialog` ga o'tadi). v2 oyna ichida antd ro'yxatlari yo'q (5-bosqich ESLint
+taqiqlaydi); ularning z-index o'rami `dialog/AntdLayer.tsx` o'chirilgan (rzzxMItN). Begona suzuvchi panel ochiq turganda
+Esc faqat panelni yopadi — oyna emas (`overlay/foreignPopups.ts`).
 
 Barcha v2 qatlamlari `#ui-portal` da (sahifa DOM'idan tashqarida). Eski sahifadagi `document` `mousedown`
 «tashqariga bosish» tinglovchisi (telefon filtr paneli, tablar menyusi) portal ichidagi bosishni o'tkazib yuborishi

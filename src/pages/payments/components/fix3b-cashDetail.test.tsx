@@ -26,6 +26,8 @@ const state = vi.hoisted(() => ({
   managerPayable: undefined as unknown,
   managerSettlement: undefined as unknown,
   usersEnabled: [] as boolean[],
+  /** `GET /couriers` (menejer kuryer kassasi summasi, T2VHX1Y7). */
+  couriers: undefined as unknown,
 }));
 const cashboxRefetch = vi.hoisted(() => vi.fn(async () => ({ data: state.cashbox })));
 const marketPayment = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
@@ -69,6 +71,8 @@ vi.mock("../../../entities/user/api/userApi", () => ({
       state.usersEnabled.push(Boolean(enabled));
       return { data: undefined, isLoading: false };
     },
+    // Menejer kuryer kassasi summasi (T2VHX1Y7) — `GET /couriers`.
+    useGetCouriers: (_params: unknown, enabled: unknown) => ({ data: enabled ? state.couriers : undefined, isLoading: false }),
   }),
 }));
 vi.mock("../../../entities/branch/api/useBranches", () => ({
@@ -176,6 +180,7 @@ beforeEach(() => {
   state.managerPayable = undefined;
   state.managerSettlement = undefined;
   state.usersEnabled = [];
+  state.couriers = undefined;
   cashboxRefetch.mockClear();
   marketPayment.mutateAsync.mockReset();
   branchPayment.mutateAsync.mockReset();
@@ -222,6 +227,23 @@ describe("FE-PAY-01 reverted — the manager's own HQ handover screen is as befo
       ),
     ).toBe(true);
     expect(state.historyCalls.some((entry) => entry.params.user_id === "16")).toBe(false);
+  });
+
+  it("IjqTYQks: /payments now opens the real branch (16) — POST branch_id and history use 16, not the row id 3", async () => {
+    branchPayment.mutateAsync.mockResolvedValue(paymentAccepted);
+    renderAt("/payments/cash-detail/16?type=branch", manager);
+
+    setAmount("100000");
+    await chooseMethod("Naqd");
+    await submit(TRANSFER_TO_HQ);
+
+    await waitFor(() => expect(branchPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    expect(callsOf(branchPayment)[0].data).toEqual(expect.objectContaining({ branch_id: "16", amount: 100_000 }));
+    expect(
+      state.historyCalls.some(
+        (entry) => entry.enabled && entry.params.user_id === "16" && entry.params.cashbox_type === "branch",
+      ),
+    ).toBe(true);
   });
 
   it("the gateway's 403 is shown as a definite error (no 'outcome unknown' warning, no success)", async () => {
@@ -384,5 +406,66 @@ describe("Dizayn v2 — menejer → HQ sahifasi", () => {
 
     expect(screen.getByText("Kassa yetarli emas")).toBeInTheDocument();
     expect(screen.getByText(/^Kassada qoladi · 0 so'm$/)).toBeInTheDocument();
+  });
+});
+
+/**
+ * T2VHX1Y7 — menejer kuryer kassasida «Qabul qilinishi kerak» summasi so'rovdan (`GET /couriers`, `/payments`
+ * oynasidagi bilan bir manba), router state'dan emas: prod — sahifada 36 000, haqiqiy 35 000, F5 dan keyin 37 000.
+ */
+describe("T2VHX1Y7 — manager courier cashbox amount comes from the query, not router state", () => {
+  const openCourier = (stateAmount: number) =>
+    renderAt(
+      {
+        pathname: "/payments/cash-detail/209",
+        search: "?type=courier",
+        state: { type: "courier", entity: { id: "209", name: "Filial kuryeri", role: "courier", amount: stateAmount } },
+      },
+      manager,
+    );
+  /** Summani to'liq ko'rsatgan eng ichki element (raqam va «so'm» alohida qismlarda bo'lishi mumkin). */
+  const flat = (text: string | null | undefined) => (text ?? "").replace(/\s+/g, " ").trim();
+  const amountText = (value: number) => (_content: string, element: Element | null) => {
+    const expected = flat(`${value.toLocaleString("uz-UZ")} so'm`);
+    return (
+      Boolean(element) &&
+      flat(element?.textContent) === expected &&
+      !Array.from(element?.children ?? []).some((child) => flat(child.textContent) === expected)
+    );
+  };
+
+  it("shows the server receivable (35 000) instead of the stale router-state amount (36 000)", () => {
+    state.cashbox = branchCourierCashbox;
+    state.couriers = { data: { items: [{ id: "209", name: "Filial kuryeri", cashbox: { balance: 35_000 } }] } };
+    openCourier(36_000);
+
+    expect(screen.getAllByText(amountText(35_000)).length).toBeGreaterThan(0);
+    expect(screen.queryAllByText(amountText(36_000))).toHaveLength(0);
+  });
+
+  it("after a receipt shows the refreshed server amount (34 000), not a locally reduced router-state amount", async () => {
+    courierPayment.mutateAsync.mockImplementation(async () => {
+      // Real mutatsiya `onSuccess` da ["couriers"] ni qayta o'qiydi — shu yerda server javobi.
+      state.couriers = { data: { items: [{ id: "209", cashbox: { balance: 34_000 } }] } };
+      return paymentAccepted;
+    });
+    state.cashbox = branchCourierCashbox;
+    state.couriers = { data: { items: [{ id: "209", name: "Filial kuryeri", cashbox: { balance: 35_000 } }] } };
+    openCourier(36_000);
+
+    setAmount("1000");
+    await chooseMethod("Naqd");
+    await submit(RECEIVE);
+    expect(await screen.findByText(RECEIVE_SUCCESS)).toBeInTheDocument();
+    await waitFor(() => expect(screen.getAllByText(amountText(34_000)).length).toBeGreaterThan(0));
+    expect(screen.queryAllByText(amountText(35_000))).toHaveLength(0);
+  });
+
+  it("keeps the router-state amount while the courier is not in the server list", () => {
+    state.cashbox = branchCourierCashbox;
+    state.couriers = { data: { items: [] } };
+    openCourier(36_000);
+
+    expect(screen.getAllByText(amountText(36_000)).length).toBeGreaterThan(0);
   });
 });

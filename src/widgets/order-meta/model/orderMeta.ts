@@ -15,6 +15,8 @@ export type HolderType = "HQ" | "BRANCH" | "COURIER" | "MARKET";
 
 export interface OrderMetaData {
   id: string;
+  /** Yaratilgan vaqt (`createdAt` / `created_at`, ISO). */
+  createdAt: Date | null;
   /** Sotilgan vaqt (backend epoch ms satr yoki ISO beradi). */
   soldAt: Date | null;
   market: { id: string | null; name: string | null; phone: string | null } | null;
@@ -77,6 +79,7 @@ export const readOrderMeta = (raw: unknown): OrderMetaData | null => {
 
   return {
     id: orderId,
+    createdAt: date(order.createdAt ?? order.created_at),
     soldAt: date(order.sold_at),
     market: market
       ? { id: id(market.id), name: text(market.name), phone: text(market.phone_number) }

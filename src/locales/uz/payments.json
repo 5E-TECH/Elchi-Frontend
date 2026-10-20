@@ -554,6 +554,7 @@
     "entry": {
       "title": "Qo'lda yozuv qo'shish",
       "source": "Manba turi",
+      "cashboxAutoNote": "Kassa kirim/chiqimi daftarga avtomatik yoziladi — bu yerda faqat kassaga tegmaydigan yozuvlarni kiriting.",
       "direction": "Yo'nalish",
       "income": "Kirim (+)",
       "expense": "Chiqim (−)",
@@ -582,8 +583,8 @@
     },
     "sources": {
       "sell_profit": "Pochta foydasi",
-      "sell_extra_cost": "Qo'shimcha xarajat",
-      "cancel_extra_cost": "Qo'shimcha xarajat",
+      "sell_extra_cost": "Qo'shimcha xarajat (sotuv)",
+      "cancel_extra_cost": "Qo'shimcha xarajat (bekor)",
       "manual_income": "Qo'lda kirim",
       "manual_expense": "Qo'lda chiqim",
       "salary": "Maosh",

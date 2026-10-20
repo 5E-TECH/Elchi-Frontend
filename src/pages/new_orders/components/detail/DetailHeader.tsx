@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 import { Copy } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { ReturnRequestedTag } from "../../../../entities/order";
+import { formatTrackingDateTime } from "../../../../features/order-tracking";
 import { copyToClipboard } from "../../../../shared/lib/clipboard";
-import { formatDateTimeLocalized } from "../../../../shared/lib/formatDateTime";
 import { notify } from "../../../../shared/lib/notify";
 import { Badge, IconButton, PageHeader } from "../../../../shared/ui/primitives";
 import { getDeliveryLabelKey } from "../../../orders/list/courier/list/orderActionModel";
@@ -42,7 +42,8 @@ export const DetailHeader = ({ orderId, order, layout, onBack, backLabel, action
   };
 
   const createdAt = order ? readOrderCreatedAt(order) : null;
-  const date = createdAt ? formatDateTimeLocalized(createdAt, { language }) : null;
+  // Toshkent vaqti (tarix va «Buyurtma ma'lumotlari» bilan bir xil) — UTC qurilmada ham kun siljimaydi (kH2zZsz3).
+  const date = createdAt ? formatTrackingDateTime(createdAt, { language }) : null;
   const marketName = order ? readOrderMarket(order)?.name : null;
   const deliveryKey = order ? getDeliveryLabelKey(order.where_deliver) : null;
   const isCourier = layout === "courier";

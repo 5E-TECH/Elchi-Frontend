@@ -25,6 +25,7 @@ import { getSidebarConfigForUser } from "../../../widgets/Sidebar/model/menuConf
 import CancelModal from "../../orders/list/courier/list/CancelModal";
 import { notifyOrderActionDone } from "../../orders/list/courier/list/orderActionModel";
 import RollbackOrderDialog from "../../orders/list/courier/list/RollbackOrderDialog";
+import type { RollbackTarget } from "../../../entities/orders/rollbackTarget";
 import SellModal from "../../orders/list/courier/list/SellModal";
 import { AddressCard } from "./detail/AddressCard";
 import { CourierContactCard, CourierPaymentCard, CourierProductsCard } from "./detail/CourierCards";
@@ -239,9 +240,9 @@ const NewOrderUpdate = () => {
     [CancelOrder, actionOrder, closeCancelModal, refreshTracking, showActionError],
   );
 
-  const handleRollback = useCallback(() => {
+  const handleRollback = useCallback((targetStatus: RollbackTarget) => {
     if (!actionOrder) return;
-    RollbackOrder.mutate(actionOrder.id, {
+    RollbackOrder.mutate({ orderId: actionOrder.id, targetStatus }, {
       onSuccess: () => {
         setIsRollbackOpen(false);
         refreshTracking();

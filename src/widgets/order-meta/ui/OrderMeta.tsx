@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import {
   Building,
+  Calendar,
   CalendarCheck,
   Copy,
   Eye,
@@ -199,6 +200,13 @@ const OrderMeta = ({ order, role, self, canOpenMails = false, className }: Order
             />
           </span>
         </Row>
+
+        {meta.createdAt ? (
+          <Row icon={<Calendar size={15} aria-hidden="true" />} label={t("metaCreatedAt")} testId="meta-created-at">
+            {/* Toshkent vaqti — brauzer zonasidan qat'i nazar (UTC qurilmada ham kun siljimaydi). */}
+            <span className="text-[13px] tabular-nums">{formatTrackingDate(meta.createdAt)}</span>
+          </Row>
+        ) : null}
 
         {meta.soldAt ? (
           <Row icon={<CalendarCheck size={15} aria-hidden="true" />} label={t("metaSoldAt")} testId="meta-sold-at">

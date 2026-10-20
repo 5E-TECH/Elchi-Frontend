@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-balance-entry-dialog, admin-balance-entry-dialog
 import { memo, useRef, useState, type FormEvent } from "react";
-import { Scale } from "lucide-react";
+import { Scale, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useFinanceCoverage } from "../../../entities/payments/financeCoverage";
 import { getActionErrorMessage } from "../../../shared/lib/actionError";
@@ -26,6 +26,12 @@ import {
   newEntryKey,
   type ManualEntrySource,
 } from "../lib/manualEntry";
+
+/**
+ * Kassa kirim/chiqimi (`finance/cashbox/spend|fill`) P&L daftariga O'ZI yoziladi (IgR4FVsR) — shu ikki turda
+ * kassa harakatini bu yerda qayta kiritish foydani ikki marta o'zgartiradi (yKhhqPLE): ogohlantirish.
+ */
+const CASH_MOVEMENT_SOURCES: ReadonlySet<ManualEntrySource> = new Set(["manual_expense", "manual_income"]);
 
 /**
  * QO'LDA DAFTAR YOZUVI (GtAoqHlk) — `POST finance/financial-balance/entries`, dizayn v2
@@ -159,6 +165,16 @@ const FinancialEntryModal = ({ open, onClose }: FinancialEntryModalProps) => {
               </Pressable>
             ))}
           </div>
+          {CASH_MOVEMENT_SOURCES.has(source) ? (
+            <p
+              role="note"
+              data-testid="cashbox-auto-note"
+              className="m-0 mt-1 flex items-start gap-3 rounded-xl bg-warning-soft px-4 py-3 text-sm text-warning-fg"
+            >
+              <TriangleAlert size={18} aria-hidden="true" className="mt-px shrink-0" />
+              <span className="min-w-0 text-text">{t("v2Balance.entry.cashboxAutoNote")}</span>
+            </p>
+          ) : null}
         </fieldset>
 
         <fieldset className="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">

@@ -219,6 +219,53 @@ describe("RollbackOrderDialog", () => {
     renderWithProviders(<RollbackOrderDialog order={null} onConfirm={vi.fn()} onCancel={vi.fn()} />);
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });
+
+  it("⭐ y2RarzlT menejer/superadmin: «Kutilmoqda» / «Bekor qilish» tanlovi, «Bekor — jo'natilgan» yo'q; tanlov onConfirm ga", async () => {
+    const onConfirm = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(<RollbackOrderDialog order={soldOrder} variant="manager" onConfirm={onConfirm} onCancel={vi.fn()} />);
+
+    const dialog = screen.getByRole("alertdialog", { name: "Buyurtmani qaytarish" });
+    const choice = within(dialog).getByRole("radiogroup", { name: "Qaysi holatga qaytariladi" });
+    expect(within(choice).getAllByRole("radio").map((radio) => radio.textContent)).toEqual(["Kutilmoqda", "Bekor qilish"]);
+    expect(within(choice).getByRole("radio", { name: "Kutilmoqda" })).toHaveAttribute("aria-checked", "true");
+    expect(dialog).toHaveTextContent("Buyurtmaning kassa yozuvlari ham qaytariladi.");
+
+    await user.click(within(choice).getByRole("radio", { name: "Bekor qilish" }));
+    expect(dialog).toHaveTextContent("Buyurtma «Bekor qilingan» holatiga qaytariladi. Davom etasizmi?");
+    await user.click(screen.getByRole("button", { name: "Ha, qaytarish" }));
+    expect(onConfirm).toHaveBeenCalledWith("cancelled");
+  });
+
+  it("⭐ y2RarzlT kuryer: «Bekor — jo'natilgan» varianti faqat kuryerda; holat o'zgarishi tanlovga qarab", async () => {
+    const onConfirm = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(<RollbackOrderDialog order={soldOrder} onConfirm={onConfirm} onCancel={vi.fn()} />);
+
+    const dialog = screen.getByRole("alertdialog", { name: "Holatni qayta tiklash" });
+    const choice = within(dialog).getByRole("radiogroup", { name: "Qaysi holatga qaytariladi" });
+    expect(within(choice).getAllByRole("radio").map((radio) => radio.textContent)).toEqual([
+      "Kutilmoqda",
+      "Bekor qilish",
+      "Bekor — jo'natilgan",
+    ]);
+    await user.click(within(choice).getByRole("radio", { name: "Bekor — jo'natilgan" }));
+    expect(within(dialog).getByText("Sotilgan holatidan Bekor — jo'natilgan holatiga")).toBeInTheDocument();
+    expect(dialog).toHaveAccessibleDescription("Buyurtma «Bekor — jo'natilgan» holatiga qaytariladi. Davom etasizmi?");
+    await user.click(screen.getByRole("button", { name: "Ha, qayta tiklash" }));
+    expect(onConfirm).toHaveBeenCalledWith("cancelled_sent");
+  });
+
+  it("bekor qilingan buyurtma — tanlov yo'q, faqat «Kutilmoqda» ga", async () => {
+    const onConfirm = vi.fn();
+    const user = userEvent.setup();
+    renderWithProviders(
+      <RollbackOrderDialog order={{ ...soldOrder, status: "cancelled" }} onConfirm={onConfirm} onCancel={vi.fn()} />,
+    );
+    expect(screen.queryByRole("radiogroup")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Ha, qayta tiklash" }));
+    expect(onConfirm).toHaveBeenCalledWith("waiting");
+  });
 });
 
 describe("notifyOrderActionDone — bajarilgan amal xabari", () => {

@@ -31,6 +31,7 @@ import {
   type OrderStatusTabId,
 } from "./list/orderFilterModel";
 import OrdersTable from "./list/OrdersTable";
+import type { RollbackTarget } from "../../entities/orders/rollbackTarget";
 import { useQueryParams } from "../../shared/lib/useQueryParams";
 import type { RootState } from "../../app/config/store";
 import { canCreateOrders } from "../../app/lib/access";
@@ -694,11 +695,11 @@ const Orders = () => {
     [CancelOrder, cancelOrder, closeCancelModal, notifyActionError],
   );
 
-  const handleRollbackOrder = useCallback(() => {
+  const handleRollbackOrder = useCallback((targetStatus: RollbackTarget) => {
     if (!rollbackOrder) return;
 
     const order = rollbackOrder;
-    RollbackOrder.mutate(order.id, {
+    RollbackOrder.mutate({ orderId: order.id, targetStatus }, {
       onSuccess: () => {
         setRollbackOrder(null);
         notifyOrderActionDone("rollback", order);
