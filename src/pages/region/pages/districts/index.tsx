@@ -1,5 +1,5 @@
-// dizayn-v2: superadmin-regions-districts
-import { memo, useMemo, useState } from "react";
+// dizayn-v2: superadmin-regions-districts, admin-regions-districts
+import { memo, useCallback, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
@@ -8,7 +8,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { RootState } from "../../../../app/config/store";
 import { api } from "../../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../../shared/api";
-import { getBackendErrorMessage } from "../../../../shared/lib/backendError";
 import { formatNumberLocalized } from "../../../../shared/lib/formatMoney";
 import { notify } from "../../../../shared/lib/notify";
 import {
@@ -25,7 +24,11 @@ import {
   useConfirm,
 } from "../../../../shared/ui/primitives";
 import DistrictBoard from "../../ui/DistrictBoard";
+import DistrictDeleteBlockedDialog from "../../ui/DistrictDeleteBlockedDialog";
+import DistrictMergeDialog from "../../ui/DistrictMergeDialog";
+import { useDistrictMerge } from "../../ui/useDistrictMerge";
 import { filterBoardRegions } from "../../model/boardModel";
+import { httpStatusOf, mergeCandidates, type MergeDistrict } from "../../model/districtMerge";
 
 type DistrictItem = { id: string; name: string };
 type RegionWithDistricts = { id: string; name: string; districts: DistrictItem[] };
@@ -58,10 +61,12 @@ const toRegionsWithDistricts = (payload: unknown): RegionWithDistricts[] => {
 const REGIONS_KEY = ["region-districts-admin"];
 
 /**
- * TUMANLAR BOSHQARUVI (faqat superadmin): 14 viloyat va ularning tumanlari, tuman qo'shish
+ * TUMANLAR BOSHQARUVI (superadmin va admin — ega S1, DM-1): 14 viloyat va ularning tumanlari, tuman qo'shish
  * (POST `district`), nomini tahrirlash (PATCH `district/name/:id`), boshqa viloyatga sudrab / telefonda
  * «⇆» bilan o'tkazish (PATCH `district/:id {assigned_region}`, optimistik — xatoda joyiga qaytadi) va
- * o'chirish (`useConfirm`, DELETE `district/:id`).
+ * o'chirish (`useConfirm`, DELETE `district/:id`). O'chirish 400 bersa (bog'langan yozuvlar bor) — «Tumanni
+ * o'chirib bo'lmaydi» oynasi → «Tumanni birlashtirish» (`POST district/:id/merge`, maqsad — shu viloyatdan).
+ * Xabarlarda faqat i18n matn (server matni ko'rsatilmaydi).
  */
 const RegionDistrictsPage = () => {
   const { t, i18n } = useTranslation("region");
@@ -75,19 +80,27 @@ const RegionDistrictsPage = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
 
+  const canManage = role === "superadmin" || role === "admin";
+  const [blocked, setBlocked] = useState<MergeDistrict | null>(null);
+
   const regionsQuery = useQuery({
     queryKey: REGIONS_KEY,
     queryFn: () =>
       api.get(API_ENDPOINTS.REGIONS.BASE).then((res) => toRegionsWithDistricts(res.data)),
-    enabled: role === "superadmin",
+    enabled: canManage,
     // Xato sahifada (`ErrorState` + «Qayta urinish») — global xabar takrorlanmaydi.
     meta: { silentError: true },
   });
   const regions = useMemo(() => regionsQuery.data ?? [], [regionsQuery.data]);
 
-  const refresh = () => queryClient.invalidateQueries({ queryKey: REGIONS_KEY });
-  const showError = (error: unknown, fallbackKey: string) =>
-    notify.error(getBackendErrorMessage(error) ?? t(fallbackKey));
+  const refresh = useCallback(
+    () => queryClient.invalidateQueries({ queryKey: REGIONS_KEY }),
+    [queryClient],
+  );
+  const merge = useDistrictMerge(refresh);
+  /** 409 — shu viloyatda shu nomli tuman bor (qo'shish, nomini o'zgartirish); qolgani — umumiy matn. */
+  const showError = (error: unknown, fallbackKey: string, conflictKey?: string) =>
+    notify.error(t(conflictKey && httpStatusOf(error) === 409 ? conflictKey : fallbackKey));
 
   const createDistrict = useMutation({
     mutationFn: (payload: { name: string; region_id: string }) =>
@@ -97,7 +110,7 @@ const RegionDistrictsPage = () => {
       notify.success(t("districts.createSuccess"));
       await refresh();
     },
-    onError: (error) => showError(error, "districts.createError"),
+    onError: (error) => showError(error, "districts.createError", "v2.districts.duplicateName"),
   });
 
   const renameDistrict = useMutation({
@@ -108,16 +121,20 @@ const RegionDistrictsPage = () => {
       notify.success(t("districts.renameSuccess"));
       await refresh();
     },
-    onError: (error) => showError(error, "districts.renameError"),
+    onError: (error) => showError(error, "districts.renameError", "v2.districts.duplicateName"),
   });
 
   const deleteDistrict = useMutation({
-    mutationFn: (id: string) => api.delete(API_ENDPOINTS.DISTRICTS.BY_ID(id)),
+    mutationFn: (district: MergeDistrict) => api.delete(API_ENDPOINTS.DISTRICTS.BY_ID(district.id)),
     onSuccess: async () => {
       notify.success(t("districts.deleteSuccess"));
       await refresh();
     },
-    onError: (error) => showError(error, "districts.deleteError"),
+    onError: (error, district) => {
+      // 400 — tumanga buyurtma/foydalanuvchi/filial bog'langan (oNAE3LW9): birlashtirishni taklif qiladigan oyna.
+      if (httpStatusOf(error) === 400) setBlocked(district);
+      else showError(error, "districts.deleteError");
+    },
   });
 
   // Optimistik ko'chirish: darhol yangi viloyatda ko'rinadi, xato bo'lsa
@@ -164,10 +181,16 @@ const RegionDistrictsPage = () => {
     },
   });
 
+  const mergeSource = merge.state.phase === "idle" ? null : merge.state.source;
+  const candidates = useMemo(
+    () => (mergeSource ? mergeCandidates(regions, mergeSource) : []),
+    [regions, mergeSource],
+  );
+
   const totalDistricts = regions.reduce((sum, region) => sum + region.districts.length, 0);
   const filteredRegions = useMemo(() => filterBoardRegions(regions, search), [regions, search]);
 
-  if (role !== "superadmin") {
+  if (!canManage) {
     return <Navigate to="/regions" replace />;
   }
 
@@ -313,7 +336,7 @@ const RegionDistrictsPage = () => {
               />
             </>
           )}
-          renderActions={(district) => (
+          renderActions={(district, region) => (
             <>
               <IconButton
                 size="sm"
@@ -340,14 +363,30 @@ const RegionDistrictsPage = () => {
                     confirmIcon: Trash2,
                     irreversible: true,
                   });
-                  // Xato bo'lsa mutatsiyaning o'zi xabar chiqaradi (`showError`).
-                  if (ok) deleteDistrict.mutate(district.id);
+                  // Xato bo'lsa mutatsiyaning o'zi xabar yoki «o'chirib bo'lmaydi» oynasini chiqaradi.
+                  if (ok)
+                    deleteDistrict.mutate({
+                      id: district.id,
+                      name: district.name,
+                      regionId: region.id,
+                      regionName: region.name,
+                    });
                 }}
               />
             </>
           )}
         />
       )}
+
+      <DistrictDeleteBlockedDialog
+        district={blocked}
+        onClose={() => setBlocked(null)}
+        onMerge={(district) => {
+          setBlocked(null);
+          merge.open(district);
+        }}
+      />
+      <DistrictMergeDialog merge={merge} candidates={candidates} />
     </div>
   );
 };

@@ -70,12 +70,14 @@ export const API_ENDPOINTS = {
   },
   DISTRICTS: {
     BASE: "district", // GET all / POST create
-    BY_ID: (districtId: string | number) => `district/${districtId}`, // GET / PATCH reassign region / DELETE (superadmin)
+    BY_ID: (districtId: string | number) => `district/${districtId}`, // GET / PATCH reassign region / DELETE (admin/superadmin)
     UPDATE_NAME: (districtId: string | number) => `district/name/${districtId}`, // PATCH
     SATO_MATCH_PREVIEW: "district/sato-match/preview", // GET
     SATO_MATCH_APPLY: "district/sato-match/apply", // POST (superadmin)
     SATO_BY_CODE: (satoCode: string | number) => `district/sato/${satoCode}`, // GET
     SATO_UPDATE: (id: string | number) => `district/sato/${id}`, // PATCH
+    // POST {target_district_id} — tuman boshqasiga qo'shiladi va o'chadi (admin/superadmin; DM-1)
+    MERGE: (districtId: string | number) => `district/${districtId}/merge`,
   },
 
   // ── Customers — buyurtma yaratishda mijoz taklifi (hiqRNhkI, CS-A) ─────────
