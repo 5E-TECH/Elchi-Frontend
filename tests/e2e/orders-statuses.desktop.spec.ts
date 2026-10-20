@@ -2,7 +2,7 @@ import { expect, test, type Page, type Route } from "@playwright/test";
 
 /**
  * SllBYhnt — backend'ning ikki holati `/orders` ro'yxatida o'z nomi bilan (ega qarori: alohida yorliq):
- * `returned_to_market` — «Marketga qaytarilgan» (neytral), `waiting_customer` — «Mijoz kutilmoqda» (ogohlantirish).
+ * `returned_to_market` — «Marketga topshirildi» (neytral), `waiting_customer` — «Mijoz kutilmoqda» (ogohlantirish).
  * «Yangi» ham, boshqa holat ham emas; «Holat» filtrida bor; `?status=returned_to_market` backend'ga uzatiladi;
  * noma'lum holat — neytral, xom nomi bilan. 1440px, soxta backend.
  */
@@ -67,12 +67,12 @@ const badgeOf = (page: Page, customer: string) =>
 test.use({ viewport: { width: 1440, height: 900 } });
 test.describe.configure({ timeout: 180_000 });
 
-test("⭐ ro'yxat: «Marketga qaytarilgan», «Mijoz kutilmoqda» — «Yangi» emas; noma'lum holat neytral", async ({ page }) => {
+test("⭐ ro'yxat: «Marketga topshirildi», «Mijoz kutilmoqda» — «Yangi» emas; noma'lum holat neytral", async ({ page }) => {
   await mockOrders(page);
   await page.goto("/orders");
   await expect(page.getByText("Mijoz 1001").first()).toBeVisible({ timeout: 90_000 });
 
-  await expect(badgeOf(page, "Mijoz 1001")).toHaveText("Marketga qaytarilgan");
+  await expect(badgeOf(page, "Mijoz 1001")).toHaveText("Marketga topshirildi");
   await expect(badgeOf(page, "Mijoz 1001")).toHaveAttribute("data-order-status", "returned_to_market");
   await expect(badgeOf(page, "Mijoz 1002")).toHaveText("Mijoz kutilmoqda");
   await expect(badgeOf(page, "Mijoz 1002")).toHaveAttribute("data-order-status", "waiting_customer");
@@ -97,13 +97,13 @@ test("⭐ «Holat» filtrida ikkala variant bor; ?status=returned_to_market back
   // Faol holat filtri bor — panel ochiq turadi («Filtrlar 1»); yopiq bo'lsa ochiladi.
   const toggle = page.getByRole("button", { name: /^Filtrlar( \d+)?$/ });
   if ((await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
-  await expect(page.getByText("Holat: Marketga qaytarilgan")).toBeVisible();
+  await expect(page.getByText("Holat: Marketga topshirildi")).toBeVisible();
   // Tanlangan qiymat chipi (×) maydon o'rtasini egallaydi — ro'yxat klaviatura bilan ochiladi.
   const select = page.getByRole("combobox", { name: "Holat" });
   await select.focus();
   await select.press("Enter");
   const listbox = page.getByRole("listbox");
   await expect(listbox.getByRole("option", { name: "Mijoz kutilmoqda" })).toBeVisible();
-  await expect(listbox.getByRole("option", { name: "Marketga qaytarilgan" })).toBeVisible();
-  await expect(listbox.getByRole("option", { name: "Marketga qaytarilgan" })).toHaveAttribute("aria-selected", "true");
+  await expect(listbox.getByRole("option", { name: "Marketga topshirildi" })).toBeVisible();
+  await expect(listbox.getByRole("option", { name: "Marketga topshirildi" })).toHaveAttribute("aria-selected", "true");
 });

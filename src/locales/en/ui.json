@@ -315,6 +315,10 @@
         "title": "Order status",
         "meta": "13 · with dot"
       },
+      "cancelStage": {
+        "title": "Cancellation stage",
+        "meta": "5 · with icon, no dot; place and duration below"
+      },
       "variants": {
         "title": "Tones, variants and sizes",
         "meta": "5 tones × 3 variants × 2 sizes"

@@ -405,15 +405,60 @@ describe("OrdersTable", () => {
     expect(screen.queryByRole("button", { name: /Qayta urinish/ })).not.toBeInTheDocument();
   });
 
-  it("«Bekor — jo'natilgan»: kuryer qatori `transport_status` bilan keladi", () => {
+  it("«Bekor · yo'lda»: kuryer qatori `transport_status` bilan keladi; ostida «→ maqsad»", () => {
     renderWithProviders(
       <OrdersTable
-        data={[{ ...orders[0], status: "cancelled", transport_status: "cancelled (sent)" }] as never}
+        data={
+          [
+            {
+              ...orders[0],
+              status: "cancelled",
+              transport_status: "cancelled (sent)",
+              branch: { id: "1", name: "Toshkent HQ" },
+            },
+          ] as never
+        }
         isLoading={false}
       />,
     );
 
-    expect(screen.getByText("Bekor — jo'natilgan")).toBeInTheDocument();
+    expect(screen.getByText("Bekor · yo'lda")).toBeInTheDocument();
+    expect(screen.getByTestId("cancel-return-place")).toHaveTextContent("→ Toshkent HQ");
+  });
+
+  it("bekor bosqichi (tizim-states-data §09): «Bekor · HQ'da» + «Toshkent HQ · 2 kun»; topshirilgani — «Marketga topshirildi»", () => {
+    const twoDaysAgo = new Date(Date.now() - 2 * 86_400_000 - 3_600_000).toISOString();
+    renderWithProviders(
+      <OrdersTable
+        data={
+          [
+            {
+              ...orders[0],
+              id: "c-1",
+              status: "cancelled",
+              holder_type: "HQ",
+              post_id: "78",
+              branch: { id: "1", name: "Toshkent HQ" },
+              last_handover_at: twoDaysAgo,
+            },
+            {
+              ...orders[0],
+              id: "c-2",
+              status: "returned_to_market",
+              holder_type: "MARKET",
+              branch: { id: "1", name: "Toshkent HQ" },
+            },
+          ] as never
+        }
+        isLoading={false}
+      />,
+    );
+
+    const hqRow = screen.getByRole("link", { name: "№c-1" }).closest("tr") as HTMLElement;
+    expect(within(hqRow).getByText("Bekor · HQ'da")).toHaveAttribute("data-cancel-stage", "hq");
+    expect(within(hqRow).getByTestId("cancel-return-place")).toHaveTextContent("Toshkent HQ · 2 kun");
+    const doneRow = screen.getByRole("link", { name: "№c-2" }).closest("tr") as HTMLElement;
+    expect(within(doneRow).getByText("Marketga topshirildi")).toHaveClass("bg-sunken", "text-text-muted");
   });
 });
 

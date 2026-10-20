@@ -315,6 +315,10 @@
         "title": "Buyurtma holati",
         "meta": "13 ta · nuqtali"
       },
+      "cancelStage": {
+        "title": "Bekor bosqichi",
+        "meta": "5 ta · ikonkali, nuqtasiz; ostida joy va muddat"
+      },
       "variants": {
         "title": "Tonlar, ko'rinishlar va o'lchamlar",
         "meta": "5 ton × 3 ko'rinish × 2 o'lcham"

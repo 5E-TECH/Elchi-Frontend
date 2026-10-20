@@ -60,7 +60,7 @@ describe("OrdersTable (v2)", () => {
     expect(within(card).getByRole("status")).toHaveTextContent("USB skaner tayyor");
     expect(headers()).toEqual(["", "Buyurtma", "Mijoz", "Tuman / manzil", "Market", "Holat", "Yetkazish", "Summa"]);
     expect(within(table()).getByRole("link", { name: "№101" })).toHaveAttribute("href", "/orders/edit/101");
-    expect(within(table()).getByText("Bekor — jo'natilgan")).toBeInTheDocument();
+    expect(within(table()).getByText("Bekor · yo'lda")).toBeInTheDocument();
     expect(within(table()).getAllByText("Uygacha")).toHaveLength(2);
     expect(within(table()).getByText("Markazgacha")).toBeInTheDocument();
     // Pastki qism: «N ta buyurtma» · «Jami: X».

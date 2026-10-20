@@ -161,7 +161,7 @@ describe("OrderMeta", () => {
     unmount();
 
     const second = renderWithProviders(<OrderMeta order={{ ...ORDER_95, holder_type: "MARKET" }} role="admin" />);
-    expect(row("meta-holder")).toHaveTextContent("Marketga qaytarilgan");
+    expect(row("meta-holder")).toHaveTextContent("Marketga topshirildi");
     second.unmount();
 
     const third = renderWithProviders(
@@ -172,6 +172,25 @@ describe("OrderMeta", () => {
 
     renderWithProviders(<OrderMeta order={{ ...ORDER_95, holder_type: "BRANCH", holder_branch_id: "12" }} role="admin" />);
     await waitFor(() => expect(row("meta-holder")).toHaveTextContent("Filialda: Urganch filiali"));
+  });
+
+  it("bekor qilingan: «Hozir kimda» bosqich bilan birlashadi (taklif §3.3)", async () => {
+    const at = new Date(Date.now() - 3 * 86_400_000 - 60_000).toISOString();
+    const first = renderWithProviders(
+      <OrderMeta order={{ ...ORDER_95, status: "cancelled", holder_type: "HQ", last_handover_at: at }} role="admin" />,
+    );
+    expect(row("meta-holder")).toHaveTextContent("Bekor · HQ'da — HQ Toshkent · 3 kun");
+    first.unmount();
+
+    const second = renderWithProviders(
+      <OrderMeta order={{ ...ORDER_95, status: "cancelled", holder_type: "BRANCH", holder_branch_id: "12" }} role="admin" />,
+    );
+    // Ro'yxatdagi `branch` boshqa filial — nom filial so'rovidan (admin).
+    await waitFor(() => expect(row("meta-holder")).toHaveTextContent("Bekor · filialda — Urganch filiali"));
+    second.unmount();
+
+    renderWithProviders(<OrderMeta order={{ ...ORDER_95, status: "returned_to_market", holder_type: "MARKET" }} role="market" />);
+    expect(row("meta-holder")).toHaveTextContent(/Marketga topshirildi — HQ Toshkent$/);
   });
 
   it("kuryer biriktirilmagan — \"Hali biriktirilmagan\"", () => {

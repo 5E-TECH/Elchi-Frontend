@@ -118,6 +118,7 @@
   "statusCancelled": "Отменен",
   "statusCancelledSent": "Отменен — отправлен",
   "statusClosed": "Закрыт",
+  "statusReturnedToMarket": "Передан маркету",
   "filterMarket": "Маркет",
   "filterCourier": "Курьер",
   "filterRegion": "Область",
@@ -199,7 +200,8 @@
   "metaHolderHQ": "В головном офисе (HQ)",
   "metaHolderBranch": "В филиале: {{name}}",
   "metaHolderCourier": "У курьера: {{name}}",
-  "metaHolderMarket": "Возвращён маркету",
+  "metaHolderMarket": "Передан маркету",
+  "metaHolderStage": "{{stage}} — {{place}}",
   "metaDelivery": "Тип доставки",
   "metaTariffs": "Тариф и доля",
   "metaTariffsShow": "Показать тариф",
@@ -495,10 +497,11 @@
       "cancelledPostCreated": "{{actor}} добавил отмененный заказ в возвратную почту и отправил",
       "cancelledPostReceivedAtBranch": "{{actor}} принял отмененный заказ от курьера",
       "cancelledPostReceivedAtHq": "{{actor}} принял отмененный заказ в HQ для передачи маркету",
-      "cancelledOrderHandedToMarket": "{{actor}} передал отмененный заказ маркету {{market}} с QR-подтверждением",
+      "cancelledOrderHandedToMarket": "{{actor}} передал(а) отменённый заказ маркету {{market}} — {{method}}",
       "returnInitiated": "{{actor}} начал(а) возврат заказа в маркет. Причина: {{reason}}",
-      "returnedToMarketByActor": "{{actor}} передал(а) заказ в {{market}} с подтверждением по QR",
-      "createdByActor": "{{actor}} создал заказ"
+      "returnedToMarketByActor": "{{actor}} передал(а) заказ маркету {{market}} — {{method}}",
+      "createdByActor": "{{actor}} создал заказ",
+      "cancelledPostReceivedAtPlace": "{{actor}} принял(а) отменённый заказ — {{place}}"
     },
     "roleValue": {
       "superadmin": "Суперадмин",
@@ -523,7 +526,7 @@
       "partly_paid": "Частично оплачен",
       "closed": "Закрыт",
       "waiting_customer": "Ожидает клиента",
-      "returned_to_market": "Возвращён в маркет",
+      "returned_to_market": "Передан маркету",
       "processing": "В процессе",
       "completed": "Готов"
     },
@@ -552,7 +555,7 @@
       "cancelledPostCreated": "Отмененный заказ отправлен",
       "cancelledPostReceived": "Отмененный заказ принят",
       "returnRequested": "Запрошен возврат",
-      "returnedToMarket": "Возвращено в маркет"
+      "returnedToMarket": "Передан маркету"
     },
     "newestFirst": "{{count}} записей — новые сверху",
     "expand": "Показать историю",
@@ -759,6 +762,8 @@
     "productsLockedAddress": "Адрес можно изменить до отправки в филиал.",
     "editClosedTitle": "Редактирование закрыто.",
     "editClosedBody": "Заказ отправлен в филиал — клиента, адрес, сумму и товары больше нельзя изменить.",
+    "editClosedCancelledBody": "Заказ отменён — клиента, адрес, сумму и товары изменить нельзя.",
+    "editClosedReturnedBody": "Заказ передан маркету — клиента, адрес, сумму и товары изменить нельзя.",
     "readOnlyTitle": "Только просмотр",
     "readOnlyLocked": "Заказ отправлен в филиал, поэтому товары, сумма, клиент и адрес заблокированы.",
     "dateLabel": "Дата:",
@@ -776,5 +781,37 @@
     "tooLong": "Слишком большая сумма — не более 12 цифр"
   },
   "returnHandoverQrAccepted": "QR магазина принят — идёт передача",
-  "returnHandoverCameraNote": "Сканируйте QR-код из приложения магазина — разрешение действует 5 минут"
+  "returnHandoverCameraNote": "Сканируйте QR-код из приложения магазина — разрешение действует 5 минут",
+  "returnPath": {
+    "title": "Путь возврата",
+    "subtitleClosed": "Цепочка закрыта — посылка вернулась маркету",
+    "subtitleOpen": "От курьера до маркета — ожидается последний шаг",
+    "subtitleMarketReady": "Посылка сейчас: {{place}} — можно забрать",
+    "step": {
+      "cancelled": "Отменён",
+      "sent": "Отправлен",
+      "received": "Принят",
+      "handed": "Передан маркету"
+    },
+    "pending": {
+      "send": "Отправка возвратной почтой",
+      "receive": "Приём",
+      "handover": "Передача маркету"
+    },
+    "pendingText": {
+      "send": "Ожидается, что курьер добавит заказ в возвратную почту",
+      "receive": "Ожидается приём: {{place}}",
+      "receiveUnknown": "Ожидается приём",
+      "handover": "Ожидается, что {{market}} заберёт заказ",
+      "handoverSelf": "Ожидается, что вы заберёте заказ",
+      "handoverBranch": "Ожидается, что {{market}} заберёт заказ или его отправят в HQ"
+    },
+    "post": "Почта №{{id}}",
+    "reason": "Причина: {{reason}}",
+    "qrHint": "При получении покажите сотруднику QR-код.",
+    "qrOpen": "Открыть QR-код",
+    "loading": "Путь возврата загружается",
+    "error": "Не удалось загрузить путь возврата",
+    "empty": "Путь возврата ещё не записан"
+  }
 }

@@ -3,7 +3,7 @@ import { memo, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { PostOrder } from "../../../../entities/mails";
-import { OrderStatusBadge } from "../../../../entities/order";
+import { OrderReturnPlace, OrderStatusBadge } from "../../../../entities/order";
 import PrintModeSelect from "../../../../shared/components/PrintModeSelect";
 import { cx } from "../../../../shared/lib/cx";
 import type { PrintMode } from "../lib/printMode";
@@ -98,13 +98,14 @@ const OrderRow = memo((props: OrderRowProps) => {
       <span className="text-[13px] text-text-muted">{metaLine}</span>
       {addressLine ? <span className="text-[13px] text-text-muted">{addressLine}</span> : null}
       <span className="flex flex-wrap items-center gap-1.5">
-        {history ? null : <OrderStatusBadge status={order.status} />}
+        {history ? null : <OrderStatusBadge status={order.status} order={order} />}
         {view.deliveryBadge(order)}
         {history && !courier ? <span className="text-xs text-text-muted">{view.date(order)}</span> : null}
         {courierDateOnBadges ? (
           <span className="ml-auto whitespace-nowrap text-xs text-text-muted">{view.date(order)}</span>
         ) : null}
       </span>
+      {history ? null : <OrderReturnPlace order={order} />}
     </>
   );
 

@@ -8,7 +8,6 @@ import {
   PackageCheck,
   Plus,
   RotateCcw,
-  Store,
   Truck,
   User,
   type LucideIcon,
@@ -32,9 +31,12 @@ import type { OrderStatus } from "../types/order";
  *    Qisman to'langan → warning · Sotilgan / To'langan → success ·
  *    Bekor qilingan → danger · Bekor — jo'natilgan → danger + chegarali ·
  *    Yopilgan → neutral.
- *  Backend'ning ikki qo'shimcha holati maketda yo'q — alohida yorliq (ega qarori, SllBYhnt), tafsilot va tarixdagi
- *  ton bilan bir xil: Mijoz kutilmoqda (`waiting_customer`) → warning · Marketga qaytarilgan
- *  (`returned_to_market`) → neutral.
+ *  Backend'ning ikki qo'shimcha holati — alohida yorliq (ega qarori, SllBYhnt), tafsilot va tarixdagi ton bilan
+ *  bir xil: Mijoz kutilmoqda (`waiting_customer`) → warning · Marketga topshirildi (`returned_to_market`) →
+ *  neutral, `PackageCheck` (ega qarori 2026-10-19, `tizim-states-data` §09: bekor qilingan posilka marketga
+ *  qaytdi, zanjir yopildi).
+ *
+ *  Bekor qilingan buyurtmaning JOY BOSQICHI («Bekor · HQ'da» …) — `cancelReturnStage.ts`.
  *
  *  Ikonka — `design/icon-registry.json` dagi kanonik nom (holat tarixi, filtr
  *  menyusi, ko'rsatkich kartasi uchun). Badge'ning O'ZIDA ikonka yo'q: katalog
@@ -94,13 +96,14 @@ export const ORDER_STATUS_REGISTRY: Readonly<Record<OrderStatus, OrderStatusMeta
   paid: meta("paid", "success", CircleCheck),
   cancelled: meta("cancelled", "danger", CircleX),
   "cancelled (sent)": meta("cancelled_sent", "danger", RotateCcw, "outline"),
-  returned_to_market: meta("returned_to_market", "neutral", Store),
+  returned_to_market: meta("returned_to_market", "neutral", PackageCheck),
   closed: meta("closed", "neutral", Lock),
 };
 
 /**
  * Barcha 13 holat — maketdagi tartibda (`tizim-states-data` «Buyurtma holati», 11 ta) va ikki qo'shimcha holat
- * o'z guruhida: yangi → jarayonda (mijoz kutilmoqda) → bajarildi → bekor (marketga qaytarilgan) → yopilgan.
+ * o'z guruhida: yangi → jarayonda (mijoz kutilmoqda) → bajarildi → bekor (marketga topshirildi — bekor zanjirining
+ * yakuni, `tizim-states-data` §09) → yopilgan.
  */
 export const ORDER_STATUSES: readonly OrderStatus[] = [
   "new",

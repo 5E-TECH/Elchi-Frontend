@@ -1,8 +1,13 @@
-// dizayn-v2: superadmin-orders-detail, admin-orders-detail, manager-orders-detail, registrator-orders-detail, market-orders-detail, courier-orders-detail, superadmin-neworders-market-order-edit, registrator-new-orders-market-order-edit, market-new-orders-edit
+// dizayn-v2: superadmin-orders-detail, superadmin-orders-detail-cancelled, manager-orders-detail-cancelled, market-orders-detail-cancelled, admin-orders-detail, manager-orders-detail, registrator-orders-detail, market-orders-detail, courier-orders-detail, superadmin-neworders-market-order-edit, registrator-new-orders-market-order-edit, market-new-orders-edit
 import type { ReactNode } from "react";
 import { Copy } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { ReturnRequestedTag } from "../../../../entities/order";
+import {
+  ReturnRequestedTag,
+  resolveCancelReturnPlace,
+  resolveCancelReturnStage,
+  useCancelReturnPlaceText,
+} from "../../../../entities/order";
 import { formatTrackingDateTime } from "../../../../features/order-tracking";
 import { copyToClipboard } from "../../../../shared/lib/clipboard";
 import { notify } from "../../../../shared/lib/notify";
@@ -21,6 +26,10 @@ type DetailHeaderProps = {
   /** Orqaga havolasi matni (sukut «Buyurtmalar»; `/new-orders/:marketId/edit` — market nomi yoki «Qabul va yaratish»). */
   backLabel?: string;
   actions?: ReactNode;
+  /** «Marketga topshirildi» usuli (tarixdan: «QR orqali» …) — sarlavhadagi joy qatori oxirida. */
+  handoverMethod?: string | null;
+  /** «Marketga topshirildi» vaqti (tarixdagi topshirish hodisasi; yo'q bo'lsa sahifa `last_handover_at` beradi). */
+  handoverAt?: unknown;
 };
 
 /**
@@ -29,8 +38,18 @@ type DetailHeaderProps = {
  * `courier-orders-detail`) desktopda holat + yetkazish turi va «Market · sana», telefonda esa
  * badge'lar To'lov kartasiga tushadi, izoh — «Buyurtma tafsilotlari».
  */
-export const DetailHeader = ({ orderId, order, layout, onBack, backLabel, actions }: DetailHeaderProps) => {
+export const DetailHeader = ({
+  orderId,
+  order,
+  layout,
+  onBack,
+  backLabel,
+  actions,
+  handoverMethod,
+  handoverAt,
+}: DetailHeaderProps) => {
   const { t, i18n } = useTranslation(["orders", "newOrders"]);
+  const placeText = useCancelReturnPlaceText();
   const language = i18n.resolvedLanguage ?? i18n.language;
   const id = order?.id ?? orderId;
 
@@ -47,10 +66,26 @@ export const DetailHeader = ({ orderId, order, layout, onBack, backLabel, action
   const marketName = order ? readOrderMarket(order)?.name : null;
   const deliveryKey = order ? getDeliveryLabelKey(order.where_deliver) : null;
   const isCourier = layout === "courier";
+  // Bekor bosqichi (maketlar `*-orders-detail-cancelled`): belgi yonida «Toshkent HQ · 3 kun» /
+  // «Toshkent HQ · Bugun, 11:20 · QR orqali». Kuryer tafsilotida bosqich yo'q (maket o'zgarmagan).
+  const stage = order && !isCourier ? resolveCancelReturnStage(order) : null;
+  const place = stage ? placeText(resolveCancelReturnPlace(order, stage, { handoverAt })) : null;
+  const stageLine = stage
+    ? [place?.name, place?.extra, stage === "market" ? handoverMethod : null].filter(Boolean).join(" · ")
+    : "";
 
   const meta = order ? (
     <>
-      <DetailStatusBadge status={order.status} className={isCourier ? "max-md:hidden" : undefined} />
+      <DetailStatusBadge
+        status={order.status}
+        order={isCourier ? undefined : order}
+        className={isCourier ? "max-md:hidden" : undefined}
+      />
+      {stageLine ? (
+        <span className="text-[13px] text-text-muted" data-testid="detail-stage-place">
+          {stageLine}
+        </span>
+      ) : null}
       {isCourier && deliveryKey ? <Badge className="max-md:hidden">{t(deliveryKey)}</Badge> : null}
       <ReturnRequestedTag order={order} />
     </>

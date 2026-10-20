@@ -52,6 +52,7 @@ const LOCKED_TONES: Record<OrderStatus, Tone> = {
   paid: "success",
   cancelled: "danger",
   "cancelled (sent)": "danger",
+  // Ega qarori 2026-10-19: bekor zanjiri yopildi — «Marketga topshirildi», neytral (kulrang).
   returned_to_market: "neutral",
   closed: "neutral",
 };
@@ -69,17 +70,23 @@ const UZ_LABELS: Record<OrderStatus, string> = {
   paid: "To'langan",
   cancelled: "Bekor qilingan",
   "cancelled (sent)": "Bekor — jo'natilgan",
-  returned_to_market: "Marketga qaytarilgan",
+  returned_to_market: "Marketga topshirildi",
   closed: "Yopilgan",
 };
 
 const lookup = (locale: object, key: string): unknown =>
   key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown> | undefined)?.[part], locale);
 
-const keys = (obj: object, prefix = ""): string[] =>
-  Object.entries(obj).flatMap(([key, value]) =>
-    value && typeof value === "object" ? keys(value, `${prefix}${key}.`) : [`${prefix}${key}`],
-  );
+/** Kalitlar; ko'plik qo'shimchalari (`_one`, `_few`, `_many`, `_other`) bitta kalit sanaladi. */
+const keys = (obj: object, prefix = ""): string[] => [
+  ...new Set(
+    Object.entries(obj).flatMap(([key, value]) =>
+      value && typeof value === "object"
+        ? keys(value, `${prefix}${key}.`)
+        : [`${prefix}${key.replace(/_(one|few|many|other)$/, "")}`],
+    ),
+  ),
+];
 
 const canonicalIcons = new Set(
   (iconRegistry.groups as Array<{ items: Array<{ icon: string }> }>).flatMap((group) =>
@@ -107,7 +114,7 @@ describe("ORDER_STATUS_REGISTRY", () => {
       "To'langan",
       "Bekor qilingan",
       "Bekor — jo'natilgan",
-      "Marketga qaytarilgan",
+      "Marketga topshirildi",
       "Yopilgan",
     ]);
   });
@@ -148,6 +155,7 @@ describe("ORDER_STATUS_REGISTRY", () => {
     expect(name("waiting")).toBe("Clock");
     expect(name("sold")).toBe("PackageCheck");
     expect(name("cancelled")).toBe("CircleX");
+    expect(name("returned_to_market")).toBe("PackageCheck");
   });
 });
 

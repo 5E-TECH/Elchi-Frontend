@@ -340,7 +340,13 @@ const OrdersTable = memo(
               cell: (order) => <span className="whitespace-nowrap">{view.market(order) ?? "—"}</span>,
             };
           case "status":
-            return { id, header, hideBelow, cell: (order) => <OrderStatusBadge status={order.status} /> };
+            // Bekor buyurtma (qaytarish pochtasi) — joy bosqichi va ostida joy qatori (`tizim-states-data` §09).
+            return {
+              id,
+              header,
+              hideBelow,
+              cell: (order) => <OrderStatusBadge status={order.status} order={order} withPlace />,
+            };
           case "delivery":
             return { id, header, hideBelow, cell: (order) => view.deliveryBadge(order) };
           case "amount":

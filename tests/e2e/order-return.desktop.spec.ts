@@ -154,18 +154,19 @@ test.describe("Marketga qaytarish — 1440px", () => {
     expect((await scan).postDataJSON()).toEqual({ qr_token: "MCR-AbC_xYz" });
     expect((await mark).postDataJSON()).toEqual({ authorization_token: "MHA-e2e_Tok" });
 
-    // Status returned_to_market — sarlavhada tarjima bilan; badge va tugma yo'qoldi.
+    // Status returned_to_market — sarlavhada «Marketga topshirildi» (neytral, ega qarori 2026-10-19); badge va tugma yo'qoldi.
     await expect(page.getByTestId("mark-returned-modal")).toHaveCount(0);
-    await expect(page.getByText("Marketga qaytarilgan", { exact: true }).first()).toBeVisible();
+    await expect(page.locator("main header").first().getByText("Marketga topshirildi", { exact: true })).toBeVisible();
     await expect(page.getByTestId("return-requested-badge")).toHaveCount(0);
     await expect(page.getByTestId("mark-returned-button")).toHaveCount(0);
 
     const after = afterIndex(requests, "POST orders/96/mark-returned-to-market");
     expect(after).toContain("GET orders/96");
     expect(after).toContain("GET orders/96/tracking");
-    const handoverEvent = page.getByTestId("tracking-event").filter({ hasText: "QR tasdiq bilan topshirdi" });
-    await expect(handoverEvent).toContainText("Menejer Filial menejeri buyurtmani Kimdur Kimdurga QR tasdiq bilan topshirdi");
-    await expect(handoverEvent).toContainText("Marketga qaytarilgan");
+    // Usul tarixdan: MHA ruxsati bilan — «QR orqali» («QR tasdiq bilan» endi qotirib yozilmaydi).
+    const handoverEvent = page.getByTestId("tracking-event").filter({ hasText: "topshirdi — QR orqali" });
+    await expect(handoverEvent).toContainText("Menejer Filial menejeri buyurtmani Kimdur Kimdurga topshirdi — QR orqali");
+    await expect(handoverEvent).toContainText("Marketga topshirildi");
     expect(writes).toEqual(["POST scan/market-cancelled", "POST orders/96/mark-returned-to-market"]);
     expect(leaked).toEqual([]);
   });

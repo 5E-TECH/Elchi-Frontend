@@ -258,7 +258,13 @@ noto'g'ri (`2026-02-30`, `10/06/2026`) — `—`. Brauzerning mahalliy vaqti (ti
 - O'zbek lotin, gap registri (Title Case yo'q). Inglizcha so'z yo'q («history», «Export», «Return» emas):
   `Bosh sahifa`, `Qaytarishlar`, `Filial paketlari`, `Yaratilgan`, `Nofaol`, `Excelga yuklash`, `Operatsiyalar tarixi`.
 - Buyurtma holati → ton: Yangi / Yaratilgan / Qabul qilindi — **info**; Yo'lda, Kutilmoqda, Qisman to'langan —
-  **warning**; Sotilgan, To'langan — **success**; Bekor qilingan, Bekor — jo'natilgan — **danger**; Yopilgan — neytral.
+  **warning**; Sotilgan, To'langan — **success**; Bekor qilingan, Bekor — jo'natilgan — **danger**; Yopilgan — neytral;
+  Marketga topshirildi (`returned_to_market`) — **neytral** (ega qarori 2026-10-19: bekor zanjiri yopildi).
+- Bekor qilingan buyurtmaning **joy bosqichi** (holat o'zgarmaydi, `entities/order` → `cancelReturnStage.ts`, maket
+  `tizim-states-data` §09): «Bekor · kuryerda» (`CircleX`), «Bekor · yo'lda» (`RotateCcw`, chegarali), «Bekor ·
+  filialda» (`Building2`), «Bekor · HQ'da» (`Warehouse`) — **danger**; «Marketga topshirildi» (`PackageCheck`) —
+  **neytral**. Belgi nuqtasiz, ikonkali; joy nomi va muddat ikkinchi qatorda («Toshkent HQ · 2 kun», yo'ldagisi
+  «→ Toshkent HQ») — nom alohida turadi, qo'shimcha nomga yopishtirilmaydi.
 - Pul o'tkazish, foydalanuvchini nofaol qilish, «Kunni yakunlash» — **tasdiqlash oynasi** orqali
   (`useConfirm()` / `ConfirmDialog`). Shu qatorda: kassa va to'lov amallari (maosh, kassadan to'lov), API kalitini
   almashtirish, hamkor/ulanishni o'chirish, filialdan chiqarish, buzuvchi o'chirish. Tasdiq tugmasida aniq fe'l
