@@ -25,6 +25,21 @@ test("⭐ market: «AI narxi» tafsilotda va tahrirda; tozalansa `ai_price_per_o
   await expect(ai).toHaveValue("250");
   await expect(ai).toHaveAccessibleDescription("Shu market uchun · 0 — bepul");
 
+  // Maket to'ri `minmax(min(240px,100%),1fr)`: 1440 va 768 da 2×2 — «Markazga tarif» va «AI narxi» bir qatorda,
+  // «AI narxi» o'ngda va «Uyga tarif» bilan bir ustunda (3 + 1 emas).
+  const center = dialog.getByRole("textbox", { name: /^Markazga tarif/ });
+  const home = dialog.getByRole("textbox", { name: /^Uyga tarif/ });
+  for (const width of [1440, 768]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect
+      .poll(async () => {
+        const [a, c, h] = await Promise.all([ai.boundingBox(), center.boundingBox(), home.boundingBox()]);
+        return [Math.round((a?.y ?? 0) - (c?.y ?? -99)), (a?.x ?? 0) > (c?.x ?? 0), Math.round((a?.x ?? 0) - (h?.x ?? -99))];
+      }, { message: `${width}px: 2×2 to'r` })
+      .toEqual([0, true, 0]);
+  }
+  await page.setViewportSize({ width: 1440, height: 900 });
+
   await ai.fill("");
   await dialog.getByRole("button", { name: "O'zgarishlarni saqlash" }).click();
   await expect.poll(() => patches.length).toBe(1);

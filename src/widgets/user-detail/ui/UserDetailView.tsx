@@ -388,7 +388,9 @@ export const UserDetailView = memo(({ user, back = "/all-users" }: UserDetailVie
           ) : null}
           <InfoRow label={t("v2.detail.homeTariff")} value={money(user.tariff_home)} />
           <InfoRow label={t("v2.detail.centerTariff")} value={money(user.tariff_center)} />
-          {isMarket && hasAiPrice && canManagePrivilegedToggles ? <InfoRow label={t("v2.edit.aiPrice")} value={money(aiPrice)} /> : null}
+          {isMarket && hasAiPrice && canManagePrivilegedToggles ? (
+            <InfoRow label={t("v2.edit.aiPrice")} value={money(aiPrice)} />
+          ) : null}
         </dl>
       </Card>
     ) : null;

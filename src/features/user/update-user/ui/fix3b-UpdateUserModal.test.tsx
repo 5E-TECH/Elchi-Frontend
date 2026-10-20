@@ -26,7 +26,8 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("../../../../entities/user/api/userApi", () => ({
   useUser: () => ({
-    useGetUserById: (id: string) => mocks.useGetUserById(id),
+    useGetUserById: (id: string, _params?: unknown, options?: { silentError?: boolean }) =>
+      options ? mocks.useGetUserById(id, options) : mocks.useGetUserById(id),
     updateUser: { mutateAsync: mocks.updateUser, isPending: false },
     updateMyProfile: { mutateAsync: mocks.updateMyProfile, isPending: false },
   }),
@@ -478,7 +479,8 @@ describe("UpdateUserModal — FY-1: market «AI narxi», logist maoshi, kuryer �
     );
     const { unmount } = renderModal(makeUser(), { role: "admin", id: "1" });
 
-    expect(mocks.useGetUserById).toHaveBeenCalledWith("263");
+    // Yordamchi so'rov — jim (xato global xabar bermaydi, maydonning o'zida).
+    expect(mocks.useGetUserById).toHaveBeenCalledWith("263", { silentError: true });
     expect(screen.getByRole("textbox", { name: "Viloyat" })).toHaveValue("Farg'ona viloyati");
     unmount();
 
@@ -486,4 +488,49 @@ describe("UpdateUserModal — FY-1: market «AI narxi», logist maoshi, kuryer �
     renderModal(makeUser(), { role: "admin", id: "1" });
     expect(screen.getByRole("textbox", { name: "Viloyat" })).toHaveValue("Biriktirilmagan");
   });
+
+  it("kuryer viloyati so'rovi yiqilsa — «Biriktirilmagan» emas, «—» (qiymat noma'lum)", () => {
+    mocks.useGetUserById.mockImplementation((id: string) =>
+      id ? { data: undefined, isLoading: false, isError: true } : { data: undefined, isLoading: false },
+    );
+    renderModal(makeUser(), { role: "admin", id: "1" });
+
+    const region = screen.getByRole("textbox", { name: "Viloyat" });
+    expect(region).toHaveValue("—");
+    expect(screen.queryByDisplayValue("Biriktirilmagan")).not.toBeInTheDocument();
+  });
+
+  it("kuryer viloyati yuklanayotganda — o'sha 44px faqat-o'qish maydon (yorliq bog'langan), qiymat bo'sh", () => {
+    mocks.useGetUserById.mockImplementation((id: string) =>
+      id ? { data: undefined, isLoading: true } : { data: undefined, isLoading: false },
+    );
+    renderModal(makeUser(), { role: "admin", id: "1" });
+
+    const region = screen.getByRole("textbox", { name: "Viloyat" });
+    expect(region).toHaveValue("");
+    expect(region).toHaveAttribute("readonly");
+    expect(region).toHaveAttribute("aria-busy", "true");
+    expect(screen.queryByDisplayValue("Biriktirilmagan")).not.toBeInTheDocument();
+  });
+
+  it("menejer kuryerni tahrirlasa — «O'tkazish» izohi yo'q (tugma faqat admin/superadminda)", () => {
+    renderModal(makeUser({ region: { id: "14", name: "Samarqand viloyati" } as never }), { role: "manager", id: "70" });
+
+    const region = screen.getByRole("textbox", { name: "Viloyat" });
+    expect(region).toHaveValue("Samarqand viloyati");
+    expect(screen.queryByText("Filial «Boshqa filialga o'tkazish» orqali o'zgaradi")).not.toBeInTheDocument();
+  });
+
+  it("market bo'limi to'ri: AI narxi bilan 240px ustun (maket 2×2 / telefonda 1), menejerda ixcham 170px", () => {
+    const { unmount } = renderModal(market({ ai_price_per_order: 250 }), { role: "superadmin", id: "1" });
+    const grid = () => aiOrHomeGrid();
+    expect(grid()).toHaveAttribute("data-min-col", "240");
+    expect(grid()?.className).toContain("minmax(min(240px,100%),1fr)");
+    unmount();
+
+    renderModal(market({ ai_price_per_order: 250 }), { role: "manager", id: "70" });
+    expect(grid()).toHaveAttribute("data-min-col", "170");
+  });
 });
+
+const aiOrHomeGrid = () => document.querySelector('input[name="tariff_home"]')?.closest("[data-min-col]") ?? null;

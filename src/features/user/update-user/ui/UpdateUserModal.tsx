@@ -2,7 +2,7 @@
 import { memo, useEffect, useState, type ReactNode } from "react";
 import { Controller, useForm, type Path } from "react-hook-form";
 import { useSelector } from "react-redux";
-import { Eye, EyeOff, Pencil, UserX } from "lucide-react";
+import { Building2, Eye, EyeOff, Pencil, UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatMoneyLocalized } from "../../../../shared/lib/formatMoney";
 import { useUser } from "../../../../entities/user/api/userApi";
@@ -103,17 +103,30 @@ const SERVER_FIELD_NAME_MAP: Record<string, Path<UpdateUserFormValues>> = {
   ai_price_per_order: "ai_price",
 };
 
-/** Bo'lim sarlavhasi (`.el-overline`) va maydonlar to'ri (maket: `repeat(auto-fit, minmax(260px, 1fr))`). */
-const FormSection = ({ title, compact = false, children }: { title: string; compact?: boolean; children: ReactNode }) => (
+/**
+ * Maydonlar to'ri ustunining eng kichik kengligi (maket: `repeat(auto-fit, minmax(min(Npx, 100%), 1fr))`):
+ * 260 — asosiy; 240 — «AI narxi» bilan market bo'limi (`superadmin-users-edit-market-ai`: 2×2, telefonda 1 ustun);
+ * 170 — ixcham tarif bo'limlari. Tailwind statik klasslari bo'lishi uchun xarita.
+ */
+const GRID_MIN_COL = {
+  170: "grid grid-cols-[repeat(auto-fit,minmax(min(170px,100%),1fr))] gap-4",
+  240: "grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-4",
+  260: "grid grid-cols-[repeat(auto-fit,minmax(min(260px,100%),1fr))] gap-4",
+} as const;
+
+/** Bo'lim sarlavhasi (`.el-overline`) va maydonlar to'ri. */
+const FormSection = ({
+  title,
+  minCol = 260,
+  children,
+}: {
+  title: string;
+  minCol?: keyof typeof GRID_MIN_COL;
+  children: ReactNode;
+}) => (
   <section className="flex flex-col gap-4 border-t border-border pt-5 first:border-t-0 first:pt-0">
     <h3 className="m-0 text-xs font-semibold uppercase tracking-[.05em] text-text-muted">{title}</h3>
-    <div
-      className={
-        compact
-          ? "grid grid-cols-[repeat(auto-fit,minmax(min(170px,100%),1fr))] gap-4"
-          : "grid grid-cols-[repeat(auto-fit,minmax(min(260px,100%),1fr))] gap-4"
-      }
-    >
+    <div className={GRID_MIN_COL[minCol]} data-min-col={minCol}>
       {children}
     </div>
   </section>
@@ -163,8 +176,15 @@ export const UpdateUserModal = memo(({
   const needsCourierRegion = Boolean(
     userId && initialUser && !isOwnProfile && initialUser.role === "courier" && initialUser.region === undefined,
   );
-  const { data: rawUser, isLoading: isUserLoading } = useGetUserById(
+  // Viloyat — yordamchi so'rov: xatosi maydonning o'zida («—»), global xabar chiqmaydi.
+  const {
+    data: rawUser,
+    isLoading: isUserLoading,
+    isError: isUserError,
+  } = useGetUserById(
     shouldFetchUser || needsCourierRegion ? userId ?? "" : "",
+    undefined,
+    needsCourierRegion ? { silentError: true } : undefined,
   );
 
   const methods = useForm<UpdateUserFormValues>({
@@ -196,6 +216,10 @@ export const UpdateUserModal = memo(({
   const fetchedUser = needsCourierRegion ? unwrapUserResponse(rawUser) : null;
   const courierRegion = userData?.region ?? fetchedUser?.region ?? null;
   const courierRegionLoading = needsCourierRegion && isUserLoading;
+  // So'rov yiqilsa «Biriktirilmagan» deyilmaydi (bu yolg'on bo'lardi) — qiymat noma'lum: «—».
+  const courierRegionFailed = needsCourierRegion && isUserError && !fetchedUser;
+  // «Boshqa filialga o'tkazish» tugmasi faqat admin/superadminda (UserDetailView `canTransferCourier`).
+  const canTransferCourier = authRole === "admin" || authRole === "superadmin";
   const initialAiPrice = userData?.ai_price_per_order != null ? toDigits(userData.ai_price_per_order) : "";
   const canEditManagerFinancial =
     !isOwnProfile &&
@@ -586,25 +610,34 @@ export const UpdateUserModal = memo(({
             // FY-S4: «Ish hududi» faqat o'qish — viloyat (filial biriktiruvidan); filial «Boshqa filialga o'tkazish»
             // oynasi orqali. «Tuman» tanlovi (maketda «Taklif · backend kerak») chizilmaydi.
             <FormSection title={t("v2.edit.workArea")}>
-              <Field label={t("v2.edit.region")} hint={t("v2.edit.regionHint")}>
-                {courierRegionLoading ? (
-                  <SkeletonLines lines={1} />
-                ) : (
-                  <TextInput readOnly value={courierRegion?.name || t("v2.edit.regionEmpty")} />
-                )}
+              <Field label={t("v2.edit.region")} hint={canTransferCourier ? t("v2.edit.regionHint") : undefined}>
+                {/* Yuklanishda ham 44px maydon (oyna sakramaydi, yorliq boshqaruvga bog'langan). */}
+                <TextInput
+                  readOnly
+                  icon={Building2}
+                  aria-busy={courierRegionLoading || undefined}
+                  placeholder={courierRegionLoading ? t("loading") : undefined}
+                  value={
+                    courierRegionLoading
+                      ? ""
+                      : courierRegionFailed
+                        ? "—"
+                        : courierRegion?.name || t("v2.edit.regionEmpty")
+                  }
+                />
               </Field>
             </FormSection>
           ) : null}
 
           {isCourier ? (
-            <FormSection title={t("courierTariff")} compact>
+            <FormSection title={t("courierTariff")} minCol={170}>
               {renderMoneyField("tariff_home", t("v2.edit.homeTariff"))}
               {renderMoneyField("tariff_center", t("v2.edit.centerTariff"))}
             </FormSection>
           ) : null}
 
           {isMarket ? (
-            <FormSection title={t("marketInfo")} compact>
+            <FormSection title={t("marketInfo")} minCol={canEditAiPrice ? 240 : 170}>
               <Controller
                 control={control}
                 name="default_tariff"

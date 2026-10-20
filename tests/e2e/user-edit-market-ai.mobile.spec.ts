@@ -19,6 +19,12 @@ test("⭐ 390 market: «AI narxi» maydoni pastki varaqada, 0 — bepul saqlanad
   await expect(ai).toBeVisible();
   const box = await ai.boundingBox();
   expect(Math.round(box?.height ?? 0)).toBeGreaterThanOrEqual(44);
+  // Maket (telefon): bitta ustun — «AI narxi» «Markazga tarif» ostida, chap qirralari bir xil, izoh bir qatorda.
+  const center = await dialog.getByRole("textbox", { name: /^Markazga tarif/ }).boundingBox();
+  expect(Math.round((box?.y ?? 0) - (center?.y ?? 0))).toBeGreaterThan(40);
+  expect(Math.round((box?.x ?? 0) - (center?.x ?? -99))).toBe(0);
+  const hint = await dialog.getByText("Shu market uchun · 0 — bepul").boundingBox();
+  expect(Math.round(hint?.height ?? 99)).toBeLessThan(24);
   // Pastki varaqa: oyna ekranning pastiga yopishgan.
   const sheet = await dialog.boundingBox();
   expect(Math.round((sheet?.y ?? 0) + (sheet?.height ?? 0))).toBeGreaterThanOrEqual(page.viewportSize()!.height - 2);
