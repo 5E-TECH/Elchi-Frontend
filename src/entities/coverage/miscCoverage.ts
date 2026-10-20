@@ -1,9 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AxiosError } from "axios";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 type QueryParams = Record<string, unknown>;
+
+/** Readiness: 200 — hammasi ishlayapti, 503 — kamida bittasi ishlamayapti (ikkalasi ham javob). */
+const isReadinessStatus = (status: number) => status === 200 || status === 503;
 
 export const useMiscCoverage = () => {
   const client = useQueryClient();
@@ -121,19 +125,33 @@ export const useMiscCoverage = () => {
 
   // ── HEALTH ─────────────────────────────────────────────────────────────────
 
-  const useGetHealthLiveness = (options?: SilentErrorOption) =>
-    useQuery({
-      queryKey: ["misc-cov", "health-liveness"],
-      queryFn: () =>
-        api.get(API_ENDPOINTS.HEALTH.LIVENESS).then((res) => res.data),
-      ...silentErrorMeta(options),
-    });
-
-  const useGetHealthReadiness = () =>
+  /**
+   * «Tizim holati» (Ops → Tizim): `GET /health/readiness` — 14 xizmat. Backend hammasi ishlasa 200, birortasi
+   * ishlamasa 503 qaytaradi (tanasi bir xil) — ikkalasi ham javob (`validateStatus`). `services` siz yoki bo'sh (har qanday kodda) — xato.
+   * Liveness (`GET /health`) doim yashil bo'lgani uchun olib tashlandi (OS-1).
+   */
+  const useGetHealthReadiness = (options?: SilentErrorOption) =>
     useQuery({
       queryKey: ["misc-cov", "health-readiness"],
       queryFn: () =>
-        api.get(API_ENDPOINTS.HEALTH.READINESS).then((res) => res.data),
+        api
+          .get(API_ENDPOINTS.HEALTH.READINESS, { validateStatus: isReadinessStatus })
+          .then((res) => {
+            const services = (res.data as { services?: unknown } | null | undefined)?.services;
+            // `services` yo'q yoki bo'sh — holat noma'lum (masalan proksi 200 bilan SPA/HTML qaytardi): xato.
+            // 200 da kod ko'rsatilmaydi («Xato kodi: 200» chalg'itadi) — `response` faqat 503 da beriladi.
+            if (!Array.isArray(services) || services.length === 0) {
+              throw new AxiosError(
+                "Readiness javobida services yo'q",
+                AxiosError.ERR_BAD_RESPONSE,
+                res.config,
+                res.request,
+                res.status === 200 ? undefined : res,
+              );
+            }
+            return res.data;
+          }),
+      ...silentErrorMeta(options),
     });
 
   // ── NOTIFICATIONS ──────────────────────────────────────────────────────────
@@ -217,7 +235,6 @@ export const useMiscCoverage = () => {
     generateQr,
     uploadFile,
     // Health
-    useGetHealthLiveness,
     useGetHealthReadiness,
     // Notifications
     useGetNotificationsHealth,
