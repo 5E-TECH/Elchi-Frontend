@@ -161,6 +161,28 @@ describe("DashboardLayout (shell)", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
+  it("⭐ «Asosiy kontentga o'tish» (KI-S2): shell'ning birinchi fokuslanadigan elementi, nishoni — kontent sloti", () => {
+    const { container, router } = renderShell();
+    const root = container.firstElementChild as HTMLElement;
+    const link = screen.getByRole("link", { name: "Asosiy kontentga o'tish" });
+    expect(root.firstElementChild).toBe(link);
+    expect(link).toHaveAttribute("href", "#main-content");
+    // Hujjat tartibida undan oldin fokuslanadigan narsa yo'q.
+    const focusable = container.querySelectorAll("a[href], button, input, select, textarea, [tabindex]:not([tabindex='-1'])");
+    expect(focusable[0]).toBe(link);
+
+    const content = container.querySelector('[data-shell-slot="content"]') as HTMLElement;
+    expect(content).toHaveAttribute("id", "main-content");
+    expect(content).toHaveAttribute("tabindex", "-1");
+    expect(content).toHaveClass("outline-none");
+
+    fireEvent.click(link);
+    expect(content).toHaveFocus();
+    // URL'ga `#main-content` yozilmaydi.
+    expect(router.state.location.hash).toBe("");
+    expect(router.state.location.pathname).toBe("/orders");
+  });
+
   it("ekran ≥ 1024 ga kengaysa ochiq menyu yopiladi (aks holda orqa fon `inert` qotib qolardi)", () => {
     const listeners: MediaListener[] = [];
     const query = {

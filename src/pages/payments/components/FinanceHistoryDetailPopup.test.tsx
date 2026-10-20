@@ -219,20 +219,37 @@ describe("FinanceHistoryDetailPopup — kuryer kvitansiyasi javobi (2crjWf7v)", 
     ...(payment_ack === undefined ? {} : { payment_ack }),
   });
 
-  it("disputed → «Kvitansiya javobi: Noto'g'ri» (ro'yxatdagi belgi bilan bir xil)", async () => {
+  it("xodim, disputed → «Kvitansiya javobi: Kuryer: noto'g'ri» (maket manager-payments-history-detail-dialog-ack)", async () => {
     open(courierPayment("disputed"), "manager");
     const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
-    const badge = within(valueOf(dialog, "Kvitansiya javobi")).getByText("Noto'g'ri");
+    const badge = within(valueOf(dialog, "Kvitansiya javobi")).getByText("Kuryer: noto'g'ri");
     expect(badge).toHaveAttribute("data-payment-ack", "disputed");
+    expect(badge).toHaveAttribute("title", "Kuryer botdagi kvitansiyaga «Noto'g'ri» deb javob berdi");
   });
 
-  it("confirmed → «Tasdiqlangan»", async () => {
-    open(courierPayment("confirmed"), "courier", { hideCashboxType: true });
+  it("xodim, confirmed → «Kuryer tasdiqladi»", async () => {
+    open(courierPayment("confirmed"), "manager");
     const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
-    expect(within(valueOf(dialog, "Kvitansiya javobi")).getByText("Tasdiqlangan")).toHaveAttribute(
+    expect(within(valueOf(dialog, "Kvitansiya javobi")).getByText("Kuryer tasdiqladi")).toHaveAttribute(
       "data-payment-ack",
       "confirmed",
     );
+  });
+
+  it("kuryerning o'zi, confirmed → «Siz tasdiqlagansiz» (KI-S1)", async () => {
+    open(courierPayment("confirmed"), "courier", { hideCashboxType: true });
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    const badge = within(valueOf(dialog, "Kvitansiya javobi")).getByText("Siz tasdiqlagansiz");
+    expect(badge).toHaveAttribute("data-payment-ack", "confirmed");
+    expect(badge).toHaveAttribute("title", "Botdagi kvitansiyani siz tasdiqlagansiz");
+  });
+
+  it("kuryerning o'zi, disputed → «Siz: noto'g'ri»", async () => {
+    open(courierPayment("disputed"), "courier", { hideCashboxType: true });
+    const dialog = await screen.findByRole("dialog", { name: "Chiqim operatsiyasi" });
+    const badge = within(valueOf(dialog, "Kvitansiya javobi")).getByText("Siz: noto'g'ri");
+    expect(badge).toHaveAttribute("title", "Botdagi kvitansiyaga siz «Noto'g'ri» deb javob bergansiz");
+    expect(within(dialog).queryByText(/^Kuryer(: noto'g'ri| tasdiqladi)$/)).not.toBeInTheDocument();
   });
 
   it("javob yo'q (null) → «Javob yo'q»; maydon kelmagan qatorda qator umuman yo'q", async () => {

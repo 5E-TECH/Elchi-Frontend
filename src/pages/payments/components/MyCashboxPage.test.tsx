@@ -370,7 +370,8 @@ describe("MyCashboxPage — holatlar", () => {
 
 /**
  * 2crjWf7v — kuryerning `/cash-box` sahifasi: `GET finance/cashbox/my-cashbox` javobidagi
- * `payment_ack` qatorga o'tadi va tarixda «Noto'g'ri» / «Tasdiqlangan» belgisi chiqadi.
+ * `payment_ack` qatorga o'tadi va tarixda kuryerning o'z javobi — «Siz: noto'g'ri» / «Siz tasdiqlagansiz»
+ * (KI-S1, maket `courier-cashbox-my-transfers-ack`).
  */
 describe("MyCashboxPage — courier receipt answer (2crjWf7v)", () => {
   const courierPayment = (id: string, hour: number, extra: Params) => ({
@@ -386,7 +387,7 @@ describe("MyCashboxPage — courier receipt answer (2crjWf7v)", () => {
   });
 
   const rows = () => [
-    courierPayment("11", 9, { payment_ack: "disputed" }),
+    courierPayment("11", 9, { payment_ack: "disputed", comment: "Kunlik tushum" }),
     courierPayment("12", 10, { payment_ack: "confirmed" }),
     courierPayment("13", 11, { payment_ack: null }),
     { id: "14", amount: 420_000, operation_type: "income", source_type: "sell", cashbox_type: "couriers", createdAt: at(8, 12) },
@@ -402,8 +403,13 @@ describe("MyCashboxPage — courier receipt answer (2crjWf7v)", () => {
     const confirmed = rowByReceiver("Menejer 12");
     const unanswered = rowByReceiver("Menejer 13");
 
-    expect(within(disputed).getByText("Noto'g'ri")).toHaveAttribute("data-payment-ack", "disputed");
-    expect(within(confirmed).getByText("Tasdiqlangan")).toHaveAttribute("data-payment-ack", "confirmed");
+    expect(within(disputed).getByText("Siz: noto'g'ri")).toHaveAttribute("data-payment-ack", "disputed");
+    expect(within(confirmed).getByText("Siz tasdiqlagansiz")).toHaveAttribute("data-payment-ack", "confirmed");
+    expect(within(confirmed).getByText("Siz tasdiqlagansiz")).toHaveAttribute(
+      "title",
+      "Botdagi kvitansiyani siz tasdiqlagansiz",
+    );
+    expect(within(table).queryByText(/^Kuryer (tasdiqladi|: )/)).not.toBeInTheDocument();
     expect(unanswered.querySelector("[data-payment-ack]")).toBeNull();
     expect(document.querySelectorAll("[data-payment-ack]")).toHaveLength(2);
   });
@@ -424,9 +430,17 @@ describe("MyCashboxPage — courier receipt answer (2crjWf7v)", () => {
       respond("couriers", 640_000, rows());
       renderWithProviders(<MyCashboxPage />, { route: "/cash-box", preloadedState: asRole("courier") });
 
-      const card = await screen.findByRole("button", { name: /\(Noto'g'ri · Qabul qildi: Menejer 11\)/ });
-      expect(within(card).getByText("Noto'g'ri")).toHaveAttribute("data-payment-ack", "disputed");
-      expect(screen.getByRole("button", { name: /\(Tasdiqlangan · Qabul qildi: Menejer 12\)/ })).toBeInTheDocument();
+      // Tartib (maket): «Qabul qildi» → izoh → javob belgisi oxirida; karta nomi ham shu tartibda.
+      const card = await screen.findByRole("button", {
+        name: /\(Qabul qildi: Menejer 11 · Kunlik tushum · Siz: noto'g'ri\)/,
+      });
+      const badge = within(card).getByText("Siz: noto'g'ri");
+      expect(badge).toHaveAttribute("data-payment-ack", "disputed");
+      const comment = within(card).getByText("Kunlik tushum");
+      const received = within(card).getByText("Menejer 11");
+      expect(received.compareDocumentPosition(comment) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(comment.compareDocumentPosition(badge) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(screen.getByRole("button", { name: /\(Qabul qildi: Menejer 12 · Siz tasdiqlagansiz\)/ })).toBeInTheDocument();
       expect(document.querySelectorAll("[data-payment-ack]")).toHaveLength(2);
     } finally {
       window.matchMedia = matchMedia;

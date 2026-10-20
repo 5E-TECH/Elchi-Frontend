@@ -1017,7 +1017,7 @@ describe("CashDetail — dizayn v2", () => {
 
 /**
  * 2crjWf7v — `GET finance/cashbox/user/:id?cashbox_type=couriers` tarixidagi `courier_payment`
- * qatorlarida `payment_ack` bor: tarixda «Noto'g'ri» / «Tasdiqlangan» belgisi, `null` — belgisiz.
+ * qatorlarida `payment_ack` bor: tarixda «Kuryer: noto'g'ri» / «Kuryer tasdiqladi» belgisi (KI-S1), `null` — belgisiz.
  */
 describe("CashDetail — kuryer kvitansiyasi javobi tarixda (2crjWf7v)", () => {
   afterEach(() => {
@@ -1055,8 +1055,8 @@ describe("CashDetail — kuryer kvitansiyasi javobi tarixda (2crjWf7v)", () => {
       expect(buttons).toHaveLength(1);
       return buttons[0];
     };
-    expect(within(rowOf("Menejer 1")).getByText("Noto'g'ri")).toHaveAttribute("data-payment-ack", "disputed");
-    expect(within(rowOf("Menejer 2")).getByText("Tasdiqlangan")).toHaveAttribute("data-payment-ack", "confirmed");
+    expect(within(rowOf("Menejer 1")).getByText("Kuryer: noto'g'ri")).toHaveAttribute("data-payment-ack", "disputed");
+    expect(within(rowOf("Menejer 2")).getByText("Kuryer tasdiqladi")).toHaveAttribute("data-payment-ack", "confirmed");
     expect(rowOf("Menejer 3").querySelector("[data-payment-ack]")).toBeNull();
   });
 });

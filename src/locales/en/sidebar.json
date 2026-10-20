@@ -53,5 +53,6 @@
   "createShort": "Create",
   "quickActionShort": "Close day",
   "activityLogsShort": "Activity log",
-  "opsShort": "Ops tools"
+  "opsShort": "Ops tools",
+  "skipToContent": "Skip to main content"
 }
