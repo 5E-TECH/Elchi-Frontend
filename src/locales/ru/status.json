@@ -5,11 +5,13 @@
     "received": "Получен",
     "on_the_road": "В пути",
     "waiting": "Ожидается",
+    "waiting_customer": "Ожидает клиента",
     "partly_paid": "Частично оплачен",
     "sold": "Продан",
     "paid": "Оплачен",
     "cancelled": "Отменен",
     "cancelled_sent": "Отменен — отправлен",
+    "returned_to_market": "Возвращён в маркет",
     "closed": "Закрыт",
     "unknown": "Неизвестно"
   }

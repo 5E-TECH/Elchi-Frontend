@@ -14,6 +14,11 @@ export type AiDraft = {
   source: AiPreviewOrder;
   /** Server bu buyurtmani yaratmagan bo'lsa — sababi kartaning o'zida. */
   createError?: string;
+  /**
+   * `duplicate_recent` (j3WEDIpt): ayni buyurtma yaqinda yaratilgan — mavjud buyurtma id. Karta «Mavjud (#N)»,
+   * qayta yuborilmaydi; kartadagi ma'lumot o'zgartirilsa — tozalanadi (yangi urinish).
+   */
+  existingOrderId?: string;
 };
 
 export type AiCreatedRow = {

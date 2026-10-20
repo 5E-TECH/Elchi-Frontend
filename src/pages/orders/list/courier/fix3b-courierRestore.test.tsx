@@ -144,7 +144,7 @@ describe("Kuryer — bekor qilinganni qayta tiklash (fix3b LC-05)", () => {
     await user.click(restoreButtonIn("Qo'limdagi bekor")!);
     await user.click(screen.getByRole("button", { name: "Ha, qayta tiklash" }));
 
-    expect(rollbackMutate).toHaveBeenCalledWith("502", expect.anything());
+    expect(rollbackMutate).toHaveBeenCalledWith({ orderId: "502", targetStatus: "waiting" }, expect.anything());
     expect(await screen.findByText("Ogohlantirish")).toBeInTheDocument();
     expect(screen.getByText(/pochtasiga qo'shilmadi \(403\)/)).toBeInTheDocument();
   });
@@ -159,7 +159,7 @@ describe("Kuryer — bekor qilinganni qayta tiklash (fix3b LC-05)", () => {
     await user.click(restoreButtonIn("Sotilgan mijoz")!);
     await user.click(screen.getByRole("button", { name: "Ha, qayta tiklash" }));
 
-    expect(rollbackMutate).toHaveBeenCalledWith("501", expect.anything());
+    expect(rollbackMutate).toHaveBeenCalledWith({ orderId: "501", targetStatus: "waiting" }, expect.anything());
     expect(screen.queryByText("Ogohlantirish")).not.toBeInTheDocument();
     expect(await screen.findByText("Buyurtma qayta tiklandi")).toBeInTheDocument();
   });

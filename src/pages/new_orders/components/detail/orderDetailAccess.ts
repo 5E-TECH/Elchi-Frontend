@@ -1,11 +1,11 @@
 import type { RootState } from "../../../../app/config/store";
 import { isCourierHeldOrder } from "../../../../entities/orders/custody";
+import { canRollbackOrderStatus } from "../../../../entities/orders/rollbackTarget";
 import { canInitiateReturn, canMarkReturnedToMarket } from "../../../../features/order-return";
 import {
   canRunCourierAction,
   isOrderReceivedOrLater,
   isOrderSentToBranch,
-  normalizeOrderStatus,
 } from "../newOrderUpdateRules";
 import type { OrderDetail } from "./orderDetailModel";
 
@@ -129,7 +129,11 @@ export const getOrderDetailAccess = ({
     isRegionalManager,
     canUseCourierActions,
     canSell: canUseCourierActions && !isCourierHeldOrder(order),
-    canRollback: canManagerSellCancel && normalizeOrderStatus(order?.status ?? "") === "sold",
+    // Ortga qaytarish (y2RarzlT, backend qoidasi): superadmin — sotilgan, bekor, yopilgan, to'langan, qisman to'langan;
+    // hududiy menejer (`can_sell_cancel`) — sotilgan, bekor.
+    canRollback:
+      (role === "superadmin" && canRollbackOrderStatus("superadmin", order?.status)) ||
+      (canManagerSellCancel && canRollbackOrderStatus("manager", order?.status)),
     canStartReturn: canInitiateReturn(rawRole, order),
     canHandOverReturn: canMarkReturnedToMarket(rawRole, order),
   };

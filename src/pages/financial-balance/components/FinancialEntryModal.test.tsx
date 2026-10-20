@@ -84,6 +84,20 @@ describe("FinancialEntryModal — qo'lda yozuv (GtAoqHlk)", () => {
     expect(expense()).toBeEnabled();
   });
 
+  it("⭐ yKhhqPLE: «Qo'lda chiqim / kirim» — kassa harakati daftarga o'zi yozilishi haqida ogohlantirish; boshqa turlarda yo'q", () => {
+    open();
+    const note = () => within(dialog()).queryByRole("note");
+    const TEXT = "Kassa kirim/chiqimi daftarga avtomatik yoziladi — bu yerda faqat kassaga tegmaydigan yozuvlarni kiriting.";
+    // Sukut — «Qo'lda chiqim».
+    expect(note()).toHaveTextContent(TEXT);
+    fireEvent.click(within(dialog()).getByRole("button", { name: "Maosh" }));
+    expect(note()).not.toBeInTheDocument();
+    fireEvent.click(within(dialog()).getByRole("button", { name: "Tuzatish" }));
+    expect(note()).not.toBeInTheDocument();
+    fireEvent.click(within(dialog()).getByRole("button", { name: "Qo'lda kirim" }));
+    expect(note()).toHaveTextContent(TEXT);
+  });
+
   it("chiplar maket tartibida va matnida (MANUAL_ENTRY_SOURCES)", () => {
     open();
     const chips = within(dialog())

@@ -114,7 +114,7 @@ describe("Menejer ro'yxati — amal oynalari (dizayn v2)", () => {
     expect(dialog).toHaveTextContent("Buyurtma «Kutilmoqda» holatiga qaytariladi. Davom etasizmi?");
     await user.click(within(dialog).getByRole("button", { name: "Ha, qaytarish" }));
 
-    expect(rollbackMutate).toHaveBeenCalledWith("10302", expect.any(Object));
+    expect(rollbackMutate).toHaveBeenCalledWith({ orderId: "10302", targetStatus: "waiting" }, expect.any(Object));
     expect(await screen.findByText("Buyurtma qayta tiklandi")).toBeInTheDocument();
     expect(screen.getByText("№10302 · Malika Yusupova")).toBeInTheDocument();
   });

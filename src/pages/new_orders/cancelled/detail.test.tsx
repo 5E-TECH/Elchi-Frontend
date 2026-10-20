@@ -37,6 +37,7 @@ const mocks = vi.hoisted(() => ({
   playScanFeedback: vi.fn(),
   scanner: { current: null as ScannerOptions | null },
   qrRequired: { current: true as boolean | undefined },
+  emptyList: { current: false },
 }));
 
 const order = (id: string, name: string, total: number) => ({
@@ -59,9 +60,11 @@ const order = (id: string, name: string, total: number) => ({
 /** Javob har renderda bir xil obyekt (haqiqiy `useQuery` kabi) — bayroq o'zgarsa yangisi. */
 const responses = new Map<string, unknown>();
 const ordersResponse = () => {
-  const key = String(mocks.qrRequired.current);
+  const key = `${mocks.qrRequired.current}-${mocks.emptyList.current}`;
   if (!responses.has(key)) {
-    responses.set(key, { data: [order("501", "Malika Yusupova", 96000), order("502", "Dilfuza Hasanova", 245000)] });
+    responses.set(key, {
+      data: mocks.emptyList.current ? [] : [order("501", "Malika Yusupova", 96000), order("502", "Dilfuza Hasanova", 245000)],
+    });
   }
   return responses.get(key);
 };
@@ -327,6 +330,7 @@ describe("Bekor qilinganlarni topshirish — skaner (QR talab qilinmaydi)", () =
 describe("Bekor qilinganlar — market roli", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.emptyList.current = false;
   });
 
   const marketState = (qrRequired?: boolean) =>
@@ -359,6 +363,22 @@ describe("Bekor qilinganlar — market roli", () => {
     expect(mocks.generateMutate).toHaveBeenCalledWith("201", expect.any(Object));
     const dialog = await screen.findByRole("dialog", { name: "Bekor qilingan buyurtmalar QR kodi" });
     expect(within(dialog).getByRole("img", { name: "Bekor qilingan buyurtmalarni topshirish QR kodi" })).toBeInTheDocument();
+  });
+
+  it("bekor buyurtma yo'q bo'lsa ham «Qabul qilish» yoqiq — QR chiqadi (qaytarishni «Marketga topshirildi» uchun)", async () => {
+    mocks.emptyList.current = true;
+    mocks.generateMutate.mockImplementation((_marketId: string, options: { onSuccess: (r: unknown) => void }) =>
+      options.onSuccess({ data: { token: "MCR-201-xyz" } }),
+    );
+    const user = userEvent.setup();
+    renderDetail(marketState());
+
+    expect(await screen.findByText("Bekor qilingan buyurtma yo'q")).toBeInTheDocument();
+    const receive = screen.getByRole("button", { name: "Qabul qilish" });
+    expect(receive).toBeEnabled();
+    await user.click(receive);
+    expect(mocks.generateMutate).toHaveBeenCalledWith("201", expect.any(Object));
+    expect(await screen.findByRole("dialog", { name: "Bekor qilingan buyurtmalar QR kodi" })).toBeInTheDocument();
   });
 
   it("marketda QR o'chirilgan bo'lsa — «Qabul qilish» yo'q", () => {

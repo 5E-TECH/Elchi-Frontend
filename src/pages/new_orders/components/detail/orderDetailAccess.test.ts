@@ -55,6 +55,31 @@ describe("getOrderDetailAccess — rollar va qulflar", () => {
     const sold = order({ status: "sold" });
     expect(getOrderDetailAccess({ role: "manager", branchType: "REGIONAL", canSellCancel: true, order: sold }).canRollback).toBe(true);
     expect(getOrderDetailAccess({ role: "manager", branchType: "PICKUP", canSellCancel: true, order: sold }).canRollback).toBe(false);
+    // y2RarzlT: menejer bekor qilinganni ham qaytaradi, to'langanni — yo'q (backend qoidasi).
+    const rollbackOf = (status: string) =>
+      getOrderDetailAccess({ role: "manager", branchType: "REGIONAL", canSellCancel: true, order: order({ status }) }).canRollback;
+    expect(rollbackOf("cancelled")).toBe(true);
+    expect(rollbackOf("paid")).toBe(false);
+  });
+
+  it.each([
+    ["sold", true],
+    ["paid", true],
+    ["partly_paid", true],
+    ["closed", true],
+    ["cancelled", true],
+    ["new", false],
+    ["received", false],
+    ["waiting", false],
+    ["on the road", false],
+  ] as const)("⭐ y2RarzlT: superadmin, %s — qaytarish %s", (status, expected) => {
+    expect(getOrderDetailAccess({ role: "superadmin", branchType: null, order: order({ status }) }).canRollback).toBe(expected);
+  });
+
+  it("admin va registrator qaytara olmaydi (backend: kuryer, menejer, superadmin)", () => {
+    for (const role of ["admin", "registrator"]) {
+      expect(getOrderDetailAccess({ role, branchType: null, order: order({ status: "sold" }) }).canRollback, role).toBe(false);
+    }
   });
 
   // Ro'yxatdagi `canUseManagerTableActions` bilan AYNI qoida: `can_sell_cancel` yo'q menejerda

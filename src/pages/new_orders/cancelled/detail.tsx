@@ -558,11 +558,11 @@ const CancelledMarketDetail = () => {
                   <Badge tone="success" dot role="status">
                     {t("cancelled.market.qrReady")}
                   </Badge>
+                  {/* Bekor buyurtma bo'lmasa ham yoqiq: shu QR qaytarilgan buyurtmani «Marketga topshirildi» (CidJqG5a) uchun ham kerak. */}
                   <Button
                     variant="secondary"
                     leftIcon={QrCode}
                     aria-haspopup="dialog"
-                    disabled={orders.length === 0}
                     loading={generateCancelledMarketQr.isPending}
                     onClick={handleGenerateQr}
                     className="flex-[1_0_auto] max-md:w-full"
