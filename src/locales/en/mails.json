@@ -278,6 +278,32 @@
     "cameraSelected": "Order selected №{{id}}",
     "cameraNotInMail": "Not in this mail",
     "cameraRejectedTitle": "{{code}} · Not in this mail",
-    "cameraRejectedText": "Belongs to another mail · rejected"
+    "cameraRejectedText": "Belongs to another mail · rejected",
+    "search": {
+      "label": "Search orders in this mail",
+      "placeholder": "№, customer, phone, district, store",
+      "found": "<strong>{{value}}</strong> orders found for «{{query}}»",
+      "foundByMarket": "<strong>{{value}}</strong> orders found for «{{query}}» · by store name",
+      "emptyTitle": "No orders found for «{{query}}»",
+      "emptyText": "Check the order number, name, phone, district or store name. You can type the phone without «+998», digits only.",
+      "clear": "Clear search",
+      "hiddenSelected": "{{value}} hidden by the search, but still selected",
+      "allSelectedHidden": "Selected orders are hidden by the search, but stay selected",
+      "selectVisible": "Select visible",
+      "selectVisibleRows": "Select visible orders",
+      "footerShown": "Showing {{shown}} of {{total}}",
+      "footerTotal": "Mail total:"
+    },
+    "duplicates": {
+      "title": "Duplicate phone numbers found ({{value}})",
+      "sendOne": "{{value}} orders in this mail go to the same number. Please check — this does not block sending.",
+      "sendMany": "{{value}} orders in this mail go to the same numbers. Please check — this does not block sending.",
+      "receiveOne": "{{value}} orders in this mail came to the same number. Please check — this does not block receiving.",
+      "receiveMany": "{{value}} orders in this mail came to the same numbers. Please check — this does not block receiving.",
+      "chipsLabel": "Duplicate numbers — tap to search by the number",
+      "chipLabel": "Show {{value}} orders with number {{phone}}: {{ids}}",
+      "rowBadge": "Duplicate number",
+      "rowBadgeTitle": "Also to this number: {{ids}}"
+    }
   }
 }

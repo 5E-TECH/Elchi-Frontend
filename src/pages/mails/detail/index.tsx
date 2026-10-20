@@ -1,5 +1,5 @@
-// dizayn-v2: superadmin-mails-detail, superadmin-mails-detail-send-dialog, superadmin-mails-detail-refused, superadmin-mails-detail-old, admin-mails-detail, admin-mails-send-branch-dialog, admin-mails-refused-detail, admin-mails-old-detail, manager-mails-detail-receive, manager-mails-detail-refused-receive, manager-mails-detail-old, registrator-mails-detail, registrator-mails-detail-send-dialog, registrator-mails-detail-refused, registrator-mails-detail-old, courier-mails-detail-receive, courier-mails-detail-refused, courier-mails-detail-old, courier-mails-detail-print-menu
-import { Fragment, memo, useEffect, useMemo, useCallback, useState } from "react";
+// dizayn-v2: superadmin-mails-detail, superadmin-mails-detail-duplicates, superadmin-mails-detail-search, superadmin-mails-detail-search-empty, admin-mails-detail-duplicates, admin-mails-detail-search, admin-mails-detail-search-empty, registrator-mails-detail-duplicates, registrator-mails-detail-search, registrator-mails-detail-search-empty, manager-mails-detail-receive-duplicates, manager-mails-detail-receive-search, manager-mails-detail-receive-search-empty, superadmin-mails-detail-send-dialog, superadmin-mails-detail-refused, superadmin-mails-detail-old, admin-mails-detail, admin-mails-send-branch-dialog, admin-mails-refused-detail, admin-mails-old-detail, manager-mails-detail-receive, manager-mails-detail-refused-receive, manager-mails-detail-old, registrator-mails-detail, registrator-mails-detail-send-dialog, registrator-mails-detail-refused, registrator-mails-detail-old, courier-mails-detail-receive, courier-mails-detail-refused, courier-mails-detail-old, courier-mails-detail-print-menu
+import { Fragment, memo, useEffect, useMemo, useCallback, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { CircleX, Info, Lock, Trash2, TriangleAlert } from "lucide-react";
@@ -40,7 +40,7 @@ import { DetailAlert } from "../../new_orders/components/detail/DetailAlert";
 import { extractScannerToken, normalizeScannerCandidates } from "../../../shared/lib/scanToken";
 import { playScanFeedback } from "../../../shared/lib/scanner/feedback";
 import { orderByRecent, scanNotify, useRecentScans } from "../../../shared/lib/scanner/scanSession";
-import type { ScanTargetListItem } from "../../../shared/lib/scanner/scanTargets";
+import type { ScanSource, ScanTargetListItem } from "../../../shared/lib/scanner/scanTargets";
 import { fetchScanDetail, getBackendErrorMessage } from "../../scan/lib/scanResource";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { getMailTabPath, normalizeMailTab, type MailTab } from "../lib/navigation";
@@ -51,11 +51,21 @@ import OrdersTable, { type OrdersTableColumn } from "./ui/OrdersTable";
 import SendButton from "./ui/SendButton";
 import SendPostModal from "./ui/SendPostModal";
 import DeleteFromPostDialog from "./ui/DeleteFromPostDialog";
+import { DuplicatePhonesAlert } from "./ui/DuplicatePhonesAlert";
 import { useMailPrintOptions } from "./ui/printOptions";
 import { getPostStatusBadge } from "./lib/postStatus";
 import { printOrders, type PrintMode } from "./lib/printMode";
 import { resolveDispatchRegionId } from "./lib/dispatchRegion";
 import { extractNotReceivedOrderIds, hasOnTheRoadOrders } from "./lib/receiveResult";
+import {
+  duplicateSiblings,
+  filterMailOrders,
+  findDuplicatePhones,
+  isPhoneQuery,
+  valueBeforeScan,
+  type DuplicatePhoneGroup,
+  type SearchEdit,
+} from "./lib/mailSearch";
 import {
   REFUSED_MAIL_ORDER_STATUSES,
   TODAY_MAIL_ORDER_STATUSES,
@@ -91,6 +101,12 @@ import { useMailDetailState } from "./model/useMailDetailState";
  * «Skanerlash») shu sahifaning maqsadini ochadi. Kamera skani USB bilan aynan bir yo'l — buyurtma faqat tanlanadi
  * (jo'natish / qabul — sahifadagi asosiy tugma). Pochtada yo'q kod ro'yxatda «Bu pochtada yo'q · rad etildi».
  * Eski pochta, kuryerning rad etilgan pochtasi va amalsiz rejimda kamera maqsadi yo'q (markaziy tugma — `/scan`).
+ *
+ * QIDIRUV VA TAKRORIY TELEFONLAR (MD-1, ega S1–S4; maketlar `*-mails-detail-search`, `-search-empty`,
+ * `-duplicates`, menejerda `manager-mails-detail-receive-*`) — faqat xodim jo'natish rejimida (superadmin, admin,
+ * registrator) va menejer qabul rejimida: qidiruv matni URL'da (`?q=`, `replace`, `location.state` saqlanadi),
+ * tanlov butun ro'yxatda qoladi; takroriy raqam banneri faqat ogohlantiradi. USB skaner qidiruv maydoni fokusda
+ * bo'lganda tokenni maydonga ham yozadi — skandan keyin oldingi `q` tiklanadi (`valueBeforeScan`).
  */
 
 /** «← …» havolasi — qaytiladigan bo'lim nomi (taxta `tizim-states-navigation`). */
@@ -188,6 +204,8 @@ const MailDetailPage = () => {
   } | null;
 
   const search = location.search ? new URLSearchParams(location.search) : null;
+  /** Pochta ichidagi qidiruv (MD-1, `?q=`). */
+  const mailQuery = search?.get("q") ?? "";
   const fromTabRaw = navState?.fromTab ?? search?.get("from") ?? undefined;
   const typeRaw = navState?.type ?? search?.get("type") ?? undefined;
   const viewRaw = navState?.view ?? search?.get("view") ?? undefined;
@@ -211,10 +229,12 @@ const MailDetailPage = () => {
   const { data: refusedResponse, isLoading: refusedLoading, isError: refusedError } = refusedQuery;
   const { apiRequest } = useAppNotification();
 
-  // URL ni tozalash: /mails/:id?from=... -> /mails/:id (state orqali saqlab qolamiz)
+  // URL ni tozalash: /mails/:id?from=...&q=... -> /mails/:id?q=... (rejim state orqali saqlanadi; qidiruv URL'da qoladi)
   useEffect(() => {
     if (!location.search) return;
-    navigate(location.pathname, {
+    const keptQuery = mailQuery ? `?${new URLSearchParams({ q: mailQuery }).toString()}` : "";
+    if (location.search === keptQuery) return;
+    navigate({ pathname: location.pathname, search: keptQuery }, {
       replace: true,
       state: {
         fromTab: fromTabRaw,
@@ -393,8 +413,87 @@ const MailDetailPage = () => {
   }, [orders]);
 
   // ─── Checkbox state ────────────────────────────────────────────────────────
-  const { selectedIds, allSelected, someSelected, toggleAll, toggleOne, selectOne, deselectOne, clearSelection } =
-    useMailDetailState(orders);
+  const {
+    selectedIds,
+    allSelected,
+    someSelected,
+    toggleAll,
+    toggleOne,
+    selectOne,
+    deselectOne,
+    clearSelection,
+    setManySelected,
+  } = useMailDetailState(orders);
+
+  // ─── Qidiruv va takroriy telefonlar (MD-1) ────────────────────────────────
+  // Faqat xodim jo'natish va menejer qabul rejimida (maketlar); kuryer, rad etilgan va eski pochtada yo'q.
+  const searchMode: "send" | "receive" | null =
+    isOldDetail || isEffectiveRefusedDetail || isCourier
+      ? null
+      : role === "manager"
+        ? shouldReceiveCurrentPost
+          ? "receive"
+          : null
+        : "send";
+  const searchResult = useMemo(
+    () => filterMailOrders(orders, searchMode ? mailQuery : ""),
+    [mailQuery, orders, searchMode],
+  );
+  const duplicateGroups = useMemo(() => (searchMode ? findDuplicatePhones(orders) : []), [orders, searchMode]);
+  const duplicateMap = useMemo(() => duplicateSiblings(duplicateGroups), [duplicateGroups]);
+  const duplicateNote = useCallback(
+    (order: PostOrder) => {
+      const siblings = duplicateMap.get(String(order.id));
+      return siblings?.length
+        ? t("detailPage.duplicates.rowBadgeTitle", { ids: siblings.map((siblingId) => `№${siblingId}`).join(", ") })
+        : null;
+    },
+    [duplicateMap, t],
+  );
+
+  // `q` — URL'da (`replace`; rejim `location.state` da saqlanadi).
+  const setMailQuery = useCallback(
+    (value: string) => {
+      const next = value ? `?${new URLSearchParams({ q: value }).toString()}` : "";
+      navigate({ pathname: location.pathname, search: next }, { replace: true, state: location.state });
+    },
+    [location.pathname, location.state, navigate],
+  );
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchEditsRef = useRef<SearchEdit[]>([]);
+  const mailQueryRef = useRef(mailQuery);
+  useEffect(() => {
+    mailQueryRef.current = mailQuery;
+  }, [mailQuery]);
+  const handleQueryChange = useCallback(
+    (value: string) => {
+      searchEditsRef.current = [
+        ...searchEditsRef.current.slice(-63),
+        { before: mailQueryRef.current, after: value, at: Date.now() },
+      ];
+      mailQueryRef.current = value;
+      setMailQuery(value);
+    },
+    [setMailQuery],
+  );
+  /** USB skan qidiruv maydoniga ham yozilgan bo'lsa — maydon skandan oldingi qiymatiga qaytadi. */
+  const restoreQueryAfterScan = useCallback(
+    (source: ScanSource) => {
+      if (source !== "keyboard" || !searchInputRef.current) return;
+      if (document.activeElement !== searchInputRef.current) return;
+      const before = valueBeforeScan(searchEditsRef.current, Date.now());
+      searchEditsRef.current = [];
+      if (before === null || before === mailQueryRef.current) return;
+      mailQueryRef.current = before;
+      setMailQuery(before);
+    },
+    [setMailQuery],
+  );
+  const activeDuplicateKey = duplicateGroups.find((group) => isPhoneQuery(mailQuery, group))?.key ?? null;
+  const toggleDuplicatePhone = useCallback(
+    (group: DuplicatePhoneGroup, active: boolean) => setMailQuery(active ? "" : group.phone),
+    [setMailQuery],
+  );
   // Kamera ro'yxati: skan tartibi (`order:<id>` / `missing:<kod>`) va pochtada yo'q kodlar.
   const { recent: recentScanKeys, touch: touchRecentScan, clear: clearRecentScans } = useRecentScans();
   const [rejectedCodes, setRejectedCodes] = useState<string[]>([]);
@@ -573,8 +672,12 @@ const MailDetailPage = () => {
   useOrderQrScanner({
     orders,
     enabled: !isOldDetail && !isReadOnlyRefusedCourier,
-    onMatch: selectScannedOrder,
-    onMissing: (rawValue) => {
+    onMatch: (order, _rawValue, source) => {
+      selectScannedOrder(order);
+      restoreQueryAfterScan(source);
+    },
+    onMissing: (rawValue, source) => {
+      restoreQueryAfterScan(source);
       void handleMissingScannedOrder(rawValue);
     },
     camera: cameraEnabled
@@ -1079,6 +1182,30 @@ const MailDetailPage = () => {
         phoneHeaderAction={isReadOnlyRefusedCourier && isPhone && orders.length > 0 ? printAll : undefined}
         phoneSelectionAction={isCourier && isPhone ? renderPrintSelected("shrink-0", true) : undefined}
         printLabel={isCourier ? (order) => t("detailPage.printRowLabel", { id: order.id }) : undefined}
+        search={
+          searchMode && orders.length > 0
+            ? {
+                value: mailQuery,
+                onValueChange: handleQueryChange,
+                active: searchResult.active,
+                visible: searchResult.visible,
+                byMarket: searchResult.byMarket,
+                onSelectRows: setManySelected,
+              }
+            : undefined
+        }
+        searchInputRef={searchInputRef}
+        alert={
+          searchMode && duplicateGroups.length > 0 ? (
+            <DuplicatePhonesAlert
+              groups={duplicateGroups}
+              mode={searchMode}
+              activeKey={activeDuplicateKey}
+              onToggle={toggleDuplicatePhone}
+            />
+          ) : undefined
+        }
+        duplicateNote={searchMode && duplicateGroups.length > 0 ? duplicateNote : undefined}
       />
 
       {/* Tanlanganlarni pochtadan o'chirish (superadmin, NEW pochta). */}

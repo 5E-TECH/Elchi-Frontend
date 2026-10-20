@@ -1,8 +1,8 @@
-// dizayn-v2: superadmin-mails-detail, superadmin-mails-detail-refused, superadmin-mails-detail-old, admin-mails-detail, admin-mails-refused-detail, admin-mails-old-detail, manager-mails-detail-receive, manager-mails-detail-refused-receive, manager-mails-detail-old, registrator-mails-detail, registrator-mails-detail-refused, registrator-mails-detail-old, courier-mails-detail-receive, courier-mails-detail-refused, courier-mails-detail-old
-import { memo, useCallback, useMemo, useState, type ReactNode } from "react";
+// dizayn-v2: superadmin-mails-detail, superadmin-mails-detail-duplicates, superadmin-mails-detail-search, superadmin-mails-detail-search-empty, admin-mails-detail-duplicates, admin-mails-detail-search, admin-mails-detail-search-empty, registrator-mails-detail-duplicates, registrator-mails-detail-search, registrator-mails-detail-search-empty, manager-mails-detail-receive-duplicates, manager-mails-detail-receive-search, manager-mails-detail-receive-search-empty, superadmin-mails-detail-refused, superadmin-mails-detail-old, admin-mails-detail, admin-mails-refused-detail, admin-mails-old-detail, manager-mails-detail-receive, manager-mails-detail-refused-receive, manager-mails-detail-old, registrator-mails-detail, registrator-mails-detail-refused, registrator-mails-detail-old, courier-mails-detail-receive, courier-mails-detail-refused, courier-mails-detail-old
+import { memo, useCallback, useMemo, useState, type ReactNode, type Ref } from "react";
 import { Link } from "react-router-dom";
-import { ListChecks, ScanLine, Trash2 } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { EyeOff, ListChecks, Phone, ScanLine, SearchX, Trash2, X } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 import type { PostOrder } from "../../../../entities/mails";
 import { OrderStatusBadge } from "../../../../entities/order";
 import { cx } from "../../../../shared/lib/cx";
@@ -14,6 +14,7 @@ import {
   DataTable,
   EmptyState,
   IconButton,
+  TextInput,
   type DataTableColumn,
   type DataTableSelection,
   type DataTableSort,
@@ -31,6 +32,14 @@ import OrderRow, { RowPrintButton } from "./OrderRow";
  *   tanlov paneli (`SelectionRegion`: «6 ta buyurtma tanlandi / 9 ta», «Barchasini tanlash», «Tanlovni bekor qilish»)
  *   jadval (`DataTable`, tanlov belgilari, qator chop etish va o'chirish) — telefonda kartalar (`OrderRow`)
  *   pastda «N ta buyurtma» · «Jami: X»
+ *
+ * Qidiruv va takroriy telefonlar (MD-1, opt-in `search` / `alert` / `duplicateNote`; maketlar
+ * `*-mails-detail-search`, `-search-empty`, `-duplicates`, menejerda `manager-mails-detail-receive-*`):
+ *   sarlavha qatorida qidiruv maydoni → holat qatori ««…» bo'yicha N ta buyurtma topildi [· market nomi bo'yicha]» →
+ *   banner (`alert`) → tanlov paneli (tanlov BUTUN ro'yxatda: «N tasi qidiruvda yashirin…», «Ko'rinayotganlarni
+ *   tanlash», sarlavha belgisi faqat ko'rinadiganlarga) → jadval (ko'rinadiganlar; takroriy raqamli qatorda
+ *   «Takroriy raqam» belgisi va chapda 3 px ogohlantirish chizig'i) yoki «… topilmadi» (`EmptyState` +
+ *   «Qidiruvni tozalash») → pastda «N ta ko'rsatilmoqda · M tadan» · «Pochta jami: X».
  *
  * Maketlar: `superadmin-mails-detail` (jo'natish), `*-refused` (qabul), `*-old` / `admin-mails-old-detail`
  * (tarix: belgi va «Holat» yo'q), `manager-mails-detail-receive`, `courier-mails-detail-*`. Paket tafsiloti
@@ -138,7 +147,35 @@ interface OrdersTableProps {
   appearance?: "mail" | "batch";
   /** «USB skaner tayyor» belgisi telefonda ham (maket `manager-returns-batch-detail`); sukut — faqat ≥ 768. */
   scannerReadyOnPhone?: boolean;
+  /**
+   * Qidiruv (MD-1, opt-in; paket tafsilotida yo'q). `orders` — BUTUN ro'yxat (sanoq, summa, tanlov), jadvalda
+   * `visible`. Sarlavha belgisi va «Ko'rinayotganlarni tanlash» — `onSelectRows` (faqat ko'rinadiganlar).
+   */
+  search?: OrdersTableSearch;
+  /** Qidiruv maydoni (`search` bilan) — USB skandan keyin `q` ni tiklash uchun fokus tekshiruvi. */
+  searchInputRef?: Ref<HTMLInputElement>;
+  /** Sarlavha (va qidiruv holati) ostidagi banner — takroriy telefonlar. */
+  alert?: ReactNode;
+  /** Takroriy raqamli qator: belgi maslahati («Shu raqamga yana: №…») yoki `null` — belgi va chiziq yo'q. */
+  duplicateNote?: (order: PostOrder) => string | null;
 }
+
+export type OrdersTableSearch = {
+  value: string;
+  onValueChange: (value: string) => void;
+  /** Qidiruv faol (bo'sh bo'lmagan so'rov). */
+  active: boolean;
+  /** Ko'rinadigan buyurtmalar (`active=false` da — hammasi). */
+  visible: PostOrder[];
+  /** Hammasi market nomi bo'yicha topildi — holat qatorida qo'shimcha. */
+  byMarket?: boolean;
+  /** Tanlash / tanlovdan chiqarish (sarlavha belgisi va «Ko'rinayotganlarni tanlash»). */
+  onSelectRows: (ids: string[], selected: boolean) => void;
+};
+
+/** Takroriy raqamli qator: chapda 3 px ogohlantirish chizig'i (jadvalda belgi katagida, telefonda kartada). */
+const DUPLICATE_ROW =
+  "[&>td:first-child]:shadow-[inset_3px_0_0_var(--color-warning)] [li&]:shadow-[inset_3px_0_0_var(--color-warning)]";
 
 const defaultOrderHref = (order: PostOrder) => `/orders/edit/${order.id}`;
 
@@ -182,6 +219,10 @@ const OrdersTable = memo(
     printLabel,
     appearance = "mail",
     scannerReadyOnPhone = false,
+    search,
+    searchInputRef,
+    alert,
+    duplicateNote,
   }: OrdersTableProps) => {
     const { t, i18n } = useTranslation(["mails", "orders"]);
     const language = i18n.resolvedLanguage ?? i18n.language;
@@ -211,11 +252,13 @@ const OrdersTable = memo(
     const isBatch = appearance === "batch";
     const showsMarket = columnIds.includes("market");
 
+    const searching = Boolean(search?.active);
+    const shownOrders = search?.active ? search.visible : orders;
     const rows = useMemo(() => {
-      if (!sort) return orders;
+      if (!sort) return shownOrders;
       const direction = sort.direction === "asc" ? 1 : -1;
-      return [...orders].sort((a, b) => (sortValue(a, sort.key) - sortValue(b, sort.key)) * direction);
-    }, [orders, sort]);
+      return [...shownOrders].sort((a, b) => (sortValue(a, sort.key) - sortValue(b, sort.key)) * direction);
+    }, [shownOrders, sort]);
 
     const selectedOrders = useMemo(() => orders.filter((order) => selectedIds.has(order.id)), [orders, selectedIds]);
     const totalSum = useMemo(() => orders.reduce((sum, order) => sum + (Number(order.total_price) || 0), 0), [orders]);
@@ -252,6 +295,15 @@ const OrdersTable = memo(
       [deleteButton, isCourierCard, isPhone, onPrintOne, rowPrintLabel],
     );
 
+    const duplicateBadge = useCallback(
+      (note: string) => (
+        <Badge tone="warning" size="sm" icon={Phone} title={note}>
+          {t("detailPage.duplicates.rowBadge")}
+        </Badge>
+      ),
+      [t],
+    );
+
     const cell = useCallback(
       (id: OrdersTableColumn): DataTableColumn<PostOrder> => {
         const header = t(`detailPage.columns.${id}`);
@@ -286,10 +338,12 @@ const OrdersTable = memo(
               header,
               cell: (order) => {
                 const place = view.place(order);
+                const duplicate = duplicateNote?.(order) ?? null;
                 return (
                   <>
                     <div className="whitespace-nowrap font-semibold text-text">{view.customerName(order)}</div>
                     <div className="whitespace-nowrap text-[13px] text-text-muted">{view.customerPhone(order)}</div>
+                    {duplicate ? <div className="mt-1">{duplicateBadge(duplicate)}</div> : null}
                     {tabletPlaceUnderCustomer && place ? (
                       <div className="hidden whitespace-nowrap text-[13px] text-text-muted max-lg:block">{place}</div>
                     ) : null}
@@ -370,7 +424,18 @@ const OrdersTable = memo(
             return { id, header, cell: () => null };
         }
       },
-      [hiddenOnTablet, money, orderHref, sortable, t, tabletMarketUnderAmount, tabletPlaceUnderCustomer, view],
+      [
+        duplicateBadge,
+        duplicateNote,
+        hiddenOnTablet,
+        money,
+        orderHref,
+        sortable,
+        t,
+        tabletMarketUnderAmount,
+        tabletPlaceUnderCustomer,
+        view,
+      ],
     );
 
     const tableColumns = useMemo<DataTableColumn<PostOrder>[]>(() => {
@@ -393,12 +458,14 @@ const OrdersTable = memo(
           ? {
               isSelected: (order) => selectedIds.has(order.id),
               onToggle: (order) => onToggleOne(order.id),
-              onToggleAll: () => onToggleAll(),
+              // Qidiruvda sarlavha belgisi faqat ko'rinadigan qatorlarga (yashirin tanlov o'zgarmaydi).
+              onToggleAll: (checked) =>
+                search ? search.onSelectRows(rows.map((order) => String(order.id)), checked) : onToggleAll(),
               headerLabel: t("detailPage.selectAllRows"),
               rowLabel: (order) => t("detailPage.selectRow", { id: order.id }),
             }
           : undefined,
-      [onToggleAll, onToggleOne, selectable, selectedIds, t],
+      [onToggleAll, onToggleOne, rows, search, selectable, selectedIds, t],
     );
 
     const renderCard = useCallback(
@@ -413,9 +480,25 @@ const OrdersTable = memo(
           actions={hasActions ? rowActions(order) : null}
           meta={isBatch ? "contact" : "place"}
           showMarket={showsMarket}
+          flag={(() => {
+            const note = duplicateNote?.(order) ?? null;
+            return note ? duplicateBadge(note) : null;
+          })()}
         />
       ),
-      [hasActions, isBatch, isCourierCard, isHistory, orderHref, rowActions, selectable, showsMarket, view],
+      [
+        duplicateBadge,
+        duplicateNote,
+        hasActions,
+        isBatch,
+        isCourierCard,
+        isHistory,
+        orderHref,
+        rowActions,
+        selectable,
+        showsMarket,
+        view,
+      ],
     );
 
     // «Barchasini tanlash» — barchasini tanlaydi (hammasi tanlangan bo'lsa o'chiq); bekor qilish — alohida tugma.
@@ -424,19 +507,49 @@ const OrdersTable = memo(
     };
     const selectedCount = selectedOrders.length;
     const hasSelection = selectedCount > 0;
+    // Qidiruvda: tanlov butun ro'yxatda qoladi; ko'rinmaydigan tanlanganlar soni izohda.
+    const visibleSelectedCount = searching ? rows.filter((order) => selectedIds.has(order.id)).length : selectedCount;
+    const hiddenSelectedCount = selectedCount - visibleSelectedCount;
+    const allVisibleSelected = rows.length > 0 && visibleSelectedCount === rows.length;
+    const selectVisible = () => {
+      if (!search || allVisibleSelected) return;
+      search.onSelectRows(rows.map((order) => String(order.id)), true);
+    };
 
     const selectionActions = (
       <>
-        <Button
-          variant="ghost"
-          size="sm"
-          leftIcon={ListChecks}
-          disabled={orders.length === 0 || allSelected}
-          onClick={selectAll}
-          className="max-md:px-2"
-        >
-          {t("detailPage.selectAll")}
-        </Button>
+        {searching ? (
+          rows.length > 0 ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              leftIcon={ListChecks}
+              disabled={allVisibleSelected}
+              onClick={selectVisible}
+              aria-label={`${t("detailPage.search.selectVisibleRows")} (${count(rows.length)})`}
+              className="max-md:px-2"
+            >
+              {t("detailPage.search.selectVisible")}
+              <span
+                aria-hidden="true"
+                className="ml-1 inline-flex h-5 min-w-[22px] items-center justify-center rounded-full bg-sunken px-1.5 text-xs font-semibold text-text-muted"
+              >
+                {count(rows.length)}
+              </span>
+            </Button>
+          ) : null
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            leftIcon={ListChecks}
+            disabled={orders.length === 0 || allSelected}
+            onClick={selectAll}
+            className="max-md:px-2"
+          >
+            {t("detailPage.selectAll")}
+          </Button>
+        )}
         {onClearSelection ? (
           <Button variant="ghost" size="sm" disabled={!hasSelection} onClick={onClearSelection} className="max-md:px-2">
             {t("detailPage.clearSelection")}
@@ -494,7 +607,24 @@ const OrdersTable = memo(
                 t("detailPage.selectionNone")
               )
             }
-            hint={hasSelection ? selectionHint : t("detailPage.selectionNoneHint")}
+            hint={
+              hasSelection ? (
+                hiddenSelectedCount > 0 ? (
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <EyeOff aria-hidden="true" size={14} className="shrink-0" />
+                    <span className="min-w-0">
+                      {visibleSelectedCount === 0 && rows.length === 0
+                        ? t("detailPage.search.allSelectedHidden")
+                        : t("detailPage.search.hiddenSelected", { value: count(hiddenSelectedCount) })}
+                    </span>
+                  </span>
+                ) : (
+                  selectionHint
+                )
+              ) : (
+                t("detailPage.selectionNoneHint")
+              )
+            }
             action={selectionActions}
           />
         )
@@ -513,13 +643,29 @@ const OrdersTable = memo(
     ) : null;
 
     const hasEmpty = orders.length === 0;
-    const hasHeaderSide = headerBadge != null || headerExtra != null;
+    const searchEmpty = searching && rows.length === 0;
+    const hasHeaderSide = headerBadge != null || headerExtra != null || search != null;
+    const query = search?.value.trim() ?? "";
+    const clearSearch = () => search?.onValueChange("");
+
+    const searchField = search ? (
+      <TextInput
+        ref={searchInputRef}
+        mode="search"
+        value={search.value}
+        onValueChange={search.onValueChange}
+        placeholder={t("detailPage.search.placeholder")}
+        aria-label={t("detailPage.search.label")}
+        clearLabel={t("detailPage.search.clear")}
+        className="min-w-0 flex-[1_1_260px] max-md:basis-full"
+      />
+    ) : null;
 
     return (
       <Card as="section" padding="none" aria-label={ariaLabel ?? t("detailPage.ordersAria")}>
         {/* Sarlavha qatori (`.el-card-head` chiziqsiz — ostidagi tanlov paneli/jadval o'z chizig'i bilan). */}
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-3 px-5 py-4 max-md:px-4">
-          <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <div className={cx("flex min-w-0 flex-col gap-1", search ? "flex-[1_1_300px]" : "flex-1")}>
             <div className="flex min-w-0 flex-wrap items-center gap-2">
               <h2 className="text-base font-bold text-text">{title ?? t("detailPage.ordersTitle")}</h2>
               <Badge>{t("detailPage.countBadge", { value: count(orders.length), count: orders.length })}</Badge>
@@ -532,13 +678,32 @@ const OrdersTable = memo(
             ) : null}
           </div>
           {hasHeaderSide ? (
-            <div className="flex flex-wrap items-center gap-2">
+            <div
+              className={cx(
+                "flex flex-wrap items-center gap-2",
+                search && "min-w-0 flex-[1_1_auto] justify-end gap-x-3 max-md:w-full",
+              )}
+            >
+              {searchField}
               {headerBadge}
               {headerExtra}
             </div>
           ) : null}
           {phoneHeaderAction ? <div className="w-full md:hidden">{phoneHeaderAction}</div> : null}
         </div>
+
+        {searching && !searchEmpty && !hasEmpty ? (
+          <p role="status" aria-live="polite" className="-mt-1 px-5 pb-3 text-[13px] text-text-muted max-md:px-4">
+            <Trans
+              t={t}
+              i18nKey={search?.byMarket ? "detailPage.search.foundByMarket" : "detailPage.search.found"}
+              values={{ query, value: count(rows.length) }}
+              components={{ strong: <span className="font-semibold text-text" /> }}
+            />
+          </p>
+        ) : null}
+
+        {alert && !hasEmpty ? <div className="px-5 pb-4 max-md:px-4">{alert}</div> : null}
 
         {notice ? (
           <p
@@ -556,20 +721,36 @@ const OrdersTable = memo(
         ) : (
           <>
             {selectionRegion}
-            <DataTable
-              rows={rows}
-              columns={tableColumns}
-              getRowKey={(order) => String(order.id)}
-              label={ariaLabel ?? t("detailPage.ordersAria")}
-              sort={sortable ? sort : undefined}
-              onSortChange={sortable ? setSort : undefined}
-              density="tight"
-              selection={selection}
-              // Qator (telefonda karta) bosilsa — tanlov (v1 dagidek); havola, tugma va belgi o'z ishini qiladi.
-              onRowClick={selectable ? (order) => onToggleOne(order.id) : undefined}
-              renderCard={renderCard}
-              className="border-t border-border"
-            />
+            {searchEmpty ? (
+              <div className="border-t border-border">
+                <EmptyState
+                  icon={SearchX}
+                  title={t("detailPage.search.emptyTitle", { query })}
+                  description={t("detailPage.search.emptyText")}
+                  action={
+                    <Button variant="secondary" leftIcon={X} onClick={clearSearch}>
+                      {t("detailPage.search.clear")}
+                    </Button>
+                  }
+                />
+              </div>
+            ) : (
+              <DataTable
+                rows={rows}
+                columns={tableColumns}
+                getRowKey={(order) => String(order.id)}
+                label={ariaLabel ?? t("detailPage.ordersAria")}
+                sort={sortable ? sort : undefined}
+                onSortChange={sortable ? setSort : undefined}
+                density="tight"
+                selection={selection}
+                // Qator (telefonda karta) bosilsa — tanlov (v1 dagidek); havola, tugma va belgi o'z ishini qiladi.
+                onRowClick={selectable ? (order) => onToggleOne(order.id) : undefined}
+                renderCard={renderCard}
+                rowClassName={duplicateNote ? (order) => (duplicateNote(order) ? DUPLICATE_ROW : null) : undefined}
+                className="border-t border-border"
+              />
+            )}
             {footer ? (
               <div
                 className={cx(
@@ -581,6 +762,16 @@ const OrdersTable = memo(
                   <>
                     <span>{t("detailPage.footerCountTotal", { value: count(orders.length), count: orders.length })}</span>
                     <span className="font-semibold text-text">{money(totalSum)}</span>
+                  </>
+                ) : searching ? (
+                  <>
+                    <span>
+                      {t("detailPage.search.footerShown", { shown: count(rows.length), total: count(orders.length) })}
+                    </span>
+                    <span>
+                      {t("detailPage.search.footerTotal")}{" "}
+                      <span className="font-semibold text-text">{money(totalSum)}</span>
+                    </span>
                   </>
                 ) : (
                   <>

@@ -278,6 +278,32 @@
     "cameraSelected": "Buyurtma tanlandi №{{id}}",
     "cameraNotInMail": "Bu pochtada yo'q",
     "cameraRejectedTitle": "{{code}} · Bu pochtada yo'q",
-    "cameraRejectedText": "Boshqa pochtaga tegishli · rad etildi"
+    "cameraRejectedText": "Boshqa pochtaga tegishli · rad etildi",
+    "search": {
+      "label": "Pochtadagi buyurtmalarni qidirish",
+      "placeholder": "№, mijoz, telefon, tuman, market",
+      "found": "«{{query}}» bo'yicha <strong>{{value}} ta</strong> buyurtma topildi",
+      "foundByMarket": "«{{query}}» bo'yicha <strong>{{value}} ta</strong> buyurtma topildi · market nomi bo'yicha",
+      "emptyTitle": "«{{query}}» bo'yicha buyurtma topilmadi",
+      "emptyText": "Buyurtma raqami, ism, telefon, tuman yoki market nomini tekshiring. Telefonni «+998» siz, faqat raqamlar bilan ham yozish mumkin.",
+      "clear": "Qidiruvni tozalash",
+      "hiddenSelected": "{{value}} tasi qidiruvda yashirin, lekin tanlangan qoladi",
+      "allSelectedHidden": "Tanlanganlar qidiruvda yashirin, lekin tanlangan qoladi",
+      "selectVisible": "Ko'rinayotganlarni tanlash",
+      "selectVisibleRows": "Ko'rinayotgan buyurtmalarni tanlash",
+      "footerShown": "{{shown}} ta ko'rsatilmoqda · {{total}} tadan",
+      "footerTotal": "Pochta jami:"
+    },
+    "duplicates": {
+      "title": "Takroriy telefon raqamlar aniqlandi ({{value}} ta)",
+      "sendOne": "Shu pochtadagi {{value}} ta buyurtma bir xil raqamga ketmoqda. Tekshirib oling — bu jo'natishni to'xtatmaydi.",
+      "sendMany": "Shu pochtadagi {{value}} ta buyurtma bir xil raqamlarga ketmoqda. Tekshirib oling — bu jo'natishni to'xtatmaydi.",
+      "receiveOne": "Shu pochtadagi {{value}} ta buyurtma bir xil raqamga kelgan. Tekshirib oling — bu qabul qilishni to'xtatmaydi.",
+      "receiveMany": "Shu pochtadagi {{value}} ta buyurtma bir xil raqamlarga kelgan. Tekshirib oling — bu qabul qilishni to'xtatmaydi.",
+      "chipsLabel": "Takroriy raqamlar — bosilsa shu raqam qidiruvga yoziladi",
+      "chipLabel": "{{phone}} raqamli {{value}} ta buyurtmani ko'rsatish: {{ids}}",
+      "rowBadge": "Takroriy raqam",
+      "rowBadgeTitle": "Shu raqamga yana: {{ids}}"
+    }
   }
 }

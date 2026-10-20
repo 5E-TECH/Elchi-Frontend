@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **183** · qisman: **90** · v2 ga ko'chirilgan route: **76 / 77**
+**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **171** · qisman: **90** · v2 ga ko'chirilgan route: **76 / 77**
 
 ## Qanday ishlatiladi
 
@@ -713,7 +713,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/mails/:id` — Pochta tafsiloti — jo'natish / qabul qilish / rad etilgan / tarix
 
-- **Fayllar:** `src/pages/mails/detail/index.tsx` · `src/pages/mails/detail/model/useMailDetailState.ts` · `src/pages/mails/detail/model/useOrderRowView.tsx` · `src/pages/mails/detail/ui/MailStatCards.tsx` · `src/pages/mails/detail/ui/OrdersTable.tsx` · `src/pages/mails/detail/ui/OrderRow.tsx` · `src/pages/mails/detail/ui/SendButton.tsx` · `src/pages/mails/detail/ui/SendPostModal.tsx` · `src/pages/mails/detail/ui/DeleteFromPostDialog.tsx` · `src/pages/mails/detail/ui/printOptions.tsx` · `src/pages/mails/detail/lib/printMode.ts` · `src/pages/mails/detail/lib/scanMatch.ts` · `src/shared/ui/SelectionRegion.tsx` · `src/shared/components/PrintModeSelect.tsx`
+- **Fayllar:** `src/pages/mails/detail/index.tsx` · `src/pages/mails/detail/model/useMailDetailState.ts` · `src/pages/mails/detail/model/useOrderRowView.tsx` · `src/pages/mails/detail/ui/MailStatCards.tsx` · `src/pages/mails/detail/ui/OrdersTable.tsx` · `src/pages/mails/detail/ui/OrderRow.tsx` · `src/pages/mails/detail/ui/SendButton.tsx` · `src/pages/mails/detail/ui/SendPostModal.tsx` · `src/pages/mails/detail/ui/DeleteFromPostDialog.tsx` · `src/pages/mails/detail/ui/printOptions.tsx` · `src/pages/mails/detail/lib/printMode.ts` · `src/pages/mails/detail/lib/scanMatch.ts` · `src/pages/mails/detail/lib/mailSearch.ts` · `src/pages/mails/detail/ui/DuplicatePhonesAlert.tsx` · `src/shared/ui/SelectionRegion.tsx` · `src/shared/components/PrintModeSelect.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewMails` (access.ts → canViewMails)
 - **Rollar:** superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
@@ -723,32 +723,32 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/mails/:id` | superadmin | `superadmin-mails-detail` — Pochta tafsiloti (jo'natish) | [design/fragments/superadmin--mails-detail.html](fragments/superadmin--mails-detail.html) | sahifa | v2 |
-| `/mails/:id` | superadmin | `superadmin-mails-detail-duplicates` — Pochta tafsiloti (jo'natish) — takroriy telefonlar | [design/fragments/superadmin--mails-detail-duplicates.html](fragments/superadmin--mails-detail-duplicates.html) | sahifa | yangi (kodda yo'q) |
-| `/mails/:id` | superadmin | `superadmin-mails-detail-search` — Pochta tafsiloti (jo'natish) — qidiruv | [design/fragments/superadmin--mails-detail-search.html](fragments/superadmin--mails-detail-search.html) | sahifa | yangi (kodda yo'q) |
-| `/mails/:id` | superadmin | `superadmin-mails-detail-search-empty` — Pochta tafsiloti (jo'natish) — qidiruvda natija yo'q | [design/fragments/superadmin--mails-detail-search-empty.html](fragments/superadmin--mails-detail-search-empty.html) | sahifa | yangi (kodda yo'q) |
+| `/mails/:id` | superadmin | `superadmin-mails-detail-duplicates` — Pochta tafsiloti (jo'natish) — takroriy telefonlar<br>↳ `src/pages/mails/detail/ui/DuplicatePhonesAlert.tsx`, `src/pages/mails/detail/ui/OrdersTable.tsx` | [design/fragments/superadmin--mails-detail-duplicates.html](fragments/superadmin--mails-detail-duplicates.html) | sahifa | v2 |
+| `/mails/:id` | superadmin | `superadmin-mails-detail-search` — Pochta tafsiloti (jo'natish) — qidiruv<br>↳ `src/pages/mails/detail/ui/OrdersTable.tsx` | [design/fragments/superadmin--mails-detail-search.html](fragments/superadmin--mails-detail-search.html) | sahifa | v2 |
+| `/mails/:id` | superadmin | `superadmin-mails-detail-search-empty` — Pochta tafsiloti (jo'natish) — qidiruvda natija yo'q<br>↳ `src/pages/mails/detail/ui/OrdersTable.tsx` | [design/fragments/superadmin--mails-detail-search-empty.html](fragments/superadmin--mails-detail-search-empty.html) | sahifa | v2 |
 | `/mails/:id` | superadmin | `superadmin-mails-detail-camera` — Pochta tafsiloti (jo'natish) — kamera | [design/fragments/superadmin--mails-detail-camera.html](fragments/superadmin--mails-detail-camera.html) | oyna | qisman |
 | `/mails/:id` | superadmin | `superadmin-mails-detail-send-dialog` — Pochtani filialga jo'natish (modal)<br>↳ `src/pages/mails/detail/ui/SendPostModal.tsx` | [design/fragments/superadmin--mails-detail-send-dialog.html](fragments/superadmin--mails-detail-send-dialog.html) | oyna | v2 |
 | `/mails/:id` | superadmin | `superadmin-mails-detail-refused` — Rad etilgan pochta tafsiloti (qabul) | [design/fragments/superadmin--mails-detail-refused.html](fragments/superadmin--mails-detail-refused.html) | sahifa | v2 |
 | `/mails/:id` | superadmin | `superadmin-mails-detail-old` — Eski pochta tafsiloti (faqat o'qish) | [design/fragments/superadmin--mails-detail-old.html](fragments/superadmin--mails-detail-old.html) | sahifa | v2 |
 | `/mails/:id` | admin | `admin-mails-detail` — Pochta tafsiloti | [design/fragments/admin--mails-detail.html](fragments/admin--mails-detail.html) | sahifa | v2 |
-| `/mails/:id` | admin | `admin-mails-detail-duplicates` — Pochta tafsiloti — takroriy telefonlar | [design/fragments/superadmin--mails-detail-duplicates.html](fragments/superadmin--mails-detail-duplicates.html) | sahifa | yangi (kodda yo'q) |
-| `/mails/:id` | admin | `admin-mails-detail-search` — Pochta tafsiloti — qidiruv | [design/fragments/superadmin--mails-detail-search.html](fragments/superadmin--mails-detail-search.html) | sahifa | yangi (kodda yo'q) |
-| `/mails/:id` | admin | `admin-mails-detail-search-empty` — Pochta tafsiloti — qidiruvda natija yo'q | [design/fragments/superadmin--mails-detail-search-empty.html](fragments/superadmin--mails-detail-search-empty.html) | sahifa | yangi (kodda yo'q) |
+| `/mails/:id` | admin | `admin-mails-detail-duplicates` — Pochta tafsiloti — takroriy telefonlar<br>↳ `src/pages/mails/detail/ui/DuplicatePhonesAlert.tsx`, `src/pages/mails/detail/ui/OrdersTable.tsx` | [design/fragments/superadmin--mails-detail-duplicates.html](fragments/superadmin--mails-detail-duplicates.html) | sahifa | v2 |
+| `/mails/:id` | admin | `admin-mails-detail-search` — Pochta tafsiloti — qidiruv<br>↳ `src/pages/mails/detail/ui/OrdersTable.tsx` | [design/fragments/superadmin--mails-detail-search.html](fragments/superadmin--mails-detail-search.html) | sahifa | v2 |
+| `/mails/:id` | admin | `admin-mails-detail-search-empty` — Pochta tafsiloti — qidiruvda natija yo'q<br>↳ `src/pages/mails/detail/ui/OrdersTable.tsx` | [design/fragments/superadmin--mails-detail-search-empty.html](fragments/superadmin--mails-detail-search-empty.html) | sahifa | v2 |
 | `/mails/:id` | admin | `admin-mails-detail-camera` — Pochta tafsiloti — kamera | [design/fragments/superadmin--mails-detail-camera.html](fragments/superadmin--mails-detail-camera.html) | oyna | qisman |
 | `/mails/:id` | admin | `admin-mails-send-branch-dialog` — Pochtani filialga jo'natish<br>↳ `src/pages/mails/detail/ui/SendPostModal.tsx` | [design/fragments/admin--mails-send-branch-dialog.html](fragments/admin--mails-send-branch-dialog.html) | oyna | v2 |
 | `/mails/:id` | admin | `admin-mails-refused-detail` — Rad etilgan pochta tafsiloti | [design/fragments/admin--mails-refused-detail.html](fragments/admin--mails-refused-detail.html) | sahifa | v2 |
 | `/mails/:id` | admin | `admin-mails-old-detail` — Eski pochta tafsiloti (tarix) | [design/fragments/admin--mails-old-detail.html](fragments/admin--mails-old-detail.html) | sahifa | v2 |
 | `/mails/:id` | manager | `manager-mails-detail-receive` — Pochta tafsiloti — qabul qilish | [design/fragments/manager--mails-detail-receive.html](fragments/manager--mails-detail-receive.html) | sahifa | v2 |
-| `/mails/:id` | manager | `manager-mails-detail-receive-duplicates` — Pochta tafsiloti — qabul qilish — takroriy telefonlar | [design/fragments/manager--mails-detail-receive-duplicates.html](fragments/manager--mails-detail-receive-duplicates.html) | sahifa | yangi (kodda yo'q) |
-| `/mails/:id` | manager | `manager-mails-detail-receive-search` — Pochta tafsiloti — qabul qilish — qidiruv | [design/fragments/manager--mails-detail-receive-search.html](fragments/manager--mails-detail-receive-search.html) | sahifa | yangi (kodda yo'q) |
-| `/mails/:id` | manager | `manager-mails-detail-receive-search-empty` — Pochta tafsiloti — qabul qilish — qidiruvda natija yo'q | [design/fragments/manager--mails-detail-receive-search-empty.html](fragments/manager--mails-detail-receive-search-empty.html) | sahifa | yangi (kodda yo'q) |
+| `/mails/:id` | manager | `manager-mails-detail-receive-duplicates` — Pochta tafsiloti — qabul qilish — takroriy telefonlar<br>↳ `src/pages/mails/detail/ui/DuplicatePhonesAlert.tsx`, `src/pages/mails/detail/ui/OrdersTable.tsx` | [design/fragments/manager--mails-detail-receive-duplicates.html](fragments/manager--mails-detail-receive-duplicates.html) | sahifa | v2 |
+| `/mails/:id` | manager | `manager-mails-detail-receive-search` — Pochta tafsiloti — qabul qilish — qidiruv<br>↳ `src/pages/mails/detail/ui/OrdersTable.tsx` | [design/fragments/manager--mails-detail-receive-search.html](fragments/manager--mails-detail-receive-search.html) | sahifa | v2 |
+| `/mails/:id` | manager | `manager-mails-detail-receive-search-empty` — Pochta tafsiloti — qabul qilish — qidiruvda natija yo'q<br>↳ `src/pages/mails/detail/ui/OrdersTable.tsx` | [design/fragments/manager--mails-detail-receive-search-empty.html](fragments/manager--mails-detail-receive-search-empty.html) | sahifa | v2 |
 | `/mails/:id` | manager | `manager-mails-detail-receive-camera` — Pochta tafsiloti — qabul qilish — kamera | [design/fragments/manager--mails-detail-receive-camera.html](fragments/manager--mails-detail-receive-camera.html) | oyna | qisman |
 | `/mails/:id` | manager | `manager-mails-detail-refused-receive` — Rad etilgan pochta — qabul | [design/fragments/manager--mails-detail-refused-receive.html](fragments/manager--mails-detail-refused-receive.html) | sahifa | v2 |
 | `/mails/:id` | manager | `manager-mails-detail-old` — Eski pochta tafsiloti (tarix) | [design/fragments/admin--mails-old-detail.html](fragments/admin--mails-old-detail.html) | sahifa | v2 |
 | `/mails/:id` | registrator | `registrator-mails-detail` — Pochta tafsiloti — bugungi | [design/fragments/registrator--mails-detail.html](fragments/registrator--mails-detail.html) | sahifa | v2 |
-| `/mails/:id` | registrator | `registrator-mails-detail-duplicates` — Pochta tafsiloti — bugungi — takroriy telefonlar | [design/fragments/registrator--mails-detail-duplicates.html](fragments/registrator--mails-detail-duplicates.html) | sahifa | yangi (kodda yo'q) |
-| `/mails/:id` | registrator | `registrator-mails-detail-search` — Pochta tafsiloti — bugungi — qidiruv | [design/fragments/registrator--mails-detail-search.html](fragments/registrator--mails-detail-search.html) | sahifa | yangi (kodda yo'q) |
-| `/mails/:id` | registrator | `registrator-mails-detail-search-empty` — Pochta tafsiloti — bugungi — qidiruvda natija yo'q | [design/fragments/registrator--mails-detail-search-empty.html](fragments/registrator--mails-detail-search-empty.html) | sahifa | yangi (kodda yo'q) |
+| `/mails/:id` | registrator | `registrator-mails-detail-duplicates` — Pochta tafsiloti — bugungi — takroriy telefonlar<br>↳ `src/pages/mails/detail/ui/DuplicatePhonesAlert.tsx`, `src/pages/mails/detail/ui/OrdersTable.tsx` | [design/fragments/registrator--mails-detail-duplicates.html](fragments/registrator--mails-detail-duplicates.html) | sahifa | v2 |
+| `/mails/:id` | registrator | `registrator-mails-detail-search` — Pochta tafsiloti — bugungi — qidiruv<br>↳ `src/pages/mails/detail/ui/OrdersTable.tsx` | [design/fragments/registrator--mails-detail-search.html](fragments/registrator--mails-detail-search.html) | sahifa | v2 |
+| `/mails/:id` | registrator | `registrator-mails-detail-search-empty` — Pochta tafsiloti — bugungi — qidiruvda natija yo'q<br>↳ `src/pages/mails/detail/ui/OrdersTable.tsx` | [design/fragments/registrator--mails-detail-search-empty.html](fragments/registrator--mails-detail-search-empty.html) | sahifa | v2 |
 | `/mails/:id` | registrator | `registrator-mails-detail-camera` — Pochta tafsiloti — bugungi — kamera | [design/fragments/registrator--mails-detail-camera.html](fragments/registrator--mails-detail-camera.html) | oyna | qisman |
 | `/mails/:id` | registrator | `registrator-mails-detail-send-dialog` — Pochtani filialga jo'natish (HQ)<br>↳ `src/pages/mails/detail/ui/SendPostModal.tsx` | [design/fragments/registrator--mails-detail-send-dialog.html](fragments/registrator--mails-detail-send-dialog.html) | oyna | v2 |
 | `/mails/:id` | registrator | `registrator-mails-detail-refused` — Pochta tafsiloti — rad etilgan | [design/fragments/registrator--mails-detail-refused.html](fragments/registrator--mails-detail-refused.html) | sahifa | v2 |
@@ -1907,7 +1907,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-222 ta maket · kodda bor: 149 · kodda yo'q: 73
+222 ta maket · kodda bor: 152 · kodda yo'q: 70
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -1961,9 +1961,9 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-mails-old` | Pochta — Eski pochtalar | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `superadmin-mails-old-batches` | Pochta — Hamma batchlar (eski) | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `superadmin-mails-detail` | Pochta tafsiloti (jo'natish) | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
-| `superadmin-mails-detail-duplicates` | Pochta tafsiloti (jo'natish) — takroriy telefonlar | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
-| `superadmin-mails-detail-search` | Pochta tafsiloti (jo'natish) — qidiruv | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
-| `superadmin-mails-detail-search-empty` | Pochta tafsiloti (jo'natish) — qidiruvda natija yo'q | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
+| `superadmin-mails-detail-duplicates` | Pochta tafsiloti (jo'natish) — takroriy telefonlar | sahifa | `/mails/:id` | `src/pages/mails/detail/ui/DuplicatePhonesAlert.tsx`, `src/pages/mails/detail/ui/OrdersTable.tsx` | v2 |
+| `superadmin-mails-detail-search` | Pochta tafsiloti (jo'natish) — qidiruv | sahifa | `/mails/:id` | `src/pages/mails/detail/ui/OrdersTable.tsx` | v2 |
+| `superadmin-mails-detail-search-empty` | Pochta tafsiloti (jo'natish) — qidiruvda natija yo'q | sahifa | `/mails/:id` | `src/pages/mails/detail/ui/OrdersTable.tsx` | v2 |
 | `superadmin-mails-detail-camera` | Pochta tafsiloti (jo'natish) — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q. |
 | `superadmin-mails-detail-send-dialog` | Pochtani filialga jo'natish (modal) | oyna | `/mails/:id` | `src/pages/mails/detail/ui/SendPostModal.tsx` | v2 |
 | `superadmin-mails-detail-refused` | Rad etilgan pochta tafsiloti (qabul) | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
@@ -2136,7 +2136,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### admin — Admin
 
-152 ta maket · kodda bor: 113 · kodda yo'q: 39
+152 ta maket · kodda bor: 116 · kodda yo'q: 36
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2179,9 +2179,9 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-mails-old` | Pochta — Eski pochtalar | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `admin-mails-old-all-batches` | Eski pochtalar — Hamma batchlar | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `admin-mails-detail` | Pochta tafsiloti | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
-| `admin-mails-detail-duplicates` | Pochta tafsiloti — takroriy telefonlar | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
-| `admin-mails-detail-search` | Pochta tafsiloti — qidiruv | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
-| `admin-mails-detail-search-empty` | Pochta tafsiloti — qidiruvda natija yo'q | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
+| `admin-mails-detail-duplicates` | Pochta tafsiloti — takroriy telefonlar | sahifa | `/mails/:id` | `src/pages/mails/detail/ui/DuplicatePhonesAlert.tsx`, `src/pages/mails/detail/ui/OrdersTable.tsx` | v2 |
+| `admin-mails-detail-search` | Pochta tafsiloti — qidiruv | sahifa | `/mails/:id` | `src/pages/mails/detail/ui/OrdersTable.tsx` | v2 |
+| `admin-mails-detail-search-empty` | Pochta tafsiloti — qidiruvda natija yo'q | sahifa | `/mails/:id` | `src/pages/mails/detail/ui/OrdersTable.tsx` | v2 |
 | `admin-mails-detail-camera` | Pochta tafsiloti — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q. |
 | `admin-mails-old-detail` | Eski pochta tafsiloti (tarix) | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
 | `admin-mails-refused-detail` | Rad etilgan pochta tafsiloti | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
@@ -2295,7 +2295,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### manager — Menejer
 
-86 ta maket · kodda bor: 72 · kodda yo'q: 14
+86 ta maket · kodda bor: 75 · kodda yo'q: 11
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2340,9 +2340,9 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-mails-refused` | Pochta — Rad etilgan pochtalar | sahifa | `/mails/refused` | `src/pages/mails/components/refusedMails.tsx` | v2 |
 | `manager-mails-old` | Pochta — Eski pochtalar | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `manager-mails-detail-receive` | Pochta tafsiloti — qabul qilish | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
-| `manager-mails-detail-receive-duplicates` | Pochta tafsiloti — qabul qilish — takroriy telefonlar | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
-| `manager-mails-detail-receive-search` | Pochta tafsiloti — qabul qilish — qidiruv | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
-| `manager-mails-detail-receive-search-empty` | Pochta tafsiloti — qabul qilish — qidiruvda natija yo'q | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
+| `manager-mails-detail-receive-duplicates` | Pochta tafsiloti — qabul qilish — takroriy telefonlar | sahifa | `/mails/:id` | `src/pages/mails/detail/ui/DuplicatePhonesAlert.tsx`, `src/pages/mails/detail/ui/OrdersTable.tsx` | v2 |
+| `manager-mails-detail-receive-search` | Pochta tafsiloti — qabul qilish — qidiruv | sahifa | `/mails/:id` | `src/pages/mails/detail/ui/OrdersTable.tsx` | v2 |
+| `manager-mails-detail-receive-search-empty` | Pochta tafsiloti — qabul qilish — qidiruvda natija yo'q | sahifa | `/mails/:id` | `src/pages/mails/detail/ui/OrdersTable.tsx` | v2 |
 | `manager-mails-detail-receive-camera` | Pochta tafsiloti — qabul qilish — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q. |
 | `manager-mails-detail-refused-receive` | Rad etilgan pochta — qabul | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
 | `manager-mails-detail-old` | Eski pochta tafsiloti (tarix) | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
@@ -2388,7 +2388,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### registrator — Registrator
 
-54 ta maket · kodda bor: 47 · kodda yo'q: 7
+54 ta maket · kodda bor: 50 · kodda yo'q: 4
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2431,9 +2431,9 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `registrator-mails-refused` | Pochta — Rad etilgan pochtalar | sahifa | `/mails/refused` | `src/pages/mails/components/refusedMails.tsx` | v2 |
 | `registrator-mails-old` | Pochta — Eski pochtalar | sahifa | `/mails/old` | `src/pages/mails/components/oldMails.tsx` | v2 |
 | `registrator-mails-detail` | Pochta tafsiloti — bugungi | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
-| `registrator-mails-detail-duplicates` | Pochta tafsiloti — bugungi — takroriy telefonlar | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
-| `registrator-mails-detail-search` | Pochta tafsiloti — bugungi — qidiruv | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
-| `registrator-mails-detail-search-empty` | Pochta tafsiloti — bugungi — qidiruvda natija yo'q | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi). |
+| `registrator-mails-detail-duplicates` | Pochta tafsiloti — bugungi — takroriy telefonlar | sahifa | `/mails/:id` | `src/pages/mails/detail/ui/DuplicatePhonesAlert.tsx`, `src/pages/mails/detail/ui/OrdersTable.tsx` | v2 |
+| `registrator-mails-detail-search` | Pochta tafsiloti — bugungi — qidiruv | sahifa | `/mails/:id` | `src/pages/mails/detail/ui/OrdersTable.tsx` | v2 |
+| `registrator-mails-detail-search-empty` | Pochta tafsiloti — bugungi — qidiruvda natija yo'q | sahifa | `/mails/:id` | `src/pages/mails/detail/ui/OrdersTable.tsx` | v2 |
 | `registrator-mails-detail-camera` | Pochta tafsiloti — bugungi — kamera | oyna | `/mails/:id` | `src/pages/mails/detail/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. Skan tanlaydi (jo'natish / qabul / rad etilganni qabul); pochtada yo'q kod — «Bu pochtada yo'q · rad etildi». Eski pochta va kuryerning rad etilgan pochtasida maqsad yo'q. |
 | `registrator-mails-detail-send-dialog` | Pochtani filialga jo'natish (HQ) | oyna | `/mails/:id` | `src/pages/mails/detail/ui/SendPostModal.tsx` | v2 |
 | `registrator-mails-detail-refused` | Pochta tafsiloti — rad etilgan | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | v2 |
@@ -2806,11 +2806,13 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/mails/components/returnMails.tsx` | `/mails/return` |
 | `src/pages/mails/components/todaysMails.tsx` | `/mails/today` |
 | `src/pages/mails/detail/index.tsx` | `/mails/:id` |
+| `src/pages/mails/detail/lib/mailSearch.ts` | `/mails/:id` |
 | `src/pages/mails/detail/lib/printMode.ts` | `/mails/:id` |
 | `src/pages/mails/detail/lib/scanMatch.ts` | `/mails/:id` |
 | `src/pages/mails/detail/model/useMailDetailState.ts` | `/mails/:id`, `/batches/:id` |
 | `src/pages/mails/detail/model/useOrderRowView.tsx` | `/mails/:id` |
 | `src/pages/mails/detail/ui/DeleteFromPostDialog.tsx` | `/mails/:id` |
+| `src/pages/mails/detail/ui/DuplicatePhonesAlert.tsx` | `/mails/:id` |
 | `src/pages/mails/detail/ui/MailStatCards.tsx` | `/mails/:id`, `/batches/:id` |
 | `src/pages/mails/detail/ui/OrderRow.tsx` | `/mails/:id` |
 | `src/pages/mails/detail/ui/OrdersTable.tsx` | `/mails/:id`, `/batches/:id` |
