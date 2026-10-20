@@ -5,11 +5,13 @@
     "received": "Received",
     "on_the_road": "On the road",
     "waiting": "Waiting",
+    "waiting_customer": "Waiting for customer",
     "partly_paid": "Partially paid",
     "sold": "Sold",
     "paid": "Paid",
     "cancelled": "Cancelled",
     "cancelled_sent": "Cancelled — sent",
+    "returned_to_market": "Returned to market",
     "closed": "Closed",
     "unknown": "Unknown"
   }

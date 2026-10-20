@@ -71,8 +71,9 @@ describe("OrderStatusBadge — API yozilishlari", () => {
     ["cancelled_sent", "Bekor — jo'natilgan"],
     ["canceled", "Bekor qilingan"],
     ["partly paid", "Qisman to'langan"],
-    ["waiting_customer", "Kutilmoqda"],
-    ["returned_to_market", "Bekor qilingan"],
+    // SllBYhnt: alohida yorliq — «Yangi» ham, boshqa holat ham emas.
+    ["waiting_customer", "Mijoz kutilmoqda"],
+    ["returned_to_market", "Marketga qaytarilgan"],
   ])("%s → «%s»", (raw, label) => {
     renderBadge(raw);
     expect(screen.getByTestId("badge")).toHaveTextContent(label);

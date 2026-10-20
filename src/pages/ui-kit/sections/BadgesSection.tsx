@@ -43,7 +43,7 @@ const Wrap = ({ children }: { children: ReactNode }) => (
 );
 
 /**
- * «Holat belgilari» bo'limi: barcha ton × ko'rinish × o'lcham, 11 buyurtma
+ * «Holat belgilari» bo'limi: barcha ton × ko'rinish × o'lcham, 13 buyurtma
  * holati (`OrderStatusBadge`), maketdagi tur/holat namunalari va API qiymatlarini
  * normallashtirish. Har namuna kunduzgi va tungi mavzuda (`ThemePair`).
  * Maket: `tizim-states-data` → «Holat belgilari — to'liq to'plam».

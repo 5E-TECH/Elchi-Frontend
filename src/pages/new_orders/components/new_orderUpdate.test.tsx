@@ -706,7 +706,7 @@ describe("NewOrderUpdate — sotilgan buyurtmani qaytarish (RollbackOrderDialog)
     const dialog = await screen.findByRole("alertdialog", { name: "Buyurtmani qaytarish" });
     await user.click(within(dialog).getByRole("button", { name: "Ha, qaytarish" }));
 
-    expect(rollbackMutation.mutate).toHaveBeenCalledWith("1251175", expect.anything());
+    expect(rollbackMutation.mutate).toHaveBeenCalledWith({ orderId: "1251175", targetStatus: "waiting" }, expect.anything());
     expect(await screen.findByText("Buyurtma qayta tiklandi")).toBeInTheDocument();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
   });

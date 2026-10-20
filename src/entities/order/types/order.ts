@@ -14,9 +14,11 @@ export type OrderStatus =
     | "received"
     | "on the road"
     | "waiting"
+    | "waiting_customer"
     | "sold"
     | "cancelled"
     | "cancelled (sent)"
+    | "returned_to_market"
     | "paid"
     | "partly_paid"
     | "closed";

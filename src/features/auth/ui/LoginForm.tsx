@@ -3,11 +3,10 @@ import { memo, useEffect, useId, useState } from "react";
 import { CircleCheck, CircleX, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Controller, useForm, type Resolver, type SubmitHandler } from "react-hook-form";
-import { yupResolver } from "@hookform/resolvers/yup";
+import { Controller, useForm, type SubmitHandler } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import type { AxiosError } from "axios";
-import { createLoginSchema } from "../../../shared/lib/validation/loginSchema";
+import { createLoginResolver, type LoginFormValues } from "../../../shared/lib/validation/loginSchema";
 import { UZBEKISTAN_PHONE_PREFIX } from "../../../shared/lib/phone";
 import { setLoading, setAppInitializing, setError } from "../../../entities/user/model/slice";
 import type { RootState, AppDispatch } from "../../../app/config/store";
@@ -28,11 +27,6 @@ import { clearLoginNotice, peekLoginNotice } from "../../../auth/loginNotice";
  *   - «Parol o'zgardi — qayta kiring» bir martalik xabari (`loginNotice`);
  *   - e2e tayanadigan nomlar: telefon `name="elchi-login-phone"`, parol `name="password"`.
  */
-
-interface LoginFormValues {
-  phone_number: string;
-  password: string;
-}
 
 interface ApiErrorResponse {
   message?: string;
@@ -73,7 +67,7 @@ const LoginForm = ({ autoFocus = false }: LoginFormProps) => {
     setFocus,
     formState: { errors },
   } = useForm<LoginFormValues>({
-    resolver: yupResolver(createLoginSchema(t)) as Resolver<LoginFormValues>,
+    resolver: createLoginResolver(t),
     mode: "onTouched",
     defaultValues: {
       phone_number: UZBEKISTAN_PHONE_PREFIX,

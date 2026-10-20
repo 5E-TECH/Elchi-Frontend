@@ -3,6 +3,11 @@ import { afterEach, vi } from "vitest";
 import { cleanup, configure } from "@testing-library/react";
 import { toastStore } from "../shared/lib/notify";
 import { getConfirmSnapshot, removeConfirm } from "../shared/ui/primitives/dialog/confirmStore";
+import { i18nReady } from "../i18n";
+
+// O'zbekcha tarjimalarning yadrodan tashqari qismi alohida chunk (rzzxMItN, `src/i18n.ts`) — test fayli (va undagi
+// modul darajasidagi `i18n.t` sxemalari) yuklanishidan oldin tayyor bo'lsin, xuddi ilova chizilishidan oldingidek.
+await i18nReady;
 
 // `<Toaster />` xabar matnini ekran o'quvchi uchun yashirin jonli hududda (`[data-toast-announcer]`) takrorlaydi.
 // `*ByText` so'rovlari ko'rinadigan matnni qidiradi — aks holda har xabar ikki marta topiladi.

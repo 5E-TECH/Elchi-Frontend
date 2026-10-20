@@ -1,12 +1,63 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
 const usePolling = process.env.VITE_USE_POLLING !== "false";
 
+/**
+ * Birinchi chizish uchun kerak bo'ladigan lazy chunklar entry bilan PARALLEL yuklansin (rzzxMItN): aks holda ular
+ * entry yuklanib bajarilgandan KEYIN so'raladi — sekin mobil tarmoqda +0,5 s.
+ *   - `/login` — kirish sahifasi chunklari (`src/features/auth`);
+ *   - boshqa yo'llar — o'zbekcha tarjimalarning qolgan qismi (`src/locales/uzRest.ts`; `src/i18n.ts` chizishdan oldin
+ *     kutadi, `/login` da esa kutmaydi).
+ * Fayl nomlari xeshli — build oxirida bundle'dan olinadi; entry'ning o'zi yuklaydigan chunklar takrorlanmaydi.
+ * Skript `<meta charset>` dan keyin, stylesheet'lardan OLDIN turadi: ichki skript oldingi CSS yuklanishini kutardi.
+ */
+const firstPaintPreload = (): Plugin => {
+  let base = "/";
+  return {
+    name: "elchi-first-paint-preload",
+    apply: "build",
+    configResolved(config) {
+      base = config.base;
+    },
+    transformIndexHtml: {
+      order: "post",
+      handler(html, { bundle }) {
+        if (!bundle) return html;
+        const chunks = Object.values(bundle).flatMap((item) => (item.type === "chunk" ? [item] : []));
+        const byName = new Map(chunks.map((chunk) => [chunk.fileName, chunk]));
+        const graph = (fileName: string, seen = new Set<string>()) => {
+          if (seen.has(fileName)) return seen;
+          seen.add(fileName);
+          byName.get(fileName)?.imports.forEach((name) => graph(name, seen));
+          return seen;
+        };
+        const entry = chunks.find((chunk) => chunk.isEntry);
+        const chunkOf = (source: string) => chunks.find((chunk) => chunk.facadeModuleId?.endsWith(source));
+        const login = chunkOf("/src/features/auth/index.tsx");
+        const locales = chunkOf("/src/locales/uzRest.ts");
+        if (!entry || !login || !locales) {
+          throw new Error("elchi-first-paint-preload: entry, login yoki uzRest chunki topilmadi");
+        }
+        const eager = graph(entry.fileName);
+        const extra = (chunk: { fileName: string }) =>
+          [...graph(chunk.fileName)].filter((name) => !eager.has(name)).map((name) => `${base}${name}`);
+        const files = JSON.stringify({ login: extra(login), app: extra(locales) });
+        const script =
+          `<script>(()=>{const f=${files};for(const href of /^\\/login\\/?$/i.test(location.pathname)?f.login:f.app){` +
+          `const l=document.createElement("link");l.rel="modulepreload";l.crossOrigin="";l.href=href;document.head.appendChild(l)}})()</script>`;
+        const charset = /<meta charset="UTF-8" \/>/;
+        if (!charset.test(html)) throw new Error("elchi-first-paint-preload: index.html da <meta charset> topilmadi");
+        return html.replace(charset, (tag) => `${tag}\n    ${script}`);
+      },
+    },
+  };
+};
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), firstPaintPreload()],
   server: {
     watch: {
       ignored: [
@@ -24,6 +75,16 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
+    /**
+     * Brauzer bazasi (js9ndYwA) — `package.json` → `browserslist` bilan bir xil: Chrome / Edge / Firefox 90+,
+     * Safari / iOS 15.4+. JS sintaksisi shu bazaga tushiriladi (`??=`, private maydon, `static {}` — ES2020);
+     * `src/test/browserTarget.test.ts` ikkalasini solishtiradi.
+     * ⚠️ CSS: Tailwind v4 to'liq ko'rinish uchun Safari 16.4+ (`color-mix`, `@property`) talab qiladi; 15.4–16.3 da
+     * Tailwind'ning `@supports` zaxiralari ishlaydi, `color-mix` li tokenlar (index.css) esa chizilmasligi mumkin.
+     * `@vitejs/plugin-legacy` qo'shilmadi: 15.4 dan eski iOS (iPhone 6S / 7 / SE1 — iOS 15.8 gacha bo'lsa ham) bu bazadan
+     * tashqarida; ularda `index.html` dagi zaxira blok «Brauzeringiz eskirgan» chiqadi.
+     */
+    target: ["es2020", "safari15", "chrome90"],
     rollupOptions: {
       output: {
         manualChunks(id) {

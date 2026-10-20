@@ -1,5 +1,5 @@
 // dizayn-v2: courier-orders-rollback-confirm, manager-orders-rollback-dialog
-import { memo, useId, useRef } from "react";
+import { memo, useId, useRef, useState } from "react";
 import { ArrowRight, RotateCcw, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
@@ -9,8 +9,13 @@ import {
   OrderStatusBadge,
   resolveDisplayOrderStatus,
 } from "../../../../../entities/order";
+import {
+  getRollbackTargets,
+  ROLLBACK_TARGET_STATUS,
+  type RollbackTarget,
+} from "../../../../../entities/orders/rollbackTarget";
 import { formatPhone } from "../../../../../shared/lib/formatPhone";
-import { Button, Dialog } from "../../../../../shared/ui/primitives";
+import { Button, Dialog, SegmentedControl } from "../../../../../shared/ui/primitives";
 import { OrderCustomerSummary } from "./OrderActionParts";
 import { getDeliveryLabelKey, type ActionOrder, type OrderActionVariant } from "./orderActionModel";
 import { useActionDialogSession } from "./useActionDialogSession";
@@ -22,7 +27,11 @@ import { useActionDialogSession } from "./useActionDialogSession";
  *
  * Maketlar: `courier-orders-rollback-confirm` (`variant="courier"`, sukut) — «Holatni qayta tiklash»,
  * mijoz bloki ichida «Holat: Sotilgan → Kutilmoqda»; `manager-orders-rollback-dialog`
- * (`variant="manager"`) — «Buyurtmani qaytarish», mijoz bloki ostida savol.
+ * (`variant="manager"`, superadmin ham) — «Buyurtmani qaytarish», mijoz bloki ostida savol.
+ *
+ * Maqsad holat (y2RarzlT, `target_status`): «Kutilmoqda» · «Bekor qilish» · kuryerda «Bekor — jo'natilgan»
+ * (`getRollbackTargets`); bekor qilingan buyurtma faqat «Kutilmoqda» ga — tanlov chiqmaydi. Maketda tanlov va
+ * kassa izohi yo'q (ega qarori kutilmoqda) — `SegmentedControl` va bir jumlalik izoh.
  */
 
 type Props = {
@@ -32,10 +41,8 @@ type Props = {
   /** Mutatsiya ketmoqda: tugmada yuklanish, Esc / fon / «Orqaga» ishlamaydi. */
   loading?: boolean;
   onCancel: () => void;
-  onConfirm: () => void;
+  onConfirm: (target: RollbackTarget) => void;
 };
-
-const WAITING = "waiting";
 
 const RollbackDialog = ({
   order,
@@ -54,14 +61,31 @@ const RollbackDialog = ({
     const key = resolveDisplayOrderStatus(status);
     return key ? t(ORDER_STATUS_REGISTRY[key].labelKey, { ns: ORDER_STATUS_NS }) : (humanizeOrderStatus(status) ?? "—");
   };
-  const waitingLabel = statusLabel(WAITING);
+  const targets = getRollbackTargets(isManager ? "manager" : "courier", order.status);
+  const [target, setTarget] = useState<RollbackTarget>(targets[0]);
+  const targetStatus = ROLLBACK_TARGET_STATUS[target];
+  const targetLabel = statusLabel(targetStatus);
+  const choice =
+    targets.length > 1 ? (
+      <SegmentedControl<RollbackTarget>
+        ariaLabel={t("rollbackTargetLabel")}
+        value={target}
+        onValueChange={setTarget}
+        options={targets.map((value) => ({
+          value,
+          label: value === "cancelled" ? t("rollbackTargetCancel") : statusLabel(ROLLBACK_TARGET_STATUS[value]),
+          disabled: loading,
+        }))}
+      />
+    ) : null;
+  const cashNote = <p className="m-0 text-[13px] text-text-muted">{t("rollbackCashNote")}</p>;
 
   const footer = (
     <>
       <Button ref={cancelRef} variant="secondary" disabled={loading} onClick={onCancel}>
         {t("back", { ns: "common" })}
       </Button>
-      <Button leftIcon={RotateCcw} loading={loading} onClick={onConfirm}>
+      <Button leftIcon={RotateCcw} loading={loading} onClick={() => onConfirm(target)}>
         {isManager ? t("rollbackConfirmLabel") : t("rollbackRestoreConfirm")}
       </Button>
     </>
@@ -107,9 +131,11 @@ const RollbackDialog = ({
             </>
           }
         />
+        {choice}
         <p id={`${ids}-desc`} className="m-0 text-sm text-text">
-          {t("rollbackManagerDescription", { status: waitingLabel })}
+          {t("rollbackManagerDescription", { status: targetLabel })}
         </p>
+        {cashNote}
       </Dialog>
     );
   }
@@ -124,7 +150,9 @@ const RollbackDialog = ({
       size="sm"
       className="md:max-w-[460px]"
       title={t("rollbackRestoreTitle")}
-      description={t("rollbackRestoreDescription")}
+      description={
+        target === "waiting" ? t("rollbackRestoreDescription") : t("rollbackManagerDescription", { status: targetLabel })
+      }
       icon={TriangleAlert}
       iconTone="warning"
       footer={footer}
@@ -144,17 +172,19 @@ const RollbackDialog = ({
             <span className="text-[13px] text-text-muted">{t("orderStatus")}</span>
             <span className="inline-flex items-center">
               <span className="sr-only">
-                {t("rollbackStatusChange", { from: statusLabel(order.status), to: waitingLabel })}
+                {t("rollbackStatusChange", { from: statusLabel(order.status), to: targetLabel })}
               </span>
               <span aria-hidden="true" className="inline-flex items-center gap-1.5">
                 <OrderStatusBadge status={order.status} />
                 <ArrowRight size={16} strokeWidth={2} className="shrink-0 text-text-subtle" />
-                <OrderStatusBadge status={WAITING} />
+                <OrderStatusBadge status={targetStatus} />
               </span>
             </span>
           </div>
         }
       />
+      {choice}
+      {cashNote}
     </Dialog>
   );
 };

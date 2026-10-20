@@ -87,3 +87,24 @@ describe("useOrders — sotish/bekor qilish sarlavhalari (j9KFyqlS)", () => {
     expect(apiMock.post.mock.calls[1]).toEqual(["orders/cancel/13", { reason: "OTHER", comment: "x", extraCost: 0 }]);
   });
 });
+
+/** y2RarzlT — ortga qaytarish: maqsad holat body'da; kassa / moliya / dashboard keshlari yangilanadi. */
+describe("useOrders — RollbackOrder", () => {
+  it("POST orders/rollback/:id { target_status }; muvaffaqiyatda buyurtma va pul keshlari eskiradi", async () => {
+    apiMock.post.mockReset();
+    apiMock.post.mockResolvedValue({ data: { statusCode: 200 } });
+    const client = new QueryClient({ defaultOptions: { mutations: { retry: false } } });
+    const invalidate = vi.spyOn(client, "invalidateQueries");
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+    );
+    const { result } = renderHook(() => useOrders(), { wrapper });
+
+    await act(() => result.current.RollbackOrder.mutateAsync({ orderId: "95", targetStatus: "cancelled" }));
+
+    expect(apiMock.post).toHaveBeenCalledWith("orders/rollback/95", { target_status: "cancelled" });
+    const keys = invalidate.mock.calls.map(([filters]) => (filters as { queryKey: unknown[] }).queryKey[0]);
+    expect(keys).toEqual(expect.arrayContaining(["finance-cov", "cashbox", "dashboard"]));
+    expect(keys.length).toBeGreaterThanOrEqual(4);
+  });
+});

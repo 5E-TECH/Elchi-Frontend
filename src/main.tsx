@@ -4,17 +4,26 @@ import "./index.css";
 import App from "./app/ui/App";
 import { registerBeforeLogout } from "./auth/authService";
 import { unsubscribePushOnLogout } from "./features/push-notifications/lib/pushClient";
-import { i18nReady } from "./i18n";
+import { preloadLoginPage } from "./app/lib/loginPagePreload";
+import { i18nReady, startsOnLogin } from "./i18n";
+
+// «Brauzeringiz eskirgan» zaxira bloki (index.html, js9ndYwA): ilova kodi ishga tushdi — brauzer uni o'qiy oldi, blok
+// kerak emas. Chizishni (tarjimalar, sekin tarmoqda 8 s dan ko'p bo'lishi mumkin) KUTMASDAN olib tashlanadi —
+// aks holda yangi brauzerda ham soxta «eskirgan» ekrani chiqardi.
+document.getElementById("legacy-fallback")?.remove();
 
 // Tanlangan til (ru/en) fayllari yuklangach chiziladi — bir lahza o'zbekcha
-// matn ko'rinib qolmasin. Standart til (uz) bundle ichida: kutish yo'q.
+// matn ko'rinib qolmasin.
 const render = () =>
   createRoot(document.getElementById("root")!).render(
     <StrictMode>
       <App />
     </StrictMode>,
   );
-void i18nReady.then(render, render);
+// To'g'ridan-to'g'ri `/login`: kirish sahifasi moduli ham tarjimalar bilan parallel — birinchi chizishda forma
+// (`app/lib/loginPage.tsx`). Yuklanmasa — oddiy `lazy` yo'li.
+const firstScreen = startsOnLogin() ? preloadLoginPage().catch(() => undefined) : undefined;
+void Promise.all([i18nReady, firstScreen]).then(render, render);
 
 // Web Push uchun Service Worker (QgqO0CdZ). Faqat PROD: dev'da HMR bilan
 // urushmasin. Sahifa to'liq yuklangach — birinchi chizishni sekinlashtirmasin.

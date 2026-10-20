@@ -7,7 +7,7 @@ import { BadgesSection } from "./BadgesSection";
 /** «Holat belgilari» namunasi: har panelda 11 holat, ton × ko'rinish × o'lcham matritsasi. */
 
 describe("BadgesSection", () => {
-  it("har panelda (kunduzgi + tungi) 11 buyurtma holati", () => {
+  it("har panelda (kunduzgi + tungi) 13 buyurtma holati", () => {
     renderWithProviders(<BadgesSection />, { route: "/ops/ui-kit?section=badges" });
     for (const panel of document.querySelectorAll("[data-kit-theme]")) {
       const keys = Array.from(panel.querySelectorAll("[data-order-status]"))
@@ -19,11 +19,13 @@ describe("BadgesSection", () => {
         "received",
         "on_the_road",
         "waiting",
+        "waiting_customer",
         "partly_paid",
         "sold",
         "paid",
         "cancelled",
         "cancelled_sent",
+        "returned_to_market",
         "closed",
       ]);
     }

@@ -6,11 +6,10 @@ import Payments from "./index";
 import { renderWithProviders } from "../../test/test-utils";
 
 /**
- * FIX3B — /payments: FE-PAY-01 QAYTARILDI (foydalanuvchi qarori #7).
- * Menejerning "Berilishi kerak" kartasi kassa sahifasini fix3 dan oldingi
- * filial ID si bilan ochadi: `all-info.branch_id` → `profile.branch.id` →
- * `profile.branch_id`. Filial puli HQ ga faqat superadmin/admin "Qabul
- * qilinishi kerak" orqali qabul qilganda o'tadi — menejer o'zi topshirmaydi.
+ * FIX3B — /payments: FE-PAY-01 QAYTARILDI (foydalanuvchi qarori #7) — menejer filial pulini o'zi topshirmaydi.
+ * Menejerning "Berilishi kerak" kartasi va «HQ'ga o'tkazish» filial kassasini HAQIQIY filial id bilan ochadi
+ * (IjqTYQks, prod: branch_users qatori id'si bilan POST 403 olardi): `all-info.branch_id` → `profile.branch.branch_id`
+ * → ichki `profile.branch.branch.id` → `profile.branch_id`; profildagi qatorning o'z `id` si hech qachon.
  */
 
 const LocationProbe = () => {
@@ -103,18 +102,18 @@ beforeEach(() => {
   };
 });
 
-describe("FE-PAY-01 reverted — manager 'Berilishi kerak' keeps the pre-fix3 branch id", () => {
-  it("opens /payments/cash-detail/<profile.branch.id>?type=branch (no nested-branch resolution)", async () => {
+describe("IjqTYQks — manager 'Berilishi kerak' / «HQ'ga o'tkazish» — real branch id, not the branch_users row id", () => {
+  it("opens /payments/cash-detail/<profile.branch.branch_id>?type=branch (16, not the row id 3)", async () => {
     open();
 
     await userEvent.setup().click(screen.getByText("Berilishi kerak"));
 
-    expect(screen.getByTestId("pathname").textContent).toBe("/payments/cash-detail/3");
+    expect(screen.getByTestId("pathname").textContent).toBe("/payments/cash-detail/16");
     expect(screen.getByTestId("search").textContent).toBe("?type=branch");
     expect(JSON.parse(screen.getByTestId("state").textContent || "null")).toEqual(
       expect.objectContaining({
         type: "branch",
-        entity: expect.objectContaining({ id: "3", role: "branch", amount: 500_000 }),
+        entity: expect.objectContaining({ id: "16", role: "branch", amount: 500_000 }),
       }),
     );
   });
@@ -141,7 +140,24 @@ describe("FE-PAY-01 reverted — manager 'Berilishi kerak' keeps the pre-fix3 br
 
     await userEvent.setup().click(screen.getByRole("button", { name: "HQ'ga o'tkazish" }));
 
-    expect(screen.getByTestId("pathname").textContent).toBe("/payments/cash-detail/3");
+    expect(screen.getByTestId("pathname").textContent).toBe("/payments/cash-detail/16");
     expect(screen.getByTestId("search").textContent).toBe("?type=branch");
+  });
+
+  it("a cashbox `branch` entity (not a branch_users row) keeps its own id", async () => {
+    page.cashboxInfo = {
+      data: {
+        branch: { id: "21", name: "Kassa filiali" },
+        kassadagi_summa: 500_000,
+        berilishi_kerak: 500_000,
+        olinishi_kerak: 0,
+        counterparty: "HQ",
+      },
+    };
+    open();
+
+    await userEvent.setup().click(screen.getByText("Berilishi kerak"));
+
+    expect(screen.getByTestId("pathname").textContent).toBe("/payments/cash-detail/21");
   });
 });

@@ -2,6 +2,7 @@
 import { memo, useId, useState, type ReactNode } from "react";
 import { Building2, ChevronDown, ChevronUp, MapPin, Minus, Package, Plus, Send, Trash2, TriangleAlert, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { useLogistics } from "../../../../../entities/logistics/api/logisticsApi";
 import { toLocalPhone, type AiPreviewItem } from "../../../../../entities/ai-order";
 import type { DeliveryType } from "../../../../../entities/order/types/order";
@@ -11,6 +12,7 @@ import { getUzbekistanPhoneDigits, toUzbekistanPhoneValue } from "../../../../..
 import {
   Badge,
   Button,
+  buttonClasses,
   Card,
   Field,
   IconButton,
@@ -237,6 +239,8 @@ const AiPreviewCard = ({
   const phoneUnreadable = !toLocalPhone(order.phone_number) && Boolean(source.phone_number?.trim());
   const failedTitle = t("aiCreateFailedTitle");
   const failedText = draft.createError ? stripTitle(draft.createError, failedTitle) : "";
+  // `duplicate_recent` (j3WEDIpt): buyurtma allaqachon bor — karta «Mavjud (#N)», qayta yaratilmaydi.
+  const existingOrderId = draft.existingOrderId;
   const priceInvalid = issues.includes("price_missing") || issues.includes("price_confirm");
   const customerName = order.customer_name?.trim();
 
@@ -247,6 +251,7 @@ const AiPreviewCard = ({
       aria-labelledby={titleId}
       data-testid="ai-preview-card"
       data-ready={ready}
+      data-existing={existingOrderId ? "" : undefined}
       // `scroll-mb-48` — klaviatura ochilganda / `scrollIntoView` da maydon pastdagi yopishgan
       // «Yaratishni tasdiqlash» paneli ostida qolib ketmaydi.
       className="scroll-mt-4 scroll-mb-48 [&_input]:scroll-mb-48 [&_textarea]:scroll-mb-48"
@@ -257,7 +262,11 @@ const AiPreviewCard = ({
           <h2 id={titleId} className="min-w-0 text-base font-bold text-text [overflow-wrap:anywhere]">
             {customerName || "—"}
           </h2>
-          {ready ? (
+          {existingOrderId ? (
+            <Badge tone="warning" dot>
+              {t("aiExisting", { id: existingOrderId })}
+            </Badge>
+          ) : ready ? (
             <Badge tone="success" dot>
               {t("aiReady")}
             </Badge>
@@ -273,7 +282,7 @@ const AiPreviewCard = ({
             size="sm"
             leftIcon={Send}
             onClick={onCreate}
-            disabled={!ready || creating}
+            disabled={!ready || creating || Boolean(existingOrderId)}
             className="max-md:flex-[1_0_auto]"
           >
             {t("aiCreateThis")}
@@ -322,7 +331,19 @@ const AiPreviewCard = ({
         data-testid="ai-card-body"
         className={cx("flex flex-col gap-5 p-5", !expanded && "max-md:hidden")}
       >
-        {draft.createError ? (
+        {draft.createError && existingOrderId ? (
+          <CreateAlert
+            tone="warning"
+            title={t("aiExistingTitle")}
+            action={
+              <Link to={`/orders/edit/${existingOrderId}`} className={buttonClasses({ variant: "secondary", size: "sm" })}>
+                {t("aiOpenExisting", { id: existingOrderId })}
+              </Link>
+            }
+          >
+            {failedText}
+          </CreateAlert>
+        ) : draft.createError ? (
           <CreateAlert tone="danger" title={failedTitle}>
             {failedText}
           </CreateAlert>

@@ -1,7 +1,6 @@
 import { memo, useId, useLayoutEffect, useRef, type FC, type ReactNode } from "react";
 import { cx } from "../lib/cx";
 import { Portal, useFocusTrap, usePresence, useScrollLock, type Presence } from "./primitives";
-import { AntdLayer } from "./primitives/dialog/AntdLayer";
 import { useBackdropPress } from "./primitives/dialog/useBackdropPress";
 
 interface Props {
@@ -94,23 +93,21 @@ const PopupModal = ({ open, presence, onClose, labelledBy, ariaLabel, children }
         onClick={backdrop.onClick}
         className={cx(ROOT, presence.exiting && "pointer-events-none")}
       >
-        <AntdLayer>
-          <div
-            ref={panelRef}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby={labelledBy}
-            aria-label={labelledBy ? undefined : ariaLabel}
-            tabIndex={-1}
-            data-state={state}
-            onTransitionEnd={(event) => {
-              if (presence.exiting && event.target === event.currentTarget) presence.finish();
-            }}
-            className={PANEL}
-          >
-            {children}
-          </div>
-        </AntdLayer>
+        <div
+          ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={labelledBy}
+          aria-label={labelledBy ? undefined : ariaLabel}
+          tabIndex={-1}
+          data-state={state}
+          onTransitionEnd={(event) => {
+            if (presence.exiting && event.target === event.currentTarget) presence.finish();
+          }}
+          className={PANEL}
+        >
+          {children}
+        </div>
       </div>
     </Portal>
   );

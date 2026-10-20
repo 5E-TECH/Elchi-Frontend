@@ -51,6 +51,45 @@ function resolveModule(spec, fromDir) {
 
 const lazyFiles = {}; // komponent nomi → fayl (repo nisbiy)
 const localComps = {}; // routes.tsx ichida e'lon qilingan komponentlar
+
+/**
+ * Route komponenti kichik preload wrapper orqali import qilinishi mumkin (`Login` → `loginPage.tsx` →
+ * `loginPagePreload.ts` → dynamic import). Wrapperning o'zini sahifa deb hisoblamaymiz: birinchi topilgan dynamic
+ * import haqiqiy route fayli. To'g'ridan-to'g'ri dynamic import topilmasa, faqat nisbiy importlarni kuzatamiz.
+ */
+function indirectLazyTargets(file, seen = new Set()) {
+  if (seen.has(file)) return [];
+  seen.add(file);
+  const body = readFileSync(file, 'utf8');
+  const source = ts.createSourceFile(rel(file), body, ts.ScriptTarget.Latest, true, file.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const direct = [];
+  (function find(n) {
+    if (ts.isCallExpression(n) && n.expression.kind === ts.SyntaxKind.ImportKeyword && n.arguments[0] && ts.isStringLiteral(n.arguments[0])) {
+      const target = resolveModule(n.arguments[0].text, dirname(file));
+      if (target) direct.push(target);
+    } else ts.forEachChild(n, find);
+  })(source);
+  if (direct.length) return [...new Set(direct)];
+
+  const nested = [];
+  for (const st of source.statements) {
+    if (!ts.isImportDeclaration(st) || !ts.isStringLiteral(st.moduleSpecifier) || !st.moduleSpecifier.text.startsWith('.')) continue;
+    const target = resolveModule(st.moduleSpecifier.text, dirname(file));
+    if (target) nested.push(...indirectLazyTargets(target, seen));
+  }
+  return [...new Set(nested)];
+}
+
+// Oddiy `import Login from "./loginPage"` ichidagi preload/lazy zanjirini ham route manbasiga bog'laymiz.
+for (const st of sf.statements) {
+  if (!ts.isImportDeclaration(st) || !st.importClause?.name || !ts.isStringLiteral(st.moduleSpecifier)) continue;
+  const name = st.importClause.name.text;
+  if (!/^[A-Z]/.test(name) || !st.moduleSpecifier.text.startsWith('.')) continue;
+  const wrapper = resolveModule(st.moduleSpecifier.text, dirname(join(ROOT, ROUTES_FILE)));
+  const targets = wrapper ? indirectLazyTargets(wrapper) : [];
+  if (targets.length === 1) lazyFiles[name] = rel(targets[0]);
+}
+
 for (const st of sf.statements) {
   if (!ts.isVariableStatement(st)) continue;
   for (const d of st.declarationList.declarations) {

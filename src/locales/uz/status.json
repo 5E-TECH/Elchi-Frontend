@@ -5,11 +5,13 @@
     "received": "Qabul qilindi",
     "on_the_road": "Yo'lda",
     "waiting": "Kutilmoqda",
+    "waiting_customer": "Mijoz kutilmoqda",
     "partly_paid": "Qisman to'langan",
     "sold": "Sotilgan",
     "paid": "To'langan",
     "cancelled": "Bekor qilingan",
     "cancelled_sent": "Bekor — jo'natilgan",
+    "returned_to_market": "Marketga qaytarilgan",
     "closed": "Yopilgan",
     "unknown": "Noma'lum"
   }
