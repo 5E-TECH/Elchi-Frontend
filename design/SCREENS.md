@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **183** · qisman: **90** · v2 ga ko'chirilgan route: **76 / 77**
+**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **177** · qisman: **89** · v2 ga ko'chirilgan route: **77 / 77**
 
 ## Qanday ishlatiladi
 
@@ -95,7 +95,7 @@
 | `/all-users` | Foydalanuvchilar | `src/pages/users/list/UserListPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 9 | v2 |
 | `/all-users/create-user` | Foydalanuvchilar | `src/pages/users/create/CreateUserPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 8 | v2 |
 | `/all-users/:id` | Foydalanuvchilar | `src/pages/users/detail/UserDetailPage.tsx` | superadmin, admin, manager (filial turi aniq bo'lsa) | 23 | v2 |
-| `/market-operators` | Foydalanuvchilar | `src/pages/market-operators/index.tsx` | market (taklif — ega qarori 2026-10-19; kodda hozir canViewMarketOperators = () => false, guard market'ga ochilishi kerak) | 8 | eski |
+| `/market-operators` | Foydalanuvchilar | `src/pages/market-operators/index.tsx` | market (MO-1: canViewMarketOperators = hasRole('market') (access.ts); backend market-operators — @Roles(MARKET), faqat o'z operatorlari) | 8 | v2 |
 | `/regions` | Hududlar | `src/pages/region/index.tsx` | superadmin, admin, manager, courier, logist (taklif — o'z viloyatlari (LG-S3), kodda yo'q) | 9 | v2 |
 | `/regions/districts` | Hududlar | `src/pages/region/pages/districts/index.tsx` | superadmin, admin | 20 | v2 |
 | `/regions/sato-management` | Hududlar | `src/pages/region/pages/sato-management/index.tsx` | superadmin, admin | 12 | v2 |
@@ -147,7 +147,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `(qobiq)` | admin | — Qobiq har sahifa maketida chizilgan — masalan admin-orders-list. | — | — | v2 |
 | `(qobiq)` | manager | — Qobiq har sahifa maketida chizilgan — masalan manager-orders-list-all (pastki menyuda «Skaner» va «Biriktirish»). | — | — | v2 |
 | `(qobiq)` | registrator | — Qobiq har sahifa maketida chizilgan — masalan registrator-orders-list. | — | — | v2 |
-| `(qobiq)` | market | `market-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq | [design/fragments/market--dashboard-mobile-menu.html](fragments/market--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | qisman |
+| `(qobiq)` | market | `market-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq | [design/fragments/market--dashboard-mobile-menu.html](fragments/market--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | v2 |
 | `(qobiq)` | market_operator | — Yangi rol qobig'i: yon menyu Bosh sahifa · Buyurtmalar · Buyurtma yaratish · Mahsulotlar · Daromadim; pastki menyu 5 oddiy katak (Skaner va Menyu yo'q) — Yaratish · Mahsulotlar · Daromadim. Bildirishnomalar, Sozlamalar va Chiqish faqat yuqori paneldan (qo'ng'iroqcha, profil menyusi) — eski market xatti-harakati kabi. Profil satri «Market operatori» (profil market nomini qaytarmaydi). | — | — | v2 |
 | `(qobiq)` | courier | `courier-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq<br>↳ `src/widgets/Sidebar/ui/MobileMenu.tsx` | [design/fragments/courier--dashboard-mobile-menu.html](fragments/courier--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | v2 |
 | `(qobiq)` | courier | `courier-dashboard-mobile-search` — Global qidiruv (telefon)<br>↳ `src/widgets/header/ui/SearchScreen.tsx` | [design/fragments/courier--dashboard-mobile-search.html](fragments/courier--dashboard-mobile-search.html) | oyna · faqat telefon | v2 |
@@ -1235,23 +1235,23 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/all-users/:id` | manager | `manager-users-detail` — Xodim tafsiloti | [design/fragments/manager--users-detail.html](fragments/manager--users-detail.html) | sahifa | v2 |
 | `/all-users/:id` | manager | `manager-users-edit-dialog` — Xodimni tahrirlash<br>↳ `src/features/user/update-user/ui/UpdateUserModal.tsx` | [design/fragments/manager--users-edit-dialog.html](fragments/manager--users-edit-dialog.html) | oyna | v2 |
 
-#### `/market-operators` — Operatorlar — market o'z operatorlarini boshqaradi (ega qarori 2026-10-19; kodda hozir YOPIQ)
+#### `/market-operators` — Operatorlar — market o'z operatorlarini boshqaradi (ega qarori 2026-10-19)
 
 - **Fayllar:** `src/pages/market-operators/index.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewMarketOperators` (routes.tsx → canViewMarketOperators (doim false))
-- **Rollar:** market (taklif — ega qarori 2026-10-19; kodda hozir canViewMarketOperators = () => false, guard market'ga ochilishi kerak)
-- **Menyuda:** yo'q — Market menyusi «Operatorlar» (yangi band, roles.json market.menu → operators); telefonda — «Menyu» varag'i
-- **Holat:** eski
-- **Izoh:** Ega qarori 2026-10-19: market operatorlarini MARKET o'zi boshqaradi (superadmin «Ops» emas). Backend (origin/main, market-operator-gateway.controller.ts, hammasi @Roles(MARKET), faqat o'z operatorlari): GET market-operators (search, status, page, limit → { items, meta: { page, limit, total, totalPages } }; maydonlar: id, name, phone_number, status, commission_type, commission_value, createdAt), POST market-operators (name, phone_number, password — kamida 4 belgi), PATCH market-operators/:id/commission (commission_type percent | fixed, commission_value; PERCENT 0..100, FIXED 0..1 000 000 so'm, ko'pi bilan 2 kasr; ikkalasi null — komissiyani olib tashlash), DELETE market-operators/:id (soft delete). Ro'yxat: DataTable + Pagination (Card footer) — total > limit bo'lsa; pastki satr faqat «N ta operator» (meta.total); «N tasi faol» soni backendda yo'q, chizilmadi. «Nofaol» holat — user.status. Ega qarori 2026-10-19 (MO-S4): market o'z operatorini nofaol / faol qiladi — qator menyusida «Nofaol qilish» (faol operatorda) yoki «Faollashtirish» (nofaol operatorda), useConfirm tasdig'i bilan: operators-deactivate-dialog (tone danger, «Nofaol qilish») va operators-activate-dialog (oddiy, «Faollashtirish»). TAKLIF · BACKEND KERAK: market uchun endpoint yo'q — PATCH users/:id/status faqat @Roles(SUPERADMIN, ADMIN); kerak: PATCH market-operators/:id/status { status: active | inactive } @Roles(MARKET), faqat o'z operatori (find_by_market kabi tekshiruv), nofaol qilinganda operator sessiyalari bekor bo'lsin. Ega qarori (MO-S5): «Operator qo'shish» oynasida ixtiyoriy «Komissiya» (Foiz | Qat'iy summa + qiymat; bo'sh — belgilanmagan). Hozirgi backend bilan ikki so'rov: POST market-operators (CreateMarketOperatorDto: name, phone_number, password — komissiya maydoni yo'q, javobda operator id) → PATCH market-operators/:id/commission; ikkinchisi yiqilsa operator komissiyasiz qoladi va notify.error «Operator qo'shildi, komissiya saqlanmadi» + «Belgilash». Tavsiya (backend): CreateMarketOperatorDto ga ixtiyoriy commission_type, commission_value (UpdateMarketOperatorCommissionDto chegaralari bilan) — bitta atomar so'rov. O'chirilgan operator ro'yxatda ko'rinmaydi. Ogohlantirish «Komissiya belgilanmagan — daromad yozilmaydi»: 1 ta operator bo'lsa — ismi bilan va «Belgilash» shu operatorning Komissiya oynasini ochadi; 2+ bo'lsa — «N ta operatorda komissiya belgilanmagan» + «Faqat ularni ko'rsatish» (backendda komissiya filtri yo'q → mijoz tomonda, joriy sahifa ichida). Komissiya oynasi: operators-commission-dialog — Foiz (belgilanmagan operator), operators-commission-fixed-dialog — Qat'iy summa, so'm qo'shimchasi, limit izohi va xato holati (1 000 000 dan oshdi), komissiyasi bor operatorda «Komissiyani olib tashlash» (PATCH ikkalasi null) — useConfirm tasdig'i bilan: «Komissiyani olib tashlaysizmi?», tavsif «Keyingi sotuvlari uchun daromad yozilmaydi. Avvalgi daromadlar saqlanadi.», tugma «Olib tashlash», tone danger. «Yangi stavka faqat keyingi sotuvlarga» — backend tasdiqlaydi: finance recordOperatorEarning sotuv paytida stavkani OperatorEarning qatoriga yozib qo'yadi (snapshot); faqat SOLD↔PARTLY_PAID qayta sotuvida joriy stavka bilan qayta hisoblanadi. O'chirish — ConfirmDialog (alertdialog), tone danger. src/pages/market-operators/index.tsx hozirgi (eski, yopiq) sahifa — v2 da qayta yoziladi.
+- **Rollar:** market (MO-1: canViewMarketOperators = hasRole('market') (access.ts); backend market-operators — @Roles(MARKET), faqat o'z operatorlari)
+- **Menyuda:** «Operatorlar» (`operators`) — market
+- **Holat:** v2
+- **Izoh:** Dizayn v2 (MO-1, 2026-10-21). Backend (origin/main, market-operator-gateway.controller.ts, hammasi @Roles(MARKET), faqat o'z operatorlari, market_id yuborilmaydi — JWT sub): GET market-operators (search, status, page, limit ≤ 100 → { items, meta: { page, limit, total, totalPages } }; maydonlar: id, name, phone_number, status, commission_type, commission_value, createdAt), POST market-operators (name 2..100, phone_number, password ≥ 4 — faqat 3 maydon, forbidNonWhitelisted), PATCH market-operators/:id/commission (percent 0..100 | fixed 0..1 000 000 so'm, 2 kasr; ikkalasi null — olib tashlash), DELETE market-operators/:id (soft). Ro'yxat: sarlavha + «Operator qo'shish», qidiruv (ism yoki telefon) + «Holat» (Barchasi · Faol · Nofaol), DataTable (Operator · Telefon · Komissiya — formatPercentLocalized / formatMoneyLocalized + izoh · Holat · Qo'shilgan · kebab), < 1024 Telefon va Qo'shilgan yashirin (telefon ism ostida), telefonda kartalar; pastda «N ta operator» yoki Pagination (jami > sahifa hajmi; 20 · 50 · 100). «N tasi faol» soni backendda yo'q — chizilmadi. Ogohlantirish «Komissiya belgilanmagan — daromad yozilmaydi» — joriy sahifa, faqat FAOL operatorlar (nofaol sotuv qilmaydi): 1 ta — ismi bilan + «Belgilash» (Komissiya oynasi); 2+ — «N ta operatorda …», ismlar (3 + «yana N ta») + «Faqat ularni ko'rsatish» ↔ «Hammasini ko'rsatish» (mijoz tomonda, backendda komissiya filtri yo'q). Bo'sh holat «Hali operator yo'q» (sarlavhada tugma, ogohlantirish va filtrlar yo'q — tugma bo'sh holat ichida); filtr bo'yicha topilmasa — «Operator topilmadi» + «Filtrlarni tozalash» (maket yo'q, eng yaqini superadmin-users-list). Qo'shish oynasi (ega MO-S5): ixtiyoriy «Komissiya» — avval POST (3 maydon), so'ng PATCH :id/commission; PATCH yiqilsa notify.error «Operator qo'shildi, komissiya saqlanmadi» + «Belgilash». 409 — telefon maydonida «Bu telefon raqam band», 403 — «Market bloklangan». Komissiya oynasi: belgilanmaganda ogohlantirish, belgilanganda «Hozirgi stavka» + «Komissiyani olib tashlash» (useConfirm danger: «Komissiyani olib tashlaysizmi?» → PATCH null); foizda «Namuna» (250 000 so'mlik sotuvdan), qat'iyda «Qanday hisoblanadi»; izoh «Yangi stavka faqat keyingi sotuvlarga …» ikkala turda (maketda faqat foizda). O'chirish — useConfirm (alertdialog, danger) + ob'ekt kartasi va izoh. Qator menyusi popover (telefonda ham, maketdagi aria-haspopup=menu; bandlar 44 px). TAKLIF · BACKEND KERAK (MO-4, mFkrqvMi): «Nofaol qilish / Faollashtirish» (operators-deactivate-dialog, operators-activate-dialog) — market uchun PATCH market-operators/:id/status yo'q; shungacha holat faqat o'qiladi. MO-5 (B3ZtzCCx): yaratishda komissiya bitta atomar so'rov.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/market-operators` | market | `market-operators-list` — Operatorlar | [design/fragments/market--operators-list.html](fragments/market--operators-list.html) | sahifa | yangi (kodda yo'q) |
-| `/market-operators` | market | `market-operators-empty` — Operatorlar — bo'sh holat | [design/fragments/market--operators-empty.html](fragments/market--operators-empty.html) | sahifa | yangi (kodda yo'q) |
-| `/market-operators` | market | `market-operators-create-dialog` — Operator qo'shish | [design/fragments/market--operators-create-dialog.html](fragments/market--operators-create-dialog.html) | oyna | yangi (kodda yo'q) |
-| `/market-operators` | market | `market-operators-commission-dialog` — Komissiya | [design/fragments/market--operators-commission-dialog.html](fragments/market--operators-commission-dialog.html) | oyna | yangi (kodda yo'q) |
-| `/market-operators` | market | `market-operators-commission-fixed-dialog` — Komissiya — qat'iy summa, xato | [design/fragments/market--operators-commission-fixed-dialog.html](fragments/market--operators-commission-fixed-dialog.html) | oyna | yangi (kodda yo'q) |
-| `/market-operators` | market | `market-operators-delete-dialog` — Operatorni o'chirish | [design/fragments/market--operators-delete-dialog.html](fragments/market--operators-delete-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/market-operators` | market | `market-operators-list` — Operatorlar | [design/fragments/market--operators-list.html](fragments/market--operators-list.html) | sahifa | v2 |
+| `/market-operators` | market | `market-operators-empty` — Operatorlar — bo'sh holat | [design/fragments/market--operators-empty.html](fragments/market--operators-empty.html) | sahifa | v2 |
+| `/market-operators` | market | `market-operators-create-dialog` — Operator qo'shish<br>↳ `src/pages/market-operators/ui/CreateOperatorDialog.tsx` | [design/fragments/market--operators-create-dialog.html](fragments/market--operators-create-dialog.html) | oyna | v2 |
+| `/market-operators` | market | `market-operators-commission-dialog` — Komissiya<br>↳ `src/pages/market-operators/ui/CommissionDialog.tsx` | [design/fragments/market--operators-commission-dialog.html](fragments/market--operators-commission-dialog.html) | oyna | v2 |
+| `/market-operators` | market | `market-operators-commission-fixed-dialog` — Komissiya — qat'iy summa, xato<br>↳ `src/pages/market-operators/ui/CommissionDialog.tsx` | [design/fragments/market--operators-commission-fixed-dialog.html](fragments/market--operators-commission-fixed-dialog.html) | oyna | v2 |
+| `/market-operators` | market | `market-operators-delete-dialog` — Operatorni o'chirish<br>↳ `src/pages/market-operators/ui/useDeleteOperatorConfirm.tsx` | [design/fragments/market--operators-delete-dialog.html](fragments/market--operators-delete-dialog.html) | oyna | v2 |
 | `/market-operators` | market | `market-operators-deactivate-dialog` — Operatorni nofaol qilish | [design/fragments/market--operators-deactivate-dialog.html](fragments/market--operators-deactivate-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/market-operators` | market | `market-operators-activate-dialog` — Operatorni faollashtirish | [design/fragments/market--operators-activate-dialog.html](fragments/market--operators-activate-dialog.html) | oyna | yangi (kodda yo'q) |
 
@@ -2449,7 +2449,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### market — Market
 
-35 ta maket · kodda bor: 20 · kodda yo'q: 15
+35 ta maket · kodda bor: 26 · kodda yo'q: 9
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2479,13 +2479,13 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `market-profile-telegram-group-dialog` | Telegram guruhini ulash (havola, QR, holat kutilmoqda) | oyna | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | yangi (kodda yo'q) — Taklif (tg-link S1, S5) — kodda yo'q; backend guruhlar holati endpointi kerak. |
 | `market-profile-telegram-group-expired-dialog` | Telegram guruhini ulash — havola muddati tugadi | oyna | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | yangi (kodda yo'q) — Taklif (tg-link S1, S5) — kodda yo'q; backend guruhlar holati endpointi kerak. |
 | `market-profile-telegram-status` | Profil — Telegram guruhi: biri ulangan (taklif · backend kerak) | sahifa | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | yangi (kodda yo'q) — Taklif (tg-link S1, S5) — kodda yo'q; backend guruhlar holati endpointi kerak. |
-| `market-operators-list` | Operatorlar | sahifa | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q: /market-operators yopiq (canViewMarketOperators = false), market menyusida «Operatorlar» yo'q. |
-| `market-operators-empty` | Operatorlar — bo'sh holat | sahifa | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q (yopiq sahifa). |
-| `market-operators-create-dialog` | Operator qo'shish | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q (yopiq sahifa); POST market-operators bor; ixtiyoriy «Komissiya» — keyingi PATCH :id/commission bilan (POST da komissiya maydoni yo'q). |
-| `market-operators-commission-dialog` | Komissiya | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q; PATCH market-operators/:id/commission bor. |
-| `market-operators-delete-dialog` | Operatorni o'chirish | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q; DELETE market-operators/:id bor. |
-| `market-operators-commission-fixed-dialog` | Komissiya — qat'iy summa, xato | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q; qat'iy summa, xato holati, «Komissiyani olib tashlash» (PATCH null). |
-| `market-dashboard-mobile-menu` | Menyu ochiq — yon panel / pastki varaq | oyna · faqat planshet + telefon | `(qobiq)` | `src/widgets/layout/dashboardLayout.tsx` | qisman — «Operatorlar» bandi yo'q — MO-1 (market operatorlari sahifasi bilan birga). |
+| `market-operators-list` | Operatorlar | sahifa | `/market-operators` | `src/pages/market-operators/index.tsx` | v2 |
+| `market-operators-empty` | Operatorlar — bo'sh holat | sahifa | `/market-operators` | `src/pages/market-operators/index.tsx` | v2 |
+| `market-operators-create-dialog` | Operator qo'shish | oyna | `/market-operators` | `src/pages/market-operators/ui/CreateOperatorDialog.tsx` | v2 |
+| `market-operators-commission-dialog` | Komissiya | oyna | `/market-operators` | `src/pages/market-operators/ui/CommissionDialog.tsx` | v2 |
+| `market-operators-delete-dialog` | Operatorni o'chirish | oyna | `/market-operators` | `src/pages/market-operators/ui/useDeleteOperatorConfirm.tsx` | v2 |
+| `market-operators-commission-fixed-dialog` | Komissiya — qat'iy summa, xato | oyna | `/market-operators` | `src/pages/market-operators/ui/CommissionDialog.tsx` | v2 |
+| `market-dashboard-mobile-menu` | Menyu ochiq — yon panel / pastki varaq | oyna · faqat planshet + telefon | `(qobiq)` | `src/widgets/layout/dashboardLayout.tsx` | v2 |
 | `market-operators-deactivate-dialog` | Operatorni nofaol qilish | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak). |
 | `market-operators-activate-dialog` | Operatorni faollashtirish | oyna | `/market-operators` | `src/pages/market-operators/index.tsx` | yangi (kodda yo'q) — Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak). |
 
@@ -2823,6 +2823,9 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/mails/model/mailsLists.ts` | `/mails/today`, `/mails/return`, `/mails/refused` |
 | `src/pages/mails/model/oldMailsModel.ts` | `/mails/old` |
 | `src/pages/market-operators/index.tsx` | `/market-operators` |
+| `src/pages/market-operators/ui/CommissionDialog.tsx` | `/market-operators` |
+| `src/pages/market-operators/ui/CreateOperatorDialog.tsx` | `/market-operators` |
+| `src/pages/market-operators/ui/useDeleteOperatorConfirm.tsx` | `/market-operators` |
 | `src/pages/new_orders/branches/batchDetail.tsx` | `/new-orders/branches/:branchId/batches/:batchId` |
 | `src/pages/new_orders/branches/batches.tsx` | `/new-orders/branches/:branchId` |
 | `src/pages/new_orders/branches/branchBatchesModel.ts` | `/new-orders/branches`, `/new-orders/branches/:branchId`, `/new-orders/branches/:branchId/batches/:batchId` |
@@ -3175,8 +3178,7 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Qabul va yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | izohga qarang |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `market-products-list` |
 | To'lovlar | `payments` | `/cash-box` | `/cash-box` | — | `market-cashbox-my` (+1) |
-
-Maketda bor, kodda hali yo'q (`plannedMenu`): Operatorlar (`operators`).
+| Operatorlar | `operators` | `/market-operators` | `/market-operators` | — | `market-operators-list` (+7) |
 
 ### market_operator — Market operatori
 

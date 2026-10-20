@@ -123,8 +123,9 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/new-orders", icon: Inbox, label: "newOrders" },
     { to: "/products", icon: Tag, label: "products" },
     { to: "/cash-box", icon: Wallet, label: "payments" },
-    // fix3 RBAC-18: "/market-operators" olib tashlandi — sahifa GET /users ga
-    // tayanadi, u esa marketga doim 403 (backendda market yo'li yo'q).
+    // MO-1 (ega 2026-10-19): market o'z operatorlari — `GET /market-operators` (@Roles(MARKET)). Telefonda pastki
+    // menyuda yo'q, «Menyu» varag'ida (maket `market-dashboard-mobile-menu`; ega MO-S1).
+    { to: "/market-operators", icon: Users, label: "operators" },
   ],
   registrator: [
     { to: "/", icon: House, label: "dashboard", end: true },

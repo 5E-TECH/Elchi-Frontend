@@ -20,7 +20,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
 | Bosqich | Holat |
 |---|---|
 | 0 tokenlar, 1 primitivlar, 2 shell, 3 forma/dialog/holatlar | tayyor, dev'da |
-| 4 sahifalar migratsiyasi | **tayyor**: 77 route'dan 76 tasi v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi); qolgan `/market-operators` — yopiq |
+| 4 sahifalar migratsiyasi | **tayyor**: 77 / 77 route v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi; oxirgi `/market-operators` — MO-1, 2026-10-21) |
 | 5 qo'riqchilar (ESLint, palitra, vizual snapshot, CI) | **tayyor** (kod va tekshiruvlar); «Visual» baseline'lari — egada (§2.1) |
 
 **4-bosqichda ko'chirilgan sahifalar** (ro'yxat `AGENTS.md` 4-qatorida ham bor):
@@ -36,7 +36,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   (umumiy `shared/ui/charts`, `widgets/region-detail`; dashboard bundle 418 KB ≤ 450)
 - G2: `/integrations/*` (konsol + 7 panel, katalog, usta; eski sahifalar «Eski sahifa» belgisi bilan), `/notifications*`
   (Telegram guruhini bir martalik havola bilan ulash), `/activity-logs` (`DataTable expandable`), `/ops` + 8 ta ops yo'li,
-  `/profile`, `/settings`, `/inbox`; `/market-operators` yopiq, ko'chirilmagan
+  `/profile`, `/settings`, `/inbox`; `/market-operators` — MO-1 da (2026-10-21) market uchun ochildi va v2 ga ko'chdi
 - G3: `/login` (+ «Sessiya tugadi» ekrani, sessiya banneri shell'ning `[data-shell-slot=banner]` slotida),
   `/scan/:token`, `/dispatch`, `/courier-bulk` (+ dev'ning isbot qadami va xato berganlar oynasi, `X-Request-Source`);
   butun `/scan` kamera ekrani — skaner ishida (1–4-bosqich tayyor, quyida §2.2)
@@ -48,7 +48,8 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   `QRCode`; boshqa ikonka kutubxonalari yo'q), `jsx-a11y/anchor-is-valid` — butun `src` da **xato**,
   `STAGE_A_PENDING = []`. Ratchet: `RAW_CONTROL_RATCHET` 5 (kamera ishi 2, `/market-operators`, `SalaryPaymentPopup`,
   `PrintModeSelect`), `UI_IMPORT_RATCHET` 0; bitta qator istisnolari 2 (kamera tugmasi, `CampaignPage` prefiksi).
-  Skaner 1–2-bosqichidan keyin: `RAW_CONTROL_RATCHET` 3 (kamera ishi chiqdi), bitta qator istisnosi 1 (`CampaignPage`).
+  Skaner 1–2-bosqichidan keyin: `RAW_CONTROL_RATCHET` 3 (kamera ishi chiqdi), bitta qator istisnosi 1 (`CampaignPage`);
+  MO-1 dan keyin: 2 (`SalaryPaymentPopup`, `PrintModeSelect`).
 - design-guard `named-colour` + `V2_SCOPES` (80 papka, ichidagi har fayl rangda 0), `V2_SCOPE_PENDING` 2,
   `OUTPUT_FORMAT_FILES` 4; `design/guard-baseline.json` faqat kamaydi (87 → 17 fayl yozuvi).
 - Vizual snapshotlar: 23 sahna × kunduzgi/tungi × 1440/390 = 92 (`tests/visual/`, mock API), CI «Visual»
@@ -172,6 +173,11 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     (`features/notification-toggle`, faqat `PATCH {is_active}`), «Tahrirlash» va `features/notification-edit` olindi;
     «Nofaol» — neytral, umumiy izoh (sabab — NG-C). Egaga: admin yon menyusi o'zgardi — admin «Visual» sahnalari
     (masalan `regions`) baseline'i «Run workflow (update)» bilan yangilanadi; `/inbox` alias'i adminda ham qabul qilindi.
+  - **MO-1 (2026-10-21, `feat/mo-1-market-operators`):** `/market-operators` — market o'z operatorlari (menyu
+    «Operatorlar», telefonda «Menyu» varag'ida; `canViewMarketOperators`), ro'yxat + komissiya ogohlantirishi, qo'shish
+    (POST → PATCH komissiya), Komissiya va o'chirish oynalari; oxirgi v1 route — 77 / 77 v2, `RAW_CONTROL_RATCHET` 2,
+    v1 `headerName`, `FormPopup`, `PageContainer`, `UserStatusBadge` o'chirildi. Egaga: market yon menyusi o'zgardi —
+    market desktop «Visual» sahnalari «Run workflow (update)»; «Nofaol qilish / Faollashtirish» — MO-4 (backend).
   - **Navbatda — 2-to'lqin** (4.1-bo'lim tartibi): KI-1 → NG-A → TG-A → DM-1 → NS-1 → OR-1 → MD-1 → FY-1 → MH-1 →
     MO-1 → OS-1 → OS-3 → LG-1 → LG-2 → IN-1 → SA-1 → KM-1 → KI-2.
 - «Visual» baseline'lari skaner 2-bosqichidan keyin yangilangan (bot commit `1393ae0`, `/dispatch` va

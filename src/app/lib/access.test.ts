@@ -19,6 +19,7 @@ import {
   canViewUsers,
   canViewProducts,
   canViewAdminDashboard,
+  canViewMarketOperators,
 } from "./access";
 import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
 
@@ -42,6 +43,8 @@ import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
  * (admin bosh sahifasi — sizish yopildi, mDfjKeQi).
  *
  * 2026-10-21 (NG-A): `canViewNotifications` · admin — → ✓ (ega NG-S2; backend `/notifications` SUPERADMIN + ADMIN).
+ *
+ * 2026-10-21 (MO-1): yangi qator `canViewMarketOperators` — faqat market (avval `routes.tsx` da `() => false`).
  */
 
 const state = (role: string | null, branchType?: BranchType): RootState =>
@@ -91,6 +94,8 @@ const MATRIX: Record<string, string> = {
   canViewProducts: "✓   ✓   ✓   ✓   —   ✓   ✓   ✓   ✓   ✓   —   —   —",
   // Menejer — o'z bosh sahifasi (`/branch-dashboard`), market — `MarketDashboardPage`.
   canViewAdminDashboard: "✓ ✓ —   ✓   ✓   —   —   —   —   —   —   —   —",
+  // MO-1: faqat market (backend `market-operators` — @Roles(MARKET), o'z operatorlari).
+  canViewMarketOperators: "— — ✓   —   —   —   —   —   —   —   —   —   —",
 };
 
 const PREDICATES = {
@@ -112,6 +117,7 @@ const PREDICATES = {
   canReceiveExternalOrders,
   canViewProducts,
   canViewAdminDashboard,
+  canViewMarketOperators,
 };
 
 describe("kirish huquqi matritsasi", () => {

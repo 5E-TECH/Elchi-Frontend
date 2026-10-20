@@ -79,9 +79,11 @@ describe("canViewProducts (ROL-0: routes.tsx dagi qo'lda nusxa o'rniga yagona pr
 });
 
 describe("menyu tuzatishlari (fix3 RBAC-18, CODE-21)", () => {
-  it("market menyusida 'Operatorlar' yo'q (GET /users marketga doim 403)", () => {
-    expect(paths("market")).not.toContain("/market-operators");
-    expect(paths("market")).toEqual(["/", "/orders", "/new-orders", "/products", "/cash-box"]);
+  it("market menyusida «Operatorlar» — o'z operatorlari (MO-1: GET /market-operators, @Roles(MARKET))", () => {
+    expect(paths("market")).toEqual(["/", "/orders", "/new-orders", "/products", "/cash-box", "/market-operators"]);
+    for (const role of ["superadmin", "admin", "registrator", "courier", "market_operator"]) {
+      expect(paths(role), role).not.toContain("/market-operators");
+    }
   });
 
   it("superadmin menyusida /batches va /returns bor (guard avvaldan ochiq edi)", () => {

@@ -24,6 +24,7 @@ import {
   canViewProducts,
   canViewAdminDashboard,
   canViewUiKit,
+  canViewMarketOperators,
 } from "./access";
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
 import { RUNTIME_ERROR_PATH } from "../../shared/lib/runtimeError";
@@ -225,13 +226,6 @@ const canViewRegionStats = (state: RootState) => {
 };
 
 const canViewOpsPages = (state: RootState) => state.role.role === "superadmin";
-/**
- * fix3 RBAC-18: market uchun "Operatorlar" sahifasi YOPILDI — u GET /users
- * ni chaqiradi (`@Roles(SUPERADMIN, ADMIN, MANAGER)`), ya'ni marketga doim
- * 403; yaratish tugmasi ham faqat "mavjud emas" deydi. Backendda market
- * operatorlari yo'li paydo bo'lganda shu yerda va menyuda qayta yoqiladi.
- */
-const canViewMarketOperators = () => false;
 const canViewCourierBulk = canViewCourierBulkPage;
 
 
