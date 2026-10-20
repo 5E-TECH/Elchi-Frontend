@@ -74,7 +74,7 @@
     "expiredHint": "Havola 10 daqiqa amal qiladi va bir marta ishlatiladi. Yangisini oling.",
     "command": "Botni guruhga qo'shing va guruhga shu buyruqni yuboring:",
     "existsTitle": "Bu turdagi guruh allaqachon ulangan",
-    "exists": "{{market}} uchun bu turdagi guruh ulangan (ID: {{groupId}}). Bot uni almashtirmaydi — ro'yxatda tahrirlang yoki o'chirib, qayta ulang.",
+    "exists": "{{market}} uchun bu turdagi guruh ulangan (ID: {{groupId}}). Bot uni almashtirmaydi — boshqa guruh ulash uchun avval eskisini ro'yxatdan o'chiring.",
     "linkError": "Havolani olib bo'lmadi",
     "connected": "Guruh ulandi",
     "connectedDescription": "{{market}} — {{type}}"

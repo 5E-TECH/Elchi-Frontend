@@ -559,9 +559,9 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
   const panelRef = useFocusTrap<HTMLDivElement>(isOpen, { onEscape: onClose });
 
   /**
-   * «Shaxsiy»: shaxsiy bildirishnomalar qutisi (`/inbox`) va sozlamalar. Superadmin menyusida Telegram
-   * guruhlari sahifasi (`/notifications`) ham «Bildirishnomalar» — ikkisi adashmasin deb qutining nomi
-   * shu rolda «Bildirishnomalar qutisi» (sahifa sarlavhasi, maket `common-inbox`).
+   * «Shaxsiy»: shaxsiy bildirishnomalar qutisi (`/inbox`) va sozlamalar. Superadmin va admin menyusida
+   * (NG-A, ega NG-S2) Telegram guruhlari sahifasi (`/notifications`) ham «Bildirishnomalar» — ikkisi adashmasin
+   * deb qutining nomi shu rollarda «Bildirishnomalar qutisi» (sahifa sarlavhasi, maket `common-inbox`).
    */
   const personal = useMemo<PersonalEntry[]>(() => {
     const inboxClashes = items.some((item) => item.to === "/notifications");

@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-notifications-telegram-groups, superadmin-notifications-row-menu, superadmin-notifications-row-menu-inactive, superadmin-notifications-empty, superadmin-notifications-loading, superadmin-notifications-error, superadmin-notifications-create-dialog, superadmin-notifications-delete-dialog
+// dizayn-v2: superadmin-notifications-telegram-groups, superadmin-notifications-row-menu, superadmin-notifications-row-menu-inactive, superadmin-notifications-connected, superadmin-notifications-empty, superadmin-notifications-loading, superadmin-notifications-error, superadmin-notifications-create-dialog, superadmin-notifications-delete-dialog
 import { memo, useCallback, useMemo, useState } from "react";
 import { Bell, BellOff, Plus, Store, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -24,7 +24,7 @@ import {
   PageHeader,
   Pagination,
   QueryBoundary,
-  SkeletonTable,
+  Skeleton,
   type DataTableColumn,
 } from "../../../shared/ui/primitives";
 import { NotificationRowMenu, type NotificationRowMenuItem } from "./NotificationRowMenu";
@@ -34,6 +34,97 @@ const PAGE_SIZES = [10, 20, 50] as const;
 /** `.el-stat-icon` 36 px — market belgisi. */
 const STAT_ICON =
   "inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-sunken text-text-muted";
+
+/** Skelet qatorlari — market nomi eni (maket `superadmin-notifications-loading`). */
+const SKELETON_NAME_WIDTHS = ["62%", "48%", "70%", "56%", "64%", "52%"] as const;
+const SKELETON_ROWS = SKELETON_NAME_WIDTHS.map((_, index) => index);
+
+const SKELETON_ICON = <Skeleton tone="border" shape="block" width={36} height={36} />;
+
+/**
+ * Yuklanish skeleti — haqiqiy jadval bilan bir xil ustunlar (maket `superadmin-notifications-loading`):
+ * belgi 36 px + 2 qator · guruh ID · tur (< 1024 yashirin) · holat · sana (< 1024 yashirin) · kebab 64 px;
+ * telefonda karta — belgi + 3 qator. Ma'lumot kelganda ustunlar sakramaydi (planshetda ham 3 ustun + kebab).
+ */
+const NotificationsSkeleton = memo(() => {
+  const { t } = useTranslation("notificationGroups");
+  const columns = useMemo<DataTableColumn<number>[]>(
+    () => [
+      {
+        id: "market",
+        header: t("columns.market"),
+        cell: (index) => (
+          <div className="flex min-w-0 items-center gap-3">
+            {SKELETON_ICON}
+            <span className="flex min-w-0 flex-1 flex-col gap-2">
+              <Skeleton tone="border" width={SKELETON_NAME_WIDTHS[index]} />
+              <Skeleton tone="border" width={36} height={10} />
+            </span>
+          </div>
+        ),
+      },
+      {
+        id: "group",
+        header: t("columns.groupId"),
+        cellClassName: "whitespace-nowrap",
+        cell: () => <Skeleton tone="border" width={120} className="max-w-full" />,
+      },
+      {
+        id: "type",
+        header: t("columns.type"),
+        hideBelow: "lg",
+        cell: () => <Skeleton tone="border" width={104} height={22} />,
+      },
+      {
+        id: "status",
+        header: t("columns.status"),
+        className: "min-w-[120px] max-w-[260px]",
+        cell: () => <Skeleton tone="border" width={64} height={22} />,
+      },
+      {
+        id: "date",
+        header: t("columns.date"),
+        hideBelow: "lg",
+        cell: (index) => <Skeleton tone="border" width={index === 4 ? 96 : 112} />,
+      },
+      {
+        id: "actions",
+        header: <span className="sr-only">{t("columns.actions")}</span>,
+        className: "w-16",
+        cell: () => <Skeleton tone="border" shape="block" width={32} height={32} className="ml-auto" />,
+      },
+    ],
+    [t],
+  );
+  const renderCard = useCallback(
+    (index: number) => (
+      <div className="flex min-w-0 items-start gap-3 px-4 py-3">
+        {SKELETON_ICON}
+        <span className="flex min-w-0 flex-1 flex-col gap-2">
+          <Skeleton tone="border" width={SKELETON_NAME_WIDTHS[index]} height={14} />
+          <Skeleton tone="border" width="46%" />
+          <span className="flex gap-2">
+            <Skeleton tone="border" width={104} height={22} />
+            <Skeleton tone="border" width={56} height={22} />
+          </span>
+        </span>
+      </div>
+    ),
+    [],
+  );
+  return (
+    <div aria-hidden="true" data-skeleton-preset="notifications-table">
+      <DataTable
+        rows={SKELETON_ROWS}
+        columns={columns}
+        getRowKey={(index) => String(index)}
+        density="tablet-tight"
+        renderCard={renderCard}
+      />
+    </div>
+  );
+});
+NotificationsSkeleton.displayName = "NotificationsSkeleton";
 
 /**
  * BILDIRISHNOMALAR — marketlarning Telegram guruhlari (`/notifications`, superadmin va admin — ega NG-S2), dizayn v2.
@@ -295,19 +386,7 @@ const NotificationsPage = () => {
         <QueryBoundary
           query={{ data: data?.data, isLoading, isError, error, refetch }}
           loadingLabel={t("list.loading")}
-          loading={
-            <SkeletonTable
-              framed={false}
-              columns={[
-                t("columns.market"),
-                t("columns.groupId"),
-                t("columns.type"),
-                t("columns.status"),
-                t("columns.date"),
-              ]}
-              rows={6}
-            />
-          }
+          loading={<NotificationsSkeleton />}
           empty={
             <EmptyState
               icon={BellOff}

@@ -75,7 +75,7 @@
     "expiredHint": "The link is valid for 10 minutes and works once. Get a new one.",
     "command": "Add the bot to the group and send this command there:",
     "existsTitle": "A group of this type is already connected",
-    "exists": "{{market}} already has a group of this type (ID: {{groupId}}). The bot does not replace it — edit it in the list, or delete it and connect again.",
+    "exists": "{{market}} already has a group of this type (ID: {{groupId}}). The bot does not replace it — to connect another group, first delete the old one from the list.",
     "linkError": "Could not get the link",
     "connected": "Group connected",
     "connectedDescription": "{{market}} — {{type}}"

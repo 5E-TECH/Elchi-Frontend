@@ -31,9 +31,15 @@ const NotificationGroupSummary = ({
       </span>
       <span className="flex min-w-0 flex-col gap-1">
         <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="font-semibold text-text">
+          {/* Maket `.el-strong` (14 px) + `.el-cell-sub` (13 px) oddiy bo'sh joy bilan — telefonda tur belgisi bir qatorga sig'adi. */}
+          <span className="text-sm font-semibold text-text">
             {marketName}
-            {showId ? <span className="ml-1.5 font-normal text-text-muted">#{row.market_id}</span> : null}
+            {showId ? (
+              <>
+                {" "}
+                <span className="text-[13px] font-normal text-text-muted tabular-nums">#{row.market_id}</span>
+              </>
+            ) : null}
           </span>
           <NotificationGroupTypeBadge type={row.group_type} />
         </span>

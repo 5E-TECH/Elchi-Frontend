@@ -429,7 +429,8 @@ describe("MobileMenu — bildirishnomalar", () => {
 
   it("o'qilmagan yo'q — son ham, nuqta ham yo'q", async () => {
     unread.count = 0;
-    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />);
+    // Menejer menyusida `/notifications` yo'q — quti oddiy «Bildirishnomalar» (admin/superadmin — «… qutisi»).
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "manager");
 
     await waitFor(() =>
       expect(screen.getByRole("link", { name: "Bildirishnomalar" })).toBeInTheDocument(),
@@ -441,21 +442,23 @@ describe("MobileMenu — bildirishnomalar", () => {
 
   it("API'dagi haqiqiy son, o'zgarsa yangilanadi", async () => {
     unread.count = 3;
-    // Admin menyusida Telegram guruhlari ham bor (NG-A) — quti «Bildirishnomalar qutisi».
-    const { queryClient } = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />);
+    // Menejer menyusida Telegram guruhlari (`/notifications`) yo'q — quti nomi «Bildirishnomalar».
+    const { queryClient } = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "manager");
 
-    const link = await screen.findByRole("link", { name: "Bildirishnomalar qutisi, 3 ta yangi" });
+    const link = await screen.findByRole("link", { name: "Bildirishnomalar, 3 ta yangi" });
+    expect(link).toHaveAttribute("href", "/inbox");
     expect(link).toHaveTextContent(/3$/);
 
     unread.count = 7;
     await queryClient.invalidateQueries();
     expect(
-      await screen.findByRole("link", { name: "Bildirishnomalar qutisi, 7 ta yangi" }),
+      await screen.findByRole("link", { name: "Bildirishnomalar, 7 ta yangi" }),
     ).toHaveTextContent(/7$/);
   });
 
   it("katta son «99+»", async () => {
     unread.count = 150;
+    // Admin menyusida Telegram guruhlari ham bor (NG-A) — quti «Bildirishnomalar qutisi».
     renderMenu(<MobileMenu isOpen onClose={vi.fn()} />);
 
     expect(

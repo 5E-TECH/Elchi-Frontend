@@ -269,7 +269,17 @@ describe("NotificationsPage — Telegram guruhlari", () => {
     );
     expect(dialog).toHaveTextContent("Guruh ID: -1002184736577");
     expect(within(dialog).getByText("Bekor qilingan buyurtma")).toBeInTheDocument();
+    // Maket: «Baraka Shop #12» — 14 px nom, 13 px id, oddiy bo'sh joy (telefonda tur belgisi bir qatorga sig'adi).
+    const marketId = within(dialog).getByText("#12");
+    expect(marketId).toHaveClass("text-[13px]");
+    expect(marketId).not.toHaveClass("ml-1.5");
+    expect(marketId.parentElement).toHaveClass("text-sm");
+    expect(marketId.parentElement).toHaveTextContent(/^Baraka Shop #12$/);
 
+    expect(within(dialog).getByRole("button", { name: "Nofaol qilish" })).toHaveAttribute(
+      "data-variant",
+      "danger",
+    );
     await user.click(within(dialog).getByRole("button", { name: "Nofaol qilish" }));
     await waitFor(() =>
       expect(api.patch).toHaveBeenCalledWith("notifications/7", { is_active: false }),
@@ -293,6 +303,10 @@ describe("NotificationsPage — Telegram guruhlari", () => {
     // Sabab API'da yo'q — «Bot guruhdan chiqarilgan» deb yozilmaydi (D1, NG-C).
     expect(dialog).not.toHaveTextContent("Bot guruhdan chiqarilgan");
 
+    expect(within(dialog).getByRole("button", { name: "Faollashtirish" })).toHaveAttribute(
+      "data-variant",
+      "primary",
+    );
     await user.click(within(dialog).getByRole("button", { name: "Faollashtirish" }));
     await waitFor(() =>
       expect(api.patch).toHaveBeenCalledWith("notifications/8", { is_active: true }),
@@ -367,6 +381,10 @@ describe("NotificationsPage — Telegram guruhlari", () => {
     expect(within(inactive).getByText("#27")).toBeInTheDocument();
     expect(within(inactive).getAllByText("Yangi buyurtma")).toHaveLength(2);
     expect(within(inactive).getByText("Nofaol")).toBeInTheDocument();
+    // Sabab noma'lum — «Nofaol» neytral (qizil emas); «Faol» — yashil.
+    expect(within(inactive).getByText("Nofaol").closest(".bg-sunken")).not.toBeNull();
+    expect(within(inactive).getByText("Nofaol").closest(".bg-danger-soft")).toBeNull();
+    expect(within(active).getByText("Faol").closest(".bg-success-soft")).not.toBeNull();
     expect(within(inactive).getByText("Xabarlar bu guruhga yuborilmayapti")).toBeInTheDocument();
     // Sabab API'da yo'q — «bot chiqarilgan» deb yozilmaydi.
     expect(within(inactive).queryByText(/Bot guruhdan chiqarilgan/)).not.toBeInTheDocument();
@@ -418,6 +436,70 @@ describe("NotificationsPage — Telegram guruhlari", () => {
       within(dialog).queryByRole("textbox", { name: /Telegram guruh ID/ }),
     ).not.toBeInTheDocument();
     expect(api.post).not.toHaveBeenCalled();
+  });
+
+  it("already connected (market, type) — the warning points to delete, not to the removed «Tahrirlash» (NG-S4)", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<NotificationsPage />);
+    await screen.findByRole("table", { name: "Ulangan Telegram guruhlari" });
+
+    await user.click(screen.getByRole("button", { name: "Bildirishnoma qo'shish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Bildirishnoma qo'shish" });
+    await user.click(within(dialog).getByRole("combobox", { name: /^Market/ }));
+    await user.click(await screen.findByRole("option", { name: /Baraka Shop/ }));
+    await user.click(within(dialog).getByRole("radio", { name: "Bekor qilinganlar guruhi" }));
+
+    const alert = await within(dialog).findByRole("alert");
+    // Maket `superadmin-notifications-create-exists-dialog` matni.
+    expect(alert).toHaveTextContent(
+      "Baraka Shop uchun bu turdagi guruh ulangan (ID: -1002184736577). Bot uni almashtirmaydi — boshqa guruh ulash uchun avval eskisini ro'yxatdan o'chiring.",
+    );
+    expect(alert).not.toHaveTextContent(/tahrirla/i);
+    expect(within(dialog).getByRole("button", { name: "Ulash havolasini olish" })).toBeDisabled();
+  });
+
+  it("loading skeleton has the table's columns: 36 px icon, type/date hidden below 1024, 64 px kebab", async () => {
+    api.get.mockImplementation((url: string) =>
+      url === "notifications" ? new Promise(() => {}) : Promise.resolve({ data: {} }),
+    );
+    const { container } = renderWithProviders(<NotificationsPage />);
+
+    expect(await screen.findByRole("status")).toHaveTextContent("Guruhlar yuklanmoqda");
+    const skeleton = container.querySelector("[data-skeleton-preset='notifications-table']") as HTMLElement;
+    expect(skeleton).toHaveAttribute("aria-hidden", "true");
+    const headers = within(skeleton).getAllByRole("columnheader", { hidden: true });
+    expect(headers.map((th) => th.textContent)).toEqual([
+      "Market",
+      "Telegram guruh ID",
+      "Xabar turi",
+      "Holat",
+      "Sana",
+      "Amallar",
+    ]);
+    // Planshetda jadvaldagidek 3 ustun + kebab — ma'lumot kelganda ustunlar sakramaydi.
+    expect(headers[2]).toHaveClass("max-lg:hidden");
+    expect(headers[4]).toHaveClass("max-lg:hidden");
+    expect(headers[5]).toHaveClass("w-16");
+    const rows = within(skeleton).getAllByRole("row", { hidden: true }).slice(1);
+    expect(rows).toHaveLength(6);
+    const icon = rows[0].querySelector("[data-skeleton='block']") as HTMLElement;
+    expect(icon.style.width).toBe("36px");
+    expect(icon.style.height).toBe("36px");
+  });
+
+  it("phone loading skeleton is cards with the market icon (no table)", async () => {
+    asPhone();
+    api.get.mockImplementation((url: string) =>
+      url === "notifications" ? new Promise(() => {}) : Promise.resolve({ data: {} }),
+    );
+    const { container } = renderWithProviders(<NotificationsPage />);
+
+    await screen.findByRole("status");
+    const skeleton = container.querySelector("[data-skeleton-preset='notifications-table']") as HTMLElement;
+    expect(within(skeleton).queryByRole("table", { hidden: true })).not.toBeInTheDocument();
+    const cards = within(skeleton).getAllByRole("listitem", { hidden: true });
+    expect(cards).toHaveLength(6);
+    expect((cards[0].querySelector("[data-skeleton='block']") as HTMLElement).style.width).toBe("36px");
   });
 
   it("empty list shows the empty state; a failed list shows the error with retry", async () => {
