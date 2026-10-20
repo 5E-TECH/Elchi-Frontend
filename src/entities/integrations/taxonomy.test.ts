@@ -9,6 +9,8 @@ const bundles = import.meta.glob<Record<string, string>>("../../locales/*/integr
   import: "default",
 });
 
+const stripPlural = (key: string): string => key.replace(/_(zero|one|two|few|many|other)$/, "");
+
 const localeOf = (lang: string): Record<string, string> => {
   const entry = Object.entries(bundles).find(([path]) => path.includes(`/${lang}/`));
   if (!entry) throw new Error(`${lang} lokali topilmadi`);
@@ -107,7 +109,8 @@ describe("Integratsiya taksonomiyasi", () => {
      * Yarim tarjima eng yomon holat: `uz` fallback tufayli yetishmagan
      * kalit ekranda o'zbekcha chiqadi va xato BILINMAYDI.
      */
-    const [uz, ru, en] = LOCALES.map((l) => new Set(Object.keys(localeOf(l))));
+    // Ko'plik qo'shimchalari (`_one/_few/_many/_other`) bitta kalit sanaladi: ruschada `_few/_many` ham bor.
+    const [uz, ru, en] = LOCALES.map((l) => new Set(Object.keys(localeOf(l)).map(stripPlural)));
     expect([...ru].sort()).toEqual([...uz].sort());
     expect([...en].sort()).toEqual([...uz].sort());
   });

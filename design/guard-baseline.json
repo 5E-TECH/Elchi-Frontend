@@ -271,7 +271,6 @@
   ],
   "files": {
     "src/app/providers/theme/AntdThemeProvider.tsx": { "colour": 1 },
-    "src/entities/integrations/settlement.ts": { "money": 2 },
     "src/entities/user/ui/UserStatusBadge.tsx": { "palette": 9 },
     "src/pages/mails/components/lib/exportOldMailsToExcel.ts": { "money": 1 },
     "src/pages/mails/detail/lib/printMode.ts": { "money": 1 },

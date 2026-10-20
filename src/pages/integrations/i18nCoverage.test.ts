@@ -28,7 +28,8 @@ const flatten = (value: Record<string, unknown>, prefix = ""): Dict =>
     if (item && typeof item === "object" && !Array.isArray(item)) {
       Object.assign(acc, flatten(item as Record<string, unknown>, `${prefix}${key}.`));
     } else {
-      acc[`${prefix}${key}`] = String(item);
+      // Ko'plik qo'shimchalari (`_one/_few/_many/_other`) bitta kalit sanaladi: ruschada `_few/_many` ham bor.
+      acc[`${prefix}${key}`.replace(/_(zero|one|two|few|many|other)$/, "")] = String(item);
     }
     return acc;
   }, {});
