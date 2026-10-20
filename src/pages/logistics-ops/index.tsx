@@ -80,7 +80,9 @@ const LogisticsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
     const status = getErrorStatus(error);
     if (status === 403) return t("logistics.approve.errors.forbidden");
     if (status === 404) return t("logistics.approve.errors.stale");
-    if (getErrorKind(error) === "server") return t("logistics.approve.errors.server");
+    // Vaqt chegarasi / oflayn: backend so'rovni yozayotgan yoki qisman yozib bo'lgan bo'lishi mumkin — 5xx kabi.
+    const kind = getErrorKind(error);
+    if (kind === "server" || kind === "timeout" || kind === "offline") return t("logistics.approve.errors.server");
     return t("logistics.approve.errors.generic");
   };
 
@@ -97,13 +99,20 @@ const LogisticsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
       .map((id) => t("logistics.list.orderLink", { id }))
       .join(", ");
     const rest = skippedOrderIds.length - SKIPPED_LISTED;
-    const orders = rest > 0 ? t("logistics.approve.result.skippedMore", { list: listed, value: number(rest) }) : listed;
+    // Son bo'yicha alohida kalit: uz «… va yana 2 tasini», ru/en — birlik/ko'plik (ops.json'da plural qo'shimchasiz).
+    const reason =
+      rest > 0
+        ? t("logistics.approve.result.skippedReasonMore", { list: listed, value: number(rest) })
+        : skippedOrderIds.length === 1
+          ? t("logistics.approve.result.skippedReason", { orders: listed })
+          : t("logistics.approve.result.skippedReasonMany", { orders: listed });
     notify.warning(
       t("logistics.approve.result.partialTitle", {
         approved: number(approved),
         skipped: number(skippedOrderIds.length),
       }),
-      { description: `${returned} ${t("logistics.approve.result.skippedReason", { orders })}` },
+      // Hech biri qaytarilmagan bo'lsa «0 ta buyurtma omborga qaytarildi» yozilmaydi.
+      { description: approved > 0 ? `${returned} ${reason}` : reason },
     );
   };
 
@@ -145,7 +154,7 @@ const LogisticsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const statusBadge = (row: ReturnRequestRow) => (
     <StatusBadge
       tone={STATUS_TONE[row.status] ?? "neutral"}
-      label={t(`logistics.statuses.${row.status}`, { defaultValue: row.status || "—" })}
+      label={t(`logistics.statuses.${row.status}`, { defaultValue: "—" })}
     />
   );
   const courierName = (row: ReturnRequestRow) => row.courier || t("logistics.list.noCourier");

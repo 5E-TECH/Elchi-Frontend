@@ -45,7 +45,6 @@
       "courier": "Kuryer"
     },
     "selectHint": "Tasdiqlash uchun ro'yxatdan buyurtmalarni tanlang.",
-    "approveError": "So'rovlarni tasdiqlab bo'lmadi",
     "loadError": "Qaytarish so'rovlarini yuklab bo'lmadi",
     "empty": "Qaytarish so'rovlari yo'q"
   }

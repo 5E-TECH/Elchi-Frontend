@@ -188,8 +188,8 @@
       "confirm": "{{value}} tasini tasdiqlash",
       "loading": "Tasdiqlanmoqda…",
       "errors": {
-        "forbidden": "Ayrim buyurtmalar boshqa filial kuryerida — ularni o'sha filial ko'rib chiqadi. Ro'yxat yangilandi.",
-        "stale": "Tanlangan so'rovlar shu orada ko'rib chiqilgan yoki holati o'zgargan. Ro'yxat yangilandi.",
+        "forbidden": "Ayrim buyurtmalar boshqa filial kuryerida — ularni o'sha filial ko'rib chiqadi. Ro'yxat yangilandi — oynani yoping va qayta tanlang.",
+        "stale": "Tanlangan so'rovlar shu orada ko'rib chiqilgan yoki holati o'zgargan. Ro'yxat yangilandi — oynani yoping va qayta tanlang.",
         "server": "Tasdiqlashda xato yuz berdi. Ayrim buyurtmalar omborga qaytgan bo'lishi mumkin — ro'yxat yangilandi, tekshirib qayta urinib ko'ring.",
         "generic": "So'rovlarni tasdiqlab bo'lmadi. Birozdan so'ng qayta urinib ko'ring."
       },
@@ -198,7 +198,8 @@
         "returned": "{{value}} ta buyurtma omborga qaytarildi.",
         "partialTitle": "{{approved}} ta tasdiqlandi, {{skipped}} tasi o'tkazib yuborildi",
         "skippedReason": "{{orders}} ni shu orada boshqa xodim ko'rib chiqqan yoki holati o'zgargan.",
-        "skippedMore": "{{list}} va yana {{value}} ta"
+        "skippedReasonMany": "{{orders}} ni shu orada boshqa xodim ko'rib chiqqan yoki holati o'zgargan.",
+        "skippedReasonMore": "{{list}} va yana {{value}} tasini shu orada boshqa xodim ko'rib chiqqan yoki holati o'zgargan."
       }
     },
     "statuses": {

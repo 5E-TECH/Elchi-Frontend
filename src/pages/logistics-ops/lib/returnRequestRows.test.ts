@@ -3,6 +3,7 @@ import {
   extractReturnRequestRows,
   extractReturnRequestScope,
   groupReturnRequestRowsByCourier,
+  normalizeReturnRequestStatus,
   parseApproveReturnResult,
 } from "./returnRequestRows";
 
@@ -18,7 +19,7 @@ const payload = {
         courier: { id: "56", name: "Jasur Tursunov" },
         orders: [
           { id: "9001", status: "waiting" },
-          { id: "9002", status: "on_the_road" },
+          { id: "9002", status: "on the road" },
         ],
       },
       { courier_id: "57", courier: { id: "57", name: "Sherzod Komilov" }, orders: [{ id: "9003", status: "waiting" }] },
@@ -35,6 +36,19 @@ describe("returnRequestRows (OS-3)", () => {
       ["9002", "56", "Jasur Tursunov"],
       ["9003", "57", "Sherzod Komilov"],
     ]);
+  });
+
+  it("holat i18n kalitiga keltiriladi: backend 'on the road' → on_the_road (xom qiymat ko'rinmasin)", () => {
+    expect(extractReturnRequestRows(payload).map((row) => row.status)).toEqual([
+      "waiting",
+      "waiting",
+      "on_the_road",
+      "waiting",
+    ]);
+    expect(normalizeReturnRequestStatus("ON_THE_ROAD")).toBe("on_the_road");
+    expect(normalizeReturnRequestStatus("on-the-road")).toBe("on_the_road");
+    expect(normalizeReturnRequestStatus("WAITING")).toBe("waiting");
+    expect(normalizeReturnRequestStatus(undefined)).toBe("");
   });
 
   it("doira `data.scope.type` dan; noma'lum bo'lsa — null", () => {

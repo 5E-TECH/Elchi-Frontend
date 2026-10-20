@@ -138,13 +138,16 @@ export const useLogisticsCoverage = () => {
 
   // OS-3: backend buyurtmalarni bo'laklab yozadi (atomik emas) — xato bo'lsa ham bir qismi omborga
   // qaytgan bo'lishi mumkin, shuning uchun ro'yxatlar har holda (onSettled) yangilanadi: Ops ro'yxati,
-  // «Pochta → Qaytarish» (`entities/mails` — `["mails", "return", …]`) va buyurtmalar.
+  // «Pochta» (`entities/mails` — `["mails", "return" | "old" | "new", …]`) va buyurtmalar.
   const approveReturnRequest = useMutation({
     mutationFn: (data: { order_ids: string[] }) =>
       api.post(API_ENDPOINTS.POSTS.RETURN_REQUESTS_APPROVE, data),
     onSettled: () => {
       client.invalidateQueries({ queryKey: [logiCov, "posts"] });
       client.invalidateQueries({ queryKey: ["mails", "return"] });
+      // Kuryer pochtasi SENT → RECEIVED bo'lishi va hisoblagichlari kamayishi mumkin (`entities/mails` tasdig'idagidek).
+      client.invalidateQueries({ queryKey: ["mails", "old"] });
+      client.invalidateQueries({ queryKey: ["mails", "new"] });
       client.invalidateQueries({ queryKey: ["orders"] });
     },
   });

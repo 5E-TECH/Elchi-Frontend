@@ -18,6 +18,13 @@ const toText = (value: unknown) => {
 };
 
 /**
+ * Backend buyurtma holatini i18n kalitiga keltiradi: `Order_status.ON_THE_ROAD = 'on the road'` (bo'shliq
+ * bilan) → `on_the_road`, `WAITING` → `waiting`. Aks holda kalit topilmay xom backend qiymati ko'rinardi.
+ */
+export const normalizeReturnRequestStatus = (value: unknown) =>
+  toText(value).toLowerCase().replace(/[\s-]+/g, "_");
+
+/**
  * GET /post/return-requests/list javobini jadval qatorlariga aylantiradi
  * (fix3 CODE-09 / C13).
  *
@@ -42,7 +49,7 @@ export const extractReturnRequestRows = (payload: unknown): ReturnRequestRow[] =
       key: id || `row-${index}`,
       id,
       order_id: toText(record.order_id ?? record.id),
-      status: toText(record.status),
+      status: normalizeReturnRequestStatus(record.status),
       courier: courierName,
       courierId,
     };

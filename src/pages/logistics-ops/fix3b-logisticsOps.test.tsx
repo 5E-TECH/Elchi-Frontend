@@ -94,7 +94,7 @@ describe("LogisticsOps — qaytarish so'rovlarini tasdiqlash (fix3b)", () => {
     await user.click(within(dialog).getByRole("button", { name: "1 tasini tasdiqlash" }));
 
     expect(await within(dialog).findByRole("alert")).toHaveTextContent(
-      "Ayrim buyurtmalar boshqa filial kuryerida — ularni o'sha filial ko'rib chiqadi. Ro'yxat yangilandi.",
+      "Ayrim buyurtmalar boshqa filial kuryerida — ularni o'sha filial ko'rib chiqadi. Ro'yxat yangilandi — oynani yoping va qayta tanlang.",
     );
     expect(screen.getByRole("alertdialog", { name: "Qaytarish so'rovlarini tasdiqlang" })).toBeInTheDocument();
     expect(screen.queryByText("Bu kuryer sizning filialingizga tegishli emas")).not.toBeInTheDocument();

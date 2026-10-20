@@ -188,8 +188,8 @@
       "confirm": "Approve {{value}}",
       "loading": "Approving…",
       "errors": {
-        "forbidden": "Some orders are with another branch's courier — that branch reviews them. The list has been refreshed.",
-        "stale": "The selected requests have already been reviewed or their status has changed. The list has been refreshed.",
+        "forbidden": "Some orders are with another branch's courier — that branch reviews them. The list has been refreshed — close this window and select again.",
+        "stale": "The selected requests have already been reviewed or their status has changed. The list has been refreshed — close this window and select again.",
         "server": "Something went wrong while approving. Some orders may already be back in the warehouse — the list has been refreshed, check it and try again.",
         "generic": "Could not approve the requests. Try again a bit later."
       },
@@ -198,7 +198,8 @@
         "returned": "Returned to the warehouse: {{value}}.",
         "partialTitle": "{{approved}} approved, {{skipped}} skipped",
         "skippedReason": "{{orders}}: another employee reviewed it meanwhile or its status changed.",
-        "skippedMore": "{{list}} and {{value}} more"
+        "skippedReasonMany": "{{orders}}: another employee reviewed them meanwhile or their status changed.",
+        "skippedReasonMore": "{{list}} and {{value}} more: another employee reviewed them meanwhile or their status changed."
       }
     },
     "statuses": {

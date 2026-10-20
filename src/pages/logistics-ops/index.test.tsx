@@ -94,7 +94,7 @@ describe("LogisticsOps page", () => {
               courier: { id: "56", name: "Kuryer Ali" },
               orders: [
                 { id: "9001", status: "waiting" },
-                { id: "9002", status: "on_the_road" },
+                { id: "9002", status: "on the road" },
               ],
             },
           ],

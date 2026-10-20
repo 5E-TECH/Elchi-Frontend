@@ -1,4 +1,5 @@
 // dizayn-v2: superadmin-ops-logistics-approve-dialog
+import { useEffect, useRef } from "react";
 import { Lock, User } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
@@ -21,8 +22,37 @@ const initialsOf = (name: string) =>
  * «Buyurtmalar N ta», «Kuryerlar M ta (+ K ta buyurtma kuryersiz)», kuryer guruhlari (avatar, ism, son,
  * birinchi 3 buyurtma va holati, «+ yana N ta») va qulf belgili eslatma. Oyna — `useConfirm()` (`children`).
  */
+/**
+ * Oyna xatosi (`ConfirmDialog` — `role="alert"`, mazmundan keyin) chiqqanda uni oyna tanasida ko'rinadigan
+ * joyga suradi: telefonda (pastki varaq, 92dvh) uzun kuryer ro'yxati bilan xato pastda, ko'rinmas qolardi.
+ * Umumiy `ConfirmDialog` ga tegmasdan (OS-3 fayllari) — mazmun konteynerini kuzatadi.
+ */
+const useRevealDialogError = () => {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const container = ref.current?.parentElement;
+    if (!container || typeof MutationObserver === "undefined") return;
+    let shown: Node | null = null;
+    let text = "";
+    const observer = new MutationObserver(() => {
+      const alert = container.querySelector<HTMLElement>(':scope > [role="alert"]');
+      if (!alert || (alert === shown && alert.textContent === text)) {
+        shown = alert;
+        return;
+      }
+      shown = alert;
+      text = alert.textContent ?? "";
+      alert.scrollIntoView?.({ block: "nearest" });
+    });
+    observer.observe(container, { childList: true, subtree: true, characterData: true });
+    return () => observer.disconnect();
+  }, []);
+  return ref;
+};
+
 export const ApproveReturnSummary = ({ rows }: { rows: ReturnRequestRow[] }) => {
   const { t, i18n } = useTranslation("ops");
+  const summaryRef = useRevealDialogError();
   const number = (value: number) => formatNumberLocalized(value, { language: i18n.language });
   const groups = groupReturnRequestRowsByCourier(rows);
   const courierCount = groups.filter((group) => group.key).length;
@@ -30,7 +60,7 @@ export const ApproveReturnSummary = ({ rows }: { rows: ReturnRequestRow[] }) => 
 
   return (
     <>
-      <div className="flex min-w-0 flex-col rounded-xl bg-sunken px-4 pt-4 pb-1">
+      <div ref={summaryRef} className="flex min-w-0 flex-col rounded-xl bg-sunken px-4 pt-4 pb-1">
         <div className="grid grid-cols-2 gap-3 pb-3">
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className="text-xs text-text-muted">{t("logistics.approve.orders")}</span>
@@ -51,11 +81,12 @@ export const ApproveReturnSummary = ({ rows }: { rows: ReturnRequestRow[] }) => 
           </div>
         </div>
 
-        {/* Uzun ro'yxat o'z ichida suriladi (maket: 340 px) — klaviatura bilan ham. */}
+        {/* Uzun ro'yxat o'z ichida suriladi (maket: 340 px) — klaviatura bilan ham. Telefonda (pastki varaq, 92dvh)
+            balandlik 30dvh gacha: aks holda xato bloki (`role="alert"`) pastki tugmalar ortida qolardi. */}
         <ul
           tabIndex={0}
           aria-label={t("logistics.approve.groups")}
-          className="m-0 flex max-h-[340px] list-none flex-col overflow-y-auto p-0 pr-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action"
+          className="m-0 flex max-h-[340px] list-none max-md:max-h-[min(340px,30dvh)] flex-col overflow-y-auto p-0 pr-1 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action"
         >
           {groups.map((group) => {
             const hidden = group.rows.length - VISIBLE_ORDERS;
@@ -95,7 +126,8 @@ export const ApproveReturnSummary = ({ rows }: { rows: ReturnRequestRow[] }) => 
                         {t("logistics.list.orderLink", { id: row.order_id || row.id })}
                       </span>
                       <span className="whitespace-nowrap text-xs text-text-muted">
-                        {t(`logistics.statuses.${row.status}`, { defaultValue: row.status || "—" })}
+                        {/* Noma'lum holat — «—» (xom backend qiymati ko'rsatilmaydi). */}
+                        {t(`logistics.statuses.${row.status}`, { defaultValue: "—" })}
                       </span>
                     </li>
                   ))}

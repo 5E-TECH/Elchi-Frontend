@@ -28,16 +28,47 @@ export const RETURN_REQUESTS = {
         courier: { id: "56", name: "Jasur Tursunov", phone_number: "+998901112233" },
         orders: [
           { id: "10244", status: "waiting" },
-          { id: "10241", status: "on_the_road" },
+          { id: "10241", status: "on the road" },
           { id: "10223", status: "waiting" },
-          { id: "10236", status: "on_the_road" },
-          { id: "10229", status: "on_the_road" },
+          { id: "10236", status: "on the road" },
+          { id: "10229", status: "on the road" },
         ],
       },
       {
         courier_id: "57",
         courier: { id: "57", name: "Sherzod Komilov", phone_number: "+998901112244" },
         orders: [{ id: "10250", status: "waiting" }],
+      },
+      { courier_id: null, courier: null, orders: [{ id: "10198", status: "waiting" }] },
+    ],
+  },
+};
+
+/** Maketdagi hajm (12 ta buyurtma, 3 kuryer + kuryersiz) — telefonda pastki varaq balandligini tekshirish uchun. */
+export const RETURN_REQUESTS_12 = {
+  ...RETURN_REQUESTS,
+  data: {
+    total: 12,
+    scope: { type: "HQ", branch_id: "1" },
+    groups: [
+      RETURN_REQUESTS.data.groups[0],
+      {
+        courier_id: "57",
+        courier: { id: "57", name: "Sherzod Komilov", phone_number: "+998901112244" },
+        orders: [
+          { id: "10250", status: "waiting" },
+          { id: "10251", status: "on the road" },
+          { id: "10252", status: "waiting" },
+          { id: "10253", status: "waiting" },
+        ],
+      },
+      {
+        courier_id: "58",
+        courier: { id: "58", name: "Bekzod Aliyev", phone_number: "+998901112255" },
+        orders: [
+          { id: "10260", status: "on the road" },
+          { id: "10261", status: "waiting" },
+        ],
       },
       { courier_id: null, courier: null, orders: [{ id: "10198", status: "waiting" }] },
     ],
@@ -56,7 +87,11 @@ export type ApproveReply = { status: number; body: unknown };
  * `approve` — har `POST post/return-requests/approve` uchun javob (tanasi `approveBodies` ga yoziladi).
  * Muvaffaqiyatli tasdiqdan keyin ro'yxat bo'sh qaytadi (buyurtmalar omborga o'tdi).
  */
-export const mockLogisticsOpsApi = async (page: Page, approve: (body: unknown) => ApproveReply) => {
+export const mockLogisticsOpsApi = async (
+  page: Page,
+  approve: (body: unknown) => ApproveReply,
+  list: unknown = RETURN_REQUESTS,
+) => {
   const leaked: string[] = [];
   const approveBodies: unknown[] = [];
   let listCalls = 0;
@@ -73,7 +108,7 @@ export const mockLogisticsOpsApi = async (page: Page, approve: (body: unknown) =
     }
     if (path === "post/return-requests/list") {
       listCalls += 1;
-      return reply(route, approved ? EMPTY_RETURN_REQUESTS : RETURN_REQUESTS);
+      return reply(route, approved ? EMPTY_RETURN_REQUESTS : list);
     }
     if (path === "post/return-requests/approve" && request.method() === "POST") {
       const body = request.postDataJSON();
@@ -108,9 +143,9 @@ export const openLogisticsOps = async (page: Page) => {
 export const APPROVE_DIALOG = "Qaytarish so'rovlarini tasdiqlang";
 
 /** Hammasini tanlab, tasdiq oynasini ochadi (maket `superadmin-ops-logistics-approve-dialog`). */
-export const openApproveDialog = async (page: Page) => {
+export const openApproveDialog = async (page: Page, count = 7) => {
   await page.getByRole("checkbox", { name: "Barcha so'rovlarni tanlash" }).first().check();
-  await page.getByRole("button", { name: "Tasdiqlash — 7 ta" }).click();
+  await page.getByRole("button", { name: `Tasdiqlash — ${count} ta` }).click();
   const dialog = page.getByRole("alertdialog", { name: APPROVE_DIALOG });
   await expect(dialog).toBeVisible();
   return dialog;

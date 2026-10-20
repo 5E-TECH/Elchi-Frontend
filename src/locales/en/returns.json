@@ -46,7 +46,6 @@
       "courier": "Courier"
     },
     "selectHint": "Select orders in the list to approve.",
-    "approveError": "Could not approve the requests",
     "loadError": "Could not load return requests",
     "empty": "No return requests"
   }
