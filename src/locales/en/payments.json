@@ -413,7 +413,8 @@
         "shortage": "Shortage",
         "surplus": "Surplus",
         "match": "Matches",
-        "notCounted": "Not counted"
+        "notCounted": "Not counted",
+        "expectedUnknown": "Expected unknown"
       },
       "result": {
         "title": "Shift closed",

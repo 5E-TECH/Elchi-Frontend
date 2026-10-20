@@ -29,6 +29,7 @@ const server = vi.hoisted(() => ({
   currentError: null as null | number,
   openError: false,
   closeError: null as null | { status: number; message: string },
+  mainError: false,
   historyItems: [] as Array<Record<string, unknown>>,
   users: {} as Record<string, string>,
   lastCloseBody: null as null | Record<string, unknown>,
@@ -108,6 +109,7 @@ beforeEach(() => {
   server.currentError = null;
   server.openError = false;
   server.closeError = null;
+  server.mainError = false;
   server.historyItems = [];
   server.users = {};
   server.lastCloseBody = null;
@@ -134,6 +136,7 @@ beforeEach(() => {
       };
     }
     if (url === MAIN_URL) {
+      if (server.mainError) throw httpError(503, "Finance service unavailable");
       return {
         data: {
           statusCode: 200,
@@ -306,9 +309,12 @@ describe("Open shift dialog", () => {
 
     await user.click(await screen.findByRole("button", { name: OPEN_SHIFT }));
     const dialog = await screen.findByRole("dialog", { name: OPEN_SHIFT });
+    const currentBefore = currentCalls().length;
     await user.click(within(dialog).getByRole("button", { name: OPEN_SHIFT }));
 
     expect(await screen.findByText("Smenani ochishda xatolik yuz berdi")).toBeInTheDocument();
+    // Smenani boshqa xodim ochgan bo'lishi mumkin — holat qayta o'qiladi.
+    await waitFor(() => expect(currentCalls().length).toBeGreaterThan(currentBefore));
     expect(screen.queryByText(/allaqachon ochiq smena bor/)).not.toBeInTheDocument();
     expect(screen.getByRole("dialog", { name: OPEN_SHIFT })).toBeInTheDocument();
     expect(postsTo(SHIFT_OPEN_URL)).toEqual([{}]);
@@ -447,13 +453,32 @@ describe("Close shift dialog → result", () => {
 
     const dialog = await openCloseDialog(user);
     await user.type(within(dialog).getByLabelText(/^Sanalgan naqd/), "18240000");
+    const currentBefore = currentCalls().length;
     await user.click(within(dialog).getByRole("button", { name: CLOSE_SHIFT }));
 
     expect(await screen.findByText("Smenani yopishda xatolik yuz berdi")).toBeInTheDocument();
+    await waitFor(() => expect(currentCalls().length).toBeGreaterThan(currentBefore));
     expect(screen.queryByText("Smena allaqachon yopilgan")).not.toBeInTheDocument();
     expect(exportReport).not.toHaveBeenCalled();
     expect(screen.getByRole("dialog", { name: CLOSE_SHIFT })).toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: "Smena yopildi" })).not.toBeInTheDocument();
+  });
+});
+
+describe("Close shift dialog — edge cases (CB-1 review)", () => {
+  it("expected balance unknown (cashbox/main failed): an entered amount shows «Kutilgan noma'lum», not «Sanalmadi»", async () => {
+    server.openShift = { id: "12", opened_by: "1" };
+    server.mainError = true;
+    const user = userEvent.setup();
+    open(superadmin);
+
+    await user.click(await screen.findByRole("button", { name: CLOSE_SHIFT }));
+    const dialog = await screen.findByRole("dialog", { name: CLOSE_SHIFT });
+    await user.type(within(dialog).getByLabelText(/^Sanalgan naqd/), "18240000");
+
+    expect(within(dialog).getByText("Kutilgan noma'lum")).toBeInTheDocument();
+    // Karta kiritilmagan — u «Sanalmadi» bo'lib qoladi.
+    expect(within(dialog).getAllByText("Sanalmadi")).toHaveLength(1);
   });
 });
 

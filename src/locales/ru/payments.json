@@ -413,7 +413,8 @@
         "shortage": "Недостача",
         "surplus": "Излишек",
         "match": "Совпало",
-        "notCounted": "Не посчитано"
+        "notCounted": "Не посчитано",
+        "expectedUnknown": "Ожидаемое неизвестно"
       },
       "result": {
         "title": "Смена закрыта",

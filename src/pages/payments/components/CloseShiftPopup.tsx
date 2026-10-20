@@ -4,7 +4,7 @@ import { Banknote, CreditCard, Download, Timer, TriangleAlert, type LucideIcon }
 import { useTranslation } from "react-i18next";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
-import { Button, Dialog, Field, TextInput, TONE_SOFT } from "../../../shared/ui/primitives";
+import { Badge, Button, Dialog, Field, TextInput, TONE_SOFT } from "../../../shared/ui/primitives";
 import { cx } from "../../../shared/lib/cx";
 import { parseOptionalAmountInput } from "./lib/amountInput";
 import { computeShiftDiff, shiftDiffKind } from "./lib/shiftDiff";
@@ -116,7 +116,9 @@ const CloseShiftPopup = ({
     </>
   );
 
-  const diffBox = (diff: number | null, id: string) => (
+  // Kutilgan qoldiq o'qilmagan (kassa so'rovi xato yoki yuklanmoqda), summa esa kiritilgan — «Sanalmadi» emas,
+  // neytral «Kutilgan noma'lum»: yakuniy farqni backend hisoblaydi (natija oynasi).
+  const diffBox = (diff: number | null, counted: number | null, expected: number | null, id: string) => (
     <div
       id={id}
       role="status"
@@ -124,8 +126,14 @@ const CloseShiftPopup = ({
     >
       <span className="text-[13px] text-text-muted">{t("v2MainCashbox.shift.close.diff")}</span>
       <span className="inline-flex flex-wrap items-center gap-2">
-        <ShiftDiffAmount diff={diff} className="text-sm" />
-        <ShiftDiffBadge diff={diff} />
+        {counted !== null && expected === null ? (
+          <Badge tone="neutral">{t("v2MainCashbox.shift.diff.expectedUnknown")}</Badge>
+        ) : (
+          <>
+            <ShiftDiffAmount diff={diff} className="text-sm" />
+            <ShiftDiffBadge diff={diff} />
+          </>
+        )}
       </span>
     </div>
   );
@@ -189,7 +197,7 @@ const CloseShiftPopup = ({
               aria-describedby={cashDiffId}
             />
           </Field>
-          {diffBox(cashDiff, cashDiffId)}
+          {diffBox(cashDiff, countedCash, expectedCash, cashDiffId)}
         </div>
         <div className="flex min-w-0 flex-col gap-1.5">
           <Field
@@ -207,7 +215,7 @@ const CloseShiftPopup = ({
               aria-describedby={cardDiffId}
             />
           </Field>
-          {diffBox(cardDiff, cardDiffId)}
+          {diffBox(cardDiff, countedCard, expectedCard, cardDiffId)}
         </div>
       </div>
 

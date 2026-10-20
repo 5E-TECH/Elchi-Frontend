@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../../app/config/store";
 import { normalizeCashboxShift, useCashBox, type CashboxShift } from "../../../../entities/payments";
@@ -90,6 +90,9 @@ export const useCashboxShift = ({ enabled = true }: { enabled?: boolean } = {}):
       ? currentUserName || DASH
       : resolveUserName(openerQuery.data) || DASH;
 
+  const { refetch: refetchQuery } = query;
+  const refetch = useCallback(() => void refetchQuery(), [refetchQuery]);
+
   const status: CashboxShiftStatus =
     !enabled || !canManage
       ? "unknown"
@@ -109,7 +112,7 @@ export const useCashboxShift = ({ enabled = true }: { enabled?: boolean } = {}):
     openedByName,
     currentUserName,
     currentUserId,
-    refetch: () => void query.refetch(),
+    refetch,
   };
 };
 

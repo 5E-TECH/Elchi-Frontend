@@ -413,7 +413,8 @@
         "shortage": "Kamomad",
         "surplus": "Ortiqcha",
         "match": "Mos keldi",
-        "notCounted": "Sanalmadi"
+        "notCounted": "Sanalmadi",
+        "expectedUnknown": "Kutilgan noma'lum"
       },
       "result": {
         "title": "Smena yopildi",

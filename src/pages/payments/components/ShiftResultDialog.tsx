@@ -163,7 +163,7 @@ const ShiftResultDialog = ({
       <div className="overflow-x-auto rounded-xl border border-border max-md:hidden">
         <table
           aria-label={t("v2MainCashbox.shift.result.tableLabel")}
-          className="w-full border-collapse text-sm [&_tbody_tr:last-child>*]:border-b-0"
+          className="w-full border-collapse text-sm"
         >
           <thead>
             <tr>
@@ -185,24 +185,29 @@ const ShiftResultDialog = ({
             </tr>
           </thead>
           <tbody>
-            {METRICS.map((metric) => (
-              <tr key={metric}>
-                <th
-                  scope="row"
-                  className={cx(
-                    "h-11 border-b border-border px-3 py-1.5 text-left",
-                    metric === "diff" ? "font-semibold text-text" : "font-normal text-text-muted",
-                  )}
-                >
-                  {metricLabel(metric)}
-                </th>
-                {columns.map((column) => (
-                  <td key={column.key} className="h-11 border-b border-border px-3 py-1.5 text-right text-text">
-                    {cell(column.key, metric, "table")}
-                  </td>
-                ))}
-              </tr>
-            ))}
+            {METRICS.map((metric, index) => {
+              // Oxirgi qatorda chiziq yo'q (tashqi ramka bor) — `th` uchun ham aniq, selektor ustunligiga bog'liq emas.
+              const rowBorder = index < METRICS.length - 1 ? "border-b border-border" : "";
+              return (
+                <tr key={metric}>
+                  <th
+                    scope="row"
+                    className={cx(
+                      "h-11 px-3 py-1.5 text-left",
+                      rowBorder,
+                      metric === "diff" ? "font-semibold text-text" : "font-normal text-text-muted",
+                    )}
+                  >
+                    {metricLabel(metric)}
+                  </th>
+                  {columns.map((column) => (
+                    <td key={column.key} className={cx("h-11 px-3 py-1.5 text-right text-text", rowBorder)}>
+                      {cell(column.key, metric, "table")}
+                    </td>
+                  ))}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

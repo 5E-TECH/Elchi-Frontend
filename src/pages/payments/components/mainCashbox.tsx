@@ -398,10 +398,12 @@ const MainCashbox = () => {
   const openShiftOpenedAt = openShiftRow?.opened_at || undefined;
   const [isOpenShiftDialogOpen, setIsOpenShiftDialogOpen] = useState(false);
   // Natija oynasi — `POST finance/shift/close` javobi (yakuniy qiymatlar faqat shu yerdan).
+  // Ma'lumot oyna yopilganda tozalanmaydi — yopilish animatsiyasida jadval «0 / Sanalmadi» ga tushmasin.
   const [shiftResult, setShiftResult] = useState<{
     shift: CashboxShift;
     openedByName: string | null;
   } | null>(null);
+  const [isShiftResultOpen, setIsShiftResultOpen] = useState(false);
 
   // ── Ma'lumot ────────────────────────────────────────────────────────────────
   const { data: usersData } = useGetUser({ limit: FULL_LIST_LIMIT }, isSalaryPopupOpen);
@@ -668,20 +670,24 @@ const MainCashbox = () => {
     [submitManualOperation],
   );
 
+  const refetchShift = shiftState.refetch;
+
   const handleOpenShift = useCallback(
     async (comment: string) => {
       if (openShift.isPending) return;
       try {
         await openShift.mutateAsync({ comment: comment || undefined });
       } catch {
-        // Oyna ochiq qoladi; xom backend matni ko'rsatilmaydi.
+        // Oyna ochiq qoladi; xom backend matni ko'rsatilmaydi. Smenani boshqa xodim ochgan bo'lishi mumkin —
+        // holat qayta o'qiladi, eskirgan amal qayta-qayta yuborilmaydi.
         notify.error(t("common:error"), { description: t("openShiftError") });
+        refetchShift();
         return;
       }
       setIsOpenShiftDialogOpen(false);
       notify.success(t("common:success"), { description: t("openShiftSuccess") });
     },
-    [openShift, t],
+    [openShift, refetchShift, t],
   );
 
   const handleCloseShift = useCallback(
@@ -699,17 +705,20 @@ const MainCashbox = () => {
         closed = normalizeCashboxShift(asRecord(response).data);
       } catch {
         notify.error(t("common:error"), { description: t("closeShiftError") });
+        // Smena boshqa xodim tomonidan yopilgan bo'lishi mumkin — holat qayta o'qiladi.
+        refetchShift();
         return;
       }
       setClosingShiftId(null);
       handleExportExcel();
       if (closed) {
         setShiftResult({ shift: closed, openedByName });
+        setIsShiftResultOpen(true);
       } else {
         notify.success(t("common:success"), { description: t("closeShiftSuccess") });
       }
     },
-    [closeShift, closingShiftId, handleExportExcel, shiftState.openedByName, t],
+    [closeShift, closingShiftId, handleExportExcel, refetchShift, shiftState.openedByName, t],
   );
 
   const setHistoryRange = useCallback((from: string, to: string) => {
@@ -1553,8 +1562,8 @@ const MainCashbox = () => {
       />
 
       <ShiftResultDialog
-        open={Boolean(shiftResult)}
-        onClose={() => setShiftResult(null)}
+        open={isShiftResultOpen && Boolean(shiftResult)}
+        onClose={() => setIsShiftResultOpen(false)}
         shift={shiftResult?.shift ?? null}
         openedByName={shiftResult?.openedByName}
         closedByName={currentUserName}
