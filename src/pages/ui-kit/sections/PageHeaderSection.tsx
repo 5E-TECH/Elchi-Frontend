@@ -1,12 +1,14 @@
 import type { ReactNode } from "react";
-import { Check, Copy, Download, Plus, X } from "lucide-react";
+import { Check, Clock, Copy, Download, Plus, RefreshCw, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { OrderStatusBadge } from "../../../entities/order/ui/OrderStatusBadge";
 import { copyToClipboard } from "../../../shared/lib/clipboard";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { Badge } from "../../../shared/ui/primitives/Badge";
 import { Button } from "../../../shared/ui/primitives/Button";
 import { IconButton } from "../../../shared/ui/primitives/IconButton";
 import { PageHeader } from "../../../shared/ui/primitives/PageHeader";
+import { Spinner } from "../../../shared/ui/primitives/Spinner";
 import { KitSection } from "../KitSection";
 import { ThemePair } from "../ThemePair";
 
@@ -24,7 +26,9 @@ const Sample = ({ caption, children }: { caption: string; children: ReactNode })
  * «Sahifa sarlavhasi» bo'limi — `PageHeader` namunalari (kunduzgi + tungi).
  * Matn va tuzilma maketlardan: `superadmin-orders-list` (izoh + 2 amal),
  * `superadmin-orders-detail` (orqaga havolasi), `manager-orders-detail`
- * (nusxalash, holat, «Bekor qilish» + «Sotish»), `manager-branch-dashboard-main` (faqat sarlavha).
+ * (nusxalash, holat, «Bekor qilish» + «Sotish»), `manager-branch-dashboard-main` (faqat sarlavha),
+ * `superadmin-orders-list-refreshing` (`grow`: sarlavha yonida «Yangilanmoqda…», telefonda o'ng chetdagi
+ * ikonka tugma — `meta` ichida `ml-auto`; desktopda ghost «Yangilash»).
  */
 export const PageHeaderSection = () => {
   const { t, i18n } = useTranslation("ui");
@@ -91,6 +95,50 @@ export const PageHeaderSection = () => {
                     {t("pageHeader.demo.cancel")}
                   </Button>
                   <Button leftIcon={Check}>{t("pageHeader.demo.sell")}</Button>
+                </>
+              }
+            />
+          </Sample>
+
+          <Sample caption={t("pageHeader.samples.refresh")}>
+            <PageHeader
+              grow
+              title={ordersTitle}
+              meta={
+                <>
+                  <Badge role="status">
+                    <Spinner className="size-3! border-[1.5px]!" />
+                    {t("pageHeader.demo.refreshing")}
+                  </Badge>
+                  <IconButton
+                    variant="secondary"
+                    icon={RefreshCw}
+                    label={t("pageHeader.demo.refreshList")}
+                    className="ml-auto md:hidden"
+                  />
+                </>
+              }
+              description={
+                <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <span>
+                    {t("pageHeader.demo.ordersTotal", {
+                      total: formatNumberLocalized(1248, { language: i18n.language }),
+                    })}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                    <Clock size={14} aria-hidden="true" className="text-text-subtle" />
+                    {t("pageHeader.demo.lastUpdated")}
+                  </span>
+                </span>
+              }
+              actions={
+                <>
+                  <Button variant="ghost" compact leftIcon={RefreshCw} className="max-md:hidden">
+                    {t("pageHeader.demo.refresh")}
+                  </Button>
+                  <Button variant="secondary" leftIcon={Download} compact>
+                    {t("pageHeader.demo.exportExcel")}
+                  </Button>
                 </>
               }
             />

@@ -82,6 +82,18 @@ describe("TabsSection", () => {
     expect(within(dayClose).getByRole("radio", { name: "Bekor" })).toHaveAttribute("aria-checked", "true");
   });
 
+  it("countBusy namunasi (OR-1): sonlar joyida, xira va aria-busy", () => {
+    renderWithProviders(<TabsSection />, { route: "/ops/ui-kit?section=tabs" });
+    const list = within(panels()[0]).getByRole("tablist", { name: "Sonlar yangilanmoqda" });
+    const tabs = within(list).getAllByRole("tab");
+    expect(tabs.map((el) => el.textContent)).toEqual(["Kutilayotgan 7", "Barchasi 24", "Bekor qilingan 3"]);
+    for (const tab of tabs) {
+      const count = tab.querySelector("[aria-busy]");
+      expect(count).toHaveAttribute("aria-busy", "true");
+      expect(count).toHaveClass("opacity-55");
+    }
+  });
+
   it("uz/ru/en: tabs.* kalitlari bir xil", () => {
     const uzKeys = keysOf(uz.tabs).sort();
     expect(keysOf(ru.tabs).sort()).toEqual(uzKeys);

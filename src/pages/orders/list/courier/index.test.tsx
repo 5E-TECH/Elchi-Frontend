@@ -7,6 +7,7 @@ import {
   EXTRA_COST_APPROVAL_POLL_MS,
   clearPendingExtraCostApproval,
 } from "../../../../entities/orders/extraCostApproval";
+import { ORDERS_REFRESH_INTERVAL_MS } from "../useOrdersRefresh";
 
 const waitingOrder = {
   id: "1251165",
@@ -41,6 +42,7 @@ vi.mock("../../../../entities/orders", () => ({
       courierRefetchInterval = refetchInterval;
       return { data: listResponse, isLoading: false };
     },
+    useGetCourierOrderCounts: () => ({ data: undefined }),
     SellOrder: { mutate: sellMutate, isPending: false },
     PartlySellOrder: idle,
     RollbackOrder: idle,
@@ -97,7 +99,8 @@ describe("Courier orders — extra cost approval flow", () => {
     cancelMutate.mockImplementation((_vars, options: MutateOptions) => options.onSuccess?.(approvalResponse));
     renderPage();
 
-    expect(courierRefetchInterval?.(listResponse)).toBe(false);
+    // Oyna yopiq — avtomatik yangilanish (OR-1, 60 s).
+    expect(courierRefetchInterval?.(listResponse)).toBe(ORDERS_REFRESH_INTERVAL_MS);
 
     // Qator tugmasi nomi maketdagidek: «№1251165 ni bekor qilish» (ko'rinadigan matn «Bekor qilish»).
     await openModal(user, /ni bekor qilish$/);
@@ -114,8 +117,9 @@ describe("Courier orders — extra cost approval flow", () => {
     // Kuryer maketi (`courier-orders-action-approval-pending`): «Tasdiq kutilmoqda» belgisi.
     expect(within(row).getByText("Tasdiq kutilmoqda")).toBeInTheDocument();
     expect(courierRefetchInterval?.(listResponse)).toBe(EXTRA_COST_APPROVAL_POLL_MS);
-    // Market tasdiqladi → buyurtma holati o'zgardi → so'rov to'xtaydi.
-    expect(courierRefetchInterval?.({ data: [{ ...waitingOrder, status: "cancelled" }] })).toBe(false);
+    // Market tasdiqladi → buyurtma holati o'zgardi → 30 s lik polling tugaydi, oddiy avtomatik yangilanish
+    // (OR-1, 60 s) qoladi.
+    expect(courierRefetchInterval?.({ data: [{ ...waitingOrder, status: "cancelled" }] })).toBe(ORDERS_REFRESH_INTERVAL_MS);
   });
 
   it("closes the sell modal as before when there is no extra cost (regression)", async () => {

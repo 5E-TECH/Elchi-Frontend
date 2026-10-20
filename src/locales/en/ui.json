@@ -356,7 +356,8 @@
       "description": "Description and actions (one primary action)",
       "back": "With a back link",
       "meta": "Status, copy and actions",
-      "long": "Long title — wraps, never truncated"
+      "long": "Long title — wraps, never truncated",
+      "refresh": "Growing text block — status next to the title and an icon button on phone"
     },
     "demo": {
       "dashboardTitle": "Home",
@@ -372,7 +373,11 @@
       "cancel": "Cancel",
       "sell": "Sell",
       "longTitle": "Weekly report on cancelled and returned orders at the Chilonzor drop-off point",
-      "longDescription": "01.10 – 08.10.2026 · 94 orders"
+      "longDescription": "01.10 – 08.10.2026 · 94 orders",
+      "refreshing": "Refreshing…",
+      "refresh": "Refresh",
+      "refreshList": "Refresh list",
+      "lastUpdated": "Last updated: 14:42"
     }
   },
   "table": {
@@ -438,7 +443,9 @@
       "dayCloseLabel": "Result for №10238",
       "closeSold": "Sold",
       "closeCancel": "Cancel",
-      "closeTomorrow": "Tomorrow"
+      "closeTomorrow": "Tomorrow",
+      "countBusyTitle": "Counts refreshing",
+      "countBusyNote": "The old count stays in place, dimmed — the tab is clickable, the width doesn't change"
     }
   },
   "kit": {

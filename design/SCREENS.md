@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **183** · qisman: **90** · v2 ga ko'chirilgan route: **76 / 77**
+**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **177** · qisman: **94** · v2 ga ko'chirilgan route: **76 / 77**
 
 ## Qanday ishlatiladi
 
@@ -285,26 +285,26 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/orders` — Buyurtmalar ro'yxati (kuryerda — alohida ro'yxat komponenti)
 
-- **Fayllar:** `src/pages/orders/index.tsx` · `src/pages/orders/list/OrderFilters.tsx` · `src/pages/orders/list/OrderFiltersSheet.tsx` · `src/pages/orders/list/OrdersTable.tsx` · `src/pages/orders/list/orderFilterModel.ts` · `src/pages/orders/list/courier/index.tsx` · `src/pages/orders/list/courier/list/tabs.tsx` · `src/pages/orders/list/courier/list/ordertable/pendingOrderTable.tsx` · `src/pages/orders/list/courier/list/ordertable/AllOrdersTable.tsx` · `src/pages/orders/list/courier/list/ordertable/CancelledOrdersTable.tsx` · `src/pages/orders/list/courier/list/ordertable/CourierOrdersTable.tsx` · `src/pages/orders/list/courier/list/SellModal.tsx` · `src/pages/orders/list/courier/list/CancelModal.tsx` · `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` · `src/pages/orders/list/courier/list/OrderActionParts.tsx` · `src/entities/orders/ui/ExtraCostApprovalAlerts.tsx` · `src/entities/orders/ui/ExtraCostApprovalTag.tsx` · `src/entities/order/ui/ReturnRequestedTag.tsx`
+- **Fayllar:** `src/pages/orders/index.tsx` · `src/pages/orders/list/OrderFilters.tsx` · `src/pages/orders/list/OrderFiltersSheet.tsx` · `src/pages/orders/list/OrdersTable.tsx` · `src/pages/orders/list/orderFilterModel.ts` · `src/pages/orders/list/useOrdersRefresh.ts` · `src/pages/orders/list/OrdersRefreshMeta.tsx` · `src/pages/orders/list/OrdersRefreshAlert.tsx` · `src/pages/orders/list/courier/index.tsx` · `src/pages/orders/list/courier/list/tabs.tsx` · `src/pages/orders/list/courier/list/ordertable/pendingOrderTable.tsx` · `src/pages/orders/list/courier/list/ordertable/AllOrdersTable.tsx` · `src/pages/orders/list/courier/list/ordertable/CancelledOrdersTable.tsx` · `src/pages/orders/list/courier/list/ordertable/CourierOrdersTable.tsx` · `src/pages/orders/list/courier/list/SellModal.tsx` · `src/pages/orders/list/courier/list/CancelModal.tsx` · `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` · `src/pages/orders/list/courier/list/OrderActionParts.tsx` · `src/entities/orders/ui/ExtraCostApprovalAlerts.tsx` · `src/entities/orders/ui/ExtraCostApprovalTag.tsx` · `src/entities/order/ui/ReturnRequestedTag.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOrders` (access.ts → canViewOrders)
 - **Rollar:** superadmin, admin, manager, registrator, market, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** «Buyurtmalar» (`orders`) — superadmin, admin, manager, registrator, market, courier
 - **Holat:** v2
-- **Izoh:** Kuryer ro'yxati — list/courier/index.tsx (tablar list/courier/list/tabs.tsx). Kuryerdan boshqa barcha rollarda bir xil 8 holat tabi (Barchasi · Yangi · Qabul qilindi · Yo'lda · Kutilmoqda · Sotilgan · To'langan · Bekor qilingan; tab sonlari API'da yo'q — chizilmaydi). Menejerning qatordagi sotish/bekor/qaytarish amallari faqat REGIONAL · HYBRID filialda va can_sell_cancel yoqilganda; «Bekor qilingan» tabida HQ'ga yuborish (tanlov + QR skaner) ham faqat REGIONAL · HYBRID. Qator bosilsa → /orders/edit/:orderId. Sarlavhada qo'lda «Yangilash» (ghost, RefreshCw; telefonda h1 yonida chegarali ikonka) va «Oxirgi yangilanish: HH:mm» (oxirgi muvaffaqiyatli yuklash vaqti) — barcha rollar va tablarda bir xil; avtomatik yangilanish yo'q (refetchOnWindowFocus: false). Holatlar: *-refreshing — h1 yonida «Yangilanmoqda…» belgisi faqat so'rov 400 ms dan uzoq cho'zilsa (tizim--loading 11-namuna), tugma band; *-refresh-error — ro'yxat kartasi ustida warning el-alert «Ro'yxat yangilanmadi» + «Qayta urinish», eski ma'lumot ko'rinib turadi (tizim--main «Xabar bloklari»; incomingStaleWarning bilan bir xil).
+- **Izoh:** Kuryer ro'yxati — list/courier/index.tsx (tablar list/courier/list/tabs.tsx). Kuryerdan boshqa barcha rollarda bir xil 8 holat tabi (Barchasi · Yangi · Qabul qilindi · Yo'lda · Kutilmoqda · Sotilgan · To'langan · Bekor qilingan; tab sonlari API'da yo'q — chizilmaydi, OR-2 backenddan keyin). Menejerning qatordagi sotish/bekor/qaytarish amallari faqat REGIONAL · HYBRID filialda va can_sell_cancel yoqilganda; «Bekor qilingan» tabida HQ'ga yuborish (tanlov + QR skaner) ham faqat REGIONAL · HYBRID. Qator bosilsa → /orders/edit/:orderId. Yangilanish (OR-1, list/useOrdersRefresh.ts; ega orders-refresh S1–S4): avtomatik — har 60 s (faqat ko'rinadigan brauzer tabida) va ilovaga qaytganda (refetchOnWindowFocus faqat shu so'rovlarda), qo'shimcha xarajat tasdig'i 30 s lik pollingi bilan birlashadi; sotish/bekor/qaytarish oynasi yoki skaner kamerasi ochiq bo'lsa to'xtaydi. Sarlavhada «Jami N ta buyurtma» · «Oxirgi yangilanish: HH:mm» (dataUpdatedAt) · «Avtomatik yangilanadi», qo'lda «Yangilash» (ghost, RefreshCw; telefonda h1 qatorining o'ng chetida chegarali ikonka — PageHeader grow) — barcha rollar va tablarda bir xil; «Yangilash» ro'yxat, tab sonlari (kuryer) va qadalgan (raqam bo'yicha aniq) buyurtmani birga so'raydi. Holatlar: *-refreshing — h1 yonida «Yangilanmoqda…» belgisi faqat fon so'rovi 400 ms dan uzoq cho'zilsa (tizim--loading 11-namuna), tugmalar band, kuryer tab sonlari xira (Tabs countBusy); *-refresh-error — ro'yxat kartasi ustida (kuryer telefonida tablar va qidiruvdan keyin) warning alert «Ro'yxat yangilanmadi» + «Qayta urinish» + × (S3), eski qatorlar ko'rinib turadi, global xato xabari chiqmaydi (ma'lumot bo'lsa meta.silentError); kuryer bo'lmagan rollarda matn tab sonlarisiz. Kuryer tab sonlari — GET orders/courier/orders/counts.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/orders` | superadmin | `superadmin-orders-list` — Buyurtmalar ro'yxati | [design/fragments/superadmin--orders-list.html](fragments/superadmin--orders-list.html) | sahifa | qisman |
 | `/orders` | superadmin | `superadmin-orders-list-cancelled` — Buyurtmalar — Bekor qilinganlar: bosqich va joy (taklif) | [design/fragments/superadmin--orders-list-cancelled.html](fragments/superadmin--orders-list-cancelled.html) | sahifa | yangi (kodda yo'q) |
-| `/orders` | superadmin | `superadmin-orders-list-refreshing` — Buyurtmalar ro'yxati — yangilanmoqda | [design/fragments/superadmin--orders-list-refreshing.html](fragments/superadmin--orders-list-refreshing.html) | sahifa | yangi (kodda yo'q) |
-| `/orders` | superadmin | `superadmin-orders-list-refresh-error` — Buyurtmalar ro'yxati — yangilanmadi | [design/fragments/superadmin--orders-list-refresh-error.html](fragments/superadmin--orders-list-refresh-error.html) | sahifa | yangi (kodda yo'q) |
+| `/orders` | superadmin | `superadmin-orders-list-refreshing` — Buyurtmalar ro'yxati — yangilanmoqda | [design/fragments/superadmin--orders-list-refreshing.html](fragments/superadmin--orders-list-refreshing.html) | sahifa | qisman |
+| `/orders` | superadmin | `superadmin-orders-list-refresh-error` — Buyurtmalar ro'yxati — yangilanmadi | [design/fragments/superadmin--orders-list-refresh-error.html](fragments/superadmin--orders-list-refresh-error.html) | sahifa | qisman |
 | `/orders` | superadmin | `superadmin-orders-filters-mobile` — Buyurtmalar — filtr paneli (telefon)<br>↳ `src/pages/orders/list/OrderFilters.tsx` | [design/fragments/superadmin--orders-filters-mobile.html](fragments/superadmin--orders-filters-mobile.html) | oyna · faqat telefon | v2 |
 | `/orders` | superadmin | `superadmin-orders-list-skip-link` — Buyurtmalar ro'yxati — «Asosiy kontentga o'tish» havolasi fokusda<br>↳ `src/widgets/layout/ui/SkipLink.tsx` | [design/fragments/superadmin--orders-list-skip-link.html](fragments/superadmin--orders-list-skip-link.html) | sahifa | v2 |
 | `/orders` | admin | `admin-orders-list` — Buyurtmalar ro'yxati | [design/fragments/admin--orders-list.html](fragments/admin--orders-list.html) | sahifa | qisman |
 | `/orders` | admin | `admin-orders-filters-mobile` — Buyurtmalar — filtr paneli (telefon)<br>↳ `src/pages/orders/list/OrderFilters.tsx` | [design/fragments/superadmin--orders-filters-mobile.html](fragments/superadmin--orders-filters-mobile.html) | oyna · faqat telefon | v2 |
 | `/orders` | manager | `manager-orders-list-all` — Buyurtmalar — Hamma buyurtmalar | [design/fragments/manager--orders-list-all.html](fragments/manager--orders-list-all.html) | sahifa | v2 |
-| `/orders` | manager | `manager-orders-list-all-refreshing` — Buyurtmalar — Hamma buyurtmalar, yangilanmoqda | [design/fragments/manager--orders-list-all-refreshing.html](fragments/manager--orders-list-all-refreshing.html) | sahifa | yangi (kodda yo'q) |
-| `/orders` | manager | `manager-orders-list-all-refresh-error` — Buyurtmalar — Hamma buyurtmalar, yangilanmadi | [design/fragments/manager--orders-list-all-refresh-error.html](fragments/manager--orders-list-all-refresh-error.html) | sahifa | yangi (kodda yo'q) |
+| `/orders` | manager | `manager-orders-list-all-refreshing` — Buyurtmalar — Hamma buyurtmalar, yangilanmoqda | [design/fragments/manager--orders-list-all-refreshing.html](fragments/manager--orders-list-all-refreshing.html) | sahifa | qisman |
+| `/orders` | manager | `manager-orders-list-all-refresh-error` — Buyurtmalar — Hamma buyurtmalar, yangilanmadi | [design/fragments/manager--orders-list-all-refresh-error.html](fragments/manager--orders-list-all-refresh-error.html) | sahifa | qisman |
 | `/orders` | manager | `manager-orders-list-pending` — Buyurtmalar — Kutilayotgan | [design/fragments/manager--orders-list-pending.html](fragments/manager--orders-list-pending.html) | sahifa | v2 |
 | `/orders` | manager | `manager-orders-list-cancelled` — Buyurtmalar — Bekor qilinganlar (HQ'ga yuborish) | [design/fragments/manager--orders-list-cancelled.html](fragments/manager--orders-list-cancelled.html) | sahifa | qisman |
 | `/orders` | manager | `manager-orders-sell-dialog` — Sotish oynasi<br>↳ `src/pages/orders/list/courier/list/SellModal.tsx` | [design/fragments/manager--orders-sell-dialog.html](fragments/manager--orders-sell-dialog.html) | oyna | v2 |
@@ -315,8 +315,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/orders` | market | `market-orders-list` — Buyurtmalar ro'yxati | [design/fragments/market--orders-list.html](fragments/market--orders-list.html) | sahifa | qisman |
 | `/orders` | market_operator | — Maket yo'q — eng yaqini: market-orders-list va market-orders-detail. GET orders — JwtAuthGuard, ichida operator o'z marketiga cheklanadi (resolveMarketOperatorMarketId); tafsilot assertCanViewOrder — faqat o'z marketi. Excel eksport bor (GET orders/export/excel @Roles … MARKET_OPERATOR). Market tafsilotidagi amallar (tahrirlash, bekor qilish, qaytarish so'rovi) — faqat backend ruxsat bergani ko'rinadi, aks holda yashiriladi. | — | — | v2 |
 | `/orders` | courier | `courier-orders-pending` — Buyurtmalar — Kutilayotganlar<br>↳ `src/pages/orders/list/courier/index.tsx` | [design/fragments/courier--orders-pending.html](fragments/courier--orders-pending.html) | sahifa | v2 |
-| `/orders` | courier | `courier-orders-pending-refreshing` — Buyurtmalar — Kutilayotganlar, yangilanmoqda | [design/fragments/courier--orders-pending-refreshing.html](fragments/courier--orders-pending-refreshing.html) | sahifa | yangi (kodda yo'q) |
-| `/orders` | courier | `courier-orders-pending-refresh-error` — Buyurtmalar — Kutilayotganlar, yangilanmadi | [design/fragments/courier--orders-pending-refresh-error.html](fragments/courier--orders-pending-refresh-error.html) | sahifa | yangi (kodda yo'q) |
+| `/orders` | courier | `courier-orders-pending-refreshing` — Buyurtmalar — Kutilayotganlar, yangilanmoqda<br>↳ `src/pages/orders/list/courier/index.tsx` | [design/fragments/courier--orders-pending-refreshing.html](fragments/courier--orders-pending-refreshing.html) | sahifa | v2 |
+| `/orders` | courier | `courier-orders-pending-refresh-error` — Buyurtmalar — Kutilayotganlar, yangilanmadi<br>↳ `src/pages/orders/list/courier/index.tsx` | [design/fragments/courier--orders-pending-refresh-error.html](fragments/courier--orders-pending-refresh-error.html) | sahifa | v2 |
 | `/orders` | courier | `courier-orders-tab-switcher-open` — Buyurtmalar — tab almashtirildi, yuklanmoqda<br>↳ `src/pages/orders/list/courier/list/tabs.tsx` | [design/fragments/courier--orders-tab-switcher-open.html](fragments/courier--orders-tab-switcher-open.html) | sahifa · faqat telefon | v2 |
 | `/orders` | courier | `courier-orders-all` — Buyurtmalar — Hammasi<br>↳ `src/pages/orders/list/courier/index.tsx` | [design/fragments/courier--orders-all.html](fragments/courier--orders-all.html) | sahifa | v2 |
 | `/orders` | courier | `courier-orders-cancelled` — Buyurtmalar — Bekor qilinganlar<br>↳ `src/pages/orders/list/courier/index.tsx` | [design/fragments/courier--orders-cancelled.html](fragments/courier--orders-cancelled.html) | sahifa | v2 |
@@ -1907,7 +1907,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-222 ta maket · kodda bor: 149 · kodda yo'q: 73
+222 ta maket · kodda bor: 151 · kodda yo'q: 71
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -1916,8 +1916,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-orders-list` | Buyurtmalar ro'yxati | sahifa | `/orders` | `src/pages/orders/index.tsx` | qisman — Bekor qatorlarida bosqich badge'i (Bekor · kuryerda / yo'lda / filialda / HQ'da — danger + ikonka; «Marketga topshirildi» — neutral, PackageCheck) va ostida joy qatori «Urgut filiali · 2 kun»; muddat 3 kunda warning, 7 kunda + TriangleAlert (BG7) (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md)) — kodda hali eski «Bekor qilingan» badge'i. |
 | `superadmin-orders-list-cancelled` | Buyurtmalar — Bekor qilinganlar: bosqich va joy (taklif) | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — «Bekor qilingan» tabi (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md)): bosqich badge'i (Bekor · kuryerda / yo'lda / filialda / HQ'da — danger + ikonka; «Marketga topshirildi» — neutral, PackageCheck) va ostida joy qatori «Urgut filiali · 2 kun»; muddat 3 kunda warning, 7 kunda + TriangleAlert (BG7). Tab ichidagi chiplar «Barchasi · Kuryerda · Yo'lda · Filialda · HQ'da · Topshirilgan» — server filtri kerak (BG4), unga qadar chizilmaydi; tab «Marketga topshirildi» (status=returned_to_market) ni ham o'z ichiga oladi. 1-bosqich kodda: badge + joy (holder_* dan), joy nomi faqat superadmin/admin'da (BG1). |
 | `superadmin-orders-list-skip-link` | Buyurtmalar ro'yxati — «Asosiy kontentga o'tish» havolasi fokusda | sahifa | `/orders` | `src/widgets/layout/ui/SkipLink.tsx` | v2 |
-| `superadmin-orders-list-refreshing` | Buyurtmalar ro'yxati — yangilanmoqda | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan. |
-| `superadmin-orders-list-refresh-error` | Buyurtmalar ro'yxati — yangilanmadi | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan. |
+| `superadmin-orders-list-refreshing` | Buyurtmalar ro'yxati — yangilanmoqda | sahifa | `/orders` | `src/pages/orders/index.tsx` | qisman — Kodda bor (OR-1): «Yangilanmoqda…» belgisi (400 ms dan keyin), «Yangilash» band, «Oxirgi yangilanish», «Avtomatik yangilanadi». Farq: holat tablari sonlari (va ularning xira holati) chizilmaydi — GET /orders har holat sonini bermaydi (OR-2, backend GaBIPi3Z). |
+| `superadmin-orders-list-refresh-error` | Buyurtmalar ro'yxati — yangilanmadi | sahifa | `/orders` | `src/pages/orders/index.tsx` | qisman — Kodda bor (OR-1): «Ro'yxat yangilanmadi» + «Qayta urinish» + ×, eski qatorlar qoladi. Farq: izoh «Ro'yxat eskirgan bo'lishi mumkin.» (tab sonlarisiz) — holat tablari sonlari API'da yo'q (OR-2, backend GaBIPi3Z). |
 | `superadmin-orders-filters-mobile` | Buyurtmalar — filtr paneli (telefon) | oyna · faqat telefon | `/orders` | `src/pages/orders/list/OrderFilters.tsx` | v2 |
 | `superadmin-orders-detail` | Buyurtma tafsilotlari | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | v2 |
 | `superadmin-orders-detail-cancelled` | Buyurtma tafsilotlari — marketga topshirilgan, «Qaytarish yo'li» (taklif) | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | yangi (kodda yo'q) — Tafsilot (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md)): sarlavhada bosqich badge'i + joy qatori; yangi «Qaytarish yo'li» kartasi (widgets/order-return-path, GET /orders/:id/tracking): Bekor qilindi → Jo'natildi (pochta №) → Qabul qilindi (joy, xodim) → Marketga topshirildi (joy, xodim, usul) yoki «kutilmoqda»; filial → HQ zanjirida 2–3 qadam takrorlanadi. Usul «QR orqali» / «Qo'lda tasdiq — sabab» / «QR'siz» tarixdan; ro'yxatda — BG2. «Buyurtma tarixi» yig'ilgan holda. |
@@ -2295,7 +2295,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### manager — Menejer
 
-86 ta maket · kodda bor: 72 · kodda yo'q: 14
+86 ta maket · kodda bor: 74 · kodda yo'q: 12
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2304,8 +2304,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-dispatch-courier-dialog` | Kuryer tanlash oynasi | oyna | `/dispatch` | `src/pages/dispatch/index.tsx` | v2 |
 | `manager-dispatch-camera-dialog` | Biriktirish — kamera | oyna | `/dispatch` | `src/pages/dispatch/index.tsx` | qisman — Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. «Biriktirish · <filial> · savatda N ta», savat qurilmada (ega D2, /scan/:token «Kuryerga biriktirish» ham shu savatga), rad etilgan QR ro'yxatda «Paket … · Rad etildi»; kuryer — sahifadagi tugma. |
 | `manager-orders-list-all` | Buyurtmalar — Hamma buyurtmalar | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
-| `manager-orders-list-all-refreshing` | Buyurtmalar — Hamma buyurtmalar, yangilanmoqda | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan. |
-| `manager-orders-list-all-refresh-error` | Buyurtmalar — Hamma buyurtmalar, yangilanmadi | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan. |
+| `manager-orders-list-all-refreshing` | Buyurtmalar — Hamma buyurtmalar, yangilanmoqda | sahifa | `/orders` | `src/pages/orders/index.tsx` | qisman — Kodda bor (OR-1): «Yangilanmoqda…» belgisi (400 ms dan keyin), «Yangilash» band, «Oxirgi yangilanish», «Avtomatik yangilanadi». Farq: holat tablari sonlari (va ularning xira holati) chizilmaydi — GET /orders har holat sonini bermaydi (OR-2, backend GaBIPi3Z). |
+| `manager-orders-list-all-refresh-error` | Buyurtmalar — Hamma buyurtmalar, yangilanmadi | sahifa | `/orders` | `src/pages/orders/index.tsx` | qisman — Kodda bor (OR-1): «Ro'yxat yangilanmadi» + «Qayta urinish» + ×, eski qatorlar qoladi. Farq: izoh «Ro'yxat eskirgan bo'lishi mumkin.» (tab sonlarisiz) — holat tablari sonlari API'da yo'q (OR-2, backend GaBIPi3Z). |
 | `manager-orders-list-pending` | Buyurtmalar — Kutilayotgan | sahifa | `/orders` | `src/pages/orders/index.tsx` | v2 |
 | `manager-orders-list-cancelled` | Buyurtmalar — Bekor qilinganlar (HQ'ga yuborish) | sahifa | `/orders` | `src/pages/orders/index.tsx` | qisman — bosqich badge'i (Bekor · kuryerda / yo'lda / filialda / HQ'da — danger + ikonka; «Marketga topshirildi» — neutral, PackageCheck) va ostida joy qatori «Urgut filiali · 2 kun»; muddat 3 kunda warning, 7 kunda + TriangleAlert (BG7) (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md)); tab ichidagi bosqich chiplari — Taklif · backend kerak (BG4), 1-bosqichda chizilmaydi. |
 | `manager-orders-sell-dialog` | Sotish oynasi | oyna | `/orders`, `/orders/edit/:orderId` | `src/pages/orders/list/courier/list/SellModal.tsx` | v2 |
@@ -2503,7 +2503,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### courier — Kuryer
 
-53 ta maket · kodda bor: 47 · kodda yo'q: 6
+53 ta maket · kodda bor: 49 · kodda yo'q: 4
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2512,8 +2512,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `courier-dashboard-mobile-menu` | Menyu ochiq — yon panel / pastki varaq | oyna · faqat planshet + telefon | `(qobiq)` | `src/widgets/Sidebar/ui/MobileMenu.tsx` | v2 |
 | `courier-dashboard-mobile-search` | Global qidiruv (telefon) | oyna · faqat telefon | `(qobiq)` | `src/widgets/header/ui/SearchScreen.tsx` | v2 |
 | `courier-orders-pending` | Buyurtmalar — Kutilayotganlar | sahifa | `/orders` | `src/pages/orders/list/courier/index.tsx` | v2 |
-| `courier-orders-pending-refreshing` | Buyurtmalar — Kutilayotganlar, yangilanmoqda | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan. |
-| `courier-orders-pending-refresh-error` | Buyurtmalar — Kutilayotganlar, yangilanmadi | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan. |
+| `courier-orders-pending-refreshing` | Buyurtmalar — Kutilayotganlar, yangilanmoqda | sahifa | `/orders` | `src/pages/orders/list/courier/index.tsx` | v2 |
+| `courier-orders-pending-refresh-error` | Buyurtmalar — Kutilayotganlar, yangilanmadi | sahifa | `/orders` | `src/pages/orders/list/courier/index.tsx` | v2 |
 | `courier-orders-tab-switcher-open` | Buyurtmalar — tab almashtirildi, yuklanmoqda | sahifa · faqat telefon | `/orders` | `src/pages/orders/list/courier/list/tabs.tsx` | v2 |
 | `courier-orders-all` | Buyurtmalar — Hammasi | sahifa | `/orders` | `src/pages/orders/list/courier/index.tsx` | v2 |
 | `courier-orders-cancelled` | Buyurtmalar — Bekor qilinganlar | sahifa | `/orders` | `src/pages/orders/list/courier/index.tsx` | v2 |
@@ -2900,6 +2900,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/orders/index.tsx` | `/orders` |
 | `src/pages/orders/list/OrderFilters.tsx` | `/orders` |
 | `src/pages/orders/list/OrderFiltersSheet.tsx` | `/orders` |
+| `src/pages/orders/list/OrdersRefreshAlert.tsx` | `/orders` |
+| `src/pages/orders/list/OrdersRefreshMeta.tsx` | `/orders` |
 | `src/pages/orders/list/OrdersTable.tsx` | `/orders` |
 | `src/pages/orders/list/courier/index.tsx` | `/orders` |
 | `src/pages/orders/list/courier/list/CancelModal.tsx` | `/orders`, `/orders/edit/:orderId` |
@@ -2912,6 +2914,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/orders/list/courier/list/ordertable/pendingOrderTable.tsx` | `/orders` |
 | `src/pages/orders/list/courier/list/tabs.tsx` | `/orders` |
 | `src/pages/orders/list/orderFilterModel.ts` | `/orders` |
+| `src/pages/orders/list/useOrdersRefresh.ts` | `/orders` |
 | `src/pages/partners/index.tsx` | `/integrations/partners` |
 | `src/pages/payments/components/CashboxActionFormCard.tsx` | `/payments/cash-detail/:id` |
 | `src/pages/payments/components/CashboxFormPopup.tsx` | `/payments/main-cashbox` |

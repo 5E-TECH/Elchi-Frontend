@@ -61,6 +61,7 @@ vi.mock("../../../../entities/orders", () => ({
             isLoading: false,
           };
     },
+    useGetCourierOrderCounts: () => ({ data: undefined }),
     SellOrder: idle,
     PartlySellOrder: idle,
     RollbackOrder: idle,

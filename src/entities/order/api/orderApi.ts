@@ -34,17 +34,27 @@ export const useOrders = () => {
         params?: OrderListParams,
         enabled = true,
         refetchInterval?: (data: OrderListResponse | undefined) => number | false,
-        /** `silentError` — xato umumiy bildirishnoma bermaydi (masalan filtr varaqasidagi yordamchi son). */
-        options?: { silentError?: boolean },
-    ) =>
-        useQuery<OrderListResponse>({
-            queryKey: [ORDER_KEY, params],
+        /**
+         * `silentError` — xato umumiy bildirishnoma bermaydi (masalan filtr varaqasidagi yordamchi son).
+         * `silentErrorWhenCached` — faqat keshda ma'lumot bo'lsa (OR-1: sahifa «Ro'yxat yangilanmadi» ni o'zi
+         * chizadi); `refetchOnWindowFocus` — ilovaga qaytganda qayta so'rash (faqat shu so'rovda).
+         */
+        options?: { silentError?: boolean; silentErrorWhenCached?: boolean; refetchOnWindowFocus?: boolean },
+    ) => {
+        const queryKey = [ORDER_KEY, params];
+        const silentError =
+            Boolean(options?.silentError) ||
+            (Boolean(options?.silentErrorWhenCached) && client.getQueryData(queryKey) !== undefined);
+        return useQuery<OrderListResponse>({
+            queryKey,
             queryFn: () => api.get(API_ENDPOINTS.ORDERS.BASE, { params }).then((res) => res.data),
             enabled,
             placeholderData: (prev) => prev,
             refetchInterval: refetchInterval ? (query) => refetchInterval(query.state.data) : undefined,
-            ...(options?.silentError ? { meta: { silentError: true } } : {}),
+            ...(options?.refetchOnWindowFocus ? { refetchOnWindowFocus: true } : {}),
+            ...(silentError ? { meta: { silentError: true } } : {}),
         });
+    };
 
     const useGetExternalOrders = (params?: ExternalOrdersParams) =>
         useQuery<ExternalOrdersResponse>({

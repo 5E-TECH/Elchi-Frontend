@@ -248,6 +248,28 @@ describe("PageHeader — slotlar", () => {
     expect(heading).toHaveAccessibleName("№10241");
   });
 
+  it("grow (opt-in, OR-1): sukut — matn bloki o'smaydi (~75 sahifa o'zgarmaydi)", () => {
+    renderAt(<PageHeader title="Buyurtmalar" description="Jami 7 ta" actions={<button type="button">Yangilash</button>} />);
+    const column = screen.getByRole("heading", { level: 1 }).parentElement as HTMLElement;
+    expect(column).toHaveClass("flex", "min-w-0", "flex-col", "gap-1");
+    expect(column).not.toHaveClass("flex-auto");
+  });
+
+  it("grow: matn bloki bo'sh joyni egallaydi — meta qatoridagi ml-auto tugma o'ng chetga tushadi (maket *-orders-list)", () => {
+    renderAt(
+      <PageHeader
+        grow
+        title="Buyurtmalar"
+        meta={<button type="button" className="ml-auto" aria-label="Ro'yxatni yangilash" />}
+        description="Jami 7 ta"
+      />,
+    );
+    const heading = screen.getByRole("heading", { level: 1 });
+    const metaRow = heading.parentElement as HTMLElement;
+    expect(metaRow).toContainElement(screen.getByRole("button", { name: "Ro'yxatni yangilash" }));
+    expect(metaRow.parentElement).toHaveClass("flex-auto", "flex-col");
+  });
+
   it("children — sarlavha qatoridan keyin (masalan Tabs)", () => {
     renderAt(
       <PageHeader title="Pochtalar" actions={<button type="button">Yangilash</button>}>

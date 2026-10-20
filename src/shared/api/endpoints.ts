@@ -106,6 +106,7 @@ export const API_ENDPOINTS = {
       `orders/markets/${marketId}/cancelled/handover`,
     BY_MARKET: (marketId: string | number) => `orders/market/${marketId}`, // GET orders by market id
     COURIER_ORDERS: "orders/courier/orders",
+    COURIER_ORDER_COUNTS: "orders/courier/orders/counts", // GET kuryer tablari soni { waiting, all, cancelled } (0d11ewk7)
     SELL: (id: string | number) => `orders/sell/${id}`, // POST courier sell (proof per §5)
     PARTLY_SELL: (id: string | number) => `orders/partly-sell/${id}`, // POST
     ROLLBACK: (id: string | number) => `orders/rollback/${id}`, // POST
