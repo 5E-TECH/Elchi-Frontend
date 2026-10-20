@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
-import { canHandoverCancelledToMarket } from "../../../app/lib/access";
+import { canHandoverCancelledToMarket, canReceiveExternalOrders } from "../../../app/lib/access";
 import { useBranchesWithSentBatches } from "../../../entities/branch";
 import { useIncomingSources } from "../../../entities/incoming-orders";
 import { useOrders } from "../../../entities/orders";
@@ -16,19 +16,21 @@ import {
 } from "./newOrdersShell";
 import { extractTodayMarkets, listOf } from "./todayMarkets";
 
-/** Rolga qarab ko'rinadigan tablar (so'rovsiz). Bola sahifa: `keys.length > 1` bo'lmasa — o'z karta sarlavhasi. */
+/** Rolga qarab ko'rinadigan tablar (so'rovsiz). */
 export const useNewOrdersTabKeys = (): NewOrdersTabKey[] => {
   const role = useSelector((state: RootState) => state.role.role);
   const roleId = useSelector((state: RootState) => state.role.id);
   // fix3 CODE-16 / C4: HQ registratori ham bekor qilingan mollarni topshiradi.
   const canSeeCancelled = useSelector(canHandoverCancelledToMarket);
+  // Route guard (`/new-orders/incoming*`) bilan bir xil predikat — tab bor joyda sahifa ham ochiladi.
+  const canReceiveIncoming = useSelector(canReceiveExternalOrders);
   return useMemo(
-    () => resolveNewOrdersTabKeys({ role, roleId, canSeeCancelled }),
-    [canSeeCancelled, role, roleId],
+    () => resolveNewOrdersTabKeys({ role, roleId, canReceiveIncoming, canSeeCancelled }),
+    [canReceiveIncoming, canSeeCancelled, role, roleId],
   );
 };
 
-/** Bitta (yoki undan kam) tab — tablar qatori chizilmaydi (maket `manager-new-orders-markets`). */
+/** Bitta (yoki undan kam) tab — tablar qatori chizilmaydi (hozir faqat market id si yo'q market rolida). */
 export const useHasNewOrdersTabs = (): boolean => useNewOrdersTabKeys().length > 1;
 
 /** So'rov muvaffaqiyatli bo'lsagina son; yuklanish va xatoda — yo'q («0» ko'rsatilmaydi). */
@@ -55,7 +57,8 @@ export const useNewOrdersTabs = (): { items: TabItem<NewOrdersTabKey>[]; active:
   const { useGetTodayOrders, useGetTodayOrdersByMarket, useCancelledMarkets, useCancelledOrdersByMarket } =
     useOrders();
   const marketsQuery = useGetTodayOrders(undefined, show("markets"));
-  const incomingQuery = useIncomingSources({ enabled: show("incoming") });
+  // Tab soni — fon so'rovi: xato bo'lsa son yozilmaydi, global xabar chiqmaydi (sahifa xatoni o'zi chizadi).
+  const incomingQuery = useIncomingSources({ enabled: show("incoming"), silentError: true });
   const branchesQuery = useBranchesWithSentBatches(undefined, { enabled: show("branches") });
   const cancelledQuery = useCancelledMarkets(undefined, { enabled: show("cancelled") });
   const marketNewQuery = useGetTodayOrdersByMarket(roleId ? Number(roleId) : 0, undefined, show("marketNew"));

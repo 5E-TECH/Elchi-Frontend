@@ -1,10 +1,10 @@
-// dizayn-v2: superadmin-neworders-incoming-scan, admin-neworders-incoming-scan, manager-new-orders-incoming-scan
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+// dizayn-v2: superadmin-neworders-incoming-scan, admin-neworders-incoming-scan, manager-new-orders-incoming-scan, registrator-new-orders-incoming-scan, superadmin-neworders-incoming-scan-undo, admin-neworders-incoming-scan-undo, manager-new-orders-incoming-scan-undo, registrator-new-orders-incoming-scan-undo
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Check, Inbox, RefreshCw, TriangleAlert } from "lucide-react";
-import type { RootState } from "../../app/config/store";
+import { canReceiveExternalOrders } from "../../app/lib/access";
 import { extractScannerToken } from "../../shared/lib/scanToken";
 // `shared/components/ScanFeedbackOverlay` ham aynan shu joydan import qiladi —
 // ovozli/vizual qaytarma app darajasida mount qilingan, shu bois bu sahifadan
@@ -14,6 +14,7 @@ import { useScanTarget, type ScanTargetListItem } from "../../shared/lib/scanner
 import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import { cx } from "../../shared/lib/cx";
 import { formatMoneyLocalized, formatNumberLocalized } from "../../shared/lib/formatMoney";
+import { notify } from "../../shared/lib/notify";
 import {
   fetchExternalBatchScan,
   sourceLabel,
@@ -34,29 +35,25 @@ import {
   SkeletonTable,
   TONE_SOFT,
 } from "../../shared/ui/primitives";
-import { districtName, orderLabel } from "./lib";
+import { countBags, districtName, keepScannedInList, orderLabel, parcelToken } from "./lib";
 import IncomingTable from "./ui/IncomingTable";
 import ScanInput from "./ui/ScanInput";
-import { ScanMessage, type ScanMessageData } from "./ui/ScanMessage";
+import { ScanMessage, type ScanMessageData, type ScanMessageUndo } from "./ui/ScanMessage";
 
 /**
- * Bu ekranga kimlar kira oladi — backend guardi bilan BIR XIL bo'lishi shart.
- *
- * `manager` 2026-09-10 da qo'shildi: hamkordan (BeePost) kelgan posilkalar HQ
- * da qabul qilinadi va buni HQ menejeri bajaradi.
+ * Bu ekranga kimlar kira oladi — `canReceiveExternalOrders` (route guard va qobiqdagi «Kiruvchi posilkalar»
+ * tabi bilan BIR XIL): superadmin, admin, registrator va `intake` li menejer (HQ · PICKUP · HYBRID).
  *
  * ⚠️ ROL O'ZI YETARLI EMAS. Backend menejer va registratorni O'Z FILIALI bilan
  * cheklaydi (`resolveReceiveBranchScope`): begona filial buyurtmasi bo'lsa
  * butun so'rov rad etiladi, filiali yo'q xodim esa hech nima qabul qila
- * olmaydi. Bu yerdagi ro'yxat faqat ekranni ko'rsatadi — haqiqiy chegara
+ * olmaydi. Bu yerdagi shart faqat ekranni ko'rsatadi — haqiqiy chegara
  * serverda.
  */
-const ALLOWED_ROLES = new Set([
-  "superadmin",
-  "admin",
-  "registrator",
-  "manager",
-]);
+
+/** «Olib tashlandi» xabari — bitta `id` (ketma-ket olib tashlashda yangisi eskisining o'rnida), 5 soniya (ega S4). */
+const UNSCAN_TOAST_ID = "incoming-unscan";
+const UNSCAN_TOAST_MS = 5000;
 
 /** `.el-overline` · `.el-stat-value` · `.el-stat-unit` (CODE-MAP 0.2, 2.4). */
 const OVERLINE = "text-xs font-semibold uppercase tracking-[.05em] text-text-muted";
@@ -103,8 +100,7 @@ const IncomingOrdersPage = () => {
   const language = i18n.resolvedLanguage ?? i18n.language;
   const navigate = useNavigate();
   const { marketId } = useParams<{ marketId: string }>();
-  const role = useSelector((state: RootState) => state.role.role);
-  const allowed = Boolean(role && ALLOWED_ROLES.has(role));
+  const allowed = useSelector(canReceiveExternalOrders);
 
   const inputRef = useRef<HTMLInputElement>(null);
   /**
@@ -179,27 +175,43 @@ const IncomingOrdersPage = () => {
   const byToken = useMemo(() => {
     const map = new Map<string, IncomingOrder>();
     for (const order of orders) {
-      const token = String(order.qr_code_token ?? "").trim();
+      const token = parcelToken(order);
       if (token) map.set(token, order);
     }
     return map;
   }, [orders]);
+
+  /** Id → buyurtma (oxirgi skan xabaridagi «Olib tashlash» uchun). */
+  const byId = useMemo(() => new Map(orders.map((order) => [order.id, order] as const)), [orders]);
 
   // Skaner klaviatura sifatida ishlaydi — maydon doim fokusda turishi kerak.
   useEffect(() => {
     if (allowed) inputRef.current?.focus();
   }, [allowed]);
 
-  // Ro'yxat yangilanganda skanerlanganlar tozalanadi (qabul qilingandan keyin
-  // eski belgilar qolib, operatorni chalg'itmasin). Effekt emas — render paytida
-  // (React tavsiyasi): eski belgilar bir kadr ham yangi ro'yxat ustida turmaydi.
+  /**
+   * Ro'yxat yangilanganda («Yangilash», qabuldan keyin, oynaga qaytish) skan belgilari SAQLANADI — faqat yangi
+   * ro'yxatda hali bor posilkalarniki (kesishma, `keepScannedInList`; eo3eeJxs). Ilgari hammasi jimgina
+   * o'chardi va operator yarim qopni qaytadan skanerlardi. Effekt emas — render paytida (React tavsiyasi):
+   * ro'yxatdan chiqqan posilka belgisi bir kadr ham turmaydi.
+   */
   const [listVersion, setListVersion] = useState(query.dataUpdatedAt);
   if (listVersion !== query.dataUpdatedAt) {
     setListVersion(query.dataUpdatedAt);
-    setScannedIds(new Set());
-    setScannedTokens([]);
-    setLastBag(null);
+    const kept = keepScannedInList(orders, scannedIds, scannedTokens);
+    if (kept.ids !== scannedIds) setScannedIds(new Set(kept.ids));
+    if (kept.tokens !== scannedTokens) setScannedTokens([...kept.tokens]);
+    if (lastBag) {
+      const memberIds = lastBag.memberIds.filter((id) => byId.has(id));
+      if (memberIds.length !== lastBag.memberIds.length) setLastBag(memberIds.length ? { ...lastBag, memberIds } : null);
+    }
   }
+
+  /** Ro'yxatdagi (hozirgi) posilkalar — «Qaytarish» kechikib bosilsa, ro'yxatdan chiqqan posilka qaytmasin. */
+  const liveIdsRef = useRef<ReadonlySet<string>>(new Set());
+  useEffect(() => {
+    liveIdsRef.current = new Set(byId.keys());
+  }, [byId]);
 
   /**
    * QOP SKANI: qopdagi hali belgilanmagan posilkalar belgilanadi. Serverga har
@@ -228,6 +240,8 @@ const IncomingOrdersPage = () => {
     setMessage({
       tone: marked < total ? "warn" : "success",
       text,
+      // «Olib tashlash» — faqat shu skan belgilaganlar (oldin bittalab skanerlanganlar qoladi).
+      undoIds: fresh.map((order) => order.id),
     });
   };
 
@@ -295,6 +309,7 @@ const IncomingOrdersPage = () => {
       tone: "success",
       text: `${orderLabel(order)} — ${t("incomingScanAdded")}`,
       detail: orderDetail(order),
+      undoIds: [order.id],
     });
   };
 
@@ -345,16 +360,64 @@ const IncomingOrdersPage = () => {
     });
   };
 
-  /** Kamera «Bekor qilish»: belgi olinadi (server amali hali yo'q — qabul sahifadagi tugma bilan). */
-  const unscan = (order: IncomingOrder) => {
-    const token = String(order.qr_code_token ?? "").trim();
+  /** Belgini olish (server amali yo'q — qabul sahifadagi «Qabul qilish» bilan). Kamera «Bekor qilish» ham shu. */
+  const unscanMany = (targets: readonly IncomingOrder[]) => {
+    const ids = new Set(targets.map((order) => order.id));
+    const tokens = new Set(targets.map(parcelToken));
     setScannedIds((prev) => {
       const next = new Set(prev);
-      next.delete(order.id);
+      ids.forEach((id) => next.delete(id));
       return next;
     });
-    setScannedTokens((prev) => prev.filter((item) => item !== token));
+    setScannedTokens((prev) => prev.filter((item) => !tokens.has(item)));
   };
+  const unscan = (order: IncomingOrder) => unscanMany([order]);
+
+  /** «Qaytarish»: olib tashlangan belgilar qaytadi (ro'yxatda hali bor va qayta belgilanmaganlari). */
+  const restoreScans = (targets: readonly IncomingOrder[]) => {
+    const live = targets.filter((order) => liveIdsRef.current.has(order.id) && parcelToken(order));
+    if (!live.length) return;
+    setScannedIds((prev) => {
+      const next = new Set(prev);
+      live.forEach((order) => next.add(order.id));
+      return next;
+    });
+    setScannedTokens((prev) => {
+      const present = new Set(prev);
+      return [...prev, ...live.map(parcelToken).filter((token) => !present.has(token))];
+    });
+    inputRef.current?.focus();
+  };
+
+  /**
+   * SKANNI OLIB TASHLASH (eo3eeJxs, maket `*-incoming-scan-undo`): qatordagi yoki oxirgi skan xabaridagi
+   * «Olib tashlash». Belgi darhol olinadi, 5 soniyalik «Olib tashlandi» xabarida «Qaytarish» (ega S4); fokus
+   * skanerga qaytadi — operator keyingi posilkani darhol skanerlaydi.
+   */
+  const undoScans = (targets: readonly IncomingOrder[]) => {
+    const live = targets.filter((order) => scannedIds.has(order.id));
+    if (!live.length) return;
+    unscanMany(live);
+    const left = scannedIds.size - live.length;
+    const subject =
+      live.length === 1
+        ? orderLabel(live[0])
+        : t("incoming.parcelsCount", { count: live.length, value: formatNumberLocalized(live.length, { language }) });
+    notify.info(t("incoming.unscanDone"), {
+      id: UNSCAN_TOAST_ID,
+      duration: UNSCAN_TOAST_MS,
+      description: `${subject} · ${formatNumberLocalized(left, { language })} / ${formatNumberLocalized(orders.length, { language })}`,
+      action: { label: t("incoming.unscanRestore"), onClick: () => restoreScans(live) },
+    });
+    inputRef.current?.focus();
+  };
+
+  // Jadval `memo` — qatordagi tugma uchun barqaror funksiya (har skan xabari jadvalni qayta chizmasin).
+  const undoRef = useRef(undoScans);
+  useEffect(() => {
+    undoRef.current = undoScans;
+  });
+  const handleRowUnscan = useCallback((order: IncomingOrder) => undoRef.current([order]), []);
 
   // Kamera ro'yxati — skanerlash tartibida, yangisi birinchi (token — tartib manbai).
   const cameraList: ScanTargetListItem[] = [...scannedTokens]
@@ -427,7 +490,29 @@ const IncomingOrdersPage = () => {
     0,
   );
   const unit = t("incoming.unitTa");
-  const refetch = () => void query.refetch();
+  const bagsCount = countBags(orders);
+  // Yangilash belgilarni saqlaydi; fokus skanerga qaytadi (tugma bosilgach skaner yozuvi tugmaga tushmasin).
+  const refetch = () => {
+    void query.refetch();
+    inputRef.current?.focus();
+  };
+
+  // Oxirgi skan xabaridagi «Olib tashlash» — shu skanning belgilari hali turgan bo'lsa.
+  const messageUndoTargets = (message?.undoIds ?? [])
+    .map((id) => byId.get(id))
+    .filter((order): order is IncomingOrder => Boolean(order && scannedIds.has(order.id)));
+  const messageUndo: ScanMessageUndo | null = messageUndoTargets.length
+    ? {
+        label:
+          messageUndoTargets.length === 1
+            ? t("incoming.unscanLabel", { order: orderLabel(messageUndoTargets[0]) })
+            : t("incoming.unscanManyLabel", {
+                count: messageUndoTargets.length,
+                value: formatNumberLocalized(messageUndoTargets.length, { language }),
+              }),
+        onUndo: () => undoScans(messageUndoTargets),
+      }
+    : null;
 
   // Manba nomi manbalar ro'yxatidan: yuklanayotganda — skelet (boshqa manba nomi miltillamasin).
   const title = source ? (
@@ -539,7 +624,7 @@ const IncomingOrdersPage = () => {
           </div>
         ) : null}
 
-        {message ? <ScanMessage message={message} /> : null}
+        {message ? <ScanMessage message={message} undo={messageUndo} /> : null}
       </Card>
 
       {/* ===== Ro'yxat ===== */}
@@ -566,8 +651,13 @@ const IncomingOrdersPage = () => {
             <p className="m-0 text-[13px] text-text-muted">
               <Trans
                 t={t}
-                i18nKey="incoming.listSummary"
-                values={{ count: orders.length, sum: formatMoneyLocalized(ordersSum) }}
+                i18nKey={bagsCount > 0 ? "incoming.listSummaryBags" : "incoming.listSummary"}
+                values={{
+                  count: orders.length,
+                  value: formatNumberLocalized(orders.length, { language }),
+                  bags: formatNumberLocalized(bagsCount, { language }),
+                  sum: formatMoneyLocalized(ordersSum),
+                }}
                 components={{ b: <strong className="font-semibold text-text" /> }}
               />
             </p>
@@ -599,7 +689,7 @@ const IncomingOrdersPage = () => {
           )}
         >
           {(_data, { isRefetching }) => (
-            <IncomingTable orders={orders} scannedIds={scannedIds} busy={isRefetching} />
+            <IncomingTable orders={orders} scannedIds={scannedIds} onUnscan={handleRowUnscan} busy={isRefetching} />
           )}
         </QueryBoundary>
       </Card>

@@ -76,38 +76,46 @@ describe("resolveNewOrdersShellMode — qobiq rejimi", () => {
   });
 });
 
-describe("resolveNewOrdersTabKeys — ko'rinadigan tablar (v1 shartlari)", () => {
+describe("resolveNewOrdersTabKeys — ko'rinadigan tablar", () => {
   it("superadmin/admin: 4 ta tab", () => {
     for (const role of ["superadmin", "admin"]) {
-      expect(resolveNewOrdersTabKeys({ role, roleId: "1", canSeeCancelled: true })).toEqual([
-        "markets",
-        "incoming",
-        "branches",
-        "cancelled",
-      ]);
+      expect(
+        resolveNewOrdersTabKeys({ role, roleId: "1", canReceiveIncoming: true, canSeeCancelled: true }),
+      ).toEqual(["markets", "incoming", "branches", "cancelled"]);
     }
   });
 
-  it("menejer — faqat «Marketlar» (tablar qatori yo'q)", () => {
-    expect(resolveNewOrdersTabKeys({ role: "manager", roleId: "2", canSeeCancelled: false })).toEqual(["markets"]);
+  it("⭐ qabul qiladigan menejer (HQ · PICKUP · HYBRID) — «Marketlar · Kiruvchi posilkalar» (ega S1)", () => {
+    expect(
+      resolveNewOrdersTabKeys({ role: "manager", roleId: "2", canReceiveIncoming: true, canSeeCancelled: false }),
+    ).toEqual(["markets", "incoming"]);
   });
 
-  it("HQ registratori — Marketlar + Bekor qilinganlar; boshqa registrator — bitta", () => {
-    expect(resolveNewOrdersTabKeys({ role: "registrator", roleId: "3", canSeeCancelled: true })).toEqual([
-      "markets",
-      "cancelled",
-    ]);
-    expect(resolveNewOrdersTabKeys({ role: "registrator", roleId: "3", canSeeCancelled: false })).toEqual([
-      "markets",
-    ]);
+  it("⭐ registrator: «Marketlar · Kiruvchi posilkalar», HQ registratorida yana «Bekor qilinganlar»", () => {
+    expect(
+      resolveNewOrdersTabKeys({ role: "registrator", roleId: "3", canReceiveIncoming: true, canSeeCancelled: true }),
+    ).toEqual(["markets", "incoming", "cancelled"]);
+    expect(
+      resolveNewOrdersTabKeys({ role: "registrator", roleId: "3", canReceiveIncoming: true, canSeeCancelled: false }),
+    ).toEqual(["markets", "incoming"]);
+  });
+
+  it("qabul huquqi yo'q xodim — «Kiruvchi posilkalar» yo'q; «Filial paketlari» faqat superadmin/admin", () => {
+    expect(
+      resolveNewOrdersTabKeys({ role: "manager", roleId: "2", canReceiveIncoming: false, canSeeCancelled: false }),
+    ).toEqual(["markets"]);
+    expect(
+      resolveNewOrdersTabKeys({ role: "registrator", roleId: "3", canReceiveIncoming: true, canSeeCancelled: true }),
+    ).not.toContain("branches");
   });
 
   it("market — Yangi buyurtmalar + (id bo'lsa) Bekor qilinganlar", () => {
-    expect(resolveNewOrdersTabKeys({ role: "market", roleId: "121", canSeeCancelled: false })).toEqual([
-      "marketNew",
-      "marketCancelled",
-    ]);
-    expect(resolveNewOrdersTabKeys({ role: "market", roleId: null, canSeeCancelled: false })).toEqual(["marketNew"]);
+    expect(
+      resolveNewOrdersTabKeys({ role: "market", roleId: "121", canReceiveIncoming: false, canSeeCancelled: false }),
+    ).toEqual(["marketNew", "marketCancelled"]);
+    expect(
+      resolveNewOrdersTabKeys({ role: "market", roleId: null, canReceiveIncoming: false, canSeeCancelled: false }),
+    ).toEqual(["marketNew"]);
   });
 });
 
@@ -117,6 +125,7 @@ describe("resolveNewOrdersActiveTab", () => {
     expect(resolveNewOrdersActiveTab("/new-orders/incoming", "admin")).toBe("incoming");
     expect(resolveNewOrdersActiveTab("/new-orders/branches/4", "admin")).toBe("branches");
     expect(resolveNewOrdersActiveTab("/new-orders/cancelled/121", "registrator")).toBe("cancelled");
+    expect(resolveNewOrdersActiveTab("/new-orders/incoming", "manager")).toBe("incoming");
     expect(resolveNewOrdersActiveTab("/new-orders/userDetail/9", "admin")).toBe("markets");
   });
 
