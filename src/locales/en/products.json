@@ -22,8 +22,6 @@
   "deleteSuccess": "Product deleted successfully",
   "createError": "An error occurred while creating the product",
   "inactiveMarketCreateBlocked": "This market is inactive. New products cannot be created for inactive markets.",
-  "marketNotResolved": "Market could not be detected",
-  "marketNotResolvedDescription": "Reload the page or wait until the profile is loaded again.",
   "updateError": "An error occurred while updating the product",
   "deleteError": "An error occurred while deleting the product",
   "empty": "No products available",
@@ -36,11 +34,13 @@
   "action": "Action",
   "image": "Image",
   "validationNameRequired": "Product name is required",
+  "validationPriceTooLarge": "Price is too large — 12 digits at most",
   "cancel": "Cancel",
   "v2": {
     "list": {
       "total_one": "{{value}} product in total",
       "total_other": "{{value}} products in total",
+      "totalWithMarket": "{{total}} · {{market}}",
       "listLabel": "Product list",
       "cardsLabel": "Products",
       "loading": "Loading products",
@@ -54,6 +54,7 @@
         "index": "#",
         "name": "Product name",
         "market": "Market",
+        "price": "Price",
         "actions": "Actions"
       },
       "sortByName": "Sort by name",
@@ -64,7 +65,13 @@
       "emptyDescription": "Click «Create product» to add a new product.",
       "filteredEmpty": "No products found",
       "filteredEmptyDescription": "Try a different search or market filter.",
-      "loadFailed": "Could not load products"
+      "loadFailed": "Could not load products",
+      "readOnlyHint": "View only. Elchi staff add and edit products.",
+      "unassignedSubtitle": "No market assigned",
+      "unassignedTitle": "You are not assigned to a market yet",
+      "unassignedDescription": "The product list opens after the market owner adds you in the «Operators» section. Contact the market owner.",
+      "unassignedRetry": "Check again",
+      "unassignedChecking": "Checking..."
     },
     "selectMarket": {
       "title": "Select a market",
@@ -83,8 +90,7 @@
       "title": "Edit product",
       "name": "Product name",
       "namePlaceholder": "Enter product name...",
-      "image": "Image",
-      "imageMarket": "Product image",
+      "image": "Product image",
       "cancel": "Cancel",
       "save": "Save",
       "saving": "Saving..."
@@ -101,15 +107,13 @@
       "title": "Confirm deletion",
       "description": "Do you really want to delete this product? This action cannot be undone.",
       "confirm": "Delete",
-      "loading": "Deleting..."
+      "loading": "Deleting...",
+      "error": "Couldn't delete the product."
     },
     "create": {
       "back": "Products",
       "title": "New product",
-      "titleMarket": "Create product",
-      "selectedMarket": "Selected market:",
       "formTitle": "Product details",
-      "formTitleMarket": "New product",
       "formTitleEdit": "Edit product",
       "name": "Product name",
       "namePlaceholder": "Enter product name...",
@@ -119,15 +123,25 @@
       "save": "Save",
       "saving": "Saving...",
       "listTitle": "Market products",
-      "listTitleMarket": "Existing products",
-      "listHintMarket": "Click the pencil to edit a product in the form",
       "count": "{{value}} pcs",
-      "countMarket": "{{value}} in total",
       "listLoading": "Loading market products",
       "empty": "This market has no products yet",
       "emptyDescription": "Add the first product using the form on this page.",
       "loadFailed": "Could not load market products",
       "editing": "Editing"
+    },
+    "form": {
+      "price": "Price",
+      "priceHint": "Optional · suggested as the order amount",
+      "errorTitle": "Couldn't save",
+      "errorDescription_one": "{{count}} field has an error — fix the ones marked in red.",
+      "errorDescription_other": "{{count}} fields have errors — fix the ones marked in red."
+    },
+    "errors": {
+      "invalid": "Check the details and try again.",
+      "forbidden": "You don't have permission for this action.",
+      "notFound": "Product not found — it may have been deleted. Refresh the list.",
+      "server": "Server error. Please try again a bit later."
     }
   }
 }

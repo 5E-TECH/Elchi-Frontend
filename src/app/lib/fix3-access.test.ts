@@ -37,11 +37,12 @@ describe("canHandoverCancelledToMarket (fix3 CODE-16 / C4)", () => {
   });
 });
 
-describe("canCreateProducts (fix3 RBAC-17)", () => {
-  it("POST /product rollari: superadmin, admin, market", () => {
+describe("canCreateProducts (fix3 RBAC-17, MH-1)", () => {
+  it("POST /product rollari: superadmin, admin; market — yo'q (MH-1: market faqat ko'radi)", () => {
     expect(canCreateProducts(state("superadmin"))).toBe(true);
     expect(canCreateProducts(state("admin"))).toBe(true);
-    expect(canCreateProducts(state("market"))).toBe(true);
+    expect(canCreateProducts(state("market"))).toBe(false);
+    expect(canCreateProducts(state("market_operator"))).toBe(false);
   });
 
   it("registrator va manager ham yarata oladi (#1); courier yo'q", () => {
@@ -51,16 +52,17 @@ describe("canCreateProducts (fix3 RBAC-17)", () => {
   });
 });
 
-describe("canViewProducts (ROL-0: routes.tsx dagi qo'lda nusxa o'rniga yagona predikat)", () => {
+describe("canViewProducts (ROL-0: yagona predikat; MH-1: market operatori — faqat ko'rish)", () => {
   const ROLES = ["superadmin", "admin", "market", "registrator", "manager", "courier", "logist", "market_operator", "investor"];
 
-  it("rollar avvalgidek: superadmin, admin, market, registrator, menejer — ha; kuryer — yo'q", () => {
+  it("superadmin, admin, market, registrator, menejer, market operatori — ha; kuryer, logist, investor — yo'q", () => {
     expect(ROLES.filter((role) => canViewProducts(state(role)))).toEqual([
       "superadmin",
       "admin",
       "market",
       "registrator",
       "manager",
+      "market_operator",
     ]);
   });
 
@@ -70,8 +72,8 @@ describe("canViewProducts (ROL-0: routes.tsx dagi qo'lda nusxa o'rniga yagona pr
     }
   });
 
-  it("yangi rollar (logist, market operatori, investor) — hozircha yo'q (MH-1 / MO-2 ochadi)", () => {
-    for (const role of ["logist", "market_operator", "investor"]) {
+  it("logist va investor — ko'rmaydi ham, yaratmaydi ham", () => {
+    for (const role of ["logist", "investor"]) {
       expect(canViewProducts(state(role)), role).toBe(false);
       expect(canCreateProducts(state(role)), role).toBe(false);
     }

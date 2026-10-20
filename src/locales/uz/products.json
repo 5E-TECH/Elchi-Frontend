@@ -22,8 +22,6 @@
   "deleteSuccess": "Mahsulot muvaffaqiyatli o'chirildi",
   "createError": "Mahsulot yaratishda xatolik yuz berdi",
   "inactiveMarketCreateBlocked": "Bu market faol emas. Faol emas market uchun yangi mahsulot yaratib bo'lmaydi.",
-  "marketNotResolved": "Market aniqlanmadi",
-  "marketNotResolvedDescription": "Sahifani qayta yuklab ko'ring yoki profil qayta yuklanishini kuting.",
   "updateError": "Mahsulotni yangilashda xatolik yuz berdi",
   "deleteError": "Mahsulotni o'chirishda xatolik yuz berdi",
   "empty": "Mahsulotlar mavjud emas",
@@ -36,10 +34,12 @@
   "action": "Amal",
   "image": "Rasm",
   "validationNameRequired": "Mahsulot nomi kiritilishi shart",
+  "validationPriceTooLarge": "Narx juda katta — ko'pi bilan 12 xonali son",
   "cancel": "Bekor qilish",
   "v2": {
     "list": {
       "total": "Jami {{value}} ta mahsulot",
+      "totalWithMarket": "{{total}} · {{market}}",
       "listLabel": "Mahsulotlar ro'yxati",
       "cardsLabel": "Mahsulotlar",
       "loading": "Mahsulotlar yuklanmoqda",
@@ -53,6 +53,7 @@
         "index": "#",
         "name": "Mahsulot nomi",
         "market": "Market",
+        "price": "Narx",
         "actions": "Amallar"
       },
       "sortByName": "Nom bo'yicha saralash",
@@ -63,7 +64,13 @@
       "emptyDescription": "Yangi mahsulot qo'shish uchun «Mahsulot yaratish» tugmasini bosing.",
       "filteredEmpty": "Mahsulot topilmadi",
       "filteredEmptyDescription": "Qidiruv so'zini yoki market filtrini o'zgartirib ko'ring.",
-      "loadFailed": "Mahsulotlarni yuklab bo'lmadi"
+      "loadFailed": "Mahsulotlarni yuklab bo'lmadi",
+      "readOnlyHint": "Faqat ko'rish. Mahsulotni Elchi xodimlari qo'shadi va o'zgartiradi.",
+      "unassignedSubtitle": "Market biriktirilmagan",
+      "unassignedTitle": "Siz hali marketga biriktirilmagansiz",
+      "unassignedDescription": "Mahsulotlar ro'yxati market egasi sizni «Operatorlar» bo'limida qo'shgandan keyin ochiladi. Market egasiga murojaat qiling.",
+      "unassignedRetry": "Qayta tekshirish",
+      "unassignedChecking": "Tekshirilmoqda..."
     },
     "selectMarket": {
       "title": "Marketni tanlang",
@@ -82,8 +89,7 @@
       "title": "Mahsulotni tahrirlash",
       "name": "Mahsulot nomi",
       "namePlaceholder": "Mahsulot nomini kiriting...",
-      "image": "Rasm",
-      "imageMarket": "Mahsulot rasmi",
+      "image": "Mahsulot rasmi",
       "cancel": "Bekor qilish",
       "save": "Saqlash",
       "saving": "Saqlanmoqda..."
@@ -100,15 +106,13 @@
       "title": "O'chirishni tasdiqlang",
       "description": "Quyidagi mahsulotni rostdan o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi.",
       "confirm": "O'chirish",
-      "loading": "O'chirilmoqda..."
+      "loading": "O'chirilmoqda...",
+      "error": "Mahsulotni o'chirib bo'lmadi."
     },
     "create": {
       "back": "Mahsulotlar",
       "title": "Yangi mahsulot",
-      "titleMarket": "Mahsulot yaratish",
-      "selectedMarket": "Tanlangan market:",
       "formTitle": "Mahsulot ma'lumotlari",
-      "formTitleMarket": "Yangi mahsulot",
       "formTitleEdit": "Mahsulotni tahrirlash",
       "name": "Mahsulot nomi",
       "namePlaceholder": "Mahsulot nomini kiriting...",
@@ -118,15 +122,24 @@
       "save": "Saqlash",
       "saving": "Saqlanmoqda...",
       "listTitle": "Market mahsulotlari",
-      "listTitleMarket": "Mavjud mahsulotlar",
-      "listHintMarket": "Qalamni bossangiz, mahsulot formada tahrirlanadi",
       "count": "{{value}} ta",
-      "countMarket": "Jami {{value}} ta",
       "listLoading": "Market mahsulotlari yuklanmoqda",
       "empty": "Bu marketda hali mahsulot yo'q",
       "emptyDescription": "Birinchi mahsulotni shu sahifadagi forma orqali qo'shing.",
       "loadFailed": "Market mahsulotlarini yuklab bo'lmadi",
       "editing": "Tahrirlanmoqda"
+    },
+    "form": {
+      "price": "Narx",
+      "priceHint": "Ixtiyoriy · buyurtma summasiga taklif sifatida chiqadi",
+      "errorTitle": "Saqlab bo'lmadi",
+      "errorDescription": "{{count}} ta maydonda xato bor — qizil bilan belgilanganlarni to'g'rilang."
+    },
+    "errors": {
+      "invalid": "Ma'lumotlarni tekshirib, qayta urinib ko'ring.",
+      "forbidden": "Bu amalni bajarishga ruxsatingiz yo'q.",
+      "notFound": "Mahsulot topilmadi — u o'chirilgan bo'lishi mumkin. Ro'yxatni yangilang.",
+      "server": "Serverda xatolik yuz berdi. Birozdan keyin qayta urinib ko'ring."
     }
   }
 }

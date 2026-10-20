@@ -4,6 +4,7 @@ import { Store, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useProducts } from "../../../entities/product";
 import { useConfirm } from "../../../shared/ui/primitives";
+import { describeProductError } from "../model/productErrors";
 import type { Product } from "../model/productView";
 import { ProductThumb } from "./ProductThumb";
 
@@ -11,7 +12,7 @@ import { ProductThumb } from "./ProductThumb";
  * O'CHIRISH TASDIG'I — maket `*-products-delete-dialog`: qizil `Trash2`, «O'chirishni tasdiqlang», «Quyidagi
  * mahsulotni rostdan o'chirmoqchimisiz? Bu amalni qaytarib bo'lmaydi.», kartochka (rasm/`Tag` · nom · market),
  * «Bekor qilish» / qizil «O'chirish». `DELETE product/:id` (`deleteProduct`) — oyna ichida: so'rov ketayotganda
- * tugmalar qulf, xato bo'lsa matni oynada qoladi. `true` — o'chirildi.
+ * tugmalar qulf, xato bo'lsa i18n matni oynada qoladi (xom backend `message` emas). `true` — o'chirildi.
  */
 export const useDeleteProductConfirm = () => {
   const { t } = useTranslation("products");
@@ -44,6 +45,7 @@ export const useDeleteProductConfirm = () => {
           </span>
         ),
         onConfirm: () => mutateAsync(product.id),
+        errorMessage: (error) => `${t("v2.delete.error")} ${describeProductError(error, t)}`,
       }),
     [confirm, mutateAsync, t],
   );
