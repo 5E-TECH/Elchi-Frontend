@@ -429,7 +429,8 @@ describe("MobileMenu — bildirishnomalar", () => {
 
   it("o'qilmagan yo'q — son ham, nuqta ham yo'q", async () => {
     unread.count = 0;
-    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />);
+    // Menejer menyusida `/notifications` yo'q — quti oddiy «Bildirishnomalar» (admin/superadmin — «… qutisi»).
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "manager");
 
     await waitFor(() =>
       expect(screen.getByRole("link", { name: "Bildirishnomalar" })).toBeInTheDocument(),
@@ -441,9 +442,11 @@ describe("MobileMenu — bildirishnomalar", () => {
 
   it("API'dagi haqiqiy son, o'zgarsa yangilanadi", async () => {
     unread.count = 3;
-    const { queryClient } = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />);
+    // Menejer menyusida Telegram guruhlari (`/notifications`) yo'q — quti nomi «Bildirishnomalar».
+    const { queryClient } = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "manager");
 
     const link = await screen.findByRole("link", { name: "Bildirishnomalar, 3 ta yangi" });
+    expect(link).toHaveAttribute("href", "/inbox");
     expect(link).toHaveTextContent(/3$/);
 
     unread.count = 7;
@@ -455,10 +458,11 @@ describe("MobileMenu — bildirishnomalar", () => {
 
   it("katta son «99+»", async () => {
     unread.count = 150;
+    // Admin menyusida Telegram guruhlari ham bor (NG-A) — quti «Bildirishnomalar qutisi».
     renderMenu(<MobileMenu isOpen onClose={vi.fn()} />);
 
     expect(
-      await screen.findByRole("link", { name: "Bildirishnomalar, 150 ta yangi" }),
+      await screen.findByRole("link", { name: "Bildirishnomalar qutisi, 150 ta yangi" }),
     ).toHaveTextContent(/99\+$/);
   });
 
@@ -470,19 +474,21 @@ describe("MobileMenu — bildirishnomalar", () => {
     expect(await screen.findByTestId("menu-unread-badge")).toHaveTextContent(/^4$/);
   });
 
-  it("Telegram guruhlari (`/notifications`) faqat superadmin menyusida; u yerda quti «Bildirishnomalar qutisi»", () => {
-    const view = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "superadmin");
-    expect(within(sectionsNav()).getByRole("link", { name: "Bildirishnomalar" })).toHaveAttribute(
-      "href",
-      "/notifications",
-    );
-    expect(screen.getByRole("link", { name: "Bildirishnomalar qutisi" })).toHaveAttribute(
-      "href",
-      "/inbox",
-    );
-    view.unmount();
+  it("Telegram guruhlari (`/notifications`) superadmin va admin menyusida (NG-A); u yerda quti «Bildirishnomalar qutisi»", () => {
+    for (const role of ["superadmin", "admin"]) {
+      const view = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, role);
+      expect(within(sectionsNav()).getByRole("link", { name: "Bildirishnomalar" })).toHaveAttribute(
+        "href",
+        "/notifications",
+      );
+      expect(screen.getByRole("link", { name: "Bildirishnomalar qutisi" })).toHaveAttribute(
+        "href",
+        "/inbox",
+      );
+      view.unmount();
+    }
 
-    for (const role of ["admin", "manager", "market", "courier", "registrator"]) {
+    for (const role of ["manager", "market", "courier", "registrator"]) {
       const roleView = renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, role);
       expect(
         screen

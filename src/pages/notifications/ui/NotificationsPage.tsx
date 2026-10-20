@@ -1,6 +1,6 @@
-// dizayn-v2: superadmin-notifications-telegram-groups, superadmin-notifications-create-dialog, superadmin-notifications-delete-dialog
+// dizayn-v2: superadmin-notifications-telegram-groups, superadmin-notifications-row-menu, superadmin-notifications-row-menu-inactive, superadmin-notifications-connected, superadmin-notifications-empty, superadmin-notifications-loading, superadmin-notifications-error, superadmin-notifications-create-dialog, superadmin-notifications-delete-dialog
 import { memo, useCallback, useMemo, useState } from "react";
-import { BellOff, Pencil, Plus, Store, Trash2 } from "lucide-react";
+import { Bell, BellOff, Plus, Store, Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   NotificationGroupTypeBadge,
@@ -11,7 +11,7 @@ import {
 } from "../../../entities/notification";
 import { NotificationFormModal } from "../../../features/notification-create";
 import { useDeleteNotificationConfirm } from "../../../features/notification-delete";
-import { NotificationEditModal } from "../../../features/notification-edit";
+import { useToggleNotificationConfirm } from "../../../features/notification-toggle";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import {
@@ -21,13 +21,13 @@ import {
   DataTable,
   EmptyState,
   ErrorState,
-  IconButton,
   PageHeader,
   Pagination,
   QueryBoundary,
-  SkeletonTable,
+  Skeleton,
   type DataTableColumn,
 } from "../../../shared/ui/primitives";
+import { NotificationRowMenu, type NotificationRowMenuItem } from "./NotificationRowMenu";
 
 const PAGE_SIZES = [10, 20, 50] as const;
 
@@ -35,17 +35,115 @@ const PAGE_SIZES = [10, 20, 50] as const;
 const STAT_ICON =
   "inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-sunken text-text-muted";
 
+/** Skelet qatorlari — market nomi eni (maket `superadmin-notifications-loading`). */
+const SKELETON_NAME_WIDTHS = ["62%", "48%", "70%", "56%", "64%", "52%"] as const;
+const SKELETON_ROWS = SKELETON_NAME_WIDTHS.map((_, index) => index);
+
+const SKELETON_ICON = <Skeleton tone="border" shape="block" width={36} height={36} />;
+
 /**
- * BILDIRISHNOMALAR — marketlarning Telegram guruhlari (`/notifications`, faqat superadmin), dizayn v2.
- * Maketlar: `superadmin-notifications-telegram-groups`, `-create-dialog`, `-delete-dialog`.
+ * Yuklanish skeleti — haqiqiy jadval bilan bir xil ustunlar (maket `superadmin-notifications-loading`):
+ * belgi 36 px + 2 qator · guruh ID · tur (< 1024 yashirin) · holat · sana (< 1024 yashirin) · kebab 64 px;
+ * telefonda karta — belgi + 3 qator. Ma'lumot kelganda ustunlar sakramaydi (planshetda ham 3 ustun + kebab).
+ */
+const NotificationsSkeleton = memo(() => {
+  const { t } = useTranslation("notificationGroups");
+  const columns = useMemo<DataTableColumn<number>[]>(
+    () => [
+      {
+        id: "market",
+        header: t("columns.market"),
+        cell: (index) => (
+          <div className="flex min-w-0 items-center gap-3">
+            {SKELETON_ICON}
+            <span className="flex min-w-0 flex-1 flex-col gap-2">
+              <Skeleton tone="border" width={SKELETON_NAME_WIDTHS[index]} />
+              <Skeleton tone="border" width={36} height={10} />
+            </span>
+          </div>
+        ),
+      },
+      {
+        id: "group",
+        header: t("columns.groupId"),
+        cellClassName: "whitespace-nowrap",
+        cell: () => <Skeleton tone="border" width={120} className="max-w-full" />,
+      },
+      {
+        id: "type",
+        header: t("columns.type"),
+        hideBelow: "lg",
+        cell: () => <Skeleton tone="border" width={104} height={22} />,
+      },
+      {
+        id: "status",
+        header: t("columns.status"),
+        className: "min-w-[120px] max-w-[260px]",
+        cell: () => <Skeleton tone="border" width={64} height={22} />,
+      },
+      {
+        id: "date",
+        header: t("columns.date"),
+        hideBelow: "lg",
+        cell: (index) => <Skeleton tone="border" width={index === 4 ? 96 : 112} />,
+      },
+      {
+        id: "actions",
+        header: <span className="sr-only">{t("columns.actions")}</span>,
+        className: "w-16",
+        cell: () => <Skeleton tone="border" shape="block" width={32} height={32} className="ml-auto" />,
+      },
+    ],
+    [t],
+  );
+  const renderCard = useCallback(
+    (index: number) => (
+      <div className="flex min-w-0 items-start gap-3 px-4 py-3">
+        {SKELETON_ICON}
+        <span className="flex min-w-0 flex-1 flex-col gap-2">
+          <Skeleton tone="border" width={SKELETON_NAME_WIDTHS[index]} height={14} />
+          <Skeleton tone="border" width="46%" />
+          <span className="flex gap-2">
+            <Skeleton tone="border" width={104} height={22} />
+            <Skeleton tone="border" width={56} height={22} />
+          </span>
+        </span>
+      </div>
+    ),
+    [],
+  );
+  return (
+    <div aria-hidden="true" data-skeleton-preset="notifications-table">
+      <DataTable
+        rows={SKELETON_ROWS}
+        columns={columns}
+        getRowKey={(index) => String(index)}
+        density="tablet-tight"
+        renderCard={renderCard}
+      />
+    </div>
+  );
+});
+NotificationsSkeleton.displayName = "NotificationsSkeleton";
+
+/**
+ * BILDIRISHNOMALAR — marketlarning Telegram guruhlari (`/notifications`, superadmin va admin — ega NG-S2), dizayn v2.
+ * Maketlar: `{superadmin,admin}-notifications-telegram-groups`, `-row-menu`, `-row-menu-inactive`, `-empty`,
+ * `-loading`, `-error`, `-create-dialog`, `-deactivate-dialog`, `-activate-dialog`, `-delete-dialog`.
  *
  * Sarlavha + «Bildirishnoma qo'shish»; karta «Ulangan guruhlar» (son) — jadval (Market #id · Telegram guruh ID ·
- * Xabar turi · Holat · Sana · tahrirlash/o'chirish), telefonda kartalar; pastda sahifalash.
+ * Xabar turi · Holat · Sana · kebab 64 px), telefonda kartalar; pastda sahifalash. Planshetda (< 1024) «Xabar turi»
+ * va «Sana» ustunlari yashirin: tur — market nomi ostida, sana — guruh ID ostida (maket `.el-show-tablet`).
  * So'rov: `GET /notifications?page&limit`. Ustun saralash strelkalari chizilmaydi — API'da sort yo'q (spec G8).
  *
- * dev (Dilshod, 8c6c07b) xulqlari: «Holat» ustuni (Faol / Nofaol + «Bot guruhdan chiqarilgan — qayta ulang»,
- * 9HIaV80X); market nomi `GET /markets` dan (`GET /notifications` qatorida faqat `market_id` — nom topilmasa
- * sarlavhada `#id`, ostida takrorlanmaydi); qo'shish — bir martalik havola oynasi (6jXw0DDr).
+ * Qator menyusi (`NotificationRowMenu`, NG-S4: «Tahrirlash» — qo'lda guruh ID — olib tashlandi): faol guruhda
+ * «Nofaol qilish», nofaolida «Faollashtirish», so'ng «O'chirish» — har biri tasdiq oynasi orqali
+ * (`features/notification-toggle`, `features/notification-delete`).
+ *
+ * «Holat» ustuni: Faol / Nofaol + umumiy neytral izoh (D1). Nofaollik sababi (`inactive_reason`) API'da yo'q —
+ * «bot chiqarilgan» deb yozilmaydi (sababga qarab matn — NG-C). Market nomi `GET /markets` dan (`GET /notifications`
+ * qatorida faqat `market_id` — nom topilmasa sarlavhada `#id`, ostida takrorlanmaydi); qo'shish — bir martalik
+ * havola oynasi (6jXw0DDr).
  */
 const NotificationsPage = () => {
   const { t, i18n } = useTranslation("notificationGroups");
@@ -53,8 +151,8 @@ const NotificationsPage = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState<number>(10);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [editTarget, setEditTarget] = useState<Notification | null>(null);
   const confirmDelete = useDeleteNotificationConfirm();
+  const confirmToggle = useToggleNotificationConfirm();
   const { getName } = useNotificationMarkets();
 
   const query = useNotifications({ page, limit }, { silentError: true });
@@ -88,7 +186,7 @@ const NotificationsPage = () => {
     [],
   );
 
-  /** «Nofaol» — bot guruhdan chiqarilgan yoki guruhga yetib bo'lmaydi: qayta ulash kerak (izoh bilan). */
+  /** «Nofaol» ostidagi umumiy neytral izoh (D1) — sabab API'da yo'q, «bot chiqarilgan» deb yozilmaydi. */
   const inactiveHint = useCallback(
     (row: Notification) =>
       row.is_active ? null : (
@@ -97,37 +195,53 @@ const NotificationsPage = () => {
     [t],
   );
 
-  const rowActions = useCallback(
-    (row: Notification, layout: "row" | "column") => {
+  const statusLine = useCallback(
+    (row: Notification) => (
+      <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <NotificationStatusBadge active={row.is_active} />
+        {inactiveHint(row)}
+      </span>
+    ),
+    [inactiveHint],
+  );
+
+  const rowMenu = useCallback(
+    (row: Notification) => {
       const market = marketName(row);
-      const names = { market, group: groupName(row) };
+      const items: NotificationRowMenuItem[] = [
+        row.is_active
+          ? {
+              key: "deactivate",
+              label: t("rowMenu.deactivate"),
+              icon: BellOff,
+              onSelect: () => void confirmToggle(row, market),
+            }
+          : {
+              key: "activate",
+              label: t("rowMenu.activate"),
+              icon: Bell,
+              onSelect: () => void confirmToggle(row, market),
+            },
+        {
+          key: "delete",
+          label: t("rowMenu.delete"),
+          icon: Trash2,
+          danger: true,
+          onSelect: () => void confirmDelete(row, market),
+        },
+      ];
       return (
-        <div
-          className={
-            layout === "row"
-              ? "flex items-center justify-end gap-1"
-              : "flex flex-col items-center gap-1"
-          }
-        >
-          <IconButton
-            size="sm"
-            icon={Pencil}
-            label={t("editLabel", names)}
-            aria-haspopup="dialog"
-            onClick={() => setEditTarget(row)}
-          />
-          <IconButton
-            size="sm"
-            variant="danger"
-            icon={Trash2}
-            label={t("deleteLabel", names)}
-            aria-haspopup="dialog"
-            onClick={() => void confirmDelete(row, market)}
-          />
-        </div>
+        <NotificationRowMenu
+          label={t("rowMenu.label", { market, group: groupName(row) })}
+          title={market}
+          titleAddon={hasName(row) ? `#${row.market_id}` : null}
+          meta={`${t(`type.${row.group_type}`)} · ${row.group_id}`}
+          status={row.is_active ? null : statusLine(row)}
+          items={items}
+        />
       );
     },
-    [confirmDelete, groupName, marketName, t],
+    [confirmDelete, confirmToggle, groupName, hasName, marketName, statusLine, t],
   );
 
   const marketCell = useCallback(
@@ -141,10 +255,12 @@ const NotificationsPage = () => {
           {hasName(row) ? (
             <span className="text-[13px] text-text-muted tabular-nums">#{row.market_id}</span>
           ) : null}
+          {/* Planshetda «Xabar turi» ustuni yashirin — tur market nomi ostida (maket `.el-show-tablet`). */}
+          <span className="mt-1 hidden max-lg:block">{typeBadge(row)}</span>
         </span>
       </div>
     ),
-    [hasName, marketName],
+    [hasName, marketName, typeBadge],
   );
 
   const columns = useMemo<DataTableColumn<Notification>[]>(
@@ -164,11 +280,11 @@ const NotificationsPage = () => {
           </>
         ),
       },
-      { id: "type", header: t("columns.type"), cell: typeBadge },
+      { id: "type", header: t("columns.type"), hideBelow: "lg", cell: typeBadge },
       {
         id: "status",
         header: t("columns.status"),
-        className: "min-w-[120px] max-w-[200px]",
+        className: "min-w-[120px] max-w-[260px]",
         cell: (row) => (
           <span className="flex flex-col items-start gap-1">
             <NotificationStatusBadge active={row.is_active} />
@@ -186,17 +302,19 @@ const NotificationsPage = () => {
       {
         id: "actions",
         header: <span className="sr-only">{t("columns.actions")}</span>,
-        className: "w-[88px]",
-        cell: (row) => rowActions(row, "row"),
+        className: "w-16",
+        cellClassName: "text-right",
+        cell: rowMenu,
       },
     ],
-    [dateTime, inactiveHint, marketCell, rowActions, t, typeBadge],
+    [dateTime, inactiveHint, marketCell, rowMenu, t, typeBadge],
   );
 
-  // Telefon kartasi (maket `.el-list-item`): belgi, «Market #id», guruh ID, turi + sana; o'ngda ikki ikonka tugma (44 px).
+  // Telefon kartasi (maket `.el-list-item`): belgi, «Market #id», guruh ID, turi + holat + sana, nofaolda izoh;
+  // o'ngda kebab (44 px) — pastki varaqa.
   const renderCard = useCallback(
     (row: Notification) => (
-      <div className="flex min-w-0 items-start gap-3 px-4 py-3">
+      <div className="flex min-w-0 items-start gap-3 py-3 pr-2 pl-4">
         <span aria-hidden="true" className={STAT_ICON}>
           <Store size={18} />
         </span>
@@ -217,10 +335,10 @@ const NotificationsPage = () => {
           </span>
           {inactiveHint(row)}
         </div>
-        {rowActions(row, "column")}
+        <span className="-my-1 shrink-0">{rowMenu(row)}</span>
       </div>
     ),
-    [dateTime, hasName, inactiveHint, marketName, rowActions, typeBadge],
+    [dateTime, hasName, inactiveHint, marketName, rowMenu, typeBadge],
   );
 
   const changeLimit = (next: number) => {
@@ -268,19 +386,7 @@ const NotificationsPage = () => {
         <QueryBoundary
           query={{ data: data?.data, isLoading, isError, error, refetch }}
           loadingLabel={t("list.loading")}
-          loading={
-            <SkeletonTable
-              framed={false}
-              columns={[
-                t("columns.market"),
-                t("columns.groupId"),
-                t("columns.type"),
-                t("columns.status"),
-                t("columns.date"),
-              ]}
-              rows={6}
-            />
-          }
+          loading={<NotificationsSkeleton />}
           empty={
             <EmptyState
               icon={BellOff}
@@ -318,11 +424,6 @@ const NotificationsPage = () => {
       </Card>
 
       <NotificationFormModal open={isCreateOpen} onClose={() => setIsCreateOpen(false)} />
-      <NotificationEditModal
-        open={Boolean(editTarget)}
-        initialData={editTarget}
-        onClose={() => setEditTarget(null)}
-      />
     </div>
   );
 };

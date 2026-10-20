@@ -113,6 +113,8 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/financial-balance", icon: Scale, label: "balance" },
     { to: "/regions", icon: MapIcon, label: "regions" },
     { to: "/integrations", icon: Plug, label: "integrations" },
+    // NG-A (ega NG-S2): Telegram guruhlari adminga ham — maketdagi menyu (`roles.json`, «Tizim» guruhi).
+    { to: "/notifications", icon: Bell, label: "notifications" },
     { to: "/activity-logs", icon: ScrollText, label: "activityLogs" },
   ],
   market: [
@@ -409,7 +411,7 @@ const STANDALONE_PATHS = new Set(["/", "/branch-dashboard"]);
  *
  * Sabab: kuryer yoki market 6 bandli menyuga ega — ular ustiga to'rtta
  * sarlavha qo'yish yordam bermaydi, aksincha shovqin qo'shadi. Guruhlash
- * uzun menyularda (admin 13, superadmin 14, HYBRID menejer 11) foyda beradi.
+ * uzun menyularda (admin 14, superadmin 16, HYBRID menejer 11) foyda beradi.
  */
 export const SIDEBAR_GROUPING_THRESHOLD = 7;
 

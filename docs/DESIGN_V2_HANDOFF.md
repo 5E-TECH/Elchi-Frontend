@@ -167,6 +167,11 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
   - **Ochiq (ega qarori):** IP — Toaster'ga Undo2 ikonka va ikkinchi darajali tugma (hozir umumiy `notify`,
     `partialViews` izohida); MO — market operatori global qidiruvi; ROL-0 dan: logist / market operatorida menyu
     qidiruvi `/orders` ochilguncha (LG-4 / MO-3) yashirin, yuqori paneldagi global qidiruv qoladi.
+  - **NG-A (2026-10-21, `feat/ng-a-telegram-groups-admin`):** `/notifications` adminga ochildi (menyu «Tizim» →
+    «Bildirishnomalar»), qator menyusi (popover / telefonda varaqa), nofaol qilish / faollashtirish tasdiq bilan
+    (`features/notification-toggle`, faqat `PATCH {is_active}`), «Tahrirlash» va `features/notification-edit` olindi;
+    «Nofaol» — neytral, umumiy izoh (sabab — NG-C). Egaga: admin yon menyusi o'zgardi — admin «Visual» sahnalari
+    (masalan `regions`) baseline'i «Run workflow (update)» bilan yangilanadi; `/inbox` alias'i adminda ham qabul qilindi.
   - **Navbatda — 2-to'lqin** (4.1-bo'lim tartibi): KI-1 → NG-A → TG-A → DM-1 → NS-1 → OR-1 → MD-1 → FY-1 → MH-1 →
     MO-1 → OS-1 → OS-3 → LG-1 → LG-2 → IN-1 → SA-1 → KM-1 → KI-2.
 - «Visual» baseline'lari skaner 2-bosqichidan keyin yangilangan (bot commit `1393ae0`, `/dispatch` va
