@@ -10,6 +10,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   push qilamiz (ega ruxsati: yashil tekshiruvli har commit so'ramasdan push), `main`/`dev` ga hech qachon.
 - **Ish branchi** (lokal, asosiy papka): `design-v2/phase-4-moliya`. 4-bosqich to'liq (G1, G2, G3 + Bahodir/Dilshod
   dev ishi) `9443388` da — PR #305 orqali `dev` ga tushgan. 5-bosqich (A — `b450e90`, B — shu commit) uning ustida.
+  Tasdiqlangan 19 guruh kodi (0- va 1-to'lqin, 2026-10-21) ham shu branch'da — §2.2.
 - `origin/dev` (`2dee343`, Bahodir #312) `shodiyor` ga birlashtirilgan (`5b7ada4`). Har PR'dan oldin
   `git merge-base --is-ancestor origin/dev HEAD` — dev oldinga ketgan bo'lsa, avval birlashtiring.
 - **Jonli tekshiruv:** front lokal (`127.0.0.1:4173`), backend — server (`api.elchipochta.uz`, test ma'lumot) lokal
@@ -149,6 +150,25 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
   - **Keyingi qadam.** Ega guruhlarni tasdiqlaydi → tasdiqlangan maketlar `design/` ga sinxron PR bilan kiradi →
     kod yoziladi. Backend talablari Trello Backend ro'yxatiga yozilgan: 2026-10-19 da 22 + 8 karta va mavjud
     kartalarga izohlar.
+- **Tasdiqlangan 19 guruhning kodi (2026-10-19 dan).** Reja — ega papkasidagi
+  `elchi-v2-specs/tasdiqlangan-dizayn-roadmap.md` (to'lqinlar, PR'lar, fayl egaligi, 4.1-bo'limdagi tartib).
+  - **0- va 1-to'lqin tayyor (2026-10-21, `design-v2/phase-4-moliya` → `origin/shodiyor`):** BH-1 (bekor
+    holatlari, 1-bosqich, `vOczoOUE`), ROL-0 (yangi rollar asosi, market pastki menyusi), IP-1 (kiruvchi
+    posilkalar), CS-A (mijoz taklifi, mavjud mijoz — `customer_id`), IS-1 (integratsiya hisob-kitobi matni va
+    «Qoldiq»), CB-1 (kassa smenasi: `shift/current`, ochish / yopish / natija oynalari). Har biri alohida branch'da
+    yozilib, mustaqil review'dan o'tib, merge commit bilan birlashtirilgan.
+  - **Dev bilan birlashtirish qarori:** Bahodir #318 (SllBYhnt) `waiting_customer` va `returned_to_market` ni
+    registrga qo'shgan; BH-1 maketi bo'yicha `returned_to_market` yorlig'i «Marketga topshirildi» (neutral,
+    `PackageCheck`), «Mijoz kutilmoqda» — dev'dagidek.
+  - **Egaga (GitHub):** ROL-0 market pastki menyusini o'zgartirdi («Mahsulotlar» → «To'lovlar», 5-katak «Menyu») —
+    «Visual» `market-home` va `market-new-orders` telefon sahnalari kutilgan farq beradi: Actions → Visual → Run
+    workflow (update ✓) `shodiyor` da. CB-1: frontend qulfi `shift === null` da (`required` ga qaramaydi, ega S4) —
+    deploy bilan asosiy/filial kassasi tezkor amallari smena ochilguncha yopiq, operatorlarga oldindan xabar.
+  - **Ochiq (ega qarori):** IP — Toaster'ga Undo2 ikonka va ikkinchi darajali tugma (hozir umumiy `notify`,
+    `partialViews` izohida); MO — market operatori global qidiruvi; ROL-0 dan: logist / market operatorida menyu
+    qidiruvi `/orders` ochilguncha (LG-4 / MO-3) yashirin, yuqori paneldagi global qidiruv qoladi.
+  - **Navbatda — 2-to'lqin** (4.1-bo'lim tartibi): KI-1 → NG-A → TG-A → DM-1 → NS-1 → OR-1 → MD-1 → FY-1 → MH-1 →
+    MO-1 → OS-1 → OS-3 → LG-1 → LG-2 → IN-1 → SA-1 → KM-1 → KI-2.
 - «Visual» baseline'lari skaner 2-bosqichidan keyin yangilangan (bot commit `1393ae0`, `/dispatch` va
   `cancelled-handover` — «Kamera» tugmalari olib tashlangani uchun kutilgan farq).
 - **To'liq QA** — Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.
