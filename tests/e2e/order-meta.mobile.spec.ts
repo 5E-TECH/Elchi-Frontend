@@ -86,7 +86,7 @@ test.describe("Buyurtma ma'lumotlari — 390px", () => {
             };
           }),
       );
-      expect(rows.length).toBeGreaterThanOrEqual(8);
+      expect(rows.length).toBeGreaterThanOrEqual(7);
       for (const row of rows) {
         expect(row.sameLine, `${row.id}: yorliq va qiymat bir chiziqda`).toBe(true);
         expect(row.noOverlap, `${row.id}: yorliq va qiymat ustma-ust emas`).toBe(true);
@@ -98,8 +98,7 @@ test.describe("Buyurtma ma'lumotlari — 390px", () => {
       await expect(page.getByTestId("meta-market").locator("a")).toHaveText("+998 99 222 22 22");
       // UTC brauzerda ham Toshkent vaqti: 19-iyul 20:30Z → 20.07.2026, 01:30.
       await expect(page.getByTestId("meta-sold-at")).toContainText("20.07.2026, 01:30:00");
-      // Yaratilgan sana — sarlavhada ham, «Yaratilgan vaqt» qatorida ham Toshkent kuni.
-      await expect(page.getByTestId("meta-created-at")).toContainText("17.10.2026, 02:34:26");
+      // Yaratilgan sana maketdagidek sarlavhada, Toshkent kuni bilan ko'rsatiladi.
       await expect(page.getByText("17.10.2026, 02:34", { exact: true })).toBeVisible();
       await expect(page.getByText(/16\.10\.2026/)).toHaveCount(0);
       expect(leaked).toEqual([]);

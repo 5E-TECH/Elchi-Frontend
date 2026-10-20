@@ -180,7 +180,6 @@
   "metaTitle": "Данные заказа",
   "metaId": "Номер заказа",
   "metaCopyId": "Скопировать номер заказа",
-  "metaCreatedAt": "Время создания",
   "metaSoldAt": "Время продажи",
   "metaMarket": "Маркет",
   "metaBranch": "Филиал",

@@ -1,14 +1,13 @@
 import { screen } from "@testing-library/react";
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../../test/test-utils";
-import OrderMeta from "../../../../widgets/order-meta/ui/OrderMeta";
 import { DetailHeader } from "./DetailHeader";
 import { normalizeOrderDetail } from "./orderDetailModel";
 
 /**
  * kH2zZsz3 — yaratilgan sana Asia/Tashkent zonasida: brauzer (qurilma) zonasi UTC bo'lsa ham kun siljimaydi.
  * №54: `createdAt 2026-10-16T21:34:26Z` — Toshkentda 17.10.2026, 02:34 (tarixdagi bilan bir xil).
- * Sarlavha («Yaratilgan: …») va «Buyurtma ma'lumotlari» dagi «Yaratilgan vaqt» qatori.
+ * Sana maketdagidek sarlavhada («Yaratilgan: …») ko'rsatiladi.
  */
 vi.mock("../../../../shared/api/api", () => ({ api: { get: vi.fn(() => new Promise(() => {})) } }));
 
@@ -51,17 +50,4 @@ describe("Yaratilgan sana — Toshkent zonasi (UTC qurilmada)", () => {
     expect(screen.queryByText(/16\.10\.2026/)).not.toBeInTheDocument();
   });
 
-  it("⭐ «Buyurtma ma'lumotlari»: «Yaratilgan vaqt» qatori Toshkent vaqtida (soniyagacha)", () => {
-    renderWithProviders(<OrderMeta order={ORDER_54} role="superadmin" />);
-
-    const row = screen.getByTestId("meta-created-at");
-    expect(row).toHaveTextContent("Yaratilgan vaqt");
-    expect(row).toHaveTextContent("17.10.2026, 02:34:26");
-  });
-
-  it("yaratilgan sana yo'q — qator chizilmaydi", () => {
-    renderWithProviders(<OrderMeta order={{ ...ORDER_54, createdAt: undefined }} role="superadmin" />);
-
-    expect(screen.queryByTestId("meta-created-at")).not.toBeInTheDocument();
-  });
 });

@@ -180,7 +180,6 @@
   "metaTitle": "Order details",
   "metaId": "Order number",
   "metaCopyId": "Copy order number",
-  "metaCreatedAt": "Created at",
   "metaSoldAt": "Sold at",
   "metaMarket": "Market",
   "metaBranch": "Branch",
