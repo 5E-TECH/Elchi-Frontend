@@ -33,7 +33,7 @@
   "clear": "Clear",
   "action": "Action",
   "image": "Image",
-  "validationNameRequired": "Product name is required",
+  "validationNameRequired": "Enter the product name",
   "validationPriceTooLarge": "Price is too large — 12 digits at most",
   "cancel": "Cancel",
   "v2": {
@@ -71,7 +71,8 @@
       "unassignedTitle": "You are not assigned to a market yet",
       "unassignedDescription": "The product list opens after the market owner adds you in the «Operators» section. Contact the market owner.",
       "unassignedRetry": "Check again",
-      "unassignedChecking": "Checking..."
+      "unassignedChecking": "Checking...",
+      "noPrice": "No price set"
     },
     "selectMarket": {
       "title": "Select a market",
@@ -141,7 +142,8 @@
       "invalid": "Check the details and try again.",
       "forbidden": "You don't have permission for this action.",
       "notFound": "Product not found — it may have been deleted. Refresh the list.",
-      "server": "Server error. Please try again a bit later."
+      "server": "Server error. Please try again a bit later.",
+      "duplicateName": "This market already has a product with this name — enter a different name."
     }
   }
 }

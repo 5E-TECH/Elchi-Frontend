@@ -8,7 +8,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { PRODUCT_LIST_MAX_LIMIT, useProducts } from "../../../entities/product";
 import { useMarkets } from "../../../entities/markets";
 import { cx } from "../../../shared/lib/cx";
-import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { isInactiveMarketStatus, unwrapMarketPayload } from "../../../shared/lib/marketStatus";
 import { notify } from "../../../shared/lib/notify";
 import {
@@ -28,13 +28,12 @@ import {
   TONE_SOFT,
   type DataTableColumn,
 } from "../../../shared/ui/primitives";
-import { describeProductError } from "../model/productErrors";
+import { describeProductError, isDuplicateNameError } from "../model/productErrors";
 import {
   getProductImageUrl,
   getProductList,
   getProductMarketName,
   getProductMeta,
-  getProductPrice,
   isPriceInputValid,
   toPriceInput,
   type Product,
@@ -42,6 +41,7 @@ import {
 import { usePickedImage } from "../model/usePickedImage";
 import { FormErrorSummary } from "../ui/FormErrorSummary";
 import { ProductImageField } from "../ui/ProductImageField";
+import { ProductPrice } from "../ui/ProductPrice";
 import { ProductPriceField } from "../ui/ProductPriceField";
 import { ProductThumb } from "../ui/ProductThumb";
 import { useDeleteProductConfirm } from "../ui/useDeleteProductConfirm";
@@ -55,6 +55,9 @@ const EMPTY_FORM: CreateFormValues = { name: "", price: "" };
  * berardi va 11-mahsulot ko'rinmasdi (3qDsJpfW); 500 — server chegarasi.
  */
 const LIST_PARAMS = { limit: PRODUCT_LIST_MAX_LIMIT };
+
+/** «Narx» katagi (jadval va karta). */
+const priceCell = (product: Product) => <ProductPrice product={product} />;
 
 /**
  * MAHSULOT YARATISH — `/products/create-product/:id` (`:id` — market), dizayn v2. Faqat xodim (superadmin, admin,
@@ -71,7 +74,7 @@ const LIST_PARAMS = { limit: PRODUCT_LIST_MAX_LIMIT };
  * Xulq: FormData `name` + `market_id` (yangi mahsulotda) + `price` (yangi — kiritilgan bo'lsa; tahrir — o'zgargan
  * bo'lsa, bo'sh — narx tozalanadi) + tanlangan `image`; tahrir — `PATCH product/:id`; nofaol market — ogohlantirish,
  * maydonlar va «Saqlash» o'chiq, yuborilsa `notify.warning`. Ro'yxat: `GET product/market/:id`. Xato — i18n izoh
- * (xom backend matni ko'rsatilmaydi).
+ * (xom backend matni ko'rsatilmaydi); 409 (shu nomli mahsulot bor) — «Mahsulot nomi» maydoni ostida.
  */
 const CreateProductPage = () => {
   const { t, i18n } = useTranslation("products");
@@ -109,6 +112,7 @@ const CreateProductPage = () => {
     control,
     handleSubmit,
     reset,
+    setError,
     setFocus,
     formState: { errors, isSubmitted, dirtyFields },
   } = useForm<CreateFormValues>({ defaultValues: EMPTY_FORM });
@@ -169,6 +173,11 @@ const CreateProductPage = () => {
       }
       resetForm();
     } catch (error) {
+      // 409 — shu nomli mahsulot bor: qayta urinish yordam bermaydi, «Mahsulot nomi» qizil + tepadagi xulosa.
+      if (isDuplicateNameError(error)) {
+        setError("name", { type: "server", message: t("v2.errors.duplicateName") }, { shouldFocus: true });
+        return;
+      }
       notify.error(t(editTarget ? "updateError" : "createError"), { description: describeProductError(error, t) });
     }
   });
@@ -196,30 +205,29 @@ const CreateProductPage = () => {
     [editTarget?.id, handleDelete, handleEdit, t],
   );
 
-  const nameCell = useCallback(
+  // Nom (+ «Tahrirlanmoqda»; tor ekranda belgi nom ostiga o'tadi) — jadvalda rasm yonida, kartada rasm ostidagi ustunda.
+  const nameLine = useCallback(
     (product: Product) => (
-      <span className="flex min-w-0 items-center gap-3">
-        <ProductThumb product={product} />
-        {/* Tor ekranda «Tahrirlanmoqda» belgisi nom ostiga o'tadi. */}
-        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="min-w-0 font-semibold text-text wrap-break-word">{product.name}</span>
-          {editTarget?.id === product.id ? (
-            <Badge tone="info" size="sm" className="shrink-0">
-              {t("v2.create.editing")}
-            </Badge>
-          ) : null}
-        </span>
+      <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="min-w-0 font-semibold text-text wrap-break-word">{product.name}</span>
+        {editTarget?.id === product.id ? (
+          <Badge tone="info" size="sm" className="shrink-0">
+            {t("v2.create.editing")}
+          </Badge>
+        ) : null}
       </span>
     ),
     [editTarget?.id, t],
   );
 
-  const priceCell = useCallback(
-    (product: Product) => {
-      const price = getProductPrice(product);
-      return price === null ? <span className="text-text-subtle">—</span> : formatMoneyLocalized(price, { language });
-    },
-    [language],
+  const nameCell = useCallback(
+    (product: Product) => (
+      <span className="flex min-w-0 items-center gap-3">
+        <ProductThumb product={product} />
+        {nameLine(product)}
+      </span>
+    ),
+    [nameLine],
   );
 
   const columns = useMemo<DataTableColumn<Product>[]>(
@@ -240,21 +248,25 @@ const CreateProductPage = () => {
         cell: actions,
       },
     ],
-    [actions, nameCell, priceCell, t],
+    [actions, nameCell, t],
   );
 
-  // Telefon kartasi (maket `.el-list-item`): ikonka · nom (+ «Tahrirlanmoqda») · narx · tahrirlash, o'chirish.
+  // Telefon kartasi (maket `.el-list-item`, `/products` kartasi kabi): rasm tepaga tekislangan · ustun (nom
+  // + «Tahrirlanmoqda», narx) · tahrirlash, o'chirish. Uzun nom 3–4 qatorga o'tsa ham rasm o'rtada suzib qolmaydi.
   const renderCard = useCallback(
     (product: Product) => (
       <div className="flex min-h-14 items-start gap-3 py-2.5 pl-4 pr-2 text-sm">
+        <ProductThumb product={product} />
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          {nameCell(product)}
-          <span className="pl-12 text-[13px] text-text-muted">{priceCell(product)}</span>
+          {nameLine(product)}
+          <span className="text-[13px] text-text-muted">
+            <ProductPrice product={product} />
+          </span>
         </span>
         {actions(product)}
       </div>
     ),
-    [actions, nameCell, priceCell],
+    [actions, nameLine],
   );
 
   // ─── Ko'rinish ───────────────────────────────────────────────────────────────

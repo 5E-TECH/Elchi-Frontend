@@ -65,6 +65,30 @@ const renderPage = (role = "admin", id = "admin-1", user: Record<string, unknown
 
 const callsTo = (url: string) => mocks.get.mock.calls.filter(([called]) => called === url);
 
+const duplicateNameError = () =>
+  Object.assign(new Error("Request failed"), {
+    isAxiosError: true,
+    response: { status: 409, data: { message: "Bu marketda Simsiz quloqchin nomli mahsulot allaqachon mavjud" } },
+  });
+
+/** Telefon kengligi (`useIsPhone` — `matchMedia("(max-width: 767px)")`). */
+const asPhone = () => {
+  const original = window.matchMedia;
+  window.matchMedia = ((query: string) => ({
+    matches: query.includes("max-width: 767px"),
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })) as typeof window.matchMedia;
+  return () => {
+    window.matchMedia = original;
+  };
+};
+
 const originalCreateObjectURL = URL.createObjectURL;
 const originalRevokeObjectURL = URL.revokeObjectURL;
 
@@ -111,6 +135,9 @@ describe("CreateProductPage — xodim", () => {
     const [, first, second] = screen.getAllByRole("row");
     expect(within(first).getAllByRole("cell")[2]).toHaveTextContent(/^189\s000 so'm$/);
     expect(within(second).getAllByRole("cell")[2]).toHaveTextContent("—");
+    // «—» ekran o'quvchiga o'qilmaydi — o'rniga «Narx kiritilmagan».
+    expect(within(within(second).getAllByRole("cell")[2]).getByText("—")).toHaveAttribute("aria-hidden", "true");
+    expect(within(within(second).getAllByRole("cell")[2]).getByText("Narx kiritilmagan")).toHaveClass("sr-only");
     expect(screen.getByRole("textbox", { name: "Narx" })).toHaveValue("");
     expect(screen.getByText("Ixtiyoriy · buyurtma summasiga taklif sifatida chiqadi")).toBeInTheDocument();
   });
@@ -212,6 +239,81 @@ describe("CreateProductPage — xodim", () => {
     expect(screen.queryByText(/PNG\/JPEG/)).not.toBeInTheDocument();
   });
 
+  it("409 (shu nomli mahsulot bor) — «Mahsulot nomi» ostida aniq sabab, xulosa 1 ta maydon, xom matn yo'q", async () => {
+    mocks.post.mockRejectedValue(duplicateNameError());
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText("Simsiz quloqchin");
+    const input = screen.getByRole("textbox", { name: /Mahsulot nomi/ });
+
+    await user.type(input, "Simsiz quloqchin");
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+
+    expect(
+      await screen.findByText("Bu marketda shu nomli mahsulot allaqachon bor — boshqa nom kiriting."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("alert")).toHaveTextContent("1 ta maydonda xato bor");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(screen.queryByText(/allaqachon mavjud/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Birozdan keyin qayta urinib ko'ring.")).not.toBeInTheDocument();
+
+    // Nom o'zgartirilsa xato yo'qoladi.
+    await user.type(input, " 2");
+    await waitFor(() => expect(screen.queryByText("Saqlab bo'lmadi")).not.toBeInTheDocument());
+  });
+
+  it("tahrirda 409 (PATCH product/:id) — nom maydonida «shu nomli mahsulot bor»", async () => {
+    mocks.patch.mockRejectedValue(duplicateNameError());
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "Telefon g'ilofi — tahrirlash" }));
+    const input = screen.getByRole("textbox", { name: /Mahsulot nomi/ });
+    await user.clear(input);
+    await user.type(input, "Simsiz quloqchin");
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+
+    await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(1));
+    expect(
+      await screen.findByText("Bu marketda shu nomli mahsulot allaqachon bor — boshqa nom kiriting."),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Mahsulotni tahrirlash" })).toBeInTheDocument();
+    expect(screen.queryByText("Mahsulotni yangilashda xatolik yuz berdi")).not.toBeInTheDocument();
+  });
+
+  it("tiyinli narx yaxlitlanmaydi: 1250000.50 → «1 250 000,5 so'm» (mavjud bo'lmagan summa chiqmaydi)", async () => {
+    mocks.get.mockImplementation((url: string) => {
+      if (url === "product/market/1") {
+        return Promise.resolve({
+          data: { data: [{ id: 7, name: "Kofe mashinasi", price: "1250000.50" }], total: 1, page: 1, limit: 500 },
+        });
+      }
+      if (url === "users/1") return Promise.resolve({ data: { data: { id: 1, name: "Baraka Shop", status: "active" } } });
+      return Promise.reject(new Error(`kutilmagan so'rov: ${url}`));
+    });
+    renderPage();
+    await screen.findByText("Kofe mashinasi");
+
+    const [, row] = screen.getAllByRole("row");
+    expect(within(row).getAllByRole("cell")[2]).toHaveTextContent(/^1\s250\s000,5 so'm$/);
+  });
+
+  it("telefon kartasi: rasm tepaga tekislangan (uzun nom bilan o'rtada suzmaydi), narx nom ostida", async () => {
+    const restore = asPhone();
+    try {
+      renderPage();
+      const name = await screen.findByText("Simsiz quloqchin");
+      expect(screen.queryByRole("columnheader")).not.toBeInTheDocument();
+      const card = name.closest("div");
+      const thumb = card?.querySelector("span.size-9");
+      expect(thumb?.parentElement).toBe(card);
+      expect(card).toHaveClass("items-start");
+      expect(card).toHaveTextContent(/189\s000 so'm/);
+    } finally {
+      restore();
+    }
+  });
+
   it("bo'sh nom yuborilmaydi", async () => {
     const user = userEvent.setup();
     renderPage();
@@ -219,7 +321,8 @@ describe("CreateProductPage — xodim", () => {
 
     await user.click(screen.getByRole("button", { name: "Saqlash" }));
 
-    expect(await screen.findByText("Mahsulot nomi kiritilishi shart")).toBeInTheDocument();
+    // Maket `*-products-create-errors`: «Mahsulot nomini kiriting».
+    expect(await screen.findByText("Mahsulot nomini kiriting")).toBeInTheDocument();
     expect(mocks.post).not.toHaveBeenCalled();
   });
 

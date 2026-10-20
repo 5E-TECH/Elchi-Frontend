@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Link, Route, Routes, useLocation } from "react-router-dom";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -130,6 +130,7 @@ describe("ProductTable — ro'yxat", () => {
     const [, olmaRow, nokRow] = screen.getAllByRole("row");
     expect(within(olmaRow).getAllByRole("cell")[3]).toHaveTextContent(/^189\s000 so'm$/);
     expect(within(nokRow).getAllByRole("cell")[3]).toHaveTextContent("—");
+    expect(within(within(nokRow).getAllByRole("cell")[3]).getByText("Narx kiritilmagan")).toHaveClass("sr-only");
     // Nom katagi ichidagi market nomi — faqat < 1024 da ko'rinadi (`max-lg:inline-flex`).
     const tabletMarket = within(within(olmaRow).getAllByRole("cell")[1]).getByText("Fresh");
     expect(tabletMarket.parentElement).toHaveClass("hidden", "max-lg:inline-flex");
@@ -357,7 +358,7 @@ describe("ProductTable — tahrirlash va o'chirish", () => {
     await user.clear(within(dialog).getByRole("textbox", { name: /Mahsulot nomi/ }));
     await user.click(within(dialog).getByRole("button", { name: "Saqlash" }));
 
-    expect(await within(dialog).findByText("Mahsulot nomi kiritilishi shart")).toBeInTheDocument();
+    expect(await within(dialog).findByText("Mahsulot nomini kiriting")).toBeInTheDocument();
     expect(mocks.patch).not.toHaveBeenCalled();
   });
 
@@ -417,6 +418,50 @@ describe("ProductTable — tahrirlash va o'chirish", () => {
     expect(summary).toHaveTextContent("2 ta maydonda xato bor — qizil bilan belgilanganlarni to'g'rilang.");
     expect(within(dialog).getByText("Narx juda katta — ko'pi bilan 12 xonali son")).toBeInTheDocument();
     expect(mocks.patch).not.toHaveBeenCalled();
+  });
+
+  it("409 (shu nomli mahsulot bor) — oyna ochiq, «Mahsulot nomi» ostida aniq sabab, xom matn yo'q", async () => {
+    mocks.patch.mockRejectedValue(
+      Object.assign(new Error("Request failed"), {
+        isAxiosError: true,
+        response: { status: 409, data: { message: "Bu marketda Nok nomli mahsulot allaqachon mavjud" } },
+      }),
+    );
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "Olma — tahrirlash" }));
+    const dialog = await screen.findByRole("dialog", { name: "Mahsulotni tahrirlash" });
+    const input = within(dialog).getByRole("textbox", { name: /Mahsulot nomi/ });
+    await user.clear(input);
+    await user.type(input, "Nok");
+    await user.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+
+    expect(
+      await within(dialog).findByText("Bu marketda shu nomli mahsulot allaqachon bor — boshqa nom kiriting."),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByRole("alert")).toHaveTextContent("1 ta maydonda xato bor");
+    expect(input).toHaveAttribute("aria-invalid", "true");
+    expect(screen.queryByText(/allaqachon mavjud/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Birozdan keyin qayta urinib ko'ring.")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Mahsulotni tahrirlash" })).toBeInTheDocument();
+  });
+
+  it("saqlanayotganda takroriy yuborish (Enter) ikkinchi PATCH yubormaydi", async () => {
+    mocks.patch.mockImplementation(() => new Promise(() => undefined));
+    const user = userEvent.setup();
+    renderPage();
+
+    await user.click(await screen.findByRole("button", { name: "Olma — tahrirlash" }));
+    const dialog = await screen.findByRole("dialog", { name: "Mahsulotni tahrirlash" });
+    const form = dialog.querySelector("form") as HTMLFormElement;
+    fireEvent.submit(form);
+    await waitFor(() => expect(mocks.patch).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(within(dialog).getByRole("button", { name: /Saqlanmoqda/ })).toBeInTheDocument());
+
+    fireEvent.submit(form);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(mocks.patch).toHaveBeenCalledTimes(1);
   });
 
   it("saqlash xatosi — i18n izoh, xom backend matni ko'rsatilmaydi", async () => {

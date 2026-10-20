@@ -10,7 +10,7 @@ import { useProducts } from "../../../entities/product";
 import { useMarkets } from "../../../entities/markets";
 import { isMarketSideRole } from "../../../entities/user/lib/role";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
-import { formatMoneyLocalized, formatNumberLocalized } from "../../../shared/lib/formatMoney";
+import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { isInactiveMarketStatus } from "../../../shared/lib/marketStatus";
 import { cx } from "../../../shared/lib/cx";
 import { notify } from "../../../shared/lib/notify";
@@ -40,11 +40,11 @@ import {
   getProductList,
   getProductMarketName,
   getProductMeta,
-  getProductPrice,
   toProductMarkets,
   type Product,
   type ProductMarket,
 } from "../model/productView";
+import { ProductPrice } from "../ui/ProductPrice";
 import { ProductThumb } from "../ui/ProductThumb";
 import { useDeleteProductConfirm } from "../ui/useDeleteProductConfirm";
 import { EditProductDialog } from "./ui/EditProductDialog";
@@ -53,6 +53,9 @@ import { SelectMarketDialog } from "./ui/SelectMarketDialog";
 // Qidiruv URL'ga (va so'rovga) yozishdan oldingi kutish — avvalgidek (GlobalSearchInput global rejimi).
 const SEARCH_DEBOUNCE_MS = 1000;
 const NAME_SORT_KEY = "name";
+
+/** «Narx» katagi (jadval va karta). */
+const priceCell = (product: Product) => <ProductPrice product={product} />;
 
 /**
  * MAHSULOTLAR — `/products` (superadmin, admin, menejer, registrator; market va market operatori — faqat ko'rish),
@@ -235,18 +238,6 @@ const ProductTable = () => {
     [handleDelete, t],
   );
 
-  const priceCell = useCallback(
-    (product: Product) => {
-      const price = getProductPrice(product);
-      return price === null ? (
-        <span className="text-text-subtle">—</span>
-      ) : (
-        formatMoneyLocalized(price, { language })
-      );
-    },
-    [language],
-  );
-
   const columns = useMemo<DataTableColumn<Product>[]>(() => {
     const list: DataTableColumn<Product>[] = [
       {
@@ -314,7 +305,7 @@ const ProductTable = () => {
       });
     }
     return list;
-  }, [actions, canManage, isMarketSide, priceCell, rowNumber, t]);
+  }, [actions, canManage, isMarketSide, rowNumber, t]);
 
   // Telefon kartasi (maket `.el-list-item`): ikonka · nom (+ market, xodimda) · narx · tahrirlash, o'chirish (xodimda).
   const renderCard = useCallback(
@@ -331,13 +322,15 @@ const ProductTable = () => {
                 <span className="truncate">{marketName}</span>
               </span>
             ) : null}
-            <span className="text-[13px] text-text-muted">{priceCell(product)}</span>
+            <span className="text-[13px] text-text-muted">
+              <ProductPrice product={product} />
+            </span>
           </span>
           {canManage ? actions(product) : null}
         </div>
       );
     },
-    [actions, canManage, isMarketSide, priceCell],
+    [actions, canManage, isMarketSide],
   );
 
   const handleSortChange = useCallback((next: DataTableSort | null) => {

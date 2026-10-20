@@ -71,7 +71,9 @@ test.describe("Market mahsulotlari: sahifa va qidiruv (3qDsJpfW) — 1440px", ()
     const first = p.getByRole("row").filter({ hasText: "Mahsulot 01" });
     await expect(first.getByRole("cell").nth(2)).toHaveText(/^10\s000 so'm$/);
     const fifth = p.getByRole("row").filter({ hasText: "Mahsulot 05" });
-    await expect(fifth.getByRole("cell").nth(2)).toHaveText("—");
+    // Narxsiz: ko'rinishda «—» (ekran o'quvchidan yashirin), ekran o'quvchiga «Narx kiritilmagan».
+    await expect(fifth.getByRole("cell").nth(2).getByText("—")).toBeVisible();
+    await expect(fifth.getByRole("cell").nth(2).getByText("Narx kiritilmagan")).toHaveClass(/sr-only/);
 
     await p.goto("/products/create-product/7");
     await expect(p).toHaveURL(/\/403$/, { timeout: 30_000 });

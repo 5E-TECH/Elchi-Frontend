@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useProducts } from "../../../../entities/product";
 import { notify } from "../../../../shared/lib/notify";
 import { Button, Dialog, Field, TextInput } from "../../../../shared/ui/primitives";
-import { describeProductError } from "../../model/productErrors";
+import { describeProductError, isDuplicateNameError } from "../../model/productErrors";
 import {
   getProductImageUrl,
   getProductMarketName,
@@ -37,8 +37,8 @@ export type EditProductDialogProps = {
  *
  * Xulq: ochilganda `GET product/:id` (yangi rasm manzili), FormData `name` (+ `price` — faqat o'zgargan bo'lsa:
  * bo'sh — narx tozalanadi, backend `null`; + `image` fayl tanlangan bo'lsa) → `PATCH product/:id`; muvaffaqiyat —
- * «Mahsulot muvaffaqiyatli yangilandi» va oyna yopiladi, xato — i18n izoh bilan (xom backend matni emas). Market va
- * market operatori mahsulotni tahrirlamaydi (MH-1) — `PATCH product/my/:id` ishlatilmaydi.
+ * «Mahsulot muvaffaqiyatli yangilandi» va oyna yopiladi, xato — i18n izoh bilan (xom backend matni emas), 409 (nom band) —
+ * «Mahsulot nomi» maydoni ostida. Market va market operatori mahsulotni tahrirlamaydi (MH-1) — `PATCH product/my/:id` ishlatilmaydi.
  */
 export const EditProductDialog = ({ product, onClose }: EditProductDialogProps) => {
   const { t } = useTranslation("products");
@@ -55,6 +55,7 @@ export const EditProductDialog = ({ product, onClose }: EditProductDialogProps) 
     control,
     handleSubmit,
     reset,
+    setError,
     formState: { errors, isSubmitted, dirtyFields },
   } = useForm<EditFormValues>({ defaultValues: { name: product?.name ?? "", price: toPriceInput(product) } });
 
@@ -64,7 +65,8 @@ export const EditProductDialog = ({ product, onClose }: EditProductDialogProps) 
   }, [product, reset]);
 
   const submit = handleSubmit(async ({ name, price }) => {
-    if (!product) return;
+    // Enter bilan takroriy yuborish (tugma `loading` bo'lsa ham) — ikkinchi PATCH ketmasin.
+    if (!product || updateProduct.isPending) return;
     const formData = new FormData();
     formData.append("name", name.trim());
     // Narx faqat o'zgargan bo'lsa yuboriladi: kasrli eski narx (125000.50) bekorga yaxlitlanmasin.
@@ -76,6 +78,11 @@ export const EditProductDialog = ({ product, onClose }: EditProductDialogProps) 
       notify.success(t("updateSuccess"));
       onClose();
     } catch (error) {
+      // 409 — shu marketda shu nomli mahsulot bor: «Mahsulot nomi» qizil + tepadagi xulosa (qayta urinish foydasiz).
+      if (isDuplicateNameError(error)) {
+        setError("name", { type: "server", message: t("v2.errors.duplicateName") }, { shouldFocus: true });
+        return;
+      }
       notify.error(t("updateError"), { description: describeProductError(error, t) });
     }
   });
