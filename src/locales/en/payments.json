@@ -935,8 +935,12 @@
       "rollback": "Correction"
     }
   }
-  ,"paymentAckDisputed": "Disputed"
-  ,"paymentAckDisputedHint": "The courier marked the bot receipt as wrong"
-  ,"paymentAckConfirmed": "Confirmed"
-  ,"paymentAckConfirmedHint": "The courier confirmed the bot receipt"
+  ,"paymentAckStaffConfirmed": "Courier confirmed"
+  ,"paymentAckStaffConfirmedHint": "The courier confirmed the bot receipt"
+  ,"paymentAckStaffDisputed": "Courier: wrong"
+  ,"paymentAckStaffDisputedHint": "The courier marked the bot receipt as wrong"
+  ,"paymentAckSelfConfirmed": "You confirmed"
+  ,"paymentAckSelfConfirmedHint": "You confirmed the bot receipt"
+  ,"paymentAckSelfDisputed": "You: wrong"
+  ,"paymentAckSelfDisputedHint": "You marked the bot receipt as wrong"
 }

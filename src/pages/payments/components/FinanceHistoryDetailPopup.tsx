@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-payments-history-detail-dialog, admin-payments-history-detail-dialog, manager-payments-history-detail-dialog, market-cashbox-history-detail-dialog, courier-cashbox-history-detail
+// dizayn-v2: superadmin-payments-history-detail-dialog, admin-payments-history-detail-dialog, manager-payments-history-detail-dialog, market-cashbox-history-detail-dialog, courier-cashbox-history-detail, manager-payments-history-detail-dialog-ack
 import { memo, useMemo, useState, type ReactNode } from "react";
 import { ArrowDownLeft, ArrowUpRight, ChevronRight, MessageSquare, Receipt, ShoppingBag } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -38,7 +38,7 @@ import {
   getViewerOperationType,
 } from "./paymentSourceType";
 import { PaymentAckBadge } from "./PaymentAckBadge";
-import { toPaymentAck } from "./paymentAck";
+import { paymentAckAudienceOf, toPaymentAck } from "./paymentAck";
 
 /**
  * KASSA TARIXI YOZUVI TAFSILOTI — «Moliya» sahifalarining umumiy oynasi (dizayn v2).
@@ -193,8 +193,10 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
   const partyPhone = party?.phone_number?.trim() || party?.phone?.trim() || "";
   const comment = display.comment?.trim();
   // 2crjWf7v: kuryerning bot kvitansiyasiga javobi — faqat «Kuryerdan qabul» qatorida (ro'yxat qatoridan;
-  // boshqa qatorlarda maydon yo'q → qator chizilmaydi). Maketda yo'q (Trello kartasidagi ega qarori).
+  // boshqa qatorlarda maydon yo'q → qator chizilmaydi). Maket `manager-payments-history-detail-dialog-ack`;
+  // matn ko'ruvchiga qarab (KI-S1): kuryer — «Siz tasdiqlagansiz», xodim — «Kuryer tasdiqladi».
   const paymentAck = toPaymentAck(current?.payment_ack);
+  const paymentAckAudience = paymentAckAudienceOf(viewerRole);
 
   const order = detail?.order ?? null;
   const orderId = order?.id != null ? String(order.id) : "";
@@ -256,7 +258,7 @@ const FinanceHistoryDetailPopup = memo(({ row, onClose, hideCashboxType = false 
           ? kvRow(
               t("v2HistoryDetail.paymentAck"),
               paymentAck ? (
-                <PaymentAckBadge ack={paymentAck} />
+                <PaymentAckBadge ack={paymentAck} audience={paymentAckAudience} />
               ) : (
                 <span className="font-normal text-text-muted">{t("v2HistoryDetail.paymentAckNone")}</span>
               ),

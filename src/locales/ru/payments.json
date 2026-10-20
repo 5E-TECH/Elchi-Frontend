@@ -935,8 +935,12 @@
       "rollback": "Корректировка"
     }
   }
-  ,"paymentAckDisputed": "Неверно"
-  ,"paymentAckDisputedHint": "Курьер ответил в боте на квитанцию «Неверно»"
-  ,"paymentAckConfirmed": "Подтверждено"
-  ,"paymentAckConfirmedHint": "Курьер подтвердил квитанцию в боте"
+  ,"paymentAckStaffConfirmed": "Курьер подтвердил"
+  ,"paymentAckStaffConfirmedHint": "Курьер подтвердил квитанцию в боте"
+  ,"paymentAckStaffDisputed": "Курьер: неверно"
+  ,"paymentAckStaffDisputedHint": "Курьер ответил в боте на квитанцию «Неверно»"
+  ,"paymentAckSelfConfirmed": "Вы подтвердили"
+  ,"paymentAckSelfConfirmedHint": "Вы подтвердили квитанцию в боте"
+  ,"paymentAckSelfDisputed": "Вы: неверно"
+  ,"paymentAckSelfDisputedHint": "Вы ответили в боте на квитанцию «Неверно»"
 }

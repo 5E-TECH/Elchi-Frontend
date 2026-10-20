@@ -935,8 +935,12 @@
       "rollback": "Tuzatish"
     }
   }
-  ,"paymentAckDisputed": "Noto'g'ri"
-  ,"paymentAckDisputedHint": "Kuryer botdagi kvitansiyaga «Noto'g'ri» deb javob berdi"
-  ,"paymentAckConfirmed": "Tasdiqlangan"
-  ,"paymentAckConfirmedHint": "Kuryer botdagi kvitansiyani tasdiqladi"
+  ,"paymentAckStaffConfirmed": "Kuryer tasdiqladi"
+  ,"paymentAckStaffConfirmedHint": "Kuryer botdagi kvitansiyani tasdiqladi"
+  ,"paymentAckStaffDisputed": "Kuryer: noto'g'ri"
+  ,"paymentAckStaffDisputedHint": "Kuryer botdagi kvitansiyaga «Noto'g'ri» deb javob berdi"
+  ,"paymentAckSelfConfirmed": "Siz tasdiqlagansiz"
+  ,"paymentAckSelfConfirmedHint": "Botdagi kvitansiyani siz tasdiqlagansiz"
+  ,"paymentAckSelfDisputed": "Siz: noto'g'ri"
+  ,"paymentAckSelfDisputedHint": "Botdagi kvitansiyaga siz «Noto'g'ri» deb javob bergansiz"
 }

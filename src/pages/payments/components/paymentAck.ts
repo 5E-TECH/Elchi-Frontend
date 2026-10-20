@@ -20,3 +20,28 @@ export const toPaymentAck = (value: unknown): PaymentAck | null | undefined => {
   if (value === "confirmed" || value === "disputed") return value;
   return null;
 };
+
+/**
+ * Kim ko'ryapti (KI-S1, ega javobi 2026-10-19):
+ *  - `staff` — kassa xodimi (menejer, admin, superadmin, market): javobni kuryer bergan → «Kuryer tasdiqladi» /
+ *    «Kuryer: noto'g'ri» (maket `manager-payments-cash-detail-courier-ack`, `manager-payments-history-detail-dialog-ack`);
+ *  - `self` — kuryerning o'zi: javobni o'zi bergan → «Siz tasdiqlagansiz» / «Siz: noto'g'ri»
+ *    (maket `courier-cashbox-my-transfers-ack`).
+ */
+export type PaymentAckAudience = "staff" | "self";
+
+export type PaymentAckKeys = { label: string; hint: string };
+
+/** `payments` nomlar fazosidagi yorliq va izoh (title) kalitlari; javob yo'q bo'lsa — `null`. */
+export const paymentAckKeys = (
+  ack: PaymentAck | null | undefined,
+  audience: PaymentAckAudience = "staff",
+): PaymentAckKeys | null => {
+  if (ack !== "confirmed" && ack !== "disputed") return null;
+  const base = `paymentAck${audience === "self" ? "Self" : "Staff"}${ack === "confirmed" ? "Confirmed" : "Disputed"}`;
+  return { label: base, hint: `${base}Hint` };
+};
+
+/** Rol → auditoriya: kuryer o'z javobini ko'radi (`self`), qolgan hamma — xodim (`staff`). */
+export const paymentAckAudienceOf = (role?: string | null): PaymentAckAudience =>
+  role === "courier" ? "self" : "staff";
