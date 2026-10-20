@@ -1545,7 +1545,7 @@
       "views": {
         "superadmin": ["ops-logistics", "ops-logistics-approve-dialog", "ops-logistics-approve-result"]
       },
-      "note": "Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Tanlangan qaytarish so'rovlarini tasdiqlash — POST post/return-requests/approve { order_ids }. Ega tasdig'i 2026-10-19 (ops-system): tasdiq oynasi (*-ops-logistics-approve-dialog), natija — toast «N ta tasdiqlandi, M tasi o'tkazib yuborildi» (S5) va qisman natija ro'yxati (*-approve-result)."
+      "note": "Dizayn v2 (G2): /ops?tab=<k> paneli bilan bir xil + «← Ops vositalari» (ega savoli 1 — sukut). Tanlangan qaytarish so'rovlarini tasdiqlash — POST post/return-requests/approve { order_ids }. Ega tasdig'i 2026-10-19 (ops-system): tasdiq oynasi (*-ops-logistics-approve-dialog), natija — faqat toast «N ta tasdiqlandi, M tasi o'tkazib yuborildi» (S5) va yangilangan (bo'sh) ro'yxat (*-approve-result; alohida natija ro'yxati yo'q). OS-3: kodda — useConfirm + ApproveReturnSummary (HQ/filial — data.scope.type), natija notify.warning/success (skipped_order_ids), bo'sh ro'yxat EmptyState; maketdagi CircleCheckBig o'rniga ikonka reyestridagi CircleCheck."
     },
     {
       "path": "/branch-ops",
@@ -1784,8 +1784,6 @@
     "admin-notifications-sent-detail-states": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
     "superadmin-ops-system-ai-config": "Taklif (ops-system, ega S1..S5) — kodda yo'q.",
     "superadmin-ops-system-ai-cap": "Taklif (ops-system, ega S1..S5) — kodda yo'q.",
-    "superadmin-ops-logistics-approve-dialog": "Taklif (ops-system, ega S1..S5) — kodda yo'q.",
-    "superadmin-ops-logistics-approve-result": "Taklif (ops-system, ega S1..S5) — kodda yo'q.",
     "superadmin-neworders-create-manual-step2-customer-update-dialog": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
     "admin-neworders-create-manual-step2-customer-update-dialog": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
     "manager-new-orders-create-manual-step2-customer-update-dialog": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
@@ -1975,6 +1973,7 @@
     "superadmin-ops-system-critical": "src/pages/system-ops/ui/HealthCard.tsx",
     "superadmin-neworders-create-manual-step2-customer-suggest": "src/pages/orders/create/ui/CustomerPhoneSuggest.tsx",
     "admin-neworders-create-manual-step2-customer-suggest": "src/pages/orders/create/ui/CustomerPhoneSuggest.tsx",
+    "superadmin-ops-logistics-approve-dialog": ["src/pages/logistics-ops/index.tsx", "src/pages/logistics-ops/ui/ApproveReturnSummary.tsx"],
     "manager-new-orders-create-manual-step2-customer-suggest": "src/pages/orders/create/ui/CustomerPhoneSuggest.tsx",
     "registrator-new-orders-create-step2-customer-suggest": "src/pages/orders/create/ui/CustomerPhoneSuggest.tsx",
     "market-new-orders-create-manual-customer-suggest": "src/pages/orders/create/ui/CustomerPhoneSuggest.tsx",

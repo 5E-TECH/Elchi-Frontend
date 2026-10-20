@@ -166,7 +166,41 @@
       "selectedOf": "{{selected}} / {{total}}",
       "selectRow": "So'rov {{id}} ni tanlash",
       "orderLink": "№{{id}}",
-      "noCourier": "Kuryer biriktirilmagan"
+      "noCourier": "Kuryer biriktirilmagan",
+      "emptyText": "Yangi so'rov kelganda shu yerda ko'rinadi."
+    },
+    "approve": {
+      "title": "Qaytarish so'rovlarini tasdiqlang",
+      "description": {
+        "hq": "{{value}} ta buyurtma kuryerlardan olinadi va HQ omboriga qaytariladi. Holati «Kutilmoqda» bo'ladi, kuryer va pochtadan ajratiladi.",
+        "branch": "{{value}} ta buyurtma kuryerlardan olinadi va filial omboriga qaytariladi. Holati «Kutilmoqda» bo'ladi, kuryer va pochtadan ajratiladi.",
+        "unknown": "{{value}} ta buyurtma kuryerlardan olinadi va omborga qaytariladi. Holati «Kutilmoqda» bo'ladi, kuryer va pochtadan ajratiladi."
+      },
+      "orders": "Buyurtmalar",
+      "ordersValue": "{{value}} ta",
+      "couriers": "Kuryerlar",
+      "couriersValue": "{{value}} ta",
+      "withoutCourier": "+ {{value}} ta buyurtma kuryersiz",
+      "groups": "Kuryerlar bo'yicha",
+      "groupCount": "{{value}} ta",
+      "more": "+ yana {{value}} ta",
+      "note": "Bu amalni bekor qilib bo'lmaydi. Shu orada boshqa xodim ko'rib chiqqan yoki holati o'zgargan buyurtma o'tkazib yuboriladi va natijada ko'rsatiladi.",
+      "confirm": "{{value}} tasini tasdiqlash",
+      "loading": "Tasdiqlanmoqda…",
+      "errors": {
+        "forbidden": "Ayrim buyurtmalar boshqa filial kuryerida — ularni o'sha filial ko'rib chiqadi. Ro'yxat yangilandi — oynani yoping va qayta tanlang.",
+        "stale": "Tanlangan so'rovlar shu orada ko'rib chiqilgan yoki holati o'zgargan. Ro'yxat yangilandi — oynani yoping va qayta tanlang.",
+        "server": "Tasdiqlashda xato yuz berdi. Ayrim buyurtmalar omborga qaytgan bo'lishi mumkin — ro'yxat yangilandi, tekshirib qayta urinib ko'ring.",
+        "generic": "So'rovlarni tasdiqlab bo'lmadi. Birozdan so'ng qayta urinib ko'ring."
+      },
+      "result": {
+        "successTitle": "{{value}} ta tasdiqlandi",
+        "returned": "{{value}} ta buyurtma omborga qaytarildi.",
+        "partialTitle": "{{approved}} ta tasdiqlandi, {{skipped}} tasi o'tkazib yuborildi",
+        "skippedReason": "{{orders}} ni shu orada boshqa xodim ko'rib chiqqan yoki holati o'zgargan.",
+        "skippedReasonMany": "{{orders}} ni shu orada boshqa xodim ko'rib chiqqan yoki holati o'zgargan.",
+        "skippedReasonMore": "{{list}} va yana {{value}} tasini shu orada boshqa xodim ko'rib chiqqan yoki holati o'zgargan."
+      }
     },
     "statuses": {
       "waiting": "Kuryer qabul qilmagan",
