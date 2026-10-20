@@ -332,6 +332,8 @@ export const API_ENDPOINTS = {
     INBOX_BY_ID: (id: string | number) => `notifications/inbox/${id}`, // GET / DELETE one
     INBOX_READ: (id: string | number) => `notifications/inbox/${id}/read`, // PATCH read/unread
     DISPATCH: "notifications/dispatch", // POST manual dispatch (admin/testing)
+    // GET bitta qo'lda yuborish: matn, jonli kanal × holat, yetkazilmaganlar (?page&limit) — id = client_request_id
+    SENT_BY_ID: (dispatchId: string) => `notifications/sent/${encodeURIComponent(dispatchId)}`,
     // Web Push (current user's device) ─────────────────────────────────────
     PUSH_PUBLIC_KEY: "notifications/push/public-key", // GET VAPID public key
     PUSH_SUBSCRIBE: "notifications/push/subscribe", // POST save / DELETE remove this device

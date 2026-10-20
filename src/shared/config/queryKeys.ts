@@ -12,6 +12,11 @@ export const queryKeys = {
     // `all` prefiksi ostida — "Barchasini o'qilgan" va har o'qish sanoqlarni ham yangilaydi.
     counts: ["notifications-inbox", "counts"] as const,
   },
+  /** Qo'lda yuborilgan xabarlar tarixi (`/notifications/sent`). */
+  notificationsSent: {
+    all: ["notifications-sent"] as const,
+    detail: (dispatchId: string, params: object) => ["notifications-sent", "detail", dispatchId, params] as const,
+  },
   branches: {
     all: ["branches"] as const,
     list: (params: object) => ["branches", "list", params] as const,
