@@ -21,8 +21,8 @@ export const TG_USERNAME = "ali_kuryer";
 
 export type ProfileTelegramOptions = {
   linked?: boolean;
-  /** Havola muddati, ms (sukut 10 daqiqa). */
-  expiresInMs?: number;
+  /** Havola muddati, ms (sukut 10 daqiqa); funksiya — n-chi kod (1 dan) uchun alohida. */
+  expiresInMs?: number | ((request: number) => number);
   /** `null` — bot nomi sozlanmagan (buyruq rejimi). */
   deepLink?: string | null;
   /** Kod olingach nechanchi profil so'rovida bot ulagan bo'ladi (`null` — ulamaydi). */
@@ -76,7 +76,9 @@ export const mockProfileTelegramApi = async (
         wrap({
           token: `Kod${state.codeRequests}`,
           purpose: "user",
-          expires_at: new Date(Date.now() + expiresInMs).toISOString(),
+          expires_at: new Date(
+            Date.now() + (typeof expiresInMs === "function" ? expiresInMs(state.codeRequests) : expiresInMs),
+          ).toISOString(),
           deep_link: deepLink,
           command: "/start Kod123",
         }),

@@ -20,7 +20,8 @@ export const TELEGRAM_LINK_POLL_MS = 3_000;
 /** Server muddati bundan uzoq yoki o'tib ketgan bo'lsa — kompyuter soati noto'g'ri, 10 daqiqa olinadi. */
 const MAX_TRUSTED_TTL_MS = 15 * 60_000;
 
-type LinkSession = { code: TelegramLinkCode; expiresAtMs: number };
+/** `totalMs` — sanoq va progressning to'liq muddati (server 10 daqiqadan uzoq bersa — shuncha, sanoq qotib qolmasin). */
+type LinkSession = { code: TelegramLinkCode; expiresAtMs: number; totalMs: number };
 type DialogState = { open: boolean; session: LinkSession };
 
 /**
@@ -31,7 +32,8 @@ const toSession = (code: TelegramLinkCode, now = Date.now()): LinkSession => {
   const serverExpiry = toValidDate(code.expiresAt)?.getTime();
   const ttl = serverExpiry == null ? Number.NaN : serverExpiry - now;
   const trusted = Number.isFinite(ttl) && ttl > 0 && ttl <= MAX_TRUSTED_TTL_MS;
-  return { code, expiresAtMs: now + (trusted ? ttl : LINK_TTL_MS) };
+  const total = trusted ? ttl : LINK_TTL_MS;
+  return { code, expiresAtMs: now + total, totalMs: Math.max(LINK_TTL_MS, total) };
 };
 
 const formatUsername = (username?: string | null) => {
@@ -190,6 +192,7 @@ export const TelegramLinkCard = ({ linked, username, linkedAt }: TelegramLinkCar
           open={dialogOpen}
           code={session.code}
           expiresAtMs={session.expiresAtMs}
+          totalMs={session.totalMs}
           expired={expired}
           renewing={linkCode.isPending}
           onRenew={requestCode}

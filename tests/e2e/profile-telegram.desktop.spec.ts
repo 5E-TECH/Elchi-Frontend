@@ -5,7 +5,7 @@ import { toast } from "./support/toast";
 /**
  * TG-A (ysBqD9Nx) — /profile «Telegram» kartasi va havola oynalari (maketlar `common-profile-telegram*`), 1440px:
  * QR oq ramkada, teskari sanoq + progress, «Ulanish kutilmoqda…», bot ulagach oyna yopilib «Telegram ulandi»,
- * ulangan holatda qalin «@username» · sana; buyruq rejimi (faqat «Yopish»); uzish — tasdiq bilan.
+ * ulangan holatda qalin «@username» · sana; muddat tugashi va yangi havola; buyruq rejimi (faqat «Yopish»); uzish — tasdiq bilan.
  */
 test.describe("Profil — shaxsiy Telegram (1440px)", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
@@ -37,6 +37,34 @@ test.describe("Profil — shaxsiy Telegram (1440px)", () => {
     await expect(card.getByText("@ali_kuryer")).toBeVisible();
     await expect(card.getByText("12.10.2026 da ulangan")).toBeVisible();
     expect(state.codeRequests).toBe(1);
+  });
+
+  test("⭐ muddat tugadi: «Havola eskirdi», «Yangi havola olish» yangi kod so'raydi va sanoq qaytadi", async ({ page }) => {
+    // Birinchi kod 3 s da eskiradi, ikkinchisi — odatdagi 10 daqiqa.
+    const state = await mockProfileTelegramApi(page, { expiresInMs: (n) => (n === 1 ? 3_000 : 10 * 60_000) });
+    await page.goto("/profile");
+
+    const card = page.getByRole("region", { name: "Telegram" });
+    await expect(card).toBeVisible({ timeout: 90_000 });
+    await card.getByRole("button", { name: "Telegram'ni ulash" }).click();
+
+    const dialog = page.getByRole("dialog", { name: "Telegram'ni ulash" });
+    await expect(dialog.getByRole("timer")).toBeVisible();
+    await expect(dialog.getByText("Havola eskirdi")).toBeVisible({ timeout: 10_000 });
+    await expect(
+      dialog.getByText("Havola 10 daqiqa amal qiladi va bir marta ishlatiladi. Ulash uchun yangisini oling."),
+    ).toBeVisible();
+    await expect(dialog.getByRole("timer")).toHaveCount(0);
+    await expect(dialog.getByRole("img", { name: "Telegram'ni ulash havolasining QR kodi" })).toHaveCount(0);
+    await expect(dialog.getByRole("link", { name: "Telegram'da ochish" })).toHaveCount(0);
+    expect(state.codeRequests).toBe(1);
+
+    await dialog.getByRole("button", { name: "Yangi havola olish" }).click();
+    await expect(dialog.getByRole("img", { name: "Telegram'ni ulash havolasining QR kodi" })).toBeVisible();
+    await expect(dialog.getByRole("timer")).toHaveText(/^(10:00|9:5\d) qoldi$/);
+    await expect(dialog.getByText("Havola eskirdi")).toHaveCount(0);
+    await expect(dialog.getByRole("link", { name: "Telegram'da ochish" })).toHaveAttribute("href", TG_DEEP_LINK);
+    expect(state.codeRequests).toBe(2);
   });
 
   test("⭐ buyruq rejimi (deep_link yo'q): buyruq va o'z qadamlari, sanoqsiz, faqat «Yopish»", async ({ page }) => {

@@ -175,6 +175,20 @@ describe("TelegramLinkCard", () => {
     expect(valueNow()).toBeLessThanOrEqual(239);
   });
 
+  it("server 10 daqiqadan uzoq muddat bersa (soat farqi) — sanoq «… gacha» bilan mos, 10:00 da qotmaydi", async () => {
+    apiPost.mockResolvedValue(linkCodeResponse(14 * 60_000));
+    const user = userEvent.setup();
+    renderWithProviders(<TelegramLinkCard linked={false} />);
+
+    await user.click(screen.getByRole("button", { name: "Telegram'ni ulash" }));
+    const dialog = await screen.findByRole("dialog", { name: "Telegram'ni ulash" });
+
+    expect(within(dialog).getByRole("timer")).toHaveTextContent(/^(14:00|13:59) qoldi$/);
+    const progress = within(dialog).getByRole("progressbar");
+    expect(Number(progress.getAttribute("aria-valuemax"))).toBeGreaterThanOrEqual(839);
+    expect(Number(progress.getAttribute("aria-valuenow"))).toBeGreaterThanOrEqual(839);
+  });
+
   it("telefonda: o'z qadamlari, QR «Boshqa telefondan — QR kod» ostida yig'ilgan", async () => {
     const restore = asPhone();
     try {

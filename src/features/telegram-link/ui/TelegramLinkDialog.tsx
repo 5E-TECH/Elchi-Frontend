@@ -22,6 +22,8 @@ export type TelegramLinkDialogProps = {
   code: TelegramLinkCode;
   /** Havola amal qiladigan oxirgi lahza (ms, mahalliy soat bo'yicha). */
   expiresAtMs: number;
+  /** Sanoqning to'liq muddati (progress 100% i), sukut — 10 daqiqa. */
+  totalMs?: number;
   expired: boolean;
   renewing: boolean;
   onRenew: () => void;
@@ -60,6 +62,7 @@ export const TelegramLinkDialog = ({
   open,
   code,
   expiresAtMs,
+  totalMs,
   expired,
   renewing,
   onRenew,
@@ -106,14 +109,14 @@ export const TelegramLinkDialog = ({
       {deepLink ? (
         isPhone ? (
           <>
-            <LinkCountdown expiresAtMs={expiresAtMs} />
+            <LinkCountdown expiresAtMs={expiresAtMs} totalMs={totalMs} />
             <Steps mode="phone" />
             <LinkQrPanel collapsible value={deepLink} alt={t("qrAlt")} />
           </>
         ) : (
           <>
             <LinkQrPanel value={deepLink} alt={t("qrAlt")} />
-            <LinkCountdown expiresAtMs={expiresAtMs} />
+            <LinkCountdown expiresAtMs={expiresAtMs} totalMs={totalMs} />
             <Steps mode="desktop" />
           </>
         )
