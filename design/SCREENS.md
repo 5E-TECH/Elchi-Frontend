@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **196** · qisman: **78** · v2 ga ko'chirilgan route: **76 / 77**
+**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **190** · qisman: **84** · v2 ga ko'chirilgan route: **76 / 77**
 
 ## Qanday ishlatiladi
 
@@ -110,7 +110,7 @@
 | `/integrations/sources/create` | Integratsiyalar | `src/pages/new_orders/external_orders/create.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 1 | v2 |
 | `/integrations/sources/:id` | Integratsiyalar | `src/pages/new_orders/external_orders/detail.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 1 | v2 |
 | `/notifications` | Bildirishnomalar | `src/pages/notifications/ui/NotificationsPage.tsx` | superadmin, admin | 30 | v2 |
-| `/notifications/send` | Bildirishnomalar | `src/pages/notification-send/index.tsx` | superadmin, admin | 16 | v2 |
+| `/notifications/send` | Bildirishnomalar | `src/pages/notification-send/index.tsx` | superadmin, admin | 18 | v2 |
 | `(taklif) /notifications/sent` | Bildirishnomalar | `src/app/lib/routes.tsx` | superadmin (taklif — yangi route), admin (taklif — yangi route (canSendNotifications)) | 12 | eski |
 | `/notifications/sms` | Bildirishnomalar | `src/pages/notifications/ui/SmsPage.tsx` | superadmin, admin | 6 | v2 |
 | `/activity-logs` | Tizim | `src/pages/activity-logs/index.tsx` | superadmin, admin | 5 | v2 |
@@ -1575,7 +1575,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/notifications/send` — Xabar yuborish (tizim ichidagi bildirishnoma)
 
-- **Fayllar:** `src/pages/notification-send/index.tsx` · `src/features/notification-dispatch/ui/NotificationDispatchForm.tsx` · `src/widgets/notification-inbox/ui/NotificationInboxItem.tsx`
+- **Fayllar:** `src/pages/notification-send/index.tsx` · `src/features/notification-dispatch/ui/NotificationDispatchForm.tsx` · `src/widgets/notification-inbox/ui/NotificationInboxItem.tsx` · `src/features/notification-dispatch/ui/DispatchResultCard.tsx` · `src/features/notification-dispatch/ui/DispatchUnknownCard.tsx` · `src/entities/notification-dispatch/ui/SentDetailDialog.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canSendNotifications` (access.ts → canSendNotifications)
 - **Rollar:** superadmin, admin
 - **Menyuda:** yo'q — /inbox sahifasidagi «Xabar yuborish» havolasi
@@ -1594,12 +1594,14 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/notifications/send` | superadmin | `superadmin-notifications-campaign-cancel-dialog` — Kampaniyani bekor qilish (tasdiq) | [design/fragments/superadmin--notifications-campaign-cancel-dialog.html](fragments/superadmin--notifications-campaign-cancel-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/notifications/send` | superadmin | `superadmin-notifications-campaign-report-dialog` — Kampaniya hisoboti (oyna) | [design/fragments/superadmin--notifications-campaign-report-dialog.html](fragments/superadmin--notifications-campaign-report-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/notifications/send` | superadmin | `superadmin-notifications-send-states` — Xabar yuborish — auditoriya va yuborish holatlari | [design/fragments/superadmin--notifications-send-states.html](fragments/superadmin--notifications-send-states.html) | sahifa | yangi (kodda yo'q) |
-| `/notifications/send` | superadmin | `superadmin-notifications-send-result` — Xabar yuborish — natija | [design/fragments/superadmin--notifications-send-result.html](fragments/superadmin--notifications-send-result.html) | sahifa | yangi (kodda yo'q) |
-| `/notifications/send` | superadmin | `superadmin-notifications-send-unknown` — Xabar yuborish — natija noma'lum | [design/fragments/superadmin--notifications-send-unknown.html](fragments/superadmin--notifications-send-unknown.html) | sahifa | yangi (kodda yo'q) |
+| `/notifications/send` | superadmin | `superadmin-notifications-send-result` — Xabar yuborish — natija<br>↳ `src/features/notification-dispatch/ui/DispatchResultCard.tsx` | [design/fragments/superadmin--notifications-send-result.html](fragments/superadmin--notifications-send-result.html) | sahifa | qisman |
+| `/notifications/send` | superadmin | `superadmin-notifications-send-unknown` — Xabar yuborish — natija noma'lum<br>↳ `src/features/notification-dispatch/ui/DispatchUnknownCard.tsx` | [design/fragments/superadmin--notifications-send-unknown.html](fragments/superadmin--notifications-send-unknown.html) | sahifa | qisman |
+| `/notifications/send` | superadmin | `superadmin-notifications-sent-detail-dialog` — Yuborilgan xabar tafsiloti<br>↳ `src/entities/notification-dispatch/ui/SentDetailDialog.tsx` | [design/fragments/superadmin--notifications-sent-detail-dialog.html](fragments/superadmin--notifications-sent-detail-dialog.html) | oyna | qisman |
 | `/notifications/send` | admin | `admin-notifications-send` — Xabar yuborish | [design/fragments/superadmin--notifications-send.html](fragments/superadmin--notifications-send.html) | sahifa | qisman |
 | `/notifications/send` | admin | `admin-notifications-send-confirm-dialog` — Xabarni yuborishni tasdiqlang | [design/fragments/superadmin--notifications-send-confirm-dialog.html](fragments/superadmin--notifications-send-confirm-dialog.html) | oyna | qisman |
-| `/notifications/send` | admin | `admin-notifications-send-result` — Xabar yuborish — natija | [design/fragments/superadmin--notifications-send-result.html](fragments/superadmin--notifications-send-result.html) | sahifa | yangi (kodda yo'q) |
-| `/notifications/send` | admin | `admin-notifications-send-unknown` — Xabar yuborish — natija noma'lum | [design/fragments/superadmin--notifications-send-unknown.html](fragments/superadmin--notifications-send-unknown.html) | sahifa | yangi (kodda yo'q) |
+| `/notifications/send` | admin | `admin-notifications-send-result` — Xabar yuborish — natija<br>↳ `src/features/notification-dispatch/ui/DispatchResultCard.tsx` | [design/fragments/superadmin--notifications-send-result.html](fragments/superadmin--notifications-send-result.html) | sahifa | qisman |
+| `/notifications/send` | admin | `admin-notifications-send-unknown` — Xabar yuborish — natija noma'lum<br>↳ `src/features/notification-dispatch/ui/DispatchUnknownCard.tsx` | [design/fragments/superadmin--notifications-send-unknown.html](fragments/superadmin--notifications-send-unknown.html) | sahifa | qisman |
+| `/notifications/send` | admin | `admin-notifications-sent-detail-dialog` — Yuborilgan xabar tafsiloti<br>↳ `src/entities/notification-dispatch/ui/SentDetailDialog.tsx` | [design/fragments/superadmin--notifications-sent-detail-dialog.html](fragments/superadmin--notifications-sent-detail-dialog.html) | oyna | qisman |
 
 #### `(taklif) /notifications/sent` — Yuborilganlar — qo'lda yuborilgan xabarlar va natija (yangi route, kodda yo'q)
 
@@ -1614,13 +1616,13 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `(taklif) /notifications/sent` | superadmin | `superadmin-notifications-sent-loading` — Yuborilganlar — yuklanmoqda | [design/fragments/superadmin--notifications-sent-loading.html](fragments/superadmin--notifications-sent-loading.html) | sahifa | yangi (kodda yo'q) |
 | `(taklif) /notifications/sent` | superadmin | `superadmin-notifications-sent-empty` — Yuborilganlar — bo'sh | [design/fragments/superadmin--notifications-sent-empty.html](fragments/superadmin--notifications-sent-empty.html) | sahifa | yangi (kodda yo'q) |
 | `(taklif) /notifications/sent` | superadmin | `superadmin-notifications-sent-error` — Yuborilganlar — xato | [design/fragments/superadmin--notifications-sent-error.html](fragments/superadmin--notifications-sent-error.html) | sahifa | yangi (kodda yo'q) |
-| `(taklif) /notifications/sent` | superadmin | `superadmin-notifications-sent-detail-dialog` — Yuborilgan xabar tafsiloti | [design/fragments/superadmin--notifications-sent-detail-dialog.html](fragments/superadmin--notifications-sent-detail-dialog.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /notifications/sent` | superadmin | `superadmin-notifications-sent-detail-dialog` — Yuborilgan xabar tafsiloti<br>↳ `src/entities/notification-dispatch/ui/SentDetailDialog.tsx` | [design/fragments/superadmin--notifications-sent-detail-dialog.html](fragments/superadmin--notifications-sent-detail-dialog.html) | oyna | qisman |
 | `(taklif) /notifications/sent` | superadmin | `superadmin-notifications-sent-detail-states` — Yuborilgan xabar tafsiloti — boshqa holatlar | [design/fragments/superadmin--notifications-sent-detail-states.html](fragments/superadmin--notifications-sent-detail-states.html) | sahifa | yangi (kodda yo'q) |
 | `(taklif) /notifications/sent` | admin | `admin-notifications-sent` — Yuborilganlar | [design/fragments/superadmin--notifications-sent.html](fragments/superadmin--notifications-sent.html) | sahifa | yangi (kodda yo'q) |
 | `(taklif) /notifications/sent` | admin | `admin-notifications-sent-loading` — Yuborilganlar — yuklanmoqda | [design/fragments/superadmin--notifications-sent-loading.html](fragments/superadmin--notifications-sent-loading.html) | sahifa | yangi (kodda yo'q) |
 | `(taklif) /notifications/sent` | admin | `admin-notifications-sent-empty` — Yuborilganlar — bo'sh | [design/fragments/superadmin--notifications-sent-empty.html](fragments/superadmin--notifications-sent-empty.html) | sahifa | yangi (kodda yo'q) |
 | `(taklif) /notifications/sent` | admin | `admin-notifications-sent-error` — Yuborilganlar — xato | [design/fragments/superadmin--notifications-sent-error.html](fragments/superadmin--notifications-sent-error.html) | sahifa | yangi (kodda yo'q) |
-| `(taklif) /notifications/sent` | admin | `admin-notifications-sent-detail-dialog` — Yuborilgan xabar tafsiloti | [design/fragments/superadmin--notifications-sent-detail-dialog.html](fragments/superadmin--notifications-sent-detail-dialog.html) | oyna | yangi (kodda yo'q) |
+| `(taklif) /notifications/sent` | admin | `admin-notifications-sent-detail-dialog` — Yuborilgan xabar tafsiloti<br>↳ `src/entities/notification-dispatch/ui/SentDetailDialog.tsx` | [design/fragments/superadmin--notifications-sent-detail-dialog.html](fragments/superadmin--notifications-sent-detail-dialog.html) | oyna | qisman |
 | `(taklif) /notifications/sent` | admin | `admin-notifications-sent-detail-states` — Yuborilgan xabar tafsiloti — boshqa holatlar | [design/fragments/superadmin--notifications-sent-detail-states.html](fragments/superadmin--notifications-sent-detail-states.html) | sahifa | yangi (kodda yo'q) |
 
 #### `/notifications/sms` — SMS — Kampaniya · Shablonlar · Xarajat · Sozlamalar
@@ -1905,7 +1907,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-222 ta maket · kodda bor: 139 · kodda yo'q: 83
+222 ta maket · kodda bor: 142 · kodda yo'q: 80
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2061,10 +2063,10 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-notifications-push-explain-dialog` | Bildirishnomalarni yoqasizmi? (tasdiq) | oyna | `/inbox` | `src/features/push-notifications/ui/PushExplainDialog.tsx` | v2 |
 | `superadmin-notifications-send` | Xabar yuborish | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | v2 |
 | `superadmin-notifications-send-confirm-dialog` | Xabarni yuborishni tasdiqlang | oyna | `/notifications/send` | `src/pages/notification-send/index.tsx` | v2 |
-| `superadmin-notifications-send-result` | Xabar yuborish — natija | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
-| `superadmin-notifications-send-unknown` | Xabar yuborish — natija noma'lum | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `superadmin-notifications-send-result` | Xabar yuborish — natija | sahifa | `/notifications/send` | `src/features/notification-dispatch/ui/DispatchResultCard.tsx` | qisman — Kodda bor (NS-1): natija kartasi, kanal kesimi, «Yetkazilmaganlar» (darhol, 5 tasi) va tafsilot oynasi; sarlavhadagi va ro'yxat xatosidagi «Yuborilganlar» havolasi — NS-2 (/notifications/sent). |
+| `superadmin-notifications-send-unknown` | Xabar yuborish — natija noma'lum | sahifa | `/notifications/send` | `src/features/notification-dispatch/ui/DispatchUnknownCard.tsx` | qisman — Kodda bor (NS-1): «Noma'lum» kartasi, «Tarixdan tekshirish», «Qayta urinish» (o'sha client_request_id), takroriy holatlar; sarlavhadagi «Yuborilganlar» havolasi — NS-2. |
 | `superadmin-notifications-sent` | Yuborilganlar | sahifa | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
-| `superadmin-notifications-sent-detail-dialog` | Yuborilgan xabar tafsiloti | oyna | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `superadmin-notifications-sent-detail-dialog` | Yuborilgan xabar tafsiloti | oyna | `/notifications/send`, `(taklif) /notifications/sent` | `src/entities/notification-dispatch/ui/SentDetailDialog.tsx` | qisman — Kodda bor (NS-1): SentDetailDialog — /notifications/send natija va noma'lum kartalaridan ochiladi; orqadagi «Yuborilganlar» ro'yxati — NS-2. |
 | `superadmin-notifications-sent-detail-states` | Yuborilgan xabar tafsiloti — boshqa holatlar | sahifa | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
 | `superadmin-notifications-sent-loading` | Yuborilganlar — yuklanmoqda | sahifa | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
 | `superadmin-notifications-sent-empty` | Yuborilganlar — bo'sh | sahifa | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
@@ -2134,7 +2136,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### admin — Admin
 
-152 ta maket · kodda bor: 110 · kodda yo'q: 42
+152 ta maket · kodda bor: 113 · kodda yo'q: 39
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2260,12 +2262,12 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-integrations-legacy-sources` | Integratsiyalar manbalari (eski) | sahifa | `/integrations/sources` | `src/pages/new_orders/external_orders/index.tsx` | v2 |
 | `admin-activity-logs-list` | Faoliyat jurnali | sahifa | `/activity-logs` | `src/pages/activity-logs/index.tsx` | v2 |
 | `admin-activity-logs-row-expanded` | Jurnal yozuvi ochilgan | sahifa | `/activity-logs` | `src/widgets/activity-log/ui/ActivityLogDetail.tsx` | v2 |
-| `admin-notifications-send` | Xabar yuborish | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | qisman — Kodda bor (canSendNotifications admin'ni o'tkazadi); natija bloki va «Yuborilganlar» havolasi — taklif (notif-send). |
-| `admin-notifications-send-confirm-dialog` | Xabarni yuborishni tasdiqlang | oyna | `/notifications/send` | `src/pages/notification-send/index.tsx` | qisman — Kodda bor (canSendNotifications admin'ni o'tkazadi); natija bloki va «Yuborilganlar» havolasi — taklif (notif-send). |
-| `admin-notifications-send-result` | Xabar yuborish — natija | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
-| `admin-notifications-send-unknown` | Xabar yuborish — natija noma'lum | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `admin-notifications-send` | Xabar yuborish | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | qisman — Kodda bor (canSendNotifications admin'ni o'tkazadi); natija bloki — NS-1; sarlavhadagi «Yuborilganlar» havolasi — NS-2 (/notifications/sent). |
+| `admin-notifications-send-confirm-dialog` | Xabarni yuborishni tasdiqlang | oyna | `/notifications/send` | `src/pages/notification-send/index.tsx` | qisman — Kodda bor (canSendNotifications admin'ni o'tkazadi); natija bloki — NS-1; sarlavhadagi «Yuborilganlar» havolasi — NS-2 (/notifications/sent). |
+| `admin-notifications-send-result` | Xabar yuborish — natija | sahifa | `/notifications/send` | `src/features/notification-dispatch/ui/DispatchResultCard.tsx` | qisman — Kodda bor (NS-1): natija kartasi, kanal kesimi, «Yetkazilmaganlar» (darhol, 5 tasi) va tafsilot oynasi; sarlavhadagi va ro'yxat xatosidagi «Yuborilganlar» havolasi — NS-2 (/notifications/sent). |
+| `admin-notifications-send-unknown` | Xabar yuborish — natija noma'lum | sahifa | `/notifications/send` | `src/features/notification-dispatch/ui/DispatchUnknownCard.tsx` | qisman — Kodda bor (NS-1): «Noma'lum» kartasi, «Tarixdan tekshirish», «Qayta urinish» (o'sha client_request_id), takroriy holatlar; sarlavhadagi «Yuborilganlar» havolasi — NS-2. |
 | `admin-notifications-sent` | Yuborilganlar | sahifa | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
-| `admin-notifications-sent-detail-dialog` | Yuborilgan xabar tafsiloti | oyna | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
+| `admin-notifications-sent-detail-dialog` | Yuborilgan xabar tafsiloti | oyna | `/notifications/send`, `(taklif) /notifications/sent` | `src/entities/notification-dispatch/ui/SentDetailDialog.tsx` | qisman — Kodda bor (NS-1): SentDetailDialog — /notifications/send natija va noma'lum kartalaridan ochiladi; orqadagi «Yuborilganlar» ro'yxati — NS-2. |
 | `admin-notifications-sent-detail-states` | Yuborilgan xabar tafsiloti — boshqa holatlar | sahifa | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
 | `admin-notifications-sent-loading` | Yuborilganlar — yuklanmoqda | sahifa | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
 | `admin-notifications-sent-empty` | Yuborilganlar — bo'sh | sahifa | `(taklif) /notifications/sent` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Taklif (notif-send, ega S1..S5) — kodda yo'q. |
@@ -2653,6 +2655,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/auth/loginNotice.ts` | `/login` |
 | `src/entities/activity-log/ui/ActivityActionBadge.tsx` | `/activity-logs` |
 | `src/entities/batch/model/batchStatus.ts` | `/batches` |
+| `src/entities/notification-dispatch/ui/SentDetailDialog.tsx` | `/notifications/send`, `(taklif) /notifications/sent` |
 | `src/entities/order/ui/ProofGallery.tsx` | `/orders/edit/:orderId` |
 | `src/entities/order/ui/ReturnRequestedTag.tsx` | `/orders` |
 | `src/entities/orders/ui/ExtraCostApprovalAlerts.tsx` | `/orders` |
@@ -2670,6 +2673,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/features/dispatch-basket/model/dispatchBasket.ts` | `/dispatch` |
 | `src/features/notification-create/ui/NotificationFormModal.tsx` | `/notifications` |
 | `src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx` | `/notifications` |
+| `src/features/notification-dispatch/ui/DispatchResultCard.tsx` | `/notifications/send` |
+| `src/features/notification-dispatch/ui/DispatchUnknownCard.tsx` | `/notifications/send` |
 | `src/features/notification-dispatch/ui/NotificationDispatchForm.tsx` | `/notifications/send` |
 | `src/features/notification-toggle/ui/useToggleNotificationConfirm.tsx` | `/notifications` |
 | `src/features/order-return/ui/InitiateReturnModal.tsx` | `/orders/edit/:orderId` |

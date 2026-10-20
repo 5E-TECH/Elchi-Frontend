@@ -105,6 +105,7 @@ export const V2_SCOPES = Object.freeze([
   "src/entities/activity-log",
   "src/entities/integrations",
   "src/entities/notification",
+  "src/entities/notification-dispatch",
   "src/entities/notification-inbox",
   "src/entities/order",
   "src/entities/orders",
