@@ -5,6 +5,7 @@ import {
   measureGrid,
   mockOrderCreateApi,
   openManualCreate,
+  SUGGESTED_CUSTOMER,
 } from "./support/orderCreate";
 import { expectToast } from "./support/toast";
 
@@ -146,6 +147,54 @@ test.describe("Qo'lda buyurtma yaratish — 390px", () => {
     // Forma keyingi buyurtma uchun tozalanadi.
     await expect(page.locator('input[name="customer.name"]')).toHaveValue("");
 
+    expect(leaked).toEqual([]);
+  });
+
+  test("CS-A: mavjud mijoz — telefonda «Mijozni tanlang» varaqasi, maydonlar to'ladi, `customer_id` yuboriladi", async ({ page }) => {
+    const { leaked, createdOrders, suggestQueries } = await mockOrderCreateApi(page, { suggestions: [SUGGESTED_CUSTOMER] });
+    await openManualCreate(page);
+
+    await page.getByPlaceholder("XX XXX XX XX").first().click();
+    await page.keyboard.type("9034567");
+
+    const sheet = page.getByRole("dialog", { name: "Mijozni tanlang" });
+    await expect(sheet).toBeVisible();
+    await expect(sheet).toContainText("+998 90 345 67 · 1 ta mos keldi");
+    // Market rolida `market_id` yuborilmaydi (backend tokendan oladi).
+    expect(suggestQueries.at(-1)).toEqual({ phone: "9034567" });
+    // Pastki varaqa: ekranning pastki chetiga yopishgan, to'liq enli.
+    const box = (await sheet.boundingBox())!;
+    const viewport = page.viewportSize()!;
+    expect(Math.round(box.y + box.height)).toBeGreaterThanOrEqual(viewport.height - 1);
+    expect(Math.round(box.width)).toBeGreaterThanOrEqual(viewport.width - 1);
+
+    const option = sheet.getByRole("option", { name: /Shahnoza Abdullayeva/ });
+    expect((await option.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+    await option.click();
+    await expect(sheet).toBeHidden();
+
+    await expect(page.locator('input[name="customer.name"]')).toHaveValue("Shahnoza Abdullayeva");
+    await expect(page.getByPlaceholder("XX XXX XX XX").first()).toHaveValue("90 345 67 21");
+    await expect(page.locator('[id="customer.district_id"]')).toHaveValue("Chilonzor • 1726269");
+    await expect(page.getByText("Mavjud mijoz", { exact: true })).toBeVisible();
+    const alert = page.getByRole("alert").filter({ hasText: "Bu mijozda yangi buyurtma bor" });
+    await expect(alert.getByRole("link", { name: "Buyurtma №10260 ni yangi oynada ochish" })).toHaveAttribute(
+      "href",
+      "/new-orders/7/edit/10260",
+    );
+    expect(await mainHorizontalOverflow(page)).toBeLessThanOrEqual(0);
+
+    await page.getByRole("list", { name: /katalogi$/ }).getByRole("button", { name: /Telefon ushlagich/ }).click();
+    await page.getByPlaceholder("0", { exact: true }).fill("150000");
+    await page.getByRole("button", { name: "Buyurtma yaratish" }).click();
+
+    await expect.poll(() => createdOrders.length).toBe(1);
+    expect(createdOrders[0]).toMatchObject({
+      customer_id: "55",
+      customer: { name: "Shahnoza Abdullayeva", phone_number: "+998903456721", district_id: "101" },
+      district_id: "101",
+      region_id: "11",
+    });
     expect(leaked).toEqual([]);
   });
 });

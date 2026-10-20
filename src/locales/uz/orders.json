@@ -813,5 +813,32 @@
     "loading": "Qaytarish yo'li yuklanmoqda",
     "error": "Qaytarish yo'lini yuklab bo'lmadi",
     "empty": "Qaytarish yo'li hali yozilmagan"
+  },
+  "createCustomer": {
+    "cardSubtitle": "Telefon raqamni kiriting — mavjud mijoz topilsa, ma'lumotlari o'zi to'ladi",
+    "listLabel": "Mijoz takliflari",
+    "scopeAll": "Barcha mijozlar · buyurtmalar soni {{market}} bo'yicha",
+    "scopeMarket": "{{market}} mijozlari · buyurtmalar soni shu market bo'yicha",
+    "scopeOwn": "Sizning mijozlaringiz · buyurtmalar soni faqat sizda",
+    "ordersCount": "{{value}} ta buyurtma",
+    "newCount": "{{value}} ta yangi",
+    "searching": "Mijoz qidirilmoqda...",
+    "notFoundTitle": "Mijoz topilmadi",
+    "notFoundHint": "Yangi mijoz sifatida saqlanadi — ismini kiriting",
+    "continueNew": "Yangi mijoz sifatida davom etish",
+    "sheetTitle": "Mijozni tanlang",
+    "sheetDescription": "{{phone}} · {{value}} ta mos keldi",
+    "existingBadge": "Mavjud mijoz",
+    "existingFilled": "Ism, manzil va qo'shimcha raqam mijoz kartasidan to'ldirildi",
+    "existingOrdersMarket": "{{market}}'da {{value}} ta buyurtma",
+    "existingOrdersOwn": "sizda {{value}} ta buyurtma",
+    "existingLast": "oxirgisi {{date}}",
+    "existingCancel": "Bekor qilish",
+    "existingCancelLabel": "Mavjud mijozni bekor qilish",
+    "newOrdersTitle": "Bu mijozda yangi buyurtma bor",
+    "newOrdersBodyMarket": "{{name}} uchun {{market}}'da yangi holatdagi {{value}} ta buyurtma bor. Takroriy buyurtma yaratmayotganingizni tekshiring.",
+    "newOrdersBodyOwn": "{{name}} uchun sizda yangi holatdagi {{value}} ta buyurtma bor. Takroriy buyurtma yaratmayotganingizni tekshiring.",
+    "openOrder": "№{{id}} ni yangi oynada ochish",
+    "openOrderLabel": "Buyurtma №{{id}} ni yangi oynada ochish"
   }
 }
