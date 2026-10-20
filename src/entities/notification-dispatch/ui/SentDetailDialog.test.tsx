@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi, type MockInstance } from "vitest";
 import { api } from "../../../shared/api/api";
+import i18n from "../../../i18n";
 import { renderWithProviders } from "../../../test/test-utils";
 import { SENT_DETAIL_LIVE_INTERVAL_MS } from "../api/useSentDetail";
 import { SentDetailDialog } from "./SentDetailDialog";
@@ -187,5 +189,84 @@ describe("SentDetailDialog", () => {
     fail = false;
     await user.click(within(dialog).getByRole("button", { name: /Qayta urinish/ }));
     expect(await screen.findByRole("dialog", { name: "Ertaga qabul punkti 10:00 dan ishlaydi" })).toBeInTheDocument();
+  });
+  it("404 opened from the unknown-result card — points to «Qayta urinish», not to a list", async () => {
+    respond = () => {
+      throw Object.assign(new Error("nf"), { isAxiosError: true, response: { status: 404, data: { message: "Dispatch topilmadi" } } });
+    };
+    renderWithProviders(<SentDetailDialog dispatchId={ID} source="unknown" onClose={vi.fn()} />);
+    const dialog = await screen.findByRole("dialog", { name: "Yuborilgan xabar" });
+    expect(await within(dialog).findByText("Xabar topilmadi")).toBeInTheDocument();
+    expect(within(dialog).getByText(/serverga yetmagan.*«Qayta urinish»/)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/havola eskirgan/)).not.toBeInTheDocument();
+  });
+
+  it("reopening the same message starts again on page 1", async () => {
+    const user = userEvent.setup();
+    const Harness = () => {
+      const [id, setId] = useState<string | null>(ID);
+      return (
+        <>
+          <button type="button" onClick={() => setId(ID)}>
+            open
+          </button>
+          <SentDetailDialog dispatchId={id} onClose={() => setId(null)} />
+        </>
+      );
+    };
+    renderWithProviders(<Harness />);
+    let dialog = await screen.findByRole("dialog", { name: "Ertaga qabul punkti 10:00 dan ishlaydi" });
+    await user.click(within(dialog).getByRole("button", { name: "2" }));
+    expect(await within(dialog).findByText("Kuryer 11")).toBeInTheDocument();
+
+    await user.click(within(dialog).getAllByRole("button", { name: "Yopish" }).at(-1)!);
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "open" }));
+    dialog = await screen.findByRole("dialog", { name: "Ertaga qabul punkti 10:00 dan ishlaydi" });
+    expect(await within(dialog).findByText("Kuryer 1")).toBeInTheDocument();
+    expect(within(dialog).queryByText("Kuryer 11")).not.toBeInTheDocument();
+  });
+
+  it("an email failure and a code-less not_eligible get readable labels (no raw i18n keys)", async () => {
+    respond = () =>
+      detail({
+        undelivered: {
+          items: [
+            {
+              notification_id: "990",
+              recipient_id: "77",
+              name: "Aziza",
+              role: "courier",
+              failures: [failure("email", "failed", null), failure("push", "not_eligible", null)],
+            },
+          ],
+          meta: { page: 1, limit: 10, total: 1, totalPages: 1 },
+        },
+      });
+    renderDialog();
+    const dialog = await screen.findByRole("dialog", { name: "Ertaga qabul punkti 10:00 dan ishlaydi" });
+    const table = await within(dialog).findByRole("table", { name: "Yetkazilmaganlar" });
+    expect(within(table).getByText("Email")).toBeInTheDocument();
+    expect(within(table).getByText("Kanal ulanmagan")).toBeInTheDocument();
+    expect(dialog).not.toHaveTextContent(/dispatch\.channel\./);
+  });
+
+  it("English: one recipient is singular", async () => {
+    await i18n.changeLanguage("en");
+    try {
+      respond = () =>
+        detail({
+          channels: ["in_app", "telegram"],
+          dispatched: 1,
+          channel_status: { in_app: { sent: 1 }, telegram: { failed: 1 } },
+          undelivered: { items: [person(1)], meta: { page: 1, limit: 10, total: 1, totalPages: 1 } },
+        });
+      renderDialog();
+      const dialog = await screen.findByRole("dialog", { name: "Ertaga qabul punkti 10:00 dan ishlaydi" });
+      expect(await within(dialog).findByText("1 recipient missed at least one channel")).toBeInTheDocument();
+      expect(within(dialog.querySelector('[data-channel="telegram"]') as HTMLElement).getByText("1 recipient")).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage("uz");
+    }
   });
 });

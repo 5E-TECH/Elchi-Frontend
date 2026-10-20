@@ -181,5 +181,10 @@ export const shot = async (page: Page, name: string, element?: Locator) => {
   if (element) await element.screenshot({ path: `${dir}/${name}-card.png` });
 };
 
+/** Gorizontal skroll yo'q: hujjatda ham, shell'ning skroll qiluvchi `<main>` ida ham. */
 export const noHorizontalScroll = async (page: Page) =>
-  page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+  page.evaluate(() => {
+    const main = document.querySelector("main");
+    const mainOk = !main || main.scrollWidth <= main.clientWidth;
+    return document.documentElement.scrollWidth <= window.innerWidth && mainOk;
+  });

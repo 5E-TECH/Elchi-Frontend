@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-notifications-send, superadmin-notifications-send-confirm-dialog, superadmin-notifications-send-result, superadmin-notifications-send-unknown
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { Lock, Send, TriangleAlert, Users, X } from "lucide-react";
 import { Controller, useForm, useWatch, type Resolver } from "react-hook-form";
@@ -220,7 +220,14 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
   const [retryError, setRetryError] = useState<string | null>(null);
   /** Tafsilot oynasi («Tarixdan tekshirish», «Barcha N tasini ko'rish») — `dispatch_id`. */
   const [detailId, setDetailId] = useState<string | null>(null);
+  /** Tafsilot natija noma'lum kartasidan ochildimi (404 matni — «Qayta urinish» ga yo'naltiradi). */
+  const [detailFromUnknown, setDetailFromUnknown] = useState(false);
   const submittingRef = useRef(false);
+  /**
+   * Joriy urinish raqami: «Yangi xabar» uni oshiradi — eski (hali tugamagan) so'rov javobi yangi formaga tushmaydi va
+   * `submittingRef` ni qulflab qoldirmaydi (`mutation.reset()` dan keyin har chaqiruv callback'lari chaqirilmaydi).
+   */
+  const attemptRef = useRef(0);
   const [attempts] = useState(createDispatchAttempts);
   const cancelRef = useRef<HTMLButtonElement>(null);
   const [previewCreatedAt] = useState(() => new Date().toISOString());
@@ -230,6 +237,12 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
   const locked = Boolean(outcome);
   /** Tasdiq oynasi yopilgach fokus: natija kartasi chiqsa — unga, aks holda «Yuborish» tugmasiga. */
   const outcomeRef = useRef<HTMLDivElement>(null);
+  const outcomeKey = outcome ? `${outcome.kind}:${outcome.request.client_request_id}` : null;
+  // Natija almashganda (noma'lum → «Qayta urinish» → natija) fokus yangi kartaga — bosilgan tugma o'chib ketadi.
+  // Tasdiq oynasidan keyingi birinchi natija — oynaning `returnFocus` i orqali.
+  useEffect(() => {
+    if (outcomeKey && !confirmPayload) outcomeRef.current?.focus({ preventScroll: true });
+  }, [outcomeKey, confirmPayload]);
 
   const roleLabel = (role?: string) => (role ? tUsers(ROLE_LABEL_KEYS[role] ?? role) : "");
   const userLabel = (user: RecipientUser) =>
@@ -305,9 +318,12 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
   const send = (sent: SentRequest, retry: boolean) => {
     if (submittingRef.current || dispatchMutation.isPending) return;
     submittingRef.current = true;
+    const token = ++attemptRef.current;
+    const current = () => token === attemptRef.current;
     setRetryError(null);
     dispatchMutation.mutate(sent.request, {
       onSuccess: (response) => {
+        if (!current()) return;
         setConfirmPayload(null);
         if (response.duplicate && response.status === "running") {
           // Ayni id bilan avvalgi so'rov hali ishlanmoqda — natija noma'lum, qayta yuborilmaydi.
@@ -328,6 +344,7 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
         setOutcome({ ...sent, kind: "result", result: response, status });
       },
       onError: (error) => {
+        if (!current()) return;
         setConfirmPayload(null);
         // Id saqlanadi (`settle` yo'q): aynan shu mazmun qayta yuborilsa backend uni ikkinchi marta yubormaydi.
         const text = errorText(error);
@@ -343,7 +360,7 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
         setSendError({ title: t("dispatch.sendFailed"), text });
       },
       onSettled: () => {
-        submittingRef.current = false;
+        if (current()) submittingRef.current = false;
       },
     });
   };
@@ -368,6 +385,9 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
   };
 
   const startNewMessage = () => {
+    // Tugamagan so'rov (masalan «Qayta urinish») endi bu formaga tegishli emas.
+    attemptRef.current += 1;
+    submittingRef.current = false;
     reset(createDefaultValues());
     attempts.clear();
     setOutcome(null);
@@ -412,9 +432,10 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
               dispatchId={outcome.result.dispatch_id ?? outcome.request.client_request_id}
               sentAt={outcome.sentAt}
               onNewMessage={startNewMessage}
-              onOpenDetail={() =>
-                setDetailId(outcome.result.dispatch_id ?? outcome.request.client_request_id)
-              }
+              onOpenDetail={() => {
+                setDetailFromUnknown(false);
+                setDetailId(outcome.result.dispatch_id ?? outcome.request.client_request_id);
+              }}
             />
           ) : (
             <DispatchUnknownCard
@@ -423,7 +444,10 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
               retrying={dispatchMutation.isPending}
               retryError={retryError}
               onRetry={retryUnknown}
-              onCheckHistory={() => setDetailId(outcome.request.client_request_id)}
+              onCheckHistory={() => {
+                setDetailFromUnknown(true);
+                setDetailId(outcome.request.client_request_id);
+              }}
               onNewMessage={startNewMessage}
             />
           )}
@@ -864,7 +888,7 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
         size="md"
         busy={dispatchMutation.isPending}
         initialFocus={cancelRef}
-        returnFocus={outcome ? outcomeRef : true}
+        returnFocus={outcomeRef}
         footer={
           <>
             <Button
@@ -965,7 +989,11 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
         ) : null}
       </Dialog>
 
-      <SentDetailDialog dispatchId={detailId} onClose={() => setDetailId(null)} />
+      <SentDetailDialog
+        dispatchId={detailId}
+        source={detailFromUnknown ? "unknown" : "history"}
+        onClose={() => setDetailId(null)}
+      />
     </>
   );
 };

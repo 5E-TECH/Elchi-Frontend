@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-notifications-send-result
 import { useEffect, useId, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, ChevronUp, CircleCheck, History, Plus, RefreshCw, UserX } from "lucide-react";
+import { ChevronDown, ChevronRight, ChevronUp, CircleCheck, History, Plus, RefreshCw, Users } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import {
   ChannelBreakdown,
@@ -16,6 +16,7 @@ import { cx } from "../../../shared/lib/cx";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { Badge, Button, Card, Pressable, Skeleton } from "../../../shared/ui/primitives";
+import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
 import type { DispatchResult } from "../api/useDispatchNotification";
 import type { DispatchPayload } from "../model/schema";
 
@@ -63,8 +64,11 @@ export const DispatchResultCard = ({
   const rootRef = useRef<HTMLElement>(null);
   const listId = useId();
   const [expanded, setExpanded] = useState(true);
+  const isPhone = useIsPhone();
 
-  const undelivered = useSentDetail(dispatchId, { page: 1, limit: RESULT_UNDELIVERED_LIMIT });
+  // Jonli: navbatdagi kanallar (Telegram, SMS, push) yakunlanguncha ro'yxat yangilanib turadi — keyingi xatolar ham
+  // kartada chiqadi (tafsilot oynasi bilan bir xil, `useSentDetail live`).
+  const undelivered = useSentDetail(dispatchId, { page: 1, limit: RESULT_UNDELIVERED_LIMIT }, { live: true });
   const total = undelivered.data?.undelivered.total ?? 0;
 
   // Karta formadan yuqorida chiqadi (tasdiq tugmasi esa pastda edi) — ko'rinadigan joyga suriladi.
@@ -73,6 +77,11 @@ export const DispatchResultCard = ({
     rootRef.current?.closest("main")?.scrollTo?.({ top: 0, behavior: "smooth" });
   }, []);
 
+  const time = (
+    <span className="whitespace-nowrap text-[13px] text-text-muted" data-testid="dispatch-time">
+      {formatDateTimeLocalized(sentAt, { language })}
+    </span>
+  );
   const recipients = result.dispatched + result.skipped_by_preference;
   const queued = externalChannels(result.channels, result.channel_status)
     .filter((channel) => bucketCounts(result.channel_status?.[channel]).queued > 0)
@@ -84,6 +93,18 @@ export const DispatchResultCard = ({
   const summary = (() => {
     if (status === "skipped") return t("dispatch.result.summarySkipped");
     if (status === "inbox_only") return t("dispatch.result.summaryInboxOnly");
+    if (queuedText && !someUndelivered) {
+      // Maket «Hammasi navbatga qo'yildi — hech kim tushib qolmadi».
+      return (
+        <Trans
+          t={t}
+          i18nKey="dispatch.result.summaryInboxQueued"
+          count={result.dispatched}
+          values={{ value: count(result.dispatched), channels: queuedText }}
+          components={{ b: <span className="font-semibold text-text" /> }}
+        />
+      );
+    }
     const tail = queuedText
       ? someUndelivered
         ? t("dispatch.result.tailQueuedUndelivered", { channels: queuedText })
@@ -96,6 +117,7 @@ export const DispatchResultCard = ({
         <Trans
           t={t}
           i18nKey="dispatch.result.summaryInbox"
+          count={result.dispatched}
           values={{ value: count(result.dispatched) }}
           components={{ b: <span className="font-semibold text-text" /> }}
         />
@@ -120,7 +142,7 @@ export const DispatchResultCard = ({
       return (
         <div className="border-t border-border">
           <div className="flex min-h-14 items-center gap-2.5 border-b border-border px-5 py-3 max-md:px-4">
-            <UserX size={18} aria-hidden="true" className="shrink-0 text-text-muted" />
+            <Users size={18} aria-hidden="true" className="shrink-0 text-text-muted" />
             <span className="text-sm font-semibold text-text">{t("dispatch.undelivered.title")}</span>
           </div>
           <div className="p-5 max-md:p-4">
@@ -149,7 +171,7 @@ export const DispatchResultCard = ({
       return (
         <div className="border-t border-border" data-testid="undelivered-loading">
           <div className="flex min-h-14 items-center gap-2.5 border-b border-border px-5 py-3 max-md:px-4">
-            <UserX size={18} aria-hidden="true" className="shrink-0 text-text-muted" />
+            <Users size={18} aria-hidden="true" className="shrink-0 text-text-muted" />
             <span className="text-sm font-semibold text-text">{t("dispatch.undelivered.title")}</span>
           </div>
           <span role="status" className="sr-only">
@@ -184,7 +206,7 @@ export const DispatchResultCard = ({
           className="flex min-h-14 w-full items-center justify-between gap-3 px-5 py-3 text-left hover:bg-row-hover max-md:px-4"
         >
           <span className="flex min-w-0 items-center gap-2.5 text-text">
-            <UserX size={18} aria-hidden="true" className="shrink-0 text-text-muted" />
+            <Users size={18} aria-hidden="true" className="shrink-0 text-text-muted" />
             <span className="text-sm font-semibold">{t("dispatch.undelivered.title")}</span>
             <Badge>{t("dispatch.detail.countValue", { value: count(total) })}</Badge>
           </span>
@@ -220,11 +242,9 @@ export const DispatchResultCard = ({
       className="overflow-hidden scroll-mt-4 focus-visible:outline-none"
       title={t("dispatch.result.title")}
       titleAddon={<DispatchStatusBadge status={status} />}
-      actions={
-        <span className="whitespace-nowrap text-[13px] text-text-muted">
-          {formatDateTimeLocalized(sentAt, { language })}
-        </span>
-      }
+      // Telefonda (maket phone-light-1) sarlavha va belgi bir qatorda, vaqt — ostida alohida qatorda.
+      description={isPhone ? time : undefined}
+      actions={isPhone ? undefined : time}
       footer={
         <div className="flex w-full flex-wrap items-center justify-between gap-3">
           <span className="text-[13px] text-text-muted max-md:hidden">{t("dispatch.result.locked")}</span>

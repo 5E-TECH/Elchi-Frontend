@@ -116,7 +116,7 @@ export const ChannelBreakdown = ({
                 <span className="text-xs text-text-muted">
                   {channel === "telegram" && telegramDm
                     ? t("dispatch.breakdown.recipientsDm", { value: count(total) })
-                    : t("dispatch.breakdown.recipients", { value: count(total) })}
+                    : t("dispatch.breakdown.recipients", { count: total, value: count(total) })}
                 </span>
               </div>
               {badge ? <StatusBadge tone={badge.tone} icon={badge.icon} label={t(badge.labelKey)} /> : null}

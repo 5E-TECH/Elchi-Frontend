@@ -102,7 +102,7 @@ export const DELIVERY_META: Record<DeliveryBucket, BadgeMeta & { chart: ChartTon
   queued: { tone: "warning", chart: "warning", icon: Clock, labelKey: "dispatch.delivery.queued" },
   failed: { tone: "danger", chart: "danger", icon: CircleX, labelKey: "dispatch.delivery.failed" },
   skipped: { tone: "neutral", chart: "neutral", icon: CircleMinus, labelKey: "dispatch.delivery.skipped" },
-  no_provider: { tone: "neutral", chart: "neutral", icon: CircleMinus, labelKey: "dispatch.delivery.no_provider" },
+  no_provider: { tone: "neutral", chart: "neutral", icon: TriangleAlert, labelKey: "dispatch.delivery.no_provider" },
 };
 
 /**

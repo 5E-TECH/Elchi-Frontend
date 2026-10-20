@@ -1,4 +1,6 @@
+import { TriangleAlert } from "lucide-react";
 import {
+  DELIVERY_META,
   bucketCounts,
   channelBadge,
   deliveryBucket,
@@ -83,5 +85,9 @@ describe("notification-dispatch status (ega S3 ranglari)", () => {
     expect(isDispatchLive("partial", { telegram: { queued: 1, sent: 3 } })).toBe(true);
     expect(isDispatchLive("sent", { in_app: { pending: 1 }, telegram: { sent: 4 } })).toBe(false);
     expect(isDispatchLive("failed", null)).toBe(false);
+  });
+  it("«Provayder ulanmagan» — neutral tone with the warning triangle (maket send-result, inbox-only)", () => {
+    expect(DELIVERY_META.no_provider.tone).toBe("neutral");
+    expect(DELIVERY_META.no_provider.icon).toBe(TriangleAlert);
   });
 });

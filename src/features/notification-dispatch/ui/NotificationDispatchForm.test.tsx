@@ -814,3 +814,199 @@ describe("NotificationDispatchForm — natija kartasi (NS-1)", () => {
     expect(sms).toHaveTextContent(/SMS provayderi ulanmagan/);
   });
 });
+
+describe("NotificationDispatchForm — natija: fokus, qayta urinish, holatlar (NS-1 review)", () => {
+  /** Natija/noma'lum kartasining o'rami (`tabIndex=-1`) — tasdiq oynasidan keyin fokus shu yerda. */
+  const outcomeWrapper = (card: HTMLElement) => card.parentElement as HTMLElement;
+
+  it("after a successful send the focus moves to the result, not to <body>", async () => {
+    const user = userEvent.setup();
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    const card = await expectResult(1);
+    await waitFor(() => expect(outcomeWrapper(card)).toHaveFocus());
+    // Desktop: vaqt sarlavha qatorining o'ng tomonida (amallar), izoh qatorida emas.
+    expect(within(card).getByTestId("dispatch-time").closest("p")).toBeNull();
+  });
+
+  it("504 → the unknown card gets the focus; «Qayta urinish» → the result card gets it", async () => {
+    const user = userEvent.setup();
+    postSpy.mockRejectedValueOnce(httpError(504, "Gateway Timeout"));
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    const unknown = await screen.findByTestId("dispatch-unknown");
+    await waitFor(() => expect(outcomeWrapper(unknown)).toHaveFocus());
+
+    await user.click(within(unknown).getByRole("button", { name: "Qayta urinish" }));
+    const card = await expectResult(1);
+    await waitFor(() => expect(outcomeWrapper(card)).toHaveFocus());
+  });
+
+  it("«Yangi xabar» is blocked while «Qayta urinish» runs; afterwards a new message can still be sent", async () => {
+    const user = userEvent.setup();
+    let resolveRetry: (value: unknown) => void = () => undefined;
+    postSpy
+      .mockRejectedValueOnce(httpError(504, "Gateway Timeout"))
+      .mockImplementationOnce(() => new Promise((resolve) => (resolveRetry = resolve)) as never);
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    const unknown = await screen.findByTestId("dispatch-unknown");
+
+    await user.click(within(unknown).getByRole("button", { name: "Qayta urinish" }));
+    expect(within(unknown).getByRole("button", { name: "Yangi xabar" })).toBeDisabled();
+    resolveRetry(
+      dispatched({ dispatched: 1, recipient_ids: [], channels: ["in_app"], by_channel: { in_app: 1 } }),
+    );
+    const card = await expectResult(1);
+    expect(postSpy).toHaveBeenCalledTimes(2);
+
+    await user.click(within(card).getByRole("button", { name: "Yangi xabar" }));
+    await chooseMode(user, "Hamma");
+    await fillContent(user, "Ikkinchi xabar", "");
+    await confirmInDialog(user);
+    await waitFor(() => expect(postSpy).toHaveBeenCalledTimes(3));
+    expect(sentRequestId(2)).not.toBe(sentRequestId(0));
+    await expectResult(1);
+  });
+
+  it("unknown card icons follow the maket: clock for «Noma'lum», loader for «Hali yuborilmoqda» (no steps there)", async () => {
+    const user = userEvent.setup();
+    postSpy
+      .mockRejectedValueOnce(httpError(504, "Gateway Timeout"))
+      .mockResolvedValueOnce(dispatched({ duplicate: true, status: "running", dispatched: 0, recipient_ids: [], channels: ["in_app"] }));
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    let unknown = await screen.findByTestId("dispatch-unknown");
+    expect(unknown.querySelector("svg.lucide-clock")).not.toBeNull();
+    expect(within(unknown).getAllByRole("listitem")).toHaveLength(3);
+
+    await user.click(within(unknown).getByRole("button", { name: "Qayta urinish" }));
+    expect(await screen.findByText("Hali yuborilmoqda")).toBeInTheDocument();
+    unknown = screen.getByTestId("dispatch-unknown");
+    expect(unknown.querySelector("svg.lucide-loader-circle")).not.toBeNull();
+    // «Tarixda yo'q bo'lsa — Qayta urinish» qadami bu holatga zid — qadamlar yo'q.
+    expect(within(unknown).queryAllByRole("listitem")).toHaveLength(0);
+  });
+
+  it("504 → «Tarixdan tekshirish» → 404: the text points to «Qayta urinish» on the card", async () => {
+    const user = userEvent.setup();
+    postSpy.mockRejectedValueOnce(httpError(504, "Gateway Timeout"));
+    sentDetail = () => {
+      throw httpError(404, "Dispatch topilmadi");
+    };
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    const unknown = await screen.findByTestId("dispatch-unknown");
+    await user.click(within(unknown).getByRole("button", { name: "Tarixdan tekshirish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Yuborilgan xabar" });
+    expect(await within(dialog).findByText(/serverga yetmagan/)).toBeInTheDocument();
+    expect(within(dialog).queryByText(/havola eskirgan/)).not.toBeInTheDocument();
+  });
+
+  it("the «Yetkazilmaganlar» header uses the Users icon (UserX means «Nofaol qilish»)", async () => {
+    const user = userEvent.setup();
+    sentDetail = (id, params) =>
+      sentDetailBody(id, {
+        undelivered: {
+          items: [{ notification_id: "1", recipient_id: "3", name: "Baraka Shop", role: "market", failures: [{ channel: "telegram", status: "skipped", reason: "no_telegram_id" }] }],
+          meta: { page: 1, limit: Number(params.limit), total: 1 },
+        },
+      });
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    const card = await expectResult(1);
+    const toggle = await within(card).findByRole("button", { name: /Yetkazilmaganlar/ });
+    expect(toggle.querySelector("svg.lucide-users")).not.toBeNull();
+    expect(card.querySelector("svg.lucide-user-x")).toBeNull();
+  });
+
+  it("all external channels queued, nobody missed — the maket sentence «…va Telegram'ga uzatildi»", async () => {
+    const user = userEvent.setup();
+    postSpy.mockResolvedValueOnce(
+      dispatched({
+        dispatched: 62,
+        recipient_ids: [],
+        channels: ["in_app", "realtime", "telegram"],
+        by_channel: { in_app: 62, realtime: 62, telegram: 62 },
+        no_provider: [],
+        skipped_by_preference: 0,
+        channel_status: { in_app: { sent: 62 }, realtime: { emitted: 62 }, telegram: { queued: 62 } },
+      }),
+    );
+    renderForm();
+    await chooseMode(user, "Hamma");
+    await fillContent(user);
+    await confirmInDialog(user);
+    const card = await screen.findByTestId("dispatch-result");
+    expect(card).toHaveTextContent("Xabar 62 ta qabul qiluvchining qutisiga yozildi va Telegram'ga uzatildi.");
+  });
+
+  it("the undelivered list stays live while channels are queued (later failures show up on the card)", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    try {
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      let calls = 0;
+      sentDetail = (id, params) => {
+        if (params.limit === 5) calls += 1;
+        return calls <= 1
+          ? sentDetailBody(id, { status: "sent", channels: ["in_app", "telegram"], channel_status: { in_app: { sent: 1 }, telegram: { queued: 1 } } })
+          : sentDetailBody(id, {
+              status: "partial",
+              channels: ["in_app", "telegram"],
+              channel_status: { in_app: { sent: 1 }, telegram: { failed: 1 } },
+              undelivered: {
+                items: [{ notification_id: "1", recipient_id: "56", name: "Kuryer Ali", role: "courier", failures: [{ channel: "telegram", status: "failed", reason: "bot_blocked" }] }],
+                meta: { page: 1, limit: 5, total: 1 },
+              },
+            });
+      };
+      renderForm();
+      await chooseMode(user, "Hamma");
+      await fillContent(user);
+      await confirmInDialog(user);
+      const card = await screen.findByTestId("dispatch-result");
+      expect(await within(card).findByText("Hozircha yetkazilmaganlar yo'q")).toBeInTheDocument();
+      await vi.advanceTimersByTimeAsync(5_100);
+      expect(await within(card).findByText("Botni bloklagan")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("phone: the time sits under the title, not in the header actions", async () => {
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query.includes("max-width: 767px"),
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })) as typeof window.matchMedia;
+    try {
+      const user = userEvent.setup();
+      renderForm();
+      await chooseMode(user, "Hamma");
+      await fillContent(user);
+      await confirmInDialog(user);
+      const card = await expectResult(1);
+      expect(within(card).getByTestId("dispatch-time").closest("p")).not.toBeNull();
+    } finally {
+      window.matchMedia = original;
+    }
+  });
+});

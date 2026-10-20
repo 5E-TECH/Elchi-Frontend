@@ -2,7 +2,7 @@
 import { useId, useState, type ReactNode } from "react";
 import { CircleCheck, CircleQuestionMark, Send, ServerCrash } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { NoticeAlert } from "../../notification/ui/NoticeAlert";
+import { NoticeAlert } from "../../notification";
 import { getUserRoleLabelKey } from "../../user/lib/role";
 import { cx } from "../../../shared/lib/cx";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
@@ -31,6 +31,11 @@ export type SentDetailDialogProps = {
   /** Ochiq oynaning xabari (`dispatch_id` = yuborishdagi `client_request_id`); `null` — yopiq. */
   dispatchId: string | null;
   onClose: () => void;
+  /**
+   * Qayerdan ochildi — faqat «topilmadi» (404) matni uchun: `history` (sukut) — ro'yxat/havola; `unknown` — natija
+   * noma'lum kartasi («Tarixdan tekshirish»): tarixda yo'q bo'lsa so'rov serverga yetmagan, kartada «Qayta urinish».
+   */
+  source?: "history" | "unknown";
 };
 
 type InfoRow = { key: string; label: ReactNode; value: ReactNode };
@@ -57,7 +62,7 @@ const InfoList = ({ rows, className }: { rows: InfoRow[]; className?: string }) 
  * («Qayta urinish»), yuborilmoqda, xato bilan tugagan (tushunarli matn — backend `error` ko'rsatilmaydi).
  * Telefonda — pastki varaqa (`Dialog` o'zi).
  */
-export const SentDetailDialog = ({ dispatchId, onClose }: SentDetailDialogProps) => {
+export const SentDetailDialog = ({ dispatchId, onClose, source = "history" }: SentDetailDialogProps) => {
   const { t, i18n } = useTranslation("notifications");
   const { t: tUsers } = useTranslation("users");
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -67,9 +72,14 @@ export const SentDetailDialog = ({ dispatchId, onClose }: SentDetailDialogProps)
   // Yopilish harakati tugaguncha oxirgi xabar ko'rinib turadi.
   const [shownId, setShownId] = useState(dispatchId);
   const [page, setPage] = useState(1);
-  if (dispatchId && dispatchId !== shownId) {
-    setShownId(dispatchId);
-    setPage(1);
+  // Har ochilishda (shu xabar qayta ochilsa ham) — birinchi sahifa.
+  const [lastId, setLastId] = useState(dispatchId);
+  if (dispatchId !== lastId) {
+    setLastId(dispatchId);
+    if (dispatchId) {
+      setShownId(dispatchId);
+      setPage(1);
+    }
   }
   const open = Boolean(dispatchId);
   const query = useSentDetail(shownId, { page, limit: SENT_DETAIL_PAGE_SIZE }, { enabled: open, live: true });
@@ -124,7 +134,7 @@ export const SentDetailDialog = ({ dispatchId, onClose }: SentDetailDialogProps)
         <EmptyState
           icon={CircleQuestionMark}
           title={t("dispatch.detail.notFoundTitle")}
-          description={t("dispatch.detail.notFoundText")}
+          description={t(source === "unknown" ? "dispatch.detail.notFoundUnknownText" : "dispatch.detail.notFoundText")}
           className="py-6"
         />
       );
@@ -211,7 +221,7 @@ const DetailBody = ({ detail, audience, page, onPageChange, busy, count, when }:
     : failed
       ? t("dispatch.detail.failedSummary")
       : total > 0
-        ? t("dispatch.detail.undeliveredSummary", { value: count(total) })
+        ? t("dispatch.detail.undeliveredSummary", { count: total, value: count(total) })
         : null;
 
   const subtle = (text: string) => <span className="font-normal text-text-subtle">{text}</span>;

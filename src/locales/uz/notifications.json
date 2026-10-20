@@ -88,7 +88,8 @@
       "realtime": "Darhol (ochiq ekranga)",
       "telegram": "Telegram",
       "sms": "SMS",
-      "push": "Push"
+      "push": "Push",
+      "email": "Email"
     },
     "inAppAlways": "Doim yoqiq — xabar Bildirishnomalar qutisida saqlanadi",
     "telegramMarket": "Telegram guruhi (market)",
@@ -179,7 +180,7 @@
       "appOpen": "Ilova ochiq edi",
       "quietHours": "Tungi tinch vaqt",
       "noSubscription": "Push obunasi yo'q",
-      "notEligible": "Manzil yo'q",
+      "notEligible": "Kanal ulanmagan",
       "failedTelegram": "Telegram xatosi",
       "failedSms": "SMS yetkazilmadi",
       "failedPush": "Push yetkazilmadi",
@@ -220,6 +221,7 @@
     "result": {
       "title": "Yuborish natijasi",
       "summaryInbox": "Xabar <b>{{value}} ta</b> qabul qiluvchining Bildirishnomalar qutisiga yozildi.",
+      "summaryInboxQueued": "Xabar <b>{{value}} ta</b> qabul qiluvchining qutisiga yozildi va {{channels}}'ga uzatildi.",
       "tailQueued": "{{channels}} navbatga qo'yildi.",
       "tailQueuedUndelivered": "{{channels}} navbatga qo'yildi, ba'zilariga esa umuman ketmaydi — ro'yxat pastda.",
       "tailUndelivered": "Ba'zilariga tashqi kanallar ketmaydi — ro'yxat pastda.",
@@ -252,6 +254,7 @@
       "close": "Yopish",
       "notFoundTitle": "Xabar topilmadi",
       "notFoundText": "Bu xabar tarixda yo'q — havola eskirgan bo'lishi mumkin. Ro'yxatni yangilab, qaytadan oching.",
+      "notFoundUnknownText": "Bu so'rov tarixda yo'q — u serverga yetmagan. Oynani yopib, kartadagi «Qayta urinish» ni bosing: xabar o'sha so'rov bilan bir marta yuboriladi.",
       "errorTitle": "Tafsilotni yuklab bo'lmadi",
       "errorText": "Server hozir javob bermayapti. Birozdan keyin qayta urinib ko'ring.",
       "undeliveredSummary": "{{value}} ta qabul qiluvchiga kamida bitta kanal yetmadi",

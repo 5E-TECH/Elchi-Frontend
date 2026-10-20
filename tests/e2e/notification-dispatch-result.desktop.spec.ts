@@ -71,6 +71,8 @@ test.describe("Xabar yuborish — natija, 1440px", () => {
     await unknown.getByRole("button", { name: "Tarixdan tekshirish" }).click();
     const dialog = page.getByRole("dialog", { name: "Yuborilgan xabar" });
     await expect(dialog.getByText("Xabar topilmadi")).toBeVisible();
+    // Noma'lum kartadan ochilgan 404 — «Qayta urinish» ga yo'naltiradi (ro'yxat/havola emas).
+    await expect(dialog.getByText(/serverga yetmagan/)).toBeVisible();
     await dialog.getByRole("button", { name: "Yopish" }).last().click();
     await expect(dialog).toBeHidden();
 
