@@ -418,6 +418,9 @@ const IncomingOrdersPage = () => {
     undoRef.current = undoScans;
   });
   const handleRowUnscan = useCallback((order: IncomingOrder) => undoRef.current([order]), []);
+  // «Qaytarish» xabari faqat shu sahifa (manba) uchun — boshqa manbaga o'tilsa yoki sahifa yopilsa yo'qoladi
+  // (aks holda tugma jimgina hech narsa qilmasdi).
+  useEffect(() => () => notify.dismiss(UNSCAN_TOAST_ID), []);
 
   // Kamera ro'yxati — skanerlash tartibida, yangisi birinchi (token — tartib manbai).
   const cameraList: ScanTargetListItem[] = [...scannedTokens]

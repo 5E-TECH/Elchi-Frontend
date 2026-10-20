@@ -253,6 +253,20 @@ const DashboardEntry = () => {
     return <MarketDashboardPage />;
   }
 
+  // Yangi rollarning o'z bosh sahifasi kelguncha — 403 (admin bosh sahifasi kompaniya tushumini ko'rsatadi).
+  // Har rol o'z tarmog'ida: LG-1 / MO-2 / IN-1 faqat o'z qatorini almashtiradi.
+  if (role === "logist") {
+    return <ForbiddenPage />;
+  }
+
+  if (role === "market_operator") {
+    return <ForbiddenPage />;
+  }
+
+  if (role === "investor") {
+    return <ForbiddenPage />;
+  }
+
   if (canViewAdmin) {
     return <DashboardPage />;
   }

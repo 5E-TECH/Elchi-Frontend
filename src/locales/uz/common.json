@@ -177,7 +177,7 @@
     "receiveUnit": " posilka",
     "receivePartial": "{{received}} qabul qilindi, {{failed}} o'tmadi: {{detail}}",
     "listTitle": "Kelgan posilkalar",
-    "listSummary": "<b>{{count}}</b> ta · jami <b>{{sum}}</b>",
+    "listSummary": "<b>{{value}}</b> ta · jami <b>{{sum}}</b>",
     "listSummaryBags": "<b>{{value}}</b> ta · <b>{{bags}}</b> ta qop · jami <b>{{sum}}</b>",
     "scanStatus": "Skan holati",
     "scanned": "Skanerlandi",

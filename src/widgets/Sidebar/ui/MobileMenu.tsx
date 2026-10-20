@@ -22,6 +22,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { RootState } from "../../../app/config/store";
+import { canViewOrders } from "../../../app/lib/access";
 import { useUnreadCount } from "../../../entities/notification-inbox";
 import { getUserRoleLabelKey, roleHasGlobalSearch } from "../../../entities/user/lib/role";
 import { cx } from "../../../shared/lib/cx";
@@ -170,7 +171,10 @@ type VariantProps = {
   activeTo: string | null;
   persona: Persona;
   branchTypeMissing: boolean;
-  /** Menyu qidiruvi — global qidiruvi bor rolda (`roleHasGlobalSearch`; investor maketida yo'q). */
+  /**
+   * Menyu qidiruvi — global qidiruvi bor (`roleHasGlobalSearch`; investor maketida yo'q) va buyurtmalar ochiladigan
+   * (`canViewOrders`) rolda.
+   */
   showSearch: boolean;
   label: (item: NavEntry) => string;
   /** Ixcham katak yorlig'i (qisqa shakl bo'lsa — u). */
@@ -544,6 +548,9 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
 
   const { role, user, sections, items, branchTypeMissing } = useNavSections();
   const roleState = useSelector((state: RootState) => state.role);
+  // Menyu qidiruvi `/orders?search=` ga olib boradi — buyurtmalar ochilmaydigan rolda (logist, market operatori:
+  // LG-4 / MO-3 gacha) u 403 sahifasiga olib borardi; yuqori paneldagi global qidiruv qoladi.
+  const canOpenOrders = useSelector(canViewOrders);
   // Yuqori paneldagi qo'ng'iroqcha bilan bir xil so'rov (kesh umumiy) — qo'shimcha so'rov ketmaydi.
   const { data: unreadCount = 0 } = useUnreadCount(Boolean(roleState.role));
   const pathname = useNavPathname();
@@ -600,7 +607,7 @@ const MobileMenu = ({ isOpen, onClose }: MobileMenuProps) => {
     activeTo,
     persona,
     branchTypeMissing,
-    showSearch: roleHasGlobalSearch(user?.role || role || roleState.role),
+    showSearch: roleHasGlobalSearch(user?.role || role || roleState.role) && canOpenOrders,
     label: (item) => t(item.labelKey),
     shortLabel: (item) => t(item.shortLabelKey ?? item.labelKey),
     onClose,

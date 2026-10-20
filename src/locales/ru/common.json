@@ -183,7 +183,7 @@
     "receiveUnit": "",
     "receivePartial": "Принято: {{received}}, не прошло: {{failed}} — {{detail}}",
     "listTitle": "Поступившие посылки",
-    "listSummary": "<b>{{count}}</b> шт. · всего <b>{{sum}}</b>",
+    "listSummary": "<b>{{value}}</b> шт. · всего <b>{{sum}}</b>",
     "listSummaryBags": "<b>{{value}}</b> шт. · мешков: <b>{{bags}}</b> · всего <b>{{sum}}</b>",
     "scanStatus": "Статус сканирования",
     "scanned": "Отсканировано",

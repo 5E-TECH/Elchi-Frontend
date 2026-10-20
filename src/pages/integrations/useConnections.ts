@@ -111,7 +111,10 @@ export const useConnections = (options?: SilentErrorOption & { enabled?: boolean
     isError: partnersQuery.isError && integrationsQuery.isError,
     /** Qismiy xato — ro'yxat to'liq emas, buni aytish kerak. */
     partialError: partnersQuery.isError !== integrationsQuery.isError,
+    // `refetch` react-query'da `enabled` ga qaramaydi — o'chiq so'rov (masalan menejer/registratorda, ikkalasi
+    // ham faqat superadmin/admin uchun) qo'lda ham yuborilmaydi (403 bo'lmasin).
     refetch: () => {
+      if (options?.enabled === false) return;
       void partnersQuery.refetch();
       void integrationsQuery.refetch();
     },

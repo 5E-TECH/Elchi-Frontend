@@ -111,7 +111,9 @@ for (const { role, name, search } of [
     await page.getByRole("button", { name: "Menyuni ochish" }).click();
     const sheet = page.getByRole("dialog", { name: "Menyu" });
     await expect(sheet).toBeVisible();
-    await expect(sheet.getByRole("searchbox", { name: "Qidiruv" })).toHaveCount(search ? 1 : 0);
+    // Menyu qidiruvi `/orders?search=` ga olib boradi — bu rollarda buyurtmalar yopiq (403), shuning uchun yo'q;
+    // global qidiruv (yuqori panel) logistda qoladi.
+    await expect(sheet.getByRole("searchbox", { name: "Qidiruv" })).toHaveCount(0);
     await expect(sheet.getByRole("link", { name: /Sozlamalar/ })).toBeVisible();
     await expect(sheet.getByRole("button", { name: "Chiqish" })).toBeVisible();
 

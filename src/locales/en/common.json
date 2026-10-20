@@ -182,7 +182,7 @@
     "receiveUnit_other": " parcels",
     "receivePartial": "{{received}} received, {{failed}} failed: {{detail}}",
     "listTitle": "Arrived parcels",
-    "listSummary": "<b>{{count}}</b> · total <b>{{sum}}</b>",
+    "listSummary": "<b>{{value}}</b> · total <b>{{sum}}</b>",
     "listSummaryBags": "<b>{{value}}</b> · bags: <b>{{bags}}</b> · total <b>{{sum}}</b>",
     "scanStatus": "Scan status",
     "scanned": "Scanned",

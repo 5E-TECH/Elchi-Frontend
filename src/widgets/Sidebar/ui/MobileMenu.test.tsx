@@ -380,11 +380,12 @@ describe("MobileMenu — telefon varaqasi (< 768)", () => {
 describe("MobileMenu — rol personasi (ROL-0)", () => {
   it.each([
     ["investor", false],
-    ["logist", true],
-    ["market_operator", true],
+    // Menyu qidiruvi `/orders?search=` ga olib boradi — buyurtmalar hali ochilmagan rolda (LG-4 / MO-3 gacha) yo'q.
+    ["logist", false],
+    ["market_operator", false],
     ["market", true],
     ["courier", true],
-  ] as const)("%s: menyu qidiruvi — %s (investor maketida qidiruv yo'q)", (role, hasSearch) => {
+  ] as const)("%s: menyu qidiruvi — %s (investor maketida qidiruv yo'q; 403 ga olib bormaydi)", (role, hasSearch) => {
     renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, role);
     if (hasSearch) expect(screen.getByRole("searchbox", { name: "Qidiruv" })).toBeInTheDocument();
     else expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
