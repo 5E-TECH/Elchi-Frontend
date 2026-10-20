@@ -1381,8 +1381,8 @@
         "src/pages/notifications/ui/NotificationsPage.tsx",
         "src/features/notification-create/ui/NotificationFormModal.tsx",
         "src/pages/notifications/ui/NotificationRowMenu.tsx",
-        "src/features/notification-create/ui/GroupLinkQr.tsx",
         "src/features/notification-toggle/ui/useToggleNotificationConfirm.tsx",
+        "src/features/telegram-link/ui/LinkQrPanel.tsx",
         "src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx"
       ],
       "views": {
@@ -1614,13 +1614,15 @@
         "src/pages/profile/lib/profileView.ts",
         "src/features/telegram-link/ui/TelegramLinkCard.tsx",
         "src/features/telegram-link/ui/TelegramLinkDialog.tsx",
+        "src/features/telegram-link/ui/LinkCountdown.tsx",
+        "src/features/telegram-link/ui/LinkQrPanel.tsx",
         "src/widgets/user-detail/ui/MarketTelegramGroupPiiCard.tsx"
       ],
       "views": {
         "market": ["profile", "profile-telegram-status", "profile-telegram-group-dialog", "profile-telegram-group-expired-dialog"],
         "common": ["profile", "profile-password-dialog", "profile-telegram", "profile-telegram-link-dialog", "profile-telegram-command-dialog", "profile-telegram-expired-dialog", "profile-telegram-linked", "profile-telegram-unlink-dialog"]
       },
-      "note": "Dizayn v2 (G2): ma'lumot kartasi (GET /auth/my-profile), maosh bloki faqat salary > 0; parol — alohida oyna (≥ 4 belgi, mos kelish, saqlangach chiqish); profilni tahrirlash — alohida oyna (Ism, Telefon; D7, maket yo'q: EditProfileDialog `(maket yo'q) common-profile-password-dialog`). UpdateUserModal profilda ishlatilmaydi. «Login» — username bo'lsa. dev birlashtirishi: «Xavfsizlik» ostida yana bir qator — o'z Telegram'ini ulash/uzish (TelegramLinkCard, mijoz/investordan boshqa rollar; POST users/me/telegram/link-code, oyna ochiqligida profil har 3 s) va market uchun «Guruhda mijoz ismi va telefoni» (MarketTelegramGroupPiiCard, PATCH markets/:id/telegram-group-pii) — maket yo'q, eng yaqini «Xavfsizlik» kartasi (`(maket yo'q) common-profile`). Ega tasdig'i 2026-10-19 (tg-link): o'z Telegram'ini ulash — ulanmagan / ulangan holatlari, havola + QR oynasi (muddat bilan), bot nomi yo'q bo'lsa buyruq oynasi, havola eskirsa — qayta yaratish, uzish — tasdiq oynasi (common-profile-telegram*). Market rolida /profile maketi — market-profile (common-profile o'rniga): «Telegram guruhlari» holati (S1 — backendga endpoint so'raladi), har xabar turi qatorida «Ulash» (S5), «Guruhda mijoz ismi va telefoni» kaliti «Telegram guruhi» kartasida (S3)."
+      "note": "Dizayn v2 (G2): ma'lumot kartasi (GET /auth/my-profile), maosh bloki faqat salary > 0; parol — alohida oyna (≥ 4 belgi, mos kelish, saqlangach chiqish); profilni tahrirlash — alohida oyna (Ism, Telefon; D7, maket yo'q: EditProfileDialog `(maket yo'q) common-profile-password-dialog`). UpdateUserModal profilda ishlatilmaydi. «Login» — username bo'lsa. dev birlashtirishi: «Xavfsizlik» ostida yana bir qator — o'z Telegram'ini ulash/uzish (TelegramLinkCard, mijoz/investordan boshqa rollar; POST users/me/telegram/link-code, oyna ochiqligida profil har 3 s) va market uchun «Guruhda mijoz ismi va telefoni» (MarketTelegramGroupPiiCard, PATCH markets/:id/telegram-group-pii) — maket yo'q, eng yaqini «Xavfsizlik» kartasi (`(maket yo'q) common-profile`). Ega tasdig'i 2026-10-19 (tg-link): o'z Telegram'ini ulash — ulanmagan / ulangan holatlari, havola + QR oynasi (muddat bilan), bot nomi yo'q bo'lsa buyruq oynasi, havola eskirsa — qayta yaratish, uzish — tasdiq oynasi (common-profile-telegram*). Market rolida /profile maketi — market-profile (common-profile o'rniga): «Telegram guruhlari» holati (S1 — backendga endpoint so'raladi), har xabar turi qatorida «Ulash» (S5), «Guruhda mijoz ismi va telefoni» kaliti «Telegram guruhi» kartasida (S3). TG-A (2026-10-21) — common-profile-telegram* maket bo'yicha: ulangan holatda qalin «@username» · «{sana} da ulangan»; havola oynasi — QR oq ramkada, muddat sanog'i va progress (LinkCountdown), «Ulanish kutilmoqda…», telefonda boshqa qadamlar va yig'ilgan «Boshqa telefondan — QR kod» (LinkQrPanel); buyruq rejimi (deep_link yo'q) — o'z qadamlari, sanoqsiz, faqat «Yopish»; muddati tugadi — sunken ichida bo'sh holat. Kod olinmasa — faqat i18n izoh (backend matni ko'rsatilmaydi). Havola qismlari (LinkCountdown, LinkQrPanel, useQrImage, requestGroupLinkCode) features/telegram-link da — notification-create shu yerdan oladi."
     },
     {
       "path": "/settings",
@@ -1803,10 +1805,6 @@
     "admin-users-list-telegram": "Taklif (tg-link S4) — kodda yo'q: «Telegram» ustuni va filtri; backend telegram_linked kerak.",
     "admin-users-detail-telegram-group-dialog": "Taklif (tg-link) — havola + QR oynasi, kodda yo'q.",
     "admin-users-detail-telegram-group-expired-dialog": "Taklif (tg-link) — havola muddati tugadi holati, kodda yo'q.",
-    "common-profile-telegram-link-dialog": "Taklif (tg-link) — kodda yo'q.",
-    "common-profile-telegram-command-dialog": "Taklif (tg-link) — kodda yo'q.",
-    "common-profile-telegram-expired-dialog": "Taklif (tg-link) — kodda yo'q.",
-    "common-profile-telegram-unlink-dialog": "Taklif (tg-link) — kodda yo'q.",
     "market-profile-telegram-status": "Taklif (tg-link S1, S5) — kodda yo'q; backend guruhlar holati endpointi kerak.",
     "market-profile-telegram-group-dialog": "Taklif (tg-link S1, S5) — kodda yo'q; backend guruhlar holati endpointi kerak.",
     "market-profile-telegram-group-expired-dialog": "Taklif (tg-link S1, S5) — kodda yo'q; backend guruhlar holati endpointi kerak.",
@@ -1941,8 +1939,6 @@
     "admin-notifications-send-confirm-dialog": "Kodda bor (canSendNotifications admin'ni o'tkazadi); natija bloki va «Yuborilganlar» havolasi — taklif (notif-send).",
     "superadmin-users-detail-telegram": "Kodda bor (MarketTelegramGroupLinkCard, MarketTelegramGroupPiiCard); taklif: har xabar turi qatorida «Ulash», PII kaliti shu kartada (tg-link S3, S5).",
     "admin-users-detail-telegram": "Kodda bor (MarketTelegramGroupLinkCard, MarketTelegramGroupPiiCard); taklif: har xabar turi qatorida «Ulash», PII kaliti shu kartada (tg-link S3, S5).",
-    "common-profile-telegram": "Kodda bor (ProfilePage — o'z Telegram'ini ulash); taklif: holat kartasi maket bo'yicha (tg-link).",
-    "common-profile-telegram-linked": "Kodda bor (ProfilePage — o'z Telegram'ini ulash); taklif: holat kartasi maket bo'yicha (tg-link).",
     "market-profile": "Kodda bor (marketda «Guruhda mijoz ismi va telefoni»); taklif: «Telegram guruhlari» holati (tg-link S1 — backend endpoint kerak).",
     "superadmin-orders-list": "Bekor qatorlarida bosqich badge'i (Bekor · kuryerda / yo'lda / filialda / HQ'da — danger + ikonka; «Marketga topshirildi» — neutral, PackageCheck) va ostida joy qatori «Urgut filiali · 2 kun»; muddat 3 kunda warning, 7 kunda + TriangleAlert (BG7) (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md)) — kodda hali eski «Bekor qilingan» badge'i.",
     "admin-orders-list": "Bekor qatorlarida bosqich badge'i (Bekor · kuryerda / yo'lda / filialda / HQ'da — danger + ikonka; «Marketga topshirildi» — neutral, PackageCheck) va ostida joy qatori «Urgut filiali · 2 kun»; muddat 3 kunda warning, 7 kunda + TriangleAlert (BG7) (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md)) — kodda hali eski «Bekor qilingan» badge'i.",
@@ -2129,6 +2125,12 @@
     "superadmin-branches-list-table": "src/widgets/branch-list/ui/BranchTable.tsx",
     "superadmin-regions-districts": "src/pages/region/pages/districts/index.tsx",
     "common-profile-password-dialog": "src/pages/profile/ui/ChangePasswordDialog.tsx",
+    "common-profile-telegram": "src/features/telegram-link/ui/TelegramLinkCard.tsx",
+    "common-profile-telegram-linked": "src/features/telegram-link/ui/TelegramLinkCard.tsx",
+    "common-profile-telegram-unlink-dialog": "src/features/telegram-link/ui/TelegramLinkCard.tsx",
+    "common-profile-telegram-link-dialog": "src/features/telegram-link/ui/TelegramLinkDialog.tsx",
+    "common-profile-telegram-command-dialog": "src/features/telegram-link/ui/TelegramLinkDialog.tsx",
+    "common-profile-telegram-expired-dialog": "src/features/telegram-link/ui/TelegramLinkDialog.tsx",
     "superadmin-branches-create-dialog": "src/features/branch/ui/BranchFormDialog.tsx",
     "superadmin-branches-add-employee-dialog": "src/features/branch-add-employee/ui/AddEmployeeModal.tsx",
     "superadmin-notifications-create-dialog": "src/features/notification-create/ui/NotificationFormModal.tsx",
