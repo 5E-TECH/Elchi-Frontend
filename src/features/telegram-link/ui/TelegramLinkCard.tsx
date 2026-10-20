@@ -1,8 +1,8 @@
-// dizayn-v2: (maket yo'q) common-profile
+// dizayn-v2: common-profile-telegram, common-profile-telegram-linked, common-profile-telegram-unlink-dialog
 import { useEffect, useRef, useState } from "react";
+import axios from "axios";
 import { Send, Unlink } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { getActionErrorMessage } from "../../../shared/lib/actionError";
 import { formatDateLocalized, toValidDate } from "../../../shared/lib/formatDateTime";
 import { notify } from "../../../shared/lib/notify";
 import { Button, Card, StatusBadge, useConfirm } from "../../../shared/ui/primitives";
@@ -12,12 +12,11 @@ import {
   useUnlinkTelegram,
 } from "../api/useTelegramLink";
 import type { TelegramLinkCode } from "../model/types";
+import { LINK_TTL_MS } from "../lib/linkTime";
 import { TelegramLinkDialog } from "./TelegramLinkDialog";
 
 /** Oyna ochiq turganda profil shu oraliqda qayta o'qiladi — bot ulagani darhol ko'rinadi. */
 export const TELEGRAM_LINK_POLL_MS = 3_000;
-/** Havola muddati (backend: bir martalik, 10 daqiqa). */
-const LINK_TTL_MS = 10 * 60_000;
 /** Server muddati bundan uzoq yoki o'tib ketgan bo'lsa — kompyuter soati noto'g'ri, 10 daqiqa olinadi. */
 const MAX_TRUSTED_TTL_MS = 15 * 60_000;
 
@@ -48,9 +47,10 @@ export type TelegramLinkCardProps = {
 };
 
 /**
- * «Telegram» kartasi (o'z profilida): shaxsiy Telegram'ni Elchi botiga ulash va uzish.
- * Maket yo'q — eng yaqini `common-profile` «Xavfsizlik» kartasi: sarlavha, qator = neytral ikonka + qalin
- * nom + 13 px izoh + holat belgisi, o'ngda ikkinchi darajali tugma (telefonda — matn ostida, to'liq en).
+ * «Telegram» kartasi (o'z profilida): shaxsiy Telegram'ni Elchi botiga ulash va uzish. Maketlar
+ * `common-profile-telegram` (ulanmagan), `-linked` (qalin «@username» · «{sana} da ulangan», «Telegram ulandi»
+ * xabari), `-unlink-dialog` (tasdiq): qator = neytral ikonka + qalin nom + holat belgisi + 13 px izoh, o'ngda
+ * ikkinchi darajali tugma (telefonda — matn ostida, to'liq en). Oynalar — `TelegramLinkDialog`.
  */
 export const TelegramLinkCard = ({ linked, username, linkedAt }: TelegramLinkCardProps) => {
   const { t } = useTranslation("telegramLink");
@@ -106,10 +106,13 @@ export const TelegramLinkCard = ({ linked, username, linkedAt }: TelegramLinkCar
       const code = await linkCode.mutateAsync();
       setDialog({ open: true, session: toSession(code) });
     } catch (error) {
-      // `null` — javob kelmadi: «Tarmoq xatosi» ni interceptor allaqachon ko'rsatgan.
-      const message = getActionErrorMessage(error, "");
-      if (message === null) return;
-      notify.error(t("linkError"), message ? { description: message } : undefined);
+      // Javob kelmadi — «Internet aloqasi yo'q» ni interceptor allaqachon ko'rsatgan. Backend matni
+      // foydalanuvchiga chiqmaydi — faqat i18n izoh (403 — bu rolga ulash yopiq).
+      if (axios.isAxiosError(error) && !error.response && error.code !== "ERR_CANCELED") return;
+      const forbidden = axios.isAxiosError(error) && error.response?.status === 403;
+      notify.error(t("linkError"), {
+        description: t(forbidden ? "linkErrorForbidden" : "linkErrorRetry"),
+      });
     }
   };
 
@@ -132,16 +135,11 @@ export const TelegramLinkCard = ({ linked, username, linkedAt }: TelegramLinkCar
     if (ok) notify.success(t("unlinkedToast"));
   };
 
-  const linkedMeta = linked
-    ? [
-        formatUsername(username),
-        linkedAt && toValidDate(linkedAt)
-          ? t("linkedSince", { date: formatDateLocalized(linkedAt) })
-          : null,
-      ]
-        .filter(Boolean)
-        .join(" · ")
-    : "";
+  const linkedHandle = linked ? formatUsername(username) : null;
+  const linkedSince =
+    linked && linkedAt && toValidDate(linkedAt)
+      ? t("linkedSince", { date: formatDateLocalized(linkedAt) })
+      : null;
 
   return (
     <>
@@ -162,8 +160,12 @@ export const TelegramLinkCard = ({ linked, username, linkedAt }: TelegramLinkCar
             <p className="m-0 text-[13px] leading-[18px] text-text-muted">
               {linked ? t("linkedDescription") : t("unlinkedDescription")}
             </p>
-            {linkedMeta ? (
-              <p className="m-0 text-[13px] leading-[18px] text-text-muted">{linkedMeta}</p>
+            {linkedHandle || linkedSince ? (
+              <p className="m-0 flex flex-wrap gap-x-1.5 text-[13px] leading-[18px] text-text-muted">
+                {linkedHandle ? <span className="font-semibold text-text">{linkedHandle}</span> : null}
+                {linkedHandle && linkedSince ? <span aria-hidden="true">·</span> : null}
+                {linkedSince ? <span>{linkedSince}</span> : null}
+              </p>
             ) : null}
           </div>
         </div>

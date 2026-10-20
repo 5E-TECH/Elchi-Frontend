@@ -7,8 +7,10 @@ import { formatTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { TelegramLinkCard } from "./TelegramLinkCard";
 
 /**
- * BreQwksC / td89SKXQ / 9uNhwTZp — o'z profilida «Telegram» kartasi: holat, ulash havolasi (QR +
- * «Telegram'da ochish»), muddat tugashi, xato va uzish (tasdiq bilan). Xabar va tasdiq — haqiqiy UI orqali.
+ * BreQwksC / td89SKXQ / 9uNhwTZp / ysBqD9Nx (TG-A) — o'z profilida «Telegram» kartasi: holat, ulash havolasi (QR
+ * oq ramkada + «Telegram'da ochish», teskari sanoq va progress, «Ulanish kutilmoqda…»), telefon qadamlari va
+ * yig'ilgan QR, buyruq rejimi, muddat tugashi, xato (backend matnisiz) va uzish (tasdiq bilan). Maketlar
+ * `common-profile-telegram*`. Xabar va tasdiq — haqiqiy UI orqali.
  */
 
 const apiPost = vi.fn();
@@ -38,6 +40,24 @@ const linkCodeResponse = (expiresInMs = 10 * 60_000, deepLink: string | null = D
     },
   },
 });
+
+/** Telefon kengligi (`useIsPhone` — `matchMedia("(max-width: 767px)")`). */
+const asPhone = () => {
+  const original = window.matchMedia;
+  window.matchMedia = ((query: string) => ({
+    matches: query.includes("max-width: 767px"),
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })) as typeof window.matchMedia;
+  return () => {
+    window.matchMedia = original;
+  };
+};
 
 const httpError = (status: number, message: string) =>
   new AxiosError("Request failed", "ERR_BAD_REQUEST", undefined, undefined, {
@@ -77,7 +97,11 @@ describe("TelegramLinkCard", () => {
 
     const card = screen.getByRole("region", { name: "Telegram" });
     expect(within(card).getByText("Ulangan")).toBeInTheDocument();
-    expect(within(card).getByText("@ali_kuryer · 17.10.2026 da ulangan")).toBeInTheDocument();
+    // Maket `common-profile-telegram-linked`: qalin «@username», ajratgich «·» va ulangan sana.
+    const handle = within(card).getByText("@ali_kuryer");
+    expect(handle).toHaveClass("font-semibold");
+    expect(within(card).getByText("17.10.2026 da ulangan")).toBeInTheDocument();
+    expect(handle.parentElement).toHaveTextContent("@ali_kuryer·17.10.2026 da ulangan");
     expect(within(card).getByRole("button", { name: "Uzish" })).toBeInTheDocument();
     expect(
       within(card).queryByRole("button", { name: "Telegram'ni ulash" }),
@@ -108,8 +132,79 @@ describe("TelegramLinkCard", () => {
     expect(within(steps).getAllByRole("listitem")).toHaveLength(3);
     expect(within(steps).getByText("Botda «Start» ni bosing")).toBeInTheDocument();
 
+    expect(within(steps).getByText("Havolani oching yoki QR'ni telefon kamerasi bilan skanerlang")).toBeInTheDocument();
+    expect(within(steps).getByText("Shu sahifa o'zi yangilanadi")).toBeInTheDocument();
+
     const time = formatTimeLocalized(response.data.data.expires_at);
     expect(within(dialog).getByText(`Havola ${time} gacha amal qiladi`)).toBeInTheDocument();
+
+    // Teskari sanoq va progress (LinkCountdown): 10 daqiqa = 600 s.
+    const timer = within(dialog).getByRole("timer");
+    expect(timer).toHaveTextContent(/^(10:00|9:59) qoldi$/);
+    const progress = within(dialog).getByRole("progressbar", { name: timer.textContent ?? "" });
+    expect(progress).toHaveAttribute("aria-valuemin", "0");
+    expect(progress).toHaveAttribute("aria-valuemax", "600");
+    expect(Number(progress.getAttribute("aria-valuenow"))).toBeGreaterThanOrEqual(599);
+
+    expect(within(dialog).getByRole("status")).toHaveTextContent("Ulanish kutilmoqda…");
+    // Desktopda QR ochiq ramkada — «Boshqa telefondan» tugmasi yo'q.
+    expect(
+      within(dialog).queryByRole("button", { name: "Boshqa telefondan — QR kod" }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("sanoq har soniyada kamayadi, progress u bilan birga", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    apiPost.mockResolvedValue(linkCodeResponse(5 * 60_000));
+    renderWithProviders(<TelegramLinkCard linked={false} />);
+
+    await user.click(screen.getByRole("button", { name: "Telegram'ni ulash" }));
+    const dialog = await screen.findByRole("dialog", { name: "Telegram'ni ulash" });
+    expect(within(dialog).getByRole("timer")).toHaveTextContent(/^(5:00|4:59) qoldi$/);
+    // 5 daqiqa qolgan havola — progress yarmida (to'liq muddat 10 daqiqa).
+    const valueNow = () => Number(within(dialog).getByRole("progressbar").getAttribute("aria-valuenow"));
+    expect(valueNow()).toBeGreaterThanOrEqual(299);
+    expect(valueNow()).toBeLessThanOrEqual(300);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(61_000);
+    });
+
+    expect(within(dialog).getByRole("timer")).toHaveTextContent(/^(3:59|3:58) qoldi$/);
+    expect(valueNow()).toBeLessThanOrEqual(239);
+  });
+
+  it("telefonda: o'z qadamlari, QR «Boshqa telefondan — QR kod» ostida yig'ilgan", async () => {
+    const restore = asPhone();
+    try {
+      const user = userEvent.setup();
+      apiPost.mockResolvedValue(linkCodeResponse());
+      renderWithProviders(<TelegramLinkCard linked={false} />);
+
+      await user.click(screen.getByRole("button", { name: "Telegram'ni ulash" }));
+      const dialog = await screen.findByRole("dialog", { name: "Telegram'ni ulash" });
+
+      const steps = within(dialog).getByRole("list", { name: "Qanday ulanadi" });
+      expect(within(steps).getByText("«Telegram'da ochish» ni bosing")).toBeInTheDocument();
+      expect(within(steps).getByText("Botda «Start» ni bosing")).toBeInTheDocument();
+      expect(within(steps).getByText("Shu sahifaga qayting — u o'zi yangilanadi")).toBeInTheDocument();
+      expect(within(dialog).getByRole("timer")).toBeInTheDocument();
+      expect(within(dialog).getByRole("link", { name: "Telegram'da ochish" })).toHaveAttribute("href", DEEP_LINK);
+
+      const toggle = within(dialog).getByRole("button", { name: "Boshqa telefondan — QR kod" });
+      expect(toggle).toHaveAttribute("aria-expanded", "false");
+      expect(within(dialog).queryByRole("img")).not.toBeInTheDocument();
+
+      await user.click(toggle);
+
+      expect(toggle).toHaveAttribute("aria-expanded", "true");
+      expect(
+        within(dialog).getByRole("img", { name: "Telegram'ni ulash havolasining QR kodi" }),
+      ).toBeInTheDocument();
+    } finally {
+      restore();
+    }
   });
 
   it("muddat tugasa «Havola eskirdi» va «Yangi havola olish» yangi kod so'raydi", async () => {
@@ -133,9 +228,16 @@ describe("TelegramLinkCard", () => {
 
     expect(within(dialog).getByText("Havola eskirdi")).toBeInTheDocument();
     expect(
+      within(dialog).getByText(
+        "Havola 10 daqiqa amal qiladi va bir marta ishlatiladi. Ulash uchun yangisini oling.",
+      ),
+    ).toBeInTheDocument();
+    expect(
       within(dialog).queryByRole("link", { name: "Telegram'da ochish" }),
     ).not.toBeInTheDocument();
     expect(within(dialog).queryByRole("img")).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("timer")).not.toBeInTheDocument();
+    expect(within(dialog).queryByText("Ulanish kutilmoqda…")).not.toBeInTheDocument();
 
     await user.click(within(dialog).getByRole("button", { name: "Yangi havola olish" }));
 
@@ -160,21 +262,49 @@ describe("TelegramLinkCard", () => {
     const dialog = await screen.findByRole("dialog", { name: "Telegram'ni ulash" });
     expect(within(dialog).getByText("Botga shu buyruqni yuboring:")).toBeInTheDocument();
     expect(within(dialog).getByText("/start Kod123")).toBeInTheDocument();
+    expect(within(dialog).getByText(/^Havola \d{2}:\d{2} gacha amal qiladi$/)).toBeInTheDocument();
     expect(
       within(dialog).queryByRole("link", { name: "Telegram'da ochish" }),
     ).not.toBeInTheDocument();
+
+    // Maket `common-profile-telegram-command-dialog`: o'z qadamlari, sanoqsiz, QR'siz, faqat «Yopish».
+    const steps = within(dialog).getByRole("list", { name: "Qanday ulanadi" });
+    expect(within(steps).getByText("Buyruqni nusxalang")).toBeInTheDocument();
+    expect(within(steps).getByText("Uni Elchi botiga shaxsiy xabar qilib yuboring")).toBeInTheDocument();
+    expect(within(steps).getByText("Shu sahifa o'zi yangilanadi")).toBeInTheDocument();
+    expect(within(dialog).queryByRole("timer")).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("progressbar")).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("img")).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("status")).toHaveTextContent("Ulanish kutilmoqda…");
+    const footerButtons = within(dialog)
+      .getAllByRole("button")
+      .filter((button) => button.textContent?.trim());
+    expect(footerButtons.map((button) => button.textContent?.trim())).toEqual(["Yopish"]);
   });
 
-  it("kod olinmasa — backend matni bilan xato xabari, oyna ochilmaydi", async () => {
+  it("kod olinmasa (403) — i18n izoh, backend matni ko'rsatilmaydi, oyna ochilmaydi", async () => {
     const user = userEvent.setup();
-    apiPost.mockRejectedValue(httpError(403, "Bu rol Telegram'ni ulay olmaydi"));
+    apiPost.mockRejectedValue(httpError(403, "Forbidden resource: role customer"));
     renderWithProviders(<TelegramLinkCard linked={false} />);
 
     await user.click(screen.getByRole("button", { name: "Telegram'ni ulash" }));
 
     expect(await screen.findByText("Havolani olib bo'lmadi")).toBeInTheDocument();
-    expect(screen.getByText("Bu rol Telegram'ni ulay olmaydi")).toBeInTheDocument();
+    expect(screen.getByText("Bu hisob uchun Telegram'ni ulab bo'lmaydi.")).toBeInTheDocument();
+    expect(screen.queryByText(/Forbidden resource/)).not.toBeInTheDocument();
     expect(screen.queryByRole("dialog", { name: "Telegram'ni ulash" })).not.toBeInTheDocument();
+  });
+
+  it("kod olinmasa (500) — «qayta urinib ko'ring», backend matni ko'rsatilmaydi", async () => {
+    const user = userEvent.setup();
+    apiPost.mockRejectedValue(httpError(500, "TELEGRAM_BOT_USERNAME is not configured"));
+    renderWithProviders(<TelegramLinkCard linked={false} />);
+
+    await user.click(screen.getByRole("button", { name: "Telegram'ni ulash" }));
+
+    expect(await screen.findByText("Havolani olib bo'lmadi")).toBeInTheDocument();
+    expect(screen.getByText("Birozdan keyin qayta urinib ko'ring.")).toBeInTheDocument();
+    expect(screen.queryByText(/TELEGRAM_BOT_USERNAME/)).not.toBeInTheDocument();
   });
 
   it("uzish: tasdiq so'raladi, so'ng DELETE va xabar", async () => {

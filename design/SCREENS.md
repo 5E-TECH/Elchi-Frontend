@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **220** · qisman: **75** · v2 ga ko'chirilgan route: **76 / 77**
+**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **216** · qisman: **73** · v2 ga ko'chirilgan route: **76 / 77**
 
 ## Qanday ishlatiladi
 
@@ -1533,7 +1533,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/notifications` — Bildirishnomalar — Telegram guruhlari
 
-- **Fayllar:** `src/pages/notifications/ui/NotificationsPage.tsx` · `src/features/notification-create/ui/NotificationFormModal.tsx` · `src/features/notification-edit/ui/NotificationEditModal.tsx` · `src/features/notification-create/ui/GroupLinkQr.tsx` · `src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx`
+- **Fayllar:** `src/pages/notifications/ui/NotificationsPage.tsx` · `src/features/notification-create/ui/NotificationFormModal.tsx` · `src/features/notification-edit/ui/NotificationEditModal.tsx` · `src/features/telegram-link/ui/LinkQrPanel.tsx` · `src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewNotifications` (access.ts → canViewNotifications)
 - **Rollar:** superadmin, admin (taklif — NG-S2, kodda yo'q)
 - **Menyuda:** «Bildirishnomalar» (`notifications`) — superadmin
@@ -1820,12 +1820,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/profile` — Profil (yuqori panel → profil menyusi)
 
-- **Fayllar:** `src/pages/profile/ui/ProfilePage.tsx` · `src/pages/profile/ui/ProfileCards.tsx` · `src/pages/profile/ui/ChangePasswordDialog.tsx` · `src/pages/profile/ui/EditProfileDialog.tsx` · `src/pages/profile/lib/salaryCycle.ts` · `src/pages/profile/lib/profileView.ts` · `src/features/telegram-link/ui/TelegramLinkCard.tsx` · `src/features/telegram-link/ui/TelegramLinkDialog.tsx` · `src/widgets/user-detail/ui/MarketTelegramGroupPiiCard.tsx`
+- **Fayllar:** `src/pages/profile/ui/ProfilePage.tsx` · `src/pages/profile/ui/ProfileCards.tsx` · `src/pages/profile/ui/ChangePasswordDialog.tsx` · `src/pages/profile/ui/EditProfileDialog.tsx` · `src/pages/profile/lib/salaryCycle.ts` · `src/pages/profile/lib/profileView.ts` · `src/features/telegram-link/ui/TelegramLinkCard.tsx` · `src/features/telegram-link/ui/TelegramLinkDialog.tsx` · `src/features/telegram-link/ui/LinkCountdown.tsx` · `src/features/telegram-link/ui/LinkQrPanel.tsx` · `src/widgets/user-detail/ui/MarketTelegramGroupPiiCard.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish)
 - **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
 - **Menyuda:** yo'q — yuqori panel → ism/avatar (profil)
 - **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): ma'lumot kartasi (GET /auth/my-profile), maosh bloki faqat salary > 0; parol — alohida oyna (≥ 4 belgi, mos kelish, saqlangach chiqish); profilni tahrirlash — alohida oyna (Ism, Telefon; D7, maket yo'q: EditProfileDialog `(maket yo'q) common-profile-password-dialog`). UpdateUserModal profilda ishlatilmaydi. «Login» — username bo'lsa. dev birlashtirishi: «Xavfsizlik» ostida yana bir qator — o'z Telegram'ini ulash/uzish (TelegramLinkCard, mijoz/investordan boshqa rollar; POST users/me/telegram/link-code, oyna ochiqligida profil har 3 s) va market uchun «Guruhda mijoz ismi va telefoni» (MarketTelegramGroupPiiCard, PATCH markets/:id/telegram-group-pii) — maket yo'q, eng yaqini «Xavfsizlik» kartasi (`(maket yo'q) common-profile`). Ega tasdig'i 2026-10-19 (tg-link): o'z Telegram'ini ulash — ulanmagan / ulangan holatlari, havola + QR oynasi (muddat bilan), bot nomi yo'q bo'lsa buyruq oynasi, havola eskirsa — qayta yaratish, uzish — tasdiq oynasi (common-profile-telegram*). Market rolida /profile maketi — market-profile (common-profile o'rniga): «Telegram guruhlari» holati (S1 — backendga endpoint so'raladi), har xabar turi qatorida «Ulash» (S5), «Guruhda mijoz ismi va telefoni» kaliti «Telegram guruhi» kartasida (S3).
+- **Izoh:** Dizayn v2 (G2): ma'lumot kartasi (GET /auth/my-profile), maosh bloki faqat salary > 0; parol — alohida oyna (≥ 4 belgi, mos kelish, saqlangach chiqish); profilni tahrirlash — alohida oyna (Ism, Telefon; D7, maket yo'q: EditProfileDialog `(maket yo'q) common-profile-password-dialog`). UpdateUserModal profilda ishlatilmaydi. «Login» — username bo'lsa. dev birlashtirishi: «Xavfsizlik» ostida yana bir qator — o'z Telegram'ini ulash/uzish (TelegramLinkCard, mijoz/investordan boshqa rollar; POST users/me/telegram/link-code, oyna ochiqligida profil har 3 s) va market uchun «Guruhda mijoz ismi va telefoni» (MarketTelegramGroupPiiCard, PATCH markets/:id/telegram-group-pii) — maket yo'q, eng yaqini «Xavfsizlik» kartasi (`(maket yo'q) common-profile`). Ega tasdig'i 2026-10-19 (tg-link): o'z Telegram'ini ulash — ulanmagan / ulangan holatlari, havola + QR oynasi (muddat bilan), bot nomi yo'q bo'lsa buyruq oynasi, havola eskirsa — qayta yaratish, uzish — tasdiq oynasi (common-profile-telegram*). Market rolida /profile maketi — market-profile (common-profile o'rniga): «Telegram guruhlari» holati (S1 — backendga endpoint so'raladi), har xabar turi qatorida «Ulash» (S5), «Guruhda mijoz ismi va telefoni» kaliti «Telegram guruhi» kartasida (S3). TG-A (2026-10-21) — common-profile-telegram* maket bo'yicha: ulangan holatda qalin «@username» · «{sana} da ulangan»; havola oynasi — QR oq ramkada, muddat sanog'i va progress (LinkCountdown), «Ulanish kutilmoqda…», telefonda boshqa qadamlar va yig'ilgan «Boshqa telefondan — QR kod» (LinkQrPanel); buyruq rejimi (deep_link yo'q) — o'z qadamlari, sanoqsiz, faqat «Yopish»; muddati tugadi — sunken ichida bo'sh holat. Kod olinmasa — faqat i18n izoh (backend matni ko'rsatilmaydi). Havola qismlari (LinkCountdown, LinkQrPanel, useQrImage, requestGroupLinkCode) features/telegram-link da — notification-create shu yerdan oladi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -1835,12 +1835,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/profile` | market | `market-profile-telegram-group-expired-dialog` — Telegram guruhini ulash — havola muddati tugadi | [design/fragments/market--profile-telegram-group-expired-dialog.html](fragments/market--profile-telegram-group-expired-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/profile` | umumiy (barcha rollar) | `common-profile` — Profil | [design/fragments/common--profile.html](fragments/common--profile.html) | sahifa | v2 |
 | `/profile` | umumiy (barcha rollar) | `common-profile-password-dialog` — Profil — parolni o'zgartirish<br>↳ `src/pages/profile/ui/ChangePasswordDialog.tsx` | [design/fragments/common--profile-password-dialog.html](fragments/common--profile-password-dialog.html) | oyna | v2 |
-| `/profile` | umumiy (barcha rollar) | `common-profile-telegram` — Profil — Telegram ulanmagan | [design/fragments/common--profile-telegram.html](fragments/common--profile-telegram.html) | sahifa | qisman |
-| `/profile` | umumiy (barcha rollar) | `common-profile-telegram-link-dialog` — Profil — Telegram'ni ulash (havola, QR, muddat) | [design/fragments/common--profile-telegram-link-dialog.html](fragments/common--profile-telegram-link-dialog.html) | oyna | yangi (kodda yo'q) |
-| `/profile` | umumiy (barcha rollar) | `common-profile-telegram-command-dialog` — Profil — Telegram'ni ulash (bot nomi yo'q: buyruq) | [design/fragments/common--profile-telegram-command-dialog.html](fragments/common--profile-telegram-command-dialog.html) | oyna | yangi (kodda yo'q) |
-| `/profile` | umumiy (barcha rollar) | `common-profile-telegram-expired-dialog` — Profil — Telegram havolasi eskirdi | [design/fragments/common--profile-telegram-expired-dialog.html](fragments/common--profile-telegram-expired-dialog.html) | oyna | yangi (kodda yo'q) |
-| `/profile` | umumiy (barcha rollar) | `common-profile-telegram-linked` — Profil — Telegram ulangan (+ «Telegram ulandi» xabari) | [design/fragments/common--profile-telegram-linked.html](fragments/common--profile-telegram-linked.html) | sahifa | qisman |
-| `/profile` | umumiy (barcha rollar) | `common-profile-telegram-unlink-dialog` — Profil — Telegram'ni uzish (tasdiq) | [design/fragments/common--profile-telegram-unlink-dialog.html](fragments/common--profile-telegram-unlink-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/profile` | umumiy (barcha rollar) | `common-profile-telegram` — Profil — Telegram ulanmagan<br>↳ `src/features/telegram-link/ui/TelegramLinkCard.tsx` | [design/fragments/common--profile-telegram.html](fragments/common--profile-telegram.html) | sahifa | v2 |
+| `/profile` | umumiy (barcha rollar) | `common-profile-telegram-link-dialog` — Profil — Telegram'ni ulash (havola, QR, muddat)<br>↳ `src/features/telegram-link/ui/TelegramLinkDialog.tsx` | [design/fragments/common--profile-telegram-link-dialog.html](fragments/common--profile-telegram-link-dialog.html) | oyna | v2 |
+| `/profile` | umumiy (barcha rollar) | `common-profile-telegram-command-dialog` — Profil — Telegram'ni ulash (bot nomi yo'q: buyruq)<br>↳ `src/features/telegram-link/ui/TelegramLinkDialog.tsx` | [design/fragments/common--profile-telegram-command-dialog.html](fragments/common--profile-telegram-command-dialog.html) | oyna | v2 |
+| `/profile` | umumiy (barcha rollar) | `common-profile-telegram-expired-dialog` — Profil — Telegram havolasi eskirdi<br>↳ `src/features/telegram-link/ui/TelegramLinkDialog.tsx` | [design/fragments/common--profile-telegram-expired-dialog.html](fragments/common--profile-telegram-expired-dialog.html) | oyna | v2 |
+| `/profile` | umumiy (barcha rollar) | `common-profile-telegram-linked` — Profil — Telegram ulangan (+ «Telegram ulandi» xabari)<br>↳ `src/features/telegram-link/ui/TelegramLinkCard.tsx` | [design/fragments/common--profile-telegram-linked.html](fragments/common--profile-telegram-linked.html) | sahifa | v2 |
+| `/profile` | umumiy (barcha rollar) | `common-profile-telegram-unlink-dialog` — Profil — Telegram'ni uzish (tasdiq)<br>↳ `src/features/telegram-link/ui/TelegramLinkCard.tsx` | [design/fragments/common--profile-telegram-unlink-dialog.html](fragments/common--profile-telegram-unlink-dialog.html) | oyna | v2 |
 
 #### `/settings` — Sozlamalar — Ko'rinish · Bosh sahifa · Interfeys · Skaner · Bildirishnomalar (dizayn v2)
 
@@ -2598,7 +2598,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### umumiy ekranlar (common — barcha rollar)
 
-19 ta maket · kodda bor: 14 · kodda yo'q: 5
+19 ta maket · kodda bor: 18 · kodda yo'q: 1
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2613,12 +2613,12 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `common-settings-notifications-pwa` | Sozlamalar — Bildirishnomalar · ilova o'rnatilgan / o'rnatilmagan | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | yangi (kodda yo'q) — Sozlamalarda «Ilova» kartasi (o'rnatilgan / o'rnatilmagan) yo'q — Taklif, faqat mijoz tomoni. |
 | `common-profile` | Profil | sahifa | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | v2 |
 | `common-profile-password-dialog` | Profil — parolni o'zgartirish | oyna | `/profile` | `src/pages/profile/ui/ChangePasswordDialog.tsx` | v2 |
-| `common-profile-telegram` | Profil — Telegram ulanmagan | sahifa | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | qisman — Kodda bor (ProfilePage — o'z Telegram'ini ulash); taklif: holat kartasi maket bo'yicha (tg-link). |
-| `common-profile-telegram-link-dialog` | Profil — Telegram'ni ulash (havola, QR, muddat) | oyna | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | yangi (kodda yo'q) — Taklif (tg-link) — kodda yo'q. |
-| `common-profile-telegram-expired-dialog` | Profil — Telegram havolasi eskirdi | oyna | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | yangi (kodda yo'q) — Taklif (tg-link) — kodda yo'q. |
-| `common-profile-telegram-command-dialog` | Profil — Telegram'ni ulash (bot nomi yo'q: buyruq) | oyna | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | yangi (kodda yo'q) — Taklif (tg-link) — kodda yo'q. |
-| `common-profile-telegram-linked` | Profil — Telegram ulangan (+ «Telegram ulandi» xabari) | sahifa | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | qisman — Kodda bor (ProfilePage — o'z Telegram'ini ulash); taklif: holat kartasi maket bo'yicha (tg-link). |
-| `common-profile-telegram-unlink-dialog` | Profil — Telegram'ni uzish (tasdiq) | oyna | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | yangi (kodda yo'q) — Taklif (tg-link) — kodda yo'q. |
+| `common-profile-telegram` | Profil — Telegram ulanmagan | sahifa | `/profile` | `src/features/telegram-link/ui/TelegramLinkCard.tsx` | v2 |
+| `common-profile-telegram-link-dialog` | Profil — Telegram'ni ulash (havola, QR, muddat) | oyna | `/profile` | `src/features/telegram-link/ui/TelegramLinkDialog.tsx` | v2 |
+| `common-profile-telegram-expired-dialog` | Profil — Telegram havolasi eskirdi | oyna | `/profile` | `src/features/telegram-link/ui/TelegramLinkDialog.tsx` | v2 |
+| `common-profile-telegram-command-dialog` | Profil — Telegram'ni ulash (bot nomi yo'q: buyruq) | oyna | `/profile` | `src/features/telegram-link/ui/TelegramLinkDialog.tsx` | v2 |
+| `common-profile-telegram-linked` | Profil — Telegram ulangan (+ «Telegram ulandi» xabari) | sahifa | `/profile` | `src/features/telegram-link/ui/TelegramLinkCard.tsx` | v2 |
+| `common-profile-telegram-unlink-dialog` | Profil — Telegram'ni uzish (tasdiq) | oyna | `/profile` | `src/features/telegram-link/ui/TelegramLinkCard.tsx` | v2 |
 | `common-inbox` | Bildirishnomalar qutisi | sahifa | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | v2 |
 | `common-bell-dropdown` | Qo'ng'iroqcha ochiq (so'nggi bildirishnomalar) | oyna | `(qobiq)` | `src/widgets/header/ui/NotificationsMenu.tsx` | v2 |
 
@@ -2668,7 +2668,6 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/features/courier-transfer-branch/ui/TransferCourierButton.tsx` | `/all-users/:id`, `/branches/:id` |
 | `src/features/courier-transfer-branch/ui/TransferCourierModal.tsx` | `/all-users/:id` |
 | `src/features/dispatch-basket/model/dispatchBasket.ts` | `/dispatch` |
-| `src/features/notification-create/ui/GroupLinkQr.tsx` | `/notifications` |
 | `src/features/notification-create/ui/NotificationFormModal.tsx` | `/notifications` |
 | `src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx` | `/notifications` |
 | `src/features/notification-dispatch/ui/NotificationDispatchForm.tsx` | `/notifications/send` |
@@ -2678,6 +2677,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/features/order-tracking/ui/TrackingTimelineItem.tsx` | `/orders/edit/:orderId` |
 | `src/features/push-notifications/ui/PushExplainDialog.tsx` | `/inbox` |
 | `src/features/push-notifications/ui/PushPermissionButton.tsx` | `/settings`, `/inbox` |
+| `src/features/telegram-link/ui/LinkCountdown.tsx` | `/profile` |
+| `src/features/telegram-link/ui/LinkQrPanel.tsx` | `/notifications`, `/profile` |
 | `src/features/telegram-link/ui/TelegramLinkCard.tsx` | `/profile` |
 | `src/features/telegram-link/ui/TelegramLinkDialog.tsx` | `/profile` |
 | `src/features/tg-scan/api/tgScanApi.ts` | `/tg/scan` |
