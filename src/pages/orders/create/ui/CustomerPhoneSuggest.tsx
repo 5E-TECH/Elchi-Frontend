@@ -137,6 +137,12 @@ export const CustomerPhoneSuggest = ({ scope, marketId, marketName }: CustomerPh
 
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  // Telefonda: foydalanuvchi maydondan boshqa joyga o'tgan — kech kelgan natija varaqani ochib fokusni tortib olmaydi
+  // (maydon ostidagi bir qatorli holat qoladi — joylashuv siljimaydi).
+  const [awayOnPhone, setAwayOnPhone] = useState(false);
+  // Telefonda varaqa «Yangi mijoz sifatida davom etish» / «Yopish» bilan yopilgan raqam boshi: shu raqam davom
+  // etsa (har yangi raqam) varaqa qayta ochilmaydi; raqam boshqasiga o'zgarsa — yana ochiladi.
+  const dismissedPrefix = useRef<string | null>(null);
   const [debounced, setDebounced] = useState(digits);
 
   useEffect(() => {
@@ -193,7 +199,9 @@ export const CustomerPhoneSuggest = ({ scope, marketId, marketName }: CustomerPh
     // Kartada bo'sh maydon foydalanuvchi yozganini o'chirmaydi.
     if (phone.length === 9) fill("phone", phone);
     if (suggestion.name?.trim()) fill("name", suggestion.name.trim());
-    if (suggestion.extra_number) fill("extra_phone", getUzbekistanPhoneDigits(suggestion.extra_number));
+    // Kartadagi qo'shimcha raqam buzuq bo'lsa (9 raqam emas) — forma yuborilmay qolmasin, maydon tegilmaydi.
+    const extraPhone = getUzbekistanPhoneDigits(suggestion.extra_number ?? "");
+    if (extraPhone.length === 9) fill("extra_phone", extraPhone);
     if (suggestion.address?.trim()) fill("address", suggestion.address.trim());
 
     if (suggestion.district_id) {
@@ -223,7 +231,10 @@ export const CustomerPhoneSuggest = ({ scope, marketId, marketName }: CustomerPh
     );
   };
 
-  const continueAsNew = () => close();
+  const continueAsNew = () => {
+    if (isPhone) dismissedPrefix.current = digits;
+    close();
+  };
 
   const optionCount = status === "results" ? results.length + 1 : 0;
   const optionId = (index: number) =>
@@ -276,7 +287,7 @@ export const CustomerPhoneSuggest = ({ scope, marketId, marketName }: CustomerPh
   };
 
   const listVisible = !isPhone && open && status !== "hidden";
-  const sheetOpen = isPhone && open && status === "results";
+  const sheetOpen = isPhone && open && !awayOnPhone && status === "results";
   const inlineStatus = isPhone && open && (status === "searching" || status === "empty") ? status : null;
 
   const renderOptions = (inCombobox: boolean) => (
@@ -317,20 +328,29 @@ export const CustomerPhoneSuggest = ({ scope, marketId, marketName }: CustomerPh
               onValueChange={(next) => {
                 const nextDigits = getUzbekistanPhoneDigits(next);
                 field.onChange(nextDigits);
+                // Har tahrir davom etayotgan tanlovni bekor qiladi (viloyat kutilayotganda telefon o'zgarsa, bog'lanish
+                // tahrirlangan raqam bilan yozilib, `customer_id` boshqa karta uchun ketmasin).
+                pickToken.current += 1;
                 // Telefon o'zgarsa mavjud mijoz bilan bog'lanish uziladi (maydonlar qoladi).
                 const link = getValues("existingCustomer");
                 if (link && link.filled.phone !== nextDigits) {
-                  pickToken.current += 1;
                   setValue("existingCustomer", null, { shouldDirty: true });
                 }
+                const dismissed = dismissedPrefix.current;
+                const stillDismissed = dismissed != null && nextDigits.startsWith(dismissed);
+                if (!stillDismissed) dismissedPrefix.current = null;
                 setActiveIndex(-1);
-                setOpen(nextDigits.length >= CUSTOMER_SUGGEST_MIN_DIGITS);
+                setOpen(nextDigits.length >= CUSTOMER_SUGGEST_MIN_DIGITS && !stillDismissed);
               }}
               onKeyDown={handleKeyDown}
+              onFocus={() => setAwayOnPhone(false)}
               onBlur={() => {
+                // Telefonda varaqa ochilganda fokusni o'zi oladi — bu maydondan chiqish emas: «tegildi» va format
+                // tekshiruvi (7–8 raqamda «Telefon formati noto'g'ri») ishga tushmaydi, varaqa yopilmaydi.
+                if (sheetOpen) return;
                 field.onBlur();
-                // Telefonda varaqa fokusni oladi — u yerda yopilish varaqaning o'zida.
-                if (!isPhone) close();
+                if (isPhone) setAwayOnPhone(true);
+                else close();
               }}
               ref={field.ref}
             />
@@ -408,7 +428,7 @@ export const CustomerPhoneSuggest = ({ scope, marketId, marketName }: CustomerPh
 
       <Dialog
         open={sheetOpen}
-        onClose={close}
+        onClose={continueAsNew}
         title={t("createCustomer.sheetTitle")}
         description={t("createCustomer.sheetDescription", {
           phone: formatUzbekistanPhoneFull(digits),

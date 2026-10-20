@@ -69,6 +69,13 @@ const apiGet = (suggestions: unknown[] = [SHAHNOZA, DILNOZA]) => (url: string) =
   return aiApiGet(url);
 };
 
+const MARKETS = [
+  { id: 3, name: "Baraka Shop", phone_number: "+998903152241", status: "active" },
+  { id: 4, name: "Nur Elektronika", phone_number: "+998936041872", status: "active" },
+];
+const apiGetWithMarkets = (url: string) =>
+  url === "markets" ? ok(MARKETS) : apiGet()(url);
+
 const suggestCalls = () => mocks.get.mock.calls.filter(([url]) => url === "customers/suggest");
 const phoneInput = () => screen.getByRole("combobox", { name: /^Telefon/ });
 const createdPayload = () => mocks.post.mock.calls.find(([url]) => url === "orders")?.[1] as Record<string, unknown>;
@@ -337,6 +344,35 @@ describe("CS-A — telefon bo'yicha mijoz taklifi (desktop)", () => {
   });
 });
 
+describe("CS-A — market almashtirilsa (review B2)", () => {
+  it("1-qadamda boshqa market tanlansa — mavjud mijoz bog'lanishi uziladi (eski market sonlari va havolalari qolmaydi), maydonlar qoladi", async () => {
+    mocks.get.mockImplementation(apiGetWithMarkets);
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: adminState });
+
+    await user.click(screen.getByRole("button", { name: /^Market/ }));
+    let picker = await screen.findByRole("dialog", { name: "Market tanlash" });
+    await user.click(await within(picker).findByRole("option", { name: /Baraka Shop/ }));
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+
+    await user.type(phoneInput(), "9034567");
+    await user.click(await screen.findByRole("option", { name: /Shahnoza Abdullayeva/ }));
+    expect(await screen.findByText("Mavjud mijoz")).toBeInTheDocument();
+
+    await user.click(within(screen.getByRole("navigation", { name: "Qadamlar" })).getByRole("button", { name: "Marketni o'zgartirish" }));
+    await user.click(screen.getByRole("button", { name: /^Market/ }));
+    picker = await screen.findByRole("dialog", { name: "Market tanlash" });
+    await user.click(await within(picker).findByRole("option", { name: /Nur Elektronika/ }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Market tanlash" })).not.toBeInTheDocument());
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+
+    await waitFor(() => expect(screen.getByRole("navigation", { name: "Qadamlar" })).toHaveTextContent("Nur Elektronika"));
+    expect(screen.queryByText("Mavjud mijoz")).not.toBeInTheDocument();
+    expect(screen.queryByText("Bu mijozda yangi buyurtma bor")).not.toBeInTheDocument();
+    expect(screen.getByLabelText(/^Mijoz ismi/)).toHaveValue("Shahnoza Abdullayeva");
+  });
+});
+
 describe("CS-A — telefonda pastki varaqa", () => {
   it("natija bo'lsa «Mijozni tanlang» varaqasi; tanlansa maydonlar to'ladi", async () => {
     setPhoneViewport(true);
@@ -382,5 +418,56 @@ describe("CS-A — telefonda pastki varaqa", () => {
 
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Mijozni tanlang" })).not.toBeInTheDocument());
     expect(screen.getByLabelText(/^Mijoz ismi/)).toHaveValue("");
+  });
+
+  it("varaqa ochilganda telefon maydoni «tegilgan» bo'lmaydi — 7 raqamda format xatosi chiqmaydi (review B1a)", async () => {
+    setPhoneViewport(true);
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await user.type(phoneInput(), "9034567");
+    await screen.findByRole("dialog", { name: "Mijozni tanlang" });
+    expect(screen.queryByText("Telefon raqam 9 ta raqamdan iborat bo'lishi kerak")).not.toBeInTheDocument();
+    expect(phoneInput()).not.toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("«Yangi mijoz sifatida davom etish» dan keyin yana raqam yozilsa varaqa qayta ochilmaydi (review B1c)", async () => {
+    setPhoneViewport(true);
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await user.type(phoneInput(), "9034567");
+    const sheet = await screen.findByRole("dialog", { name: "Mijozni tanlang" });
+    await user.click(within(sheet).getByRole("button", { name: "Yangi mijoz sifatida davom etish" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Mijozni tanlang" })).not.toBeInTheDocument());
+
+    await user.type(phoneInput(), "2");
+    // Debounce (300 ms) va so'rov o'tib ketadi — varaqa baribir yopiq.
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    expect(screen.queryByRole("dialog", { name: "Mijozni tanlang" })).not.toBeInTheDocument();
+  });
+
+  it("natija kechiksa va foydalanuvchi boshqa maydonga o'tgan bo'lsa — varaqa fokusni tortib olmaydi (review B1b)", async () => {
+    setPhoneViewport(true);
+    let resolveSuggest: (value: unknown) => void = () => undefined;
+    mocks.get.mockImplementation((url: string) =>
+      url === "customers/suggest"
+        ? new Promise((resolve) => {
+            resolveSuggest = () => resolve({ data: { statusCode: 200, message: "ok", data: [SHAHNOZA, DILNOZA] } });
+          })
+        : apiGet()(url),
+    );
+    const user = userEvent.setup();
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await user.type(phoneInput(), "903456721");
+    await waitFor(() => expect(suggestCalls().length).toBeGreaterThan(0));
+    const name = screen.getByLabelText(/^Mijoz ismi/);
+    await user.click(name);
+    resolveSuggest(null);
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(screen.queryByRole("dialog", { name: "Mijozni tanlang" })).not.toBeInTheDocument();
+    expect(name).toHaveFocus();
   });
 });
