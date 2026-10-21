@@ -14,6 +14,8 @@ export const loadReleasedRegionNames = async (
       queryKey: logistKeys.regions,
       queryFn: getLogistRegions,
       staleTime: 60_000,
+      // Xato tasdiq oynasining o'zida (nomsiz umumiy qator) — global xabar (backend matni bilan) chiqmasin.
+      meta: { silentError: true },
     });
     return regions.filter((region) => region.logistId === String(logistId)).map((region) => region.name);
   } catch {

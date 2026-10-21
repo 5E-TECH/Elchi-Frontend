@@ -69,10 +69,41 @@ test("409 — oyna ichida «Rol o'zgartirilmadi», backend matni yo'q, qolgan ma
   await expect(alert).toContainText("Kamron Tursunov filialga biriktirilgan.");
   await expect(page.getByText(/DELETE \/branches/)).toHaveCount(0);
   await expect(dialog.getByRole("combobox", { name: "Rol" })).toHaveAttribute("aria-invalid", "true");
+  // Sababi maydon izohida ham (maket: `aria-describedby` → ogohlantirish).
+  await expect(dialog.getByRole("combobox", { name: "Rol" })).toHaveAccessibleDescription(/filialga biriktirilgan/);
   await expect(dialog.getByText("O'zgartirildi: Ro'yxatchi → Menejer", { exact: true })).toBeVisible();
   await expect(dialog.getByRole("textbox", { name: /^Ism familiya/ })).toHaveValue("Kamron Tursunov K.");
   expect(rolePatches).toEqual([{ role: "manager" }]);
   expect(userPatches).toEqual([]);
+});
+
+test("qisman: rol saqlandi, qolgani yo'q — tafsilot qayta kelsa ham kiritilganlar joyida, qayta saqlash yuboradi", async ({
+  page,
+}) => {
+  const { rolePatches, userPatches } = await openStaffDetail(page, { userStatuses: [500] });
+  const dialog = await openEditDialog(page);
+
+  await pickRole(page, "Menejer");
+  // Menejer tanlansa forma o'zgarmaydi (maket `superadmin-users-role-confirm-dialog`): tarif maydonlari yo'q.
+  await expect(dialog.getByRole("textbox", { name: /tarif/i })).toHaveCount(0);
+  const nameInput = dialog.getByRole("textbox", { name: /^Ism familiya/ });
+  await nameInput.fill("Nilufar Rashidova X");
+  await dialog.getByRole("button", { name: "O'zgarishlarni saqlash" }).click();
+  await page
+    .getByRole("alertdialog", { name: "Rolni o'zgartirasizmi?" })
+    .getByRole("button", { name: "Rolni o'zgartirish" })
+    .click();
+
+  await expect(toast(page, "Rol o'zgartirildi, qolgani saqlanmadi")).toBeVisible();
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("Nilufar Rashidova · Menejer");
+  await expect(nameInput).toHaveValue("Nilufar Rashidova X");
+  expect(rolePatches).toEqual([{ role: "manager" }]);
+
+  await dialog.getByRole("button", { name: "O'zgarishlarni saqlash" }).click();
+  await expect.poll(() => userPatches).toEqual([{ name: "Nilufar Rashidova X" }, { name: "Nilufar Rashidova X" }]);
+  await expect(dialog).toBeHidden();
+  expect(rolePatches).toEqual([{ role: "manager" }]);
 });
 
 test("Logist → Admin: bo'shaydigan viloyatlar va «Logistlarni biriktirish» havolasi", async ({ page }) => {

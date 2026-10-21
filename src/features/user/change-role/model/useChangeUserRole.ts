@@ -3,7 +3,7 @@ import { changeUserRole } from "../../../../entities/user/api/roleApi";
 import type { ChangeableUserRole } from "../../../../entities/user/types/user";
 import { useRefreshLogistAssignments } from "../../../../entities/logist";
 import { queryKeys } from "../../../../shared/config/queryKeys";
-import { classifyRoleChangeError } from "./roleChangeError";
+import { classifyRoleChangeError, isRetryableRoleChangeError } from "./roleChangeError";
 
 /** `useUser()` so'rovlarining ildiz kaliti (`entities/user/api/userApi.ts` → `user`): ro'yxat, tafsilot, profil. */
 const USER_QUERY_ROOT = "user";
@@ -36,7 +36,7 @@ export const useChangeUserRole = () => {
       await Promise.all([invalidateUsers(), from === "logist" ? refreshLogists() : undefined]);
     },
     onError: (error: unknown) => {
-      if (classifyRoleChangeError(error) === "retry") void invalidateUsers();
+      if (isRetryableRoleChangeError(classifyRoleChangeError(error))) void invalidateUsers();
     },
   });
 };

@@ -1,4 +1,5 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { useEffect, useState } from "react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../../test/test-utils";
@@ -99,6 +100,44 @@ const renderModal = (user: User, viewer: { role: string; id: string } = { role: 
   });
   return { onClose };
 };
+
+/**
+ * Tafsilot sahifasidagidek (`UserDetailView`: `initialUser` — `GET /users/:id` so'rovi): rol o'zgargach `[user]`
+ * qayta so'raladi va oynaga yangi ob'ekt keladi. `hostUser.set` — shu qayta kelishni taqlid qiladi.
+ */
+const hostUser: { set: (user: User) => void } = { set: () => {} };
+
+const DetailHost = ({ initial, onClose }: { initial: User; onClose: () => void }) => {
+  const [user, setUser] = useState(initial);
+  useEffect(() => {
+    hostUser.set = setUser;
+  }, []);
+  return <UpdateUserModal userId={user.id} initialUser={user} onClose={onClose} />;
+};
+
+const renderInDetail = (initial: User) => {
+  const onClose = vi.fn();
+  renderWithProviders(<DetailHost initial={initial} onClose={onClose} />, {
+    preloadedState: stateFor("superadmin", "1"),
+  });
+  return { onClose };
+};
+
+/** Server javobidan keyin tafsilot qayta keldi (rol yangi). */
+const refetchDetail = (user: User) => act(() => hostUser.set(user));
+
+const nameField = () => {
+  const input = document.querySelector<HTMLInputElement>('input[name="name"]');
+  if (!input) throw new Error("name input not found");
+  return input;
+};
+
+const confirmRoleChange = async (user: ReturnType<typeof userEvent.setup>) =>
+  user.click(
+    within(await screen.findByRole("alertdialog", { name: "Rolni o'zgartirasizmi?" })).getByRole("button", {
+      name: "Rolni o'zgartirish",
+    }),
+  );
 
 const roleField = () => screen.getByRole("combobox", { name: "Rol" });
 const saveButton = () => screen.getByRole("button", { name: "O'zgarishlarni saqlash" });
@@ -441,5 +480,111 @@ describe("UpdateUserModal — rolni o'zgartirish oqimi (FY-2)", () => {
     await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
     expect(mocks.changeUserRole).not.toHaveBeenCalled();
     expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+  });
+});
+
+describe("UpdateUserModal — review tuzatishlari (FY-2)", () => {
+  it("qisman muvaffaqiyat tafsilot sahifasida: tafsilot qayta kelsa ham kiritilganlar joyida, qayta saqlash yuboradi", async () => {
+    const base = makeUser();
+    mocks.changeUserRole.mockImplementation(async () => {
+      refetchDetail({ ...base, role: "manager", updatedAt: "2026-10-21T10:00:00.000Z" });
+      return { statusCode: 200 };
+    });
+    mocks.updateUser.mockRejectedValueOnce(httpError(400));
+    const user = userEvent.setup();
+    const { onClose } = renderInDetail(base);
+
+    await pickRole(user, "Menejer");
+    await user.type(nameField(), "!");
+    await user.click(saveButton());
+    await confirmRoleChange(user);
+
+    expect(await screen.findByText("Rol o'zgartirildi, qolgani saqlanmadi")).toBeInTheDocument();
+    expect(nameField()).toHaveValue("Nilufar Rashidova!");
+    expect(onClose).not.toHaveBeenCalled();
+
+    await user.click(saveButton());
+    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(2));
+    expect(mocks.updateUser).toHaveBeenLastCalledWith({ id: "41", data: { name: "Nilufar Rashidova!" } });
+    expect(mocks.changeUserRole).toHaveBeenCalledTimes(1);
+  });
+
+  it("vaqt chegarasi — «natija noma'lum» matni; rol aslida o'zgargan bo'lsa, «Qayta urinish» rolni qayta yubormaydi", async () => {
+    const base = makeUser();
+    mocks.changeUserRole.mockImplementationOnce(async () => {
+      refetchDetail({ ...base, role: "manager" });
+      throw { isAxiosError: true, code: "ECONNABORTED" };
+    });
+    const user = userEvent.setup();
+    renderInDetail(base);
+
+    await pickRole(user, "Menejer");
+    await user.type(nameField(), "!");
+    await user.click(saveButton());
+    await confirmRoleChange(user);
+
+    const alert = await screen.findByTestId("role-change-error");
+    expect(alert).toHaveTextContent("Javob kelmadi — rol o'zgargan-o'zgarmagani noma'lum.");
+    expect(alert).not.toHaveTextContent("rol o'zgarmadi");
+    expect(nameField()).toHaveValue("Nilufar Rashidova!");
+
+    await user.click(within(alert).getByRole("button", { name: "Qayta urinish" }));
+    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
+    expect(mocks.updateUser).toHaveBeenCalledWith({ id: "41", data: { name: "Nilufar Rashidova!" } });
+    expect(mocks.changeUserRole).toHaveBeenCalledTimes(1);
+  });
+
+  it("Menejer tanlansa forma o'zgarmaydi (maketlar): tarif maydonlari yo'q, bo'lim «Maosh va to'lov kuni»", async () => {
+    const user = userEvent.setup();
+    renderModal(makeUser());
+
+    await pickRole(user, "Menejer");
+    expect(document.querySelector('input[name="tariff_home"]')).toBeNull();
+    expect(document.querySelector('input[name="tariff_center"]')).toBeNull();
+    expect(screen.getByRole("heading", { name: "Maosh va to'lov kuni" })).toBeInTheDocument();
+  });
+
+  it("xato holatida rol maydonining izohi ogohlantirishga bog'langan (aria-describedby)", async () => {
+    mocks.changeUserRole.mockRejectedValue(httpError(409));
+    const user = userEvent.setup();
+    renderModal(makeUser({ name: "Kamron Tursunov", role: "registrator" }));
+
+    expect(roleField()).not.toHaveAccessibleDescription(expect.stringContaining("filialga biriktirilgan"));
+    await pickRole(user, "Menejer");
+    await user.click(saveButton());
+    await confirmRoleChange(user);
+
+    const alert = await screen.findByTestId("role-change-error");
+    expect(roleField().getAttribute("aria-describedby")?.split(" ")).toContain(alert.id);
+    expect(roleField()).toHaveAccessibleDescription(expect.stringContaining("Kamron Tursunov filialga biriktirilgan."));
+  });
+
+  it("logistdan chiqib, qolgani saqlanmasa — ogohlantirishda ham «Logistlarni biriktirish»", async () => {
+    mocks.updateUser.mockRejectedValueOnce(httpError(500));
+    const user = userEvent.setup();
+    renderModal(makeUser({ name: "Aziz Rahimov", role: "logist" }));
+
+    await pickRole(user, "Admin");
+    await user.type(nameField(), "!");
+    await user.click(saveButton());
+    await confirmRoleChange(user);
+
+    expect(await screen.findByText("Rol o'zgartirildi, qolgani saqlanmadi")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Logistlarni biriktirish" }));
+    expect(mocks.navigate).toHaveBeenCalledWith("/regions/logist-assignment");
+  });
+
+  it("ikki marta tez saqlash — bitta so'rov", async () => {
+    mocks.updateUser.mockImplementation(() => new Promise(() => {}));
+    const user = userEvent.setup();
+    renderModal(makeUser());
+
+    await user.type(nameField(), "!");
+    fireEvent.click(saveButton());
+    fireEvent.click(saveButton());
+
+    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(mocks.updateUser).toHaveBeenCalledTimes(1);
   });
 });

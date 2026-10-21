@@ -34,6 +34,8 @@ export type StaffDetailOptions = {
   user?: Partial<typeof STAFF>;
   /** `PATCH users/41/role` javob kodlari ketma-ket (tugasa — 200). */
   roleStatuses?: number[];
+  /** `PATCH users/41` javob kodlari ketma-ket (tugasa — 200). */
+  userStatuses?: number[];
   /** `GET region` qatorlari (`logist_id`). */
   regions?: Array<{ id: number; name: string; logist_id: number | string | null }>;
   /** `localStorage` mavzusi. */
@@ -44,6 +46,7 @@ export const openStaffDetail = async (page: Page, options: StaffDetailOptions = 
   const rolePatches: Array<Record<string, unknown>> = [];
   const userPatches: Array<Record<string, unknown>> = [];
   const roleStatuses = [...(options.roleStatuses ?? [])];
+  const userStatuses = [...(options.userStatuses ?? [])];
   let staff: Record<string, unknown> = { ...STAFF, ...options.user };
 
   await page.context().routeWebSocket(/\/socket\.io\//, (ws) => ws.close());
@@ -86,6 +89,8 @@ export const openStaffDetail = async (page: Page, options: StaffDetailOptions = 
     if (path === "users/41" && request.method() === "PATCH") {
       const body = request.postDataJSON() as Record<string, unknown>;
       userPatches.push(body);
+      const status = userStatuses.shift() ?? 200;
+      if (status !== 200) return reply(route, { statusCode: status, message: "Internal server error" }, status);
       staff = { ...staff, ...body };
       return reply(route, { statusCode: 200, data: staff });
     }

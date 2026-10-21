@@ -438,7 +438,8 @@
         "title": "Rol o'zgartirilmadi",
         "assigned": "{{name}} filialga biriktirilgan. Avval uni filialdan chiqaring — rol o'zgargach, yangi rol bilan qayta biriktiring. Oyna yopilmadi — kiritilganlar joyida.",
         "retry": "Hozir tekshirib bo'lmadi — rol o'zgarmadi. Birozdan so'ng qayta urinib ko'ring. Oyna yopilmadi — kiritilganlar joyida.",
-        "failed": "Rolni o'zgartirib bo'lmadi. Sahifani yangilab, qayta urinib ko'ring. Oyna yopilmadi — kiritilganlar joyida.",
+        "unknown": "Javob kelmadi — rol o'zgargan-o'zgarmagani noma'lum. Rolini tekshirib, qayta urinib ko'ring. Oyna yopilmadi — kiritilganlar joyida.",
+      "failed": "Rolni o'zgartirib bo'lmadi. Sahifani yangilab, qayta urinib ko'ring. Oyna yopilmadi — kiritilganlar joyida.",
         "retryAction": "Qayta urinish"
       },
       "success": {

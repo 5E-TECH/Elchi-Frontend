@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { classifyRoleChangeError } from "./roleChangeError";
+import { classifyRoleChangeError, isRetryableRoleChangeError } from "./roleChangeError";
 
 const http = (status: number) => ({ isAxiosError: true, response: { status, data: { message: "raw" } } });
 
@@ -14,9 +14,14 @@ describe("classifyRoleChangeError (FY-2)", () => {
     expect(classifyRoleChangeError(http(status))).toBe("retry");
   });
 
-  it("vaqt chegarasi va tarmoq — qayta urinish", () => {
-    expect(classifyRoleChangeError({ isAxiosError: true, code: "ECONNABORTED" })).toBe("retry");
-    expect(classifyRoleChangeError({ isAxiosError: true, code: "ERR_NETWORK", request: {} })).toBe("retry");
+  it("vaqt chegarasi va tarmoq — natija noma'lum (rol o'zgargan bo'lishi mumkin), qayta urinish bor", () => {
+    expect(classifyRoleChangeError({ isAxiosError: true, code: "ECONNABORTED" })).toBe("unknown");
+    expect(classifyRoleChangeError({ isAxiosError: true, code: "ERR_NETWORK", request: {} })).toBe("unknown");
+    expect(isRetryableRoleChangeError("unknown")).toBe(true);
+    expect(isRetryableRoleChangeError("retry")).toBe(true);
+    expect(isRetryableRoleChangeError("assigned")).toBe(false);
+    expect(isRetryableRoleChangeError("failed")).toBe(false);
+    expect(isRetryableRoleChangeError(null)).toBe(false);
   });
 
   it.each([400, 403, 404])("%s — umumiy xato", (status) => {

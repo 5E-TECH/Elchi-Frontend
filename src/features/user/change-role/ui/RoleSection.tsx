@@ -7,7 +7,7 @@ import { CHANGEABLE_USER_ROLES, isChangeableUserRole } from "../../../../entitie
 import { getUserRoleLabelKey } from "../../../../entities/user/lib/role";
 import type { ChangeableUserRole } from "../../../../entities/user/types/user";
 import { Button, Field, Select, type SelectOption } from "../../../../shared/ui/primitives";
-import type { RoleChangeErrorKind } from "../model/roleChangeError";
+import { isRetryableRoleChangeError, type RoleChangeErrorKind } from "../model/roleChangeError";
 import { CHANGEABLE_ROLE_ICON } from "../model/roleIcons";
 
 export type RoleSectionProps = {
@@ -38,7 +38,8 @@ export type RoleSectionProps = {
  * ro'yxat (`CHANGEABLE_USER_ROLES`, backend baribir o'zi tekshiradi). Joriy rol variantlarda doim bor.
  *
  * Xato (`error`): 409 — umumiy matn (filial nomi va havolasi backend kGIjOciz dan keyin, FY-4 —
- * `superadmin-users-edit-role-branch` ham o'sha yerda); 503 / tarmoq — «Qayta urinish»; qolgani — umumiy matn.
+ * `superadmin-users-edit-role-branch` ham o'sha yerda); 5xx — «Qayta urinish»; vaqt / tarmoq — natija noma'lum,
+ * «Qayta urinish»; qolgani — umumiy matn.
  * Backend matni ko'rsatilmaydi (unda texnik yo'l bor).
  */
 export const RoleSection = ({
@@ -53,6 +54,7 @@ export const RoleSection = ({
 }: RoleSectionProps) => {
   const { t } = useTranslation("users");
   const titleId = useId();
+  const alertId = useId();
   const [catalogRequested, setCatalogRequested] = useState(false);
   const catalog = useRoleCatalog({ enabled: catalogRequested });
 
@@ -94,6 +96,8 @@ export const RoleSection = ({
           value={selected}
           icon={CHANGEABLE_ROLE_ICON[selected]}
           listLabel={t("v2.role.listLabel")}
+          // Xato holatida sababi maydon izohida ham (maket: `aria-describedby="ue-role-alert"`).
+          aria-describedby={error ? alertId : undefined}
           onOpenChange={(open) => {
             if (open) setCatalogRequested(true);
           }}
@@ -106,6 +110,7 @@ export const RoleSection = ({
 
       {error ? (
         <div
+          id={alertId}
           role="alert"
           data-testid="role-change-error"
           className="flex min-w-0 items-start gap-3 rounded-xl bg-danger-soft px-4 py-3 text-sm text-danger-fg"
@@ -118,7 +123,7 @@ export const RoleSection = ({
                 {t(`v2.role.error.${error}`, { name: userName })}
               </div>
             </div>
-            {error === "retry" && onRetry ? (
+            {isRetryableRoleChangeError(error) && onRetry ? (
               <Button variant="secondary" size="sm" leftIcon={RefreshCw} loading={busy} onClick={onRetry}>
                 {t("v2.role.error.retryAction")}
               </Button>

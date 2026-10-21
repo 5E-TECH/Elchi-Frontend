@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-users-edit-dialog, admin-users-edit-dialog, manager-users-edit-dialog, superadmin-users-edit-market-ai, superadmin-users-edit-market-ai-phone, superadmin-users-edit-courier-district, superadmin-users-edit-role, superadmin-users-role-confirm-dialog, superadmin-users-role-confirm-logist, superadmin-users-edit-role-error
-import { memo, useEffect, useState, type ReactNode } from "react";
+import { memo, useEffect, useRef, useState, type ReactNode } from "react";
 import { Controller, useForm, type Path } from "react-hook-form";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -168,8 +168,9 @@ const FormSection = ({
  * ro'yxatchi ⇄ logist, o'zini emas). Saqlash: tasdiq «Rolni o'zgartirasizmi?» → avval `PATCH /users/:id/role`, keyin
  * qolgan maydonlar (`PATCH /users/:id`). Rol o'zgarmasa (409 — filialga biriktirilgan, 503 / tarmoq — «Qayta
  * urinish», boshqasi) — xato oyna ichida, qolgan maydonlar yuborilmaydi, kiritilganlar joyida. Rol o'zgarib, qolgani
- * saqlanmasa — alohida ogohlantirish, oyna ochiq (rol endi yangi). Menejer tariflari faqat menejerda: rol
- * menejerdan boshqasiga o'zgarsa yuborilmaydi (backend ularni tozalaydi), menejerga o'zgarsa — maydonlar chiqadi.
+ * saqlanmasa — alohida ogohlantirish, oyna ochiq (rol endi yangi), kiritilganlar joyida (tafsilot qayta kelsa ham).
+ * Menejer tariflari faqat menejerda: rol menejerdan boshqasiga o'zgarsa yashirinadi va yuborilmaydi (backend ularni
+ * tozalaydi); menejerga o'zgarsa forma o'zgarmaydi (maketlar) — tariflar rol saqlangach chiqadi.
  *
  * Props va xulq o'zgarmagan (spec §8.4; `/profile` ham shu oynani ochadi): faqat o'zgargan maydonlar
  * yuboriladi; nofaol qilish — tasdiq oynasi; o'z parolini o'zgartirgan foydalanuvchi darhol chiqariladi
@@ -199,6 +200,11 @@ export const UpdateUserModal = memo(({
   const [roleBusy, setRoleBusy] = useState(false);
   const [roleError, setRoleError] = useState<RoleChangeErrorKind | null>(null);
   const [committedRole, setCommittedRole] = useState<string | null>(null);
+  // Forma oxirgi marta qaysi foydalanuvchi uchun to'ldirilgan: shu foydalanuvchi ma'lumoti qayta kelsa (rol
+  // o'zgargach `[user]` qayta so'raladi) — kiritilganlar saqlanadi, faqat tegilmagan maydonlar yangilanadi.
+  const filledForUserRef = useRef<string | null>(null);
+  // Ikki marta tez bosish (yoki Enter) ikki oqim boshlamasin — `isPending` keyingi chizishgacha kechikadi.
+  const submittingRef = useRef(false);
   // O'z hisobi: profil sahifasi yoki ro'yxatdan o'zini tahrirlash.
   const isSelf =
     isOwnProfile ||
@@ -261,14 +267,21 @@ export const UpdateUserModal = memo(({
   // «Boshqa filialga o'tkazish» tugmasi faqat admin/superadminda (UserDetailView `canTransferCourier`).
   const canTransferCourier = authRole === "admin" || authRole === "superadmin";
   const initialAiPrice = userData?.ai_price_per_order != null ? toDigits(userData.ai_price_per_order) : "";
+  // Menejer tariflari — faqat saqlangan rol ham, tanlangan rol ham menejer bo'lsa: menejerga o'tkazishda maydonlar
+  // qo'shilmaydi (maketlar `*-role-confirm-dialog`, `*-edit-role-error` — forma o'zgarmaydi), menejerdan boshqasiga
+  // o'tkazishda yashirinadi va yuborilmaydi (backend tariflarni o'zi tozalaydi).
   const canEditManagerFinancial =
     !isOwnProfile &&
+    role === "manager" &&
     effectiveRole === "manager" &&
     (authRole === "admin" || authRole === "superadmin");
 
   useEffect(() => {
     if (!userData) return;
-
+    // Yangi ochilish yoki boshqa foydalanuvchi — to'liq to'ldirish; o'sha foydalanuvchi qayta kelsa (masalan rol
+    // o'zgargach tafsilot qayta so'raldi) — o'zgartirilgan maydonlar joyida qoladi.
+    const sameUser = filledForUserRef.current === String(userData.id);
+    filledForUserRef.current = String(userData.id);
     reset({
       name: userData.name ?? "",
       phone: userData.phone_number ? toUzbekistanPhoneValue(userData.phone_number) : "",
@@ -282,14 +295,17 @@ export const UpdateUserModal = memo(({
       default_tariff: toTariffOption(userData.default_tariff),
       ai_price: userData.ai_price_per_order != null ? toDigits(userData.ai_price_per_order) : "",
       role: userData.role ?? "",
-    });
+    }, sameUser ? { keepDirtyValues: true } : undefined);
   }, [reset, userData]);
 
   // Oyna yopilganda parol yana yashirin; boshqa foydalanuvchi yoki yopilish — rol holati tozalanadi.
   useEffect(() => {
     setRoleError(null);
     setCommittedRole(null);
-    if (!userId) setShowPassword(false);
+    if (!userId) {
+      setShowPassword(false);
+      filledForUserRef.current = null;
+    }
   }, [userId]);
 
   const validateForm = (values: UpdateUserFormValues): boolean => {
@@ -405,6 +421,7 @@ export const UpdateUserModal = memo(({
           applyBackendFieldErrors(error, setError, SERVER_FIELD_NAME_MAP);
           notify.warning(t("v2.role.partial.title"), {
             description: t("v2.role.partial.text", { name, role: t(`v2.role.as.${targetRole}`) }),
+            action: assignLogists,
           });
           return;
         }
@@ -424,6 +441,16 @@ export const UpdateUserModal = memo(({
 
   /** `skipRoleConfirm` — «Qayta urinish» (rol tasdig'i olingan, tanlov o'zgarmagan). */
   const submitForm = async (values: UpdateUserFormValues, skipRoleConfirm: boolean) => {
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    try {
+      await submitFormOnce(values, skipRoleConfirm);
+    } finally {
+      submittingRef.current = false;
+    }
+  };
+
+  const submitFormOnce = async (values: UpdateUserFormValues, skipRoleConfirm: boolean) => {
     if (!userId || !userData || !validateForm(values)) return;
     const targetRole =
       canChangeRole && isChangeableUserRole(values.role) && values.role !== role ? values.role : null;
