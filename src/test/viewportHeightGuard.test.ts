@@ -73,13 +73,13 @@ describe("viewport height guard (100vh → dvh)", () => {
   });
 
   it("naqsh: 100vh va h-screen oilasini topadi, dvh / svh va boshqa nomlarni emas", () => {
-    const hits = (text: string) => findViewportHeightUses(text).map((use) => use.match);
+    const hits = (text: string, path?: string) => findViewportHeightUses(text, path).map((use) => use.match);
     expect(hits(`<div className="min-h-screen md:h-screen max-h-screen" />`)).toEqual([
       "min-h-screen",
       "h-screen",
       "max-h-screen",
     ]);
-    expect(hits(".shell { min-height: 100vh; height: calc(100vh - 64px); }")).toEqual(["100vh", "100vh"]);
+    expect(hits(".shell { min-height: 100vh; height: calc(100vh - 64px); }", "x.css")).toEqual(["100vh", "100vh"]);
     expect(hits(`style={{ maxHeight: "100vh" }}`)).toEqual(["100vh"]);
     expect(hits(`<div className="min-h-dvh h-[100dvh] max-h-[100svh] w-screen" />`)).toEqual([]);
     expect(hits(`const x = "100vhx"; const y = "data-h-screen-id";`)).toEqual([]);
