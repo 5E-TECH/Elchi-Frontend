@@ -1,8 +1,8 @@
-// dizayn-v2: superadmin-users-create, admin-users-create, manager-users-create-courier, manager-users-create-hybrid
+// dizayn-v2: superadmin-users-create, admin-users-create, manager-users-create-courier, manager-users-create-hybrid, superadmin-users-create-logist, admin-users-create-logist, superadmin-users-create-courier-district
 import { memo, useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import { Controller, useForm, useWatch, type Path } from "react-hook-form";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   Briefcase,
@@ -11,6 +11,8 @@ import {
   Eye,
   EyeOff,
   KeyRound,
+  Map as MapIcon,
+  Route,
   Store,
   Truck,
   UserCog,
@@ -19,6 +21,7 @@ import {
 import type {
   CreateAdminRequest,
   CreateCourierRequest,
+  CreateLogistRequest,
   CreateManagerRequest,
   CreateMarketRequest,
   CreateRegistratorRequest,
@@ -29,6 +32,7 @@ import { getUserRoleLabelKey } from "../../../../entities/user/lib/role";
 import { useBranches, type Branch } from "../../../../entities/branch";
 import type { RootState } from "../../../../app/config/store";
 import { cx } from "../../../../shared/lib/cx";
+import { notify } from "../../../../shared/lib/notify";
 import { getUzbekistanPhoneDigits, toUzbekistanPhoneValue } from "../../../../shared/lib/phone";
 import {
   Button,
@@ -63,7 +67,6 @@ interface CreateUserFormValues {
   password: string;
   salary: string;
   paymentDay: string;
-  region: string;
   branchId: string;
   homeRate: string;
   centerRate: string;
@@ -78,7 +81,6 @@ const INITIAL_FORM: CreateUserFormValues = {
   password: "",
   salary: "",
   paymentDay: "",
-  region: "",
   branchId: "",
   homeRate: "",
   centerRate: "",
@@ -99,9 +101,6 @@ const SERVER_FIELD_NAME_MAP: Record<string, Path<CreateUserFormValues>> = {
   paymentDay: "paymentDay",
   branch_id: "branchId",
   branchId: "branchId",
-  region: "region",
-  region_id: "region",
-  regionId: "region",
   tariff_home: "homeRate",
   tariffHome: "homeRate",
   home_rate: "homeRate",
@@ -127,10 +126,32 @@ const ROLE_ICONS: Record<string, LucideIcon> = {
   admin: UserCog,
   manager: Briefcase,
   registrator: ClipboardPenLine,
+  logist: Route,
   courier: Truck,
   marketing: Store,
 };
-const ROLE_ORDER: UserRole[] = ["admin", "manager", "registrator", "courier", "marketing"];
+/** Superadmin/admin rollari (LG-2: Admin · Menejer · Ro'yxatchi · Logist · Kuryer · Market). */
+const ROLE_ORDER: UserRole[] = ["admin", "manager", "registrator", "logist", "courier", "marketing"];
+
+/** `?role=logist` («Logist biriktirish» → «Logist yaratish») — shu rol tanlangan holda ochiladi. */
+const readRoleParam = (value: string | null, allowed: readonly UserRole[]): UserRole | null =>
+  value && (allowed as readonly string[]).includes(value) ? (value as UserRole) : null;
+
+/** Logist yaratilgach — «Logist biriktirish» shu logist tanlangan holda. */
+const logistAssignmentPath = (id: unknown) =>
+  typeof id === "string" || typeof id === "number"
+    ? `/regions/logist-assignment?logist=${encodeURIComponent(String(id))}`
+    : "/regions/logist-assignment";
+
+/** `POST /logists` javobidan yangi logist id'si (`successRes(user)` → `data.id`; axios javobi ham bo'lishi mumkin). */
+const createdIdOf = (response: unknown): unknown => {
+  const body = (response as { data?: unknown } | null)?.data ?? response;
+  const data = (body as { data?: unknown } | null)?.data ?? body;
+  return (data as { id?: unknown } | null)?.id;
+};
+
+const statusOf = (error: unknown): number | undefined =>
+  (error as { response?: { status?: unknown } } | null)?.response?.status as number | undefined;
 
 /** `.el-overline` — bo'lim sarlavhasi. */
 const OVERLINE = "m-0 text-xs font-semibold uppercase tracking-[.05em] text-text-muted";
@@ -164,13 +185,13 @@ const FormSection = ({ title, note, children }: { title: string; note?: ReactNod
 export const CreateUserForm = memo(() => {
   const { t } = useTranslation(["users", "common"]);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const formId = useId();
   const authRole = useSelector((state: RootState) => state.role.role);
   const viewerBranch = useSelector((state: RootState) => readViewerBranch(state.user.user), shallowBranch);
 
   const currentBranchType = viewerBranch.type;
   const currentBranchId = viewerBranch.id;
-  const currentRegionId = viewerBranch.regionId;
   const isManagerHybridCreator = authRole === "manager" && currentBranchType === "HYBRID";
   // REGIONAL menejer — faqat kuryer (avvalgidek). fix3 CODE-21: boshqa
   // turdagi (PICKUP/HQ/noma'lum) menejer uchun avval `null` = HAMMA rollar
@@ -189,8 +210,11 @@ export const CreateUserForm = memo(() => {
   const [showPassword, setShowPassword] = useState(false);
   const getRoleLabel = (userRole: UserRole) => t(getUserRoleLabelKey(userRole));
 
+  const [initialRole] = useState<UserRole>(
+    () => readRoleParam(searchParams.get("role"), managerAllowedRoles ?? ROLE_ORDER) ?? INITIAL_FORM.role,
+  );
   const methods = useForm<CreateUserFormValues>({
-    defaultValues: INITIAL_FORM,
+    defaultValues: { ...INITIAL_FORM, role: initialRole },
     mode: "onTouched",
   });
 
@@ -204,7 +228,7 @@ export const CreateUserForm = memo(() => {
   const visibleRoles = managerAllowedRoles ?? ROLE_ORDER;
   const shouldShowRolePanel = visibleRoles.length > 1;
 
-  const { createAdmin, createManager, createRegistrator, createMarket, createCourier } = useUser();
+  const { createAdmin, createManager, createRegistrator, createMarket, createCourier, createLogist } = useUser();
   // Filial tanlovi faqat superadmin/admin formasida — menejer uchun `GET branches` 403 (BatchesPage naqshi).
   const canLoadBranches = authRole === "superadmin" || authRole === "admin";
   const { data: branchesResponse, isLoading: isBranchesLoading } = useBranches(
@@ -234,7 +258,8 @@ export const CreateUserForm = memo(() => {
     createManager.isPending ||
     createRegistrator.isPending ||
     createMarket.isPending ||
-    createCourier.isPending;
+    createCourier.isPending ||
+    createLogist.isPending;
 
   const validateByRole = (values: CreateUserFormValues): boolean => {
     let valid = true;
@@ -257,7 +282,7 @@ export const CreateUserForm = memo(() => {
       valid = false;
     }
 
-    if (role === "admin" || role === "registrator") {
+    if (role === "admin" || role === "registrator" || role === "logist") {
       if (!values.salary) {
         setError("salary", { message: t("salaryRequired") });
         valid = false;
@@ -287,6 +312,15 @@ export const CreateUserForm = memo(() => {
       // Himoya: HQ ga menejer biriktirilmaydi (backend ham 400 qaytaradi).
       setError("branchId", { message: t("managerHqNotAllowed") });
       valid = false;
+    }
+
+    // Logist: to'lov kuni ixtiyoriy (backend sukuti — biznes to'lov kuni), berilsa 1–30.
+    if (role === "logist" && values.paymentDay) {
+      const day = Number(values.paymentDay);
+      if (day < 1 || day > 30) {
+        setError("paymentDay", { message: t("paymentDayValidation") });
+        valid = false;
+      }
     }
 
     if (role === "courier" || role === "manager") {
@@ -422,10 +456,8 @@ export const CreateUserForm = memo(() => {
         phone_number: rawPhone,
         password: values.password,
       };
-      if (authRole === "manager") {
-        if (currentBranchId) payload.branch_id = currentBranchId;
-        if (currentRegionId) payload.region_id = currentRegionId;
-      }
+      // `region_id` yuborilmaydi: gateway DTO'sida yo'q (doim 400 edi) — hudud filialdan olinadi.
+      if (authRole === "manager" && currentBranchId) payload.branch_id = currentBranchId;
       if (values.salary.trim()) {
         payload.salary = parseAmount(values.salary);
         if (values.paymentDay) {
@@ -441,6 +473,31 @@ export const CreateUserForm = memo(() => {
       payload.tariff_center = tariffs.tariff_center;
 
       await submitRequest(() => createCourier.mutateAsync(payload), t("createCourier"));
+      return;
+    }
+
+    if (role === "logist") {
+      const payload: CreateLogistRequest = {
+        name: values.fullName.trim(),
+        phone_number: rawPhone,
+        password: values.password,
+        salary: parseAmount(values.salary),
+      };
+      if (values.paymentDay) payload.payment_day = Number(values.paymentDay);
+      try {
+        const response = await createLogist.mutateAsync(payload);
+        notify.success(t("v2.logist.created"), {
+          description: t("v2.logist.createdDescription", { name: payload.name }),
+        });
+        navigate(logistAssignmentPath(createdIdOf(response)));
+      } catch (error) {
+        // Server matni ko'rsatilmaydi: 409 — telefon band (maydon ostida), qolgani — umumiy xabar.
+        if (statusOf(error) === 409) {
+          setError("phone", { type: "server", message: t("v2.logist.phoneTaken") });
+        } else {
+          notify.error(t("v2.logist.createError"), { description: t("v2.logist.createErrorText") });
+        }
+      }
       return;
     }
 
@@ -564,7 +621,7 @@ export const CreateUserForm = memo(() => {
     />
   );
 
-  const renderPaymentDayField = (required: boolean) => (
+  const renderPaymentDayField = (required: boolean, hint?: string) => (
     <Controller
       control={control}
       name="paymentDay"
@@ -573,7 +630,7 @@ export const CreateUserForm = memo(() => {
           label={t("v2.create.fields.paymentDay")}
           labelAs="span"
           required={required}
-          hint={t(required ? "v2.create.fields.paymentDayHintRequired" : "v2.create.fields.paymentDayHint")}
+          hint={hint ?? t(required ? "v2.create.fields.paymentDayHintRequired" : "v2.create.fields.paymentDayHint")}
           error={fieldState.error?.message}
         >
           {/* Ega qarori 2026-10-16: oylik kalendar o'rniga 1–30 kunlar; qiymat avvalgidek satr. */}
@@ -628,6 +685,7 @@ export const CreateUserForm = memo(() => {
 
   const roleHint = (key: UserRole) => {
     if (key === "marketing") return t("v2.create.roleHint.market");
+    if (key === "logist") return t("v2.logist.roleHint");
     if (key === "registrator" && isManagerHybridCreator) return t("v2.create.roleHint.registratorOwnBranch");
     return t(`v2.create.roleHint.${key}`);
   };
@@ -734,7 +792,9 @@ export const CreateUserForm = memo(() => {
       ? t("v2.create.formDescription.courier")
       : isMarketRole
         ? t("v2.create.formDescription.market")
-        : undefined;
+        : role === "logist"
+          ? t("v2.logist.formDescription")
+          : undefined;
 
   const formTitle = (
     <span className="flex min-w-0 items-center gap-3">
@@ -818,6 +878,26 @@ export const CreateUserForm = memo(() => {
                   {renderPaymentDayField(true)}
                 </div>
               </FormSection>
+            ) : null}
+
+            {role === "logist" ? (
+              <>
+                <FormSection title={t("v2.logist.sections.salary")}>
+                  <div className={GRID_260}>
+                    {renderMoneyField("salary", t("v2.create.fields.salary"), salaryPlaceholder, {
+                      required: true,
+                      hint: t("v2.logist.salaryHint"),
+                    })}
+                    {renderPaymentDayField(false, t("v2.logist.paymentDayHint"))}
+                  </div>
+                </FormSection>
+                <FormSection title={t("v2.logist.sections.regions")}>
+                  <div className="flex items-start gap-3 rounded-xl bg-sunken px-4 py-3">
+                    <MapIcon size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-text-subtle" />
+                    <p className="m-0 min-w-0 text-[13px] leading-[18px] text-text">{t("v2.logist.regionsNote")}</p>
+                  </div>
+                </FormSection>
+              </>
             ) : null}
 
             {role === "manager" ? (

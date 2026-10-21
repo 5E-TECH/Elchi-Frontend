@@ -405,12 +405,113 @@
     },
     "logist": {
       "title": "Logist biriktirish",
-      "subtitle": "Logistlarni viloyatlarga biriktirish bo'limi",
-      "empty": {
-        "title": "Bo'lim hali ishga tushmagan",
-        "text": "Logist biriktirish imkoniyati tayyor bo'lgach shu sahifada paydo bo'ladi. Hozircha hududlar xaritasidan foydalaning."
+      "subtitle": "Logistni tanlang va unga viloyatlarni belgilang · bir viloyatda bitta logist",
+      "create": "Logist yaratish",
+      "list": {
+        "title": "Logistlar",
+        "searchPlaceholder": "Ism yoki telefon",
+        "searchLabel": "Logistni qidirish",
+        "groupLabel": "Logistlar ro'yxati",
+        "notFound": "Logist topilmadi",
+        "notFoundHint": "Boshqa ism yoki telefon raqam bilan qidiring.",
+        "inactive": "Nofaol",
+        "noRegions": "Viloyatsiz",
+        "regionCount_one": "{{count}} viloyat",
+        "regionCount_other": "{{count}} viloyat",
+        "inactiveNote": "Nofaol logistga viloyat biriktirilmaydi."
       },
-      "back": "Hududlarga qaytish"
+      "picker": {
+        "label": "Logist",
+        "noRegions": "viloyatsiz"
+      },
+      "regions": {
+        "title": "{{name}} viloyatlari",
+        "checkedOf": "{{total}} tadan {{checked}} tasi belgilangan",
+        "legend": "{{name}}ga biriktiriladigan viloyatlar",
+        "filterLabel": "Viloyatlar filtri",
+        "filter": {
+          "all": "Barchasi · {{count}}",
+          "checked": "Belgilangan · {{count}}",
+          "free": "Logistsiz · {{count}}"
+        },
+        "filteredEmpty": "Bu filtrda viloyat yo'q",
+        "note": "Boshqa logistdagi viloyat belgilansa, u shu logistga o'tadi. Belgi olib tashlangan viloyat logistsiz qoladi.",
+        "state": {
+          "free": "Logist yo'q",
+          "assigned": "Biriktirilgan",
+          "adding": "Hozir logist yo'q",
+          "transfer": "Hozir: {{name}}",
+          "removing": "Logistsiz qoladi",
+          "otherUnknown": "Boshqa logist"
+        },
+        "badge": {
+          "adding": "Qo'shiladi",
+          "transfer": "O'tkaziladi",
+          "removing": "Olib tashlanadi"
+        }
+      },
+      "changes": {
+        "regionLabel": "Saqlanmagan o'zgarishlar",
+        "count_one": "{{count}} ta o'zgarish",
+        "count_other": "{{count}} ta o'zgarish",
+        "none": "O'zgarish yo'q",
+        "added": "{{count}} ta qo'shiladi",
+        "transferred": "{{count}} ta o'tkaziladi",
+        "removed": "{{count}} ta olib tashlanadi",
+        "addedShort": "{{count}} qo'shiladi",
+        "transferredShort": "{{count}} o'tkaziladi",
+        "removedShort": "{{count}} olib tashlanadi",
+        "cancel": "Bekor qilish",
+        "save": "Saqlash",
+        "saving": "Saqlanmoqda…"
+      },
+      "confirm": {
+        "title": "O'zgarishlarni saqlaysizmi?",
+        "description": "{{name}} viloyatlari yangilanadi: {{parts}}.",
+        "removedPart": "{{count}} ta viloyat olib tashlanadi",
+        "transferredPart": "{{count}} ta viloyat boshqa logistdan o'tadi",
+        "transferredPartAfter": "{{count}} tasi boshqa logistdan o'tadi",
+        "listLabel": "O'zgarishlar",
+        "removedHint": "Viloyat logistsiz qoladi",
+        "transferHint": "{{name}}dan olinadi",
+        "transferHintUnknown": "Boshqa logistdan olinadi",
+        "addedHint": "Hozir logist yo'q",
+        "note": "Logistsiz viloyat hech bir logistning bosh sahifasida ko'rinmaydi.",
+        "confirm": "Saqlash"
+      },
+      "leave": {
+        "title": "O'zgarishlar saqlanmaydi",
+        "description_one": "{{name}} uchun {{count}} ta o'zgarish saqlanmagan. {{next}}ga o'tsangiz, ular bekor bo'ladi.",
+        "description_other": "{{name}} uchun {{count}} ta o'zgarish saqlanmagan. {{next}}ga o'tsangiz, ular bekor bo'ladi.",
+        "stay": "Qolish",
+        "confirm": "O'zgarishsiz o'tish"
+      },
+      "saved": {
+        "title": "Saqlandi",
+        "description_one": "{{name}} · {{count}} ta viloyat",
+        "description_other": "{{name}} · {{count}} ta viloyat"
+      },
+      "saveError": {
+        "title": "Saqlab bo'lmadi",
+        "inactive": "Logist nofaol — avval uni faollashtiring. O'zgarishlar sahifada qoldi.",
+        "notFound": "Logist yoki viloyat topilmadi — ro'yxat yangilandi. O'zgarishlar sahifada qoldi.",
+        "forbidden": "Logist biriktirishga ruxsatingiz yo'q.",
+        "generic": "Server javob bermadi — birozdan so'ng qayta urining. O'zgarishlar sahifada qoldi."
+      },
+      "inactive": {
+        "title": "{{name}} nofaol",
+        "text": "Nofaol logistga viloyat biriktirib bo'lmaydi. Uni «Foydalanuvchilar» bo'limida faollashtiring."
+      },
+      "loading": "Logistlar yuklanmoqda",
+      "error": {
+        "logists": "Logistlarni yuklab bo'lmadi",
+        "regions": "Viloyatlarni yuklab bo'lmadi",
+        "text": "Internet aloqasini tekshirib, qayta urining."
+      },
+      "empty": {
+        "title": "Logist yo'q",
+        "text": "Viloyatlarni biriktirish uchun avval «Logist» rolida foydalanuvchi yarating. Yaratilgan logist shu ro'yxatda chiqadi."
+      }
     }
   }
 }

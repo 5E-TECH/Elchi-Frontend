@@ -58,6 +58,11 @@ export const API_ENDPOINTS = {
     // PATCH { commission_type: percent | fixed | null, commission_value } — PERCENT 0..100, FIXED 0..1 000 000, 2 kasr
     COMMISSION: (id: string | number) => `market-operators/${id}/commission`,
   },
+  // Logistlar (superadmin/admin; LG-2, dzyVftBx): GET ?search&status&page&limit (limit ≤ 100) → { items, meta } /
+  // POST { name, phone_number, password, salary, payment_day? } — filialsiz, viloyatlar alohida (REGIONS.LOGIST_BULK).
+  LOGISTS: {
+    BASE: "logists",
+  },
   COURIERS: {
     BASE: "couriers", // GET list / POST create
     BY_REGION: (regionId: string | number) => `couriers/region/${regionId}`,
@@ -74,6 +79,10 @@ export const API_ENDPOINTS = {
     STATS_BY_ID: (regionId: string | number) => `region/stats/${regionId}`,
     MY_DISTRICT_STATS: "region/my/district-stats", // GET — kuryer/menejerning o'z viloyati (tumanlar kesimida)
     BY_ID: (regionId: string | number) => `region/${regionId}`, // GET / PATCH update / DELETE
+    // Logist biriktirish (superadmin/admin; LG-2, dzyVftBx). POST { logist_id, region_ids } — region_ids dagilar
+    // logistga o'tadi, uning qolgan viloyatlaridan u olinadi (bitta tranzaksiya).
+    LOGIST_BULK: "region/logist/bulk",
+    LOGIST: (regionId: string | number) => `region/${regionId}/logist`, // PATCH { logist_id | null } — bitta viloyat
   },
   DISTRICTS: {
     BASE: "district", // GET all / POST create

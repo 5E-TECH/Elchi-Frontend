@@ -1113,7 +1113,7 @@
         "admin": ["users-create", "users-create-logist"],
         "manager": ["users-create-courier", "users-create-hybrid", "users-create-courier-district"]
       },
-      "note": "Menejer: oddiy filialda — kuryer; HYBRID filialda — rol tanlash (kuryer yoki registrator). «Logist» rol kartasi (superadmin, admin; users-create-logist; kodda hali yo'q): POST /logists (SUPERADMIN | ADMIN) — ism, telefon, parol, maosh, to'lov kuni; filial yo'q. Muvaffaqiyat → notify.success «Logist yaratildi» va /regions/logist-assignment?logist=<id> (yangi logist tanlangan). 409 «Bu telefon raqam allaqachon mavjud» — telefon maydoni ostida, forma saqlanib qoladi."
+      "note": "Menejer: oddiy filialda — kuryer; HYBRID filialda — rol tanlash (kuryer yoki registrator). «Logist» rol kartasi (superadmin, admin; users-create-logist; LG-2 — tartib Admin · Menejer · Ro'yxatchi · Logist · Kuryer · Market, ikonka Route, izoh «Buyurtmalar va holat tarixi, moliyasiz» — LG-S1; ?role=logist — shu rol tanlangan holda ochiladi): POST /logists (SUPERADMIN | ADMIN) — ism, telefon, parol, maosh, to'lov kuni; filial yo'q. Muvaffaqiyat → notify.success «Logist yaratildi» va /regions/logist-assignment?logist=<id> (yangi logist tanlangan). 409 «Bu telefon raqam allaqachon mavjud» — telefon maydoni ostida, forma saqlanib qoladi (server matni ko'rsatilmaydi; boshqa xato — «Logistni yaratib bo'lmadi»). Maosh majburiy (backend DTO), to'lov kuni ixtiyoriy. LG-2 tozalash: kuryer yaratishda region_id yuborilmaydi (gateway DTO'da yo'q) va «region_id bo'lmasa qayta yuborish» olib tashlandi."
     },
     {
       "path": "/all-users/:id",
@@ -1209,14 +1209,20 @@
       "section": "regions",
       "title": "Logist biriktirish",
       "components": [
-        "src/pages/region/pages/logist-assignment/index.tsx"
+        "src/pages/region/pages/logist-assignment/index.tsx",
+        "src/pages/region/pages/logist-assignment/model/assignment.ts",
+        "src/pages/region/pages/logist-assignment/ui/LogistListCard.tsx",
+        "src/pages/region/pages/logist-assignment/ui/LogistPicker.tsx",
+        "src/pages/region/pages/logist-assignment/ui/RegionChoiceCard.tsx",
+        "src/pages/region/pages/logist-assignment/ui/ChangesBar.tsx",
+        "src/pages/region/pages/logist-assignment/ui/ChangesList.tsx"
       ],
       "roles": { "superadmin": "", "admin": "" },
       "views": {
         "superadmin": ["regions-logist-assignment", "regions-logist-assignment-confirm-dialog", "regions-logist-assignment-empty"],
         "admin": ["regions-logist-assignment", "regions-logist-assignment-confirm-dialog", "regions-logist-assignment-empty"]
       },
-      "note": "Komponent ichida: superadmin/admin bo'lmasa → /regions. Ma'lumot: chapda GET /logists (ism, telefon, faollik); viloyatlar — GET /region (har qatorda logist_id; logistdagi viloyatlar soni shundan). Saqlash — POST /region/logist/bulk { logist_id, region_ids } (region_ids dagilar unga o'tadi, ro'yxatda yo'q eski viloyatlaridan u olinadi). «Saqlash» o'zgarish bo'lmaguncha o'chiq. Tasdiq qoidasi: faqat qo'shish bo'lsa — darhol saqlanadi + notify.success «Saqlandi»; olib tashlash yoki boshqa logistdan o'tkazish bo'lsa — avval tasdiq oynasi (…-confirm-dialog, o'zgarishlar ro'yxati bilan). Saqlanmagan o'zgarish bor paytda boshqa logist tanlansa — useConfirm «O'zgarishlar saqlanmaydi» (Qolish / O'zgarishsiz o'tish). Nofaol logist tanlansa — ogohlantirish, viloyat kartalari va «Saqlash» o'chiq (server rad etishi — zaxira). Telefon: logist — Select (pastki varaqa, qidiruv), filtr seg 44px, o'zgarish bo'lsa pastki menyu ustida yopishqoq panel («N ta o'zgarish» + Bekor qilish / Saqlash). ?logist=<id> — shu logist tanlangan holda ochiladi. Logist yo'q — EmptyState «Logist yo'q» + «Logist yaratish» (…-empty). Eski «Bo'lim hali ishga tushmagan» bo'sh holati olib tashlanadi."
+      "note": "Komponent ichida: superadmin/admin bo'lmasa → /regions. Ma'lumot: chapda GET /logists (ism, telefon, faollik); viloyatlar — GET /region (har qatorda logist_id; logistdagi viloyatlar soni shundan). Saqlash — POST /region/logist/bulk { logist_id, region_ids } (region_ids dagilar unga o'tadi, ro'yxatda yo'q eski viloyatlaridan u olinadi). «Saqlash» o'zgarish bo'lmaguncha o'chiq. Tasdiq qoidasi: faqat qo'shish bo'lsa — darhol saqlanadi + notify.success «Saqlandi»; olib tashlash yoki boshqa logistdan o'tkazish bo'lsa — avval tasdiq oynasi (…-confirm-dialog, o'zgarishlar ro'yxati bilan). Saqlanmagan o'zgarish bor paytda boshqa logist tanlansa — useConfirm «O'zgarishlar saqlanmaydi» (Qolish / O'zgarishsiz o'tish). Nofaol logist tanlansa — ogohlantirish, viloyat kartalari va «Saqlash» o'chiq (server rad etishi — zaxira). Telefon: logist — Select (pastki varaqa, qidiruv), filtr seg 44px, o'zgarish bo'lsa pastki menyu ustida yopishqoq panel («N ta o'zgarish» + Bekor qilish / Saqlash). ?logist=<id> — shu logist tanlangan holda ochiladi. Logist yo'q — EmptyState «Logist yo'q» + «Logist yaratish» (…-empty). Eski «Bo'lim hali ishga tushmagan» bo'sh holati olib tashlandi (LG-2). LG-2 sukutlari: «Logist yaratish» → /all-users/create-user?role=logist; ro'yxat tartibi — faollari avval, so'ng ism; ?logist= yo'q yoki noma'lum — birinchi logist; viloyatlar — Toshkent sh., Toshkent vil., so'ng alifbo; «Logistsiz · N» — serverdagi holat, «Belgilangan · N» — joriy belgilar; saqlash xatosi — notify.error «Saqlab bo'lmadi» (400 → logist nofaol, 404 → topilmadi, qolgani — umumiy), qoralama sahifada qoladi; telefonda Select maydonida avatar yo'q (primitiv ikonka oladi, avatar emas)."
     },
     {
       "path": "/branches",
@@ -1731,7 +1737,6 @@
     "superadmin-users-edit-role-error": "Taklif (users-roles): 409 — filialga biriktirilgan, rol o'zgarmadi.",
     "superadmin-users-edit-role-branch": "Taklif (users-roles): filialga biriktirilgan — rol maydoni qulf.",
     "superadmin-users-edit-courier-district-phone": "Taklif (users-roles): kuryer «Tuman» ro'yxati, telefon — backend kerak.",
-    "superadmin-users-create-courier-district": "Taklif (users-roles): yaratishda Logist roli kartasi va kuryer «Ish hududi» (Tuman — backend kerak).",
     "manager-users-create-courier-district": "Taklif (users-roles): menejer kuryer yaratishda «Tuman» — backend kerak.",
     "courier-inbox-pwa-install": "Ilovani o'rnatish kartasi yo'q (beforeinstallprompt ishlatilmaydi) — Taklif, faqat mijoz tomoni.",
     "courier-inbox-pwa-ios-dialog": "iOS uchun «Bosh ekranga qo'shing» oynasi yo'q — Taklif, faqat mijoz tomoni.",
@@ -1746,14 +1751,6 @@
     "superadmin-notifications-campaign-report-dialog": "Taklif (ega KM-S1, 2026-10-19) — kodda yo'q: kampaniya hisoboti (GET /notifications/campaigns/:id/report, /undelivered, /undelivered/export)",
     "superadmin-notifications-send-states": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
     "superadmin-notifications-sms-campaign-segment": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
-    "superadmin-regions-logist-assignment": "Kodda hali «Bo'lim hali ishga tushmagan» bo'sh holati — ishlaydigan biriktirish sahifasi (dzyVftBx).",
-    "admin-regions-logist-assignment": "Kodda hali «Bo'lim hali ishga tushmagan» bo'sh holati — ishlaydigan biriktirish sahifasi (dzyVftBx).",
-    "superadmin-regions-logist-assignment-confirm-dialog": "Saqlashni tasdiqlash oynasi (olib tashlash / o'tkazish) — kodda yo'q.",
-    "admin-regions-logist-assignment-confirm-dialog": "Saqlashni tasdiqlash oynasi (olib tashlash / o'tkazish) — kodda yo'q.",
-    "superadmin-regions-logist-assignment-empty": "«Logist yo'q» holati — kodda yo'q.",
-    "admin-regions-logist-assignment-empty": "«Logist yo'q» holati — kodda yo'q.",
-    "superadmin-users-create-logist": "«Logist» rol kartasi va formasi (POST /logists) — kodda yo'q.",
-    "admin-users-create-logist": "«Logist» rol kartasi va formasi (POST /logists) — kodda yo'q.",
     "logist-dashboard-main": "Logist roli (menuConfig, routes, guard) kodda hali yo'q — dzyVftBx, mDfjKeQi.",
     "logist-regions-detail": "Logist roli (menuConfig, routes, guard) kodda hali yo'q — dzyVftBx, mDfjKeQi.",
     "market-operators-deactivate-dialog": "Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak).",
@@ -1827,6 +1824,7 @@
     "superadmin-neworders-cancelled-pin-dialog": "Market PIN kodi oynasi (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md), ega javobi 1): QR zaxirasi — 6 xonali PIN (Field + TextInput, raqamli), 5 marta xato — sessiya bloklanadi. Taklif · backend kerak (BG6: POST scan/market-cancelled { market_id, pin }). Kirish — skaner oynasidagi «PIN kodni kiritish»."
   },
   "partialViews": {
+    "superadmin-users-create-courier-district": "Kodda bor (LG-2): rol kartasi — Admin · Menejer · Ro'yxatchi · Logist · Kuryer · Market, «Logist» (Route, «Buyurtmalar va holat tarixi, moliyasiz» — LG-S1). Kuryer «Ish hududi» (Tuman) chizilmagan — Taklif · backend kerak.",
     "superadmin-orders-list-refreshing": "Kodda bor (OR-1): «Yangilanmoqda…» belgisi (400 ms dan keyin), «Yangilash» band, «Oxirgi yangilanish», «Avtomatik yangilanadi». Farq: holat tablari sonlari (va ularning xira holati) chizilmaydi — GET /orders har holat sonini bermaydi (OR-2, backend GaBIPi3Z).",
     "superadmin-orders-list-refresh-error": "Kodda bor (OR-1): «Ro'yxat yangilanmadi» + «Qayta urinish» + ×, eski qatorlar qoladi. Farq: izoh «Ro'yxat eskirgan bo'lishi mumkin.» (tab sonlarisiz) — holat tablari sonlari API'da yo'q (OR-2, backend GaBIPi3Z).",
     "manager-orders-list-all-refreshing": "Kodda bor (OR-1): «Yangilanmoqda…» belgisi (400 ms dan keyin), «Yangilash» band, «Oxirgi yangilanish», «Avtomatik yangilanadi». Farq: holat tablari sonlari (va ularning xira holati) chizilmaydi — GET /orders har holat sonini bermaydi (OR-2, backend GaBIPi3Z).",
@@ -1945,6 +1943,8 @@
   },
   "viewFiles": {
     "$comment": "Maket → uni chizadigan aniq fayl, agar route'ning asosiy faylidan farq qilsa (rolga xos komponent, alohida oyna fayli). SCREENS.md 2- va 4-bo'limlarida ko'rsatiladi.",
+    "superadmin-regions-logist-assignment-confirm-dialog": "src/pages/region/pages/logist-assignment/ui/ChangesList.tsx",
+    "admin-regions-logist-assignment-confirm-dialog": "src/pages/region/pages/logist-assignment/ui/ChangesList.tsx",
     "market-operators-create-dialog": "src/pages/market-operators/ui/CreateOperatorDialog.tsx",
     "market-operators-commission-dialog": "src/pages/market-operators/ui/CommissionDialog.tsx",
     "market-operators-commission-fixed-dialog": "src/pages/market-operators/ui/CommissionDialog.tsx",
