@@ -179,7 +179,7 @@ describe("BottomNav — maketdagi bandlar (roles.json → bottomNav)", () => {
     expect(screen.getByRole("button", { name: "Menyu" })).toHaveAttribute("aria-haspopup", "dialog");
   });
 
-  it.each(["logist", "market_operator", "investor"] as const)(
+  it.each(["market_operator", "investor"] as const)(
     "%s (ROL-0): menyusi hali bo'sh — pastki menyu chizilmaydi (yolg'iz «Menyu» yoki admin havolalari yo'q)",
     (role) => {
       renderNav(role);
@@ -390,5 +390,17 @@ describe("BottomNav — kontekstli «Skaner» (ega qarori 2026-10-19)", () => {
     await user.click(scan);
     expect(isScannerOverlayOpen()).toBe(false);
     expect(screen.getByTestId("path")).toHaveTextContent("/scan");
+  });
+});
+
+describe("BottomNav — logist (LG-1)", () => {
+  it("«Bosh sahifa» + «Menyu»; skaner va moliya yo'q (qolgan kataklar o'z sahifasi bilan — LG-3/LG-4/LG-5)", () => {
+    renderNav("logist");
+    expect(hrefs()).toEqual(["/", "button:Menyu"]);
+    expect(screen.getByRole("link", { name: "Bosh sahifa" })).toHaveAttribute("aria-current", "page");
+    expect(screen.queryByRole("link", { name: "Skaner" })).not.toBeInTheDocument();
+    for (const finance of ["/payments", "/cash-box", "/financial-balance"]) {
+      expect(hrefs()).not.toContain(finance);
+    }
   });
 });

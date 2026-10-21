@@ -340,5 +340,70 @@
       "colRate": "Sell-through",
       "colPart": "Sold / total"
     }
+  },
+  "v2Logist": {
+    "headerSub": "Regions assigned to you ({{count}}): {{names}}",
+    "headerSubGeneric": "Figures for the regions assigned to you",
+    "kpi": {
+      "label": "Overall figures for my regions",
+      "totalHint": "In progress: {{pending}} · {{count}} regions",
+      "totalHint_one": "In progress: {{pending}} · {{count}} region",
+      "totalAria": "Total {{total}}: sold {{sold}}, in progress {{pending}}, cancelled {{cancelled}}",
+      "soldHint": "Handed to the customer",
+      "cancelledHint": "Returns to the market",
+      "couriers": "Active couriers",
+      "couriersHint": "Couriers with active status",
+      "couriersUnit": "/ {{total}}",
+      "couriersAria": "Active couriers: {{active}} of {{total}}",
+      "share": "Share of total",
+      "soldShareAria": "Share sold",
+      "cancelledShareAria": "Share cancelled",
+      "activity": "Activity"
+    },
+    "legend": {
+      "sold": "Sold",
+      "pending": "In progress",
+      "cancelledShort": "Cancelled",
+      "cancelled": "Cancelled"
+    },
+    "success": {
+      "sub": "{{period}} · my {{count}} regions",
+      "sub_one": "{{period}} · my {{count}} region"
+    },
+    "regions": {
+      "title": "Success by region",
+      "sub": "Sold / accepted · lowest first",
+      "aria": "{{name}} success rate",
+      "noOrders": "No orders",
+      "lowest": "Lowest success",
+      "highest": "Highest success",
+      "extremeMeta": "{{rate}} · {{sold}} / {{total}}"
+    },
+    "table": {
+      "title": "My regions",
+      "label": "My regions table",
+      "region": "Region",
+      "orders": "Orders",
+      "status": "Status",
+      "success": "Success",
+      "couriers": "Active couriers",
+      "districts": "{{count}} districts",
+      "districts_one": "{{count}} district",
+      "ordersAria": "{{name}}: {{value}} orders",
+      "ordersAria_one": "{{name}}: {{value}} order",
+      "statusAria": "{{sold}} sold, {{pending}} in progress, {{cancelled}} cancelled",
+      "total": "Total · {{count}} regions",
+      "total_one": "Total · {{count}} region",
+      "cardSummary": "{{rate}} sold · {{active}} / {{total}} couriers",
+      "cardSummaryNoCouriers": "{{rate}} sold"
+    },
+    "error": {
+      "title": "Couldn't load region statistics",
+      "description": "Check your internet connection and try again."
+    },
+    "empty": {
+      "title": "No region has been assigned to you yet",
+      "description": "Once an administrator assigns a region, its statistics will appear here."
+    }
   }
 }
