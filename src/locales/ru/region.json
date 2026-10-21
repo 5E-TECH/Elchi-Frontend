@@ -471,6 +471,7 @@
         "enter": "Ввести код",
         "editAria": "{{name}} — изменить код СОАТО",
         "enterAria": "{{name}} — ввести код СОАТО",
+        "enterButtonAria": "Ввести код: {{name}}",
         "nameWithRegion": "{{name}} ({{region}})",
         "id": "ID {{id}}",
         "meta": "{{region}} · {{code}}",
@@ -489,7 +490,9 @@
         "taken": "Код занят: {{district}}, {{region}}",
         "takenNoRegion": "Код занят: {{district}}",
         "takenUnknown": "Этот код записан другому району",
-        "failed": "Не удалось сохранить код. Попробуйте ещё раз."
+        "failed": "Не удалось сохранить код. Попробуйте ещё раз.",
+        "failedTitle": "{{name}} — код СОАТО не сохранён",
+        "errorAnnounce": "{{name}} — код СОАТО: {{error}}"
       },
       "footer": {
         "districts_one": "{{value}} район",

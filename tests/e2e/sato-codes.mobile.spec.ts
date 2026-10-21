@@ -38,7 +38,8 @@ test("⭐ 390: Select bo'limlar, kartalar, kartadagi muharrir (409 → «Bu kod 
     expect(box.x + box.width, name).toBeLessThanOrEqual(390);
   }
   await page.getByRole("button", { name: "Saqlash", exact: true }).click();
-  await expect(page.getByText("Bu kod band: Uchtepa tumani, Toshkent sh.")).toBeVisible();
+  await expect(page.getByText("Bu kod band: Uchtepa tumani, Toshkent sh.", { exact: true })).toBeVisible();
+  await expect(page.getByRole("alert").filter({ hasText: "Yashnobod tumani — SATO kodi: Bu kod band" })).toHaveCount(1);
   expect(mock.patches).toHaveLength(1);
   await noOverflow(page);
 

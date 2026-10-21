@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-regions-sato-codes, superadmin-regions-sato-codes-not-found, superadmin-regions-sato-codes-edit, admin-regions-sato-codes, admin-regions-sato-codes-edit
+// dizayn-v2: superadmin-regions-sato-codes, superadmin-regions-sato-codes-not-found, superadmin-regions-sato-codes-edit, admin-regions-sato-codes, admin-regions-sato-codes-edit, superadmin-regions-sato-codes-duplicates, superadmin-regions-sato-codes-missing
 import type { ReactNode } from "react";
 import { Keyboard, Pencil } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -50,7 +50,7 @@ export const SatoCodesTable = ({ tab, rows, editor, busy, label }: Props) => {
         variant="ghost"
         size="sm"
         leftIcon={Keyboard}
-        aria-label={t("v2.sato.row.enterAria", { name })}
+        aria-label={t("v2.sato.row.enterButtonAria", { name })}
         onClick={() => editor.start(row)}
       >
         {t("v2.sato.row.enter")}

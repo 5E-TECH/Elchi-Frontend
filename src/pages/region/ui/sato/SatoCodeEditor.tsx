@@ -8,6 +8,10 @@ import { useSatoEditorErrorText, type SatoCodeEditorState } from "./useSatoCodeE
 
 type EditorProps = { row: SatoDistrictRow; editor: SatoCodeEditorState };
 
+/*
+ * Saqlash paytida maydon `readOnly` (`disabled` EMAS): o'chirilgan fokusli element fokusni `<body>` ga beradi va
+ * 409/400/500 dan keyin Esc/Enter ishlamay qoladi. Enter — `saving` bilan himoyalangan.
+ */
 const useKeys = ({ row, editor }: EditorProps) => (event: KeyboardEvent<HTMLInputElement>) => {
   if (event.key === "Enter") {
     event.preventDefault();
@@ -32,16 +36,18 @@ export const SatoCodeField = ({ row, editor }: EditorProps) => {
       error={errorText ?? undefined}
       className="min-w-0 max-w-[420px]"
     >
-      <TextInput
-        className="w-[200px] max-w-full"
-        mode="number"
-        autoFocus
-        autoComplete="off"
-        value={editor.draft}
-        onValueChange={editor.setDraft}
-        onKeyDown={onKeyDown}
-        disabled={editor.saving}
-      />
+      {/* Kenglik o'rovchida: `TextInput` tashqi qutisi `w-full` (maket — ~200px maydon, xato matni kengroq). */}
+      <div data-sato-code-box="" className="w-[200px] max-w-full">
+        <TextInput
+          mode="number"
+          autoFocus
+          autoComplete="off"
+          value={editor.draft}
+          onValueChange={editor.setDraft}
+          onKeyDown={onKeyDown}
+          readOnly={editor.saving}
+        />
+      </div>
     </Field>
   );
 };
@@ -88,7 +94,7 @@ export const SatoCodeEditorBlock = ({ row, editor }: EditorProps) => {
           value={editor.draft}
           onValueChange={editor.setDraft}
           onKeyDown={onKeyDown}
-          disabled={editor.saving}
+          readOnly={editor.saving}
           aria-label={t("v2.sato.editor.fieldAria", { name: row.name })}
         />
       </Field>

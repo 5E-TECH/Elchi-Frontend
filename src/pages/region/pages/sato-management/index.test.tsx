@@ -366,7 +366,10 @@ describe("RegionSatoManagementPage (v2) — «SATO kodlari» (superadmin)", () =
     await screen.findByText("Tuman 01");
 
     await user.click(statusTab(/^Topilmadi/));
-    await user.click(await screen.findByRole("button", { name: "Urgut sh. — SATO kodini kiritish" }));
+    // Ko'rinadigan matn nomning boshida (WCAG 2.5.3 «label in name»).
+    const enter = await screen.findByRole("button", { name: "Kod kiritish: Urgut sh." });
+    expect(enter).toHaveTextContent("Kod kiritish");
+    await user.click(enter);
     await user.click(screen.getByRole("button", { name: "Saqlash" }));
     expect(screen.getByText("Faqat raqamlar kiriting, masalan 1727401")).toBeInTheDocument();
     expect(api.patch).not.toHaveBeenCalled();
@@ -393,7 +396,7 @@ describe("RegionSatoManagementPage (v2) — «SATO kodlari» (superadmin)", () =
     expect(within(duplicates).getAllByText("Bo'ka tumani")).toHaveLength(2);
     expect(within(duplicates).getByText("ID 32")).toBeInTheDocument();
     expect(
-      within(duplicates).getByRole("button", { name: "Bo'ka tumani (Samarqand) — SATO kodini kiritish" }),
+      within(duplicates).getByRole("button", { name: "Kod kiritish: Bo'ka tumani (Samarqand)" }),
     ).toBeInTheDocument();
     expect(screen.getByText("1 ta nom · 2 ta yozuv")).toBeInTheDocument();
 
@@ -472,7 +475,7 @@ describe("RegionSatoManagementPage (v2) — «SATO kodlari» (admin)", () => {
       screen.getByText("Kodni tumanning rasmiy SATO raqamidan kiriting. Bitta kod faqat bitta tumanga yoziladi."),
     ).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "Urgut sh. — SATO kodini kiritish" }));
+    await user.click(screen.getByRole("button", { name: "Kod kiritish: Urgut sh." }));
     await user.type(screen.getByRole("textbox", { name: "Urgut sh. — SATO kodi" }), "1718236{Enter}");
     await waitFor(() => expect(api.patch).toHaveBeenCalledWith("district/sato/14", { sato_code: "1718236" }));
     await waitFor(() => expect(calls("district")).toBe(2));
@@ -489,5 +492,151 @@ describe("RegionSatoManagementPage (v2) — «SATO kodlari» (admin)", () => {
     open("admin", "?tab=sato");
     expect(await screen.findByText("Tumanlarni yuklab bo'lmadi")).toBeInTheDocument();
     expect(screen.queryByText("upstream")).not.toBeInTheDocument();
+  });
+});
+
+const deferred = <T,>() => {
+  let resolve!: (value: T) => void;
+  let reject!: (cause: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+};
+
+describe("RegionSatoManagementPage (v2) — SATO muharriri: fokus, e'lon, kenglik, sahifalash", () => {
+  beforeEach(() => {
+    mockGets();
+    api.patch.mockResolvedValue({ data: { statusCode: 200, data: {} } });
+  });
+  afterEach(() => vi.clearAllMocks());
+
+  const openYashnobod = async (user: ReturnType<typeof userEvent.setup>) => {
+    open("superadmin", "?tab=sato");
+    await screen.findByText("Tuman 01");
+    await user.click(statusTab(/^Kodi bor/));
+    await user.click(await screen.findByRole("button", { name: "Yashnobod tumani — SATO kodini o'zgartirish" }));
+    const input = screen.getByRole("textbox", { name: "Yashnobod tumani — SATO kodi" });
+    await user.clear(input);
+    return input;
+  };
+
+  it("saqlash paytida maydon readOnly (disabled emas): 409 dan keyin fokus maydonda, xato e'lon qilinadi, Esc ishlaydi", async () => {
+    const patch = deferred<never>();
+    api.patch.mockReturnValue(patch.promise);
+    const user = userEvent.setup();
+    const input = await openYashnobod(user);
+    await user.type(input, "1726262{Enter}");
+
+    expect(input).not.toBeDisabled();
+    expect(input).toHaveAttribute("readonly");
+    expect(input).toHaveFocus();
+    await user.keyboard("{Enter}");
+    expect(api.patch).toHaveBeenCalledTimes(1);
+
+    const live = screen.getByTestId("sato-editor-live");
+    expect(live).toHaveAttribute("role", "alert");
+    expect(live).toBeEmptyDOMElement();
+    await act(async () => patch.reject(httpError(409)));
+
+    await waitFor(() => expect(live).toHaveTextContent("Yashnobod tumani — SATO kodi: Bu kod band: Uchtepa tumani, Toshkent sh."));
+    expect(input).not.toHaveAttribute("readonly");
+    expect(input).toHaveFocus();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("textbox", { name: "Yashnobod tumani — SATO kodi" })).not.toBeInTheDocument();
+    expect(live).toBeEmptyDOMElement();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Yashnobod tumani — SATO kodini o'zgartirish" })).toHaveFocus(),
+    );
+  });
+
+  it("jadvaldagi kod maydoni ~200px o'rovchida (TextInput qutisining `w-full` i kenglikni yutmaydi)", async () => {
+    const user = userEvent.setup();
+    const input = await openYashnobod(user);
+    const box = input.closest("[data-sato-code-box]");
+    expect(box).not.toBeNull();
+    expect(box).toHaveClass("w-[200px]", "max-w-full");
+    expect(box).not.toHaveClass("w-full");
+  });
+
+  it("so'rov davomida muharrir yopilsa (qidiruv) — xato yo'qolmaydi: qalqib chiquvchi xabar, server matnisiz", async () => {
+    const patch = deferred<never>();
+    api.patch.mockReturnValue(patch.promise);
+    const user = userEvent.setup();
+    const input = await openYashnobod(user);
+    await user.type(input, "1726262{Enter}");
+    await user.type(screen.getByRole("searchbox", { name: "Tuman, viloyat yoki SATO kodi bo'yicha qidirish" }), "Yash");
+    expect(screen.queryByRole("textbox", { name: "Yashnobod tumani — SATO kodi" })).not.toBeInTheDocument();
+
+    await act(async () => patch.reject(httpError(500, "Internal server error: db timeout")));
+
+    expect(await screen.findByText("Yashnobod tumani — SATO kodi saqlanmadi")).toBeInTheDocument();
+    expect(screen.getByText("Kodni saqlab bo'lmadi. Qayta urinib ko'ring.")).toBeInTheDocument();
+    expect(screen.queryByText(/db timeout/)).not.toBeInTheDocument();
+  });
+
+  it("«Topildi»dan saqlangan qator «Kodi bor»ga o'tsa — fokus qidiruv maydoniga (body ga tushib qolmaydi)", async () => {
+    let districtCalls = 0;
+    mockGets({
+      district: () => {
+        districtCalls += 1;
+        return ok(districtCalls === 1 ? DISTRICTS : DISTRICTS.map((d) => (d.id === "100" ? { ...d, sato_code: "1726200" } : d)));
+      },
+    });
+    const user = userEvent.setup();
+    open("superadmin", "?tab=sato");
+    await screen.findByText("Tuman 01");
+
+    await user.click(screen.getByRole("button", { name: "Tuman 01 — SATO kodini o'zgartirish" }));
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+
+    await waitFor(() => expect(statusTab(/^Topildi/)).toHaveTextContent("11"));
+    await waitFor(() =>
+      expect(screen.getByRole("searchbox", { name: "Tuman, viloyat yoki SATO kodi bo'yicha qidirish" })).toHaveFocus(),
+    );
+  });
+
+  it("muvaffaqiyatdan keyin qayta yuklash kutilayotganda boshqa qator «Saqlanmoqda…» ko'rinmaydi", async () => {
+    const reload = deferred<unknown>();
+    let districtCalls = 0;
+    mockGets({
+      district: () => {
+        districtCalls += 1;
+        return districtCalls === 1 ? ok(DISTRICTS) : reload.promise;
+      },
+    });
+    const user = userEvent.setup();
+    open("superadmin", "?tab=sato");
+    await screen.findByText("Tuman 01");
+
+    await user.click(screen.getByRole("button", { name: "Tuman 01 — SATO kodini o'zgartirish" }));
+    const first = screen.getByRole("textbox", { name: "Tuman 01 — SATO kodi" });
+    await user.clear(first);
+    await user.type(first, "1726299");
+    await user.click(screen.getByRole("button", { name: "Saqlash" }));
+    expect(await screen.findByText("SATO kodi saqlandi")).toBeInTheDocument();
+    await waitFor(() => expect(districtCalls).toBe(2));
+
+    await user.click(screen.getByRole("button", { name: "Tuman 02 — SATO kodini o'zgartirish" }));
+    expect(screen.getByRole("button", { name: "Saqlash" })).not.toHaveAttribute("aria-busy");
+    expect(screen.getByRole("textbox", { name: "Tuman 02 — SATO kodi" })).not.toHaveAttribute("readonly");
+
+    await act(async () => reload.resolve(await ok(DISTRICTS)));
+  });
+
+  it("kattaroq sahifa hajmi tanlangach ham hajm tanlagichi qoladi (10 ga qaytarish mumkin)", async () => {
+    const user = userEvent.setup();
+    open("superadmin", "?tab=sato");
+    await screen.findByText("Tuman 01");
+
+    await user.click(screen.getByRole("combobox", { name: "Sahifadagi qatorlar soni: 10 ta" }));
+    await user.click(await screen.findByRole("option", { name: "25 ta" }));
+    expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(13);
+
+    const size = await screen.findByRole("combobox", { name: "Sahifadagi qatorlar soni: 25 ta" });
+    await user.click(size);
+    await user.click(await screen.findByRole("option", { name: "10 ta" }));
+    expect(within(screen.getByRole("table")).getAllByRole("row")).toHaveLength(11);
   });
 });

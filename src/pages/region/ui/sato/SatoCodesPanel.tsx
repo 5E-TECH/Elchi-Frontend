@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-regions-sato-codes, superadmin-regions-sato-codes-not-found, superadmin-regions-sato-codes-edit, admin-regions-sato-codes, admin-regions-sato-codes-edit
+// dizayn-v2: superadmin-regions-sato-codes, superadmin-regions-sato-codes-not-found, superadmin-regions-sato-codes-edit, admin-regions-sato-codes, admin-regions-sato-codes-edit, superadmin-regions-sato-codes-duplicates, superadmin-regions-sato-codes-missing
 import { useCallback, useMemo, useRef, useState } from "react";
 import { CircleCheck, Info, Map as MapIcon, SearchX } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -41,6 +41,8 @@ const COUNT_ACTIVE = "bg-action-soft text-action-fg";
 const COUNT_IDLE = "bg-sunken text-text-muted";
 
 const ID_PREFIX = "sato-status";
+/** Eng kichik sahifa hajmi (`Pagination` sukut variantlari 10 · 25 · 50 · 100). */
+const MIN_PAGE_SIZE = 10;
 
 type Props = {
   variant: "superadmin" | "admin";
@@ -127,7 +129,8 @@ export const SatoCodesPanel = ({ variant, rows, duplicateGroups = 0, regionOptio
       : t(`v2.sato.footer.${unit}`, { count: total, value: number(total) });
   const footer =
     rows && total > 0 ? (
-      total > pageSize ? (
+      // Hajm tanlagichi yo'qolmasin: kattaroq hajm tanlangach ham (12 qator, 20 talik) qaytarib bo'lsin.
+      total > MIN_PAGE_SIZE ? (
         <Pagination
           page={paged.page}
           pageSize={pageSize}
@@ -201,6 +204,11 @@ export const SatoCodesPanel = ({ variant, rows, duplicateGroups = 0, regionOptio
           listClassName="px-3"
         />
       )}
+
+      {/* Muharrir xatosi (409 «Bu kod band», 400, 500) ekran o'quvchiga e'lon qilinadi — doim mavjud jonli hudud. */}
+      <div role="alert" aria-atomic="true" data-testid="sato-editor-live" className="sr-only">
+        {editor.announcement}
+      </div>
 
       <div
         role={isPhone ? undefined : "tabpanel"}

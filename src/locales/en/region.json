@@ -473,6 +473,7 @@
         "enter": "Enter code",
         "editAria": "{{name}} — change SOATO code",
         "enterAria": "{{name}} — enter SOATO code",
+        "enterButtonAria": "Enter code: {{name}}",
         "nameWithRegion": "{{name}} ({{region}})",
         "id": "ID {{id}}",
         "meta": "{{region}} · {{code}}",
@@ -491,7 +492,9 @@
         "taken": "This code is taken: {{district}}, {{region}}",
         "takenNoRegion": "This code is taken: {{district}}",
         "takenUnknown": "This code belongs to another district",
-        "failed": "Could not save the code. Try again."
+        "failed": "Could not save the code. Try again.",
+        "failedTitle": "{{name}} — SOATO code not saved",
+        "errorAnnounce": "{{name}} — SOATO code: {{error}}"
       },
       "footer": {
         "districts_one": "{{value}} district",

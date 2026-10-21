@@ -471,6 +471,7 @@
         "enter": "Kod kiritish",
         "editAria": "{{name}} — SATO kodini o'zgartirish",
         "enterAria": "{{name}} — SATO kodini kiritish",
+        "enterButtonAria": "Kod kiritish: {{name}}",
         "nameWithRegion": "{{name}} ({{region}})",
         "id": "ID {{id}}",
         "meta": "{{region}} · {{code}}",
@@ -489,7 +490,9 @@
         "taken": "Bu kod band: {{district}}, {{region}}",
         "takenNoRegion": "Bu kod band: {{district}}",
         "takenUnknown": "Bu kod boshqa tumanga yozilgan",
-        "failed": "Kodni saqlab bo'lmadi. Qayta urinib ko'ring."
+        "failed": "Kodni saqlab bo'lmadi. Qayta urinib ko'ring.",
+        "failedTitle": "{{name}} — SATO kodi saqlanmadi",
+        "errorAnnounce": "{{name}} — SATO kodi: {{error}}"
       },
       "footer": {
         "districts": "{{value}} ta tuman",

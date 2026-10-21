@@ -37,6 +37,10 @@ test("superadmin: «SATO kodlari» tabi → KPI, «Topildi» → ✎ → «Saqla
   const input = page.getByRole("textbox", { name: "Kosonsoy tumani — SATO kodi" });
   await expect(input).toBeFocused();
   await expect(input).toHaveValue("1714207");
+  // Maket: ~200px maydon (ustun to'la kengligi emas).
+  const inputBox = (await page.locator("[data-sato-code-box]").boundingBox())!;
+  expect(inputBox.width).toBeLessThanOrEqual(200.5);
+  expect((await input.boundingBox())!.width).toBeLessThan(200);
   await page.getByRole("button", { name: "Saqlash" }).click();
 
   await expect(toast(page, "SATO kodi saqlandi")).toBeVisible();
@@ -58,12 +62,15 @@ test("409 → kod egasi so'raladi → «Bu kod band: Uchtepa tumani, Toshkent sh
   await input.fill("1726262");
   await input.press("Enter");
 
-  await expect(page.getByText("Bu kod band: Uchtepa tumani, Toshkent sh.")).toBeVisible();
+  await expect(page.getByText("Bu kod band: Uchtepa tumani, Toshkent sh.", { exact: true })).toBeVisible();
   await expect(input).toHaveAttribute("aria-invalid", "true");
+  // Saqlash paytida maydon `readOnly` — fokus `<body>` ga tushmaydi; xato ekran o'quvchiga e'lon qilinadi.
+  await expect(input).toBeFocused();
+  await expect(page.getByRole("alert").filter({ hasText: "Yashnobod tumani — SATO kodi: Bu kod band" })).toHaveCount(1);
   await expect(page.getByText(/already exists/)).toHaveCount(0);
   expect(mock.patches).toEqual([{ path: "district/sato/23", body: { sato_code: "1726262" } }]);
 
-  await input.press("Escape");
+  await page.keyboard.press("Escape");
   await expect(input).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Yashnobod tumani — SATO kodini o'zgartirish" })).toBeFocused();
 });
@@ -78,7 +85,9 @@ test("admin: preview so'ralmaydi, «Kodsiz» · «Kodi bor», KPI yo'q; kod kiri
   ]);
   await expect(page.getByRole("region", { name: "SATO solishtirish natijasi" })).toHaveCount(0);
 
-  await page.getByRole("button", { name: "Urgut sh. — SATO kodini kiritish" }).click();
+  const enter = page.getByRole("button", { name: "Kod kiritish: Urgut sh." });
+  await expect(enter).toHaveText("Kod kiritish");
+  await enter.click();
   await page.getByRole("textbox", { name: "Urgut sh. — SATO kodi" }).fill("1718236");
   await page.getByRole("button", { name: "Saqlash" }).click();
   await expect(toast(page, "SATO kodi saqlandi")).toBeVisible();

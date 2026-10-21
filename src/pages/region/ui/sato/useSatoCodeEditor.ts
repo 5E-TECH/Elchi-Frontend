@@ -20,6 +20,8 @@ export type SatoEditorError =
 
 export type SatoCodeEditorState = {
   editingId: string | null;
+  /** Ekran o'quvchiga e'lon («<tuman> — SATO kodi: <xato>»); xato yo'q — bo'sh satr. */
+  announcement: string;
   draft: string;
   error: SatoEditorError | null;
   saving: boolean;
@@ -50,6 +52,7 @@ export const useSatoCodeEditor = ({
 }): SatoCodeEditorState => {
   const { t } = useTranslation("region");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
   const [draft, setDraftState] = useState("");
   const [error, setError] = useState<SatoEditorError | null>(null);
   const [saving, setSaving] = useState(false);
@@ -75,6 +78,7 @@ export const useSatoCodeEditor = ({
   const start = useCallback((row: SatoDistrictRow) => {
     editingRef.current = row.id;
     setEditingId(row.id);
+    setEditingName(row.name);
     setDraftState(satoDraftFor(row));
     setError(null);
   }, []);
@@ -85,6 +89,8 @@ export const useSatoCodeEditor = ({
     setDraftState(value);
     setError(null);
   }, []);
+
+  const errorText = useSatoEditorErrorText();
 
   const save = useCallback(
     async (row: SatoDistrictRow) => {
@@ -100,11 +106,6 @@ export const useSatoCodeEditor = ({
       setSaving(true);
       try {
         await api.patch(API_ENDPOINTS.DISTRICTS.SATO_UPDATE(row.id), { sato_code: code });
-        if (editingRef.current === row.id) stop(row.id, true);
-        notify.success(t("v2.sato.editor.saved"), {
-          description: t("v2.sato.editor.savedText", { name: row.name, code }),
-        });
-        await onSaved();
       } catch (cause) {
         const status = httpStatusOf(cause);
         let next: SatoEditorError = { kind: "failed" };
@@ -118,21 +119,45 @@ export const useSatoCodeEditor = ({
             // Egasini olib bo'lmadi — umumiy «kod band» matni.
           }
         }
-        if (editingRef.current === row.id) setError(next);
-      } finally {
         setSaving(false);
+        // Muharrir ochiq — xato maydon ostida; so'rov davomida yopilgan bo'lsa (qidiruv, tab, boshqa qator) —
+        // xato yo'qolmasin: qalqib chiquvchi xabar (faqat i18n matn).
+        if (editingRef.current === row.id) setError(next);
+        else notify.error(t("v2.sato.editor.failedTitle", { name: row.name }), { description: errorText(next) ?? undefined });
+        return;
       }
+      // Muvaffaqiyat: «Saqlanmoqda…» shu yerda tugaydi (qayta yuklash kutilmaydi — boshqa qator band ko'rinmasin).
+      setSaving(false);
+      const stillEditing = editingRef.current === row.id;
+      if (stillEditing) stop(null);
+      notify.success(t("v2.sato.editor.saved"), {
+        description: t("v2.sato.editor.savedText", { name: row.name, code }),
+      });
+      try {
+        await onSaved();
+        // react-query obunachilarga yangi ma'lumotni `setTimeout(0)` partiyasida beradi — eski qator hali DOM da
+        // turgan paytda fokuslanmasin (keyin u o'chib, fokus `<body>` ga tushadi).
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      } catch {
+        // Qayta yuklash xatosi sahifadagi holatda ko'rinadi.
+      }
+      // Fokus qayta yuklashdan KEYIN: qator boshqa tabga o'tgan bo'lsa — qidiruv maydoniga (eskisi o'chib ketadi).
+      if (stillEditing && editingRef.current === null) setFocusTarget({ id: row.id, fallback: true });
     },
-    [draft, onSaved, stop, t],
+    [draft, errorText, onSaved, stop, t],
   );
 
-  return { editingId, draft, error, saving, start, cancel, setDraft, save };
+  const errorMessage = errorText(error);
+  const announcement =
+    editingId && errorMessage ? t("v2.sato.editor.errorAnnounce", { name: editingName, error: errorMessage }) : "";
+
+  return { editingId, announcement, draft, error, saving, start, cancel, setDraft, save };
 };
 
 /** Xato → i18n matn (server `message` hech qachon ko'rsatilmaydi). */
 export const useSatoEditorErrorText = () => {
   const { t } = useTranslation("region");
-  return (error: SatoEditorError | null): string | null => {
+  return useCallback((error: SatoEditorError | null): string | null => {
     if (!error) return null;
     if (error.kind === "invalid") return t("v2.sato.editor.invalid");
     if (error.kind === "taken")
@@ -141,5 +166,5 @@ export const useSatoEditorErrorText = () => {
         : t("v2.sato.editor.takenNoRegion", { district: error.district });
     if (error.kind === "takenUnknown") return t("v2.sato.editor.takenUnknown");
     return t("v2.sato.editor.failed");
-  };
+  }, [t]);
 };
