@@ -8,6 +8,7 @@
         "phone_number": "+998941173984",
         "role": "market",
         "status": "active",
+        "telegram_linked": true,
         "createdAt": "2026-10-15T04:40:00.000Z",
         "updatedAt": "2026-10-15T04:40:00.000Z"
       },
@@ -17,6 +18,7 @@
         "phone_number": "+998904121855",
         "role": "courier",
         "status": "active",
+        "telegram_linked": true,
         "createdAt": "2026-10-06T04:30:00.000Z",
         "updatedAt": "2026-10-06T04:30:00.000Z"
       },
@@ -26,6 +28,7 @@
         "phone_number": "+998915073318",
         "role": "courier",
         "status": "inactive",
+        "telegram_linked": false,
         "createdAt": "2026-10-03T10:20:00.000Z",
         "updatedAt": "2026-10-03T10:20:00.000Z"
       },
@@ -35,6 +38,7 @@
         "phone_number": "+998996402187",
         "role": "manager",
         "status": "active",
+        "telegram_linked": true,
         "createdAt": "2026-10-02T06:05:00.000Z",
         "updatedAt": "2026-10-02T06:05:00.000Z"
       },
@@ -44,6 +48,7 @@
         "phone_number": "+998903152241",
         "role": "market",
         "status": "active",
+        "telegram_linked": true,
         "createdAt": "2026-09-29T05:00:00.000Z",
         "updatedAt": "2026-09-29T05:00:00.000Z"
       },
@@ -53,6 +58,7 @@
         "phone_number": "+998945520761",
         "role": "registrator",
         "status": "active",
+        "telegram_linked": false,
         "createdAt": "2026-09-17T04:10:00.000Z",
         "updatedAt": "2026-09-17T04:10:00.000Z"
       },
@@ -62,6 +68,7 @@
         "phone_number": "+998908112649",
         "role": "admin",
         "status": "active",
+        "telegram_linked": true,
         "createdAt": "2026-09-03T09:00:00.000Z",
         "updatedAt": "2026-09-03T09:00:00.000Z"
       },
@@ -71,6 +78,7 @@
         "phone_number": "+998972146308",
         "role": "logist",
         "status": "active",
+        "telegram_linked": false,
         "createdAt": "2026-09-24T11:45:00.000Z",
         "updatedAt": "2026-09-24T11:45:00.000Z"
       },
@@ -80,6 +88,7 @@
         "phone_number": "+998993715264",
         "role": "market_operator",
         "status": "active",
+        "telegram_linked": false,
         "createdAt": "2026-08-28T14:25:00.000Z",
         "updatedAt": "2026-08-28T14:25:00.000Z"
       },
@@ -89,6 +98,7 @@
         "phone_number": "+998953307146",
         "role": "investor",
         "status": "inactive",
+        "telegram_linked": false,
         "createdAt": "2026-08-14T07:30:00.000Z",
         "updatedAt": "2026-08-14T07:30:00.000Z"
       }

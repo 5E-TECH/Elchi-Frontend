@@ -145,15 +145,6 @@
   "sellExtraCostProofRequired": "Sale extra cost proof",
   "cancelExtraCostProofRequired": "Cancel extra cost proof",
   "permissions": "Permissions",
-  "tgGroupCardTitle": "Telegram group",
-  "changesSaveInstantly": "Changes are saved instantly",
-  "tgGroupPiiLabel": "Customer name and phone in the group",
-  "tgGroupPiiHint": "When off, the customer's name and phone are hidden on order cards in the Telegram group",
-  "tgGroupPiiSaved": "Saved",
-  "tgGroupPiiShownDescription": "Order cards in the group show the customer's name and phone",
-  "tgGroupPiiHiddenDescription": "Order cards in the group hide the customer's name and phone",
-  "tgGroupPiiSaveError": "Not saved",
-  "tgGroupPiiSaveErrorDescription": "Couldn't save the setting. Try again",
   "v2": {
     "common": {
       "back": "Users",
@@ -401,6 +392,40 @@
       "createErrorText": "Check the details and try again."
     }
   },
-  "tgGroupLinkAction": "Get connection link",
-  "tgGroupLinkHint": "One-time link (10 minutes): the bot joins the group and connects it itself. Connected groups are listed on the Notifications page."
+  "tgGroup": {
+    "title": "Telegram group",
+    "hintStaff": "The market's order messages go to these groups. Each group is connected with a one-time link.",
+    "hintSelf": "Order messages go to your shop's Telegram group. Each group is connected with a one-time link.",
+    "typeCreate": "New orders group",
+    "typeCancel": "Cancelled orders group",
+    "connected": "Connected",
+    "since": "since {{date}}",
+    "notConnected": "Not connected",
+    "offCreate": "New order cards are not delivered",
+    "offCancel": "Cancelled order messages are not delivered",
+    "inactive": "Inactive",
+    "inactiveHint": "Messages are not sent to this group",
+    "link": "Connect",
+    "linkCreate": "Connect the new orders group",
+    "linkCancel": "Connect the cancelled orders group",
+    "allGroups": "All groups — in the «Notifications» section",
+    "loadError": "Could not load the group status",
+    "loadErrorText": "Please try again.",
+    "piiLabel": "Customer name and phone in the group",
+    "piiHint": "When off, the customer's name and phone are hidden on order cards in the group. Changes are saved instantly.",
+    "piiSaved": "Saved",
+    "piiShown": "Customer name and phone are shown on order cards in the group",
+    "piiHidden": "Customer name and phone are hidden on order cards in the group",
+    "piiSaveError": "Not saved",
+    "piiSaveErrorText": "Could not save the setting. Please try again."
+  },
+  "tgBot": {
+    "column": "Telegram bot",
+    "columnHint": "Personal Elchi bot connection",
+    "linked": "Connected",
+    "unlinked": "Not connected",
+    "cardLinked": "Bot connected",
+    "cardUnlinked": "Bot not connected",
+    "unavailable": "Cannot be connected"
+  }
 }

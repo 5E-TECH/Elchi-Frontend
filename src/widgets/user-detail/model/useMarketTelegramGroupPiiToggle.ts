@@ -4,13 +4,15 @@ import { useTranslation } from "react-i18next";
 import type { RootState } from "../../../app/config/store";
 import { useUser } from "../../../entities/user/api/userApi";
 import type { User } from "../../../entities/user/types/user";
-import { getActionErrorMessage } from "../../../shared/lib/actionError";
+import axios from "axios";
 import { notify } from "../../../shared/lib/notify";
 
 /**
- * Kalit xulqi (holat, kim o'zgartira oladi, PATCH + xabarlar) — bir joyda: `/profile` dagi alohida karta
- * (`MarketTelegramGroupPiiCard`, v2 `ProfilePage`) va v2 `/all-users/:id` dagi «Ruxsatlar»
- * kartasining qatori (`UserDetailView`) ikkalasi shuni ishlatadi — tahrir qoidalari aynan bir xil.
+ * «Guruhda mijoz ismi va telefoni» kaliti xulqi (ysBqD9Nx; holat, kim o'zgartira oladi, PATCH + xabarlar) —
+ * «Telegram guruhi» kartasining qatori (`MarketTelegramGroupsCard`: `/all-users/:id` va market `/profile`, TG-B S3).
+ * Darhol qaytariladigan ruxsat — tasdiqsiz (DESIGN_SYSTEM §8). Xato matni faqat i18n (backend matni chiqmaydi).
+ *
+ * O'zgartira oladi: superadmin, admin — istalgan market; market — faqat o'zi (backend boshqasiga 403).
  */
 export const useMarketTelegramGroupPiiToggle = (user: User, isOwnProfile = false) => {
   const { t } = useTranslation("users");
@@ -40,14 +42,14 @@ export const useMarketTelegramGroupPiiToggle = (user: User, isOwnProfile = false
         id: String(user.id),
         tg_group_show_customer_pii: next,
       });
-      notify.success(t("tgGroupPiiSaved"), {
-        description: next ? t("tgGroupPiiShownDescription") : t("tgGroupPiiHiddenDescription"),
+      notify.success(t("tgGroup.piiSaved"), {
+        description: next ? t("tgGroup.piiShown") : t("tgGroup.piiHidden"),
       });
     } catch (error) {
       setPending(null);
-      // `null` — javob umuman kelmadi: tarmoq xatosini global xabar allaqachon ko'rsatgan.
-      const message = getActionErrorMessage(error, t("tgGroupPiiSaveErrorDescription"));
-      if (message !== null) notify.error(t("tgGroupPiiSaveError"), { description: message });
+      // Javob umuman kelmadi — tarmoq xatosini global xabar allaqachon ko'rsatgan.
+      if (axios.isAxiosError(error) && !error.response && error.code !== "ERR_CANCELED") return;
+      notify.error(t("tgGroup.piiSaveError"), { description: t("tgGroup.piiSaveErrorText") });
     }
   };
 

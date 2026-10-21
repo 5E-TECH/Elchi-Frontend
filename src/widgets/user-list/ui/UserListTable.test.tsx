@@ -268,3 +268,63 @@ describe("UserListTable (dizayn v2)", () => {
     expect(updateUserStatusMutateMock).not.toHaveBeenCalled();
   });
 });
+
+/** Telefon kengligi (`useIsPhone` — `matchMedia("(max-width: 767px)")`). */
+const asPhone = () => {
+  const original = window.matchMedia;
+  window.matchMedia = ((query: string) => ({
+    matches: query.includes("max-width: 767px"),
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })) as typeof window.matchMedia;
+  return () => {
+    window.matchMedia = original;
+  };
+};
+
+describe("UserListTable — «Telegram boti» ustuni (TG-B, `*-users-list-telegram`)", () => {
+  const telegramUsers = [
+    { ...users[0], telegram_linked: true },
+    { ...users[1], telegram_linked: false },
+    { id: "3", name: "Eski javob", phone_number: "+998901112233", role: "market", status: "active" },
+    { id: "4", name: "Karim Investov", phone_number: "+998904445566", role: "investor", status: "active", telegram_linked: false },
+  ];
+
+  it("superadmin/admin: «Holat» dan keyin «Telegram boti» (izohli sarlavha), «Ulangan» / «Ulanmagan», maydon yo'q yoki ulab bo'lmaydi — «—»", () => {
+    renderWithProviders(<UserListTable users={telegramUsers as never} canManage />);
+
+    const table = screen.getByRole("table", { name: "Foydalanuvchilar ro'yxati" });
+    const headers = within(table).getAllByRole("columnheader").map((cell) => cell.textContent);
+    expect(headers.indexOf("Telegram boti")).toBe(headers.indexOf("Holat") + 1);
+    expect(within(table).getByTitle("Shaxsiy Elchi boti ulanishi")).toHaveTextContent("Telegram boti");
+
+    const rowOf = (name: string) => within(within(table).getByText(name).closest("tr") as HTMLElement);
+    expect(rowOf("Ali Valiyev").getByText("Ulangan")).toBeInTheDocument();
+    expect(rowOf("Vali").getByText("Ulanmagan")).toBeInTheDocument();
+    expect(rowOf("Eski javob").queryByText(/Ulan/)).not.toBeInTheDocument();
+    expect(rowOf("Karim Investov").getByLabelText("Ulab bo'lmaydi")).toHaveTextContent("—");
+  });
+
+  it("menejerda (boshqaruvsiz) ustun yo'q", () => {
+    renderWithProviders(<UserListTable users={telegramUsers as never} />);
+    expect(screen.queryByRole("columnheader", { name: "Telegram boti" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Ulangan")).not.toBeInTheDocument();
+  });
+
+  it("telefon kartasi: rol va holatdan keyin «Bot ulangan» / «Bot ulanmagan»", () => {
+    const restore = asPhone();
+    try {
+      renderWithProviders(<UserListTable users={telegramUsers as never} canManage />);
+      expect(screen.getByText("Bot ulangan")).toBeInTheDocument();
+      expect(screen.getByText("Bot ulanmagan")).toBeInTheDocument();
+      expect(screen.getAllByText(/^Bot /)).toHaveLength(2);
+    } finally {
+      restore();
+    }
+  });
+});

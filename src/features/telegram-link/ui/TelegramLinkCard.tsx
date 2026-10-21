@@ -12,29 +12,16 @@ import {
   useUnlinkTelegram,
 } from "../api/useTelegramLink";
 import type { TelegramLinkCode } from "../model/types";
-import { LINK_TTL_MS } from "../lib/linkTime";
+import { toLinkWindow } from "../lib/linkTime";
 import { TelegramLinkDialog } from "./TelegramLinkDialog";
 
 /** Oyna ochiq turganda profil shu oraliqda qayta o'qiladi — bot ulagani darhol ko'rinadi. */
 export const TELEGRAM_LINK_POLL_MS = 3_000;
-/** Server muddati bundan uzoq yoki o'tib ketgan bo'lsa — kompyuter soati noto'g'ri, 10 daqiqa olinadi. */
-const MAX_TRUSTED_TTL_MS = 15 * 60_000;
-
-/** `totalMs` — sanoq va progressning to'liq muddati (server 10 daqiqadan uzoq bersa — shuncha, sanoq qotib qolmasin). */
+/** `totalMs` — sanoq va progressning to'liq muddati (`toLinkWindow`). */
 type LinkSession = { code: TelegramLinkCode; expiresAtMs: number; totalMs: number };
 type DialogState = { open: boolean; session: LinkSession };
 
-/**
- * Muddat mahalliy soat bo'yicha: serverning `expires_at` i qolgan vaqtga aylantiriladi (soat farqi bo'lsa
- * havola «eskirgan» bo'lib ochilmasin).
- */
-const toSession = (code: TelegramLinkCode, now = Date.now()): LinkSession => {
-  const serverExpiry = toValidDate(code.expiresAt)?.getTime();
-  const ttl = serverExpiry == null ? Number.NaN : serverExpiry - now;
-  const trusted = Number.isFinite(ttl) && ttl > 0 && ttl <= MAX_TRUSTED_TTL_MS;
-  const total = trusted ? ttl : LINK_TTL_MS;
-  return { code, expiresAtMs: now + total, totalMs: Math.max(LINK_TTL_MS, total) };
-};
+const toSession = (code: TelegramLinkCode): LinkSession => ({ code, ...toLinkWindow(code.expiresAt) });
 
 const formatUsername = (username?: string | null) => {
   const value = typeof username === "string" ? username.trim().replace(/^@+/, "") : "";

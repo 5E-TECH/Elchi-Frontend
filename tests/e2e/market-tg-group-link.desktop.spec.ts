@@ -1,117 +1,121 @@
-import { expect, test, type Page, type Route } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { TG_GROUP_DEEP_LINK, marketGroupRow, mockMarketTgGroupApi } from "./support/marketTgGroup";
 
 /**
- * 4TfLyTrL / 6jXw0DDr — market sahifasidagi «Telegram guruhi» kartasi (eski «Telegram token» o'rnida; matnli
- * token bilan ulash backendda o'chirilgan). Tugma «Bildirishnoma qo'shish» oynasini shu market tanlangan holda
- * ochadi → `POST /telegram/link-code { purpose: "market_group", group_type, market_id }` → QR va
- * `t.me/<bot>?startgroup=<kod>`. Faqat superadmin; `GET /markets/:id/tg-token` hech qachon so'ralmaydi.
+ * TG-B (4TfLyTrL, 6jXw0DDr; ega javoblari tg-link S1–S5) — market tafsilotidagi «Telegram guruhi» kartasi
+ * (`*-users-detail-telegram`): har tur holati, ulanmagan turda to'g'ridan-to'g'ri «Ulash» → bir martalik havola oynasi
+ * (`*-users-detail-telegram-group-dialog`), guruh ulanganda oyna o'zi yopiladi va «Guruh ulandi»; muddati tugasa —
+ * «Yangi havola olish»; admin ham ulaydi; menejer kartani ko'rmaydi; market o'z profilida — holatsiz qatorlar
+ * (`market-profile`); `/all-users` da «Telegram boti» ustuni. `GET /markets/:id/tg-token` hech qachon so'ralmaydi.
  * Soxta backend, 1440px.
  */
-const ORIGIN = "http://127.0.0.1:4173";
-const DEEP_LINK = "https://t.me/elchi_bot?startgroup=c0de42";
-const cors = {
-  "access-control-allow-origin": ORIGIN,
-  "access-control-allow-credentials": "true",
-  "access-control-allow-headers": "*",
-  "access-control-allow-methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS",
-};
-const reply = (route: Route, body: unknown) =>
-  route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify(body) });
-
-const MARKET = {
-  id: "201",
-  name: "Baraka Shop",
-  phone_number: "+998901234567",
-  username: "baraka",
-  role: "market",
-  status: "active",
-  salary: 0,
-  payment_day: null,
-  tariff_home: 30000,
-  tariff_center: 20000,
-  default_tariff: "center",
-  createdAt: "2026-09-01T09:00:00.000Z",
-  updatedAt: "2026-09-30T09:00:00.000Z",
-  is_deleted: false,
-};
-
-const mockApi = async (page: Page, role: "superadmin" | "admin") => {
-  const tokenRequests: string[] = [];
-  const linkRequests: unknown[] = [];
-  await page.context().route("**/*", async (route) => {
-    const request = route.request();
-    const url = new URL(request.url());
-    if (url.origin === ORIGIN) return route.continue();
-    if (!/api\.elchipochta\.uz|:3004$/.test(url.host)) return route.abort();
-    if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
-    const path = url.pathname.replace(/^\//, "");
-    if (path === "auth/my-profile") return reply(route, { statusCode: 200, data: { id: "1", role, name: "E2E", status: "active" } });
-    if (path === "users/201") return reply(route, { statusCode: 200, data: MARKET });
-    if (path === "markets") return reply(route, { statusCode: 200, data: [MARKET] });
-    if (path.endsWith("/tg-token")) {
-      tokenRequests.push(request.method());
-      return reply(route, { statusCode: 200, data: {} });
-    }
-    if (path === "telegram/link-code" && request.method() === "POST") {
-      const body = request.postDataJSON() as { group_type?: string };
-      linkRequests.push(body);
-      return reply(route, {
-        statusCode: 200,
-        data: {
-          token: "c0de42",
-          purpose: "market_group",
-          group_type: body.group_type,
-          expires_at: new Date(Date.now() + 10 * 60_000).toISOString(),
-          deep_link: DEEP_LINK,
-          command: "/start c0de42",
-        },
-      });
-    }
-    return reply(route, { statusCode: 200, data: [] });
-  });
-  await page.addInitScript(() => {
-    const far = Date.now() + 86_400_000;
-    window.sessionStorage.setItem("accessToken", "e2e.local.token");
-    window.sessionStorage.setItem(
-      "authSessionMetadata",
-      JSON.stringify({ accessTokenExpiresAt: far, refreshTokenExpiresAt: far, refreshTokenWarnAt: far }),
-    );
-  });
-  return { tokenRequests, linkRequests };
-};
-
-test.describe("Market Telegram guruhi (bir martalik havola) — 1440px", () => {
+test.describe("Market Telegram guruhi (TG-B) — 1440px", () => {
   test.use({ viewport: { width: 1440, height: 1000 } });
   test.describe.configure({ timeout: 120_000 });
 
-  test("⭐ superadmin: «Telegram guruhi» kartasi → oyna shu market bilan → bir martalik havola va QR", async ({ page }) => {
-    const { tokenRequests, linkRequests } = await mockApi(page, "superadmin");
+  test("⭐ superadmin: holatlar → «Ulash» (shu market, tur) → QR va havola → guruh ulanadi, oyna yopiladi, karta yangilanadi", async ({
+    page,
+  }) => {
+    const state = await mockMarketTgGroupApi(page, { role: "superadmin", connectAfterPolls: 1 });
     await page.goto("/all-users/201");
 
     const card = page.getByRole("region", { name: "Telegram guruhi" });
     await expect(card).toBeVisible({ timeout: 90_000 });
-    await expect(page.getByRole("region", { name: "Telegram token" })).toHaveCount(0);
+    await expect(card.getByText("06.10.2026 dan")).toBeVisible();
+    await expect(card.getByText("Bekor qilingan buyurtmalar xabari kelmaydi")).toBeVisible();
+    await expect(card.getByRole("button", { name: "Yangi buyurtmalar guruhini ulash" })).toHaveCount(0);
+    await expect(card.getByRole("switch", { name: "Guruhda mijoz ismi va telefoni" })).toBeVisible();
+    // PII kaliti «Ruxsatlar» da emas (S3).
+    await expect(
+      page.getByRole("region", { name: "Ruxsatlar" }).getByRole("switch", { name: "Guruhda mijoz ismi va telefoni" }),
+    ).toHaveCount(0);
 
-    await card.getByRole("button", { name: "Ulash havolasini olish" }).click();
-    const dialog = page.getByRole("dialog", { name: "Bildirishnoma qo'shish" });
+    await card.getByRole("button", { name: "Bekor qilinganlar guruhini ulash" }).click();
+    const dialog = page.getByRole("dialog", { name: "Telegram guruhini ulash" });
     await expect(dialog).toBeVisible();
-    // Market oldindan tanlangan — qidiruvli tanlov maydonining qiymati.
-    await expect(dialog.getByRole("combobox").first()).toHaveValue(/Baraka Shop/);
+    await expect(dialog.getByText("Baraka Shop · Bekor qilinganlar guruhi")).toBeVisible();
+    await expect(dialog.getByRole("img", { name: "Telegram guruhini ulash havolasining QR kodi" })).toBeVisible();
+    await expect(dialog.getByRole("link", { name: "Telegram'da ochish" })).toHaveAttribute("href", TG_GROUP_DEEP_LINK);
+    await expect(dialog.getByRole("timer")).toHaveText(/qoldi$/);
+    expect(state.linkRequests).toEqual([{ purpose: "market_group", group_type: "cancel", market_id: "201" }]);
 
-    await dialog.getByText("Bekor qilinganlar guruhi").click();
-    await dialog.getByRole("button", { name: "Ulash havolasini olish" }).click();
-
-    await expect(dialog.getByRole("link", { name: /Telegram'da ochish/ })).toHaveAttribute("href", DEEP_LINK);
-    expect(linkRequests).toEqual([{ purpose: "market_group", group_type: "cancel", market_id: "201" }]);
-    expect(tokenRequests).toEqual([]);
+    // Bot guruhni uladi (2-kuzatuvda qator paydo bo'ladi) — oyna yopiladi, xabar, karta «Ulangan».
+    await expect(page.getByText("Guruh ulandi", { exact: true })).toBeVisible({ timeout: 15_000 });
+    await expect(dialog).toHaveCount(0);
+    await expect(card.getByRole("button", { name: /guruhini ulash/ })).toHaveCount(0);
+    await expect(card.getByText("Ulangan")).toHaveCount(2);
+    expect(state.tokenRequests).toBe(0);
   });
 
-  test("⭐ admin: karta yo'q (guruh ulash oynasi faqat superadminda), token so'ralmaydi", async ({ page }) => {
-    const { tokenRequests } = await mockApi(page, "admin");
+  test("⭐ muddati tugadi: «Havola muddati tugadi» → «Yangi havola olish» yangi kod so'raydi", async ({ page }) => {
+    const state = await mockMarketTgGroupApi(page, { role: "superadmin", expiresInMs: 3_000 });
     await page.goto("/all-users/201");
 
-    await expect(page.getByText("Baraka Shop").first()).toBeVisible({ timeout: 90_000 });
+    const card = page.getByRole("region", { name: "Telegram guruhi" });
+    await card.getByRole("button", { name: "Bekor qilinganlar guruhini ulash" }).click({ timeout: 90_000 });
+    const dialog = page.getByRole("dialog", { name: "Telegram guruhini ulash" });
+    await expect(dialog.getByText("Havola muddati tugadi")).toBeVisible({ timeout: 10_000 });
+    await expect(dialog.getByRole("link", { name: "Telegram'da ochish" })).toHaveCount(0);
+
+    await dialog.getByRole("button", { name: "Yangi havola olish" }).click();
+    await expect(dialog.getByRole("link", { name: "Telegram'da ochish" })).toBeVisible();
+    expect(state.linkRequests).toHaveLength(2);
+  });
+
+  test("⭐ admin: karta, «Ulash» va «Barcha guruhlar «Bildirishnomalar» bo'limida» havolasi; nofaol ulanish — «Nofaol»", async ({
+    page,
+  }) => {
+    const state = await mockMarketTgGroupApi(page, { role: "admin", rows: [marketGroupRow("create", false)] });
+    await page.goto("/all-users/201");
+
+    const card = page.getByRole("region", { name: "Telegram guruhi" });
+    await expect(card.getByText("Nofaol")).toBeVisible({ timeout: 90_000 });
+    await expect(card.getByText("Xabarlar bu guruhga yuborilmayapti")).toBeVisible();
+    await expect(card.getByRole("button", { name: "Bekor qilinganlar guruhini ulash" })).toBeVisible();
+    await card.getByRole("link", { name: /Barcha guruhlar «Bildirishnomalar» bo'limida/ }).click();
+    await expect(page).toHaveURL(/\/notifications$/);
+    expect(state.tokenRequests).toBe(0);
+  });
+
+  test("⭐ menejer: market tafsilotida karta ham, PII kaliti ham yo'q; guruhlar so'ralmaydi", async ({ page }) => {
+    const state = await mockMarketTgGroupApi(page, { role: "manager" });
+    await page.goto("/all-users/201");
+
+    await expect(page.getByRole("heading", { name: "Baraka Shop" })).toBeVisible({ timeout: 90_000 });
     await expect(page.getByRole("region", { name: "Telegram guruhi" })).toHaveCount(0);
-    expect(tokenRequests).toEqual([]);
+    await expect(page.getByRole("switch", { name: "Guruhda mijoz ismi va telefoni" })).toHaveCount(0);
+    expect(state.notificationRequests).toBe(0);
+  });
+
+  test("⭐ market /profile: «Xavfsizlik» va «Telegram» yonma-yon, «Telegram guruhi» — holatsiz, «Ulash» `market_id` siz", async ({
+    page,
+  }) => {
+    const state = await mockMarketTgGroupApi(page, { role: "market" });
+    await page.goto("/profile");
+
+    const groups = page.getByRole("region", { name: "Telegram guruhi" });
+    await expect(groups).toBeVisible({ timeout: 90_000 });
+    const security = await page.getByRole("region", { name: "Xavfsizlik" }).boundingBox();
+    const telegram = await page.getByRole("region", { name: "Telegram", exact: true }).boundingBox();
+    expect(Math.abs((security?.y ?? 0) - (telegram?.y ?? 1))).toBeLessThan(2);
+    await expect(groups.getByText("Ulanmagan")).toHaveCount(0);
+
+    await groups.getByRole("button", { name: "Yangi buyurtmalar guruhini ulash" }).click();
+    const dialog = page.getByRole("dialog", { name: "Telegram guruhini ulash" });
+    await expect(dialog.getByText("Bot guruhni o'zi ulaydi — ulanganda sizga bildirishnoma keladi")).toBeVisible();
+    await expect(dialog.getByText("Guruh ulanishi kutilmoqda…")).toHaveCount(0);
+    expect(state.linkRequests).toEqual([{ purpose: "market_group", group_type: "create" }]);
+    expect(state.notificationRequests).toBe(0);
+  });
+
+  test("⭐ /all-users: «Telegram boti» ustuni — «Ulangan» / «Ulanmagan», investor — «—»", async ({ page }) => {
+    await mockMarketTgGroupApi(page, { role: "superadmin" });
+    await page.goto("/all-users");
+
+    const table = page.getByRole("table", { name: "Foydalanuvchilar ro'yxati" });
+    await expect(table.getByRole("columnheader", { name: "Telegram boti" })).toBeVisible({ timeout: 90_000 });
+    await expect(table.getByRole("row", { name: /Mehr Kosmetika/ }).getByText("Ulangan")).toBeVisible();
+    await expect(table.getByRole("row", { name: /Jasur Tursunov/ }).getByText("Ulanmagan")).toBeVisible();
+    await expect(table.getByRole("row", { name: /Sherzod Umarov/ }).getByLabel("Ulab bo'lmaydi")).toBeVisible();
   });
 });

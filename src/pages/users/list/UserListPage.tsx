@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-users-list, admin-users-list, manager-users-list, superadmin-users-list-roles, superadmin-users-list-role-select, superadmin-users-delete-dialog, admin-users-delete-dialog
+// dizayn-v2: superadmin-users-list, admin-users-list, manager-users-list, superadmin-users-list-telegram, admin-users-list-telegram, superadmin-users-list-roles, superadmin-users-list-role-select, superadmin-users-delete-dialog, admin-users-delete-dialog
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -350,6 +350,8 @@ const UserListPage = memo(() => {
                 t("v2.list.columns.phone"),
                 t("v2.list.columns.role"),
                 t("v2.list.columns.status"),
+                // TG-B: «Telegram boti» ustuni (superadmin/admin) — skelet ham shu tartibda.
+                ...(canManageUsers ? [t("tgBot.column")] : []),
                 t("v2.list.columns.joined"),
               ]}
               rows={6}

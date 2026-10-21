@@ -1,11 +1,13 @@
-// dizayn-v2: superadmin-users-list, admin-users-list, manager-users-list, superadmin-users-delete-dialog, admin-users-delete-dialog
+// dizayn-v2: superadmin-users-list, admin-users-list, manager-users-list, superadmin-users-delete-dialog, admin-users-delete-dialog, superadmin-users-list-telegram, admin-users-list-telegram
 import { memo, useCallback, useMemo, useState } from "react";
-import { ChevronRight, Pencil, Trash2, UserCheck, UserX } from "lucide-react";
+import { ChevronRight, Pencil, Send, Trash2, UserCheck, UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import type { User, UserStatus } from "../../../entities/user/types/user";
 import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
 import { useUser } from "../../../entities/user/api/userApi";
+// Faqat qoida (barrel emas): ro'yxat havola so'rovlari/oynalarini yuklamasin.
+import { canLinkTelegram } from "../../../features/telegram-link/model/canLinkTelegram";
 import { UpdateUserModal } from "../../../features/user/update-user/ui/UpdateUserModal";
 import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { cx } from "../../../shared/lib/cx";
@@ -70,11 +72,26 @@ const SUB = "text-[13px] text-text-muted";
 const userHref = (user: User) => `/all-users/${user.id}`;
 
 /**
+ * Shaxsiy Elchi boti ulanishi (`GET /users` → `telegram_linked`, backend `sanitize`): mijoz/investor ulay olmaydi —
+ * `unavailable`; maydon kelmasa — `unknown` (ikkalasida «—»).
+ */
+type TelegramBotState = "linked" | "unlinked" | "unavailable" | "unknown";
+const telegramBotState = (user: User): TelegramBotState => {
+  if (!canLinkTelegram(user.role)) return "unavailable";
+  if (typeof user.telegram_linked !== "boolean") return "unknown";
+  return user.telegram_linked ? "linked" : "unlinked";
+};
+
+/**
  * FOYDALANUVCHILAR JADVALI — `/all-users` (dizayn v2, `DataTable`; telefonda kartalar).
  *
  * Ustunlar (maket `superadmin-users-list`): Foydalanuvchi (avatar + ism; planshetda ostida telefon) · Telefon
  * (planshetda yashirin) · Rol · Holat · Qo'shilgan (planshetda yashirin) · amallar (kebab: «Tahrirlash»,
  * «Nofaol qilish»/«Faol qilish», «O'chirish»). Menejerda (`manager-users-list`) amallar o'rnida «Ochish» (›).
+ * TG-B (`*-users-list-telegram`, ega javobi tg-link S4): superadmin/admin jadvalida «Holat» dan keyin «Telegram boti»
+ * (`telegram_linked`: «Ulangan» / «Ulanmagan», `Send` ikonkali belgi; planshetda ham), telefon kartasida «Bot ulangan» /
+ * «Bot ulanmagan». «Telegram boti: Barchasi · Ulangan · Ulanmagan» filtri chizilmaydi — backend `telegram_linked`
+ * parametri yo'q (yA31z7Rr, TG-D). Menejerda ustun yo'q.
  * «Filial» ustuni chizilmaydi: `GET /users` qatorlarida filial yo'q (backend `findAllAdmins` — faqat `users`
  * jadvali), har qator uchun alohida so'rov esa og'ir — spec §6 ma'lumot bo'shlig'i.
  *
@@ -108,6 +125,29 @@ export const UserListTable = memo(({ users, canManage = false, busy = false, cla
         <Badge tone={STATUS_TONE[status]} dot>
           {t(`v2.common.status.${status}`)}
         </Badge>
+      );
+    },
+    [t],
+  );
+
+  const telegramBadge = useCallback(
+    (user: User, variant: "cell" | "card") => {
+      const state = telegramBotState(user);
+      if (state === "linked" || state === "unlinked") {
+        const key = variant === "card" ? (state === "linked" ? "cardLinked" : "cardUnlinked") : state;
+        return (
+          <Badge tone={state === "linked" ? "success" : "neutral"} icon={Send}>
+            {t(`tgBot.${key}`)}
+          </Badge>
+        );
+      }
+      if (variant === "card") return null;
+      return state === "unavailable" ? (
+        <span className="text-text-subtle" aria-label={t("tgBot.unavailable")} title={t("tgBot.unavailable")}>
+          —
+        </span>
+      ) : (
+        <span className="text-text-subtle">—</span>
       );
     },
     [t],
@@ -266,6 +306,20 @@ export const UserListTable = memo(({ users, canManage = false, busy = false, cla
         cell: (user) => <Badge>{roleLabel(user)}</Badge>,
       },
       { id: "status", header: t("v2.list.columns.status"), cell: statusBadge },
+      ...(canManage
+        ? [
+            {
+              id: "telegram",
+              header: (
+                <abbr title={t("tgBot.columnHint")} className="no-underline">
+                  {t("tgBot.column")}
+                </abbr>
+              ),
+              className: "whitespace-nowrap",
+              cell: (user: User) => telegramBadge(user, "cell"),
+            } satisfies DataTableColumn<User>,
+          ]
+        : []),
       {
         id: "joined",
         header: t("v2.list.columns.joined"),
@@ -281,7 +335,7 @@ export const UserListTable = memo(({ users, canManage = false, busy = false, cla
         cell: renderActions,
       },
     ],
-    [canManage, joined, phone, renderActions, roleLabel, statusBadge, t],
+    [canManage, joined, phone, renderActions, roleLabel, statusBadge, t, telegramBadge],
   );
 
   // Telefon kartasi (maket `.el-list-item`): avatar, ism, «telefon», rol + holat, kebab yoki ›.
@@ -299,12 +353,13 @@ export const UserListTable = memo(({ users, canManage = false, busy = false, cla
           <span className="flex flex-wrap gap-1.5">
             <Badge>{roleLabel(user)}</Badge>
             {statusBadge(user)}
+            {canManage ? telegramBadge(user, "card") : null}
           </span>
         </Link>
         {canManage ? renderActions(user) : <ChevronRight aria-hidden="true" size={18} className="shrink-0 text-text-subtle" />}
       </div>
     ),
-    [canManage, phone, renderActions, roleLabel, statusBadge],
+    [canManage, phone, renderActions, roleLabel, statusBadge, telegramBadge],
   );
 
   const deletePhone = deleteTarget ? phone(deleteTarget) : "";
