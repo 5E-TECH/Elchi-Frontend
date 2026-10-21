@@ -115,6 +115,9 @@
     "lastOrderAny": "Любое время",
     "minOrders": "Количество заказов",
     "minOrdersPlaceholder": "от",
+    "maxOrdersPlaceholder": "до",
+    "ordersFrom": "Количество заказов — от",
+    "ordersTo": "Количество заказов — до",
     "loadError": "Не удалось загрузить список"
   },
   "audience": {

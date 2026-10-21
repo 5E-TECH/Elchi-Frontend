@@ -1,9 +1,9 @@
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../../shared/api/instance";
 import { API_ENDPOINTS } from "../../../shared/api";
 import { queryKeys } from "../../../shared/config/queryKeys";
 import { toChannelStatus, toCountMap, type ChannelStatusCounts } from "../../../entities/notification-dispatch";
-import { BROADCAST_ROLES, type DispatchPayload, type RecipientMode } from "../model/schema";
+import type { DispatchPayload } from "../model/schema";
 
 export type DispatchResult = {
   /** Tarix id'si (`client_request_id`) — `GET /notifications/sent/:dispatch_id`. Yo'q bo'lsa — so'rovdagi id. */
@@ -109,29 +109,3 @@ export const useRecipientSearch = (search: string, enabled: boolean) =>
     enabled,
     staleTime: 30_000,
   });
-
-/**
- * "Taxminan N ta qabul qiluvchi". Har rol uchun foydalanuvchilar ro'yxati
- * jami soni (`role` + `limit: 1`) — backend qabul qiluvchini xuddi shu
- * ro'yxatdan yig'adi. ⚠️ Rolsiz ro'yxatda `meta.total` sahifadagi qatorlar
- * soni bo'lib keladi (jonli: `limit=1` → 1), shuning uchun "Hamma" ham
- * rollar yig'indisi.
- */
-export const useRecipientEstimate = (
-  mode: RecipientMode,
-  { roles, listSize }: { roles: string[]; listSize: number },
-) => {
-  const countedRoles: readonly string[] = mode === "roles" ? roles : mode === "all" ? BROADCAST_ROLES : [];
-  const roleCounts = useQueries({
-    queries: countedRoles.map((role) => ({
-      queryKey: ["notification-dispatch", "count", role],
-      queryFn: () => fetchUsers({ role, page: 1, limit: 1 }).then((result) => result.total),
-      staleTime: 60_000,
-    })),
-  });
-
-  if (mode === "single") return { count: 1, loading: false };
-  if (mode === "list") return { count: listSize, loading: false };
-  if (roleCounts.some((query) => query.isLoading)) return { count: null, loading: true };
-  return { count: roleCounts.reduce((sum, query) => sum + (query.data ?? 0), 0), loading: false };
-};

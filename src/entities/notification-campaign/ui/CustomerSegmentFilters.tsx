@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-notifications-sms-campaign-segment
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMarketLookup } from "../../markets/lookup";
 import { useRegionDistrictCatalog } from "../../region";
@@ -16,6 +16,17 @@ export type CustomerSegmentFiltersProps = {
   enabled?: boolean;
   /** «Oxirgi buyurtma» taqvimida bugungi kun (test va namuna). */
   today?: string;
+  /**
+   * «Buyurtmalar soni» — «dan – gacha» (bildirishnoma auditoriyasi, KM-2: `segment.max_orders` bor). Sukut `false` —
+   * faqat minimum (SMS kampaniyasi DTO'sida «gacha» yo'q).
+   */
+  withMaxOrders?: boolean;
+  /** Teskari oraliq («dan» > «gacha») xatosi — «gacha» maydoni ostida. */
+  orderRangeError?: string;
+  /** Tanlangan market nomi (segmentni saqlash oynasidagi xulosa uchun). */
+  onMarketLabel?: (label: string | null) => void;
+  /** Hamma maydon o'chiq (forma qulflangan — xabar yuborilgan). */
+  disabled?: boolean;
   className?: string;
 };
 
@@ -39,9 +50,14 @@ export const CustomerSegmentFilters = ({
   onChange,
   enabled = true,
   today,
+  withMaxOrders = false,
+  orderRangeError,
+  onMarketLabel,
+  disabled = false,
   className,
 }: CustomerSegmentFiltersProps) => {
   const { t } = useTranslation("sms");
+  const ordersLabelId = useId();
   const regionId = value.region_id ?? "";
   const regions = useRegionLookup(enabled);
   const districts = useRegionDistrictCatalog(regionId, enabled, { silentError: true });
@@ -92,6 +108,7 @@ export const CustomerSegmentFilters = ({
           label={t("segment.region")}
           labelAs="span"
           className="min-w-0"
+          disabled={disabled}
           hint={regions.isError ? loadError : undefined}
           hintLive
         >
@@ -106,7 +123,7 @@ export const CustomerSegmentFilters = ({
           label={t("segment.district")}
           labelAs="span"
           className="min-w-0"
-          disabled={!regionId}
+          disabled={disabled || !regionId}
           hint={districts.isError ? loadError : undefined}
           hintLive
         >
@@ -115,7 +132,7 @@ export const CustomerSegmentFilters = ({
             value={value.district_id ?? ""}
             onChange={(next) => set({ district_id: next || undefined })}
             placeholder={t("segment.districtNeedsRegion")}
-            disabled={!regionId}
+            disabled={disabled || !regionId}
             loading={Boolean(regionId) && districts.isLoading}
           />
         </Field>
@@ -126,6 +143,7 @@ export const CustomerSegmentFilters = ({
           label={t("segment.market")}
           labelAs="span"
           className="min-w-0"
+          disabled={disabled}
           hint={
             markets.isError
               ? loadError
@@ -143,12 +161,13 @@ export const CustomerSegmentFilters = ({
             value={marketId}
             onChange={(next, option) => {
               setPickedMarket(next && option ? { value: option.value, label: option.label } : null);
+              onMarketLabel?.(next && option ? option.label : null);
               set({ market_id: next || undefined });
             }}
             loading={markets.isFetching}
           />
         </Field>
-        <Field label={t("segment.lastOrder")} labelAs="span" className="min-w-0">
+        <Field label={t("segment.lastOrder")} labelAs="span" className="min-w-0" disabled={disabled}>
           <DateRange
             value={{ from: value.last_order_from ?? "", to: value.last_order_to ?? "" }}
             onChange={({ from, to }) => set({ last_order_from: from || undefined, last_order_to: to || undefined })}
@@ -158,14 +177,49 @@ export const CustomerSegmentFilters = ({
             className="w-full"
           />
         </Field>
-        <Field label={t("segment.minOrders")} className="min-w-0">
-          <TextInput
-            mode="number"
-            value={value.min_orders ? String(value.min_orders) : ""}
-            placeholder={t("segment.minOrdersPlaceholder")}
-            onValueChange={(next) => set({ min_orders: parseMinOrders(next) })}
-          />
-        </Field>
+        {withMaxOrders ? (
+          <div role="group" aria-labelledby={ordersLabelId} className="flex min-w-0 flex-col gap-1.5">
+            <span id={ordersLabelId} className="min-w-0 text-[13px] font-semibold text-text">
+              {t("segment.minOrders")}
+            </span>
+            <div className="flex min-w-0 items-start gap-2">
+              <Field label={t("segment.ordersFrom")} hideLabel className="min-w-0 flex-1" disabled={disabled}>
+                <TextInput
+                  mode="number"
+                  value={value.min_orders ? String(value.min_orders) : ""}
+                  placeholder={t("segment.minOrdersPlaceholder")}
+                  onValueChange={(next) => set({ min_orders: parseMinOrders(next) })}
+                />
+              </Field>
+              <span aria-hidden="true" className="flex h-10 items-center text-text-muted max-md:h-11">
+                –
+              </span>
+              <Field
+                label={t("segment.ordersTo")}
+                hideLabel
+                className="min-w-0 flex-1"
+                disabled={disabled}
+                error={orderRangeError}
+              >
+                <TextInput
+                  mode="number"
+                  value={value.max_orders ? String(value.max_orders) : ""}
+                  placeholder={t("segment.maxOrdersPlaceholder")}
+                  onValueChange={(next) => set({ max_orders: parseMinOrders(next) })}
+                />
+              </Field>
+            </div>
+          </div>
+        ) : (
+          <Field label={t("segment.minOrders")} className="min-w-0" disabled={disabled}>
+            <TextInput
+              mode="number"
+              value={value.min_orders ? String(value.min_orders) : ""}
+              placeholder={t("segment.minOrdersPlaceholder")}
+              onValueChange={(next) => set({ min_orders: parseMinOrders(next) })}
+            />
+          </Field>
+        )}
       </div>
     </div>
   );

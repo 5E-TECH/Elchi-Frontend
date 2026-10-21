@@ -1,7 +1,8 @@
 import { expect, type Locator, type Page, type Route } from "@playwright/test";
 
 /**
- * NS-1 — «Xabar yuborish» natijasi uchun API soxtasi (superadmin). Faqat `POST notifications/dispatch` ruxsat;
+ * NS-1 — «Xabar yuborish» natijasi uchun API soxtasi (superadmin). Faqat `POST notifications/dispatch` (va «Hamma» soni —
+ * `POST notifications/audience/preview`, KM-2) ruxsat;
  * boshqa yozish so'rovi `leaked` ga tushadi. Worktree serverlari boshqa portda — `E2E_ORIGIN`.
  */
 export const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
@@ -118,6 +119,20 @@ export const mockDispatchApi = async (page: Page, options: { theme?: "light" | "
           name: "Bosh admin",
           status: "active",
           settings: { appearance: { theme: options.theme ?? "light", themeChosen: true, language: "uz" } },
+        },
+      });
+    }
+    // «Hamma» soni (KM-2): backend preview — hech narsa yubormaydi.
+    if (path === "notifications/audience/preview" && request.method() === "POST") {
+      return reply(route, {
+        statusCode: 200,
+        data: {
+          exact: true,
+          total: 148,
+          by_role: { courier: 100, market: 48 },
+          by_channel: { in_app: 148, realtime: 148, push: 0 },
+          limits: { dispatch_max: 5000, campaign_max: 20000 },
+          campaign_allowed: true,
         },
       });
     }
