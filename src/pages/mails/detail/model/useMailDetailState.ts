@@ -62,6 +62,19 @@ export const useMailDetailState = (orders: PostOrder[]) => {
         setSelectedIds(new Set());
     }, []);
 
+    /**
+     * Bir nechta buyurtmani tanlash / tanlovdan chiqarish (MD-1: qidiruvda «Ko'rinayotganlarni tanlash» va sarlavha
+     * belgisi faqat ko'rinadiganlarga). Qolgan tanlov o'zgarmaydi — qidiruvda yashirin buyurtma tanlangan qoladi.
+     */
+    const setManySelected = useCallback((ids: readonly string[], selected: boolean) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            ids.forEach((id) => (selected ? next.add(id) : next.delete(id)));
+            if (next.size === prev.size && ids.every((id) => prev.has(id) === selected)) return prev;
+            return next;
+        });
+    }, []);
+
     return {
         selectedIds,
         allSelected,
@@ -71,5 +84,6 @@ export const useMailDetailState = (orders: PostOrder[]) => {
         selectOne,
         deselectOne,
         clearSelection,
+        setManySelected,
     };
 };
