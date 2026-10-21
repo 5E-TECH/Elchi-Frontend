@@ -32,6 +32,11 @@ import {
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
 import { RUNTIME_ERROR_PATH } from "../../shared/lib/runtimeError";
 import ErrorBoundary from "../../shared/ui/ErrorBoundary";
+// MO-3: market operatori qobiqda faqat yaratadi — qaysi bola yo'l ochiq (sof funksiya, testlanadi).
+import {
+  MARKET_OPERATOR_CREATE_PATH,
+  resolveMarketOperatorNewOrdersAccess,
+} from "../../pages/new_orders/model/newOrdersShell";
 // ✅ Login page: `lazy` + to'g'ridan-to'g'ri `/login` da oldindan yuklash.
 import Login from "./loginPage";
 
@@ -329,6 +334,22 @@ const NewOrdersCancelledDetailEntry = () => {
   }
 
   return <NewOrdersCancelledDetail />;
+};
+
+/**
+ * MO-3: «Qabul va yaratish» qobig'i market operatorida — faqat `/new-orders/create` («AI bilan» yaratish).
+ * `/new-orders` (menyu bandi) → yaratishga, qolgan bolalar (market ro'yxati, bekorlar, qabul, paketlar,
+ * foydalanuvchi tafsiloti) → 403: ularning backend yo'llari operatorga yopiq. Boshqa rollar — o'zgarishsiz.
+ */
+const NewOrdersRoleGate = ({ children }: { children: ReactNode }) => {
+  const { pathname } = useLocation();
+  const role = useSelector((state: RootState) => state.role.role);
+  if (role !== "market_operator") return <>{children}</>;
+
+  const access = resolveMarketOperatorNewOrdersAccess(pathname);
+  if (access === "redirect") return <Navigate replace to={MARKET_OPERATOR_CREATE_PATH} />;
+  if (access === "forbidden") return <Navigate replace to="/403" />;
+  return <>{children}</>;
 };
 
 const NewOrdersMarketAccessEntry = ({ children }: { children: ReactNode }) => {
@@ -737,7 +758,9 @@ const AppRouter = () => {
               path: "new-orders",
               element: (
                 <ProtectedRoute canActivate={canCreateOrdersByRoleAndBranchType}>
-                  <NewOrders />
+                  <NewOrdersRoleGate>
+                    <NewOrders />
+                  </NewOrdersRoleGate>
                 </ProtectedRoute>
               ),
               children: [

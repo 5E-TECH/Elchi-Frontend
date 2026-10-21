@@ -333,7 +333,8 @@
     "quick": {
       "viewHint": "Qabul va yaratish bo'limidagi buyurtmalaringiz",
       "listHint": "Market buyurtmalari ro'yxati",
-      "createHint": "Qo'lda yoki AI yordamida yaratish"
+      "createHint": "Qo'lda yoki AI yordamida yaratish",
+      "createHintAi": "AI yordamida yaratish"
     },
     "sales": {
       "title": "Marketlar bo'yicha sotuv foizi",

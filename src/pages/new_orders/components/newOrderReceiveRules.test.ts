@@ -32,6 +32,8 @@ const TABLE: Row[] = [
   // Market — qabul oqimi yo'q
   ["market", null, "none"],
   ["market", "HQ", "none"],
+  // MO-3: market operatori — qabul oqimi yo'q.
+  ["market_operator", null, "none"],
 ];
 
 describe("resolveReceiveMode", () => {

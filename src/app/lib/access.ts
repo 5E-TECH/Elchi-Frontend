@@ -65,11 +65,15 @@ export const branchTypeOf = (state: RootState): BranchType | null =>
 // Har biri o'sha paytdagi ruxsat matritsasini AYNAN takrorlaydi —
 // refaktor hech kimning huquqini kengaytirmaydi va toraytirmaydi.
 
-/** Barcha rollarda bor edi. */
+/**
+ * Barcha rollarda bor edi. MO-3 (ega 2026-10-19): market operatori — o'z marketi buyurtmalari (backend `GET /orders`
+ * operatorni `user.market_id` ga cheklaydi, tafsilot `assertCanViewOrder` — faqat o'z marketi); faqat ko'rish va Excel.
+ */
 export const canViewOrders: Predicate = hasRole(
   "superadmin",
   "admin",
   "market",
+  "market_operator",
   "registrator",
   "courier",
   "manager",
@@ -239,9 +243,14 @@ export const canViewReturnsPage: Predicate = anyOf(
  * ⚠️ Bu `canReceiveExternalOrders` dan ATAYLAB ajratilgan. Avval ikkalasi bitta
  * shart edi, ya'ni "hamkordan kelgan posilkani qabul qilish" huquqini berish
  * uchun "yangi buyurtma yaratish" huquqini ham berishga to'g'ri kelardi.
+ *
+ * MO-3 (ega MO-S3): market operatori — faqat «AI bilan» (`POST orders/ai-parse`, `ai-confirm` `@Roles(…
+ * MARKET_OPERATOR)`, market serverda `user.market_id` dan). «Qabul va yaratish» qobig'idan unga faqat
+ * `/new-orders/create` ochiq (`/new-orders` → shu yerga, qolgan bolalar 403 — `newOrdersShell.ts`). Qo'lda yaratish
+ * (`POST /orders`) — backend ruxsatidan keyin (OfRSoRUX, MO-7).
  */
 export const canCreateOrders: Predicate = anyOf(
-  hasRole("superadmin", "admin", "market", "registrator"),
+  hasRole("superadmin", "admin", "market", "market_operator", "registrator"),
   managerCan("intake"),
 );
 

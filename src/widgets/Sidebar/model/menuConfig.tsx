@@ -175,11 +175,14 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
   ],
   /**
    * MO-2 (ega 2026-10-19): bosh sahifa (market bosh sahifasi operator rejimida), mahsulotlar (faqat ko'rish, MH-1) va
-   * «Daromadim» (o'z stavkasi). «Buyurtmalar» va «Buyurtma yaratish» — MO-3 (`route-map.json` → `plannedMenu`).
+   * «Daromadim» (o'z stavkasi). MO-3: «Buyurtmalar» (o'z marketi, faqat ko'rish va Excel) va «Buyurtma yaratish»
+   * (`/new-orders` → `/new-orders/create`, faqat «AI bilan»; yorlig'i rolga xos — `navSections.ts`).
    * Kassa/to'lov bandlari qo'shilmaydi — operatorda moliya ruxsati yo'q, o'z hisobi faqat «Daromadim» da.
    */
   market_operator: [
     { to: "/", icon: House, label: "dashboard", end: true },
+    { to: "/orders", icon: ShoppingBag, label: "orders" },
+    { to: "/new-orders", icon: Inbox, label: "newOrders" },
     { to: "/products", icon: Tag, label: "products" },
     { to: "/my-earnings", icon: Banknote, label: "earnings" },
   ],

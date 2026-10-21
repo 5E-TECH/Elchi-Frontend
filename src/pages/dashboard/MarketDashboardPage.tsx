@@ -398,7 +398,13 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
         <MarketSalesCard rows={salesRows} selfId={selfId} />
       ) : null}
 
-      {!dashboardError && !isLoading ? <QuickActions canAddOrder={canAddOrder} orders={isOperator ? (ordersOpen ? "list" : null) : "intake"} /> : null}
+      {!dashboardError && !isLoading ? (
+        <QuickActions
+          canAddOrder={canAddOrder}
+          orders={isOperator ? (ordersOpen ? "list" : null) : "intake"}
+          createMode={isOperator ? "ai" : "any"}
+        />
+      ) : null}
     </div>
   );
 };

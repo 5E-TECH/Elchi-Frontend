@@ -8,6 +8,14 @@ describe("QuickActions — «Tezkor harakatlar»", () => {
     renderWithProviders(<QuickActions canAddOrder />);
     expect(screen.getByRole("link", { name: /Buyurtmalarni ko'rish/ })).toHaveAttribute("href", "/new-orders");
     expect(screen.getByRole("link", { name: /Buyurtma yaratish/ })).toHaveAttribute("href", "/new-orders/create");
+    expect(screen.getByRole("link", { name: /Buyurtma yaratish/ })).toHaveTextContent("Qo'lda yoki AI yordamida yaratish");
+  });
+
+  it("MO-3: `createMode=\"ai\"` — izoh faqat AI (operatorda qo'lda yaratish yo'q)", () => {
+    renderWithProviders(<QuickActions canAddOrder orders="list" createMode="ai" />);
+    const link = screen.getByRole("link", { name: /Buyurtma yaratish/ });
+    expect(link).toHaveTextContent("AI yordamida yaratish");
+    expect(link).not.toHaveTextContent(/Qo'lda/);
   });
 
   it("market operatori (MO-2): «Buyurtmalarni ko'rish» → /orders (qabul bo'limi yo'q)", () => {

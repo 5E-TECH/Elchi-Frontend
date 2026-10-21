@@ -1,11 +1,12 @@
 import type { BranchType } from "../../../widgets/Sidebar/model/menuConfig";
+import { isMarketSideRole } from "../../../entities/user/lib/role";
 
 /**
  * "Qabul qilish" qaysi endpointga ketadi:
  *
  * - `receive`  — POST /orders/receive (`createReceiveOrder`);
  * - `transfer` — POST /branches/transfer-batches (`createTransferBatch`);
- * - `none`     — bu rolda qabul oqimi yo'q (market o'z buyurtmasini qabul qilmaydi).
+ * - `none`     — bu rolda qabul oqimi yo'q (market va uning operatori o'z buyurtmasini qabul qilmaydi; MO-3).
  */
 export type NewOrderReceiveMode = "receive" | "transfer" | "none";
 
@@ -29,7 +30,7 @@ export const resolveReceiveMode = (
   role: string | null | undefined,
   branchType: BranchType | null | undefined,
 ): NewOrderReceiveMode => {
-  if (role === "market") return "none";
+  if (isMarketSideRole(role)) return "none";
 
   if (role === "manager" || role === "registrator") {
     if (branchType === "HQ") return "receive";

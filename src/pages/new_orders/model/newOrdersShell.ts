@@ -115,3 +115,23 @@ export const resolveNewOrdersActiveTab = (pathname: string, role: string | null 
   if (!isMarket && first === "incoming") return "incoming";
   return isMarket ? "marketNew" : "markets";
 };
+
+/**
+ * MO-3 — market operatori «Qabul va yaratish» qobig'ida faqat buyurtma YARATADI (ega MO-S3; menyu bandi «Buyurtma
+ * yaratish»): unda qabul, market yangi buyurtmalari, bekorlar va paketlar yo'q (backend `orders/markets/*`,
+ * `orders/external*` — MARKET_OPERATOR'siz).
+ *  - `create`   — `/new-orders/create` (faqat «AI bilan»);
+ *  - `redirect` — `/new-orders` (menyu bandi va eski havolalar) → `/new-orders/create`;
+ *  - `forbidden` — qolgan har bola yo'l (`:marketId`, `cancelled`, `incoming`, `branches`, `userDetail/:id` …) → 403.
+ * Boshqa rollar uchun qobiq o'zgarmaydi (bu funksiya faqat market operatorida chaqiriladi).
+ */
+export type MarketOperatorNewOrdersAccess = "create" | "redirect" | "forbidden";
+
+export const MARKET_OPERATOR_CREATE_PATH = "/new-orders/create";
+
+export const resolveMarketOperatorNewOrdersAccess = (pathname: string): MarketOperatorNewOrdersAccess => {
+  const segments = segmentsOf(pathname);
+  if (segments.length === 0) return "redirect";
+  if (segments.length === 1 && segments[0] === "create") return "create";
+  return "forbidden";
+};

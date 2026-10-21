@@ -27,6 +27,8 @@ import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
 import { canViewInvestorCabinet } from "./access";
 // LG-3: «Hududlar», MO-2: «Daromadim» — o'z describe bloklari (pastda).
 import { canViewMyEarnings, canViewRegionStats } from "./access";
+// MO-3: market operatori buyurtmalari — o'z describe bloki (pastda).
+import { canHandoverCancelledToMarket } from "./access";
 
 /**
  * B0 — kirish huquqi sidebar'dan AJRATILDI.
@@ -52,6 +54,8 @@ import { canViewMyEarnings, canViewRegionStats } from "./access";
  * 2026-10-21 (MH-1): `canViewProducts` · mo — → ✓ (faqat ko'rish, `GET product/my-products`); yangi qator
  * `canCreateProducts` — market ✓ → — (market endi faqat ko'radi, ega qarori 2026-10-15).
  * 2026-10-21 (MO-1): yangi qator `canViewMarketOperators` — faqat market (avval `routes.tsx` da `() => false`).
+ * 2026-10-21 (MO-3): `canViewOrders` · mo — → ✓ (o'z marketi, backend `GET /orders` operatorni cheklaydi);
+ * `canCreateOrders` · mo — → ✓ (faqat «AI bilan» — `/new-orders/create`, qobiqning boshqa bolalari 403).
  */
 
 const state = (role: string | null, branchType?: BranchType): RootState =>
@@ -81,7 +85,7 @@ const CASES: Case[] = [
 /** `✓` = ruxsat, `—` = rad. Ustunlar CASES tartibida. */
 const MATRIX: Record<string, string> = {
   //                sa  ad  mk  rg  cr  HQ  PU  RG  HY  ???  lg  mo  in
-  canViewOrders: "  ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   —   —   —",
+  canViewOrders: "  ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   ✓   —   ✓   —",
   canViewMails: "   ✓   ✓   —   ✓   ✓   ✓   —   ✓   ✓   —   —   —   —",
   canViewUsers: "   ✓   ✓   —   —   —   ✓   ✓   ✓   ✓   —   —   —   —",
   canViewFinancialBalance: "✓ ✓   —   —   —   —   —   —   —   —   —   —   —",
@@ -96,7 +100,7 @@ const MATRIX: Record<string, string> = {
   canViewBatchesPage: "✓  ✓   —   —   —   ✓   ✓   —   ✓   —   —   —   —",
   canViewReturnsPage: "✓  ✓   —   —   —   ✓   ✓   —   ✓   —   —   —   —",
   canViewPaymentsPage: "✓  ✓   —   —   —   ✓   —   ✓   ✓   —   —   —   —",
-  canCreateOrders: "  ✓   ✓   ✓   ✓   —   ✓   ✓   —   ✓   —   —   —   —",
+  canCreateOrders: "  ✓   ✓   ✓   ✓   —   ✓   ✓   —   ✓   —   —   ✓   —",
   canReceiveExternalOrders: "✓ ✓ — ✓   —   ✓   ✓   —   ✓   —   —   —   —",
   canViewProducts: "✓   ✓   ✓   ✓   —   ✓   ✓   ✓   ✓   ✓   —   ✓   —",
   canCreateProducts: "✓ ✓   —   ✓   —   ✓   ✓   ✓   ✓   ✓   —   —   —",
@@ -293,7 +297,7 @@ describe("canViewRegionStats — «Hududlar» (/regions; LG-3: logist)", () => {
   });
 });
 
-describe("market operatori (MO-2) — «Daromadim», moliya va buyurtmalar yopiq", () => {
+describe("market operatori (MO-2) — «Daromadim», moliya yopiq", () => {
   it("canViewMyEarnings — faqat market_operator; boshqa har rol/filial va rolsiz holat — rad", () => {
     for (const [caseName, s] of CASES) {
       expect(canViewMyEarnings(s), caseName).toBe(caseName === "market_operator");
@@ -304,6 +308,29 @@ describe("market operatori (MO-2) — «Daromadim», moliya va buyurtmalar yopiq
   it("admin bosh sahifasiga tushmaydi (`DashboardEntry` — market bosh sahifasi operator rejimida); moliya va operatorlar yopiq", () => {
     const operator = state("market_operator");
     for (const predicate of [canViewAdminDashboard, canViewPaymentsPage, canViewFinancialBalance, canViewMarketOperators]) {
+      expect(predicate(operator)).toBe(false);
+    }
+  });
+});
+
+describe("market operatori (MO-3) — o'z marketi buyurtmalari va «AI bilan» yaratish", () => {
+  const operator = state("market_operator");
+
+  it("buyurtmalar ro'yxati/tafsiloti va yaratish ochiq", () => {
+    expect(canViewOrders(operator)).toBe(true);
+    expect(canCreateOrders(operator)).toBe(true);
+  });
+
+  it("qabul, bekorlarni topshirish, pochta, jo'natish va paketlar — yopiq (operator faqat o'z marketi nomidan yaratadi)", () => {
+    for (const predicate of [
+      canReceiveExternalOrders,
+      canHandoverCancelledToMarket,
+      canViewMails,
+      canViewDispatchPage,
+      canViewBatchesPage,
+      canViewReturnsPage,
+      canViewCourierBulkPage,
+    ]) {
       expect(predicate(operator)).toBe(false);
     }
   });

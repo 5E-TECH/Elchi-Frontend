@@ -64,9 +64,9 @@ export interface NavSection {
 /** Rolga xos yorliq kaliti (yo'l bo'yicha). */
 const LABEL_KEY_BY_ROLE: Partial<Record<SidebarUserRole, Record<string, string>>> = {
   courier: { "/cash-box": "cashbox" },
-  // MO-2: market operatorida yaratish bandi «Buyurtma yaratish» (maket `roles.json`; qabul/bekorlar yo'q) — band
-  // o'zi MO-3 da keladi. Yo'l hali tanlanmagan (roadmap MO-3: `/new-orders` → `/new-orders/create`) — ikkalasi ham
-  // shu yorliqqa bog'langan, aks holda umumiy «Qabul va yaratish» chiqardi.
+  // MO-2/MO-3: market operatorida yaratish bandi «Buyurtma yaratish» (maket `roles.json`; qabul/bekorlar yo'q). Band
+  // `/new-orders` (MO-3: operatorda u `/new-orders/create` ga yo'naltiriladi); `/new-orders/create` ham shu yorliqda —
+  // aks holda umumiy «Qabul va yaratish» chiqardi.
   market_operator: { "/new-orders": "createOrder", "/new-orders/create": "createOrder" },
 };
 

@@ -1,0 +1,71 @@
+import { expect, test } from "@playwright/test";
+import {
+  expectNoForbiddenRequests,
+  expectNoHorizontalOverflow,
+  openOperatorCreate,
+  openOperatorOrders,
+} from "./support/marketOperatorOrders";
+import { tapTargets, tooSmall } from "./support/tapTargets";
+
+/**
+ * MO-3 — market operatori telefonda (390): «Buyurtmalar» kartalar ko'rinishida (market kabi, sana qatorda,
+ * «Filtrlar» varaqasida viloyat/market/kuryer yo'q), tafsilot — faqat o'qish; «Yaratish» katagi →
+ * `/new-orders/create`, faqat «AI bilan». Bosiladigan har narsa ≥ 44px, gorizontal skroll yo'q.
+ */
+test.describe.configure({ timeout: 180_000 });
+
+const bottomNav = (page: import("@playwright/test").Page) => page.getByRole("navigation", { name: "Asosiy bo'limlar" });
+
+test("⭐ 390: ro'yxat kartalari, filtr varaqasi, tafsilot; 44px va toshishsiz", async ({ page }) => {
+  const mock = await openOperatorOrders(page);
+
+  await expect(bottomNav(page).getByRole("link", { name: "Buyurtmalar" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByRole("button", { name: /Sana oralig'i/ })).toBeVisible();
+  expect(tooSmall(await tapTargets(page))).toEqual([]);
+  await expectNoHorizontalOverflow(page);
+
+  await page.getByRole("button", { name: /^Filtrlar/ }).click();
+  const sheet = page.getByRole("dialog", { name: "Filtrlar" });
+  await expect(sheet).toBeVisible();
+  for (const name of ["Viloyat", "Market", "Kuryer", "Filial"]) {
+    await expect(sheet.getByRole("combobox", { name })).toHaveCount(0);
+  }
+  await expect(sheet.getByRole("radio", { name: "Uygacha" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(sheet).toHaveCount(0);
+
+  await page.getByRole("link", { name: /Mansur Karimov/ }).click();
+  await expect(page).toHaveURL(/\/orders\/edit\/10239$/);
+  await expect(page.getByText("Mansur Karimov").first()).toBeVisible({ timeout: 30_000 });
+  await expect(page.getByRole("button", { name: /tahrirlash/i })).toHaveCount(0);
+  expect(tooSmall(await tapTargets(page))).toEqual([]);
+  await expectNoHorizontalOverflow(page);
+  expectNoForbiddenRequests(mock);
+});
+
+test("⭐ 390: «Yaratish» katagi → AI bilan yaratish (tanlovsiz), kartalar va tasdiq paneli sig'adi", async ({ page }) => {
+  const mock = await openOperatorOrders(page);
+
+  await bottomNav(page).getByRole("link", { name: "Yaratish" }).click();
+  await expect(page).toHaveURL(/\/new-orders\/create$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Yangi buyurtma" })).toBeVisible();
+  await expect(bottomNav(page).getByRole("link", { name: "Yaratish" })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByTestId("create-mode-tabs")).toHaveCount(0);
+
+  await page.getByRole("textbox", { name: "Buyurtma matni" }).fill("Sevara 90 214 55 08\nMansur 93 627 18 40");
+  await page.getByRole("button", { name: "Tahlil qilish" }).click();
+  await expect(page.getByTestId("ai-preview-card")).toHaveCount(2);
+  await expect(page.getByText("Viloyat", { exact: true })).toHaveCount(0);
+  await expect(page.getByTestId("ai-confirm-bar")).toBeVisible();
+  expect(tooSmall(await tapTargets(page))).toEqual([]);
+  await expectNoHorizontalOverflow(page);
+  expectNoForbiddenRequests(mock);
+});
+
+test("390: AI o'chiq — ogohlantirish, qo'lda forma yo'q", async ({ page }) => {
+  const mock = await openOperatorCreate(page, { aiEnabled: false });
+  await expect(page.getByText("AI bilan yaratish hozir o'chiq")).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Buyurtma matni" })).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+  expectNoForbiddenRequests(mock);
+});

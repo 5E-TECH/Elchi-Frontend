@@ -173,6 +173,21 @@ describe("Orders list — sarlavha, tablar, sahifalash", () => {
     );
   });
 
+  it("MO-3: market operatori — Excel maslahati (market kabi) va «Buyurtma yaratish» → /new-orders/create", () => {
+    renderWithProviders(<Orders />, {
+      // Eski havoladagi market filtri ham operator so'roviga tushmaydi.
+      route: "/orders?orderMarketId=5",
+      preloadedState: { role: { id: "42", role: "market_operator", region: null, name: "Operator" } } as never,
+    });
+    expect(screen.getByRole("button", { name: "Excelga yuklash" })).toHaveAttribute(
+      "title",
+      "Filtrga mos barcha sahifalar Excel faylga yuklanadi",
+    );
+    expect(screen.getByRole("link", { name: "Buyurtma yaratish" })).toHaveAttribute("href", "/new-orders/create");
+    // Ro'yxat so'rovida `market_id` yo'q — backend operatorni o'z marketiga o'zi cheklaydi (boshqa market — 400).
+    expect(getOrdersMock).toHaveBeenLastCalledWith(expect.not.objectContaining({ market_id: expect.anything() }));
+  });
+
   it("holat tablari: «Barchasi» tanlangan, sakkizta tab, izohlar", () => {
     open("/orders");
 

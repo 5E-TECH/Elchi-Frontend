@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
+import { isMarketSideRole } from "../../../entities/user/lib/role";
 import { shallowEqual, useSelector } from "react-redux";
 import type { RootState } from "../../../app/config/store";
 import { branchTypeOf, canCreateOrders, canViewDispatchPage } from "../../../app/lib/access";
@@ -40,7 +41,8 @@ const COURIER_ASSIGN_ROLES: ReadonlySet<string> = new Set(["branch", "manager", 
 
 /** Rol va imkoniyatga qarab rejimlar (segment tartibida). Market — skanerlamaydi (bo'sh ro'yxat). */
 export const resolveScanModes = ({ role, branchType, canCreateOrders, canViewDispatch }: ScanModeAccess): UniversalScanMode[] => {
-  if (!role || role === "market") return [];
+  // Market tomoni (market va MO-3 dan beri buyurtma yaratadigan market operatori) — skanerlamaydi.
+  if (!role || isMarketSideRole(role)) return [];
   if (role === "courier") return ["take", "info"];
   const modes: UniversalScanMode[] = ["info"];
   if (canCreateOrders && resolveReceiveMode(role, branchType) !== "none") modes.push("receive");

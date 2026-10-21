@@ -2,29 +2,32 @@ import { expect, test } from "@playwright/test";
 import {
   expectNoHorizontalOverflow,
   expectNoLeakRequests,
-  expectNoOrderLinks,
+  expectOnlyOperatorOrderLinks,
   openOperatorEarnings,
   openOperatorHome,
 } from "./support/marketOperatorHome";
 
 /**
- * MO-2 — market operatori (desktop): yon menyu Bosh sahifa · Mahsulotlar · Daromadim; bosh sahifa — o'z marketi KPI va
- * reytingi («Siz» — profildagi `market_id`), xarajat tasdiqlarisiz; «Daromadim» — «Stavkam» (foiz) va menyudan o'tish.
+ * MO-2 — market operatori (desktop): bosh sahifa — o'z marketi KPI va reytingi («Siz» — profildagi `market_id`), xarajat
+ * tasdiqlarisiz; «Daromadim» — «Stavkam» (foiz) va menyudan o'tish. MO-3: yon menyu to'liq (Bosh sahifa · Buyurtmalar ·
+ * Buyurtma yaratish · Mahsulotlar · Daromadim), bosh sahifada «Buyurtma yaratish» va buyurtma havolalari.
  */
 test.describe.configure({ timeout: 180_000 });
 
-test("⭐ yon menyu va bosh sahifa: o'z marketi «Siz», xarajat tasdiqlari va buyurtma havolalari yo'q", async ({ page }) => {
+test("⭐ yon menyu va bosh sahifa: o'z marketi «Siz», xarajat tasdiqlari yo'q, buyurtma havolalari faqat ochiq yo'llarga", async ({
+  page,
+}) => {
   const mock = await openOperatorHome(page);
 
   const nav = page.getByRole("navigation", { name: "Asosiy bo'limlar" });
-  await expect(nav.getByRole("link")).toHaveText(["Bosh sahifa", "Mahsulotlar", "Daromadim"]);
+  await expect(nav.getByRole("link")).toHaveText(["Bosh sahifa", "Buyurtmalar", "Buyurtma yaratish", "Mahsulotlar", "Daromadim"]);
 
   const sales = page.getByRole("list", { name: "Marketlar bo'yicha sotuv foizi" });
   await expect(sales.getByRole("listitem").filter({ hasText: "Baraka Shop" })).toContainText("Siz");
   await expect(sales.getByRole("listitem").filter({ hasText: "Nur Elektronika" })).not.toContainText("Siz");
   await expect(page.getByText("Qo'shimcha xarajat tasdiqlari")).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Buyurtma yaratish" })).toHaveCount(0);
-  await expectNoOrderLinks(page);
+  await expect(page.getByRole("button", { name: "Buyurtma yaratish" })).toBeVisible();
+  await expectOnlyOperatorOrderLinks(page);
   await expectNoHorizontalOverflow(page);
   expectNoLeakRequests(mock);
 
