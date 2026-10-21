@@ -383,6 +383,22 @@
       "region": "Viloyat",
       "regionHint": "Filial «Boshqa filialga o'tkazish» orqali o'zgaradi",
       "regionEmpty": "Biriktirilmagan"
+    },
+    "logist": {
+      "roleHint": "Buyurtmalar va holat tarixi, moliyasiz",
+      "formDescription": "Logist o'ziga biriktirilgan viloyatlar statistikasini kuzatadi",
+      "sections": {
+        "salary": "Maosh",
+        "regions": "Viloyatlar"
+      },
+      "salaryHint": "Oylik maosh",
+      "paymentDayHint": "Har oyning 1–30 kuni",
+      "regionsNote": "Logist filialga biriktirilmaydi. Saqlagach «Logist biriktirish» sahifasi shu logist tanlangan holda ochiladi — viloyatlarni o'sha yerda belgilaysiz.",
+      "phoneTaken": "Bu telefon raqam allaqachon mavjud",
+      "created": "Logist yaratildi",
+      "createdDescription": "{{name}} · endi unga viloyatlarni belgilang",
+      "createError": "Logistni yaratib bo'lmadi",
+      "createErrorText": "Ma'lumotlarni tekshirib, qayta urining."
     }
   },
   "tgGroupLinkAction": "Ulash havolasini olish",

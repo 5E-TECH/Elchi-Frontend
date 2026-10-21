@@ -180,8 +180,9 @@ export interface CreateMarketResponse {
 
 // ==================== CREATE COURIER ====================
 
+// `region_id` yo'q: gateway `CreateCourierRequestDto` da bu maydon yo'q (400 «should not exist») — kuryer hududi
+// filial biriktiruvidan keladi (LG-2 tozalash).
 export interface CreateCourierRequest {
-  region_id?: string; // Viloyat ID (ba'zi rollarda backend o'zi aniqlaydi)
   branch_id?: string;
   name: string; // Kuryer ismi
   phone_number: string; // Telefon (+998...)
@@ -190,6 +191,20 @@ export interface CreateCourierRequest {
   payment_day?: number;
   tariff_home?: number; // Uyga tarif (so'm)
   tariff_center?: number; // Markazga tarif (so'm)
+}
+
+// ==================== CREATE LOGIST ====================
+
+/**
+ * `POST /logists` (superadmin, admin; dzyVftBx) — admin naqshi: ism, telefon, parol, maosh (majburiy), to'lov kuni
+ * (ixtiyoriy). `branch_id` yo'q — logist filialga biriktirilmaydi, viloyatlar `POST /region/logist/bulk` bilan.
+ */
+export interface CreateLogistRequest {
+  name: string;
+  phone_number: string;
+  password: string;
+  salary: number;
+  payment_day?: number;
 }
 
 // ==================== USER DETAIL ====================

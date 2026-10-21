@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **127** · qisman: **117** · v2 ga ko'chirilgan route: **77 / 77**
+**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **118** · qisman: **118** · v2 ga ko'chirilgan route: **77 / 77**
 
 ## Qanday ishlatiladi
 
@@ -1187,15 +1187,15 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 - **Rollar:** superadmin, admin, manager (filial turi aniq bo'lsa)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Menejer: oddiy filialda — kuryer; HYBRID filialda — rol tanlash (kuryer yoki registrator). «Logist» rol kartasi (superadmin, admin; users-create-logist; kodda hali yo'q): POST /logists (SUPERADMIN | ADMIN) — ism, telefon, parol, maosh, to'lov kuni; filial yo'q. Muvaffaqiyat → notify.success «Logist yaratildi» va /regions/logist-assignment?logist=<id> (yangi logist tanlangan). 409 «Bu telefon raqam allaqachon mavjud» — telefon maydoni ostida, forma saqlanib qoladi.
+- **Izoh:** Menejer: oddiy filialda — kuryer; HYBRID filialda — rol tanlash (kuryer yoki registrator). «Logist» rol kartasi (superadmin, admin; users-create-logist; LG-2 — tartib Admin · Menejer · Ro'yxatchi · Logist · Kuryer · Market, ikonka Route, izoh «Buyurtmalar va holat tarixi, moliyasiz» — LG-S1; ?role=logist — shu rol tanlangan holda ochiladi): POST /logists (SUPERADMIN | ADMIN) — ism, telefon, parol, maosh, to'lov kuni; filial yo'q. Muvaffaqiyat → notify.success «Logist yaratildi» va /regions/logist-assignment?logist=<id> (yangi logist tanlangan). 409 «Bu telefon raqam allaqachon mavjud» — telefon maydoni ostida, forma saqlanib qoladi (server matni ko'rsatilmaydi; boshqa xato — «Logistni yaratib bo'lmadi»). Maosh majburiy (backend DTO), to'lov kuni ixtiyoriy. LG-2 tozalash: kuryer yaratishda region_id yuborilmaydi (gateway DTO'da yo'q) va «region_id bo'lmasa qayta yuborish» olib tashlandi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
 | `/all-users/create-user` | superadmin | `superadmin-users-create` — Foydalanuvchi yaratish | [design/fragments/superadmin--users-create.html](fragments/superadmin--users-create.html) | sahifa | v2 |
-| `/all-users/create-user` | superadmin | `superadmin-users-create-courier-district` — Yangi foydalanuvchi — Logist roli va kuryer «Ish hududi» (taklif) | [design/fragments/superadmin--users-create-courier-district.html](fragments/superadmin--users-create-courier-district.html) | sahifa | yangi (kodda yo'q) |
-| `/all-users/create-user` | superadmin | `superadmin-users-create-logist` — Foydalanuvchi yaratish — Logist | [design/fragments/superadmin--users-create-logist.html](fragments/superadmin--users-create-logist.html) | sahifa | yangi (kodda yo'q) |
+| `/all-users/create-user` | superadmin | `superadmin-users-create-courier-district` — Yangi foydalanuvchi — Logist roli va kuryer «Ish hududi» (taklif) | [design/fragments/superadmin--users-create-courier-district.html](fragments/superadmin--users-create-courier-district.html) | sahifa | qisman |
+| `/all-users/create-user` | superadmin | `superadmin-users-create-logist` — Foydalanuvchi yaratish — Logist | [design/fragments/superadmin--users-create-logist.html](fragments/superadmin--users-create-logist.html) | sahifa | v2 |
 | `/all-users/create-user` | admin | `admin-users-create` — Yangi foydalanuvchi | [design/fragments/admin--users-create.html](fragments/admin--users-create.html) | sahifa | v2 |
-| `/all-users/create-user` | admin | `admin-users-create-logist` — Foydalanuvchi yaratish — Logist | [design/fragments/superadmin--users-create-logist.html](fragments/superadmin--users-create-logist.html) | sahifa | yangi (kodda yo'q) |
+| `/all-users/create-user` | admin | `admin-users-create-logist` — Foydalanuvchi yaratish — Logist | [design/fragments/superadmin--users-create-logist.html](fragments/superadmin--users-create-logist.html) | sahifa | v2 |
 | `/all-users/create-user` | manager | `manager-users-create-courier` — Yangi xodim — kuryer | [design/fragments/manager--users-create-courier.html](fragments/manager--users-create-courier.html) | sahifa | v2 |
 | `/all-users/create-user` | manager | `manager-users-create-hybrid` — Yangi xodim — Aralash filial (rol tanlash) | [design/fragments/manager--users-create-hybrid.html](fragments/manager--users-create-hybrid.html) | sahifa | v2 |
 | `/all-users/create-user` | manager | `manager-users-create-courier-district` — Yangi xodim — kuryer, «Ish hududi» (taklif) | [design/fragments/manager--users-create-courier-district.html](fragments/manager--users-create-courier-district.html) | sahifa | yangi (kodda yo'q) |
@@ -1336,21 +1336,21 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/regions/logist-assignment` — Logist biriktirish
 
-- **Fayllar:** `src/pages/region/pages/logist-assignment/index.tsx`
+- **Fayllar:** `src/pages/region/pages/logist-assignment/index.tsx` · `src/pages/region/pages/logist-assignment/model/assignment.ts` · `src/pages/region/pages/logist-assignment/ui/LogistListCard.tsx` · `src/pages/region/pages/logist-assignment/ui/LogistPicker.tsx` · `src/pages/region/pages/logist-assignment/ui/RegionChoiceCard.tsx` · `src/pages/region/pages/logist-assignment/ui/ChangesBar.tsx` · `src/pages/region/pages/logist-assignment/ui/ChangesList.tsx`
 - **Qobiq:** DashboardLayout › Region (`src/pages/region/index.tsx`) · **Guard:** `canViewRegionStats` (routes.tsx → canViewRegionStats)
 - **Rollar:** superadmin, admin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Komponent ichida: superadmin/admin bo'lmasa → /regions. Ma'lumot: chapda GET /logists (ism, telefon, faollik); viloyatlar — GET /region (har qatorda logist_id; logistdagi viloyatlar soni shundan). Saqlash — POST /region/logist/bulk { logist_id, region_ids } (region_ids dagilar unga o'tadi, ro'yxatda yo'q eski viloyatlaridan u olinadi). «Saqlash» o'zgarish bo'lmaguncha o'chiq. Tasdiq qoidasi: faqat qo'shish bo'lsa — darhol saqlanadi + notify.success «Saqlandi»; olib tashlash yoki boshqa logistdan o'tkazish bo'lsa — avval tasdiq oynasi (…-confirm-dialog, o'zgarishlar ro'yxati bilan). Saqlanmagan o'zgarish bor paytda boshqa logist tanlansa — useConfirm «O'zgarishlar saqlanmaydi» (Qolish / O'zgarishsiz o'tish). Nofaol logist tanlansa — ogohlantirish, viloyat kartalari va «Saqlash» o'chiq (server rad etishi — zaxira). Telefon: logist — Select (pastki varaqa, qidiruv), filtr seg 44px, o'zgarish bo'lsa pastki menyu ustida yopishqoq panel («N ta o'zgarish» + Bekor qilish / Saqlash). ?logist=<id> — shu logist tanlangan holda ochiladi. Logist yo'q — EmptyState «Logist yo'q» + «Logist yaratish» (…-empty). Eski «Bo'lim hali ishga tushmagan» bo'sh holati olib tashlanadi.
+- **Izoh:** Komponent ichida: superadmin/admin bo'lmasa → /regions. Ma'lumot: chapda GET /logists (ism, telefon, faollik); viloyatlar — GET /region (har qatorda logist_id; logistdagi viloyatlar soni shundan). Saqlash — POST /region/logist/bulk { logist_id, region_ids } (region_ids dagilar unga o'tadi, ro'yxatda yo'q eski viloyatlaridan u olinadi). «Saqlash» o'zgarish bo'lmaguncha o'chiq. Tasdiq qoidasi: faqat qo'shish bo'lsa — darhol saqlanadi + notify.success «Saqlandi»; olib tashlash yoki boshqa logistdan o'tkazish bo'lsa — avval tasdiq oynasi (…-confirm-dialog, o'zgarishlar ro'yxati bilan). Saqlanmagan o'zgarish bor paytda boshqa logist tanlansa — useConfirm «O'zgarishlar saqlanmaydi» (Qolish / O'zgarishsiz o'tish). Nofaol logist tanlansa — ogohlantirish, viloyat kartalari va «Saqlash» o'chiq (server rad etishi — zaxira). Telefon: logist — Select (pastki varaqa, qidiruv), filtr seg 44px, o'zgarish bo'lsa pastki menyu ustida yopishqoq panel («N ta o'zgarish» + Bekor qilish / Saqlash). ?logist=<id> — shu logist tanlangan holda ochiladi. Logist yo'q — EmptyState «Logist yo'q» + «Logist yaratish» (…-empty). Eski «Bo'lim hali ishga tushmagan» bo'sh holati olib tashlandi (LG-2). LG-2 sukutlari: «Logist yaratish» → /all-users/create-user?role=logist; ro'yxat tartibi — faollari avval, so'ng ism; ?logist= yo'q yoki noma'lum — birinchi logist; viloyatlar — Toshkent sh., Toshkent vil., so'ng alifbo; «Logistsiz · N» — serverdagi holat, «Belgilangan · N» — joriy belgilar; saqlash xatosi — notify.error «Saqlab bo'lmadi» (400 → logist nofaol, 404 → topilmadi, qolgani — umumiy), qoralama sahifada qoladi; telefonda Select maydonida avatar yo'q (primitiv ikonka oladi, avatar emas).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `/regions/logist-assignment` | superadmin | `superadmin-regions-logist-assignment` — Logist biriktirish | [design/fragments/superadmin--regions-logist-assignment.html](fragments/superadmin--regions-logist-assignment.html) | sahifa | yangi (kodda yo'q) |
-| `/regions/logist-assignment` | superadmin | `superadmin-regions-logist-assignment-confirm-dialog` — Logist biriktirish — saqlashni tasdiqlash | [design/fragments/superadmin--regions-logist-assignment-confirm-dialog.html](fragments/superadmin--regions-logist-assignment-confirm-dialog.html) | oyna | yangi (kodda yo'q) |
-| `/regions/logist-assignment` | superadmin | `superadmin-regions-logist-assignment-empty` — Logist biriktirish — logist yo'q | [design/fragments/superadmin--regions-logist-assignment-empty.html](fragments/superadmin--regions-logist-assignment-empty.html) | sahifa | yangi (kodda yo'q) |
-| `/regions/logist-assignment` | admin | `admin-regions-logist-assignment` — Logist biriktirish | [design/fragments/superadmin--regions-logist-assignment.html](fragments/superadmin--regions-logist-assignment.html) | sahifa | yangi (kodda yo'q) |
-| `/regions/logist-assignment` | admin | `admin-regions-logist-assignment-confirm-dialog` — Logist biriktirish — saqlashni tasdiqlash | [design/fragments/superadmin--regions-logist-assignment-confirm-dialog.html](fragments/superadmin--regions-logist-assignment-confirm-dialog.html) | oyna | yangi (kodda yo'q) |
-| `/regions/logist-assignment` | admin | `admin-regions-logist-assignment-empty` — Logist biriktirish — logist yo'q | [design/fragments/superadmin--regions-logist-assignment-empty.html](fragments/superadmin--regions-logist-assignment-empty.html) | sahifa | yangi (kodda yo'q) |
+| `/regions/logist-assignment` | superadmin | `superadmin-regions-logist-assignment` — Logist biriktirish | [design/fragments/superadmin--regions-logist-assignment.html](fragments/superadmin--regions-logist-assignment.html) | sahifa | v2 |
+| `/regions/logist-assignment` | superadmin | `superadmin-regions-logist-assignment-confirm-dialog` — Logist biriktirish — saqlashni tasdiqlash<br>↳ `src/pages/region/pages/logist-assignment/ui/ChangesList.tsx` | [design/fragments/superadmin--regions-logist-assignment-confirm-dialog.html](fragments/superadmin--regions-logist-assignment-confirm-dialog.html) | oyna | v2 |
+| `/regions/logist-assignment` | superadmin | `superadmin-regions-logist-assignment-empty` — Logist biriktirish — logist yo'q | [design/fragments/superadmin--regions-logist-assignment-empty.html](fragments/superadmin--regions-logist-assignment-empty.html) | sahifa | v2 |
+| `/regions/logist-assignment` | admin | `admin-regions-logist-assignment` — Logist biriktirish | [design/fragments/superadmin--regions-logist-assignment.html](fragments/superadmin--regions-logist-assignment.html) | sahifa | v2 |
+| `/regions/logist-assignment` | admin | `admin-regions-logist-assignment-confirm-dialog` — Logist biriktirish — saqlashni tasdiqlash<br>↳ `src/pages/region/pages/logist-assignment/ui/ChangesList.tsx` | [design/fragments/superadmin--regions-logist-assignment-confirm-dialog.html](fragments/superadmin--regions-logist-assignment-confirm-dialog.html) | oyna | v2 |
+| `/regions/logist-assignment` | admin | `admin-regions-logist-assignment-empty` — Logist biriktirish — logist yo'q | [design/fragments/superadmin--regions-logist-assignment-empty.html](fragments/superadmin--regions-logist-assignment-empty.html) | sahifa | v2 |
 
 ### Filiallar
 
@@ -1907,7 +1907,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-222 ta maket · kodda bor: 169 · kodda yo'q: 53
+222 ta maket · kodda bor: 174 · kodda yo'q: 48
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2029,7 +2029,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-regions-sato-codes-merge-dialog` | SATO kodlari — takroriy tumanni birlashtirish | oyna | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | yangi (kodda yo'q) — Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin. |
 | `superadmin-regions-sato-codes-missing` | SATO kodlari — bazada yo'q | sahifa | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | yangi (kodda yo'q) — Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin. |
 | `superadmin-regions-sato-codes-add-dialog` | SATO kodlari — tuman qo'shish oynasi | oyna | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | yangi (kodda yo'q) — Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin. |
-| `superadmin-regions-logist-assignment` | Logist biriktirish | sahifa | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | yangi (kodda yo'q) — Kodda hali «Bo'lim hali ishga tushmagan» bo'sh holati — ishlaydigan biriktirish sahifasi (dzyVftBx). |
+| `superadmin-regions-logist-assignment` | Logist biriktirish | sahifa | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | v2 |
 | `superadmin-branches-list-tree` | Filiallar — daraxt ko'rinishi | sahifa | `/branches` | `src/widgets/branch-list/ui/BranchTree.tsx` | v2 |
 | `superadmin-branches-list-table` | Filiallar — jadval / kartalar | sahifa | `/branches` | `src/widgets/branch-list/ui/BranchTable.tsx` | v2 |
 | `superadmin-branches-create-dialog` | Yangi filial (modal) | oyna | `/branches` | `src/features/branch/ui/BranchFormDialog.tsx` | v2 |
@@ -2114,13 +2114,13 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-users-edit-role-error` | Foydalanuvchini tahrirlash — rol o'zgartirilmadi, 409 (taklif) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): 409 — filialga biriktirilgan, rol o'zgarmadi. |
 | `superadmin-users-edit-role-branch` | Foydalanuvchini tahrirlash — filialga biriktirilgan, rol qulf (taklif) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): filialga biriktirilgan — rol maydoni qulf. |
 | `superadmin-users-edit-courier-district` | Kuryerni tahrirlash — «Tuman» maydoni (taklif) | oyna | `/all-users/:id` | `src/features/user/update-user/ui/UpdateUserModal.tsx` | qisman — FY-1: «Ish hududi» — viloyat faqat o'qish (GET /users/:id `region`) + «Boshqa filialga o'tkazish» izohi (FY-S4). «Tuman» tanlovi chizilmagan — backend kerak (Taklif). |
-| `superadmin-users-create-courier-district` | Yangi foydalanuvchi — Logist roli va kuryer «Ish hududi» (taklif) | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): yaratishda Logist roli kartasi va kuryer «Ish hududi» (Tuman — backend kerak). |
+| `superadmin-users-create-courier-district` | Yangi foydalanuvchi — Logist roli va kuryer «Ish hududi» (taklif) | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | qisman — Kodda bor (LG-2): rol kartasi — Admin · Menejer · Ro'yxatchi · Logist · Kuryer · Market, «Logist» (Route, «Buyurtmalar va holat tarixi, moliyasiz» — LG-S1). Kuryer «Ish hududi» (Tuman) chizilmagan — Taklif · backend kerak. |
 | `superadmin-users-edit-market-ai` | Marketni tahrirlash — «AI narxi (1 buyurtma)» | oyna | `/all-users/:id` | `src/features/user/update-user/ui/UpdateUserModal.tsx` | v2 |
 | `superadmin-users-edit-courier-district-phone` | Kuryerni tahrirlash — «Tuman» ro'yxati, telefon (taklif) | oyna · faqat telefon | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): kuryer «Tuman» ro'yxati, telefon — backend kerak. |
 | `superadmin-users-edit-market-ai-phone` | Marketni tahrirlash — «AI narxi», telefon | oyna · faqat telefon | `/all-users/:id` | `src/features/user/update-user/ui/UpdateUserModal.tsx` | v2 |
-| `superadmin-regions-logist-assignment-confirm-dialog` | Logist biriktirish — saqlashni tasdiqlash | oyna | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | yangi (kodda yo'q) — Saqlashni tasdiqlash oynasi (olib tashlash / o'tkazish) — kodda yo'q. |
-| `superadmin-regions-logist-assignment-empty` | Logist biriktirish — logist yo'q | sahifa | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | yangi (kodda yo'q) — «Logist yo'q» holati — kodda yo'q. |
-| `superadmin-users-create-logist` | Foydalanuvchi yaratish — Logist | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | yangi (kodda yo'q) — «Logist» rol kartasi va formasi (POST /logists) — kodda yo'q. |
+| `superadmin-regions-logist-assignment-confirm-dialog` | Logist biriktirish — saqlashni tasdiqlash | oyna | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/ui/ChangesList.tsx` | v2 |
+| `superadmin-regions-logist-assignment-empty` | Logist biriktirish — logist yo'q | sahifa | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | v2 |
+| `superadmin-users-create-logist` | Foydalanuvchi yaratish — Logist | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | v2 |
 | `superadmin-notifications-row-menu` | Guruh amallari menyusi | oyna | `/notifications` | `src/pages/notifications/ui/NotificationRowMenu.tsx` | v2 |
 | `superadmin-notifications-connected` | Bildirishnomalar — guruh ulandi | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | v2 |
 | `superadmin-notifications-empty` | Bildirishnomalar — bo'sh holat | sahifa | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | v2 |
@@ -2136,7 +2136,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### admin — Admin
 
-152 ta maket · kodda bor: 127 · kodda yo'q: 25
+152 ta maket · kodda bor: 131 · kodda yo'q: 21
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2241,7 +2241,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-regions-sato-management` | Tumanlarni o'tkazish | sahifa | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | v2 |
 | `admin-regions-sato-codes` | SATO kodlari | sahifa | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | yangi (kodda yo'q) — Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin. |
 | `admin-regions-sato-codes-edit` | SATO kodlari — kodni tahrirlash («kod band») | sahifa | `/regions/sato-management` | `src/pages/region/pages/sato-management/index.tsx` | yangi (kodda yo'q) — Taklif (sato, ega S1..S4) — kodda yo'q: «Tumanlar va SATO kodlari» — Topildi / Topilmadi, «Bazada yo'q» va «Takroriy nomlar» faqat superadmin. |
-| `admin-regions-logist-assignment` | Logist biriktirish | sahifa | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | yangi (kodda yo'q) — Kodda hali «Bo'lim hali ishga tushmagan» bo'sh holati — ishlaydigan biriktirish sahifasi (dzyVftBx). |
+| `admin-regions-logist-assignment` | Logist biriktirish | sahifa | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | v2 |
 | `admin-integrations-partners` | Integratsiyalar — Hamkorlar | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | v2 |
 | `admin-integrations-external` | Integratsiyalar — Tashqi tizimlar | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | v2 |
 | `admin-integrations-marketplace` | Integratsiyalar — Marketplace | sahifa | `/integrations/connections` | `src/pages/integrations/ConnectionsPage.tsx` | v2 |
@@ -2289,9 +2289,9 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-notifications-create-exists-inactive-dialog` | Bildirishnoma qo'shish — shu tur ulangan, lekin nofaol | oyna | `/notifications` | `src/pages/notifications/ui/NotificationsPage.tsx` | yangi (kodda yo'q) — Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha. |
 | `admin-notifications-deactivate-dialog` | Guruhni nofaol qilish (tasdiq) | oyna | `/notifications` | `src/features/notification-toggle/ui/useToggleNotificationConfirm.tsx` | v2 |
 | `admin-notifications-activate-dialog` | Guruhni faollashtirish (tasdiq) | oyna | `/notifications` | `src/features/notification-toggle/ui/useToggleNotificationConfirm.tsx` | qisman — Kodda bor (NG-A, v2). Farq: nofaollik sababi (inactive_reason + inactive_at — backend G085w5Qr, NG-C) API'da yo'q — maketdagi sababga bog'liq matnlar («Bot guruhdan chiqarilgan — …», «Qo'lda nofaol qilingan», «Guruh topilmadi — …») o'rniga umumiy neytral izoh «Xabarlar bu guruhga yuborilmayapti» (D1), «Nofaol» belgisi neytral ton; faollashtirish oynasidagi ogohlantirish sarlavhasi «Bot guruhda ekanini tekshiring». |
-| `admin-regions-logist-assignment-confirm-dialog` | Logist biriktirish — saqlashni tasdiqlash | oyna | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | yangi (kodda yo'q) — Saqlashni tasdiqlash oynasi (olib tashlash / o'tkazish) — kodda yo'q. |
-| `admin-regions-logist-assignment-empty` | Logist biriktirish — logist yo'q | sahifa | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | yangi (kodda yo'q) — «Logist yo'q» holati — kodda yo'q. |
-| `admin-users-create-logist` | Foydalanuvchi yaratish — Logist | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | yangi (kodda yo'q) — «Logist» rol kartasi va formasi (POST /logists) — kodda yo'q. |
+| `admin-regions-logist-assignment-confirm-dialog` | Logist biriktirish — saqlashni tasdiqlash | oyna | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/ui/ChangesList.tsx` | v2 |
+| `admin-regions-logist-assignment-empty` | Logist biriktirish — logist yo'q | sahifa | `/regions/logist-assignment` | `src/pages/region/pages/logist-assignment/index.tsx` | v2 |
+| `admin-users-create-logist` | Foydalanuvchi yaratish — Logist | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | v2 |
 
 ### manager — Menejer
 
@@ -2975,6 +2975,12 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/region/model/scopedModel.ts` | `/regions` |
 | `src/pages/region/pages/districts/index.tsx` | `/regions/districts` |
 | `src/pages/region/pages/logist-assignment/index.tsx` | `/regions/logist-assignment` |
+| `src/pages/region/pages/logist-assignment/model/assignment.ts` | `/regions/logist-assignment` |
+| `src/pages/region/pages/logist-assignment/ui/ChangesBar.tsx` | `/regions/logist-assignment` |
+| `src/pages/region/pages/logist-assignment/ui/ChangesList.tsx` | `/regions/logist-assignment` |
+| `src/pages/region/pages/logist-assignment/ui/LogistListCard.tsx` | `/regions/logist-assignment` |
+| `src/pages/region/pages/logist-assignment/ui/LogistPicker.tsx` | `/regions/logist-assignment` |
+| `src/pages/region/pages/logist-assignment/ui/RegionChoiceCard.tsx` | `/regions/logist-assignment` |
 | `src/pages/region/pages/sato-management/index.tsx` | `/regions/sato-management` |
 | `src/pages/region/ui/DistrictBoard.tsx` | `/regions/districts`, `/regions/sato-management` |
 | `src/pages/region/ui/DistrictDeleteBlockedDialog.tsx` | `/regions/districts` |

@@ -405,12 +405,113 @@
     },
     "logist": {
       "title": "Assign logisticians",
-      "subtitle": "Assigning logisticians to regions",
-      "empty": {
-        "title": "This section is not available yet",
-        "text": "Logistician assignment will appear on this page once it is ready. Use the regions map for now."
+      "subtitle": "Choose a logistician and tick their regions · one logistician per region",
+      "create": "Create logistician",
+      "list": {
+        "title": "Logisticians",
+        "searchPlaceholder": "Name or phone",
+        "searchLabel": "Search logisticians",
+        "groupLabel": "Logistician list",
+        "notFound": "No logistician found",
+        "notFoundHint": "Try another name or phone number.",
+        "inactive": "Inactive",
+        "noRegions": "No regions",
+        "regionCount_one": "{{count}} region",
+        "regionCount_other": "{{count}} regions",
+        "inactiveNote": "Regions are not assigned to an inactive logistician."
       },
-      "back": "Back to regions"
+      "picker": {
+        "label": "Logistician",
+        "noRegions": "no regions"
+      },
+      "regions": {
+        "title": "{{name}}'s regions",
+        "checkedOf": "{{checked}} of {{total}} ticked",
+        "legend": "Regions to assign to {{name}}",
+        "filterLabel": "Region filter",
+        "filter": {
+          "all": "All · {{count}}",
+          "checked": "Ticked · {{count}}",
+          "free": "Free · {{count}}"
+        },
+        "filteredEmpty": "No regions in this filter",
+        "note": "Ticking a region of another logistician moves it to this one. A region you untick is left without a logistician.",
+        "state": {
+          "free": "No logistician",
+          "assigned": "Assigned",
+          "adding": "No logistician now",
+          "transfer": "Now: {{name}}",
+          "removing": "Will be left unassigned",
+          "otherUnknown": "Another logistician"
+        },
+        "badge": {
+          "adding": "Will be added",
+          "transfer": "Will be moved",
+          "removing": "Will be removed"
+        }
+      },
+      "changes": {
+        "regionLabel": "Unsaved changes",
+        "count_one": "{{count}} change",
+        "count_other": "{{count}} changes",
+        "none": "No changes",
+        "added": "{{count}} added",
+        "transferred": "{{count}} moved",
+        "removed": "{{count}} removed",
+        "addedShort": "{{count}} added",
+        "transferredShort": "{{count}} moved",
+        "removedShort": "{{count}} removed",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving…"
+      },
+      "confirm": {
+        "title": "Save the changes?",
+        "description": "{{name}}'s regions will be updated: {{parts}}.",
+        "removedPart": "{{count}} removed",
+        "transferredPart": "{{count}} moved from another logistician",
+        "transferredPartAfter": "{{count}} moved from another logistician",
+        "listLabel": "Changes",
+        "removedHint": "The region is left without a logistician",
+        "transferHint": "Taken from {{name}}",
+        "transferHintUnknown": "Taken from another logistician",
+        "addedHint": "No logistician now",
+        "note": "A region without a logistician is not shown on any logistician's home page.",
+        "confirm": "Save"
+      },
+      "leave": {
+        "title": "Changes will not be saved",
+        "description_one": "{{name}} has {{count}} unsaved change. If you switch to {{next}}, it will be discarded.",
+        "description_other": "{{name}} has {{count}} unsaved changes. If you switch to {{next}}, they will be discarded.",
+        "stay": "Stay",
+        "confirm": "Switch without saving"
+      },
+      "saved": {
+        "title": "Saved",
+        "description_one": "{{name}} · {{count}} region",
+        "description_other": "{{name}} · {{count}} regions"
+      },
+      "saveError": {
+        "title": "Could not save",
+        "inactive": "The logistician is inactive — activate them first. Your changes are still on the page.",
+        "notFound": "Logistician or region not found — the list has been refreshed. Your changes are still on the page.",
+        "forbidden": "You are not allowed to assign logisticians.",
+        "generic": "The server did not respond — try again shortly. Your changes are still on the page."
+      },
+      "inactive": {
+        "title": "{{name}} is inactive",
+        "text": "Regions cannot be assigned to an inactive logistician. Activate them in «Users»."
+      },
+      "loading": "Loading logisticians",
+      "error": {
+        "logists": "Could not load logisticians",
+        "regions": "Could not load regions",
+        "text": "Check your internet connection and try again."
+      },
+      "empty": {
+        "title": "No logisticians",
+        "text": "To assign regions, first create a user with the «Logist» role. A new logistician appears in this list."
+      }
     }
   }
 }
