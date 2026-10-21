@@ -18,6 +18,8 @@
       "quickAction": "Close day",
       "products": "Products",
       "payments": "Payments",
+      "investments": "Investments",
+      "profits": "Profit",
       "scanner": "Scan",
       "menu": "Menu"
     },

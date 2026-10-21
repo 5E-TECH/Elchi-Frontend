@@ -97,6 +97,8 @@ const SHORT_LABEL: Record<string, string> = {
 /** Rolga xos qisqa yorliq: marketda «Qabul va yaratish» — «Yaratish» (market faqat yaratadi). */
 const SHORT_LABEL_BY_ROLE: Partial<Record<SidebarUserRole, Record<string, string>>> = {
     market: { newOrders: "create" },
+    // IN-2: «Investitsiya», «Foyda» (maket `roles.json` → investor.menu.short).
+    investor: { investments: "investments", profits: "profits" },
 };
 
 type BottomNavEntry =

@@ -531,12 +531,19 @@ describe("MobileMenu — logist (LG-1, maket logist-dashboard-mobile-menu)", () 
   });
 });
 
-describe("MobileMenu — investor (IN-1)", () => {
-  it("varaqada «Bosh sahifa» plitkasi (maket `investor-dashboard-mobile-menu`); Investitsiyalar/Foyda tarixi — IN-2", () => {
+describe("MobileMenu — investor (IN-1, IN-2)", () => {
+  it("varaqada «Bosh sahifa», «Investitsiya», «Foyda» plitkalari (maket `investor-dashboard-mobile-menu`)", () => {
     asPhone();
     renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "investor", { route: "/" });
     const links = within(sectionsNav()).getAllByRole("link");
-    expect(links.map((link) => [link.textContent, link.getAttribute("href")])).toEqual([["Bosh sahifa", "/"]]);
+    expect(links.map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+      ["Bosh sahifa", "/"],
+      ["Investitsiya", "/investments"],
+      ["Foyda", "/profits"],
+    ]);
+    // Qisqa yorliq — to'liq nom ekran o'quvchida.
+    expect(links[1]).toHaveAccessibleName("Investitsiyalar");
+    expect(links[2]).toHaveAccessibleName("Foyda tarixi");
     expect(links[0]).toHaveAttribute("aria-current", "page");
     expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
   });

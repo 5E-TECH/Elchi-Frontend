@@ -81,6 +81,8 @@ const SHORT_LABEL_KEY_BY_PATH: Record<string, string> = {
 const SHORT_LABEL_KEY_BY_ROLE: Partial<Record<SidebarUserRole, Record<string, string>>> = {
   // Market buyurtmani faqat yaratadi — maketda «Yaratish».
   market: { "/new-orders": "createShort" },
+  // IN-2: investor katagi maketdagidek qisqa — «Investitsiya», «Foyda» (`roles.json` → investor.menu.short).
+  investor: { "/investments": "investmentsShort", "/profits": "profitsShort" },
 };
 
 const toEntry = (role: SidebarUserRole | null, item: NavItem): NavEntry => {

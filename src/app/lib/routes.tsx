@@ -65,6 +65,9 @@ const MarketDashboardPage = lazy(
 );
 // IN-1: investor kabineti — alohida lazy chunk (dashboard bundle chegarasi 450 KB).
 const InvestorDashboardPage = lazy(() => import("../../pages/investor/InvestorDashboardPage"));
+// IN-2: investor ro'yxatlari — «Investitsiyalar» va «Foyda tarixi» (o'z chunk'lari).
+const InvestmentsPage = lazy(() => import("../../pages/investor/InvestmentsPage"));
+const ProfitsPage = lazy(() => import("../../pages/investor/ProfitsPage"));
 const BranchDashboardPage = lazy(() => import("../../pages/branch-dashboard"));
 const DispatchPage = lazy(() => import("../../pages/dispatch"));
 const BatchesPage = lazy(() => import("../../pages/batches"));
@@ -990,6 +993,23 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute canActivate={canViewFinancialBalance}>
                   <FinancialBalance />
+                </ProtectedRoute>
+              ),
+            },
+            // IN-2: investor kabineti ro'yxatlari — faqat investor (`canViewInvestorCabinet`; backend `@Roles(INVESTOR)`).
+            {
+              path: "investments",
+              element: (
+                <ProtectedRoute canActivate={canViewInvestorCabinet}>
+                  <InvestmentsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "profits",
+              element: (
+                <ProtectedRoute canActivate={canViewInvestorCabinet}>
+                  <ProfitsPage />
                 </ProtectedRoute>
               ),
             },

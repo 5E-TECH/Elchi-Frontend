@@ -19,6 +19,8 @@ import {
   Building2,
   Truck,
   Zap,
+  PiggyBank,
+  HandCoins,
   type LucideIcon,
 } from "lucide-react";
 import type { User } from "../../../entities/user/model/types";
@@ -168,11 +170,15 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
   logist: [{ to: "/", icon: House, label: "dashboard", end: true }],
   market_operator: [],
   /**
-   * IN-1 (vpKijXce): investor kabineti — `/` (`DashboardEntry` → `InvestorDashboardPage`). «Investitsiyalar» va
-   * «Foyda tarixi» (`/investments`, `/profits`) o'z sahifalari bilan IN-2 da qo'shiladi (`plannedMenu.investor`).
-   * Moliya/kassa sahifalari bu yerga qo'shilmaydi — investor faqat o'z investitsiyasi va foydasini ko'radi.
+   * IN-1 / IN-2 (vpKijXce): investor kabineti — `/` (`DashboardEntry` → `InvestorDashboardPage`), «Investitsiyalar»
+   * (`/investments`) va «Foyda tarixi» (`/profits`) — maket `roles.json` → investor.menu (ikonkalar PiggyBank,
+   * HandCoins). Moliya/kassa sahifalari bu yerga qo'shilmaydi — investor faqat o'z investitsiyasi va foydasini ko'radi.
    */
-  investor: [{ to: "/", icon: House, label: "dashboard", end: true }],
+  investor: [
+    { to: "/", icon: House, label: "dashboard", end: true },
+    { to: "/investments", icon: PiggyBank, label: "investments" },
+    { to: "/profits", icon: HandCoins, label: "profits" },
+  ],
 };
 
 /**
@@ -395,7 +401,7 @@ export const SIDEBAR_GROUP_BY_PATH: Record<string, SidebarGroupId> = {
   "/payments": 'finance',
   "/cash-box": 'finance',
   "/financial-balance": 'finance',
-  // IN-1: investor kabineti ro'yxatlari (sahifalari IN-2 da) — Moliya guruhida.
+  // IN-1/IN-2: investor kabineti ro'yxatlari — Moliya guruhida (investor menyusi qisqa — guruh sarlavhasi chiqmaydi).
   "/investments": 'finance',
   "/profits": 'finance',
   // Ma'lumotnoma

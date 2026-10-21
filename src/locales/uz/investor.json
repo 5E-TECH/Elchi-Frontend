@@ -4,6 +4,7 @@
     "cabinet": "Investor kabineti",
     "cabinetOf": "Investor kabineti · {{name}}"
   },
+  "allLink": "Barchasi",
   "kpi": {
     "label": "Asosiy ko'rsatkichlar",
     "invested": "Mening investitsiyam",
@@ -72,7 +73,8 @@
     "cardSub": "Kiritilgan: {{date}}",
     "emptyTitle": "Hali investitsiya yo'q",
     "emptyText": "Investitsiyani administrator kiritadi — shundan keyin u shu yerda ko'rinadi.",
-    "errorTitle": "Investitsiyalarni yuklab bo'lmadi"
+    "errorTitle": "Investitsiyalarni yuklab bo'lmadi",
+    "allLabel": "Barcha investitsiyalar"
   },
   "profits": {
     "title": "Foyda tarixi",
@@ -89,7 +91,47 @@
     "cardPaid": "To'langan: {{date}}",
     "emptyTitle": "Hali foyda yozuvi yo'q",
     "emptyText": "Birinchi davr yopilgach, hisoblangan foyda shu ro'yxatda paydo bo'ladi.",
-    "errorTitle": "Foyda tarixini yuklab bo'lmadi"
+    "errorTitle": "Foyda tarixini yuklab bo'lmadi",
+    "allLabel": "Barcha foyda yozuvlari"
+  },
+  "investmentsPage": {
+    "title": "Investitsiyalar",
+    "sub": "Kiritgan mablag'laringiz, eng yangisi tepada",
+    "listTitle": "Investitsiyalar ro'yxati",
+    "label": "Investitsiyalar ro'yxati",
+    "total": "Jami: {{amount}} · {{count}} ta",
+    "rangeTotal": "Tanlangan oraliqda: {{amount}} · {{count}} ta",
+    "rangeCount": "Tanlangan oraliqda: {{count}} ta",
+    "rangeLabel": "Sana oralig'i",
+    "allTime": "Barcha vaqt",
+    "colDate": "Kiritilgan sana",
+    "colAmount": "Summa",
+    "colShare": "Jamidagi hissasi",
+    "cardShare": "{{value}} hissa",
+    "loading": "Ro'yxat yuklanmoqda",
+    "summary": "{{from}}–{{to}} / {{total}} ta investitsiya",
+    "filteredTitle": "Bu oraliqda investitsiya yo'q",
+    "filteredText": "Sana oralig'ini kengaytiring yoki filtrni tozalang. Jami investitsiyangiz: {{amount}}.",
+    "clear": "Filtrni tozalash"
+  },
+  "profitsPage": {
+    "title": "Foyda tarixi",
+    "sub": "Har bir davr uchun hisoblangan foyda va to'lov holati",
+    "listTitle": "Foyda yozuvlari",
+    "label": "Foyda yozuvlari",
+    "paidTotal": "To'langan: {{amount}}",
+    "unpaidTotal": "Kutilmoqda: {{amount}}",
+    "statusLabel": "To'lov holati",
+    "statusAll": "Barchasi",
+    "statusPaid": "To'langan",
+    "statusPending": "Kutilmoqda",
+    "loading": "Foyda yozuvlari yuklanmoqda",
+    "summary": "{{from}}–{{to}} / {{total}} ta yozuv",
+    "pendingEmptyTitle": "Kutilayotgan foyda yo'q",
+    "pendingEmptyText": "Hisoblangan foydaning hammasi to'langan. Yangi davr foydasi oy yopilgach shu yerda chiqadi.",
+    "paidEmptyTitle": "To'langan foyda yo'q",
+    "paidEmptyText": "Hali birorta davr foydasi to'lanmagan. To'lov qilingach, u shu yerda ko'rinadi.",
+    "clear": "Filtrni tozalash"
   },
   "access": {
     "retry": "Qayta urinish",

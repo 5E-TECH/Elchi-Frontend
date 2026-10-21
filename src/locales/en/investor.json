@@ -4,6 +4,7 @@
     "cabinet": "Investor account",
     "cabinetOf": "Investor account · {{name}}"
   },
+  "allLink": "View all",
   "kpi": {
     "label": "Key figures",
     "invested": "My investment",
@@ -72,7 +73,8 @@
     "cardSub": "Added: {{date}}",
     "emptyTitle": "No investments yet",
     "emptyText": "An administrator adds investments — after that they appear here.",
-    "errorTitle": "Couldn't load investments"
+    "errorTitle": "Couldn't load investments",
+    "allLabel": "All investments"
   },
   "profits": {
     "title": "Profit history",
@@ -89,7 +91,47 @@
     "cardPaid": "Paid: {{date}}",
     "emptyTitle": "No profit records yet",
     "emptyText": "Once the first period closes, the calculated profit will appear in this list.",
-    "errorTitle": "Couldn't load profit history"
+    "errorTitle": "Couldn't load profit history",
+    "allLabel": "All profit records"
+  },
+  "investmentsPage": {
+    "title": "Investments",
+    "sub": "Funds you have invested, newest first",
+    "listTitle": "Investment list",
+    "label": "Investment list",
+    "total": "Total: {{amount}} · {{count}}",
+    "rangeTotal": "In selected period: {{amount}} · {{count}}",
+    "rangeCount": "In selected period: {{count}}",
+    "rangeLabel": "Date range",
+    "allTime": "All time",
+    "colDate": "Date added",
+    "colAmount": "Amount",
+    "colShare": "Share of total",
+    "cardShare": "{{value}} share",
+    "loading": "Loading list",
+    "summary": "{{from}}–{{to}} of {{total}} investments",
+    "filteredTitle": "No investments in this period",
+    "filteredText": "Widen the date range or clear the filter. Your total investment: {{amount}}.",
+    "clear": "Clear filter"
+  },
+  "profitsPage": {
+    "title": "Profit history",
+    "sub": "Profit calculated for each period and its payout status",
+    "listTitle": "Profit records",
+    "label": "Profit records",
+    "paidTotal": "Paid: {{amount}}",
+    "unpaidTotal": "Pending: {{amount}}",
+    "statusLabel": "Payout status",
+    "statusAll": "All",
+    "statusPaid": "Paid",
+    "statusPending": "Pending",
+    "loading": "Loading profit records",
+    "summary": "{{from}}–{{to}} of {{total}} records",
+    "pendingEmptyTitle": "No pending profit",
+    "pendingEmptyText": "All calculated profit has been paid. Profit for a new period appears here once the month closes.",
+    "paidEmptyTitle": "No paid profit",
+    "paidEmptyText": "No period's profit has been paid yet. Once paid, it will appear here.",
+    "clear": "Clear filter"
   },
   "access": {
     "retry": "Try again",

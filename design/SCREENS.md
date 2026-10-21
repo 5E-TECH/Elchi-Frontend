@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**78 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **61** · qisman: **125** · v2 ga ko'chirilgan route: **78 / 78**
+**80 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **56** · qisman: **121** · v2 ga ko'chirilgan route: **80 / 80**
 
 ## Qanday ishlatiladi
 
@@ -82,8 +82,8 @@
 | `/scan` | Skaner | `src/pages/scan/index.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 15 | v2 |
 | `/scan/:token` | Skaner | `src/pages/scan/detail.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 10 | v2 |
 | `/tg/scan` | Skaner | `src/pages/tg-scan/index.tsx` | hamma (kirishsiz) | 7 | v2 |
-| `(taklif) /investments` | Moliya | `src/app/lib/routes.tsx` | investor (taklif — yangi rol, yangi route) | 3 | eski |
-| `(taklif) /profits` | Moliya | `src/app/lib/routes.tsx` | investor (taklif — yangi rol, yangi route) | 2 | eski |
+| `/investments` | Moliya | `src/pages/investor/InvestmentsPage.tsx` | investor (IN-2: canViewInvestorCabinet = hasRole('investor') (access.ts); backend GET investors/me/investments — @Roles(INVESTOR), doira JWT'dan) | 3 | v2 |
+| `/profits` | Moliya | `src/pages/investor/ProfitsPage.tsx` | investor (IN-2: canViewInvestorCabinet = hasRole('investor') (access.ts); backend GET investors/me/profits — @Roles(INVESTOR), doira JWT'dan) | 2 | v2 |
 | `/payments` | Moliya | `src/pages/payments/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 12 | v2 |
 | `/payments/main-cashbox` | Moliya | `src/pages/payments/components/mainCashbox.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 18 | v2 |
 | `/payments/cash-detail/:id` | Moliya | `src/pages/payments/components/cashDetail.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID) | 14 | v2 |
@@ -151,7 +151,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `(qobiq)` | market_operator | — Yangi rol qobig'i: yon menyu Bosh sahifa · Buyurtmalar · Buyurtma yaratish · Mahsulotlar · Daromadim; pastki menyu 5 oddiy katak (Skaner va Menyu yo'q) — Yaratish · Mahsulotlar · Daromadim. Bildirishnomalar, Sozlamalar va Chiqish faqat yuqori paneldan (qo'ng'iroqcha, profil menyusi) — eski market xatti-harakati kabi. Profil satri «Market operatori» (profil market nomini qaytarmaydi). | — | — | v2 |
 | `(qobiq)` | courier | `courier-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq<br>↳ `src/widgets/Sidebar/ui/MobileMenu.tsx` | [design/fragments/courier--dashboard-mobile-menu.html](fragments/courier--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | v2 |
 | `(qobiq)` | courier | `courier-dashboard-mobile-search` — Global qidiruv (telefon)<br>↳ `src/widgets/header/ui/SearchScreen.tsx` | [design/fragments/courier--dashboard-mobile-search.html](fragments/courier--dashboard-mobile-search.html) | oyna · faqat telefon | v2 |
-| `(qobiq)` | investor | `investor-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq<br>↳ `src/widgets/Sidebar/ui/MobileMenu.tsx` | [design/fragments/investor--dashboard-mobile-menu.html](fragments/investor--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | qisman |
+| `(qobiq)` | investor | `investor-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq<br>↳ `src/widgets/Sidebar/ui/MobileMenu.tsx` | [design/fragments/investor--dashboard-mobile-menu.html](fragments/investor--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | v2 |
 | `(qobiq)` | umumiy (barcha rollar) | `common-bell-dropdown` — Qo'ng'iroqcha ochiq (so'nggi bildirishnomalar)<br>↳ `src/widgets/header/ui/NotificationsMenu.tsx` | [design/fragments/common--bell-dropdown.html](fragments/common--bell-dropdown.html) | oyna | v2 |
 | `(qobiq)` | tizim taxtasi | `tizim-states-navigation` — Holatlar — navigatsiya | [design/fragments/tizim--states-navigation.html](fragments/tizim--states-navigation.html) | taxta | qoida |
 | `(qobiq)` | tizim taxtasi | `tizim-responsive` — Moslashuvchanlik — telefon, planshet, desktop | [design/fragments/tizim--responsive.html](fragments/tizim--responsive.html) | taxta | qoida |
@@ -259,10 +259,10 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/` | logist | `logist-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq<br>↳ `src/widgets/Sidebar/ui/MobileMenu.tsx` | [design/fragments/logist--dashboard-mobile-menu.html](fragments/logist--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | qisman |
 | `/` | logist | `logist-dashboard-mobile-search` — Global qidiruv (telefon) — buyurtma, mijoz, telefon | [design/fragments/logist--dashboard-mobile-search.html](fragments/logist--dashboard-mobile-search.html) | oyna · faqat telefon | yangi (kodda yo'q) |
 | `/` | investor | `investor-dashboard-home` — Bosh sahifa — investor kabineti<br>↳ `src/pages/investor/InvestorDashboardPage.tsx` | [design/fragments/investor--dashboard-home.html](fragments/investor--dashboard-home.html) | sahifa | qisman |
-| `/` | investor | `investor-dashboard-home-table` — Bosh sahifa — oylik foyda jadvali<br>↳ `src/pages/investor/ui/MonthlyProfitCard.tsx` | [design/fragments/investor--dashboard-home-table.html](fragments/investor--dashboard-home-table.html) | sahifa | qisman |
-| `/` | investor | `investor-dashboard-loading` — Bosh sahifa — yuklanmoqda<br>↳ `src/pages/investor/InvestorDashboardPage.tsx` | [design/fragments/investor--dashboard-loading.html](fragments/investor--dashboard-loading.html) | sahifa | qisman |
+| `/` | investor | `investor-dashboard-home-table` — Bosh sahifa — oylik foyda jadvali<br>↳ `src/pages/investor/ui/MonthlyProfitCard.tsx` | [design/fragments/investor--dashboard-home-table.html](fragments/investor--dashboard-home-table.html) | sahifa | v2 |
+| `/` | investor | `investor-dashboard-loading` — Bosh sahifa — yuklanmoqda<br>↳ `src/pages/investor/InvestorDashboardPage.tsx` | [design/fragments/investor--dashboard-loading.html](fragments/investor--dashboard-loading.html) | sahifa | v2 |
 | `/` | investor | `investor-dashboard-empty` — Bosh sahifa — ma'lumot yo'q<br>↳ `src/pages/investor/InvestorDashboardPage.tsx` | [design/fragments/investor--dashboard-empty.html](fragments/investor--dashboard-empty.html) | sahifa | v2 |
-| `/` | investor | `investor-dashboard-error` — Bosh sahifa — yuklash xatosi<br>↳ `src/pages/investor/InvestorDashboardPage.tsx` | [design/fragments/investor--dashboard-error.html](fragments/investor--dashboard-error.html) | sahifa | qisman |
+| `/` | investor | `investor-dashboard-error` — Bosh sahifa — yuklash xatosi<br>↳ `src/pages/investor/InvestorDashboardPage.tsx` | [design/fragments/investor--dashboard-error.html](fragments/investor--dashboard-error.html) | sahifa | v2 |
 | `/` | investor | `investor-dashboard-forbidden` — Bosh sahifa — profil nofaol (403)<br>↳ `src/pages/investor/ui/InvestorAccessState.tsx` | [design/fragments/investor--dashboard-forbidden.html](fragments/investor--dashboard-forbidden.html) | sahifa | v2 |
 | `/` | investor | `investor-dashboard-not-linked` — Bosh sahifa — profil bog'lanmagan (404)<br>↳ `src/pages/investor/ui/InvestorAccessState.tsx` | [design/fragments/investor--dashboard-not-linked.html](fragments/investor--dashboard-not-linked.html) | sahifa | v2 |
 | `/` | tizim taxtasi | `tizim-charts` — Grafiklar — statistika va tahlil | [design/fragments/tizim--charts.html](fragments/tizim--charts.html) | taxta | qoida |
@@ -942,30 +942,34 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 ### Moliya — to'lovlar, kassa, balans
 
-#### `(taklif) /investments` — Investitsiyalar — investorning o'z investitsiyalari (yangi route, kodda yo'q)
+#### `/investments` — Investitsiyalar — investorning o'z investitsiyalari (dizayn v2, IN-2)
 
-- **Fayllar:** `src/app/lib/routes.tsx`
-- **Rollar:** investor (taklif — yangi rol, yangi route)
-- **Holat:** eski
-- **Izoh:** Ega qarori 2026-10-19: investor bosh sahifasi quriladi; ro'yxat sahifalari menyudan (Investitsiyalar · Foyda tarixi). Yo'l nomi taklif — kod yozilganda haqiqiy yo'l bilan almashtiriladi. GET investors/me/investments (@Roles INVESTOR): from_date, to_date, page, limit; tartib invested_at DESC (saralash parametri yo'q — sarlavhada saralash tugmasi yo'q). Ustun «Jamidagi hissasi» = amount / summary.total_amount — frontendda hisoblanadi (backend maydoni emas); «Ulush» so'zi faqat KPI dagi foyda stavkasi (current_percentage) uchun. Holatlar: yuklanish — investments-list-loading (jadval skeleti, telefonda kartalar), sana oralig'i bo'yicha bo'sh — investments-list-filtered-empty («Filtrni tozalash»), umuman bo'sh / xato / 403 / 404 — bosh sahifa holatlari matni bilan (investor-dashboard-empty, -error, -forbidden, -not-linked). Sahifalash — Pagination (page/limit).
-
-| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
-|---|---|---|---|---|---|
-| `(taklif) /investments` | investor | `investor-investments-list` — Investitsiyalar | [design/fragments/investor--investments-list.html](fragments/investor--investments-list.html) | sahifa | yangi (kodda yo'q) |
-| `(taklif) /investments` | investor | `investor-investments-list-loading` — Investitsiyalar — yuklanmoqda | [design/fragments/investor--investments-list-loading.html](fragments/investor--investments-list-loading.html) | sahifa | yangi (kodda yo'q) |
-| `(taklif) /investments` | investor | `investor-investments-list-filtered-empty` — Investitsiyalar — filtr bo'yicha bo'sh | [design/fragments/investor--investments-list-filtered-empty.html](fragments/investor--investments-list-filtered-empty.html) | sahifa | yangi (kodda yo'q) |
-
-#### `(taklif) /profits` — Foyda tarixi — investorning foyda yozuvlari (yangi route, kodda yo'q)
-
-- **Fayllar:** `src/app/lib/routes.tsx`
-- **Rollar:** investor (taklif — yangi rol, yangi route)
-- **Holat:** eski
-- **Izoh:** Ega qarori 2026-10-19 (investor roli). Yo'l nomi taklif. GET investors/me/profits (@Roles INVESTOR): is_paid (Barchasi · To'langan · Kutilmoqda — telefonda to'liq kenglik, 44px), page, limit; tartib period_start DESC (saralash tugmasi yo'q); sana filtri backendda yo'q — chizilmagan. Qator: davr (period_start – period_end), foiz, summa, holat (is_paid), to'langan sana (paid_at). Holatlar: filtr bo'yicha bo'sh — profits-list-filtered-empty; yuklanish — investments-list-loading naqshi; umuman bo'sh / xato / 403 / 404 — bosh sahifa holatlari. Sahifalash — Pagination.
+- **Fayllar:** `src/pages/investor/InvestmentsPage.tsx` · `src/pages/investor/model/listSearch.ts` · `src/pages/investor/ui/InvestorAccessState.tsx`
+- **Qobiq:** DashboardLayout · **Guard:** `canViewInvestorCabinet` (access.ts → canViewInvestorCabinet)
+- **Rollar:** investor (IN-2: canViewInvestorCabinet = hasRole('investor') (access.ts); backend GET investors/me/investments — @Roles(INVESTOR), doira JWT'dan)
+- **Menyuda:** «Investitsiyalar» (`investments`) — investor
+- **Holat:** v2
+- **Izoh:** Ega qarori 2026-10-19: investor bosh sahifasi quriladi; ro'yxat sahifalari menyudan (Investitsiyalar · Foyda tarixi). Yo'l nomi taklif — kod yozilganda haqiqiy yo'l bilan almashtiriladi. GET investors/me/investments (@Roles INVESTOR): from_date, to_date, page, limit; tartib invested_at DESC (saralash parametri yo'q — sarlavhada saralash tugmasi yo'q). Ustun «Jamidagi hissasi» = amount / summary.total_amount — frontendda hisoblanadi (backend maydoni emas); «Ulush» so'zi faqat KPI dagi foyda stavkasi (current_percentage) uchun. Holatlar: yuklanish — investments-list-loading (jadval skeleti, telefonda kartalar), sana oralig'i bo'yicha bo'sh — investments-list-filtered-empty («Filtrni tozalash»), umuman bo'sh / xato / 403 / 404 — bosh sahifa holatlari matni bilan (investor-dashboard-empty, -error, -forbidden, -not-linked). Sahifalash — Pagination (page/limit). IN-2 (2026-10-21): filtr va sahifa URL'da (?from&to&page&limit — listSearch.ts), oraliq Toshkent kuni bo'yicha (from_date = kun boshi +05:00, to_date = kun oxiri +05:00). Sarlavha: filtrsiz «Jami: summary.total_amount · meta.total ta»; oraliqda backend oraliq summasini bermaydi (N6 → IN-3) — bitta sahifa bo'lsa sahifa yig'indisi («Tanlangan oraliqda: X so'm · N ta»), aks holda faqat «Tanlangan oraliqda: N ta». Eski javob (keepPreviousData) paytida URL tuzatilmaydi va bo'sh holat chizilmaydi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
-| `(taklif) /profits` | investor | `investor-profits-list` — Foyda tarixi | [design/fragments/investor--profits-list.html](fragments/investor--profits-list.html) | sahifa | yangi (kodda yo'q) |
-| `(taklif) /profits` | investor | `investor-profits-list-filtered-empty` — Foyda tarixi — filtr bo'yicha bo'sh | [design/fragments/investor--profits-list-filtered-empty.html](fragments/investor--profits-list-filtered-empty.html) | sahifa | yangi (kodda yo'q) |
+| `/investments` | investor | `investor-investments-list` — Investitsiyalar | [design/fragments/investor--investments-list.html](fragments/investor--investments-list.html) | sahifa | v2 |
+| `/investments` | investor | `investor-investments-list-loading` — Investitsiyalar — yuklanmoqda | [design/fragments/investor--investments-list-loading.html](fragments/investor--investments-list-loading.html) | sahifa | v2 |
+| `/investments` | investor | `investor-investments-list-filtered-empty` — Investitsiyalar — filtr bo'yicha bo'sh | [design/fragments/investor--investments-list-filtered-empty.html](fragments/investor--investments-list-filtered-empty.html) | sahifa | v2 |
+
+#### `/profits` — Foyda tarixi — investorning foyda yozuvlari (dizayn v2, IN-2)
+
+- **Fayllar:** `src/pages/investor/ProfitsPage.tsx` · `src/pages/investor/ui/ProfitHistoryTable.tsx` · `src/pages/investor/model/listSearch.ts` · `src/pages/investor/ui/InvestorAccessState.tsx`
+- **Qobiq:** DashboardLayout · **Guard:** `canViewInvestorCabinet` (access.ts → canViewInvestorCabinet)
+- **Rollar:** investor (IN-2: canViewInvestorCabinet = hasRole('investor') (access.ts); backend GET investors/me/profits — @Roles(INVESTOR), doira JWT'dan)
+- **Menyuda:** «Foyda tarixi» (`profits`) — investor
+- **Holat:** v2
+- **Izoh:** Ega qarori 2026-10-19 (investor roli). Yo'l nomi taklif. GET investors/me/profits (@Roles INVESTOR): is_paid (Barchasi · To'langan · Kutilmoqda — telefonda to'liq kenglik, 44px), page, limit; tartib period_start DESC (saralash tugmasi yo'q); sana filtri backendda yo'q — chizilmagan. Qator: davr (period_start – period_end), foiz, summa, holat (is_paid), to'langan sana (paid_at). Holatlar: filtr bo'yicha bo'sh — profits-list-filtered-empty; yuklanish — investments-list-loading naqshi; umuman bo'sh / xato / 403 / 404 — bosh sahifa holatlari. Sahifalash — Pagination. IN-2 (2026-10-21): ?status=paid|pending&page&limit URL'da; sarlavhadagi «To'langan · Kutilmoqda» — summary (filtrdan qat'i nazar barcha yozuvlar); jadval bosh sahifa bilan umumiy ProfitHistoryTable. «To'langan» filtri bo'yicha bo'sh holat — maket yo'q, eng yaqini profits-list-filtered-empty («To'langan foyda yo'q» + «Filtrni tozalash»).
+
+| Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
+|---|---|---|---|---|---|
+| `/profits` | investor | `investor-profits-list` — Foyda tarixi | [design/fragments/investor--profits-list.html](fragments/investor--profits-list.html) | sahifa | v2 |
+| `/profits` | investor | `investor-profits-list-filtered-empty` — Foyda tarixi — filtr bo'yicha bo'sh | [design/fragments/investor--profits-list-filtered-empty.html](fragments/investor--profits-list-filtered-empty.html) | sahifa | v2 |
 
 #### `/payments` — To'lovlar — umumiy (berilishi / qabul qilinishi kerak, operatsiyalar tarixi)
 
@@ -2582,23 +2586,23 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### investor — Investor
 
-13 ta maket · kodda bor: 8 · kodda yo'q: 5
+13 ta maket · kodda bor: 13 · kodda yo'q: 0
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
-| `investor-dashboard-home` | Bosh sahifa — investor kabineti | sahifa | `/` | `src/pages/investor/InvestorDashboardPage.tsx` | qisman — Kodda bor (IN-1): KPI, «Oylik foyda» (6 · 12 · 24 oy, Grafik \| Jadval, StackedBars), «So'nggi investitsiyalar», «Foyda tarixi». Farq: kartalardagi «Barchasi» havolalari yo'q — /investments va /profits sahifalari IN-2 da; yuqori paneldagi qidiruv investorda yo'q (ROL-0). |
-| `investor-dashboard-home-table` | Bosh sahifa — oylik foyda jadvali | sahifa | `/` | `src/pages/investor/ui/MonthlyProfitCard.tsx` | qisman — Kodda bor (IN-1): jadval egizagi (yangi oy tepada, «Joriy oy», «Jami · N oy»; telefonda kartalar, ikkala qism alohida qatorda). Farq: «Barchasi» havolalari IN-2 da. |
-| `investor-dashboard-loading` | Bosh sahifa — yuklanmoqda | sahifa | `/` | `src/pages/investor/InvestorDashboardPage.tsx` | qisman — Kodda bor (IN-1): KPI, grafik va ro'yxatlar skeleti. Farq: «Barchasi» havolalari IN-2 da. |
+| `investor-dashboard-home` | Bosh sahifa — investor kabineti | sahifa | `/` | `src/pages/investor/InvestorDashboardPage.tsx` | qisman — Kodda bor (IN-1): KPI, «Oylik foyda» (6 · 12 · 24 oy, Grafik \| Jadval, StackedBars), «So'nggi investitsiyalar», «Foyda tarixi». «Barchasi» → /investments, /profits (IN-2). Farq: yuqori paneldagi qidiruv investorda yo'q (ROL-0). |
+| `investor-dashboard-home-table` | Bosh sahifa — oylik foyda jadvali | sahifa | `/` | `src/pages/investor/ui/MonthlyProfitCard.tsx` | v2 |
+| `investor-dashboard-loading` | Bosh sahifa — yuklanmoqda | sahifa | `/` | `src/pages/investor/InvestorDashboardPage.tsx` | v2 |
 | `investor-dashboard-empty` | Bosh sahifa — ma'lumot yo'q | sahifa | `/` | `src/pages/investor/InvestorDashboardPage.tsx` | v2 |
-| `investor-dashboard-error` | Bosh sahifa — yuklash xatosi | sahifa | `/` | `src/pages/investor/InvestorDashboardPage.tsx` | qisman — Kodda bor (IN-1): KPI va grafik o'rnida «Ko'rsatkichlarni yuklab bo'lmadi» + «Qayta urinish», ro'yxatlar mustaqil. Farq: «Barchasi» havolalari IN-2 da. |
+| `investor-dashboard-error` | Bosh sahifa — yuklash xatosi | sahifa | `/` | `src/pages/investor/InvestorDashboardPage.tsx` | v2 |
 | `investor-dashboard-forbidden` | Bosh sahifa — profil nofaol (403) | sahifa | `/` | `src/pages/investor/ui/InvestorAccessState.tsx` | v2 |
 | `investor-dashboard-not-linked` | Bosh sahifa — profil bog'lanmagan (404) | sahifa | `/` | `src/pages/investor/ui/InvestorAccessState.tsx` | v2 |
-| `investor-investments-list` | Investitsiyalar | sahifa | `(taklif) /investments` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi). |
-| `investor-profits-list` | Foyda tarixi | sahifa | `(taklif) /profits` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi). |
-| `investor-dashboard-mobile-menu` | Menyu ochiq — yon panel / pastki varaq | oyna · faqat planshet + telefon | `(qobiq)` | `src/widgets/Sidebar/ui/MobileMenu.tsx` | qisman — Kodda bor (IN-1): varaqada profil, «Bosh sahifa» plitkasi, Bildirishnomalar, Sozlamalar, «Chiqish»; pastki menyu Bosh sahifa · Menyu. Farq: «Investitsiyalar» va «Foyda tarixi» plitkalari va pastki menyu kataklari o'z sahifalari bilan IN-2 da (plannedMenu / plannedBottomNav). |
-| `investor-investments-list-loading` | Investitsiyalar — yuklanmoqda | sahifa | `(taklif) /investments` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi). |
-| `investor-investments-list-filtered-empty` | Investitsiyalar — filtr bo'yicha bo'sh | sahifa | `(taklif) /investments` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi). |
-| `investor-profits-list-filtered-empty` | Foyda tarixi — filtr bo'yicha bo'sh | sahifa | `(taklif) /profits` | `src/app/lib/routes.tsx` | yangi (kodda yo'q) — Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi). |
+| `investor-investments-list` | Investitsiyalar | sahifa | `/investments` | `src/pages/investor/InvestmentsPage.tsx` | v2 |
+| `investor-profits-list` | Foyda tarixi | sahifa | `/profits` | `src/pages/investor/ProfitsPage.tsx` | v2 |
+| `investor-dashboard-mobile-menu` | Menyu ochiq — yon panel / pastki varaq | oyna · faqat planshet + telefon | `(qobiq)` | `src/widgets/Sidebar/ui/MobileMenu.tsx` | v2 |
+| `investor-investments-list-loading` | Investitsiyalar — yuklanmoqda | sahifa | `/investments` | `src/pages/investor/InvestmentsPage.tsx` | v2 |
+| `investor-investments-list-filtered-empty` | Investitsiyalar — filtr bo'yicha bo'sh | sahifa | `/investments` | `src/pages/investor/InvestmentsPage.tsx` | v2 |
+| `investor-profits-list-filtered-empty` | Foyda tarixi — filtr bo'yicha bo'sh | sahifa | `/profits` | `src/pages/investor/ProfitsPage.tsx` | v2 |
 
 ### umumiy ekranlar (common — barcha rollar)
 
@@ -2652,7 +2656,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 
 | Fayl | Route(lar) |
 |---|---|
-| `src/app/lib/routes.tsx` | `/`, `(taklif) /investments`, `(taklif) /profits`, `/new-orders/cancelled/:marketId`, `/new-orders/:marketId`, `/new-orders/:marketId/edit/:orderId`, `(taklif) /my-earnings` |
+| `src/app/lib/routes.tsx` | `/`, `/new-orders/cancelled/:marketId`, `/new-orders/:marketId`, `/new-orders/:marketId/edit/:orderId`, `(taklif) /my-earnings` |
 | `src/auth/SessionExpiryCountdown.tsx` | `/login` |
 | `src/auth/loginNotice.ts` | `/login` |
 | `src/entities/activity-log/ui/ActivityActionBadge.tsx` | `/activity-logs` |
@@ -2804,11 +2808,14 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/integrations/useConnections.ts` | `/integrations/connections` |
 | `src/pages/integrations/wizard/ConnectWizard.tsx` | `/integrations/new/:typeKey` |
 | `src/pages/integrations/wizard/steps.ts` | `/integrations/new/:typeKey` |
+| `src/pages/investor/InvestmentsPage.tsx` | `/investments` |
 | `src/pages/investor/InvestorDashboardPage.tsx` | `/` |
-| `src/pages/investor/ui/InvestorAccessState.tsx` | `/` |
+| `src/pages/investor/ProfitsPage.tsx` | `/profits` |
+| `src/pages/investor/model/listSearch.ts` | `/investments`, `/profits` |
+| `src/pages/investor/ui/InvestorAccessState.tsx` | `/`, `/investments`, `/profits` |
 | `src/pages/investor/ui/InvestorListCards.tsx` | `/` |
 | `src/pages/investor/ui/MonthlyProfitCard.tsx` | `/` |
-| `src/pages/investor/ui/ProfitHistoryTable.tsx` | `/` |
+| `src/pages/investor/ui/ProfitHistoryTable.tsx` | `/`, `/profits` |
 | `src/pages/investors-ops/index.tsx` | `/investors-ops` |
 | `src/pages/logistics-ops/index.tsx` | `/logistics-ops`, `/ops` |
 | `src/pages/logistics-ops/lib/returnRequestRows.ts` | `/logistics-ops` |
@@ -3258,5 +3265,5 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): Buyurtmalar (`orders`), Pochta (`m
 | Band | Kalit | `to` | Route | Shart (filial turi) | investor maketlari |
 |---|---|---|---|---|---|
 | Bosh sahifa | `dashboard` | `/` | `/` | — | `investor-dashboard-home` (+6) |
-
-Maketda bor, kodda hali yo'q (`plannedMenu`): Investitsiyalar (`investments`), Foyda tarixi (`profits`).
+| Investitsiyalar | `investments` | `/investments` | `/investments` | — | `investor-investments-list` (+2) |
+| Foyda tarixi | `profits` | `/profits` | `/profits` | — | `investor-profits-list` (+1) |

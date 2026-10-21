@@ -93,14 +93,16 @@ afterAll(async () => {
 });
 
 describe("BottomNav — maketdagi bandlar (roles.json → bottomNav)", () => {
-  it.each(CURRENT_ROLES)("%s: 5 ta katak, tartibi, manzili va qisqa yorlig'i maketdagidek", (role) => {
+  it.each(CURRENT_ROLES)("%s: 5 ta katak (investorda 4), tartibi, manzili va qisqa yorlig'i maketdagidek", (role) => {
     const branchType = DEFAULT_BRANCH[role] ?? null;
     renderNav(role, { branchType });
     const menu = getSidebarConfigForUser(role, userOf(role, branchType));
     const design = ROLES[role];
 
-    expect(design.bottomNav).toHaveLength(5);
-    expect(cells()).toHaveLength(5);
+    // Investorda 4 katak (ega IN-S2), qolgan rollarda 5.
+    const count = role === "investor" ? 4 : 5;
+    expect(design.bottomNav).toHaveLength(count);
+    expect(cells()).toHaveLength(count);
 
     design.bottomNav.forEach((key, index) => {
       const cell = cells()[index];
@@ -405,15 +407,15 @@ describe("BottomNav — logist (LG-1)", () => {
   });
 });
 
-describe("BottomNav — investor (IN-1)", () => {
+describe("BottomNav — investor (IN-1, IN-2)", () => {
   /**
-   * Investor menyusida hozircha faqat «Bosh sahifa» (IN-1). Maketdagi 4 katak (Bosh sahifa · Investitsiya · Foyda ·
-   * Menyu, ega IN-S2) — «Investitsiyalar» va «Foyda tarixi» o'z sahifalari bilan IN-2 da keladi (`plannedBottomNav`).
+   * Maketdagi 4 katak (ega IN-S2): Bosh sahifa · Investitsiya · Foyda · Menyu — qisqa yorliqlar `roles.json` → short.
    * Skaner yo'q, kataklar teng.
    */
-  it("Bosh sahifa · Menyu; skanersiz, faqat o'z menyusidagi yo'l", () => {
+  it("Bosh sahifa · Investitsiya · Foyda · Menyu; skanersiz, faqat o'z menyusidagi yo'l", () => {
     renderNav("investor");
-    expect(hrefs()).toEqual(["/", "button:Menyu"]);
+    expect(hrefs()).toEqual(["/", "/investments", "/profits", "button:Menyu"]);
+    expect(cells().map((cell) => cell.textContent)).toEqual(["Bosh sahifa", "Investitsiya", "Foyda", "Menyu"]);
     expect(screen.getByRole("link", { name: "Bosh sahifa" })).toHaveAttribute("aria-current", "page");
     expect(screen.queryByRole("link", { name: /Skaner/ })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Menyu" })).toHaveAttribute("aria-haspopup", "dialog");

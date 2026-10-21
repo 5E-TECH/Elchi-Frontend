@@ -20,7 +20,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
 | Bosqich | Holat |
 |---|---|
 | 0 tokenlar, 1 primitivlar, 2 shell, 3 forma/dialog/holatlar | tayyor, dev'da |
-| 4 sahifalar migratsiyasi | **tayyor**: 78 / 78 route v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi; oxirgi `/market-operators` — MO-1, 2026-10-21; yangi `/notifications/sent` — NS-2, v2 da yozilgan) |
+| 4 sahifalar migratsiyasi | **tayyor**: 80 / 80 route v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi; oxirgi `/market-operators` — MO-1, 2026-10-21; yangi `/notifications/sent` — NS-2, `/investments` va `/profits` — IN-2, v2 da yozilgan) |
 | 5 qo'riqchilar (ESLint, palitra, vizual snapshot, CI) | **tayyor** (kod va tekshiruvlar); «Visual» baseline'lari — egada (§2.1) |
 
 **4-bosqichda ko'chirilgan sahifalar** (ro'yxat `AGENTS.md` 4-qatorida ham bor):
@@ -211,6 +211,11 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     `GET /notifications/sent`, «Natija» / «Kim yubordi» filtrlari, sahifa va ochiq oyna (`?id=`) URL'da, telefonda
     «Filtrlar» varaqasi; «Kimga» hozircha «—» + qabul qiluvchilar (auditoriya ro'yxat javobida yo'q — S2, backend);
     tafsilot oynasida «Xato bilan tugadi» → «Qayta yuborish». Route soni 78 / 78.
+  - **IN-2 (2026-10-21, `feat/in-2-investor-lists`):** yangi route'lar `/investments` («Investitsiyalar» — `DateRange`
+    «Barcha vaqt», «Jamidagi hissasi», oraliq jami — bitta sahifada yig'indi, aks holda faqat son, N6 → IN-3) va
+    `/profits` («Foyda tarixi» — «To'lov holati» segmenti, umumiy `ProfitHistoryTable`); filtr va sahifa URL'da,
+    `canViewInvestorCabinet`; investor menyusi va pastki menyusi to'liq (4 katak), bosh sahifada «Barchasi».
+    Route soni 80 / 80.
 - «Visual» baseline'lari skaner 2-bosqichidan keyin yangilangan (bot commit `1393ae0`, `/dispatch` va
   `cancelled-handover` — «Kamera» tugmalari olib tashlangani uchun kutilgan farq).
 - **To'liq QA** — Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.
