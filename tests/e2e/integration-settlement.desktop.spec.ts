@@ -61,6 +61,8 @@ test.describe("Integratsiya — Hisob-kitob, desktop", () => {
       // Tenglash — summa to'lanishi kerakka, ogohlantirish yo'qoladi; qayta ortiqcha summa — yozish bloklanmaydi.
       await dialog.getByRole("button", { name: /Summani 4\s510\s000 so'mga tenglash/ }).click();
       await expect(amount).toHaveValue(/^4\s510\s000$/);
+      // Tenglash tugmasi yo'qoladi — fokus oynadan chiqib ketmaydi, summa maydonida.
+      await expect(amount).toBeFocused();
       await expect(dialog.getByText("Ortig'i hamkor avansiga o'tadi")).toHaveCount(0);
       await amount.fill("5000000");
       await dialog.getByRole("button", { name: "Yozish" }).click();
@@ -77,6 +79,8 @@ test.describe("Integratsiya — Hisob-kitob, desktop", () => {
       await expect(result.getByRole("link", { name: "Asosiy kassani ochish" })).toHaveAttribute("href", "/payments/main-cashbox");
       await result.getByRole("button", { name: "Tayyor" }).click();
       await expect(result).toHaveCount(0);
+      // Fokus «To'lov olindi» ga qaytadi (to'lov oynasining yo'qolgan «Yozish» tugmasiga emas).
+      await expect(page.getByRole("button", { name: "To'lov olindi" })).toBeFocused();
 
       expect(remittances).toEqual([{ amount: 5_000_000 }]);
       expect(leaked).toEqual([]);

@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-integrations-panel-settlement, superadmin-integrations-settlement-pay-dialog, superadmin-integrations-settlement-pay-overpay-dialog, admin-integrations-conn-settlement, admin-integrations-settlement-pay-dialog, admin-integrations-settlement-pay-overpay-dialog
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -116,6 +116,11 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
   /** Natija oynasi: mazmun yopilish animatsiyasida ham qoladi (`resultOpen` alohida). */
   const [result, setResult] = useState<PayResultContext | null>(null);
   const [resultOpen, setResultOpen] = useState(false);
+  /**
+   * «To'lov olindi» — natija oynasi yopilgach fokus shu tugmaga qaytadi. Natija oynasi to'lov oynasi yopilayotgan
+   * paytda ochiladi: o'z-o'zidan «ochgan element» to'lov oynasidagi «Yozish» bo'lib qoladi, u esa DOM'dan olinadi.
+   */
+  const payTriggerRef = useRef<HTMLButtonElement>(null);
 
   const balance = useReceivableBalance(connection.id, { silentError: true });
   const list = useReceivables({ integrationId: connection.id, status, page, limit: PAGE_SIZE }, { silentError: true });
@@ -177,7 +182,7 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
             title={t("stlBalance")}
             icon={Wallet}
             actions={
-              <Button variant="secondary" leftIcon={Plus} onClick={() => setPayOpen(true)} className="max-md:min-h-11">
+              <Button ref={payTriggerRef} variant="secondary" leftIcon={Plus} onClick={() => setPayOpen(true)}>
                 {t("console.paymentReceived")}
               </Button>
             }
@@ -214,7 +219,20 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
       </PanelSection>
       <QueryBoundary
         query={{ data: list.data ? rows : undefined, isLoading: list.isLoading, isError: list.isError, error: list.error, refetch: list.refetch }}
-        loading={<SkeletonTable framed={false} rows={4} columns={[t("colOrder"), t("colExternalNumber"), t("colAmount"), t("colStatus")]} />}
+        loading={
+          <SkeletonTable
+            framed={false}
+            rows={4}
+            columns={[
+              t("colOrder"),
+              t("colExternalNumber"),
+              t("colAmount"),
+              t("colStatus"),
+              t("settlementPay.colRemittance"),
+              t("colClosed"),
+            ]}
+          />
+        }
         empty={<EmptyState icon={Banknote} title={t("console.receivablesEmpty")} />}
         error={(error, retry) => <ErrorState error={error} title={t("console.receivablesError")} onRetry={retry} />}
         className="border-t border-border"
@@ -278,7 +296,12 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
           setResultOpen(true);
         }}
       />
-      <PayResultDialog open={resultOpen} context={result} onClose={() => setResultOpen(false)} />
+      <PayResultDialog
+        open={resultOpen}
+        context={result}
+        returnFocus={payTriggerRef}
+        onClose={() => setResultOpen(false)}
+      />
     </div>
   );
 };
@@ -386,6 +409,8 @@ const PayDialog = ({
   const [reference, setReference] = useState("");
   const [note, setNote] = useState("");
   const [touched, setTouched] = useState(false);
+  /** «Summani … ga tenglash» bosilgach tugma yo'qoladi — fokus summa maydoniga o'tadi (oynadan chiqib ketmaydi). */
+  const amountRef = useRef<HTMLInputElement>(null);
 
   const value = Number(amount);
   const amountError = !touched
@@ -395,10 +420,16 @@ const PayDialog = ({
       : !Number.isFinite(value) || value < 1
         ? t("stlAmountPositive")
         : undefined;
-  /** Ortiqcha summa (ega S2): ogohlantirish, «Yozish» bloklanmaydi. Xato bo'lsa — ko'rsatilmaydi. */
-  const overpay = amountError ? null : overpayPreview(value, summary);
-  /** «Summani … ga tenglash» — to'lanishi kerak ≥ 1 bo'lsa (maydon faqat butun so'm qabul qiladi). */
+  /**
+   * «Summani … ga tenglash» — to'lanishi kerak ≥ 1 bo'lsa. Maydon faqat butun so'm qabul qiladi: tiyinli qoldiq
+   * (4 510 000,50) yuqoriga yaxlitlanadi.
+   */
   const equalizeTo = summary && summary.payable >= 1 ? Math.ceil(summary.payable) : null;
+  /**
+   * Ortiqcha summa (ega S2): ogohlantirish, «Yozish» bloklanmaydi. Xato bo'lsa — ko'rsatilmaydi. Tenglangan summa
+   * (yaxlitlangan qoldiqqa teng yoki kichik) ortiqcha emas — aks holda «0,50 so'm ortiq» qolib, tugma takrorlanardi.
+   */
+  const overpay = amountError || (equalizeTo !== null && value <= equalizeTo) ? null : overpayPreview(value, summary);
 
   const reset = () => {
     setAmount("");
@@ -454,7 +485,7 @@ const PayDialog = ({
         name: connection.name,
         amount: summary ? money(summary.payable) : "—",
       })}
-      icon={Wallet}
+      icon={Banknote}
       size="md"
       onSubmit={(event) => void submit(event)}
       footer={
@@ -489,6 +520,7 @@ const PayDialog = ({
           }
         >
           <TextInput
+            ref={amountRef}
             mode="money"
             value={amount}
             onValueChange={setAmount}
@@ -526,8 +558,11 @@ const PayDialog = ({
               <Button
                 variant="ghost"
                 size="sm"
-                className="self-start max-md:min-h-11"
-                onClick={() => setAmount(String(equalizeTo))}
+                className="self-start"
+                onClick={() => {
+                  setAmount(String(equalizeTo));
+                  amountRef.current?.focus();
+                }}
               >
                 {t("settlementPay.equalize", { amount: money(equalizeTo) })}
               </Button>

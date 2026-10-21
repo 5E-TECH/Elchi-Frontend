@@ -1,4 +1,5 @@
 // dizayn-v2: superadmin-integrations-settlement-pay-result-dialog, admin-integrations-settlement-pay-result-dialog
+import type { RefObject } from "react";
 import { Trans, useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { CircleCheck, Wallet } from "lucide-react";
@@ -43,10 +44,16 @@ const CASHBOX_PATH = "/payments/main-cashbox";
 const PayResultDialog = ({
   open,
   context,
+  returnFocus,
   onClose,
 }: {
   open: boolean;
   context: PayResultContext | null;
+  /**
+   * Yopilgach fokus qaytadigan element («To'lov olindi»). Oyna to'lov oynasi yopilayotganda ochiladi — sukut
+   * («ochgan element») to'lov oynasining «Yozish» tugmasi bo'lib qoladi va u DOM'dan olinadi (fokus `<body>` ga tushardi).
+   */
+  returnFocus?: RefObject<HTMLElement | null>;
   onClose: () => void;
 }) => {
   const { t, i18n } = useTranslation("integrations");
@@ -66,6 +73,7 @@ const PayResultDialog = ({
     <Dialog
       open={open && Boolean(context)}
       onClose={onClose}
+      returnFocus={returnFocus ?? true}
       title={t("settlementPay.recorded")}
       description={description}
       icon={CircleCheck}
@@ -113,7 +121,11 @@ const ResultBody = ({ context, money }: { context: PayResultContext; money: (val
         {reference ? <BalanceRow first wrap label={t("settlementPay.reference")} value={reference} /> : null}
         <BalanceRow first={!reference} label={t("settlementPay.received")} value={money(result.remitted)} />
         {result.advanceApplied > 0 ? (
-          <BalanceRow label={t("settlementPay.advanceUsed")} value={money(result.advanceApplied)} />
+          /* Maket: ortiqcha to'lovda «Avvalgi avansdan ishlatildi», to'lov qarzdan kam bo'lsa — «Avansdan ishlatildi». */
+          <BalanceRow
+            label={t(toAdvance > 0 ? "settlementPay.advanceUsed" : "settlementPay.advanceUsedShort")}
+            value={money(result.advanceApplied)}
+          />
         ) : null}
         <BalanceRow
           label={t("settlementPay.settled")}
@@ -145,7 +157,12 @@ const ResultBody = ({ context, money }: { context: PayResultContext; money: (val
 
       {posted ? null : (
         <InlineAlert tone="warning" role="alert" title={t("settlementPay.notPostedTitle")}>
-          <Trans t={t} i18nKey="settlementPay.notPostedDesc" components={{ cashbox: cashboxLink }} />
+          {/* Birorta qarz yopilmagan bo'lsa (summa eng eski yozuvga ham yetmadi) — «Qarzlar yopildi» deyilmaydi. */}
+          <Trans
+            t={t}
+            i18nKey={result.settledCount > 0 ? "settlementPay.notPostedDesc" : "settlementPay.notPostedNoneDesc"}
+            components={{ cashbox: cashboxLink }}
+          />
         </InlineAlert>
       )}
     </>

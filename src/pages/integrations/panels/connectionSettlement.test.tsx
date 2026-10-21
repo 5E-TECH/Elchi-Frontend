@@ -250,7 +250,16 @@ describe("ConnectionSettlement — to'lov oynasi", () => {
     await screen.findByText("To'lov yozildi");
     const keys = spy.mock.calls.map(([filters]) => (filters as { queryKey: unknown[] }).queryKey[0]);
     expect(keys).toEqual(
-      expect.arrayContaining(["integration-settlement", "cashbox", "finance-history", "dashboard", "revenue", "kpi", "markets"]),
+      expect.arrayContaining([
+        "integration-settlement",
+        "integration-metrics",
+        "cashbox",
+        "finance-history",
+        "dashboard",
+        "revenue",
+        "kpi",
+        "markets",
+      ]),
     );
   });
 
@@ -302,6 +311,27 @@ describe("ConnectionSettlement — ortiqcha summa (IS-2, ega S2)", () => {
     expect(amount).toHaveValue("4 510 000");
     expect(within(dialog).queryByText("Ortig'i hamkor avansiga o'tadi")).not.toBeInTheDocument();
     expect(within(dialog).getByText("Summa asosiy kassaga kirim bo'ladi")).toBeInTheDocument();
+    // Tugma yo'qoladi — fokus `<body>` ga emas, summa maydoniga o'tadi (oyna ichida qoladi).
+    expect(amount).toHaveFocus();
+  });
+
+  it("tiyinli qoldiq — tenglangan (yaxlitlangan) summa ortiqcha deb aytilmaydi", async () => {
+    balance = { ...BALANCE, payable_amount: "4510000.50" };
+    const { user, dialog } = await openPayDialog();
+    // Pul butun so'mga yaxlitlab ko'rsatiladi — sarlavhada «4 510 001».
+    await waitFor(() => expect(norm(dialog.textContent)).toContain("to'lanishi kerak 4 510 001 so'm"));
+    const amount = within(dialog).getByRole("textbox", { name: /Summa/ });
+    await user.type(amount, "5000000");
+    await user.click(within(dialog).getByRole("button", { name: /^Summani 4\s510\s001 so'mga tenglash$/ }));
+    expect(amount).toHaveValue("4 510 001");
+    expect(within(dialog).queryByText("Ortig'i hamkor avansiga o'tadi")).not.toBeInTheDocument();
+    expect(within(dialog).queryByRole("button", { name: /tenglash/ })).not.toBeInTheDocument();
+  });
+
+  it("oyna sarlavhasi ikonkasi — Banknote (maket `*-pay-dialog`)", async () => {
+    const { dialog } = await openPayDialog();
+    expect(dialog.querySelector("svg.lucide-banknote")).not.toBeNull();
+    expect(dialog.querySelector("svg.lucide-wallet")).toBeNull();
   });
 
   it("qarz yo'q (to'lanishi kerak = 0) — «yopilmagan qarz yo'q» matni, tenglash tugmasi yo'q", async () => {
@@ -360,6 +390,8 @@ describe("ConnectionSettlement — «To'lov yozildi» natija oynasi (IS-2)", () 
 
     await user.click(within(result).getByRole("button", { name: "Tayyor" }));
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "To'lov yozildi" })).not.toBeInTheDocument());
+    // Fokus «To'lov olindi» ga qaytadi — to'lov oynasining DOM'dan olingan «Yozish» tugmasiga emas.
+    expect(screen.getByRole("button", { name: "To'lov olindi" })).toHaveFocus();
     expect(apiPostMock).toHaveBeenCalledWith("integrations/7/remittances", {
       amount: 5_000_000,
       reference: "To'lov topshiriqnomasi №4531",
@@ -377,7 +409,18 @@ describe("ConnectionSettlement — «To'lov yozildi» natija oynasi (IS-2)", () 
     expect(norm(result.textContent)).not.toContain("hammasi");
   });
 
-  it("avansdan ishlatildi (to'lov qarzdan kam) — «Avvalgi avansdan ishlatildi», «Hamkor avansi endi 0»", async () => {
+  it("kassaga yozilmadi va birorta qarz yopilmadi — «Qarzlar yopildi» deyilmaydi", async () => {
+    const { result } = await payAndOpenResult(
+      { remittance_id: 87, remitted_amount: 100_000, settled_amount: 0, settled_count: 0, unapplied_amount: 100_000, advance_applied: 0, advance_balance: 450_000, cashbox_posted: false },
+      "100000",
+    );
+    const alert = within(result).getByRole("alert");
+    expect(alert).toHaveTextContent("Summa birorta qarz yozuviga yetmadi — hamkor avansiga o'tdi");
+    expect(alert).not.toHaveTextContent("Qarzlar yopildi");
+    expect(within(alert).getByRole("link", { name: "Asosiy kassa" })).toHaveAttribute("href", "/payments/main-cashbox");
+  });
+
+  it("avansdan ishlatildi (to'lov qarzdan kam) — «Avansdan ishlatildi», «Hamkor avansi endi 0»", async () => {
     const { result } = await payAndOpenResult(
       {
         remittance_id: 85,
@@ -393,7 +436,9 @@ describe("ConnectionSettlement — «To'lov yozildi» natija oynasi (IS-2)", () 
     );
     const text = norm(result.textContent);
     expect(text).toContain("Olingan summa4 300 000 so'm");
-    expect(text).toContain("Avvalgi avansdan ishlatildi350 000 so'm");
+    // Maket «Avansdan ishlatilsa» holati — qisqa yorliq.
+    expect(text).toContain("Avansdan ishlatildi350 000 so'm");
+    expect(text).not.toContain("Avvalgi avansdan");
     expect(text).toContain("Yopilgan qarzlar4 650 000 so'm21 ta yozuv");
     expect(text).toContain("Hamkor avansi endi0 so'm");
     expect(text).not.toContain("Avansga o'tdi");
@@ -412,6 +457,19 @@ describe("ConnectionSettlement — «To'lov yozildi» natija oynasi (IS-2)", () 
 });
 
 describe("ConnectionSettlement — «Qarz yozuvlari» da «To'lov» ustuni (IS-2)", () => {
+  it("yuklanayotganda skelet jadvali ham 6 ustunli («To'lov», «Yopilgan» bilan)", async () => {
+    apiGetMock.mockImplementation((url: string) =>
+      String(url).includes("receivable-balance")
+        ? Promise.resolve({ data: { statusCode: 200, data: BALANCE } })
+        : new Promise(() => {}),
+    );
+    const { container } = renderWithProviders(<ConnectionSettlement connection={carrier} />);
+    await waitFor(() => expect(container.querySelector('[data-skeleton-preset="table"]')).not.toBeNull());
+    const skeleton = container.querySelector('[data-skeleton-preset="table"]') as HTMLElement;
+    const headers = ["Buyurtma", "Tashqi raqam", "Summa", "Holat", "To'lov", "Yopilgan"];
+    for (const header of headers) expect(within(skeleton).getByText(header)).toBeInTheDocument();
+  });
+
   it("⭐ yopilgan qarzda «To'lov №82», kutilayotganda «—»", async () => {
     receivables = [
       { id: 1, order_id: "10209", integration_id: "7", provider_slug: "ty", external_ref: "TY-447738", amount: "1150000.00", status: "settled", remittance_id: "82", settled_at: "2026-10-14T05:30:00.000Z" },
@@ -440,6 +498,8 @@ describe("IS-2 matnlari — ko'plik shakli (ru/en)", () => {
     expect(tr("ru", "settlementPay.toastDesc", { count: 6, amount: "X" })).toBe("Закрыто 6 долгов · Приход в основную кассу: X");
     expect(tr("en", "settlementPay.toastDesc", { count: 1, amount: "X" })).toBe("1 debt closed · X posted to the main cashbox");
     expect(tr("ru", "settlementPay.overpayDesc", { count: 23, name: "N", advance: "A", amount: "S" })).toMatch(/^Будут закрыты все 23 долга,/);
+    // ru `_one` (1, 21, 31 …) ham «все» bilan.
+    expect(tr("ru", "settlementPay.overpayDesc", { count: 21, name: "N", advance: "A", amount: "S" })).toMatch(/^Будут закрыты все долги \(21\),/);
     expect(tr("en", "settlementPay.overpayDesc", { count: 23, name: "N", advance: "A", amount: "S" })).toMatch(/^All 23 debts will be closed,/);
   });
 });

@@ -41,7 +41,18 @@ const RECEIVABLES = [
 ];
 
 /** Qarzga aniq tushgan va kassaga yozilgan to'lov — natija oynasisiz, faqat xabar. */
-export const EXACT_RESPONSE = { remittance_id: "82", settled_count: 3, settled_amount: 1282500, unapplied_amount: 0, cashbox_posted: true };
+/** Qarzga aniq tushgan to'lov (backend shakli: `unapplied = amount + advance_applied − settled` = 0). */
+export const EXACT_RESPONSE = {
+  remittance_id: "82",
+  integration_id: "7",
+  remitted_amount: 1_500_000,
+  settled_amount: 1_500_000,
+  settled_count: 3,
+  unapplied_amount: 0,
+  advance_applied: 0,
+  advance_balance: 350_000,
+  cashbox_posted: true,
+};
 /** Maket `*-pay-result-dialog`: 5 000 000 olindi, 23 ta qarz yopildi, ortig'i avansga (backend shakli). */
 export const OVERPAID_RESPONSE = {
   remittance_id: 84,

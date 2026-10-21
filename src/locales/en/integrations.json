@@ -932,6 +932,7 @@
     "reference": "Payment number",
     "received": "Amount received",
     "advanceUsed": "Used from the previous advance",
+    "advanceUsedShort": "Used from the advance",
     "settled": "Debts closed",
     "settledAll": "{{records}} — all",
     "toAdvance": "Moved to the advance",
@@ -942,6 +943,7 @@
     "cashboxNotPosted": "Not recorded in the cashbox",
     "notPostedTitle": "The amount did not reach the main cashbox",
     "notPostedDesc": "The debts were closed, but there is no cashbox entry. Before entering it by hand, check the <cashbox>main cashbox</cashbox> history — if the entry arrived late, the money would be recorded twice.",
+    "notPostedNoneDesc": "The amount did not cover any debt record — it moved to the partner advance, but there is no cashbox entry. Before entering it by hand, check the <cashbox>main cashbox</cashbox> history — if the entry arrived late, the money would be recorded twice.",
     "openCashbox": "Open the main cashbox",
     "done": "Done"
   }

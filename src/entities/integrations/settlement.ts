@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
+import { metricsKey } from "./metrics";
 
 /**
  * HISOB-KITOB — tashuvchi yig'gan COD va bizga qarzi.
@@ -227,7 +228,7 @@ export const overpayPreview = (amount: number, summary: BalanceSummary | null): 
  * yopish kerak bo'lsa ular alohida uzatiladi.
  *
  * Muvaffaqiyatdan keyin hisob-kitob kalitlari (`settlementKey`: qoldiq, qarz yozuvlari, ulanish «Umumiy holat»
- * qoldig'i) yangilanadi. Summa MAIN kassaga ham yoziladi — kassa, moliya tarixi, bosh sahifa, daromad, KPI va
+ * qoldig'i) va ulanish ko'rsatkichlari (`metricsKey` — «Umumiy holat» dagi COD «To'langan») yangilanadi. Summa MAIN kassaga ham yoziladi — kassa, moliya tarixi, bosh sahifa, daromad, KPI va
  * marketlar kalitlarini sahifa `refreshCashboxQueries` (entities/payments) bilan yangilaydi (entity'lar bir-birini
  * import qilmaydi).
  */
@@ -238,6 +239,10 @@ export const useCreateRemittance = () => {
       api
         .post(API_ENDPOINTS.INTEGRATIONS.REMITTANCES(integrationId), body)
         .then((res) => normalizeRemittanceResult(res.data, body.amount)),
-    onSuccess: () => client.invalidateQueries({ queryKey: [settlementKey] }),
+    onSuccess: () => {
+      // Ko'rsatkichlar (24/48 soatlik) kutilmaydi — «Yozish» faqat hisob-kitob qayta o'qilguncha band.
+      void client.invalidateQueries({ queryKey: metricsKey });
+      return client.invalidateQueries({ queryKey: [settlementKey] });
+    },
   });
 };

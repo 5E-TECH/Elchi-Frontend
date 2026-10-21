@@ -932,6 +932,7 @@
     "reference": "To'lov raqami",
     "received": "Olingan summa",
     "advanceUsed": "Avvalgi avansdan ishlatildi",
+    "advanceUsedShort": "Avansdan ishlatildi",
     "settled": "Yopilgan qarzlar",
     "settledAll": "{{records}} — hammasi",
     "toAdvance": "Avansga o'tdi",
@@ -942,6 +943,7 @@
     "cashboxNotPosted": "Kassaga yozilmadi",
     "notPostedTitle": "Summa asosiy kassaga tushmadi",
     "notPostedDesc": "Qarzlar yopildi, lekin kassa yozuvi bo'lmadi. Kassaga qo'lda kiritishdan oldin <cashbox>Asosiy kassa</cashbox> tarixini tekshiring — yozuv kechikib tushgan bo'lsa, pul ikki marta yoziladi.",
+    "notPostedNoneDesc": "Summa birorta qarz yozuviga yetmadi — hamkor avansiga o'tdi, lekin kassa yozuvi bo'lmadi. Kassaga qo'lda kiritishdan oldin <cashbox>Asosiy kassa</cashbox> tarixini tekshiring — yozuv kechikib tushgan bo'lsa, pul ikki marta yoziladi.",
     "openCashbox": "Asosiy kassani ochish",
     "done": "Tayyor"
   }
