@@ -58,13 +58,15 @@ type MockOptions = {
 export type LogistHomeMock = {
   /** `region/stats/all` so'rovlarining query satrlari. */
   statsQueries: string[];
+  /** Barcha GET so'rovlarining yo'llari (LG-S1: moliya so'rovlari ketmasligini tekshirish uchun). */
+  requested: string[];
   leaked: string[];
   /** `true` — `region/stats/all` 500 qaytaradi. */
   failing: boolean;
 };
 
 export const mockLogistHome = async (page: Page, { unassigned = false, fail = false, theme }: MockOptions = {}) => {
-  const mock: LogistHomeMock = { statsQueries: [], leaked: [], failing: fail };
+  const mock: LogistHomeMock = { statsQueries: [], requested: [], leaked: [], failing: fail };
   await page.context().routeWebSocket(/\/socket\.io\//, (ws) => ws.close());
   await page.context().route("**/*", async (route) => {
     const request = route.request();
@@ -74,6 +76,7 @@ export const mockLogistHome = async (page: Page, { unassigned = false, fail = fa
     if (request.method() === "OPTIONS") return route.fulfill({ status: 204, headers: cors });
     const path = url.pathname.replace(/^\//, "");
     const method = request.method();
+    if (method === "GET") mock.requested.push(path);
     if (path === "auth/my-profile") {
       return reply(
         route,
@@ -122,6 +125,15 @@ export const openLogistHome = async (page: Page, options: MockOptions = {}) => {
     });
   }
   return mock;
+};
+
+/** LG-S1: logist moliyani ko'rmaydi — moliya/analitika so'rovlari umuman yuborilmaydi. */
+const FINANCE_REQUEST = /analytics|cashbox|cash-box|payments|financial|investors/;
+
+export const expectNoFinanceRequests = (mock: LogistHomeMock) => {
+  // Yozuvchi ishlayotganini tasdiqlash (aks holda tekshiruv bo'sh ro'yxat ustida «o'tib» ketadi).
+  expect(mock.requested).toContain("region/stats/all");
+  expect(mock.requested.filter((path) => FINANCE_REQUEST.test(path))).toEqual([]);
 };
 
 /** Sahifada gorizontal oqib ketish yo'q (hujjat ham, shell kontenti ham). */

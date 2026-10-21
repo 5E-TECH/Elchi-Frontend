@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { expectNoHorizontalOverflow, openLogistHome } from "./support/logistHome";
+import { expectNoFinanceRequests, expectNoHorizontalOverflow, openLogistHome } from "./support/logistHome";
 import { tapTargets, tooSmall } from "./support/tapTargets";
 
 /**
@@ -22,10 +22,11 @@ test("⭐ 390: kartalar, pastki menyu, nishonlar ≥ 44 px, oqish yo'q", async (
   expect(tooSmall(await tapTargets(page))).toEqual([]);
   await expectNoHorizontalOverflow(page);
   expect(mock.leaked).toEqual([]);
+  expectNoFinanceRequests(mock);
 });
 
 test("390: «Menyu» varaqasi — shaxsiy bo'lim, moliyasiz", async ({ page }) => {
-  await openLogistHome(page);
+  const mock = await openLogistHome(page);
   await page.getByRole("navigation", { name: "Asosiy bo'limlar" }).getByRole("button", { name: "Menyu" }).click();
   const sheet = page.getByRole("dialog", { name: "Menyu" });
   await expect(sheet.getByRole("link", { name: /Profilni ochish/ })).toContainText("Logist");
@@ -35,4 +36,5 @@ test("390: «Menyu» varaqasi — shaxsiy bo'lim, moliyasiz", async ({ page }) =
   for (const finance of ["/payments", "/cash-box", "/financial-balance"]) {
     await expect(sheet.locator(`a[href="${finance}"]`)).toHaveCount(0);
   }
+  expectNoFinanceRequests(mock);
 });

@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../test/test-utils";
@@ -128,6 +128,13 @@ describe("LogistDashboardPage — o'z viloyatlari (LG-1)", () => {
     expect(screen.queryByText("Andijon")).not.toBeInTheDocument();
   });
 
+  it("LG-S1: yagona GET — `region/stats/all` (analitika, kassa, to'lovlar so'ralmaydi)", async () => {
+    renderPage();
+    await screen.findByText(/Sizga biriktirilgan 3 ta viloyat/);
+    const paths = new Set(mocks.get.mock.calls.map(([path]) => path));
+    expect([...paths]).toEqual(["region/stats/all"]);
+  });
+
   it("pul chizilmaydi (ega LG-S1): tushum yo'q, «so'm» yo'q", async () => {
     const { container } = renderPage();
     await screen.findByText(/Sizga biriktirilgan 3 ta viloyat/);
@@ -187,6 +194,21 @@ describe("LogistDashboardPage — o'z viloyatlari (LG-1)", () => {
 });
 
 describe("LogistDashboardPage — holatlar", () => {
+  it("foydalanuvchi id'si hali noma'lum — yuklanish, yolg'on «viloyat biriktirilmagan» emas", async () => {
+    let resolved = false;
+    mocks.get.mockImplementation(async () => {
+      resolved = true;
+      return { data: STATS };
+    });
+    renderPage(null);
+    await waitFor(() => expect(resolved).toBe(true));
+    // So'rov javobi kelgandan keyin ham id yo'q — bo'sh holat chiqmaydi, skeletonlar qoladi.
+    await act(() => new Promise((resolve) => setTimeout(resolve, 30)));
+    expect(screen.getByRole("heading", { level: 2, name: /^Viloyatlarim/ }).closest("[aria-busy=true]")).not.toBeNull();
+    expect(screen.queryByText("Sizga hali viloyat biriktirilmagan")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Sizga biriktirilgan/)).not.toBeInTheDocument();
+  });
+
   it("viloyat biriktirilmagan — bo'sh holat", async () => {
     mocks.get.mockResolvedValue({ data: { data: { regions: [region(3, "Toshkent shahri", "7", [5, 1, 1])] } } });
     renderPage();

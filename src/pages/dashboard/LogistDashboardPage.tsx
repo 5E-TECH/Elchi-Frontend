@@ -75,6 +75,9 @@ const LogistDashboardPage = () => {
   const { data, isLoading, isError, isFetching, refetch } = useRegionStats(params);
   const model = useMemo(() => buildLogistDashboard(data?.regions ?? [], me), [data?.regions, me]);
   const { summary } = model;
+  // Foydalanuvchi id'si hali ma'lum bo'lmasa (profil yuklanmoqda) — «viloyat biriktirilmagan» emas, yuklanish.
+  const meKnown = me != null && String(me) !== "";
+  const loading = isLoading || !meKnown;
 
   const applyRange = useCallback(
     (range: { from: string; to: string }) => {
@@ -93,9 +96,9 @@ const LogistDashboardPage = () => {
 
   const count = (value: number) => formatNumberLocalized(value, { language });
   const percent = (value: number) => formatPercentLocalized(value, { language });
-  const unassigned = !isLoading && !isError && summary.regionCount === 0;
+  const unassigned = !loading && !isError && summary.regionCount === 0;
   const description =
-    !isLoading && !isError && summary.regionCount > 0
+    !loading && !isError && summary.regionCount > 0
       ? t("v2Logist.headerSub", {
           count: summary.regionCount,
           names: model.rows.map((row) => row.name).join(", "),
@@ -156,11 +159,11 @@ const LogistDashboardPage = () => {
         <StatCard
           label={t("cards.total_orders")}
           icon={ShoppingBag}
-          loading={isLoading}
+          loading={loading}
           value={count(summary.total)}
           unit={t("unit.orders")}
           hint={
-            isLoading
+            loading
               ? undefined
               : t("v2Logist.kpi.totalHint", { pending: count(summary.pending), regions: count(summary.regionCount) })
           }
@@ -199,7 +202,7 @@ const LogistDashboardPage = () => {
         <StatCard
           label={t("cards.sold")}
           icon={PackageCheck}
-          loading={isLoading}
+          loading={loading}
           value={count(summary.delivered)}
           unit={t("unit.orders")}
           hint={t("v2Logist.kpi.soldHint")}
@@ -215,7 +218,7 @@ const LogistDashboardPage = () => {
         <StatCard
           label={t("cards.cancelled")}
           icon={CircleX}
-          loading={isLoading}
+          loading={loading}
           value={count(summary.cancelled)}
           unit={t("unit.orders")}
           hint={t("v2Logist.kpi.cancelledHint")}
@@ -231,7 +234,7 @@ const LogistDashboardPage = () => {
         <StatCard
           label={t("v2Logist.kpi.couriers")}
           icon={Truck}
-          loading={isLoading}
+          loading={loading}
           value={couriersKnown ? count(activeCouriers) : "—"}
           unit={couriersKnown ? t("v2Logist.kpi.couriersUnit", { total: count(totalCouriers) }) : undefined}
           hint={t("v2Logist.kpi.couriersHint")}
@@ -252,7 +255,7 @@ const LogistDashboardPage = () => {
       </KpiRow>
 
       <div className="flex flex-wrap gap-4 max-md:gap-3">
-        {isLoading ? (
+        {loading ? (
           <>
             <div className="flex min-w-0 flex-[1_1_340px] flex-col [&>*]:flex-1">
               <LoadingChartCard title={t("v2Dashboard.success.title")} />
@@ -277,7 +280,7 @@ const LogistDashboardPage = () => {
         )}
       </div>
 
-      {isLoading ? (
+      {loading ? (
         <LoadingChartCard title={t("v2Logist.table.title")} />
       ) : (
         <LogistRegionsTable model={model} periodText={periodText} />

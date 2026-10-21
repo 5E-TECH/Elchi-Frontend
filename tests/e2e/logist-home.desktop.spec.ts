@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { expectNoHorizontalOverflow, openLogistHome } from "./support/logistHome";
+import { expectNoFinanceRequests, expectNoHorizontalOverflow, openLogistHome } from "./support/logistHome";
 
 /**
  * LG-1 — logist bosh sahifasi (desktop 1280): yon menyuda faqat «Bosh sahifa» (moliyasiz — ega LG-S1), o'z
@@ -33,6 +33,7 @@ test("⭐ o'z viloyatlari, KPI va jadval; menyu faqat «Bosh sahifa»; pul yo'q"
   await expect.poll(() => mock.statsQueries.at(-1)).toBe("");
   await expectNoHorizontalOverflow(page);
   expect(mock.leaked).toEqual([]);
+  expectNoFinanceRequests(mock);
 });
 
 test("xato — tushunarli matn, backend matni yo'q; «Qayta urinish» tiklaydi", async ({ page }) => {
@@ -45,7 +46,8 @@ test("xato — tushunarli matn, backend matni yo'q; «Qayta urinish» tiklaydi",
 });
 
 test("viloyat biriktirilmagan — bo'sh holat", async ({ page }) => {
-  await openLogistHome(page, { unassigned: true });
+  const mock = await openLogistHome(page, { unassigned: true });
   await expect(page.getByText("Sizga hali viloyat biriktirilmagan")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByRole("table")).toHaveCount(0);
+  expectNoFinanceRequests(mock);
 });
