@@ -154,6 +154,25 @@ describe("useOrdersRefresh", () => {
     expect(result.current.errorVisible).toBe(true);
   });
 
+  it("yopilgandan keyin avtomatik urinish ham yiqilgan bo'lsa: qo'lda «Yangilash» ketayotganda ogohlantirish qaytmaydi", async () => {
+    const { result, rerender } = renderHook(({ list }) => useOrdersRefresh({ list }), {
+      initialProps: { list: query({ isError: true, errorUpdatedAt: 5_000 }) },
+    });
+    act(() => result.current.dismissError());
+    // > 60 s dan keyin avtomatik urinish yana yiqildi (ma'lumot o'sha) — yashirin.
+    rerender({ list: query({ isError: true, errorUpdatedAt: 65_000 }) });
+    expect(result.current.errorVisible).toBe(false);
+    await act(async () => {
+      await result.current.refreshAll();
+    });
+    // Qo'lda so'rov ketmoqda — TanStack v5 isError=true ni saqlaydi; eski (65 000) xato qaytmasligi kerak.
+    rerender({ list: query({ isError: true, errorUpdatedAt: 65_000, isFetching: true }) });
+    expect(result.current.errorVisible).toBe(false);
+    // Aynan shu urinish yiqildi — ko'rinadi.
+    rerender({ list: query({ isError: true, errorUpdatedAt: 70_000 }) });
+    expect(result.current.errorVisible).toBe(true);
+  });
+
   it("fetching — ro'yxat so'rovi ketmoqda («Qayta urinish» band)", () => {
     const { result } = renderHook(() => useOrdersRefresh({ list: query({ isFetching: true }) }));
     expect(result.current.fetching).toBe(true);

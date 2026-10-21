@@ -70,14 +70,17 @@ test.describe("Buyurtmalar — yangilanish (desktop)", () => {
 
     state.listDelayMs = 1_500;
     await header.getByRole("button", { name: "Ro'yxatni yangilash" }).last().click();
-    await expect(header.getByRole("status").filter({ hasText: "Yangilanmoqda…" })).toBeVisible();
-    await expect(header.getByRole("button", { name: "Ro'yxat yangilanmoqda" }).last()).toHaveAttribute("aria-busy", "true");
+    // Jonli hudud doim joyida (matni almashadi); ko'rinadigan badge — bezak.
+    await expect(header.getByRole("status")).toHaveText("Yangilanmoqda…");
+    await expect(header.locator('[aria-hidden="true"]').filter({ hasText: "Yangilanmoqda…" })).toBeVisible();
+    // Ghost tugma nomi yuklanishda ham «Ro'yxatni yangilash» (WCAG 2.5.3), bandlik — aria-busy.
+    await expect(header.getByRole("button", { name: "Ro'yxatni yangilash" }).last()).toHaveAttribute("aria-busy", "true");
     await expect(header.getByText("Yangilanmoqda…")).toHaveCount(0, { timeout: 10_000 });
 
     state.listDelayMs = 0;
     state.listFail = true;
     await header.getByRole("button", { name: "Ro'yxatni yangilash" }).last().click();
-    const alert = page.getByRole("status").filter({ hasText: "Ro'yxat yangilanmadi" });
+    const alert = page.getByRole("alert").filter({ hasText: "Ro'yxat yangilanmadi" });
     await expect(alert).toBeVisible();
     await expect(alert).toContainText("Ro'yxat eskirgan bo'lishi mumkin.");
     await expect(alert).not.toContainText("tab sonlari");
@@ -95,6 +98,8 @@ test.describe("Buyurtmalar — yangilanish (desktop)", () => {
 
     await alert.getByRole("button", { name: "Ogohlantirishni yopish" }).click();
     await expect(alert).toHaveCount(0);
+    // Fokus <body> ga tushmaydi — ko'rinadigan «Yangilash» ga qaytadi.
+    await expect(header.getByRole("button", { name: "Ro'yxatni yangilash" }).last()).toBeFocused();
 
     // «Qayta urinish» — qaytadan xato, so'ng tiklanadi.
     state.listFail = true;
@@ -131,7 +136,7 @@ test.describe("Buyurtmalar — yangilanish (desktop)", () => {
     state.listDelayMs = 0;
     state.listFail = true;
     await header.getByRole("button", { name: "Ro'yxatni yangilash" }).last().click();
-    const alert = page.getByRole("status").filter({ hasText: "Ro'yxat yangilanmadi" });
+    const alert = page.getByRole("alert").filter({ hasText: "Ro'yxat yangilanmadi" });
     await expect(alert).toContainText("Ro'yxat va tab sonlari eskirgan bo'lishi mumkin.");
     await expect(page.getByText("Feruza Mirzayeva")).toBeVisible();
   });

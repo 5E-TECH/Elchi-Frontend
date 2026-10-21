@@ -65,7 +65,9 @@ test.describe("Buyurtmalar — yangilanish (390px)", () => {
 
     state.listDelayMs = 1_500;
     await header.getByRole("button", { name: "Ro'yxatni yangilash" }).first().click();
-    const badge = header.getByRole("status").filter({ hasText: "Yangilanmoqda…" });
+    // Jonli hudud doim joyida (matni almashadi); ko'rinadigan badge — bezak (aria-hidden).
+    await expect(header.getByRole("status")).toHaveText("Yangilanmoqda…");
+    const badge = header.locator('[aria-hidden="true"]').filter({ hasText: "Yangilanmoqda…" });
     await expect(badge).toBeVisible();
     const badgeBox = (await badge.boundingBox())!;
     const titleBox = (await heading(page).boundingBox())!;
@@ -85,7 +87,7 @@ test.describe("Buyurtmalar — yangilanish (390px)", () => {
 
     state.listFail = true;
     await page.getByRole("button", { name: "Ro'yxatni yangilash" }).first().click();
-    const alert = page.getByRole("status").filter({ hasText: "Ro'yxat yangilanmadi" });
+    const alert = page.getByRole("alert").filter({ hasText: "Ro'yxat yangilanmadi" });
     await expect(alert).toBeVisible();
     await expect(alert).toContainText("Ro'yxat va tab sonlari eskirgan bo'lishi mumkin.");
     await expect(page.getByText("Feruza Mirzayeva")).toBeVisible();
@@ -104,5 +106,7 @@ test.describe("Buyurtmalar — yangilanish (390px)", () => {
 
     await alert.getByRole("button", { name: "Ogohlantirishni yopish" }).click();
     await expect(alert).toHaveCount(0);
+    // Telefonda ko'rinadigan «Yangilash» — sarlavhadagi ikonka tugma.
+    await expect(page.getByRole("button", { name: "Ro'yxatni yangilash" }).first()).toBeFocused();
   });
 });

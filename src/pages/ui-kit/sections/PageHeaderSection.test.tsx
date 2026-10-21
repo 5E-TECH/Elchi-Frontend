@@ -100,6 +100,9 @@ describe("PageHeaderSection", () => {
     expect(within(metaRow).getByRole("heading", { level: 1 })).toHaveTextContent("Buyurtmalar");
     expect(metaRow.parentElement).toHaveClass("flex-auto");
     expect(screen.getByRole("button", { name: "Yangilash" })).toHaveClass("max-md:hidden");
+    // Haqiqiy sahifadagidek: «Yangilanmoqda…» holatida ikkala «Yangilash» tugmasi ham band.
+    expect(iconButton).toHaveAttribute("aria-busy", "true");
+    expect(screen.getByRole("button", { name: "Yangilash" })).toHaveAttribute("aria-busy", "true");
     expect(screen.getByText("Oxirgi yangilanish: 14:42")).toBeInTheDocument();
   });
 

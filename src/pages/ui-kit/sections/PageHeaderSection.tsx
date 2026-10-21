@@ -114,6 +114,7 @@ export const PageHeaderSection = () => {
                     variant="secondary"
                     icon={RefreshCw}
                     label={t("pageHeader.demo.refreshList")}
+                    loading
                     className="ml-auto md:hidden"
                   />
                 </>
@@ -133,7 +134,7 @@ export const PageHeaderSection = () => {
               }
               actions={
                 <>
-                  <Button variant="ghost" compact leftIcon={RefreshCw} className="max-md:hidden">
+                  <Button variant="ghost" compact leftIcon={RefreshCw} loading className="max-md:hidden">
                     {t("pageHeader.demo.refresh")}
                   </Button>
                   <Button variant="secondary" leftIcon={Download} compact>

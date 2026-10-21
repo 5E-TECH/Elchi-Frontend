@@ -115,7 +115,7 @@ describe("Buyurtmalar — yangilanish (OR-1, kuryer bo'lmagan rollar)", () => {
     server.fail = true;
     await user.click(screen.getAllByRole("button", { name: "Ro'yxatni yangilash" })[0]);
 
-    const alert = (await screen.findByText("Ro'yxat yangilanmadi")).closest('[role="status"]') as HTMLElement;
+    const alert = (await screen.findByText("Ro'yxat yangilanmadi")).closest('[role="alert"]') as HTMLElement;
     expect(alert).toHaveTextContent("Ro'yxat eskirgan bo'lishi mumkin.");
     expect(alert).not.toHaveTextContent("tab sonlari");
     // Xom backend matni ko'rsatilmaydi.
@@ -126,6 +126,8 @@ describe("Buyurtmalar — yangilanish (OR-1, kuryer bo'lmagan rollar)", () => {
     await user.click(within(alert).getByRole("button", { name: "Ogohlantirishni yopish" }));
     expect(screen.queryByText("Ro'yxat yangilanmadi")).not.toBeInTheDocument();
     expect(screen.getByText("Sevara Tursunova")).toBeInTheDocument();
+    // Fokus <body> ga tushmaydi — «Yangilash» tugmasiga qaytadi.
+    expect(document.activeElement).toBe(screen.getAllByRole("button", { name: "Ro'yxatni yangilash" })[0]);
   });
 
   it("«Qayta urinish» — muvaffaqiyatli bo'lsa ogohlantirish yo'qoladi, yangi qatorlar chiqadi", async () => {
@@ -134,7 +136,7 @@ describe("Buyurtmalar — yangilanish (OR-1, kuryer bo'lmagan rollar)", () => {
     await screen.findByText("Sevara Tursunova");
     server.fail = true;
     await user.click(screen.getAllByRole("button", { name: "Ro'yxatni yangilash" })[0]);
-    const alert = (await screen.findByText("Ro'yxat yangilanmadi")).closest('[role="status"]') as HTMLElement;
+    const alert = (await screen.findByText("Ro'yxat yangilanmadi")).closest('[role="alert"]') as HTMLElement;
 
     server.fail = false;
     server.rows = [row("10250", "Javohir Toshmatov"), ...server.rows];
@@ -142,6 +144,8 @@ describe("Buyurtmalar — yangilanish (OR-1, kuryer bo'lmagan rollar)", () => {
     expect(await screen.findByText("Javohir Toshmatov")).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByText("Ro'yxat yangilanmadi")).not.toBeInTheDocument());
     expect(screen.getByText("Jami 3 ta buyurtma")).toBeInTheDocument();
+    // «Qayta urinish» fokusda edi — ogohlantirish yo'qolganda fokus «Yangilash» ga o'tadi.
+    expect(document.activeElement).toHaveAttribute("data-orders-refresh");
   });
 
   it("so'rov sozlamalari: 60 s, ilovaga qaytganda; global xato xabari faqat ma'lumot bo'lmaganda", async () => {
@@ -159,6 +163,16 @@ describe("Buyurtmalar — yangilanish (OR-1, kuryer bo'lmagan rollar)", () => {
     await screen.findByText("Ro'yxat yangilanmadi");
     // Ma'lumot bor edi — global «Server xatosi» xabari chiqmaydi, sahifa ogohlantirishi yetarli.
     expect(listQuery().meta).toEqual({ silentError: true });
+  });
+
+  it("birinchi yuklash yiqilsa (keshda ma'lumot yo'q) — meta.silentError YO'Q: global xato xabari chiqadi", async () => {
+    server.fail = true;
+    const { queryClient } = open();
+    await waitFor(() => expect(listCalls()).toBeGreaterThan(0));
+    const listQuery = () => queryClient.getQueryCache().findAll({ queryKey: ["orders"] })[0];
+    await waitFor(() => expect(listQuery().state.status).toBe("error"));
+    expect(listQuery().meta?.silentError).not.toBe(true);
+    expect(screen.queryByText("Ro'yxat yangilanmadi")).not.toBeInTheDocument();
   });
 
   it("ilovaga qaytganda (visibilitychange) ro'yxat qayta so'raladi — eskirgan bo'lsa", async () => {

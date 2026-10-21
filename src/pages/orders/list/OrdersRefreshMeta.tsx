@@ -27,8 +27,13 @@ export const OrdersRefreshTitleMeta = ({ refreshing, onRefresh }: RefreshControl
   const { t } = useTranslation("orders");
   return (
     <>
+      {/* Doim joyida turgan jonli hudud — matni almashadi (to'la holda qo'shilgan role=status ko'p ekran
+          o'quvchilarida e'lon qilinmaydi); ko'rinadigan badge esa bezak. */}
+      <span role="status" className="sr-only">
+        {refreshing ? t("ordersList.refreshingBadge") : ""}
+      </span>
       {refreshing ? (
-        <Badge role="status">
+        <Badge aria-hidden="true">
           <Spinner className="size-3! border-[1.5px]!" />
           {t("ordersList.refreshingBadge")}
         </Badge>
@@ -40,6 +45,7 @@ export const OrdersRefreshTitleMeta = ({ refreshing, onRefresh }: RefreshControl
         loading={refreshing}
         loadingLabel={t("ordersList.refreshingLabel")}
         className="ml-auto md:hidden"
+        data-orders-refresh=""
         onClick={onRefresh}
       />
     </>
@@ -55,8 +61,11 @@ export const OrdersRefreshButton = ({ refreshing, onRefresh }: RefreshControlPro
       compact
       leftIcon={RefreshCw}
       loading={refreshing}
-      aria-label={refreshing ? t("ordersList.refreshingLabel") : t("ordersList.refreshLabel")}
+      // Nom yuklanishda ham o'zgarmaydi — ko'rinadigan «Yangilash» so'zi nomda qoladi (WCAG 2.5.3); bandlik —
+      // `loading` → `aria-busy`.
+      aria-label={t("ordersList.refreshLabel")}
       className="max-md:hidden"
+      data-orders-refresh=""
       onClick={onRefresh}
     >
       {t("ordersList.refreshAction")}

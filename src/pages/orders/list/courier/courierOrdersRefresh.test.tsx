@@ -5,6 +5,7 @@ import CourierOrders from "./index";
 import { renderWithProviders } from "../../../../test/test-utils";
 import { api } from "../../../../shared/api/api";
 import { COURIER_ORDER_COUNTS_QUERY_KEY, parseCourierOrderCounts } from "../../../../entities/orders";
+import { ORDERS_REFRESH_INTERVAL_MS } from "../useOrdersRefresh";
 
 /**
  * OR-1 — kuryer «Buyurtmalar»: tab sonlari (`GET orders/courier/orders/counts`), «Yangilash» (ro'yxat + sonlar),
@@ -142,16 +143,25 @@ describe("Kuryer buyurtmalari — yangilanish va tab sonlari (OR-1)", () => {
     await waitFor(() => expect(calls("orders/courier/orders")).toBe(listBefore + 1));
     expect(calls("orders/courier/orders/counts")).toBe(2);
 
-    expect(await screen.findByText("Yangilanmoqda…", undefined, { timeout: 1500 })).toBeInTheDocument();
+    // Doim joyida turgan jonli hudud (bo'sh) — matni almashadi; ko'rinadigan badge — bezak (aria-hidden).
+    const live = document.querySelector('header [role="status"]') as HTMLElement;
+    expect(live).toHaveTextContent(/^$/);
+    await waitFor(() => expect(live).toHaveTextContent("Yangilanmoqda…"), { timeout: 1500 });
+    expect(document.querySelector('header [role="status"]')).toBe(live);
+    const badge = screen.getAllByText("Yangilanmoqda…").find((node) => node !== live) as HTMLElement;
+    expect(badge.closest('[aria-hidden="true"]')).not.toBeNull();
     const busyCount = within(screen.getByRole("tab", { name: /Kutilayotgan/ })).getByText("7");
     expect(busyCount).toHaveAttribute("aria-busy", "true");
-    for (const button of screen.getAllByRole("button", { name: "Ro'yxat yangilanmoqda" })) {
-      expect(button).toHaveAttribute("aria-busy", "true");
-    }
+    // Telefon ikonka tugmasi (matnsiz) — nomi «Ro'yxat yangilanmoqda»; ghost tugma nomi esa o'zgarmaydi
+    // (ko'rinadigan «Yangilash» nomda qoladi, WCAG 2.5.3), bandlik — aria-busy.
+    expect(screen.getByRole("button", { name: "Ro'yxat yangilanmoqda" })).toHaveAttribute("aria-busy", "true");
+    expect(refreshButton()).toHaveTextContent("Yangilash");
+    expect(refreshButton()).toHaveAttribute("aria-busy", "true");
 
     server.hold.resolve();
     server.hold = null;
     await waitFor(() => expect(screen.queryByText("Yangilanmoqda…")).not.toBeInTheDocument());
+    expect(live).toBeInTheDocument();
     expect(await screen.findByRole("tab", { name: "Kutilayotgan 8" })).toBeInTheDocument();
   });
 
@@ -161,7 +171,7 @@ describe("Kuryer buyurtmalari — yangilanish va tab sonlari (OR-1)", () => {
     await screen.findByText("Laylo Hasanova");
     server.fail = true;
     await user.click(refreshButton());
-    const alert = (await screen.findByText("Ro'yxat yangilanmadi")).closest('[role="status"]') as HTMLElement;
+    const alert = (await screen.findByText("Ro'yxat yangilanmadi")).closest('[role="alert"]') as HTMLElement;
     expect(alert).toHaveTextContent("Ro'yxat va tab sonlari eskirgan bo'lishi mumkin.");
     expect(screen.getByText("Laylo Hasanova")).toBeInTheDocument();
     // Sonlar eskisi qoladi (yordamchi so'rov xatosi jim).
@@ -169,6 +179,31 @@ describe("Kuryer buyurtmalari — yangilanish va tab sonlari (OR-1)", () => {
 
     await user.click(within(alert).getByRole("button", { name: "Ogohlantirishni yopish" }));
     expect(screen.queryByText("Ro'yxat yangilanmadi")).not.toBeInTheDocument();
+    expect(document.activeElement).toHaveAttribute("data-orders-refresh");
+  });
+
+  it("sotish oynasi ochiq — ro'yxat va sonlarning avtomatik yangilanishi (60 s, ilovaga qaytganda) to'xtaydi", async () => {
+    const user = userEvent.setup();
+    const { queryClient } = open();
+    await screen.findByText("Laylo Hasanova");
+    const listQuery = () =>
+      queryClient
+        .getQueryCache()
+        .findAll({ queryKey: ["orders", "courier"] })
+        .find((query) => typeof query.queryKey[2] === "object")!;
+    const countsQuery = () => queryClient.getQueryCache().find({ queryKey: COURIER_ORDER_COUNTS_QUERY_KEY })!;
+    const listOptions = () => listQuery().observers[0].options;
+    const interval = () => (listOptions().refetchInterval as (query: unknown) => number | false)(listQuery());
+    expect(interval()).toBe(ORDERS_REFRESH_INTERVAL_MS);
+    expect(listOptions().refetchOnWindowFocus).toBe(true);
+    expect(countsQuery().observers[0].options.refetchInterval).toBe(ORDERS_REFRESH_INTERVAL_MS);
+
+    await user.click(screen.getByRole("button", { name: "№10239 ni sotish" }));
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(interval()).toBe(false);
+    expect(listOptions().refetchOnWindowFocus).toBe(false);
+    expect(countsQuery().observers[0].options.refetchInterval).toBe(false);
+    expect(countsQuery().observers[0].options.refetchOnWindowFocus).toBe(false);
   });
 
   it("bekor qilinganlar tabi: yangilanishdan keyin ro'yxatdan chiqqan buyurtma tanlovdan ham chiqadi", async () => {

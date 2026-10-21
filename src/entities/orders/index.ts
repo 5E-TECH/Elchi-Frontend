@@ -278,7 +278,8 @@ export const useOrders = () => {
       queryFn: () =>
         api.get(API_ENDPOINTS.ORDERS.COURIER_ORDERS, { params }).then((res) => res.data),
       refetchInterval: refetchInterval ? (query) => refetchInterval(query.state.data) : undefined,
-      ...(options?.refetchOnWindowFocus ? { refetchOnWindowFocus: true } : {}),
+      // Berilgan bo'lsa aniq (to'xtatilganda `false`) — global sukutga tayanmaydi.
+      ...(options?.refetchOnWindowFocus !== undefined ? { refetchOnWindowFocus: options.refetchOnWindowFocus } : {}),
       ...(silentError ? { meta: { silentError: true } } : {}),
     });
   };
@@ -301,7 +302,8 @@ export const useOrders = () => {
         api.get(API_ENDPOINTS.ORDERS.COURIER_ORDER_COUNTS).then((res) => parseCourierOrderCounts(res.data)),
       enabled: options?.enabled ?? true,
       refetchInterval: options?.refetchInterval ?? false,
-      ...(options?.refetchOnWindowFocus ? { refetchOnWindowFocus: true } : {}),
+      // Berilgan bo'lsa aniq (to'xtatilganda `false`) — global sukutga tayanmaydi.
+      ...(options?.refetchOnWindowFocus !== undefined ? { refetchOnWindowFocus: options.refetchOnWindowFocus } : {}),
       meta: { silentError: true },
     });
 

@@ -51,7 +51,8 @@ export const useOrders = () => {
             enabled,
             placeholderData: (prev) => prev,
             refetchInterval: refetchInterval ? (query) => refetchInterval(query.state.data) : undefined,
-            ...(options?.refetchOnWindowFocus ? { refetchOnWindowFocus: true } : {}),
+            // Berilgan bo'lsa aniq (to'xtatilganda `false`) — global sukutga tayanmaydi.
+            ...(options?.refetchOnWindowFocus !== undefined ? { refetchOnWindowFocus: options.refetchOnWindowFocus } : {}),
             ...(silentError ? { meta: { silentError: true } } : {}),
         });
     };

@@ -91,7 +91,8 @@ describe("Courier orders — extra cost approval flow", () => {
       { orderId: "1251165", data: expect.objectContaining({ extraCost: 5000, reason: "CUSTOMER_REFUSED" }) },
       expect.any(Object),
     );
-    expect(await screen.findByRole("status")).toHaveTextContent("Market tasdig'i kutilmoqda");
+    // Oyna ichidagi holat (sarlavhadagi «Yangilanmoqda…» jonli hududi ham role=status — OR-1).
+    expect(await within(screen.getByRole("dialog")).findByRole("status")).toHaveTextContent("Market tasdig'i kutilmoqda");
   });
 
   it("marks the order in the list and polls the list until the market decides", async () => {
