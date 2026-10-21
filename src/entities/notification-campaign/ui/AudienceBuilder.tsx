@@ -21,15 +21,16 @@ import {
   AUDIENCE_KINDS,
   AUDIENCE_STAFF_ROLES,
   draftFromSavedAudience,
+  isAudienceSegmentEmpty,
   type AudienceDraft,
   type AudienceKind,
   type AudienceStaffRole,
   type AudienceTarget,
 } from "../model/audience";
-import { isCustomerSegmentEmpty, isOrderRangeInverted } from "../model/segment";
+import { isOrderRangeInverted } from "../model/segment";
 import type { AudiencePreviewErrorKind, AudiencePreviewState } from "../model/previewState";
 import { AudienceSampleDialog } from "./AudienceSampleDialog";
-import { AllCustomersChoice, AudienceSummary } from "./AudienceSummary";
+import { AudienceSummary } from "./AudienceSummary";
 import { CustomerSegmentFilters } from "./CustomerSegmentFilters";
 import { SaveSegmentDialog } from "./SaveSegmentDialog";
 
@@ -110,11 +111,13 @@ export const AudienceBuilder = ({
     onChange({ ...value, ...patch });
   };
 
+  /** «Mijoz» olib tashlansa «Filtrsiz» tasdig'i ham bekor — qayta tanlanganda yana aniq belgilash kerak. */
   const toggleKind = (kind: AudienceKind, checked: boolean) =>
     edit({
       kinds: AUDIENCE_KINDS.filter((item) =>
         item === kind ? checked : value.kinds.includes(item),
       ),
+      ...(kind === "customer" && !checked ? { allCustomers: false } : {}),
     });
   const toggleRole = (role: AudienceStaffRole) =>
     edit({
@@ -151,6 +154,8 @@ export const AudienceBuilder = ({
   };
 
   const removeSegment = async (segment: SavedAudienceSegment) => {
+    /** Backend 404 — segment allaqachon o'chirilgan (boshqa oynada): natija baribir shu, lekin matni boshqa. */
+    let gone = false;
     const done = await confirm({
       title: t("campaign.segments.deleteTitle"),
       description: t("campaign.segments.deleteText", { name: segment.name }),
@@ -164,13 +169,15 @@ export const AudienceBuilder = ({
         } catch (error) {
           // Allaqachon o'chirilgan — natija baribir shu.
           if (getErrorStatus(error) !== 404) throw error;
+          gone = true;
         }
       },
       errorMessage: () => t("campaign.segments.deleteFailed"),
     });
     if (!done) return;
     setSegmentId(null);
-    notify.success(t("campaign.segments.deleted"), { description: segment.name });
+    if (gone) notify.info(t("campaign.segments.deleteGone"), { description: segment.name });
+    else notify.success(t("campaign.segments.deleted"), { description: segment.name });
   };
 
   return (
@@ -286,7 +293,13 @@ export const AudienceBuilder = ({
       {has("customer") ? (
         <CustomerSegmentFilters
           value={value.customerSegment}
-          onChange={(customerSegment) => edit({ customerSegment })}
+          // Filtr qo'shilsa «Filtrsiz» tasdig'i bekor: filtr keyin tozalansa — yana «filtr tanlang».
+          onChange={(customerSegment) =>
+            edit({
+              customerSegment,
+              ...(isAudienceSegmentEmpty(customerSegment) ? {} : { allCustomers: false }),
+            })
+          }
           withMaxOrders
           orderRangeError={
             isOrderRangeInverted(value.customerSegment) ? t("campaign.errors.range") : undefined
@@ -308,18 +321,11 @@ export const AudienceBuilder = ({
         </p>
       ) : null}
 
-      {has("customer") && value.allCustomers && isCustomerSegmentEmpty(value.customerSegment) ? (
-        <AllCustomersChoice
-          checked
-          disabled={disabled}
-          onChange={(allCustomers) => edit({ allCustomers })}
-        />
-      ) : null}
-
       <AudienceSummary
         state={previewState}
         data={preview}
         errorKind={previewErrorKind}
+        showAllCustomers={has("customer") && isAudienceSegmentEmpty(value.customerSegment)}
         allCustomers={value.allCustomers}
         onAllCustomersChange={(allCustomers) => edit({ allCustomers })}
         onRetry={onRetryPreview}

@@ -21,10 +21,12 @@ import {
   useAudienceDescription,
   useAudiencePreview,
   useCreateCampaign,
+  useRecountAudience,
   useSchedulePolicy,
   type AudienceBuilderErrors,
   type AudienceDraft,
   type AudienceGate,
+  type AudienceTarget,
   type CampaignCreated,
   type CampaignPayload,
 } from "../../../entities/notification-campaign";
@@ -36,6 +38,7 @@ import {
   type DispatchHistoryStatus,
 } from "../../../entities/notification-dispatch";
 import { cx } from "../../../shared/lib/cx";
+import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { formatPhone } from "../../../shared/lib/formatPhone";
@@ -86,10 +89,12 @@ type SentRequest = { request: DispatchPayload & { client_request_id: string }; f
  */
 /**
  * Kampaniya so'rovi (KM-2): `Idempotency-Key` mazmunga bog'langan (`attempts`), `preview` — tasdiq paytidagi son va
- * chegara (400 bo'lsa tushunarli matn shundan).
+ * chegara. `target` — nishon: 400 bo'lsa son QAYTA sanaladi (backend yaratishda qayta sanaydi; tasdiq paytidagi son
+ * chegarada bo'lgani uchun tushunarli matn faqat yangi sondan chiqadi).
  */
 type CampaignRequest = {
   payload: CampaignPayload;
+  target: AudienceTarget;
   key: string;
   fingerprint: string;
   preview: { total: number; campaignMax: number | null };
@@ -105,6 +110,7 @@ type DispatchOutcome =
 /** Tasdiq oynasidagi kampaniya: so'rov, konstruktor holati va «Darhol» lahzasi (tungi taqiq tekshiruvi). */
 type CampaignConfirm = {
   payload: CampaignPayload;
+  target: AudienceTarget;
   draft: AudienceDraft;
   preview: CampaignRequest["preview"];
   requestedAt: string;
@@ -292,7 +298,10 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
     isAudience ? audienceTarget : values.mode === "all" ? BROADCAST_TARGET : null,
   );
   const previewState = isAudience ? audiencePreviewState(gate, audiencePreview) : "idle";
-  const previewErrorKind = audiencePreview.error ? audiencePreviewErrorKind(audiencePreview.error) : undefined;
+  const previewErrorKind =
+    audiencePreview.error || audiencePreview.isPaused
+      ? audiencePreviewErrorKind(audiencePreview.error, audiencePreview.isPaused)
+      : undefined;
   /** Yuborishga urinilgach konstruktor xatolari ko'rinadi. */
   const [audienceTouched, setAudienceTouched] = useState(false);
   const gateError = GATE_ERRORS[gate];
@@ -332,6 +341,12 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
     Boolean(confirmCampaign) && confirmCampaign?.payload.category === "marketing",
   );
   const quietCheck = confirmCampaign && quietPolicy.data?.check?.shifted ? quietPolicy.data : null;
+  /** Reklama: tungi taqiq tekshiruvi kelguncha «Ha, yuborish» o'chiq — ogohlantirishsiz tasdiqlanmasin. */
+  const quietPending =
+    confirmCampaign?.payload.category === "marketing" && quietPolicy.isFetching;
+  const recountAudience = useRecountAudience();
+  /** 400 dan keyin son qayta sanalmoqda — «Yuborish» kutadi. */
+  const [recounting, setRecounting] = useState(false);
   const [outcome, setOutcome] = useState<DispatchOutcome | null>(null);
   const [sendError, setSendError] = useState<SendError | null>(null);
   /** «Qayta urinish» rad etildi (natija noma'lum kartasida). */
@@ -434,6 +449,7 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
       if (!target || !canSendAudience(previewState) || !data) return;
       setConfirmCampaign({
         payload: buildCampaignPayload(formValues, target),
+        target,
         draft: formValues.audience,
         preview: { total: data.total, campaignMax: data.campaignMax },
         requestedAt: tashkentNowIso(),
@@ -507,11 +523,25 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
    * (kampaniya yaratilgan bo'lishi mumkin): «Qayta urinish» AYNI kalit bilan, backend ikkinchisini yaratmaydi.
    */
   const sendCampaign = (request: CampaignRequest, retry: boolean) => {
-    if (submittingRef.current || sending) return;
+    if (submittingRef.current || sending || recounting) return;
     submittingRef.current = true;
     const token = ++attemptRef.current;
     const current = () => token === attemptRef.current;
+    const release = () => {
+      if (current()) submittingRef.current = false;
+    };
     setRetryError(null);
+    const showError = (kind: Extract<ReturnType<typeof classifyCampaignError>, { kind: "error" }>) => {
+      const values = Object.fromEntries(
+        Object.entries(kind.values ?? {}).map(([key, value]) => [key, count(value)]),
+      );
+      const text = t(kind.messageKey, values);
+      if (retry) {
+        setRetryError(text);
+        return;
+      }
+      setSendError({ title: t("campaign.createError.title"), text });
+    };
     campaignMutation.mutate(
       { payload: request.payload, idempotencyKey: request.key },
       {
@@ -520,27 +550,35 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
           setConfirmCampaign(null);
           attempts.settle(request.fingerprint);
           setOutcome({ ...request, kind: "campaign", created });
+          release();
         },
         onError: (error) => {
           if (!current()) return;
           setConfirmCampaign(null);
-          const kind = classifyCampaignError(error, request.preview);
-          if (kind.kind === "unknown") {
-            setOutcome({ ...request, kind: "campaignUnknown" });
+          const status = getErrorStatus(error);
+          if (status !== 400 && status !== 422) {
+            const kind = classifyCampaignError(error, request.preview);
+            if (kind.kind === "unknown") setOutcome({ ...request, kind: "campaignUnknown" });
+            else showError(kind);
+            release();
             return;
           }
-          const values = Object.fromEntries(
-            Object.entries(kind.values ?? {}).map(([key, value]) => [key, count(value)]),
-          );
-          const text = t(kind.messageKey, values);
-          if (retry) {
-            setRetryError(text);
-            return;
-          }
-          setSendError({ title: t("campaign.createError.title"), text });
-        },
-        onSettled: () => {
-          if (current()) submittingRef.current = false;
+          // 400: backend yaratishda qayta sanadi — son o'zgargan (0 yoki chegaradan oshgan) bo'lishi mumkin. Tasdiq
+          // paytidagi son chegarada edi, shuning uchun o'sha nishon qayta sanaladi: matn yangi sondan, «Kimga» bloki va
+          // «Yuborish» ham yangi son bilan (eski «tayyor» son qolmaydi). Sanab bo'lmasa — umumiy rad matni.
+          setRecounting(true);
+          void recountAudience(request.target)
+            .then(
+              (fresh) => ({ total: fresh.total, campaignMax: fresh.campaignMax }),
+              () => null,
+            )
+            .then((fresh) => {
+              if (!current()) return;
+              setRecounting(false);
+              const kind = classifyCampaignError(error, fresh);
+              if (kind.kind === "error") showError(kind);
+              release();
+            });
         },
       },
     );
@@ -552,6 +590,7 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
       sendCampaign(
         {
           payload: confirmCampaign.payload,
+          target: confirmCampaign.target,
           key: attempts.take(fingerprint),
           fingerprint,
           preview: confirmCampaign.preview,
@@ -579,6 +618,7 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
       sendCampaign(
         {
           payload: outcome.payload,
+          target: outcome.target,
           key: outcome.key,
           fingerprint: outcome.fingerprint,
           preview: outcome.preview,
@@ -607,6 +647,7 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
     setConfirmPayload(null);
     setConfirmCampaign(null);
     setAudienceTouched(false);
+    setRecounting(false);
     setBuilderEpoch((epoch) => epoch + 1);
     dispatchMutation.reset();
     campaignMutation.reset();
@@ -643,12 +684,23 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
     : previewState === "loading"
       ? "campaign.disabled.counting"
       : previewState === "error"
-        ? "campaign.disabled.error"
+        ? previewErrorKind === "offline"
+          ? "campaign.disabled.offline"
+          : "campaign.disabled.error"
         : previewState === "empty"
           ? "campaign.disabled.empty"
           : previewState === "overCap"
             ? "campaign.disabled.overCap"
             : null;
+
+  /** «Yuborish» ostidagi izoh (sababi yoki «Darhol · kampaniya · N ta»); yo'q bo'lsa tugma unga bog'lanmaydi. */
+  const sendNote = !isAudience
+    ? null
+    : sendBlockedKey
+      ? t(sendBlockedKey)
+      : canSendAudience(previewState)
+        ? t("campaign.previewNote", { value: count(audiencePreview.data?.total ?? 0) })
+        : null;
 
   return (
     <>
@@ -893,7 +945,7 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
                         disabled={locked}
                         label={t("dispatch.channel.push")}
                         hint={
-                          previewState === "ready" && audiencePreview.data?.push != null
+                          canSendAudience(previewState) && audiencePreview.data?.push != null
                             ? t("campaign.channel.pushHint", { value: count(audiencePreview.data.push) })
                             : t("campaign.channel.pushHintUnknown")
                         }
@@ -1140,17 +1192,21 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
                   size="lg"
                   fullWidth
                   leftIcon={Send}
-                  loading={sending}
+                  loading={sending || recounting}
                   disabled={sendBlockedKey !== null}
-                  aria-describedby={isAudience ? "campaign-send-note" : undefined}
+                  aria-describedby={sendNote ? "campaign-send-note" : undefined}
                 >
                   {t("dispatch.send")}
                 </Button>
-                {isAudience && (sendBlockedKey || canSendAudience(previewState)) ? (
-                  <span id="campaign-send-note" className="text-center text-xs text-text-muted" aria-live="polite">
-                    {sendBlockedKey
-                      ? t(sendBlockedKey)
-                      : t("campaign.previewNote", { value: count(audiencePreview.data?.total ?? 0) })}
+                {isAudience ? (
+                  // Doim joyida (jonli hudud qayta yaratilmaydi) — faqat matni almashadi.
+                  <span
+                    id="campaign-send-note"
+                    // Matn yo'q — oqimdan chiqadi (ortiqcha oraliq yo'q), jonli hudud a11y daraxtida qoladi.
+                    className={cx("text-center text-xs text-text-muted", !sendNote && "sr-only")}
+                    aria-live="polite"
+                  >
+                    {sendNote}
                   </span>
                 ) : null}
               </div>
@@ -1194,6 +1250,7 @@ const NotificationDispatchForm = ({ renderPreview }: NotificationDispatchFormPro
               leftIcon={Send}
               loading={sending}
               loadingText={t("dispatch.confirmSending")}
+              disabled={quietPending}
               onClick={confirmSend}
             >
               {t("dispatch.confirmSend")}

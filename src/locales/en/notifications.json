@@ -438,6 +438,8 @@
       "errorTitle": "Could not count the audience",
       "errorText": "The server did not respond. The filters are kept.",
       "errorBadRequest": "Could not count with these filters — the customer filter may be too wide, narrow it. The filters are kept.",
+      "offlineTitle": "No internet connection",
+      "offlineText": "The audience will be counted when the connection is back. The filters are kept.",
       "retry": "Retry",
       "needsFilterTitle": "Choose a filter for customers",
       "needsFilterText": "At least one filter is needed: region, market, last order or number of orders. The count appears after a filter is chosen.",
@@ -497,7 +499,7 @@
       "realtime": "To open screens",
       "realtimeHint": "To those in the app right now",
       "pushHint": "Enabled for {{value}} users",
-      "pushHintUnknown": "To devices with notifications on",
+      "pushHintUnknown": "To users with notifications on",
       "telegramOff": "Not in campaigns",
       "hint": "An audience message is always sent as a campaign through the queue; advertising follows the night ban. Telegram is for market groups and is not in campaigns."
     },
@@ -506,7 +508,8 @@
       "overCap": "The audience is over the limit — cannot send",
       "empty": "The audience is empty — cannot send",
       "counting": "Counting the audience — one moment",
-      "error": "Could not count the audience — try again"
+      "error": "Could not count the audience — try again",
+      "offline": "No internet connection — the audience is not counted"
     },
     "who": {
       "customerFiltered": "Customers ({{filters}})",
@@ -561,7 +564,8 @@
       "retrying": "Checking…",
       "retryFailed": "The retry failed too",
       "locked": "The campaign is queued — the form is locked. Press «New message» to write a new one.",
-      "lockedUnknown": "The result is unknown — the form is locked so the campaign is not created twice."
+      "lockedUnknown": "The result is unknown — the form is locked so the campaign is not created twice.",
+      "statusLive": "Campaign status: {{status}}"
     },
     "status": {
       "scheduled": "Scheduled",

@@ -101,7 +101,7 @@ test.describe("Xabar yuborish — auditoriya, 1440px", () => {
       expect(mock.campaigns[0].body).not.toHaveProperty("group_key");
 
       const progress = page.getByTestId("campaign-progress");
-      await expect(progress.getByText("Yuborilmoqda")).toBeVisible();
+      await expect(progress.getByText("Yuborilmoqda", { exact: true })).toBeVisible();
       await expect(progress.getByTestId("campaign-counts")).toContainText("654 / 1 308 yuborildi");
       await expect(progress.getByRole("progressbar", { name: "Yuborildi" })).toHaveAttribute(
         "aria-valuenow",
@@ -122,7 +122,7 @@ test.describe("Xabar yuborish — auditoriya, 1440px", () => {
           .getByRole("region", { name: "Bildirishnomalar" })
           .getByText("Kampaniya bekor qilindi", { exact: true }),
       ).toBeVisible();
-      await expect(progress.getByText("Bekor qilingan")).toBeVisible();
+      await expect(progress.getByText("Bekor qilingan", { exact: true })).toBeVisible();
       await expect(progress.getByRole("button", { name: "Bekor qilish" })).toHaveCount(0);
       expect(mock.leaked).toEqual([]);
     });
@@ -266,7 +266,7 @@ test.describe("Xabar yuborish — auditoriya, 1440px", () => {
     await expect(progress.getByText("Javob kelmadi")).toBeVisible();
     await shot(page, "campaign-unknown", progress);
     await progress.getByRole("button", { name: "Qayta urinish" }).click();
-    await expect(progress.getByText("Yuborilmoqda")).toBeVisible();
+    await expect(progress.getByText("Yuborilmoqda", { exact: true })).toBeVisible();
     expect(mock.campaigns).toHaveLength(2);
     expect(mock.campaigns[1].key).toBe(mock.campaigns[0].key);
     expect(mock.leaked).toEqual([]);

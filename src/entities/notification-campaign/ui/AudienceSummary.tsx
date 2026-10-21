@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-notifications-send-audience, superadmin-notifications-send-states
-import { Eye, Filter, RotateCw, Save, TriangleAlert, Users } from "lucide-react";
+import { Eye, Filter, RotateCw, Save, TriangleAlert, Users, WifiOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { NoticeAlert } from "../../notification";
 import { cx } from "../../../shared/lib/cx";
@@ -18,6 +18,11 @@ export type AudienceSummaryProps = {
   /** So'nggi natija (yuklanayotganda — oldingisi). */
   data: AudiencePreview | undefined;
   errorKind?: AudiencePreviewErrorKind;
+  /**
+   * «Filtrsiz — barcha mijozlarga yuborish» katakchasi ko'rinadimi (mijoz tanlangan, filtr yo'q). Belgilangan yoki
+   * yo'qligidan qat'i nazar BIR joyda turadi — bosilganda fokus yo'qolmaydi.
+   */
+  showAllCustomers: boolean;
   /** «Filtrsiz — barcha mijozlarga yuborish». */
   allCustomers: boolean;
   onAllCustomersChange: (next: boolean) => void;
@@ -29,25 +34,27 @@ export type AudienceSummaryProps = {
 
 const BOX = "flex min-w-0 flex-wrap items-center gap-x-4 gap-y-3 rounded-xl bg-sunken px-4 py-3";
 const CHOICE =
-  "flex min-h-11 w-full min-w-0 cursor-pointer items-center gap-2.5 rounded-xl border border-border-strong bg-surface " +
+  "flex min-h-11 min-w-0 cursor-pointer items-center gap-2.5 rounded-xl border border-border-strong bg-surface " +
   "p-3 text-sm text-text has-[:checked]:border-action has-[:checked]:bg-action-soft has-[:disabled]:cursor-not-allowed";
 
 /**
- * «Filtrsiz — barcha mijozlarga yuborish» (`confirm_all_customers`). Belgilangach ham ko'rinib turadi (konstruktor
- * uni son blokining ustida chizadi) — aks holda tanlovni qaytarib bo'lmasdi.
+ * «Filtrsiz — barcha mijozlarga yuborish» (`confirm_all_customers`). Belgilangach ham ko'rinib turadi (son blokining
+ * ostida, o'sha joyda) — aks holda tanlovni qaytarib bo'lmasdi.
  */
 export const AllCustomersChoice = ({
   checked,
   disabled = false,
   onChange,
+  className,
 }: {
   checked: boolean;
   disabled?: boolean;
   onChange: (next: boolean) => void;
+  className?: string;
 }) => {
   const { t } = useTranslation("notifications");
   return (
-    <label className={CHOICE}>
+    <label className={cx(CHOICE, className)}>
       <input
         type="checkbox"
         className="size-[18px] shrink-0 cursor-pointer accent-action disabled:cursor-not-allowed"
@@ -71,6 +78,7 @@ export const AudienceSummary = ({
   state,
   data,
   errorKind = "unavailable",
+  showAllCustomers,
   allCustomers,
   onAllCustomersChange,
   onRetry,
@@ -81,18 +89,15 @@ export const AudienceSummary = ({
   const { t, i18n } = useTranslation("notifications");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const num = (value: number) => formatNumberLocalized(value, { language });
+  const needsFilter = state === "needsFilter";
+  const loading = state === "loading";
 
-  if (state === "idle") return null;
+  const renderContent = () => {
+    if (state === "idle") return null;
 
-  if (state === "needsFilter") {
-    return (
-      <div
-        className={cx(BOX, "items-start")}
-        aria-live="polite"
-        data-testid="audience-summary"
-        data-state={state}
-      >
-        <div className="flex min-w-0 flex-[1_1_260px] items-start gap-3">
+    if (needsFilter) {
+      return (
+        <div className="flex min-w-0 items-start gap-3">
           <Filter aria-hidden="true" size={20} className="mt-0.5 shrink-0 text-text-muted" />
           <div className="flex min-w-0 flex-1 flex-col gap-2">
             <span className="text-base font-bold text-text">
@@ -101,158 +106,187 @@ export const AudienceSummary = ({
             <span className="text-[13px] text-text-muted">
               {t("campaign.summary.needsFilterText")}
             </span>
-            <AllCustomersChoice
-              checked={allCustomers}
-              disabled={disabled}
-              onChange={onAllCustomersChange}
-            />
           </div>
         </div>
+      );
+    }
+
+    if (state === "error") {
+      const retryable = errorKind !== "badRequest";
+      const offline = errorKind === "offline";
+      return (
+        <NoticeAlert
+          tone="danger"
+          role="note"
+          icon={offline ? WifiOff : TriangleAlert}
+          title={t(offline ? "campaign.summary.offlineTitle" : "campaign.summary.errorTitle")}
+          action={
+            retryable ? (
+              <Button variant="secondary" size="sm" leftIcon={RotateCw} onClick={onRetry}>
+                {t("campaign.summary.retry")}
+              </Button>
+            ) : undefined
+          }
+        >
+          {t(
+            offline
+              ? "campaign.summary.offlineText"
+              : retryable
+                ? "campaign.summary.errorText"
+                : "campaign.summary.errorBadRequest",
+          )}
+        </NoticeAlert>
+      );
+    }
+
+    if (state === "overCap" && data) {
+      return (
+        <NoticeAlert
+          tone="danger"
+          role="note"
+          title={t("campaign.summary.overCapTitle", {
+            value: num(data.total),
+            max: num(data.campaignMax ?? 0),
+          })}
+        >
+          {t("campaign.summary.overCapText")}
+        </NoticeAlert>
+      );
+    }
+
+    const total = data?.total ?? 0;
+    const byRole = data?.byRole ?? {};
+    const staffCounts = AUDIENCE_STAFF_ROLES.map((role) => [role, byRole[role] ?? 0] as const).filter(
+      ([, value]) => value > 0,
+    );
+    const staffTotal = Object.entries(byRole)
+      .filter(([role]) => role !== "customer" && role !== "market")
+      .reduce((sum, [, value]) => sum + value, 0);
+    const customers = byRole.customer ?? 0;
+    const markets = byRole.market ?? 0;
+    const onlyStaff = customers === 0 && markets === 0 && staffTotal > 0;
+    const breakdown = onlyStaff
+      ? t("campaign.summary.staffOnly", {
+          list: [...staffCounts]
+            .sort((a, b) => b[1] - a[1])
+            .map(([role, value]) =>
+              t("campaign.summary.roleCount", {
+                role: t(`campaign.role.${role}`),
+                value: num(value),
+              }),
+            )
+            .join(" · "),
+        })
+      : [
+          customers ? t("campaign.summary.customer", { value: num(customers) }) : null,
+          markets ? t("campaign.summary.market", { value: num(markets) }) : null,
+          staffTotal ? t("campaign.summary.staff", { value: num(staffTotal) }) : null,
+        ]
+          .filter(Boolean)
+          .join(" · ");
+    const actionsDisabled = disabled || loading || state === "empty";
+
+    return (
+      <div className="flex min-w-0 flex-col gap-3">
+        <div className={BOX}>
+          {/* Matn ustuni qisqara oladi — keng ekranda tugmalar son yonida bir qatorda (maket), telefonda ostida. */}
+          <div className="flex min-w-[200px] flex-[1_1_0] items-center gap-3 max-md:min-w-0 max-md:basis-[220px]">
+            {loading ? (
+              <Spinner size="md" className="shrink-0 text-text-muted" />
+            ) : (
+              <Users aria-hidden="true" size={20} className="shrink-0 text-text-muted" />
+            )}
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <span className={cx("text-base font-bold", loading ? "text-text-muted" : "text-text")}>
+                {loading
+                  ? t("campaign.summary.loading")
+                  : t("campaign.summary.title", { value: num(total) })}
+              </span>
+              {loading ? (
+                <span className="text-xs text-text-muted">{t("campaign.summary.loadingHint")}</span>
+              ) : state === "empty" ? (
+                <span className="text-[13px] text-text-muted">{t("campaign.summary.emptyHint")}</span>
+              ) : (
+                <>
+                  {breakdown ? <span className="text-xs text-text-muted">{breakdown}</span> : null}
+                  {state === "big" ? (
+                    <span className="text-xs text-text-muted">
+                      {t("campaign.summary.bigHint", { batch: num(CAMPAIGN_BATCH_SIZE) })}
+                    </span>
+                  ) : data?.push !== null && data?.push !== undefined ? (
+                    <span className="text-xs text-text-muted">
+                      {t("campaign.summary.push", { value: num(data.push) })}
+                    </span>
+                  ) : null}
+                </>
+              )}
+            </div>
+          </div>
+          {state === "empty" ? null : (
+            <div className="ml-auto flex min-w-[min(100%,300px)] flex-[0_1_auto] flex-wrap gap-2 md:min-w-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                leftIcon={Eye}
+                disabled={actionsDisabled}
+                onClick={onSample}
+                aria-haspopup="dialog"
+                className="flex-auto"
+              >
+                {t("campaign.summary.sample")}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={Save}
+                disabled={actionsDisabled}
+                onClick={onSave}
+                aria-haspopup="dialog"
+                className="flex-auto"
+              >
+                {t("campaign.summary.save")}
+              </Button>
+            </div>
+          )}
+        </div>
+        {state === "big" ? (
+          <NoticeAlert tone="info" role="note" title={t("campaign.summary.bigTitle")}>
+            {t("campaign.summary.bigText", { batch: num(CAMPAIGN_BATCH_SIZE) })}
+          </NoticeAlert>
+        ) : null}
       </div>
     );
-  }
+  };
 
-  if (state === "error") {
-    const retryable = errorKind !== "badRequest";
-    return (
-      <NoticeAlert
-        tone="danger"
-        icon={TriangleAlert}
-        title={t("campaign.summary.errorTitle")}
-        data-testid="audience-summary"
-        action={
-          retryable ? (
-            <Button variant="secondary" size="sm" leftIcon={RotateCw} onClick={onRetry}>
-              {t("campaign.summary.retry")}
-            </Button>
-          ) : undefined
-        }
-      >
-        {t(retryable ? "campaign.summary.errorText" : "campaign.summary.errorBadRequest")}
-      </NoticeAlert>
-    );
-  }
-
-  if (state === "overCap" && data) {
-    return (
-      <NoticeAlert
-        tone="danger"
-        title={t("campaign.summary.overCapTitle", {
-          value: num(data.total),
-          max: num(data.campaignMax ?? 0),
-        })}
-        data-testid="audience-summary"
-      >
-        {t("campaign.summary.overCapText")}
-      </NoticeAlert>
-    );
-  }
-
-  const loading = state === "loading";
-  const total = data?.total ?? 0;
-  const byRole = data?.byRole ?? {};
-  const staffCounts = AUDIENCE_STAFF_ROLES.map((role) => [role, byRole[role] ?? 0] as const).filter(
-    ([, value]) => value > 0,
-  );
-  const staffTotal = Object.entries(byRole)
-    .filter(([role]) => role !== "customer" && role !== "market")
-    .reduce((sum, [, value]) => sum + value, 0);
-  const customers = byRole.customer ?? 0;
-  const markets = byRole.market ?? 0;
-  const onlyStaff = customers === 0 && markets === 0 && staffTotal > 0;
-  const breakdown = onlyStaff
-    ? t("campaign.summary.staffOnly", {
-        list: [...staffCounts]
-          .sort((a, b) => b[1] - a[1])
-          .map(([role, value]) =>
-            t("campaign.summary.roleCount", {
-              role: t(`campaign.role.${role}`),
-              value: num(value),
-            }),
-          )
-          .join(" · "),
-      })
-    : [
-        customers ? t("campaign.summary.customer", { value: num(customers) }) : null,
-        markets ? t("campaign.summary.market", { value: num(markets) }) : null,
-        staffTotal ? t("campaign.summary.staff", { value: num(staffTotal) }) : null,
-      ]
-        .filter(Boolean)
-        .join(" · ");
-  const actionsDisabled = disabled || loading || state === "empty";
-
+  // Jonli hudud (`role="status"`) va «Filtrsiz» katakchasi DOIM bir xil joyda turadi: holat almashganda faqat
+  // ichidagi matn o'zgaradi (o'qigich e'lon qiladi), katakcha esa qayta yaratilmaydi (fokus saqlanadi).
   return (
-    <div className="flex min-w-0 flex-col gap-3">
+    <div
+      className={cx(
+        "flex min-w-0 flex-col",
+        needsFilter && "rounded-xl bg-sunken px-4 py-3",
+        // Ko'rinadigan narsa yo'q — oqimdan chiqadi (konstruktorda ortiqcha oraliq qolmasin), lekin jonli hudud
+        // a11y daraxtida qoladi.
+        state === "idle" && !showAllCustomers && "sr-only",
+      )}
+    >
       <div
-        className={BOX}
+        role="status"
         aria-live="polite"
         aria-busy={loading || undefined}
+        className="min-w-0"
         data-testid="audience-summary"
         data-state={state}
       >
-        <div className="flex min-w-0 flex-[1_1_220px] items-center gap-3">
-          {loading ? (
-            <Spinner size="md" className="shrink-0 text-text-muted" />
-          ) : (
-            <Users aria-hidden="true" size={20} className="shrink-0 text-text-muted" />
-          )}
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <span className={cx("text-base font-bold", loading ? "text-text-muted" : "text-text")}>
-              {loading
-                ? t("campaign.summary.loading")
-                : t("campaign.summary.title", { value: num(total) })}
-            </span>
-            {loading ? (
-              <span className="text-xs text-text-muted">{t("campaign.summary.loadingHint")}</span>
-            ) : state === "empty" ? (
-              <span className="text-[13px] text-text-muted">{t("campaign.summary.emptyHint")}</span>
-            ) : (
-              <>
-                {breakdown ? <span className="text-xs text-text-muted">{breakdown}</span> : null}
-                {state === "big" ? (
-                  <span className="text-xs text-text-muted">
-                    {t("campaign.summary.bigHint", { batch: num(CAMPAIGN_BATCH_SIZE) })}
-                  </span>
-                ) : data?.push !== null && data?.push !== undefined ? (
-                  <span className="text-xs text-text-muted">
-                    {t("campaign.summary.push", { value: num(data.push) })}
-                  </span>
-                ) : null}
-              </>
-            )}
-          </div>
-        </div>
-        {state === "empty" ? null : (
-          <div className="ml-auto flex min-w-[min(100%,300px)] flex-[0_1_auto] flex-wrap gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              leftIcon={Eye}
-              disabled={actionsDisabled}
-              onClick={onSample}
-              aria-haspopup="dialog"
-              className="flex-auto"
-            >
-              {t("campaign.summary.sample")}
-            </Button>
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon={Save}
-              disabled={actionsDisabled}
-              onClick={onSave}
-              aria-haspopup="dialog"
-              className="flex-auto"
-            >
-              {t("campaign.summary.save")}
-            </Button>
-          </div>
-        )}
+        {renderContent()}
       </div>
-      {state === "big" ? (
-        <NoticeAlert tone="info" role="note" title={t("campaign.summary.bigTitle")}>
-          {t("campaign.summary.bigText", { batch: num(CAMPAIGN_BATCH_SIZE) })}
-        </NoticeAlert>
+      {showAllCustomers ? (
+        <AllCustomersChoice
+          checked={allCustomers}
+          disabled={disabled}
+          onChange={onAllCustomersChange}
+          className={cx(needsFilter ? "mt-2 ml-8" : state !== "idle" && "mt-3")}
+        />
       ) : null}
     </div>
   );

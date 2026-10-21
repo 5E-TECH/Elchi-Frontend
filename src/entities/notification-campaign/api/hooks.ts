@@ -1,7 +1,13 @@
 import { useEffect, useState } from "react";
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryKeys } from "../../../shared/config/queryKeys";
-import { isCampaignActive, type CampaignPayload } from "../model/campaign";
+import { getErrorStatus } from "../../../shared/lib/errorKind";
+import {
+  campaignDisplayStatus,
+  isCampaignActive,
+  type Campaign,
+  type CampaignPayload,
+} from "../model/campaign";
 import type { AudienceTarget } from "../model/audience";
 import {
   cancelCampaign,
@@ -19,6 +25,8 @@ import {
 export const AUDIENCE_PREVIEW_DEBOUNCE_MS = 400;
 /** Kampaniya progressi shu oraliqda yangilanadi (backend partiyalari ~2–3 s qadam bilan). */
 export const CAMPAIGN_PROGRESS_INTERVAL_MS = 3_000;
+/** Rejalashtirilgan (masalan, tungi taqiq bilan 09:00 ga surilgan) kampaniya — kamroq so'rov. */
+export const CAMPAIGN_SCHEDULED_INTERVAL_MS = 60_000;
 
 type PreviewTarget = AudienceTarget | { broadcast: true };
 
@@ -54,6 +62,23 @@ export const useAudiencePreview = (
   /** Natija aynan joriy nishonga tegishli (eski nishonniki emas). */
   const current = settled && !query.isPlaceholderData && query.isSuccess;
   return { ...query, settled, current };
+};
+
+/**
+ * Kampaniya yaratish 400 berganda (backend yaratishda qayta sanaydi — son o'zgargan bo'lishi mumkin): o'sha nishonni
+ * keshni chetlab qayta sanaydi. Natija jonli son keshiga yoziladi — «Kimga» bloki va «Yuborish» darhol yangilanadi.
+ */
+export const useRecountAudience = () => {
+  const queryClient = useQueryClient();
+  return (target: PreviewTarget) => {
+    const key = JSON.stringify(target);
+    return queryClient.fetchQuery({
+      queryKey: queryKeys.notificationCampaigns.audience(key),
+      queryFn: () => previewAudience(JSON.parse(key) as PreviewTarget),
+      staleTime: 0,
+      retry: false,
+    });
+  };
 };
 
 /** «Namunani ko'rish» — 20 ta maskalangan qator (oyna ochilganda). */
@@ -112,6 +137,9 @@ export const useCreateCampaign = () => {
       idempotencyKey: string;
     }) => createCampaign(payload, idempotencyKey),
     retry: 0,
+    // Oflayn bo'lsa navbatda «osilib» qolmasin (tasdiq oynasi yopilmay qoladi, internet qaytganda kutilmaganda ketadi):
+    // darhol tarmoq xatosi → «Javob kelmadi» + «Qayta urinish» ayni kalit bilan.
+    networkMode: "always",
     onSettled: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.notificationCampaigns.lists }),
@@ -122,16 +150,31 @@ export const useCreateCampaign = () => {
   });
 };
 
-/** Kampaniya progressi — faol bo'lsa har 3 s (`CAMPAIGN_PROGRESS_INTERVAL_MS`). */
+/**
+ * Progress so'rovi oralig'i: 403/404 (va boshqa 4xx) — to'xtaydi (har 3 s xato so'rash befoyda); javob hali yo'q yoki
+ * faol — 3 s; rejalashtirilgan (`display_status = scheduled`) — 60 s; yakunlangan — yo'q.
+ */
+export const campaignRefetchInterval = (state: {
+  data: Campaign | undefined;
+  error: unknown;
+}): number | false => {
+  const status = state.error ? getErrorStatus(state.error) : undefined;
+  if (status && status >= 400 && status < 500 && status !== 408 && status !== 429) return false;
+  const campaign = state.data;
+  if (!campaign) return CAMPAIGN_PROGRESS_INTERVAL_MS;
+  if (!isCampaignActive(campaign.status)) return false;
+  return campaignDisplayStatus(campaign) === "scheduled"
+    ? CAMPAIGN_SCHEDULED_INTERVAL_MS
+    : CAMPAIGN_PROGRESS_INTERVAL_MS;
+};
+
+/** Kampaniya progressi — faol bo'lsa har 3 s (`campaignRefetchInterval`). */
 export const useCampaign = (id: string | null | undefined) =>
   useQuery({
     queryKey: queryKeys.notificationCampaigns.detail(id ?? ""),
     queryFn: () => getCampaign(id as string),
     enabled: Boolean(id),
-    refetchInterval: (query) =>
-      !query.state.data || isCampaignActive(query.state.data.status)
-        ? CAMPAIGN_PROGRESS_INTERVAL_MS
-        : false,
+    refetchInterval: (query) => campaignRefetchInterval(query.state),
     refetchIntervalInBackground: false,
     meta: { silentError: true },
   });

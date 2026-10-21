@@ -432,6 +432,8 @@
       "errorTitle": "Auditoriyani hisoblab bo'lmadi",
       "errorText": "Server javob bermadi. Filtrlar saqlanib qoldi.",
       "errorBadRequest": "Bu filtrlar bo'yicha sanab bo'lmadi — mijozlar filtri juda keng bo'lishi mumkin, toraytiring. Filtrlar saqlanib qoldi.",
+      "offlineTitle": "Internet aloqasi yo'q",
+      "offlineText": "Auditoriya internet qaytgach sanaladi. Filtrlar saqlanib qoldi.",
       "retry": "Qayta urinish",
       "needsFilterTitle": "Mijozlar uchun filtr tanlang",
       "needsFilterText": "Hudud, market, oxirgi buyurtma yoki buyurtmalar soni bo'yicha kamida bitta filtr kerak. Son filtr tanlangandan keyin chiqadi.",
@@ -491,7 +493,7 @@
       "realtime": "Ochiq ekranga",
       "realtimeHint": "Hozir ilovada bo'lganlarga",
       "pushHint": "{{value}} ta foydalanuvchida yoqilgan",
-      "pushHintUnknown": "Bildirishnomani yoqqan qurilmalarga",
+      "pushHintUnknown": "Bildirishnomani yoqqan foydalanuvchilarga",
       "telegramOff": "Kampaniyada yo'q",
       "hint": "Auditoriya bo'yicha xabar doim kampaniya sifatida navbat orqali ketadi; reklama tungi taqiq bilan. Telegram — market guruhlari uchun, kampaniyada yo'q."
     },
@@ -500,7 +502,8 @@
       "overCap": "Auditoriya chegaradan oshgan — yuborib bo'lmaydi",
       "empty": "Auditoriya bo'sh — yuborib bo'lmaydi",
       "counting": "Auditoriya hisoblanmoqda — bir lahza",
-      "error": "Auditoriyani hisoblab bo'lmadi — qayta urinib ko'ring"
+      "error": "Auditoriyani hisoblab bo'lmadi — qayta urinib ko'ring",
+      "offline": "Internet aloqasi yo'q — auditoriya sanalmadi"
     },
     "who": {
       "customerFiltered": "Mijoz ({{filters}})",
@@ -555,7 +558,8 @@
       "retrying": "Tekshirilmoqda…",
       "retryFailed": "Qayta urinish ham bo'lmadi",
       "locked": "Kampaniya navbatga qo'yildi — forma qulflandi. Yangisini yozish uchun «Yangi xabar» ni bosing.",
-      "lockedUnknown": "Natija noma'lum — kampaniya ikki marta yaratilmasligi uchun forma qulflandi."
+      "lockedUnknown": "Natija noma'lum — kampaniya ikki marta yaratilmasligi uchun forma qulflandi.",
+      "statusLive": "Kampaniya holati: {{status}}"
     },
     "status": {
       "scheduled": "Rejalashtirilgan",

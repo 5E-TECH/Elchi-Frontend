@@ -14,9 +14,11 @@ export {
   AUDIENCE_KINDS,
   AUDIENCE_STAFF_ROLES,
   audienceGate,
+  audienceSegmentPayload,
   audienceTargetKey,
   createAudienceDraft,
   draftFromSavedAudience,
+  isAudienceSegmentEmpty,
   toAudienceTarget,
   type AudienceDraft,
   type AudienceGate,
@@ -78,6 +80,8 @@ export {
 export {
   AUDIENCE_PREVIEW_DEBOUNCE_MS,
   CAMPAIGN_PROGRESS_INTERVAL_MS,
+  CAMPAIGN_SCHEDULED_INTERVAL_MS,
+  campaignRefetchInterval,
   useAudiencePreview,
   useAudienceSample,
   useAudienceSegments,
@@ -86,6 +90,7 @@ export {
   useCreateAudienceSegment,
   useCreateCampaign,
   useDeleteAudienceSegment,
+  useRecountAudience,
   useSchedulePolicy,
 } from "./api/hooks";
 export { AudienceBuilder, type AudienceBuilderErrors, type AudienceBuilderProps } from "./ui/AudienceBuilder";

@@ -1,3 +1,4 @@
+import { onlineManager } from "@tanstack/react-query";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
@@ -18,12 +19,14 @@ const STAFF: Record<string, number> = {
   logist: 4,
 };
 
-type Reply = { status?: number; body: unknown };
+type Reply = { status?: number; body: unknown; network?: boolean };
 let previewReply: ((body: Record<string, unknown>) => Reply) | null;
 let createReplies: Reply[];
 let cancelReply: Reply | null;
 let segmentReply: Reply | null;
 let policyShifted: boolean;
+/** Tungi taqiq javobi shu va'da bajarilguncha kutadi (`null` — darhol). */
+let policyGate: Promise<void> | null;
 let campaignState: {
   status: string;
   display_status: string;
@@ -41,8 +44,13 @@ const httpError = (status: number, message = "raw backend text") =>
     response: { status, data: { message } },
   });
 
+const networkError = () =>
+  Object.assign(new Error("Network Error"), { isAxiosError: true, code: "ERR_NETWORK" });
+
 const respond = (reply: Reply) =>
-  reply.status && reply.status >= 400
+  reply.network
+    ? Promise.reject(networkError())
+    : reply.status && reply.status >= 400
     ? Promise.reject(httpError(reply.status))
     : Promise.resolve({ status: reply.status ?? 200, data: reply.body });
 
@@ -85,6 +93,7 @@ beforeEach(() => {
   cancelReply = null;
   segmentReply = null;
   policyShifted = false;
+  policyGate = null;
   campaignState = {
     status: "running",
     display_status: "sending",
@@ -115,6 +124,7 @@ beforeEach(() => {
       };
     }
     if (url === "notifications/campaigns/schedule-policy") {
+      if (policyGate) await policyGate;
       return {
         data: {
           data: {
@@ -190,6 +200,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  onlineManager.setOnline(true);
   getSpy.mockRestore();
   postSpy.mockRestore();
   deleteSpy.mockRestore();
@@ -604,5 +615,244 @@ describe("NotificationDispatchForm — «Auditoriya» (KM-2)", () => {
     expect(await within(dialog).findByText("***7434")).toBeInTheDocument();
     expect(dialog).toHaveTextContent("98 ta qabul qiluvchidan 2 tasi");
     expect(previews().at(-1)).toEqual({ roles: ["market"], with_sample: true });
+  });
+
+  it("400 — the audience is recounted: a clear text from the NEW count, the summary and «Yuborish» follow it", async () => {
+    const user = userEvent.setup();
+    createReplies = [{ status: 400, body: {} }];
+    await openAudience(user);
+    await user.click(screen.getByRole("checkbox", { name: "Market" }));
+    await waitFor(() => expect(summary()).toHaveTextContent("Auditoriya: 98 ta"));
+    await user.type(screen.getByRole("textbox", { name: "Sarlavha" }), "Yangi tariflar");
+    await user.click(sendButton());
+    const dialog = await screen.findByRole("alertdialog", { name: "Xabarni yuborishni tasdiqlang" });
+    // Tasdiqdan keyin auditoriya o'sdi — backend yaratishda qayta sanab, 400 qaytaradi.
+    previewReply = () => ({
+      body: {
+        data: {
+          exact: true,
+          total: 24310,
+          by_role: { market: 24310 },
+          by_channel: { push: 10 },
+          limits: { dispatch_max: 5000, campaign_max: 20000 },
+          campaign_allowed: false,
+        },
+      },
+    });
+    const before = previews().length;
+    await user.click(within(dialog).getByRole("button", { name: /Ha, yuborish/ }));
+
+    expect(
+      await screen.findByText("Kampaniya auditoriyasi 24 310 — chegara 20 000. Hech kimga yuborilmadi."),
+    ).toBeInTheDocument();
+    expect(previews().length).toBe(before + 1);
+    expect(previews().at(-1)).toEqual({ roles: ["market"] });
+    expect(summary()).toHaveTextContent("Auditoriya: 24 310 ta — chegara 20 000 ta");
+    expect(sendButton()).toBeDisabled();
+    expect(campaignCalls()).toHaveLength(1);
+  });
+
+  it("400 → recount returns 0: «Auditoriya bo'sh» instead of the generic rejection", async () => {
+    const user = userEvent.setup();
+    createReplies = [{ status: 400, body: {} }];
+    await openAudience(user);
+    await user.click(screen.getByRole("checkbox", { name: "Market" }));
+    await waitFor(() => expect(summary()).toHaveTextContent("Auditoriya: 98 ta"));
+    await user.type(screen.getByRole("textbox", { name: "Sarlavha" }), "Salom");
+    await user.click(sendButton());
+    const dialog = await screen.findByRole("alertdialog", { name: "Xabarni yuborishni tasdiqlang" });
+    previewReply = () => ({
+      body: { data: { exact: true, total: 0, by_role: {}, limits: { campaign_max: 20000 }, campaign_allowed: false } },
+    });
+    await user.click(within(dialog).getByRole("button", { name: /Ha, yuborish/ }));
+    expect(await screen.findByText("Auditoriya bo'sh — hech kimga yuborilmadi.")).toBeInTheDocument();
+    expect(sendButton()).toBeDisabled();
+  });
+
+  it("«Filtrsiz» keeps keyboard focus when toggled (the checkbox is not re-created)", async () => {
+    const user = userEvent.setup();
+    await openAudience(user);
+    await user.click(screen.getByRole("checkbox", { name: "Mijoz" }));
+    const box = screen.getByRole("checkbox", { name: "Filtrsiz — barcha mijozlarga yuborish" });
+    box.focus();
+    await user.keyboard(" ");
+    expect(box).toBeChecked();
+    expect(box).toHaveFocus();
+    await waitFor(() => expect(summary()).toHaveTextContent("Auditoriya: 1 186 ta"));
+    expect(box).toHaveFocus();
+    await user.keyboard(" ");
+    expect(box).not.toBeChecked();
+    expect(box).toHaveFocus();
+    expect(screen.getByText("Mijozlar uchun filtr tanlang")).toBeInTheDocument();
+  });
+
+  it("«Filtrsiz» needs a fresh tick after «Mijoz» is unticked or a filter was added", async () => {
+    const user = userEvent.setup();
+    await openAudience(user);
+    const allBox = () =>
+      screen.getByRole("checkbox", { name: "Filtrsiz — barcha mijozlarga yuborish" });
+    await user.click(screen.getByRole("checkbox", { name: "Mijoz" }));
+    await user.click(allBox());
+    expect(allBox()).toBeChecked();
+    await user.click(screen.getByRole("checkbox", { name: "Mijoz" }));
+    await user.click(screen.getByRole("checkbox", { name: "Mijoz" }));
+    expect(allBox()).not.toBeChecked();
+    expect(screen.getByText("Mijozlar uchun filtr tanlang")).toBeInTheDocument();
+
+    await user.click(allBox());
+    const from = screen.getByRole("textbox", { name: "Buyurtmalar soni — dan" });
+    await user.type(from, "3");
+    await user.clear(from);
+    expect(allBox()).not.toBeChecked();
+    expect(screen.getByText("Mijozlar uchun filtr tanlang")).toBeInTheDocument();
+  });
+
+  it("«dan 1» alone is not a filter: no request, «Filtrsiz» still required", async () => {
+    const user = userEvent.setup();
+    await openAudience(user);
+    await user.click(screen.getByRole("checkbox", { name: "Mijoz" }));
+    await user.type(screen.getByRole("textbox", { name: "Buyurtmalar soni — dan" }), "1");
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    expect(screen.getByText("Mijozlar uchun filtr tanlang")).toBeInTheDocument();
+    expect(previews()).toEqual([]);
+  });
+
+  it("the progress card is not a live region (no announcement every 3 s); only the status is announced", async () => {
+    const user = userEvent.setup();
+    await openAudience(user);
+    await sendMarkets(user);
+    const progress = await screen.findByTestId("campaign-progress");
+    const counts = within(progress).getByTestId("campaign-counts");
+    await waitFor(() => expect(counts).toHaveTextContent("40 / 98 yuborildi"));
+    expect(progress).not.toHaveAttribute("aria-live");
+    expect(counts.closest('[aria-live], [role="status"], [role="alert"]')).toBeNull();
+    const live = within(progress).getByTestId("campaign-status-live");
+    expect(live).toHaveAttribute("role", "status");
+    expect(live).toHaveTextContent("Kampaniya holati: Yuborilmoqda");
+  });
+
+  it("offline: the count says «Internet aloqasi yo'q» (not endless counting), then counts when back online", async () => {
+    const user = userEvent.setup();
+    await openAudience(user);
+    onlineManager.setOnline(false);
+    await user.click(screen.getByRole("checkbox", { name: "Market" }));
+    await waitFor(() => expect(summary()).toHaveTextContent("Internet aloqasi yo'q"));
+    expect(sendButton()).toBeDisabled();
+    expect(sendButton()).toHaveAccessibleDescription("Internet aloqasi yo'q — auditoriya sanalmadi");
+    onlineManager.setOnline(true);
+    await waitFor(() => expect(summary()).toHaveTextContent("Auditoriya: 98 ta"));
+    expect(sendButton()).toBeEnabled();
+  });
+
+  it("offline: the sample dialog shows «Internet aloqasi yo'q» instead of an endless skeleton", async () => {
+    const user = userEvent.setup();
+    await openAudience(user);
+    await user.click(screen.getByRole("checkbox", { name: "Market" }));
+    await waitFor(() => expect(summary()).toHaveTextContent("Auditoriya: 98 ta"));
+    onlineManager.setOnline(false);
+    await user.click(within(summary()).getByRole("button", { name: "Namunani ko'rish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Auditoriya namunasi" });
+    expect(await within(dialog).findByText("Internet aloqasi yo'q")).toBeInTheDocument();
+    onlineManager.setOnline(true);
+    expect(await within(dialog).findByText("***7434")).toBeInTheDocument();
+  });
+
+  it("offline create fails fast into «Javob kelmadi» (the confirmation does not hang busy)", async () => {
+    const user = userEvent.setup();
+    createReplies = [{ network: true, body: {} }];
+    await openAudience(user);
+    await user.click(screen.getByRole("checkbox", { name: "Market" }));
+    await waitFor(() => expect(summary()).toHaveTextContent("Auditoriya: 98 ta"));
+    await user.type(screen.getByRole("textbox", { name: "Sarlavha" }), "Salom");
+    await user.click(sendButton());
+    const dialog = await screen.findByRole("alertdialog", { name: "Xabarni yuborishni tasdiqlang" });
+    onlineManager.setOnline(false);
+    await user.click(within(dialog).getByRole("button", { name: /Ha, yuborish/ }));
+    const unknown = await screen.findByTestId("campaign-progress");
+    expect(within(unknown).getByText("Javob kelmadi")).toBeInTheDocument();
+    expect(campaignCalls()).toHaveLength(1);
+    expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
+  });
+
+  it("advertising: «Ha, yuborish» waits for the night-ban check", async () => {
+    const user = userEvent.setup();
+    policyShifted = true;
+    let release = () => {};
+    policyGate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await openAudience(user);
+    await user.click(screen.getByRole("checkbox", { name: "Market" }));
+    await waitFor(() => expect(summary()).toHaveTextContent("Auditoriya: 98 ta"));
+    await user.type(screen.getByRole("textbox", { name: "Sarlavha" }), "Chegirma");
+    await user.click(screen.getByRole("combobox", { name: "Kategoriya" }));
+    await user.click(await screen.findByRole("option", { name: "Reklama" }));
+    await user.click(sendButton());
+    const dialog = await screen.findByRole("alertdialog", { name: "Xabarni yuborishni tasdiqlang" });
+    const confirmButton = within(dialog).getByRole("button", { name: /Ha, yuborish/ });
+    expect(confirmButton).toBeDisabled();
+    release();
+    expect(await within(dialog).findByText(/^Reklama .* da yuboriladi$/)).toBeInTheDocument();
+    expect(confirmButton).toBeEnabled();
+  });
+
+  it("push hint: the user count also in the big state; the fallback speaks of users, not devices", async () => {
+    const user = userEvent.setup();
+    await openAudience(user);
+    expect(screen.getByRole("checkbox", { name: "Push" })).toHaveAccessibleDescription(
+      "Bildirishnomani yoqqan foydalanuvchilarga",
+    );
+    previewReply = () => ({
+      body: {
+        data: {
+          exact: true,
+          total: 8640,
+          by_role: { market: 8640 },
+          by_channel: { push: 314 },
+          limits: { dispatch_max: 5000, campaign_max: 20000 },
+          campaign_allowed: true,
+        },
+      },
+    });
+    await user.click(screen.getByRole("checkbox", { name: "Market" }));
+    await waitFor(() => expect(summary()).toHaveAttribute("data-state", "big"));
+    expect(screen.getByRole("checkbox", { name: "Push" })).toHaveAccessibleDescription(
+      "314 ta foydalanuvchida yoqilgan",
+    );
+  });
+
+  it("«Yuborish» points at the note only when there is one", async () => {
+    const user = userEvent.setup();
+    await openAudience(user);
+    expect(sendButton()).not.toHaveAttribute("aria-describedby");
+    await user.click(screen.getByRole("checkbox", { name: "Market" }));
+    await waitFor(() =>
+      expect(sendButton()).toHaveAccessibleDescription("Darhol · kampaniya · 98 ta qabul qiluvchi"),
+    );
+  });
+
+  it("deleting a segment that is already gone (404) says so", async () => {
+    const user = userEvent.setup();
+    deleteSpy.mockRejectedValueOnce(httpError(404));
+    await openAudience(user);
+    await user.click(screen.getByRole("combobox", { name: "Saqlangan segment" }));
+    await user.click(await screen.findByRole("option", { name: /Toshkent — faol mijozlar/ }));
+    await user.click(
+      screen.getByRole("button", { name: "«Toshkent — faol mijozlar» segmentini o'chirish" }),
+    );
+    const confirm = await screen.findByRole("alertdialog", { name: "Segmentni o'chirasizmi?" });
+    await user.click(within(confirm).getByRole("button", { name: "Segmentni o'chirish" }));
+    expect(await screen.findByText("Segment allaqachon o'chirilgan")).toBeInTheDocument();
+    expect(screen.queryByText("Segment o'chirildi")).not.toBeInTheDocument();
+  });
+
+  it("save dialog: the note field is marked optional", async () => {
+    const user = userEvent.setup();
+    await openAudience(user);
+    await user.click(screen.getByRole("checkbox", { name: "Market" }));
+    await waitFor(() => expect(summary()).toHaveTextContent("Auditoriya: 98 ta"));
+    await user.click(within(summary()).getByRole("button", { name: "Segmentni saqlash" }));
+    const dialog = await screen.findByRole("dialog", { name: "Segmentni saqlash" });
+    expect(within(dialog).getByText("Izoh")).toHaveTextContent("Izoh (ixtiyoriy)");
   });
 });

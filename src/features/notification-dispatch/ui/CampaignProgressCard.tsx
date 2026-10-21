@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { Ban, Clock, Plus, RefreshCw } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import {
+  CAMPAIGN_STATUS_META,
   CampaignStatusBadge,
   campaignDisplayStatus,
   isCampaignActive,
@@ -168,9 +169,10 @@ export const CampaignProgressCard = (props: CampaignProgressCardProps) => {
   ].filter(Boolean);
 
   return (
+    // Karta jonli hudud EMAS: son har 3 s yangilanadi — o'qigich har safar o'qimasin (progressbar qiymati so'ralganda
+    // bor). Faqat holat almashuvi (yuborilmoqda → yuborilgan / bekor) alohida doimiy `role="status"` orqali.
     <Card
       ref={rootRef}
-      aria-live="polite"
       title={t("campaign.progress.title")}
       titleAddon={<CampaignStatusBadge status={display} />}
       bodyClassName="flex flex-col gap-3"
@@ -200,6 +202,9 @@ export const CampaignProgressCard = (props: CampaignProgressCardProps) => {
         </div>
       }
     >
+      <span className="sr-only" role="status" data-testid="campaign-status-live">
+        {t("campaign.progress.statusLive", { status: t(CAMPAIGN_STATUS_META[display].labelKey) })}
+      </span>
       <span className="text-sm font-semibold text-text [overflow-wrap:anywhere]">
         {campaign?.title || title}
       </span>

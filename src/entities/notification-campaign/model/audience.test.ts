@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   audienceGate,
+  audienceSegmentPayload,
   createAudienceDraft,
   draftFromSavedAudience,
+  isAudienceSegmentEmpty,
   toAudienceTarget,
   type AudienceDraft,
 } from "./audience";
@@ -131,5 +133,20 @@ describe("draftFromSavedAudience", () => {
       customerSegment: { district_id: "41", last_order_to: "2026-09-30" },
     });
     expect(draftFromSavedAudience(toAudienceTarget(original))).toEqual(original);
+  });
+
+  it("«dan 1» is not a customer filter (the backend ignores min_orders ≤ 1) — «Filtrsiz» is still required", () => {
+    const onlyOne = draft({ kinds: ["customer"], customerSegment: { min_orders: 1 } });
+    expect(audienceGate(onlyOne)).toBe("needsCustomerFilter");
+    expect(toAudienceTarget(onlyOne)).toBeNull();
+    expect(isAudienceSegmentEmpty(onlyOne.customerSegment)).toBe(true);
+    expect(toAudienceTarget({ ...onlyOne, allCustomers: true })).toEqual({
+      include_customers: true,
+      confirm_all_customers: true,
+    });
+    expect(
+      toAudienceTarget(draft({ kinds: ["customer"], customerSegment: { min_orders: 1, max_orders: 5 } })),
+    ).toEqual({ include_customers: true, segment: { max_orders: 5 } });
+    expect(audienceSegmentPayload({ min_orders: 2 })).toEqual({ min_orders: 2 });
   });
 });

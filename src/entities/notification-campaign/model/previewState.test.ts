@@ -78,3 +78,20 @@ describe("audiencePreviewState (maket `-send-states`)", () => {
     expect(audiencePreviewErrorKind(new Error("Network Error"))).toBe("unavailable");
   });
 });
+
+describe("offline (QueryBoundary: isPaused → «Internet aloqasi yo'q»)", () => {
+  it("a paused request without a current number is an offline error, not endless counting", () => {
+    const paused = {
+      current: false,
+      settled: true,
+      isError: false,
+      isFetching: false,
+      isPaused: true,
+      data: undefined,
+    };
+    expect(audiencePreviewState("ready", paused)).toBe("error");
+    expect(audiencePreviewErrorKind(null, true)).toBe("offline");
+    // Hali debounce kutilmoqda — oflayn deb aytilmaydi.
+    expect(audiencePreviewState("ready", { ...paused, settled: false })).toBe("loading");
+  });
+});

@@ -72,7 +72,10 @@ export const AudienceSampleDialog = ({ open, target, onClose }: AudienceSampleDi
     >
       <div className="flex min-w-0 flex-col gap-3" data-testid="audience-sample">
         <p className="m-0 text-[13px] text-text-muted">{t("campaign.sampleDialog.privacy")}</p>
-        {query.isPending && open ? (
+        {query.isPaused && !query.data ? (
+          // Oflayn (QueryBoundary qoidasi): skelet abadiy turmasin.
+          <ErrorState size="inline" kind="offline" onRetry={() => void query.refetch()} />
+        ) : query.isPending && open ? (
           <SkeletonList rows={5} />
         ) : query.isError ? (
           <ErrorState

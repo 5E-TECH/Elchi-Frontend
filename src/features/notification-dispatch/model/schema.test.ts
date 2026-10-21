@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { toAudienceTarget } from "../../../entities/notification-campaign";
+import * as schemaModule from "./schema";
 import {
+  RECIPIENT_MODES,
   buildCampaignPayload,
   buildDispatchPayload,
   createDefaultValues,
@@ -27,6 +29,12 @@ describe("buildDispatchPayload", () => {
 
   it("the «Rol» mode is gone — no roles field ever reaches the dispatch payload (KM-2)", () => {
     expect(buildDispatchPayload(base({ mode: "all" }))).not.toHaveProperty("roles");
+  });
+
+  it("KM-2 item 10 regression: modes are exactly single · list · audience · all, no DISPATCH_ROLES", () => {
+    expect(RECIPIENT_MODES).toEqual(["single", "list", "audience", "all"]);
+    expect(schemaModule).not.toHaveProperty("DISPATCH_ROLES");
+    expect(schemaModule).not.toHaveProperty("DISABLED_DISPATCH_ROLES");
   });
 
   it("targets a picked list with recipient_ids", () => {

@@ -3,8 +3,12 @@ import { useRegionDistrictCatalog } from "../../region";
 import { useRegionLookup } from "../../region/lookup";
 import { formatDateLocalized } from "../../../shared/lib/formatDateTime";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
-import { AUDIENCE_KINDS, AUDIENCE_STAFF_ROLES, type AudienceDraft } from "./audience";
-import { isCustomerSegmentEmpty } from "./segment";
+import {
+  AUDIENCE_KINDS,
+  AUDIENCE_STAFF_ROLES,
+  isAudienceSegmentEmpty,
+  type AudienceDraft,
+} from "./audience";
 
 export type AudienceDescription = {
   /** «Mijoz, Market, Xodim». */
@@ -61,7 +65,8 @@ export const useAudienceDescription = (
     ? formatDateLocalized(segment.last_order_to, { language })
     : null;
   const lastOrder = from && to ? `${from} – ${to}` : from ? `${from} –` : to ? `– ${to}` : all;
-  const min = segment.min_orders;
+  // «dan 1» — filtr emas (`audienceSegmentPayload`).
+  const min = segment.min_orders && segment.min_orders > 1 ? segment.min_orders : undefined;
   const max = segment.max_orders;
   const orders =
     min && max
@@ -82,7 +87,7 @@ export const useAudienceDescription = (
 
   const customerWho = !withCustomers
     ? null
-    : isCustomerSegmentEmpty(segment)
+    : isAudienceSegmentEmpty(segment)
       ? t("campaign.who.customerAll")
       : areaParts.length
         ? t("campaign.who.customerFiltered", { filters: areaParts.join(", ") })

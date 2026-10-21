@@ -1,5 +1,4 @@
 import {
-  isCustomerSegmentEmpty,
   isOrderRangeInverted,
   toCustomerSegmentPayload,
   type CustomerSegment,
@@ -63,12 +62,27 @@ export type AudienceGate =
 
 const has = (draft: AudienceDraft, kind: AudienceKind) => draft.kinds.includes(kind);
 
+/**
+ * Konstruktordagi mijoz filtri → backend `segment`. Backend `min_orders ≤ 1` ni e'tiborsiz qoldiradi («dan 1» —
+ * buyurtma bergan hamma mijoz), shuning uchun u filtr hisoblanmaydi: yolg'iz o'zi «Filtrsiz» tasdig'ini chetlab
+ * o'tmasin.
+ */
+export const audienceSegmentPayload = (segment: CustomerSegment): CustomerSegmentPayload => {
+  const payload = toCustomerSegmentPayload(segment);
+  if (payload.min_orders !== undefined && payload.min_orders <= 1) delete payload.min_orders;
+  return payload;
+};
+
+/** Mijoz filtri amalda yo'q (bo'sh yoki faqat «dan 1»). */
+export const isAudienceSegmentEmpty = (segment: CustomerSegment) =>
+  Object.keys(audienceSegmentPayload(segment)).length === 0;
+
 export const audienceGate = (draft: AudienceDraft): AudienceGate => {
   if (!draft.kinds.length) return "noKind";
   if (has(draft, "staff") && !draft.staffRoles.length) return "noStaffRole";
   if (has(draft, "customer")) {
     if (isOrderRangeInverted(draft.customerSegment)) return "invertedRange";
-    if (isCustomerSegmentEmpty(draft.customerSegment) && !draft.allCustomers)
+    if (isAudienceSegmentEmpty(draft.customerSegment) && !draft.allCustomers)
       return "needsCustomerFilter";
   }
   return "ready";
@@ -86,7 +100,7 @@ export const toAudienceTarget = (draft: AudienceDraft): AudienceTarget | null =>
   if (roles.length) target.roles = roles;
   if (has(draft, "customer")) {
     target.include_customers = true;
-    const segment = toCustomerSegmentPayload(draft.customerSegment);
+    const segment = audienceSegmentPayload(draft.customerSegment);
     if (Object.keys(segment).length) target.segment = segment;
     else target.confirm_all_customers = true;
   }

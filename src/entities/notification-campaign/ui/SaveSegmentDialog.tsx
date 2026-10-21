@@ -10,8 +10,7 @@ import { cx } from "../../../shared/lib/cx";
 import { Button, Dialog, Field, TextInput } from "../../../shared/ui/primitives";
 import { useCreateAudienceSegment } from "../api/hooks";
 import type { SavedAudienceSegment } from "../api/campaignApi";
-import type { AudienceDraft, AudienceTarget } from "../model/audience";
-import { isCustomerSegmentEmpty } from "../model/segment";
+import { isAudienceSegmentEmpty, type AudienceDraft, type AudienceTarget } from "../model/audience";
 import { useAudienceDescription } from "../model/useAudienceDescription";
 
 /** Backend chegaralari (`CreateAudienceSegmentRequestDto`). */
@@ -101,7 +100,7 @@ export const SaveSegmentDialog = ({
       ? [{ label: t("campaign.saveDialog.staffRoles"), value: description.staffRoles }]
       : []),
     ...(withCustomers
-      ? isCustomerSegmentEmpty(draft.customerSegment)
+      ? isAudienceSegmentEmpty(draft.customerSegment)
         ? [{ label: t("campaign.saveDialog.region"), value: t("campaign.saveDialog.allCustomers") }]
         : [
             { label: t("campaign.saveDialog.region"), value: description.area },
@@ -157,7 +156,7 @@ export const SaveSegmentDialog = ({
         >
           <TextInput value={name} onValueChange={setName} maxLength={SEGMENT_NAME_MAX} />
         </Field>
-        <Field label={t("campaign.saveDialog.note")}>
+        <Field label={t("campaign.saveDialog.note")} optional>
           <TextInput
             multiline
             rows={2}
