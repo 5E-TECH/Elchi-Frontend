@@ -180,6 +180,13 @@ export const canViewProducts: Predicate = hasRole(
 );
 
 /**
+ * «Operatorlar» (`/market-operators`) — market O'Z operatorlarini boshqaradi (MO-1, ega qarori 2026-10-19). Backend
+ * `market-operators` yo'llari faqat `@Roles(MARKET)` (o'z operatorlari, JWT `sub`) — superadmin/admin uchun `/users`.
+ * Market operatori o'zi bu sahifani ko'rmaydi.
+ */
+export const canViewMarketOperators: Predicate = hasRole("market");
+
+/**
  * Admin `DashboardPage` (`/`) — kompaniya bo'yicha tushum, viloyatlar kesimi (`RegionOverviewCard`) va
  * reytinglar. Faqat sanab o'tilgan rollar: yangi rol (logist, market operatori, investor) unga tushib qolmaydi —
  * avval `DashboardEntry` qolgan har rolni shu sahifaga yuborardi va logist kompaniya tushumini ko'rardi

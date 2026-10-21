@@ -51,6 +51,13 @@ export const API_ENDPOINTS = {
     // superadmin, admin, market — faqat o'zinikini)
     TELEGRAM_GROUP_PII: (id: string | number) => `markets/${id}/telegram-group-pii`,
   },
+  // Market o'z operatorlari (i76gGjyq; faqat MARKET, faqat o'z operatorlari — JWT `sub`, market_id yuborilmaydi)
+  MARKET_OPERATORS: {
+    BASE: "market-operators", // GET ?search&status&page&limit → { items, meta } / POST { name, phone_number, password }
+    BY_ID: (id: string | number) => `market-operators/${id}`, // DELETE (soft)
+    // PATCH { commission_type: percent | fixed | null, commission_value } — PERCENT 0..100, FIXED 0..1 000 000, 2 kasr
+    COMMISSION: (id: string | number) => `market-operators/${id}/commission`,
+  },
   COURIERS: {
     BASE: "couriers", // GET list / POST create
     BY_REGION: (regionId: string | number) => `couriers/region/${regionId}`,

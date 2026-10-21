@@ -20,6 +20,7 @@ import {
   canViewProducts,
   canCreateProducts,
   canViewAdminDashboard,
+  canViewMarketOperators,
 } from "./access";
 import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
 
@@ -46,6 +47,7 @@ import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
  *
  * 2026-10-21 (MH-1): `canViewProducts` · mo — → ✓ (faqat ko'rish, `GET product/my-products`); yangi qator
  * `canCreateProducts` — market ✓ → — (market endi faqat ko'radi, ega qarori 2026-10-15).
+ * 2026-10-21 (MO-1): yangi qator `canViewMarketOperators` — faqat market (avval `routes.tsx` da `() => false`).
  */
 
 const state = (role: string | null, branchType?: BranchType): RootState =>
@@ -96,6 +98,8 @@ const MATRIX: Record<string, string> = {
   canCreateProducts: "✓ ✓   —   ✓   —   ✓   ✓   ✓   ✓   ✓   —   —   —",
   // Menejer — o'z bosh sahifasi (`/branch-dashboard`), market — `MarketDashboardPage`.
   canViewAdminDashboard: "✓ ✓ —   ✓   ✓   —   —   —   —   —   —   —   —",
+  // MO-1: faqat market (backend `market-operators` — @Roles(MARKET), o'z operatorlari).
+  canViewMarketOperators: "— — ✓   —   —   —   —   —   —   —   —   —   —",
 };
 
 const PREDICATES = {
@@ -118,6 +122,7 @@ const PREDICATES = {
   canViewProducts,
   canCreateProducts,
   canViewAdminDashboard,
+  canViewMarketOperators,
 };
 
 describe("kirish huquqi matritsasi", () => {

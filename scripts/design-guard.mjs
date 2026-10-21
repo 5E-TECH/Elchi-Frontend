@@ -104,6 +104,7 @@ export const V2_SCOPES = Object.freeze([
   "src/auth",
   "src/entities/activity-log",
   "src/entities/integrations",
+  "src/entities/market-operator",
   "src/entities/notification",
   "src/entities/notification-dispatch",
   "src/entities/notification-inbox",
@@ -146,6 +147,7 @@ export const V2_SCOPES = Object.freeze([
   "src/pages/logistics-ops",
   "src/pages/logs",
   "src/pages/mails",
+  "src/pages/market-operators",
   "src/pages/new_orders",
   "src/pages/notification-send",
   "src/pages/notifications",
@@ -187,6 +189,8 @@ export const V2_SCOPES = Object.freeze([
   "src/shared/ui/charts",
   "src/shared/ui/error-page",
   "src/shared/ui/camera",
+  // MO-1: v1 `headerName.tsx` o'chirildi — papka rangda toza (`PrintModeSelect` raw-control ratchetida, rangda 0).
+  "src/shared/components",
 ]);
 
 /** Scope ichida hali v1 qolgan fayllar — baseline'dagi rang ruxsati saqlanadi. FAQAT QISQARADI (sabab bilan;

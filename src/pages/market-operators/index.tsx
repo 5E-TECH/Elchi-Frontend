@@ -1,314 +1,291 @@
-import { memo, useMemo, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import { Eye, EyeOff, Loader2, Lock, Phone, Plus, UserRound, UsersRound } from "lucide-react";
+// dizayn-v2: market-operators-list, market-operators-empty, market-operators-create-dialog, market-operators-commission-dialog, market-operators-commission-fixed-dialog, market-operators-delete-dialog
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CircleCheck, SearchX, UserPlus, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useUser } from "../../entities/user/api/userApi";
-import type { User } from "../../entities/user/types/user";
-import { UserStatusBadge } from "../../entities/user/ui/UserStatusBadge";
-import HeaderName from "../../shared/components/headerName";
-import FormPopup from "../../shared/ui/FormPopup";
-import PageContainer from "../../shared/ui/PageContainer";
+import { useSelector } from "react-redux";
+import type { RootState } from "../../app/config/store";
 import {
-  formatUzbekistanPhoneLocal,
-  isCompleteUzbekistanPhone,
-  keepPhoneCaretAfterChange,
-  toUzbekistanPhoneValue,
-  UZBEKISTAN_PHONE_PREFIX,
-} from "../../shared/lib/phone";
+  useMarketOperators,
+  type MarketOperator,
+  type MarketOperatorStatus,
+} from "../../entities/market-operator";
+import { formatNumberLocalized } from "../../shared/lib/formatMoney";
 import {
-  buildCreateMarketOperatorPayload,
-  type MarketOperatorCreateFormValues,
-} from "./model/createMarketOperator";
-import { notify } from "../../shared/lib/notify";
+  Button,
+  Card,
+  EmptyState,
+  Field,
+  PageHeader,
+  Pagination,
+  QueryBoundary,
+  Select,
+  TextInput,
+  type SelectOption,
+} from "../../shared/ui/primitives";
+import { operatorsWithoutCommission } from "./model/unsetCommission";
+import { CommissionDialog } from "./ui/CommissionDialog";
+import { CommissionWarning } from "./ui/CommissionWarning";
+import { CreateOperatorDialog } from "./ui/CreateOperatorDialog";
+import { OperatorsSkeleton, OperatorsTable } from "./ui/OperatorsTable";
+import { useDeleteOperatorConfirm } from "./ui/useDeleteOperatorConfirm";
 
-const DEFAULT_CREATE_VALUES: MarketOperatorCreateFormValues = {
-  name: "",
-  phone_number: UZBEKISTAN_PHONE_PREFIX,
-  password: "",
-};
+/** Backend `limit` ≤ 100 (`normalizeQuery`). */
+const PAGE_SIZES = [20, 50, 100] as const;
+const SEARCH_DEBOUNCE_MS = 400;
+const STATUS_VALUES: readonly MarketOperatorStatus[] = ["active", "inactive"];
 
-const labelClassName =
-  "mb-2 flex items-center gap-1 text-xs font-black uppercase tracking-[0.08em] text-[color:var(--color-text-muted)] dark:text-white/65";
+/**
+ * OPERATORLAR — market o'z operatorlarini boshqaradi (`/market-operators`, faqat market; ega qarori 2026-10-19).
+ * Maketlar: `market-operators-list`, `-empty`, `-create-dialog`, `-commission-dialog`, `-commission-fixed-dialog`,
+ * `-delete-dialog`.
+ *
+ * Sarlavha «Operatorlar» + «<market> nomidan …» va «Operator qo'shish»; «Komissiya belgilanmagan» ogohlantirishi
+ * (joriy sahifa, faqat faol operatorlar); karta: qidiruv (ism yoki telefon, `search`) + «Holat» (`status`), jadval
+ * (telefonda kartalar), pastda «N ta operator» yoki sahifalash (jami > sahifa hajmi bo'lsa). Bo'sh holat «Hali
+ * operator yo'q» — sarlavhadagi tugma va filtrlarsiz, tugma bo'sh holat ichida (maket `-empty`).
+ *
+ * So'rov: `GET /market-operators?page&limit&search&status` (market_id yuborilmaydi — serverda JWT `sub`). Qator
+ * menyusi: Komissiya oynasi va o'chirish (tasdiq bilan). «Nofaol qilish / Faollashtirish» — MO-4 (backend endpointi
+ * kutilmoqda), shungacha holat faqat o'qiladi.
+ */
+const MarketOperatorsPage = () => {
+  const { t, i18n } = useTranslation("marketOperators");
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const marketName = useSelector((state: RootState) => state.user.user?.name?.trim() || null);
 
-const iconClassName =
-  "pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[color:var(--color-text-muted)] dark:text-white/45";
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState<number>(PAGE_SIZES[0]);
+  const [searchText, setSearchText] = useState("");
+  const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<MarketOperatorStatus | "">("");
+  const [onlyUnset, setOnlyUnset] = useState(false);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [commissionOperator, setCommissionOperator] = useState<MarketOperator | null>(null);
+  const confirmDelete = useDeleteOperatorConfirm();
+  /** Sarlavhadagi yoki bo'sh holatdagi «Operator qo'shish» (bir vaqtda bittasi chiziladi). */
+  const addButtonRef = useRef<HTMLButtonElement>(null);
 
-const baseInputClassName =
-  "h-12 w-full rounded-2xl border bg-white/80 text-sm font-bold text-maindark outline-none transition placeholder:text-[color:var(--color-text-muted)] focus:ring-2 dark:bg-white/[0.075] dark:text-white dark:placeholder:text-white/38";
+  const searchTimer = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(searchTimer.current), []);
 
-const inputStateClassName = (hasError: boolean) =>
-  hasError
-    ? "border-red-400 focus:border-red-400 focus:ring-red-400/15"
-    : "border-[color:var(--color-border-strong)] hover:border-main/50 focus:border-main focus:ring-main/20 dark:border-white/14";
+  const commitSearch = (value: string) => {
+    window.clearTimeout(searchTimer.current);
+    const next = value.trim();
+    if (next !== search) {
+      setSearch(next);
+      setPage(1);
+    }
+  };
+  const handleSearchInput = (value: string) => {
+    setSearchText(value);
+    window.clearTimeout(searchTimer.current);
+    searchTimer.current = window.setTimeout(() => commitSearch(value), SEARCH_DEBOUNCE_MS);
+  };
 
-const formatPhoneNumber = (phone?: string | null) => {
-  const digits = String(phone ?? "").replace(/\D/g, "");
-  const local = digits.startsWith("998") ? digits.slice(3) : digits;
+  const query = useMarketOperators({
+    page,
+    limit,
+    ...(search ? { search } : {}),
+    ...(status ? { status } : {}),
+  });
+  const { data, isLoading, isError, error, refetch, isFetching, isPlaceholderData } = query;
+  const items = useMemo(() => data?.items ?? [], [data?.items]);
+  const filtersActive = Boolean(search || status);
+  /** Umuman operator yo'q (filtrsiz) — maket `-empty`: sarlavhada tugma, ogohlantirish va filtrlar yo'q. */
+  const noOperators = !filtersActive && data !== undefined && !isPlaceholderData && data.total === 0;
 
-  if (local.length === 9) {
-    return `+998 ${local.slice(0, 2)} ${local.slice(2, 5)} ${local.slice(5, 7)} ${local.slice(7, 9)}`;
+  // Oxirgi sahifadagi yagona operator o'chirilsa sahifa bo'shaydi — mavjud oxirgi sahifaga qaytiladi (render paytida).
+  if (data && data.items.length === 0 && data.total > 0 && page > 1) {
+    const lastPage = Math.max(1, Math.ceil(data.total / limit));
+    if (lastPage < page) setPage(lastPage);
   }
 
-  return phone || "—";
-};
+  const unset = useMemo(() => operatorsWithoutCommission(items), [items]);
+  // «Faqat ularni ko'rsatish» faqat 2+ operatorda ma'noli; komissiya belgilangach o'zi o'chadi.
+  if (onlyUnset && unset.length < 2) setOnlyUnset(false);
+  const rows = onlyUnset ? unset : items;
 
-const getInitials = (name?: string | null) => {
-  const parts = String(name ?? "").trim().split(/\s+/).filter(Boolean);
-  if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-  return (parts[0]?.slice(0, 2) || "OP").toUpperCase();
-};
-
-const OperatorCard = memo(({ operator }: { operator: User }) => (
-  <div className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 transition hover:border-main/30 hover:bg-white/8 dark:bg-white/[0.035]">
-    <div className="flex min-w-0 items-center gap-3">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-main/15 text-sm font-black text-main dark:bg-white/10 dark:text-white">
-        {getInitials(operator.name)}
-      </div>
-      <div className="min-w-0">
-        <p className="m-0 truncate text-sm font-black text-maindark dark:text-white">
-          {operator.name || "—"}
-        </p>
-        <p className="m-0 mt-1 flex items-center gap-1.5 truncate text-xs font-semibold text-[color:var(--color-text-muted)] dark:text-white/55">
-          <Phone size={13} />
-          {formatPhoneNumber(operator.phone_number)}
-        </p>
-      </div>
-    </div>
-    <UserStatusBadge status={operator.status} />
-  </div>
-));
-
-OperatorCard.displayName = "OperatorCard";
-
-const MarketOperatorsPage = () => {
-  const { t } = useTranslation("marketOperators");
-  const { useGetUser } = useUser();
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm<MarketOperatorCreateFormValues>({
-    defaultValues: DEFAULT_CREATE_VALUES,
-    mode: "onSubmit",
-  });
-  const { data, isLoading, isError, refetch } = useGetUser({
-    role: "operator",
-    page: 1,
-    limit: 100,
-  });
-
-  const operators = useMemo(
-    () => (data?.data?.items ?? []).filter((user) => user.role === "operator"),
-    [data?.data?.items],
+  const statusOptions = useMemo<SelectOption[]>(
+    () => [
+      { value: "", label: t("list.statusAll") },
+      ...STATUS_VALUES.map((value) => ({ value, label: t(`status.${value}`) })),
+    ],
+    [t],
   );
 
-  const closeCreateModal = () => {
-    setIsCreateOpen(false);
-    setShowPassword(false);
-    reset(DEFAULT_CREATE_VALUES);
+  const clearFilters = () => {
+    window.clearTimeout(searchTimer.current);
+    setSearchText("");
+    setSearch("");
+    setStatus("");
+    setPage(1);
   };
 
-  const handleCreateSubmit = (values: MarketOperatorCreateFormValues) => {
-    buildCreateMarketOperatorPayload(values);
-    notify.warning(t("createUnavailableTitle"), { description: t("createUnavailableDescription") });
+  const openCreate = useCallback(() => setIsCreateOpen(true), []);
+  const openCommission = useCallback((operator: MarketOperator) => setCommissionOperator(operator), []);
+  // O'chirilgach qator (va uning menyu tugmasi) ro'yxatdan ketadi — fokus `body` ga tushmasin: «Operator qo'shish».
+  const handleDelete = useCallback(
+    (operator: MarketOperator) =>
+      void confirmDelete(operator).then((ok) => {
+        if (ok) window.setTimeout(() => addButtonRef.current?.focus({ preventScroll: true }), 0);
+      }),
+    [confirmDelete],
+  );
+
+  // Birinchi operator qo'shilgach bo'sh holat (oynani ochgan tugma bilan) yo'qoladi — fokus sarlavhadagi tugmaga.
+  const hadNoOperators = useRef(noOperators);
+  useEffect(() => {
+    const lostEmptyState = hadNoOperators.current && !noOperators;
+    hadNoOperators.current = noOperators;
+    const active = document.activeElement;
+    if (lostEmptyState && (!active || active === document.body)) addButtonRef.current?.focus({ preventScroll: true });
+  }, [noOperators]);
+
+  const changeLimit = (next: number) => {
+    setLimit(next);
+    setPage(1);
   };
+
+  const total = data?.total ?? 0;
+  const footer =
+    data && total > 0 && !noOperators ? (
+      total > limit ? (
+        <Pagination
+          page={data.page || page}
+          pageSize={data.limit || limit}
+          total={total}
+          onPageChange={setPage}
+          onPageSizeChange={changeLimit}
+          pageSizeOptions={PAGE_SIZES}
+          disabled={isFetching}
+          summary={(range) => t("list.pagination", range)}
+        />
+      ) : (
+        <span className="text-[13px] text-text-muted">
+          {onlyUnset
+            ? t("list.summaryShown", {
+                shown: formatNumberLocalized(rows.length, { language }),
+                total: formatNumberLocalized(total, { language }),
+              })
+            : t("list.summary", { total: formatNumberLocalized(total, { language }) })}
+        </span>
+      )
+    ) : undefined;
+
+  const addButton = (
+    <Button ref={addButtonRef} leftIcon={UserPlus} aria-haspopup="dialog" onClick={openCreate}>
+      {t("add")}
+    </Button>
+  );
 
   return (
-    <PageContainer className="flex min-h-full flex-col gap-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <HeaderName
-          name={t("title")}
-          description={t("description")}
-          icon={<UsersRound />}
-          iconClassName="bg-blue-600/20 text-blue-400 dark:bg-blue-500/20 dark:text-blue-300"
-        />
-        <button
-          type="button"
-          onClick={() => setIsCreateOpen(true)}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-2xl bg-main px-4 text-sm font-black text-white shadow-lg shadow-main/20 transition hover:bg-main/90 active:scale-[0.99] sm:px-5"
-        >
-          <Plus size={17} />
-          {t("newOperator")}
-        </button>
-      </div>
+    <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
+      <PageHeader
+        title={t("title")}
+        description={marketName ? t("description", { market: marketName }) : t("descriptionFallback")}
+        actions={noOperators ? undefined : addButton}
+      />
 
-      <section className="flex min-h-[calc(100vh-18rem)] flex-1 flex-col overflow-hidden rounded-[24px] border border-white/10 bg-primary/45 shadow-sm dark:bg-white/[0.025]">
-        {isLoading ? (
-          <div className="flex flex-1 items-center justify-center py-20">
-            <div className="flex flex-col items-center gap-3 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)]">
-              <Loader2 className="h-8 w-8 animate-spin text-main" />
-              <p className="m-0 text-sm font-semibold">{t("loading")}</p>
-            </div>
-          </div>
-        ) : isError ? (
-          <div className="flex flex-1 items-center justify-center px-4 py-20 text-center">
-            <div>
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-red-500/10 text-red-400">
-                <UsersRound size={30} />
-              </div>
-              <p className="m-0 text-base font-black text-maindark dark:text-white">{t("loadError")}</p>
-              <button
-                type="button"
-                onClick={() => void refetch()}
-                className="mt-4 min-h-10 rounded-xl border border-white/10 px-4 text-sm font-bold text-main transition hover:border-main/40"
-              >
-                {t("retry")}
-              </button>
-            </div>
-          </div>
-        ) : operators.length === 0 ? (
-          <div className="flex flex-1 items-center justify-center px-4 py-20 text-center">
-            <div>
-              <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/5 text-[color:var(--color-text-muted)] dark:text-[color:var(--color-text-muted-dark)] dark:bg-white/5">
-                <UsersRound size={34} />
-              </div>
-              <p className="m-0 text-base font-semibold text-[color:var(--color-text-muted)] dark:text-white/60">
-                {t("emptyTitle")}
-              </p>
-              <p className="m-0 mt-2 text-xs font-semibold text-[color:var(--color-text-muted)] dark:text-white/45">
-                {t("emptyDescription")}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-3 p-4 md:grid-cols-2 xl:grid-cols-3">
-            {operators.map((operator) => (
-              <OperatorCard key={operator.id} operator={operator} />
-            ))}
+      {noOperators ? null : (
+        <CommissionWarning
+          operators={unset}
+          onSet={openCommission}
+          onlyUnset={onlyUnset}
+          onToggleOnlyUnset={() => setOnlyUnset((value) => !value)}
+        />
+      )}
+
+      <Card padding="none" aria-label={t("list.label")} footer={footer}>
+        {noOperators ? null : (
+          <div
+            role="group"
+            aria-label={t("list.filtersLabel")}
+            className="flex flex-wrap items-center gap-3 px-5 py-4 max-md:px-4"
+          >
+            <TextInput
+              mode="search"
+              value={searchText}
+              onValueChange={handleSearchInput}
+              onClear={() => commitSearch("")}
+              onSearch={commitSearch}
+              placeholder={t("list.searchPlaceholder")}
+              aria-label={t("list.searchLabel")}
+              className="min-w-0 flex-[10_1_320px]"
+            />
+            <Field
+              label={t("list.statusFilter")}
+              hideLabel
+              labelAs="span"
+              className="min-w-0 flex-[1_1_200px] md:max-w-[420px] max-md:basis-full"
+            >
+              <Select
+                options={statusOptions}
+                value={status || null}
+                onChange={(next) => {
+                  setStatus((next ?? "") as MarketOperatorStatus | "");
+                  setPage(1);
+                }}
+                placeholder={t("list.statusAll")}
+                inlineLabel={t("list.statusFilter")}
+                icon={CircleCheck}
+              />
+            </Field>
           </div>
         )}
-      </section>
 
-      <FormPopup
-        isOpen={isCreateOpen}
-        onClose={closeCreateModal}
-        onSubmit={(event) => {
-          void handleSubmit(handleCreateSubmit)(event);
-        }}
-        title={t("createTitle")}
-        description={t("createDescription")}
-        icon={<UsersRound size={22} />}
-        submitLabel={t("save")}
-        cancelLabel={t("cancel")}
-        widthClassName="max-w-[520px]"
-        theme="market"
-      >
-        <div className="space-y-4">
-          <Controller
-            control={control}
-            name="name"
-            rules={{ required: t("nameRequired") }}
-            render={({ field }) => (
-              <label className="block">
-                <span className="mb-2 flex items-center gap-1 text-xs font-black uppercase tracking-[0.08em] text-[color:var(--color-text-muted)] dark:text-white/65">
-                  {t("nameLabel")} <span className="text-red-400">*</span>
-                </span>
-                <div className="relative">
-                  <UserRound
-                    size={18}
-                    className={iconClassName}
-                  />
-                  <input
-                    {...field}
-                    autoComplete="name"
-                    placeholder={t("namePlaceholder")}
-                    className={`${baseInputClassName} pl-11 pr-4 ${inputStateClassName(!!errors.name)}`}
-                  />
-                </div>
-                {errors.name ? <span className="mt-1.5 block text-xs font-semibold text-red-400">{errors.name.message}</span> : null}
-              </label>
-            )}
-          />
+        <QueryBoundary
+          query={{ data: data ? rows : undefined, isLoading, isError, error, refetch }}
+          loadingLabel={t("list.loading")}
+          loading={<OperatorsSkeleton />}
+          empty={
+            // Filtr almashganda eski (bo'sh) natija o'rinbosar bo'lib turadi — yangi javobgacha noto'g'ri bo'sh holat
+            // («Hali operator yo'q» + ikkinchi «Operator qo'shish») emas, skelet.
+            isPlaceholderData ? (
+              <OperatorsSkeleton />
+            ) : filtersActive ? (
+              <EmptyState
+                icon={SearchX}
+                title={t("list.notFoundTitle")}
+                description={t("list.notFoundDescription")}
+                action={
+                  <Button variant="secondary" onClick={clearFilters}>
+                    {t("list.clearFilters")}
+                  </Button>
+                }
+              />
+            ) : (
+              <EmptyState
+                icon={Users}
+                title={t("list.emptyTitle")}
+                description={
+                  marketName
+                    ? t("list.emptyDescription", { market: marketName })
+                    : t("list.emptyDescriptionFallback")
+                }
+                action={addButton}
+              />
+            )
+          }
+        >
+          {(shownRows) => (
+            <OperatorsTable
+              rows={shownRows}
+              busy={isFetching && isPlaceholderData}
+              onCommission={openCommission}
+              onDelete={handleDelete}
+            />
+          )}
+        </QueryBoundary>
+      </Card>
 
-          <Controller
-            control={control}
-            name="phone_number"
-            rules={{
-              validate: (value) =>
-                isCompleteUzbekistanPhone(value) || t("phoneRequired"),
-            }}
-            render={({ field }) => (
-              <label className="block">
-                <span className={labelClassName}>
-                  {t("phoneLabel")} <span className="text-red-400">*</span>
-                </span>
-                <div className="relative">
-                  <Phone
-                    size={18}
-                    className={iconClassName}
-                  />
-                  <span className="pointer-events-none absolute left-11 top-1/2 -translate-y-1/2 text-sm font-bold text-maindark dark:text-white">
-                    {UZBEKISTAN_PHONE_PREFIX}
-                  </span>
-                  <input
-                    type="tel"
-                    inputMode="numeric"
-                    autoComplete="off"
-                    name={field.name}
-                    value={formatUzbekistanPhoneLocal(field.value)}
-                    onChange={(event) => {
-                      const nextValue = toUzbekistanPhoneValue(event.target.value);
-                      const nextDisplayValue = formatUzbekistanPhoneLocal(nextValue);
-                      field.onChange(nextValue);
-                      keepPhoneCaretAfterChange(event.target, nextDisplayValue);
-                    }}
-                    onBlur={field.onBlur}
-                    placeholder="90 123 45 67"
-                    className={`${baseInputClassName} pl-[5.65rem] pr-4 ${inputStateClassName(!!errors.phone_number)}`}
-                  />
-                </div>
-                {errors.phone_number ? (
-                  <span className="mt-1.5 block text-xs font-semibold text-red-400">{errors.phone_number.message}</span>
-                ) : null}
-              </label>
-            )}
-          />
-
-          <Controller
-            control={control}
-            name="password"
-            rules={{
-              required: t("passwordRequired"),
-              minLength: { value: 4, message: t("passwordMinLength") },
-            }}
-            render={({ field }) => (
-              <label className="block">
-                <span className={labelClassName}>
-                  {t("passwordLabel")} <span className="text-red-400">*</span>
-                </span>
-                <div className="relative">
-                  <Lock
-                    size={18}
-                    className={iconClassName}
-                  />
-                  <input
-                    {...field}
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    placeholder={t("passwordPlaceholder")}
-                    className={`${baseInputClassName} pl-11 pr-12 ${inputStateClassName(!!errors.password)}`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((value) => !value)}
-                    aria-label={showPassword ? t("hidePassword") : t("showPassword")}
-                    className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-xl text-[color:var(--color-text-muted)] transition hover:bg-main/10 hover:text-main dark:text-white/55 dark:hover:bg-white/10 dark:hover:text-white"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-                {errors.password ? (
-                  <span className="mt-1.5 block text-xs font-semibold text-red-400">{errors.password.message}</span>
-                ) : null}
-              </label>
-            )}
-          />
-        </div>
-      </FormPopup>
-    </PageContainer>
+      <CreateOperatorDialog
+        open={isCreateOpen}
+        onClose={() => setIsCreateOpen(false)}
+        marketName={marketName}
+        onSetCommission={openCommission}
+      />
+      <CommissionDialog operator={commissionOperator} onClose={() => setCommissionOperator(null)} />
+    </div>
   );
 };
 
