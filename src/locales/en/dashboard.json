@@ -325,8 +325,16 @@
     "operatorRate": "Operator sell-through",
     "marketAverage": "{{name}} average · {{rate}}",
     "yourMarket": "Market",
+    "operatorUnassigned": {
+      "subtitle": "No market assigned",
+      "title": "You are not assigned to a market yet",
+      "description": "Home page figures open after the market owner adds you in the «Operators» section. Contact the market owner.",
+      "retry": "Check again",
+      "checking": "Checking..."
+    },
     "quick": {
       "viewHint": "Your orders in Intake and creation",
+      "listHint": "Your market's order list",
       "createHint": "Manually or with AI"
     },
     "sales": {

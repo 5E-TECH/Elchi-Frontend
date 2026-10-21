@@ -102,6 +102,8 @@ const profile = (themeName) => ({
     ...(branchType
       ? { branch_id: '1', branch_type: branchType, branch: { id: '1', name: 'Namuna filiali', type: branchType, branch_type: branchType } }
       : {}),
+    // MO-2: market operatori — marketi va komissiyasi («Daromadim» → «Stavkam», maket `market_operator-earnings`).
+    ...(role === 'market_operator' ? { market_id: '1', commission_type: 'percent', commission_value: '5.00' } : {}),
   },
 });
 /**

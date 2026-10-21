@@ -1,4 +1,5 @@
 import {
+  Banknote,
   House,
   Plug,
   Wrench,
@@ -170,7 +171,16 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
     { to: "/", icon: House, label: "dashboard", end: true },
     { to: "/regions", icon: MapIcon, label: "regions" },
   ],
-  market_operator: [],
+  /**
+   * MO-2 (ega 2026-10-19): bosh sahifa (market bosh sahifasi operator rejimida), mahsulotlar (faqat ko'rish, MH-1) va
+   * «Daromadim» (o'z stavkasi). «Buyurtmalar» va «Buyurtma yaratish» — MO-3 (`route-map.json` → `plannedMenu`).
+   * Kassa/to'lov bandlari qo'shilmaydi — operatorda moliya ruxsati yo'q, o'z hisobi faqat «Daromadim» da.
+   */
+  market_operator: [
+    { to: "/", icon: House, label: "dashboard", end: true },
+    { to: "/products", icon: Tag, label: "products" },
+    { to: "/my-earnings", icon: Banknote, label: "earnings" },
+  ],
   /**
    * IN-1 (vpKijXce): investor kabineti — `/` (`DashboardEntry` → `InvestorDashboardPage`). «Investitsiyalar» va
    * «Foyda tarixi» (`/investments`, `/profits`) o'z sahifalari bilan IN-2 da qo'shiladi (`plannedMenu.investor`).
@@ -402,6 +412,8 @@ export const SIDEBAR_GROUP_BY_PATH: Record<string, SidebarGroupId> = {
   // IN-1: investor kabineti ro'yxatlari (sahifalari IN-2 da) — Moliya guruhida.
   "/investments": 'finance',
   "/profits": 'finance',
+  // MO-2: market operatorining «Daromadim» sahifasi.
+  "/my-earnings": 'finance',
   // Ma'lumotnoma
   "/products": 'directory',
   "/all-users": 'directory',

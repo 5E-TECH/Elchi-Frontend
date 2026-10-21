@@ -323,8 +323,16 @@
     "operatorRate": "Operator sotuv foizi",
     "marketAverage": "{{name}} o'rtachasi · {{rate}}",
     "yourMarket": "Market",
+    "operatorUnassigned": {
+      "subtitle": "Market biriktirilmagan",
+      "title": "Siz hali marketga biriktirilmagansiz",
+      "description": "Bosh sahifa ko'rsatkichlari market egasi sizni «Operatorlar» bo'limida qo'shgandan keyin ochiladi. Market egasiga murojaat qiling.",
+      "retry": "Qayta tekshirish",
+      "checking": "Tekshirilmoqda..."
+    },
     "quick": {
       "viewHint": "Qabul va yaratish bo'limidagi buyurtmalaringiz",
+      "listHint": "Market buyurtmalari ro'yxati",
       "createHint": "Qo'lda yoki AI yordamida yaratish"
     },
     "sales": {

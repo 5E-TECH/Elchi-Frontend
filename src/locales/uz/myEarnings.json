@@ -1,0 +1,22 @@
+{
+  "title": "Daromadim",
+  "subtitle": "Sotilgan buyurtmalaringiz uchun komissiya",
+  "unset": {
+    "title": "Komissiya belgilanmagan — daromad yozilmaydi",
+    "text": "Market egasi sizga stavka belgilamaguncha sotuvlaringiz uchun daromad hisoblanmaydi. U bilan bog'laning."
+  },
+  "rate": {
+    "title": "Stavkam",
+    "percentHint": "har sotilgan buyurtma narxidan",
+    "fixedHint": "har sotilgan buyurtma uchun",
+    "notSet": "Belgilanmagan",
+    "type": "Turi",
+    "typePercent": "Foiz",
+    "typeFixed": "Qat'iy summa",
+    "setBy": "Belgilaydi",
+    "marketOwner": "Market egasi",
+    "sample": "Namuna",
+    "note": "Stavka o'zgarsa, faqat keyingi sotuvlarga qo'llanadi.",
+    "unsetNote": "Stavka belgilanmaguncha daromad yozilmaydi. Market egasi bilan bog'laning."
+  }
+}

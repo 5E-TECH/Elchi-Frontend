@@ -168,7 +168,7 @@ export const canCreateProducts: Predicate = hasRole("superadmin", "admin", "regi
 /**
  * Mahsulotlar ro'yxati (`/products`) — avval `routes.tsx` da qo'lda nusxalangan `canManageProducts` edi (ROL-0
  * shu yerga ko'chirdi). Market va market operatori (MH-1) — faqat ko'rish (`GET product/my-products`; operatorga
- * biriktirilgan marketi). Operatorning menyu bandi — MO-2.
+ * biriktirilgan marketi). Operatorning menyu bandi — MO-2 (`menuConfig.tsx`).
  */
 export const canViewProducts: Predicate = hasRole(
   "superadmin",
@@ -190,8 +190,8 @@ export const canViewMarketOperators: Predicate = hasRole("market");
  * Admin `DashboardPage` (`/`) — kompaniya bo'yicha tushum, viloyatlar kesimi (`RegionOverviewCard`) va
  * reytinglar. Faqat sanab o'tilgan rollar: yangi rol (logist, market operatori, investor) unga tushib qolmaydi —
  * avval `DashboardEntry` qolgan har rolni shu sahifaga yuborardi va logist kompaniya tushumini ko'rardi
- * (mDfjKeQi). Ularning o'z bosh sahifasi kelguncha `/` da 403 (LG-1, MO-2, IN-1 shu yerga o'z tarmog'ini qo'shadi).
- * `operator` — avvalgidek (sahifa uni alohida qisqartiradi: kompaniya bloklarisiz). Market va menejerning o'z
+ * (mDfjKeQi). Ularning o'z bosh sahifasi `DashboardEntry` da (LG-1 logist, MO-2 market operatori — market bosh sahifasi
+ * operator rejimida, IN-1 investor). `operator` — avvalgidek (sahifa uni alohida qisqartiradi: kompaniya bloklarisiz). Market va menejerning o'z
  * bosh sahifasi bor (`DashboardEntry`).
  */
 export const canViewAdminDashboard: Predicate = hasRole(
@@ -269,3 +269,10 @@ export const canViewInvestorCabinet: Predicate = hasRole("investor");
  * (`RegionPage` → `LogistRegionView`). Avval `routes.tsx` ichidagi qo'lda yozilgan predikat edi.
  */
 export const canViewRegionStats: Predicate = hasRole("superadmin", "admin", "manager", "courier", "logist");
+
+/**
+ * «Daromadim» (`/my-earnings`, MO-2, ega 2026-10-19) — faqat market operatori: o'z stavkasi (`GET auth/my-profile` →
+ * `commission_type`, `commission_value`). Hisob, to'lovlar va daromadlar ro'yxati — backend `finance/operators/me/*`
+ * (E6iEOAVs, MO-6) kelgach; operator boshqa moliya sahifalarini ko'rmaydi.
+ */
+export const canViewMyEarnings: Predicate = hasRole("market_operator");

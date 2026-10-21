@@ -25,6 +25,8 @@ export interface User {
     add_order?: boolean;
     cancelled_handover_qr_required?: boolean;
     settings?: Record<string, unknown> | null;
+    /** MO-2: market operatorining marketi (`my-profile` → `market_id`) — bosh sahifada o'z marketi qatorini belgilash uchun. */
+    market_id?: string | number | null;
 }
 
 export interface UserState {

@@ -64,6 +64,10 @@ export interface NavSection {
 /** Rolga xos yorliq kaliti (yo'l bo'yicha). */
 const LABEL_KEY_BY_ROLE: Partial<Record<SidebarUserRole, Record<string, string>>> = {
   courier: { "/cash-box": "cashbox" },
+  // MO-2: market operatorida yaratish bandi «Buyurtma yaratish» (maket `roles.json`; qabul/bekorlar yo'q) — band
+  // o'zi MO-3 da keladi. Yo'l hali tanlanmagan (roadmap MO-3: `/new-orders` → `/new-orders/create`) — ikkalasi ham
+  // shu yorliqqa bog'langan, aks holda umumiy «Qabul va yaratish» chiqardi.
+  market_operator: { "/new-orders": "createOrder", "/new-orders/create": "createOrder" },
 };
 
 /**
@@ -81,9 +85,11 @@ const SHORT_LABEL_KEY_BY_PATH: Record<string, string> = {
 const SHORT_LABEL_KEY_BY_ROLE: Partial<Record<SidebarUserRole, Record<string, string>>> = {
   // Market buyurtmani faqat yaratadi — maketda «Yaratish».
   market: { "/new-orders": "createShort" },
+  market_operator: { "/new-orders": "createShort", "/new-orders/create": "createShort" },
 };
 
-const toEntry = (role: SidebarUserRole | null, item: NavItem): NavEntry => {
+/** Menyu bandi → yorliq kalitlari bilan (rolga xos to'liq va qisqa yorliq). Testlar uchun eksport. */
+export const toNavEntry = (role: SidebarUserRole | null, item: NavItem): NavEntry => {
   const shortLabelKey =
     (role ? SHORT_LABEL_KEY_BY_ROLE[role]?.[item.to] : undefined) ??
     SHORT_LABEL_KEY_BY_PATH[item.to];
@@ -109,7 +115,7 @@ export const getNavSections = (
 
   for (const group of getSidebarGroupsForUser(normalizedRole, user)) {
     const id = group.id ? SECTION_OF_GROUP[group.id] : null;
-    const items = group.items.map((item) => toEntry(normalizedRole, item));
+    const items = group.items.map((item) => toNavEntry(normalizedRole, item));
     const previous = sections[sections.length - 1];
     if (id && previous?.id === id) previous.items.push(...items);
     else sections.push({ id, items });

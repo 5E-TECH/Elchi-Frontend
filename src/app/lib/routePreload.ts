@@ -13,6 +13,7 @@ const routeImporters: Record<string, RouteImporter> = {
   "/all-users": () => import("../../pages/users/list/UserListPage"),
   "/payments": () => import("../../pages/payments"),
   "/cash-box": () => import("../../pages/payments/components/MyCashboxPage"),
+  "/my-earnings": () => import("../../pages/my-earnings"),
   "/financial-balance": () => import("../../pages/financial-balance"),
   "/regions": () => import("../../pages/region/index"),
   "/notifications": () => import("../../pages/notifications"),

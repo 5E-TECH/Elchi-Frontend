@@ -20,7 +20,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
 | Bosqich | Holat |
 |---|---|
 | 0 tokenlar, 1 primitivlar, 2 shell, 3 forma/dialog/holatlar | tayyor, dev'da |
-| 4 sahifalar migratsiyasi | **tayyor**: 78 / 78 route v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi; oxirgi `/market-operators` — MO-1, 2026-10-21; yangi `/notifications/sent` — NS-2, v2 da yozilgan) |
+| 4 sahifalar migratsiyasi | **tayyor**: 79 / 79 route v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi; oxirgi `/market-operators` — MO-1, 2026-10-21; yangi `/notifications/sent` — NS-2, `/my-earnings` — MO-2, v2 da yozilgan) |
 | 5 qo'riqchilar (ESLint, palitra, vizual snapshot, CI) | **tayyor** (kod va tekshiruvlar); «Visual» baseline'lari — egada (§2.1) |
 
 **4-bosqichda ko'chirilgan sahifalar** (ro'yxat `AGENTS.md` 4-qatorida ham bor):
@@ -229,6 +229,11 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     davr almashganda ham saqlanadi; oflayn (keshda ro'yxat bo'lsa ham) — «Internet aloqasi yo'q». Logist qatorlarida
     tushum maydoni umuman yo'q (`toDistrictRows(…, { withRevenue: false })`). «Tuman buyurtmalari» — LG-4,
     «Barcha kuryerlar» — LG-5. Yangi route yo'q.
+  - **MO-2 (2026-10-21, `feat/mo-2-operator-shell`):** market operatori qobig'i — yon menyu Bosh sahifa · Mahsulotlar ·
+    Daromadim (pastki menyu shu 3 katak; Buyurtmalar va «Buyurtma yaratish» — MO-3); `/` — `MarketDashboardPage`
+    operator rejimida (xarajat tasdiqlarisiz — backend 403, buyurtma havolalari MO-3 gacha yashirin); yangi route
+    `/my-earnings` — «Stavkam» (`auth/my-profile` komissiyasi) va «Komissiya belgilanmagan» ogohlantirishi; «Hisob»,
+    «To'lovlar», «Daromadlar» — backend `finance/operators/me/*` (MO-6). Route soni 79 / 79.
 - «Visual» baseline'lari skaner 2-bosqichidan keyin yangilangan (bot commit `1393ae0`, `/dispatch` va
   `cancelled-handover` — «Kamera» tugmalari olib tashlangani uchun kutilgan farq).
 - **To'liq QA** — Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.

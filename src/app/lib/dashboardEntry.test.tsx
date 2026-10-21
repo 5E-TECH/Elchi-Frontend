@@ -31,7 +31,10 @@ vi.mock("../../pages/dashboard/DashboardPage", () => ({
 }));
 
 vi.mock("../../pages/dashboard/MarketDashboardPage", () => ({
-  default: () => <p>Market bosh sahifasi</p>,
+  // MO-2: market operatori — o'sha sahifa `variant="operator"` bilan.
+  default: ({ variant }: { variant?: string }) => (
+    <p>{variant === "operator" ? "Operator bosh sahifasi" : "Market bosh sahifasi"}</p>
+  ),
 }));
 
 vi.mock("../../pages/dashboard/LogistDashboardPage", () => ({
@@ -40,6 +43,10 @@ vi.mock("../../pages/dashboard/LogistDashboardPage", () => ({
 
 vi.mock("../../pages/branch-dashboard", () => ({
   default: () => <p>Filial bosh sahifasi</p>,
+}));
+
+vi.mock("../../pages/my-earnings", () => ({
+  default: () => <p>Daromadim sahifasi</p>,
 }));
 
 vi.mock("../../pages/investor/InvestorDashboardPage", () => ({
@@ -58,26 +65,25 @@ const signedInAs = (role: string): Partial<RootState> => ({
   role: { id: "1", role, region: null, name: null },
 });
 
-const renderHome = (role: string) =>
+const renderAt = (route: string, role: string) =>
   renderWithProviders(
     <Suspense fallback={null}>
       <AppRouter />
     </Suspense>,
-    { route: "/", preloadedState: signedInAs(role) },
+    { route, preloadedState: signedInAs(role) },
   );
 
+const renderHome = (role: string) => renderAt("/", role);
+
 describe("DashboardEntry — `/` rolga qarab", () => {
-  it.each(["market_operator"])(
-    "%s: admin bosh sahifasiga tushmaydi — shell ichida 403",
-    async (role) => {
-      renderHome(role);
-      expect(
-        await screen.findByRole("heading", { level: 1, name: "Bu sahifaga ruxsatingiz yo'q" }, { timeout: 5000 }),
-      ).toBeInTheDocument();
-      expect(screen.getByTestId("shell")).toBeInTheDocument();
-      expect(screen.queryByText("Admin bosh sahifasi")).not.toBeInTheDocument();
-    },
-  );
+  it.each(["branch", "customer"])("%s (bosh sahifasiz rol): admin bosh sahifasiga tushmaydi — shell ichida 403", async (role) => {
+    renderHome(role);
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Bu sahifaga ruxsatingiz yo'q" }, { timeout: 5000 }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("shell")).toBeInTheDocument();
+    expect(screen.queryByText("Admin bosh sahifasi")).not.toBeInTheDocument();
+  });
 
   it.each(["superadmin", "admin", "registrator", "courier"])("%s: admin bosh sahifasi (avvalgidek)", async (role) => {
     renderHome(role);
@@ -123,5 +129,36 @@ describe("DashboardEntry — investor (IN-1)", () => {
     renderHome(role);
     expect(await screen.findByText(expected, undefined, { timeout: 5000 })).toBeInTheDocument();
     expect(screen.queryByText("Investor kabineti")).not.toBeInTheDocument();
+  });
+});
+
+describe("DashboardEntry — market operatori (MO-2)", () => {
+  it("market operatori — market bosh sahifasi operator rejimida (admin sahifasi va 403 emas)", async () => {
+    renderHome("market_operator");
+    expect(await screen.findByText("Operator bosh sahifasi", undefined, { timeout: 5000 })).toBeInTheDocument();
+    expect(screen.getByTestId("shell")).toBeInTheDocument();
+    expect(screen.queryByText("Admin bosh sahifasi")).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Bu sahifaga ruxsatingiz yo'q" })).not.toBeInTheDocument();
+  });
+
+  it("market — o'z rejimida (operator rejimi faqat market_operator'da)", async () => {
+    renderHome("market");
+    expect(await screen.findByText("Market bosh sahifasi", undefined, { timeout: 5000 })).toBeInTheDocument();
+    expect(screen.queryByText("Operator bosh sahifasi")).not.toBeInTheDocument();
+  });
+});
+
+describe("/my-earnings — «Daromadim» (MO-2, `canViewMyEarnings`)", () => {
+  it("market operatori — sahifa ochiladi", async () => {
+    renderAt("/my-earnings", "market_operator");
+    expect(await screen.findByText("Daromadim sahifasi", undefined, { timeout: 5000 })).toBeInTheDocument();
+  });
+
+  it.each(["market", "superadmin", "courier", "investor"])("%s — 403", async (role) => {
+    renderAt("/my-earnings", role);
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Bu sahifaga ruxsatingiz yo'q" }, { timeout: 5000 }),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Daromadim sahifasi")).not.toBeInTheDocument();
   });
 });

@@ -179,15 +179,27 @@ describe("BottomNav — maketdagi bandlar (roles.json → bottomNav)", () => {
     expect(screen.getByRole("button", { name: "Menyu" })).toHaveAttribute("aria-haspopup", "dialog");
   });
 
-  it.each(["market_operator"] as const)(
-    "%s (ROL-0): menyusi hali bo'sh — pastki menyu chizilmaydi (yolg'iz «Menyu» yoki admin havolalari yo'q)",
-    (role) => {
-      renderNav(role);
-      expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
-      expect(screen.queryAllByRole("link")).toHaveLength(0);
-      expect(screen.queryByRole("button")).not.toBeInTheDocument();
-    },
-  );
+  it("market operatori (MO-2): Bosh sahifa · Mahsulotlar · Daromadim — skanersiz, «Menyu»siz; Buyurtmalar va Yaratish — MO-3", () => {
+    renderNav("market_operator");
+    expect(hrefs()).toEqual(["/", "/products", "/my-earnings"]);
+    expect(cells().map((cell) => cell.textContent)).toEqual(["Bosh sahifa", "Mahsulotlar", "Daromadim"]);
+    expect(screen.queryByRole("link", { name: /Skaner/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Menyu" })).not.toBeInTheDocument();
+  });
+
+  it.each([
+    ["ru", ["Главная", "Товары", "Мой доход"]],
+    ["en", ["Home", "Products", "Earnings"]],
+  ] as const)("market operatori (MO-2), %s: qisqa yorliqlar maketdagidek (roles.json → short)", async (lang, labels) => {
+    await i18n.changeLanguage(lang);
+    try {
+      renderNav("market_operator", { route: "/my-earnings" });
+      expect(cells().map((cell) => cell.textContent)).toEqual(labels);
+      expect(screen.getByRole("link", { name: labels[2] })).toHaveAttribute("aria-current", "page");
+    } finally {
+      await i18n.changeLanguage("uz");
+    }
+  });
 });
 
 describe("BottomNav — filial turi va ruxsat", () => {

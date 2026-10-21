@@ -1,5 +1,5 @@
 // dizayn-v2: market-dashboard-home
-import { ChevronRight, Inbox, Plus, type LucideIcon } from "lucide-react";
+import { ChevronRight, Inbox, Plus, ShoppingBag, type LucideIcon } from "lucide-react";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
@@ -22,14 +22,33 @@ const ActionLink = ({ to, icon: Icon, title, hint }: { to: string; icon: LucideI
 );
 
 /**
- * «TEZKOR HARAKATLAR» (market): «Buyurtmalarni ko'rish» → `/new-orders`, «Buyurtma yaratish» →
- * `/new-orders/create` (faqat `add_order` ruxsati bo'lsa).
+ * «Buyurtmalarni ko'rish» manzili: market — «Qabul va yaratish» (`/new-orders`, o'z yangi buyurtmalari); market
+ * operatori — buyurtmalar ro'yxati (`/orders`, MO-2; operatorda qabul bo'limi yo'q).
  */
-const QuickActions = ({ canAddOrder }: { canAddOrder: boolean }) => {
+export type QuickActionsOrders = "intake" | "list";
+
+type QuickActionsProps = {
+  /** «Buyurtma yaratish» (`/new-orders/create`) ko'rinadimi. */
+  canAddOrder: boolean;
+  /** «Buyurtmalarni ko'rish» manzili; `null` — band yo'q (rolda buyurtmalar ro'yxati hali ochilmagan). */
+  orders?: QuickActionsOrders | null;
+};
+
+/**
+ * «TEZKOR HARAKATLAR» (market bosh sahifasi): «Buyurtmalarni ko'rish» va «Buyurtma yaratish» (faqat ruxsat bo'lsa).
+ * Birorta band qolmasa — karta umuman chizilmaydi (bo'sh karta yo'q).
+ */
+const QuickActions = ({ canAddOrder, orders = "intake" }: QuickActionsProps) => {
   const { t } = useTranslation("dashboard");
+  if (!orders && !canAddOrder) return null;
   return (
     <Card title={t("market.quick_actions")} bodyClassName="flex flex-wrap gap-3">
-      <ActionLink to="/new-orders" icon={Inbox} title={t("market.view_orders")} hint={t("v2Market.quick.viewHint")} />
+      {orders === "intake" ? (
+        <ActionLink to="/new-orders" icon={Inbox} title={t("market.view_orders")} hint={t("v2Market.quick.viewHint")} />
+      ) : null}
+      {orders === "list" ? (
+        <ActionLink to="/orders" icon={ShoppingBag} title={t("market.view_orders")} hint={t("v2Market.quick.listHint")} />
+      ) : null}
       {canAddOrder ? (
         <ActionLink to="/new-orders/create" icon={Plus} title={t("v2Market.createOrder")} hint={t("v2Market.quick.createHint")} />
       ) : null}

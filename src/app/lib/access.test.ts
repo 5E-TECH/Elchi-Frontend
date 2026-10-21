@@ -25,8 +25,8 @@ import {
 import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
 // IN-1: investor kabineti — o'z describe bloki (pastda), umumiy matritsaga tegilmaydi.
 import { canViewInvestorCabinet } from "./access";
-// LG-3: «Hududlar» — o'z describe bloki (pastda).
-import { canViewRegionStats } from "./access";
+// LG-3: «Hududlar», MO-2: «Daromadim» — o'z describe bloklari (pastda).
+import { canViewMyEarnings, canViewRegionStats } from "./access";
 
 /**
  * B0 — kirish huquqi sidebar'dan AJRATILDI.
@@ -289,6 +289,22 @@ describe("canViewRegionStats — «Hududlar» (/regions; LG-3: logist)", () => {
     expect(canViewRegionStats(logist)).toBe(true);
     for (const predicate of [canViewPaymentsPage, canViewFinancialBalance, canViewAdminDashboard]) {
       expect(predicate(logist)).toBe(false);
+    }
+  });
+});
+
+describe("market operatori (MO-2) — «Daromadim», moliya va buyurtmalar yopiq", () => {
+  it("canViewMyEarnings — faqat market_operator; boshqa har rol/filial va rolsiz holat — rad", () => {
+    for (const [caseName, s] of CASES) {
+      expect(canViewMyEarnings(s), caseName).toBe(caseName === "market_operator");
+    }
+    expect(canViewMyEarnings(state(null))).toBe(false);
+  });
+
+  it("admin bosh sahifasiga tushmaydi (`DashboardEntry` — market bosh sahifasi operator rejimida); moliya va operatorlar yopiq", () => {
+    const operator = state("market_operator");
+    for (const predicate of [canViewAdminDashboard, canViewPaymentsPage, canViewFinancialBalance, canViewMarketOperators]) {
+      expect(predicate(operator)).toBe(false);
     }
   });
 });
