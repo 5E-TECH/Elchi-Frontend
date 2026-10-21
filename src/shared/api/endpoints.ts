@@ -159,10 +159,6 @@ export const API_ENDPOINTS = {
     AI_PARSE: "orders/ai-parse", // POST multipart: text, market_id, images[]
     AI_CONFIRM: "orders/ai-confirm", // POST { market_id?, orders[] }
     AI_AVAILABILITY: "orders/ai-availability", // GET { enabled, state } — AI tabini ko'rsatish/yashirish
-    // COD settlement legs (FIFO per order) — guide §7
-    SETTLEMENT_COURIER_TO_BRANCH: "orders/settlement/courier-to-branch", // POST courier
-    SETTLEMENT_BRANCH_TO_HQ: "orders/settlement/branch-to-hq", // POST
-    SETTLEMENT_HQ_TO_MARKET: "orders/settlement/hq-to-market", // POST manager/HQ
   },
 
   // ── Posts (registrator/courier/branch) ───────────────────────────────────

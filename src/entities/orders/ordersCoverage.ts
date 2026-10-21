@@ -3,15 +3,10 @@ import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 
 /**
- * Hisob-kitob oyog'i so'rovi. `idempotencyKey` forma ochilganda bir marta
- * yaratiladi va muvaffaqiyatgacha o'zgarmaydi — javob kechikib operator qayta
- * bossa, backend o'sha kalit bo'yicha birinchi natijani qaytaradi, pul ikkinchi
- * marta taqsimlanmaydi (5hBeDuyn).
+ * Lump-sum hisob-kitob oyoqlari (`POST orders/settlement/courier-to-branch | branch-to-hq | hq-to-market`) bu yerdan
+ * olib tashlandi (XAtqsRNH d381b1): backend ularni 410 Gone qiladi — pul har-buyurtma FIFO daftari va kassa
+ * to'lovlari (`entities/payments` → `refreshCashboxQueries`) orqali yuradi. `GET orders/:id/settlement` (holat) qoladi.
  */
-export type SettlementLegRequest = { data: Record<string, unknown>; idempotencyKey: string };
-
-const settlementHeaders = (idempotencyKey: string) => ({ headers: { "Idempotency-Key": idempotencyKey } });
-
 export const useOrdersCoverage = () => {
   const client = useQueryClient();
 
@@ -117,27 +112,6 @@ export const useOrdersCoverage = () => {
     onSuccess: () => client.invalidateQueries({ queryKey: ["orders-cov"] }),
   });
 
-  const settlementBranchToHq = useMutation({
-    mutationFn: ({ data, idempotencyKey }: SettlementLegRequest) =>
-      api.post(API_ENDPOINTS.ORDERS.SETTLEMENT_BRANCH_TO_HQ, data, settlementHeaders(idempotencyKey))
-        .then((res) => res.data),
-    onSuccess: () => client.invalidateQueries({ queryKey: ["orders-cov"] }),
-  });
-
-  const settlementCourierToBranch = useMutation({
-    mutationFn: ({ data, idempotencyKey }: SettlementLegRequest) =>
-      api.post(API_ENDPOINTS.ORDERS.SETTLEMENT_COURIER_TO_BRANCH, data, settlementHeaders(idempotencyKey))
-        .then((res) => res.data),
-    onSuccess: () => client.invalidateQueries({ queryKey: ["orders-cov"] }),
-  });
-
-  const settlementHqToMarket = useMutation({
-    mutationFn: ({ data, idempotencyKey }: SettlementLegRequest) =>
-      api.post(API_ENDPOINTS.ORDERS.SETTLEMENT_HQ_TO_MARKET, data, settlementHeaders(idempotencyKey))
-        .then((res) => res.data),
-    onSuccess: () => client.invalidateQueries({ queryKey: ["orders-cov"] }),
-  });
-
   const telegramBotCreate = useMutation({
     mutationFn: (data?: any) =>
       api.post(API_ENDPOINTS.ORDERS.TELEGRAM_BOT_CREATE, data)
@@ -162,9 +136,6 @@ export const useOrdersCoverage = () => {
     receiveExternalOrder,
     receiveOrder,
     scanAssign,
-    settlementBranchToHq,
-    settlementCourierToBranch,
-    settlementHqToMarket,
     telegramBotCreate,
   };
 };

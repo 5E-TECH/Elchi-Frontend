@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-neworders-create-manual-step2, manager-new-orders-create-manual-step2, registrator-new-orders-create-step2, market-new-orders-create-manual, superadmin-neworders-create-manual-step2-customer-suggest, superadmin-neworders-create-manual-step2-existing-customer
-import { memo, useMemo, useState, type ReactNode } from "react";
+import { memo, useMemo, useState, type ReactNode, type Ref } from "react";
 import { Building2, Check, CircleX, MapPin, Minus, Plus, ShoppingBag, Tag, Trash2, type LucideIcon } from "lucide-react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useSelector } from "react-redux";
@@ -91,6 +91,8 @@ const DeliveryChoice = ({
   icon: Icon,
   invalid,
   onSelect,
+  inputRef,
+  describedBy,
 }: {
   name: string;
   value: DeliveryType;
@@ -100,6 +102,10 @@ const DeliveryChoice = ({
   icon: LucideIcon;
   invalid: boolean;
   onSelect: (value: DeliveryType) => void;
+  /** react-hook-form `field.ref` — xato bo'lsa yuborishda fokus shu radioga o'tadi. */
+  inputRef?: Ref<HTMLInputElement>;
+  /** Xato matni `id` si (radio fokusda bo'lsa ham o'qiladi). */
+  describedBy?: string;
 }) => (
   <label
     className={cx(
@@ -113,11 +119,14 @@ const DeliveryChoice = ({
     )}
   >
     <input
+      ref={inputRef}
       type="radio"
       name={name}
       value={value}
       checked={checked}
       onChange={() => onSelect(value)}
+      aria-invalid={invalid || undefined}
+      aria-describedby={describedBy}
       className="sr-only"
     />
     <span
@@ -136,6 +145,9 @@ const DeliveryChoice = ({
     <Icon size={18} aria-hidden="true" className={cx("shrink-0", checked ? "text-action-fg" : "text-text-muted")} />
   </label>
 );
+
+const WHERE_DELIVER_ERROR_ID = "details.where_deliver-error";
+const ITEMS_ERROR_ID = "details.items-error";
 
 /** Karta ostidagi xato matni (`Field error` ko'rinishida). */
 const InlineError = ({ id, children }: { id?: string; children: ReactNode }) => (
@@ -361,7 +373,11 @@ const Step2Combined = () => {
             control={control}
             name="details.where_deliver"
             render={({ field }) => (
-              <fieldset className="col-span-full m-0 min-w-0 border-0 p-0">
+              // XsoWhKP5: xato matni guruhga (`aria-describedby`), xato holati har radioga (`aria-invalid`) bog'langan.
+              <fieldset
+                aria-describedby={errors.details?.where_deliver?.message ? WHERE_DELIVER_ERROR_ID : undefined}
+                className="col-span-full m-0 min-w-0 border-0 p-0"
+              >
                 <legend className="mb-1.5 p-0 text-[13px] font-semibold text-text">
                   {t("deliveryType")}
                   <span aria-hidden="true" className="text-danger-fg">
@@ -377,7 +393,9 @@ const Step2Combined = () => {
                     hint={t("createDeliveryCenterHint")}
                     icon={Building2}
                     invalid={Boolean(errors.details?.where_deliver)}
+                    describedBy={errors.details?.where_deliver?.message ? WHERE_DELIVER_ERROR_ID : undefined}
                     onSelect={field.onChange}
+                    inputRef={field.ref}
                   />
                   <DeliveryChoice
                     name={field.name}
@@ -387,12 +405,13 @@ const Step2Combined = () => {
                     hint={t("createDeliveryHomeHint")}
                     icon={MapPin}
                     invalid={Boolean(errors.details?.where_deliver)}
+                    describedBy={errors.details?.where_deliver?.message ? WHERE_DELIVER_ERROR_ID : undefined}
                     onSelect={field.onChange}
                   />
                 </div>
                 {errors.details?.where_deliver?.message ? (
                   <div className="pt-1.5">
-                    <InlineError>{errors.details.where_deliver.message}</InlineError>
+                    <InlineError id={WHERE_DELIVER_ERROR_ID}>{errors.details.where_deliver.message}</InlineError>
                   </div>
                 ) : null}
               </fieldset>
@@ -457,8 +476,15 @@ const Step2Combined = () => {
       >
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(280px,100%),1fr))] items-start gap-6">
           <div className="flex min-w-0 flex-col gap-4">
-            <Field id="create-product-search" label={t("addProduct")}>
-              <TextInput mode="search" placeholder={t("searchProduct")} value={productSearch} onValueChange={setProductSearch} />
+            {/* «Kamida bitta mahsulot» xatosi karta ostida — qidiruv maydoni unga bog'langan (XsoWhKP5). */}
+            <Field id="create-product-search" label={t("addProduct")} invalid={Boolean(itemsError)}>
+              <TextInput
+                mode="search"
+                placeholder={t("searchProduct")}
+                value={productSearch}
+                onValueChange={setProductSearch}
+                aria-describedby={itemsError ? ITEMS_ERROR_ID : undefined}
+              />
             </Field>
 
             <ul
@@ -612,7 +638,7 @@ const Step2Combined = () => {
             )}
           </div>
         </div>
-        {itemsError ? <InlineError id="details.items-error">{itemsError}</InlineError> : null}
+        {itemsError ? <InlineError id={ITEMS_ERROR_ID}>{itemsError}</InlineError> : null}
       </Card>
     </>
   );

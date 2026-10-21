@@ -46,6 +46,7 @@ export const mockFinancialEntryApi = async (page: Page, options: { failFirstPost
   const byKey = new Map<string, LedgerEntry>();
   const leaked: string[] = [];
   let historyGets = 0;
+  let balanceGets = 0;
   let failNext = Boolean(options.failFirstPost);
 
   await page.context().route("**/*", async (route) => {
@@ -60,7 +61,10 @@ export const mockFinancialEntryApi = async (page: Page, options: { failFirstPost
       return reply(route, { statusCode: 200, data: { id: "1", role: "superadmin", name: "Bosh admin", status: "active" } });
     }
     if (path === "finance/cashbox/financial-balanse") {
-      return reply(route, { statusCode: 200, data: { balance: 1545000, main: { balance: 1545000 } } });
+      // Yuqoridagi balans kartalari: kassa = daftarning oxirgi qoldig'i (yozuvdan keyin o'zgaradi).
+      balanceGets += 1;
+      const balance = state.history[0].balance_after;
+      return reply(route, { statusCode: 200, data: { balance, main: { balance } } });
     }
     if (path === "finance/financial-balance/history") {
       historyGets += 1;
@@ -128,7 +132,7 @@ export const mockFinancialEntryApi = async (page: Page, options: { failFirstPost
       JSON.stringify({ accessTokenExpiresAt: far, refreshTokenExpiresAt: far, refreshTokenWarnAt: far }),
     );
   });
-  return { state, posts, leaked, historyGets: () => historyGets };
+  return { state, posts, leaked, historyGets: () => historyGets, balanceGets: () => balanceGets };
 };
 
 export const openHistoryTab = async (page: Page) => {

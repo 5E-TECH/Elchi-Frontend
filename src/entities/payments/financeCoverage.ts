@@ -2,6 +2,13 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
+import { refreshCashboxQueries } from "./index";
+
+/** Operatorga to'lov (`POST finance/operator-payments`) — body backend DTO'si, `Idempotency-Key` bitta mantiqiy to'lovga bitta. */
+export type OperatorPaymentRequest = {
+  payload: { operator_id: string; amount: number; note?: string };
+  idempotencyKey: string;
+};
 
 export const useFinanceCoverage = () => {
   const client = useQueryClient();
@@ -77,7 +84,9 @@ export const useFinanceCoverage = () => {
         headers: idempotencyKey ? { "Idempotency-Key": idempotencyKey } : undefined,
       })
         .then((res) => res.data),
-    onSuccess: () => client.invalidateQueries({ queryKey: ["finance-cov"] }),
+    // XAtqsRNH (aac031, 26eb9d): daftar yozuvi kassa balansini o'zgartiradi — `finance-cov` (tarix, tahlil) bilan birga
+    // `[cashbox]` (jumladan `/financial-balance` tepasidagi kartalar `[cashbox, "financial-balance"]`) ham darhol yangilanadi.
+    onSuccess: () => refreshCashboxQueries(client),
   });
 
   const useGetFinancialBalanceHistory = (enabled: boolean = true, params?: any) =>
@@ -155,6 +164,18 @@ export const useFinanceCoverage = () => {
       ...silentErrorMeta(options),
     });
 
+  /**
+   * Operatorga to'lov (OPS → «Moliya operatorlari»). Pul kassadan chiqadi — `refreshCashboxQueries`: operator balansi,
+   * daromad va to'lovlar (`finance-cov`) bilan birga kassa (`[cashbox]`), tarix va bosh sahifa ham yangilanadi (aac031).
+   */
+  const createOperatorPayment = useMutation({
+    mutationFn: ({ payload, idempotencyKey }: OperatorPaymentRequest) =>
+      api
+        .post(API_ENDPOINTS.FINANCE.OPERATOR_PAYMENTS, payload, { headers: { "Idempotency-Key": idempotencyKey } })
+        .then((res) => res.data),
+    onSuccess: () => refreshCashboxQueries(client),
+  });
+
   // ── Salary ────────────────────────────────────────────────────────────────
 
   const createSalary = useMutation({
@@ -209,6 +230,7 @@ export const useFinanceCoverage = () => {
     useGetOperatorBalance,
     useGetOperatorEarnings,
     useGetOperatorPayouts,
+    createOperatorPayment,
     // Salary
     createSalary,
     updateSalary,
