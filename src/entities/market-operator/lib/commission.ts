@@ -65,9 +65,13 @@ export const parseCommissionInput = (
   return { ok: true, value };
 };
 
-/** Maydonga boshlang'ich matn (mavjud stavka): «3,5» / «3000» — kiritish bilan bir xil ko'rinishda. */
+/** Butun qism mingliklari oddiy bo'sh joy bilan (`parseCommissionInput` bo'sh joyni olib tashlaydi). */
+const groupThousands = (digits: string) => digits.replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+
+/** Maydonga boshlang'ich matn (mavjud stavka): «3,5» / «3 000» — kiritish bilan bir xil ko'rinishda. */
 export const commissionInputText = (value: number | null, language?: string | null): string => {
   if (value === null) return "";
-  const text = String(value);
-  return resolveMoneyLanguage(language) === "en" ? text : text.replace(".", ",");
+  const [integer, fraction] = String(value).split(".");
+  const decimal = resolveMoneyLanguage(language) === "en" ? "." : ",";
+  return fraction ? `${groupThousands(integer)}${decimal}${fraction}` : groupThousands(integer);
 };

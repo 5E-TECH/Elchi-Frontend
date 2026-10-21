@@ -110,7 +110,8 @@ export const CreateOperatorDialog = ({ open, onClose, marketName, onSetCommissio
     }
 
     const name = created.name || buildCreateMarketOperatorPayload(values).name;
-    let commissionSaved = true;
+    // Javobda `id` bo'lmasa (kutilmagan shakl) PATCH yuborib bo'lmaydi — komissiya saqlanmagan deb aytiladi.
+    let commissionSaved = commission.value === null || Boolean(created.id);
     if (commission.value !== null && created.id) {
       try {
         await updateCommission.mutateAsync({
@@ -132,7 +133,10 @@ export const CreateOperatorDialog = ({ open, onClose, marketName, onSetCommissio
       const operator: MarketOperator = { ...created, name, commission_type: null, commission_value: null };
       notify.error(t("create.commissionFailed"), {
         description: t("create.commissionFailedText", { name }),
-        action: { label: t("create.setCommission"), onClick: () => onSetCommission(operator) },
+        // `id` siz operatorga Komissiya oynasi ochilmaydi (PATCH manzili yo'q) — ro'yxatdagi qator menyusidan.
+        ...(created.id
+          ? { action: { label: t("create.setCommission"), onClick: () => onSetCommission(operator) } }
+          : {}),
       });
     }
   };

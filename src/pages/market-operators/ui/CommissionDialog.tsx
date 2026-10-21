@@ -1,7 +1,7 @@
 // dizayn-v2: market-operators-commission-dialog, market-operators-commission-fixed-dialog
 import { useRef, useState, type FormEvent } from "react";
-import { Ban, Info, Percent, TriangleAlert } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { CircleX, Info, Percent, TriangleAlert } from "lucide-react";
+import { Trans, useTranslation } from "react-i18next";
 import {
   COMMISSION_SAMPLE_PRICE,
   COMMISSION_SAMPLE_PRICE_HIGH,
@@ -25,6 +25,11 @@ import { CommissionTypeSwitch, CommissionValueInput } from "./CommissionParts";
 const ALERT = "flex items-start gap-3 rounded-xl bg-warning-soft px-4 py-3 text-sm text-warning-fg";
 /** Kulrang izoh bloki (maketda `background: var(--sunken)`, r 10). */
 const INSET = "flex flex-col gap-1 rounded-[10px] bg-sunken px-4 py-3";
+/** Summa + «lik» qo'shimchasi bo'linmasin (maketda `white-space: nowrap`); daromad — qalin (`el-strong`). */
+const MONEY_PARTS = {
+  nw: <span className="whitespace-nowrap" />,
+  earn: <span className="whitespace-nowrap font-semibold" />,
+};
 
 type CommissionDialogProps = {
   /** Ochiq oyna operatori; `null` — yopiq. */
@@ -38,9 +43,10 @@ type CommissionDialogProps = {
  *
  * Belgilanmagan operatorda — ogohlantirish «Komissiya belgilanmagan — daromad yozilmaydi»; belgilanganida — «Hozirgi
  * stavka». Tur (Foiz | Qat'iy summa) va qiymat: foiz 0..100, so'm 0..1 000 000, ko'pi bilan 2 kasr. Foizda «Namuna»
- * (250 000 so'mlik sotuvdan), qat'iyda «Qanday hisoblanadi». «Komissiyani olib tashlash» — `useConfirm` (danger)
- * tasdig'i bilan `PATCH { commission_type: null, commission_value: null }`. Yangi stavka faqat keyingi sotuvlarga
- * (backend sotuv paytida stavkani daromad qatoriga yozib qo'yadi).
+ * (250 000 so'mlik sotuvdan; qiymat yo'q — «foizni kiriting») va izoh «Yangi stavka faqat keyingi sotuvlarga», qat'iyda
+ * «Qanday hisoblanadi» (summalar bo'linmaydi). «Komissiyani olib tashlash» — `useConfirm` (danger)
+ * tasdig'i bilan `PATCH { commission_type: null, commission_value: null }` (404 — «Operator topilmadi»). Yangi stavka
+ * faqat keyingi sotuvlarga (backend sotuv paytida stavkani daromad qatoriga yozib qo'yadi).
  */
 export const CommissionDialog = ({ operator, onClose }: CommissionDialogProps) => {
   const { t } = useTranslation("marketOperators");
@@ -118,13 +124,14 @@ export const CommissionDialog = ({ operator, onClose }: CommissionDialogProps) =
     const ok = await confirm({
       tone: "danger",
       size: "sm",
-      icon: Ban,
+      icon: CircleX,
       title: t("commissionDialog.removeConfirm.title"),
       description: t("commissionDialog.removeConfirm.description"),
       confirmLabel: t("commissionDialog.removeConfirm.confirm"),
       loadingLabel: t("commissionDialog.removeConfirm.loading"),
       cancelLabel: t("commissionDialog.cancel"),
-      errorMessage: () => t("commissionDialog.removeConfirm.failed"),
+      errorMessage: (error) =>
+        httpStatusOf(error) === 404 ? t("commissionDialog.notFound") : t("commissionDialog.removeConfirm.failed"),
       onConfirm: () =>
         update.mutateAsync({ id: operator.id, commission: { commission_type: null, commission_value: null } }),
     });
@@ -158,7 +165,7 @@ export const CommissionDialog = ({ operator, onClose }: CommissionDialogProps) =
           {current ? (
             <Button
               variant="ghost"
-              leftIcon={Ban}
+              leftIcon={CircleX}
               onClick={() => void remove()}
               disabled={busy}
               className="mr-auto text-danger-fg! not-disabled:hover:bg-danger-soft max-md:basis-full"
@@ -226,28 +233,38 @@ export const CommissionDialog = ({ operator, onClose }: CommissionDialogProps) =
         <div className={INSET}>
           <span className="text-xs font-semibold text-text-muted">{t("commissionDialog.sample")}</span>
           <span className="text-[13px] text-text">
-            {t("commissionDialog.sampleText", {
-              price: text.money(COMMISSION_SAMPLE_PRICE),
-              earning: sampleValue === null ? "—" : text.money(percentEarning(sampleValue)),
-            })}
+            <Trans
+              t={t}
+              i18nKey={sampleValue === null ? "commissionDialog.sampleTextEmpty" : "commissionDialog.sampleText"}
+              values={{
+                price: text.money(COMMISSION_SAMPLE_PRICE),
+                earning: sampleValue === null ? "" : text.money(percentEarning(sampleValue)),
+              }}
+              components={MONEY_PARTS}
+            />
           </span>
         </div>
       ) : (
         <div className={INSET}>
           <span className="text-xs font-semibold text-text-muted">{t("commissionDialog.howTitle")}</span>
           <span className="text-[13px] text-text">
-            {t("commissionDialog.howText", {
-              low: text.money(COMMISSION_SAMPLE_PRICE),
-              high: text.money(COMMISSION_SAMPLE_PRICE_HIGH),
-            })}
+            <Trans
+              t={t}
+              i18nKey="commissionDialog.howText"
+              values={{ low: text.money(COMMISSION_SAMPLE_PRICE), high: text.money(COMMISSION_SAMPLE_PRICE_HIGH) }}
+              components={MONEY_PARTS}
+            />
           </span>
         </div>
       )}
 
-      <p className="m-0 flex items-start gap-2 text-[13px] text-text-muted">
-        <Info size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
-        <span className="min-w-0">{t("commissionDialog.note")}</span>
-      </p>
+      {/* Maketda izoh faqat foiz oynasida (`-commission-fixed-dialog` da yo'q). */}
+      {type === "percent" ? (
+        <p className="m-0 flex items-start gap-2 text-[13px] text-text-muted">
+          <Info size={16} aria-hidden="true" className="mt-0.5 shrink-0" />
+          <span className="min-w-0">{t("commissionDialog.note")}</span>
+        </p>
+      ) : null}
     </Dialog>
   );
 };

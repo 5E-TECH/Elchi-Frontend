@@ -36,7 +36,7 @@ export const useDeleteOperatorConfirm = () => {
         loadingLabel: t("deleteDialog.loading"),
         cancelLabel: t("deleteDialog.cancel"),
         details: (
-          <div className="flex items-center gap-3 rounded-[10px] bg-sunken px-3 py-2.5">
+          <div className="flex items-center gap-3">
             <OperatorAvatar name={operator.name} size={40} onSunken />
             <span className="flex min-w-0 flex-col gap-0.5">
               <span className="font-semibold text-text [overflow-wrap:anywhere]">{operator.name}</span>

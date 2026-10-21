@@ -45,6 +45,11 @@ describe("market operatori komissiyasi", () => {
     expect(commissionInputText(3.5, "uz")).toBe("3,5");
     expect(commissionInputText(3.5, "en")).toBe("3.5");
     expect(commissionInputText(null, "uz")).toBe("");
+    // Qat'iy summa mingliklari bo'sh joy bilan (maket «1 500 000»), o'qilganda yana o'sha son.
+    expect(commissionInputText(3000, "uz")).toBe("3 000");
+    expect(commissionInputText(1_000_000, "en")).toBe("1 000 000");
+    expect(commissionInputText(12500.5, "ru")).toBe("12 500,5");
+    expect(parseCommissionInput("fixed", commissionInputText(12500.5, "ru"))).toEqual({ ok: true, value: 12500.5 });
   });
 
   it("normalize: backend qatori (createdAt, numeric satr) va ro'yxat meta'si", () => {

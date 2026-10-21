@@ -62,6 +62,8 @@ const MarketOperatorsPage = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [commissionOperator, setCommissionOperator] = useState<MarketOperator | null>(null);
   const confirmDelete = useDeleteOperatorConfirm();
+  /** Sarlavhadagi yoki bo'sh holatdagi «Operator qo'shish» (bir vaqtda bittasi chiziladi). */
+  const addButtonRef = useRef<HTMLButtonElement>(null);
 
   const searchTimer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(searchTimer.current), []);
@@ -121,7 +123,23 @@ const MarketOperatorsPage = () => {
 
   const openCreate = useCallback(() => setIsCreateOpen(true), []);
   const openCommission = useCallback((operator: MarketOperator) => setCommissionOperator(operator), []);
-  const handleDelete = useCallback((operator: MarketOperator) => void confirmDelete(operator), [confirmDelete]);
+  // O'chirilgach qator (va uning menyu tugmasi) ro'yxatdan ketadi — fokus `body` ga tushmasin: «Operator qo'shish».
+  const handleDelete = useCallback(
+    (operator: MarketOperator) =>
+      void confirmDelete(operator).then((ok) => {
+        if (ok) window.setTimeout(() => addButtonRef.current?.focus({ preventScroll: true }), 0);
+      }),
+    [confirmDelete],
+  );
+
+  // Birinchi operator qo'shilgach bo'sh holat (oynani ochgan tugma bilan) yo'qoladi — fokus sarlavhadagi tugmaga.
+  const hadNoOperators = useRef(noOperators);
+  useEffect(() => {
+    const lostEmptyState = hadNoOperators.current && !noOperators;
+    hadNoOperators.current = noOperators;
+    const active = document.activeElement;
+    if (lostEmptyState && (!active || active === document.body)) addButtonRef.current?.focus({ preventScroll: true });
+  }, [noOperators]);
 
   const changeLimit = (next: number) => {
     setLimit(next);
@@ -144,13 +162,18 @@ const MarketOperatorsPage = () => {
         />
       ) : (
         <span className="text-[13px] text-text-muted">
-          {t("list.summary", { total: formatNumberLocalized(total, { language }) })}
+          {onlyUnset
+            ? t("list.summaryShown", {
+                shown: formatNumberLocalized(rows.length, { language }),
+                total: formatNumberLocalized(total, { language }),
+              })
+            : t("list.summary", { total: formatNumberLocalized(total, { language }) })}
         </span>
       )
     ) : undefined;
 
   const addButton = (
-    <Button leftIcon={UserPlus} aria-haspopup="dialog" onClick={openCreate}>
+    <Button ref={addButtonRef} leftIcon={UserPlus} aria-haspopup="dialog" onClick={openCreate}>
       {t("add")}
     </Button>
   );
@@ -215,7 +238,11 @@ const MarketOperatorsPage = () => {
           loadingLabel={t("list.loading")}
           loading={<OperatorsSkeleton />}
           empty={
-            filtersActive ? (
+            // Filtr almashganda eski (bo'sh) natija o'rinbosar bo'lib turadi — yangi javobgacha noto'g'ri bo'sh holat
+            // («Hali operator yo'q» + ikkinchi «Operator qo'shish») emas, skelet.
+            isPlaceholderData ? (
+              <OperatorsSkeleton />
+            ) : filtersActive ? (
               <EmptyState
                 icon={SearchX}
                 title={t("list.notFoundTitle")}

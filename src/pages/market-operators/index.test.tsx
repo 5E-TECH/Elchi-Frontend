@@ -2,6 +2,7 @@ import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../test/test-utils";
+import enLocale from "../../locales/en/marketOperators.json";
 import MarketOperatorsPage from "./index";
 
 /**
@@ -32,14 +33,18 @@ const OPERATORS = [
 let rows: unknown[] = OPERATORS;
 
 const listResponse = (config?: { params?: Record<string, unknown> }) => {
-  const status = config?.params?.status;
-  const items = status ? rows.filter((row) => (row as { status: string }).status === status) : rows;
+  const { status, search } = config?.params ?? {};
+  const page = Number(config?.params?.page ?? 1);
+  const limit = Number(config?.params?.limit ?? 20);
+  const matched = (rows as { status: string; name: string }[]).filter(
+    (row) => (!status || row.status === status) && (!search || row.name.includes(String(search))),
+  );
   return Promise.resolve({
     data: {
       statusCode: 200,
       data: {
-        items,
-        meta: { page: config?.params?.page ?? 1, limit: config?.params?.limit ?? 20, total: items.length, totalPages: 1 },
+        items: matched.slice((page - 1) * limit, page * limit),
+        meta: { page, limit, total: matched.length, totalPages: Math.max(1, Math.ceil(matched.length / limit)) },
       },
     },
   });
@@ -53,7 +58,8 @@ const marketState = {
   user: { user: { id: "12", name: "Baraka Shop", role: "market" } },
 } as never;
 
-const renderPage = () => renderWithProviders(<MarketOperatorsPage />, { route: "/market-operators", preloadedState: marketState });
+const renderPage = (preloadedState = marketState) =>
+  renderWithProviders(<MarketOperatorsPage />, { route: "/market-operators", preloadedState });
 
 const openRowMenu = async (user: ReturnType<typeof userEvent.setup>, name: string, item: string) => {
   const label = `${name} amallari`;
@@ -263,7 +269,11 @@ describe("MarketOperatorsPage — komissiya va o'chirish", () => {
     expect(dialog).toHaveTextContent("3 000 so'm · qat'iy");
     expect(dialog).toHaveTextContent("Qanday hisoblanadi");
     const input = within(dialog).getByLabelText(/Summa/);
-    expect(input).toHaveValue("3000");
+    // Mingliklar bo'sh joy bilan (maket «1 500 000»); izoh «Yangi stavka …» qat'iyda yo'q (maket).
+    expect(input).toHaveValue("3 000");
+    expect(dialog).not.toHaveTextContent("Yangi stavka faqat keyingi sotuvlarga");
+    expect(within(dialog).getByText("250 000 so'mlik")).toHaveClass("whitespace-nowrap");
+    expect(within(dialog).getByText("900 000 so'mlik")).toHaveClass("whitespace-nowrap");
 
     await user.clear(input);
     await user.type(input, "1 500 000");
@@ -289,8 +299,14 @@ describe("MarketOperatorsPage — komissiya va o'chirish", () => {
     await openRowMenu(user, "Nodira Aliyeva", "Komissiya belgilash");
     const dialog = await screen.findByRole("dialog", { name: "Komissiya" });
     expect(within(dialog).queryByRole("button", { name: "Komissiyani olib tashlash" })).not.toBeInTheDocument();
+    // Qiymat yo'q — «— —» emas, ko'rsatma.
+    expect(dialog).toHaveTextContent("250 000 so'mlik sotilgan buyurtmadan — foizni kiriting");
+    expect(dialog).not.toHaveTextContent("— —");
+    expect(dialog).toHaveTextContent("Yangi stavka faqat keyingi sotuvlarga qo'llanadi");
     await user.type(within(dialog).getByLabelText(/^Foiz/), "4");
     expect(dialog).toHaveTextContent("250 000 so'mlik sotilgan buyurtmadan — 10 000 so'm");
+    expect(within(dialog).getByText("250 000 so'mlik")).toHaveClass("whitespace-nowrap");
+    expect(within(dialog).getByText("10 000 so'm")).toHaveClass("whitespace-nowrap", "font-semibold");
     await user.click(within(dialog).getByRole("button", { name: "Saqlash" }));
     await waitFor(() =>
       expect(api.patch).toHaveBeenCalledWith("market-operators/45/commission", {
@@ -328,6 +344,11 @@ describe("MarketOperatorsPage — komissiya va o'chirish", () => {
     expect(dialog).toHaveTextContent("Operator · +998 91 640 27 13");
     expect(dialog).toHaveTextContent("Komissiya: 3,5%");
     expect(dialog).toHaveTextContent("U tizimga boshqa kira olmaydi. Yaratgan buyurtmalari va daromad tarixi saqlanadi.");
+    // Ob'ekt kartasi — ConfirmDialog'ning o'z kulrang bloki ichida, ikkinchi «karta ichida karta» yo'q.
+    const card = within(dialog).getByText("Kamola Rasulova", { selector: "span" }).closest(".bg-sunken");
+    expect(card).not.toBeNull();
+    expect(card!.parentElement!.closest(".bg-sunken")).toBeNull();
+    expect(card!.querySelectorAll(".bg-sunken")).toHaveLength(0);
 
     await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
     expect(await within(dialog).findByText("Operatorni o'chirib bo'lmadi. Qaytadan urinib ko'ring.")).toBeInTheDocument();
@@ -336,5 +357,201 @@ describe("MarketOperatorsPage — komissiya va o'chirish", () => {
     await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
     await waitFor(() => expect(api.delete).toHaveBeenLastCalledWith("market-operators/43"));
     expect(await screen.findByText("Operator o'chirildi")).toBeInTheDocument();
+  });
+});
+
+describe("MarketOperatorsPage — review tuzatishlari", () => {
+  it("«Faqat ularni ko'rsatish»da pastki matn «2 / 5 ta operator»", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole("button", { name: "Faqat ularni ko'rsatish" }));
+    expect(await screen.findByText("2 / 5 ta operator")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Hammasini ko'rsatish" }));
+    expect(await screen.findByText("5 ta operator")).toBeInTheDocument();
+  });
+
+  it("market nomi yo'q — «Do'koningiz …» (Marketingiz emas)", async () => {
+    rows = [];
+    renderPage({ role: { id: "12", role: "market", region: null, name: null }, user: { user: { id: "12", name: "", role: "market" } } } as never);
+    expect(await screen.findByText("Do'koningiz nomidan buyurtma yaratadigan xodimlar va ularning komissiyasi")).toBeInTheDocument();
+    expect(await screen.findByText(/Operator do'koningiz nomidan buyurtma yaratadi/)).toBeInTheDocument();
+    expect(screen.queryByText(/Marketingiz/)).not.toBeInTheDocument();
+  });
+
+  it("en matnlarda «» emas, “ ” qo'shtirnoq", () => {
+    expect(JSON.stringify(enLocale)).not.toMatch(/[«»]/);
+    expect(enLocale.deleteDialog.description).toBe("Delete the operator “{{name}}”?");
+  });
+
+  it("filtr almashganda eski bo'sh natija o'rniga skelet (noto'g'ri bo'sh holat chiqmaydi)", async () => {
+    rows = [OPERATORS[0]];
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText("Madina Xoliqova");
+    await user.click(screen.getByRole("combobox", { name: /Holat/ }));
+    await user.click(await screen.findByRole("option", { name: "Nofaol" }));
+    expect(await screen.findByText("Operator topilmadi")).toBeInTheDocument();
+
+    let release: () => void = () => {};
+    api.get.mockImplementationOnce(
+      (_url: string, config?: { params?: Record<string, unknown> }) =>
+        new Promise((resolve) => {
+          release = () => resolve(listResponse(config));
+        }),
+    );
+    await user.click(screen.getByRole("combobox", { name: /Holat/ }));
+    await user.click(await screen.findByRole("option", { name: "Faol" }));
+    await waitFor(() =>
+      expect(api.get).toHaveBeenLastCalledWith("market-operators", { params: { page: 1, limit: 20, status: "active" } }),
+    );
+    expect(screen.queryByText("Operator topilmadi")).not.toBeInTheDocument();
+    expect(screen.queryByText("Hali operator yo'q")).not.toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: "Operator qo'shish" })).toHaveLength(1);
+    release();
+    expect(await screen.findByText("Madina Xoliqova")).toBeInTheDocument();
+  });
+
+  it("ro'yxat yiqilsa — xato holati va «Qayta urinish» qayta so'raydi; xom matn yo'q", async () => {
+    api.get.mockRejectedValueOnce(axiosError(500, "connect ECONNREFUSED identity"));
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole("button", { name: "Qayta urinish" }));
+    expect(await screen.findByText("Madina Xoliqova")).toBeInTheDocument();
+    expect(screen.queryByText(/ECONNREFUSED/)).not.toBeInTheDocument();
+  });
+
+  it("qidiruv — kechiktirib `search` bilan so'raydi, 1-sahifadan", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText("Madina Xoliqova");
+    await user.type(screen.getByRole("searchbox", { name: "Operatorlarni qidirish" }), "Sevara");
+    await waitFor(() =>
+      expect(api.get).toHaveBeenCalledWith("market-operators", { params: { page: 1, limit: 20, search: "Sevara" } }),
+    );
+    const table = screen.getByRole("table", { name: "Operatorlar ro'yxati" });
+    await waitFor(() => expect(within(table).queryByText("Madina Xoliqova")).not.toBeInTheDocument());
+    expect(within(table).getByText("Sevara Usmonova")).toBeInTheDocument();
+  });
+
+  it("oxirgi sahifadagi yagona operator o'chirilsa — mavjud oxirgi sahifaga qaytadi", async () => {
+    rows = Array.from({ length: 21 }, (_, index) => ({
+      ...OPERATORS[0],
+      id: String(100 + index),
+      name: `Operator ${String(index + 1).padStart(2, "0")}`,
+    }));
+    api.delete.mockImplementation((url: string) => {
+      rows = (rows as { id: string }[]).filter((row) => `market-operators/${row.id}` !== url);
+      return Promise.resolve({ data: { statusCode: 200, data: {} } });
+    });
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText("Operator 01");
+    await user.click(screen.getAllByRole("button", { name: "Keyingi sahifa" })[0]);
+    expect(await screen.findByText("Operator 21")).toBeInTheDocument();
+
+    await openRowMenu(user, "Operator 21", "O'chirish");
+    const dialog = await screen.findByRole("alertdialog", { name: "Operatorni o'chirish" });
+    await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+    await waitFor(() =>
+      expect(api.get).toHaveBeenLastCalledWith("market-operators", { params: { page: 1, limit: 20 } }),
+    );
+    expect(await screen.findByText("Operator 01")).toBeInTheDocument();
+  });
+
+  it("o'chirilgach fokus «Operator qo'shish» tugmasida (menyu tugmasi yo'qolgan)", async () => {
+    api.delete.mockImplementation((url: string) => {
+      rows = (rows as { id: string }[]).filter((row) => `market-operators/${row.id}` !== url);
+      return Promise.resolve({ data: { statusCode: 200, data: {} } });
+    });
+    const user = userEvent.setup();
+    renderPage();
+    await openRowMenu(user, "Kamola Rasulova", "O'chirish");
+    const dialog = await screen.findByRole("alertdialog", { name: "Operatorni o'chirish" });
+    await user.click(within(dialog).getByRole("button", { name: "O'chirish" }));
+    expect(await screen.findByText("Operator o'chirildi")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByText("Kamola Rasulova")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("button", { name: "Operator qo'shish" })).toHaveFocus());
+  });
+
+  it("birinchi operator qo'shilgach fokus sarlavhadagi «Operator qo'shish»da", async () => {
+    rows = [];
+    api.post.mockImplementationOnce(() => {
+      rows = [{ ...OPERATORS[0], id: "46", name: "Lola Karimova" }];
+      return Promise.resolve({
+        data: { statusCode: 201, data: { id: "46", name: "Lola Karimova", phone_number: "+998901234567", status: "active", commission_type: null, commission_value: null } },
+      });
+    });
+    const user = userEvent.setup();
+    renderPage();
+    await screen.findByText("Hali operator yo'q");
+    await user.click(screen.getByRole("button", { name: "Operator qo'shish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Operator qo'shish" });
+    await user.type(within(dialog).getByLabelText(/Ism familiya/), "Lola Karimova");
+    await user.type(within(dialog).getByLabelText(/Telefon/), "901234567");
+    await user.type(within(dialog).getByLabelText(/^Parol/, { selector: "input" }), "lola25");
+    await user.click(within(dialog).getByRole("button", { name: "Qo'shish" }));
+
+    expect(await screen.findByRole("table", { name: "Operatorlar ro'yxati" })).toBeInTheDocument();
+    expect(screen.queryByText("Hali operator yo'q")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByRole("button", { name: "Operator qo'shish" })).toHaveFocus());
+  });
+
+  it("POST javobida id yo'q — komissiya saqlanmagan deb aytiladi, PATCH va «Belgilash» yo'q", async () => {
+    api.post.mockResolvedValueOnce({ data: { statusCode: 201, data: { name: "Lola Karimova" } } });
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole("button", { name: "Operator qo'shish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Operator qo'shish" });
+    await user.type(within(dialog).getByLabelText(/Ism familiya/), "Lola Karimova");
+    await user.type(within(dialog).getByLabelText(/Telefon/), "901234567");
+    await user.type(within(dialog).getByLabelText(/^Parol/, { selector: "input" }), "lola25");
+    await user.type(within(dialog).getByLabelText(/Komissiya/, { selector: "input" }), "4");
+    await user.click(within(dialog).getByRole("button", { name: "Qo'shish" }));
+
+    expect(await screen.findByText("Operator qo'shildi, komissiya saqlanmadi")).toBeInTheDocument();
+    expect(screen.queryByText("Operator qo'shildi")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Belgilash" })).not.toBeInTheDocument();
+    expect(api.patch).not.toHaveBeenCalled();
+  });
+
+  it("POST 403 — «Market bloklangan», oyna ochiq qoladi", async () => {
+    api.post.mockRejectedValueOnce(axiosError(403, "Market is blocked"));
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(await screen.findByRole("button", { name: "Operator qo'shish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Operator qo'shish" });
+    await user.type(within(dialog).getByLabelText(/Ism familiya/), "Lola Karimova");
+    await user.type(within(dialog).getByLabelText(/Telefon/), "901234567");
+    await user.type(within(dialog).getByLabelText(/^Parol/, { selector: "input" }), "lola25");
+    await user.click(within(dialog).getByRole("button", { name: "Qo'shish" }));
+
+    expect(await screen.findByText("Market bloklangan — operator qo'shib bo'lmaydi")).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Operator qo'shish" })).toBeInTheDocument();
+    expect(screen.queryByText(/Market is blocked/)).not.toBeInTheDocument();
+  });
+
+  it("komissiya PATCH 404 — «Operator topilmadi», oyna yopiladi", async () => {
+    api.patch.mockRejectedValueOnce(axiosError(404, "Operator not found"));
+    const user = userEvent.setup();
+    renderPage();
+    await openRowMenu(user, "Nodira Aliyeva", "Komissiya belgilash");
+    const dialog = await screen.findByRole("dialog", { name: "Komissiya" });
+    await user.type(within(dialog).getByLabelText(/^Foiz/), "4");
+    await user.click(within(dialog).getByRole("button", { name: "Saqlash" }));
+    expect(await screen.findByText("Operator topilmadi — ro'yxat yangilandi")).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Komissiya" })).not.toBeInTheDocument());
+  });
+
+  it("komissiyani olib tashlash 404 — tasdiq oynasida «Operator topilmadi»", async () => {
+    api.patch.mockRejectedValueOnce(axiosError(404, "Operator not found"));
+    const user = userEvent.setup();
+    renderPage();
+    await openRowMenu(user, "Madina Xoliqova", "Komissiyani o'zgartirish");
+    const dialog = await screen.findByRole("dialog", { name: "Komissiya" });
+    await user.click(within(dialog).getByRole("button", { name: "Komissiyani olib tashlash" }));
+    const confirm = await screen.findByRole("alertdialog", { name: "Komissiyani olib tashlaysizmi?" });
+    await user.click(within(confirm).getByRole("button", { name: "Olib tashlash" }));
+    expect(await within(confirm).findByText("Operator topilmadi — ro'yxat yangilandi")).toBeInTheDocument();
+    expect(within(confirm).queryByText(/Qaytadan urinib/)).not.toBeInTheDocument();
   });
 });
