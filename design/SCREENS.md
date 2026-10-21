@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **98** · qisman: **129** · v2 ga ko'chirilgan route: **77 / 77**
+**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **94** · qisman: **129** · v2 ga ko'chirilgan route: **77 / 77**
 
 ## Qanday ishlatiladi
 
@@ -1404,8 +1404,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/integrations/connections` | superadmin | `superadmin-integrations-panel-events` — Ulanish — Hodisalar paneli<br>↳ `src/pages/integrations/panels/ConnectionLog.tsx` | [design/fragments/superadmin--integrations-panel-events.html](fragments/superadmin--integrations-panel-events.html) | sahifa | v2 |
 | `/integrations/connections` | superadmin | `superadmin-integrations-panel-settlement` — Ulanish — Hisob-kitob paneli<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/superadmin--integrations-panel-settlement.html](fragments/superadmin--integrations-panel-settlement.html) | sahifa | qisman |
 | `/integrations/connections` | superadmin | `superadmin-integrations-settlement-pay-dialog` — Tashuvchidan olingan to'lov (modal)<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/superadmin--integrations-settlement-pay-dialog.html](fragments/superadmin--integrations-settlement-pay-dialog.html) | oyna | v2 |
-| `/integrations/connections` | superadmin | `superadmin-integrations-settlement-pay-overpay-dialog` — To'lov — ortiqcha summa (modal)<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/superadmin--integrations-settlement-pay-overpay-dialog.html](fragments/superadmin--integrations-settlement-pay-overpay-dialog.html) | oyna | yangi (kodda yo'q) |
-| `/integrations/connections` | superadmin | `superadmin-integrations-settlement-pay-result-dialog` — To'lov natijasi — avans va kassa (modal)<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/superadmin--integrations-settlement-pay-result-dialog.html](fragments/superadmin--integrations-settlement-pay-result-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/integrations/connections` | superadmin | `superadmin-integrations-settlement-pay-overpay-dialog` — To'lov — ortiqcha summa (modal)<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/superadmin--integrations-settlement-pay-overpay-dialog.html](fragments/superadmin--integrations-settlement-pay-overpay-dialog.html) | oyna | v2 |
+| `/integrations/connections` | superadmin | `superadmin-integrations-settlement-pay-result-dialog` — To'lov natijasi — avans va kassa (modal)<br>↳ `src/pages/integrations/panels/settlement/PayResultDialog.tsx` | [design/fragments/superadmin--integrations-settlement-pay-result-dialog.html](fragments/superadmin--integrations-settlement-pay-result-dialog.html) | oyna | v2 |
 | `/integrations/connections` | superadmin | `superadmin-integrations-settlement-cancel-dialog` — To'lovni bekor qilish (tasdiq)<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/superadmin--integrations-settlement-cancel-dialog.html](fragments/superadmin--integrations-settlement-cancel-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/integrations/connections` | superadmin | `superadmin-integrations-panel-control` — Ulanish — Ish rejimi paneli<br>↳ `src/pages/integrations/panels/ConnectionControl.tsx` | [design/fragments/superadmin--integrations-panel-control.html](fragments/superadmin--integrations-panel-control.html) | sahifa | v2 |
 | `/integrations/connections` | superadmin | `superadmin-integrations-panel-security` — Ulanish — Xavfsizlik paneli<br>↳ `src/pages/integrations/panels/ConnectionSecurity.tsx` | [design/fragments/superadmin--integrations-panel-security.html](fragments/superadmin--integrations-panel-security.html) | sahifa | v2 |
@@ -1419,8 +1419,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/integrations/connections` | admin | `admin-integrations-conn-log` — Ulanish — Hodisalar<br>↳ `src/pages/integrations/panels/ConnectionLog.tsx` | [design/fragments/admin--integrations-conn-log.html](fragments/admin--integrations-conn-log.html) | sahifa | v2 |
 | `/integrations/connections` | admin | `admin-integrations-conn-settlement` — Ulanish — Hisob-kitob<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/admin--integrations-conn-settlement.html](fragments/admin--integrations-conn-settlement.html) | sahifa | qisman |
 | `/integrations/connections` | admin | `admin-integrations-settlement-pay-dialog` — Tashuvchidan olingan to'lov<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/admin--integrations-settlement-pay-dialog.html](fragments/admin--integrations-settlement-pay-dialog.html) | oyna | v2 |
-| `/integrations/connections` | admin | `admin-integrations-settlement-pay-overpay-dialog` — To'lov — ortiqcha summa<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/admin--integrations-settlement-pay-overpay-dialog.html](fragments/admin--integrations-settlement-pay-overpay-dialog.html) | oyna | yangi (kodda yo'q) |
-| `/integrations/connections` | admin | `admin-integrations-settlement-pay-result-dialog` — To'lov natijasi<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/admin--integrations-settlement-pay-result-dialog.html](fragments/admin--integrations-settlement-pay-result-dialog.html) | oyna | yangi (kodda yo'q) |
+| `/integrations/connections` | admin | `admin-integrations-settlement-pay-overpay-dialog` — To'lov — ortiqcha summa<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/admin--integrations-settlement-pay-overpay-dialog.html](fragments/admin--integrations-settlement-pay-overpay-dialog.html) | oyna | v2 |
+| `/integrations/connections` | admin | `admin-integrations-settlement-pay-result-dialog` — To'lov natijasi<br>↳ `src/pages/integrations/panels/settlement/PayResultDialog.tsx` | [design/fragments/admin--integrations-settlement-pay-result-dialog.html](fragments/admin--integrations-settlement-pay-result-dialog.html) | oyna | v2 |
 | `/integrations/connections` | admin | `admin-integrations-settlement-cancel-dialog` — To'lovni bekor qilish<br>↳ `src/pages/integrations/panels/ConnectionSettlement.tsx` | [design/fragments/admin--integrations-settlement-cancel-dialog.html](fragments/admin--integrations-settlement-cancel-dialog.html) | oyna | yangi (kodda yo'q) |
 | `/integrations/connections` | admin | `admin-integrations-conn-control` — Ulanish — Ish rejimi<br>↳ `src/pages/integrations/panels/ConnectionControl.tsx` | [design/fragments/admin--integrations-conn-control.html](fragments/admin--integrations-conn-control.html) | sahifa | v2 |
 | `/integrations/connections` | admin | `admin-integrations-conn-security` — Ulanish — Xavfsizlik<br>↳ `src/pages/integrations/panels/ConnectionSecurity.tsx` | [design/fragments/admin--integrations-conn-security.html](fragments/admin--integrations-conn-security.html) | sahifa | v2 |
@@ -1907,7 +1907,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-222 ta maket · kodda bor: 180 · kodda yo'q: 42
+222 ta maket · kodda bor: 182 · kodda yo'q: 40
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2041,10 +2041,10 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-integrations-panel-settings` | Ulanish — Sozlamalar paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettings.tsx` | v2 |
 | `superadmin-integrations-panel-shipments` | Ulanish — Posilkalar paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionShipments.tsx` | v2 |
 | `superadmin-integrations-panel-events` | Ulanish — Hodisalar paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionLog.tsx` | v2 |
-| `superadmin-integrations-panel-settlement` | Ulanish — Hisob-kitob paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | qisman — Kodda «Olingan to'lovlar» bloki va bekor qilish (IS-3), «Qarz yozuvlari» dagi «To'lov №» ustuni, ortiqcha summa va natija oynasi (IS-2) hali yo'q; «Kim kiritdi / bekor qildi» ismi — Taklif · backend kerak. Qolgani v2 (IS-1: «To'lov asosiy kassaga o'zi yoziladi» + Asosiy kassa havolasi, «Qoldiq» — to'lanishi kerak, yopilmagan qarz, hamkor avansi, formula, «Qarz yo'q»). |
+| `superadmin-integrations-panel-settlement` | Ulanish — Hisob-kitob paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | qisman — Kodda «Olingan to'lovlar» bloki va bekor qilish (IS-3) hali yo'q — shungacha «Qarz yozuvlari» dagi «To'lov №N» havola emas, oddiy matn; «Kim kiritdi / bekor qildi» ismi — Taklif · backend kerak. Qolgani v2 (IS-1: «To'lov asosiy kassaga o'zi yoziladi» + Asosiy kassa havolasi, «Qoldiq» — to'lanishi kerak, yopilmagan qarz, hamkor avansi, formula, «Qarz yo'q»; IS-2: «To'lov» ustuni / telefonda «… · To'lov №N · …», ortiqcha summa ogohlantirishi va «To'lov yozildi» natija oynasi). |
 | `superadmin-integrations-settlement-pay-dialog` | Tashuvchidan olingan to'lov (modal) | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | v2 |
-| `superadmin-integrations-settlement-pay-overpay-dialog` | To'lov — ortiqcha summa (modal) | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | yangi (kodda yo'q) — Taklif (integ-settlement, ega S1..S3) — kodda yo'q: ortiqcha to'lov avansga, natija oynasi, bekor qilishda kassa tanlovi. |
-| `superadmin-integrations-settlement-pay-result-dialog` | To'lov natijasi — avans va kassa (modal) | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | yangi (kodda yo'q) — Taklif (integ-settlement, ega S1..S3) — kodda yo'q: ortiqcha to'lov avansga, natija oynasi, bekor qilishda kassa tanlovi. |
+| `superadmin-integrations-settlement-pay-overpay-dialog` | To'lov — ortiqcha summa (modal) | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | v2 |
+| `superadmin-integrations-settlement-pay-result-dialog` | To'lov natijasi — avans va kassa (modal) | oyna | `/integrations/connections` | `src/pages/integrations/panels/settlement/PayResultDialog.tsx` | v2 |
 | `superadmin-integrations-settlement-cancel-dialog` | To'lovni bekor qilish (tasdiq) | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | yangi (kodda yo'q) — Taklif (integ-settlement, ega S1..S3) — kodda yo'q: ortiqcha to'lov avansga, natija oynasi, bekor qilishda kassa tanlovi. |
 | `superadmin-integrations-panel-control` | Ulanish — Ish rejimi paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionControl.tsx` | v2 |
 | `superadmin-integrations-panel-security` | Ulanish — Xavfsizlik paneli | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSecurity.tsx` | v2 |
@@ -2136,7 +2136,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### admin — Admin
 
-152 ta maket · kodda bor: 133 · kodda yo'q: 19
+152 ta maket · kodda bor: 135 · kodda yo'q: 17
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2248,10 +2248,10 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `admin-integrations-conn-settings` | Ulanish — Sozlamalar | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettings.tsx` | v2 |
 | `admin-integrations-conn-shipments` | Ulanish — Posilkalar | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionShipments.tsx` | v2 |
 | `admin-integrations-conn-log` | Ulanish — Hodisalar | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionLog.tsx` | v2 |
-| `admin-integrations-conn-settlement` | Ulanish — Hisob-kitob | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | qisman — Kodda «Olingan to'lovlar» bloki va bekor qilish (IS-3), «Qarz yozuvlari» dagi «To'lov №» ustuni, ortiqcha summa va natija oynasi (IS-2) hali yo'q; «Kim kiritdi / bekor qildi» ismi — Taklif · backend kerak. Qolgani v2 (IS-1: «To'lov asosiy kassaga o'zi yoziladi» + Asosiy kassa havolasi, «Qoldiq» — to'lanishi kerak, yopilmagan qarz, hamkor avansi, formula, «Qarz yo'q»). |
+| `admin-integrations-conn-settlement` | Ulanish — Hisob-kitob | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | qisman — Kodda «Olingan to'lovlar» bloki va bekor qilish (IS-3) hali yo'q — shungacha «Qarz yozuvlari» dagi «To'lov №N» havola emas, oddiy matn; «Kim kiritdi / bekor qildi» ismi — Taklif · backend kerak. Qolgani v2 (IS-1: «To'lov asosiy kassaga o'zi yoziladi» + Asosiy kassa havolasi, «Qoldiq» — to'lanishi kerak, yopilmagan qarz, hamkor avansi, formula, «Qarz yo'q»; IS-2: «To'lov» ustuni / telefonda «… · To'lov №N · …», ortiqcha summa ogohlantirishi va «To'lov yozildi» natija oynasi). |
 | `admin-integrations-settlement-pay-dialog` | Tashuvchidan olingan to'lov | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | v2 |
-| `admin-integrations-settlement-pay-overpay-dialog` | To'lov — ortiqcha summa | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | yangi (kodda yo'q) — Taklif (integ-settlement, ega S1..S3) — kodda yo'q: ortiqcha to'lov avansga, natija oynasi, bekor qilishda kassa tanlovi. |
-| `admin-integrations-settlement-pay-result-dialog` | To'lov natijasi | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | yangi (kodda yo'q) — Taklif (integ-settlement, ega S1..S3) — kodda yo'q: ortiqcha to'lov avansga, natija oynasi, bekor qilishda kassa tanlovi. |
+| `admin-integrations-settlement-pay-overpay-dialog` | To'lov — ortiqcha summa | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | v2 |
+| `admin-integrations-settlement-pay-result-dialog` | To'lov natijasi | oyna | `/integrations/connections` | `src/pages/integrations/panels/settlement/PayResultDialog.tsx` | v2 |
 | `admin-integrations-settlement-cancel-dialog` | To'lovni bekor qilish | oyna | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSettlement.tsx` | yangi (kodda yo'q) — Taklif (integ-settlement, ega S1..S3) — kodda yo'q: ortiqcha to'lov avansga, natija oynasi, bekor qilishda kassa tanlovi. |
 | `admin-integrations-conn-control` | Ulanish — Ish rejimi | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionControl.tsx` | v2 |
 | `admin-integrations-conn-security` | Ulanish — Xavfsizlik | sahifa | `/integrations/connections` | `src/pages/integrations/panels/ConnectionSecurity.tsx` | v2 |
@@ -2787,6 +2787,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/integrations/panels/ConnectionSettings.tsx` | `/integrations/connections` |
 | `src/pages/integrations/panels/ConnectionSettlement.tsx` | `/integrations/connections` |
 | `src/pages/integrations/panels/ConnectionShipments.tsx` | `/integrations/connections` |
+| `src/pages/integrations/panels/settlement/PayResultDialog.tsx` | `/integrations/connections` |
 | `src/pages/integrations/ui/FilterChips.tsx` | `/integrations/connections` |
 | `src/pages/integrations/ui/InlineAlert.tsx` | `/integrations/connections` |
 | `src/pages/integrations/ui/Switch.tsx` | `/integrations/connections` |
