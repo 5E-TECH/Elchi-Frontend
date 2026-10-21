@@ -1277,5 +1277,34 @@
       "text": "Yorug'lik kam",
       "action": "Chiroqni yoqish"
     }
+  },
+  "chartsKit": {
+    "title": "Grafiklar",
+    "description": "Steklangan ustunlar — har ustunda bir nechta qism, ustida yig'indi, ustiga kelganda qiymatlar oynasi.",
+    "stackedTitle": "Steklangan ustunlar",
+    "stackedMeta": "Maket: investor-dashboard-home («Oylik foyda»). Telefonda yig'indi va qiymatlar oynasi yashirin, oy yorliqlari siyrak.",
+    "ariaLabel": "Oylik foyda, mart – oktabr 2026: 3,6 mln dan 6,2 mln so'mgacha; sentabr foydasi hali to'lanmagan",
+    "paid": "To'langan",
+    "unpaid": "Kutilmoqda",
+    "months": [
+      "Mar",
+      "Apr",
+      "May",
+      "Iyn",
+      "Iyl",
+      "Avg",
+      "Sen",
+      "Okt"
+    ],
+    "monthTitles": [
+      "Mart 2026",
+      "Aprel 2026",
+      "May 2026",
+      "Iyun 2026",
+      "Iyul 2026",
+      "Avgust 2026",
+      "Sentabr 2026",
+      "Oktabr 2026"
+    ]
   }
 }

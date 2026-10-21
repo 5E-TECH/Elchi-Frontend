@@ -45,3 +45,7 @@ export type { ChartView, ViewToggleProps } from "./ViewToggle";
 
 export { DeltaChip } from "./DeltaChip";
 export type { DeltaChipProps } from "./DeltaChip";
+
+// IN-1: steklangan ustunlar (investor «Oylik foyda» — To'langan · Kutilmoqda).
+export { StackedBars } from "./StackedBars";
+export type { StackedBarsColumn, StackedBarsProps, StackedBarsSeries } from "./StackedBars";

@@ -320,6 +320,15 @@ export const API_ENDPOINTS = {
   // ── Investors (admin-managed; investor reads own) ────────────────────────
   INVESTORS: {
     BASE: "investors", // GET list / POST create
+    /**
+     * IN-1 (vpKijXce): investorning O'ZI — doira faqat JWT'dan (`@Roles(INVESTOR)`), `investor_id` yuborilmaydi.
+     * ⚠️ Backendda `investors/:id` dan OLDIN e'lon qilingan (aks holda "me" id deb o'qilardi) — shu tartibda.
+     * Xatolar: 403 — profil nofaol, 404 — login investor yozuviga bog'lanmagan, 409 — bir nechta yozuv.
+     */
+    ME: "investors/me", // GET — profil + yig'indi
+    ME_DASHBOARD: "investors/me/dashboard", // GET ?months=1..36 (sukut 12) — KPI + oylik foyda
+    ME_INVESTMENTS: "investors/me/investments", // GET ?from_date&to_date&page&limit — invested_at DESC
+    ME_PROFITS: "investors/me/profits", // GET ?is_paid&page&limit — period_start DESC
     BY_ID: (id: string | number) => `investors/${id}`, // GET / PATCH / DELETE
     INVESTMENTS: (investorId: string | number) => `investors/${investorId}/investments`,
     PROFITS: (investorId: string | number) => `investors/${investorId}/profits`,

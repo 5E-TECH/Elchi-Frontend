@@ -530,3 +530,14 @@ describe("MobileMenu — logist (LG-1, maket logist-dashboard-mobile-menu)", () 
     expect(screen.queryByRole("searchbox", { name: "Qidiruv" })).not.toBeInTheDocument();
   });
 });
+
+describe("MobileMenu — investor (IN-1)", () => {
+  it("varaqada «Bosh sahifa» plitkasi (maket `investor-dashboard-mobile-menu`); Investitsiyalar/Foyda tarixi — IN-2", () => {
+    asPhone();
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "investor", { route: "/" });
+    const links = within(sectionsNav()).getAllByRole("link");
+    expect(links.map((link) => [link.textContent, link.getAttribute("href")])).toEqual([["Bosh sahifa", "/"]]);
+    expect(links[0]).toHaveAttribute("aria-current", "page");
+    expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
+  });
+});

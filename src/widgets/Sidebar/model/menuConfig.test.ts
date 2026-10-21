@@ -344,3 +344,21 @@ describe("logist menyusi (LG-1)", () => {
     for (const finance of ["/payments", "/cash-box", "/financial-balance"]) expect(paths).not.toContain(finance);
   });
 });
+
+describe("investor menyusi (IN-1)", () => {
+  it("faqat «Bosh sahifa» (`/`, House) — «Investitsiyalar» va «Foyda tarixi» IN-2 da; moliya/kassa bandlari yo'q", () => {
+    const items = getSidebarConfigForUser("investor");
+    expect(items.map((item) => [item.to, item.label])).toEqual([["/", "dashboard"]]);
+    expect(items[0].end).toBe(true);
+    // Ikonka maketdagidek (`roles.json` → investor.menu.dashboard).
+    const design = designRoleInCode("investor").menu;
+    expect(design.map((item) => item.key)).toEqual(["dashboard"]);
+    expect(design[0].icon).toBe("i1");
+    expect(items[0].icon).toBe(House);
+  });
+
+  it("investor kabineti ro'yxatlari yo'llari «Moliya» guruhida (sahifalari IN-2 da)", () => {
+    expect(SIDEBAR_GROUP_BY_PATH["/investments"]).toBe("finance");
+    expect(SIDEBAR_GROUP_BY_PATH["/profits"]).toBe("finance");
+  });
+});
