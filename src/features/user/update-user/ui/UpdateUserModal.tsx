@@ -236,6 +236,7 @@ export const UpdateUserModal = memo(({
     handleSubmit,
     reset,
     setError,
+    setFocus,
     clearErrors,
     watch,
   } = methods;
@@ -311,22 +312,27 @@ export const UpdateUserModal = memo(({
   const validateForm = (values: UpdateUserFormValues): boolean => {
     let valid = true;
     clearErrors();
+    // Bo'sh / noto'g'ri saqlashda fokus birinchi xato maydonga (klaviatura va ekran o'qigichi xatoni topsin).
+    // Tekshiruv tartibi — formadagi tartib; `ref` faqat matn maydonlarida (payment_day — Select, fokussiz).
+    const invalid: Path<UpdateUserFormValues>[] = [];
+    const fail = (name: Path<UpdateUserFormValues>, message: string) => {
+      setError(name, { message });
+      invalid.push(name);
+      valid = false;
+    };
 
     if (!values.name.trim()) {
-      setError("name", { message: t("nameRequired") });
-      valid = false;
+      fail("name", t("nameRequired"));
     }
 
     if (getUzbekistanPhoneDigits(values.phone).length !== 9) {
-      setError("phone", { message: t("phoneValidation") });
-      valid = false;
+      fail("phone", t("phoneValidation"));
     }
 
     if (isAdmin && values.payment_day) {
       const day = Number(values.payment_day);
       if (day < 1 || day > 30) {
-        setError("payment_day", { message: t("paymentDayValidation") });
-        valid = false;
+        fail("payment_day", t("paymentDayValidation"));
       }
     }
 
@@ -335,34 +341,29 @@ export const UpdateUserModal = memo(({
       const hasCenterTariff = Boolean(values.tariff_center.trim());
       if (hasHomeTariff !== hasCenterTariff) {
         if (!hasHomeTariff) {
-          setError("tariff_home", { message: t("homeTariffRequired") });
+          fail("tariff_home", t("homeTariffRequired"));
         }
         if (!hasCenterTariff) {
-          setError("tariff_center", { message: t("centerTariffRequired") });
+          fail("tariff_center", t("centerTariffRequired"));
         }
-        valid = false;
       }
     }
 
     // Market tariflari majburiy (maket: «*»): bo'sh qoldirilsa avval ham yuborilmasdi — endi sababi aytiladi.
     if (isMarket) {
       if (!values.tariff_home.trim()) {
-        setError("tariff_home", { message: t("homeTariffRequired") });
-        valid = false;
+        fail("tariff_home", t("v2.edit.marketHomePriceRequired"));
       }
       if (!values.tariff_center.trim()) {
-        setError("tariff_center", { message: t("centerTariffRequired") });
-        valid = false;
+        fail("tariff_center", t("v2.edit.marketCenterPriceRequired"));
       }
     }
 
     if (canEditAiPrice && values.ai_price.trim() && parseAmount(values.ai_price) > AI_PRICE_MAX_UZS) {
-      setError("ai_price", {
-        message: t("v2.edit.aiPriceRange", { max: formatMoneyLocalized(AI_PRICE_MAX_UZS, { language }) }),
-      });
-      valid = false;
+      fail("ai_price", t("v2.edit.aiPriceRange", { max: formatMoneyLocalized(AI_PRICE_MAX_UZS, { language }) }));
     }
 
+    if (invalid[0]) setFocus(invalid[0]);
     return valid;
   };
 
@@ -598,6 +599,7 @@ export const UpdateUserModal = memo(({
           <TextInput
             mode="money"
             name={field.name}
+            ref={field.ref}
             value={field.value}
             onValueChange={field.onChange}
             onBlur={field.onBlur}
@@ -668,6 +670,7 @@ export const UpdateUserModal = memo(({
                 <Field label={t(isMarket ? "v2.edit.marketName" : "v2.edit.name")} required error={fieldState.error?.message}>
                   <TextInput
                     name={field.name}
+                    ref={field.ref}
                     value={field.value}
                     onValueChange={field.onChange}
                     onBlur={field.onBlur}
@@ -685,6 +688,7 @@ export const UpdateUserModal = memo(({
                   <TextInput
                     mode="phone"
                     name={field.name}
+                    ref={field.ref}
                     value={field.value}
                     onValueChange={field.onChange}
                     onBlur={field.onBlur}
@@ -824,8 +828,9 @@ export const UpdateUserModal = memo(({
                   </Field>
                 )}
               />
-              {renderMoneyField("tariff_home", t("v2.edit.homeTariff"), true)}
-              {renderMoneyField("tariff_center", t("v2.edit.centerTariff"), true)}
+              {/* CS-C: market yorlig'i — «Uyga / Markazga standart narx» (maket); kuryer/menejer «… tarif» qoladi. */}
+              {renderMoneyField("tariff_home", t("v2.edit.marketHomePrice"), true)}
+              {renderMoneyField("tariff_center", t("v2.edit.marketCenterPrice"), true)}
               {canEditAiPrice ? (
                 <Controller
                   control={control}
@@ -835,6 +840,7 @@ export const UpdateUserModal = memo(({
                       <TextInput
                         mode="money"
                         name={field.name}
+                        ref={field.ref}
                         value={field.value}
                         onValueChange={field.onChange}
                         onBlur={field.onBlur}

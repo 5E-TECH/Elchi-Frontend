@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
 import type { User, UserRole } from "../../../entities/user/types/user";
+import i18n from "../../../i18n";
 import { UserDetailView } from "./UserDetailView";
 
 /**
@@ -376,5 +377,59 @@ describe("UserDetailView — FY-1: «AI narxi» va logist maoshi", () => {
 
     renderView(makeUser("logist", { name: "Dilshod Karimov", salary: 0 }), "admin");
     expect(screen.getByRole("region", { name: "Profil ma'lumotlari" })).toHaveTextContent("0 so'm");
+  });
+});
+
+describe("UserDetailView — CS-C: market yorliqlari «Uyga / Markazga standart narx» (maket `superadmin-users-detail`)", () => {
+  const valueOf = (region: HTMLElement, label: string) => within(region).getByText(label).nextElementSibling;
+
+  it.each(["superadmin", "admin"])("%s: market «Tarif» kartasida standart narx yorliqlari va summalari", (viewerRole) => {
+    renderView(makeUser("market"), viewerRole);
+
+    const tariff = screen.getByRole("region", { name: "Tarif" });
+    expect(valueOf(tariff, "Asosiy tarif")).toHaveTextContent("Uygacha");
+    expect(valueOf(tariff, "Uyga standart narx")).toHaveTextContent("35 000 so'm");
+    expect(valueOf(tariff, "Markazga standart narx")).toHaveTextContent("25 000 so'm");
+    expect(tariff).not.toHaveTextContent("Uyga tarif");
+    expect(tariff).not.toHaveTextContent("Markazga tarif");
+    // «Vazn va hajm bo'yicha narx» — backend maydoni yo'q (DAqXPeSy), chizilmaydi.
+    expect(screen.queryByText("Vazn va hajm bo'yicha narx")).not.toBeInTheDocument();
+  });
+
+  it("menejer market sahifasida ham yangi yorliqlarni ko'radi", () => {
+    renderView(makeUser("market"), "manager", "Urgut filiali");
+
+    const tariff = screen.getByRole("region", { name: "Tarif" });
+    expect(valueOf(tariff, "Uyga standart narx")).toHaveTextContent("35 000 so'm");
+    expect(valueOf(tariff, "Markazga standart narx")).toHaveTextContent("25 000 so'm");
+  });
+
+  it("kuryer va menejer (tarifli) — eski «Uyga tarif» / «Markazga tarif» o'zgarmaydi", () => {
+    const { unmount } = renderView(makeUser("courier", { name: "Sherzod Alimov" }), "superadmin");
+    let tariff = screen.getByRole("region", { name: "Tarif" });
+    expect(valueOf(tariff, "Uyga tarif")).toHaveTextContent("35 000 so'm");
+    expect(valueOf(tariff, "Markazga tarif")).toHaveTextContent("25 000 so'm");
+    expect(tariff).not.toHaveTextContent("standart narx");
+    unmount();
+
+    renderView(makeUser("manager", { name: "Aziz Karimov" }), "superadmin");
+    tariff = screen.getByRole("region", { name: "Tarif" });
+    expect(within(tariff).getByText("Uyga tarif")).toBeInTheDocument();
+    expect(tariff).not.toHaveTextContent("standart narx");
+  });
+
+  it.each([
+    ["ru", "Тариф", "Стандартная цена до дома", "Стандартная цена до центра"],
+    ["en", "Tariff", "Standard price to the door", "Standard price to the centre"],
+  ])("%s: market yorliqlari tarjima qilingan", async (language, title, home, center) => {
+    await i18n.changeLanguage(language);
+    try {
+      renderView(makeUser("market"), "superadmin");
+      const tariff = screen.getByRole("region", { name: title });
+      expect(within(tariff).getByText(home)).toBeInTheDocument();
+      expect(within(tariff).getByText(center)).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage("uz");
+    }
   });
 });
