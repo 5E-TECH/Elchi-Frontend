@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "../../shared/api/api";
 import { API_ENDPOINTS } from "../../shared/api";
 import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
+import { metricsKey } from "./metrics";
 
 /**
  * HISOB-KITOB — tashuvchi yig'gan COD va bizga qarzi.
@@ -144,17 +145,104 @@ export interface RemittanceInput {
 }
 
 /**
+ * `POST integrations/:id/remittances` javobi (backend `createRemittance`) ekran uchun songa keltirilgan.
+ *
+ *   `unapplied_amount = amount + advance_applied − settled_amount` — musbat bo'lsa hamkorning YANGI avansi bo'ladi;
+ *   `advance_balance` — to'lovdan keyingi hamkor avansi; `cashbox_posted` — summa MAIN kassaga kirim bo'lib yozildimi
+ *   (`false` — yozilmadi, operator kassa tarixini tekshirishi kerak). Javobda `created_at` yo'q — vaqt mijoz vaqti.
+ *   `warning` (xom o'zbekcha matn) ataylab o'qilmaydi — ekran faqat i18n matn ko'rsatadi.
+ */
+export interface RemittanceResult {
+  remittanceId: string | null;
+  /** Olingan summa (`remitted_amount`; kelmasa — yuborilgan summa). */
+  remitted: number;
+  settledAmount: number;
+  settledCount: number;
+  /** Qarzga sig'magan qism (musbat — avansga o'tdi). */
+  unapplied: number;
+  /** Avvalgi avansdan ishlatilgani. */
+  advanceApplied: number;
+  /** To'lovdan keyingi hamkor avansi; eski backendda yo'q — `null`. */
+  advanceBalance: number | null;
+  /** `true` — MAIN kassaga kirim yozildi; `false`/`null` — yozilmadi yoki noma'lum. */
+  cashboxPosted: boolean | null;
+}
+
+const optionalAmount = (v: unknown): number | null =>
+  v === undefined || v === null || v === "" ? null : toAmount(v as string | number);
+
+export const normalizeRemittanceResult = (raw: unknown, sentAmount: number): RemittanceResult => {
+  const data = unwrap<Record<string, unknown> | null>(raw, null) ?? {};
+  const id = data.remittance_id ?? data.id;
+  const posted = data.cashbox_posted;
+  return {
+    remittanceId: id === undefined || id === null || id === "" ? null : String(id),
+    remitted: optionalAmount(data.remitted_amount) ?? sentAmount,
+    settledAmount: toAmount(data.settled_amount as string | number | undefined),
+    settledCount: Math.max(0, Number(data.settled_count ?? 0) || 0),
+    unapplied: toAmount(data.unapplied_amount as string | number | undefined),
+    advanceApplied: Math.max(0, toAmount(data.advance_applied as string | number | undefined)),
+    advanceBalance: optionalAmount(data.advance_balance),
+    cashboxPosted: typeof posted === "boolean" ? posted : null,
+  };
+};
+
+/**
+ * Summa qarzga ANIQ tushdi va kassaga yozildi — natija oynasi kerak emas, faqat xabar (maket
+ * `*-settlement-pay-dialog` «Boshqa holatlar»). Avansga o'tsa, avansdan ishlatilsa yoki kassaga yozilmasa — oyna.
+ */
+export const isExactRemittance = (result: RemittanceResult): boolean =>
+  result.cashboxPosted === true && result.settledCount > 0 && result.unapplied === 0 && result.advanceApplied === 0;
+
+/** Pul ayirmasi tiyin aniqligida (suzuvchi nuqta qoldig'isiz — backend ham tiyinda hisoblaydi). */
+const subtractMoney = (a: number, b: number) => Math.round((a - b) * 100) / 100;
+
+export interface OverpayPreview {
+  /** «To'lanishi kerak» dan ortig'i. */
+  excess: number;
+  /** To'lovdan keyin hamkor avansi (= summa + avans − yopilmagan qarz; barcha qarz yopiladi). */
+  advanceAfter: number;
+  /** Yopiladigan qarz yozuvlari soni (hammasi). */
+  recordsClosed: number;
+}
+
+/**
+ * Ortiqcha summa (maket `*-settlement-pay-overpay-dialog`, ega S2): summa «to'lanishi kerak» dan katta bo'lsa —
+ * barcha qarzlar yopiladi (FIFO: summa + avans ≥ yopilmagan qarz), ortig'i hamkor avansiga o'tadi. Yozish
+ * bloklanmaydi. Qoldiq o'qilmagan bo'lsa (`summary = null`) — oldindan aytib bo'lmaydi, `null`.
+ */
+export const overpayPreview = (amount: number, summary: BalanceSummary | null): OverpayPreview | null => {
+  if (!summary || !Number.isFinite(amount) || amount <= 0 || amount <= summary.payable) return null;
+  return {
+    excess: subtractMoney(amount, summary.payable),
+    advanceAfter: Math.max(0, subtractMoney(amount + summary.advance, summary.outstanding)),
+    recordsClosed: summary.outstandingCount,
+  };
+};
+
+/**
  * Tashuvchidan olingan to'lovni yozish.
  *
  * `order_ids` berilmasa backend eng eskisidan boshlab yopadi — bu ataylab:
  * qaysi buyurtma yopilgani muhim emas, qoldiq muhim. Aniq buyurtmalarni
  * yopish kerak bo'lsa ular alohida uzatiladi.
+ *
+ * Muvaffaqiyatdan keyin hisob-kitob kalitlari (`settlementKey`: qoldiq, qarz yozuvlari, ulanish «Umumiy holat»
+ * qoldig'i) va ulanish ko'rsatkichlari (`metricsKey` — «Umumiy holat» dagi COD «To'langan») yangilanadi. Summa MAIN kassaga ham yoziladi — kassa, moliya tarixi, bosh sahifa, daromad, KPI va
+ * marketlar kalitlarini sahifa `refreshCashboxQueries` (entities/payments) bilan yangilaydi (entity'lar bir-birini
+ * import qilmaydi).
  */
 export const useCreateRemittance = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ integrationId, ...body }: RemittanceInput) =>
-      api.post(API_ENDPOINTS.INTEGRATIONS.REMITTANCES(integrationId), body).then((res) => res.data),
-    onSuccess: () => client.invalidateQueries({ queryKey: [settlementKey] }),
+      api
+        .post(API_ENDPOINTS.INTEGRATIONS.REMITTANCES(integrationId), body)
+        .then((res) => normalizeRemittanceResult(res.data, body.amount)),
+    onSuccess: () => {
+      // Ko'rsatkichlar (24/48 soatlik) kutilmaydi — «Yozish» faqat hisob-kitob qayta o'qilguncha band.
+      void client.invalidateQueries({ queryKey: metricsKey });
+      return client.invalidateQueries({ queryKey: [settlementKey] });
+    },
   });
 };
