@@ -22,7 +22,9 @@ test("⭐ market: «AI narxi» tafsilotda va tahrirda; tozalansa `ai_price_per_o
   await expect(
     tariff.locator("dt", { hasText: "Markazga standart narx" }).locator("xpath=following-sibling::dd[1]"),
   ).toHaveText(/^25\s?000\s?so'm$/);
-  await expect(tariff.getByText("Uyga tarif")).toHaveCount(0);
+  // Eski yorliq qatori umuman yo'q (aniq matn bo'yicha — «… standart narx» yorlig'ini sanamaydi).
+  await expect(tariff.locator("dt").filter({ hasText: /^(Uyga|Markazga) tarif$/ })).toHaveCount(0);
+  await expect(tariff.locator("dt").filter({ hasText: /^(Uyga|Markazga) standart narx$/ })).toHaveCount(2);
   await expect(tariff).toContainText(/250\s?so'm/);
 
   await content.getByRole("button", { name: "Tahrirlash" }).click();

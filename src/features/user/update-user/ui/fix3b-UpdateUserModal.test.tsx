@@ -573,6 +573,34 @@ describe("UpdateUserModal — CS-C: market «Uyga / Markazga standart narx» (ma
     expect(mocks.updateUser).not.toHaveBeenCalled();
   });
 
+  it("bo'sh standart narx bilan saqlash — fokus birinchi xato maydonga («Uyga standart narx»)", async () => {
+    const user = userEvent.setup();
+    renderModal(market(), { role: "superadmin", id: "1" });
+
+    const home = screen.getByRole("textbox", { name: /^Uyga standart narx/ });
+    await user.clear(home);
+    await user.clear(screen.getByRole("textbox", { name: /^Markazga standart narx/ }));
+    await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
+
+    await screen.findByText("Uyga standart narxni kiriting");
+    expect(home).toHaveFocus();
+    expect(home).toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("bir nechta xato — fokus formadagi birinchisiga (nom), keyingisiga emas", async () => {
+    const user = userEvent.setup();
+    renderModal(market(), { role: "superadmin", id: "1" });
+
+    const name = screen.getByRole("textbox", { name: /^Market nomi/ });
+    await user.clear(name);
+    await user.clear(screen.getByRole("textbox", { name: /^Markazga standart narx/ }));
+    await user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
+
+    await screen.findByText("Markazga standart narxni kiriting");
+    expect(name).toHaveFocus();
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+  });
+
   it("kuryer — «Uyga tarif» / «Markazga tarif» o'zgarmaydi", () => {
     renderModal(makeUser(), { role: "superadmin", id: "1" });
 
