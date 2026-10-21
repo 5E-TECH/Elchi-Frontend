@@ -20,9 +20,10 @@ describe("v2.logist.regions.filter — telefon eni", () => {
   });
 
   it("uz/ru/en kalitlari bir xil", () => {
-    const keys = (bundle: typeof uz) => Object.keys(bundle.v2.logist.regions.filter).sort();
-    expect(keys(ru as typeof uz)).toEqual(keys(uz));
-    expect(keys(en as typeof uz)).toEqual(keys(uz));
+    // Faqat `v2.logist` daraxti solishtiriladi — boshqa daraxtlarda ru/en ko'plik shakllari uz dan farq qiladi (SA-1).
+    const keys = (bundle: { v2: { logist: typeof uz.v2.logist } }) => Object.keys(bundle.v2.logist.regions.filter).sort();
+    expect(keys(ru)).toEqual(keys(uz));
+    expect(keys(en)).toEqual(keys(uz));
   });
 
   it("en: bo'sh holat matni rol kartasidagi «Logist» nomini ishlatadi", () => {
