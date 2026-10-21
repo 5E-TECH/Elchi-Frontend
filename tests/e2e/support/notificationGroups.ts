@@ -37,7 +37,18 @@ export type NotificationGroupsMock = {
   linkRequests: unknown[];
 };
 
-export const openNotificationGroups = async (page: Page): Promise<NotificationGroupsMock> => {
+export type NotificationGroupsOptions = {
+  /**
+   * TOZ-1: havolaning `expires_at` i hozirdan qancha keyin (ms, sukut 10 daqiqa). Manfiy — mahalliy soat server
+   * soatidan oldinda (havola muddati mahalliy «o'tmishda»).
+   */
+  linkExpiresInMs?: number;
+};
+
+export const openNotificationGroups = async (
+  page: Page,
+  { linkExpiresInMs = 10 * 60_000 }: NotificationGroupsOptions = {},
+): Promise<NotificationGroupsMock> => {
   const groups = initialGroups();
   const mock: NotificationGroupsMock = { patches: [], linkRequests: [] };
   await page.context().routeWebSocket(/\/socket\.io\//, (ws) => ws.close());
@@ -75,7 +86,7 @@ export const openNotificationGroups = async (page: Page): Promise<NotificationGr
           token: "c0de42",
           purpose: "market_group",
           group_type: body.group_type,
-          expires_at: new Date(Date.now() + 10 * 60_000).toISOString(),
+          expires_at: new Date(Date.now() + linkExpiresInMs).toISOString(),
           deep_link: GROUP_DEEP_LINK,
           command: "/start c0de42",
         },
