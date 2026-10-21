@@ -68,7 +68,7 @@ export const RegionChoiceCard = ({
         onChange={() => onToggle(region.id)}
       />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate font-semibold text-text">{shortRegionName(region.name)}</span>
+        <span className="truncate text-sm font-semibold text-text">{shortRegionName(region.name)}</span>
         <span className="truncate text-xs text-text-muted">{stateText}</span>
       </span>
       {tone ? (

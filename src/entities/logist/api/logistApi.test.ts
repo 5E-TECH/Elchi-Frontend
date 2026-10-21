@@ -40,10 +40,19 @@ describe("normalizeLogistList", () => {
       { id: "42", name: "Aziz Rahimov", phone_number: "+998901234567", status: "active" },
       { id: "43", name: "Malika Yusupova", phone_number: "+998944567890", status: "inactive" },
     ]);
-    expect(normalizeLogistList({ data: [{ id: "1", name: "A" }] })).toEqual([
-      { id: "1", name: "A", phone_number: "", status: "active" },
-    ]);
     expect(normalizeLogistList(null)).toEqual([]);
+  });
+
+  it("holat: faqat «active» faol (backend `resolveActiveLogist`), yo'q/noma'lum — nofaol", () => {
+    expect(
+      normalizeLogistList({
+        data: [
+          { id: "1", name: "A" },
+          { id: "2", name: "B", status: "blocked" },
+          { id: "3", name: "C", status: " Active " },
+        ],
+      }).map((logist) => logist.status),
+    ).toEqual(["inactive", "inactive", "active"]);
   });
 });
 
@@ -76,6 +85,26 @@ describe("so'rovlar", () => {
     await getLogistRegions();
     expect(api.get).toHaveBeenNthCalledWith(1, "logists", { params: { page: 1, limit: 100 } });
     expect(api.get).toHaveBeenNthCalledWith(2, "region");
+  });
+
+  it("100 dan ko'p logist — `meta.totalPages` bo'yicha qolgan sahifalar ham olinadi", async () => {
+    const page = (ids: string[], totalPages: number) => ({
+      data: {
+        data: {
+          items: ids.map((id) => ({ id, name: `L${id}`, status: "active" })),
+          meta: { total: 201, totalPages },
+        },
+      },
+    });
+    api.get
+      .mockResolvedValueOnce(page(["1", "2"], 3))
+      .mockResolvedValueOnce(page(["3"], 3))
+      .mockResolvedValueOnce(page(["3", "4"], 3));
+    const logists = await getLogists();
+    expect(api.get).toHaveBeenCalledTimes(3);
+    expect(api.get).toHaveBeenNthCalledWith(2, "logists", { params: { page: 2, limit: 100 } });
+    expect(api.get).toHaveBeenNthCalledWith(3, "logists", { params: { page: 3, limit: 100 } });
+    expect(logists.map((logist) => logist.id)).toEqual(["1", "2", "3", "4"]);
   });
 
   it("POST region/logist/bulk va PATCH region/:id/logist", async () => {

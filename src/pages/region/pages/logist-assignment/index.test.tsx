@@ -47,10 +47,14 @@ const REGIONS = [
 
 let logists: unknown[] = LOGISTS;
 let logistsFail = false;
+let regions: unknown[] = REGIONS;
+let regionsFail = false;
 
 beforeEach(() => {
   logists = LOGISTS;
   logistsFail = false;
+  regions = REGIONS;
+  regionsFail = false;
   api.get.mockReset().mockImplementation((url: string) => {
     if (url === "logists") {
       if (logistsFail) {
@@ -60,7 +64,12 @@ beforeEach(() => {
         data: { statusCode: 200, data: { items: logists, meta: { total: logists.length } } },
       });
     }
-    if (url === "region") return Promise.resolve({ data: { statusCode: 200, data: REGIONS } });
+    if (url === "region") {
+      if (regionsFail) {
+        return Promise.reject(Object.assign(new Error("Network Error"), { isAxiosError: true }));
+      }
+      return Promise.resolve({ data: { statusCode: 200, data: regions } });
+    }
     return Promise.resolve({ data: {} });
   });
   api.post.mockReset().mockResolvedValue({ data: { statusCode: 200, data: {} } });
@@ -137,6 +146,8 @@ describe("RegionLogistAssignmentPage — ro'yxat va holatlar", () => {
           .getAllByRole("radio")
           .map((option) => option.textContent),
       ).toEqual(["Barchasi · 14", "Belgilangan · 4", "Logistsiz · 7"]);
+      // Telefonda segment eni matnga qarab — ikki xonali son bilan ham «…» bo'lmaydi.
+      expect(filter).toHaveClass("max-md:[&>button]:flex-auto");
 
       const cards = within(regionsCard()).getAllByRole("checkbox");
       expect(cards).toHaveLength(14);
@@ -146,8 +157,31 @@ describe("RegionLogistAssignmentPage — ro'yxat va holatlar", () => {
       expect(checkbox(/^Navoiy/)).toHaveAccessibleName("Navoiy Biriktirilgan");
       expect(within(footer()).getByText("O'zgarish yo'q")).toBeInTheDocument();
       expect(saveButton()).toBeDisabled();
+      // Birinchi tanlangan logist URL'ga yoziladi — keyin ro'yxat tartibi o'zgarsa ham tanlov ko'chmaydi.
+      await waitFor(() =>
+        expect(screen.getByTestId("path")).toHaveTextContent("/regions/logist-assignment?logist=1"),
+      );
     },
   );
+
+  it("asosiy matn 14 px (`text-sm`, maket `.el-strong`): viloyat, logist ismi, «N ta o'zgarish»", async () => {
+    const user = userEvent.setup();
+    open();
+    await screen.findByRole("heading", { name: "Aziz Rahimov viloyatlari" });
+
+    expect(within(regionsCard()).getByText("Toshkent sh.")).toHaveClass("text-sm", "font-semibold");
+    expect(within(logistButton(/^Aziz/)).getByText("Aziz Rahimov")).toHaveClass("text-sm");
+
+    await user.click(checkbox(/^Buxoro/));
+    await user.click(checkbox(/^Surxondaryo/));
+    expect(within(footer()).getByText("2 ta o'zgarish")).toHaveClass("text-sm");
+    const sticky = screen.getByRole("region", { name: "Saqlanmagan o'zgarishlar" });
+    expect(within(sticky).getByText("2 ta o'zgarish")).toHaveClass("text-sm");
+
+    await user.click(saveButton());
+    const dialog = await screen.findByRole("alertdialog", { name: "O'zgarishlarni saqlaysizmi?" });
+    expect(within(dialog).getByText("Surxondaryo")).toHaveClass("text-sm");
+  });
 
   it("filtr «Logistsiz» va «Belgilangan», qidiruv ism/telefon bo'yicha", async () => {
     const user = userEvent.setup();
@@ -333,6 +367,50 @@ describe("RegionLogistAssignmentPage — saqlash", () => {
     expect(screen.queryByText(/bloklangan/)).not.toBeInTheDocument();
     expect(checkbox(/^Xorazm/)).toBeChecked();
     expect(within(footer()).getByText("1 ta o'zgarish")).toBeInTheDocument();
+  });
+
+  it("400 va logist shu orada nofaol bo'lgan — tanlov o'sha logistda qoladi, qoralama ko'rinadi", async () => {
+    api.post.mockImplementation(() => {
+      // Boshqa admin Azizni o'chirgan: qayta so'rovda u nofaol va saralashda oxirga tushadi.
+      logists = LOGISTS.map((item) => (item.id === "1" ? { ...item, status: "inactive" } : item));
+      return Promise.reject(
+        Object.assign(new Error("Request failed"), {
+          isAxiosError: true,
+          response: { status: 400, data: { message: "Logist faol emas" } },
+        }),
+      );
+    });
+    const user = userEvent.setup();
+    open();
+    await screen.findByRole("heading", { name: "Aziz Rahimov viloyatlari" });
+
+    await user.click(checkbox(/^Xorazm/));
+    await user.click(saveButton());
+
+    expect(await screen.findByText("Saqlab bo'lmadi")).toBeInTheDocument();
+    expect(await screen.findByText("Aziz Rahimov nofaol")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Aziz Rahimov viloyatlari" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Dilnoza Karimova viloyatlari" })).toBeNull();
+    expect(checkbox(/^Xorazm/)).toBeChecked();
+    expect(saveButton()).toBeDisabled();
+  });
+
+  it("saqlangandan keyin qayta so'rov xato bersa — saqlangan holat ko'rinadi, xato ekrani yo'q", async () => {
+    const user = userEvent.setup();
+    open();
+    await screen.findByRole("heading", { name: "Aziz Rahimov viloyatlari" });
+
+    regionsFail = true;
+    await user.click(checkbox(/^Xorazm/));
+    await user.click(saveButton());
+
+    expect(await screen.findByText("Saqlandi")).toBeInTheDocument();
+    await waitFor(() =>
+      expect(within(footer()).getByText("O'zgarish yo'q")).toBeInTheDocument(),
+    );
+    expect(checkbox(/^Xorazm/)).toBeChecked();
+    expect(checkbox(/^Xorazm/)).toHaveAccessibleName("Xorazm Biriktirilgan");
+    expect(screen.queryByText("Viloyatlarni yuklab bo'lmadi")).not.toBeInTheDocument();
   });
 
   it("saqlanmagan o'zgarish bilan boshqa logist — «Qolish» / «O'zgarishsiz o'tish»", async () => {

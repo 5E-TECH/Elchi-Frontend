@@ -72,7 +72,7 @@ export const ChangesFooter = (props: ChangesBarProps) => {
       <div role="status" className="flex min-w-0 flex-col gap-0.5">
         {dirty ? (
           <>
-            <span className="font-semibold text-text">
+            <span className="text-sm font-semibold text-text">
               {t("v2.logist.changes.count", { count: props.diff.total })}
             </span>
             <span className="text-[13px] text-text-muted">{parts}</span>
@@ -105,7 +105,7 @@ export const ChangesStickyBar = (props: ChangesBarProps) => {
         className="fixed inset-x-0 bottom-[var(--shell-bottomnav-h)] z-30 flex flex-col gap-2.5 border-t border-border bg-surface px-4 py-3 md:hidden"
       >
         <div role="status" className="flex min-w-0 items-baseline justify-between gap-3">
-          <span className="whitespace-nowrap font-semibold text-text">
+          <span className="whitespace-nowrap text-sm font-semibold text-text">
             {t("v2.logist.changes.count", { count: props.diff.total })}
           </span>
           <span className="min-w-0 truncate text-xs text-text-muted">{parts}</span>

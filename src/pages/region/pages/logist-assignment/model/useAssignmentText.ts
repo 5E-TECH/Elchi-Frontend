@@ -1,16 +1,23 @@
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import type { Logist } from "../../../../../entities/logist";
 import type { AssignmentDiff } from "./assignment";
 
-/** Ro'yxatdagi belgi: «Nofaol» · «Viloyatsiz» · «4 viloyat» (serverdagi holat). */
+/**
+ * Ro'yxatdagi belgi: «Nofaol» · «Viloyatsiz» · «4 viloyat» (serverdagi holat). Funksiya `t` o'zgarmaguncha bir xil
+ * (`LogistPicker` dagi `useMemo` har chizishda qayta hisoblanmasin).
+ */
 export const useLogistBadgeText = () => {
   const { t } = useTranslation("region");
-  return (logist: Logist, count: number) =>
-    logist.status === "inactive"
-      ? t("v2.logist.list.inactive")
-      : count > 0
-        ? t("v2.logist.list.regionCount", { count })
-        : t("v2.logist.list.noRegions");
+  return useCallback(
+    (logist: Logist, count: number) =>
+      logist.status === "inactive"
+        ? t("v2.logist.list.inactive")
+        : count > 0
+          ? t("v2.logist.list.regionCount", { count })
+          : t("v2.logist.list.noRegions"),
+    [t],
+  );
 };
 
 /** Oyna izohi: «Aziz Rahimov viloyatlari yangilanadi: 1 ta viloyat olib tashlanadi, 1 tasi boshqa logistdan o'tadi.» */

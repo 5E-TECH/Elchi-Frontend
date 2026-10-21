@@ -85,7 +85,7 @@ export const LogistListCard = ({
                 <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span
                     className={cx(
-                      "truncate font-semibold",
+                      "truncate text-sm font-semibold",
                       inactive ? "text-text-muted" : "text-text",
                     )}
                   >

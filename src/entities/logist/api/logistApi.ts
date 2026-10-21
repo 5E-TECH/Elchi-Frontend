@@ -22,7 +22,10 @@ export const normalizeLogist = (value: unknown): Logist | null => {
     id,
     name: typeof item.name === "string" ? item.name.trim() : "",
     phone_number: typeof item.phone_number === "string" ? item.phone_number : "",
-    status: item.status === "inactive" ? "inactive" : "active",
+    // Backend (`resolveActiveLogist`) faqat `status === "active"` ni qabul qiladi — yo'q/noma'lum holat nofaol.
+    status: typeof item.status === "string" && item.status.trim().toLowerCase() === "active"
+      ? "active"
+      : "inactive",
   };
 };
 
@@ -63,16 +66,33 @@ export const normalizeLogistRegions = (value: unknown): LogistRegion[] => {
   });
 };
 
+/** `{ data: { meta: { totalPages } } }` → sahifalar soni (yo'q yoki buzuq — 1). */
+const totalPagesOf = (value: unknown): number => {
+  const meta = asRecord(asRecord(asRecord(value)?.data)?.meta);
+  const pages = Number(meta?.totalPages);
+  return Number.isInteger(pages) && pages > 1 ? pages : 1;
+};
+
 /**
- * Backend sahifasi 100 tadan oshmaydi (`normalizeQuery`): logistlar soni kichik — bitta so'rov, qidiruv klientda.
+ * Backend sahifasi 100 tadan oshmaydi (`normalizeQuery`): odatda bitta so'rov, qidiruv klientda. 100 dan ko'p
+ * bo'lsa (`meta.totalPages`) qolgan sahifalar ham olinadi — eski logistlar ro'yxatdan jim tushib qolmasin.
  */
 export const LOGISTS_LIMIT = 100;
+/** Himoya: buzuq `totalPages` cheksiz so'rovga olib kelmasin (100 × 20 = 2000 logist). */
+const LOGISTS_MAX_PAGES = 20;
 
 export const getLogists = async (): Promise<Logist[]> => {
-  const response = await api.get(API_ENDPOINTS.LOGISTS.BASE, {
-    params: { page: 1, limit: LOGISTS_LIMIT },
-  });
-  return normalizeLogistList(response.data);
+  const fetchPage = (page: number) =>
+    api.get(API_ENDPOINTS.LOGISTS.BASE, { params: { page, limit: LOGISTS_LIMIT } });
+  const first = await fetchPage(1);
+  const pages = Math.min(totalPagesOf(first.data), LOGISTS_MAX_PAGES);
+  const rest = await Promise.all(
+    Array.from({ length: pages - 1 }, (_, index) => fetchPage(index + 2)),
+  );
+  const seen = new Set<string>();
+  return [first, ...rest]
+    .flatMap((response) => normalizeLogistList(response.data))
+    .filter((logist) => !seen.has(logist.id) && Boolean(seen.add(logist.id)));
 };
 
 export const getLogistRegions = async (): Promise<LogistRegion[]> => {

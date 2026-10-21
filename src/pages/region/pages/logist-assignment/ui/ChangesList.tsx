@@ -47,7 +47,7 @@ export const ChangesList = ({
             className="flex items-center gap-3 rounded-[10px] bg-sunken px-3 py-2.5"
           >
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="font-semibold text-text">{shortRegionName(change.region.name)}</span>
+              <span className="text-sm font-semibold text-text">{shortRegionName(change.region.name)}</span>
               <span className="text-xs text-text-muted">{hintOf(change)}</span>
             </span>
             <Badge dot tone={CHANGE_TONE[change.kind]}>

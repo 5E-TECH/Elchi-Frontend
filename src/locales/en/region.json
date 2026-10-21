@@ -432,7 +432,7 @@
         "filter": {
           "all": "All · {{count}}",
           "checked": "Ticked · {{count}}",
-          "free": "Unassigned · {{count}}"
+          "free": "Free · {{count}}"
         },
         "filteredEmpty": "No regions in this filter",
         "note": "Ticking a region of another logistician moves it to this one. A region you untick is left without a logistician.",
@@ -510,7 +510,7 @@
       },
       "empty": {
         "title": "No logisticians",
-        "text": "To assign regions, first create a user with the «Logistician» role. A new logistician appears in this list."
+        "text": "To assign regions, first create a user with the «Logist» role. A new logistician appears in this list."
       }
     }
   }

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import type { BulkAssignRegionLogistRequest, LogistRegion } from "../model/types";
 import { bulkAssignRegionLogist, getLogistRegions, getLogists } from "./logistApi";
 
 /** So'rov kalitlari — shu entity ichida (`shared/config/queryKeys.ts` boshqa PR'lar egaligida). */
@@ -45,11 +46,35 @@ export const useRefreshLogistAssignments = () => {
     );
 };
 
+/**
+ * Saqlangan to'plamni keshga yozish (backend semantikasi: `region_ids` — shu logistniki, uning qolgan viloyatlari
+ * logistsiz). Qayta so'rov tarmoq xatosi bilan tugasa ham sahifa «Saqlandi» dan keyin eski holatni ko'rsatmaydi.
+ */
+export const applyBulkAssignment = (
+  regions: readonly LogistRegion[],
+  { logist_id, region_ids }: BulkAssignRegionLogistRequest,
+): LogistRegion[] => {
+  const ids = new Set(region_ids);
+  return regions.map((region) =>
+    ids.has(region.id)
+      ? { ...region, logistId: logist_id }
+      : region.logistId === logist_id
+        ? { ...region, logistId: null }
+        : region,
+  );
+};
+
 /** `POST /region/logist/bulk`. Xabar va xato matnini sahifa beradi (server matni ko'rsatilmaydi). */
 export const useBulkAssignRegionLogist = () => {
+  const queryClient = useQueryClient();
   const refresh = useRefreshLogistAssignments();
   return useMutation({
     mutationFn: bulkAssignRegionLogist,
-    onSuccess: () => refresh(),
+    onSuccess: (_data, variables) => {
+      queryClient.setQueryData<LogistRegion[]>(logistKeys.regions, (regions) =>
+        regions ? applyBulkAssignment(regions, variables) : regions,
+      );
+      return refresh();
+    },
   });
 };

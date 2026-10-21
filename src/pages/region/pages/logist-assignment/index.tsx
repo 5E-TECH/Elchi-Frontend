@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-regions-logist-assignment, admin-regions-logist-assignment, superadmin-regions-logist-assignment-confirm-dialog, admin-regions-logist-assignment-confirm-dialog, superadmin-regions-logist-assignment-empty, admin-regions-logist-assignment-empty
-import { memo, useCallback, useId, useMemo, useState } from "react";
+import { memo, useCallback, useEffect, useId, useMemo, useState } from "react";
 import { Check, Info, TriangleAlert, UserPlus, Users } from "lucide-react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -122,11 +122,25 @@ const RegionLogistAssignmentPage = () => {
   );
   const ownerName = useCallback((logistId: string) => nameById.get(logistId) || null, [nameById]);
 
-  const selected = useMemo(
-    () => resolveSelectedLogist(logists, requestedId),
-    [logists, requestedId],
-  );
+  // Qoralama bor paytda tanlov uning logistida qoladi (ro'yxat qayta kelib, tartib o'zgarsa ham).
+  const pinnedId = draft?.logistId ?? requestedId;
+  const selected = useMemo(() => resolveSelectedLogist(logists, pinnedId), [logists, pinnedId]);
   const selectedId = selected?.id ?? null;
+  const hasDraft = draft !== null;
+
+  // `?logist=` yo'q (yoki eskirgan) bo'lsa — birinchi marta tanlangan logist URL'ga yoziladi: keyin logist nofaol
+  // bo'lib ro'yxat oxiriga tushsa ham, qayta ulanish yoki `refresh()` tanlovni boshqa logistga o'tkazmaydi.
+  useEffect(() => {
+    if (!selectedId || selectedId === requestedId || hasDraft) return;
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+        next.set("logist", selectedId);
+        return next;
+      },
+      { replace: true },
+    );
+  }, [hasDraft, requestedId, selectedId, setSearchParams]);
   const serverIds = useMemo(
     () => (selectedId ? assignedRegionIds(regions, selectedId) : EMPTY_IDS),
     [regions, selectedId],
@@ -223,7 +237,11 @@ const RegionLogistAssignmentPage = () => {
   };
 
   const loading = logistsQuery.isPending || regionsQuery.isPending;
-  const failed = logistsQuery.isError || regionsQuery.isError;
+  // Faqat ma'lumot umuman kelmagan bo'lsa: fondagi qayta so'rov xatosi (saqlashdan keyin, qayta ulanishda) qoralama va
+  // keshdagi holatni xato ekrani bilan almashtirmaydi.
+  const logistsFailed = logistsQuery.isError && logistsQuery.data === undefined;
+  const regionsFailed = regionsQuery.isError && regionsQuery.data === undefined;
+  const failed = logistsFailed || regionsFailed;
   const empty = !loading && !failed && logists.length === 0;
 
   const header = (
@@ -245,16 +263,16 @@ const RegionLogistAssignmentPage = () => {
 
   if (failed) {
     const retry = () => {
-      if (logistsQuery.isError) void logistsQuery.refetch();
-      if (regionsQuery.isError) void regionsQuery.refetch();
+      if (logistsFailed) void logistsQuery.refetch();
+      if (regionsFailed) void regionsQuery.refetch();
     };
     return (
       <div className="flex flex-col gap-6 max-md:gap-4">
         {header}
         <Card padding="none">
           <ErrorState
-            error={logistsQuery.error ?? regionsQuery.error}
-            title={t(logistsQuery.isError ? "v2.logist.error.logists" : "v2.logist.error.regions")}
+            error={logistsFailed ? logistsQuery.error : regionsQuery.error}
+            title={t(logistsFailed ? "v2.logist.error.logists" : "v2.logist.error.regions")}
             description={t("v2.logist.error.text")}
             onRetry={retry}
             retrying={logistsQuery.isFetching || regionsQuery.isFetching}
@@ -348,7 +366,9 @@ const RegionLogistAssignmentPage = () => {
               ariaLabel={t("v2.logist.regions.filterLabel")}
               value={filter}
               onValueChange={setFilter}
-              className="max-w-full"
+              // Telefonda segmentlar matn eniga qarab (teng emas): «Barchasi · 14» qisqa, «Belgilangan · 14» /
+              // «Свободные · 14» uzun — teng `flex-1` da ~88 px ga sig'maydi va son «…» ostida qolardi.
+              className="max-w-full max-md:[&>button]:flex-auto"
               options={[
                 {
                   value: "all",
