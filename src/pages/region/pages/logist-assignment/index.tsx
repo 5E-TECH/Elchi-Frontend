@@ -130,8 +130,12 @@ const RegionLogistAssignmentPage = () => {
 
   // `?logist=` yo'q (yoki eskirgan) bo'lsa — birinchi marta tanlangan logist URL'ga yoziladi: keyin logist nofaol
   // bo'lib ro'yxat oxiriga tushsa ham, qayta ulanish yoki `refresh()` tanlovni boshqa logistga o'tkazmaydi.
+  // `?logist=` dagi logist ro'yxatda hali yo'q, ro'yxat esa yangilanmoqda (masalan «Logist yaratish» dan keyin
+  // keshdagi eski ro'yxat): URL yangi ro'yxatgacha tegilmaydi — aks holda yangi logist o'rniga birinchisi qolardi.
+  const requestedPending =
+    Boolean(requestedId) && logistsQuery.isFetching && !logists.some((logist) => logist.id === requestedId);
   useEffect(() => {
-    if (!selectedId || selectedId === requestedId || hasDraft) return;
+    if (!selectedId || selectedId === requestedId || hasDraft || requestedPending) return;
     setSearchParams(
       (previous) => {
         const next = new URLSearchParams(previous);
@@ -140,7 +144,7 @@ const RegionLogistAssignmentPage = () => {
       },
       { replace: true },
     );
-  }, [hasDraft, requestedId, selectedId, setSearchParams]);
+  }, [hasDraft, requestedId, requestedPending, selectedId, setSearchParams]);
   const serverIds = useMemo(
     () => (selectedId ? assignedRegionIds(regions, selectedId) : EMPTY_IDS),
     [regions, selectedId],

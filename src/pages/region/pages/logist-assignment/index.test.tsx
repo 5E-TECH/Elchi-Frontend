@@ -1,6 +1,7 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Route, Routes, useLocation } from "react-router-dom";
+import { useEffect } from "react";
+import { Route, Routes, useLocation, useNavigate, type NavigateFunction } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../../../test/test-utils";
 import RegionLogistAssignmentPage from "./index";
@@ -75,8 +76,15 @@ beforeEach(() => {
   api.post.mockReset().mockResolvedValue({ data: { statusCode: 200, data: {} } });
 });
 
+/** Testdan URL almashtirish (masalan «Logist yaratish» dan qaytish) — `MemoryRouter` ichidagi `navigate`. */
+const navigateRef: { current: NavigateFunction | null } = { current: null };
+
 const Where = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  useEffect(() => {
+    navigateRef.current = navigate;
+  }, [navigate]);
   return <span data-testid="path">{`${location.pathname}${location.search}`}</span>;
 };
 
@@ -219,6 +227,32 @@ describe("RegionLogistAssignmentPage — ro'yxat va holatlar", () => {
     ).toBeInTheDocument();
     expect(logistButton(/^Sherzod/)).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText("+998 93 345 67 89 · 14 tadan 0 tasi belgilangan")).toBeInTheDocument();
+  });
+
+  it("?logist=<yangi id> ro'yxat yangilanayotganda — URL birinchi logistga almashtirilmaydi, yangi logist tanlanadi", async () => {
+    const view = open("admin");
+    expect(await screen.findByRole("heading", { name: /viloyatlari$/ })).toBeInTheDocument();
+    // «Logist yaratish» dan qaytish: kesh eski (yangi logist yo'q), qayta so'rov sekin keladi.
+    let release: () => void = () => undefined;
+    logists = [...LOGISTS, { id: "57", name: "Lola Karimova", phone_number: "+998901112233", status: "active" }];
+    const original = api.get.getMockImplementation();
+    api.get.mockImplementation((url: string) =>
+      url === "logists"
+        ? new Promise((resolve) => {
+            release = () => resolve(original?.(url));
+          })
+        : original?.(url),
+    );
+    await act(async () => {
+      void view.queryClient.invalidateQueries({ queryKey: ["logists"] });
+    });
+    await act(async () => {
+      navigateRef.current?.("/regions/logist-assignment?logist=57");
+    });
+    expect(screen.getByTestId("path")).toHaveTextContent("?logist=57");
+    await act(async () => release());
+    expect(await screen.findByRole("heading", { name: "Lola Karimova viloyatlari" })).toBeInTheDocument();
+    expect(screen.getByTestId("path")).toHaveTextContent("?logist=57");
   });
 
   it("logist yo'q — «Logist yo'q» + «Logist yaratish»", async () => {
