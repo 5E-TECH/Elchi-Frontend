@@ -153,6 +153,7 @@ export const V2_SCOPES = Object.freeze([
   "src/pages/market-operators",
   "src/pages/new_orders",
   "src/pages/notification-send",
+  "src/pages/notification-sent",
   "src/pages/notifications",
   "src/pages/ops",
   "src/pages/orders",

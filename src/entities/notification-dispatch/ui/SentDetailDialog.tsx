@@ -1,9 +1,9 @@
-// dizayn-v2: superadmin-notifications-sent-detail-dialog
+// dizayn-v2: superadmin-notifications-sent-detail-dialog, superadmin-notifications-sent-detail-states
 import { useId, useState, type ReactNode } from "react";
 import { CircleCheck, CircleQuestionMark, Send, ServerCrash } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import { NoticeAlert } from "../../notification";
-import { getUserRoleLabelKey } from "../../user/lib/role";
 import { cx } from "../../../shared/lib/cx";
 import { getErrorStatus } from "../../../shared/lib/errorKind";
 import { formatDateTimeLocalized } from "../../../shared/lib/formatDateTime";
@@ -11,6 +11,8 @@ import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import {
   Badge,
   Button,
+  ButtonIcon,
+  buttonClasses,
   Dialog,
   EmptyState,
   ErrorState,
@@ -19,7 +21,8 @@ import {
 } from "../../../shared/ui/primitives";
 import { useSentDetail } from "../api/useSentDetail";
 import { externalChannels } from "../model/status";
-import type { DispatchAudience, SentDetail } from "../model/types";
+import type { SentDetail } from "../model/types";
+import { useAudienceText } from "../model/useAudienceText";
 import { ChannelBreakdown } from "./ChannelBreakdown";
 import { DispatchStatusBadge } from "./DispatchBadges";
 import { UndeliveredList } from "./UndeliveredList";
@@ -36,6 +39,11 @@ export type SentDetailDialogProps = {
    * noma'lum kartasi («Tarixdan tekshirish»): tarixda yo'q bo'lsa so'rov serverga yetmagan, kartada «Qayta urinish».
    */
   source?: "history" | "unknown";
+  /**
+   * «Xato bilan tugagan» holatida asosiy «Qayta yuborish» havolasi (maket `*-sent-detail-states`) — «Yuborilganlar»
+   * sahifasidan `/notifications/send`. Yuborish sahifasining o'zida berilmaydi (forma shu yerda).
+   */
+  resendHref?: string;
 };
 
 type InfoRow = { key: string; label: ReactNode; value: ReactNode };
@@ -62,9 +70,9 @@ const InfoList = ({ rows, className }: { rows: InfoRow[]; className?: string }) 
  * («Qayta urinish»), yuborilmoqda, xato bilan tugagan (tushunarli matn — backend `error` ko'rsatilmaydi).
  * Telefonda — pastki varaqa (`Dialog` o'zi).
  */
-export const SentDetailDialog = ({ dispatchId, onClose, source = "history" }: SentDetailDialogProps) => {
+export const SentDetailDialog = ({ dispatchId, onClose, source = "history", resendHref }: SentDetailDialogProps) => {
   const { t, i18n } = useTranslation("notifications");
-  const { t: tUsers } = useTranslation("users");
+  const { roleLabel, audienceText } = useAudienceText();
   const language = i18n.resolvedLanguage ?? i18n.language;
   const count = (value: number) => formatNumberLocalized(value, { language });
   const when = (value: string | null) => formatDateTimeLocalized(value, { language });
@@ -85,21 +93,6 @@ export const SentDetailDialog = ({ dispatchId, onClose, source = "history" }: Se
   const query = useSentDetail(shownId, { page, limit: SENT_DETAIL_PAGE_SIZE }, { enabled: open, live: true });
   const detail = query.data;
 
-  const roleLabel = (role: string | null | undefined) => {
-    const value = role?.split(",")[0]?.trim();
-    return value ? tUsers(getUserRoleLabelKey(value)) : null;
-  };
-
-  const audienceText = (audience: DispatchAudience | null) => {
-    if (audience?.broadcast) return t("dispatch.detail.audienceAll");
-    if (audience?.roles?.length) {
-      return t("dispatch.detail.audienceRoles", { roles: audience.roles.map((role) => roleLabel(role)).join(", ") });
-    }
-    if (audience?.recipient_ids === 1) return t("dispatch.detail.audienceSingle");
-    if (audience?.recipient_ids) return t("dispatch.detail.audienceList");
-    return "—";
-  };
-
   const closeFooter = (
     <Button variant="secondary" onClick={onClose}>
       {t("dispatch.detail.close")}
@@ -117,10 +110,24 @@ export const SentDetailDialog = ({ dispatchId, onClose, source = "history" }: Se
       ? [detail.created_by.name, roleLabel(detail.created_by.role)].filter(Boolean).join(", ")
       : "";
     description = [when(detail.created_at), author].filter(Boolean).join(" · ");
+    if (detail.status === "failed" && resendHref) {
+      // ⚠️ `onClose` (sahifada — `?id=` ni `replace` bilan olib tashlash) Link o'tishidan OLDIN ishlaydi: BrowserRouter'da
+      // avval replace, keyin push — «Orqaga» ro'yxatga `?id=` siz qaytadi. Data router'ga o'tilsa navigatsiyalar
+      // birlashib replace yo'qolishi mumkin — o'shanda tartibni qayta tekshiring.
+      footer = (
+        <>
+          {closeFooter}
+          <Link to={resendHref} className={buttonClasses({ variant: "primary" })} onClick={onClose}>
+            <ButtonIcon icon={Send} px={18} />
+            {t("dispatch.detail.resend")}
+          </Link>
+        </>
+      );
+    }
     body = (
       <DetailBody
         detail={detail}
-        audience={audienceText(detail.audience)}
+        audience={audienceText(detail.audience) ?? "—"}
         page={page}
         onPageChange={setPage}
         busy={query.isPlaceholderData}

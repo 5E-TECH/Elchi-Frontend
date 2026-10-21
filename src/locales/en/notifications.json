@@ -281,8 +281,10 @@
       "audienceAll": "Everyone",
       "audienceRoles": "Role: {{roles}}",
       "audienceSingle": "One person",
-      "audienceList": "Selected list"
-    }
+      "audienceList": "Selected list",
+      "resend": "Send again"
+    },
+    "historyLink": "Sent"
   },
   "push": {
     "turnOn": "Turn on notifications",
@@ -325,5 +327,62 @@
   },
   "realtime": {
     "manyNew": "{{count}} new notifications"
+  },
+  "sent": {
+    "pageTitle": "Sent",
+    "pageDescription": "Manually sent messages and who received them",
+    "listTitle": "Sent messages",
+    "listDescription": "Newest first · result per channel",
+    "total": "{{value}}",
+    "loading": "Loading sent messages",
+    "summary_one": "{{from}}–{{to}} of {{total}} message",
+    "summary_other": "{{from}}–{{to}} of {{total}} messages",
+    "filters": {
+      "label": "Sent message filters",
+      "status": "Result",
+      "author": "Sent by",
+      "all": "All",
+      "authorsLoading": "Loading…",
+      "clear": "Clear filter"
+    },
+    "columns": {
+      "date": "Date",
+      "title": "Title",
+      "author": "Sent by",
+      "audience": "To",
+      "channels": "Channels",
+      "status": "Result",
+      "open": "Details"
+    },
+    "openRow": "Open the result of “{{title}}” ({{time}})",
+    "untitled": "Untitled message",
+    "toLabel": "To:",
+    "recipients_one": "{{value}} recipient",
+    "recipients_other": "{{value}} recipients",
+    "recipientsNone": "No recipients",
+    "channelShort": {
+      "realtime": "Instant"
+    },
+    "note": {
+      "running": "Started: {{time}}",
+      "failed": "Reached no one — send it again",
+      "skipped": "Turned notifications off: {{value}}",
+      "noProvider": "{{channels}}: provider not connected",
+      "skippedChannels": "Skipped: {{list}}",
+      "failedChannels": "Failed: {{list}}"
+    },
+    "empty": {
+      "title": "No messages sent yet",
+      "text": "Once a message is sent, it shows up here with its result: who got it, who didn't and why."
+    },
+    "emptyFiltered": {
+      "statusTitle": "No messages with this result",
+      "title": "No messages match this filter",
+      "text": "Change or clear the filter."
+    },
+    "error": {
+      "title": "Couldn't load sent messages",
+      "text": "The server is not responding right now. Try again a bit later."
+    }
   }
 }

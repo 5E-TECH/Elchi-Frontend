@@ -20,7 +20,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
 | Bosqich | Holat |
 |---|---|
 | 0 tokenlar, 1 primitivlar, 2 shell, 3 forma/dialog/holatlar | tayyor, dev'da |
-| 4 sahifalar migratsiyasi | **tayyor**: 77 / 77 route v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi; oxirgi `/market-operators` — MO-1, 2026-10-21) |
+| 4 sahifalar migratsiyasi | **tayyor**: 78 / 78 route v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi; oxirgi `/market-operators` — MO-1, 2026-10-21; yangi `/notifications/sent` — NS-2, v2 da yozilgan) |
 | 5 qo'riqchilar (ESLint, palitra, vizual snapshot, CI) | **tayyor** (kod va tekshiruvlar); «Visual» baseline'lari — egada (§2.1) |
 
 **4-bosqichda ko'chirilgan sahifalar** (ro'yxat `AGENTS.md` 4-qatorida ham bor):
@@ -206,6 +206,11 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     vsmpTweI, ILq3WNL1), `partialViews` izohlarida. Egaga: proksi read timeout'i ≥ 125 s bo'lsin (nginx 60 s,
     Cloudflare 100 s), aks holda ko'pincha «Natija noma'lum»; timeout'da global «Tarmoq xatosi» toast'i ham chiqadi;
     admin `regions` «Visual» sahnasi kutilgan farq — «Run workflow (update)».
+  - **NS-2 (2026-10-21, `feat/ns-2-sent-history`):** yangi route `/notifications/sent` — «Yuborilganlar» (superadmin,
+    admin; `canSendNotifications`, menyusiz — «Xabar yuborish» sarlavhasidagi va natija kartasi xatosidagi havola):
+    `GET /notifications/sent`, «Natija» / «Kim yubordi» filtrlari, sahifa va ochiq oyna (`?id=`) URL'da, telefonda
+    «Filtrlar» varaqasi; «Kimga» hozircha «—» + qabul qiluvchilar (auditoriya ro'yxat javobida yo'q — S2, backend);
+    tafsilot oynasida «Xato bilan tugadi» → «Qayta yuborish». Route soni 78 / 78.
 - «Visual» baseline'lari skaner 2-bosqichidan keyin yangilangan (bot commit `1393ae0`, `/dispatch` va
   `cancelled-handover` — «Kamera» tugmalari olib tashlangani uchun kutilgan farq).
 - **To'liq QA** — Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.

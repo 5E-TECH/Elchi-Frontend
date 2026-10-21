@@ -780,6 +780,8 @@ describe("NotificationDispatchForm — natija kartasi (NS-1)", () => {
     const card = await expectResult(1);
     expect(await within(card).findByText("Ro'yxatni olib bo'lmadi")).toBeInTheDocument();
     expect(within(card).getByText(/faqat yetkazilmaganlar ro'yxati yuklanmadi/)).toBeInTheDocument();
+    // NS-2: xatoda «Yuborilganlar» sahifasiga havola ham bor.
+    expect(within(card).getByRole("link", { name: "Yuborilganlar" })).toHaveAttribute("href", "/notifications/sent");
 
     fail = false;
     await user.click(within(card).getByRole("button", { name: "Qayta urinish" }));
