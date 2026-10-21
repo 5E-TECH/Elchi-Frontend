@@ -145,15 +145,6 @@
   "sellExtraCostProofRequired": "Sotishda qo'shimcha harajat isboti",
   "cancelExtraCostProofRequired": "Bekor qilishda qo'shimcha harajat isboti",
   "permissions": "Ruxsatlar",
-  "tgGroupCardTitle": "Telegram guruhi",
-  "changesSaveInstantly": "O'zgarish darhol saqlanadi",
-  "tgGroupPiiLabel": "Guruhda mijoz ismi va telefoni",
-  "tgGroupPiiHint": "O'chirilsa, Telegram guruhidagi buyurtma kartalarida mijoz ismi va telefoni yashiriladi",
-  "tgGroupPiiSaved": "Saqlandi",
-  "tgGroupPiiShownDescription": "Guruhdagi buyurtma kartalarida mijoz ismi va telefoni ko'rinadi",
-  "tgGroupPiiHiddenDescription": "Guruhdagi buyurtma kartalarida mijoz ismi va telefoni yashiriladi",
-  "tgGroupPiiSaveError": "Saqlanmadi",
-  "tgGroupPiiSaveErrorDescription": "Sozlamani saqlab bo'lmadi. Qayta urinib ko'ring",
   "v2": {
     "common": {
       "back": "Foydalanuvchilar",
@@ -401,6 +392,41 @@
       "createErrorText": "Ma'lumotlarni tekshirib, qayta urining."
     }
   },
-  "tgGroupLinkAction": "Ulash havolasini olish",
-  "tgGroupLinkHint": "Bir martalik havola (10 daqiqa): bot guruhga qo'shiladi va uni o'zi ulaydi. Ulangan guruhlar — «Bildirishnomalar» sahifasida."
+  "tgGroup": {
+    "title": "Telegram guruhi",
+    "hintStaff": "Market buyurtma xabarlari shu guruhlarga keladi. Har bir guruh bir martalik havola bilan ulanadi.",
+    "hintSelf": "Buyurtma xabarlari do'koningizning Telegram guruhiga keladi. Har bir guruh bir martalik havola bilan ulanadi.",
+    "typeCreate": "Yangi buyurtmalar guruhi",
+    "typeCancel": "Bekor qilinganlar guruhi",
+    "connected": "Ulangan",
+    "since": "{{date}} dan",
+    "notConnected": "Ulanmagan",
+    "offCreate": "Yangi buyurtma kartalari kelmaydi",
+    "offCancel": "Bekor qilingan buyurtmalar xabari kelmaydi",
+    "inactive": "Nofaol",
+    "inactiveHint": "Xabarlar bu guruhga yuborilmayapti",
+    "link": "Ulash",
+    "linkCreate": "Yangi buyurtmalar guruhini ulash",
+    "linkCancel": "Bekor qilinganlar guruhini ulash",
+    "allGroups": "Barcha guruhlar «Bildirishnomalar» bo'limida",
+    "loadError": "Guruhlar holatini yuklab bo'lmadi",
+    "loadErrorText": "Qayta urinib ko'ring.",
+    "piiLabel": "Guruhda mijoz ismi va telefoni",
+    "piiHint": "O'chirilsa, guruhdagi buyurtma kartalarida mijoz ismi va telefoni yashiriladi. O'zgarish darhol saqlanadi.",
+    "piiSaved": "Saqlandi",
+    "piiShown": "Guruhdagi buyurtma kartalarida mijoz ismi va telefoni ko'rinadi",
+    "piiHidden": "Guruhdagi buyurtma kartalarida mijoz ismi va telefoni yashiriladi",
+    "piiSaveError": "Saqlanmadi",
+    "piiSaveErrorText": "Sozlamani saqlab bo'lmadi. Qayta urinib ko'ring."
+  },
+  "tgBot": {
+    "column": "Telegram boti",
+    "columnHint": "Shaxsiy Elchi boti ulanishi",
+    "linked": "Ulangan",
+    "unlinked": "Ulanmagan",
+    "cardLinked": "Bot ulangan",
+    "cardUnlinked": "Bot ulanmagan",
+    "listHint": "Shaxsiy Elchi boti ulanishi. Market guruhlari holati — foydalanuvchi tafsilotida, «Telegram guruhi» kartasida.",
+    "unavailable": "Ulab bo'lmaydi"
+  }
 }

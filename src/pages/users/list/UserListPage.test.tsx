@@ -120,6 +120,12 @@ describe("UserListPage — superadmin/admin (maket `superadmin-users-list`)", ()
     expect(screen.getByText("1–10 / 1 286 ta foydalanuvchi")).toBeInTheDocument();
   });
 
+  it("«Telegram boti» ustuni izohi filtrlar ostida ko'rinadi (TG-B, `*-users-list-telegram`; sarlavha `title` i faqat sichqonchada)", () => {
+    render("/all-users", "admin");
+    const filters = screen.getByRole("group", { name: "Filtrlar" });
+    expect(within(filters).getByText("Shaxsiy Elchi boti ulanishi. Market guruhlari holati — foydalanuvchi tafsilotida, «Telegram guruhi» kartasida.")).toBeInTheDocument();
+  });
+
   it("URL'dagi filtrlar so'rovga o'tadi", () => {
     render("/all-users?role=courier&status=inactive&search=Jasur&page=3&limit=25");
 
@@ -309,6 +315,8 @@ describe("UserListPage — menejer (maket `manager-users-list`)", () => {
       "Ro'yxatchilar",
       "Marketlar",
     ]);
+    // «Telegram boti» ustuni ham, uning izohi ham yo'q.
+    expect(screen.queryByText(/Shaxsiy Elchi boti ulanishi/)).not.toBeInTheDocument();
     // Menejerda 4 ta tab telefonda ham sig'adi — «Rol» tanlovi yo'q, tablar yashirilmaydi.
     expect(screen.queryByRole("combobox", { name: "Rol" })).not.toBeInTheDocument();
     expect(tabs.closest(".max-md\\:hidden")).toBeNull();

@@ -10,11 +10,12 @@ defineScene({
   id: "users",
   route: "/all-users",
   role: "superadmin",
-  maket: ["superadmin-users-list", "superadmin-users-list-roles"],
+  maket: ["superadmin-users-list", "superadmin-users-list-roles", "superadmin-users-list-telegram"],
   api: {
     // Ro'yxat (`page=1&limit=10`) va KPI (`page=1&limit=1`, `meta.totalUsers/totalMarket/totalEmployees`) — 10 ta,
     // rollar aralash (market, kuryer, menejer, ro'yxatchi, admin; FY-1 — logist, market operatori, investor),
     // ikkitasi nofaol. Telefonda tablar o'rnida «Rol: Hammasi» tanlovi (`superadmin-users-list-role-select`).
+    // TG-B: `telegram_linked` — «Telegram boti» ustuni (investor — «—», ulab bo'lmaydi).
     "GET users": fixture("users/users.json"),
   },
 });

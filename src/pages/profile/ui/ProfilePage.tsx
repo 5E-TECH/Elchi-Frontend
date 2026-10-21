@@ -1,11 +1,11 @@
-// dizayn-v2: common-profile, common-profile-password-dialog
+// dizayn-v2: common-profile, common-profile-password-dialog, market-profile
 import { memo, useState } from "react";
 import { Pencil, UserX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useUser } from "../../../entities/user/api/userApi";
 import { unwrapUserResponse } from "../../../entities/user/lib/normalizeUser";
 import { TelegramLinkCard, canLinkTelegram } from "../../../features/telegram-link";
-import { MarketTelegramGroupPiiCard } from "../../../widgets/user-detail/ui/MarketTelegramGroupPiiCard";
+import { MarketTelegramGroupsCard } from "../../../widgets/user-detail/ui/MarketTelegramGroupsCard";
 import {
   Button,
   Card,
@@ -26,8 +26,10 @@ import { ProfileInfoCard, ProfileSalaryCard, ProfileSecurityCard } from "./Profi
  * Sarlavha «Profil» + asosiy amal «Tahrirlash» (Ism, Telefon — `EditProfileDialog`); ma'lumot kartasi;
  * «Oylik maosh» (faqat maoshli xodimda) va «Xavfsizlik» (parol oynasi) yonma-yon, joy yetmasa ustma-ust.
  * Ostida (maket yo'q — eng yaqini «Xavfsizlik» kartasi) o'z Telegram'ini botga ulash/uzish
- * (`TelegramLinkCard`, faqat xodimlarga — mijoz/investor emas) va marketda «Guruhda mijoz ismi va
- * telefoni» kaliti (`MarketTelegramGroupPiiCard`, market o'zini tahrirlaydi).
+ * (`TelegramLinkCard`, faqat xodimlarga — mijoz/investor emas).
+ * Market (maket `market-profile`, TG-B): «Xavfsizlik» va «Telegram» bir qatorda, ostida «Telegram guruhi»
+ * (`MarketTelegramGroupsCard mode="self"`: holatsiz qatorlar va «Ulash» — guruhlar holati endpointi TG-C da;
+ * «Guruhda mijoz ismi va telefoni» kaliti shu kartada). Sarlavhadagi kontakt shaxs ismi uchun backend maydoni yo'q.
  * Ma'lumot — `GET /auth/my-profile` (`useGetMyProfile`), holatlar `QueryBoundary size="page"`.
  *
  * `UpdateUserModal` (`/all-users/:id` ishlatadi) bu sahifada ishlatilmaydi — profil o'z v2 komponentlari bilan
@@ -88,18 +90,13 @@ const ProfilePage = () => {
         {(profile) => (
           <>
             <ProfileInfoCard user={profile} />
-            <div className="flex flex-wrap items-stretch gap-6 max-md:gap-4">
-              {hasProfileSalary(profile) ? (
-                <ProfileSalaryCard user={profile} className="min-w-0 flex-[3_1_460px]" />
-              ) : null}
-              <ProfileSecurityCard
-                onChangePassword={() => setPasswordOpen(true)}
-                className="min-w-0 flex-[2_1_320px]"
-              />
-            </div>
-            {canLinkTelegram(profile.role) || profile.role === "market" ? (
-              <div className="flex flex-wrap items-stretch gap-6 max-md:gap-4">
-                {canLinkTelegram(profile.role) ? (
+            {profile.role === "market" ? (
+              <>
+                <div className="flex flex-wrap items-stretch gap-6 max-md:gap-4">
+                  <ProfileSecurityCard
+                    onChangePassword={() => setPasswordOpen(true)}
+                    className="min-w-0 flex-[1_1_320px]"
+                  />
                   <div className="flex min-w-0 flex-[1_1_320px] flex-col *:flex-1">
                     <TelegramLinkCard
                       linked={profile.telegram_linked === true}
@@ -107,14 +104,33 @@ const ProfilePage = () => {
                       linkedAt={profile.telegram_linked_at}
                     />
                   </div>
-                ) : null}
-                {profile.role === "market" ? (
-                  <div className="flex min-w-0 flex-[1_1_320px] flex-col *:flex-1">
-                    <MarketTelegramGroupPiiCard user={profile} isOwnProfile />
+                </div>
+                <MarketTelegramGroupsCard user={profile} mode="self" />
+              </>
+            ) : (
+              <>
+                <div className="flex flex-wrap items-stretch gap-6 max-md:gap-4">
+                  {hasProfileSalary(profile) ? (
+                    <ProfileSalaryCard user={profile} className="min-w-0 flex-[3_1_460px]" />
+                  ) : null}
+                  <ProfileSecurityCard
+                    onChangePassword={() => setPasswordOpen(true)}
+                    className="min-w-0 flex-[2_1_320px]"
+                  />
+                </div>
+                {canLinkTelegram(profile.role) ? (
+                  <div className="flex flex-wrap items-stretch gap-6 max-md:gap-4">
+                    <div className="flex min-w-0 flex-[1_1_320px] flex-col *:flex-1">
+                      <TelegramLinkCard
+                        linked={profile.telegram_linked === true}
+                        username={profile.telegram_username}
+                        linkedAt={profile.telegram_linked_at}
+                      />
+                    </div>
                   </div>
                 ) : null}
-              </div>
-            ) : null}
+              </>
+            )}
             <EditProfileDialog open={editOpen} onClose={() => setEditOpen(false)} user={profile} />
             <ChangePasswordDialog
               open={passwordOpen}

@@ -177,7 +177,7 @@ const NotificationsPage = () => {
     [getName],
   );
   const dateTime = useCallback(
-    (value: string) => formatDateTimeLocalized(value, { language }),
+    (value: string | null) => formatDateTimeLocalized(value, { language }),
     [language],
   );
 
