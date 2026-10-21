@@ -9,6 +9,13 @@ import {
   uninstallPushEnv,
 } from "../../../features/push-notifications/test/pushEnv";
 import { PUSH_DENIED_STORAGE_KEY } from "../../../features/push-notifications/model/usePushSubscription";
+import {
+  IPHONE_UA,
+  fireBeforeInstallPrompt,
+  resetInstallEnv,
+  restoreInstallEnv,
+  setDevice,
+} from "../../../features/pwa-install/test/installEnv";
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() }));
 vi.mock("../../../shared/api/api", () => ({ api }));
@@ -169,5 +176,34 @@ describe("NotificationInboxPage — push holatlari", () => {
     expect(
       await screen.findByRole("button", { name: "Bildirishnomalarni yoqish" }),
     ).toBeInTheDocument();
+  });
+});
+
+describe("NotificationInboxPage — «Ilovani o'rnatish» (KI-2)", () => {
+  beforeEach(resetInstallEnv);
+  afterEach(restoreInstallEnv);
+
+  it.each(["courier", "admin", "market"])(
+    "%s: o'rnatish mumkin — karta «O'rnatish» bilan, yopish tugmasisiz (doim)",
+    (role) => {
+      fireBeforeInstallPrompt();
+      render(role);
+      const card = screen.getByTestId("pwa-install-card-inbox");
+      expect(within(card).getByRole("heading", { name: "Elchi'ni ilova sifatida o'rnating" })).toBeInTheDocument();
+      expect(within(card).getByRole("button", { name: "O'rnatish" })).toBeInTheDocument();
+      expect(within(card).queryByRole("button", { name: "Taklifni yopish" })).not.toBeInTheDocument();
+    },
+  );
+
+  it("iPhone — «Qanday qo'shiladi» → «Bosh ekranga qo'shing» oynasi", async () => {
+    setDevice(IPHONE_UA, 5);
+    render();
+    await userEvent.click(screen.getByRole("button", { name: "Qanday qo'shiladi" }));
+    expect(await screen.findByRole("dialog", { name: "Bosh ekranga qo'shing" })).toBeInTheDocument();
+  });
+
+  it("o'rnatib bo'lmaydigan brauzerda karta yo'q", () => {
+    render();
+    expect(screen.queryByTestId("pwa-install-card-inbox")).not.toBeInTheDocument();
   });
 });

@@ -1679,12 +1679,14 @@
         "src/pages/settings/ui/InterfacePanel.tsx",
         "src/pages/settings/ui/ScannerPanel.tsx",
         "src/pages/settings/ui/NotificationsPanel.tsx",
-        "src/features/push-notifications/ui/PushPermissionButton.tsx"
+        "src/features/push-notifications/ui/PushPermissionButton.tsx",
+        "src/features/pwa-install/ui/AppInstallStatusBlock.tsx",
+        "src/features/pwa-install/ui/IosInstallDialog.tsx"
       ],
       "views": {
         "common": ["settings-appearance", "settings-dashboard", "settings-interface", "settings-scanner", "settings-notifications", "settings-notifications-pwa"]
       },
-      "note": "Dizayn v2 (G2): 5 tab (desktopda chap navigatsiya, telefonda gorizontal), komponent holatida — URL'da emas; «Saqlandi» belgisi, mavzu/til darhol. «Skaner» alohida tab (D5): ovozlar «Interfeys» dan ko'chdi; «Kamera» kartasi — skaner 4-bosqichi (common-settings-scanner): «Kamerani sinash» → /scan (marketda yo'q), asosiy kamera, «Chiroq — avtomatik» (ega qarori: yorug'lik kam bo'lsa yoqish taklifi, o'zi yoqilmaydi — izoh matni shunga moslangan), «Uzluksiz skanerlash» (o'chiq — oqim kamerasi bitta koddan keyin yopiladi), «Ovoz», «Tebranish», «Ramka o'lchami» (ramka va skan hududi); hisobga saqlanadi (entities/settings scanner.camera / scanner.feedback, backend jsonb ochiq) + localStorage ko'zgusi — maketdagi «shu qurilmada saqlanadi» o'rniga «hisobingizda saqlanadi». Tab izohi maketdagidek «Kamera, ovoz va tebranish». Ega savoli 3 — sukut: «Bildirishnomalar» tabida maketdagi qurilma blokidan keyin kodda bor kanallar / kategoriyalar / reklama / sokin soatlar maket uslubidagi kartalarda saqlanadi. «Bosh sahifa bloklari» tartibi bosh sahifadagi (G1) tartib bilan bir xil; «Buyurtmalar vaqti» — Taklif, chizilmaydi. Taklif (kodda yo'q, faqat mijoz tomoni — manifest.webmanifest va sw.js bor, backend kerak emas): «Bildirishnomalar» tabida qurilma blokidan keyin «Ilova» kartasi — «O'rnatilgan» (display-mode: standalone) / «O'rnatilmagan» + «O'rnatish» (beforeinstallprompt) / iOS — «Qanday qo'shiladi» (common-settings-notifications-pwa → courier-inbox-pwa-ios-dialog) / brauzer qo'llab-quvvatlamasa — «Qo'llab-quvvatlanmaydi», tugmasiz; tab izohi «Shu qurilmaga xabarlar · ilova»."
+      "note": "Dizayn v2 (G2): 5 tab (desktopda chap navigatsiya, telefonda gorizontal), komponent holatida — URL'da emas; «Saqlandi» belgisi, mavzu/til darhol. «Skaner» alohida tab (D5): ovozlar «Interfeys» dan ko'chdi; «Kamera» kartasi — skaner 4-bosqichi (common-settings-scanner): «Kamerani sinash» → /scan (marketda yo'q), asosiy kamera, «Chiroq — avtomatik» (ega qarori: yorug'lik kam bo'lsa yoqish taklifi, o'zi yoqilmaydi — izoh matni shunga moslangan), «Uzluksiz skanerlash» (o'chiq — oqim kamerasi bitta koddan keyin yopiladi), «Ovoz», «Tebranish», «Ramka o'lchami» (ramka va skan hududi); hisobga saqlanadi (entities/settings scanner.camera / scanner.feedback, backend jsonb ochiq) + localStorage ko'zgusi — maketdagi «shu qurilmada saqlanadi» o'rniga «hisobingizda saqlanadi». Tab izohi maketdagidek «Kamera, ovoz va tebranish». Ega savoli 3 — sukut: «Bildirishnomalar» tabida maketdagi qurilma blokidan keyin kodda bor kanallar / kategoriyalar / reklama / sokin soatlar maket uslubidagi kartalarda saqlanadi. «Bosh sahifa bloklari» tartibi bosh sahifadagi (G1) tartib bilan bir xil; «Buyurtmalar vaqti» — Taklif, chizilmaydi. KI-2 (2026-10-21, ega javobi KI-S3 «Sozlamalarda doim»): «Bildirishnomalar» tabida qurilma blokidan keyin «Ilova» kartasi (AppInstallStatusBlock, features/pwa-install; faqat mijoz tomoni — manifest.webmanifest va sw.js bor, backend kerak emas) — «O'rnatilgan» (display-mode: standalone yoki shu qurilmada appinstalled) / «O'rnatilmagan» + «O'rnatish» (beforeinstallprompt, main.tsx da chizishdan oldin ushlanadi) / iOS va iPadOS — «Qanday qo'shiladi» → IosInstallDialog (courier-inbox-pwa-ios-dialog) / brauzer qo'llab-quvvatlamasa — «Qo'llab-quvvatlanmaydi», tugmasiz; tab izohi «Shu qurilmaga xabarlar · ilova». Maketdagi «Boshqa holatlar» bloki — dizayn taxtasi (holatlar namunasi), kodda bir vaqtda faqat joriy holat chiziladi."
     },
     {
       "path": "/inbox",
@@ -1697,14 +1699,16 @@
         "src/widgets/notification-inbox/ui/NotificationInboxItem.tsx",
         "src/widgets/notification-inbox/ui/NotificationItemMenu.tsx",
         "src/features/push-notifications/ui/PushPermissionButton.tsx",
-        "src/features/push-notifications/ui/PushExplainDialog.tsx"
+        "src/features/push-notifications/ui/PushExplainDialog.tsx",
+        "src/features/pwa-install/ui/InstallAppCard.tsx",
+        "src/features/pwa-install/ui/IosInstallDialog.tsx"
       ],
       "views": {
         "superadmin": ["notifications-inbox", "notifications-push-explain-dialog"],
         "courier": ["inbox-list", "inbox-push-explain-dialog", "inbox-pwa-install", "inbox-pwa-ios-dialog"],
         "common": ["inbox"]
       },
-      "note": "Dizayn v2 (G2): tablar, kategoriya chiplari (URL'da), «Faqat muhim», qator amallari, sahifalash; push holat bloki barcha rollarda holatga qarab (D4). Ega savoli 9 — sukut: sarlavha barcha rollarda «Bildirishnomalar» (superadmin maketidagi «Bildirishnomalar qutisi» emas); «SMS» va «Xabar yuborish» faqat canSendNotifications. Push ruxsati tushuntirish oynasi — PushExplainDialog (sozlamalarda ham). Taklif (kodda yo'q): ilovani o'rnatish kartasi — barcha rollarda, ilova o'rnatilmagan bo'lsa push blokidan keyin; Android/kompyuter — «Keyinroq» + «O'rnatish» (ikkinchi darajali tugma, beforeinstallprompt) — courier-inbox-pwa-install; iPhone/iPad (Safari) — «Qanday qo'shiladi» → 3 qadamli oyna «Bosh ekranga qo'shing» («Keyinroq» / «Tushunarli», telefonda pastki varaqa) — courier-inbox-pwa-ios-dialog. iOS'da ilova o'rnatilmagan bo'lsa push bloki («Bildirishnomalar yoqilgan / yoqish») yashiriladi — push faqat o'rnatilgan ilovada ishlaydi, uning o'rnida o'rnatish kartasi turadi (bu ataylab). «Keyinroq» yoki o'rnatilgach karta shu qurilmada boshqa chiqmaydi (holat — localStorage), qayta o'rnatish — sozlamalardagi «Ilova» kartasidan."
+      "note": "Dizayn v2 (G2): tablar, kategoriya chiplari (URL'da), «Faqat muhim», qator amallari, sahifalash; push holat bloki barcha rollarda holatga qarab (D4). Ega savoli 9 — sukut: sarlavha barcha rollarda «Bildirishnomalar» (superadmin maketidagi «Bildirishnomalar qutisi» emas); «SMS» va «Xabar yuborish» faqat canSendNotifications. Push ruxsati tushuntirish oynasi — PushExplainDialog (sozlamalarda ham). KI-2 (2026-10-21, ega javobi KI-S3): «Ilovani o'rnatish» kartasi (InstallAppCard placement=inbox, features/pwa-install) — barcha rollarda, push blokidan keyin, doim (yopishsiz; maketdagidek faqat «O'rnatish»), faqat ilova o'rnatilmagan va o'rnatish mumkin bo'lsa: Android/kompyuter — «O'rnatish» (ikkinchi darajali tugma, beforeinstallprompt; brauzer oynasi oldin yopilgan bo'lsa — brauzer menyusidan o'rnatish izohi, notify.info) — courier-inbox-pwa-install; iPhone/iPad — «Elchi'ni bosh ekranga qo'shing» + «Qanday qo'shiladi» → 3 qadamli oyna «Bosh ekranga qo'shing» («Keyinroq» / «Tushunarli», telefonda pastki varaqa) — courier-inbox-pwa-ios-dialog. iOS Safari tabida PushManager yo'q — push bloki o'zi chiqmaydi, uning o'rnida o'rnatish kartasi turadi. O'rnatilgan yoki qo'llab-quvvatlanmaydigan brauzerda karta yo'q (holat — Sozlamalar → Bildirishnomalar → «Ilova»)."
     }
   ],
   "plannedMenu": {
@@ -1747,9 +1751,6 @@
     "superadmin-users-edit-role-branch": "Taklif (users-roles): filialga biriktirilgan — rol maydoni qulf.",
     "superadmin-users-edit-courier-district-phone": "Taklif (users-roles): kuryer «Tuman» ro'yxati, telefon — backend kerak.",
     "manager-users-create-courier-district": "Taklif (users-roles): menejer kuryer yaratishda «Tuman» — backend kerak.",
-    "courier-inbox-pwa-install": "Ilovani o'rnatish kartasi yo'q (beforeinstallprompt ishlatilmaydi) — Taklif, faqat mijoz tomoni.",
-    "courier-inbox-pwa-ios-dialog": "iOS uchun «Bosh ekranga qo'shing» oynasi yo'q — Taklif, faqat mijoz tomoni.",
-    "common-settings-notifications-pwa": "Sozlamalarda «Ilova» kartasi (o'rnatilgan / o'rnatilmagan) yo'q — Taklif, faqat mijoz tomoni.",
     "courier-scan-offline": "Oflayn chip bor («Internet yo'q»); skanlarni navbatga qo'yish yo'q.",
     "superadmin-notifications-send-audience": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
     "superadmin-notifications-send-schedule": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
@@ -1799,7 +1800,6 @@
     "market-profile-telegram-status": "Taklif (tg-link S1, S5) — kodda yo'q; backend guruhlar holati endpointi kerak.",
     "market-profile-telegram-group-dialog": "Taklif (tg-link S1, S5) — kodda yo'q; backend guruhlar holati endpointi kerak.",
     "market-profile-telegram-group-expired-dialog": "Taklif (tg-link S1, S5) — kodda yo'q; backend guruhlar holati endpointi kerak.",
-    "courier-dashboard-pwa-install": "Taklif (small-p1 S3) — kodda yo'q: bir martalik «Ilovani o'rnatish» kartasi.",
     "superadmin-payments-cash-detail-branch-shift-closed": "Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari.",
     "admin-payments-cash-detail-branch-shift-closed": "Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari.",
     "manager-payments-cash-detail-branch-shift-closed": "Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari.",
@@ -2158,6 +2158,10 @@
     "superadmin-notifications-delete-dialog": "src/features/notification-delete/ui/useDeleteNotificationConfirm.tsx",
     "superadmin-notifications-push-explain-dialog": "src/features/push-notifications/ui/PushExplainDialog.tsx",
     "courier-inbox-push-explain-dialog": "src/features/push-notifications/ui/PushExplainDialog.tsx",
+    "courier-inbox-pwa-install": "src/features/pwa-install/ui/InstallAppCard.tsx",
+    "courier-inbox-pwa-ios-dialog": "src/features/pwa-install/ui/IosInstallDialog.tsx",
+    "common-settings-notifications-pwa": "src/features/pwa-install/ui/AppInstallStatusBlock.tsx",
+    "courier-dashboard-pwa-install": "src/features/pwa-install/ui/InstallAppCard.tsx",
     "superadmin-activity-logs-row-expanded": "src/widgets/activity-log/ui/ActivityLogDetail.tsx",
     "admin-activity-logs-row-expanded": "src/widgets/activity-log/ui/ActivityLogDetail.tsx",
     "superadmin-integrations-panel-settings": "src/pages/integrations/panels/ConnectionSettings.tsx",

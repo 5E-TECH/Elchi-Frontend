@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **102** · qisman: **129** · v2 ga ko'chirilgan route: **77 / 77**
+**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **98** · qisman: **129** · v2 ga ko'chirilgan route: **77 / 77**
 
 ## Qanday ishlatiladi
 
@@ -254,7 +254,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/` | market | `market-dashboard-extra-cost-approvals` — Dashboard · Xarajat tasdiqlari<br>↳ `src/pages/dashboard/ui/ExtraCostApprovals.tsx` | [design/fragments/market--dashboard-extra-cost-approvals.html](fragments/market--dashboard-extra-cost-approvals.html) | sahifa | v2 |
 | `/` | market_operator | — Maket yo'q — eng yaqini: market-dashboard-home. GET analytics/dashboard market_operator'ga ochiq (DASHBOARD_ROLES). Faqat ko'rish: qo'shimcha xarajat tasdiqlari ro'yxati tugmasiz (ExtraCostApprovals — market_operator qaror qilmaydi, mavjud qaror Q6); «To'lovlar»/kassa kartasi va moliya havolalari yo'q (finance ruxsati yo'q). Bosh sahifadagi «Buyurtma yaratish» — /new-orders/create (Qo'lda va AI bilan — MO-S3, quyida). | — | — | v2 |
 | `/` | courier | `courier-dashboard-home` — Bosh sahifa — kuryer statistikasi<br>↳ `src/pages/dashboard/DashboardPage.tsx` | [design/fragments/courier--dashboard-home.html](fragments/courier--dashboard-home.html) | sahifa | v2 |
-| `/` | courier | `courier-dashboard-pwa-install` — Bosh sahifa — ilovani o'rnatish taklifi (bir marta, yopiladi) | [design/fragments/courier--dashboard-pwa-install.html](fragments/courier--dashboard-pwa-install.html) | sahifa | yangi (kodda yo'q) |
+| `/` | courier | `courier-dashboard-pwa-install` — Bosh sahifa — ilovani o'rnatish taklifi (bir marta, yopiladi)<br>↳ `src/features/pwa-install/ui/InstallAppCard.tsx` | [design/fragments/courier--dashboard-pwa-install.html](fragments/courier--dashboard-pwa-install.html) | sahifa | v2 |
 | `/` | logist | `logist-dashboard-main` — Bosh sahifa — viloyatlarim<br>↳ `src/pages/dashboard/LogistDashboardPage.tsx` | [design/fragments/logist--dashboard-main.html](fragments/logist--dashboard-main.html) | sahifa | qisman |
 | `/` | logist | `logist-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq<br>↳ `src/widgets/Sidebar/ui/MobileMenu.tsx` | [design/fragments/logist--dashboard-mobile-menu.html](fragments/logist--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | qisman |
 | `/` | logist | `logist-dashboard-mobile-search` — Global qidiruv (telefon) — buyurtma, mijoz, telefon | [design/fragments/logist--dashboard-mobile-search.html](fragments/logist--dashboard-mobile-search.html) | oyna · faqat telefon | yangi (kodda yo'q) |
@@ -1846,12 +1846,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/settings` — Sozlamalar — Ko'rinish · Bosh sahifa · Interfeys · Skaner · Bildirishnomalar (dizayn v2)
 
-- **Fayllar:** `src/pages/settings/ui/SettingsPage.tsx` · `src/pages/settings/ui/settingsUi.tsx` · `src/pages/settings/ui/AppearancePanel.tsx` · `src/pages/settings/ui/DashboardPanel.tsx` · `src/pages/settings/ui/InterfacePanel.tsx` · `src/pages/settings/ui/ScannerPanel.tsx` · `src/pages/settings/ui/NotificationsPanel.tsx` · `src/features/push-notifications/ui/PushPermissionButton.tsx`
+- **Fayllar:** `src/pages/settings/ui/SettingsPage.tsx` · `src/pages/settings/ui/settingsUi.tsx` · `src/pages/settings/ui/AppearancePanel.tsx` · `src/pages/settings/ui/DashboardPanel.tsx` · `src/pages/settings/ui/InterfacePanel.tsx` · `src/pages/settings/ui/ScannerPanel.tsx` · `src/pages/settings/ui/NotificationsPanel.tsx` · `src/features/push-notifications/ui/PushPermissionButton.tsx` · `src/features/pwa-install/ui/AppInstallStatusBlock.tsx` · `src/features/pwa-install/ui/IosInstallDialog.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish)
 - **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
 - **Menyuda:** yo'q — yuqori panel → «Sozlamalar» tugmasi; telefon menyusi
 - **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): 5 tab (desktopda chap navigatsiya, telefonda gorizontal), komponent holatida — URL'da emas; «Saqlandi» belgisi, mavzu/til darhol. «Skaner» alohida tab (D5): ovozlar «Interfeys» dan ko'chdi; «Kamera» kartasi — skaner 4-bosqichi (common-settings-scanner): «Kamerani sinash» → /scan (marketda yo'q), asosiy kamera, «Chiroq — avtomatik» (ega qarori: yorug'lik kam bo'lsa yoqish taklifi, o'zi yoqilmaydi — izoh matni shunga moslangan), «Uzluksiz skanerlash» (o'chiq — oqim kamerasi bitta koddan keyin yopiladi), «Ovoz», «Tebranish», «Ramka o'lchami» (ramka va skan hududi); hisobga saqlanadi (entities/settings scanner.camera / scanner.feedback, backend jsonb ochiq) + localStorage ko'zgusi — maketdagi «shu qurilmada saqlanadi» o'rniga «hisobingizda saqlanadi». Tab izohi maketdagidek «Kamera, ovoz va tebranish». Ega savoli 3 — sukut: «Bildirishnomalar» tabida maketdagi qurilma blokidan keyin kodda bor kanallar / kategoriyalar / reklama / sokin soatlar maket uslubidagi kartalarda saqlanadi. «Bosh sahifa bloklari» tartibi bosh sahifadagi (G1) tartib bilan bir xil; «Buyurtmalar vaqti» — Taklif, chizilmaydi. Taklif (kodda yo'q, faqat mijoz tomoni — manifest.webmanifest va sw.js bor, backend kerak emas): «Bildirishnomalar» tabida qurilma blokidan keyin «Ilova» kartasi — «O'rnatilgan» (display-mode: standalone) / «O'rnatilmagan» + «O'rnatish» (beforeinstallprompt) / iOS — «Qanday qo'shiladi» (common-settings-notifications-pwa → courier-inbox-pwa-ios-dialog) / brauzer qo'llab-quvvatlamasa — «Qo'llab-quvvatlanmaydi», tugmasiz; tab izohi «Shu qurilmaga xabarlar · ilova».
+- **Izoh:** Dizayn v2 (G2): 5 tab (desktopda chap navigatsiya, telefonda gorizontal), komponent holatida — URL'da emas; «Saqlandi» belgisi, mavzu/til darhol. «Skaner» alohida tab (D5): ovozlar «Interfeys» dan ko'chdi; «Kamera» kartasi — skaner 4-bosqichi (common-settings-scanner): «Kamerani sinash» → /scan (marketda yo'q), asosiy kamera, «Chiroq — avtomatik» (ega qarori: yorug'lik kam bo'lsa yoqish taklifi, o'zi yoqilmaydi — izoh matni shunga moslangan), «Uzluksiz skanerlash» (o'chiq — oqim kamerasi bitta koddan keyin yopiladi), «Ovoz», «Tebranish», «Ramka o'lchami» (ramka va skan hududi); hisobga saqlanadi (entities/settings scanner.camera / scanner.feedback, backend jsonb ochiq) + localStorage ko'zgusi — maketdagi «shu qurilmada saqlanadi» o'rniga «hisobingizda saqlanadi». Tab izohi maketdagidek «Kamera, ovoz va tebranish». Ega savoli 3 — sukut: «Bildirishnomalar» tabida maketdagi qurilma blokidan keyin kodda bor kanallar / kategoriyalar / reklama / sokin soatlar maket uslubidagi kartalarda saqlanadi. «Bosh sahifa bloklari» tartibi bosh sahifadagi (G1) tartib bilan bir xil; «Buyurtmalar vaqti» — Taklif, chizilmaydi. KI-2 (2026-10-21, ega javobi KI-S3 «Sozlamalarda doim»): «Bildirishnomalar» tabida qurilma blokidan keyin «Ilova» kartasi (AppInstallStatusBlock, features/pwa-install; faqat mijoz tomoni — manifest.webmanifest va sw.js bor, backend kerak emas) — «O'rnatilgan» (display-mode: standalone yoki shu qurilmada appinstalled) / «O'rnatilmagan» + «O'rnatish» (beforeinstallprompt, main.tsx da chizishdan oldin ushlanadi) / iOS va iPadOS — «Qanday qo'shiladi» → IosInstallDialog (courier-inbox-pwa-ios-dialog) / brauzer qo'llab-quvvatlamasa — «Qo'llab-quvvatlanmaydi», tugmasiz; tab izohi «Shu qurilmaga xabarlar · ilova». Maketdagi «Boshqa holatlar» bloki — dizayn taxtasi (holatlar namunasi), kodda bir vaqtda faqat joriy holat chiziladi.
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -1860,16 +1860,16 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/settings` | umumiy (barcha rollar) | `common-settings-interface` — Sozlamalar — Interfeys | [design/fragments/common--settings-interface.html](fragments/common--settings-interface.html) | sahifa | v2 |
 | `/settings` | umumiy (barcha rollar) | `common-settings-scanner` — Sozlamalar — Skaner (kamera va ovoz) | [design/fragments/common--settings-scanner.html](fragments/common--settings-scanner.html) | sahifa | v2 |
 | `/settings` | umumiy (barcha rollar) | `common-settings-notifications` — Sozlamalar — Bildirishnomalar | [design/fragments/common--settings-notifications.html](fragments/common--settings-notifications.html) | sahifa | v2 |
-| `/settings` | umumiy (barcha rollar) | `common-settings-notifications-pwa` — Sozlamalar — Bildirishnomalar · ilova o'rnatilgan / o'rnatilmagan | [design/fragments/common--settings-notifications-pwa.html](fragments/common--settings-notifications-pwa.html) | sahifa | yangi (kodda yo'q) |
+| `/settings` | umumiy (barcha rollar) | `common-settings-notifications-pwa` — Sozlamalar — Bildirishnomalar · ilova o'rnatilgan / o'rnatilmagan<br>↳ `src/features/pwa-install/ui/AppInstallStatusBlock.tsx` | [design/fragments/common--settings-notifications-pwa.html](fragments/common--settings-notifications-pwa.html) | sahifa | v2 |
 
 #### `/inbox` — Bildirishnomalar qutisi (qo'ng'iroqcha manzili)
 
-- **Fayllar:** `src/pages/notifications/ui/NotificationInboxPage.tsx` · `src/widgets/notification-inbox/ui/NotificationInboxList.tsx` · `src/widgets/notification-inbox/ui/NotificationInboxItem.tsx` · `src/widgets/notification-inbox/ui/NotificationItemMenu.tsx` · `src/features/push-notifications/ui/PushPermissionButton.tsx` · `src/features/push-notifications/ui/PushExplainDialog.tsx`
+- **Fayllar:** `src/pages/notifications/ui/NotificationInboxPage.tsx` · `src/widgets/notification-inbox/ui/NotificationInboxList.tsx` · `src/widgets/notification-inbox/ui/NotificationInboxItem.tsx` · `src/widgets/notification-inbox/ui/NotificationItemMenu.tsx` · `src/features/push-notifications/ui/PushPermissionButton.tsx` · `src/features/push-notifications/ui/PushExplainDialog.tsx` · `src/features/pwa-install/ui/InstallAppCard.tsx` · `src/features/pwa-install/ui/IosInstallDialog.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** yo'q (faqat kirish)
 - **Rollar:** superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor
 - **Menyuda:** yo'q — yuqori panel → qo'ng'iroqcha; telefon menyusi
 - **Holat:** v2
-- **Izoh:** Dizayn v2 (G2): tablar, kategoriya chiplari (URL'da), «Faqat muhim», qator amallari, sahifalash; push holat bloki barcha rollarda holatga qarab (D4). Ega savoli 9 — sukut: sarlavha barcha rollarda «Bildirishnomalar» (superadmin maketidagi «Bildirishnomalar qutisi» emas); «SMS» va «Xabar yuborish» faqat canSendNotifications. Push ruxsati tushuntirish oynasi — PushExplainDialog (sozlamalarda ham). Taklif (kodda yo'q): ilovani o'rnatish kartasi — barcha rollarda, ilova o'rnatilmagan bo'lsa push blokidan keyin; Android/kompyuter — «Keyinroq» + «O'rnatish» (ikkinchi darajali tugma, beforeinstallprompt) — courier-inbox-pwa-install; iPhone/iPad (Safari) — «Qanday qo'shiladi» → 3 qadamli oyna «Bosh ekranga qo'shing» («Keyinroq» / «Tushunarli», telefonda pastki varaqa) — courier-inbox-pwa-ios-dialog. iOS'da ilova o'rnatilmagan bo'lsa push bloki («Bildirishnomalar yoqilgan / yoqish») yashiriladi — push faqat o'rnatilgan ilovada ishlaydi, uning o'rnida o'rnatish kartasi turadi (bu ataylab). «Keyinroq» yoki o'rnatilgach karta shu qurilmada boshqa chiqmaydi (holat — localStorage), qayta o'rnatish — sozlamalardagi «Ilova» kartasidan.
+- **Izoh:** Dizayn v2 (G2): tablar, kategoriya chiplari (URL'da), «Faqat muhim», qator amallari, sahifalash; push holat bloki barcha rollarda holatga qarab (D4). Ega savoli 9 — sukut: sarlavha barcha rollarda «Bildirishnomalar» (superadmin maketidagi «Bildirishnomalar qutisi» emas); «SMS» va «Xabar yuborish» faqat canSendNotifications. Push ruxsati tushuntirish oynasi — PushExplainDialog (sozlamalarda ham). KI-2 (2026-10-21, ega javobi KI-S3): «Ilovani o'rnatish» kartasi (InstallAppCard placement=inbox, features/pwa-install) — barcha rollarda, push blokidan keyin, doim (yopishsiz; maketdagidek faqat «O'rnatish»), faqat ilova o'rnatilmagan va o'rnatish mumkin bo'lsa: Android/kompyuter — «O'rnatish» (ikkinchi darajali tugma, beforeinstallprompt; brauzer oynasi oldin yopilgan bo'lsa — brauzer menyusidan o'rnatish izohi, notify.info) — courier-inbox-pwa-install; iPhone/iPad — «Elchi'ni bosh ekranga qo'shing» + «Qanday qo'shiladi» → 3 qadamli oyna «Bosh ekranga qo'shing» («Keyinroq» / «Tushunarli», telefonda pastki varaqa) — courier-inbox-pwa-ios-dialog. iOS Safari tabida PushManager yo'q — push bloki o'zi chiqmaydi, uning o'rnida o'rnatish kartasi turadi. O'rnatilgan yoki qo'llab-quvvatlanmaydigan brauzerda karta yo'q (holat — Sozlamalar → Bildirishnomalar → «Ilova»).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -1877,8 +1877,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/inbox` | superadmin | `superadmin-notifications-push-explain-dialog` — Bildirishnomalarni yoqasizmi? (tasdiq)<br>↳ `src/features/push-notifications/ui/PushExplainDialog.tsx` | [design/fragments/superadmin--notifications-push-explain-dialog.html](fragments/superadmin--notifications-push-explain-dialog.html) | oyna | v2 |
 | `/inbox` | courier | `courier-inbox-list` — Bildirishnomalar | [design/fragments/courier--inbox-list.html](fragments/courier--inbox-list.html) | sahifa | v2 |
 | `/inbox` | courier | `courier-inbox-push-explain-dialog` — Bildirishnomalarni yoqish oynasi<br>↳ `src/features/push-notifications/ui/PushExplainDialog.tsx` | [design/fragments/courier--inbox-push-explain-dialog.html](fragments/courier--inbox-push-explain-dialog.html) | oyna | v2 |
-| `/inbox` | courier | `courier-inbox-pwa-install` — Bildirishnomalar — ilovani o'rnatish taklifi (Android / kompyuter) | [design/fragments/courier--inbox-pwa-install.html](fragments/courier--inbox-pwa-install.html) | sahifa | yangi (kodda yo'q) |
-| `/inbox` | courier | `courier-inbox-pwa-ios-dialog` — Bosh ekranga qo'shish oynasi (iPhone / iPad) | [design/fragments/courier--inbox-pwa-ios-dialog.html](fragments/courier--inbox-pwa-ios-dialog.html) | oyna · faqat planshet + telefon | yangi (kodda yo'q) |
+| `/inbox` | courier | `courier-inbox-pwa-install` — Bildirishnomalar — ilovani o'rnatish taklifi (Android / kompyuter)<br>↳ `src/features/pwa-install/ui/InstallAppCard.tsx` | [design/fragments/courier--inbox-pwa-install.html](fragments/courier--inbox-pwa-install.html) | sahifa | v2 |
+| `/inbox` | courier | `courier-inbox-pwa-ios-dialog` — Bosh ekranga qo'shish oynasi (iPhone / iPad)<br>↳ `src/features/pwa-install/ui/IosInstallDialog.tsx` | [design/fragments/courier--inbox-pwa-ios-dialog.html](fragments/courier--inbox-pwa-ios-dialog.html) | oyna · faqat planshet + telefon | v2 |
 | `/inbox` | umumiy (barcha rollar) | `common-inbox` — Bildirishnomalar qutisi | [design/fragments/common--inbox.html](fragments/common--inbox.html) | sahifa | v2 |
 
 ## 3. Yo'naltirishlar (eski havolalar)
@@ -2503,12 +2503,12 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### courier — Kuryer
 
-53 ta maket · kodda bor: 49 · kodda yo'q: 4
+53 ta maket · kodda bor: 52 · kodda yo'q: 1
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
 | `courier-dashboard-home` | Bosh sahifa — kuryer statistikasi | sahifa | `/` | `src/pages/dashboard/DashboardPage.tsx` | v2 |
-| `courier-dashboard-pwa-install` | Bosh sahifa — ilovani o'rnatish taklifi (bir marta, yopiladi) | sahifa | `/` | `src/pages/dashboard/MarketDashboardPage.tsx + src/pages/dashboard/LogistDashboardPage.tsx + src/shared/ui/Forbidden.tsx + src/pages/investor/InvestorDashboardPage.tsx + src/pages/dashboard/DashboardPage.tsx` | yangi (kodda yo'q) — Taklif (small-p1 S3) — kodda yo'q: bir martalik «Ilovani o'rnatish» kartasi. |
+| `courier-dashboard-pwa-install` | Bosh sahifa — ilovani o'rnatish taklifi (bir marta, yopiladi) | sahifa | `/` | `src/features/pwa-install/ui/InstallAppCard.tsx` | v2 |
 | `courier-dashboard-mobile-menu` | Menyu ochiq — yon panel / pastki varaq | oyna · faqat planshet + telefon | `(qobiq)` | `src/widgets/Sidebar/ui/MobileMenu.tsx` | v2 |
 | `courier-dashboard-mobile-search` | Global qidiruv (telefon) | oyna · faqat telefon | `(qobiq)` | `src/widgets/header/ui/SearchScreen.tsx` | v2 |
 | `courier-orders-pending` | Buyurtmalar — Kutilayotganlar | sahifa | `/orders` | `src/pages/orders/list/courier/index.tsx` | v2 |
@@ -2558,8 +2558,8 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `courier-scan-manual-entry` | Skaner — kodni qo'lda kiritish | sahifa | `/scan` | `src/pages/scan/index.tsx` | qisman — «Kodni qo'lda kiriting» varag'i v2 (token yoki /scan/<token> havolasi, «Ochish»); maketdagi raqamli klaviatura va «Harflar» yo'q — buyurtma raqami bo'yicha qidiruv API'si yo'q, ega qarori kutiladi. |
 | `courier-inbox-list` | Bildirishnomalar | sahifa | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | v2 |
 | `courier-inbox-push-explain-dialog` | Bildirishnomalarni yoqish oynasi | oyna | `/inbox` | `src/features/push-notifications/ui/PushExplainDialog.tsx` | v2 |
-| `courier-inbox-pwa-install` | Bildirishnomalar — ilovani o'rnatish taklifi (Android / kompyuter) | sahifa | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | yangi (kodda yo'q) — Ilovani o'rnatish kartasi yo'q (beforeinstallprompt ishlatilmaydi) — Taklif, faqat mijoz tomoni. |
-| `courier-inbox-pwa-ios-dialog` | Bosh ekranga qo'shish oynasi (iPhone / iPad) | oyna · faqat planshet + telefon | `/inbox` | `src/pages/notifications/ui/NotificationInboxPage.tsx` | yangi (kodda yo'q) — iOS uchun «Bosh ekranga qo'shing» oynasi yo'q — Taklif, faqat mijoz tomoni. |
+| `courier-inbox-pwa-install` | Bildirishnomalar — ilovani o'rnatish taklifi (Android / kompyuter) | sahifa | `/inbox` | `src/features/pwa-install/ui/InstallAppCard.tsx` | v2 |
+| `courier-inbox-pwa-ios-dialog` | Bosh ekranga qo'shish oynasi (iPhone / iPad) | oyna · faqat planshet + telefon | `/inbox` | `src/features/pwa-install/ui/IosInstallDialog.tsx` | v2 |
 
 ### logist — Logist
 
@@ -2600,7 +2600,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### umumiy ekranlar (common — barcha rollar)
 
-19 ta maket · kodda bor: 18 · kodda yo'q: 1
+19 ta maket · kodda bor: 19 · kodda yo'q: 0
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2612,7 +2612,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `common-settings-interface` | Sozlamalar — Interfeys | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | v2 |
 | `common-settings-scanner` | Sozlamalar — Skaner (kamera va ovoz) | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | v2 |
 | `common-settings-notifications` | Sozlamalar — Bildirishnomalar | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | v2 |
-| `common-settings-notifications-pwa` | Sozlamalar — Bildirishnomalar · ilova o'rnatilgan / o'rnatilmagan | sahifa | `/settings` | `src/pages/settings/ui/SettingsPage.tsx` | yangi (kodda yo'q) — Sozlamalarda «Ilova» kartasi (o'rnatilgan / o'rnatilmagan) yo'q — Taklif, faqat mijoz tomoni. |
+| `common-settings-notifications-pwa` | Sozlamalar — Bildirishnomalar · ilova o'rnatilgan / o'rnatilmagan | sahifa | `/settings` | `src/features/pwa-install/ui/AppInstallStatusBlock.tsx` | v2 |
 | `common-profile` | Profil | sahifa | `/profile` | `src/pages/profile/ui/ProfilePage.tsx` | v2 |
 | `common-profile-password-dialog` | Profil — parolni o'zgartirish | oyna | `/profile` | `src/pages/profile/ui/ChangePasswordDialog.tsx` | v2 |
 | `common-profile-telegram` | Profil — Telegram ulanmagan | sahifa | `/profile` | `src/features/telegram-link/ui/TelegramLinkCard.tsx` | v2 |
@@ -2683,6 +2683,9 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/features/order-tracking/ui/TrackingTimelineItem.tsx` | `/orders/edit/:orderId` |
 | `src/features/push-notifications/ui/PushExplainDialog.tsx` | `/inbox` |
 | `src/features/push-notifications/ui/PushPermissionButton.tsx` | `/settings`, `/inbox` |
+| `src/features/pwa-install/ui/AppInstallStatusBlock.tsx` | `/settings` |
+| `src/features/pwa-install/ui/InstallAppCard.tsx` | `/inbox`, `/` |
+| `src/features/pwa-install/ui/IosInstallDialog.tsx` | `/settings`, `/inbox` |
 | `src/features/telegram-link/ui/LinkCountdown.tsx` | `/profile` |
 | `src/features/telegram-link/ui/LinkQrPanel.tsx` | `/notifications`, `/profile` |
 | `src/features/telegram-link/ui/TelegramLinkCard.tsx` | `/profile` |

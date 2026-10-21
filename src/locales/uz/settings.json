@@ -14,7 +14,7 @@
     "dashboard": "Ko'rsatiladigan bloklar",
     "interface": "Yon panel holati",
     "scanner": "Kamera, ovoz va tebranish",
-    "notifications": "Shu qurilmaga xabarlar"
+    "notifications": "Shu qurilmaga xabarlar · ilova"
   },
   "appearance": {
     "theme": "Mavzu",
@@ -113,6 +113,8 @@
     "device_hint": "Yangi buyurtma yoki muhim hodisa bo'lganda shu qurilmaga xabar keladi — ilova yopiq bo'lsa ham.",
     "footer": "Barcha xabarlar bildirishnomalar qutisida ham saqlanadi.",
     "open_inbox": "Qutini ochish",
+    "app_title": "Ilova",
+    "app_hint": "Elchi'ni o'rnatsangiz, alohida oynada tez ochiladi — kompyuterda ish stolidan yoki boshlash menyusidan, telefonda bosh ekrandan.",
     "scope_title": "Hozircha bu sozlamalar faqat saqlanadi",
     "scope_body": "Kanal, kategoriya va sokin soatlar tanlovingiz saqlanadi, lekin xabar yuborishda hali hisobga olinmaydi — barcha xabarlar avvalgidek keladi. Server tomoni tayyor bo'lgach, saqlangan tanlovingiz avtomatik qo'llaniladi. Yuqoridagi «Shu qurilmaga bildirishnomalar» kaliti esa hozirning o'zida ishlaydi.",
     "channels_title": "Kanallar",

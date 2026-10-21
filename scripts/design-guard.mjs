@@ -127,6 +127,7 @@ export const V2_SCOPES = Object.freeze([
   "src/features/order-return",
   "src/features/order-tracking",
   "src/features/push-notifications",
+  "src/features/pwa-install",
   "src/features/telegram-link",
   "src/features/tg-scan",
   "src/features/user",
