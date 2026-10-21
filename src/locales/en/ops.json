@@ -425,6 +425,120 @@
         }
       }
     },
+    "ai": {
+      "title": "AI status",
+      "subtitle": "Creating orders with AI: key, models and daily limit",
+      "loadingLabel": "Checking AI status",
+      "badge": {
+        "enabled": "Enabled",
+        "off": "AI off",
+        "capExceeded": "Limit reached",
+        "unknown": "Unknown",
+        "weakModel": "Weak model",
+        "unknownModel": "Unknown model"
+      },
+      "settingsLabel": "AI key and models",
+      "key": {
+        "label": "API key",
+        "state": {
+          "ok": "Configured",
+          "missing": "No key",
+          "misnamed": "Wrong key name",
+          "unknown": "Unknown"
+        },
+        "hint": {
+          "ok": "The key value is never shown",
+          "missing": "ANTHROPIC_API_KEY is not set on the server",
+          "misnamed": "The key must be set as ANTHROPIC_API_KEY",
+          "unknown": "The key value is never shown"
+        }
+      },
+      "models": {
+        "order": "Order parsing (text)",
+        "vision": "Order parsing (photo)",
+        "classify": "District and product matching"
+      },
+      "purpose": {
+        "order": "For parsing orders from text",
+        "vision": "For parsing orders from photos",
+        "classify": "For district and product matching"
+      },
+      "purposeInline": {
+        "order": "parsing orders from text",
+        "vision": "parsing orders from photos",
+        "classify": "district and product matching"
+      },
+      "verdict": {
+        "ok": "Suitable",
+        "weak": "Weak model",
+        "unknown": "Unknown model"
+      },
+      "modelHint": {
+        "classifyOk": "a cheap model is enough",
+        "unknown": "not in the price table"
+      },
+      "off": {
+        "flagOff": {
+          "title": "AI off — switched off on the server",
+          "text": "The «With AI» tab is hidden when creating an order; orders are created manually. To turn it on, enable <strong>AI_ORDER_ENABLED</strong> in the server settings."
+        },
+        "keyMissing": {
+          "title": "AI off — key not configured",
+          "text": "The «With AI» tab is hidden when creating an order; orders are created manually. To turn it on, add <strong>ANTHROPIC_API_KEY</strong> to the server settings."
+        },
+        "keyMisnamed": {
+          "title": "AI off — wrong key name",
+          "text": "The key is set on the server under a different name, so AI cannot see it. It must be set as <strong>ANTHROPIC_API_KEY</strong>. Until then the «With AI» tab is hidden when creating an order."
+        },
+        "disabled": {
+          "title": "AI off",
+          "text": "The AI service is off. The «With AI» tab is hidden when creating an order; orders are created manually."
+        }
+      },
+      "weak": {
+        "title": "Weak model: order parsing quality will drop",
+        "text": "{{purpose}}, <strong>{{model}}</strong> is selected — it is too weak for this job. Finding the region from the district and calculating the price may go wrong.",
+        "fixOn": "Switch to a stronger model in the server settings — AI keeps working until then.",
+        "fixOff": "Switch to a stronger model in the server settings."
+      },
+      "unknownModel": {
+        "title": "Unknown model: {{purpose}}",
+        "text": "<strong>{{model}}</strong> is not in the price table — the name may be misspelled.",
+        "impactOff": "Once AI is on, these calls will fail.",
+        "impactOn": "These calls fail.",
+        "fix": "Check the model name in the server settings."
+      },
+      "capExceeded": {
+        "title": "Daily limit reached — AI is off until 00:00",
+        "text": "Today's {{cap}} has been spent in full. The «With AI» tab shows «The daily AI limit is used up» when creating an order; orders are entered manually."
+      },
+      "capUnknown": {
+        "title": "Could not read the daily limit status",
+        "text": "The spending counter did not respond — AI does not work until then; orders are created manually."
+      },
+      "cap": {
+        "title": "Today's limit",
+        "value": "{{spent}} / {{cap}} · {{percent}}",
+        "aria": "AI daily limit: {{spent}} spent of {{cap}}, {{percent}}",
+        "warn": "Over {{threshold}}",
+        "exceeded": "Limit reached",
+        "unknown": "Unknown",
+        "reset": "Resets tomorrow at 00:00 (Tashkent time)",
+        "override": "Base limit {{base}} · raised by +{{extra}} for today",
+        "resetOverride": "Back to {{base}} tomorrow at 00:00",
+        "resetExceeded": "AI turns back on tomorrow at 00:00 (Tashkent time)",
+        "serverOnly": "the limit can only be raised on the server",
+        "offIdle": "AI off — nothing spent today, the limit is not counted",
+        "offSpent": "AI off — the limit is not counted",
+        "unknownText": "Could not read today's spending",
+        "persist": "Calls not written to the spending log:"
+      },
+      "error": {
+        "title": "Could not get the AI status",
+        "text": "The AI service is not connected or did not respond. Orders are still created manually.",
+        "timeout": "The AI service did not respond ({{status}}). Check the «AI orders» row in the system status."
+      }
+    },
     "sla": {
       "title": "On time (SLA)",
       "subtitle": "Whole system · analytics KPI",

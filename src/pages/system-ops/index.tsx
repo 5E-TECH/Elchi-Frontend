@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-ops-system, superadmin-ops-system-loading, superadmin-ops-system-error, superadmin-ops-system-partial, superadmin-ops-system-down, superadmin-ops-system-critical
+// dizayn-v2: superadmin-ops-system, superadmin-ops-system-loading, superadmin-ops-system-error, superadmin-ops-system-partial, superadmin-ops-system-down, superadmin-ops-system-critical, superadmin-ops-system-ai-config, superadmin-ops-system-ai-cap
 import { memo, useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { Banknote, CircleCheck, CircleX, Clock, Info, RefreshCw, Search, Trophy, Truck, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -31,11 +31,12 @@ import {
   type ScanResult,
 } from "./lib/systemOps";
 import { KpiRing, SlaGauge } from "./ui/charts";
+import { AiStatusCard } from "./ui/AiStatusCard";
 import { HealthCard } from "./ui/HealthCard";
 
 /**
  * OPS → «Tizim» (maket `superadmin-ops-system` va holatlari): kirish kartasi → «Tizim holati» (`GET /health/readiness`,
- * `ui/HealthCard.tsx`) → [«AI holati» — OS-2] → «O'z vaqtida (SLA)» (`onTimeRate`) + «Analitika KPI»
+ * `ui/HealthCard.tsx`) → «AI holati» (`GET ai/status` + gateway bayrog'i, `ui/AiStatusCard.tsx`, OS-2) → «O'z vaqtida (SLA)» (`onTimeRate`) + «Analitika KPI»
  * (`GET analytics/kpi`) → «Token orqali tekshirish» (`GET scan/:token`).
  * Hozirgi `JSON.stringify` o'rniga natija maydonlar ro'yxati (`dl`). «Kuryer samaradorligi» — foiz halqasi emas,
  * «O'rtacha N ta buyurtma» (API — kuryerga o'rtacha buyurtma soni, spec §8 D3).
@@ -119,7 +120,7 @@ const SystemOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const [scanInput, setScanInput] = useState("");
   const [activeToken, setActiveToken] = useState("");
 
-  // Ikkala so'rov ham shartsiz (React hook qoidasi), skan — faqat token bo'lsa. Tizim holati — `HealthCard` ichida.
+  // Ikkala so'rov ham shartsiz (React hook qoidasi), skan — faqat token bo'lsa. Tizim holati va AI holati — o'z kartalari ichida.
   const kpiQuery = useGetAnalyticsKpi(undefined, { silentError: true });
   const scanQuery = useGetScanByToken(activeToken, !!activeToken, { silentError: true });
 
@@ -181,6 +182,8 @@ const SystemOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
       <OpsIntro title={t("system.intro.title")} description={t("system.intro.description")} />
 
       <HealthCard />
+
+      <AiStatusCard />
 
       <QueryBoundary
         query={kpiQuery}
