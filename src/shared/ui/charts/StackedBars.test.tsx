@@ -2,7 +2,7 @@ import { createEvent, fireEvent, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
 import { StackedBars, type StackedBarsColumn, type StackedBarsSeries } from ".";
-import { niceCeiling } from "./StackedBars";
+import { niceCeiling } from "./scale";
 
 /**
  * IN-1: `StackedBars` — steklangan ustunlar (maket `investor-dashboard-home`, «Oylik foyda»).

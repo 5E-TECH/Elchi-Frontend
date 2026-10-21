@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { cx } from "../../lib/cx";
 import { formatCompactMoneyLocalized, formatMoneyLocalized } from "../../lib/formatMoney";
+import { niceCeiling } from "./scale";
 import { CHART_FILL, type ChartTone } from "./tone";
 
 export interface StackedBarsSeries {
@@ -49,17 +50,6 @@ const safe = (value: number | undefined) => (typeof value === "number" && Number
 const labelVisible = (index: number, count: number, step: number) => (count - 1 - index) % Math.max(1, step) === 0;
 
 const defaultPhoneStep = (count: number) => (count <= 6 ? 1 : count <= 12 ? 3 : 6);
-
-/**
- * Shkala shifti — eng katta yig'indidan katta-teng yaxlit son (1 · 2 · 5 × 10ⁿ): maketda 5,6 mln ustun plotning 56%
- * ida (shift 10 mln), eng baland ustun tepaga tegmaydi va uning yig'indisi tooltip ostida qolmaydi.
- */
-export const niceCeiling = (value: number) => {
-  if (!(value > 0) || !Number.isFinite(value)) return 0;
-  const magnitude = 10 ** Math.floor(Math.log10(value));
-  const step = [1, 2, 5, 10].find((factor) => factor * magnitude >= value * (1 - 1e-9)) ?? 10;
-  return step * magnitude;
-};
 
 /**
  * STEKLANGAN USTUNLAR (`.el-bars`, `.el-bars-col`, `.el-bars-stack` — maket `investor-dashboard-home`,
