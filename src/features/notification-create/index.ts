@@ -1,4 +1,2 @@
+// Havola so'rovi, turlari va `GROUP_LINK_POLL_MS` — `features/telegram-link` dan olinadi (TOZ-1: qayta eksport olindi).
 export { default as NotificationFormModal } from "./ui/NotificationFormModal";
-export { useRequestGroupLink } from "./api/useRequestGroupLink";
-export { GROUP_LINK_POLL_MS } from "./model/constants";
-export type { GroupLinkCode, GroupLinkCodeRequest } from "./model/types";

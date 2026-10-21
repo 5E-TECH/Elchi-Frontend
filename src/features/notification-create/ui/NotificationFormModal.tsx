@@ -16,18 +16,28 @@ import { queryKeys } from "../../../shared/config/queryKeys";
 import { formatTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { notify } from "../../../shared/lib/notify";
 import { Button, buttonClasses, Dialog, Field, Select, Spinner } from "../../../shared/ui/primitives";
-import { useRequestGroupLink } from "../api/useRequestGroupLink";
-import { GROUP_LINK_POLL_MS } from "../model/constants";
-import type { GroupLinkCode } from "../model/types";
 import { useToggleNotificationConfirm } from "../../notification-toggle";
-import { LinkCountdown, LinkQrImage } from "../../telegram-link";
+// Havola so'rovi, turlari, kutish oralig'i, muddat hisobi, sanoq va QR — umumiy `features/telegram-link` (TG-A);
+// bu feature'da nusxasi yo'q (TOZ-1).
+import {
+  GROUP_LINK_POLL_MS,
+  LinkCountdown,
+  LinkQrImage,
+  toLinkWindow,
+  useRequestGroupLink,
+  type GroupLinkCode,
+} from "../../telegram-link";
 
 interface NotificationFormModalProps {
   open: boolean;
   onClose: () => void;
-  /** Market oldindan tanlangan holda ochish (market sahifasidagi «Telegram guruhi» kartasi). */
-  marketId?: string;
 }
+
+/**
+ * Olingan havola + mahalliy soat bo'yicha muddati va sanoq uzunligi (`toLinkWindow`: soat farqi yoki `expires_at`
+ * yo'qligi). `totalMs` ham saqlanadi — server muddati 10 daqiqadan uzun ko'rinsa (soat ortda) sanoq «10:00» da qotmaydi.
+ */
+type ActiveGroupLink = GroupLinkCode & ReturnType<typeof toLinkWindow>;
 
 /**
  * «Bildirishnoma qo'shish» — market guruhini bir martalik havola bilan ulash (Trello 6jXw0DDr, 4TfLyTrL).
@@ -45,10 +55,12 @@ interface NotificationFormModalProps {
  *   (`inactive_reason`) backendda yo'q — matn umumiy (maketdagi «bot guruhdan chiqarilgan» yozilmaydi, NG-C).
  *
  * Havola tayyor (`*-create-link-dialog`): QR oq ramkada (desktopda chapda, telefonda qadamlardan keyin),
- * qadamlar, ajratgich ostida teskari sanoq (`LinkCountdown` `inline`, `role="timer"`) va kutish holati.
+ * qadamlar, ajratgich ostida teskari sanoq (`LinkCountdown` `inline`, `role="timer"`) va kutish holati. Muddat —
+ * «Telegram guruhi» kartasidagidek mahalliy soat bo'yicha (`toLinkWindow`): kompyuter soati farq qilsa havola darhol
+ * «eskirgan» bo'lib ochilmaydi, `expires_at` kelmasa — backend muddati (10 daqiqa).
  * Xato — faqat i18n matn (backend `message` ko'rsatilmaydi).
  */
-const CreateGroupLinkDialog = ({ open, onClose, marketId: initialMarketId }: NotificationFormModalProps) => {
+const CreateGroupLinkDialog = ({ open, onClose }: NotificationFormModalProps) => {
   const { t } = useTranslation("notificationGroups");
   const queryClient = useQueryClient();
   const { options, getName, isLoading: marketsLoading } = useNotificationMarkets(open);
@@ -56,11 +68,11 @@ const CreateGroupLinkDialog = ({ open, onClose, marketId: initialMarketId }: Not
   const confirmToggle = useToggleNotificationConfirm();
   const linkTitleId = useId();
 
-  const [marketId, setMarketId] = useState<string | null>(initialMarketId ?? null);
+  const [marketId, setMarketId] = useState<string | null>(null);
   const [groupType, setGroupType] = useState<NotificationGroupType>("create");
   const [marketMissing, setMarketMissing] = useState(false);
-  const [link, setLink] = useState<GroupLinkCode | null>(null);
-  const [expiredLink, setExpiredLink] = useState<GroupLinkCode | null>(null);
+  const [link, setLink] = useState<ActiveGroupLink | null>(null);
+  const [expiredLink, setExpiredLink] = useState<ActiveGroupLink | null>(null);
   const marketRef = useRef<HTMLElement>(null);
   /** Tanlov almashsa, kechikkan javob eski (market, tur) havolasini ko'rsatmasin. */
   const requestSeq = useRef(0);
@@ -85,9 +97,7 @@ const CreateGroupLinkDialog = ({ open, onClose, marketId: initialMarketId }: Not
   // Havola muddati tugadi — «Yangi havola olish».
   useEffect(() => {
     if (!link) return;
-    const left = Date.parse(link.expires_at) - Date.now();
-    if (!Number.isFinite(left)) return;
-    const timer = window.setTimeout(() => setExpiredLink(link), Math.max(0, left));
+    const timer = window.setTimeout(() => setExpiredLink(link), Math.max(0, link.expiresAtMs - Date.now()));
     return () => window.clearTimeout(timer);
   }, [link]);
 
@@ -135,7 +145,7 @@ const CreateGroupLinkDialog = ({ open, onClose, marketId: initialMarketId }: Not
     const seq = ++requestSeq.current;
     try {
       const next = await requestLink.mutateAsync({ purpose: "market_group", group_type: groupType, market_id: marketId });
-      if (seq === requestSeq.current) setLink(next);
+      if (seq === requestSeq.current) setLink({ ...next, ...toLinkWindow(next.expires_at) });
     } catch (error) {
       if (seq !== requestSeq.current) return;
       // Javob kelmadi — «Internet aloqasi yo'q» ni interceptor allaqachon ko'rsatgan; ataylab bekor qilingan
@@ -157,8 +167,6 @@ const CreateGroupLinkDialog = ({ open, onClose, marketId: initialMarketId }: Not
   };
 
   const activeLink = link && !expired ? link : null;
-  // `expires_at` kelmasa (normalizatsiyada "") — sanoq chizilmaydi («NaN:NaN qoldi» o'rniga).
-  const activeExpiresAtMs = activeLink ? Date.parse(activeLink.expires_at) : Number.NaN;
 
   const primaryAction = inactiveConnection ? (
     <Button
@@ -293,13 +301,12 @@ const CreateGroupLinkDialog = ({ open, onClose, marketId: initialMarketId }: Not
               </div>
             )}
             <div className="flex flex-col gap-2 border-t border-border pt-3">
-              {Number.isFinite(activeExpiresAtMs) ? (
-                <LinkCountdown
-                  variant="inline"
-                  expiresAtMs={activeExpiresAtMs}
-                  untilLabel={t("create.expiresAt", { time: formatTimeLocalized(activeLink.expires_at) })}
-                />
-              ) : null}
+              <LinkCountdown
+                variant="inline"
+                expiresAtMs={activeLink.expiresAtMs}
+                totalMs={activeLink.totalMs}
+                untilLabel={t("create.expiresAt", { time: formatTimeLocalized(activeLink.expiresAtMs) })}
+              />
               <p role="status" className="m-0 flex items-center gap-2 text-[13px] font-semibold text-text">
                 <Spinner size="sm" />
                 {t("create.waiting")}
@@ -316,7 +323,7 @@ const CreateGroupLinkDialog = ({ open, onClose, marketId: initialMarketId }: Not
  * Har ochilishda holat yangidan (market, tur, havola) — ichki oyna har ochilishda qayta o'rnatiladi;
  * yopilish harakati paytida esa eski holat ko'rinib turadi.
  */
-const NotificationFormModal = ({ open, onClose, marketId }: NotificationFormModalProps) => {
+const NotificationFormModal = ({ open, onClose }: NotificationFormModalProps) => {
   const [session, setSession] = useState(0);
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
@@ -324,7 +331,7 @@ const NotificationFormModal = ({ open, onClose, marketId }: NotificationFormModa
     if (open) setSession((value) => value + 1);
   }
 
-  return <CreateGroupLinkDialog key={session} open={open} onClose={onClose} marketId={marketId} />;
+  return <CreateGroupLinkDialog key={session} open={open} onClose={onClose} />;
 };
 
 export default NotificationFormModal;

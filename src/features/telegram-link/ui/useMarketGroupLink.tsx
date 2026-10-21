@@ -3,6 +3,7 @@ import axios from "axios";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useNotifications, type NotificationGroupType, type NotificationParams } from "../../../entities/notification";
+import { isNetworkFailure } from "../../../auth/networkError";
 import { queryKeys } from "../../../shared/config/queryKeys";
 import { notify } from "../../../shared/lib/notify";
 import { useRequestGroupLink } from "../api/useTelegramLink";
@@ -135,8 +136,9 @@ export const useMarketGroupLink = ({
       }
       setSession({ open: true, groupType, code, openedAt: Date.now(), ...toLinkWindow(code.expires_at) });
     } catch (error) {
-      // Javob kelmadi — «Internet aloqasi yo'q» ni interceptor ko'rsatgan. 403 — bu hisobga ulash yopiq.
-      if (axios.isAxiosError(error) && !error.response && error.code !== "ERR_CANCELED") return;
+      // Javob kelmadi — «Internet aloqasi yo'q» ni interceptor ko'rsatgan; ataylab bekor qilingan so'rov — jim
+      // (bildirishnoma qo'shish oynasi bilan bir xil, TOZ-1). 403 — bu hisobga ulash yopiq.
+      if (axios.isCancel(error) || isNetworkFailure(error)) return;
       const forbidden = axios.isAxiosError(error) && error.response?.status === 403;
       notify.error(t("linkError"), { description: t(forbidden ? "linkErrorForbidden" : "linkErrorRetry") });
     } finally {

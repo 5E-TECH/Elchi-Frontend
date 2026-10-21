@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { AxiosError, CanceledError, type AxiosResponse } from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import NotificationFormModal from "./NotificationFormModal";
-import { GROUP_LINK_POLL_MS } from "../model/constants";
+import { GROUP_LINK_POLL_MS } from "../../telegram-link";
 import { renderWithProviders } from "../../../test/test-utils";
 import { notify } from "../../../shared/lib/notify";
 import enGroups from "../../../locales/en/notificationGroups.json";
@@ -299,7 +299,7 @@ describe("NotificationFormModal — bir martalik guruh havolasi", () => {
     expect(screen.queryByText("Havolani olib bo'lmadi")).not.toBeInTheDocument();
   });
 
-  it("expires_at kelmasa — sanoq chizilmaydi («NaN» yo'q), havola va kutish ko'rinadi", async () => {
+  it("expires_at kelmasa — backend muddati (10 daqiqa) bilan sanoq, «NaN» yo'q (TOZ-1: `toLinkWindow`)", async () => {
     const user = userEvent.setup();
     mocks.post.mockResolvedValue(linkResponse(null));
     renderWithProviders(<NotificationFormModal open onClose={vi.fn()} />);
@@ -308,9 +308,38 @@ describe("NotificationFormModal — bir martalik guruh havolasi", () => {
     await user.click(screen.getByRole("button", { name: "Ulash havolasini olish" }));
 
     expect(await screen.findByRole("link", { name: "Telegram'da ochish" })).toBeInTheDocument();
-    expect(screen.queryByRole("timer")).not.toBeInTheDocument();
+    expect(screen.getByRole("timer")).toHaveTextContent(/^(10:00|9:\d{2}) qoldi$/);
+    expect(screen.getByText(/^· \d{2}:\d{2} gacha amal qiladi$/)).toBeInTheDocument();
     expect(screen.queryByText(/NaN/)).not.toBeInTheDocument();
     expect(screen.getByRole("status")).toHaveTextContent("Guruh ulanishi kutilmoqda…");
+  });
+
+  it("kompyuter soati oldinda (server `expires_at` o'tib ketgan) — havola darhol «eskirgan» bo'lmaydi", async () => {
+    const user = userEvent.setup();
+    // Server soati bo'yicha 10 daqiqa, lekin mahalliy soat 1 soat oldinda — `expires_at` mahalliy «o'tmishda».
+    mocks.post.mockResolvedValue(linkResponse(-60 * 60_000));
+    renderWithProviders(<NotificationFormModal open onClose={vi.fn()} />);
+
+    await pickMarket(user, /Baraka Shop/);
+    await user.click(screen.getByRole("button", { name: "Ulash havolasini olish" }));
+
+    expect(await screen.findByRole("link", { name: "Telegram'da ochish" })).toBeInTheDocument();
+    expect(screen.getByRole("timer")).toHaveTextContent(/^(10:00|9:\d{2}) qoldi$/);
+    expect(screen.queryByText("Havola muddati tugadi")).not.toBeInTheDocument();
+  });
+
+  it("kompyuter soati ortda (server muddati 13 daqiqa ko'rinadi) — sanoq «10:00» da qotmaydi, 13 daqiqadan boshlanadi", async () => {
+    const user = userEvent.setup();
+    // Mahalliy soat 3 daqiqa ortda — `toLinkWindow` 13 daqiqalik muddatga ishonadi; `totalMs` uzatilmasa
+    // `LinkCountdown` 10 daqiqaga qisib, 3 daqiqa davomida «10:00 qoldi» ko'rsatardi.
+    mocks.post.mockResolvedValue(linkResponse(13 * 60_000));
+    renderWithProviders(<NotificationFormModal open onClose={vi.fn()} />);
+
+    await pickMarket(user, /Baraka Shop/);
+    await user.click(screen.getByRole("button", { name: "Ulash havolasini olish" }));
+
+    expect(await screen.findByRole("link", { name: "Telegram'da ochish" })).toBeInTheDocument();
+    expect(screen.getByRole("timer")).toHaveTextContent(/^(13:00|12:\d{2}) qoldi$/);
   });
 
   it("en/ru: «· valid until 14:37» — o'rta nuqtadan keyin kichik harf", () => {

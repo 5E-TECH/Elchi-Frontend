@@ -75,3 +75,17 @@ test("⭐ 390: nofaol ulanish — «Faollashtirish» ≥ 44 px, tasdiq oynasi oc
   await activate.click();
   await expect(page.getByRole("alertdialog", { name: "Faollashtirishni tasdiqlang" })).toBeVisible();
 });
+
+test("⭐ 390 · TOZ-1: kompyuter soati 1 soat oldinda — havola amalda, sanoq 10 daqiqadan, oqib ketish yo'q", async ({ page }) => {
+  await openNotificationGroups(page, { linkExpiresInMs: -60 * 60_000 });
+  const dialog = await openCreateDialog(page);
+
+  await pickMarket(page, "Bahor Kiyim");
+  await dialog.getByRole("button", { name: "Ulash havolasini olish" }).click();
+  const section = dialog.getByRole("region", { name: "Bir martalik havola tayyor" });
+  await expect(section).toBeVisible();
+  await expect(section.getByRole("timer")).toHaveText(/^(10:00|9:\d{2}) qoldi$/);
+  await expect(dialog.getByText("Havola muddati tugadi")).toHaveCount(0);
+  expect((await dialog.getByRole("link", { name: "Telegram'da ochish" }).boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  await expectNoHorizontalOverflow(page);
+});
