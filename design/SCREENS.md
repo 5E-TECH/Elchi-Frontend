@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**81 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **48** · qisman: **114** · v2 ga ko'chirilgan route: **81 / 81**
+**81 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **47** · qisman: **115** · v2 ga ko'chirilgan route: **81 / 81**
 
 ## Qanday ishlatiladi
 
@@ -54,10 +54,10 @@
 | `/*` | Kirish va xato sahifalari | `src/shared/ui/NotFound.tsx` | superadmin, admin, manager, registrator, market, market_operator, courier, logist, investor | 1 | v2 |
 | `/` | Bosh sahifa | `src/pages/dashboard/MarketDashboardPage.tsx` + `src/pages/dashboard/LogistDashboardPage.tsx` + `src/pages/investor/InvestorDashboardPage.tsx` + `src/pages/dashboard/DashboardPage.tsx` + `src/shared/ui/Forbidden.tsx` | superadmin, admin, manager (→ /branch-dashboard), registrator, market, market_operator (MO-2: DashboardEntry → MarketDashboardPage variant=operator), courier, logist (LogistDashboardPage (LG-1) — o'z viloyatlari, pulsiz), investor (IN-1: DashboardEntry → InvestorDashboardPage (canViewInvestorCabinet)) | 19 | v2 |
 | `/branch-dashboard` | Bosh sahifa | `src/pages/branch-dashboard/ui/BranchDashboardPage.tsx` | manager | 2 | v2 |
-| `/orders` | Buyurtmalar | `src/pages/orders/index.tsx` | superadmin, admin, manager, registrator, market, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 33 | v2 |
-| `/orders/edit/:orderId` | Buyurtmalar | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager, registrator, market, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 23 | v2 |
-| `/new-orders` | Qabul va yaratish | `src/pages/new_orders/markets/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (taklif — MO-S3, kodda yo'q (backend POST /orders ruxsati kerak)) | 4 | v2 |
-| `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (taklif — MO-S3, kodda yo'q (backend POST /orders ruxsati kerak)) | 39 | v2 |
+| `/orders` | Buyurtmalar | `src/pages/orders/index.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 33 | v2 |
+| `/orders/edit/:orderId` | Buyurtmalar | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 23 | v2 |
+| `/new-orders` | Qabul va yaratish | `src/pages/new_orders/markets/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 4 | v2 |
+| `/new-orders/create` | Qabul va yaratish | `src/pages/orders/create/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 39 | v2 |
 | `/new-orders/incoming` | Qabul va yaratish | `src/pages/incoming-orders/SourcePicker.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 4 | v2 |
 | `/new-orders/incoming/:marketId` | Qabul va yaratish | `src/pages/incoming-orders/index.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator | 21 | v2 |
 | `/new-orders/branches` | Qabul va yaratish | `src/pages/new_orders/branches/index.tsx` | superadmin, admin | 2 | v2 |
@@ -67,7 +67,7 @@
 | `/new-orders/cancelled/:marketId` | Qabul va yaratish | `src/pages/new_orders/cancelled/detail.tsx` | superadmin, admin, registrator (faqat HQ), market (faqat o'z marketi) | 18 | v2 |
 | `/new-orders/:marketId` | Qabul va yaratish | `src/pages/new_orders/components/new_orderDetail.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi) | 17 | v2 |
 | `/new-orders/:marketId/edit/:orderId` | Qabul va yaratish | `src/pages/new_orders/components/new_orderUpdate.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi) | 3 | v2 |
-| `/new-orders/userDetail/:id` | Qabul va yaratish | `src/pages/users/detail/UserDetailPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (taklif — MO-S3, kodda yo'q (backend POST /orders ruxsati kerak)) | 0 | v2 |
+| `/new-orders/userDetail/:id` | Qabul va yaratish | `src/pages/users/detail/UserDetailPage.tsx` | superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7)) | 0 | v2 |
 | `/mails` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 0 | v2 |
 | `/mails/today` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 7 | v2 |
 | `/mails/return` | Pochta | `src/pages/mails/index.tsx` | superadmin, admin, manager (HQ · REGIONAL · HYBRID), registrator, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q) | 4 | v2 |
@@ -148,7 +148,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `(qobiq)` | manager | — Qobiq har sahifa maketida chizilgan — masalan manager-orders-list-all (pastki menyuda «Skaner» va «Biriktirish»). | — | — | v2 |
 | `(qobiq)` | registrator | — Qobiq har sahifa maketida chizilgan — masalan registrator-orders-list. | — | — | v2 |
 | `(qobiq)` | market | `market-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq | [design/fragments/market--dashboard-mobile-menu.html](fragments/market--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | v2 |
-| `(qobiq)` | market_operator | — Yangi rol qobig'i (maket): yon menyu Bosh sahifa · Buyurtmalar · Buyurtma yaratish · Mahsulotlar · Daromadim; pastki menyu 5 oddiy katak (Skaner va Menyu yo'q) — Bosh sahifa · Buyurtmalar · Yaratish · Mahsulotlar · Daromadim. Bildirishnomalar, Sozlamalar va Chiqish faqat yuqori paneldan (qo'ng'iroqcha, profil menyusi) — eski market xatti-harakati kabi. Profil satri «Market operatori» (profil market nomini qaytarmaydi). Kodda (MO-2): yon menyu Bosh sahifa · Mahsulotlar · Daromadim (guruhsiz), pastki menyu shu 3 katak; «Buyurtmalar» va «Buyurtma yaratish» (yorlig'i rolga xos — sidebar:createOrder, qisqasi «Yaratish») — MO-3 (plannedMenu / plannedBottomNav). | — | — | v2 |
+| `(qobiq)` | market_operator | — Yangi rol qobig'i (maket): yon menyu Bosh sahifa · Buyurtmalar · Buyurtma yaratish · Mahsulotlar · Daromadim; pastki menyu 5 oddiy katak (Skaner va Menyu yo'q) — Bosh sahifa · Buyurtmalar · Yaratish · Mahsulotlar · Daromadim. Bildirishnomalar, Sozlamalar va Chiqish faqat yuqori paneldan (qo'ng'iroqcha, profil menyusi) — eski market xatti-harakati kabi. Profil satri «Market operatori» (profil market nomini qaytarmaydi). Kodda (MO-2, MO-3): yon menyu maketdagidek 5 band (guruhsiz), pastki menyu shu 5 katak; «Buyurtma yaratish» — /new-orders (operatorda /new-orders/create ga yo'naltiriladi; yorlig'i rolga xos — sidebar:createOrder, qisqasi «Yaratish»). Menyu varaqasidagi qidiruv (/orders?search=) MO-3 dan beri ochiq. | — | — | v2 |
 | `(qobiq)` | courier | `courier-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq<br>↳ `src/widgets/Sidebar/ui/MobileMenu.tsx` | [design/fragments/courier--dashboard-mobile-menu.html](fragments/courier--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | v2 |
 | `(qobiq)` | courier | `courier-dashboard-mobile-search` — Global qidiruv (telefon)<br>↳ `src/widgets/header/ui/SearchScreen.tsx` | [design/fragments/courier--dashboard-mobile-search.html](fragments/courier--dashboard-mobile-search.html) | oyna · faqat telefon | v2 |
 | `(qobiq)` | investor | `investor-dashboard-mobile-menu` — Menyu ochiq — yon panel / pastki varaq<br>↳ `src/widgets/Sidebar/ui/MobileMenu.tsx` | [design/fragments/investor--dashboard-mobile-menu.html](fragments/investor--dashboard-mobile-menu.html) | oyna · faqat planshet + telefon | v2 |
@@ -287,8 +287,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 - **Fayllar:** `src/pages/orders/index.tsx` · `src/pages/orders/list/OrderFilters.tsx` · `src/pages/orders/list/OrderFiltersSheet.tsx` · `src/pages/orders/list/OrdersTable.tsx` · `src/pages/orders/list/orderFilterModel.ts` · `src/pages/orders/list/useOrdersRefresh.ts` · `src/pages/orders/list/OrdersRefreshMeta.tsx` · `src/pages/orders/list/OrdersRefreshAlert.tsx` · `src/pages/orders/list/courier/index.tsx` · `src/pages/orders/list/courier/list/tabs.tsx` · `src/pages/orders/list/courier/list/ordertable/pendingOrderTable.tsx` · `src/pages/orders/list/courier/list/ordertable/AllOrdersTable.tsx` · `src/pages/orders/list/courier/list/ordertable/CancelledOrdersTable.tsx` · `src/pages/orders/list/courier/list/ordertable/CourierOrdersTable.tsx` · `src/pages/orders/list/courier/list/SellModal.tsx` · `src/pages/orders/list/courier/list/CancelModal.tsx` · `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` · `src/pages/orders/list/courier/list/OrderActionParts.tsx` · `src/entities/orders/ui/ExtraCostApprovalAlerts.tsx` · `src/entities/orders/ui/ExtraCostApprovalTag.tsx` · `src/entities/order/ui/ReturnRequestedTag.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOrders` (access.ts → canViewOrders)
-- **Rollar:** superadmin, admin, manager, registrator, market, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
-- **Menyuda:** «Buyurtmalar» (`orders`) — superadmin, admin, manager, registrator, market, courier
+- **Rollar:** superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
+- **Menyuda:** «Buyurtmalar» (`orders`) — superadmin, admin, manager, registrator, market, market_operator, courier
 - **Holat:** v2
 - **Izoh:** Kuryer ro'yxati — list/courier/index.tsx (tablar list/courier/list/tabs.tsx). Kuryerdan boshqa barcha rollarda bir xil 8 holat tabi (Barchasi · Yangi · Qabul qilindi · Yo'lda · Kutilmoqda · Sotilgan · To'langan · Bekor qilingan; tab sonlari API'da yo'q — chizilmaydi, OR-2 backenddan keyin). Menejerning qatordagi sotish/bekor/qaytarish amallari faqat REGIONAL · HYBRID filialda va can_sell_cancel yoqilganda; «Bekor qilingan» tabida HQ'ga yuborish (tanlov + QR skaner) ham faqat REGIONAL · HYBRID. Qator bosilsa → /orders/edit/:orderId. Yangilanish (OR-1, list/useOrdersRefresh.ts; ega orders-refresh S1–S4): avtomatik — har 60 s (faqat ko'rinadigan brauzer tabida) va ilovaga qaytganda — ma'lumot 30 s dan eski bo'lsa (global staleTime; refetchOnWindowFocus faqat shu so'rovlarda), qo'shimcha xarajat tasdig'i 30 s lik pollingi bilan birlashadi; sotish/bekor/qaytarish oynasi yoki skaner kamerasi ochiq bo'lsa to'xtaydi. Sarlavhada «Jami N ta buyurtma» · «Oxirgi yangilanish: HH:mm» (dataUpdatedAt) · «Avtomatik yangilanadi», qo'lda «Yangilash» (ghost, RefreshCw; telefonda h1 qatorining o'ng chetida chegarali ikonka — PageHeader grow) — barcha rollar va tablarda bir xil; «Yangilash» ro'yxat, tab sonlari (kuryer) va qadalgan (raqam bo'yicha aniq) buyurtmani birga so'raydi. Holatlar: *-refreshing — h1 yonida «Yangilanmoqda…» belgisi faqat fon so'rovi 400 ms dan uzoq cho'zilsa (tizim--loading 11-namuna), tugmalar band, kuryer tab sonlari xira (Tabs countBusy); *-refresh-error — ro'yxat kartasi ustida (kuryer telefonida tablar va qidiruvdan keyin) warning alert «Ro'yxat yangilanmadi» + «Qayta urinish» + × (S3; yo'qolganda fokus «Yangilash» ga qaytadi), eski qatorlar ko'rinib turadi, global xato xabari chiqmaydi (ma'lumot bo'lsa meta.silentError); kuryer bo'lmagan rollarda matn tab sonlarisiz. Kuryer tab sonlari — GET orders/courier/orders/counts.
 
@@ -313,7 +313,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/orders` | registrator | `registrator-orders-list` — Buyurtmalar ro'yxati | [design/fragments/registrator--orders-list.html](fragments/registrator--orders-list.html) | sahifa | qisman |
 | `/orders` | registrator | `registrator-orders-filters-mobile` — Buyurtmalar — filtr paneli (telefon)<br>↳ `src/pages/orders/list/OrderFilters.tsx` | [design/fragments/registrator--orders-filters-mobile.html](fragments/registrator--orders-filters-mobile.html) | oyna · faqat telefon | v2 |
 | `/orders` | market | `market-orders-list` — Buyurtmalar ro'yxati | [design/fragments/market--orders-list.html](fragments/market--orders-list.html) | sahifa | qisman |
-| `/orders` | market_operator | — Maket yo'q — eng yaqini: market-orders-list va market-orders-detail. GET orders — JwtAuthGuard, ichida operator o'z marketiga cheklanadi (resolveMarketOperatorMarketId); tafsilot assertCanViewOrder — faqat o'z marketi. Excel eksport bor (GET orders/export/excel @Roles … MARKET_OPERATOR). Market tafsilotidagi amallar (tahrirlash, bekor qilish, qaytarish so'rovi) — faqat backend ruxsat bergani ko'rinadi, aks holda yashiriladi. | — | — | v2 |
+| `/orders` | market_operator | — Maket yo'q — eng yaqini: market-orders-list va market-orders-detail. GET orders — JwtAuthGuard, ichida operator o'z marketiga cheklanadi (resolveMarketOperatorMarketId); tafsilot assertCanViewOrder — faqat o'z marketi. Excel eksport bor (GET orders/export/excel @Roles … MARKET_OPERATOR). Kodda (MO-3): market ro'yxati bilan bir xil (isMarketSideRole — market va kuryer filtrlarisiz, Excel izohi), «Buyurtma yaratish» → /new-orders/create; «Viloyat» filtri yo'q — GET /region operatorga 403 (N11). | — | — | v2 |
 | `/orders` | courier | `courier-orders-pending` — Buyurtmalar — Kutilayotganlar<br>↳ `src/pages/orders/list/courier/index.tsx` | [design/fragments/courier--orders-pending.html](fragments/courier--orders-pending.html) | sahifa | v2 |
 | `/orders` | courier | `courier-orders-pending-refreshing` — Buyurtmalar — Kutilayotganlar, yangilanmoqda<br>↳ `src/pages/orders/list/courier/index.tsx` | [design/fragments/courier--orders-pending-refreshing.html](fragments/courier--orders-pending-refreshing.html) | sahifa | v2 |
 | `/orders` | courier | `courier-orders-pending-refresh-error` — Buyurtmalar — Kutilayotganlar, yangilanmadi<br>↳ `src/pages/orders/list/courier/index.tsx` | [design/fragments/courier--orders-pending-refresh-error.html](fragments/courier--orders-pending-refresh-error.html) | sahifa | v2 |
@@ -333,7 +333,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 - **Fayllar:** `src/pages/new_orders/components/new_orderUpdate.tsx` · `src/pages/new_orders/components/detail/DetailHeader.tsx` · `src/pages/new_orders/components/detail/DetailAlerts.tsx` · `src/pages/new_orders/components/detail/CustomerCard.tsx` · `src/pages/new_orders/components/detail/AddressCard.tsx` · `src/pages/new_orders/components/detail/PaymentCard.tsx` · `src/pages/new_orders/components/detail/ProductsCard.tsx` · `src/pages/new_orders/components/detail/ProofCard.tsx` · `src/pages/new_orders/components/detail/CourierCards.tsx` · `src/pages/new_orders/components/detail/orderDetailAccess.ts` · `src/pages/new_orders/components/detail/orderDetailModel.ts` · `src/pages/new_orders/components/newOrderUpdateRules.ts` · `src/pages/new_orders/components/editDialogs/index.ts` · `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` · `src/pages/new_orders/components/editDialogs/EditCustomerDialog.tsx` · `src/pages/new_orders/components/editDialogs/EditOrderDialog.tsx` · `src/widgets/order-tracking/ui/OrderTracking.tsx` · `src/features/order-tracking/ui/TrackingTimelineItem.tsx` · `src/entities/order/ui/ProofGallery.tsx` · `src/widgets/order-meta/ui/OrderMeta.tsx` · `src/pages/orders/list/courier/list/SellModal.tsx` · `src/pages/orders/list/courier/list/CancelModal.tsx` · `src/pages/orders/list/courier/list/RollbackOrderDialog.tsx` · `src/features/order-return/ui/InitiateReturnModal.tsx` · `src/features/order-return/ui/MarkReturnedModal.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewOrders` (access.ts → canViewOrders)
-- **Rollar:** superadmin, admin, manager, registrator, market, courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
+- **Rollar:** superadmin, admin, manager, registrator, market, market_operator (MO-3: o'z marketi (backend GET /orders operatorni cheklaydi), faqat ko'rish va Excel), courier, logist (taklif — logist faqat ko'radi (LG-S1), kodda yo'q)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
 - **Izoh:** Mijozni tahrirlash — faqat superadmin/admin; buyurtma va manzilni tahrirlash — superadmin/admin/registrator/menejer; market va kuryer — faqat o'qish. Sotish/bekor/qaytarish — REGIONAL · HYBRID menejeri. Ayni komponent /new-orders/:marketId/edit/:orderId da ham ishlatiladi.
@@ -361,6 +361,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/orders/edit/:orderId` | registrator | `registrator-orders-detail-edit-address-dialog` — Manzilni tahrirlash oynasi<br>↳ `src/pages/new_orders/components/editDialogs/EditAddressDialog.tsx` | [design/fragments/registrator--orders-detail-edit-address-dialog.html](fragments/registrator--orders-detail-edit-address-dialog.html) | oyna | v2 |
 | `/orders/edit/:orderId` | market | `market-orders-detail` — Buyurtma tafsilotlari | [design/fragments/market--orders-detail.html](fragments/market--orders-detail.html) | sahifa | v2 |
 | `/orders/edit/:orderId` | market | `market-orders-detail-cancelled` — Buyurtma tafsilotlari — bekor, «Qaytarish yo'li» (taklif) | [design/fragments/market--orders-detail-cancelled.html](fragments/market--orders-detail-cancelled.html) | sahifa | yangi (kodda yo'q) |
+| `/orders/edit/:orderId` | market_operator | — Maket yo'q — eng yaqini: market-orders-detail. Kodda (MO-3): market ko'rinishi (getOrderDetailAccess → layout market), faqat o'qish — tahrirlash, sotish / bekor, qaytarish va topshirish yo'q; «Buyurtma ma'lumotlari» da faqat market tarifi (backend proyeksiyasi market bilan bir xil). «Kuzatuv» va «Qaytarish yo'li» yo'q — GET orders/:id/tracking @Roles da MARKET_OPERATOR yo'q (403); bekor QR sahifasi — faqat market egasi. | — | — | v2 |
 | `/orders/edit/:orderId` | courier | `courier-orders-detail` — Buyurtma tafsilotlari | [design/fragments/courier--orders-detail.html](fragments/courier--orders-detail.html) | sahifa | v2 |
 | `/orders/edit/:orderId` | logist | `logist-orders-detail` — Buyurtma tafsiloti va kuzatuv — faqat ko'rish | [design/fragments/logist--orders-detail.html](fragments/logist--orders-detail.html) | sahifa | yangi (kodda yo'q) |
 
@@ -369,9 +370,9 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/new-orders` — Qabul va yaratish — tablar (layout) + Marketlar tabi
 
 - **Fayllar:** `src/pages/new_orders/markets/index.tsx` · `src/pages/new_orders/index.tsx` · `src/pages/new_orders/ui/NewOrdersHeader.tsx` · `src/pages/new_orders/ui/NewOrdersTabs.tsx`
-- **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders)
-- **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (taklif — MO-S3, kodda yo'q (backend POST /orders ruxsati kerak))
-- **Menyuda:** «Qabul va yaratish» (`newOrders`) — superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market
+- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders)
+- **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7))
+- **Menyuda:** «Qabul va yaratish» (`newOrders`) — superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market; «Buyurtma yaratish» (`newOrders`) — market_operator
 - **Holat:** v2
 - **Izoh:** Qobiq (src/pages/new_orders/index.tsx, barcha /new-orders/* uchun) rejimi yo'lga qarab — model/newOrdersShell.ts: «Qabul va yaratish» sarlavhasi + «Buyurtma yaratish» havolasi (NewOrdersHeader.tsx); tablar (Marketlar · Kiruvchi posilkalar · Filial paketlari · Bekor qilinganlar, sonlari bilan; market — Yangi buyurtmalar · Bekor qilinganlar) bola sahifaning birinchi kartasida (NewOrdersTabs.tsx). Ega qarori (2026-10-19, S1; DamKku7C/xQ045luf, maket: manager-new-orders-markets, registrator-new-orders-markets): «Kiruvchi posilkalar» tabi posilka qabul qiladigan hamma xodimga — superadmin, admin, intake'li menejer (HQ · PICKUP · HYBRID; MANAGER_CAPABILITIES «intake») «Marketlar · Kiruvchi posilkalar», har qanday registrator «Marketlar · Kiruvchi posilkalar» (+ HQ registratorida «Bekor qilinganlar»). REGIONAL menejerda tab yo'q. Backend tayyor: GET orders/external, orders/external/sources va POST orders/external/receive-by-scan da MANAGER va REGISTRATOR bor. Kodda: resolveNewOrdersTabKeys → canReceiveIncoming (canReceiveExternalOrders, route guard bilan bir xil); tab soni silentError bilan (IP-1).
 
@@ -382,13 +383,13 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/new-orders` | manager | `manager-new-orders-markets` — Qabul va yaratish — Marketlar | [design/fragments/manager--new-orders-markets.html](fragments/manager--new-orders-markets.html) | sahifa | v2 |
 | `/new-orders` | registrator | `registrator-new-orders-markets` — Qabul va yaratish — Marketlar | [design/fragments/registrator--new-orders-markets.html](fragments/registrator--new-orders-markets.html) | sahifa | v2 |
 | `/new-orders` | market | — Market /new-orders/:marketId (o'z marketi) ga yo'naltiriladi — o'sha route'ga qarang. | — | — | v2 |
-| `/new-orders` | market_operator | — maket yo'q — docs/DESIGN_SYSTEM.md va eng yaqin maket asos | — | — | v2 |
+| `/new-orders` | market_operator | — MO-3: menyu bandi «Buyurtma yaratish» — /new-orders → /new-orders/create (NewOrdersRoleGate, newOrdersShell.ts → resolveMarketOperatorNewOrdersAccess); qobiqning boshqa bolalari (market ro'yxati, bekorlar, qabul, paketlar, foydalanuvchi tafsiloti) — 403. | — | — | v2 |
 
 #### `/new-orders/create` — Buyurtma yaratish — qo'lda (market → mijoz va mahsulot) yoki AI bilan
 
 - **Fayllar:** `src/pages/orders/create/index.tsx` · `src/pages/orders/create/ui/CreateModeTabs.tsx` · `src/pages/orders/create/ui/OrderStepper.tsx` · `src/pages/orders/create/ui/Step1Market.tsx` · `src/pages/orders/create/ui/MarketPicker.tsx` · `src/pages/orders/create/ui/Step2Combined.tsx` · `src/pages/orders/create/ui/Step2Summary.tsx` · `src/pages/orders/create/ui/TodayOrdersCard.tsx` · `src/pages/orders/create/ui/CreateAlert.tsx` · `src/pages/orders/create/ui/ai/AiCreatePanel.tsx` · `src/pages/orders/create/ui/ai/AiInputPanel.tsx` · `src/pages/orders/create/ui/ai/AiPreviewCard.tsx` · `src/pages/orders/create/ui/ai/AiConfirmBar.tsx` · `src/pages/orders/create/ui/ai/AiCreatedList.tsx` · `src/pages/orders/create/model/orderCreateForm.ts` · `src/pages/orders/create/ui/CustomerPhoneSuggest.tsx` · `src/pages/orders/create/ui/ExistingCustomerNotice.tsx`
-- **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders)
-- **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (taklif — MO-S3, kodda yo'q (backend POST /orders ruxsati kerak))
+- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders)
+- **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7))
 - **Menyuda:** yo'q — «Buyurtma yaratish» tugmasi (/new-orders sarlavhasi, market bosh sahifasi, market yangi buyurtmalari)
 - **Holat:** v2
 - **Izoh:** Market rolida 1-qadam (market tanlash) yo'q — forma darhol 2-qadamdan ochiladi. Market tanlash oynasi — MarketPicker.tsx (Step1Market.tsx ochadi); 2-qadam o'ng ustuni — Step2Summary.tsx + TodayOrdersCard.tsx; AI tasdiqlash oynasi — AiConfirmBar.tsx. «Oldingi» / «O'zgartirish» 1-qadamga qaytaradi (market va forma saqlanadi). Ega tasdig'i 2026-10-19 (create-step2): 2-qadamda mijoz takliflari (*-customer-suggest; qo'shimcha raqam bo'yicha ham — S4, backend karta), mavjud mijoz tanlangach tarif, taxminiy yetkazish narxi va mahsulot rasmi (*-existing-customer). Narx (S1): market yaratilganda standart uy va markaz narxi; sukut — vazn yoki hajm bo'yicha avtomatik (katta bo'lsa oshadi), market sozlamasida «Vazn va hajm bo'yicha narx» toggle (sukut yoqiq) o'chirilsa — faqat standart narx; backend narx dvigateli (DAqXPeSy) va market maydoni kerak. Xulosada bitta «Yetkazish narxi» qatori, vazn/hajm hisobi yoqilgan bo'lsa ostida izoh (S2). Mijozni yaratuvchi har rol tanlay oladi, lekin market mijozning faqat o'z marketidagi buyurtmalari tarixini ko'radi (S3 — taklifdagi soni ham shu bo'yicha). Mavjud mijoz ma'lumoti o'zgartirilsa — «Mijoz kartasi ham yangilansinmi?» (Ha / Faqat shu buyurtmada, *-customer-update-dialog, S5). «Taklif · backend kerak» belgisi kodga ko'chirilmaydi.
@@ -433,12 +434,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/new-orders/create` | market | `market-new-orders-create-manual-customer-suggest` — Buyurtma yaratish · mijoz takliflari (taklif)<br>↳ `src/pages/orders/create/ui/CustomerPhoneSuggest.tsx` | [design/fragments/market--new-orders-create-manual-customer-suggest.html](fragments/market--new-orders-create-manual-customer-suggest.html) | sahifa | qisman |
 | `/new-orders/create` | market | `market-new-orders-create-manual-existing-customer` — Buyurtma yaratish · mavjud mijoz, tarif, rasm (taklif)<br>↳ `src/pages/orders/create/ui/ExistingCustomerNotice.tsx` | [design/fragments/market--new-orders-create-manual-existing-customer.html](fragments/market--new-orders-create-manual-existing-customer.html) | sahifa | qisman |
 | `/new-orders/create` | market | `market-new-orders-create-manual-customer-update-dialog` — Buyurtma yaratish · mijoz kartasini yangilash (taklif) | [design/fragments/market--new-orders-create-manual-customer-update-dialog.html](fragments/market--new-orders-create-manual-customer-update-dialog.html) | oyna | yangi (kodda yo'q) |
-| `/new-orders/create` | market_operator | `market_operator-new-orders-create-manual` — Buyurtma yaratish · Qo'lda | [design/fragments/market_operator--new-orders-create-manual.html](fragments/market_operator--new-orders-create-manual.html) | sahifa | yangi (kodda yo'q) |
+| `/new-orders/create` | market_operator | `market_operator-new-orders-create-manual` — Buyurtma yaratish · Qo'lda | [design/fragments/market_operator--new-orders-create-manual.html](fragments/market_operator--new-orders-create-manual.html) | sahifa | qisman |
 
 #### `/new-orders/incoming` — Kiruvchi posilkalar — manba tanlash
 
 - **Fayllar:** `src/pages/incoming-orders/SourcePicker.tsx` · `src/pages/incoming-orders/lib.ts` · `src/pages/incoming-orders/ui/SourcesSummary.tsx` · `src/pages/incoming-orders/ui/SourcesTable.tsx` · `src/pages/incoming-orders/ui/sourceVisuals.tsx` · `src/pages/incoming-orders/ui/sourceFormat.ts` · `src/pages/incoming-orders/ui/IdleSources.tsx`
-- **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canManageExternalIntegrations` (access.ts → canReceiveExternalOrders)
+- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canManageExternalIntegrations` (access.ts → canReceiveExternalOrders)
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
@@ -454,7 +455,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/new-orders/incoming/:marketId` — Kiruvchi posilkalarni skanerlab qabul qilish (tanlangan manba)
 
 - **Fayllar:** `src/pages/incoming-orders/index.tsx` · `src/pages/incoming-orders/lib.ts` · `src/pages/incoming-orders/ui/ScanInput.tsx` · `src/pages/incoming-orders/ui/ScanMessage.tsx` · `src/pages/incoming-orders/ui/IncomingTable.tsx`
-- **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canManageExternalIntegrations` (access.ts → canReceiveExternalOrders)
+- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canManageExternalIntegrations` (access.ts → canReceiveExternalOrders)
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
@@ -487,7 +488,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/new-orders/branches` — Filial paketlari — filiallar
 
 - **Fayllar:** `src/pages/new_orders/branches/index.tsx` · `src/pages/new_orders/ui/SourceListCard.tsx` · `src/pages/new_orders/branches/branchBatchesModel.ts`
-- **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canViewAdminNewOrderTabs` (routes.tsx → canViewAdminNewOrderTabs)
+- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canViewAdminNewOrderTabs` (routes.tsx → canViewAdminNewOrderTabs)
 - **Rollar:** superadmin, admin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
@@ -500,7 +501,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/new-orders/branches/:branchId` — Filial paketlari ro'yxati
 
 - **Fayllar:** `src/pages/new_orders/branches/batches.tsx` · `src/shared/ui/SelectionRegion.tsx` · `src/pages/new_orders/branches/branchBatchesModel.ts`
-- **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canViewAdminNewOrderTabs` (routes.tsx → canViewAdminNewOrderTabs)
+- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canViewAdminNewOrderTabs` (routes.tsx → canViewAdminNewOrderTabs)
 - **Rollar:** superadmin, admin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
@@ -513,7 +514,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/new-orders/branches/:branchId/batches/:batchId` — Filial paketi tafsiloti (qabul)
 
 - **Fayllar:** `src/pages/new_orders/branches/batchDetail.tsx` · `src/shared/ui/SelectionRegion.tsx` · `src/pages/new_orders/branches/branchBatchesModel.ts`
-- **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canViewAdminNewOrderTabs` (routes.tsx → canViewAdminNewOrderTabs)
+- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canViewAdminNewOrderTabs` (routes.tsx → canViewAdminNewOrderTabs)
 - **Rollar:** superadmin, admin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
@@ -530,7 +531,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/new-orders/cancelled` — Bekor qilinganlar — marketlar
 
 - **Fayllar:** `src/pages/new_orders/cancelled/index.tsx` · `src/pages/new_orders/ui/SourceListCard.tsx` · `src/pages/new_orders/cancelled/utils.ts`
-- **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canHandoverCancelledToMarket` (access.ts → canHandoverCancelledToMarket)
+- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) → `canHandoverCancelledToMarket` (access.ts → canHandoverCancelledToMarket)
 - **Rollar:** superadmin, admin, registrator (faqat HQ)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
@@ -544,7 +545,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/new-orders/cancelled/:marketId` — Bekor qilinganlarni marketga topshirish (market rolida — o'z bekorlari va QR kod)
 
 - **Fayllar:** `src/pages/new_orders/cancelled/detail.tsx` · `src/pages/new_orders/cancelled/cancelledModel.ts` · `src/pages/new_orders/cancelled/ui/HandoverStatusAlert.tsx` · `src/pages/new_orders/cancelled/ui/CancelledOrdersTable.tsx` · `src/pages/new_orders/cancelled/ui/ManualConfirmDialog.tsx` · `src/pages/new_orders/cancelled/ui/MarketQrDialog.tsx` · `src/shared/ui/SelectionRegion.tsx` · `src/pages/new_orders/cancelled/utils.ts` · `src/shared/ui/camera/ScannerCamera.tsx` · `src/app/lib/routes.tsx`
-- **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) · o'rovchi: `NewOrdersCancelledDetailEntry`
+- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) · o'rovchi: `NewOrdersCancelledDetailEntry`
 - **Rollar:** superadmin, admin, registrator (faqat HQ), market (faqat o'z marketi)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
@@ -574,7 +575,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/new-orders/:marketId` — Market yangi buyurtmalari — qabul (market rolida: o'z yangi buyurtmalari)
 
 - **Fayllar:** `src/pages/new_orders/components/new_orderDetail.tsx` · `src/pages/new_orders/components/newOrderReceiveRules.ts` · `src/pages/new_orders/components/lib/printLabelPdf.ts` · `src/pages/new_orders/components/marketOrders/MarketOrdersTable.tsx` · `src/pages/new_orders/components/marketOrders/SelectionBar.tsx` · `src/pages/new_orders/components/marketOrders/MarketOrderDialogs.tsx` · `src/pages/new_orders/components/marketOrders/marketOrdersModel.ts` · `src/app/lib/routes.tsx`
-- **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) · o'rovchi: `NewOrdersMarketAccessEntry`
+- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) · o'rovchi: `NewOrdersMarketAccessEntry`
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
@@ -603,7 +604,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/new-orders/:marketId/edit/:orderId` — Yangi buyurtmani tahrirlash (qabuldan oldin)
 
 - **Fayllar:** `src/pages/new_orders/components/new_orderUpdate.tsx` · `src/pages/new_orders/components/newOrderUpdateRules.ts` · `src/app/lib/routes.tsx`
-- **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) · o'rovchi: `NewOrdersMarketAccessEntry`
+- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders) · o'rovchi: `NewOrdersMarketAccessEntry`
 - **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market (faqat o'z marketi)
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
@@ -619,8 +620,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 #### `/new-orders/userDetail/:id` — Foydalanuvchi tafsiloti (eski havola, /new-orders ichida; dizayn v2)
 
 - **Fayllar:** `src/pages/users/detail/UserDetailPage.tsx` · `src/widgets/user-detail/ui/UserDetailView.tsx` · `src/widgets/user-detail/ui/MarketTelegramGroupsCard.tsx`
-- **Qobiq:** DashboardLayout › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders)
-- **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (taklif — MO-S3, kodda yo'q (backend POST /orders ruxsati kerak))
+- **Qobiq:** DashboardLayout › NewOrdersRoleGate › NewOrders (`src/pages/new_orders/index.tsx`) · **Guard:** `canCreateOrdersByRoleAndBranchType` (access.ts → canCreateOrders)
+- **Rollar:** superadmin, admin, manager (HQ · PICKUP · HYBRID), registrator, market, market_operator (MO-3: faqat /new-orders/create («AI bilan»); /new-orders → create, qolgan bolalar 403 (NewOrdersRoleGate). Qo'lda — POST /orders ruxsatidan keyin (MO-7))
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
 - **Izoh:** Alohida maket yo'q — <rol>-users-detail maketlari (superadmin-users-detail). /all-users/:id bilan bir xil v2 sahifa (UserDetailView); «Qabul va yaratish» qobig'i bu yo'lda bare — sarlavha va «Buyurtma yaratish» takrorlanmaydi (newOrdersShell.ts), «←» — navigate(-1).
@@ -2499,7 +2500,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### market_operator — Market operatori
 
-5 ta maket · kodda bor: 4 · kodda yo'q: 1
+5 ta maket · kodda bor: 5 · kodda yo'q: 0
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2507,7 +2508,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `market_operator-products-unassigned` | Mahsulotlar — market biriktirilmagan | sahifa | `/products` | `src/pages/products/list/index.tsx` | v2 |
 | `market_operator-earnings` | Daromadim | sahifa | `/my-earnings` | `src/pages/my-earnings/index.tsx` | qisman — Kodda bor (MO-2): sarlavha va «Stavkam» kartasi (my-profile → commission_type/commission_value: qiymat, Turi, Belgilaydi «Market egasi», Namuna, izoh). Farq: «Hisob» (Qoldiq · Daromad · To'langan), «To'lovlar», «Daromadlar» chizilmagan — maketda «Taklif · backend kerak» (finance/operators/me/* — E6iEOAVs, MO-6); yolg'iz karta max-w-xl. |
 | `market_operator-earnings-no-commission` | Daromadim — komissiya belgilanmagan | sahifa | `/my-earnings` | `src/pages/my-earnings/index.tsx` | qisman — Kodda bor (MO-2): ogohlantirish «Komissiya belgilanmagan — daromad yozilmaydi» va «Stavkam» kartasida «Belgilanmagan» (commission_type null yoki qiymat 0). Farq: «Hisob», «To'lovlar» va «Daromadlar» («Hali daromad yo'q») bo'sh holatlari chizilmagan (Taklif — MO-6); ogohlantirish karta kengligida (max-w-xl). |
-| `market_operator-new-orders-create-manual` | Buyurtma yaratish · Qo'lda | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | yangi (kodda yo'q) — Kodda yo'q: market_operator roli frontendda yo'q; POST orders MARKET_OPERATOR'ga yopiq (Taklif · backend kerak). |
+| `market_operator-new-orders-create-manual` | Buyurtma yaratish · Qo'lda | sahifa | `/new-orders/create` | `src/pages/orders/create/index.tsx` | qisman — Kodda bor (MO-3): faqat «AI bilan» qismi — 1-qadamsiz (market serverda user.market_id dan, katalog my-products), AI kiritish / natijalar / tasdiq holatlari market-new-orders-create-ai-* bilan bir xil; «Qo'lda · AI bilan» tanlovi yo'q (yolg'iz usul), AI o'chiq bo'lsa «AI bilan yaratish hozir o'chiq» ogohlantirishi; orqaga — «Buyurtmalar». Farq: qo'lda forma (mijoz, manzil, mahsulotlar, «Operator: Siz — avtomatik») — POST orders MARKET_OPERATOR'ga yopiq (OfRSoRUX, MO-7); sarlavhadagi «<market> nomidan» — my-profile market nomini bermaydi (N13, MO-8), o'rniga umumiy izoh; AI kartasida «Viloyat» maydoni yo'q va tuman faqat AI aniqlagani / takliflari — GET /region va region/:id operatorga 403 (N11; ai-confirm viloyatni tumandan oladi); «Bugungi yangi buyurtmalar» yon kartasi yo'q (orders/markets/:id/new — N12, MO-8). |
 
 ### courier — Kuryer
 
@@ -3256,10 +3257,10 @@ Manba: `src/widgets/Sidebar/model/menuConfig.tsx` (kod) va `design/kit/roles.jso
 | Band | Kalit | `to` | Route | Shart (filial turi) | market_operator maketlari |
 |---|---|---|---|---|---|
 | Bosh sahifa | `dashboard` | `/` | `/` | — | izohga qarang |
+| Buyurtmalar | `orders` | `/orders` | `/orders` | — | izohga qarang |
+| Buyurtma yaratish | `newOrders` | `/new-orders` | `/new-orders` | — | izohga qarang |
 | Mahsulotlar | `products` | `/products` | `/products` | — | `market_operator-products-list` (+1) |
 | Daromadim | `earnings` | `/my-earnings` | `/my-earnings` | — | `market_operator-earnings` (+1) |
-
-Maketda bor, kodda hali yo'q (`plannedMenu`): Buyurtmalar (`orders`), Buyurtma yaratish (`newOrders`).
 
 ### courier — Kuryer
 

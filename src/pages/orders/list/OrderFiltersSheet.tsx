@@ -181,15 +181,20 @@ export const OrderFiltersSheet = ({ open, onClose, initial, role, withDate, sear
       ),
     );
   }
-  fields.push(
-    scope.area === "district"
-      ? selectField("district", t("district"), draft.districtId, options.districts, options.districtsLoading, (districtId) =>
-          patch({ districtId, courierId: "" }),
-        )
-      : selectField("region", t("filterRegion"), draft.regionId, options.regions, options.regionsLoading, (regionId) =>
-          patch({ regionId, courierId: "" }),
-        ),
-  );
+  // Market operatorida hudud filtri yo'q (`area: "none"` — `GET /region` unga yopiq, MO-3).
+  if (scope.area === "district") {
+    fields.push(
+      selectField("district", t("district"), draft.districtId, options.districts, options.districtsLoading, (districtId) =>
+        patch({ districtId, courierId: "" }),
+      ),
+    );
+  } else if (scope.area === "region") {
+    fields.push(
+      selectField("region", t("filterRegion"), draft.regionId, options.regions, options.regionsLoading, (regionId) =>
+        patch({ regionId, courierId: "" }),
+      ),
+    );
+  }
   if (scope.courier) {
     fields.push(
       selectField("courier", t("filterCourier"), draft.courierId, options.couriers, options.couriersLoading, (courierId) =>

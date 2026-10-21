@@ -140,10 +140,15 @@ export const expectNoHorizontalOverflow = async (page: Page) => {
   ).toBe(true);
 };
 
-/** Shell kontentida buyurtmalar ro'yxati / yaratishga havola yo'q (MO-3 gacha ular 403). */
-export const expectNoOrderLinks = async (page: Page) => {
+/**
+ * MO-3: shell kontentidagi buyurtma havolalari faqat operatorga ochiq yo'llarga — ro'yxat (`/orders…`) va yaratish
+ * (`/new-orders/create`); «Qabul va yaratish» qobig'ining boshqa yo'llari (`/new-orders`, `/new-orders/:id` …) — 403.
+ */
+export const expectOnlyOperatorOrderLinks = async (page: Page) => {
   const hrefs = await page
     .locator("[data-shell-slot=content] a[href]")
     .evaluateAll((links) => links.map((link) => link.getAttribute("href") ?? ""));
-  expect(hrefs.filter((href) => /^\/(orders|new-orders)/.test(href))).toEqual([]);
+  const orderLinks = hrefs.filter((href) => /^\/(orders|new-orders)/.test(href));
+  expect(orderLinks).toContain("/new-orders/create");
+  expect(orderLinks.filter((href) => !/^\/orders(\?|$)/.test(href) && href !== "/new-orders/create")).toEqual([]);
 };

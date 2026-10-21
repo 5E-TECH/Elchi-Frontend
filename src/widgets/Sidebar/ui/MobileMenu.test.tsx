@@ -380,9 +380,10 @@ describe("MobileMenu — telefon varaqasi (< 768)", () => {
 describe("MobileMenu — rol personasi (ROL-0)", () => {
   it.each([
     ["investor", false],
-    // Menyu qidiruvi `/orders?search=` ga olib boradi — buyurtmalar hali ochilmagan rolda (LG-4 / MO-3 gacha) yo'q.
+    // Menyu qidiruvi `/orders?search=` ga olib boradi — buyurtmalar hali ochilmagan rolda (logist: LG-4 gacha) yo'q;
+    // market operatorida MO-3 dan beri bor (`canViewOrders`).
     ["logist", false],
-    ["market_operator", false],
+    ["market_operator", true],
     ["market", true],
     ["courier", true],
   ] as const)("%s: menyu qidiruvi — %s (investor maketida qidiruv yo'q; 403 ga olib bormaydi)", (role, hasSearch) => {

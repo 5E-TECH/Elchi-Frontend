@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-neworders-create-ai-input, superadmin-neworders-create-ai-preview, admin-neworders-create-ai, manager-new-orders-create-ai, registrator-new-orders-create-ai, market-new-orders-create-ai-input, market-new-orders-create-ai-preview
+// dizayn-v2: superadmin-neworders-create-ai-input, superadmin-neworders-create-ai-preview, admin-neworders-create-ai, manager-new-orders-create-ai, registrator-new-orders-create-ai, market-new-orders-create-ai-input, market-new-orders-create-ai-preview, market_operator-new-orders-create-manual
 import { memo, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import type { AxiosError } from "axios";
@@ -32,9 +32,16 @@ const AI_CATALOG_PARAMS = { limit: PRODUCT_LIST_MAX_LIMIT };
 type AiCreatePanelProps = {
   /** Tab faolmi (yashirin turganda ham holat saqlanadi). */
   active: boolean;
+  /** Market tomoni (market va market operatori): market serverda tokendan, katalog — `my-products`. */
   isMarketRole: boolean;
   market: MarketOption | null;
-  onSwitchToManual: () => void;
+  /** «Qo'lda» rejimiga o'tish. Berilmasa (market operatori, MO-3 — qo'lda yaratish MO-7 da) xato tugmasi yo'q. */
+  onSwitchToManual?: () => void;
+  /**
+   * Viloyat/tuman ro'yxatlari bormi (sukut `true`). Market operatorida `false` — `GET /region` unga 403 (N11):
+   * ro'yxatlar so'ralmaydi, viloyat shart emas (`ai-confirm` uni tumandan oladi).
+   */
+  areaLists?: boolean;
   /** Admin/registrator: marketni qayta tanlash (`no_market`). Market rolida berilmaydi. */
   onChangeMarket?: () => void;
 };
@@ -48,7 +55,14 @@ type AiCreatePanelProps = {
  * (localStorage emas). Admin/registrator uchun market tanlanmagan bo'lsa
  * avval ko'rsatma va market tanlash maydoni ko'rsatiladi (maket «Market tanlanmagan»).
  */
-const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChangeMarket }: AiCreatePanelProps) => {
+const AiCreatePanel = ({
+  active,
+  isMarketRole,
+  market,
+  onSwitchToManual,
+  onChangeMarket,
+  areaLists = true,
+}: AiCreatePanelProps) => {
   const { t } = useTranslation("orders");
   const queryClient = useQueryClient();
   const confirm = useAiConfirm();
@@ -79,7 +93,7 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
   );
 
   const { useGetRegions } = useLogistics();
-  const regionsQuery = useGetRegions();
+  const regionsQuery = useGetRegions(areaLists);
   const regions = toList<AiAreaItem>(regionsQuery.data);
 
   const navigate = useNavigate();
@@ -87,7 +101,8 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
 
   // «Mavjud (#N)» kartasi (`duplicate_recent`) na tayyorlar, na to'ldirilmaganlar qatorida — u yuborilmaydi.
   const pendingDrafts = drafts.filter((draft) => !draft.existingOrderId);
-  const readyDrafts = pendingDrafts.filter((draft) => evalPreview(draft.order).ready);
+  const previewRules = { regionRequired: areaLists };
+  const readyDrafts = pendingDrafts.filter((draft) => evalPreview(draft.order, previewRules).ready);
   const hasUnconfirmedReady = readyDrafts.length > 0;
 
   useKeepFocusedFieldVisible(cardsRef, barRef, active && drafts.length > 0);
@@ -173,7 +188,7 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
    * ko'r-ko'rona qayta yuborish dublikat buyurtma demakdir.
    */
   const submit = (targets: AiDraft[]) => {
-    const readyTargets = targets.filter((draft) => !draft.existingOrderId && evalPreview(draft.order).ready);
+    const readyTargets = targets.filter((draft) => !draft.existingOrderId && evalPreview(draft.order, previewRules).ready);
     if (submittingRef.current || confirm.isPending || readyTargets.length === 0) return;
     submittingRef.current = true;
     setConfirmError("");
@@ -282,7 +297,8 @@ const AiCreatePanel = ({ active, isMarketRole, market, onSwitchToManual, onChang
               products={products}
               productsLoading={productsQuery.isLoading}
               regions={regions}
-              regionsLoading={regionsQuery.isLoading}
+              regionsLoading={areaLists && regionsQuery.isLoading}
+              areaLists={areaLists}
               creating={confirm.isPending}
               onChange={(order) => updateDraft(draft.key, order)}
               onRemove={() => removeDraft(draft.key)}

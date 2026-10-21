@@ -883,5 +883,16 @@
     "byProducts": "From products:",
     "apply": "Apply",
     "applyLabel": "Apply the products total: {{amount}}"
+  },
+  "operatorCreate": {
+    "description": "Orders are created on behalf of your market with AI",
+    "aiOffTitle": "Creating with AI is turned off",
+    "aiOffText": "To create an order, contact the market owner or an administrator.",
+    "aiDisabled": "AI is not enabled for this market — contact the market owner or an administrator.",
+    "aiInsufficient": "The AI service limit is used up — tell an administrator.",
+    "aiCap": "Today's AI order-reading limit is used up — it resets tomorrow.",
+    "aiRefused": "Rephrase the text and try again.",
+    "aiForbidden": "You are not allowed to create orders with AI — contact an administrator.",
+    "districtFromText": "District not found — add the district to the text and analyze again."
   }
 }

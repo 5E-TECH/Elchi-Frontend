@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  MARKET_OPERATOR_CREATE_PATH,
   NEW_ORDERS_RESERVED_SEGMENTS,
+  resolveMarketOperatorNewOrdersAccess,
   resolveNewOrdersActiveTab,
   resolveNewOrdersShellMode,
   resolveNewOrdersTabKeys,
@@ -132,5 +134,35 @@ describe("resolveNewOrdersActiveTab", () => {
   it("market: o'z yangi buyurtmalari yoki bekor qilinganlari", () => {
     expect(resolveNewOrdersActiveTab("/new-orders/121", "market")).toBe("marketNew");
     expect(resolveNewOrdersActiveTab("/new-orders/cancelled/121", "market")).toBe("marketCancelled");
+  });
+});
+
+describe("resolveMarketOperatorNewOrdersAccess — market operatori (MO-3)", () => {
+  it("`/new-orders` → yaratishga yo'naltiriladi", () => {
+    for (const path of ["/new-orders", "/new-orders/", "new-orders"]) {
+      expect(resolveMarketOperatorNewOrdersAccess(path), path).toBe("redirect");
+    }
+    expect(MARKET_OPERATOR_CREATE_PATH).toBe("/new-orders/create");
+  });
+
+  it("faqat `/new-orders/create` ochiq", () => {
+    expect(resolveMarketOperatorNewOrdersAccess("/new-orders/create")).toBe("create");
+    expect(resolveMarketOperatorNewOrdersAccess("/new-orders/create/")).toBe("create");
+  });
+
+  it.each([
+    "/new-orders/7",
+    "/new-orders/7/edit/12",
+    "/new-orders/cancelled",
+    "/new-orders/cancelled/7",
+    "/new-orders/incoming",
+    "/new-orders/incoming/7",
+    "/new-orders/branches",
+    "/new-orders/branches/3/batches/4",
+    "/new-orders/userDetail/9",
+    "/new-orders/create/extra",
+    "/new-orders/external",
+  ])("%s — 403", (path) => {
+    expect(resolveMarketOperatorNewOrdersAccess(path)).toBe("forbidden");
   });
 });

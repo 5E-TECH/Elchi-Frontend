@@ -246,6 +246,13 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     `/profits` («Foyda tarixi» — «To'lov holati» segmenti, umumiy `ProfitHistoryTable`); filtr va sahifa URL'da,
     `canViewInvestorCabinet`; investor menyusi va pastki menyusi to'liq (4 katak), bosh sahifada «Barchasi».
     Route soni 81 / 81 (MO-2 bilan).
+  - **MO-3 (2026-10-21, `feat/mo-3-operator-orders`):** market operatoriga `/orders` va `/orders/edit/:orderId`
+    (`canViewOrders`; o'z marketi — backend cheklaydi): market ro'yxati (`isMarketSideRole` — market/kuryer filtrlarisiz,
+    Excel izohi; «Viloyat» filtri yo'q — `GET /region` 403, N11), tafsilot — market ko'rinishi, faqat o'qish, «Kuzatuv»
+    va «Qaytarish yo'li»siz (`orders/:id/tracking` 403). `canCreateOrders` — `/new-orders` → `/new-orders/create`,
+    qobiqning boshqa bolalari 403 (`NewOrdersRoleGate`, `resolveMarketOperatorNewOrdersAccess`); yaratish — faqat «AI
+    bilan» (tanlovsiz, viloyat maydonisiz, «Qo'lda …» tugmalarisiz; qo'lda — MO-7). Menyu va pastki menyu to'liq
+    (5 band), menyu qidiruvi ochildi, bosh sahifada «Buyurtma yaratish» va «Tezkor harakatlar». Yangi route yo'q.
 - «Visual» baseline'lari skaner 2-bosqichidan keyin yangilangan (bot commit `1393ae0`, `/dispatch` va
   `cancelled-handover` — «Kamera» tugmalari olib tashlangani uchun kutilgan farq).
 - **To'liq QA** — Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.

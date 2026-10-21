@@ -382,14 +382,19 @@ describe("MarketDashboardPage (v2)", () => {
       expect(screen.getByTestId("market-stats-grid")).toBeInTheDocument();
     });
 
-    it("buyurtmalar ochilmaguncha (MO-3) — «Buyurtma yaratish», «Tezkor harakatlar» va ro'yxat havolasi yo'q (403 ga olib bormaydi)", () => {
+    it("MO-3: buyurtmalar ochilgach — «Buyurtma yaratish», «Tezkor harakatlar» (ro'yxat va yaratish) va ro'yxat havolasi bor", () => {
       renderWithProviders(<MarketDashboardPage variant="operator" />, { preloadedState: operatorState });
 
-      expect(screen.queryByRole("button", { name: "Buyurtma yaratish" })).not.toBeInTheDocument();
-      expect(screen.queryByRole("heading", { name: "Tezkor harakatlar" })).not.toBeInTheDocument();
-      expect(within(section("Buyurtmalar holati")).queryByRole("link", { name: /Ro'yxat/ })).not.toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Buyurtma yaratish" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Tezkor harakatlar" })).toBeInTheDocument();
+      expect(within(section("Buyurtmalar holati")).getByRole("link", { name: /Ro'yxat/ })).toHaveAttribute(
+        "href",
+        expect.stringMatching(/^\/orders/),
+      );
       const hrefs = screen.queryAllByRole("link").map((link) => link.getAttribute("href") ?? "");
-      expect(hrefs.filter((href) => /^\/(orders|new-orders)/.test(href))).toEqual([]);
+      // Operatorda «Qabul va yaratish» (`/new-orders`) yo'q — faqat ro'yxat va yaratish.
+      expect(hrefs).toEqual(expect.arrayContaining(["/orders", "/new-orders/create"]));
+      expect(hrefs).not.toContain("/new-orders");
     });
   });
 });

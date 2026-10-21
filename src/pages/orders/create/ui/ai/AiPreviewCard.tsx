@@ -92,6 +92,11 @@ type AiPreviewCardProps = {
   productsLoading: boolean;
   regions: AiAreaItem[];
   regionsLoading: boolean;
+  /**
+   * Viloyat/tuman ro'yxatlari bormi (sukut `true`). Market operatorida yo'q (`GET /region`, `region/:id` — 403, N11;
+   * MO-3): «Viloyat» maydoni chiqmaydi (viloyatni backend tumandan oladi), «Tuman» — AI aniqlagani va takliflari.
+   */
+  areaLists?: boolean;
   creating: boolean;
   onChange: (order: AiDraftOrder) => void;
   onRemove: () => void;
@@ -111,6 +116,7 @@ const AiPreviewCard = ({
   productsLoading,
   regions,
   regionsLoading,
+  areaLists = true,
   creating,
   onChange,
   onRemove,
@@ -119,7 +125,7 @@ const AiPreviewCard = ({
   const { t, i18n } = useTranslation(["orders", "common"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
   const { order, source } = draft;
-  const { ready, issues } = evalPreview(order);
+  const { ready, issues } = evalPreview(order, { regionRequired: areaLists });
   const idPrefix = `ai-${draft.key}`;
   const titleId = useId();
   const bodyId = useId();
@@ -139,9 +145,9 @@ const AiPreviewCard = ({
 
   // react-query kaliti `[districts, regionId]` — bir xil viloyatli kartalar keshni baham ko'radi.
   const { useGetDistricts } = useLogistics();
-  const districtsQuery = useGetDistricts(order.region_id ?? undefined);
+  const districtsQuery = useGetDistricts(order.region_id ?? undefined, areaLists);
   const districts = toList<AiAreaItem>(districtsQuery.data);
-  const districtsLoading = Boolean(order.region_id) && districtsQuery.isLoading;
+  const districtsLoading = areaLists && Boolean(order.region_id) && districtsQuery.isLoading;
 
   const update = (patch: Partial<AiDraftOrder>) => onChange({ ...order, ...patch });
   const updateItem = (itemIndex: number, patch: Partial<AiPreviewItem>) =>
@@ -392,32 +398,45 @@ const AiPreviewCard = ({
             />
           </Field>
 
+          {areaLists ? (
+            <Field
+              label={t("filterRegion")}
+              labelAs="span"
+              required
+              id={`${idPrefix}-region`}
+              hint={order.region_id && !order.region_given ? <WarningHint>{t("aiRegionGuessed")}</WarningHint> : undefined}
+            >
+              <Select
+                searchable
+                options={regionOptions}
+                value={order.region_id || null}
+                onChange={(value) => handleRegionChange(value ?? "")}
+                placeholder={t("selectRegion")}
+                loading={regionsLoading}
+              />
+            </Field>
+          ) : null}
+
           <Field
-            label={t("filterRegion")}
+            label={t("district")}
             labelAs="span"
             required
-            id={`${idPrefix}-region`}
-            hint={order.region_id && !order.region_given ? <WarningHint>{t("aiRegionGuessed")}</WarningHint> : undefined}
+            id={`${idPrefix}-district`}
+            hint={
+              // Ro'yxatsiz (market operatori): tuman AI matndan topmagan va taklif yo'q — matnni tuzatib qayta tahlil.
+              !areaLists && !order.district_id && !hasCandidates ? (
+                <WarningHint>{t("operatorCreate.districtFromText")}</WarningHint>
+              ) : undefined
+            }
           >
-            <Select
-              searchable
-              options={regionOptions}
-              value={order.region_id || null}
-              onChange={(value) => handleRegionChange(value ?? "")}
-              placeholder={t("selectRegion")}
-              loading={regionsLoading}
-            />
-          </Field>
-
-          <Field label={t("district")} labelAs="span" required id={`${idPrefix}-district`}>
             <Select
               searchable
               options={districtOptions}
               value={order.district_id || null}
               onChange={(value) => handleDistrictChange(value ?? "")}
-              placeholder={!order.region_id && !hasCandidates ? t("selectRegionFirst") : t("selectDistrict")}
+              placeholder={!areaLists || order.region_id || hasCandidates ? t("selectDistrict") : t("selectRegionFirst")}
               loading={districtsLoading}
-              disabled={!order.region_id && !hasCandidates}
+              disabled={areaLists ? !order.region_id && !hasCandidates : !hasCandidates && !order.district_id}
             />
           </Field>
 

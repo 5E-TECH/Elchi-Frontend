@@ -311,6 +311,8 @@ describe("sidebar menu icons — roles.json bilan bir xil", () => {
     i18: Zap,
     i19: Wallet,
     MapPinned,
+    // Market operatori «Daromadim» (MO-2) — maketda lucide nomi bilan.
+    Banknote,
   };
   type DesignItem = { key: string; icon: string };
   // Maketdagi, kodda hali yo'q bandlar (`route-map.json` → `plannedMenu`) chiqariladi.
@@ -323,6 +325,7 @@ describe("sidebar menu icons — roles.json bilan bir xil", () => {
     ["registrator", "HQ"],
     ["market", null],
     ["courier", "REGIONAL"],
+    ["market_operator", null],
   ] as const)("%s: har bir bandning ikonkasi maketdagidek", (role, type) => {
     const items = getSidebarConfigForUser(role, type ? userWithBranchType(type) : null);
     const design = designMenu(role);
@@ -379,19 +382,24 @@ describe("investor menyusi (IN-1, IN-2)", () => {
   });
 });
 
-describe("market operatori menyusi (MO-2)", () => {
-  it("Bosh sahifa · Mahsulotlar · Daromadim — maketdagi ikonkalar; Buyurtmalar va «Buyurtma yaratish» — MO-3 (plannedMenu)", () => {
+describe("market operatori menyusi (MO-2, MO-3)", () => {
+  it("Bosh sahifa · Buyurtmalar · Buyurtma yaratish · Mahsulotlar · Daromadim — maket tartibi va ikonkalari", () => {
     const items = getSidebarConfigForUser("market_operator", null);
     expect(items.map((item) => [item.to, item.label])).toEqual([
       ["/", "dashboard"],
+      ["/orders", "orders"],
+      // MO-3: `/new-orders` operatorda `/new-orders/create` ga yo'naltiriladi (yorliq «Buyurtma yaratish» — navSections).
+      ["/new-orders", "newOrders"],
       ["/products", "products"],
       ["/my-earnings", "earnings"],
     ]);
-    expect(items.map((item) => item.icon)).toEqual([House, Tag, Banknote]);
+    expect(items.map((item) => item.icon)).toEqual([House, ShoppingBag, Inbox, Tag, Banknote]);
     expect(items[0].end).toBe(true);
-    // Maket (`roles.json` → market_operator.menu): `i1` · `i9` · `Banknote`.
+    // Maket (`roles.json` → market_operator.menu): `i1` · `i2` · `i3` · `i9` · `Banknote`.
     expect(designRoleInCode("market_operator").menu.map((item) => [item.key, item.icon])).toEqual([
       ["dashboard", "i1"],
+      ["orders", "i2"],
+      ["newOrders", "i3"],
       ["products", "i9"],
       ["earnings", "Banknote"],
     ]);

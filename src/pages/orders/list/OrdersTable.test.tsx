@@ -122,10 +122,11 @@ describe("OrdersTable", () => {
     expect(onClearFilters).toHaveBeenCalled();
   });
 
-  it("hides market column for market role", () => {
+  // MO-3: market operatori — market jadvali (`isMarketSideRole`).
+  it.each(["market", "market_operator"])("hides market column for %s role", (role) => {
     renderWithProviders(<OrdersTable data={orders as never} isLoading={false} />, {
       preloadedState: {
-        role: { role: "market", id: "", region: "", name: "" },
+        role: { role, id: "", region: "", name: "" },
       },
     });
 

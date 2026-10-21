@@ -39,8 +39,9 @@ describe("maket menyusi — rejadagi (kodda hali yo'q) bandlar", () => {
     expect(EMPTY_MENU_ROLES).not.toContain("market_operator");
   });
 
-  it("MO-2: market operatorining rejadagi bandlari — faqat MO-3 niki (Buyurtmalar, Buyurtma yaratish)", () => {
-    expect(plannedMenuKeys("market_operator")).toEqual(["orders", "newOrders"]);
+  it("MO-3: market operatorining menyusi va pastki menyusi kodda to'liq — rejada hech narsa qolmadi", () => {
+    expect(plannedMenuKeys("market_operator")).toEqual([]);
+    expect(plannedBottomNav("market_operator")).toEqual([]);
   });
 
   it.each(EMPTY_MENU_ROLES)("%s: kodda yo'q yoki bo'sh menyuli rolning butun menyusi plannedMenu da", (role) => {

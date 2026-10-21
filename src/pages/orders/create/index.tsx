@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-neworders-create-manual-step1, superadmin-neworders-create-market-picker-dialog, superadmin-neworders-create-manual-step2, superadmin-neworders-create-ai-input, superadmin-neworders-create-ai-preview, superadmin-neworders-create-ai-confirm-dialog, admin-neworders-create-manual, admin-neworders-create-market-picker, admin-neworders-create-ai, admin-neworders-create-ai-confirm-dialog, manager-new-orders-create-manual-step1, manager-new-orders-create-manual-step2, manager-new-orders-create-ai, manager-new-orders-create-ai-confirm-dialog, registrator-new-orders-create-step1, registrator-new-orders-create-market-picker-dialog, registrator-new-orders-create-step2, registrator-new-orders-create-ai, registrator-new-orders-create-ai-confirm-dialog, market-new-orders-create-manual, market-new-orders-create-ai-input, market-new-orders-create-ai-preview, market-new-orders-create-ai-confirm-dialog
+// dizayn-v2: superadmin-neworders-create-manual-step1, superadmin-neworders-create-market-picker-dialog, superadmin-neworders-create-manual-step2, superadmin-neworders-create-ai-input, superadmin-neworders-create-ai-preview, superadmin-neworders-create-ai-confirm-dialog, admin-neworders-create-manual, admin-neworders-create-market-picker, admin-neworders-create-ai, admin-neworders-create-ai-confirm-dialog, manager-new-orders-create-manual-step1, manager-new-orders-create-manual-step2, manager-new-orders-create-ai, manager-new-orders-create-ai-confirm-dialog, registrator-new-orders-create-step1, registrator-new-orders-create-market-picker-dialog, registrator-new-orders-create-step2, registrator-new-orders-create-ai, registrator-new-orders-create-ai-confirm-dialog, market-new-orders-create-manual, market-new-orders-create-ai-input, market-new-orders-create-ai-preview, market-new-orders-create-ai-confirm-dialog, market_operator-new-orders-create-manual
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Store } from "lucide-react";
@@ -35,6 +35,7 @@ import {
 import { isInactiveMarketStatus } from "../../../shared/lib/marketStatus";
 import { notify } from "../../../shared/lib/notify";
 import { cx } from "../../../shared/lib/cx";
+import { isMarketSideRole } from "../../../entities/user/lib/role";
 import { PageHeader, useConfirm } from "../../../shared/ui/primitives";
 
 type BackendErrorPayload = {
@@ -129,6 +130,8 @@ const applyOrderCreateFieldErrors = (
 
 /** «Orqaga» va havolalar manzili — «Qabul va yaratish». */
 const BACK_TO = "/new-orders";
+/** MO-3: market operatorining orqaga havolasi — o'z buyurtmalari. */
+const OPERATOR_BACK_TO = "/orders";
 
 /**
  * YANGI BUYURTMA — `/new-orders/create` (dizayn v2, maketlar `*-create-manual-step1|step2`,
@@ -148,7 +151,11 @@ const OrderCreateFormContent = () => {
   const role = useSelector((state: RootState) => state.role.role);
   const roleState = useSelector((state: RootState) => state.role);
   const profile = useSelector((state: RootState) => state.user.user);
-  const isMarketRole = role === "market";
+  // MO-3: market operatori — market tomoni (1-qadamsiz, market serverda tokendan, katalog `my-products`), faqat
+  // «AI bilan»: `POST /orders` unga hali yopiq (qo'lda — MO-7, OfRSoRUX). Maket `market_operator-new-orders-create-manual`
+  // (faqat AI qismi; holatlar `market-new-orders-create-ai-*`).
+  const isMarketOperator = role === "market_operator";
+  const isMarketRole = isMarketSideRole(role);
   const navigationState = location.state as { selectedMarket?: MarketOption } | null;
   const selectedMarketFromState = navigationState?.selectedMarket ?? null;
   const [step, setStep] = useState<1 | 2>(
@@ -162,7 +169,9 @@ const OrderCreateFormContent = () => {
   // `cap_exceeded` va so'rov xatosida tab qoladi — panel sababini o'zi tushuntiradi.
   const aiAvailability = useAiAvailability();
   const aiHidden = isAiTabHidden(aiAvailability.data);
-  const mode: CreateMode = aiHidden ? "manual" : selectedMode;
+  const mode: CreateMode = isMarketOperator ? "ai" : aiHidden ? "manual" : selectedMode;
+  // Operatorda AI o'chiq bo'lsa yaratish usuli umuman yo'q — sabab ogohlantirishda (qo'lda rejim chizilmaydi).
+  const operatorAiOff = isMarketOperator && aiHidden;
 
   // Bitta sxema — formaning tekshiruvi ham, «Buyurtma yuborishga tayyor» holati ham shundan (D-06).
   const createSchema = useMemo(() => createOrderSchema(!isMarketRole), [isMarketRole]);
@@ -196,12 +205,17 @@ const OrderCreateFormContent = () => {
   const details = useWatch({ control, name: "details" });
   const marketRoleId = roleState.id ?? profile?.id;
   const marketRoleName = roleState.name ?? profile?.name;
-  const selectedMarketId = isMarketRole
-    ? marketRoleId
-    : market?.id ?? selectedMarketFromState?.id;
-  const selectedMarketName = isMarketRole
-    ? marketRoleName
-    : market?.name ?? selectedMarketFromState?.name;
+  // Operatorning `id`/`name` i — o'zi, market emas (market nomi `my-profile` da yo'q, N13): market ma'lum emas.
+  const selectedMarketId = isMarketOperator
+    ? undefined
+    : isMarketRole
+      ? marketRoleId
+      : market?.id ?? selectedMarketFromState?.id;
+  const selectedMarketName = isMarketOperator
+    ? undefined
+    : isMarketRole
+      ? marketRoleName
+      : market?.name ?? selectedMarketFromState?.name;
   const isInactiveSelectedMarket = isMarketRole
     ? isInactiveMarketStatus(profile?.status)
     : isInactiveMarketStatus(market?.status ?? selectedMarketFromState?.status);
@@ -355,8 +369,9 @@ const OrderCreateFormContent = () => {
 
   // Sarlavha izohi: market ma'lum bo'lsa (market roli yoki AI) — «Tanlangan market: …»; 2-qadamda — majburiy
   // maydonlar belgisi; qolganida — «Buyurtma yaratish uchun qadamlarni bajaring».
-  const description =
-    selectedMarketName && (isMarketRole || !isManual) ? (
+  const description = isMarketOperator ? (
+    t("operatorCreate.description")
+  ) : selectedMarketName && (isMarketRole || !isManual) ? (
       <Trans
         t={t}
         i18nKey="createSelectedMarket"
@@ -384,11 +399,12 @@ const OrderCreateFormContent = () => {
         className="flex min-w-0 flex-col gap-6 max-md:gap-4"
       >
         <PageHeader
-          back={BACK_TO}
-          backLabel={t("pageTitle", { ns: "newOrders" })}
+          // Operatorda «Qabul va yaratish» yo'q (`/new-orders` shu sahifaga qaytaradi) — orqaga «Buyurtmalar».
+          back={isMarketOperator ? OPERATOR_BACK_TO : BACK_TO}
+          backLabel={isMarketOperator ? t("title") : t("pageTitle", { ns: "newOrders" })}
           title={t("createPageTitle")}
           description={description}
-          actions={aiHidden ? undefined : <CreateModeTabs mode={mode} onChange={setMode} />}
+          actions={aiHidden || isMarketOperator ? undefined : <CreateModeTabs mode={mode} onChange={setMode} />}
         />
 
         <div className="flex min-w-0 flex-wrap items-start gap-6 max-md:gap-4">
@@ -398,37 +414,45 @@ const OrderCreateFormContent = () => {
               almashganda qo'lda forma qiymatlari ham, AI matni/rasmlari ham
               yo'qolmaydi.
             */}
-            <div
-              data-testid="manual-mode-panel"
-              className={isManual ? "flex min-w-0 flex-col gap-6 max-md:gap-4" : "hidden"}
-            >
-              {!isMarketRole ? (
-                <div ref={stepsRef} tabIndex={-1} className="min-w-0 scroll-mt-6 outline-none">
-                  <OrderStepper
-                    step={step}
-                    marketName={selectedMarketName}
-                    onChangeMarket={handlePrevious}
+            {operatorAiOff ? (
+              <CreateAlert tone="warning" title={t("operatorCreate.aiOffTitle")}>
+                {t("operatorCreate.aiOffText")}
+              </CreateAlert>
+            ) : null}
+            {/* Operatorda qo'lda forma umuman yo'q (yashirin holda ham): u viloyatlarni so'raydi — `GET /region` 403. */}
+            {isMarketOperator ? null : (
+              <div
+                data-testid="manual-mode-panel"
+                className={isManual ? "flex min-w-0 flex-col gap-6 max-md:gap-4" : "hidden"}
+              >
+                {!isMarketRole ? (
+                  <div ref={stepsRef} tabIndex={-1} className="min-w-0 scroll-mt-6 outline-none">
+                    <OrderStepper
+                      step={step}
+                      marketName={selectedMarketName}
+                      onChangeMarket={handlePrevious}
+                    />
+                  </div>
+                ) : null}
+
+                {serverError ? (
+                  <CreateAlert tone="danger" title={t("orderCreateErrorTitle")}>
+                    {serverError}
+                  </CreateAlert>
+                ) : null}
+
+                {showStep1 ? (
+                  <Step1Market
+                    canNext={canNext}
+                    backTo={BACK_TO}
+                    onNext={() => {
+                      void handleNext();
+                    }}
                   />
-                </div>
-              ) : null}
-
-              {serverError ? (
-                <CreateAlert tone="danger" title={t("orderCreateErrorTitle")}>
-                  {serverError}
-                </CreateAlert>
-              ) : null}
-
-              {showStep1 ? (
-                <Step1Market
-                  canNext={canNext}
-                  backTo={BACK_TO}
-                  onNext={() => {
-                    void handleNext();
-                  }}
-                />
-              ) : null}
-              {step === 2 ? <Step2Combined /> : null}
-            </div>
+                ) : null}
+                {step === 2 ? <Step2Combined /> : null}
+              </div>
+            )}
 
             {!aiHidden ? (
               <div data-testid="ai-mode-panel" className={isManual ? "hidden" : "flex min-w-0 flex-col gap-4"}>
@@ -437,7 +461,8 @@ const OrderCreateFormContent = () => {
                   active={mode === "ai"}
                   isMarketRole={isMarketRole}
                   market={isMarketRole ? null : market}
-                  onSwitchToManual={() => setMode("manual")}
+                  onSwitchToManual={isMarketOperator ? undefined : () => setMode("manual")}
+                  areaLists={!isMarketOperator}
                   onChangeMarket={
                     isMarketRole
                       ? undefined
