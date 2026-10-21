@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **103** · qisman: **128** · v2 ga ko'chirilgan route: **77 / 77**
+**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **102** · qisman: **129** · v2 ga ko'chirilgan route: **77 / 77**
 
 ## Qanday ishlatiladi
 
@@ -1627,12 +1627,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 #### `/notifications/sms` — SMS — Kampaniya · Shablonlar · Xarajat · Sozlamalar
 
-- **Fayllar:** `src/pages/notifications/ui/SmsPage.tsx` · `src/pages/notifications/ui/CampaignPage.tsx` · `src/pages/notifications/ui/SmsTemplatesTab.tsx` · `src/pages/notifications/ui/SmsReportTab.tsx` · `src/pages/notifications/ui/SmsSettingsTab.tsx` · `src/pages/notifications/ui/sms/CardList.tsx` · `src/pages/notifications/ui/sms/SmsReportCharts.tsx` · `src/shared/ui/SmsMeter.tsx`
+- **Fayllar:** `src/pages/notifications/ui/SmsPage.tsx` · `src/pages/notifications/ui/CampaignPage.tsx` · `src/pages/notifications/ui/SmsTemplatesTab.tsx` · `src/pages/notifications/ui/SmsReportTab.tsx` · `src/pages/notifications/ui/SmsSettingsTab.tsx` · `src/pages/notifications/ui/sms/CardList.tsx` · `src/pages/notifications/ui/sms/SmsReportCharts.tsx` · `src/pages/notifications/ui/sms/CampaignAudienceSummary.tsx` · `src/pages/notifications/ui/sms/CampaignSendTime.tsx` · `src/entities/notification-campaign/ui/CustomerSegmentFilters.tsx` · `src/shared/ui/SmsMeter.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canSendNotifications` (access.ts → canSendNotifications)
 - **Rollar:** superadmin, admin
 - **Menyuda:** yo'q — sahifa ichidagi havola yoki URL orqali ochiladi
 - **Holat:** v2
-- **Izoh:** Tab URL'da: ?tab=campaign|templates|report|settings. Dizayn v2 (G2): kampaniya — tasdiq oynasi + Idempotency-Key; «Xarajat» grafiklari Grafik | Jadval egizagi; shablonni o'chirish — tasdiq. «Xarajat» o'lchagichi — «Yetkazildi / jami yuborilgan» (maket); backend success_rate (yetkazildi / (yetkazildi + xato)) ko'rsatilmaydi. Rejalashtirilgan vaqt «18.10.2026, 09:00 da yuboriladi» ko'rinishida (umumiy formatlovchida «Ertaga» yo'q).
+- **Izoh:** Tab URL'da: ?tab=campaign|templates|report|settings. Dizayn v2 (G2): kampaniya — tasdiq oynasi + Idempotency-Key; «Xarajat» grafiklari Grafik | Jadval egizagi; shablonni o'chirish — tasdiq. «Xarajat» o'lchagichi — «Yetkazildi / jami yuborilgan» (maket); backend success_rate (yetkazildi / (yetkazildi + xato)) ko'rsatilmaydi. Rejalashtirilgan vaqt «18.10.2026, 09:00 da yuboriladi» ko'rinishida (umumiy formatlovchida «Ertaga» yo'q). KM-1: kampaniya faqat reklama; «Mijozlar segmenti» — CustomerSegmentFilters (Select / DateRange / minimum), jonli auditoriya va bugungi SMS limiti; «Oxirgi buyurtma» oxirgi kuni ham kiradi (backend last_order_to qat'iy — keyingi kun yuboriladi); xato — faqat i18n matn (HTTP holati bo'yicha).
 
 | Route | Rol | Maket (`npm run design:shot -- <nom>`) | Fragment | Tur | Holat |
 |---|---|---|---|---|---|
@@ -1641,7 +1641,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/notifications/sms` | superadmin | `superadmin-notifications-sms-templates` — SMS — Shablonlar | [design/fragments/superadmin--notifications-sms-templates.html](fragments/superadmin--notifications-sms-templates.html) | sahifa | v2 |
 | `/notifications/sms` | superadmin | `superadmin-notifications-sms-report` — SMS — Xarajat | [design/fragments/superadmin--notifications-sms-report.html](fragments/superadmin--notifications-sms-report.html) | sahifa | v2 |
 | `/notifications/sms` | superadmin | `superadmin-notifications-sms-settings` — SMS — Sozlamalar | [design/fragments/superadmin--notifications-sms-settings.html](fragments/superadmin--notifications-sms-settings.html) | sahifa | v2 |
-| `/notifications/sms` | superadmin | `superadmin-notifications-sms-campaign-segment` — SMS — Kampaniya: mijozlar segmenti va yuborish vaqti | [design/fragments/superadmin--notifications-sms-campaign-segment.html](fragments/superadmin--notifications-sms-campaign-segment.html) | sahifa | yangi (kodda yo'q) |
+| `/notifications/sms` | superadmin | `superadmin-notifications-sms-campaign-segment` — SMS — Kampaniya: mijozlar segmenti va yuborish vaqti<br>↳ `src/pages/notifications/ui/CampaignPage.tsx` | [design/fragments/superadmin--notifications-sms-campaign-segment.html](fragments/superadmin--notifications-sms-campaign-segment.html) | sahifa | qisman |
 | `/notifications/sms` | admin | — Maket yo'q — superadmin-notifications-sms-* ga qarang. | — | — | v2 |
 
 ### Tizim — faoliyat jurnali va ops
@@ -1907,7 +1907,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-222 ta maket · kodda bor: 179 · kodda yo'q: 43
+222 ta maket · kodda bor: 180 · kodda yo'q: 42
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2105,7 +2105,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-notifications-campaign-cancel-dialog` | Kampaniyani bekor qilish (tasdiq) | oyna | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi |
 | `superadmin-notifications-campaign-report-dialog` | Kampaniya hisoboti (oyna) | oyna | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (ega KM-S1, 2026-10-19) — kodda yo'q: kampaniya hisoboti (GET /notifications/campaigns/:id/report, /undelivered, /undelivered/export) |
 | `superadmin-notifications-send-states` | Xabar yuborish — auditoriya va yuborish holatlari | sahifa | `/notifications/send` | `src/pages/notification-send/index.tsx` | yangi (kodda yo'q) — Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi |
-| `superadmin-notifications-sms-campaign-segment` | SMS — Kampaniya: mijozlar segmenti va yuborish vaqti | sahifa | `/notifications/sms` | `src/pages/notifications/ui/SmsPage.tsx` | yangi (kodda yo'q) — Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi |
+| `superadmin-notifications-sms-campaign-segment` | SMS — Kampaniya: mijozlar segmenti va yuborish vaqti | sahifa | `/notifications/sms` | `src/pages/notifications/ui/CampaignPage.tsx` | qisman — Kodda bor (KM-1): «Xabar turi» — faqat «Reklama» (xizmat va OTP shablonlari ro'yxatda yo'q); «Mijoz filtrlari» — Viloyat / Tuman / Market Select, «Oxirgi buyurtma» DateRange, «Buyurtmalar soni» faqat minimum (entities/notification-campaign CustomerSegmentFilters); jonli auditoriya (POST sms/campaigns/preview, debounce) va «SMS limiti · Bugun qolgan: X / N» (KM-S4; oshsa «Ko'rib chiqish» o'chiq); «Yuborish vaqti» — «Darhol» va tungi taqiq izohi. Chizilmaydi («Taklif · backend kerak»): «Saqlangan segment», «Segmentni saqlash», «gacha» (max_orders SMS kampaniyada yo'q), «Belgilangan vaqtda» (KM-4/KM-6). |
 | `superadmin-users-list-roles` | Foydalanuvchilar — barcha rollar tablari (taklif) | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | qisman — FY-1: 9 ta rol tabi (FY-S1) va qator menyusi («Nofaol qilish», FY-S2) — kodda. Chizilmagan: «Filial» ustuni va market operatori qatorida market nomi (FY-S3) — GET /users qatorida filial ham, market nomi ham yo'q (backend kerak). |
 | `superadmin-users-list-role-select` | Foydalanuvchilar — rol tanlash ro'yxati (telefon, taklif) | sahifa · faqat telefon | `/all-users` | `src/pages/users/list/UserListPage.tsx` | v2 |
 | `superadmin-users-edit-role` | Foydalanuvchini tahrirlash — «Rol» maydoni (taklif) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): tahrirlash oynasida «Rol» (faqat superadmin, PATCH /users/:id/role — backend bor). |
@@ -2655,6 +2655,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/auth/loginNotice.ts` | `/login` |
 | `src/entities/activity-log/ui/ActivityActionBadge.tsx` | `/activity-logs` |
 | `src/entities/batch/model/batchStatus.ts` | `/batches` |
+| `src/entities/notification-campaign/ui/CustomerSegmentFilters.tsx` | `/notifications/sms` |
 | `src/entities/notification-dispatch/ui/SentDetailDialog.tsx` | `/notifications/send`, `(taklif) /notifications/sent` |
 | `src/entities/order/ui/ProofGallery.tsx` | `/orders/edit/:orderId` |
 | `src/entities/order/ui/ReturnRequestedTag.tsx` | `/orders` |
@@ -2888,6 +2889,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/notifications/ui/SmsReportTab.tsx` | `/notifications/sms` |
 | `src/pages/notifications/ui/SmsSettingsTab.tsx` | `/notifications/sms` |
 | `src/pages/notifications/ui/SmsTemplatesTab.tsx` | `/notifications/sms` |
+| `src/pages/notifications/ui/sms/CampaignAudienceSummary.tsx` | `/notifications/sms` |
+| `src/pages/notifications/ui/sms/CampaignSendTime.tsx` | `/notifications/sms` |
 | `src/pages/notifications/ui/sms/CardList.tsx` | `/notifications/sms` |
 | `src/pages/notifications/ui/sms/SmsReportCharts.tsx` | `/notifications/sms` |
 | `src/pages/ops/index.tsx` | `/ops` |

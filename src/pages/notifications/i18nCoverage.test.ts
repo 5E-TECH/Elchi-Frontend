@@ -52,8 +52,6 @@ const RU_LATIN_OK = new Set([
   "settings.profileOtp",
   "settings.providers.eskiz",
   "settings.providers.playmobile",
-  "campaign.marketId",
-  "campaign.templateOption",
   "campaign.confirmPartsValue",
   "templates.approved",
   "channel.telegram",

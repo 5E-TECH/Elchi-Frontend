@@ -1479,6 +1479,9 @@
         "src/pages/notifications/ui/SmsSettingsTab.tsx",
         "src/pages/notifications/ui/sms/CardList.tsx",
         "src/pages/notifications/ui/sms/SmsReportCharts.tsx",
+        "src/pages/notifications/ui/sms/CampaignAudienceSummary.tsx",
+        "src/pages/notifications/ui/sms/CampaignSendTime.tsx",
+        "src/entities/notification-campaign/ui/CustomerSegmentFilters.tsx",
         "src/shared/ui/SmsMeter.tsx"
       ],
       "views": {
@@ -1487,7 +1490,7 @@
       "roleNotes": {
         "admin": "Maket yo'q — superadmin-notifications-sms-* ga qarang."
       },
-      "note": "Tab URL'da: ?tab=campaign|templates|report|settings. Dizayn v2 (G2): kampaniya — tasdiq oynasi + Idempotency-Key; «Xarajat» grafiklari Grafik | Jadval egizagi; shablonni o'chirish — tasdiq. «Xarajat» o'lchagichi — «Yetkazildi / jami yuborilgan» (maket); backend success_rate (yetkazildi / (yetkazildi + xato)) ko'rsatilmaydi. Rejalashtirilgan vaqt «18.10.2026, 09:00 da yuboriladi» ko'rinishida (umumiy formatlovchida «Ertaga» yo'q)."
+      "note": "Tab URL'da: ?tab=campaign|templates|report|settings. Dizayn v2 (G2): kampaniya — tasdiq oynasi + Idempotency-Key; «Xarajat» grafiklari Grafik | Jadval egizagi; shablonni o'chirish — tasdiq. «Xarajat» o'lchagichi — «Yetkazildi / jami yuborilgan» (maket); backend success_rate (yetkazildi / (yetkazildi + xato)) ko'rsatilmaydi. Rejalashtirilgan vaqt «18.10.2026, 09:00 da yuboriladi» ko'rinishida (umumiy formatlovchida «Ertaga» yo'q). KM-1: kampaniya faqat reklama; «Mijozlar segmenti» — CustomerSegmentFilters (Select / DateRange / minimum), jonli auditoriya va bugungi SMS limiti; «Oxirgi buyurtma» oxirgi kuni ham kiradi (backend last_order_to qat'iy — keyingi kun yuboriladi); xato — faqat i18n matn (HTTP holati bo'yicha)."
     },
     {
       "path": "/activity-logs",
@@ -1756,7 +1759,6 @@
     "superadmin-notifications-campaign-cancel-dialog": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
     "superadmin-notifications-campaign-report-dialog": "Taklif (ega KM-S1, 2026-10-19) — kodda yo'q: kampaniya hisoboti (GET /notifications/campaigns/:id/report, /undelivered, /undelivered/export)",
     "superadmin-notifications-send-states": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
-    "superadmin-notifications-sms-campaign-segment": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
     "logist-regions-detail": "Logist roli (menuConfig, routes, guard) kodda hali yo'q — dzyVftBx, mDfjKeQi.",
     "market-operators-deactivate-dialog": "Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak).",
     "market-operators-activate-dialog": "Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak).",
@@ -1949,7 +1951,8 @@
     "superadmin-regions-sato-codes-not-found": "Kodda bor (SA-1): «Topilmadi» tabi, «Kod kiritish» → inline maydon («Faqat raqamlar, masalan 1727401»), telefonda kartadagi «SATO kodi *». Farq: sarlavhadagi «SATO kodlarini yozish N» — SA-2.",
     "superadmin-regions-sato-codes-edit": "Kodda bor (SA-1): «Kodi bor» tabi, ✎ → inline maydon, 409 → GET district/sato/:code → «Bu kod band: <tuman>, <viloyat>». Farq: sarlavhadagi «SATO kodlarini yozish N» — SA-2.",
     "superadmin-regions-sato-codes-duplicates": "Kodda bor (SA-1, faqat ko'rish): «Takroriy nomlar» tabi — yozuvlar /district dan (Tuman · ID, Viloyat, SATO kodi), tab soni guruhlar, pastki satr «N ta nom · M ta yozuv», har yozuvga kod qo'lda (inline muharrir). Farq: guruh sarlavha qatorlari («… · 2 ta yozuv · <viloyat>», «Turli viloyatda — birlashtirilmaydi»), «Birlashtirish» va izohdagi birlashtirish gapi — SA-2 (tekis ro'yxat almashtiriladi).",
-    "superadmin-regions-sato-codes-missing": "Kodda bor (SA-1, faqat ko'rish): «Bazada yo'q» tabi — missingSatoEntries (SATO kodi, rasmiy nom, viloyat), pastki satr «N ta yozuv». Farq: «Amallar» ustuni va «Tuman qo'shish» oynasi — SA-2."
+    "superadmin-regions-sato-codes-missing": "Kodda bor (SA-1, faqat ko'rish): «Bazada yo'q» tabi — missingSatoEntries (SATO kodi, rasmiy nom, viloyat), pastki satr «N ta yozuv». Farq: «Amallar» ustuni va «Tuman qo'shish» oynasi — SA-2.",
+    "superadmin-notifications-sms-campaign-segment": "Kodda bor (KM-1): «Xabar turi» — faqat «Reklama» (xizmat va OTP shablonlari ro'yxatda yo'q); «Mijoz filtrlari» — Viloyat / Tuman / Market Select, «Oxirgi buyurtma» DateRange, «Buyurtmalar soni» faqat minimum (entities/notification-campaign CustomerSegmentFilters); jonli auditoriya (POST sms/campaigns/preview, debounce) va «SMS limiti · Bugun qolgan: X / N» (KM-S4; oshsa «Ko'rib chiqish» o'chiq); «Yuborish vaqti» — «Darhol» va tungi taqiq izohi. Chizilmaydi («Taklif · backend kerak»): «Saqlangan segment», «Segmentni saqlash», «gacha» (max_orders SMS kampaniyada yo'q), «Belgilangan vaqtda» (KM-4/KM-6)."
   },
   "viewFiles": {
     "$comment": "Maket → uni chizadigan aniq fayl, agar route'ning asosiy faylidan farq qilsa (rolga xos komponent, alohida oyna fayli). SCREENS.md 2- va 4-bo'limlarida ko'rsatiladi.",
@@ -2232,7 +2235,8 @@
     "superadmin-regions-sato-codes-duplicates": ["src/pages/region/ui/sato/SatoCodesPanel.tsx", "src/pages/region/ui/sato/SatoCodesTable.tsx", "src/pages/region/model/satoModel.ts"],
     "superadmin-regions-sato-codes-missing": ["src/pages/region/ui/sato/SatoCodesPanel.tsx", "src/pages/region/ui/sato/SatoCodesTable.tsx", "src/pages/region/model/satoModel.ts"],
     "admin-regions-sato-codes": ["src/pages/region/ui/sato/SatoCodesPanel.tsx", "src/pages/region/ui/sato/SatoCodesTable.tsx", "src/pages/region/model/satoModel.ts"],
-    "admin-regions-sato-codes-edit": ["src/pages/region/ui/sato/SatoCodeEditor.tsx", "src/pages/region/ui/sato/useSatoCodeEditor.ts"]
+    "admin-regions-sato-codes-edit": ["src/pages/region/ui/sato/SatoCodeEditor.tsx", "src/pages/region/ui/sato/useSatoCodeEditor.ts"],
+    "superadmin-notifications-sms-campaign-segment": "src/pages/notifications/ui/CampaignPage.tsx"
   },
   "tizim": {
     "main": {
