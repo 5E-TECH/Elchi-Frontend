@@ -76,7 +76,8 @@ const BOTTOM_NAV_SLOTS: Record<SidebarUserRole, readonly BottomNavSlot[]> = {
     /**
      * Yangi rollar (ROL-0) — maketdagi kataklar; menyu bandlari hali yo'q, shuning uchun katak o'z sahifasi
      * menyuga kirganda paydo bo'ladi (LG-1/LG-5, MO-2/MO-3, IN-1/IN-2). Investorda 4 katak (ega IN-S2),
-     * market operatorida «Menyu» yo'q (5 bo'lim). Skaner yo'q (`roleHasScanner`).
+     * market operatorida «Menyu» yo'q (5 bo'lim; MO-2 da 3 tasi — Bosh sahifa · Mahsulotlar · Daromadim,
+     * «Buyurtmalar» va «Yaratish» MO-3 da). Skaner yo'q (`roleHasScanner`).
      */
     logist: [link("dashboard"), link("orders"), link("couriers"), link("regions"), MENU],
     market_operator: [link("dashboard"), link("orders"), link("newOrders"), link("products"), link("earnings")],
@@ -92,11 +93,14 @@ const SHORT_LABEL: Record<string, string> = {
     quickAction: "quickAction",
     products: "products",
     payments: "payments",
+    earnings: "earnings",
 };
 
 /** Rolga xos qisqa yorliq: marketda «Qabul va yaratish» — «Yaratish» (market faqat yaratadi). */
 const SHORT_LABEL_BY_ROLE: Partial<Record<SidebarUserRole, Record<string, string>>> = {
     market: { newOrders: "create" },
+    // MO-2: «Buyurtma yaratish» → «Yaratish» (band MO-3 da keladi).
+    market_operator: { newOrders: "create" },
 };
 
 type BottomNavEntry =

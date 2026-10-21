@@ -25,6 +25,7 @@ import {
 import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
 // IN-1: investor kabineti — o'z describe bloki (pastda), umumiy matritsaga tegilmaydi.
 import { canViewInvestorCabinet } from "./access";
+import { canViewMyEarnings } from "./access";
 
 /**
  * B0 — kirish huquqi sidebar'dan AJRATILDI.
@@ -268,6 +269,22 @@ describe("canViewInvestorCabinet — investor kabineti (IN-1)", () => {
     const investor = state("investor");
     for (const predicate of [canViewAdminDashboard, canViewPaymentsPage, canViewFinancialBalance, canViewOrders, canViewUsers]) {
       expect(predicate(investor)).toBe(false);
+    }
+  });
+});
+
+describe("market operatori (MO-2) — «Daromadim», moliya va buyurtmalar yopiq", () => {
+  it("canViewMyEarnings — faqat market_operator; boshqa har rol/filial va rolsiz holat — rad", () => {
+    for (const [caseName, s] of CASES) {
+      expect(canViewMyEarnings(s), caseName).toBe(caseName === "market_operator");
+    }
+    expect(canViewMyEarnings(state(null))).toBe(false);
+  });
+
+  it("admin bosh sahifasiga tushmaydi (`DashboardEntry` — market bosh sahifasi operator rejimida); moliya va operatorlar yopiq", () => {
+    const operator = state("market_operator");
+    for (const predicate of [canViewAdminDashboard, canViewPaymentsPage, canViewFinancialBalance, canViewMarketOperators]) {
+      expect(predicate(operator)).toBe(false);
     }
   });
 });

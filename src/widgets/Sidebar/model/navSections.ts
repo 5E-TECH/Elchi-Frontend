@@ -64,6 +64,9 @@ export interface NavSection {
 /** Rolga xos yorliq kaliti (yo'l bo'yicha). */
 const LABEL_KEY_BY_ROLE: Partial<Record<SidebarUserRole, Record<string, string>>> = {
   courier: { "/cash-box": "cashbox" },
+  // MO-2: market operatorida yaratish bandi «Buyurtma yaratish» (maket `roles.json`; qabul/bekorlar yo'q) — band
+  // o'zi MO-3 da `/new-orders/create` bilan keladi.
+  market_operator: { "/new-orders/create": "createOrder" },
 };
 
 /**
@@ -81,6 +84,7 @@ const SHORT_LABEL_KEY_BY_PATH: Record<string, string> = {
 const SHORT_LABEL_KEY_BY_ROLE: Partial<Record<SidebarUserRole, Record<string, string>>> = {
   // Market buyurtmani faqat yaratadi — maketda «Yaratish».
   market: { "/new-orders": "createShort" },
+  market_operator: { "/new-orders/create": "createShort" },
 };
 
 const toEntry = (role: SidebarUserRole | null, item: NavItem): NavEntry => {

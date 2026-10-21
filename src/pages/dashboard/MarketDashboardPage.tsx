@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import type { RootState } from "../../app/config/store";
+import { canCreateOrders, canViewOrders } from "../../app/lib/access";
 import { useDashboard } from "../../entities/dashboard";
 import { hasFailedPart } from "../../entities/dashboard/lib/partialFailure";
 import {
@@ -59,8 +60,17 @@ import QuickActions from "./ui/QuickActions";
  * bo'yicha sotuv foizi»). «Reytingdagi o'rningiz» va «Buyurtmalar dinamikasi» — «Taklif», chizilmaydi.
  * Qisman nosozlik (VkwhHqvW): `myStat`/`orders` olinmasa — KPI va grafiklar o'rnida xato; `topOperators` —
  * «Top operatorlar» joyida; `topMarkets` yoki `markets` — «Marketlar bo'yicha sotuv foizi» joyida xato kartasi.
+ *
+ * `variant="operator"` — MARKET OPERATORI bosh sahifasi (MO-2; maket yo'q — eng yaqini `market-dashboard-home`).
+ * `analytics/dashboard` operatorga ochiq (backend operatorni o'z marketiga cheklaydi). Farqlar:
+ *   - qo'shimcha xarajat tasdiqlari (`ExtraCostApprovals`, `AutoApprovedExtraCosts`) yo'q va so'ralmaydi —
+ *     `GET orders/extra-cost-approvals` operatorga 403 (faqat o'qish ruxsati — N14, MO-8);
+ *   - sarlavha izohida market nomi yo'q (profil faqat `market_id` beradi — N13), o'rnida davr;
+ *   - «Marketlar bo'yicha sotuv foizi» da o'z qatori — `market_id` (operatorning o'z id'si emas);
+ *   - buyurtmalar havolalari («Buyurtmalarni ko'rish» → `/orders`, holat kartasidagi ro'yxat) faqat `canViewOrders`,
+ *     «Buyurtma yaratish» faqat `canCreateOrders` bo'lsa — ikkalasi MO-3 da ochiladi (shungacha 403 ga olib bormaydi).
  */
-const MarketDashboardPage = () => {
+const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "operator" }) => {
   const { t, i18n } = useTranslation("dashboard");
   const language = i18n.language;
   const dispatch = useDispatch();
@@ -71,6 +81,9 @@ const MarketDashboardPage = () => {
   const user = useSelector((state: RootState) => state.user.user);
   const role = useSelector((state: RootState) => state.role.role);
   const roleId = useSelector((state: RootState) => state.role.id);
+  const isOperator = variant === "operator";
+  const ordersOpen = useSelector(canViewOrders);
+  const createOpen = useSelector(canCreateOrders);
 
   const [fromDate, setFromDate] = useState(typeof storedFromDate === "string" ? storedFromDate : "");
   const [toDate, setToDate] = useState(typeof storedToDate === "string" ? storedToDate : "");
@@ -136,9 +149,11 @@ const MarketDashboardPage = () => {
   const prevRate =
     hasPrevious && (prevAccepted ?? 0) > 0 ? (prevStat?.successRate ?? share(prevSold ?? 0, prevAccepted ?? 0)) : null;
 
-  const canAddOrder = Boolean((user as Record<string, unknown> | null)?.add_order);
-  const selfId = user?.id ?? roleId;
-  const marketName = readProfileName(user);
+  const canAddOrder = isOperator ? createOpen : Boolean((user as Record<string, unknown> | null)?.add_order);
+  // Operator: o'z marketi qatori — profildagi `market_id` (bo'lmasa belgilanmaydi).
+  const selfId = isOperator ? (user?.market_id != null ? String(user.market_id) : undefined) : (user?.id ?? roleId);
+  // Operator profilida `name` — operatorning o'z ismi, market nomi emas.
+  const marketName = isOperator ? null : readProfileName(user);
   const periodText = periodLabel(t, period);
   const hint = comparisonHint(t, period);
   /** KPI delta va izohi («kechaga nisbatan»): delta bo'lmasa (oldingi davr yo'q, asos 0) — izoh ham yo'q. */
@@ -173,7 +188,12 @@ const MarketDashboardPage = () => {
   })();
 
   const operators = operatorRows(data?.data?.topOperators);
-  const ordersListHref = isAllTime ? "/orders" : `/orders?startDay=${period.range.from}&endDay=${period.range.to}`;
+  const ordersListHref =
+    isOperator && !ordersOpen
+      ? undefined
+      : isAllTime
+        ? "/orders"
+        : `/orders?startDay=${period.range.from}&endDay=${period.range.to}`;
 
   const createOrderButton = canAddOrder ? (
     <Button leftIcon={Plus} onClick={() => navigate("/new-orders/create")}>
@@ -196,8 +216,12 @@ const MarketDashboardPage = () => {
         primaryAction={createOrderButton}
       />
 
-      <ExtraCostApprovals />
-      <AutoApprovedExtraCosts />
+      {isOperator ? null : (
+        <>
+          <ExtraCostApprovals />
+          <AutoApprovedExtraCosts />
+        </>
+      )}
 
       {dashboardError || statsFailed ? (
         <Card>
@@ -329,7 +353,7 @@ const MarketDashboardPage = () => {
         <MarketSalesCard rows={salesRows} selfId={selfId} />
       ) : null}
 
-      {!dashboardError && !isLoading ? <QuickActions canAddOrder={canAddOrder} /> : null}
+      {!dashboardError && !isLoading ? <QuickActions canAddOrder={canAddOrder} orders={isOperator ? (ordersOpen ? "list" : null) : "intake"} /> : null}
     </div>
   );
 };

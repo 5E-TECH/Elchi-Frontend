@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  Banknote,
   Bell,
   Building2,
   CreditCard,
@@ -360,5 +361,38 @@ describe("investor menyusi (IN-1)", () => {
   it("investor kabineti ro'yxatlari yo'llari «Moliya» guruhida (sahifalari IN-2 da)", () => {
     expect(SIDEBAR_GROUP_BY_PATH["/investments"]).toBe("finance");
     expect(SIDEBAR_GROUP_BY_PATH["/profits"]).toBe("finance");
+  });
+});
+
+describe("market operatori menyusi (MO-2)", () => {
+  it("Bosh sahifa · Mahsulotlar · Daromadim — maketdagi ikonkalar; Buyurtmalar va «Buyurtma yaratish» — MO-3 (plannedMenu)", () => {
+    const items = getSidebarConfigForUser("market_operator", null);
+    expect(items.map((item) => [item.to, item.label])).toEqual([
+      ["/", "dashboard"],
+      ["/products", "products"],
+      ["/my-earnings", "earnings"],
+    ]);
+    expect(items.map((item) => item.icon)).toEqual([House, Tag, Banknote]);
+    expect(items[0].end).toBe(true);
+    // Maket (`roles.json` → market_operator.menu): `i1` · `i9` · `Banknote`.
+    expect(designRoleInCode("market_operator").menu.map((item) => [item.key, item.icon])).toEqual([
+      ["dashboard", "i1"],
+      ["products", "i9"],
+      ["earnings", "Banknote"],
+    ]);
+  });
+
+  it("qisqa menyu — guruhsiz; «Daromadim» yo'li «Moliya» guruhida", () => {
+    expect(getSidebarGroupsForUser("market_operator", null)).toEqual([
+      { id: null, items: SIDEBAR_CONFIG.market_operator },
+    ]);
+    expect(SIDEBAR_GROUP_BY_PATH["/my-earnings"]).toBe("finance");
+  });
+
+  it("kassa, to'lovlar, balans va «Operatorlar» yo'q (operatorda moliya ruxsati yo'q)", () => {
+    const paths = SIDEBAR_CONFIG.market_operator.map((item) => item.to);
+    for (const path of ["/payments", "/cash-box", "/financial-balance", "/market-operators"]) {
+      expect(paths).not.toContain(path);
+    }
   });
 });

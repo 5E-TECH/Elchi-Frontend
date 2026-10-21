@@ -325,6 +325,7 @@
     "yourMarket": "Market",
     "quick": {
       "viewHint": "Qabul va yaratish bo'limidagi buyurtmalaringiz",
+      "listHint": "Market buyurtmalari ro'yxati",
       "createHint": "Qo'lda yoki AI yordamida yaratish"
     },
     "sales": {

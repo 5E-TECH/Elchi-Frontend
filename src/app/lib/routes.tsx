@@ -26,6 +26,7 @@ import {
   canViewUiKit,
   canViewMarketOperators,
   canViewInvestorCabinet,
+  canViewMyEarnings,
 } from "./access";
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
 import { RUNTIME_ERROR_PATH } from "../../shared/lib/runtimeError";
@@ -65,6 +66,8 @@ const MarketDashboardPage = lazy(
 );
 // IN-1: investor kabineti — alohida lazy chunk (dashboard bundle chegarasi 450 KB).
 const InvestorDashboardPage = lazy(() => import("../../pages/investor/InvestorDashboardPage"));
+/** MO-2: market operatorining «Daromadim» sahifasi (o'z stavkasi). */
+const MyEarningsPage = lazy(() => import("../../pages/my-earnings"));
 const BranchDashboardPage = lazy(() => import("../../pages/branch-dashboard"));
 const DispatchPage = lazy(() => import("../../pages/dispatch"));
 const BatchesPage = lazy(() => import("../../pages/batches"));
@@ -238,10 +241,9 @@ const canViewCourierBulk = canViewCourierBulkPage;
 const LogistDashboardPage = lazy(() => import("../../pages/dashboard/LogistDashboardPage"));
 
 /**
- * Bosh sahifa (`/`) — rolga qarab. Admin `DashboardPage` faqat `canViewAdminDashboard` rollarida: qolgan har
- * rol (logist, market operatori, investor, menyusiz eski rollar) 403 ko'radi — `ForbiddenPage` shell ichida,
- * yangi UI yo'q (taxta `tizim-errors`). O'z bosh sahifasi kelganda har rol shu yerga o'z tarmog'ini qo'shadi
- * (LG-1 logist, MO-2 market operatori, IN-1 investor).
+ * Bosh sahifa (`/`) — rolga qarab. Admin `DashboardPage` faqat `canViewAdminDashboard` rollarida: o'z bosh sahifasi
+ * yo'q har rol (menyusiz eski rollar) 403 ko'radi — `ForbiddenPage` shell ichida, yangi UI yo'q (taxta `tizim-errors`).
+ * Yangi rollar — o'z tarmog'ida (LG-1 logist, MO-2 market operatori, IN-1 investor).
  */
 const DashboardEntry = () => {
   const role = useSelector((state: RootState) => state.role.role);
@@ -262,8 +264,9 @@ const DashboardEntry = () => {
     return <LogistDashboardPage />;
   }
 
+  // MO-2: market operatori — market bosh sahifasi operator rejimida (xarajat tasdiqlarisiz, o'z marketi doirasida).
   if (role === "market_operator") {
-    return <ForbiddenPage />;
+    return <MarketDashboardPage variant="operator" />;
   }
 
   // IN-1: investor kabineti (`canViewInvestorCabinet`) — KPI, oylik foyda, investitsiyalar va foyda tarixi.
@@ -966,6 +969,15 @@ const AppRouter = () => {
                   redirectTo="/payments"
                 >
                   <MyCashboxPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              // MO-2: market operatorining «Daromadim» (o'z stavkasi; hisob/to'lovlar — backend E6iEOAVs, MO-6).
+              path: "my-earnings",
+              element: (
+                <ProtectedRoute canActivate={canViewMyEarnings}>
+                  <MyEarningsPage />
                 </ProtectedRoute>
               ),
             },

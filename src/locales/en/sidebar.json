@@ -10,6 +10,8 @@
   "users": "Users",
   "payments": "Payments",
   "operators": "Operators",
+  "earnings": "Earnings",
+  "createOrder": "Create order",
   "balance": "Balance",
   "regions": "Regions",
   "logs": "Logs",

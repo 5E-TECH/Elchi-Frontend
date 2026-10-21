@@ -381,7 +381,7 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   `confirm`/`alert`/`prompt` — xato.
 
 **4-bosqich — tayyor (sahifalar).** Har sahifa alohida PR, faylning birinchi qatorida `// dizayn-v2: <ekran>`.
-78 / 78 route v2 (`design/SCREENS.md`; NS-2 — yangi `/notifications/sent`); `/scan` skaner 1-bosqichida ko'chirildi (2026-10-19), oxirgisi —
+79 / 79 route v2 (`design/SCREENS.md`; NS-2 — yangi `/notifications/sent`, MO-2 — yangi `/my-earnings`); `/scan` skaner 1-bosqichida ko'chirildi (2026-10-19), oxirgisi —
 `/market-operators` (MO-1, 2026-10-21: market o'z operatorlari, menyuda «Operatorlar»). Oqimlardagi kamera rejimlari (`*-camera`) — skaner 2-bosqichida kontekstli
 markaziy tugma orqali qilindi, v1 `ScannerCameraModal` o'chirildi (§14); universal rejimlar — 3-bosqich,
 Sozlamalar → Skaner → «Kamera» — 4-bosqich (kamera ishi yopildi).
@@ -1066,3 +1066,8 @@ da §11 dan o'zgarishsiz ko'chirildi, G2 va G3 yozuvlari birlashtirishda qo'shil
   «Kim yubordi» filtrlari (URL, telefonda pastki varaqa), `DataTable` (planshetda 3 ustun yashirin, telefonda kartalar)
   + `Pagination`, `QueryBoundary` holatlari, tafsilot oynasi `SentDetailDialog` («Qayta yuborish»). «Xabar yuborish»
   sarlavhasida «Yuborilganlar». 78 / 78 route v2.
+- **Yangi (v2 da yozilgan):** MO-2 (2026-10-21) — «Daromadim» `/my-earnings`, faqat market operatori (maketlar
+  `market_operator-earnings`, `-earnings-no-commission` — qisman): «Stavkam» kartasi (`auth/my-profile` →
+  `commission_type`, `commission_value`; «Namuna», «Belgilaydi: Market egasi»), stavka yo'q — ogohlantirish va
+  «Belgilanmagan»; «Hisob», «To'lovlar», «Daromadlar» — backend (MO-6). Operator qobig'i va bosh sahifasi (market bosh
+  sahifasi operator rejimida). 79 / 79 route v2.
