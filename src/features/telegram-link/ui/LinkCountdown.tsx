@@ -1,4 +1,4 @@
-// dizayn-v2: common-profile-telegram-link-dialog
+// dizayn-v2: common-profile-telegram-link-dialog, superadmin-notifications-create-link-dialog
 import { useEffect, useId, useState } from "react";
 import { Clock } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -11,6 +11,14 @@ export type LinkCountdownProps = {
   expiresAtMs: number;
   /** To'liq muddat (progress 100% i), sukut — 10 daqiqa. */
   totalMs?: number;
+  /**
+   * `bar` (sukut) — ikki qator + progress chizig'i (shaxsiy Telegram oynasi, `common-profile-telegram-link-dialog`).
+   * `inline` — bitta qator, progresssiz: «🕓 9:41 qoldi · 14:37 gacha amal qiladi» (guruh qo'shish oynasi,
+   * `*-notifications-create-link-dialog`).
+   */
+  variant?: "bar" | "inline";
+  /** `inline` da muddat matni (sukut — `telegramLink:expiresAt`); iste'molchi o'z matnini beradi. */
+  untilLabel?: string;
   className?: string;
 };
 
@@ -19,7 +27,13 @@ export type LinkCountdownProps = {
  * progress chizig'i (maket `.el-progress`, 6 px, to'ldirish `text-subtle`; primitivi yo'q — CODE-MAP §2.9).
  * Muddat tugaganini bu komponent hal qilmaydi — ota oyna «Havola eskirdi» holatiga o'tkazadi.
  */
-export const LinkCountdown = ({ expiresAtMs, totalMs = LINK_TTL_MS, className }: LinkCountdownProps) => {
+export const LinkCountdown = ({
+  expiresAtMs,
+  totalMs = LINK_TTL_MS,
+  variant = "bar",
+  untilLabel,
+  className,
+}: LinkCountdownProps) => {
   const { t } = useTranslation("telegramLink");
   const leftId = useId();
   const [now, setNow] = useState(() => Date.now());
@@ -36,6 +50,20 @@ export const LinkCountdown = ({ expiresAtMs, totalMs = LINK_TTL_MS, className }:
   const totalSeconds = Math.round(totalMs / 1000);
   const leftSeconds = Math.ceil(leftMs / 1000);
   const percent = totalMs > 0 ? (leftMs / totalMs) * 100 : 0;
+
+  if (variant === "inline") {
+    return (
+      <p className={cx("m-0 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-[18px]", className)}>
+        <Clock aria-hidden="true" size={16} strokeWidth={2} className="shrink-0 text-text-muted" />
+        <span role="timer" className="whitespace-nowrap font-semibold text-text tabular-nums">
+          {t("timeLeft", { time: formatLinkTimeLeft(leftMs) })}
+        </span>
+        <span className="text-text-muted">
+          · {untilLabel ?? t("expiresAt", { time: formatTimeLocalized(expiresAtMs) })}
+        </span>
+      </p>
+    );
+  }
 
   return (
     <div className={cx("flex flex-col gap-2", className)}>

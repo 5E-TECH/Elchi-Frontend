@@ -1,6 +1,7 @@
-// dizayn-v2: superadmin-notifications-create-dialog
-import { useEffect, useEffectEvent, useRef, useState, type FormEvent } from "react";
-import { Bell, Clock, ExternalLink, Link2, RefreshCw, Store } from "lucide-react";
+// dizayn-v2: superadmin-notifications-create-dialog, superadmin-notifications-create-link-dialog, superadmin-notifications-create-expired-dialog, superadmin-notifications-create-exists-dialog, superadmin-notifications-create-exists-inactive-dialog
+import { useEffect, useEffectEvent, useId, useRef, useState, type FormEvent } from "react";
+import axios from "axios";
+import { Bell, ExternalLink, Link2, RefreshCw, Store } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import {
@@ -11,14 +12,14 @@ import {
   type NotificationGroupType,
 } from "../../../entities/notification";
 import { queryKeys } from "../../../shared/config/queryKeys";
-import { getApiErrorMessage } from "../../../shared/lib/apiError";
 import { formatTimeLocalized } from "../../../shared/lib/formatDateTime";
 import { notify } from "../../../shared/lib/notify";
 import { Button, buttonClasses, Dialog, Field, Select, Spinner } from "../../../shared/ui/primitives";
 import { useRequestGroupLink } from "../api/useRequestGroupLink";
 import { GROUP_LINK_POLL_MS } from "../model/constants";
 import type { GroupLinkCode } from "../model/types";
-import { LinkQrImage as GroupLinkQr } from "../../telegram-link";
+import { useToggleNotificationConfirm } from "../../notification-toggle";
+import { LinkCountdown, LinkQrImage } from "../../telegram-link";
 
 interface NotificationFormModalProps {
   open: boolean;
@@ -35,15 +36,24 @@ interface NotificationFormModalProps {
  * tanlaydi, bot guruhga qo'shilib uni o'zi ulaydi. Oyna shu paytda har 4 soniyada `GET /notifications
  * ?market_id&group_type` ni so'raydi: qator paydo bo'lsa — oyna yopiladi, «Guruh ulandi».
  *
- * Mavjud (market, tur) ulanishini bot HECH QACHON almashtirmaydi — bunday holatda havola berilmaydi,
- * foydalanuvchiga ro'yxatda tahrirlash yoki o'chirish aytiladi. Qo'lda «Telegram guruh ID» maydoni va
- * `VITE_TELEGRAM_NOTIFICATION_BOT_USERNAME` endi kerak emas (maketdagi qo'lda oqim o'rniga — kartadagi qaror).
+ * Mavjud (market, tur) ulanishini bot HECH QACHON almashtirmaydi — bunday holatda havola berilmaydi:
+ * - faol ulanish (`*-create-exists-dialog`) — «avval eskisini ro'yxatdan o'chiring», asosiy tugma o'chiq;
+ * - nofaol ulanish (`*-create-exists-inactive-dialog`, NG-S3) — asosiy tugma «Faollashtirish»: ochiq oyna
+ *   ustida faollashtirish tasdig'i (`features/notification-toggle`, faqat `PATCH {is_active: true}`);
+ *   muvaffaqiyatda oyna yopiladi, bekor qilinsa fokus «Faollashtirish» ga qaytadi. Nofaollik sababi
+ *   (`inactive_reason`) backendda yo'q — matn umumiy (maketdagi «bot guruhdan chiqarilgan» yozilmaydi, NG-C).
+ *
+ * Havola tayyor (`*-create-link-dialog`): QR oq ramkada (desktopda chapda, telefonda qadamlardan keyin),
+ * qadamlar, ajratgich ostida teskari sanoq (`LinkCountdown` `inline`, `role="timer"`) va kutish holati.
+ * Xato — faqat i18n matn (backend `message` ko'rsatilmaydi).
  */
 const CreateGroupLinkDialog = ({ open, onClose, marketId: initialMarketId }: NotificationFormModalProps) => {
   const { t } = useTranslation("notificationGroups");
   const queryClient = useQueryClient();
   const { options, getName, isLoading: marketsLoading } = useNotificationMarkets(open);
   const requestLink = useRequestGroupLink();
+  const confirmToggle = useToggleNotificationConfirm();
+  const linkTitleId = useId();
 
   const [marketId, setMarketId] = useState<string | null>(initialMarketId ?? null);
   const [groupType, setGroupType] = useState<NotificationGroupType>("create");
@@ -127,13 +137,37 @@ const CreateGroupLinkDialog = ({ open, onClose, marketId: initialMarketId }: Not
       if (seq === requestSeq.current) setLink(next);
     } catch (error) {
       if (seq !== requestSeq.current) return;
-      notify.error(t("create.linkError"), { description: getApiErrorMessage(error) || undefined });
+      // Javob kelmadi — «Internet aloqasi yo'q» ni interceptor allaqachon ko'rsatgan. Backend matni
+      // foydalanuvchiga chiqmaydi — faqat i18n izoh (403 — bu market uchun ulash yopiq).
+      if (axios.isAxiosError(error) && !error.response && error.code !== "ERR_CANCELED") return;
+      const forbidden = axios.isAxiosError(error) && error.response?.status === 403;
+      notify.error(t("create.linkError"), {
+        description: t(forbidden ? "create.linkErrorForbidden" : "create.linkErrorRetry"),
+      });
     }
+  };
+
+  // NG-S3: shu tur ulangan, lekin nofaol — ochiq oyna ustida faollashtirish tasdig'i.
+  const inactiveConnection = connection && !connection.is_active && !link ? connection : null;
+  const handleActivate = async () => {
+    if (!inactiveConnection) return;
+    const ok = await confirmToggle(inactiveConnection, marketName);
+    if (ok) onClose();
   };
 
   const activeLink = link && !expired ? link : null;
 
-  const primaryAction = activeLink ? (
+  const primaryAction = inactiveConnection ? (
+    <Button
+      variant="primary"
+      leftIcon={Bell}
+      aria-haspopup="dialog"
+      onClick={() => void handleActivate()}
+      className="flex-[999_1_200px]"
+    >
+      {t("toggle.activate.confirm")}
+    </Button>
+  ) : activeLink ? (
     activeLink.deep_link ? (
       <a
         href={activeLink.deep_link}
@@ -207,7 +241,11 @@ const CreateGroupLinkDialog = ({ open, onClose, marketId: initialMarketId }: Not
         <GroupTypeChoice name="notification-create-type" value={groupType} onChange={handleTypeChange} />
       </Field>
 
-      {connection && !link ? (
+      {inactiveConnection ? (
+        <NoticeAlert tone="warning" role="alert" title={t("create.existsInactiveTitle")}>
+          {t("create.existsInactive", { market: marketName, groupId: inactiveConnection.group_id })}
+        </NoticeAlert>
+      ) : connection && !link ? (
         <NoticeAlert tone="warning" role="alert" title={t("create.existsTitle")}>
           {t("create.exists", { market: marketName, groupId: connection.group_id })}
         </NoticeAlert>
@@ -221,37 +259,47 @@ const CreateGroupLinkDialog = ({ open, onClose, marketId: initialMarketId }: Not
 
       {activeLink ? (
         <section
-          aria-label={t("create.linkTitle")}
-          className="flex min-w-0 items-start gap-4 rounded-xl bg-sunken p-4 max-md:flex-col max-md:items-center"
+          aria-labelledby={linkTitleId}
+          className="flex min-w-0 flex-wrap items-start gap-4 rounded-xl bg-sunken p-4"
         >
           {activeLink.deep_link ? (
-            // Telefonda havola tugmasi asosiy yo'l — QR qadamlardan keyin (boshqa qurilmadan skanerlash uchun).
-            <GroupLinkQr value={activeLink.deep_link} alt={t("create.qrAlt")} className="max-md:order-last" />
+            // QR oq ramkada (tungi mavzuda ham oq — kamera o'qiydi). Desktopda chapda; telefonda havola tugmasi
+            // asosiy yo'l — QR qadamlardan keyin, markazda (boshqa qurilmadan skanerlash uchun).
+            <div className="flex shrink-0 max-md:order-last max-md:w-full max-md:justify-center">
+              <div className="flex rounded-xl bg-on-nav p-2.5">
+                <LinkQrImage value={activeLink.deep_link} alt={t("create.qrAlt")} size={156} rounded={false} />
+              </div>
+            </div>
           ) : null}
-          <div className="flex min-w-0 flex-1 flex-col gap-3 max-md:self-stretch">
-            <h3 className="text-sm font-semibold text-text">{t("create.linkTitle")}</h3>
+          <div className="flex min-w-0 flex-[1_1_220px] flex-col gap-3">
+            <h3 id={linkTitleId} className="m-0 text-sm font-semibold text-text">
+              {t("create.linkTitle")}
+            </h3>
             {activeLink.deep_link ? (
-              <ol className="flex list-decimal flex-col gap-1.5 pl-5 text-[13px] text-text-muted">
+              <ol className="m-0 flex list-decimal flex-col gap-1.5 pl-5 text-[13px] text-text-muted">
                 <li>{t("create.step1")}</li>
                 <li>{t("create.step2")}</li>
                 <li>{t("create.step3")}</li>
               </ol>
             ) : (
               <div className="flex flex-col gap-1.5 text-[13px] text-text-muted">
-                <p>{t("create.command")}</p>
+                <p className="m-0">{t("create.command")}</p>
                 <code className="rounded-lg bg-surface px-3 py-2 font-mono text-sm break-all text-text select-all">
                   {activeLink.command}
                 </code>
               </div>
             )}
-            <p className="flex items-center gap-1.5 text-[13px] text-text-muted">
-              <Clock size={16} aria-hidden="true" className="shrink-0" />
-              {t("create.expiresAt", { time: formatTimeLocalized(activeLink.expires_at) })}
-            </p>
-            <p role="status" className="flex items-center gap-2 text-[13px] font-semibold text-text">
-              <Spinner size="sm" />
-              {t("create.waiting")}
-            </p>
+            <div className="flex flex-col gap-2 border-t border-border pt-3">
+              <LinkCountdown
+                variant="inline"
+                expiresAtMs={Date.parse(activeLink.expires_at)}
+                untilLabel={t("create.expiresAt", { time: formatTimeLocalized(activeLink.expires_at) })}
+              />
+              <p role="status" className="m-0 flex items-center gap-2 text-[13px] font-semibold text-text">
+                <Spinner size="sm" />
+                {t("create.waiting")}
+              </p>
+            </div>
           </div>
         </section>
       ) : null}

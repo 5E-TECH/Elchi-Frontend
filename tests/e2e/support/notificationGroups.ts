@@ -4,6 +4,7 @@ import { expect, type Page, type Route } from "@playwright/test";
  * `/notifications` (NG-A) — soxta backend: ADMIN (ega NG-S2), 3 ta Telegram guruhi (biri nofaol), marketlar ro'yxati.
  * `PATCH /notifications/:id` tanasini yozib oladi va ro'yxatda holatni yangilaydi (`is_active`). Serverga so'rov
  * ketmaydi (jonli kanal WebSocket'i ham yopiladi).
+ * NG-B: `POST /telegram/link-code` (bir martalik guruh havolasi, 10 daqiqa) tanalarini ham yozib oladi.
  */
 const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
@@ -14,6 +15,8 @@ const cors = {
 };
 const reply = (route: Route, body: unknown) =>
   route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify(body) });
+
+export const GROUP_DEEP_LINK = "https://t.me/elchi_bot?startgroup=c0de42";
 
 const MARKETS = [
   { id: 12, name: "Baraka Shop", phone_number: "+998901112233" },
@@ -30,11 +33,13 @@ const initialGroups = () => [
 export type NotificationGroupsMock = {
   /** `PATCH /notifications/:id` tanalari (`{ id, body }`). */
   patches: { id: string; body: unknown }[];
+  /** `POST /telegram/link-code` tanalari (NG-B). */
+  linkRequests: unknown[];
 };
 
 export const openNotificationGroups = async (page: Page): Promise<NotificationGroupsMock> => {
   const groups = initialGroups();
-  const mock: NotificationGroupsMock = { patches: [] };
+  const mock: NotificationGroupsMock = { patches: [], linkRequests: [] };
   await page.context().routeWebSocket(/\/socket\.io\//, (ws) => ws.close());
   await page.context().route("**/*", async (route) => {
     const request = route.request();
@@ -60,6 +65,21 @@ export const openNotificationGroups = async (page: Page): Promise<NotificationGr
       const group = groups.find((item) => item.id === byId[1]);
       if (group && typeof body.is_active === "boolean") group.is_active = body.is_active;
       return reply(route, { statusCode: 200, data: group ?? {} });
+    }
+    if (path === "telegram/link-code" && request.method() === "POST") {
+      const body = request.postDataJSON() as { group_type?: string };
+      mock.linkRequests.push(body);
+      return reply(route, {
+        statusCode: 200,
+        data: {
+          token: "c0de42",
+          purpose: "market_group",
+          group_type: body.group_type,
+          expires_at: new Date(Date.now() + 10 * 60_000).toISOString(),
+          deep_link: GROUP_DEEP_LINK,
+          command: "/start c0de42",
+        },
+      });
     }
     return reply(route, { statusCode: 200, data: [] });
   });
