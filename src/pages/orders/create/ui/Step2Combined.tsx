@@ -373,11 +373,9 @@ const Step2Combined = () => {
             control={control}
             name="details.where_deliver"
             render={({ field }) => (
-              // XsoWhKP5: xato matni guruhga (`aria-describedby`), xato holati har radioga (`aria-invalid`) bog'langan.
-              <fieldset
-                aria-describedby={errors.details?.where_deliver?.message ? WHERE_DELIVER_ERROR_ID : undefined}
-                className="col-span-full m-0 min-w-0 border-0 p-0"
-              >
+              // XsoWhKP5: xato holati va matni har radioga (`aria-invalid` + `aria-describedby`) bog'langan. Guruhga
+              // (`fieldset`) qo'yilmaydi — aks holda ekran o'quvchi guruhga kirganda xatoni ikki marta o'qiydi.
+              <fieldset className="col-span-full m-0 min-w-0 border-0 p-0">
                 <legend className="mb-1.5 p-0 text-[13px] font-semibold text-text">
                   {t("deliveryType")}
                   <span aria-hidden="true" className="text-danger-fg">
@@ -476,8 +474,10 @@ const Step2Combined = () => {
       >
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(280px,100%),1fr))] items-start gap-6">
           <div className="flex min-w-0 flex-col gap-4">
-            {/* «Kamida bitta mahsulot» xatosi karta ostida — qidiruv maydoni unga bog'langan (XsoWhKP5). */}
-            <Field id="create-product-search" label={t("addProduct")} invalid={Boolean(itemsError)}>
+            {/* «Kamida bitta mahsulot» xatosi karta ostida — qidiruv maydoni unga faqat matn bilan bog'langan
+                (XsoWhKP5). Qizil holat (`invalid`) yo'q: step2 maketlarida bu xato faqat karta ostida, foydalanuvchi
+                hali yozmagan qidiruv maydoni xato emas. */}
+            <Field id="create-product-search" label={t("addProduct")}>
               <TextInput
                 mode="search"
                 placeholder={t("searchProduct")}

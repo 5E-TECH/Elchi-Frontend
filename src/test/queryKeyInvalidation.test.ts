@@ -14,8 +14,9 @@ import { SMS_KEYS } from "../entities/sms";
  * (`["user"]`) — ro'yxat 30 s (`staleTime`) eski qoladi va yangi yozuv «yo'qolgan» ko'rinadi.
  *
  * Qoida: so'rov kalitlari fabrikalaridagi har `all` (bo'lim prefiksi), `lists` va `list(…)` (ro'yxat prefiksi) —
- * `all` i yo'q fabrikada har statik kalit — `src` dagi kamida bitta `invalidateQueries` / `refetchQueries` /
- * `resetQueries` chaqiruvi bilan QAMRALADI (chaqiruv kaliti uning prefiksi). Faqat o'qiladigan kalitlar —
+ * `all` i yo'q fabrikada har statik kalit — `src` dagi kamida bitta MUTATSIYA kontekstidagi `invalidateQueries` /
+ * `refetchQueries` / `resetQueries` chaqiruvi bilan QAMRALADI (chaqiruv kaliti uning prefiksi). «Yangilash» tugmasi
+ * yoki real-vaqt effekti qamrov hisoblanmaydi (pastdagi «Chaqiruv mutatsiyadanmi?» bo'limi). Faqat o'qiladigan kalitlar —
  * `READ_ONLY` da, har biri yozma sabab bilan; ro'yxat eskirsa (kalit endi qamralsa) test shuni ham aytadi.
  *
  * Kalit TypeScript AST'dan aniqlanadi: massiv literali (satrlar, fayl/eksport `const` lari, `...spread`), fabrika
@@ -224,9 +225,100 @@ const resolveIterated = (identifier: ts.Identifier, path: string): Resolved[] | 
 
 const INVALIDATING_CALLS = new Set(["invalidateQueries", "refetchQueries", "resetQueries"]);
 
+// ── Chaqiruv mutatsiyadanmi? ───────────────────────────────────────────────────────────────────────────────
+//
+// Qamrov faqat MUTATSIYA invalidatsiyasidan hisoblanadi — «Yangilash» tugmasi yoki effekt ichidagi `refetchQueries`
+// kalitni «yozuvdan keyin yangilanadi» qilmaydi. Mutatsiya konteksti:
+//   1) `useMutation` parametrlari — `onSuccess` / `onSettled` / `onMutate` / `onError` xususiyati ichida;
+//   2) eng yaqin ishlovchi funksiya (`then`/`map`/`Promise.all` ichki strelkalaridan yuqoriroq) o'zi yozadi —
+//      `.mutate(` / `.mutateAsync(` yoki `api.post|put|patch|delete(` chaqiradi;
+//   3) nomli yordamchi (`const refreshX = () => …invalidateQueries…`) — 1) yoki 2) kontekstda nomi bilan chaqirilsa
+//      (zanjir bo'ylab, fiksatsiya nuqtasigacha).
+
+const MUTATION_HOOK_PROPS = new Set(["onSuccess", "onSettled", "onMutate", "onError"]);
+const WRITES = /\.(?:mutate|mutateAsync)\(|\bapi\s*\.\s*(?:post|put|patch|delete)\s*[<(]/;
+const INNER_CALLS = new Set(["then", "catch", "finally", "map", "forEach", "all", "allSettled"]);
+
+const isFunctionLike = (node: ts.Node): node is ts.ArrowFunction | ts.FunctionExpression | ts.FunctionDeclaration | ts.MethodDeclaration =>
+  ts.isArrowFunction(node) || ts.isFunctionExpression(node) || ts.isFunctionDeclaration(node) || ts.isMethodDeclaration(node);
+
+const propertyName = (node: ts.Node) =>
+  (ts.isPropertyAssignment(node) || ts.isMethodDeclaration(node) || ts.isShorthandPropertyAssignment(node)) && ts.isIdentifier(node.name)
+    ? node.name.text
+    : undefined;
+
+/** Ishlovchi funksiya: ichki `then`/`map`/`Promise.all` strelkalaridan o'tib, birinchi «haqiqiy» funksiya. */
+const handlerOf = (node: ts.Node): ts.Node | undefined => {
+  let fn: ts.Node | undefined = node.parent;
+  while (fn && !isFunctionLike(fn)) fn = fn.parent;
+  while (fn) {
+    const call: ts.Node | undefined = fn.parent;
+    const callee = call && ts.isCallExpression(call) ? call.expression : undefined;
+    const name = callee && ts.isPropertyAccessExpression(callee) ? callee.name.text : undefined;
+    if (!name || !INNER_CALLS.has(name)) return fn;
+    let up: ts.Node | undefined = call.parent;
+    while (up && !isFunctionLike(up)) up = up.parent;
+    if (!up) return fn;
+    fn = up;
+  }
+  return fn;
+};
+
+/** Nomli yordamchi: chaqiruv joylashgan `const NAME = (…) => …` / `function NAME` nomi. */
+const helperNameOf = (node: ts.Node): string | undefined => {
+  for (let n: ts.Node | undefined = node.parent; n; n = n.parent) {
+    if (ts.isFunctionDeclaration(n) && n.name) return n.name.text;
+    if (isFunctionLike(n) && ts.isVariableDeclaration(n.parent) && ts.isIdentifier(n.parent.name)) return n.parent.name.text;
+    if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer && ts.isCallExpression(unwrap(n.initializer))) {
+      return n.name.text; // `const refresh = useCallback(() => …)`
+    }
+  }
+  return undefined;
+};
+
+/** Tugun mutatsiya kontekstidami (1–2-band); `helpers` — mutatsiyaga bog'langan yordamchi nomlari (3-band). */
+const inMutationContext = (node: ts.Node, helpers: Set<string>) => {
+  for (let n: ts.Node | undefined = node.parent; n; n = n.parent) {
+    const name = propertyName(n);
+    if (name && MUTATION_HOOK_PROPS.has(name)) return true;
+  }
+  const handler = handlerOf(node);
+  if (handler && WRITES.test(handler.getText())) return true;
+  const helper = helperNameOf(node);
+  return helper !== undefined && helpers.has(helper);
+};
+
+/** Yordamchi nomlari (fayl ichida yoki eksport) — ular mutatsiya kontekstida chaqiriladimi (fiksatsiya nuqtasigacha). */
+const mutationHelpers = (() => {
+  const helpers = new Set<string>();
+  const calls: Array<{ name: string; node: ts.CallExpression }> = [];
+  for (const { source } of parsed) {
+    const visit = (node: ts.Node) => {
+      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression)) calls.push({ name: node.expression.text, node });
+      // `onSuccess: refreshX` — chaqiruvsiz havola ham.
+      if ((ts.isPropertyAssignment(node) && MUTATION_HOOK_PROPS.has(propertyName(node) ?? "")) && ts.isIdentifier(unwrap(node.initializer))) {
+        helpers.add((unwrap(node.initializer) as ts.Identifier).text);
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(source);
+  }
+  for (let changed = true; changed; ) {
+    changed = false;
+    for (const { name, node } of calls) {
+      if (helpers.has(name)) continue;
+      if (inMutationContext(node, helpers)) {
+        helpers.add(name);
+        changed = true;
+      }
+    }
+  }
+  return helpers;
+})();
+
 /** `src` dagi barcha invalidatsiya chaqiruvlari kalitlari. */
 const invalidatedKeys = (() => {
-  const result: Array<Resolved & { at: string }> = [];
+  const result: Array<Resolved & { at: string; mutation: boolean }> = [];
   for (const { path, source } of parsed) {
     const visit = (node: ts.Node) => {
       if (
@@ -249,7 +341,8 @@ const invalidatedKeys = (() => {
         if (keyExpression) {
           const target = unwrap(keyExpression);
           const iterated = ts.isIdentifier(target) ? resolveIterated(target, path) : undefined;
-          for (const resolved of iterated ?? resolveKeys(target, path)) result.push({ ...resolved, at });
+          const mutation = inMutationContext(node, mutationHelpers);
+          for (const resolved of iterated ?? resolveKeys(target, path)) result.push({ ...resolved, at, mutation });
         }
       }
       ts.forEachChild(node, visit);
@@ -281,7 +374,8 @@ const samePart = (a: KeyPart, b: KeyPart) => JSON.stringify(a) === JSON.stringif
 /** `prefix` kaliti `key` ni qamraydi (TanStack Query prefiks mosligi). */
 const covers = (prefix: Key, key: Key) => prefix.length <= key.length && prefix.every((part, index) => samePart(part, key[index]));
 
-const coveredBy = (key: Key) => invalidatedKeys.filter((entry) => entry.complete && entry.key.length > 0 && covers(entry.key, key));
+const coveredBy = (key: Key) =>
+  invalidatedKeys.filter((entry) => entry.mutation && entry.complete && entry.key.length > 0 && covers(entry.key, key));
 
 describe("so'rov kalitlari fabrikalari ↔ invalidatsiya (SZTZ4HEU 837be6)", () => {
   it("AST tahlilchisi ishlaydi: ma'lum chaqiruvlar aniqlanadi (o'z-o'zini tekshirish)", () => {
@@ -309,6 +403,21 @@ describe("so'rov kalitlari fabrikalari ↔ invalidatsiya (SZTZ4HEU 837be6)", () 
       expect(coveredBy(candidate.key).map((entry) => entry.at), `${id} endi invalidatsiya qilinadi — READ_ONLY dan olib tashlang`).toEqual([]);
       expect(reason.length).toBeGreaterThan(30);
     }
+  });
+
+  it("faqat mutatsiya chaqiruvi qamraydi: «Yangilash» tugmasi hisoblanmaydi, onSuccess va yordamchi orqali — hisoblanadi", () => {
+    const site = (file: string, key: unknown[]) =>
+      invalidatedKeys.filter((entry) => entry.at.startsWith(`${file}:`) && JSON.stringify(entry.key) === JSON.stringify(key));
+    // «Umumiy holat → Yangilash» (`useCallback` ichida, yozuv yo'q) — mutatsiya emas.
+    const refresh = site("src/pages/integrations/ConnectionsPage.tsx", integrationKeys.all as unknown as unknown[]);
+    expect(refresh.length).toBeGreaterThan(0);
+    expect(refresh.every((entry) => !entry.mutation)).toBe(true);
+    // `invalidateUserLists` — `onSuccess: invalidateUserLists` orqali bog'langan yordamchi.
+    const users = site("src/entities/user/api/userApi.ts", queryKeys.users.all as unknown as unknown[]);
+    expect(users.length).toBeGreaterThan(0);
+    expect(users.every((entry) => entry.mutation)).toBe(true);
+    // Mutatsiyadan tashqari chaqiruvlar mavjud — tasnif hammasini «mutatsiya» deb belgilamaydi.
+    expect(invalidatedKeys.filter((entry) => !entry.mutation).length).toBeGreaterThan(3);
   });
 
   it("queryKeys.users — foydalanuvchi mutatsiyalari (`entities/user/api/userApi.ts`) ham uni eskirtiradi", () => {

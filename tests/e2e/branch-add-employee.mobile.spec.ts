@@ -42,9 +42,12 @@ test.describe("Filial «Xodim qo'shish» — yangi xodim darhol — 390px", () =
     await expectToast(page, /Kuryer/, { tone: "success" });
     expect(mock.creates).toHaveLength(1);
 
-    // 3) Forma `navigate(-1)` — filial sahifasiga qaytadi; oyna yangi kuryerni ko'rsatadi.
+    // 3) Forma `navigate(-1)` — filial sahifasiga qaytadi; oyna yangi kuryerni ko'rsatadi. Soat to'xtatilgan — kesh
+    //    o'z-o'zidan eskirmaydi, qayta GET faqat POST dan keyingi invalidatsiyadan.
     await expect(page).toHaveURL(new RegExp(`/branches/${BRANCH.id}$`));
+    const getsAfterPost = mock.usersGets();
     dialog = await openAddEmployee(page);
+    await expect.poll(() => mock.usersGets()).toBeGreaterThan(getsAfterPost);
     await expect(dialog.getByRole("option", { name: /Lola Kuryerova/ })).toBeVisible();
     await expect(dialog.getByRole("option", { name: /Sardor Karimov/ })).toBeVisible();
     expect(await isSameDocument(page)).toBe(true);

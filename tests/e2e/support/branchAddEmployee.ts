@@ -63,6 +63,10 @@ export const mockBranchAddEmployeeApi = async (page: Page) => {
     }
     return reply(route, wrap([]));
   });
+  // Soat to'xtatilgan (`Date.now` o'zgarmaydi, taymerlar ishlaydi): `useUsers` ning 30 s `staleTime` i HECH QACHON
+  // o'z-o'zidan tugamaydi — oyna yangi xodimni faqat mutatsiya invalidatsiyasi tufayli ko'rsatadi (sekin mashinada
+  // ham test tuzatishsiz yiqiladi).
+  await page.clock.setFixedTime(new Date());
   await page.addInitScript(() => {
     const far = Date.now() + 86_400_000;
     window.sessionStorage.setItem("accessToken", "e2e.local.token");

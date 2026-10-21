@@ -22,7 +22,9 @@ export type ContrastIssue = { text: string; ratio: number; color: string; backgr
  * ega savoli yoki alohida PR; sabab bo'sh bo'lmaydi (test tekshiradi).
  */
 export const CONTRAST_ALLOW_LIST: Record<string, string> = {
-  ".text-nav-muted":
+  // Faqat yon menyu guruh sarlavhasi tugmasi (`nav` ichidagi yig'iladigan `button`) — boshqa `text-nav-muted` matnlar
+  // (mobil menyu bo'lim sarlavhasi va persona izohi, PageLoader) tekshiruvda qoladi (o'z-o'zini tekshirish ushlaydi).
+  "nav button[aria-expanded][aria-controls].text-nav-muted":
     "Yon menyu guruh sarlavhalari («Ish», «Moliya» …) — shell tokeni `--color-nav-muted` tungi mavzuda " +
     "rgba(232,235,247,.48) / #0a0e1b = 4.33:1 (maket qiymati). Token va shell faqat o'z bosqichi PR'ida yoki ega " +
     "roziligi bilan o'zgaradi (AGENTS.md) — ega savoli: alfa .48 → .50 (4.66:1). Sahifa matni emas.",
@@ -164,6 +166,23 @@ const expectProbeCaught = async (page: Page) => {
   const probe = issues.find((issue) => issue.text === "kontrast namunasi");
   expect(probe, "o'lchagich binafsha namunani ushlamadi").toBeTruthy();
   expect(probe!.ratio).toBeLessThan(3.5);
+
+  // Ruxsat ro'yxati faqat yozilgan sababdagi elementni o'tkazib yuboradi: guruh sarlavhasi bo'lmagan `text-nav-muted`
+  // matn (masalan mobil menyu izohi) baribir o'lchanadi va ushlanadi.
+  await page.evaluate(() => {
+    const probe = document.createElement("span");
+    probe.id = "contrast-probe-allow";
+    probe.className = "text-nav-muted";
+    probe.textContent = "ruxsat namunasi";
+    probe.style.color = "#7c3aed";
+    (document.querySelector("[data-shell-slot=content]") ?? document.body).append(probe);
+  });
+  const allowed = await measureTextContrast(page, Object.keys(CONTRAST_ALLOW_LIST));
+  await page.evaluate(() => document.getElementById("contrast-probe-allow")?.remove());
+  expect(
+    allowed.issues.find((issue) => issue.text === "ruxsat namunasi"),
+    "ruxsat ro'yxati selektori sababidan kengroq — boshqa text-nav-muted matnni ham yashiradi",
+  ).toBeTruthy();
 };
 
 /** Sahifa to'liq chizilgach (skelet/yuklanish tugagach) o'lchaydi va natijani tekshiradi. */

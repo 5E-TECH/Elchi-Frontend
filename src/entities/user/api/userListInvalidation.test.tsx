@@ -80,6 +80,21 @@ describe("useUser mutatsiyalari → queryKeys.users (filial «Xodim qo'shish» r
     expect(queryClient.getQueryState(MODAL_KEY)?.isInvalidated).toBe(true);
   });
 
+  // Kuryer / menejer tanlovlari (`useGetCouriers` → `["couriers", params]`, `useGetManagers` → `["managers", params]`)
+  // ham eskiradi — superadmin yaratgan kuryer tarqatish va to'lov tanlovida staleTime kutmasdan chiqadi.
+  it.each(CASES)("%s → kuryer va menejer ro'yxatlari ham eskiradi", async (_name, run) => {
+    const { result, queryClient } = setup();
+    const couriersKey = ["couriers", { page: 1, limit: 100 }];
+    const managersKey = ["managers", { page: 1, limit: 100 }];
+    queryClient.setQueryData(couriersKey, { data: { items: [] } });
+    queryClient.setQueryData(managersKey, { data: { items: [] } });
+    await act(async () => {
+      await run(result.current);
+    });
+    expect(queryClient.getQueryState(couriersKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(managersKey)?.isInvalidated).toBe(true);
+  });
+
   it("oyna ochiq (faol useUsers) bo'lsa createCourier dan keyin GET /users darhol qayta yuboriladi", async () => {
     const { result, queryClient, wrapper } = setup();
     queryClient.removeQueries({ queryKey: MODAL_KEY });

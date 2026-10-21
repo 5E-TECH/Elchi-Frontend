@@ -14,8 +14,8 @@ vi.mock("../../../../shared/api/api", () => ({
 
 /**
  * XsoWhKP5: buyurtma yaratish 2-qadamida maydon xatolari ekran o'quvchiga bog'langan — «Yetkazish turi» radiolari
- * `aria-invalid` + xato matniga `aria-describedby` (guruh ham), «Kamida bitta mahsulot» xatosi mahsulot qidiruvi
- * maydoniga. `Field` ichidagi maydonlar (ism, manzil …) — `Field` ning o'zi (alohida test).
+ * `aria-invalid` + xato matniga `aria-describedby` (faqat radiolarda — guruhda ham bo'lsa xato ikki marta o'qiladi),
+ * «Kamida bitta mahsulot» xatosi mahsulot qidiruvi maydoniga faqat `aria-describedby` bilan (maketda qizil holat yo'q). `Field` ichidagi maydonlar (ism, manzil …) — `Field` ning o'zi (alohida test).
  */
 
 const marketState = { role: { id: "7", role: "market", region: null, name: "Test market" } } as never;
@@ -51,13 +51,15 @@ describe("Step2Combined — xato matnlari maydonlarga bog'langan (XsoWhKP5)", ()
     expect(search).not.toHaveAttribute("aria-invalid");
   });
 
-  it("«Yetkazish turi» xatosi: har radio aria-invalid, guruh va radiolar xato matni bilan tavsiflangan; fokus radioga", async () => {
+  it("«Yetkazish turi» xatosi: har radio aria-invalid va xato matni bilan tavsiflangan (guruh emas); fokus radioga", async () => {
     render();
     await waitFor(() => expect(form).not.toBeNull());
     act(() => form!.setError("details.where_deliver", { message: "Yetkazish turini tanlang" }, { shouldFocus: true }));
 
     const group = screen.getByRole("group", { name: /Yetkazish turi/ });
-    expect(group).toHaveAccessibleDescription("Yetkazish turini tanlang");
+    // Guruh tavsifi bo'lsa NVDA/JAWS xatoni guruhga kirganda va radioda — ikki marta o'qiydi.
+    expect(group).not.toHaveAttribute("aria-describedby");
+    expect(group).toHaveAccessibleDescription("");
     const radios = within(group).getAllByRole("radio");
     expect(radios).toHaveLength(2);
     for (const radio of radios) {
@@ -67,13 +69,15 @@ describe("Step2Combined — xato matnlari maydonlarga bog'langan (XsoWhKP5)", ()
     expect(radios[0]).toHaveFocus();
   });
 
-  it("«Kamida bitta mahsulot» xatosi: mahsulot qidiruvi aria-invalid va xato matni bilan tavsiflangan", async () => {
+  it("«Kamida bitta mahsulot» xatosi: mahsulot qidiruvi xato matni bilan tavsiflangan, lekin qizil (aria-invalid) emas", async () => {
     render();
     await waitFor(() => expect(form).not.toBeNull());
     act(() => form!.setError("details.items", { message: "Kamida bitta mahsulot qo'shing" }));
 
     const search = screen.getByRole("searchbox", { name: "Mahsulot qo'shish" });
-    expect(search).toHaveAttribute("aria-invalid", "true");
+    expect(search).not.toHaveAttribute("aria-invalid");
     expect(search).toHaveAccessibleDescription("Kamida bitta mahsulot qo'shing");
+    // Maketda qidiruv maydoni xato ramkasisiz — `Field invalid` qizil chegara berardi.
+    expect(search.closest("[data-invalid]")).toBeNull();
   });
 });

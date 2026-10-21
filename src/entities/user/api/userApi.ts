@@ -145,11 +145,15 @@ export const useUser = () => {
    * `[user]` — «Foydalanuvchilar» ro'yxati, tafsilot va o'z profili (`useGetUser`, `useGetUserById`, …);
    * `queryKeys.users` — `useUsers` (filial «Xodim qo'shish» oynasi, «Kim yubordi» filtri). Ikkinchisi faol bo'lmasa
    * ham eskirgan deb belgilanadi — oyna keyin ochilganda yangi xodim darhol ko'rinadi (30 s `staleTime` kutilmaydi).
+   * `["couriers"]` / `["managers"]` — shu hookning `useGetCouriers` / `useGetManagers` ro'yxatlari (tarqatish sahifasi,
+   * to'lov «kimdan» tanlovi): yangi / o'zgargan / o'chirilgan kuryer yoki menejer ular ichida ham darhol aks etadi.
    */
   const invalidateUserLists = () =>
     Promise.all([
       client.invalidateQueries({ queryKey: [user], refetchType: "active" }),
       client.invalidateQueries({ queryKey: queryKeys.users.all }),
+      client.invalidateQueries({ queryKey: ["couriers"] }),
+      client.invalidateQueries({ queryKey: ["managers"] }),
     ]);
 
   /** `silentError` — sahifa xatoni o'zi ko'rsatadi (`ErrorState`), global xabar takrorlanmaydi. */
