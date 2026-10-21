@@ -29,6 +29,14 @@ export const API_ENDPOINTS = {
     // O'z Telegram'ini botga ulash (har qanday xodim; mijoz/investor — 403).
     MY_TELEGRAM_LINK_CODE: "users/me/telegram/link-code", // POST → { token, purpose, expires_at, deep_link, command } (bir martalik, 10 daqiqa)
     MY_TELEGRAM: "users/me/telegram", // DELETE → { unlinked }
+    // Rolni o'zgartirish (FY-2, K3scaE0W; faqat SUPERADMIN): PATCH { role } — faqat admin ⇄ registrator ⇄ manager ⇄
+    // logist. 409 — filialga biriktirilgan, 503 — biriktiruv tekshirilmadi yoki logist viloyatlari bo'shatilmadi.
+    ROLE: (id: string | number) => `users/${id}/role`,
+  },
+  // Rol katalogi (FY-2, K3scaE0W; superadmin, admin, menejer): GET → { items, changeable_roles }. Yorliqlar faqat
+  // o'zbekcha — frontend faqat `changeable_roles` ni oladi, nomlar i18n'dan.
+  ROLES: {
+    BASE: "roles",
   },
   ADMINS: {
     BASE: "admins", // GET list / POST create

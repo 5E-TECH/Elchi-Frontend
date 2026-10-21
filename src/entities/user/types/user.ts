@@ -237,3 +237,20 @@ export interface UpdateUserRequest {
    */
   ai_price_per_order?: number | null;
 }
+
+// ==================== CHANGE ROLE (FY-2) ====================
+
+/**
+ * K3scaE0W — `PATCH /users/:id/role` da manba ham, nishon ham bo'la oladigan rollar (backend `CHANGEABLE_ROLES`:
+ * pul/hisob bog'lanmagan xodimlar). Kuryer, market, operator, investor va superadmin almashtirilmaydi.
+ */
+export type ChangeableUserRole = "admin" | "manager" | "registrator" | "logist";
+
+export interface ChangeUserRoleRequest {
+  role: ChangeableUserRole;
+}
+
+/** `GET /roles` — frontend faqat `changeable_roles` ni oladi (katalog yorliqlari faqat o'zbekcha, nomlar i18n'dan). */
+export interface RoleCatalog {
+  changeableRoles: ChangeableUserRole[];
+}
