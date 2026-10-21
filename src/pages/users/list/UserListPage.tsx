@@ -332,6 +332,11 @@ const UserListPage = memo(() => {
               icon={CircleCheck}
             />
           </Field>
+          {/* TG-B (`*-users-list-telegram`): ustun izohi ko'rinadigan qator (sarlavhadagi `title` faqat sichqonchada).
+              Maketdagi «Telegram boti» filtr chiplari — «Taklif · backend kerak», chizilmaydi. */}
+          {canManageUsers ? (
+            <p className="m-0 basis-full text-[13px] leading-[18px] text-text-muted">{t("tgBot.listHint")}</p>
+          ) : null}
         </div>
 
         <QueryBoundary

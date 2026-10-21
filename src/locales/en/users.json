@@ -426,6 +426,7 @@
     "unlinked": "Not connected",
     "cardLinked": "Bot connected",
     "cardUnlinked": "Bot not connected",
+    "listHint": "Personal Elchi bot connection. Store group status is on the user's details page, in the “Telegram group” card.",
     "unavailable": "Cannot be connected"
   }
 }

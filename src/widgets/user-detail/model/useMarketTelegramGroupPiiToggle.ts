@@ -1,10 +1,10 @@
 import { useState } from "react";
+import axios from "axios";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import type { RootState } from "../../../app/config/store";
 import { useUser } from "../../../entities/user/api/userApi";
 import type { User } from "../../../entities/user/types/user";
-import axios from "axios";
 import { notify } from "../../../shared/lib/notify";
 
 /**

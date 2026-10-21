@@ -1,4 +1,5 @@
 // dizayn-v2: superadmin-users-detail-telegram-group-dialog, superadmin-users-detail-telegram-group-expired-dialog, admin-users-detail-telegram-group-dialog, admin-users-detail-telegram-group-expired-dialog, market-profile-telegram-group-dialog, market-profile-telegram-group-expired-dialog
+import type { RefObject } from "react";
 import { Clock, ExternalLink, RefreshCw, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { NotificationGroupType } from "../../../entities/notification";
@@ -61,6 +62,8 @@ export type MarketGroupLinkDialogProps = {
    * endpointi TG-C da) — kutish qatori yo'q, 3-qadam «ulanganda sizga bildirishnoma keladi».
    */
   watching: boolean;
+  /** Yopilgach fokus shu elementga (sukut — oynani ochgan element). */
+  returnFocus?: RefObject<HTMLElement | null>;
   onRenew: () => void;
   onClose: () => void;
 };
@@ -86,6 +89,7 @@ export const MarketGroupLinkDialog = ({
   expired,
   renewing,
   watching,
+  returnFocus,
   onRenew,
   onClose,
 }: MarketGroupLinkDialogProps) => {
@@ -176,6 +180,7 @@ export const MarketGroupLinkDialog = ({
       open={open}
       onClose={onClose}
       busy={renewing}
+      returnFocus={returnFocus ?? true}
       size="lg"
       icon={Users}
       title={t("group.title")}

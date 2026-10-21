@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import axios from "axios";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { useNotifications, type NotificationGroupType } from "../../../entities/notification";
+import { useNotifications, type NotificationGroupType, type NotificationParams } from "../../../entities/notification";
 import { queryKeys } from "../../../shared/config/queryKeys";
 import { notify } from "../../../shared/lib/notify";
 import { useRequestGroupLink } from "../api/useTelegramLink";
@@ -14,6 +14,8 @@ type GroupLinkSession = {
   open: boolean;
   groupType: NotificationGroupType;
   code: GroupLinkCode;
+  /** Sessiya boshlangan lahza: kuzatuv faqat shundan keyin olingan javobga ishonadi (keshdagi eski qator emas). */
+  openedAt: number;
   expiresAtMs: number;
   totalMs: number;
 };
@@ -31,6 +33,11 @@ export type UseMarketGroupLinkOptions = {
    * Qator paydo bo'lsa — oyna yopiladi, «Guruh ulandi». `marketId` siz e'tiborga olinmaydi.
    */
   watch?: boolean;
+  /**
+   * Oyna yopilgach fokus qaytadigan joy (tur bo'yicha). Kuzatuvda «Ulash» guruh ulangach yo'qoladi — fokus `<body>`
+   * ga tushmasligi uchun o'sha tur qatori beriladi. Berilmasa — oynani ochgan tugmaga.
+   */
+  returnFocusRefs?: Partial<Record<NotificationGroupType, RefObject<HTMLElement | null>>>;
 };
 
 /**
@@ -39,13 +46,20 @@ export type UseMarketGroupLinkOptions = {
  * kuzatilsa — guruh ulanganda oyna o'zi yopiladi va `notifications` so'rovlari yangilanadi.
  * Xato matni — faqat i18n (backend matni foydalanuvchiga chiqmaydi); javob kelmasa — interceptor xabari yetarli.
  */
-export const useMarketGroupLink = ({ marketId, marketName, watch = false }: UseMarketGroupLinkOptions) => {
+export const useMarketGroupLink = ({
+  marketId,
+  marketName,
+  watch = false,
+  returnFocusRefs,
+}: UseMarketGroupLinkOptions) => {
   const { t } = useTranslation("telegramLink");
   const queryClient = useQueryClient();
   const request = useRequestGroupLink();
   const [session, setSession] = useState<GroupLinkSession | null>(null);
   const [expiredToken, setExpiredToken] = useState<string | null>(null);
   const [pendingType, setPendingType] = useState<NotificationGroupType | null>(null);
+  // Bir xil «tick» dagi ikki bosish ikki havola so'ramasin (`isPending` render yopilmasida hali `false`).
+  const starting = useRef(false);
 
   const open = session?.open === true;
   const expired = session != null && expiredToken === session.code.token;
@@ -60,8 +74,14 @@ export const useMarketGroupLink = ({ marketId, marketName, watch = false }: UseM
   }, [open, session]);
 
   // Havola amalda — bot guruhni ulaganini kutish (oyna fonda bo'lsa ham: foydalanuvchi Telegram'da).
+  const watchParams = (groupType: NotificationGroupType | undefined): NotificationParams => ({
+    market_id: marketId,
+    group_type: groupType,
+    page: 1,
+    limit: 1,
+  });
   const connectionQuery = useNotifications(
-    { market_id: marketId, group_type: session?.groupType, page: 1, limit: 1 },
+    watchParams(session?.groupType),
     {
       enabled: watching && open && !expired,
       refetchInterval: GROUP_LINK_POLL_MS,
@@ -73,6 +93,9 @@ export const useMarketGroupLink = ({ marketId, marketName, watch = false }: UseM
     watching &&
     open &&
     session != null &&
+    // Kesh (oldingi sessiya, «Bildirishnomalar» oynasi — xuddi shu kalit) eski qatorni darhol qaytaradi: faqat shu
+    // sessiyada olingan javob hisoblanadi.
+    connectionQuery.dataUpdatedAt >= session.openedAt &&
     (connectionQuery.data?.data ?? []).some(
       (row) => row.market_id === String(marketId) && row.group_type === session.groupType,
     );
@@ -98,7 +121,8 @@ export const useMarketGroupLink = ({ marketId, marketName, watch = false }: UseM
   }, [notice, marketName, queryClient, t]);
 
   const start = async (groupType: NotificationGroupType) => {
-    if (request.isPending) return;
+    if (starting.current || request.isPending) return;
+    starting.current = true;
     setPendingType(groupType);
     try {
       const code = await request.mutateAsync({
@@ -106,13 +130,17 @@ export const useMarketGroupLink = ({ marketId, marketName, watch = false }: UseM
         group_type: groupType,
         ...(marketId ? { market_id: marketId } : {}),
       });
-      setSession({ open: true, groupType, code, ...toLinkWindow(code.expires_at) });
+      if (watching) {
+        queryClient.removeQueries({ queryKey: queryKeys.notifications.list(watchParams(groupType)), exact: true });
+      }
+      setSession({ open: true, groupType, code, openedAt: Date.now(), ...toLinkWindow(code.expires_at) });
     } catch (error) {
       // Javob kelmadi — «Internet aloqasi yo'q» ni interceptor ko'rsatgan. 403 — bu hisobga ulash yopiq.
       if (axios.isAxiosError(error) && !error.response && error.code !== "ERR_CANCELED") return;
       const forbidden = axios.isAxiosError(error) && error.response?.status === 403;
       notify.error(t("linkError"), { description: t(forbidden ? "linkErrorForbidden" : "linkErrorRetry") });
     } finally {
+      starting.current = false;
       setPendingType(null);
     }
   };
@@ -134,6 +162,7 @@ export const useMarketGroupLink = ({ marketId, marketName, watch = false }: UseM
       expired={expired}
       renewing={request.isPending}
       watching={watching}
+      returnFocus={returnFocusRefs?.[session.groupType]}
       onRenew={() => void start(session.groupType)}
       onClose={close}
     />

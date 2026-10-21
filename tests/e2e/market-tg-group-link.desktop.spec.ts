@@ -116,6 +116,11 @@ test.describe("Market Telegram guruhi (TG-B) — 1440px", () => {
     await expect(table.getByRole("columnheader", { name: "Telegram boti" })).toBeVisible({ timeout: 90_000 });
     await expect(table.getByRole("row", { name: /Mehr Kosmetika/ }).getByText("Ulangan")).toBeVisible();
     await expect(table.getByRole("row", { name: /Jasur Tursunov/ }).getByText("Ulanmagan")).toBeVisible();
-    await expect(table.getByRole("row", { name: /Sherzod Umarov/ }).getByLabel("Ulab bo'lmaydi")).toBeVisible();
+    // «—» faqat ko'zga, nomi — ko'rinmas matnda (generic `<span>` dagi `aria-label` o'qilmaydi).
+    await expect(table.getByRole("row", { name: /Sherzod Umarov/ }).getByText("Ulab bo'lmaydi")).toHaveClass(/sr-only/);
+    // Ustun izohi — filtrlar ostida ko'rinadigan qator (sarlavhadagi `title` faqat sichqonchada).
+    await expect(
+      page.getByRole("group", { name: "Filtrlar" }).getByText(/^Shaxsiy Elchi boti ulanishi\. Market guruhlari holati/),
+    ).toBeVisible();
   });
 });

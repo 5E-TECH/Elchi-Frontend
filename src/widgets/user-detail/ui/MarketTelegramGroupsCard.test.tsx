@@ -192,6 +192,51 @@ describe("MarketTelegramGroupsCard — `staff` (superadmin/admin, `*-users-detai
     await waitFor(() => expect(screen.queryByRole("dialog", { name: "Telegram guruhini ulash" })).not.toBeInTheDocument());
   }, 15_000);
 
+  it("keshdagi eski qator (oldingi sessiya / «Bildirishnomalar» oynasi — xuddi shu kalit) «Guruh ulandi» demaydi", async () => {
+    mocks.getNotifications.mockResolvedValue(page([]));
+    mocks.requestGroupLinkCode.mockResolvedValue(linkCode("create"));
+    const user = userEvent.setup();
+    const { queryClient } = renderCard("staff", "superadmin");
+    const watchParams = { market_id: "201", group_type: "create", page: 1, limit: 1 };
+    // Guruh avval ulangan edi, keyin o'chirildi — kesh `invalidate` dan keyin ham eski qatorni saqlaydi.
+    queryClient.setQueryData(["notifications", "list", watchParams], page([row()]));
+
+    await user.click(await screen.findByRole("button", { name: "Yangi buyurtmalar guruhini ulash" }));
+
+    const dialog = await screen.findByRole("dialog", { name: "Telegram guruhini ulash" });
+    await waitFor(() => expect(mocks.getNotifications).toHaveBeenCalledWith(watchParams));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByText("Guruh ulanishi kutilmoqda…")).toBeInTheDocument();
+    expect(screen.queryByText("Guruh ulandi")).not.toBeInTheDocument();
+  });
+
+  it("guruh ulangach oyna o'zi yopilsa — fokus `<body>` ga emas, o'sha tur qatoriga («Ulash» yo'qoladi)", async () => {
+    let watchCalls = 0;
+    mocks.getNotifications.mockImplementation(async (params: NotificationParams) => {
+      if (!params.group_type) return page(watchCalls > 1 ? [row({ group_type: "cancel" })] : []);
+      watchCalls += 1;
+      return page(watchCalls > 1 ? [row({ group_type: "cancel" })] : []);
+    });
+    mocks.requestGroupLinkCode.mockResolvedValue(linkCode("cancel"));
+    const user = userEvent.setup();
+    renderCard("staff", "superadmin");
+
+    const trigger = await screen.findByRole("button", { name: "Bekor qilinganlar guruhini ulash" });
+    trigger.focus();
+    await user.keyboard("{Enter}");
+    await screen.findByRole("dialog", { name: "Telegram guruhini ulash" });
+
+    expect(await screen.findByText("Guruh ulandi", undefined, { timeout: 8_000 })).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Telegram guruhini ulash" })).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByRole("button", { name: "Bekor qilinganlar guruhini ulash" })).not.toBeInTheDocument(),
+    );
+    const cancelRow = screen.getByRole("group", { name: "Bekor qilinganlar guruhi" });
+    expect(within(cancelRow).getByText("Ulangan")).toBeInTheDocument();
+    expect(document.activeElement).toBe(cancelRow);
+  }, 15_000);
+
   it("havola olinmasa — i18n xabar (403 — «ulab bo'lmaydi»), backend matni ko'rsatilmaydi, oyna ochilmaydi", async () => {
     mocks.getNotifications.mockResolvedValue(page([]));
     mocks.requestGroupLinkCode.mockRejectedValue(

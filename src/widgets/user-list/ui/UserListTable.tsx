@@ -142,9 +142,11 @@ export const UserListTable = memo(({ users, canManage = false, busy = false, cla
         );
       }
       if (variant === "card") return null;
+      // Nom `<span>` ga (generic) `aria-label` bilan berilmaydi — o'qilmaydi; ko'rinmas matn yoniga.
       return state === "unavailable" ? (
-        <span className="text-text-subtle" aria-label={t("tgBot.unavailable")} title={t("tgBot.unavailable")}>
-          —
+        <span className="text-text-subtle" title={t("tgBot.unavailable")}>
+          <span aria-hidden="true">—</span>
+          <span className="sr-only">{t("tgBot.unavailable")}</span>
         </span>
       ) : (
         <span className="text-text-subtle">—</span>

@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-users-detail-telegram, admin-users-detail-telegram, market-profile
-import { memo, useId } from "react";
+import { memo, useId, useRef } from "react";
 import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { ChevronRight, Link as LinkIcon, Send, Users } from "lucide-react";
@@ -58,6 +58,11 @@ export const MarketTelegramGroupsCard = memo(({ user, mode }: MarketTelegramGrou
   const pii = useMarketTelegramGroupPiiToggle(user, !isStaff);
   const piiLabelId = useId();
   const piiHintId = useId();
+  const headingId = useId();
+  // Oyna yopilgach fokus shu tur qatoriga: kuzatuvda guruh ulangach «Ulash» yo'qoladi (fokus `<body>` ga tushmasin).
+  const createRowRef = useRef<HTMLDivElement>(null);
+  const cancelRowRef = useRef<HTMLDivElement>(null);
+  const rowRefs = { create: createRowRef, cancel: cancelRowRef } as const;
 
   const groupsQuery = useNotifications(
     { market_id: marketId, page: 1, limit: 10 },
@@ -67,6 +72,7 @@ export const MarketTelegramGroupsCard = memo(({ user, mode }: MarketTelegramGrou
     marketId: isStaff ? marketId : undefined,
     marketName: user.name,
     watch: isStaff,
+    returnFocusRefs: isStaff ? rowRefs : undefined,
   });
 
   const connectionOf = (type: NotificationGroupType): Notification | null => {
@@ -143,13 +149,22 @@ export const MarketTelegramGroupsCard = memo(({ user, mode }: MarketTelegramGrou
       GROUP_TYPES.map((type) => {
         const status = statusLine(type);
         return (
-          <div key={type} className={ROW}>
+          <div
+            key={type}
+            ref={rowRefs[type]}
+            role="group"
+            aria-labelledby={`${headingId}-${type}`}
+            tabIndex={-1}
+            className={cx(ROW, "outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-action")}
+          >
             <div className="flex min-w-0 flex-[1_1_200px] items-start gap-3">
               <span aria-hidden="true" className={STAT_ICON}>
                 <Users size={18} strokeWidth={2} />
               </span>
               <div className={cx("flex min-w-0 flex-col gap-1", !status && "self-center")}>
-                <h3 className="m-0 text-sm font-semibold text-text">{t(TYPE_KEYS[type].title)}</h3>
+                <h3 id={`${headingId}-${type}`} className="m-0 text-sm font-semibold text-text">
+                  {t(TYPE_KEYS[type].title)}
+                </h3>
                 {status ? <div className="flex flex-wrap items-center gap-x-2 gap-y-1">{status}</div> : null}
               </div>
             </div>

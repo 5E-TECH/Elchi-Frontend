@@ -307,7 +307,11 @@ describe("UserListTable — «Telegram boti» ustuni (TG-B, `*-users-list-telegr
     expect(rowOf("Ali Valiyev").getByText("Ulangan")).toBeInTheDocument();
     expect(rowOf("Vali").getByText("Ulanmagan")).toBeInTheDocument();
     expect(rowOf("Eski javob").queryByText(/Ulan/)).not.toBeInTheDocument();
-    expect(rowOf("Karim Investov").getByLabelText("Ulab bo'lmaydi")).toHaveTextContent("—");
+    // Ko'rinmas matn (generic `<span>` dagi `aria-label` o'qilmaydi); «—» — faqat ko'zga.
+    const unavailable = rowOf("Karim Investov").getByText("Ulab bo'lmaydi");
+    expect(unavailable).toHaveClass("sr-only");
+    expect(unavailable.previousElementSibling).toHaveTextContent("—");
+    expect(unavailable.previousElementSibling).toHaveAttribute("aria-hidden", "true");
   });
 
   it("menejerda (boshqaruvsiz) ustun yo'q", () => {
