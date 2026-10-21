@@ -36,7 +36,8 @@ const page = vi.hoisted(() => ({
   hqCouriers: undefined as unknown,
 }));
 
-vi.mock("../../entities/payments", () => ({
+vi.mock("../../entities/payments", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../entities/payments")>()),
   useCashBox: () => ({
     useGetCashBoxInfo: () => ({ data: page.cashboxInfo, isLoading: false }),
     useGetFinanceHistory: () => ({ data: { data: { items: [] } }, isLoading: false }),

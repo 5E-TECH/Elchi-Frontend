@@ -26,7 +26,16 @@ vi.mock("../../../shared/lib/navigationPending", async (importOriginal) => ({
   },
 }));
 
-type DesignRole = "superadmin" | "admin" | "manager" | "registrator" | "market" | "courier";
+type DesignRole =
+  | "superadmin"
+  | "admin"
+  | "manager"
+  | "registrator"
+  | "market"
+  | "courier"
+  | "logist"
+  | "market_operator"
+  | "investor";
 type DesignMenuItem = { key: string; label: string; group?: string };
 // Maket menyusi — kodda bor rollar, kodda hali yo'q bandlarsiz (`route-map.json` → `plannedMenu`).
 const ROLES = Object.fromEntries(CODE_DESIGN_ROLES.map((role) => [role, designRoleInCode(role)])) as unknown as Record<
@@ -77,9 +86,10 @@ const renderSidebar = (
   renderWithProviders(<Sidebar />, { route, preloadedState: stateOf(role, { branchType, open }) });
 
 const mainNav = () => screen.getByRole("navigation", { name: "Asosiy bo'limlar" });
+// `queryAll` — yangi rollarning (logist, market operatori, investor) menyusi hali bo'sh (ROL-0).
 const linkNames = () =>
   within(mainNav())
-    .getAllByRole("link")
+    .queryAllByRole("link")
     .map((link) => link.textContent?.trim());
 const groupHeaders = () =>
   within(mainNav())

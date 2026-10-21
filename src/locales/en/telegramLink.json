@@ -20,7 +20,7 @@
   "step3": "This page updates by itself",
   "expiresAt": "The link is valid until {{time}}",
   "expiredTitle": "The link has expired",
-  "expiredText": "The link is valid for 10 minutes. Get a new one to link your account.",
+  "expiredText": "The link is valid for 10 minutes and works only once. Get a new one to link your account.",
   "renew": "Get a new link",
   "commandHint": "Send this command to the bot:",
   "linkedToast": "Telegram linked",
@@ -30,5 +30,14 @@
   "unlinkDescription": "Bot messages and buttons will no longer reach this account. You can link it again at any time.",
   "unlinkConfirm": "Unlink",
   "unlinking": "Unlinking…",
-  "unlinkedToast": "Telegram unlinked"
+  "unlinkedToast": "Telegram unlinked",
+  "timeLeft": "{{time}} left",
+  "waiting": "Waiting for the link…",
+  "phoneStep1": "Tap «Open in Telegram»",
+  "phoneStep3": "Come back to this page — it updates by itself",
+  "commandStep1": "Copy the command",
+  "commandStep2": "Send it to the Elchi bot as a private message",
+  "qrOtherPhone": "From another phone — QR code",
+  "linkErrorRetry": "Please try again in a moment.",
+  "linkErrorForbidden": "Telegram cannot be linked for this account."
 }

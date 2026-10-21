@@ -166,7 +166,41 @@
       "selectedOf": "{{selected}} / {{total}}",
       "selectRow": "Select request {{id}}",
       "orderLink": "№{{id}}",
-      "noCourier": "No courier assigned"
+      "noCourier": "No courier assigned",
+      "emptyText": "New requests will appear here."
+    },
+    "approve": {
+      "title": "Confirm return requests",
+      "description": {
+        "hq": "Orders ({{value}}) will be taken from couriers and returned to the HQ warehouse. Their status becomes “Waiting” and they are detached from the courier and the mail.",
+        "branch": "Orders ({{value}}) will be taken from couriers and returned to the branch warehouse. Their status becomes “Waiting” and they are detached from the courier and the mail.",
+        "unknown": "Orders ({{value}}) will be taken from couriers and returned to the warehouse. Their status becomes “Waiting” and they are detached from the courier and the mail."
+      },
+      "orders": "Orders",
+      "ordersValue": "{{value}}",
+      "couriers": "Couriers",
+      "couriersValue": "{{value}}",
+      "withoutCourier": "+ without a courier: {{value}}",
+      "groups": "By courier",
+      "groupCount": "{{value}}",
+      "more": "+ {{value}} more",
+      "note": "This action can't be undone. An order that another employee has reviewed meanwhile, or whose status has changed, is skipped and shown in the result.",
+      "confirm": "Approve {{value}}",
+      "loading": "Approving…",
+      "errors": {
+        "forbidden": "Some orders are with another branch's courier — that branch reviews them. The list has been refreshed — close this window and select again.",
+        "stale": "The selected requests have already been reviewed or their status has changed. The list has been refreshed — close this window and select again.",
+        "server": "Something went wrong while approving. Some orders may already be back in the warehouse — the list has been refreshed, check it and try again.",
+        "generic": "Could not approve the requests. Try again a bit later."
+      },
+      "result": {
+        "successTitle": "{{value}} approved",
+        "returned": "Returned to the warehouse: {{value}}.",
+        "partialTitle": "{{approved}} approved, {{skipped}} skipped",
+        "skippedReason": "{{orders}}: another employee reviewed it meanwhile or its status changed.",
+        "skippedReasonMany": "{{orders}}: another employee reviewed them meanwhile or their status changed.",
+        "skippedReasonMore": "{{list}} and {{value}} more: another employee reviewed them meanwhile or their status changed."
+      }
     },
     "statuses": {
       "waiting": "Courier hasn't accepted",
@@ -234,15 +268,156 @@
   },
   "system": {
     "intro": {
-      "title": "System — analytics and services",
-      "description": "System health, analytics indicators and the QR token check."
+      "title": "System — services and analytics",
+      "description": "Service health, AI settings, analytics indicators and the QR token check."
     },
     "health": {
       "title": "System health",
-      "ok": "Running",
-      "okHint": "The server is responding to requests",
-      "error": "Error",
-      "errorHint": "The server didn't respond"
+      "badge": {
+        "ok": "Running",
+        "partial": "Partially running",
+        "down": "Down",
+        "unknown": "Unknown"
+      },
+      "meta": "Services: {{count}} · checked {{time}}",
+      "metaChecking": "Services: {{count}} · checking…",
+      "lastSuccess": "Last successful check: {{time}}",
+      "neverChecked": "No successful check yet",
+      "refresh": "Refresh",
+      "checking": "Checking",
+      "loadingLabel": "Checking system health",
+      "and": "and",
+      "summary": {
+        "okTitle": "All services are running",
+        "okText": "{{ok}} of {{total}} services are responding",
+        "okLatency": "average response {{value}}",
+        "okUnknownTitle": "Connected services are running",
+        "okUnknownText": "{{ok}} of {{total}} services are responding; not connected in this environment: {{names}}.",
+        "okUnknownTextMany": "{{ok}} of {{total}} services are responding; not connected in this environment: {{names}}.",
+        "partialTitle": "Services not responding: {{count}}",
+        "partialText": "{{ok}} of {{total}} services are running. Actions related to {{areas}} may fail.",
+        "criticalTitleOne": "Core service is down: {{names}}",
+        "criticalTitleMany": "Core services are down: {{names}}",
+        "criticalRest": "Other services responding: {{count}}",
+        "criticalRestUnknown": "Other services responding: {{count}}; not connected in this environment: {{names}}",
+        "criticalRestUnknownMany": "Other services responding: {{count}}; not connected in this environment: {{names}}",
+        "criticalAux": "Supporting services also down: {{count}}.",
+        "downTitle": "No service is responding",
+        "downTextTimeout": "None of the services ({{count}}) responded within 1.5 seconds. This usually means the internal message queue or the server has stopped.",
+        "downText": "All services ({{count}}) are down. This usually means the internal message queue or the server has stopped."
+      },
+      "impact": {
+        "IDENTITY": "Sign-in and user management don't work.",
+        "ORDER": "Creating orders, changing their status and selling don't work.",
+        "FINANCE": "Payments, cashbox and balance operations don't work.",
+        "LOGISTICS": "Sending and receiving mail and batches don't work."
+      },
+      "counts": {
+        "ok": "Running: {{count}}",
+        "down": "Down: {{count}}",
+        "unknown": "Unknown: {{count}}"
+      },
+      "list": {
+        "show": "Service list",
+        "hide": "Hide service list",
+        "count": "· {{count}}",
+        "label": "Service health"
+      },
+      "columns": {
+        "service": "Service",
+        "status": "Status",
+        "latency": "Response time",
+        "error": "Error"
+      },
+      "core": "core",
+      "ms": "{{value}} ms",
+      "state": {
+        "ok": "Running",
+        "down": "Down",
+        "unknown": "Unknown"
+      },
+      "problem": {
+        "timeout": {
+          "title": "No response in time",
+          "hint": "Took longer than 1.5 seconds"
+        },
+        "reported": {
+          "title": "The service reported itself unhealthy",
+          "hint": "A related system may have failed its check",
+          "hintNotification": "The bot token or a related system may have failed its check"
+        },
+        "notRegistered": {
+          "title": "Service not connected",
+          "hint": "The {{area}} service isn't configured in this environment"
+        },
+        "failed": {
+          "title": "The service returned an error",
+          "hint": "The detailed reason is in the server log"
+        }
+      },
+      "error": {
+        "title": "Couldn't get the system health",
+        "text": "The health request got no answer. It's impossible to tell right now whether services are running — try again a bit later.",
+        "code": "Error code: {{status}}"
+      },
+      "services": {
+        "IDENTITY": {
+          "name": "Users and sign-in",
+          "area": "sign-in"
+        },
+        "ORDER": {
+          "name": "Orders",
+          "area": "orders"
+        },
+        "CATALOG": {
+          "name": "Product catalogue",
+          "area": "products"
+        },
+        "LOGISTICS": {
+          "name": "Logistics — mail and batches",
+          "area": "mail and batches"
+        },
+        "FINANCE": {
+          "name": "Finance and cashbox",
+          "area": "finance and cashbox"
+        },
+        "NOTIFICATION": {
+          "name": "Notifications and Telegram bot",
+          "area": "notifications"
+        },
+        "INTEGRATION": {
+          "name": "Integrations",
+          "area": "integrations"
+        },
+        "ANALYTICS": {
+          "name": "Analytics",
+          "area": "analytics"
+        },
+        "BRANCH": {
+          "name": "Branches",
+          "area": "branches"
+        },
+        "INVESTOR": {
+          "name": "Investors",
+          "area": "investors"
+        },
+        "FILE": {
+          "name": "Files",
+          "area": "files"
+        },
+        "C2C": {
+          "name": "Customer-to-customer sales (C2C)",
+          "area": "C2C sales"
+        },
+        "SEARCH": {
+          "name": "Search",
+          "area": "search"
+        },
+        "AI": {
+          "name": "AI orders",
+          "area": "AI"
+        }
+      }
     },
     "sla": {
       "title": "On time (SLA)",
@@ -272,7 +447,9 @@
       "ratingEmpty": "No data — the rating hasn't been calculated yet",
       "degradedTitle": "Some indicators weren't calculated",
       "degradedText": "Some services didn't respond — the values are incomplete.",
-      "loadError": "Couldn't load analytics indicators"
+      "loadError": "Couldn't load analytics indicators",
+      "loadErrorText": "The analytics service didn't respond.",
+      "loadingLabel": "Loading analytics indicators"
     },
     "scan": {
       "title": "Check by token",
@@ -290,6 +467,7 @@
       "notFound": "Not found",
       "notFoundHint": "No order, package or mail was found for this token.",
       "error": "Couldn't check the token",
+      "errorText": "The server didn't respond or returned an error. Try again a bit later.",
       "empty": "The result has no fields to show",
       "fields": {
         "id": "ID",

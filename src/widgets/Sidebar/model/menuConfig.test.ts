@@ -331,3 +331,34 @@ describe("sidebar menu icons — roles.json bilan bir xil", () => {
     }
   });
 });
+
+describe("logist menyusi (LG-1)", () => {
+  it("faqat «Bosh sahifa» (maket ikonkasi); qolgan bandlar plannedMenu da — o'z sahifasi bilan (LG-3/LG-4/LG-5)", () => {
+    const items = getSidebarConfigForUser("logist", null);
+    expect(items).toEqual([{ to: "/", icon: House, label: "dashboard", end: true }]);
+    expect(designRoleInCode("logist").menu.map((item) => item.key)).toEqual(["dashboard"]);
+  });
+
+  it("moliya bandlari hech qachon yo'q (ega LG-S1)", () => {
+    const paths = SIDEBAR_CONFIG.logist.map((item) => item.to);
+    for (const finance of ["/payments", "/cash-box", "/financial-balance"]) expect(paths).not.toContain(finance);
+  });
+});
+
+describe("investor menyusi (IN-1)", () => {
+  it("faqat «Bosh sahifa» (`/`, House) — «Investitsiyalar» va «Foyda tarixi» IN-2 da; moliya/kassa bandlari yo'q", () => {
+    const items = getSidebarConfigForUser("investor");
+    expect(items.map((item) => [item.to, item.label])).toEqual([["/", "dashboard"]]);
+    expect(items[0].end).toBe(true);
+    // Ikonka maketdagidek (`roles.json` → investor.menu.dashboard).
+    const design = designRoleInCode("investor").menu;
+    expect(design.map((item) => item.key)).toEqual(["dashboard"]);
+    expect(design[0].icon).toBe("i1");
+    expect(items[0].icon).toBe(House);
+  });
+
+  it("investor kabineti ro'yxatlari yo'llari «Moliya» guruhida (sahifalari IN-2 da)", () => {
+    expect(SIDEBAR_GROUP_BY_PATH["/investments"]).toBe("finance");
+    expect(SIDEBAR_GROUP_BY_PATH["/profits"]).toBe("finance");
+  });
+});

@@ -9,3 +9,12 @@ export const formatAmountInput = (value?: string | null) => {
   const amount = parseAmountInput(value);
   return amount ? amount.toLocaleString("uz-UZ") : "";
 };
+
+/**
+ * Ixtiyoriy summa maydoni (masalan smena yopishdagi «Sanalgan karta»): bo'sh — `null` (sanalmagan), aks holda son
+ * (`"0"` — haqiqiy nol, «Sanalmadi» emas).
+ */
+export const parseOptionalAmountInput = (value?: string | null): number | null => {
+  const normalized = normalizeAmountInput(value ?? "");
+  return normalized ? Number(normalized) : null;
+};

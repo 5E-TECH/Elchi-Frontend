@@ -48,6 +48,7 @@ const SECTION_IDS = [
   "feedback",
   "states",
   "table",
+  "charts",
 ];
 
 const sectionIds = () =>
@@ -115,6 +116,7 @@ describe("UiKitPage", () => {
       "Qalqib chiquvchi xabarlar",
       "Yuklanish, bo'sh va xato holatlari",
       "Jadval va sahifalash",
+      "Grafiklar",
     ]);
   });
 
@@ -148,7 +150,7 @@ describe("UiKitPage", () => {
     expect(sectionIds()).toHaveLength(SECTION_IDS.length);
   });
 
-  it.each(["forms", "select", "date", "dialog", "feedback", "states", "table"])("?section=%s — faqat shu bo'lim", (id) => {
+  it.each(["forms", "select", "date", "dialog", "feedback", "states", "table", "charts"])("?section=%s — faqat shu bo'lim", (id) => {
     renderWithProviders(<UiKitPage />, { route: `/ops/ui-kit?section=${id}` });
     expect(sectionIds()).toEqual([id]);
   });

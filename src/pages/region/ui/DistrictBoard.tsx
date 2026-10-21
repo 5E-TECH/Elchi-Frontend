@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-regions-districts, superadmin-regions-sato-management, admin-regions-sato-management
+// dizayn-v2: superadmin-regions-districts, admin-regions-districts, superadmin-regions-sato-management, admin-regions-sato-management
 import {
   ArrowLeftRight,
   ArrowRight,

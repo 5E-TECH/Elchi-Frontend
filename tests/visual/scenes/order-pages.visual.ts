@@ -15,6 +15,8 @@ defineScene({
   api: {
     // Sukut tab — «Kutilmoqda» (`status=waiting`), 4 qator.
     "GET orders/courier/orders": fixture("orders-courier/courier-orders.json"),
+    // Tab sonlari (OR-1): «Kutilayotgan 4 · Barchasi 24 · Bekor qilingan 3».
+    "GET orders/courier/orders/counts": fixture("orders-courier/courier-counts.json"),
   },
 });
 

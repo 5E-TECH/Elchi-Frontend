@@ -18,7 +18,7 @@ import { Button, buttonClasses, Dialog, Field, Select, Spinner } from "../../../
 import { useRequestGroupLink } from "../api/useRequestGroupLink";
 import { GROUP_LINK_POLL_MS } from "../model/constants";
 import type { GroupLinkCode } from "../model/types";
-import GroupLinkQr from "./GroupLinkQr";
+import { LinkQrImage as GroupLinkQr } from "../../telegram-link";
 
 interface NotificationFormModalProps {
   open: boolean;

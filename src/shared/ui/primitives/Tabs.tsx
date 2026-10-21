@@ -105,6 +105,11 @@ export type TabsProps<T extends string = string> = Omit<
    * 12 px ichkarida, ostidagi chiziq esa karta eni bo'yicha: `listClassName="px-3"`.
    */
   listClassName?: string;
+  /**
+   * Sonlar yangilanmoqda (maket `*-orders-list-refreshing`): eski son xira (`opacity-55`) va
+   * `aria-busy` bilan qoladi — joyi o'zgarmaydi, tab bosiladi. Sukut `false`.
+   */
+  countBusy?: boolean;
 };
 
 /** `id` ichida bo'shliq va maxsus belgi bo'lmasin (`aria-controls` — IDREF ro'yxati). */
@@ -146,6 +151,8 @@ const COUNT_IDLE = "bg-sunken text-text-muted";
 /** Sahifa fonidagi tablarda (`background="bg"`) nofaol son — yuza + chegara (maket `courier-mails-today`). */
 const COUNT_IDLE_ON_BG = "border border-border bg-surface text-text-muted";
 const COUNT_ACTIVE = "bg-action-soft text-action-fg";
+/** Yangilanayotgan son (`countBusy`) — maketdagi `opacity: .55`. */
+const COUNT_BUSY = "opacity-55";
 
 const FADE_BG: Record<TabsBackground, string> = {
   surface: "bg-surface",
@@ -299,11 +306,13 @@ const TabContent = ({
   active,
   language,
   background = "surface",
+  countBusy = false,
 }: {
   item: TabItem;
   active: boolean;
   language: string | undefined;
   background?: TabsBackground;
+  countBusy?: boolean;
 }) => {
   const Icon = item.icon;
   return (
@@ -313,7 +322,14 @@ const TabContent = ({
       {/* Bo'shliq — ekran o'quvchi «Yangi 32» deb o'qisin («Yangi32» emas); flex ichida ko'rinmaydi. */}
       {item.count !== undefined ? " " : null}
       {item.count !== undefined ? (
-        <span className={cx(COUNT, active ? COUNT_ACTIVE : background === "bg" ? COUNT_IDLE_ON_BG : COUNT_IDLE)}>
+        <span
+          aria-busy={countBusy || undefined}
+          className={cx(
+            COUNT,
+            active ? COUNT_ACTIVE : background === "bg" ? COUNT_IDLE_ON_BG : COUNT_IDLE,
+            countBusy && COUNT_BUSY,
+          )}
+        >
           {formatNumberLocalized(item.count, { language })}
         </span>
       ) : null}
@@ -457,6 +473,7 @@ const TabList = <T extends string>({
   controlsPanel = false,
   background = "surface",
   listClassName,
+  countBusy = false,
   ...rest
 }: ModeProps<T> & { controlsPanel?: boolean }) => {
   const { i18n } = useTranslation("ui");
@@ -515,7 +532,7 @@ const TabList = <T extends string>({
               item.disabled ? TAB_DISABLED : active ? TAB_ACTIVE : TAB_IDLE,
             )}
           >
-            <TabContent item={item} active={active} language={language} background={background} />
+            <TabContent item={item} active={active} language={language} background={background} countBusy={countBusy} />
           </button>
         );
       })}
@@ -532,6 +549,7 @@ const TabNav = <T extends string>({
   prefix,
   background = "surface",
   listClassName,
+  countBusy = false,
   ...rest
 }: ModeProps<T>) => {
   const { i18n } = useTranslation("ui");
@@ -558,7 +576,7 @@ const TabNav = <T extends string>({
           // Havolani o'chirib bo'lmaydi — o'chirilgan band oddiy matn.
           return (
             <span key={item.value} id={id} aria-disabled="true" title={item.title} className={cx(TAB, sizing, TAB_DISABLED)}>
-              <TabContent item={item} active={false} language={language} background={background} />
+              <TabContent item={item} active={false} language={language} background={background} countBusy={countBusy} />
             </span>
           );
         }
@@ -577,7 +595,7 @@ const TabNav = <T extends string>({
               onClick={onClick}
               className={cx(TAB, sizing, active ? TAB_ACTIVE : TAB_IDLE)}
             >
-              <TabContent item={item} active={active} language={language} background={background} />
+              <TabContent item={item} active={active} language={language} background={background} countBusy={countBusy} />
             </Link>
           );
         }
@@ -591,7 +609,7 @@ const TabNav = <T extends string>({
             onClick={onClick}
             className={({ isActive }) => cx(TAB, sizing, isActive ? TAB_ACTIVE : TAB_IDLE)}
           >
-            {({ isActive }) => <TabContent item={item} active={isActive} language={language} background={background} />}
+            {({ isActive }) => <TabContent item={item} active={isActive} language={language} background={background} countBusy={countBusy} />}
           </NavLink>
         );
       })}

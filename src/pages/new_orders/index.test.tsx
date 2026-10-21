@@ -7,6 +7,7 @@ import { LegacyOrderCreateRedirect } from "../../app/lib/routes";
 import NewOrders from "./index";
 import Markets from "./markets";
 import NewOrdersTabs from "./ui/NewOrdersTabs";
+import { emitQueryError } from "../../shared/lib/queryErrorEvents";
 
 /**
  * «Qabul va yaratish» qobig'i (`/new-orders/*`, dizayn v2): sarlavha, «Buyurtma yaratish» havolasi,
@@ -176,31 +177,64 @@ describe("Qabul va yaratish — tablar (v1 shartlari) va sonlar", () => {
     expect(incoming).toHaveTextContent(/^Kiruvchi posilkalar$/);
   });
 
-  it("HQ registratori: Marketlar + Bekor qilinganlar", () => {
+  it("HQ registratori: Marketlar · Kiruvchi posilkalar · Bekor qilinganlar", () => {
     renderShell("/new-orders", "registrator", "HQ");
     const links = within(tabsNav()).getAllByRole("link");
-    expect(links.map((link) => link.getAttribute("href"))).toEqual(["/new-orders", "/new-orders/cancelled"]);
+    expect(links.map((link) => link.getAttribute("href"))).toEqual([
+      "/new-orders",
+      "/new-orders/incoming",
+      "/new-orders/cancelled",
+    ]);
   });
 
   it.each([
+    ["manager", "HQ"],
+    ["manager", "PICKUP"],
     ["manager", "HYBRID"],
     ["registrator", "REGIONAL"],
-  ])("%s (%s): bitta tab — tablar qatori yo'q, karta sarlavhasi «Marketlar» + «Bugun: …»", async (role, branchType) => {
-    renderShell("/new-orders", role, branchType);
+  ])(
+    "⭐ %s (%s): «Marketlar · Kiruvchi posilkalar» tablari, posilkalar soni; filial va bekor so'ralmaydi (ega S1)",
+    async (role, branchType) => {
+      renderShell("/new-orders", role, branchType);
 
-    expect(screen.queryByRole("navigation", { name: "Qabul manbalari" })).not.toBeInTheDocument();
-    const card = screen.getByRole("region", { name: "Marketlar" });
-    expect(within(card).getByRole("heading", { level: 2, name: "Marketlar" })).toBeInTheDocument();
-    await waitFor(() =>
-      expect(within(card).getByText(/Bugun:/).closest("p")).toHaveTextContent(
-        "Bugun: 2 ta market · 23 ta buyurtma · jami 8 280 000 so'm",
-      ),
-    );
-    // Faqat ko'rinadigan tab so'raladi: menejer/registrator uchun posilka, filial va bekor so'rovlari yo'q.
-    const urls = mocks.get.mock.calls.map(([url]) => url);
-    expect(urls).not.toContain("orders/external/sources");
-    expect(urls).not.toContain("branches/with-sent-batches");
-    expect(urls).not.toContain("orders/markets/cancelled");
+      const nav = tabsNav();
+      const links = within(nav).getAllByRole("link");
+      expect(links.map((link) => link.getAttribute("href"))).toEqual(["/new-orders", "/new-orders/incoming"]);
+      await waitFor(() => expect(links[1]).toHaveTextContent("Kiruvchi posilkalar 12"));
+      // Karta tablar bilan boshlanadi — alohida «Marketlar» sarlavhasi yo'q; xulosa «Bugun: …» qidiruv yonida.
+      const card = screen.getByRole("region", { name: "Qabul kutayotgan buyurtmalar" });
+      expect(within(card).queryByRole("heading", { level: 2, name: "Marketlar" })).not.toBeInTheDocument();
+      await waitFor(() =>
+        expect(within(card).getByText(/Bugun:/).closest("p")).toHaveTextContent(
+          "Bugun: 2 ta market · 23 ta buyurtma · jami 8 280 000 so'm",
+        ),
+      );
+      const urls = mocks.get.mock.calls.map(([url]) => url);
+      expect(urls).not.toContain("branches/with-sent-batches");
+      expect(urls).not.toContain("orders/markets/cancelled");
+    },
+  );
+
+  it("posilkalar soni so'rovi yiqilsa — son yozilmaydi, so'rov `silentError` (global xato xabari yo'q)", async () => {
+    const forbidden = Object.assign(new Error("Request failed with status code 403"), {
+      isAxiosError: true,
+      response: { status: 403, data: { message: "Forbidden resource" } },
+    });
+    respond({ "orders/external/sources": forbidden });
+    const { queryClient } = renderShell("/new-orders", "manager", "HQ");
+
+    const incoming = within(tabsNav()).getByRole("link", { name: /Kiruvchi posilkalar/ });
+    await waitFor(() => expect(queryClient.getQueryState(["incoming-external-sources"])?.status).toBe("error"));
+    expect(incoming).toHaveTextContent(/^Kiruvchi posilkalar$/);
+    // `meta.silentError` — ilovadagi `QueryCache.onError` (`emitQueryError`) bu so'rov uchun xabar chiqarmaydi.
+    const meta = queryClient.getQueryCache().find({ queryKey: ["incoming-external-sources"] })?.meta;
+    expect(meta).toEqual({ silentError: true });
+    const dispatch = vi.spyOn(window, "dispatchEvent");
+    emitQueryError(forbidden, meta);
+    expect(dispatch).not.toHaveBeenCalled();
+    emitQueryError(forbidden, undefined); // bayroqsiz bo'lganda — global xabar bo'lardi
+    expect(dispatch).toHaveBeenCalledTimes(1);
+    dispatch.mockRestore();
   });
 
   it("market (hosted bola — tablar bola kartasida): Yangi buyurtmalar + Bekor qilinganlar, o'z market id si bilan", async () => {

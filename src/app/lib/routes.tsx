@@ -21,7 +21,11 @@ import {
   canViewPaymentsPage,
   canHandoverCancelledToMarket,
   canCreateProducts,
+  canViewProducts,
+  canViewAdminDashboard,
   canViewUiKit,
+  canViewMarketOperators,
+  canViewInvestorCabinet,
 } from "./access";
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
 import { RUNTIME_ERROR_PATH } from "../../shared/lib/runtimeError";
@@ -59,6 +63,8 @@ const DashboardPage = lazy(() => import("../../pages/dashboard/DashboardPage"));
 const MarketDashboardPage = lazy(
   () => import("../../pages/dashboard/MarketDashboardPage"),
 );
+// IN-1: investor kabineti — alohida lazy chunk (dashboard bundle chegarasi 450 KB).
+const InvestorDashboardPage = lazy(() => import("../../pages/investor/InvestorDashboardPage"));
 const BranchDashboardPage = lazy(() => import("../../pages/branch-dashboard"));
 const DispatchPage = lazy(() => import("../../pages/dispatch"));
 const BatchesPage = lazy(() => import("../../pages/batches"));
@@ -207,17 +213,6 @@ const canManageUsers = canViewUsers;
 const canCreateOrdersByRoleAndBranchType = canCreateOrders;
 const canManageExternalIntegrations = canReceiveExternalOrders;
 
-const canManageProducts = (state: RootState) => {
-  const role = state.role.role;
-  return (
-    role === "admin" ||
-    role === "superadmin" ||
-    role === "market" ||
-    role === "registrator" ||
-    role === "manager"
-  );
-};
-
 const canViewAdminNewOrderTabs = (state: RootState) => {
   const role = state.role.role;
   return role === "admin" || role === "superadmin";
@@ -234,18 +229,21 @@ const canViewRegionStats = (state: RootState) => {
 };
 
 const canViewOpsPages = (state: RootState) => state.role.role === "superadmin";
-/**
- * fix3 RBAC-18: market uchun "Operatorlar" sahifasi YOPILDI — u GET /users
- * ni chaqiradi (`@Roles(SUPERADMIN, ADMIN, MANAGER)`), ya'ni marketga doim
- * 403; yaratish tugmasi ham faqat "mavjud emas" deydi. Backendda market
- * operatorlari yo'li paydo bo'lganda shu yerda va menyuda qayta yoqiladi.
- */
-const canViewMarketOperators = () => false;
 const canViewCourierBulk = canViewCourierBulkPage;
 
 
+/** LG-1: logist bosh sahifasi (`DashboardEntry` → logist tarmog'i). */
+const LogistDashboardPage = lazy(() => import("../../pages/dashboard/LogistDashboardPage"));
+
+/**
+ * Bosh sahifa (`/`) — rolga qarab. Admin `DashboardPage` faqat `canViewAdminDashboard` rollarida: qolgan har
+ * rol (logist, market operatori, investor, menyusiz eski rollar) 403 ko'radi — `ForbiddenPage` shell ichida,
+ * yangi UI yo'q (taxta `tizim-errors`). O'z bosh sahifasi kelganda har rol shu yerga o'z tarmog'ini qo'shadi
+ * (LG-1 logist, MO-2 market operatori, IN-1 investor).
+ */
 const DashboardEntry = () => {
   const role = useSelector((state: RootState) => state.role.role);
+  const canViewAdmin = useSelector(canViewAdminDashboard);
 
   if (role === "manager") {
     return <Navigate replace to="/branch-dashboard" />;
@@ -255,7 +253,31 @@ const DashboardEntry = () => {
     return <MarketDashboardPage />;
   }
 
-  return <DashboardPage />;
+  // Yangi rollarning o'z bosh sahifasi kelguncha — 403 (admin bosh sahifasi kompaniya tushumini ko'rsatadi).
+  // Har rol o'z tarmog'ida: LG-1 / MO-2 / IN-1 faqat o'z qatorini almashtiradi.
+  // LG-1: logist — o'z viloyatlari, pulsiz (ega LG-S1).
+  if (role === "logist") {
+    return <LogistDashboardPage />;
+  }
+
+  if (role === "market_operator") {
+    return <ForbiddenPage />;
+  }
+
+  // IN-1: investor kabineti (`canViewInvestorCabinet`) — KPI, oylik foyda, investitsiyalar va foyda tarixi.
+  if (role === "investor") {
+    return (
+      <ProtectedRoute canActivate={canViewInvestorCabinet}>
+        <InvestorDashboardPage />
+      </ProtectedRoute>
+    );
+  }
+
+  if (canViewAdmin) {
+    return <DashboardPage />;
+  }
+
+  return <ForbiddenPage />;
 };
 
 /**
@@ -697,7 +719,7 @@ const AppRouter = () => {
                 {
                   index: true,
                   element: (
-                    <ProtectedRoute canActivate={canManageProducts}>
+                    <ProtectedRoute canActivate={canViewProducts}>
                       <ProductTable />
                     </ProtectedRoute>
                   ),

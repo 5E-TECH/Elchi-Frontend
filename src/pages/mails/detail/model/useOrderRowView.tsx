@@ -6,15 +6,13 @@ import { formatMoneyLocalized } from "../../../../shared/lib/formatMoney";
 import { formatPhone } from "../../../../shared/lib/formatPhone";
 import { Badge } from "../../../../shared/ui/primitives";
 import { getDeliveryLabelKey } from "../../../orders/list/courier/list/orderActionModel";
+import { readCustomerName, readCustomerPhone } from "../lib/mailSearch";
 
 /**
  * Pochta buyurtmasi qatorining ko'rinish ma'lumoti — jadval kataklari (`OrdersTable`) va telefon kartasi
  * (`OrderRow`) bir xil matnni oladi: mijoz (turli API shakllari), telefon (`formatPhone`), tuman, manzil,
  * market, sana (`formatDateTimeLocalized`; tarixda — faqat kun), yetkazish badge'i («Uygacha» / «Markazgacha»).
  */
-const asRecord = (value: unknown): Record<string, unknown> =>
-  value && typeof value === "object" ? (value as Record<string, unknown>) : {};
-
 const firstText = (...values: unknown[]) => {
   for (const value of values) {
     if (typeof value === "string" && value.trim()) return value.trim();
@@ -43,39 +41,11 @@ export const useOrderRowView = ({ history = false }: { history?: boolean } = {})
   const { t, i18n } = useTranslation(["mails", "orders"]);
   const language = i18n.resolvedLanguage ?? i18n.language;
 
-  const customerName = useCallback((order: PostOrder) => {
-    const record = asRecord(order);
-    const customer = asRecord(order.customer);
-    return (
-      firstText(
-        customer.name,
-        customer.full_name,
-        customer.fullName,
-        record.customer_name,
-        record.customerName,
-        record.client_name,
-        record.clientName,
-        record.receiver_name,
-        record.receiverName,
-        record.name,
-      ) || "—"
-    );
-  }, []);
+  const customerName = useCallback((order: PostOrder) => readCustomerName(order) || "—", []);
 
   const customerPhone = useCallback(
     (order: PostOrder) => {
-      const record = asRecord(order);
-      const customer = asRecord(order.customer);
-      const raw = firstText(
-        customer.phone_number,
-        customer.phoneNumber,
-        customer.phone,
-        record.customer_phone,
-        record.customerPhone,
-        record.phone_number,
-        record.phoneNumber,
-        record.phone,
-      );
+      const raw = readCustomerPhone(order);
       return raw ? formatPhone(raw) || raw : t("mails:phoneUnavailable");
     },
     [t],

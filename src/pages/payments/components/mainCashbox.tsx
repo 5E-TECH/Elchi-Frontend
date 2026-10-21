@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-payments-main-cashbox, admin-payments-main-cashbox, manager-payments-main-cashbox
+// dizayn-v2: superadmin-payments-main-cashbox, admin-payments-main-cashbox, manager-payments-main-cashbox, superadmin-payments-main-cashbox-shift-closed, admin-payments-main-cashbox-shift-closed, manager-payments-main-cashbox-shift-closed
 import { memo, useCallback, useId, useMemo, useRef, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -60,12 +60,15 @@ import {
   type DataTableColumn,
 } from "../../../shared/ui/primitives";
 import { useUser } from "../../../entities/user/api/userApi";
-import { useCashBox } from "../../../entities/payments";
+import { normalizeCashboxShift, useCashBox, type CashboxShift } from "../../../entities/payments";
 import type { RootState } from "../../../app/config/store";
 import CashboxFormPopup from "./CashboxFormPopup";
-import CloseShiftPopup from "./CloseShiftPopup";
+import CloseShiftPopup, { type CloseShiftPayload } from "./CloseShiftPopup";
 import FinanceHistoryDetailPopup from "./FinanceHistoryDetailPopup";
 import MainCashboxBalanceChart, { type BalanceChartView } from "./MainCashboxBalanceChart";
+import OpenShiftDialog from "./OpenShiftDialog";
+import ShiftBanner from "./ShiftBanner";
+import ShiftResultDialog from "./ShiftResultDialog";
 import SalaryPaymentPopup, { type SalaryCardSource } from "./SalaryPaymentPopup";
 import SettlementPickerDialog, {
   type SettlementPickerKind,
@@ -75,6 +78,7 @@ import type { PaymentRow } from "./patmentHistoryTable";
 import { resolvePaymentActorName, resolvePaymentCounterparty } from "./paymentHistoryActor";
 import { getPaymentMethodLabel, getPaymentSourceTitle, getViewerOperationType } from "./paymentSourceType";
 import { exportMainCashboxReport } from "./lib/exportMainCashboxReport";
+import { useCashboxShift } from "./lib/useCashboxShift";
 import {
   buildDailyBalanceSeries,
   computePeriodStats,
@@ -99,12 +103,13 @@ import {
  * «ASOSIY KASSA» — /payments/main-cashbox (dizayn v2; maketlar `superadmin-payments-main-cashbox` =
  * `admin-payments-main-cashbox`, `manager-payments-main-cashbox`; rollar orasida layout bir xil, xulq rolga qarab).
  *
- *  - Sarlavha: «← To'lovlar», «Asosiy kassa» + smena holati (SA/admin) yoki filial nomi (menejer); «Excelga
- *    yuklash» (hisobot AYNAN eskidek), SA/admin — «Smenani yopish» / «Smenani ochish» (holat ma'lum bo'lsagina).
+ *  - Sarlavha: «← To'lovlar», «Asosiy kassa» + smena holati (menejerda filial nomi bilan); «Excelga yuklash»
+ *    (hisobot AYNAN eskidek), smena holati ma'lum bo'lsagina — yopiq: «Smenani ochish» (asosiy), ochiq: «Smenani
+ *    yopish» (ikkinchi darajali). Smena yopiq — «Smena boshlanmagan» banneri va «Tezkor amallar» qulfi.
  *  - «Kassa balansi»: umumiy balans + bugungi sof oqim, naqd/karta segment chizig'i, kun oxiridagi qoldiq
  *    grafigi (`Grafik | Jadval`), ko'z tugmasi summalarni yashiradi. «Tezkor amallar»: qabul (SA/admin — filial
  *    yoki HQ kuryeri, menejer — kuryer), «Marketga to'lov» (faqat SA/admin — backend menejerga 403), xarajat,
- *    to'ldirish; SA/admin — smena holati bloki.
+ *    to'ldirish; smena ochiq — «Smena ochiq · … dan · Ochgan xodim: <ism>» bloki.
  *  - «Bugun / Bu hafta / Bu oy» (telefonda bitta karta + segment), «Pul qayerdan keldi, qayerga ketdi»
  *    (bu oy, manba turi bo'yicha), «Operatsiyalar tarixi» (sana filtri, jadval → telefonda kartalar, tafsilot).
  *
@@ -113,6 +118,14 @@ import {
  * qo'yadi). D3 — «Kassani to'ldirish» / «Kassadan xarajat» `Idempotency-Key` bilan (`paymentIdempotency`
  * yordamchilari: kalit shu operatsiya javob olguncha saqlanadi — qayta yuborishda o'sha kalit, keyingi yangi
  * operatsiyaga yangi kalit).
+ *
+ * Smena (kfdfYDik, ega javoblari CB-S1…S5, 2026-10-19): holat — `GET finance/shift/current` (`useCashboxShift`;
+ * SA/admin — asosiy kassa, menejer — o'z filiali kassasi). Smena HAMMA kassada majburiy (S4): `shift === null` da
+ * `required` dan qat'i nazar qulf chiziladi. Ochish — `OpenShiftDialog` (`{ comment? }`), yopish — `CloseShiftPopup`
+ * (sanalgan naqd/karta, farq ≠ 0 da izoh majburiy) → POST javobidan `ShiftResultDialog` + Excel avtomatik. Xatoda
+ * oyna ochiq qoladi va `notify.error` (xom backend matni ko'rsatilmaydi). Oxirgi yopilgan smena kartasi
+ * («Smena yopildi · … · Natija») va ochish oynasidagi «Oxirgi smena … bilan yopilgan» — `last_closed` kerak
+ * (Taklif · backend kerak, CB-3) — chizilmaydi.
  */
 
 const FULL_LIST_LIMIT = 10000;
@@ -312,6 +325,9 @@ const SourceBars = ({
 const ACTION_TILE =
   "flex min-h-16 w-full items-center gap-3 rounded-[10px] border border-border-strong bg-surface p-3 text-left text-sm font-semibold text-text " +
   "transition-[background-color,border-color,color,box-shadow,opacity] duration-150 motion-reduce:transition-none hover:bg-sunken active:bg-border";
+/** Smena yopiq (maket `*-main-cashbox-shift-closed`): o'chirilgan tugma ko'rinishi — `.el-btn[disabled]`. */
+const ACTION_TILE_LOCKED =
+  "cursor-not-allowed border-border opacity-50 hover:bg-surface active:bg-surface";
 
 // ─── MainCashbox ──────────────────────────────────────────────────────────────
 
@@ -321,6 +337,7 @@ const MainCashbox = () => {
   const currency = CURRENCY_LABEL[resolveMoneyLanguage(language)];
   const navigate = useNavigate();
   const balanceTitleId = useId();
+  const actionsLockedId = useId();
 
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [balanceView, setBalanceView] = useState<BalanceChartView>("chart");
@@ -345,21 +362,15 @@ const MainCashbox = () => {
   const manualPendingRef = useRef(false);
 
   const role = useSelector((state: RootState) => state.role.role);
-  const roleName = useSelector((state: RootState) => state.role.name);
   const profile = useSelector((state: RootState) => state.user.user);
   const profileUserId = useSelector((state: RootState) => state.user.user?.id);
   const roleUserId = useSelector((state: RootState) => state.role.id);
   const normalizedRole = String(role).toLowerCase();
   const isManagerRole = normalizedRole === "manager";
   const isStaffRole = normalizedRole === "superadmin" || normalizedRole === "admin";
-  // FE-PAY-06: smena ochish/yopish — faqat superadmin/admin (gateway menejerga
-  // 403 qaytaradi). Smena foydalanuvchining o'ziga yoziladi (`opened_by` /
-  // `closed_by` = o'z ID si); ID noma'lum bo'lsa tugma ko'rsatilmaydi.
   const currentUserId = String(profileUserId ?? roleUserId ?? "").trim();
-  const shiftUserId = isStaffRole && /^\d+$/.test(currentUserId) ? currentUserId : "";
 
   const profileRecord = asRecord(profile);
-  const currentUserName = getText(profileRecord.name) || getText(roleName);
   // Menejer profili: `branch` — branch_users qatori, filial nomi ichki `branch.branch.name` da.
   const ownBranch = asRecord(profileRecord.branch);
   const ownBranchName = getText(asRecord(ownBranch.branch).name) || getText(ownBranch.name) || undefined;
@@ -370,28 +381,29 @@ const MainCashbox = () => {
     cashboxFill,
     openShift,
     closeShift,
-    useGetCurrentShift,
     useGetCashBoxInfo,
     useGetFinanceHistory,
     useGetCashBoxMain,
   } = useCashBox();
-  const currentShiftQuery = useGetCurrentShift(shiftUserId, Boolean(shiftUserId));
-  // Ochiq smena aniq ma'lum bo'lgandagina tugma chiqadi: so'rov kutilayotgan
-  // yoki xato bergan paytda noto'g'ri amal (ochiq smenani qayta ochish /
-  // yo'q smenani yopish) taklif qilinmaydi.
-  const isShiftStateKnown = Boolean(shiftUserId) && currentShiftQuery.isSuccess;
-  const openShiftRow = useMemo(
-    () =>
-      toDataItems(currentShiftQuery.data)
-        .map(asRecord)
-        .find((item) => String(item.status ?? "").toLowerCase() === "open") ?? null,
-    [currentShiftQuery.data],
-  );
-  const openShiftId = useMemo(() => {
-    const id = openShiftRow?.id;
-    return id === undefined || id === null || id === "" ? null : String(id);
-  }, [openShiftRow]);
-  const openShiftOpenedAt = getText(openShiftRow?.opened_at) || undefined;
+
+  // ── Smena ───────────────────────────────────────────────────────────────────
+  // Holat noma'lum (so'rov kutilmoqda / xato — masalan filiali topilmagan menejerga 403) — smena amali taklif
+  // qilinmaydi va qulf chizilmaydi; ochiq yoki yopiq aniq bo'lgandagina.
+  const shiftState = useCashboxShift();
+  const currentUserName = shiftState.currentUserName;
+  const openShiftRow = shiftState.shift;
+  const isShiftStateKnown = shiftState.status === "open" || shiftState.status === "closed";
+  const isShiftLocked = shiftState.status === "closed";
+  const openShiftId = openShiftRow?.id ?? null;
+  const openShiftOpenedAt = openShiftRow?.opened_at || undefined;
+  const [isOpenShiftDialogOpen, setIsOpenShiftDialogOpen] = useState(false);
+  // Natija oynasi — `POST finance/shift/close` javobi (yakuniy qiymatlar faqat shu yerdan).
+  // Ma'lumot oyna yopilganda tozalanmaydi — yopilish animatsiyasida jadval «0 / Sanalmadi» ga tushmasin.
+  const [shiftResult, setShiftResult] = useState<{
+    shift: CashboxShift;
+    openedByName: string | null;
+  } | null>(null);
+  const [isShiftResultOpen, setIsShiftResultOpen] = useState(false);
 
   // ── Ma'lumot ────────────────────────────────────────────────────────────────
   const { data: usersData } = useGetUser({ limit: FULL_LIST_LIMIT }, isSalaryPopupOpen);
@@ -458,6 +470,8 @@ const MainCashbox = () => {
       mainCashboxData.transfer,
   );
   const balanceLoading = Boolean(mainCashboxQuery.isLoading || cashboxInfoQuery.isLoading);
+  // Smena oynalaridagi «Ochilish qoldig'i» / «Tizim bo'yicha kutilgan» — kassa javobi kelgandagina (aks holda «—»).
+  const balanceKnown = Boolean(mainCashboxQuery.isSuccess);
   // «Qabul qilinishi kerak» oynasi izohidagi jami (SA/admin, /payments bilan bir xil manba).
   const receiveTotal = useMemo(() => {
     if (isManagerRole) return undefined;
@@ -656,34 +670,55 @@ const MainCashbox = () => {
     [submitManualOperation],
   );
 
-  const handleOpenShift = useCallback(async () => {
-    if (!shiftUserId || openShift.isPending) return;
-    try {
-      await openShift.mutateAsync({ opened_by: shiftUserId });
-      notify.success(t("common:success"), { description: t("openShiftSuccess") });
-    } catch (error) {
-      notify.error(t("common:error"), { description: getBackendErrorMessage(error) ?? t("openShiftError") });
-    }
-  }, [openShift, shiftUserId, t]);
+  const refetchShift = shiftState.refetch;
 
-  const handleCloseShift = useCallback(
+  const handleOpenShift = useCallback(
     async (comment: string) => {
-      if (!shiftUserId || !closingShiftId) return;
+      if (openShift.isPending) return;
       try {
-        await closeShift.mutateAsync({
-          closed_by: shiftUserId,
-          shift_id: closingShiftId,
-          comment: comment || undefined,
-        });
-      } catch (error) {
-        notify.error(t("common:error"), { description: getBackendErrorMessage(error) ?? t("closeShiftError") });
+        await openShift.mutateAsync({ comment: comment || undefined });
+      } catch {
+        // Oyna ochiq qoladi; xom backend matni ko'rsatilmaydi. Smenani boshqa xodim ochgan bo'lishi mumkin —
+        // holat qayta o'qiladi, eskirgan amal qayta-qayta yuborilmaydi.
+        notify.error(t("common:error"), { description: t("openShiftError") });
+        refetchShift();
         return;
       }
-      notify.success(t("common:success"), { description: t("closeShiftSuccess") });
+      setIsOpenShiftDialogOpen(false);
+      notify.success(t("common:success"), { description: t("openShiftSuccess") });
+    },
+    [openShift, refetchShift, t],
+  );
+
+  const handleCloseShift = useCallback(
+    async ({ countedCash, countedCard, comment }: CloseShiftPayload) => {
+      if (!closingShiftId || closeShift.isPending) return;
+      const openedByName = shiftState.openedByName;
+      let closed: CashboxShift | null = null;
+      try {
+        const response = await closeShift.mutateAsync({
+          shift_id: closingShiftId,
+          closing_balance_cash: countedCash,
+          closing_balance_card: countedCard,
+          comment: comment || undefined,
+        });
+        closed = normalizeCashboxShift(asRecord(response).data);
+      } catch {
+        notify.error(t("common:error"), { description: t("closeShiftError") });
+        // Smena boshqa xodim tomonidan yopilgan bo'lishi mumkin — holat qayta o'qiladi.
+        refetchShift();
+        return;
+      }
       setClosingShiftId(null);
       handleExportExcel();
+      if (closed) {
+        setShiftResult({ shift: closed, openedByName });
+        setIsShiftResultOpen(true);
+      } else {
+        notify.success(t("common:success"), { description: t("closeShiftSuccess") });
+      }
     },
-    [closeShift, closingShiftId, handleExportExcel, shiftUserId, t],
+    [closeShift, closingShiftId, handleExportExcel, refetchShift, shiftState.openedByName, t],
   );
 
   const setHistoryRange = useCallback((from: string, to: string) => {
@@ -861,24 +896,26 @@ const MainCashbox = () => {
   };
 
   // ── Sarlavha ────────────────────────────────────────────────────────────────
-  const headerDescription = isManagerRole
-    ? ownBranchName
-      ? t("v2MainCashbox.subtitleBranch", { branch: ownBranchName })
-      : t("v2MainCashbox.subtitle")
-    : isShiftStateKnown
-      ? t(openShiftId ? "v2MainCashbox.subtitleShiftOpen" : "v2MainCashbox.subtitleShiftClosed")
-      : t("v2MainCashbox.subtitle");
+  const headerDescription =
+    isManagerRole && ownBranchName
+      ? isShiftStateKnown
+        ? t(openShiftId ? "v2MainCashbox.subtitleBranchShiftOpen" : "v2MainCashbox.subtitleBranchShiftClosed", {
+            branch: ownBranchName,
+          })
+        : t("v2MainCashbox.subtitleBranch", { branch: ownBranchName })
+      : isShiftStateKnown
+        ? t(openShiftId ? "v2MainCashbox.subtitleShiftOpen" : "v2MainCashbox.subtitleShiftClosed")
+        : t("v2MainCashbox.subtitle");
 
-  // FE-PAY-06: smena — faqat superadmin/admin. Ochiq smena yo'q bo'lsa "Smenani ochish" (POST /finance/shift/open
-  // { opened_by }), bor bo'lsa "Smenani yopish" (POST /finance/shift/close { closed_by, shift_id, comment? }),
-  // yopilgach Excel hisobot yuklanadi. Holat noma'lum (so'rov kutilmoqda / xato) — tugma yo'q.
+  // Smena yopiq — «Smenani ochish» asosiy tugma (ochish oynasi); ochiq — «Smenani yopish» ikkinchi darajali
+  // (sanash oynasi). Holat noma'lum — tugma yo'q.
   const shiftAction = isShiftStateKnown ? (
     openShiftId ? (
       <Button variant="secondary" leftIcon={Timer} onClick={() => setClosingShiftId(openShiftId)}>
         {t("v2MainCashbox.closeShift")}
       </Button>
     ) : (
-      <Button variant="secondary" leftIcon={Timer} onClick={handleOpenShift} disabled={openShift.isPending}>
+      <Button leftIcon={Timer} onClick={() => setIsOpenShiftDialogOpen(true)} aria-haspopup="dialog">
         {t("v2MainCashbox.openShift")}
       </Button>
     )
@@ -1050,34 +1087,37 @@ const MainCashbox = () => {
     fillCashbox: { icon: Plus, title: t("v2MainCashbox.actions.fill"), hint: t("v2MainCashbox.actions.fillHint") },
   };
 
-  const shiftStatus =
-    isStaffRole && isShiftStateKnown ? (
-      <div className="mt-auto flex items-center gap-2.5 rounded-xl bg-sunken px-3.5 py-3">
-        <Clock aria-hidden="true" size={18} className="shrink-0 text-text-subtle" />
-        <span className="flex min-w-0 flex-col">
-          <span className="text-sm font-semibold text-text">
-            {openShiftId
-              ? openShiftOpenedAt
-                ? t("v2MainCashbox.actions.shiftOpen", {
-                    time: formatDateTimeLocalized(openShiftOpenedAt, { language }),
-                  })
-                : t("v2MainCashbox.actions.shiftOpenNoTime")
-              : t("v2MainCashbox.actions.shiftClosed")}
-          </span>
-          {openShiftId && currentUserName ? (
-            <span className="text-xs text-text-muted">
-              {t("v2MainCashbox.actions.shiftOpenedBy", { name: currentUserName })}
-            </span>
-          ) : null}
+  const shiftStatus = openShiftRow ? (
+    <div className="mt-auto flex items-center gap-2.5 rounded-xl bg-sunken px-3.5 py-3">
+      <Clock aria-hidden="true" size={18} className="shrink-0 text-text-subtle" />
+      <span className="flex min-w-0 flex-col">
+        <span className="text-sm font-semibold text-text">
+          {openShiftOpenedAt
+            ? t("v2MainCashbox.actions.shiftOpen", {
+                time: formatDateTimeLocalized(openShiftOpenedAt, { language }),
+              })
+            : t("v2MainCashbox.actions.shiftOpenNoTime")}
         </span>
-      </div>
-    ) : null;
+        {shiftState.openedByName ? (
+          <span className="text-xs text-text-muted">
+            {t("v2MainCashbox.actions.shiftOpenedBy", { name: shiftState.openedByName })}
+          </span>
+        ) : null}
+      </span>
+    </div>
+  ) : null;
 
   const actionsCard = (
     <Card
       divided={false}
       title={t("v2MainCashbox.actions.title")}
-      description={t("v2MainCashbox.actions.subtitle")}
+      description={
+        isShiftLocked ? (
+          <span id={actionsLockedId}>{t("v2MainCashbox.shift.locked")}</span>
+        ) : (
+          t("v2MainCashbox.actions.subtitle")
+        )
+      }
       bodyClassName="flex flex-1 flex-col gap-4"
       className="min-w-0"
     >
@@ -1087,7 +1127,13 @@ const MainCashbox = () => {
           const copy = actionCopy[label];
           const Icon = copy.icon;
           return (
-            <Pressable key={label} onClick={() => handleActionClick(label)} className={ACTION_TILE}>
+            <Pressable
+              key={label}
+              onClick={() => handleActionClick(label)}
+              disabled={isShiftLocked}
+              aria-describedby={isShiftLocked ? actionsLockedId : undefined}
+              className={cx(ACTION_TILE, isShiftLocked && ACTION_TILE_LOCKED)}
+            >
               <span
                 aria-hidden="true"
                 className="inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-sunken text-text-muted"
@@ -1410,6 +1456,13 @@ const MainCashbox = () => {
     requireComment: true,
   };
   const confirmCashboxLabel = isManagerRole && ownBranchName ? ownBranchName : t("v2MainCashbox.confirm.mainCashbox");
+  // Smena oynalari: «Asosiy kassa» / «Urgut filiali kassasi»; karta yorlig'i — asosiy kassada «Karta (Click)».
+  const shiftCashboxLabel = isManagerRole
+    ? ownBranchName
+      ? t("v2MainCashbox.shift.branchCashbox", { branch: ownBranchName })
+      : t("v2MainCashbox.shift.branchCashboxFallback")
+    : t("v2MainCashbox.shift.mainCashbox");
+  const shiftCardLabel = isManagerRole ? t("v2MainCashbox.shift.card") : t("v2MainCashbox.shift.cardClick");
 
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">
@@ -1427,6 +1480,12 @@ const MainCashbox = () => {
           </>
         }
       />
+
+      {isShiftLocked ? (
+        <ShiftBanner
+          description={t(isManagerRole ? "v2MainCashbox.shift.banner.branch" : "v2MainCashbox.shift.banner.main")}
+        />
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         {balanceCard}
@@ -1479,14 +1538,38 @@ const MainCashbox = () => {
         {...manualFormProps}
       />
 
+      <OpenShiftDialog
+        open={isOpenShiftDialogOpen}
+        onClose={() => setIsOpenShiftDialogOpen(false)}
+        onSubmit={handleOpenShift}
+        isLoading={openShift.isPending}
+        openerName={currentUserName}
+        cashboxLabel={shiftCashboxLabel}
+        cash={balanceKnown ? cashBalance : null}
+        card={balanceKnown ? transferBalance : null}
+        cardLabel={shiftCardLabel}
+      />
+
       <CloseShiftPopup
         isOpen={Boolean(closingShiftId)}
         onClose={() => setClosingShiftId(null)}
         isLoading={closeShift.isPending}
         onConfirm={handleCloseShift}
         openedAt={openShiftOpenedAt}
-        openedByName={currentUserName}
-        cashboxTotal={totalBalance}
+        openedByName={shiftState.openedByName}
+        expectedCash={balanceKnown ? cashBalance : null}
+        expectedCard={balanceKnown ? transferBalance : null}
+      />
+
+      <ShiftResultDialog
+        open={isShiftResultOpen && Boolean(shiftResult)}
+        onClose={() => setIsShiftResultOpen(false)}
+        shift={shiftResult?.shift ?? null}
+        openedByName={shiftResult?.openedByName}
+        closedByName={currentUserName}
+        cashboxLabel={shiftCashboxLabel}
+        cardLabel={shiftCardLabel}
+        onExport={handleExportExcel}
       />
 
       <FinanceHistoryDetailPopup row={selectedRow} onClose={() => setSelectedRow(null)} />

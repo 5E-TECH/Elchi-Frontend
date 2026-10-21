@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import LogisticsOpsPage from "./index";
@@ -51,6 +51,10 @@ describe("LogisticsOps page", () => {
     // [0] — "hammasini tanlash", [1] — 9001 qatori.
     await user.click(screen.getAllByRole("checkbox")[1]);
     await user.click(screen.getByRole("button", { name: "Tasdiqlash — 1 ta" }));
+    // OS-3: avval tasdiq oynasi — oynasiz so'rov ketmaydi.
+    const dialog = await screen.findByRole("alertdialog", { name: "Qaytarish so'rovlarini tasdiqlang" });
+    expect(apiPostMock).not.toHaveBeenCalled();
+    await user.click(within(dialog).getByRole("button", { name: "1 tasini tasdiqlash" }));
 
     await waitFor(() => {
       expect(apiPostMock).toHaveBeenCalledWith("post/return-requests/approve", { order_ids: ["9001"] });
@@ -90,7 +94,7 @@ describe("LogisticsOps page", () => {
               courier: { id: "56", name: "Kuryer Ali" },
               orders: [
                 { id: "9001", status: "waiting" },
-                { id: "9002", status: "on_the_road" },
+                { id: "9002", status: "on the road" },
               ],
             },
           ],

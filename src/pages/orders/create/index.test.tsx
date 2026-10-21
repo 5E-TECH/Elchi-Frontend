@@ -598,8 +598,8 @@ describe("OrderCreate — 2-qadam: mijoz, manzil, mahsulotlar va xulosa", () => 
     const user = userEvent.setup();
     renderWithProviders(<OrderCreate />, { preloadedState: marketState });
 
-    await user.type(screen.getByRole("textbox", { name: /^Telefon/ }), "901234567");
-    expect(screen.getByRole("textbox", { name: /^Telefon/ })).toHaveValue("90 123 45 67");
+    await user.type(screen.getByRole("combobox", { name: /^Telefon/ }), "901234567");
+    expect(screen.getByRole("combobox", { name: /^Telefon/ })).toHaveValue("90 123 45 67");
     await user.type(screen.getByLabelText(/^Mijoz ismi/), "Aliyev Vali");
     await pickOption(user, "customer.region_id", "Toshkent shahri • 1726");
     await pickOption(user, "customer.district_id", "Chilonzor • 1726269");
@@ -639,7 +639,7 @@ describe("OrderCreate — 2-qadam: mijoz, manzil, mahsulotlar va xulosa", () => 
     const status = () => within(aside).getByRole("status");
     const submit = () => within(aside).getByRole("button", { name: "Buyurtma yaratish" });
 
-    await user.type(screen.getByRole("textbox", { name: /^Telefon/ }), "90123456");
+    await user.type(screen.getByRole("combobox", { name: /^Telefon/ }), "90123456");
     await user.type(screen.getByLabelText(/^Mijoz ismi/), "Aliyev Vali");
     await pickOption(user, "customer.region_id", "Toshkent shahri • 1726");
     await pickOption(user, "customer.district_id", "Chilonzor • 1726269");
@@ -650,7 +650,7 @@ describe("OrderCreate — 2-qadam: mijoz, manzil, mahsulotlar va xulosa", () => 
     expect(status()).toHaveTextContent("Majburiy maydonlarni to'ldirib, mahsulot tanlang");
     expect(submit()).toBeDisabled();
 
-    await user.type(screen.getByRole("textbox", { name: /^Telefon/ }), "7");
+    await user.type(screen.getByRole("combobox", { name: /^Telefon/ }), "7");
     expect(status()).toHaveTextContent("Buyurtma yuborishga tayyor");
     expect(submit()).toBeEnabled();
 
@@ -688,7 +688,7 @@ describe("OrderCreate — 2-qadam: mijoz, manzil, mahsulotlar va xulosa", () => 
     const user = userEvent.setup();
     renderWithProviders(<OrderCreate />, { preloadedState: marketState });
 
-    await user.type(screen.getByRole("textbox", { name: /^Telefon/ }), "901234567");
+    await user.type(screen.getByRole("combobox", { name: /^Telefon/ }), "901234567");
     await user.type(screen.getByLabelText(/^Mijoz ismi/), "Vali");
     await pickOption(user, "customer.region_id", "Toshkent shahri • 1726");
     await pickOption(user, "customer.district_id", "Chilonzor • 1726269");
@@ -700,7 +700,7 @@ describe("OrderCreate — 2-qadam: mijoz, manzil, mahsulotlar va xulosa", () => 
     expect(alert).toHaveTextContent("Buyurtma yaratilmadi");
     expect(alert).toHaveTextContent("Telefon noto'g'ri");
     expect(alert).toHaveClass("bg-danger-soft");
-    expect(screen.getByRole("textbox", { name: /^Telefon/ })).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("combobox", { name: /^Telefon/ })).toHaveAttribute("aria-invalid", "true");
   });
 });
 

@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-payments-cash-detail-courier, superadmin-payments-cash-detail-market, superadmin-payments-cash-detail-branch, admin-payments-cash-detail-courier, admin-payments-cash-detail-market, admin-payments-cash-detail-branch, manager-payments-cash-detail-courier, manager-payments-cash-detail-branch
+// dizayn-v2: superadmin-payments-cash-detail-courier, superadmin-payments-cash-detail-market, superadmin-payments-cash-detail-branch, admin-payments-cash-detail-courier, admin-payments-cash-detail-market, admin-payments-cash-detail-branch, manager-payments-cash-detail-courier, manager-payments-cash-detail-branch, manager-payments-cash-detail-courier-ack
 import { memo, useRef, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, ReceiptText } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -27,6 +27,7 @@ import {
   SkeletonList,
 } from "../../../shared/ui/primitives";
 import { PaymentAckBadge } from "./PaymentAckBadge";
+import { paymentAckAudienceOf, paymentAckKeys } from "./paymentAck";
 
 /**
  * KASSA OPERATSIYALARI RO'YXATI — dizayn v2 (maket `*-payments-cash-detail-*`, «Operatsiyalar tarixi»
@@ -125,27 +126,27 @@ const HistoryRow = memo(
     const extra = sourceUserName ? t("v2CashDetail.list.courier", { name: sourceUserName }) : comment.text;
     const date = formatDateTimeLocalized(getHistoryRowDate(row));
     const Icon = isIncome ? ArrowDownLeft : ArrowUpRight;
-    // Tugma nomi (aria-label) qator belgilarini ham aytsin: «Tuzatish», kvitansiya javobi (2crjWf7v).
-    const badgeLabels = [
-      comment.isRollback ? t("v2CashDetail.list.rollback") : "",
-      row.payment_ack === "disputed"
-        ? t("paymentAckDisputed")
-        : row.payment_ack === "confirmed"
-          ? t("paymentAckConfirmed")
-          : "",
-    ].filter(Boolean);
-    const labelTitle = badgeLabels.length ? `${title} (${badgeLabels.join(", ")})` : title;
+    // Tugma nomi (aria-label) qator belgilarini ham aytsin: «Tuzatish» — sarlavhadan keyin qavsda; kvitansiya
+    // javobi (2crjWf7v, KI-S1) — maketdagidek oxirida: «…, Bugun, 09:10, Kuryer: noto'g'ri».
+    const ackAudience = paymentAckAudienceOf(viewerRole);
+    const ackKeys = paymentAckKeys(row.payment_ack, ackAudience);
+    const labelTitle = comment.isRollback ? `${title} (${t("v2CashDetail.list.rollback")})` : title;
 
     return (
       <li>
         <Pressable
           onClick={() => onOpen(row)}
-          aria-label={t("v2CashDetail.list.rowLabel", {
-            title: labelTitle,
-            direction: t(isIncome ? "v2Common.income" : "v2Common.expense"),
-            amount: signedAmount,
-            date,
-          })}
+          aria-label={[
+            t("v2CashDetail.list.rowLabel", {
+              title: labelTitle,
+              direction: t(isIncome ? "v2Common.income" : "v2Common.expense"),
+              amount: signedAmount,
+              date,
+            }),
+            ackKeys ? t(ackKeys.label) : "",
+          ]
+            .filter(Boolean)
+            .join(", ")}
           className={cx(
             "flex w-full min-h-14 items-start gap-3 px-5 py-3 text-left text-sm max-md:px-4",
             "transition-[background-color] duration-150 hover:bg-row-hover motion-reduce:transition-none",
@@ -164,15 +165,16 @@ const HistoryRow = memo(
               <span className="mt-0.5 text-xs whitespace-pre-line [overflow-wrap:anywhere] text-text-muted">{extra}</span>
             ) : null}
             {/* Belgilar: «Tuzatish» (`[ROLLBACK]`, maket `courier-cashbox-my-all` → `.el-badge-outline`) va
-                kuryer kvitansiyasi javobi (2crjWf7v: «Noto'g'ri» / «Tasdiqlangan»). */}
+                kuryer kvitansiyasi javobi (2crjWf7v, KI-S1: «Kuryer: noto'g'ri» / «Kuryer tasdiqladi»). Ikkalasi ham maketdagi
+                `.el-badge` — 24px (`md`). */}
             {comment.isRollback || row.payment_ack ? (
               <span className="mt-1 flex flex-wrap items-center gap-2">
                 {comment.isRollback ? (
-                  <Badge variant="outline" size="sm">
+                  <Badge variant="outline">
                     {t("v2CashDetail.list.rollback")}
                   </Badge>
                 ) : null}
-                <PaymentAckBadge ack={row.payment_ack} size="sm" />
+                <PaymentAckBadge ack={row.payment_ack} audience={ackAudience} />
               </span>
             ) : null}
           </span>

@@ -54,6 +54,10 @@
   "roleOperator": "Оператор",
   "roleSuperAdmin": "Суперадмин",
   "roleCustomer": "Клиент",
+  "roleLogist": "Логист",
+  "roleMarketOperator": "Оператор маркета",
+  "roleInvestor": "Инвестор",
+  "roleBranch": "Филиал",
   "roleUnknown": "Неизвестно",
   "editUser": "Редактировать пользователя",
   "edit": "Редактировать",
@@ -179,12 +183,19 @@
       "tabsLabel": "По роли",
       "tabs": {
         "all": "Все",
-        "market": "Маркеты",
-        "courier": "Курьеры",
+        "admin": "Администраторы",
         "manager": "Менеджеры",
         "registrator": "Регистраторы",
-        "operator": "Операторы",
-        "admin": "Администраторы"
+        "courier": "Курьеры",
+        "logist": "Логисты",
+        "market": "Маркеты",
+        "marketOperator": "Операторы маркетов",
+        "investor": "Инвесторы"
+      },
+      "roleFilter": "Роль",
+      "roleGroups": {
+        "staff": "Сотрудники",
+        "external": "Внешние аккаунты"
       },
       "filtersLabel": "Фильтры",
       "searchLabel": "Поиск пользователей",
@@ -361,7 +372,33 @@
       "defaultTariff": "Основной тариф",
       "homeTariff": "Тариф до дома",
       "centerTariff": "Тариф до центра",
-      "saving": "Сохранение…"
+      "saving": "Сохранение…",
+      "marketName": "Название маркета",
+      "marketNamePlaceholder": "Например: Baraka Shop",
+      "aiPrice": "Цена ИИ (1 заказ)",
+      "aiPriceHint": "Для этого маркета · 0 — бесплатно",
+      "aiPricePlaceholder": "Например: 250",
+      "aiPriceRange": "Введите от 0 до {{max}}",
+      "workArea": "Рабочая зона",
+      "region": "Область",
+      "regionHint": "Филиал меняется через «Перевести в другой филиал»",
+      "regionEmpty": "Не назначена"
+    },
+    "logist": {
+      "roleHint": "Заказы и история статусов, без финансов",
+      "formDescription": "Логист следит за статистикой назначенных ему регионов",
+      "sections": {
+        "salary": "Зарплата",
+        "regions": "Регионы"
+      },
+      "salaryHint": "Ежемесячная зарплата",
+      "paymentDayHint": "1–30 число каждого месяца",
+      "regionsNote": "Логист не привязывается к филиалу. После сохранения откроется страница «Назначение логистов» с этим логистом — регионы отмечаются там.",
+      "phoneTaken": "Этот номер телефона уже зарегистрирован",
+      "created": "Логист создан",
+      "createdDescription": "{{name}} · теперь назначьте ему регионы",
+      "createError": "Не удалось создать логиста",
+      "createErrorText": "Проверьте данные и повторите попытку."
     }
   },
   "tgGroupLinkAction": "Получить ссылку",

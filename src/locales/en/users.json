@@ -54,6 +54,10 @@
   "roleOperator": "Operator",
   "roleSuperAdmin": "Superadmin",
   "roleCustomer": "Customer",
+  "roleLogist": "Logist",
+  "roleMarketOperator": "Market operator",
+  "roleInvestor": "Investor",
+  "roleBranch": "Branch",
   "roleUnknown": "Unknown",
   "editUser": "Edit user",
   "edit": "Edit",
@@ -179,12 +183,19 @@
       "tabsLabel": "By role",
       "tabs": {
         "all": "All",
-        "market": "Markets",
-        "courier": "Couriers",
+        "admin": "Admins",
         "manager": "Managers",
         "registrator": "Registrars",
-        "operator": "Operators",
-        "admin": "Admins"
+        "courier": "Couriers",
+        "logist": "Logists",
+        "market": "Markets",
+        "marketOperator": "Market operators",
+        "investor": "Investors"
+      },
+      "roleFilter": "Role",
+      "roleGroups": {
+        "staff": "Staff",
+        "external": "External accounts"
       },
       "filtersLabel": "Filters",
       "searchLabel": "Search users",
@@ -361,7 +372,33 @@
       "defaultTariff": "Main tariff",
       "homeTariff": "Home tariff",
       "centerTariff": "Centre tariff",
-      "saving": "Saving…"
+      "saving": "Saving…",
+      "marketName": "Market name",
+      "marketNamePlaceholder": "For example: Baraka Shop",
+      "aiPrice": "AI price (per order)",
+      "aiPriceHint": "For this market · 0 — free",
+      "aiPricePlaceholder": "For example: 250",
+      "aiPriceRange": "Enter a value from 0 to {{max}}",
+      "workArea": "Work area",
+      "region": "Region",
+      "regionHint": "The branch is changed via “Transfer to another branch”",
+      "regionEmpty": "Not assigned"
+    },
+    "logist": {
+      "roleHint": "Orders and status history, no finance",
+      "formDescription": "A logistician follows the statistics of their assigned regions",
+      "sections": {
+        "salary": "Salary",
+        "regions": "Regions"
+      },
+      "salaryHint": "Monthly salary",
+      "paymentDayHint": "Day 1–30 of each month",
+      "regionsNote": "A logistician is not attached to a branch. After saving, «Assign logisticians» opens with this logistician selected — tick the regions there.",
+      "phoneTaken": "This phone number is already registered",
+      "created": "Logistician created",
+      "createdDescription": "{{name}} · now assign their regions",
+      "createError": "Could not create the logistician",
+      "createErrorText": "Check the details and try again."
     }
   },
   "tgGroupLinkAction": "Get connection link",

@@ -10,7 +10,7 @@ description: >-
 
 # Elchi dizayn v2: UI o'zgarishi tartibi
 
-Loyiha **dizayn v2** ga bosqichma-bosqich o'tmoqda. Ega tasdiqlagan maketlar repoda turadi (`design/`, 654 ekran ×
+Loyiha **dizayn v2** ga bosqichma-bosqich o'tmoqda. Ega tasdiqlagan maketlar repoda turadi (`design/`, 662 ekran ×
 desktop/planshet/telefon × kunduzgi/tungi). Frontenddagi har bir o'zgarish, kim so'raganidan qat'i nazar, shu
 maketlar va `docs/DESIGN_SYSTEM.md` bo'yicha qilinadi. Bu tartib ixtiyoriy emas. Qadamni o'tkazib yuborsangiz, buni
 javobda ochiq ayting.

@@ -209,10 +209,15 @@ export const getIntegrationErrorMessage = (err: unknown): string => {
   return "";
 };
 
-export const useGetIntegrations = (params: IntegrationParams, options?: SilentErrorOption) =>
+/** `options.enabled` — ixtiyoriy (sukut `true`): `GET /integrations` faqat SUPERADMIN, ADMIN ga (boshqasiga 403). */
+export const useGetIntegrations = (
+  params: IntegrationParams,
+  options?: SilentErrorOption & { enabled?: boolean },
+) =>
   useQuery<IntegrationsResponse>({
     queryKey: integrationKeys.list(params),
     queryFn: () => api.get(API_ENDPOINTS.INTEGRATIONS.BASE, { params }).then((res) => res.data),
+    enabled: options?.enabled ?? true,
     placeholderData: keepPreviousData,
     staleTime: 10_000,
     refetchOnWindowFocus: false,

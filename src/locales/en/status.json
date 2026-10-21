@@ -11,8 +11,34 @@
     "paid": "Paid",
     "cancelled": "Cancelled",
     "cancelled_sent": "Cancelled — sent",
-    "returned_to_market": "Returned to market",
     "closed": "Closed",
+    "returned_to_market": "Handed to market",
     "unknown": "Unknown"
+  },
+  "cancelStage": {
+    "courier": "Cancelled · with courier",
+    "in_transit": "Cancelled · in transit",
+    "branch": "Cancelled · at branch",
+    "hq": "Cancelled · at HQ",
+    "market": "Handed to market"
+  },
+  "cancelReturn": {
+    "towards": "→ {{name}}",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
+    "hq": "HQ",
+    "method": {
+      "qr": "Via QR",
+      "manual": "Manual confirmation — {{reason}}",
+      "manualNoReason": "Manual confirmation",
+      "no_qr": "Without QR (market setting)",
+      "pin": "Via password"
+    },
+    "manualReason": {
+      "torn": "QR torn",
+      "unreadable": "QR unreadable",
+      "missing": "Label missing",
+      "wet": "QR wet or faded"
+    }
   }
 }

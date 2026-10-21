@@ -41,22 +41,34 @@ const mockApi = ({ sources = SOURCES, sourcesError }: Mock = {}) =>
       return sourcesError ? Promise.reject(sourcesError) : Promise.resolve({ data: sources });
     }
     if (url === "integrations") return Promise.resolve({ data: { statusCode: 200, data: { items: INTEGRATIONS } } });
-    if (url === "partners") return Promise.resolve({ data: [{ id: 7, name: "BeePost hamkor", is_active: true }] });
+    if (url === "admin/partners") return Promise.resolve({ data: [{ id: 7, name: "BeePost hamkor", is_active: true }] });
     return Promise.resolve({ data: [] });
   });
 
 const sourcesCalls = () => apiGetMock.mock.calls.filter(([url]) => url === "orders/external/sources");
 
-const stateFor = (role: string) =>
-  ({ role: { id: `${role}-1`, role, region: null, name: role } }) as never;
+const stateFor = (role: string, branchType?: string) =>
+  ({
+    role: { id: `${role}-1`, role, region: null, name: role },
+    user: {
+      user: { id: `${role}-1`, role, ...(branchType ? { branch: { id: "1", type: branchType } } : {}) },
+      isAuthenticated: true,
+      accessToken: null,
+      loading: false,
+      isAppInitializing: false,
+      error: null,
+    },
+  }) as never;
 
-const renderPicker = (role = "superadmin") =>
+const renderPicker = (role = "superadmin", branchType?: string) =>
   renderWithProviders(
     <Routes>
       <Route path="/new-orders/incoming" element={<SourcePicker />} />
     </Routes>,
-    { route: "/new-orders/incoming", preloadedState: stateFor(role) },
+    { route: "/new-orders/incoming", preloadedState: stateFor(role, branchType) },
   );
+
+const requestedUrls = () => apiGetMock.mock.calls.map(([url]) => url);
 
 describe("SourcePicker — kiruvchi posilkalar manbalari (dizayn v2)", () => {
   beforeEach(() => {
@@ -115,13 +127,43 @@ describe("SourcePicker — kiruvchi posilkalar manbalari (dizayn v2)", () => {
     expect(screen.queryByRole("heading", { level: 2, name: "Kiruvchi posilkalar" })).not.toBeInTheDocument();
   });
 
-  it("menejer: tab qatori yo'q (bitta tab) — kartaning o'z sarlavhasi", async () => {
+  it.each([
+    ["manager", "HQ"],
+    ["manager", "PICKUP"],
+    ["registrator", "REGIONAL"],
+  ])(
+    "⭐ %s (%s): «Marketlar · Kiruvchi posilkalar» tablari; ulanishlar (admin/partners, integrations) so'ralmaydi — 403 yo'q",
+    async (role, branchType) => {
+      mockApi();
+      renderPicker(role, branchType);
+      await screen.findByRole("table", { name: "Manbalar" });
+
+      const tabs = screen.getByRole("navigation", { name: "Qabul manbalari" });
+      expect(within(tabs).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+        "/new-orders",
+        "/new-orders/incoming",
+      ]);
+      expect(within(tabs).getByRole("link", { name: /Kiruvchi posilkalar/ })).toHaveAttribute("aria-current", "page");
+      expect(screen.queryByRole("heading", { level: 2, name: "Kiruvchi posilkalar" })).not.toBeInTheDocument();
+      expect(requestedUrls()).not.toContain("admin/partners");
+      expect(requestedUrls()).not.toContain("integrations");
+      expect(screen.queryByRole("region", { name: "Ulangan manbalar — hozircha posilka yo'q" })).not.toBeInTheDocument();
+    },
+  );
+
+  it("superadmin: ulanishlar so'raladi (posilkasiz manbalar kartasi uchun)", async () => {
     mockApi();
-    renderPicker("manager");
+    renderPicker("superadmin");
     await screen.findByRole("table", { name: "Manbalar" });
 
-    expect(screen.getByRole("heading", { level: 2, name: "Kiruvchi posilkalar" })).toBeInTheDocument();
-    expect(screen.queryByRole("navigation", { name: "Qabul manbalari" })).not.toBeInTheDocument();
+    await waitFor(() => expect(requestedUrls()).toEqual(expect.arrayContaining(["admin/partners", "integrations"])));
+  });
+
+  it("qabul qilmaydigan menejer (REGIONAL) — ruxsat yo'q", async () => {
+    mockApi();
+    renderPicker("manager", "REGIONAL");
+
+    expect(await screen.findByText("Bu sahifaga kirish huquqingiz yo'q")).toBeInTheDocument();
   });
 
   it("ulangan, lekin posilkasiz manbalar alohida kartada (hamkor va yetkazuvchi emas) + Integratsiyalar havolasi", async () => {

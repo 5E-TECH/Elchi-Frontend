@@ -10,6 +10,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   push qilamiz (ega ruxsati: yashil tekshiruvli har commit so'ramasdan push), `main`/`dev` ga hech qachon.
 - **Ish branchi** (lokal, asosiy papka): `design-v2/phase-4-moliya`. 4-bosqich to'liq (G1, G2, G3 + Bahodir/Dilshod
   dev ishi) `9443388` da — PR #305 orqali `dev` ga tushgan. 5-bosqich (A — `b450e90`, B — shu commit) uning ustida.
+  Tasdiqlangan 19 guruh kodi (0- va 1-to'lqin, 2026-10-21) ham shu branch'da — §2.2.
 - `origin/dev` (`2dee343`, Bahodir #312) `shodiyor` ga birlashtirilgan (`5b7ada4`). Har PR'dan oldin
   `git merge-base --is-ancestor origin/dev HEAD` — dev oldinga ketgan bo'lsa, avval birlashtiring.
 - **Jonli tekshiruv:** front lokal (`127.0.0.1:4173`), backend — server (`api.elchipochta.uz`, test ma'lumot) lokal
@@ -19,7 +20,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
 | Bosqich | Holat |
 |---|---|
 | 0 tokenlar, 1 primitivlar, 2 shell, 3 forma/dialog/holatlar | tayyor, dev'da |
-| 4 sahifalar migratsiyasi | **tayyor**: 77 route'dan 76 tasi v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi); qolgan `/market-operators` — yopiq |
+| 4 sahifalar migratsiyasi | **tayyor**: 77 / 77 route v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi; oxirgi `/market-operators` — MO-1, 2026-10-21) |
 | 5 qo'riqchilar (ESLint, palitra, vizual snapshot, CI) | **tayyor** (kod va tekshiruvlar); «Visual» baseline'lari — egada (§2.1) |
 
 **4-bosqichda ko'chirilgan sahifalar** (ro'yxat `AGENTS.md` 4-qatorida ham bor):
@@ -35,7 +36,7 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   (umumiy `shared/ui/charts`, `widgets/region-detail`; dashboard bundle 418 KB ≤ 450)
 - G2: `/integrations/*` (konsol + 7 panel, katalog, usta; eski sahifalar «Eski sahifa» belgisi bilan), `/notifications*`
   (Telegram guruhini bir martalik havola bilan ulash), `/activity-logs` (`DataTable expandable`), `/ops` + 8 ta ops yo'li,
-  `/profile`, `/settings`, `/inbox`; `/market-operators` yopiq, ko'chirilmagan
+  `/profile`, `/settings`, `/inbox`; `/market-operators` — MO-1 da (2026-10-21) market uchun ochildi va v2 ga ko'chdi
 - G3: `/login` (+ «Sessiya tugadi» ekrani, sessiya banneri shell'ning `[data-shell-slot=banner]` slotida),
   `/scan/:token`, `/dispatch`, `/courier-bulk` (+ dev'ning isbot qadami va xato berganlar oynasi, `X-Request-Source`);
   butun `/scan` kamera ekrani — skaner ishida (1–4-bosqich tayyor, quyida §2.2)
@@ -47,7 +48,8 @@ Bu fayl faqat **holat, qarorlar va navbatni** beradi.
   `QRCode`; boshqa ikonka kutubxonalari yo'q), `jsx-a11y/anchor-is-valid` — butun `src` da **xato**,
   `STAGE_A_PENDING = []`. Ratchet: `RAW_CONTROL_RATCHET` 5 (kamera ishi 2, `/market-operators`, `SalaryPaymentPopup`,
   `PrintModeSelect`), `UI_IMPORT_RATCHET` 0; bitta qator istisnolari 2 (kamera tugmasi, `CampaignPage` prefiksi).
-  Skaner 1–2-bosqichidan keyin: `RAW_CONTROL_RATCHET` 3 (kamera ishi chiqdi), bitta qator istisnosi 1 (`CampaignPage`).
+  Skaner 1–2-bosqichidan keyin: `RAW_CONTROL_RATCHET` 3 (kamera ishi chiqdi), bitta qator istisnosi 1 (`CampaignPage`);
+  MO-1 dan keyin: 2 (`SalaryPaymentPopup`, `PrintModeSelect`).
 - design-guard `named-colour` + `V2_SCOPES` (80 papka, ichidagi har fayl rangda 0), `V2_SCOPE_PENDING` 2,
   `OUTPUT_FORMAT_FILES` 4; `design/guard-baseline.json` faqat kamaydi (87 → 17 fayl yozuvi).
 - Vizual snapshotlar: 23 sahna × kunduzgi/tungi × 1440/390 = 92 (`tests/visual/`, mock API), CI «Visual»
@@ -149,6 +151,61 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
   - **Keyingi qadam.** Ega guruhlarni tasdiqlaydi → tasdiqlangan maketlar `design/` ga sinxron PR bilan kiradi →
     kod yoziladi. Backend talablari Trello Backend ro'yxatiga yozilgan: 2026-10-19 da 22 + 8 karta va mavjud
     kartalarga izohlar.
+- **Tasdiqlangan 19 guruhning kodi (2026-10-19 dan).** Reja — ega papkasidagi
+  `elchi-v2-specs/tasdiqlangan-dizayn-roadmap.md` (to'lqinlar, PR'lar, fayl egaligi, 4.1-bo'limdagi tartib).
+  - **0- va 1-to'lqin tayyor (2026-10-21, `design-v2/phase-4-moliya` → `origin/shodiyor`):** BH-1 (bekor
+    holatlari, 1-bosqich, `vOczoOUE`), ROL-0 (yangi rollar asosi, market pastki menyusi), IP-1 (kiruvchi
+    posilkalar), CS-A (mijoz taklifi, mavjud mijoz — `customer_id`), IS-1 (integratsiya hisob-kitobi matni va
+    «Qoldiq»), CB-1 (kassa smenasi: `shift/current`, ochish / yopish / natija oynalari). Har biri alohida branch'da
+    yozilib, mustaqil review'dan o'tib, merge commit bilan birlashtirilgan.
+  - **Dev bilan birlashtirish qarori:** Bahodir #318 (SllBYhnt) `waiting_customer` va `returned_to_market` ni
+    registrga qo'shgan; BH-1 maketi bo'yicha `returned_to_market` yorlig'i «Marketga topshirildi» (neutral,
+    `PackageCheck`), «Mijoz kutilmoqda» — dev'dagidek.
+  - **Egaga (GitHub):** ROL-0 market pastki menyusini o'zgartirdi («Mahsulotlar» → «To'lovlar», 5-katak «Menyu») —
+    «Visual» `market-home` va `market-new-orders` telefon sahnalari kutilgan farq beradi: Actions → Visual → Run
+    workflow (update ✓) `shodiyor` da. CB-1: frontend qulfi `shift === null` da (`required` ga qaramaydi, ega S4) —
+    deploy bilan asosiy/filial kassasi tezkor amallari smena ochilguncha yopiq, operatorlarga oldindan xabar.
+  - **Ochiq (ega qarori):** IP — Toaster'ga Undo2 ikonka va ikkinchi darajali tugma (hozir umumiy `notify`,
+    `partialViews` izohida); MO — market operatori global qidiruvi; ROL-0 dan: logist / market operatorida menyu
+    qidiruvi `/orders` ochilguncha (LG-4 / MO-3) yashirin, yuqori paneldagi global qidiruv qoladi.
+  - **2-to'lqin, 1-to'plam tayyor (2026-10-21, `67d4d21d`):** KI-1 (kvitansiya yorliqlari rolga qarab — xodim
+    «Kuryer …», kuryer «Siz …»; shell'da «Asosiy kontentga o'tish», `#main-content`), NG-A (yuqorida), TG-A (shaxsiy
+    Telegram: teskari sanoq, QR, buyruq rejimi; umumiy havola qismlari `features/telegram-link`), NS-1 (yuborish
+    natijasi, «Natija noma'lum» — o'sha `client_request_id`, tafsilot oynasi; `entities/notification-dispatch`), OS-1
+    («Tizim holati» — `health/readiness`, 14 xizmat), OS-3 (qaytarish so'rovlarini tasdiqlash oynasi va natija
+    xabari). Integratsiyada: 5375 unit, 258 e2e yashil. Sukut bilan qilingan qarorlar va egaga savollar — ega
+    papkasidagi `elchi-v2-specs/ochiq-savollar-2-tolqin.md`.
+  - **2-to'lqin, 2-to'plam tayyor (2026-10-21, `183079c5`):** DM-1 (quyida), OR-1 (buyurtmalar ro'yxati avtomatik
+    yangilanadi, «Yangilash», «Ro'yxat yangilanmadi» ogohlantirishi, kuryer tab sonlari; `PageHeader` / `Tabs` — opt-in
+    prop'lar), MD-1 (pochta tafsilotida `?q=` qidiruv va takroriy telefonlar banneri), FY-1 (9 rol tabi, telefonda
+    «Rol» tanlovi, AI narxi, logist maoshi, kuryer ish hududi), MH-1 (market mahsulotlarni faqat ko'radi, «Narx», xato
+    xulosasi, market operatori — ko'rish), MO-1 (quyida — oxirgi v1 route ko'chdi). Integratsiyada: 5544 unit, 291 e2e.
+  - **2-to'lqin, 3-to'plam tayyor (2026-10-21):** LG-1 (logist qobig'i va bosh sahifasi — o'z viloyatlari, pulsiz;
+    `region/stats/all` brauzerda `logist_id` bo'yicha filtrlanadi, serverda cheklash — iOnGbEqi), LG-2 (`/regions/
+    logist-assignment` va «Logist» yaratish), IN-1 (investor kabineti — `investors/me`, `StackedBars` primitivi),
+    SA-1 (SATO: qobiq, KPI, holat tablari, inline kod muharriri), KM-1 (SMS kampaniya — mijozlar segmenti, jonli
+    auditoriya, kunlik limit), KI-2 («Ilovani o'rnatish» — kuryer bosh sahifasi, `/inbox`, Sozlamalar «Ilova»).
+    Endi `/` da 403 faqat market operatorida (MO-2 gacha). Integratsiyada: 5778 unit, 328 e2e. 2-to'lqin yopildi.
+  - **Navbatda — 3-to'lqin** (roadmap 4.1): NG-B, TG-B, FY-2, NS-2, CS-B, CB-2, IS-2, SA-2, LG-3, OS-2, MO-2, IN-2;
+    keyin 4-to'lqin (KM-2, KM-3, MO-3, IS-3, CS-C, TOZ-1).
+  - **NG-A (2026-10-21, `feat/ng-a-telegram-groups-admin`):** `/notifications` adminga ochildi (menyu «Tizim» →
+    «Bildirishnomalar»), qator menyusi (popover / telefonda varaqa), nofaol qilish / faollashtirish tasdiq bilan
+    (`features/notification-toggle`, faqat `PATCH {is_active}`), «Tahrirlash» va `features/notification-edit` olindi;
+    «Nofaol» — neytral, umumiy izoh (sabab — NG-C). Egaga: admin yon menyusi o'zgardi — admin «Visual» sahnalari
+    (masalan `regions`) baseline'i «Run workflow (update)» bilan yangilanadi; `/inbox` alias'i adminda ham qabul qilindi.
+  - **MO-1 (2026-10-21, `feat/mo-1-market-operators`):** `/market-operators` — market o'z operatorlari (menyu
+    «Operatorlar», telefonda «Menyu» varag'ida; `canViewMarketOperators`), ro'yxat + komissiya ogohlantirishi, qo'shish
+    (POST → PATCH komissiya), Komissiya va o'chirish oynalari; oxirgi v1 route — 77 / 77 v2, `RAW_CONTROL_RATCHET` 2,
+    v1 `headerName`, `FormPopup`, `PageContainer`, `UserStatusBadge` o'chirildi. Egaga: market yon menyusi o'zgardi —
+    market desktop «Visual» sahnalari «Run workflow (update)»; «Nofaol qilish / Faollashtirish» — MO-4 (backend).
+  - **DM-1 (2026-10-21, `feat/dm-1-districts-merge`):** `/regions/districts` adminga ochildi (ega S1; admin
+    «Hududlar» sarlavhasida «Tumanlar» birinchi), DELETE 400 → «Tumanni o'chirib bo'lmaydi» (faqat holat kodi bo'yicha,
+    sonlarsiz), sahifadan ajratilgan `DistrictMergeDialog` + `useDistrictMerge` (maqsad — shu viloyatdan, oldindan
+    tanlangan maqsad — SA-2 uchun; idle → confirm → progress → result | error | unknown), `MERGE_REQUEST_TIMEOUT_MS`
+    125 s (`shared/api/api.ts`). Xato oynalari, sonlar bloklari va jurnal nomlari — DM-2 / DM-3 (backend N1,
+    vsmpTweI, ILq3WNL1), `partialViews` izohlarida. Egaga: proksi read timeout'i ≥ 125 s bo'lsin (nginx 60 s,
+    Cloudflare 100 s), aks holda ko'pincha «Natija noma'lum»; timeout'da global «Tarmoq xatosi» toast'i ham chiqadi;
+    admin `regions` «Visual» sahnasi kutilgan farq — «Run workflow (update)».
 - «Visual» baseline'lari skaner 2-bosqichidan keyin yangilangan (bot commit `1393ae0`, `/dispatch` va
   `cancelled-handover` — «Kamera» tugmalari olib tashlangani uchun kutilgan farq).
 - **To'liq QA** — Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.

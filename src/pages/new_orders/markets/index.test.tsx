@@ -111,6 +111,26 @@ describe("Marketlar — jadval va xulosa", () => {
     );
   });
 
+  it.each([
+    ["manager", "HQ"],
+    ["registrator", "REGIONAL"],
+  ])("%s (%s): karta tablar bilan (alohida «Marketlar» sarlavhasi yo'q), «Bugun: …» qidiruv yonida", async (role, branchType) => {
+    renderMarkets(role, branchType);
+
+    const card = screen.getByRole("region", { name: "Qabul kutayotgan buyurtmalar" });
+    const tabs = within(card).getByRole("navigation", { name: "Qabul manbalari" });
+    expect(within(tabs).getAllByRole("link").map((link) => link.textContent?.replace(/\s*\d+$/, ""))).toEqual([
+      "Marketlar",
+      "Kiruvchi posilkalar",
+    ]);
+    expect(within(card).queryByRole("heading", { level: 2, name: "Marketlar" })).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(within(card).getByText(/ta market/).closest("p")).toHaveTextContent(
+        "Bugun: 3 ta market · 25 ta buyurtma · jami 8 590 000 so'm",
+      ),
+    );
+  });
+
   it("saralash: «Market» bosilsa nom bo'yicha, yana bosilsa teskari", async () => {
     const user = userEvent.setup();
     renderMarkets();

@@ -54,6 +54,10 @@
   "roleOperator": "Operator",
   "roleSuperAdmin": "Superadmin",
   "roleCustomer": "Mijoz",
+  "roleLogist": "Logist",
+  "roleMarketOperator": "Market operatori",
+  "roleInvestor": "Investor",
+  "roleBranch": "Filial",
   "roleUnknown": "Noma'lum",
   "editUser": "Foydalanuvchini tahrirlash",
   "edit": "Tahrirlash",
@@ -178,13 +182,20 @@
       "cardsLabel": "Foydalanuvchilar",
       "tabsLabel": "Rol bo'yicha",
       "tabs": {
-        "all": "Barchasi",
-        "market": "Marketlar",
-        "courier": "Kuryerlar",
+        "all": "Hammasi",
+        "admin": "Adminlar",
         "manager": "Menejerlar",
         "registrator": "Ro'yxatchilar",
-        "operator": "Operatorlar",
-        "admin": "Adminlar"
+        "courier": "Kuryerlar",
+        "logist": "Logistlar",
+        "market": "Marketlar",
+        "marketOperator": "Market operatorlari",
+        "investor": "Investorlar"
+      },
+      "roleFilter": "Rol",
+      "roleGroups": {
+        "staff": "Xodimlar",
+        "external": "Tashqi hisoblar"
       },
       "filtersLabel": "Filtrlar",
       "searchLabel": "Foydalanuvchilarni qidirish",
@@ -361,7 +372,33 @@
       "defaultTariff": "Asosiy tarif",
       "homeTariff": "Uyga tarif",
       "centerTariff": "Markazga tarif",
-      "saving": "Saqlanmoqda…"
+      "saving": "Saqlanmoqda…",
+      "marketName": "Market nomi",
+      "marketNamePlaceholder": "Masalan: Baraka Shop",
+      "aiPrice": "AI narxi (1 buyurtma)",
+      "aiPriceHint": "Shu market uchun · 0 — bepul",
+      "aiPricePlaceholder": "Masalan: 250",
+      "aiPriceRange": "0 dan {{max}}gacha kiriting",
+      "workArea": "Ish hududi",
+      "region": "Viloyat",
+      "regionHint": "Filial «Boshqa filialga o'tkazish» orqali o'zgaradi",
+      "regionEmpty": "Biriktirilmagan"
+    },
+    "logist": {
+      "roleHint": "Buyurtmalar va holat tarixi, moliyasiz",
+      "formDescription": "Logist o'ziga biriktirilgan viloyatlar statistikasini kuzatadi",
+      "sections": {
+        "salary": "Maosh",
+        "regions": "Viloyatlar"
+      },
+      "salaryHint": "Oylik maosh",
+      "paymentDayHint": "Har oyning 1–30 kuni",
+      "regionsNote": "Logist filialga biriktirilmaydi. Saqlagach «Logist biriktirish» sahifasi shu logist tanlangan holda ochiladi — viloyatlarni o'sha yerda belgilaysiz.",
+      "phoneTaken": "Bu telefon raqam allaqachon mavjud",
+      "created": "Logist yaratildi",
+      "createdDescription": "{{name}} · endi unga viloyatlarni belgilang",
+      "createError": "Logistni yaratib bo'lmadi",
+      "createErrorText": "Ma'lumotlarni tekshirib, qayta urining."
     }
   },
   "tgGroupLinkAction": "Ulash havolasini olish",

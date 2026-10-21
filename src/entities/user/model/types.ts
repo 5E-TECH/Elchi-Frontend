@@ -4,7 +4,21 @@ export interface User {
     name: string;
     phone_number: string;
     branch_id?: string | null;
-    role: "superadmin" | "admin" | "manager" | "registrator" | "courier" | "client" | "market" | "marketing" | "operator" | "customer";
+    role:
+        | "superadmin"
+        | "admin"
+        | "manager"
+        | "registrator"
+        | "courier"
+        | "client"
+        | "market"
+        | "marketing"
+        | "operator"
+        | "customer"
+        | "logist"
+        | "market_operator"
+        | "investor"
+        | "branch";
     status: "active" | "inactive" | "blocked";
     createdAt: string;
     updatedAt: string;

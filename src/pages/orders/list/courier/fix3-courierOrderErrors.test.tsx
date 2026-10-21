@@ -36,6 +36,7 @@ vi.mock("../../../../entities/orders", () => ({
       data: { data: listState.orders, total: listState.orders.length, page: 1, limit: 10 },
       isLoading: false,
     }),
+    useGetCourierOrderCounts: () => ({ data: undefined }),
     SellOrder: { mutate: sellMutate, isPending: false },
     PartlySellOrder: idle,
     RollbackOrder: idle,

@@ -9,7 +9,7 @@ const QR_OPTIONS = { type: "svg", margin: 2, errorCorrectionLevel: "M" } as cons
  *
  * Kanvas kerak emas: SVG satri `qrcode` ning callback ko'rinishida SINXRON quriladi (brauzer va Node
  * yig'malarida ham) — holat/effekt yo'q, rasm oyna bilan birga chiziladi. Xato bo'lsa (juda uzun matn) —
- * `null`, oynada skelet qoladi.
+ * `null`: QR umuman chizilmaydi, «Telegram'da ochish» tugmasi baribir qoladi.
  */
 export const useQrImage = (value: string | null): string | null =>
   useMemo(() => {

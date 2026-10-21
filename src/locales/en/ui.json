@@ -315,6 +315,10 @@
         "title": "Order status",
         "meta": "13 · with dot"
       },
+      "cancelStage": {
+        "title": "Cancellation stage",
+        "meta": "5 · with icon, no dot; place and duration below"
+      },
       "variants": {
         "title": "Tones, variants and sizes",
         "meta": "5 tones × 3 variants × 2 sizes"
@@ -352,7 +356,8 @@
       "description": "Description and actions (one primary action)",
       "back": "With a back link",
       "meta": "Status, copy and actions",
-      "long": "Long title — wraps, never truncated"
+      "long": "Long title — wraps, never truncated",
+      "refresh": "Growing text block — status next to the title and an icon button on phone"
     },
     "demo": {
       "dashboardTitle": "Home",
@@ -368,7 +373,11 @@
       "cancel": "Cancel",
       "sell": "Sell",
       "longTitle": "Weekly report on cancelled and returned orders at the Chilonzor drop-off point",
-      "longDescription": "01.10 – 08.10.2026 · 94 orders"
+      "longDescription": "01.10 – 08.10.2026 · 94 orders",
+      "refreshing": "Refreshing…",
+      "refresh": "Refresh",
+      "refreshList": "Refresh list",
+      "lastUpdated": "Last updated: 14:42"
     }
   },
   "table": {
@@ -434,7 +443,9 @@
       "dayCloseLabel": "Result for №10238",
       "closeSold": "Sold",
       "closeCancel": "Cancel",
-      "closeTomorrow": "Tomorrow"
+      "closeTomorrow": "Tomorrow",
+      "countBusyTitle": "Counts refreshing",
+      "countBusyNote": "The old count stays in place, dimmed — the tab is clickable, the width doesn't change"
     }
   },
   "kit": {
@@ -764,15 +775,22 @@
     },
     "demo": {
       "shiftTitle": "Close shift",
-      "shiftDescription": "The current cash shift will be closed",
+      "shiftDescription": "Count the cashbox and enter the counted amount",
       "shiftCurrent": "Current shift",
       "shiftCurrentValue": "Today, since 09:00",
       "shiftOpenedBy": "Opened by",
       "shiftOpenedByValue": "Ravshan Ortiqov",
-      "shiftCash": "Cash on hand",
-      "shiftExcel": "When you close the shift, an Excel report downloads automatically.",
+      "shiftCountedCash": "Counted cash",
+      "shiftCountedCard": "Counted card",
+      "shiftExpected": "Expected by the system:",
+      "shiftDiff": "Difference",
+      "shiftSurplus": "Surplus",
+      "shiftNotCounted": "Not counted",
+      "shiftDiffAlert": "There is a difference — write the reason in the comment",
+      "shiftCommentHint": "A comment is required if there is a difference. Otherwise — optional.",
+      "shiftNote": "Expected is the current cashbox balance; the final difference is calculated at closing. If the card is left empty — «Not counted». After closing, the Excel report downloads automatically.",
       "shiftComment": "Comment",
-      "shiftCommentPlaceholder": "A note about the shift...",
+      "shiftCommentPlaceholder": "For example: cash was counted twice",
       "shiftAction": "Close shift",
       "deleteTitle": "Confirm deletion",
       "deleteDescription": "The product will be removed from the catalog for good.",
@@ -1259,5 +1277,34 @@
       "text": "Low light",
       "action": "Turn on flashlight"
     }
+  },
+  "chartsKit": {
+    "title": "Charts",
+    "description": "Stacked bars — several parts per bar, total on top, tooltip on hover.",
+    "stackedTitle": "Stacked bars",
+    "stackedMeta": "Mockup: investor-dashboard-home («Monthly profit»). On phones the totals and tooltip are hidden and month labels are sparse.",
+    "ariaLabel": "Monthly profit, March – October 2026: from 3.6M to 6.2M UZS; September profit not paid yet",
+    "paid": "Paid",
+    "unpaid": "Pending",
+    "months": [
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct"
+    ],
+    "monthTitles": [
+      "March 2026",
+      "April 2026",
+      "May 2026",
+      "June 2026",
+      "July 2026",
+      "August 2026",
+      "September 2026",
+      "October 2026"
+    ]
   }
 }

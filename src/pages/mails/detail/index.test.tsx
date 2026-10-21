@@ -52,9 +52,18 @@ vi.mock("../../../shared/lib/useOrderQrScanner", () => ({
 
 // Jadval o'rniga yengil stub: sahifa mantig'i (tanlash → tugma → modal) tekshiriladi.
 vi.mock("./ui/OrdersTable", () => ({
-  default: ({ orders, onToggleAll }: { orders: Array<{ id: string }>; onToggleAll: () => void }) => (
+  default: ({
+    orders,
+    onToggleAll,
+    search,
+  }: {
+    orders: Array<{ id: string }>;
+    onToggleAll: () => void;
+    search?: { value: string; visible: Array<{ id: string }> };
+  }) => (
     <div>
       <span data-testid="orders-count">{orders.length}</span>
+      <span data-testid="search-state">{search ? `${search.value}:${search.visible.length}` : "none"}</span>
       <button type="button" onClick={onToggleAll}>
         test-select-all
       </button>
@@ -258,5 +267,21 @@ describe("MailDetailPage — bekor qilingan pochta (o'zgarmagan)", () => {
     await user.click(await screen.findByRole("button", { name: "test-select-all" }));
 
     expect(screen.getByRole("button", { name: /Pochtani qabul qilish/ })).toBeDisabled();
+  });
+
+  it("MD-1: rad etilgan pochtada qidiruv yo'q; URL tozalanganda `q` qoladi", async () => {
+    const { unmount } = renderPage(stateFor("registrator", "HQ"), `/mails/${POST_ID}?type=refused&q=Laylo`);
+    expect(await screen.findByTestId("search-state")).toHaveTextContent("none");
+    unmount();
+
+    mocks.useMailDetail.mockReturnValue({
+      data: { data: { allOrdersByPostId: [order("301"), order("302")], post: { id: POST_ID, status: "new" } } },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    renderPage(stateFor("superadmin"), `/mails/${POST_ID}?from=today&q=301`);
+    // Jo'natish rejimi: qidiruv berilgan, `q` URL'dan, natija — №301.
+    expect(await screen.findByTestId("search-state")).toHaveTextContent("301:1");
   });
 });

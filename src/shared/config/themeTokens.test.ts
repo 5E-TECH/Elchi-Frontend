@@ -174,9 +174,10 @@ describe("--color-text-muted class'larida dark: jufti", () => {
     const uses = files.reduce((sum, [, source]) => sum + (source.match(TOKEN)?.length ?? 0), 0);
     expect(files.length).toBeGreaterThan(50);
     // v1 kodi ko'chirilgan sari kamayadi (G1 dan keyin 94 ta, G2 dan keyin 45 ta, skaner 1-bosqichida `/scan` v2 ga
-    // o'tgach 19 ta) — chegara glob bo'sh emasligini tekshiradi, xolos (har bir topilgan joyda `dark:` jufti —
-    // keyingi test, u zaiflashmagan).
-    expect(uses).toBeGreaterThan(10);
+    // o'tgach 19 ta, MO-1 da oxirgi v1 route `/market-operators` ko'chgach 7 ta) — chegara glob va naqsh hali biror
+    // joyni topayotganini tekshiradi, xolos (har bir topilgan joyda `dark:` jufti — keyingi test, u zaiflashmagan).
+    // 0 ga tushsa — v1 qolmagan: bu `describe` bloki butunlay olib tashlanadi.
+    expect(uses).toBeGreaterThan(0);
   });
 
   it("⭐ har bir `…-[color:var(--color-text-muted)]` yonida `dark:` jufti bor", () => {

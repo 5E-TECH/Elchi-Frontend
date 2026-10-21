@@ -89,7 +89,8 @@ describe("NotificationFormModal — bir martalik guruh havolasi", () => {
     );
 
     const qr = await screen.findByRole("img", { name: "Telegram guruhini ulash havolasining QR kodi" });
-    expect(qr.getAttribute("src")).toMatch(/^data:image\/png;base64,/);
+    // QR umumiy `LinkQrImage` dan (TG-A, `features/telegram-link`) — SVG, sinxron.
+    expect(qr.getAttribute("src")).toMatch(/^data:image\/svg\+xml/);
 
     const open = screen.getByRole("link", { name: "Telegram'da ochish" });
     expect(open).toHaveAttribute("href", DEEP_LINK);

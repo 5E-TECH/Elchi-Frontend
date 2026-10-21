@@ -5,7 +5,8 @@ import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import type { RootState } from "../../../app/config/store";
-import { getUserRoleLabelKey } from "../../../entities/user/lib/role";
+import { canViewOrders } from "../../../app/lib/access";
+import { getUserRoleLabelKey, roleHasGlobalSearch, roleHasScanner } from "../../../entities/user/lib/role";
 import { openScanner } from "../../../shared/lib/scanner/scannerHost";
 import { useActiveScanTarget } from "../../../shared/lib/scanner/scanTargets";
 import { preloadScannerCamera } from "../../../shared/ui/camera/loadScannerCamera";
@@ -41,6 +42,11 @@ import UserMenu from "./UserMenu";
  * ko'chguncha global qidiruvga yagona yo'l, shuning uchun saqlangan.
  *
  * Klaviatura: Ctrl/⌘ + K — qidiruv, `?` — tezkor tugmalar, G → O — buyurtmalar, G → B — paketlar (menejer).
+ *
+ * Rol personasi (`entities/user/lib/role.ts`, maket `roles.json` → `persona`): «Skanerlash» faqat
+ * `roleHasScanner` rollarida (market, market operatori, logist, investorda yo'q); qidiruv (maydon, telefondagi
+ * qidiruv ekrani, Ctrl K) faqat `roleHasGlobalSearch` da (investorda yo'q). G → O — buyurtmalar ochiladigan
+ * rolda (`canViewOrders`), aks holda tugma 403 ga olib borardi.
  */
 
 interface HeaderProps {
@@ -86,6 +92,9 @@ const Header = ({ onMenuClick }: HeaderProps) => {
   const menuRoleLine = joinRoleAndBranch(roleLabel, branchName);
   const roleLine = TOPBAR_BRANCH_ROLES.has(String(role ?? "").toLowerCase()) ? menuRoleLine : roleLabel;
   const canOpenBatchesShortcut = roleState.role === "manager";
+  const canOpenOrdersShortcut = useSelector(canViewOrders);
+  const hasScanner = roleHasScanner(role);
+  const hasSearch = roleHasGlobalSearch(role);
 
   const openSearchScreen = useCallback(() => setSearchScreenOpen(true), []);
   const { setOpen: setSearchOpen, close: closeSearch } = search;
@@ -110,6 +119,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
       const key = event.key.toLowerCase();
 
       if ((event.ctrlKey || event.metaKey) && key === "k") {
+        if (!hasSearch) return;
         event.preventDefault();
         if (matchesMedia(DESKTOP_QUERY)) {
           desktopInputRef.current?.focus();
@@ -135,7 +145,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         return;
       }
       if (goShortcutRef.current && now - goShortcutRef.current <= GO_SHORTCUT_WINDOW_MS) {
-        if (key === "o") {
+        if (key === "o" && canOpenOrdersShortcut) {
           event.preventDefault();
           goShortcutRef.current = 0;
           navigate("/orders");
@@ -155,7 +165,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [canOpenBatchesShortcut, navigate, setSearchOpen]);
+  }, [canOpenBatchesShortcut, canOpenOrdersShortcut, hasSearch, navigate, setSearchOpen]);
 
   return (
     <header
@@ -171,15 +181,16 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         className="lg:hidden"
       />
 
-      {isDesktop ? (
+      {isDesktop && hasSearch ? (
         <HeaderSearch search={search} listId={`${searchId}-list`} inputRef={desktopInputRef} />
       ) : null}
 
       <div aria-hidden="true" className="min-w-0 flex-1" />
 
-      {/* Market skanerlamaydi (maket: persona.scan=false; ega qarori 2026-10-16). Kontekstli (ega roziligi
-          2026-10-19): sahifa skan maqsadi bo'lsa kamera shu sahifa ustida ochiladi, aks holda `/scan`. */}
-      {String(role ?? "").toLowerCase() !== "market" ? (
+      {/* Skanersiz rollar — market, market operatori, logist, investor (maket: persona.scan=false; ega qarori
+          2026-10-16, ROL-0). Kontekstli (ega roziligi 2026-10-19): sahifa skan maqsadi bo'lsa kamera shu sahifa
+          ustida ochiladi, aks holda `/scan`. */}
+      {hasScanner ? (
         <Button
           variant="secondary"
           leftIcon={ScanLine}
@@ -195,7 +206,7 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         </Button>
       ) : null}
 
-      {!isDesktop ? (
+      {!isDesktop && hasSearch ? (
         <IconButton
           label={t("header.search.open")}
           icon={Search}
@@ -217,15 +228,19 @@ const Header = ({ onMenuClick }: HeaderProps) => {
         onLogout={() => void logout()}
       />
 
-      <SearchScreen
-        open={searchScreenOpen && !isDesktop}
-        search={search}
-        listId={`${searchId}-screen-list`}
-        onClose={closeSearchScreen}
-      />
+      {hasSearch ? (
+        <SearchScreen
+          open={searchScreenOpen && !isDesktop}
+          search={search}
+          listId={`${searchId}-screen-list`}
+          onClose={closeSearchScreen}
+        />
+      ) : null}
       <ShortcutsDialog
         open={shortcutsOpen}
         onClose={() => setShortcutsOpen(false)}
+        showSearch={hasSearch}
+        showOrders={canOpenOrdersShortcut}
         showBatches={canOpenBatchesShortcut}
       />
     </header>

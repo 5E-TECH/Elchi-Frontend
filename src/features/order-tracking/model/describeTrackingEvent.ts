@@ -11,7 +11,14 @@ import {
   Undo2,
   type LucideIcon,
 } from "lucide-react";
-import { ORDER_STATUS_REGISTRY, resolveDisplayOrderStatus, type TrackingEvent } from "../../../entities/order";
+import {
+  ORDER_STATUS_REGISTRY,
+  cleanBranchLabel,
+  formatCancelHandoverMethod,
+  readCancelHandoverInfo,
+  resolveDisplayOrderStatus,
+  type TrackingEvent,
+} from "../../../entities/order";
 import type { User } from "../../../entities/user/model/types";
 import { actionLabelMap } from "./actionLabelMap";
 
@@ -30,6 +37,11 @@ export type TrackingContext = {
   marketName?: string | null;
   branchNamesById?: Record<string, string>;
   marketNamesById?: Record<string, string>;
+  /**
+   * HQ (bosh ofis) filialining nomi («Toshkent HQ»), agar ma'lum bo'lsa — bekor pochtasini HQ qabul qilgan
+   * jumlada joy nomi sifatida (backend metadata'da HQ uchun faqat `received_by_hq: true` beradi).
+   */
+  hqName?: string | null;
 };
 
 type T = ReturnType<typeof useTranslation>["t"];
@@ -195,6 +207,19 @@ const getNameForIdKey = (event: TrackingEvent, key: string, value: unknown, cont
   return "";
 };
 
+/**
+ * Jumlaning o'zida aytilgan bekor qaytarish maydonlari — alohida «qo'shimcha ma'lumot» bo'lib takrorlanmaydi
+ * (`manual_override: true` / xom «Urgut filiali (UR, ID: 12)» yorlig'i ko'rinmasin). `source_branch` — backend
+ * xatosi bilan noto'g'ri manba (BG5), ko'rsatilmaydi.
+ */
+const SENTENCE_METADATA_KEYS = new Set([
+  "manual_override",
+  "manual_reason",
+  "received_by_hq",
+  "destination_branch",
+  "source_branch",
+]);
+
 const getAdditionalDetails = (event: TrackingEvent, context?: TrackingContext) => {
   const details: Array<{ key: string; label: string; value: string }> = [];
   const seen = new Set<string>();
@@ -204,7 +229,7 @@ const getAdditionalDetails = (event: TrackingEvent, context?: TrackingContext) =
 
     for (const [key, value] of Object.entries(source)) {
       const normalizedKey = normalizeKey(key);
-      if (normalizedKey === "status") continue;
+      if (normalizedKey === "status" || SENTENCE_METADATA_KEYS.has(normalizedKey)) continue;
 
       const isIdKey = normalizedKey.endsWith("_id") || normalizedKey.endsWith("id");
       const resolvedValue = getNameForIdKey(event, key, value, context);
@@ -423,12 +448,28 @@ const getSentenceTemplate = (
   if (isBulkCourierAssignEvent(event)) return dynamic("assignedToCourier");
   const returnReason = getReturnInitiatedReason(event);
   if (returnReason !== null) return dynamic("returnInitiated", { reason: returnReason || "—" });
-  if (newStatus === "returned_to_market") return dynamic("returnedToMarketByActor", { market });
+  // Usul hodisadan («QR orqali», «qo'lda tasdiq — sabab», «QR'siz») — endi «QR tasdiq bilan» qotirib yozilmaydi.
+  const handover = readCancelHandoverInfo(event);
+  if (handover) {
+    return dynamic("returnedToMarketByActor", { market, method: formatCancelHandoverMethod(t, handover) ?? "" });
+  }
   if (isCancelledPostCreatedEvent(event)) return dynamic("cancelledPostCreated");
   if (isCancelledPostReceivedEvent(event)) {
     const role = normalizeKey(event.actor?.role ?? event.changed_by_role);
     const note = normalizeKey(event.note ?? event.description);
-    const isHqReceiver = ["admin", "superadmin", "registrator"].includes(role) || note.includes("market_handover");
+    const metadata = isRecord(event.metadata) ? event.metadata : {};
+    // Aniq bayroq ustun: filial registratori o'z filialida qabul qilsa `received_by_hq: false` — joy filial.
+    const isHqReceiver =
+      typeof metadata.received_by_hq === "boolean"
+        ? metadata.received_by_hq
+        : ["admin", "superadmin", "registrator"].includes(role) ||
+          note.includes("market_handover") ||
+          note.includes("received_by_hq");
+    // Joy nomi (`metadata.destination_branch`, «Urgut filiali (UR, ID: 12)» → «Urgut filiali»); HQ'da — HQ nomi.
+    const place = isHqReceiver
+      ? (context?.hqName ?? null)
+      : cleanBranchLabel(metadata.destination_branch ?? metadata.destination_branch_name);
+    if (place) return dynamic("cancelledPostReceivedAtPlace", { place });
     return dynamic(isHqReceiver ? "cancelledPostReceivedAtHq" : "cancelledPostReceivedAtBranch");
   }
   if (normalizeKey(event.action) === "created" || (!oldStatus && (newStatus === "new" || newStatus === "created"))) {
@@ -440,7 +481,12 @@ const getSentenceTemplate = (
   if (transition === "on_the_road->waiting") return dynamic("returnedToWaiting");
   if (newStatus === "cancelled") return dynamic("cancelledByActor");
   if (newStatus === "sold") return dynamic("soldByActor");
-  if (oldStatus === "cancelled_sent" && newStatus === "closed") return dynamic("cancelledOrderHandedToMarket", { market });
+  if (oldStatus === "cancelled_sent" && newStatus === "closed") {
+    return dynamic("cancelledOrderHandedToMarket", {
+      market,
+      method: formatCancelHandoverMethod(t, { method: "qr", reason: null }) ?? "",
+    });
+  }
   return null;
 };
 
@@ -459,6 +505,7 @@ const getEventIcon = (event: TrackingEvent, templateKey: string | null): LucideI
       return Send;
     case "tracking.dynamic.cancelledPostReceivedAtHq":
     case "tracking.dynamic.cancelledPostReceivedAtBranch":
+    case "tracking.dynamic.cancelledPostReceivedAtPlace":
     case "tracking.dynamic.acceptedAtHq":
       return Inbox;
     case "tracking.dynamic.dispatchToBranch":

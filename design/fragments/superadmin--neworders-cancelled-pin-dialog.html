@@ -1,0 +1,146 @@
+<div class="el-pagehead">
+  <div class="el-pagehead-text">
+    <a class="el-back el-hide-mobile" href="@neworders-cancelled-markets"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Bekor qilinganlar</a>
+    <a class="el-back el-show-mobile" href="@neworders-cancelled-markets" style="min-height: 44px; margin: -12px 0 -8px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>Bekor qilinganlar</a>
+    <h1 class="el-h1">Baraka Shop</h1>
+    <p class="el-sub">6 ta bekor qilingan buyurtma · jami 1 845 000 so'm</p>
+  </div>
+  <div class="el-actions">
+    <a class="el-btn el-btn-secondary" href="@neworders-cancelled-scanner-dialog" aria-haspopup="dialog"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/></svg>Market QR skanerlash</a>
+    <button class="el-btn el-btn-primary is-disabled" type="button" disabled aria-describedby="send-hint"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg>Marketga jo'natish</button>
+  </div>
+</div>
+
+<div class="el-alert el-tone-warning" role="status" style="align-items: center; flex-wrap: wrap; gap: 12px 16px">
+  <div style="display: flex; gap: 12px; align-items: flex-start; flex: 1 1 320px; min-width: 0">
+    <span style="display: inline-flex; margin-top: 1px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></svg></span>
+    <div class="el-alert-body">
+      <div class="el-alert-title">Market QR kerak</div>
+      <div class="el-small el-muted" id="send-hint">Jo'natish uchun avval market chiqargan QR kodni skanerlang. Skanerlangach, barcha buyurtmalar avtomatik tanlanadi.</div>
+    </div>
+  </div>
+</div>
+
+<section class="el-card" aria-labelledby="cw-title" style="overflow: hidden">
+  <div class="el-card-head" style="flex-wrap: wrap">
+    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 360px">
+      <h2 class="el-h2" id="cw-title">Bekor qilingan buyurtmalarni tayyorlash</h2>
+      <p class="el-small el-muted">Buyurtmalar faqat QR skaner orqali tanlanadi. QR buzilgan bo'lsa, qo'lda tasdiqlash mumkin.</p>
+    </div>
+  </div>
+  <div role="region" aria-label="Tanlangan buyurtmalar" style="display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; padding: 12px 20px; background: var(--sunken); border-top: 1px solid var(--border)">
+    <span class="el-strong">Hali buyurtma tanlanmagan</span>
+    <span class="el-xs el-muted">Market QR kodini skanerlang — barcha buyurtmalar avtomatik tanlanadi.</span>
+  </div>
+  <div class="el-table-wrap el-hide-mobile">
+    <table class="el-table">
+      <thead>
+        <tr>
+          <th class="el-col-check"><span class="el-sr">Tanlash</span></th>
+          <th>Buyurtma</th>
+          <th>Mijoz</th>
+          <th class="el-hide-tablet">Manzil</th>
+          <th class="el-hide-tablet">Mahsulotlar</th>
+          <th class="el-hide-tablet">Yetkazish</th>
+          <th class="el-num">Summa</th>
+          <th>Tanlov</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="el-col-check"><input class="el-check" type="checkbox" aria-label="№10235 ni qo'lda tanlash"></td>
+          <td><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text)">№10235</a><div class="el-cell-sub">Kecha, 18:04</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Malika Yusupova</div><div class="el-cell-sub">+998 99 812 40 11</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Sergeli tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td class="el-hide-tablet el-small"><div style="white-space: nowrap">Bolalar kurtkasi <span class="el-muted">× 1</span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Uygacha</span></td>
+          <td class="el-num el-strong">96 000 so'm</td>
+          <td style="white-space: nowrap"><button class="el-btn el-btn-secondary el-btn-sm" type="button" aria-haspopup="dialog"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--warning-fg)"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>QR buzilgan</button></td>
+        </tr>
+        <tr>
+          <td class="el-col-check"><input class="el-check" type="checkbox" aria-label="№10220 ni qo'lda tanlash"></td>
+          <td><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text)">№10220</a><div class="el-cell-sub">06.10.2026, 15:20</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Dilfuza Hasanova</div><div class="el-cell-sub">+998 90 441 27 63</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Chilonzor tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td class="el-hide-tablet el-small"><div style="white-space: nowrap">Ayollar sumkasi <span class="el-muted">× 1</span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Markazgacha</span></td>
+          <td class="el-num el-strong">245 000 so'm</td>
+          <td style="white-space: nowrap"><button class="el-btn el-btn-secondary el-btn-sm" type="button" aria-haspopup="dialog"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--warning-fg)"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>QR buzilgan</button></td>
+        </tr>
+        <tr>
+          <td class="el-col-check"><input class="el-check" type="checkbox" aria-label="№10213 ni qo'lda tanlash"></td>
+          <td><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text)">№10213</a><div class="el-cell-sub">05.10.2026, 11:42</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Kamron Islomov</div><div class="el-cell-sub">+998 93 118 50 92</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Samarqand sh.</div><div class="el-cell-sub">Samarqand viloyati</div></td>
+          <td class="el-hide-tablet el-small"><div style="white-space: nowrap">Sport krossovka <span class="el-muted">× 1</span></div><div style="white-space: nowrap">Paypoq to'plami <span class="el-muted">× 2</span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Uygacha</span></td>
+          <td class="el-num el-strong">420 000 so'm</td>
+          <td style="white-space: nowrap"><button class="el-btn el-btn-secondary el-btn-sm" type="button" aria-haspopup="dialog"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--warning-fg)"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>QR buzilgan</button></td>
+        </tr>
+        <tr>
+          <td class="el-col-check"><input class="el-check" type="checkbox" aria-label="№10205 ni qo'lda tanlash"></td>
+          <td><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text)">№10205</a><div class="el-cell-sub">04.10.2026, 17:05</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Zuhra Mamatova</div><div class="el-cell-sub">+998 97 562 81 30</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Marg'ilon sh.</div><div class="el-cell-sub">Farg'ona viloyati</div></td>
+          <td class="el-hide-tablet el-small"><div style="white-space: nowrap">Choynak to'plami <span class="el-muted">× 1</span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Uygacha</span></td>
+          <td class="el-num el-strong">310 000 so'm</td>
+          <td style="white-space: nowrap"><button class="el-btn el-btn-secondary el-btn-sm" type="button" aria-haspopup="dialog"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--warning-fg)"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>QR buzilgan</button></td>
+        </tr>
+        <tr>
+          <td class="el-col-check"><input class="el-check" type="checkbox" aria-label="№10200 ni qo'lda tanlash"></td>
+          <td><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text)">№10200</a><div class="el-cell-sub">03.10.2026, 10:30</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Ulug'bek Sobirov</div><div class="el-cell-sub">+998 91 207 66 14</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Yunusobod tumani</div><div class="el-cell-sub">Toshkent sh.</div></td>
+          <td class="el-hide-tablet el-small"><div style="white-space: nowrap">Qishki shapka <span class="el-muted">× 2</span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Markazgacha</span></td>
+          <td class="el-num el-strong">184 000 so'm</td>
+          <td style="white-space: nowrap"><button class="el-btn el-btn-secondary el-btn-sm" type="button" aria-haspopup="dialog"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--warning-fg)"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>QR buzilgan</button></td>
+        </tr>
+        <tr>
+          <td class="el-col-check"><input class="el-check" type="checkbox" aria-label="№10202 ni qo'lda tanlash"></td>
+          <td><a class="el-cell-title" href="@orders-detail" style="text-decoration: none; color: var(--text)">№10202</a><div class="el-cell-sub">02.10.2026, 16:48</div></td>
+          <td><div class="el-cell-title" style="white-space: nowrap">Feruza Qosimova</div><div class="el-cell-sub">+998 94 380 12 57</div></td>
+          <td class="el-hide-tablet"><div style="white-space: nowrap">Andijon sh.</div><div class="el-cell-sub">Andijon viloyati</div></td>
+          <td class="el-hide-tablet el-small"><div style="white-space: nowrap">Bolalar kurtkasi <span class="el-muted">× 1</span></div><div style="white-space: nowrap">Qo'lqop <span class="el-muted">× 1</span></div></td>
+          <td class="el-hide-tablet"><span class="el-badge el-tone-neutral">Uygacha</span></td>
+          <td class="el-num el-strong">590 000 so'm</td>
+          <td style="white-space: nowrap"><button class="el-btn el-btn-secondary el-btn-sm" type="button" aria-haspopup="dialog"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--warning-fg)"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>QR buzilgan</button></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<div class="el-overlay" style="position: absolute">
+  <div class="el-dialog" role="dialog" aria-modal="true" aria-labelledby="pin-title" aria-describedby="pin-desc" style="width: min(440px, 100%)">
+    <div class="el-dialog-head">
+      <span class="el-stat-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/></svg></span>
+      <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1">
+        <h2 class="el-h2" id="pin-title">Market PIN kodi</h2>
+        <p class="el-small el-muted" id="pin-desc">Baraka Shop · QR o'qilmasa, market QR oynasidagi PIN bilan tasdiqlang.</p>
+      </div>
+      <a class="el-iconbtn el-iconbtn-sm" href="@neworders-cancelled-scanner-dialog" role="button" aria-label="Yopish" style="margin: -4px -8px 0 0; color: var(--text-muted)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></a>
+    </div>
+
+    <span class="el-badge el-tone-neutral" style="align-self: flex-start" title="POST scan/market-cancelled { market_id, pin } (BG6)">Taklif · backend kerak</span>
+
+    <form id="pin-form" style="display: flex; flex-direction: column; gap: 16px">
+      <div class="el-field">
+        <label class="el-label" for="pin-code">6 xonali PIN <span class="el-req">*</span></label>
+        <input class="el-input" id="pin-code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="000000" value="4829" aria-describedby="pin-hint" style="font-size: 20px; font-weight: 600; text-align: center">
+        <span class="el-hint" id="pin-hint">Market vakili telefonidagi QR ostida ko'rsatilgan kod.</span>
+      </div>
+    </form>
+
+    <div class="el-alert el-tone-neutral" role="note" style="padding: 10px 14px; align-items: center">
+      <span style="display: inline-flex"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
+      <div class="el-alert-body el-small">5 marta noto'g'ri kiritilsa, sessiya bloklanadi — market yangi QR chiqaradi.</div>
+    </div>
+
+    <div class="el-dialog-foot">
+      <a class="el-btn el-btn-secondary" href="@neworders-cancelled-scanner-dialog" role="button" style="flex: 1 1 auto">Bekor qilish</a>
+      <button class="el-btn el-btn-primary" type="submit" form="pin-form" style="flex: 1 1 auto"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>Tasdiqlash</button>
+    </div>
+  </div>
+</div>

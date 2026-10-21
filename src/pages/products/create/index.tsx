@@ -1,15 +1,12 @@
-// dizayn-v2: superadmin-products-create, admin-products-create, manager-products-create, registrator-products-create, market-products-create
+// dizayn-v2: superadmin-products-create, admin-products-create, manager-products-create, registrator-products-create, superadmin-products-create-errors, admin-products-create-errors, manager-products-create-errors, registrator-products-create-errors
 import { memo, useCallback, useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Pencil, Store, Tag, Trash2, TriangleAlert } from "lucide-react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { useSelector } from "react-redux";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import type { RootState } from "../../../app/config/store";
 import { PRODUCT_LIST_MAX_LIMIT, useProducts } from "../../../entities/product";
 import { useMarkets } from "../../../entities/markets";
-import { getBackendErrorMessage } from "../../../shared/lib/backendError";
 import { cx } from "../../../shared/lib/cx";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { isInactiveMarketStatus, unwrapMarketPayload } from "../../../shared/lib/marketStatus";
@@ -31,13 +28,27 @@ import {
   TONE_SOFT,
   type DataTableColumn,
 } from "../../../shared/ui/primitives";
-import { getProductImageUrl, getProductList, getProductMarketName, getProductMeta, type Product } from "../model/productView";
+import { describeProductError, isDuplicateNameError } from "../model/productErrors";
+import {
+  getProductImageUrl,
+  getProductList,
+  getProductMarketName,
+  getProductMeta,
+  isPriceInputValid,
+  toPriceInput,
+  type Product,
+} from "../model/productView";
 import { usePickedImage } from "../model/usePickedImage";
+import { FormErrorSummary } from "../ui/FormErrorSummary";
 import { ProductImageField } from "../ui/ProductImageField";
+import { ProductPrice } from "../ui/ProductPrice";
+import { ProductPriceField } from "../ui/ProductPriceField";
 import { ProductThumb } from "../ui/ProductThumb";
 import { useDeleteProductConfirm } from "../ui/useDeleteProductConfirm";
 
-type CreateFormValues = { name: string };
+type CreateFormValues = { name: string; price: string };
+
+const EMPTY_FORM: CreateFormValues = { name: "", price: "" };
 
 /**
  * O'ng ro'yxat — sahifalashsiz (maket «Jami N ta»), bitta so'rovda hammasi: `limit` bermasak server 10 tasini
@@ -45,18 +56,25 @@ type CreateFormValues = { name: string };
  */
 const LIST_PARAMS = { limit: PRODUCT_LIST_MAX_LIMIT };
 
+/** «Narx» katagi (jadval va karta). */
+const priceCell = (product: Product) => <ProductPrice product={product} />;
+
 /**
- * MAHSULOT YARATISH — `/products/create-product/:id` (`:id` — market), dizayn v2.
+ * MAHSULOT YARATISH — `/products/create-product/:id` (`:id` — market), dizayn v2. Faqat xodim (superadmin, admin,
+ * menejer, registrator — `canCreateProducts`); market va market operatori mahsulot yaratmaydi (MH-1).
  *
- * Maketlar: `superadmin-products-create` (= admin, menejer, registrator), `market-products-create`.
- * «← Mahsulotlar», sarlavha: xodim «Yangi mahsulot» + market nomi, market «Mahsulot yaratish» + «Tanlangan market: …».
- * Ikki ustun (telefonda ustma-ust): chapda forma («Mahsulot ma'lumotlari» / market «Yangi mahsulot»: nom, rasm;
- * «Tozalash» / «Saqlash»), o'ngda ro'yxat («Market mahsulotlari» + «N ta» / market «Mavjud mahsulotlar» + izoh +
- * «Jami N ta»): qalam — mahsulot formada tahrirlanadi («Bekor qilish» tahrirdan chiqadi), savat — o'chirish tasdig'i.
+ * Maketlar: `superadmin-products-create` (= admin, menejer, registrator), `*-products-create-errors`.
+ * «← Mahsulotlar», sarlavha «Yangi mahsulot» + market nomi. Ikki ustun (telefonda ustma-ust): chapda forma
+ * («Mahsulot ma'lumotlari»: nom, «Narx» — ixtiyoriy, `mode="money"`, rasm «Mahsulot rasmi»; «Tozalash» / «Saqlash»;
+ * «Saqlash» bosilganda xato maydon bo'lsa tepada «Saqlab bo'lmadi · N ta maydonda xato»), o'ngda ro'yxat («Market
+ * mahsulotlari» + «N ta»; «# · Mahsulot nomi · Narx»): qalam — mahsulot formada tahrirlanadi («Bekor qilish»
+ * tahrirdan chiqadi), savat — o'chirish tasdig'i. «Og'irlik va o'lcham» bo'limi va «hisob vazni» — maket taklifi
+ * (backend kerak, MH-2), chizilmaydi.
  *
- * Xulq (avvalgidek): FormData `name` + xodimda `market_id` (yangi mahsulotda) + tanlangan `image`; tahrir — xodim
- * `PATCH product/:id`, market `PATCH product/my/:id`; nofaol market — ogohlantirish, maydonlar va «Saqlash» o'chiq,
- * yuborilsa `notify.warning`. Ro'yxat: xodim `GET product/market/:id`, market `GET product/my-products`.
+ * Xulq: FormData `name` + `market_id` (yangi mahsulotda) + `price` (yangi — kiritilgan bo'lsa; tahrir — o'zgargan
+ * bo'lsa, bo'sh — narx tozalanadi) + tanlangan `image`; tahrir — `PATCH product/:id`; nofaol market — ogohlantirish,
+ * maydonlar va «Saqlash» o'chiq, yuborilsa `notify.warning`. Ro'yxat: `GET product/market/:id`. Xato — i18n izoh
+ * (xom backend matni ko'rsatilmaydi); 409 (shu nomli mahsulot bor) — «Mahsulot nomi» maydoni ostida.
  */
 const CreateProductPage = () => {
   const { t, i18n } = useTranslation("products");
@@ -64,25 +82,17 @@ const CreateProductPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const roleState = useSelector((state: RootState) => state.role);
-  const profile = useSelector((state: RootState) => state.user.user);
-  const isMarketRole = roleState.role === "market";
   const [editTarget, setEditTarget] = useState<Product | null>(null);
   const [picked, pick] = usePickedImage();
   const confirmDelete = useDeleteProductConfirm();
 
-  const { createProduct, updateProduct, updateMyProduct, useGetByMarketId, useGetMyProducts } = useProducts();
+  const { createProduct, updateProduct, useGetByMarketId } = useProducts();
   const { id } = useParams<{ id: string }>();
-  const marketIdFromState = roleState.id ?? profile?.id;
-  const effectiveMarketId = id ?? (marketIdFromState ? String(marketIdFromState) : "");
+  const effectiveMarketId = id ?? "";
 
   // ─── Ro'yxat va market ───────────────────────────────────────────────────────
   // Xato ro'yxat kartasida (`ErrorState`) — global xabar takrorlanmaydi.
-  const marketListQuery = useGetByMarketId(effectiveMarketId || undefined, !isMarketRole, LIST_PARAMS, {
-    silentError: true,
-  });
-  const myListQuery = useGetMyProducts(isMarketRole, LIST_PARAMS, { keepPreviousData: true, silentError: true });
-  const listQuery = isMarketRole ? myListQuery : marketListQuery;
+  const listQuery = useGetByMarketId(effectiveMarketId || undefined, true, LIST_PARAMS, { silentError: true });
   const listResponse = listQuery.data;
   const rows = useMemo(() => (listResponse === undefined ? undefined : getProductList(listResponse)), [listResponse]);
   const listTotal = getProductMeta(listResponse, { page: 1, limit: PRODUCT_LIST_MAX_LIMIT })?.total;
@@ -90,37 +100,36 @@ const CreateProductPage = () => {
   const { useGetMarketById } = useMarkets();
   const { data: selectedMarketData, isLoading: isMarketStatusLoading } = useGetMarketById(
     Number(effectiveMarketId),
-    !isMarketRole && Boolean(effectiveMarketId),
+    Boolean(effectiveMarketId),
   );
   const selectedMarket = unwrapMarketPayload<{ status?: string | null; name?: string | null }>(selectedMarketData);
-  const selectedMarketStatus = isMarketRole ? profile?.status : selectedMarket?.status;
-  const isInactiveMarket = isInactiveMarketStatus(selectedMarketStatus);
-  const marketName: string | null = isMarketRole
-    ? (profile?.name ?? roleState.name ?? null)
-    : (selectedMarket?.name?.trim() || (rows?.length ? getProductMarketName(rows[0]) : null));
+  const isInactiveMarket = isInactiveMarketStatus(selectedMarket?.status);
+  const marketName: string | null =
+    selectedMarket?.name?.trim() || (rows?.length ? getProductMarketName(rows[0]) : null);
 
   // ─── Forma ───────────────────────────────────────────────────────────────────
   const {
     control,
     handleSubmit,
     reset,
+    setError,
     setFocus,
-    formState: { errors },
-  } = useForm<CreateFormValues>({ defaultValues: { name: "" } });
+    formState: { errors, isSubmitted, dirtyFields },
+  } = useForm<CreateFormValues>({ defaultValues: EMPTY_FORM });
 
-  const isPending = createProduct.isPending || updateProduct.isPending || updateMyProduct.isPending;
+  const isPending = createProduct.isPending || updateProduct.isPending;
   const blocked = isMarketStatusLoading || isInactiveMarket;
 
   const resetForm = useCallback(() => {
     setEditTarget(null);
-    reset({ name: "" });
+    reset(EMPTY_FORM);
     pick(null);
   }, [pick, reset]);
 
   const handleEdit = useCallback(
     (product: Product) => {
       setEditTarget(product);
-      reset({ name: product.name });
+      reset({ name: product.name, price: toPriceInput(product) });
       pick(null);
       // Telefonda forma ro'yxatdan yuqorida — fokus nom maydoniga (ko'rinishga ham shu olib keladi).
       window.requestAnimationFrame(() => setFocus("name"));
@@ -139,7 +148,7 @@ const CreateProductPage = () => {
     [confirmDelete, editTarget?.id, marketName, queryClient, resetForm, t],
   );
 
-  const onSubmit = handleSubmit(async ({ name }) => {
+  const onSubmit = handleSubmit(async ({ name, price }) => {
     if (isPending || isMarketStatusLoading) return;
 
     if (isInactiveMarket) {
@@ -149,15 +158,14 @@ const CreateProductPage = () => {
 
     const formData = new FormData();
     formData.append("name", name.trim());
-    if (!editTarget && !isMarketRole && effectiveMarketId) {
-      formData.append("market_id", effectiveMarketId);
-    }
+    if (!editTarget && effectiveMarketId) formData.append("market_id", effectiveMarketId);
+    // Yangi mahsulot — narx kiritilgan bo'lsa; tahrir — o'zgargan bo'lsa (bo'sh satr — narxni tozalaydi).
+    if (editTarget ? dirtyFields.price : price) formData.append("price", price);
     if (picked) formData.append("image", picked.file);
 
     try {
       if (editTarget) {
-        const mutation = isMarketRole ? updateMyProduct : updateProduct;
-        await mutation.mutateAsync({ id: editTarget.id, data: formData });
+        await updateProduct.mutateAsync({ id: editTarget.id, data: formData });
         notify.success(t("updateSuccess"));
       } else {
         await createProduct.mutateAsync(formData);
@@ -165,9 +173,12 @@ const CreateProductPage = () => {
       }
       resetForm();
     } catch (error) {
-      notify.error(t(editTarget ? "updateError" : "createError"), {
-        description: getBackendErrorMessage(error),
-      });
+      // 409 — shu nomli mahsulot bor: qayta urinish yordam bermaydi, «Mahsulot nomi» qizil + tepadagi xulosa.
+      if (isDuplicateNameError(error)) {
+        setError("name", { type: "server", message: t("v2.errors.duplicateName") }, { shouldFocus: true });
+        return;
+      }
+      notify.error(t(editTarget ? "updateError" : "createError"), { description: describeProductError(error, t) });
     }
   });
 
@@ -194,22 +205,29 @@ const CreateProductPage = () => {
     [editTarget?.id, handleDelete, handleEdit, t],
   );
 
+  // Nom (+ «Tahrirlanmoqda»; tor ekranda belgi nom ostiga o'tadi) — jadvalda rasm yonida, kartada rasm ostidagi ustunda.
+  const nameLine = useCallback(
+    (product: Product) => (
+      <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+        <span className="min-w-0 font-semibold text-text wrap-break-word">{product.name}</span>
+        {editTarget?.id === product.id ? (
+          <Badge tone="info" size="sm" className="shrink-0">
+            {t("v2.create.editing")}
+          </Badge>
+        ) : null}
+      </span>
+    ),
+    [editTarget?.id, t],
+  );
+
   const nameCell = useCallback(
     (product: Product) => (
       <span className="flex min-w-0 items-center gap-3">
         <ProductThumb product={product} />
-        {/* Tor ekranda «Tahrirlanmoqda» belgisi nom ostiga o'tadi. */}
-        <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="min-w-0 font-semibold text-text wrap-break-word">{product.name}</span>
-          {editTarget?.id === product.id ? (
-            <Badge tone="info" size="sm" className="shrink-0">
-              {t("v2.create.editing")}
-            </Badge>
-          ) : null}
-        </span>
+        {nameLine(product)}
       </span>
     ),
-    [editTarget?.id, t],
+    [nameLine],
   );
 
   const columns = useMemo<DataTableColumn<Product>[]>(
@@ -221,6 +239,7 @@ const CreateProductPage = () => {
         cell: (_product, index) => <span className="font-semibold text-text-subtle">{index + 1}</span>,
       },
       { id: "name", header: t("v2.list.columns.name"), cell: nameCell },
+      { id: "price", header: t("v2.list.columns.price"), align: "end", className: "w-[148px]", cell: priceCell },
       {
         id: "actions",
         header: <span className="sr-only">{t("v2.list.columns.actions")}</span>,
@@ -232,14 +251,22 @@ const CreateProductPage = () => {
     [actions, nameCell, t],
   );
 
+  // Telefon kartasi (maket `.el-list-item`, `/products` kartasi kabi): rasm tepaga tekislangan · ustun (nom
+  // + «Tahrirlanmoqda», narx) · tahrirlash, o'chirish. Uzun nom 3–4 qatorga o'tsa ham rasm o'rtada suzib qolmaydi.
   const renderCard = useCallback(
     (product: Product) => (
-      <div className="flex min-h-14 items-center gap-3 py-2 pl-4 pr-2 text-sm">
-        <span className="min-w-0 flex-1">{nameCell(product)}</span>
+      <div className="flex min-h-14 items-start gap-3 py-2.5 pl-4 pr-2 text-sm">
+        <ProductThumb product={product} />
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          {nameLine(product)}
+          <span className="text-[13px] text-text-muted">
+            <ProductPrice product={product} />
+          </span>
+        </span>
         {actions(product)}
       </div>
     ),
-    [actions, nameCell],
+    [actions, nameLine],
   );
 
   // ─── Ko'rinish ───────────────────────────────────────────────────────────────
@@ -250,39 +277,25 @@ const CreateProductPage = () => {
   };
 
   const marketLabel = marketName ? (
-    isMarketRole ? (
-      <>
-        {t("v2.create.selectedMarket")} <span className="font-semibold text-text">{marketName}</span>
-      </>
-    ) : (
-      <span className="inline-flex items-center gap-2">
-        <Store size={16} strokeWidth={2} aria-hidden="true" className="shrink-0" />
-        {marketName}
-      </span>
-    )
+    <span className="inline-flex items-center gap-2">
+      <Store size={16} strokeWidth={2} aria-hidden="true" className="shrink-0" />
+      {marketName}
+    </span>
   ) : listQuery.isLoading || isMarketStatusLoading ? (
     <Skeleton width={128} height={14} className="inline-block align-middle" />
   ) : null;
 
-  const formTitle = editTarget
-    ? t("v2.create.formTitleEdit")
-    : isMarketRole
-      ? t("v2.create.formTitleMarket")
-      : t("v2.create.formTitle");
-
+  const formTitle = editTarget ? t("v2.create.formTitleEdit") : t("v2.create.formTitle");
   const count =
-    listTotal !== undefined
-      ? t(isMarketRole ? "v2.create.countMarket" : "v2.create.count", {
-          value: formatNumberLocalized(listTotal, { language }),
-        })
-      : null;
+    listTotal !== undefined ? t("v2.create.count", { value: formatNumberLocalized(listTotal, { language }) }) : null;
+  const errorCount = isSubmitted ? Object.keys(errors).length : 0;
 
   return (
     <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
       <PageHeader
         back={goBack}
         backLabel={t("v2.create.back")}
-        title={isMarketRole ? t("v2.create.titleMarket") : t("v2.create.title")}
+        title={t("v2.create.title")}
         description={marketLabel}
       />
 
@@ -304,6 +317,7 @@ const CreateProductPage = () => {
             }
           >
             <div className="flex flex-col gap-5 p-5 max-md:p-4">
+              <FormErrorSummary count={errorCount} />
               {isInactiveMarket ? (
                 <div
                   role="status"
@@ -335,6 +349,24 @@ const CreateProductPage = () => {
                   </Field>
                 )}
               />
+              <Controller
+                control={control}
+                name="price"
+                rules={{ validate: (value) => isPriceInputValid(value) || t("validationPriceTooLarge") }}
+                render={({ field }) => (
+                  <ProductPriceField
+                    id="product-price"
+                    name={field.name}
+                    inputRef={field.ref}
+                    value={field.value}
+                    onChange={field.onChange}
+                    onBlur={field.onBlur}
+                    error={errors.price?.message}
+                    disabled={blocked}
+                    readOnly={isPending}
+                  />
+                )}
+              />
               <ProductImageField
                 label={t("v2.create.image")}
                 picked={picked}
@@ -349,8 +381,7 @@ const CreateProductPage = () => {
         <Card
           as="section"
           padding="none"
-          title={isMarketRole ? t("v2.create.listTitleMarket") : t("v2.create.listTitle")}
-          description={isMarketRole ? t("v2.create.listHintMarket") : undefined}
+          title={t("v2.create.listTitle")}
           actions={count ? <Badge>{count}</Badge> : undefined}
           className="min-w-0 flex-[999_1_480px]"
         >
@@ -364,7 +395,11 @@ const CreateProductPage = () => {
             }}
             loadingLabel={t("v2.create.listLoading")}
             loading={
-              <SkeletonTable framed={false} columns={[t("v2.list.columns.index"), t("v2.list.columns.name")]} rows={6} />
+              <SkeletonTable
+                framed={false}
+                columns={[t("v2.list.columns.index"), t("v2.list.columns.name"), t("v2.list.columns.price")]}
+                rows={6}
+              />
             }
             empty={<EmptyState icon={Tag} title={t("v2.create.empty")} description={t("v2.create.emptyDescription")} />}
             error={(error, retry) => <ErrorState error={error} title={t("v2.create.loadFailed")} onRetry={retry} />}
@@ -374,7 +409,7 @@ const CreateProductPage = () => {
                 rows={list}
                 columns={columns}
                 getRowKey={(product) => String(product.id)}
-                label={isMarketRole ? t("v2.create.listTitleMarket") : t("v2.create.listTitle")}
+                label={t("v2.create.listTitle")}
                 rowClassName={(product) => (editTarget?.id === product.id ? "bg-action-soft" : null)}
                 renderCard={renderCard}
                 busy={isRefetching}

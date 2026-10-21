@@ -55,6 +55,12 @@ vi.mock("../../../entities/orders", () => ({
   }),
 }));
 
+// «Kiruvchi posilkalar» tabi registratorga ham ochiq (IP-1) — tab soni so'rovi mock (bu testda son kerak emas).
+vi.mock("../../../entities/incoming-orders", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../entities/incoming-orders")>()),
+  useIncomingSources: () => idleQuery(),
+}));
+
 vi.mock("../../../shared/lib/useOrderQrScanner", () => ({
   useOrderQrScanner: () => undefined,
 }));

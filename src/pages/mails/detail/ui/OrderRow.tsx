@@ -1,9 +1,9 @@
-// dizayn-v2: superadmin-mails-detail, superadmin-mails-detail-refused, superadmin-mails-detail-old, admin-mails-detail, admin-mails-old-detail, manager-mails-detail-receive, manager-mails-detail-refused-receive, registrator-mails-detail, courier-mails-detail-receive, courier-mails-detail-refused, courier-mails-detail-old
+// dizayn-v2: superadmin-mails-detail, superadmin-mails-detail-duplicates, superadmin-mails-detail-search, admin-mails-detail-duplicates, admin-mails-detail-search, registrator-mails-detail-duplicates, registrator-mails-detail-search, manager-mails-detail-receive-duplicates, manager-mails-detail-receive-search, superadmin-mails-detail-refused, superadmin-mails-detail-old, admin-mails-detail, admin-mails-old-detail, manager-mails-detail-receive, manager-mails-detail-refused-receive, registrator-mails-detail, courier-mails-detail-receive, courier-mails-detail-refused, courier-mails-detail-old
 import { memo, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import type { PostOrder } from "../../../../entities/mails";
-import { OrderStatusBadge } from "../../../../entities/order";
+import { OrderReturnPlace, OrderStatusBadge } from "../../../../entities/order";
 import PrintModeSelect from "../../../../shared/components/PrintModeSelect";
 import { cx } from "../../../../shared/lib/cx";
 import type { PrintMode } from "../lib/printMode";
@@ -66,12 +66,24 @@ type OrderRowProps = {
   showMarket?: boolean;
   /** O'ngdagi amallar (chop etish, o'chirish). */
   actions: ReactNode;
+  /** Badge'lar qatori oxirida — «Takroriy raqam» (MD-1, maket `*-mails-detail-duplicates`). */
+  flag?: ReactNode;
 };
 
 /** Telefon kartasi (< 768). */
 const OrderRow = memo((props: OrderRowProps) => {
-  const { order, view, selectable, history = false, courier = false, href, actions, meta = "place", showMarket = true } =
-    props;
+  const {
+    order,
+    view,
+    selectable,
+    history = false,
+    courier = false,
+    href,
+    actions,
+    meta = "place",
+    showMarket = true,
+    flag,
+  } = props;
   const place = view.place(order);
   const market = view.market(order);
   const isContact = meta === "contact" && !courier;
@@ -98,13 +110,15 @@ const OrderRow = memo((props: OrderRowProps) => {
       <span className="text-[13px] text-text-muted">{metaLine}</span>
       {addressLine ? <span className="text-[13px] text-text-muted">{addressLine}</span> : null}
       <span className="flex flex-wrap items-center gap-1.5">
-        {history ? null : <OrderStatusBadge status={order.status} />}
+        {history ? null : <OrderStatusBadge status={order.status} order={order} />}
         {view.deliveryBadge(order)}
+        {flag}
         {history && !courier ? <span className="text-xs text-text-muted">{view.date(order)}</span> : null}
         {courierDateOnBadges ? (
           <span className="ml-auto whitespace-nowrap text-xs text-text-muted">{view.date(order)}</span>
         ) : null}
       </span>
+      {history ? null : <OrderReturnPlace order={order} />}
     </>
   );
 

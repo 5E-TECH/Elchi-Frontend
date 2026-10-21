@@ -10,6 +10,7 @@ import { useMobileMenu } from "../Sidebar/model/shellNav";
 import { useShellScroll } from "./model/useShellScroll";
 import { setShellBannerSlot } from "../../shared/lib/shellBannerSlot";
 import RouteProgress, { RouteSuspenseFallback } from "./ui/RouteProgress";
+import SkipLink, { MAIN_CONTENT_ID } from "./ui/SkipLink";
 
 /** Yon menyu ko'rinadigan kenglik (Tailwind `lg`). Undan torda — menyu tugmasi + suriluvchi menyu. */
 export const SHELL_DESKTOP_QUERY = "(min-width: 1024px)";
@@ -21,6 +22,9 @@ export const SHELL_DESKTOP_QUERY = "(min-width: 1024px)";
  * (`mx-auto`; taxta `tizim-responsive`: «Mazmun 1440 px dan kengaymaydi — katta ekranda markazda turadi»),
  * chekkalar maketdagidek: ≥ 1024: 24px 32px 48px · < 1024: 16px 16px 88px (`@container el (max-width:1023px)`).
  * Sahifaning ichki ritmi (sarlavha → bo'limlar, `gap-6` / telefonda `gap-4`) sahifaning o'z ildizida.
+ *
+ * Birinchi fokuslanadigan element — «Asosiy kontentga o'tish» (`SkipLink`, KI-S2): faqat Tab bilan ko'rinadi, nishoni —
+ * kontent sloti (`id="main-content"`, `tabIndex={-1}`, fokus halqasisiz — u tugma emas, o'qish boshlanadigan joy).
  *
  * Slotlar (har birini o'z quruvchisi to'ldiradi, shell faqat joy beradi):
  *   - `sidebar`   — faqat ≥ 1024 (`hidden lg:flex`), balandlik to'liq; kenglik `Sidebar` ning o'zida
@@ -68,6 +72,9 @@ const DashboardLayout = () => {
 
   return (
     <div className="flex h-dvh overflow-hidden bg-bg font-sans text-text [--shell-bottomnav-h:calc(4rem+env(safe-area-inset-bottom))]">
+      {/* Telefon menyusi ochiq bo'lsa havola ham `inert` (ustun va pastki menyu kabi). */}
+      <SkipLink inert={isMenuOpen} />
+
       <div data-shell-slot="sidebar" className="hidden h-full shrink-0 lg:flex">
         <Sidebar />
       </div>
@@ -88,8 +95,10 @@ const DashboardLayout = () => {
 
         <main ref={scrollRef} className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-y-contain">
           <div
+            id={MAIN_CONTENT_ID}
+            tabIndex={-1}
             data-shell-slot="content"
-            className="mx-auto w-full max-w-[1440px] flex-1 px-8 pt-6 pb-12 max-lg:px-4 max-lg:pt-4 max-lg:pb-[88px]"
+            className="mx-auto w-full max-w-[1440px] flex-1 px-8 pt-6 pb-12 outline-none max-lg:px-4 max-lg:pt-4 max-lg:pb-[88px]"
           >
             <Suspense fallback={<RouteSuspenseFallback />}>
               <Outlet />

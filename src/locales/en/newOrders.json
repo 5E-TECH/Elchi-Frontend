@@ -494,6 +494,21 @@
       "selected": "Selected №{{id}}",
       "missing": "Not among this market's cancellations",
       "qrAlreadyAccepted": "Market QR already accepted"
+    },
+    "done": {
+      "title": "Handed over",
+      "count_one": "{{value}} order",
+      "count_other": "{{value}} orders",
+      "hint": "Handed over on this page. The list clears when the page reloads — the orders stay \"Handed to market\".",
+      "total": "total <strong>{{sum}}</strong>",
+      "label": "Handed-over orders",
+      "columns": {
+        "order": "Order",
+        "customer": "Customer",
+        "status": "Status",
+        "time": "Time",
+        "amount": "Amount"
+      }
     }
   },
   "deleteIntegration": "Delete integration",

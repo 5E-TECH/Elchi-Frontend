@@ -8,7 +8,7 @@
 //   npm run app:shot -- /ops/ui-kit --device phone --split 1200      (uzun sahifa: + -1.png, -2.png … bo'laklar)
 //   npm run app:shot -- / /orders --role manager --branch-type REGIONAL  (menejer/kuryer/registrator menyusi filial turiga bog'liq)
 //
-// Bayroqlar: --device desktop|tablet|phone · --theme light|dark · --role superadmin|admin|manager|registrator|market|courier
+// Bayroqlar: --device desktop|tablet|phone · --theme light|dark · --role superadmin|admin|manager|registrator|market|courier|logist|market_operator|investor
 //            (sukut superadmin) · --lang uz|ru|en (sukut uz) · --split <px>
 //            · --branch-type HQ|REGIONAL|HYBRID|PICKUP — profildagi filial turi (`menuConfig.tsx` →
 //              `getUserBranchType`). Sukut: manager HYBRID (maketdagi to'liq menyu), registrator HQ, courier REGIONAL;
@@ -44,7 +44,8 @@ const DEVICES = {
   phone: { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true },
 };
 const THEMES = ['light', 'dark'];
-const ROLES = ['superadmin', 'admin', 'manager', 'registrator', 'market', 'courier'];
+// Yangi rollar (ROL-0): logist, market_operator, investor — qobiq, 403 va pastki menyuni ko'rish uchun.
+const ROLES = ['superadmin', 'admin', 'manager', 'registrator', 'market', 'courier', 'logist', 'market_operator', 'investor'];
 const LANGS = ['uz', 'ru', 'en'];
 const BRANCH_TYPES = ['HQ', 'REGIONAL', 'HYBRID', 'PICKUP'];
 /** Rol → sukut filial turi (maketdagi persona menyusi: menejer — to'liq, registrator — «Toshkent HQ»). */
@@ -103,8 +104,69 @@ const profile = (themeName) => ({
       : {}),
   },
 });
+/**
+ * IN-1: investor kabineti (`investors/me/*`) — maketdagi namunaviy qiymatlar (`investor-dashboard-home`), oylar joriy
+ * oydan orqaga hisoblanadi: shunda bosh sahifa bo'sh holat emas, to'liq ko'rinishda chiziladi.
+ */
+const investorMock = (path) => {
+  const now = new Date();
+  const key = (back) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - back, 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  };
+  const paid = [0, 0, 2.4, 3.1, 3.6, 4.4, 5, 5.3, 4.9, 5.6, 0, 0];
+  if (path.startsWith('investors/me/dashboard')) {
+    const items = Array.from({ length: 12 }, (_, i) => {
+      const p = paid[i] * 1_000_000;
+      const u = i === 10 ? 6_200_000 : 0;
+      return { month: key(11 - i), paid_amount: p, unpaid_amount: u, total_amount: p + u };
+    });
+    return {
+      statusCode: 200,
+      data: {
+        investor: { id: '7', name: 'Habibulla Nazirov', status: 'active' },
+        summary: {
+          total_invested: 450_000_000, investments_count: 5, last_invested_at: '2026-08-01T00:00:00+05:00',
+          total_paid_profit: 34_300_000, total_unpaid_profit: 6_200_000, total_profit: 40_500_000,
+          profit_shares_count: 9, current_percentage: 12.5, last_paid_at: '2026-09-05T10:00:00+05:00',
+        },
+        monthly: { months: 12, items },
+      },
+    };
+  }
+  if (path.startsWith('investors/me/investments')) {
+    const rows = [['2026-08-01', 100_000_000], ['2026-06-20', 50_000_000], ['2026-04-12', 100_000_000]];
+    return {
+      statusCode: 200,
+      data: {
+        items: rows.map(([date, amount], i) => ({ id: String(i + 1), amount, invested_at: `${date}T00:00:00+05:00` })),
+        meta: { page: 1, limit: 3, total: 5, totalPages: 2 },
+        summary: { total_amount: 450_000_000 },
+      },
+    };
+  }
+  if (path.startsWith('investors/me/profits')) {
+    const rows = [[9, 30, 6_200_000, null], [8, 31, 5_600_000, '2026-09-05'], [7, 31, 4_900_000, '2026-08-05'], [6, 30, 5_300_000, '2026-07-05'], [5, 31, 5_000_000, '2026-06-05']];
+    const mm = (m) => String(m).padStart(2, '0');
+    return {
+      statusCode: 200,
+      data: {
+        items: rows.map(([m, last, amount, paidAt], i) => ({
+          id: String(20 - i), amount, percentage: 12.5,
+          period_start: `2026-${mm(m)}-01T00:00:00+05:00`, period_end: `2026-${mm(m)}-${last}T23:59:59+05:00`,
+          is_paid: paidAt != null, paid_at: paidAt ? `${paidAt}T10:00:00+05:00` : null,
+        })),
+        meta: { page: 1, limit: 5, total: 9, totalPages: 2 },
+        summary: { total_paid_amount: 34_300_000, total_unpaid_amount: 6_200_000 },
+      },
+    };
+  }
+  return null;
+};
+
 const mockBody = (path, themeName) => {
   if (path.endsWith('auth/my-profile')) return profile(themeName);
+  if (role === 'investor' && path.startsWith('investors/me')) return investorMock(path) ?? { statusCode: 200, data: {} };
   if (ARRAYISH.test(path)) return { statusCode: 200, data: [] };
   if (ARRAY_LIST.test(path)) return { statusCode: 200, data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 };
   return { statusCode: 200, data: { items: [], data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 }, total: 0 } };

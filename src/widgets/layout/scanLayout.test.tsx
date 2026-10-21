@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { I18nextProvider } from "react-i18next";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryRouter, RouterProvider } from "react-router-dom";
@@ -37,6 +37,17 @@ describe("ScanLayout (shell)", () => {
     for (const cls of ["px-4", "py-4", "lg:px-8", "lg:pt-6", "lg:pb-8"]) expect(main).toHaveClass(cls);
     expect(container.innerHTML).not.toMatch(/\bsm:/);
     expect(container.firstElementChild).toHaveClass("min-h-dvh", "bg-bg", "text-text");
+  });
+
+  it("«Asosiy kontentga o'tish» (KI-S2) — birinchi element, bosilsa fokus kontent blokiga", () => {
+    const { container } = renderScan();
+    const link = screen.getByRole("link", { name: "Asosiy kontentga o'tish" });
+    expect((container.firstElementChild as HTMLElement).firstElementChild).toBe(link);
+    const content = container.querySelector("#main-content") as HTMLElement;
+    expect(content).toHaveAttribute("tabindex", "-1");
+    expect(content).toContainElement(screen.getByRole("heading", { name: "Skaner" }));
+    fireEvent.click(link);
+    expect(content).toHaveFocus();
   });
 
   it("bo'lim kodi yuklanayotganda 150 ms dan keyin yuqori chiziq ko'rinadi (oyna skrolida ham tepada — `fixed`)", () => {

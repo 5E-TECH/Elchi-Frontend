@@ -1,4 +1,4 @@
-// dizayn-v2: courier-orders-pending, courier-orders-all, courier-orders-cancelled, courier-orders-tab-switcher-open
+// dizayn-v2: courier-orders-pending, courier-orders-pending-refreshing, courier-orders-pending-refresh-error, courier-orders-all, courier-orders-cancelled, courier-orders-tab-switcher-open
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Inbox, ScanLine, SearchX, Send } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -56,6 +56,14 @@ import {
   TextInput,
 } from "../../../../shared/ui/primitives";
 import { useIsPhone } from "../../../../shared/ui/primitives/date/useIsPhone";
+import {
+  getOrdersRefetchInterval,
+  ORDERS_REFRESH_INTERVAL_MS,
+  useOrdersRefresh,
+  useOrdersRefreshPaused,
+} from "../useOrdersRefresh";
+import { OrdersRefreshButton, OrdersRefreshDescription, OrdersRefreshTitleMeta } from "../OrdersRefreshMeta";
+import { OrdersRefreshAlert } from "../OrdersRefreshAlert";
 
 /**
  * KURYER «BUYURTMALAR» (`/orders`, rol `courier`) — maketlar `courier-orders-pending` · `-all` ·
@@ -68,7 +76,11 @@ import { useIsPhone } from "../../../../shared/ui/primitives/date/useIsPhone";
  *
  * Maketdagi «Yetkazish: barchasi» filtri chizilmaydi: kuryer ro'yxati API'si (`GET orders/courier/orders`)
  * yetkazish turi bo'yicha filtrni qabul qilmaydi (faqat `status`, `search`, `startDate`, `endDate`,
- * `page`, `limit`). Tab sonlari ham yo'q — API har holat sonini bermaydi.
+ * `page`, `limit`). Tab sonlari — `GET orders/courier/orders/counts` (OR-1, 0d11ewk7).
+ *
+ * Yangilanish (OR-1, `../useOrdersRefresh`): 60 s va ilovaga qaytganda (ro'yxat + tab sonlari), sarlavhada
+ * «Oxirgi yangilanish», «Yangilash» (telefonda ikonka tugma); yiqilsa — «Ro'yxat yangilanmadi» (telefonda
+ * tablar va qidiruvdan keyin, kartadan oldin).
  */
 
 const asRecord = (value: unknown): Record<string, unknown> =>
@@ -426,6 +438,7 @@ const CourierOrders = () => {
 
   const {
     useGetOrderCourier,
+    useGetCourierOrderCounts,
     SellOrder,
     PartlySellOrder,
     RollbackOrder,
@@ -450,9 +463,18 @@ const CourierOrders = () => {
     ...(withFilters && dateTo ? { endDate: dateTo } : {}),
   };
 
-  const ordersQuery = useGetOrderCourier(params, (current) =>
-    pollWhileApprovalPending(extractOrderRows(current)),
+  // Oyna yoki kamera ochiq — avtomatik yangilanish to'xtaydi (tasdiq pollingi davom etadi).
+  const refreshPaused = useOrdersRefreshPaused(Boolean(sellOrder || cancelOrder || rollbackOrder));
+  const ordersQuery = useGetOrderCourier(
+    params,
+    (current) => getOrdersRefetchInterval(refreshPaused, pollWhileApprovalPending(extractOrderRows(current))),
+    { refetchOnWindowFocus: !refreshPaused, silentErrorWhenCached: true },
   );
+  const countsQuery = useGetCourierOrderCounts({
+    refetchInterval: refreshPaused ? false : ORDERS_REFRESH_INTERVAL_MS,
+    refetchOnWindowFocus: !refreshPaused,
+  });
+  const refresh = useOrdersRefresh({ list: ordersQuery, extras: [countsQuery] });
   const { data, isLoading } = ordersQuery;
 
   const { mutate: sellMutate, isPending: isSelling } = SellOrder;
@@ -497,6 +519,18 @@ const CourierOrders = () => {
   const totalPages = Math.max(1, Math.ceil(totalItems / Math.max(1, itemsPerPage)));
   const selectableOrders = orders.filter(isSelectableCancelledOrder);
   const selectedSendableCount = selectableOrders.filter((order) => selectedIds.has(order.id)).length;
+
+  // Yangilanishdan keyin tanlov ko'rinadigan (yuborsa bo'ladigan) qatorlarga qisqaradi — ro'yxatdan chiqib
+  // ketgan buyurtma tanlovda «ko'rinmas» bo'lib qolmasin (OR-1).
+  const selectableIdsKey = selectableOrders.map((order) => order.id).join(",");
+  useEffect(() => {
+    if (data === undefined) return;
+    const visible = new Set(selectableIdsKey ? selectableIdsKey.split(",") : []);
+    setSelectedIds((previous) => {
+      const next = new Set([...previous].filter((id) => visible.has(id)));
+      return next.size === previous.size ? previous : next;
+    });
+  }, [data, selectableIdsKey]);
 
   // Kamera ro'yxati (Trello v1eLN2tV 2-bosqich): skan tartibi (`order:<id>` / `missing:<kod>`) va rad etilgan kodlar.
   const { recent: recentScanKeys, touch: touchRecentScan, clear: clearRecentScans } = useRecentScans();
@@ -816,13 +850,18 @@ const CourierOrders = () => {
     ) : !shownList ? (
       "—"
     ) : (
-      t("totalOrdersSummary", { count: totalItems })
+      <OrdersRefreshDescription
+        total={t("totalOrdersSummary", { count: totalItems })}
+        lastUpdatedAt={refresh.lastUpdatedAt}
+      />
     );
 
   const tabs = (
     <Tabs
       activeTab={activeTab}
       onChange={handleTabChange}
+      counts={countsQuery.data ?? undefined}
+      countBusy={refresh.refreshing}
       fullWidth={isPhone}
       ariaLabel={isPhone ? t("courierList.tabsLabelPhone") : t("courierList.tabsLabel")}
       className={isPhone ? "-mx-4 border-t border-border bg-surface" : undefined}
@@ -877,9 +916,27 @@ const CourierOrders = () => {
   const showPagination =
     Boolean(shownList?.hasRows) && !(isPhone && activeTab === "cancelled" && totalPages <= 1);
 
+  const handleRefresh = () => void refresh.refreshAll();
+  const refreshAlert = refresh.errorVisible ? (
+    <OrdersRefreshAlert
+      withCounts
+      retrying={refresh.fetching}
+      onRetry={handleRefresh}
+      onDismiss={refresh.dismissError}
+    />
+  ) : null;
+
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">
-      <PageHeader title={t("title")} description={description} />
+      <PageHeader
+        title={t("title")}
+        // Matn bloki o'sadi: telefonda «Yangilash» ikonka tugmasi sarlavha qatorining o'ng chetida (maket).
+        grow
+        meta={<OrdersRefreshTitleMeta refreshing={refresh.refreshing} onRefresh={handleRefresh} />}
+        description={description}
+        // Telefonda amallar qatori bo'sh qolmasin — u yerda faqat ikonka tugma.
+        actions={isPhone ? undefined : <OrdersRefreshButton refreshing={refresh.refreshing} onRefresh={handleRefresh} />}
+      />
 
       {isPhone ? (
         <>
@@ -894,6 +951,8 @@ const CourierOrders = () => {
           )}
         </>
       ) : null}
+
+      {refreshAlert}
 
       <Card
         padding="none"

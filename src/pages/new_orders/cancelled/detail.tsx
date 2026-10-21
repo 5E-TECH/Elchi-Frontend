@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-neworders-cancelled-handover, superadmin-neworders-cancelled-manual-dialog, superadmin-neworders-cancelled-scanner-dialog, admin-neworders-cancelled-detail, admin-neworders-cancelled-manual-dialog, admin-neworders-cancelled-scanner-dialog, registrator-new-orders-cancelled-detail, registrator-new-orders-cancelled-manual-dialog, registrator-new-orders-cancelled-scanner-dialog, market-new-orders-cancelled, market-new-orders-cancelled-qr-dialog
+// dizayn-v2: superadmin-neworders-cancelled-handover, superadmin-neworders-cancelled-handover-done, superadmin-neworders-cancelled-manual-dialog, superadmin-neworders-cancelled-scanner-dialog, admin-neworders-cancelled-detail, admin-neworders-cancelled-manual-dialog, admin-neworders-cancelled-scanner-dialog, registrator-new-orders-cancelled-detail, registrator-new-orders-cancelled-manual-dialog, registrator-new-orders-cancelled-scanner-dialog, market-new-orders-cancelled, market-new-orders-cancelled-qr-dialog
 import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -53,6 +53,7 @@ import {
   type CancelledMarketQr,
 } from "./cancelledModel";
 import { CancelledOrdersTable } from "./ui/CancelledOrdersTable";
+import { HandedOverCard, type HandedOverOrder } from "./ui/HandedOverCard";
 import { HandoverStatusAlert } from "./ui/HandoverStatusAlert";
 import { ManualConfirmDialog } from "./ui/ManualConfirmDialog";
 import { MarketQrDialog } from "./ui/MarketQrDialog";
@@ -103,6 +104,8 @@ const CancelledMarketDetail = () => {
   const [manualConfirmOrder, setManualConfirmOrder] = useState<MarketOrder | null>(null);
   const [manualReason, setManualReason] = useState("");
   const [sentIds, setSentIds] = useState<Set<string>>(new Set());
+  // «Topshirildi (N)» — shu sahifada (sessiya ichida) topshirilganlar; sahifa yangilansa tozalanadi.
+  const [handedOver, setHandedOver] = useState<HandedOverOrder[]>([]);
   const [isQrOpen, setIsQrOpen] = useState(false);
   const [handoverQr, setHandoverQr] = useState<CancelledMarketQr | null>(null);
   const [isHandoverQrScanned, setIsHandoverQrScanned] = useState(false);
@@ -382,6 +385,20 @@ const CancelledMarketDetail = () => {
       manualOverrides,
     }, {
       onSuccess: () => {
+        const handedAt = Date.now();
+        const handedRows = orders
+          .filter((order) => selectedIds.has(order.id))
+          .map<HandedOverOrder>((order) => ({
+            order,
+            at: handedAt,
+            handover: manualSelectedIds.has(order.id)
+              ? { method: "manual", reason: toCancelledManualReason(manualOverrideReasons[order.id]) }
+              : { method: isCancelledHandoverQrRequired ? "qr" : "no_qr", reason: null },
+          }));
+        setHandedOver((previous) => [
+          ...handedRows,
+          ...previous.filter((row) => !handedRows.some((item) => item.order.id === row.order.id)),
+        ]);
         setSentIds((previous) => new Set([...previous, ...orderIds]));
         setSelectedIds(new Set());
         setManualSelectedIds(new Set());
@@ -412,6 +429,7 @@ const CancelledMarketDetail = () => {
     marketId,
     manualOverrideReasons,
     manualSelectedIds,
+    orders,
     query,
     selectedIds,
     t,
@@ -754,6 +772,8 @@ const CancelledMarketDetail = () => {
           )}
         </QueryBoundary>
       </Card>
+
+      {handedOver.length > 0 ? <HandedOverCard rows={handedOver} /> : null}
 
       <ManualConfirmDialog
         order={manualConfirmOrder}

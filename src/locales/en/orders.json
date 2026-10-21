@@ -67,7 +67,18 @@
     "cameraSelected": "Selected №{{id}}",
     "cameraRejected": "Rejected · {{reason}}",
     "cameraReasonMissing": "not in the list",
-    "cameraReasonNotSendable": "cannot be sent"
+    "cameraReasonNotSendable": "cannot be sent",
+    "refreshAction": "Refresh",
+    "refreshLabel": "Refresh list",
+    "refreshingLabel": "Refreshing list",
+    "refreshingBadge": "Refreshing…",
+    "refreshLastUpdated": "Last updated: <time>{{time}}</time>",
+    "refreshAuto": "Updates automatically",
+    "refreshAutoHint": "Every minute and when you return to the app",
+    "refreshErrorTitle": "The list wasn't refreshed",
+    "refreshErrorText": "The list may be out of date.",
+    "refreshErrorTextWithCounts": "The list and tab counts may be out of date.",
+    "refreshDismiss": "Dismiss warning"
   },
   "list": "Order list",
   "create": "Create order",
@@ -118,6 +129,7 @@
   "statusCancelled": "Cancelled",
   "statusCancelledSent": "Cancelled — sent",
   "statusClosed": "Closed",
+  "statusReturnedToMarket": "Handed to market",
   "filterMarket": "Market",
   "filterCourier": "Courier",
   "filterRegion": "Region",
@@ -199,7 +211,8 @@
   "metaHolderHQ": "At head office (HQ)",
   "metaHolderBranch": "At branch: {{name}}",
   "metaHolderCourier": "With courier: {{name}}",
-  "metaHolderMarket": "Returned to the market",
+  "metaHolderMarket": "Handed to market",
+  "metaHolderStage": "{{stage}} — {{place}}",
   "metaDelivery": "Delivery type",
   "metaTariffs": "Tariff and share",
   "metaTariffsShow": "Show tariff",
@@ -495,10 +508,11 @@
       "cancelledPostCreated": "{{actor}} added the cancelled order to the return post and sent it",
       "cancelledPostReceivedAtBranch": "{{actor}} received the cancelled order from the courier",
       "cancelledPostReceivedAtHq": "{{actor}} received the cancelled order at HQ for market handover",
-      "cancelledOrderHandedToMarket": "{{actor}} handed the cancelled order over to {{market}} with QR confirmation",
+      "cancelledOrderHandedToMarket": "{{actor}} handed the cancelled order to {{market}} — {{method}}",
       "returnInitiated": "{{actor}} started returning the order to the market. Reason: {{reason}}",
-      "returnedToMarketByActor": "{{actor}} handed the order to {{market}} with QR confirmation",
-      "createdByActor": "{{actor}} created the order"
+      "returnedToMarketByActor": "{{actor}} handed the order to {{market}} — {{method}}",
+      "createdByActor": "{{actor}} created the order",
+      "cancelledPostReceivedAtPlace": "{{actor}} received the cancelled order — {{place}}"
     },
     "roleValue": {
       "superadmin": "Superadmin",
@@ -523,7 +537,7 @@
       "partly_paid": "Partly paid",
       "closed": "Closed",
       "waiting_customer": "Waiting for customer",
-      "returned_to_market": "Returned to market",
+      "returned_to_market": "Handed to market",
       "processing": "Processing",
       "completed": "Ready"
     },
@@ -552,7 +566,7 @@
       "cancelledPostCreated": "Cancelled order sent",
       "cancelledPostReceived": "Cancelled order received",
       "returnRequested": "Return requested",
-      "returnedToMarket": "Returned to market"
+      "returnedToMarket": "Handed to market"
     },
     "newestFirst": "{{count}} entries — newest first",
     "expand": "Show history",
@@ -759,6 +773,8 @@
     "productsLockedAddress": "The address can be edited until the order is sent to a branch.",
     "editClosedTitle": "Editing is closed.",
     "editClosedBody": "The order has been sent to a branch — the customer, address, amount and products can no longer be changed.",
+    "editClosedCancelledBody": "The order is cancelled — the customer, address, amount and products can't be changed.",
+    "editClosedReturnedBody": "The order has been handed to the market — the customer, address, amount and products can't be changed.",
     "readOnlyTitle": "View only",
     "readOnlyLocked": "The order has been sent to a branch, so products, amount, customer and address are locked.",
     "dateLabel": "Date:",
@@ -776,5 +792,71 @@
     "tooLong": "The amount is too large — 12 digits at most"
   },
   "returnHandoverQrAccepted": "Market QR accepted — handing over",
-  "returnHandoverCameraNote": "Scan the QR code shown in the market app — the permission lasts 5 minutes"
+  "returnHandoverCameraNote": "Scan the QR code shown in the market app — the permission lasts 5 minutes",
+  "returnPath": {
+    "title": "Return path",
+    "subtitleClosed": "Chain closed — the parcel is back with the market",
+    "subtitleOpen": "From courier to market — the last step is pending",
+    "subtitleMarketReady": "The parcel is now at: {{place}} — you can pick it up",
+    "step": {
+      "cancelled": "Cancelled",
+      "sent": "Sent",
+      "received": "Received",
+      "handed": "Handed to market"
+    },
+    "pending": {
+      "send": "Sending by return post",
+      "receive": "Receipt",
+      "handover": "Handover to market"
+    },
+    "pendingText": {
+      "send": "Waiting for the courier to add it to a return post",
+      "receive": "Waiting for {{place}} to receive it",
+      "receiveUnknown": "Waiting to be received",
+      "handover": "Waiting for {{market}} to pick it up",
+      "handoverSelf": "Waiting for you to pick it up",
+      "handoverBranch": "Waiting for {{market}} to pick it up or for it to be sent to HQ"
+    },
+    "post": "Post №{{id}}",
+    "reason": "Reason: {{reason}}",
+    "qrHint": "Show the QR code to the staff member when picking up.",
+    "qrOpen": "Open QR code",
+    "loading": "Loading the return path",
+    "error": "Couldn't load the return path",
+    "empty": "The return path hasn't been recorded yet"
+  },
+  "createCustomer": {
+    "cardSubtitle": "Enter the phone number — if the customer already exists, their details fill in automatically",
+    "listLabel": "Customer suggestions",
+    "scopeAll": "All customers · order count for {{market}}",
+    "scopeMarket": "{{market}} customers · order count for this store",
+    "scopeOwn": "Your customers · order count with you only",
+    "ordersCount_one": "{{value}} order",
+    "ordersCount_other": "{{value}} orders",
+    "newCount_one": "{{value}} new",
+    "newCount_other": "{{value}} new",
+    "searching": "Searching for the customer...",
+    "notFoundTitle": "Customer not found",
+    "notFoundHint": "Will be saved as a new customer — enter the name",
+    "continueNew": "Continue as a new customer",
+    "sheetTitle": "Choose a customer",
+    "sheetDescription_one": "{{phone}} · {{value}} match",
+    "sheetDescription_other": "{{phone}} · {{value}} matches",
+    "existingBadge": "Existing customer",
+    "existingFilled": "Name, address and extra number were filled from the customer card",
+    "existingOrdersMarket_one": "{{value}} order at {{market}}",
+    "existingOrdersMarket_other": "{{value}} orders at {{market}}",
+    "existingOrdersOwn_one": "{{value}} order with you",
+    "existingOrdersOwn_other": "{{value}} orders with you",
+    "existingLast": "latest {{date}}",
+    "existingCancel": "Cancel",
+    "existingCancelLabel": "Cancel the existing customer",
+    "newOrdersTitle": "This customer has a new order",
+    "newOrdersBodyMarket_one": "{{name}} has {{value}} order in “New” status at {{market}}. Make sure you are not creating a duplicate.",
+    "newOrdersBodyMarket_other": "{{name}} has {{value}} orders in “New” status at {{market}}. Make sure you are not creating a duplicate.",
+    "newOrdersBodyOwn_one": "{{name}} has {{value}} order in “New” status with you. Make sure you are not creating a duplicate.",
+    "newOrdersBodyOwn_other": "{{name}} has {{value}} orders in “New” status with you. Make sure you are not creating a duplicate.",
+    "openOrder": "Open №{{id}} in a new tab",
+    "openOrderLabel": "Open order №{{id}} in a new tab"
+  }
 }

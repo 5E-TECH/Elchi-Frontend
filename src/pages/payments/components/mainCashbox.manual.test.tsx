@@ -29,6 +29,7 @@ vi.mock("./lib/exportMainCashboxReport", () => ({ exportMainCashboxReport: vi.fn
 vi.mock("../../../entities/user/api/userApi", () => ({
   useUser: () => ({
     useGetUser: () => ({ data: undefined, isLoading: false }),
+    useGetUserById: () => ({ data: undefined, isLoading: false }),
     useGetManagers: () => ({ data: undefined, isLoading: false }),
     useGetCouriers: () => ({ data: undefined, isLoading: false }),
   }),
@@ -92,7 +93,18 @@ beforeEach(() => {
   http.get.mockReset();
   http.post.mockReset();
   http.patch.mockReset();
-  http.get.mockImplementation(async () => ({ data: { statusCode: 200, message: "success", data: {} } }));
+  http.get.mockImplementation(async (url: string) =>
+    url === "finance/shift/current"
+      ? // Smena ochiq — tezkor amallar qulfsiz (smena yopiq holati: fix3b-mainCashbox.test.tsx).
+        {
+          data: {
+            statusCode: 200,
+            message: "Current shift",
+            data: { shift: { id: "12", opened_by: "1", status: "open", opened_at: "2026-10-01T04:00:00.000Z" }, required: true },
+          },
+        }
+      : { data: { statusCode: 200, message: "success", data: {} } },
+  );
   http.patch.mockImplementation(async () => ({ data: { statusCode: 200, message: "ok", data: { id: "900" } } }));
 });
 

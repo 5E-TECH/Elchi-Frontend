@@ -1,4 +1,4 @@
-// dizayn-v2: common-settings-appearance, common-settings-dashboard, common-settings-interface, common-settings-scanner, common-settings-notifications
+// dizayn-v2: common-settings-appearance, common-settings-dashboard, common-settings-interface, common-settings-scanner, common-settings-notifications, common-settings-notifications-pwa
 import { memo, useId, useRef, useState, type KeyboardEvent } from "react";
 import {
   Bell,

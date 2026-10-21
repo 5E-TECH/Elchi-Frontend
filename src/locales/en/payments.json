@@ -227,6 +227,8 @@
     "subtitleShiftOpen": "Main cashbox management · shift open",
     "subtitleShiftClosed": "Main cashbox management · shift closed",
     "subtitleBranch": "Main cashbox management · {{branch}}",
+    "subtitleBranchShiftOpen": "{{branch}} · shift open",
+    "subtitleBranchShiftClosed": "{{branch}} · shift closed",
     "exportExcel": "Export to Excel",
     "openShift": "Open shift",
     "closeShift": "Close shift",
@@ -360,18 +362,76 @@
       "submit": "Confirm"
     },
     "shift": {
-      "title": "Close shift",
-      "subtitle": "The current cashbox shift will be finished",
       "current": "Current shift",
       "since": "since {{time}}",
       "openedBy": "Opened by",
-      "cashboxTotal": "Amount in the cashbox",
-      "excelNote": "When you close the shift, an Excel report is downloaded automatically.",
+      "closedBy": "Closed by",
+      "opener": "Opened by",
       "comment": "Comment",
-      "commentPlaceholder": "Comment about the shift...",
       "cancel": "Cancel",
-      "submit": "Close shift",
-      "closing": "Closing…"
+      "cash": "Cash",
+      "card": "Card",
+      "cardClick": "Card (Click)",
+      "mainCashbox": "Main cashbox",
+      "branchCashbox": "{{branch}} cashbox",
+      "branchCashboxFallback": "Branch cashbox",
+      "locked": "Available once the shift is open",
+      "banner": {
+        "title": "Shift not started",
+        "main": "Receiving money, market payouts, expenses and cashbox top-ups work once the shift is open. The balance and operations history stay visible.",
+        "branch": "Receiving from couriers, expenses and cashbox top-ups work once the shift is open. The balance and operations history stay visible."
+      },
+      "open": {
+        "title": "Open shift",
+        "subtitle": "{{cashbox}} · a new shift starts",
+        "start": "Start",
+        "now": "now",
+        "balanceTitle": "Opening balance",
+        "total": "Total",
+        "balanceHint": "The current cashbox balance is recorded. The expected amount at closing is calculated from it.",
+        "commentPlaceholder": "For example: evening shift",
+        "submit": "Open shift",
+        "opening": "Opening…"
+      },
+      "close": {
+        "title": "Close shift",
+        "subtitle": "Count the cashbox and enter the counted amount",
+        "countedCash": "Counted cash",
+        "countedCard": "Counted card",
+        "expected": "Expected by the system:",
+        "diff": "Difference",
+        "diffAlert": "There is a difference — write the reason in the comment",
+        "commentHint": "A comment is required if there is a difference. Otherwise — optional.",
+        "commentPlaceholder": "For example: cash was counted twice",
+        "cashRequired": "Enter the counted cash amount",
+        "commentRequired": "There is a difference — write a comment",
+        "note": "Expected is the current cashbox balance; the final difference is calculated at closing. If the card is left empty — «Not counted», no card difference is calculated. After closing, the Excel report downloads automatically.",
+        "submit": "Close shift",
+        "closing": "Closing…"
+      },
+      "diff": {
+        "shortage": "Shortage",
+        "surplus": "Surplus",
+        "match": "Matches",
+        "notCounted": "Not counted",
+        "expectedUnknown": "Expected unknown"
+      },
+      "result": {
+        "title": "Shift closed",
+        "subtitle": "{{range}} · {{cashbox}}",
+        "tableLabel": "Shift result: cash and card",
+        "metric": "Metric",
+        "opening": "At opening",
+        "income": "Income",
+        "expense": "Expense",
+        "expected": "Expected",
+        "counted": "Counted",
+        "diff": "Difference",
+        "cardNotCounted": "Card not counted — no card difference was calculated.",
+        "excelNote": "The Excel report was downloaded. Download again if needed.",
+        "export": "Export to Excel",
+        "done": "Done"
+      }
     },
     "notify": {
       "alreadyRecorded": "This operation has already been recorded — the cashbox was refreshed, please check the amount",
@@ -875,8 +935,12 @@
       "rollback": "Correction"
     }
   }
-  ,"paymentAckDisputed": "Disputed"
-  ,"paymentAckDisputedHint": "The courier marked the bot receipt as wrong"
-  ,"paymentAckConfirmed": "Confirmed"
-  ,"paymentAckConfirmedHint": "The courier confirmed the bot receipt"
+  ,"paymentAckStaffConfirmed": "Courier confirmed"
+  ,"paymentAckStaffConfirmedHint": "The courier confirmed the bot receipt"
+  ,"paymentAckStaffDisputed": "Courier: wrong"
+  ,"paymentAckStaffDisputedHint": "The courier marked the bot receipt as wrong"
+  ,"paymentAckSelfConfirmed": "You confirmed"
+  ,"paymentAckSelfConfirmedHint": "You confirmed the bot receipt"
+  ,"paymentAckSelfDisputed": "You: wrong"
+  ,"paymentAckSelfDisputedHint": "You marked the bot receipt as wrong"
 }

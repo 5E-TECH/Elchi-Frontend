@@ -7,7 +7,13 @@ export type UserRole =
   | "courier"
   | "market"
   | "superadmin"
-  | "customer";
+  | "customer"
+  // Backend `Roles` (libs/common/enums): yangi rollar — logist (dzyVftBx), market operatori, investor
+  // va filial hisobi (`branch`, faqat yorliq). Ularning qobig'i `menuConfig.tsx` da (ROL-0).
+  | "logist"
+  | "market_operator"
+  | "investor"
+  | "branch";
 
 export type UserStatus = "active" | "inactive" | "blocked";
 
@@ -89,6 +95,8 @@ export interface User {
    */
   tg_group_show_customer_pii?: boolean;
   default_tariff: "home" | "center";
+  /** NFiXfmq6: market AI buyurtma narxi (so'm). `null` / yo'q — global narx (sukut ko'rsatilmaydi, FY-S5). */
+  ai_price_per_order?: number | string | null;
   region_id?: string | null;
   region?: Region | null;
   avatar?: string;
@@ -172,8 +180,9 @@ export interface CreateMarketResponse {
 
 // ==================== CREATE COURIER ====================
 
+// `region_id` yo'q: gateway `CreateCourierRequestDto` da bu maydon yo'q (400 «should not exist») — kuryer hududi
+// filial biriktiruvidan keladi (LG-2 tozalash).
 export interface CreateCourierRequest {
-  region_id?: string; // Viloyat ID (ba'zi rollarda backend o'zi aniqlaydi)
   branch_id?: string;
   name: string; // Kuryer ismi
   phone_number: string; // Telefon (+998...)
@@ -182,6 +191,20 @@ export interface CreateCourierRequest {
   payment_day?: number;
   tariff_home?: number; // Uyga tarif (so'm)
   tariff_center?: number; // Markazga tarif (so'm)
+}
+
+// ==================== CREATE LOGIST ====================
+
+/**
+ * `POST /logists` (superadmin, admin; dzyVftBx) — admin naqshi: ism, telefon, parol, maosh (majburiy), to'lov kuni
+ * (ixtiyoriy). `branch_id` yo'q — logist filialga biriktirilmaydi, viloyatlar `POST /region/logist/bulk` bilan.
+ */
+export interface CreateLogistRequest {
+  name: string;
+  phone_number: string;
+  password: string;
+  salary: number;
+  payment_day?: number;
 }
 
 // ==================== USER DETAIL ====================
@@ -207,5 +230,10 @@ export interface UpdateUserRequest {
   can_add_extra_cost?: boolean;
   can_sell_cancel?: boolean;
   default_tariff?: "address" | "center";
-  region_id?: string;
+  /**
+   * NFiXfmq6: market AI buyurtma narxi (so'm, 1 ta buyurtma). `null` — global narx; 0 — bepul. Faqat
+   * superadmin/admin va faqat market yozuvida (backend boshqasiga 403/400). `region_id` olib tashlandi (FY-1):
+   * identity `updateUser` uni e'tiborsiz qoldiradi — kuryer hududi filial biriktiruvidan keladi.
+   */
+  ai_price_per_order?: number | null;
 }
