@@ -46,6 +46,7 @@ vi.mock("../../entities/payments", async (importOriginal) => ({
       isLoading: false,
     }),
     useGetCurrentShift: () => ({ isSuccess: false, data: undefined }),
+    openShift: { mutateAsync: vi.fn(), isPending: false },
     useGetCashBoxMain: () => ({ data: undefined, isLoading: false }),
   }),
 }));
@@ -60,6 +61,7 @@ vi.mock("../../entities/payments/financeCoverage", () => ({
 vi.mock("../../entities/user/api/userApi", () => ({
   useUser: () => ({
     useGetUser: () => ({ data: { data: { items: [] } }, isLoading: false }),
+    useGetUserById: () => ({ data: undefined }),
     useGetManagers: (params: unknown, enabled: boolean) => {
       if (enabled) page.managerParams.push(params);
       return { data: enabled ? page.managers : undefined, isLoading: false };

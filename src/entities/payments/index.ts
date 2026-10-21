@@ -386,11 +386,13 @@ export const useCashBox = () => {
       enabled: bool,
     });
 
-  const useGetCashBoxMain = (params?: any) =>
+  // `enabled` (CB-2) — smena ochish oynasi qoldiqni faqat oyna ochilganda o'qiydi (sukut o'zgarmagan).
+  const useGetCashBoxMain = (params?: any, enabled: boolean = true) =>
     useQuery({
       queryKey: [cashbox, "main", params],
       queryFn: () =>
         api.get(API_ENDPOINTS.FINANCE.CASHBOX_MAIN, { params }).then((res) => res.data),
+      enabled,
     });
 
   // Kalit `cashbox` prefiksi ostida — refreshCashbox har to'lovdan

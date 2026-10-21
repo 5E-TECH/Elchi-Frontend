@@ -58,7 +58,19 @@ export const resolveUserName = (payload: unknown): string => {
   );
 };
 
-export const useCashboxShift = ({ enabled = true }: { enabled?: boolean } = {}): CashboxShiftState => {
+export type UseCashboxShiftOptions = {
+  enabled?: boolean;
+  /**
+   * Ochgan xodim ismini `GET users/:id` dan o'qish (sukut — ha). Ismni ko'rsatmaydigan ekranlar (CB-2: menejer
+   * «To'lovlar», kassa tafsiloti) `false` beradi — ortiqcha (menejerga jim 403 bo'lishi mumkin) so'rov ketmaydi.
+   */
+  resolveOpener?: boolean;
+};
+
+export const useCashboxShift = ({
+  enabled = true,
+  resolveOpener = true,
+}: UseCashboxShiftOptions = {}): CashboxShiftState => {
   const role = useSelector((state: RootState) => state.role.role);
   const roleName = useSelector((state: RootState) => state.role.name);
   const profile = useSelector((state: RootState) => state.user.user);
@@ -82,7 +94,9 @@ export const useCashboxShift = ({ enabled = true }: { enabled?: boolean } = {}):
   const isSelf = Boolean(openedBy) && openedBy === currentUserId;
   const { useGetUserById } = useUser();
   // Boshqa xodim ochgan smena — ismi `GET users/:id` dan (jim; xato bo'lsa «—»).
-  const openerQuery = useGetUserById(openedBy && !isSelf ? openedBy : "", undefined, { silentError: true });
+  const openerQuery = useGetUserById(resolveOpener && openedBy && !isSelf ? openedBy : "", undefined, {
+    silentError: true,
+  });
 
   const openedByName = !shift
     ? null
