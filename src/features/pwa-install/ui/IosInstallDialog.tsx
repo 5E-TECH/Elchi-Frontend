@@ -1,4 +1,5 @@
 // dizayn-v2: courier-inbox-pwa-ios-dialog
+import { useId } from "react";
 import { Check, Info, Share, SquarePlus, type LucideIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button, Dialog } from "../../../shared/ui/primitives";
@@ -19,6 +20,7 @@ const STEPS: readonly Step[] = [
  */
 export const IosInstallDialog = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const { t } = useTranslation("pwaInstall");
+  const descId = useId();
   return (
     <Dialog
       open={open}
@@ -26,7 +28,9 @@ export const IosInstallDialog = ({ open, onClose }: { open: boolean; onClose: ()
       size="sm"
       icon={<AppMark size="sm" />}
       title={t("ios.title")}
-      description={t("ios.body")}
+      // Izoh maketdagidek sarlavha ostida, butun kenglikda (14px) — Dialog `description` slotida emas (u ikonka
+      // yonidagi ustunda, 13px); nom-izoh bog'lanishi `aria-describedby` orqali saqlanadi.
+      aria-describedby={descId}
       footer={
         <>
           <Button variant="secondary" onClick={onClose}>
@@ -36,6 +40,9 @@ export const IosInstallDialog = ({ open, onClose }: { open: boolean; onClose: ()
         </>
       }
     >
+      <p id={descId} data-testid="pwa-ios-body" className="text-sm text-text-muted">
+        {t("ios.body")}
+      </p>
       <ol aria-label={t("ios.stepsLabel")} className="m-0 flex list-none flex-col gap-4 p-0">
         {STEPS.map(({ key, icon: Icon }, index) => (
           <li key={key} className="flex items-start gap-3">

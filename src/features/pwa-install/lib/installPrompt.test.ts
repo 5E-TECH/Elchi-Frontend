@@ -106,3 +106,16 @@ function resetInstallEnvKeepingStorage() {
   resetInstallEnv();
   if (saved) window.localStorage.setItem(INSTALLED_STORAGE_KEY, saved);
 }
+
+describe("pwa-install: test muhiti tozaligi", () => {
+  it("restoreInstallEnv — navigator.userAgent / maxTouchPoints asliga qaytadi (iPhone UA meros qolmaydi)", () => {
+    const userAgent = window.navigator.userAgent;
+    const maxTouchPoints = window.navigator.maxTouchPoints;
+    resetInstallEnv();
+    setDevice(IPHONE_UA, 5);
+    expect(window.navigator.userAgent).toBe(IPHONE_UA);
+    restoreInstallEnv();
+    expect(window.navigator.userAgent).toBe(userAgent);
+    expect(window.navigator.maxTouchPoints).toBe(maxTouchPoints);
+  });
+});

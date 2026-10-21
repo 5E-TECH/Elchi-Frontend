@@ -119,5 +119,58 @@ describe("InstallAppCard", () => {
     expect(screen.queryByTestId("pwa-install-card-dashboard")).not.toBeInTheDocument();
     set.mockRestore();
   });
-});
 
+  it("telefonda tugma kenglikni faqat bosh sahifa kartasida egallaydi; /inbox da — o'z kengligida, o'ngda", () => {
+    fireBeforeInstallPrompt();
+    renderWithProviders(
+      <>
+        <InstallAppCard placement="inbox" />
+        <InstallAppCard placement="dashboard" />
+      </>,
+    );
+    const [inboxActions, dashboardActions] = screen.getAllByTestId("pwa-install-card-actions");
+    expect(inboxActions.className).toContain("ml-auto");
+    expect(inboxActions.className).not.toContain("max-md:w-full");
+    expect(within(inboxActions).getByRole("button", { name: "O'rnatish" }).className).not.toContain("max-md:flex-1");
+    expect(dashboardActions.className).toContain("max-md:w-full");
+    expect(within(dashboardActions).getByRole("button", { name: "O'rnatish" }).className).toContain("max-md:flex-1");
+  });
+
+  it("iOS oynasi: izoh sarlavha ostida, butun kenglikda (14px) va oynaning aria-describedby'si", async () => {
+    setDevice(IPHONE_UA, 5);
+    renderWithProviders(<InstallAppCard placement="inbox" />);
+    await userEvent.click(screen.getByRole("button", { name: "Qanday qo'shiladi" }));
+    const dialog = await screen.findByRole("dialog", { name: "Bosh ekranga qo'shing" });
+    const body = within(dialog).getByTestId("pwa-ios-body");
+    expect(body.tagName).toBe("P");
+    expect(body).toHaveClass("text-sm");
+    expect(dialog).toHaveAttribute("aria-describedby", body.id);
+    expect(dialog).toHaveAccessibleDescription(
+      "Elchi alohida ilova bo'lib ochiladi va bildirishnomalar qurilmangizga keladi — ilova yopiq bo'lsa ham.",
+    );
+  });
+
+  it("fokus yo'qolmaydi: «Taklifni yopish» va qabul qilingan «O'rnatish» dan keyin — sahifa sarlavhasiga", async () => {
+    fireBeforeInstallPrompt("accepted");
+    const { unmount } = renderWithProviders(
+      <main>
+        <h1>Bosh sahifa</h1>
+        <InstallAppCard placement="dashboard" />
+      </main>,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Taklifni yopish" }));
+    expect(screen.queryByTestId("pwa-install-card-dashboard")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toHaveFocus();
+    unmount();
+
+    renderWithProviders(
+      <main>
+        <h1>Bildirishnomalar</h1>
+        <InstallAppCard placement="inbox" />
+      </main>,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "O'rnatish" }));
+    await waitFor(() => expect(screen.queryByTestId("pwa-install-card-inbox")).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.getByRole("heading", { level: 1 })).toHaveFocus());
+  });
+});

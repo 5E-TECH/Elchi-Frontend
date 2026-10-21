@@ -14,6 +14,12 @@ export const IPADOS_UA =
   "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15";
 
 const originalMatchMedia = window.matchMedia;
+// `setDevice` navigator xususiyatlarini o'zgartiradi — keyingi testlarga (shu fayldagi boshqa describe) iPhone UA
+// meros qolmasin: asl deskriptorlar saqlanadi va `restoreInstallEnv` da qaytariladi.
+const NAVIGATOR_PROPS = ["userAgent", "maxTouchPoints"] as const;
+const originalNavigatorProps = NAVIGATOR_PROPS.map(
+  (name) => [name, Object.getOwnPropertyDescriptor(window.navigator, name)] as const,
+);
 
 export const setDevice = (userAgent: string = ANDROID_UA, maxTouchPoints = 0) => {
   Object.defineProperty(window.navigator, "userAgent", { value: userAgent, configurable: true });
@@ -46,6 +52,11 @@ export const restoreInstallEnv = () => {
   resetInstallStateForTests();
   window.localStorage.clear();
   window.matchMedia = originalMatchMedia;
+  for (const [name, descriptor] of originalNavigatorProps) {
+    // Asl xususiyat prototipda (`Navigator.prototype`) — o'z (own) nusxasi o'chiriladi.
+    if (descriptor) Object.defineProperty(window.navigator, name, descriptor);
+    else Reflect.deleteProperty(window.navigator, name);
+  }
 };
 
 /** `beforeinstallprompt` — `outcome` brauzer oynasidagi javob. */

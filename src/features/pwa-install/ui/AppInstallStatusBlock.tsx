@@ -1,5 +1,5 @@
 // dizayn-v2: common-settings-notifications-pwa
-import { useId } from "react";
+import { useEffect, useId, useRef } from "react";
 import { Download, SquarePlus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Badge, Button } from "../../../shared/ui/primitives";
@@ -29,12 +29,27 @@ export const AppInstallStatusBlock = () => {
   const titleId = useId();
   const { status, busy, install, iosOpen, openIos, closeIos } = useAppInstall();
   const badge = BADGE[status];
+  const blockRef = useRef<HTMLDivElement>(null);
+  const prevStatus = useRef(status);
+
+  // «O'rnatish» / «Qanday qo'shiladi» holat o'zgarishi bilan yo'qoladi (masalan, o'rnatildi) — fokus `<body>` ga
+  // tushib qolmasin: tugma fokusda bo'lgan bo'lsa, fokus shu blokka (yangi holat matni) o'tadi.
+  useEffect(() => {
+    const hadAction = prevStatus.current === "installable" || prevStatus.current === "ios";
+    const hasAction = status === "installable" || status === "ios";
+    prevStatus.current = status;
+    if (!hadAction || hasAction) return;
+    const active = document.activeElement;
+    if (active == null || active === document.body) blockRef.current?.focus();
+  }, [status]);
 
   return (
     <div
+      ref={blockRef}
+      tabIndex={-1}
       data-testid="pwa-install-status"
       data-status={status}
-      className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl bg-sunken p-4"
+      className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl bg-sunken p-4 outline-none"
     >
       <AppMark size="md" />
       <span className="flex min-w-0 flex-[1_1_200px] flex-col gap-1">
@@ -55,7 +70,7 @@ export const AppInstallStatusBlock = () => {
           loading={busy}
           aria-describedby={titleId}
           onClick={() => void install()}
-          className="shrink-0 max-md:w-full"
+          className="shrink-0"
         >
           {t("install")}
         </Button>
@@ -66,7 +81,7 @@ export const AppInstallStatusBlock = () => {
           leftIcon={SquarePlus}
           aria-haspopup="dialog"
           onClick={openIos}
-          className="shrink-0 max-md:w-full"
+          className="shrink-0"
         >
           {t("howTo")}
         </Button>

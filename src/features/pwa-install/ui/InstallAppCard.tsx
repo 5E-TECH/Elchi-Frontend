@@ -2,8 +2,10 @@
 import { useId, useState } from "react";
 import { Download, SquarePlus, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { cx } from "../../../shared/lib/cx";
 import { Button, Card, IconButton } from "../../../shared/ui/primitives";
 import { readDashboardDismissed, writeDashboardDismissed } from "../lib/dismissal";
+import { focusPageHeading } from "../lib/focus";
 import { useAppInstall } from "../model/useAppInstall";
 import { AppMark } from "./AppMark";
 import { IosInstallDialog } from "./IosInstallDialog";
@@ -34,6 +36,12 @@ export const InstallAppCard = ({ placement }: { placement: InstallAppCardPlaceme
   const dismiss = () => {
     writeDashboardDismissed();
     setDismissed(true);
+    // Karta (va fokusdagi X) yo'qoladi — fokus sahifa sarlavhasiga.
+    focusPageHeading();
+  };
+  const onInstall = async () => {
+    // Qabul qilinsa holat `installed` — karta yo'qoladi, fokus sarlavhaga o'tadi.
+    if ((await install()) === "accepted") focusPageHeading();
   };
 
   return (
@@ -60,14 +68,22 @@ export const InstallAppCard = ({ placement }: { placement: InstallAppCardPlaceme
             </>
           )}
         </div>
-        <div className="ml-auto flex flex-[0_1_auto] items-center gap-2 max-md:w-full max-md:flex-[1_1_auto]">
+        {/* Telefonda tugma kenglikni faqat bosh sahifa kartasida egallaydi (yonida X — maket
+            `courier-dashboard-pwa-install`); `/inbox` da — o'z kengligida, o'ngda (`courier-inbox-pwa-*`). */}
+        <div
+          data-testid="pwa-install-card-actions"
+          className={cx(
+            "ml-auto flex flex-[0_1_auto] items-center gap-2",
+            dismissible && "max-md:w-full max-md:flex-[1_1_auto]",
+          )}
+        >
           {isIos ? (
             <Button
               variant="secondary"
               leftIcon={SquarePlus}
               aria-haspopup="dialog"
               onClick={openIos}
-              className="max-md:flex-1"
+              className={dismissible ? "max-md:flex-1" : undefined}
             >
               {t("howTo")}
             </Button>
@@ -76,8 +92,8 @@ export const InstallAppCard = ({ placement }: { placement: InstallAppCardPlaceme
               variant="secondary"
               leftIcon={Download}
               loading={busy}
-              onClick={() => void install()}
-              className="max-md:flex-1"
+              onClick={() => void onInstall()}
+              className={dismissible ? "max-md:flex-1" : undefined}
             >
               {t("install")}
             </Button>

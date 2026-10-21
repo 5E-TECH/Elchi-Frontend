@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { renderWithProviders } from "../../../test/test-utils";
@@ -49,5 +49,21 @@ describe("AppInstallStatusBlock", () => {
       "Qo'llab-quvvatlanmaydiBu brauzerda o'rnatib bo'lmaydi — Chrome, Edge yoki Safari'da oching",
     );
     expect(within(block()).queryByRole("button")).not.toBeInTheDocument();
+  });
+
+  it("telefonda ham tugma o'z kengligida (maketda `flex: none`, butun kenglikka cho'zilmaydi)", () => {
+    fireBeforeInstallPrompt();
+    renderWithProviders(<AppInstallStatusBlock />);
+    const install = within(block()).getByRole("button", { name: "O'rnatish" });
+    expect(install).toHaveClass("shrink-0");
+    expect(install.className).not.toContain("w-full");
+  });
+
+  it("o'rnatildi — tugma yo'qoladi, fokus `<body>` ga emas, holat blokiga o'tadi", async () => {
+    fireBeforeInstallPrompt("accepted");
+    renderWithProviders(<AppInstallStatusBlock />);
+    await userEvent.click(within(block()).getByRole("button", { name: "O'rnatish" }));
+    await waitFor(() => expect(block()).toHaveAttribute("data-status", "installed"));
+    expect(block()).toHaveFocus();
   });
 });
