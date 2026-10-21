@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-payments-cash-detail-courier, superadmin-payments-cash-detail-market, superadmin-payments-cash-detail-branch, admin-payments-cash-detail-courier, admin-payments-cash-detail-market, admin-payments-cash-detail-branch, manager-payments-cash-detail-courier, manager-payments-cash-detail-branch
+// dizayn-v2: superadmin-payments-cash-detail-courier, superadmin-payments-cash-detail-market, superadmin-payments-cash-detail-branch, admin-payments-cash-detail-courier, admin-payments-cash-detail-market, admin-payments-cash-detail-branch, manager-payments-cash-detail-courier, manager-payments-cash-detail-branch, manager-payments-cash-detail-courier-shift-closed, manager-payments-cash-detail-branch-shift-closed
 import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useLocation, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -48,6 +48,9 @@ import CashboxActionFormCard, {
   type CashboxActionFormValues,
 } from "./CashboxActionFormCard";
 import PaymentHistoryList, { historyRowView } from "./PaymentHistoryList";
+import OpenShiftFlow from "./OpenShiftFlow";
+import ShiftLockedCard from "./ShiftLockedCard";
+import { useCashboxShift } from "./lib/useCashboxShift";
 import type { RootState } from "../../../app/config/store";
 import { api, LONG_REQUEST_TIMEOUT_MS } from "../../../shared/api/api";
 import { API_ENDPOINTS } from "../../../shared/api";
@@ -391,6 +394,17 @@ const CashDetail = () => {
   const currentProfile = useSelector((store: RootState) => store.user.user);
   const isCurrentManagerRole = String(currentRole).toLowerCase() === "manager";
   const ownBranchName = readProfileBranchName(currentProfile);
+  /**
+   * SMENA QULFI (CB-2, ega javobi CB-S4 — hamma kassada majburiy). `useCashboxShift` — joriy foydalanuvchi
+   * kassasi: menejer — o'z filiali kassasi (kuryerdan qabul ham, HQ'ga o'tkazish ham shu kassada), superadmin/admin
+   * — asosiy kassa (kuryerdan / filialdan qabul va marketga to'lov shu kassa orqali). Smena yo'q (`closed`) —
+   * forma o'rnida `ShiftLockedCard` (maket `manager-payments-cash-detail-{courier,branch}-shift-closed`;
+   * superadmin/admin uchun maket yo'q — eng yaqini shu). Holat noma'lum yoki yuklanmoqda — forma (backend darvozasi
+   * baribir tekshiradi). Tarix va balans o'zgarmaydi. HQ filialdan qabulidagi «Filial smenasi ochilmagan» va
+   * menejerning «HQ smenasi» holati — Taklif · backend kerak (CB-4, CB-5).
+   */
+  const shiftState = useCashboxShift();
+  const [isOpenShiftOpen, setIsOpenShiftOpen] = useState(false);
 
   const isBranchDetailRequest = requestedType === "branch";
   const isMarketDetailRequest = requestedType === "market";
@@ -1277,7 +1291,7 @@ const CashDetail = () => {
           message: t("amountExceedsBalance", {
             amount: formatMoneyLocalized(courierReceiveLimit, { withCurrency: false }),
           }),
-        });
+        }, { shouldFocus: true });
         return;
       }
     }
@@ -1417,6 +1431,17 @@ const CashDetail = () => {
     </Card>
   );
 
+  const shiftLockedDescription =
+    type === "courier"
+      ? isCurrentManagerRole
+        ? t("cashDetail.shift.banner.courierBranch")
+        : t("cashDetail.shift.banner.courierMain")
+      : type === "market"
+        ? t("cashDetail.shift.banner.market")
+        : isManagerBranchView
+          ? t("cashDetail.shift.banner.hqTransfer")
+          : t("cashDetail.shift.banner.branchReceive");
+
   const actionCard = isTypeUnknown ? (
     <Card>
       <PageAlert tone="warning">{t("cashDetailTypeUnknown")}</PageAlert>
@@ -1425,6 +1450,12 @@ const CashDetail = () => {
     <Card title={formTitle} description={formSubtitle}>
       <PageAlert tone="warning">{courierReceiveBlockedMessage}</PageAlert>
     </Card>
+  ) : shiftState.status === "closed" ? (
+    <ShiftLockedCard
+      title={formTitle}
+      description={shiftLockedDescription}
+      onOpenShift={() => setIsOpenShiftOpen(true)}
+    />
   ) : (
     <CashboxActionFormCard
       type={type}
@@ -1543,6 +1574,12 @@ const CashDetail = () => {
         </div>
         {historyCard}
       </div>
+      <OpenShiftFlow
+        open={isOpenShiftOpen}
+        onClose={() => setIsOpenShiftOpen(false)}
+        openerName={shiftState.currentUserName}
+        onRefetchShift={shiftState.refetch}
+      />
     </div>
   );
 };

@@ -1,7 +1,7 @@
-// dizayn-v2: superadmin-payments-overview, admin-payments-overview, manager-payments-overview
+// dizayn-v2: superadmin-payments-overview, admin-payments-overview, manager-payments-overview, manager-payments-overview-shift-closed
 import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSelector } from "react-redux";
-import { ArrowDownLeft, ArrowUpRight, CreditCard, ListFilter, User, Wallet, X } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, CreditCard, ListFilter, Timer, User, Wallet, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useCashBox } from "../../entities/payments";
@@ -32,6 +32,9 @@ import SettlementPickerDialog, {
   type SettlementPickerTarget,
 } from "./components/SettlementPickerDialog";
 import { useReceiveOptions } from "./components/lib/receiveOptions";
+import { useCashboxShift } from "./components/lib/useCashboxShift";
+import OpenShiftFlow from "./components/OpenShiftFlow";
+import ShiftBanner from "./components/ShiftBanner";
 import { getCashboxTypeLabel, getPaymentSourceTitle } from "./components/paymentSourceType";
 
 const DEFAULT_PAYMENTS_LIMIT = 10;
@@ -287,6 +290,12 @@ const PaymentsFiltersSheet = ({ open, onClose, initial, fields, onApply }: Filte
  *    «Filtrlar» varaqasi va faol filtr chiplari. Har filtr 1-sahifa bilan BITTA URL yangilanishida yoziladi.
  *    Tab sonlari chizilmaydi (API faqat joriy so'rov jamini beradi).
  * Maketdagi «Pul oqimi», «Kassa holati», «Kassa oqimi» (Taklif) — chizilmaydi.
+ *
+ * Smena (CB-2, ega javobi CB-S4 — hamma kassada majburiy; maket `manager-payments-overview-shift-closed`): menejer
+ * filial kassasida smena yo'q (`useCashboxShift` → `closed`) — sarlavha izohi «… · smena yopiq», «HQ'ga
+ * o'tkazish» va «Kuryerdan qabul qilish» o'rnida bitta asosiy «Smenani ochish» (ayni ochish oynasi) va «Smena
+ * boshlanmagan» banneri; KPI, kuryerlar va tarix o'zgarmaydi. Holat noma'lum (yuklanmoqda / 403) — avvalgi tugmalar
+ * (backend darvozasi baribir tekshiradi). Superadmin/admin sarlavhasi o'zgarmagan (maketda smena holati yo'q).
  */
 const Payments = () => {
   const { t, i18n } = useTranslation(["payments", "ui"]);
@@ -372,6 +381,11 @@ const Payments = () => {
   // Menejer: o'z kuryerlari sahifa ochilganda («Qabul qilinishi kerak» kartasi va «Kuryerlardagi pul»).
   // Superadmin/admin uchun ro'yxatlar faqat oyna ochilganda yuklanadi.
   const managerCouriers = useReceiveOptions({ isManagerRole: true, enabled: isManagerRole });
+
+  // ── Smena (faqat menejer — filial kassasi) ───────────────────────────────────
+  const shiftState = useCashboxShift({ enabled: isManagerRole });
+  const isShiftLocked = isManagerRole && shiftState.status === "closed";
+  const [isOpenShiftOpen, setIsOpenShiftOpen] = useState(false);
 
   // API response formatlari:
   // 1) oddiy: { data: { mainCashboxTotal, courierCashboxTotal, marketCashboxTotal } }
@@ -714,7 +728,11 @@ const Payments = () => {
     </div>
   );
 
-  const headerActions = isManagerRole ? (
+  const headerActions = isShiftLocked ? (
+    <Button leftIcon={Timer} aria-haspopup="dialog" onClick={() => setIsOpenShiftOpen(true)}>
+      {t("v2MainCashbox.openShift")}
+    </Button>
+  ) : isManagerRole ? (
     <>
       {branchToMainOption ? (
         <Button variant="secondary" leftIcon={ArrowUpRight} onClick={openBranchToMain}>
@@ -738,7 +756,13 @@ const Payments = () => {
 
   return (
     <div className="flex min-w-0 flex-col gap-6 max-md:gap-4">
-      <PageHeader title={t("title")} description={t("pageDescription")} actions={headerActions} />
+      <PageHeader
+        title={t("title")}
+        description={isShiftLocked ? t("cashDetail.shift.overviewSubtitle") : t("pageDescription")}
+        actions={headerActions}
+      />
+
+      {isShiftLocked ? <ShiftBanner description={t("cashDetail.shift.overviewBanner")} /> : null}
 
       <PaymentSummaryCards
         isManagerRole={isManagerRole}
@@ -808,6 +832,15 @@ const Payments = () => {
         total={pickerKind === "give" ? undefined : courierCashboxTotal}
         branchName={ownBranchName}
       />
+
+      {isManagerRole ? (
+        <OpenShiftFlow
+          open={isOpenShiftOpen}
+          onClose={() => setIsOpenShiftOpen(false)}
+          openerName={shiftState.currentUserName}
+          onRefetchShift={shiftState.refetch}
+        />
+      ) : null}
     </div>
   );
 };

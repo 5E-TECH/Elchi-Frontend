@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **98** · qisman: **129** · v2 ga ko'chirilgan route: **77 / 77**
+**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **95** · qisman: **129** · v2 ga ko'chirilgan route: **77 / 77**
 
 ## Qanday ishlatiladi
 
@@ -987,7 +987,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/payments` | admin | `admin-payments-to-receive-dialog` — Qabul qilinishi kerak — tanlash<br>↳ `src/pages/payments/components/SettlementPickerDialog.tsx` | [design/fragments/admin--payments-to-receive-dialog.html](fragments/admin--payments-to-receive-dialog.html) | oyna | v2 |
 | `/payments` | admin | `admin-payments-history-detail-dialog` — To'lov tarixi tafsiloti<br>↳ `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | [design/fragments/admin--payments-history-detail-dialog.html](fragments/admin--payments-history-detail-dialog.html) | oyna | v2 |
 | `/payments` | manager | `manager-payments-overview` — To'lovlar — umumiy | [design/fragments/manager--payments-overview.html](fragments/manager--payments-overview.html) | sahifa | v2 |
-| `/payments` | manager | `manager-payments-overview-shift-closed` — To'lovlar — smena yopiq | [design/fragments/manager--payments-overview-shift-closed.html](fragments/manager--payments-overview-shift-closed.html) | sahifa | yangi (kodda yo'q) |
+| `/payments` | manager | `manager-payments-overview-shift-closed` — To'lovlar — smena yopiq<br>↳ `src/pages/payments/index.tsx`, `src/pages/payments/components/ShiftBanner.tsx`, `src/pages/payments/components/OpenShiftFlow.tsx` | [design/fragments/manager--payments-overview-shift-closed.html](fragments/manager--payments-overview-shift-closed.html) | sahifa | v2 |
 | `/payments` | manager | `manager-payments-courier-select-dialog` — Qabul qilish — kuryer tanlash<br>↳ `src/pages/payments/components/SettlementPickerDialog.tsx` | [design/fragments/manager--payments-courier-select-dialog.html](fragments/manager--payments-courier-select-dialog.html) | oyna | v2 |
 | `/payments` | manager | `manager-payments-history-detail-dialog` — Tranzaksiya tafsiloti<br>↳ `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | [design/fragments/manager--payments-history-detail-dialog.html](fragments/manager--payments-history-detail-dialog.html) | oyna | v2 |
 | `/payments` | market_operator | — Yo'q — market_operator'da kassa va to'lovlar bo'limi yo'q (menyuda emas, finance ruxsati yo'q); o'z hisobi — «Daromadim» ((taklif) /my-earnings). | — | — | v2 |
@@ -1045,8 +1045,8 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-branch` — Kassa tafsiloti — HQ'ga o'tkazish | [design/fragments/manager--payments-cash-detail-branch.html](fragments/manager--payments-cash-detail-branch.html) | sahifa | v2 |
 | `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-courier-ack` — Kassa tafsiloti — kuryerdan qabul · kvitansiya javobi<br>↳ `src/pages/payments/components/cashDetail.tsx`, `src/pages/payments/components/PaymentHistoryList.tsx`, `src/pages/payments/components/PaymentAckBadge.tsx` | [design/fragments/manager--payments-cash-detail-courier-ack.html](fragments/manager--payments-cash-detail-courier-ack.html) | sahifa | v2 |
 | `/payments/cash-detail/:id` | manager | `manager-payments-history-detail-dialog-ack` — Tranzaksiya tafsiloti — kvitansiya javobi «Kuryer: noto'g'ri»<br>↳ `src/pages/payments/components/FinanceHistoryDetailPopup.tsx`, `src/pages/payments/components/PaymentAckBadge.tsx` | [design/fragments/manager--payments-history-detail-dialog-ack.html](fragments/manager--payments-history-detail-dialog-ack.html) | oyna | v2 |
-| `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-branch-shift-closed` — Kassa tafsiloti — HQ'ga o'tkazish · smena yopiq | [design/fragments/manager--payments-cash-detail-branch-shift-closed.html](fragments/manager--payments-cash-detail-branch-shift-closed.html) | sahifa | yangi (kodda yo'q) |
-| `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-courier-shift-closed` — Kassa tafsiloti — kuryerdan qabul · smena yopiq | [design/fragments/manager--payments-cash-detail-courier-shift-closed.html](fragments/manager--payments-cash-detail-courier-shift-closed.html) | sahifa | yangi (kodda yo'q) |
+| `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-branch-shift-closed` — Kassa tafsiloti — HQ'ga o'tkazish · smena yopiq<br>↳ `src/pages/payments/components/cashDetail.tsx`, `src/pages/payments/components/ShiftLockedCard.tsx`, `src/pages/payments/components/OpenShiftFlow.tsx` | [design/fragments/manager--payments-cash-detail-branch-shift-closed.html](fragments/manager--payments-cash-detail-branch-shift-closed.html) | sahifa | v2 |
+| `/payments/cash-detail/:id` | manager | `manager-payments-cash-detail-courier-shift-closed` — Kassa tafsiloti — kuryerdan qabul · smena yopiq<br>↳ `src/pages/payments/components/cashDetail.tsx`, `src/pages/payments/components/ShiftLockedCard.tsx`, `src/pages/payments/components/OpenShiftFlow.tsx` | [design/fragments/manager--payments-cash-detail-courier-shift-closed.html](fragments/manager--payments-cash-detail-courier-shift-closed.html) | sahifa | v2 |
 
 #### `/cash-box` — O'z kassam — market va kuryer (Barcha tarix · Oldi-berdi)
 
@@ -2295,7 +2295,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### manager — Menejer
 
-86 ta maket · kodda bor: 78 · kodda yo'q: 8
+86 ta maket · kodda bor: 81 · kodda yo'q: 5
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2355,7 +2355,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-returns-list` | Return batchlar | sahifa | `/returns` | `src/pages/returns/index.tsx` | v2 |
 | `manager-returns-batch-detail` | Qaytarish paketi tafsiloti | sahifa | `/batches/:id` | `src/pages/batches/ui/BatchDetailPage.tsx` | v2 |
 | `manager-payments-overview` | To'lovlar — umumiy | sahifa | `/payments` | `src/pages/payments/index.tsx` | v2 |
-| `manager-payments-overview-shift-closed` | To'lovlar — smena yopiq | sahifa | `/payments` | `src/pages/payments/index.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
+| `manager-payments-overview-shift-closed` | To'lovlar — smena yopiq | sahifa | `/payments` | `src/pages/payments/index.tsx`, `src/pages/payments/components/ShiftBanner.tsx`, `src/pages/payments/components/OpenShiftFlow.tsx` | v2 |
 | `manager-payments-courier-select-dialog` | Qabul qilish — kuryer tanlash | oyna | `/payments` | `src/pages/payments/components/SettlementPickerDialog.tsx` | v2 |
 | `manager-payments-main-cashbox` | Asosiy kassa (filial) | sahifa | `/payments/main-cashbox` | `src/pages/payments/components/mainCashbox.tsx` | v2 |
 | `manager-payments-cashbox-form-dialog` | Kassadan xarajat / to'ldirish oynasi | oyna | `/payments/main-cashbox` | `src/pages/payments/components/CashboxFormPopup.tsx` | v2 |
@@ -2364,10 +2364,10 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `manager-payments-main-cashbox-shift-open-dialog` | Smenani ochish oynasi | oyna | `/payments/main-cashbox` | `src/pages/payments/components/OpenShiftDialog.tsx` | qisman — Kodda bor (CB-1, OpenShiftDialog): ochadigan xodim, «Boshlanish: hozir», ochilish qoldig'i (jonli balans), izoh. «Oxirgi smena … bilan yopilgan» ogohlantirishi chizilmagan — Taklif · backend kerak (`last_closed`, BD2-8 → CB-3). |
 | `manager-payments-main-cashbox-shift-result-dialog` | Smena yopildi — natija oynasi | oyna | `/payments/main-cashbox` | `src/pages/payments/components/ShiftResultDialog.tsx` | v2 |
 | `manager-payments-cash-detail-branch` | Kassa tafsiloti — HQ'ga o'tkazish | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
-| `manager-payments-cash-detail-branch-shift-closed` | Kassa tafsiloti — HQ'ga o'tkazish · smena yopiq | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
+| `manager-payments-cash-detail-branch-shift-closed` | Kassa tafsiloti — HQ'ga o'tkazish · smena yopiq | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx`, `src/pages/payments/components/ShiftLockedCard.tsx`, `src/pages/payments/components/OpenShiftFlow.tsx` | v2 |
 | `manager-payments-cash-detail-courier` | Kassa tafsiloti — kuryerdan qabul | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | v2 |
 | `manager-payments-cash-detail-courier-ack` | Kassa tafsiloti — kuryerdan qabul · kvitansiya javobi | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx`, `src/pages/payments/components/PaymentHistoryList.tsx`, `src/pages/payments/components/PaymentAckBadge.tsx` | v2 |
-| `manager-payments-cash-detail-courier-shift-closed` | Kassa tafsiloti — kuryerdan qabul · smena yopiq | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx` | yangi (kodda yo'q) — Taklif (cashbox-shift, ega S1..S5) — kodda yo'q: smena ochilmaguncha kirim/chiqim qulf (hamma kassada, FINANCE_REQUIRE_OPEN_SHIFT=all), ochish / natija oynalari. |
+| `manager-payments-cash-detail-courier-shift-closed` | Kassa tafsiloti — kuryerdan qabul · smena yopiq | sahifa | `/payments/cash-detail/:id` | `src/pages/payments/components/cashDetail.tsx`, `src/pages/payments/components/ShiftLockedCard.tsx`, `src/pages/payments/components/OpenShiftFlow.tsx` | v2 |
 | `manager-payments-history-detail-dialog` | Tranzaksiya tafsiloti | oyna | `/payments` | `src/pages/payments/components/FinanceHistoryDetailPopup.tsx` | v2 |
 | `manager-payments-history-detail-dialog-ack` | Tranzaksiya tafsiloti — kvitansiya javobi «Kuryer: noto'g'ri» | oyna | `/payments/cash-detail/:id` | `src/pages/payments/components/FinanceHistoryDetailPopup.tsx`, `src/pages/payments/components/PaymentAckBadge.tsx` | v2 |
 | `manager-products-list` | Mahsulotlar ro'yxati | sahifa | `/products` | `src/pages/products/list/index.tsx` | v2 |
@@ -2943,12 +2943,14 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/payments/components/MainCashboxBalanceChart.tsx` | `/payments/main-cashbox` |
 | `src/pages/payments/components/MyCashboxPage.tsx` | `/cash-box` |
 | `src/pages/payments/components/OpenShiftDialog.tsx` | `/payments/main-cashbox` |
+| `src/pages/payments/components/OpenShiftFlow.tsx` | `/payments/cash-detail/:id`, `/payments` |
 | `src/pages/payments/components/PaymentAckBadge.tsx` | `/payments/cash-detail/:id`, `/cash-box` |
 | `src/pages/payments/components/PaymentHistoryList.tsx` | `/payments/cash-detail/:id` |
 | `src/pages/payments/components/PaymentSummaryCards.tsx` | `/payments` |
 | `src/pages/payments/components/SalaryPaymentPopup.tsx` | `/payments/main-cashbox` |
 | `src/pages/payments/components/SettlementPickerDialog.tsx` | `/payments`, `/payments/main-cashbox` |
-| `src/pages/payments/components/ShiftBanner.tsx` | `/payments/main-cashbox` |
+| `src/pages/payments/components/ShiftBanner.tsx` | `/payments/main-cashbox`, `/payments` |
+| `src/pages/payments/components/ShiftLockedCard.tsx` | `/payments/cash-detail/:id` |
 | `src/pages/payments/components/ShiftResultDialog.tsx` | `/payments/main-cashbox` |
 | `src/pages/payments/components/cashDetail.tsx` | `/payments/cash-detail/:id` |
 | `src/pages/payments/components/lib/exportMainCashboxReport.ts` | `/payments/main-cashbox` |

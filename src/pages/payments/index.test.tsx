@@ -41,6 +41,8 @@ const pageState = vi.hoisted(() => ({
   mainCashbox: undefined as unknown,
   mainCashboxParams: [] as unknown[],
 }));
+/** CB-2: `POST finance/shift/open` (menejer «To'lovlar» — smena yopiq). */
+const openShiftMutation = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 
 vi.mock("../../entities/payments", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../entities/payments")>()),
@@ -56,10 +58,13 @@ vi.mock("../../entities/payments", async (importOriginal) => ({
       if (enabled) pageState.shiftRequests += 1;
       return enabled ? pageState.currentShift : { isSuccess: false, data: undefined };
     },
-    useGetCashBoxMain: (params: unknown) => {
+    // `enabled` (CB-2) — smena ochish oynasi qoldiqni faqat ochiq bo'lganda so'raydi; sukut — so'raladi.
+    useGetCashBoxMain: (params: unknown, enabled: boolean = true) => {
+      if (!enabled) return { data: undefined, isLoading: false, isSuccess: false };
       pageState.mainCashboxParams.push(params);
-      return { data: pageState.mainCashbox, isLoading: false };
+      return { data: pageState.mainCashbox, isLoading: false, isSuccess: pageState.mainCashbox !== undefined };
     },
+    openShift: openShiftMutation,
   }),
 }));
 
@@ -80,6 +85,7 @@ vi.mock("../../entities/user/api/userApi", () => ({
       data: enabled ? pageState.managers : undefined,
       isLoading: false,
     }),
+    useGetUserById: () => ({ data: undefined }),
     useGetCouriers: (params: unknown, enabled: boolean) => {
       if (enabled) pageState.courierParams.push(params);
       return { data: enabled ? pageState.couriers : undefined, isLoading: false };
@@ -379,7 +385,7 @@ describe("Payments — header and KPI cards", () => {
     expect(await screen.findByRole("dialog", { name: "Qabul qilinishi kerak" })).toBeInTheDocument();
   });
 
-  it("manager: full values, HQ share meta, «Yetarli» badge; no shift / main-cashbox split requests", () => {
+  it("manager: full values, HQ share meta, «Yetarli» badge; no main-cashbox split request (shift — CB-2 only)", () => {
     pageState.cashboxInfo = { data: { kassadagi_summa: 3_785_000, berilishi_kerak: 3_460_000, olinishi_kerak: 2_940_000 } };
     pageState.couriers = {
       data: {
@@ -406,7 +412,8 @@ describe("Payments — header and KPI cards", () => {
     expect(within(giveCard).getByText("Kassada qoladi: 325 000 so'm")).toBeInTheDocument();
     expect(within(giveCard).getByText("Yetarli")).toBeInTheDocument();
 
-    expect(pageState.shiftRequests).toBe(0);
+    // CB-2: menejer o'z filiali kassasi smenasini so'raydi (qulf uchun); KPI dagi asosiy kassa bo'linishi — yo'q.
+    expect(pageState.shiftRequests).toBeGreaterThan(0);
     expect(pageState.mainCashboxParams).toEqual([]);
   });
 
@@ -594,5 +601,101 @@ describe("Payments — 'Qabul qilinishi kerak'", () => {
 
     expect(screen.getByTestId("pathname")).toHaveTextContent("/payments/cash-detail/15");
     expect(screen.getByTestId("search")).toHaveTextContent("?type=branch");
+  });
+});
+
+/**
+ * CB-2 (kfdfYDik, ega javobi CB-S4): menejer «To'lovlar», filial kassasida smena yo'q — maket
+ * `manager-payments-overview-shift-closed`: izoh «… · smena yopiq», ikki amal o'rnida bitta «Smenani ochish»,
+ * «Smena boshlanmagan» banneri; KPI va tarix o'zgarmaydi.
+ */
+describe("Payments — menejer, smena yopiq (CB-2)", () => {
+  const open = (preloadedState: never) =>
+    renderWithProviders(
+      <>
+        <Payments />
+        <LocationProbe />
+      </>,
+      { route: "/payments", preloadedState },
+    );
+  const withBranch = () => {
+    // `branch_id` — «HQ'ga o'tkazish» tugmasi chiqishi uchun (smena ochiq bo'lsa).
+    pageState.cashboxInfo = { data: { kassadagi_summa: 3_785_000, berilishi_kerak: 3_460_000, branch_id: "15" } };
+  };
+
+  afterEach(() => {
+    openShiftMutation.mutateAsync.mockReset();
+  });
+
+  it("⭐ smena yo'q: «Smenani ochish» bitta asosiy amal, banner, sarlavha izohi; KPI va tarix qoladi", () => {
+    withBranch();
+    pageState.currentShift = { isSuccess: true, data: { data: { shift: null, required: true } } };
+    open(manager);
+
+    expect(screen.getByText("Kassa va to'lovlarni boshqarish · smena yopiq")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Smenani ochish" })).toHaveAttribute("aria-haspopup", "dialog");
+    expect(screen.queryByRole("button", { name: "HQ'ga o'tkazish" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Kuryerdan qabul qilish" })).not.toBeInTheDocument();
+    const banner = screen.getByTestId("shift-banner");
+    expect(banner).toHaveTextContent("Smena boshlanmagan");
+    expect(banner).toHaveTextContent(
+      "Kuryerdan qabul qilish, HQ'ga o'tkazish, xarajat va kassani to'ldirish filial kassasida smena ochilgandan keyin ishlaydi. Balans va operatsiyalar tarixi ko'rinib turadi.",
+    );
+    expect(screen.getByRole("link", { name: /Kassadagi summa/ })).toBeInTheDocument();
+    expect(screen.getByTestId("payment-history-table")).toBeInTheDocument();
+    // Qoldiq faqat oyna ochilganda so'raladi.
+    expect(pageState.mainCashboxParams).toEqual([]);
+  });
+
+  it("⭐ «Smenani ochish» → oyna (filial kassasi, jonli qoldiq) → POST → «Smena ochildi»", async () => {
+    pageState.currentShift = { isSuccess: true, data: { data: { shift: null, required: true } } };
+    pageState.mainCashbox = { data: { cashbox: { balance_cash: 2_000_000, balance_card: 500_000 } } };
+    openShiftMutation.mutateAsync.mockResolvedValue({ data: { id: "9", status: "open" } });
+    const user = userEvent.setup();
+    open(manager);
+
+    await user.click(screen.getByRole("button", { name: "Smenani ochish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Smenani ochish" });
+    expect(dialog).toHaveTextContent("Filial kassasi · yangi smena boshlanadi");
+    expect(dialog).toHaveTextContent(/2\D000\D000/);
+    expect(dialog).toHaveTextContent(/2\D500\D000/);
+    expect(pageState.mainCashboxParams).toEqual([undefined]);
+
+    await user.click(within(dialog).getByRole("button", { name: "Smenani ochish" }));
+    expect(openShiftMutation.mutateAsync).toHaveBeenCalledWith({ comment: undefined });
+    expect(await screen.findByText("Smena ochildi")).toBeInTheDocument();
+  });
+
+  it("smena ochiq: avvalgi amallar, banner yo'q", () => {
+    withBranch();
+    pageState.currentShift = {
+      isSuccess: true,
+      data: { data: { shift: { id: "5", status: "open", opened_by: "198" }, required: true } },
+    };
+    open(manager);
+
+    expect(screen.getByRole("button", { name: "HQ'ga o'tkazish" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Kuryerdan qabul qilish" })).toBeInTheDocument();
+    expect(screen.queryByTestId("shift-banner")).not.toBeInTheDocument();
+    expect(screen.getByText("Kassa va to'lovlarni boshqarish")).toBeInTheDocument();
+  });
+
+  it("holat noma'lum (403 / yuklanmoqda): avvalgi amallar, qulf taxmin qilinmaydi", () => {
+    withBranch();
+    pageState.currentShift = { isSuccess: false, data: undefined };
+    open(manager);
+
+    expect(screen.getByRole("button", { name: "Kuryerdan qabul qilish" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Smenani ochish" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("shift-banner")).not.toBeInTheDocument();
+  });
+
+  it("superadmin: sarlavha o'zgarmaydi (maketda smena holati yo'q) — «Marketga to'lov» / «Pul qabul qilish»", () => {
+    pageState.currentShift = { isSuccess: true, data: { data: { shift: null, required: true } } };
+    open(superadmin);
+
+    expect(screen.getByRole("button", { name: "Pul qabul qilish" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Smenani ochish" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("shift-banner")).not.toBeInTheDocument();
   });
 });
