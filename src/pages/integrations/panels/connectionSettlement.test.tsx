@@ -88,7 +88,10 @@ beforeEach(() => {
     Promise.resolve(
       String(url).includes("receivable-balance")
         ? { data: { statusCode: 200, data: balance } }
-        : {
+        : String(url).endsWith("/remittances")
+          ? // «Olingan to'lovlar» (IS-3) — alohida test fayli (`remittances.test.tsx`); bu yerda bo'sh.
+            { data: { statusCode: 200, data: { items: [], pagination: { total: 0, page: 1, limit: 10 } } } }
+          : {
             data: {
               statusCode: 200,
               data: { items: receivables, pagination: { total: receivables.length, page: 1, limit: 20 } },
@@ -464,8 +467,10 @@ describe("ConnectionSettlement — «Qarz yozuvlari» da «To'lov» ustuni (IS-2
         : new Promise(() => {}),
     );
     const { container } = renderWithProviders(<ConnectionSettlement connection={carrier} />);
-    await waitFor(() => expect(container.querySelector('[data-skeleton-preset="table"]')).not.toBeNull());
-    const skeleton = container.querySelector('[data-skeleton-preset="table"]') as HTMLElement;
+    // «Olingan to'lovlar» (IS-3) skeleti ham bor — «Qarz yozuvlari» niki oxirgisi.
+    const debtsSkeleton = () => Array.from(container.querySelectorAll<HTMLElement>('[data-skeleton-preset="table"]')).at(-1);
+    await waitFor(() => expect(debtsSkeleton()).toBeTruthy());
+    const skeleton = debtsSkeleton()!;
     const headers = ["Buyurtma", "Tashqi raqam", "Summa", "Holat", "To'lov", "Yopilgan"];
     for (const header of headers) expect(within(skeleton).getByText(header)).toBeInTheDocument();
   });

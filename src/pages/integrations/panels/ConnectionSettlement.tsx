@@ -46,14 +46,17 @@ import { FilterChips, InlineAlert, PanelSection, SectionHead } from "../ui";
 import type { Connection } from "../useConnections";
 import { BALANCE_LIST_CLASS, BalanceRow } from "./settlement/BalanceRow";
 import PayResultDialog, { type PayResultContext } from "./settlement/PayResultDialog";
+import RemittancesSection from "./settlement/RemittancesSection";
+import { focusRemittancesSection } from "./settlement/remittancesAnchor";
 
 /**
  * HISOB-KITOB — tashuvchi yig'gan pul va bizga qarzi (maket `*-panel-settlement`).
  *
  *   «To'lov asosiy kassaga o'zi yoziladi» → «Qoldiq» (to'lanishi kerak, yopilmagan qarz, hamkor avansi, formula
- *   + «To'lov olindi») → «Qarz yozuvlari» (chiplar + jadval «… · To'lov №N · …» + «Shu sahifada …» + sahifalash).
- *   Hali kodda yo'q: «Olingan to'lovlar» va bekor qilish (IS-3; shungacha «To'lov №N» havola emas, oddiy matn).
- *   «Kim kiritdi» ismi va «Qarz harakati» grafigi — Taklif, chizilmaydi.
+ *   + «To'lov olindi») → «Olingan to'lovlar» (IS-3: sana + chiplar, jadval, «Bekor qilish» oynasi —
+ *   `settlement/RemittancesSection`) → «Qarz yozuvlari» (chiplar + jadval «… · To'lov №N · …» + «Shu sahifada …» +
+ *   sahifalash; «To'lov №N» — «Olingan to'lovlar» ga o'tish).
+ *   «Kim kiritdi / bekor qildi» ismi va «Qarz harakati» grafigi — Taklif, chizilmaydi.
  *
  * ⚠️ «To'lov olindi» summasi ASOSIY KASSAGA O'ZI YOZILADI (backend N3yNa6rO). Ekran buni aytadi — aks holda
  * operator pulni kassaga qo'lda qayta kiritib, ikki marta yozadi.
@@ -136,7 +139,7 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
     return <StatusBadge tone={tag?.tone ?? "neutral"} label={tag ? t(tag.labelKey) : r.status} />;
   };
 
-  /** «To'lov №82» — qarzni yopgan to'lov (IS-3 «Olingan to'lovlar» kelguncha havola emas). */
+  /** «To'lov №82» — qarzni yopgan to'lov (jadvalda «Olingan to'lovlar» bo'limiga o'tadi, kartada — matn). */
   const remittanceLabel = (r: ReceivableRow) =>
     r.remittance_id ? t("settlementPay.remittanceNo", { id: r.remittance_id }) : null;
 
@@ -155,7 +158,13 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
       header: t("settlementPay.colRemittance"),
       cell: (r) => {
         const label = remittanceLabel(r);
-        return label ? <span className="whitespace-nowrap">{label}</span> : <span className="text-text-subtle">—</span>;
+        return label ? (
+          <Button variant="link" size="sm" className="-mx-1 whitespace-nowrap underline" onClick={focusRemittancesSection}>
+            {label}
+          </Button>
+        ) : (
+          <span className="text-text-subtle">—</span>
+        );
       },
     },
     {
@@ -198,6 +207,16 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
         </div>
       </PanelSection>
 
+      {/* ═══ OLINGAN TO'LOVLAR (IS-3) ═══ */}
+      <RemittancesSection
+        // Boshqa ulanish — filtr, sana, sahifa va oyna holati yangidan (A ning 3-sahifasi B ga o'tmasin).
+        key={connection.id}
+        integrationId={connection.id}
+        connectionName={connection.name}
+        // Qoldiq o'qilmagan bo'lsa — bekor qilish to'sig'i oldindan aytilmaydi (backend 409 zaxira).
+        advanceBalance={balance.data ? summary.advance : null}
+      />
+
       {/* ═══ QARZ YOZUVLARI ═══ */}
       <PanelSection aria-label={t("stlRows")} className="pb-4">
         <SectionHead title={t("stlRows")} icon={ReceiptText} />
@@ -218,7 +237,17 @@ const CarrierSettlement = ({ connection }: { connection: Connection }) => {
         />
       </PanelSection>
       <QueryBoundary
-        query={{ data: list.data ? rows : undefined, isLoading: list.isLoading, isError: list.isError, error: list.error, refetch: list.refetch }}
+        query={{
+          data: list.data ? rows : undefined,
+          isLoading: list.isLoading,
+          isPending: list.isPending,
+          isFetching: list.isFetching,
+          // Oflayn — «Internet aloqasi yo'q», yolg'on «qarz yo'q» emas.
+          isPaused: list.isPaused,
+          isError: list.isError,
+          error: list.error,
+          refetch: list.refetch,
+        }}
         loading={
           <SkeletonTable
             framed={false}

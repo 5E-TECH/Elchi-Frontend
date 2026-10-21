@@ -202,6 +202,15 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     invalidatsiyasi, o'lik settlement mutatsiyalari olindi, forma a11y, tungi kontrast e2e). Route 81 / 81.
     Integratsiyada: 6243 unit, 418 e2e.
   - **Navbatda — 4-to'lqin** (ishda): KM-2, MO-3, IS-3, CS-C, TOZ-1; keyin KM-3 (KM-2 dan keyin).
+  - **IS-3 (2026-10-21, `feat/is-3-settlement-received`):** integratsiya hisob-kitobida «Olingan to'lovlar» (sana
+    oralig'i, «Faol · Bekor qilingan · Barchasi», «Holat · kassa» `cashbox_posted` bo'yicha) va «To'lovni bekor qilish»
+    oynasi (oqibatlar, «Sabab *», eski yozuvda majburiy kassa tanlovi, «Hozir bekor qilib bo'lmaydi» oldindan + 409
+    zaxira, 502 — kassa xatosi; xom backend matni ko'rsatilmaydi); «To'lov №N» — bo'limga o'tish. Muallif ismi va eski
+    yozuvdagi kassa tanlovi — BD2-10 (IS-4) kutadi. O'lik `sidebar.settlement` kaliti olindi (N9jY9xVV).
+    Review: bo'lim ulanish bo'yicha `key` bilan (filtr/sahifa A dan B ga o'tmaydi), sahifa yangi javobdan keyingina oxirgi
+    haqiqiy sahifaga suriladi (LG-2), oflayn — «Internet aloqasi yo'q» (`isPaused`); «To'lov №N» faqat `<main>` ni suradi
+    (`scrollIntoView` qobiq ildizini 64 px surardi); summalar `nowrap`, 409 dan keyin fokus «Orqaga» da, ikonkalar
+    CircleX / RotateCcw, en matnlarida “”.
   - **NG-A (2026-10-21, `feat/ng-a-telegram-groups-admin`):** `/notifications` adminga ochildi (menyu «Tizim» →
     «Bildirishnomalar»), qator menyusi (popover / telefonda varaqa), nofaol qilish / faollashtirish tasdiq bilan
     (`features/notification-toggle`, faqat `PATCH {is_active}`), «Tahrirlash» va `features/notification-edit` olindi;
