@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-regions-districts-merge-dialog, superadmin-regions-districts-merge-target, superadmin-regions-districts-merge-progress, superadmin-regions-districts-merge-result, superadmin-regions-districts-merge-unknown, admin-regions-districts-merge-dialog, admin-regions-districts-merge-target, admin-regions-districts-merge-progress, admin-regions-districts-merge-result, admin-regions-districts-merge-unknown
+// dizayn-v2: superadmin-regions-districts-merge-dialog, superadmin-regions-districts-merge-target, superadmin-regions-districts-merge-progress, superadmin-regions-districts-merge-result, superadmin-regions-districts-merge-unknown, admin-regions-districts-merge-dialog, admin-regions-districts-merge-target, admin-regions-districts-merge-progress, admin-regions-districts-merge-result, admin-regions-districts-merge-unknown, superadmin-regions-sato-codes-merge-dialog
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowDown,
@@ -29,6 +29,7 @@ import {
   Spinner,
   TONE_SOFT,
   type DialogProps,
+  type SelectOption,
 } from "../../../shared/ui/primitives";
 import {
   formatElapsed,
@@ -43,17 +44,20 @@ export const DistrictSummary = ({
   label,
   title,
   subtitle,
+  icon: Icon = MapPin,
 }: {
   label?: ReactNode;
   title: ReactNode;
   subtitle: ReactNode;
+  /** Sukut `MapPin` (tumanlar sahifasi); SATO maketida — `Map`. */
+  icon?: LucideIcon;
 }) => (
   <div className="flex min-w-0 items-center gap-3 rounded-[10px] bg-sunken px-3 py-2.5">
     <span
       aria-hidden="true"
       className="inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-surface text-text-muted"
     >
-      <MapPin size={18} />
+      <Icon size={18} />
     </span>
     <span className="flex min-w-0 flex-col gap-0.5">
       {label ? <span className="text-xs font-semibold text-text-muted">{label}</span> : null}
@@ -161,8 +165,36 @@ const TargetCounts = ({
   );
 };
 
+/**
+ * Oyna matnlarini almashtirish (SA-2, maket `superadmin-regions-sato-codes-merge-dialog`): SATO takroriylari bir
+ * xil nomli — yozuvlar ID va SATO kodi bilan ajratiladi. Berilmagan har band — tumanlar sahifasidagi sukut matn.
+ */
+export type DistrictMergePresentation = {
+  /** Jarayon, natija va «noma'lum» oynalaridagi nom («Bo'ka tumani (ID 203)»). */
+  displayName?: (district: MergeDistrict) => string;
+  /** Sarlavha ostidagi izoh. */
+  description?: (source: MergeDistrict) => ReactNode;
+  /** «O'chiriladigan tuman» blokining nomi va ikkinchi qatori. */
+  sourceTitle?: (source: MergeDistrict) => ReactNode;
+  sourceSubtitle?: (source: MergeDistrict) => ReactNode;
+  /** «O'chiriladigan tuman» blokining ikonkasi (sukut `MapPin`; SATO maketida `Map`). */
+  sourceIcon?: LucideIcon;
+  /** Maqsad ro'yxatidagi variant: nom, ikkinchi qator, qidiruv matni. */
+  option?: (candidate: MergeDistrict) => Pick<SelectOption, "label" | "description" | "searchText">;
+  /** Tanlangan maqsad yonidagi qo'shimcha (SATO kodi). Qidiruvli ro'yxatda ko'rinmaydi — `searchable: false` bilan. */
+  valueAddon?: (target: MergeDistrict) => ReactNode;
+  /** Maqsad ro'yxatida qidiruv (sukut `true`). */
+  searchable?: boolean;
+  /** Maqsad tanlangandagi izoh. */
+  targetHint?: (source: MergeDistrict, target: MergeDistrict) => ReactNode;
+  /** «Bu amalni qaytarib bo'lmaydi» matni. */
+  irreversibleText?: (source: MergeDistrict) => ReactNode;
+};
+
 export type DistrictMergeDialogProps = {
   merge: DistrictMergeController;
+  /** Matnlarni almashtirish (SATO takroriylari) — sukut: tumanlar sahifasi matnlari. */
+  presentation?: DistrictMergePresentation;
   /** Manba viloyatidagi boshqa tumanlar (`mergeCandidates`) — ega S2. */
   candidates: readonly MergeDistrict[];
   /**
@@ -183,8 +215,9 @@ const WIDTH_520 = "md:w-[520px]";
  * Sonlar bloklari («Bog'langan», «… ko'chadi», «Ko'chirildi») va xato oynalari — backend N1 dan keyin (DM-2);
  * jurnal yozuvi nomlari — DM-3.
  */
-const DistrictMergeDialog = ({ merge, candidates, returnFocus }: DistrictMergeDialogProps) => {
+const DistrictMergeDialog = ({ merge, candidates, returnFocus, presentation }: DistrictMergeDialogProps) => {
   const { t } = useTranslation("region");
+  const nameOf = (district: MergeDistrict) => presentation?.displayName?.(district) ?? district.name;
   const navigate = useNavigate();
   const { state, select, submit, close, refresh } = merge;
   const inProgress = state.phase === "progress";
@@ -241,7 +274,9 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus }: DistrictMergeDi
       className: WIDTH_520,
       props: {
         title: t("v2.districts.merge.title"),
-        description: t("v2.districts.merge.text", { name: source.name }),
+        description: presentation?.description
+          ? presentation.description(source)
+          : t("v2.districts.merge.text", { name: source.name }),
         icon: Merge,
       },
       body: (
@@ -249,8 +284,9 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus }: DistrictMergeDi
           <div className="flex flex-col gap-2">
             <DistrictSummary
               label={t("v2.districts.merge.source")}
-              title={source.name}
-              subtitle={source.regionName}
+              title={presentation?.sourceTitle ? presentation.sourceTitle(source) : source.name}
+              subtitle={presentation?.sourceSubtitle ? presentation.sourceSubtitle(source) : source.regionName}
+              icon={presentation?.sourceIcon}
             />
             <span className="flex justify-center text-text-subtle" aria-hidden="true">
               <ArrowDown size={18} />
@@ -262,7 +298,9 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus }: DistrictMergeDi
                 candidates.length === 0
                   ? t("v2.districts.merge.noTargets")
                   : target
-                    ? t("v2.districts.merge.targetHint", { region: source.regionName })
+                    ? presentation?.targetHint
+                      ? presentation.targetHint(source, target)
+                      : t("v2.districts.merge.targetHint", { region: source.regionName })
                     : (
                         // merge-target: to'liq izoh `Info` belgisi bilan.
                         <span className="flex items-start gap-1.5">
@@ -270,7 +308,7 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus }: DistrictMergeDi
                           <span className="min-w-0">
                             {t("v2.districts.merge.targetHintFull", {
                               region: source.regionName,
-                              name: source.name,
+                              name: nameOf(source),
                             })}
                           </span>
                         </span>
@@ -278,10 +316,16 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus }: DistrictMergeDi
               }
             >
               <Select
-                searchable
+                searchable={presentation?.searchable ?? true}
                 value={target?.id ?? null}
                 placeholder={t("v2.districts.merge.targetPlaceholder")}
-                options={candidates.map((c) => ({ value: c.id, label: c.name, group: c.regionName }))}
+                options={candidates.map((c) => ({
+                  value: c.id,
+                  label: c.name,
+                  group: c.regionName,
+                  ...presentation?.option?.(c),
+                }))}
+                valueAddon={target && presentation?.valueAddon ? presentation.valueAddon(target) : undefined}
                 onChange={(value) => select(value)}
                 disabled={candidates.length === 0}
               />
@@ -289,7 +333,9 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus }: DistrictMergeDi
           </div>
           {target ? (
             <MergeAlert tone="warning" icon={TriangleAlert} title={t("v2.districts.merge.irreversibleTitle")}>
-              {t("v2.districts.merge.irreversibleText", { name: source.name })}
+              {presentation?.irreversibleText
+                ? presentation.irreversibleText(source)
+                : t("v2.districts.merge.irreversibleText", { name: source.name })}
             </MergeAlert>
           ) : null}
         </>
@@ -334,7 +380,7 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus }: DistrictMergeDi
               {t("v2.districts.progress.title")}
             </h2>
             <p id="district-merge-progress-text" className="m-0 text-[13px] text-text-muted">
-              {t("v2.districts.progress.text", { from: source.name, to: target.name })}
+              {t("v2.districts.progress.text", { from: nameOf(source), to: nameOf(target) })}
             </p>
             <ElapsedBadge startedAt={startedAt} />
           </div>
@@ -361,7 +407,7 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus }: DistrictMergeDi
       size: "md",
       props: {
         title: t("v2.districts.result.title"),
-        description: t("v2.districts.result.text", { from: source.name, to: target.name }),
+        description: t("v2.districts.result.text", { from: nameOf(source), to: nameOf(target) }),
         icon: CircleCheck,
         iconTone: "success",
         iconShape: "circle",
@@ -369,7 +415,7 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus }: DistrictMergeDi
       body: (
         <>
           {outcome.after ? (
-            <TargetCounts name={target.name} before={outcome.before} after={outcome.after} />
+            <TargetCounts name={nameOf(target)} before={outcome.before} after={outcome.after} />
           ) : null}
           <DialogNote>{t("v2.districts.result.note")}</DialogNote>
         </>
@@ -394,14 +440,14 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus }: DistrictMergeDi
       },
       body: (
         <>
-          <DistrictSummary title={`${source.name} → ${target.name}`} subtitle={source.regionName} />
+          <DistrictSummary title={`${nameOf(source)} → ${nameOf(target)}`} subtitle={source.regionName} />
           <div className="flex flex-col gap-2">
             <Overline id="district-merge-check">{t("v2.districts.unknown.check")}</Overline>
             <ol
               aria-labelledby="district-merge-check"
               className="m-0 list-none rounded-xl border border-border px-3 py-0"
             >
-              {[t("v2.districts.unknown.step1", { from: source.name }), t("v2.districts.unknown.step2", { from: source.name })].map(
+              {[t("v2.districts.unknown.step1", { from: nameOf(source) }), t("v2.districts.unknown.step2", { from: nameOf(source) })].map(
                 (step, index) => (
                   <li
                     key={index}

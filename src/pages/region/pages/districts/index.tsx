@@ -61,9 +61,10 @@ const toRegionsWithDistricts = (payload: unknown): RegionWithDistricts[] => {
 const REGIONS_KEY = ["region-districts-admin"];
 /**
  * Tumanlar o'zgarsa boshqa ekranlar keshi ham eskiradi: tuman tanlagichlari (`useRegionDistrictCatalog`,
- * 5 daqiqa) va viloyat statistikasi (`region-stats`) — birlashtirilgan/o'chirilgan tuman qolib ketmasin.
+ * 5 daqiqa), viloyat statistikasi (`region-stats`) va SATO tabi (`district-sato`: preview + `/district`, SA-2) —
+ * birlashtirilgan/o'chirilgan tuman qolib ketmasin (SATO tabida unga kod yozish yoki birlashtirish taklif qilinmasin).
  */
-const DEPENDENT_KEYS = [["region-district-catalog"], ["region-stats"]];
+const DEPENDENT_KEYS = [["region-district-catalog"], ["region-stats"], ["district-sato"]];
 
 /**
  * TUMANLAR BOSHQARUVI (superadmin va admin — ega S1, DM-1): 14 viloyat va ularning tumanlari, tuman qo'shish

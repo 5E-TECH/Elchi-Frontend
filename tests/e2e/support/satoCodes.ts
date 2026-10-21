@@ -1,10 +1,11 @@
 import { expect, type Page, type Route } from "@playwright/test";
 
 /**
- * `/regions/sato-management?tab=sato` e2e (SA-1) uchun soxta backend: `GET region`, `GET district`,
- * `GET district/sato-match/preview` (faqat superadmin), `GET district/sato/:code` (kod egasi) va
- * `PATCH district/sato/:id` (testdagi javob). Hech qanday so'rov serverga ketmaydi; kutilmagan yozuvchi so'rov
- * `leaked` ga tushadi.
+ * `/regions/sato-management?tab=sato` e2e (SA-1, SA-2) uchun soxta backend: `GET region`, `GET district`,
+ * `GET district/sato-match/preview` (faqat superadmin), `GET district/sato/:code` (kod egasi),
+ * `PATCH district/sato/:id`, SA-2: `POST district/sato-match/apply`, `POST district`, `POST district/:id/merge`
+ * (testdagi javob; muvaffaqiyatda ro'yxat va preview shunga mos o'zgaradi). Hech qanday so'rov serverga ketmaydi;
+ * kutilmagan yozuvchi so'rov `leaked` ga tushadi.
  */
 /** Dev server manzili (worktree probe'larida boshqa port — `E2E_ORIGIN`). */
 const ORIGIN = process.env.E2E_ORIGIN ?? "http://127.0.0.1:4173";
@@ -77,18 +78,54 @@ const PREVIEW = {
 
 export type PatchReply = { status: number; body: unknown; delayMs?: number };
 
+const okReply = (body: unknown): PatchReply => ({ status: 200, body });
+
 export const mockSatoApi = async (
   page: Page,
   {
     role = "superadmin",
     patch = () => ({ status: 200, body: { statusCode: 200, message: "District sato_code updated", data: {} } }),
+    apply = () => okReply({ statusCode: 200, message: "12 ta tumanga SATO code qo'shildi", data: { appliedCount: FOUND.length } }),
+    create = () => ({ status: 201, body: { statusCode: 201, message: "New district added", data: { id: "300" } } }),
+    merge = () =>
+      okReply({
+        statusCode: 200,
+        message: "District merged",
+        data: {
+          moved: { orders: 3, users: 1, branches: 0 },
+          target_before: { orders: 42, users: 3, branches: 0 },
+          target_after: { orders: 45, users: 4, branches: 0 },
+        },
+      }),
     theme = "light",
-  }: { role?: "superadmin" | "admin"; patch?: () => PatchReply; theme?: "light" | "dark" } = {},
+  }: {
+    role?: "superadmin" | "admin";
+    patch?: () => PatchReply;
+    apply?: () => PatchReply;
+    create?: () => PatchReply;
+    merge?: () => PatchReply;
+    theme?: "light" | "dark";
+  } = {},
 ) => {
   const leaked: string[] = [];
   const patches: { path: string; body: unknown }[] = [];
+  const posts: { path: string; body: unknown }[] = [];
   const counts = { preview: 0, district: 0 };
   const saved = new Map<string, string>();
+  const created: District[] = [];
+  const removed = new Set<string>();
+  const regions = [TOSHKENT_SH, TOSHKENT_V, SAMARQAND, NAMANGAN];
+  const current = () =>
+    [...DISTRICTS, ...created]
+      .filter((d) => !removed.has(d.id))
+      .map((d) => (saved.has(d.id) ? { ...d, sato_code: saved.get(d.id)! } : d));
+  const preview = () => ({
+    ...PREVIEW,
+    duplicates: removed.size > 0 ? [] : PREVIEW.duplicates,
+    missingSatoEntries: PREVIEW.missingSatoEntries.filter((m) => !created.some((d) => d.sato_code === m.satoCode)),
+  });
+  const delay = (result: PatchReply) =>
+    result.delayMs ? new Promise((resolve) => setTimeout(resolve, result.delayMs)) : Promise.resolve();
   await page.context().route("**/*", async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -110,17 +147,16 @@ export const mockSatoApi = async (
     }
     if (path === "district" && request.method() === "GET") {
       counts.district += 1;
-      const data = DISTRICTS.map((d) => (saved.has(d.id) ? { ...d, sato_code: saved.get(d.id)! } : d));
-      return reply(route, { statusCode: 200, message: "success", data });
+      return reply(route, { statusCode: 200, message: "success", data: current() });
     }
     if (path === "district/sato-match/preview") {
       counts.preview += 1;
       if (role !== "superadmin") return reply(route, { statusCode: 403, message: "Forbidden resource" }, 403);
-      return reply(route, { statusCode: 200, message: "SATO matching natijasi", data: PREVIEW });
+      return reply(route, { statusCode: 200, message: "SATO matching natijasi", data: preview() });
     }
     const byCode = /^district\/sato\/(\d+)$/.exec(path);
     if (byCode && request.method() === "GET") {
-      const owner = DISTRICTS.find((d) => d.sato_code === byCode[1]);
+      const owner = current().find((d) => d.sato_code === byCode[1]);
       if (!owner) return reply(route, { statusCode: 404, message: "District not found" }, 404);
       return reply(route, { statusCode: 200, data: owner });
     }
@@ -130,6 +166,30 @@ export const mockSatoApi = async (
       const result = patch();
       if (result.delayMs) await new Promise((resolve) => setTimeout(resolve, result.delayMs));
       if (result.status < 400) saved.set(byCode[1], body.sato_code);
+      return reply(route, result.body, result.status);
+    }
+    if (path === "district/sato-match/apply" && request.method() === "POST") {
+      posts.push({ path, body: request.postData() });
+      const result = apply();
+      await delay(result);
+      if (result.status < 400) for (const [d, code] of FOUND) saved.set(d.id, code);
+      return reply(route, result.body, result.status);
+    }
+    if (path === "district" && request.method() === "POST") {
+      const body = request.postDataJSON() as { name: string; region_id: string; sato_code?: string };
+      posts.push({ path, body });
+      const result = create();
+      await delay(result);
+      const region = regions.find((r) => r.id === body.region_id);
+      if (result.status < 400 && region) created.push(district("300", body.name, region, body.sato_code ?? null));
+      return reply(route, result.body, result.status);
+    }
+    const mergePath = /^district\/(\d+)\/merge$/.exec(path);
+    if (mergePath && request.method() === "POST") {
+      posts.push({ path, body: request.postDataJSON() });
+      const result = merge();
+      await delay(result);
+      if (result.status < 400) removed.add(mergePath[1]);
       return reply(route, result.body, result.status);
     }
     if (request.method() !== "GET") {
@@ -146,7 +206,7 @@ export const mockSatoApi = async (
       JSON.stringify({ accessTokenExpiresAt: far, refreshTokenExpiresAt: far, refreshTokenWarnAt: far }),
     );
   });
-  return { leaked, patches, counts };
+  return { leaked, patches, posts, counts };
 };
 
 export const openSatoCodes = async (page: Page) => {

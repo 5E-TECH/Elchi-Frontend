@@ -1,10 +1,17 @@
 // dizayn-v2: superadmin-regions-sato-codes, superadmin-regions-sato-codes-not-found, superadmin-regions-sato-codes-edit, admin-regions-sato-codes, admin-regions-sato-codes-edit, superadmin-regions-sato-codes-duplicates, superadmin-regions-sato-codes-missing
 import type { ReactNode } from "react";
-import { Keyboard, Pencil } from "lucide-react";
+import { Keyboard, Pencil, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button, DataTable, IconButton, type DataTableColumn } from "../../../../shared/ui/primitives";
-import type { SatoDistrictRow, SatoMissingRow, SatoRow, SatoTab } from "../../model/satoModel";
+import type {
+  SatoDistrictRow,
+  SatoDuplicateGroup,
+  SatoMissingRow,
+  SatoRow,
+  SatoTab,
+} from "../../model/satoModel";
 import { SatoCodeActions, SatoCodeEditorBlock, SatoCodeField } from "./SatoCodeEditor";
+import { SatoDuplicatesTable } from "./SatoDuplicatesTable";
 import type { SatoCodeEditorState } from "./useSatoCodeEditor";
 
 const TITLE = "whitespace-nowrap text-sm font-semibold text-text";
@@ -19,14 +26,20 @@ type Props = {
   /** Qatorlar qayta yuklanmoqda (eski qatorlar xira). */
   busy?: boolean;
   label: string;
+  /** «Takroriy nomlar» guruhlari (sahifadagilar) — guruh sarlavha qatorlari bilan jadval (SA-2). */
+  groups?: readonly SatoDuplicateGroup[];
+  /** «Bazada yo'q» → «Tuman qo'shish» oynasi (SA-2). */
+  onAdd?: (row: SatoMissingRow) => void;
+  /** Takroriy guruhni birlashtirish oynasi (SA-2). */
+  onMerge?: (group: SatoDuplicateGroup) => void;
 };
 
 /**
  * SATO tabining jadvali (desktop/planshet) va kartalari (telefon). Kodli qatorda — «✎» (kodni o'zgartirish),
  * kodsizda — «Kod kiritish»; tahrirlanayotgan qatorda maydon + «Bekor» / «Saqlash» (bir vaqtda bitta qator).
- * «Bazada yo'q» (SA-1) — faqat ko'rish: «Tuman qo'shish» SA-2 da.
+ * «Bazada yo'q» — «Tuman qo'shish» (oyna); «Takroriy nomlar» — guruhlar va «Birlashtirish» (`SatoDuplicatesTable`).
  */
-export const SatoCodesTable = ({ tab, rows, editor, busy, label }: Props) => {
+export const SatoCodesTable = ({ tab, rows, editor, busy, label, groups, onAdd, onMerge }: Props) => {
   const { t } = useTranslation("region");
   const withRegion = tab === "duplicates";
 
@@ -86,8 +99,39 @@ export const SatoCodesTable = ({ tab, rows, editor, busy, label }: Props) => {
     if (tab === "missing")
       return [
         { id: "code", header: t("v2.sato.columns.satoCode"), cell: missing((row) => <span className={CODE}>{row.satoCode}</span>) },
-        { id: "official", header: t("v2.sato.columns.officialName"), cell: missing((row) => row.satoName) },
-        { id: "region", header: t("v2.sato.columns.region"), cell: missing((row) => row.regionName) },
+        {
+          id: "official",
+          header: t("v2.sato.columns.officialName"),
+          cell: missing((row) => <span className="whitespace-nowrap">{row.satoName}</span>),
+        },
+        {
+          id: "region",
+          header: t("v2.sato.columns.region"),
+          cell: missing((row) => <span className="whitespace-nowrap">{row.regionName}</span>),
+        },
+        ...(onAdd
+          ? [
+              {
+                id: "actions",
+                header: <span className="sr-only">{t("v2.sato.columns.actions")}</span>,
+                align: "end" as const,
+                cell: missing((row) => (
+                  <div className="flex justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      leftIcon={Plus}
+                      aria-haspopup="dialog"
+                      aria-label={t("v2.sato.row.addAria", { name: row.satoName })}
+                      onClick={() => onAdd(row)}
+                    >
+                      {t("v2.sato.row.add")}
+                    </Button>
+                  </div>
+                )),
+              },
+            ]
+          : []),
       ];
 
     if (tab === "found")
@@ -136,9 +180,21 @@ export const SatoCodesTable = ({ tab, rows, editor, busy, label }: Props) => {
   const renderCard = (row: SatoRow) => {
     if (row.kind === "missing")
       return (
-        <div className="flex min-w-0 flex-col gap-1 px-4 py-3">
-          <span className="text-sm font-semibold text-text">{row.satoName}</span>
-          <span className={SUB}>{t("v2.sato.row.meta", { region: row.regionName, code: row.satoCode })}</span>
+        <div className="flex min-w-0 items-center gap-3 px-4 py-3">
+          <div className="flex min-w-0 flex-1 flex-col gap-1">
+            <span className="text-sm font-semibold text-text">{row.satoName}</span>
+            <span className={SUB}>{t("v2.sato.row.meta", { region: row.regionName, code: row.satoCode })}</span>
+          </div>
+          {onAdd ? (
+            <IconButton
+              size="lg"
+              variant="secondary"
+              icon={Plus}
+              aria-haspopup="dialog"
+              label={t("v2.sato.row.addAria", { name: row.satoName })}
+              onClick={() => onAdd(row)}
+            />
+          ) : null}
         </div>
       );
     const editing = editor.editingId === row.id;
@@ -160,6 +216,26 @@ export const SatoCodesTable = ({ tab, rows, editor, busy, label }: Props) => {
       </div>
     );
   };
+
+  if (tab === "duplicates" && groups && onMerge)
+    return (
+      <SatoDuplicatesTable
+        groups={groups}
+        label={label}
+        busy={busy}
+        renderDistrict={(row) => (
+          <div className="flex min-w-0 flex-col">
+            <span className={TITLE}>{row.name}</span>
+            <span className={SUB}>{t("v2.sato.row.id", { id: row.id })}</span>
+          </div>
+        )}
+        renderCode={codeCell}
+        renderActions={actionsCell}
+        renderCard={renderCard}
+        rowClassName={(row) => (editor.editingId === row.id ? "bg-row-hover" : null)}
+        onMerge={onMerge}
+      />
+    );
 
   return (
     <DataTable<SatoRow>
