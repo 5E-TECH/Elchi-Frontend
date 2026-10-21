@@ -82,20 +82,20 @@ export const useAiConfirm = () => {
 export const AI_AVAILABILITY_KEY = "ai-order-availability";
 
 /**
- * AI yoqilganmi (`AI_ORDER_ENABLED` konfiguratsiya kaliti). `enabled:false`
- * bo'lsa "AI bilan" tabi umuman ko'rsatilmaydi.
- *
- * ⚠️ So'rov YIQILSA (masalan eski backend'da endpoint yo'q) tab YASHIRILMAYDI:
- * AI o'chiq bo'lsa ham `ai-parse` baribir `disabled` qaytaradi va panel
- * operatorga tushuntiradi — tabni jimgina yo'qotish chalg'itadi.
- */
-/**
  * «AI bilan» tabi yashirilsinmi (ega Ops S3): faqat AI aniq o'chiq bo'lsa — `enabled:false` yoki
  * `state === "disabled"` (kalit yo'q / noto'g'ri). `unknown`, `cap_exceeded` va javob yo'q (xato) — tab qoladi.
  */
 export const isAiTabHidden = (availability: AiAvailability | null | undefined): boolean =>
   availability?.enabled === false || availability?.state === "disabled";
 
+/**
+ * AI yoqilganmi (`AI_ORDER_ENABLED` konfiguratsiya kaliti va ai-service holati). Tab ko'rinishi —
+ * `isAiTabHidden`.
+ *
+ * ⚠️ So'rov YIQILSA (masalan eski backend'da endpoint yo'q) tab YASHIRILMAYDI:
+ * AI o'chiq bo'lsa ham `ai-parse` baribir `disabled` qaytaradi va panel
+ * operatorga tushuntiradi — tabni jimgina yo'qotish chalg'itadi.
+ */
 export const useAiAvailability = () =>
   useQuery({
     queryKey: [AI_AVAILABILITY_KEY],
@@ -103,6 +103,6 @@ export const useAiAvailability = () =>
       api.get(API_ENDPOINTS.ORDERS.AI_AVAILABILITY).then((res) => unwrap<AiAvailability>(res.data)),
     staleTime: 60_000,
     retry: false,
-    // Tab ko'rinishini boshqaradi — xato bo'lsa AI tab shunchaki yashiriladi.
+    // Tab ko'rinishini boshqaradi — xato bo'lsa tab QOLADI (`isAiTabHidden`), global xabar chiqmaydi.
     meta: { silentError: true },
   });
