@@ -201,7 +201,17 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     (`/investments`, `/profits`, investor pastki menyusi 4 katak); TOZ-2 (foydalanuvchi ro'yxati keshi, kassa/balans
     invalidatsiyasi, o'lik settlement mutatsiyalari olindi, forma a11y, tungi kontrast e2e). Route 81 / 81.
     Integratsiyada: 6243 unit, 418 e2e.
-  - **Navbatda — 4-to'lqin** (ishda): KM-2, MO-3, IS-3, CS-C, TOZ-1; keyin KM-3 (KM-2 dan keyin).
+  - **4-to'lqin tayyor (2026-10-21, KM-3 dan tashqari):** KM-2 (xabar yuborishda «Auditoriya» — kampaniya
+    konstruktori, jonli son, saqlangan segmentlar, progress va bekor qilish; 400 da auditoriya qayta sanaladi), MO-3
+    (market operatori buyurtmalari ro'yxati/tafsiloti va «AI bilan» yaratish), IS-3 («Olingan to'lovlar» va to'lovni
+    bekor qilish), CS-C (marketda «Uyga / Markazga standart narx» yorliqlari), TOZ-1 (bildirishnoma qo'shish oynasi
+    tozaligi). Integratsiyada: 6441 unit, 444 e2e.
+  - **ERTAGA DAVOM (2026-10-22):** (1) KM-3 — kampaniya rejalashtirish, «Kampaniyalar tarixi», bekor qilish oynasi,
+    hisobot (KM-2 API funksiyalari tayyor; Trello `WIsb9Ytq`, `H7kpCman`). Shu bilan roadmap'ning backendsiz qismi
+    tugaydi. (2) Egaga savollar — ega papkasidagi `elchi-v2-specs/ochiq-savollar-2-tolqin.md` (to'lqinlar bo'yicha;
+    javoblar kichik tuzatish PR'larida). (3) «Visual» baseline'lari — ko'p sahna kutilgan farq beradi: `shodiyor` da
+    Actions → Visual → Run workflow (update ✓). (4) Keyin roadmap 2-bo'limi — backend kartalaridan keyingi PR'lar.
+    Ish usuli: `~/.elchi-work` (worktree'lar, `merge-branches.sh`, `merge-routemap.py`, `full-check.sh`, `trello.py`).
   - **IS-3 (2026-10-21, `feat/is-3-settlement-received`):** integratsiya hisob-kitobida «Olingan to'lovlar» (sana
     oralig'i, «Faol · Bekor qilingan · Barchasi», «Holat · kassa» `cashbox_posted` bo'yicha) va «To'lovni bekor qilish»
     oynasi (oqibatlar, «Sabab *», eski yozuvda majburiy kassa tanlovi, «Hozir bekor qilib bo'lmaydi» oldindan + 409
