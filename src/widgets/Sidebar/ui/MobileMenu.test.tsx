@@ -500,8 +500,8 @@ describe("MobileMenu — bildirishnomalar", () => {
   });
 });
 
-describe("MobileMenu — logist (LG-1, maket logist-dashboard-mobile-menu)", () => {
-  it("telefon varaqasi: profil («Logist»), «Bosh sahifa» (tanlangan), Bildirishnomalar, Sozlamalar, Chiqish; moliyasiz", () => {
+describe("MobileMenu — logist (LG-1, LG-3, maket logist-dashboard-mobile-menu)", () => {
+  it("telefon varaqasi: profil («Logist»), «Bosh sahifa» (tanlangan), «Hududlar», Bildirishnomalar, Sozlamalar, Chiqish; moliyasiz", () => {
     asPhone();
     renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "logist", { route: "/" });
 
@@ -510,7 +510,10 @@ describe("MobileMenu — logist (LG-1, maket logist-dashboard-mobile-menu)", () 
     const home = within(sectionsNav()).getByRole("link", { name: "Bosh sahifa" });
     expect(home).toHaveAttribute("href", "/");
     expect(home).toHaveAttribute("aria-current", "page");
-    expect(within(sectionsNav()).getAllByRole("link")).toHaveLength(1);
+    expect(within(sectionsNav()).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+      "/",
+      "/regions",
+    ]);
     expect(screen.getByRole("link", { name: /Bildirishnomalar/ })).toHaveAttribute("href", "/inbox");
     expect(screen.getByRole("link", { name: /Sozlamalar/ })).toHaveAttribute("href", "/settings");
     expect(screen.getByRole("button", { name: "Chiqish" })).toBeInTheDocument();

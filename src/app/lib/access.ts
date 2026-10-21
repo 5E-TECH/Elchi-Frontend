@@ -262,3 +262,10 @@ export const canReceiveExternalOrders: Predicate = anyOf(
  * backendda JWT'dan (`GET investors/me/*`, `@Roles(INVESTOR)`); superadmin/admin investorni `/investors-ops` da ko'radi.
  */
 export const canViewInvestorCabinet: Predicate = hasRole("investor");
+
+/**
+ * «Hududlar» (`/regions`). Superadmin va admin — butun kompaniya xaritasi; menejer va kuryer — o'z viloyati
+ * (`region/my/district-stats`); logist (LG-3, ega LG-S3) — faqat o'ziga biriktirilgan viloyatlar, PULSIZ
+ * (`RegionPage` → `LogistRegionView`). Avval `routes.tsx` ichidagi qo'lda yozilgan predikat edi.
+ */
+export const canViewRegionStats: Predicate = hasRole("superadmin", "admin", "manager", "courier", "logist");

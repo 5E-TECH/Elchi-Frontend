@@ -25,6 +25,8 @@ import {
 import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
 // IN-1: investor kabineti — o'z describe bloki (pastda), umumiy matritsaga tegilmaydi.
 import { canViewInvestorCabinet } from "./access";
+// LG-3: «Hududlar» — o'z describe bloki (pastda).
+import { canViewRegionStats } from "./access";
 
 /**
  * B0 — kirish huquqi sidebar'dan AJRATILDI.
@@ -268,6 +270,25 @@ describe("canViewInvestorCabinet — investor kabineti (IN-1)", () => {
     const investor = state("investor");
     for (const predicate of [canViewAdminDashboard, canViewPaymentsPage, canViewFinancialBalance, canViewOrders, canViewUsers]) {
       expect(predicate(investor)).toBe(false);
+    }
+  });
+});
+
+describe("canViewRegionStats — «Hududlar» (/regions; LG-3: logist)", () => {
+  it("superadmin, admin, menejer (har filial turi), kuryer va logist — ha; market, registrator, market operatori, investor — yo'q", () => {
+    const allowed = new Set(["superadmin", "admin", "courier", "logist"]);
+    for (const [caseName, s] of CASES) {
+      const want = allowed.has(caseName) || caseName.startsWith("manager/");
+      expect(canViewRegionStats(s), caseName).toBe(want);
+    }
+    expect(canViewRegionStats(state(null))).toBe(false);
+  });
+
+  it("logist uchun «Hududlar» ochilsa ham moliya predikatlari yopiq qoladi (ega LG-S1)", () => {
+    const logist = state("logist");
+    expect(canViewRegionStats(logist)).toBe(true);
+    for (const predicate of [canViewPaymentsPage, canViewFinancialBalance, canViewAdminDashboard]) {
+      expect(predicate(logist)).toBe(false);
     }
   });
 });

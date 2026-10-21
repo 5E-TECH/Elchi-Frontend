@@ -158,7 +158,7 @@ describe("LogistDashboardPage — o'z viloyatlari (LG-1)", () => {
     expect(within(card).getByText(/^80(,0)?% · 4 \/ 5 ta$/)).toBeInTheDocument();
   });
 
-  it("«Viloyatlarim» jadvali — buyurtmalar bo'yicha, «Jami» qatori; «Tafsilot» havolasi yo'q (LG-3)", async () => {
+  it("«Viloyatlarim» jadvali — buyurtmalar bo'yicha, «Jami» qatori; nom va «›» — viloyat tafsiloti (LG-3)", async () => {
     renderPage();
     await screen.findByText(/Sizga biriktirilgan 3 ta viloyat/);
     const card = section("Viloyatlarim");
@@ -174,7 +174,21 @@ describe("LogistDashboardPage — o'z viloyatlari (LG-1)", () => {
     expect(within(rows[0]).getByText("18 / 22")).toBeInTheDocument();
     expect(within(rows[3]).getByText("103 ta")).toBeInTheDocument();
     expect(within(rows[3]).getByText("31 / 38")).toBeInTheDocument();
-    expect(within(card).queryAllByRole("link")).toHaveLength(0);
+    // LG-3: nom va «›» → logistning `/regions` ko'rinishi; «Jami» qatorida havola yo'q.
+    // Bosh sahifa davri havolaga o'tadi (sukut — «Bugun»); «›» nomi — to'liq viloyat nomi (maket).
+    expect(within(rows[0]).getByRole("link", { name: /16 tuman$/ })).toHaveAttribute(
+      "href",
+      "/regions?region=1&period=today",
+    );
+    expect(within(rows[0]).getByRole("link", { name: "Samarqand viloyati tafsiloti" })).toHaveAttribute(
+      "href",
+      "/regions?region=1&period=today",
+    );
+    expect(within(rows[2]).getByRole("link", { name: "Navoiy viloyati tafsiloti" })).toHaveAttribute(
+      "href",
+      "/regions?region=4&period=today",
+    );
+    expect(within(rows[3]).queryAllByRole("link")).toHaveLength(0);
   });
 
   it("«Barchasi» — sanasiz so'rov", async () => {
@@ -183,6 +197,13 @@ describe("LogistDashboardPage — o'z viloyatlari (LG-1)", () => {
     await screen.findByText(/Sizga biriktirilgan 3 ta viloyat/);
     await user.click(screen.getByRole("radio", { name: "Barchasi" }));
     await waitFor(() => expect(mocks.get).toHaveBeenLastCalledWith("region/stats/all", { params: {} }));
+    // LG-3: «Tafsilot» shu davr bilan ochiladi (aks holda `/regions` «Bugun» da boshqa raqamlar ko'rsatardi).
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: "Samarqand viloyati tafsiloti" })).toHaveAttribute(
+        "href",
+        "/regions?region=1&period=all",
+      ),
+    );
   });
 
   it("kuryerlar soni noma'lum (identity javob bermadi) — «—», yolg'on 0 emas", async () => {
@@ -290,5 +311,7 @@ describe("LogistDashboardPage — telefon (390)", () => {
     ]);
     expect(within(card).getByText("67,4% sotildi · 18 / 22 kuryer")).toBeInTheDocument();
     expect(within(card).queryByText(/Jami ·/)).not.toBeInTheDocument();
+    // LG-3: butun karta — viloyat tafsiloti havolasi.
+    expect(items[0].querySelector("a")).toHaveAttribute("href", "/regions?region=1&period=today");
   });
 });

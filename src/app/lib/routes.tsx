@@ -26,6 +26,7 @@ import {
   canViewUiKit,
   canViewMarketOperators,
   canViewInvestorCabinet,
+  canViewRegionStats,
 } from "./access";
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
 import { RUNTIME_ERROR_PATH } from "../../shared/lib/runtimeError";
@@ -218,16 +219,6 @@ const canManageExternalIntegrations = canReceiveExternalOrders;
 const canViewAdminNewOrderTabs = (state: RootState) => {
   const role = state.role.role;
   return role === "admin" || role === "superadmin";
-};
-
-const canViewRegionStats = (state: RootState) => {
-  const role = state.role.role;
-  return (
-    role === "admin" ||
-    role === "superadmin" ||
-    role === "manager" ||
-    role === "courier"
-  );
 };
 
 const canViewOpsPages = (state: RootState) => state.role.role === "superadmin";

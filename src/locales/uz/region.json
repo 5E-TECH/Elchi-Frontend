@@ -717,6 +717,61 @@
         "title": "Logist yo'q",
         "text": "Viloyatlarni biriktirish uchun avval «Logist» rolida foydalanuvchi yarating. Yaratilgan logist shu ro'yxatda chiqadi."
       }
+    },
+    "logistView": {
+      "subtitle": "Viloyatning barcha buyurtmalari · tumanlar va kuryerlar kesimida",
+      "titleGeneric": "Viloyatlarim",
+      "cardSubtitle": "{{period}} · {{region}}",
+      "picker": {
+        "label": "Viloyatlarim:",
+        "aria": "Viloyatni tanlash",
+        "field": "Viloyat",
+        "option": "{{name}} · {{count}} ta",
+        "placeholder": "Viloyatni tanlang",
+        "list": "Viloyatlarim"
+      },
+      "overview": {
+        "couriers": "Faol kuryerlar",
+        "couriersUnit": "/ {{total}}",
+        "couriersMeta": "Faol holatdagi kuryerlar"
+      },
+      "selected": {
+        "couriers": "Kuryerlar"
+      },
+      "couriers": {
+        "title": "Kuryerlar",
+        "subtitle": "Buyurtmasi bor kuryerlar · viloyatda faol {{active}} / {{total}}",
+        "subtitleNoCounts": "Buyurtmasi bor kuryerlar",
+        "label": "Kuryerlar jadvali",
+        "listLabel": "Kuryerlar, buyurtmalar soni bo'yicha",
+        "position": "№",
+        "courier": "Kuryer",
+        "district": "Tuman",
+        "orders": "Buyurtmalar",
+        "soldCancelled": "Sotilgan · bekor",
+        "success": "Muvaffaqiyat",
+        "cardSummary": "{{rate}} sotildi · {{cancelled}} bekor",
+        "more": "Yana {{count}} ta kuryer",
+        "less": "Kamroq ko'rsatish",
+        "empty": {
+          "title": "Buyurtmasi bor kuryer yo'q",
+          "text": "Tanlangan davrda bu viloyat kuryerlarida buyurtma bo'lmadi."
+        }
+      },
+      "states": {
+        "error": {
+          "title": "Viloyat ma'lumotini yuklab bo'lmadi",
+          "text": "Internet aloqasini tekshirib, qayta urining."
+        },
+        "notAssigned": {
+          "title": "Bu viloyat endi sizga biriktirilmagan",
+          "text": "Administrator viloyatni boshqa logistga o'tkazgan. Yuqoridagi ro'yxatdan o'z viloyatingizni tanlang."
+        },
+        "none": {
+          "title": "Sizga hali viloyat biriktirilmagan",
+          "text": "Administrator viloyat biriktirgach, uning statistikasi shu yerda chiqadi."
+        }
+      }
     }
   }
 }

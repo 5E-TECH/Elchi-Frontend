@@ -1,3 +1,4 @@
+import type { DashboardPeriod } from "../../../entities/dashboard/lib/period";
 import {
   pendingOf,
   regionsOfLogist,
@@ -18,6 +19,8 @@ export interface LogistRegionRow {
   id: string;
   /** Qisqa nom: «Samarqand viloyati» → «Samarqand». */
   name: string;
+  /** To'liq nom («Samarqand viloyati») — «›» havolasining ekran o'quvchi nomi (maket). */
+  fullName: string;
   districtCount: number;
   total: number;
   delivered: number;
@@ -63,6 +66,7 @@ const toRow = (region: RegionItem): LogistRegionRow => {
   return {
     id: region.id,
     name: shortRegionName(region.name),
+    fullName: region.name,
     districtCount: region.districtCount,
     total,
     delivered,
@@ -127,3 +131,21 @@ export const regionStatsParams = (
   period: { kind: string; range: { from: string; to: string } },
 ): { startDate?: string; endDate?: string } =>
   period.kind === "all" ? {} : { startDate: period.range.from, endDate: period.range.to };
+
+/**
+ * LG-3: «Tafsilot» havolasi — logistning `/regions` ko'rinishi (`?region=<id>`) bosh sahifadagi DAVR bilan (aks holda
+ * `/regions` «Bugun» da ochilib, raqamlar boshqacha chiqardi). Bugun · Bu oy · Barchasi — `/regions` ning o'z tezkor
+ * davri (oraliqlari bir xil); «Bu hafta» (bosh sahifa — dushanbadan, `/regions` — `dayjs` haftasi), yil va
+ * oraliq — aynan shu kunlar bilan `period=custom`.
+ */
+export const logistRegionHref = (regionId: string, period: Pick<DashboardPeriod, "kind" | "range">): string => {
+  const params = new URLSearchParams({ region: regionId });
+  if (period.kind === "today" || period.kind === "month" || period.kind === "all") {
+    params.set("period", period.kind);
+  } else {
+    params.set("period", "custom");
+    params.set("startDate", period.range.from);
+    params.set("endDate", period.range.to);
+  }
+  return `/regions?${params.toString()}`;
+};

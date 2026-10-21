@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**78 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **58** · qisman: **121** · v2 ga ko'chirilgan route: **78 / 78**
+**78 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **57** · qisman: **122** · v2 ga ko'chirilgan route: **78 / 78**
 
 ## Qanday ishlatiladi
 
@@ -1257,12 +1257,12 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 
 ### Hududlar
 
-#### `/regions` — Hududlar — xarita va statistika (menejer/kuryer: o'z viloyati; dizayn v2)
+#### `/regions` — Hududlar — xarita va statistika (menejer/kuryer: o'z viloyati; logist: o'z viloyatlari, pulsiz; dizayn v2)
 
-- **Fayllar:** `src/pages/region/index.tsx` · `src/pages/region/ui/RegionsOverview.tsx` · `src/pages/region/ui/RegionsMapCard.tsx` · `src/pages/region/ui/RegionsSuccessCards.tsx` · `src/pages/region/ui/UzbekistanRegionMap.tsx` · `src/pages/region/ui/RegionPeriodControls.tsx` · `src/pages/region/ui/regionBlocks.tsx` · `src/pages/region/ui/ScopedRegionView.tsx` · `src/pages/region/ui/ScopedDistricts.tsx` · `src/pages/region/model/regionsModel.ts` · `src/pages/region/model/scopedModel.ts` · `src/pages/region/model/regionPeriod.ts` · `src/widgets/region-detail/ui/RegionDetailDialog.tsx`
+- **Fayllar:** `src/pages/region/index.tsx` · `src/pages/region/ui/RegionsOverview.tsx` · `src/pages/region/ui/RegionsMapCard.tsx` · `src/pages/region/ui/RegionsSuccessCards.tsx` · `src/pages/region/ui/UzbekistanRegionMap.tsx` · `src/pages/region/ui/RegionPeriodControls.tsx` · `src/pages/region/ui/regionBlocks.tsx` · `src/pages/region/ui/ScopedRegionView.tsx` · `src/pages/region/ui/ScopedDistricts.tsx` · `src/pages/region/ui/LogistRegionView.tsx` · `src/pages/region/ui/LogistRegionCouriers.tsx` · `src/pages/region/model/regionsModel.ts` · `src/pages/region/model/scopedModel.ts` · `src/pages/region/model/logistRegionModel.ts` · `src/pages/region/model/regionPeriod.ts` · `src/widgets/region-detail/ui/RegionDetailDialog.tsx`
 - **Qobiq:** DashboardLayout · **Guard:** `canViewRegionStats` (routes.tsx → canViewRegionStats)
 - **Rollar:** superadmin, admin, manager, courier, logist (taklif — o'z viloyatlari (LG-S3), kodda yo'q)
-- **Menyuda:** «Hududlar» (`regions`) — superadmin, admin, manager, courier
+- **Menyuda:** «Hududlar» (`regions`) — superadmin, admin, manager, courier, logist
 - **Holat:** v2
 - **Izoh:** Viloyat oynasi — umumiy RegionDetailDialog (widgets/region-detail, lazy; bosh sahifa kartogrammasi ham shu). Menejer va kuryer — GET region/my/district-stats (stats/all va orders so'rovlari yo'q). Ega savollari sukuti: Q11 xarita — Highcharts lazy, v2 tokenlar; Q12 scoped sarlavhalarda filial / «sizga tegishli» da'vosi yo'q («{viloyat} buyurtmalari · …» — backend butun viloyat raqamlarini beradi). Chizilmagan: oynadagi «Kunlik buyurtmalar» (Taklif), scoped filial/kuryer kesimi (API yo'q).
 
@@ -1274,7 +1274,7 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/regions` | admin | `admin-regions-region-detail-dialog` — Viloyat ma'lumotlari oynasi<br>↳ `src/widgets/region-detail/ui/RegionDetailDialog.tsx` | [design/fragments/admin--regions-region-detail-dialog.html](fragments/admin--regions-region-detail-dialog.html) | oyna | v2 |
 | `/regions` | manager | `manager-regions-scoped` — Hudud — tumanlar statistikasi<br>↳ `src/pages/region/ui/ScopedRegionView.tsx` | [design/fragments/manager--regions-scoped.html](fragments/manager--regions-scoped.html) | sahifa | v2 |
 | `/regions` | courier | `courier-regions-scoped` — Hududlar — o'z viloyatim<br>↳ `src/pages/region/ui/ScopedRegionView.tsx` | [design/fragments/courier--regions-scoped.html](fragments/courier--regions-scoped.html) | sahifa | v2 |
-| `/regions` | logist | `logist-regions-detail` — Viloyat — tumanlar va kuryerlar | [design/fragments/logist--regions-detail.html](fragments/logist--regions-detail.html) | sahifa | yangi (kodda yo'q) |
+| `/regions` | logist | `logist-regions-detail` — Viloyat — tumanlar va kuryerlar<br>↳ `src/pages/region/ui/LogistRegionView.tsx`, `src/pages/region/ui/LogistRegionCouriers.tsx` | [design/fragments/logist--regions-detail.html](fragments/logist--regions-detail.html) | sahifa | qisman |
 | `/regions` | logist | `logist-couriers-list` — Kuryerlar — viloyatlarim | [design/fragments/logist--couriers-list.html](fragments/logist--couriers-list.html) | sahifa | yangi (kodda yo'q) |
 | `/regions` | tizim taxtasi | `tizim-charts` — Grafiklar — statistika va tahlil | [design/fragments/tizim--charts.html](fragments/tizim--charts.html) | taxta | qoida |
 
@@ -2565,12 +2565,12 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### logist — Logist
 
-10 ta maket · kodda bor: 2 · kodda yo'q: 8
+10 ta maket · kodda bor: 3 · kodda yo'q: 7
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
-| `logist-dashboard-main` | Bosh sahifa — viloyatlarim | sahifa | `/` | `src/pages/dashboard/LogistDashboardPage.tsx` | qisman — Kodda bor (LG-1): sarlavha + biriktirilgan viloyatlar, davr (Bugun · Bu hafta · Bu oy · Barchasi + sana), KPI (Jami, Sotilgan, Bekor, Faol kuryerlar a/b), «Muvaffaqiyat darajasi», «Viloyatlar muvaffaqiyati», «Viloyatlarim» jadvali (telefonda kartalar), holatlar (yuklanish, xato, internet yo'q — «Internet aloqasi yo'q», viloyat yo'q). Ma'lumot — GET region/stats/all + klientda logist_id = me (backend iOnGbEqi gacha). Farq: «So'nggi buyurtmalar» chizilmagan (logist buyurtmalari — backend 4BftLLnc, LG-4); viloyat «Tafsilot» havolasi yashirin (LG-3); «Faol kuryerlar» — backend status = 'active' (maketdagi «bugun buyurtmasi bor» soni API'da yo'q, izoh «Faol holatdagi kuryerlar» — ega savoli); «Viloyatlar muvaffaqiyati» — umumiy HBarList emas, sahifa ichidagi Meter ro'yxati (LogistRegionSuccessCard: HBarList'da maqsad chizig'i yo'q, maketda 70% belgisi); davr tablaridagi sonlar yo'q (API bermaydi — ega savoli); foizlarda oxirgi nol tushadi («75%», maketda «75,0%» — umumiy formatPercentLocalized qoidasi, butun ilova bo'yicha qaror). |
-| `logist-dashboard-mobile-menu` | Menyu ochiq — yon panel / pastki varaq | oyna · faqat planshet + telefon | `/` | `src/widgets/Sidebar/ui/MobileMenu.tsx` | qisman — Kodda bor (LG-1): telefon varaqasi / planshet paneli — profil (rol «Logist»), «Bosh sahifa», Bildirishnomalar (+ son), Sozlamalar, Chiqish; pastki menyu — «Bosh sahifa» + «Menyu». Farq: menyu qidiruvi yo'q (buyurtmalar ochilmaguncha — LG-4/LG-6); Buyurtmalar, Pochta, Paketlar, Kuryerlar, Hududlar bandlari o'z sahifasi bilan (LG-3, LG-4, LG-5); personadagi «· 4 viloyat» yo'q. |
+| `logist-dashboard-main` | Bosh sahifa — viloyatlarim | sahifa | `/` | `src/pages/dashboard/LogistDashboardPage.tsx` | qisman — Kodda bor (LG-1): sarlavha + biriktirilgan viloyatlar, davr (Bugun · Bu hafta · Bu oy · Barchasi + sana), KPI (Jami, Sotilgan, Bekor, Faol kuryerlar a/b), «Muvaffaqiyat darajasi», «Viloyatlar muvaffaqiyati», «Viloyatlarim» jadvali (telefonda kartalar), holatlar (yuklanish, xato, internet yo'q — «Internet aloqasi yo'q», viloyat yo'q). Ma'lumot — GET region/stats/all + klientda logist_id = me (backend iOnGbEqi gacha). Farq: «So'nggi buyurtmalar» chizilmagan (logist buyurtmalari — backend 4BftLLnc, LG-4); «Faol kuryerlar» — backend status = 'active' (maketdagi «bugun buyurtmasi bor» soni API'da yo'q, izoh «Faol holatdagi kuryerlar» — ega savoli); «Viloyatlar muvaffaqiyati» — umumiy HBarList emas, sahifa ichidagi Meter ro'yxati (LogistRegionSuccessCard: HBarList'da maqsad chizig'i yo'q, maketda 70% belgisi); davr tablaridagi sonlar yo'q (API bermaydi — ega savoli); foizlarda oxirgi nol tushadi («75%», maketda «75,0%» — umumiy formatPercentLocalized qoidasi, butun ilova bo'yicha qaror). |
+| `logist-dashboard-mobile-menu` | Menyu ochiq — yon panel / pastki varaq | oyna · faqat planshet + telefon | `/` | `src/widgets/Sidebar/ui/MobileMenu.tsx` | qisman — Kodda bor (LG-1): telefon varaqasi / planshet paneli — profil (rol «Logist»), «Bosh sahifa», «Hududlar» (LG-3), Bildirishnomalar (+ son), Sozlamalar, Chiqish; pastki menyu — «Bosh sahifa» · «Hududlar» · «Menyu». Farq: menyu qidiruvi yo'q (buyurtmalar ochilmaguncha — LG-4/LG-6); «Hududlar» — LG-3 da (pastki menyuda ham katak); Buyurtmalar, Pochta, Paketlar, Kuryerlar bandlari o'z sahifasi bilan (LG-4, LG-5); personadagi «· 4 viloyat» yo'q. |
 | `logist-dashboard-mobile-search` | Global qidiruv (telefon) — buyurtma, mijoz, telefon | oyna · faqat telefon | `/` | `src/pages/dashboard/MarketDashboardPage.tsx + src/pages/dashboard/LogistDashboardPage.tsx + src/shared/ui/Forbidden.tsx + src/pages/investor/InvestorDashboardPage.tsx + src/pages/dashboard/DashboardPage.tsx` | yangi (kodda yo'q) — Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz. |
 | `logist-orders-list` | Buyurtmalar — faqat ko'rish | sahifa | `/orders` | `src/pages/orders/index.tsx` | yangi (kodda yo'q) — Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz. |
 | `logist-orders-detail` | Buyurtma tafsiloti va kuzatuv — faqat ko'rish | sahifa | `/orders/edit/:orderId` | `src/pages/new_orders/components/new_orderUpdate.tsx` | yangi (kodda yo'q) — Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz. |
@@ -2578,7 +2578,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `logist-mails-detail` | Pochta tafsiloti — faqat ko'rish | sahifa | `/mails/:id` | `src/pages/mails/detail/index.tsx` | yangi (kodda yo'q) — Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz. |
 | `logist-batches-list` | Paketlar — viloyatlarimga | sahifa | `/batches` | `src/pages/batches/ui/BatchesPage.tsx` | yangi (kodda yo'q) — Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz. |
 | `logist-couriers-list` | Kuryerlar — viloyatlarim | sahifa | `/regions` | `src/pages/region/index.tsx` | yangi (kodda yo'q) — Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz. |
-| `logist-regions-detail` | Viloyat — tumanlar va kuryerlar | sahifa | `/regions` | `src/pages/region/index.tsx` | yangi (kodda yo'q) — Logist roli (menuConfig, routes, guard) kodda hali yo'q — dzyVftBx, mDfjKeQi. |
+| `logist-regions-detail` | Viloyat — tumanlar va kuryerlar | sahifa | `/regions` | `src/pages/region/ui/LogistRegionView.tsx`, `src/pages/region/ui/LogistRegionCouriers.tsx` | qisman — Kodda bor (LG-3): /regions logist ko'rinishi — viloyat tanlovi (?region=), davr, spidometr, umumiy ko'rsatkichlar, tumanlar taxtasi (Grafik \| Jadval) va «Tanlangan tuman», «Tumanlar kesimida», «Kuryerlar» top 5, holatlar (yuklanish, xato, «Bu viloyat endi sizga biriktirilmagan», tumanlar yo'q, viloyat biriktirilmagan). Farq: «Tuman buyurtmalari» (logist buyurtmalari — LG-4) va «Barcha kuryerlar» (/couriers — LG-5) yashirin; «Faol kuryerlar» — backend status = 'active' (maketdagi «bugun buyurtmasi bor» soni API'da yo'q — LG-1 qarori, izoh «Faol holatdagi kuryerlar»); tuman kataklari shkalasi 4 pog'ona (ilovadagi region-map tokenlari; maketda 5); 5 tadan ko'p viloyatda desktopda ham Select. |
 
 ### investor — Investor
 
@@ -2993,6 +2993,7 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/region/index.tsx` | `/regions` |
 | `src/pages/region/model/boardModel.ts` | `/regions/districts`, `/regions/sato-management` |
 | `src/pages/region/model/districtMerge.ts` | `/regions/districts` |
+| `src/pages/region/model/logistRegionModel.ts` | `/regions` |
 | `src/pages/region/model/regionPeriod.ts` | `/regions` |
 | `src/pages/region/model/regionsModel.ts` | `/regions` |
 | `src/pages/region/model/satoModel.ts` | `/regions/sato-management` |
@@ -3009,6 +3010,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/pages/region/ui/DistrictBoard.tsx` | `/regions/districts`, `/regions/sato-management` |
 | `src/pages/region/ui/DistrictDeleteBlockedDialog.tsx` | `/regions/districts` |
 | `src/pages/region/ui/DistrictMergeDialog.tsx` | `/regions/districts`, `/regions/sato-management` |
+| `src/pages/region/ui/LogistRegionCouriers.tsx` | `/regions` |
+| `src/pages/region/ui/LogistRegionView.tsx` | `/regions` |
 | `src/pages/region/ui/MoveDistrictDialog.tsx` | `/regions/sato-management` |
 | `src/pages/region/ui/RegionPeriodControls.tsx` | `/regions` |
 | `src/pages/region/ui/RegionsMapCard.tsx` | `/regions` |
@@ -3255,8 +3258,9 @@ Maketda bor, kodda hali yo'q (`plannedMenu`): Bosh sahifa (`dashboard`), Buyurtm
 | Band | Kalit | `to` | Route | Shart (filial turi) | logist maketlari |
 |---|---|---|---|---|---|
 | Bosh sahifa | `dashboard` | `/` | `/` | — | `logist-dashboard-main` (+2) |
+| Hududlar | `regions` | `/regions` | `/regions` | — | `logist-regions-detail` (+1) |
 
-Maketda bor, kodda hali yo'q (`plannedMenu`): Buyurtmalar (`orders`), Pochta (`mails`), Paketlar (`batches`), Kuryerlar (`couriers`), Hududlar (`regions`).
+Maketda bor, kodda hali yo'q (`plannedMenu`): Buyurtmalar (`orders`), Pochta (`mails`), Paketlar (`batches`), Kuryerlar (`couriers`).
 
 ### investor — Investor
 

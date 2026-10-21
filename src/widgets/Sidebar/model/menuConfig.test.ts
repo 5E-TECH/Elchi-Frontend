@@ -332,11 +332,14 @@ describe("sidebar menu icons — roles.json bilan bir xil", () => {
   });
 });
 
-describe("logist menyusi (LG-1)", () => {
-  it("faqat «Bosh sahifa» (maket ikonkasi); qolgan bandlar plannedMenu da — o'z sahifasi bilan (LG-3/LG-4/LG-5)", () => {
+describe("logist menyusi (LG-1, LG-3)", () => {
+  it("«Bosh sahifa» va «Hududlar» (maket ikonkalari, maket tartibi); qolgan bandlar plannedMenu da (LG-4/LG-5)", () => {
     const items = getSidebarConfigForUser("logist", null);
-    expect(items).toEqual([{ to: "/", icon: House, label: "dashboard", end: true }]);
-    expect(designRoleInCode("logist").menu.map((item) => item.key)).toEqual(["dashboard"]);
+    expect(items).toEqual([
+      { to: "/", icon: House, label: "dashboard", end: true },
+      { to: "/regions", icon: MapIcon, label: "regions" },
+    ]);
+    expect(designRoleInCode("logist").menu.map((item) => item.key)).toEqual(["dashboard", "regions"]);
   });
 
   it("moliya bandlari hech qachon yo'q (ega LG-S1)", () => {

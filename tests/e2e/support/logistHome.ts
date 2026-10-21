@@ -4,6 +4,8 @@ import { expect, type Page, type Route } from "@playwright/test";
  * LG-1 — logist bosh sahifasi (`/`, rol `logist`) uchun soxta backend: `region/stats/all` 5 viloyat qaytaradi
  * (3 tasi shu logistga — `logist_id = 42`, biri boshqa logistga, biri biriktirilmagan; har birida `revenue` bor —
  * sahifa uni ko'rsatmasligi kerak). Yozish so'rovlari taqiqlangan (`leaked`), jonli kanal yopiladi.
+ * LG-3 — `region/stats/:id` (logist `/regions`): o'z viloyatlari uchun tumanlar va kuryerlar (tushum va kuryer
+ * daromadi bilan — sahifa ko'rsatmaydi), boshqasiga 403 (backend iOnGbEqi'dan keyingi xulq).
  */
 const ORIGIN = "http://127.0.0.1:4173";
 const cors = {
@@ -47,6 +49,75 @@ const REGIONS = [
   region(3, "Andijon viloyati", null, [30, 20, 5], [5, 6], 14),
 ];
 
+/** `region/stats/:id` — tuman: [nom, SATO, jami, sotilgan, bekor, kuryerlar]. */
+const DISTRICTS: Array<[string, string, number, number, number, number]> = [
+  ["Urgut tumani", "1718236", 41, 30, 3, 2],
+  ["Toyloq tumani", "1718238", 14, 9, 2, 1],
+  ["Samarqand sh.", "1718401", 12, 7, 2, 1],
+  ["Pastdarg'om tumani", "1718227", 9, 6, 1, 1],
+  ["Jomboy tumani", "1718209", 6, 4, 0, 1],
+  ["Bulung'ur tumani", "1718206", 4, 2, 1, 0],
+  ["Ishtixon tumani", "1718212", 0, 0, 0, 0],
+  ["Narpay tumani", "1718215", 0, 0, 0, 0],
+  ["Nurobod tumani", "1718216", 0, 0, 0, 0],
+];
+
+/** `region/stats/:id` — kuryer: [ism, telefon, tuman indeksi, jami, sotilgan, bekor, holat]. */
+const COURIERS: Array<[string, string, number, number, number, number, string]> = [
+  ["Jasur Tursunov", "+998904123318", 0, 24, 19, 2, "active"],
+  ["Ulug'bek Sobirov", "+998912057740", 0, 17, 11, 1, "active"],
+  ["Bekzod Aliyev", "+998936180925", 1, 14, 9, 2, "active"],
+  ["Sardor Qodirov", "+998931184625", 2, 12, 7, 2, "active"],
+  ["Otabek Yo'ldoshev", "+998947305162", 3, 9, 6, 1, "active"],
+  ["Dilshod Karimov", "+998901112233", 4, 6, 4, 0, "inactive"],
+  ["Rustam Nazarov", "+998902223344", 5, 4, 2, 1, "active"],
+  ["Anvar Ergashev", "+998903334455", 6, 0, 0, 0, "inactive"],
+];
+
+const regionDetail = (regionId: string, name: string) => {
+  const districts = DISTRICTS.map(([district, sato, total, delivered, cancelled, couriers], index) => ({
+    id: `${regionId}-${index + 1}`,
+    name: district,
+    satoCode: sato,
+    couriers: Array.from({ length: couriers }, (_, n) => ({ id: `c${n}`, name: "x", phone_number: "" })),
+    totalOrders: total,
+    deliveredOrders: delivered,
+    cancelledOrders: cancelled,
+    totalRevenue: 987_654_321,
+    successRate: 0,
+  }));
+  const couriers = COURIERS.map(([courier, phone, district, total, delivered, cancelled, status], index) => ({
+    id: `${regionId}-c${index + 1}`,
+    name: courier,
+    phoneNumber: phone,
+    status,
+    districtId: `${regionId}-${district + 1}`,
+    totalOrders: total,
+    deliveredOrders: delivered,
+    cancelledOrders: cancelled,
+    totalRevenue: 987_654_321,
+    successRate: 0,
+  }));
+  const sum = (key: "totalOrders" | "deliveredOrders" | "cancelledOrders") =>
+    districts.reduce((total, district) => total + district[key], 0);
+  return {
+    region: { id: regionId, name, satoCode: "1718", mainCourier: null },
+    summary: {
+      totalOrders: sum("totalOrders"),
+      deliveredOrders: sum("deliveredOrders"),
+      cancelledOrders: sum("cancelledOrders"),
+      pendingOrders: sum("totalOrders") - sum("deliveredOrders") - sum("cancelledOrders"),
+      totalRevenue: 987_654_321,
+      successRate: 0,
+      totalCouriers: couriers.length,
+      activeCouriers: couriers.filter((courier) => courier.status === "active").length,
+      totalDistricts: districts.length,
+    },
+    couriers,
+    districts,
+  };
+};
+
 type MockOptions = {
   /** Logistga hech viloyat biriktirilmagan. */
   unassigned?: boolean;
@@ -58,6 +129,8 @@ type MockOptions = {
 export type LogistHomeMock = {
   /** `region/stats/all` so'rovlarining query satrlari. */
   statsQueries: string[];
+  /** LG-3: `region/stats/:id` so'rovlari — `<id><query>`. */
+  detailQueries: string[];
   /** Barcha GET so'rovlarining yo'llari (LG-S1: moliya so'rovlari ketmasligini tekshirish uchun). */
   requested: string[];
   leaked: string[];
@@ -66,7 +139,7 @@ export type LogistHomeMock = {
 };
 
 export const mockLogistHome = async (page: Page, { unassigned = false, fail = false, theme }: MockOptions = {}) => {
-  const mock: LogistHomeMock = { statsQueries: [], requested: [], leaked: [], failing: fail };
+  const mock: LogistHomeMock = { statsQueries: [], detailQueries: [], requested: [], leaked: [], failing: fail };
   await page.context().routeWebSocket(/\/socket\.io\//, (ws) => ws.close());
   await page.context().route("**/*", async (route) => {
     const request = route.request();
@@ -97,6 +170,13 @@ export const mockLogistHome = async (page: Page, { unassigned = false, fail = fa
       }
       const regions = unassigned ? REGIONS.filter((item) => item.logist_id !== LOGIST_ID) : REGIONS;
       return reply(route, wrap({ regions, summary: { totalRegions: regions.length } }));
+    }
+    const detail = /^region\/stats\/([^/]+)$/.exec(path);
+    if (detail && detail[1] !== "all" && method === "GET") {
+      mock.detailQueries.push(`${detail[1]}${url.search}`);
+      const own = REGIONS.find((item) => String(item.id) === detail[1] && item.logist_id === LOGIST_ID && !unassigned);
+      if (!own) return reply(route, { statusCode: 403, message: "Bu viloyat statistikasini ko'rishga ruxsat yo'q" }, 403);
+      return reply(route, wrap(regionDetail(String(own.id), own.name)));
     }
     if (method !== "GET") {
       mock.leaked.push(`${method} ${path}`);
@@ -142,4 +222,17 @@ export const expectNoHorizontalOverflow = async (page: Page) => {
   expect(
     await page.locator("[data-shell-slot=content]").evaluate((node) => node.scrollWidth <= node.clientWidth),
   ).toBe(true);
+};
+
+/** LG-3: logist `/regions` (viloyat ko'rinishi) — sarlavhada viloyat nomi chiqquncha kutadi. */
+export const openLogistRegions = async (
+  page: Page,
+  { search = "", heading = "Samarqand viloyati", ...options }: MockOptions & { search?: string; heading?: string | null } = {},
+) => {
+  const mock = await mockLogistHome(page, options);
+  await page.goto(`/regions${search}`);
+  if (heading) {
+    await expect(page.getByRole("heading", { level: 1, name: heading })).toBeVisible({ timeout: 90_000 });
+  }
+  return mock;
 };

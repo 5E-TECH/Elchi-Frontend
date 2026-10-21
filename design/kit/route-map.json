@@ -1149,7 +1149,7 @@
     {
       "path": "/regions",
       "section": "regions",
-      "title": "Hududlar — xarita va statistika (menejer/kuryer: o'z viloyati; dizayn v2)",
+      "title": "Hududlar — xarita va statistika (menejer/kuryer: o'z viloyati; logist: o'z viloyatlari, pulsiz; dizayn v2)",
       "components": [
         "src/pages/region/index.tsx",
         "src/pages/region/ui/RegionsOverview.tsx",
@@ -1160,8 +1160,11 @@
         "src/pages/region/ui/regionBlocks.tsx",
         "src/pages/region/ui/ScopedRegionView.tsx",
         "src/pages/region/ui/ScopedDistricts.tsx",
+        "src/pages/region/ui/LogistRegionView.tsx",
+        "src/pages/region/ui/LogistRegionCouriers.tsx",
         "src/pages/region/model/regionsModel.ts",
         "src/pages/region/model/scopedModel.ts",
+        "src/pages/region/model/logistRegionModel.ts",
         "src/pages/region/model/regionPeriod.ts",
         "src/widgets/region-detail/ui/RegionDetailDialog.tsx"
       ],
@@ -1174,7 +1177,7 @@
         "tizim": ["charts"]
       },
       "roleNotes": {
-        "logist": "Logist (kodda hali yo'q): menyu ildizi — orqaga havolasiz. Tepada o'z viloyatlari tanlovi (desktop seg, telefonda Select) — ro'yxat stats/all dan logist_id === me.id bo'yicha. Viloyat — GET region/stats/:id (logistga 403 bermaydi): tumanlar va kuryerlar kesimi. Tanlangan viloyatning logist_id ≠ me.id bo'lsa (boshqa logistga o'tkazilgan) — EmptyState «Bu viloyat endi sizga biriktirilmagan». Xato — ErrorState + «Qayta urinish». Kuryerlar ro'yxati (couriers-list, LG-S1) — TAKLIF: yangi route (masalan /couriers, menyu «Kuryerlar»), kodda yo'q; route qo'shilgach shu yerdan ko'chiriladi. Moliyaviy ustunlar («Tushum») olib tashlandi; tanlangan tuman panelida «Tuman buyurtmalari» → /orders."
+        "logist": "LG-3 (kodda bor): menyu ildizi — orqaga havolasiz. Tepada o'z viloyatlari tanlovi (desktop seg, 5 tadan ko'p bo'lsa va telefonda Select «Samarqand · 86 ta») — ro'yxat GET region/stats/all dan klientda logist_id === me (backend iOnGbEqi gacha). Viloyat (?region=) — GET region/stats/:id: spidometr, umumiy ko'rsatkichlar (Jami, Jarayonda, Faol kuryerlar a/b), tumanlar taxtasi (Grafik | Jadval) + «Tanlangan tuman» (Tushum o'rnida «Kuryerlar»), «Tumanlar kesimida» (Tushumsiz), «Kuryerlar (N)» top 5 + «Yana N ta kuryer». GET /district chaqirilmaydi (logistga 403). URL'dagi viloyat logistniki bo'lmasa (yangi ro'yxat bo'yicha) yoki stats/:id 403 — «Bu viloyat endi sizga biriktirilmagan». Xato — ogohlantirish + «Qayta urinish». Chizilmagan: «Tuman buyurtmalari» (LG-4), «Barcha kuryerlar» va couriers-list (/couriers — LG-5)."
       },
       "note": "Viloyat oynasi — umumiy RegionDetailDialog (widgets/region-detail, lazy; bosh sahifa kartogrammasi ham shu). Menejer va kuryer — GET region/my/district-stats (stats/all va orders so'rovlari yo'q). Ega savollari sukuti: Q11 xarita — Highcharts lazy, v2 tokenlar; Q12 scoped sarlavhalarda filial / «sizga tegishli» da'vosi yo'q («{viloyat} buyurtmalari · …» — backend butun viloyat raqamlarini beradi). Chizilmagan: oynadagi «Kunlik buyurtmalar» (Taklif), scoped filial/kuryer kesimi (API yo'q)."
     },
@@ -1729,7 +1732,7 @@
   "plannedMenu": {
     "$comment": "Maketda bor, kodda hali yo'q menyu bandlari (ega tasdig'i 2026-10-19). Faqat qisqaradi: band menuConfig.tsx ga qo'shilgach — shu yerdan olinadi.",
     "market_operator": ["dashboard", "orders", "newOrders", "products", "earnings"],
-    "logist": ["orders", "mails", "batches", "couriers", "regions"],
+    "logist": ["orders", "mails", "batches", "couriers"],
     "investor": ["investments", "profits"]
   },
   "plannedBottomNav": {
@@ -1771,7 +1774,6 @@
     "superadmin-notifications-campaign-cancel-dialog": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
     "superadmin-notifications-campaign-report-dialog": "Taklif (ega KM-S1, 2026-10-19) — kodda yo'q: kampaniya hisoboti (GET /notifications/campaigns/:id/report, /undelivered, /undelivered/export)",
     "superadmin-notifications-send-states": "Taklif (WIsb9Ytq, ebSV5oyP) — kodda yo'q: auditoriya konstruktori, rejalashtirish, kampaniyalar tarixi",
-    "logist-regions-detail": "Logist roli (menuConfig, routes, guard) kodda hali yo'q — dzyVftBx, mDfjKeQi.",
     "market-operators-deactivate-dialog": "Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak).",
     "market-operators-activate-dialog": "Kodda yo'q; market uchun status endpoint yo'q (Taklif · backend kerak).",
     "market_operator-new-orders-create-manual": "Kodda yo'q: market_operator roli frontendda yo'q; POST orders MARKET_OPERATOR'ga yopiq (Taklif · backend kerak).",
@@ -1799,8 +1801,9 @@
     "superadmin-neworders-cancelled-pin-dialog": "Market PIN kodi oynasi (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md), ega javobi 1): QR zaxirasi — 6 xonali PIN (Field + TextInput, raqamli), 5 marta xato — sessiya bloklanadi. Taklif · backend kerak (BG6: POST scan/market-cancelled { market_id, pin }). Kirish — skaner oynasidagi «PIN kodni kiritish»."
   },
   "partialViews": {
-    "logist-dashboard-main": "Kodda bor (LG-1): sarlavha + biriktirilgan viloyatlar, davr (Bugun · Bu hafta · Bu oy · Barchasi + sana), KPI (Jami, Sotilgan, Bekor, Faol kuryerlar a/b), «Muvaffaqiyat darajasi», «Viloyatlar muvaffaqiyati», «Viloyatlarim» jadvali (telefonda kartalar), holatlar (yuklanish, xato, internet yo'q — «Internet aloqasi yo'q», viloyat yo'q). Ma'lumot — GET region/stats/all + klientda logist_id = me (backend iOnGbEqi gacha). Farq: «So'nggi buyurtmalar» chizilmagan (logist buyurtmalari — backend 4BftLLnc, LG-4); viloyat «Tafsilot» havolasi yashirin (LG-3); «Faol kuryerlar» — backend status = 'active' (maketdagi «bugun buyurtmasi bor» soni API'da yo'q, izoh «Faol holatdagi kuryerlar» — ega savoli); «Viloyatlar muvaffaqiyati» — umumiy HBarList emas, sahifa ichidagi Meter ro'yxati (LogistRegionSuccessCard: HBarList'da maqsad chizig'i yo'q, maketda 70% belgisi); davr tablaridagi sonlar yo'q (API bermaydi — ega savoli); foizlarda oxirgi nol tushadi («75%», maketda «75,0%» — umumiy formatPercentLocalized qoidasi, butun ilova bo'yicha qaror).",
-    "logist-dashboard-mobile-menu": "Kodda bor (LG-1): telefon varaqasi / planshet paneli — profil (rol «Logist»), «Bosh sahifa», Bildirishnomalar (+ son), Sozlamalar, Chiqish; pastki menyu — «Bosh sahifa» + «Menyu». Farq: menyu qidiruvi yo'q (buyurtmalar ochilmaguncha — LG-4/LG-6); Buyurtmalar, Pochta, Paketlar, Kuryerlar, Hududlar bandlari o'z sahifasi bilan (LG-3, LG-4, LG-5); personadagi «· 4 viloyat» yo'q.",
+    "logist-regions-detail": "Kodda bor (LG-3): /regions logist ko'rinishi — viloyat tanlovi (?region=), davr, spidometr, umumiy ko'rsatkichlar, tumanlar taxtasi (Grafik | Jadval) va «Tanlangan tuman», «Tumanlar kesimida», «Kuryerlar» top 5, holatlar (yuklanish, xato, «Bu viloyat endi sizga biriktirilmagan», tumanlar yo'q, viloyat biriktirilmagan). Farq: «Tuman buyurtmalari» (logist buyurtmalari — LG-4) va «Barcha kuryerlar» (/couriers — LG-5) yashirin; «Faol kuryerlar» — backend status = 'active' (maketdagi «bugun buyurtmasi bor» soni API'da yo'q — LG-1 qarori, izoh «Faol holatdagi kuryerlar»); tuman kataklari shkalasi 4 pog'ona (ilovadagi region-map tokenlari; maketda 5); 5 tadan ko'p viloyatda desktopda ham Select.",
+    "logist-dashboard-main": "Kodda bor (LG-1): sarlavha + biriktirilgan viloyatlar, davr (Bugun · Bu hafta · Bu oy · Barchasi + sana), KPI (Jami, Sotilgan, Bekor, Faol kuryerlar a/b), «Muvaffaqiyat darajasi», «Viloyatlar muvaffaqiyati», «Viloyatlarim» jadvali (telefonda kartalar), holatlar (yuklanish, xato, internet yo'q — «Internet aloqasi yo'q», viloyat yo'q). Ma'lumot — GET region/stats/all + klientda logist_id = me (backend iOnGbEqi gacha). Farq: «So'nggi buyurtmalar» chizilmagan (logist buyurtmalari — backend 4BftLLnc, LG-4); «Faol kuryerlar» — backend status = 'active' (maketdagi «bugun buyurtmasi bor» soni API'da yo'q, izoh «Faol holatdagi kuryerlar» — ega savoli); «Viloyatlar muvaffaqiyati» — umumiy HBarList emas, sahifa ichidagi Meter ro'yxati (LogistRegionSuccessCard: HBarList'da maqsad chizig'i yo'q, maketda 70% belgisi); davr tablaridagi sonlar yo'q (API bermaydi — ega savoli); foizlarda oxirgi nol tushadi («75%», maketda «75,0%» — umumiy formatPercentLocalized qoidasi, butun ilova bo'yicha qaror).",
+    "logist-dashboard-mobile-menu": "Kodda bor (LG-1): telefon varaqasi / planshet paneli — profil (rol «Logist»), «Bosh sahifa», «Hududlar» (LG-3), Bildirishnomalar (+ son), Sozlamalar, Chiqish; pastki menyu — «Bosh sahifa» · «Hududlar» · «Menyu». Farq: menyu qidiruvi yo'q (buyurtmalar ochilmaguncha — LG-4/LG-6); «Hududlar» — LG-3 da (pastki menyuda ham katak); Buyurtmalar, Pochta, Paketlar, Kuryerlar bandlari o'z sahifasi bilan (LG-4, LG-5); personadagi «· 4 viloyat» yo'q.",
     "superadmin-orders-list-refreshing": "Kodda bor (OR-1): «Yangilanmoqda…» belgisi (400 ms dan keyin), «Yangilash» band, «Oxirgi yangilanish», «Avtomatik yangilanadi». Farq: holat tablari sonlari (va ularning xira holati) chizilmaydi — GET /orders har holat sonini bermaydi (OR-2, backend GaBIPi3Z).",
     "superadmin-orders-list-refresh-error": "Kodda bor (OR-1): «Ro'yxat yangilanmadi» + «Qayta urinish» + ×, eski qatorlar qoladi. Farq: izoh «Ro'yxat eskirgan bo'lishi mumkin.» (tab sonlarisiz) — holat tablari sonlari API'da yo'q (OR-2, backend GaBIPi3Z).",
     "manager-orders-list-all-refreshing": "Kodda bor (OR-1): «Yangilanmoqda…» belgisi (400 ms dan keyin), «Yangilash» band, «Oxirgi yangilanish», «Avtomatik yangilanadi». Farq: holat tablari sonlari (va ularning xira holati) chizilmaydi — GET /orders har holat sonini bermaydi (OR-2, backend GaBIPi3Z).",
@@ -2102,6 +2105,7 @@
     "manager-branch-dashboard-main": "src/pages/branch-dashboard/ui/BranchDashboardPage.tsx",
     "manager-regions-scoped": "src/pages/region/ui/ScopedRegionView.tsx",
     "courier-regions-scoped": "src/pages/region/ui/ScopedRegionView.tsx",
+    "logist-regions-detail": ["src/pages/region/ui/LogistRegionView.tsx", "src/pages/region/ui/LogistRegionCouriers.tsx"],
     "superadmin-users-delete-dialog": "src/widgets/user-list/ui/UserListTable.tsx",
     "admin-users-delete-dialog": "src/widgets/user-list/ui/UserListTable.tsx",
     "superadmin-products-select-market-dialog": "src/pages/products/list/ui/SelectMarketDialog.tsx",
