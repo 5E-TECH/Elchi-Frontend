@@ -399,9 +399,142 @@
       }
     },
     "sato": {
-      "title": "Tumanlarni o'tkazish",
-      "subtitle": "Tumanlarni viloyatlar bo'yicha boshqarish: tumanni ushlab olib kerakli viloyat ustiga tashlang",
-      "moveErrorText": "Ro'yxat qayta yuklandi, tuman joyida qoldi"
+      "title": "Tumanlar va SATO kodlari",
+      "subtitle": "Tumanlarni viloyatlarga biriktirish va rasmiy SATO kodlarini yozish",
+      "moveErrorText": "Ro'yxat qayta yuklandi, tuman joyida qoldi",
+      "moveInfo": "Tumanni ushlab olib kerakli viloyat ustiga tashlang yoki uning o'tkazish tugmasini bosing.",
+      "pageTabsAria": "Tumanlar bo'limlari",
+      "pageTabs": {
+        "move": "Tumanlarni o'tkazish",
+        "sato": "SATO kodlari"
+      },
+      "kpi": {
+        "aria": "SATO solishtirish natijasi",
+        "unit": "ta",
+        "totalDb": "Bazada",
+        "totalDbHint": "Elchi tumanlari",
+        "totalSato": "SATO'da",
+        "totalSatoHint": "Rasmiy ro'yxat",
+        "matched": "Mos keldi",
+        "matchedHint": "{{value}} tasida kod bor",
+        "matchedShareAria": "Mos kelganlar ulushi",
+        "unmatched": "Mos kelmadi",
+        "unmatchedHint": "Kod qo'lda kiritiladi",
+        "duplicates": "Takroriy",
+        "duplicatesHint": "Yozuv · {{value}} ta nomda",
+        "missing": "Bazada yo'q",
+        "missingHint": "Faqat SATO'da"
+      },
+      "tabs": {
+        "found": "Topildi",
+        "notFound": "Topilmadi",
+        "hasCode": "Kodi bor",
+        "duplicates": "Takroriy nomlar",
+        "missing": "Bazada yo'q",
+        "noCode": "Kodsiz"
+      },
+      "statusTabsAria": "SATO holati bo'yicha",
+      "statusSelectAria": "SATO bo'limi: {{tab}}",
+      "sectionAria": {
+        "found": "SATO kodi topilgan tumanlar",
+        "notFound": "SATO kodi topilmagan tumanlar",
+        "hasCode": "SATO kodi bor tumanlar",
+        "duplicates": "Dublikat tumanlar",
+        "missing": "Bazada yo'q SATO yozuvlari",
+        "noCode": "SATO kodi yo'q tumanlar"
+      },
+      "filters": {
+        "searchAria": "Tuman, viloyat yoki SATO kodi bo'yicha qidirish",
+        "searchPlaceholder": "Tuman, viloyat yoki kod",
+        "region": "Viloyat",
+        "allRegions": "Barchasi",
+        "clear": "Filtrlarni tozalash"
+      },
+      "info": {
+        "found": "Bu kodlar rasmiy ro'yxatdan nomi bo'yicha topildi, lekin hali yozilmagan. Kodni tekshirib, shu yerda saqlang yoki xato topilganini tuzating.",
+        "notFound": "Bu tumanlar rasmiy ro'yxatda nomi bo'yicha topilmadi. Kodni qo'lda kiriting; tuman «Bazada yo'q» tabida boshqa nom bilan turgan bo'lishi mumkin.",
+        "hasCode": "Kodni faqat xato kiritilgan bo'lsa o'zgartiring. Bitta kod faqat bitta tumanga yoziladi.",
+        "duplicates": "Bir xil nomli tumanlarga kod avtomatik yozilmaydi. Har bir yozuvga kodni qo'lda kiriting.",
+        "missing": "Bu tumanlar rasmiy SATO ro'yxatida bor, lekin bazada topilmadi. Nomi boshqacha yozilgan bo'lsa, bazadagi tumanga kodni qo'lda kiriting.",
+        "noCode": "Kodni tumanning rasmiy SATO raqamidan kiriting. Bitta kod faqat bitta tumanga yoziladi."
+      },
+      "columns": {
+        "district": "Tuman",
+        "region": "Viloyat",
+        "satoCode": "SATO kodi",
+        "foundCode": "Topilgan kod",
+        "officialName": "Rasmiy nomi",
+        "actions": "Amallar"
+      },
+      "row": {
+        "noCode": "Kod yo'q",
+        "enter": "Kod kiritish",
+        "editAria": "{{name}} — SATO kodini o'zgartirish",
+        "enterAria": "{{name}} — SATO kodini kiritish",
+        "nameWithRegion": "{{name}} ({{region}})",
+        "id": "ID {{id}}",
+        "meta": "{{region}} · {{code}}",
+        "metaWithId": "{{region}} · ID {{id}} · {{code}}"
+      },
+      "editor": {
+        "label": "SATO kodi",
+        "fieldAria": "{{name}} — SATO kodi",
+        "hint": "Faqat raqamlar, masalan 1727401",
+        "cancel": "Bekor",
+        "save": "Saqlash",
+        "saving": "Saqlanmoqda…",
+        "saved": "SATO kodi saqlandi",
+        "savedText": "{{name}} · {{code}}",
+        "invalid": "Faqat raqamlar kiriting, masalan 1727401",
+        "taken": "Bu kod band: {{district}}, {{region}}",
+        "takenNoRegion": "Bu kod band: {{district}}",
+        "takenUnknown": "Bu kod boshqa tumanga yozilgan",
+        "failed": "Kodni saqlab bo'lmadi. Qayta urinib ko'ring."
+      },
+      "footer": {
+        "districts": "{{value}} ta tuman",
+        "districtsRange": "{{from}}–{{to}} / {{total}} ta tuman",
+        "records": "{{value}} ta yozuv",
+        "recordsRange": "{{from}}–{{to}} / {{total}} ta yozuv",
+        "duplicates": "{{names}} ta nom · {{value}} ta yozuv"
+      },
+      "states": {
+        "previewLoading": "Solishtirish yuklanmoqda",
+        "districtsLoading": "Ro'yxat yuklanmoqda",
+        "previewError": "Solishtirishni yuklab bo'lmadi",
+        "districtsError": "Tumanlarni yuklab bo'lmadi",
+        "loadErrorText": "Internetni tekshirib, qayta urinib ko'ring."
+      },
+      "empty": {
+        "found": {
+          "title": "Yoziladigan kod yo'q",
+          "description": "Topilgan kodlarning hammasi yozilgan."
+        },
+        "notFound": {
+          "title": "Topilmagan tuman yo'q",
+          "description": "Hamma tuman rasmiy ro'yxatdan topildi."
+        },
+        "hasCode": {
+          "title": "Kodli tuman yo'q",
+          "description": "Kod saqlangach, tuman shu yerda ko'rinadi."
+        },
+        "duplicates": {
+          "title": "Takroriy nom yo'q",
+          "description": "Bazada bir xil nomli tumanlar yo'q."
+        },
+        "missing": {
+          "title": "Hamma SATO tumani bazada bor",
+          "description": "Rasmiy ro'yxatdagi har bir tuman bazada topildi."
+        },
+        "noCode": {
+          "title": "Hamma tumanda SATO kodi bor",
+          "description": "Yangi tuman qo'shilsa, shu yerda ko'rinadi."
+        },
+        "filtered": {
+          "title": "Hech narsa topilmadi",
+          "description": "Qidiruv yoki viloyat filtrini o'zgartiring."
+        }
+      }
     },
     "logist": {
       "title": "Logist biriktirish",

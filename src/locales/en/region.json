@@ -399,9 +399,148 @@
       }
     },
     "sato": {
-      "title": "Move districts",
-      "subtitle": "Manage districts by region: drag a district and drop it onto the target region",
-      "moveErrorText": "The list was reloaded, the district stayed in place"
+      "title": "Districts and SOATO codes",
+      "subtitle": "Assign districts to regions and record official SOATO codes",
+      "moveErrorText": "The list was reloaded, the district stayed in place",
+      "moveInfo": "Drag a district onto the target region or press its move button.",
+      "pageTabsAria": "District sections",
+      "pageTabs": {
+        "move": "Move districts",
+        "sato": "SOATO codes"
+      },
+      "kpi": {
+        "aria": "SOATO matching result",
+        "unit": "",
+        "totalDb": "In database",
+        "totalDbHint": "Elchi districts",
+        "totalSato": "In SOATO",
+        "totalSatoHint": "Official list",
+        "matched": "Matched",
+        "matchedHint_one": "{{value}} has a code",
+        "matchedHint_other": "{{value}} have a code",
+        "matchedShareAria": "Share of matched districts",
+        "unmatched": "Not matched",
+        "unmatchedHint": "Code is entered manually",
+        "duplicates": "Duplicates",
+        "duplicatesHint_one": "Records · {{value}} name",
+        "duplicatesHint_other": "Records · {{value}} names",
+        "missing": "Not in database",
+        "missingHint": "Only in SOATO"
+      },
+      "tabs": {
+        "found": "Found",
+        "notFound": "Not found",
+        "hasCode": "Has code",
+        "duplicates": "Duplicate names",
+        "missing": "Not in database",
+        "noCode": "No code"
+      },
+      "statusTabsAria": "By SOATO status",
+      "statusSelectAria": "SOATO section: {{tab}}",
+      "sectionAria": {
+        "found": "Districts with a found SOATO code",
+        "notFound": "Districts without a found SOATO code",
+        "hasCode": "Districts with a SOATO code",
+        "duplicates": "Duplicate districts",
+        "missing": "SOATO records missing from the database",
+        "noCode": "Districts without a SOATO code"
+      },
+      "filters": {
+        "searchAria": "Search by district, region or SOATO code",
+        "searchPlaceholder": "District, region or code",
+        "region": "Region",
+        "allRegions": "All",
+        "clear": "Clear filters"
+      },
+      "info": {
+        "found": "These codes were found in the official list by name but are not saved yet. Check the code and save it here, or fix a wrong match.",
+        "notFound": "These districts were not found in the official list by name. Enter the code manually; the district may be in the “Not in database” tab under another name.",
+        "hasCode": "Change a code only if it was entered by mistake. One code belongs to one district only.",
+        "duplicates": "Codes are not written automatically to districts with the same name. Enter the code for each record manually.",
+        "missing": "These districts are in the official SOATO list but were not found in the database. If the name is spelled differently, enter the code for the database district manually.",
+        "noCode": "Enter the code from the district's official SOATO number. One code belongs to one district only."
+      },
+      "columns": {
+        "district": "District",
+        "region": "Region",
+        "satoCode": "SOATO code",
+        "foundCode": "Found code",
+        "officialName": "Official name",
+        "actions": "Actions"
+      },
+      "row": {
+        "noCode": "No code",
+        "enter": "Enter code",
+        "editAria": "{{name}} — change SOATO code",
+        "enterAria": "{{name}} — enter SOATO code",
+        "nameWithRegion": "{{name}} ({{region}})",
+        "id": "ID {{id}}",
+        "meta": "{{region}} · {{code}}",
+        "metaWithId": "{{region}} · ID {{id}} · {{code}}"
+      },
+      "editor": {
+        "label": "SOATO code",
+        "fieldAria": "{{name}} — SOATO code",
+        "hint": "Digits only, e.g. 1727401",
+        "cancel": "Cancel",
+        "save": "Save",
+        "saving": "Saving…",
+        "saved": "SOATO code saved",
+        "savedText": "{{name}} · {{code}}",
+        "invalid": "Enter digits only, e.g. 1727401",
+        "taken": "This code is taken: {{district}}, {{region}}",
+        "takenNoRegion": "This code is taken: {{district}}",
+        "takenUnknown": "This code belongs to another district",
+        "failed": "Could not save the code. Try again."
+      },
+      "footer": {
+        "districts_one": "{{value}} district",
+        "districts_other": "{{value}} districts",
+        "districtsRange_one": "{{from}}–{{to}} of {{total}} district",
+        "districtsRange_other": "{{from}}–{{to}} of {{total}} districts",
+        "records_one": "{{value}} record",
+        "records_other": "{{value}} records",
+        "recordsRange_one": "{{from}}–{{to}} of {{total}} record",
+        "recordsRange_other": "{{from}}–{{to}} of {{total}} records",
+        "duplicates": "Names: {{names}} · records: {{value}}"
+      },
+      "states": {
+        "previewLoading": "Loading the matching",
+        "districtsLoading": "Loading the list",
+        "previewError": "Could not load the matching",
+        "districtsError": "Could not load districts",
+        "loadErrorText": "Check your connection and try again."
+      },
+      "empty": {
+        "found": {
+          "title": "No codes to save",
+          "description": "All found codes are already saved."
+        },
+        "notFound": {
+          "title": "No unmatched districts",
+          "description": "Every district was found in the official list."
+        },
+        "hasCode": {
+          "title": "No districts with a code",
+          "description": "A district appears here once its code is saved."
+        },
+        "duplicates": {
+          "title": "No duplicate names",
+          "description": "There are no districts with the same name in the database."
+        },
+        "missing": {
+          "title": "Every SOATO district is in the database",
+          "description": "Each district from the official list was found in the database."
+        },
+        "noCode": {
+          "title": "Every district has a SOATO code",
+          "description": "A new district will appear here once added."
+        },
+        "filtered": {
+          "title": "Nothing found",
+          "description": "Change the search or the region filter."
+        }
+      }
     },
     "logist": {
       "title": "Assign logisticians",
