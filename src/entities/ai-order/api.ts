@@ -89,6 +89,13 @@ export const AI_AVAILABILITY_KEY = "ai-order-availability";
  * AI o'chiq bo'lsa ham `ai-parse` baribir `disabled` qaytaradi va panel
  * operatorga tushuntiradi — tabni jimgina yo'qotish chalg'itadi.
  */
+/**
+ * «AI bilan» tabi yashirilsinmi (ega Ops S3): faqat AI aniq o'chiq bo'lsa — `enabled:false` yoki
+ * `state === "disabled"` (kalit yo'q / noto'g'ri). `unknown`, `cap_exceeded` va javob yo'q (xato) — tab qoladi.
+ */
+export const isAiTabHidden = (availability: AiAvailability | null | undefined): boolean =>
+  availability?.enabled === false || availability?.state === "disabled";
+
 export const useAiAvailability = () =>
   useQuery({
     queryKey: [AI_AVAILABILITY_KEY],

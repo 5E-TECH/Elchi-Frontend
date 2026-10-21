@@ -858,5 +858,30 @@
     "newOrdersBodyOwn_other": "{{name}} has {{value}} orders in “New” status with you. Make sure you are not creating a duplicate.",
     "openOrder": "Open №{{id}} in a new tab",
     "openOrderLabel": "Open order №{{id}} in a new tab"
+  },
+  "createPricing": {
+    "standard": "standard",
+    "noPrice": "No price",
+    "marketStandard": "{{market}} standard price",
+    "ownStandard": "Your standard price",
+    "deliveryHintDefault": "{{owner}}. Default: {{type}}",
+    "noTariffTitle": "No standard price is set for this market",
+    "noTariffBody": "The order will be created; the price is applied at sale. Set the standard price on the market card.",
+    "noTariffOwnTitle": "Your standard price is not set",
+    "noTariffOwnBody": "The order will be created; the price is applied at sale. If you have questions, contact your manager.",
+    "catalogLessNoPrice": "Not in catalog · no price",
+    "priceMissing": "No price entered",
+    "unitTimes": "{{quantity}} × {{price}}",
+    "deliveryPrice": "Delivery price",
+    "summaryStandard": "Standard price",
+    "summaryNoPriceHint": "No standard price · the price is applied at sale",
+    "summaryChargedMarket": "Charged to the market · the final price is fixed at sale",
+    "summaryChargedOwn": "Charged to you · the final price is fixed at sale",
+    "autoTotalHint": "Calculated from product prices — you can change it",
+    "unpricedNote_one": "{{value}} product without a price was not counted",
+    "unpricedNote_other": "{{value}} products without a price were not counted",
+    "byProducts": "From products:",
+    "apply": "Apply",
+    "applyLabel": "Apply the products total: {{amount}}"
   }
 }

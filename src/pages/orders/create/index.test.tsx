@@ -573,7 +573,7 @@ describe("OrderCreate — 2-qadam: mijoz, manzil, mahsulotlar va xulosa", () => 
 
     const selected = screen.getByRole("list", { name: "Tanlangan mahsulotlar" });
     expect(within(selected).getByText("Sovg'a qadog'i")).toBeInTheDocument();
-    expect(within(selected).getByText("Katalogdan tashqari")).toBeInTheDocument();
+    expect(within(selected).getByText("Katalogdan tashqari · narxsiz")).toBeInTheDocument();
     expect(within(selected).getByRole("group", { name: "Sovg'a qadog'i soni" })).toHaveTextContent("2");
     expect(name).toHaveValue("");
 
@@ -605,6 +605,9 @@ describe("OrderCreate — 2-qadam: mijoz, manzil, mahsulotlar va xulosa", () => 
     await pickOption(user, "customer.district_id", "Chilonzor • 1726269");
     await user.type(screen.getByLabelText(/^Manzil/), "Chilonzor 19-kvartal");
     await user.click(await screen.findByRole("button", { name: /Telefon ushlagich/ }));
+    // CS-B: summa mahsulot narxidan avtomatik to'ldirildi (45 000) — qo'lda boshqasi yoziladi.
+    expect(screen.getByLabelText(/^Umumiy summa/)).toHaveValue("45 000");
+    await user.clear(screen.getByLabelText(/^Umumiy summa/));
     await user.type(screen.getByLabelText(/^Umumiy summa/), "150000");
     expect(screen.getByLabelText(/^Umumiy summa/)).toHaveValue("150 000");
 
@@ -644,6 +647,9 @@ describe("OrderCreate — 2-qadam: mijoz, manzil, mahsulotlar va xulosa", () => 
     await pickOption(user, "customer.region_id", "Toshkent shahri • 1726");
     await pickOption(user, "customer.district_id", "Chilonzor • 1726269");
     await user.click(await screen.findByRole("button", { name: /Telefon ushlagich/ }));
+    // CS-B: summa mahsulot narxidan avtomatik to'ldirildi (45 000) — qo'lda boshqasi yoziladi.
+    expect(screen.getByLabelText(/^Umumiy summa/)).toHaveValue("45 000");
+    await user.clear(screen.getByLabelText(/^Umumiy summa/));
     await user.type(screen.getByLabelText(/^Umumiy summa/), "150000");
 
     // Telefon 8 raqam — hali tayyor emas.
@@ -762,5 +768,301 @@ describe("OrderCreate — maydonlar v2 Field geometriyasida (viloyat/tuman Selec
     expect(screen.getByLabelText(/^Umumiy summa/).parentElement).toHaveTextContent("so'm");
     expect(screen.getByLabelText(/^Manzil/)).toHaveClass("min-h-[88px]");
     expect(screen.getByLabelText(/^Izoh/)).toHaveClass("min-h-[88px]");
+  });
+});
+
+/**
+ * CS-B (IT1YpboR, zRqDRLAZ; maket `*-step2-existing-customer`): standart narx, mahsulot rasmi, narx matni,
+ * «Umumiy summa» taklifi va vaqtinchalik «Yetkazish narxi».
+ */
+describe("OrderCreate — CS-B: standart narx, rasm, narx matni, summa taklifi", () => {
+  const ok = (data: unknown) => Promise.resolve({ data: { statusCode: 200, message: "ok", data } });
+  const managerState = {
+    role: { id: "9", role: "manager", region: null, name: "Menejer" },
+  } as never;
+  const TARIFFS = { tariff_home: 35000, tariff_center: 25000, default_tariff: "address" };
+  const CATALOG = [
+    { id: 501, name: "Telefon ushlagich", price: "45000.00", image_url: "https://cdn.example/holder.png" },
+    { id: 502, name: "Avto changyutgich", price: 120000 },
+    { id: 503, name: "USB-C kabel", price: null },
+  ];
+
+  /** Market roli: o'z kartasi (`auth/my-profile`) va katalog. */
+  const marketGet =
+    (profile: Record<string, unknown> | Promise<unknown>) =>
+    (url: string): Promise<unknown> => {
+      if (url === "auth/my-profile") {
+        return profile instanceof Promise ? profile : ok({ id: "7", role: "market", name: "Test market", ...profile });
+      }
+      if (url.startsWith("product/")) return ok(CATALOG);
+      return aiApiGet(url);
+    };
+
+  const deliveryGroup = () => screen.getByRole("group", { name: /Yetkazish turi/ });
+  const radio = (name: RegExp) => within(deliveryGroup()).getByRole("radio", { name });
+  const card = (name: RegExp) => radio(name).closest("label") as HTMLElement;
+  const aside = () => screen.getByRole("complementary", { name: "Buyurtma xulosasi" });
+  const deliveryPrice = () => within(aside()).queryByRole("group", { name: "Yetkazish narxi" });
+  const total = () => screen.getByLabelText(/^Umumiy summa/) as HTMLInputElement;
+
+  it("market roli: kartalarda standart narx, sukut — `default_tariff` (Uygacha), izoh va xulosada «Yetkazish narxi»", async () => {
+    mocks.get.mockImplementation(marketGet(TARIFFS));
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await waitFor(() => expect(radio(/Uygacha/)).toBeChecked());
+    expect(card(/Markazgacha/)).toHaveTextContent("25 000 so'm");
+    expect(card(/Markazgacha/)).toHaveTextContent("standart");
+    expect(card(/Uygacha/)).toHaveTextContent("35 000 so'm");
+    expect(within(deliveryGroup()).getByText("Sizning standart narxingiz. Sukut bo'yicha: Uygacha")).toBeInTheDocument();
+    // `og'ir yoki katta posilkada oshadi` — narx dvigateli (CS-E) bilan; hozir yozilmaydi.
+    expect(deliveryGroup()).not.toHaveTextContent(/oshadi/);
+
+    const price = deliveryPrice()!;
+    expect(price).toHaveTextContent("35 000 so'm");
+    expect(price).toHaveTextContent("Standart narx");
+    expect(price).toHaveTextContent("Sizdan yechiladi · yakuniy narx sotuvda qotiriladi");
+    expect(price).not.toHaveTextContent(/≈|Taklif/);
+
+    fireEvent.click(radio(/Markazgacha/));
+    expect(radio(/Markazgacha/)).toBeChecked();
+    expect(deliveryPrice()).toHaveTextContent("25 000 so'm");
+    expect(within(aside()).getByText("Markazgacha")).toBeInTheDocument();
+  });
+
+  it("qo'lda tanlangan tur ustidan yozilmaydi — tariflar keyin kelsa ham", async () => {
+    let resolveProfile: (value: unknown) => void = () => {};
+    const profile = new Promise((resolve) => {
+      resolveProfile = resolve;
+    });
+    mocks.get.mockImplementation(marketGet(profile));
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    // Tariflar kelmaguncha narx yo'q — kartada ikonka, xulosada qator yo'q («Narx yo'q» ham demaydi).
+    expect(card(/Uygacha/)).not.toHaveTextContent(/so'm|Narx yo'q/);
+    expect(deliveryPrice()).not.toBeInTheDocument();
+    fireEvent.click(radio(/Markazgacha/));
+
+    resolveProfile({ data: { statusCode: 200, data: { id: "7", role: "market", ...TARIFFS } } });
+    await waitFor(() => expect(card(/Uygacha/)).toHaveTextContent("35 000 so'm"));
+    expect(radio(/Markazgacha/)).toBeChecked();
+    expect(deliveryPrice()).toHaveTextContent("25 000 so'm");
+  });
+
+  it("standart narxsiz market: kartalarda «Narx yo'q», ogohlantirish, xulosada «Narx yo'q»", async () => {
+    mocks.get.mockImplementation(marketGet({ tariff_home: null, tariff_center: 0, default_tariff: null }));
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    const alert = await screen.findByText("Standart narxingiz belgilanmagan");
+    expect(alert.closest("[data-tone]")).toHaveTextContent(
+      "Buyurtma yaratiladi, narx sotuvda qo'llanadi. Savol bo'lsa, menejeringizga murojaat qiling.",
+    );
+    expect(card(/Markazgacha/)).toHaveTextContent("Narx yo'q");
+    expect(card(/Uygacha/)).toHaveTextContent("Narx yo'q");
+    expect(radio(/Markazgacha/)).toBeChecked();
+    expect(deliveryPrice()).toHaveTextContent("Narx yo'q");
+    expect(deliveryPrice()).toHaveTextContent("Standart narx belgilanmagan · narx sotuvda qo'llanadi");
+  });
+
+  it("profil so'rovi yiqilsa narx ko'rsatilmaydi va «Narx yo'q» deyilmaydi (jim)", async () => {
+    mocks.get.mockImplementation((url: string) =>
+      url === "auth/my-profile" ? Promise.reject(new Error("500")) : marketGet(TARIFFS)(url),
+    );
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await waitFor(() => expect(mocks.get).toHaveBeenCalledWith("auth/my-profile"));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(deliveryGroup()).not.toHaveTextContent(/so'm|Narx yo'q/);
+    expect(deliveryPrice()).not.toBeInTheDocument();
+    expect(screen.queryByText(/standart narx/i)).not.toBeInTheDocument();
+  });
+
+  it("admin: tanlash oynasidagi qatorda tariflar bor — `GET users/:id` so'ralmaydi; izohda market nomi", async () => {
+    const user = userEvent.setup();
+    const marketsWithTariffs = MARKETS.map((market) => ({ ...market, ...TARIFFS, default_tariff: "center" }));
+    mocks.get.mockImplementation((url: string) =>
+      url === "markets" ? ok(marketsWithTariffs) : url.startsWith("product/") ? ok(CATALOG) : aiApiGet(url),
+    );
+    renderWithProviders(<OrderCreate />, { preloadedState: adminState });
+
+    await chooseMarket(user);
+    await user.click(screen.getByRole("button", { name: "Keyingi" }));
+
+    expect(await within(deliveryGroup()).findByText("Baraka Shop standart narxi. Sukut bo'yicha: Markazgacha")).toBeInTheDocument();
+    expect(radio(/Markazgacha/)).toBeChecked();
+    expect(deliveryPrice()).toHaveTextContent("25 000 so'm");
+    expect(deliveryPrice()).toHaveTextContent("Marketdan yechiladi · yakuniy narx sotuvda qotiriladi");
+    expect(mocks.get).not.toHaveBeenCalledWith("users/3");
+  });
+
+  it("admin: `location.state.selectedMarket` (faqat id va nom) — tariflar `GET users/:id` dan", async () => {
+    mocks.get.mockImplementation((url: string) =>
+      url === "users/3"
+        ? ok({ id: "3", role: "market", name: "Baraka Shop", ...TARIFFS })
+        : url.startsWith("product/")
+          ? ok(CATALOG)
+          : aiApiGet(url),
+    );
+    renderWithProviders(<OrderCreate />, {
+      preloadedState: adminState,
+      route: { pathname: "/new-orders/create", state: { selectedMarket: { id: 3, name: "Baraka Shop" } } },
+    });
+
+    await waitFor(() => expect(card(/Uygacha/)).toHaveTextContent("35 000 so'm"));
+    expect(mocks.get).toHaveBeenCalledWith("users/3");
+    expect(radio(/Uygacha/)).toBeChecked();
+    expect(deliveryPrice()).toHaveTextContent("35 000 so'm");
+  });
+
+  it("standart narxsiz market (admin): ogohlantirish matni market kartasiga yo'naltiradi", async () => {
+    mocks.get.mockImplementation((url: string) =>
+      url === "users/3"
+        ? ok({ id: "3", role: "market", tariff_home: null, tariff_center: null, default_tariff: "center" })
+        : aiApiGet(url),
+    );
+    renderWithProviders(<OrderCreate />, {
+      preloadedState: adminState,
+      route: { pathname: "/new-orders/create", state: { selectedMarket: { id: 3, name: "Baraka Shop" } } },
+    });
+
+    const title = await screen.findByText("Bu marketga standart narx belgilanmagan");
+    expect(title.closest("[data-tone]")).toHaveTextContent("Standart narxni market kartasida belgilang.");
+  });
+
+  it("menejer: tarif so'ralmaydi, narx, izoh va «Yetkazish narxi» chizilmaydi", async () => {
+    mocks.get.mockImplementation((url: string) => (url.startsWith("product/") ? ok(CATALOG) : aiApiGet(url)));
+    renderWithProviders(<OrderCreate />, {
+      preloadedState: managerState,
+      route: { pathname: "/new-orders/create", state: { selectedMarket: { id: 3, name: "Baraka Shop" } } },
+    });
+
+    await screen.findByRole("button", { name: /Telefon ushlagich/ });
+    expect(deliveryGroup()).not.toHaveTextContent(/so'm|Narx yo'q|standart/);
+    expect(deliveryPrice()).not.toBeInTheDocument();
+    expect(mocks.get).not.toHaveBeenCalledWith("users/3");
+    expect(mocks.get).not.toHaveBeenCalledWith("auth/my-profile");
+  });
+
+  it("mahsulot rasmi (40 px) va narx matni: «2 × 45 000 so'm», «Narxi kiritilmagan», «Katalogdan tashqari · narxsiz»", async () => {
+    const user = userEvent.setup();
+    mocks.get.mockImplementation(marketGet(TARIFFS));
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    const holder = await screen.findByRole("button", { name: /Telefon ushlagich/ });
+    const holderThumb = holder.querySelector("[data-product-thumb]")!;
+    expect(holderThumb).toHaveAttribute("data-product-thumb", "image");
+    expect(holderThumb).toHaveClass("size-10");
+    expect(holderThumb.querySelector("img")).toHaveAttribute("src", "https://cdn.example/holder.png");
+    expect(holder).toHaveTextContent("45 000 so'm");
+    const cable = screen.getByRole("button", { name: /USB-C kabel/ });
+    expect(cable.querySelector("[data-product-thumb]")).toHaveAttribute("data-product-thumb", "icon");
+    expect(cable).not.toHaveTextContent("so'm");
+
+    await user.click(holder);
+    await user.click(holder);
+    await user.click(cable);
+    await user.type(screen.getByLabelText("Katalogda yo'q mahsulot"), "Sovg'a qadog'i{Enter}");
+
+    const selected = screen.getByRole("list", { name: "Tanlangan mahsulotlar" });
+    const rows = within(selected).getAllByRole("listitem");
+    expect(rows[0]).toHaveTextContent("2 × 45 000 so'm");
+    expect(rows[0].querySelector("img")).toHaveAttribute("src", "https://cdn.example/holder.png");
+    expect(rows[1]).toHaveTextContent("Narxi kiritilmagan");
+    expect(rows[2]).toHaveTextContent("Katalogdan tashqari · narxsiz");
+    expect(rows[2].querySelector("[data-product-thumb]")).toHaveAttribute("data-product-thumb", "icon");
+  });
+
+  it("«Umumiy summa» — mahsulotlardan avtomatik; qo'lda yozilgach ustidan yozilmaydi, «Qo'llash» qaytaradi", async () => {
+    const user = userEvent.setup();
+    mocks.get.mockImplementation(marketGet(TARIFFS));
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    const holder = await screen.findByRole("button", { name: /Telefon ushlagich/ });
+    await user.click(holder);
+    expect(total()).toHaveValue("45 000");
+    expect(total()).toHaveAccessibleDescription("Mahsulotlar narxidan hisoblandi — o'zgartirish mumkin");
+
+    await user.click(holder);
+    expect(total()).toHaveValue("90 000");
+    // Narxsiz mahsulot hisobga kirmaydi — izohda aytiladi.
+    await user.click(screen.getByRole("button", { name: /USB-C kabel/ }));
+    expect(total()).toHaveValue("90 000");
+    expect(total()).toHaveAccessibleDescription(
+      "Mahsulotlar narxidan hisoblandi — o'zgartirish mumkin. Narxsiz 1 ta mahsulot hisobga kirmadi",
+    );
+
+    // Qo'lda yozildi — keyingi mahsulot maydonni o'zgartirmaydi, taklif qatorda.
+    await user.clear(total());
+    await user.type(total(), "100000");
+    await user.click(screen.getByRole("button", { name: /Avto changyutgich/ }));
+    expect(total()).toHaveValue("100 000");
+    expect(total()).toHaveAccessibleDescription("Mijozdan olinadigan jami summa. Narxsiz 1 ta mahsulot hisobga kirmadi");
+    expect(within(aside()).getByText("Mahsulotlar bo'yicha:")).toBeInTheDocument();
+    expect(within(aside()).getByText("210 000 so'm")).toBeInTheDocument();
+
+    await user.click(within(aside()).getByRole("button", { name: "Mahsulotlar bo'yicha summani qo'llash: 210 000 so'm" }));
+    expect(total()).toHaveValue("210 000");
+    expect(within(aside()).queryByText("Mahsulotlar bo'yicha:")).not.toBeInTheDocument();
+    // «Qo'llash» — yana avtomatik: mahsulot olib tashlansa summa ham yangilanadi.
+    await user.click(screen.getByRole("button", { name: "Avto changyutgichni olib tashlash" }));
+    expect(total()).toHaveValue("90 000");
+  });
+
+  it("faqat narxsiz mahsulotlar — summa avtomatik to'ldirilmaydi va taklif qatori yo'q", async () => {
+    const user = userEvent.setup();
+    mocks.get.mockImplementation(marketGet(TARIFFS));
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await user.click(await screen.findByRole("button", { name: /USB-C kabel/ }));
+    expect(total()).toHaveValue("");
+    expect(total()).toHaveAccessibleDescription("Mijozdan olinadigan jami summa");
+    expect(within(aside()).queryByText("Mahsulotlar bo'yicha:")).not.toBeInTheDocument();
+  });
+
+  it("yaratilgandan keyin forma tozalanadi: summa yana avtomatik, tur yana sukut (`default_tariff`)", async () => {
+    mocks.post.mockResolvedValue({ data: { statusCode: 201, data: { id: "o1" } } });
+    const user = userEvent.setup();
+    mocks.get.mockImplementation(marketGet(TARIFFS));
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await waitFor(() => expect(radio(/Uygacha/)).toBeChecked());
+    fireEvent.click(radio(/Markazgacha/));
+    await user.type(screen.getByRole("combobox", { name: /^Telefon/ }), "901234567");
+    await user.type(screen.getByLabelText(/^Mijoz ismi/), "Aliyev Vali");
+    await pickOption(user, "customer.region_id", "Toshkent shahri • 1726");
+    await pickOption(user, "customer.district_id", "Chilonzor • 1726269");
+    await user.click(await screen.findByRole("button", { name: /Telefon ushlagich/ }));
+    await user.click(within(aside()).getByRole("button", { name: "Buyurtma yaratish" }));
+
+    await waitFor(() => expect(mocks.post).toHaveBeenCalledWith("orders", expect.anything()));
+    const payload = mocks.post.mock.calls.find(([url]) => url === "orders")?.[1] as Record<string, unknown>;
+    expect(payload).toMatchObject({ total_price: 45000, where_deliver: "center" });
+    expect(payload).not.toHaveProperty("totalPriceAuto");
+    expect(payload).not.toHaveProperty("deliveryTypeTouched");
+
+    await waitFor(() => expect(screen.getByLabelText(/^Mijoz ismi/)).toHaveValue(""));
+    await waitFor(() => expect(radio(/Uygacha/)).toBeChecked());
+    expect(total()).toHaveValue("");
+  });
+});
+
+describe("OrderCreate — «AI bilan» tabi va AI holati (CS-B 6-band, Ops S3)", () => {
+  const availability = (data: unknown) => (url: string) =>
+    url === "orders/ai-availability" ? Promise.resolve({ data: { statusCode: 200, data } }) : aiApiGet(url);
+
+  it("`state: disabled` (kalit yo'q / noto'g'ri) — `enabled:true` bo'lsa ham tab yashiriladi", async () => {
+    mocks.get.mockImplementation(availability({ enabled: true, state: "disabled" }));
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await waitFor(() => expect(screen.queryByTestId("create-mode-tabs")).not.toBeInTheDocument());
+    expect(screen.queryByTestId("ai-mode-panel")).not.toBeInTheDocument();
+  });
+
+  it.each(["cap_exceeded", "unknown", "enabled"])("`state: %s` — tab qoladi", async (state) => {
+    mocks.get.mockImplementation(availability({ enabled: true, state }));
+    renderWithProviders(<OrderCreate />, { preloadedState: marketState });
+
+    await waitFor(() => expect(mocks.get).toHaveBeenCalledWith("orders/ai-availability"));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(tab("AI bilan")).toBeInTheDocument();
   });
 });

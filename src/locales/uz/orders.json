@@ -851,5 +851,29 @@
     "newOrdersBodyOwn": "{{name}} uchun sizda yangi holatdagi {{value}} ta buyurtma bor. Takroriy buyurtma yaratmayotganingizni tekshiring.",
     "openOrder": "№{{id}} ni yangi oynada ochish",
     "openOrderLabel": "Buyurtma №{{id}} ni yangi oynada ochish"
+  },
+  "createPricing": {
+    "standard": "standart",
+    "noPrice": "Narx yo'q",
+    "marketStandard": "{{market}} standart narxi",
+    "ownStandard": "Sizning standart narxingiz",
+    "deliveryHintDefault": "{{owner}}. Sukut bo'yicha: {{type}}",
+    "noTariffTitle": "Bu marketga standart narx belgilanmagan",
+    "noTariffBody": "Buyurtma yaratiladi, narx sotuvda qo'llanadi. Standart narxni market kartasida belgilang.",
+    "noTariffOwnTitle": "Standart narxingiz belgilanmagan",
+    "noTariffOwnBody": "Buyurtma yaratiladi, narx sotuvda qo'llanadi. Savol bo'lsa, menejeringizga murojaat qiling.",
+    "catalogLessNoPrice": "Katalogdan tashqari · narxsiz",
+    "priceMissing": "Narxi kiritilmagan",
+    "unitTimes": "{{quantity}} × {{price}}",
+    "deliveryPrice": "Yetkazish narxi",
+    "summaryStandard": "Standart narx",
+    "summaryNoPriceHint": "Standart narx belgilanmagan · narx sotuvda qo'llanadi",
+    "summaryChargedMarket": "Marketdan yechiladi · yakuniy narx sotuvda qotiriladi",
+    "summaryChargedOwn": "Sizdan yechiladi · yakuniy narx sotuvda qotiriladi",
+    "autoTotalHint": "Mahsulotlar narxidan hisoblandi — o'zgartirish mumkin",
+    "unpricedNote": "Narxsiz {{value}} ta mahsulot hisobga kirmadi",
+    "byProducts": "Mahsulotlar bo'yicha:",
+    "apply": "Qo'llash",
+    "applyLabel": "Mahsulotlar bo'yicha summani qo'llash: {{amount}}"
   }
 }

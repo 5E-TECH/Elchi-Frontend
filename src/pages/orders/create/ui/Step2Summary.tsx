@@ -1,14 +1,18 @@
-// dizayn-v2: superadmin-neworders-create-manual-step2, manager-new-orders-create-manual-step2, registrator-new-orders-create-step2, market-new-orders-create-manual
-import { memo, useId, useMemo, useState } from "react";
+// dizayn-v2: superadmin-neworders-create-manual-step2, manager-new-orders-create-manual-step2, registrator-new-orders-create-step2, market-new-orders-create-manual, superadmin-neworders-create-manual-step2-existing-customer, market-new-orders-create-manual-existing-customer
+import { memo, useEffect, useId, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, ChevronLeft, CircleCheck, Plus } from "lucide-react";
+import { ArrowLeft, Check, ChevronLeft, CircleCheck, Plus } from "lucide-react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useLogistics } from "../../../../entities/logistics/api/logisticsApi";
 import { cx } from "../../../../shared/lib/cx";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../../shared/lib/formatMoney";
 import { Badge, Button, buttonClasses, Card, Field, TextInput } from "../../../../shared/ui/primitives";
 import { ORDER_AMOUNT_ERROR_KEYS, readOrderAmountInput } from "../../lib/orderAmountInput";
 import { toApiList, type OrderCreateFormValues } from "../model/orderCreateForm";
+import { computeItemsTotal, suggestedTotalDigits, tariffFor } from "../model/orderPricing";
+import { useMarketTariffs } from "./useMarketTariffs";
+import { useOrderCatalog } from "./useOrderCatalog";
 
 type Step2SummaryProps = {
   /** Market roli: «Market» qatori yo'q, pastki tugma «Orqaga» (`/new-orders`). */
@@ -30,6 +34,12 @@ const Divider = () => <hr className="m-0 h-px border-0 bg-border" />;
  * BUYURTMA XULOSASI — yon ustundagi karta (maket `*-create-manual-step2`, `market-new-orders-create-manual`):
  * `dl` (Market · Mahsulotlar «3 ta · 4 dona» · Yetkazish · Tuman), «Umumiy summa *» (katta, so'm bilan),
  * «Operator», asosiy «Buyurtma yaratish» (`type="submit"`) + holat qatori, ostida «Oldingi» / «Orqaga».
+ *
+ * CS-B (maket `*-step2-existing-customer`):
+ *  - «Yetkazish narxi» — VAQTINCHA faqat market standart narxi (narx dvigateli DAqXPeSy → CS-E); superadmin,
+ *    admin, market; tariflar kelmaguncha yoki xatoda qator yo'q;
+ *  - «Umumiy summa» avto-taklifi: qo'lda yozilmaguncha maydon mahsulotlar narxidan to'ldiriladi («Mahsulotlar
+ *    narxidan hisoblandi»); qo'lda yozilgach ustidan yozilmaydi — «Mahsulotlar bo'yicha: … · Qo'llash».
  */
 const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/new-orders" }: Step2SummaryProps) => {
   const { t, i18n } = useTranslation(["orders", "common"]);
@@ -39,7 +49,12 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
   const {
     control,
     formState: { errors },
+    setValue,
+    getFieldState,
   } = useFormContext<OrderCreateFormValues>();
+  const language = i18n.resolvedLanguage ?? i18n.language;
+  const money = (value: unknown) => formatMoneyLocalized(value, { language });
+  const deliveryPriceId = useId();
 
   const market = useWatch({ control, name: "market" });
   const items = useWatch({ control, name: "details.items" });
@@ -57,6 +72,53 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
   );
 
   const units = items.reduce((total, item) => total + (Number(item.quantity) || 0), 0);
+
+  // «Umumiy summa» taklifi — mahsulotlar narxidan (katalog `Step2Combined` bilan bir xil so'rov, keshdan).
+  const { findProduct } = useOrderCatalog(control);
+  const totalPrice = useWatch({ control, name: "details.total_price" }) ?? "";
+  const totalPriceAuto = useWatch({ control, name: "totalPriceAuto" });
+  const itemsTotal = useMemo(() => computeItemsTotal(items, findProduct), [findProduct, items]);
+  const suggestedDigits = suggestedTotalDigits(itemsTotal);
+
+  useEffect(() => {
+    if (!totalPriceAuto || totalPrice === suggestedDigits) return;
+    // Xato ko'rsatilgan bo'lsa (masalan «Summani kiriting») — to'ldirilgach darhol yo'qolsin.
+    const { invalid } = getFieldState("details.total_price");
+    setValue("details.total_price", suggestedDigits, { shouldDirty: true, shouldValidate: invalid });
+  }, [getFieldState, setValue, suggestedDigits, totalPrice, totalPriceAuto]);
+
+  const applySuggestedTotal = () => {
+    setValue("totalPriceAuto", true);
+    setValue("details.total_price", suggestedDigits, { shouldDirty: true, shouldValidate: true });
+    setAmountHint(undefined);
+  };
+  const showSuggestion = !totalPriceAuto && itemsTotal.priced > 0 && totalPrice !== suggestedDigits;
+  const unpricedNote =
+    itemsTotal.priced > 0 && itemsTotal.unpriced > 0
+      ? t("createPricing.unpricedNote", {
+          count: itemsTotal.unpriced,
+          value: formatNumberLocalized(itemsTotal.unpriced, { language }),
+        })
+      : null;
+  const totalHint =
+    amountHint ??
+    (totalPriceAuto && totalPrice ? (
+      <span className="inline-flex items-start gap-1.5">
+        <Check size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
+        <span>
+          {t("createPricing.autoTotalHint")}
+          {unpricedNote ? `. ${unpricedNote}` : null}
+        </span>
+      </span>
+    ) : unpricedNote ? (
+      `${t("createTotalHint")}. ${unpricedNote}`
+    ) : (
+      t("createTotalHint")
+    ));
+
+  // «Yetkazish narxi» — vaqtincha standart narx (CS-B 5-band, ega tasdig'i kutilmoqda).
+  const tariffState = useMarketTariffs(control);
+  const deliveryPrice = tariffState.status === "ready" ? tariffFor(tariffState.tariffs, whereDeliver) : undefined;
 
   const statusText = submitting ? t("createSubmitting") : ready ? t("orderReadyMessage") : t("fillRequiredFields");
 
@@ -81,6 +143,29 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
         <dd className="m-0 min-w-0 truncate font-semibold text-text">{districtName ?? "—"}</dd>
       </dl>
 
+      {deliveryPrice !== undefined ? (
+        <div role="group" aria-labelledby={deliveryPriceId} className="flex flex-col gap-1">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <span id={deliveryPriceId} className="text-[13px] text-text-muted">
+              {t("createPricing.deliveryPrice")}
+            </span>
+            {deliveryPrice == null ? (
+              <span className="ml-auto text-[13px] text-text-muted">{t("createPricing.noPrice")}</span>
+            ) : (
+              <span className="ml-auto font-semibold whitespace-nowrap text-text">{money(deliveryPrice)}</span>
+            )}
+          </div>
+          <p className="m-0 text-xs text-text-muted">
+            {deliveryPrice == null ? t("createPricing.summaryNoPriceHint") : t("createPricing.summaryStandard")}
+          </p>
+          {deliveryPrice != null ? (
+            <p className="m-0 text-xs text-text-subtle">
+              {isMarketRole ? t("createPricing.summaryChargedOwn") : t("createPricing.summaryChargedMarket")}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       <Divider />
 
       <Controller
@@ -91,7 +176,7 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
             id="details.total_price"
             label={t("totalPrice")}
             required
-            hint={amountHint ?? t("createTotalHint")}
+            hint={totalHint}
             hintLive
             error={errors.details?.total_price?.message}
           >
@@ -109,6 +194,8 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
                   return;
                 }
                 if (result.digits.length < (field.value ?? "").length) setAmountHint(undefined);
+                // Qo'lda yozildi — avto-taklif endi maydon ustidan yozmaydi (faqat «Qo'llash» qatori).
+                if (result.digits !== (field.value ?? "")) setValue("totalPriceAuto", false);
                 field.onChange(result.digits);
               }}
               onBlur={() => {
@@ -117,6 +204,23 @@ const Step2Summary = ({ isMarketRole, ready, submitting, onPrevious, backTo = "/
               }}
               ref={field.ref}
             />
+            {showSuggestion ? (
+              <div className="flex min-w-0 flex-wrap items-center gap-x-1.5 text-[13px]">
+                <span className="text-text-muted">{t("createPricing.byProducts")}</span>
+                <span className="font-semibold whitespace-nowrap text-text">{money(itemsTotal.total)}</span>
+                <span aria-hidden="true" className="text-text-subtle">
+                  ·
+                </span>
+                <Button
+                  variant="link"
+                  size="sm"
+                  aria-label={t("createPricing.applyLabel", { amount: money(itemsTotal.total) })}
+                  onClick={applySuggestedTotal}
+                >
+                  {t("createPricing.apply")}
+                </Button>
+              </div>
+            ) : null}
           </Field>
         )}
       />

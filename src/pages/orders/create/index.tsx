@@ -22,7 +22,7 @@ import TodayOrdersCard from "./ui/TodayOrdersCard";
 import CreateModeTabs, { type CreateMode } from "./ui/CreateModeTabs";
 import { CreateAlert } from "./ui/CreateAlert";
 import AiCreatePanel from "./ui/ai/AiCreatePanel";
-import { useAiAvailability } from "../../../entities/ai-order";
+import { isAiTabHidden, useAiAvailability } from "../../../entities/ai-order";
 import { useOrders } from "../../../entities/order/api/orderApi";
 import type { RootState } from "../../../app/config/store";
 import {
@@ -157,10 +157,11 @@ const OrderCreateFormContent = () => {
   const [serverError, setServerError] = useState("");
   // "Qo'lda" (asosiy, hech qachon olib tashlanmaydi) yoki "AI bilan".
   const [selectedMode, setMode] = useState<CreateMode>("manual");
-  // Konfiguratsiya kaliti o'chiq (`enabled:false`) bo'lsa AI tabi UMUMAN
-  // ko'rinmaydi. So'rov yiqilsa yoki hali kelmagan bo'lsa tab qoladi.
+  // AI o'chiq bo'lsa «AI bilan» tabi UMUMAN ko'rinmaydi (ega Ops S3, CS-B 6-band): konfiguratsiya kaliti o'chiq
+  // (`enabled:false`) yoki `state === "disabled"` (ai-service'da kalit yo'q / noto'g'ri). `unknown`,
+  // `cap_exceeded` va so'rov xatosida tab qoladi — panel sababini o'zi tushuntiradi.
   const aiAvailability = useAiAvailability();
-  const aiHidden = aiAvailability.data?.enabled === false;
+  const aiHidden = isAiTabHidden(aiAvailability.data);
   const mode: CreateMode = aiHidden ? "manual" : selectedMode;
 
   // Bitta sxema — formaning tekshiruvi ham, «Buyurtma yuborishga tayyor» holati ham shundan (D-06).

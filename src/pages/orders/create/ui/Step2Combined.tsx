@@ -1,15 +1,15 @@
-// dizayn-v2: superadmin-neworders-create-manual-step2, manager-new-orders-create-manual-step2, registrator-new-orders-create-step2, market-new-orders-create-manual, superadmin-neworders-create-manual-step2-customer-suggest, superadmin-neworders-create-manual-step2-existing-customer
-import { memo, useMemo, useState, type ReactNode } from "react";
-import { Building2, Check, CircleX, MapPin, Minus, Plus, ShoppingBag, Tag, Trash2, type LucideIcon } from "lucide-react";
+// dizayn-v2: superadmin-neworders-create-manual-step2, manager-new-orders-create-manual-step2, registrator-new-orders-create-step2, market-new-orders-create-manual, superadmin-neworders-create-manual-step2-customer-suggest, superadmin-neworders-create-manual-step2-existing-customer, market-new-orders-create-manual-existing-customer
+import { memo, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Building2, Check, CircleX, MapPin, Minus, Plus, ShoppingBag, Trash2, type LucideIcon } from "lucide-react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { useLogistics } from "../../../../entities/logistics/api/logisticsApi";
-import { PRODUCT_LIST_MAX_LIMIT, useProducts } from "../../../../entities/product";
+import { ProductThumb } from "../../../../entities/product/ui/ProductThumb";
 import type { DeliveryType } from "../../../../entities/order/types/order";
 import type { RootState } from "../../../../app/config/store";
 import { cx } from "../../../../shared/lib/cx";
-import { formatMoneyLocalized } from "../../../../shared/lib/formatMoney";
+import { formatMoneyLocalized, formatNumberLocalized } from "../../../../shared/lib/formatMoney";
 import { getUzbekistanPhoneDigits } from "../../../../shared/lib/phone";
 import {
   Button,
@@ -24,20 +24,16 @@ import {
   type SelectOption,
 } from "../../../../shared/ui/primitives";
 import { orderItemKey, toApiList, type OrderCreateFormValues } from "../model/orderCreateForm";
+import { hasNoTariffs, readProductImageUrl, readProductPrice, tariffFor, type CatalogProduct } from "../model/orderPricing";
+import { CreateAlert } from "./CreateAlert";
 import { CustomerPhoneSuggest, type CustomerSuggestScope } from "./CustomerPhoneSuggest";
 import { ExistingCustomerNotice } from "./ExistingCustomerNotice";
+import { useMarketTariffs } from "./useMarketTariffs";
+import { useOrderCatalog } from "./useOrderCatalog";
 
 type OrderItemValue = OrderCreateFormValues["details"]["items"][number];
 
-type CatalogProduct = { id: string | number; name?: string; price?: number | string | null };
-
 type AreaItem = { id: string | number; name?: string; sato_code?: string | null };
-
-/**
- * Katalog to'liq olinadi (gateway chegarasi 500): `limit` siz server 10 tasini berardi va qidiruv faqat shu
- * 10 ta ichida ishlardi (D-20). Qidiruv — mijozda, olingan ro'yxat bo'yicha.
- */
-const CATALOG_PARAMS = { limit: PRODUCT_LIST_MAX_LIMIT };
 
 /** Mavjud naqsh: `nom • sato_code` — operator viloyat/tumanni kod bilan tekshira oladi. */
 const toAreaOptions = (items: AreaItem[]): SelectOption[] =>
@@ -45,16 +41,6 @@ const toAreaOptions = (items: AreaItem[]): SelectOption[] =>
     value: String(item.id),
     label: `${item.name ?? "—"}${item.sato_code ? ` • ${item.sato_code}` : ""}`,
   }));
-
-/** `.el-stat-icon` (36 px): neytral ikonka qutisi. */
-const StatIcon = ({ icon: Icon, className }: { icon: LucideIcon; className?: string }) => (
-  <span
-    aria-hidden="true"
-    className={cx("inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] text-text-muted", className)}
-  >
-    <Icon size={18} />
-  </span>
-);
 
 /** Son tanlagich: «−» · son · «+» (har biri 44 px), chegarali guruh. «−» 1 da o'chiq. */
 const QuantityStepper = ({
@@ -81,7 +67,11 @@ const QuantityStepper = ({
   </div>
 );
 
-/** Yetkazish turi kartasi (`.el-choice-card` + radio): tanlanganda `action` chegara va `action-soft` fon. */
+/**
+ * Yetkazish turi kartasi (`.el-choice-card` + radio): tanlanganda `action` chegara va `action-soft` fon.
+ * `price` berilsa (CS-B) — o'ngda standart narx («25 000 so'm» + «standart») yoki «Narx yo'q»; berilmasa
+ * (menejer, registrator yoki narx hali kelmagan) — tur ikonkasi.
+ */
 const DeliveryChoice = ({
   name,
   value,
@@ -89,6 +79,7 @@ const DeliveryChoice = ({
   title,
   hint,
   icon: Icon,
+  price,
   invalid,
   onSelect,
 }: {
@@ -98,6 +89,7 @@ const DeliveryChoice = ({
   title: string;
   hint: string;
   icon: LucideIcon;
+  price?: ReactNode;
   invalid: boolean;
   onSelect: (value: DeliveryType) => void;
 }) => (
@@ -118,6 +110,8 @@ const DeliveryChoice = ({
       value={value}
       checked={checked}
       onChange={() => onSelect(value)}
+      // Allaqachon tanlangan kartani bosish ham qo'lda tanlov (change kelmaydi) — keyin kelgan sukut ustidan yozmasin.
+      onClick={() => onSelect(value)}
       className="sr-only"
     />
     <span
@@ -133,9 +127,27 @@ const DeliveryChoice = ({
       <span className="font-semibold text-text">{title}</span>
       <span className="text-xs text-text-muted">{hint}</span>
     </span>
-    <Icon size={18} aria-hidden="true" className={cx("shrink-0", checked ? "text-action-fg" : "text-text-muted")} />
+    {price ?? (
+      <Icon size={18} aria-hidden="true" className={cx("shrink-0", checked ? "text-action-fg" : "text-text-muted")} />
+    )}
   </label>
 );
+
+/** Karta o'ngidagi narx bloki (maket `*-step2-existing-customer`): summa + «standart» yoki «Narx yo'q». */
+const DeliveryPrice = ({ amount, money, standardLabel, noPriceLabel }: {
+  amount: number | null;
+  money: (value: number) => string;
+  standardLabel: string;
+  noPriceLabel: string;
+}) =>
+  amount == null ? (
+    <span className="shrink-0 text-[13px] text-text-muted">{noPriceLabel}</span>
+  ) : (
+    <span className="flex shrink-0 flex-col items-end text-right">
+      <span className="font-semibold whitespace-nowrap text-text">{money(amount)}</span>
+      <span className="text-xs text-text-muted">{standardLabel}</span>
+    </span>
+  );
 
 /** Karta ostidagi xato matni (`Field error` ko'rinishida). */
 const InlineError = ({ id, children }: { id?: string; children: ReactNode }) => (
@@ -152,6 +164,9 @@ const InlineError = ({ id, children }: { id?: string; children: ReactNode }) => 
  *    (`CustomerPhoneSuggest`) va tanlangan mavjud mijoz bloki (`ExistingCustomerNotice`, CS-A);
  *  - «Buyurtma tafsilotlari *»: chapda katalogdan qo'shish (qidiruv + ro'yxat) va katalogda yo'q mahsulot
  *    (nomi + soni), o'ngda tanlangan mahsulotlar (son tanlagich, olib tashlash).
+ * CS-B (maket `*-step2-existing-customer`): yetkazish turi kartalarida market standart narxi (superadmin, admin,
+ * market) va «Narx yo'q» holati, sukut tur — `default_tariff`; mahsulot rasmi (40 px, `ProductThumb`); narx matni
+ * «2 × 45 000 so'm» · «Narxi kiritilmagan» · «Katalogdan tashqari · narxsiz».
  * Summa, operator va «Buyurtma yaratish» — yon ustundagi `Step2Summary` da.
  */
 const Step2Combined = () => {
@@ -169,6 +184,7 @@ const Step2Combined = () => {
   const market = useWatch({ control, name: "market" });
   const items = useWatch({ control, name: "details.items" });
   const whereDeliver = useWatch({ control, name: "details.where_deliver" });
+  const deliveryTypeTouched = useWatch({ control, name: "deliveryTypeTouched" });
   const selectedRegionId = useWatch({ control, name: "customer.region_id" }) ?? "";
   const role = useSelector((state: RootState) => state.role.role);
   const roleName = useSelector((state: RootState) => state.role.name);
@@ -180,15 +196,20 @@ const Step2Combined = () => {
   const { data: regions, isLoading: regLoading } = useGetRegions();
   const { data: districts, isLoading: distLoading } = useGetDistricts(selectedRegionId);
 
-  const { useGetByMarketId, useGetMyProducts } = useProducts();
-  const marketProductsQuery = useGetByMarketId(productSourceMarketId, !isMarketRole, CATALOG_PARAMS);
-  const myProductsQuery = useGetMyProducts(isMarketRole, CATALOG_PARAMS);
-  const productsData = isMarketRole ? myProductsQuery.data : marketProductsQuery.data;
-  const prodLoading = isMarketRole ? myProductsQuery.isLoading : marketProductsQuery.isLoading;
+  const { products: allProducts, findProduct, isLoading: prodLoading } = useOrderCatalog(control);
+  const tariffState = useMarketTariffs(control);
+  const tariffs = tariffState.status === "ready" ? tariffState.tariffs : null;
+  const defaultDeliveryType = tariffs?.defaultType ?? null;
+
+  // Sukut turi — market kartasidagi `default_tariff` (CS-B): tariflar shu market uchun kelgach, tur qo'lda
+  // tanlanmagan bo'lsa moslanadi. Qo'lda tanlangani ustidan yozilmaydi; yaratishdan keyingi `reset` da yana sukut.
+  useEffect(() => {
+    if (deliveryTypeTouched || !defaultDeliveryType || whereDeliver === defaultDeliveryType) return;
+    setValue("details.where_deliver", defaultDeliveryType);
+  }, [defaultDeliveryType, deliveryTypeTouched, setValue, whereDeliver]);
 
   const regionOptions = useMemo(() => toAreaOptions(toApiList<AreaItem>(regions)), [regions]);
   const districtOptions = useMemo(() => toAreaOptions(toApiList<AreaItem>(districts)), [districts]);
-  const allProducts = useMemo(() => toApiList<CatalogProduct>(productsData), [productsData]);
 
   const [productSearch, setProductSearch] = useState("");
   const filteredProducts = useMemo(() => {
@@ -228,8 +249,42 @@ const Step2Combined = () => {
 
   const removeItem = (key: string) => updateItems((current) => current.filter((item) => orderItemKey(item) !== key));
 
-  const getProduct = (id: string | null) =>
-    id == null ? undefined : allProducts.find((product) => String(product.id) === id);
+  /** Tanlangan mahsulot ostidagi narx matni: «185 000 so'm», «2 × 45 000 so'm», «Narxi kiritilmagan». */
+  const itemPriceText = (item: OrderItemValue, product: CatalogProduct | undefined) => {
+    if (item.product_id == null) return t("createPricing.catalogLessNoPrice");
+    if (!product) return "—";
+    const price = readProductPrice(product);
+    if (price == null) return t("createPricing.priceMissing");
+    return item.quantity > 1
+      ? t("createPricing.unitTimes", { quantity: formatNumberLocalized(item.quantity, { language }), price: money(price) })
+      : money(price);
+  };
+
+  const selectDeliveryType = (onChange: (value: DeliveryType) => void) => (value: DeliveryType) => {
+    setValue("deliveryTypeTouched", true);
+    onChange(value);
+  };
+  const deliveryPrice = (type: DeliveryType) =>
+    tariffs ? (
+      <DeliveryPrice
+        amount={tariffFor(tariffs, type)}
+        money={money}
+        standardLabel={t("createPricing.standard")}
+        noPriceLabel={t("createPricing.noPrice")}
+      />
+    ) : undefined;
+  const deliveryOwner = isMarketRole
+    ? t("createPricing.ownStandard")
+    : t("createPricing.marketStandard", { market: market?.name ?? "—" });
+  const deliveryHint =
+    tariffs && !hasNoTariffs(tariffs)
+      ? defaultDeliveryType
+        ? t("createPricing.deliveryHintDefault", {
+            owner: deliveryOwner,
+            type: defaultDeliveryType === "address" ? t("deliveryToHome") : t("deliveryToCenter"),
+          })
+        : deliveryOwner
+      : null;
 
   const catalogOwner = isMarketRole ? roleName : market?.name;
   // Taklif doirasi backend bilan bir xil: admin — barcha mijozlar, market — o'zi, qolganlar — tanlangan market.
@@ -376,8 +431,9 @@ const Step2Combined = () => {
                     title={t("deliveryToCenter")}
                     hint={t("createDeliveryCenterHint")}
                     icon={Building2}
+                    price={deliveryPrice("center")}
                     invalid={Boolean(errors.details?.where_deliver)}
-                    onSelect={field.onChange}
+                    onSelect={selectDeliveryType(field.onChange)}
                   />
                   <DeliveryChoice
                     name={field.name}
@@ -386,10 +442,21 @@ const Step2Combined = () => {
                     title={t("deliveryToHome")}
                     hint={t("createDeliveryHomeHint")}
                     icon={MapPin}
+                    price={deliveryPrice("address")}
                     invalid={Boolean(errors.details?.where_deliver)}
-                    onSelect={field.onChange}
+                    onSelect={selectDeliveryType(field.onChange)}
                   />
                 </div>
+                {deliveryHint ? <p className="m-0 pt-1.5 text-xs text-text-muted">{deliveryHint}</p> : null}
+                {hasNoTariffs(tariffs) ? (
+                  <CreateAlert
+                    tone="warning"
+                    className="mt-3"
+                    title={isMarketRole ? t("createPricing.noTariffOwnTitle") : t("createPricing.noTariffTitle")}
+                  >
+                    {isMarketRole ? t("createPricing.noTariffOwnBody") : t("createPricing.noTariffBody")}
+                  </CreateAlert>
+                ) : null}
                 {errors.details?.where_deliver?.message ? (
                   <div className="pt-1.5">
                     <InlineError>{errors.details.where_deliver.message}</InlineError>
@@ -469,7 +536,7 @@ const Step2Combined = () => {
               {prodLoading ? (
                 Array.from({ length: 3 }, (_, index) => (
                   <li key={index} aria-hidden="true" className="flex min-h-13 items-center gap-3 px-3 py-2">
-                    <Skeleton shape="block" tone="border" width={36} height={36} />
+                    <Skeleton shape="block" tone="border" width={40} height={40} />
                     <span className="flex flex-1 flex-col gap-1.5">
                       <Skeleton tone="border" width="55%" />
                       <Skeleton tone="border" width="30%" />
@@ -492,6 +559,7 @@ const Step2Combined = () => {
               ) : (
                 filteredProducts.map((product) => {
                   const isAdded = items.some((item) => item.product_id === String(product.id));
+                  const price = readProductPrice(product);
                   return (
                     <li key={product.id}>
                       <Pressable
@@ -501,12 +569,10 @@ const Step2Combined = () => {
                           "transition-[background-color] duration-150 hover:bg-surface motion-reduce:transition-none",
                         )}
                       >
-                        <StatIcon icon={ShoppingBag} className="bg-surface" />
+                        <ProductThumb size="lg" imageUrl={readProductImageUrl(product)} fallbackIcon={ShoppingBag} />
                         <span className="flex min-w-0 flex-1 flex-col">
                           <span className="truncate font-semibold text-text">{product.name}</span>
-                          {product.price != null ? (
-                            <span className="text-[13px] text-text-muted">{money(product.price)}</span>
-                          ) : null}
+                          {price != null ? <span className="text-[13px] text-text-muted">{money(price)}</span> : null}
                         </span>
                         {isAdded ? (
                           <span className="inline-flex shrink-0 items-center gap-1 text-[13px] font-semibold text-action-fg">
@@ -571,24 +637,22 @@ const Step2Combined = () => {
               <ul aria-label={t("createSelectedProducts")} className="m-0 list-none p-0 text-sm">
                 {items.map((item) => {
                   const key = orderItemKey(item);
-                  const product = getProduct(item.product_id);
+                  const product = findProduct(item.product_id);
                   const isCustom = item.product_id == null;
                   const name = product?.name ?? item.product_name ?? `#${item.product_id ?? "?"}`;
                   return (
                     <li
                       key={key}
-                      className="grid grid-cols-[36px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-t border-border py-3 last:pb-0"
+                      className="grid grid-cols-[40px_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2 border-t border-border py-3 last:pb-0"
                     >
-                      <StatIcon icon={isCustom ? Tag : ShoppingBag} className="bg-sunken" />
+                      {isCustom ? (
+                        <ProductThumb size="lg" />
+                      ) : (
+                        <ProductThumb size="lg" imageUrl={readProductImageUrl(product)} fallbackIcon={ShoppingBag} />
+                      )}
                       <div className="min-w-0">
                         <div className="truncate font-semibold text-text">{name}</div>
-                        <div className="text-[13px] text-text-muted">
-                          {isCustom
-                            ? t("orderDetail.catalogLess")
-                            : product?.price != null
-                              ? money(product.price)
-                              : "—"}
-                        </div>
+                        <div className="text-[13px] text-text-muted">{itemPriceText(item, product)}</div>
                       </div>
                       <IconButton
                         size="lg"

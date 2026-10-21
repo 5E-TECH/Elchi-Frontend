@@ -33,6 +33,16 @@ export interface OrderCreateFormValues {
   market: MarketOption | null;
   /** Bog'langan mavjud mijoz (`null` — yangi mijoz yoki taklif tanlanmagan). */
   existingCustomer: ExistingCustomerLink | null;
+  /**
+   * Yetkazish turi qo'lda tanlanganmi (CS-B). `false` bo'lsa tur market kartasidagi sukut (`default_tariff`) ga
+   * moslanadi; qo'lda tanlangani ustidan yozilmaydi. Payload'ga kirmaydi.
+   */
+  deliveryTypeTouched: boolean;
+  /**
+   * «Umumiy summa» mahsulotlar narxidan avtomatik to'ldiriladimi (CS-B). Qo'lda yozilsa `false` — taklif faqat
+   * «Mahsulotlar bo'yicha: … · Qo'llash» qatorida turadi, maydon ustidan yozilmaydi. Payload'ga kirmaydi.
+   */
+  totalPriceAuto: boolean;
   customer: {
     phone: string;
     extra_phone: string;
@@ -53,6 +63,8 @@ export interface OrderCreateFormValues {
 export const ORDER_CREATE_DEFAULT_VALUES: OrderCreateFormValues = {
   market: null,
   existingCustomer: null,
+  deliveryTypeTouched: false,
+  totalPriceAuto: true,
   customer: {
     phone: "",
     extra_phone: "",
@@ -88,6 +100,9 @@ export const createOrderSchema = (requireMarket: boolean = true) =>
         : marketSchema,
       // Bog'lanish holati (tekshirilmaydi) — `buildCreateOrderPayload` `customer_id` ni shundan oladi.
       existingCustomer: yup.mixed<ExistingCustomerLink>().nullable().default(null),
+      // Forma holati (tekshirilmaydi, payload'ga kirmaydi) — CS-B.
+      deliveryTypeTouched: yup.boolean().default(false),
+      totalPriceAuto: yup.boolean().default(true),
       customer: yup.object({
         phone: yup
           .string()
