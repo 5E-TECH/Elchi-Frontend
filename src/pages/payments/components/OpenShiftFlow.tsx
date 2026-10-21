@@ -1,5 +1,5 @@
 // dizayn-v2: manager-payments-main-cashbox-shift-open-dialog, superadmin-payments-main-cashbox-shift-open-dialog, admin-payments-main-cashbox-shift-open-dialog
-import { memo, useCallback } from "react";
+import { memo, useCallback, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import type { RootState } from "../../../app/config/store";
@@ -13,15 +13,23 @@ import OpenShiftDialog from "./OpenShiftDialog";
  *
  *  - kassa — joriy foydalanuvchi doirasi (menejer — o'z filiali kassasi, superadmin/admin — asosiy kassa; backend
  *    JWT'dan oladi), «Ochilish qoldig'i» — `GET finance/cashbox/main` (faqat oyna ochiq bo'lganda so'raladi);
- *  - `POST finance/shift/open` `{ comment? }` → muvaffaqiyatda oyna yopiladi va «Smena ochildi»; smena holati
- *    (`shift/current`) mutatsiyaning o'zida qayta o'qiladi — qulf o'zi yo'qoladi;
+ *  - `POST finance/shift/open` `{ comment? }` → muvaffaqiyatda `onOpened` (ota oynani yopadi, fokusni tiklangan
+ *    formaga beradi) va «Smena ochildi»; smena holati (`shift/current`) mutatsiyaning o'zida qayta o'qiladi — qulf
+ *    o'zi yo'qoladi;
  *  - xatoda oyna ochiq qoladi, faqat i18n xabar (xom backend matni yo'q) va holat qayta o'qiladi (smenani boshqa
- *    xodim ochgan bo'lishi mumkin).
+ *    xodim ochgan bo'lishi mumkin);
+ *  - oyna ochiq turganda smena ochiq bo'lib qolsa (`shiftOpen` — masalan 400 «allaqachon ochiq» dan keyingi qayta
+ *    o'qish) — `onOpened`: oyna yopiladi, ikkinchi bosish yana 400 bermaydi.
  */
 
 type OpenShiftFlowProps = {
   open: boolean;
+  /** Bekor qilish (smena ochilmadi). */
   onClose: () => void;
+  /** Smena ochildi (shu oynadan yoki boshqa xodim tomonidan) — ota oynani yopadi. */
+  onOpened: () => void;
+  /** Joriy smena holati ochiqmi (`useCashboxShift().status === "open"`). */
+  shiftOpen: boolean;
   /** Ochadigan xodim (joriy foydalanuvchi) — `useCashboxShift().currentUserName`. */
   openerName: string;
   /** Xatoda smena holatini qayta o'qish — `useCashboxShift().refetch`. */
@@ -49,7 +57,7 @@ const readCashboxSplit = (payload: unknown): { cash: number | null; card: number
   };
 };
 
-const OpenShiftFlow = ({ open, onClose, openerName, onRefetchShift }: OpenShiftFlowProps) => {
+const OpenShiftFlow = ({ open, onClose, onOpened, shiftOpen, openerName, onRefetchShift }: OpenShiftFlowProps) => {
   const { t } = useTranslation("payments");
   const role = useSelector((state: RootState) => state.role.role);
   const profile = useSelector((state: RootState) => state.user.user);
@@ -79,11 +87,16 @@ const OpenShiftFlow = ({ open, onClose, openerName, onRefetchShift }: OpenShiftF
         onRefetchShift();
         return;
       }
-      onClose();
+      onOpened();
       notify.success(t("common:success"), { description: t("openShiftSuccess") });
     },
-    [onClose, onRefetchShift, openShift, t],
+    [onOpened, onRefetchShift, openShift, t],
   );
+
+  // Smena (boshqa joyda) ochilib bo'lgan — oyna ortiqcha: yopiladi (qayta bosish yana 400 bermasin).
+  useEffect(() => {
+    if (open && shiftOpen) onOpened();
+  }, [open, shiftOpen, onOpened]);
 
   return (
     <OpenShiftDialog

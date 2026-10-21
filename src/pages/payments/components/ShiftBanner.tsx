@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-payments-main-cashbox-shift-closed, admin-payments-main-cashbox-shift-closed, manager-payments-main-cashbox-shift-closed
+// dizayn-v2: superadmin-payments-main-cashbox-shift-closed, admin-payments-main-cashbox-shift-closed, manager-payments-main-cashbox-shift-closed, manager-payments-overview-shift-closed
 import { memo, type ReactNode } from "react";
 import { TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";

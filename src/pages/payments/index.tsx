@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-payments-overview, admin-payments-overview, manager-payments-overview, manager-payments-overview-shift-closed
-import { memo, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useSelector } from "react-redux";
 import { ArrowDownLeft, ArrowUpRight, CreditCard, ListFilter, Timer, User, Wallet, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -383,9 +383,25 @@ const Payments = () => {
   const managerCouriers = useReceiveOptions({ isManagerRole: true, enabled: isManagerRole });
 
   // ── Smena (faqat menejer — filial kassasi) ───────────────────────────────────
-  const shiftState = useCashboxShift({ enabled: isManagerRole });
+  const shiftState = useCashboxShift({ enabled: isManagerRole, resolveOpener: false });
   const isShiftLocked = isManagerRole && shiftState.status === "closed";
+  const isShiftOpen = shiftState.status === "open";
   const [isOpenShiftOpen, setIsOpenShiftOpen] = useState(false);
+  // Smena shu ekrandan ochildi — «Smenani ochish» tugmasi yo'qoladi; fokus <body> ga tushmasin: tiklangan birinchi
+  // sarlavha amaliga («HQ'ga o'tkazish», bo'lmasa «Kuryerdan qabul qilish»).
+  const focusActionsAfterShiftRef = useRef(false);
+  const hqActionRef = useRef<HTMLButtonElement>(null);
+  const courierActionRef = useRef<HTMLButtonElement>(null);
+  const closeOpenShift = useCallback(() => setIsOpenShiftOpen(false), []);
+  const handleShiftOpened = useCallback(() => {
+    focusActionsAfterShiftRef.current = true;
+    setIsOpenShiftOpen(false);
+  }, []);
+  useEffect(() => {
+    if (!focusActionsAfterShiftRef.current || isOpenShiftOpen || !isShiftOpen) return;
+    focusActionsAfterShiftRef.current = false;
+    (hqActionRef.current ?? courierActionRef.current)?.focus();
+  }, [isOpenShiftOpen, isShiftOpen]);
 
   // API response formatlari:
   // 1) oddiy: { data: { mainCashboxTotal, courierCashboxTotal, marketCashboxTotal } }
@@ -735,11 +751,11 @@ const Payments = () => {
   ) : isManagerRole ? (
     <>
       {branchToMainOption ? (
-        <Button variant="secondary" leftIcon={ArrowUpRight} onClick={openBranchToMain}>
+        <Button ref={hqActionRef} variant="secondary" leftIcon={ArrowUpRight} onClick={openBranchToMain}>
           {t("v2Overview.transferToHq")}
         </Button>
       ) : null}
-      <Button leftIcon={ArrowDownLeft} onClick={() => openPicker("courier")}>
+      <Button ref={courierActionRef} leftIcon={ArrowDownLeft} onClick={() => openPicker("courier")}>
         {t("v2Overview.receiveFromCourier")}
       </Button>
     </>
@@ -836,7 +852,9 @@ const Payments = () => {
       {isManagerRole ? (
         <OpenShiftFlow
           open={isOpenShiftOpen}
-          onClose={() => setIsOpenShiftOpen(false)}
+          onClose={closeOpenShift}
+          onOpened={handleShiftOpened}
+          shiftOpen={isShiftOpen}
           openerName={shiftState.currentUserName}
           onRefetchShift={shiftState.refetch}
         />

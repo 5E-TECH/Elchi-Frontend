@@ -29,48 +29,71 @@ const shiftState = vi.hoisted(() => ({
   shift: { id: "5", status: "open", opened_by: "1" } as Record<string, unknown> | null | "error",
   refetch: vi.fn(),
   balanceRequests: [] as boolean[],
+  /** Qayta o'qishdan keyingi qayta chizish uchun (`setShift`) — mock `useSyncExternalStore` bilan obuna. */
+  version: 0,
+  listeners: new Set<() => void>(),
 }));
+/** Smena holatini «server» da o'zgartiradi va mock so'rov obunachilarini yangilaydi (refetch natijasi). */
+const setShift = (value: typeof shiftState.shift) => {
+  shiftState.shift = value;
+  shiftState.version += 1;
+  shiftState.listeners.forEach((listener) => listener());
+};
+const OPEN_SHIFT = { id: "5", status: "open", opened_by: "1" };
+/** `useGetUserById` (ochgan xodim ismi) ga berilgan ID lar — CB-2 ekranlari so'ramasligi kerak. */
+const userByIdCalls = vi.hoisted(() => [] as unknown[]);
 const openShiftMutation = vi.hoisted(() => ({ mutateAsync: vi.fn(), isPending: false }));
 const idleQuery = { data: undefined, isLoading: false, refetch: vi.fn() };
 
-vi.mock("../../../entities/payments", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../../../entities/payments")>()),
-  useCashBox: () => ({
-    useGetCurrentShift: () =>
-      shiftState.shift === "error"
-        ? { isSuccess: false, isError: true, data: undefined, refetch: shiftState.refetch }
-        : {
-            isSuccess: true,
-            isError: false,
-            data: { data: { shift: shiftState.shift, required: true } },
-            refetch: shiftState.refetch,
+vi.mock("../../../entities/payments", async (importOriginal) => {
+  const { useSyncExternalStore } = await vi.importActual<typeof import("react")>("react");
+  return {
+    ...(await importOriginal<typeof import("../../../entities/payments")>()),
+    useCashBox: () => ({
+      useGetCurrentShift: () => {
+        useSyncExternalStore(
+          (listener) => {
+            shiftState.listeners.add(listener);
+            return () => void shiftState.listeners.delete(listener);
           },
-    openShift: openShiftMutation,
-    // «Ochilish qoldig'i» — faqat oyna ochiq bo'lganda so'raladi.
-    useGetCashBoxMain: (_params: unknown, enabled: boolean) => {
-      shiftState.balanceRequests.push(enabled);
-      return enabled
-        ? { isSuccess: true, data: { data: { cashbox: { balance_cash: 1200000, balance_card: 300000 } } } }
-        : { isSuccess: false, data: undefined };
-    },
-    useGetCashBoxById: (id: unknown, enabled: unknown, params: Record<string, unknown>) => {
-      cashboxState.calls.push({ id, enabled, params });
-      if (cashboxState.failWhen?.(params)) {
-        return { data: undefined, isLoading: false, isError: true, error: new Error("boom"), refetch: cashboxRefetch };
-      }
-      return {
-        data: cashboxState.response,
-        isLoading: false,
-        refetch: cashboxRefetch,
-      };
-    },
-    useGetFinanceHistory: () => ({ ...idleQuery, data: historyState.data }),
-    useGetFinanceHistoryById: () => idleQuery,
-    createPaymentCourier: courierPayment,
-    createPaymentBranchToMain: idle,
-    createPaymentMarket: marketPayment,
-  }),
-}));
+          () => shiftState.version,
+        );
+        return shiftState.shift === "error"
+          ? { isSuccess: false, isError: true, data: undefined, refetch: shiftState.refetch }
+          : {
+              isSuccess: true,
+              isError: false,
+              data: { data: { shift: shiftState.shift, required: true } },
+              refetch: shiftState.refetch,
+            };
+      },
+      openShift: openShiftMutation,
+      // «Ochilish qoldig'i» — faqat oyna ochiq bo'lganda so'raladi.
+      useGetCashBoxMain: (_params: unknown, enabled: boolean) => {
+        shiftState.balanceRequests.push(enabled);
+        return enabled
+          ? { isSuccess: true, data: { data: { cashbox: { balance_cash: 1200000, balance_card: 300000 } } } }
+          : { isSuccess: false, data: undefined };
+      },
+      useGetCashBoxById: (id: unknown, enabled: unknown, params: Record<string, unknown>) => {
+        cashboxState.calls.push({ id, enabled, params });
+        if (cashboxState.failWhen?.(params)) {
+          return { data: undefined, isLoading: false, isError: true, error: new Error("boom"), refetch: cashboxRefetch };
+        }
+        return {
+          data: cashboxState.response,
+          isLoading: false,
+          refetch: cashboxRefetch,
+        };
+      },
+      useGetFinanceHistory: () => ({ ...idleQuery, data: historyState.data }),
+      useGetFinanceHistoryById: () => idleQuery,
+      createPaymentCourier: courierPayment,
+      createPaymentBranchToMain: idle,
+      createPaymentMarket: marketPayment,
+    }),
+  };
+});
 vi.mock("../../../entities/payments/financeCoverage", () => ({
   useFinanceCoverage: () => ({
     useGetManagerPayableToHq: () => idleQuery,
@@ -88,7 +111,10 @@ vi.mock("../../../entities/markets", () => ({
 vi.mock("../../../entities/user/api/userApi", () => ({
   useUser: () => ({
     useGetUser: () => ({ data: undefined, isLoading: false }),
-    useGetUserById: () => ({ data: undefined }),
+    useGetUserById: (id: unknown) => {
+      userByIdCalls.push(id);
+      return { data: undefined };
+    },
     // Menejer kuryer kassasi summasi (T2VHX1Y7) — `GET /couriers`.
     useGetCouriers: () => ({ data: undefined, isLoading: false }),
   }),
@@ -1099,11 +1125,14 @@ describe("CashDetail — smena qulfi (CB-2)", () => {
   afterEach(() => {
     cashboxState.response = undefined;
     cashboxState.calls = [];
-    shiftState.shift = { id: "5", status: "open", opened_by: "1" };
+    shiftState.shift = { ...OPEN_SHIFT };
     shiftState.refetch.mockReset();
     shiftState.balanceRequests = [];
+    userByIdCalls.length = 0;
     openShiftMutation.mutateAsync.mockReset();
     courierPayment.mutateAsync.mockReset();
+    marketPayment.mutateAsync.mockReset();
+    sessionStorage.clear();
   });
 
   const managerCourier = () => {
@@ -1176,6 +1205,83 @@ describe("CashDetail — smena qulfi (CB-2)", () => {
     expect(screen.queryByText(/raw/)).not.toBeInTheDocument();
     expect(shiftState.refetch).toHaveBeenCalled();
     expect(screen.getByRole("dialog", { name: "Smenani ochish" })).toBeInTheDocument();
+  });
+
+  it("smena shu ekrandan ochildi: oyna yopiladi, fokus tiklangan formaning «Summa» maydoniga", async () => {
+    shiftState.shift = null;
+    openShiftMutation.mutateAsync.mockImplementation(async () => {
+      setShift({ ...OPEN_SHIFT });
+      return { data: { id: "9", status: "open" } };
+    });
+    const user = userEvent.setup();
+    managerCourier();
+
+    await user.click(screen.getByRole("button", { name: "Smenani ochish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Smenani ochish" });
+    await user.click(within(dialog).getByRole("button", { name: "Smenani ochish" }));
+
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Smenani ochish" })).not.toBeInTheDocument());
+    expect(screen.queryByTestId("shift-locked-card")).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByPlaceholderText("0")).toHaveFocus());
+  });
+
+  it("400 «allaqachon ochiq» (boshqa xodim ochgan): qayta o'qishdan keyin oyna yopiladi — ikkinchi bosish yo'q", async () => {
+    shiftState.shift = null;
+    openShiftMutation.mutateAsync.mockRejectedValue(Object.assign(new Error("raw"), { response: { status: 400 } }));
+    shiftState.refetch.mockImplementation(() => setShift({ ...OPEN_SHIFT, opened_by: "77" }));
+    const user = userEvent.setup();
+    managerCourier();
+
+    await user.click(screen.getByRole("button", { name: "Smenani ochish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Smenani ochish" });
+    await user.click(within(dialog).getByRole("button", { name: "Smenani ochish" }));
+
+    expect(shiftState.refetch).toHaveBeenCalled();
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Smenani ochish" })).not.toBeInTheDocument());
+    expect(screen.queryByTestId("shift-locked-card")).not.toBeInTheDocument();
+    expect(screen.getByPlaceholderText("0")).toBeInTheDocument();
+    expect(openShiftMutation.mutateAsync).toHaveBeenCalledTimes(1);
+  });
+
+  it("kuryer to'lovi xatosi (smena boshqa qurilmada yopilgan, 400): holat qayta o'qiladi — forma o'rnida qulf", async () => {
+    courierPayment.mutateAsync.mockRejectedValue(Object.assign(new Error("Bad Request"), { response: { status: 400 } }));
+    shiftState.refetch.mockImplementation(() => setShift(null));
+    cashboxState.response = courierDetailResponse();
+    openWithoutState("/payments/cash-detail/263?type=courier");
+    expect(screen.queryByTestId("shift-locked-card")).not.toBeInTheDocument();
+
+    await fillCourierPayment("100000");
+
+    await waitFor(() => expect(courierPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    expect(shiftState.refetch).toHaveBeenCalled();
+    expect(await screen.findByTestId("shift-locked-card")).toBeInTheDocument();
+  });
+
+  it("market to'lovi xatosi (idempotent yo'l): holat qayta o'qiladi — qulf", async () => {
+    marketPayment.mutateAsync.mockRejectedValue(Object.assign(new Error("Bad Request"), { response: { status: 400 } }));
+    shiftState.refetch.mockImplementation(() => setShift(null));
+    cashboxState.response = {
+      data: { cashbox: { id: "40", cashbox_type: "markets", user_id: "3", balance: 0 }, user: { name: "Market" } },
+    };
+    const user = userEvent.setup();
+    openWithoutState("/payments/cash-detail/3?type=market");
+
+    setAmount("50000");
+    await chooseMethod("Naqd");
+    await user.click(screen.getByRole("button", { name: "To'lash" }));
+    const confirmDialog = await findConfirm();
+    await user.click(within(confirmDialog).getByRole("button", { name: "Tasdiqlash" }));
+
+    await waitFor(() => expect(marketPayment.mutateAsync).toHaveBeenCalledTimes(1));
+    expect(shiftState.refetch).toHaveBeenCalled();
+    expect(await screen.findByTestId("shift-locked-card")).toBeInTheDocument();
+  });
+
+  it("ochgan xodim ismi bu ekranda ko'rsatilmaydi — `GET users/:id` so'ralmaydi", () => {
+    shiftState.shift = { ...OPEN_SHIFT, opened_by: "77" };
+    managerCourier();
+    expect(screen.queryByTestId("shift-locked-card")).not.toBeInTheDocument();
+    expect(userByIdCalls).not.toContain("77");
   });
 
   it("menejer, «HQ'ga o'tkazish» (filial kassasi), smena yo'q: «HQ'ga pul o'tkazish» qulfi", () => {
