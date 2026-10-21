@@ -517,4 +517,16 @@ describe("MobileMenu — logist (LG-1, maket logist-dashboard-mobile-menu)", () 
     const hrefs = screen.getAllByRole("link").map((link) => link.getAttribute("href"));
     for (const finance of ["/payments", "/cash-box", "/financial-balance"]) expect(hrefs).not.toContain(finance);
   });
+
+  it("«Bildirishnomalar» — o'qilmaganlar soni bilan (maket: «Bildirishnomalar + son»); menyu qidiruvi yo'q", async () => {
+    asPhone();
+    unread.count = 3;
+    renderMenu(<MobileMenu isOpen onClose={vi.fn()} />, "logist", { route: "/" });
+
+    const inbox = await screen.findByRole("link", { name: "Bildirishnomalar, 3 ta yangi" });
+    expect(inbox).toHaveAttribute("href", "/inbox");
+    expect(inbox).toHaveTextContent(/3$/);
+    // Menyu qidiruvi `/orders?search=` ga olib boradi — logist buyurtmalari LG-4 gacha yo'q.
+    expect(screen.queryByRole("searchbox", { name: "Qidiruv" })).not.toBeInTheDocument();
+  });
 });

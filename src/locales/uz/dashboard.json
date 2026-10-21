@@ -344,7 +344,7 @@
     "headerSubGeneric": "Biriktirilgan viloyatlaringiz bo'yicha ko'rsatkichlar",
     "kpi": {
       "label": "Viloyatlarim bo'yicha umumiy ko'rsatkichlar",
-      "totalHint": "Jarayonda {{pending}} ta · {{regions}} viloyat",
+      "totalHint": "Jarayonda {{pending}} ta · {{count}} viloyat",
       "totalAria": "Jami {{total}} ta: sotilgan {{sold}}, jarayonda {{pending}}, bekor qilingan {{cancelled}}",
       "soldHint": "Mijozga topshirilgan",
       "cancelledHint": "Marketga qaytadi",
@@ -384,7 +384,7 @@
       "success": "Muvaffaqiyat",
       "couriers": "Faol kuryer",
       "districts": "{{count}} tuman",
-      "ordersAria": "{{name}}: {{count}} ta buyurtma",
+      "ordersAria": "{{name}}: {{value}} ta buyurtma",
       "statusAria": "{{sold}} sotilgan, {{pending}} jarayonda, {{cancelled}} bekor",
       "total": "Jami · {{count}} viloyat",
       "cardSummary": "{{rate}} sotildi · {{active}} / {{total}} kuryer",

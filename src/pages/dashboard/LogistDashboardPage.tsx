@@ -1,15 +1,16 @@
 // dizayn-v2: logist-dashboard-main
-import { CircleX, Map as MapIcon, PackageCheck, ShoppingBag, Truck } from "lucide-react";
+import { CircleX, Map as MapIcon, PackageCheck, RefreshCw, ShoppingBag, TriangleAlert, Truck } from "lucide-react";
 import { memo, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import type { RootState } from "../../app/config/store";
 import { periodLabel, resolveDashboardPeriod, share } from "../../entities/dashboard/lib/period";
 import { useRegionStats } from "../../entities/region";
+import { cx } from "../../shared/lib/cx";
 import { formatNumberLocalized, formatPercentLocalized } from "../../shared/lib/formatMoney";
 import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
 import { LegendKey, Meter, SegBar } from "../../shared/ui/charts";
-import { Card, EmptyState, ErrorState, StatCard } from "../../shared/ui/primitives";
+import { Button, Card, EmptyState, ErrorState, StatCard, TONE_SOFT } from "../../shared/ui/primitives";
 import DashboardHeader from "../../widgets/dashboard-statistics/ui/DashboardHeader";
 import { KpiRow, LoadingChartCard } from "../../widgets/dashboard-statistics/ui/DashboardGrid";
 import SuccessRateCard from "../../widgets/dashboard-statistics/ui/SuccessRateCard";
@@ -51,6 +52,8 @@ const ShareMeter = ({
  * «Viloyatlar muvaffaqiyati», «Viloyatlarim» jadvali (telefonda kartalar); holatlar — yuklanish, xato
  * («Qayta urinish»), viloyat biriktirilmagan.
  *
+ * Oflayn (so'rov `isPaused`, javob yo'q) — «Internet aloqasi yo'q» (`ErrorState kind="offline"`), bo'sh holat emas.
+ *
  * Chizilmaganlar: «So'nggi buyurtmalar» (logist buyurtmalari — backend 4BftLLnc, LG-4), viloyat «Tafsilot»
  * havolasi (`/regions` logist ko'rinishi — LG-3). «Faol kuryerlar» — backend `status = 'active'` (maketdagi «bugun
  * buyurtmasi bor» emas — bunday son API'da yo'q; ega savoli).
@@ -72,12 +75,15 @@ const LogistDashboardPage = () => {
   const periodText = periodLabel(t, period);
   const params = useMemo(() => regionStatsParams(resolveDashboardPeriod(fromDate, toDate)), [fromDate, toDate]);
 
-  const { data, isLoading, isError, isFetching, refetch } = useRegionStats(params);
+  const { data, isPending, isPaused, isError, isFetching, refetch } = useRegionStats(params);
   const model = useMemo(() => buildLogistDashboard(data?.regions ?? [], me), [data?.regions, me]);
   const { summary } = model;
   // Foydalanuvchi id'si hali ma'lum bo'lmasa (profil yuklanmoqda) — «viloyat biriktirilmagan» emas, yuklanish.
   const meKnown = me != null && String(me) !== "";
-  const loading = isLoading || !meKnown;
+  // Oflayn: so'rov kutib turibdi (`isPaused`, `isLoading` false) — ma'lumot yo'q, lekin bu «bo'sh» EMAS
+  // (QueryBoundary qoidasi: «Internet aloqasi yo'q»).
+  const offline = data === undefined && isPaused;
+  const loading = (isPending && !isPaused) || !meKnown;
 
   const applyRange = useCallback(
     (range: { from: string; to: string }) => {
@@ -96,7 +102,8 @@ const LogistDashboardPage = () => {
 
   const count = (value: number) => formatNumberLocalized(value, { language });
   const percent = (value: number) => formatPercentLocalized(value, { language });
-  const unassigned = !loading && !isError && summary.regionCount === 0;
+  // Bo'sh holat — faqat javob haqiqatan kelganda (oflayn / yuklanishda yolg'on «biriktirilmagan» yo'q).
+  const unassigned = data !== undefined && !loading && !isError && summary.regionCount === 0;
   const description =
     !loading && !isError && summary.regionCount > 0
       ? t("v2Logist.headerSub", {
@@ -117,16 +124,41 @@ const LogistDashboardPage = () => {
   );
 
   if (isError) {
+    // Maket «Yuklashda xato»: kartada `.el-alert.el-tone-danger` + ostida chapda «Qayta urinish» (secondary).
+    return (
+      <div className="flex flex-col gap-6 max-md:gap-4">
+        {header}
+        <Card bodyClassName="flex min-h-[196px] flex-col justify-center gap-3">
+          <div
+            role="alert"
+            className={cx("flex min-w-0 items-start gap-3 rounded-xl px-4 py-3 text-sm", TONE_SOFT.danger)}
+          >
+            <TriangleAlert size={20} aria-hidden="true" className="shrink-0" />
+            <div className="flex min-w-0 flex-1 flex-col gap-1 text-text">
+              <div className="font-bold">{t("v2Logist.error.title")}</div>
+              <span className="text-[13px] leading-[18px] text-text-muted">{t("v2Logist.error.description")}</span>
+            </div>
+          </div>
+          <Button
+            variant="secondary"
+            leftIcon={RefreshCw}
+            loading={isFetching}
+            onClick={() => void refetch()}
+            className="self-start"
+          >
+            {t("states.retry", { ns: "ui" })}
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  if (offline) {
     return (
       <div className="flex flex-col gap-6 max-md:gap-4">
         {header}
         <Card>
-          <ErrorState
-            title={t("v2Logist.error.title")}
-            description={t("v2Logist.error.description")}
-            onRetry={() => void refetch()}
-            retrying={isFetching}
-          />
+          <ErrorState kind="offline" onRetry={() => void refetch()} retrying={isFetching} />
         </Card>
       </div>
     );
@@ -165,7 +197,7 @@ const LogistDashboardPage = () => {
           hint={
             loading
               ? undefined
-              : t("v2Logist.kpi.totalHint", { pending: count(summary.pending), regions: count(summary.regionCount) })
+              : t("v2Logist.kpi.totalHint", { pending: count(summary.pending), count: summary.regionCount })
           }
         >
           <span className="flex min-w-0 flex-col gap-2">

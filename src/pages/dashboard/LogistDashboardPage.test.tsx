@@ -1,6 +1,8 @@
+import { onlineManager } from "@tanstack/react-query";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import i18n from "../../i18n";
 import { renderWithProviders } from "../../test/test-utils";
 import { getTodayRange } from "../../shared/lib/dateRange";
 import LogistDashboardPage from "./LogistDashboardPage";
@@ -96,8 +98,10 @@ beforeEach(() => {
   mocks.get.mockResolvedValue({ data: STATS });
 });
 
-afterEach(() => {
+afterEach(async () => {
   vi.restoreAllMocks();
+  onlineManager.setOnline(true);
+  if (i18n.language !== "uz") await i18n.changeLanguage("uz");
 });
 
 describe("LogistDashboardPage — o'z viloyatlari (LG-1)", () => {
@@ -228,9 +232,46 @@ describe("LogistDashboardPage — holatlar", () => {
     renderPage();
     expect(await screen.findByText("Viloyatlar statistikasini yuklab bo'lmadi")).toBeInTheDocument();
     expect(screen.queryByText(/RPC timeout/)).not.toBeInTheDocument();
+    // Maket «Yuklashda xato»: danger `.el-alert` (sarlavha + izoh), «Qayta urinish» — uning OSTIDA, alert ichida emas.
+    const alert = screen.getByRole("alert");
+    expect(alert).toHaveTextContent("Viloyatlar statistikasini yuklab bo'lmadi");
+    expect(alert).toHaveTextContent("Internet aloqasini tekshirib, qayta urining.");
+    expect(within(alert).queryByRole("button")).not.toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Qayta urinish" }));
     expect(await screen.findByText(/Sizga biriktirilgan 3 ta viloyat/)).toBeInTheDocument();
+  });
+});
+
+describe("LogistDashboardPage — oflayn", () => {
+  it("internet yo'q (so'rov `isPaused`) — «Internet aloqasi yo'q», yolg'on «viloyat biriktirilmagan» emas", async () => {
+    onlineManager.setOnline(false);
+    renderPage();
+    expect(await screen.findByText("Internet aloqasi yo'q")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Qayta urinish" })).toBeInTheDocument();
+    expect(screen.queryByText("Sizga hali viloyat biriktirilmagan")).not.toBeInTheDocument();
+    expect(mocks.get).not.toHaveBeenCalled();
+
+    // Aloqa qaytdi — so'rov ketadi, viloyatlar chiqadi.
+    act(() => onlineManager.setOnline(true));
+    expect(await screen.findByText(/Sizga biriktirilgan 3 ta viloyat/)).toBeInTheDocument();
+  });
+});
+
+describe("LogistDashboardPage — en birlik shakli", () => {
+  it("bitta viloyat / tuman — «1 region», «1 district» («1 regions» emas)", async () => {
+    await i18n.changeLanguage("en");
+    mocks.get.mockResolvedValue({
+      data: { data: { regions: [region(1, "Samarqand viloyati", ME, [10, 5, 1], [2, 3], 1)] } },
+    });
+    renderPage();
+    const kpis = await screen.findByRole("region", { name: "Overall figures for my regions" });
+    await waitFor(() => expect(within(kpis).getByText("In progress: 4 · 1 region")).toBeInTheDocument());
+    expect(screen.getByText(/· my 1 region$/)).toBeInTheDocument();
+    const table = screen.getByRole("table", { name: "My regions table" });
+    expect(within(table).getByText("1 district")).toBeInTheDocument();
+    expect(within(table).getByText("Total · 1 region")).toBeInTheDocument();
+    expect(within(table).getByRole("img", { name: /: 10 orders$/ })).toBeInTheDocument();
   });
 });
 

@@ -91,7 +91,7 @@ export const LogistRegionsTable = ({ model, periodText }: { model: LogistDashboa
       header: t("v2Logist.table.region"),
       cell: (item) =>
         item.kind === "total" ? (
-          <span className={totalCell}>{t("v2Logist.table.total", { count: count(summary.regionCount) })}</span>
+          <span className={totalCell}>{t("v2Logist.table.total", { count: summary.regionCount })}</span>
         ) : (
           <div className="flex min-w-0 flex-col gap-0.5">
             <span className="whitespace-nowrap font-semibold text-text">{item.row.name}</span>
@@ -113,7 +113,7 @@ export const LogistRegionsTable = ({ model, periodText }: { model: LogistDashboa
         return (
           <span
             role="img"
-            aria-label={t("v2Logist.table.ordersAria", { name: item.row.name, count: count(item.row.total) })}
+            aria-label={t("v2Logist.table.ordersAria", { name: item.row.name, count: item.row.total, value: count(item.row.total) })}
             className="flex min-w-0 items-center gap-2"
           >
             <span

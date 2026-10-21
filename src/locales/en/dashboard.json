@@ -346,7 +346,8 @@
     "headerSubGeneric": "Figures for the regions assigned to you",
     "kpi": {
       "label": "Overall figures for my regions",
-      "totalHint": "In progress: {{pending}} · {{regions}} regions",
+      "totalHint": "In progress: {{pending}} · {{count}} regions",
+      "totalHint_one": "In progress: {{pending}} · {{count}} region",
       "totalAria": "Total {{total}}: sold {{sold}}, in progress {{pending}}, cancelled {{cancelled}}",
       "soldHint": "Handed to the customer",
       "cancelledHint": "Returns to the market",
@@ -366,7 +367,8 @@
       "cancelled": "Cancelled"
     },
     "success": {
-      "sub": "{{period}} · my {{count}} regions"
+      "sub": "{{period}} · my {{count}} regions",
+      "sub_one": "{{period}} · my {{count}} region"
     },
     "regions": {
       "title": "Success by region",
@@ -386,9 +388,12 @@
       "success": "Success",
       "couriers": "Active couriers",
       "districts": "{{count}} districts",
-      "ordersAria": "{{name}}: {{count}} orders",
+      "districts_one": "{{count}} district",
+      "ordersAria": "{{name}}: {{value}} orders",
+      "ordersAria_one": "{{name}}: {{value}} order",
       "statusAria": "{{sold}} sold, {{pending}} in progress, {{cancelled}} cancelled",
       "total": "Total · {{count}} regions",
+      "total_one": "Total · {{count}} region",
       "cardSummary": "{{rate}} sold · {{active}} / {{total}} couriers",
       "cardSummaryNoCouriers": "{{rate}} sold"
     },

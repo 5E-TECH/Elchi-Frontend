@@ -344,7 +344,7 @@
     "headerSubGeneric": "Показатели по назначенным вам областям",
     "kpi": {
       "label": "Общие показатели по моим областям",
-      "totalHint": "В процессе: {{pending}} · областей: {{regions}}",
+      "totalHint": "В процессе: {{pending}} · областей: {{count}}",
       "totalAria": "Всего {{total}}: продано {{sold}}, в процессе {{pending}}, отменено {{cancelled}}",
       "soldHint": "Вручено клиенту",
       "cancelledHint": "Вернётся в маркет",
@@ -384,7 +384,7 @@
       "success": "Успешность",
       "couriers": "Активные курьеры",
       "districts": "Районов: {{count}}",
-      "ordersAria": "{{name}}: заказов {{count}}",
+      "ordersAria": "{{name}}: заказов {{value}}",
       "statusAria": "продано {{sold}}, в процессе {{pending}}, отменено {{cancelled}}",
       "total": "Итого · областей: {{count}}",
       "cardSummary": "{{rate}} продано · курьеры {{active}} / {{total}}",
