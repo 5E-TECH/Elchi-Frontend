@@ -453,11 +453,11 @@
         "clear": "Clear filters"
       },
       "info": {
-        "found": "These codes were found in the official list by name but are not saved yet. Check the code and save it here, or fix a wrong match.",
+        "found": "These codes were found in the official list by name but are not saved yet — “Write SOATO codes” saves them all at once. Fix a wrong match here.",
         "notFound": "These districts were not found in the official list by name. Enter the code manually; the district may be in the “Not in database” tab under another name.",
         "hasCode": "Change a code only if it was entered by mistake. One code belongs to one district only.",
-        "duplicates": "Codes are not written automatically to districts with the same name. Enter the code for each record manually.",
-        "missing": "These districts are in the official SOATO list but were not found in the database. If the name is spelled differently, enter the code for the database district manually.",
+        "duplicates": "Codes are not written automatically to districts with the same name. Merge the extra record within one region with “Merge” — orders move over and the record with the code stays. Enter codes manually for records in different regions.",
+        "missing": "These districts are in the official SOATO list but were not found in the database. If the name is spelled differently, enter the code for the database district manually; otherwise “Add district” opens with the name, region and code filled in.",
         "noCode": "Enter the code from the district's official SOATO number. One code belongs to one district only."
       },
       "columns": {
@@ -477,7 +477,9 @@
         "nameWithRegion": "{{name}} ({{region}})",
         "id": "ID {{id}}",
         "meta": "{{region}} · {{code}}",
-        "metaWithId": "{{region}} · ID {{id}} · {{code}}"
+        "metaWithId": "{{region}} · ID {{id}} · {{code}}",
+        "add": "Add district",
+        "addAria": "{{name}} — add district"
       },
       "editor": {
         "label": "SOATO code",
@@ -505,7 +507,9 @@
         "records_other": "{{value}} records",
         "recordsRange_one": "{{from}}–{{to}} of {{total}} record",
         "recordsRange_other": "{{from}}–{{to}} of {{total}} records",
-        "duplicates": "Names: {{names}} · records: {{value}}"
+        "duplicates": "Names: {{names}} · records: {{value}}",
+        "namesRange_one": "{{from}}–{{to}} of {{total}} name",
+        "namesRange_other": "{{from}}–{{to}} of {{total}} names"
       },
       "states": {
         "previewLoading": "Loading the matching",
@@ -543,6 +547,79 @@
           "title": "Nothing found",
           "description": "Change the search or the region filter."
         }
+      },
+      "apply": {
+        "button": "Write SOATO codes",
+        "buttonAria": "Write SOATO codes: {{value}}",
+        "emptyHint": "No codes to write",
+        "title": "Write SOATO codes?",
+        "text_one": "{{value}} code found in the official list will be written to database districts.",
+        "text_other": "{{value}} codes found in the official list will be written to database districts.",
+        "summaryAria": "Write summary",
+        "write": "Will be written",
+        "unchanged": "Unchanged",
+        "skipped": "Not written",
+        "listAria": "Codes to write",
+        "more_one": "{{value}} more district",
+        "more_other": "{{value}} more districts",
+        "note": "Districts that already have a code don't change. Not found ({{notFound}}) and duplicate ({{duplicates}}) records get no code. The action is recorded in the activity log.",
+        "cancel": "Cancel",
+        "submit_one": "Write {{value}} code",
+        "submit_other": "Write {{value}} codes",
+        "writing": "Writing…",
+        "done_one": "SOATO code written to {{value}} district",
+        "done_other": "SOATO codes written to {{value}} districts",
+        "doneText": "List refreshed",
+        "none": "No new codes written",
+        "noneText": "List refreshed — no codes left to write.",
+        "partial": "Codes written partially",
+        "partialText": "Codes written to {{written}} of {{total}} districts. List refreshed — write the rest again.",
+        "failed": "Couldn't write SOATO codes",
+        "failedText": "List refreshed — no codes were written. Try again.",
+        "unknown": "Result unknown",
+        "unknownText": "Couldn't refresh the list. Reload the page and check the “Found” tab."
+      },
+      "add": {
+        "title": "Add district",
+        "text": "Filled in from the official SOATO list — check and save",
+        "name": "District name",
+        "namePlaceholder": "District name",
+        "region": "Region",
+        "regionPlaceholder": "Choose a region",
+        "code": "SOATO code",
+        "codeHint": "Digits only. One code belongs to one district only.",
+        "similar": "The database has “{{name}}”. If it is the same district, don't add a new one — enter its code in the “{{tab}}” tab.",
+        "similarWithCode": "The database has “{{name}}” (SOATO code {{code}}). If it is the same district, don't add a new one.",
+        "cancel": "Cancel",
+        "submit": "Add district",
+        "saving": "Adding…",
+        "nameRequired": "Enter the district name",
+        "regionRequired": "Choose a region",
+        "codeInvalid": "Enter digits only, for example 1718236",
+        "nameTaken": "This region already has a district with this name",
+        "regionMissing": "Region not found — refresh the list",
+        "done": "District added",
+        "doneText": "{{name}} · {{region}}",
+        "failed": "Couldn't add the district",
+        "failedText": "Try again."
+      },
+      "duplicates": {
+        "records_one": "{{value}} record",
+        "records_other": "{{value}} records",
+        "crossRegion": "Different regions — not merged",
+        "merge": "Merge",
+        "mergeAria": "Merge {{name}} records"
+      },
+      "merge": {
+        "recordName": "{{name}} (ID {{id}})",
+        "text": "Everything in {{name}} (ID {{id}}) moves to the chosen district, and record ID {{id}} is deleted.",
+        "sourceTitle": "{{name}} · ID {{id}}",
+        "sourceSubtitle": "{{region}} · {{code}}",
+        "option": "{{name}} · ID {{id}}",
+        "hint": "Only districts of {{region}}.",
+        "hintKeeps": "Only districts of {{region}}. SOATO code {{code}} is kept.",
+        "sourceCodeLost": "Code {{code}} of record ID {{id}} will be lost.",
+        "irreversibleText": "Record ID {{id}} will be deleted permanently. Merging can take up to 2 minutes."
       }
     },
     "logist": {

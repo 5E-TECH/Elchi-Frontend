@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-regions-sato-management, admin-regions-sato-management, superadmin-regions-sato-codes, superadmin-regions-sato-codes-not-found, superadmin-regions-sato-codes-edit, admin-regions-sato-codes, admin-regions-sato-codes-edit
+// dizayn-v2: superadmin-regions-sato-management, admin-regions-sato-management, superadmin-regions-sato-codes, superadmin-regions-sato-codes-not-found, superadmin-regions-sato-codes-edit, admin-regions-sato-codes, admin-regions-sato-codes-edit, superadmin-regions-sato-codes-apply-dialog, superadmin-regions-sato-codes-duplicates, superadmin-regions-sato-codes-merge-dialog, superadmin-regions-sato-codes-missing, superadmin-regions-sato-codes-add-dialog
 import { memo, useCallback, useMemo, useState } from "react";
 import { Navigate, useSearchParams } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -28,8 +28,10 @@ import {
   normalizeSatoDistricts,
   normalizeSatoPreview,
   satoRegionOptions,
+  type SatoDistrict,
   type SatoTabRows,
 } from "../../model/satoModel";
+import { SatoApplyAction } from "../../ui/sato/SatoApplyDialog";
 import { SatoCodesPanel } from "../../ui/sato/SatoCodesPanel";
 import { SatoKpiRow } from "../../ui/sato/SatoKpiRow";
 
@@ -94,6 +96,11 @@ const REGIONS_KEY = ["regions", "with-districts"];
 const SATO_KEY = ["district-sato"] as const;
 const SATO_DISTRICTS_KEY = [...SATO_KEY, "districts"] as const;
 const SATO_PREVIEW_KEY = [...SATO_KEY, "preview"] as const;
+/**
+ * Tuman qo'shilsa yoki birlashtirilsa (SA-2) eskiradigan boshqa keshlar: o'tkazish taxtasi, tumanlar sahifasi
+ * (DM-1), tuman tanlagichlari va viloyat statistikasi.
+ */
+const DISTRICT_DEPENDENT_KEYS = [REGIONS_KEY, ["region-districts-admin"], ["region-district-catalog"], ["region-stats"]];
 
 type PageTab = "move" | "sato";
 const PAGE_TABS: readonly PageTab[] = ["move", "sato"];
@@ -203,16 +210,17 @@ const MoveDistrictsTab = ({ regionsQuery }: { regionsQuery: ReturnType<typeof us
 };
 
 /**
- * SATO KODLARI tabi. Superadmin: preview (`GET district/sato-match/preview`) + `GET district` (`dbId = id`),
- * KPI qatori va 5 ta holat tabi. Admin: preview chaqirilmaydi (403) — faqat `GET district`, «Kodsiz» va
- * «Kodi bor». Kod saqlangach ikkala so'rov birga qayta yuklanadi.
+ * SATO KODLARI ma'lumoti (sahifa darajasida — sarlavhadagi «SATO kodlarini yozish N» ham shuni o'qiydi).
+ * Superadmin: preview (`GET district/sato-match/preview`) + `GET district` (`dbId = id`). Admin: preview
+ * chaqirilmaydi (403) — faqat `GET district`. Kod saqlangach ikkala so'rov birga qayta yuklanadi.
  */
-const SatoCodesTab = ({ superadmin }: { superadmin: boolean }) => {
+const useSatoCodesData = (superadmin: boolean, enabled: boolean) => {
   const queryClient = useQueryClient();
 
   const districtsQuery = useQuery({
     queryKey: SATO_DISTRICTS_KEY,
     queryFn: () => api.get(API_ENDPOINTS.DISTRICTS.BASE).then((res) => normalizeSatoDistricts(res.data)),
+    enabled,
     refetchOnWindowFocus: false,
     meta: { silentError: true },
   });
@@ -220,7 +228,7 @@ const SatoCodesTab = ({ superadmin }: { superadmin: boolean }) => {
     queryKey: SATO_PREVIEW_KEY,
     queryFn: () =>
       api.get(API_ENDPOINTS.DISTRICTS.SATO_MATCH_PREVIEW).then((res) => normalizeSatoPreview(res.data)),
-    enabled: superadmin,
+    enabled: enabled && superadmin,
     refetchOnWindowFocus: false,
     meta: { silentError: true },
   });
@@ -238,8 +246,32 @@ const SatoCodesTab = ({ superadmin }: { superadmin: boolean }) => {
   const regionOptions = useMemo(() => satoRegionOptions(districts ?? []), [districts]);
 
   const refresh = useCallback(() => queryClient.invalidateQueries({ queryKey: SATO_KEY }), [queryClient]);
+  /** Tuman qo'shildi / birlashtirildi: SATO so'rovlari va bog'liq keshlar. */
+  const refreshAll = useCallback(
+    () =>
+      Promise.all(
+        [SATO_KEY, ...DISTRICT_DEPENDENT_KEYS].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      ),
+    [queryClient],
+  );
+  /** Qayta yuklab, yangi `/district` ni qaytaradi (yozish natijasi — haqiqiy holat); yuklanmasa `null`. */
+  const reload = useCallback(async (): Promise<SatoDistrict[] | null> => {
+    const startedAt = Date.now();
+    await queryClient.invalidateQueries({ queryKey: SATO_KEY });
+    const state = queryClient.getQueryState<SatoDistrict[]>(SATO_DISTRICTS_KEY);
+    return state?.status === "success" && state.dataUpdatedAt >= startedAt ? (state.data ?? null) : null;
+  }, [queryClient]);
   const queries = superadmin ? [districtsQuery, previewQuery] : [districtsQuery];
   const failed = queries.find((query) => query.isError && !query.data);
+
+  return { districts, preview, view, regionOptions, refresh, refreshAll, reload, queries, failed };
+};
+
+type SatoCodesData = ReturnType<typeof useSatoCodesData>;
+
+/** SATO KODLARI tabi: superadmin — KPI qatori va 5 ta holat tabi; admin — «Kodsiz» va «Kodi bor». */
+const SatoCodesTab = ({ superadmin, data }: { superadmin: boolean; data: SatoCodesData }) => {
+  const { districts, preview, view, regionOptions, refresh, refreshAll, queries, failed } = data;
 
   return (
     <>
@@ -263,6 +295,8 @@ const SatoCodesTab = ({ superadmin }: { superadmin: boolean }) => {
           refetch: () => Promise.all(queries.map((query) => query.refetch())),
         }}
         onSaved={refresh}
+        districts={superadmin ? districts : undefined}
+        onChanged={superadmin ? refreshAll : undefined}
       />
     </>
   );
@@ -271,7 +305,7 @@ const SatoCodesTab = ({ superadmin }: { superadmin: boolean }) => {
 /**
  * TUMANLAR VA SATO KODLARI (superadmin, admin — ega S1): bitta sarlavha va ikki tab — «Tumanlarni o'tkazish»
  * (sukut) va «SATO kodlari» (`?tab=sato`). Tab almashsa sarlavha amallari ham almashadi: o'tkazishda — viloyat va
- * tuman sonlari, SATO'da — hozircha amal yo'q («SATO kodlarini yozish» — SA-2).
+ * tuman sonlari, SATO'da — superadminga «SATO kodlarini yozish N» (SA-2; adminda amal yo'q).
  */
 const RegionSatoManagementPage = () => {
   const { t, i18n } = useTranslation("region");
@@ -281,6 +315,8 @@ const RegionSatoManagementPage = () => {
   const tab: PageTab = searchParams.get("tab") === "sato" ? "sato" : "move";
 
   const regionsQuery = useRegionsQuery(canAccess && tab === "move");
+  const superadmin = role === "superadmin";
+  const satoData = useSatoCodesData(superadmin, canAccess && tab === "sato");
   const regions = regionsQuery.data ?? [];
   const totalDistricts = regions.reduce((sum, region) => sum + region.districts.length, 0);
 
@@ -321,6 +357,8 @@ const RegionSatoManagementPage = () => {
                 <span className="font-bold">{number(totalDistricts)}</span>
               </Badge>
             </div>
+          ) : superadmin ? (
+            <SatoApplyAction rows={satoData.failed ? null : (satoData.view?.rows ?? null)} reload={satoData.reload} />
           ) : undefined
         }
       >
@@ -344,7 +382,7 @@ const RegionSatoManagementPage = () => {
         {tab === "move" ? (
           <MoveDistrictsTab regionsQuery={regionsQuery} />
         ) : (
-          <SatoCodesTab superadmin={role === "superadmin"} />
+          <SatoCodesTab superadmin={superadmin} data={satoData} />
         )}
       </div>
     </div>
