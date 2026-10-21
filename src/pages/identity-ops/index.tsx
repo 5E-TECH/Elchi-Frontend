@@ -3,7 +3,6 @@ import { memo, useState, type FormEvent } from "react";
 import { Check } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useIdentityCoverage } from "../../entities/identity";
-import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import { toRows } from "../../shared/lib/toRows";
 import {
   Badge,
@@ -19,6 +18,7 @@ import {
   type QueryLike,
 } from "../../shared/ui/primitives";
 import { OpsAlert, OpsIntro, OpsToolPage } from "../ops/ui/OpsToolPage";
+import { useOpsErrorText } from "../ops/lib/opsErrorText";
 
 /**
  * OPS → «Xodimlar» (maket `superadmin-ops-identity`): adminlar, menejerlar, registratorlar ro'yxatlari
@@ -48,6 +48,7 @@ const readTotal = (payload: unknown, fallback: number) => {
 
 const StaffCard = ({ title, query }: { title: string; query: QueryLike<unknown> }) => {
   const { t } = useTranslation("ops");
+  const errorText = useOpsErrorText();
   const rows = toStaffRows(query.data);
   const total = readTotal(query.data, rows.length);
 
@@ -75,7 +76,13 @@ const StaffCard = ({ title, query }: { title: string; query: QueryLike<unknown> 
         isEmpty={() => rows.length === 0}
         empty={<EmptyState title={t("identity.lists.empty")} />}
         error={(error, retry) => (
-          <ErrorState error={error} title={t("identity.lists.loadError")} retryLabel={t("common.retry")} onRetry={retry} />
+          <ErrorState
+            error={error}
+            title={t("identity.lists.loadError")}
+            description={errorText(error)}
+            retryLabel={t("common.retry")}
+            onRetry={retry}
+          />
         )}
       >
         {() => (
@@ -103,6 +110,8 @@ const StaffCard = ({ title, query }: { title: string; query: QueryLike<unknown> 
 const IdentityOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const { t } = useTranslation("ops");
   const { useGetAdmins, useGetManagers, useGetRegistrators, addOrderToMarket } = useIdentityCoverage();
+  // Rad etilgan so'rov — o'z matnimiz (backend xabari ko'rsatilmaydi, LJt0G1y1).
+  const errorText = useOpsErrorText();
 
   const admins = useGetAdmins(undefined, { silentError: true });
   const managers = useGetManagers(undefined, { silentError: true });
@@ -149,7 +158,7 @@ const IdentityOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
             ) : null}
             {addOrderToMarket.isError ? (
               <OpsAlert tone="danger" title={t("identity.market.error")}>
-                {getBackendErrorMessage(addOrderToMarket.error)}
+                {errorText(addOrderToMarket.error, { action: true })}
               </OpsAlert>
             ) : null}
           </form>

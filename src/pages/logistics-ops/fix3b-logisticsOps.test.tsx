@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import LogisticsOpsPage from "./index";
 import { renderWithProviders } from "../../test/test-utils";
+import { mockEnvelope, mockRejection } from "../../test/mockEnvelope";
 import i18n from "../../i18n";
 
 /**
@@ -21,32 +22,27 @@ vi.mock("../../shared/api/api", () => ({
   },
 }));
 
-const groupsResponse = {
-  data: {
-    statusCode: 200,
-    data: {
-      total: 3,
-      groups: [
-        {
-          courier_id: "56",
-          courier: { id: "56", name: "Kuryer Ali" },
-          orders: [
-            { id: "9001", status: "waiting" },
-            { id: "9002", status: "waiting" },
-          ],
-        },
-        { courier_id: "57", courier: { id: "57", name: "Kuryer Vali" }, orders: [{ id: "9003", status: "waiting" }] },
+const groupsResponse = mockEnvelope({
+  total: 3,
+  groups: [
+    {
+      courier_id: "56",
+      courier: { id: "56", name: "Kuryer Ali" },
+      orders: [
+        { id: "9001", status: "waiting" },
+        { id: "9002", status: "waiting" },
       ],
     },
-  },
-};
+    { courier_id: "57", courier: { id: "57", name: "Kuryer Vali" }, orders: [{ id: "9003", status: "waiting" }] },
+  ],
+});
 
 describe("LogisticsOps — qaytarish so'rovlarini tasdiqlash (fix3b)", () => {
   beforeEach(() => {
     apiGetMock.mockReset();
     apiPostMock.mockReset();
     apiGetMock.mockResolvedValue(groupsResponse);
-    apiPostMock.mockResolvedValue({ data: { statusCode: 200, data: { approved: 2 } } });
+    apiPostMock.mockResolvedValue(mockEnvelope({ approved: 2 }));
   });
 
   afterEach(async () => {
@@ -102,7 +98,7 @@ describe("LogisticsOps — qaytarish so'rovlarini tasdiqlash (fix3b)", () => {
 
   it("ro'yxat yuklanmasa — xato holati va qayta urinish", async () => {
     const user = userEvent.setup();
-    apiGetMock.mockRejectedValueOnce({ response: { status: 500, data: { message: "boom" } } });
+    apiGetMock.mockRejectedValueOnce(mockRejection(500));
     renderWithProviders(<LogisticsOpsPage />);
 
     expect(await screen.findByText("Qaytarish so'rovlarini yuklab bo'lmadi")).toBeInTheDocument();

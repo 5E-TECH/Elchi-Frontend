@@ -22,7 +22,12 @@
   "common": {
     "count": "{{count}} ta",
     "idValue": "ID {{id}}",
-    "retry": "Qayta urinish"
+    "retry": "Qayta urinish",
+    "requestError": {
+      "badRequest": "Ma'lumot qabul qilinmadi ({{status}}). Kiritilganini tekshirib, qayta urinib ko'ring.",
+      "notFound": "Topilmadi (404). ID to'g'riligini tekshiring.",
+      "conflict": "Holat allaqachon o'zgargan (409). Ro'yxatni yangilab, qayta urinib ko'ring."
+    }
   },
   "finance": {
     "intro": {

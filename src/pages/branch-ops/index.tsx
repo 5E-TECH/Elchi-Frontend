@@ -4,7 +4,6 @@ import { CircleX } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useBranchCoverage } from "../../entities/branch/branchCoverage";
 import { extractArray } from "../../entities/branch";
-import { getBackendErrorMessage } from "../../shared/lib/backendError";
 import {
   Badge,
   Button,
@@ -19,6 +18,7 @@ import {
   type DataTableColumn,
 } from "../../shared/ui/primitives";
 import { OpsAlert, OpsIntro, OpsToolPage } from "../ops/ui/OpsToolPage";
+import { useOpsErrorText } from "../ops/lib/opsErrorText";
 
 /**
  * OPS → «Filiallar» (maket `superadmin-ops-branches`): yangi buyurtmali filiallar (`GET branches/new-orders`,
@@ -35,6 +35,8 @@ const BranchOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const { t } = useTranslation("ops");
   const { useGetNewOrders, cancelBatch } = useBranchCoverage();
   const confirm = useConfirm();
+  // Rad etilgan so'rov — o'z matnimiz (backend xabari ko'rsatilmaydi, LJt0G1y1).
+  const errorText = useOpsErrorText();
 
   const newOrders = useGetNewOrders(undefined, { silentError: true });
   // Javob konverti `{ statusCode, message, data: [...] }` — massiv `data` ichida.
@@ -99,7 +101,13 @@ const BranchOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
             isEmpty={() => rows.length === 0}
             empty={<EmptyState title={t("branches.list.empty")} description={t("branches.list.emptyHint")} />}
             error={(error, retry) => (
-              <ErrorState error={error} title={t("branches.list.loadError")} retryLabel={t("common.retry")} onRetry={retry} />
+              <ErrorState
+                error={error}
+                title={t("branches.list.loadError")}
+                description={errorText(error)}
+                retryLabel={t("common.retry")}
+                onRetry={retry}
+              />
             )}
           >
             {() => (
@@ -174,7 +182,7 @@ const BranchOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
             {cancelBatch.isSuccess ? <OpsAlert tone="success" title={t("branches.cancel.success")} /> : null}
             {cancelBatch.isError ? (
               <OpsAlert tone="danger" title={t("branches.cancel.error")}>
-                {getBackendErrorMessage(cancelBatch.error) ?? t("branches.cancel.unknownError")}
+                {errorText(cancelBatch.error, { action: true })}
               </OpsAlert>
             ) : null}
           </form>

@@ -12,7 +12,7 @@ import {
 test.describe("Filiallar — operatsiyalar — 390px", () => {
   test.describe.configure({ timeout: 90_000 });
 
-  test("kartalar filiallarni ko'rsatadi; 400 xabari ko'rinadi; gorizontal skroll yo'q", async ({ page }) => {
+  test("kartalar filiallarni ko'rsatadi; 400 da i18n xato matni (server xabari emas); gorizontal skroll yo'q", async ({ page }) => {
     const { leaked } = await mockBranchOpsApi(page, {
       cancel: () => ({ status: 400, body: { statusCode: 400, message: "Partiya topilmadi" } }),
     });
@@ -27,7 +27,8 @@ test.describe("Filiallar — operatsiyalar — 390px", () => {
     await cancelBatchButton(page).click();
     await confirmBatchCancel(page);
     const alert = page.getByRole("alert").filter({ hasText: "Paketni bekor qilib bo'lmadi" });
-    await expect(alert).toContainText("Partiya topilmadi");
+    await expect(alert).toContainText("Ma'lumot qabul qilinmadi (400). Kiritilganini tekshirib, qayta urinib ko'ring.");
+    await expect(alert).not.toContainText("Partiya topilmadi");
 
     const outside = await page
       .locator("[data-shell-slot=content] li, [role='alert'], textarea, button")

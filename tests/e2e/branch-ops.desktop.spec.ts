@@ -55,7 +55,8 @@ for (const width of [1920, 1440]) {
       expect(leaked).toEqual([]);
     });
 
-    test("⭐ backend 400 — server xabari xato ogohlantirishida ko'rinadi", async ({ page }) => {
+    // LJt0G1y1: xom backend matni foydalanuvchiga chiqmaydi — ogohlantirishda o'z (i18n) matnimiz.
+    test("⭐ backend 400 — xato ogohlantirishida i18n matn, server xabari emas", async ({ page }) => {
       const { leaked } = await mockBranchOpsApi(page, {
         cancel: () => ({
           status: 400,
@@ -70,7 +71,8 @@ for (const width of [1920, 1440]) {
 
       const alert = page.getByRole("alert").filter({ hasText: "Paketni bekor qilib bo'lmadi" });
       await expect(alert).toBeVisible();
-      await expect(alert).toContainText("Faqat SENT holatdagi partiyani bekor qilish mumkin");
+      await expect(alert).toContainText("Ma'lumot qabul qilinmadi (400). Kiritilganini tekshirib, qayta urinib ko'ring.");
+      await expect(alert).not.toContainText("Faqat SENT holatdagi partiyani bekor qilish mumkin");
       expect(leaked).toEqual([]);
     });
   });

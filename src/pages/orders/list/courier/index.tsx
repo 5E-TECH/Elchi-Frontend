@@ -498,7 +498,14 @@ const CourierOrders = () => {
   // (ro'yxatni `QueryBoundary` o'zi saqlaydi): sarlavhadagi «Jami N» skeletga almashmaydi, sahifalash
   // o'chmaydi — bosilgan sahifa tugmasidagi fokus `body` ga tushib qolmaydi. Tab almashsa — eski tab
   // soni ishlatilmaydi (skelet, maket `courier-orders-tab-switcher-open`).
-  const freshTotal = isFresh ? (toPositiveNumber(paginationContainer.total) ?? orders.length) : 0;
+  //
+  // «Bekor qilingan» tabida «Jami» (wtmkmJ8h 65c007) — backend `total` i: u `courier_cancelled_tab` filtri bilan
+  // sanaydi (pochtaga hali yuborilmagan, filial/HQ qo'lida bo'lmagan bekorlar — `isUnsentCancelledOrder` bilan
+  // bir xil qoida), shuning uchun ekrandagi qatorlar bilan mos. Yagona farq oynasi: shu sessiyada pochtaga
+  // yuborilgan buyurtmalar (`hiddenSentCancelledOrderIds`) qatorlardan darhol yashiriladi, `total` esa
+  // `SendToPost` dan keyingi qayta so'rov kelguncha eski son bo'lib turadi. Ataylab — xatti-harakat o'zgarmaydi.
+  // Bo'sh ro'yxat (`total` 0) — «Jami 0 ta buyurtma» (fb6aae, `courierOrdersCounts.test.tsx`).
+  const freshTotal =isFresh ? (toPositiveNumber(paginationContainer.total) ?? orders.length) : 0;
   const freshHasRows = orders.length > 0;
   const [knownList, setKnownList] = useState<{ tab: CourierOrdersTab; total: number; hasRows: boolean } | null>(null);
   if (

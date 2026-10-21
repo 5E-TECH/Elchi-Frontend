@@ -22,6 +22,7 @@ import {
 } from "../../shared/ui/primitives";
 import { useIsPhone } from "../../shared/ui/primitives/date/useIsPhone";
 import { OpsIntro, OpsToolPage } from "../ops/ui/OpsToolPage";
+import { useOpsErrorText } from "../ops/lib/opsErrorText";
 import {
   extractReturnRequestRows,
   extractReturnRequestScope,
@@ -56,6 +57,8 @@ const LogisticsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
   const confirm = useConfirm();
   const number = (value: number) => formatNumberLocalized(value, { language: i18n.language });
   const { useGetReturnRequestsList, approveReturnRequest } = useLogisticsCoverage();
+  // Ro'yxat xatosi — o'z matnimiz (backend xabari ko'rsatilmaydi, LJt0G1y1).
+  const errorText = useOpsErrorText();
 
   const returnRequests = useGetReturnRequestsList(undefined, { silentError: true });
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
@@ -218,6 +221,7 @@ const LogisticsOpsPage = ({ embedded = false }: { embedded?: boolean }) => {
             <ErrorState
               error={error}
               title={t("returns:opsReturnRequests.loadError")}
+              description={errorText(error)}
               retryLabel={t("common.retry")}
               onRetry={retry}
             />

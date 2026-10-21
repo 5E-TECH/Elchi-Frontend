@@ -175,7 +175,8 @@ oldingi joyi. Bo'limlar orasida o'tishda butun ekranli yuklovchi yo'q: 150 ms da
 (`RouteProgress`), menyuda bosilgan band darhol tanlangan. Sahifa ichida yon menyu, pastki menyu yoki sahifa darajasidagi o'z skroll
 konteyneri yasalmaydi. Sahifa `[data-shell-slot=content]` ichida chiziladi: o'ziga tashqi karta (`bg-surface` o'rami),
 tashqi chekka (`p-*` / `px-*`), `h-screen` yoki pastki menyu uchun joy qo'shmaydi — bular shell'da; sahifa ildizi
-faqat bo'limlar oralig'i (`flex flex-col gap-6 max-md:gap-4`).
+faqat bo'limlar oralig'i (`flex flex-col gap-6 max-md:gap-4`). Ekran balandligi kerak bo'lsa — faqat `dvh` (`min-h-dvh`, `100dvh`): `100vh` / `h-screen` iOS
+Safari'da manzil paneli ostida qoladi (`src/test/viewportHeightGuard.test.ts`).
 
 **Telefonda filtrlar:** ≤ 2 ta filtr — qatorda, ustma-ust (`max-md:min-h-11`; namuna `manager-returns-list`);
 ≥ 3 ta — «Filtrlar» tugmasi (soni bilan) + pastdan chiquvchi oyna, «Tozalash» va «Natijalarni ko'rsatish (N)»
@@ -419,7 +420,7 @@ ESLint'da `-- <sabab>`, design-guard'da `design-guard-ignore: <sabab>`.
 | ESLint ratchet (`src/test/lintRatchet.test.ts`, §12.2) | ratchet ro'yxatlari faqat qisqaradi; `design-v2` disable izohida sabab; `STAGE_A_PENDING` bo'sh | `npm test` | ro'yxatdan olib tashlash | — |
 | Vizual snapshotlar (CI «Visual», §12.5) | piksel farqi: sahnalar × kunduzgi/tungi × 1440/390 | GitHub Actions: PR + «Run workflow» | kodni tuzatish yoki «Run workflow (update)» | sahna `maxDiffPixels` faqat sabab bilan; beqaror — `test.fixme` + issue |
 | `src/test/visualCiVersion.test.ts` (§12.5) | CI Docker obrazi tegi = o'rnatilgan Playwright; aniq pin; lock; workflow qoidalari | `npm test` | bitta PR'da package.json + lock + obraz + baseline'lar | — |
-| Tokenlar, shrift, menyu | `themeTokens.test.ts` (`index.css` ↔ `themeTokens.ts`, kontrast), `inputFontGuard.test.ts` (telefonda maydon 16px), `design/tools/screens.test.mjs` (route ↔ maket, menyu) | `npm test` | `AGENTS.md` «Dizayn qo'riqchisi (CI)» | — |
+| Tokenlar, shrift, menyu | `themeTokens.test.ts` (`index.css` ↔ `themeTokens.ts`, kontrast), `inputFontGuard.test.ts` (telefonda maydon 16px), `viewportHeightGuard.test.ts` (`src` da `100vh` / `h-screen` / `min-h-screen` yo'q — faqat `dvh`, iOS manzil paneli), `design/tools/screens.test.mjs` (route ↔ maket, menyu) | `npm test` | `AGENTS.md` «Dizayn qo'riqchisi (CI)» | — |
 
 ### 12.2 ESLint: xom boshqaruv elementlari, antd va ikonkalar
 
