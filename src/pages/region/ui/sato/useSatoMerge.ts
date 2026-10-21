@@ -1,4 +1,4 @@
-import { useCallback, useRef, type RefObject } from "react";
+import { useCallback, useRef, useState, type RefObject } from "react";
 import type { MergeDistrict } from "../../model/districtMerge";
 import type { SatoDuplicateGroup } from "../../model/satoModel";
 import { useDistrictMerge, type DistrictMergeController } from "../useDistrictMerge";
@@ -8,6 +8,11 @@ export type SatoMergeController = DistrictMergeController & {
   openGroup: (group: SatoDuplicateGroup) => void;
   /** Oyna yopilgach fokus: guruh tugmasi (qolgan bo'lsa), aks holda zaxira element. */
   originRef: RefObject<HTMLElement | null>;
+  /**
+   * Muvaffaqiyatli birlashtirilgan manbalar (o'chirilgan ID lar). Ro'yxat qayta yuklanguncha eski keshdagi guruh
+   * yashiriladi — o'chgan yozuv uchun yana «Birlashtirish» bosilib 404 olinmasin. ID qayta ishlatilmaydi.
+   */
+  mergedIds: ReadonlySet<string>;
 };
 
 const toMergeDistrict = (row: { id: string; name: string; regionId: string | null; regionName: string }): MergeDistrict => ({
@@ -25,7 +30,9 @@ const toMergeDistrict = (row: { id: string; name: string; regionId: string | nul
 export const useSatoMerge = (refresh: () => unknown): SatoMergeController => {
   const merge = useDistrictMerge(refresh);
   const originRef = useRef<HTMLElement | null>(null);
-  const { open } = merge;
+  const { open, state } = merge;
+  const [mergedIds, setMergedIds] = useState<ReadonlySet<string>>(() => new Set());
+  if (state.phase === "result" && !mergedIds.has(state.source.id)) setMergedIds(new Set([...mergedIds, state.source.id]));
   const openGroup = useCallback(
     (group: SatoDuplicateGroup) => {
       if (!group.merge) return;
@@ -37,5 +44,5 @@ export const useSatoMerge = (refresh: () => unknown): SatoMergeController => {
     },
     [open],
   );
-  return { ...merge, openGroup, originRef };
+  return { ...merge, openGroup, originRef, mergedIds };
 };

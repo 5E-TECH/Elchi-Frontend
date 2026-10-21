@@ -110,17 +110,24 @@ export const SatoCodesPanel = ({
   const filtered = useMemo(() => filterSatoRows(tabRows, { search, regionId }), [tabRows, search, regionId]);
   // «Takroriy nomlar» (SA-2): guruh bo'yicha — birorta yozuvi mos kelgan guruh butunligicha, sahifalash guruhlar bilan.
   const grouped = tab === "duplicates" && Boolean(districts);
+  const [addRow, setAddRow] = useState<SatoMissingRow | null>(null);
+  const refreshAll = useCallback(() => (onChanged ? onChanged() : onSaved()), [onChanged, onSaved]);
+  const merge = useSatoMerge(refreshAll);
+  const { mergedIds } = merge;
+
   const groups = useMemo<SatoDuplicateGroup[]>(
-    () => (grouped ? filterSatoDuplicateGroups(groupSatoDuplicates(tabRows), { search, regionId }) : []),
-    [grouped, tabRows, search, regionId],
+    () =>
+      grouped
+        ? filterSatoDuplicateGroups(groupSatoDuplicates(tabRows), { search, regionId }).filter(
+            // Birlashtirilgan (o'chgan) yozuvli guruh — yangi ro'yxat kelguncha ko'rsatilmaydi.
+            (group) => !group.rows.some((row) => mergedIds.has(row.id)),
+          )
+        : [],
+    [grouped, tabRows, search, regionId, mergedIds],
   );
   const paged = paginateSatoRows(filtered, page, pageSize);
   const pagedGroups = paginateSatoRows(groups, page, pageSize);
   const hasFilters = search.trim().length > 0 || regionId != null;
-
-  const [addRow, setAddRow] = useState<SatoMissingRow | null>(null);
-  const refreshAll = useCallback(() => (onChanged ? onChanged() : onSaved()), [onChanged, onSaved]);
-  const merge = useSatoMerge(refreshAll);
   const tabOf = useCallback(
     (id: string): SatoTab | null =>
       (tabs.find((value) => rows?.[value]?.some((row) => row.kind === "district" && row.id === id)) ?? null),
@@ -340,6 +347,7 @@ export const SatoCodesPanel = ({
             tabOf={tabOf}
             onClose={() => setAddRow(null)}
             onAdded={refreshAll}
+            fallbackFocus={searchRef}
           />
           <SatoMergeDialog merge={merge} districts={districts} fallbackFocus={searchRef} />
         </>

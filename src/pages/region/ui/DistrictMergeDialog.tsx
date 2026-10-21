@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-regions-districts-merge-dialog, superadmin-regions-districts-merge-target, superadmin-regions-districts-merge-progress, superadmin-regions-districts-merge-result, superadmin-regions-districts-merge-unknown, admin-regions-districts-merge-dialog, admin-regions-districts-merge-target, admin-regions-districts-merge-progress, admin-regions-districts-merge-result, admin-regions-districts-merge-unknown
+// dizayn-v2: superadmin-regions-districts-merge-dialog, superadmin-regions-districts-merge-target, superadmin-regions-districts-merge-progress, superadmin-regions-districts-merge-result, superadmin-regions-districts-merge-unknown, admin-regions-districts-merge-dialog, admin-regions-districts-merge-target, admin-regions-districts-merge-progress, admin-regions-districts-merge-result, admin-regions-districts-merge-unknown, superadmin-regions-sato-codes-merge-dialog
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowDown,
@@ -44,17 +44,20 @@ export const DistrictSummary = ({
   label,
   title,
   subtitle,
+  icon: Icon = MapPin,
 }: {
   label?: ReactNode;
   title: ReactNode;
   subtitle: ReactNode;
+  /** Sukut `MapPin` (tumanlar sahifasi); SATO maketida — `Map`. */
+  icon?: LucideIcon;
 }) => (
   <div className="flex min-w-0 items-center gap-3 rounded-[10px] bg-sunken px-3 py-2.5">
     <span
       aria-hidden="true"
       className="inline-flex size-9 shrink-0 items-center justify-center rounded-[10px] bg-surface text-text-muted"
     >
-      <MapPin size={18} />
+      <Icon size={18} />
     </span>
     <span className="flex min-w-0 flex-col gap-0.5">
       {label ? <span className="text-xs font-semibold text-text-muted">{label}</span> : null}
@@ -174,6 +177,8 @@ export type DistrictMergePresentation = {
   /** «O'chiriladigan tuman» blokining nomi va ikkinchi qatori. */
   sourceTitle?: (source: MergeDistrict) => ReactNode;
   sourceSubtitle?: (source: MergeDistrict) => ReactNode;
+  /** «O'chiriladigan tuman» blokining ikonkasi (sukut `MapPin`; SATO maketida `Map`). */
+  sourceIcon?: LucideIcon;
   /** Maqsad ro'yxatidagi variant: nom, ikkinchi qator, qidiruv matni. */
   option?: (candidate: MergeDistrict) => Pick<SelectOption, "label" | "description" | "searchText">;
   /** Tanlangan maqsad yonidagi qo'shimcha (SATO kodi). Qidiruvli ro'yxatda ko'rinmaydi — `searchable: false` bilan. */
@@ -281,6 +286,7 @@ const DistrictMergeDialog = ({ merge, candidates, returnFocus, presentation }: D
               label={t("v2.districts.merge.source")}
               title={presentation?.sourceTitle ? presentation.sourceTitle(source) : source.name}
               subtitle={presentation?.sourceSubtitle ? presentation.sourceSubtitle(source) : source.regionName}
+              icon={presentation?.sourceIcon}
             />
             <span className="flex justify-center text-text-subtle" aria-hidden="true">
               <ArrowDown size={18} />

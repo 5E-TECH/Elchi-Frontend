@@ -492,20 +492,24 @@ export const pickSatoMerge = (
   const sorted = [...bucket].sort(byIdNumber);
   const coded = sorted.filter((row) => row.satoCode);
   const uncoded = sorted.filter((row) => !row.satoCode);
-  if (coded.length === 1 && uncoded.length > 0) return { source: uncoded[uncoded.length - 1], target: coded[0] };
+  // Kodsiz yozuv bor bo'lsa — hech qachon kodli yozuv o'chirilmaydi: eng yangi kodsiz → eng eski kodli.
+  if (coded.length > 0 && uncoded.length > 0) return { source: uncoded[uncoded.length - 1], target: coded[0] };
   return { source: sorted[sorted.length - 1], target: sorted[0] };
 };
 
-/** «Takroriy nomlar» qatorlari (`duplicateGroup` bo'yicha) → guruhlar, tartib saqlanadi. */
+/**
+ * «Takroriy nomlar» qatorlari (`duplicateGroup` bo'yicha) → guruhlar, tartib saqlanadi. `key` — guruhdagi eng kichik
+ * tuman ID si (barqaror: birlashtirilgach indekslar siljiydi, React va fokus boshqa guruhga o'tib ketmasin).
+ */
 export const groupSatoDuplicates = (rows: readonly SatoRow[]): SatoDuplicateGroup[] => {
   const groups = new Map<string, SatoDistrictRow[]>();
   for (const row of rows) {
     if (row.kind !== "district") continue;
-    const key = String(row.duplicateGroup ?? row.id);
-    groups.set(key, [...(groups.get(key) ?? []), row]);
+    const index = String(row.duplicateGroup ?? row.id);
+    groups.set(index, [...(groups.get(index) ?? []), row]);
   }
-  return [...groups.entries()].map(([key, items]) => ({
-    key,
+  return [...groups.values()].map((items) => ({
+    key: [...items].sort(byIdNumber)[0].id,
     name: items[0].name,
     rows: items,
     regionNames: [...new Set(items.map((row) => row.regionName))],

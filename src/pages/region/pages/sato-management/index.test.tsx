@@ -666,7 +666,9 @@ describe("RegionSatoManagementPage (v2) — SA-2: «SATO kodlarini yozish»", ()
 
     const second = open("superadmin", "?tab=sato");
     await screen.findByText("Tuman 01");
-    expect(applyButton()).toHaveTextContent("SATO kodlarini yozish12");
+    // Nom va son orasida bo'sh joy (maket: «SATO kodlarini yozish 12»), ekran o'quvchi ham shunday o'qiydi.
+    expect(applyButton()).toHaveTextContent("SATO kodlarini yozish 12");
+    expect(applyButton()).toHaveAccessibleName("SATO kodlarini yozish 12");
     expect(applyButton()).toBeEnabled();
     second.unmount();
 
@@ -679,7 +681,7 @@ describe("RegionSatoManagementPage (v2) — SA-2: «SATO kodlarini yozish»", ()
     open("superadmin", "?tab=sato");
     await screen.findByText("Yoziladigan kod yo'q");
     expect(applyButton()).toBeDisabled();
-    expect(applyButton()).toHaveTextContent("0");
+    expect(applyButton()).toHaveAccessibleName("SATO kodlarini yozish 0");
   });
 
   it("oyna: Yoziladi / O'zgarmaydi / Yozilmaydi, 3 tuman + «yana 9 ta»; «Yozilmoqda…» (yopilmaydi) → POST → xabar, qayta yuklash", async () => {
@@ -703,6 +705,8 @@ describe("RegionSatoManagementPage (v2) — SA-2: «SATO kodlarini yozish»", ()
       "Tuman 03Toshkent sh.1726202",
       "yana 9 ta tuman",
     ]);
+    // Kod — maketdagi `.el-strong` (14px), nomdan og'ir emas.
+    expect(within(list).getByText("1726200")).toHaveClass("text-sm");
     expect(dialog).toHaveTextContent(
       "Kodi bor tumanlar o'zgarmaydi. Topilmagan 1 ta va takroriy 2 ta yozuvga kod yozilmaydi. Amal faoliyat jurnaliga yoziladi.",
     );
@@ -748,6 +752,38 @@ describe("RegionSatoManagementPage (v2) — SA-2: «SATO kodlarini yozish»", ()
     ).toBeInTheDocument();
     expect(screen.queryByText(/Gateway/)).not.toBeInTheDocument();
     await waitFor(() => expect(statusTab(/^Topildi/)).toHaveTextContent("7"));
+  });
+
+  it("yopilish harakati paytida oyna ochilgandagi sonlarni ko'rsatadi (qayta yuklangan sonlar sakramaydi)", async () => {
+    vi.stubGlobal("TransitionEvent", class extends Event {});
+    try {
+      api.post.mockRejectedValue(httpError(504, "Gateway Timeout"));
+      let districtCalls = 0;
+      mockGets({
+        district: () => {
+          districtCalls += 1;
+          if (districtCalls === 1) return ok(DISTRICTS);
+          return ok(DISTRICTS.map((d, i) => (i < 5 ? { ...d, sato_code: String(1726200 + i) } : d)));
+        },
+      });
+      const user = userEvent.setup();
+      open("superadmin", "?tab=sato");
+      await screen.findByText("Tuman 01");
+
+      await user.click(applyButton());
+      await user.click(within(await screen.findByRole("alertdialog")).getByRole("button", { name: "12 ta kodni yozish" }));
+      expect(await screen.findByText("Kodlar qisman yozildi")).toBeInTheDocument();
+      expect(statusTab(/^Topildi/)).toHaveTextContent("7");
+      // Oyna hali DOM'da (chiqish harakati) — sonlar o'sha 12 ta, yangi 7 ta emas.
+      const exiting = document.querySelector<HTMLElement>('[role="alertdialog"]');
+      expect(exiting).not.toBeNull();
+      expect(exiting).toHaveAttribute("data-state", "closed");
+      expect(exiting).toHaveTextContent("Rasmiy ro'yxatdan topilgan 12 ta kod bazadagi tumanlarga yoziladi.");
+      expect(exiting).not.toHaveTextContent("topilgan 7 ta kod");
+      await waitFor(() => expect(document.querySelector('[role="alertdialog"]')).toBeNull());
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("504, lekin hammasi yozilgan — muvaffaqiyat; hech biri — xato; ro'yxat ham yuklanmasa — «Natija noma'lum»", async () => {
@@ -882,6 +918,34 @@ describe("RegionSatoManagementPage (v2) — SA-2: «Tuman qo'shish»", () => {
     expect(screen.getByRole("dialog", { name: "Tuman qo'shish" })).toBeInTheDocument();
   });
 
+  it("409 + kod egasini so'rash 5xx — «nom band» deb noto'g'ri aytilmaydi: umumiy xabar, maydon xatosi yo'q", async () => {
+    api.post.mockRejectedValue(httpError(409, "District sato_code already exists"));
+    mockGets({ "district/sato/1718236": () => Promise.reject(httpError(503, "Service Unavailable")) });
+    const user = userEvent.setup();
+    const dialog = await openAdd(user);
+    await user.click(within(dialog).getByRole("button", { name: "Tuman qo'shish" }));
+    expect(await screen.findByText("Tumanni qo'shib bo'lmadi")).toBeInTheDocument();
+    expect(within(dialog).queryByText("Bu viloyatda shu nomli tuman bor")).not.toBeInTheDocument();
+    expect(within(dialog).getByRole("textbox", { name: /Tuman nomi/ })).not.toHaveAttribute("aria-invalid", "true");
+    expect(screen.queryByText(/Service Unavailable|already exists/)).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "Tuman qo'shish" })).toBeInTheDocument();
+  });
+
+  it("fokus: bekor qilinsa — qator tugmasiga; qo'shilgach (qator ro'yxatdan chiqadi) — qidiruv maydoniga", async () => {
+    api.post.mockResolvedValue({ data: { statusCode: 201, data: { id: "300" } } });
+    const user = userEvent.setup();
+    let dialog = await openAdd(user);
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Tuman qo'shish" })).not.toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "Urgut tumani — tuman qo'shish" })).toHaveFocus();
+
+    await user.click(screen.getByRole("button", { name: "Urgut tumani — tuman qo'shish" }));
+    dialog = await screen.findByRole("dialog", { name: "Tuman qo'shish" });
+    await user.click(within(dialog).getByRole("button", { name: "Tuman qo'shish" }));
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Tuman qo'shish" })).not.toBeInTheDocument());
+    expect(screen.getByRole("searchbox", { name: "Tuman, viloyat yoki SATO kodi bo'yicha qidirish" })).toHaveFocus();
+  });
+
   it("boshqa xato — umumiy xabar, oyna ochiq qoladi", async () => {
     api.post.mockRejectedValue(httpError(500, "QueryFailedError: duplicate key"));
     const user = userEvent.setup();
@@ -973,6 +1037,41 @@ describe("RegionSatoManagementPage (v2) — SA-2: takroriylarni birlashtirish", 
     expect(result).toHaveTextContent("Bo'ka tumani (ID 32) o'chirildi.");
     await waitFor(() => expect(calls("district")).toBe(2));
     expect(calls("district/sato-match/preview")).toBe(2);
+  });
+
+  it("birlashtirilgach ro'yxat yangilanguncha eski guruh va uning «Birlashtirish» i ko'rinmaydi (o'chgan ID ga 404 yo'q)", async () => {
+    api.post.mockResolvedValue({ data: { statusCode: 200, data: {} } });
+    let districtCalls = 0;
+    mockGets({
+      district: () => {
+        districtCalls += 1;
+        return districtCalls === 1 ? ok(DISTRICTS) : new Promise(() => undefined);
+      },
+    });
+    const user = userEvent.setup();
+    open("superadmin", "?tab=sato");
+    await screen.findByText("Tuman 01");
+    await user.click(statusTab(/^Takroriy nomlar/));
+    await user.click(await screen.findByRole("button", { name: "Bo'ka tumani yozuvlarini birlashtirish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Tumanni birlashtirish" });
+    await user.click(within(dialog).getByRole("button", { name: "Birlashtirish" }));
+    await screen.findByRole("dialog", { name: "Tumanlar birlashtirildi" });
+    await waitFor(() => expect(districtCalls).toBe(2));
+    expect(
+      screen.queryByRole("button", { name: "Bo'ka tumani yozuvlarini birlashtirish", hidden: true }),
+    ).not.toBeInTheDocument();
+  });
+
+  it("«O'chiriladigan tuman» blokida maketdagi `Map` ikonkasi (tumanlar sahifasidagi `MapPin` emas)", async () => {
+    const user = userEvent.setup();
+    open("superadmin", "?tab=sato");
+    await screen.findByText("Tuman 01");
+    await user.click(statusTab(/^Takroriy nomlar/));
+    await user.click(await screen.findByRole("button", { name: "Bo'ka tumani yozuvlarini birlashtirish" }));
+    const dialog = await screen.findByRole("dialog", { name: "Tumanni birlashtirish" });
+    const source = within(dialog).getByText("O'chiriladigan tuman").parentElement!.parentElement!;
+    expect(source.querySelector("svg.lucide-map")).not.toBeNull();
+    expect(source.querySelector("svg.lucide-map-pin")).toBeNull();
   });
 
   it("maqsad ro'yxati — faqat shu viloyatdan (Samarqand): «Urgut sh. · ID 14» bor, Toshkent tumanlari yo'q", async () => {

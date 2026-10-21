@@ -1,5 +1,6 @@
 // dizayn-v2: superadmin-regions-sato-codes-merge-dialog
 import { useMemo, type RefObject } from "react";
+import { Map as MapIcon } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { MergeDistrict } from "../../model/districtMerge";
 import { satoMergeCandidates, type SatoDistrict } from "../../model/satoModel";
@@ -47,6 +48,7 @@ export const SatoMergeDialog = ({ merge, districts, fallbackFocus }: Props) => {
     const codeOf = (district: MergeDistrict) => codeById.get(district.id) ?? null;
     const label = (district: MergeDistrict) => t("v2.sato.merge.option", { name: district.name, id: district.id });
     return {
+      sourceIcon: MapIcon,
       displayName: (district) => t("v2.sato.merge.recordName", { name: district.name, id: district.id }),
       description: (from) => t("v2.sato.merge.text", { name: from.name, id: from.id }),
       sourceTitle: (from) => t("v2.sato.merge.sourceTitle", { name: from.name, id: from.id }),

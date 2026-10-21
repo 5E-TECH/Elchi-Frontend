@@ -20,7 +20,8 @@ test("«SATO kodlarini yozish 12» → oyna → «Yozilmoqda…» (yopilmaydi) �
   await openSatoCodes(page);
 
   const button = page.getByRole("button", { name: /^SATO kodlarini yozish/ });
-  await expect(button).toHaveText("SATO kodlarini yozish12");
+  await expect(button).toHaveText("SATO kodlarini yozish 12");
+  await expect(button).toHaveAccessibleName("SATO kodlarini yozish 12");
   await button.click();
   const dialog = page.getByRole("alertdialog", { name: "SATO kodlarini yozasizmi?" });
   await expect(dialog).toContainText("Rasmiy ro'yxatdan topilgan 12 ta kod bazadagi tumanlarga yoziladi.");

@@ -543,8 +543,6 @@
       },
       "apply": {
         "button": "SATO kodlarini yozish",
-        "buttonAria": "SATO kodlarini yozish: {{value}} ta kod",
-        "emptyHint": "Yoziladigan kod yo'q",
         "title": "SATO kodlarini yozasizmi?",
         "text": "Rasmiy ro'yxatdan topilgan {{value}} ta kod bazadagi tumanlarga yoziladi.",
         "summaryAria": "Yozish xulosasi",

@@ -309,6 +309,9 @@ describe("RegionDistrictsPage — o'chirib bo'lmaydi va birlashtirish (DM-1, oNA
     const statsKey = ["region-stats", undefined];
     queryClient.setQueryData(catalogKey, [{ id: "2", name: "Chilonzor" }]);
     queryClient.setQueryData(statsKey, { items: [] });
+    // SATO tabi (SA-2) — o'chgan tumanga kod yozish / birlashtirish taklif qilinmasin.
+    const satoKey = ["district-sato", "districts"];
+    queryClient.setQueryData(satoKey, [{ id: "2", name: "Chilonzor" }]);
     await screen.findByText("Chilonzor");
     api.delete.mockRejectedValue(httpError(400));
     await user.click(screen.getByRole("button", { name: "Chilonzorni o'chirish" }));
@@ -368,6 +371,7 @@ describe("RegionDistrictsPage — o'chirib bo'lmaydi va birlashtirish (DM-1, oNA
     await waitFor(() => expect(result).toHaveFocus());
     await waitFor(() => expect(queryClient.getQueryState(catalogKey)?.isInvalidated).toBe(true));
     expect(queryClient.getQueryState(statsKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(satoKey)?.isInvalidated).toBe(true);
     const now = within(result).getByRole("list", { name: "Mirobodda endi" });
     expect(within(now).getByText("1 254 ta")).toHaveClass("text-sm");
     expect(within(now).getByText("oldin 1 126 ta")).toBeInTheDocument();

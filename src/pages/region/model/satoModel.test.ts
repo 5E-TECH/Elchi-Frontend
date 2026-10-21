@@ -316,7 +316,7 @@ describe("satoModel — SA-2: takroriylar va birlashtirish", () => {
     const view = buildSuperadminSatoView(normalizeSatoPreview(PREVIEW), normalizeSatoDistricts(DISTRICTS));
     expect(view.rows.duplicates.map((r) => (r as SatoDistrictRow).duplicateGroup)).toEqual([0, 0]);
     const [group] = groupSatoDuplicates(view.rows.duplicates);
-    expect(group).toMatchObject({ key: "0", name: "Chilonzor tumani", regionNames: ["Toshkent sh.", "Toshkent viloyati"], merge: null });
+    expect(group).toMatchObject({ key: "31", name: "Chilonzor tumani", regionNames: ["Toshkent sh.", "Toshkent viloyati"], merge: null });
   });
 
   it("sukut (ega S4): kodsiz yozuv → kodli yozuv", () => {
@@ -347,6 +347,32 @@ describe("satoModel — SA-2: takroriylar va birlashtirish", () => {
       target: { id: "3" },
     });
     expect(pickSatoMerge([row("1", "1", null), row("2", "2", null)])).toBeNull();
+  });
+
+  it("kodli yozuvlar ≥ 2 va kodsiz bor — kodli yozuv o'chirilmaydi (eng yangi kodsiz → eng eski kodli)", () => {
+    expect(pickSatoMerge([row("5", "2", null), row("10", "2", "1"), row("11", "2", "2")])).toMatchObject({
+      source: { id: "5" },
+      target: { id: "10" },
+    });
+    expect(
+      pickSatoMerge([row("5", "2", null), row("7", "2", null), row("10", "2", "1"), row("11", "2", "2")]),
+    ).toMatchObject({ source: { id: "7" }, target: { id: "10" } });
+  });
+
+  it("guruh kaliti barqaror — eng kichik ID (birlashtirilgach indekslar siljisa ham o'zgarmaydi)", () => {
+    const before = groupSatoDuplicates([
+      { ...row("31", "1", "1726294", "Chilonzor tumani"), duplicateGroup: 0 },
+      { ...row("188", "2", null, "Chilonzor tumani"), duplicateGroup: 0 },
+      { ...row("142", "2", "1727228"), duplicateGroup: 1 },
+      { ...row("203", "2", null), duplicateGroup: 1 },
+    ]);
+    expect(before.map((g) => g.key)).toEqual(["31", "142"]);
+    // Chilonzor birlashtirildi — qolgan guruhning indeksi 0 ga tushdi, kaliti esa o'sha.
+    const after = groupSatoDuplicates([
+      { ...row("203", "2", null), duplicateGroup: 0 },
+      { ...row("142", "2", "1727228"), duplicateGroup: 0 },
+    ]);
+    expect(after.map((g) => g.key)).toEqual(["142"]);
   });
 
   it("filtr: birorta yozuvi mos kelgan guruh butunligicha", () => {

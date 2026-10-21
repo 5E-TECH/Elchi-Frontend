@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-regions-sato-codes-add-dialog
-import { useState, type FormEvent } from "react";
+import { useMemo, useRef, useState, type FormEvent, type RefObject } from "react";
 import { Info, Plus } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { api } from "../../../../shared/api/api";
@@ -29,6 +29,8 @@ type Props = {
   onClose: () => void;
   /** Qo'shilgach: preview, `/district` va viloyatlar taxtasi qayta yuklanadi. */
   onAdded: () => Promise<unknown>;
+  /** Qator tugmasi yo'qolgan bo'lsa (qo'shilgach «Bazada yo'q» dan chiqadi) — fokus shu yerga (qidiruv maydoni). */
+  fallbackFocus: RefObject<HTMLElement | null>;
 };
 
 /**
@@ -47,6 +49,7 @@ const AddDistrictForm = ({
   tabOf,
   onClose,
   onAdded,
+  fallbackFocus,
 }: Props & { row: SatoMissingRow }) => {
   const { t } = useTranslation("region");
   const codeErrorText = useSatoEditorErrorText();
@@ -56,6 +59,20 @@ const AddDistrictForm = ({
   const [code, setCode] = useState(row.satoCode);
   const [errors, setErrors] = useState<Errors>({});
   const [saving, setSaving] = useState(false);
+  // Ochgan tugma (qator «+»): bekor qilinsa — unga. Qo'shilgach qator ro'yxatdan chiqadi (qayta yuklash oyna
+  // yopilgandan keyin tugashi mumkin) — fokus darhol zaxira elementga (qidiruv), body ga tushib qolmaydi.
+  const [origin] = useState(() =>
+    typeof document === "undefined" ? null : document.activeElement instanceof HTMLElement ? document.activeElement : null,
+  );
+  const addedRef = useRef(false);
+  const returnFocus = useMemo<RefObject<HTMLElement | null>>(
+    () => ({
+      get current() {
+        return !addedRef.current && origin?.isConnected ? origin : fallbackFocus.current;
+      },
+    }),
+    [fallbackFocus, origin],
+  );
 
   const similar = findSimilarSatoDistrict(districts, { name, regionId });
   const similarTab = similar ? tabOf(similar.id) : null;
@@ -89,12 +106,14 @@ const AddDistrictForm = ({
       if (status === 409) {
         // Backend 409 ikki xil: shu viloyatda shu nom bor yoki kod band — kod egasi so'raladi, server matni o'qilmaydi.
         let codeError: SatoEditorError | null = null;
+        let ownerUnknown = false;
         if (trimmedCode) {
           try {
             const owner = normalizeSatoOwner((await api.get(API_ENDPOINTS.DISTRICTS.SATO_BY_CODE(trimmedCode))).data);
             if (owner) codeError = { kind: "taken", district: owner.name, region: owner.regionName };
-          } catch {
-            // Kod egasi topilmadi (404) — demak nom band.
+          } catch (lookupError) {
+            // 404 — kod egasi yo'q, demak nom band. Boshqa xato (5xx, aloqa) — sabab noma'lum.
+            if (httpStatusOf(lookupError) !== 404) ownerUnknown = true;
           }
         }
         // Backend: shu viloyatda aynan shu nom (trim) — o'xshash nom emas.
@@ -102,6 +121,12 @@ const AddDistrictForm = ({
         const nameTaken = districts.some(
           (district) => district.region?.id === regionId && district.name.trim().toLocaleLowerCase("uz") === key,
         );
+        if (ownerUnknown && !nameTaken) {
+          // Kod egasini bilib bo'lmadi — «nom band» deb noto'g'ri aytilmaydi.
+          notify.error(t("v2.sato.add.failed"), { description: t("v2.sato.add.failedText") });
+          setSaving(false);
+          return;
+        }
         setErrors({
           code: codeError ? (codeErrorText(codeError) ?? undefined) : undefined,
           name: nameTaken || !codeError ? t("v2.sato.add.nameTaken") : undefined,
@@ -114,6 +139,7 @@ const AddDistrictForm = ({
       setSaving(false);
       return;
     }
+    addedRef.current = true;
     notify.success(t("v2.sato.add.done"), {
       description: t("v2.sato.add.doneText", { name: trimmedName, region: regionName }),
     });
@@ -132,6 +158,7 @@ const AddDistrictForm = ({
       open={open}
       onClose={close}
       onExited={onClose}
+      returnFocus={returnFocus}
       size="md"
       className="md:w-[460px]"
       busy={saving}

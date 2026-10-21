@@ -16,7 +16,7 @@ import {
 } from "../../model/satoModel";
 import { DialogNote } from "../DistrictMergeDialog";
 
-/** Tugmadagi son (`.el-tab-count`, maket: oq fon, ko'k matn). */
+/** Tugmadagi son (`.el-tab-count`, maket: oq fon, ko'k matn). Oldidagi bo'sh joy — nom «SATO kodlarini yozish 12». */
 const COUNT =
   "ms-0.5 inline-flex h-5 min-w-[22px] items-center justify-center rounded-full bg-surface px-1.5 text-xs font-semibold text-action-fg tabular-nums";
 
@@ -46,9 +46,10 @@ export const SatoApplyAction = ({ rows, reload }: Props) => {
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const summary = rows ? satoApplySummary(rows) : null;
-  // Oyna ochilgandagi ro'yxat (yozish paytida qayta yuklansa ham xulosa o'zgarmaydi).
-  const [snapshot, setSnapshot] = useState(summary);
-  const shown = open || writing ? snapshot : summary;
+  // Oyna ochilgandagi ro'yxat: yozish paytida va yopilish harakati tugaguncha (`onExited`) o'zgarmaydi —
+  // qayta yuklangan sonlar chiqib ketayotgan oynada «sakramasin».
+  const [snapshot, setSnapshot] = useState<typeof summary>(null);
+  const shown = snapshot;
   const write = summary?.write ?? 0;
 
   const close = () => {
@@ -109,13 +110,19 @@ export const SatoApplyAction = ({ rows, reload }: Props) => {
         }}
       >
         {t("v2.sato.apply.button")}
-        {summary ? <span className={COUNT}>{number(write)}</span> : null}
+        {summary ? (
+          <>
+            {" "}
+            <span className={COUNT}>{number(write)}</span>
+          </>
+        ) : null}
       </Button>
 
       {shown ? (
         <Dialog
           open={open}
           onClose={close}
+          onExited={() => setSnapshot(null)}
           role="alertdialog"
           size="md"
           busy={writing}
@@ -166,7 +173,7 @@ export const SatoApplyAction = ({ rows, reload }: Props) => {
                     <span className="text-[13px] font-semibold text-text [overflow-wrap:anywhere]">{row.name}</span>
                     <span className="text-xs text-text-muted">{row.regionName}</span>
                   </span>
-                  <span className="font-semibold whitespace-nowrap text-text tabular-nums tracking-[.04em]">
+                  <span className="text-sm font-semibold whitespace-nowrap text-text tabular-nums tracking-[.04em]">
                     {row.foundCode ?? row.satoCode}
                   </span>
                 </li>

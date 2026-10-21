@@ -550,8 +550,6 @@
       },
       "apply": {
         "button": "Write SOATO codes",
-        "buttonAria": "Write SOATO codes: {{value}}",
-        "emptyHint": "No codes to write",
         "title": "Write SOATO codes?",
         "text_one": "{{value}} code found in the official list will be written to database districts.",
         "text_other": "{{value}} codes found in the official list will be written to database districts.",
