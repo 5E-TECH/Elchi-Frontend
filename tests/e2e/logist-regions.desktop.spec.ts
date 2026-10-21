@@ -52,10 +52,11 @@ test("⭐ o'z viloyati — tumanlar va kuryerlar, pulsiz; viloyat almashadi va U
   expectNoFinanceRequests(mock);
 });
 
-test("bosh sahifadagi «Tafsilot» — viloyat sahifasini ochadi", async ({ page }) => {
+test("bosh sahifadagi «Tafsilot» — viloyat sahifasini bosh sahifa davri bilan ochadi", async ({ page }) => {
   await openLogistHome(page);
-  await page.getByRole("link", { name: "Qashqadaryo tafsiloti" }).click();
-  await expect(page).toHaveURL(/\/regions\?region=8/);
+  await page.getByRole("link", { name: "Qashqadaryo viloyati tafsiloti" }).click();
+  await expect(page).toHaveURL(/\/regions\?region=8&period=today/);
+  await expect(page.getByRole("radio", { name: "Bugun" })).toHaveAttribute("aria-checked", "true");
   await expect(page.getByRole("heading", { level: 1, name: "Qashqadaryo viloyati" })).toBeVisible({ timeout: 30_000 });
 });
 

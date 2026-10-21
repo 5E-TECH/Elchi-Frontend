@@ -217,7 +217,11 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     («Faol kuryerlar» — `status = 'active'`), tumanlar taxtasi va «Tanlangan tuman» (Tushum o'rnida «Kuryerlar»),
     «Tumanlar kesimida» (Tushumsiz), «Kuryerlar» top 5; pul yo'q (LG-S1), `GET /district` chaqirilmaydi. Begona /
     o'tkazilgan viloyat (yangi ro'yxat bo'yicha yoki 403) — «Bu viloyat endi sizga biriktirilmagan». Bosh sahifada
-    «Tafsilot» ochildi. «Tuman buyurtmalari» — LG-4, «Barcha kuryerlar» — LG-5. Yangi route yo'q.
+    «Tafsilot» ochildi — bosh sahifa davri bilan (`period=today|month|all`, hafta/yil/oraliq — `period=custom` aniq
+    kunlar bilan). Eskirgan keshni qayta tekshirish har davr kaliti uchun alohida; URL'da viloyat bo'lmasa ko'rsatilgani
+    davr almashganda ham saqlanadi; oflayn (keshda ro'yxat bo'lsa ham) — «Internet aloqasi yo'q». Logist qatorlarida
+    tushum maydoni umuman yo'q (`toDistrictRows(…, { withRevenue: false })`). «Tuman buyurtmalari» — LG-4,
+    «Barcha kuryerlar» — LG-5. Yangi route yo'q.
 - «Visual» baseline'lari skaner 2-bosqichidan keyin yangilangan (bot commit `1393ae0`, `/dispatch` va
   `cancelled-handover` — «Kamera» tugmalari olib tashlangani uchun kutilgan farq).
 - **To'liq QA** — Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.

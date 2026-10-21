@@ -84,10 +84,14 @@ const LoadError = ({ onRetry, retrying }: { onRetry: () => void; retrying: boole
   );
 };
 
+/** Yuklanish: skeletlar `aria-hidden` — ekran o'quvchiga «Yuklanmoqda…» (`role="status"`) va `aria-busy`. */
 const LoadingBody = () => {
   const { t } = useTranslation("region");
   return (
-    <>
+    <div aria-busy="true" data-testid="logist-region-loading" className="flex flex-col gap-6 max-md:gap-4">
+      <span role="status" className="sr-only">
+        {t("common.loading", { ns: "ui" })}
+      </span>
       <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)] gap-6 max-lg:grid-cols-1 max-md:gap-4">
         <Card divided={false} title={t("v2.gauge.title")}>
           <SkeletonChart />
@@ -99,7 +103,7 @@ const LoadingBody = () => {
       <Card divided={false} title={t("v2.scoped.districts.title")}>
         <SkeletonChart />
       </Card>
-    </>
+    </div>
   );
 };
 
@@ -164,7 +168,8 @@ const RegionPicker = ({
  *
  * Poyga (LG-2 saboqi): URL'dagi viloyat ro'yxatda bo'lmasa, ro'yxat shu ko'rinish ochilgandan keyin yangidan
  * olinmaguncha («Bu viloyat endi sizga biriktirilmagan» deyilmaydi, URL va tanlov ustidan yozilmaydi; eskirgan
- * keshda bir marta qayta so'raladi). Tanlov faqat foydalanuvchi bosganda URL'ga yoziladi.
+ * keshda har davr kaliti uchun bir marta qayta so'raladi). Tanlov faqat foydalanuvchi bosganda URL'ga yoziladi;
+ * URL'da viloyat bo'lmasa ko'rsatilgani holatda ushlanadi (davr almashganda o'z-o'zidan almashmaydi).
  *
  * Chizilmaganlar: «Tuman buyurtmalari» (logist buyurtmalari — LG-4), «Barcha kuryerlar» (`/couriers` — LG-5).
  * «Faol kuryerlar» — `status = 'active'` (LG-1 qarori; maketdagi «bugun buyurtmasi bor» soni API'da yo'q).
@@ -182,7 +187,6 @@ const LogistRegionView = ({ dateParams, periodLabel, controls }: LogistRegionVie
   const meKnown = me != null && String(me) !== "";
 
   const listQuery = useRegionStats(dateParams, meKnown);
-  const [mountedAt] = useState(() => Date.now());
   const regions = listQuery.data?.regions;
   const options = useMemo(
     () => (regions ? logistRegionOptions(regions, me) : null),
@@ -193,24 +197,37 @@ const LogistRegionView = ({ dateParams, periodLabel, controls }: LogistRegionVie
   const [shownOptions, setShownOptions] = useState<LogistRegionOption[] | null>(options);
   if (options && options !== shownOptions) setShownOptions(options);
 
+  // «Yangi» ro'yxat — HAR BIR so'rov kaliti (davr) uchun alohida: ko'rinish shu kalitni birinchi ko'rganda keshda
+  // turgan javob (`dataUpdatedAt`) «eskirgan» hisoblanadi, undan keyin kelgani — yangi. (Ochilish vaqtiga
+  // bog'lansa, ochilishdan oldingi keshdagi boshqa davrga o'tganda yangi javob hech kelmay, yuklanish abadiy qolardi.)
+  const listKey = `${dateParams.startDate ?? ""}|${dateParams.endDate ?? ""}`;
+  const [seen, setSeen] = useState(() => ({ key: listKey, baseline: listQuery.dataUpdatedAt }));
+  if (seen.key !== listKey) setSeen({ key: listKey, baseline: listQuery.dataUpdatedAt });
+  const baseline = seen.key === listKey ? seen.baseline : listQuery.dataUpdatedAt;
   const fresh =
-    Boolean(listQuery.data) && !listQuery.isFetching && listQuery.dataUpdatedAt >= mountedAt;
+    Boolean(listQuery.data) && !listQuery.isFetching && listQuery.dataUpdatedAt > baseline;
+
+  // URL'da viloyat yo'q — ko'rsatilgani ushlab turiladi (davr almashib tartib o'zgarsa ham o'z-o'zidan almashmaydi).
+  const [pinnedId, setPinnedId] = useState<string | null>(null);
   const resolution = resolveLogistRegion({
     options: meKnown ? options : null,
     requestedId,
+    pinnedId,
     fresh,
   });
+  const autoId = !requestedId?.trim() && resolution.kind === "region" ? resolution.option.id : null;
+  if (autoId && autoId !== pinnedId) setPinnedId(autoId);
 
-  // Keshdagi ro'yxat ochilishdan oldin olingan va URL'dagi viloyat unda yo'q (yoki ro'yxat bo'sh) — rad etishdan
-  // oldin bir marta yangidan so'raladi (yangi biriktirilgan viloyat eskirgan keshda bo'lmasligi mumkin).
-  const refetchedRef = useRef(false);
-  const { data: listData, isFetching: listFetching, dataUpdatedAt, refetch: refetchList } = listQuery;
+  // Keshdagi ro'yxat shu kalit uchun eskirgan va URL'dagi viloyat unda yo'q (yoki ro'yxat bo'sh) — rad etishdan
+  // oldin HAR KALIT uchun bir marta yangidan so'raladi (yangi biriktirilgan viloyat eskirgan keshda bo'lmasligi mumkin).
+  const refetchedRef = useRef<string | null>(null);
+  const { data: listData, isFetching: listFetching, refetch: refetchList } = listQuery;
   useEffect(() => {
-    if (resolution.kind !== "pending" || !listData || listFetching) return;
-    if (dataUpdatedAt >= mountedAt || refetchedRef.current) return;
-    refetchedRef.current = true;
+    if (resolution.kind !== "pending" || !listData || listFetching || fresh) return;
+    if (refetchedRef.current === listKey) return;
+    refetchedRef.current = listKey;
     void refetchList();
-  }, [resolution.kind, listData, listFetching, dataUpdatedAt, mountedAt, refetchList]);
+  }, [resolution.kind, listData, listFetching, fresh, listKey, refetchList]);
 
   const selected = resolution.kind === "region" ? resolution.option : null;
   const detailQuery = useRegionDetailStats(selected?.id ?? "", dateParams, Boolean(selected));
@@ -220,7 +237,11 @@ const LogistRegionView = ({ dateParams, periodLabel, controls }: LogistRegionVie
   const [district, setDistrict] = useState<{ regionId: string; id: string } | null>(null);
 
   const detail = detailQuery.data ?? null;
-  const rows = useMemo(() => toDistrictRows(detail?.districts ?? []), [detail?.districts]);
+  // LG-S1: tushum qatorlarga umuman o'tmaydi (UI prop'i unutilsa ham pul chiqmaydi).
+  const rows = useMemo(
+    () => toDistrictRows(detail?.districts ?? [], { withRevenue: false }),
+    [detail?.districts],
+  );
   const couriers = useMemo(
     () => toLogistCourierRows(detail?.couriers, detail?.districts ?? []),
     [detail?.couriers, detail?.districts],
@@ -262,18 +283,16 @@ const LogistRegionView = ({ dateParams, periodLabel, controls }: LogistRegionVie
   );
 
   // — Holatlar —
+  const offline = (onRetry: () => void, retrying: boolean) =>
+    page(
+      <Card>
+        <ErrorState kind="offline" onRetry={onRetry} retrying={retrying} />
+      </Card>,
+    );
+
   if (resolution.kind === "pending") {
-    if (listQuery.isPaused && !listQuery.data) {
-      return page(
-        <Card>
-          <ErrorState
-            kind="offline"
-            onRetry={() => void listQuery.refetch()}
-            retrying={listQuery.isFetching}
-          />
-        </Card>,
-      );
-    }
+    // Oflayn — keshda (eskirgan) ro'yxat bo'lsa ham: yangisi kelmaguncha skelet abadiy qolmasin.
+    if (listQuery.isPaused) return offline(() => void listQuery.refetch(), listQuery.isFetching);
     if (listQuery.isError && !listQuery.isFetching) {
       return page(<LoadError onRetry={() => void listQuery.refetch()} retrying={false} />);
     }
@@ -304,6 +323,9 @@ const LogistRegionView = ({ dateParams, periodLabel, controls }: LogistRegionVie
     );
   }
 
+  if (!detail && detailQuery.isPaused) {
+    return offline(() => void detailQuery.refetch(), detailQuery.isFetching);
+  }
   if (!detail && detailQuery.isError) {
     return page(
       <LoadError onRetry={() => void detailQuery.refetch()} retrying={detailQuery.isFetching} />,

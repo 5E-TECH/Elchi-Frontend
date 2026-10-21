@@ -1,5 +1,5 @@
 // dizayn-v2: logist-regions-detail
-import { ChevronDown, ChevronUp, CircleAlert, TriangleAlert, Users } from "lucide-react";
+import { ChevronDown, ChevronUp, CircleX, TriangleAlert, Truck } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatNumberLocalized, formatPercentLocalized } from "../../../shared/lib/formatMoney";
@@ -18,7 +18,7 @@ import { COURIER_TOP, type LogistCourierRow } from "../model/logistRegionModel";
 const RateIcon = ({ rate }: { rate: number }) => {
   const tone = successZoneTone(rate);
   if (tone === "success") return null;
-  const Icon = tone === "danger" ? CircleAlert : TriangleAlert;
+  const Icon = tone === "danger" ? CircleX : TriangleAlert;
   return (
     <Icon
       size={14}
@@ -158,7 +158,7 @@ export const LogistRegionCouriers = ({
       {rows.length === 0 ? (
         <EmptyState
           size="chart"
-          icon={Users}
+          icon={Truck}
           title={t("v2.logistView.couriers.empty.title")}
           description={t("v2.logistView.couriers.empty.text")}
         />

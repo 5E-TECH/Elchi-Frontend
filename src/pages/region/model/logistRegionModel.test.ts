@@ -79,6 +79,23 @@ describe("resolveLogistRegion", () => {
     });
   });
 
+  it("URL'da viloyat yo'q — oldin ko'rsatilgani (pinnedId) tartib o'zgarsa ham saqlanadi; ro'yxatda yo'q bo'lsa — birinchisi", () => {
+    const reordered = [options[1], options[0]];
+    expect(resolveLogistRegion({ options: reordered, requestedId: null, pinnedId: "6", fresh: true })).toEqual({
+      kind: "region",
+      option: options[0],
+    });
+    expect(resolveLogistRegion({ options: reordered, requestedId: null, pinnedId: "1", fresh: true })).toEqual({
+      kind: "region",
+      option: options[1],
+    });
+    // URL ustun: pinned faqat URL bo'sh bo'lganda.
+    expect(resolveLogistRegion({ options, requestedId: "8", pinnedId: "6", fresh: true })).toEqual({
+      kind: "region",
+      option: options[1],
+    });
+  });
+
   it("URL'dagi begona viloyat: eskirgan ro'yxatda — kutish (rad etilmaydi), yangisida — «biriktirilmagan»", () => {
     expect(resolveLogistRegion({ options, requestedId: "1", fresh: false })).toEqual({ kind: "pending" });
     expect(resolveLogistRegion({ options, requestedId: " 1 ", fresh: true })).toEqual({

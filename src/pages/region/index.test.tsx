@@ -1,4 +1,5 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { onlineManager } from "@tanstack/react-query";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "dayjs";
 import { useState } from "react";
@@ -568,9 +569,23 @@ describe("Region page — logist (LG-3, region/stats/all + region/stats/:id, pul
     // LG-S1: pul yo'q — tushum, «so'm», summalar chizilmaydi.
     const text = document.body.textContent ?? "";
     expect(text).not.toMatch(/so'm|Tushum|987|123/);
+    // Yorliqlar bo'yicha ham (formatlovchiga bog'lanmasdan): grafik ko'rinishi …
+    expect(screen.queryByRole("columnheader", { name: "Tushum" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Tushum")).not.toBeInTheDocument();
     // «Tuman buyurtmalari» (LG-4) va «Barcha kuryerlar» (LG-5) hali yo'q.
     expect(screen.queryByText("Tuman buyurtmalari")).not.toBeInTheDocument();
     expect(screen.queryByText("Barcha kuryerlar")).not.toBeInTheDocument();
+  });
+
+  it("table view (Jadval) — no «Tushum» column or label either", async () => {
+    const user = userEvent.setup();
+    renderRegion("logist");
+    await screen.findByRole("heading", { level: 1, name: "Samarqand viloyati" });
+    await screen.findAllByText("Urgut tumani");
+    await user.click(screen.getByRole("radio", { name: "Jadval" }));
+    expect(await screen.findAllByRole("columnheader", { name: "Buyurtmalar" })).not.toHaveLength(0);
+    expect(screen.queryByRole("columnheader", { name: "Tushum" })).not.toBeInTheDocument();
+    expect(screen.queryByText("Tushum")).not.toBeInTheDocument();
   });
 
   it("shows active couriers (status) and the top-5 courier table with «Yana N ta kuryer»", async () => {
@@ -723,5 +738,160 @@ describe("Region page — logist (LG-3, region/stats/all + region/stats/:id, pul
     expect(await screen.findByText("Viloyat ma'lumotini yuklab bo'lmadi")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Qayta urinish/ })).toBeInTheDocument();
     expect(screen.queryByText(/RPC timeout/)).not.toBeInTheDocument();
+  });
+  // — Review (LG-3): kalit bo'yicha yangilik, oflayn, yuklanish, tanlangan viloyat barqarorligi —
+  const Remount = ({ leaveTo, onLeave }: { leaveTo?: string; onLeave?: () => void }) => {
+    const [shown, setShown] = useState(true);
+    const navigate = useNavigate();
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => {
+            onLeave?.();
+            setShown(false);
+            if (leaveTo) navigate(leaveTo);
+          }}
+        >
+          leave
+        </button>
+        <button type="button" onClick={() => setShown(true)}>
+          back
+        </button>
+        {shown ? <Region /> : null}
+      </>
+    );
+  };
+  const renderRemount = (route: string, props: { leaveTo?: string; onLeave?: () => void } = {}) =>
+    renderWithProviders(
+      <>
+        <Remount {...props} />
+        <Where />
+      </>,
+      { route, preloadedState: { role: roleState("logist") } as never },
+    );
+  const listCalls = (params: Record<string, string>) =>
+    apiGetMock.mock.calls.filter(
+      ([url, config]) =>
+        url === "region/stats/all" && JSON.stringify((config as { params?: unknown })?.params) === JSON.stringify(params),
+    ).length;
+  const NONE_LIST = {
+    statusCode: 200,
+    data: { regions: LOGIST_STATS_ALL.data.regions.filter((item) => item.logist_id !== ME) },
+  };
+
+  it("remount with cached lists: a period switch to a list cached BEFORE mount is re-checked per key (no endless skeleton)", async () => {
+    const user = userEvent.setup();
+    respond({ "region/stats/all": NONE_LIST });
+    renderRemount("/regions", { leaveTo: "/regions" });
+
+    expect(await screen.findByText("Sizga hali viloyat biriktirilmagan")).toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "Barchasi" }));
+    await waitFor(() => expect(listCalls({})).toBe(1));
+    expect(await screen.findByText("Sizga hali viloyat biriktirilmagan")).toBeInTheDocument();
+
+    // Bosh sahifaga chiqib qaytish (30 s ichida — ikkala ro'yxat keshda, «yangi»).
+    await user.click(screen.getByRole("button", { name: "leave" }));
+    await user.click(screen.getByRole("button", { name: "back" }));
+    expect(await screen.findByText("Sizga hali viloyat biriktirilmagan")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("radio", { name: "Barchasi" }));
+    await waitFor(() => expect(listCalls({})).toBe(2));
+    expect(await screen.findByText("Sizga hali viloyat biriktirilmagan")).toBeInTheDocument();
+    expect(screen.queryByTestId("logist-region-loading")).not.toBeInTheDocument();
+  });
+
+  it("remount with a foreign ?region=: after a period switch to a pre-mount cached list — «biriktirilmagan», not skeletons", async () => {
+    const user = userEvent.setup();
+    renderRemount("/regions?region=1");
+
+    expect(await screen.findByText("Bu viloyat endi sizga biriktirilmagan")).toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "Barchasi" }));
+    await waitFor(() => expect(listCalls({})).toBe(1));
+    await user.click(screen.getByRole("radio", { name: "Bugun" }));
+    await user.click(screen.getByRole("button", { name: "leave" }));
+    await user.click(screen.getByRole("button", { name: "back" }));
+    expect(await screen.findByText("Bu viloyat endi sizga biriktirilmagan")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("radio", { name: "Barchasi" }));
+    await waitFor(() => expect(listCalls({})).toBe(2));
+    expect(await screen.findByText("Bu viloyat endi sizga biriktirilmagan")).toBeInTheDocument();
+    expect(screen.queryByTestId("logist-region-loading")).not.toBeInTheDocument();
+    expect(screen.getByTestId("where")).toHaveTextContent("region=1");
+  });
+
+  it("no ?region=: a period switch that reorders the list keeps the shown region (no silent switch)", async () => {
+    const user = userEvent.setup();
+    apiGetMock.mockImplementation((url: string, config?: { params?: { startDate?: string } }) => {
+      if (url === "region/stats/all") {
+        const allTime = !config?.params?.startDate;
+        const regions = LOGIST_STATS_ALL.data.regions.map((item) =>
+          item.id === "8" && allTime ? { ...item, totalOrders: 50 } : item,
+        );
+        return Promise.resolve({ data: { statusCode: 200, data: { regions } } });
+      }
+      if (url === "region/stats/6") return Promise.resolve({ data: LOGIST_DETAIL });
+      if (url === "region/stats/8") return Promise.resolve({ data: QASHQADARYO_DETAIL });
+      return Promise.reject(new Error(`Unexpected API request: ${url}`));
+    });
+    renderRegion("logist");
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Samarqand viloyati" })).toBeInTheDocument();
+    await user.click(screen.getByRole("radio", { name: "Barchasi" }));
+    await waitFor(() => expect(apiGetMock).toHaveBeenCalledWith("region/stats/6", { params: {} }));
+    // Ro'yxat endi «Qashqadaryo» birinchi — lekin ko'rsatilgan viloyat o'zgarmaydi.
+    const picker = screen.getByRole("radiogroup", { name: "Viloyatni tanlash" });
+    await waitFor(() =>
+      expect(within(picker).getAllByRole("radio").map((radio) => radio.textContent)).toEqual([
+        "Qashqadaryo",
+        "Samarqand",
+      ]),
+    );
+    expect(screen.getByRole("heading", { level: 1, name: "Samarqand viloyati" })).toBeInTheDocument();
+    expect(calledUrls()).not.toContain("region/stats/8");
+  });
+
+  it("offline with a cached list: the re-check is paused — «Internet aloqasi yo'q», not endless skeletons", async () => {
+    const user = userEvent.setup();
+    try {
+      renderRemount("/regions?region=1", { onLeave: () => onlineManager.setOnline(false) });
+      expect(await screen.findByText("Bu viloyat endi sizga biriktirilmagan")).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "leave" }));
+      await user.click(screen.getByRole("button", { name: "back" }));
+      expect(await screen.findByText("Internet aloqasi yo'q")).toBeInTheDocument();
+      expect(screen.queryByTestId("logist-region-loading")).not.toBeInTheDocument();
+    } finally {
+      act(() => onlineManager.setOnline(true));
+    }
+    expect(await screen.findByText("Bu viloyat endi sizga biriktirilmagan")).toBeInTheDocument();
+  });
+
+  it("offline region detail (list cached, stats/:id paused) — «Internet aloqasi yo'q», then recovers", async () => {
+    apiGetMock.mockImplementation((url: string) => {
+      if (url === "region/stats/all") {
+        onlineManager.setOnline(false);
+        return Promise.resolve({ data: LOGIST_STATS_ALL });
+      }
+      if (url === "region/stats/6") return Promise.resolve({ data: LOGIST_DETAIL });
+      return Promise.reject(new Error(`Unexpected API request: ${url}`));
+    });
+    try {
+      renderRegion("logist");
+      expect(await screen.findByText("Internet aloqasi yo'q")).toBeInTheDocument();
+      expect(calledUrls()).not.toContain("region/stats/6");
+    } finally {
+      act(() => onlineManager.setOnline(true));
+    }
+    expect(await screen.findAllByText("Urgut tumani")).not.toHaveLength(0);
+  });
+
+  it("loading is announced: aria-busy body with a «Yuklanmoqda…» status", async () => {
+    apiGetMock.mockImplementation((url: string) =>
+      url === "region/stats/all" ? Promise.resolve({ data: LOGIST_STATS_ALL }) : new Promise(() => {}),
+    );
+    renderRegion("logist");
+    const status = await screen.findByText("Yuklanmoqda…");
+    expect(status).toHaveAttribute("role", "status");
+    expect(screen.getByTestId("logist-region-loading")).toHaveAttribute("aria-busy", "true");
   });
 });

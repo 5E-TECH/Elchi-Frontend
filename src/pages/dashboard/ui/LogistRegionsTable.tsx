@@ -7,12 +7,15 @@ import { formatNumberLocalized, formatPercentLocalized } from "../../../shared/l
 import { CHART_FILL, ChartLegend, successZoneTone } from "../../../shared/ui/charts";
 import { Card, DataTable, type DataTableColumn } from "../../../shared/ui/primitives";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
-import type { LogistDashboardModel, LogistRegionRow, LogistSummary } from "../model/logistDashboard";
+import type { DashboardPeriod } from "../../../entities/dashboard/lib/period";
+import {
+  logistRegionHref,
+  type LogistDashboardModel,
+  type LogistRegionRow,
+  type LogistSummary,
+} from "../model/logistDashboard";
 
 type TableRow = { kind: "region"; row: LogistRegionRow } | { kind: "total"; summary: LogistSummary };
-
-/** LG-3: viloyat tafsiloti — logistning `/regions` ko'rinishi (`?region=<id>`). */
-const logistRegionHref = (regionId: string) => `/regions?region=${encodeURIComponent(regionId)}`;
 
 /** «›» havola-ikonka (maket `.el-iconbtn`, ghost `IconButton` md ko'rinishi; telefonda jadval yo'q). */
 const DETAIL_LINK =
@@ -75,9 +78,18 @@ const RateCell = ({ row }: { row: LogistRegionRow }) => {
 /**
  * «VILOYATLARIM (N)» (maket `logist-dashboard-main`): jadval — viloyat (tumanlar soni), buyurtmalar ustuni,
  * holat chizig'i, muvaffaqiyat, faol kuryer, «›» tafsilot; oxirida «Jami» qatori. Planshetda «Holat» va «Faol kuryer»
- * yashirin, telefonda kartalar. LG-3: viloyat nomi, «›» va telefon kartasi — `/regions?region=<id>` havolasi.
+ * yashirin, telefonda kartalar. LG-3: viloyat nomi, «›» va telefon kartasi — `/regions?region=<id>&period=…` havolasi (bosh sahifa davri bilan).
  */
-export const LogistRegionsTable = ({ model, periodText }: { model: LogistDashboardModel; periodText: string }) => {
+export const LogistRegionsTable = ({
+  model,
+  period,
+  periodText,
+}: {
+  model: LogistDashboardModel;
+  /** Bosh sahifa davri — «Tafsilot» havolasiga o'tadi (`/regions` shu davrda ochiladi). */
+  period: DashboardPeriod;
+  periodText: string;
+}) => {
   const { t, i18n } = useTranslation("dashboard");
   const language = i18n.language;
   const isPhone = useIsPhone();
@@ -94,6 +106,7 @@ export const LogistRegionsTable = ({ model, periodText }: { model: LogistDashboa
       cancelled: count(row.cancelled),
     });
   const totalCell = "font-semibold text-text";
+  const href = (regionId: string) => logistRegionHref(regionId, period);
 
   const columns: DataTableColumn<TableRow>[] = [
     {
@@ -104,7 +117,7 @@ export const LogistRegionsTable = ({ model, periodText }: { model: LogistDashboa
           <span className={totalCell}>{t("v2Logist.table.total", { count: summary.regionCount })}</span>
         ) : (
           <Link
-            to={logistRegionHref(item.row.id)}
+            to={href(item.row.id)}
             className="flex min-w-0 flex-col gap-0.5 text-inherit no-underline hover:[&>span:first-child]:underline"
           >
             <span className="whitespace-nowrap font-semibold text-text">{item.row.name}</span>
@@ -191,9 +204,9 @@ export const LogistRegionsTable = ({ model, periodText }: { model: LogistDashboa
       cell: (item) =>
         item.kind === "total" ? null : (
           <Link
-            to={logistRegionHref(item.row.id)}
-            aria-label={t("v2Logist.table.detailAria", { name: item.row.name })}
-            title={t("v2Logist.table.detailAria", { name: item.row.name })}
+            to={href(item.row.id)}
+            aria-label={t("v2Logist.table.detailAria", { name: item.row.fullName })}
+            title={t("v2Logist.table.detailAria", { name: item.row.fullName })}
             className={DETAIL_LINK}
           >
             <ChevronRight size={18} aria-hidden="true" />
@@ -214,7 +227,7 @@ export const LogistRegionsTable = ({ model, periodText }: { model: LogistDashboa
     const rate = row.hasOrders ? formatPercentLocalized(row.rate, { language }) : "—";
     return (
       <Link
-        to={logistRegionHref(row.id)}
+        to={href(row.id)}
         className="flex min-h-16 min-w-0 flex-col gap-2 py-3 text-inherit no-underline"
       >
         <span className="flex items-baseline justify-between gap-3">

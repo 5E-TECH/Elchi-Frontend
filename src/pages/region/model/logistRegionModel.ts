@@ -46,7 +46,9 @@ export const LOGIST_REGION_SEG_MAX = 5;
  *    LG-2 saboqi: yangi ma'lumot kelmaguncha tanlov/URL ustidan yozilmaydi);
  *  - `none` — logistga hech viloyat biriktirilmagan;
  *  - `notAssigned` — URL'dagi viloyat (`?region=`) endi bu logistniki emas;
- *  - `region` — ko'rsatiladigan viloyat (URL'da bo'lmasa — ro'yxatdagi birinchisi).
+ *  - `region` — ko'rsatiladigan viloyat (URL'da bo'lmasa — shu ko'rinishda avval ko'rsatilgani (`pinnedId`), u ham
+ *    ro'yxatda bo'lmasa — ro'yxatdagi birinchisi). Davr almashganda tartib o'zgarsa ham ko'rsatilgan viloyat
+ *    o'z-o'zidan almashmaydi.
  */
 export type LogistRegionResolution =
   | { kind: "pending" }
@@ -57,11 +59,14 @@ export type LogistRegionResolution =
 export const resolveLogistRegion = ({
   options,
   requestedId,
+  pinnedId = null,
   fresh,
 }: {
   /** `null` — ro'yxat hali kelmagan. */
   options: readonly LogistRegionOption[] | null;
   requestedId: string | null;
+  /** URL'da viloyat yo'q bo'lganda shu ko'rinishda oldin ko'rsatilgan viloyat (rad etilmaydi — faqat ustunlik). */
+  pinnedId?: string | null;
   /** Ro'yxat shu ko'rinish ochilgandan keyin olingan (kesh emas) va hozir yangilanmayapti. */
   fresh: boolean;
 }): LogistRegionResolution => {
@@ -73,7 +78,8 @@ export const resolveLogistRegion = ({
     return fresh ? { kind: "notAssigned", requestedId: requested } : { kind: "pending" };
   }
   if (options.length === 0) return fresh ? { kind: "none" } : { kind: "pending" };
-  return { kind: "region", option: options[0] };
+  const pinned = pinnedId ? options.find((item) => item.id === pinnedId) : undefined;
+  return { kind: "region", option: pinned ?? options[0] };
 };
 
 /** «Kuryerlar» jadvali qatori (pulsiz). */

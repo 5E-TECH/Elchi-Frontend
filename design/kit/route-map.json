@@ -2106,6 +2106,7 @@
     "manager-branch-dashboard-main": "src/pages/branch-dashboard/ui/BranchDashboardPage.tsx",
     "manager-regions-scoped": "src/pages/region/ui/ScopedRegionView.tsx",
     "courier-regions-scoped": "src/pages/region/ui/ScopedRegionView.tsx",
+    "logist-regions-detail": ["src/pages/region/ui/LogistRegionView.tsx", "src/pages/region/ui/LogistRegionCouriers.tsx"],
     "superadmin-users-delete-dialog": "src/widgets/user-list/ui/UserListTable.tsx",
     "admin-users-delete-dialog": "src/widgets/user-list/ui/UserListTable.tsx",
     "superadmin-products-select-market-dialog": "src/pages/products/list/ui/SelectMarketDialog.tsx",
