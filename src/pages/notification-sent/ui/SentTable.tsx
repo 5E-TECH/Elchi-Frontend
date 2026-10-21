@@ -18,6 +18,11 @@ type Props = {
 };
 
 const SUB = "text-[13px] text-text-muted";
+/**
+ * Ikkinchi darajali ustunlar («Kim yubordi», «Kanallar», ›) kartaning O'Z kengligi bo'yicha ham yashirinadi (konteyner
+ * so'rovi): 1024–1279 px da yon menyu ochiq bo'lsa yetti ustun kartaga sig'maydi (maketda bu kenglik yo'q).
+ */
+export const SECONDARY_COLUMN_CLASS = "@max-[64rem]:hidden";
 
 /**
  * «Yuborilgan xabarlar» jadvali (maket `*-notifications-sent`): Sana · Sarlavha (+ matn boshi) · Kim yubordi ·
@@ -29,7 +34,8 @@ export const SentTable = ({ rows, busy, onOpen }: Props) => {
   const { t, i18n } = useTranslation("notifications");
   const language = i18n.resolvedLanguage ?? i18n.language;
   const { roleLabel, audienceText } = useAudienceText();
-  const count = (value: number) => formatNumberLocalized(value, { language });
+  // Guruh ajratgichi bo'linmas bo'shliq — tor ustunda «1 / 312» bo'lib qatorga sinmasin.
+  const count = (value: number) => formatNumberLocalized(value, { language }).replace(/ /g, "\u00a0");
   const when = (value: string | null) => (value ? formatDateTimeLocalized(value, { language }) : "—");
 
   const channelLabel = (channel: string) =>
@@ -65,7 +71,7 @@ export const SentTable = ({ rows, busy, onOpen }: Props) => {
     // Yuborilayotganda raqam hali yo'q (yakunda yoziladi) — izoh chiqmaydi.
     if (item.status === "running" && !recipientsCount(item)) return null;
     return recipientsCount(item) > 0
-      ? t("sent.recipients", { value: count(recipientsCount(item)) })
+      ? t("sent.recipients", { count: recipientsCount(item), value: count(recipientsCount(item)) })
       : t("sent.recipientsNone");
   };
   const audience = (item: SentListItem) => audienceText(item.audience) ?? "—";
@@ -84,11 +90,12 @@ export const SentTable = ({ rows, busy, onOpen }: Props) => {
       id: "title",
       header: t("sent.columns.title"),
       cell: (item) => (
-        <div className="flex min-w-[180px] max-w-[240px] flex-col gap-0.5">
+        <div className="flex min-w-[160px] max-w-[240px] flex-col gap-0.5">
           <Pressable className="text-left font-semibold text-text hover:text-action-hover" onClick={() => onOpen(item)}>
             {title(item)}
           </Pressable>
-          {item.body_preview ? <span className={`${SUB} truncate`}>{item.body_preview}</span> : null}
+          {/* `w-0 min-w-full` — qisqartirilgan matn ustun kengligini o'zi belgilamasin (tor kartada sarlavha ustuni toraysin). */}
+          {item.body_preview ? <span className={`${SUB} w-0 min-w-full truncate`}>{item.body_preview}</span> : null}
         </div>
       ),
     },
@@ -96,6 +103,7 @@ export const SentTable = ({ rows, busy, onOpen }: Props) => {
       id: "author",
       header: t("sent.columns.author"),
       hideBelow: "lg",
+      className: SECONDARY_COLUMN_CLASS,
       cell: (item) => (
         <>
           <div className="whitespace-nowrap">{authorName(item)}</div>
@@ -106,7 +114,7 @@ export const SentTable = ({ rows, busy, onOpen }: Props) => {
     {
       id: "audience",
       header: t("sent.columns.audience"),
-      className: "min-w-[128px]",
+      className: "min-w-[112px]",
       cell: (item) => (
         <>
           <div>{audience(item)}</div>
@@ -118,7 +126,7 @@ export const SentTable = ({ rows, busy, onOpen }: Props) => {
       id: "channels",
       header: t("sent.columns.channels"),
       hideBelow: "lg",
-      className: "max-w-[168px]",
+      className: `max-w-[168px] ${SECONDARY_COLUMN_CLASS}`,
       cell: (item) => {
         const channels = requestedChannels(item);
         return channels.length ? (
@@ -149,7 +157,8 @@ export const SentTable = ({ rows, busy, onOpen }: Props) => {
       id: "open",
       header: <span className="sr-only">{t("sent.columns.open")}</span>,
       hideBelow: "lg",
-      className: "w-14",
+      // Tor kartada ham yashirin — sarlavha (`Pressable`) va qator bosilishi tafsilotni ochadi.
+      className: `w-14 ${SECONDARY_COLUMN_CLASS}`,
       cell: (item) => (
         <IconButton
           size="sm"
@@ -190,15 +199,17 @@ export const SentTable = ({ rows, busy, onOpen }: Props) => {
   };
 
   return (
-    <DataTable
-      rows={rows}
-      columns={columns}
-      getRowKey={(item) => item.dispatch_id}
-      label={t("sent.listTitle")}
-      cardsLabel={t("sent.listTitle")}
-      onRowClick={onOpen}
-      renderCard={renderCard}
-      busy={busy}
-    />
+    <div className="@container min-w-0">
+      <DataTable
+        rows={rows}
+        columns={columns}
+        getRowKey={(item) => item.dispatch_id}
+        label={t("sent.listTitle")}
+        cardsLabel={t("sent.listTitle")}
+        onRowClick={onOpen}
+        renderCard={renderCard}
+        busy={busy}
+      />
+    </div>
   );
 };

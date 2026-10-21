@@ -1,8 +1,10 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { getDefaultNormalizer, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useLocation } from "react-router-dom";
 import { vi, type MockInstance } from "vitest";
 import { api } from "../../shared/api/api";
+import i18n from "../../i18n";
+import { queryKeys } from "../../shared/config/queryKeys";
 import { renderWithProviders } from "../../test/test-utils";
 import NotificationSentPage from "./index";
 
@@ -50,7 +52,7 @@ const ROWS = [
 ];
 
 let listCalls: Array<Record<string, unknown>>;
-let listResponse: (params: Record<string, unknown>) => unknown;
+let listResponse: (params: Record<string, unknown>) => unknown | Promise<unknown>;
 let getSpy: MockInstance<typeof api.get>;
 
 const pageOf = (rows: unknown[], params: Record<string, unknown>) => {
@@ -79,7 +81,7 @@ beforeEach(() => {
     const params = config?.params ?? {};
     if (url === "notifications/sent") {
       listCalls.push(params);
-      return { data: listResponse(params) };
+      return { data: await listResponse(params) };
     }
     if (url.startsWith("notifications/sent/")) {
       const id = decodeURIComponent(url.slice("notifications/sent/".length));
@@ -224,5 +226,104 @@ describe("NotificationSentPage («Yuborilganlar», NS-2)", () => {
     renderPage("/notifications/sent?page=9");
     await waitFor(() => expect(search().get("page")).toBe("2"));
     expect(await screen.findByText("11–12 / 12 ta xabar")).toBeInTheDocument();
+  });
+
+  it("«Filtrni tozalash» never flashes «Hali xabar yuborilmagan» from the stale empty filtered page", async () => {
+    const user = userEvent.setup();
+    let release: () => void = () => undefined;
+    const base = listResponse;
+    listResponse = (params) =>
+      params.status ? base(params) : new Promise((resolve) => (release = () => resolve(base(params))));
+    renderPage("/notifications/sent?status=skipped");
+    expect(await screen.findByText("Bu natija bo'yicha xabar yo'q")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Filtrni tozalash" }));
+    await waitFor(() => expect(listCalls.at(-1)).toEqual({ page: 1, limit: 10 }));
+    expect(screen.queryByText("Hali xabar yuborilmagan")).not.toBeInTheDocument();
+    // Filtrlar yashirinmaydi — javob kelguncha yuklanish.
+    expect(screen.getByRole("combobox", { name: "Natija" })).toBeInTheDocument();
+    release();
+    expect(await screen.findByRole("table", { name: "Yuborilgan xabarlar" })).toBeInTheDocument();
+  });
+
+  it("an out-of-range page shows loading, not the empty state, while it jumps back", async () => {
+    let release: () => void = () => undefined;
+    const base = listResponse;
+    listResponse = (params) =>
+      params.page === 9 ? base(params) : new Promise((resolve) => (release = () => resolve(base(params))));
+    renderPage("/notifications/sent?page=9");
+    await waitFor(() => expect(search().get("page")).toBe("2"));
+    await waitFor(() => expect(listCalls.at(-1)).toEqual({ page: 2, limit: 10 }));
+    expect(screen.queryByText("Hali xabar yuborilmagan")).not.toBeInTheDocument();
+    release();
+    expect(await screen.findByText("11–12 / 12 ta xabar")).toBeInTheDocument();
+  });
+
+  it("a background refetch (polling) does not disable the pager; a page change does", async () => {
+    const { queryClient } = renderPage();
+    await screen.findByText("1–10 / 12 ta xabar");
+    let release: () => void = () => undefined;
+    const base = listResponse;
+    listResponse = (params) => new Promise((resolve) => (release = () => resolve(base(params))));
+    void queryClient.invalidateQueries({ queryKey: queryKeys.notificationsSent.all });
+    await waitFor(() => expect(listCalls).toHaveLength(2));
+    expect(screen.getByRole("button", { name: "Keyingi sahifa" })).toBeEnabled();
+    release();
+
+    await userEvent.setup().click(screen.getByRole("button", { name: "Keyingi sahifa" }));
+    await waitFor(() => expect(listCalls.at(-1)).toEqual({ page: 2, limit: 10 }));
+    expect(screen.getByRole("button", { name: "Oldingi sahifa" })).toBeDisabled();
+    release();
+    expect(await screen.findByText("11–12 / 12 ta xabar")).toBeInTheDocument();
+  });
+
+  it("the «Kim yubordi» helper list is silent on error (no global toast)", async () => {
+    const { queryClient } = renderPage();
+    await screen.findByRole("table", { name: "Yuborilgan xabarlar" });
+    const users = queryClient.getQueryCache().findAll({ queryKey: queryKeys.users.all });
+    expect(users).toHaveLength(1);
+    expect(users[0].meta).toEqual({ silentError: true });
+  });
+
+  it("secondary columns also hide on a narrow card (sidebar open at 1024–1279 px)", async () => {
+    renderPage();
+    const table = await screen.findByRole("table", { name: "Yuborilgan xabarlar" });
+    for (const name of ["Kim yubordi", "Kanallar", "Tafsilot"]) {
+      expect(within(table).getByRole("columnheader", { name })).toHaveClass("@max-[64rem]:hidden");
+    }
+    expect(table.closest(".\\@container")).not.toBeNull();
+  });
+
+  it("en: singular recipients and summary", async () => {
+    await i18n.changeLanguage("en");
+    try {
+      listResponse = (params) => pageOf([item(1, { dispatched: 1, recipients: 1 })], params);
+      renderPage();
+      expect(await screen.findByText("1 recipient")).toBeInTheDocument();
+      expect(screen.getByText("1–1 of 1 message")).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage("uz");
+    }
+  });
+
+  it("ru: the running note does not glue a preposition to a capitalised relative day", async () => {
+    await i18n.changeLanguage("ru");
+    try {
+      listResponse = (params) =>
+        pageOf([item(1, { status: "running", dispatched: 0, recipients: 0, finished_at: null })], params);
+      renderPage();
+      const table = await screen.findByRole("table");
+      expect(within(table).getByText(/^Начато: /)).toBeInTheDocument();
+      expect(within(table).queryByText(/^с /)).not.toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage("uz");
+    }
+  });
+
+  it("recipient counts never break inside a grouped number", async () => {
+    listResponse = (params) => pageOf([item(1, { dispatched: 1312, recipients: 1312 })], params);
+    renderPage();
+    const exact = { normalizer: getDefaultNormalizer({ collapseWhitespace: false }) };
+    expect(await screen.findByText("1\u00a0312 ta qabul qiluvchi", exact)).toBeInTheDocument();
   });
 });

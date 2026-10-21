@@ -77,13 +77,18 @@ const NotificationSentPage = () => {
   );
 
   const ready = Boolean(data) && !(listQuery.isError && !data);
-  // Hech narsa yuborilmagan (filtrsiz bo'sh) — maketdagidek filtrlar ko'rinmaydi.
-  const nothingSent = Boolean(data && data.total === 0 && !filtered);
+  // Eski (boshqa filtr/sahifa) javob hali turibdi va u bo'sh — bo'sh holatni shu eski javobdan chizmaymiz (masalan
+  // «Filtrni tozalash» dan so'ng bir lahza «Hali xabar yuborilmagan» chiqardi), yangi javobgacha — yuklanish.
+  const settling = listQuery.isPlaceholderData && !items?.length;
+  // Hech narsa yuborilmagan (filtrsiz bo'sh) — maketdagidek filtrlar ko'rinmaydi. Faqat haqiqiy (eski emas) javobdan.
+  const nothingSent = Boolean(data && !listQuery.isPlaceholderData && data.total === 0 && !filtered);
   const clearFilters = () => update({ status: "", author: "" });
+  // Oxirgi sahifadan tashqarida yoki eski bo'sh javob — bo'sh holat emas, yuklanish (oxirgi sahifaga o'tilmoqda).
+  const pending = outOfRange || settling;
 
   const query = {
-    data: listQuery.isError && !data ? undefined : items,
-    isLoading: listQuery.isLoading,
+    data: (listQuery.isError && !data) || pending ? undefined : items,
+    isLoading: listQuery.isLoading || pending,
     isError: listQuery.isError && !data,
     error: listQuery.error,
     refetch: () => void listQuery.refetch(),
@@ -121,8 +126,9 @@ const NotificationSentPage = () => {
               pageSize={data.limit}
               total={data.total}
               onPageChange={(next) => update({ page: next })}
-              disabled={listQuery.isFetching}
-              summary={(range) => t("sent.summary", range)}
+              // Faqat sahifa/filtr almashuvi kutilayotganda — «Yuborilmoqda» qatori uchun fon yangilanishida emas.
+              disabled={listQuery.isPlaceholderData}
+              summary={(range) => t("sent.summary", { ...range, count: data.total })}
             />
           ) : undefined
         }

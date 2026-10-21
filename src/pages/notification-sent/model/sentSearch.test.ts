@@ -32,6 +32,12 @@ describe("sentSearch (URL state of /notifications/sent)", () => {
     expect(current.toString()).toBe("status=sent&page=4&id=abc&tab=x");
   });
 
+  it("re-sending the same filter values keeps the page (phone sheet sends both keys)", () => {
+    const current = new URLSearchParams("status=failed&page=3");
+    expect(applySentSearch(current, { status: "failed", author: "" }).get("page")).toBe("3");
+    expect(applySentSearch(current, { status: "failed", author: "7" }).has("page")).toBe(false);
+  });
+
   it("counts active filters (phone «Filtrlar» pill)", () => {
     expect(countSentFilters({ status: "", author: "" })).toBe(0);
     expect(countSentFilters({ status: "partial", author: "7" })).toBe(2);

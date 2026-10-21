@@ -111,6 +111,9 @@ export const SentDetailDialog = ({ dispatchId, onClose, source = "history", rese
       : "";
     description = [when(detail.created_at), author].filter(Boolean).join(" · ");
     if (detail.status === "failed" && resendHref) {
+      // ⚠️ `onClose` (sahifada — `?id=` ni `replace` bilan olib tashlash) Link o'tishidan OLDIN ishlaydi: BrowserRouter'da
+      // avval replace, keyin push — «Orqaga» ro'yxatga `?id=` siz qaytadi. Data router'ga o'tilsa navigatsiyalar
+      // birlashib replace yo'qolishi mumkin — o'shanda tartibni qayta tekshiring.
       footer = (
         <>
           {closeFooter}

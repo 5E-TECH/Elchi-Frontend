@@ -41,7 +41,7 @@ export const parseSentSearch = (params: URLSearchParams): SentSearch => {
 export type SentSearchPatch = Partial<SentFilters> & { page?: number; openId?: string | null };
 
 /**
- * Yangi URL parametrlari. Filtr o'zgarsa — 1-sahifa. Bo'sh qiymat va 1-sahifa URL'ga yozilmaydi; boshqa (begona)
+ * Yangi URL parametrlari. Filtr qiymati o'zgarsa — 1-sahifa (o'sha qiymat qayta yuborilsa sahifa saqlanadi). Bo'sh qiymat va 1-sahifa URL'ga yozilmaydi; boshqa (begona)
  * parametrlar saqlanadi.
  */
 export const applySentSearch = (current: URLSearchParams, patch: SentSearchPatch): URLSearchParams => {
@@ -50,7 +50,9 @@ export const applySentSearch = (current: URLSearchParams, patch: SentSearchPatch
     if (value) next.set(key, value);
     else next.delete(key);
   };
-  const filtersChanged = patch.status !== undefined || patch.author !== undefined;
+  // Faqat qiymat haqiqatan o'zgarsa 1-sahifaga (telefon varaqasi ikkala kalitni ham yuboradi).
+  const changed = (key: string, value: string | undefined) => value !== undefined && value !== (current.get(key) ?? "");
+  const filtersChanged = changed("status", patch.status) || changed("created_by", patch.author);
   if (patch.status !== undefined) set("status", patch.status);
   if (patch.author !== undefined) set("created_by", patch.author);
   if (filtersChanged) next.delete("page");

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { FAILED_ID, PARTIAL_ID, mockSentApi, noHorizontalScroll, shot } from "./support/notificationSent";
+import { FAILED_ID, PARTIAL_ID, mockSentApi, noHorizontalScroll, shot, tableOverflow } from "./support/notificationSent";
 
 /**
  * NS-2 — «Yuborilganlar» (`/notifications/sent`; maketlar `superadmin-notifications-sent`, `-loading`, `-empty`,
@@ -143,4 +143,28 @@ test.describe("Yuborilganlar — 1440px", () => {
     await page.waitForTimeout(1000);
     expect(mock.listRequests).toHaveLength(0);
   });
+});
+
+/**
+ * 1024–1279 px da yon menyu ochiq: yetti ustun kartaga sig'maydi — «Kim yubordi» va «Kanallar» karta kengligi bo'yicha
+ * yashirinadi (konteyner so'rovi), jadval karta ichida yonga aylanmaydi. 1440 px da barcha ustunlar ko'rinadi.
+ */
+test.describe("Yuborilganlar — tor desktop (yon menyu ochiq)", () => {
+  test.describe.configure({ timeout: 90_000 });
+  for (const width of [1024, 1280, 1440]) {
+    for (const language of ["uz", "ru"] as const) {
+      test(`${width}px · ${language}: jadval kartaga sig'adi`, async ({ page }) => {
+        await page.setViewportSize({ width, height: 900 });
+        await mockSentApi(page, { language });
+        await page.goto("/notifications/sent");
+        const table = page.locator("table");
+        await expect(table.locator("tbody tr")).toHaveCount(10, { timeout: 60_000 });
+        expect(await tableOverflow(table)).toBeLessThanOrEqual(0);
+        expect(await noHorizontalScroll(page)).toBe(true);
+        const headers = table.locator("thead th:visible");
+        await expect(headers).toHaveCount(width >= 1440 ? 7 : 4);
+        await shot(page, `narrow-${width}-${language}`);
+      });
+    }
+  }
 });

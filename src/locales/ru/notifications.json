@@ -331,7 +331,10 @@
     "listDescription": "Новые сверху · результат по каждому каналу",
     "total": "{{value}}",
     "loading": "Загружаем отправленные",
-    "summary": "{{from}}–{{to}} из {{total}} сообщений",
+    "summary_one": "{{from}}–{{to}} из {{total}} сообщения",
+    "summary_few": "{{from}}–{{to}} из {{total}} сообщений",
+    "summary_many": "{{from}}–{{to}} из {{total}} сообщений",
+    "summary_other": "{{from}}–{{to}} из {{total}} сообщения",
     "filters": {
       "label": "Фильтры отправленных",
       "status": "Результат",
@@ -358,7 +361,7 @@
       "realtime": "Сразу"
     },
     "note": {
-      "running": "с {{time}}",
+      "running": "Начато: {{time}}",
       "failed": "Никому не ушло — отправьте снова",
       "skipped": "Отключили уведомления: {{value}}",
       "noProvider": "{{channels}}: провайдер не подключён",

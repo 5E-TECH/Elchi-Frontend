@@ -335,7 +335,8 @@
     "listDescription": "Newest first · result per channel",
     "total": "{{value}}",
     "loading": "Loading sent messages",
-    "summary": "{{from}}–{{to}} of {{total}} messages",
+    "summary_one": "{{from}}–{{to}} of {{total}} message",
+    "summary_other": "{{from}}–{{to}} of {{total}} messages",
     "filters": {
       "label": "Sent message filters",
       "status": "Result",
@@ -356,13 +357,14 @@
     "openRow": "Open the result of “{{title}}” ({{time}})",
     "untitled": "Untitled message",
     "toLabel": "To:",
-    "recipients": "{{value}} recipients",
+    "recipients_one": "{{value}} recipient",
+    "recipients_other": "{{value}} recipients",
     "recipientsNone": "No recipients",
     "channelShort": {
       "realtime": "Instant"
     },
     "note": {
-      "running": "since {{time}}",
+      "running": "Started: {{time}}",
       "failed": "Reached no one — send it again",
       "skipped": "Turned notifications off: {{value}}",
       "noProvider": "{{channels}}: provider not connected",

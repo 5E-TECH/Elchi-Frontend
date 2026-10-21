@@ -66,9 +66,14 @@ export const useDispatchNotification = () => {
       };
     },
     retry: 0,
-    onSuccess: async () => {
-      // Yuboruvchi o'zi ham qabul qiluvchi bo'lishi mumkin — inbox yangilansin.
-      await queryClient.invalidateQueries({ queryKey: queryKeys.notificationsInbox.all });
+    // `onSettled` — 504 / noma'lum javobda ham: backend tarix qatorini baribir yozib qo'ygan bo'lishi mumkin.
+    onSettled: async () => {
+      await Promise.all([
+        // Yuboruvchi o'zi ham qabul qiluvchi bo'lishi mumkin — inbox yangilansin.
+        queryClient.invalidateQueries({ queryKey: queryKeys.notificationsInbox.all }),
+        // «Yuborilganlar» ro'yxati keshda 30 s yangi turadi — yangi yuborish darhol ko'rinsin.
+        queryClient.invalidateQueries({ queryKey: queryKeys.notificationsSent.all }),
+      ]);
     },
   });
 };

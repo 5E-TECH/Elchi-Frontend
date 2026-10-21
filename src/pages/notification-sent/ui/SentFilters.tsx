@@ -1,5 +1,6 @@
 // dizayn-v2: superadmin-notifications-sent, admin-notifications-sent
 import { useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Funnel } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
@@ -7,7 +8,8 @@ import {
   DISPATCH_STATUS_META,
   useAudienceText,
 } from "../../../entities/notification-dispatch";
-import { useUsers } from "../../../entities/user";
+import { getUsers } from "../../../entities/user";
+import { queryKeys } from "../../../shared/config/queryKeys";
 import { formatNumberLocalized } from "../../../shared/lib/formatMoney";
 import { Button, Dialog, Field, Select, type SelectOption } from "../../../shared/ui/primitives";
 import { useIsPhone } from "../../../shared/ui/primitives/date/useIsPhone";
@@ -44,7 +46,13 @@ export const SentFilters = ({ values, onChange, disabled = false, knownAuthors }
   const { roleLabel } = useAudienceText();
   const allLabel = t("sent.filters.all");
 
-  const usersQuery = useUsers({ role: [...AUTHOR_ROLES], limit: AUTHOR_LIMIT });
+  // Yordamchi ro'yxat: xatosi global xabar bermaydi — tanlov baribir tarixdagi nomlar / `#id` bilan ishlaydi.
+  const usersParams = { role: [...AUTHOR_ROLES], limit: AUTHOR_LIMIT };
+  const usersQuery = useQuery({
+    queryKey: queryKeys.users.list(usersParams),
+    queryFn: () => getUsers(usersParams),
+    meta: { silentError: true },
+  });
 
   const statusOptions = useMemo<SelectOption[]>(
     () => [
@@ -86,7 +94,11 @@ export const SentFilters = ({ values, onChange, disabled = false, knownAuthors }
     setSheetOpen(true);
   };
   const applySheet = () => {
-    onChange(draft);
+    // Faqat o'zgargan kalitlar — o'zgarmagan filtr sahifani 1-ga qaytarmasin.
+    const patch: Partial<SentFilterValues> = {};
+    if (draft.status !== values.status) patch.status = draft.status;
+    if (draft.author !== values.author) patch.author = draft.author;
+    if (Object.keys(patch).length) onChange(patch);
     setSheetOpen(false);
   };
 

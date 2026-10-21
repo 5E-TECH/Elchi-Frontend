@@ -163,7 +163,7 @@ export type SentMock = {
 
 export const mockSentApi = async (
   page: Page,
-  options: { theme?: "light" | "dark"; role?: "superadmin" | "admin" | "manager" } = {},
+  options: { theme?: "light" | "dark"; role?: "superadmin" | "admin" | "manager"; language?: "uz" | "ru" | "en" } = {},
 ) => {
   const mock: SentMock = { leaked: [], listRequests: [], failList: false, emptyList: false };
   await page.context().route("**/*", async (route) => {
@@ -186,7 +186,7 @@ export const mockSentApi = async (
           role,
           name: role === "admin" ? "Nilufar Rashidova" : "Shodiyor Ergashev",
           status: "active",
-          settings: { appearance: { theme: options.theme ?? "light", themeChosen: true, language: "uz" } },
+          settings: { appearance: { theme: options.theme ?? "light", themeChosen: true, language: options.language ?? "uz" } },
         },
       });
     }
@@ -251,4 +251,11 @@ export const noHorizontalScroll = async (page: Page) =>
     const main = document.querySelector("main");
     const mainOk = !main || main.scrollWidth <= main.clientWidth;
     return document.documentElement.scrollWidth <= window.innerWidth && mainOk;
+  });
+
+/** Jadvalning gorizontal skroll qiluvchisi (`DataTable` — `overflow-x-auto`) qancha px oshib ketgan (0 — sig'adi). */
+export const tableOverflow = async (table: Locator) =>
+  table.evaluate((element) => {
+    const scroller = element.closest(".overflow-x-auto");
+    return scroller ? scroller.scrollWidth - scroller.clientWidth : 0;
   });
