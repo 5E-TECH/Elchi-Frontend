@@ -356,7 +356,8 @@
       "description": "Izoh va amallar (asosiy amal bitta)",
       "back": "Orqaga havolasi bilan",
       "meta": "Holat, nusxalash va amallar",
-      "long": "Uzun sarlavha — qatorga o'raladi, kesilmaydi"
+      "long": "Uzun sarlavha — qatorga o'raladi, kesilmaydi",
+      "refresh": "O'sadigan matn bloki — sarlavha yonida holat va telefondagi ikonka tugma"
     },
     "demo": {
       "dashboardTitle": "Bosh sahifa",
@@ -372,7 +373,11 @@
       "cancel": "Bekor qilish",
       "sell": "Sotish",
       "longTitle": "Chilonzor qabul punkti bo'yicha bekor qilingan va qaytarilgan buyurtmalarning haftalik hisoboti",
-      "longDescription": "01.10 – 08.10.2026 · 94 ta buyurtma"
+      "longDescription": "01.10 – 08.10.2026 · 94 ta buyurtma",
+      "refreshing": "Yangilanmoqda…",
+      "refresh": "Yangilash",
+      "refreshList": "Ro'yxatni yangilash",
+      "lastUpdated": "Oxirgi yangilanish: 14:42"
     }
   },
   "table": {
@@ -438,7 +443,9 @@
       "dayCloseLabel": "№10238 natijasi",
       "closeSold": "Sotildi",
       "closeCancel": "Bekor",
-      "closeTomorrow": "Ertaga"
+      "closeTomorrow": "Ertaga",
+      "countBusyTitle": "Sonlar yangilanmoqda",
+      "countBusyNote": "Eski son joyida xira turadi — tab bosiladi, kenglik o'zgarmaydi"
     }
   },
   "kit": {

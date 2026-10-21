@@ -190,6 +190,21 @@ export const TabsSection = () => {
                 />
               </DemoBlock>
 
+              <DemoBlock title={t("tabs.demo.countBusyTitle")} note={t("tabs.demo.countBusyNote")}>
+                {/* Maket `courier-orders-pending-refreshing`: ro'yxat yangilanayotganda sonlar xira. */}
+                <Card as="div" padding="none">
+                  <Tabs
+                    idPrefix={`${prefix}-busy`}
+                    ariaLabel={t("tabs.demo.countBusyTitle")}
+                    items={courierItems}
+                    value={courierTab}
+                    onValueChange={setCourierTab}
+                    countBusy
+                    listClassName="px-3"
+                  />
+                </Card>
+              </DemoBlock>
+
               <DemoBlock title={t("tabs.demo.segmentTitle")}>
                 <div className="flex min-w-0 flex-col gap-4">
                   <SegmentRow label={t("tabs.demo.period")}>

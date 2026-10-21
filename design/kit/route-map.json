@@ -280,6 +280,9 @@
         "src/pages/orders/list/OrderFiltersSheet.tsx",
         "src/pages/orders/list/OrdersTable.tsx",
         "src/pages/orders/list/orderFilterModel.ts",
+        "src/pages/orders/list/useOrdersRefresh.ts",
+        "src/pages/orders/list/OrdersRefreshMeta.tsx",
+        "src/pages/orders/list/OrdersRefreshAlert.tsx",
         "src/pages/orders/list/courier/index.tsx",
         "src/pages/orders/list/courier/list/tabs.tsx",
         "src/pages/orders/list/courier/list/ordertable/pendingOrderTable.tsx",
@@ -308,7 +311,7 @@
         "market_operator": "Maket yo'q — eng yaqini: market-orders-list va market-orders-detail. GET orders — JwtAuthGuard, ichida operator o'z marketiga cheklanadi (resolveMarketOperatorMarketId); tafsilot assertCanViewOrder — faqat o'z marketi. Excel eksport bor (GET orders/export/excel @Roles … MARKET_OPERATOR). Market tafsilotidagi amallar (tahrirlash, bekor qilish, qaytarish so'rovi) — faqat backend ruxsat bergani ko'rinadi, aks holda yashiriladi.",
         "logist": "Logist (LG-S1, kodda yo'q): faqat ko'rish — «Buyurtma yaratish», Excel, sotish/bekor yo'q; «Summa» o'rniga «Kuryer» ustuni; «To'langan» tabi yo'q («Sotilgan» = sold + paid + partly_paid). Viloyat filtri — faqat o'z viloyatlari. GET /orders logistga hozir 403 (resolveOrderListRequest) — backend kerak."
       },
-      "note": "Kuryer ro'yxati — list/courier/index.tsx (tablar list/courier/list/tabs.tsx). Kuryerdan boshqa barcha rollarda bir xil 8 holat tabi (Barchasi · Yangi · Qabul qilindi · Yo'lda · Kutilmoqda · Sotilgan · To'langan · Bekor qilingan; tab sonlari API'da yo'q — chizilmaydi). Menejerning qatordagi sotish/bekor/qaytarish amallari faqat REGIONAL · HYBRID filialda va can_sell_cancel yoqilganda; «Bekor qilingan» tabida HQ'ga yuborish (tanlov + QR skaner) ham faqat REGIONAL · HYBRID. Qator bosilsa → /orders/edit/:orderId. Sarlavhada qo'lda «Yangilash» (ghost, RefreshCw; telefonda h1 yonida chegarali ikonka) va «Oxirgi yangilanish: HH:mm» (oxirgi muvaffaqiyatli yuklash vaqti) — barcha rollar va tablarda bir xil; avtomatik yangilanish yo'q (refetchOnWindowFocus: false). Holatlar: *-refreshing — h1 yonida «Yangilanmoqda…» belgisi faqat so'rov 400 ms dan uzoq cho'zilsa (tizim--loading 11-namuna), tugma band; *-refresh-error — ro'yxat kartasi ustida warning el-alert «Ro'yxat yangilanmadi» + «Qayta urinish», eski ma'lumot ko'rinib turadi (tizim--main «Xabar bloklari»; incomingStaleWarning bilan bir xil)."
+      "note": "Kuryer ro'yxati — list/courier/index.tsx (tablar list/courier/list/tabs.tsx). Kuryerdan boshqa barcha rollarda bir xil 8 holat tabi (Barchasi · Yangi · Qabul qilindi · Yo'lda · Kutilmoqda · Sotilgan · To'langan · Bekor qilingan; tab sonlari API'da yo'q — chizilmaydi, OR-2 backenddan keyin). Menejerning qatordagi sotish/bekor/qaytarish amallari faqat REGIONAL · HYBRID filialda va can_sell_cancel yoqilganda; «Bekor qilingan» tabida HQ'ga yuborish (tanlov + QR skaner) ham faqat REGIONAL · HYBRID. Qator bosilsa → /orders/edit/:orderId. Yangilanish (OR-1, list/useOrdersRefresh.ts; ega orders-refresh S1–S4): avtomatik — har 60 s (faqat ko'rinadigan brauzer tabida) va ilovaga qaytganda — ma'lumot 30 s dan eski bo'lsa (global staleTime; refetchOnWindowFocus faqat shu so'rovlarda), qo'shimcha xarajat tasdig'i 30 s lik pollingi bilan birlashadi; sotish/bekor/qaytarish oynasi yoki skaner kamerasi ochiq bo'lsa to'xtaydi. Sarlavhada «Jami N ta buyurtma» · «Oxirgi yangilanish: HH:mm» (dataUpdatedAt) · «Avtomatik yangilanadi», qo'lda «Yangilash» (ghost, RefreshCw; telefonda h1 qatorining o'ng chetida chegarali ikonka — PageHeader grow) — barcha rollar va tablarda bir xil; «Yangilash» ro'yxat, tab sonlari (kuryer) va qadalgan (raqam bo'yicha aniq) buyurtmani birga so'raydi. Holatlar: *-refreshing — h1 yonida «Yangilanmoqda…» belgisi faqat fon so'rovi 400 ms dan uzoq cho'zilsa (tizim--loading 11-namuna), tugmalar band, kuryer tab sonlari xira (Tabs countBusy); *-refresh-error — ro'yxat kartasi ustida (kuryer telefonida tablar va qidiruvdan keyin) warning alert «Ro'yxat yangilanmadi» + «Qayta urinish» + × (S3; yo'qolganda fokus «Yangilash» ga qaytadi), eski qatorlar ko'rinib turadi, global xato xabari chiqmaydi (ma'lumot bo'lsa meta.silentError); kuryer bo'lmagan rollarda matn tab sonlarisiz. Kuryer tab sonlari — GET orders/courier/orders/counts."
     },
     {
       "path": "/orders/edit/:orderId",
@@ -1803,12 +1806,6 @@
     "market-profile-telegram-group-dialog": "Taklif (tg-link S1, S5) — kodda yo'q; backend guruhlar holati endpointi kerak.",
     "market-profile-telegram-group-expired-dialog": "Taklif (tg-link S1, S5) — kodda yo'q; backend guruhlar holati endpointi kerak.",
     "courier-dashboard-pwa-install": "Taklif (small-p1 S3) — kodda yo'q: bir martalik «Ilovani o'rnatish» kartasi.",
-    "superadmin-orders-list-refreshing": "Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan.",
-    "superadmin-orders-list-refresh-error": "Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan.",
-    "manager-orders-list-all-refreshing": "Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan.",
-    "manager-orders-list-all-refresh-error": "Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan.",
-    "courier-orders-pending-refreshing": "Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan.",
-    "courier-orders-pending-refresh-error": "Taklif (orders-refresh, ega S1..S4) — kodda yo'q: «Yangilash», «Oxirgi yangilanish», avtomatik yangilash (60 s / ilovaga qaytganda), xato ogohlantirishi × bilan.",
     "superadmin-mails-detail-duplicates": "Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi).",
     "superadmin-mails-detail-search": "Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi).",
     "superadmin-mails-detail-search-empty": "Taklif (mails-detail, ega S1..S4) — kodda yo'q: pochta ichida qidiruv (?q=, market nomi ham) va takroriy telefon banneri (faqat ogohlantiradi).",
@@ -1852,6 +1849,10 @@
     "superadmin-neworders-cancelled-pin-dialog": "Market PIN kodi oynasi (taklif «Bekor holatlari» (ega 2026-10-19, Trello vOczoOUE; elchi-v2-specs/bekor-holatlari-taklif.md), ega javobi 1): QR zaxirasi — 6 xonali PIN (Field + TextInput, raqamli), 5 marta xato — sessiya bloklanadi. Taklif · backend kerak (BG6: POST scan/market-cancelled { market_id, pin }). Kirish — skaner oynasidagi «PIN kodni kiritish»."
   },
   "partialViews": {
+    "superadmin-orders-list-refreshing": "Kodda bor (OR-1): «Yangilanmoqda…» belgisi (400 ms dan keyin), «Yangilash» band, «Oxirgi yangilanish», «Avtomatik yangilanadi». Farq: holat tablari sonlari (va ularning xira holati) chizilmaydi — GET /orders har holat sonini bermaydi (OR-2, backend GaBIPi3Z).",
+    "superadmin-orders-list-refresh-error": "Kodda bor (OR-1): «Ro'yxat yangilanmadi» + «Qayta urinish» + ×, eski qatorlar qoladi. Farq: izoh «Ro'yxat eskirgan bo'lishi mumkin.» (tab sonlarisiz) — holat tablari sonlari API'da yo'q (OR-2, backend GaBIPi3Z).",
+    "manager-orders-list-all-refreshing": "Kodda bor (OR-1): «Yangilanmoqda…» belgisi (400 ms dan keyin), «Yangilash» band, «Oxirgi yangilanish», «Avtomatik yangilanadi». Farq: holat tablari sonlari (va ularning xira holati) chizilmaydi — GET /orders har holat sonini bermaydi (OR-2, backend GaBIPi3Z).",
+    "manager-orders-list-all-refresh-error": "Kodda bor (OR-1): «Ro'yxat yangilanmadi» + «Qayta urinish» + ×, eski qatorlar qoladi. Farq: izoh «Ro'yxat eskirgan bo'lishi mumkin.» (tab sonlarisiz) — holat tablari sonlari API'da yo'q (OR-2, backend GaBIPi3Z).",
     "superadmin-ops-system": "Kodda bor (OS-1): kirish matni, «Tizim holati» (GET /health/readiness, 14 xizmat, «Yangilash», sanoqlar, ochiladigan ro'yxat), SLA + KPI, token tekshirish. «AI holati» kartasi chizilmagan — OS-2.",
     "superadmin-ops-system-loading": "Kodda bor (OS-1): «Tizim holati» skeleti («tekshirilmoqda…», o'chiq «Tekshirilmoqda», 4 qator) va SLA/KPI kartalari skeleti. «AI holati» skeleti — OS-2.",
     "superadmin-ops-system-error": "Kodda bor (OS-1): «Noma'lum», «Oxirgi muvaffaqiyatli tekshiruv», «Tizim holatini olib bo'lmadi», «Xato kodi: N», «Qayta urinish». «AI holati» bloki (AI o'chiq) — OS-2.",
@@ -2012,6 +2013,8 @@
     "admin-orders-filters-mobile": "src/pages/orders/list/OrderFilters.tsx",
     "registrator-orders-filters-mobile": "src/pages/orders/list/OrderFilters.tsx",
     "courier-orders-pending": "src/pages/orders/list/courier/index.tsx",
+    "courier-orders-pending-refreshing": "src/pages/orders/list/courier/index.tsx",
+    "courier-orders-pending-refresh-error": "src/pages/orders/list/courier/index.tsx",
     "courier-orders-all": "src/pages/orders/list/courier/index.tsx",
     "courier-orders-cancelled": "src/pages/orders/list/courier/index.tsx",
     "courier-orders-tab-switcher-open": "src/pages/orders/list/courier/list/tabs.tsx",

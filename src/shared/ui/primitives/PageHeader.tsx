@@ -61,6 +61,12 @@ export type PageHeaderProps = Omit<ComponentProps<"header">, "title"> &
     meta?: ReactNode;
     /** Sarlavha ostidagi qism (masalan `Tabs`), sahifa ritmi oralig'ida (24, telefonda 16). */
     children?: ReactNode;
+    /**
+     * Matn bloki qatordagi bo'sh joyni egallaydi (maketdagi `.el-pagehead-text { flex: 1 1 auto }`):
+     * `meta` qatori butun enga cho'ziladi, undagi `ml-auto` element (masalan telefondagi «Yangilash»
+     * ikonka tugmasi, maket `*-orders-list`) o'ng chetga tushadi. Sukut `false` — o'zgarishsiz.
+     */
+    grow?: boolean;
   };
 
 /** Maketdagi `.el-back`: 13px · 600 · `text-muted`, hover `action-hover`, `ArrowLeft` 16. */
@@ -139,6 +145,7 @@ export const PageHeader = ({
   titleAction,
   meta,
   children,
+  grow = false,
   className,
   ...rest
 }: PageHeaderProps) => {
@@ -162,7 +169,7 @@ export const PageHeader = ({
   return (
     <header className={cx("flex min-w-0 flex-col gap-6 max-md:gap-4", className)} {...rest}>
       <div className="flex min-w-0 flex-wrap items-end justify-between gap-4 max-md:items-stretch">
-        <div className="flex min-w-0 flex-col gap-1">
+        <div className={cx("flex min-w-0 flex-col gap-1", grow && "flex-auto")}>
           {back !== undefined ? (
             <BackLink back={back} label={backLabel ?? t("common.back")} />
           ) : null}
