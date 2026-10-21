@@ -42,6 +42,12 @@ type AiCreatePanelProps = {
    * ro'yxatlar so'ralmaydi, viloyat shart emas (`ai-confirm` uni tumandan oladi).
    */
   areaLists?: boolean;
+  /**
+   * Buyurtma operatori — so'rovchining o'zi (market operatori, MO-3; maket «Siz — avtomatik yoziladi»). Kartada
+   * maydon faqat o'qish uchun; `operator` matni YUBORILMAYDI — `ai-confirm` bo'sh `operator` ga so'rovchi ismini
+   * o'zi yozadi (`operator_id` ham tokendan).
+   */
+  selfOperator?: { name: string | null };
   /** Admin/registrator: marketni qayta tanlash (`no_market`). Market rolida berilmaydi. */
   onChangeMarket?: () => void;
 };
@@ -62,6 +68,7 @@ const AiCreatePanel = ({
   onSwitchToManual,
   onChangeMarket,
   areaLists = true,
+  selfOperator,
 }: AiCreatePanelProps) => {
   const { t } = useTranslation("orders");
   const queryClient = useQueryClient();
@@ -196,7 +203,7 @@ const AiCreatePanel = ({
 
     const payload = {
       ...buildAiConfirmPayload(
-        readyTargets.map((draft) => draft.order),
+        readyTargets.map((draft) => (selfOperator ? { ...draft.order, operator: "" } : draft.order)),
         { marketId, includeMarketId: !isMarketRole },
       ),
       request_id: crypto.randomUUID(),
@@ -299,6 +306,7 @@ const AiCreatePanel = ({
               regions={regions}
               regionsLoading={areaLists && regionsQuery.isLoading}
               areaLists={areaLists}
+              selfOperator={selfOperator}
               creating={confirm.isPending}
               onChange={(order) => updateDraft(draft.key, order)}
               onRemove={() => removeDraft(draft.key)}

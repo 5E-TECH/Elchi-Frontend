@@ -893,6 +893,10 @@
     "aiCap": "Today's AI order-reading limit is used up — it resets tomorrow.",
     "aiRefused": "Rephrase the text and try again.",
     "aiForbidden": "You are not allowed to create orders with AI — contact an administrator.",
-    "districtFromText": "District not found — add the district to the text and analyze again."
+    "aiServer": "Try again in a moment. If it keeps happening, tell an administrator.",
+    "districtFromText": "District not found — add the district to the text and analyze again.",
+    "districtChip": "District not found",
+    "operatorYou": "You",
+    "operatorAuto": "You — filled in automatically"
   }
 }

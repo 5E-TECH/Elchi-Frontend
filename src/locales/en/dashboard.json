@@ -335,7 +335,8 @@
     "quick": {
       "viewHint": "Your orders in Intake and creation",
       "listHint": "Your market's order list",
-      "createHint": "Manually or with AI"
+      "createHint": "Manually or with AI",
+      "createHintAi": "With AI"
     },
     "sales": {
       "title": "Sell-through by market",

@@ -60,7 +60,7 @@ describe("OrderCreate — market operatori (MO-3)", () => {
     renderWithProviders(<OrderCreate />, { preloadedState: operatorState });
 
     expect(screen.getByRole("heading", { level: 1, name: "Yangi buyurtma" })).toBeInTheDocument();
-    expect(screen.getByText("Buyurtmalar marketingiz nomidan AI bilan yaratiladi")).toBeInTheDocument();
+    expect(screen.getByText("Buyurtmalar siz ishlaydigan market nomidan AI bilan yaratiladi")).toBeInTheDocument();
     expect(screen.getByRole("textbox", { name: "Buyurtma matni" })).toBeInTheDocument();
     expect(screen.getByTestId("ai-mode-panel")).not.toHaveClass("hidden");
 
@@ -96,6 +96,24 @@ describe("OrderCreate — market operatori (MO-3)", () => {
     expect(getUrls().filter((url) => url === "region" || url.startsWith("region/"))).toEqual([]);
   });
 
+  it("Operator maydoni — o'zi, faqat o'qish («Siz — avtomatik yoziladi»); AI o'qigan operator matni yuborilmaydi", async () => {
+    parseOrders = [aiPreview({ region_id: null, region_name: null, region_given: false, operator: "sevinch" })];
+    renderWithProviders(<OrderCreate />, { preloadedState: operatorState });
+    await analyse();
+
+    const card = await screen.findByTestId("ai-preview-card");
+    const field = within(card).getByRole("textbox", { name: "Operator" });
+    expect(field).toHaveValue("Dilnoza Karimova");
+    expect(field).toHaveAttribute("readonly");
+    expect(within(card).getByText("Siz — avtomatik yoziladi")).toBeInTheDocument();
+    expect(within(card).queryByDisplayValue("sevinch")).not.toBeInTheDocument();
+
+    fireEvent.click(within(screen.getByTestId("ai-confirm-bar")).getByRole("button", { name: "Tayyorlarini yaratish — 1 ta" }));
+    await waitFor(() => expect(confirmCalls()).toHaveLength(1));
+    // Backend bo'sh `operator` ga so'rovchi ismini o'zi yozadi (`operator_id` — tokendan).
+    expect(confirmCalls()[0].orders[0]).not.toHaveProperty("operator");
+  });
+
   it("tuman topilmagan va taklif yo'q — tuman maydoni o'chiq, «matnda tumanni yozing» izohi; karta tayyor emas", async () => {
     parseOrders = [aiPreview({ region_id: null, region_name: null, district_id: null, district_name: null })];
     renderWithProviders(<OrderCreate />, { preloadedState: operatorState });
@@ -104,6 +122,10 @@ describe("OrderCreate — market operatori (MO-3)", () => {
     const card = await screen.findByTestId("ai-preview-card");
     expect(card).toHaveAttribute("data-ready", "false");
     expect(within(card).getByText("Tuman aniqlanmadi — matnda tumanni yozib, qayta tahlil qiling.")).toBeInTheDocument();
+    // Kamchilik belgisi tanlab bo'lmaydigan amalni («Tuman tanlang») so'ramaydi.
+    const chips = within(card).getByTestId("ai-issues");
+    expect(within(chips).getByText("Tuman aniqlanmadi")).toBeInTheDocument();
+    expect(within(chips).queryByText("Tuman tanlang")).not.toBeInTheDocument();
   });
 
   it("AI o'chiq (`reason: disabled`) — «Qo'lda yaratish» tugmasi yo'q, kimga murojaat qilish aytiladi", async () => {
@@ -136,6 +158,8 @@ describe("OrderCreate — market operatori (MO-3)", () => {
     renderWithProviders(<OrderCreate />, { preloadedState: operatorState });
 
     expect(await screen.findByText("AI bilan yaratish hozir o'chiq")).toBeInTheDocument();
+    // Sarlavha izohi «AI bilan yaratiladi» ogohlantirishga zid — AI o'chiqda chiqmaydi.
+    expect(screen.queryByText(/nomidan AI bilan yaratiladi/)).not.toBeInTheDocument();
     expect(screen.getByText("Buyurtma yaratish uchun market egasi yoki administratorga murojaat qiling.")).toBeInTheDocument();
     expect(screen.queryByTestId("ai-mode-panel")).not.toBeInTheDocument();
     expect(screen.queryByTestId("manual-mode-panel")).not.toBeInTheDocument();

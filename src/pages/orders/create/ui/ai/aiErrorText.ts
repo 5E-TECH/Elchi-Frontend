@@ -88,7 +88,7 @@ const UNKNOWN_PARSE_ERROR = editText("aiParseFailedTitle", "aiParseFailed");
 /**
  * MO-3: qo'lda yaratish yo'q rol (market operatori — `POST /orders` unga hali yopiq, MO-7). «Qo'lda kiriting»
  * maslahati o'rniga kim hal qilishi aytiladi; «Qo'lda yaratish» tugmasi chiqmaydi (`AiInputPanel`). AI rad etgan
- * matn — «Matnni tahrirlash».
+ * matn — «Matnni tahrirlash». 5xx «Qayta urinish» izohi ham «qo'lda kiriting» desiz.
  */
 const NO_MANUAL_DESCRIPTION: Record<string, string> = {
   aiDisabledDescription: "operatorCreate.aiDisabled",
@@ -96,13 +96,16 @@ const NO_MANUAL_DESCRIPTION: Record<string, string> = {
   aiCapDescription: "operatorCreate.aiCap",
   aiRefusedDescription: "operatorCreate.aiRefused",
   aiHttpForbiddenDescription: "operatorCreate.aiForbidden",
+  aiHttpServerDescription: "operatorCreate.aiServer",
 };
 
+/**
+ * Har qanday ko'rinish (faqat `manual` emas): tavsif operator matniga almashtiriladi va xom server izohi
+ * (`detail`) HECH QAYSI holatda ko'rsatilmaydi (400/422/404… ham) — sabab i18n matnda.
+ */
 const withoutManual = (view: AiErrorView): AiErrorView => {
-  if (view.action !== "manual") return view;
   const description = NO_MANUAL_DESCRIPTION[view.description] ?? view.description;
-  if (view.title === "aiRefusedTitle") return editText(view.title, description);
-  // Xom server izohi (`detail`) bu yerda ko'rsatilmaydi — sabab i18n matnda.
+  if (view.action === "manual" && view.title === "aiRefusedTitle") return editText(view.title, description);
   return { tone: view.tone, title: view.title, description, action: view.action, actionLabel: view.actionLabel };
 };
 

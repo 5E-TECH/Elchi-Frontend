@@ -369,8 +369,9 @@ const OrderCreateFormContent = () => {
 
   // Sarlavha izohi: market ma'lum bo'lsa (market roli yoki AI) — «Tanlangan market: …»; 2-qadamda — majburiy
   // maydonlar belgisi; qolganida — «Buyurtma yaratish uchun qadamlarni bajaring».
+  // Operator: AI o'chiq bo'lsa izoh yo'q — «AI bilan yaratiladi» ogohlantirish «AI o'chiq» ga zid.
   const description = isMarketOperator ? (
-    t("operatorCreate.description")
+    operatorAiOff ? undefined : t("operatorCreate.description")
   ) : selectedMarketName && (isMarketRole || !isManual) ? (
       <Trans
         t={t}
@@ -463,6 +464,8 @@ const OrderCreateFormContent = () => {
                   market={isMarketRole ? null : market}
                   onSwitchToManual={isMarketOperator ? undefined : () => setMode("manual")}
                   areaLists={!isMarketOperator}
+                  // Operator maydoni — o'zi (maket «Siz — avtomatik yoziladi»); matn yuborilmaydi, backend ismni o'zi yozadi.
+                  selfOperator={isMarketOperator ? { name: marketRoleName ?? null } : undefined}
                   onChangeMarket={
                     isMarketRole
                       ? undefined

@@ -395,6 +395,10 @@ describe("MarketDashboardPage (v2)", () => {
       // Operatorda «Qabul va yaratish» (`/new-orders`) yo'q — faqat ro'yxat va yaratish.
       expect(hrefs).toEqual(expect.arrayContaining(["/orders", "/new-orders/create"]));
       expect(hrefs).not.toContain("/new-orders");
+      // Operatorda qo'lda yaratish yo'q (MO-7 gacha) — izoh «Qo'lda yoki AI» ni va'da qilmaydi.
+      const create = screen.getAllByRole("link").find((link) => link.getAttribute("href") === "/new-orders/create");
+      expect(create).toHaveTextContent("AI yordamida yaratish");
+      expect(create).not.toHaveTextContent(/Qo'lda/);
     });
   });
 });

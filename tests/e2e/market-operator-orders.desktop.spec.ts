@@ -57,7 +57,7 @@ test("⭐ «Buyurtma yaratish» menyudan: /new-orders → /new-orders/create, fa
   await page.getByRole("navigation", { name: "Asosiy bo'limlar" }).getByRole("link", { name: "Buyurtma yaratish" }).click();
   await expect(page).toHaveURL(/\/new-orders\/create$/);
   await expect(page.getByRole("heading", { level: 1, name: "Yangi buyurtma" })).toBeVisible();
-  await expect(page.getByText("Buyurtmalar marketingiz nomidan AI bilan yaratiladi")).toBeVisible();
+  await expect(page.getByText("Buyurtmalar siz ishlaydigan market nomidan AI bilan yaratiladi")).toBeVisible();
   await expect(page.getByTestId("create-mode-tabs")).toHaveCount(0);
   await expect(page.getByRole("link", { name: /Buyurtmalar/ }).first()).toHaveAttribute("href", "/orders");
 

@@ -132,4 +132,24 @@ describe("qo'lda yaratish yo'q rol (market operatori, MO-3)", () => {
     expect(operator).toMatchObject({ description: "operatorCreate.aiForbidden" });
     expect(operator).not.toHaveProperty("detail");
   });
+
+  it.each([400, 422, 404, 409])("%i — xom server izohi operatorga chiqmaydi (boshqa rollarda bor)", (status) => {
+    const error = { isAxiosError: true, response: { status, data: { message: "property text should not exist" } } };
+    expect(parseHttpErrorView(error)).toHaveProperty("detail", "property text should not exist");
+    const operator = parseHttpErrorView(error, { canCreateManually: false });
+    expect(operator).not.toBeNull();
+    expect(operator).not.toHaveProperty("detail");
+  });
+
+  it("5xx — «Qayta urinish», lekin «qo'lda kiriting» maslahatisiz (uch tilda)", () => {
+    const error = { isAxiosError: true, response: { status: 502, data: {} } };
+    expect(parseHttpErrorView(error)).toMatchObject({ action: "retry", description: "aiHttpServerDescription" });
+    const operator = parseHttpErrorView(error, { canCreateManually: false });
+    expect(operator).toMatchObject({ action: "retry", description: "operatorCreate.aiServer" });
+    for (const locale of [uz, ru, en]) {
+      const text = (locale as { operatorCreate: Record<string, string> }).operatorCreate.aiServer;
+      expect(text).toBeTruthy();
+      expect(text).not.toMatch(/qo'lda|вручную|manual/i);
+    }
+  });
 });

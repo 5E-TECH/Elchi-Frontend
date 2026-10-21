@@ -97,6 +97,8 @@ type AiPreviewCardProps = {
    * MO-3): «Viloyat» maydoni chiqmaydi (viloyatni backend tumandan oladi), «Tuman» — AI aniqlagani va takliflari.
    */
   areaLists?: boolean;
+  /** Operator — so'rovchining o'zi (market operatori): maydon faqat o'qish uchun, «Siz — avtomatik yoziladi». */
+  selfOperator?: { name: string | null };
   creating: boolean;
   onChange: (order: AiDraftOrder) => void;
   onRemove: () => void;
@@ -117,6 +119,7 @@ const AiPreviewCard = ({
   regions,
   regionsLoading,
   areaLists = true,
+  selfOperator,
   creating,
   onChange,
   onRemove,
@@ -169,6 +172,8 @@ const AiPreviewCard = ({
     };
   });
   const hasCandidates = candidateOptions.length > 0;
+  // Ro'yxatsiz (market operatori) va taklifsiz: tumanni kartada tanlab bo'lmaydi — faqat matnni tuzatib qayta tahlil.
+  const districtFromTextOnly = !areaLists && !hasCandidates && !order.district_id;
   const districtOptions: SelectOption[] = [
     ...candidateOptions,
     ...districts
@@ -360,7 +365,9 @@ const AiPreviewCard = ({
             {issues.map((issue) => (
               <li key={issue} className="min-w-0">
                 <Badge tone="warning" className="max-w-full">
-                  <span className="truncate">{t(ISSUE_KEYS[issue])}</span>
+                  <span className="truncate">
+                    {t(issue === "district_missing" && districtFromTextOnly ? "operatorCreate.districtChip" : ISSUE_KEYS[issue])}
+                  </span>
                 </Badge>
               </li>
             ))}
@@ -424,7 +431,7 @@ const AiPreviewCard = ({
             id={`${idPrefix}-district`}
             hint={
               // Ro'yxatsiz (market operatori): tuman AI matndan topmagan va taklif yo'q — matnni tuzatib qayta tahlil.
-              !areaLists && !order.district_id && !hasCandidates ? (
+              districtFromTextOnly ? (
                 <WarningHint>{t("operatorCreate.districtFromText")}</WarningHint>
               ) : undefined
             }
@@ -580,13 +587,20 @@ const AiPreviewCard = ({
             ) : null}
           </Field>
 
-          <Field label={t("operator")} id={`${idPrefix}-operator`}>
-            <TextInput
-              value={order.operator ?? ""}
-              onValueChange={(value) => update({ operator: value })}
-              placeholder={t("operatorPlaceholder")}
-            />
-          </Field>
+          {selfOperator ? (
+            // Market operatori: operator — o'zi (maket `market_operator-new-orders-create-manual`); tahrirlanmaydi.
+            <Field label={t("operator")} id={`${idPrefix}-operator`} hint={t("operatorCreate.operatorAuto")}>
+              <TextInput value={selfOperator.name?.trim() || t("operatorCreate.operatorYou")} readOnly />
+            </Field>
+          ) : (
+            <Field label={t("operator")} id={`${idPrefix}-operator`}>
+              <TextInput
+                value={order.operator ?? ""}
+                onValueChange={(value) => update({ operator: value })}
+                placeholder={t("operatorPlaceholder")}
+              />
+            </Field>
+          )}
 
           <Field label={t("note")} id={`${idPrefix}-comment`}>
             <TextInput

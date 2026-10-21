@@ -877,7 +877,7 @@
     "applyLabel": "Mahsulotlar bo'yicha summani qo'llash: {{amount}}"
   },
   "operatorCreate": {
-    "description": "Buyurtmalar marketingiz nomidan AI bilan yaratiladi",
+    "description": "Buyurtmalar siz ishlaydigan market nomidan AI bilan yaratiladi",
     "aiOffTitle": "AI bilan yaratish hozir o'chiq",
     "aiOffText": "Buyurtma yaratish uchun market egasi yoki administratorga murojaat qiling.",
     "aiDisabled": "Bu market uchun AI yoqilmagan — market egasi yoki administratorga murojaat qiling.",
@@ -885,6 +885,10 @@
     "aiCap": "Bugun AI orqali buyurtma o'qish limiti tugadi — limit ertaga yangilanadi.",
     "aiRefused": "Matnni boshqacha yozib, qayta urinib ko'ring.",
     "aiForbidden": "Sizda AI bilan buyurtma yaratishga ruxsat yo'q — administratorga murojaat qiling.",
-    "districtFromText": "Tuman aniqlanmadi — matnda tumanni yozib, qayta tahlil qiling."
+    "aiServer": "Birozdan keyin qayta urinib ko'ring. Takrorlansa — administratorga xabar bering.",
+    "districtFromText": "Tuman aniqlanmadi — matnda tumanni yozib, qayta tahlil qiling.",
+    "districtChip": "Tuman aniqlanmadi",
+    "operatorYou": "Siz",
+    "operatorAuto": "Siz — avtomatik yoziladi"
   }
 }
