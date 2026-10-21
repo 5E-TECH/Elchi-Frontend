@@ -2,17 +2,17 @@ import { expect, test } from "@playwright/test";
 import { expectNoFinanceRequests, expectNoHorizontalOverflow, openLogistHome } from "./support/logistHome";
 
 /**
- * LG-1 — logist bosh sahifasi (desktop 1280): yon menyuda faqat «Bosh sahifa» (moliyasiz — ega LG-S1), o'z
+ * LG-1 — logist bosh sahifasi (desktop 1280): yon menyuda «Bosh sahifa» va «Hududlar» (LG-3; moliyasiz — ega LG-S1), o'z
  * viloyatlari (logist_id = me), KPI, «Viloyatlar muvaffaqiyati», «Viloyatlarim» + «Jami»; pul yo'q; «Barchasi» —
  * sanasiz so'rov; xato → «Qayta urinish»; viloyat biriktirilmagan — bo'sh holat.
  */
 test.describe.configure({ timeout: 180_000 });
 
-test("⭐ o'z viloyatlari, KPI va jadval; menyu faqat «Bosh sahifa»; pul yo'q", async ({ page }) => {
+test("⭐ o'z viloyatlari, KPI va jadval; menyu «Bosh sahifa» · «Hududlar»; pul yo'q", async ({ page }) => {
   const mock = await openLogistHome(page);
 
   const nav = page.getByRole("navigation", { name: "Asosiy bo'limlar" });
-  await expect(nav.getByRole("link")).toHaveText(["Bosh sahifa"]);
+  await expect(nav.getByRole("link")).toHaveText(["Bosh sahifa", "Hududlar"]);
 
   const kpis = page.getByRole("region", { name: "Viloyatlarim bo'yicha umumiy ko'rsatkichlar" });
   await expect(kpis.getByText("Jarayonda 22 ta · 3 viloyat")).toBeVisible();

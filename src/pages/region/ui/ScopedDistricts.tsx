@@ -1,4 +1,4 @@
-// dizayn-v2: manager-regions-scoped, courier-regions-scoped
+// dizayn-v2: manager-regions-scoped, courier-regions-scoped, logist-regions-detail
 import {
   ChevronDown,
   ChevronUp,
@@ -61,13 +61,19 @@ const useFormat = () => {
   };
 };
 
-/** «Tanlangan tuman» paneli: halqa (muvaffaqiyat) + viloyatga nisbatan p.p. + jami/tushum + holatlar. */
+/**
+ * «Tanlangan tuman» paneli: halqa (muvaffaqiyat) + viloyatga nisbatan p.p. + jami/tushum + holatlar.
+ * LG-3: logistda (`metric="couriers"`, maket `logist-regions-detail`) tushum o'rnida «Kuryerlar» — logist pulni
+ * ko'rmaydi (ega LG-S1).
+ */
 export const SelectedDistrictPanel = ({
   row,
   regionRate,
+  metric = "revenue",
 }: {
   row: DistrictRow;
   regionRate: number;
+  metric?: "revenue" | "couriers";
 }) => {
   const { t, language, number, percent, money } = useFormat();
   const delta = row.orders > 0 ? row.rate - regionRate : null;
@@ -114,12 +120,21 @@ export const SelectedDistrictPanel = ({
             {t("v2.common.countTa", { count: number(row.orders) })}
           </dd>
         </div>
-        <div className="flex min-w-0 flex-col gap-0.5">
-          <dt className="text-xs text-text-muted">{t("v2.scoped.selected.revenue")}</dt>
-          <dd className="m-0 text-lg font-bold whitespace-nowrap text-text">
-            {money(row.revenue)}
-          </dd>
-        </div>
+        {metric === "couriers" ? (
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <dt className="text-xs text-text-muted">{t("v2.logistView.selected.couriers")}</dt>
+            <dd className="m-0 text-lg font-bold whitespace-nowrap text-text">
+              {t("v2.common.countTa", { count: number(row.couriers) })}
+            </dd>
+          </div>
+        ) : (
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <dt className="text-xs text-text-muted">{t("v2.scoped.selected.revenue")}</dt>
+            <dd className="m-0 text-lg font-bold whitespace-nowrap text-text">
+              {money(row.revenue)}
+            </dd>
+          </div>
+        )}
       </dl>
       <SegBar
         ariaLabel={t("v2.scoped.selected.statusAria", {
@@ -338,13 +353,18 @@ export const DistrictRankPhone = ({
   );
 };
 
-/** «Tumanlar kesimida» jadvali: Tuman (+SATO) · Buyurtmalar (chiziq) · Holat · Muvaffaqiyat · Tushum. */
+/**
+ * «Tumanlar kesimida» jadvali: Tuman (+SATO) · Buyurtmalar (chiziq) · Holat · Muvaffaqiyat · Tushum.
+ * LG-3: logistda `showRevenue={false}` — «Tushum» ustuni yo'q (maket `logist-regions-detail`, ega LG-S1).
+ */
 export const DistrictTable = ({
   rows,
   onSelect,
+  showRevenue = true,
 }: {
   rows: DistrictRow[];
   onSelect?: (id: string) => void;
+  showRevenue?: boolean;
 }) => {
   const { t, number, percent, money } = useFormat();
   const [showEmpty, setShowEmpty] = useState(false);
@@ -382,11 +402,15 @@ export const DistrictTable = ({
                   className: "text-left max-lg:hidden",
                 },
                 { key: "rate", label: t("v2.scoped.table.success"), className: "text-right" },
-                {
-                  key: "revenue",
-                  label: t("v2.scoped.table.revenue"),
-                  className: "text-right max-md:hidden",
-                },
+                ...(showRevenue
+                  ? [
+                      {
+                        key: "revenue",
+                        label: t("v2.scoped.table.revenue"),
+                        className: "text-right max-md:hidden",
+                      },
+                    ]
+                  : []),
               ].map((column) => (
                 <th
                   key={column.key}
@@ -475,15 +499,17 @@ export const DistrictTable = ({
                       {row.orders > 0 ? percent(row.rate) : "—"}
                     </span>
                   </td>
-                  <td className={cx(td, "whitespace-nowrap text-right text-text max-md:hidden")}>
-                    {money(row.revenue)}
-                  </td>
+                  {showRevenue ? (
+                    <td className={cx(td, "whitespace-nowrap text-right text-text max-md:hidden")}>
+                      {money(row.revenue)}
+                    </td>
+                  ) : null}
                 </tr>
               );
             })}
             {withoutOrders.length > 0 ? (
               <tr className="bg-sunken">
-                <td colSpan={5} className="border-b border-border px-3 py-2">
+                <td colSpan={showRevenue ? 5 : 4} className="border-b border-border px-3 py-2">
                   <span className="flex min-w-0 items-center justify-between gap-3">
                     <span className="flex min-w-0 flex-col">
                       <span className="text-sm font-semibold text-text">
@@ -522,9 +548,11 @@ export const DistrictTable = ({
               <td className="h-11 whitespace-nowrap px-3 py-1.5 text-right">
                 {percent(totalRate)}
               </td>
-              <td className="h-11 whitespace-nowrap px-3 py-1.5 text-right max-md:hidden">
-                {money(total.revenue)}
-              </td>
+              {showRevenue ? (
+                <td className="h-11 whitespace-nowrap px-3 py-1.5 text-right max-md:hidden">
+                  {money(total.revenue)}
+                </td>
+              ) : null}
             </tr>
           </tfoot>
         </table>

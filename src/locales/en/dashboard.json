@@ -395,7 +395,9 @@
       "total": "Total · {{count}} regions",
       "total_one": "Total · {{count}} region",
       "cardSummary": "{{rate}} sold · {{active}} / {{total}} couriers",
-      "cardSummaryNoCouriers": "{{rate}} sold"
+      "cardSummaryNoCouriers": "{{rate}} sold",
+      "detail": "Details",
+      "detailAria": "{{name}} details"
     },
     "error": {
       "title": "Couldn't load region statistics",

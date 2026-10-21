@@ -211,6 +211,13 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     `GET /notifications/sent`, «Natija» / «Kim yubordi» filtrlari, sahifa va ochiq oyna (`?id=`) URL'da, telefonda
     «Filtrlar» varaqasi; «Kimga» hozircha «—» + qabul qiluvchilar (auditoriya ro'yxat javobida yo'q — S2, backend);
     tafsilot oynasida «Xato bilan tugadi» → «Qayta yuborish». Route soni 78 / 78.
+  - **LG-3 (2026-10-21, `feat/lg-3-logist-regions`):** `/regions` logistga ochildi (`canViewRegionStats` endi
+    `access.ts` da; menyuda va pastki menyuda «Hududlar»): `LogistRegionView` — o'z viloyatlari tanlovi (`?region=`,
+    desktopda seg, telefonda / 5 tadan ko'pida `Select`), `GET region/stats/:id` — spidometr, umumiy ko'rsatkichlar
+    («Faol kuryerlar» — `status = 'active'`), tumanlar taxtasi va «Tanlangan tuman» (Tushum o'rnida «Kuryerlar»),
+    «Tumanlar kesimida» (Tushumsiz), «Kuryerlar» top 5; pul yo'q (LG-S1), `GET /district` chaqirilmaydi. Begona /
+    o'tkazilgan viloyat (yangi ro'yxat bo'yicha yoki 403) — «Bu viloyat endi sizga biriktirilmagan». Bosh sahifada
+    «Tafsilot» ochildi. «Tuman buyurtmalari» — LG-4, «Barcha kuryerlar» — LG-5. Yangi route yo'q.
 - «Visual» baseline'lari skaner 2-bosqichidan keyin yangilangan (bot commit `1393ae0`, `/dispatch` va
   `cancelled-handover` — «Kamera» tugmalari olib tashlangani uchun kutilgan farq).
 - **To'liq QA** — Trello «Qo'lda testlar» (79 karta), real ma'lumotda, oddiy foydalanuvchi sifatida.

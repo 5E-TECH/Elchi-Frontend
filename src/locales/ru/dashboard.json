@@ -388,7 +388,9 @@
       "statusAria": "продано {{sold}}, в процессе {{pending}}, отменено {{cancelled}}",
       "total": "Итого · областей: {{count}}",
       "cardSummary": "{{rate}} продано · курьеры {{active}} / {{total}}",
-      "cardSummaryNoCouriers": "{{rate}} продано"
+      "cardSummaryNoCouriers": "{{rate}} продано",
+      "detail": "Подробнее",
+      "detailAria": "{{name}}: подробнее"
     },
     "error": {
       "title": "Не удалось загрузить статистику по областям",

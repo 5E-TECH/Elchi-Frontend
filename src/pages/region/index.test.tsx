@@ -1,7 +1,8 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import dayjs from "dayjs";
-import { useLocation } from "react-router-dom";
+import { useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { vi } from "vitest";
 import Region from "./index";
 import { renderWithProviders } from "../../test/test-utils";
@@ -455,5 +456,272 @@ describe("Region page — manager / courier (scoped, my/district-stats)", () => 
     renderRegion("market");
     await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent("/403"));
     expect(apiGetMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("Region page — logist (LG-3, region/stats/all + region/stats/:id, pulsiz)", () => {
+  const ME = "logist-1";
+  const regionRow = (id: string, name: string, logistId: string | null, totalOrders: number) => ({
+    id,
+    name,
+    logist_id: logistId,
+    districts_count: 3,
+    totalOrders,
+    deliveredOrders: Math.floor(totalOrders / 2),
+    cancelledOrders: 1,
+    revenue: 987_654_321,
+    activeCouriers: 2,
+    totalCouriers: 3,
+  });
+  const LOGIST_STATS_ALL = {
+    statusCode: 200,
+    data: {
+      regions: [
+        regionRow("8", "Qashqadaryo viloyati", ME, 12),
+        regionRow("6", "Samarqand viloyati", ME, 31),
+        regionRow("1", "Toshkent shahri", "logist-7", 112),
+        regionRow("11", "Sirdaryo viloyati", null, 5),
+      ],
+    },
+  };
+  const courier = (id: string, name: string, totalOrders: number, deliveredOrders: number, extra = {}) => ({
+    id,
+    name,
+    phoneNumber: "+998905556677",
+    status: "active",
+    districtId: "d1",
+    totalOrders,
+    deliveredOrders,
+    cancelledOrders: 1,
+    totalRevenue: 123_456_789,
+    successRate: 0,
+    ...extra,
+  });
+  const LOGIST_DETAIL = {
+    statusCode: 200,
+    data: {
+      ...STATS_BY_ID.data,
+      summary: { ...STATS_BY_ID.data.summary, totalRevenue: 987_654_321 },
+      couriers: [
+        courier("c1", "Ilhom Saidov", 9, 7),
+        courier("c2", "Shohruh Mirzayev", 8, 4, { districtId: "d2" }),
+        courier("c3", "Jasur Tursunov", 6, 5),
+        courier("c4", "Bekzod Aliyev", 5, 3),
+        courier("c5", "Sardor Qodirov", 4, 3),
+        courier("c6", "Otabek Yo'ldoshev", 3, 2, { status: "inactive" }),
+        courier("c7", "Ulug'bek Sobirov", 2, 1),
+        courier("c8", "Buyurtmasiz Kuryer", 0, 0, { status: "inactive" }),
+      ],
+    },
+  };
+  const QASHQADARYO_DETAIL = {
+    statusCode: 200,
+    data: {
+      region: { id: "8", name: "Qashqadaryo viloyati" },
+      summary: { totalOrders: 12, deliveredOrders: 6, cancelledOrders: 1, totalCouriers: 0, activeCouriers: 0 },
+      couriers: [],
+      districts: [
+        { id: "q1", name: "Qarshi sh.", couriers: [], totalOrders: 12, deliveredOrders: 6, cancelledOrders: 1 },
+      ],
+    },
+  };
+
+  const forbidden = () =>
+    Promise.reject(
+      Object.assign(new Error("forbidden"), {
+        isAxiosError: true,
+        response: { status: 403, data: { message: "Bu viloyat statistikasini ko'rishga ruxsat yo'q" } },
+      }),
+    );
+
+  beforeEach(() => {
+    apiGetMock.mockReset();
+    respond({
+      "region/stats/all": LOGIST_STATS_ALL,
+      "region/stats/6": LOGIST_DETAIL,
+      "region/stats/8": QASHQADARYO_DETAIL,
+    });
+  });
+
+  it("opens the busiest own region: no district catalog, no my/district-stats, no money on the page", async () => {
+    renderRegion("logist");
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Samarqand viloyati" })).toBeInTheDocument();
+    expect(await screen.findAllByText("Urgut tumani")).not.toHaveLength(0);
+    const today = dayjs().format("YYYY-MM-DD");
+    expect(apiGetMock).toHaveBeenCalledWith("region/stats/6", {
+      params: { startDate: today, endDate: today },
+    });
+    expect(calledUrls()).not.toContain("district");
+    expect(calledUrls()).not.toContain("region/my/district-stats");
+    expect(calledUrls()).not.toContain("region/stats/1");
+
+    // Faqat o'z viloyatlari, buyurtmalar ko'pidan; URL ga o'zboshimcha yozilmaydi.
+    const picker = screen.getByRole("radiogroup", { name: "Viloyatni tanlash" });
+    expect(within(picker).getAllByRole("radio").map((radio) => radio.textContent)).toEqual([
+      "Samarqand",
+      "Qashqadaryo",
+    ]);
+    expect(within(picker).getByRole("radio", { name: "Samarqand" })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByTestId("where").textContent).not.toContain("region=");
+
+    // LG-S1: pul yo'q — tushum, «so'm», summalar chizilmaydi.
+    const text = document.body.textContent ?? "";
+    expect(text).not.toMatch(/so'm|Tushum|987|123/);
+    // «Tuman buyurtmalari» (LG-4) va «Barcha kuryerlar» (LG-5) hali yo'q.
+    expect(screen.queryByText("Tuman buyurtmalari")).not.toBeInTheDocument();
+    expect(screen.queryByText("Barcha kuryerlar")).not.toBeInTheDocument();
+  });
+
+  it("shows active couriers (status) and the top-5 courier table with «Yana N ta kuryer»", async () => {
+    const user = userEvent.setup();
+    renderRegion("logist");
+
+    const card = (await screen.findByRole("heading", { level: 2, name: /^Kuryerlar/ })).closest("section")!;
+    expect(within(card).getByText("(7)")).toBeInTheDocument();
+    expect(within(card).getByText("Buyurtmasi bor kuryerlar · viloyatda faol 6 / 8")).toBeInTheDocument();
+    const table = within(card).getByRole("table", { name: "Kuryerlar jadvali" });
+    const rows = within(table).getAllByRole("row").slice(1);
+    expect(rows).toHaveLength(5);
+    expect(rows[0]).toHaveTextContent("Ilhom Saidov");
+    expect(rows[0]).toHaveTextContent("Samarqand sh.");
+    expect(rows[0]).toHaveTextContent("77,8%");
+    expect(rows[1]).toHaveTextContent("Urgut tumani");
+    expect(within(card).queryByText("Buyurtmasiz Kuryer")).not.toBeInTheDocument();
+
+    await user.click(within(card).getByRole("button", { name: "Yana 2 ta kuryer" }));
+    expect(within(table).getAllByRole("row").slice(1)).toHaveLength(7);
+    expect(within(card).getByRole("button", { name: "Kamroq ko'rsatish" })).toHaveAttribute("aria-expanded", "true");
+
+    // Umumiy ko'rsatkichlar: «Faol kuryerlar 6 / 8».
+    expect(screen.getByText("/ 8")).toBeInTheDocument();
+  });
+
+  it("the selected district panel shows couriers instead of revenue", async () => {
+    renderRegion("logist");
+    const panels = await screen.findAllByRole("region", { name: "Tanlangan tuman: Samarqand sh." });
+    expect(within(panels[0]).getByText("Kuryerlar")).toBeInTheDocument();
+    expect(within(panels[0]).queryByText("Tushum")).not.toBeInTheDocument();
+  });
+
+  it("reads ?region= and writes the user's pick to the URL", async () => {
+    const user = userEvent.setup();
+    renderRegion("logist", "/regions?region=8&period=all");
+
+    expect(await screen.findByRole("heading", { level: 1, name: "Qashqadaryo viloyati" })).toBeInTheDocument();
+    expect(apiGetMock).toHaveBeenCalledWith("region/stats/8", { params: {} });
+    expect(calledUrls()).not.toContain("region/stats/6");
+
+    await user.click(screen.getByRole("radio", { name: "Samarqand" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Samarqand viloyati" })).toBeInTheDocument();
+    expect(screen.getByTestId("where")).toHaveTextContent("region=6");
+    expect(screen.getByTestId("where")).toHaveTextContent("period=all");
+  });
+
+  it("a region of another logist in the URL — «endi sizga biriktirilmagan», no stats/:id, URL kept", async () => {
+    renderRegion("logist", "/regions?region=1");
+
+    expect(await screen.findByText("Bu viloyat endi sizga biriktirilmagan")).toBeInTheDocument();
+    expect(calledUrls().filter((url) => url.startsWith("region/stats/") && url !== "region/stats/all")).toEqual([]);
+    expect(screen.getByTestId("where")).toHaveTextContent("region=1");
+    const picker = screen.getByRole("radiogroup", { name: "Viloyatni tanlash" });
+    expect(within(picker).getAllByRole("radio").every((radio) => radio.getAttribute("aria-checked") === "false")).toBe(
+      true,
+    );
+  });
+
+  it("stats/:id 403 (region moved, backend iOnGbEqi) — «endi sizga biriktirilmagan»", async () => {
+    apiGetMock.mockImplementation((url: string) =>
+      url === "region/stats/all" ? Promise.resolve({ data: LOGIST_STATS_ALL }) : forbidden(),
+    );
+    renderRegion("logist");
+    expect(await screen.findByText("Bu viloyat endi sizga biriktirilmagan")).toBeInTheDocument();
+    expect(screen.queryByText(/ruxsat yo'q/)).not.toBeInTheDocument();
+  });
+
+  it("stale cached list: re-checks once before rejecting the URL region (LG-2 race lesson)", async () => {
+    const user = userEvent.setup();
+    let assigned = false;
+    apiGetMock.mockImplementation((url: string) => {
+      if (url === "region/stats/all") {
+        const regions = LOGIST_STATS_ALL.data.regions.map((item) =>
+          item.id === "11" && assigned ? { ...item, logist_id: ME } : item,
+        );
+        return Promise.resolve({ data: { statusCode: 200, data: { regions } } });
+      }
+      if (url === "region/stats/11") return Promise.resolve({ data: { ...QASHQADARYO_DETAIL, data: { ...QASHQADARYO_DETAIL.data, region: { id: "11", name: "Sirdaryo viloyati" } } } });
+      if (url === "region/stats/6") return Promise.resolve({ data: LOGIST_DETAIL });
+      return Promise.reject(new Error(`Unexpected API request: ${url}`));
+    });
+
+    // Sahifadan chiqib, keyin `?region=11` bilan qaytish (masalan bosh sahifadagi «Tafsilot»): ro'yxat keshda.
+    const Remount = () => {
+      const [shown, setShown] = useState(true);
+      const navigate = useNavigate();
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => {
+              assigned = true;
+              setShown(false);
+              navigate("/regions?region=11");
+            }}
+          >
+            leave
+          </button>
+          <button
+            type="button"
+            onClick={() => setShown(true)}
+          >
+            back
+          </button>
+          {shown ? <Region /> : null}
+        </>
+      );
+    };
+    renderWithProviders(
+      <>
+        <Remount />
+        <Where />
+      </>,
+      { route: "/regions", preloadedState: { role: roleState("logist") } as never },
+    );
+    expect(await screen.findByRole("heading", { level: 1, name: "Samarqand viloyati" })).toBeInTheDocument();
+    await new Promise((resolve) => setTimeout(resolve, 5));
+
+    await user.click(screen.getByRole("button", { name: "leave" }));
+    await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent("/regions?region=11"));
+    await user.click(screen.getByRole("button", { name: "back" }));
+    expect(await screen.findByRole("heading", { level: 1, name: "Sirdaryo viloyati" })).toBeInTheDocument();
+    expect(screen.queryByText("Bu viloyat endi sizga biriktirilmagan")).not.toBeInTheDocument();
+    expect(calledUrls().filter((url) => url === "region/stats/all")).toHaveLength(2);
+    expect(screen.getByTestId("where")).toHaveTextContent("region=11");
+  });
+
+  it("no region assigned — empty state, no picker, no stats/:id", async () => {
+    respond({
+      "region/stats/all": {
+        statusCode: 200,
+        data: { regions: LOGIST_STATS_ALL.data.regions.filter((item) => item.logist_id !== ME) },
+      },
+    });
+    renderRegion("logist");
+    expect(await screen.findByText("Sizga hali viloyat biriktirilmagan")).toBeInTheDocument();
+    expect(screen.queryByRole("radiogroup", { name: "Viloyatni tanlash" })).not.toBeInTheDocument();
+    expect(calledUrls()).toEqual(["region/stats/all"]);
+  });
+
+  it("list load error — readable text (no backend message) and «Qayta urinish»", async () => {
+    apiGetMock.mockRejectedValue(
+      Object.assign(new Error("Internal RPC timeout"), {
+        isAxiosError: true,
+        response: { status: 500, data: { message: "Internal RPC timeout logistics.region.stats_all" } },
+      }),
+    );
+    renderRegion("logist");
+    expect(await screen.findByText("Viloyat ma'lumotini yuklab bo'lmadi")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Qayta urinish/ })).toBeInTheDocument();
+    expect(screen.queryByText(/RPC timeout/)).not.toBeInTheDocument();
   });
 });

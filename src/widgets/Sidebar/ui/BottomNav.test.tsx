@@ -393,10 +393,10 @@ describe("BottomNav — kontekstli «Skaner» (ega qarori 2026-10-19)", () => {
   });
 });
 
-describe("BottomNav — logist (LG-1)", () => {
-  it("«Bosh sahifa» + «Menyu»; skaner va moliya yo'q (qolgan kataklar o'z sahifasi bilan — LG-3/LG-4/LG-5)", () => {
+describe("BottomNav — logist (LG-1, LG-3)", () => {
+  it("«Bosh sahifa» · «Hududlar» · «Menyu»; skaner va moliya yo'q (qolgan kataklar o'z sahifasi bilan — LG-4/LG-5)", () => {
     renderNav("logist");
-    expect(hrefs()).toEqual(["/", "button:Menyu"]);
+    expect(hrefs()).toEqual(["/", "/regions", "button:Menyu"]);
     expect(screen.getByRole("link", { name: "Bosh sahifa" })).toHaveAttribute("aria-current", "page");
     expect(screen.queryByRole("link", { name: "Skaner" })).not.toBeInTheDocument();
     for (const finance of ["/payments", "/cash-box", "/financial-balance"]) {

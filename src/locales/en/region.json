@@ -654,6 +654,62 @@
         "title": "No logisticians",
         "text": "To assign regions, first create a user with the «Logist» role. A new logistician appears in this list."
       }
+    },
+    "logistView": {
+      "subtitle": "All orders in the region · by district and courier",
+      "titleGeneric": "My regions",
+      "cardSubtitle": "{{period}} · {{region}}",
+      "picker": {
+        "label": "My regions:",
+        "aria": "Choose a region",
+        "field": "Region",
+        "option": "{{name}} · {{count}}",
+        "placeholder": "Choose a region",
+        "list": "My regions"
+      },
+      "overview": {
+        "couriers": "Active couriers",
+        "couriersUnit": "/ {{total}}",
+        "couriersMeta": "Couriers with active status"
+      },
+      "selected": {
+        "couriers": "Couriers"
+      },
+      "couriers": {
+        "title": "Couriers",
+        "subtitle": "Couriers with orders · active in the region {{active}} / {{total}}",
+        "subtitleNoCounts": "Couriers with orders",
+        "label": "Couriers table",
+        "listLabel": "Couriers by number of orders",
+        "position": "No.",
+        "courier": "Courier",
+        "district": "District",
+        "orders": "Orders",
+        "soldCancelled": "Sold · cancelled",
+        "success": "Success",
+        "cardSummary": "{{rate}} sold · {{cancelled}} cancelled",
+        "more": "{{count}} more couriers",
+        "more_one": "{{count}} more courier",
+        "less": "Show less",
+        "empty": {
+          "title": "No couriers with orders",
+          "text": "Couriers in this region had no orders in the selected period."
+        }
+      },
+      "states": {
+        "error": {
+          "title": "Couldn't load region data",
+          "text": "Check your internet connection and try again."
+        },
+        "notAssigned": {
+          "title": "This region is no longer assigned to you",
+          "text": "An administrator moved the region to another logist. Choose one of your regions in the list above."
+        },
+        "none": {
+          "title": "No region has been assigned to you yet",
+          "text": "Once an administrator assigns a region, its statistics will appear here."
+        }
+      }
     }
   }
 }

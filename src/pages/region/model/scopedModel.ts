@@ -15,6 +15,11 @@ export interface DistrictRow {
   revenue: number;
   /** 0..100 */
   rate: number;
+  /**
+   * LG-3 (additiv): tumandagi kuryerlar soni — `stats/:id` → `districts[].couriers.length`, `my/district-stats` →
+   * `couriersCount` (normalizator `activeCouriers` ga yozadi).
+   */
+  couriers: number;
 }
 
 export const toDistrictRows = (districts: DistrictStatsItem[]): DistrictRow[] =>
@@ -33,6 +38,7 @@ export const toDistrictRows = (districts: DistrictStatsItem[]): DistrictRow[] =>
         pending: pendingOf(orders, sold, cancelled, district.pendingOrders),
         revenue: Math.max(0, district.revenue),
         rate: successRateOf(sold, orders),
+        couriers: Math.max(0, district.activeCouriers),
       };
     })
     .sort((a, b) => b.orders - a.orders || a.name.localeCompare(b.name));

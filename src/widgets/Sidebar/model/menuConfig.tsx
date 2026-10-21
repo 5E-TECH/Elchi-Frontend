@@ -163,9 +163,13 @@ export const SIDEBAR_CONFIG: Record<SidebarUserRole, NavItem[]> = {
    * havolalarini (hammasi 403) ko'rsatmaydi. Logist moliyadan butunlay yopiq (ega LG-S1) — bu yerga hech qachon
    * `/payments`, `/cash-box`, `/financial-balance` qo'shilmaydi.
    */
-  // LG-1: bosh sahifa (o'z viloyatlari, pulsiz). Qolgan bandlar — LG-3 (Hududlar), LG-4 (Buyurtmalar), LG-5
-  // (Pochta, Paketlar, Kuryerlar): `route-map.json` → `plannedMenu.logist`.
-  logist: [{ to: "/", icon: House, label: "dashboard", end: true }],
+  // LG-1: bosh sahifa (o'z viloyatlari, pulsiz); LG-3: «Hududlar» (o'z viloyati — tumanlar va kuryerlar, pulsiz).
+  // Qolgan bandlar — LG-4 (Buyurtmalar), LG-5 (Pochta, Paketlar, Kuryerlar): `route-map.json` → `plannedMenu.logist`.
+  // Maket tartibi: Bosh sahifa · Buyurtmalar · Pochta · Paketlar · Kuryerlar · Hududlar — «Hududlar» oxirida qoladi.
+  logist: [
+    { to: "/", icon: House, label: "dashboard", end: true },
+    { to: "/regions", icon: MapIcon, label: "regions" },
+  ],
   market_operator: [],
   /**
    * IN-1 (vpKijXce): investor kabineti — `/` (`DashboardEntry` → `InvestorDashboardPage`). «Investitsiyalar» va

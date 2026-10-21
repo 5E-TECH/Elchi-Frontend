@@ -388,7 +388,9 @@
       "statusAria": "{{sold}} sotilgan, {{pending}} jarayonda, {{cancelled}} bekor",
       "total": "Jami · {{count}} viloyat",
       "cardSummary": "{{rate}} sotildi · {{active}} / {{total}} kuryer",
-      "cardSummaryNoCouriers": "{{rate}} sotildi"
+      "cardSummaryNoCouriers": "{{rate}} sotildi",
+      "detail": "Tafsilot",
+      "detailAria": "{{name}} tafsiloti"
     },
     "error": {
       "title": "Viloyatlar statistikasini yuklab bo'lmadi",

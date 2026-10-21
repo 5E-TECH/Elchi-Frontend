@@ -54,8 +54,8 @@ const ShareMeter = ({
  *
  * Oflayn (so'rov `isPaused`, javob yo'q) — «Internet aloqasi yo'q» (`ErrorState kind="offline"`), bo'sh holat emas.
  *
- * Chizilmaganlar: «So'nggi buyurtmalar» (logist buyurtmalari — backend 4BftLLnc, LG-4), viloyat «Tafsilot»
- * havolasi (`/regions` logist ko'rinishi — LG-3). «Faol kuryerlar» — backend `status = 'active'` (maketdagi «bugun
+ * Viloyat «Tafsilot» (nom, «›», telefon kartasi) — `/regions?region=<id>` (LG-3).
+ * Chizilmaganlar: «So'nggi buyurtmalar» (logist buyurtmalari — backend 4BftLLnc, LG-4). «Faol kuryerlar» — backend `status = 'active'` (maketdagi «bugun
  * buyurtmasi bor» emas — bunday son API'da yo'q; ega savoli).
  */
 const LogistDashboardPage = () => {
