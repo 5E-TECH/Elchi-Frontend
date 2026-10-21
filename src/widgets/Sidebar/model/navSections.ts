@@ -85,6 +85,8 @@ const SHORT_LABEL_KEY_BY_PATH: Record<string, string> = {
 const SHORT_LABEL_KEY_BY_ROLE: Partial<Record<SidebarUserRole, Record<string, string>>> = {
   // Market buyurtmani faqat yaratadi — maketda «Yaratish».
   market: { "/new-orders": "createShort" },
+  // Investor: varaqa plitkalarida TO'LIQ nom («Investitsiyalar», «Foyda tarixi» — maket
+  // `investor--dashboard-mobile-menu`); qisqa «Investitsiya» / «Foyda» faqat pastki menyuda (`BottomNav`).
   market_operator: { "/new-orders": "createShort", "/new-orders/create": "createShort" },
 };
 

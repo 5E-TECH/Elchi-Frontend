@@ -41,7 +41,8 @@
     "canViewRegionStats": { "source": "routes.tsx → canViewRegionStats", "roles": { "superadmin": "", "admin": "", "manager": "", "courier": "", "logist": "taklif — o'z viloyatlari (LG-S3), kodda yo'q" } },
     "hasSelfCashboxAccess": { "source": "routes.tsx → hasSelfCashboxAccess", "roles": { "manager": "", "market": "", "courier": "" } },
     "canViewMarketOperators": { "source": "routes.tsx → canViewMarketOperators (doim false)", "roles": {} },
-    "canViewMyEarnings": { "source": "access.ts → canViewMyEarnings", "roles": { "market_operator": "" } }
+    "canViewMyEarnings": { "source": "access.ts → canViewMyEarnings", "roles": { "market_operator": "" } },
+    "canViewInvestorCabinet": { "source": "access.ts → canViewInvestorCabinet", "roles": { "investor": "" } }
   },
   "sections": [
     { "id": "shell", "title": "Qobiq — yon menyu, yuqori panel, pastki menyu" },
@@ -98,7 +99,7 @@
         "registrator": "Qobiq har sahifa maketida chizilgan — masalan registrator-orders-list.",
         "market": "Pastki menyu — ega qarori 2026-10-19 (MO-S1): Bosh sahifa · Buyurtmalar · Yaratish · To'lovlar · Menyu; «Mahsulotlar» va yangi «Operatorlar» — «Menyu» varag'ida (6-band 5 katakka sig'maydi). Planshetda yon panel (drawer), telefonda pastki varaq — dashboard-mobile-menu; varaqda global qidiruv maydoni, profil, 6 bo'lim plitkasi, Bildirishnomalar, Sozlamalar, Chiqish.",
         "market_operator": "Yangi rol qobig'i (maket): yon menyu Bosh sahifa · Buyurtmalar · Buyurtma yaratish · Mahsulotlar · Daromadim; pastki menyu 5 oddiy katak (Skaner va Menyu yo'q) — Bosh sahifa · Buyurtmalar · Yaratish · Mahsulotlar · Daromadim. Bildirishnomalar, Sozlamalar va Chiqish faqat yuqori paneldan (qo'ng'iroqcha, profil menyusi) — eski market xatti-harakati kabi. Profil satri «Market operatori» (profil market nomini qaytarmaydi). Kodda (MO-2): yon menyu Bosh sahifa · Mahsulotlar · Daromadim (guruhsiz), pastki menyu shu 3 katak; «Buyurtmalar» va «Buyurtma yaratish» (yorlig'i rolga xos — sidebar:createOrder, qisqasi «Yaratish») — MO-3 (plannedMenu / plannedBottomNav).",
-        "investor": "Investor qobig'i (IN-1 dan kodda, menuConfig.tsx SIDEBAR_CONFIG.investor): maketda yon menyu guruhsiz — Bosh sahifa · Investitsiyalar · Foyda tarixi; pastki menyu 4 teng katak — Bosh sahifa · Investitsiya · Foyda · Menyu (skaner yo'q; ilovadagi BottomNav auto-cols-fr, maket build.mjs ham katak sonini bandlardan oladi). Kodda hozir: yon menyu «Bosh sahifa», pastki menyu 2 katak — Bosh sahifa · Menyu; «Investitsiyalar» va «Foyda tarixi» (/investments, /profits) o'z sahifalari bilan IN-2 da keladi — shungacha plannedMenu.investor va plannedBottomNav.investor da. Yuqori panelda global qidiruv va Ctrl K YO'Q — investorda buyurtma va foydalanuvchi ruxsati yo'q (qidiruv 403 beradi); qo'ng'iroqcha va profil menyusi (mavzu, til, «Chiqish») bor. «Menyu» varag'i — investor-dashboard-mobile-menu: profil satri «Investor», 3 bo'lim plitkasi, Bildirishnomalar (/inbox), Sozlamalar (/settings), «Chiqish»; qidiruv maydoni yo'q."
+        "investor": "Investor qobig'i (IN-1 dan kodda, menuConfig.tsx SIDEBAR_CONFIG.investor): maketda yon menyu guruhsiz — Bosh sahifa · Investitsiyalar · Foyda tarixi; pastki menyu 4 teng katak — Bosh sahifa · Investitsiya · Foyda · Menyu (skaner yo'q; ilovadagi BottomNav auto-cols-fr, maket build.mjs ham katak sonini bandlardan oladi). Kodda (IN-2): yon menyu Bosh sahifa · Investitsiyalar · Foyda tarixi; pastki menyu 4 katak — Bosh sahifa · Investitsiya · Foyda · Menyu; «Menyu» varag'i plitkalarida to'liq nom (Investitsiyalar, Foyda tarixi — maketdagidek). Yuqori panelda global qidiruv va Ctrl K YO'Q — investorda buyurtma va foydalanuvchi ruxsati yo'q (qidiruv 403 beradi); qo'ng'iroqcha va profil menyusi (mavzu, til, «Chiqish») bor. «Menyu» varag'i — investor-dashboard-mobile-menu: profil satri «Investor», 3 bo'lim plitkasi, Bildirishnomalar (/inbox), Sozlamalar (/settings), «Chiqish»; qidiruv maydoni yo'q."
       }
     },
     {
@@ -233,32 +234,37 @@
       "note": "DashboardEntry (routes.tsx): market → MarketDashboardPage (xarajat tasdiqlari shu sahifada), canViewAdminDashboard rollari (superadmin, admin, registrator, kuryer, eski operator) → DashboardPage (kuryer — alohida tarmoq isCourier), logist → LogistDashboardPage (LG-1, o'z viloyatlari, pulsiz), investor → InvestorDashboardPage (IN-1), market_operator → MarketDashboardPage variant=operator (MO-2, xarajat tasdiqlarisiz), qolgan har rol (menyusiz eski rollar) — 403 ForbiddenPage (ROL-0, sizish yopildi — mDfjKeQi). Dizayn v2 (G1): grafiklar — src/shared/ui/charts (recharts faqat «Moliyaviy tahlil» trendida, FinancialTrendPlot lazy + DeferredMount rootMargin 0; bundle byudjeti 450 KB — tests/e2e/dashboard-bundle.preview.spec.ts), viloyat oynasi — umumiy RegionDetailDialog (lazy, faqat bosilganda; registratorda daromadsiz — showRevenue=false, eski oyna xulqi). Reytinglar top 5 (telefonda top 3) + «Yana ko'rsatish». Chizilmaganlar (Taklif yoki API yo'q, spec §6): «Buyurtmalar vaqti» issiqlik xaritasi, KPI «Yo'qotilgan daromad», KPI sparkline, «maqsad 80%», «Sof foyda» qatori, market «Reytingdagi o'rningiz» / «Buyurtmalar dinamikasi», xarajat so'rovida so'rovchi ismi va buyurtma raqami, kuryer «Oxirgi 7 kun». Ega savollari — sukut javoblari qo'llangan (spec §9): Q1 delta va «Kecha» — oldingi davr uchun ikkinchi analytics so'rovi («Barchasi»da yo'q); Q2 gauge belgisi «Yaxshi chegarasi · 70%»; Q3 registrator sarlavha izohida filial nomi (backend registratorni filialga cheklaydi); Q4 «Moliyaviy tahlil» izohi «Daromad · oldingi davr bilan solishtirish», qator «Daromad»; Q5 kuryer «Kassa» sharsharasi faqat my-cashbox bugungi tarixni bersa, aks holda «Qo'lingizdagi pul»; Q6 market «Tasdiqlash» — pul amali, tasdiq oynasi bilan (useConfirm), «Rad etish» — sabab oynasi ExtraCostRejectDialog; 409 «allaqachon hal qilingan» — qayta yuklash + info toast; market_operator — faqat ko'rish (dev, Urozov04); Q7 «Barchasi»da «Yetkazish sifati» o'rnida bo'sh holat, «Moliyaviy tahlil» va «Kassa» yashirin. Ega tasdig'i 2026-10-19 (small-p1 S3): «Ilovani o'rnatish» taklifi kuryer bosh sahifasida bir marta (yopiladi, courier-dashboard-pwa-install); Sozlamalar va Bildirishnomalarda doim."
     },
     {
-      "path": "(taklif) /investments",
-      "entry": "investor menyusi «Investitsiyalar» (roles.json investor.menu → investments), telefonda pastki menyuning 2-katagi",
+      "path": "/investments",
+      "entry": "investor menyusi «Investitsiyalar» (roles.json investor.menu → investments), telefonda pastki menyuning 2-katagi; bosh sahifadagi «So'nggi investitsiyalar» → «Barchasi»",
       "section": "finance",
-      "title": "Investitsiyalar — investorning o'z investitsiyalari (yangi route, kodda yo'q)",
+      "title": "Investitsiyalar — investorning o'z investitsiyalari (dizayn v2, IN-2)",
       "components": [
-        "src/app/lib/routes.tsx"
+        "src/pages/investor/InvestmentsPage.tsx",
+        "src/pages/investor/model/listSearch.ts",
+        "src/pages/investor/ui/InvestorAccessState.tsx"
       ],
-      "roles": { "investor": "taklif — yangi rol, yangi route" },
+      "roles": { "investor": "IN-2: canViewInvestorCabinet = hasRole('investor') (access.ts); backend GET investors/me/investments — @Roles(INVESTOR), doira JWT'dan" },
       "views": {
         "investor": ["investments-list", "investments-list-loading", "investments-list-filtered-empty"]
       },
-      "note": "Ega qarori 2026-10-19: investor bosh sahifasi quriladi; ro'yxat sahifalari menyudan (Investitsiyalar · Foyda tarixi). Yo'l nomi taklif — kod yozilganda haqiqiy yo'l bilan almashtiriladi. GET investors/me/investments (@Roles INVESTOR): from_date, to_date, page, limit; tartib invested_at DESC (saralash parametri yo'q — sarlavhada saralash tugmasi yo'q). Ustun «Jamidagi hissasi» = amount / summary.total_amount — frontendda hisoblanadi (backend maydoni emas); «Ulush» so'zi faqat KPI dagi foyda stavkasi (current_percentage) uchun. Holatlar: yuklanish — investments-list-loading (jadval skeleti, telefonda kartalar), sana oralig'i bo'yicha bo'sh — investments-list-filtered-empty («Filtrni tozalash»), umuman bo'sh / xato / 403 / 404 — bosh sahifa holatlari matni bilan (investor-dashboard-empty, -error, -forbidden, -not-linked). Sahifalash — Pagination (page/limit)."
+      "note": "Ega qarori 2026-10-19: investor bosh sahifasi quriladi; ro'yxat sahifalari menyudan (Investitsiyalar · Foyda tarixi). GET investors/me/investments (@Roles INVESTOR): from_date, to_date, page, limit; tartib invested_at DESC (saralash parametri yo'q — sarlavhada saralash tugmasi yo'q). Ustun «Jamidagi hissasi» = amount / summary.total_amount — frontendda hisoblanadi (backend maydoni emas); «Ulush» so'zi faqat KPI dagi foyda stavkasi (current_percentage) uchun. Holatlar: yuklanish — investments-list-loading (jadval skeleti, telefonda kartalar), sana oralig'i bo'yicha bo'sh — investments-list-filtered-empty («Filtrni tozalash»), umuman bo'sh / xato / 403 / 404 — bosh sahifa holatlari matni bilan (investor-dashboard-empty, -error, -forbidden, -not-linked). Sahifalash — Pagination (page/limit). IN-2 (2026-10-21): filtr va sahifa URL'da (?from&to&page&limit — listSearch.ts), oraliq Toshkent kuni bo'yicha (from_date = kun boshi +05:00, to_date = kun oxiri +05:00). Sarlavha: filtrsiz «Jami: summary.total_amount · meta.total ta»; oraliqda backend oraliq summasini bermaydi (N6 → IN-3) — bitta sahifa bo'lsa sahifa yig'indisi («Tanlangan oraliqda: X so'm · N ta»), aks holda faqat «Tanlangan oraliqda: N ta». Eski javob (keepPreviousData) paytida URL tuzatilmaydi va bo'sh holat chizilmaydi."
     },
     {
-      "path": "(taklif) /profits",
-      "entry": "investor menyusi «Foyda tarixi» (roles.json investor.menu → profits), telefonda pastki menyuning 3-katagi",
+      "path": "/profits",
+      "entry": "investor menyusi «Foyda tarixi» (roles.json investor.menu → profits), telefonda pastki menyuning 3-katagi; bosh sahifadagi «Foyda tarixi» → «Barchasi»",
       "section": "finance",
-      "title": "Foyda tarixi — investorning foyda yozuvlari (yangi route, kodda yo'q)",
+      "title": "Foyda tarixi — investorning foyda yozuvlari (dizayn v2, IN-2)",
       "components": [
-        "src/app/lib/routes.tsx"
+        "src/pages/investor/ProfitsPage.tsx",
+        "src/pages/investor/ui/ProfitHistoryTable.tsx",
+        "src/pages/investor/model/listSearch.ts",
+        "src/pages/investor/ui/InvestorAccessState.tsx"
       ],
-      "roles": { "investor": "taklif — yangi rol, yangi route" },
+      "roles": { "investor": "IN-2: canViewInvestorCabinet = hasRole('investor') (access.ts); backend GET investors/me/profits — @Roles(INVESTOR), doira JWT'dan" },
       "views": {
         "investor": ["profits-list", "profits-list-filtered-empty"]
       },
-      "note": "Ega qarori 2026-10-19 (investor roli). Yo'l nomi taklif. GET investors/me/profits (@Roles INVESTOR): is_paid (Barchasi · To'langan · Kutilmoqda — telefonda to'liq kenglik, 44px), page, limit; tartib period_start DESC (saralash tugmasi yo'q); sana filtri backendda yo'q — chizilmagan. Qator: davr (period_start – period_end), foiz, summa, holat (is_paid), to'langan sana (paid_at). Holatlar: filtr bo'yicha bo'sh — profits-list-filtered-empty; yuklanish — investments-list-loading naqshi; umuman bo'sh / xato / 403 / 404 — bosh sahifa holatlari. Sahifalash — Pagination."
+      "note": "Ega qarori 2026-10-19 (investor roli). GET investors/me/profits (@Roles INVESTOR): is_paid (Barchasi · To'langan · Kutilmoqda — telefonda to'liq kenglik, 44px), page, limit; tartib period_start DESC (saralash tugmasi yo'q); sana filtri backendda yo'q — chizilmagan. Qator: davr (period_start – period_end), foiz, summa, holat (is_paid), to'langan sana (paid_at). Holatlar: filtr bo'yicha bo'sh — profits-list-filtered-empty; yuklanish — investments-list-loading naqshi; umuman bo'sh / xato / 403 / 404 — bosh sahifa holatlari. Sahifalash — Pagination. IN-2 (2026-10-21): ?status=paid|pending&page&limit URL'da; sarlavhadagi «To'langan · Kutilmoqda» — summary (filtrdan qat'i nazar barcha yozuvlar); jadval bosh sahifa bilan umumiy ProfitHistoryTable. «To'langan» filtri bo'yicha bo'sh holat — maket yo'q, eng yaqini profits-list-filtered-empty («To'langan foyda yo'q» + «Filtrni tozalash»)."
     },
     {
       "path": "/branch-dashboard",
@@ -1737,14 +1743,12 @@
   "plannedMenu": {
     "$comment": "Maketda bor, kodda hali yo'q menyu bandlari (ega tasdig'i 2026-10-19). Faqat qisqaradi: band menuConfig.tsx ga qo'shilgach — shu yerdan olinadi.",
     "market_operator": ["orders", "newOrders"],
-    "logist": ["orders", "mails", "batches", "couriers"],
-    "investor": ["investments", "profits"]
+    "logist": ["orders", "mails", "batches", "couriers"]
   },
   "plannedBottomNav": {
     "$comment": "Maketda o'zgargan, kodda (src/widgets/Sidebar/ui/BottomNav.tsx) hali to'liq bo'lmagan pastki menyu: rol → maketdagi kataklar (roles.json → bottomNav bilan bir xil; ega tasdig'i 2026-10-19). Faqat qisqaradi: kod maketga yetgach — shu yerdan olinadi (src/test/designMenu.test.ts eslatadi). Yangi rollar (ROL-0): kataklar kodda yozilgan, lekin menyu bandlari hali yo'q — har band o'z sahifasi bilan keladi (logist — LG-5, market_operator — MO-3, investor — IN-2 oladi).",
     "logist": ["dashboard", "orders", "couriers", "regions", "@menu"],
-    "market_operator": ["dashboard", "orders", "newOrders", "products", "earnings"],
-    "investor": ["dashboard", "investments", "profits", "@menu"]
+    "market_operator": ["dashboard", "orders", "newOrders", "products", "earnings"]
   },
   "newViews": {
     "superadmin-neworders-incoming-scan-partial": "Chala qop ogohlantirishi, «2/3» belgisi va chala qop QR'i skanerlanganda sariq xabar + ogohlantirish ovozi yo'q (DamKku7C, ega S5) — kodda faqat qop skanida «N tadan M tasi» xabari; «keldi» soni uchun backend received_count kerak (ega S3).",
@@ -1762,11 +1766,6 @@
     "logist-mails-detail": "Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz.",
     "logist-batches-list": "Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz.",
     "logist-couriers-list": "Logist roli kodda hali yo'q (dzyVftBx, mDfjKeQi); ega javobi LG-S1..S3 (2026-10-19) — faqat ko'rish, moliyasiz.",
-    "investor-investments-list": "Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi).",
-    "investor-investments-list-loading": "Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi).",
-    "investor-investments-list-filtered-empty": "Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi).",
-    "investor-profits-list": "Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi).",
-    "investor-profits-list-filtered-empty": "Investor roli kodda hali yo'q (ega qarori 2026-10-19 — investor bosh sahifasi quriladi).",
     "superadmin-users-edit-role-branch": "Taklif (users-roles): filialga biriktirilgan — rol maydoni qulf. Backend kerak: GET /users da branch_id + branch{id,name} (kGIjOciz) — FY-4; FY-2 da rol maydoni ochiq, 409 umumiy matn bilan.",
     "superadmin-users-edit-courier-district-phone": "Taklif (users-roles): kuryer «Tuman» ro'yxati, telefon — backend kerak.",
     "manager-users-create-courier-district": "Taklif (users-roles): menejer kuryer yaratishda «Tuman» — backend kerak.",
@@ -1911,11 +1910,7 @@
     "manager-products-create-errors": "Kodda bor (MH-1): forma tepasida «Saqlab bo'lmadi · N ta maydonda xato» (tahrirlash oynasida ham), «Mahsulot nomi» va «Narx» xatolari. Og'irlik va o'lcham maydonlari xatolari — backend kerak (9fHyFp3y → MH-2).",
     "registrator-products-create-errors": "Kodda bor (MH-1): forma tepasida «Saqlab bo'lmadi · N ta maydonda xato» (tahrirlash oynasida ham), «Mahsulot nomi» va «Narx» xatolari. Og'irlik va o'lcham maydonlari xatolari — backend kerak (9fHyFp3y → MH-2).",
     "superadmin-users-create-courier-district": "Kodda bor (LG-2): rol kartasi — Admin · Menejer · Ro'yxatchi · Logist · Kuryer · Market, «Logist» (Route, «Buyurtmalar va holat tarixi, moliyasiz» — LG-S1). Kuryer «Ish hududi» (Tuman) chizilmagan — Taklif · backend kerak.",
-    "investor-dashboard-home": "Kodda bor (IN-1): KPI, «Oylik foyda» (6 · 12 · 24 oy, Grafik | Jadval, StackedBars), «So'nggi investitsiyalar», «Foyda tarixi». Farq: kartalardagi «Barchasi» havolalari yo'q — /investments va /profits sahifalari IN-2 da; yuqori paneldagi qidiruv investorda yo'q (ROL-0).",
-    "investor-dashboard-home-table": "Kodda bor (IN-1): jadval egizagi (yangi oy tepada, «Joriy oy», «Jami · N oy»; telefonda kartalar, ikkala qism alohida qatorda). Farq: «Barchasi» havolalari IN-2 da.",
-    "investor-dashboard-loading": "Kodda bor (IN-1): KPI, grafik va ro'yxatlar skeleti. Farq: «Barchasi» havolalari IN-2 da.",
-    "investor-dashboard-error": "Kodda bor (IN-1): KPI va grafik o'rnida «Ko'rsatkichlarni yuklab bo'lmadi» + «Qayta urinish», ro'yxatlar mustaqil. Farq: «Barchasi» havolalari IN-2 da.",
-    "investor-dashboard-mobile-menu": "Kodda bor (IN-1): varaqada profil, «Bosh sahifa» plitkasi, Bildirishnomalar, Sozlamalar, «Chiqish»; pastki menyu Bosh sahifa · Menyu. Farq: «Investitsiyalar» va «Foyda tarixi» plitkalari va pastki menyu kataklari o'z sahifalari bilan IN-2 da (plannedMenu / plannedBottomNav).",
+    "investor-dashboard-home": "Kodda bor (IN-1): KPI, «Oylik foyda» (6 · 12 · 24 oy, Grafik | Jadval, StackedBars), «So'nggi investitsiyalar», «Foyda tarixi». «Barchasi» → /investments, /profits (IN-2). Farq: yuqori paneldagi qidiruv investorda yo'q (ROL-0).",
     "superadmin-regions-sato-codes-merge-dialog": "Kodda bor (SA-2): «Takroriy nomlar» → guruhdagi «Birlashtirish» → umumiy DistrictMergeDialog (DM-1) SATO matnlari bilan — «Nom (ID N) dagi hamma narsa …», «O'chiriladigan tuman: Nom · ID N, <viloyat> · <kod>», maqsad «Nom · ID N» + kod, «Faqat <viloyat> tumanlari. SATO kodi N saqlanadi.», «ID N yozuvi butunlay o'chiriladi …»; jarayon / natija / «noma'lum» — regions-districts-merge-* bo'yicha. Farq: «… ga ko'chadi» sonlar bloki (Buyurtmalar, Foydalanuvchilar) — backend N4 (GET district/:id/usage) dan keyin SA-3; maqsad ro'yxati qidiruvsiz (kod yonida ko'rinishi uchun).",
     "superadmin-notifications-sms-campaign-segment": "Kodda bor (KM-1): «Xabar turi» — faqat «Reklama» (xizmat va OTP shablonlari ro'yxatda yo'q); «Mijoz filtrlari» — Viloyat / Tuman / Market Select, «Oxirgi buyurtma» DateRange, «Buyurtmalar soni» faqat minimum (entities/notification-campaign CustomerSegmentFilters); jonli auditoriya (POST sms/campaigns/preview, debounce) va «SMS limiti · Bugun qolgan: X / N» (KM-S4; oshsa «Ko'rib chiqish» o'chiq); «Yuborish vaqti» — «Darhol» va tungi taqiq izohi. Chizilmaydi («Taklif · backend kerak»): «Saqlangan segment», «Segmentni saqlash», «gacha» (max_orders SMS kampaniyada yo'q), «Belgilangan vaqtda» (KM-4/KM-6).",
     "market_operator-earnings": "Kodda bor (MO-2): sarlavha va «Stavkam» kartasi (my-profile → commission_type/commission_value: qiymat, Turi, Belgilaydi «Market egasi», Namuna, izoh). Farq: «Hisob» (Qoldiq · Daromad · To'langan), «To'lovlar», «Daromadlar» chizilmagan — maketda «Taklif · backend kerak» (finance/operators/me/* — E6iEOAVs, MO-6); yolg'iz karta max-w-xl.",

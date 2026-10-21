@@ -3,7 +3,7 @@ import { expectNoHorizontalOverflow, openInvestorHome, shot } from "./support/in
 
 /**
  * IN-1 — investor bosh sahifasi, telefon 390 (maketlar `investor-dashboard-home`, `-home-table`, `-mobile-menu`,
- * `-not-linked`): pastki menyu (Bosh sahifa · Menyu — Investitsiyalar/Foyda IN-2 da), skanersiz, qidiruvsiz;
+ * `-not-linked`): pastki menyu (Bosh sahifa · Investitsiya · Foyda · Menyu — IN-2), skanersiz, qidiruvsiz;
  * davr va «Grafik | Jadval» to'liq enda, ≥ 44px; jadval egizagi kartalarda; gorizontal skroll yo'q.
  */
 
@@ -15,7 +15,7 @@ test("bosh sahifa: pastki menyu, «Menyu» varaqasi, boshqaruvlar ≥ 44px, jadv
   await expect(page.getByText("5 ta investitsiya · oxirgisi 01.08.2026")).toBeVisible({ timeout: 30_000 });
 
   const nav = page.getByRole("navigation", { name: "Asosiy bo'limlar" });
-  await expect(nav.locator(":scope > a, :scope > button")).toHaveText(["Bosh sahifa", "Menyu"]);
+  await expect(nav.locator(":scope > a, :scope > button")).toHaveText(["Bosh sahifa", "Investitsiya", "Foyda", "Menyu"]);
   await expect(nav.getByRole("link", { name: /Skaner/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Qidiruvni ochish" })).toHaveCount(0);
 
@@ -39,7 +39,11 @@ test("bosh sahifa: pastki menyu, «Menyu» varaqasi, boshqaruvlar ≥ 44px, jadv
   await nav.getByRole("button", { name: "Menyu" }).click();
   const sheet = page.getByRole("dialog", { name: "Menyu" });
   await expect(sheet).toBeVisible();
-  await expect(sheet.getByRole("navigation", { name: "Asosiy bo'limlar" }).getByRole("link")).toHaveText(["Bosh sahifa"]);
+  await expect(sheet.getByRole("navigation", { name: "Asosiy bo'limlar" }).getByRole("link")).toHaveText([
+    "Bosh sahifa",
+    "Investitsiyalar",
+    "Foyda tarixi",
+  ]);
   await expect(sheet.getByRole("link", { name: /Bildirishnomalar/ })).toBeVisible();
   await expect(sheet.getByRole("link", { name: /Sozlamalar/ })).toBeVisible();
   await expect(sheet.getByRole("button", { name: "Chiqish" })).toBeVisible();

@@ -1,11 +1,20 @@
 // dizayn-v2: investor-dashboard-home, investor-dashboard-empty, investor-dashboard-loading
-import { HandCoins, PiggyBank } from "lucide-react";
+import { ChevronRight, HandCoins, PiggyBank } from "lucide-react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 import type { InvestorInvestmentsPage, InvestorProfitsPage } from "../../../entities/investors";
 import { formatDateLocalized } from "../../../shared/lib/formatDateTime";
 import { formatMoneyLocalized } from "../../../shared/lib/formatMoney";
-import { Card, DataTable, EmptyState, ErrorState, Skeleton, SkeletonTable } from "../../../shared/ui/primitives";
+import {
+  buttonClasses,
+  Card,
+  DataTable,
+  EmptyState,
+  ErrorState,
+  Skeleton,
+  SkeletonTable,
+} from "../../../shared/ui/primitives";
 import { loadErrorText } from "../lib/format";
 import { ProfitHistoryTable } from "./ProfitHistoryTable";
 
@@ -22,7 +31,8 @@ type ListQuery<T> = {
 /**
  * Pastki ikki blok (maket `investor-dashboard-home`): «So'nggi investitsiyalar» (1 qism) va «Foyda tarixi» (2 qism)
  * yonma-yon, tor joyda ustma-ust. Har biri o'z so'rovi bilan mustaqil: biri yiqilsa, ikkinchisi va yuqoridagi KPI
- * ishlayveradi (maket `dashboard-error`). «Barchasi» havolalari `/investments`, `/profits` sahifalari bilan IN-2 da.
+ * ishlayveradi (maket `dashboard-error`). Sarlavhada «Barchasi ›» → `/investments`, `/profits` (IN-2); ro'yxat
+ * bo'sh kelgan bo'lsa havola yo'q (maket `investor-dashboard-empty`).
  */
 export const InvestorListCards = ({
   investments,
@@ -36,6 +46,18 @@ export const InvestorListCards = ({
     <ProfitHistoryCard query={profits} />
   </div>
 );
+
+/** «Barchasi ›» (maket `.el-btn-link.el-btn-sm`, `aria-label` — to'liq nom). Bo'sh ro'yxatda chizilmaydi. */
+const AllLink = ({ to, label, hidden }: { to: string; label: string; hidden: boolean }) => {
+  const { t } = useTranslation("investor");
+  if (hidden) return null;
+  return (
+    <Link to={to} aria-label={label} className={buttonClasses({ variant: "link", size: "sm", className: "-mr-1" })}>
+      {t("allLink")}
+      <ChevronRight size={16} aria-hidden="true" />
+    </Link>
+  );
+};
 
 const ListState = <T,>({
   query,
@@ -90,6 +112,13 @@ const RecentInvestmentsCard = ({ query }: { query: ListQuery<InvestorInvestments
           <Skeleton width={140} height={12} className="mt-1" />
         ) : undefined
       }
+      actions={
+        <AllLink
+          to="/investments"
+          label={t("investments.allLabel")}
+          hidden={query.data != null && query.data.items.length === 0}
+        />
+      }
       className="min-w-0 flex-[1_1_340px]"
     >
       <ListState
@@ -142,6 +171,9 @@ const ProfitHistoryCard = ({ query }: { query: ListQuery<InvestorProfitsPage> })
       padding="none"
       title={t("profits.title")}
       description={t("profits.sub")}
+      actions={
+        <AllLink to="/profits" label={t("profits.allLabel")} hidden={query.data != null && query.data.items.length === 0} />
+      }
       className="min-w-0 flex-[2_1_520px] max-md:flex-[1_1_100%]"
     >
       <ListState

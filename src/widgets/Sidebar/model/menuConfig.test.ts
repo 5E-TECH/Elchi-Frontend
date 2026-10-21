@@ -3,6 +3,8 @@ import {
   Banknote,
   Bell,
   Building2,
+  HandCoins,
+  PiggyBank,
   CreditCard,
   House,
   Inbox,
@@ -349,19 +351,29 @@ describe("logist menyusi (LG-1, LG-3)", () => {
   });
 });
 
-describe("investor menyusi (IN-1)", () => {
-  it("faqat «Bosh sahifa» (`/`, House) — «Investitsiyalar» va «Foyda tarixi» IN-2 da; moliya/kassa bandlari yo'q", () => {
+describe("investor menyusi (IN-1, IN-2)", () => {
+  it("Bosh sahifa · Investitsiyalar · Foyda tarixi (maket `roles.json`); moliya/kassa bandlari yo'q", () => {
     const items = getSidebarConfigForUser("investor");
-    expect(items.map((item) => [item.to, item.label])).toEqual([["/", "dashboard"]]);
+    expect(items.map((item) => [item.to, item.label])).toEqual([
+      ["/", "dashboard"],
+      ["/investments", "investments"],
+      ["/profits", "profits"],
+    ]);
     expect(items[0].end).toBe(true);
-    // Ikonka maketdagidek (`roles.json` → investor.menu.dashboard).
+    // Ikonkalar maketdagidek (`roles.json` → investor.menu: i1 — House, PiggyBank, HandCoins).
     const design = designRoleInCode("investor").menu;
-    expect(design.map((item) => item.key)).toEqual(["dashboard"]);
-    expect(design[0].icon).toBe("i1");
-    expect(items[0].icon).toBe(House);
+    expect(design.map((item) => [item.key, item.icon])).toEqual([
+      ["dashboard", "i1"],
+      ["investments", "PiggyBank"],
+      ["profits", "HandCoins"],
+    ]);
+    expect(items.map((item) => item.icon)).toEqual([House, PiggyBank, HandCoins]);
+    for (const finance of ["/payments", "/cash-box", "/financial-balance"]) {
+      expect(items.map((item) => item.to)).not.toContain(finance);
+    }
   });
 
-  it("investor kabineti ro'yxatlari yo'llari «Moliya» guruhida (sahifalari IN-2 da)", () => {
+  it("investor kabineti ro'yxatlari yo'llari «Moliya» guruhida (qisqa menyu — guruh sarlavhasisiz)", () => {
     expect(SIDEBAR_GROUP_BY_PATH["/investments"]).toBe("finance");
     expect(SIDEBAR_GROUP_BY_PATH["/profits"]).toBe("finance");
   });

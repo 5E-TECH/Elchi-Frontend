@@ -69,6 +69,9 @@ const MarketDashboardPage = lazy(
 const InvestorDashboardPage = lazy(() => import("../../pages/investor/InvestorDashboardPage"));
 /** MO-2: market operatorining «Daromadim» sahifasi (o'z stavkasi). */
 const MyEarningsPage = lazy(() => import("../../pages/my-earnings"));
+// IN-2: investor ro'yxatlari — «Investitsiyalar» va «Foyda tarixi» (o'z chunk'lari).
+const InvestmentsPage = lazy(() => import("../../pages/investor/InvestmentsPage"));
+const ProfitsPage = lazy(() => import("../../pages/investor/ProfitsPage"));
 const BranchDashboardPage = lazy(() => import("../../pages/branch-dashboard"));
 const DispatchPage = lazy(() => import("../../pages/dispatch"));
 const BatchesPage = lazy(() => import("../../pages/batches"));
@@ -993,6 +996,23 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute canActivate={canViewFinancialBalance}>
                   <FinancialBalance />
+                </ProtectedRoute>
+              ),
+            },
+            // IN-2: investor kabineti ro'yxatlari — faqat investor (`canViewInvestorCabinet`; backend `@Roles(INVESTOR)`).
+            {
+              path: "investments",
+              element: (
+                <ProtectedRoute canActivate={canViewInvestorCabinet}>
+                  <InvestmentsPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "profits",
+              element: (
+                <ProtectedRoute canActivate={canViewInvestorCabinet}>
+                  <ProfitsPage />
                 </ProtectedRoute>
               ),
             },

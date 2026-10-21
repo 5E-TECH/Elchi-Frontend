@@ -101,6 +101,8 @@ const SHORT_LABEL_BY_ROLE: Partial<Record<SidebarUserRole, Record<string, string
     market: { newOrders: "create" },
     // MO-2: «Buyurtma yaratish» → «Yaratish» (band MO-3 da keladi).
     market_operator: { newOrders: "create" },
+    // IN-2: «Investitsiya», «Foyda» (maket `roles.json` → investor.menu.short).
+    investor: { investments: "investments", profits: "profits" },
 };
 
 type BottomNavEntry =
