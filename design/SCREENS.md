@@ -4,7 +4,7 @@
 > yuritiladi), `src/app/lib/routes.tsx` (yo'llar va guardlar), `design/kit/views.json` (maketlar). Qayta yaratish:
 > `npm run design:screens`; tekshirish: `npm run design:screens -- --check`.
 
-**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **82** · qisman: **130** · v2 ga ko'chirilgan route: **77 / 77**
+**77 ta route** (+ qobiq) · **662 ta maket** (413 sahifa, 236 oyna, 13 tizim taxtasi; 562 ta fragment fayli) · kodda yo'q: **78** · qisman: **131** · v2 ga ko'chirilgan route: **77 / 77**
 
 ## Qanday ishlatiladi
 
@@ -1214,10 +1214,10 @@ Har route: fayllar (birinchisi — routes.tsx dagi sahifa), guard zanjiri, kim o
 | `/all-users/:id` | superadmin | `superadmin-users-detail` — Foydalanuvchi tafsilotlari | [design/fragments/superadmin--users-detail.html](fragments/superadmin--users-detail.html) | sahifa | v2 |
 | `/all-users/:id` | superadmin | `superadmin-users-edit-dialog` — Foydalanuvchini tahrirlash (modal)<br>↳ `src/features/user/update-user/ui/UpdateUserModal.tsx` | [design/fragments/superadmin--users-edit-dialog.html](fragments/superadmin--users-edit-dialog.html) | oyna | v2 |
 | `/all-users/:id` | superadmin | `superadmin-users-courier-transfer-dialog` — Kuryerni boshqa filialga o'tkazish<br>↳ `src/features/courier-transfer-branch/ui/TransferCourierModal.tsx` | [design/fragments/superadmin--users-courier-transfer-dialog.html](fragments/superadmin--users-courier-transfer-dialog.html) | oyna | v2 |
-| `/all-users/:id` | superadmin | `superadmin-users-edit-role` — Foydalanuvchini tahrirlash — «Rol» maydoni (taklif) | [design/fragments/superadmin--users-edit-role.html](fragments/superadmin--users-edit-role.html) | oyna | yangi (kodda yo'q) |
-| `/all-users/:id` | superadmin | `superadmin-users-role-confirm-dialog` — Rolni o'zgartirish — tasdiq (taklif) | [design/fragments/superadmin--users-role-confirm-dialog.html](fragments/superadmin--users-role-confirm-dialog.html) | oyna | yangi (kodda yo'q) |
-| `/all-users/:id` | superadmin | `superadmin-users-role-confirm-logist` — Rolni o'zgartirish — Logist → Admin, viloyatlar bo'shatiladi (taklif) | [design/fragments/superadmin--users-role-confirm-logist.html](fragments/superadmin--users-role-confirm-logist.html) | oyna | yangi (kodda yo'q) |
-| `/all-users/:id` | superadmin | `superadmin-users-edit-role-error` — Foydalanuvchini tahrirlash — rol o'zgartirilmadi, 409 (taklif) | [design/fragments/superadmin--users-edit-role-error.html](fragments/superadmin--users-edit-role-error.html) | oyna | yangi (kodda yo'q) |
+| `/all-users/:id` | superadmin | `superadmin-users-edit-role` — Foydalanuvchini tahrirlash — «Rol» maydoni (taklif)<br>↳ `src/features/user/change-role/ui/RoleSection.tsx` | [design/fragments/superadmin--users-edit-role.html](fragments/superadmin--users-edit-role.html) | oyna | v2 |
+| `/all-users/:id` | superadmin | `superadmin-users-role-confirm-dialog` — Rolni o'zgartirish — tasdiq (taklif)<br>↳ `src/features/user/change-role/ui/roleChangeConfirm.tsx` | [design/fragments/superadmin--users-role-confirm-dialog.html](fragments/superadmin--users-role-confirm-dialog.html) | oyna | v2 |
+| `/all-users/:id` | superadmin | `superadmin-users-role-confirm-logist` — Rolni o'zgartirish — Logist → Admin, viloyatlar bo'shatiladi (taklif)<br>↳ `src/features/user/change-role/ui/roleChangeConfirm.tsx` | [design/fragments/superadmin--users-role-confirm-logist.html](fragments/superadmin--users-role-confirm-logist.html) | oyna | v2 |
+| `/all-users/:id` | superadmin | `superadmin-users-edit-role-error` — Foydalanuvchini tahrirlash — rol o'zgartirilmadi, 409 (taklif)<br>↳ `src/features/user/change-role/ui/RoleSection.tsx` | [design/fragments/superadmin--users-edit-role-error.html](fragments/superadmin--users-edit-role-error.html) | oyna | qisman |
 | `/all-users/:id` | superadmin | `superadmin-users-edit-role-branch` — Foydalanuvchini tahrirlash — filialga biriktirilgan, rol qulf (taklif) | [design/fragments/superadmin--users-edit-role-branch.html](fragments/superadmin--users-edit-role-branch.html) | oyna | yangi (kodda yo'q) |
 | `/all-users/:id` | superadmin | `superadmin-users-edit-courier-district` — Kuryerni tahrirlash — «Tuman» maydoni (taklif)<br>↳ `src/features/user/update-user/ui/UpdateUserModal.tsx` | [design/fragments/superadmin--users-edit-courier-district.html](fragments/superadmin--users-edit-courier-district.html) | oyna | qisman |
 | `/all-users/:id` | superadmin | `superadmin-users-edit-courier-district-phone` — Kuryerni tahrirlash — «Tuman» ro'yxati, telefon (taklif) | [design/fragments/superadmin--users-edit-courier-district-phone.html](fragments/superadmin--users-edit-courier-district-phone.html) | oyna · faqat telefon | yangi (kodda yo'q) |
@@ -1907,7 +1907,7 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 
 ### superadmin — Superadmin
 
-222 ta maket · kodda bor: 187 · kodda yo'q: 35
+222 ta maket · kodda bor: 191 · kodda yo'q: 31
 
 | Maket | Sarlavha | Tur | Route | Asosiy fayl | Holat |
 |---|---|---|---|---|---|
@@ -2108,11 +2108,11 @@ Har maket qaysi route/faylda yashaydi. `yangi (kodda yo'q)` — maket chizilgan,
 | `superadmin-notifications-sms-campaign-segment` | SMS — Kampaniya: mijozlar segmenti va yuborish vaqti | sahifa | `/notifications/sms` | `src/pages/notifications/ui/CampaignPage.tsx` | qisman — Kodda bor (KM-1): «Xabar turi» — faqat «Reklama» (xizmat va OTP shablonlari ro'yxatda yo'q); «Mijoz filtrlari» — Viloyat / Tuman / Market Select, «Oxirgi buyurtma» DateRange, «Buyurtmalar soni» faqat minimum (entities/notification-campaign CustomerSegmentFilters); jonli auditoriya (POST sms/campaigns/preview, debounce) va «SMS limiti · Bugun qolgan: X / N» (KM-S4; oshsa «Ko'rib chiqish» o'chiq); «Yuborish vaqti» — «Darhol» va tungi taqiq izohi. Chizilmaydi («Taklif · backend kerak»): «Saqlangan segment», «Segmentni saqlash», «gacha» (max_orders SMS kampaniyada yo'q), «Belgilangan vaqtda» (KM-4/KM-6). |
 | `superadmin-users-list-roles` | Foydalanuvchilar — barcha rollar tablari (taklif) | sahifa | `/all-users` | `src/pages/users/list/UserListPage.tsx` | qisman — FY-1: 9 ta rol tabi (FY-S1) va qator menyusi («Nofaol qilish», FY-S2) — kodda. Chizilmagan: «Filial» ustuni va market operatori qatorida market nomi (FY-S3) — GET /users qatorida filial ham, market nomi ham yo'q (backend kerak). |
 | `superadmin-users-list-role-select` | Foydalanuvchilar — rol tanlash ro'yxati (telefon, taklif) | sahifa · faqat telefon | `/all-users` | `src/pages/users/list/UserListPage.tsx` | v2 |
-| `superadmin-users-edit-role` | Foydalanuvchini tahrirlash — «Rol» maydoni (taklif) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): tahrirlash oynasida «Rol» (faqat superadmin, PATCH /users/:id/role — backend bor). |
-| `superadmin-users-role-confirm-dialog` | Rolni o'zgartirish — tasdiq (taklif) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): rolni o'zgartirish tasdig'i (useConfirm). |
-| `superadmin-users-role-confirm-logist` | Rolni o'zgartirish — Logist → Admin, viloyatlar bo'shatiladi (taklif) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): Logist → Admin tasdig'i, viloyatlar bo'shatiladi. |
-| `superadmin-users-edit-role-error` | Foydalanuvchini tahrirlash — rol o'zgartirilmadi, 409 (taklif) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): 409 — filialga biriktirilgan, rol o'zgarmadi. |
-| `superadmin-users-edit-role-branch` | Foydalanuvchini tahrirlash — filialga biriktirilgan, rol qulf (taklif) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): filialga biriktirilgan — rol maydoni qulf. |
+| `superadmin-users-edit-role` | Foydalanuvchini tahrirlash — «Rol» maydoni (taklif) | oyna | `/all-users/:id` | `src/features/user/change-role/ui/RoleSection.tsx` | v2 |
+| `superadmin-users-role-confirm-dialog` | Rolni o'zgartirish — tasdiq (taklif) | oyna | `/all-users/:id` | `src/features/user/change-role/ui/roleChangeConfirm.tsx` | v2 |
+| `superadmin-users-role-confirm-logist` | Rolni o'zgartirish — Logist → Admin, viloyatlar bo'shatiladi (taklif) | oyna | `/all-users/:id` | `src/features/user/change-role/ui/roleChangeConfirm.tsx` | v2 |
+| `superadmin-users-edit-role-error` | Foydalanuvchini tahrirlash — rol o'zgartirilmadi, 409 (taklif) | oyna | `/all-users/:id` | `src/features/user/change-role/ui/RoleSection.tsx` | qisman — FY-2: 409 — oyna ichida «Rol o'zgartirilmadi» umumiy matn bilan («{ism} filialga biriktirilgan …»); filial nomi va «… filialini ochish» tugmasi chizilmagan — backend 409 javobida filial maydoni yo'q (kGIjOciz, FY-4; backend matni ko'rsatilmaydi). 503 / tarmoq — o'sha joyda «Qayta urinish» (tasdiqsiz qayta yuboradi), 400/403 — umumiy matn. |
+| `superadmin-users-edit-role-branch` | Foydalanuvchini tahrirlash — filialga biriktirilgan, rol qulf (taklif) | oyna | `/all-users/:id` | `src/pages/users/detail/UserDetailPage.tsx` | yangi (kodda yo'q) — Taklif (users-roles): filialga biriktirilgan — rol maydoni qulf. Backend kerak: GET /users da branch_id + branch{id,name} (kGIjOciz) — FY-4; FY-2 da rol maydoni ochiq, 409 umumiy matn bilan. |
 | `superadmin-users-edit-courier-district` | Kuryerni tahrirlash — «Tuman» maydoni (taklif) | oyna | `/all-users/:id` | `src/features/user/update-user/ui/UpdateUserModal.tsx` | qisman — FY-1: «Ish hududi» — viloyat faqat o'qish (GET /users/:id `region`) + «Boshqa filialga o'tkazish» izohi (FY-S4). «Tuman» tanlovi chizilmagan — backend kerak (Taklif). |
 | `superadmin-users-create-courier-district` | Yangi foydalanuvchi — Logist roli va kuryer «Ish hududi» (taklif) | sahifa | `/all-users/create-user` | `src/pages/users/create/CreateUserPage.tsx` | qisman — Kodda bor (LG-2): rol kartasi — Admin · Menejer · Ro'yxatchi · Logist · Kuryer · Market, «Logist» (Route, «Buyurtmalar va holat tarixi, moliyasiz» — LG-S1). Kuryer «Ish hududi» (Tuman) chizilmagan — Taklif · backend kerak. |
 | `superadmin-users-edit-market-ai` | Marketni tahrirlash — «AI narxi (1 buyurtma)» | oyna | `/all-users/:id` | `src/features/user/update-user/ui/UpdateUserModal.tsx` | v2 |
@@ -2698,6 +2698,8 @@ Tegayotgan fayl qaysi route(lar)ga tegishli — o'sha route'ning maketlarini 2-b
 | `src/features/tg-scan/model/useTelegramAuth.ts` | `/tg/scan` |
 | `src/features/tg-scan/ui/ScanListSheet.tsx` | `/tg/scan` |
 | `src/features/tg-scan/ui/TgScanner.tsx` | `/tg/scan` |
+| `src/features/user/change-role/ui/RoleSection.tsx` | `/all-users/:id` |
+| `src/features/user/change-role/ui/roleChangeConfirm.tsx` | `/all-users/:id` |
 | `src/features/user/create-user/ui/CreateUserForm.tsx` | `/all-users/create-user` |
 | `src/features/user/update-user/ui/UpdateUserModal.tsx` | `/all-users`, `/all-users/:id` |
 | `src/pages/activity-logs/index.tsx` | `/activity-logs` |

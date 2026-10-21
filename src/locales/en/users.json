@@ -390,6 +390,58 @@
       "createdDescription": "{{name}} · now assign their regions",
       "createError": "Could not create the logistician",
       "createErrorText": "Check the details and try again."
+    },
+    "role": {
+      "section": "Role",
+      "superadminOnly": "Superadmin only",
+      "label": "Role",
+      "listLabel": "Roles",
+      "hint": "Can only be switched between admin, manager, registrar and logistician. Saving asks for confirmation first.",
+      "changed": "Changed: {{from}} → {{to}} · saving asks for confirmation",
+      "changedShort": "Changed: {{from}} → {{to}}",
+      "descriptions": {
+        "admin": "Company-wide management",
+        "manager": "Branch manager: own branch mail, couriers and cash desk",
+        "registrator": "Receiving and registering orders",
+        "logist": "Assigned regions: orders, status history, mail and couriers · no finance"
+      },
+      "as": {
+        "admin": "an admin",
+        "manager": "a manager",
+        "registrator": "a registrar",
+        "logist": "a logistician"
+      },
+      "confirm": {
+        "title": "Change the role?",
+        "description": "{{name}} will now work as {{role}}.",
+        "action": "Change role",
+        "transition": "Role: {{from}} → {{to}}",
+        "after": "After the change",
+        "regions": "Regions to be released ({{n}}): {{names}} — reassign them to another logistician on the «Assign logisticians» page",
+        "regionsMore": "{{names}} and {{n}} more",
+        "regionsUnknown": "The logistician's regions will be released — reassign them to another logistician on the «Assign logisticians» page",
+        "session": "Their current session will be closed — they will use the new role at the next sign-in",
+        "managerBranch": "Assign the manager to a branch: «Branches» → branch → «Add employee»",
+        "journal": "The old and new role are written to the activity log",
+        "journalLogist": "The old and new role and the released regions are written to the activity log"
+      },
+      "error": {
+        "title": "Role not changed",
+        "assigned": "{{name}} is assigned to a branch. Remove them from the branch first — after the role change, assign them again with the new role. The window stays open — your input is kept.",
+        "retry": "Could not check right now — the role was not changed. Try again in a moment. The window stays open — your input is kept.",
+        "unknown": "No response — it is unknown whether the role changed. Check the role and try again. The window stays open — your input is kept.",
+      "failed": "Could not change the role. Refresh the page and try again. The window stays open — your input is kept.",
+        "retryAction": "Try again"
+      },
+      "success": {
+        "title": "Role changed",
+        "text": "{{name}}: {{from}} → {{to}}",
+        "assignLogists": "Assign logisticians"
+      },
+      "partial": {
+        "title": "Role changed, the rest was not saved",
+        "text": "{{name}} is now {{role}}. Other changes were not saved — check them and save again."
+      }
     }
   },
   "tgGroup": {
