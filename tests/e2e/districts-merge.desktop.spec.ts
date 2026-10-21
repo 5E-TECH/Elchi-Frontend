@@ -26,9 +26,16 @@ test("⭐ o'chirib bo'lmaydi → birlashtirish → jarayon → natija (target_be
   // Server matni («Bu tumanda 128 ta buyurtma bor…») hech qayerda ko'rinmaydi.
   await expect(page.getByText(/128 ta buyurtma bor/)).toHaveCount(0);
 
+  // Maket: oyna eni 520 px, tuman nomi 14 px (sarlavha 16 px).
+  expect((await dialog.boundingBox())?.width).toBe(520);
+  const sourceTitle = dialog.getByText("Bo'z tumani", { exact: true });
+  await expect(sourceTitle).toHaveCSS("font-size", "14px");
+
   await dialog.getByRole("button", { name: "Birlashtirish" }).click();
   const progress = page.getByRole("alertdialog", { name: "Birlashtirilmoqda…" });
   await expect(progress).toBeVisible();
+  // Bosilgan tugma yo'qoldi — fokus panelda (ekran o'quvchi «Birlashtirilmoqda…» ni o'qiydi).
+  await expect(progress).toBeFocused();
   await expect(progress.getByText(/^O'tgan vaqt \d:\d\d$/)).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(progress).toBeVisible();
@@ -38,6 +45,8 @@ test("⭐ o'chirib bo'lmaydi → birlashtirish → jarayon → natija (target_be
   const now = result.getByRole("list", { name: "Izboskan tumanida endi" });
   await expect(now).toContainText("1 254 ta");
   await expect(now).toContainText("oldin 1 126 ta");
+  await expect(result).toBeFocused();
+  await expect(now.getByText("1 254 ta", { exact: true })).toHaveCSS("font-size", "14px");
   await expect(result.getByText("Ko'chirildi", { exact: true })).toHaveCount(0);
   expect(mock.mergeBodies).toEqual([{ path: "district/23/merge", body: { target_district_id: "24" } }]);
 
@@ -45,6 +54,8 @@ test("⭐ o'chirib bo'lmaydi → birlashtirish → jarayon → natija (target_be
   await expect(result).toBeHidden();
   // Ro'yxat yangilandi — Bo'z tumani yo'q.
   await expect(page.getByText("Bo'z tumani")).toHaveCount(0);
+  // Ochgan tugmalar yo'q — fokus qidiruv maydonida, `body` da emas.
+  await expect(page.getByRole("searchbox", { name: "Tuman yoki viloyat qidirish" })).toBeFocused();
   expect(mock.leaked).toEqual([]);
 });
 

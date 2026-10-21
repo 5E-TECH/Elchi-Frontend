@@ -44,6 +44,8 @@ export type MergeEvent =
   | { type: "open"; source: MergeDistrict; targetId?: string | null }
   | { type: "select"; targetId: string | null }
   | { type: "submit"; target: MergeDistrict; at: number }
+  /** Shu manba bilan so'rov allaqachon ketmoqda (sahifa qayta ochilgan) — jarayon oynasiga qaytiladi. */
+  | { type: "resume"; source: MergeDistrict; target: MergeDistrict; startedAt: number }
   | { type: "succeed"; outcome: MergeOutcome }
   | { type: "fail"; failure: MergeFailure }
   | { type: "close" };
@@ -67,6 +69,9 @@ export const mergeReducer = (state: MergeState, event: MergeEvent): MergeState =
       // Ega S2: maqsad faqat shu viloyatdan — chaqiruvchi ro'yxati buzilsa ham so'rov ketmaydi.
       if (event.target.regionId !== state.source.regionId) return state;
       return { phase: "progress", source: state.source, target: event.target, startedAt: event.at };
+    case "resume":
+      if (state.phase === "progress") return state;
+      return { phase: "progress", source: event.source, target: event.target, startedAt: event.startedAt };
     case "succeed":
       return state.phase === "progress"
         ? { phase: "result", source: state.source, target: state.target, outcome: event.outcome }

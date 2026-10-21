@@ -13,7 +13,8 @@ const expectSheet = async (page: Page, dialog: Locator, buttons: string[]) => {
   expect(Math.round(box.y + box.height)).toBeGreaterThanOrEqual(844 - 1);
   for (const name of buttons) {
     const button = (await dialog.getByRole("button", { name, exact: true }).last().boundingBox())!;
-    expect(button.height, `${name}: telefonda ≥ 44px`).toBeGreaterThanOrEqual(44);
+    // Varaqa siljish harakatida o'lcham suzuvchi nuqtada keladi (43.99993) — 0.01 px chidamlilik.
+    expect(button.height, `${name}: telefonda ≥ 44px`).toBeGreaterThanOrEqual(44 - 0.01);
     expect(button.x + button.width, name).toBeLessThanOrEqual(390);
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);

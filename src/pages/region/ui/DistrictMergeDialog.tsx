@@ -1,5 +1,5 @@
-// dizayn-v2: superadmin-regions-districts-merge-dialog, superadmin-regions-districts-merge-target, superadmin-regions-districts-merge-progress, superadmin-regions-districts-merge-result, superadmin-regions-districts-merge-unknown
-import { useEffect, useState, type ReactNode } from "react";
+// dizayn-v2: superadmin-regions-districts-merge-dialog, superadmin-regions-districts-merge-target, superadmin-regions-districts-merge-progress, superadmin-regions-districts-merge-result, superadmin-regions-districts-merge-unknown, admin-regions-districts-merge-dialog, admin-regions-districts-merge-target, admin-regions-districts-merge-progress, admin-regions-districts-merge-result, admin-regions-districts-merge-unknown
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import {
   ArrowDown,
   Building2,
@@ -57,7 +57,7 @@ export const DistrictSummary = ({
     </span>
     <span className="flex min-w-0 flex-col gap-0.5">
       {label ? <span className="text-xs font-semibold text-text-muted">{label}</span> : null}
-      <span className="font-semibold [overflow-wrap:anywhere] text-text">{title}</span>
+      <span className="text-sm font-semibold [overflow-wrap:anywhere] text-text">{title}</span>
       <span className="text-[13px] text-text-muted">{subtitle}</span>
     </span>
   </div>
@@ -147,7 +147,7 @@ const TargetCounts = ({
               {t(`v2.districts.rows.${key}`)}
             </span>
             <span className="flex flex-col items-end gap-0.5">
-              <span className="font-semibold whitespace-nowrap text-text">{countTa(after[key])}</span>
+              <span className="text-sm font-semibold whitespace-nowrap text-text">{countTa(after[key])}</span>
               {before ? (
                 <span className="text-xs whitespace-nowrap text-text-muted">
                   {t("v2.districts.rows.before", { count: countTa(before[key]) })}
@@ -165,7 +165,15 @@ export type DistrictMergeDialogProps = {
   merge: DistrictMergeController;
   /** Manba viloyatidagi boshqa tumanlar (`mergeCandidates`) — ega S2. */
   candidates: readonly MergeDistrict[];
+  /**
+   * Yopilgach fokus qayerga. Oyna boshqa oynadan («o'chirib bo'lmaydi») ochilsa, ochgan tugma o'sha oyna
+   * bilan yo'qoladi — chaqiruvchi sahifadagi barqaror elementni beradi (sukut: ochgan element).
+   */
+  returnFocus?: DialogProps["returnFocus"];
 };
+
+/** Maketdagi oyna eni (`min(520px,100%)`); primitivda 520 yo'q — kompyuterda `lg` (560) ichida. */
+const WIDTH_520 = "md:w-[520px]";
 
 /**
  * «TUMANNI BIRLASHTIRISH» OYNASI (oNAE3LW9) — sahifadan ajratilgan: tumanlar sahifasi (o'chirib bo'lmaydi
@@ -175,7 +183,7 @@ export type DistrictMergeDialogProps = {
  * Sonlar bloklari («Bog'langan», «… ko'chadi», «Ko'chirildi») va xato oynalari — backend N1 dan keyin (DM-2);
  * jurnal yozuvi nomlari — DM-3.
  */
-const DistrictMergeDialog = ({ merge, candidates }: DistrictMergeDialogProps) => {
+const DistrictMergeDialog = ({ merge, candidates, returnFocus }: DistrictMergeDialogProps) => {
   const { t } = useTranslation("region");
   const navigate = useNavigate();
   const { state, select, submit, close, refresh } = merge;
@@ -192,6 +200,19 @@ const DistrictMergeDialog = ({ merge, candidates }: DistrictMergeDialogProps) =>
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [inProgress]);
 
+  // Bitta oyna holatdan holatga o'tadi (tanlash → jarayon → natija): bosilgan tugma yo'qoladi, `initialFocus`
+  // faqat ochilishda ishlaydi — har o'tishda fokus panelga qo'yiladi (ekran o'quvchi yangi sarlavhani o'qiydi).
+  const anchorRef = useRef<HTMLSpanElement>(null);
+  const lastPhaseRef = useRef<MergeState["phase"]>(state.phase);
+  useEffect(() => {
+    const previous = lastPhaseRef.current;
+    lastPhaseRef.current = state.phase;
+    if (previous === "idle" || state.phase === "idle" || previous === state.phase) return;
+    anchorRef.current
+      ?.closest<HTMLElement>('[role="dialog"], [role="alertdialog"]')
+      ?.focus({ preventScroll: true });
+  }, [state.phase]);
+
   // Yopilgan oynaning oxirgi mazmuni chiqish harakati davomida ko'rinib turadi.
   const [shown, setShown] = useState<MergeState>(state);
   if (state.phase !== "idle" && state !== shown) setShown(state);
@@ -205,6 +226,7 @@ const DistrictMergeDialog = ({ merge, candidates }: DistrictMergeDialogProps) =>
   let content: {
     role: "dialog" | "alertdialog";
     size: "md" | "lg";
+    className?: string;
     props: Partial<DialogProps>;
     body: ReactNode;
     footer: ReactNode;
@@ -216,6 +238,7 @@ const DistrictMergeDialog = ({ merge, candidates }: DistrictMergeDialogProps) =>
     content = {
       role: "dialog",
       size: "lg",
+      className: WIDTH_520,
       props: {
         title: t("v2.districts.merge.title"),
         description: t("v2.districts.merge.text", { name: source.name }),
@@ -240,10 +263,18 @@ const DistrictMergeDialog = ({ merge, candidates }: DistrictMergeDialogProps) =>
                   ? t("v2.districts.merge.noTargets")
                   : target
                     ? t("v2.districts.merge.targetHint", { region: source.regionName })
-                    : t("v2.districts.merge.targetHintFull", {
-                        region: source.regionName,
-                        name: source.name,
-                      })
+                    : (
+                        // merge-target: to'liq izoh `Info` belgisi bilan.
+                        <span className="flex items-start gap-1.5">
+                          <Info size={16} aria-hidden="true" className="mt-px shrink-0" />
+                          <span className="min-w-0">
+                            {t("v2.districts.merge.targetHintFull", {
+                              region: source.regionName,
+                              name: source.name,
+                            })}
+                          </span>
+                        </span>
+                      )
               }
             >
               <Select
@@ -354,6 +385,7 @@ const DistrictMergeDialog = ({ merge, candidates }: DistrictMergeDialogProps) =>
     content = {
       role: "alertdialog",
       size: "lg",
+      className: WIDTH_520,
       props: {
         title: t("v2.districts.unknown.title"),
         description: t("v2.districts.unknown.text"),
@@ -415,9 +447,12 @@ const DistrictMergeDialog = ({ merge, candidates }: DistrictMergeDialogProps) =>
       onClose={view.phase === "unknown" ? closeAndRefresh : close}
       role={content.role}
       size={content.size}
+      className={content.className}
       footer={content.footer}
+      returnFocus={returnFocus}
       {...content.props}
     >
+      <span ref={anchorRef} hidden />
       {content.body}
     </Dialog>
   );

@@ -1,4 +1,4 @@
-// dizayn-v2: superadmin-regions-districts-delete-blocked
+// dizayn-v2: superadmin-regions-districts-delete-blocked, admin-regions-districts-delete-blocked
 import { useState } from "react";
 import { Merge, TriangleAlert } from "lucide-react";
 import { useTranslation } from "react-i18next";

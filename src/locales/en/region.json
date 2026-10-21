@@ -344,7 +344,6 @@
       "rows": {
         "orders": "Orders",
         "users": "Users",
-        "usersHint": "Customers, couriers and markets",
         "branches": "Branches",
         "before": "was {{count}}"
       },
@@ -395,7 +394,7 @@
       },
       "error": {
         "title": "Could not merge",
-        "text": "The district list was refreshed. Check the result in the Activity log.",
+        "text": "The district list was refreshed: if {{from}} is still listed, nothing was merged.",
         "journal": "Activity log"
       }
     },

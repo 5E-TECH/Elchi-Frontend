@@ -344,7 +344,6 @@
       "rows": {
         "orders": "Buyurtmalar",
         "users": "Foydalanuvchilar",
-        "usersHint": "Mijoz, kuryer va market",
         "branches": "Filiallar",
         "before": "oldin {{count}}"
       },
@@ -395,7 +394,7 @@
       },
       "error": {
         "title": "Birlashtirib bo'lmadi",
-        "text": "Tumanlar ro'yxati yangilandi. Natijani Faoliyat jurnalida tekshiring.",
+        "text": "Tumanlar ro'yxati yangilandi: {{from}} ro'yxatda turgan bo'lsa, birlashtirilmagan.",
         "journal": "Faoliyat jurnali"
       }
     },

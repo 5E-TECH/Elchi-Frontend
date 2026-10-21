@@ -1,5 +1,5 @@
 // dizayn-v2: superadmin-regions-districts, admin-regions-districts
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useRef, useState, type RefObject } from "react";
 import { Navigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Check, Pencil, Plus, Trash2, X } from "lucide-react";
@@ -59,6 +59,11 @@ const toRegionsWithDistricts = (payload: unknown): RegionWithDistricts[] => {
 };
 
 const REGIONS_KEY = ["region-districts-admin"];
+/**
+ * Tumanlar o'zgarsa boshqa ekranlar keshi ham eskiradi: tuman tanlagichlari (`useRegionDistrictCatalog`,
+ * 5 daqiqa) va viloyat statistikasi (`region-stats`) — birlashtirilgan/o'chirilgan tuman qolib ketmasin.
+ */
+const DEPENDENT_KEYS = [["region-district-catalog"], ["region-stats"]];
 
 /**
  * TUMANLAR BOSHQARUVI (superadmin va admin — ega S1, DM-1): 14 viloyat va ularning tumanlari, tuman qo'shish
@@ -94,8 +99,24 @@ const RegionDistrictsPage = () => {
   const regions = useMemo(() => regionsQuery.data ?? [], [regionsQuery.data]);
 
   const refresh = useCallback(
-    () => queryClient.invalidateQueries({ queryKey: REGIONS_KEY }),
+    () =>
+      Promise.all(
+        [REGIONS_KEY, ...DEPENDENT_KEYS].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      ),
     [queryClient],
+  );
+  // Birlashtirish oynasi «o'chirib bo'lmaydi» oynasidan ochiladi — u yopilgach fokus o'chirish tugmasiga
+  // (birlashtirilgan tuman qatori yo'qolgan bo'lsa — qidiruv maydoniga) qaytadi.
+  const deleteOriginRef = useRef<HTMLElement | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const mergeReturnFocus = useMemo<RefObject<HTMLElement | null>>(
+    () => ({
+      get current() {
+        const origin = deleteOriginRef.current;
+        return origin?.isConnected ? origin : searchRef.current;
+      },
+    }),
+    [],
   );
   const merge = useDistrictMerge(refresh);
   /** 409 — shu viloyatda shu nomli tuman bor (qo'shish, nomini o'zgartirish); qolgani — umumiy matn. */
@@ -276,6 +297,7 @@ const RegionDistrictsPage = () => {
       </Card>
 
       <TextInput
+        ref={searchRef}
         mode="search"
         value={search}
         onValueChange={setSearch}
@@ -353,7 +375,8 @@ const RegionDistrictsPage = () => {
                 variant="ghost"
                 icon={Trash2}
                 label={t("v2.board.deleteAria", { name: district.name })}
-                onClick={async () => {
+                onClick={async (event) => {
+                  deleteOriginRef.current = event.currentTarget;
                   const ok = await confirm({
                     tone: "danger",
                     title: t("v2.board.deleteConfirm", { name: district.name }),
@@ -386,7 +409,7 @@ const RegionDistrictsPage = () => {
           merge.open(district);
         }}
       />
-      <DistrictMergeDialog merge={merge} candidates={candidates} />
+      <DistrictMergeDialog merge={merge} candidates={candidates} returnFocus={mergeReturnFocus} />
     </div>
   );
 };

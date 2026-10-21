@@ -6,7 +6,11 @@ import { renderWithProviders } from "../../../../test/test-utils";
 import RegionDistrictsPage from "./index";
 
 const api = vi.hoisted(() => ({ get: vi.fn(), post: vi.fn(), patch: vi.fn(), delete: vi.fn() }));
-vi.mock("../../../../shared/api/api", () => ({ api, MERGE_REQUEST_TIMEOUT_MS: 125_000 }));
+// Haqiqiy `MERGE_REQUEST_TIMEOUT_MS` qoladi — qiymati o'zgarsa so'rov tekshiruvi yiqiladi.
+vi.mock("../../../../shared/api/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../../shared/api/api")>()),
+  api,
+}));
 
 const REGIONS = [
   {
@@ -263,6 +267,8 @@ describe("RegionDistrictsPage — o'chirib bo'lmaydi va birlashtirish (DM-1, oNA
     const blocked = await screen.findByRole("alertdialog", { name: "Mirobodni o'chirib bo'lmaydi" });
     expect(api.delete).toHaveBeenCalledWith("district/3");
     expect(within(blocked).getByText("Toshkent shahri")).toBeInTheDocument();
+    // Maket: tuman nomi 14 px (`.el-strong`), sarlavhadan (16 px) kichik.
+    expect(within(blocked).getByText("Mirobod")).toHaveClass("text-sm");
     expect(within(blocked).getByText(/Birlashtirsangiz, bularning hammasi/)).toBeInTheDocument();
     expect(within(blocked).queryByText(/128/)).not.toBeInTheDocument();
     expect(screen.queryByText(/Bu tumanda 128 ta buyurtma bor/)).not.toBeInTheDocument();
@@ -297,7 +303,12 @@ describe("RegionDistrictsPage — o'chirib bo'lmaydi va birlashtirish (DM-1, oNA
         resolveMerge = resolve;
       }),
     );
-    open("admin");
+    const { queryClient } = open("admin");
+    // Boshqa ekranlarning keshi (tuman tanlagichi, viloyat statistikasi) — birlashtirishdan keyin eskiradi.
+    const catalogKey = ["region-district-catalog", "1"];
+    const statsKey = ["region-stats", undefined];
+    queryClient.setQueryData(catalogKey, [{ id: "2", name: "Chilonzor" }]);
+    queryClient.setQueryData(statsKey, { items: [] });
     await screen.findByText("Chilonzor");
     api.delete.mockRejectedValue(httpError(400));
     await user.click(screen.getByRole("button", { name: "Chilonzorni o'chirish" }));
@@ -334,6 +345,8 @@ describe("RegionDistrictsPage — o'chirib bo'lmaydi va birlashtirish (DM-1, oNA
     );
 
     const progress = await screen.findByRole("alertdialog", { name: "Birlashtirilmoqda…" });
+    // Bosilgan «Birlashtirish» yo'qoldi — fokus `body` ga tushmaydi, panelda (ekran o'quvchi o'qiydi).
+    await waitFor(() => expect(progress).toHaveFocus());
     expect(within(progress).getByText("O'tgan vaqt 0:00")).toBeInTheDocument();
     expect(within(progress).getByText("Oynani yopmang")).toBeInTheDocument();
     expect(within(progress).queryByRole("button", { name: "Yopish" })).not.toBeInTheDocument();
@@ -345,11 +358,18 @@ describe("RegionDistrictsPage — o'chirib bo'lmaydi va birlashtirish (DM-1, oNA
     expect(unload.defaultPrevented).toBe(true);
 
     const getsBefore = api.get.mock.calls.length;
+    // Server Chilonzorni o'chirdi — qayta olingan ro'yxatda yo'q.
+    api.get.mockResolvedValue({
+      data: { statusCode: 200, data: [{ ...REGIONS[0], districts: [{ id: "3", name: "Mirobod" }] }, REGIONS[1]] },
+    });
     await act(async () => resolveMerge(MERGED));
 
     const result = await screen.findByRole("dialog", { name: "Tumanlar birlashtirildi" });
+    await waitFor(() => expect(result).toHaveFocus());
+    await waitFor(() => expect(queryClient.getQueryState(catalogKey)?.isInvalidated).toBe(true));
+    expect(queryClient.getQueryState(statsKey)?.isInvalidated).toBe(true);
     const now = within(result).getByRole("list", { name: "Mirobodda endi" });
-    expect(within(now).getByText("1 254 ta")).toBeInTheDocument();
+    expect(within(now).getByText("1 254 ta")).toHaveClass("text-sm");
     expect(within(now).getByText("oldin 1 126 ta")).toBeInTheDocument();
     expect(within(now).getByText("19 ta")).toBeInTheDocument();
     expect(within(now).getByText("2 ta")).toBeInTheDocument();
@@ -366,6 +386,57 @@ describe("RegionDistrictsPage — o'chirib bo'lmaydi va birlashtirish (DM-1, oNA
     await waitFor(() =>
       expect(screen.queryByRole("dialog", { name: "Tumanlar birlashtirildi" })).not.toBeInTheDocument(),
     );
+    // Ochgan tugmalar («o'chirib bo'lmaydi» oynasi, Chilonzor qatori) yo'q — fokus qidiruv maydoniga.
+    expect(screen.queryByText("Chilonzor")).not.toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: /qidir/i })).toHaveFocus();
+  });
+
+  it("cancelling the merge opened from «o'chirib bo'lmaydi» returns focus to the delete button", async () => {
+    const user = userEvent.setup();
+    open();
+    const dialog = await openMergeForChilonzor(user);
+    await user.click(within(dialog).getByRole("button", { name: "Bekor qilish" }));
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Tumanni birlashtirish" })).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole("button", { name: "Chilonzorni o'chirish" })).toHaveFocus();
+  });
+
+  it("leaving the page during a merge and coming back reattaches to the same request (no second POST)", async () => {
+    const user = userEvent.setup();
+    let resolveMerge: (value: unknown) => void = () => undefined;
+    api.post.mockReturnValue(
+      new Promise((resolve) => {
+        resolveMerge = resolve;
+      }),
+    );
+    const first = open();
+    const dialog = await openMergeForChilonzor(user);
+    await user.click(within(dialog).getByRole("button", { name: "Birlashtirish" }));
+    await screen.findByRole("alertdialog", { name: "Birlashtirilmoqda…" });
+    // Brauzer/Android «Orqaga» — sahifa yopiladi, so'rov davom etadi.
+    first.unmount();
+
+    open();
+    await screen.findByText("Chilonzor");
+    await user.click(screen.getByRole("button", { name: "Chilonzorni o'chirish" }));
+    await user.click(
+      within(await screen.findByRole("alertdialog", { name: "Chilonzor o'chirilsinmi?" })).getByRole("button", {
+        name: "O'chirish",
+      }),
+    );
+    await user.click(
+      within(await screen.findByRole("alertdialog", { name: "Chilonzorni o'chirib bo'lmaydi" })).getByRole(
+        "button",
+        { name: "Birlashtirish" },
+      ),
+    );
+    expect(await screen.findByRole("alertdialog", { name: "Birlashtirilmoqda…" })).toBeInTheDocument();
+    expect(api.post).toHaveBeenCalledTimes(1);
+
+    await act(async () => resolveMerge(MERGED));
+    expect(await screen.findByRole("dialog", { name: "Tumanlar birlashtirildi" })).toBeInTheDocument();
+    expect(api.post).toHaveBeenCalledTimes(1);
   });
 
   it("a timeout shows «Natija noma'lum» without «Qayta urinish»; «Tumanlarni yangilash» refetches", async () => {
@@ -410,7 +481,11 @@ describe("RegionDistrictsPage — o'chirib bo'lmaydi va birlashtirish (DM-1, oNA
     await user.click(within(dialog).getByRole("button", { name: "Birlashtirish" }));
 
     expect((await screen.findAllByText("Birlashtirib bo'lmadi")).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Natijani Faoliyat jurnalida tekshiring/).length).toBeGreaterThan(0);
+    // 409/503 da backend jurnalga yozmaydi — xabar bo'sh jurnalga yubormaydi, ro'yxatni tekshirishni aytadi.
+    expect(
+      screen.getAllByText("Tumanlar ro'yxati yangilandi: Chilonzor ro'yxatda turgan bo'lsa, birlashtirilmagan.").length,
+    ).toBeGreaterThan(0);
+    expect(screen.queryByText(/Faoliyat jurnalida tekshiring/)).not.toBeInTheDocument();
     expect(screen.queryByText(/tekshiruv mos kelmadi/)).not.toBeInTheDocument();
     expect(screen.queryByText(/qaytarildi/)).not.toBeInTheDocument();
     await waitFor(() =>

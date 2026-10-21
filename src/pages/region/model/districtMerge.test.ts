@@ -1,5 +1,6 @@
 import { AxiosError, AxiosHeaders } from "axios";
 import { describe, expect, it } from "vitest";
+import { MERGE_REQUEST_TIMEOUT_MS } from "../../../shared/api/api";
 import {
   classifyMergeError,
   formatElapsed,
@@ -47,6 +48,13 @@ describe("mergeReducer — idle → confirm → progress → result | error | un
     expect(mergeReducer(confirm, { type: "submit", target: BOZ, at: 1 })).toBe(confirm);
     expect(mergeReducer(confirm, { type: "submit", target: CHILONZOR, at: 1 })).toBe(confirm);
     expect(mergeReducer(MERGE_IDLE, { type: "submit", target: IZBOSKAN, at: 1 })).toBe(MERGE_IDLE);
+  });
+
+  it("resumes a request that is still running (page reopened) instead of starting a new one", () => {
+    const resumed = mergeReducer(MERGE_IDLE, { type: "resume", source: BOZ, target: IZBOSKAN, startedAt: 1000 });
+    expect(resumed).toEqual(progress);
+    expect(mergeReducer(confirm, { type: "resume", source: BOZ, target: IZBOSKAN, startedAt: 1000 })).toEqual(progress);
+    expect(mergeReducer(progress, { type: "resume", source: IZBOSKAN, target: BOZ, startedAt: 5 })).toBe(progress);
   });
 
   it("cannot be closed or reopened while the request is running", () => {
@@ -169,5 +177,11 @@ describe("formatElapsed", () => {
     expect(formatElapsed(42_400)).toBe("0:42");
     expect(formatElapsed(125_000)).toBe("2:05");
     expect(formatElapsed(-5)).toBe("0:00");
+  });
+});
+
+describe("MERGE_REQUEST_TIMEOUT_MS", () => {
+  it("waits longer than the gateway (rxjs timeout 120 s) so a 200/409/503 is not lost on the way", () => {
+    expect(MERGE_REQUEST_TIMEOUT_MS).toBeGreaterThanOrEqual(120_000 + 5_000);
   });
 });
