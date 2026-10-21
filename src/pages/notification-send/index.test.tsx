@@ -19,6 +19,8 @@ describe("NotificationSendPage", () => {
       "/inbox",
     );
     expect(screen.getByRole("form", { name: "Xabar yuborish formasi" })).toBeInTheDocument();
+    // NS-2: sarlavhada «Yuborilganlar» (ikkinchi darajali havola).
+    expect(screen.getByRole("link", { name: "Yuborilganlar" })).toHaveAttribute("href", "/notifications/sent");
     getSpy.mockRestore();
   });
 

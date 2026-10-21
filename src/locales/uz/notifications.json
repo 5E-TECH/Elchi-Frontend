@@ -277,8 +277,10 @@
       "audienceAll": "Hamma",
       "audienceRoles": "Rol: {{roles}}",
       "audienceSingle": "Bitta odam",
-      "audienceList": "Tanlangan ro'yxat"
-    }
+      "audienceList": "Tanlangan ro'yxat",
+      "resend": "Qayta yuborish"
+    },
+    "historyLink": "Yuborilganlar"
   },
   "push": {
     "turnOn": "Bildirishnomalarni yoqish",
@@ -321,5 +323,60 @@
   },
   "realtime": {
     "manyNew": "{{count}} ta yangi bildirishnoma"
+  },
+  "sent": {
+    "pageTitle": "Yuborilganlar",
+    "pageDescription": "Qo'lda yuborilgan xabarlar va kimga yetgani",
+    "listTitle": "Yuborilgan xabarlar",
+    "listDescription": "Eng yangisi yuqorida · natija har kanal bo'yicha",
+    "total": "{{value}} ta",
+    "loading": "Yuborilganlar yuklanmoqda",
+    "summary": "{{from}}–{{to}} / {{total}} ta xabar",
+    "filters": {
+      "label": "Yuborilganlar filtrlari",
+      "status": "Natija",
+      "author": "Kim yubordi",
+      "all": "Barchasi",
+      "authorsLoading": "Yuklanmoqda…",
+      "clear": "Filtrni tozalash"
+    },
+    "columns": {
+      "date": "Sana",
+      "title": "Sarlavha",
+      "author": "Kim yubordi",
+      "audience": "Kimga",
+      "channels": "Kanallar",
+      "status": "Natija",
+      "open": "Tafsilot"
+    },
+    "openRow": "«{{title}}» ({{time}}) natijasini ochish",
+    "untitled": "Sarlavhasiz xabar",
+    "toLabel": "Kimga:",
+    "recipients": "{{value}} ta qabul qiluvchi",
+    "recipientsNone": "Qabul qiluvchi yo'q",
+    "channelShort": {
+      "realtime": "Darhol"
+    },
+    "note": {
+      "running": "{{time}} dan beri",
+      "failed": "Hech kimga ketmadi — qayta yuboring",
+      "skipped": "Bildirishnomani o'chirganlar: {{value}}",
+      "noProvider": "{{channels}}: provayder ulanmagan",
+      "skippedChannels": "O'tkazib yuborildi: {{list}}",
+      "failedChannels": "Xato: {{list}}"
+    },
+    "empty": {
+      "title": "Hali xabar yuborilmagan",
+      "text": "Xabar yuborilgach, u shu yerda natijasi bilan chiqadi: kimga yetdi, kimga yetmadi va nima uchun."
+    },
+    "emptyFiltered": {
+      "statusTitle": "Bu natija bo'yicha xabar yo'q",
+      "title": "Bu filtr bo'yicha xabar yo'q",
+      "text": "Filtrni o'zgartiring yoki tozalang."
+    },
+    "error": {
+      "title": "Yuborilganlar ro'yxatini olib bo'lmadi",
+      "text": "Server hozir javob bermayapti. Birozdan keyin qayta urinib ko'ring."
+    }
   }
 }

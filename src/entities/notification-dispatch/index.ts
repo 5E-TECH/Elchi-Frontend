@@ -1,6 +1,6 @@
 /**
- * Qo'lda yuborilgan bildirishnoma natijasi va tarixi (NS-1; `/notifications/send` natija kartasi, keyin NS-2
- * `/notifications/sent`). Faqat nomli eksport.
+ * Qo'lda yuborilgan bildirishnoma natijasi va tarixi (NS-1 — `/notifications/send` natija kartasi; NS-2 —
+ * `/notifications/sent` ro'yxati `useSentList`). Faqat nomli eksport.
  */
 export type {
   ChannelStatusCounts,
@@ -8,6 +8,9 @@ export type {
   DispatchHistoryStatus,
   SentDetail,
   SentDetailParams,
+  SentListItem,
+  SentListPage,
+  SentListParams,
   UndeliveredFailure,
   UndeliveredItem,
 } from "./model/types";
@@ -27,8 +30,18 @@ export {
 } from "./model/status";
 export type { BucketCounts, DeliveryBucket, DispatchOutcome } from "./model/status";
 export { failureReasonKey } from "./model/reasons";
-export { getSentDetail, normalizeSentDetail, toChannelStatus, toCountMap } from "./api/sentApi";
+export { useAudienceText } from "./model/useAudienceText";
+export {
+  getSentDetail,
+  getSentList,
+  normalizeSentDetail,
+  normalizeSentList,
+  normalizeSentListItem,
+  toChannelStatus,
+  toCountMap,
+} from "./api/sentApi";
 export { SENT_DETAIL_LIVE_INTERVAL_MS, useSentDetail } from "./api/useSentDetail";
+export { SENT_LIST_LIVE_INTERVAL_MS, useSentList } from "./api/useSentList";
 export { ChannelBreakdown } from "./ui/ChannelBreakdown";
 export type { ChannelBreakdownProps } from "./ui/ChannelBreakdown";
 export { DispatchStatusBadge, FailureBadge } from "./ui/DispatchBadges";

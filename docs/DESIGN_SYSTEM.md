@@ -303,7 +303,7 @@ sinonimlarning o'rnini bosuvchilari — `design/icon-registry.json` (132 ikonka,
 | 1 | primitivlar, formatlovchilar, namuna sahifasi `/ops/ui-kit` | `src/shared/ui/primitives`, `src/entities/order`, `src/shared/lib/format*.ts` | tayyor |
 | 2 | shell: kanvas, yon / pastki menyu, yuqori panel | `src/widgets/layout`, `src/widgets/Sidebar`, `src/widgets/header` | tayyor |
 | 3 | forma, dialog, xabar, holatlar, xato sahifalari | `src/shared/ui/primitives`, `src/app/providers/UiHost.tsx`, `src/shared/lib/notify.ts` | tayyor |
-| 4 | sahifalar migratsiyasi (har sahifa alohida PR, `// dizayn-v2:`) | `src/pages/**`, `src/widgets/**`; jurnal — Ilova A, route bo'yicha — `design/SCREENS.md` | tayyor: 77 / 77 route v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi, 2026-10-19; oxirgi `/market-operators` — MO-1, 2026-10-21) |
+| 4 | sahifalar migratsiyasi (har sahifa alohida PR, `// dizayn-v2:`) | `src/pages/**`, `src/widgets/**`; jurnal — Ilova A, route bo'yicha — `design/SCREENS.md` | tayyor: 78 / 78 route v2 (G1, G2, G3; `/scan` — skaner 1-bosqichi, 2026-10-19; oxirgi `/market-operators` — MO-1, 2026-10-21; yangi `/notifications/sent` — NS-2) |
 | 5 | qo'riqchilar: ESLint `design-v2/*` + `Pressable`, `V2_SCOPES` + `named-colour`, vizual snapshotlar (CI «Visual») | `eslint.config.js`, `scripts/eslint-design-v2.mjs`, `scripts/design-guard.mjs`, `playwright.visual.config.ts`, `tests/visual/`, `.github/workflows/visual.yml` | tayyor (§12; qolgan ish — §14) |
 
 Palitra testi va ratchet qo'riqchisi 0-bosqichdan beri ishlaydi: eski kodga tegmaydi, lekin yangi buzilish qo'shilsa
@@ -380,7 +380,7 @@ mavzuda AA, telefonda bosish maydoni ≥ 44px. Qaysi maket bloki qaysi primitivg
   `confirm`/`alert`/`prompt` — xato.
 
 **4-bosqich — tayyor (sahifalar).** Har sahifa alohida PR, faylning birinchi qatorida `// dizayn-v2: <ekran>`.
-77 / 77 route v2 (`design/SCREENS.md`); `/scan` skaner 1-bosqichida ko'chirildi (2026-10-19), oxirgisi —
+78 / 78 route v2 (`design/SCREENS.md`; NS-2 — yangi `/notifications/sent`); `/scan` skaner 1-bosqichida ko'chirildi (2026-10-19), oxirgisi —
 `/market-operators` (MO-1, 2026-10-21: market o'z operatorlari, menyuda «Operatorlar»). Oqimlardagi kamera rejimlari (`*-camera`) — skaner 2-bosqichida kontekstli
 markaziy tugma orqali qilindi, v1 `ScannerCameraModal` o'chirildi (§14); universal rejimlar — 3-bosqich,
 Sozlamalar → Skaner → «Kamera» — 4-bosqich (kamera ishi yopildi).
@@ -1060,3 +1060,8 @@ da §11 dan o'zgarishsiz ko'chirildi, G2 va G3 yozuvlari birlashtirishda qo'shil
   `entities/market-operator`. «Nofaol qilish / Faollashtirish» — MO-4 (backend). Chiqarilgan v1: eski sahifa,
   `shared/components/headerName.tsx`, `shared/ui/FormPopup/`, `shared/ui/PageContainer.tsx`,
   `entities/user/ui/UserStatusBadge.tsx`; `RAW_CONTROL_RATCHET` 3 → 2 — 77 / 77 route v2.
+- **Yangi (v2 da yozilgan):** NS-2 (2026-10-21) — «Yuborilganlar» `/notifications/sent`, superadmin va admin (maketlar
+  `*-notifications-sent`, `-loading`, `-empty`, `-error`, `-sent-detail-dialog`, `-sent-detail-states`): «Natija» va
+  «Kim yubordi» filtrlari (URL, telefonda pastki varaqa), `DataTable` (planshetda 3 ustun yashirin, telefonda kartalar)
+  + `Pagination`, `QueryBoundary` holatlari, tafsilot oynasi `SentDetailDialog` («Qayta yuborish»). «Xabar yuborish»
+  sarlavhasida «Yuborilganlar». 78 / 78 route v2.

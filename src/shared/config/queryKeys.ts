@@ -15,6 +15,8 @@ export const queryKeys = {
   /** Qo'lda yuborilgan xabarlar tarixi (`/notifications/sent`). */
   notificationsSent: {
     all: ["notifications-sent"] as const,
+    lists: ["notifications-sent", "list"] as const,
+    list: (params: object) => ["notifications-sent", "list", params] as const,
     detail: (dispatchId: string, params: object) => ["notifications-sent", "detail", dispatchId, params] as const,
   },
   branches: {

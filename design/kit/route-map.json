@@ -1450,22 +1450,27 @@
       "roleNotes": {
         "admin": "Maket yo'q — superadmin-notifications-send ga qarang (kirish: /inbox sahifasidagi havola)."
       },
-      "note": "Dizayn v2 (G2): 4 rejim, kanallar, ko'rinish (NotificationInboxItem preview), yuborish — tasdiq oynasi (hammaga — danger), ikki marta yuborilmaydi. Ega savoli 10 — sukut: «← Bildirishnomalar» /inbox ga qaytaradi (kirish nuqtasi /inbox; admin /notifications ni ocholmaydi). Ega tasdig'i 2026-10-19 (notif-send): yuborishdan keyin natija bloki (*-send-result: kanal bo'yicha yuborildi / navbatda / o'tkazib yuborildi / xato; «Yetkazilmaganlar» darhol — S1, qo'shimcha so'rov bilan); javob kelmasa (504) — *-send-unknown, «Qayta urinish» ayni client_request_id bilan (S5). Ranglar (S3): navbatda / yuborilmoqda — warning, o'tkazib yuborildi / provayder ulanmagan — neytral, xato — danger, yetkazildi — success. Xato matni faqat tushunarli o'zbekcha (S4). Sarlavhadagi «Yuborilganlar» havolasi → (taklif) /notifications/sent."
+      "note": "Dizayn v2 (G2): 4 rejim, kanallar, ko'rinish (NotificationInboxItem preview), yuborish — tasdiq oynasi (hammaga — danger), ikki marta yuborilmaydi. Ega savoli 10 — sukut: «← Bildirishnomalar» /inbox ga qaytaradi (kirish nuqtasi /inbox; admin /notifications ni ocholmaydi). Ega tasdig'i 2026-10-19 (notif-send): yuborishdan keyin natija bloki (*-send-result: kanal bo'yicha yuborildi / navbatda / o'tkazib yuborildi / xato; «Yetkazilmaganlar» darhol — S1, qo'shimcha so'rov bilan); javob kelmasa (504) — *-send-unknown, «Qayta urinish» ayni client_request_id bilan (S5). Ranglar (S3): navbatda / yuborilmoqda — warning, o'tkazib yuborildi / provayder ulanmagan — neytral, xato — danger, yetkazildi — success. Xato matni faqat tushunarli o'zbekcha (S4). Sarlavhadagi «Yuborilganlar» havolasi → /notifications/sent (NS-2; natija kartasidagi «Yetkazilmaganlar» xatosida ham)."
     },
     {
-      "path": "(taklif) /notifications/sent",
-      "entry": "«Xabar yuborish» sahifasi sarlavhasidagi «Yuborilganlar» havolasi (menyu bandi emas)",
+      "path": "/notifications/sent",
+      "entry": "«Xabar yuborish» sahifasi sarlavhasidagi «Yuborilganlar» havolasi (menyu bandi emas); natija kartasidagi ro'yxat xatosida ham",
       "section": "notifications",
-      "title": "Yuborilganlar — qo'lda yuborilgan xabarlar va natija (yangi route, kodda yo'q)",
+      "title": "Yuborilganlar — qo'lda yuborilgan xabarlar va natija",
       "components": [
-        "src/app/lib/routes.tsx"
+        "src/pages/notification-sent/index.tsx",
+        "src/pages/notification-sent/ui/SentFilters.tsx",
+        "src/pages/notification-sent/ui/SentTable.tsx",
+        "src/entities/notification-dispatch/ui/SentDetailDialog.tsx"
       ],
-      "roles": { "superadmin": "taklif — yangi route", "admin": "taklif — yangi route (canSendNotifications)" },
       "views": {
         "superadmin": ["notifications-sent", "notifications-sent-loading", "notifications-sent-empty", "notifications-sent-error", "notifications-sent-detail-dialog", "notifications-sent-detail-states"],
         "admin": ["notifications-sent", "notifications-sent-loading", "notifications-sent-empty", "notifications-sent-error", "notifications-sent-detail-dialog", "notifications-sent-detail-states"]
       },
-      "note": "Ega tasdig'i 2026-10-19 (notif-send): ro'yxat — sana, sarlavha, kim yubordi, «Kimga» (S2 — backend ro'yxat javobiga auditoriyani qo'shadi; hozir faqat tafsilotda), kanallar, natija; filtrlar «Natija» va «Kim yubordi». Ro'yxatdagi channel_status — saqlangan nusxa, tafsilot oynasidagi — jonli (Telegram yakuniy holati failed + tushunarli sabab). Holatlar: yuklanish, bo'sh, xato (QueryBoundary). Yo'l nomi taklif — kod yozilganda haqiqiy yo'l bilan almashtiriladi."
+      "roleNotes": {
+        "admin": "Superadmin bilan bir xil maket (canSendNotifications — superadmin + admin; backend GET /notifications/sent ham SUPERADMIN, ADMIN)."
+      },
+      "note": "NS-2 (ega tasdig'i 2026-10-19, notif-send): GET /notifications/sent?page&limit=10&status&created_by — yangisi birinchi. Filtrlar «Natija» (tarix holati) va «Kim yubordi» (GET /users?role=superadmin|admin; created_by — foydalanuvchi id'si) URL'da (?status, ?created_by), sahifa ?page, ochiq tafsilot oynasi ?id=<dispatch_id> (eskirgan havola — oynada «Xabar topilmadi»); telefonda «Filtrlar» tugmasi + pastki varaqa. Jadval (DataTable + Pagination; planshetda «Kim yubordi», «Kanallar» va › yashirin; telefonda kartalar): sana, sarlavha + matn boshi (body_preview), muallif + rol, «Kimga» — ro'yxat javobida auditoriya yo'q (S2 — backend kartasi), hozircha «—» + qabul qiluvchilar (dispatched + skipped_by_preference), kanal chiplari (Darhol · Telegram · SMS · Push), «Natija» badge'i + izoh (yuborilmoqda — «… dan beri»; xato — «Hech kimga ketmadi»; provayder ulanmagan / xato / o'tkazib yuborildi kanal sonlari bilan — saqlangan channel_status dan; backend message ko'rsatilmaydi). «Yuborilmoqda» qatori bo'lsa ro'yxat har 10 s yangilanadi; tafsilot oynasidagi raqamlar jonli (SentDetailDialog). Holatlar (QueryBoundary): yuklanish (filtrlar o'chiq), bo'sh (hech narsa yuborilmagan — filtrlar yashirin; filtr bo'yicha — «Filtrni tozalash»), xato («Qayta urinish»). Tafsilot holatlari: 404, xato, yuborilmoqda, xato bilan tugagan — «Qayta yuborish» → /notifications/send."
     },
     {
       "path": "/notifications/sms",
@@ -1774,16 +1779,6 @@
     "admin-notifications-create-expired-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
     "admin-notifications-create-exists-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
     "admin-notifications-create-exists-inactive-dialog": "Taklif (notif-groups, ega NG-S1..S4) — kodda yo'q: bot havolasi oqimi, nofaol / faollashtirish, holat ekranlari maket bo'yicha.",
-    "superadmin-notifications-sent": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
-    "superadmin-notifications-sent-loading": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
-    "superadmin-notifications-sent-empty": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
-    "superadmin-notifications-sent-error": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
-    "superadmin-notifications-sent-detail-states": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
-    "admin-notifications-sent": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
-    "admin-notifications-sent-loading": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
-    "admin-notifications-sent-empty": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
-    "admin-notifications-sent-error": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
-    "admin-notifications-sent-detail-states": "Taklif (notif-send, ega S1..S5) — kodda yo'q.",
     "superadmin-ops-system-ai-config": "Taklif (ops-system, ega S1..S5) — kodda yo'q.",
     "superadmin-ops-system-ai-cap": "Taklif (ops-system, ega S1..S5) — kodda yo'q.",
     "superadmin-neworders-create-manual-step2-customer-update-dialog": "Taklif (create-step2, ega S1..S5) — kodda yo'q: taxminiy narx, mijoz kartasini yangilash tasdig'i; backend narx dvigateli (DAqXPeSy) kerak.",
@@ -1893,14 +1888,6 @@
     "courier-courier-bulk-scanner-camera-list": "Kamera v2 — markaziy «Skaner» (planshet/desktopda «Skanerlash») kamerani shu sahifa ustida ochadi (ega qarori 2026-10-19: oqim ichidagi «Kamera bilan skanerlash» / «Kamera» tugmasi yo'q); skan USB bilan bitta handler, kamera har skandan keyin yopilmaydi. «Skanerlanganlar · N / M · K ta bekor, L ta ertaga» varag'i, «Bekor qilish» belgini oladi, «Skanerlanmagan N ta buyurtma sotilgan deb belgilanadi».",
     "superadmin-notifications-create-dialog": "Kodda bor (v2): qo'shish — bir martalik bot havolasi (maketdagi qo'lda guruh ID formasi emas; «Tahrirlash» NG-A da olib tashlandi, NG-S4); havola tayyor / muddati tugadi / ulangan / ulangan, lekin nofaol oynalari — NG-B.",
     "admin-notifications-create-dialog": "Kodda bor (v2): qo'shish — bir martalik bot havolasi (maketdagi qo'lda guruh ID formasi emas; «Tahrirlash» NG-A da olib tashlandi, NG-S4); havola tayyor / muddati tugadi / ulangan / ulangan, lekin nofaol oynalari — NG-B.",
-    "admin-notifications-send": "Kodda bor (canSendNotifications admin'ni o'tkazadi); natija bloki — NS-1; sarlavhadagi «Yuborilganlar» havolasi — NS-2 (/notifications/sent).",
-    "admin-notifications-send-confirm-dialog": "Kodda bor (canSendNotifications admin'ni o'tkazadi); natija bloki — NS-1; sarlavhadagi «Yuborilganlar» havolasi — NS-2 (/notifications/sent).",
-    "superadmin-notifications-send-result": "Kodda bor (NS-1): natija kartasi, kanal kesimi, «Yetkazilmaganlar» (darhol, 5 tasi) va tafsilot oynasi; sarlavhadagi va ro'yxat xatosidagi «Yuborilganlar» havolasi — NS-2 (/notifications/sent).",
-    "admin-notifications-send-result": "Kodda bor (NS-1): natija kartasi, kanal kesimi, «Yetkazilmaganlar» (darhol, 5 tasi) va tafsilot oynasi; sarlavhadagi va ro'yxat xatosidagi «Yuborilganlar» havolasi — NS-2 (/notifications/sent).",
-    "superadmin-notifications-send-unknown": "Kodda bor (NS-1): «Noma'lum» kartasi, «Tarixdan tekshirish», «Qayta urinish» (o'sha client_request_id), takroriy holatlar; sarlavhadagi «Yuborilganlar» havolasi — NS-2.",
-    "admin-notifications-send-unknown": "Kodda bor (NS-1): «Noma'lum» kartasi, «Tarixdan tekshirish», «Qayta urinish» (o'sha client_request_id), takroriy holatlar; sarlavhadagi «Yuborilganlar» havolasi — NS-2.",
-    "superadmin-notifications-sent-detail-dialog": "Kodda bor (NS-1): SentDetailDialog — /notifications/send natija va noma'lum kartalaridan ochiladi; orqadagi «Yuborilganlar» ro'yxati — NS-2.",
-    "admin-notifications-sent-detail-dialog": "Kodda bor (NS-1): SentDetailDialog — /notifications/send natija va noma'lum kartalaridan ochiladi; orqadagi «Yuborilganlar» ro'yxati — NS-2.",
     "superadmin-users-list-roles": "FY-1: 9 ta rol tabi (FY-S1) va qator menyusi («Nofaol qilish», FY-S2) — kodda. Chizilmagan: «Filial» ustuni va market operatori qatorida market nomi (FY-S3) — GET /users qatorida filial ham, market nomi ham yo'q (backend kerak).",
     "superadmin-users-edit-courier-district": "FY-1: «Ish hududi» — viloyat faqat o'qish (GET /users/:id `region`) + «Boshqa filialga o'tkazish» izohi (FY-S4). «Tuman» tanlovi chizilmagan — backend kerak (Taklif).",
     "superadmin-users-detail-telegram": "Kodda bor (MarketTelegramGroupLinkCard, MarketTelegramGroupPiiCard); taklif: har xabar turi qatorida «Ulash», PII kaliti shu kartada (tg-link S3, S5).",
@@ -1966,6 +1953,8 @@
     "admin-notifications-send-unknown": "src/features/notification-dispatch/ui/DispatchUnknownCard.tsx",
     "superadmin-notifications-sent-detail-dialog": "src/entities/notification-dispatch/ui/SentDetailDialog.tsx",
     "admin-notifications-sent-detail-dialog": "src/entities/notification-dispatch/ui/SentDetailDialog.tsx",
+    "superadmin-notifications-sent-detail-states": "src/entities/notification-dispatch/ui/SentDetailDialog.tsx",
+    "admin-notifications-sent-detail-states": "src/entities/notification-dispatch/ui/SentDetailDialog.tsx",
     "superadmin-ops-system-loading": "src/pages/system-ops/ui/HealthCard.tsx",
     "superadmin-ops-system-error": "src/pages/system-ops/ui/HealthCard.tsx",
     "superadmin-ops-system-partial": "src/pages/system-ops/ui/HealthCard.tsx",

@@ -361,6 +361,8 @@ export const API_ENDPOINTS = {
     DISPATCH: "notifications/dispatch", // POST manual dispatch (admin/testing)
     // GET bitta qo'lda yuborish: matn, jonli kanal × holat, yetkazilmaganlar (?page&limit) — id = client_request_id
     SENT_BY_ID: (dispatchId: string) => `notifications/sent/${encodeURIComponent(dispatchId)}`,
+    // GET qo'lda yuborilgan xabarlar tarixi (?page&limit&status&created_by) — yangisi birinchi (NS-2, superadmin/admin)
+    SENT: "notifications/sent",
     // Web Push (current user's device) ─────────────────────────────────────
     PUSH_PUBLIC_KEY: "notifications/push/public-key", // GET VAPID public key
     PUSH_SUBSCRIBE: "notifications/push/subscribe", // POST save / DELETE remove this device

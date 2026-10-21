@@ -143,6 +143,8 @@ const RegionSatoManagementPage = lazy(() => import("../../pages/region/pages/sat
 const RegionLogistAssignmentPage = lazy(() => import("../../pages/region/pages/logist-assignment"));
 const NotificationsPage = lazy(() => import("../../pages/notifications"));
 const NotificationSendPage = lazy(() => import("../../pages/notification-send"));
+// NS-2: «Yuborilganlar» — qo'lda yuborilgan xabarlar tarixi (menyusiz, «Xabar yuborish» sarlavhasidan).
+const NotificationSentPage = lazy(() => import("../../pages/notification-sent"));
 const SmsPage = lazy(() => import("../../pages/notifications/ui/SmsPage"));
 const NotificationInboxPage = lazy(
   () => import("../../pages/notifications/ui/NotificationInboxPage"),
@@ -1017,6 +1019,14 @@ const AppRouter = () => {
               element: (
                 <ProtectedRoute canActivate={canSendNotifications}>
                   <NotificationSendPage />
+                </ProtectedRoute>
+              ),
+            },
+            {
+              path: "notifications/sent",
+              element: (
+                <ProtectedRoute canActivate={canSendNotifications}>
+                  <NotificationSentPage />
                 </ProtectedRoute>
               ),
             },
