@@ -484,7 +484,7 @@
         },
         "keyMissing": {
           "title": "AI off — key not configured",
-          "text": "The «With AI» tab is hidden when creating an order; orders are created manually. To turn it on, add <strong>ANTHROPIC_API_KEY</strong> to the server settings."
+          "text": "The «With AI» tab is hidden when creating an order; orders are created manually. To turn it on, add ANTHROPIC_API_KEY to the server settings."
         },
         "keyMisnamed": {
           "title": "AI off — wrong key name",

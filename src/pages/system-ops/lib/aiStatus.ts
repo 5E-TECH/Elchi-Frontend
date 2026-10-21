@@ -85,7 +85,11 @@ const readCap = (raw: Record<string, unknown>): AiCapSummary => {
       : effectiveCapUsd > 0
         ? spentUsd / effectiveCapUsd
         : 0;
-  return { state, spentUsd, capUsd, overrideUsd, effectiveCapUsd, percent: Math.max(0, Math.round(ratio * 100)) };
+  // Limit tugamaguncha pastga yaxlitlanadi — 0,995 «100%» bo'lib «80% dan oshdi» yonida chiqmasin
+  // (`1e-9` — 0,29 × 100 = 28,999… kabi suzuvchi nuqta xatosi uchun).
+  const scaled = Math.max(0, ratio * 100);
+  const percent = state === "exceeded" ? Math.round(scaled) : Math.floor(scaled + 1e-9);
+  return { state, spentUsd, capUsd, overrideUsd, effectiveCapUsd, percent };
 };
 
 /**

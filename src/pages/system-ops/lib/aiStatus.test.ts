@@ -122,4 +122,10 @@ describe("readAiStatus", () => {
       cap: { spentUsd: 0 },
     });
   });
+
+  it("foiz: limit tugamaguncha pastga yaxlitlanadi (0,995 → 99%, 100% emas); suzuvchi nuqta xatosi yo'q (0,29 → 29%)", () => {
+    expect(readAiStatus(status({}, { ratio: 0.995, state: "warn" }))?.cap.percent).toBe(99);
+    expect(readAiStatus(status({}, { ratio: 0.29, state: "ok" }))?.cap.percent).toBe(29);
+    expect(readAiStatus(status({}, { ratio: 1.004, state: "exceeded" }))?.cap.percent).toBe(100);
+  });
 });

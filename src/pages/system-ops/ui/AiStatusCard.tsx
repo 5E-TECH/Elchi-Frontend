@@ -1,6 +1,6 @@
 // dizayn-v2: superadmin-ops-system, superadmin-ops-system-loading, superadmin-ops-system-error, superadmin-ops-system-partial, superadmin-ops-system-down, superadmin-ops-system-critical, superadmin-ops-system-ai-config, superadmin-ops-system-ai-cap
 import { useEffect, useRef, type ReactNode } from "react";
-import { CircleCheck, CircleHelp, CircleX, Info, RefreshCw, TriangleAlert, type LucideIcon } from "lucide-react";
+import { CircleCheck, CircleQuestionMark, CircleX, Info, RefreshCw, TriangleAlert, type LucideIcon } from "lucide-react";
 import { Trans, useTranslation } from "react-i18next";
 import { useAiAvailability, useAiStatus, type AiModelVerdict } from "../../../entities/ai-order";
 import { cx } from "../../../shared/lib/cx";
@@ -11,6 +11,7 @@ import {
   Badge,
   Button,
   Card,
+  EmptyState,
   ErrorState,
   Skeleton,
   StatusBadge,
@@ -58,7 +59,7 @@ const KEY_ICON: Record<AiStatusSummary["keyState"], LucideIcon> = {
   ok: CircleCheck,
   missing: CircleX,
   misnamed: CircleX,
-  unknown: CircleHelp,
+  unknown: CircleQuestionMark,
 };
 
 const strong = <strong className="font-semibold text-text" />;
@@ -74,7 +75,9 @@ export const AiStatusCard = () => {
   const gatewayEnabled = availability.isSuccess ? availability.data?.enabled : undefined;
   const summary = query.isError ? null : readAiStatus(query.data, gatewayEnabled);
   const offline = query.isPending && query.fetchStatus === "paused";
-  const loading = query.isPending && !offline;
+  // Bayroq hali kelmagan bo'lsa holat chizilmaydi — aks holda «Yoqilgan» chiqib, keyin «AI o'chiq» ga sakraydi.
+  const flagLoading = availability.isPending && availability.fetchStatus === "fetching";
+  const loading = (query.isPending && !offline) || (query.isSuccess && flagLoading);
   const failed = !loading && summary === null;
 
   const hasSummary = summary !== null;
@@ -84,6 +87,11 @@ export const AiStatusCard = () => {
     const active = document.activeElement;
     if (!active || active === document.body) cardRef.current?.focus();
   }, [hasSummary]);
+
+  // Qayta urinish yana yiqilsa — keyingi (fon) tiklanishda fokus kartaga sakramasin.
+  useEffect(() => {
+    if (query.isError && !query.isFetching) focusOnRecovery.current = false;
+  }, [query.isError, query.isFetching, query.errorUpdatedAt]);
 
   const retry = () => {
     focusOnRecovery.current = true;
@@ -112,6 +120,8 @@ export const AiStatusCard = () => {
   );
 
   const status = getErrorStatus(query.error);
+  // Maket `-critical`: bo'sh holat karta tanasining chekkasisiz (tepa 24 / past 28).
+  const critical = failed && !offline && status !== 504;
 
   return (
     <Card
@@ -122,6 +132,7 @@ export const AiStatusCard = () => {
       tabIndex={-1}
       aria-busy={loading || undefined}
       data-ai-state={summary?.overall ?? (loading ? "loading" : offline ? "offline" : "error")}
+      padding={critical ? "none" : undefined}
       bodyClassName="flex flex-col gap-4"
     >
       {loading ? (
@@ -143,14 +154,18 @@ export const AiStatusCard = () => {
           </Button>
         </div>
       ) : failed ? (
-        <ErrorState
-          icon={CircleHelp}
+        // Maket `-critical`: neytral ikonka (`el-empty-icon`) — ErrorState doim qizil, shuning uchun EmptyState.
+        <EmptyState
+          role="alert"
+          icon={CircleQuestionMark}
           title={t("system.ai.error.title")}
           description={t("system.ai.error.text")}
-          onRetry={retry}
-          retrying={query.isFetching}
-          retryLabel={t("common.retry")}
-          className="py-4"
+          className="pt-6! pb-7!"
+          action={
+            <Button variant="secondary" leftIcon={RefreshCw} onClick={retry} loading={query.isFetching}>
+              {t("common.retry")}
+            </Button>
+          }
         />
       ) : summary ? (
         <AiBody summary={summary} language={language} />
@@ -282,7 +297,7 @@ const AiBody = ({ summary, language }: { summary: AiStatusSummary; language: str
         })}
       </Badge>
     ) : !capKnown ? (
-      <Badge icon={CircleHelp}>{t("system.ai.cap.unknown")}</Badge>
+      <Badge icon={CircleQuestionMark}>{t("system.ai.cap.unknown")}</Badge>
     ) : null;
 
   const meterTone: ChartTone | undefined =
@@ -352,7 +367,13 @@ const AiBody = ({ summary, language }: { summary: AiStatusSummary; language: str
           </span>
         </div>
         {capKnown && !off ? (
-          <Meter value={cap.percent} max={100} tone={meterTone} ariaLabel={t("system.ai.cap.aria", values)} />
+          // Maket: aria-valuenow / aria-valuemax — dollarda (sarflangan / bugungi limit).
+          <Meter
+            value={cap.effectiveCapUsd > 0 ? cap.spentUsd : cap.percent}
+            max={cap.effectiveCapUsd > 0 ? cap.effectiveCapUsd : 100}
+            tone={meterTone}
+            ariaLabel={t("system.ai.cap.aria", values)}
+          />
         ) : null}
         <div className="flex flex-wrap justify-between gap-x-4 gap-y-1 text-xs text-text-muted">
           <span>{note}</span>

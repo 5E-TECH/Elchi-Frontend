@@ -79,7 +79,9 @@ describe("AiStatusCard (OS-2)", () => {
     expect(tiles[3]).toHaveTextContent("AI_CLASSIFY_MODEL · arzon model yetarli");
 
     const meter = within(card()).getByRole("meter", { name: "Bugungi AI limiti: 5,82 $ sarflandi, 25,00 $ dan 23%" });
-    expect(meter).toHaveAttribute("aria-valuenow", "23");
+    // Maket: o'lchagich qiymati dollarda (sarflangan / bugungi limit), foizda emas.
+    expect(meter).toHaveAttribute("aria-valuenow", "5.82");
+    expect(meter).toHaveAttribute("aria-valuemax", "25");
     expect(within(card()).getByText("Ertaga, 00:00 da yangilanadi (Toshkent vaqti)")).toBeInTheDocument();
     expect(within(card()).getByText("Xarajat jurnaliga yozilmagan chaqiruvlar:")).toBeInTheDocument();
     expect(within(card()).getByText("0 ta")).toBeInTheDocument();
@@ -101,7 +103,7 @@ describe("AiStatusCard (OS-2)", () => {
     expect(
       within(card()).getByText("AI ertaga, 00:00 da qayta yoqiladi (Toshkent vaqti) · limit faqat serverda oshiriladi"),
     ).toBeInTheDocument();
-    expect(within(card()).getByRole("meter")).toHaveAttribute("aria-valuenow", "100");
+    expect(within(card()).getByRole("meter")).toHaveAttribute("aria-valuenow", "25");
     expect(within(card()).queryAllByRole("button")).toHaveLength(0);
   });
 
@@ -160,6 +162,9 @@ describe("AiStatusCard (OS-2)", () => {
     expect(within(card()).getByRole("status")).toHaveTextContent(
       "Buyurtma yaratishda «AI bilan» tabi ko'rinmaydi, buyurtmalar qo'lda yaratilaveradi. Yoqish uchun serverdagi sozlamaga ANTHROPIC_API_KEY qo'shing.",
     );
+    // Maket `-error`: kalit nomi oddiy matn (qalin emas).
+    expect(within(within(card()).getByRole("status")).queryByText("ANTHROPIC_API_KEY")).toBeNull();
+    expect(within(card()).getByRole("status").querySelector("strong")).toBeNull();
     const tiles = within(settings()).getAllByRole("listitem");
     expect(tiles[0]).toHaveTextContent("Kalit yo'q");
     expect(tiles[0]).toHaveTextContent("ANTHROPIC_API_KEY serverda berilmagan");
@@ -175,6 +180,20 @@ describe("AiStatusCard (OS-2)", () => {
     // Bugun sarflangan — «limit hisoblanmaydi» (sarflanmagan deb yozilmaydi), o'lchagich yo'q.
     expect(within(card()).getByText("AI o'chiq — limit hisoblanmaydi")).toBeInTheDocument();
     expect(within(card()).queryByRole("meter")).toBeNull();
+  });
+
+  it("bayroq kech kelsa — «Yoqilgan» oraliqda chiqmaydi (skelet), keyin to'g'ridan-to'g'ri «AI o'chiq»", async () => {
+    let releaseFlag: (value: unknown) => void = () => undefined;
+    mockApi({ flag: () => new Promise((resolve) => (releaseFlag = resolve)) });
+    renderWithProviders(<AiStatusCard />);
+    await waitFor(() => expect(apiGetMock).toHaveBeenCalledWith("ai/status"));
+    // `ai/status` kelgan, bayroq hali yo'q — holat chizilmaydi.
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(within(card()).queryByText("Yoqilgan")).toBeNull();
+    expect(card()).toHaveAttribute("aria-busy", "true");
+    releaseFlag(availability(false));
+    expect(await within(card()).findByText("AI o'chiq")).toBeInTheDocument();
+    expect(within(card()).queryByText("Yoqilgan")).toBeNull();
   });
 
   it("bayroq so'rovi yiqilsa — hisobga olinmaydi (holat `ai/status` dan)", async () => {
@@ -247,6 +266,28 @@ describe("AiStatusCard (OS-2)", () => {
     await waitFor(() => expect(card()).toHaveFocus());
   });
 
+  it("qayta urinish yana yiqilsa — keyingi fon tiklanishida fokus kartaga sakramaydi", async () => {
+    let calls = 0;
+    mockApi({
+      status: () => {
+        calls += 1;
+        return calls <= 2 ? Promise.reject(mockRejection(504)) : Promise.resolve(mockEnvelope(statusBody()));
+      },
+    });
+    const user = userEvent.setup();
+    const { queryClient } = renderWithProviders(<AiStatusCard />);
+    const alert = await within(card()).findByRole("alert", {}, { timeout: 5000 });
+    await user.click(within(alert).getByRole("button", { name: "Qayta urinish" }));
+    await waitFor(() => expect(calls).toBe(2));
+    await waitFor(() => expect(within(card()).getByRole("button", { name: "Qayta urinish" })).toBeEnabled());
+    (document.activeElement as HTMLElement | null)?.blur();
+
+    await queryClient.refetchQueries({ queryKey: ["ai-status"] });
+    expect(await within(card()).findByText("Yoqilgan")).toBeInTheDocument();
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(card()).not.toHaveFocus();
+  });
+
   it("⭐ boshqa xato (403 / ulanmagan, maket `-critical`): bo'sh holat, xom matn yo'q", async () => {
     mockApi({ status: () => Promise.reject(mockRejection(403)) });
     renderWithProviders(<AiStatusCard />);
@@ -255,6 +296,12 @@ describe("AiStatusCard (OS-2)", () => {
     expect(alert).toHaveTextContent("AI xizmati ulanmagan yoki javob bermadi. Buyurtmalar qo'lda yaratilaveradi.");
     expect(within(alert).getByRole("button", { name: "Qayta urinish" })).toBeInTheDocument();
     expectNoRawBackendText();
+    // Maket `-critical`: neytral (kulrang) ikonka, qizil emas; tepa 24 / past 28 — karta tanasi chekkasisiz.
+    expect(alert).toHaveAttribute("data-state-tone", "neutral");
+    expect(alert.querySelector("[data-state-icon]")).toHaveAttribute("data-state-icon", "neutral");
+    expect(alert.className).toContain("pt-6!");
+    expect(alert.className).toContain("pb-7!");
+    expect(alert.parentElement?.className).not.toMatch(/\bp-5\b/);
   });
 
   it("javob shakli buzuq (konvert ichida `models` yo'q) — xato holati", async () => {

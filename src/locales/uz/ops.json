@@ -484,7 +484,7 @@
         },
         "keyMissing": {
           "title": "AI o'chiq — kalit sozlanmagan",
-          "text": "Buyurtma yaratishda «AI bilan» tabi ko'rinmaydi, buyurtmalar qo'lda yaratilaveradi. Yoqish uchun serverdagi sozlamaga <strong>ANTHROPIC_API_KEY</strong> qo'shing."
+          "text": "Buyurtma yaratishda «AI bilan» tabi ko'rinmaydi, buyurtmalar qo'lda yaratilaveradi. Yoqish uchun serverdagi sozlamaga ANTHROPIC_API_KEY qo'shing."
         },
         "keyMisnamed": {
           "title": "AI o'chiq — kalit nomi noto'g'ri",
