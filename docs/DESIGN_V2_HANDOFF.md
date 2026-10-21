@@ -172,6 +172,14 @@ Lokal kompyuterda Docker yoki vizual solishtirish shart emas; lokal faqat `VISUA
     (`features/notification-toggle`, faqat `PATCH {is_active}`), «Tahrirlash» va `features/notification-edit` olindi;
     «Nofaol» — neytral, umumiy izoh (sabab — NG-C). Egaga: admin yon menyusi o'zgardi — admin «Visual» sahnalari
     (masalan `regions`) baseline'i «Run workflow (update)» bilan yangilanadi; `/inbox` alias'i adminda ham qabul qilindi.
+  - **DM-1 (2026-10-21, `feat/dm-1-districts-merge`):** `/regions/districts` adminga ochildi (ega S1; admin
+    «Hududlar» sarlavhasida «Tumanlar» birinchi), DELETE 400 → «Tumanni o'chirib bo'lmaydi» (faqat holat kodi bo'yicha,
+    sonlarsiz), sahifadan ajratilgan `DistrictMergeDialog` + `useDistrictMerge` (maqsad — shu viloyatdan, oldindan
+    tanlangan maqsad — SA-2 uchun; idle → confirm → progress → result | error | unknown), `MERGE_REQUEST_TIMEOUT_MS`
+    125 s (`shared/api/api.ts`). Xato oynalari, sonlar bloklari va jurnal nomlari — DM-2 / DM-3 (backend N1,
+    vsmpTweI, ILq3WNL1), `partialViews` izohlarida. Egaga: proksi read timeout'i ≥ 125 s bo'lsin (nginx 60 s,
+    Cloudflare 100 s), aks holda ko'pincha «Natija noma'lum»; timeout'da global «Tarmoq xatosi» toast'i ham chiqadi;
+    admin `regions` «Visual» sahnasi kutilgan farq — «Run workflow (update)».
   - **2-to'lqin, 1-to'plam tayyor (2026-10-21, `67d4d21d`):** KI-1 (kvitansiya yorliqlari rolga qarab — xodim
     «Kuryer …», kuryer «Siz …»; shell'da «Asosiy kontentga o'tish», `#main-content`), NG-A (yuqorida), TG-A (shaxsiy
     Telegram: teskari sanoq, QR, buyruq rejimi; umumiy havola qismlari `features/telegram-link`), NS-1 (yuborish

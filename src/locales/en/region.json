@@ -339,6 +339,63 @@
         "title": "Add a district",
         "name": "District name",
         "region": "Region"
+      },
+      "duplicateName": "This region already has a district with this name",
+      "rows": {
+        "orders": "Orders",
+        "users": "Users",
+        "branches": "Branches",
+        "before": "was {{count}}"
+      },
+      "deleteBlocked": {
+        "title": "{{name}} can't be deleted",
+        "text": "Orders, users or branches are linked to this district. If it is deleted, they will be left without a district.",
+        "note": "If you merge, all of them move to the district you choose and {{name}} is deleted. Or move the orders, users and branches to another district one by one.",
+        "close": "Close",
+        "merge": "Merge"
+      },
+      "merge": {
+        "title": "Merge district",
+        "text": "Everything in {{name}} moves to the chosen district, and {{name}} is deleted.",
+        "source": "District to delete",
+        "target": "Target district",
+        "targetPlaceholder": "Choose a district",
+        "targetHint": "Only districts of {{region}}",
+        "targetHintFull": "Only districts of {{region}}. {{name}} itself is not in the list.",
+        "noTargets": "There are no other districts in this region",
+        "irreversibleTitle": "This can't be undone",
+        "irreversibleText": "{{name}} will be deleted permanently. Merging can take up to 2 minutes.",
+        "cancel": "Cancel",
+        "submit": "Merge"
+      },
+      "progress": {
+        "title": "Merging…",
+        "text": "{{from}} → {{to}}. Orders, users and branches are being moved and their counts re-checked.",
+        "elapsed": "Elapsed {{time}}",
+        "keepOpenTitle": "Don't close this window",
+        "keepOpenText": "It can take up to 2 minutes. Don't reload the page. If the connection drops, check the result in the Activity log."
+      },
+      "result": {
+        "title": "Districts merged",
+        "text": "{{from}} was deleted. Its orders, users and branches were moved to {{to}}.",
+        "nowIn": "Now in {{name}}",
+        "note": "Deleted records are not counted.",
+        "close": "Close"
+      },
+      "unknown": {
+        "title": "Result unknown",
+        "text": "No response: the connection dropped or the wait timed out. The merge may have finished on the server or been cancelled.",
+        "check": "Check the result",
+        "step1": "Refresh the district list. If {{from}} is not in the list, it was merged.",
+        "step2": "If {{from}} is still there, look at this district's entries in the Activity log.",
+        "note": "Don't start again until the result is clear.",
+        "journal": "Open the activity log",
+        "refresh": "Refresh districts"
+      },
+      "error": {
+        "title": "Could not merge",
+        "text": "The district list was refreshed: if {{from}} is still listed, nothing was merged.",
+        "journal": "Activity log"
       }
     },
     "sato": {

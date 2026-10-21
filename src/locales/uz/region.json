@@ -339,6 +339,63 @@
         "title": "Yangi tuman qo'shish",
         "name": "Tuman nomi",
         "region": "Viloyat"
+      },
+      "duplicateName": "Bu viloyatda shu nomli tuman bor",
+      "rows": {
+        "orders": "Buyurtmalar",
+        "users": "Foydalanuvchilar",
+        "branches": "Filiallar",
+        "before": "oldin {{count}}"
+      },
+      "deleteBlocked": {
+        "title": "{{name}}ni o'chirib bo'lmaydi",
+        "text": "Tumanga buyurtma, foydalanuvchi yoki filial bog'langan. O'chirilsa, ular hech qaysi tumanga tegishli bo'lmay qoladi.",
+        "note": "Birlashtirsangiz, bularning hammasi siz tanlagan tumanga ko'chadi va {{name}} o'chiriladi. Yoki buyurtma, foydalanuvchi va filiallarni boshqa tumanga alohida ko'chiring.",
+        "close": "Yopish",
+        "merge": "Birlashtirish"
+      },
+      "merge": {
+        "title": "Tumanni birlashtirish",
+        "text": "{{name}}dagi hamma narsa tanlangan tumanga ko'chadi, {{name}} o'chiriladi.",
+        "source": "O'chiriladigan tuman",
+        "target": "Maqsad tuman",
+        "targetPlaceholder": "Tumanni tanlang",
+        "targetHint": "Faqat {{region}} tumanlari",
+        "targetHintFull": "Faqat {{region}} tumanlari. {{name}}ning o'zi ro'yxatda yo'q.",
+        "noTargets": "Bu viloyatda boshqa tuman yo'q",
+        "irreversibleTitle": "Bu amalni qaytarib bo'lmaydi",
+        "irreversibleText": "{{name}} butunlay o'chiriladi. Birlashtirish 2 daqiqagacha davom etishi mumkin.",
+        "cancel": "Bekor qilish",
+        "submit": "Birlashtirish"
+      },
+      "progress": {
+        "title": "Birlashtirilmoqda…",
+        "text": "{{from}} → {{to}}. Buyurtmalar, foydalanuvchilar va filiallar ko'chirilib, sonlari qayta tekshirilmoqda.",
+        "elapsed": "O'tgan vaqt {{time}}",
+        "keepOpenTitle": "Oynani yopmang",
+        "keepOpenText": "2 daqiqagacha davom etishi mumkin. Sahifani yangilamang. Aloqa uzilsa, natijani «Faoliyat jurnali»da ko'ring."
+      },
+      "result": {
+        "title": "Tumanlar birlashtirildi",
+        "text": "{{from}} o'chirildi. Uning buyurtma, foydalanuvchi va filiallari {{to}}ga ko'chirildi.",
+        "nowIn": "{{name}}da endi",
+        "note": "O'chirilgan yozuvlar sanalmaydi.",
+        "close": "Yopish"
+      },
+      "unknown": {
+        "title": "Natija noma'lum",
+        "text": "Javob kelmadi: aloqa uzildi yoki kutish vaqti tugadi. Birlashtirish serverda yakunlangan yoki bekor qilingan bo'lishi mumkin.",
+        "check": "Natijani tekshiring",
+        "step1": "Tumanlar ro'yxatini yangilang. {{from}} ro'yxatda bo'lmasa — birlashtirildi.",
+        "step2": "{{from}} hali turgan bo'lsa, Faoliyat jurnalida shu tuman yozuvlarini ko'ring.",
+        "note": "Natija aniq bo'lmaguncha qayta boshlamang.",
+        "journal": "Faoliyat jurnalini ochish",
+        "refresh": "Tumanlarni yangilash"
+      },
+      "error": {
+        "title": "Birlashtirib bo'lmadi",
+        "text": "Tumanlar ro'yxati yangilandi: {{from}} ro'yxatda turgan bo'lsa, birlashtirilmagan.",
+        "journal": "Faoliyat jurnali"
       }
     },
     "sato": {

@@ -27,7 +27,8 @@ const CHILD_ROUTES = [
 /**
  * «HUDUDLAR» (`/regions`, guard `canViewRegionStats`: superadmin, admin, menejer, kuryer).
  *  - superadmin/admin — butun kompaniya xaritasi (`GET region/stats/all`), sarlavhada bola sahifalar
- *    («Tumanlar» — faqat superadmin);
+ *    (maketlar bo'yicha tartib: superadmin — Tumanlarni o'tkazish · Tumanlar · Logist biriktirish;
+ *    admin — Tumanlar · Tumanlarni o'tkazish · Logist biriktirish, ega S1 / DM-1);
  *  - menejer/kuryer — o'z viloyati tumanlar kesimida (`GET region/my/district-stats`).
  * Davr URL'da: `period=today|week|month|all|custom` + `startDate/endDate` (bola route'da yozilmaydi).
  */
@@ -102,6 +103,12 @@ const RegionPage = () => {
     />
   );
 
+  const districtsButton = (
+    <Button variant="secondary" leftIcon={MapIcon} onClick={() => navigate("districts")}>
+      {t("v2.page.actions.districts")}
+    </Button>
+  );
+
   if (canViewScopedStats) {
     return (
       <ScopedRegionView dateParams={dateParams} periodLabel={periodLabel} controls={controls} />
@@ -115,6 +122,7 @@ const RegionPage = () => {
         description={t("v2.page.subtitle")}
         actions={
           <>
+            {isSuperadmin ? null : districtsButton}
             <Button
               variant="secondary"
               leftIcon={ArrowLeftRight}
@@ -122,11 +130,7 @@ const RegionPage = () => {
             >
               {t("v2.page.actions.sato")}
             </Button>
-            {isSuperadmin ? (
-              <Button variant="secondary" leftIcon={MapIcon} onClick={() => navigate("districts")}>
-                {t("v2.page.actions.districts")}
-              </Button>
-            ) : null}
+            {isSuperadmin ? districtsButton : null}
             <Button
               variant="secondary"
               leftIcon={Headset}
