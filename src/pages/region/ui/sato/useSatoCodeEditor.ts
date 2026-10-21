@@ -57,15 +57,22 @@ export const useSatoCodeEditor = ({
   const [error, setError] = useState<SatoEditorError | null>(null);
   const [saving, setSaving] = useState(false);
   const editingRef = useRef<string | null>(null);
-  const [focusTarget, setFocusTarget] = useState<{ id: string; fallback: boolean } | null>(null);
+  // Fokus so'rovi: nishon ref'da, effektni faqat hisoblagich uyg'otadi (effekt ichida setState yo'q).
+  const focusTargetRef = useRef<{ id: string; fallback: boolean } | null>(null);
+  const [focusRequest, setFocusRequest] = useState(0);
+  const setFocusTarget = useCallback((target: { id: string; fallback: boolean }) => {
+    focusTargetRef.current = target;
+    setFocusRequest((n) => n + 1);
+  }, []);
 
   useEffect(() => {
-    if (!focusTarget) return;
-    const trigger = editTriggerOf(focusTarget.id);
+    const target = focusTargetRef.current;
+    if (!target) return;
+    focusTargetRef.current = null;
+    const trigger = editTriggerOf(target.id);
     if (trigger) trigger.focus();
-    else if (focusTarget.fallback) fallbackFocus?.()?.focus();
-    setFocusTarget(null);
-  }, [focusTarget, fallbackFocus]);
+    else if (target.fallback) fallbackFocus?.()?.focus();
+  }, [focusRequest, fallbackFocus]);
 
   const stop = useCallback((id: string | null, fallback = false) => {
     editingRef.current = null;
@@ -73,7 +80,7 @@ export const useSatoCodeEditor = ({
     setError(null);
     setDraftState("");
     if (id) setFocusTarget({ id, fallback });
-  }, []);
+  }, [setFocusTarget]);
 
   const start = useCallback((row: SatoDistrictRow) => {
     editingRef.current = row.id;
@@ -144,7 +151,7 @@ export const useSatoCodeEditor = ({
       // Fokus qayta yuklashdan KEYIN: qator boshqa tabga o'tgan bo'lsa — qidiruv maydoniga (eskisi o'chib ketadi).
       if (stillEditing && editingRef.current === null) setFocusTarget({ id: row.id, fallback: true });
     },
-    [draft, errorText, onSaved, stop, t],
+    [draft, errorText, onSaved, setFocusTarget, stop, t],
   );
 
   const errorMessage = errorText(error);
