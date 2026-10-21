@@ -498,6 +498,18 @@ const CourierOrders = () => {
   // (ro'yxatni `QueryBoundary` o'zi saqlaydi): sarlavhadagi «Jami N» skeletga almashmaydi, sahifalash
   // o'chmaydi — bosilgan sahifa tugmasidagi fokus `body` ga tushib qolmaydi. Tab almashsa — eski tab
   // soni ishlatilmaydi (skelet, maket `courier-orders-tab-switcher-open`).
+  //
+  // «Bekor qilingan» tabida «Jami» (wtmkmJ8h 65c007) — backend `total` i (`courier_cancelled_tab` filtri), qatorlar
+  // esa `visibleRows` (`isUnsentCancelledOrder`) dan. Ikki joyda farq qiladi — xatti-harakat ataylab o'zgartirilmagan:
+  //  (a) shu sessiyada pochtaga yuborilganlar (`hiddenSentCancelledOrderIds`) qatorlardan darhol yashiriladi, `total`
+  //      esa `SendToPost` dan keyingi qayta so'rov kelguncha eski son — vaqtinchalik;
+  //  (b) DOIMIY: backend (order-service `courier_cancelled_tab`, origin/main order-service.service.ts ~982-984)
+  //      filial/HQ qo'lidagi qisman sotuv bola buyurtmalarini ham sanaydi (`holder_type` BRANCH/HQ,
+  //      `parent_order_id` bor, `canceled_post_id` yo'q) — kuryer qo'lidagi bola buyurtmalarni ham filtrlamaydi;
+  //      frontend esa ularni yashiradi (`courierOrdersModel.ts` `isUnsentCancelledOrder`: BRANCH/HQ → false,
+  //      `parentOrderId` bor → false; `courierOrdersModel.test.ts`). Masalan bitta shunday qator bo'lsa — «Jami 1 ta»
+  //      bo'sh ro'yxat ustida. Qaysi tomon to'g'ri — egasi/backend qarori (ochiq savol); bu kesh xatosi emas.
+  // Bo'sh ro'yxat (`total` 0) — «Jami 0 ta buyurtma» (fb6aae, `courierOrdersCounts.test.tsx`).
   const freshTotal = isFresh ? (toPositiveNumber(paginationContainer.total) ?? orders.length) : 0;
   const freshHasRows = orders.length > 0;
   const [knownList, setKnownList] = useState<{ tab: CourierOrdersTab; total: number; hasRows: boolean } | null>(null);

@@ -22,7 +22,13 @@
   "common": {
     "count": "{{count}}",
     "idValue": "ID {{id}}",
-    "retry": "Try again"
+    "retry": "Try again",
+    "requestError": {
+      "badRequest": "The data wasn't accepted ({{status}}). Check what you entered and try again.",
+      "notFound": "Not found (404). Check that the ID is correct.",
+      "conflict": "The state has already changed (409). Refresh the list and try again.",
+      "forbidden": "This action isn't available for your role (403)."
+    }
   },
   "finance": {
     "intro": {
@@ -236,7 +242,7 @@
       "cancelLabel": "No",
       "success": "Package cancelled",
       "error": "Couldn't cancel the package",
-      "unknownError": "An unknown error occurred"
+      "rejected": "The batch can't be cancelled in its current status (400): it may already be received or cancelled. Check the batch ID and status."
     }
   },
   "identity": {

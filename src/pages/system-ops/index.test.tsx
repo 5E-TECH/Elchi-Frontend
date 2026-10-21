@@ -6,6 +6,7 @@ import SystemOpsPage from "./index";
 import { HEALTH_SERVICE_KEYS } from "./lib/systemHealth";
 import i18n from "../../i18n";
 import { renderWithProviders } from "../../test/test-utils";
+import { expectNoRawBackendText, mockEnvelope, mockRejection } from "../../test/mockEnvelope";
 
 const apiGetMock = vi.fn();
 
@@ -13,11 +14,9 @@ vi.mock("../../shared/api/api", () => ({
   api: { get: (...a: unknown[]) => apiGetMock(...a) },
 }));
 
-/** `analytics-service` KPI konverti (backend `origin/main`). */
-const KPI = {
-  statusCode: 200,
-  message: "KPI stats",
-  data: {
+/** `analytics-service` KPI konverti (backend `origin/main`): `{ statusCode, message: "KPI stats", data }`. */
+const KPI = mockEnvelope(
+  {
     averageOrderValue: 236400,
     averageFulfillmentHours: 18.4,
     onTimeRate: 82.6,
@@ -28,7 +27,8 @@ const KPI = {
     degraded: false,
     failed_parts: [],
   },
-};
+  { message: "KPI stats" },
+);
 
 type Probe = { status: string; latency_ms?: number; error?: string };
 
@@ -51,7 +51,7 @@ const readiness = (overrides: Record<string, Probe> = {}, latency = 19) => {
 
 const mockApi = ({
   health = () => Promise.resolve(readiness()),
-  kpi = () => Promise.resolve({ data: KPI }),
+  kpi = () => Promise.resolve(KPI),
   other,
 }: {
   health?: () => Promise<unknown>;
@@ -61,7 +61,7 @@ const mockApi = ({
   apiGetMock.mockImplementation((url: string) => {
     if (url === "health/readiness") return health();
     if (url === "analytics/kpi") return kpi();
-    return other?.(url) ?? Promise.resolve({ data: {} });
+    return other?.(url) ?? Promise.resolve(mockEnvelope({}));
   });
 };
 
@@ -436,8 +436,8 @@ describe("SystemOps page", () => {
       kpi: () => {
         attempt += 1;
         return attempt === 1
-          ? Promise.reject({ response: { status: 500, data: { message: "analytics RPC timeout (raw)" } } })
-          : Promise.resolve({ data: KPI });
+          ? Promise.reject(mockRejection(500))
+          : Promise.resolve(KPI);
       },
     });
     renderWithProviders(<SystemOpsPage />);
@@ -445,7 +445,7 @@ describe("SystemOps page", () => {
     const alert = title.closest<HTMLElement>("[role='alert']");
     expect(alert).not.toBeNull();
     expect(alert).toHaveTextContent("Analitika xizmati javob bermadi.");
-    expect(screen.queryByText(/analytics RPC timeout/)).toBeNull();
+    expectNoRawBackendText();
     expect(screen.getByRole("region", { name: "Analitika KPI" })).toBeInTheDocument();
 
     await user.click(within(alert as HTMLElement).getByRole("button", { name: "Qayta urinish" }));
@@ -459,7 +459,7 @@ describe("SystemOps page", () => {
     mockApi({
       other: (url) =>
         url.startsWith("scan/")
-          ? Promise.reject({ response: { status: 500, data: { message: "scan RPC exploded (raw)" } } })
+          ? Promise.reject(mockRejection(500))
           : undefined,
     });
     renderWithProviders(<SystemOpsPage />);
@@ -467,7 +467,7 @@ describe("SystemOps page", () => {
     await user.click(screen.getByRole("button", { name: "Tekshirish" }));
     expect(await screen.findByText("Tokenni tekshirib bo'lmadi")).toBeInTheDocument();
     expect(screen.getByText("Server javob bermadi yoki xato qaytardi. Birozdan keyin qayta urining.")).toBeInTheDocument();
-    expect(screen.queryByText(/scan RPC exploded/)).toBeNull();
+    expectNoRawBackendText();
   });
 
   it("types scan token and clicks Tekshirish — calls api.get with scan/t1 and lists the result fields", async () => {
@@ -499,7 +499,7 @@ describe("SystemOps page", () => {
     const user = userEvent.setup();
     mockApi({
       other: (url) =>
-        url.startsWith("scan/") ? Promise.reject({ response: { status: 404, data: { message: "Topilmadi" } } }) : undefined,
+        url.startsWith("scan/") ? Promise.reject(mockRejection(404)) : undefined,
     });
     renderWithProviders(<SystemOpsPage />);
 
@@ -507,6 +507,22 @@ describe("SystemOps page", () => {
     await user.click(screen.getByRole("button", { name: "Tekshirish" }));
 
     expect(await screen.findByText("Bu token bo'yicha buyurtma, paket yoki pochta topilmadi.")).toBeInTheDocument();
+    expectNoRawBackendText();
+  });
+
+  it("so'rov rad etildi (token 400) — o'z matnimiz, xom backend matni yo'q", async () => {
+    const user = userEvent.setup();
+    mockApi({
+      other: (url) => (url.startsWith("scan/") ? Promise.reject(mockRejection(400)) : undefined),
+    });
+    renderWithProviders(<SystemOpsPage />);
+
+    await user.type(screen.getByRole("searchbox", { name: "Token" }), "t-bad");
+    await user.click(screen.getByRole("button", { name: "Tekshirish" }));
+
+    expect(await screen.findByText("Tokenni tekshirib bo'lmadi")).toBeInTheDocument();
+    expect(screen.getByText("Server javob bermadi yoki xato qaytardi. Birozdan keyin qayta urining.")).toBeInTheDocument();
+    expectNoRawBackendText();
   });
 
   describe("ru/en matnlar", () => {

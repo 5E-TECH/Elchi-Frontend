@@ -43,6 +43,8 @@ export const mockCourierCancelApi = async (page: Page, theme: "light" | "dark" =
     /** OR-1: `GET orders/courier/orders` va `…/counts` so'rovlari soni. */
     listCalls: 0,
     countCalls: 0,
+    /** TOZ-0 (0d11ewk7 5e77ed): tab sonlarini qo'lda berish (masalan 1 000+); `null` — ro'yxatdan hisoblanadi. */
+    counts: null as null | { waiting: number; all: number; cancelled: number },
   };
   const cancels: Array<{ id: string; body: Record<string, unknown>; status: number }> = [];
   const sells: Array<{ id: string; body: Record<string, unknown>; status: number }> = [];
@@ -75,7 +77,7 @@ export const mockCourierCancelApi = async (page: Page, theme: "light" | "dark" =
       return reply(route, {
         statusCode: 200,
         message: "Courier order counts",
-        data: { waiting: state.orders.length, all: state.orders.length + 3, cancelled: 1 },
+        data: state.counts ?? { waiting: state.orders.length, all: state.orders.length + 3, cancelled: 1 },
       });
     }
     if (path === "orders/courier/orders") {
