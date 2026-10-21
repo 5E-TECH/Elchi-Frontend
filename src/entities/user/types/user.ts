@@ -95,6 +95,8 @@ export interface User {
    */
   tg_group_show_customer_pii?: boolean;
   default_tariff: "home" | "center";
+  /** NFiXfmq6: market AI buyurtma narxi (so'm). `null` / yo'q — global narx (sukut ko'rsatilmaydi, FY-S5). */
+  ai_price_per_order?: number | string | null;
   region_id?: string | null;
   region?: Region | null;
   avatar?: string;
@@ -213,5 +215,10 @@ export interface UpdateUserRequest {
   can_add_extra_cost?: boolean;
   can_sell_cancel?: boolean;
   default_tariff?: "address" | "center";
-  region_id?: string;
+  /**
+   * NFiXfmq6: market AI buyurtma narxi (so'm, 1 ta buyurtma). `null` — global narx; 0 — bepul. Faqat
+   * superadmin/admin va faqat market yozuvida (backend boshqasiga 403/400). `region_id` olib tashlandi (FY-1):
+   * identity `updateUser` uni e'tiborsiz qoldiradi — kuryer hududi filial biriktiruvidan keladi.
+   */
+  ai_price_per_order?: number | null;
 }

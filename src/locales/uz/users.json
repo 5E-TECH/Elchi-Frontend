@@ -182,13 +182,20 @@
       "cardsLabel": "Foydalanuvchilar",
       "tabsLabel": "Rol bo'yicha",
       "tabs": {
-        "all": "Barchasi",
-        "market": "Marketlar",
-        "courier": "Kuryerlar",
+        "all": "Hammasi",
+        "admin": "Adminlar",
         "manager": "Menejerlar",
         "registrator": "Ro'yxatchilar",
-        "operator": "Operatorlar",
-        "admin": "Adminlar"
+        "courier": "Kuryerlar",
+        "logist": "Logistlar",
+        "market": "Marketlar",
+        "marketOperator": "Market operatorlari",
+        "investor": "Investorlar"
+      },
+      "roleFilter": "Rol",
+      "roleGroups": {
+        "staff": "Xodimlar",
+        "external": "Tashqi hisoblar"
       },
       "filtersLabel": "Filtrlar",
       "searchLabel": "Foydalanuvchilarni qidirish",
@@ -365,7 +372,17 @@
       "defaultTariff": "Asosiy tarif",
       "homeTariff": "Uyga tarif",
       "centerTariff": "Markazga tarif",
-      "saving": "Saqlanmoqda…"
+      "saving": "Saqlanmoqda…",
+      "marketName": "Market nomi",
+      "marketNamePlaceholder": "Masalan: Baraka Shop",
+      "aiPrice": "AI narxi (1 buyurtma)",
+      "aiPriceHint": "Shu market uchun · 0 — bepul",
+      "aiPricePlaceholder": "Masalan: 250",
+      "aiPriceRange": "0 dan {{max}}gacha kiriting",
+      "workArea": "Ish hududi",
+      "region": "Viloyat",
+      "regionHint": "Filial «Boshqa filialga o'tkazish» orqali o'zgaradi",
+      "regionEmpty": "Biriktirilmagan"
     }
   },
   "tgGroupLinkAction": "Ulash havolasini olish",

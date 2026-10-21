@@ -183,12 +183,19 @@
       "tabsLabel": "По роли",
       "tabs": {
         "all": "Все",
-        "market": "Маркеты",
-        "courier": "Курьеры",
+        "admin": "Администраторы",
         "manager": "Менеджеры",
         "registrator": "Регистраторы",
-        "operator": "Операторы",
-        "admin": "Администраторы"
+        "courier": "Курьеры",
+        "logist": "Логисты",
+        "market": "Маркеты",
+        "marketOperator": "Операторы маркетов",
+        "investor": "Инвесторы"
+      },
+      "roleFilter": "Роль",
+      "roleGroups": {
+        "staff": "Сотрудники",
+        "external": "Внешние аккаунты"
       },
       "filtersLabel": "Фильтры",
       "searchLabel": "Поиск пользователей",
@@ -365,7 +372,17 @@
       "defaultTariff": "Основной тариф",
       "homeTariff": "Тариф до дома",
       "centerTariff": "Тариф до центра",
-      "saving": "Сохранение…"
+      "saving": "Сохранение…",
+      "marketName": "Название маркета",
+      "marketNamePlaceholder": "Например: Baraka Shop",
+      "aiPrice": "Цена ИИ (1 заказ)",
+      "aiPriceHint": "Для этого маркета · 0 — бесплатно",
+      "aiPricePlaceholder": "Например: 250",
+      "aiPriceRange": "Введите от 0 до {{max}}",
+      "workArea": "Рабочая зона",
+      "region": "Область",
+      "regionHint": "Филиал меняется через «Перевести в другой филиал»",
+      "regionEmpty": "Не назначена"
     }
   },
   "tgGroupLinkAction": "Получить ссылку",

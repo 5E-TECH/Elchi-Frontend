@@ -10,10 +10,11 @@ defineScene({
   id: "users",
   route: "/all-users",
   role: "superadmin",
-  maket: ["superadmin-users-list"],
+  maket: ["superadmin-users-list", "superadmin-users-list-roles"],
   api: {
-    // Ro'yxat (`page=1&limit=10`) va KPI (`page=1&limit=1`, `meta.totalUsers/totalMarket/totalEmployees`) — 8 ta,
-    // rollar aralash (market, kuryer, menejer, ro'yxatchi, admin), bittasi nofaol.
+    // Ro'yxat (`page=1&limit=10`) va KPI (`page=1&limit=1`, `meta.totalUsers/totalMarket/totalEmployees`) — 10 ta,
+    // rollar aralash (market, kuryer, menejer, ro'yxatchi, admin; FY-1 — logist, market operatori, investor),
+    // ikkitasi nofaol. Telefonda tablar o'rnida «Rol: Hammasi» tanlovi (`superadmin-users-list-role-select`).
     "GET users": fixture("users/users.json"),
   },
 });

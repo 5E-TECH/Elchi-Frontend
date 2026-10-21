@@ -14,7 +14,8 @@ const cors = {
 const reply = (route: Route, body: unknown) =>
   route.fulfill({ status: 200, contentType: "application/json", headers: cors, body: JSON.stringify(body) });
 
-const ROLES = ["market", "courier", "manager", "registrator", "admin"] as const;
+// FY-1: yangi rollar ham (logist, market operatori, investor) — qator menyusi ularda ham bor (FY-S2).
+const ROLES = ["market", "courier", "manager", "registrator", "admin", "logist", "market_operator", "investor"] as const;
 export const ITEMS = Array.from({ length: 10 }, (_, i) => ({
   id: String(i + 1),
   name: `Foydalanuvchi ${i + 1}`,
@@ -25,7 +26,12 @@ export const ITEMS = Array.from({ length: 10 }, (_, i) => ({
 }));
 const META = { page: 1, limit: 10, total: 1286, totalPages: 129, totalUsers: 1286, totalMarket: 342, totalEmployees: 118 };
 
+/**
+ * `GET /users` ro'yxat so'rovlari (KPI — `limit=1` — tashqari): sahifa qaysi `role` bilan so'raganini tekshirish uchun.
+ * Rol filtri bo'lsa, javobda faqat shu roldagi qatorlar.
+ */
 export const openUsers = async (page: Page) => {
+  const listQueries: URLSearchParams[] = [];
   await page.context().routeWebSocket(/\/socket\.io\//, (ws) => ws.close());
   await page.context().route("**/*", async (route) => {
     const request = route.request();
@@ -37,7 +43,12 @@ export const openUsers = async (page: Page) => {
     if (path === "auth/my-profile") {
       return reply(route, { statusCode: 200, data: { id: "99", role: "superadmin", name: "E2E", status: "active" } });
     }
-    if (path === "users") return reply(route, { statusCode: 200, data: { items: ITEMS, meta: META } });
+    if (path === "users") {
+      const role = url.searchParams.get("role");
+      if (url.searchParams.get("limit") !== "1") listQueries.push(url.searchParams);
+      const items = role ? ITEMS.filter((item) => item.role === role) : ITEMS;
+      return reply(route, { statusCode: 200, data: { items, meta: role ? { ...META, total: items.length, totalPages: 1 } : META } });
+    }
     return reply(route, { statusCode: 200, data: [] });
   });
   await page.addInitScript(() => {
@@ -50,5 +61,6 @@ export const openUsers = async (page: Page) => {
   });
   await page.goto("/all-users");
   await expect(page.getByText("Foydalanuvchi 1", { exact: true })).toBeVisible({ timeout: 90_000 });
+  return { listQueries };
 };
 

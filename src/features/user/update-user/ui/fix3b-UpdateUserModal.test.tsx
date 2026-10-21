@@ -18,6 +18,7 @@ beforeAll(() => {
 });
 
 const mocks = vi.hoisted(() => ({
+  useGetUserById: vi.fn(),
   updateUser: vi.fn(),
   updateMyProfile: vi.fn(),
   logout: vi.fn(),
@@ -25,7 +26,8 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("../../../../entities/user/api/userApi", () => ({
   useUser: () => ({
-    useGetUserById: () => ({ data: undefined, isLoading: false }),
+    useGetUserById: (id: string, _params?: unknown, options?: { silentError?: boolean }) =>
+      options ? mocks.useGetUserById(id, options) : mocks.useGetUserById(id),
     updateUser: { mutateAsync: mocks.updateUser, isPending: false },
     updateMyProfile: { mutateAsync: mocks.updateMyProfile, isPending: false },
   }),
@@ -34,6 +36,10 @@ vi.mock("../../../../entities/user/api/userApi", () => ({
 vi.mock("../../../../shared/lib/useLogout", () => ({
   useLogout: () => ({ logout: mocks.logout }),
 }));
+
+beforeEach(() => {
+  mocks.useGetUserById.mockReset().mockReturnValue({ data: undefined, isLoading: false });
+});
 
 const makeUser = (overrides: Partial<User> = {}): User => ({
   id: "263",
@@ -338,3 +344,193 @@ describe("UpdateUserModal — dizayn v2 oynasi (maket `superadmin-users-edit-dia
     expect(await screen.findByText("Bu raqam band")).toBeInTheDocument();
   });
 });
+
+describe("UpdateUserModal — FY-1: market «AI narxi», logist maoshi, kuryer «Ish hududi»", () => {
+  beforeEach(() => {
+    mocks.updateUser.mockReset().mockResolvedValue({ statusCode: 200 });
+    mocks.logout.mockReset().mockResolvedValue(undefined);
+  });
+
+  const aiInput = () => document.querySelector<HTMLInputElement>('input[name="ai_price"]');
+  const market = (overrides: Partial<User> = {}) =>
+    makeUser({ id: "40", name: "Baraka Shop", role: "market", tariff_home: 35000, tariff_center: 25000, ...overrides });
+  const save = (user: ReturnType<typeof userEvent.setup>) =>
+    user.click(screen.getByRole("button", { name: "O'zgarishlarni saqlash" }));
+
+  it("market (maket `superadmin-users-edit-market-ai`): «Market nomi *», «AI narxi (1 buyurtma)» + izoh, saqlangan qiymat", () => {
+    renderModal(market({ ai_price_per_order: 250 }), { role: "superadmin", id: "1" });
+
+    expect(screen.getByRole("textbox", { name: /^Market nomi/ })).toHaveValue("Baraka Shop");
+    const field = screen.getByRole("textbox", { name: "AI narxi (1 buyurtma)" });
+    expect(field).toHaveValue("250");
+    expect(field).toHaveAccessibleDescription("Shu market uchun · 0 — bepul");
+    expect(field).toHaveAttribute("placeholder", "Masalan: 250");
+  });
+
+  it("AI narxi `null` — maydon bo'sh, sukut narx (300) ko'rsatilmaydi (FY-S5); o'zgartirilmasa payload'da yo'q", async () => {
+    const user = userEvent.setup();
+    renderModal(market({ ai_price_per_order: null }), { role: "admin", id: "1" });
+
+    expect(aiInput()).toHaveValue("");
+    expect(screen.queryByText(/300/)).not.toBeInTheDocument();
+    const home = document.querySelector<HTMLInputElement>('input[name="tariff_home"]');
+    if (!home) throw new Error("tariff_home input not found");
+    await user.clear(home);
+    await user.type(home, "40000");
+    await save(user);
+
+    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
+    expect(mocks.updateUser).toHaveBeenCalledWith({ id: "40", data: { tariff_home: 40000 } });
+  });
+
+  it("AI narxi kiritilsa — son; 0 — bepul (0 yuboriladi)", async () => {
+    const user = userEvent.setup();
+    renderModal(market({ ai_price_per_order: null }), { role: "superadmin", id: "1" });
+
+    await user.type(aiInput() as HTMLInputElement, "0");
+    await save(user);
+
+    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
+    expect(mocks.updateUser).toHaveBeenCalledWith({ id: "40", data: { ai_price_per_order: 0 } });
+  });
+
+  it("AI narxi tozalansa — `null` (global narx)", async () => {
+    const user = userEvent.setup();
+    renderModal(market({ ai_price_per_order: "250.00" as never }), { role: "superadmin", id: "1" });
+
+    expect(aiInput()).toHaveValue("250");
+    await user.clear(aiInput() as HTMLInputElement);
+    await save(user);
+
+    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
+    expect(mocks.updateUser).toHaveBeenCalledWith({ id: "40", data: { ai_price_per_order: null } });
+  });
+
+  it("AI narxi 1 000 000 dan katta — maydon xatosi, so'rov ketmaydi", async () => {
+    const user = userEvent.setup();
+    renderModal(market(), { role: "superadmin", id: "1" });
+
+    await user.type(aiInput() as HTMLInputElement, "1000001");
+    await save(user);
+
+    expect(await screen.findByText("0 dan 1 000 000 so'mgacha kiriting")).toBeInTheDocument();
+    expect(mocks.updateUser).not.toHaveBeenCalled();
+  });
+
+  it("menejer marketni tahrirlasa — «AI narxi» maydoni yo'q (backend faqat superadmin/admin)", () => {
+    renderModal(market({ ai_price_per_order: 250 }), { role: "manager", id: "70" });
+
+    expect(screen.getByText("Market ma'lumotlari")).toBeInTheDocument();
+    expect(aiInput()).toBeNull();
+    expect(screen.queryByText("AI narxi (1 buyurtma)")).not.toBeInTheDocument();
+  });
+
+  it("logist — «Maosh va to'lov kuni» bo'limi; maosh o'zgarsa yuboriladi", async () => {
+    const user = userEvent.setup();
+    renderModal(makeUser({ id: "81", name: "Dilshod Karimov", role: "logist", salary: 3000000, payment_day: "10" }), {
+      role: "superadmin",
+      id: "1",
+    });
+
+    expect(screen.getByText("Maosh va to'lov kuni")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "To'lov kuni (1-30)" })).toHaveTextContent("10");
+    const salary = document.querySelector<HTMLInputElement>('input[name="salary"]');
+    if (!salary) throw new Error("salary input not found");
+    expect(salary).toHaveValue("3 000 000");
+    await user.clear(salary);
+    await user.type(salary, "3500000");
+    await save(user);
+
+    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
+    expect(mocks.updateUser).toHaveBeenCalledWith({ id: "81", data: { salary: 3500000 } });
+  });
+
+  it("kuryer (tafsilotdan, `region` bor) — «Ish hududi»: viloyat faqat o'qish + «O'tkazish» izohi, tuman tanlovi yo'q", async () => {
+    const user = userEvent.setup();
+    renderModal(
+      makeUser({ region: { id: "14", name: "Samarqand viloyati", sato_code: "1718", createdAt: "", updatedAt: "" } }),
+      { role: "superadmin", id: "1" },
+    );
+
+    expect(screen.getByText("Ish hududi")).toBeInTheDocument();
+    const region = screen.getByRole("textbox", { name: "Viloyat" });
+    expect(region).toHaveValue("Samarqand viloyati");
+    expect(region).toHaveAttribute("readonly");
+    expect(region).toHaveAccessibleDescription("Filial «Boshqa filialga o'tkazish» orqali o'zgaradi");
+    expect(screen.queryByRole("combobox", { name: "Tuman" })).not.toBeInTheDocument();
+    // Tafsilotda viloyat bor — qo'shimcha so'rov yo'q.
+    expect(mocks.useGetUserById).toHaveBeenLastCalledWith("");
+
+    // O'lik `region_id` endi hech qachon yuborilmaydi.
+    const home = document.querySelector<HTMLInputElement>('input[name="tariff_home"]');
+    if (!home) throw new Error("tariff_home input not found");
+    await user.clear(home);
+    await user.type(home, "12000");
+    await save(user);
+    await waitFor(() => expect(mocks.updateUser).toHaveBeenCalledTimes(1));
+    expect(mocks.updateUser).toHaveBeenCalledWith({ id: "263", data: { tariff_home: 12000 } });
+  });
+
+  it("kuryer ro'yxatdan (`region` yo'q) — viloyat `GET /users/:id` dan olinadi; biriktirilmagan bo'lsa matn", () => {
+    mocks.useGetUserById.mockImplementation((id: string) =>
+      id
+        ? { data: { data: { ...makeUser(), region: { id: "14", name: "Farg'ona viloyati" } } }, isLoading: false }
+        : { data: undefined, isLoading: false },
+    );
+    const { unmount } = renderModal(makeUser(), { role: "admin", id: "1" });
+
+    // Yordamchi so'rov — jim (xato global xabar bermaydi, maydonning o'zida).
+    expect(mocks.useGetUserById).toHaveBeenCalledWith("263", { silentError: true });
+    expect(screen.getByRole("textbox", { name: "Viloyat" })).toHaveValue("Farg'ona viloyati");
+    unmount();
+
+    mocks.useGetUserById.mockReturnValue({ data: { data: { ...makeUser(), region: null } }, isLoading: false });
+    renderModal(makeUser(), { role: "admin", id: "1" });
+    expect(screen.getByRole("textbox", { name: "Viloyat" })).toHaveValue("Biriktirilmagan");
+  });
+
+  it("kuryer viloyati so'rovi yiqilsa — «Biriktirilmagan» emas, «—» (qiymat noma'lum)", () => {
+    mocks.useGetUserById.mockImplementation((id: string) =>
+      id ? { data: undefined, isLoading: false, isError: true } : { data: undefined, isLoading: false },
+    );
+    renderModal(makeUser(), { role: "admin", id: "1" });
+
+    const region = screen.getByRole("textbox", { name: "Viloyat" });
+    expect(region).toHaveValue("—");
+    expect(screen.queryByDisplayValue("Biriktirilmagan")).not.toBeInTheDocument();
+  });
+
+  it("kuryer viloyati yuklanayotganda — o'sha 44px faqat-o'qish maydon (yorliq bog'langan), qiymat bo'sh", () => {
+    mocks.useGetUserById.mockImplementation((id: string) =>
+      id ? { data: undefined, isLoading: true } : { data: undefined, isLoading: false },
+    );
+    renderModal(makeUser(), { role: "admin", id: "1" });
+
+    const region = screen.getByRole("textbox", { name: "Viloyat" });
+    expect(region).toHaveValue("");
+    expect(region).toHaveAttribute("readonly");
+    expect(region).toHaveAttribute("aria-busy", "true");
+    expect(screen.queryByDisplayValue("Biriktirilmagan")).not.toBeInTheDocument();
+  });
+
+  it("menejer kuryerni tahrirlasa — «O'tkazish» izohi yo'q (tugma faqat admin/superadminda)", () => {
+    renderModal(makeUser({ region: { id: "14", name: "Samarqand viloyati" } as never }), { role: "manager", id: "70" });
+
+    const region = screen.getByRole("textbox", { name: "Viloyat" });
+    expect(region).toHaveValue("Samarqand viloyati");
+    expect(screen.queryByText("Filial «Boshqa filialga o'tkazish» orqali o'zgaradi")).not.toBeInTheDocument();
+  });
+
+  it("market bo'limi to'ri: AI narxi bilan 240px ustun (maket 2×2 / telefonda 1), menejerda ixcham 170px", () => {
+    const { unmount } = renderModal(market({ ai_price_per_order: 250 }), { role: "superadmin", id: "1" });
+    const grid = () => aiOrHomeGrid();
+    expect(grid()).toHaveAttribute("data-min-col", "240");
+    expect(grid()?.className).toContain("minmax(min(240px,100%),1fr)");
+    unmount();
+
+    renderModal(market({ ai_price_per_order: 250 }), { role: "manager", id: "70" });
+    expect(grid()).toHaveAttribute("data-min-col", "170");
+  });
+});
+
+const aiOrHomeGrid = () => document.querySelector('input[name="tariff_home"]')?.closest("[data-min-col]") ?? null;
