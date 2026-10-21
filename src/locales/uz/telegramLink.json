@@ -32,6 +32,7 @@
   "unlinking": "Uzilmoqda…",
   "unlinkedToast": "Telegram uzildi",
   "timeLeft": "{{time}} qoldi",
+  "timeLeftA11y": "Havola muddati: {{minutes}} daqiqa {{seconds}} soniya qoldi",
   "waiting": "Ulanish kutilmoqda…",
   "phoneStep1": "«Telegram'da ochish» ni bosing",
   "phoneStep3": "Shu sahifaga qayting — u o'zi yangilanadi",

@@ -8,3 +8,9 @@ export const formatLinkTimeLeft = (ms: number): string => {
   const seconds = totalSeconds % 60;
   return `${minutes}:${String(seconds).padStart(2, "0")}`;
 };
+
+/** Qolgan vaqt qismlari (ekran o'quvchi matni uchun: «9 daqiqa 41 soniya»). */
+export const splitLinkTimeLeft = (ms: number): { minutes: number; seconds: number } => {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1000));
+  return { minutes: Math.floor(totalSeconds / 60), seconds: totalSeconds % 60 };
+};

@@ -32,6 +32,7 @@
   "unlinking": "Unlinking…",
   "unlinkedToast": "Telegram unlinked",
   "timeLeft": "{{time}} left",
+  "timeLeftA11y": "Link expires in {{minutes}} min {{seconds}} s",
   "waiting": "Waiting for the link…",
   "phoneStep1": "Tap «Open in Telegram»",
   "phoneStep3": "Come back to this page — it updates by itself",
