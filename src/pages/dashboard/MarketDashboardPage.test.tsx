@@ -27,6 +27,10 @@ vi.mock("../../entities/orders", () => ({
   }),
 }));
 
+// «Qayta tekshirish» (biriktirilmagan operator) — profil qayta o'qiladi; tarmoqqa chiqmaydi.
+const fetchMyProfileMock = vi.fn(() => Promise.resolve({}));
+vi.mock("../../auth/authService", () => ({ fetchMyProfile: () => fetchMyProfileMock() }));
+
 const settingsState: { data: unknown } = { data: undefined };
 vi.mock("../../entities/settings", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../../entities/settings")>()),
@@ -342,6 +346,40 @@ describe("MarketDashboardPage (v2)", () => {
       expect(rows[0]).toHaveTextContent("Boshqa market");
       expect(rows[0]).not.toHaveTextContent("Siz");
       expect(rows[1]).toHaveTextContent("Baraka ShopSiz");
+    });
+
+    it("marketga biriktirilmagan (profilda `market_id` yo'q) — nol KPI emas, «Siz hali marketga biriktirilmagansiz» + «Qayta tekshirish»; analitika so'ralmaydi", async () => {
+      const user = userEvent.setup();
+      const unassignedState = {
+        role: { id: "op-9", role: "market_operator", region: null, name: "Dilnoza Karimova" },
+        user: {
+          user: { id: "op-9", name: "Dilnoza Karimova", role: "market_operator", market_id: null } as never,
+          isAuthenticated: true,
+          accessToken: "token",
+          loading: false,
+          isAppInitializing: false,
+          error: null,
+        },
+      } as never;
+      renderWithProviders(<MarketDashboardPage variant="operator" />, { preloadedState: unassignedState });
+
+      expect(screen.getByRole("heading", { level: 1, name: "Bosh sahifa" })).toBeInTheDocument();
+      expect(screen.getByText("Market biriktirilmagan")).toBeInTheDocument();
+      expect(within(screen.getByTestId("operator-unassigned")).getByText("Siz hali marketga biriktirilmagansiz")).toBeInTheDocument();
+      expect(screen.queryByTestId("market-stats-grid")).not.toBeInTheDocument();
+      expect(screen.queryByRole("list", { name: "Marketlar bo'yicha sotuv foizi" })).not.toBeInTheDocument();
+      // `analytics/dashboard` yoqilmagan (enabled = false) — operatorning o'z id'si bo'yicha bo'sh statistika so'ralmaydi.
+      expect(getDashboardMock).toHaveBeenCalledWith({ start_day: "", end_day: "" }, false, "market_operator:op-9");
+      expect(getDashboardMock.mock.calls.every(([, enabled]) => enabled === false)).toBe(true);
+
+      await user.click(screen.getByRole("button", { name: "Qayta tekshirish" }));
+      expect(fetchMyProfileMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("market egasi rejimi `market_id` siz ham odatdagidek (holat faqat operatorda)", () => {
+      renderWithProviders(<MarketDashboardPage />, { preloadedState: marketState() });
+      expect(screen.queryByTestId("operator-unassigned")).not.toBeInTheDocument();
+      expect(screen.getByTestId("market-stats-grid")).toBeInTheDocument();
     });
 
     it("buyurtmalar ochilmaguncha (MO-3) — «Buyurtma yaratish», «Tezkor harakatlar» va ro'yxat havolasi yo'q (403 ga olib bormaydi)", () => {

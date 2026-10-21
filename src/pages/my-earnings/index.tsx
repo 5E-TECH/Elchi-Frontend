@@ -4,7 +4,6 @@ import { memo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { COMMISSION_SAMPLE_PRICE, formatCommissionValue } from "../../entities/market-operator";
 import { useUser } from "../../entities/user/api/userApi";
-import { unwrapUserResponse } from "../../entities/user/lib/normalizeUser";
 import {
   CURRENCY_LABEL,
   formatMoneyLocalized,
@@ -12,12 +11,12 @@ import {
   resolveMoneyLanguage,
 } from "../../shared/lib/formatMoney";
 import { Badge, Card, ErrorState, PageHeader, QueryBoundary, SkeletonLines } from "../../shared/ui/primitives";
-import { readOperatorRate, sampleEarning, type OperatorRate } from "./lib/operatorRate";
+import { readOperatorProfile, readOperatorRate, sampleEarning, type OperatorRate } from "./lib/operatorRate";
 
 /** Yolg'iz karta butun enga cho'zilmaydi (maketda «Stavkam» — qatorning 1/3 qismi, yonida Taklif bloklari). */
 const RATE_CARD = "w-full max-w-xl";
-/** `.el-alert.el-tone-warning` (CODE-MAP). */
-const ALERT = "flex items-start gap-3 rounded-xl bg-warning-soft px-4 py-3 text-sm text-warning-fg";
+/** `.el-alert.el-tone-warning` (CODE-MAP) — karta bilan bir xil kenglikda (aks holda desktopda alert 2× keng). */
+const ALERT = "flex w-full max-w-xl items-start gap-3 rounded-xl bg-warning-soft px-4 py-3 text-sm text-warning-fg";
 /** `.el-kpi-value` · `.el-kpi-unit` (CODE-MAP). */
 const VALUE =
   "whitespace-nowrap text-[28px] leading-9 font-bold tracking-[-.01em] text-text proportional-nums max-md:text-[22px] max-md:leading-[30px]";
@@ -93,12 +92,19 @@ const RateCard = ({ rate }: { rate: OperatorRate | null }) => {
  * «Market egasi» (profil market nomini bermaydi — N13).
  * Chizilmagan (maketda «Taklif · backend kerak»): «Hisob» (Qoldiq · Daromad · To'langan), «To'lovlar», «Daromadlar» —
  * `finance/operators/:id/*` operatorga 403, `/me` ko'rinishi yo'q (E6iEOAVs → MO-6).
- * Holatlar: yuklanish — karta skeleti; xato — karta ichida `ErrorState` + «Qayta urinish» (xom backend matnisiz).
+ * Holatlar: yuklanish — karta skeleti; xato (yoki javobda profil yo'q) — karta ichida `ErrorState` + «Qayta urinish» (xom
+ * backend matnisiz).
  */
 const MyEarningsPage = () => {
   const { t } = useTranslation("myEarnings");
   const { useGetMyProfile } = useUser();
   const profileQuery = useGetMyProfile({ silentError: true });
+  // Javob bo'sh yoki shakli buzilgan (profil yo'q) — «Komissiya belgilanmagan» deb chalg'itmaymiz, xato ko'rsatamiz.
+  const malformed = (
+    <Card title={t("rate.title")} divided className={RATE_CARD}>
+      <ErrorState size="card" onRetry={() => void profileQuery.refetch()} retrying={profileQuery.isFetching} />
+    </Card>
+  );
 
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">
@@ -106,6 +112,7 @@ const MyEarningsPage = () => {
       <QueryBoundary
         query={profileQuery}
         isEmpty={() => false}
+        empty={malformed}
         className="flex flex-col gap-6 max-md:gap-4"
         loading={
           <Card title={t("rate.title")} divided className={RATE_CARD}>
@@ -119,7 +126,9 @@ const MyEarningsPage = () => {
         )}
       >
         {(response) => {
-          const rate = readOperatorRate(unwrapUserResponse(response));
+          const profile = readOperatorProfile(response);
+          if (!profile) return malformed;
+          const rate = readOperatorRate(profile);
           return (
             <>
               {rate ? null : (

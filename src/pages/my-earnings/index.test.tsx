@@ -3,6 +3,12 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderWithProviders } from "../../test/test-utils";
 import i18n from "../../i18n";
+import uzSidebar from "../../locales/uz/sidebar.json";
+import ruSidebar from "../../locales/ru/sidebar.json";
+import enSidebar from "../../locales/en/sidebar.json";
+import uzPage from "../../locales/uz/myEarnings.json";
+import ruPage from "../../locales/ru/myEarnings.json";
+import enPage from "../../locales/en/myEarnings.json";
 
 const mocks = vi.hoisted(() => ({ get: vi.fn() }));
 vi.mock("../../shared/api/api", () => ({
@@ -113,6 +119,43 @@ describe("MyEarningsPage — «Daromadim»", () => {
     expect(screen.queryByText(/RPC timeout/)).not.toBeInTheDocument();
     await user.click(within(card).getByRole("button", { name: "Qayta urinish" }));
     await waitFor(() => expect(screen.getByTestId("operator-rate-value")).toHaveTextContent("5%"));
+  });
+
+  it("ogohlantirish karta kengligida (max-w-xl) — desktopda alert va yolg'iz karta bir xil eni", async () => {
+    mocks.get.mockResolvedValue(profile({ commission_type: null, commission_value: null }));
+    renderPage();
+
+    const alert = (await screen.findByText("Komissiya belgilanmagan — daromad yozilmaydi")).closest('[role="status"]');
+    const card = await rateCard();
+    expect(alert).toHaveClass("max-w-xl");
+    expect(card).toHaveClass("max-w-xl");
+  });
+
+  it.each([
+    ["bo'sh", { data: null }],
+    ["id siz obyekt", { data: { statusCode: 200, message: "ok" } }],
+    ["matn", { data: "<html>Bad gateway</html>" }],
+  ])("javobda profil yo'q (%s) — «Belgilanmagan» emas, xato va «Qayta urinish»", async (_case, malformed) => {
+    const user = userEvent.setup();
+    mocks.get
+      .mockResolvedValueOnce(malformed)
+      .mockResolvedValue(profile({ commission_type: "percent", commission_value: 5 }));
+    renderPage();
+
+    const card = await rateCard();
+    expect(await within(card).findByRole("alert")).toBeInTheDocument();
+    expect(screen.queryByText("Komissiya belgilanmagan — daromad yozilmaydi")).not.toBeInTheDocument();
+    expect(within(card).queryByText("Belgilanmagan")).not.toBeInTheDocument();
+    await user.click(within(card).getByRole("button", { name: "Qayta urinish" }));
+    await waitFor(() => expect(screen.getByTestId("operator-rate-value")).toHaveTextContent("5%"));
+  });
+
+  it.each([
+    ["uz", uzSidebar, uzPage],
+    ["ru", ruSidebar, ruPage],
+    ["en", enSidebar, enPage],
+  ])("%s: menyu bandi nomi sahifa sarlavhasi bilan bir xil", (_lang, sidebar, page) => {
+    expect(sidebar.earnings).toBe(page.title);
   });
 
   it("ru/en: sarlavha va karta tarjimasi", async () => {

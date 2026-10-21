@@ -114,18 +114,21 @@ export const openOperatorEarnings = async (page: Page, options: MockOptions = {}
 };
 
 /**
- * Sizish to'sig'i: operator bosh sahifasi faqat o'z marketi analitikasini (`analytics/dashboard`) so'raydi —
- * kompaniya analitikasi (`analytics/*` boshqasi, `region/stats`), xarajat tasdiqlari (operatorga 403), moliya, kassa,
- * investor va market egasining operatorlar ro'yxati yuborilmaydi.
+ * Sizish to'sig'i — ruxsat ro'yxati (allowlist): operator bosh sahifasi va «Daromadim» faqat o'z profili, o'z marketi
+ * analitikasi (`analytics/dashboard`) va qobiq hisoblagichini so'raydi. Boshqa har qanday GET (kompaniya analitikasi,
+ * `region/stats`, xarajat tasdiqlari — operatorga 403, moliya, kassa, investor, buyurtmalar, foydalanuvchilar, market
+ * egasining operatorlar ro'yxati va h.k.) — sizish; catch-all mock unga 200 bersa ham test yiqiladi.
  */
-const FORBIDDEN_REQUEST =
-  /^(analytics\/(?!dashboard$)|region\/stats|orders\/extra-cost-approvals|finance|cashbox|cash-box|payments|financial|investors|market-operators)/;
+const ALLOWED_GET = new Set(["auth/my-profile", "analytics/dashboard", "notifications/inbox/unread-count"]);
+/** Ruxsat ro'yxatidagi yo'l ham bosh sahifa bo'lmasa so'ralmasligi kerak (`/my-earnings` faqat profilni o'qiydi). */
+const HOME_ONLY_GET = new Set(["analytics/dashboard"]);
 
 export const expectNoLeakRequests = (mock: MarketOperatorMock, { home = true }: { home?: boolean } = {}) => {
   // Yozuvchi ishlayotganini tasdiqlash (aks holda tekshiruv bo'sh ro'yxat ustida «o'tib» ketadi).
   expect(mock.requested).toContain("auth/my-profile");
   if (home) expect(mock.requested).toContain("analytics/dashboard");
-  expect(mock.requested.filter((path) => FORBIDDEN_REQUEST.test(path))).toEqual([]);
+  expect(mock.requested.filter((path) => !ALLOWED_GET.has(path))).toEqual([]);
+  if (!home) expect(mock.requested.filter((path) => HOME_ONLY_GET.has(path))).toEqual([]);
   expect(mock.leaked).toEqual([]);
 };
 

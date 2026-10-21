@@ -1,10 +1,11 @@
 // dizayn-v2: market-dashboard-home, market-dashboard-extra-cost-approvals
-import { CircleCheck, CircleX, Plus, ShoppingBag, Truck, UsersRound, Wallet } from "lucide-react";
+import { CircleCheck, CircleX, Plus, RefreshCw, ShoppingBag, Truck, Unlink, UsersRound, Wallet } from "lucide-react";
 import { memo, useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import type { RootState } from "../../app/config/store";
+import { fetchMyProfile } from "../../auth/authService";
 import { canCreateOrders, canViewOrders } from "../../app/lib/access";
 import { useDashboard } from "../../entities/dashboard";
 import { hasFailedPart } from "../../entities/dashboard/lib/partialFailure";
@@ -30,7 +31,7 @@ import {
 } from "../../shared/lib/formatMoney";
 import { removeFilterValue, setMultipleFilters } from "../../shared/model/filterSlice";
 import { ChartLegend } from "../../shared/ui/charts";
-import { Button, Card, EmptyState, ErrorState, StatCard } from "../../shared/ui/primitives";
+import { Button, Card, EmptyState, ErrorState, PageHeader, StatCard } from "../../shared/ui/primitives";
 import { DashboardPartError } from "../../widgets/dashboard-part-error/ui/DashboardPartError";
 import DashboardHeader from "../../widgets/dashboard-statistics/ui/DashboardHeader";
 import { CardRow, KpiRow, LoadingChartCard } from "../../widgets/dashboard-statistics/ui/DashboardGrid";
@@ -67,6 +68,9 @@ import QuickActions from "./ui/QuickActions";
  *     `GET orders/extra-cost-approvals` operatorga 403 (faqat o'qish ruxsati — N14, MO-8);
  *   - sarlavha izohida market nomi yo'q (profil faqat `market_id` beradi — N13), o'rnida davr;
  *   - «Marketlar bo'yicha sotuv foizi» da o'z qatori — `market_id` (operatorning o'z id'si emas);
+ *   - profilda `market_id` yo'q (operator hali marketga biriktirilmagan) — `analytics/dashboard` so'ralmaydi (backend
+ *     operatorning o'z id'si bilan bo'sh statistika qaytaradi — nol KPI chalg'itadi); o'rnida MH-1
+ *     `products-unassigned` kabi `EmptyState` + «Qayta tekshirish» (profil qayta o'qiladi);
  *   - buyurtmalar havolalari («Buyurtmalarni ko'rish» → `/orders`, holat kartasidagi ro'yxat) faqat `canViewOrders`,
  *     «Buyurtma yaratish» faqat `canCreateOrders` bo'lsa — ikkalasi MO-3 da ochiladi (shungacha 403 ga olib bormaydi).
  */
@@ -82,6 +86,9 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
   const role = useSelector((state: RootState) => state.role.role);
   const roleId = useSelector((state: RootState) => state.role.id);
   const isOperator = variant === "operator";
+  // Operator marketga biriktirilmagan: profil yuklangan, lekin `market_id` yo'q.
+  const unassigned = isOperator && user != null && user.market_id == null;
+  const [recheckingProfile, setRecheckingProfile] = useState(false);
   const ordersOpen = useSelector(canViewOrders);
   const createOpen = useSelector(canCreateOrders);
 
@@ -110,14 +117,18 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
     isFetching: dashboardFetching,
     isError: dashboardError,
     refetch: refetchDashboard,
-  } = getDashboard(analyticsParams, true, analyticsScope);
+  } = getDashboard(analyticsParams, !unassigned, analyticsScope);
   // Oldingi teng davr (ega savoli 1 sukuti) — joriy javob kelgach, «Barchasi»da yo'q.
   const prevRange = useMemo(() => previousPeriodRange(resolveDashboardPeriod(fromDate, toDate)), [fromDate, toDate]);
   const previousParams = useMemo(
     () => (prevRange ? { start_day: prevRange.from, end_day: prevRange.to } : analyticsParams),
     [analyticsParams, prevRange],
   );
-  const { data: previousData } = getDashboard(previousParams, Boolean(prevRange) && Boolean(data), analyticsScope);
+  const { data: previousData } = getDashboard(
+    previousParams,
+    !unassigned && Boolean(prevRange) && Boolean(data),
+    analyticsScope,
+  );
 
   // Qisman nosozlik (VkwhHqvW): olinmagan bo'lak 0 lar bilan emas, joyida xato holati bilan chiziladi.
   const failedParts = data?.data?.failedParts;
@@ -200,6 +211,40 @@ const MarketDashboardPage = ({ variant = "market" }: { variant?: "market" | "ope
       {t("v2Market.createOrder")}
     </Button>
   ) : undefined;
+
+  const recheckProfile = () => {
+    setRecheckingProfile(true);
+    // Muvaffaqiyatda profil store'ga yoziladi (`market_id` kelsa sahifa o'zi ochiladi); xato — jim, tugma qaytadi.
+    void fetchMyProfile()
+      .catch(() => undefined)
+      .finally(() => setRecheckingProfile(false));
+  };
+
+  if (unassigned) {
+    return (
+      <div className="flex flex-col gap-6 max-md:gap-4">
+        <PageHeader title={t("v2Dashboard.header.title")} description={t("v2Market.operatorUnassigned.subtitle")} />
+        <Card as="section" padding="none" data-testid="operator-unassigned">
+          <EmptyState
+            icon={Unlink}
+            title={t("v2Market.operatorUnassigned.title")}
+            description={t("v2Market.operatorUnassigned.description")}
+            action={
+              <Button
+                variant="secondary"
+                leftIcon={RefreshCw}
+                loading={recheckingProfile}
+                loadingText={t("v2Market.operatorUnassigned.checking")}
+                onClick={recheckProfile}
+              >
+                {t("v2Market.operatorUnassigned.retry")}
+              </Button>
+            }
+          />
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6 max-md:gap-4">

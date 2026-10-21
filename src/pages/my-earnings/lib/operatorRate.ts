@@ -22,6 +22,20 @@ const toNumber = (value: unknown): number | null => {
 };
 
 /**
+ * `GET auth/my-profile` javobi → profil yozuvi (`{ data: User }` yoki `User`). Profil deb faqat `id` li obyekt
+ * olinadi: bo'sh, matn yoki `id` siz javob — `null` (sahifa xato ko'rsatadi, «belgilanmagan» emas).
+ */
+export const readOperatorProfile = (response: unknown): Record<string, unknown> | null => {
+  // `User`, `{ data: User }` yoki `{ data: { data: User } }` (`unwrapUserResponse` qabul qiladigan shakllar).
+  let node = asRecord(response);
+  for (let depth = 0; node && depth < 3; depth += 1) {
+    if (node.id != null && node.id !== "") return node;
+    node = asRecord(node.data);
+  }
+  return null;
+};
+
+/**
  * Profil → stavka. Backend (`finance recordOperatorEarning`): turi yo'q yoki qiymati 0 (yoki yo'q) — daromad
  * yozilmaydi, shuning uchun bunday holat «Komissiya belgilanmagan» (`null`) bilan bir xil ko'rsatiladi.
  */
