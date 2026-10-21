@@ -5,14 +5,15 @@ import { useTranslation } from "react-i18next";
 import { formatMoneyLocalized, CURRENCY_LABEL, resolveMoneyLanguage } from "../../../../shared/lib/formatMoney";
 import { formatPhone, toTelHref } from "../../../../shared/lib/formatPhone";
 import { formatDateTimeLocalized } from "../../../../shared/lib/formatDateTime";
+import { ProductThumb } from "../../../../entities/product/ui/ProductThumb";
 import { getOrderItemName } from "../../../../shared/lib/orderItemName";
 import { Badge, Card, EmptyState } from "../../../../shared/ui/primitives";
 import { getDeliveryLabelKey, getInitials } from "../../../orders/list/courier/list/orderActionModel";
 import { DetailStatusBadge } from "./DetailStatusBadge";
 import { OrderComment } from "./OrderComment";
-import { ProductThumb } from "./ProductThumb";
 import {
   getDistrictName,
+  getProductImageUrl,
   getRegionName,
   isCatalogLessItem,
   readOrderCreatedAt,
@@ -193,7 +194,7 @@ export const CourierProductsCard = ({
         <ul className="m-0 flex list-none flex-col p-0">
           {order.items.map((item) => (
             <li key={item.id} className="flex min-h-14 items-center gap-3 border-b border-border px-5 py-2 text-sm last:border-b-0">
-              <ProductThumb item={item} />
+              <ProductThumb imageUrl={getProductImageUrl(item)} />
               <span className="min-w-0 flex-1">
                 <span className="block font-semibold wrap-break-word text-text">
                   {getOrderItemName(item, t("productFallback", { ns: "newOrders" }))}

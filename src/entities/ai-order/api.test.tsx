@@ -10,7 +10,7 @@ vi.mock("../../auth/authService", () => ({
 }));
 
 import { api } from "../../shared/api/api";
-import { AI_REQUEST_TIMEOUT_MS, useAiAvailability, useAiConfirm, useAiParse } from "./api";
+import { AI_REQUEST_TIMEOUT_MS, isAiTabHidden, useAiAvailability, useAiConfirm, useAiParse } from "./api";
 import type { AiConfirmRequest } from "./types";
 
 /**
@@ -188,5 +188,22 @@ describe("useAiAvailability", () => {
     expect(result.current.data).toEqual({ enabled: false, state: "disabled" });
     expect(requests[0].url).toBe("orders/ai-availability");
     expect(requests[0].method).toBe("get");
+  });
+});
+
+describe("isAiTabHidden (ega Ops S3, CS-B)", () => {
+  it("faqat AI aniq o'chiq bo'lsa yashiriladi: `enabled:false` yoki `state: disabled`", () => {
+    expect(isAiTabHidden({ enabled: false })).toBe(true);
+    expect(isAiTabHidden({ enabled: false, state: "unknown" })).toBe(true);
+    expect(isAiTabHidden({ enabled: true, state: "disabled" })).toBe(true);
+  });
+
+  it("`unknown`, `cap_exceeded`, `enabled` va javob yo'q (xato / yuklanmoqda) — tab qoladi", () => {
+    expect(isAiTabHidden({ enabled: true, state: "unknown" })).toBe(false);
+    expect(isAiTabHidden({ enabled: true, state: "cap_exceeded" })).toBe(false);
+    expect(isAiTabHidden({ enabled: true, state: "enabled" })).toBe(false);
+    expect(isAiTabHidden({ enabled: true })).toBe(false);
+    expect(isAiTabHidden(undefined)).toBe(false);
+    expect(isAiTabHidden(null)).toBe(false);
   });
 });

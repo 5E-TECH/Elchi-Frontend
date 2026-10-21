@@ -227,12 +227,14 @@ export const useUser = () => {
     });
 
   /** `silentError` — sahifa xatoni o'zi ko'rsatadi (`QueryBoundary`), global xabar takrorlanmaydi. */
-  const useGetMyProfile = (options?: SilentErrorOption) =>
+  const useGetMyProfile = (options?: SilentErrorOption & { enabled?: boolean }) =>
     useQuery({
       queryKey: [user, "profile"],
       queryFn: () =>
         api.get(API_ENDPOINTS.AUTH.MY_PROFILE).then((res) => res.data),
       staleTime: 60 * 1000,
+      // `enabled` — ixtiyoriy (sukut: so'raladi); buyurtma yaratishda faqat market rolida (CS-B).
+      enabled: options?.enabled ?? true,
       ...silentErrorMeta(options),
     });
 
