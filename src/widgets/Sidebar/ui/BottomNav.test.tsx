@@ -179,7 +179,7 @@ describe("BottomNav — maketdagi bandlar (roles.json → bottomNav)", () => {
     expect(screen.getByRole("button", { name: "Menyu" })).toHaveAttribute("aria-haspopup", "dialog");
   });
 
-  it.each(["logist", "market_operator", "investor"] as const)(
+  it.each(["logist", "market_operator"] as const)(
     "%s (ROL-0): menyusi hali bo'sh — pastki menyu chizilmaydi (yolg'iz «Menyu» yoki admin havolalari yo'q)",
     (role) => {
       renderNav(role);
@@ -390,5 +390,20 @@ describe("BottomNav — kontekstli «Skaner» (ega qarori 2026-10-19)", () => {
     await user.click(scan);
     expect(isScannerOverlayOpen()).toBe(false);
     expect(screen.getByTestId("path")).toHaveTextContent("/scan");
+  });
+});
+
+describe("BottomNav — investor (IN-1)", () => {
+  /**
+   * Investor menyusida hozircha faqat «Bosh sahifa» (IN-1). Maketdagi 4 katak (Bosh sahifa · Investitsiya · Foyda ·
+   * Menyu, ega IN-S2) — «Investitsiyalar» va «Foyda tarixi» o'z sahifalari bilan IN-2 da keladi (`plannedBottomNav`).
+   * Skaner yo'q, kataklar teng.
+   */
+  it("Bosh sahifa · Menyu; skanersiz, faqat o'z menyusidagi yo'l", () => {
+    renderNav("investor");
+    expect(hrefs()).toEqual(["/", "button:Menyu"]);
+    expect(screen.getByRole("link", { name: "Bosh sahifa" })).toHaveAttribute("aria-current", "page");
+    expect(screen.queryByRole("link", { name: /Skaner/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Menyu" })).toHaveAttribute("aria-haspopup", "dialog");
   });
 });

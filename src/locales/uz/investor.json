@@ -1,0 +1,111 @@
+{
+  "home": {
+    "title": "Bosh sahifa",
+    "cabinet": "Investor kabineti",
+    "cabinetOf": "Investor kabineti · {{name}}"
+  },
+  "kpi": {
+    "label": "Asosiy ko'rsatkichlar",
+    "invested": "Mening investitsiyam",
+    "investedHint": "{{n}} ta investitsiya · oxirgisi {{date}}",
+    "investedCount": "{{n}} ta investitsiya",
+    "investedNone": "Hali investitsiya kiritilmagan",
+    "share": "Ulush",
+    "shareHint": "Oxirgi davr stavkasi",
+    "shareNone": "Foyda davri hali yo'q",
+    "paid": "To'langan foyda",
+    "paidHint": "Oxirgi to'lov: {{date}}",
+    "paidNone": "Hali to'lov bo'lmagan",
+    "unpaid": "Kutilayotgan foyda",
+    "unpaidHint": "Hisoblangan, hali to'lanmagan",
+    "unpaidNone": "Hisoblangan foyda yo'q"
+  },
+  "monthly": {
+    "title": "Oylik foyda",
+    "sub": "To'langan va kutilayotgan foyda; oy — davr tugagan sana",
+    "periodLabel": "Grafik davri",
+    "window": "{{count}} oy",
+    "total": "Jami foyda · {{count}} oy",
+    "paid": "To'langan",
+    "unpaid": "Kutilmoqda",
+    "note": "{{month}} davri hali yopilmagan — foyda davr tugagach hisoblanadi",
+    "ariaLabel": "Oylik foyda, {{from}} – {{to}}: jami {{total}}, to'langan {{paid}}, kutilmoqda {{unpaid}}",
+    "tableLabel": "Oylik foyda jadvali",
+    "colMonth": "Oy",
+    "colPaid": "To'langan",
+    "colUnpaid": "Kutilmoqda",
+    "colTotal": "Jami",
+    "currentMonth": "Joriy oy",
+    "totalRow": "Jami · {{count}} oy",
+    "notCalculated": "Davr hali hisoblanmagan",
+    "noProfit": "Foyda yo'q",
+    "paidLine": "To'langan: {{value}}",
+    "unpaidLine": "Kutilmoqda: {{value}}",
+    "emptyTitle": "Hali foyda hisoblanmagan",
+    "emptyText": "Foyda har oy davr yopilgach hisoblanadi va shu grafikda ko'rinadi.",
+    "errorCard": "Ko'rsatkichlar va oylik foyda",
+    "errorTitle": "Ko'rsatkichlarni yuklab bo'lmadi",
+    "errorBelow": "Investitsiyalar va foyda tarixi quyida.",
+    "monthsShort": [
+      "Yan",
+      "Fev",
+      "Mar",
+      "Apr",
+      "May",
+      "Iyn",
+      "Iyl",
+      "Avg",
+      "Sen",
+      "Okt",
+      "Noy",
+      "Dek"
+    ]
+  },
+  "investments": {
+    "title": "So'nggi investitsiyalar",
+    "total": "Jami: {{amount}}",
+    "label": "So'nggi investitsiyalar",
+    "colDate": "Kiritilgan sana",
+    "colAmount": "Summa",
+    "cardSub": "Kiritilgan: {{date}}",
+    "emptyTitle": "Hali investitsiya yo'q",
+    "emptyText": "Investitsiyani administrator kiritadi — shundan keyin u shu yerda ko'rinadi.",
+    "errorTitle": "Investitsiyalarni yuklab bo'lmadi"
+  },
+  "profits": {
+    "title": "Foyda tarixi",
+    "sub": "Har bir davr uchun hisoblangan foyda",
+    "label": "Foyda tarixi",
+    "colPeriod": "Davr",
+    "colPercent": "Foiz",
+    "colAmount": "Summa",
+    "colStatus": "Holat",
+    "colPaidAt": "To'langan sana",
+    "statusPaid": "To'langan",
+    "statusPending": "Kutilmoqda",
+    "cardPending": "Hali to'lanmagan",
+    "cardPaid": "To'langan: {{date}}",
+    "emptyTitle": "Hali foyda yozuvi yo'q",
+    "emptyText": "Birinchi davr yopilgach, hisoblangan foyda shu ro'yxatda paydo bo'ladi.",
+    "errorTitle": "Foyda tarixini yuklab bo'lmadi"
+  },
+  "access": {
+    "retry": "Qayta urinish",
+    "logout": "Chiqish",
+    "inactive": {
+      "overline": "Xato kodi 403",
+      "title": "Investor profilingiz nofaol",
+      "text": "Profil vaqtincha to'xtatilgan, shuning uchun ko'rsatkichlar yopiq. Batafsil ma'lumot uchun administrator bilan bog'laning."
+    },
+    "notLinked": {
+      "overline": "Xato kodi 404",
+      "title": "Investor profili hali bog'lanmagan",
+      "text": "Hisobingiz investor yozuviga ulanmagan. Administrator ulagach, investitsiya va foydangiz shu yerda ko'rinadi."
+    },
+    "multiple": {
+      "overline": "Xato kodi 409",
+      "title": "Investor profilini aniqlab bo'lmadi",
+      "text": "Hisobingizga bir nechta investor profili ulangan — administrator tuzatishi kerak."
+    }
+  }
+}

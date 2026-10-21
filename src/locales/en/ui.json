@@ -1277,5 +1277,34 @@
       "text": "Low light",
       "action": "Turn on flashlight"
     }
+  },
+  "chartsKit": {
+    "title": "Charts",
+    "description": "Stacked bars — several parts per bar, total on top, tooltip on hover.",
+    "stackedTitle": "Stacked bars",
+    "stackedMeta": "Mockup: investor-dashboard-home («Monthly profit»). On phones the totals and tooltip are hidden and month labels are sparse.",
+    "ariaLabel": "Monthly profit, March – October 2026: from 3.6M to 6.2M UZS; September profit not paid yet",
+    "paid": "Paid",
+    "unpaid": "Pending",
+    "months": [
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct"
+    ],
+    "monthTitles": [
+      "March 2026",
+      "April 2026",
+      "May 2026",
+      "June 2026",
+      "July 2026",
+      "August 2026",
+      "September 2026",
+      "October 2026"
+    ]
   }
 }

@@ -256,3 +256,9 @@ export const canReceiveExternalOrders: Predicate = anyOf(
   hasRole("superadmin", "admin", "registrator"),
   managerCan("intake"),
 );
+
+/**
+ * Investor kabineti (IN-1, vpKijXce): `/` da `InvestorDashboardPage` — faqat investor roli. Ma'lumot doirasi
+ * backendda JWT'dan (`GET investors/me/*`, `@Roles(INVESTOR)`); superadmin/admin investorni `/investors-ops` da ko'radi.
+ */
+export const canViewInvestorCabinet: Predicate = hasRole("investor");

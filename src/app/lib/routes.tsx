@@ -25,6 +25,7 @@ import {
   canViewAdminDashboard,
   canViewUiKit,
   canViewMarketOperators,
+  canViewInvestorCabinet,
 } from "./access";
 import { useResetInputsOnPathChange } from "../../shared/lib/useResetInputsOnPathChange";
 import { RUNTIME_ERROR_PATH } from "../../shared/lib/runtimeError";
@@ -62,6 +63,8 @@ const DashboardPage = lazy(() => import("../../pages/dashboard/DashboardPage"));
 const MarketDashboardPage = lazy(
   () => import("../../pages/dashboard/MarketDashboardPage"),
 );
+// IN-1: investor kabineti — alohida lazy chunk (dashboard bundle chegarasi 450 KB).
+const InvestorDashboardPage = lazy(() => import("../../pages/investor/InvestorDashboardPage"));
 const BranchDashboardPage = lazy(() => import("../../pages/branch-dashboard"));
 const DispatchPage = lazy(() => import("../../pages/dispatch"));
 const BatchesPage = lazy(() => import("../../pages/batches"));
@@ -257,8 +260,13 @@ const DashboardEntry = () => {
     return <ForbiddenPage />;
   }
 
+  // IN-1: investor kabineti (`canViewInvestorCabinet`) — KPI, oylik foyda, investitsiyalar va foyda tarixi.
   if (role === "investor") {
-    return <ForbiddenPage />;
+    return (
+      <ProtectedRoute canActivate={canViewInvestorCabinet}>
+        <InvestorDashboardPage />
+      </ProtectedRoute>
+    );
   }
 
   if (canViewAdmin) {

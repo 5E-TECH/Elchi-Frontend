@@ -6,6 +6,7 @@ import { PageHeader } from "../../shared/ui/primitives";
 import { BadgesSection } from "./sections/BadgesSection";
 import { ButtonsSection } from "./sections/ButtonsSection";
 import { CardsSection } from "./sections/CardsSection";
+import { ChartsSection } from "./sections/ChartsSection";
 import { DateSection } from "./sections/DateSection";
 import { DialogSection } from "./sections/DialogSection";
 import { FeedbackSection } from "./sections/FeedbackSection";
@@ -27,7 +28,7 @@ import { TabsSection } from "./sections/TabsSection";
  * Har bo'lim namunani kunduzgi va tungi mavzuda yonma-yon chizadi (`ThemePair`).
  * Skrinshot uchun URL parametrlari:
  *   `?section=<id>`  — faqat shu bo'lim (`buttons`, `badges`, `cards`, `page-header`, `tabs`, `format`,
- *                    `forms`, `select`, `date`, `dialog`, `feedback`, `states`, `table`; noma'lum id — hammasi);
+ *                    `forms`, `select`, `date`, `dialog`, `feedback`, `states`, `table`, `charts`; noma'lum id — hammasi);
  *   `?theme-pair=0`  — har bo'limda bitta panel, ilovaning joriy mavzusida.
  *   npm run app:shot -- "/ops/ui-kit?section=buttons" --device phone
  */
@@ -47,6 +48,8 @@ const SECTIONS: ReadonlyArray<{ id: string; Component: ComponentType }> = [
   { id: "states", Component: StatesSection },
   // 4-bosqich: ro'yxat sahifalari.
   { id: "table", Component: TableSection },
+  // IN-1: grafik primitivi `StackedBars` (`src/shared/ui/charts`).
+  { id: "charts", Component: ChartsSection },
 ];
 
 export const UiKitPage = () => {

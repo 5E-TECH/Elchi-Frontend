@@ -23,6 +23,8 @@ import {
   canViewMarketOperators,
 } from "./access";
 import type { BranchType } from "../../widgets/Sidebar/model/menuConfig";
+// IN-1: investor kabineti — o'z describe bloki (pastda), umumiy matritsaga tegilmaydi.
+import { canViewInvestorCabinet } from "./access";
 
 /**
  * B0 — kirish huquqi sidebar'dan AJRATILDI.
@@ -237,6 +239,22 @@ describe("rol yo'q bo'lsa hech narsa ochilmaydi", () => {
     const anonymous = state(null);
     for (const [name, predicate] of Object.entries(PREDICATES)) {
       expect(predicate(anonymous), name).toBe(false);
+    }
+  });
+});
+
+describe("canViewInvestorCabinet — investor kabineti (IN-1)", () => {
+  it("faqat investor; boshqa har rol/filial va rolsiz holat — rad", () => {
+    for (const [caseName, s] of CASES) {
+      expect(canViewInvestorCabinet(s), caseName).toBe(caseName === "investor");
+    }
+    expect(canViewInvestorCabinet(state(null))).toBe(false);
+  });
+
+  it("investor admin bosh sahifasini, moliya va buyurtma bo'limlarini ko'rmaydi", () => {
+    const investor = state("investor");
+    for (const predicate of [canViewAdminDashboard, canViewPaymentsPage, canViewFinancialBalance, canViewOrders, canViewUsers]) {
+      expect(predicate(investor)).toBe(false);
     }
   });
 });
