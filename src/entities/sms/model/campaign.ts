@@ -85,3 +85,7 @@ export const smsCampaignErrorKind = (error: unknown): SmsCampaignErrorKind => {
   if (status === 401 || status === 403) return "forbidden";
   return "unknown";
 };
+
+/** Qayta urinish natijani o'zgartira oladigan xatolar (tarmoq, server); 400 / 409 / 403 — o'zgarmaydi. */
+export const isRetryableSmsCampaignError = (kind: SmsCampaignErrorKind = "unknown") =>
+  kind === "timeout" || kind === "unknown";

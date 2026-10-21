@@ -9,6 +9,7 @@ import {
   type CustomerSegment,
 } from "../../../entities/notification-campaign";
 import {
+  isRetryableSmsCampaignError,
   previewSmsCampaign,
   smsCampaignErrorKind,
   smsDailyQuota,
@@ -44,11 +45,7 @@ import {
 } from "../../../shared/ui/primitives";
 import SmsMeter from "../../../shared/ui/SmsMeter";
 import { useIsBelowLg } from "../lib/useIsPhoneViewport";
-import {
-  CampaignAudienceSummary,
-  isRetryableAudienceError,
-  type CampaignAudienceState,
-} from "./sms/CampaignAudienceSummary";
+import { CampaignAudienceSummary, type CampaignAudienceState } from "./sms/CampaignAudienceSummary";
 import { CampaignSendTime } from "./sms/CampaignSendTime";
 import { CardList } from "./sms/CardList";
 
@@ -241,7 +238,7 @@ const CampaignPage = () => {
 
   const audienceHint: Record<Exclude<CampaignAudienceState, "ready">, string> = {
     loading: t("campaign.hintAudienceWait"),
-    error: isRetryableAudienceError(audienceErrorKind)
+    error: isRetryableSmsCampaignError(audienceErrorKind)
       ? t("campaign.hintAudienceError")
       : t("campaign.hintAudienceBlocked"),
     fanout: t("campaign.hintFanout"),

@@ -2,7 +2,12 @@
 import { useId } from "react";
 import { CircleX, RotateCw, Users } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import type { SmsCampaignErrorKind, SmsCampaignPreview, SmsDailyQuota } from "../../../../entities/sms";
+import {
+  isRetryableSmsCampaignError,
+  type SmsCampaignErrorKind,
+  type SmsCampaignPreview,
+  type SmsDailyQuota,
+} from "../../../../entities/sms";
 import { cx } from "../../../../shared/lib/cx";
 import { formatNumberLocalized } from "../../../../shared/lib/formatMoney";
 import { Button, Spinner } from "../../../../shared/ui/primitives";
@@ -31,10 +36,6 @@ export type CampaignAudienceSummaryProps = {
   onRetry: () => void;
 };
 
-/** Qayta urinish natijani o'zgartira oladigan xatolar (tarmoq, server). */
-export const isRetryableAudienceError = (kind: SmsCampaignErrorKind = "unknown") =>
-  kind === "timeout" || kind === "unknown";
-
 /**
  * «AUDITORIYA» BLOKI — maket `superadmin-notifications-sms-campaign-segment` (o'ng ustun pastida, `sunken`):
  * «Auditoriya: 386 ta» + kimga yuborilmaydi; chiziq ostida «SMS limiti · Bugun qolgan: 420 / 500», «Kerak: 386 ta»
@@ -60,7 +61,7 @@ export const CampaignAudienceSummary = ({
 
   let title: string;
   let detail: string | null = null;
-  const retryable = isRetryableAudienceError(errorKind);
+  const retryable = isRetryableSmsCampaignError(errorKind);
   if (state === "error") {
     title = t("audience.error");
     detail = retryable ? t("audience.errorHint") : t(`campaign.errors.${errorKind}`);

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  isRetryableSmsCampaignError,
   minutesToHhmm,
   quietHoursNotice,
   smsCampaignErrorKind,
@@ -51,5 +52,14 @@ describe("KM-1 SMS kampaniya yordamchilari", () => {
     expect(smsCampaignErrorKind(http(403))).toBe("forbidden");
     expect(smsCampaignErrorKind(http(500))).toBe("unknown");
     expect(smsCampaignErrorKind(new Error("x"))).toBe("unknown");
+  });
+
+  it("qayta urinish faqat tarmoq / server xatosida", () => {
+    expect(isRetryableSmsCampaignError("timeout")).toBe(true);
+    expect(isRetryableSmsCampaignError("unknown")).toBe(true);
+    expect(isRetryableSmsCampaignError()).toBe(true);
+    expect(isRetryableSmsCampaignError("badRequest")).toBe(false);
+    expect(isRetryableSmsCampaignError("conflict")).toBe(false);
+    expect(isRetryableSmsCampaignError("forbidden")).toBe(false);
   });
 });

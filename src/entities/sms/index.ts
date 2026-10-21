@@ -5,6 +5,7 @@ import { API_ENDPOINTS } from "../../shared/api";
 import { silentErrorMeta, type SilentErrorOption } from "../../shared/lib/queryErrorEvents";
 
 export {
+  isRetryableSmsCampaignError,
   minutesToHhmm,
   quietHoursNotice,
   smsCampaignErrorKind,
