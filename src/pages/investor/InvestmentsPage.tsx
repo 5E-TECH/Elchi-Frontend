@@ -23,7 +23,6 @@ import {
   Pagination,
   QueryBoundary,
   Skeleton,
-  SkeletonTable,
 } from "../../shared/ui/primitives";
 import { loadErrorText } from "./lib/format";
 import {
@@ -34,6 +33,7 @@ import {
   type InvestorListPatch,
 } from "./model/listSearch";
 import { InvestorAccessState } from "./ui/InvestorAccessState";
+import { InvestorListSkeleton } from "./ui/InvestorListSkeleton";
 
 /** Maket `investor-investments-list-loading`: 5 qator skelet. */
 const SKELETON_ROWS = 5;
@@ -97,11 +97,15 @@ const InvestmentsPage = () => {
   }
 
   // Eski (boshqa oraliq/sahifa) javob bo'sh bo'lsa yoki sahifa tuzatilayotgan bo'lsa — bo'sh holat emas, yuklanish.
-  const settling = (listQuery.isPlaceholderData && !data?.items.length) || outOfRange;
+  // Oflayn (`isPaused`): so'rov yuborilmagan — skelet/bo'sh holat emas, «Internet aloqasi yo'q» (QueryBoundary
+  // shartnomasi); eski oraliqning javobi ham ko'rsatilmaydi.
+  const paused = listQuery.isPaused;
+  const settling = !paused && ((listQuery.isPlaceholderData && !data?.items.length) || outOfRange);
   const failed = listQuery.isError && !data;
   const query = {
-    data: failed || settling ? undefined : data,
-    isLoading: listQuery.isPending || settling,
+    data: failed || settling || (paused && listQuery.isPlaceholderData) ? undefined : data,
+    isLoading: (listQuery.isPending && !paused) || settling,
+    isPaused: paused,
     isError: failed,
     error: listQuery.error,
     refetch: () => void listQuery.refetch(),
@@ -112,15 +116,18 @@ const InvestmentsPage = () => {
 
   const description = (() => {
     if (!summaryData) {
-      return failed ? undefined : <Skeleton width={180} height={12} className="mt-1.5" />;
+      return failed || paused ? undefined : <Skeleton width={180} height={12} className="mt-1.5" />;
     }
-    const total = count(summaryData.meta.total);
-    if (!filtered) return t("investmentsPage.total", { amount: money(summaryData.totalAmount), count: total });
-    if (summaryData.meta.totalPages <= 1) {
+    // `count` — son (i18next ko'plik shakli uchun), `countText` — mahalliy formatdagi matn.
+    const counts = { count: summaryData.meta.total, countText: count(summaryData.meta.total) };
+    if (!filtered) return t("investmentsPage.total", { amount: money(summaryData.totalAmount), ...counts });
+    // Oraliq yig'indisi — faqat oraliqning BARCHA yozuvlari shu javobda bo'lsa (sahifadan tashqari havola
+    // `?page=3` → `items=[]`, `total=3` — «0 so'm» emas, faqat son).
+    if (summaryData.items.length === summaryData.meta.total) {
       const sum = summaryData.items.reduce((acc, item) => acc + item.amount, 0);
-      return t("investmentsPage.rangeTotal", { amount: money(sum), count: total });
+      return t("investmentsPage.rangeTotal", { amount: money(sum), ...counts });
     }
-    return t("investmentsPage.rangeCount", { count: total });
+    return t("investmentsPage.rangeCount", counts);
   })();
 
   const clearFilter = () => update({ from: "", to: "" });
@@ -153,7 +160,7 @@ const InvestmentsPage = () => {
               onPageChange={(page) => update({ page })}
               onPageSizeChange={(limit) => update({ limit })}
               disabled={listQuery.isPlaceholderData}
-              summary={(range) => t("investmentsPage.summary", range)}
+              summary={(range) => t("investmentsPage.summary", { ...range, count: data.meta.total })}
             />
           ) : undefined
         }
@@ -163,14 +170,7 @@ const InvestmentsPage = () => {
           keepPreviousData={false}
           isEmpty={(page: InvestorInvestmentsPage) => page.items.length === 0}
           loadingLabel={t("investmentsPage.loading")}
-          loading={
-            <SkeletonTable
-              framed={false}
-              rows={SKELETON_ROWS}
-              mobileRows={SKELETON_ROWS}
-              columns={[t("investmentsPage.colDate"), t("investmentsPage.colAmount"), t("investmentsPage.colShare")]}
-            />
-          }
+          loading={<InvestorListSkeleton rows={SKELETON_ROWS} />}
           error={(error, retry) => (
             <ErrorState
               error={error}
@@ -256,7 +256,11 @@ const InvestmentsTable = ({
                 {share == null ? null : (
                   // `Meter` o'zi `w-full` — kenglik o'ramda (maket `.el-meter.is-thin`, 96px).
                   <span className="w-24 flex-none">
-                    <Meter value={share} thickness="thin" ariaLabel={t("investmentsPage.colShare")} />
+                    <Meter
+                      value={share}
+                      thickness="thin"
+                      ariaLabel={`${formatDateLocalized(row.investedAt)} — ${t("investmentsPage.colShare")}`}
+                    />
                   </span>
                 )}
                 <span className="min-w-12 text-right proportional-nums">{percent(share)}</span>

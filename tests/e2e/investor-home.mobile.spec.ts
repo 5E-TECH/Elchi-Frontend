@@ -41,8 +41,8 @@ test("bosh sahifa: pastki menyu, «Menyu» varaqasi, boshqaruvlar ≥ 44px, jadv
   await expect(sheet).toBeVisible();
   await expect(sheet.getByRole("navigation", { name: "Asosiy bo'limlar" }).getByRole("link")).toHaveText([
     "Bosh sahifa",
-    "Investitsiya",
-    "Foyda",
+    "Investitsiyalar",
+    "Foyda tarixi",
   ]);
   await expect(sheet.getByRole("link", { name: /Bildirishnomalar/ })).toBeVisible();
   await expect(sheet.getByRole("link", { name: /Sozlamalar/ })).toBeVisible();

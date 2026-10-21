@@ -2,7 +2,8 @@ import type { InvestorListParams, InvestorProfitParams } from "../../../entities
 
 /**
  * Investor ro'yxat sahifalarining URL holati (IN-2): `/investments?from&to&page&limit`, `/profits?status&page&limit`.
- * Filtr, sahifa va sahifa hajmi URL'da — havola ulashiladi, «Orqaga» filtrni tiklaydi. Noto'g'ri qiymat jim
+ * Filtr, sahifa va sahifa hajmi URL'da — havola ulashiladi, sahifa yangilansa holat saqlanadi. O'zgarishlar tarixga
+ * `replace` bilan yoziladi (filtr bosqichlari «Orqaga» ni to'ldirmaydi — «Orqaga» oldingi sahifaga). Noto'g'ri qiymat jim
  * tashlanadi (sukutga qaytadi), so'rov 400 bilan yiqilmaydi.
  */
 

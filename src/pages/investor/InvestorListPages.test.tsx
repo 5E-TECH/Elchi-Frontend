@@ -1,9 +1,11 @@
+import { onlineManager } from "@tanstack/react-query";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { AxiosRequestConfig } from "axios";
 import { useLocation } from "react-router-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { RootState } from "../../app/config/store";
+import i18n from "../../i18n";
 import { api } from "../../shared/api/api";
 import { renderWithProviders } from "../../test/test-utils";
 import InvestmentsPage from "./InvestmentsPage";
@@ -75,7 +77,10 @@ const profit = (id: string, month: number, last: number, amount: number, paidAt:
 
 const PROFITS = [profit("20", 9, 30, 6_200_000, null), profit("19", 8, 31, 5_600_000, "2026-09-05T10:00:00+05:00")];
 
-const profitsBody = (items: unknown[] = PROFITS, meta: Partial<{ total: number; totalPages: number }> = {}) => ({
+const profitsBody = (
+  items: unknown[] = PROFITS,
+  meta: Partial<{ page: number; total: number; totalPages: number }> = {},
+) => ({
   data: {
     items,
     meta: { page: 1, limit: 10, total: items.length, totalPages: 1, ...meta },
@@ -126,9 +131,29 @@ const asPhone = () => {
   );
 };
 
-afterEach(() => {
+afterEach(async () => {
   vi.restoreAllMocks();
+  onlineManager.setOnline(true);
+  if (i18n.language !== "uz") await i18n.changeLanguage("uz");
 });
+
+/** Javobni qo'lda bo'shatiladigan va'da (oraliq holatni tekshirish uchun). */
+const deferred = <T,>() => {
+  let resolve: (value: T) => void = () => undefined;
+  const promise = new Promise<T>((done) => {
+    resolve = done;
+  });
+  return { promise, resolve };
+};
+
+const loadingState = () => document.querySelector('[data-query-state="loading"]');
+
+/** Oflayn testdan keyin: so'rovni bekor qilib (keshni tozalab), keyin aloqani qaytaradi — tarmoq qo'riqchisiga tegmaydi. */
+const goOnlineAfter = (view: ReturnType<typeof renderAt>) => {
+  view.unmount();
+  view.queryClient.clear();
+  onlineManager.setOnline(true);
+};
 
 describe("InvestmentsPage — /investments (investor-investments-list)", () => {
   it("sarlavha, «Jami: X · N ta», jadval (sana, summa, jamidagi hissasi), sahifalash; so'rov sanasiz", async () => {
@@ -150,7 +175,15 @@ describe("InvestmentsPage — /investments (investor-investments-list)", () => {
       "03.03.202680 000 000 so'm17,8%",
       "15.01.2026120 000 000 so'm26,7%",
     ]);
-    const meters = within(card).getAllByRole("meter", { name: "Jamidagi hissasi" });
+    // Har o'lchagichning nomi o'z sanasi bilan (ekran o'quvchida 5 ta bir xil «Jamidagi hissasi» emas).
+    const meters = within(card).getAllByRole("meter");
+    expect(meters.map((meter) => meter.getAttribute("aria-label"))).toEqual([
+      "01.08.2026 — Jamidagi hissasi",
+      "20.06.2026 — Jamidagi hissasi",
+      "12.04.2026 — Jamidagi hissasi",
+      "03.03.2026 — Jamidagi hissasi",
+      "15.01.2026 — Jamidagi hissasi",
+    ]);
     expect(meters[0]).toHaveAttribute("aria-valuenow", String((100_000_000 / 450_000_000) * 100));
     expect(within(card).getByText("1–5 / 5 ta investitsiya")).toBeInTheDocument();
     // Sarlavhada saralash tugmasi yo'q (tartib serverda).
@@ -243,16 +276,96 @@ describe("InvestmentsPage — /investments (investor-investments-list)", () => {
   });
 
   it("oxirgi sahifadan tashqarida (eski havola) — YANGI javobdan keyin mavjud oxirgi sahifaga o'tadi", async () => {
+    const page2 = deferred<unknown>();
     const get = mockApi((_, params) =>
-      params?.page === 2
-        ? investmentsBody([INVESTMENTS[4]], { page: 2, total: 11, totalPages: 2 })
-        : investmentsBody([], { page: Number(params?.page), total: 11, totalPages: 2 }),
+      params?.page === 2 ? page2.promise : investmentsBody([], { page: Number(params?.page), total: 11, totalPages: 2 }),
     );
     renderAt("investments", "?page=7");
     await waitFor(() => expect(location()).toBe("/investments?page=2"));
+    // 2-sahifa hali kelmagan: bo'sh `?page=7` javobi «Hali investitsiya yo'q» bo'lib chaqnamaydi — yuklanish.
+    expect(loadingState()).toBeInTheDocument();
+    expect(screen.queryByText("Hali investitsiya yo'q")).not.toBeInTheDocument();
+
+    page2.resolve(investmentsBody([INVESTMENTS[4]], { page: 2, total: 11, totalPages: 2 }));
     expect(await screen.findByText("15.01.2026")).toBeInTheDocument();
     expect(paramsOf(get, "investors/me/investments").map((params) => params.page)).toEqual([7, 2]);
+    expect(screen.queryByText("Hali investitsiya yo'q")).not.toBeInTheDocument();
+  });
+
+  it("bo'sh oraliqdan filtr tozalansa — yangi javob kelguncha yuklanish, «Hali investitsiya yo'q» chaqnamaydi", async () => {
+    const user = userEvent.setup();
+    const all = deferred<unknown>();
+    mockApi((_, params) => (params?.from_date ? investmentsBody([]) : all.promise));
+    renderAt("investments", "?from=2026-09-01&to=2026-09-30");
+    expect(await screen.findByText("Bu oraliqda investitsiya yo'q")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Filtrni tozalash" }));
+    expect(location()).toBe("/investments");
+    expect(loadingState()).toBeInTheDocument();
+    expect(screen.queryByText("Hali investitsiya yo'q")).not.toBeInTheDocument();
     expect(screen.queryByText("Bu oraliqda investitsiya yo'q")).not.toBeInTheDocument();
+
+    all.resolve(investmentsBody());
+    expect(await screen.findByText("Jami: 450 000 000 so'm · 5 ta")).toBeInTheDocument();
+  });
+
+  it("oraliqda sahifadan tashqari havola (`items=[]`, `total=3`) — sarlavhada «0 so'm» emas, faqat son", async () => {
+    const page1 = deferred<unknown>();
+    mockApi((_, params) =>
+      params?.page === 3 ? investmentsBody([], { page: 3, total: 3, totalPages: 1 }) : page1.promise,
+    );
+    renderAt("investments", "?from=2026-04-01&to=2026-08-31&page=3");
+    await waitFor(() => expect(location()).toBe("/investments?from=2026-04-01&to=2026-08-31"));
+    expect(screen.getByText("Tanlangan oraliqda: 3 ta")).toBeInTheDocument();
+    expect(screen.queryByText(/Tanlangan oraliqda: 0 so'm/)).not.toBeInTheDocument();
+
+    page1.resolve(investmentsBody(INVESTMENTS.slice(0, 3)));
+    expect(await screen.findByText("Tanlangan oraliqda: 250 000 000 so'm · 3 ta")).toBeInTheDocument();
+  });
+
+  it("yuklanish skeleti — maketdagidek ustun sarlavhasi qatorisiz (faqat qatorlar)", async () => {
+    const pending = deferred<unknown>();
+    mockApi(() => pending.promise);
+    renderAt("investments");
+    expect(loadingState()).toBeInTheDocument();
+    expect(document.querySelector('[data-skeleton-preset="investor-list"]')).toBeInTheDocument();
+    expect(screen.queryByText("Kiritilgan sana")).not.toBeInTheDocument();
+    expect(screen.queryByText("Jamidagi hissasi")).not.toBeInTheDocument();
+    pending.resolve(investmentsBody());
+    expect(await screen.findByText("Jami: 450 000 000 so'm · 5 ta")).toBeInTheDocument();
+  });
+
+  it("oflayn — «Internet aloqasi yo'q», skelet emas, so'rov ketmaydi", async () => {
+    onlineManager.setOnline(false);
+    const get = mockApi(() => investmentsBody());
+    const view = renderAt("investments");
+    expect(await screen.findByText("Internet aloqasi yo'q")).toBeInTheDocument();
+    expect(loadingState()).not.toBeInTheDocument();
+    expect(document.querySelector('[data-skeleton]')).not.toBeInTheDocument();
+    expect(get).not.toHaveBeenCalled();
+    goOnlineAfter(view);
+  });
+
+  it("oflayn, bo'sh oraliqdan filtr tozalansa — «Internet aloqasi yo'q», cheksiz skelet emas", async () => {
+    const user = userEvent.setup();
+    const get = mockApi((_, params) => (params?.from_date ? investmentsBody([]) : investmentsBody()));
+    const view = renderAt("investments", "?from=2026-09-01&to=2026-09-30");
+    expect(await screen.findByText("Bu oraliqda investitsiya yo'q")).toBeInTheDocument();
+
+    onlineManager.setOnline(false);
+    await user.click(screen.getByRole("button", { name: "Filtrni tozalash" }));
+    expect(location()).toBe("/investments");
+    expect(await screen.findByText("Internet aloqasi yo'q")).toBeInTheDocument();
+    expect(loadingState()).not.toBeInTheDocument();
+    expect(paramsOf(get, "investors/me/investments")).toHaveLength(1);
+    goOnlineAfter(view);
+  });
+
+  it("ru: sahifalash xulosasi ko'plik shakli bilan («из 1 инвестиции», «из 5 инвестиций» emas)", async () => {
+    await i18n.changeLanguage("ru");
+    mockApi(() => investmentsBody(INVESTMENTS.slice(0, 1)));
+    renderAt("investments");
+    expect(await screen.findByText("1–1 из 1 инвестиции")).toBeInTheDocument();
   });
 
   it("xato 500 — «Investitsiyalarni yuklab bo'lmadi» + «Qayta urinish»; backend matni ko'rinmaydi", async () => {
@@ -365,6 +478,46 @@ describe("ProfitsPage — /profits (investor-profits-list)", () => {
     expect(await screen.findByRole("heading", { level: 2, name: "Investor profilingiz nofaol" })).toBeInTheDocument();
     expect(screen.queryByRole("radiogroup", { name: "To'lov holati" })).not.toBeInTheDocument();
     expect(screen.queryByText(RAW)).not.toBeInTheDocument();
+  });
+
+  it("oxirgi sahifadan tashqarida (`?page=7`) — yangi javobdan keyin oxirgi sahifaga; oraliqda bo'sh holat chaqnamaydi", async () => {
+    const page2 = deferred<unknown>();
+    const get = mockApi((_, params) =>
+      params?.page === 2
+        ? page2.promise
+        : { data: { ...profitsBody([]).data, meta: { page: Number(params?.page), limit: 10, total: 11, totalPages: 2 } } },
+    );
+    renderAt("profits", "?page=7");
+    await waitFor(() => expect(location()).toBe("/profits?page=2"));
+    expect(loadingState()).toBeInTheDocument();
+    expect(screen.queryByText("Hali foyda yozuvi yo'q")).not.toBeInTheDocument();
+
+    page2.resolve(profitsBody(PROFITS.slice(0, 1), { page: 2, total: 11, totalPages: 2 }));
+    expect(await screen.findByText("11–11 / 11 ta yozuv")).toBeInTheDocument();
+    expect(paramsOf(get, "investors/me/profits").map((params) => params.page)).toEqual([7, 2]);
+    expect(screen.queryByText("Hali foyda yozuvi yo'q")).not.toBeInTheDocument();
+  });
+
+  it("oflayn — «Internet aloqasi yo'q», skelet emas, so'rov ketmaydi", async () => {
+    onlineManager.setOnline(false);
+    const get = mockApi(() => profitsBody());
+    const view = renderAt("profits");
+    expect(await screen.findByText("Internet aloqasi yo'q")).toBeInTheDocument();
+    expect(loadingState()).not.toBeInTheDocument();
+    expect(document.querySelector('[data-skeleton]')).not.toBeInTheDocument();
+    expect(get).not.toHaveBeenCalled();
+    goOnlineAfter(view);
+  });
+
+  it("ru/en: «из 1 записи», «of 1 record»", async () => {
+    await i18n.changeLanguage("ru");
+    mockApi(() => profitsBody(PROFITS.slice(0, 1)));
+    const view = renderAt("profits");
+    expect(await screen.findByText("1–1 из 1 записи")).toBeInTheDocument();
+    view.unmount();
+    await i18n.changeLanguage("en");
+    renderAt("profits");
+    expect(await screen.findByText("1–1 of 1 record")).toBeInTheDocument();
   });
 
   it("telefon: kartalar — davr, summa, holat, «Hali to'lanmagan» / «To'langan: sana»", async () => {

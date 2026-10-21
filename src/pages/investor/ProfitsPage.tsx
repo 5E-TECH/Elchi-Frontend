@@ -15,7 +15,6 @@ import {
   QueryBoundary,
   SegmentedControl,
   Skeleton,
-  SkeletonTable,
 } from "../../shared/ui/primitives";
 import { loadErrorText } from "./lib/format";
 import {
@@ -28,6 +27,7 @@ import {
   type ProfitStatusFilter,
 } from "./model/listSearch";
 import { InvestorAccessState } from "./ui/InvestorAccessState";
+import { InvestorListSkeleton } from "./ui/InvestorListSkeleton";
 import { ProfitHistoryTable } from "./ui/ProfitHistoryTable";
 
 /** Yuklanish — `investor-investments-list-loading` naqshi (route-map izohi), 5 qator. */
@@ -87,11 +87,14 @@ const ProfitsPage = () => {
     );
   }
 
-  const settling = (listQuery.isPlaceholderData && !data?.items.length) || outOfRange;
+  // Oflayn (`isPaused`) — «Internet aloqasi yo'q», skelet emas (QueryBoundary shartnomasi).
+  const paused = listQuery.isPaused;
+  const settling = !paused && ((listQuery.isPlaceholderData && !data?.items.length) || outOfRange);
   const failed = listQuery.isError && !data;
   const query = {
-    data: failed || settling ? undefined : data,
-    isLoading: listQuery.isPending || settling,
+    data: failed || settling || (paused && listQuery.isPlaceholderData) ? undefined : data,
+    isLoading: (listQuery.isPending && !paused) || settling,
+    isPaused: paused,
     isError: failed,
     error: listQuery.error,
     refetch: () => void listQuery.refetch(),
@@ -105,7 +108,7 @@ const ProfitsPage = () => {
       {" · "}
       <span className="whitespace-nowrap">{t("profitsPage.unpaidTotal", { amount: money(data.totalUnpaid) })}</span>
     </>
-  ) : failed ? undefined : (
+  ) : failed || paused ? undefined : (
     <Skeleton width={240} height={12} className="mt-1.5" />
   );
 
@@ -141,7 +144,7 @@ const ProfitsPage = () => {
               onPageChange={(page) => update({ page })}
               onPageSizeChange={(limit) => update({ limit })}
               disabled={listQuery.isPlaceholderData}
-              summary={(range) => t("profitsPage.summary", range)}
+              summary={(range) => t("profitsPage.summary", { ...range, count: data.meta.total })}
             />
           ) : undefined
         }
@@ -151,20 +154,7 @@ const ProfitsPage = () => {
           keepPreviousData={false}
           isEmpty={(page: InvestorProfitsPage) => page.items.length === 0}
           loadingLabel={t("profitsPage.loading")}
-          loading={
-            <SkeletonTable
-              framed={false}
-              rows={SKELETON_ROWS}
-              mobileRows={SKELETON_ROWS}
-              columns={[
-                t("profits.colPeriod"),
-                t("profits.colPercent"),
-                t("profits.colAmount"),
-                t("profits.colStatus"),
-                t("profits.colPaidAt"),
-              ]}
-            />
-          }
+          loading={<InvestorListSkeleton rows={SKELETON_ROWS} widths={["22%", "14%", "16%", "12%"]} />}
           error={(error, retry) => (
             <ErrorState
               error={error}
